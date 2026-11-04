@@ -1,0 +1,120 @@
+/* The insights: nine principles from the showcase, redrawn in the homepage's foundations, each on a card (the gallery
+ * card: frame, inset stage, foot). The scenes keep their own colours where the principle is about colour (a saffron
+ * page, a forecast's blue and amber); everything else is our grounds and inks. */
+.ins-x { max-width: 72rem; margin: 0 auto; padding: var(--s-10) var(--s-6) var(--s-9); color: var(--ink-1); }
+.ins-x-head { max-width: 44rem; margin: 0 auto; text-align: center; }
+.ins-x-eyebrow { display: inline-block; margin-bottom: var(--s-4); font: var(--t-label); color: var(--accent-ink); }
+.ins-x .title { margin-bottom: var(--s-4); }
+.ins-x .lead { margin: 0 auto; }
+.ins-x-families { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin: var(--s-6) 0 0; padding: 0; list-style: none; }
+.ins-x-families li { display: inline-flex; gap: 6px; align-items: center; height: 26px; padding: 0 10px; border-radius: 99px; background: var(--g1); box-shadow: inset 0 0 0 1px var(--line);
+  font: var(--t-small); font-size: 12.5px; color: var(--ink-2); }
+.ins-x-families li span { color: var(--ink-3); }
+.ins-x-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin-top: var(--s-8); }
+
+/* ── the card ── */
+.ins-card { padding: 10px; border-radius: 22px; background: var(--g1);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.04), inset 0 0 0 1px var(--line), 0 12px 32px -20px rgb(0 0 0 / 0.5); transition: background-color 200ms var(--ease); }
+:root[data-scheme='light'] .ins-card { box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.9), inset 0 0 0 1px var(--line), 0 12px 32px -22px rgb(20 20 30 / 0.25); }
+@media (hover: hover) and (pointer: fine) { .ins-card:hover { background: color-mix(in oklab, var(--g1) 70%, var(--g2)); } }
+.ins-stage { position: relative; height: 252px; overflow: hidden; border-radius: 14px; background: var(--g0); box-shadow: inset 0 0 0 1px var(--line); }
+.ins-state { position: absolute; left: 10px; top: 10px; display: inline-flex; gap: 6px; align-items: center; height: 22px; padding: 0 8px; border-radius: 6px;
+  font: 500 11px/1 var(--mono); color: var(--off); background: color-mix(in oklab, var(--off) 12%, var(--g1)); transition: color 200ms ease, background-color 200ms ease; }
+.ins-state i { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.ins-state[data-fixed='true'] { color: var(--on); background: color-mix(in oklab, var(--on) 12%, var(--g1)); }
+.ins-switch { position: absolute; right: 10px; bottom: 10px; display: flex; padding: 2px; border-radius: 8px; background: var(--g1); box-shadow: inset 0 0 0 1px var(--line-2); }
+.ins-switch button { height: 22px; padding: 0 8px; border: 0; border-radius: 6px; background: transparent; color: var(--ink-3); font: var(--t-label); font-size: 11px; cursor: pointer;
+  transition: background-color 150ms var(--ease), color 150ms var(--ease); }
+.ins-switch button[aria-pressed='true'] { background: var(--g3); color: var(--ink-1); }
+.ins-switch button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.ins-foot { display: flex; gap: 12px; align-items: flex-start; padding: 14px 6px 6px; }
+.ins-n { display: grid; place-items: center; flex: none; width: 28px; height: 28px; border-radius: 8px; background: var(--g2); box-shadow: inset 0 0 0 1px var(--line); font: 500 11px/1 var(--mono); color: var(--ink-2); }
+.ins-text { display: grid; gap: 3px; min-width: 0; }
+.ins-text b { font: 510 14px/19px var(--font); }
+.ins-text span { font: 400 13px/18px var(--font); color: var(--ink-3); }
+
+/* ── the scenes ── */
+.sc { position: absolute; inset: 0; display: grid; place-items: center; padding: 40px 0 46px; font-family: var(--font); } /* clear of the state pill above and the switch below */
+
+/* #2 play button */
+.sc-video { position: relative; display: grid; place-items: center; width: 240px; height: 140px; border-radius: 12px; overflow: hidden;
+  background: linear-gradient(160deg, oklch(0.42 0.06 250), oklch(0.28 0.04 270)); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.06); }
+.sc-video small { position: absolute; left: 10px; bottom: 9px; font-size: 11px; color: rgb(255 255 255 / 0.8); }
+.sc-play-btn { display: grid; place-items: center; width: 58px; height: 58px; border-radius: 50%; background: rgb(255 255 255 / 0.95); box-shadow: 0 8px 20px -8px rgb(0 0 0 / 0.5); }
+.sc-play-btn svg { width: 26px; height: 26px; fill: oklch(0.25 0.03 260); transition: translate 280ms var(--ease); }
+/* the triangle's box is centred on the path 7..19 (13 wide); its weight sits at x≈11, so it reads left. Nudged by weight: */
+.sc-play[data-fixed='true'] .sc-play-btn svg { translate: 2.5px 0; }
+
+/* #8 nested radius */
+.sc-tile { width: 128px; padding: 8px; border-radius: 20px; background: var(--g2); box-shadow: inset 0 0 0 1px var(--line); }
+.sc-cover { aspect-ratio: 1; border-radius: 20px; background: linear-gradient(140deg, oklch(0.72 0.1 220), oklch(0.5 0.12 260)); transition: border-radius 300ms var(--ease); }
+.sc-album[data-fixed='true'] .sc-cover { border-radius: 12px; } /* 20 − 8 */
+.sc-tile b { display: block; margin: 8px 2px 2px; font: 590 13px/1 var(--font); }
+.sc-tile small { display: block; margin: 0 2px 2px; font-size: 11px; color: var(--ink-3); }
+
+/* #16 figures */
+.sc-timer { align-content: center; gap: 8px; }
+.sc-clock { display: grid; justify-items: center; gap: 4px; }
+.sc-clock small { font-size: 11px; color: var(--ink-3); }
+.sc-clock b { font: 590 30px/1 var(--font); letter-spacing: -0.02em; font-variant-numeric: proportional-nums; }
+.sc-timer ul { width: 220px; margin: 0; padding: 0; list-style: none; }
+.sc-timer li { display: flex; justify-content: space-between; padding: 5px 2px; border-top: 1px solid var(--line); font-size: 12px; color: var(--ink-2); }
+.sc-timer li b { font-weight: 500; color: var(--ink-1); font-variant-numeric: proportional-nums; }
+.sc-timer[data-fixed='true'] b { font-variant-numeric: tabular-nums; }
+
+/* #18 widows */
+.sc-news { align-content: center; justify-items: start; width: 256px; margin: 0 auto; gap: 8px; }
+.sc-news small { font-size: 11px; color: var(--ink-3); }
+.sc-news h4 { width: 256px; margin: 0; font: 590 21px/1.2 var(--font); letter-spacing: -0.015em; text-wrap: wrap; }
+.sc-news[data-fixed='true'] h4 { text-wrap: balance; }
+
+/* #21 tinted shadow: a saffron page, a card on it */
+.sc-shadow { background: oklch(0.86 0.09 80); }
+.sc-recipe { display: grid; gap: 4px; width: 210px; padding: 14px 16px; border-radius: 14px; background: oklch(0.97 0.02 85); color: oklch(0.28 0.04 60);
+  box-shadow: 0 2px 4px rgb(0 0 0 / 0.25), 0 18px 32px -10px rgb(0 0 0 / 0.5); transition: box-shadow 300ms ease; }
+.sc-shadow[data-fixed='true'] .sc-recipe { box-shadow: 0 2px 4px oklch(0.55 0.13 65 / 0.4), 0 18px 32px -10px oklch(0.52 0.15 58 / 0.7); }
+.sc-recipe small { font-size: 11px; color: oklch(0.5 0.06 60); }
+.sc-recipe b { font: 590 17px/1.2 var(--font); }
+.sc-recipe span { font-size: 12px; color: oklch(0.5 0.05 60); }
+
+/* #55 gradients */
+.sc-forecast { align-content: center; gap: 12px; }
+.sc-day { display: grid; grid-template-columns: 34px 220px; align-items: center; font-size: 12px; color: var(--ink-2); }
+.sc-day i { position: relative; height: 8px; border-radius: 4px; background: var(--g2); }
+.sc-day b { position: absolute; top: 0; bottom: 0; border-radius: 4px; background: linear-gradient(in srgb 90deg, #2f6fe4, #f5a524); }
+.sc-forecast[data-fixed='true'] .sc-day b { background: linear-gradient(in oklab 90deg, #2f6fe4, #f5a524); }
+
+/* #39 image outline: a pale photo on a pale card */
+.sc-photo { background: #ece9e3; }
+.sc-pin { width: 140px; padding: 8px 8px 10px; border-radius: 12px; background: #fbfaf7; box-shadow: 0 6px 16px -8px rgb(60 50 40 / 0.35); color: #2a2723; }
+.sc-glaze { position: relative; aspect-ratio: 4 / 3; border-radius: 6px; background: radial-gradient(120% 90% at 30% 20%, #fdfcf9, #ede9e0 60%, #e3ddd0); }
+.sc-glaze::after { content: ''; position: absolute; inset: 0; border-radius: inherit; box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.1); opacity: 0; transition: opacity 250ms ease; }
+.sc-photo[data-fixed='true'] .sc-glaze::after { opacity: 1; }
+.sc-pin b { display: block; margin-top: 8px; font: 590 12px/1 var(--font); }
+.sc-pin small { font-size: 10.5px; color: #8a847a; }
+
+/* #42 bold on hover: the tabs */
+.sc-tabs { align-content: center; justify-items: center; gap: 0; }
+.sc-tabs nav { display: flex; gap: 2px; padding: 3px; border-radius: 10px; background: var(--g1); box-shadow: inset 0 0 0 1px var(--line); }
+.sc-tabs nav span { display: inline-grid; padding: 6px 10px; border-radius: 7px; font: 400 13px/1 var(--font); color: var(--ink-2); }
+.sc-tabs nav span[data-hover='true'] { font-weight: 600; color: var(--ink-1); background: var(--g3); }
+/* width kept: each tab reserves its bold width with an invisible bold copy of its label */
+.sc-tabs[data-fixed='true'] nav span::after { content: attr(data-label); height: 0; overflow: hidden; visibility: hidden; font-weight: 600; }
+.sc-tabs-body { width: 300px; height: 70px; margin-top: 10px; border-radius: 10px; background: repeating-linear-gradient(var(--g1) 0 14px, transparent 14px 22px); opacity: 0.6; }
+
+/* #63 menu */
+.sc-menu { align-content: start; justify-items: center; }
+.sc-share { padding: 7px 14px; border-radius: 8px; background: var(--ink-1); color: var(--g0); font: 510 12px/1 var(--font); }
+.sc-pop { display: grid; gap: 2px; width: 150px; margin-top: 8px; padding: 4px; border-radius: 10px; background: var(--g2); box-shadow: inset 0 0 0 1px var(--line-2), 0 16px 30px -12px rgb(0 0 0 / 0.6);
+  opacity: 0; scale: 0; transform-origin: center; transition: scale 260ms var(--ease), opacity 160ms ease; }
+.sc-pop span { padding: 7px 8px; border-radius: 6px; font-size: 12px; color: var(--ink-2); }
+.sc-pop span:first-child { background: var(--g3); color: var(--ink-1); }
+.sc-menu[data-open='true'] .sc-pop { opacity: 1; scale: 1; }
+.sc-menu[data-fixed='true'] .sc-pop { scale: 0.96; transform-origin: top center; }
+.sc-menu[data-fixed='true'][data-open='true'] .sc-pop { scale: 1; }
+
+@media (max-width: 64rem) { .ins-x-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 40rem) { .ins-x { padding-left: var(--s-4); padding-right: var(--s-4); } .ins-x-grid { grid-template-columns: 1fr; } }
+@media (prefers-reduced-motion: reduce) {
+  .ins-state, .sc-play-btn svg, .sc-cover, .sc-recipe, .sc-glaze::after, .sc-pop, .ins-card { transition: none; }
+}

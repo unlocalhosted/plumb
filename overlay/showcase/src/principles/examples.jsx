@@ -3,7 +3,7 @@
 // plumber, scoped to it, finds one thing. `measure` (optional) says where the eye sees the harm, for the ticks drawn
 // over the example; it reads the page, it never decides what is wrong (plumber does).
 import { useEffect, useRef, useState } from 'react';
-import { ArrowRightIcon, BoltIcon, CopyIcon, DownloadIcon, ExternalLinkIcon, FolderIcon, HeadphonesIcon, HeartIcon, HistoryIcon, LayersIcon, MailIcon, SunIcon, BookIcon, MessageIcon, PathIcon, PauseIcon, PlusIcon, SearchIcon, SendIcon, SparklesIcon, TrashIcon, UploadIcon, UserIcon } from '@unlocalhosted/dither-icons';
+import { ArrowRightIcon, BoltIcon, CopyIcon, DownloadIcon, ExternalLinkIcon, FolderIcon, HeadphonesIcon, HeartIcon, HistoryIcon, LayersIcon, MailIcon, SunIcon, BookIcon, FileIcon, ChartIcon, CodeIcon, MessageIcon, PathIcon, PauseIcon, PlusIcon, SearchIcon, SendIcon, SparklesIcon, TrashIcon, UploadIcon, UserIcon } from '@unlocalhosted/dither-icons';
 import lowTide from '../media/low-tide.jpg';
 import paperCities from '../media/paper-cities.jpg';
 import afterglow from '../media/afterglow.jpg';
@@ -1764,5 +1764,165 @@ ShareAccess.measure = (root) => {
   };
 };
 
-export const EXAMPLES = { 8: RecentlyPlayed, 1: ClientProfile, 2: InvoiceWalkthrough, 3: Whiteboard, 4: DriveActivity, 5: ChatThread, 6: FitnessToday, 15: IssueTable, 16: Timesheet, 18: NewsFront, 45: LongRead, 46: BoardingPass, 21: Recipe, 25: FeatureCard, 37: ReadersChart, 38: Agenda, 39: GlazeBoard, 40: Widgets, 42: ProjectTabs, 73: Handbook, 74: Projects, 75: ShareAccess, 57: Inbox, 23: ShareMenu, 51: DeleteDialog, 55: Forecast, 56: Destination };
+// #68 exits faster than entrances. A calendar's event preview opens and closes on one transition: 300ms both ways.
+// Coming in, 300ms reads as the popover arriving. Going out, you've already decided (you clicked away, pressed Esc),
+// and the same 300ms holds the popover in front of what you want next. plumber gives the close its own, shorter time.
+function EventPreview() {
+  // Slate's primitives, with dithered icons
+  const [open, setOpen] = useState(true);
+  return (
+    <article className="relative h-[22rem] w-full max-w-[26rem] rounded-card bg-surface shadow-card">
+      <header className="flex items-baseline justify-between px-5 pt-4 pb-3">
+        <span className="text-[17px] leading-6 font-medium tracking-[-0.01em]">Thursday</span>
+        <span className="text-[13px] text-ink-muted">6 November</span>
+      </header>
+      <button type="button" aria-expanded={open} onClick={() => setOpen((o) => !o)} className="mx-5 flex w-[calc(100%-2.5rem)] items-baseline gap-3 rounded-control bg-accent-soft px-3 py-2 text-left">
+        <span className="text-[13px] text-accent-deep tabular-nums">9:00</span>
+        <span className="text-sm font-medium text-accent-deep">Design crit</span>
+      </button>
+      <div data-popover data-state={open ? 'open' : 'closed'} role="dialog" aria-label="Design crit"
+        className="absolute top-[6.5rem] left-10 flex w-64 origin-top-left flex-col gap-3 rounded-card bg-surface p-4 shadow-popover transition-[opacity,scale] duration-300 ease-arrive data-[state=closed]:pointer-events-none data-[state=closed]:scale-95 data-[state=closed]:opacity-0 data-[state=open]:scale-100 data-[state=open]:opacity-100">
+        <span className="flex flex-col gap-1">
+          <span className="text-[15px] font-medium">Design crit</span>
+          <span className="text-[13px] text-ink-muted tabular-nums">9:00 – 9:30 · Studio 2</span>
+        </span>
+        <span className="text-[13px] text-pretty text-ink-muted">Bring the onboarding flows. We’ll go through the empty states first.</span>
+        <span className="flex gap-2">
+          <button type="button" className="h-8 rounded-control bg-accent px-3 text-[13px] font-medium text-accent-ink hover:bg-accent-deep">Join</button>
+          <button type="button" onClick={() => setOpen(false)} className="h-8 rounded-control px-3 text-[13px] font-medium ring-1 ring-line ring-inset hover:bg-sunken">Close</button>
+        </span>
+      </div>
+    </article>
+  );
+}
+EventPreview.stage = true;
+EventPreview.names = ['Same both ways', 'Faster out'];
+EventPreview.lesson = {
+  why: 'Opening and closing aren’t the same moment. Coming in, 300ms reads as the popover arriving. Going out, you’ve already decided, and the same 300ms keeps it in front of what you want to do next: it feels slow to leave.',
+  habit: 'Give the exit its own, shorter duration: about 70% of the entrance (data-[state=closed]:duration-200 against a 300 in).',
+};
+// What the eye sees: how long the popover takes to arrive and to leave, drawn to scale under it (a bar per 100ms is a
+// third of its width). The pill is the exit, in ms.
+EventPreview.measure = (root) => {
+  const pop = root?.querySelector('[data-popover]');
+  if (!pop) return null;
+  const r = pop.getBoundingClientRect(), k = r.width / pop.offsetWidth || 1;
+  const enter = parseFloat(getComputedStyle(pop).transitionDuration) * 1000;
+  const exit = Number(/(?:^|\s)data-\[state=closed\]:duration-(\d+)(?:\s|$)/.exec(pop.className)?.[1] ?? enter);
+  const per = (r.width * 0.9) / 300, y0 = r.bottom + 14 * k;
+  return {
+    lines: [],
+    bands: [
+      { key: 'in', left: r.left, right: r.left + enter * per, top: y0, bottom: y0 + 6 * k, pattern: 'dots' },
+      { key: 'out', left: r.left, right: r.left + exit * per, top: y0 + 14 * k, bottom: y0 + 20 * k, pattern: 'hatch' },
+    ],
+    pills: [{ key: 'exit', x: r.left + exit * per + 26 * k, y: y0 + 17 * k, text: String(exit * k), ok: exit <= enter * 0.8 }],
+    off: exit > enter * 0.8,
+    cut: { left: r.left, right: r.right, top: r.top, bottom: r.bottom, r: 10 * k },
+    subject: { left: r.left - 20 * k, right: r.right + 60 * k, top: r.top - 20 * k, bottom: y0 + 40 * k },
+  };
+};
+
+// #50 icon strokes keep their weight. A notes app's search: the field's magnifier is a 16px stroked icon, and the empty
+// state below draws the same icon at 48px for "no results". A stroke is drawn in the icon's own 24-unit box, so tripling
+// the icon triples the line: 4px against the 1.3px of the one in the field, a heavy outline that shouts over the words
+// it illustrates. plumber keeps the stroke at the width it's drawn, whatever the size.
+function Magnifier({ size, ...rest }) {
+  return (
+    <svg viewBox="0 0 24 24" width={size} height={size} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true" {...rest}>
+      <circle cx="11" cy="11" r="7" />
+      <path d="M16.5 16.5 21 21" />
+    </svg>
+  );
+}
+function NoNotes() {
+  // Slate's primitives, with a stroked icon set (the principle is about strokes)
+  return (
+    <article className="flex w-full max-w-[24rem] flex-col rounded-card bg-surface shadow-card">
+      <label className="m-4 mb-0 flex h-9 items-center gap-2 rounded-control px-3 text-ink-muted ring-1 ring-line ring-inset">
+        <Magnifier size={16} />
+        <input type="search" defaultValue="offsite budget" aria-label="Search notes" className="min-w-0 flex-1 bg-transparent text-base text-ink outline-none md:text-sm" />
+      </label>
+      <div data-empty className="flex flex-col items-center gap-3 px-8 pt-10 pb-12 text-center">
+        <Magnifier size={48} className="text-ink-subtle" />
+        <span className="flex flex-col gap-1">
+          <span className="text-[15px] font-medium">No notes match “offsite budget”</span>
+          <span className="text-[13px] text-pretty text-ink-muted">Try fewer words, or search in all folders.</span>
+        </span>
+      </div>
+    </article>
+  );
+}
+NoNotes.stage = true;
+NoNotes.names = ['Stroke scales', 'Stroke stays'];
+NoNotes.lesson = {
+  why: 'An icon’s stroke is drawn in its own 24-unit box, so drawing it three times bigger draws the line three times thicker: 4px here, against 1.3px for the same icon in the field. The big one stops matching its set and outweighs the words it sits above.',
+  habit: 'Keep the stroke width fixed as icons grow: vector-effect: non-scaling-stroke, or your icon set’s absoluteStrokeWidth.',
+};
+// What the eye sees: the big magnifier's ring. The band is the stroke's width on the ring's left side; the pill is that
+// width in px.
+NoNotes.measure = (root) => {
+  const svg = root?.querySelector('[data-empty] svg'), ring = svg?.querySelector('circle');
+  if (!ring) return null;
+  const r = svg.getBoundingClientRect(), k = r.width / svg.clientWidth || 1, cs = getComputedStyle(ring);
+  const w = cs.vectorEffect === 'non-scaling-stroke' ? parseFloat(cs.strokeWidth) : parseFloat(cs.strokeWidth) * (svg.clientWidth / 24);
+  const c = ring.getBoundingClientRect(), mid = c.top + c.height / 2;
+  return {
+    lines: [{ key: 'out', x: c.left, top: mid - 14 * k, bottom: mid + 14 * k }, { key: 'in', x: c.left + w * k, top: mid - 14 * k, bottom: mid + 14 * k }],
+    bands: [{ key: 'stroke', left: c.left, right: c.left + w * k, top: mid - 14 * k, bottom: mid + 14 * k, pattern: 'hatch' }],
+    pills: [{ key: 'stroke', x: c.left - 24 * k, y: mid, text: (w * k).toFixed(1), ok: w <= 2.5 }],
+    off: w > 2.5,
+    cut: { left: r.left - 6 * k, right: r.right + 6 * k, top: r.top - 6 * k, bottom: r.bottom + 6 * k, r: 10 * k },
+    subject: { left: r.left - 70 * k, right: r.right + 50 * k, top: r.top - 40 * k, bottom: r.bottom + 40 * k },
+  };
+};
+
+// #63 never scale from 0. A docs editor's Insert menu opens from the + beside an empty line, with an entrance written
+// the modern way: a transition from its starting style, starting:scale-0. From 0 the menu grows out of a single point:
+// for the first frames it's a speck, then a smear of shrunken words, and it reads as appearing from nowhere rather than
+// opening from the button. plumber starts it at 95%: it fades in at nearly its size, from the + it belongs to.
+const INSERT = [['Heading', FileIcon], ['Table', LayersIcon], ['Chart', ChartIcon], ['Code block', CodeIcon]];
+function InsertMenu() {
+  // Slate's primitives, with dithered icons
+  return (
+    <article className="relative h-[19rem] w-full max-w-[26rem] rounded-card bg-surface px-6 pt-5 shadow-card">
+      <span className="text-[22px] leading-7 font-medium tracking-[-0.015em]">Offsite plan</span>
+      <p className="pt-2 text-sm leading-relaxed text-ink-muted">Two days in Lisbon, the second week of March. The budget covers travel, rooms and one team dinner.</p>
+      <span className="flex items-center gap-2 pt-3">
+        <button type="button" aria-label="Insert" aria-expanded="true" className="grid size-6 place-items-center rounded-chip text-ink-muted ring-1 ring-line ring-inset hover:bg-sunken"><PlusIcon size={14} texture="solid" /></button>
+        <span className="text-sm text-ink-subtle">Type / for blocks</span>
+      </span>
+      <div data-menu role="menu" className="absolute top-[10.25rem] left-6 flex w-48 origin-top-left flex-col rounded-card bg-surface p-1 shadow-popover transition-[scale,opacity] duration-200 starting:scale-0 starting:opacity-0">
+        {INSERT.map(([label, Icon]) => (
+          <button key={label} type="button" role="menuitem" className="flex h-8 items-center gap-2.5 rounded-control px-2 text-left text-[13px] hover:bg-sunken"><Icon size={14} texture="dither" className="text-ink-muted" />{label}</button>
+        ))}
+      </div>
+    </article>
+  );
+}
+InsertMenu.stage = true;
+InsertMenu.names = ['From 0', 'From 95%'];
+InsertMenu.lesson = {
+  why: 'Something that grows from scale 0 starts as a point: for its first frames it’s a speck, then a smear of tiny words. Nothing real grows out of nothing, so it reads as appearing from nowhere instead of opening from the button that asked for it.',
+  habit: 'Start entrances at 0.9–0.97 with opacity 0, with transform-origin at the trigger. It opens; it doesn’t inflate.',
+};
+// What the eye sees: the menu, and the box it starts from (drawn from its corner at the +). The hatch is the ground it
+// has to grow across; the pill is how much it grows, in percent of its size.
+InsertMenu.measure = (root) => {
+  const menu = root?.querySelector('[data-menu]');
+  if (!menu) return null;
+  const r = menu.getBoundingClientRect(), k = r.width / menu.offsetWidth || 1;
+  const from = Number(/(?:^|\s)starting:scale-(\d+)(?:\s|$)/.exec(menu.className)?.[1] ?? 100) / 100, grow = Math.round((1 - from) * 100);
+  return {
+    lines: [],
+    rules: [{ key: 'start', y: r.top + r.height * from, left: r.left, right: r.left + r.width * from }],
+    bands: [{ key: 'grow', left: r.left + r.width * from, right: r.right, top: r.top, bottom: r.bottom, pattern: 'hatch' }],
+    pills: [{ key: 'grow', x: r.right + 26 * k, y: r.top + 14 * k, text: String(grow * k), ok: grow <= 10 }],
+    off: grow > 10,
+    cut: { left: r.left, right: r.right, top: r.top, bottom: r.bottom, r: 10 * k },
+    subject: { left: r.left - 30 * k, right: r.right + 60 * k, top: r.top - 40 * k, bottom: r.bottom + 30 * k },
+  };
+};
+
+export const EXAMPLES = { 8: RecentlyPlayed, 1: ClientProfile, 2: InvoiceWalkthrough, 3: Whiteboard, 4: DriveActivity, 5: ChatThread, 6: FitnessToday, 15: IssueTable, 16: Timesheet, 18: NewsFront, 45: LongRead, 46: BoardingPass, 21: Recipe, 25: FeatureCard, 37: ReadersChart, 38: Agenda, 39: GlazeBoard, 40: Widgets, 42: ProjectTabs, 50: NoNotes, 63: InsertMenu, 73: Handbook, 68: EventPreview, 74: Projects, 75: ShareAccess, 57: Inbox, 23: ShareMenu, 51: DeleteDialog, 55: Forecast, 56: Destination };
 

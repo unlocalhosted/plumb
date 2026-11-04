@@ -386,6 +386,16 @@ export const scaleFromZero = {
   id: 'craft/scale-from-zero', family: 'craft', number: [63], owns: ['transform'], once: 'ancestor', reads: ['style'],
   check({ el, facts }, theme) {
     const s = facts.style(el);
+    // an entrance written as a transition from its starting style (Tailwind's starting:, @starting-style): a class to swap
+    const start = classesOf(el).split(/\s+/).find((c) => /^starting:scale-(?:0|\[0(?:\.0+)?\])$/.test(c));
+    if (start) {
+      return [{
+        ...say(this.id, { name: start }),
+        key: this.id, text: start, props: ['scale'], value: '0', n: 0,
+        evidence: { starting: start }, confidence: 0.9,
+        suggest: { kind: 'class', from: start, to: 'starting:scale-95', why: 'it grows from nearly its size, not from a point', sets: {} },
+      }];
+    }
     if (!s.animationName || s.animationName === 'none') return [];
     const found = [];
     for (const name of s.animationName.split(',').map((n) => n.trim())) {
@@ -1845,11 +1855,12 @@ export const strokeWeight = {
     const svg = facts.kids(el).find((k) => k.localName === 'svg');
     const w = svg && facts.stroke(svg);
     if (!w) return [];
-    const r = facts.rect(svg);
-    if (r.width >= T.big && w > T.heavy) {
+    const size = svg.clientWidth || facts.rect(svg).width;
+    if (size >= T.big && w > T.heavy) {
+      // the stroke stays the width it's drawn at (2 in a 24 box) however big the icon is drawn
       return [{ ...say(this.id, { w, big: true }), key: this.id, text: 'svg', props: ['stroke-width'], value: fmt(w), n: w,
-        evidence: { stroke: Math.round(w * 10) / 10, size: Math.round(r.width) }, confidence: 0.84,
-        suggest: { kind: 'advice', text: 'Keep the stroke at the small size’s width as the icon grows (absoluteStrokeWidth, or [stroke-width:1.5]).' } }];
+        evidence: { stroke: Math.round(w * 10) / 10, size: Math.round(size) }, confidence: 0.84,
+        suggest: { kind: 'class', from: '', to: '[&>svg_*]:[vector-effect:non-scaling-stroke]', target: ':scope > svg *', why: 'the stroke the small icons have', sets: { vectorEffect: 'non-scaling-stroke' } } }];
     }
     const host = facts.text(el) ? el : facts.kids(el).find((k) => k !== svg && facts.text(k));
     if (!host) return [];

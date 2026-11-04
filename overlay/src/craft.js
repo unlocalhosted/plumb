@@ -212,8 +212,9 @@ export class Facts {
   // An icon's stroke as drawn, in px: the first stroked shape's width, scaled from its viewBox; null for a filled icon.
   stroke(svg) {
     if (svg?.localName !== 'svg') return null;
-    const r = this.rect(svg), vb = svg.viewBox?.baseVal;
-    const scale = vb && vb.width > 0 ? r.width / vb.width : 1;
+    // its layout width (the page may be drawn scaled): the stroke is judged in CSS pixels
+    const r = this.rect(svg), vb = svg.viewBox?.baseVal, wide = svg.clientWidth || r.width;
+    const scale = vb && vb.width > 0 ? wide / vb.width : 1;
     for (const n of [svg, ...svg.querySelectorAll('path, circle, rect, line, polyline, polygon, ellipse')]) {
       const cs = getComputedStyle(n);
       if (n === svg && n.children.length) continue; // the root only sets what its shapes inherit

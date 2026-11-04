@@ -20,3 +20,9 @@ Screens built but below the bar, found in the post-build review. Fix these after
 | 74 | Projects, z-index | The pill beside the badge is hard to see under the shade; the first card's cover is hidden by the menu | Put the pill on the menu's edge; open the menu over the badge only |
 | 36 | scrollbar-gutter (not built) | On a Mac the scrollbar overlays and takes no width, so nothing jumps where the owner looks | Build it when the stage can show a classic scrollbar (Windows, or "always show scrollbars") honestly |
 | 76 | Middle truncation (not built) | Its fix is markup (the text split into a start and an end), which plumber can't hand over as a class | Teach plumber a markup fix, or build the screen with advice only |
+| 75 | Share list, scroll shadows | The fixed state's hatch covers the shadow it brings; the shadow only shows once the camera leaves | End the hatch when the fix lands, so the shadow is seen at the zoom |
+| 68 | Event preview, exits faster | The moment never plays the close; two duration bars carry it | Play the popover closing at both durations, side by side, slowed |
+| 50 | Empty search, icon stroke | After the fix the big icon's stroke is 2px, still heavier than the field's 1.3px; the habit names absoluteStrokeWidth, which gives the same 2px | Decide which stroke the set means (2px at any size) and show the two icons together |
+| 63 | Insert menu, scale from 0 | The moment never plays the entrance: the hatch says how far it grows, not what it looks like | Play the entrance slowed, from 0 and from 95%, from the + |
+| 70 | Inputs at 16px (not built) | The harm is iOS zooming in on focus, which can't be seen on the desktop showcase honestly | Build it when the stage can show a phone, or as advice only |
+| 49 | Optical sizing (not built yet) | Needs a font with an opsz axis loaded in the showcase (Inter 4 has one) | Load Inter variable with opsz, then build |
