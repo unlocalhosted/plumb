@@ -45,3 +45,40 @@
 .i-round { font: 400 12px/1 var(--font); fill: var(--ink-3); }
 
 @media (max-width: 64rem) { .i-split, .i-ctx { grid-template-columns: 1fr; } }
+
+/* ── motion (animate.js): runners, trails, stops lighting as they're reached ── */
+.i-trail { fill: none; stroke: var(--ink-2); stroke-width: 1.5; opacity: 0.55; }
+.i-runner-long { fill: var(--ink-1); }
+.i-runner-short { fill: var(--on); filter: drop-shadow(0 0 6px rgb(from var(--on) r g b / 0.8)); }
+.i-runner.home { opacity: 0; transition: opacity 300ms ease; }
+.i-stop circle, .i-node circle { transition: fill 200ms ease, stroke 200ms ease; }
+.i-stop text, .i-node text { transition: fill 200ms ease, opacity 200ms ease; }
+.i-stop:not(.lit) text { opacity: 0.45; }
+.i-stop.lit circle { fill: var(--ink-2); stroke: var(--ink-2); }
+.i-stop-you:not(.lit) circle { fill: rgb(from var(--accent) r g b / 0.3); }
+.i-stop-you.lit circle { fill: var(--accent); }
+.i-key rect { transition: fill 200ms ease, stroke 200ms ease; }
+.i-key:not(.on) rect { stroke: var(--line-2); }
+.i-key.on rect { fill: var(--on-soft); stroke: var(--on); }
+.i-key.on { animation: i-tap 260ms cubic-bezier(0.25, 1, 0.5, 1); transform-box: fill-box; transform-origin: center; }
+@keyframes i-tap { 40% { transform: translateY(1.5px) scale(0.96); } }
+.i-end-done:not(.arrived) circle { fill: var(--g0); stroke: var(--ink-3); stroke-width: 2; }
+.i-end-done.arrived circle { animation: i-arrive 600ms cubic-bezier(0.25, 1, 0.5, 1); transform-box: fill-box; transform-origin: center; }
+@keyframes i-arrive { 30% { transform: scale(1.5); } }
+.i-node.lit circle { fill: var(--ink-3); }
+.i-node.twice circle { fill: var(--ink-2); }
+.i-round { opacity: 0; transition: opacity 300ms ease; }
+.i-round.on { opacity: 1; }
+.i-blk { opacity: 0; transform: scaleY(0.4); transform-origin: bottom; transition: opacity 300ms ease, transform 450ms cubic-bezier(0.25, 1, 0.5, 1); }
+.i-blk.on { opacity: 1; transform: none; }
+.i-ctx-keys { display: flex; gap: 6px; }
+.i-ctx-keys kbd { display: inline-grid; place-items: center; height: 24px; padding: 0 8px; border-radius: 6px; background: var(--g2); box-shadow: inset 0 0 0 1px var(--line-2), 0 1px 0 var(--line-2);
+  font: 500 11px/1 var(--mono); color: var(--ink-3); transition: background-color 150ms ease, color 150ms ease, translate 120ms ease; }
+.i-ctx-keys kbd.done { color: var(--ink-1); }
+.i-ctx-keys kbd.tap { background: var(--on-soft); color: var(--on); translate: 0 1px; }
+.i-ctx-empty .chip { opacity: 0.35; transition: opacity 300ms ease; }
+.i-ctx-empty .chip.lit { opacity: 1; }
+@media (prefers-reduced-motion: reduce) {
+  .i-key.on, .i-end-done.arrived circle { animation: none; }
+  .i-blk, .i-ctx-keys kbd, .i-round, .i-runner.home { transition: none; }
+}

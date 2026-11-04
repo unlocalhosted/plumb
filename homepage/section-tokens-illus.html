@@ -27,7 +27,7 @@
     <h2 class="title">A 2px change shouldn’t cost a prompt.</h2>
     <p class="lead">Ask an agent and it goes the long way: through your files, your theme, an edit, and back to you to check. <b>On the page it’s three keys and no model.</b></p>
   </header>
-  <figure class="i-art">
+  <figure class="i-art" data-anim="routes">
     <svg viewBox="0 0 1000 420" class="i-svg" aria-label="Two routes from 'rows a bit tighter' to 'done': a long winding route through nine stops by prompt, and a short straight route of three keys on the page">
       <!-- the long way: a prompt -->
       <path class="i-route-long" d="M90 210 C 150 60, 260 60, 300 150 S 380 330, 470 300 S 560 80, 640 110 S 720 330, 790 290 S 860 120, 910 210" />
@@ -39,14 +39,17 @@
       <g class="i-stop" data-at="0.64" data-side="above"><circle r="5" /><text text-anchor="middle">read again</text></g>
       <g class="i-stop" data-at="0.77" data-side="below"><circle r="5" /><text text-anchor="middle">edit again</text></g>
       <g class="i-stop i-stop-you" data-at="0.88" data-side="above"><circle r="6" /><text text-anchor="middle">you check</text></g>
+      <path class="i-trail" d="M90 210 C 150 60, 260 60, 300 150 S 380 330, 470 300 S 560 80, 640 110 S 720 330, 790 290 S 860 120, 910 210" />
       <!-- the short way: on the page -->
       <path class="i-route-short" d="M90 210 L 910 210" />
-      <g class="i-key"><rect x="330" y="196" width="64" height="28" rx="7" /><text x="362" y="215">Alt B</text></g>
-      <g class="i-key"><rect x="468" y="196" width="64" height="28" rx="7" /><text x="500" y="215">↑ ↓</text></g>
-      <g class="i-key"><rect x="606" y="196" width="64" height="28" rx="7" /><text x="638" y="215">A</text></g>
+      <g class="i-key" data-at="0.33"><rect x="330" y="196" width="64" height="28" rx="7" /><text x="362" y="215" text-anchor="middle">Alt B</text></g>
+      <g class="i-key" data-at="0.5"><rect x="468" y="196" width="64" height="28" rx="7" /><text x="500" y="215" text-anchor="middle">↑ ↓</text></g>
+      <g class="i-key" data-at="0.67"><rect x="606" y="196" width="64" height="28" rx="7" /><text x="638" y="215" text-anchor="middle">A</text></g>
       <!-- start and finish -->
-      <g class="i-end"><circle cx="90" cy="210" r="9" /><text x="90" y="250">rows a bit tighter</text></g>
-      <g class="i-end i-end-done"><circle cx="910" cy="210" r="9" /><text x="910" y="250">done</text></g>
+      <g class="i-end"><circle cx="90" cy="210" r="9" /><text x="90" y="250" text-anchor="middle">rows a bit tighter</text></g>
+      <circle class="i-runner i-runner-long" r="5" cx="90" cy="210" />
+      <circle class="i-runner i-runner-short" r="6" cx="90" cy="210" />
+      <g class="i-end i-end-done"><circle cx="910" cy="210" r="9" /><text x="910" y="250" text-anchor="middle">done</text></g>
     </svg>
     <figcaption class="i-legend"><span><i class="i-sw-long"></i>by prompt, a typical loop</span><span><i class="i-sw-short"></i>on the page, no model</span></figcaption>
   </figure>
@@ -61,7 +64,7 @@
       <h2 class="title">Your context is for building.</h2>
       <p class="lead">Every nudge you prompt fills the agent’s context with files it read to find one class. <b>Nudge on the page instead</b>, and the agent’s context stays on the feature.</p>
     </header>
-    <figure class="i-art i-ctx">
+    <figure class="i-art i-ctx" data-anim="context">
       <div class="i-ctx-col">
         <p class="i-ctx-name">Agent’s context, after one nudge</p>
         <div class="i-ctx-box">
@@ -72,11 +75,11 @@
           <span class="i-blk" style="--h:8%">your second prompt</span>
           <span class="i-blk i-blk-file" style="--h:13%">Members.jsx, again</span>
         </div>
-        <p class="i-ctx-foot">a typical loop, drawn to scale of what it reads</p>
+        <p class="i-ctx-foot">a typical loop, illustrative</p>
       </div>
       <div class="i-ctx-col">
         <p class="i-ctx-name">On the page</p>
-        <div class="i-ctx-box i-ctx-empty"><span class="chip chip-on"><i></i>no model</span><small>Alt B · ↑ ↓ · A</small></div>
+        <div class="i-ctx-box i-ctx-empty"><span class="chip chip-on"><i></i>no model</span><span class="i-ctx-keys"><kbd>Alt B</kbd><kbd>↑ ↓</kbd><kbd>A</kbd></span></div>
         <p class="i-ctx-foot">the class is written straight into the line</p>
       </div>
     </figure>
@@ -87,19 +90,21 @@
 <p class="comp-name"><b>C</b> The loop: the prompt as a circle you go round twice; the page as a chord straight across it</p>
 <section class="comp i-comp">
   <div class="i-split">
-    <figure class="i-art i-loop">
+    <figure class="i-art i-loop" data-anim="loop">
       <svg viewBox="0 0 440 440" class="i-svg" aria-label="A circle through you, the agent, your files and an edit, gone round twice; a straight line across it labelled with three keys">
         <circle class="i-ring" cx="220" cy="220" r="160" />
         <path class="i-ring-run" d="M220 60 A160 160 0 1 1 219.9 60" />
         <path class="i-ring-run i-ring-run-2" d="M220 76 A144 144 0 1 1 219.9 76" />
-        <g class="i-node"><circle cx="220" cy="60" r="7" /><text x="220" y="40" text-anchor="middle">you ask</text></g>
-        <g class="i-node"><circle cx="380" cy="220" r="7" /><text x="394" y="224" text-anchor="start">agent reads files</text></g>
-        <g class="i-node"><circle cx="220" cy="380" r="7" /><text x="220" y="408" text-anchor="middle">edits</text></g>
-        <g class="i-node"><circle cx="60" cy="220" r="7" /><text x="46" y="224" text-anchor="end">you check</text></g>
+        <g class="i-node" data-at="0"><circle cx="220" cy="60" r="7" /><text x="220" y="40" text-anchor="middle">you ask</text></g>
+        <g class="i-node" data-at="0.25"><circle cx="380" cy="220" r="7" /><text x="394" y="224" text-anchor="start">agent reads files</text></g>
+        <g class="i-node" data-at="0.5"><circle cx="220" cy="380" r="7" /><text x="220" y="408" text-anchor="middle">edits</text></g>
+        <g class="i-node" data-at="0.75"><circle cx="60" cy="220" r="7" /><text x="46" y="224" text-anchor="end">you check</text></g>
         <path class="i-chord" d="M220 60 L 220 380" />
-        <g class="i-key"><rect x="186" y="150" width="68" height="28" rx="7" /><text x="220" y="169">Alt B</text></g>
-        <g class="i-key"><rect x="186" y="206" width="68" height="28" rx="7" /><text x="220" y="225">↑ ↓</text></g>
-        <g class="i-key"><rect x="186" y="262" width="68" height="28" rx="7" /><text x="220" y="281">A</text></g>
+        <circle class="i-runner i-runner-long i-ring-dot" r="5" cx="220" cy="60" />
+        <g class="i-key" data-at="0.3"><rect x="186" y="150" width="68" height="28" rx="7" /><text x="220" y="169" text-anchor="middle">Alt B</text></g>
+        <g class="i-key" data-at="0.5"><rect x="186" y="206" width="68" height="28" rx="7" /><text x="220" y="225" text-anchor="middle">↑ ↓</text></g>
+        <g class="i-key" data-at="0.7"><rect x="186" y="262" width="68" height="28" rx="7" /><text x="220" y="281" text-anchor="middle">A</text></g>
+        <circle class="i-runner i-runner-short i-chord-dot" r="6" cx="220" cy="60" />
         <text class="i-round" x="330" y="96">round 2</text>
       </svg>
     </figure>
@@ -110,14 +115,6 @@
     </header>
   </div>
 </section>
-<script type="module">
-// A: each stop sits on the long route, at its share of the way
-const path = document.querySelector('.i-route-long'), len = path.getTotalLength();
-for (const g of document.querySelectorAll('.i-stop')) {
-  const p = path.getPointAtLength(len * +g.dataset.at), below = g.dataset.side === 'below';
-  g.querySelector('circle').setAttribute('cx', p.x); g.querySelector('circle').setAttribute('cy', p.y);
-  const t = g.querySelector('text'); t.setAttribute('x', p.x); t.setAttribute('y', p.y + (below ? 28 : -18));
-}
-</script>
+<script type="module" src="/src/tokens-comps/animate.js"></script>
 </body>
 </html>
