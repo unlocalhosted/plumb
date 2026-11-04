@@ -20,5 +20,6 @@ export const Paperclip = glyph(<path d="m20 11-8.5 8.5a5 5 0 0 1-7-7L13 4a3.5 3.
 export const Close = glyph(<path d="M6 6l12 12M18 6 6 18" />);
 // filled marks: the play triangle and the integrations' round and square logos
 export const Play = ({ size = 16, className = '' }) => <svg viewBox="0 0 24 24" width={size} height={size} aria-hidden="true" className={'shrink-0 ' + className}><path d="M3 3v18l18-9z" fill="currentColor" /></svg>;
-export const Round = ({ size = 20, className = '' }) => <svg viewBox="0 0 24 24" width={size} height={size} aria-hidden="true" className={'shrink-0 ' + className}><circle cx="12" cy="12" r="10" fill="currentColor" /></svg>;
-export const Square = ({ size = 20, className = '' }) => <svg viewBox="0 0 24 24" width={size} height={size} aria-hidden="true" className={'shrink-0 ' + className}><rect x="2" y="2" width="20" height="20" rx="3" fill="currentColor" /></svg>;
+// a round logo needs a little more than a square one's width to look the same size (#3): r 9.75 against a side of 18
+export const Round = ({ size = 20, r = 9.75, className = '' }) => <svg viewBox="0 0 24 24" width={size} height={size} aria-hidden="true" className={'shrink-0 ' + className}><circle cx="12" cy="12" r={r} fill="currentColor" /></svg>;
+export const Square = ({ size = 20, className = '' }) => <svg viewBox="0 0 24 24" width={size} height={size} aria-hidden="true" className={'shrink-0 ' + className}><rect x="3" y="3" width="18" height="18" rx="2" fill="currentColor" /></svg>;

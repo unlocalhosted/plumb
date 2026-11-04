@@ -96,6 +96,6 @@ Marks in Fixed mode, on a screen built right. Each is a rule to fix, not the pag
 
 | rule | where | what it says | why it's wrong |
 |---|---|---|---|
-| craft/rhythm (#12) | dashboard · the section's own stack | "This stack is 24px apart; the page keeps to 12px and 16px." | a section gap is meant to differ from the gaps inside the section; the rule compares every stack to the page's majority |
+| craft/rhythm (#12) | the page's column (40px), the dashboard section (24px), a plan card (8px) | "This stack is 24px apart; the page keeps to 12px and 16px." | a section gap is meant to differ from the gaps inside the section; the rule compares every stack to the page's majority |
 | drift (theme provenance) | dashboard · target bar, `bg-linear-to-r/oklch` | "This works out to linear-gradient(var(--tw-gradient-stops))." | a gradient's direction and space are not theme values; nothing in a theme can name them |
 | craft/grey-levels (#17) | invoice panel · photo caption | "This text grey isn't one of the 3 greys the page mostly uses." | the caption sits on a photo under a scrim; the census reads its ground as the page, so light text on an image counts as a fourth grey |

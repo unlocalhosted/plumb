@@ -2,6 +2,8 @@
 import { Bell, Gear, Home, Invoice, People, Search } from './icons.jsx';
 import { Dashboard } from './Dashboard.jsx';
 import { Invoices } from './Invoices.jsx';
+import { Team } from './Team.jsx';
+import { Settings } from './Settings.jsx';
 
 const NAV = [
   { id: 'dashboard', label: 'Dashboard', icon: Home },
@@ -77,6 +79,8 @@ export function Shell({ broken }) {
         <main className="flex flex-col gap-10 px-8 py-8">
           <Dashboard broken={broken} />
           <Invoices broken={broken} />
+          <Team broken={broken} />
+          <Settings broken={broken} />
         </main>
       </div>
     </div>
