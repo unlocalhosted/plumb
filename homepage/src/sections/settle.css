@@ -32,7 +32,8 @@
 .settle-beat b { font-weight: 600; }
 .settle-beats li[data-state='past'] .settle-beat { color: var(--pl-ink-3); }
 .settle-beats li[data-state='past'] .settle-beat b { color: var(--pl-ink-2); }
-.settle-beats li[data-state='next'] .settle-beat { opacity: 0; transform: translateY(10px); }
+.settle-beats li[data-state='next'] .settle-beat { color: var(--pl-ink-3); } /* the whole story is readable from the start; the current part is the bright one */
+.settle-beats li[data-state='next'] .settle-beat b { color: var(--pl-ink-2); }
 .settle-glyph { width: 21px; height: 20px; margin-top: 5px; fill: none; stroke: currentColor; stroke-width: 1.3; stroke-linecap: round; color: var(--pl-ink-3);
   transition: color 300ms ease; }
 .settle-beats li[data-state='now'] .settle-glyph { color: var(--pl-instrument); }
@@ -106,10 +107,9 @@
 
 @media (max-width: 47.99rem) {
   .settle-pin { grid-template-columns: minmax(0, 1fr); align-content: center; gap: var(--pl-space-8); padding: 0 var(--pl-space-6); }
-  .settle-scene { height: 46vh; }
+  .settle-scene { height: 30vh; } /* with every part of the story showing, the scene gives up height so all of it fits one phone screen */
   .settle-beats { margin-top: var(--pl-space-5); }
   .settle-beat { font-size: 16px; line-height: 24px; }
-  .settle-beats li[data-state='past'] { display: none; }
   .settle-label small { display: none; }
   .settle-label { font-size: 10px; line-height: 13px; }
   .settle-count { display: none; } /* the narration already says it */
@@ -154,8 +154,9 @@
 .settle-count > :nth-child(2) { padding: 0; box-shadow: none; background: none; color: var(--pl-ink); font-size: 32px; }
 .settle-count > :nth-child(3) { background: var(--pl-mint-soft); color: var(--pl-mint-ink); rotate: 5deg; }
 @media (max-width: 47.99rem) {
-  .settle-field { padding: 24px 20px 64px; border-radius: 24px; box-shadow: 0 0 0 2px var(--pl-ink), 5px 5px 0 var(--pl-ink); }
-  .settle-beat { font-size: 16px; line-height: 24px; }
+  .settle-beats { gap: var(--pl-space-3); }
+  .settle-field { padding: 16px 16px 44px; border-radius: 24px; box-shadow: 0 0 0 2px var(--pl-ink), 5px 5px 0 var(--pl-ink); }
+  .settle-beat { font-size: 15px; line-height: 22px; }
 }
 @media (max-width: 47.99rem) {
   .settle-label b { padding: 2px 4px; font-size: 9px; border-radius: 5px; }
