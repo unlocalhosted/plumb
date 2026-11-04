@@ -6,6 +6,7 @@ import { Taken } from './taken.js';
 import { createPortal } from 'react-dom';
 import { PRINCIPLES as ALL } from './catalogue.js';
 import { MERGED, shown } from './curation.js';
+import { ProbeStage } from './ProbeStage.jsx';
 
 // the principles the showcase stages; the others are reached by their number and say why they have no screen
 const PRINCIPLES = ALL.filter((p) => shown(p.n));
@@ -192,7 +193,7 @@ function shot(subject, cam, view) {
 // plumber's read, drawn with plumber's own primitives: its tokens (overlay/src/tokens.css, served by the overlay and
 // scoped to a shadow root's :host, exactly as the overlay uses them), so the moment looks like plumber on a real page.
 const TOKENS = '/__plumb/src/tokens.css';
-function PlumbLayer({ children }) {
+export function PlumbLayer({ children }) {
   const host = useRef(null);
   const [root, setRoot] = useState(null);
   useEffect(() => {
@@ -398,6 +399,12 @@ export function Principle({ n }) {
   const staged = shown(n);
   const fixed = state.phase === 'fixing' || state.phase === 'fixed', ready = (state.phase === 'broken' || state.phase === 'fixed') && moment.stage === STAGE.rest;
   const live = Example && p.how === 'live';
+  // a probe example: two components, one per side; plumber probes each for real and the stage plays it back
+  const probe = Example?.probe ?? null;
+  const [side, setSide] = useState(() => new URLSearchParams(location.search).get('side') ?? 'broken');
+  // the route that probes a side asks for the page as it is: no playback there
+  const probing = new URLSearchParams(location.search).has('side');
+  const [stage, setStage] = useState(null);
   const names = Example?.names ?? ['As built', 'plumber’s fix'];
   useEffect(() => { document.title = `${n} · ${p.title} · plumber`; }, [n, p.title]);
   useEffect(() => {
@@ -430,24 +437,28 @@ export function Principle({ n }) {
               run off the window); at rest nothing is clipped, so the component keeps its shadow */}
           <div className="relative w-full" style={moment.frame}>
           <div ref={moment.cam} className="relative flex w-full justify-center" style={moment.style}>
-            <section data-example aria-label="Example" className={Example?.stage ? 'flex w-full min-w-0 justify-center' : 'flex w-full max-w-2xl min-w-0 justify-center overflow-hidden rounded-sheet corner-squircle bg-surface shadow-window ' + (Example?.framed ? 'ring-1 ring-line' : 'border border-line px-4 pt-4 pb-5 sm:px-6 sm:pt-5 sm:pb-6')}>
-              <Taken.Provider value={plumb.rewrite}>{Example ? <Example broken live={moment.live && !plumb.reading} /> : <p className="text-sm text-ink-muted">This example isn’t built yet.</p>}</Taken.Provider>
+            <section data-example aria-label="Example" className={probe ? 'w-fit' : Example?.stage ? 'flex w-full min-w-0 justify-center' : 'flex w-full max-w-2xl min-w-0 justify-center overflow-hidden rounded-sheet corner-squircle bg-surface shadow-window ' + (Example?.framed ? 'ring-1 ring-line' : 'border border-line px-4 pt-4 pb-5 sm:px-6 sm:pt-5 sm:pb-6')}>
+              {probe ? (probing ? <Example key={side} side={side} /> : <ProbeStage n={n} side={side} setSide={setSide} onState={setStage}><Example key={side} side={side} /></ProbeStage>)
+                : <Taken.Provider value={plumb.rewrite}>{Example ? <Example broken live={moment.live && !plumb.reading} /> : <p className="text-sm text-ink-muted">This example isn’t built yet.</p>}</Taken.Provider>}
             </section>
             {moment.marks}
           </div>
           </div>
           <div ref={sw} className="relative z-10">
             {live ? <Switch names={names} fixed={fixed} ready={ready} onBack={() => fixed && moment.give()} onFix={() => !fixed && moment.take()} /> : null}
+            {probe && !probing ? <Switch names={names} fixed={side === 'fixed'} ready={!stage?.busy} onBack={() => stage?.pick('broken')} onFix={() => stage?.pick('fixed')} /> : null}
+            {probe && stage?.status ? <p className="mt-3 text-center text-[13px] text-ink-muted">{stage.status}</p> : null}
           </div>
         </div>
         ) : <div className="h-24" />}
-        {live ? <Lesson state={state} lesson={Example?.lesson} away={moment.stage !== STAGE.rest} />
+        {probe && stage?.lesson ? <Lesson state={stage.lesson} lesson={Example?.lesson} away={false} />
+          : live ? <Lesson state={state} lesson={Example?.lesson} away={moment.stage !== STAGE.rest} />
           : !staged ? (
             <p className="max-w-sm text-center text-sm text-ink-muted text-pretty">
               {MERGED[n] ? <>Shown with <a href={`/rule/${MERGED[n]}`} className={'font-medium text-accent ' + RING}>№ {MERGED[n]}</a>, the same insight.</>
                 : 'Not staged here: plumber still checks it on every page, but it’s hygiene a review catches, not an insight to show.'}
             </p>
-          ) : <p className="max-w-72 text-sm text-ink-muted">{FOUND[p.how] ?? ''}</p>}
+          ) : probe ? null : <p className="max-w-72 text-sm text-ink-muted">{FOUND[p.how] ?? ''}</p>}
       </main>
     </div>
   );

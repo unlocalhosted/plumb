@@ -50,6 +50,11 @@ proved in `screen.mjs`: read it with `DPR=2`, and prove its fix in a real browse
 Measure the harm on real pixels before building a rendering screen. #37's rule marked half a pixel across too, but a
 screenshot of the letters (the share of grey fringe pixels) showed Chrome places words across at sub-pixel precision:
 only a fraction down blurs (0.44 → 0.60 at 1×). The rule changed to match what was measured.
+A probe screen (#59) plays plumber's real recording (`--record-probe`, served at `/__showcase/probe/:n?side=`): the
+example is two components (`Example.probe`, a `side` prop), and each side is probed for real, so the broken side
+must hold exactly its principle's finding and the fixed side none, like any screen. Frames are 2× snapshots of
+`[data-example]`; the stage layers them over the example and the marks over them explicitly (the example's own
+menus sit at z-10). Hold on what the gesture is about to lose before it moves, and on the frame after it's lost.
 
 ## 3. The example is real software, built well everywhere else
 

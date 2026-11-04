@@ -53,7 +53,6 @@ test('record-probe: a scoped submenu probe writes probe.json and frames that bra
   assert.ok(!(result.stderr ?? '').includes('"k":"div:1>main:1>div:1>div:1>button:1","rec":{"lost"'), why); // the menu outside the scope was not tried
   // the clip: the scope's box, in CSS px
   assert.deepEqual(rec.box, { w: 420, h: 260 }, why);
-  assert.equal(rec.dpr, 1);
   // pointer samples on one clock: t rises from 0, one per move, `open` true until the step it closed at
   assert.ok(rec.samples.length >= 11, why);
   assert.equal(rec.samples[0].t, 0);
@@ -79,7 +78,9 @@ test('record-probe: a scoped submenu probe writes probe.json and frames that bra
   assert.ok(rec.frames.some((f) => f.t <= closedAt.t) && rec.frames.some((f) => f.t >= closedAt.t), why);
   const png = await readFile(join(dir, rec.frames[0].file));
   assert.equal(png.subarray(1, 4).toString(), 'PNG');
-  assert.equal(png.readUInt32BE(16), 420); assert.equal(png.readUInt32BE(20), 260); // clipped to the scope
+  // clipped to the scope, in device pixels: a recorded probe is drawn at 2× so its frames stay sharp when the stage zooms in
+  assert.equal(rec.dpr, 2, why);
+  assert.equal(png.readUInt32BE(16), 420 * 2); assert.equal(png.readUInt32BE(20), 260 * 2);
 
   // without the flag nothing is written
   const quiet = await mkdtemp(join(tmpdir(), 'probe-none-'));

@@ -19,8 +19,9 @@ interface Anim { t: number; at: string; kind: string; name: string; duration: nu
 interface Sampled { frames: { t: number; v: Record<string, string> | null }[]; events: { type: string; t: number; at: string }[] }
 
 /** A page of its own with the recorder in, the safety nets up, and the overlay present. */
-async function session<T>(browser: Browser, url: string, timeout: number, work: (s: Session) => Promise<T>): Promise<T> {
-  const context = await browser.newContext({ viewport: desktop, reducedMotion: 'no-preference' });
+async function session<T>(browser: Browser, url: string, timeout: number, work: (s: Session) => Promise<T>, scale = 1): Promise<T> {
+  // a recorded gesture is drawn at 2×: its frames are shown zoomed in, and must stay sharp there
+  const context = await browser.newContext({ viewport: desktop, reducedMotion: 'no-preference', deviceScaleFactor: scale });
   try {
     const page = await context.newPage();
     context.on('page', popup => { popup.close().catch(() => {}); });
@@ -142,6 +143,9 @@ async function menuDown({ page }: Session, keys: string[]): Promise<ProbeRecord[
   for (const k of keys) {
     const f = await frame(page, k);
     if (!f) continue;
+    // a menu already open (left by the last one, or open at rest) would be closed by the press and read as no open
+    for (let tries = 0; tries < 2 && (await ask<{ menus: number }>(page, { op: 'state', key: k })).menus; tries++) { await page.keyboard.press('Escape'); await sleep(300); }
+    if ((await ask<{ menus: number }>(page, { op: 'state', key: k })).menus) continue;
     await page.mouse.move(f.cx, f.cy);
     await sleep(60);
     await page.mouse.down();
@@ -162,36 +166,20 @@ type Box = { x: number; y: number; w: number; h: number; label?: string };
 /** What a recorded submenu probe leaves behind (--record-probe): frames of the page and the probe's own clock, in CSS px from the scope's top-left. */
 interface Recording { dir: string; scope?: string; browser: Browser }
 
-/** Frames of the page while a gesture runs: a CDP screencast, each frame stamped with the wall clock the probe's samples use. */
-async function screencast(page: Page) {
+/** Frames of the page while a gesture runs: the scoped element captured in device pixels (a 2× page gives 2× frames,
+ * sharp when the stage zooms in) after each move the probe makes, each stamped with the wall clock its samples use. A
+ * screencast would keep the gesture's own pace, but headless it only sends frames at 1×. */
+async function snapshots(page: Page, box: Box) {
   const cdp = await page.context().newCDPSession(page);
   const shots: { at: number; data: string }[] = [];
-  cdp.on('Page.screencastFrame', (e: { data: string; sessionId: number; metadata: { timestamp?: number } }) => {
-    shots.push({ at: e.metadata.timestamp ? e.metadata.timestamp * 1000 : Date.now(), data: e.data });
-    cdp.send('Page.screencastFrameAck', { sessionId: e.sessionId }).catch(() => {});
-  });
-  const view = page.viewportSize() ?? desktop;
-  await cdp.send('Page.startScreencast', { format: 'png', everyNthFrame: 1, maxWidth: view.width, maxHeight: view.height });
-  return { shots, stop: async () => { await cdp.send('Page.stopScreencast').catch(() => {}); await cdp.detach().catch(() => {}); } };
-}
-
-/** Crop screencast frames to the box (in a scratch page of the same browser), keeping their device pixels. */
-async function crop(browser: Browser, shots: string[], box: Box, view: { width: number; height: number }): Promise<string[]> {
-  const page = await browser.newPage();
-  try {
-    return await page.evaluate(async ({ shots, box, view }) => {
-      const out: string[] = [];
-      for (const data of shots) {
-        const image = await createImageBitmap(await (await fetch(`data:image/png;base64,${data}`)).blob());
-        const k = image.width / view.width;
-        const canvas = document.createElement('canvas');
-        canvas.width = Math.max(1, Math.round(box.w * k)); canvas.height = Math.max(1, Math.round(box.h * k));
-        canvas.getContext('2d')!.drawImage(image, box.x * k, box.y * k, box.w * k, box.h * k, 0, 0, canvas.width, canvas.height);
-        out.push(canvas.toDataURL('image/png').split(',')[1]!);
-      }
-      return out;
-    }, { shots, box, view });
-  } finally { await page.close().catch(() => {}); }
+  // headless, the clip's scale is the only way to device pixels: the page's own ratio
+  const dpr = await page.evaluate(() => devicePixelRatio).catch(() => 1);
+  const snap = async () => {
+    const at = Date.now();
+    const r = await cdp.send('Page.captureScreenshot', { format: 'png', clip: { x: box.x, y: box.y, width: box.w, height: box.h, scale: dpr } }) as { data: string };
+    shots.push({ at, data: r.data });
+  };
+  return { shots, snap, dpr, stop: async () => { await cdp.detach().catch(() => {}); } };
 }
 
 async function submenu({ page }: Session, keys: string[], recording?: Recording): Promise<ProbeRecord[]> {
@@ -209,8 +197,10 @@ async function submenu({ page }: Session, keys: string[], recording?: Recording)
     const sub = await ask<Sub | null>(page, { op: 'subtrigger' });
     if (sub) {
       // the recording starts before the first move, so the frames hold the menu at rest first
-      const cast = recording && !recorded ? await screencast(page).catch(() => null) : null;
       const view = page.viewportSize() ?? desktop;
+      const scoped = recording?.scope ? await page.evaluate((sel) => { const r = document.querySelector(sel)?.getBoundingClientRect(); return r ? { x: r.x, y: r.y, w: r.width, h: r.height } : null; }, recording.scope) : null;
+      const cast = recording && !recorded ? await snapshots(page, scoped ?? { x: 0, y: 0, w: view.width, h: view.height }).catch(() => null) : null;
+      await cast?.snap().catch(() => {});
       const samples: { t: number; x: number; y: number; step: number; open: boolean }[] = [];
       let t0 = 0, inner: Box | null = null, opened: { subtrigger: Box; submenu: Box; siblings: Box[] } | null = null;
       const move = async (x: number, y: number, step: number) => {
@@ -223,6 +213,7 @@ async function submenu({ page }: Session, keys: string[], recording?: Recording)
       const hover = await move(sub.cx, sub.cy, 0);
       for (let waited = 0; !inner && waited < 1000; waited += 100) { await sleep(100); inner = await ask(page, { op: 'submenu', key: sub.key }); }
       mark(hover, !!inner);
+      await cast?.snap().catch(() => {});
       if (inner && cast) {
         const item = await ask<Frame | null>(page, { op: 'rect', key: sub.key });
         opened = { subtrigger: item ? { x: item.x, y: item.y, w: item.w, h: item.h, label: sub.label } : { x: sub.cx, y: sub.cy - sub.h / 2, w: 0, h: sub.h, label: sub.label }, submenu: inner, siblings: sub.siblings };
@@ -243,23 +234,22 @@ async function submenu({ page }: Session, keys: string[], recording?: Recording)
             const open = !!await ask(page, { op: 'submenu', key: sub.key });
             if (step < 0 && !open) step = i;
             mark(m, open);
+            await cast?.snap().catch(() => {});
           }
           record = { gesture: 'submenu', k, rec: { lost: step >= 0, step, crossed } };
           out.push(record);
         }
       }
       if (cast && recording) {
-        await sleep(300); // what the page does after the last move
+        for (let i = 0; i < 3; i++) { await sleep(100); await cast.snap().catch(() => {}); } // what the page does after the last move
         await cast.stop();
         if (record && opened && samples.length) {
           recorded = true;
-          const scope = recording.scope ? await page.evaluate((sel) => { const r = document.querySelector(sel)?.getBoundingClientRect(); return r ? { x: r.x, y: r.y, w: r.width, h: r.height } : null; }, recording.scope) : null;
-          const box: Box = scope ?? { x: 0, y: 0, w: view.width, h: view.height };
+          const box: Box = scoped ?? { x: 0, y: 0, w: view.width, h: view.height };
           const rel = (r: Box): Box => ({ x: r.x - box.x, y: r.y - box.y, w: r.w, h: r.h, ...(r.label !== undefined ? { label: r.label } : {}) });
-          // frames from the last one before the gesture on: the menu at rest, then each change
-          const first = Math.max(0, cast.shots.findLastIndex(s => s.at <= t0));
-          const kept = cast.shots.slice(first);
-          const images = await crop(recording.browser, kept.map(s => s.data), box, view);
+          // the menu at rest (taken before the first move), then the page after each move; already cropped to the scope
+          const kept = cast.shots;
+          const images = kept.map(s => s.data);
           await mkdir(recording.dir, { recursive: true });
           const frames = await Promise.all(images.map(async (data, i) => {
             const file = `frame-${String(i).padStart(3, '0')}.png`;
@@ -267,7 +257,8 @@ async function submenu({ page }: Session, keys: string[], recording?: Recording)
             // the first frame is the page at rest (a screencast sends one on start), so it is not later than the first move
             return { t: i === 0 ? Math.min(0, Math.round(kept[i]!.at - t0)) : Math.round(kept[i]!.at - t0), file };
           }));
-          const dpr = await page.evaluate(() => window.devicePixelRatio);
+          // the ratio the frames were taken at (read again after the capture session detaches, Chromium reports 1)
+          const dpr = cast.dpr;
           const pointer = samples.map(s => ({ t: s.t, x: Math.round((s.x - box.x) * 100) / 100, y: Math.round((s.y - box.y) * 100) / 100, step: s.step, open: s.open }));
           const rec = record.rec as { lost: boolean; step: number; crossed: number };
           await writeFile(join(recording.dir, 'probe.json'), JSON.stringify({
@@ -441,7 +432,7 @@ export async function takeProbes(browser: Browser, url: string, timeout: number,
   const out: ProbeRecord[] = [];
   for (const [name, list, run] of families) {
     if (name !== 'keys' && !list?.length) continue;
-    out.push(...await session(browser, url, timeout, s => run(s, list ?? [])).catch(quiet(name)));
+    out.push(...await session(browser, url, timeout, s => run(s, list ?? []), name === 'submenu' && options.record ? 2 : 1).catch(quiet(name)));
   }
   return out;
 }

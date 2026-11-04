@@ -8,6 +8,7 @@
     "findings": "node scripts/findings.mjs"
   },
   "dependencies": {
-    "@unlocalhosted/dither-icons": "^0.2.6"
+    "@unlocalhosted/dither-icons": "^0.2.6",
+    "@radix-ui/react-dropdown-menu": "^2.2.1"
   }
 }

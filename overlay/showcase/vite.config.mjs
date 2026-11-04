@@ -27,7 +27,12 @@ const repo = resolve(import.meta.dirname, '../..');
 const cacheDir = join(import.meta.dirname, '.probe-cache');
 const ORIGIN = 'http://127.0.0.1:4312';
 let queue = Promise.resolve();
-const sourceHash = () => createHash('sha1').update(readFileSync(join(import.meta.dirname, 'src/principles/examples.jsx'))).digest('hex').slice(0, 12);
+// what a recording depends on: the example's source, and plumber itself (a rebuilt probe records differently)
+const sourceHash = () => {
+  const h = createHash('sha1').update(readFileSync(join(import.meta.dirname, 'src/principles/examples.jsx')));
+  try { h.update(readFileSync(join(import.meta.dirname, '../../dist/cli.js'))); } catch {}
+  return h.digest('hex').slice(0, 12);
+};
 
 function runCli(n, side, dir) {
   return new Promise((done, fail) => {
