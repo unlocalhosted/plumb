@@ -1,6 +1,8 @@
 # The craft showcase: Quarry, a workspace with all 77 mistakes in it
 
-Run `npx vite --config vite.config.mjs` in overlay/showcase and open http://127.0.0.1:4312/ (Broken) or `/?fixed`. It is
+Run `npx vite --config vite.config.mjs` in overlay/showcase and open http://127.0.0.1:4312/: the 77 principles, each
+opening one example (`/rule/16`, `/rule/16/fixed`), so the overlay marks one thing at a time. `/all` is the whole
+workspace with every mistake at once. It is
 its own project, so React Plumber judges it by Quarry's own theme (overlay/showcase/src/theme.css). Quarry is a made-up invoicing and projects workspace: a sidebar, a dashboard, an invoices
 table, an invoice drawer, a team page and settings. In **Broken** each screen carries the mistakes real apps ship;
 the overlay (Alt+B) marks them where they are. In **Fixed** the same screens are built right, and the overlay must have
@@ -99,3 +101,12 @@ Marks in Fixed mode, on a screen built right. Each is a rule to fix, not the pag
 | craft/rhythm (#12) | the page's column (40px), the dashboard section (24px), a plan card (8px) | "This stack is 24px apart; the page keeps to 12px and 16px." | a section gap is meant to differ from the gaps inside the section; the rule compares every stack to the page's majority |
 | drift (theme provenance) | dashboard · target bar, `bg-linear-to-r/oklch` | "This works out to linear-gradient(var(--tw-gradient-stops))." | a gradient's direction and space are not theme values; nothing in a theme can name them |
 | craft/grey-levels (#17) | invoice panel · photo caption | "This text grey isn't one of the 3 greys the page mostly uses." | the caption sits on a photo under a scrim; the census reads its ground as the page, so light text on an image counts as a fourth grey |
+
+## Product bugs the showcase has found
+
+- **New files are invisible to the overlay until the dev server restarts.** A component in a file created after
+  `vite` started is never resolved to its source, so the craft rules never judge it: /rule/16 showed "Nothing to fix"
+  on a table of proportional figures until the server was restarted, then marked every amount.
+- **`plumber craft` records some probes but doesn't report them.** On Quarry the tooltip probe measured a 66ms wait
+  and the keys probe a 200ms palette entrance; neither finding reached the report.
+- **`plumber craft --routes` drops a query string**, so `/?fixed` was read as `/`.

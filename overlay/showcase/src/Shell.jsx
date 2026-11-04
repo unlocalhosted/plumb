@@ -65,8 +65,8 @@ function ModeSwitch({ broken }) {
   const tab = (on) => 'inline-flex h-7 items-center rounded-[6px] px-3 text-sm ' + (on ? 'bg-surface font-medium text-ink shadow-raised' : 'text-ink-muted');
   return (
     <nav aria-label="Showcase mode" className="flex items-center gap-0.5 rounded-control bg-sunken p-0.5">
-      <a href="?" aria-current={broken ? 'page' : undefined} className={tab(broken)}>Broken</a>
-      <a href="?fixed" aria-current={broken ? undefined : 'page'} className={tab(!broken)}>Fixed</a>
+      <a href="/all" aria-current={broken ? 'page' : undefined} className={tab(broken)}>Broken</a>
+      <a href="/all/fixed" aria-current={broken ? undefined : 'page'} className={tab(!broken)}>Fixed</a>
     </nav>
   );
 }
