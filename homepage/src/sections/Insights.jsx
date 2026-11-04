@@ -103,10 +103,12 @@ function Card({ card, live, reduced, offset }) {
     return clear;
   }, [live, held, paused, reduced]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // while the guides are up, they're read from the scene every frame, so they follow the fix as it glides
+  // while the guides are up, they're read from the scene every frame something moves (the fix gliding, the number
+  // settling, a scene that is motion itself); once still, they stop being read, so idle cards cost nothing
   useLayoutEffect(() => {
     if (step < STEP.marks || step > STEP.out) { if (step === STEP.rest || step === STEP.home) { setMarks(null); shown.current = null; } return; }
     let raf = 0;
+    const until = performance.now() + 700;
     const read = () => {
       const s = stage.current.getBoundingClientRect(), m = card.measure(scene.current, fixed);
       const k = cam?.k ?? 1;
@@ -114,7 +116,7 @@ function Card({ card, live, reduced, offset }) {
       shown.current = shown.current == null ? m.value : shown.current + (m.value - shown.current) * 0.16;
       if (Math.abs(shown.current - m.value) < 0.005) shown.current = m.value;
       setMarks({ ...m, value: shown.current, s, k, focus: undefined, box: m.focus.getBoundingClientRect() });
-      raf = requestAnimationFrame(read);
+      if (card.moving || performance.now() < until || shown.current !== m.value) raf = requestAnimationFrame(read);
     };
     read();
     return () => cancelAnimationFrame(raf);
@@ -318,11 +320,13 @@ function Tabs({ fixed, live }) {
     </div>
   );
 }
-let BOLD;
+// how far the tabs after "Board" move when it goes bold: its width at 600 minus at 400. Measured once, while the
+// browser is idle after the fonts load, never in the middle of a moment (a first canvas costs a frame or more).
+let BOLD = 0;
+const measureBold = () => { const c = document.createElement('canvas').getContext('2d'), f = getComputedStyle(document.documentElement).getPropertyValue('--font') || 'Inter'; c.font = `600 13px ${f}`; const w6 = c.measureText('Board').width; c.font = `400 13px ${f}`; BOLD = w6 - c.measureText('Board').width; };
+if (typeof document !== 'undefined') document.fonts.ready.then(() => (window.requestIdleCallback ?? setTimeout)(measureBold));
 Tabs.measure = (root) => {
   const spans = root.querySelectorAll('.sc-tabs nav span'), nav = root.querySelector('.sc-tabs nav'), k = R(nav).width / nav.offsetWidth;
-  // how far the tabs after "Board" move when it goes bold: its width at 600 minus at 400, unless its bold width is kept
-  BOLD ??= (() => { const c = document.createElement('canvas').getContext('2d'), f = getComputedStyle(spans[1]).fontFamily; c.font = `600 13px ${f}`; const w6 = c.measureText('Board').width; c.font = `400 13px ${f}`; return w6 - c.measureText('Board').width; })();
   const kept = root.querySelector('.sc-tabs').dataset.fixed === 'true';
   return { focus: nav, value: kept ? 0 : BOLD, lines: [2, 3].map(i => { const r = R(spans[i]); return [r.left, r.top - 8, r.left, r.bottom + 8]; }) };
 };
