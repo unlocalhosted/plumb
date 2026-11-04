@@ -1,0 +1,66 @@
+/* Hero comps, insights lead, in the foundations. One screen (a team's home) carrying five real mistakes. */
+code { font-family: var(--mono); }
+.btn-xs { height: 32px; padding: 0 12px; font-size: 13px; }
+.hc { padding-top: var(--s-8); }
+.hc-head { max-width: 46rem; margin: 0 auto; text-align: center; }
+.hc-head .lead { margin: var(--s-5) auto 0; }
+.hc-cta { margin: var(--s-6) 0 0; }
+.hc-install { display: inline-flex; align-items: center; gap: 12px; height: 40px; padding: 0 4px 0 14px; border-radius: var(--r-sm); background: var(--g1); box-shadow: inset 0 0 0 1px var(--line-2); font-size: 13px; color: var(--ink-2); }
+.hc-num { color: var(--off); -webkit-text-fill-color: var(--off); }
+.hc-frame { position: relative; height: 520px; margin-top: var(--s-8); overflow: hidden; }
+.hc-layer { position: absolute; inset: 0; }
+.hc-clean { clip-path: inset(0 0 0 62%); }
+
+/* ── the screen ── */
+.hs { position: absolute; inset: 0; display: grid; grid-template-columns: 12rem 1fr; background: var(--g0); color: var(--ink-1); font-family: var(--font); }
+.hs-side { display: grid; align-content: start; gap: 2px; padding: 16px 10px; border-right: 1px solid var(--line); background: var(--g1); }
+.hs-brand { display: flex; align-items: center; gap: 8px; padding: 4px 10px 14px; font: 590 14px/1 var(--font); }
+.hs-brand i { width: 16px; height: 16px; border-radius: 4px; background: oklch(0.7 0.12 160); }
+.hs-side a { padding: 7px 10px; border-radius: var(--r-xs); font-size: 13px; color: var(--ink-2); }
+.hs-side a.on { background: var(--g2); color: var(--ink-1); }
+.hs-main { padding: 32px 36px; min-width: 0; }
+.hs-title { width: 640px; margin: 0 0 24px; font: 590 28px/1.2 var(--font); letter-spacing: -0.02em; }
+.hs[data-kind='clean'] .hs-title { text-wrap: pretty; } /* the fix for a widow keeps the lines above it, so a wipe across the heading still reads */
+.hs-grid { display: grid; grid-template-columns: 1.5fr 1fr 1fr; gap: 13px; }
+.hs[data-kind='clean'] .hs-grid { gap: 16px; }
+.hs-grid > section { min-height: 220px; border-radius: 14px; }
+.hs-video { position: relative; display: grid; place-items: center; background: linear-gradient(160deg, oklch(0.42 0.06 250), oklch(0.28 0.04 270)); }
+.hs-video small { position: absolute; left: 12px; bottom: 10px; font-size: 12px; color: rgb(255 255 255 / 0.8); }
+.hs-play { display: grid; place-items: center; width: 54px; height: 54px; border-radius: 50%; background: rgb(255 255 255 / 0.95); }
+.hs-play svg { width: 24px; height: 24px; fill: oklch(0.25 0.03 260); translate: -1px 0; }
+.hs[data-kind='clean'] .hs-play svg { translate: 1px 0; }
+.hs-figs { display: grid; align-content: start; gap: 10px; padding: 16px; background: var(--g1); box-shadow: inset 0 0 0 1px var(--line); }
+.hs-figs small { font-size: 12px; color: var(--ink-3); }
+.hs-figs div { display: flex; justify-content: space-between; padding-top: 10px; border-top: 1px solid var(--line); font-size: 13px; color: var(--ink-2); }
+.hs-figs b { font-weight: 500; color: var(--ink-1); font-variant-numeric: proportional-nums; }
+.hs[data-kind='clean'] .hs-figs b { font-variant-numeric: tabular-nums; }
+.hs-promo { display: grid; place-items: center; background: oklch(0.86 0.09 80); }
+.hs-promo-card { display: grid; gap: 4px; width: 78%; padding: 14px; border-radius: 12px; background: oklch(0.97 0.02 85); color: oklch(0.28 0.04 60);
+  box-shadow: 0 2px 4px rgb(0 0 0 / 0.25), 0 18px 30px -10px rgb(0 0 0 / 0.5); }
+.hs[data-kind='clean'] .hs-promo-card { box-shadow: 0 2px 4px oklch(0.55 0.13 65 / 0.4), 0 18px 30px -10px oklch(0.52 0.15 58 / 0.7); }
+.hs-promo-card small { font-size: 11px; color: oklch(0.5 0.06 60); }
+.hs-promo-card b { font: 590 15px/1.2 var(--font); }
+.hs-promo-card span { font-size: 12px; color: oklch(0.5 0.05 60); }
+
+/* ── marks ── */
+.hc-marks { position: absolute; inset: 0; pointer-events: none; }
+.hc-box { position: absolute; border-radius: 6px; box-shadow: 0 0 0 1px var(--off), 0 0 0 4px rgb(from var(--off) r g b / 0.12); }
+.hc-tag { position: absolute; padding: 3px 7px; border-radius: 5px; background: var(--off); color: #fff; font: 600 11px/1.2 var(--mono); white-space: nowrap; }
+.hc-pin { position: absolute; display: flex; gap: 8px; align-items: flex-start; }
+.hc-pin > b { display: grid; place-items: center; flex: none; width: 22px; height: 22px; border-radius: 50%; background: var(--off); color: #fff; font: 600 11px/1 var(--mono); box-shadow: 0 0 0 3px var(--g0); }
+.hc-pin > span { display: grid; gap: 2px; padding: 6px 9px; border-radius: 8px; background: var(--g1); box-shadow: inset 0 0 0 1px var(--line-2), var(--drop); white-space: nowrap; }
+.hc-pin-narrow > span { width: 140px; white-space: normal; }
+.hc-pin-narrow em { white-space: nowrap; }
+.hc-pin-left { flex-direction: row-reverse; translate: calc(-100% + 22px) 0; }
+.hc-pin em { font: 510 12px/1.2 var(--font); font-style: normal; color: var(--off); }
+.hc-pin small { font: 400 11px/1.2 var(--font); color: var(--ink-3); }
+.hc-count { position: absolute; right: 16px; bottom: 14px; display: flex; gap: 10px; align-items: center; padding: 6px 8px 6px 6px; border-radius: 10px; background: var(--g1); box-shadow: inset 0 0 0 1px var(--line-2); font: var(--t-small); font-size: 13px; color: var(--ink-2); }
+/* A: the split */
+.hc-split { position: absolute; top: 0; bottom: 0; left: 62%; width: 1px; background: var(--ink-1); box-shadow: 0 0 24px 2px rgb(from var(--accent) r g b / 0.45); }
+.hc-split i { position: absolute; left: 50%; top: 50%; width: 30px; height: 30px; translate: -50% -50%; border-radius: 50%; background: var(--ink-1); }
+.hc-wipe .hc-marks { clip-path: inset(0 38% 0 0); } /* the split sits right of the heading, which a wipe across would garble */
+/* C: one moment at full size */
+.hc-guides { position: absolute; inset: 0; overflow: visible; }
+.hc-guides line { stroke: var(--off); stroke-width: 1; }
+.hc-guides line.w { stroke-dasharray: 3 3; }
+.hc-big-pill { position: absolute; translate: -50% 0; padding: 7px 12px; border-radius: 8px; background: var(--off); color: #fff; font: 600 14px/1 var(--mono); white-space: nowrap; box-shadow: 0 10px 24px -10px rgb(from var(--off) r g b / 0.7); }

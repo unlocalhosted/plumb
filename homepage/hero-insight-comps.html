@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en" data-scheme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Hero · insights lead · three comps</title>
+<link rel="stylesheet" href="/src/foundations/foundations.css" />
+<link rel="stylesheet" href="/src/section2-comps/comps.css" />
+<link rel="stylesheet" href="/src/hero-insight-comps/hero-insight.css" />
+</head>
+<body>
+<!--
+  The hero, re-aimed at the lead (STORY.md: Plumber knows the patterns design engineers know). Three static comps, all on
+  one screen: a team's home page that carries five real mistakes from the craft principles: a widowed heading (#18),
+  figures that don't stack (#16), a play button centred by its box (#2), a grey shadow on a coloured card (#21), and a
+  made-up space (spacing, on your theme). The marks are measured from the screen as drawn (src/hero-insight-comps/main.js).
+    A  the wipe, re-aimed   the split screen; the as-written side names each mistake
+    B  the review           numbered pins on the screen, like a design review, each with its principle
+    C  one moment, huge     a single insight at full size: camera in, guides, the measured number
+-->
+<div class="bar"><span>Hero · insights lead · three comps</span><button type="button" onclick="const r=document.documentElement; r.dataset.scheme = r.dataset.scheme==='dark'?'light':'dark'; window.dispatchEvent(new Event('resize'))">Light / dark</button></div>
+
+<template id="screen">
+  <div class="hs">
+    <aside class="hs-side"><span class="hs-brand"><i></i>Northwind</span><a class="on">Home</a><a>Projects</a><a>Members</a><a>Settings</a></aside>
+    <main class="hs-main">
+      <h3 class="hs-title" data-issue="18">Good morning, Maya. Here’s what moved in your workspace this week</h3>
+      <div class="hs-grid" data-issue="space">
+        <section class="hs-video"><span class="hs-play" data-issue="2"><svg viewBox="0 0 24 24"><path d="M7 4.5v15L19 12z" /></svg></span><small>Welcome tour · 1:24</small></section>
+        <section class="hs-figs" data-issue="16"><small>Time this week</small><div><span>Design</span><b>12:06:18</b></div><div><span>Reviews</span><b>4:48:05</b></div><div><span>Meetings</span><b>7:11:40</b></div></section>
+        <section class="hs-promo"><div class="hs-promo-card" data-issue="21"><small>New</small><b>Invite your team</b><span>Three seats left on your plan</span></div></section>
+      </div>
+    </main>
+  </div>
+</template>
+
+<!-- A -->
+<p class="comp-name"><b>A</b> The wipe, re-aimed: the as-written side names each mistake</p>
+<section class="comp hc">
+  <header class="hc-head">
+    <h1 class="display">Design-engineer eyes<br />on every pixel.</h1>
+    <p class="lead">Plumber checks your running app for 77 patterns experienced people catch, from optical centring to tinted shadows, <b>and writes the fix into your JSX.</b></p>
+    <p class="hc-cta"><span class="hc-install"><code>npm install -D @unlocalhosted/react-plumber</code><span class="btn btn-accent btn-xs">Copy</span></span></p>
+  </header>
+  <div class="hc-frame surface hc-wipe" data-comp="a">
+    <div class="hc-layer" data-screen="messy" data-tags></div>
+    <div class="hc-layer hc-clean" data-screen="clean"></div>
+    <span class="hc-split"><i></i></span>
+  </div>
+</section>
+
+<!-- B -->
+<p class="comp-name"><b>B</b> The review: numbered pins, like a design review, each with its principle</p>
+<section class="comp hc">
+  <header class="hc-head">
+    <h1 class="display">A design review<br />on every screen.</h1>
+    <p class="lead">Hold Alt on your running app. Plumber finds what a senior design engineer would, names the principle, <b>and writes the fix.</b></p>
+    <p class="hc-cta"><span class="hc-install"><code>npm install -D @unlocalhosted/react-plumber</code><span class="btn btn-accent btn-xs">Copy</span></span></p>
+  </header>
+  <div class="hc-frame surface" data-comp="b">
+    <div class="hc-layer" data-screen="messy" data-pins></div>
+    <div class="hc-count"><span class="chip chip-off"><i></i>5 found</span><span>77 patterns checked</span></div>
+  </div>
+</section>
+
+<!-- C -->
+<p class="comp-name"><b>C</b> One moment, huge: a single insight at full size, with the measured number</p>
+<section class="comp hc">
+  <header class="hc-head">
+    <h1 class="display">You’d miss <span class="hc-num">2px</span>.<br />Plumber doesn’t.</h1>
+    <p class="lead">A play button centred by its box reads off. Plumber measures it, names it, <b>and writes the fix</b>, along with 76 other patterns design engineers know.</p>
+    <p class="hc-cta"><span class="hc-install"><code>npm install -D @unlocalhosted/react-plumber</code><span class="btn btn-accent btn-xs">Copy</span></span></p>
+  </header>
+  <div class="hc-frame surface hc-zoom" data-comp="c">
+    <div class="hc-layer" data-screen="messy" data-zoom></div>
+  </div>
+</section>
+
+<script type="module" src="/src/hero-insight-comps/main.js"></script>
+</body>
+</html>
