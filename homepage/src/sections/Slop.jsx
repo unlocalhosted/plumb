@@ -55,12 +55,12 @@ export function Slop() {
     <section className="slop" aria-labelledby="slop-title">
       <header className="slop-head">
         <span className="slop-eyebrow">Guardrails for agents</span>
-        <h2 id="slop-title" className="title">Your agent writes the UI. Plumber keeps it yours.</h2>
-        <p className="lead">After every edit, Plumber checks what changed against your theme. <b>Every hardcoded value comes back with the exact fix</b>, so the agent corrects itself before you ever see it.</p>
+        <h2 id="slop-title" className="title">Write directly to your src file.</h2>
+        <p className="lead">After every edit, Plumber checks what changed against your theme. <b>Every hardcoded value comes back with the exact fix</b>, so the agent changes corrects itself before you ever see it.</p>
         <ul className="slop-facts">
           <li><b>Runs on every edit</b><span>A hook in Claude Code or Cursor, set up by <code>plumber install --hooks</code>.</span></li>
           <li><b>Exact fixes, not advice</b><span>The file, the line, the class to write.</span></li>
-          <li><b>Only what’s new</b><span>Today’s debt is recorded once and left alone.</span></li>
+          <li><b>Only what’s new</b><span>Adopt plumber without adding breaking your old code</span></li>
         </ul>
       </header>
 
