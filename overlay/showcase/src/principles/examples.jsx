@@ -3,7 +3,7 @@
 // plumber, scoped to it, finds one thing. `measure` (optional) says where the eye sees the harm, for the ticks drawn
 // over the example; it reads the page, it never decides what is wrong (plumber does).
 import { useEffect, useState } from 'react';
-import { BoltIcon, FolderIcon, HeartIcon, HistoryIcon, LayersIcon, MessageIcon, PathIcon, PlusIcon, SearchIcon, SendIcon, SparklesIcon, UploadIcon, UserIcon } from '@unlocalhosted/dither-icons';
+import { ArrowRightIcon, BoltIcon, FolderIcon, HeartIcon, HistoryIcon, LayersIcon, LockIcon, MessageIcon, PathIcon, PlusIcon, SearchIcon, SendIcon, SparklesIcon, UploadIcon, UserIcon } from '@unlocalhosted/dither-icons';
 import receipt from '../receipt.png';
 
 // where a line of text sits, from its font: the baseline and the middle of its capitals, in page pixels
@@ -166,41 +166,6 @@ Timesheet.measure = (root) => {
 
 // ── Spacing and rhythm ─────────────────────────────────────
 
-// #7 the space inside a group is tighter than the space between groups: here a shared Field puts 12px between a label
-// and its input, inside a form that sets its fields only 8px apart, so each label reads as belonging to the input above it
-const FIELDS = [['Name', 'Halden & Co.'], ['Email', 'billing@halden.example'], ['Company number', 'SC 412 908'], ['Payment terms', 'Net 14']];
-function Grouping({ broken }) {
-  return (
-    <AppFrame crumb="Clients / New client">
-      <div className="flex flex-col gap-5 px-5 pt-4 pb-6">
-        <div className="flex flex-col gap-0.5">
-          <h3 className="text-base font-semibold">New client</h3>
-          <span className="text-sm text-ink-muted">Who you bill, and how they pay.</span>
-        </div>
-        <div data-form className="flex max-w-sm flex-col gap-2">
-          {FIELDS.map(([label, value]) => (
-            <div key={label} data-field className="flex flex-col gap-3">
-              <span className="text-xs font-medium text-ink-muted">{label}</span>
-              <span className="flex h-9 items-center rounded-control border border-line px-3 text-sm">{value}</span>
-            </div>
-          ))}
-        </div>
-        <div className="flex gap-2">
-          <button type="button" className="rounded-control bg-ink px-3 py-1.5 text-sm font-medium text-accent-ink active:bg-ink-muted">Create client</button>
-          <button type="button" className="rounded-control border border-line px-3 py-1.5 text-sm font-medium active:bg-sunken">Cancel</button>
-        </div>
-      </div>
-    </AppFrame>
-  );
-}
-Grouping.framed = true;
-Grouping.measure = (root) => {
-  const [a, b] = [...root.querySelectorAll('[data-field]')], la = a.children[0].getBoundingClientRect(), ia = a.children[1].getBoundingClientRect(), lb = b.children[0].getBoundingClientRect();
-  const inside = la.bottom < ia.top ? ia.top - la.bottom : 0, between = lb.top - ia.bottom;
-  return { around: a, focus: { x: ia.left + 30, y: (ia.bottom + lb.top) / 2 }, ticks: [{ y: la.bottom, left: la.left, right: la.left + 60 }, { y: ia.top, left: la.left, right: la.left + 60 }, { y: ia.bottom, left: la.left, right: la.left + 60 }, { y: lb.top, left: la.left, right: la.left + 60 }],
-    broken: `${px(inside)} inside · ${px(between)} between`, fixed: 'tighter inside ✓', off: inside > between };
-};
-Grouping.lesson = { why: 'Each field puts 12px between its label and its input, but the form sets fields only 8px apart, so every label sits closer to the input above it than to its own.', habit: 'Space inside a group is always tighter than space between groups: proximity is how people read what belongs together.' };
 
 // #8 nested corners are concentric: inner radius = outer radius − the padding between them
 const TEMPLATES = [['Classic', 'Serif heading, ruled lines'], ['Studio', 'Your logo, a calm grid'], ['Minimal', 'Just the numbers']];
@@ -793,5 +758,70 @@ FitnessToday.measure = (root) => {
   };
 };
 
-export const EXAMPLES = { 7: Grouping, 8: Templates, 9: Toolbar, 10: NewClient, 1: ClientProfile, 2: InvoiceWalkthrough, 3: Whiteboard, 4: DriveActivity, 5: ChatThread, 6: FitnessToday, 16: Timesheet };
+// #7 space inside a group is tighter than space between groups. A flight booking's passenger step: each field puts its
+// label 10px above its input (gap-2.5, for room), but the fields sit only 8px apart, so every label is as near the input
+// above it as its own. plumber's fix tightens each field to half the gap between them.
+const PASSENGER = [
+  { label: 'Full name, as on passport', value: 'Sana Okafor' },
+  { label: 'Date of birth', value: '14 March 1991' },
+  { label: 'Nationality', value: 'Portuguese' },
+  { label: 'Passport number', value: 'CB 482 1907' },
+];
+function PassengerStep() {
+  // Slate's primitives, with dithered icons
+  return (
+    <article className="w-full max-w-[25rem] rounded-card bg-surface shadow-card">
+      <header className="flex flex-col gap-1 border-b-hairline border-line px-6 pt-5 pb-4">
+        <span className="flex items-center gap-2 text-[13px] text-ink-muted">Lisbon<ArrowRightIcon size={14} texture="dither" />Copenhagen · Fri 14 Nov</span>
+        <span className="text-[17px] leading-6 font-medium tracking-[-0.01em]">Who’s flying?</span>
+        <span className="text-[13px] text-ink-muted">Passenger 1 of 2 · adult</span>
+      </header>
+      <div data-fields className="flex flex-col gap-2 px-6 pt-5 pb-6">
+        {PASSENGER.map((f) => (
+          <label key={f.label} className="flex flex-col gap-2.5 text-[13px] font-medium text-ink-muted">
+            {f.label}
+            <span className="flex h-10 items-center rounded-control bg-surface px-3 text-sm font-normal text-ink ring-1 ring-line ring-inset">{f.value}</span>
+          </label>
+        ))}
+      </div>
+      <footer className="flex items-center justify-between gap-4 border-t-hairline border-line px-6 py-4">
+        <span className="flex items-center gap-1.5 text-xs text-ink-muted"><LockIcon size={14} texture="dither" />Saved to your trip</span>
+        <button type="button" className="h-10 rounded-control bg-accent px-4 text-sm font-medium text-accent-ink hover:bg-accent-deep">Continue to seats</button>
+      </footer>
+    </article>
+  );
+}
+PassengerStep.stage = true;
+PassengerStep.names = ['Even', 'Grouped'];
+PassengerStep.lesson = {
+  why: 'Each field puts 10px between its label and its input, but the fields are only 8px apart. Every label sits as near the input above it as its own, so the form reads as a stack of lines, not four questions.',
+  habit: 'Space inside a group is always tighter than space between groups. Proximity is how people read what belongs together.',
+};
+// What the eye sees: the space inside each field (label to input) and between fields (input to the next label),
+// hatched on the left gutter. The pill is the space inside, which should be the smaller.
+PassengerStep.measure = (root) => {
+  const list = root?.querySelector('[data-fields]');
+  if (!list) return null;
+  const k = list.getBoundingClientRect().width / list.offsetWidth || 1, fields = [...list.children];
+  const bands = [], rules = [];
+  let inner = 0, outer = Infinity;
+  fields.forEach((f, i) => {
+    const words = document.createRange(); words.selectNodeContents(f.firstChild);
+    const lb = words.getBoundingClientRect(), box = f.lastElementChild.getBoundingClientRect();
+    bands.push({ key: `in${i}`, left: box.left - 14 * k, right: box.left - 4 * k, top: lb.bottom, bottom: box.top, pattern: 'hatch' });
+    rules.push({ key: `lb${i}`, y: lb.bottom, left: box.left - 16 * k, right: lb.right + 6 * k }, { key: `bx${i}`, y: box.top, left: box.left - 16 * k, right: box.left + 40 * k });
+    inner = Math.max(inner, (box.top - lb.bottom) / k);
+    const next = fields[i + 1];
+    if (next) { const n = document.createRange(); n.selectNodeContents(next.firstChild); outer = Math.min(outer, (n.getBoundingClientRect().top - box.bottom) / k); }
+  });
+  const ok = inner < outer - 0.5, lr = list.getBoundingClientRect(), first = bands[0];
+  return {
+    lines: [], rules, bands, off: !ok,
+    pills: [{ key: 'inner', x: first.left - 18 * k, y: (first.top + first.bottom) / 2, text: (inner * k).toFixed(1), ok }],
+    cut: { left: lr.left, right: lr.right, top: lr.top, bottom: lr.bottom },
+    subject: { left: lr.left - 30 * k, right: lr.left + lr.width * 0.6, top: lr.top - 10 * k, bottom: lr.top + lr.height * 0.62 },
+  };
+};
+
+export const EXAMPLES = { 7: PassengerStep, 8: Templates, 9: Toolbar, 10: NewClient, 1: ClientProfile, 2: InvoiceWalkthrough, 3: Whiteboard, 4: DriveActivity, 5: ChatThread, 6: FitnessToday, 16: Timesheet };
 

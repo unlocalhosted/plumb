@@ -156,7 +156,9 @@ export const innerOuterSpacing = {
     const axis = flowAxis(s);
     if (!axis) return [];
     const g = gapOf(s, axis);
-    if (g <= 0 || facts.kids(el).length < 2) return [];
+    // a group's items: its elements and its bare words (<label>Date of birth<input /></label> is two things)
+    const items = facts.kids(el).length + [...el.childNodes].filter((n) => n.nodeType === 3 && n.nodeValue.trim()).length;
+    if (g <= 0 || items < 2) return [];
     const parent = el.parentElement;
     if (!parent || parent === document.body || parent === document.documentElement) return [];
     const ps = facts.style(parent);
@@ -1485,7 +1487,12 @@ export const cardOpticalPadding = {
     if (facts.text(el) || /trim/.test(s.textBoxTrim ?? '') || /trim/.test(facts.style(first).textBoxTrim ?? '')) return [];
     const m = facts.metrics(first);
     if (!m) return [];
-    const top = b.pt + (facts.rect(first).top - facts.rect(el).top - b.bt - b.pt) + m.halfLeading + (m.ascent - m.capHeight), left = b.pl;
+    const letters = b.pt + (facts.rect(first).top - facts.rect(el).top - b.bt - b.pt) + m.halfLeading + (m.ascent - m.capHeight), left = b.pl;
+    // the first thing the eye meets at the top: the first letters, or a drawn box beside them that starts higher (a
+    // footer's button, a field), measured from the same edge
+    const drawn = (k) => k.matches(CONTROL + ', input, select, textarea, img, svg') || (rgb(facts.style(k).backgroundColor)?.[3] ?? 0) > 0 || facts.box(k).bt > 0;
+    const boxes = kids.filter(drawn).map((k) => facts.rect(k).top - facts.rect(el).top - b.bt);
+    const top = Math.min(letters, ...boxes);
     if (top - left < T.min || top - left < left * T.share) return [];
     return [{
       ...say(this.id, { top, left }),
