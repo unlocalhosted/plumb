@@ -543,7 +543,7 @@ export const PRINCIPLES = [
   "title": "Exits faster than entrances",
   "detail": "(~70% of the duration).",
   "why": "The user has already moved on.",
-  "how": "probe"
+  "how": "live"
  },
  {
   "n": 69,
