@@ -263,6 +263,7 @@ function useMoment(Example, plumb, view) {
   const [t, setT] = useState(0);
   const [live, setLive] = useState(true);
   const timers = useRef([]);
+  const following = useRef(false);
   useEffect(() => () => timers.current.forEach(clearTimeout), []);
   const measure = () => (Example?.measure ? marksOf(Example.measure(document.querySelector(SCOPE)), cam.current) : null);
   // the card under the shade, in camera pixels (the component the example draws)
@@ -294,10 +295,15 @@ function useMoment(Example, plumb, view) {
     at(TIMING.fix, async () => {
       const glide = await plumb.fix();
       setStage(STAGE.fix);
-      // as long as plumber's own glide, so the last reading is where the fix came to rest
-      tween(() => setMarks((m) => ({ ...m, to: measure() })), Math.max(MARKS.converge, glide + 120));
+      // the count-down runs as long as plumber's own glide; after it, the marks keep reading the page through the hold,
+      // so they always end where the fix came to rest, however slow the page is
+      const read = () => setMarks((m) => ({ ...m, to: measure() }));
+      await tween(read, Math.max(MARKS.converge, glide + 120));
+      following.current = true;
+      const follow = () => { if (!following.current) return; read(); requestAnimationFrame(follow); };
+      follow();
     });
-    at(TIMING.marksOut, () => setStage(STAGE.marksOut));
+    at(TIMING.marksOut, () => { following.current = false; setStage(STAGE.marksOut); });
     at(TIMING.cameraOut, () => { setLens({ k: 1, x: 0, y: 0 }); setStage(STAGE.cameraOut); });
     at(TIMING.resume, async () => {
       setStage(STAGE.rest); setLive(true); setMarks({ from: null, to: null });

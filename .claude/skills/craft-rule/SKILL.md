@@ -84,6 +84,9 @@ screen. Ours used to be a teaching page with a still picture in it; that system 
 - **Each principle lives in the product where it naturally bites,** not in one product's world: a Shapes picker on a
   whiteboard (#3), not another invoice. All of them share Slate, so the showcase still reads as one family. One app
   for everything turned every screen into money ("all the examples are becoming money theme").
+- **Media is real:** photos, covers and pictures come from free-licensed stock (Unsplash, searched in the browser),
+  saved small (480px) under overlay/showcase/src/media and credited in its CREDITS.md. Never drawn stand-ins, and never
+  real album covers or brand art (copyrighted). Real photos bring real edges: give them an inner hairline.
 - **Icons come from dithered.dev** (`@unlocalhosted/dither-icons`, the owner's own MIT set: `<LayersIcon size texture="dither" />`),
   never hand-drawn, for a screen's own controls. Shapes that are the subject (a triangle in a play button, a picker's
   shapes) stay drawn, since the principle is about their geometry.
@@ -186,3 +189,5 @@ Each line is something the owner had to say once; the sections above exist so th
   own colours, card and type inside the example. → §3½ Quarry primitives first, picked by the owner on /primitives.
 - 2026-11-04 · "all the examples are becoming money theme"; "incorporate icons and all, dithered.dev": every screen
   was set in one invoicing app, with hand-drawn icons. → §3½ each principle in its natural product; dither icons.
+- 2026-11-04 · "use real media just search on internet": #8's covers were drawn compositions. → §3½ media is real,
+  free-licensed and credited.

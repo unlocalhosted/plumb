@@ -3,8 +3,11 @@
 // plumber, scoped to it, finds one thing. `measure` (optional) says where the eye sees the harm, for the ticks drawn
 // over the example; it reads the page, it never decides what is wrong (plumber does).
 import { useEffect, useState } from 'react';
-import { ArrowRightIcon, BoltIcon, FolderIcon, HeartIcon, HistoryIcon, LayersIcon, LockIcon, MessageIcon, PathIcon, PlusIcon, SearchIcon, SendIcon, SparklesIcon, UploadIcon, UserIcon } from '@unlocalhosted/dither-icons';
+import { ArrowRightIcon, BoltIcon, FolderIcon, HeadphonesIcon, HeartIcon, HistoryIcon, LayersIcon, LockIcon, MessageIcon, PathIcon, PauseIcon, PlusIcon, SearchIcon, SendIcon, SparklesIcon, UploadIcon, UserIcon } from '@unlocalhosted/dither-icons';
 import receipt from '../receipt.png';
+import lowTide from '../media/low-tide.jpg';
+import paperCities from '../media/paper-cities.jpg';
+import afterglow from '../media/afterglow.jpg';
 
 // where a line of text sits, from its font: the baseline and the middle of its capitals, in page pixels
 let ctx;
@@ -167,42 +170,6 @@ Timesheet.measure = (root) => {
 // ── Spacing and rhythm ─────────────────────────────────────
 
 
-// #8 nested corners are concentric: inner radius = outer radius − the padding between them
-const TEMPLATES = [['Classic', 'Serif heading, ruled lines'], ['Studio', 'Your logo, a calm grid'], ['Minimal', 'Just the numbers']];
-function Templates({ broken }) {
-  return (
-    <AppFrame crumb="Settings / Invoice templates">
-      <div className="flex flex-col gap-4 px-5 pt-4 pb-6">
-        <div className="flex items-baseline justify-between gap-3">
-          <div className="flex flex-col gap-0.5">
-            <h3 className="text-base font-semibold">Invoice templates</h3>
-            <span className="text-sm text-ink-muted">What clients see when they open an invoice.</span>
-          </div>
-          <span className="text-sm text-accent">Upload your own</span>
-        </div>
-        <div className="grid grid-cols-3 gap-3">
-          {TEMPLATES.map(([name, what], i) => (
-            <div key={name} data-tpl className={'flex flex-col gap-2 rounded-card border bg-surface p-2 ' + (i === 1 ? 'border-accent' : 'border-line')}>
-              <img src={receipt} alt="" width="240" height="320" className="aspect-[4/3] w-full rounded-card bg-sunken object-cover object-top outline outline-1 -outline-offset-1 outline-line" />
-              <div className="flex flex-col gap-0.5 px-1 pb-1">
-                <span className="flex items-center gap-1.5 text-sm font-medium">{name}{i === 1 ? <span className="rounded-full bg-accent-soft px-1.5 text-xs text-accent">In use</span> : null}</span>
-                <span className="truncate text-xs text-ink-muted" title={what}>{what}</span>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </AppFrame>
-  );
-}
-Templates.framed = true;
-Templates.measure = (root) => {
-  const card = root.querySelector('[data-tpl]'), img = card.querySelector('img'), c = card.getBoundingClientRect(), r = img.getBoundingClientRect();
-  const R = parseFloat(getComputedStyle(card).borderTopLeftRadius), ir = parseFloat(getComputedStyle(img).borderTopLeftRadius), inset = r.left - c.left;
-  return { around: card, focus: { x: r.left + 4, y: r.top + 4 }, ticks: [{ x: c.left, top: c.top, bottom: c.top + 24 }, { x: r.left, top: r.top, bottom: r.top + 24 }, { y: c.top, left: c.left, right: c.left + 24 }, { y: r.top, left: r.left, right: r.left + 24 }],
-    broken: `${px(ir)} inside ${px(R)} · ${px(inset)} apart`, fixed: 'concentric ✓', off: Math.abs(ir - Math.max(0, R - inset)) > 1 };
-};
-Templates.lesson = { why: 'The preview keeps the card’s 12px corner but sits 9px inside it (8px of padding and the 1px border), so the two curves run side by side at different rates: the gap between them pinches at every corner.', habit: 'Inner radius = outer radius − everything between them, padding and border, at every level of nesting.' };
 
 // #9 a text button takes about twice as much padding across as up and down (broken: p-2, copied from the icon
 // buttons beside it)
@@ -823,5 +790,73 @@ PassengerStep.measure = (root) => {
   };
 };
 
-export const EXAMPLES = { 7: PassengerStep, 8: Templates, 9: Toolbar, 10: NewClient, 1: ClientProfile, 2: InvoiceWalkthrough, 3: Whiteboard, 4: DriveActivity, 5: ChatThread, 6: FitnessToday, 16: Timesheet };
+// #8 nested corners are concentric: inner radius = outer radius − the padding between them. A music app's Recently
+// played: each tile is a 14px card with 8px of padding, and its cover art keeps the card's own 14px corner, so the two
+// curves run side by side at different rates and the gap between them pinches at every corner. plumber's fix: 6px.
+// real photos as cover art (src/media, credited in src/media/CREDITS.md)
+const ALBUMS = [
+  { title: 'Low Tide', artist: 'Marina Avila', cover: lowTide },
+  { title: 'Paper Cities', artist: 'The Lanterns', cover: paperCities },
+  { title: 'Afterglow', artist: 'Kaito Ren', cover: afterglow },
+];
+function RecentlyPlayed() {
+  // Slate's primitives, with dithered icons
+  return (
+    <article className="w-full max-w-[30rem] rounded-card bg-surface shadow-card">
+      <header className="flex items-baseline justify-between px-5 pt-4 pb-3">
+        <span className="text-[17px] leading-6 font-medium tracking-[-0.01em]">Recently played</span>
+        <a href="#history" className="-my-1 inline-flex min-h-6 items-center text-[13px] font-medium text-accent hover:text-accent-deep">See all</a>
+      </header>
+      <ul data-albums className="grid grid-cols-3 gap-3 px-5">
+        {ALBUMS.map((a) => (
+          <li key={a.title}>
+            <button type="button" data-tile className="flex w-full flex-col gap-2 rounded-sheet bg-sunken p-2 text-left hover:bg-line/40">
+              <span data-cover className="block overflow-hidden rounded-sheet">
+                <img src={a.cover} alt="" width="240" height="240" className="block aspect-square w-full object-cover outline-1 -outline-offset-1 outline-ink/10" />
+              </span>
+              <span className="flex flex-col px-0.5 pb-0.5">
+                <span className="truncate text-[13px] font-medium">{a.title}</span>
+                <span className="truncate text-xs text-ink-muted">{a.artist}</span>
+              </span>
+            </button>
+          </li>
+        ))}
+      </ul>
+      <footer className="mt-4 flex items-center gap-3 border-t-hairline border-line px-5 py-3">
+        <HeadphonesIcon size={16} texture="dither" className="shrink-0 text-ink-muted" />
+        <span className="flex min-w-0 flex-1 flex-col">
+          <span className="truncate text-[13px] font-medium">Low Tide · Marina Avila</span>
+          <span className="mt-1.5 h-1 overflow-hidden rounded-full bg-sunken"><span className="block h-full w-2/5 rounded-full bg-ink" /></span>
+        </span>
+        <button type="button" aria-label="Pause" className="grid size-9 shrink-0 place-items-center rounded-full bg-ink text-surface hover:bg-ink/85"><PauseIcon size={16} texture="solid" /></button>
+      </footer>
+    </article>
+  );
+}
+RecentlyPlayed.stage = true;
+RecentlyPlayed.names = ['Same radius', 'Concentric'];
+RecentlyPlayed.lesson = {
+  why: 'The cover keeps the tile’s 14px corner but sits 8px inside it, so the two curves run side by side at different rates: the gap between them is 8px along the sides and pinches at the corner.',
+  habit: 'Inner radius = outer radius − everything between them, padding and border. Here 14 − 8 = 6, at every level of nesting.',
+};
+// What the eye sees at the first tile's corner: the tile's edges and the cover's, and the padding between them (the
+// hatch). The pill is how far the cover's corner is from concentric (its radius against 14 − 8), in px.
+RecentlyPlayed.measure = (root) => {
+  const tile = root?.querySelector('[data-tile]'), cover = tile?.querySelector('[data-cover]');
+  if (!cover) return null;
+  const t = tile.getBoundingClientRect(), c = cover.getBoundingClientRect(), k = t.width / tile.offsetWidth || 1;
+  const R = parseFloat(getComputedStyle(tile).borderTopLeftRadius), r = parseFloat(getComputedStyle(cover).borderTopLeftRadius), p = (c.left - t.left) / k;
+  const off = Math.abs(r - Math.max(0, R - p)), span = 34 * k;
+  return {
+    lines: [{ key: 'tile', x: t.left, top: t.top, bottom: t.top + span }, { key: 'cover', x: c.left, top: c.top, bottom: c.top + span }],
+    rules: [{ key: 'tile-top', y: t.top, left: t.left, right: t.left + span }, { key: 'cover-top', y: c.top, left: c.left, right: c.left + span }],
+    bands: [{ key: 'pad', left: t.left, right: c.left, top: t.top, bottom: t.top + span, pattern: 'hatch' }, { key: 'pad-top', left: c.left, right: t.left + span, top: t.top, bottom: c.top, pattern: 'hatch' }],
+    pills: [{ key: 'off', x: t.left + span + 18 * k, y: t.top - 10 * k, text: (off * k).toFixed(1), ok: off <= 1.5 }],
+    off: off > 1.5,
+    cut: { left: t.left, right: t.right, top: t.top, bottom: t.bottom, r: R * k },
+    subject: { left: t.left - 30 * k, right: t.left + 90 * k, top: t.top - 30 * k, bottom: t.top + 80 * k },
+  };
+};
+
+export const EXAMPLES = { 7: PassengerStep, 8: RecentlyPlayed, 9: Toolbar, 10: NewClient, 1: ClientProfile, 2: InvoiceWalkthrough, 3: Whiteboard, 4: DriveActivity, 5: ChatThread, 6: FitnessToday, 16: Timesheet };
 

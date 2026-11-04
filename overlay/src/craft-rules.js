@@ -566,6 +566,9 @@ export const iconSide = {
     if (!text || kids.length < 1) return [];
     const lead = icon(kids[0]) && !(kids.length === 1 && !facts.text(el)), tail = kids.length > 0 && icon(kids.at(-1)) && !lead;
     if (!lead && !tail) return [];
+    // an icon beside the words, in a row: a cover or a picture above them (a media tile) is not an icon side
+    const es = facts.style(el), mark = facts.rect(lead ? kids[0] : kids.at(-1));
+    if ((/flex/.test(es.display) && /column/.test(es.flexDirection)) || mark.height > 32 || mark.width > 32) return [];
     const b = facts.box(el);
     if (b.pl < T.min || Math.abs(b.pl - b.pr) > 0.5) return [];
     const side = lead ? 'l' : 'r', other = lead ? 'r' : 'l';
