@@ -33,6 +33,7 @@
   --font-weight-semibold: 600;
   --tracking-tight: -0.02em;
   --tracking-wide: 0.04em;
+  --tracking-caps: 0.06em;   /* small capitals: they're spaced to sit beside lowercase, so alone they need air */
   --leading-tight: 1.15;
   --leading-normal: 1.5;
 

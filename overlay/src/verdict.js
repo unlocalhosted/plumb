@@ -158,7 +158,8 @@ function verify(k, el, byId, rules, facts, theme, before) {
   const sets = edit.target || edit.moves ? {} : { ...(edit.sets ?? {}) };
   for (const cls of words(edit.to)) {
     // a type step (letter spacing, line height, text size, weight) must be one the project's own theme names
-    const t = /^!?(tracking|leading|text|font)-([a-z0-9]+(?:-[a-z0-9]+)*)!?$/.exec(cls);
+    // (text-balance, text-pretty, text-left, text-ellipsis… are text utilities, not sizes)
+    const t = /^!?text-(?:balance|pretty|wrap|nowrap|left|center|right|justify|start|end|ellipsis|clip)!?$/.test(cls) ? null : /^!?(tracking|leading|text|font)-([a-z0-9]+(?:-[a-z0-9]+)*)!?$/.exec(cls);
     if (t && theme.loaded) {
       const ns = { tracking: ['--tracking-'], leading: ['--leading-'], text: ['--text-'], font: ['--font-weight-'] }[t[1]];
       const said = { tracking: 'letter-spacing', leading: 'line-height', text: 'text size', font: 'weight' }[t[1]];

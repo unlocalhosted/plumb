@@ -3,7 +3,7 @@
 // plumber, scoped to it, finds one thing. `measure` (optional) says where the eye sees the harm, for the ticks drawn
 // over the example; it reads the page, it never decides what is wrong (plumber does).
 import { useEffect, useState } from 'react';
-import { BoltIcon, FolderIcon, HeadphonesIcon, HeartIcon, HistoryIcon, LayersIcon, MessageIcon, PathIcon, PauseIcon, PlusIcon, SearchIcon, SendIcon, SparklesIcon, UploadIcon, UserIcon } from '@unlocalhosted/dither-icons';
+import { ArrowRightIcon, BoltIcon, FolderIcon, HeadphonesIcon, HeartIcon, HistoryIcon, LayersIcon, MessageIcon, PathIcon, PauseIcon, PlusIcon, SearchIcon, SendIcon, SparklesIcon, UploadIcon, UserIcon } from '@unlocalhosted/dither-icons';
 import lowTide from '../media/low-tide.jpg';
 import paperCities from '../media/paper-cities.jpg';
 import afterglow from '../media/afterglow.jpg';
@@ -688,5 +688,228 @@ RecentlyPlayed.measure = (root) => {
   };
 };
 
-export const EXAMPLES = { 8: RecentlyPlayed, 1: ClientProfile, 2: InvoiceWalkthrough, 3: Whiteboard, 4: DriveActivity, 5: ChatThread, 6: FitnessToday, 16: Timesheet };
+// #15 small capitals need tracking. An issue tracker's table: its column labels are 11px capitals with no letter
+// spacing. Capitals are drawn to sit beside lowercase; set alone and small, they crowd into each other. plumber opens
+// them to 0.06em.
+const ISSUES = [
+  { id: 'PLM-214', title: 'Upload queue retries forever on a 413', who: 'Mira', state: 'In review', tone: 'bg-accent-soft text-accent-deep', updated: '2h' },
+  { id: 'PLM-209', title: 'Dark mode loses focus rings in menus', who: 'Theo', state: 'In progress', tone: 'bg-caution-soft text-caution', updated: '5h' },
+  { id: 'PLM-198', title: 'Search ignores accents in names', who: 'Sana', state: 'Done', tone: 'bg-positive-soft text-positive', updated: '1d' },
+];
+function IssueTable() {
+  // Slate's primitives, with dithered icons
+  const head = ['Issue', 'Assignee', 'Status', 'Updated'];
+  return (
+    <article className="w-full max-w-[36rem] overflow-hidden rounded-card bg-surface shadow-card">
+      <header className="flex items-baseline gap-2 px-5 pt-4 pb-3">
+        <LayersIcon size={16} texture="dither" className="translate-y-0.5 self-center text-ink-muted" />
+        <span className="text-[17px] leading-6 font-medium tracking-[-0.01em]">Upload pipeline</span>
+        <span className="ml-auto text-[13px] text-ink-muted">3 open</span>
+      </header>
+      <table className="w-full table-fixed text-left text-sm">
+        <colgroup><col /><col className="w-24" /><col className="w-28" /><col className="w-20" /></colgroup>
+        <thead><tr className="border-y-hairline border-line bg-sunken/60">
+          {head.map((h, i) => <th key={h} data-label scope="col" className={'py-2 text-[11px] font-semibold text-ink-muted uppercase ' + (i === 0 ? 'pl-5' : i === 3 ? 'pr-5 text-right' : '')}>{h}</th>)}
+        </tr></thead>
+        <tbody>
+          {ISSUES.map((r) => (
+            <tr key={r.id} className="border-b-hairline border-line last:border-0">
+              <td className="py-3 pl-5"><span className="flex min-w-0 flex-col"><span className="truncate font-medium">{r.title}</span><span className="case-forms font-mono text-xs text-ink-muted">{r.id}</span></span></td>
+              <td className="py-3">{r.who}</td>
+              <td className="py-3"><span className={'inline-flex h-5 items-center rounded-full px-2 text-xs font-medium ' + r.tone}>{r.state}</span></td>
+              <td className="py-3 pr-5 text-right text-ink-muted tabular-nums">{r.updated}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </article>
+  );
+}
+IssueTable.stage = true;
+IssueTable.names = ['Untracked', 'Tracked'];
+IssueTable.lesson = {
+  why: 'Capitals are spaced to sit beside lowercase letters, which carry most of a line’s white space. Set alone, small and bold, they have nothing between them: the letters touch at a glance and the label reads as a smudge.',
+  habit: 'Small capitals get 0.05–0.1em of letter spacing; big display type gets tighter instead.',
+};
+// What the eye sees in "Assignee": the space between each pair of capitals, hatched. The pill is the letter spacing,
+// in hundredths of an em.
+IssueTable.measure = (root) => {
+  const th = [...(root?.querySelectorAll('[data-label]') ?? [])][1];
+  if (!th) return null;
+  const t = th.firstChild, k = th.getBoundingClientRect().width / th.offsetWidth || 1, range = document.createRange(), boxes = [];
+  for (let i = 0; i < t.length; i++) { range.setStart(t, i); range.setEnd(t, i + 1); boxes.push(range.getBoundingClientRect()); }
+  const bands = [], lines = [];
+  boxes.forEach((b, i) => {
+    lines.push({ key: `l${i}`, x: b.left, top: b.top + b.height * 0.2, bottom: b.bottom - b.height * 0.2 });
+    if (boxes[i + 1]) bands.push({ key: `g${i}`, left: b.right - 0.5 * k, right: boxes[i + 1].left + 0.5 * k, top: b.top + b.height * 0.25, bottom: b.bottom - b.height * 0.25, pattern: 'hatch' });
+  });
+  const s = getComputedStyle(th), em = (s.letterSpacing === 'normal' ? 0 : parseFloat(s.letterSpacing)) / parseFloat(s.fontSize);
+  const first = boxes[0], last = boxes.at(-1);
+  return {
+    lines, bands, off: em < 0.04,
+    pills: [{ key: 'em', x: (first.left + last.right) / 2, y: first.top - 12 * k, text: (em * 100 * k).toFixed(0), ok: em >= 0.04 }],
+    cut: { left: first.left - 4 * k, right: last.right + 4 * k, top: first.top - 2 * k, bottom: first.bottom + 2 * k },
+    subject: { left: first.left - 40 * k, right: last.right + 60 * k, top: first.top - 40 * k, bottom: first.bottom + 50 * k },
+  };
+};
+
+// #18 no widows in headings. A news reader's front page: headlines wrap where they run out of room, so a story's last
+// word often sits alone on its own line, a widow, and the heading's shape breaks. plumber balances the lines.
+const STORIES = [
+  { kicker: 'Science', head: 'Northern lights reach farther south than any year since records began', meta: 'The Ledger · 6 min' },
+  { kicker: 'Cities', head: 'Lisbon turns three of its busiest streets over to bicycles and trams', meta: 'Metro Weekly · 4 min' },
+];
+function NewsFront() {
+  // Slate's primitives, with dithered icons and real photos
+  return (
+    <article className="w-full max-w-[34rem] rounded-card bg-surface shadow-card">
+      <header className="flex items-baseline justify-between px-6 pt-5 pb-1">
+        <span className="text-[17px] leading-6 font-medium tracking-[-0.01em]">Today</span>
+        <span className="text-[13px] text-ink-muted">Wednesday, 4 November</span>
+      </header>
+      <ul className="flex flex-col px-6 pb-2">
+        {STORIES.map((st, i) => (
+          <li key={st.head} className="flex gap-4 border-b-hairline border-line py-4 last:border-0">
+            <img src={i ? paperCities : lowTide} alt="" width="96" height="96" className="size-24 shrink-0 rounded-control object-cover outline-1 -outline-offset-1 outline-ink/10" />
+            <span className="flex min-w-0 flex-col gap-1">
+              <span className="text-xs font-medium text-accent">{st.kicker}</span>
+              <h3 data-head className="text-[19px] leading-6 font-semibold tracking-[-0.01em]">{st.head}</h3>
+              <span className="text-[13px] text-ink-muted">{st.meta}</span>
+            </span>
+          </li>
+        ))}
+      </ul>
+    </article>
+  );
+}
+NewsFront.stage = true;
+NewsFront.names = ['Greedy', 'Balanced'];
+NewsFront.lesson = {
+  why: 'A browser fills each line as far as it can and carries over whatever is left, so a heading’s last word often ends up alone. One short word under two full lines reads as a mistake, and the heading loses its shape.',
+  habit: 'Headings get text-wrap: balance (even lines); paragraphs get text-wrap: pretty (no lone last word).',
+};
+// What the eye sees on the first headline: each line's length, as a band under it. The pill is the last line's length
+// as a share of the longest.
+NewsFront.measure = (root) => {
+  const h = root?.querySelector('[data-head]');
+  if (!h) return null;
+  const k = h.getBoundingClientRect().width / h.offsetWidth || 1, range = document.createRange();
+  range.selectNodeContents(h);
+  const rows = [];
+  for (const q of range.getClientRects()) { const row = rows.find((r) => Math.abs(r.top - q.top) < 4); if (row) { row.left = Math.min(row.left, q.left); row.right = Math.max(row.right, q.right); } else rows.push({ top: q.top, bottom: q.bottom, left: q.left, right: q.right }); }
+  rows.sort((a, b) => a.top - b.top);
+  const widths = rows.map((r) => r.right - r.left), share = widths.at(-1) / Math.max(...widths);
+  const r = h.getBoundingClientRect();
+  return {
+    lines: [], off: share < 0.5,
+    bands: rows.map((row, i) => ({ key: `row${i}`, left: row.left, right: row.right, top: row.bottom - 3 * k, bottom: row.bottom, pattern: 'hatch' })),
+    pills: [{ key: 'share', x: r.right + 18 * k, y: rows.at(-1).top + 8 * k, text: String(Math.round(share * 100) * k), ok: share >= 0.5 }],
+    cut: { left: r.left, right: r.right, top: r.top, bottom: r.bottom },
+    subject: { left: r.left - 30 * k, right: r.right + 50 * k, top: r.top - 40 * k, bottom: r.bottom + 30 * k },
+  };
+};
+
+// #45 hanging punctuation. A magazine's long read with a pull quote: the opening quote mark sits on the column edge
+// and pushes the quote's first line in by its own width, so the quote's words don't line up with the text around them.
+// plumber hangs the mark in the margin, measured from the mark itself.
+function LongRead() {
+  // Slate's primitives, with a real photo
+  return (
+    <article className="w-full max-w-[34rem] overflow-hidden rounded-card bg-surface shadow-card">
+      <img src={afterglow} alt="" width="544" height="160" className="h-40 w-full object-cover" />
+      <div data-column className="flex flex-col gap-4 px-8 pt-6 pb-8">
+        <span className="text-xs font-medium text-accent">Culture · Long read</span>
+        <p className="text-[15px] leading-7 text-pretty">By the third night the studio had stopped arguing about the sign. Kaito Ren wanted it pink; the landlord wanted it gone.</p>
+        <blockquote data-quote className="text-[21px] leading-8 font-medium tracking-[-0.01em] text-balance"><p>“Neon is a promise you make to the street at two in the morning.”</p></blockquote>
+        <p className="text-[15px] leading-7 text-pretty">The sign stayed. So did the crowd that gathers under it every Friday.</p>
+      </div>
+    </article>
+  );
+}
+LongRead.stage = true;
+LongRead.names = ['Flush', 'Hanging'];
+LongRead.lesson = {
+  why: 'An opening quote mark is punctuation, not a letter, but set flush it takes the first place on the line. The quote’s words start a mark’s width in from every other line on the page, and the column looks dented.',
+  habit: 'Hang opening quotes (and bullets) in the margin, so the words line up: text-indent by minus the mark’s width, or hanging-punctuation where it’s supported.',
+};
+// What the eye sees: the column's edge, and where the quote's words start after the mark (the hatch is the mark's
+// width). The pill is that width, in px.
+LongRead.measure = (root) => {
+  const col = root?.querySelector('[data-column]'), q = root?.querySelector('[data-quote] p');
+  if (!col || !q) return null;
+  const k = col.getBoundingClientRect().width / col.offsetWidth || 1, cs = getComputedStyle(col);
+  const edge = col.getBoundingClientRect().left + parseFloat(cs.paddingLeft) * k, t = q.firstChild, r = document.createRange();
+  r.setStart(t, 1); r.setEnd(t, 2);
+  const word = r.getBoundingClientRect(), qr = q.getBoundingClientRect(), off = (word.left - edge) / k, cr = col.getBoundingClientRect();
+  return {
+    lines: [{ key: 'edge', x: edge, top: cr.top + 16 * k, bottom: cr.bottom - 16 * k }, { key: 'word', x: word.left, top: word.top, bottom: word.bottom }],
+    bands: [{ key: 'mark', left: Math.min(edge, word.left), right: Math.max(edge, word.left), top: word.top, bottom: word.bottom, pattern: 'hatch' }],
+    pills: [{ key: 'off', x: edge, y: word.top - 12 * k, text: (Math.abs(off) * k).toFixed(1), ok: Math.abs(off) < 1 }],
+    off: Math.abs(off) >= 1,
+    cut: { left: qr.left - 14 * k, right: qr.right, top: qr.top, bottom: qr.bottom },
+    subject: { left: edge - 40 * k, right: edge + 260 * k, top: qr.top - 70 * k, bottom: qr.bottom + 40 * k },
+  };
+};
+
+// #46 capitals get case-sensitive forms. An airline's boarding pass, set in capitals as boarding passes are: dashes,
+// colons and brackets are drawn to sit beside lowercase, so between capitals they hang low. The case feature lifts them
+// to the capitals' middle.
+const Caps = ({ className = '', children }) => <span data-caps className={'uppercase ' + className}>{children}</span>;
+function BoardingPass() {
+  // Slate's primitives, with dithered icons
+  return (
+    <article className="w-full max-w-[26rem] overflow-hidden rounded-card bg-surface shadow-card">
+      <header className="flex items-center justify-between bg-ink px-6 py-4 text-surface">
+        <span className="text-sm font-semibold">Northwind Air</span>
+        <Caps className="text-xs font-medium tracking-caps">Boarding pass</Caps>
+      </header>
+      <div className="flex flex-col gap-5 px-6 pt-5 pb-6">
+        <div className="flex items-end justify-between">
+          <span className="flex flex-col"><span className="text-xs text-ink-muted">Lisbon</span><Caps className="text-[34px] leading-none font-semibold tracking-[-0.02em]">LIS</Caps></span>
+          <ArrowRightIcon size={20} texture="dither" className="mb-1.5 text-ink-muted" />
+          <span className="flex flex-col items-end"><span className="text-xs text-ink-muted">Copenhagen</span><Caps className="text-[34px] leading-none font-semibold tracking-[-0.02em]">CPH</Caps></span>
+        </div>
+        <dl className="grid grid-cols-3 gap-x-4 gap-y-3 text-sm">
+          <span className="flex flex-col"><dt className="text-xs text-ink-muted">Flight</dt><dd><Caps className="font-medium tracking-caps tabular-nums">NW–754</Caps></dd></span>
+          <span className="flex flex-col"><dt className="text-xs text-ink-muted">Time</dt><dd><Caps className="font-medium tracking-caps tabular-nums">07:55–12:30</Caps></dd></span>
+          <span className="flex flex-col"><dt className="text-xs text-ink-muted">Seat</dt><dd><Caps className="font-medium tracking-caps">14A (Zone 2)</Caps></dd></span>
+        </dl>
+        <div className="flex items-center justify-between border-t border-dashed border-line pt-4">
+          <span className="flex flex-col"><span className="text-xs text-ink-muted">Passenger</span><Caps className="text-sm font-medium tracking-caps">Okafor / Sana</Caps></span>
+          <span aria-hidden="true" className="h-10 w-28 bg-[repeating-linear-gradient(90deg,var(--color-ink)_0_2px,transparent_2px_4px,var(--color-ink)_4px_5px,transparent_5px_8px)]" />
+        </div>
+      </div>
+    </article>
+  );
+}
+BoardingPass.stage = true;
+BoardingPass.names = ['Lowercase forms', 'Case forms'];
+BoardingPass.lesson = {
+  why: 'Hyphens, dashes, colons and brackets are drawn to sit at the middle of lowercase letters. Between capitals that middle is too low, so in “07:55–12:30” the colon and dash sag below the figures around them.',
+  habit: 'Text set in capitals turns on the font’s case-sensitive forms (font-feature-settings: "case"), so punctuation rises to the capitals.',
+};
+// What the eye sees in the time: the middle of its capitals (figures), carried across. The pill is 1 while the
+// punctuation sits on lowercase forms, and turns to ✓ once the case feature is on.
+BoardingPass.measure = (root) => {
+  const el = [...(root?.querySelectorAll('[data-caps]') ?? [])].find((e) => /\d:\d\d–/.test(e.textContent));
+  if (!el) return null;
+  const k = el.getBoundingClientRect().width / el.offsetWidth || 1, s = getComputedStyle(el), r = el.getBoundingClientRect();
+  ctx ??= document.createElement('canvas').getContext('2d');
+  ctx.font = `${s.fontWeight} ${s.fontSize} ${s.fontFamily}`;
+  const m = ctx.measureText('H'), q = document.createRange(); q.selectNodeContents(el);
+  const box = q.getClientRects()[0], base = box.top + ((box.height / k - (m.fontBoundingBoxAscent + m.fontBoundingBoxDescent)) / 2 + m.fontBoundingBoxAscent) * k;
+  const mid = base - (m.actualBoundingBoxAscent / 2) * k, on = /case/.test(s.fontFeatureSettings);
+  const at = (i) => { const c = document.createRange(); c.setStart(el.firstChild, i); c.setEnd(el.firstChild, i + 1); return c.getBoundingClientRect(); };
+  const colon = at(2), dash = at(5);
+  return {
+    lines: [{ key: 'colon', x: (colon.left + colon.right) / 2, top: mid - 6 * k, bottom: base + 2 * k }, { key: 'dash', x: (dash.left + dash.right) / 2, top: mid - 6 * k, bottom: base + 2 * k }],
+    rules: [{ key: 'mid', y: mid, left: r.left - 8 * k, right: r.right + 8 * k }],
+    bands: [], off: !on,
+    pills: [{ key: 'case', x: r.right + 18 * k, y: mid, text: on ? '0' : String(k), ok: on }],
+    cut: { left: r.left - 3 * k, right: r.right + 3 * k, top: r.top, bottom: r.bottom },
+    subject: { left: r.left - 50 * k, right: r.right + 70 * k, top: r.top - 50 * k, bottom: r.bottom + 40 * k },
+  };
+};
+
+export const EXAMPLES = { 8: RecentlyPlayed, 1: ClientProfile, 2: InvoiceWalkthrough, 3: Whiteboard, 4: DriveActivity, 5: ChatThread, 6: FitnessToday, 15: IssueTable, 16: Timesheet, 18: NewsFront, 45: LongRead, 46: BoardingPass };
 

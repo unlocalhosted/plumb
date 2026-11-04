@@ -743,7 +743,7 @@ export const headingWidow = {
       ...say(this.id, { word: m[3] }),
       key: this.id, text: 'text-wrap', props: ['text-wrap'], value: m[3], n: 1,
       evidence: { word: m[3] }, confidence: 0.88,
-      suggest: { kind: 'class', from: '', to: 'text-balance', why: 'even lines', sets: { textWrap: 'balance', textWrapStyle: 'balance' } },
+      suggest: { kind: 'class', from: '', to: 'text-balance', why: 'even lines', sets: { textWrap: 'balance', textWrapStyle: 'balance' }, moves: true },
     }];
   },
 };
@@ -987,11 +987,15 @@ export const hangingQuote = {
     const s = facts.style(el);
     if (px(s.textIndent) < 0 || /first/.test(s.hangingPunctuation ?? '')) return [];
     if (el.matches('blockquote > p') && el.parentElement && el.parentElement.firstElementChild !== el) return [];
+    const at = first.data.search(/\S/), mark = document.createRange();
+    mark.setStart(first, at); mark.setEnd(first, at + 1);
+    const em = Math.round((mark.getBoundingClientRect().width / (px(s.fontSize) || 16)) * 100) / 100;
     return [{
       ...say(this.id, {}),
       key: this.id, text: 'text-indent', props: ['text-indent'], value: s.textIndent, n: 0,
-      evidence: { first: first.data.trim()[0] }, confidence: 0.82,
-      suggest: { kind: 'advice', text: 'Add text-indent: -0.45em.' },
+      evidence: { first: first.data.trim()[0], hang: em }, confidence: 0.82,
+      // hang exactly the opening mark's own width, measured, so the words line up with the lines below
+      suggest: { kind: 'class', from: '', to: `-indent-[${em}em]`, why: 'the quote mark hangs in the margin', sets: { textIndent: `-${em}em` } },
     }];
   },
 };
@@ -1008,7 +1012,7 @@ export const capsCase = {
       ...say(this.id, {}),
       key: this.id, text: 'font-feature-settings', props: ['font-feature-settings'], value: s.fontFeatureSettings, n: 0,
       evidence: { text: words(el).slice(0, 40) }, confidence: 0.8,
-      suggest: { kind: 'class', from: '', to: "[font-feature-settings:'case']", why: 'lifts the punctuation' },
+      suggest: { kind: 'class', from: '', to: "[font-feature-settings:'case']", why: 'lifts the punctuation', sets: { fontFeatureSettings: '"case"' } },
     }];
   },
 };
@@ -1166,7 +1170,8 @@ export const textWrapRole = {
       ...say(this.id, { heading, lines }),
       key: this.id, text: 'text-wrap', props: ['text-wrap'], value: s.textWrap ?? 'wrap', n: lines,
       evidence: { lines, heading, ratio: Math.round(ratio * 100) / 100 }, confidence: 0.82,
-      suggest: { kind: 'class', from: '', to, why: heading ? 'even lines' : 'no lonely last word', sets: { textWrap: heading ? 'balance' : 'pretty', textWrapStyle: heading ? 'balance' : 'pretty' } },
+      // re-breaking lines is a reflow the verdict's virtual trial can't do: left untried, proved by asking again
+      suggest: { kind: 'class', from: '', to, why: heading ? 'even lines' : 'no lonely last word', sets: { textWrap: heading ? 'balance' : 'pretty', textWrapStyle: heading ? 'balance' : 'pretty' }, moves: true },
     }];
   },
 };
