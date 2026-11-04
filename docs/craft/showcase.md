@@ -2,7 +2,12 @@
 
 Run `npx vite --config vite.config.mjs` in overlay/showcase and open http://127.0.0.1:4312/: the 77 principles, each
 opening one example (`/rule/16`, `/rule/16/fixed`), so the overlay marks one thing at a time. `/all` is the whole
-workspace with every mistake at once. It is
+workspace with every mistake at once.
+
+Every screen is powered by plumber. It asks `window.__plumb.craft({ scope: '[data-example]' })`, so plumber reads the
+example alone (the scripted twin of an Alt+click), and shows plumber's finding in its own words. **Fixed by plumber** is
+the broken example with plumber's recommendation applied where it found the problem (its class swap and the values it
+says that class sets), then plumber asked again: if its fix is wrong or it only gives advice, the screen says so. It is
 its own project, so React Plumber judges it by Quarry's own theme (overlay/showcase/src/theme.css). Quarry is a made-up invoicing and projects workspace: a sidebar, a dashboard, an invoices
 table, an invoice drawer, a team page and settings. In **Broken** each screen carries the mistakes real apps ship;
 the overlay (Alt+B) marks them where they are. In **Fixed** the same screens are built right, and the overlay must have

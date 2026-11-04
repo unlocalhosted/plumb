@@ -6,7 +6,7 @@
 import { createRoot } from 'react-dom/client';
 import './theme.css';
 import { Shell } from './Shell.jsx';
-import { Index, Principle } from './principles/Principle.jsx';
+import { Index, Layout, Principle } from './principles/Principle.jsx';
 
 const path = location.pathname.replace(/\/$/, '');
 const rule = path.match(/^\/rule\/(\d+)(\/fixed)?$/);
@@ -14,5 +14,5 @@ const all = path.match(/^\/all(\/fixed)?$/);
 const broken = rule ? !rule[2] : all ? !all[1] : true;
 await (broken ? import('./broken.css') : import('./fixed.css'));
 createRoot(document.getElementById('root')).render(
-  rule ? <Principle n={Number(rule[1])} broken={broken} /> : all ? <Shell broken={broken} /> : <Index />,
+  rule ? <Layout current={Number(rule[1])}><Principle n={Number(rule[1])} broken={broken} /></Layout> : all ? <Shell broken={broken} /> : <Index />,
 );
