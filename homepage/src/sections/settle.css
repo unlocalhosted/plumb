@@ -2,7 +2,8 @@
  * only: coral for a value off the scale, mint once it's on a step, sky for the instrument (threads, the rail).
  * Motion: transform and opacity only; custom curves; hover only where there's hover. */
 
-.settle {
+.settle { overflow-x: clip; /* nothing in the scene ever widens the page (clip keeps the sticky pin working) */
+ 
   --ease-reveal: cubic-bezier(0.19, 1, 0.22, 1);   /* strong ease-out: things appearing */
   --ease-fall: cubic-bezier(0.32, 0.72, 0, 1);     /* steep start, long settle: a place falling onto its step */
   --land: linear(0, 0.36 14%, 0.86 34%, 1.06 52%, 1.02 66%, 1 80%, 1); /* a small landing bounce, for small things */
@@ -52,7 +53,6 @@
   font: 500 12px/16px var(--pl-mono); color: var(--pl-ink); opacity: 0; transform: translate(-50%, 6px);
   transition: opacity 300ms ease calc(var(--k) * 90ms + 200ms), transform 600ms var(--ease-reveal) calc(var(--k) * 90ms + 200ms); }
 .settle-label b { font-weight: 600; color: var(--pl-mint-ink); }
-:root[data-scheme='dark'] .settle-label b { color: var(--pl-mint); }
 .settle-label small { width: 72px; margin-top: 2px; font: 400 11.5px/15px var(--pl-sans); color: var(--pl-ink-2); white-space: normal; text-align: center; text-wrap: balance; }
 .settle-label em { margin-top: 4px; font: 600 11px/14px var(--pl-mono); font-style: normal; color: var(--pl-mint); opacity: 0; transition: opacity 300ms ease; }
 .settle-label em[data-shown='true'] { opacity: 1; }
@@ -89,7 +89,6 @@
   transform: translateX(-50%); transform-origin: bottom center; animation: card-in 160ms var(--ease-reveal); pointer-events: none; }
 .settle-card b { font-weight: 600; color: var(--pl-ink); }
 .settle-card strong { font-weight: 600; color: var(--pl-mint-ink); }
-:root[data-scheme='dark'] .settle-card strong { color: var(--pl-mint); }
 @keyframes card-in { from { opacity: 0; transform: translateX(-50%) scale(0.95); } }
 
 /* the threads: the instrument's sky, drawn from each place to its step */
@@ -133,14 +132,13 @@
 .settle-beats li:not(:last-child)::before { left: 6.5px; width: 2px; background: var(--pl-ink-3); }
 .settle-beats li[data-state='now'] .settle-glyph { color: var(--pl-pink); }
 
-.settle-field { position: relative; padding: 44px 44px 92px; border-radius: 36px; background: var(--pl-butter-soft);
+.settle-field { position: relative; padding: 44px 44px 92px; border-radius: 36px;
   box-shadow: 0 0 0 2px var(--pl-ink), 8px 8px 0 var(--pl-ink); }
 .settle-floor { height: 2px; background: var(--pl-ink); }
 .settle-line { width: 2px; left: -1px; background: var(--pl-ink); }
 .settle-scene:not([data-beat='0']) .settle-line { opacity: 1; }
 .settle-label { top: calc(100% + 10px); gap: 4px; }
 .settle-label b { padding: 4px 8px; border-radius: 7px; background: var(--pl-mint-soft); color: var(--pl-mint-ink); box-shadow: 0 0 0 1.5px var(--pl-ink); font-size: 12px; }
-:root[data-scheme='dark'] .settle-label b { color: var(--pl-mint-ink); }
 .settle-label > span { font: 600 12px/1 var(--pl-mono); }
 .settle-label small { color: color-mix(in oklab, var(--pl-ink) 70%, var(--pl-butter-soft)); }
 .settle-label em { color: var(--pl-ink); }
@@ -159,9 +157,6 @@
   .settle-field { padding: 24px 20px 64px; border-radius: 24px; box-shadow: 0 0 0 2px var(--pl-ink), 5px 5px 0 var(--pl-ink); }
   .settle-beat { font-size: 16px; line-height: 24px; }
 }
-/* dark: the overlay's dark "butter soft" is a deep pill colour; the field wants a quiet warm ground instead */
-:root[data-scheme='dark'] .settle-field { background: color-mix(in oklab, var(--pl-butter) 14%, var(--pl-paper)); }
-:root[data-scheme='dark'] .settle-label small { color: var(--pl-ink-2); }
 @media (max-width: 47.99rem) {
   .settle-label b { padding: 2px 4px; font-size: 9px; border-radius: 5px; }
   .settle-label > span { font-size: 9px; }

@@ -1,0 +1,63 @@
+/* THE FIELDS' GROUND. The page stays flat paper; inside a frame the field is a painting of light, after the flow
+ * gradients on feralui.dev (owner's references, 2026-11-04): the demo is "Orchid", the theme scene is "Peach glow".
+ *
+ * What makes those alive, and what this copies as a rule, not a look:
+ *   - four colours from near-white to a mid tone. A field of one pastel sits in one narrow band of lightness and
+ *     reads as flat; the spread from white to mid is what gives it life.
+ *   - large swept areas, not small spots: a light sweep through the middle, a warm and a mid colour beside it, the deep
+ *     colour at the far edge.
+ *   - a slow drift, so the light is alive; a fine grain over it, so it reads as printed, not as a CSS gradient.
+ * The same in both schemes. Only the overlay's hues, each taken across its range (owner's call): lilac and pink for Orchid, butter, coral and
+ * pink for Peach glow.
+ *
+ * The layer is a child (.field-glow > i) larger than the frame, so it can drift by transform alone without a repaint;
+ * the frame itself clips nothing, since its stickers and screens hang over its edges.
+ *   --c1 light   --c2 warm   --c3 mid   --c4 deep   --dir the sweep from light to deep
+ */
+:root {
+  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='2.2 0 0 0 -.6 2.2 0 0 0 -.6 2.2 0 0 0 -.6 0 0 0 0 .28'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
+}
+
+/* Orchid: mostly violet haze and wisteria pink, mid wisteria through the body, a soft violet only at one edge */
+.toy-home .stage {
+  --c1: color-mix(in oklab, var(--pl-lilac-soft) 40%, white);
+  --c2: color-mix(in oklab, var(--pl-pink) 18%, var(--pl-pink-soft));
+  --c3: color-mix(in oklab, var(--pl-lilac) 28%, var(--pl-lilac-soft));
+  --c4: color-mix(in oklab, var(--pl-lilac) 55%, var(--pl-lilac-soft));
+  --dir: 125deg;
+}
+/* Peach glow: a warm white and peach, ibis pink beside them, a soft plum blush only at the far corner */
+.settle-field {
+  --c1: color-mix(in oklab, var(--pl-butter-soft) 30%, white);
+  --c2: color-mix(in oklab, var(--pl-coral-soft) 65%, var(--pl-butter-soft));
+  --c3: color-mix(in oklab, var(--pl-pink) 18%, var(--pl-coral-soft));
+  --c4: color-mix(in oklab, color-mix(in oklab, var(--pl-pink) 50%, var(--pl-lilac)) 45%, var(--pl-pink-soft));
+  --dir: 40deg;
+}
+
+:is(.toy-home .stage, .settle-field) { isolation: isolate; background: var(--c3); }
+.field-glow { position: absolute; inset: 0; z-index: -1; border-radius: inherit; overflow: hidden; pointer-events: none; }
+.field-glow i {
+  position: absolute; inset: -30%;
+  background:
+    radial-gradient(34% 22% at 40% 44%, var(--c1), transparent 70%),
+    radial-gradient(30% 26% at 30% 66%, var(--c2), transparent 70%),
+    radial-gradient(34% 30% at 70% 30%, var(--c3), transparent 72%),
+    linear-gradient(var(--dir), var(--c2) 20%, var(--c1) 38%, var(--c3) 64%, var(--c4) 92%);
+  animation: field-drift 26s ease-in-out infinite alternate;
+  will-change: transform;
+}
+@keyframes field-drift {
+  from { transform: rotate(-5deg) translate(-3%, -2%); }
+  to   { transform: rotate(7deg) translate(4%, 3%) scale(1.06); }
+}
+/* the grain, and a lip of light along the top inside edge */
+.field-glow::after {
+  content: ''; position: absolute; inset: 0; border-radius: inherit;
+  background: var(--grain) 0 0 / 180px 180px; mix-blend-mode: overlay;
+  box-shadow: inset 0 2px 0 color-mix(in oklab, white 55%, transparent);
+}
+@media (prefers-reduced-motion: reduce) { .field-glow i { animation: none; } }
+
+/* dark: the frames stay light, lit panels on the night page (owner's call). They wear .pl-light, so everything in them
+   keeps its light colours too. */

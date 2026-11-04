@@ -71,7 +71,8 @@ export function Carousel() {
 
   return (
     <section className="carousel mt-page-2" aria-roledescription="carousel" aria-label="Plumber cleaning up UI, a piece at a time">
-      <div ref={stageRef} className="stage" id="demo" style={{ '--fit': fit, height: fit < 1 ? 600 * fit : undefined }}>
+      <div ref={stageRef} className="stage pl-light" id="demo" style={{ '--fit': fit, height: fit < 1 ? 600 * fit : undefined }}>
+        <div className="field-glow" aria-hidden="true"><i /></div>
         {/* the toy's table: the product's own patterns lying around, and the fix just made, as a sticker */}
         <span className="toy-deco toy-hatch" aria-hidden="true" /><span className="toy-deco toy-dither" aria-hidden="true" /><span className="toy-deco toy-checker" aria-hidden="true" />
         {clean[shown] && <span key={`${index}-${shown}`} className="toy-float toy-float-fix" aria-hidden="true">{FIXED[shown]}</span>}

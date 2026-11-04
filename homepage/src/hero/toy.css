@@ -61,7 +61,7 @@
 
 /* ── the demo on the toy's table ── */
 .toy-home .carousel { margin: 48px auto 0; left: auto; translate: none; } /* the hero is full width: centre it plainly */
-.toy-home .stage { overflow: visible; -webkit-mask: none; mask: none; border-radius: 36px; background: var(--pl-sky-soft); box-shadow: none; }
+.toy-home .stage { overflow: visible; -webkit-mask: none; mask: none; border-radius: 36px; box-shadow: none; }
 .toy-home .slot[data-at='0'] { rotate: -1deg; }
 .toy-home .slot[data-at='0'] .piece { filter: drop-shadow(0 18px 30px rgb(28 27 25 / 0.18)); }
 .toy-home .slot[data-at='-1'], .toy-home .slot[data-at='1'] { --o: 0; }

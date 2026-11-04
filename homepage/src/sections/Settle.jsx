@@ -57,7 +57,9 @@ export function Settle() {
   const scroller = useRef(null), scene = useRef(null);
   const reduced = typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches;
   const [beat, setBeat] = useState(reduced ? BEATS.length - 1 : 0);
-  const [size, setSize] = useState({ w: 600, h: 440 });
+  // null until the scene has measured itself: the marks are drawn only then, so none is first placed for a guessed
+  // width and then sent flying (or left hanging past a phone's edge) when the real one arrives
+  const [size, setSize] = useState(null);
   const [dot, setDot] = useState(null);      // the place being pointed at
   const [column, setColumn] = useState(null); // the step being pointed at
 
@@ -88,9 +90,10 @@ export function Settle() {
     scrollTo({ top: scrollY + r.top + run * (k + 0.5) / BEATS.length, behavior: reduced ? 'auto' : 'smooth' });
   };
 
-  const X = px => (px / MAX) * size.w;
-  const floor = size.h * FLOOR;
-  const free = p => ({ x: X(p.px) + (rand(p.i) - 0.5) * 10, y: size.h * (0.06 + rand(p.i + 99) * 0.46) });
+  const { w, h } = size ?? { w: 0, h: 0 };
+  const X = px => (px / MAX) * w;
+  const floor = h * FLOOR;
+  const free = p => ({ x: X(p.px) + (rand(p.i) - 0.5) * 10, y: h * (0.06 + rand(p.i + 99) * 0.46) });
   const settled = p => ({ x: X(p.step.px), y: floor - 6 - p.row * DOT });
   const landed = beat >= 3;
 
@@ -113,10 +116,12 @@ export function Settle() {
           </ol>
         </div>
 
-        <div className="settle-field">
+        <div className="settle-field pl-light">
+        <div className="field-glow" aria-hidden="true"><i /></div>
         <div ref={scene} className="settle-scene" data-beat={beat} style={{ '--floor': `${floor}px` }}>
           <div className="settle-floor" aria-hidden="true" />
 
+          {size && <>
           {STEPS.map((s, k) => (
             <div key={s.name} className="settle-step" style={{ transform: `translateX(${X(s.px)}px)`, '--k': k }}
               onPointerEnter={() => setColumn(s.name)} onPointerLeave={() => setColumn(null)}>
@@ -132,7 +137,7 @@ export function Settle() {
             </div>
           ))}
 
-          <svg className="settle-threads" data-shown={beat === 2} width={size.w} height={size.h} aria-hidden="true">
+          <svg className="settle-threads" data-shown={beat === 2} width={w} height={h} aria-hidden="true">
             {PLACES.map(p => {
               const a = free(p);
               return <line key={p.i} x1={a.x} y1={a.y} x2={X(p.step.px)} y2={floor} pathLength="1" style={{ transitionDelay: `${beat === 2 ? p.px * 14 : 0}ms` }} />;
@@ -157,6 +162,8 @@ export function Settle() {
               </span>
             );
           })}
+
+          </>}
 
           <p className="settle-count tabular" data-shown={beat >= 4} aria-hidden={beat < 4}>
             <b>{WRITTEN.length}</b><span>→</span><b>5</b>

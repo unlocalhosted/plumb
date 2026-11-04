@@ -4,6 +4,7 @@
 import { useEffect, useState } from 'react';
 import { Hero } from './hero/Hero.jsx';
 import { Settle } from './sections/Settle.jsx';
+import './surfaces.css';
 
 export function App() {
   const [scheme, setScheme] = useState(() => matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
