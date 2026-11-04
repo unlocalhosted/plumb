@@ -100,15 +100,15 @@ function Annotations({ state, stage, measureOf, onAnchor }) {
           {/* the spotlight: everything but the named elements fades back */}
           <div className="absolute rounded-control transition-[box-shadow] duration-300" style={{ left: b.x - pad, top: b.y - pad, width: b.w + pad * 2, height: b.h + pad * 2, boxShadow: `0 0 0 9999px color-mix(in oklch, var(--color-surface) ${fixed ? 72 : 0}%, transparent)` }} />
           {/* the bracket: the measured span, ticked at both ends */}
-          <div className={'absolute border-y-2 transition-colors duration-300 ' + (fixed ? 'border-accent' : 'border-negative')} style={{ left: b.x + b.w + pad + 4, top: b.y, width: 6, height: b.h, borderRightWidth: 2, borderRightStyle: 'solid' }} />
+          <div className={'absolute border-y border-r border-dashed transition-colors duration-300 ' + (fixed ? 'border-accent/50' : 'border-negative/50')} style={{ left: b.x + b.w + pad + 4, top: b.y, width: 5, height: b.h }} />
           <span className={'absolute flex items-center gap-1 rounded-chip px-1.5 py-0.5 font-mono text-[11px] whitespace-nowrap text-accent-ink transition-colors duration-300 ' + (fixed ? 'bg-accent' : 'bg-negative')}
             style={{ left: b.x + b.w + pad + 10, top: b.y - 30, transform: 'translateX(-100%)' }}>{seen ? (fixed && !seen.off ? seen.fixed : seen.broken) : fixed ? <>{b.now} ✓</> : b.was}</span>
         </div>
       ))}
       {/* where the eye sees it: a tick on each place the example measures, red while they disagree, blue once they line up */}
       {seen?.ticks.map((t, i) => (t.y === undefined
-        ? <span key={i} className={'absolute w-0.5 rounded-full transition-[left,background-color] duration-300 ' + (seen.off ? 'bg-negative' : 'bg-accent')} style={{ left: t.x - 1, top: t.top, height: t.bottom - t.top }} />
-        : <span key={i} className={'absolute h-0.5 rounded-full transition-[top,background-color] duration-300 ' + (seen.off ? 'bg-negative' : 'bg-accent')} style={{ top: t.y - 1, left: t.left, width: t.right - t.left }} />))}
+        ? <span key={i} className={'absolute border-l border-dashed transition-[left,border-color] duration-300 ' + (seen.off ? 'border-negative/60' : 'border-accent/60')} style={{ left: t.x - 0.5, top: t.top, height: t.bottom - t.top }} />
+        : <span key={i} className={'absolute border-t border-dashed transition-[top,border-color] duration-300 ' + (seen.off ? 'border-negative/60' : 'border-accent/60')} style={{ top: t.y - 0.5, left: t.left, width: t.right - t.left }} />))}
     </div>
   );
 }
@@ -138,7 +138,7 @@ function FindingCard({ state, anchor }) {
   return (
     <aside aria-label="What plumber finds" className="relative w-full md:mt-(--anchor) md:w-72 md:shrink-0" style={{ '--anchor': `${Math.max(0, (anchor?.y ?? 40) - 40)}px`, '--reach': `${40 + Math.max(0, anchor?.reach ?? 0)}px` }}>
       {/* the leader: from the bracket, across the window's edge, to the card */}
-      <span aria-hidden="true" className={'absolute top-10 right-full hidden h-px w-(--reach) transition-colors duration-300 md:block ' + (fixed ? 'bg-accent' : 'bg-negative')} />
+      <span aria-hidden="true" className={'absolute top-10 right-full hidden w-(--reach) border-t border-dashed transition-colors duration-300 md:block ' + (fixed ? 'border-accent/50' : 'border-negative/50')} />
       <div className="flex flex-col gap-3 rounded-card border border-line bg-surface/90 px-4 pt-3 pb-4 shadow-overlay backdrop-blur">
         <div className="flex items-center justify-between gap-3">
           <span className="text-xs font-medium text-ink-muted">plumber</span>
