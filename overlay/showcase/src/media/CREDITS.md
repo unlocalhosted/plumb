@@ -10,3 +10,4 @@ Photos from Unsplash, under the Unsplash License (free to use, no permission nee
 | lake.jpg | photo-1559310589-2673bfe16970 (a turquoise lake below snow-capped peaks) | @vradenburg |
 | valley.jpg | photo-1516655855035-d5215bcb5604 (a river near mountains) | @markk92 |
 | peak.jpg | photo-1503614472-8c93d56e92ce (scenery of a mountain) | @john_artifexfilm |
+| ceramic.jpg | https://unsplash.com/photos/a-yellow-and-blue-cup-sitting-on-top-of-each-other-FfgHlb-QBA8 (photo-1704663198277-f3671defb217, two stacked handmade ceramic mugs, blue over yellow, on white) | @rashedpaykary |

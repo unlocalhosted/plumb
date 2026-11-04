@@ -3,13 +3,14 @@
 // plumber, scoped to it, finds one thing. `measure` (optional) says where the eye sees the harm, for the ticks drawn
 // over the example; it reads the page, it never decides what is wrong (plumber does).
 import { useEffect, useState } from 'react';
-import { ArrowRightIcon, BoltIcon, CopyIcon, DownloadIcon, ExternalLinkIcon, FolderIcon, HeadphonesIcon, HeartIcon, HistoryIcon, LayersIcon, MessageIcon, PathIcon, PauseIcon, PlusIcon, SearchIcon, SendIcon, SparklesIcon, TrashIcon, UploadIcon, UserIcon } from '@unlocalhosted/dither-icons';
+import { ArrowRightIcon, BoltIcon, CopyIcon, DownloadIcon, ExternalLinkIcon, FolderIcon, HeadphonesIcon, HeartIcon, HistoryIcon, LayersIcon, MailIcon, MessageIcon, PathIcon, PauseIcon, PlusIcon, SearchIcon, SendIcon, SparklesIcon, TrashIcon, UploadIcon, UserIcon } from '@unlocalhosted/dither-icons';
 import lowTide from '../media/low-tide.jpg';
 import paperCities from '../media/paper-cities.jpg';
 import afterglow from '../media/afterglow.jpg';
 import lake from '../media/lake.jpg';
 import valley from '../media/valley.jpg';
 import peak from '../media/peak.jpg';
+import ceramic from '../media/ceramic.jpg';
 
 // one canvas for reading font metrics, shared by the measures below
 let ctx;
@@ -265,7 +266,7 @@ function InvoiceWalkthrough() {
             </div>
             <div aria-hidden="true" className="absolute inset-0 bg-ink/35" />
             <button type="button" data-play aria-label="Play Ana’s walkthrough, 1 minute 24 seconds"
-              className="relative grid size-14 place-items-center rounded-full bg-surface text-ink shadow-[0_6px_20px_rgb(18_35_61/0.35)] transition-[scale] duration-150 hover:scale-105 active:scale-95 outline-offset-2 focus-visible:outline-2 focus-visible:outline-surface">
+              className="relative grid size-14 place-items-center rounded-full bg-surface text-ink shadow-[0_1px_3px_rgb(18_35_61/0.25),0_6px_20px_rgb(18_35_61/0.3)] transition-[scale] duration-150 hover:scale-105 active:scale-95 outline-offset-2 focus-visible:outline-2 focus-visible:outline-surface">
               {/* exported from the design file with its box centred, as custom glyphs usually are */}
               <svg viewBox="0.3 0 20 20" className="size-6" fill="currentColor" aria-hidden="true"><path d="M2 1.6v16.8a1 1 0 0 0 1.5.86l14.6-8.4a1 1 0 0 0 0-1.72L3.5.74A1 1 0 0 0 2 1.6" /></svg>
             </button>
@@ -1062,7 +1063,7 @@ function ShareMenu() {
         <span className="text-[13px] text-ink-muted">3 selected</span>
       </header>
       <PhotoGrid selected={[0, 2, 4]} />
-      <div data-menu role="menu" className="absolute top-24 right-6 flex w-52 flex-col rounded-control border border-divider bg-white p-1 shadow-lg">
+      <div data-menu role="menu" className="absolute top-24 right-6 flex w-52 flex-col rounded-control border border-gray-200 bg-white p-1 shadow-lg">
         {items.map(([Icon, label]) => (
           <button key={label} type="button" role="menuitem" className="flex h-9 items-center gap-2.5 rounded-chip px-2.5 text-left text-sm hover:bg-sunken"><Icon size={16} texture="dither" className="text-ink-muted" />{label}</button>
         ))}
@@ -1101,7 +1102,7 @@ function DeleteDialog() {
     <article className="relative w-full max-w-[26rem] overflow-hidden rounded-card bg-surface shadow-card">
       <PhotoGrid selected={[1, 3, 5]} />
       <div className="absolute inset-0 bg-ink/35" />
-      <div data-dialog role="alertdialog" aria-label="Delete 3 photos?" className="absolute inset-x-8 top-1/2 flex -translate-y-1/2 flex-col gap-3 rounded-sheet bg-surface p-5 shadow-dialog">
+      <div data-dialog role="alertdialog" aria-label="Delete 3 photos?" className="absolute inset-x-8 top-1/2 flex -translate-y-1/2 flex-col gap-3 rounded-sheet bg-surface p-5 shadow-2xl">
         <span className="grid size-9 place-items-center rounded-full bg-negative-soft text-negative"><TrashIcon size={18} texture="dither" /></span>
         <span className="flex flex-col gap-1">
           <span className="text-[15px] font-medium">Delete 3 photos?</span>
@@ -1118,7 +1119,7 @@ function DeleteDialog() {
 DeleteDialog.stage = true;
 DeleteDialog.names = ['One blur', 'Layered'];
 DeleteDialog.lesson = {
-  why: 'A single shadow can be soft or tight, not both. A dialog’s usual shadow is one 50px blur pushed 25px down, so right under the dialog’s edge there’s almost nothing: no contact, and the dialog reads as hovering in a haze rather than resting above the page.',
+  why: 'A single shadow can be soft or tight, not both. Tailwind’s largest shadow is one 50px blur pushed 25px down, so right under the dialog’s edge there’s almost nothing: no contact, and the dialog reads as hovering in a haze rather than resting above the page.',
   habit: 'Build shadows from layers: a small, dark one for contact and wider, fainter ones for distance, each doubling the last.',
 };
 // What the eye sees: the band just under the dialog's bottom edge, where contact should darken. The pill counts the
@@ -1131,11 +1132,291 @@ DeleteDialog.measure = (root) => {
     lines: [], off: layers < 2,
     rules: [{ key: 'edge', y: r.bottom, left: r.left, right: r.right }],
     bands: [{ key: 'contact', left: r.left + 12 * k, right: r.right - 12 * k, top: r.bottom, bottom: r.bottom + 10 * k, pattern: 'hatch' }],
-    pills: [{ key: 'layers', x: r.right + 20 * k, y: r.bottom, text: String(layers), ok: layers >= 2 }],
+    pills: [{ key: 'layers', x: r.right + 20 * k, y: r.bottom, text: String(layers * k), ok: layers >= 2 }],
     cut: { left: r.left, right: r.right, top: r.top, bottom: r.bottom + 14 * k, r: 14 * k },
     subject: { left: r.left - 20 * k, right: r.right + 40 * k, top: r.top - 20 * k, bottom: r.bottom + 40 * k },
   };
 };
 
-export const EXAMPLES = { 8: RecentlyPlayed, 1: ClientProfile, 2: InvoiceWalkthrough, 3: Whiteboard, 4: DriveActivity, 5: ChatThread, 6: FitnessToday, 15: IssueTable, 16: Timesheet, 18: NewsFront, 45: LongRead, 46: BoardingPass, 23: ShareMenu, 51: DeleteDialog, 55: Forecast, 56: Destination };
+// #21 shadows are tinted by what they fall on. A recipe app's page takes the dish's warm saffron as its ground, and
+// the ingredients card floats on it with Tailwind's shadow-lg: 10% black. Black over saffron isn't a darker saffron,
+// it's a grey smudge, so the card looks dusty at its edge. plumber tints the shadow with the ground's own hue.
+const INGREDIENTS = [
+  { what: 'Carnaroli rice', much: '320 g' },
+  { what: 'Saffron threads', much: '1 pinch' },
+  { what: 'Warm stock', much: '1.2 l' },
+  { what: 'Parmesan, grated', much: '60 g' },
+];
+function Recipe() {
+  // Slate's primitives on the recipe's own ground, with dithered icons
+  return (
+    <article data-ground className="flex w-full max-w-[24rem] flex-col gap-5 rounded-card bg-[#f4e2c3] p-6 text-[#3d2a12]">
+      <header className="flex flex-col gap-1">
+        <span className="text-xs font-medium text-[#7a5a2e]">Dinner · 35 min · serves 4</span>
+        <span className="text-[22px] leading-7 font-medium tracking-[-0.015em]">Saffron risotto</span>
+      </header>
+      <section data-card className="flex flex-col rounded-card bg-surface px-4 py-2 text-ink shadow-lg">
+        {INGREDIENTS.map((i) => (
+          <span key={i.what} className="flex items-baseline justify-between border-b-hairline border-line py-2.5 text-sm last:border-0">
+            <span>{i.what}</span>
+            <span className="text-ink-muted tabular-nums">{i.much}</span>
+          </span>
+        ))}
+      </section>
+      <button type="button" className="inline-flex h-10 items-center justify-center gap-2 rounded-control bg-[#3d2a12] text-sm font-medium text-[#f4e2c3] hover:bg-[#3d2a12]/90">
+        Start cooking <ArrowRightIcon size={16} texture="dither" />
+      </button>
+    </article>
+  );
+}
+Recipe.stage = true;
+Recipe.names = ['Grey shadow', 'Tinted'];
+Recipe.lesson = {
+  why: 'A shadow is the ground with less light on it, so on saffron it should be a deeper saffron. Black at 10% doesn’t darken the colour, it greys it out: the card’s edge sits in a dusty band that belongs to no colour on the page.',
+  habit: 'On a coloured ground, make the shadow a dark tint of that ground’s hue, not black.',
+};
+// What the eye sees: the band where the shadow falls under the card. The pill is how much of the ground's colour that
+// band loses, in percent: a darker saffron keeps all of it, black laid over it greys it out.
+Recipe.measure = (root) => {
+  const card = root?.querySelector('[data-card]'), ground = root?.querySelector('[data-ground]');
+  if (!card) return null;
+  const r = card.getBoundingClientRect(), g = ground.getBoundingClientRect(), k = r.width / card.offsetWidth || 1;
+  // the band right under the edge, where the shadow's layers overlap, painted the way the browser paints it
+  const ctx = Object.assign(document.createElement('canvas'), { width: 1, height: 1 }).getContext('2d', { willReadFrequently: true });
+  const paint = (colours) => { ctx.clearRect(0, 0, 1, 1); for (const c of colours) { ctx.fillStyle = c; ctx.fillRect(0, 0, 1, 1); } return [...ctx.getImageData(0, 0, 1, 1).data].slice(0, 3).map((v) => v / 255); };
+  const base = getComputedStyle(ground).backgroundColor;
+  const layers = getComputedStyle(card).boxShadow.split(/,(?![^(]*\))/).map((l) => l.match(/(rgba?|oklch)\([^)]*\)/)?.[0]).filter((c) => c && !/rgba\(0, 0, 0, 0\)/.test(c));
+  const C = (c) => chromaOf(toLab(c));
+  const loss = Math.max(0, Math.round((1 - C(paint([base, ...layers])) / C(paint([base]))) * 100));
+  return {
+    lines: [], off: loss > 8,
+    rules: [{ key: 'edge', y: r.bottom, left: r.left, right: r.right }],
+    bands: [{ key: 'shadow', left: r.left + 10 * k, right: r.right - 10 * k, top: r.bottom, bottom: r.bottom + 14 * k, pattern: 'dots' }],
+    pills: [{ key: 'loss', x: r.right - 30 * k, y: r.bottom + 10 * k, text: String(loss * k), ok: loss <= 8 }],
+    // the whole ground stays in colour: the shadow is judged against it
+    cut: { left: g.left, right: g.right, top: g.top, bottom: g.bottom, r: 10 * k },
+    subject: { left: r.left - 24 * k, right: r.right + 24 * k, top: r.bottom - 90 * k, bottom: r.bottom + 50 * k },
+  };
+};
+
+// #57 text colour by colour, not by opacity. An email inbox mutes each message's preview line with opacity-60, the
+// quickest way to make words quieter. But opacity fades the whole line, not just its grey: the @mention in it, the one
+// part written to stand out, is washed out with the rest. plumber names a colour for the words instead.
+const MAIL = [
+  { from: 'Anika Rao', at: '9:41', subject: 'Venue for the offsite', preview: ['Two options left, both near the station. Pick by Friday?'] },
+  { from: 'Design review', at: '9:12', subject: 'Notes from Tuesday', preview: [<span key="m" data-mention className="font-medium text-accent">@you</span>, ' can you take the empty states before we ship?'] },
+  { from: 'Jonas Weber', at: 'Mon', subject: 'Re: the April numbers', preview: ['Thanks, that matches what finance sent this morning.'] },
+];
+function Inbox() {
+  // Slate's primitives, with dithered icons
+  return (
+    <article className="w-full max-w-[26rem] rounded-card bg-surface shadow-card">
+      <header className="flex items-center gap-2 px-5 pt-4 pb-3">
+        <MailIcon size={16} texture="dither" className="text-ink-muted" />
+        <span className="text-[17px] leading-6 font-medium tracking-[-0.01em]">Inbox</span>
+      </header>
+      <ul className="flex flex-col gap-0.5 px-2 pb-2">
+        {MAIL.map((m) => (
+          <li key={m.subject} className="flex flex-col gap-0.5 rounded-control px-3 py-2.5 hover:bg-sunken">
+            <span className="flex items-baseline justify-between text-sm">
+              <span className="font-medium">{m.from}</span>
+              <span className="text-xs text-ink-muted tabular-nums">{m.at}</span>
+            </span>
+            <span className="truncate text-[13px]">{m.subject}</span>
+            <span data-preview className="line-clamp-1 text-[13px] opacity-60">{m.preview}</span>
+          </li>
+        ))}
+      </ul>
+    </article>
+  );
+}
+Inbox.stage = true;
+Inbox.names = ['Opacity', 'A colour'];
+Inbox.lesson = {
+  why: 'Opacity doesn’t make words a quieter colour, it fades everything inside them. The preview turns grey, and so does the @mention in it: the one word coloured to catch your eye is washed out to 60% with the rest.',
+  habit: 'Mute text with a colour from your theme (or color-mix with a fixed colour), never with opacity, so what’s inside keeps its own colour.',
+};
+// What the eye sees: the @mention in the muted line. The pill is how much of it is faded away, in percent.
+Inbox.measure = (root) => {
+  const mention = root?.querySelector('[data-mention]');
+  if (!mention) return null;
+  const r = mention.getBoundingClientRect(), line = mention.parentElement.getBoundingClientRect(), k = r.width / mention.offsetWidth || 1;
+  let seen = 1;
+  for (let el = mention; el && el !== root; el = el.parentElement) seen *= parseFloat(getComputedStyle(el).opacity);
+  const faded = Math.round((1 - seen) * 100);
+  return {
+    lines: [], off: faded > 0,
+    bands: [{ key: 'mention', left: r.left - 2 * k, right: r.right + 2 * k, top: r.top, bottom: r.bottom, pattern: 'dots' }],
+    pills: [{ key: 'faded', x: r.left + r.width / 2, y: r.bottom + 14 * k, text: String(faded * k), ok: faded === 0 }],
+    cut: { left: line.left - 4 * k, right: line.right + 4 * k, top: line.top - 2 * k, bottom: line.bottom + 2 * k, r: 4 * k },
+    subject: { left: r.left - 40 * k, right: r.left + 200 * k, top: r.top - 50 * k, bottom: r.bottom + 40 * k },
+  };
+};
+
+// #25 no pure black for large areas. A notes app announces a new feature with a dark card, bg-black under white words:
+// the most contrast a screen can make. On a large area that's harsh rather than rich: the white words glow and smear
+// into the black (worse on OLED, where black pixels switch off and smear as you scroll), and the card reads as a hole in
+// the page instead of a dark surface. plumber moves it to the theme's near-black.
+function FeatureCard() {
+  // Slate's primitives, with dithered icons
+  return (
+    <article data-dark className="flex w-full max-w-[28rem] flex-col gap-5 rounded-card bg-black p-6 text-white">
+      <span className="grid size-9 place-items-center rounded-full bg-white/10"><SparklesIcon size={18} texture="dither" /></span>
+      {/* the feature itself: a session running */}
+      <span className="flex flex-col gap-3 rounded-control px-5 py-6 ring-1 ring-white/10 ring-inset">
+        <span className="flex items-baseline justify-between text-[13px] text-white/70"><span>Draft: Q3 offsite plan</span><span className="tabular-nums">2 of 4</span></span>
+        <span className="text-[56px] leading-none font-medium tracking-[-0.03em] tabular-nums">18:42</span>
+        <span className="h-1 overflow-hidden rounded-full bg-white/10"><span className="block h-full w-1/4 rounded-full bg-white" /></span>
+      </span>
+      <span className="flex flex-col gap-1.5">
+        <span className="text-xs font-medium tracking-caps text-white/70 uppercase">New in Notes</span>
+        <span className="text-[22px] leading-7 font-medium tracking-[-0.015em]">Focus sessions</span>
+        <span className="text-sm leading-relaxed text-white/80 text-pretty">Pick a note, set a time, and everything else in the app goes quiet until the timer ends. Your sessions add up on the Today page.</span>
+      </span>
+      <span className="flex items-center gap-2 pt-1">
+        <button type="button" className="h-9 rounded-control bg-white px-3.5 text-sm font-medium text-black hover:bg-white/90">Try a session</button>
+        <button type="button" className="h-9 rounded-control px-3.5 text-sm font-medium text-white/80 hover:bg-white/10">Not now</button>
+      </span>
+    </article>
+  );
+}
+FeatureCard.stage = true;
+FeatureCard.names = ['Pure black', 'Near-black'];
+FeatureCard.lesson = {
+  why: 'Black under white is the most contrast a screen can make: 21 to 1. On a large area that much is harsh, not rich: white words glow and smear into the black, especially on OLED screens, and the card reads as a hole cut in the page rather than a dark surface on it.',
+  habit: 'Use a near-black, a few percent toward your brand’s hue, for any dark area bigger than a button.',
+};
+const lum = (c) => { const [r, g, b] = c.map(lin); return 0.2126 * r + 0.7152 * g + 0.0722 * b; };
+// What the eye sees: the card's dark ground behind its words. The pill is the contrast of white on it, out of 21.
+FeatureCard.measure = (root) => {
+  const card = root?.querySelector('[data-dark]');
+  if (!card) return null;
+  const r = card.getBoundingClientRect(), k = r.width / card.offsetWidth || 1;
+  const ctx = Object.assign(document.createElement('canvas'), { width: 1, height: 1 }).getContext('2d', { willReadFrequently: true });
+  ctx.fillStyle = getComputedStyle(card).backgroundColor; ctx.fillRect(0, 0, 1, 1);
+  const g = [...ctx.getImageData(0, 0, 1, 1).data].slice(0, 3).map((v) => v / 255), ratio = 1.05 / (lum(g) + 0.05);
+  return {
+    lines: [], off: ratio > 19,
+    bands: [{ key: 'ground', left: r.right - 120 * k, right: r.right - 16 * k, top: r.top + 16 * k, bottom: r.top + 52 * k, pattern: 'dots' }],
+    pills: [{ key: 'contrast', x: r.right - 68 * k, y: r.top + 34 * k, text: (ratio * k).toFixed(1), ok: ratio <= 19 }],
+    cut: { left: r.left, right: r.right, top: r.top, bottom: r.bottom, r: 10 * k },
+    subject: { left: r.left - 20 * k, right: r.right + 20 * k, top: r.top - 20 * k, bottom: r.bottom + 20 * k },
+  };
+};
+
+// #38 hairlines are one device pixel. A calendar's agenda divides its events with border-b, 1px, the thinnest line
+// Tailwind names. On a 2× screen that's two device pixels: every divider is drawn twice as heavy as a line can be, and
+// the rules compete with the words they separate. plumber halves them to one device pixel.
+const AGENDA = [
+  { at: '9:00', until: '9:30', what: 'Design crit', where: 'Studio 2', tone: 'bg-accent' },
+  { at: '11:00', until: '12:00', what: 'Interview: Priya Nair', where: 'Video call', tone: 'bg-positive' },
+  { at: '13:30', until: '14:00', what: 'Lunch with Jonas', where: 'Café Mona', tone: 'bg-caution' },
+  { at: '16:00', until: '17:00', what: 'Release review', where: 'Room 4B', tone: 'bg-accent' },
+];
+function Agenda() {
+  // Slate's primitives, with dithered icons
+  return (
+    <article className="w-full max-w-[24rem] rounded-card bg-surface shadow-card">
+      <header className="flex items-baseline justify-between px-5 pt-4 pb-2">
+        <span className="text-[17px] leading-6 font-medium tracking-[-0.01em]">Thursday</span>
+        <span className="text-[13px] text-ink-muted">6 November</span>
+      </header>
+      <ul className="px-5 pb-2">
+        {AGENDA.map((e, i) => (
+          <li key={e.what} data-row={i === 0 || undefined} className="flex gap-3 border-b border-line py-3 last:border-0">
+            <span className="w-11 shrink-0 text-[13px] text-ink-muted tabular-nums">{e.at}</span>
+            <span className={`w-0.5 shrink-0 rounded-full ${e.tone}`} />
+            <span className="flex min-w-0 flex-col gap-0.5">
+              <span className="text-sm font-medium">{e.what}</span>
+              <span className="text-[13px] text-ink-muted">{e.where} · until {e.until}</span>
+            </span>
+          </li>
+        ))}
+      </ul>
+    </article>
+  );
+}
+Agenda.stage = true;
+Agenda.names = ['1px', 'One device pixel'];
+Agenda.lesson = {
+  why: 'CSS pixels aren’t screen pixels. On a 2× screen, border-b’s 1px is drawn two device pixels thick: as heavy as the thinnest strokes of the words, so the dividers compete with what they divide.',
+  habit: 'Draw dividers 0.5px on 2× screens (one device pixel), the thinnest line the screen can show.',
+};
+// What the eye sees: the first divider, magnified. The pill is its thickness in device pixels.
+Agenda.measure = (root) => {
+  const row = root?.querySelector('[data-row]');
+  if (!row) return null;
+  const r = row.getBoundingClientRect(), k = r.width / row.offsetWidth || 1, w = parseFloat(getComputedStyle(row).borderBottomWidth) || 0;
+  const device = Math.round(w * (devicePixelRatio || 1) * 10) / 10;
+  return {
+    lines: [], off: device > 1,
+    rules: [{ key: 'divider', y: r.bottom - (w * k) / 2, left: r.left, right: r.right }],
+    bands: [{ key: 'line', left: r.left + 120 * k, right: r.right, top: r.bottom - 4 * k, bottom: r.bottom + 3 * k, pattern: 'dots' }],
+    pills: [{ key: 'device', x: r.left + 90 * k, y: r.bottom + 12 * k, text: String(device * k), ok: device <= 1 }],
+    cut: { left: r.left, right: r.right, top: r.bottom - 14 * k, bottom: r.bottom + 14 * k, r: 4 * k },
+    subject: { left: r.left - 10 * k, right: r.left + 170 * k, top: r.bottom - 40 * k, bottom: r.bottom + 36 * k },
+  };
+};
+
+// #39 images get a faint inner outline. A moodboard app's board of glaze tests: each pin is a white card with its
+// photo inside. Most photos have edges of their own, but a product shot on a white sweep has none: its edge is the
+// card's colour, so the picture has no boundary and the mugs float loose in the card. plumber adds a 10% black outline
+// inside the image's edge, which a dark photo hides and a light one needs.
+const PINS = [
+  { src: ceramic, title: 'Cobalt over honey', note: 'Two dips, cone 6', light: true },
+  { src: lake, title: 'Celadon', note: 'The colour to aim for' },
+  { src: peak, title: 'Iron speckle', note: 'Reduction, test 3' },
+];
+function GlazeBoard() {
+  // Slate's primitives, with dithered icons and real photos
+  return (
+    <article className="w-full max-w-[34rem] rounded-card bg-sunken p-4">
+      <header className="flex items-center gap-2 px-1 pb-3">
+        <LayersIcon size={16} texture="dither" className="text-ink-muted" />
+        <span className="text-[15px] font-medium">Glaze tests</span>
+      </header>
+      <ul className="grid grid-cols-3 gap-3">
+        {PINS.map((p) => (
+          <li key={p.title} className="flex flex-col gap-2 rounded-control bg-surface p-2 shadow-card">
+            <img src={p.src} alt={p.title} width="160" height="160" data-light={p.light || undefined} className="block aspect-square w-full rounded-chip object-cover" />
+            <span className="flex flex-col px-0.5 pb-0.5">
+              <span className="truncate text-[13px] font-medium">{p.title}</span>
+              <span className="truncate text-xs text-ink-muted">{p.note}</span>
+            </span>
+          </li>
+        ))}
+      </ul>
+    </article>
+  );
+}
+GlazeBoard.stage = true;
+GlazeBoard.names = ['No outline', 'Inner outline'];
+GlazeBoard.lesson = {
+  why: 'A photo’s edge is drawn by its own pixels. A product shot on a white sweep has none: its border is the card’s white, so the picture has no shape and its subject floats loose in the card.',
+  habit: 'Give every image a 1px inner outline at about 10% black (white on dark grounds). Dark photos hide it; light ones get their edge back.',
+};
+// What the eye sees: the light photo's edge against its card. The pill is how far apart the two are in lightness, out
+// of 100: near 0, there's no edge to see.
+GlazeBoard.measure = (root) => {
+  const img = root?.querySelector('[data-light]');
+  if (!img) return null;
+  const r = img.getBoundingClientRect(), k = r.width / img.offsetWidth || 1, s = getComputedStyle(img);
+  const lined = s.outlineStyle !== 'none' && parseFloat(s.outlineWidth) > 0;
+  // the edge as painted: the photo's own outer pixels, or the outline over them
+  const c = Object.assign(document.createElement('canvas'), { width: 16, height: 16 }).getContext('2d', { willReadFrequently: true });
+  c.drawImage(img, 0, 0, 16, 16);
+  if (lined) { c.strokeStyle = s.outlineColor; c.lineWidth = 2; c.strokeRect(0, 0, 16, 16); }
+  const d = c.getImageData(0, 0, 16, 1).data, edge = [0, 1, 2].map((i) => d[i + 4 * 8] / 255);
+  const L = (x) => toLab(x)[0], gap = Math.round(Math.abs(L(edge) - L([1, 1, 1])) * 100);
+  return {
+    lines: [], off: gap < 4,
+    rules: [{ key: 'top', y: r.top, left: r.left, right: r.right }],
+    bands: [{ key: 'edge', left: r.left, right: r.right, top: r.top - 4 * k, bottom: r.top + 4 * k, pattern: 'dots' }],
+    pills: [{ key: 'gap', x: r.left + r.width / 2, y: r.top - 16 * k, text: String(Math.max(gap, 1) * k), ok: gap >= 4 }],
+    cut: { left: r.left - 8 * k, right: r.right + 8 * k, top: r.top - 8 * k, bottom: r.bottom + 8 * k, r: 6 * k },
+    subject: { left: r.left - 30 * k, right: r.right + 30 * k, top: r.top - 50 * k, bottom: r.bottom + 30 * k },
+  };
+};
+
+export const EXAMPLES = { 8: RecentlyPlayed, 1: ClientProfile, 2: InvoiceWalkthrough, 3: Whiteboard, 4: DriveActivity, 5: ChatThread, 6: FitnessToday, 15: IssueTable, 16: Timesheet, 18: NewsFront, 45: LongRead, 46: BoardingPass, 21: Recipe, 25: FeatureCard, 38: Agenda, 39: GlazeBoard, 57: Inbox, 23: ShareMenu, 51: DeleteDialog, 55: Forecast, 56: Destination };
 

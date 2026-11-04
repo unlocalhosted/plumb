@@ -38,6 +38,15 @@ check fires is forging evidence: the showcase then proves a rule that misses the
 
 Examples: overshoot treated "same size" as grey, so the real case went unmarked; the fix was to make it a sure finding.
 Content alignment's fix had no `sets`, so it could not be previewed; the fix was in the rule.
+When the same thing fails on several screens, it's the system, not the examples: four colour screens (#21 #23 #25 #51)
+lost their finding because a craft mark on a stock class (`shadow-lg`, `bg-black`) was folded under the theme's drift
+mark and the craft read dropped it. Adding theme tokens to dodge that was bending the example; the fix was the read
+(verdict.js `craftUnder`). Examples use the classes people really write.
+A `measure` that tells the story must be measured, not assumed: #57's first lesson ("opacity drops the contrast on a
+tinted row") measured the other way round (4.1 broken, 3.7 fixed), so the lesson changed to what's true (the faded
+@mention). Paint colours on a canvas to read what the browser shows; never parse `oklch()` as rgb.
+Headless Chromium computes a 0.5px border as 1px even at deviceScaleFactor 2, so a device-pixel rule (#38) can't be
+proved in `screen.mjs`: read it with `DPR=2`, and prove its fix in a real browser (the app's pane).
 
 ## 3. The example is real software, built well everywhere else
 

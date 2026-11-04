@@ -60,6 +60,15 @@ export function verdicts(items, { rules, facts, theme }) {
       compose(k, under.get(k), item.el, byId, facts, theme);
       verify(k, item.el, byId, rules, facts, theme, marks);
     }
+    // a craft mark folded under the theme's (drift outranks it on a shared facet) is still craft's to report: the
+    // element shows one verdict, but `plumber craft` names the insight with its fix tried like any other
+    for (const k of kept) {
+      if (k.family === 'craft') continue;
+      const craft = under.get(k).filter((m) => m.family === 'craft');
+      if (!craft.length) continue;
+      if (facts && theme) for (const m of craft) verify(m, item.el, byId, rules, facts, theme, marks);
+      Object.defineProperty(k, 'craftUnder', { value: craft, enumerable: false });
+    }
     const keep = new Set(kept);
     return { ...item, marks: [...rest, ...marks.filter((m) => keep.has(m))] };
   });
@@ -171,6 +180,7 @@ function verify(k, el, byId, rules, facts, theme, before) {
     if (!u || !theme.scale(u.family).length) continue; // no named steps: the numeric scale is the system
     const v = pxOf(u, theme);
     if (!v || v.named) continue;
+    if (Math.abs(v.px) < 1) continue; // under a pixel (a hairline's 0.5px) is a device pixel, not a step of the scale
     // rounded the way the rule that wrote this class asks (a composed class keeps its own rule's direction)
     const writer = byId.get(edit.by?.[cls]) ?? rule;
     const step = stepFor(theme, u.family, v.px, writer?.round?.[u.prefix] ?? writer?.round?.['*'] ?? 'nearest');

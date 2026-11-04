@@ -177,7 +177,8 @@ export async function craftRun(overlay, { timeout = 60000, quiet = 600, op, grey
     }
     const found = new Map();
     for (const item of blueprint.items) {
-      const marks = item.marks.filter((m) => m.family === 'craft');
+      // its own craft marks, and those the theme's mark outranked on the same facet (verdict.js craftUnder)
+      const marks = [...item.marks.filter((m) => m.family === 'craft'), ...item.marks.flatMap((m) => m.craftUnder ?? [])];
       if (!marks.length) continue;
       const at = await locate(item.el, { explain: true, batch: true }).catch(() => null);
       for (const m of marks) {

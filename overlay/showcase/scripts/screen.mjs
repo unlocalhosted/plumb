@@ -13,7 +13,9 @@ const run = promisify(execFile);
 const [n, flag, dir] = process.argv.slice(2);
 const base = process.env.SHOWCASE ?? 'http://127.0.0.1:4312';
 const browser = await chromium.launch();
-const ctx = await browser.newContext({ viewport: { width: 1280, height: 800 }, ...(flag === '--record' ? { recordVideo: { dir, size: { width: 1280, height: 800 } } } : {}) });
+// 1× by default: headless Chromium computes a 0.5px border as 1px even at 2×, so at 2× every hairline the screens
+// already draw would read as a mistake. DPR=2 to see what a 2× rule finds; a hairline's fix is proved in a real browser.
+const ctx = await browser.newContext({ viewport: { width: 1280, height: 800 }, deviceScaleFactor: Number(process.env.DPR ?? 1), ...(flag === '--record' ? { recordVideo: { dir, size: { width: 1280, height: 800 } } } : {}) });
 const page = await ctx.newPage();
 const errors = [];
 page.on('pageerror', (e) => errors.push(e.message));

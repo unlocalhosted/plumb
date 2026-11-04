@@ -270,7 +270,9 @@ export const hairline = {
     const s = facts.style(el), r = facts.rect(el);
     // a divider: a 1px rule (an <hr>, or a box one pixel tall or wide), or a box drawn by one 1px side only
     const sides = ['Top', 'Right', 'Bottom', 'Left'].filter((k) => s[`border${k}Style`] !== 'none' && Math.abs(px(s[`border${k}Width`]) - 1) < 0.01);
-    const rule = (r.height <= 1.01 && r.width > 8) || (r.width <= 1.01 && r.height > 8);
+    // exactly one CSS pixel: a rule already drawn at half of one is the fix, not the mistake
+    const one = (v) => Math.abs(v - 1) < 0.05;
+    const rule = (one(r.height) && r.width > 8) || (one(r.width) && r.height > 8);
     const oneSide = sides.length === 1;
     if (!rule && !oneSide) return [];
     if (rule && !(rgb(s.backgroundColor)?.[3] > 0) && !sides.length) return [];
@@ -280,7 +282,11 @@ export const hairline = {
       ...say(this.id, { dpr: devicePixelRatio }),
       key: this.id, text, props: oneSide ? [`border-${sides[0].toLowerCase()}-width`] : ['height'], value: '1px', n: 1,
       evidence: { dpr: devicePixelRatio, sides, rule }, confidence: 0.82,
-      suggest: { kind: 'advice', text: oneSide ? `Use a 0.5px border on 2× screens.` : 'Make it 0.5px tall on 2× screens.' },
+      // one device pixel: the side's own width class (border-b) becomes half a CSS pixel; a 1px-tall rule, half as tall
+      suggest: ((side) => oneSide
+        ? { kind: 'class', from: cls && new RegExp(`^border-${side[0].toLowerCase()}(?:-px|-1)?$`).test(cls) ? cls : '', to: `border-${side[0].toLowerCase()}-[0.5px]`, why: 'one device pixel', sets: { [`border${side}Width`]: '0.5px' } }
+        : one(r.height) ? { kind: 'class', from: cls && /^h-(px|\[1px\])$/.test(cls) ? cls : '', to: 'h-[0.5px]', why: 'one device pixel', sets: { height: '0.5px' }, moves: true }
+          : { kind: 'class', from: cls && /^w-(px|\[1px\])$/.test(cls) ? cls : '', to: 'w-[0.5px]', why: 'one device pixel', sets: { width: '0.5px' }, moves: true })(sides[0]),
     }];
   },
 };
@@ -829,11 +835,14 @@ export const contrast = {
     const ground = facts.ground(el), c = rgb(s.color);
     if (!c) return [];
     // the text as it shows: its own alpha and every fade on the way up
-    let fade = 1;
+    let fade = 1, muted = 1;
     for (let n = el; n && n !== document.documentElement; n = n.parentElement) {
       // a fade still running (an entrance, a reveal on scroll) is a moment, not the text's colour: judge it at rest
       if (animated(facts).has(n)) return [];
-      fade *= parseFloat(facts.style(n).opacity) || 0;
+      const o = parseFloat(facts.style(n).opacity) || 0;
+      fade *= o;
+      // an ancestor's line of words muted by opacity (#57 marks it there): its fade is that finding's, not this one's
+      if (n !== el && o > 0 && o < 1 && facts.text(n)) muted *= o;
     }
     if (fade < 0.05) return []; // not shown at all (waiting to be revealed): there is nothing to read yet
     const text = over([c[0], c[1], c[2], alpha(c) * fade], ground);
@@ -843,6 +852,7 @@ export const contrast = {
     const need = large ? T.large : fs >= T.boldAt && w >= T.boldWeight ? T.bold : T.small;
     const lc = Math.abs(apca(text, ground));
     if (lc >= need) return [];
+    if (muted < 1 && Math.abs(apca(over([c[0], c[1], c[2], alpha(c) * fade / muted], ground), ground)) >= need) return [];
     return [{
       ...say(this.id, { lc: Math.round(lc), size: fs, need, large }),
       key: this.id, text: colourClass(el, 'text', theme) ?? 'color', props: ['color'], value: `Lc ${Math.round(lc)}`, n: Math.round(lc),
@@ -1280,7 +1290,8 @@ export const tintedShadow = {
       evidence: { ground: hex(ground), hue: h }, confidence: grey ? GREY : 0.82,
       // the same shadow, its grey swapped for a dark tint of the ground's own hue
       suggest: ((v) => ({ kind: 'class', from: utility(el, 'shadow') ?? '', to: arbitrary('shadow', v), why: 'tinted with what it falls on', sets: { boxShadow: v } }))(
-        s.boxShadow.replace(new RegExp(COLOUR.source, 'g'), (c) => { const x = rgb(c); return x && x[3] > 0 && chroma(x) < T.shadow ? `oklch(0.3 0.05 ${h} / ${x[3].toFixed(2)})` : c; })),
+        // (Tailwind's empty ring and inset layers, transparent and zero, are left out of the class)
+        s.boxShadow.split(/,(?![^(]*\))/).map((l) => l.trim()).filter((l) => !/^rgba\(0, 0, 0, 0\) 0px 0px 0px 0px$/.test(l)).join(', ').replace(new RegExp(COLOUR.source, 'g'), (c) => { const x = rgb(c); return x && x[3] > 0 && chroma(x) < T.shadow ? `oklch(0.3 0.05 ${h} / ${x[3].toFixed(2)})` : c; })),
     }];
   },
 };
@@ -1336,11 +1347,15 @@ export const pureBlackWhite = {
     const big = (k) => area >= T.area * k || area >= innerWidth * innerHeight * T.share * k;
     if (!big(0.5)) return [];
     const grey = !big(1); // half the size: is it large enough to glare?
-    // a colour the theme names (bg-surface that happens to be white) is the project's decision, not an escape
+    // a colour the project's theme names (bg-surface that happens to be white) is its decision, not an escape; the
+    // framework's own black and white come with every theme, so they decide nothing
     const own = colourClass(el, 'bg', theme);
-    if (own && theme.colors().some((t) => own === `bg-${t.short}`)) return [];
+    if (own && theme.colors().some((t) => t.own !== false && own === `bg-${t.short}`)) return [];
     const tinted = theme.colors().find((t) => /surface|paper|ground|background/.test(t.short) && !(t.rgb[0] === 255 && t.rgb[1] === 255 && t.rgb[2] === 255) && Math.min(...t.rgb) > 220);
-    const near = black ? theme.nearestColor([20, 20, 22], T.within) : tinted;
+    // the project's own near-black first (a dark ink or night colour), else whatever the theme has near it
+    const ownDark = theme.colors().filter((t) => t.own !== false && Math.max(...t.rgb) <= 64)
+      .map((t) => ({ ...t, distance: Math.hypot(t.rgb[0] - 20, t.rgb[1] - 20, t.rgb[2] - 22) })).filter((t) => t.distance <= T.within * 1.25).sort((a, b) => a.distance - b.distance)[0];
+    const near = black ? ownDark ?? theme.nearestColor([20, 20, 22], T.within) : tinted;
     // white outside a tinted theme is taste, unless the spec makes the rule a note already
     const tier = black || tinted ? T.tier : Math.max(T.tier, TIER.advisory);
     return [{
