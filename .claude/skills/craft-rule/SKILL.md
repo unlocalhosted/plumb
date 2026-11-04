@@ -9,6 +9,15 @@ A craft rule exists to catch a mistake people really make. Its showcase example 
 screen, `/rule/N`) exists to show that mistake, plumber finding it, and plumber's own fix. Both fail the same way: by
 being built to fit each other instead of the real world. These rules come from that failing, more than once.
 
+## 0. Only insights get a screen
+
+A principle earns a showcase screen only if it is the kind of craft knowledge people share online as an insight:
+obvious once shown, missed by everyone who hasn't been shown (the safe triangle for submenus, tabular numbers,
+concentric corners, overshoot). Hygiene that any reviewer would catch, or a mistake nobody really ships, gets no
+screen; plumber keeps checking it. Owner, 2026-11-04, on #9 and #10: "they aren't even real mistakes"; "it's trivial,
+easy to spot, people won't do it"; "the rules should be something obvious but which people miss". Never invent a
+mistake to give a rule a screen.
+
 ## 1. Start from the mistake people make, not from the rule
 
 Before writing a check or an example, write one sentence: *how does this go wrong in a shipped product, and why did
@@ -191,3 +200,5 @@ Each line is something the owner had to say once; the sections above exist so th
   was set in one invoicing app, with hand-drawn icons. → §3½ each principle in its natural product; dither icons.
 - 2026-11-04 · "use real media just search on internet": #8's covers were drawn compositions. → §3½ media is real,
   free-licensed and credited.
+- 2026-11-04 · "most of the rules you are showing is just changing padding … not the insightful stuff, the tacit
+  knowledge"; #9 and #10 "aren't real mistakes". → §0 only insights get a screen; the rest are off the showcase.
