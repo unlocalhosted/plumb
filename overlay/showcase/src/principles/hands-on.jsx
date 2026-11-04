@@ -11,7 +11,7 @@
 // /hands-on/:n shows one alone with its switch (a viewer for building them; the stage wires them in).
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { CheckIcon, FileIcon, FolderIcon, PlusIcon, SlidersIcon } from '@unlocalhosted/dither-icons';
+import { CheckIcon, FileIcon, FolderIcon, HistoryIcon, PlusIcon, RetryIcon, SlidersIcon } from '@unlocalhosted/dither-icons';
 
 const TOKENS = '/__plumb/src/tokens.css';
 function MarksLayer({ children }) {
@@ -170,7 +170,7 @@ function Ruler({ top, width, span, played, kind, events, label = 'live' }) {
 }
 // hollow, so the word you pressed still reads through it
 const Contact = ({ x, y }) => <span style={{ position: 'absolute', left: x - 5, top: y - 5, width: 10, height: 10, borderRadius: '50%', boxShadow: '0 0 0 1.5px var(--pl-sky), 0 0 0 3px var(--pl-halo)' }} />;
-const Ghost = ({ x, y, w, h, r = 10 }) => <span style={{ position: 'absolute', left: x, top: y, width: w, height: h, borderRadius: r, border: '1px dashed var(--pl-off)', opacity: 0.6 }} />;
+const Ghost = ({ x, y, w, h, r = 10, off = true }) => <span style={{ position: 'absolute', left: x, top: y, width: w, height: h, borderRadius: r, border: `1px dashed ${hue(off)}`, opacity: 0.6 }} />;
 
 // a clock that ticks while `on`, for marks that grow while you hold
 function useTicking(on) {
@@ -328,7 +328,118 @@ MenuPress.lesson = {
   habit: 'Open menus on pointerdown, and pick the item under the pointer on pointerup. Radix’s DropdownMenu and Base UI’s Menu do both; a hand-rolled onClick menu does neither.',
 };
 
-export const HANDS_ON = { 42: BoldHover, 61: MenuPress };
+// ── #77 Skeletons match the final layout exactly ───────────────────────────
+// Quarry's activity feed and its refresh. Each refresh is a real request to the showcase's /api/activity, its reply
+// held 0.9s as plumber holds a page's replies (said on the marks). Broken: a generic skeleton, a thin bar per row, so
+// the rows land taller and everything under the feed jumps, the link you were reaching for included. Fixed: the
+// skeleton is the rows' own shape (a mark, two lines), so nothing moves when they land.
+// plumber's rule (craft-headless skeletonMatch) compares the skeleton's box while the page waited with the box of what
+// landed. The marks are that: the box it promised (a dashed ghost), what it grew by (hatch, a tag), and what below
+// moved, with your pointer if it was on it. No ruler: how long it took isn't the lesson.
+const HOLD = 900;
+const initials = (what) => what.split(' ')[0].slice(0, 2).toUpperCase();
+function SkeletonLand({ side = 'broken', onStatus }) {
+  const root = useRef(null), list = useRef(null), more = useRef(null), hand = useRef(null);
+  const [items, setItems] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [rec, setRec] = useState(null); // { before: { box, n, link }, after: { box, n, link }, hand }
+  const pending = useRef(null);
+  const [held, setHeld] = useState(null); // the skeleton's box, as read while the reply is held
+  const fixed = side === 'fixed';
+  const at = () => local(root.current);
+  const inside = (p, r) => p && r && p.x >= r.x && p.x <= r.x + r.w && p.y >= r.y && p.y <= r.y + r.h;
+  useEffect(() => { fetch('/api/activity').then((r) => r.json()).then(setItems); }, []);
+  // the skeleton is read while it shows, as plumber reads it while the reply is held
+  useLayoutEffect(() => {
+    if (!loading) return;
+    pending.current = { before: { box: at()(list.current), n: list.current.children.length, link: at()(more.current) } };
+    setHeld(pending.current.before.box);
+    let gone = false;
+    Promise.all([fetch('/api/activity').then((r) => r.json()), new Promise((r) => setTimeout(r, HOLD))]).then(([body]) => {
+      if (gone) return;
+      // the pointer, the moment before the rows land: was it on the link?
+      pending.current.hand = inside(hand.current, at()(more.current)) ? hand.current : null;
+      setItems(body); setLoading(false);
+    });
+    return () => { gone = true; };
+  }, [loading]);
+  // and what landed, the frame it lands
+  useLayoutEffect(() => {
+    if (loading || !pending.current) return;
+    const p = pending.current; pending.current = null;
+    setRec({ ...p, after: { box: at()(list.current), n: list.current.children.length, link: at()(more.current) } });
+  }, [loading, items]);
+  const track = (e) => { const o = root.current.getBoundingClientRect(), k = o.width / root.current.offsetWidth || 1; hand.current = { x: (e.clientX - o.left) / k, y: (e.clientY - o.top) / k }; };
+
+  const grew = rec ? rec.after.box.h - rec.before.box.h : 0, off = Math.abs(grew) > 4; // the rule's line (craft-spec: 4px)
+  const moved = rec ? rec.after.link.y - rec.before.link.y : 0;
+  useEffect(() => {
+    onStatus?.(loading ? 'Loading. Now reach for View all activity, under the feed.'
+      : !rec ? 'Press Refresh, then reach for View all activity while it loads.'
+      : off ? `It landed ${Math.round(grew)}px taller than its skeleton, so View all activity dropped ${Math.round(moved)}px${rec.hand ? ', out from under your pointer' : ''}.`
+      : `It landed in the skeleton’s own shape: the same ${rec.after.n} rows, the same height. Nothing under it moved${rec.hand ? ', and your pointer is still on the link' : ''}.`);
+  }, [loading, rec, onStatus]);
+
+  const row = 'flex items-center gap-3 px-5';
+  return (
+    <div ref={root} onPointerMove={track} className="relative w-[26rem] max-w-full">
+      <article className="rounded-card bg-surface shadow-card">
+        <header className="flex items-center gap-2 px-5 pt-4 pb-2">
+          <HistoryIcon size={16} texture="dither" className="text-ink-muted" />
+          <span className="text-[17px] leading-6 font-medium tracking-[-0.01em]">Activity</span>
+          <button type="button" onClick={() => !loading && (setRec(null), setLoading(true))}
+            className="ml-auto inline-flex h-7 items-center gap-1.5 rounded-control pr-2.5 pl-2 text-[13px] font-medium text-ink-muted ring-1 ring-line ring-inset hover:bg-sunken hover:text-ink">
+            <RetryIcon size={14} texture="solid" />Refresh
+          </button>
+        </header>
+        <ul ref={list} aria-busy={loading || !items} className="py-1">
+          {loading || !items
+            ? [0, 1, 2].map((i) => fixed ? (
+              // the rows' own shape: the mark, the line, the time under it
+              <li key={i} className={row + ' h-14'}><span className="size-8 shrink-0 animate-pulse rounded-full bg-sunken" /><span className="flex flex-1 flex-col gap-1.5"><span className="h-3 w-3/4 animate-pulse rounded-chip bg-sunken" /><span className="h-2.5 w-16 animate-pulse rounded-chip bg-sunken" /></span></li>
+            ) : (
+              // a generic skeleton: one thin bar a row
+              <li key={i} className={row + ' h-8'}><span className="h-3 w-full animate-pulse rounded-chip bg-sunken" /></li>
+            ))
+            : items.map((a) => (
+              <li key={a.id} className={row + ' h-14'}>
+                <span className="grid size-8 shrink-0 place-items-center rounded-full bg-sunken text-[11px] font-medium text-ink-muted ring-1 ring-line ring-inset">{initials(a.what)}</span>
+                <span className="min-w-0"><span className="block truncate text-[13px]">{a.what}</span><span className="block text-[12px] text-ink-subtle">{a.when}</span></span>
+              </li>
+            ))}
+        </ul>
+        <footer className="border-t-hairline border-line px-5 py-3">
+          <a ref={more} href="#activity" onClick={(e) => e.preventDefault()} className="inline-flex items-center gap-1 text-[13px] font-medium text-accent hover:underline">View all activity</a>
+        </footer>
+      </article>
+      <MarksLayer>
+        {loading && held ? (
+          // plumber measuring the skeleton while the reply is held
+          <>
+            <span style={{ position: 'absolute', left: held.x, top: held.y, width: held.w, height: held.h, border: '1px dashed var(--pl-sky)', borderRadius: 4, opacity: 0.8 }} />
+            <span style={{ position: 'absolute', left: held.x + held.w + 10, top: held.y + 10, transform: 'translateY(-50%)', display: 'flex', alignItems: 'center', height: 20, padding: '0 var(--pl-space-3)', borderRadius: 'var(--pl-radius-tag)', font: '500 11px/1 var(--pl-mono)', color: 'var(--pl-on-accent)', background: 'var(--pl-sky)', boxShadow: '0 0 0 1px var(--pl-halo)', whiteSpace: 'nowrap' }}>reply held 0.9s</span>
+          </>
+        ) : null}
+        {rec ? (
+          <>
+            <Ghost {...rec.before.box} r={4} off={off} />
+            {off ? <Hatch x={rec.before.box.x} y={rec.before.box.y + rec.before.box.h} w={rec.before.box.w} h={grew} /> : null}
+            <Tag x={rec.after.box.x + rec.after.box.w + 10} y={rec.before.box.y + rec.before.box.h + grew / 2} off={off}>{off ? `+${Math.round(grew)}px · ${rec.before.n} → ${rec.after.n} rows` : `0px · ${rec.after.n} rows ✓`}</Tag>
+            {off && moved ? <Outline {...rec.before.link} off r={4} /> : null}
+            {rec.hand ? <Contact {...rec.hand} /> : null}
+          </>
+        ) : null}
+      </MarksLayer>
+    </div>
+  );
+}
+SkeletonLand.names = ['A generic skeleton', 'The rows’ own shape'];
+SkeletonLand.lesson = {
+  why: 'A skeleton promises the shape of what’s coming. A generic one, a thin bar a row, promises less than lands: the rows arrive taller and everything under them jumps, often just as you reach for it.',
+  habit: 'Draw the skeleton from the loaded row itself: the same height, the same number of rows, the same mark and lines. Then landing changes what’s in the boxes, not where they are.',
+};
+
+export const HANDS_ON = { 42: BoldHover, 61: MenuPress, 77: SkeletonLand };
 
 // ── /hands-on/:n, a viewer for building them ───────────────────────────────
 export function HandsOnPage({ n }) {
