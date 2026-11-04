@@ -3,7 +3,7 @@
 // plumber, scoped to it, finds one thing. `measure` (optional) says where the eye sees the harm, for the ticks drawn
 // over the example; it reads the page, it never decides what is wrong (plumber does).
 import { useEffect, useState } from 'react';
-import { FolderIcon, HistoryIcon, LayersIcon, MessageIcon, PlusIcon, SearchIcon, SendIcon, SparklesIcon, UploadIcon, UserIcon } from '@unlocalhosted/dither-icons';
+import { BoltIcon, FolderIcon, HeartIcon, HistoryIcon, LayersIcon, MessageIcon, PathIcon, PlusIcon, SearchIcon, SendIcon, SparklesIcon, UploadIcon, UserIcon } from '@unlocalhosted/dither-icons';
 import receipt from '../receipt.png';
 
 // where a line of text sits, from its font: the baseline and the middle of its capitals, in page pixels
@@ -163,58 +163,6 @@ Timesheet.measure = (root) => {
   return { lines, bands, pills, off, subject: { left: s.left, right: s.right, top: top - 12, bottom } };
 };
 
-// #6 a price and its unit, two sizes side by side, share a baseline
-const PLANS = [
-  { name: 'Starter', price: '0', who: 'Just you, starting out', perks: ['5 clients', 'Invoices and quotes', 'Card payments'] },
-  { name: 'Studio', price: '24', who: 'A small team, billing weekly', perks: ['Unlimited clients', 'Automatic reminders', 'Team seats'], current: true },
-  { name: 'Agency', price: '64', who: 'Many clients and projects', perks: ['Everything in Studio', 'Client portal', 'Priority support'] },
-];
-const Check = () => <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="shrink-0 text-positive"><path d="m3.5 8.5 3 3 6-7" /></svg>;
-function Price({ broken }) {
-  return (
-    <div className="@container flex w-full flex-col gap-6">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div className="flex flex-col gap-1">
-          <h3 className="text-base font-semibold">Plans</h3>
-          <span className="text-sm text-ink-muted">Billed monthly, per seat. Change any time.</span>
-        </div>
-        <div role="group" aria-label="Billing period" className="flex shrink-0 rounded-full bg-sunken p-0.5 text-xs whitespace-nowrap">
-          <span className="rounded-full bg-surface px-3 py-1 font-medium shadow-raised">Monthly</span>
-          <span className="px-3 py-1 text-ink-muted">Yearly −20%</span>
-        </div>
-      </div>
-      {/* three columns only when the window can hold them; below that the plans stack, one per row */}
-      <div className="grid gap-6 divide-y-hairline divide-line @xl:grid-cols-3 @xl:gap-0 @xl:divide-x-hairline @xl:divide-y-0">
-        {PLANS.map((p) => (
-          <div key={p.name} className="flex flex-col gap-4 pb-6 last:pb-0 @xl:px-5 @xl:pb-0 @xl:first:pl-0 @xl:last:pr-0">
-            <div className="flex flex-col gap-1">
-              <span className="flex items-center gap-2 text-sm font-medium">{p.name}{p.current ? <span className="rounded-full bg-accent-soft px-1.5 text-xs font-medium text-accent">Current</span> : null}</span>
-              <span className="text-xs text-ink-muted">{p.who}</span>
-            </div>
-            <div data-price className={'flex gap-1 ' + (broken ? 'items-center' : '')}>
-              <span className="text-3xl font-semibold tracking-tight tabular-nums">${p.price}</span>
-              <span className="text-sm whitespace-nowrap text-ink-muted">/mo</span>
-            </div>
-            <ul className="flex flex-col gap-2 text-sm text-ink-muted">
-              {p.perks.map((k) => <li key={k} className="flex items-center gap-2"><Check />{k}</li>)}
-            </ul>
-            <button type="button" className={'mt-auto rounded-control px-3 py-1.5 text-sm font-medium ' + (p.current ? 'border border-line text-ink-muted active:bg-sunken' : p.name === 'Agency' ? 'bg-ink text-accent-ink active:bg-ink-muted' : 'border border-line active:bg-sunken')}>
-              {p.current ? 'Your plan' : p.name === 'Agency' ? 'Upgrade' : 'Switch'}
-            </button>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-Price.wide = true;
-Price.measure = (root) => {
-  const row = root.querySelector('[data-price]'), [a, b] = [...row.children].map(lineOf);
-  const d = b.baseline - a.baseline;
-  return { around: row, ticks: [{ y: a.baseline, left: a.left, right: a.right }, { y: b.baseline, left: b.left, right: b.right }], broken: `baselines ${px(d)} apart`, fixed: 'one baseline ✓', off: Math.abs(d) > 0.6 };
-};
-
-Price.lesson = { why: 'items-center lines up the middles of the two boxes. Boxes of different sizes keep their baselines at different heights, so the unit floats beside the price.', habit: 'Text of different sizes side by side sits on one baseline: items-baseline.' };
 
 // ── Spacing and rhythm ─────────────────────────────────────
 
@@ -772,5 +720,78 @@ ChatThread.measure = (root) => {
   };
 };
 
-export const EXAMPLES = { 7: Grouping, 8: Templates, 9: Toolbar, 10: NewClient, 1: ClientProfile, 2: InvoiceWalkthrough, 3: Whiteboard, 4: DriveActivity, 5: ChatThread, 6: Price, 16: Timesheet };
+// #6 text of different sizes side by side shares a baseline. A fitness app's Today: a big figure with its unit beside
+// it, in a row centred the default way (items-center). Centring lines up the middles of the two boxes, and boxes of
+// different sizes keep their baselines at different heights, so every unit floats above its figure's baseline.
+const STATS = [
+  { Icon: BoltIcon, label: 'Active', value: '46', unit: 'min' },
+  { Icon: PathIcon, label: 'Distance', value: '6.2', unit: 'km' },
+  { Icon: HeartIcon, label: 'Resting', value: '58', unit: 'bpm' },
+];
+// a figure and its unit: one place in the code, at two sizes
+const Reading = ({ value, unit, big }) => (
+  <span data-reading className="flex items-center gap-1"><span className={big ? 'text-[44px] leading-none font-medium tracking-[-0.025em] tabular-nums' : 'text-[22px] leading-7 font-medium tracking-[-0.01em] tabular-nums'}>{value}</span><span className="text-[13px] leading-5 text-ink-muted">{unit}</span></span>
+);
+function FitnessToday() {
+  // Slate's primitives, with dithered icons
+  return (
+    <article className="w-full max-w-[26rem] rounded-card bg-surface shadow-card">
+      <div className="flex flex-col gap-5 p-6">
+        <header className="flex items-baseline justify-between">
+          <span className="text-[17px] leading-6 font-medium tracking-[-0.01em]">Today</span>
+          <span className="text-[13px] text-ink-muted">Thursday</span>
+        </header>
+        <div className="flex flex-col gap-3">
+          <Reading value="8,421" unit="steps" big />
+          <div className="flex flex-col gap-1.5">
+            <div className="h-2 overflow-hidden rounded-full bg-sunken" role="progressbar" aria-label="Steps toward today's goal" aria-valuenow={84} aria-valuemin={0} aria-valuemax={100}>
+              <div className="h-full w-[84%] rounded-full bg-accent" />
+            </div>
+            <span className="text-[13px] text-ink-muted">84% of your 10,000 goal · 1,579 to go</span>
+          </div>
+        </div>
+        <ul className="grid grid-cols-3 border-t-hairline border-line pt-4">
+          {STATS.map(({ Icon, label, value, unit }) => (
+            <li key={label} className="flex flex-col gap-1">
+              <span className="flex items-center gap-1.5 text-xs font-medium text-ink-muted"><Icon size={14} texture="dither" />{label}</span>
+              <Reading value={value} unit={unit} />
+            </li>
+          ))}
+        </ul>
+      </div>
+    </article>
+  );
+}
+FitnessToday.stage = true;
+FitnessToday.names = ['Centred', 'Baseline'];
+FitnessToday.lesson = {
+  why: 'items-center lines up the middles of two boxes. A 44px figure and a 13px unit keep their baselines at very different heights in boxes that size, so the unit floats beside the figure instead of sitting on its line.',
+  habit: 'Text of different sizes side by side sits on one baseline: items-baseline. Centre boxes, not words.',
+};
+// What the eye sees on the big reading: the figure's baseline and the unit's, carried across; the hatch is the gap.
+// The pill is that gap, in px.
+FitnessToday.measure = (root) => {
+  const row = root?.querySelector('[data-reading]');
+  if (!row) return null;
+  const k = row.getBoundingClientRect().width / row.offsetWidth || 1;
+  const base = (el) => {
+    const s = getComputedStyle(el), r = document.createRange(); r.selectNodeContents(el); const q = r.getClientRects()[0];
+    ctx ??= document.createElement('canvas').getContext('2d');
+    ctx.font = `${s.fontWeight} ${s.fontSize} ${s.fontFamily}`;
+    const m = ctx.measureText('H');
+    return { y: q.top + ((q.height / k - (m.fontBoundingBoxAscent + m.fontBoundingBoxDescent)) / 2 + m.fontBoundingBoxAscent) * k, left: q.left, right: q.right };
+  };
+  const [fig, unit] = [...row.children].map(base), off = (fig.y - unit.y) / k;
+  return {
+    lines: [],
+    rules: [{ key: 'fig', y: fig.y, left: fig.left - 8 * k, right: unit.right + 10 * k }, { key: 'unit', y: unit.y, left: unit.left - 4 * k, right: unit.right + 10 * k }],
+    bands: [{ key: 'gap', left: unit.left, right: unit.right, top: Math.min(fig.y, unit.y), bottom: Math.max(fig.y, unit.y), pattern: 'hatch' }],
+    pills: [{ key: 'off', x: unit.right + 26 * k, y: (fig.y + unit.y) / 2, text: (Math.abs(off) * k).toFixed(1), ok: Math.abs(off) <= 1 }],
+    off: Math.abs(off) > 1,
+    cut: (() => { const r = row.getBoundingClientRect(); return { left: r.left, right: r.right, top: r.top, bottom: r.bottom, r: 4 * k }; })(),
+    subject: { left: fig.left - 30 * k, right: unit.right + 70 * k, top: fig.y - 70 * k, bottom: fig.y + 40 * k },
+  };
+};
+
+export const EXAMPLES = { 7: Grouping, 8: Templates, 9: Toolbar, 10: NewClient, 1: ClientProfile, 2: InvoiceWalkthrough, 3: Whiteboard, 4: DriveActivity, 5: ChatThread, 6: FitnessToday, 16: Timesheet };
 

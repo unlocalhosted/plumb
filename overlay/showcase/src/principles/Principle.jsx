@@ -228,7 +228,7 @@ function Marks({ from, to, t, k, shown, pills, card }) {
         clipPath: `path(evenodd, "M0 0H${card.right - card.left}V${card.bottom - card.top}H0Z${holes}")`, ...fade(shown, shown ? 160 : MARKS.out) }} /> : null}
       <div style={{ position: 'absolute', inset: 0, ...fade(shown, shown ? MARKS.fade : MARKS.out) }}>
         {from.bands.map((b) => { const n = at('bands', b.key) ?? b; return (
-          <span key={'b' + b.key} style={{ position: 'absolute', left: lerp(b.left, n.left, e), top: lerp(b.top, n.top, e), width: lerp(b.right - b.left, n.right - n.left, e), height: b.bottom - b.top, opacity: b.pattern === 'hatch' ? 0.55 : 0.4,
+          <span key={'b' + b.key} style={{ position: 'absolute', left: lerp(b.left, n.left, e), top: lerp(b.top, n.top, e), width: lerp(b.right - b.left, n.right - n.left, e), height: lerp(b.bottom - b.top, n.bottom - n.top, e), opacity: b.pattern === 'hatch' ? 0.55 : 0.4,
             // plumber's patterns: hatch is padding, dots are where it's off
             ...(b.pattern === 'hatch'
               ? { backgroundImage: `repeating-linear-gradient(45deg, ${hue} 0 ${1 / k}px, transparent ${1 / k}px ${4 / k}px)` }
