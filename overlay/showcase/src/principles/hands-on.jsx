@@ -12,7 +12,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import valley from '../media/valley.jpg';
-import { ChartIcon, CheckIcon, CodeIcon, LayersIcon, FileIcon, FolderIcon, HistoryIcon, PlusIcon, RetryIcon, SlidersIcon, SparklesIcon } from '@unlocalhosted/dither-icons';
+import { ChartIcon, CheckIcon, CodeIcon, LayersIcon, MessageIcon, FileIcon, FolderIcon, HistoryIcon, PlusIcon, RetryIcon, SlidersIcon, SparklesIcon } from '@unlocalhosted/dither-icons';
 
 const TOKENS = '/__plumb/src/tokens.css';
 function MarksLayer({ children }) {
@@ -1078,4 +1078,125 @@ ScaleFromZero.lesson = {
   habit: 'Start entrances at 0.9–0.97 with opacity 0, with transform-origin at the trigger. It opens; it doesn’t inflate.',
 };
 
-export const HANDS_ON = { 42: BoldHover, 60: TooltipWarm, 63: ScaleFromZero, 61: MenuPress, 64: InterruptPanel, 65: PlaceSheet, 68: ExitFaster, 77: SkeletonLand, 66: SpinnerTiming };
+// ── #36 scrollbar-gutter: stable ─────────────────────────────────────────
+// A team chat's channel list, with the app's own thin scrollbar (styled with ::-webkit-scrollbar, so it takes its 8px
+// on every platform, a Mac's included). Broken: room for it only once it's needed, so the moment the list grows past
+// its height (Show all channels) every unread count slides left by the scrollbar's width. Fixed: plumber's fix,
+// [scrollbar-gutter:stable], keeps the room from the start: nothing moves.
+// The marks are that shift: where the counts' right edge rested (a dashed line), the ground they slid across (hatch),
+// and the shift in px, read from the real counts before and after.
+const CHANNELS = [['general', 3], ['launch', 12], ['design', 0], ['press', 5], ['pricing', 0], ['film', 2], ['support', 8], ['random', 0], ['hiring', 1], ['eng', 4], ['ops', 0], ['legal', 0]];
+function ChannelList({ side = 'broken', onStatus }) {
+  const root = useRef(null), list = useRef(null);
+  const [all, setAll] = useState(false);
+  const [rest, setRest] = useState(null), [now, setNow] = useState(null);
+  const edges = () => { const at = local(root.current); return [...list.current.querySelectorAll('[data-count]')].slice(0, 5).map((n) => at(n)); };
+  useLayoutEffect(() => { setAll(false); setNow(null); requestAnimationFrame(() => setRest(edges())); }, [side]);
+  useLayoutEffect(() => { if (all) requestAnimationFrame(() => setNow(edges())); }, [all]);
+  const shift = rest && now ? Math.max(0, ...now.map((b, i) => rest[i].x + rest[i].w - (b.x + b.w))) : null;
+  useEffect(() => {
+    onStatus?.(shift === null ? 'Press Show all channels, and watch the unread counts on the right.'
+      : shift >= 0.5 ? `The list grew past its height, its scrollbar appeared, and every count slid ${shift.toFixed(0)}px left to make room.`
+      : 'The scrollbar appeared into room that was kept for it. Nothing moved.');
+  }, [shift, onStatus]);
+  const off = shift !== null && shift >= 0.5;
+  return (
+    <div ref={root} className="relative w-[30rem] max-w-full">
+      <article className="flex w-64 flex-col rounded-card bg-surface shadow-card">
+        <header className="flex items-center gap-2 px-4 pt-3.5 pb-2"><MessageIcon size={16} texture="dither" className="text-ink-muted" /><span className="text-[15px] font-medium">Channels</span></header>
+        <ul ref={list} className={'flex h-56 flex-col overflow-y-auto px-2 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-line ' + (side === 'fixed' ? '[scrollbar-gutter:stable]' : '')}>
+          {CHANNELS.slice(0, all ? CHANNELS.length : 6).map(([name, n]) => (
+            <li key={name} className="flex h-9 shrink-0 items-center justify-between rounded-control px-2.5 text-[13px] hover:bg-sunken">
+              <span className={n ? 'font-medium' : 'text-ink-muted'}># {name}</span>
+              <span data-count className={'grid h-5 min-w-5 place-items-center rounded-full px-1.5 text-[11px] font-medium tabular-nums ' + (n ? 'bg-accent text-accent-ink' : 'text-transparent')}>{n || '0'}</span>
+            </li>
+          ))}
+        </ul>
+        <button type="button" onClick={() => setAll((a) => !a)} className="mx-2 mt-1 mb-2 h-8 rounded-control text-left px-2.5 text-[13px] font-medium text-accent hover:bg-sunken">{all ? 'Show fewer' : 'Show all channels'}</button>
+      </article>
+      <MarksLayer>
+        {rest && now ? rest.map((b, i) => (
+          <span key={i}>
+            <Line x={b.x + b.w} y={b.y - 2} h={b.h + 4} off={off} dashed={off} />
+            {off ? <Hatch x={now[i].x + now[i].w} y={b.y + 3} w={b.x + b.w - (now[i].x + now[i].w)} h={b.h - 6} /> : null}
+          </span>
+        )) : null}
+        {rest && now ? <Tag x={rest[0].x + rest[0].w + 22} y={rest[0].y + rest[0].h / 2} off={off}>{off ? `−${shift.toFixed(0)}px · all slid` : '0px ✓'}</Tag> : null}
+      </MarksLayer>
+    </div>
+  );
+}
+ChannelList.names = ['Room when needed', 'Room kept'];
+ChannelList.lesson = {
+  why: 'A scrollbar that takes space (any styled one does, even on a Mac) only claims it when the content first overflows. Load more, and everything in the box jumps sideways by its width, under the pointer.',
+  habit: 'Give scroll areas whose content grows scrollbar-gutter: stable, so the room is there before the scrollbar is.',
+};
+
+// ── #76 Truncate in the middle for paths and IDs ─────────────────────────
+// A code review's changed files, in a panel you can drag narrower. Broken: each path truncated at its end (truncate),
+// so a narrow panel shows four rows of "src/components/…" and hides the one part that tells them apart, the file.
+// Fixed: the path split into its start and its file name, the start truncating and the name kept whole (the markup
+// plumber's advice names), with the full path in title.
+// The marks are what the lesson turns on: on the broken side the rows that now read alike, on the fixed side the file
+// name each row kept. The middle-truncate rule (craft-rules.js) marks the broken rows.
+const PATHS = ['src/components/forms/inputs/TextField.tsx', 'src/components/forms/inputs/Checkbox.tsx', 'src/components/forms/inputs/Select.tsx', 'src/components/forms/inputs/RadioGroup.tsx'];
+function MiddlePath({ path }) {
+  const cut = path.lastIndexOf('/') + 1;
+  return (
+    <span title={path} className="flex min-w-0 font-mono text-[12px]">
+      <span className="truncate">{path.slice(0, cut)}</span>
+      <span className="shrink-0">{path.slice(cut)}</span>
+    </span>
+  );
+}
+function PathList({ side = 'broken', onStatus }) {
+  const root = useRef(null), panel = useRef(null);
+  const [w, setW] = useState(300), drag = useRef(null);
+  const [seen, setSeen] = useState([]);
+  const fixed = side === 'fixed';
+  // what each row shows: its rendered text, read back (the truncation is the browser's)
+  useLayoutEffect(() => {
+    const rows = [...(panel.current?.querySelectorAll('[data-path]') ?? [])];
+    setSeen(rows.map((r) => {
+      const spans = [...r.querySelectorAll('span')].filter((x) => !x.children.length && x.textContent.trim());
+      const visible = spans.map((x) => (x.scrollWidth > x.clientWidth + 1 ? x.textContent.slice(0, Math.max(0, Math.floor((x.clientWidth / x.scrollWidth) * x.textContent.length) - 1)) + '…' : x.textContent)).join('');
+      const at = local(root.current), box = at(r), text = spans.map(at), name = spans.length > 1 ? at(spans.at(-1)) : null;
+      return { visible, box, cut: spans.some((x) => x.scrollWidth > x.clientWidth + 1), text: { x: text[0].x, y: box.y + 7, w: text.at(-1).x + text.at(-1).w - text[0].x, h: box.h - 14 }, name };
+    }));
+  }, [w, side]);
+  const same = new Set(seen.map((r) => r.visible)).size < seen.length;
+  useEffect(() => {
+    onStatus?.(!seen.some((r) => r.cut) ? 'Drag the panel’s edge to the left, narrower.'
+      : !fixed ? (same ? 'Now the rows read alike: each path lost its end, and the end is the file you were looking for.' : 'Each path lost its end first, the part that tells them apart. Keep going.')
+      : 'Each row keeps its file name whole and gives up the middle of the path instead.');
+  }, [seen, same, fixed, onStatus]);
+  const move = (e) => { if (!drag.current) return; setW(Math.max(170, Math.min(340, drag.current.w + (e.clientX - drag.current.x)))); };
+  return (
+    <div ref={root} className="relative w-[30rem] max-w-full" onPointerMove={move} onPointerUp={() => (drag.current = null)} onLostPointerCapture={() => (drag.current = null)}>
+      <article ref={panel} style={{ width: w }} className="relative flex flex-col rounded-card bg-surface py-2 shadow-card">
+        <header className="flex items-center gap-2 px-4 pt-1.5 pb-2"><FileIcon size={14} texture="dither" className="text-ink-muted" /><span className="text-[13px] font-medium">Changed files</span><span className="ml-auto text-xs text-ink-subtle tabular-nums">4</span></header>
+        {PATHS.map((p) => (
+          <div key={p} data-path className="flex h-8 min-w-0 items-center gap-2 px-4 text-ink-muted">
+            <span className="size-1.5 shrink-0 rounded-full bg-caution" />
+            {fixed ? <MiddlePath path={p} /> : <span title={p} className="truncate font-mono text-[12px]">{p}</span>}
+          </div>
+        ))}
+        <span role="separator" aria-orientation="vertical" aria-label="Panel width" onPointerDown={(e) => { e.currentTarget.setPointerCapture(e.pointerId); drag.current = { x: e.clientX, w }; }}
+          className="absolute top-3 -right-1.5 bottom-3 w-3 cursor-col-resize rounded-full hover:bg-accent/15"><span className="absolute inset-y-0 left-1/2 w-0.5 -translate-x-1/2 rounded-full bg-line" /></span>
+      </article>
+      <MarksLayer>
+        {/* what the lesson turns on: rows that now read alike (coral), or the file names each row kept (mint) */}
+        {seen.map((r, i) => (!r.cut ? null : !fixed ? (same ? <Outline key={i} {...r.text} x={r.text.x - 3} w={r.text.w + 6} off /> : null)
+          : r.name ? <Outline key={i} x={r.name.x - 2} y={r.box.y + 7} w={r.name.w + 4} h={r.box.h - 14} off={false} /> : null))}
+        {seen.some((r) => r.cut) ? <Tag x={w + 22} y={seen[0].box.y + seen[0].box.h / 2} off={!fixed}>{!fixed ? (same ? `${seen.length} rows read the same` : 'the file is cut') : 'file names kept ✓'}</Tag> : null}
+      </MarksLayer>
+    </div>
+  );
+}
+PathList.names = ['Cut at the end', 'Cut in the middle'];
+PathList.lesson = {
+  why: 'A path’s two ends carry its meaning: where it lives, and which file it is. Truncating at the end keeps the part every row shares and drops the file name, so a narrow list of paths reads src/components/…, src/components/…, src/components/….',
+  habit: 'Truncate paths and IDs in the middle: keep the start and the end, give up the middle (split the text into a truncating start and a whole end), and put the full value in a title.',
+};
+
+export const HANDS_ON = { 36: ChannelList, 76: PathList, 42: BoldHover, 60: TooltipWarm, 63: ScaleFromZero, 61: MenuPress, 64: InterruptPanel, 65: PlaceSheet, 68: ExitFaster, 77: SkeletonLand, 66: SpinnerTiming };

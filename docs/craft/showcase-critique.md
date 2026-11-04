@@ -18,8 +18,8 @@ Screens built but below the bar, found in the post-build review. Fix these after
 | 37 | Stats chart, half pixels | The blur is only in the pill: the zoomed camera re-rasterises the text, so the softness can't be seen | A loupe of real pixels (a screenshot of the tooltip at 1×, magnified without smoothing), soft rows before, crisp after |
 | 73 | Handbook, anchor offset | Fixed: the pane’s cue is scroll shadows (#75’s fix), not a mask, so the card keeps its shadow (2026-11-04) | (done) |
 | 74 | Projects, z-index | Fixed: the pill sits on the menu’s edge, level with the badge, outside the shade (2026-11-04) | (done) |
-| 36 | scrollbar-gutter (not built) | On a Mac the scrollbar overlays and takes no width, so nothing jumps where the owner looks | Build it when the stage can show a classic scrollbar (Windows, or "always show scrollbars") honestly |
-| 76 | Middle truncation (not built) | Its fix is markup (the text split into a start and an end), which plumber can't hand over as a class | Teach plumber a markup fix, or build the screen with advice only |
+| 36 | scrollbar-gutter | Built hands-on (2026-11-04): a chat's channel list with an app-styled scrollbar, which takes its 8px on a Mac too; Show all channels slides every count 8px, or 0 with the gutter kept. Headless Chromium hides scrollbars, so it's proved in the app's pane | (done) |
+| 76 | Middle truncation | Built hands-on (2026-11-04): drag a code review's file panel narrower; cut at the end, four rows read the same; cut in the middle, every file name stays | (done) |
 | 75 | Share list, scroll shadows | Fixed: the hatch closes when the scroll shadow lands, so the shadow is seen at the zoom (2026-11-04) | (done) |
 | 68 | Event preview, exits faster | Hands-on now (2026-11-04): you open and close it at ¼ speed; both directions timed from the browser’s transition events | (done) |
 | 50 | Empty search, icon stroke | Fixed: the field’s icon keeps its stroke too, so after the fix both draw the same 2px line (2026-11-04) | (done) |
