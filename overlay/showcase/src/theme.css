@@ -36,28 +36,31 @@
   --leading-tight: 1.15;
   --leading-normal: 1.5;
 
-  /* three greys of text, one line colour, one accent: hierarchy by these, never by opacity */
-  --color-canvas: oklch(0.975 0.003 264);
-  --color-surface: oklch(1 0 0);
-  --color-sunken: oklch(0.955 0.004 264);
-  --color-ink: oklch(0.21 0.02 264);
-  --color-ink-muted: oklch(0.45 0.02 264);
-  --color-ink-subtle: oklch(0.56 0.018 264);
-  --color-line: oklch(0.21 0.02 264 / 0.1);
-  --color-accent: oklch(0.51 0.2 268);
-  --color-accent-ink: oklch(1 0 0);
-  --color-positive: oklch(0.52 0.13 155);
-  --color-caution: oklch(0.6 0.13 75);
-  --color-negative: oklch(0.55 0.19 25);
-  --color-violet: oklch(0.47 0.2 290);
+  /* Quarry's look: Slate (picked by the owner on /primitives, 2026-11-04; the bar is Mercury / Stripe). Cool and
+     exact: navy ink in three greys, one hairline colour, one muted blue-violet brand, soft status tints with their own
+     ink as the words. Hierarchy by these, never by opacity. */
+  --color-canvas: #f5f7fa;
+  --color-surface: #ffffff;
+  --color-sunken: #f3f5f9;
+  --color-ink: #12233d;
+  --color-ink-muted: #5a6779;
+  --color-ink-subtle: #6f7c90;   /* the third grey: still 4.5:1 on a surface */
+  --color-line: rgb(18 35 61 / 0.11);   /* Slate's hairline, translucent so it blends with any surface it sits on */
+  --color-accent: #5550d8;       /* the one brand colour: actions, the running thing, a client's mark */
+  --color-accent-ink: #ffffff;   /* words on the brand */
+  --color-accent-deep: #3631a6;  /* the brand as words and marks on its soft tint */
+  --color-positive: #0f6f58;
+  --color-caution: #965a03;
+  --color-negative: #b02a3a;
+  --color-violet: #5550d8;       /* retired as its own hue: the brand */
   /* soft tints: a status's ground, quiet enough to sit in a list, with its own colour as the words on it */
-  --color-positive-soft: oklch(0.95 0.035 155);
-  --color-caution-soft: oklch(0.95 0.045 80);
-  --color-negative-soft: oklch(0.95 0.03 25);
-  --color-accent-soft: oklch(0.95 0.03 268);
-  /* the board an example is shown on: a warm, quiet grey, with a dot grid fainter than any line in the app */
-  --color-board: oklch(0.955 0.004 85);
-  --color-board-dot: oklch(0.86 0.006 85);
+  --color-positive-soft: #e5f4ef;
+  --color-caution-soft: #fcf1dd;
+  --color-negative-soft: #fbeaed;
+  --color-accent-soft: #efeefd;
+  /* the board an example is shown on: the canvas a step deeper, with a dot grid fainter than any line in the app */
+  --color-board: #eef1f5;
+  --color-board-dot: #d6dce4;
   --color-magenta: oklch(0.66 0.21 354);
 
   /* dark: lighter surfaces lift, not shadows */
@@ -68,14 +71,16 @@
 
   /* corners: a surface, the control inside it at its padding, the chip inside that */
   --radius-chip: 4px;
-  --radius-control: 8px;
-  --radius-card: 12px;
-  --radius-sheet: 16px;
+  --radius-control: 6px;
+  --radius-card: 10px;
+  --radius-sheet: 14px;
 
   /* elevation: each step about twice the blur of the one below, the offset a third of the blur, two layers each */
   --shadow-raised: 0 1px 1px oklch(0.21 0.02 264 / 0.04), 0 1px 3px oklch(0.21 0.02 264 / 0.08);
   --shadow-overlay: 0 2px 4px oklch(0.21 0.02 264 / 0.04), 0 6px 16px oklch(0.21 0.02 264 / 0.1);
   --shadow-violet: 0 2px 4px oklch(0.3 0.12 290 / 0.2), 0 8px 16px oklch(0.3 0.15 290 / 0.35);
+  /* Slate's card: a hairline edge and a faint lift, the edge doing most of the work */
+  --shadow-card: 0 0 0 1px rgb(18 35 61 / 0.11), 0 1px 1px rgb(18 35 61 / 0.03), 0 2px 6px rgb(18 35 61 / 0.04);
   /* a window resting on the board: the top of the ladder, softest and widest */
   --shadow-window: 0 1px 2px oklch(0.21 0.02 264 / 0.04), 0 8px 24px oklch(0.21 0.02 264 / 0.06), 0 24px 64px oklch(0.21 0.02 264 / 0.08);
   --shadow-popover: 0 4px 8px oklch(0.21 0.02 264 / 0.05), 0 12px 32px oklch(0.21 0.02 264 / 0.14);

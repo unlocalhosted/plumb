@@ -48,10 +48,10 @@ export function AppFrame({ children, bell, crumb = 'Studio' }) {
  * ───────────────────────────────────────────────────────── */
 const TIMER = { every: 1000, startedAgo: 6157, rate: 145, task: 'Moodboard review', job: 'Marlow Joinery · Showroom launch' };
 const EARLIER = [
-  { task: 'Wireframes, checkout', client: 'Brightwater Vets', seconds: 7578, rate: 130, dot: 'bg-accent' },
-  { task: 'Logo exploration', client: 'Halden & Co.', seconds: 4300, rate: 145, dot: 'bg-violet' },
-  { task: 'Kickoff call', client: 'Northfield Dental', seconds: 2885, rate: 120, dot: 'bg-positive' },
-  { task: 'Invoice review', client: 'Okafor Landscape', seconds: 1192, rate: 95, dot: 'bg-caution' },
+  { task: 'Wireframes, checkout', client: 'Brightwater Vets', seconds: 7578, rate: 130 },
+  { task: 'Logo exploration', client: 'Halden & Co.', seconds: 4300, rate: 145 },
+  { task: 'Kickoff call', client: 'Northfield Dental', seconds: 2885, rate: 120 },
+  { task: 'Invoice review', client: 'Okafor Landscape', seconds: 1192, rate: 95 },
 ];
 const clock = (t) => `${Math.floor(t / 3600)}:${String(Math.floor(t / 60) % 60).padStart(2, '0')}:${String(t % 60).padStart(2, '0')}`;
 const dollars = (n) => '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -73,57 +73,52 @@ function Timesheet({ live = true }) {
   const { t, paused, toggle } = useTimer(live);
   const total = EARLIER.reduce((a, e) => a + e.seconds, 0) + t;
   const totalEarned = EARLIER.reduce((a, e) => a + earned(e.seconds, e.rate), 0) + earned(t, TIMER.rate);
+  // Quarry's Slate primitives only: the card, the type ramp (figure, title, body, meta, label), one brand colour
   return (
-    <article className="w-full max-w-[31rem] rounded-[20px] bg-surface shadow-[0_1px_2px_oklch(0.21_0.02_264/0.05),0_16px_40px_-12px_oklch(0.21_0.02_264/0.14)] ring-1 ring-line">
-      <header className="flex flex-col gap-6 px-7 pt-6 pb-7">
-        <div className="flex items-center text-[13px] text-ink-muted">
-          <span className="flex items-center gap-2">
-            <span className="relative flex size-2">
-              {paused ? null : <span className="absolute inset-0 animate-ping rounded-full bg-positive/50 motion-reduce:animate-none" />}
-              <span className={'relative size-2 rounded-full ' + (paused ? 'bg-ink-subtle' : 'bg-positive')} />
-            </span>
-            {paused ? 'Paused' : 'Tracking'}
-          </span>
-        </div>
-        <div className="flex min-w-0 flex-col">
-          <span className="truncate text-[15px] font-medium">{TIMER.task}</span>
-          <span className="truncate text-sm text-ink-muted">{TIMER.job}</span>
-        </div>
-        <div className="flex flex-col gap-3">
+    <article className="w-full max-w-[30rem] rounded-card bg-surface shadow-card">
+      <header className="flex flex-col gap-5 p-6">
+        <span className="flex items-center gap-2 text-xs font-medium text-ink-muted">
+          <span className={'size-1.5 rounded-full ' + (paused ? 'bg-ink-subtle' : 'bg-positive')} />
+          {paused ? 'Paused' : 'Tracking'}
+        </span>
+        <span className="flex min-w-0 flex-col">
+          <span className="truncate text-[17px] leading-6 font-medium tracking-[-0.01em]">{TIMER.task}</span>
+          <span className="truncate text-[13px] text-ink-muted">{TIMER.job}</span>
+        </span>
+        <span className="flex flex-col gap-2">
           {/* the control sits on what it controls: centred on the clock */}
-          <div className="flex items-center justify-between gap-6">
-            <Fig col="clock" className="text-[56px] leading-none font-light tracking-[-0.03em]">{clock(t)}</Fig>
+          <span className="flex items-center justify-between gap-6">
+            <Fig col="clock" className="text-[48px] leading-none font-medium tracking-[-0.025em]">{clock(t)}</Fig>
             <button type="button" onClick={toggle} aria-label={paused ? 'Resume timer' : 'Pause timer'}
-            className="grid size-12 shrink-0 place-items-center rounded-full bg-ink text-surface transition-[background-color,scale] duration-150 hover:bg-ink/85 active:scale-95 outline-offset-2 focus-visible:outline-2 focus-visible:outline-accent">
-            {paused
-              ? <svg viewBox="0 0 16 16" className="size-4 translate-x-px" fill="currentColor" aria-hidden="true"><path d="M4 2.8v10.4a.8.8 0 0 0 1.2.7l8.6-5.2a.8.8 0 0 0 0-1.4L5.2 2.1a.8.8 0 0 0-1.2.7" /></svg>
-              : <svg viewBox="0 0 16 16" className="size-4" fill="currentColor" aria-hidden="true"><rect x="3.5" y="2.5" width="3" height="11" rx="1" /><rect x="9.5" y="2.5" width="3" height="11" rx="1" /></svg>}
+              className="grid size-10 shrink-0 place-items-center rounded-full bg-accent text-accent-ink transition-[background-color,scale] duration-150 hover:bg-accent-deep active:scale-95 outline-offset-2 focus-visible:outline-2 focus-visible:outline-accent">
+              {paused
+                ? <svg viewBox="0 0 16 16" className="size-3.5 translate-x-px" fill="currentColor" aria-hidden="true"><path d="M4 2.8v10.4a.8.8 0 0 0 1.2.7l8.6-5.2a.8.8 0 0 0 0-1.4L5.2 2.1a.8.8 0 0 0-1.2.7" /></svg>
+                : <svg viewBox="0 0 16 16" className="size-3.5" fill="currentColor" aria-hidden="true"><rect x="3.5" y="2.5" width="3" height="11" rx="1" /><rect x="9.5" y="2.5" width="3" height="11" rx="1" /></svg>}
             </button>
-          </div>
-          <span className="text-sm text-ink-muted"><Fig col="earned" className="text-ink">{dollars(earned(t, TIMER.rate))}</Fig> at ${TIMER.rate} an hour</span>
-        </div>
+          </span>
+          <span className="text-[13px] text-ink-muted"><Fig col="earned" className="text-ink">{dollars(earned(t, TIMER.rate))}</Fig> at ${TIMER.rate} an hour</span>
+        </span>
       </header>
-      <section data-entries className="border-t-hairline border-line px-7 pt-5 pb-6">
-        <h3 className="text-[13px] font-normal text-ink-muted">Earlier today</h3>
+      <section data-entries className="border-t-hairline border-line px-6 pt-4 pb-5">
+        <h3 className="text-xs font-medium text-ink-muted">Earlier today</h3>
         <ul className="mt-1">
           {EARLIER.map((e) => (
-            <li key={e.task} data-entry className="flex items-start gap-3 border-b-hairline border-line py-3.5">
-              <span className={'mt-[7px] size-2 shrink-0 rounded-full ' + e.dot} />
+            <li key={e.task} data-entry className="flex items-start gap-3 border-b-hairline border-line py-3">
               <span className="flex min-w-0 flex-1 flex-col">
-                <span className="truncate text-[15px] font-medium">{e.task}</span>
+                <span className="truncate text-sm font-medium">{e.task}</span>
                 <span className="truncate text-[13px] text-ink-muted">{e.client}</span>
               </span>
               <span className="flex flex-col items-end">
-                <Fig col="time" className="text-[15px]">{clock(e.seconds)}</Fig>
+                <Fig col="time" className="text-sm">{clock(e.seconds)}</Fig>
                 <Fig col="money" className="text-[13px] text-ink-muted">{dollars(earned(e.seconds, e.rate))}</Fig>
               </span>
             </li>
           ))}
         </ul>
-        <div data-total className="flex items-baseline justify-between gap-3 pt-4">
-          <span className="text-[13px] text-ink-muted">Today so far</span>
+        <div data-total className="flex items-baseline justify-between gap-3 pt-3.5">
+          <span className="text-xs font-medium text-ink-muted">Today so far</span>
           <span className="flex flex-col items-end">
-            <Fig col="time" className="text-[17px] font-medium">{clock(total)}</Fig>
+            <Fig col="time" className="text-[17px] font-medium tracking-[-0.01em]">{clock(total)}</Fig>
             <Fig col="money" className="text-[13px] text-ink-muted">{dollars(totalEarned)}</Fig>
           </span>
         </div>
@@ -378,7 +373,7 @@ function Chips({ broken }) {
           </div>
         </div>
         {/* the callout: padded evenly, one line of text-sm/6 */}
-        <p data-chip className="rounded-control bg-accent-soft p-3 text-sm leading-6 text-ink">Card payments are on: Halden &amp; Co. can pay this invoice by card. <a href="#settings" className="font-medium text-accent underline underline-offset-2">Settings</a></p>
+        <p data-chip className="-mx-3 rounded-control bg-accent-soft p-3 text-sm leading-6 text-ink">Card payments are on: Halden &amp; Co. can pay this invoice by card. <a href="#settings" className="font-medium text-accent underline underline-offset-2">Settings</a></p>
         <div className="flex items-center gap-3">
           <span className="grid size-9 shrink-0 place-items-center rounded-full bg-accent-soft text-xs font-semibold text-accent">HC</span>
           <div className="flex flex-col">
@@ -630,40 +625,48 @@ NewClient.lesson = { why: 'An icon’s glyph box carries its own space around th
 // recent invoices. The note is a tinted panel with its own padding, sitting on the same column as the sections around
 // it, so its words start 16px in from every other line on the page. plumber's fix bleeds the panel out by that padding.
 const RECENT = [
-  { id: 'INV-2041', what: 'Brand refresh', state: 'Overdue', tone: 'bg-negative-soft text-negative', amount: '$4,820.00' },
-  { id: 'INV-2036', what: 'Signage', state: 'Paid', tone: 'bg-positive-soft text-positive', amount: '$1,950.00' },
-  { id: 'INV-2029', what: 'Retainer, October', state: 'Paid', tone: 'bg-positive-soft text-positive', amount: '$3,200.00' },
+  { id: 'INV-2041', what: 'Brand refresh', state: 'Overdue', tone: 'negative', amount: '$4,820.00' },
+  { id: 'INV-2036', what: 'Signage', state: 'Paid', tone: 'positive', amount: '$1,950.00' },
+  { id: 'INV-2029', what: 'Retainer, October', state: 'Paid', tone: 'positive', amount: '$3,200.00' },
 ];
+// Slate's status: a soft pill in the status's own ink, with a hairline ring of the same ink
+const STATUS = {
+  positive: 'bg-positive-soft text-positive ring-positive/15',
+  negative: 'bg-negative-soft text-negative ring-negative/15',
+};
 function ClientProfile() {
+  // Quarry's Slate primitives only: the card, the type ramp, a client shown by its own mark, one brand colour
   return (
-    <article className="w-full max-w-[34rem] rounded-[20px] bg-surface shadow-[0_1px_2px_oklch(0.21_0.02_264/0.05),0_16px_40px_-12px_oklch(0.21_0.02_264/0.14)] ring-1 ring-line">
-      <div data-profile className="flex flex-col gap-6 px-7 pt-7 pb-7">
-        <header className="flex items-center gap-4">
-          <span className="grid size-12 shrink-0 place-items-center rounded-[12px] bg-violet text-[15px] font-semibold text-accent-ink">HC</span>
+    <article className="w-full max-w-[32rem] rounded-card bg-surface shadow-card">
+      <div data-profile className="flex flex-col gap-5 p-6">
+        <header className="flex items-center gap-3.5">
+          <span className="grid size-11 shrink-0 place-items-center rounded-control bg-accent-soft text-accent-deep">
+            <svg viewBox="0 0 24 24" className="size-5" fill="currentColor" aria-hidden="true"><rect x="5" y="6.5" width="14" height="4" rx="2" /><rect x="5" y="13.5" width="9" height="4" rx="2" /></svg>
+          </span>
           <span className="flex min-w-0 flex-col">
-            <span className="truncate text-lg leading-6 font-medium">Halden & Co.</span>
-            <span className="truncate text-sm text-ink-muted">Brand studio · Copenhagen · client since 2023</span>
+            <span className="truncate text-[17px] leading-6 font-medium tracking-[-0.01em]">Halden & Co.</span>
+            <span className="truncate text-[13px] text-ink-muted">Brand studio · Copenhagen · client since 2023</span>
           </span>
         </header>
-        <dl className="grid grid-cols-[7.5rem_1fr] gap-x-4 gap-y-2 text-sm">
+        <dl className="grid grid-cols-[7.5rem_1fr] gap-x-4 gap-y-1.5 text-sm">
           <dt className="text-ink-muted">Billing contact</dt><dd>Mette Halden</dd>
           <dt className="text-ink-muted">Send invoices to</dt><dd className="truncate">accounts@halden.studio</dd>
           <dt className="text-ink-muted">Terms</dt><dd>Net 14, in DKK</dd>
         </dl>
-        <aside data-note className="rounded-[12px] bg-caution-soft px-4 pt-3 pb-3.5 text-sm">
+        <aside data-note className="rounded-control bg-sunken px-4 pt-3 pb-3.5 text-sm">
           <p className="font-medium">Note from Ana</p>
-          <p className="mt-1 text-pretty text-ink-muted">They need a PO number on every invoice since September. Mette approves anything over 5,000 kr.</p>
+          <p className="mt-0.5 text-pretty text-ink-muted">They need a PO number on every invoice since September. Mette approves anything over 5,000 kr.</p>
         </aside>
         <section className="flex flex-col">
-          <h3 className="text-[13px] font-normal text-ink-muted">Recent invoices</h3>
+          <h3 className="text-xs font-medium text-ink-muted">Recent invoices</h3>
           <ul className="mt-1">
             {RECENT.map((r) => (
-              <li key={r.id} className="flex items-center gap-3 border-b-hairline border-line py-3 last:border-0">
+              <li key={r.id} className="flex items-center gap-3 border-b-hairline border-line py-2.5 last:border-0">
                 <span className="flex min-w-0 flex-1 flex-col">
                   <span className="truncate text-sm font-medium">{r.what}</span>
                   <span className="case-forms text-[13px] text-ink-muted">{r.id}</span>
                 </span>
-                <span className={'rounded-full px-2 py-0.5 text-xs font-medium ' + r.tone}>{r.state}</span>
+                <span className={'inline-flex h-5 items-center rounded-full px-2 text-xs font-medium ring-1 ring-inset ' + STATUS[r.tone]}>{r.state}</span>
                 <span className="w-24 text-right text-sm tabular-nums">{r.amount}</span>
               </li>
             ))}
