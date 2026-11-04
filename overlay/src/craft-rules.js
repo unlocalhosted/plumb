@@ -1439,7 +1439,9 @@ export const cardOpticalPadding = {
     const s = facts.style(el), b = facts.box(el);
     // a card: a filled or bordered box with a card's side padding (a chip's or a row's few pixels are not one)
     if (!(b.pt > 0 && b.pl >= T.side) || !((rgb(s.backgroundColor)?.[3] ?? 0) > 0 || b.bt > 0)) return [];
-    if (/trim/.test(facts.style(first).textBoxTrim ?? '')) return [];
+    // a box that holds its own line of words is trim-leading's (one cause, one finding), and a trimmed box has no
+    // leading left to add
+    if (facts.text(el) || /trim/.test(s.textBoxTrim ?? '') || /trim/.test(facts.style(first).textBoxTrim ?? '')) return [];
     const m = facts.metrics(first);
     if (!m) return [];
     const top = b.pt + (facts.rect(first).top - facts.rect(el).top - b.bt - b.pt) + m.halfLeading + (m.ascent - m.capHeight), left = b.pl;
