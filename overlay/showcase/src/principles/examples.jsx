@@ -3,7 +3,7 @@
 // plumber, scoped to it, finds one thing. `measure` (optional) says where the eye sees the harm, for the ticks drawn
 // over the example; it reads the page, it never decides what is wrong (plumber does).
 import { useEffect, useState } from 'react';
-import { ArrowLeftIcon, ArrowRightIcon, BellIcon, BoltIcon, CheckIcon, FileIcon, FolderIcon, HeadphonesIcon, HeartIcon, HistoryIcon, LayersIcon, LockIcon, MailIcon, MessageIcon, PathIcon, PauseIcon, PlusIcon, SearchIcon, SendIcon, SparklesIcon, UploadIcon, UserIcon } from '@unlocalhosted/dither-icons';
+import { ArrowLeftIcon, ArrowRightIcon, BellIcon, BoltIcon, BookIcon, CheckIcon, FileIcon, FolderIcon, HeadphonesIcon, HeartIcon, HistoryIcon, LayersIcon, LockIcon, MailIcon, MessageIcon, PathIcon, PauseIcon, PlayIcon, PlusIcon, SearchIcon, SendIcon, SparklesIcon, UploadIcon, UserIcon } from '@unlocalhosted/dither-icons';
 import receipt from '../receipt.png';
 import lowTide from '../media/low-tide.jpg';
 import paperCities from '../media/paper-cities.jpg';
@@ -971,5 +971,115 @@ NotificationSettings.measure = (root) => {
   };
 };
 
-export const EXAMPLES = { 7: PassengerStep, 8: RecentlyPlayed, 9: PullRequest, 10: CalendarWeek, 1: ClientProfile, 2: InvoiceWalkthrough, 3: Whiteboard, 4: DriveActivity, 5: ChatThread, 6: FitnessToday, 12: NotificationSettings, 16: Timesheet };
+// #13 45–75 characters per line. A help centre article in a docs product: the body runs the width of the reading pane,
+// about 94 characters a line, so the eye loses its place on the way back to the next line. plumber caps it at a measure.
+const HELP = [
+  'Two-step sign-in asks for a second proof that it’s really you, a code from an authenticator app on your phone, each time you sign in on a new device. Even if someone learns your password, they can’t get into your account without your phone in their hand as well.',
+  'Open Settings, choose Security, and select Turn on beside Two-step sign-in. Scan the code with your authenticator app, then type the six digits it shows to confirm. Save your backup codes somewhere safe: they let you in if you ever lose your phone.',
+];
+function HelpArticle() {
+  // Slate's primitives, with dithered icons
+  return (
+    <article className="w-full rounded-card bg-surface shadow-card">
+      <div className="flex flex-col gap-4 px-8 pt-7 pb-8">
+        <span className="flex items-center gap-2 text-[13px] text-ink-muted"><BookIcon size={14} texture="dither" />Help centre · Security</span>
+        <h2 className="text-2xl leading-8 font-semibold tracking-[-0.015em] text-balance">Turn on two-step sign-in</h2>
+        <div data-body className="flex flex-col gap-3">
+          {HELP.map((t) => <p key={t.slice(0, 12)} className="text-[15px] leading-7 text-pretty">{t}</p>)}
+        </div>
+      </div>
+    </article>
+  );
+}
+HelpArticle.stage = true;
+HelpArticle.names = ['Full width', 'A measure'];
+HelpArticle.lesson = {
+  why: 'At about 94 characters a line, the eye’s return sweep to the start of the next line is long enough to land on the wrong one. Readers slow down, reread, or skim.',
+  habit: 'Keep running text to 45–75 characters a line: cap paragraphs with a measure (max-width in ch), however wide the pane.',
+};
+// What the eye sees: each paragraph's lines, from the first letter to the last, and what runs past the 75th character
+// (the hatch). The pill is the characters actually on the first line, counted from the text itself.
+function firstLine(p) {
+  const t = p.firstChild, r = document.createRange();
+  let top = null, n = 0, cut = null;
+  for (let i = 0; i < t.length; i++) {
+    r.setStart(t, i); r.setEnd(t, i + 1);
+    const q = r.getClientRects()[0];
+    if (!q) continue;
+    top ??= q.top;
+    if (q.top > top + q.height / 2) break;
+    n = i + 1;
+    if (i === 74) cut = q.right;
+  }
+  return { chars: n, cut };
+}
+HelpArticle.measure = (root) => {
+  const ps = [...(root?.querySelectorAll('[data-body] p') ?? [])];
+  if (!ps.length) return null;
+  const k = ps[0].getBoundingClientRect().width / ps[0].offsetWidth || 1, lines = [], bands = [];
+  const reads = ps.map((p, i) => {
+    const r = p.getBoundingClientRect(), f = firstLine(p);
+    lines.push({ key: `start${i}`, x: r.left, top: r.top, bottom: r.bottom }, { key: `end${i}`, x: r.right, top: r.top, bottom: r.bottom });
+    bands.push({ key: `over${i}`, left: f.cut ?? r.right, right: r.right, top: r.top, bottom: r.bottom, pattern: 'hatch' });
+    return f.chars;
+  });
+  const r0 = ps[0].getBoundingClientRect(), most = Math.max(...reads), body = root.querySelector('[data-body]').getBoundingClientRect();
+  return {
+    lines, bands, off: most > 75,
+    pills: [{ key: 'chars', x: r0.right, y: r0.top - 12 * k, text: String(most * k), ok: most <= 75 }],
+    cut: { left: body.left, right: body.right, top: body.top, bottom: body.bottom },
+    subject: { left: body.left - 20 * k, right: body.right + 20 * k, top: body.top - 30 * k, bottom: body.bottom + 20 * k },
+  };
+};
+
+// #14 line height shrinks as size grows. A podcast app's episode page: the 40px title keeps the 1.5 line height that
+// suits body text, so its two lines float apart. plumber tightens it to a display leading.
+function EpisodePage() {
+  // Slate's primitives, with dithered icons
+  return (
+    <article className="w-full max-w-[34rem] rounded-card bg-surface shadow-card">
+      <div className="flex flex-col gap-5 p-7">
+        <span className="flex items-center gap-2 text-[13px] text-ink-muted"><HeadphonesIcon size={14} texture="dither" />Small Studios · Episode 42 · 38 min</span>
+        <h2 data-title className="text-[40px] leading-[1.5] font-semibold tracking-[-0.025em] text-balance">How small teams ship big launches</h2>
+        <p className="text-[15px] leading-6 text-ink-muted text-pretty">Mira Avila on cutting scope without cutting quality, and the one checklist her studio never skips.</p>
+        <div className="flex items-center gap-3">
+          <button type="button" className="flex h-10 items-center gap-2 rounded-full bg-accent pr-5 pl-4 text-sm font-medium text-accent-ink hover:bg-accent-deep"><PlayIcon size={16} texture="solid" />Play episode</button>
+          <button type="button" aria-label="Save episode" className="grid size-10 place-items-center rounded-full text-ink-muted ring-1 ring-line ring-inset hover:bg-sunken hover:text-ink"><HeartIcon size={18} texture="dither" /></button>
+        </div>
+      </div>
+    </article>
+  );
+}
+EpisodePage.stage = true;
+EpisodePage.names = ['Body leading', 'Display leading'];
+EpisodePage.lesson = {
+  why: 'Line height is a ratio of the type size. At 40px, 1.5 puts 20px of air between the lines, so the title’s two lines read as two separate lines rather than one heading.',
+  habit: 'Line height shrinks as size grows: about 1.5 for body text, 1.1–1.25 for display sizes.',
+};
+// What the eye sees: the title's two lines, their baselines and the air between them (the hatch). The pill is the line
+// height as a ratio of the size.
+EpisodePage.measure = (root) => {
+  const h = root?.querySelector('[data-title]');
+  if (!h) return null;
+  const r = h.getBoundingClientRect(), k = r.width / h.offsetWidth || 1, s = getComputedStyle(h), lh = parseFloat(s.lineHeight), fs = parseFloat(s.fontSize);
+  const range = document.createRange(); range.selectNodeContents(h);
+  const rows = [...range.getClientRects()].reduce((a, q) => (a.some((x) => Math.abs(x.top - q.top) < 4) ? a : [...a, q]), []);
+  const ratio = lh / fs, bands = [], rules = [];
+  ctx ??= document.createElement('canvas').getContext('2d');
+  ctx.font = `${s.fontWeight} ${s.fontSize} ${s.fontFamily}`;
+  const m = ctx.measureText('H'), cap = m.actualBoundingBoxAscent * k, half = ((lh - (m.fontBoundingBoxAscent + m.fontBoundingBoxDescent)) / 2) * k;
+  rows.forEach((q, i) => {
+    const base = q.top + half + m.fontBoundingBoxAscent * k;
+    rules.push({ key: `base${i}`, y: base, left: r.left - 10 * k, right: r.left + 160 * k }, { key: `cap${i}`, y: base - cap, left: r.left - 10 * k, right: r.left + 160 * k });
+    if (rows[i + 1]) bands.push({ key: `air${i}`, left: r.left - 10 * k, right: r.left + 160 * k, top: base + 6 * k, bottom: rows[i + 1].top + half + m.fontBoundingBoxAscent * k - cap, pattern: 'hatch' });
+  });
+  return {
+    lines: [], rules, bands, off: ratio > 1.4,
+    pills: [{ key: 'ratio', x: r.left + 190 * k, y: r.top + 10 * k, text: (ratio * k).toFixed(2), ok: ratio <= 1.3 }],
+    cut: { left: r.left, right: r.right, top: r.top, bottom: r.bottom },
+    subject: { left: r.left - 30 * k, right: r.left + 360 * k, top: r.top - 40 * k, bottom: r.bottom + 30 * k },
+  };
+};
+
+export const EXAMPLES = { 7: PassengerStep, 8: RecentlyPlayed, 9: PullRequest, 10: CalendarWeek, 1: ClientProfile, 2: InvoiceWalkthrough, 3: Whiteboard, 4: DriveActivity, 5: ChatThread, 6: FitnessToday, 12: NotificationSettings, 13: HelpArticle, 14: EpisodePage, 16: Timesheet };
 

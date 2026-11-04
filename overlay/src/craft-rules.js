@@ -480,6 +480,7 @@ function textNodes(el) {
   for (let n = walk.nextNode(); n; n = walk.nextNode()) if (n.nodeType === 3) out.push(n);
   return out;
 }
+let textCtx;
 const words = (el) => textNodes(el).map((n) => n.nodeValue).join('').replace(/\s+/g, ' ').trim();
 const alpha = (c) => c?.[3] ?? 0;
 // a over b, both [r, g, b, a]
@@ -602,17 +603,34 @@ export const measure = {
     if (!el.matches('p, li, dd, blockquote') || !facts.text(el)) return [];
     const text = words(el);
     if (text.length < T.chars) return [];
-    const s = facts.style(el), r = facts.rect(el), b = facts.box(el);
-    const fs = px(s.fontSize), width = r.width - b.pl - b.pr;
-    // the average glyph of running text is about half an em wide
-    const perLine = width / (fs * 0.5);
-    if (perLine <= T.max || lineCount(el) < 3) return [];
+    const s = facts.style(el);
+    // the characters actually on a line, counted from the words (an estimate of half an em a character overcounts the
+    // width a line holds and undercounts what a reader sees): the first full line, and the width its characters take
+    const t = textNodes(el).find((n) => n.nodeValue.trim().length > 40);
+    if (!t) return [];
+    const range = document.createRange();
+    let top = null, chars = 0, left = Infinity, right = -Infinity;
+    for (let i = 0; i < Math.min(t.length, 400); i++) {
+      range.setStart(t, i); range.setEnd(t, i + 1);
+      const q = range.getClientRects()[0];
+      if (!q) continue;
+      top ??= q.top;
+      if (q.top > top + q.height / 2) break;
+      chars = i + 1; left = Math.min(left, q.left); right = Math.max(right, q.right);
+    }
+    if (chars <= T.max || lineCount(el) < 3) return [];
+    // the fix sized from this font: the width of T.want.target characters, in the font's own ch (its zero)
+    textCtx ??= document.createElement('canvas').getContext('2d');
+    textCtx.font = `${s.fontStyle} ${s.fontWeight} ${s.fontSize} ${s.fontFamily}`;
+    const avg = (right - left) / chars, zero = textCtx.measureText('0').width || px(s.fontSize) * 0.55;
+    const ch = Math.round((T.want.target * avg) / zero);
     const cls = utility(el, 'max-w');
     return [{
-      ...say(this.id, { chars: Math.round(perLine) }),
-      key: this.id, text: cls ?? 'max-width', props: ['max-width'], value: `${Math.round(perLine)}ch`, n: Math.round(perLine),
-      evidence: { perLine: Math.round(perLine), width, fontSize: fs }, confidence: 0.84,
-      suggest: { kind: 'class', from: cls ?? '', to: 'max-w-prose', why: `about ${T.want.target} characters a line` },
+      ...say(this.id, { chars }),
+      key: this.id, text: cls ?? 'max-width', props: ['max-width'], value: `${chars}ch`, n: chars,
+      evidence: { perLine: chars, width: right - left, fontSize: px(s.fontSize) }, confidence: 0.84,
+      // narrowing reflows the lines, which the verdict's virtual trial can't do: left untried, proved by asking again
+      suggest: { kind: 'class', from: cls ?? '', to: `max-w-[${ch}ch]`, why: `about ${T.want.target} characters a line`, sets: { maxWidth: `${ch}ch` }, moves: true },
     }];
   },
 };

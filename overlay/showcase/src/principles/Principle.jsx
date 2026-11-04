@@ -297,7 +297,8 @@ function useMoment(Example, plumb, view) {
       setStage(STAGE.fix);
       // the count-down runs as long as plumber's own glide; after it, the marks keep reading the page through the hold,
       // so they always end where the fix came to rest, however slow the page is
-      const read = () => setMarks((m) => ({ ...m, to: measure() }));
+      // the card can grow or shrink as the fix lands (narrower lines run taller): the shade follows it too
+      const read = () => { setMarks((m) => ({ ...m, to: measure() })); setCard(cardOf()); };
       await tween(read, Math.max(MARKS.converge, glide + 120));
       following.current = true;
       const follow = () => { if (!following.current) return; read(); requestAnimationFrame(follow); };
