@@ -1,0 +1,136 @@
+<!doctype html>
+<!-- COMP #8, nested corners are concentric (docs/craft/taste-checklist.md). Sonder, a music app on the desktop,
+     Listen now: the Recently played shelf (one album playing, one hovered), mixes made for you, and the player.
+     Each Recently played tile is a 14px card with 8px of padding around its cover; in the showcase the cover keeps the
+     card's own 14px corner, so the gap pinches at every corner. Plant: .tile (data-tile) and its .cover (data-cover):
+     cover radius 14 instead of 14 − 8 = 6. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sonder · Listen now (comp)</title>
+<style>
+  :root {
+    --surface: #fff; --sunken: #f3f5f9; --ink: #12233d; --ink-muted: #5a6779; --ink-subtle: #6f7c90;
+    --line: rgb(18 35 61 / 0.09); --line-strong: rgb(18 35 61 / 0.14); --accent: #5550d8; --accent-soft: #efeefd; --accent-deep: #3631a6;
+    --board: #e9edf2; --board-dot: #d3d9e2;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 48px; background: var(--board);
+    background-image: radial-gradient(var(--board-dot) 1px, transparent 1px); background-size: 16px 16px;
+    font: 14px/20px Inter, -apple-system, system-ui, sans-serif; color: var(--ink); -webkit-font-smoothing: antialiased; font-feature-settings: "cv11", "ss01"; }
+  .num { font-variant-numeric: tabular-nums; }
+  svg.i { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+
+  .window { width: 1060px; height: 612px; display: grid; grid-template-columns: 200px 1fr; grid-template-rows: 1fr 72px; border-radius: 12px; overflow: hidden; background: var(--surface);
+    box-shadow: 0 1px 2px rgb(18 35 61 / 0.05), 0 8px 24px rgb(18 35 61 / 0.08), 0 24px 64px rgb(18 35 61 / 0.12), 0 0 0 0.5px rgb(18 35 61 / 0.18); }
+  .side { background: #f7f8fa; border-right: 0.5px solid var(--line-strong); display: flex; flex-direction: column; padding: 12px 10px; gap: 2px; overflow: hidden; }
+  .lights { display: flex; gap: 7px; padding: 4px 6px 14px; } .lights i { width: 11px; height: 11px; border-radius: 50%; background: #d9dde3; }
+  .search { margin: 0 0 10px; height: 30px; border-radius: 8px; background: rgb(18 35 61 / 0.05); display: flex; align-items: center; gap: 8px; padding: 0 10px; color: var(--ink-subtle); font-size: 13px; }
+  .nav { display: flex; align-items: center; gap: 9px; height: 30px; padding: 0 8px; border-radius: 6px; color: var(--ink-muted); font-size: 13px; }
+  .nav.on { background: rgb(18 35 61 / 0.06); color: var(--ink); font-weight: 500; } .nav.on svg { color: var(--accent); }
+  .label { margin: 14px 8px 6px; font-size: 11px; font-weight: 500; color: var(--ink-subtle); }
+  .pl { display: flex; align-items: center; gap: 9px; height: 34px; padding: 0 8px; font-size: 13px; color: var(--ink-muted); }
+  .pl img, .pl i { width: 24px; height: 24px; border-radius: 4px; object-fit: cover; flex: none; }
+
+  .main { overflow: hidden; padding: 0 28px; }
+  .bar { display: flex; align-items: center; height: 60px; gap: 12px; }
+  .bar h1 { margin: 0; font-size: 24px; font-weight: 600; letter-spacing: -0.02em; }
+  .bar .me { margin-left: auto; width: 28px; height: 28px; border-radius: 50%; object-fit: cover; }
+  .row-h { display: flex; align-items: baseline; justify-content: space-between; margin: 6px 0 12px; }
+  .row-h b { font-size: 17px; font-weight: 600; letter-spacing: -0.01em; }
+  .row-h a { font-size: 13px; font-weight: 500; color: var(--accent); text-decoration: none; }
+
+  /* Recently played: the lesson's component */
+  .shelf { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; }
+  .tile { display: flex; flex-direction: column; gap: 8px; padding: 8px; border-radius: 14px; background: var(--sunken); }
+  .tile.hover { background: #e9ecf2; }
+  .cover { position: relative; border-radius: 6px; overflow: hidden; aspect-ratio: 1; }
+  .cover img { display: block; width: 100%; height: 100%; object-fit: cover; }
+  .cover::after { content: ''; position: absolute; inset: 0; border-radius: inherit; box-shadow: inset 0 0 0 1px rgb(18 35 61 / 0.1); }
+  .type { position: absolute; inset: 0; background: #1f2a3c; color: #f0b59a; padding: 12% 11%; display: flex; flex-direction: column; justify-content: space-between; }
+  .type b { font-size: 34px; line-height: 0.92; font-weight: 800; letter-spacing: -0.03em; }
+  .type small { font-size: 10px; line-height: 13px; color: rgb(240 181 154 / 0.75); letter-spacing: 0.02em; }
+  .tile .t { display: flex; flex-direction: column; padding: 0 2px 2px; min-width: 0; }
+  .tile .t b { font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tile .t span { font-size: 12px; color: var(--ink-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tile.playing .t b { color: var(--accent-deep); }
+  .eq { position: absolute; left: 8px; bottom: 8px; display: flex; align-items: flex-end; gap: 2px; height: 22px; padding: 5px 6px; border-radius: 6px; background: rgb(18 35 61 / 0.55); backdrop-filter: blur(6px); }
+  .eq i { width: 3px; border-radius: 1px; background: #fff; animation: eq 0.9s ease-in-out infinite alternate; }
+  .eq i:nth-child(1) { height: 60%; } .eq i:nth-child(2) { height: 100%; animation-delay: .2s; } .eq i:nth-child(3) { height: 40%; animation-delay: .4s; }
+  @keyframes eq { to { transform: scaleY(0.4); transform-origin: bottom; } }
+  .play { position: absolute; right: 8px; bottom: 8px; width: 34px; height: 34px; border-radius: 50%; background: var(--accent); display: grid; place-items: center; box-shadow: 0 4px 12px rgb(54 49 166 / 0.4); }
+  .play svg { width: 14px; height: 14px; margin-left: 2px; }
+
+  .mixes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  .mix { position: relative; height: 128px; border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; justify-content: flex-end; padding: 14px; color: #fff; }
+  .mix img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .mix::after { content: ''; position: absolute; inset: 0; z-index: 0; background: linear-gradient(180deg, rgb(0 0 0 / 0) 20%, rgb(10 18 32 / 0.72)); }
+  .mix > *:not(img) { position: relative; z-index: 1; }
+  .mix small { font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; opacity: 0.8; }
+  .mix b { font-size: 17px; font-weight: 600; letter-spacing: -0.01em; }
+  .mix span { font-size: 12px; opacity: 0.85; }
+
+  /* the player */
+  .player { grid-column: 1 / -1; display: grid; grid-template-columns: 260px 1fr 200px; align-items: center; gap: 20px; padding: 0 18px; border-top: 0.5px solid var(--line-strong); background: rgb(255 255 255 / 0.96); }
+  .now { display: flex; align-items: center; gap: 11px; min-width: 0; }
+  .now img { width: 46px; height: 46px; border-radius: 6px; object-fit: cover; box-shadow: 0 0 0 1px rgb(18 35 61 / 0.08), 0 2px 6px rgb(18 35 61 / 0.12); }
+  .now span { display: flex; flex-direction: column; min-width: 0; } .now b { font-size: 13px; font-weight: 500; } .now small { font-size: 12px; color: var(--ink-muted); }
+  .now .heart { color: var(--accent); margin-left: 6px; }
+  .ctrl { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .btns { display: flex; align-items: center; gap: 22px; color: var(--ink-muted); }
+  .btns .pp { width: 34px; height: 34px; border-radius: 50%; background: var(--ink); display: grid; place-items: center; }
+  .prog { display: flex; align-items: center; gap: 10px; width: 100%; max-width: 440px; font-size: 11px; color: var(--ink-subtle); }
+  .prog .tr { flex: 1; height: 4px; border-radius: 2px; background: #e3e7ee; position: relative; }
+  .prog .tr i { position: absolute; inset: 0 61% 0 0; border-radius: 2px; background: var(--ink); }
+  .vol { display: flex; align-items: center; gap: 8px; justify-content: flex-end; color: var(--ink-muted); }
+  .vol .tr { width: 90px; height: 4px; border-radius: 2px; background: #e3e7ee; position: relative; } .vol .tr i { position: absolute; inset: 0 30% 0 0; border-radius: 2px; background: var(--ink-muted); }
+</style>
+</head>
+<body>
+<div class="window">
+  <aside class="side">
+    <div class="lights"><i></i><i></i><i></i></div>
+    <div class="search"><svg class="i" viewBox="0 0 16 16" style="width:14px;height:14px"><circle cx="7" cy="7" r="4.5"/><path d="m10.5 10.5 3 3"/></svg>Search</div>
+    <div class="nav on"><svg class="i" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"/><path d="m6.5 5.5 4 2.5-4 2.5z" fill="currentColor"/></svg>Listen now</div>
+    <div class="nav"><svg class="i" viewBox="0 0 16 16"><rect x="2" y="2" width="5" height="5" rx="1"/><rect x="9" y="2" width="5" height="5" rx="1"/><rect x="2" y="9" width="5" height="5" rx="1"/><rect x="9" y="9" width="5" height="5" rx="1"/></svg>Browse</div>
+    <div class="nav"><svg class="i" viewBox="0 0 16 16"><circle cx="8" cy="8" r="1.5"/><path d="M5 5a4.2 4.2 0 0 0 0 6M11 5a4.2 4.2 0 0 1 0 6M3 3a7 7 0 0 0 0 10M13 3a7 7 0 0 1 0 10"/></svg>Radio</div>
+    <div class="label">Library</div>
+    <div class="nav"><svg class="i" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"/><path d="M8 4.8V8l2.2 1.4"/></svg>Recently added</div>
+    <div class="nav"><svg class="i" viewBox="0 0 16 16"><circle cx="8" cy="5.5" r="2.5"/><path d="M3.5 13.5c.6-2.3 2.3-3.5 4.5-3.5s3.9 1.2 4.5 3.5"/></svg>Artists</div>
+    <div class="nav"><svg class="i" viewBox="0 0 16 16"><rect x="2" y="2" width="12" height="12" rx="2"/><circle cx="8" cy="8" r="2.5"/></svg>Albums</div>
+    <div class="label">Playlists</div>
+    <div class="pl"><img src="../../../../overlay/showcase/src/media/peak.jpg" alt="">Long drives</div>
+    <div class="pl"><img src="../../../../overlay/showcase/src/media/ceramic.jpg" alt="">Studio, Sunday</div>
+    <div class="pl"><i style="background:linear-gradient(135deg,#5550d8,#d0543c)"></i>Run club, 170 bpm</div>
+  </aside>
+
+  <main class="main">
+    <div class="bar"><h1>Listen now</h1><img class="me" src="../../../../overlay/showcase/src/media/people/person-05.jpg" alt=""></div>
+    <div class="row-h"><b>Recently played</b><a href="#">See all</a></div>
+    <div class="shelf" data-albums>
+      <div class="tile playing" data-tile><span class="cover" data-cover><img src="../../../../overlay/showcase/src/media/low-tide.jpg" alt=""><span class="eq"><i></i><i></i><i></i></span></span><span class="t"><b>Low Tide</b><span>Marina Avila</span></span></div>
+      <div class="tile hover"><span class="cover"><img src="../../../../overlay/showcase/src/media/paper-cities.jpg" alt=""><span class="play"><svg viewBox="0 0 14 14" fill="#fff"><path d="M3 1.8v10.4l9-5.2z"/></svg></span></span><span class="t"><b>Paper Cities</b><span>The Lanterns</span></span></div>
+      <div class="tile"><span class="cover"><img src="../../../../overlay/showcase/src/media/afterglow.jpg" alt=""></span><span class="t"><b>Afterglow</b><span>Kaito Ren</span></span></div>
+      <div class="tile"><span class="cover"><img src="../../../../overlay/showcase/src/media/valley.jpg" alt=""></span><span class="t"><b>North of Here</b><span>Ida Holm</span></span></div>
+      <div class="tile"><span class="cover"><span class="type"><b>ALTI<br>TUDE</b><small>live at the Assembly Hall</small></span></span><span class="t"><b>Altitude, Live</b><span>Coast Assembly</span></span></div>
+    </div>
+    <div class="row-h" style="margin-top:24px"><b>Made for you</b><a href="#">See all</a></div>
+    <div class="mixes">
+      <div class="mix"><img src="../../../../overlay/showcase/src/media/lake.jpg" alt=""><small>Daily mix 1</small><b>Quiet focus</b><span>Ida Holm, Marina Avila and more</span></div>
+      <div class="mix"><img src="../../../../overlay/showcase/src/media/afterglow.jpg" alt=""><small>New for you</small><b>Release radar</b><span>Updated Friday · 30 songs</span></div>
+      <div class="mix"><img src="../../../../overlay/showcase/src/media/ceramic.jpg" alt="" style="object-position:center 30%"><small>Daily mix 2</small><b>Kitchen radio</b><span>The Lanterns, Kaito Ren and more</span></div>
+    </div>
+  </main>
+
+  <footer class="player">
+    <div class="now"><img src="../../../../overlay/showcase/src/media/low-tide.jpg" alt=""><span><b>Half Moon Harbour</b><small>Marina Avila · Low Tide</small></span><svg class="i heart" viewBox="0 0 16 16" fill="currentColor"><path d="M8 13.5S2.5 10.3 2.5 6.3A2.8 2.8 0 0 1 8 5a2.8 2.8 0 0 1 5.5 1.3c0 4-5.5 7.2-5.5 7.2z"/></svg></div>
+    <div class="ctrl">
+      <div class="btns"><svg class="i" viewBox="0 0 16 16"><path d="M2 4h2.5l7 8H14M2 12h2.5l2-2.3M9.5 6.3l2-2.3H14M12.5 2.5 14 4l-1.5 1.5M12.5 10.5 14 12l-1.5 1.5"/></svg><svg class="i" viewBox="0 0 16 16" fill="currentColor"><path d="M13 3v10L6 8zM4 3v10" stroke-width="1.8"/></svg><span class="pp"><svg viewBox="0 0 14 14" width="12" height="12" fill="#fff"><rect x="3" y="2" width="3" height="10" rx="1"/><rect x="8" y="2" width="3" height="10" rx="1"/></svg></span><svg class="i" viewBox="0 0 16 16" fill="currentColor"><path d="M3 3v10l7-5zM12 3v10" stroke-width="1.8"/></svg><svg class="i" viewBox="0 0 16 16"><path d="M3 6.5V5h9.5L11 3.5M13 9.5V11H3.5L5 12.5"/></svg></div>
+      <div class="prog num"><span>1:42</span><span class="tr"><i></i></span><span>4:21</span></div>
+    </div>
+    <div class="vol"><svg class="i" viewBox="0 0 16 16"><path d="M2.5 6h2.5l3.5-3v10L5 10H2.5zM11 5.5a3.5 3.5 0 0 1 0 5"/></svg><span class="tr"><i></i></span></div>
+  </footer>
+</div>
+</body>
+</html>

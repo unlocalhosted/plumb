@@ -1,0 +1,140 @@
+<!doctype html>
+<!-- COMP #5, trim the text's leading (docs/craft/taste-checklist.md). Kite, a messenger for a small studio, on the
+     desktop: the conversation list, and Sana's thread mid-afternoon (a photo she's sent, the short replies, her typing).
+     The bubbles are the lesson's component: built px-3.5 py-2 with 15px words on a 24px line, the line's leading adds
+     itself to the padding, so the one-line replies look puffy. Plant: [data-bubble] (the short ones: "Perfect, thanks!",
+     "On my way"). -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kite · Sana Okafor (comp)</title>
+<style>
+  :root {
+    --surface: #fff; --sunken: #f3f5f9; --ink: #12233d; --ink-muted: #5a6779; --ink-subtle: #6f7c90;
+    --line: rgb(18 35 61 / 0.09); --line-strong: rgb(18 35 61 / 0.14); --accent: #5550d8; --accent-soft: #efeefd; --accent-deep: #3631a6;
+    --positive: #0f8a6e; --board: #e9edf2; --board-dot: #d3d9e2;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 48px; background: var(--board);
+    background-image: radial-gradient(var(--board-dot) 1px, transparent 1px); background-size: 16px 16px;
+    font: 14px/20px Inter, -apple-system, system-ui, sans-serif; color: var(--ink); -webkit-font-smoothing: antialiased; font-feature-settings: "cv11", "ss01"; }
+  .num { font-variant-numeric: tabular-nums; }
+  svg.i { width: 17px; height: 17px; stroke: currentColor; fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+
+  .window { width: 1000px; height: 660px; display: grid; grid-template-columns: 300px 1fr; grid-template-rows: 100%; border-radius: 12px; overflow: hidden; background: var(--surface);
+    box-shadow: 0 1px 2px rgb(18 35 61 / 0.05), 0 8px 24px rgb(18 35 61 / 0.08), 0 24px 64px rgb(18 35 61 / 0.12), 0 0 0 0.5px rgb(18 35 61 / 0.18); }
+
+  .list { background: #f7f8fa; border-right: 0.5px solid var(--line-strong); display: flex; flex-direction: column; min-width: 0; }
+  .lhead { display: flex; align-items: center; gap: 10px; padding: 14px 14px 10px; }
+  .lights { display: flex; gap: 7px; } .lights i { width: 11px; height: 11px; border-radius: 50%; background: #d9dde3; }
+  .lhead .pen { margin-left: auto; color: var(--ink-muted); }
+  .search { margin: 0 12px 8px; height: 30px; border-radius: 8px; background: rgb(18 35 61 / 0.05); display: flex; align-items: center; gap: 8px; padding: 0 10px; color: var(--ink-subtle); font-size: 13px; }
+  .search svg { width: 14px; height: 14px; }
+  .conv { position: relative; display: grid; grid-template-columns: 40px 1fr; gap: 11px; margin: 0 6px; padding: 9px 10px; border-radius: 10px; }
+  .conv.sel { background: #fff; box-shadow: 0 0 0 0.5px var(--line-strong), 0 1px 2px rgb(18 35 61 / 0.05); }
+  .av { position: relative; width: 40px; height: 40px; }
+  .av img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; }
+  .av .on { position: absolute; right: 0; bottom: 0; width: 11px; height: 11px; border-radius: 50%; background: var(--positive); box-shadow: 0 0 0 2px #f7f8fa; }
+  .conv.sel .av .on { box-shadow: 0 0 0 2px #fff; }
+  .av.grp { display: grid; place-items: center; border-radius: 50%; background: var(--accent-soft); color: var(--accent-deep); font-weight: 600; font-size: 13px; }
+  .av.grp img { position: absolute; width: 26px; height: 26px; box-shadow: 0 0 0 2px #f7f8fa; }
+  .w { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+  .w .top { display: flex; align-items: baseline; gap: 6px; }
+  .w b { font-size: 13.5px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .w time { margin-left: auto; font-size: 11.5px; color: var(--ink-subtle); flex: none; }
+  .w .pre { display: flex; gap: 6px; font-size: 12.5px; color: var(--ink-muted); }
+  .w .pre span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .w .pre i { margin-left: auto; flex: none; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: var(--accent); color: #fff; font: 600 11px/18px Inter, system-ui; text-align: center; }
+  .conv.unread b { font-weight: 600; } .conv.unread .pre { color: var(--ink); } .conv.unread time { color: var(--accent-deep); font-weight: 500; }
+  .typing { color: var(--accent-deep) !important; font-style: normal; }
+
+  /* the thread */
+  .thread { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+  .thead { display: flex; align-items: center; gap: 12px; height: 62px; padding: 0 18px; border-bottom: 0.5px solid var(--line-strong); }
+  .thead .av, .thead .av img { width: 36px; height: 36px; }
+  .thead .av .on { box-shadow: 0 0 0 2px #fff; width: 10px; height: 10px; }
+  .thead .t { display: flex; flex-direction: column; }
+  .thead .t b { font-size: 14px; font-weight: 600; } .thead .t span { font-size: 12px; color: var(--positive); }
+  .thead .acts { margin-left: auto; display: flex; gap: 4px; color: var(--ink-muted); }
+  .thead .acts span { width: 34px; height: 34px; border-radius: 8px; display: grid; place-items: center; }
+  .msgs { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 6px; padding: 18px 24px 14px; overflow: hidden; justify-content: flex-end; }
+  .sep { align-self: center; margin: 2px 0 8px; font-size: 12px; color: var(--ink-subtle); }
+  .sep b { font-weight: 500; color: var(--ink-muted); }
+  .grp { display: flex; align-items: flex-end; gap: 8px; }
+  .grp > img { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; flex: none; }
+  .col { display: flex; flex-direction: column; gap: 3px; align-items: flex-start; max-width: 64%; }
+  .grp.me { justify-content: flex-end; } .grp.me .col { align-items: flex-end; }
+
+  /* the bubbles: the lesson's component */
+  .bubble { margin: 0; padding: 8px 14px; border-radius: 18px; font-size: 15px; line-height: 24px; background: var(--sunken); text-wrap: pretty; }
+  .me .bubble { background: var(--accent); color: #fff; }
+  .col .bubble + .bubble { margin-top: 0; }
+  .grp:not(.me) .col .bubble:not(:last-child) { border-bottom-left-radius: 6px; } .grp:not(.me) .col .bubble:not(:first-child) { border-top-left-radius: 6px; }
+  .me .col .bubble:not(:last-child) { border-bottom-right-radius: 6px; } .me .col .bubble:not(:first-child) { border-top-right-radius: 6px; }
+  .photo { width: 260px; border-radius: 18px 18px 18px 6px; overflow: hidden; position: relative; box-shadow: inset 0 0 0 1px rgb(18 35 61 / 0.06); }
+  .photo img { display: block; width: 100%; height: 150px; object-fit: cover; }
+  .photo span { position: absolute; left: 10px; bottom: 10px; height: 22px; padding: 0 8px; border-radius: 11px; background: rgb(18 35 61 / 0.6); color: #fff; font-size: 11.5px; display: inline-flex; align-items: center; backdrop-filter: blur(6px); }
+  .react { margin: -10px 0 0 10px; display: inline-flex; align-items: center; gap: 4px; height: 22px; padding: 0 7px; border-radius: 11px; background: #fff; box-shadow: 0 0 0 1px var(--line-strong), 0 1px 2px rgb(18 35 61 / 0.06); font-size: 12px; color: var(--ink-muted); position: relative; }
+  .read { align-self: flex-end; display: flex; align-items: center; gap: 5px; font-size: 11.5px; color: var(--ink-subtle); margin-top: -2px; }
+  .read img { width: 14px; height: 14px; border-radius: 50%; object-fit: cover; }
+  .dots { display: inline-flex; gap: 4px; padding: 13px 14px; border-radius: 18px; background: var(--sunken); }
+  .dots i { width: 7px; height: 7px; border-radius: 50%; background: #9aa5b5; animation: b 1.2s infinite ease-in-out; }
+  .dots i:nth-child(2) { animation-delay: .15s; } .dots i:nth-child(3) { animation-delay: .3s; }
+  @keyframes b { 30% { transform: translateY(-3px); background: #6f7c90; } 60% { transform: none; } }
+  .compose { display: flex; align-items: center; gap: 8px; padding: 10px 14px 14px; }
+  .compose .ic { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; color: var(--ink-muted); }
+  .compose .field { flex: 1; height: 38px; border-radius: 19px; box-shadow: inset 0 0 0 1px var(--line-strong); display: flex; align-items: center; padding: 0 16px; font-size: 14px; color: var(--ink-subtle); }
+  .compose .send { width: 36px; height: 36px; border-radius: 50%; background: var(--accent-soft); color: var(--accent); display: grid; place-items: center; }
+</style>
+</head>
+<body>
+<div class="window">
+  <aside class="list">
+    <div class="lhead"><div class="lights"><i></i><i></i><i></i></div><svg class="i pen" viewBox="0 0 18 18"><path d="M12.5 3.5 14.5 5.5 6 14l-3 .8.8-3z"/></svg></div>
+    <div class="search"><svg class="i" viewBox="0 0 16 16"><circle cx="7" cy="7" r="4.5"/><path d="m10.5 10.5 3 3"/></svg>Search</div>
+    <div class="conv sel"><span class="av"><img src="../../../../overlay/showcase/src/media/people/person-09.jpg" alt=""><span class="on"></span></span><span class="w"><span class="top"><b>Sana Okafor</b><time>2:44</time></span><span class="pre"><span class="typing">typing…</span></span></span></div>
+    <div class="conv unread"><span class="av grp"><img style="left:-2px;top:-2px" src="../../../../overlay/showcase/src/media/people/person-07.jpg" alt=""><img style="right:-2px;bottom:-2px" src="../../../../overlay/showcase/src/media/people/person-08.jpg" alt=""></span><span class="w"><span class="top"><b>Spring launch</b><time>2:31</time></span><span class="pre"><span>Theo: print slot moves to the 21st</span><i>3</i></span></span></div>
+    <div class="conv"><span class="av"><img src="../../../../overlay/showcase/src/media/people/person-04.jpg" alt=""></span><span class="w"><span class="top"><b>Henrik Lund</b><time>1:05</time></span><span class="pre"><span>Proofs look great, sending to press</span></span></span></div>
+    <div class="conv"><span class="av"><img src="../../../../overlay/showcase/src/media/people/person-07.jpg" alt=""><span class="on"></span></span><span class="w"><span class="top"><b>Ana Kovač</b><time>11:48</time></span><span class="pre"><span>You: I'll record the walkthrough after lunch</span></span></span></div>
+    <div class="conv"><span class="av"><img src="../../../../overlay/showcase/src/media/people/person-10.jpg" alt=""></span><span class="w"><span class="top"><b>Mette Halden</b><time>Tue</time></span><span class="pre"><span>PO-7716 attached for the final delivery</span></span></span></div>
+    <div class="conv"><span class="av"><img src="../../../../overlay/showcase/src/media/people/person-06.jpg" alt=""></span><span class="w"><span class="top"><b>David Park</b><time>Mon</time></span><span class="pre"><span>Thanks, talk next week</span></span></span></div>
+    <div class="conv"><span class="av"><img src="../../../../overlay/showcase/src/media/people/person-03.jpg" alt=""></span><span class="w"><span class="top"><b>Lea Mbatha</b><time>Sun</time></span><span class="pre"><span>Photo: the studio at night</span></span></span></div>
+  </aside>
+
+  <section class="thread">
+    <header class="thead">
+      <span class="av"><img src="../../../../overlay/showcase/src/media/people/person-09.jpg" alt=""><span class="on"></span></span>
+      <span class="t"><b>Sana Okafor</b><span>Active now</span></span>
+      <span class="acts"><span><svg class="i" viewBox="0 0 18 18"><path d="M4 3h3l1.3 3.2-1.8 1.2a8 8 0 0 0 4.1 4.1l1.2-1.8L15 11v3a1 1 0 0 1-1 1A11 11 0 0 1 3 4a1 1 0 0 1 1-1z"/></svg></span><span><svg class="i" viewBox="0 0 18 18"><rect x="2" y="5" width="10" height="8" rx="1.5"/><path d="m12 8 4-2.2v6.4L12 10"/></svg></span><span><svg class="i" viewBox="0 0 18 18"><circle cx="8" cy="8" r="5"/><path d="m12 12 3.5 3.5"/></svg></span></span>
+    </header>
+    <div class="msgs">
+      
+      <div class="grp"><img src="../../../../overlay/showcase/src/media/people/person-09.jpg" alt=""><div class="col">
+        <div class="photo"><img src="../../../../overlay/showcase/src/media/ceramic.jpg" alt=""><span>hero_v2.jpg</span></div>
+        <p class="bubble">Final hero for Moss &amp; Fern. Mugs in hand didn't work, the stack reads better at that size.</p>
+        <p class="bubble">Are we still on for the walkthrough at 3?</p>
+      </div></div>
+      <div class="grp me"><div class="col">
+        <p class="bubble" data-bubble="2">Yes, finishing the last two slides now.</p>
+        <p class="bubble">And the photo is lovely. Clay, not teal 🙌</p>
+      </div></div>
+      <div class="grp"><img src="../../../../overlay/showcase/src/media/people/person-09.jpg" alt=""><div class="col">
+        <p class="bubble" data-bubble="3">Perfect, thanks!</p>
+      </div></div>
+      <div class="grp me"><div class="col">
+        <p class="bubble" data-bubble="4">On my way</p>
+      </div></div>
+      <span class="read"><img src="../../../../overlay/showcase/src/media/people/person-09.jpg" alt="">Read 2:44 pm</span>
+      <div class="grp"><img src="../../../../overlay/showcase/src/media/people/person-09.jpg" alt=""><div class="col"><span class="dots"><i></i><i></i><i></i></span></div></div>
+    </div>
+    <div class="compose">
+      <span class="ic"><svg class="i" viewBox="0 0 18 18"><path d="M9 3.5v11M3.5 9h11"/></svg></span>
+      <span class="field">Message Sana</span>
+      <span class="ic"><svg class="i" viewBox="0 0 18 18"><circle cx="9" cy="9" r="6.5"/><path d="M6.5 10.5a3 3 0 0 0 5 0"/><circle cx="6.8" cy="7.3" r=".6" fill="currentColor"/><circle cx="11.2" cy="7.3" r=".6" fill="currentColor"/></svg></span>
+      <span class="send"><svg class="i" viewBox="0 0 18 18" style="width:16px;height:16px"><path d="M9 14.5v-11M4.5 8 9 3.5 13.5 8"/></svg></span>
+    </div>
+  </section>
+</div>
+</body>
+</html>

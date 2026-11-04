@@ -1,0 +1,168 @@
+<!doctype html>
+<!-- COMP #3, round shapes are drawn a touch larger than square ones (docs/craft/taste-checklist.md). Field, a team
+     whiteboard, mid-session: a moodboard of pinned photos, the launch flow drawn in shapes, notes with their authors,
+     two collaborators' cursors. The Shapes picker is open above the toolbar; in the showcase its square, circle,
+     triangle and diamond are drawn in the same 20px box, so the circle reads small. Plant: [data-shapes]. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Field · Spring launch (comp)</title>
+<style>
+  :root {
+    --surface: #fff; --sunken: #f3f5f9; --ink: #12233d; --ink-muted: #5a6779; --ink-subtle: #6f7c90;
+    --line: rgb(18 35 61 / 0.09); --line-strong: rgb(18 35 61 / 0.14); --accent: #5550d8; --accent-soft: #efeefd; --accent-deep: #3631a6;
+    --caution-soft: #fcf1dd; --positive-soft: #e5f4ef; --positive: #0f6f58;
+    --board: #e9edf2; --board-dot: #d3d9e2;
+    --theo: #0f8a6e; --sana: #d0543c;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 48px; background: var(--board);
+    background-image: radial-gradient(var(--board-dot) 1px, transparent 1px); background-size: 16px 16px;
+    font: 14px/20px Inter, -apple-system, system-ui, sans-serif; color: var(--ink); -webkit-font-smoothing: antialiased; font-feature-settings: "cv11", "ss01"; }
+  svg.i { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+
+  .window { width: 1060px; height: 660px; display: flex; flex-direction: column; border-radius: 12px; overflow: hidden; background: #fff;
+    box-shadow: 0 1px 2px rgb(18 35 61 / 0.05), 0 8px 24px rgb(18 35 61 / 0.08), 0 24px 64px rgb(18 35 61 / 0.12), 0 0 0 0.5px rgb(18 35 61 / 0.18); }
+  .bar { display: flex; align-items: center; gap: 12px; height: 50px; padding: 0 14px; border-bottom: 0.5px solid var(--line-strong); }
+  .lights { display: flex; gap: 7px; margin-right: 8px; } .lights i { width: 11px; height: 11px; border-radius: 50%; background: #d9dde3; }
+  .logo { width: 24px; height: 24px; border-radius: 6px; background: #12233d; display: grid; place-items: center; }
+  .file { font-size: 13px; color: var(--ink-subtle); } .file b { color: var(--ink); font-weight: 500; }
+  .saved { font-size: 12px; color: var(--ink-subtle); display: flex; align-items: center; gap: 5px; }
+  .faces { margin-left: auto; display: flex; }
+  .faces img { width: 26px; height: 26px; border-radius: 50%; object-fit: cover; box-shadow: 0 0 0 2px #fff; margin-left: -6px; }
+  .faces img.t { box-shadow: 0 0 0 2px #fff, 0 0 0 3.5px var(--theo); } .faces img.s { box-shadow: 0 0 0 2px #fff, 0 0 0 3.5px var(--sana); }
+  .ghost { width: 32px; height: 32px; border-radius: 7px; display: grid; place-items: center; color: var(--ink-muted); }
+  .share { height: 30px; padding: 0 12px; border-radius: 7px; background: var(--accent); color: #fff; font-size: 13px; font-weight: 500; display: inline-flex; align-items: center; box-shadow: 0 1px 2px rgb(54 49 166 / 0.3); }
+
+  .canvas { position: relative; flex: 1; overflow: hidden; background: #f6f7f9; background-image: radial-gradient(#d9dee6 1.1px, transparent 1.1px); background-size: 20px 20px; }
+
+  /* the moodboard */
+  .frame-label { position: absolute; font-size: 12px; color: var(--ink-subtle); }
+  .frame { position: absolute; border-radius: 6px; background: #fff; box-shadow: 0 0 0 1px rgb(18 35 61 / 0.08), 0 1px 3px rgb(18 35 61 / 0.06); }
+  .photo { position: absolute; background: #fff; padding: 6px 6px 22px; border-radius: 3px; box-shadow: 0 1px 2px rgb(18 35 61 / 0.08), 0 6px 14px rgb(18 35 61 / 0.1); font-size: 10.5px; color: var(--ink-muted); }
+  .photo img { display: block; width: 100%; height: 100%; object-fit: cover; border-radius: 1.5px; }
+  .photo span { position: absolute; left: 7px; bottom: 5px; }
+  .sticky { position: absolute; width: 132px; padding: 10px 11px 9px; font-size: 12.5px; line-height: 17px; border-radius: 2px;
+    box-shadow: 0 1px 1px rgb(18 35 61 / 0.06), 0 6px 12px -4px rgb(18 35 61 / 0.18); }
+  .sticky small { display: flex; align-items: center; gap: 5px; margin-top: 8px; font-size: 10.5px; color: rgb(18 35 61 / 0.55); }
+  .sticky small img { width: 14px; height: 14px; border-radius: 50%; object-fit: cover; }
+  .y { background: #fbe9a8; } .b { background: #d8e6fb; } .g { background: #d5efe3; } .p { background: #f6dbe2; }
+
+  /* the flow, drawn in shapes */
+  .flow { position: absolute; left: 540px; top: 58px; }
+  .flow text { font: 500 12px Inter, -apple-system, system-ui, sans-serif; fill: var(--ink); }
+
+  /* cursors */
+  .cursor { position: absolute; display: flex; align-items: flex-start; gap: 2px; }
+  .cursor span { margin-top: 14px; height: 20px; padding: 0 7px; border-radius: 5px 10px 10px 10px; color: #fff; font-size: 11.5px; font-weight: 500; display: inline-flex; align-items: center; }
+  .sel { position: absolute; border: 1.5px solid var(--theo); border-radius: 3px; }
+  .sel i { position: absolute; width: 7px; height: 7px; background: #fff; border: 1.5px solid var(--theo); border-radius: 1.5px; }
+
+  /* the Shapes picker, open above the toolbar: the lesson's component */
+  .picker { position: absolute; left: 50%; bottom: 74px; transform: translateX(-50%); display: flex; flex-direction: column; gap: 8px; padding: 10px; border-radius: 12px; background: #fff;
+    box-shadow: 0 0 0 0.5px rgb(18 35 61 / 0.14), 0 4px 8px rgb(18 35 61 / 0.05), 0 12px 32px rgb(18 35 61 / 0.14); }
+  .picker .h { display: flex; justify-content: space-between; padding: 0 4px; font-size: 12px; font-weight: 500; color: var(--ink-muted); }
+  .picker .h span { font-weight: 400; color: var(--ink-subtle); }
+  .shapes { display: flex; gap: 4px; }
+  .shapes button { all: unset; width: 48px; height: 48px; border-radius: 8px; display: grid; place-items: center; color: var(--ink); }
+  .shapes button.hover { background: var(--sunken); }
+  .shapes svg { width: 24px; height: 24px; }
+  .styles { display: flex; align-items: center; gap: 8px; padding: 8px 4px 0; border-top: 0.5px solid var(--line); }
+  .styles i { width: 16px; height: 16px; border-radius: 50%; box-shadow: inset 0 0 0 1px rgb(18 35 61 / 0.12); }
+  .styles i.on { box-shadow: 0 0 0 2px #fff, 0 0 0 3.5px var(--accent); }
+  .styles .k { margin-left: auto; display: flex; gap: 2px; padding: 2px; border-radius: 6px; background: var(--sunken); font-size: 11.5px; color: var(--ink-muted); }
+  .styles .k span { padding: 1px 7px; border-radius: 4px; } .styles .k span.on { background: #fff; color: var(--ink); box-shadow: 0 1px 2px rgb(18 35 61 / 0.1); }
+
+  .toolbar { position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%); display: flex; align-items: center; gap: 2px; padding: 5px; border-radius: 12px; background: #fff;
+    box-shadow: 0 0 0 0.5px rgb(18 35 61 / 0.14), 0 2px 4px rgb(18 35 61 / 0.04), 0 6px 16px rgb(18 35 61 / 0.1); }
+  .toolbar .t { width: 38px; height: 38px; border-radius: 8px; display: grid; place-items: center; color: var(--ink-muted); }
+  .toolbar .t.on { background: var(--accent-soft); color: var(--accent-deep); }
+  .toolbar .sep { width: 1px; height: 22px; background: var(--line-strong); margin: 0 4px; }
+  .zoom { position: absolute; right: 14px; bottom: 14px; display: flex; align-items: center; gap: 2px; height: 34px; padding: 0 4px; border-radius: 9px; background: #fff; font-size: 12px; color: var(--ink-muted);
+    box-shadow: 0 0 0 0.5px rgb(18 35 61 / 0.14), 0 2px 6px rgb(18 35 61 / 0.08); font-variant-numeric: tabular-nums; }
+  .zoom span { width: 26px; text-align: center; } .zoom b { font-weight: 500; color: var(--ink); width: 40px; text-align: center; }
+  .mini { position: absolute; left: 14px; bottom: 14px; width: 132px; height: 84px; border-radius: 9px; background: #fff; box-shadow: 0 0 0 0.5px rgb(18 35 61 / 0.14), 0 2px 6px rgb(18 35 61 / 0.08); overflow: hidden; }
+  .mini i { position: absolute; border-radius: 1.5px; }
+</style>
+</head>
+<body>
+<div class="window">
+  <div class="bar">
+    <div class="lights"><i></i><i></i><i></i></div>
+    <span class="logo"><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="#fff" stroke-width="1.7" stroke-linecap="round"><path d="M3 13c2-6 5-9 10-10M4 6.5h5"/></svg></span>
+    <span class="file">Moss &amp; Fern / <b>Spring launch</b></span>
+    <span class="saved"><svg class="i" viewBox="0 0 16 16" style="width:13px;height:13px"><path d="m3.5 8.5 3 3 6-7"/></svg>Saved</span>
+    <span class="faces"><img class="t" src="../../../../overlay/showcase/src/media/people/person-08.jpg" alt=""><img class="s" src="../../../../overlay/showcase/src/media/people/person-09.jpg" alt=""><img src="../../../../overlay/showcase/src/media/people/person-01.jpg" alt=""></span>
+    <span class="ghost"><svg class="i" viewBox="0 0 18 18"><circle cx="9" cy="9" r="6.5"/><path d="M9 5.5V9l2.5 1.5"/></svg></span>
+    <span class="ghost"><svg class="i" viewBox="0 0 18 18"><path d="M3.5 4.5h11v7.5h-6l-3.5 3v-3H3.5z"/></svg></span>
+    <span class="share">Share</span>
+  </div>
+
+  <div class="canvas">
+    <!-- moodboard -->
+    <span class="frame-label" style="left:40px;top:22px">Moodboard · 9 items</span>
+    <div class="frame" style="left:40px;top:44px;width:430px;height:300px"></div>
+    <div class="photo" style="left:60px;top:66px;width:150px;height:150px;transform:rotate(-2deg)"><img src="../../../../overlay/showcase/src/media/valley.jpg" alt=""><span>Cover, option A</span></div>
+    <div class="photo" style="left:220px;top:60px;width:126px;height:166px;transform:rotate(1.5deg)"><img src="../../../../overlay/showcase/src/media/ceramic.jpg" alt=""><span>Product shot</span></div>
+    <div class="photo" style="left:354px;top:76px;width:100px;height:116px;transform:rotate(-1deg)"><img src="../../../../overlay/showcase/src/media/lake.jpg" alt=""><span>Palette</span></div>
+    <div class="sticky y" style="left:70px;top:240px;transform:rotate(-1.5deg)">Warmer than last spring. Less teal, more clay.<small><img src="../../../../overlay/showcase/src/media/people/person-01.jpg" alt="">Ines</small></div>
+    <div class="sticky g" style="left:230px;top:246px;width:122px;transform:rotate(1deg)">Mugs in hand, not on a table<small><img src="../../../../overlay/showcase/src/media/people/person-09.jpg" alt="">Sana</small></div>
+    <div class="sticky b" style="left:360px;top:212px;width:100px;transform:rotate(2deg)">Ask for the raw files<small><img src="../../../../overlay/showcase/src/media/people/person-08.jpg" alt="">Theo</small></div>
+
+    <!-- the launch flow -->
+    <span class="frame-label" style="left:540px;top:22px">Launch flow</span>
+    <svg class="flow" width="490" height="290" viewBox="0 0 490 290" fill="none">
+      <defs><marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M1 1.5 8 5 1 8.5" fill="none" stroke="#5a6779" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+      <rect x="4" y="18" width="116" height="56" rx="6" fill="#fff" stroke="#12233d" stroke-width="1.5"/><text x="62" y="51" text-anchor="middle">Brief signed</text>
+      <path d="M122 46h46" stroke="#5a6779" stroke-width="1.5" marker-end="url(#ah)"/>
+      <path d="M232 4 290 46 232 88 174 46z" fill="#fff" stroke="#12233d" stroke-width="1.5"/><text x="232" y="50" text-anchor="middle">Shoot ok?</text>
+      <path d="M292 46h46" stroke="#5a6779" stroke-width="1.5" marker-end="url(#ah)"/><text x="304" y="38" style="font-size:10.5px;font-weight:400;fill:#6f7c90">yes</text>
+      <rect x="344" y="18" width="128" height="56" rx="6" fill="#efeefd" stroke="#5550d8" stroke-width="1.5"/><text x="408" y="51" text-anchor="middle" style="fill:#3631a6">Catalogue print</text>
+      <path d="M232 90v46" stroke="#5a6779" stroke-width="1.5" marker-end="url(#ah)"/><text x="240" y="118" style="font-size:10.5px;font-weight:400;fill:#6f7c90">no</text>
+      <rect x="174" y="142" width="116" height="52" rx="6" fill="#fff" stroke="#12233d" stroke-width="1.5" stroke-dasharray="4 3"/><text x="232" y="172" text-anchor="middle">Reshoot, 2 days</text>
+      <path d="M408 76v66" stroke="#5a6779" stroke-width="1.5" marker-end="url(#ah)"/>
+      <circle cx="408" cy="180" r="34" fill="#fff" stroke="#12233d" stroke-width="1.5"/><text x="408" y="184" text-anchor="middle">Launch</text>
+    </svg>
+    <!-- Theo has just dropped a note beside the flow -->
+    <div class="sticky p" style="left:556px;top:266px;width:118px;transform:rotate(-1deg)">Print slot moves to the 21st<small><img src="../../../../overlay/showcase/src/media/people/person-08.jpg" alt="">Theo · now</small></div>
+    <div class="sel" style="left:552px;top:262px;width:126px;height:80px;transform:rotate(-1deg)"><i style="left:-4px;top:-4px"></i><i style="right:-4px;top:-4px"></i><i style="left:-4px;bottom:-4px"></i><i style="right:-4px;bottom:-4px"></i></div>
+    <div class="cursor" style="left:668px;top:326px"><svg width="16" height="18" viewBox="0 0 16 18"><path d="M2 1.5v13l3.6-3.3 2.4 5.3 2.3-1-2.4-5.2h5z" fill="var(--theo)" stroke="#fff" stroke-width="1.2" stroke-linejoin="round"/></svg><span style="background:var(--theo)">Theo</span></div>
+    <div class="cursor" style="left:400px;top:150px"><svg width="16" height="18" viewBox="0 0 16 18"><path d="M2 1.5v13l3.6-3.3 2.4 5.3 2.3-1-2.4-5.2h5z" fill="var(--sana)" stroke="#fff" stroke-width="1.2" stroke-linejoin="round"/></svg><span style="background:var(--sana)">Sana</span></div>
+
+    <!-- minimap -->
+    <div class="mini">
+      <i style="left:12px;top:14px;width:46px;height:34px;background:#e3e7ee"></i><i style="left:16px;top:18px;width:14px;height:14px;background:#9fb0a0"></i><i style="left:32px;top:18px;width:12px;height:16px;background:#d8b46a"></i>
+      <i style="left:66px;top:16px;width:52px;height:30px;background:#e3e7ee"></i><i style="left:28px;top:56px;width:72px;height:18px;border:1px solid var(--accent);background:rgb(85 80 216 / 0.06)"></i>
+    </div>
+
+    <!-- the Shapes picker -->
+    <div class="picker">
+      <div class="h">Shapes<span>S</span></div>
+      <div class="shapes" data-shapes>
+        <button class="hover" aria-label="Square"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="2" y="2" width="20" height="20" rx="1"/></svg></button>
+        <button aria-label="Circle"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg></button>
+        <button aria-label="Triangle"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.5 22 21H2z"/></svg></button>
+        <button aria-label="Diamond"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 1.5 22.5 12 12 22.5 1.5 12z"/></svg></button>
+      </div>
+      <div class="styles"><i class="on" style="background:#fff"></i><i style="background:#fbe9a8"></i><i style="background:#d8e6fb"></i><i style="background:#d5efe3"></i><i style="background:#12233d"></i>
+        <span class="k"><span class="on">Outline</span><span>Fill</span></span></div>
+    </div>
+
+    <!-- the toolbar -->
+    <div class="toolbar">
+      <span class="t"><svg class="i" viewBox="0 0 18 18"><path d="M4 2.5v11l3-2.8 2 4.5 2-.9-2-4.4h4.3z"/></svg></span>
+      <span class="t"><svg class="i" viewBox="0 0 18 18"><path d="M6 8V4.2a1.2 1.2 0 0 1 2.4 0V8M8.4 7.5V3.2a1.2 1.2 0 0 1 2.4 0v4.3M10.8 7.6V4.6a1.2 1.2 0 0 1 2.4 0V11a5 5 0 0 1-5 5h-.6a4.6 4.6 0 0 1-3.8-2l-2-3.1a1.2 1.2 0 0 1 2-1.3L6 10.6V6.3"/></svg></span>
+      <span class="sep"></span>
+      <span class="t"><svg class="i" viewBox="0 0 18 18"><path d="M3 3h12v8l-4 4H3z"/><path d="M11 15v-4h4"/></svg></span>
+      <span class="t on"><svg viewBox="0 0 20 20" width="19" height="19" fill="currentColor"><rect x="2.5" y="2.5" width="9" height="9" rx="1"/><circle cx="13.5" cy="13.5" r="4.8"/></svg></span>
+      <span class="t"><svg class="i" viewBox="0 0 18 18"><path d="M4 4h10M9 4v11"/></svg></span>
+      <span class="t"><svg class="i" viewBox="0 0 18 18"><path d="M3 14 15 4M11 4h4v4"/></svg></span>
+      <span class="t"><svg class="i" viewBox="0 0 18 18"><path d="M12.5 3.5 14.5 5.5 6 14l-3 .8.8-3z"/></svg></span>
+      <span class="t"><svg class="i" viewBox="0 0 18 18"><rect x="2.5" y="3.5" width="13" height="11" rx="1.5"/><circle cx="6.5" cy="7.5" r="1.3"/><path d="m3 13 4-3.5 3 2.5 2-1.5 3.5 3"/></svg></span>
+    </div>
+    <div class="zoom"><span>–</span><b>84%</b><span>+</span></div>
+  </div>
+</div>
+</body>
+</html>
