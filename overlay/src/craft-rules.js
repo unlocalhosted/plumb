@@ -100,6 +100,9 @@ export const concentricRadius = {
     const pr = facts.rect(parent), cr = facts.rect(el), b = facts.box(parent);
     // the radius a browser draws is at most half the box: a pill is its height over two, not 9999px
     const drawnR = Math.min(R, pr.width / 2, pr.height / 2), drawnr = Math.min(r, cr.width / 2, cr.height / 2);
+    // a circle has no corner to nest in: what sits at its box's corner (a presence dot on an avatar) overlaps the
+    // circle's edge, it isn't inside a curve
+    if (drawnR >= Math.min(pr.width, pr.height) / 2 - 0.5 && Math.abs(pr.width - pr.height) < 1) return [];
     // the corner the child sits at: its edges on the parent's content edges, both sides
     const corners = [
       { name: 'tl', prop: 'border-top-left-radius', at: Math.abs(cr.left - (pr.left + b.bl + b.pl)) < 1 && Math.abs(cr.top - (pr.top + b.bt + b.pt)) < 1, ix: cr.left - pr.left, iy: cr.top - pr.top },

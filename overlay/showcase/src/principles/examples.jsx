@@ -3,7 +3,7 @@
 // plumber, scoped to it, finds one thing. `measure` (optional) says where the eye sees the harm, for the ticks drawn
 // over the example; it reads the page, it never decides what is wrong (plumber does).
 import { useEffect, useState } from 'react';
-import { FolderIcon, HistoryIcon, LayersIcon, MessageIcon, SparklesIcon, UploadIcon, UserIcon } from '@unlocalhosted/dither-icons';
+import { FolderIcon, HistoryIcon, LayersIcon, MessageIcon, PlusIcon, SearchIcon, SendIcon, SparklesIcon, UploadIcon, UserIcon } from '@unlocalhosted/dither-icons';
 import receipt from '../receipt.png';
 
 // where a line of text sits, from its font: the baseline and the middle of its capitals, in page pixels
@@ -163,63 +163,6 @@ Timesheet.measure = (root) => {
   return { lines, bands, pills, off, subject: { left: s.left, right: s.right, top: top - 12, bottom } };
 };
 
-// #5 padding meant to be even all round (p-3) is measured from the letters, not from the line's leading: one line of
-// text-sm/6 carries 5px of invisible leading above and below, so the top reads 17px against 12px at the sides
-const LINES = [['Brand workshop, two days', '2', '1,200.00', '2,400.00'], ['Website design, six pages', '1', '1,800.00', '1,800.00'], ['Hosting setup', '1', '420.00', '420.00']];
-function Chips({ broken }) {
-  return (
-    <AppFrame crumb="Invoices / INV-2042">
-      <div className="flex flex-col gap-5 px-5 pt-4 pb-6">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <h3 className="case-forms text-base font-semibold">INV-2042</h3>
-            <span className="rounded-full bg-sunken px-2 py-0.5 text-xs font-medium text-ink-muted">Draft</span>
-          </div>
-          <div className="flex gap-2">
-            <button type="button" className="rounded-control border border-line px-3 py-1.5 text-sm font-medium active:bg-sunken">Preview</button>
-            <button type="button" className="rounded-control bg-ink px-3 py-1.5 text-sm font-medium text-accent-ink active:bg-ink-muted">Send invoice</button>
-          </div>
-        </div>
-        {/* the callout: padded evenly, one line of text-sm/6 */}
-        <p data-chip className="-mx-3 rounded-control bg-accent-soft p-3 text-sm leading-6 text-ink">Card payments are on: Halden &amp; Co. can pay this invoice by card. <a href="#settings" className="font-medium text-accent underline underline-offset-2">Settings</a></p>
-        <div className="flex items-center gap-3">
-          <span className="grid size-9 shrink-0 place-items-center rounded-full bg-accent-soft text-xs font-semibold text-accent">HC</span>
-          <div className="flex flex-col">
-            <span className="text-sm font-medium">Halden &amp; Co.</span>
-            <span className="text-xs text-ink-muted">billing@halden.example · Due Dec 12</span>
-          </div>
-        </div>
-        <table className="w-full text-left text-sm">
-          <thead className="text-xs text-ink-muted"><tr><th className="pb-2 font-medium">Item</th><th className="pb-2 text-right font-medium">Qty</th><th className="hidden pb-2 text-right font-medium sm:table-cell">Rate</th><th className="pb-2 text-right font-medium">Amount</th></tr></thead>
-          <tbody>
-            {LINES.map(([item, qty, rate, amount]) => (
-              <tr key={item} className="border-t-hairline border-line">
-                <td className="py-2 pr-3">{item}</td>
-                <td className="py-2 text-right tabular-nums">{qty}</td>
-                <td className="hidden py-2 text-right tabular-nums sm:table-cell">${rate}</td>
-                <td className="py-2 text-right font-medium tabular-nums">${amount}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        <div className="flex flex-col gap-1 self-end text-sm">
-          <div className="flex justify-between gap-10 text-ink-muted"><span>Tax (5%)</span><span className="tabular-nums">$231.00</span></div>
-          <div className="flex justify-between gap-10 font-semibold"><span>Total</span><span className="tabular-nums">$4,851.00</span></div>
-        </div>
-      </div>
-    </AppFrame>
-  );
-}
-Chips.framed = true;
-Chips.measure = (root) => {
-  const c = root.querySelector('[data-chip]'), r = c.getBoundingClientRect(), t = lineOf(c);
-  const capTop = t.baseline - (t.baseline - t.capMiddle) * 2, above = capTop - r.top;
-  // the bar's top edge and where its letters begin, against the padding at its side
-  const side = parseFloat(getComputedStyle(c).paddingLeft);
-  return { around: c, ticks: [{ y: r.top, left: r.left + side, right: r.left + side + 160 }, { y: capTop, left: r.left + side, right: r.left + side + 160 }, { x: r.left + side, top: capTop, bottom: capTop + 8 }],
-    broken: `${px(above)} above · ${px(side)} beside`, fixed: 'even padding ✓', off: above > side + 1.5 };
-};
-
 // #6 a price and its unit, two sizes side by side, share a baseline
 const PLANS = [
   { name: 'Starter', price: '0', who: 'Just you, starting out', perks: ['5 clients', 'Invoices and quotes', 'Card payments'] },
@@ -271,7 +214,6 @@ Price.measure = (root) => {
   return { around: row, ticks: [{ y: a.baseline, left: a.left, right: a.right }, { y: b.baseline, left: b.left, right: b.right }], broken: `baselines ${px(d)} apart`, fixed: 'one baseline ✓', off: Math.abs(d) > 0.6 };
 };
 
-Chips.lesson = { why: 'text-sm/6 puts a 24px line around 14px letters: 5px of invisible leading sits above and below them and adds itself to the padding, so even padding looks taller than it is wide.', habit: 'Measure padding from the letters: trim the text box to the capitals and baseline (text-box: trim-both cap alphabetic).' };
 Price.lesson = { why: 'items-center lines up the middles of the two boxes. Boxes of different sizes keep their baselines at different heights, so the unit floats beside the price.', habit: 'Text of different sizes side by side sits on one baseline: items-baseline.' };
 
 // ── Spacing and rhythm ─────────────────────────────────────
@@ -762,5 +704,73 @@ DriveActivity.measure = (root) => {
   };
 };
 
-export const EXAMPLES = { 7: Grouping, 8: Templates, 9: Toolbar, 10: NewClient, 1: ClientProfile, 2: InvoiceWalkthrough, 3: Whiteboard, 4: DriveActivity, 5: Chips, 6: Price, 16: Timesheet };
+// #5 trim the text's leading. A team chat thread: message bubbles built as px-3.5 py-2 with 15px words on a 24px line.
+// The line's leading adds itself to the padding above and below the letters, so the short replies look puffy, taller
+// than their sides. plumber's fix trims the text box to the letters, so the padding is measured from them.
+const THREAD = [
+  { id: 1, me: false, text: 'Are we still on for the walkthrough at 3?' },
+  { id: 2, me: true, text: 'Yes, finishing the last two slides now.' },
+  { id: 3, me: false, text: 'Perfect, thanks!' },
+  { id: 4, me: true, text: 'On my way' },
+];
+function ChatThread() {
+  // Slate's primitives, with dithered icons
+  return (
+    <article className="flex w-full max-w-[26rem] flex-col overflow-hidden rounded-card bg-surface shadow-card">
+      <header className="flex items-center gap-3 border-b-hairline border-line px-4 py-3">
+        <span className="relative grid size-9 shrink-0 place-items-center rounded-full bg-positive-soft text-[13px] font-semibold text-positive">
+          SO<span className="absolute right-0 bottom-0 size-2.5 rounded-full bg-positive ring-2 ring-surface" />
+        </span>
+        <span className="flex min-w-0 flex-1 flex-col">
+          <span className="truncate text-sm font-medium">Sana Okafor</span>
+          <span className="text-xs text-ink-muted">Active now</span>
+        </span>
+        <button type="button" aria-label="Search this conversation" className="grid size-9 place-items-center rounded-control text-ink-muted hover:bg-sunken hover:text-ink"><SearchIcon size={18} texture="dither" /></button>
+      </header>
+      <div className="flex flex-col gap-1.5 px-4 pt-4 pb-5">
+        <span className="self-center pb-2 text-xs text-ink-muted">Today, 2:41 pm</span>
+        {THREAD.map((m) => (
+          <p key={m.id} data-bubble={m.id} className={'max-w-[78%] rounded-[18px] px-3.5 py-2 text-[15px] leading-6 ' + (m.me ? 'self-end bg-accent text-accent-ink' : 'self-start bg-sunken')}>{m.text}</p>
+        ))}
+        <span className="self-end pt-0.5 text-xs text-ink-muted">Read 2:44 pm</span>
+      </div>
+      <footer className="flex items-center gap-2 border-t-hairline border-line px-3 py-2.5">
+        <button type="button" aria-label="Attach a file" className="grid size-9 shrink-0 place-items-center rounded-full text-ink-muted hover:bg-sunken hover:text-ink"><PlusIcon size={18} texture="dither" /></button>
+        <span className="flex h-9 min-w-0 flex-1 items-center rounded-full bg-sunken px-4 text-sm text-ink-subtle">Message Sana</span>
+        <button type="button" aria-label="Send" className="grid size-9 shrink-0 place-items-center rounded-full bg-accent text-accent-ink hover:bg-accent-deep"><SendIcon size={16} texture="dither" /></button>
+      </footer>
+    </article>
+  );
+}
+ChatThread.stage = true;
+ChatThread.names = ['Line box', 'Trimmed'];
+ChatThread.lesson = {
+  why: 'A 24px line around 15px letters puts about 3px of invisible leading above and below them, on top of the room every font keeps above its capitals. It adds itself to py-2, so a one-line bubble looks taller than it is wide.',
+  habit: 'Measure padding from the letters: trim the text box to the capitals and the baseline (text-box: trim-both cap alphabetic), then set the padding you mean.',
+};
+// What the eye sees on a one-line reply: the bubble's padding, and the space the line adds between it and the letters
+// (the hatch), above the capitals and below the baseline. The pill is that unseen space above, in px.
+ChatThread.measure = (root) => {
+  const b = root?.querySelector('[data-bubble="3"]');
+  if (!b) return null;
+  const br = b.getBoundingClientRect(), k = br.width / b.offsetWidth || 1, s = getComputedStyle(b);
+  const r = document.createRange(); r.selectNodeContents(b); const q = r.getClientRects()[0];
+  ctx ??= document.createElement('canvas').getContext('2d');
+  ctx.font = `${s.fontWeight} ${s.fontSize} ${s.fontFamily}`;
+  const m = ctx.measureText('H'), asc = m.fontBoundingBoxAscent, desc = m.fontBoundingBoxDescent, cap = m.actualBoundingBoxAscent;
+  const baseline = q.top + ((q.height / k - (asc + desc)) / 2 + asc) * k, capTop = baseline - cap * k;
+  const top = br.top + parseFloat(s.paddingTop) * k, bottom = br.bottom - parseFloat(s.paddingBottom) * k, unseen = (capTop - top) / k;
+  const left = br.left, right = br.right;
+  return {
+    lines: [],
+    rules: [{ key: 'cap', y: capTop, left: left - 10 * k, right: right + 10 * k }, { key: 'base', y: baseline, left: left - 10 * k, right: right + 10 * k }],
+    bands: [{ key: 'above', left, right, top, bottom: capTop, pattern: 'hatch' }, { key: 'below', left, right, top: baseline, bottom, pattern: 'hatch' }],
+    pills: [{ key: 'unseen', x: right + 22 * k, y: (top + capTop) / 2, text: (Math.max(0, unseen) * k).toFixed(1), ok: unseen < 0.5 }],
+    off: unseen >= 0.5,
+    cut: { left: br.left, right: br.right, top: br.top, bottom: br.bottom, r: 18 * k },
+    subject: { left: br.left - 40 * k, right: br.right + 60 * k, top: br.top - 50 * k, bottom: br.bottom + 50 * k },
+  };
+};
+
+export const EXAMPLES = { 7: Grouping, 8: Templates, 9: Toolbar, 10: NewClient, 1: ClientProfile, 2: InvoiceWalkthrough, 3: Whiteboard, 4: DriveActivity, 5: ChatThread, 6: Price, 16: Timesheet };
 

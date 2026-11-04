@@ -216,7 +216,8 @@ function Marks({ from, to, t, k, shown, pills, card }) {
   // each hole follows its element's shape: a rounded rectangle with the element's own corner (a circle for a round button)
   const holes = (from.cut ? [from.cut] : from.bands).map((b) => {
     const n = (b.key === 'cut' ? to?.cut : at('bands', b.key)) ?? b, c = MARKS.cut;
-    const l = Math.min(b.left, n.left) - c - card.left, r = Math.max(b.right, n.right) + c - card.left, t = b.top - c - card.top, btm = b.bottom + c - card.top;
+    // the hole follows its element while the fix lands (a trimmed bubble shrinks and the thread reflows under it)
+    const l = lerp(b.left, n.left, e) - c - card.left, r = lerp(b.right, n.right, e) + c - card.left, t = lerp(b.top, n.top, e) - c - card.top, btm = lerp(b.bottom, n.bottom, e) + c - card.top;
     const q = Math.min((b.r ?? 0) + c, (r - l) / 2, (btm - t) / 2);
     return `M${l + q} ${t}H${r - q}A${q} ${q} 0 0 1 ${r} ${t + q}V${btm - q}A${q} ${q} 0 0 1 ${r - q} ${btm}H${l + q}A${q} ${q} 0 0 1 ${l} ${btm - q}V${t + q}A${q} ${q} 0 0 1 ${l + q} ${t}Z`;
   }).join('');
