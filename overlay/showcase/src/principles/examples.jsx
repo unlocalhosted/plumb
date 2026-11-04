@@ -164,61 +164,6 @@ Timesheet.measure = (root) => {
   return { lines, bands, pills, off, subject: { left: s.left, right: s.right, top: top - 12, bottom } };
 };
 
-// #2 a play triangle is centred by its weight, not its box: it leans toward its point
-const CHAPTERS = [['Create a client', '1:08', 'done'], ['Send your first invoice', '2:14', 'now'], ['Get paid by card', '3:02', 'next']];
-function Lesson({ broken }) {
-  return (
-    <AppFrame crumb="Academy">
-      <div className="@container px-5 pt-4 pb-6">
-        <div className="flex flex-col gap-5 @xl:flex-row">
-          <div className="flex min-w-0 flex-1 flex-col gap-4">
-            <span className="text-xs font-medium text-ink-muted">Getting paid · Lesson 2 of 6</span>
-            <div className="relative overflow-hidden rounded-control">
-              <img src={site} alt="" width="480" height="270" className="aspect-video w-full object-cover" />
-              <div className="absolute inset-0 grid place-items-center">
-                <button type="button" aria-label="Play: Send your first invoice" data-play className="grid size-14 place-items-center rounded-full bg-surface text-ink shadow-overlay active:bg-sunken"><Play size={24} /></button>
-              </div>
-              <span className="absolute right-2 bottom-2 rounded-chip bg-ink px-1.5 py-0.5 text-xs font-medium text-accent-ink tabular-nums">2:14</span>
-            </div>
-            <div className="flex flex-col gap-1">
-              <h3 className="text-base font-semibold">Send your first invoice</h3>
-              <span className="text-sm text-ink-muted">From a draft to a paid invoice in under a minute.</span>
-            </div>
-            <div className="flex items-center gap-3">
-              <span className="grid size-8 shrink-0 place-items-center rounded-full bg-violet text-[11px] font-semibold text-accent-ink">AM</span>
-              <span className="flex flex-col"><span className="text-sm font-medium">Ada Morales</span><span className="text-xs text-ink-muted">Product, Quarry</span></span>
-            </div>
-          </div>
-          <aside className="flex flex-col gap-3 @xl:w-56 @xl:shrink-0">
-            <div className="flex flex-col gap-1.5">
-              <div className="flex justify-between text-xs text-ink-muted"><span>Course progress</span><span className="tabular-nums">1 of 6</span></div>
-              <div className="h-1.5 overflow-hidden rounded-full bg-sunken"><div className="h-full w-1/6 rounded-full bg-accent" /></div>
-            </div>
-            <ol className="flex flex-col border-t-hairline border-line">
-              {CHAPTERS.map(([title, time, at], i) => (
-                <li key={title} className="flex items-center gap-3 border-b-hairline border-line py-2 text-sm">
-                  <span className={'grid size-5 shrink-0 place-items-center rounded-full text-[11px] font-semibold ' + (at === 'done' ? 'bg-positive-soft text-positive' : at === 'now' ? 'bg-accent text-accent-ink' : 'bg-sunken text-ink-muted')}>{at === 'done' ? '✓' : i + 1}</span>
-                  <span className={'min-w-0 flex-1 truncate ' + (at === 'now' ? 'font-medium' : at === 'done' ? 'text-ink-muted' : '')} title={title}>{title}</span>
-                  <span className="text-xs text-ink-muted tabular-nums">{time}</span>
-                </li>
-              ))}
-            </ol>
-            <span className="text-xs font-medium text-ink-muted">Resources</span>
-            <span className="text-sm text-accent">Invoice template (.pdf)</span>
-          </aside>
-        </div>
-      </div>
-    </AppFrame>
-  );
-}
-Lesson.framed = true;
-Lesson.measure = (root) => {
-  const b = root.querySelector('[data-play]').getBoundingClientRect(), g = root.querySelector('[data-play] svg').getBoundingClientRect();
-  const centre = b.left + b.width / 2, seen = g.left + g.width * (10.5 / 24);
-  const d = centre - seen;
-  return { around: root.querySelector('[data-play]'), focus: { x: centre, y: b.top + b.height / 2 }, ticks: [{ x: centre, top: b.top - 6, bottom: b.bottom + 6 }, { x: seen, top: g.top, bottom: g.bottom }], broken: `weight ${px(d)} left`, fixed: 'centred ✓', off: Math.abs(d) > 0.6 };
-};
-
 // #3 round logos are drawn a touch larger than square ones, or they look smaller
 const Mark = ({ shape, r, tone, letter, size = 28 }) => (
   <svg viewBox="0 0 24 24" width={size} height={size} aria-hidden="true" className={'shrink-0 ' + tone}>
@@ -463,7 +408,6 @@ Price.measure = (root) => {
   return { around: row, ticks: [{ y: a.baseline, left: a.left, right: a.right }, { y: b.baseline, left: b.left, right: b.right }], broken: `baselines ${px(d)} apart`, fixed: 'one baseline ✓', off: Math.abs(d) > 0.6 };
 };
 
-Lesson.lesson = { why: "A triangle's weight sits toward its flat side. Centre its box and the point carries empty space, so the shape reads left of centre.", habit: 'Centre an uneven glyph by its weight, not its box: nudge it toward its point, about a twelfth of its width.' };
 Connected.lesson = { why: 'A circle fills about 78% of its box, a square nearly all of it. In the same box the circle has less ink, so it reads smaller.', habit: 'In one set, draw round marks a few percent larger than square ones (type designers call it overshoot).' };
 Notice.lesson = { why: 'items-center centres the line box, and the line box keeps room for descenders below the baseline. The capitals sit above its middle, so a centred icon reads low.', habit: "Line icons up with the capitals' middle, not the line box: nudge up by the gap, or make the line box as tall as the capitals." };
 Chips.lesson = { why: 'text-sm/6 puts a 24px line around 14px letters: 5px of invisible leading sits above and below them and adds itself to the padding, so even padding looks taller than it is wide.', habit: 'Measure padding from the letters: trim the text box to the capitals and baseline (text-box: trim-both cap alphabetic).' };
@@ -702,10 +646,103 @@ ClientProfile.measure = (root) => {
     lines, off: Math.abs(off) >= 0.5,
     bands: [{ key: 'pad', left: n.left, right: words, top: n.top, bottom: n.bottom, pattern: 'hatch' }],
     pills: [{ key: 'off', x: column, y: n.top - 14 * k, text: Math.abs(off).toFixed(1), ok: Math.abs(off) < 0.5 }],
-    cut: { left: n.left, right: n.right, top: n.top, bottom: n.bottom }, // blueprint cuts out the drifting element only
+    cut: { left: n.left, right: n.right, top: n.top, bottom: n.bottom, r: parseFloat(getComputedStyle(note).borderTopLeftRadius) * k }, // the drifting element only
     subject: { left: pr.left - 4 * k, right: pr.left + pr.width * 0.66, top: top - 8 * k, bottom: n.bottom + 64 * k },
   };
 };
 
-export const EXAMPLES = { 7: Grouping, 8: Templates, 9: Toolbar, 10: NewClient, 1: ClientProfile, 2: Lesson, 3: Connected, 4: Notice, 5: Chips, 6: Price, 16: Timesheet };
+// #2 optical centre beats geometric centre. The invoice a client of Quarry receives, with a short walkthrough the
+// studio recorded. Its play button centres the triangle by its box, and a triangle's weight sits toward its flat side,
+// so the glyph reads left of centre. plumber's fix nudges it toward its point by its weight.
+function InvoiceWalkthrough() {
+  // Quarry's Slate primitives only
+  return (
+    <article className="w-full max-w-[30rem] rounded-card bg-surface shadow-card">
+      <div className="flex flex-col gap-5 p-6">
+        <header className="flex items-center gap-3">
+          <span className="grid size-9 shrink-0 place-items-center rounded-control bg-accent-soft text-accent-deep">
+            <svg viewBox="0 0 24 24" className="size-[18px]" fill="currentColor" aria-hidden="true"><path d="M12 4 20 18H4z" /></svg>
+          </span>
+          <span className="flex min-w-0 flex-col">
+            <span className="truncate text-sm font-medium">Studio North</span>
+            <span className="truncate text-[13px] text-ink-muted">Invoice <span className="case-forms">INV-2041</span> for Halden & Co.</span>
+          </span>
+        </header>
+        <div className="flex flex-col gap-1">
+          <span className="text-xs font-medium text-ink-muted">Amount due</span>
+          <span className="text-[34px] leading-[38px] font-medium tracking-[-0.02em] tabular-nums">$4,820.00</span>
+          <span className="text-[13px] text-ink-muted">Due 12 November 2026 · Net 14</span>
+        </div>
+        {/* the walkthrough: a frame of the recording (the invoice itself, on the studio's screen) and its play button */}
+        <figure className="flex flex-col gap-2">
+          <div data-video className="relative grid aspect-[16/9] place-items-center overflow-hidden rounded-control bg-ink">
+            <div aria-hidden="true" className="absolute inset-x-[18%] top-[14%] bottom-0 rounded-t-[4px] bg-surface/95 px-[6%] pt-[5%]">
+              <div className="h-1.5 w-1/3 rounded-full bg-ink/25" />
+              <div className="mt-[6%] flex flex-col gap-[5%]">
+                {[70, 55, 62, 40].map((w) => <div key={w} className="flex justify-between"><span className="h-1 rounded-full bg-ink/12" style={{ width: `${w}%` }} /><span className="h-1 w-[14%] rounded-full bg-ink/12" /></div>)}
+              </div>
+            </div>
+            <div aria-hidden="true" className="absolute inset-0 bg-ink/35" />
+            <button type="button" data-play aria-label="Play Ana’s walkthrough, 1 minute 24 seconds"
+              className="relative grid size-14 place-items-center rounded-full bg-surface text-ink shadow-[0_6px_20px_rgb(18_35_61/0.35)] transition-[scale] duration-150 hover:scale-105 active:scale-95 outline-offset-2 focus-visible:outline-2 focus-visible:outline-surface">
+              {/* exported from the design file with its box centred, as custom glyphs usually are */}
+              <svg viewBox="0.3 0 20 20" className="size-6" fill="currentColor" aria-hidden="true"><path d="M2 1.6v16.8a1 1 0 0 0 1.5.86l14.6-8.4a1 1 0 0 0 0-1.72L3.5.74A1 1 0 0 0 2 1.6" /></svg>
+            </button>
+            <span className="absolute bottom-3 left-3 flex items-center gap-2 rounded-full bg-ink/70 py-1 pr-2.5 pl-1 text-xs text-surface backdrop-blur">
+              <span className="grid size-5 place-items-center rounded-full bg-accent text-[10px] font-semibold text-accent-ink">A</span>Ana · 1:24
+            </span>
+          </div>
+          <figcaption className="text-[13px] text-ink-muted">Ana walked through this invoice for you.</figcaption>
+        </figure>
+        <div className="flex items-center gap-4">
+          <button type="button" className="h-10 flex-1 rounded-control bg-accent px-4 text-sm font-medium text-accent-ink hover:bg-accent-deep outline-offset-2 focus-visible:outline-2 focus-visible:outline-accent">Pay $4,820.00</button>
+          <a href="#pdf" className="text-sm font-medium text-ink-muted hover:text-ink">Download PDF</a>
+        </div>
+      </div>
+    </article>
+  );
+}
+InvoiceWalkthrough.stage = true;
+InvoiceWalkthrough.names = ['Box centred', 'Weight centred'];
+InvoiceWalkthrough.lesson = {
+  why: 'A triangle’s weight sits toward its flat side. Centre its box in the circle and the point carries empty space, so the glyph reads left of centre, and the button looks off.',
+  habit: 'Centre an uneven glyph by its weight, not its box: nudge it toward its point, about a twelfth of its width.',
+};
+// The glyph's real shape, in its own units: the box of its ink and its centre of mass, sampled from the filled path
+// once (the shape never changes; only where it's drawn does)
+const SHAPES = new WeakMap();
+function shapeOf(svg) {
+  const path = svg.querySelector('path');
+  if (SHAPES.has(path)) return SHAPES.get(path);
+  const vb = svg.viewBox.baseVal, pt = svg.createSVGPoint(), step = vb.width / 160;
+  let a = 0, cx = 0, x0 = Infinity, x1 = -Infinity;
+  for (let y = vb.y; y < vb.y + vb.height; y += step) for (let x = vb.x; x < vb.x + vb.width; x += step) {
+    pt.x = x; pt.y = y;
+    if (!path.isPointInFill(pt)) continue;
+    a++; cx += x; x0 = Math.min(x0, x); x1 = Math.max(x1, x + step);
+  }
+  const v = { mid: (x0 + x1) / 2 - vb.x, centroid: cx / a - vb.x, units: vb.width };
+  SHAPES.set(path, v);
+  return v;
+}
+// What the eye sees: the button's middle, and where the eye puts the triangle's middle (halfway between its ink's
+// middle and its weight, as plumber reads it). The pill is the distance between them; under 1px the eye can't tell
+// (plumber's own threshold for this rule).
+InvoiceWalkthrough.measure = (root) => {
+  const b = root?.querySelector('[data-play]'), g = b?.querySelector('svg');
+  if (!g) return null;
+  const br = b.getBoundingClientRect(), gr = g.getBoundingClientRect(), k = br.width / b.offsetWidth || 1, shape = shapeOf(g), u = gr.width / shape.units;
+  const centre = br.left + br.width / 2, seen = gr.left + ((shape.mid + shape.centroid) / 2) * u, off = (centre - seen) / k;
+  const top = br.top - 10 * k, bottom = br.bottom + 10 * k;
+  return {
+    lines: [{ key: 'centre', x: centre, top, bottom }, { key: 'seen', x: seen, top: gr.top, bottom: gr.bottom }],
+    bands: [{ key: 'gap', left: Math.min(centre, seen), right: Math.max(centre, seen), top: gr.top, bottom: gr.bottom, pattern: 'hatch' }],
+    pills: [{ key: 'off', x: centre, y: top - 4 * k, text: (Math.abs(off) * k).toFixed(1), ok: Math.abs(off) < 1 }],
+    off: Math.abs(off) >= 1,
+    cut: { left: br.left, right: br.right, top: br.top, bottom: br.bottom, r: br.width / 2 }, // the round button itself
+    subject: { left: br.left - 60 * k, right: br.right + 60 * k, top: br.top - 40 * k, bottom: br.bottom + 40 * k },
+  };
+};
+
+export const EXAMPLES = { 7: Grouping, 8: Templates, 9: Toolbar, 10: NewClient, 1: ClientProfile, 2: InvoiceWalkthrough, 3: Connected, 4: Notice, 5: Chips, 6: Price, 16: Timesheet };
 

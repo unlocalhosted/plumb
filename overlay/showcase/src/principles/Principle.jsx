@@ -160,7 +160,7 @@ function marksOf(m, cam) {
       pills: m.pills.map((p, i) => { const value = (Number(p.text) || 0) / k; return { key: p.key ?? i, x: X(p.x), y: Y(p.y), value, ok: p.ok || value < 0.5 }; }),
       subject: { left: X(m.subject.left), right: X(m.subject.right), top: Y(m.subject.top), bottom: Y(m.subject.bottom) },
       // what the shade leaves clear: the example's own choice, else the measured bands
-      cut: m.cut ? { key: 'cut', left: X(m.cut.left), right: X(m.cut.right), top: Y(m.cut.top), bottom: Y(m.cut.bottom) } : null,
+      cut: m.cut ? { key: 'cut', left: X(m.cut.left), right: X(m.cut.right), top: Y(m.cut.top), bottom: Y(m.cut.bottom), r: (m.cut.r ?? 0) / k } : null,
     };
   }
   const v = m.ticks.filter((t) => t.y === undefined), a = m.around?.getBoundingClientRect?.();
@@ -211,8 +211,13 @@ function Marks({ from, to, t, k, shown, pills, card }) {
   // the lines skip plumber's white halo: it lets one line show over any page, but side by side on every glyph edge it
   // whites the digits out, and inside the cut-out the ground is already white. The tag keeps its halo.
   // the shade over the card, with the measured columns cut out (even-odd: the holes stay clear)
-  const holes = (from.cut ? [from.cut] : from.bands).map((b) => { const n = (b.key === 'cut' ? to?.cut : at('bands', b.key)) ?? b, l = Math.min(b.left, n.left) - MARKS.cut, r = Math.max(b.right, n.right) + MARKS.cut;
-    return `M${l - card.left} ${b.top - card.top - MARKS.cut}H${r - card.left}V${b.bottom - card.top + MARKS.cut}H${l - card.left}Z`; }).join('');
+  // each hole follows its element's shape: a rounded rectangle with the element's own corner (a circle for a round button)
+  const holes = (from.cut ? [from.cut] : from.bands).map((b) => {
+    const n = (b.key === 'cut' ? to?.cut : at('bands', b.key)) ?? b, c = MARKS.cut;
+    const l = Math.min(b.left, n.left) - c - card.left, r = Math.max(b.right, n.right) + c - card.left, t = b.top - c - card.top, btm = b.bottom + c - card.top;
+    const q = Math.min((b.r ?? 0) + c, (r - l) / 2, (btm - t) / 2);
+    return `M${l + q} ${t}H${r - q}A${q} ${q} 0 0 1 ${r} ${t + q}V${btm - q}A${q} ${q} 0 0 1 ${r - q} ${btm}H${l + q}A${q} ${q} 0 0 1 ${l} ${btm - q}V${t + q}A${q} ${q} 0 0 1 ${l + q} ${t}Z`;
+  }).join('');
   return (
     <PlumbLayer>
       {card ? <div style={{ position: 'absolute', left: card.left, top: card.top, width: card.right - card.left, height: card.bottom - card.top, borderRadius: card.radius,
