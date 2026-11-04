@@ -6,6 +6,7 @@ import { Hero } from './hero/Hero.jsx';
 import { Slop } from './sections/Slop.jsx';
 import { Live } from './sections/Live.jsx';
 import { Tokens } from './sections/Tokens.jsx';
+import { Install } from './sections/Install.jsx';
 import './foundations/foundations.css';
 
 export function App() {
@@ -18,6 +19,7 @@ export function App() {
         <Slop />
         <Live />
         <Tokens />
+        <Install />
       </main>
       {import.meta.env.DEV && (
         <aside aria-label="Light or dark" className="picker">
