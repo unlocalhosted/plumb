@@ -1,0 +1,335 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Page primitives · React Plumber</title>
+</head>
+<body style="margin:0">
+<div id="sheet"></div>
+<script type="module">
+  // The project page's primitives, for review (docs/design/page-primitives.md, onboarding layer 3). Built from the
+  // overlay's own tokens; what's proposed is defined here, marked Proposed, and goes into tokens.css only once approved.
+  import tokens from '../src/tokens.css?raw';
+  import { LANGUAGE_CSS } from '../src/language.js';
+  import { SCALE_CSS, count as countMark, rollCount } from '../src/scale-marks.js';
+  import DATA from '../../docs/design/prototypes/data/crafting-ui.json';
+
+  const nf = new Intl.NumberFormat('en');
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // the three code meanings, today and proposed, with what a deuteranope sees (the dataviz skill's simulate(), Machado 2009)
+  const SETS = {
+    today: { mint: '#1f9e64', butter: '#bd8500', coral: '#e5503f' },
+    proposed: { mint: '#1a9460', butter: '#d19a00', coral: '#bf3a1e' },
+  };
+  const DEUTAN = { '#1f9e64': '#8e8668', '#bd8500': '#a7950d', '#e5503f': '#9f8f3a', '#1a9460': '#847e63', '#d19a00': '#bea913', '#bf3a1e': '#827416' };
+  const MEANINGS = [['mint', 'On your scale', 'disc'], ['butter', 'Your size, typed by hand', 'ring'], ['coral', 'Not on your scale', 'square']];
+
+  // a mark in one of the three shapes; `shaped` false draws today's dot for all three
+  const mark = (shape, fill, x, y, r, shaped) => {
+    if (!shaped || shape === 'disc') return `<circle cx="${x}" cy="${y}" r="${r}" fill="${fill}"/>`;
+    if (shape === 'ring') return `<circle cx="${x}" cy="${y}" r="${r - 0.75}" fill="none" stroke="${fill}" stroke-width="1.5"/>`;
+    return `<rect x="${x - r * 0.9}" y="${y - r * 0.9}" width="${r * 1.8}" height="${r * 1.8}" rx="1" fill="${fill}"/>`;
+  };
+  // a strip of places like Gravity's: seeded, so both sides scatter the same way
+  let seed = 7; const rand = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  const SPOTS = Array.from({ length: 70 }, (_, i) => ({ kind: i % 7 < 2 ? 0 : i % 7 < 5 ? 1 : 2, x: 14 + rand() * 292, y: 14 + rand() * 52 }));
+  const strip = (set, shaped, blind) => `<svg viewBox="0 0 320 80" role="img" aria-label="${shaped ? 'Places drawn in three shapes' : 'Places drawn as dots'}">${SPOTS.map((s) => {
+    const [hue, , shape] = MEANINGS[s.kind], c = SETS[set][hue];
+    return mark(shape, blind ? DEUTAN[c] : c, s.x.toFixed(1), s.y.toFixed(1), 4, shaped);
+  }).join('')}</svg>`;
+
+  const steps = DATA.size.steps.slice().sort((a, b) => b.uses - a.uses || a.px - b.px);
+  const total = steps.reduce((n, s) => n + s.uses, 0);
+  let carry = 0, k = 0; for (const s of steps) { if (carry >= total * 0.75) break; carry += s.uses; k++; }
+  const words = ['', 'One size carries', 'Two sizes carry', 'Three sizes carry', 'Four sizes carry', 'Five sizes carry'];
+
+  const host = document.getElementById('sheet'), root = host.attachShadow({ mode: 'open' });
+  root.innerHTML = `<style>${tokens}${LANGUAGE_CSS}${SCALE_CSS}
+    :host {
+      /* Proposed (docs/design/page-primitives.md) */
+      --pl-page-max: 1120px;
+      --pl-page-display-narrow: 600 30px/36px var(--pl-sans);
+      --pl-stagger: 40ms;
+      --pl-dur-build: 380ms;
+      --pl-dur-arrive: 600ms;
+      --pl-chart-bar: 12px;
+      display: block; min-height: 100vh; background: var(--pl-desk); color: var(--pl-ink);
+    }
+    .top { position: sticky; top: 0; z-index: 3; display: flex; align-items: center; gap: 12px; padding: 12px var(--pl-page-space-1); background: color-mix(in oklab, var(--pl-paper) 88%, transparent); backdrop-filter: blur(12px); box-shadow: 0 1px 0 var(--pl-rule); }
+    .top b { font: 600 14px var(--pl-sans); }
+    .top .pl-rainbow { width: 22px; height: 12px; border-radius: 3px; }
+    .top .read { font: var(--pl-card-meta); color: var(--pl-ink-2); }
+    .top .pl-act { margin-left: auto; }
+    main { max-width: var(--pl-page-max); margin: 0 auto; padding: var(--pl-page-space-2) var(--pl-page-space-1) var(--pl-page-space-4); }
+    .eyebrow { font: var(--pl-page-meta); color: var(--pl-ink-2); }
+    h1 { margin: 10px 0 14px; max-width: 26ch; font: var(--pl-page-display); letter-spacing: var(--pl-tracking-display); text-wrap: balance; }
+    .lede { max-width: 60ch; margin: 0; font: var(--pl-page-body); color: var(--pl-ink-2); text-wrap: pretty; }
+    section { margin-top: var(--pl-page-space-3); }
+    h2 { margin: 0 0 6px; font: var(--pl-page-title); letter-spacing: var(--pl-tracking-title); }
+    h2 + p { max-width: 60ch; margin: 0 0 var(--pl-space-8); font: var(--pl-page-small); color: var(--pl-ink-2); text-wrap: pretty; }
+    .card { padding: var(--pl-page-inset); }
+    .grid { display: grid; gap: var(--pl-space-6); grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+    .tag { display: inline-block; padding: 1px 7px; border-radius: var(--pl-radius-tag); font: var(--pl-text-label); letter-spacing: var(--pl-tracking-label); vertical-align: 2px; }
+    .tag.new { background: var(--pl-sky-soft); color: var(--pl-sky-ink); }
+    .tag.keep { background: var(--pl-paper-2); color: var(--pl-ink-2); }
+    .meta { font: var(--pl-page-meta); color: var(--pl-ink-2); }
+    code, .code { font: var(--pl-card-code); color: var(--pl-ink-2); }
+    .n { font-variant-numeric: tabular-nums; }
+    .row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
+
+    /* colour */
+    .set h3 { margin: 0; font: var(--pl-page-small); font-weight: 600; }
+    .set svg { display: block; width: 100%; height: auto; margin: 12px 0; border-radius: var(--pl-radius-row); background: var(--pl-paper-2); }
+    .key { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; font: var(--pl-page-meta); color: var(--pl-ink-2); }
+    .key li { display: flex; align-items: center; gap: 8px; }
+    .key svg { width: 12px; height: 12px; margin: 0; background: none; flex: none; }
+    .key code { margin-left: auto; }
+    .score { display: flex; gap: var(--pl-space-8); margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--pl-rule); }
+    .score div { display: grid; gap: 2px; }
+    .score b { font: var(--pl-page-small); font-weight: 600; font-variant-numeric: tabular-nums; }
+    .score .bad { color: var(--pl-coral-ink); } .score .ok { color: var(--pl-mint-ink); }
+    .switch { display: inline-flex; align-items: center; gap: 8px; font: var(--pl-page-small); color: var(--pl-ink-2); cursor: pointer; }
+    .switch input { accent-color: var(--pl-sky); width: 16px; height: 16px; margin: 0; }
+    .decide { margin-top: var(--pl-space-6); padding: 14px 16px; border-radius: var(--pl-radius-row); background: var(--pl-sky-soft); color: var(--pl-sky-ink); font: var(--pl-page-small); }
+    .decide b { font-weight: 600; }
+    :host([data-scheme="dark"]) .night-note { display: block; }
+    .night-note { display: none; margin-top: var(--pl-space-6); font: var(--pl-page-small); color: var(--pl-ink-2); }
+
+    /* type */
+    .spec { display: grid; grid-template-columns: 180px 1fr; gap: 6px 24px; align-items: baseline; padding: 14px 0; border-top: 1px solid var(--pl-rule); }
+    .spec:first-child { border-top: 0; padding-top: 0; }
+    .spec .say { min-width: 0; text-wrap: balance; }
+    .spec .who { display: grid; gap: 2px; }
+
+    /* space */
+    .frame { position: relative; border-radius: var(--pl-radius-row); background: var(--pl-paper-2); padding: 28px 28px 40px; }
+    .frame .pg { position: relative; margin: 0 auto; max-width: 560px; background: var(--pl-desk); border-radius: var(--pl-radius-tag); box-shadow: inset 0 0 0 1px var(--pl-rule); padding: 0 16px; }
+    .frame .blk { height: 10px; border-radius: 2px; background: var(--pl-ink-3); opacity: .5; }
+    .frame .gap { position: relative; display: flex; align-items: center; justify-content: center; font: var(--pl-page-meta); color: var(--pl-sky-ink); }
+    .frame .gap::before { content: ""; position: absolute; inset: 0; background: repeating-linear-gradient(-45deg, color-mix(in oklab, var(--pl-sky) 22%, transparent) 0 2px, transparent 2px 6px); border-radius: 2px; }
+    .frame .gap span { position: relative; padding: 0 6px; background: var(--pl-desk); border-radius: 3px; }
+    .frame .cardbox { background: var(--pl-paper); border-radius: 6px; box-shadow: var(--pl-shadow-tag); padding: 12px; display: grid; gap: 6px; }
+    .frame .cap { position: absolute; left: 28px; right: 28px; bottom: 12px; display: flex; justify-content: space-between; font: var(--pl-page-meta); color: var(--pl-ink-2); }
+
+    /* depth */
+    .desk { position: relative; overflow: hidden; height: 220px; border-radius: var(--pl-radius-row); background: var(--pl-desk); box-shadow: inset 0 0 0 1px var(--pl-rule); }
+    .desk .bar { position: absolute; inset: 0 0 auto; height: 40px; display: flex; align-items: center; padding: 0 14px; font: var(--pl-page-meta); color: var(--pl-ink-2); background: color-mix(in oklab, var(--pl-paper) 88%, transparent); backdrop-filter: blur(12px); box-shadow: 0 1px 0 var(--pl-rule); z-index: 1; }
+    .desk .pl-card { position: absolute; left: 24px; right: 24px; top: 72px; bottom: -20px; padding: 16px; font: var(--pl-page-meta); color: var(--pl-ink-2); }
+
+    /* motion */
+    .demo { display: grid; gap: 12px; align-content: start; }
+    .demo .stage { position: relative; height: 120px; border-radius: var(--pl-radius-row); background: var(--pl-paper-2); overflow: hidden; }
+    .demo .head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .demo h3 { margin: 0; font: var(--pl-page-small); font-weight: 600; }
+    .build { display: grid; gap: 6px; padding: 14px; }
+    .build i { display: block; height: 12px; border-radius: 2px; background: var(--pl-ink-3); opacity: 0; translate: 0 6px; }
+    .build.on i { opacity: .55; translate: 0 0; transition: opacity var(--pl-dur-build) var(--pl-ease-out), translate var(--pl-dur-build) var(--pl-ease-out); }
+    .lane { position: absolute; left: 16px; right: 16px; height: 1px; background: var(--pl-rule); }
+    .lane span { position: absolute; left: 0; top: -14px; font: var(--pl-page-meta); color: var(--pl-ink-2); }
+    .ball { position: absolute; width: 14px; height: 14px; margin: -7px 0 0 -7px; border-radius: 50%; background: var(--pl-sky); }
+    .target { position: absolute; width: 22px; height: 22px; margin: -11px 0 0 -11px; border-radius: 50%; box-shadow: inset 0 0 0 1.5px var(--pl-ink-3); }
+    .countstage { display: grid; place-content: center; height: 100%; }
+    .countstage .sc-count { font: var(--pl-page-figure); }
+    .cause { position: absolute; inset: 16px; display: flex; align-items: center; gap: 14px; padding: 0 16px; border-radius: var(--pl-radius-row); background: var(--pl-paper); box-shadow: 0 0 0 1px var(--pl-rule); }
+    .cause .dot { width: 14px; height: 14px; border-radius: 2px; background: var(--c-coral); transition: background-color 160ms var(--pl-ease-out); flex: none; }
+    .cause.done .dot { border-radius: 50%; background: var(--c-mint); animation: pop 520ms var(--pl-spring-pop); }
+    .cause .what { flex: 1; font: var(--pl-page-small); }
+    .cause .sc-count { font: var(--pl-page-title); }
+    @keyframes pop { from { scale: .6; } to { scale: 1; } }
+
+    /* charts */
+    .chart { display: grid; grid-template-columns: max-content 1fr; gap: 8px 14px; align-items: center; margin: 0; }
+    .chart dt { font: var(--pl-page-meta); color: var(--pl-ink-2); text-align: right; }
+    .chart dd { display: flex; align-items: center; gap: 8px; margin: 0; min-height: 20px; cursor: default; }
+    .chart .b { height: var(--pl-chart-bar); border-radius: 0 var(--pl-radius-mark) var(--pl-radius-mark) 0; background: var(--c-mint); transition: opacity 120ms var(--pl-ease-out); }
+    .chart .b.none { width: 28px; background: none; box-shadow: inset 0 0 0 1px var(--pl-ink-3); border-radius: var(--pl-radius-mark); }
+    .chart .v { font: var(--pl-page-small); font-variant-numeric: tabular-nums; }
+    .chart .v.none { color: var(--pl-ink-2); }
+    .chart:has(dd:hover) .b:not(:hover *) { opacity: .45; }
+    .chart dd:hover .b { opacity: 1; }
+    .readout { min-height: 22px; margin-top: 14px; font: var(--pl-page-small); color: var(--pl-ink-2); }
+    .rules { margin: var(--pl-space-6) 0 0; padding-left: 18px; font: var(--pl-page-small); color: var(--pl-ink-2); }
+    .rules li { margin: 4px 0; }
+    .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+    @media (max-width: 720px) {
+      main { padding: var(--pl-page-space-1) var(--pl-space-6) var(--pl-page-space-3); }
+      .top { padding: 10px 16px; }
+      h1 { font: var(--pl-page-display-narrow); }
+      section { margin-top: var(--pl-page-space-2); }
+      .spec { grid-template-columns: 1fr; }
+    }
+    @media (prefers-reduced-motion: reduce) { .build.on i, .cause .dot { transition: none; } .cause.done .dot { animation: none; } }
+  </style>
+  <header class="top"><span class="pl-rainbow"></span><b>React Plumber</b><span class="pl-tag">Page primitives</span><span class="read">For review</span><button type="button" class="pl-act quiet" id="scheme">Day</button></header>
+  <main>
+    <span class="eyebrow">Onboarding, layer 3</span>
+    <h1>What the project page stands on.</h1>
+    <p class="lede">The page shares the overlay's foundations. This sheet shows the few it needs on top: colours that hold their meaning for everyone, the page's width, motion every part shares, and how a chart is drawn. <span class="tag keep">In use</span> is in tokens.css today; <span class="tag new">Proposed</span> waits for your review.</p>
+
+    <section>
+      <h2>Colour: every meaning needs two cues</h2>
+      <p>Gravity's places are mostly butter and coral. By day, to a deuteranope (about 1 in 16 men) those two are almost the same olive. The proposal re-steps the three day colours by lightness and gives each meaning its own shape, so colour is never the only cue.</p>
+      <label class="switch"><input type="checkbox" id="blind"> See them as a deuteranope does</label>
+      <div class="grid" style="margin-top:16px">
+        <div class="pl-card card set" data-set="today" data-shaped="0"><h3>Today <span class="tag keep">In use</span></h3><div class="strip"></div><ul class="key"></ul>
+          <div class="score"><div><span class="meta">Colour-blind gap</span><b class="bad">3.4 (needs 8)</b></div><div><span class="meta">Full-colour gap</span><b class="bad">14.5 (needs 15)</b></div><div><span class="meta">Mint on the desk</span><b class="bad">2.87:1</b></div></div></div>
+        <div class="pl-card card set" data-set="proposed" data-shaped="1"><h3>Proposed <span class="tag new">Proposed</span></h3><div class="strip"></div><ul class="key"></ul>
+          <div class="score"><div><span class="meta">Colour-blind gap</span><b class="ok">7.7, with shapes</b></div><div><span class="meta">Full-colour gap</span><b class="ok">21.4</b></div><div><span class="meta">Mint on the desk</span><b class="ok">3.23:1</b></div></div></div>
+      </div>
+      <p class="decide"><b>Your call:</b> the three day colours change everywhere the overlay uses them, not only on this page. The cost is butter at 2.45:1 on a card, which the ring shape and the table view cover. Night stays as it is: its three already separate (8.7).</p>
+      <p class="night-note">You're looking at night. Night's colours don't change; switch to Day to see the decision.</p>
+    </section>
+
+    <section>
+      <h2>Type: six steps and a narrow headline</h2>
+      <p>The six page steps stay. The only addition is the headline below 720px, which was a literal.</p>
+      <div class="pl-card card" id="type"></div>
+    </section>
+
+    <section>
+      <h2>Space and width</h2>
+      <p>The page is at most 1120px wide, with prose kept to 60 characters. There's one breakpoint, 720px: below it the gutters drop from 32 to 16 and each page space drops a step.</p>
+      <div class="frame">
+        <div class="pg">
+          <div class="gap" style="height:24px"><span>48 above the first thing</span></div>
+          <div class="blk" style="width:55%;height:16px;opacity:.7"></div>
+          <div style="height:8px"></div><div class="blk" style="width:80%"></div>
+          <div class="gap" style="height:16px"><span>32 under the lede</span></div>
+          <div class="cardbox"><div class="gap" style="height:12px;justify-content:flex-start"><span>24 inset</span></div><div class="blk" style="width:40%"></div><div class="blk" style="width:70%"></div></div>
+          <div class="gap" style="height:32px"><span>64 between sections</span></div>
+          <div class="cardbox"><div class="blk" style="width:35%"></div><div class="blk" style="width:60%"></div></div>
+          <div class="gap" style="height:48px"><span>96 under the last card</span></div>
+        </div>
+        <div class="cap"><span>Drawn at half size. 32 gutters (16 below 720px)</span><span><code>--pl-page-max</code> 1120px <span class="tag new">Proposed</span></span></div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Depth: the desk and a card</h2>
+      <p>Two levels. The top bar isn't lifted: it's the card colour at 88% with a blur and one hairline. Hovering never lifts a card.</p>
+      <div class="desk"><div class="bar">Top bar: paper at 88%, blur, a hairline</div><div class="pl-card">A card: <code>--pl-shadow-card</code>, <code>--pl-radius-card</code></div></div>
+    </section>
+
+    <section>
+      <h2>Motion every part shares</h2>
+      <p>These were constants inside Gravity. Moved to tokens (and the two springs to one module), the causes, counts and progress move the same way. With reduced motion: no drift, no stagger, no springs, and numbers change at once.</p>
+      <div class="grid">
+        <div class="pl-card card demo"><div class="head"><h3>Building in</h3><button type="button" class="pl-act quiet" data-replay="build">Replay</button></div><div class="stage"><div class="build" id="build">${'<i></i>'.repeat(6)}</div></div><p class="meta"><code>--pl-stagger</code> 40ms apart, <code>--pl-dur-build</code> 380ms each; a sequence never runs past 400ms. <span class="tag new">Proposed</span></p></div>
+        <div class="pl-card card demo"><div class="head"><h3>Two springs</h3><button type="button" class="pl-act quiet" data-replay="springs">Replay</button></div><div class="stage" id="springs"><div class="lane" style="top:40px"><span>Settle: a place coming home</span></div><div class="lane" style="top:88px"><span>Detent: pulled into a step</span></div><div class="target" style="top:40px"></div><div class="target" style="top:88px"></div><div class="ball" style="top:40px"></div><div class="ball" style="top:88px"></div></div><p class="meta">Settle k 300, c 30. Detent k 600, c 35. Only for marks that fall or get pulled. <span class="tag new">Proposed</span> as one module</p></div>
+        <div class="pl-card card demo"><div class="head"><h3>A number changing</h3><button type="button" class="pl-act quiet" data-replay="count">Replay</button></div><div class="stage"><div class="countstage" id="count"></div></div><p class="meta">Every changing number rolls, never jumps. <span class="tag keep">In use</span></p></div>
+        <div class="pl-card card demo"><div class="head"><h3>Clearing a cause</h3><button type="button" class="pl-act quiet" data-replay="clear">Replay</button></div><div class="stage"><div class="cause" id="cause"><span class="dot"></span><span class="what">You wrote white 4 ways</span><span id="cause-n"></span></div></div><p class="meta">The count rolls to 0, the mark springs once and turns mint. Under 600ms, no confetti. <span class="tag new">Proposed</span></p></div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Charts</h2>
+      <p>One question per chart, and the title is the answer. Colour by meaning only, values at the bar's end in ink, one series and no legend.</p>
+      <div class="pl-card card">
+        <h2 id="chart-title">${words[k] ?? `${k} sizes carry`} most of your app</h2>
+        <p class="meta" style="margin:0 0 18px">${nf.format(carry)} of the ${nf.format(total)} places that use your type scale, on crafting-ui.</p>
+        <dl class="chart" id="chart" aria-describedby="chart-title"></dl>
+        <p class="readout" id="readout" aria-live="polite">Point at a size to read it.</p>
+        <table class="sr"><caption>Places that use each text size</caption><tr><th>Size</th><th>Pixels</th><th>Places</th></tr>${DATA.size.steps.map((s) => `<tr><td>${s.name}</td><td>${s.px}</td><td>${s.uses}</td></tr>`).join('')}</table>
+        <ul class="rules">
+          <li>Bars 12px thick (<code>--pl-chart-bar</code> <span class="tag new">Proposed</span>), square at zero, <code>--pl-radius-mark</code> at the value end.</li>
+          <li>A size nobody uses is an outline in <code>--pl-ink-3</code>, with the words "never used".</li>
+          <li>Gridlines only when values aren't written on the bars: one hairline in <code>--pl-rule</code>, at most four.</li>
+          <li>Text never takes a data colour. The one exception is the headline's two numbers, and only at 3:1 or more.</li>
+        </ul>
+      </div>
+    </section>
+  </main>`;
+
+  // ---- colour ----
+  const blind = root.getElementById('blind');
+  const drawSets = () => {
+    const day = host.dataset.scheme !== 'dark';
+    for (const card of root.querySelectorAll('.set')) {
+      const set = card.dataset.set, shaped = card.dataset.shaped === '1', sim = blind.checked;
+      card.querySelector('.strip').innerHTML = strip(set, shaped, sim);
+      card.querySelector('.key').innerHTML = MEANINGS.map(([hue, say, shape]) => {
+        const c = SETS[set][hue];
+        return `<li><svg viewBox="0 0 12 12" aria-hidden="true">${mark(shape, sim ? DEUTAN[c] : c, 6, 6, 5, shaped)}</svg>${say}${shaped ? `, ${shape === 'disc' ? 'a disc' : shape === 'ring' ? 'a ring' : 'a square'}` : ''}<code>${c}</code></li>`;
+      }).join('');
+    }
+    // the chart and the cause demo draw with the proposed day colours, and night's own
+    const live = day ? SETS.proposed : { mint: 'var(--pl-mint)', butter: 'var(--pl-butter)', coral: 'var(--pl-coral)' };
+    for (const [hue, value] of Object.entries(live)) host.style.setProperty(`--c-${hue}`, value);
+  };
+  blind.addEventListener('change', drawSets);
+
+  // ---- type ----
+  const TYPE = [
+    ['--pl-page-display', 'Display', '40/46', '576 places type a text size by hand.', 'keep', 'font: var(--pl-page-display); letter-spacing: var(--pl-tracking-display)'],
+    ['--pl-page-display-narrow', 'Display, below 720px', '30/36', '576 places type a text size by hand.', 'new', 'font: var(--pl-page-display-narrow); letter-spacing: var(--pl-tracking-display)'],
+    ['--pl-page-figure', 'Figure', '32/36', '45', 'keep', 'font: var(--pl-page-figure); font-variant-numeric: tabular-nums'],
+    ['--pl-page-title', 'Title', '20/28', 'Where your text sizes land', 'keep', 'font: var(--pl-page-title); letter-spacing: var(--pl-tracking-title)'],
+    ['--pl-page-body', 'Body', '16/26', 'Your theme has 10 text sizes; your code uses 49.', 'keep', 'font: var(--pl-page-body)'],
+    ['--pl-page-small', 'Small', '14/22', 'Each dot is a place in your code that types a size by hand.', 'keep', 'font: var(--pl-page-small)'],
+    ['--pl-page-meta', 'Meta', '13/20', 'On your scale · Your size, typed by hand', 'keep', 'font: var(--pl-page-meta); color: var(--pl-ink-2)'],
+  ];
+  root.getElementById('type').innerHTML = TYPE.map(([token, name, size, say, state, style]) => `<div class="spec"><div class="who"><span style="font: var(--pl-page-small); font-weight: 600">${name} <span class="tag ${state}">${state === 'new' ? 'Proposed' : 'In use'}</span></span><span class="code">${token} · ${size}</span></div><div class="say" style="${style}">${say}</div></div>`).join('');
+
+  // ---- motion ----
+  const build = () => {
+    const el = root.getElementById('build'); el.classList.remove('on'); void el.offsetWidth;
+    const items = [...el.children], gap = Math.min(40, 400 / items.length);
+    items.forEach((i, n) => { i.style.transitionDelay = reduce ? '0ms' : `${n * gap}ms`; });
+    el.classList.add('on');
+  };
+  const springs = () => {
+    const stage = root.getElementById('springs'), w = stage.clientWidth;
+    const balls = [...stage.querySelectorAll('.ball')], targets = [...stage.querySelectorAll('.target')];
+    const to = w - 48; targets.forEach((t) => { t.style.left = `${to}px`; });
+    const runs = [{ k: 300, c: 30 }, { k: 600, c: 35 }].map((s, i) => ({ ...s, el: balls[i], x: 32, v: 0 }));
+    if (reduce) { for (const r of runs) r.el.style.left = `${to}px`; return; }
+    let last = performance.now();
+    const frame = (now) => {
+      const dt = Math.min(0.032, (now - last) / 1000); last = now; let moving = false;
+      for (const r of runs) { const a = -r.k * (r.x - to) - r.c * r.v; r.v += a * dt; r.x += r.v * dt; r.el.style.left = `${r.x}px`; if (Math.abs(r.x - to) > 0.2 || Math.abs(r.v) > 0.2) moving = true; }
+      if (moving) requestAnimationFrame(frame);
+    };
+    for (const r of runs) r.el.style.left = '32px';
+    requestAnimationFrame(frame);
+  };
+  const countEl = root.getElementById('count'); countEl.innerHTML = countMark(576, 'places typed by hand');
+  let counted = 576;
+  const count = () => { counted = counted === 576 ? 621 : 576; rollCount(countEl, counted); };
+  const causeEl = root.getElementById('cause'), causeN = root.getElementById('cause-n'); causeN.innerHTML = countMark(92, 'places');
+  const clear = () => {
+    if (causeEl.classList.contains('done')) { causeEl.classList.remove('done'); rollCount(causeN, 92); return; }
+    rollCount(causeN, 0); causeEl.classList.add('done');
+  };
+  const DEMOS = { build, springs, count, clear };
+  root.addEventListener('click', (e) => { const b = e.target.closest('[data-replay]'); if (b) DEMOS[b.dataset.replay](); });
+
+  // ---- chart ----
+  const byPx = DATA.size.steps.slice().sort((a, b) => a.px - b.px), most = Math.max(...byPx.map((s) => s.uses));
+  const chart = root.getElementById('chart'), readout = root.getElementById('readout');
+  chart.innerHTML = byPx.map((s) => `<dt>${s.name.replace(/^text-/, '')}</dt><dd data-name="${s.name}" data-px="${s.px}" data-uses="${s.uses}">${s.uses
+    ? `<span class="b" style="width:${Math.max(4, (s.uses / most) * 100) * 0.8}%"></span><span class="v">${nf.format(s.uses)}</span>`
+    : '<span class="b none"></span><span class="v none">never used</span>'}</dd>`).join('');
+  chart.addEventListener('pointerover', (e) => {
+    const d = e.target.closest('dd'); if (!d) return;
+    const n = +d.dataset.uses;
+    readout.textContent = `${d.dataset.name} is ${d.dataset.px}px. ${n ? `${nf.format(n)} ${n === 1 ? 'place uses' : 'places use'} it, ${Math.round((n / total) * 100)}% of your scale's places.` : 'Nothing uses it.'}`;
+  });
+  chart.addEventListener('pointerleave', () => { readout.textContent = 'Point at a size to read it.'; });
+
+  // ---- scheme ----
+  const button = root.getElementById('scheme');
+  const setScheme = (dark) => {
+    host.dataset.scheme = dark ? 'dark' : 'light';
+    document.body.style.background = getComputedStyle(host).getPropertyValue('--pl-desk');
+    button.textContent = dark ? 'Day' : 'Night';
+    drawSets();
+  };
+  const asked = new URLSearchParams(location.search).get('scheme');
+  setScheme(asked ? asked === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches);
+  button.addEventListener('click', () => setScheme(host.dataset.scheme !== 'dark'));
+  build(); springs();
+</script>
+</body>
+</html>
