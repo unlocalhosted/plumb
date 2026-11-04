@@ -2,7 +2,8 @@
 // soft depth. Each takes `broken` and is wrong in exactly one way, the principle's; everything else on it is right, so
 // plumber, scoped to it, finds one thing. `measure` (optional) says where the eye sees the harm, for the ticks drawn
 // over the example; it reads the page, it never decides what is wrong (plumber does).
-import { Bell, Gear, Invoice, People, Play, Round, Square } from '../icons.jsx';
+import { Bell, Play } from '../icons.jsx';
+import site from '../site.png';
 
 // where a line of text sits, from its font: the baseline and the middle of its capitals, in page pixels
 let ctx;
@@ -79,107 +80,210 @@ Amounts.measure = (root) => {
 };
 
 
-// #1 a highlighted row bleeds out by its padding, so its words stay on the edge the other rows' words share
-const NAV = [['General', Gear], ['Members', People], ['Billing', Invoice], ['Notifications', Bell]];
-function SettingsNav({ broken }) {
+// #1 sections down a page line up by their words, not their boxes: a filled notice between a heading and a list
+// keeps its box on the column, so its words sit in by its padding; it should bleed out by that padding instead
+const HISTORY = [['Nov 1, 2026', '96.00'], ['Oct 1, 2026', '96.00'], ['Sep 1, 2026', '72.00']];
+function Billing({ broken }) {
   return (
-    <div className="flex w-full max-w-sm gap-6">
-      <nav aria-label="Settings" className="flex w-40 shrink-0 flex-col gap-0.5">
-        <span className="pb-2 text-xs font-medium text-ink-muted">Workspace</span>
-        {NAV.map(([label, Icon]) => (
-          <a key={label} href="#settings" data-row aria-current={label === 'Billing' ? 'page' : undefined}
-            className={'flex h-8 items-center gap-2 text-sm ' + (label === 'Billing' ? 'rounded-control bg-sunken px-2 font-medium text-ink' : 'text-ink-muted')}>
-            <Icon />{label}
-          </a>
-        ))}
-      </nav>
-      <div className="flex min-w-0 flex-1 flex-col gap-1 pt-6">
-        <h3 className="text-base font-semibold">Billing</h3>
-        <p className="text-sm text-ink-muted">Studio plan, renews December 1.</p>
-      </div>
+    <div data-sections className="flex w-full max-w-md flex-col gap-6">
+      <section className="flex items-start justify-between gap-4">
+        <div className="flex flex-col gap-1">
+          <h3 className="text-base font-semibold">Billing</h3>
+          <p className="text-sm text-ink-muted">Manage your plan, payment method and invoices.</p>
+        </div>
+        <button type="button" className="shrink-0 rounded-control border border-line bg-surface px-3 py-1.5 text-sm font-medium shadow-raised active:bg-sunken">Change plan</button>
+      </section>
+      <section className="flex gap-3 rounded-control bg-caution-soft px-4 pt-3 pb-4">
+        <span aria-hidden="true" className="mt-0.5 grid size-5 shrink-0 place-items-center rounded-full bg-caution text-[11px] font-bold text-accent-ink">!</span>
+        <div className="flex flex-col gap-1">
+          <span className="text-sm font-medium text-ink">Your card expires this month</span>
+          <span className="text-sm text-ink-muted">Update it before Dec 1 so reminders keep sending. <a href="#billing" className="font-medium text-ink underline decoration-line underline-offset-2">Update card</a></span>
+        </div>
+      </section>
+      <section className="flex flex-col gap-3">
+        <div className="flex items-baseline justify-between">
+          <span className="text-sm font-medium">Studio plan</span>
+          <span className="text-sm text-ink-muted"><span className="tabular-nums">$24</span> per seat / month</span>
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <div className="h-1.5 overflow-hidden rounded-full bg-sunken"><div className="h-full w-4/5 rounded-full bg-accent" /></div>
+          <span className="text-xs text-ink-muted"><span className="tabular-nums">4 of 5</span> seats used · next invoice <span className="tabular-nums">$96.00</span> on Dec 1</span>
+        </div>
+      </section>
+      <section className="flex flex-col gap-2">
+        <span className="text-xs font-medium text-ink-muted">Invoice history</span>
+        <ul className="flex flex-col">
+          {HISTORY.map(([date, amount]) => (
+            <li key={date} className="flex items-center gap-3 border-b-hairline border-line py-2 text-sm last:border-0">
+              <span className="flex-1">{date}</span>
+              <span className="rounded-full bg-positive-soft px-2 py-0.5 text-xs font-medium text-positive">Paid</span>
+              <span className="w-16 text-right font-medium tabular-nums">${amount}</span>
+            </li>
+          ))}
+        </ul>
+      </section>
     </div>
   );
 }
-SettingsNav.measure = (root) => {
-  const ticks = [...root.querySelectorAll('[data-row] svg')].map((g) => { const r = g.getBoundingClientRect(); return { x: r.left, top: r.top - 4, bottom: r.bottom + 4 }; });
+// where each section's words begin
+Billing.measure = (root) => {
+  const ticks = [...root.querySelectorAll('[data-sections] > section')].map((sec) => {
+    // where its content begins, as plumber reads it: an icon, or the first words
+    const icon = sec.querySelector('svg, img, [aria-hidden="true"]');
+    const walker = document.createTreeWalker(sec, NodeFilter.SHOW_TEXT, { acceptNode: (n) => (n.textContent.trim() && !n.parentElement.closest('[aria-hidden="true"]') ? 1 : 3) });
+    const text = walker.nextNode();
+    if (!text && !icon) return null;
+    const range = document.createRange(); if (text) range.selectNodeContents(text);
+    const xs = [text && range.getBoundingClientRect().left, icon?.getBoundingClientRect().left].filter((x) => x != null);
+    const box = sec.getBoundingClientRect();
+    return { x: Math.min(...xs), top: box.top, bottom: box.bottom };
+  }).filter(Boolean);
   const xs = ticks.map((t) => t.x), d = Math.max(...xs) - Math.min(...xs);
-  return { ticks, broken: `row starts ${px(d)} in`, fixed: 'one edge ✓', off: d > 0.5 };
+  return { ticks, broken: `words ${px(d)} in`, fixed: 'one edge ✓', off: d > 0.5 };
 };
 
 // #2 a play triangle is centred by its weight, not its box: it leans toward its point
+const CHAPTERS = [['Create a client', '1:08', 'done'], ['Send your first invoice', '2:14', 'now'], ['Get paid by card', '3:02', 'next']];
 function Lesson({ broken }) {
   return (
-    <div className="flex w-full max-w-sm flex-col gap-3">
-      <div className="grid aspect-video place-items-center rounded-control bg-[linear-gradient(135deg,var(--color-accent-soft),var(--color-positive-soft))]">
-        <button type="button" aria-label="Play: Send your first invoice" data-play className="grid size-14 place-items-center rounded-full bg-surface text-ink shadow-overlay active:bg-sunken"><Play size={24} /></button>
+    <div className="flex w-full max-w-md flex-col gap-4">
+      <span className="text-xs font-medium text-ink-muted">Quarry Academy · Getting paid</span>
+      <div className="relative overflow-hidden rounded-control">
+        <img src={site} alt="" width="480" height="270" className="aspect-video w-full object-cover" />
+        <div className="absolute inset-0 grid place-items-center">
+          <button type="button" aria-label="Play: Send your first invoice" data-play className="grid size-14 place-items-center rounded-full bg-surface text-ink shadow-overlay active:bg-sunken"><Play size={24} /></button>
+        </div>
+        <span className="absolute right-2 bottom-2 rounded-chip bg-ink px-1.5 py-0.5 text-xs font-medium text-accent-ink tabular-nums">2:14</span>
       </div>
-      <div className="flex items-baseline justify-between gap-3">
-        <span className="text-sm font-medium">Send your first invoice</span>
-        <span className="text-sm text-ink-muted tabular-nums">2:14</span>
+      <div className="flex flex-col gap-1">
+        <h3 className="text-base font-semibold">Send your first invoice</h3>
+        <span className="text-sm text-ink-muted">Lesson 2 of 6 · with Ada Morales</span>
       </div>
+      <ol className="flex flex-col border-t-hairline border-line">
+        {CHAPTERS.map(([title, time, at]) => (
+          <li key={title} className="flex items-center gap-3 border-b-hairline border-line py-2 text-sm">
+            <span className={'grid size-5 shrink-0 place-items-center rounded-full text-[11px] font-semibold ' + (at === 'done' ? 'bg-positive-soft text-positive' : at === 'now' ? 'bg-accent text-accent-ink' : 'bg-sunken text-ink-muted')}>{at === 'done' ? '✓' : CHAPTERS.findIndex((c) => c[0] === title) + 1}</span>
+            <span className={'flex-1 ' + (at === 'now' ? 'font-medium' : at === 'done' ? 'text-ink-muted' : '')}>{title}</span>
+            <span className="text-ink-muted tabular-nums">{time}</span>
+          </li>
+        ))}
+      </ol>
     </div>
   );
 }
 Lesson.measure = (root) => {
   const b = root.querySelector('[data-play]').getBoundingClientRect(), g = root.querySelector('[data-play] svg').getBoundingClientRect();
-  const centre = b.left + b.width / 2, seen = g.left + g.width * (10.5 / 24); // the triangle's weight: halfway from its box's middle to its centroid
+  const centre = b.left + b.width / 2, seen = g.left + g.width * (10.5 / 24);
   const d = centre - seen;
   return { ticks: [{ x: centre, top: b.top - 6, bottom: b.bottom + 6 }, { x: seen, top: g.top, bottom: g.bottom }], broken: `weight ${px(d)} left`, fixed: 'centred ✓', off: Math.abs(d) > 0.6 };
 };
 
 // #3 round logos are drawn a touch larger than square ones, or they look smaller
+const Mark = ({ shape, r, tone, letter, size = 28 }) => (
+  <svg viewBox="0 0 24 24" width={size} height={size} aria-hidden="true" className={'shrink-0 ' + tone}>
+    {shape === 'round' ? <circle cx="12" cy="12" r={r} fill="currentColor" /> : <rect x="3" y="3" width="18" height="18" rx="4" fill="currentColor" />}
+    <text x="12" y="16" textAnchor="middle" fontSize="10" fontWeight="700" fill="white">{letter}</text>
+  </svg>
+);
+const APPS = [
+  { name: 'Ledgerline', what: 'Books every paid invoice', shape: 'square', tone: 'text-accent', letter: 'L', on: true },
+  { name: 'Orbit Mail', what: 'Sends reminders from your address', shape: 'round', tone: 'text-violet', letter: 'O', on: true },
+  { name: 'Tallyhook', what: 'Imports hours from your tracker', shape: 'square', tone: 'text-positive', letter: 'T', on: true },
+  { name: 'Copperbank', what: 'Matches payments to invoices', shape: 'round', tone: 'text-caution', letter: 'C', on: false },
+];
 function Connected({ broken }) {
   const r = broken ? 8.5 : 9.75;
   return (
-    <div className="flex w-full max-w-sm flex-col gap-4">
+    <div className="flex w-full max-w-md flex-col gap-4">
       <div className="flex items-center justify-between gap-3">
         <div className="flex flex-col gap-0.5">
-          <h3 className="text-base font-semibold">Connected apps</h3>
-          <span className="text-sm text-ink-muted">Four sync every hour</span>
+          <h3 className="text-base font-semibold">Integrations</h3>
+          <span className="text-sm text-ink-muted">Three connected · synced 4 min ago</span>
         </div>
-        <div data-logos aria-label="Ledgerline, Orbit Mail, Tallyhook, Copperbank" className="flex items-center gap-2">
-          <Square size={28} className="text-accent" /><Round size={28} r={r} className="text-violet" /><Square size={28} className="text-positive" /><Round size={28} r={r} className="text-caution" />
+        <div data-logos aria-label="Ledgerline, Orbit Mail, Tallyhook, Copperbank" className="flex items-center -space-x-1">
+          {APPS.map((a) => <Mark key={a.name} shape={a.shape} r={r} tone={a.tone} letter={a.letter} />)}
         </div>
       </div>
+      <ul className="flex flex-col rounded-control border border-line">
+        {APPS.map((a) => (
+          <li key={a.name} className="flex items-center gap-3 border-b-hairline border-line px-3 py-2.5 last:border-0">
+            <span className="grid size-9 shrink-0 place-items-center rounded-control bg-sunken"><Mark shape="square" tone={a.tone} letter={a.letter} size={20} /></span>
+            <span className="flex min-w-0 flex-1 flex-col">
+              <span className="text-sm font-medium">{a.name}</span>
+              <span className="truncate text-xs text-ink-muted" title={a.what}>{a.what}</span>
+            </span>
+            <span role="switch" aria-checked={a.on} aria-label={a.name} className={'relative h-6 w-11 shrink-0 rounded-full ' + (a.on ? 'bg-accent' : 'bg-line')}>
+              <span className={'absolute top-0.5 size-5 rounded-full bg-surface shadow-raised ' + (a.on ? 'left-5.5' : 'left-0.5')} />
+            </span>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
 Connected.measure = (root) => {
   const ticks = [...root.querySelectorAll('[data-logos] svg')].map((g) => {
-    const box = g.getBoundingClientRect(), round = !!g.querySelector('circle');
-    const half = round ? Number(g.querySelector('circle').getAttribute('r')) : 9, size = (box.height / 24) * half * 2 * (parseFloat(getComputedStyle(g).scale) || 1);
+    const box = g.getBoundingClientRect(), circle = g.querySelector('circle');
+    const half = circle ? Number(circle.getAttribute('r')) : 9, size = (box.height / 24) * half * 2 * (parseFloat(getComputedStyle(g).scale) || 1);
     const mid = box.top + box.height / 2;
-    return { y: mid - size / 2, left: box.left - 2, right: box.right + 2, size, round };
+    return { y: mid - size / 2, left: box.left + 2, right: box.right - 2, size, round: !!circle };
   });
   const rd = Math.min(...ticks.filter((t) => t.round).map((t) => t.size)), sq = Math.max(...ticks.filter((t) => !t.round).map((t) => t.size));
   return { ticks, broken: `round ${px(rd)} · square ${px(sq)}`, fixed: 'reads the same ✓', off: rd < sq * 1.04 };
 };
 
 // #4 an icon beside words sits on the capitals' middle (broken: pushed down with mt-1, for a font long gone)
+const NOTES = [
+  ['Halden & Co. paid INV-2041', '$4,820.00 arrived in Studio checking', '2m'],
+  ['Northfield Dental opened INV-2040', 'Viewed twice, from Lisbon', '1h'],
+  ['Reminder sent for INV-2039', 'Okafor Landscape · 12 days overdue', '3h'],
+];
 function Notice({ broken }) {
   return (
-    <div className="flex w-full max-w-sm flex-col gap-3">
-      <div data-notice className="flex items-center gap-2 text-sm font-medium">
-        <Bell className={'text-accent ' + (broken ? 'mt-1' : '')} /><span>Halden &amp; Co. paid INV-2041</span>
+    <div className="flex w-full max-w-md flex-col gap-2">
+      <div className="flex items-baseline justify-between pb-1">
+        <h3 className="text-base font-semibold">Notifications</h3>
+        <span className="text-sm text-accent">Mark all read</span>
       </div>
-      <p className="pl-6 text-sm text-ink-muted">$4,820.00 arrived in Studio checking, 2 minutes ago.</p>
+      <ul className="flex flex-col">
+        {NOTES.map(([title, detail, when], i) => (
+          <li key={title} className={'flex flex-col gap-0.5 border-b-hairline border-line py-2.5 last:border-0 ' + (i === 0 ? '' : '')}>
+            <div data-notice className="flex items-center gap-2.5 text-sm font-medium">
+              <Bell className={'text-accent ' + (broken ? 'mt-1' : '')} />
+              <span className="min-w-0 flex-1 truncate" title={title}>{title}</span>
+              <span className="text-xs font-normal text-ink-muted tabular-nums">{when}</span>
+            </div>
+            <p className="pl-6.5 text-sm text-ink-muted">{detail}</p>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
 Notice.measure = (root) => {
   const row = root.querySelector('[data-notice]'), g = row.querySelector('svg').getBoundingClientRect(), t = lineOf(row.querySelector('span'));
   const icon = g.top + g.height / 2, d = icon - t.capMiddle;
-  return { ticks: [{ y: icon, left: g.left - 4, right: g.right + 2 }, { y: t.capMiddle, left: t.left - 2, right: t.left + 40 }], broken: `icon ${px(d)} low`, fixed: 'on the capitals ✓', off: Math.abs(d) > 0.6 };
+  return { ticks: [{ y: icon, left: g.left - 4, right: g.right + 2 }, { y: t.capMiddle, left: t.left - 2, right: t.left + 48 }], broken: `icon ${px(d)} low`, fixed: 'on the capitals ✓', off: Math.abs(d) > 0.6 };
 };
 
 // #5 the padding around a line of words is measured from the letters, not from the line's invisible leading
 function Chips({ broken }) {
   return (
-    <div className="flex w-full max-w-sm flex-col gap-3">
-      <span className="text-sm text-ink-muted">Invoice INV-2041</span>
-      <div className="flex items-center gap-2">
-        <span data-chip className="rounded-full bg-accent-soft px-3 py-1.5 text-sm leading-6 font-medium text-accent">Awaiting payment</span>
-        <span className="text-sm text-ink-muted">since Nov 2</span>
+    <div className="flex w-full max-w-md flex-col gap-4">
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex flex-col gap-1.5">
+          <div className="flex items-center gap-2">
+            <h3 className="case-forms text-base font-semibold">INV-2041</h3>
+            <span data-chip className="rounded-full bg-accent-soft px-3 py-1.5 text-sm leading-6 font-medium text-accent">Awaiting payment</span>
+          </div>
+          <span className="text-sm text-ink-muted">Halden &amp; Co. · sent Nov 2 · due Nov 12</span>
+        </div>
+        <span className="text-xl font-semibold tabular-nums">$4,820.00</span>
+      </div>
+      <div className="flex items-center gap-2 border-t-hairline border-line pt-3">
+        <button type="button" className="rounded-control bg-ink px-3 py-1.5 text-sm font-medium text-accent-ink active:bg-ink-muted">Send reminder</button>
+        <button type="button" className="rounded-control border border-line px-3 py-1.5 text-sm font-medium active:bg-sunken">Download PDF</button>
+        <span className="ml-auto text-xs text-ink-muted">Opened twice</span>
       </div>
     </div>
   );
@@ -191,23 +295,31 @@ Chips.measure = (root) => {
 };
 
 // #6 a price and its unit, two sizes side by side, share a baseline
+const PLANS = [['Starter', '0', 'For one person'], ['Studio', '24', 'For small teams'], ['Agency', '64', 'For many clients']];
 function Price({ broken }) {
   return (
-    <div className="flex w-full max-w-sm flex-col gap-3">
-      <span className="text-sm font-medium text-ink-muted">Studio</span>
-      <div data-price className={'flex gap-1 ' + (broken ? 'items-center' : '')}>
-        <span className="text-3xl font-semibold tracking-tight tabular-nums">$24</span>
-        <span className="text-sm text-ink-muted">per seat / month</span>
-      </div>
-      <p className="text-sm text-ink-muted">Unlimited clients, reminders that send themselves.</p>
+    <div className="grid w-full max-w-lg gap-3 sm:grid-cols-3">
+      {PLANS.map(([name, price, who]) => (
+        <div key={name} className={'flex flex-col gap-3 rounded-control border px-3 pt-3 pb-4 ' + (name === 'Studio' ? 'border-accent bg-accent-soft' : 'border-line')}>
+          <div className="flex flex-col gap-0.5">
+            <span className="text-sm font-medium">{name}</span>
+            <span className="text-xs text-ink-muted">{who}</span>
+          </div>
+          <div data-price className={'flex gap-1 ' + (broken ? 'items-center' : '')}>
+            <span className="text-3xl font-semibold tracking-tight tabular-nums">${price}</span>
+            <span className="text-xs text-ink-muted">/ seat / mo</span>
+          </div>
+          <button type="button" className={'rounded-control px-3 py-1.5 text-sm font-medium ' + (name === 'Studio' ? 'bg-accent text-accent-ink active:bg-ink' : 'border border-line bg-surface active:bg-sunken')}>{name === 'Studio' ? 'Current plan' : 'Choose'}</button>
+        </div>
+      ))}
     </div>
   );
 }
 Price.measure = (root) => {
-  const [a, b] = [...root.querySelectorAll('[data-price] > span')].map(lineOf);
+  const [a, b] = [...root.querySelector('[data-price]').children].map(lineOf);
   const d = b.baseline - a.baseline;
   return { ticks: [{ y: a.baseline, left: a.left, right: a.right }, { y: b.baseline, left: b.left, right: b.right }], broken: `baselines ${px(d)} apart`, fixed: 'one baseline ✓', off: Math.abs(d) > 0.6 };
 };
 
-export const EXAMPLES = { 1: SettingsNav, 2: Lesson, 3: Connected, 4: Notice, 5: Chips, 6: Price, 16: Amounts };
+export const EXAMPLES = { 1: Billing, 2: Lesson, 3: Connected, 4: Notice, 5: Chips, 6: Price, 16: Amounts };
 

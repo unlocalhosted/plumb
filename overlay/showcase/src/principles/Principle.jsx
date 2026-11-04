@@ -19,7 +19,8 @@ const inplace = () => import(/* @vite-ignore */ INPLACE);
 // what plumber finds in the example, read without drawing (the blueprint then draws it, scoped)
 const ask = async () => (await (await plumber()).craft({ scope: SCOPE, timeout: 30000, hidden: true })).findings;
 const sitesOf = (f) => [...document.querySelectorAll(`${SCOPE} [data-plumb-source]`)].filter((e) => e.getAttribute('data-plumb-source').startsWith(`${f.file}:${f.line}:${f.column}#`));
-const kebab = (o = {}) => Object.fromEntries(Object.entries(o).map(([k, v]) => [k.replace(/[A-Z]/g, (c) => '-' + c.toLowerCase()), v]));
+// plumber's sets as style declarations: camelCase to kebab, a bare number in pixels (as its rules hand them over)
+const kebab = (o = {}) => Object.fromEntries(Object.entries(o).map(([k, v]) => [k.replace(/[A-Z]/g, (c) => '-' + c.toLowerCase()), typeof v === 'number' ? `${v}px` : v]));
 
 // The example's life: plumber reads it, the blueprint opens on it, and the switch takes plumber's fix or gives it back.
 function usePlumber() {
@@ -118,7 +119,7 @@ function Annotations({ state, stage, measureOf, onAnchor }) {
 function FindingCard({ state, anchor }) {
   const fixed = state.phase === 'fixed';
   const f = state.found?.[0];
-  const chip = (to, from) => <code className="rounded-chip bg-sunken px-1.5 py-0.5 font-mono text-xs text-ink">{from ? `${from} → ` : '+ '}{to}</code>;
+  const chip = (to, from) => { const t = `${from ? `${from} → ` : '+ '}${to}`; return <code title={t} className="block truncate rounded-chip bg-sunken px-1.5 py-0.5 font-mono text-[11px] text-ink-muted">{t}</code>; };
   let body;
   if (state.phase === 'asking') body = (
     <div aria-label="Asking plumber about this example" className="flex flex-col gap-2">
@@ -131,7 +132,13 @@ function FindingCard({ state, anchor }) {
     <div key={fixed ? 'fixed' : 'found'} className="flex animate-rise flex-col gap-3 motion-reduce:animate-none">
       <p className="text-sm font-medium text-pretty">{fixed ? (state.after?.length ? state.after[0].title : 'Nothing left to find. plumber is satisfied with its own fix.') : f.title}</p>
       {fixed ? null : <p className="text-sm text-ink-muted text-pretty">{f.because}</p>}
-      {f.suggest?.kind === 'class' ? <div className="flex items-center gap-2 text-sm text-ink-muted">{fixed ? 'Applied' : 'Fix'} {chip(f.suggest.to, f.suggest.from)}</div> : <p className="text-sm">{f.action}</p>}
+      {/* the fix in words (plumber's own reason), then the class it writes, small, for whoever wants it */}
+      {f.suggest?.kind === 'class' ? (
+        <div className="flex min-w-0 flex-col gap-1.5">
+          <p className="text-sm"><span className="text-ink-muted">{fixed ? 'Applied: ' : 'Fix: '}</span>{f.suggest.why ?? f.action}</p>
+          {chip(f.suggest.to, f.suggest.from)}
+        </div>
+      ) : <p className="text-sm">{f.action}</p>}
       <p className="font-mono text-[11px] text-ink-muted">{f.rule} · {f.file.split('/').pop()}:{f.line}{f.count > 1 ? ` · ${f.count} places` : ''}</p>
     </div>
   );
