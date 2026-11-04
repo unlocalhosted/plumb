@@ -42,6 +42,24 @@ Content alignment's fix had no `sets`, so it could not be previewed; the fix was
   (dashed guides, a measured pill: "commas drift 9.4px"), and for sub-pixel fixes a loupe. If you can't see the
   difference between broken and fixed, the example hasn't shown anything.
 
+## 3½. The screen it lives on (overlay/showcase/src/principles)
+
+- **One principle, one example, one screen** (`/rule/N`). Never a page carrying many problems: nobody can judge 50 at
+  once. The list of 77 sits at the left; the board (warm grey, faint dot grid) is the page; the example floats on it
+  in a window.
+- **Broken ↔ Fixed is a switch in place**, never a reload. Fixed is plumber's own fix taken with plumber's own
+  primitives (`inplace.js` `swapPreview` and its `GLIDE`), and Broken gives it back exactly. The change must be
+  watchable: what can move glides; what moves a pixel gets the loupe.
+- **Everything is plumber's.** Detection is `window.__plumb.craft({ scope: '[data-example]', hidden: true })`: scoped to
+  the example (the frame never pollutes it), hidden so asking doesn't flash the overlay. The fix is its `suggest`.
+  Nothing on the screen states a finding plumber didn't make.
+- **Quiet annotation, like the reference video.** Guides are thin dashed lines in a softened colour, on the subject
+  only, never solid and never on something else (a time stamp beside the icon). The one bold thing is the measured
+  pill, a tab on plumber's card. The leader leaves from the window's edge. On Fixed the rest of the example fades
+  back and red turns blue with a check.
+- **Rich, soothing, tasteful.** The example and the page around it get the same care: real content, calm colour,
+  soft depth, generous space, the type hierarchy a good product has.
+
 ## 4. plumber's fix is one you can take
 
 `suggest` is `{ kind: 'class', from, to, why, sets }`, not advice text, whenever a class can say it:
@@ -86,3 +104,18 @@ for the screenshot pass so end states are true, and say what motion you did not 
 3. Run the noise test (`e2e/craft.test.mjs`, a well-built page yields no finding) whenever a rule gets stricter.
 4. New showcase files are invisible to the overlay until the dev server restarts (a known bug): restart after adding
    one.
+
+## Feedback this skill came from (add to it every time)
+
+Each line is something the owner had to say once; the sections above exist so they never have to say it again.
+
+- 2026-11-04 · "nobody ships UI like this": a sidebar where one row is padded and the others aren't. → §1, §2.
+- 2026-11-04 · "why would someone create a 21px square and a 20px circle?": an example bent to fit a rule. → §1, §2.
+- 2026-11-04 · "a pill font larger than the label beside it": an example breaking hierarchy to show another rule. → §3.
+- 2026-11-04 · "wtf are these": coloured squares for logos, an empty gradient for a video. → §3.
+- 2026-11-04 · "I can't judge 50 problems at once": one workspace carrying every mistake. → §3½.
+- 2026-11-04 · "flickering, reloading, I can't see the transition": Broken and Fixed as two routes. → §3½.
+- 2026-11-04 · "the solid lines are too attention seeking"; "why highlight the time when I'm looking at the icon". → §3½.
+- 2026-11-04 · "the fixes are just the final CSS, they aren't teaching anything". → §5.
+- 2026-11-04 · "5 and 6 are totally broken, do a post-review step before coming to me". → §6.
+- 2026-11-04 · "I don't see any difference between broken and fixed" (a 1.5px nudge). → §3 (loupe), §6.
