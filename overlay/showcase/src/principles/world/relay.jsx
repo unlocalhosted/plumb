@@ -45,8 +45,8 @@ const LABELS = {
 };
 const ASK = 'can you take the empty states before we ship? Screens attached.';
 const MAIL = [
+  { from: 'Anika Rao', face: anika, at: '9:41', label: 'Launch', subject: 'Venue for the offsite', unread: true, preview: 'Two options left, both near the station. Can you pick one by Friday?' },
   { from: 'Mei Lin', face: mei, at: '9:12', label: 'Design', subject: 'Notes from Tuesday’s crit', unread: true, selected: true, mention: true, preview: ASK, file: 'empty-states.fig' },
-  { from: 'Anika Rao', face: anika, at: '8:47', label: 'Launch', subject: 'Venue for the offsite', unread: true, preview: 'Two options left, both near the station. Can you pick one by Friday?' },
   { from: 'Jonas Weber', face: jonas, at: 'Yesterday', label: 'Finance', subject: 'Re: the April numbers', preview: 'Thanks, that matches what finance sent over this morning.' },
   { from: 'GitHub', mark: 'GH', tone: 'bg-ink', at: 'Yesterday', subject: '[relay/web] Release 4.2 is out', preview: '12 pull requests merged, 3 contributors. See what changed.' },
   { from: 'Amara Osei', face: amara, at: 'Tue', label: 'Hiring', subject: 'Portfolio review, Thursday 3pm', preview: 'I’ve put the three finalists in a doc, with notes from the first round.' },
@@ -54,7 +54,7 @@ const MAIL = [
   { from: 'Stripe', mark: 'S', tone: 'bg-[#635bff]', at: 'Mon', subject: 'Your payout of $4,120.00 is on its way', preview: 'Expected in your account on 7 November.' },
 ];
 
-const nav = 'flex h-7 items-center gap-2.5 rounded-control px-2 text-[13px] transition-colors';
+const nav = 'flex h-7 items-center gap-2.5 rounded-control pr-2 pl-1.5 text-[13px] transition-colors';
 const tool = 'grid size-[30px] place-items-center rounded-[7px] text-ink-muted transition-colors hover:bg-ink/6 hover:text-ink focus-visible:outline-2 focus-visible:outline-accent';
 
 function Row({ m, i }) {
@@ -63,14 +63,14 @@ function Row({ m, i }) {
   const rule = i > 0 && !m.selected && !prev?.selected;
   return (
     <li className="relative">
-      {rule ? <span aria-hidden="true" className="absolute top-0 right-2.5 left-[52px] border-t-hairline border-line" /> : null}
+      {rule ? <span aria-hidden="true" className="absolute top-0 right-2.5 left-12 border-t-hairline border-line" /> : null}
       <button
         type="button"
         aria-current={m.selected ? 'true' : undefined}
-        className={'relative grid w-full grid-cols-[32px_1fr] gap-2.5 rounded-[8px] px-2.5 pt-[9px] pb-2.5 text-left transition-colors focus-visible:outline-2 focus-visible:outline-accent '
-          + (m.selected ? 'bg-accent-soft' : 'hover:bg-sunken')}
+        className={'relative grid w-full grid-cols-[32px_1fr] gap-2.5 rounded-[8px] pt-[9px] pr-2.5 pb-2.5 pl-1.5 text-left transition-colors focus-visible:outline-2 focus-visible:outline-accent '
+          + (m.selected ? 'bg-[#f3f2fe]' : 'hover:bg-sunken')}
       >
-        {m.unread ? <i aria-label="Unread" className="absolute top-[21px] left-[3px] size-1.5 rounded-full bg-accent" /> : null}
+        {m.unread ? <i aria-label="Unread" className="absolute top-[21px] -left-[7px] size-1.5 rounded-full bg-accent" /> : null}
         {m.face
           ? <img src={m.face} alt="" className="size-8 rounded-full object-cover" />
           : <span className={'grid size-8 place-items-center rounded-full text-xs font-semibold text-white ' + m.tone}>{m.mark}</span>}
@@ -84,11 +84,11 @@ function Row({ m, i }) {
             <span title={m.subject} className="truncate">{m.subject}</span>
           </span>
           {/* the mistake: the preview is muted by fading it, and so is everything inside it */}
-          <span data-preview title={m.mention ? `@you ${m.preview}` : m.preview} className="truncate text-[12.5px] leading-[18px] text-ink opacity-60">
+          <span data-preview title={m.mention ? `@you ${m.preview}` : m.preview} className="truncate text-[13px] leading-[18px] text-ink opacity-60">
             {m.mention ? <><span data-mention className="font-semibold text-accent">@you</span> </> : null}{m.preview}
           </span>
           {m.file ? (
-            <span className="mt-[5px] inline-flex h-[22px] items-center gap-[5px] self-start rounded-[6px] pr-2 pl-1 text-[11.5px] text-ink-muted ring-[0.5px] ring-ink/14 ring-inset">
+            <span className="mt-[5px] -mx-1 inline-flex h-[22px] items-center gap-[5px] self-start rounded-[6px] pr-2 pl-1 text-[11.5px] text-ink-muted ring-[0.5px] ring-ink/14 ring-inset">
               <img src={figThumb} alt="" className="size-4 rounded-[3px] object-cover" />{m.file}
             </span>
           ) : null}
@@ -124,11 +124,11 @@ export function Relay() {
       {/* the list */}
       <section className="flex min-w-0 flex-col border-r-hairline border-ink/14">
         <div className="flex flex-col gap-2.5 px-3.5 pt-3">
-          <label className="flex h-[30px] items-center gap-2 rounded-[8px] bg-sunken px-2.5 text-ink-subtle focus-within:ring-2 focus-within:ring-accent/40">
-            <Icon d={I.search} />
-            <input type="search" placeholder="Search mail" aria-label="Search mail" className="min-w-0 flex-1 bg-transparent text-[13px] text-ink outline-none placeholder:text-ink-subtle" />
-            <kbd className="font-sans text-[11px] text-ink-subtle">⌘K</kbd>
-          </label>
+          {/* search opens the command bar, as ⌘K does */}
+          <button type="button" className="flex h-[30px] items-center gap-2 rounded-[8px] bg-sunken pr-2.5 pl-1.5 text-ink-subtle transition-colors hover:bg-ink/6 focus-visible:outline-2 focus-visible:outline-accent">
+            <Icon d={I.search} />Search mail
+            <kbd className="ml-auto font-sans text-[11px]">⌘K</kbd>
+          </button>
           <nav className="flex gap-4 border-b-hairline border-ink/14">
             {[['Important', 8], ['Other', 24], ['Calendar', 2]].map(([t, n], i) => (
               <button key={t} type="button" aria-current={i === 0 ? 'page' : undefined} className={'pt-1.5 pb-[9px] font-medium transition-colors ' + (i === 0 ? 'text-ink shadow-[inset_0_-2px_0_var(--color-ink)]' : 'text-ink-subtle hover:text-ink-muted')}>
@@ -137,7 +137,7 @@ export function Relay() {
             ))}
           </nav>
         </div>
-        <ul className="overflow-hidden px-1.5 py-1">
+        <ul className="overflow-hidden px-2.5 py-1">
           {MAIL.map((m, i) => <Row key={m.subject} m={m} i={i} />)}
         </ul>
       </section>
@@ -157,7 +157,7 @@ export function Relay() {
             <span className="flex flex-col"><b className="font-semibold">Mei Lin</b><small className="text-xs text-ink-subtle">to Design team</small></span>
             <span className="ml-auto text-xs text-ink-subtle tabular-nums">Today, 9:12</span>
           </div>
-          <div className="flex max-w-[32.5rem] flex-col gap-2.5 text-[13.5px] leading-[21px] text-[#2a3a52]">
+          <div className="flex max-w-[32.5rem] flex-col gap-2.5 text-[13.5px] text-pretty leading-[21px] text-[#2a3a52]">
             <p>Hi all, thanks for a sharp crit. The flows hold up; the gaps are where nothing has happened yet.</p>
             <p><span className="font-semibold text-accent">@you</span> can you take the empty states before we ship? The inbox, the search with no results, and the first project. I’ve put my rough screens in the file.</p>
             <p>Theo is on the onboarding copy; I’ll pick up the error toasts.</p>
@@ -175,11 +175,11 @@ export function Relay() {
             </a>
           </div>
         </div>
-        <label className="mx-6 mt-auto mb-[18px] flex h-[42px] items-center gap-2.5 rounded-[10px] px-3 text-ink-subtle ring-1 ring-ink/14 ring-inset focus-within:ring-accent/50">
-          <img src={me} alt="" className="size-[22px] rounded-full object-cover" />
-          <input placeholder="Reply to Mei…" aria-label="Reply to Mei" className="min-w-0 flex-1 bg-transparent text-[13px] text-ink outline-none placeholder:text-ink-subtle" />
-          <kbd className="font-sans text-[11px]">R</kbd>
-        </label>
+        {/* the reply box opens the composer, as R does */}
+        <button type="button" className="mx-6 mt-auto mb-[18px] flex h-[42px] items-center gap-2.5 rounded-[10px] pr-3 pl-2 text-left text-ink-subtle ring-1 ring-ink/14 transition-shadow ring-inset hover:ring-ink/24 focus-visible:outline-2 focus-visible:outline-accent">
+          <img src={me} alt="" className="size-[22px] rounded-full object-cover" />Reply to Mei…
+          <kbd className="ml-auto font-sans text-[11px]">R</kbd>
+        </button>
       </section>
     </article>
   );
@@ -202,7 +202,8 @@ Relay.measure = (root) => {
   return {
     lines: [], off: faded > 0,
     bands: [{ key: 'mention', left: r.left - 2 * k, right: r.right + 2 * k, top: r.top, bottom: r.bottom, pattern: 'dots' }],
-    pills: [{ key: 'faded', x: r.left + r.width / 2, y: r.bottom + 14 * k, text: String(faded * k), ok: faded === 0 }],
+    // left of the line, under the face, where the row is empty (below it sits the attachment)
+    pills: [{ key: 'faded', x: r.left - 22 * k, y: (r.top + r.bottom) / 2, text: String(faded * k), ok: faded === 0 }],
     cut: { left: line.left - 4 * k, right: line.right + 4 * k, top: line.top - 2 * k, bottom: line.bottom + 2 * k, r: 4 * k },
     // the selected row's preview line, the @you and the grey after it, with the row it belongs to
     subject: { left: line.left - 60 * k, right: line.right + 20 * k, top: r.top - 60 * k, bottom: r.bottom + 50 * k },
