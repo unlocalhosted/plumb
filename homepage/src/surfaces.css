@@ -35,17 +35,16 @@
   --dir: 40deg;
 }
 
-/* Mint ice (the "start on the repo you have" field): a cool white, sky, mint, and a deeper mint at the far edge; mint
-   is the overlay's "on the system", and this field is about passing */
-.ledger-field {
-  --c1: color-mix(in oklab, var(--pl-mint-soft) 30%, white);
-  --c2: color-mix(in oklab, var(--pl-sky-soft) 70%, white);
-  --c3: var(--pl-mint-soft);
-  --c4: color-mix(in oklab, var(--pl-mint) 35%, var(--pl-mint-soft));
-  --dir: 135deg;
+/* The day you start (the "start on the repo you have" art): lilac haze before the line, clean mint light after it */
+.ledger-art {
+  --c1: white;
+  --c2: color-mix(in oklab, var(--pl-lilac-soft) 75%, white);
+  --c3: color-mix(in oklab, var(--pl-mint-soft) 70%, white);
+  --c4: color-mix(in oklab, var(--pl-mint) 25%, var(--pl-mint-soft));
+  --dir: 90deg;
 }
 
-:is(.toy-home .stage, .settle-field, .ledger-field) { isolation: isolate; background: var(--c3); }
+:is(.toy-home .stage, .settle-field, .ledger-art) { isolation: isolate; background: var(--c3); }
 .field-glow { position: absolute; inset: 0; z-index: -1; border-radius: inherit; overflow: hidden; pointer-events: none; }
 .field-glow i {
   position: absolute; inset: -30%;
