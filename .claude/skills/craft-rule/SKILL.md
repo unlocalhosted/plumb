@@ -56,7 +56,28 @@ Content alignment's fix had no `sets`, so it could not be previewed; the fix was
   its own rule when applied is a bug.
 - `why` reads as the fix in words ("pull the panel out by its 16px padding"); the showcase leads with it.
 
-## 5. Prove it
+## 5. Teach, don't just diff
+
+The card is a lesson: **what plumber sees** (its finding, with the number), **why it happens** (the mechanism, one or
+two sentences), **the habit** to carry to the next screen, then **plumber's fix** in words with the class small under
+it. Write `Example.lesson = { why, habit }` for every example; a card that only shows the final CSS teaches nothing.
+
+## 6. Review the screenshots yourself before showing anyone
+
+Numbers passing (one finding, nothing after the fix, tests green) is not a review. Look at every screen, Broken and
+Fixed, at a wide window and in a narrow pane, and check:
+
+- nothing clipped, overflowing, or wrapping where it shouldn't (a price unit under its price, a banner cut at the top);
+- annotations sit on the subject and never on the example's words: guides are quiet dashed hairlines on the thing;
+  the measured pill is a tab on plumber's card; the leader leaves from the window's edge, never across content;
+- the broken version is visibly broken and the fixed version visibly better (if the fix looks worse, the example or
+  the rule is wrong: see §1–2);
+- the example obeys good UI everywhere else (hierarchy, sizes, consistency: one brand, one logo shape).
+
+The browser pane may be hidden, which pauses transitions: inject `*{transition:none!important;animation:none!important}`
+for the screenshot pass so end states are true, and say what motion you did not watch.
+
+## 7. Prove it
 
 1. In the showcase: Broken → plumber finds exactly this rule; Fixed by plumber → its fix applied, and plumber asked
    again finds nothing. Check both directions, at a wide window and in a narrow pane.

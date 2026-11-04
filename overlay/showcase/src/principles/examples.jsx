@@ -139,7 +139,8 @@ Billing.measure = (root) => {
     return { x: Math.min(...xs), top: box.top, bottom: box.bottom };
   }).filter(Boolean);
   const xs = ticks.map((t) => t.x), d = Math.max(...xs) - Math.min(...xs);
-  return { ticks, broken: `words ${px(d)} in`, fixed: 'one edge ✓', off: d > 0.5 };
+  const notice = root.querySelectorAll('[data-sections] > section')[1], nr = notice.getBoundingClientRect();
+  return { around: notice, focus: { x: nr.left + 16, y: nr.top + nr.height / 2 }, ticks, broken: `words ${px(d)} in`, fixed: 'one edge ✓', off: d > 0.5 };
 };
 
 // #2 a play triangle is centred by its weight, not its box: it leans toward its point
@@ -175,7 +176,7 @@ Lesson.measure = (root) => {
   const b = root.querySelector('[data-play]').getBoundingClientRect(), g = root.querySelector('[data-play] svg').getBoundingClientRect();
   const centre = b.left + b.width / 2, seen = g.left + g.width * (10.5 / 24);
   const d = centre - seen;
-  return { focus: { x: centre, y: b.top + b.height / 2 }, ticks: [{ x: centre, top: b.top - 6, bottom: b.bottom + 6 }, { x: seen, top: g.top, bottom: g.bottom }], broken: `weight ${px(d)} left`, fixed: 'centred ✓', off: Math.abs(d) > 0.6 };
+  return { around: root.querySelector('[data-play]'), focus: { x: centre, y: b.top + b.height / 2 }, ticks: [{ x: centre, top: b.top - 6, bottom: b.bottom + 6 }, { x: seen, top: g.top, bottom: g.bottom }], broken: `weight ${px(d)} left`, fixed: 'centred ✓', off: Math.abs(d) > 0.6 };
 };
 
 // #3 round logos are drawn a touch larger than square ones, or they look smaller
@@ -208,7 +209,7 @@ function Connected({ broken }) {
       <ul className="flex flex-col rounded-control border border-line">
         {APPS.map((a) => (
           <li key={a.name} className="flex items-center gap-3 border-b-hairline border-line px-3 py-2.5 last:border-0">
-            <span className="grid size-9 shrink-0 place-items-center rounded-control bg-sunken"><Mark shape="square" tone={a.tone} letter={a.letter} size={20} /></span>
+            <span className="grid size-9 shrink-0 place-items-center rounded-control bg-sunken"><Mark shape={a.shape} r={9.75} tone={a.tone} letter={a.letter} size={20} /></span>
             <span className="flex min-w-0 flex-1 flex-col">
               <span className="text-sm font-medium">{a.name}</span>
               <span className="truncate text-xs text-ink-muted" title={a.what}>{a.what}</span>
@@ -231,7 +232,7 @@ Connected.measure = (root) => {
   });
   const rd = Math.min(...ticks.filter((t) => t.round).map((t) => t.size)), sq = Math.max(...ticks.filter((t) => !t.round).map((t) => t.size));
   const near = [...root.querySelectorAll('[data-logos] svg')].slice(0, 2).map((g) => g.getBoundingClientRect());
-  return { focus: { x: (near[0].right + near[1].left) / 2, y: near[0].top + near[0].height / 2 }, ticks, broken: Math.abs(rd - sq) < 0.6 ? `same ${px(sq)} · circle reads smaller` : `round ${px(rd)} · square ${px(sq)}`, fixed: 'reads the same ✓', off: rd < sq * 1.04 };
+  return { around: root.querySelector('[data-logos]'), focus: { x: (near[0].right + near[1].left) / 2, y: near[0].top + near[0].height / 2 }, ticks, broken: Math.abs(rd - sq) < 0.6 ? `same ${px(sq)} · circle reads smaller` : `round ${px(rd)} · square ${px(sq)}`, fixed: 'reads the same ✓', off: rd < sq * 1.04 };
 };
 
 // #4 an icon beside words sits on the capitals' middle (broken: pushed down with mt-1, for a font long gone)
@@ -265,15 +266,15 @@ function Notice({ broken }) {
 Notice.measure = (root) => {
   const row = root.querySelector('[data-notice]'), g = row.querySelector('svg').getBoundingClientRect(), t = lineOf(row.querySelector('span'));
   const icon = g.top + g.height / 2, d = icon - t.capMiddle;
-  return { focus: { x: g.right + 4, y: (icon + t.capMiddle) / 2 }, ticks: [{ y: icon, left: g.left - 4, right: g.right + 2 }, { y: t.capMiddle, left: t.left - 2, right: t.left + 48 }], broken: `icon ${px(d)} low`, fixed: 'on the capitals ✓', off: Math.abs(d) > 0.6 };
+  return { around: row, focus: { x: g.right + 4, y: (icon + t.capMiddle) / 2 }, ticks: [{ y: icon, left: g.left - 4, right: g.right + 2 }, { y: t.capMiddle, left: t.left - 2, right: t.left + 48 }], broken: `icon ${px(d)} low`, fixed: 'on the capitals ✓', off: Math.abs(d) > 0.6 };
 };
 
-// #5 the padding around a line of words is measured from the letters, not from the line's leading: an announcement
-// bar built the way Tailwind UI builds it (text-sm/6 py-2) carries 5px of invisible leading inside its 8px padding
+// #5 padding meant to be even all round (p-3) is measured from the letters, not from the line's leading: one line of
+// text-sm/6 carries 5px of invisible leading above and below, so the top reads 17px against 12px at the sides
 function Chips({ broken }) {
   return (
-    <div className="flex w-full max-w-md flex-col gap-4 overflow-hidden">
-      <p data-chip className="-mx-6 -mt-5 bg-ink px-6 py-2 text-center text-sm leading-6 text-accent-ink sm:-mx-6">
+    <div className="flex w-full max-w-md flex-col gap-4">
+      <p data-chip className="rounded-control bg-ink p-3 text-sm leading-6 text-accent-ink">
         Card payments are live. <a href="#banner" className="font-semibold underline underline-offset-2">See how</a>
       </p>
       <div className="flex items-center justify-between gap-3">
@@ -295,7 +296,10 @@ function Chips({ broken }) {
 Chips.measure = (root) => {
   const c = root.querySelector('[data-chip]'), r = c.getBoundingClientRect(), t = lineOf(c);
   const capTop = t.baseline - (t.baseline - t.capMiddle) * 2, above = capTop - r.top;
-  return { ticks: [{ y: r.top + 1, left: r.left + 24, right: r.left + 140 }, { y: capTop, left: r.left + 24, right: r.left + 140 }], broken: `${px(above)} above the letters`, fixed: 'even padding ✓', off: above > 9 };
+  // the bar's top edge and where its letters begin, against the padding at its side
+  const side = parseFloat(getComputedStyle(c).paddingLeft);
+  return { around: c, ticks: [{ y: r.top, left: r.left + side, right: r.left + side + 160 }, { y: capTop, left: r.left + side, right: r.left + side + 160 }, { x: r.left + side, top: capTop, bottom: capTop + 8 }],
+    broken: `${px(above)} above · ${px(side)} beside`, fixed: 'even padding ✓', off: above > side + 1.5 };
 };
 
 // #6 a price and its unit, two sizes side by side, share a baseline
@@ -311,7 +315,7 @@ function Price({ broken }) {
           </div>
           <div data-price className={'flex gap-1 ' + (broken ? 'items-center' : '')}>
             <span className="text-3xl font-semibold tracking-tight tabular-nums">${price}</span>
-            <span className="text-xs text-ink-muted">/ seat / mo</span>
+            <span className="text-sm whitespace-nowrap text-ink-muted">/mo</span>
           </div>
           <button type="button" className={'rounded-control px-3 py-1.5 text-sm font-medium ' + (name === 'Studio' ? 'bg-accent text-accent-ink active:bg-ink' : 'border border-line bg-surface active:bg-sunken')}>{name === 'Studio' ? 'Current plan' : 'Choose'}</button>
         </div>
@@ -320,10 +324,17 @@ function Price({ broken }) {
   );
 }
 Price.measure = (root) => {
-  const [a, b] = [...root.querySelector('[data-price]').children].map(lineOf);
+  const row = root.querySelector('[data-price]'), [a, b] = [...row.children].map(lineOf);
   const d = b.baseline - a.baseline;
-  return { ticks: [{ y: a.baseline, left: a.left, right: a.right }, { y: b.baseline, left: b.left, right: b.right }], broken: `baselines ${px(d)} apart`, fixed: 'one baseline ✓', off: Math.abs(d) > 0.6 };
+  return { around: row, ticks: [{ y: a.baseline, left: a.left, right: a.right }, { y: b.baseline, left: b.left, right: b.right }], broken: `baselines ${px(d)} apart`, fixed: 'one baseline ✓', off: Math.abs(d) > 0.6 };
 };
 
+Billing.lesson = { why: "The notice's box sits on the column like the sections around it, so its padding pushes its words 16px in. The eye follows letters, not boxes, so the page reads as misaligned.", habit: 'A filled panel in a column bleeds out by its own padding: the background escapes the column, the words stay on it.' };
+Lesson.lesson = { why: "A triangle's weight sits toward its flat side. Centre its box and the point carries empty space, so the shape reads left of centre.", habit: 'Centre an uneven glyph by its weight, not its box: nudge it toward its point, about a twelfth of its width.' };
+Connected.lesson = { why: 'A circle fills about 78% of its box, a square nearly all of it. In the same box the circle has less ink, so it reads smaller.', habit: 'In one set, draw round marks a few percent larger than square ones (type designers call it overshoot).' };
+Notice.lesson = { why: 'items-center centres the line box, and the line box keeps room for descenders below the baseline. The capitals sit above its middle, so a centred icon reads low.', habit: "Line icons up with the capitals' middle, not the line box: nudge up by the gap, or make the line box as tall as the capitals." };
+Chips.lesson = { why: 'text-sm/6 puts a 24px line around 14px letters: 5px of invisible leading sits above and below them and adds itself to the padding, so even padding looks taller than it is wide.', habit: 'Measure padding from the letters: trim the text box to the capitals and baseline (text-box: trim-both cap alphabetic).' };
+Price.lesson = { why: 'items-center lines up the middles of the two boxes. Boxes of different sizes keep their baselines at different heights, so the unit floats beside the price.', habit: 'Text of different sizes side by side sits on one baseline: items-baseline.' };
+Amounts.lesson = { why: "Proportional digits are as wide as their shapes: a 1 is narrow, an 8 wide. Down a column, each amount's digits land in different places.", habit: 'Numbers that line up or change use tabular figures: every digit the same width.' };
 export const EXAMPLES = { 1: Billing, 2: Lesson, 3: Connected, 4: Notice, 5: Chips, 6: Price, 16: Amounts };
 

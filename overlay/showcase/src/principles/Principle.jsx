@@ -122,10 +122,18 @@ function Annotations({ state, stage, measureOf, onAnchor, onSeen }) {
         return { key: f.rule + f.line, x, y, w, h, was, now };
       }).filter(Boolean));
       const first = sitesOf(state.found[0] ?? {}).map((e) => e.getBoundingClientRect());
-      if (first.length) onAnchor?.({ y: Math.round((Math.min(...first.map((r) => r.top)) + Math.max(...first.map((r) => r.bottom))) / 2 - s.top), reach: Math.round(s.right - Math.max(...first.map((r) => r.right)) - pad - 10) });
+      if (first.length && !measureOf) onAnchor?.({ y: Math.round((Math.min(...first.map((r) => r.top)) + Math.max(...first.map((r) => r.bottom))) / 2 - s.top), reach: Math.round(s.right - Math.max(...first.map((r) => r.right)) - pad - 10) });
       // the example's own view of the harm, when it has one (where the eye sees the problem), in the stage's frame
       const m = measureOf?.(document.querySelector(SCOPE));
       const next = m ? { ...m, focus: m.focus ? { x: m.focus.x - s.left, y: m.focus.y - s.top } : null, ticks: m.ticks.map((t) => (t.y === undefined ? { x: t.x - s.left, top: t.top - s.top, bottom: t.bottom - s.top } : { y: t.y - s.top, left: t.left - s.left, right: t.right - s.left })) } : null;
+      if (next) {
+        // the subject: what the guides span, and the element they're about (so the pill clears its words)
+        const a = m.around?.getBoundingClientRect?.(), box = a ? [[a.left - s.left, a.top - s.top], [a.right - s.left, a.bottom - s.top]] : [];
+        const xs = [...next.ticks.flatMap((t) => (t.y === undefined ? [t.x] : [t.left, t.right])), ...box.map((p) => p[0])], ys = [...next.ticks.flatMap((t) => (t.y === undefined ? [t.top, t.bottom] : [t.y])), ...box.map((p) => p[1])];
+        next.subject = { left: Math.min(...xs), right: Math.max(...xs), top: Math.min(...ys), bottom: Math.max(...ys), width: s.width };
+        // the card lines up with the subject; its leader leaves from the window's edge, never across the example
+        onAnchor?.({ y: Math.round(next.focus ? next.focus.y : (next.subject.top + next.subject.bottom) / 2), reach: 0 });
+      }
       setSeen(next); onSeen?.(next);
       if (performance.now() < until) frame = requestAnimationFrame(measure);
     };
@@ -139,12 +147,13 @@ function Annotations({ state, stage, measureOf, onAnchor, onSeen }) {
         <div key={b.key}>
           {/* the spotlight: everything but the named elements fades back */}
           <div className="absolute rounded-control transition-[box-shadow] duration-300" style={{ left: b.x - pad, top: b.y - pad, width: b.w + pad * 2, height: b.h + pad * 2, boxShadow: `0 0 0 9999px color-mix(in oklch, var(--color-surface) ${fixed ? 72 : 0}%, transparent)` }} />
-          {/* the bracket: the measured span, ticked at both ends */}
-          <div className={'absolute border-y border-r border-dashed transition-colors duration-300 ' + (fixed ? 'border-accent/50' : 'border-negative/50')} style={{ left: b.x + b.w + pad + 4, top: b.y, width: 5, height: b.h }} />
-          <span className={'absolute flex items-center gap-1 rounded-chip px-1.5 py-0.5 font-mono text-[11px] whitespace-nowrap text-accent-ink transition-colors duration-300 ' + (fixed ? 'bg-accent' : 'bg-negative')}
-            style={{ left: b.x + b.w + pad + 10, top: b.y - 30, transform: 'translateX(-100%)' }}>{seen ? (fixed && !seen.off ? seen.fixed : seen.broken) : fixed ? <>{b.now} ✓</> : b.was}</span>
+          {/* the bracket: the measured span, ticked at both ends (only where the example names no subject of its own) */}
+          {seen ? null : <div className={'absolute border-y border-r border-dashed transition-colors duration-300 ' + (fixed ? 'border-accent/50' : 'border-negative/50')} style={{ left: b.x + b.w + pad + 4, top: b.y, width: 5, height: b.h }} />}
+          {seen ? null : <span className={'absolute flex items-center gap-1 rounded-chip px-1.5 py-0.5 font-mono text-[11px] whitespace-nowrap text-accent-ink transition-colors duration-300 ' + (fixed ? 'bg-accent' : 'bg-negative')}
+            style={{ left: b.x + b.w + pad + 10, top: b.y - 30, transform: 'translateX(-100%)' }}>{seen ? (fixed && !seen.off ? seen.fixed : seen.broken) : fixed ? <>{b.now} ✓</> : b.was}</span>}
         </div>
       ))}
+
       {/* where the eye sees it: a tick on each place the example measures, red while they disagree, blue once they line up */}
       {seen?.ticks.map((t, i) => (t.y === undefined
         ? <span key={i} className={'absolute border-l border-dashed transition-[left,border-color] duration-300 ' + (seen.off ? 'border-negative/60' : 'border-accent/60')} style={{ left: t.x - 0.5, top: t.top, height: t.bottom - t.top }} />
@@ -155,7 +164,8 @@ function Annotations({ state, stage, measureOf, onAnchor, onSeen }) {
 
 // plumber's finding as a card floating beside the window, joined to what it found by a leader line: what it saw, why,
 // its fix as a chip, and where in the source. Once its fix is in, what plumber says when asked again.
-function FindingCard({ state, anchor, seen, stage }) {
+const Part = ({ label, children }) => <div className="flex flex-col gap-1"><span className="text-xs font-medium text-ink-muted">{label}</span>{children}</div>;
+function FindingCard({ state, anchor, seen, stage, lesson }) {
   const fixed = state.phase === 'fixed';
   const f = state.found?.[0];
   const chip = (to, from) => { const t = `${from ? `${from} → ` : '+ '}${to}`; return <code title={t} className="block truncate rounded-chip bg-sunken px-1.5 py-0.5 font-mono text-[11px] text-ink-muted">{t}</code>; };
@@ -168,16 +178,27 @@ function FindingCard({ state, anchor, seen, stage }) {
   else if (state.phase === 'error') body = <p className="text-sm text-negative">{state.error}</p>;
   else if (!f) body = <p className="text-sm text-ink-muted">plumber has no finding on this example.</p>;
   else body = (
-    <div key={fixed ? 'fixed' : 'found'} className="flex animate-rise flex-col gap-3 motion-reduce:animate-none">
-      <p className="text-sm font-medium text-pretty">{fixed ? (state.after?.length ? state.after[0].title : 'Nothing left to find. plumber is satisfied with its own fix.') : f.title}</p>
-      {fixed ? null : <p className="text-sm text-ink-muted text-pretty">{f.because}</p>}
-      {/* the fix in words (plumber's own reason), then the class it writes, small, for whoever wants it */}
-      {f.suggest?.kind === 'class' ? (
-        <div className="flex min-w-0 flex-col gap-1.5">
-          <p className="text-sm"><span className="text-ink-muted">{fixed ? 'Applied: ' : 'Fix: '}</span>{f.suggest.why ?? f.action}</p>
-          {chip(f.suggest.to, f.suggest.from)}
-        </div>
-      ) : <p className="text-sm">{f.action}</p>}
+    <div key={fixed ? 'fixed' : 'found'} className="flex animate-rise flex-col gap-4 motion-reduce:animate-none">
+      {/* a lesson, not a diff: what plumber sees, why it happens, the habit to keep, then plumber's fix */}
+      {fixed ? (
+        <Part label="What changed">
+          <p className="text-sm text-pretty">plumber’s fix: {f.suggest?.why ?? f.action}.</p>
+          {f.suggest?.kind === 'class' ? chip(f.suggest.to, f.suggest.from) : null}
+          <p className="text-sm text-ink-muted text-pretty">{state.after?.length ? `Asked again: ${state.after[0].title}` : 'Asked again, plumber finds nothing.'}</p>
+        </Part>
+      ) : (
+        <>
+          <Part label="What plumber sees"><p className="text-sm font-medium text-pretty">{f.title}</p></Part>
+          <Part label="Why it happens"><p className="text-sm text-ink-muted text-pretty">{lesson?.why ?? f.because}</p></Part>
+        </>
+      )}
+      {lesson?.habit ? <p className="rounded-control bg-sunken px-3 pt-2 pb-2.5 text-sm text-pretty"><span className="font-medium">The habit: </span>{lesson.habit}</p> : null}
+      {fixed ? null : (
+        <Part label="plumber’s fix">
+          <p className="text-sm text-pretty">{f.suggest?.why ? f.suggest.why[0].toUpperCase() + f.suggest.why.slice(1) + '.' : f.action}</p>
+          {f.suggest?.kind === 'class' ? chip(f.suggest.to, f.suggest.from) : null}
+        </Part>
+      )}
       <p className="font-mono text-[11px] text-ink-muted">{f.rule} · {f.file.split('/').pop()}:{f.line}{f.count > 1 ? ` · ${f.count} places` : ''}</p>
     </div>
   );
@@ -185,6 +206,12 @@ function FindingCard({ state, anchor, seen, stage }) {
     <aside aria-label="What plumber finds" className="relative w-full md:mt-(--anchor) md:w-72 md:shrink-0" style={{ '--anchor': `${Math.max(0, (anchor?.y ?? 40) - 40)}px`, '--reach': `${40 + Math.max(0, anchor?.reach ?? 0)}px` }}>
       {/* the leader: from the bracket, across the window's edge, to the card */}
       <span aria-hidden="true" className={'absolute top-10 right-full hidden w-(--reach) border-t border-dashed transition-colors duration-300 md:block ' + (fixed ? 'border-accent/50' : 'border-negative/50')} />
+      {/* the measurement, as a tab on plumber's card where the leader arrives: never over the example's words */}
+      {seen ? (
+        <span className={'absolute -top-3 left-4 z-10 rounded-chip px-1.5 py-0.5 font-mono text-[11px] whitespace-nowrap text-accent-ink transition-colors duration-300 ' + (state.phase === 'fixed' && !seen.off ? 'bg-accent' : 'bg-negative')}>
+          {state.phase === 'fixed' && !seen.off ? seen.fixed : seen.broken}
+        </span>
+      ) : null}
       <div className="flex flex-col gap-3 rounded-card border border-line bg-surface/90 px-4 pt-3 pb-4 shadow-overlay backdrop-blur">
         <div className="flex items-center justify-between gap-3">
           <span className="text-xs font-medium text-ink-muted">plumber</span>
@@ -262,7 +289,7 @@ export function Principle({ n }) {
             </section>
             {Example && state.found ? <Annotations state={state} stage={stage} measureOf={Example.measure} onAnchor={setAnchor} onSeen={setSeen} /> : null}
           </div>
-          {live ? <FindingCard state={state} anchor={anchor} seen={seen} stage={stage} /> : <p className="max-w-72 text-sm text-ink-muted">{FOUND[p.how] ?? ''}</p>}
+          {live ? <FindingCard state={state} anchor={anchor} seen={seen} stage={stage} lesson={Example?.lesson} /> : <p className="max-w-72 text-sm text-ink-muted">{FOUND[p.how] ?? ''}</p>}
         </div>
       </main>
     </div>
