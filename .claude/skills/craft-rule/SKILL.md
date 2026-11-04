@@ -81,6 +81,12 @@ screen. Ours used to be a teaching page with a still picture in it; that system 
   client marks and notes come from the chosen direction (/primitives, overlay/showcase/src/primitives), never from
   a colour picked inside one example (a violet initials tile, a butter note, saturated pills read cheap). The bar is
   Mercury / Stripe: calm finance software, one brand colour, soft status, a client shown by its own mark.
+- **Each principle lives in the product where it naturally bites,** not in one product's world: a Shapes picker on a
+  whiteboard (#3), not another invoice. All of them share Slate, so the showcase still reads as one family. One app
+  for everything turned every screen into money ("all the examples are becoming money theme").
+- **Icons come from dithered.dev** (`@unlocalhosted/dither-icons`, the owner's own MIT set: `<LayersIcon size texture="dither" />`),
+  never hand-drawn, for a screen's own controls. Shapes that are the subject (a triangle in a play button, a picker's
+  shapes) stay drawn, since the principle is about their geometry.
 - **#16 is the bar** (Quarry's running timer, commit ce37e8a): every screen is held to it.
 - **plumber's read is drawn with plumber's own primitives,** imported from overlay/src/tokens.css and the blueprint
   marks, never invented: coral (`--pl-off`) for off, mint (`--pl-on`) once fixed, 1px lines with the white halo, the
@@ -178,3 +184,5 @@ Each line is something the owner had to say once; the sections above exist so th
   is earned; #1 is sections down a page lined up by their boxes (the owner's own definition).
 - 2026-11-04 · "the card and the colors you chose look cheap and not up to the taste bar": every example picked its
   own colours, card and type inside the example. → §3½ Quarry primitives first, picked by the owner on /primitives.
+- 2026-11-04 · "all the examples are becoming money theme"; "incorporate icons and all, dithered.dev": every screen
+  was set in one invoicing app, with hand-drawn icons. → §3½ each principle in its natural product; dither icons.
