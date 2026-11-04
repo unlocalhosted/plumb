@@ -26,11 +26,11 @@
   <span class="eyebrow">Install</span>
   <h2 class="title">Three commands. Then hold Alt.</h2>
   <ol class="n-lines">
-    <li><span class="n-prompt">$</span><code>npm install -D <b>@unlocalhosted/react-plumber</b></code><span class="n-copy">Copy</span></li>
-    <li><span class="n-prompt">$</span><code>npx plumber <b>init</b></code><small>writes your theme and config, and records today’s problems as the baseline</small></li>
-    <li><span class="n-prompt">$</span><code>npx plumber <b>install --overlay --write</b></code><small>wires the overlay into Vite or Next.js</small></li>
+    <li><span class="n-prompt">$</span><code>npm install -D <b>@unlocalhosted/react-plumber</b></code><span class="n-copy">Copy</span><span class="n-vis" data-vis="1"></span></li>
+    <li><span class="n-prompt">$</span><code>npx plumber <b>init</b></code><small>writes your theme and config, and records today’s problems as the baseline</small><span class="n-vis" data-vis="2"></span></li>
+    <li><span class="n-prompt">$</span><code>npx plumber <b>install --overlay --write</b></code><small>wires the overlay into Vite or Next.js</small><span class="n-vis" data-vis="3"></span></li>
   </ol>
-  <p class="n-then display">Run your dev server.<br />Hold <span class="n-alt">Alt</span>.</p>
+  <div class="n-then-row"><p class="n-then display">Run your dev server.<br />Hold <span class="n-alt">Alt</span>.</p><span class="n-vis n-vis-big" data-vis="4"></span></div>
   <p class="n-agent">Working with an agent? <code>npx plumber install --hooks</code> checks every edit it makes.</p>
   <p class="n-req">Vite and Next.js · Tailwind v4 or plain CSS · Node 22.18+</p>
 </section>
@@ -43,10 +43,10 @@
     <h2 class="title">Four steps to your first fix.</h2>
   </header>
   <ol class="n-steps">
-    <li><span class="n-num">1</span><b>Install</b><code>npm install -D @unlocalhosted/react-plumber</code></li>
-    <li><span class="n-num">2</span><b>Set up</b><code>npx plumber init</code><small>Your theme, your config, today’s problems recorded as the baseline.</small></li>
-    <li><span class="n-num">3</span><b>Wire the page</b><code>npx plumber install --overlay --write</code><small>Vite or Next.js, with the diff shown.</small></li>
-    <li><span class="n-num">4</span><b>Hold Alt</b><span class="n-key"><kbd>Alt</kbd></span><small>On your running app.</small></li>
+    <li><span class="n-num">1</span><b>Install</b><code>npm install -D @unlocalhosted/react-plumber</code><span class="n-vis" data-vis="1"></span></li>
+    <li><span class="n-num">2</span><b>Set up</b><code>npx plumber init</code><small>Your theme, your config, today’s problems recorded as the baseline.</small><span class="n-vis" data-vis="2"></span></li>
+    <li><span class="n-num">3</span><b>Wire the page</b><code>npx plumber install --overlay --write</code><small>Vite or Next.js, with the diff shown.</small><span class="n-vis" data-vis="3"></span></li>
+    <li><span class="n-num">4</span><b>Hold Alt</b><span class="n-key"><kbd>Alt</kbd></span><small>On your running app.</small><span class="n-vis" data-vis="4"></span></li>
   </ol>
   <p class="n-req n-req-center">Vite and Next.js · Tailwind v4 or plain CSS · Node 22.18+ · <code>npx plumber install --hooks</code> for agents</p>
 </section>
@@ -58,7 +58,9 @@
   <p class="lead n-lead">Live editing for you, guardrails for your agent, and a check that only fails on what’s new.</p>
   <p class="n-cta"><span class="n-install"><code>npm install -D @unlocalhosted/react-plumber</code><span class="btn btn-accent btn-xs">Copy</span></span></p>
   <p class="n-next"><a>Read the docs</a><a>See it on GitHub</a><a>Set up your agent</a></p>
+  <figure class="n-shot surface"><img src="/media/live-editing-poster.png" alt="The overlay on a real Members page, just after a gap was applied: Changed gap-[10px] to gap-related at 1 place." /></figure>
   <p class="n-req n-req-center">Vite and Next.js · Tailwind v4 or plain CSS · Node 22.18+</p>
 </section>
+<script type="module" src="/src/install-comps/visuals.js"></script>
 </body>
 </html>
