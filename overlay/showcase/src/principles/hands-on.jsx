@@ -439,7 +439,132 @@ SkeletonLand.lesson = {
   habit: 'Draw the skeleton from the loaded row itself: the same height, the same number of rows, the same mark and lines. Then landing changes what’s in the boxes, not where they are.',
 };
 
-export const HANDS_ON = { 42: BoldHover, 61: MenuPress, 77: SkeletonLand };
+// ── #66 Spinners: wait ~150–300ms, then hold ≥ ~500ms ──────────────────────
+// A bank feed's Sync now. Each press is a real request to the showcase's /api (about 120ms), or held 1.4s, as plumber
+// holds a reply to see a slow one: the viewer picks which, and the control says it's held. Broken: the spinner shows
+// on the press and goes with the reply, so a fast reply blinks it. Fixed: spin-delay's habit, shown only after 200ms
+// and then kept at least 500ms, so a fast reply shows none and a slow one a steady one.
+// plumber's rule (craft-headless spinnerTiming, craft-spec 'spinner-timing') reads when the spinner showed after the
+// press and how long a fast reply kept it. Time is the lesson, so the marks are the ruler: the reply on one lane, the
+// spinner on the other, the rule's 200ms line on it.
+const SPIN = { delay: 200, min: 500 }, SLOW = 1400, PRESS = 150;
+function SpinnerTiming({ side = 'broken', onStatus }) {
+  const root = useRef(null), sheet = useRef(null), button = useRef(null);
+  const [reply, setReply] = useState('fast');
+  const [run, setRun] = useState(null); // { t0, replied, on, off }
+  const [spinning, setSpinning] = useState(false);
+  const [synced, setSynced] = useState('2 min ago');
+  const fixed = side === 'fixed';
+  useTicking(!!run && (run.replied === null || (run.on !== null && run.off === null)));
+  const now = () => performance.now();
+  const timers = useRef([]);
+  useEffect(() => () => timers.current.forEach(clearTimeout), []);
+  const later = (ms, fn) => timers.current.push(setTimeout(fn, ms));
+  const cur = useRef(null); // this press: its start, and when its spinner showed
+  const show = (t0) => { if (cur.current?.t0 !== t0) return; cur.current.on = now() - t0; setSpinning(true); setRun((r) => (r && r.t0 === t0 ? { ...r, on: cur.current.on } : r)); };
+  const hide = (t0) => { setSpinning(false); setRun((r) => (r && r.t0 === t0 && r.on !== null ? { ...r, off: now() - t0 } : r)); };
+  const sync = async () => {
+    if (run && run.replied === null) return;
+    timers.current.forEach(clearTimeout); timers.current = [];
+    const t0 = now();
+    cur.current = { t0, on: null };
+    setRun({ t0, replied: null, on: null, off: null, reply });
+    if (!fixed) show(t0); else later(SPIN.delay, () => show(t0));
+    await Promise.all([fetch('/api/sync').then((r) => r.json()), new Promise((r) => setTimeout(r, reply === 'slow' ? SLOW : 0))]);
+    const replied = now() - t0;
+    setRun((r) => (r && r.t0 === t0 ? { ...r, replied } : r));
+    setSynced('just now');
+    if (!fixed) hide(t0);
+    else {
+      timers.current.forEach(clearTimeout); timers.current = [];
+      // shown already: keep it its 500ms; never shown: it never will be
+      const on = cur.current?.t0 === t0 ? cur.current.on : null;
+      if (on !== null) later(Math.max(0, on + SPIN.min - replied), () => hide(t0));
+    }
+  };
+  const flashed = run && run.on !== null && run.off !== null && run.off - run.on < SPIN.delay;
+  const early = run && run.on !== null && run.on < PRESS;
+  // the rule's two findings: shown under 150ms after the press (on any reply), or blinked off a fast one
+  const off = !!(flashed || early);
+  useEffect(() => {
+    if (!run) return onStatus?.(`Press Sync now. The reply comes ${reply === 'fast' ? 'as fast as it does (about 120ms)' : 'held 1.4s'}: try both.`);
+    if (run.replied === null) return onStatus?.(run.on === null ? 'Waiting for the reply…' : 'Syncing…');
+    const ms = Math.round(run.replied);
+    onStatus?.(fixed
+      ? (run.on === null ? `The reply came in ${ms}ms, before the spinner was due: none showed, nothing blinked.` : `It waited 200ms, then stayed ${Math.round((run.off ?? now() - run.t0) - run.on)}ms: steady, not a blink.`)
+      : (flashed ? `The spinner showed on the press and was gone ${Math.round(run.off - run.on)}ms later: a blink, for a reply that took ${ms}ms.` : `On a slow reply it spun the whole ${ms}ms; on a fast one the same spinner only blinks.`));
+  }, [run, reply, onStatus, fixed]);
+
+  const card = sheet.current ? { w: sheet.current.offsetWidth, h: sheet.current.offsetHeight } : null;
+  const span = 1600, t = run ? Math.min(span, run.off !== null && run.replied !== null ? Math.max(run.off, run.replied) : run.replied !== null && run.on === null ? run.replied : now() - run.t0) : 0;
+  const lane = (top, label, a, b, kind) => {
+    const x = (ms) => (Math.min(span, ms) / span) * (card?.w ?? 0);
+    return (
+      <div style={{ position: 'absolute', left: 0, top, width: card?.w ?? 0, height: 14 }}>
+        <span style={{ position: 'absolute', right: '100%', marginRight: 8, top: 0, font: '500 10.5px/14px var(--pl-sans)', color: 'var(--pl-ink-2)', whiteSpace: 'nowrap' }}>{label}</span>
+        <span style={{ position: 'absolute', left: 0, right: 0, top: 6, borderTop: '1px dashed var(--pl-ink-3)' }} />
+        {a !== null ? <span style={{ position: 'absolute', left: x(a), top: 4, height: 5, width: Math.max(2, x(b ?? t) - x(a)), borderRadius: 3, background: kind === 'off' ? 'var(--pl-off)' : kind === 'on' ? 'var(--pl-on)' : 'var(--pl-sky)' }} /> : null}
+      </div>
+    );
+  };
+  return (
+    <div ref={root} className="relative w-[26rem] max-w-full pb-28">
+      <article ref={sheet} className="rounded-card bg-surface shadow-card">
+        <div className="flex items-center gap-3 px-5 py-4">
+          <span className="grid size-9 shrink-0 place-items-center rounded-control bg-accent-soft text-[12px] font-semibold text-accent-deep">NB</span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-[14px] font-medium">Northfield Bank</span>
+            <span className="block text-[12px] text-ink-subtle">Business current •••• 4821 · Synced {synced}</span>
+          </span>
+          <button ref={button} type="button" onClick={sync}
+            className="inline-flex h-8 w-[7.5rem] items-center justify-center gap-1.5 rounded-control text-[13px] font-medium text-ink-muted ring-1 ring-line ring-inset hover:bg-sunken hover:text-ink">
+            {spinning ? <span role="status" aria-label="Syncing" className="size-3.5 animate-spin rounded-full border-[1.5px] border-ink/20 border-t-ink-muted" /> : <RetryIcon size={14} texture="solid" />}
+            {spinning ? 'Syncing' : 'Sync now'}
+          </button>
+        </div>
+      </article>
+      <div className="mt-3 flex items-center gap-2 text-[12px] text-ink-subtle">
+        Reply
+        <span role="group" aria-label="Reply" className="flex rounded-control bg-sunken p-0.5 ring-1 ring-line">
+          {[['fast', 'as it comes'], ['slow', 'held 1.4s']].map(([k, label]) => (
+            <button key={k} type="button" aria-pressed={reply === k} onClick={() => setReply(k)}
+              className={'rounded-[5px] px-2 py-0.5 ' + (reply === k ? 'bg-surface text-ink shadow-raised' : 'hover:text-ink')}>{label}</button>
+          ))}
+        </span>
+      </div>
+      <MarksLayer>
+        {card ? (
+          <div style={{ position: 'absolute', left: 0, top: card.h + 62, width: card.w }}>
+            <div style={{ position: 'relative', marginLeft: 0 }}>
+              {lane(0, 'reply', run ? 0 : null, run?.replied ?? null, '')}
+              {lane(18, 'spinner', run?.on ?? null, run?.off ?? null, run?.on !== null && run ? (off ? 'off' : run.off !== null || run.replied !== null ? 'on' : '') : '')}
+              {/* the rule's line: a spinner is due no sooner than 200ms after the press */}
+              <span style={{ position: 'absolute', left: (SPIN.delay / span) * card.w, top: -4, height: 40, borderLeft: '1px dashed var(--pl-sky)', opacity: 0.7 }} />
+              <span style={{ position: 'absolute', left: (SPIN.delay / span) * card.w + 4, top: -6, font: '500 10px/12px var(--pl-mono)', color: 'var(--pl-sky)' }}>200</span>
+              <div style={{ position: 'absolute', left: 0, top: 30 }}>
+                <Ruler top={0} width={card.w} span={span} played={t} kind={!run || run.replied === null ? '' : off ? 'off' : 'on'}
+                  events={run ? [[0, ''], ...(run.replied !== null ? [[run.replied, '']] : [])] : []} label={run?.reply === 'slow' ? 'reply held' : 'live'} />
+              </div>
+            </div>
+          </div>
+        ) : null}
+        {run && run.replied !== null && button.current && root.current ? (() => {
+          const b = local(root.current)(button.current), ms = (v) => Math.round(v);
+          const text = flashed ? `flashed ${ms(run.off - run.on)}ms` : early ? `${ms(run.on)}ms after the press` : run.on === null ? `no spinner · ${ms(run.replied)}ms ✓` : fixed ? `after 200 · held ${ms((run.off ?? now() - run.t0) - run.on)}ms ✓` : `${ms(run.on)}ms after the press`;
+          // above the button, clear of the account's words
+          return <Tag end x={b.x + b.w} y={b.y - 26} off={off}>{text}</Tag>;
+        })() : null}
+      </MarksLayer>
+    </div>
+  );
+}
+SpinnerTiming.names = ['Spinner at once', 'After 200ms, for 500ms'];
+SpinnerTiming.lesson = {
+  why: 'A spinner shown on the press and hidden on the reply blinks whenever the reply is quick: a flash of “something’s wrong” for a wait nobody would have noticed. Most replies are quick, so most presses blink.',
+  habit: 'Wait about 200ms before showing a spinner, and once it shows, keep it at least 500ms (spin-delay’s delay and minDuration). A fast reply shows none; a slow one shows a steady one.',
+};
+
+export const HANDS_ON = { 42: BoldHover, 61: MenuPress, 77: SkeletonLand, 66: SpinnerTiming };
 
 // ── /hands-on/:n, a viewer for building them ───────────────────────────────
 export function HandsOnPage({ n }) {
