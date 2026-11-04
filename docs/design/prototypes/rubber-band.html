@@ -42,8 +42,6 @@
 
   /* plumber's layer */
   svg.marks { position: absolute; inset: 0; width: 640px; height: 340px; overflow: visible; pointer-events: none; }
-  .dot { fill: var(--m-sky); }
-  .ring { fill: #fff; stroke: var(--m-sky); stroke-width: 1.5; }
   .contact { fill: #fff; stroke: var(--m-sky); stroke-width: 1.5; }
   .limit { stroke: var(--m-sky); stroke-width: 1.25; stroke-dasharray: 4 3; }
   .wall { fill: url(#hatch); }
@@ -122,14 +120,14 @@ const follow = (dy) => (dy >= 0 ? dy : mode === 'clamp' ? 0 : -band(-dy));
 let offset = 0, spring = null;
 const place = () => { sheet.style.translate = `0 ${offset}px`; };
 
-// ── plumber's record: the contact, the hand's samples, how far past the limit it pulled and how far the sheet came ──
+// ── plumber's record: the contact, how far past the limit it pulled and how far the sheet came ──
 let g = null;
 const at = (e) => { const f = frame.getBoundingClientRect(); return { x: e.clientX - f.left, y: e.clientY - f.top }; };
 sheet.addEventListener('pointerdown', (e) => {
   try { sheet.setPointerCapture(e.pointerId); } catch {} // a finger or the mouse: the drag goes on outside the sheet
   spring = null; offset = 0; place();
   const p = at(e);
-  g = { contact: p, t0: performance.now(), samples: [p], pull: 0, gave: 0, peak: { pull: 0, gave: 0, hand: p }, hit: null, up: null, settled: null, live: true };
+  g = { contact: p, t0: performance.now(), pull: 0, gave: 0, peak: { pull: 0, gave: 0, hand: p }, hit: null, up: null, settled: null, live: true };
   draw();
 });
 window.addEventListener('pointermove', (e) => {
@@ -137,8 +135,6 @@ window.addEventListener('pointermove', (e) => {
   if (e.pointerType === 'mouse' && e.buttons === 0) { release(); return; } // the button came up where we didn't hear it
   const p = at(e), now = performance.now() - g.t0, dy = p.y - g.contact.y;
   offset = follow(dy); place();
-  const last = g.samples.at(-1);
-  if (Math.hypot(p.x - last.x, p.y - last.y) > 3) g.samples.push(p);
   g.pull = Math.max(0, -dy); g.gave = Math.max(0, -offset); g.hand = p;
   if (g.pull > 0 && g.hit === null) g.hit = now;
   if (g.pull > g.peak.pull) g.peak = { pull: g.pull, gave: g.gave, hand: p };
@@ -196,13 +192,7 @@ function draw() {
         el('rect', { class: 'gave', x: L, y: top, width: R - L, height: limitY - top }, layer);
       }
     }
-    // the trail: every sample a dot, every fourth a ring, older ones fainter
-    const n = g.samples.length;
-    g.samples.forEach((q, i) => {
-      const age = n > 1 ? i / (n - 1) : 1;
-      if (i % 4 === 0) el('circle', { class: 'ring', cx: q.x, cy: q.y, r: 1.9 * 1.6 }, layer);
-      else el('circle', { class: 'dot', cx: q.x, cy: q.y, r: 1.1 * 1.6, opacity: (0.2 + 0.6 * age).toFixed(2) }, layer);
-    });
+    // the pull is the lesson, not the route: where you pressed, and where your hand is now (no trail)
     el('circle', { class: 'contact', cx: g.contact.x, cy: g.contact.y, r: 4.5 }, layer);
     const hand = g.live ? g.hand ?? g.contact : g.peak.hand;
     if (m.pull > 0) {

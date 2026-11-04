@@ -135,11 +135,15 @@ interrupt-marks.html (#64) and rubber-band.html (#65) follow it, and docs/craft/
   synthesize the viewer's input, and never imitate what a desktop browser can't do (iOS zoom on focus, half-pixel
   blur): those are out. A slowed speed or a held reply is labelled ("¼ speed", a reply-speed dial) and applies to
   both sides of the switch equally.
-- **The marks follow the input, with plumber's primitives.** A trail (a dot per move, a ring every fourth, older ones
-  fainter); a blue contact ring where the gesture starts, and the clock starts there; coral at the moment it went
-  wrong, with the frame holding there: hatch for what was lost, a dashed ghost for what went, a pill with the
-  measured number; mint where the fix carries the same input through; a time ruler under the frame. Thresholds are
-  the rule's (craft-spec.js), never the demo's own.
+- **Marks are a vocabulary, not a kit.** Each mark draws one number plumber's probe records and the lesson turns on;
+  a demo uses only the ones its own quantity needs. Sky measures, coral is broken, mint is fixed, always.
+  - *Trail* (a dot per move, a ring every fourth, older ones fainter): only when the path is the lesson (#59: the
+    pointer's route crosses the next item). Not for a wait, a pull or a press.
+  - *Contact ring*: where the gesture starts, when where matters (where you left the item, where you pressed).
+  - *Time ruler*: when time is the lesson (a wait, a delay, how long something stayed), with the rule's thresholds on it.
+  - *Hatch, dashed ghost, pill*: what was lost, what went or moved, and by how much, held where it went wrong.
+  - *Mint*: where the fix carries the same input through.
+  Thresholds are the rule's (craft-spec.js), never the demo's own.
 - **The switch names the technique, and the same input runs on both sides.** Going back to the start, or leaving the
   frame, is a fresh try. One hint line says what to try, then what just happened, with its number.
 - **A gesture ends however the hand ends it.** Capture the pointer, follow moves on `window`, and let go on

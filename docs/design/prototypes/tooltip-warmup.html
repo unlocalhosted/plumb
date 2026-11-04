@@ -43,9 +43,6 @@
 
   /* plumber's layer */
   svg.marks { position: absolute; left: 0; top: 0; width: 400px; height: 212px; overflow: visible; pointer-events: none; }
-  .dot { fill: var(--m-sky); }
-  .ring { fill: #fff; stroke: var(--m-sky); stroke-width: 1.5; vector-effect: non-scaling-stroke; }
-  .contact { fill: #fff; stroke: var(--m-sky); stroke-width: 1.5; vector-effect: non-scaling-stroke; }
   .ghostline { fill: url(#hatch); stroke: var(--m-coral); stroke-width: 1; stroke-dasharray: 2 3; vector-effect: non-scaling-stroke; opacity: 0.8; }
   .wait { stroke-width: 2; stroke-linecap: round; vector-effect: non-scaling-stroke; }
   .wait.sky { stroke: var(--m-sky); } .wait.off { stroke: var(--m-coral); } .wait.on { stroke: var(--m-mint); }
@@ -167,11 +164,11 @@ for (const b of buttons) {
   b.el.addEventListener('pointerleave', () => { clearTimeout(tt.timer); hide(); record.left(); });
 }
 
-// ── plumber's record: the trail, each visit (entered, shown, gone), the chain a visit belongs to ──
+// ── plumber's record: each visit (entered, shown, gone), the chain a visit belongs to ──
 // A visit is "next" when it starts under 300ms after a tooltip closed (the window a provider keeps them warm, and the
 // probe's own); otherwise it leads a new chain. The lead's kind speaks for its chain, as the rule's does for the page.
 let run = null;
-const fresh = () => ({ t0: null, samples: [], visits: [], held: false });
+const fresh = () => ({ t0: null, visits: [], held: false });
 run = fresh();
 const rel = (now) => now - run.t0;
 const record = {
@@ -208,9 +205,6 @@ function judge(v) {
 
 frame.addEventListener('pointermove', (e) => {
   if (run.t0 === null || run.held) return;
-  const f = frame.getBoundingClientRect(), p = { x: (e.clientX - f.left) / K, y: (e.clientY - f.top) / K };
-  const last = run.samples.at(-1);
-  if (!last || Math.hypot(p.x - last.x, p.y - last.y) > 2.5) run.samples.push(p);
   if (rel(performance.now()) > SPAN) { run.held = true; clearTimeout(tt.timer); hide(); }
   draw();
 });
@@ -231,15 +225,7 @@ function draw() {
     if (v.tip && v.gone !== null && v.gone - v.shown < FLASH && j.kind === 'off' && (j.why === 'flash' || j.why === 'quick'))
       el('rect', { class: 'ghostline', x: v.tip.x, y: v.tip.y, width: v.tip.w, height: v.tip.h, rx: 6 }, layer);
   }
-  // the trail: every sample a dot, every fourth a ring, older ones fainter (the last 160)
-  const s = run.samples.slice(-160), n = s.length;
-  s.forEach((q, i) => {
-    const age = n > 1 ? i / (n - 1) : 1;
-    if (i % 4 === 0) el('circle', { class: 'ring', cx: q.x, cy: q.y, r: 1.9 }, layer);
-    else el('circle', { class: 'dot', cx: q.x, cy: q.y, r: 1.1, opacity: (0.2 + 0.6 * age).toFixed(2) }, layer);
-  });
-  // where you came onto each button: the contact ring; the live wait, filling under the button you're on
-  for (const v of run.visits) el('circle', { class: 'contact', cx: v.at.x, cy: v.at.y, r: 3 }, layer);
+  // the wait is the lesson, not the route: no trail and no contact rings, only the wait filling under the button
   const cur = run.visits.at(-1);
   if (cur && cur.shown === null && cur.gone === null && tt.timer && !run.held && buttons[cur.i].el.matches(':hover')) {
     const r = box(buttons[cur.i].el), waited = now - cur.t, k = Math.min(1, waited / WANT.first);
