@@ -39,9 +39,11 @@ function usePlumber() {
     for (const f of state.found) {
       if (f.suggest?.kind !== 'class') continue;
       for (const el of sitesOf(f)) {
-        const memo = {};
-        swapPreview(el, { from: f.suggest.from, to: f.suggest.to }, true, memo, kebab(f.suggest.sets));
+        // the class lands on the element; what it stands for lands where it reaches (its target), or on the element
+        const memo = {}, styles = kebab(f.suggest.sets), on = f.suggest.target ? [...el.querySelectorAll(f.suggest.target)] : [];
+        swapPreview(el, { from: f.suggest.from, to: f.suggest.to }, true, memo, on.length ? {} : styles);
         taken.current.push({ el, memo });
+        for (const child of on) { const m = {}; swapPreview(child, { from: '', to: '' }, true, m, styles); taken.current.push({ el: child, memo: m }); }
       }
     }
     setState((s) => ({ ...s, phase: 'fixing' }));
@@ -84,7 +86,7 @@ function Annotations({ state, stage, measureOf, onAnchor }) {
       if (first.length) onAnchor?.({ y: Math.round((Math.min(...first.map((r) => r.top)) + Math.max(...first.map((r) => r.bottom))) / 2 - s.top), reach: Math.round(s.right - Math.max(...first.map((r) => r.right)) - pad - 10) });
       // the example's own view of the harm, when it has one (where the eye sees the problem), in the stage's frame
       const m = measureOf?.(document.querySelector(SCOPE));
-      setSeen(m ? { ...m, ticks: m.ticks.map((t) => ({ x: t.x - s.left, top: t.top - s.top, bottom: t.bottom - s.top })) } : null);
+      setSeen(m ? { ...m, ticks: m.ticks.map((t) => (t.y === undefined ? { x: t.x - s.left, top: t.top - s.top, bottom: t.bottom - s.top } : { y: t.y - s.top, left: t.left - s.left, right: t.right - s.left })) } : null);
       if (performance.now() < until) frame = requestAnimationFrame(measure);
     };
     measure();
@@ -104,10 +106,9 @@ function Annotations({ state, stage, measureOf, onAnchor }) {
         </div>
       ))}
       {/* where the eye sees it: a tick on each place the example measures, red while they disagree, blue once they line up */}
-      {seen?.ticks.map((t, i) => (
-        <span key={i} className={'absolute w-0.5 rounded-full transition-[left,background-color] duration-300 ' + (seen.off ? 'bg-negative' : 'bg-accent')}
-          style={{ left: t.x - 1, top: t.top, height: t.bottom - t.top }} />
-      ))}
+      {seen?.ticks.map((t, i) => (t.y === undefined
+        ? <span key={i} className={'absolute w-0.5 rounded-full transition-[left,background-color] duration-300 ' + (seen.off ? 'bg-negative' : 'bg-accent')} style={{ left: t.x - 1, top: t.top, height: t.bottom - t.top }} />
+        : <span key={i} className={'absolute h-0.5 rounded-full transition-[top,background-color] duration-300 ' + (seen.off ? 'bg-negative' : 'bg-accent')} style={{ top: t.y - 1, left: t.left, width: t.right - t.left }} />))}
     </div>
   );
 }
