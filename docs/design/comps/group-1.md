@@ -174,4 +174,4 @@ are #2, #3 and #6. The common weakness is empty space at the bottom of one colum
 - Group 1 holds the pilots' bar: a world, faces, data drawn as data, one selected or live state per screen.
 - #6: the three reading cards leave a tall empty middle with the chart pinned to the bottom; in the build, shorten
   the cards or let the chart fill the space under the figure.
-- Rename: this group's "Shelf" (#4) clashes with #50's comp; #4 becomes "Cabinet" in the build.
+- #4 and #50 are both Shelf, the same team drive: one shared world, kept.

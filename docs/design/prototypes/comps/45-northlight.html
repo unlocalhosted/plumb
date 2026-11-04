@@ -1,0 +1,132 @@
+<!doctype html>
+<!-- COMP #45 hanging punctuation (docs/craft/taste-checklist.md). Northlight, a monthly culture magazine, read in its
+     own reader: the issue's stories down the side, a reading-progress bar, the long read's column with a pull quote,
+     a friend's highlight in the margin. The pull quote is the subject: its opening quote mark is where the column's
+     edge is dented (the mistake is planted by removing the hang on .pull p). Slate's tokens. Throwaway. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Northlight · Reader (comp)</title>
+<style>
+  :root {
+    --ink: #12233d; --ink-muted: #5a6779; --ink-subtle: #6f7c90; --line: rgb(18 35 61 / 0.08); --line-strong: rgb(18 35 61 / 0.14);
+    --accent: #5550d8; --accent-soft: #efeefd; --accent-deep: #3631a6; --board: #e9edf2; --board-dot: #d3d9e2;
+    --serif: Charter, "Iowan Old Style", Georgia, serif;
+    --mark: #f6e7b4; /* a reader's highlight */
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 48px; background: var(--board);
+    background-image: radial-gradient(var(--board-dot) 1px, transparent 1px); background-size: 16px 16px;
+    font: 13px/18px Inter, -apple-system, system-ui, sans-serif; color: var(--ink); -webkit-font-smoothing: antialiased; }
+  .num { font-variant-numeric: tabular-nums; }
+  svg.i { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; }
+  .window { width: 1000px; height: 680px; display: grid; grid-template-columns: 232px 1fr; border-radius: 12px; overflow: hidden; background: #fff;
+    box-shadow: 0 1px 2px rgb(18 35 61 / 0.05), 0 8px 24px rgb(18 35 61 / 0.08), 0 24px 64px rgb(18 35 61 / 0.12), 0 0 0 0.5px rgb(18 35 61 / 0.18); }
+
+  /* the issue */
+  .side { background: #f7f8fa; border-right: 0.5px solid var(--line-strong); padding: 12px 10px; display: flex; flex-direction: column; }
+  .lights { display: flex; gap: 7px; padding: 4px 6px 16px; } .lights i { width: 11px; height: 11px; border-radius: 50%; background: #d9dde3; }
+  .mast { padding: 0 8px 2px; font: 600 19px/24px var(--serif); letter-spacing: -0.01em; }
+  .issue { padding: 0 8px 14px; font-size: 12px; color: var(--ink-subtle); }
+  .story { display: grid; grid-template-columns: 44px 1fr; gap: 10px; padding: 8px; border-radius: 8px; align-items: center; }
+  .story img, .story .ph { width: 44px; height: 44px; border-radius: 6px; object-fit: cover; box-shadow: inset 0 0 0 0.5px rgb(0 0 0 / 0.1); }
+  .story span { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+  .story small { font-size: 11px; color: var(--ink-subtle); }
+  .story b { font: 500 13px/17px var(--serif); color: var(--ink); }
+  .story.on { background: rgb(18 35 61 / 0.06); }
+  .story .read { display: flex; flex-direction: row; margin-top: 3px; align-items: center; gap: 5px; }
+  .story .read i { width: 34px; height: 3px; border-radius: 2px; background: rgb(18 35 61 / 0.1); overflow: hidden; }
+  .story .read i::after { content: ''; display: block; height: 100%; width: var(--p); background: var(--accent); }
+  .story.done b { color: var(--ink-muted); }
+  .sub { margin-top: auto; padding: 12px 8px 4px; border-top: 0.5px solid var(--line); display: flex; align-items: center; gap: 9px; }
+  .sub img { width: 26px; height: 26px; border-radius: 50%; object-fit: cover; }
+  .sub span { display: flex; flex-direction: column; font-size: 12.5px; line-height: 16px; } .sub small { font-size: 11.5px; color: var(--ink-subtle); }
+
+  /* the reader */
+  .main { position: relative; display: flex; flex-direction: column; min-width: 0; }
+  .bar { height: 48px; flex: none; display: flex; align-items: center; gap: 4px; padding: 0 14px 0 20px; border-bottom: 0.5px solid var(--line-strong); color: var(--ink-muted); }
+  .bar .where { font-size: 12.5px; color: var(--ink-subtle); } .bar .where b { color: var(--ink); font-weight: 500; }
+  .bar .sp { flex: 1; }
+  .bar .left { font-size: 12px; color: var(--ink-subtle); margin-right: 10px; }
+  .bar .b { width: 30px; height: 30px; border-radius: 7px; display: grid; place-items: center; }
+  .bar .aa { font: 500 14px var(--serif); color: var(--ink); width: auto; padding: 0 8px; box-shadow: inset 0 0 0 0.5px var(--line-strong); }
+  .progress { position: absolute; top: 47px; left: 0; height: 2px; width: 38%; background: var(--accent); border-radius: 0 1px 1px 0; }
+
+  .page { flex: 1; overflow: hidden; display: grid; grid-template-columns: 64px 500px 1fr; padding-top: 30px; }
+  .col { grid-column: 2; display: flex; flex-direction: column; }
+  .kicker { font-size: 11.5px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #b8456b; }
+  h1 { margin: 8px 0 10px; font: 600 31px/36px var(--serif); letter-spacing: -0.015em; text-wrap: balance; }
+  .dek { margin: 0 0 16px; font: 17px/25px var(--serif); color: var(--ink-muted); text-wrap: pretty; }
+  .by { display: flex; align-items: center; gap: 10px; padding-bottom: 18px; margin-bottom: 18px; border-bottom: 0.5px solid var(--line-strong); }
+  .by img { width: 30px; height: 30px; border-radius: 50%; object-fit: cover; }
+  .by span { display: flex; flex-direction: column; font-size: 12.5px; line-height: 16px; } .by small { color: var(--ink-subtle); font-size: 12px; }
+  .by .photo { margin-left: auto; font-size: 11.5px; color: var(--ink-subtle); }
+  .hero { position: relative; height: 170px; border-radius: 4px; overflow: hidden; margin-bottom: 6px; }
+  .hero img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 40%; }
+  .cap { font-size: 11.5px; color: var(--ink-subtle); margin-bottom: 18px; }
+  .col p { margin: 0 0 14px; font: 16.5px/27px var(--serif); color: #1d2b42; text-wrap: pretty; }
+  .col p.first::first-letter { float: left; font: 600 52px/44px var(--serif); margin: 5px 5px 0 -1px; color: var(--ink); }
+  .hl { background: linear-gradient(transparent 12%, var(--mark) 12%, var(--mark) 92%, transparent 92%); border-radius: 2px; }
+
+  /* the subject: the pull quote, set in the column, its words on the column's edge */
+  .pull { margin: 8px 0 22px; padding: 18px 0 16px; border-top: 2px solid var(--ink); border-bottom: 0.5px solid var(--line-strong); }
+  .pull p { margin: 0 0 10px; font: italic 500 26px/34px var(--serif); letter-spacing: -0.01em; color: var(--ink); text-wrap: balance;
+    text-indent: -0.42em; /* the hang: the opening mark sits in the margin, the words on the edge (removed, the mark dents it) */ }
+  .pull cite { font: normal 600 11.5px/16px Inter, system-ui, sans-serif; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-subtle); }
+
+  /* the margin: a friend's highlight and note, beside its line */
+  .note { position: absolute; right: 18px; width: 166px; display: flex; gap: 8px; padding: 10px; border-radius: 10px; background: #fff;
+    box-shadow: 0 0 0 0.5px var(--line-strong), 0 2px 6px rgb(18 35 61 / 0.06); font-size: 12px; line-height: 16px; color: var(--ink-muted); }
+  .note img { width: 22px; height: 22px; border-radius: 50%; object-fit: cover; flex: none; }
+  .note b { display: block; color: var(--ink); font-weight: 600; font-size: 12px; }
+  .fig { position: absolute; right: 18px; top: 470px; width: 166px; margin: 0; }
+  .fig img { display: block; width: 100%; height: 124px; object-fit: cover; border-radius: 4px; box-shadow: inset 0 0 0 0.5px rgb(0 0 0 / 0.1); }
+  .fig figcaption { margin-top: 6px; font-size: 11.5px; line-height: 15px; color: var(--ink-muted); } .fig i { font-style: normal; color: var(--ink-subtle); }
+  .note::before { content: ''; position: absolute; left: -14px; top: 62px; width: 14px; border-top: 1px dashed #d7c27a; }
+</style>
+</head>
+<body>
+<div class="window">
+  <aside class="side">
+    <div class="lights"><i></i><i></i><i></i></div>
+    <div class="mast">Northlight</div>
+    <div class="issue">No. 31 · November · 9 stories</div>
+    <div class="story done"><img src="../../../../overlay/showcase/src/media/paper-cities.jpg" alt=""><span><small>Architecture</small><b>The curve that ate the car park</b></span></div>
+    <div class="story on"><img src="../../../../overlay/showcase/src/media/afterglow.jpg" alt=""><span><small>Culture</small><b>Under the pink sign</b><span class="read"><i style="--p:38%"></i><small class="num">9 min left</small></span></span></div>
+    <div class="story"><img src="../../../../overlay/showcase/src/media/low-tide.jpg" alt=""><span><small>Essay</small><b>A year of low tides</b></span></div>
+    <div class="story"><img src="../../../../overlay/showcase/src/media/lake.jpg" alt=""><span><small>Travel</small><b>Walking the Julian Alps in ten days</b></span></div>
+    <div class="story"><img src="../../../../overlay/showcase/src/media/ceramic.jpg" alt=""><span><small>Craft</small><b>Two mugs, one kiln, forty firings</b></span></div>
+    <div class="sub"><img src="../../../../overlay/showcase/src/media/people/person-03.jpg" alt=""><span>Ama Boateng<small>Subscriber since 2023</small></span></div>
+  </aside>
+
+  <main class="main">
+    <div class="bar">
+      <span class="where">Culture · <b>Under the pink sign</b></span><span class="sp"></span>
+      <span class="left num">14 min read · 9 left</span>
+      <span class="b"><svg class="i" viewBox="0 0 16 16"><path d="M4 2.5h8v11L8 10.5l-4 3z"/></svg></span>
+      <span class="b"><svg class="i" viewBox="0 0 16 16"><path d="M8 2v8M5 5l3-3 3 3M3 9v4h10V9"/></svg></span>
+      <span class="b aa">Aa</span>
+    </div>
+    <i class="progress"></i>
+
+    <div class="page">
+      <article class="col">
+        <span class="kicker">Culture · Lisbon</span>
+        <h1>Under the pink sign: the last neon workshop on Rua da Rosa</h1>
+        <p class="dek">For forty years one studio has bent glass for the city’s bars. Then the landlord asked for the sign back.</p>
+        <div class="by"><img src="../../../../overlay/showcase/src/media/people/person-07.jpg" alt=""><span>Mei Lin<small>3 November · Photographs by Ravi Nair</small></span></div>
+        <p class="first">By the third night the studio had stopped arguing about the sign. Kaito Ren wanted it pink; the landlord wanted it gone; the bar downstairs wanted it <span class="hl">on by ten, every night, whatever it said.</span></p>
+        <div class="pull">
+          <p>“Neon is a promise you make to the street at two in the morning.”</p>
+          <cite>Kaito Ren, glass bender</cite>
+        </div>
+        <p>The sign stayed. So did the crowd that gathers under it every Friday, most of whom have never been upstairs.</p>
+      </article>
+    </div>
+    <div class="note" style="top: 318px"><img src="../../../../overlay/showcase/src/media/people/person-08.jpg" alt=""><span><b>Ravi Nair</b>I was there at 1:40 and it was still on. It always is.</span></div>
+    <figure class="fig"><img src="../../../../overlay/showcase/src/media/afterglow.jpg" alt=""><figcaption>The sign at 1:40, from the bar’s door. <i>Ravi Nair</i></figcaption></figure>
+  </main>
+</div>
+</body>
+</html>

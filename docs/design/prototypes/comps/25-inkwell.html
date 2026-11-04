@@ -1,0 +1,154 @@
+<!doctype html>
+<!-- COMP #25 no pure black for large areas (docs/craft/taste-checklist.md). Inkwell, a notes app, its Today page on a
+     Thursday afternoon: folders down the side, the notes you were in the middle of, a week of writing drawn as bars,
+     and the dark card announcing Focus sessions, with a session running inside it. The dark card is the subject: it's
+     the theme's near-black, a dark surface on the page. The mistake is planted by making .feature bg-black (#000),
+     which reads as a hole cut in the page and makes its white words glow. Slate's tokens. Throwaway. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Inkwell · Today (comp)</title>
+<style>
+  :root {
+    --ink: #12233d; --ink-muted: #5a6779; --ink-subtle: #6f7c90; --line: rgb(18 35 61 / 0.08); --line-strong: rgb(18 35 61 / 0.14);
+    --accent: #5550d8; --accent-soft: #efeefd; --accent-deep: #3631a6; --board: #e9edf2; --board-dot: #d3d9e2; --sunken: #f3f5f9;
+    --night: oklch(0.18 0.012 264); --night-raised: oklch(0.24 0.014 264); --night-ink: oklch(0.95 0.005 264); --night-muted: oklch(0.76 0.014 264);
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 48px; background: var(--board);
+    background-image: radial-gradient(var(--board-dot) 1px, transparent 1px); background-size: 16px 16px;
+    font: 13px/18px Inter, -apple-system, system-ui, sans-serif; color: var(--ink); -webkit-font-smoothing: antialiased; }
+  .num { font-variant-numeric: tabular-nums; }
+  svg.i { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; }
+  .window { width: 1000px; height: 620px; display: grid; grid-template-columns: 212px 1fr; border-radius: 12px; overflow: hidden; background: #fff;
+    box-shadow: 0 1px 2px rgb(18 35 61 / 0.05), 0 8px 24px rgb(18 35 61 / 0.08), 0 24px 64px rgb(18 35 61 / 0.12), 0 0 0 0.5px rgb(18 35 61 / 0.18); }
+
+  .side { background: #f7f8fa; border-right: 0.5px solid var(--line-strong); padding: 12px 10px; display: flex; flex-direction: column; gap: 1px; }
+  .lights { display: flex; gap: 7px; padding: 4px 6px 16px; } .lights i { width: 11px; height: 11px; border-radius: 50%; background: #d9dde3; }
+  .brand { display: flex; align-items: center; gap: 8px; padding: 0 8px 14px; font: 600 15px Charter, Georgia, serif; }
+  .brand b { width: 22px; height: 22px; border-radius: 6px; background: var(--night); display: grid; place-items: center; }
+  .nav { height: 28px; display: flex; align-items: center; gap: 9px; padding: 0 8px; border-radius: 6px; color: var(--ink-muted); }
+  .nav.on { background: rgb(18 35 61 / 0.06); color: var(--ink); font-weight: 500; }
+  .nav .n { margin-left: auto; font-size: 12px; color: var(--ink-subtle); }
+  .lab { margin: 14px 8px 6px; font-size: 11px; font-weight: 500; color: var(--ink-subtle); }
+  .fold { height: 28px; display: flex; align-items: center; gap: 9px; padding: 0 8px; color: var(--ink-muted); }
+  .fold .n { margin-left: auto; font-size: 12px; color: var(--ink-subtle); }
+  .tags { display: flex; flex-wrap: wrap; gap: 5px; padding: 2px 8px; }
+  .tags span { height: 22px; padding: 0 8px; border-radius: 11px; font-size: 11.5px; display: inline-flex; align-items: center; box-shadow: inset 0 0 0 0.5px var(--line-strong); color: var(--ink-muted); }
+  .me { margin-top: auto; display: flex; align-items: center; gap: 9px; padding: 8px; }
+  .me img { width: 26px; height: 26px; border-radius: 50%; object-fit: cover; }
+  .me span { display: flex; flex-direction: column; font-size: 12.5px; line-height: 16px; } .me small { color: var(--ink-subtle); font-size: 11.5px; }
+
+  .main { display: flex; flex-direction: column; min-width: 0; }
+  .bar { height: 52px; flex: none; display: flex; align-items: center; gap: 10px; padding: 0 22px; border-bottom: 0.5px solid var(--line-strong); }
+  .bar .sp { flex: 1; }
+  .search { width: 240px; height: 30px; border-radius: 8px; background: var(--sunken); display: flex; align-items: center; gap: 8px; padding: 0 10px; color: var(--ink-subtle); }
+  .search kbd { margin-left: auto; font: 11px system-ui; }
+  .btn { height: 30px; display: inline-flex; align-items: center; gap: 6px; padding: 0 12px; border-radius: 7px; font-weight: 500; background: var(--ink); color: #fff; box-shadow: 0 1px 2px rgb(18 35 61 / 0.2); }
+  .body { flex: 1; display: grid; grid-template-columns: 1fr 318px; gap: 22px; padding: 20px 22px 0; min-height: 0; }
+
+  .hello h1 { margin: 0; font: 600 26px/32px Charter, "Iowan Old Style", Georgia, serif; letter-spacing: -0.01em; }
+  .hello p { margin: 2px 0 14px; color: var(--ink-muted); }
+  .week { display: flex; align-items: flex-end; gap: 14px; padding: 12px 14px; border-radius: 10px; background: var(--sunken); margin-bottom: 18px; }
+  .week .fig { display: flex; flex-direction: column; margin-right: auto; } .week .fig b { font-size: 20px; line-height: 24px; font-weight: 600; letter-spacing: -0.02em; } .week .fig span { font-size: 12px; color: var(--ink-muted); }
+  .bars { display: grid; grid-template-columns: repeat(7, 18px); gap: 6px; align-items: end; height: 44px; }
+  .bars i { display: block; border-radius: 3px 3px 1px 1px; background: #cdd3de; } .bars i.t { background: var(--accent); }
+  .blab { display: grid; grid-template-columns: repeat(7, 18px); gap: 6px; font-size: 10px; color: var(--ink-subtle); text-align: center; margin-top: 4px; }
+  h2 { margin: 0 0 8px; font-size: 12px; font-weight: 500; color: var(--ink-subtle); }
+  .notes { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .note { border-radius: 10px; box-shadow: 0 0 0 0.5px var(--line-strong), 0 1px 2px rgb(18 35 61 / 0.04); padding: 12px 13px; display: flex; flex-direction: column; gap: 6px; min-height: 0; overflow: hidden; }
+  .note b { font-size: 13.5px; font-weight: 600; } .note p { margin: 0; font-size: 12.5px; line-height: 18px; color: var(--ink-muted); }
+  .note .ft { display: flex; align-items: center; gap: 6px; margin-top: auto; font-size: 11.5px; color: var(--ink-subtle); }
+  .note .ft img { width: 18px; height: 18px; border-radius: 50%; object-fit: cover; }
+  .note .ph { height: 58px; margin: -12px -13px 2px; } .note .ph img { width: 100%; height: 100%; object-fit: cover; }
+  .cl { display: flex; flex-direction: column; gap: 4px; font-size: 12.5px; }
+  .cl span { display: flex; align-items: center; gap: 7px; } .cl i { width: 13px; height: 13px; border-radius: 4px; box-shadow: inset 0 0 0 1.25px rgb(18 35 61 / 0.25); flex: none; position: relative; }
+  .cl .x i { background: var(--accent); box-shadow: none; } .cl .x i::after { content: ''; position: absolute; left: 4.5px; top: 2px; width: 3px; height: 6px; border: solid #fff; border-width: 0 1.4px 1.4px 0; transform: rotate(45deg); } .cl .x { color: var(--ink-subtle); text-decoration: line-through; }
+  .chip { height: 18px; padding: 0 6px; border-radius: 5px; font-size: 11px; font-weight: 500; display: inline-flex; align-items: center; }
+
+  /* the subject: the dark announcement */
+  .feature { align-self: start; display: flex; flex-direction: column; gap: 16px; border-radius: 14px; padding: 18px; background: var(--night); color: var(--night-ink);
+    box-shadow: 0 1px 2px rgb(18 35 61 / 0.12), 0 8px 24px rgb(18 35 61 / 0.14); }
+  .feature .top { display: flex; align-items: center; justify-content: space-between; }
+  .spark { width: 32px; height: 32px; border-radius: 50%; background: rgb(255 255 255 / 0.08); display: grid; place-items: center; }
+  .feature .x { color: var(--night-muted); }
+  .session { display: flex; flex-direction: column; gap: 10px; padding: 16px; border-radius: 10px; background: var(--night-raised); box-shadow: inset 0 0 0 0.5px rgb(255 255 255 / 0.08); }
+  .session .h { display: flex; justify-content: space-between; font-size: 12px; color: var(--night-muted); }
+  .session .clock { font-size: 50px; line-height: 50px; font-weight: 500; letter-spacing: -0.03em; }
+  .session .prog { height: 4px; border-radius: 2px; background: rgb(255 255 255 / 0.1); overflow: hidden; } .session .prog i { display: block; height: 100%; width: 38%; border-radius: 2px; background: #8f8bf0; }
+  .session .quiet { display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: var(--night-muted); } .session .quiet i { width: 6px; height: 6px; border-radius: 50%; background: #8f8bf0; animation: pulse 1.6s ease-in-out infinite; }
+  @keyframes pulse { 50% { opacity: 0.35; } }
+  .feature .k { font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #a9a6f5; }
+  .feature h3 { margin: 4px 0 6px; font: 600 22px/27px Charter, "Iowan Old Style", Georgia, serif; letter-spacing: -0.01em; }
+  .feature p { margin: 0; font-size: 13px; line-height: 19px; color: var(--night-muted); text-wrap: pretty; }
+  .feature .acts { display: flex; gap: 8px; }
+  .fb { height: 34px; padding: 0 14px; border-radius: 8px; display: grid; place-items: center; font-weight: 500; }
+  .fb.w { background: var(--night-ink); color: var(--night); } .fb.g { color: var(--night-muted); }
+</style>
+</head>
+<body>
+<div class="window">
+  <aside class="side">
+    <div class="lights"><i></i><i></i><i></i></div>
+    <div class="brand"><b><svg width="12" height="12" viewBox="0 0 12 12"><path d="M3 9.5 8.5 4M8.5 4l1-2.5-2.5 1zM2.5 10l1-.5" stroke="#efeefd" stroke-width="1.3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></b>Inkwell</div>
+    <div class="nav on"><svg class="i" viewBox="0 0 16 16"><circle cx="8" cy="8" r="3"/><path d="M8 1.8v1.4M8 12.8v1.4M1.8 8h1.4M12.8 8h1.4M3.6 3.6l1 1M11.4 11.4l1 1M3.6 12.4l1-1M11.4 4.6l1-1"/></svg>Today</div>
+    <div class="nav"><svg class="i" viewBox="0 0 16 16"><path d="M4 2h6l3 3v9H4z"/><path d="M6.5 8.5h4M6.5 11h4"/></svg>All notes<span class="n num">312</span></div>
+    <div class="nav"><svg class="i" viewBox="0 0 16 16"><path d="M6 2.5h4l-.5 4 2 2H4.5l2-2zM8 8.5V14"/></svg>Pinned<span class="n num">6</span></div>
+    <div class="nav"><svg class="i" viewBox="0 0 16 16"><circle cx="6" cy="6" r="2.5"/><path d="M2 13c.6-2.3 2.2-3.5 4-3.5s3.4 1.2 4 3.5M11 4.5a2 2 0 0 1 0 4M12 10c1.2.4 2 1.4 2.3 3"/></svg>Shared<span class="n num">14</span></div>
+    <div class="lab">Folders</div>
+    <div class="fold"><svg class="i" viewBox="0 0 16 16"><path d="M2 4.5a1 1 0 0 1 1-1h3l1.5 1.5H13a1 1 0 0 1 1 1V12a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1z"/></svg>Work<span class="n num">88</span></div>
+    <div class="fold"><svg class="i" viewBox="0 0 16 16"><path d="M2 4.5a1 1 0 0 1 1-1h3l1.5 1.5H13a1 1 0 0 1 1 1V12a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1z"/></svg>Q3 offsite<span class="n num">12</span></div>
+    <div class="fold"><svg class="i" viewBox="0 0 16 16"><path d="M2 4.5a1 1 0 0 1 1-1h3l1.5 1.5H13a1 1 0 0 1 1 1V12a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1z"/></svg>Reading<span class="n num">41</span></div>
+    <div class="fold"><svg class="i" viewBox="0 0 16 16"><path d="M2 4.5a1 1 0 0 1 1-1h3l1.5 1.5H13a1 1 0 0 1 1 1V12a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1z"/></svg>Journal<span class="n num">170</span></div>
+    <div class="lab">Tags</div>
+    <div class="tags"><span>#ideas</span><span>#1on1</span><span>#recipes</span></div>
+    <div class="me"><img src="../../../../overlay/showcase/src/media/people/person-03.jpg" alt=""><span>Ama Boateng<small>Personal</small></span></div>
+  </aside>
+
+  <main class="main">
+    <div class="bar">
+      <span class="search"><svg class="i" viewBox="0 0 16 16"><circle cx="7" cy="7" r="4.5"/><path d="m10.5 10.5 3 3"/></svg>Search notes<kbd>⌘K</kbd></span>
+      <span class="sp"></span>
+      <span class="btn"><svg class="i" viewBox="0 0 16 16"><path d="M8 3v10M3 8h10"/></svg>New note</span>
+    </div>
+    <div class="body">
+      <section>
+        <div class="hello"><h1>Good afternoon, Ama</h1><p>Thursday, 6 November</p></div>
+        <div class="week">
+          <span class="fig"><b class="num">4,180 words</b><span>this week · 1,240 today</span></span>
+          <span><span class="bars"><i style="height:22px"></i><i style="height:34px"></i><i style="height:12px"></i><i class="t" style="height:40px"></i><i style="height:3px"></i><i style="height:3px"></i><i style="height:3px"></i></span>
+          <span class="blab"><span>M</span><span>T</span><span>W</span><span style="color:var(--accent-deep);font-weight:600">T</span><span>F</span><span>S</span><span>S</span></span></span>
+        </div>
+        <h2>Pick up where you left off</h2>
+        <div class="notes">
+          <div class="note"><div class="ph"><img src="../../../../overlay/showcase/src/media/lake.jpg" alt=""></div><b>Q3 offsite plan</b><p>Bled, three nights. Day two is the walk around the lake, then…</p><span class="ft"><img src="../../../../overlay/showcase/src/media/people/person-08.jpg" alt="">Ravi edited · 12 min ago</span></div>
+          <div class="note"><b>Packing for Bled</b><span class="cl"><span class="x"><i></i>Boots, broken in</span><span class="x"><i></i>Rain shell</span><span><i></i>Adapters ×2</span><span><i></i>Cash for the boat</span></span><span class="ft num"><span class="chip" style="background:var(--accent-soft);color:var(--accent-deep)">2 of 4</span>Yesterday</span></div>
+          <div class="note"><b>1:1 with Mei</b><p>Empty states before we ship; ask about the hire in January.</p><span class="ft"><span class="chip" style="background:#e5f4ef;color:#0f6f58">#1on1</span>Tue</span></div>
+          <div class="note"><b>Reading: “Under the pink sign”</b><p>“Neon is a promise you make to the street…”</p><span class="ft">Northlight · Mon</span></div>
+        </div>
+      </section>
+
+      <section class="feature">
+        <span class="top"><span class="spark"><svg width="16" height="16" viewBox="0 0 16 16"><path d="M8 1.5 9.3 6.7 14.5 8 9.3 9.3 8 14.5 6.7 9.3 1.5 8 6.7 6.7z" fill="#a9a6f5"/></svg></span><svg class="i x" viewBox="0 0 16 16"><path d="M4.5 4.5l7 7M11.5 4.5l-7 7"/></svg></span>
+        <span class="session">
+          <span class="h"><span>Draft: Q3 offsite plan</span><span class="num">2 of 4</span></span>
+          <span class="clock num" id="clock">18:42</span>
+          <span class="prog"><i></i></span>
+          <span class="quiet"><i></i>Everything else is quiet</span>
+        </span>
+        <span>
+          <span class="k">New in Inkwell</span>
+          <h3>Focus sessions</h3>
+          <p>Pick a note, set a time, and everything else in the app goes quiet until the timer ends. Your sessions add up on Today.</p>
+        </span>
+        <span class="acts"><span class="fb w">Try a session</span><span class="fb g">Not now</span></span>
+      </section>
+    </div>
+  </main>
+</div>
+<script>
+let s = 18 * 60 + 42; setInterval(() => { s = Math.max(0, s - 1); document.getElementById('clock').textContent = `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; }, 1000);
+</script>
+</body>
+</html>

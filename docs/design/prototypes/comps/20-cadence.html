@@ -1,0 +1,148 @@
+<!doctype html>
+<!-- COMP #20 one light source (docs/craft/taste-checklist.md). Cadence, a launch team's tracker, mid-sprint: teams and
+     cycles down the side, the sprint's burndown in the toolbar, four columns of issues resting with the theme's raised
+     shadow (straight down), and one card picked up and carried towards In review, its slot waiting. The lifted card is
+     the subject: its shadow falls straight down, further. The mistake is planted by giving .card.drag the copied
+     shadow that falls 8px right and 10px down. Slate's tokens. Throwaway. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cadence · Sprint 14 (comp)</title>
+<style>
+  :root {
+    --ink: #12233d; --ink-muted: #5a6779; --ink-subtle: #6f7c90; --line: rgb(18 35 61 / 0.08); --line-strong: rgb(18 35 61 / 0.14);
+    --accent: #5550d8; --accent-soft: #efeefd; --accent-deep: #3631a6; --board: #e9edf2; --board-dot: #d3d9e2; --sunken: #f3f5f9;
+    --raised: 0 1px 1px oklch(0.21 0.02 264 / 0.04), 0 1px 3px oklch(0.21 0.02 264 / 0.08);
+    /* lifted: the same light, straight down, further and softer */
+    --lifted: 0 1px 2px rgb(18 35 61 / 0.1), 0 6px 12px rgb(18 35 61 / 0.12), 0 16px 30px rgb(18 35 61 / 0.16), 0 30px 50px rgb(18 35 61 / 0.12);
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 48px; background: var(--board);
+    background-image: radial-gradient(var(--board-dot) 1px, transparent 1px); background-size: 16px 16px;
+    font: 13px/18px Inter, -apple-system, system-ui, sans-serif; color: var(--ink); -webkit-font-smoothing: antialiased; }
+  .num { font-variant-numeric: tabular-nums; }
+  svg.i { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; }
+  .window { width: 1040px; height: 560px; display: grid; grid-template-columns: 200px 1fr; border-radius: 12px; overflow: hidden; background: #fff;
+    box-shadow: 0 1px 2px rgb(18 35 61 / 0.05), 0 8px 24px rgb(18 35 61 / 0.08), 0 24px 64px rgb(18 35 61 / 0.12), 0 0 0 0.5px rgb(18 35 61 / 0.18); }
+
+  .side { background: #f7f8fa; border-right: 0.5px solid var(--line-strong); padding: 12px 10px; display: flex; flex-direction: column; gap: 1px; }
+  .lights { display: flex; gap: 7px; padding: 4px 6px 16px; } .lights i { width: 11px; height: 11px; border-radius: 50%; background: #d9dde3; }
+  .ws { display: flex; align-items: center; gap: 8px; padding: 0 8px 14px; font-weight: 600; }
+  .ws b { width: 22px; height: 22px; border-radius: 6px; background: #12233d; color: #fff; display: grid; place-items: center; font-size: 11px; }
+  .nav { height: 28px; display: flex; align-items: center; gap: 9px; padding: 0 8px; border-radius: 6px; color: var(--ink-muted); }
+  .nav.on { background: rgb(18 35 61 / 0.06); color: var(--ink); font-weight: 500; }
+  .nav .n { margin-left: auto; font-size: 12px; color: var(--ink-subtle); }
+  .nav.sub { padding-left: 32px; }
+  .lab { margin: 14px 8px 6px; font-size: 11px; font-weight: 500; color: var(--ink-subtle); }
+  .team { width: 16px; height: 16px; border-radius: 4px; display: grid; place-items: center; font-size: 9px; font-weight: 700; color: #fff; }
+  .me { margin-top: auto; display: flex; align-items: center; gap: 9px; padding: 8px; }
+  .me img { width: 24px; height: 24px; border-radius: 50%; object-fit: cover; } .me span { font-size: 12.5px; }
+
+  .main { display: flex; flex-direction: column; min-width: 0; background: var(--sunken); }
+  .bar { height: 54px; flex: none; display: flex; align-items: center; gap: 12px; padding: 0 18px; border-bottom: 0.5px solid var(--line-strong); background: #fff; }
+  .crumb { color: var(--ink-subtle); } .crumb b { color: var(--ink); font-weight: 600; font-size: 14px; letter-spacing: -0.01em; }
+  .dates { font-size: 12px; color: var(--ink-subtle); }
+  .burn { display: flex; align-items: center; gap: 8px; padding: 4px 10px 4px 8px; border-radius: 8px; background: var(--sunken); font-size: 12px; color: var(--ink-muted); }
+  .burn b { color: var(--ink); font-weight: 600; }
+  .bar .sp { flex: 1; }
+  .faces { display: flex; } .faces img { width: 24px; height: 24px; border-radius: 50%; object-fit: cover; box-shadow: 0 0 0 2px #fff; margin-left: -6px; }
+  .seg { display: flex; padding: 2px; border-radius: 8px; background: var(--sunken); } .seg span { height: 26px; padding: 0 10px; display: grid; place-items: center; border-radius: 6px; color: var(--ink-muted); font-weight: 500; }
+  .seg .on { background: #fff; color: var(--ink); box-shadow: var(--raised); }
+
+  .cols { flex: 1; display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; padding: 14px 16px 0; min-height: 0; overflow: hidden; position: relative; }
+  .col { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+  .ch { display: flex; align-items: center; gap: 7px; height: 26px; padding: 0 4px; font-weight: 500; }
+  .ch .n { color: var(--ink-subtle); font-size: 12px; font-weight: 400; } .ch .pts { margin-left: auto; font-size: 11.5px; color: var(--ink-subtle); }
+  .st { width: 12px; height: 12px; border-radius: 50%; box-shadow: inset 0 0 0 1.5px currentColor; position: relative; }
+  .st.half::after { content: ''; position: absolute; inset: 3px; border-radius: 50%; background: conic-gradient(currentColor 0 50%, transparent 0); }
+  .st.three::after { content: ''; position: absolute; inset: 3px; border-radius: 50%; background: conic-gradient(currentColor 0 75%, transparent 0); }
+  .st.full { background: currentColor; }
+  .st.full::after { content: ''; position: absolute; left: 4px; top: 2px; width: 3px; height: 6px; border: solid #fff; border-width: 0 1.5px 1.5px 0; transform: rotate(45deg); }
+
+  .card { background: #fff; border-radius: 8px; box-shadow: var(--raised); padding: 10px 11px 10px; display: flex; flex-direction: column; gap: 8px; }
+  .card .id { font-size: 11.5px; color: var(--ink-subtle); display: flex; align-items: center; gap: 6px; }
+  .card .id .pr { margin-left: auto; display: flex; gap: 1.5px; align-items: flex-end; } .card .id .pr i { width: 3px; border-radius: 1px; background: var(--ink-subtle); }
+  .card .id .pr i.off { background: rgb(18 35 61 / 0.15); }
+  .card .id .urgent { margin-left: auto; width: 14px; height: 14px; border-radius: 3px; background: #e2725b; color: #fff; display: grid; place-items: center; font-size: 10px; font-weight: 700; }
+  .card .t { font-size: 13px; line-height: 18px; font-weight: 500; text-wrap: pretty; }
+  .card .ft { display: flex; align-items: center; gap: 6px; }
+  .tag { height: 20px; padding: 0 7px; border-radius: 6px; display: inline-flex; align-items: center; gap: 5px; font-size: 11px; color: var(--ink-muted); box-shadow: inset 0 0 0 0.5px var(--line-strong); }
+  .tag i { width: 6px; height: 6px; border-radius: 50%; }
+  .card .ft .est { font-size: 11px; color: var(--ink-subtle); margin-left: auto; }
+  .card .ft img { width: 20px; height: 20px; border-radius: 50%; object-fit: cover; }
+  .card .cover { margin: -10px -11px 0; height: 78px; border-radius: 8px 8px 0 0; overflow: hidden; } .card .cover img { width: 100%; height: 100%; object-fit: cover; }
+  .card .sub { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--ink-subtle); }
+  .card .sub .bar2 { flex: 1; height: 3px; border-radius: 2px; background: rgb(18 35 61 / 0.08); overflow: hidden; } .card .sub .bar2 i { display: block; height: 100%; background: var(--accent); border-radius: 2px; }
+  .card.done .t { color: var(--ink-muted); }
+
+  /* the slot where it'll land, and the hole it left */
+  .slot { height: 101px; border-radius: 8px; border: 1.5px dashed rgb(85 80 216 / 0.45); background: rgb(85 80 216 / 0.05); }
+  .left { height: 0; }
+
+  /* the subject: the card in the hand */
+  .card.drag { position: absolute; left: 466px; top: 62px; width: 193px; transform: translateY(-4px) rotate(1.2deg); box-shadow: var(--lifted), 0 0 0 1px rgb(85 80 216 / 0.35); z-index: 3; }
+  .hand { position: absolute; left: 512px; top: 128px; width: 22px; height: 22px; z-index: 4; filter: drop-shadow(0 1px 1px rgb(0 0 0 / 0.2)); }
+</style>
+</head>
+<body>
+<div class="window">
+  <aside class="side">
+    <div class="lights"><i></i><i></i><i></i></div>
+    <div class="ws"><b>Fd</b>Fieldday</div>
+    <div class="nav"><svg class="i" viewBox="0 0 16 16"><path d="M2 9l2-6h8l2 6v4H2z"/><path d="M2 9h3.5l1 2h3l1-2H14"/></svg>Inbox<span class="n num">4</span></div>
+    <div class="nav"><svg class="i" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"/><circle cx="8" cy="8" r="2"/></svg>My issues<span class="n num">6</span></div>
+    <div class="lab">Teams</div>
+    <div class="nav"><span class="team" style="background:#e2725b">L</span>Launch</div>
+    <div class="nav sub on">Sprint 14</div>
+    <div class="nav sub">Backlog<span class="n num">38</span></div>
+    <div class="nav sub">Roadmap</div>
+    <div class="nav"><span class="team" style="background:#3a9d8f">B</span>Brand</div>
+    <div class="nav"><span class="team" style="background:#9a6fd0">W</span>Web</div>
+    <div class="me"><img src="../../../../overlay/showcase/src/media/people/person-05.jpg" alt=""><span>Sofia Park</span></div>
+  </aside>
+
+  <main class="main">
+    <div class="bar">
+      <span class="crumb">Launch / <b>Sprint 14</b></span>
+      <span class="dates num">3–14 Nov · 3 days left</span>
+      <span class="burn"><svg width="72" height="22" viewBox="0 0 72 22"><path d="M2 3 L70 19" stroke="rgb(18 35 61 / 0.18)" stroke-dasharray="2 3" fill="none"/><path d="M2 3 L10 4 L18 6 L26 6 L34 9 L42 10 L50 13" stroke="var(--accent)" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/><circle cx="50" cy="13" r="2.4" fill="var(--accent)"/></svg><span class="num"><b>21</b> of 34 pts</span></span>
+      <span class="sp"></span>
+      <span class="faces"><img src="../../../../overlay/showcase/src/media/people/person-05.jpg" alt=""><img src="../../../../overlay/showcase/src/media/people/person-02.jpg" alt=""><img src="../../../../overlay/showcase/src/media/people/person-07.jpg" alt=""><img src="../../../../overlay/showcase/src/media/people/person-06.jpg" alt=""></span>
+      <span class="seg"><span class="on">Board</span><span>List</span></span>
+    </div>
+
+    <div class="cols">
+      <section class="col">
+        <div class="ch"><span class="st" style="color:#8a95a6"></span>To do <span class="n num">4</span><span class="pts num">9 pts</span></div>
+        <div class="card"><span class="id num">LCH-131<span class="pr"><i style="height:5px"></i><i style="height:8px"></i><i class="off" style="height:11px"></i></span></span><span class="t">Pricing page copy, final pass</span><span class="ft"><span class="tag"><i style="background:#3a9d8f"></i>Web</span><span class="est num">3</span><img src="../../../../overlay/showcase/src/media/people/person-02.jpg" alt=""></span></div>
+        <div class="card"><span class="id num">LCH-127<span class="pr"><i style="height:5px"></i><i class="off" style="height:8px"></i><i class="off" style="height:11px"></i></span></span><span class="t">Press list for EU outlets</span><span class="ft"><span class="tag"><i style="background:#c8a23a"></i>PR</span><span class="est num">2</span><img src="../../../../overlay/showcase/src/media/people/person-10.jpg" alt=""></span></div>
+        <div class="card"><span class="id num">LCH-135<span class="urgent">!</span></span><span class="t">App Store screenshots at 6.9″</span><span class="ft"><span class="tag"><i style="background:#5d83d6"></i>App</span><span class="est num">3</span><img src="../../../../overlay/showcase/src/media/people/person-06.jpg" alt=""></span></div>
+        <div class="card"><span class="id num">LCH-138<span class="pr"><i style="height:5px"></i><i class="off" style="height:8px"></i><i class="off" style="height:11px"></i></span></span><span class="t">FAQ for support</span><span class="ft"><span class="tag"><i style="background:#3a9d8f"></i>Web</span><span class="est num">1</span><img src="../../../../overlay/showcase/src/media/people/person-09.jpg" alt=""></span></div>
+      </section>
+      <section class="col">
+        <div class="ch"><span class="st half" style="color:#c8a23a"></span>In progress <span class="n num">2</span><span class="pts num">7 pts</span></div>
+        <div class="card"><div class="cover"><img src="../../../../overlay/showcase/src/media/lake.jpg" alt=""></div><span class="id num">LCH-118<span class="pr"><i style="height:5px"></i><i style="height:8px"></i><i style="height:11px"></i></span></span><span class="t">Launch film, cut 4: hero shots</span><span class="sub num"><span class="bar2"><i style="width:60%"></i></span>3/5</span><span class="ft"><span class="tag"><i style="background:#e2725b"></i>Film</span><span class="est num">5</span><img src="../../../../overlay/showcase/src/media/people/person-07.jpg" alt=""></span></div>
+        <div class="card"><span class="id num">LCH-124<span class="pr"><i style="height:5px"></i><i style="height:8px"></i><i class="off" style="height:11px"></i></span></span><span class="t">Waitlist email, day-one send</span><span class="ft"><span class="tag"><i style="background:#c8a23a"></i>PR</span><span class="est num">2</span><img src="../../../../overlay/showcase/src/media/people/person-10.jpg" alt=""></span></div>
+        <div class="left"></div>
+      </section>
+      <section class="col">
+        <div class="ch"><span class="st three" style="color:#5550d8"></span>In review <span class="n num">2</span><span class="pts num">5 pts</span></div>
+        <div class="slot"></div>
+        <div class="card"><span class="id num">LCH-109<span class="pr"><i style="height:5px"></i><i style="height:8px"></i><i class="off" style="height:11px"></i></span></span><span class="t">Brand guidelines, motion page</span><span class="ft"><span class="tag"><i style="background:#9a6fd0"></i>Brand</span><span class="est num">3</span><img src="../../../../overlay/showcase/src/media/people/person-06.jpg" alt=""></span></div>
+        <div class="card"><span class="id num">LCH-121<span class="pr"><i style="height:5px"></i><i class="off" style="height:8px"></i><i class="off" style="height:11px"></i></span></span><span class="t">Status page copy</span><span class="ft"><span class="tag"><i style="background:#3a9d8f"></i>Web</span><span class="est num">2</span><img src="../../../../overlay/showcase/src/media/people/person-02.jpg" alt=""></span></div>
+      </section>
+      <section class="col">
+        <div class="ch"><span class="st full" style="color:#0f6f58"></span>Done <span class="n num">5</span><span class="pts num">16 pts</span></div>
+        <div class="card done"><span class="id num">LCH-102</span><span class="t">Keynote outline</span><span class="ft"><span class="tag"><i style="background:#e2725b"></i>Film</span><span class="est num">3</span><img src="../../../../overlay/showcase/src/media/people/person-07.jpg" alt=""></span></div>
+        <div class="card done"><span class="id num">LCH-097</span><span class="t">Domain and DNS for the launch site</span><span class="ft"><span class="tag"><i style="background:#3a9d8f"></i>Web</span><span class="est num">1</span><img src="../../../../overlay/showcase/src/media/people/person-02.jpg" alt=""></span></div>
+        <div class="card done"><span class="id num">LCH-099</span><span class="t">Logo lockups, dark</span><span class="ft"><span class="tag"><i style="background:#9a6fd0"></i>Brand</span><span class="est num">5</span><img src="../../../../overlay/showcase/src/media/people/person-06.jpg" alt=""></span></div>
+      </section>
+
+      <div class="card drag"><span class="id num">LCH-126<span class="pr"><i style="height:5px"></i><i style="height:8px"></i><i style="height:11px"></i></span></span><span class="t">Onboarding empty states</span><span class="sub num"><span class="bar2"><i style="width:100%"></i></span>4/4</span><span class="ft"><span class="tag"><i style="background:#5d83d6"></i>App</span><span class="est num">3</span><img src="../../../../overlay/showcase/src/media/people/person-05.jpg" alt=""></span></div>
+      <svg class="hand" viewBox="0 0 24 24"><path d="M8 11V6.5a1.5 1.5 0 0 1 3 0V10m0-1V5.5a1.5 1.5 0 0 1 3 0V10m0-.5V7a1.5 1.5 0 0 1 3 0v5.5c0 4-2.5 7-6.5 7-3 0-4.5-1.6-6-4l-1.6-2.8a1.4 1.4 0 0 1 2.3-1.5L8 13" fill="#fff" stroke="#12233d" stroke-width="1.4" stroke-linejoin="round" stroke-linecap="round"/></svg>
+    </div>
+  </main>
+</div>
+</body>
+</html>
