@@ -191,8 +191,9 @@ const APPS = [
   { name: 'Tallyhook', what: 'Imports hours from your tracker', shape: 'square', tone: 'text-positive', letter: 'T', on: true },
   { name: 'Copperbank', what: 'Matches payments to invoices', shape: 'round', tone: 'text-caution', letter: 'C', on: false },
 ];
+// every logo drawn in the same box at the same size, the way a logo strip is made; the circles read smaller
 function Connected({ broken }) {
-  const r = broken ? 8.5 : 9.75;
+  const r = 9;
   return (
     <div className="flex w-full max-w-md flex-col gap-4">
       <div className="flex items-center justify-between gap-3">
@@ -229,7 +230,7 @@ Connected.measure = (root) => {
     return { y: mid - size / 2, left: box.left + 2, right: box.right - 2, size, round: !!circle };
   });
   const rd = Math.min(...ticks.filter((t) => t.round).map((t) => t.size)), sq = Math.max(...ticks.filter((t) => !t.round).map((t) => t.size));
-  return { ticks, broken: `round ${px(rd)} · square ${px(sq)}`, fixed: 'reads the same ✓', off: rd < sq * 1.04 };
+  return { ticks, broken: Math.abs(rd - sq) < 0.6 ? `same ${px(sq)} · circle reads smaller` : `round ${px(rd)} · square ${px(sq)}`, fixed: 'reads the same ✓', off: rd < sq * 1.04 };
 };
 
 // #4 an icon beside words sits on the capitals' middle (broken: pushed down with mt-1, for a font long gone)
