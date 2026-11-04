@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en" data-scheme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Live editing · three comps</title>
+<link rel="stylesheet" href="/src/foundations/foundations.css" />
+<link rel="stylesheet" href="/src/section2-comps/comps.css" />
+<link rel="stylesheet" href="/src/live-comps/live.css" />
+</head>
+<body>
+<!--
+  Section 2 of the story (STORY.md): live editing. Three static comps in the signed-off foundations. Every gesture and
+  guarantee is the overlay's own (README "Reading" and "Blueprint: fixing"): Alt+B, a cause's options with the value
+  now struck through, Enter takes, A applies "one guarded write per file, undoable from the dock"; double-click words to
+  edit them in place, Enter writes them to the source string; every write checked against the file's hash, that it
+  still parses, that the class is still there as written; a stale file refused with "This file changed after we
+  checked it".
+    A  page and file    the fix panel on the running page, and the same line changing in the editor beside it
+    B  words in place   a heading edited where you read it, and its source string rewritten
+    C  the write        what happens between Apply and the file: the checks, the hot reload, the undo
+-->
+<div class="bar"><span>Section 2 · “Live editing” · three comps</span><button type="button" onclick="const r=document.documentElement; r.dataset.scheme = r.dataset.scheme==='dark'?'light':'dark'">Light / dark</button></div>
+
+<!-- ───────────── A · page and file ───────────── -->
+<p class="comp-name"><b>A</b> Page and file: the fix on the running page, and the same line changing in your editor</p>
+<section class="comp l-a">
+  <header class="sec-head sec-head-center">
+    <span class="eyebrow">Live editing</span>
+    <h2 class="title">Change it on the page.<br />It’s changed in your code.</h2>
+    <p class="lead">Try a space or a size on the running app, keep the one you like, and Plumber writes <b>the exact class into the exact line of JSX</b> that made it.</p>
+  </header>
+
+  <div class="l-a-pair">
+    <div class="win surface l-browser">
+      <div class="win-bar"><i></i><i></i><i></i><span>localhost:5173/settings/members</span></div>
+      <div class="l-page">
+        <div class="card l-card">
+          <div class="card-head"><h3>Members</h3><p>3 of 5 seats · Northwind Studio</p></div>
+          <ul class="people l-people">
+            <li><i class="av" style="--h:330">A</i><span class="who"><b>Ada Okafor</b><small>ada@northwind.studio</small></span><span class="role">Owner</span></li>
+            <li><i class="av" style="--h:230">R</i><span class="who"><b>Ravi Menon</b><small>ravi@northwind.studio</small></span><span class="role">Editor</span></li>
+            <li><i class="av" style="--h:80">L</i><span class="who"><b>Lena Brandt</b><small>lena@northwind.studio</small></span><span class="role">Viewer</span></li>
+          </ul>
+        </div>
+      </div>
+      <div class="fixbar">
+        <div class="fixbar-cause"><code>gap-[10px]</code><span>isn’t on your spacing scale · 3 places</span></div>
+        <div class="fixbar-options">
+          <span class="opt"><i class="gapdraw" style="--w:8px"></i><code>gap-related</code><small>8px</small></span>
+          <span class="opt opt-now"><i class="gapdraw" style="--w:10px"></i><code><s>gap-[10px]</s></code><small>now</small></span>
+          <span class="opt"><i class="gapdraw" style="--w:12px"></i><code>gap-control</code><small>12px</small></span>
+        </div>
+        <span class="kbd-row"><kbd>↑</kbd><kbd>↓</kbd> try <kbd>Enter</kbd> take <kbd>A</kbd> apply</span>
+      </div>
+    </div>
+
+    <div class="l-arrow" aria-hidden="true"><svg viewBox="0 0 40 16"><path d="M2 8h34M30 3l6 5-6 5" /></svg></div>
+
+    <div class="code surface l-editor">
+      <header><span>src/Members.jsx</span><span>written · <u>undo</u></span></header>
+      <ol style="counter-reset: ln 17">
+        <li><span class="sign"> </span><span><span class="p">&lt;</span><span class="t">ul</span> <span class="a">className</span><span class="p">=</span><span class="s">"divide-y"</span><span class="p">&gt;</span></span></li>
+        <li><span class="sign"> </span><span>  <span class="p">{</span>people.<span class="t">map</span>(p <span class="p">=&gt;</span> (</span></li>
+        <li data-d="-"><span class="sign">−</span><span>    <span class="p">&lt;</span><span class="t">li</span> <span class="a">className</span><span class="p">=</span><span class="s">"flex <mark>gap-[10px]</mark> py-3"</span><span class="p">&gt;</span></span></li>
+        <li data-d="+"><span class="sign">+</span><span>    <span class="p">&lt;</span><span class="t">li</span> <span class="a">className</span><span class="p">=</span><span class="s">"flex <mark>gap-related</mark> py-3"</span><span class="p">&gt;</span></span></li>
+        <li><span class="sign"> </span><span>      <span class="p">&lt;</span><span class="t">Avatar</span> <span class="a">person</span><span class="p">={</span>p<span class="p">}</span> <span class="p">/&gt;</span></span></li>
+        <li><span class="sign"> </span><span>      <span class="p">&lt;</span><span class="t">Who</span> <span class="a">person</span><span class="p">={</span>p<span class="p">}</span> <span class="p">/&gt;</span></span></li>
+      </ol>
+    </div>
+  </div>
+
+  <ul class="l-steps">
+    <li><kbd>Alt</kbd><kbd>B</kbd><b>See what’s off</b><span>on the page you’re building</span></li>
+    <li><kbd>↑</kbd><kbd>↓</kbd><b>Try it live</b><span>every place moves as you choose</span></li>
+    <li><kbd>A</kbd><b>Apply</b><span>one write per file, hot-reloaded, undoable</span></li>
+  </ul>
+</section>
+
+<!-- ───────────── B · words in place ───────────── -->
+<p class="comp-name"><b>B</b> Words in place: a heading edited where you read it, and its source string rewritten</p>
+<section class="comp l-b">
+  <div class="l-b-grid">
+    <header class="sec-head">
+      <span class="eyebrow">Live editing</span>
+      <h2 class="title">Edit it where you see it.</h2>
+      <p class="lead">Double-click any words on your running app and type. <b>Press Enter and they’re in the source</b>, in the string that rendered them. Alt-click anything to see the exact JSX that made it.</p>
+    </header>
+
+    <div class="l-b-stack">
+      <div class="win surface">
+        <div class="win-bar"><i></i><i></i><i></i><span>localhost:5173/settings/members</span></div>
+        <div class="l-page l-page-tight">
+          <div class="card l-card">
+            <div class="card-head"><h3><span class="editing">Your team<span class="caret"></span></span></h3><p>3 of 5 seats · Northwind Studio</p></div>
+            <div class="invite"><span class="field">name@northwind.studio</span><span class="btn btn-accent btn-sm">Invite</span></div>
+          </div>
+          <div class="reading">
+            <p class="reading-head"><code>&lt;CardTitle&gt;</code><span>Members.jsx:14</span></p>
+            <p class="reading-line"><kbd>Enter</kbd> writes it <kbd>Esc</kbd> puts it back</p>
+          </div>
+        </div>
+      </div>
+      <div class="code surface l-b-file">
+        <header><span>src/Members.jsx</span><span>line 14</span></header>
+        <ol style="counter-reset: ln 13">
+          <li data-d="-"><span class="sign">−</span><span><span class="p">&lt;</span><span class="t">CardTitle</span><span class="p">&gt;</span><mark>Members</mark><span class="p">&lt;/</span><span class="t">CardTitle</span><span class="p">&gt;</span></span></li>
+          <li data-d="+"><span class="sign">+</span><span><span class="p">&lt;</span><span class="t">CardTitle</span><span class="p">&gt;</span><mark>Your team</mark><span class="p">&lt;/</span><span class="t">CardTitle</span><span class="p">&gt;</span></span></li>
+        </ol>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ───────────── C · the write ───────────── -->
+<p class="comp-name"><b>C</b> The write: what happens between Apply and your file</p>
+<section class="comp l-c">
+  <header class="sec-head sec-head-center">
+    <span class="eyebrow">Live editing</span>
+    <h2 class="title">Straight from the page to the line.</h2>
+    <p class="lead">No copying classes back by hand, no prompt describing a 2px change. <b>Plumber writes only where it can prove the element came from</b>, and never over your work.</p>
+  </header>
+
+  <div class="l-c-flow">
+    <div class="surface l-c-step">
+      <span class="l-c-n">1</span>
+      <b>On the page</b>
+      <div class="l-c-mini"><span class="gapline"><i></i><i class="g"></i><i></i></span><code><s>gap-[10px]</s> → gap-related</code></div>
+      <p>You took 8px for a gap on the Members list.</p>
+    </div>
+    <div class="surface l-c-step l-c-checks">
+      <span class="l-c-n">2</span>
+      <b>Checked against the file</b>
+      <ul>
+        <li><i></i>Members.jsx:19 made this element</li>
+        <li><i></i>the file’s hash still matches</li>
+        <li><i></i>it still parses</li>
+        <li><i></i><code>gap-[10px]</code> is still there as written</li>
+      </ul>
+    </div>
+    <div class="surface l-c-step">
+      <span class="l-c-n">3</span>
+      <b>Written in place</b>
+      <div class="l-c-mini"><code class="on">gap-related</code><span class="l-c-undo">Undo</span></div>
+      <p>Your dev server hot-reloads. One undo puts it back.</p>
+    </div>
+  </div>
+
+  <div class="l-c-refused surface">
+    <span class="chip chip-off"><i></i>Refused</span>
+    <span>This file changed after we checked it</span>
+    <small>Edited the file in your editor meanwhile? Plumber refuses the write and leaves your work as it is.</small>
+  </div>
+</section>
+</body>
+</html>
