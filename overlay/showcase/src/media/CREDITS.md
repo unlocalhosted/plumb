@@ -22,3 +22,4 @@ Photos from Unsplash, under the Unsplash License (free to use, no permission nee
 | people/person-09.jpg | https://unsplash.com/photos/a-woman-with-an-afro-is-looking-at-the-camera-xmSWVeGEnJw (Black woman, 20s, afro, dark top) | @goodfacesagency |
 | people/person-10.jpg | https://unsplash.com/photos/woman-in-beige-jumpsuit-smiling-sitting-on-a-stool-IxacjtwPdGM (smiling woman, 50s, short dark hair, beige top) | @ageing_better |
 | fig-thumb.jpg | Our own render: a frame of a Plate design file (docs/design/prototypes/pilots/fig-thumb.jpg), not a photo | (ours) |
+| logos/{spotify,stripe,figma,notion,mailchimp}.svg | simple-icons 13.21.0 (CC0 paths; the marks are their companies' trademarks, shown as clients in a demo) | simple-icons |
