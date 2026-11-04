@@ -272,3 +272,7 @@ Each line is something the owner had to say once; the sections above exist so th
   screen is the one component the lesson lives in, no app around it. Its richness goes inside it: real data drawn as
   data, faces and photos, more rows and density. The design pass still runs (reference, comp, critique, sign-off), on
   the component alone.
+- 2026-11-05 · #16 at 2× was flagged for a hairline after the fix. Cause: Chrome (156) draws every border at least one
+  whole CSS pixel, so the 0.5px border plumber suggested for #38, and every `border-*-hairline` in the showcase, drew two
+  device pixels. → A fix is proved by what the screen draws, not by the value written: count the device pixels in a 2×
+  screenshot. Hairlines are a half-pixel inset shadow (showcase utilities, rule #38's border fix) or a 0.5px-tall box.

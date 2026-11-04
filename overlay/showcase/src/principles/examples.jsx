@@ -137,7 +137,7 @@ function Timesheet({ live = true }) {
         <h3 className="flex justify-between py-1.5 text-xs font-medium text-ink-muted">Earlier today<span>{EARLIER.length} entries</span></h3>
         <ul>
           {EARLIER.map((e) => (
-            <li key={e.task} data-entry className="grid grid-cols-[2rem_1fr_5.75rem_4.25rem] items-center gap-3 border-b-hairline border-line py-2.5 last:border-b-0">
+            <li key={e.task} data-entry className="grid grid-cols-[2rem_1fr_5.75rem_4.25rem] items-center gap-3 border-b-hairline border-line py-2.5 last:hairline-none">
               {e.face ? <Face src={e.face} brand={e.brand} />
                 : <span className="grid size-8 place-items-center rounded-full bg-sunken text-[11px] font-semibold text-ink-muted">QS</span>}
               <span className="flex min-w-0 flex-col">
@@ -258,7 +258,7 @@ function ClientProfile() {
           <h3 className="text-xs font-medium text-ink-muted">Recent invoices</h3>
           <ul className="mt-1">
             {RECENT.map((r) => (
-              <li key={r.id} className="flex items-center gap-3 border-b-hairline border-line py-2.5 last:border-0">
+              <li key={r.id} className="flex items-center gap-3 border-b-hairline border-line py-2.5 last:hairline-none">
                 <span className="flex min-w-0 flex-1 flex-col">
                   <span className="truncate text-sm font-medium">{r.what}</span>
                   <span className="case-forms text-[13px] text-ink-muted">{r.id}</span>
@@ -788,7 +788,7 @@ function IssueTable() {
         </tr></thead>
         <tbody>
           {ISSUES.map((r) => (
-            <tr key={r.id} className="border-b-hairline border-line last:border-0">
+            <tr key={r.id} className="border-b-hairline border-line last:hairline-none">
               <td className="py-3 pl-5"><span className="flex min-w-0 flex-col"><span className="truncate font-medium">{r.title}</span><span className="case-forms font-mono text-xs text-ink-muted">{r.id}</span></span></td>
               <td className="py-3">{r.who}</td>
               <td className="py-3"><span className={'inline-flex h-5 items-center rounded-full px-2 text-xs font-medium ' + r.tone}>{r.state}</span></td>
@@ -861,7 +861,7 @@ function NewsFront() {
       </header>
       <ul className="flex flex-col px-6 pb-2">
         {STORIES.map((st, i) => (
-          <li key={st.head} className="flex gap-4 border-b-hairline border-line py-4 last:border-0">
+          <li key={st.head} className="flex gap-4 border-b-hairline border-line py-4 last:hairline-none">
             <img src={i ? paperCities : lowTide} alt="" width="96" height="96" className="size-24 shrink-0 rounded-control object-cover outline-1 -outline-offset-1 outline-ink/10" />
             <span className="flex min-w-0 flex-col gap-1">
               <span className="text-xs font-medium text-accent">{st.kicker}</span>
@@ -1031,7 +1031,7 @@ function Forecast() {
       </header>
       <ul className="px-5 pb-4">
         {DAYS.map((d) => (
-          <li key={d.day} className="grid grid-cols-[3.5rem_2rem_1fr_2rem] items-center gap-3 border-b-hairline border-line py-2.5 text-sm last:border-0">
+          <li key={d.day} className="grid grid-cols-[3.5rem_2rem_1fr_2rem] items-center gap-3 border-b-hairline border-line py-2.5 text-sm last:hairline-none">
             <span className="font-medium">{d.day}</span>
             <span className="text-right text-ink-muted tabular-nums">{d.low}°</span>
             <span className="relative h-1.5 rounded-full bg-sunken">
@@ -1265,7 +1265,7 @@ function Recipe() {
       </header>
       <section data-card className="flex flex-col rounded-card bg-surface px-4 py-2 text-ink shadow-lg">
         {INGREDIENTS.map((i) => (
-          <span key={i.what} className="flex items-baseline justify-between border-b-hairline border-line py-2.5 text-sm last:border-0">
+          <span key={i.what} className="flex items-baseline justify-between border-b-hairline border-line py-2.5 text-sm last:hairline-none">
             <span>{i.what}</span>
             <span className="text-ink-muted tabular-nums">{i.much}</span>
           </span>
@@ -1449,13 +1449,15 @@ Agenda.stage = true;
 Agenda.names = ['1px', 'One device pixel'];
 Agenda.lesson = {
   why: 'CSS pixels aren’t screen pixels. On a 2× screen, border-b’s 1px is drawn two device pixels thick: as heavy as the thinnest strokes of the words, so the dividers compete with what they divide.',
-  habit: 'Draw dividers 0.5px on 2× screens (one device pixel), the thinnest line the screen can show.',
+  habit: 'Draw dividers one device pixel on 2× screens: a box 0.5px tall, or a half-pixel inset shadow. Not a 0.5px border: Chrome draws every border at least one CSS pixel wide.',
 };
 // What the eye sees: the first divider, magnified. The pill is its thickness in device pixels.
 Agenda.measure = (root) => {
   const row = root?.querySelector('[data-row]');
   if (!row) return null;
-  const r = row.getBoundingClientRect(), k = r.width / row.offsetWidth || 1, w = parseFloat(getComputedStyle(row).borderBottomWidth) || 0;
+  const r = row.getBoundingClientRect(), k = r.width / row.offsetWidth || 1, cs = getComputedStyle(row);
+  // the line is the border, or once fixed, the inset shadow drawn in its place
+  const w = parseFloat(cs.borderBottomWidth) || Math.abs(parseFloat(cs.boxShadow.match(/(-?[\d.]+)px\s+0px\s+0px\s+inset/)?.[1] ?? cs.boxShadow.match(/0px\s+(-?[\d.]+)px/)?.[1] ?? 0)) || 0;
   const device = Math.round(w * (devicePixelRatio || 1) * 10) / 10;
   return {
     lines: [], off: device > 1,

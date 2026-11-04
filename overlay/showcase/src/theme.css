@@ -99,10 +99,29 @@
 
 body { background: var(--color-canvas); color: var(--color-ink); font-family: var(--font-sans); -webkit-font-smoothing: antialiased; }
 
-/* a hairline: one device pixel on a 2× screen (#38) */
-@utility border-r-hairline { border-right-width: 0.5px; border-right-style: solid; }
-@utility border-b-hairline { border-bottom-width: 0.5px; border-bottom-style: solid; }
-@utility border-t-hairline { border-top-width: 0.5px; border-top-style: solid; }
+/* a hairline: one device pixel on a 2× screen (#38). Not a border: Chrome rounds a border's width down to whole CSS
+   pixels, never under 1, so a 0.5px border draws two device pixels. A half-pixel inset shadow draws one. Each side sets
+   its own variable, so sides combine; the line takes the line colour (every caller uses border-line). */
+/* the line's width: one device pixel, so a whole CSS pixel below 2×, half of one from 2× up */
+:root { --hl-w: 1px; }
+@media (resolution >= 2dppx) { :root { --hl-w: 0.5px; } }
+@property --hl-t { syntax: "*"; inherits: false; }
+@property --hl-r { syntax: "*"; inherits: false; }
+@property --hl-b { syntax: "*"; inherits: false; }
+@property --hl-l { syntax: "*"; inherits: false; }
+@utility hairline-sides {
+  box-shadow: var(--hl-t, 0 0 #0000), var(--hl-r, 0 0 #0000), var(--hl-b, 0 0 #0000), var(--hl-l, 0 0 #0000);
+}
+/* a hairline drawn as a box (a separator in a toolbar): one device pixel wide or tall */
+@utility w-hairline { width: var(--hl-w); }
+@utility h-hairline { height: var(--hl-w); }
+/* the off switch: a row's last line goes (last:hairline-none), as last:border-0 did */
+@utility hairline-none { --hl-t: 0 0 #0000; --hl-r: 0 0 #0000; --hl-b: 0 0 #0000; --hl-l: 0 0 #0000; }
+@utility border-t-hairline { --hl-t: inset 0 var(--hl-w) 0 var(--color-line); @apply hairline-sides; }
+@utility border-r-hairline { --hl-r: inset calc(-1 * var(--hl-w)) 0 0 var(--color-line); @apply hairline-sides; }
+@utility border-b-hairline { --hl-b: inset 0 calc(-1 * var(--hl-w)) 0 var(--color-line); @apply hairline-sides; }
+@utility border-l-hairline { --hl-l: inset var(--hl-w) 0 0 var(--color-line); @apply hairline-sides; }
+@utility border-y-hairline { --hl-t: inset 0 var(--hl-w) 0 var(--color-line); --hl-b: inset 0 calc(-1 * var(--hl-w)) 0 var(--color-line); @apply hairline-sides; }
 
 /* continuous corners where the browser draws them (#40) */
 @utility corner-squircle { corner-shape: squircle; }
@@ -131,8 +150,8 @@ body { background: var(--color-canvas); color: var(--color-ink); font-family: va
 @utility scrim-eased { background-image: linear-gradient(to bottom, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.05) 20%, rgba(0, 0, 0, 0.2) 45%, rgba(0, 0, 0, 0.45) 70%, rgba(0, 0, 0, 0.75)); }
 /* capitals with digits and dashes (an invoice number): the case feature lifts the dash to their height (#46) */
 @utility case-forms { font-feature-settings: 'case'; }
-@utility divide-y-hairline { & > :not(:last-child) { border-bottom-width: 0.5px; border-bottom-style: solid; } }
+@utility divide-y-hairline { & > :not(:last-child) { box-shadow: inset 0 calc(-1 * var(--hl-w)) 0 var(--color-line); } }
 
 /* the board's dot grid (an example's stage) */
 @utility board { background-color: var(--color-board); background-image: radial-gradient(var(--color-board-dot) 1px, transparent 1px); background-size: 16px 16px; }
-@utility divide-x-hairline { & > :not(:last-child) { border-right-width: 0.5px; border-right-style: solid; } }
+@utility divide-x-hairline { & > :not(:last-child) { box-shadow: inset calc(-1 * var(--hl-w)) 0 0 var(--color-line); } }

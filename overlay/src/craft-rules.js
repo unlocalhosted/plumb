@@ -278,7 +278,8 @@ export const hairline = {
     if ((devicePixelRatio || 1) < T.minDpr) return [];
     const s = facts.style(el), r = facts.rect(el);
     // a divider: a 1px rule (an <hr>, or a box one pixel tall or wide), or a box drawn by one 1px side only
-    const sides = ['Top', 'Right', 'Bottom', 'Left'].filter((k) => s[`border${k}Style`] !== 'none' && Math.abs(px(s[`border${k}Width`]) - 1) < 0.01);
+    // solid only: a dashed or dotted side (a tear line) can't be drawn thinner, a shadow has no dashes
+    const sides = ['Top', 'Right', 'Bottom', 'Left'].filter((k) => s[`border${k}Style`] === 'solid' && Math.abs(px(s[`border${k}Width`]) - 1) < 0.01);
     // exactly one CSS pixel: a rule already drawn at half of one is the fix, not the mistake
     const one = (v) => Math.abs(v - 1) < 0.05;
     const rule = (one(r.height) && r.width > 8) || (one(r.width) && r.height > 8);
@@ -291,9 +292,16 @@ export const hairline = {
       ...say(this.id, { dpr: devicePixelRatio }),
       key: this.id, text, props: oneSide ? [`border-${sides[0].toLowerCase()}-width`] : ['height'], value: '1px', n: 1,
       evidence: { dpr: devicePixelRatio, sides, rule }, confidence: 0.82,
-      // one device pixel: the side's own width class (border-b) becomes half a CSS pixel; a 1px-tall rule, half as tall
+      // one device pixel. A side can't be a thinner border: Chrome rounds a border's width down to whole CSS pixels,
+      // never under 1, so border-b-[0.5px] still draws two. The side becomes an inset shadow 1/dpr tall in the border's
+      // colour, laid over any shadow it had. A 1px-tall rule is a box, and a box can be half as tall.
       suggest: ((side) => oneSide
-        ? { kind: 'class', from: cls && new RegExp(`^border-${side[0].toLowerCase()}(?:-px|-1)?$`).test(cls) ? cls : '', to: `border-${side[0].toLowerCase()}-[0.5px]`, why: 'one device pixel', sets: { [`border${side}Width`]: '0.5px' } }
+        ? ((k, d) => {
+          const w = `${Math.round(1000 / devicePixelRatio) / 1000}px`, c = s[`border${side}Color`];
+          const [x, y] = { Top: ['0', w], Bottom: ['0', `-${w}`], Left: [w, '0'], Right: [`-${w}`, '0'] }[side];
+          const line = `inset ${x} ${y} 0 ${c}`, shadow = s.boxShadow && s.boxShadow !== 'none' ? `${line}, ${s.boxShadow}` : line;
+          return { kind: 'class', from: cls && new RegExp(`^border-${k}(?:-px|-1|-\\[0\\.5px\\])?$`).test(cls) ? cls : '', to: `border-${k}-0 ${arbitrary('shadow', shadow)}`, why: 'one device pixel', sets: { [`border${side}Width`]: '0px', boxShadow: shadow } };
+        })(side[0].toLowerCase())
         : one(r.height) ? { kind: 'class', from: cls && /^h-(px|\[1px\])$/.test(cls) ? cls : '', to: 'h-[0.5px]', why: 'one device pixel', sets: { height: '0.5px' }, moves: true }
           : { kind: 'class', from: cls && /^w-(px|\[1px\])$/.test(cls) ? cls : '', to: 'w-[0.5px]', why: 'one device pixel', sets: { width: '0.5px' }, moves: true })(sides[0]),
     }];

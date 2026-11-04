@@ -632,7 +632,7 @@ function TooltipWarm({ side = 'broken', onStatus }) {
     <article ref={root} onPointerLeave={leave} className="relative w-[30rem] max-w-full rounded-card bg-surface shadow-card">
       <div role="toolbar" aria-label="Formatting" className="flex items-center gap-0.5 border-b-hairline border-line px-3 py-2">
         {TOOLS.map((tool, i) => {
-          if (!tool) return <span key={'sep' + i} className="mx-1.5 h-4 w-px bg-line" />;
+          if (!tool) return <span key={'sep' + i} className="mx-1.5 h-4 w-hairline bg-line" />;
           const [Glyph, label] = tool, at = TOOLS.slice(0, i).filter(Boolean).length;
           return (
             <button key={label} type="button" data-tool aria-label={label} onPointerEnter={() => enter(at)} onPointerLeave={leave}
