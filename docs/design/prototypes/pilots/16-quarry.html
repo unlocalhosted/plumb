@@ -1,0 +1,184 @@
+<!doctype html>
+<!-- COMP, pilot #16 (docs/design/pilots/critique-current.md, docs/craft/taste-checklist.md). Quarry's Today view in its
+     world: the app's sidebar of clients, the week, the running timer, the day drawn as data, today's entries, the
+     total against the day's goal. Slate's tokens (overlay/showcase/src/theme.css). Throwaway: once signed off it's built
+     into the showcase and plumber's mistake (proportional figures) is planted in it. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Quarry · Today (comp)</title>
+<style>
+  :root {
+    --canvas: #f5f7fa; --surface: #fff; --sunken: #f3f5f9; --ink: #12233d; --ink-muted: #5a6779; --ink-subtle: #6f7c90;
+    --line: rgb(18 35 61 / 0.09); --line-strong: rgb(18 35 61 / 0.14); --accent: #5550d8; --accent-soft: #efeefd; --accent-deep: #3631a6;
+    --board: #e9edf2; --board-dot: #d3d9e2;
+    --window: 0 1px 2px rgb(18 35 61 / 0.05), 0 8px 24px rgb(18 35 61 / 0.08), 0 24px 64px rgb(18 35 61 / 0.12);
+    /* each client keeps one colour everywhere: the dot, the block, the bar */
+    --c1: #e2725b; --c2: #3a9d8f; --c3: #c8a23a; --c4: #5d83d6; --c5: #9a6fd0;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 48px; background: var(--board);
+    background-image: radial-gradient(var(--board-dot) 1px, transparent 1px); background-size: 16px 16px;
+    font: 14px/20px Inter, -apple-system, system-ui, sans-serif; color: var(--ink); -webkit-font-smoothing: antialiased; font-feature-settings: "cv11", "ss01"; }
+  .num { font-variant-numeric: tabular-nums; }
+
+  .window { width: 1040px; height: 612px; display: grid; grid-template-columns: 216px 1fr; border-radius: 12px; overflow: hidden; background: var(--surface); box-shadow: var(--window), 0 0 0 0.5px rgb(18 35 61 / 0.18); }
+
+  /* sidebar */
+  .side { background: #f7f8fa; border-right: 0.5px solid var(--line-strong); display: flex; flex-direction: column; padding: 12px 10px; gap: 2px; }
+  .lights { display: flex; gap: 7px; padding: 4px 6px 14px; }
+  .lights i { width: 11px; height: 11px; border-radius: 50%; background: #d9dde3; box-shadow: inset 0 0 0 0.5px rgb(0 0 0 / 0.08); }
+  .brand { display: flex; align-items: center; gap: 8px; padding: 2px 8px 12px; font-weight: 600; font-size: 14px; letter-spacing: -0.01em; }
+  .brand b { width: 22px; height: 22px; border-radius: 6px; background: linear-gradient(145deg, #6c67ea, #4a44c9); display: grid; place-items: center; color: #fff; font-size: 12px; box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.25); }
+  .nav { display: flex; align-items: center; gap: 9px; height: 30px; padding: 0 8px; border-radius: 6px; color: var(--ink-muted); font-size: 13px; }
+  .nav svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 1.5; }
+  .nav.on { background: rgb(18 35 61 / 0.06); color: var(--ink); font-weight: 500; }
+  .nav .n { margin-left: auto; font-size: 12px; color: var(--ink-subtle); }
+  .label { margin: 16px 8px 6px; font-size: 11px; font-weight: 500; color: var(--ink-subtle); }
+  .client { display: flex; align-items: center; gap: 9px; height: 30px; padding: 0 8px; border-radius: 6px; font-size: 13px; color: var(--ink); }
+  .client i { width: 8px; height: 8px; border-radius: 2.5px; }
+  .client .n { margin-left: auto; font-size: 12px; color: var(--ink-subtle); }
+  .client.live .n { color: var(--accent-deep); font-weight: 500; }
+  .me { margin-top: auto; display: flex; align-items: center; gap: 9px; padding: 8px; border-radius: 8px; }
+  .me img { width: 26px; height: 26px; border-radius: 50%; }
+  .me span { display: flex; flex-direction: column; font-size: 12.5px; line-height: 16px; }
+  .me small { color: var(--ink-subtle); font-size: 11.5px; }
+
+  /* main */
+  .main { display: flex; flex-direction: column; min-width: 0; background: var(--surface); }
+  .bar { display: flex; align-items: center; gap: 14px; height: 54px; padding: 0 22px; border-bottom: 0.5px solid var(--line-strong); }
+  .bar h1 { margin: 0; font-size: 15px; font-weight: 600; letter-spacing: -0.01em; }
+  .bar .date { color: var(--ink-subtle); font-size: 13px; }
+  .week { display: flex; gap: 2px; margin-left: 18px; }
+  .day { width: 44px; display: flex; flex-direction: column; align-items: center; gap: 1px; padding: 4px 0 5px; border-radius: 7px; font-size: 11px; color: var(--ink-subtle); }
+  .day b { font-size: 12px; font-weight: 500; color: var(--ink-muted); }
+  .day.on { background: var(--accent-soft); color: var(--accent-deep); }
+  .day.on b { color: var(--accent-deep); }
+  .day.off { opacity: 0.45; }
+  .btn { margin-left: auto; height: 30px; display: inline-flex; align-items: center; gap: 6px; padding: 0 12px; border-radius: 7px; font-size: 13px; font-weight: 500; box-shadow: inset 0 0 0 1px var(--line-strong); color: var(--ink); background: var(--surface); }
+
+  .content { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+  /* the running timer: the one thing that's moving */
+  .running { margin: 16px 22px 0; display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 16px; padding: 16px 18px; border-radius: 12px;
+    background: linear-gradient(180deg, #f6f5ff, #f1f0fe); box-shadow: inset 0 0 0 1px rgb(85 80 216 / 0.14); }
+  .mark { width: 42px; height: 42px; border-radius: 10px; display: grid; place-items: center; color: #fff; font-size: 13px; font-weight: 600; letter-spacing: 0.02em; box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.2); }
+  .what { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .what .t { font-size: 15px; font-weight: 600; letter-spacing: -0.01em; }
+  .what .c { font-size: 13px; color: var(--ink-muted); }
+  .what .c .rec { display: inline-flex; align-items: center; gap: 5px; color: var(--accent-deep); font-weight: 500; margin-right: 8px; }
+  .what .c .rec i { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); animation: pulse 1.6s ease-in-out infinite; }
+  @keyframes pulse { 50% { opacity: 0.35; } }
+  .clock { display: flex; align-items: center; gap: 18px; }
+  .clock .time { display: flex; flex-direction: column; align-items: flex-end; }
+  .clock .big { font-size: 34px; line-height: 38px; font-weight: 500; letter-spacing: -0.03em; }
+  .clock .money { font-size: 12.5px; color: var(--ink-muted); }
+  .stop { width: 42px; height: 42px; border-radius: 50%; background: var(--ink); display: grid; place-items: center; box-shadow: 0 1px 2px rgb(18 35 61 / 0.2), inset 0 1px 0 rgb(255 255 255 / 0.12); }
+  .stop i { width: 12px; height: 12px; border-radius: 2.5px; background: #fff; }
+
+  /* the day, drawn: blocks by client, the gaps, now */
+  .dayline { margin: 18px 22px 0; }
+  .dayline .head { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-subtle); margin-bottom: 8px; }
+  .track { position: relative; height: 34px; border-radius: 8px; background: repeating-linear-gradient(90deg, transparent 0 calc(10% - 1px), rgb(18 35 61 / 0.05) calc(10% - 1px) 10%), var(--sunken); }
+  .blk { position: absolute; top: 5px; bottom: 5px; border-radius: 5px; }
+  .blk.live { background-image: repeating-linear-gradient(-45deg, rgb(255 255 255 / 0.32) 0 5px, transparent 5px 10px); background-size: 14px 14px; animation: crawl 1.2s linear infinite; box-shadow: 0 0 0 2px rgb(226 114 91 / 0.25); }
+  @keyframes crawl { to { background-position: 14px 0; } }
+  .row.gap { height: 36px; grid-template-columns: 4px 1fr auto; color: var(--ink-subtle); font-size: 12.5px; }
+  .row.gap .bar2 { height: 18px; background: repeating-linear-gradient(180deg, #cfd5de 0 3px, transparent 3px 6px); }
+  .row.gap .add { font-weight: 500; color: var(--accent); }
+  .now { position: absolute; top: -3px; bottom: -3px; width: 2px; border-radius: 1px; background: var(--ink); }
+  .now::after { content: '14:42'; position: absolute; top: -17px; left: 50%; transform: translateX(-50%); font-size: 10.5px; font-weight: 600; color: var(--ink); font-variant-numeric: tabular-nums; }
+  .hours { display: flex; justify-content: space-between; font-size: 10.5px; color: var(--ink-subtle); margin-top: 5px; font-variant-numeric: tabular-nums; }
+
+  /* today's entries */
+  .list { margin: 14px 22px 0; }
+  .row { display: grid; grid-template-columns: 4px 1fr auto auto; align-items: center; gap: 14px; height: 50px; border-bottom: 0.5px solid var(--line); }
+  .row .bar2 { width: 4px; height: 26px; border-radius: 2px; }
+  .row .w { display: flex; flex-direction: column; min-width: 0; }
+  .row .w b { font-weight: 500; font-size: 13.5px; }
+  .row .w span { font-size: 12.5px; color: var(--ink-muted); }
+  .row .span { font-size: 12.5px; color: var(--ink-subtle); }
+  .row .d { display: flex; flex-direction: column; align-items: flex-end; width: 78px; }
+  .row .d b { font-weight: 500; font-size: 13.5px; }
+  .row .d span { font-size: 12px; color: var(--ink-subtle); }
+  .foot { display: flex; align-items: center; gap: 14px; margin: auto 22px 0; padding: 14px 0 18px; border-top: 0.5px solid var(--line-strong); }
+  .ring { width: 34px; height: 34px; }
+  .foot .t { display: flex; flex-direction: column; }
+  .foot .t b { font-size: 13px; font-weight: 500; }
+  .foot .t span { font-size: 12px; color: var(--ink-subtle); }
+  .foot .sum { margin-left: auto; display: flex; flex-direction: column; align-items: flex-end; }
+  .foot .sum b { font-size: 20px; font-weight: 500; letter-spacing: -0.02em; }
+  .foot .sum span { font-size: 12.5px; color: var(--ink-muted); }
+</style>
+</head>
+<body>
+<div class="window">
+  <aside class="side">
+    <div class="lights"><i></i><i></i><i></i></div>
+    <div class="brand"><b>Q</b>Quarry</div>
+    <div class="nav on"><svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"/><path d="M8 4.8V8l2.2 1.4"/></svg>Today</div>
+    <div class="nav"><svg viewBox="0 0 16 16"><rect x="2" y="3" width="12" height="11" rx="2"/><path d="M2 6.5h12M5.5 1.8v2.4M10.5 1.8v2.4"/></svg>This week<span class="n num">31h</span></div>
+    <div class="nav"><svg viewBox="0 0 16 16"><path d="M3 13V8M8 13V3M13 13V6"/></svg>Reports</div>
+    <div class="nav"><svg viewBox="0 0 16 16"><path d="M4 2h6l3 3v9H4z"/><path d="M6.5 8.5h4M6.5 11h4"/></svg>Invoices<span class="n num">2</span></div>
+    <div class="label">Clients today</div>
+    <div class="client live"><i style="background:var(--c1)"></i>Marlow Joinery<span class="n num">1:42</span></div>
+    <div class="client"><i style="background:var(--c2)"></i>Brightwater Vets<span class="n num">2:06</span></div>
+    <div class="client"><i style="background:var(--c3)"></i>Halden &amp; Co.<span class="n num">1:11</span></div>
+    <div class="client"><i style="background:var(--c4)"></i>Northfield Dental<span class="n num">0:48</span></div>
+    <div class="client"><i style="background:var(--c5)"></i>Okafor Landscape<span class="n num">0:19</span></div>
+    <div class="me"><img src="../../../../overlay/showcase/src/media/people/person-05.jpg" alt=""><span>Nadia Ferreira<small>Studio Ferreira</small></span></div>
+  </aside>
+
+  <main class="main">
+    <div class="bar">
+      <h1>Today</h1><span class="date">Thursday, 6 November</span>
+      <div class="week num">
+        <div class="day"><b>Mon</b>7:12</div><div class="day"><b>Tue</b>6:48</div><div class="day"><b>Wed</b>7:30</div>
+        <div class="day on"><b>Thu</b>6:08</div><div class="day off"><b>Fri</b>–</div>
+      </div>
+      <span class="btn">+ New entry</span>
+    </div>
+
+    <div class="content">
+      <section class="running">
+        <span class="mark" style="background:var(--c1)">MJ</span>
+        <span class="what"><span class="t">Moodboard review</span><span class="c"><span class="rec"><i></i>Tracking</span>Marlow Joinery · Showroom launch</span></span>
+        <span class="clock"><span class="time"><span class="big num" id="clock">1:42:37</span><span class="money num" id="money">$247.99 at $145/h</span></span><span class="stop"><i></i></span></span>
+      </section>
+
+      <section class="dayline">
+        <div class="head"><span>Your day</span><span class="num">6h 08m tracked · 1h 20m of gaps</span></div>
+        <div class="track">
+          <span class="blk" style="left:9%;width:21%;background:var(--c2)"></span>
+          <span class="blk" style="left:31%;width:11.8%;background:var(--c3)"></span>
+          <span class="blk" style="left:46%;width:8%;background:var(--c4)"></span>
+          <span class="blk" style="left:55%;width:3.3%;background:var(--c5)"></span>
+          <span class="blk live" style="left:60%;width:6.7%;background:var(--c1)"></span>
+          <span class="now" style="left:66.7%"></span>
+        </div>
+        <div class="hours"><span>8:00</span><span>10:00</span><span>12:00</span><span>14:00</span><span>16:00</span><span>18:00</span></div>
+      </section>
+
+      <section class="list">
+        <div class="row"><span class="bar2" style="background:var(--c2)"></span><span class="w"><b>Wireframes, checkout</b><span>Brightwater Vets</span></span><span class="span num">8:54 – 11:00</span><span class="d"><b class="num">2:06:18</b><span class="num">$273.65</span></span></div>
+        <div class="row"><span class="bar2" style="background:var(--c3)"></span><span class="w"><b>Logo exploration</b><span>Halden &amp; Co.</span></span><span class="span num">11:06 – 12:17</span><span class="d"><b class="num">1:11:40</b><span class="num">$173.19</span></span></div>
+        <div class="row gap"><span class="bar2"></span><span class="num">Untracked · 12:17 – 12:36 · 19m</span><span class="add">Add entry</span></div>
+        <div class="row"><span class="bar2" style="background:var(--c4)"></span><span class="w"><b>Kickoff call</b><span>Northfield Dental</span></span><span class="span num">12:36 – 13:24</span><span class="d"><b class="num">0:48:05</b><span class="num">$96.17</span></span></div>
+        <div class="row"><span class="bar2" style="background:var(--c5)"></span><span class="w"><b>Invoice review</b><span>Okafor Landscape</span></span><span class="span num">13:30 – 13:50</span><span class="d"><b class="num">0:19:52</b><span class="num">$31.46</span></span></div>
+      </section>
+      <div class="foot">
+        <svg class="ring" viewBox="0 0 34 34"><circle cx="17" cy="17" r="14" fill="none" stroke="#e7eaf0" stroke-width="4"/><circle cx="17" cy="17" r="14" fill="none" stroke="var(--accent)" stroke-width="4" stroke-linecap="round" stroke-dasharray="88" stroke-dashoffset="20" transform="rotate(-90 17 17)"/></svg>
+        <span class="t"><b>6h 08m of 7h</b><span>52 minutes to today’s goal</span></span>
+        <span class="sum"><b class="num">6:08:32</b><span class="num">$822.46 today</span></span>
+      </div>
+    </div>
+  </main>
+</div>
+<script>
+// the timer runs
+let s = 1 * 3600 + 42 * 60 + 37;
+setInterval(() => { s++; const h = Math.floor(s / 3600), m = String(Math.floor(s / 60) % 60).padStart(2, '0'), x = String(s % 60).padStart(2, '0');
+  document.getElementById('clock').textContent = `${h}:${m}:${x}`; document.getElementById('money').textContent = `$${(s / 3600 * 145).toFixed(2)} at $145/h`; }, 1000);
+</script>
+</body>
+</html>

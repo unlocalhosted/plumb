@@ -19,3 +19,4 @@ dist/
 **/.plumb/cache/
 
 /overlay/showcase/.probe-cache/
+/docs/design/references/

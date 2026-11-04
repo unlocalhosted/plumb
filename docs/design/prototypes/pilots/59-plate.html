@@ -1,0 +1,176 @@
+<!doctype html>
+<!-- COMP, pilot #59 (docs/design/pilots/critique-current.md). Plate, a design tool, mid-work: the toolbar and who's in
+     the file, pages and a layer tree with type icons, an artboard with a real hero being designed and its selection
+     drawn on the canvas and in the tree, properties on the right. The context menu on the selected layer, Arrange's
+     submenu open, is the subject. Throwaway: once signed off it's built into the showcase and probed as now. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Plate · Spring launch (comp)</title>
+<style>
+  :root {
+    --ink: #12233d; --ink-muted: #5a6779; --ink-subtle: #7b8698; --line: rgb(18 35 61 / 0.09); --line-strong: rgb(18 35 61 / 0.14);
+    --panel: #fbfbfc; --canvas: #eceef2; --sel: #2f6bff; --sel-soft: rgb(47 107 255 / 0.1);
+    --board: #e9edf2; --board-dot: #d3d9e2;
+    --menu: 0 0 0 0.5px rgb(18 35 61 / 0.14), 0 4px 10px rgb(18 35 61 / 0.08), 0 14px 36px rgb(18 35 61 / 0.16);
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 48px; background: var(--board);
+    background-image: radial-gradient(var(--board-dot) 1px, transparent 1px); background-size: 16px 16px;
+    font: 13px/18px Inter, -apple-system, system-ui, sans-serif; color: var(--ink); -webkit-font-smoothing: antialiased; }
+  .window { position: relative; width: 1080px; height: 640px; display: grid; grid-template-rows: 44px 1fr; border-radius: 12px; overflow: hidden; background: var(--panel);
+    box-shadow: 0 1px 2px rgb(18 35 61 / 0.05), 0 8px 24px rgb(18 35 61 / 0.08), 0 24px 64px rgb(18 35 61 / 0.12), 0 0 0 0.5px rgb(18 35 61 / 0.18); }
+  svg.i { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; }
+
+  /* toolbar */
+  .top { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; padding: 0 12px; border-bottom: 0.5px solid var(--line-strong); background: #fff; }
+  .left { display: flex; align-items: center; gap: 4px; }
+  .lights { display: flex; gap: 7px; margin-right: 14px; }
+  .lights i { width: 11px; height: 11px; border-radius: 50%; background: #d9dde3; }
+  .tool { width: 30px; height: 30px; border-radius: 7px; display: grid; place-items: center; color: var(--ink-muted); }
+  .tool.on { background: var(--sel); color: #fff; }
+  .file { font-size: 13px; color: var(--ink-subtle); } .file b { color: var(--ink); font-weight: 500; }
+  .right { display: flex; align-items: center; gap: 10px; justify-content: flex-end; }
+  .faces { display: flex; } .faces img { width: 24px; height: 24px; border-radius: 50%; box-shadow: 0 0 0 2px #fff; margin-left: -6px; }
+  .faces img:first-child { box-shadow: 0 0 0 2px #fff, 0 0 0 3.5px #e2725b; }
+  .share { height: 28px; padding: 0 12px; border-radius: 7px; background: var(--sel); color: #fff; font-weight: 500; display: grid; place-items: center; }
+  .zoom { font-size: 12px; color: var(--ink-muted); font-variant-numeric: tabular-nums; }
+
+  .body { display: grid; grid-template-columns: 236px 1fr 236px; min-height: 0; }
+  .panel { background: #fff; display: flex; flex-direction: column; min-height: 0; }
+  .panel.l { border-right: 0.5px solid var(--line-strong); }
+  .panel.r { border-left: 0.5px solid var(--line-strong); }
+  .sec { padding: 10px 10px 6px; }
+  .h { display: flex; justify-content: space-between; align-items: center; padding: 2px 6px 6px; font-size: 11.5px; font-weight: 600; color: var(--ink); }
+  .h span { font-weight: 400; color: var(--ink-subtle); }
+  .page { height: 26px; display: flex; align-items: center; gap: 8px; padding: 0 6px; border-radius: 6px; color: var(--ink-muted); }
+  .page.on { background: rgb(18 35 61 / 0.05); color: var(--ink); font-weight: 500; }
+  .tree .n { height: 26px; display: flex; align-items: center; gap: 7px; border-radius: 6px; color: var(--ink); padding-right: 6px; }
+  .tree .n .c { width: 12px; color: var(--ink-subtle); font-size: 9px; text-align: center; }
+  .tree .n svg.i { width: 14px; height: 14px; color: var(--ink-subtle); }
+  .tree .n.sel { background: var(--sel-soft); color: #1f4fd8; } .tree .n.sel svg.i { color: var(--sel); }
+  .tree .n.hot { background: var(--sel); color: #fff; } .tree .n.hot svg.i { color: #fff; }
+  .tree .n .act { margin-left: auto; display: flex; gap: 6px; color: rgb(255 255 255 / 0.8); }
+
+  /* canvas */
+  .canvas { position: relative; background: var(--canvas); overflow: hidden; }
+  .frame-label { position: absolute; left: 196px; top: 26px; font-size: 11.5px; color: var(--ink-subtle); }
+  .artboard { position: absolute; left: 196px; top: 44px; width: 384px; height: 500px; background: #fff; box-shadow: 0 1px 3px rgb(18 35 61 / 0.08); overflow: hidden; }
+  .hero-nav { display: flex; align-items: center; justify-content: space-between; padding: 18px 22px; font-size: 11px; color: #3b4a5c; }
+  .hero-nav b { font-size: 13px; color: #10241f; letter-spacing: -0.01em; }
+  .card { position: absolute; left: 112px; top: 70px; width: 250px; border-radius: 16px; background: #10241f; color: #eef4ef; overflow: hidden; box-shadow: 0 10px 30px rgb(16 36 31 / 0.25); }
+  .card img { display: block; width: 100%; height: 150px; object-fit: cover; }
+  .card .tx { padding: 16px 18px 18px; display: flex; flex-direction: column; gap: 8px; }
+  .card .k { font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: #9ec3b2; }
+  .card h2 { margin: 0; font-size: 22px; line-height: 26px; letter-spacing: -0.02em; font-weight: 600; }
+  .card p { margin: 0; font-size: 11.5px; line-height: 17px; color: #bcd2c6; }
+  .card .cta { align-self: flex-start; margin-top: 4px; padding: 7px 12px; border-radius: 999px; background: #e6f2a2; color: #10241f; font-size: 11px; font-weight: 600; }
+  /* the selection on the canvas, in the tree's colour */
+  .selbox { position: absolute; border: 1.5px solid var(--sel); pointer-events: none; }
+  .selbox i { position: absolute; width: 8px; height: 8px; background: #fff; border: 1.5px solid var(--sel); border-radius: 2px; }
+  .selbox .dim { position: absolute; left: 50%; bottom: -24px; transform: translateX(-50%); background: var(--sel); color: #fff; font-size: 10.5px; padding: 1px 6px; border-radius: 4px; font-variant-numeric: tabular-nums; }
+
+  /* properties */
+  .prop { padding: 12px 14px; border-bottom: 0.5px solid var(--line); }
+  .prop .t { font-size: 11.5px; font-weight: 600; margin-bottom: 8px; display: flex; justify-content: space-between; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .f { height: 26px; display: flex; align-items: center; gap: 8px; padding: 0 8px; border-radius: 6px; background: #f3f5f8; font-size: 12px; font-variant-numeric: tabular-nums; }
+  .f span { color: var(--ink-subtle); width: 10px; }
+  .sw { width: 14px; height: 14px; border-radius: 3px; box-shadow: inset 0 0 0 0.5px rgb(0 0 0 / 0.2); }
+
+  /* the context menu: the subject */
+  .menu, .sub { position: absolute; z-index: 5; width: 216px; padding: 5px; border-radius: 10px; background: #fff; box-shadow: var(--menu); }
+  .menu { left: 168px; top: 218px; }
+  .sub { left: 378px; top: 352px; width: 176px; }
+  .it { height: 28px; display: flex; align-items: center; justify-content: space-between; padding: 0 9px 0 10px; border-radius: 6px; font-size: 13px; }
+  .it kbd { font: 11.5px -apple-system, system-ui, sans-serif; color: var(--ink-subtle); letter-spacing: 0.02em; }
+  .it.hot { background: var(--sel); color: #fff; } .it.hot kbd, .it.hot .chev { color: rgb(255 255 255 / 0.85); }
+  .it .chev { color: var(--ink-subtle); font-size: 10px; }
+  .sep { height: 0.5px; margin: 5px 8px; background: var(--line-strong); }
+</style>
+</head>
+<body>
+<div class="window">
+  <header class="top">
+    <div class="left">
+      <div class="lights"><i></i><i></i><i></i></div>
+      <span class="tool on"><svg class="i" viewBox="0 0 16 16"><path d="M4 2.5 12 8l-3.6.7L10.6 13l-1.5.7-2.2-4.3L4 12z" fill="currentColor"/></svg></span>
+      <span class="tool"><svg class="i" viewBox="0 0 16 16"><path d="M5 2v12M11 2v12M2 5h12M2 11h12"/></svg></span>
+      <span class="tool"><svg class="i" viewBox="0 0 16 16"><rect x="2.5" y="2.5" width="11" height="11" rx="1.5"/></svg></span>
+      <span class="tool"><svg class="i" viewBox="0 0 16 16"><path d="M8 13.5 3 4.5h10z"/></svg></span>
+      <span class="tool"><svg class="i" viewBox="0 0 16 16"><path d="M3 4V2.5h10V4M8 2.5v11M6 13.5h4"/></svg></span>
+      <span class="tool"><svg class="i" viewBox="0 0 16 16"><path d="M3 13l2-5 6-6 3 3-6 6z"/></svg></span>
+    </div>
+    <div class="file">Spring launch / <b>Hero</b></div>
+    <div class="right">
+      <span class="faces"><img src="../../../../overlay/showcase/src/media/people/person-07.jpg" alt=""><img src="../../../../overlay/showcase/src/media/people/person-02.jpg" alt=""><img src="../../../../overlay/showcase/src/media/people/person-09.jpg" alt=""></span>
+      <span class="share">Share</span>
+      <span class="zoom">100%</span>
+    </div>
+  </header>
+  <div class="body">
+    <aside class="panel l">
+      <div class="sec">
+        <div class="h">Pages <span>3</span></div>
+        <div class="page on">Hero</div><div class="page">Pricing</div><div class="page">Launch email</div>
+      </div>
+      <div class="sec tree" style="border-top:0.5px solid var(--line)">
+        <div class="h">Layers</div>
+        <div class="n"><span class="c">▾</span><svg class="i" viewBox="0 0 16 16"><path d="M5 2v12M11 2v12M2 5h12M2 11h12"/></svg>Hero, desktop</div>
+        <div class="n" style="padding-left:14px"><span class="c"></span><svg class="i" viewBox="0 0 16 16"><path d="M3 4h10M3 8h10M3 12h6"/></svg>Nav</div>
+        <div class="n hot" style="padding-left:14px"><span class="c">▾</span><svg class="i" viewBox="0 0 16 16"><rect x="2.5" y="3" width="11" height="10" rx="2"/></svg>Story card<span class="act"><svg class="i" viewBox="0 0 16 16"><path d="M1.5 8s2.5-4.5 6.5-4.5S14.5 8 14.5 8 12 12.5 8 12.5 1.5 8 1.5 8z"/><circle cx="8" cy="8" r="1.8"/></svg></span></div>
+        <div class="n" style="padding-left:28px"><span class="c"></span><svg class="i" viewBox="0 0 16 16"><rect x="2.5" y="3" width="11" height="10" rx="1.5"/><path d="m3 11 3-3 2.5 2.5 2-2 2.5 2.5"/></svg>Lake at dawn</div>
+        <div class="n" style="padding-left:28px"><span class="c"></span><svg class="i" viewBox="0 0 16 16"><path d="M3 4V2.5h10V4M8 2.5v11M6 13.5h4"/></svg>Kicker</div>
+        <div class="n" style="padding-left:28px"><span class="c"></span><svg class="i" viewBox="0 0 16 16"><path d="M3 4V2.5h10V4M8 2.5v11M6 13.5h4"/></svg>Headline</div>
+        <div class="n" style="padding-left:28px"><span class="c"></span><svg class="i" viewBox="0 0 16 16"><path d="M3 4V2.5h10V4M8 2.5v11M6 13.5h4"/></svg>Body</div>
+        <div class="n" style="padding-left:28px"><span class="c"></span><svg class="i" viewBox="0 0 16 16"><rect x="2" y="5" width="12" height="6" rx="3"/></svg>Book a stay</div>
+        <div class="n" style="padding-left:14px"><span class="c"></span><svg class="i" viewBox="0 0 16 16"><rect x="2.5" y="2.5" width="11" height="11" rx="1.5"/></svg>Background</div>
+      </div>
+    </aside>
+
+    <section class="canvas">
+      <span class="frame-label">Hero, desktop</span>
+      <div class="artboard">
+        <div class="hero-nav"><b>Stillwater</b><span>Cabins · Trails · Journal</span></div>
+        <div class="card" id="card">
+          <img src="../../../../overlay/showcase/src/media/lake.jpg" alt="">
+          <div class="tx"><span class="k">New this spring</span><h2>Wake up where the lake does</h2><p>Six cabins on the north shore, a short walk from the water. Bring a book; leave the car.</p><span class="cta">Book a stay</span></div>
+        </div>
+      </div>
+      <div class="selbox" id="sel"><i style="left:-5px;top:-5px"></i><i style="right:-5px;top:-5px"></i><i style="left:-5px;bottom:-5px"></i><i style="right:-5px;bottom:-5px"></i><span class="dim" id="dim"></span></div>
+    </section>
+
+    <aside class="panel r">
+      <div class="prop"><div class="t">Story card<span style="color:var(--ink-subtle);font-weight:400">Frame</span></div>
+        <div class="grid2"><span class="f"><span>X</span>112</span><span class="f"><span>Y</span>70</span><span class="f"><span>W</span>250</span><span class="f" id="h"><span>H</span>352</span></div></div>
+      <div class="prop"><div class="t">Corners</div><div class="grid2"><span class="f"><span>R</span>16</span><span class="f">Smooth</span></div></div>
+      <div class="prop"><div class="t">Fill</div><span class="f"><i class="sw" style="background:#10241f"></i>10241F<span style="margin-left:auto;width:auto">100%</span></span></div>
+      <div class="prop"><div class="t">Shadow</div><span class="f"><i class="sw" style="background:#10241f;opacity:.25"></i>0 · 10 · 30<span style="margin-left:auto;width:auto">25%</span></span></div>
+    </aside>
+  </div>
+
+  <!-- the context menu on Story card, Arrange open -->
+  <div class="menu">
+    <div class="it">Copy<kbd>⌘C</kbd></div><div class="it">Paste here<kbd>⌘V</kbd></div><div class="it">Duplicate<kbd>⌘D</kbd></div>
+    <div class="sep"></div>
+    <div class="it">Group selection<kbd>⌘G</kbd></div>
+    <div class="it hot">Arrange<span class="chev">▸</span></div>
+    <div class="it">Hide<kbd>⇧⌘H</kbd></div><div class="it">Lock<kbd>⇧⌘L</kbd></div>
+    <div class="sep"></div>
+    <div class="it">Delete<kbd>⌫</kbd></div>
+  </div>
+  <div class="sub">
+    <div class="it">Bring to front<kbd>⇧⌘]</kbd></div><div class="it">Bring forward<kbd>⌘]</kbd></div>
+    <div class="it">Send backward<kbd>⌘[</kbd></div><div class="it">Send to back<kbd>⇧⌘[</kbd></div>
+  </div>
+</div>
+<script>
+// the selection follows the card it selects
+const c = document.getElementById('card'), v = c.closest('.canvas').getBoundingClientRect(), r = c.getBoundingClientRect(), sel = document.getElementById('sel');
+Object.assign(sel.style, { left: `${r.left - v.left - 1}px`, top: `${r.top - v.top - 1}px`, width: `${r.width + 2}px`, height: `${r.height + 2}px` });
+document.getElementById('dim').textContent = `${Math.round(r.width)} × ${Math.round(r.height)}`;
+document.getElementById('h').lastChild.textContent = Math.round(r.height);
+</script>
+</body>
+</html>
