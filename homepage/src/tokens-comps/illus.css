@@ -1,0 +1,84 @@
+/* "Save tokens on iteration" as illustration, in the signed-off foundations. Line drawings: the prompt in quiet ink,
+ * the page in the on signal; keys drawn as the page draws keycaps. */
+.i-comp { padding-bottom: var(--s-9); }
+.i-art { margin: var(--s-8) 0 0; }
+.i-svg { display: block; width: 100%; height: auto; overflow: visible; font-family: var(--font); }
+.i-split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--s-8); align-items: center; }
+.i-split .i-art { margin: 0; }
+
+/* A · two routes */
+.i-route-long { fill: none; stroke: var(--ink-3); stroke-width: 1.5; stroke-dasharray: 2 6; stroke-linecap: round; }
+.i-route-short { fill: none; stroke: var(--on); stroke-width: 2; }
+.i-stop circle { fill: var(--g0); stroke: var(--ink-3); stroke-width: 1.5; }
+.i-stop text, .i-node text { font-size: 13px; fill: var(--ink-2); }
+.i-stop-you circle { fill: var(--accent); stroke: none; }
+.i-stop-you text { fill: var(--accent-ink); }
+.i-key rect { fill: var(--g1); stroke: rgb(from var(--on) r g b / 0.6); stroke-width: 1; }
+.i-key text { font: 500 12px/1 var(--mono); fill: var(--ink-1); }
+.i-end circle { fill: var(--g0); stroke: var(--ink-1); stroke-width: 2; }
+.i-end-done circle { fill: var(--on); stroke: none; }
+.i-end text { font: 510 14px/1 var(--font); fill: var(--ink-1); }
+.i-legend { display: flex; gap: var(--s-6); justify-content: center; margin-top: var(--s-5); font: var(--t-small); font-size: 13px; color: var(--ink-3); }
+.i-legend span { display: inline-flex; gap: 8px; align-items: center; }
+.i-legend i { width: 24px; height: 0; }
+.i-sw-long { border-top: 1.5px dashed var(--ink-3); }
+.i-sw-short { border-top: 2px solid var(--on); }
+
+/* B · the context */
+.i-ctx { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s-5); }
+.i-ctx-col { display: grid; gap: 10px; }
+.i-ctx-name { margin: 0; font: var(--t-label); font-size: 13px; color: var(--ink-2); }
+.i-ctx-box { display: flex; flex-direction: column-reverse; gap: 3px; height: 340px; padding: 6px; border-radius: var(--r-md); background: var(--g1); box-shadow: inset 0 0 0 1px var(--line); }
+.i-blk { display: flex; align-items: flex-start; height: var(--h); padding: 6px 8px; border-radius: 6px; background: var(--g3); font: 400 11px/1.2 var(--mono); color: var(--ink-2); }
+.i-blk-file { background: repeating-linear-gradient(0deg, var(--g2) 0 6px, var(--g3) 6px 7px); }
+.i-ctx-empty { flex-direction: column; justify-content: center; align-items: center; gap: 10px; }
+.i-ctx-empty small { font: 400 12px/1 var(--mono); color: var(--ink-3); }
+.i-ctx-foot { margin: 0; font: 400 12px/1.4 var(--font); color: var(--ink-3); }
+
+/* C · the loop */
+.i-loop .i-svg { max-width: 30rem; margin: 0 auto; }
+.i-ring { fill: none; stroke: var(--line-2); stroke-width: 1; }
+.i-ring-run { fill: none; stroke: var(--ink-3); stroke-width: 1.5; stroke-dasharray: 2 6; stroke-linecap: round; }
+.i-ring-run-2 { opacity: 0.55; }
+.i-node circle { fill: var(--g0); stroke: var(--ink-2); stroke-width: 1.5; }
+.i-chord { stroke: var(--on); stroke-width: 2; }
+.i-round { font: 400 12px/1 var(--font); fill: var(--ink-3); }
+
+@media (max-width: 64rem) { .i-split, .i-ctx { grid-template-columns: 1fr; } }
+
+/* ── motion (animate.js): runners, trails, stops lighting as they're reached ── */
+.i-trail { fill: none; stroke: var(--ink-2); stroke-width: 1.5; opacity: 0.55; }
+.i-runner-long { fill: var(--ink-1); }
+.i-runner-short { fill: var(--on); filter: drop-shadow(0 0 6px rgb(from var(--on) r g b / 0.8)); }
+.i-runner.home { opacity: 0; transition: opacity 300ms ease; }
+.i-stop circle, .i-node circle { transition: fill 200ms ease, stroke 200ms ease; }
+.i-stop text, .i-node text { transition: fill 200ms ease, opacity 200ms ease; }
+.i-stop:not(.lit) text { opacity: 0.45; }
+.i-stop.lit circle { fill: var(--ink-2); stroke: var(--ink-2); }
+.i-stop-you:not(.lit) circle { fill: rgb(from var(--accent) r g b / 0.3); }
+.i-stop-you.lit circle { fill: var(--accent); }
+.i-key rect { transition: fill 200ms ease, stroke 200ms ease; }
+.i-key:not(.on) rect { stroke: var(--line-2); }
+.i-key.on rect { fill: var(--on-soft); stroke: var(--on); }
+.i-key.on { animation: i-tap 260ms cubic-bezier(0.25, 1, 0.5, 1); transform-box: fill-box; transform-origin: center; }
+@keyframes i-tap { 40% { transform: translateY(1.5px) scale(0.96); } }
+.i-end-done:not(.arrived) circle { fill: var(--g0); stroke: var(--ink-3); stroke-width: 2; }
+.i-end-done.arrived circle { animation: i-arrive 600ms cubic-bezier(0.25, 1, 0.5, 1); transform-box: fill-box; transform-origin: center; }
+@keyframes i-arrive { 30% { transform: scale(1.5); } }
+.i-node.lit circle { fill: var(--ink-3); }
+.i-node.twice circle { fill: var(--ink-2); }
+.i-round { opacity: 0; transition: opacity 300ms ease; }
+.i-round.on { opacity: 1; }
+.i-blk { opacity: 0; transform: scaleY(0.4); transform-origin: bottom; transition: opacity 300ms ease, transform 450ms cubic-bezier(0.25, 1, 0.5, 1); }
+.i-blk.on { opacity: 1; transform: none; }
+.i-ctx-keys { display: flex; gap: 6px; }
+.i-ctx-keys kbd { display: inline-grid; place-items: center; height: 24px; padding: 0 8px; border-radius: 6px; background: var(--g2); box-shadow: inset 0 0 0 1px var(--line-2), 0 1px 0 var(--line-2);
+  font: 500 11px/1 var(--mono); color: var(--ink-3); transition: background-color 150ms ease, color 150ms ease, translate 120ms ease; }
+.i-ctx-keys kbd.done { color: var(--ink-1); }
+.i-ctx-keys kbd.tap { background: var(--on-soft); color: var(--on); translate: 0 1px; }
+.i-ctx-empty .chip { opacity: 0.35; transition: opacity 300ms ease; }
+.i-ctx-empty .chip.lit { opacity: 1; }
+@media (prefers-reduced-motion: reduce) {
+  .i-key.on, .i-end-done.arrived circle { animation: none; }
+  .i-blk, .i-ctx-keys kbd, .i-round, .i-runner.home { transition: none; }
+}

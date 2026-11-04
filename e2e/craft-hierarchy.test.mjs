@@ -76,8 +76,8 @@ export function App() {
         <div><button id="off-ok" disabled className="rounded-control bg-ground px-s4 py-s2 text-body text-ink-muted">Pay now</button></div>
         <p id="path" className="w-40 truncate text-body">src/components/forms/inputs/TextField.tsx</p>
         <p id="sentence" className="w-40 truncate text-body">A sentence far too long for its box</p>
-        <div><button id="pair" className="flex items-center gap-s2 rounded-control bg-surface px-s3 py-s3 text-body"><svg width="16" height="16" aria-hidden="true"><circle cx="8" cy="8" r="6" /></svg>Save</button></div>
-        <div><button id="pair-ok" className="flex items-center gap-s2 rounded-control bg-surface pl-s4 pr-s6 py-s3 text-body"><svg width="16" height="16" aria-hidden="true"><circle cx="8" cy="8" r="6" /></svg>Save</button></div>
+        <div><button id="pair" className="inline-flex items-center gap-s2 rounded-control bg-surface px-s3 py-s3 text-body"><svg width="16" height="16" aria-hidden="true"><circle cx="8" cy="8" r="6" /></svg>Save</button></div>
+        <div><button id="pair-ok" className="inline-flex items-center gap-s2 rounded-control bg-surface pl-s4 pr-s6 py-s3 text-body"><svg width="16" height="16" aria-hidden="true"><circle cx="8" cy="8" r="6" /></svg>Save</button></div>
         <div id="rows" className="flex flex-col items-start gap-s2">{['a', 'b', 'c'].map((n) => <button key={n} className="rounded-control bg-surface px-s2 py-s2 text-body">Go {n}</button>)}</div>
       </div>
     </main>
@@ -161,7 +161,7 @@ test('Padding pair: square padding on an icon button is one mark whose one edit 
   const source = join(root, 'src/App.jsx');
   const line = async () => (await readFile(source, 'utf8')).split('\n').find((l) => l.includes('id="pair"'));
   for (let i = 0; i < 100 && !/pl-s4 pr-s6/.test(await line()); i++) await page.waitForTimeout(100);
-  assert.match(await line(), /className="flex items-center gap-s2 rounded-control bg-surface pl-s4 pr-s6 py-s3 text-body"/);
+  assert.match(await line(), /className="inline-flex items-center gap-s2 rounded-control bg-surface pl-s4 pr-s6 py-s3 text-body"/);
   // the page as written: neither rule has anything left to say about the button
   await page.reload();
   await page.waitForFunction(() => window.__plumb?.overlay);

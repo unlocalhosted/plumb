@@ -6,10 +6,13 @@
  * without a person and left as it was found; this module only waits for the reader to run dry, then asks where in
  * the source each craft finding lives.
  *
- *  window.__plumb.craft({ timeout }) → { route, url, read, complete, findings: [{ rule, title, because, action,
+ *  window.__plumb.craft({ timeout, scope }) → { route, url, read, complete, findings: [{ rule, title, because, action,
  *    text, value, confidence, evidence, file, line, column, component, tag, count }] }
  *
  *  dedupe  rows of a list share one site: one finding per rule, text and source site, `count` says how many elements
+ *  hidden  read without drawing: the overlay's blueprint stays out of sight while it reads (a page asking for itself)
+ *  scope   a CSS selector: only that element and what's inside it is read, as an Alt+click reads one element, so a
+ *          census rule counts that subtree alone; nothing matching it is an error, never a silent whole-page read
  *
  * The runner's other questions (src/craft-run.ts), asked as window.__plumb.craft({ op, … }):
  *  needs                      → { dark, scrolled, held }: which pairs this page gives a reason to take
@@ -47,7 +50,7 @@ async function operate(options) {
   if (op === 'sample') return rec.sample(options.key, options.props, options.ms);
   if (op === 'taken') return { frames: await rec.samples.get(options.id), events: JSON.parse(JSON.stringify(rec.events)) };
   if (op === 'since') return JSON.parse(JSON.stringify(rec.since(options.t0, options.except)));
-  if (op === 'tip') return rec.tip(options.ms, options.other, options.at);
+  if (op === 'tip') return rec.tip(options.ms, options.other, options.at, options.from);
   if (op === 'state') {
     const el = fromKey(options.key);
     const menus = [...document.querySelectorAll('[role="menu"]')].filter((m) => m.getClientRects().length);
@@ -146,17 +149,22 @@ async function greyPass() {
   return out.slice(0, 12);
 }
 
-export async function craftRun(overlay, { timeout = 60000, quiet = 600, op, grey = false, ...rest } = {}) {
+export async function craftRun(overlay, { timeout = 60000, quiet = 600, op, grey = false, scope = null, hidden = false, ...rest } = {}) {
   if (op) return operate({ op, ...rest });
   resetKeys();
   await prepareSources();
   const blueprint = overlay?.blueprintReader;
   if (!blueprint) throw new Error('The Plumb overlay is not mounted on this page.');
+  const within = scope ? document.querySelector(scope) : null;
+  if (scope && !within) throw new Error(`Nothing on this page matches the scope ${scope}.`);
   const was = blueprint.active;
+  const host = hidden ? document.querySelector('plumb-overlay') : null, shown = host?.style.visibility ?? '';
+  if (host) host.style.visibility = 'hidden';
   const started = performance.now();
   let complete = true;
   try {
-    blueprint.enter({ instant: true });
+    if (within && was) blueprint.leave({ instant: true }); // a scope is read on its own, not added to a whole-page read
+    blueprint.enter({ instant: true, scope: within });
     // done: the reader has nothing left, and what it handed on has not changed for `quiet` ms (the theme's decisions
     // arrive late and judge everything again)
     let last = '', since = performance.now();
@@ -169,7 +177,8 @@ export async function craftRun(overlay, { timeout = 60000, quiet = 600, op, grey
     }
     const found = new Map();
     for (const item of blueprint.items) {
-      const marks = item.marks.filter((m) => m.family === 'craft');
+      // its own craft marks, and those the theme's mark outranked on the same facet (verdict.js craftUnder)
+      const marks = [...item.marks.filter((m) => m.family === 'craft'), ...item.marks.flatMap((m) => m.craftUnder ?? [])];
       if (!marks.length) continue;
       const at = await locate(item.el, { explain: true, batch: true }).catch(() => null);
       for (const m of marks) {
@@ -194,6 +203,8 @@ export async function craftRun(overlay, { timeout = 60000, quiet = 600, op, grey
     if (grey) result.grey = JSON.parse(JSON.stringify(await greyPass()));
     return result;
   } finally {
-    if (!was) blueprint.leave({ instant: true });
+    if (!was || within) blueprint.leave({ instant: true });
+    if (was && within) blueprint.enter({ instant: true });
+    if (host) host.style.visibility = shown;
   }
 }

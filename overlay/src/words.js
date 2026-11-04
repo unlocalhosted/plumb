@@ -64,7 +64,7 @@ export const CRAFT = {
   }),
   'content-align': ({ pl }) => ({
     label: 'Text off the column',
-    line: `This row’s words start ${px(pl)} in from the others.`,
+    line: `These words start ${px(pl)} in from the words around them.`,
     reason: 'Line up the words, not the boxes. Let the background stick out.',
   }),
   'button-padding': ({ side }) => ({
@@ -268,7 +268,7 @@ export const CRAFT = {
   }),
   overshoot: ({ rd, sq }) => ({
     label: 'Round icon looks smaller',
-    line: `The round icon is ${px(rd)}, the square ones ${px(sq)}. Make it a bit bigger.`,
+    line: Math.abs(rd - sq) <= 0.5 ? `The round icons are drawn the same ${px(sq)} as the square ones, so they read smaller.` : `The round icon is ${px(rd)}, the square ones ${px(sq)}. Make it a bit bigger.`,
     reason: 'A circle covers less than a square of the same width, so it reads smaller.',
   }),
   'stroke-weight': ({ w, usual, big }) => ({

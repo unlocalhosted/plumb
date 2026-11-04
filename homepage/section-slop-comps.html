@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en" data-scheme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Keep AI slop out · three comps</title>
+<link rel="stylesheet" href="/src/foundations/foundations.css" />
+<link rel="stylesheet" href="/src/section2-comps/comps.css" />
+<link rel="stylesheet" href="/src/slop-comps/slop.css" />
+</head>
+<body>
+<!--
+  Section 1 of the story (STORY.md): keep AI slop out of your app. Three static comps in the signed-off foundations.
+  The slop is what agents really write: arbitrary values (gap-[13px], text-[15px], bg-[#3b78d8]). Plumber's words are
+  its own: "`gap-[13px]` hardcodes 13px" (src/rules/provenance.ts), "N new", "Known debt: N places, unchanged"
+  (src/cli-report.ts), and the --agent format's "replace `x` with `y`".
+    A  after every edit   an agent session: the agent writes slop, the hook catches it, the agent fixes it, 0 new
+    B  on the page        the running app with the agent's slop marked where it landed
+    C  at the PR          the check fails on the one new finding; the 94 known ones don't block the merge
+-->
+<div class="bar"><span>Section 1 · “Keep AI slop out of your app” · three comps</span><button type="button" onclick="const r=document.documentElement; r.dataset.scheme = r.dataset.scheme==='dark'?'light':'dark'">Light / dark</button></div>
+
+<!-- ───────────── A · after every edit ───────────── -->
+<p class="comp-name"><b>A</b> After every edit: the agent writes slop, the hook catches it, the agent fixes it</p>
+<section class="comp s-a">
+  <header class="sec-head">
+    <span class="eyebrow">Guardrails for agents</span>
+    <h2 class="title">Your agent writes the UI. Plumber keeps it yours.</h2>
+    <p class="lead">After every edit, Plumber checks what changed against your theme. <b>Every hardcoded value comes back with the exact fix</b>, so the agent corrects itself before you ever see it.</p>
+    <ul class="s-facts">
+      <li><b>Runs on every edit</b><span>A hook in Claude Code or Cursor, set up by <code>plumber install --hooks</code>.</span></li>
+      <li><b>Exact fixes, not advice</b><span>The file, the line, the class to write.</span></li>
+      <li><b>Only what’s new</b><span>Today’s debt is recorded once and left alone.</span></li>
+    </ul>
+  </header>
+
+  <div class="session surface">
+    <header class="session-head"><span><i></i>Agent session</span><span>northwind-app</span></header>
+    <div class="session-body">
+      <p class="turn turn-you"><span class="who-tag">You</span>Add an invite row to the Members card.</p>
+
+      <div class="turn">
+        <p class="turn-line"><span class="dot"></span>Edited <code>src/Members.jsx</code> <span class="delta"><b class="plus">+4</b> <b class="minus">−1</b></span></p>
+        <div class="code mini">
+          <ol style="counter-reset: ln 21">
+            <li data-d="+"><span class="sign">+</span><span><span class="p">&lt;</span><span class="t">form</span> <span class="a">className</span><span class="p">=</span><span class="s">"flex <mark class="slop">gap-[13px]</mark>"</span><span class="p">&gt;</span></span></li>
+            <li data-d="+"><span class="sign">+</span><span>  <span class="p">&lt;</span><span class="t">input</span> <span class="a">className</span><span class="p">=</span><span class="s">"<mark class="slop">px-[9px]</mark> <mark class="slop">text-[15px]</mark>"</span> <span class="p">/&gt;</span></span></li>
+            <li data-d="+"><span class="sign">+</span><span>  <span class="p">&lt;</span><span class="t">button</span> <span class="a">className</span><span class="p">=</span><span class="s">"<mark class="slop">bg-[#3b78d8]</mark>"</span><span class="p">&gt;</span>Invite<span class="p">&lt;/</span><span class="t">button</span><span class="p">&gt;</span></span></li>
+          </ol>
+        </div>
+      </div>
+
+      <div class="hook">
+        <p class="hook-head"><span>After edit</span><code>plumber check --changed --agent</code><span class="chip chip-off"><i></i>4 new</span></p>
+        <ol class="hook-findings">
+          <li><code>gap-[13px]</code> hardcodes 13px<span>replace with <code class="fix">gap-stack</code> 24px · between groups</span></li>
+          <li><code>px-[9px]</code> hardcodes 9px<span>replace with <code class="fix">px-control</code> 12px · a control’s padding</span></li>
+          <li><code>text-[15px]</code> hardcodes 15px<span>replace with <code class="fix">text-body</code> 16px · body text</span></li>
+          <li><code>bg-[#3b78d8]</code> hardcodes #3b78d8<span>replace with <code class="fix">bg-accent</code> · what you can do</span></li>
+        </ol>
+      </div>
+
+      <div class="turn">
+        <p class="turn-line"><span class="dot"></span>Applied Plumber’s 4 fixes to <code>src/Members.jsx</code></p>
+      </div>
+
+      <div class="hook hook-clean">
+        <p class="hook-head"><span>After edit</span><code>plumber check --changed --agent</code><span class="chip chip-on"><i></i>0 new</span></p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ───────────── B · on the page ───────────── -->
+<p class="comp-name"><b>B</b> On the page: the running app, with the agent’s slop marked where it landed</p>
+<section class="comp s-b">
+  <header class="sec-head sec-head-center">
+    <h2 class="title">See the slop the moment it lands.</h2>
+    <p class="lead">An agent’s edit hot-reloads, and Plumber marks every value it made up, right on your page. <b>One click writes the fix from your theme.</b></p>
+  </header>
+
+  <div class="win surface s-b-win">
+    <div class="win-bar"><i></i><i></i><i></i><span>localhost:5173/settings/members</span></div>
+    <div class="win-body">
+      <nav class="side" aria-hidden="true"><small>Settings</small><a>General</a><a class="on">Members</a><a>Billing</a><a>API keys</a></nav>
+      <div class="page">
+        <div class="card">
+          <div class="card-head"><h3>Members</h3><p>3 of 5 seats · Northwind Studio</p></div>
+          <div class="invite slop-gap">
+            <span class="field slop-box" style="padding:0 9px;font-size:15px">name@northwind.studio<em class="pin">px-[9px] · text-[15px]</em></span>
+            <span class="btn btn-sm slop-box" style="background:#3b78d8;color:#fff">Invite<em class="pin pin-right">bg-[#3b78d8]</em></span>
+            <em class="pin pin-gap">gap-[13px]</em>
+          </div>
+          <ul class="people">
+            <li><i class="av" style="--h:330">A</i><span class="who"><b>Ada Okafor</b><small>ada@northwind.studio</small></span><span class="role">Owner</span></li>
+            <li><i class="av" style="--h:230">R</i><span class="who"><b>Ravi Menon</b><small>ravi@northwind.studio</small></span><span class="role">Editor</span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="dock">
+      <span class="dock-mark"><i></i>Plumber</span>
+      <span class="dock-said"><b>4 new</b> since your edit, all in <code>Members.jsx</code></span>
+      <span class="dock-known">Known debt: 94 places, unchanged</span>
+      <span class="btn btn-primary btn-sm">Apply 4 fixes</span>
+    </div>
+  </div>
+</section>
+
+<!-- ───────────── C · at the PR ───────────── -->
+<p class="comp-name"><b>C</b> At the PR: the check fails on the one new finding, and the 94 known ones don’t block the merge</p>
+<section class="comp s-c">
+  <div class="s-c-grid">
+    <header class="sec-head">
+      <span class="eyebrow">In CI</span>
+      <h2 class="title">New slop can’t merge. Old debt doesn’t block you.</h2>
+      <p class="lead">Plumber records today’s problems once. From then on, <b>a pull request fails only on what it adds</b>, with the fix written on the line.</p>
+    </header>
+
+    <div class="pr surface">
+      <div class="pr-check">
+        <span class="pr-x" aria-hidden="true"></span>
+        <span class="pr-name"><b>plumber check</b><span>1 new finding · Known debt: 94 places, unchanged</span></span>
+        <span class="chip chip-off"><i></i>Failing</span>
+      </div>
+      <div class="code pr-file">
+        <header><span>src/Members.jsx</span><span>+3 −1</span></header>
+        <ol style="counter-reset: ln 20">
+          <li><span class="sign"> </span><span><span class="p">&lt;</span><span class="t">div</span> <span class="a">className</span><span class="p">=</span><span class="s">"grid gap-stack"</span><span class="p">&gt;</span></span></li>
+          <li data-d="-"><span class="sign">−</span><span>  <span class="p">&lt;</span><span class="t">InviteForm</span> <span class="p">/&gt;</span></span></li>
+          <li data-d="+"><span class="sign">+</span><span>  <span class="p">&lt;</span><span class="t">form</span> <span class="a">className</span><span class="p">=</span><span class="s">"flex <mark>gap-[13px]</mark>"</span><span class="p">&gt;</span></span></li>
+        </ol>
+        <div class="annotation">
+          <p class="ann-head"><span class="chip chip-off"><i></i>new</span><b><code>gap-[13px]</code> hardcodes 13px</b></p>
+          <p class="ann-why">Off-scale spacing makes layouts drift apart and can’t be changed from the theme.</p>
+          <p class="ann-fix">Use <code class="fix">gap-related</code> 8px · related parts, or <code class="fix">gap-stack</code> 24px · between groups</p>
+        </div>
+        <ol style="counter-reset: ln 22">
+          <li data-d="+"><span class="sign">+</span><span>    <span class="p">&lt;</span><span class="t">input</span> <span class="a">className</span><span class="p">=</span><span class="s">"px-control text-body"</span> <span class="p">/&gt;</span></span></li>
+          <li data-d="+"><span class="sign">+</span><span>    <span class="p">&lt;</span><span class="t">button</span> <span class="a">className</span><span class="p">=</span><span class="s">"bg-accent"</span><span class="p">&gt;</span>Invite<span class="p">&lt;/</span><span class="t">button</span><span class="p">&gt;</span></span></li>
+        </ol>
+      </div>
+      <div class="pr-debt">
+        <span>Known debt</span><b class="tabular">94 places</b><span class="pr-debt-bar" aria-hidden="true"><i style="width:100%"></i></span><span class="pr-debt-state">unchanged · not failing</span>
+      </div>
+    </div>
+  </div>
+</section>
+</body>
+</html>

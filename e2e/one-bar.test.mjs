@@ -119,7 +119,7 @@ for (const width of [1440, 375]) test(`one bar at ${width} wide: one surface, on
     await s.page.keyboard.press('Escape');
   }
   // Close ends Blueprint, and the dock is back as its mark
-  await s.page.locator('plumb-overlay').locator('.fx .bar .close').click();
+  await s.page.locator('plumb-overlay').locator('.fx .bar .bar-close').click();
   await s.page.waitForFunction(() => !document.querySelector('plumb-overlay').hasAttribute('data-blueprint'), null, { timeout: 10000 });
   assert.equal(await s.page.evaluate(inRoot(`(r) => getComputedStyle(r.querySelector('.dock')).display`)), 'flex', 'the dock is back');
   if (width === 1440 && process.env.SHOT) await s.page.screenshot({ path: process.env.SHOT });

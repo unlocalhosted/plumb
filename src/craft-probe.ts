@@ -199,8 +199,9 @@ async function submenu({ page }: Session, keys: string[]): Promise<ProbeRecord[]
 }
 
 // ── tooltips (60): the wait for the first, for the next, and after a short absence ──
-// the longest the probe's own absence or crossing may take and still judge a skipped wait: under the 300ms a provider keeps it off
-const PROBE_WINDOW = 250;
+// a skipped wait is judged only when the pointer was away for less than the 300ms a provider keeps it off, timed on the
+// page's clock from leaving the trigger to coming back (a slow machine stretches the probe's own moves; that's no reading)
+const PROBE_WINDOW = 280;
 async function tooltips({ page }: Session, keys: string[]): Promise<ProbeRecord[]> {
   const out: ProbeRecord[] = [];
   const first: { k: string; f: Frame; t1: number }[] = [];
@@ -230,30 +231,23 @@ async function tooltips({ page }: Session, keys: string[]): Promise<ProbeRecord[
   let t2: number | null = null, t3: number | null = null;
   if (lead) {
     // away for 100ms and back
-    let wait = ask<{ ms: number } | null>(page, { op: 'tip', ms: 2000, other: false, at: lead.k });
+    const wait = ask<{ ms: number } | null>(page, { op: 'tip', ms: 2000, other: false, at: lead.k });
     await page.mouse.move(lead.f.cx, lead.f.cy, { steps: 4 });
     await wait;
-    // the tooltip closes somewhere in the move away, so the absence is timed from its start; a slow machine can stretch
-    // the probe's own moves past the window being judged, and then a wait is the probe's fault, not the page's: no reading
-    const away = Date.now();
     await leave();
     const left = Date.now();
     for (let waited = 0; waited < 1500 && await shown(); waited += 25) await sleep(25);
     if (!await shown()) {
       await sleep(Math.max(0, 100 - (Date.now() - left)));
-      const absent = Date.now() - away;
-      wait = ask(page, { op: 'tip', ms: 2000, other: true, at: lead.k });
+      const judged = (got: { ms: number; away: number | null } | null) => (got && got.away !== null && got.away < PROBE_WINDOW ? got.ms : null);
+      const back = ask<{ ms: number; away: number | null } | null>(page, { op: 'tip', ms: 2000, other: true, at: lead.k, from: lead.k });
       await page.mouse.move(lead.f.cx, lead.f.cy, { steps: 4 });
-      const back = (await wait)?.ms ?? 2000;
-      t3 = absent < PROBE_WINDOW ? back : null;
+      t3 = judged(await back);
       // straight from the first to the next
       if (next) {
-        wait = ask(page, { op: 'tip', ms: 2000, other: true, at: next.k });
-        const moved = Date.now();
+        const across = ask<{ ms: number; away: number | null } | null>(page, { op: 'tip', ms: 2000, other: true, at: next.k, from: lead.k });
         await page.mouse.move(next.f.cx, next.f.cy, { steps: 12 });
-        const crossing = Date.now() - moved;
-        const ms = (await wait)?.ms ?? 2000;
-        t2 = crossing < PROBE_WINDOW ? ms : null;
+        t2 = judged(await across);
       }
     }
   }

@@ -1,0 +1,6 @@
+{
+  "name": "plumber-recording-app",
+  "private": true,
+  "type": "module",
+  "description": "A tiny team settings page. record.mjs copies it to a scratch dir and lets React Plumber's overlay edit the copy."
+}

@@ -69,7 +69,7 @@ test('Content alignment (#1): a filled row among plain rows whose words fall off
   const marks = await marksOf(page, 'content-align');
   assert.equal(marks.length, 1, JSON.stringify(marks));
   assert.ok(await within(page, 'row-bad', marks[0]), 'on the row that does not bleed');
-  assert.match(marks[0].label, /words start 12px in from the others/);
+  assert.match(marks[0].label, /words start 12px in from the words around them/);
   // its fix is one pick: -mx-s3 is added where it was written, and the words land on the column
   const line = async () => (await readFile(join(root, 'src/App.jsx'), 'utf8')).split('\\n').find((l) => l.includes('id="row-bad"'));
   assert.match(await line(), /className="rounded-control/);
@@ -117,7 +117,7 @@ test('z-index war (#74): a 999 in the flow is marked; a 10 is not', { timeout: 1
   assert.deepEqual(errors, []);
 });
 
-test('Hairline (#38): a 1px divider is marked on a 2× screen and not on a 1× screen', { timeout: 120000 }, async (t) => {
+test('Hairline (#38): a 1px divider is marked on a 2× screen, with a class that halves it, and not on a 1× screen', { timeout: 120000 }, async (t) => {
   const launched = await browser(t); if (!launched) return;
   const { url } = await fixture(t, PAGE);
   const one = await open(t, launched, url, 1);
@@ -126,6 +126,9 @@ test('Hairline (#38): a 1px divider is marked on a 2× screen and not on a 1× s
   const marks = await marksOf(two.page, 'hairline');
   assert.equal(marks.length, 1, `marked at 2×: ${JSON.stringify(marks)}`);
   assert.ok(await within(two.page, 'rule-bad', marks[0]));
+  // a fix you can take: the 1px rule drawn half as tall, one device pixel
+  const fix = await two.page.evaluate(() => window.__plumb.overlay.blueprintReader.items.find((i) => i.el.id === 'rule-bad')?.marks.find((m) => m.rule === 'craft/hairline')?.craft.suggest);
+  assert.deepEqual([fix?.kind, fix?.from, fix?.to], ['class', 'h-px', 'h-[0.5px]'], JSON.stringify(fix));
   assert.deepEqual([...one.errors, ...two.errors], []);
 });
 

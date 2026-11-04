@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en" data-scheme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Section 2 · three comps</title>
+<link rel="stylesheet" href="/src/foundations/foundations.css" />
+<link rel="stylesheet" href="/src/section2-comps/comps.css" />
+</head>
+<body>
+<!--
+  Section 2, "every fix uses your theme", as three static comps in the signed-off foundations (owner, 2026-11-04).
+  Each answers the same doubt ("will its fixes match my design system?") with the same proof (a real Members screen
+  whose card padding, written as 21px, becomes the theme's card step, 16px, though 24 is nearer). They differ in
+  what the picture is.
+    A  in place     the fix, on the running app, with the change it writes beside it
+    B  mapped       your @theme beside the screen, each step drawn to the spaces that use it
+    C  its job      the decision itself: 21px on your scale, the nearest step refused, the step its job calls for taken
+  Static: to choose by looking. Motion comes after a pick.
+-->
+<div class="bar"><span>Section 2 · “Every fix uses your theme” · three comps</span><button type="button" onclick="const r=document.documentElement; r.dataset.scheme = r.dataset.scheme==='dark'?'light':'dark'; window.dispatchEvent(new Event('resize'))">Light / dark</button></div>
+
+<!-- ───────────── A · in place ───────────── -->
+<p class="comp-name"><b>A</b> In place: the fix on the running app, with the change it writes beside it</p>
+<section class="comp comp-a">
+  <header class="sec-head">
+    <span class="eyebrow">Theme-aware</span>
+    <h2 class="title">Every fix uses your theme.</h2>
+    <p class="lead">Plumber reads the steps your Tailwind theme names, and why each one exists. <b>Each space gets the step its job calls for</b>, never a new number.</p>
+  </header>
+
+  <div class="a-frame surface" data-connect>
+    <div class="win">
+      <div class="win-bar"><i></i><i></i><i></i><span>northwind.app/settings/members</span></div>
+      <div class="win-body">
+        <nav class="side" aria-hidden="true">
+          <small>Settings</small><a>General</a><a class="on">Members</a><a>Billing</a><a>API keys</a><a>Integrations</a>
+        </nav>
+        <div class="page">
+          <div class="card" data-space="pad" data-tone="on" data-label="p-card · 16" data-ghost="21">
+            <div class="card-head"><h3>Members</h3><p>3 of 5 seats · Northwind Studio</p></div>
+            <div class="invite"><span class="field">name@northwind.studio</span><span class="btn btn-accent btn-sm">Invite</span></div>
+            <ul class="people">
+              <li><i class="av" style="--h:330">A</i><span class="who"><b>Ada Okafor</b><small>ada@northwind.studio</small></span><span class="role">Owner</span><span class="seen">Now</span></li>
+              <li><i class="av" style="--h:230">R</i><span class="who"><b>Ravi Menon</b><small>ravi@northwind.studio</small></span><span class="role">Editor</span><span class="seen">2h ago</span></li>
+              <li><i class="av" style="--h:80">L</i><span class="who"><b>Lena Brandt</b><small>lena@northwind.studio</small></span><span class="role">Viewer</span><span class="seen">Yesterday</span></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+    <aside class="a-side">
+      <div class="code">
+        <header><span>Members.jsx</span><span>1 change</span></header>
+        <ol style="counter-reset: ln 13">
+          <li><span class="sign"> </span><span><span class="p">&lt;</span><span class="t">section</span></span></li>
+          <li data-d="-"><span class="sign">−</span><span>  <span class="a">className</span><span class="p">=</span><span class="s">"rounded-xl <mark>p-[21px]</mark>"</span></span></li>
+          <li data-d="+"><span class="sign">+</span><span>  <span class="a">className</span><span class="p">=</span><span class="s">"rounded-xl <mark>p-card</mark>"</span></span></li>
+          <li><span class="sign"> </span><span><span class="p">&gt;</span></span></li>
+        </ol>
+      </div>
+      <div class="why">
+        <p class="label">Why card, not stack</p>
+        <dl>
+          <div><dt>Nearest step</dt><dd><s>stack · 24</s></dd></div>
+          <div><dt>Its job</dt><dd>card padding</dd></div>
+          <div><dt>Your theme says</dt><dd class="on">card · 16</dd></div>
+        </dl>
+      </div>
+    </aside>
+  </div>
+
+  <ul class="a-points">
+    <li><svg viewBox="0 0 20 20"><path d="M4 4h12M4 8h8M4 12h10M4 16h6" /></svg><b>Reads your @theme</b><span>The steps you named, and the reason written beside each.</span></li>
+    <li><svg viewBox="0 0 20 20"><circle cx="10" cy="10" r="6" /><path d="M10 4v-2M10 18v-2M4 10H2M18 10h-2" /></svg><b>Picks by job</b><span>Card padding gets card, even when another step is nearer.</span></li>
+    <li><svg viewBox="0 0 20 20"><path d="M6 5 2 10l4 5M14 5l4 5-4 5M11 4 9 16" /></svg><b>Writes the class</b><span>p-card in your JSX. No arbitrary values left behind.</span></li>
+  </ul>
+</section>
+
+<!-- ───────────── B · mapped ───────────── -->
+<p class="comp-name"><b>B</b> Mapped: your @theme beside the screen, each step drawn to the spaces that use it</p>
+<section class="comp comp-b">
+  <header class="sec-head sec-head-center">
+    <h2 class="title">Every fix uses your theme.</h2>
+    <p class="lead">Five steps, each with a reason. <b>Every space on the page lands on one of them.</b></p>
+  </header>
+
+  <div class="b-board" data-connect>
+    <div class="code surface b-theme">
+      <header><span>app.css</span><span>@theme</span></header>
+      <ol style="counter-reset: ln 3">
+        <li><span class="sign"> </span><span><span class="t">@theme</span> <span class="p">{</span></span></li>
+        <li data-from="tight"><span class="sign"> </span><span>  <span class="a">--spacing-tight</span><span class="p">:</span> <span class="s">4px</span><span class="p">;</span>    <span class="p">/* inside a group */</span></span></li>
+        <li data-from="related"><span class="sign"> </span><span>  <span class="a">--spacing-related</span><span class="p">:</span> <span class="s">8px</span><span class="p">;</span>  <span class="p">/* related parts */</span></span></li>
+        <li data-from="control"><span class="sign"> </span><span>  <span class="a">--spacing-control</span><span class="p">:</span> <span class="s">12px</span><span class="p">;</span> <span class="p">/* a control’s padding */</span></span></li>
+        <li data-from="card" data-d="+"><span class="sign">›</span><span>  <span class="a">--spacing-card</span><span class="p">:</span> <span class="s"><mark>16px</mark></span><span class="p">;</span>    <span class="p">/* card padding */</span></span></li>
+        <li data-from="stack"><span class="sign"> </span><span>  <span class="a">--spacing-stack</span><span class="p">:</span> <span class="s">24px</span><span class="p">;</span>   <span class="p">/* between groups */</span></span></li>
+        <li><span class="sign"> </span><span><span class="p">}</span></span></li>
+      </ol>
+    </div>
+
+    <div class="card surface b-card" data-space="pad" data-to="card" data-tone="on">
+      <div class="card-head"><h3>Members</h3><p>3 of 5 seats · Northwind Studio</p></div>
+      <div class="b-body" data-space="gap" data-to="stack">
+        <div class="invite"><span class="field" data-space="padx" data-to="control">name@northwind.studio</span><span class="btn btn-accent btn-sm">Invite</span></div>
+        <ul class="people">
+          <li data-space="gap" data-to="related"><i class="av" style="--h:330">A</i><span class="who" data-space="gap" data-to="tight"><b>Ada Okafor</b><small>ada@northwind.studio</small></span><span class="role">Owner</span></li>
+          <li><i class="av" style="--h:230">R</i><span class="who"><b>Ravi Menon</b><small>ravi@northwind.studio</small></span><span class="role">Editor</span></li>
+          <li><i class="av" style="--h:80">L</i><span class="who"><b>Lena Brandt</b><small>lena@northwind.studio</small></span><span class="role">Viewer</span></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <p class="b-foot"><span class="chip chip-on"><i></i>23 values → 5 steps</span><span class="small">measured on a real app, three months in</span></p>
+</section>
+
+<!-- ───────────── C · its job ───────────── -->
+<p class="comp-name"><b>C</b> Its job: 21px on your scale, the nearest step refused, the step its job calls for taken</p>
+<section class="comp comp-c">
+  <div class="c-grid">
+    <header class="sec-head">
+      <span class="eyebrow">Theme-aware</span>
+      <h2 class="title">Not the nearest number. The step it’s for.</h2>
+      <p class="lead">A card’s padding written as 21px is closer to 24. <b>Plumber reads what the space does</b>, and your theme says card padding is 16.</p>
+      <div class="code surface c-code">
+        <header><span>Members.jsx</span><span>line 14</span></header>
+        <ol style="counter-reset: ln 13">
+          <li data-d="-"><span class="sign">−</span><span><span class="p">&lt;</span><span class="t">section</span> <span class="a">className</span><span class="p">=</span><span class="s">"<mark>p-[21px]</mark>"</span><span class="p">&gt;</span></span></li>
+          <li data-d="+"><span class="sign">+</span><span><span class="p">&lt;</span><span class="t">section</span> <span class="a">className</span><span class="p">=</span><span class="s">"<mark>p-card</mark>"</span><span class="p">&gt;</span></span></li>
+        </ol>
+      </div>
+    </header>
+
+    <figure class="c-art surface">
+      <!-- the scale, 0–28px, your five steps as ticks -->
+      <svg class="c-scale" viewBox="0 70 560 220" aria-label="21px on a scale of your five steps: nearest is stack at 24, Plumber picks card at 16">
+        <defs>
+          <marker id="tip-on" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M1 1 9 5 1 9" fill="none" stroke="var(--on)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" /></marker>
+          <marker id="tip-off" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M1 1 9 5 1 9" fill="none" stroke="var(--ink-3)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" /></marker>
+        </defs>
+        <line x1="32" y1="200" x2="528" y2="200" class="c-axis" />
+        <!-- your steps: x = 32 + px × 17.7 -->
+        <g class="c-step"><line x1="102.8" y1="190" x2="102.8" y2="210" /><text x="102.8" y="234">4</text><text x="102.8" y="254" class="c-name">tight</text></g>
+        <g class="c-step"><line x1="173.6" y1="190" x2="173.6" y2="210" /><text x="173.6" y="234">8</text><text x="173.6" y="254" class="c-name">related</text></g>
+        <g class="c-step"><line x1="244.4" y1="190" x2="244.4" y2="210" /><text x="244.4" y="234">12</text><text x="244.4" y="254" class="c-name">control</text></g>
+        <g class="c-step c-step-on"><line x1="315.2" y1="184" x2="315.2" y2="216" /><text x="315.2" y="234">16</text><text x="315.2" y="254" class="c-name">card</text><text x="315.2" y="272" class="c-why">card padding</text></g>
+        <g class="c-step c-step-near"><line x1="456.8" y1="190" x2="456.8" y2="210" /><text x="456.8" y="234">24</text><text x="456.8" y="254" class="c-name">stack</text><text x="456.8" y="272" class="c-why">between groups</text></g>
+        <!-- 21px, as written: on the line, its value under it where no step sits -->
+        <g class="c-written"><circle cx="403.7" cy="200" r="6" /><text x="403.7" y="234">21px</text><text x="403.7" y="254" class="c-why">as written</text></g>
+        <!-- the nearest step, refused: a short dashed hop -->
+        <path d="M408 190 C 418 158, 444 158, 454 186" class="c-near" marker-end="url(#tip-off)" />
+        <text x="431" y="150" class="c-tag c-tag-near">nearest</text>
+        <!-- the step its job calls for: the long way, taken -->
+        <path d="M398 190 C 384 96, 330 96, 317 180" class="c-take" marker-end="url(#tip-on)" />
+        <text x="357" y="104" class="c-tag c-tag-on">its job</text>
+      </svg>
+      <figcaption>
+        <span class="chip chip-off"><i></i>p-[21px]</span>
+        <svg viewBox="0 0 16 16" class="c-arrow"><path d="M3 8h10M9 4l4 4-4 4" /></svg>
+        <span class="chip chip-on"><i></i>p-card</span>
+        <span class="small">One of the five spaces on the Members screen.</span>
+      </figcaption>
+    </figure>
+  </div>
+</section>
+
+<script type="module" src="/src/section2-comps/connect.js"></script>
+</body>
+</html>

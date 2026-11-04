@@ -1,113 +1,120 @@
-/* The hero's carousel, drawn only with the overlay's tokens and marks (overlay/src/tokens.css, language.js). */
+/* The hero (comp A, the wipe), in the homepage's foundations. Motion: the line's sweep and the clip behind it
+ * (clip-path, transform); one ease-in-out curve for the sweep, ease-out for the rest. Reduced motion shows the end. */
 
-/* ── the stage: the piece in hand in the middle, the one done on the left, the next on the right ── */
-.carousel { position: relative; left: 50%; translate: -50% 0; width: min(calc(100vw - 32px), 72rem); }
-.stage { position: relative; height: 600px; overflow: hidden;
-  -webkit-mask: linear-gradient(90deg, transparent, #000 14%, #000 86%, transparent); mask: linear-gradient(90deg, transparent, #000 14%, #000 86%, transparent); border-radius: var(--pl-radius-card); background: var(--pl-paper-2);
-  box-shadow: inset 0 0 0 1px var(--pl-rule); }
-.slot { position: absolute; left: 50%; top: 50%; width: 880px; height: 520px;
-  transform: translate(-50%, -50%) translateX(calc(var(--x) * 1%)) scale(calc(var(--s) * var(--fit, 1)));
-  opacity: var(--o); transition: transform 600ms var(--pl-spring), opacity 400ms var(--pl-ease-out); }
-.slot[data-at='0'] { --x: 0; --s: 1; --o: 1; z-index: var(--z-raised); }
-.slot[data-at='-1'] { --x: -112; --s: 0.9; --o: 0.45; cursor: pointer; }
-.slot[data-at='1'] { --x: 112; --s: 0.9; --o: 0.45; cursor: pointer; }
-.piece { position: relative; height: 100%; }
-.piece * { transition: font-size 320ms var(--pl-ease-out), color 320ms var(--pl-ease-out), background-color 320ms var(--pl-ease-out), width 320ms var(--pl-ease-out), height 320ms var(--pl-ease-out), padding 320ms var(--pl-ease-out), gap 320ms var(--pl-ease-out), row-gap 320ms var(--pl-ease-out), column-gap 320ms var(--pl-ease-out); }
+.hero { display: flex; flex-direction: column; max-width: 72rem; margin: 0 auto; padding: 0 var(--s-6) var(--s-9); color: var(--ink-1); }
+/* on a wide window the hero is exactly one viewport: the head keeps its size and the wipe takes what's left */
+@media (min-width: 48rem) {
+  .hero { height: 100svh; min-height: 40rem; padding-bottom: clamp(16px, 3vh, 40px); }
+  /* the head gives way on short windows, so the screen keeps most of the height: type and gaps follow the height */
+  .hero-head { max-width: 52rem; margin-top: clamp(8px, 4svh, 72px); }
+  .hero-head .display { font-size: clamp(44px, 7.2svh, 72px); }
+  .hero-head .lead { max-width: 40rem; margin-top: clamp(12px, 2.6svh, 24px); font-size: clamp(17px, 2.3svh, 20px); }
+  .hero-cta { margin-top: clamp(16px, 3.5svh, 32px); }
+  .wipe { flex: 1 1 0; min-height: 0; margin-top: clamp(20px, 4svh, 56px); }
+}
+.hero code { font-family: var(--mono); }
 
-/* ── the marks, as the overlay's box model draws them: a line box as a faint band; padding a deeper band inside
- *    the edge; a gap the deepest band; each band big enough carries its block icon. Coral while off, mint once on. ── */
-.mk { position: absolute; pointer-events: none; box-sizing: border-box; }
-.mk[data-tone='coral'] { --c: var(--pl-coral); }
-.mk[data-tone='mint'] { --c: var(--pl-mint); }
-.mk-text { border-radius: var(--pl-radius-mark); background: color-mix(in oklab, var(--c) 10%, transparent); }
-.mk-pad { background: color-mix(in oklab, var(--c) 20%, transparent);
+/* ── nav ── */
+.hero-nav { display: flex; justify-content: space-between; align-items: center; height: 64px; }
+.hero-brand { display: inline-flex; align-items: center; gap: 10px; font: 590 15px/1 var(--font); color: var(--ink-1); text-decoration: none; }
+.hero-brand i { width: 18px; height: 18px; border-radius: 5px; background: linear-gradient(135deg, var(--accent), var(--measured)); }
+.hero-links { display: flex; gap: 2px; }
+.hero-links a { padding: 7px 10px; border-radius: var(--r-xs); font: var(--t-small); color: var(--ink-2); text-decoration: none; transition: color 150ms var(--ease), background-color 150ms var(--ease); }
+@media (hover: hover) and (pointer: fine) { .hero-links a:hover { color: var(--ink-1); background: var(--g2); } }
+
+/* ── head ── */
+.hero-head { flex: none; width: 100%; max-width: 46rem; margin: var(--s-9) auto 0; text-align: center; }
+.hero-head .lead { margin: var(--s-5) auto 0; }
+.hero-cta { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: var(--s-6); }
+.hero-docs { height: 40px; text-decoration: none; }
+.install { display: inline-flex; flex: 0 1 auto; align-items: center; gap: 12px; min-width: 0; max-width: 100%; height: 40px; padding: 0 4px 0 14px; border-radius: var(--r-sm); background: var(--g1);
+  box-shadow: inset 0 0 0 1px var(--line-2); font: 400 13px/1 var(--mono); color: var(--ink-2); }
+.install code { min-width: 0; overflow-x: auto; white-space: nowrap; scrollbar-width: none; }
+.install-copy { flex: none; height: 32px; padding: 0 12px; border: 0; border-radius: 6px; cursor: pointer; background: var(--accent); color: #fff; font: var(--t-label);
+  transition: background-color 150ms var(--ease), scale 150ms var(--ease); }
+@media (hover: hover) and (pointer: fine) { .install-copy:hover { background: color-mix(in oklab, var(--accent) 88%, white); } }
+.install-copy:active { scale: 0.97; }
+.install-copy:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.install-copy[data-state='copied'] { background: var(--on); }
+
+/* ── the wipe ── */
+.wipe { position: relative; display: grid; place-items: start center; margin: var(--s-8) 0 0; }
+.wipe-frame { position: relative; overflow: hidden; cursor: ew-resize; touch-action: pan-y; user-select: none; }
+.wipe-fit { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
+.wipe-layer { position: absolute; inset: 0; }
+/* the settled page shows right of the line */
+.wipe-clean { clip-path: inset(0 0 0 var(--at)); }
+.wipe-frame[data-sweeping='true'] .wipe-clean { transition: clip-path 1400ms cubic-bezier(0.65, 0, 0.35, 1); }
+.wipe-line { position: absolute; top: 0; bottom: 0; left: var(--at); width: 1px; translate: -0.5px 0; background: var(--ink-1); outline: none;
+  box-shadow: 0 0 24px 2px rgb(from var(--accent) r g b / 0.45); }
+.wipe-frame[data-sweeping='true'] .wipe-line { transition: left 1400ms cubic-bezier(0.65, 0, 0.35, 1); }
+.wipe-line i { position: absolute; left: 50%; top: 50%; width: 30px; height: 30px; translate: -50% -50%; border-radius: 50%; background: var(--ink-1); box-shadow: var(--drop);
+  transition: scale 150ms var(--ease); }
+.wipe-line i::before, .wipe-line i::after { content: ''; position: absolute; top: 50%; translate: 0 -50%; border: 4px solid transparent; }
+.wipe-line i::before { left: 5px; border-right-color: var(--g0); }
+.wipe-line i::after { right: 5px; border-left-color: var(--g0); }
+.wipe-line:focus-visible i { box-shadow: 0 0 0 3px var(--g0), 0 0 0 5px var(--accent); }
+@media (hover: hover) and (pointer: fine) { .wipe-frame:hover .wipe-line i { scale: 1.08; } }
+.wipe-label { position: absolute; bottom: 14px; padding: 5px 9px; border-radius: var(--r-xs); background: var(--g2); box-shadow: inset 0 0 0 1px var(--line-2);
+  font: 500 11px/1 var(--mono); color: var(--ink-2); pointer-events: none; white-space: nowrap; }
+.wipe-label-l { left: calc(var(--at) - 12px); translate: -100% 0; }
+.wipe-label-r { left: calc(var(--at) + 12px); }
+.wipe-frame[data-sweeping='true'] .wipe-label { transition: left 1400ms cubic-bezier(0.65, 0, 0.35, 1); }
+.wipe-label b { font-weight: 500; opacity: 0; transition: opacity 400ms var(--ease); }
+.wipe-label-l b { color: var(--off); } .wipe-label-r b { color: var(--on); }
+.wipe-label b[data-shown='true'] { opacity: 1; }
+
+/* ── the app screen, drawn at 1104 × 540 ── */
+.scr { position: relative; display: grid; grid-template-columns: 13rem 1fr; width: 100%; height: 100%; background: var(--g0); color: var(--ink-1); font-family: var(--font); }
+.scr-side { display: grid; align-content: start; gap: 2px; padding: 16px 10px; border-right: 1px solid var(--line); background: var(--g1); }
+.scr-brand { display: flex; align-items: center; gap: 8px; padding: 4px 10px 14px; font: 590 14px/1 var(--font); }
+.scr-brand i { width: 16px; height: 16px; border-radius: 4px; background: oklch(0.7 0.12 160); }
+.scr-nav { border-radius: var(--r-xs); font-size: 13px; color: var(--ink-2); }
+.scr-nav.on { background: var(--g2); color: var(--ink-1); }
+.scr-main { display: grid; grid-template-rows: auto 1fr; min-width: 0; }
+.scr-top { display: flex; justify-content: space-between; align-items: center; padding: 12px 24px; border-bottom: 1px solid var(--line); }
+.scr-search { width: 15rem; padding: 7px 10px; border-radius: var(--r-sm); background: var(--g2); font-size: 12px; color: var(--ink-3); }
+.scr-new { padding: 7px 12px; border-radius: var(--r-sm); background: var(--ink-1); color: var(--g0); font: 510 12px/1 var(--font); }
+.scr-body { display: grid; align-content: start; padding: 24px; }
+.scr-title { margin: 0; font-weight: 590; letter-spacing: -0.02em; }
+.scr-stats { display: grid; grid-template-columns: repeat(3, 1fr); }
+.scr-stat { display: grid; gap: 4px; border-radius: var(--r-md); background: var(--g1); border: 1px solid var(--line); }
+.scr-stat small { color: var(--ink-3); }
+.scr-stat b { font-weight: 590; letter-spacing: -0.02em; }
+.scr-table { border-radius: var(--r-md); background: var(--g1); border: 1px solid var(--line); }
+.scr-row { display: grid; grid-template-columns: 1fr 6rem 8rem 26px; align-items: center; border-top: 1px solid var(--line); }
+.scr-row:first-child { border-top: 0; }
+.scr-chip { justify-self: start; padding: 3px 8px; border-radius: 99px; font: 510 11px/1.3 var(--font); }
+.scr-chip-on { background: var(--on-soft); color: var(--on); }
+.scr-chip-off { background: var(--off-soft); color: var(--off); }
+.scr-chip-idle { background: var(--g2); color: var(--ink-3); }
+.scr-bar { height: 4px; border-radius: 2px; background: var(--g3); overflow: hidden; }
+.scr-bar i { display: block; height: 100%; background: var(--ink-3); }
+.scr-av { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; font: 590 10px/1 var(--font); font-style: normal;
+  color: oklch(0.86 0.06 var(--h)); background: oklch(0.36 0.07 var(--h)); }
+:root[data-scheme='light'] .scr-av { color: oklch(0.42 0.1 var(--h)); background: oklch(0.92 0.04 var(--h)); }
+/* Plumber's spacing marks: off in coral, on in green */
+.scr-marks { position: absolute; inset: 0; pointer-events: none; }
+.smk { position: absolute; box-sizing: border-box; }
+.smk[data-tone='off'] { --c: var(--off); }
+.smk[data-tone='on'] { --c: var(--on); }
+.smk-pad { background: rgb(from var(--c) r g b / 0.14); box-shadow: inset 0 0 0 1px rgb(from var(--c) r g b / 0.35);
   -webkit-mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0); mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0); }
-.mk-gap { background: color-mix(in oklab, var(--c) 30%, transparent); }
-.mk-icon { position: absolute; width: 12px; height: 12px; translate: -50% -50%; color: color-mix(in oklab, var(--c) 85%, var(--pl-ink)); }
-.mk-icon svg { display: block; width: 100%; height: 100%; }
-.mk { transition: background-color var(--pl-dur-feedback) var(--pl-ease-out); }
-/* colour: a dashed ring round the place, no fill (colour-pass.js); icons: a ring round each glyph */
-.mk-colour { outline: 1.5px dashed var(--c); outline-offset: 2px; }
-.mk.mk-icon-ring { border-radius: 4px; box-shadow: 0 0 0 1.5px var(--c), 0 0 0 3px color-mix(in oklab, var(--c) 20%, transparent); }
+.smk-gap { background: repeating-linear-gradient(135deg, rgb(from var(--c) r g b / 0.4) 0 1px, transparent 1px 4px); }
 
-/* ── the clean-up bar, in the overlay's clean-up language ── */
-.cleanup { display: grid; gap: var(--pl-space-5); margin-top: var(--pl-space-6); padding: var(--pl-space-6); border-radius: var(--pl-radius-card);
-  background: var(--pl-paper); box-shadow: var(--pl-shadow-card); }
-.cleanup-steps { display: flex; flex-wrap: wrap; align-items: center; gap: var(--pl-space-3); }
-.cleanup-title { margin-right: var(--pl-space-4); font: var(--pl-card-title); }
-.cleanup-step { display: inline-flex; align-items: center; gap: var(--pl-space-3); height: 28px; padding: 0 var(--pl-space-5) 0 var(--pl-space-4); border: 0;
-  border-radius: var(--pl-radius-row); background: var(--pl-paper-2); color: var(--pl-ink-2); font: var(--pl-text-label); cursor: pointer;
-  transition: background-color var(--pl-dur-feedback) var(--pl-ease-out), color var(--pl-dur-feedback) var(--pl-ease-out), scale var(--pl-dur-feedback) var(--pl-ease-out); }
-button.cleanup-step:active { scale: 0.97; }
-.cleanup-step[data-now='true'] { background: var(--pl-sky-soft); color: var(--pl-sky-ink); }
-.cleanup-step[data-done='true']:not([data-now='true']) { color: var(--pl-ink); }
-.cleanup-step[data-next='true'] { cursor: default; background: transparent; box-shadow: inset 0 0 0 1px var(--pl-rule); }
-.cleanup-step small { font: var(--pl-card-meta); color: var(--pl-ink-3); }
-.glyph { width: 16px; height: 16px; flex: none; overflow: visible; }
-.glyph path, .glyph rect, .glyph circle { fill: none; stroke: currentColor; stroke-width: 1px; vector-effect: non-scaling-stroke; }
-.glyph .fill { fill: currentColor; stroke: none; }
-.glyph .soft { fill-opacity: .4; }
-.cleanup-check { display: grid; place-items: center; width: 14px; height: 14px; border-radius: 50%; background: var(--pl-mint); color: var(--pl-paper); font-size: 9px; }
-.cleanup-count { font: 500 11px/1 var(--pl-mono); opacity: 0.8; }
-.cleanup-said { display: grid; gap: var(--pl-space-4); min-height: 56px; font: var(--pl-card-body); }
-/* colour: swatches at their own places, gliding onto the token they become; the tokens wait as rings below */
-.swatches { position: relative; height: 52px; margin: var(--pl-space-6) var(--pl-space-6) 0; }
-.swatch, .swatch-slot { position: absolute; width: 18px; height: 18px; translate: -50% 0; border-radius: var(--pl-radius-tag); }
-.swatch-slot { top: 22px; box-shadow: inset 0 0 0 1.5px var(--sw), 0 0 0 1px var(--pl-rule); }
-.swatch { box-shadow: 0 0 0 2px var(--pl-paper), 0 0 0 3px var(--pl-rule);
-  transition: left 560ms var(--pl-spring), top 560ms var(--pl-spring), background-color 360ms var(--pl-ease-out); }
-
-/* the scale ruler: ticks are the theme's steps (mint), dots are the values the screen uses (coral, then mint) */
-.ruler { position: relative; height: 52px; margin: var(--pl-space-6) var(--pl-space-6) 0; }
-.ruler-line { position: absolute; left: 0; right: 0; top: 20px; height: 1px; background: var(--pl-rule); }
-.ruler-tick { position: absolute; top: 20px; display: grid; justify-items: center; translate: -50% 0; }
-.ruler-tick i { width: 1.5px; height: 9px; border-radius: 1px; background: var(--pl-mint); }
-.ruler-tick b { margin-top: var(--pl-space-2); font: 600 11px/1 var(--pl-mono); color: var(--pl-mint-ink); white-space: nowrap; }
-.ruler-dot { position: absolute; width: 9px; height: 9px; margin-top: 16px; translate: -50% 0; border-radius: 50%; background: var(--pl-coral);
-  box-shadow: 0 0 0 2px var(--pl-paper); transition: left 520ms var(--pl-spring), top 520ms var(--pl-spring), background-color 300ms var(--pl-ease-out); }
-.ruler-dot[data-on='true'] { background: var(--pl-mint); }
-
-/* ── the timeline: one segment per screen, inside the clean-up card ── */
-.timeline { display: flex; align-items: flex-end; gap: var(--pl-space-5); padding-top: var(--pl-space-6); border-top: 1px solid var(--pl-rule); }
-.timeline-play { display: grid; place-items: center; flex: none; width: 28px; height: 28px; border: 0; border-radius: 50%; cursor: pointer;
-  background: var(--pl-paper-2); color: var(--pl-ink); transition: scale var(--pl-dur-feedback) var(--pl-ease-out), background-color var(--pl-dur-feedback) var(--pl-ease-out); }
-.timeline-play svg { width: 12px; height: 12px; fill: currentColor; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
-.timeline-play:active { scale: 0.94; }
-@media (hover: hover) { .timeline-play:hover { background: var(--pl-rule); } }
-.segment { flex: 1; display: grid; gap: var(--pl-space-3); min-width: 0; padding: 0; border: 0; background: none; cursor: pointer; text-align: left; }
-.segment-name { font: var(--pl-text-label); color: var(--pl-ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  transition: color var(--pl-dur-feedback) var(--pl-ease-out); }
-.segment[data-state='now'] .segment-name { color: var(--pl-ink); }
-@media (hover: hover) { .segment:hover .segment-name { color: var(--pl-ink); } }
-.segment-track { position: relative; display: block; height: 4px; border-radius: var(--pl-radius-mark); background: var(--pl-paper-2);
-  box-shadow: inset 0 0 0 1px var(--pl-rule); overflow: hidden; }
-.segment[data-state='done'] .segment-track { background: var(--pl-mint-soft); box-shadow: none; }
-.segment-fill { position: absolute; inset: 0 auto 0 0; width: 100%; background: var(--pl-instrument); }
-.segment-run { transform-origin: left; animation: run linear both; }
-@keyframes run { from { transform: scaleX(0); } }
-.segment-notch { position: absolute; top: 0; bottom: 0; width: 2px; translate: -1px 0; background: var(--pl-paper); }
-.segment:focus-visible { outline: 2px solid var(--pl-instrument); outline-offset: 4px; border-radius: var(--pl-radius-mark); }
-
-/* the overlay's pop */
-@keyframes pl-pop { from { opacity: 0; scale: 0.92; } }
-.pop { animation: pl-pop 260ms var(--pl-spring-pop) both; }
-
-/* ── the action ── */
-.copy-button { background: var(--pl-action-soft); color: var(--pl-on-action); transition: background-color var(--pl-dur-feedback) var(--pl-ease-out), scale var(--pl-dur-feedback) var(--pl-ease-out); }
-@media (hover: hover) { .copy-button:hover { background: color-mix(in oklab, var(--pl-action) 15%, var(--pl-action-soft)); } }
-.copy-button:active { scale: 0.97; }
-.copy-button[data-state='copied'] { background: var(--pl-mint-soft); color: var(--pl-mint-ink); }
-
-@media (max-width: 47.99rem) {
-  .slot[data-at='-1'], .slot[data-at='1'] { --o: 0; }
+@media (max-width: 40rem) {
+  .hero { padding-left: var(--s-4); padding-right: var(--s-4); }
+  .hero-head { margin-top: var(--s-7); }
+  .install { font-size: 11.5px; }
+  .wipe-label { display: none; }
+  .wipe-line i { width: 26px; height: 26px; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .pop, .segment-run { animation: none; }
-  .slot, .piece *, .cleanup-step, .copy-button, .ruler-dot, .swatch { transition: none; }
+  .wipe-label b, .install-copy, .wipe-line i { transition: none; }
 }
 
 /* dev-only picker: chrome, not a contestant */
-.picker { position: fixed; left: 12px; bottom: 12px; z-index: var(--z-chrome); display: flex; gap: 4px; padding: 6px; border-radius: 10px;
+.picker { position: fixed; left: 12px; bottom: 12px; z-index: 50; display: flex; gap: 4px; padding: 6px; border-radius: 10px;
   background: #111; font: 12px/1.2 system-ui, sans-serif; box-shadow: 0 8px 24px rgb(0 0 0 / 0.3); }
 .picker span { width: 8px; }
 .picker button { padding: 4px 8px; border: 0; border-radius: 6px; cursor: pointer; background: #222; color: #ccc; font: inherit; }

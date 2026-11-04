@@ -1,0 +1,97 @@
+/* The hero's three comps, in the signed-off foundations. The app screen is a real-feeling dashboard; Plumber's marks
+ * are the overlay's box model (line boxes, padding bands, gap bands): off in coral, on in green. */
+code { font-family: var(--mono); font-size: 0.92em; }
+.btn-xs { height: 30px; padding: 0 12px; font-size: 13px; }
+
+/* ── the head, shared ── */
+.h-comp { padding-top: var(--s-6); }
+.h-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--s-9); }
+.h-brand { display: inline-flex; align-items: center; gap: 10px; font: 590 15px/1 var(--font); }
+.h-brand i { width: 18px; height: 18px; border-radius: 5px; background: linear-gradient(135deg, var(--accent), var(--measured)); }
+.h-links { display: flex; gap: 6px; align-items: center; font: var(--t-small); }
+.h-links a { padding: 6px 10px; color: var(--ink-2); }
+.h-head { max-width: 46rem; margin: 0 auto; text-align: center; }
+.h-head .lead { margin: var(--s-5) auto 0; }
+.h-cta { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin: var(--s-6) 0 0; }
+.h-install { display: inline-flex; align-items: center; gap: 12px; height: 40px; padding: 0 5px 0 14px; border-radius: var(--r-sm); background: var(--g1);
+  box-shadow: inset 0 0 0 1px var(--line-2); font-size: 13px; color: var(--ink-2); }
+.h-cta .btn-ghost { height: 40px; }
+
+/* ── the frame ── */
+.h-frame { position: relative; height: 540px; margin-top: var(--s-8); overflow: hidden; }
+.h-layer { position: absolute; inset: 0; }
+.h-layer-clean { clip-path: inset(0 0 0 55%); }
+
+/* ── the app screen ── */
+.app { position: relative; display: grid; grid-template-columns: 13rem 1fr; height: 100%; background: var(--g0); color: var(--ink-1); font-family: var(--font); }
+.app-side { display: grid; align-content: start; padding: 16px 10px; border-right: 1px solid var(--line); background: var(--g1); }
+.app-brand { display: flex; align-items: center; gap: 8px; padding: 4px 10px 14px; font: 590 14px/1 var(--font); }
+.app-brand i { width: 16px; height: 16px; border-radius: 4px; background: oklch(0.7 0.12 160); }
+.app-side a { border-radius: var(--r-xs); font-size: 13px; color: var(--ink-2); }
+.app-side a.on { background: var(--g2); color: var(--ink-1); }
+.app-main { display: grid; grid-template-rows: auto 1fr; min-width: 0; }
+.app-top { display: flex; justify-content: space-between; align-items: center; padding: 12px 24px; border-bottom: 1px solid var(--line); }
+.app-search { width: 15rem; padding: 7px 10px; border-radius: var(--r-sm); background: var(--g2); font-size: 12px; color: var(--ink-3); }
+.app-new { padding: 7px 12px; border-radius: var(--r-sm); background: var(--ink-1); color: var(--g0); font: 510 12px/1 var(--font); }
+.app-body { display: grid; align-content: start; padding: 24px; }
+.app-title { margin: 0; font-weight: 590; letter-spacing: -0.02em; }
+.app-stats { display: grid; grid-template-columns: repeat(3, 1fr); }
+.app-stat { display: grid; gap: 4px; border-radius: var(--r-md); background: var(--g1); border: 1px solid var(--line); }
+.app-stat small { color: var(--ink-3); }
+.app-stat b { font-weight: 590; letter-spacing: -0.02em; }
+.app-table { border-radius: var(--r-md); background: var(--g1); border: 1px solid var(--line); }
+.app-row { display: grid; grid-template-columns: 1fr 6rem 8rem 26px; align-items: center; border-top: 1px solid var(--line); }
+.app-row:first-child { border-top: 0; }
+.app-chip { justify-self: start; padding: 3px 8px; border-radius: 99px; font: 510 11px/1.3 var(--font); }
+.app-chip-on { background: var(--on-soft); color: var(--on); }
+.app-chip-off { background: var(--off-soft); color: var(--off); }
+.app-chip-idle { background: var(--g2); color: var(--ink-3); }
+.app-bar { height: 4px; border-radius: 2px; background: var(--g3); overflow: hidden; }
+.app-bar i { display: block; height: 100%; background: var(--ink-3); }
+.app-av { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; font: 590 10px/1 var(--font); font-style: normal;
+  color: oklch(0.86 0.06 var(--h)); background: oklch(0.36 0.07 var(--h)); }
+:root[data-scheme='light'] .app-av { color: oklch(0.42 0.1 var(--h)); background: oklch(0.92 0.04 var(--h)); }
+
+/* ── Plumber's marks ── */
+.h-marks { position: absolute; inset: 0; pointer-events: none; }
+.mk { position: absolute; box-sizing: border-box; }
+.mk[data-tone='coral'] { --c: var(--off); }
+.mk[data-tone='mint'] { --c: var(--on); }
+.mk-text { border-radius: 2px; background: rgb(from var(--c) r g b / 0.12); }
+.mk-pad { background: rgb(from var(--c) r g b / 0.14); box-shadow: inset 0 0 0 1px rgb(from var(--c) r g b / 0.35);
+  -webkit-mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0); mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0); }
+.mk-gap { background: repeating-linear-gradient(135deg, rgb(from var(--c) r g b / 0.4) 0 1px, transparent 1px 4px); }
+
+/* A · the wipe */
+.h-split { position: absolute; top: 0; bottom: 0; left: 55%; width: 1px; background: var(--ink-1); box-shadow: 0 0 24px 2px rgb(from var(--accent) r g b / 0.5); }
+.h-split i { position: absolute; left: 50%; top: 50%; width: 28px; height: 28px; translate: -50% -50%; border-radius: 50%; background: var(--ink-1); box-shadow: var(--drop); }
+.h-split i::before, .h-split i::after { content: ''; position: absolute; top: 50%; border: 4px solid transparent; translate: 0 -50%; }
+.h-split i::before { left: 5px; border-right-color: var(--g0); }
+.h-split i::after { right: 5px; border-left-color: var(--g0); }
+.h-side-label { position: absolute; bottom: 14px; padding: 5px 9px; border-radius: var(--r-xs); background: var(--g2); font: 500 11px/1 var(--mono); color: var(--ink-2); box-shadow: inset 0 0 0 1px var(--line-2); }
+.h-side-l { left: calc(55% - 12px); translate: -100% 0; }
+.h-side-r { left: calc(55% + 12px); }
+.h-counts { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: center; margin: var(--s-5) 0 0; }
+.h-counts b { font-weight: 600; }
+.h-to { color: var(--ink-3); }
+.h-gap { width: 24px; }
+.h-caption { font: 400 13px/1.4 var(--mono); color: var(--ink-3); }
+
+/* B · the clean-up bar */
+.h-cleanup { position: absolute; left: 50%; bottom: 20px; translate: -50% 0; display: flex; gap: 16px; align-items: center; padding: 10px 10px 10px 16px; white-space: nowrap; }
+.h-cleanup p { margin: 0; font: var(--t-small); color: var(--ink-2); }
+.h-cleanup b { color: var(--ink-1); font-weight: 590; }
+.h-pass { display: inline-flex; gap: 8px; align-items: center; font: var(--t-label); font-size: 14px; }
+.h-pass svg { width: 16px; height: 16px; fill: none; stroke: var(--measured); stroke-width: 1.3; stroke-linecap: round; }
+
+/* C · one pixel: the page dimmed, the clicked element cut out, its fix on it */
+.h-spot { position: absolute; z-index: 2; border-radius: var(--r-md); box-shadow: 0 0 0 9999px rgb(0 0 0 / 0.62), 0 0 0 1.5px var(--measured), 0 0 0 5px var(--measured-soft); }
+:root[data-scheme='light'] .h-spot { box-shadow: 0 0 0 9999px rgb(250 250 248 / 0.72), 0 0 0 1.5px var(--measured), 0 0 0 5px var(--measured-soft); }
+.h-spot::before { content: ''; position: absolute; inset: 0; border-radius: inherit;
+  background: rgb(from var(--off) r g b / 0.22); -webkit-mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0); mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0); padding: 18px; }
+.h-fix { position: absolute; left: 0; top: calc(100% + 12px); display: inline-flex; gap: 8px; align-items: center; padding: 7px 10px; border-radius: var(--r-sm); background: var(--g1);
+  box-shadow: inset 0 0 0 1px var(--line-2), var(--drop); font-size: 13px; color: var(--ink-3); white-space: nowrap; }
+.h-fix s { color: var(--off); text-decoration-color: var(--off); }
+.h-fix code.on { color: var(--on); }
+.h-fix small { font: 400 12px/1 var(--font); }
+.h-cursor { position: absolute; z-index: 3; width: 16px; height: 22px; fill: var(--ink-1); stroke: var(--g0); stroke-width: 1.2; filter: drop-shadow(0 2px 4px rgb(0 0 0 / 0.4)); }

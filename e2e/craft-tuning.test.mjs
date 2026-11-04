@@ -38,7 +38,7 @@ const craft = (url, root) => run('node', [cli, 'craft', '--url', url, '--json', 
 const lineOf = (id) => PAGE.slice(0, PAGE.indexOf(`id="${id}"`)).split('\n').length;
 const found = (report, rule, id) => report.routes[0].findings.find((f) => f.rule === rule && f.line === lineOf(id));
 
-// about 80 characters a line (14px text, half an em a glyph: 560px), four lines; a 32px button; a loose heading; tight capitals
+// 80–90 characters a line (14px text in 560px), four lines; a 32px button; a loose heading; tight capitals
 const WORDS = 'Reading text runs best between forty-five and seventy-five characters a line, because the eye has to find the start of the next line on the way back, and a long line makes that return sweep a guess. ';
 const PAGE = `export function App() {
   return (
@@ -74,7 +74,10 @@ test('plumber craft judges by the project’s config: a tighter measure and a bi
   const b = await craft(tuned.url, tuned.root);
   const measure = found(b, 'craft/measure', 'measure');
   assert.ok(measure, 'with the measure at 70, 80 characters a line is too long');
-  assert.match(measure.title, /About 80 characters a line/);
+  // counted from the words as set (the rule measures real characters, not half an em a glyph): between the config's 70
+  // and the standard's 90
+  const chars = Number(/About (\d+) characters a line/.exec(measure.title)?.[1]);
+  assert.ok(chars > 70 && chars < 90, `the line's real length is told: ${measure.title}`);
   const hit = found(b, 'craft/hit-target', 'hit');
   assert.ok(hit, 'with hit targets at 44, a 32px button is too small');
   assert.match(hit.title, /32×32\. People miss anything under 44×44\./);

@@ -1,0 +1,99 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,100..900&family=Geist+Mono:wght@400..600&display=swap");
+/* ─────────────────────────────────────────────────────────
+ * THE HOMEPAGE'S FOUNDATIONS, signed off by the owner on 2026-11-04 (the overlay's tokens read cheap on a homepage;
+ * the bar is Linear; the homepage gets its own type, colour and code system, hero included). The review sheet is
+ * homepage/foundations.html. Fonts come from Google Fonts until the homepage hosts them itself.
+ *
+ * The rules that connect them:
+ *   type     one family (Inter, optical sizes) for everything but code; display sizes are set tight (negative
+ *            tracking grows with size); weight carries hierarchy only at 400/510/590, never bold-black
+ *   colour   neutrals do almost all the work, in four ground levels and three ink levels; one accent, for what you can
+ *            do; three signals that are the product's meaning (off, on, measured), used small and never as decoration
+ *   surface  depth from light, not outlines: a 1px border at 7% white, a lip of light along the top edge, a soft drop
+ *            far below; radius grows with size
+ *   code     Geist Mono at 13/20; tokens in muted hues at one lightness, so code reads as texture until a diff line
+ *            lights up
+ * ───────────────────────────────────────────────────────── */
+:root {
+  --font: "Inter", system-ui, sans-serif;
+  --mono: "Geist Mono", ui-monospace, monospace;
+  /* type: size / line-height / tracking / weight */
+  --t-display: 590 72px/1.02 var(--font);   --tr-display: -0.04em;
+  --t-title: 590 48px/1.06 var(--font);     --tr-title: -0.032em;
+  --t-heading: 590 24px/1.25 var(--font);   --tr-heading: -0.018em;
+  --t-lead: 400 20px/1.5 var(--font);       --tr-lead: -0.011em;
+  --t-body: 400 16px/1.6 var(--font);       --tr-body: -0.006em;
+  --t-small: 400 14px/1.5 var(--font);      --tr-small: -0.003em;
+  --t-label: 510 13px/1.3 var(--font);      --tr-label: 0;
+  --t-code: 400 13px/20px var(--mono);
+  /* radius grows with size */
+  --r-xs: 6px; --r-sm: 8px; --r-md: 12px; --r-lg: 16px; --r-xl: 24px;
+  /* space: 4px base */
+  --s-1: 4px; --s-2: 8px; --s-3: 12px; --s-4: 16px; --s-5: 24px; --s-6: 32px; --s-7: 48px; --s-8: 64px; --s-9: 96px; --s-10: 128px;
+  --ease: cubic-bezier(0.25, 1, 0.5, 1);
+}
+:root[data-scheme='dark'] {
+  --g0: #08090a; --g1: #0f1012; --g2: #16171a; --g3: #1e2024;
+  --line: rgb(255 255 255 / 0.07); --line-2: rgb(255 255 255 / 0.12); --lip: rgb(255 255 255 / 0.06);
+  --ink-1: #f7f8f8; --ink-2: #9ea2a9; --ink-3: #62666d;
+  --accent: #8d7bff; --accent-ink: #b8acff; --accent-soft: rgb(141 123 255 / 0.14);
+  --off: #ff7a5c; --off-soft: rgb(255 122 92 / 0.1);
+  --on: #4cc38a; --on-soft: rgb(76 195 138 / 0.1);
+  --measured: #5aa9ff; --measured-soft: rgb(90 169 255 / 0.12);
+  --drop: 0 24px 64px -24px rgb(0 0 0 / 0.8);
+  --display-fill: linear-gradient(180deg, #fff 30%, rgb(255 255 255 / 0.58));
+  --c-tag: #8fb8ff; --c-attr: #c3b4ff; --c-str: #a6dcbc; --c-punc: #6c7078; --c-text: #d5d7db;
+}
+:root[data-scheme='light'] {
+  --g0: #fbfbfa; --g1: #ffffff; --g2: #f4f4f2; --g3: #ebebe8;
+  --line: rgb(0 0 0 / 0.08); --line-2: rgb(0 0 0 / 0.13); --lip: rgb(255 255 255 / 0.9);
+  --ink-1: #0e0f11; --ink-2: #5d6168; --ink-3: #8e9299;
+  --accent: #6b57f0; --accent-ink: #5340d6; --accent-soft: rgb(107 87 240 / 0.1);
+  --off: #e2533a; --off-soft: rgb(226 83 58 / 0.08);
+  --on: #1d9a62; --on-soft: rgb(29 154 98 / 0.09);
+  --measured: #2d7fe0; --measured-soft: rgb(45 127 224 / 0.09);
+  --drop: 0 24px 48px -28px rgb(20 20 30 / 0.28);
+  --display-fill: linear-gradient(180deg, #0e0f11 40%, rgb(14 15 17 / 0.72));
+  --c-tag: #2f6fd0; --c-attr: #7350d8; --c-str: #1f8a58; --c-punc: #9a9ea5; --c-text: #2a2c31;
+}
+* { box-sizing: border-box; }
+html { background: var(--g0); color: var(--ink-1); font: var(--t-body); letter-spacing: var(--tr-body); -webkit-font-smoothing: antialiased; font-feature-settings: "cv11", "ss03"; }
+/* type */
+.display { margin: 0; font: var(--t-display); letter-spacing: var(--tr-display); background: var(--display-fill); -webkit-background-clip: text; background-clip: text; color: transparent; text-wrap: balance; }
+.title { margin: 0; font: var(--t-title); letter-spacing: var(--tr-title); text-wrap: balance; }
+.heading { margin: 0; font: var(--t-heading); letter-spacing: var(--tr-heading); }
+.lead { margin: 0; font: var(--t-lead); letter-spacing: var(--tr-lead); color: var(--ink-2); max-width: 36rem; text-wrap: pretty; }
+.lead b { color: var(--ink-1); font-weight: 510; }
+.small { margin: 0; font: var(--t-small); letter-spacing: var(--tr-small); color: var(--ink-2); }
+.label { font: var(--t-label); color: var(--ink-2); }
+/* colour */
+.surface { position: relative; border-radius: var(--r-lg); background: var(--g1); border: 1px solid var(--line); box-shadow: inset 0 1px 0 var(--lip), var(--drop); }
+/* code */
+.code { font: var(--t-code); color: var(--c-text); }
+.code header { display: flex; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid var(--line); font: var(--t-label); color: var(--ink-2); }
+.code header span:last-child { font-family: var(--mono); font-size: 12px; color: var(--ink-3); }
+.code ol { margin: 0; padding: 10px 0 12px; list-style: none; counter-reset: ln 11; }
+.code li { display: grid; grid-template-columns: 44px 18px 1fr; padding: 0 16px 0 0; counter-increment: ln; white-space: pre; }
+.code li::before { content: counter(ln); text-align: right; padding-right: 14px; color: var(--ink-3); opacity: 0.6; }
+.code li[data-d='-'] { background: var(--off-soft); }
+.code li[data-d='+'] { background: var(--on-soft); }
+.code .sign { color: var(--ink-3); }
+.code li[data-d='-'] .sign { color: var(--off); }
+.code li[data-d='+'] .sign { color: var(--on); }
+.code mark { background: none; color: inherit; border-radius: 3px; padding: 0 2px; margin: 0 -2px; }
+.code li[data-d='-'] mark { background: rgb(from var(--off) r g b / 0.2); }
+.code li[data-d='+'] mark { background: rgb(from var(--on) r g b / 0.22); }
+/* signals, in use: small, precise */
+.chip { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 8px; border-radius: var(--r-xs); font: 500 12px/1 var(--mono); }
+.chip i { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.chip-off { color: var(--off); background: var(--off-soft); }
+.chip-on { color: var(--on); background: var(--on-soft); }
+.chip-m { color: var(--measured); background: var(--measured-soft); }
+.btn { display: inline-flex; align-items: center; height: 36px; padding: 0 14px; border-radius: var(--r-sm); font: var(--t-label); font-size: 14px; border: 0; cursor: pointer; }
+.btn-primary { background: var(--ink-1); color: var(--g0); }
+.btn-accent { background: var(--accent); color: #fff; }
+.btn-ghost { background: var(--g2); color: var(--ink-1); box-shadow: inset 0 0 0 1px var(--line-2); }
+/* code tokens */
+.t { color: var(--c-tag); } .a { color: var(--c-attr); } .s { color: var(--c-str); } .p { color: var(--c-punc); }
+/* phones: display and title come down */
+@media (max-width: 52rem) { :root { --t-display: 590 44px/1.05 var(--font); --t-title: 590 34px/1.1 var(--font); } }

@@ -89,18 +89,20 @@ export const FIX_CSS = TEXT_EDITOR_CSS + ELEMENT_CARD_CSS + `
   .fx .bar .more:hover, .fx .bar .tool:hover, .fx .bar .more[aria-expanded="true"] { background: rgb(0 0 0 / .05); color: #1c1b19; }
   .fx .bar .more svg, .fx .bar .tool svg { width: 16px; height: 16px; }
   .fx .bar .tools { display: inline-flex; gap: 2px; animation: pl-pop 260ms var(--pl-spring-pop) both; }
-  .fx .bar .close { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 6px; border-radius: 8px; color: #8b8a85; font-weight: 600; font-size: 12px; flex: none; }
-  .fx .bar .close:hover { background: rgb(0 0 0 / .05); color: #1c1b19; }
-  .fx .bar .close kbd { display: inline-grid; place-items: center; height: 18px; padding: 0 5px; margin: 0; border-radius: 4px; font: 600 11px/1 var(--pl-mono, ui-monospace, monospace);
+  .fx .bar .bar-close { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 6px; border-radius: 8px; color: #8b8a85; font-weight: 600; font-size: 12px; flex: none; }
+  .fx .bar .bar-close:hover { background: rgb(0 0 0 / .05); color: #1c1b19; }
+  .fx .bar .bar-close kbd { display: inline-grid; place-items: center; height: 18px; padding: 0 5px; margin: 0; border-radius: 4px; font: 600 11px/1 var(--pl-mono, ui-monospace, monospace);
     background: var(--pl-paper-2); box-shadow: inset 0 0 0 1px var(--pl-rule); color: var(--pl-ink-2); }
-  .fx .bar .close .x { display: none; width: 16px; height: 16px; }
+  .fx .bar .bar-close .x { display: none; width: 16px; height: 16px; }
   .fx .bar.has-notice .long { display: none; }
+  /* the tools out take the room Close's word had: Esc says it */
+  .fx .bar:has(.tools) .bar-close .word { display: none; }
   @media (max-width: 560px) {
     .fx .bar { padding: 0 4px 0 12px; gap: 4px; }
     /* a phone's bar keeps the count, its two actions and Close; the tools are on the dock's mark once Blueprint closes */
-    .fx .bar .long, .fx .bar .notice, .fx .bar .more, .fx .bar .tools, .fx .bar .close .word, .fx .bar .close kbd { display: none; }
+    .fx .bar .long, .fx .bar .notice, .fx .bar .more, .fx .bar .tools, .fx .bar .bar-close .word, .fx .bar .bar-close kbd { display: none; }
     .fx .bar .pl-act.quiet kbd { display: none; } .fx .bar .pl-act { padding: 0 11px; }
-    .fx .bar .close .x { display: block; }
+    .fx .bar .bar-close .x { display: block; }
   }
   @media (prefers-reduced-motion: reduce) { .fx .readout { transition: none; } .fx .bar .tools { animation: none; } }
   .fx .primary { height: 32px; padding: 0 12px 0 14px; border-radius: 11px; background: #1c1b19; color: #fff; font-weight: 550; display: inline-flex; align-items: center; gap: 6px;
@@ -356,7 +358,7 @@ export class FixPanel {
       else if (b.classList.contains('cleanup')) this.#cleanup.start();
       else if (b.classList.contains('more')) { this.#tools = !this.#tools; this.#html = ''; this.render(); }
       else if (b.classList.contains('tool')) this.#host.tool?.(b.dataset.tool);
-      else if (b.classList.contains('close')) this.#host.tool?.('bp-toggle');
+      else if (b.classList.contains('bar-close')) this.#host.tool?.('bp-toggle');
       else if (b.classList.contains('setup')) this.#host.openSetup?.();
       else if (b.classList.contains('sp')) this.#pick(+b.dataset.i);
       else if (b.classList.contains('take')) this.take();
@@ -779,12 +781,12 @@ export class FixPanel {
     const settledNow = this.#progress?.done ?? (!!this.#progress?.total && this.#progress.read === this.#progress.total);
     const settled = settledNow || (this.#steady?.path === location.pathname && !!this.#unsettledAt && performance.now() - this.#unsettledAt < BRIEF);
     let html;
-    const tidy = `<button class="pl-act quiet cleanup" aria-keyshortcuts="c">${esc(CLEANUP.bar)}<span class="long">&nbsp;${esc(CLEANUP.barLong)}</span> <kbd>C</kbd></button>`;
+    const tidy = `<button class="pl-act quiet cleanup" aria-keyshortcuts="c"><span>${esc(CLEANUP.bar)}<span class="long"> ${esc(CLEANUP.barLong)}</span></span> <kbd>C</kbd></button>`;
     // the bar's end: ··· (its tools, only once asked for) and Close; and the setup steps left, said in the line
     const B = FIX.bar, left = this.#host.setupLeft?.() ?? 0;
     const end = `<button class="more" aria-expanded="${this.#tools}" aria-label="${esc(this.#tools ? B.less : B.more)}" title="${esc(this.#tools ? B.less : B.more)}">${BAR_ICON.more}</button>`
       + (this.#tools ? `<span class="tools">${Object.entries(B.tools).map(([n, label]) => `<button class="tool" data-tool="${n}" aria-label="${esc(label)}" title="${esc(label)}">${BAR_ICON[n]}</button>`).join('')}</span>` : '')
-      + `<button class="close" aria-keyshortcuts="Escape" aria-label="${esc(B.close)}"><span class="word">${esc(B.close)}</span> <kbd>Esc</kbd>${BAR_ICON.x}</button>`;
+      + `<button class="bar-close" aria-keyshortcuts="Escape" aria-label="${esc(B.close)}"><span class="word">${esc(B.close)}</span> <kbd>Esc</kbd>${BAR_ICON.x}</button>`;
     const notice = left ? `<span class="notice"><b>${esc(B.setup(left))}</b><button class="setup">${esc(B.review)}</button></span>` : '';
     if (this.#cleanup.running) html = this.#cleanup.html();
     else if (this.#writing || this.#undoing) html = `<div class="writing"><i></i>${esc(this.#undoing ? FIX.undoing : this.#writingText ?? FIX.writing)}</div>`;

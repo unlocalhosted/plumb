@@ -1,0 +1,83 @@
+/* The three concepts. Overlay hues only (plus white for light), each piece on its own painted field (surfaces.css
+   .field-glow). Very few words: the picture says it. */
+body { margin: 0; background: var(--pl-paper); color: var(--pl-ink); font-family: var(--pl-sans); }
+.concepts { max-width: 72rem; margin: 0 auto; padding: 64px 32px 120px; display: grid; gap: 96px; }
+.concept header { display: grid; grid-template-columns: auto 1fr; column-gap: 16px; align-items: baseline; margin-bottom: 28px; }
+.concept header b { grid-row: span 2; display: grid; place-items: center; width: 44px; height: 44px; border-radius: 12px; background: var(--pl-pink-soft); color: var(--pl-pink-ink);
+  box-shadow: 0 0 0 2px var(--pl-ink), 3px 3px 0 var(--pl-ink); font: 820 22px/1 var(--pl-sans); }
+.concept h2 { margin: 0; font: 820 40px/1 var(--pl-sans); letter-spacing: -0.04em; }
+.concept p { margin: 8px 0 0; max-width: 44rem; font-size: 18px; line-height: 28px; color: var(--pl-ink-2); }
+
+.art { position: relative; isolation: isolate; aspect-ratio: 16 / 9; border-radius: 36px; overflow: hidden;
+  box-shadow: 0 0 0 2px var(--pl-ink), 8px 8px 0 var(--pl-ink); }
+.art .field-glow i { animation-duration: 40s; }
+.art [class$='-tag'], .art [class*='-tag '] { position: absolute; padding: 6px 10px; border-radius: 9px; font: 600 13px/1 var(--pl-mono); white-space: nowrap;
+  background: var(--pl-paper); box-shadow: 0 0 0 1.5px var(--pl-ink), 3px 3px 0 var(--pl-ink); }
+
+/* ── A · the day you start ── */
+.art-a { --c1: white; --c2: color-mix(in oklab, var(--pl-lilac-soft) 75%, white); --c3: color-mix(in oklab, var(--pl-mint-soft) 70%, white);
+  --c4: color-mix(in oklab, var(--pl-mint) 25%, var(--pl-mint-soft)); --dir: 90deg; }
+.art-a::after { content: ''; position: absolute; inset: 0 0 0 56%; z-index: -1; pointer-events: none;
+  background: radial-gradient(60% 70% at 40% 46%, color-mix(in oklab, white 70%, transparent), transparent 70%); }
+.a-past { position: absolute; inset: 0 auto 0 0; width: 56%; }
+.a-past i { position: absolute; width: calc(var(--s) * 1.5px); height: calc(var(--s) * 1.5px); translate: -50% -50%; border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, color-mix(in oklab, white 40%, var(--pl-lilac)), color-mix(in oklab, var(--pl-lilac-ink) 45%, var(--pl-lilac)));
+  opacity: 0.8; box-shadow: 0 4px 10px -4px color-mix(in oklab, var(--pl-lilac-ink) 50%, transparent); }
+.a-past i:nth-child(3n) { background: radial-gradient(circle at 35% 30%, color-mix(in oklab, white 40%, var(--pl-pink)), color-mix(in oklab, var(--pl-pink-ink) 35%, var(--pl-pink))); opacity: 0.6; }
+.a-past i:nth-child(5n) { background: radial-gradient(circle at 35% 30%, color-mix(in oklab, white 40%, var(--pl-sky)), color-mix(in oklab, var(--pl-sky-ink) 35%, var(--pl-sky))); opacity: 0.6; }
+.a-frost { position: absolute; inset: 0 auto 0 0; width: 56%; backdrop-filter: blur(2.5px) saturate(0.75); -webkit-backdrop-filter: blur(2.5px) saturate(0.75);
+  background: linear-gradient(90deg, color-mix(in oklab, white 34%, transparent), color-mix(in oklab, white 12%, transparent) 85%, color-mix(in oklab, white 40%, transparent)); }
+.a-line { position: absolute; left: 56%; top: 0; bottom: 0; width: 2px; background: var(--pl-ink);
+  box-shadow: 0 0 0 6px color-mix(in oklab, var(--pl-mint) 18%, transparent), 0 0 48px 8px color-mix(in oklab, var(--pl-mint) 30%, transparent); }
+.a-line .a-tag { top: 28px; left: 50%; translate: -50% 0; background: var(--pl-ink); color: var(--pl-paper); }
+.a-tag-kept { left: 32px; bottom: 32px; color: var(--pl-ink-2); }
+.a-new { position: absolute; left: 78%; top: 46%; }
+.a-new b { position: absolute; width: 22px; height: 22px; translate: -50% -50%; border-radius: 50%; background: var(--pl-coral); box-shadow: 0 0 0 2px var(--pl-ink), 0 0 36px 10px color-mix(in oklab, var(--pl-coral) 45%, transparent); }
+.a-new i { position: absolute; translate: -50% -50%; border-radius: 50%; border: 2px solid var(--pl-coral); }
+.a-new i:nth-child(1) { width: 64px; height: 64px; opacity: 0.6; }
+.a-new i:nth-child(2) { width: 120px; height: 120px; opacity: 0.32; }
+.a-new i:nth-child(3) { width: 190px; height: 190px; opacity: 0.14; }
+.a-tag-new { left: calc(78% + 26px); top: calc(46% - 46px); background: var(--pl-coral-soft); color: var(--pl-coral-ink); rotate: 5deg; }
+
+/* ── B · sealed ── */
+.art-b { --c1: color-mix(in oklab, var(--pl-lilac-soft) 40%, white); --c2: color-mix(in oklab, var(--pl-pink) 18%, var(--pl-pink-soft));
+  --c3: color-mix(in oklab, var(--pl-lilac) 28%, var(--pl-lilac-soft)); --c4: color-mix(in oklab, var(--pl-lilac) 50%, var(--pl-lilac-soft)); --dir: 125deg; }
+.b-slab { position: absolute; left: 9%; top: 14%; width: 52%; height: 72%; border-radius: 32px; overflow: hidden; rotate: -3deg;
+  background: linear-gradient(140deg, color-mix(in oklab, white 62%, transparent), color-mix(in oklab, white 18%, transparent) 60%, color-mix(in oklab, white 34%, transparent));
+  backdrop-filter: blur(12px) saturate(1.4); -webkit-backdrop-filter: blur(12px) saturate(1.4);
+  box-shadow: inset 0 0 0 1.5px color-mix(in oklab, white 80%, transparent), inset 0 2px 0 white, inset 0 -10px 30px -10px color-mix(in oklab, var(--pl-lilac) 30%, transparent),
+    0 40px 70px -30px color-mix(in oklab, var(--pl-lilac-ink) 55%, transparent), 0 0 0 2px var(--pl-ink); }
+.b-slab::before { content: ''; position: absolute; inset: -40%; background: conic-gradient(from 200deg, var(--pl-pink-soft), var(--pl-sky-soft), var(--pl-mint-soft), var(--pl-butter-soft), var(--pl-pink-soft));
+  opacity: 0.35; mix-blend-mode: soft-light; filter: blur(30px); }
+.b-slab::after { content: ''; position: absolute; left: -10%; top: -30%; width: 40%; height: 160%; rotate: 25deg;
+  background: linear-gradient(90deg, transparent, color-mix(in oklab, white 55%, transparent), transparent); }
+.b-slab i { position: absolute; width: calc(var(--s) * 1px); height: calc(var(--s) * 1px); translate: -50% -50%; border-radius: 50%;
+  background: color-mix(in oklab, var(--pl-lilac-ink) 55%, var(--pl-ink-3)); opacity: calc(0.35 + var(--depth) * 0.5); filter: blur(calc((1 - var(--depth)) * 1.6px));
+  scale: calc(0.7 + var(--depth) * 0.5); }
+.b-etch { position: absolute; right: 26px; bottom: 34px; font: 820 120px/0.8 var(--pl-sans); letter-spacing: -0.06em; color: color-mix(in oklab, white 70%, transparent);
+  text-shadow: 0 1px 0 color-mix(in oklab, var(--pl-lilac-ink) 25%, transparent), 0 -1px 0 white; }
+.b-etch-sub { position: absolute; right: 30px; bottom: 16px; font: 600 12px/1 var(--pl-mono); color: color-mix(in oklab, var(--pl-lilac-ink) 60%, transparent); }
+.b-new { position: absolute; left: 76%; top: 44%; }
+.b-new b { position: absolute; width: 28px; height: 28px; translate: -50% -50%; border-radius: 50%; background: radial-gradient(circle at 35% 30%, color-mix(in oklab, white 60%, var(--pl-coral)), var(--pl-coral) 60%);
+  box-shadow: 0 0 0 2px var(--pl-ink), 0 0 0 10px color-mix(in oklab, var(--pl-coral) 20%, transparent), 0 0 60px 18px color-mix(in oklab, var(--pl-coral) 45%, transparent); }
+.b-new span { position: absolute; left: 26px; top: -48px; padding: 6px 10px; border-radius: 9px; background: var(--pl-coral-soft); color: var(--pl-coral-ink); white-space: nowrap;
+  box-shadow: 0 0 0 1.5px var(--pl-ink), 3px 3px 0 var(--pl-ink); font: 600 13px/1 var(--pl-mono); rotate: 5deg; }
+
+/* ── C · still water ── */
+.art-c { --c1: color-mix(in oklab, var(--pl-sky-soft) 40%, white); --c2: color-mix(in oklab, var(--pl-mint-soft) 60%, var(--pl-sky-soft));
+  --c3: color-mix(in oklab, var(--pl-sky) 25%, var(--pl-sky-soft)); --c4: color-mix(in oklab, var(--pl-sky) 45%, var(--pl-mint-soft)); --dir: 165deg; }
+.c-bed { position: absolute; inset: 0; }
+.c-bed i { position: absolute; width: calc(var(--s) * 1.5px); height: calc(var(--s) * 1.05px); translate: -50% -50%; border-radius: 46% 54% 50% 50%;
+  background: radial-gradient(ellipse at 38% 28%, color-mix(in oklab, white 75%, var(--pl-mint-soft)), color-mix(in oklab, var(--pl-sky-ink) 22%, var(--pl-mint-soft)) 55%, color-mix(in oklab, var(--pl-sky-ink) 45%, var(--pl-sky)));
+  opacity: 0.85; box-shadow: 0 6px 10px -5px color-mix(in oklab, var(--pl-sky-ink) 55%, transparent); }
+.c-caustics { position: absolute; inset: -20%; mix-blend-mode: soft-light; opacity: 0.9;
+  background:
+    radial-gradient(closest-side, transparent 55%, color-mix(in oklab, white 90%, transparent) 70%, transparent) 0 0 / 110px 80px,
+    radial-gradient(closest-side, transparent 50%, color-mix(in oklab, white 80%, transparent) 68%, transparent) 55px 40px / 150px 110px;
+  filter: blur(3px); rotate: 14deg; }
+.c-ripple { position: absolute; left: 68%; top: 44%; width: 340px; height: 340px; translate: -50% -50%; overflow: visible; }
+.c-ripple circle { fill: none; stroke: var(--pl-coral); stroke-width: calc(3.5px - var(--k) * 0.55px); opacity: calc(0.9 - var(--k) * 0.17);
+  filter: drop-shadow(0 2px 0 color-mix(in oklab, white 80%, transparent)); }
+.c-ripple .c-drop { fill: var(--pl-coral); stroke: var(--pl-ink); stroke-width: 2px; opacity: 1; filter: drop-shadow(0 0 12px color-mix(in oklab, var(--pl-coral) 60%, transparent)); }
+.c-tag-still { left: 32px; bottom: 32px; color: var(--pl-sky-ink); }
+.c-tag-new { left: calc(68% + 24px); top: calc(44% - 52px); background: var(--pl-coral-soft); color: var(--pl-coral-ink); rotate: 5deg; }

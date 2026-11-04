@@ -8,7 +8,8 @@ check it on the rendered page.
 Rules React Plumber already enforces are marked *(rule today)*.
 
 Status: catalogue, 2026-10-27. The order of what gets built is at the end.
-Encoded, 2026-11-04: all 77. Each craft rule carries its number here (`number: [...]`) in overlay/src/craft-rules.js
+Verified, 2026-11-04 (docs/craft/verification.md): 15 rules check their whole row; 59 check part of it; #53 is not
+checked; #69's habit checks something else; #49's test can't fail. Where each lives: each craft rule carries its number here (`number: [...]`) in overlay/src/craft-rules.js
 (read on the rendered page) or overlay/src/craft-headless.js (driven and measured); 11, 19, 28–30, 32, 43, 47, 58, 67,
 69 and 72 are the source habits in src/habits/index.ts.
 

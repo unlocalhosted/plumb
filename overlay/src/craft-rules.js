@@ -46,7 +46,7 @@
  * `theme.spec(this.id)` and never holds a threshold, a target or a tier of its own. Every rule says nothing when its
  * evidence is ambiguous: unequal insets, a running animation, a disabled control, a scale or rotation.
  * ───────────────────────────────────────────────────────── */
-import { rgb, utility, classesOf, elevation } from './craft-read.js';
+import { rgb, utility, classesOf, elevation, COLOUR } from './craft-read.js';
 import { TIER } from './craft-facets.js';
 import { say } from './words.js';
 import { RUN_RULES } from './craft-headless.js';
@@ -75,6 +75,14 @@ function cornerShows(el, s) {
   return s.overflow !== 'visible' && s.overflow !== '';
 }
 
+// a corner drawn only by borders shows only where a border meets it: a top border draws no bottom corner
+const SIDES = { tl: ['Top', 'Left'], tr: ['Top', 'Right'], bl: ['Bottom', 'Left'], br: ['Bottom', 'Right'] };
+function drawsCorner(el, s, corner) {
+  const bg = rgb(s.backgroundColor);
+  if (REPLACED.has(el.localName) || (bg && bg[3] > 0) || s.backgroundImage !== 'none' || s.boxShadow !== 'none' || (s.overflow !== 'visible' && s.overflow !== '')) return true;
+  return SIDES[corner].some((side) => px(s[`border${side}Width`]) > 0);
+}
+
 // #8 / #41. Nested radius = outer radius − padding, never below 0.
 export const concentricRadius = {
   id: 'craft/concentric-radius', family: 'craft', number: [8, 41], owns: ['radius'], once: 'ancestor', reads: ['rect', 'style', 'parent'],
@@ -92,6 +100,9 @@ export const concentricRadius = {
     const pr = facts.rect(parent), cr = facts.rect(el), b = facts.box(parent);
     // the radius a browser draws is at most half the box: a pill is its height over two, not 9999px
     const drawnR = Math.min(R, pr.width / 2, pr.height / 2), drawnr = Math.min(r, cr.width / 2, cr.height / 2);
+    // a circle has no corner to nest in: what sits at its box's corner (a presence dot on an avatar) overlaps the
+    // circle's edge, it isn't inside a curve
+    if (drawnR >= Math.min(pr.width, pr.height) / 2 - 0.5 && Math.abs(pr.width - pr.height) < 1) return [];
     // the corner the child sits at: its edges on the parent's content edges, both sides
     const corners = [
       { name: 'tl', prop: 'border-top-left-radius', at: Math.abs(cr.left - (pr.left + b.bl + b.pl)) < 1 && Math.abs(cr.top - (pr.top + b.bt + b.pt)) < 1, ix: cr.left - pr.left, iy: cr.top - pr.top },
@@ -99,13 +110,14 @@ export const concentricRadius = {
       { name: 'bl', prop: 'border-bottom-left-radius', at: Math.abs(cr.left - (pr.left + b.bl + b.pl)) < 1 && Math.abs(pr.bottom - b.bb - b.pb - cr.bottom) < 1, ix: cr.left - pr.left, iy: pr.bottom - cr.bottom },
       { name: 'br', prop: 'border-bottom-right-radius', at: Math.abs(pr.right - b.br - b.pr - cr.right) < 1 && Math.abs(pr.bottom - b.bb - b.pb - cr.bottom) < 1, ix: pr.right - cr.right, iy: pr.bottom - cr.bottom },
     ];
-    const c = corners.find((k) => k.at);
+    const c = corners.find((k) => k.at && drawsCorner(el, s, k.name));
     if (!c) return [];
     // unequal insets would want an elliptical corner: say nothing
     if (Math.abs(c.ix - c.iy) > 0.5) return [];
     const p = c.ix;
-    // flush in a corner the parent clips: the parent's own curve is the corner, the child's radius is never seen
-    if (p < 0.5 && ps.overflow !== 'visible') return [];
+    // flush in a corner the parent clips: the parent's own curve is the corner, the child's radius is never seen. A
+    // clip follows the inside of the parent's border, so a child whose only inset is that border is flush too
+    if (p - Math.max(b.bl, b.br, b.bt, b.bb) < 0.5 && ps.overflow !== 'visible') return [];
     // the parent's curve ends before the child's edge: no relation to keep
     if (p >= drawnR - 0.5) return [];
     const wanted = Math.max(0, drawnR - p);
@@ -115,7 +127,9 @@ export const concentricRadius = {
     const rec = wanted <= tolerance && !theme.nearest('radius', wanted, tolerance) ? { kind: 'class', from: cls ?? '', to: 'rounded-none', why: `0px: ${fmt(drawnR)} minus ${fmt(p)}` }
       : recommend({ family: 'radius', prefix: 'rounded', job: 'nested', want: { min: wanted - tolerance, max: wanted + tolerance, target: wanted }, exact: tolerance, from: cls ?? '', sets: RADII, theme,
         label: 'this corner wants', advice: () => `None of your radius steps is near ${fmt(wanted)}. Add one, or change the padding.` });
-    if (rec.kind === 'class') rec.why = `${fmt(theme.scale('radius').find((s) => `rounded-${s.short}` === rec.to)?.px ?? wanted)}: ${fmt(drawnR)} minus ${fmt(p)}`;
+    // the step taken can differ from the exact answer by the tolerance; say so instead of writing false arithmetic
+    const taken = theme.scale('radius').find((s) => `rounded-${s.short}` === rec.to)?.px ?? wanted;
+    if (rec.kind === 'class') rec.why = Math.abs(taken - wanted) < 0.5 ? `${fmt(taken)}: ${fmt(drawnR)} minus ${fmt(p)}` : `${fmt(taken)}, your nearest step to ${fmt(drawnR)} minus ${fmt(p)} (${fmt(wanted)})`;
     const suggest = cls ? rec : asAdvice(rec, (r) => `Use ${fmt(wanted)} (${r.to}).`);
     return [{
       ...say(this.id, { r: drawnr, p, R: drawnR, wanted }),
@@ -142,7 +156,9 @@ export const innerOuterSpacing = {
     const axis = flowAxis(s);
     if (!axis) return [];
     const g = gapOf(s, axis);
-    if (g <= 0 || facts.kids(el).length < 2) return [];
+    // a group's items: its elements and its bare words (<label>Date of birth<input /></label> is two things)
+    const items = facts.kids(el).length + [...el.childNodes].filter((n) => n.nodeType === 3 && n.nodeValue.trim()).length;
+    if (g <= 0 || items < 2) return [];
     const parent = el.parentElement;
     if (!parent || parent === document.body || parent === document.documentElement) return [];
     const ps = facts.style(parent);
@@ -155,7 +171,10 @@ export const innerOuterSpacing = {
     if (g <= G + T.min) return [];
     const cls = utility(el, 'gap', { not: /^[xy](?:-|$)/ });
     const text = cls ?? 'gap';
-    const rec = recommend({ family: 'spacing', prefix: 'gap', job: 'inner', want: { min: 0, max: G, target: G }, round: 'down', from: cls ?? '', token: false, theme,
+    // tighter than the gap between groups, not equal to it: equal leaves a label exactly between its input and the one
+    // above, which is the confusion itself; aim at half the outer gap
+    const rec = recommend({ family: 'spacing', prefix: 'gap', job: 'inner', want: { min: 0, max: G - 1, target: G / 2 }, round: 'down', from: cls ?? '', token: false, theme,
+      sets: (v) => ({ rowGap: v, columnGap: v }),
       advice: () => `Make the gap smaller than ${fmt(G)}.` });
     if (rec.kind === 'class') rec.why = `${rec.why.split(' (')[0]}, tighter than the ${fmt(G)} between groups`;
     const suggest = cls ? rec : asAdvice(rec, (r) => `Make the gap ${r.why.split(',')[0]} (${r.to}) or less.`);
@@ -221,19 +240,28 @@ export const halfPixel = {
     if (e === 0 && f === 0) return [];
     if (s.animationName !== 'none') return [];
     const hairline = r.width <= 1.01 || r.height <= 1.01;
-    if (!facts.text(el) && !hairline) return [];
+    // a translation moves everything inside: a box holding words (a tooltip of two lines) blurs them all
+    if (!facts.text(el) && !el.textContent?.trim() && !hairline) return [];
     const T = theme.spec(this.id);
     const dpr = devicePixelRatio || 1, { slack } = T;
     const off = (v) => { const dv = Math.abs(v * dpr - Math.round(v * dpr)); return dv > slack && dv < 1 - slack; };
-    const fx = off(e), fy = off(f);
+    // words are placed across at sub-pixel precision anyway, so only a fraction down blurs them (measured: grey fringe
+    // 0.44 → 0.60 at 1×); a hairline blurs either way
+    const fx = hairline && off(e), fy = off(f);
     if (!fx && !fy) return [];
     const cls = utility(el, 'translate');
     const text = cls ?? 'transform';
     const half = cls && /1\/2$/.test(cls);
     const size = fx ? r.width : r.height, even = Math.ceil(size / 2) * 2;
-    const suggest = { kind: 'advice', text: half
-      ? `Make it ${even}px ${fx ? 'wide' : 'tall'}, so half of it is a whole number.`
-      : 'Move it by whole pixels.' };
+    // centred down by half its own height (top-1/2 -translate-y-1/2): centre it by layout instead, which lands on whole
+    // pixels: pinned top and bottom, auto margins, its own height
+    const own = classesOf(el).split(/\s+/);
+    const pinned = fy && /absolute|fixed/.test(s.position) && own.includes('top-1/2') && own.includes('-translate-y-1/2');
+    const suggest = pinned
+      ? { kind: 'class', from: 'top-1/2 -translate-y-1/2', to: 'inset-y-0 my-auto h-fit', why: 'centred by layout, on whole pixels', sets: { top: '0px', bottom: '0px', marginTop: 'auto', marginBottom: 'auto', height: 'fit-content', translate: 'none' }, moves: true }
+      : { kind: 'advice', text: half
+        ? `Make it ${even}px ${fx ? 'wide' : 'tall'}, so half of it is a whole number.`
+        : 'Move it by whole pixels.' };
     return [{
       ...say(this.id, { x: e, y: f, line: hairline }),
       key: this.id, text, props: ['transform'], value: `${e}px ${f}px`, n: fx ? e : f,
@@ -251,7 +279,9 @@ export const hairline = {
     const s = facts.style(el), r = facts.rect(el);
     // a divider: a 1px rule (an <hr>, or a box one pixel tall or wide), or a box drawn by one 1px side only
     const sides = ['Top', 'Right', 'Bottom', 'Left'].filter((k) => s[`border${k}Style`] !== 'none' && Math.abs(px(s[`border${k}Width`]) - 1) < 0.01);
-    const rule = (r.height <= 1.01 && r.width > 8) || (r.width <= 1.01 && r.height > 8);
+    // exactly one CSS pixel: a rule already drawn at half of one is the fix, not the mistake
+    const one = (v) => Math.abs(v - 1) < 0.05;
+    const rule = (one(r.height) && r.width > 8) || (one(r.width) && r.height > 8);
     const oneSide = sides.length === 1;
     if (!rule && !oneSide) return [];
     if (rule && !(rgb(s.backgroundColor)?.[3] > 0) && !sides.length) return [];
@@ -261,7 +291,11 @@ export const hairline = {
       ...say(this.id, { dpr: devicePixelRatio }),
       key: this.id, text, props: oneSide ? [`border-${sides[0].toLowerCase()}-width`] : ['height'], value: '1px', n: 1,
       evidence: { dpr: devicePixelRatio, sides, rule }, confidence: 0.82,
-      suggest: { kind: 'advice', text: oneSide ? `Use a 0.5px border on 2× screens.` : 'Make it 0.5px tall on 2× screens.' },
+      // one device pixel: the side's own width class (border-b) becomes half a CSS pixel; a 1px-tall rule, half as tall
+      suggest: ((side) => oneSide
+        ? { kind: 'class', from: cls && new RegExp(`^border-${side[0].toLowerCase()}(?:-px|-1)?$`).test(cls) ? cls : '', to: `border-${side[0].toLowerCase()}-[0.5px]`, why: 'one device pixel', sets: { [`border${side}Width`]: '0.5px' } }
+        : one(r.height) ? { kind: 'class', from: cls && /^h-(px|\[1px\])$/.test(cls) ? cls : '', to: 'h-[0.5px]', why: 'one device pixel', sets: { height: '0.5px' }, moves: true }
+          : { kind: 'class', from: cls && /^w-(px|\[1px\])$/.test(cls) ? cls : '', to: 'w-[0.5px]', why: 'one device pixel', sets: { width: '0.5px' }, moves: true })(sides[0]),
     }];
   },
 };
@@ -304,7 +338,7 @@ export const imageOutline = {
 function shadows(value) {
   if (!value || value === 'none') return [];
   return value.split(/,(?![^(]*\))/).map((layer) => {
-    const nums = layer.replace(/rgba?\([^)]*\)|oklch\([^)]*\)|#[0-9a-f]+/gi, '').match(/-?[\d.]+px/g)?.map(parseFloat) ?? [];
+    const nums = layer.replace(COLOUR, '').replace(/#[0-9a-f]+/gi, '').match(/-?[\d.]+px/g)?.map(parseFloat) ?? [];
     return { x: nums[0] ?? 0, y: nums[1] ?? 0, blur: nums[2] ?? 0, spread: nums[3] ?? 0, inset: /inset/.test(layer) };
   });
 }
@@ -315,18 +349,22 @@ export const layeredShadow = {
   check({ el, facts }, theme) {
     const T = theme.spec(this.id);
     const s = facts.style(el);
-    const layers = shadows(s.boxShadow).filter((l) => !l.inset && (l.blur > 0 || l.x || l.y));
+    const raw = s.boxShadow.split(/,(?![^(]*\))/);
+    const layers = shadows(s.boxShadow).map((l, i) => ({ ...l, colour: rgb(raw[i].match(COLOUR)?.[0]) })).filter((l) => !l.inset && (l.blur > 0 || l.x || l.y));
     if (layers.length !== 1 || layers[0].blur < T.blur) return [];
     const l = layers[0];
+    // the layers keep the shadow's own colour (a tinted shadow stays tinted); only its alpha is spread across them
+    const [r, g, bl] = l.colour ?? [0, 0, 0];
     const cls = utility(el, 'shadow');
     const text = cls ?? 'box-shadow';
     const b = l.blur, y = Math.max(1, Math.round(l.y || b / 4));
-    const stack = [[0.5, 1], [1, 2], [2, 4], [4, 8]].map(([k, m]) => `0 ${Math.round(y * k / 4 * 10) / 10}px ${Math.round(b * m / 8)}px rgb(0 0 0 / ${(0.04 * (5 - m / 2)).toFixed(2)})`).join(', ');
+    const stack = [[0.5, 1], [1, 2], [2, 4], [4, 8]].map(([k, m]) => `0 ${Math.round(y * k / 4 * 10) / 10}px ${Math.round(b * m / 8)}px rgb(${Math.round(r)} ${Math.round(g)} ${Math.round(bl)} / ${(0.04 * (5 - m / 2)).toFixed(2)})`).join(', ');
     return [{
       ...say(this.id, { blur: b }),
       key: this.id, text, props: ['box-shadow'], value: s.boxShadow, n: b,
       evidence: { blur: b, x: l.x, y: l.y }, confidence: 0.84,
-      suggest: { kind: 'advice', text: `Try: box-shadow: ${stack}` },
+      // four layers whose blur and offset double from one to the next: a contact shadow and a soft, wide one
+      suggest: { kind: 'class', from: cls ?? '', to: arbitrary('shadow', stack), why: 'layered like real light', sets: { boxShadow: stack } },
     }];
   },
 };
@@ -399,8 +437,8 @@ function contentLeft(el, facts) {
   return null;
 }
 
-// #1. Align content, not boxes: a filled, padded row whose words fall off the column its siblings' words share bleeds
-// out by its padding (-mx-p px-p) so its fill escapes the column and its words stay on the line.
+// #1. Align content, not boxes: a filled, padded row or panel whose words fall off the column its siblings' words share
+// bleeds out by its padding (-mx-p px-p) so its fill escapes the column and its words stay on the line.
 export const contentAlign = {
   id: 'craft/content-align', family: 'craft', number: [1], owns: ['margin-x'], once: 'ancestor', reads: ['style', 'rect', 'kids', 'parent'],
   check({ el, facts }, theme) {
@@ -416,10 +454,14 @@ export const contentAlign = {
     const r = facts.rect(el), pr = facts.rect(parent);
     const column = pr.left + px(ps.borderLeftWidth) + px(ps.paddingLeft);
     if (Math.abs(r.left - column) > 0.5) return []; // the row already bleeds, or sits elsewhere
-    // the pattern is a highlighted row among rows like it (a selected item in a list), not a card in a column of
-    // mixed things: peers are siblings of the same kind and about the same height, at least one of them unfilled
+    // a highlighted row among rows like it (a selected item in a list), or an edgeless tint among the sections of a page
+    // (a note between a profile and its invoices): either way its words should share the edge its unfilled siblings'
+    // words share. A card with a shadow or a border is an object with an edge, and objects line up by their edges, so
+    // only rows like it count as its peers; an edgeless tint is compared with siblings of any kind and height
     const isFilled = (k) => { const ks = facts.style(k); return (rgb(ks.backgroundColor)?.[3] ?? 0) > 0 || ks.boxShadow !== 'none'; };
-    const peers = facts.kids(parent).filter((k) => k !== el && k.localName === el.localName && facts.rect(k).height >= r.height * 0.5 && facts.rect(k).height <= r.height * 2);
+    const edged = s.boxShadow !== 'none' || px(s.borderLeftWidth) > 0 || px(s.borderTopWidth) > 0;
+    const peers = facts.kids(parent).filter((k) => k !== el && facts.rect(k).height > 0
+      && (!edged || (k.localName === el.localName && facts.rect(k).height >= r.height * 0.5 && facts.rect(k).height <= r.height * 2)));
     if (!peers.some((k) => !isFilled(k))) return [];
     // the edge its peers' words share
     const edges = peers.filter((k) => !isFilled(k)).map((k) => contentLeft(k, facts)).filter((x) => x !== null);
@@ -429,9 +471,11 @@ export const contentAlign = {
     const mine = contentLeft(el, facts);
     if (mine === null || Math.abs(mine - column - pl) > 1) return [];
     const cls = utility(el, 'px') ?? utility(el, 'pl') ?? utility(el, 'p');
+    // what the bleed sets, so a preview can show it (and a project that hasn't generated the class yet still sees it)
     const rec = recommend({ family: 'spacing', prefix: '-mx', job: 'bleed', want: { min: pl - 0.5, max: pl + 0.5, target: pl }, from: '', token: false, theme,
+      sets: (v) => ({ marginLeft: -v, marginRight: -v }),
       advice: () => `Pull the row out by ${fmt(pl)} (margin-inline: -${fmt(pl)}).` });
-    if (rec.kind === 'class') rec.why = `pulls the row out by its ${fmt(pl)} padding`;
+    if (rec.kind === 'class') { rec.why = `pull the panel out by its ${fmt(pl)} padding`; rec.moves = true; } // a bleed moves layout: tried by asking again
     const suggest = cls && rec.kind === 'class' ? rec : { kind: 'advice', text: `Pull the row out by ${fmt(pl)} (margin-inline: -${fmt(pl)}).` };
     return [{
       ...say(this.id, { pl }),
@@ -447,7 +491,20 @@ export const contentAlign = {
 const GREY = 0.7; // the grey band: measured, but too close to the line to stand behind alone (the headless judge decides)
 const CONTROL = 'button, [role="button"], a[href], input[type="button"], input[type="submit"], input[type="reset"], summary';
 const disabled = (el) => el.matches(':disabled, [aria-disabled="true"]') || !!el.closest('[disabled], [aria-disabled="true"]');
-const words = (el) => (el.textContent ?? '').replace(/\s+/g, ' ').trim();
+// the words a person reads in an element: its text, never what an svg, a style or a script carries (an animated icon
+// brings its own styles)
+const UNREAD = new Set(['svg', 'style', 'script', 'template']);
+function textNodes(el) {
+  const out = [], walk = document.createTreeWalker(el, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT, { acceptNode: (n) => (n.nodeType === 1 && UNREAD.has(n.localName) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT) });
+  for (let n = walk.nextNode(); n; n = walk.nextNode()) if (n.nodeType === 3) out.push(n);
+  return out;
+}
+// the eased scrim's darkness at thirteen even stops, from the dark end (1) to clear (0)
+const EASED = [1, 0.738, 0.541, 0.382, 0.278, 0.194, 0.126, 0.075, 0.042, 0.021, 0.008, 0.002, 0];
+// a CSS value as a Tailwind arbitrary class: shadow-[0_1px_2px_rgb(0_0_0/0.1)]
+const arbitrary = (prefix, value) => `${prefix}-[${value.trim().replace(/\s*,\s*/g, ',').replace(/\s+/g, '_')}]`;
+let textCtx;
+const words = (el) => textNodes(el).map((n) => n.nodeValue).join('').replace(/\s+/g, ' ').trim();
 const alpha = (c) => c?.[3] ?? 0;
 // a over b, both [r, g, b, a]
 const over = (a, b) => [0, 1, 2].map((i) => a[i] * alpha(a) + b[i] * (1 - alpha(a))).concat(1);
@@ -541,6 +598,15 @@ export const iconSide = {
     if (!text || kids.length < 1) return [];
     const lead = icon(kids[0]) && !(kids.length === 1 && !facts.text(el)), tail = kids.length > 0 && icon(kids.at(-1)) && !lead;
     if (!lead && !tail) return [];
+    // an icon beside the words, in a row: a cover or a picture above them (a media tile) is not an icon side
+    const es = facts.style(el), mark = facts.rect(lead ? kids[0] : kids.at(-1));
+    if ((/flex/.test(es.display) && /column/.test(es.flexDirection)) || mark.height > 32 || mark.width > 32) return [];
+    // a full-width row (a menu item, a list row) whose content sits at its start isn't a centred button: its sides
+    // aren't seen against each other
+    // (the content's span, bare words included)
+    const span = document.createRange(); span.selectNodeContents(el);
+    const b0 = facts.box(el);
+    if (!/center/.test(es.justifyContent) && facts.rect(el).width - b0.pl - b0.pr > span.getBoundingClientRect().width + 24) return [];
     const b = facts.box(el);
     if (b.pl < T.min || Math.abs(b.pl - b.pr) > 0.5) return [];
     const side = lead ? 'l' : 'r', other = lead ? 'r' : 'l';
@@ -566,17 +632,34 @@ export const measure = {
     if (!el.matches('p, li, dd, blockquote') || !facts.text(el)) return [];
     const text = words(el);
     if (text.length < T.chars) return [];
-    const s = facts.style(el), r = facts.rect(el), b = facts.box(el);
-    const fs = px(s.fontSize), width = r.width - b.pl - b.pr;
-    // the average glyph of running text is about half an em wide
-    const perLine = width / (fs * 0.5);
-    if (perLine <= T.max || lineCount(el) < 3) return [];
+    const s = facts.style(el);
+    // the characters actually on a line, counted from the words (an estimate of half an em a character overcounts the
+    // width a line holds and undercounts what a reader sees): the first full line, and the width its characters take
+    const t = textNodes(el).find((n) => n.nodeValue.trim().length > 40);
+    if (!t) return [];
+    const range = document.createRange();
+    let top = null, chars = 0, left = Infinity, right = -Infinity;
+    for (let i = 0; i < Math.min(t.length, 400); i++) {
+      range.setStart(t, i); range.setEnd(t, i + 1);
+      const q = range.getClientRects()[0];
+      if (!q) continue;
+      top ??= q.top;
+      if (q.top > top + q.height / 2) break;
+      chars = i + 1; left = Math.min(left, q.left); right = Math.max(right, q.right);
+    }
+    if (chars <= T.max || lineCount(el) < 3) return [];
+    // the fix sized from this font: the width of T.want.target characters, in the font's own ch (its zero)
+    textCtx ??= document.createElement('canvas').getContext('2d');
+    textCtx.font = `${s.fontStyle} ${s.fontWeight} ${s.fontSize} ${s.fontFamily}`;
+    const avg = (right - left) / chars, zero = textCtx.measureText('0').width || px(s.fontSize) * 0.55;
+    const ch = Math.round((T.want.target * avg) / zero);
     const cls = utility(el, 'max-w');
     return [{
-      ...say(this.id, { chars: Math.round(perLine) }),
-      key: this.id, text: cls ?? 'max-width', props: ['max-width'], value: `${Math.round(perLine)}ch`, n: Math.round(perLine),
-      evidence: { perLine: Math.round(perLine), width, fontSize: fs }, confidence: 0.84,
-      suggest: { kind: 'class', from: cls ?? '', to: 'max-w-prose', why: `about ${T.want.target} characters a line` },
+      ...say(this.id, { chars }),
+      key: this.id, text: cls ?? 'max-width', props: ['max-width'], value: `${chars}ch`, n: chars,
+      evidence: { perLine: chars, width: right - left, fontSize: px(s.fontSize) }, confidence: 0.84,
+      // narrowing reflows the lines, which the verdict's virtual trial can't do: left untried, proved by asking again
+      suggest: { kind: 'class', from: cls ?? '', to: `max-w-[${ch}ch]`, why: `about ${T.want.target} characters a line`, sets: { maxWidth: `${ch}ch` }, moves: true },
     }];
   },
 };
@@ -639,16 +722,23 @@ export const tracking = {
   },
 };
 
-// #16. Tabular numbers where numbers line up: a column of figures in a table.
+// #16. Tabular numbers where numbers line up: a column of figures in a table, or down the rows of a list.
 export const tabularNums = {
   id: 'craft/tabular-nums', family: 'craft', number: [16], owns: ['font-features'], once: 'ancestor', reads: ['style', 'text'],
   check({ el, facts }, theme) {
     const T = theme.spec(this.id);
-    if (!el.matches('td, th, [role="cell"], [role="gridcell"]')) return [];
+    const cell = el.matches('td, th, [role="cell"], [role="gridcell"]');
+    // a figure on its own in a row of a list (a timesheet's durations, an order list's totals) stacks just like a cell
+    if (!cell && (el.children.length || !el.closest('li, [role="listitem"]'))) return [];
     const text = words(el);
     if (!/^[\s$€£¥₹+\-−–.,:%()\d]+$/.test(text) || (text.match(/\d/g) ?? []).length < 2) return [];
-    const table = el.closest('table, [role="table"], [role="grid"]');
-    if (!table || rowsOf(facts, table) < T.rows) return [];
+    if (cell) {
+      const table = el.closest('table, [role="table"], [role="grid"]');
+      if (!table || rowsOf(facts, table) < T.rows) return [];
+    } else {
+      const list = el.closest('li, [role="listitem"]').parentElement;
+      if (!list || list.children.length < T.rows) return [];
+    }
     const s = facts.style(el);
     if (/tabular-nums/.test(s.fontVariantNumeric) || /"tnum"/.test(s.fontFeatureSettings)) return [];
     if (/mono/i.test(s.fontFamily)) return [];
@@ -682,7 +772,7 @@ export const headingWidow = {
       ...say(this.id, { word: m[3] }),
       key: this.id, text: 'text-wrap', props: ['text-wrap'], value: m[3], n: 1,
       evidence: { word: m[3] }, confidence: 0.88,
-      suggest: { kind: 'class', from: '', to: 'text-balance', why: 'even lines', sets: { textWrap: 'balance', textWrapStyle: 'balance' } },
+      suggest: { kind: 'class', from: '', to: 'text-balance', why: 'even lines', sets: { textWrap: 'balance', textWrapStyle: 'balance' }, moves: true },
     }];
   },
 };
@@ -736,15 +826,32 @@ export const contrast = {
     const T = theme.spec(this.id);
     if (!facts.text(el) || el.closest('[aria-hidden="true"]')) return [];
     const s = facts.style(el);
-    for (let n = el; n && n !== document.documentElement; n = n.parentElement) { const ns = facts.style(n); if (ns.backgroundImage !== 'none') return []; if (alpha(rgb(ns.backgroundColor)) > 0.5) break; }
+    // words on a picture: a background image on the way up, or a photo laid under them (an <img> the words sit over, as
+    // on a card with a scrim). What the eye reads them against isn't a colour plumber knows, so it says nothing. A picture
+    // counts when it is drawn, visible, and covers most of the words' box
+    const box = el.getBoundingClientRect(), under = (m) => {
+      const q = m.getBoundingClientRect(), ms = getComputedStyle(m);
+      if (q.width < 8 || q.height < 8 || ms.visibility === 'hidden' || ms.display === 'none') return false;
+      const w = Math.min(q.right, box.right) - Math.max(q.left, box.left), h = Math.min(q.bottom, box.bottom) - Math.max(q.top, box.top);
+      return w > 0 && h > 0 && w * h >= box.width * box.height * 0.5;
+    };
+    for (let n = el; n && n !== document.documentElement; n = n.parentElement) {
+      const ns = facts.style(n);
+      if (ns.backgroundImage !== 'none') return [];
+      if (n !== el && [...n.querySelectorAll('img, video, picture, canvas')].some((m) => !el.contains(m) && under(m))) return [];
+      if (alpha(rgb(ns.backgroundColor)) > 0.5) break;
+    }
     const ground = facts.ground(el), c = rgb(s.color);
     if (!c) return [];
     // the text as it shows: its own alpha and every fade on the way up
-    let fade = 1;
+    let fade = 1, muted = 1;
     for (let n = el; n && n !== document.documentElement; n = n.parentElement) {
       // a fade still running (an entrance, a reveal on scroll) is a moment, not the text's colour: judge it at rest
       if (animated(facts).has(n)) return [];
-      fade *= parseFloat(facts.style(n).opacity) || 0;
+      const o = parseFloat(facts.style(n).opacity) || 0;
+      fade *= o;
+      // an ancestor's line of words muted by opacity (#57 marks it there): its fade is that finding's, not this one's
+      if (n !== el && o > 0 && o < 1 && facts.text(n)) muted *= o;
     }
     if (fade < 0.05) return []; // not shown at all (waiting to be revealed): there is nothing to read yet
     const text = over([c[0], c[1], c[2], alpha(c) * fade], ground);
@@ -754,6 +861,7 @@ export const contrast = {
     const need = large ? T.large : fs >= T.boldAt && w >= T.boldWeight ? T.bold : T.small;
     const lc = Math.abs(apca(text, ground));
     if (lc >= need) return [];
+    if (muted < 1 && Math.abs(apca(over([c[0], c[1], c[2], alpha(c) * fade / muted], ground), ground)) >= need) return [];
     return [{
       ...say(this.id, { lc: Math.round(lc), size: fs, need, large }),
       key: this.id, text: colourClass(el, 'text', theme) ?? 'color', props: ['color'], value: `Lc ${Math.round(lc)}`, n: Math.round(lc),
@@ -819,7 +927,10 @@ export const mediaSize = {
   check({ el, facts }, theme) {
     const T = theme.spec(this.id);
     if (!el.matches('img, svg, [data-avatar]')) return [];
-    const r = facts.rect(el);
+    // the size a list shares is the box: a scale drawn on top is an optical correction made on purpose (a round icon's
+    // overshoot, #3), so it is taken out before sizes are compared
+    const scaleOf = (n) => { const ns = facts.style(n), sc = ns.scale && ns.scale !== 'none' ? parseFloat(ns.scale) : 1, m = /matrix\(([^,]+)/.exec(ns.transform ?? ''); return (sc || 1) * (m ? parseFloat(m[1]) || 1 : 1); };
+    const r = facts.rect(el), width = (n) => facts.rect(n).width / scaleOf(n);
     if (r.width < T.min) return [];
     // the row it sits in: the nearest ancestor (three levels up at most) with siblings of its own kind
     let row = el.parentElement;
@@ -831,10 +942,10 @@ export const mediaSize = {
     const path = []; for (let n = el; n !== row; n = n.parentElement) path.unshift([...n.parentElement.children].indexOf(n));
     const peers = [...row.parentElement.children].filter((k) => k.localName === row.localName && k.className === row.className);
     if (peers.length < 3) return [];
-    const sizes = peers.map((p) => { let n = p; for (const i of path) n = n?.children[i]; return n && n.localName === el.localName ? Math.round(facts.rect(n).width) : null; }).filter((w) => w !== null);
+    const sizes = peers.map((p) => { let n = p; for (const i of path) n = n?.children[i]; return n && n.localName === el.localName ? Math.round(width(n)) : null; }).filter((w) => w !== null);
     const count = new Map(); for (const w of sizes) count.set(w, (count.get(w) ?? 0) + 1);
     const [mode, times] = [...count].sort((a, b) => b[1] - a[1])[0] ?? [];
-    const mine = Math.round(r.width);
+    const mine = Math.round(width(el));
     if (!mode || mine === mode || times < 2 || times <= sizes.length / 2 || Math.abs(mine - mode) > T.near) return [];
     const cls = utility(el, 'size') ?? utility(el, 'w');
     return [{
@@ -908,7 +1019,12 @@ export const boldHover = {
       ...say(this.id, {}),
       key: this.id, text: cls ?? 'font-weight', props: ['font-weight'], value: facts.style(el).fontWeight, n: 0,
       evidence: { hover: cls ?? 'stylesheet' }, confidence: 0.85,
-      suggest: { kind: 'advice', text: 'Reserve the bold width with a hidden bold copy, or change the colour instead.' },
+      // on the class: the hover darkens to the theme's strongest text colour instead of growing heavier, so nothing
+      // around it moves (a bold copy reserving the width needs markup, so it stays advice)
+      suggest: ((ink) => cls && ink
+        ? { kind: 'class', from: cls, to: `${cls.replace(/font-[a-z]+$/, '')}text-${ink.short}`, why: 'a darker colour, the same width' }
+        : { kind: 'advice', text: 'Reserve the bold width with a hidden bold copy, or change the colour instead.' })(
+        theme.colors().find((t) => t.own !== false && /^(ink|foreground|fg|text|text-primary|content)$/.test(t.short))),
     }];
   },
 };
@@ -923,11 +1039,15 @@ export const hangingQuote = {
     const s = facts.style(el);
     if (px(s.textIndent) < 0 || /first/.test(s.hangingPunctuation ?? '')) return [];
     if (el.matches('blockquote > p') && el.parentElement && el.parentElement.firstElementChild !== el) return [];
+    const at = first.data.search(/\S/), mark = document.createRange();
+    mark.setStart(first, at); mark.setEnd(first, at + 1);
+    const em = Math.round((mark.getBoundingClientRect().width / (px(s.fontSize) || 16)) * 100) / 100;
     return [{
       ...say(this.id, {}),
       key: this.id, text: 'text-indent', props: ['text-indent'], value: s.textIndent, n: 0,
-      evidence: { first: first.data.trim()[0] }, confidence: 0.82,
-      suggest: { kind: 'advice', text: 'Add text-indent: -0.45em.' },
+      evidence: { first: first.data.trim()[0], hang: em }, confidence: 0.82,
+      // hang exactly the opening mark's own width, measured, so the words line up with the lines below
+      suggest: { kind: 'class', from: '', to: `-indent-[${em}em]`, why: 'the quote mark hangs in the margin', sets: { textIndent: `-${em}em` } },
     }];
   },
 };
@@ -944,11 +1064,14 @@ export const capsCase = {
       ...say(this.id, {}),
       key: this.id, text: 'font-feature-settings', props: ['font-feature-settings'], value: s.fontFeatureSettings, n: 0,
       evidence: { text: words(el).slice(0, 40) }, confidence: 0.8,
-      suggest: { kind: 'class', from: '', to: "[font-feature-settings:'case']", why: 'lifts the punctuation' },
+      suggest: { kind: 'class', from: '', to: "[font-feature-settings:'case']", why: 'lifts the punctuation', sets: { fontFeatureSettings: '"case"' } },
     }];
   },
 };
 
+// a computed linear or radial gradient, mixed in OKLCH: "linear-gradient(90deg, …)" becomes "linear-gradient(90deg in oklch, …)"
+const inOklch = (bg) => bg.replace(/(linear|radial|conic)-gradient\(([^,(]*(?:\([^)]*\))?[^,]*?),/, (m, kind, first) =>
+  /^\s*(?:to\s|-?[\d.]+(?:deg|turn|rad)|circle|ellipse|at\s)/.test(first) ? `${kind}-gradient(${first} in oklch,` : `${kind}-gradient(in oklch, ${first},`);
 // The colour stops of a computed gradient, as rgb arrays.
 const stops = (bg) => [...bg.matchAll(/rgba?\([^)]+\)/g)].map((m) => rgb(m[0])).filter(Boolean);
 function hsl([r, g, b]) {
@@ -962,11 +1085,15 @@ function hsl([r, g, b]) {
 
 // #55. Interpolate gradients in OKLCH/OKLab: sRGB goes grey between saturated colours.
 export const gradientSpace = {
-  id: 'craft/gradient-space', family: 'craft', number: [55], owns: ['background'], once: 'ancestor', reads: ['style'],
+  // owns how a gradient mixes, not which colours it uses: a token (the theme's answer to "which colours") never settles
+  // it, so it stands beside a drift mark on the same background instead of folding under it
+  id: 'craft/gradient-space', family: 'craft', number: [55], owns: ['interpolation'], once: 'ancestor', reads: ['style'],
   check({ el, facts }, theme) {
     const T = theme.spec(this.id);
     const bg = facts.style(el).backgroundImage;
     if (!/gradient\(/.test(bg) || /\bin (?:oklab|oklch|lab|lch|hsl|display-p3)/.test(bg)) return [];
+    // a stop written in a modern space (oklch, oklab, color()) already mixes in Oklab by default: only legacy stops go grey
+    if (/\b(?:oklch|oklab|color)\(/.test(bg)) return [];
     const c = stops(bg).filter((x) => alpha(x) > 0.5).map(hsl);
     if (c.length < 2) return [];
     const [a, b] = [c[0], c.at(-1)];
@@ -977,7 +1104,9 @@ export const gradientSpace = {
       ...say(this.id, {}),
       key: this.id, text: cls ?? 'background-image', props: ['background-image'], value: 'srgb', n: dh,
       evidence: { from: hex(stops(bg)[0]), to: hex(stops(bg).at(-1)), hue: Math.round(dh) }, confidence: 0.84,
-      suggest: cls ? { kind: 'class', from: cls, to: `${cls.replace('bg-gradient-', 'bg-linear-')}/oklch`, why: 'mixed in OKLCH' } : { kind: 'advice', text: 'Mix it in OKLCH: linear-gradient(in oklch to right, …).' },
+      // the same gradient, mixed in OKLCH: a Tailwind gradient class takes /oklch; a written one gets the words added
+      suggest: cls ? { kind: 'class', from: cls, to: `${cls.replace('bg-gradient-', 'bg-linear-')}/oklch`, why: 'mixed in OKLCH', sets: { backgroundImage: inOklch(bg) } }
+        : { kind: 'class', from: '', to: arbitrary('bg', inOklch(bg)), why: 'mixed in OKLCH', sets: { backgroundImage: inOklch(bg) } },
     }];
   },
 };
@@ -990,6 +1119,10 @@ export const inputZoom = {
     if (!el.matches('input:not([type="checkbox"], [type="radio"], [type="range"], [type="color"], [type="file"], [type="hidden"], [type="button"], [type="submit"], [type="reset"], [type="image"]), textarea, select') || disabled(el)) return [];
     const fs = px(facts.style(el).fontSize);
     if (fs >= T.min) return [];
+    // the zoom happens on a phone: a field 16px at phone width (text-base, then smaller from md up) is the fix, on any
+    // window this page is read in
+    const phone = classesOf(el).split(/\s+/).filter((c) => !c.includes(':'));
+    if (phone.some((c) => /^text-(?:base|lg|xl|[2-9]xl)$/.test(c) || (/^text-\[(\d+(?:\.\d+)?)px\]$/.exec(c)?.[1] ?? 0) >= T.min)) return [];
     // only a class known to be a size under 16px is swapped; a theme's own size name (text-small) gets advice
     const cls = classesOf(el).split(/\s+/).find((c) => /^text-(?:xs|sm)$/.test(c) || (/^text-\[(\d+(?:\.\d+)?)px\]$/.exec(c)?.[1] ?? 99) < 16);
     return [{
@@ -1003,18 +1136,30 @@ export const inputZoom = {
 
 // The sticky or fixed header across the top of the page, measured once per pass.
 const headers = new WeakMap();
-function stickyHeader(facts) {
-  if (headers.has(facts)) return headers.get(facts);
+// The header that stays at the top of what the target scrolls in: the page's, or a pane's own (a docs column, an app
+// panel that scrolls by itself), as wide as most of it.
+function stickyHeader(facts, target) {
+  let pane = null;
+  for (let n = target?.parentElement; n && n !== document.body && n !== document.documentElement; n = n.parentElement) {
+    const o = facts.style(n).overflowY;
+    if ((o === 'auto' || o === 'scroll') && n.scrollHeight > n.clientHeight + 1) { pane = n; break; }
+  }
+  const memo = headers.get(facts) ?? new Map();
+  headers.set(facts, memo);
+  if (memo.has(pane)) return memo.get(pane);
   let found = null;
-  for (const el of document.querySelectorAll('header, nav, [role="banner"], body > div > *:first-child, body > *')) {
+  const wide = pane ? pane.clientWidth : innerWidth;
+  const list = pane ? pane.querySelectorAll('header, nav, [role="banner"], :scope > *') : document.querySelectorAll('header, nav, [role="banner"], body > div > *:first-child, body > *');
+  for (const el of list) {
     if (el.closest('plumb-overlay')) continue;
     const s = facts.style(el);
     if (s.position !== 'sticky' && s.position !== 'fixed') continue;
-    const r = facts.rect(el);
-    if (px(s.top) > 0.5 || r.width < innerWidth * 0.6 || r.height < 32 || r.height > 160) continue;
-    found = r.height; break;
+    // its layout size (the page may be drawn scaled; the margin it needs is in CSS pixels)
+    const w = el.offsetWidth || facts.rect(el).width, h = el.offsetHeight || facts.rect(el).height;
+    if (px(s.top) > 0.5 || w < wide * 0.6 || h < 32 || h > 160) continue;
+    found = h; break;
   }
-  headers.set(facts, found);
+  memo.set(pane, found);
   return found;
 }
 
@@ -1026,13 +1171,15 @@ export const anchorOffset = {
     // an id is only a place people land when something links to it (a link on the page, or the address itself)
     facts.linked ??= new Set([...document.querySelectorAll('a[href*="#"]')].map((a) => decodeURIComponent(a.hash.slice(1))).concat(decodeURIComponent(location.hash.slice(1))).filter(Boolean));
     if (!facts.linked.has(el.id)) return [];
-    const h = stickyHeader(facts);
+    const h = stickyHeader(facts, el);
     if (!h) return [];
     const s = facts.style(el);
     if (px(s.scrollMarginTop) >= h - 0.5) return [];
     const parentMargin = [...document.querySelectorAll('html, body')].some((n) => px(facts.style(n).scrollPaddingTop) >= h - 0.5);
     if (parentMargin) return [];
-    const rec = recommend({ family: 'spacing', prefix: 'scroll-mt', job: 'header', want: { min: Math.ceil(h), target: Math.ceil(h) }, round: 'up', from: utility(el, 'scroll-mt') ?? '', token: false, sets: (v) => ({ scrollMarginTop: v }), theme,
+    // up to a whole step of the spacing scale: 77px becomes 80 (scroll-mt-20), the way it would be written
+    const unit = theme.unit?.() || 4, need = Math.ceil(h / unit - 1e-6) * unit;
+    const rec = recommend({ family: 'spacing', prefix: 'scroll-mt', job: 'header', want: { min: Math.ceil(h), target: need }, round: 'up', from: utility(el, 'scroll-mt') ?? '', token: false, sets: (v) => ({ scrollMarginTop: v }), theme,
       advice: () => `Give it scroll-margin-top: ${fmt(Math.ceil(h))}, the header’s height.` });
     return [{
       ...say(this.id, { id: el.id, header: h }),
@@ -1083,9 +1230,9 @@ export const textWrapRole = {
     const body = px(facts.style(document.body).fontSize) || 16, fs = px(s.fontSize);
     const heading = el.matches('h1, h2, h3, h4') || fs >= body * 1.5;
     // the lines as drawn: their widths, from the words' own boxes
-    const range = document.createRange(); range.selectNodeContents(el);
-    const rows = new Map();
-    for (const q of range.getClientRects()) { if (q.width < 1) continue; const k = Math.round(q.top); const row = rows.get(k) ?? { l: Infinity, r: -Infinity }; row.l = Math.min(row.l, q.left); row.r = Math.max(row.r, q.right); rows.set(k, row); }
+    const range = document.createRange(), rows = new Map(), boxes = [];
+    for (const t of textNodes(el)) { range.selectNodeContents(t); boxes.push(...range.getClientRects()); }
+    for (const q of boxes) { if (q.width < 1) continue; const k = Math.round(q.top); const row = rows.get(k) ?? { l: Infinity, r: -Infinity }; row.l = Math.min(row.l, q.left); row.r = Math.max(row.r, q.right); rows.set(k, row); }
     const widths = [...rows.entries()].sort((a, b) => a[0] - b[0]).map(([, w]) => w.r - w.l);
     const lines = widths.length;
     if (lines < 2) return [];
@@ -1100,7 +1247,8 @@ export const textWrapRole = {
       ...say(this.id, { heading, lines }),
       key: this.id, text: 'text-wrap', props: ['text-wrap'], value: s.textWrap ?? 'wrap', n: lines,
       evidence: { lines, heading, ratio: Math.round(ratio * 100) / 100 }, confidence: 0.82,
-      suggest: { kind: 'class', from: '', to, why: heading ? 'even lines' : 'no lonely last word', sets: { textWrap: heading ? 'balance' : 'pretty', textWrapStyle: heading ? 'balance' : 'pretty' } },
+      // re-breaking lines is a reflow the verdict's virtual trial can't do: left untried, proved by asking again
+      suggest: { kind: 'class', from: '', to, why: heading ? 'even lines' : 'no lonely last word', sets: { textWrap: heading ? 'balance' : 'pretty', textWrapStyle: heading ? 'balance' : 'pretty' }, moves: true },
     }];
   },
 };
@@ -1160,7 +1308,8 @@ export const tintedShadow = {
     const s = facts.style(el);
     if (s.boxShadow === 'none' || !el.parentElement) return [];
     const layers = s.boxShadow.split(/,(?![^(]*\))/).filter((l) => !/inset/.test(l));
-    const colours = layers.map((l) => rgb((/rgba?\([^)]*\)/.exec(l) ?? [])[0])).filter((c) => c && c[3] > T.alpha);
+    // Tailwind's shadow-sm…xl are exactly 10% black: at the line counts
+    const colours = layers.map((l) => rgb(l.match(COLOUR)?.[0])).filter((c) => c && c[3] >= T.alpha);
     if (!colours.length) return [];
     const ground = facts.ground(el.parentElement);
     // a barely coloured ground (two thirds of the way to the line) is the grey band: is the grey shadow dirty there?
@@ -1171,20 +1320,24 @@ export const tintedShadow = {
       ...say(this.id, { ground: hex(ground) }),
       key: this.id, text: utility(el, 'shadow') ?? 'box-shadow', props: ['box-shadow'], value: s.boxShadow, n: a,
       evidence: { ground: hex(ground), hue: h }, confidence: grey ? GREY : 0.82,
-      suggest: { kind: 'advice', text: `Tint the shadow: oklch(0.3 0.05 ${h} / ${a.toFixed(2)}) in place of its grey.` },
+      // the same shadow, its grey swapped for a dark tint of the ground's own hue
+      suggest: ((v) => ({ kind: 'class', from: utility(el, 'shadow') ?? '', to: arbitrary('shadow', v), why: 'tinted with what it falls on', sets: { boxShadow: v } }))(
+        // (Tailwind's empty ring and inset layers, transparent and zero, are left out of the class)
+        s.boxShadow.split(/,(?![^(]*\))/).map((l) => l.trim()).filter((l) => !/^rgba\(0, 0, 0, 0\) 0px 0px 0px 0px$/.test(l)).join(', ').replace(new RegExp(COLOUR.source, 'g'), (c) => { const x = rgb(c); return x && x[3] > 0 && chroma(x) < T.shadow ? `oklch(0.3 0.05 ${h} / ${x[3].toFixed(2)})` : c; })),
     }];
   },
 };
 
 // #56. A two-stop scrim over an image: ease it.
 export const easedScrim = {
-  id: 'craft/eased-scrim', family: 'craft', number: [56], owns: ['background'], once: 'ancestor', reads: ['style', 'rect'],
+  // owns the curve of the fade, not its colour (see gradient-space): it stands beside a drift mark on the same background
+  id: 'craft/eased-scrim', family: 'craft', number: [56], owns: ['interpolation'], once: 'ancestor', reads: ['style', 'rect'],
   judge: true,
   check({ el, facts }, theme) {
     const T = theme.spec(this.id);
     const s = facts.style(el);
     if (!/^linear-gradient\(/.test(s.backgroundImage) || /,\s*linear-gradient/.test(s.backgroundImage) || s.position !== 'absolute') return [];
-    const stops = [...s.backgroundImage.matchAll(/rgba?\([^)]+\)/g)].map((m) => rgb(m[0]));
+    const stops = [...s.backgroundImage.matchAll(COLOUR)].map((m) => rgb(m[0])).filter(Boolean);
     if (stops.length !== 2) return [];
     const clear = stops.find((c) => c[3] === 0), dark = stops.find((c) => c[3] >= 0.5 && oklab(c)[0] < 0.2);
     if (!clear || !dark) return [];
@@ -1198,12 +1351,15 @@ export const easedScrim = {
       return w * h >= r.width * r.height * 0.5;
     });
     if (!media) return [];
-    const c = `rgb(${dark.slice(0, 3).join('_')}`;
+    const c = `rgb(${dark.slice(0, 3).join(' ')}`; // real CSS: arbitrary() turns it into a class
     return [{
       ...say(this.id, {}),
       key: this.id, text: 'background-image', props: ['background-image'], value: 'linear', n: 2,
       evidence: { dark: hex(dark) }, confidence: grey ? GREY : 0.83,
-      suggest: { kind: 'advice', text: `Ease it: bg-[linear-gradient(to_top,${c}/${dark[3]})_0%,${c}/${(dark[3] * 0.6).toFixed(2)})_30%,${c}/${(dark[3] * 0.25).toFixed(2)})_60%,transparent_100%)].` },
+      // the same fade on an eased curve (the scrim gradient: thirteen stops whose darkness drops fast, then flattens to
+      // nothing), so its end has no edge for the eye to catch
+      suggest: ((v) => ({ kind: 'class', from: '', to: arbitrary('bg', v), why: 'an eased fade, no edge', sets: { backgroundImage: v } }))(
+        `linear-gradient(to top, ${EASED.map((k, i) => `${c} / ${(dark[3] * k).toFixed(3)}) ${Math.round((i / (EASED.length - 1)) * 1000) / 10}%`).join(', ')})`),
     }];
   },
 };
@@ -1223,11 +1379,15 @@ export const pureBlackWhite = {
     const big = (k) => area >= T.area * k || area >= innerWidth * innerHeight * T.share * k;
     if (!big(0.5)) return [];
     const grey = !big(1); // half the size: is it large enough to glare?
-    // a colour the theme names (bg-surface that happens to be white) is the project's decision, not an escape
+    // a colour the project's theme names (bg-surface that happens to be white) is its decision, not an escape; the
+    // framework's own black and white come with every theme, so they decide nothing
     const own = colourClass(el, 'bg', theme);
-    if (own && theme.colors().some((t) => own === `bg-${t.short}`)) return [];
+    if (own && theme.colors().some((t) => t.own !== false && own === `bg-${t.short}`)) return [];
     const tinted = theme.colors().find((t) => /surface|paper|ground|background/.test(t.short) && !(t.rgb[0] === 255 && t.rgb[1] === 255 && t.rgb[2] === 255) && Math.min(...t.rgb) > 220);
-    const near = black ? theme.nearestColor([20, 20, 22], T.within) : tinted;
+    // the project's own near-black first (a dark ink or night colour), else whatever the theme has near it
+    const ownDark = theme.colors().filter((t) => t.own !== false && Math.max(...t.rgb) <= 64)
+      .map((t) => ({ ...t, distance: Math.hypot(t.rgb[0] - 20, t.rgb[1] - 20, t.rgb[2] - 22) })).filter((t) => t.distance <= T.within * 1.25).sort((a, b) => a.distance - b.distance)[0];
+    const near = black ? ownDark ?? theme.nearestColor([20, 20, 22], T.within) : tinted;
     // white outside a tinted theme is taste, unless the spec makes the rule a note already
     const tier = black || tinted ? T.tier : Math.max(T.tier, TIER.advisory);
     return [{
@@ -1297,21 +1457,31 @@ export const baselineAlign = {
   },
 };
 
-// #4. An icon beside words is centred on the capitals' middle, not the line box.
+// #4. An icon beside words is centred on the capitals' middle (the first line's, in a row built to wrap), not the line box.
 export const iconCap = {
   id: 'craft/icon-cap', family: 'craft', number: [4], owns: ['transform'], once: 'ancestor', reads: ['style', 'kids', 'rect', 'metrics'],
   // judged from the row that holds the icon (the reader doesn't read inside svg), and drawn on that row
   check({ el, facts }, theme) {
     const T = theme.spec(this.id);
     const ps = facts.style(el);
-    if (!/flex/.test(ps.display) || /column/.test(ps.flexDirection) || !/center/.test(ps.alignItems)) return [];
+    if (!/flex/.test(ps.display) || /column/.test(ps.flexDirection)) return [];
+    // centred on the row (one line of words), or on top of it, the way a list row with a title and a time under it is
+    // built so its words can wrap: then the icon belongs on the first line's capitals
+    const centred = /center/.test(ps.alignItems), top = /^(?:normal|stretch|start|flex-start)$/.test(ps.alignItems);
+    if (!centred && !top) return [];
     const icon = [...el.children].find((k) => k.localName === 'svg');
     if (!icon) return [];
     const parent = el;
     const r = facts.rect(icon);
     if (r.height > T.icon || r.height < 4) return [];
-    const host = facts.text(parent) ? parent : facts.kids(parent).find((k) => k !== icon && facts.text(k));
-    if (!host || lineCount(host, facts) > 1) return [];
+    // the element whose own words make the first line (a title inside a column of title and time). An svg is never the
+    // words: icons can carry text of their own (an animated icon's styles), so the search never enters one
+    const own = (n) => [...n.childNodes].some((c) => c.nodeType === 3 && c.nodeValue.trim());
+    const first = (n) => (n.localName === 'svg' ? null : own(n) ? n : [...n.children].reduce((hit, k) => hit ?? first(k), null));
+    const host = centred
+      ? (facts.text(parent) ? parent : facts.kids(parent).find((k) => k !== icon && facts.text(k)))
+      : (own(parent) ? parent : facts.kids(parent).reduce((hit, k) => hit ?? (k === icon ? null : first(k)), null));
+    if (!host || (centred && lineCount(host, facts) > 1)) return [];
     const m = facts.metrics(host);
     if (!m?.baseline) return [];
     const off = (r.top + r.height / 2) - (m.baseline - m.capHeight / 2);
@@ -1321,7 +1491,8 @@ export const iconCap = {
       ...say(this.id, { off }),
       key: this.id, text: 'svg', props: ['align-items'], value: `${Math.round(off * 10) / 10}px`, n: off,
       evidence: { off: Math.round(off * 10) / 10, cap: m.capHeight }, confidence: 0.82,
-      suggest: { kind: 'advice', text: `Nudge it ${whole > 0 ? 'up' : 'down'} by ${fmt(Math.abs(whole))} (translate-y-[${-whole}px]), or size it to the capitals.` },
+      suggest: { kind: 'class', from: '', to: `[&>svg]:translate-y-[${-whole}px]`, target: ':scope > svg', why: 'on the capitals’ middle', sets: { translate: `0 ${-whole}px` },
+        text: `Nudge it ${whole > 0 ? 'up' : 'down'} by ${fmt(Math.abs(whole))} (translate-y-[${-whole}px]), or size it to the capitals.` },
     }];
   },
 };
@@ -1331,7 +1502,8 @@ export const trimLeading = {
   id: 'craft/trim-leading', family: 'craft', number: [5], owns: ['text-box'], once: 'ancestor', reads: ['style', 'metrics'],
   check({ el, facts }, theme) {
     const T = theme.spec(this.id);
-    if (el.matches('input, textarea, select') || !oneLine(el, facts) || facts.kids(el).length) return [];
+    // one line of words, with the inline things a line carries (a link, a bold word): a banner or a button as built
+    if (el.matches('input, textarea, select') || !oneLine(el, facts) || facts.kids(el).some((k) => !/^inline(?!-(?:block|flex|grid))/.test(facts.style(k).display))) return [];
     const s = facts.style(el);
     if (/trim/.test(s.textBoxTrim ?? s.getPropertyValue('text-box-trim') ?? '')) return [];
     if (!((rgb(s.backgroundColor)?.[3] ?? 0) > 0 || px(s.borderTopWidth) > 0)) return [];
@@ -1345,7 +1517,7 @@ export const trimLeading = {
       ...say(this.id, { pad: pt, seen: pt + unseen }),
       key: this.id, text: 'padding-top', props: ['padding-top'], value: `${pt}px`, n: pt,
       evidence: { padding: pt, unseen: Math.round(unseen * 10) / 10 }, confidence: 0.82,
-      suggest: trim ? { kind: 'class', from: '', to: '[text-box:trim-both_cap_alphabetic]', why: 'the padding measured from the letters', sets: { textBoxTrim: 'trim-both' } }
+      suggest: trim ? { kind: 'class', from: '', to: '[text-box:trim-both_cap_alphabetic]', why: 'the padding measured from the letters', sets: { textBoxTrim: 'trim-both', textBoxEdge: 'cap alphabetic' } }
         : { kind: 'advice', text: `Take about ${fmt(Math.round(unseen))} off the top and bottom padding, or trim the text box.` },
     }];
   },
@@ -1432,10 +1604,17 @@ export const cardOpticalPadding = {
     const s = facts.style(el), b = facts.box(el);
     // a card: a filled or bordered box with a card's side padding (a chip's or a row's few pixels are not one)
     if (!(b.pt > 0 && b.pl >= T.side) || !((rgb(s.backgroundColor)?.[3] ?? 0) > 0 || b.bt > 0)) return [];
-    if (/trim/.test(facts.style(first).textBoxTrim ?? '')) return [];
+    // a box that holds its own line of words is trim-leading's (one cause, one finding), and a trimmed box has no
+    // leading left to add
+    if (facts.text(el) || /trim/.test(s.textBoxTrim ?? '') || /trim/.test(facts.style(first).textBoxTrim ?? '')) return [];
     const m = facts.metrics(first);
     if (!m) return [];
-    const top = b.pt + (facts.rect(first).top - facts.rect(el).top - b.bt - b.pt) + m.halfLeading + (m.ascent - m.capHeight), left = b.pl;
+    const letters = b.pt + (facts.rect(first).top - facts.rect(el).top - b.bt - b.pt) + m.halfLeading + (m.ascent - m.capHeight), left = b.pl;
+    // the first thing the eye meets at the top: the first letters, or a drawn box beside them that starts higher (a
+    // footer's button, a field), measured from the same edge
+    const drawn = (k) => k.matches(CONTROL + ', input, select, textarea, img, svg') || (rgb(facts.style(k).backgroundColor)?.[3] ?? 0) > 0 || facts.box(k).bt > 0;
+    const boxes = kids.filter(drawn).map((k) => facts.rect(k).top - facts.rect(el).top - b.bt);
+    const top = Math.min(letters, ...boxes);
     if (top - left < T.min || top - left < left * T.share) return [];
     return [{
       ...say(this.id, { top, left }),
@@ -1514,6 +1693,10 @@ export const rhythm = {
     for (const k of c.clusters) { if (covered / c.sample >= T.majority) break; steps.push(k.value); covered += k.count; }
     // a minority: a tenth of the page or less, and a lone value always (on a small page one place is over a tenth)
     if (steps.some((v) => Math.abs(v - g) <= T.off) || c.share(g) > Math.max(0.1, 1.5 / c.sample)) return [];
+    // a stack of stacks spaces groups: its gap is meant to be wider than the gaps inside them (#7), so a wider gap there
+    // is the page's structure, not a stray value
+    const stacks = facts.kids(el).filter((k) => { const ks = facts.style(k); return /flex|grid/.test(ks.display) && facts.kids(k).length >= 2 && px(ks.rowGap === 'normal' ? 0 : ks.rowGap) > 0; });
+    if (stacks.length && g > Math.max(...steps)) return [];
     const near = steps.slice().sort((a, b) => Math.abs(a - g) - Math.abs(b - g))[0];
     const cls = utility(el, 'gap', { not: /^x(?:-|$)/ });
     const rec = recommend({ family: 'spacing', prefix: 'gap', job: 'stack', want: { min: near - 0.5, max: near + 0.5, target: near }, from: cls ?? '', token: false, sets: (v) => ({ rowGap: v, columnGap: v }), theme, advice: () => `Use ${fmt(near)}, the page’s rhythm.` });
@@ -1543,8 +1726,10 @@ export const elevationLadder = {
     const near = c.clusters.filter((k) => k !== own && k.count > own.count && Math.max(k.value, b) / Math.min(k.value, b) < T.step)
       .sort((x, y) => Math.abs(x.value - b) - Math.abs(y.value - b))[0];
     if (!near) return [];
-    const cls = utility(el, 'shadow');
-    const to = near.members.map((m) => utility(m, 'shadow')).find(Boolean);
+    // the class that sets the level, never the one that colours it (shadow-black/5 beside shadow-md)
+    const level = (x) => utility(x, 'shadow', { not: { test: (rest) => isColour(rest, theme) } });
+    const cls = level(el);
+    const to = near.members.map(level).find(Boolean);
     const value = facts.style(near.members[0]).boxShadow;
     return [{
       ...say(this.id, { blur: b, level: near.value }),
@@ -1590,7 +1775,9 @@ export const opticalCentre = {
       key: this.id, text: 'svg', props: ['translate'], value: `${Math.round(by * 10) / 10}px`, n: by,
       // a nudge of 1 to 1.4px is the grey band: whether the eye sees it depends on the shape (the judge looks)
       evidence: { lean: Math.round(lean[axis] * 100) / 100, move: Math.round(by * 10) / 10, axis }, confidence: Math.abs(by) < T.sure ? GREY : 0.84,
-      suggest: { kind: 'advice', text: `Nudge the icon ${dir} by ${fmt(Math.abs(whole))}: ${cls} on the svg.` },
+      // the nudge belongs to the icon, so the class that carries it sits on the control and reaches its svg
+      suggest: { kind: 'class', from: '', to: `[&>svg]:${cls}`, target: ':scope > svg', why: 'centred by its weight', sets: { translate: axis === 'x' ? `${whole}px 0` : `0 ${whole}px` },
+        text: `Nudge the icon ${dir} by ${fmt(Math.abs(whole))}: ${cls} on the svg.` },
     }];
   },
 };
@@ -1616,9 +1803,23 @@ export const overshoot = {
     return [{
       ...say(this.id, { rd, sq }),
       key: this.id, text: 'svg', props: ['width', 'height'], value: fmt(rd), n: rd / sq,
-      // as big as the squares but not over them is the grey band: stroke icons' ink is a soft measure
-      evidence: { round: Math.round(rd * 10) / 10, square: Math.round(sq * 10) / 10 }, confidence: rd >= sq ? GREY : 0.8,
-      suggest: { kind: 'advice', text: 'Draw the round icon about 6% bigger (scale-[1.06]) so it reads the same size.' },
+      // drawn the same size as the squares is the mistake itself (the natural one: one box for every logo), and filled
+      // shapes are measured exactly, so it is sure; only a round one already a little larger, short of the overshoot, is grey
+      evidence: { round: Math.round(rd * 10) / 10, square: Math.round(sq * 10) / 10 }, confidence: rd > sq + 0.5 ? GREY : 0.8,
+      // the scale that brings the smallest round one to the squares' size and the overshoot past it, on the round svgs:
+      // a set's own svgs (svg:nth-child), or the svg inside a set's icon-only controls (:nth-child > svg), the usual case
+      suggest: ((at, k) => {
+        const text = `Draw the round icons ${Math.round((k - 1) * 100)}% bigger (scale-[${k}]) so they read the same size.`;
+        if (!at.length || at.some((a) => !a.i)) return { kind: 'advice', text };
+        const own = at.every((a) => a.own), nth = at.map((a) => `:nth-child(${a.i})`);
+        if (!own && at.some((a) => a.own)) return { kind: 'advice', text };
+        const pick = nth.length === 1 ? nth[0] : `:is(${nth.join(',')})`;
+        return { kind: 'class', from: '', to: own ? `[&>svg${pick}]:scale-[${k}]` : `[&>${pick}>svg]:scale-[${k}]`,
+          target: nth.map((n) => (own ? `:scope > svg${n}` : `:scope > ${n} > svg`)).join(', '), why: 'round drawn a touch larger', sets: { scale: String(k) }, text };
+      })(svgs.filter((g, i) => round.includes(inks[i])).map((g) => {
+        const own = g.parentElement === el, child = own ? g : g.parentElement?.parentElement === el ? g.parentElement : null;
+        return { own, i: child ? [...el.children].indexOf(child) + 1 : 0 };
+      }), Math.ceil((sq * T.over / rd) * 100) / 100),
     }];
   },
 };
@@ -1671,6 +1872,14 @@ export const strokeWeight = {
 };
 
 // #75 (static half). A scroll area with no scrollbar shows nothing at its edge: people don't know there is more.
+// Scroll shadows drawn in the background (Lea Verou's): a soft shadow at an edge where more is hidden, covered by a
+// patch of the ground that scrolls with the content, so it's gone once you reach that end. One class, on the ground's
+// own colour.
+function scrollShadows(ground) {
+  const g = hex(ground);
+  const v = `linear-gradient(${g} 30%, transparent) center top / 100% 40px no-repeat local, linear-gradient(transparent, ${g} 70%) center bottom / 100% 40px no-repeat local, radial-gradient(farthest-side at 50% 0, rgb(0 0 0 / 0.12), transparent) center top / 100% 12px no-repeat scroll, radial-gradient(farthest-side at 50% 100%, rgb(0 0 0 / 0.12), transparent) center bottom / 100% 12px no-repeat scroll, ${g}`;
+  return { kind: 'class', from: '', to: `[background:${v.replace(/ /g, '_')}]`, why: 'a shadow at the edge while more is hidden', sets: { background: v, backgroundAttachment: 'local, local, scroll, scroll' } };
+}
 export const scrollCue = {
   id: 'craft/scroll-cue', family: 'craft', number: [75], owns: ['scroll'], once: 'ancestor', reads: ['style', 'box'],
   check({ el, facts }, theme) {
@@ -1690,7 +1899,7 @@ export const scrollCue = {
       ...say(this.id, { x }),
       key: this.id, text: utility(el, 'overflow') ?? 'overflow', props: [y ? 'overflow-y' : 'overflow-x'], value: y ? s.overflowY : s.overflowX, n: 0,
       evidence: { hidden: Math.round(y ? el.scrollHeight - el.clientHeight : el.scrollWidth - el.clientWidth) }, confidence: 0.8,
-      suggest: { kind: 'advice', text: `Fade the ${x ? 'sides' : 'bottom'} where more is hidden: a mask-image gradient, or a background with background-attachment: local.` },
+      suggest: y ? scrollShadows(facts.ground(el)) : { kind: 'advice', text: 'Fade the sides where more is hidden: a mask-image gradient, or a background with background-attachment: local.' },
     }];
   },
 };

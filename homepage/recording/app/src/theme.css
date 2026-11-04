@@ -1,0 +1,41 @@
+@import 'tailwindcss';
+
+@theme {
+  --spacing-tight: 4px;
+  --spacing-related: 8px;
+  --spacing-control: 12px;
+  --spacing-card: 16px;
+  --spacing-stack: 24px;
+
+  --spacing-avatar: 36px;
+  --container-panel: 36rem;
+
+  --text-xs: 0.75rem;
+  --text-xs--line-height: 1rem;
+  --text-sm: 0.875rem;
+  --text-sm--line-height: 1.25rem;
+  --text-xl: 1.25rem;
+  --text-xl--line-height: 1.75rem;
+
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+
+  --color-page: #0b0b0c;
+  --color-card: #131315;
+  --color-line: #232326;
+  --color-ink: #f2f2f3;
+  --color-muted: #8b8b92;
+  --color-chip: #1d1d21;
+
+  --radius-card: 14px;
+  --radius-pill: 999px;
+
+  --font-sans: Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+
+body {
+  margin: 0;
+  background: var(--color-page);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+}

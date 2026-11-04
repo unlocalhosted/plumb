@@ -1,0 +1,13 @@
+{
+  "name": "quarry-showcase",
+  "private": true,
+  "type": "module",
+  "description": "Quarry, the craft showcase: docs/craft/showcase.md",
+  "scripts": {
+    "dev": "vite --config vite.config.mjs",
+    "findings": "node scripts/findings.mjs"
+  },
+  "dependencies": {
+    "@unlocalhosted/dither-icons": "^0.2.6"
+  }
+}
