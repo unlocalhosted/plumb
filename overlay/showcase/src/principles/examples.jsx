@@ -37,153 +37,136 @@ export function AppFrame({ children, bell, crumb = 'Studio' }) {
   );
 }
 
-// #16 figures that change, or stack in a column, line up only in tabular figures. A live usage board for an API:
-// requests land many times a second, and in proportional figures every column shimmers as digits change width.
-
-// each workspace's own mark, as its app icon
-const LOGOS = {
-  halden: <><rect x="5" y="6" width="14" height="4" rx="2" /><rect x="5" y="14" width="9" height="4" rx="2" /></>,
-  northfield: <path d="M3 18 9.5 7l4 6.5L16 10l5 8z" />,
-  okafor: <path fillRule="evenodd" d="M12 4a8 8 0 1 1 0 16 8 8 0 0 1 0-16m0 4.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7" />,
-  brightwater: <path d="M3 13c2.2-2.4 4.4-2.4 6.6 0s4.4 2.4 6.6 0c1.6-1.7 3.2-2.2 4.8-1.4V16c-1.6-.8-3.2-.3-4.8 1.4-2.2 2.4-4.4 2.4-6.6 0S5.2 15 3 17.4z" />,
-  marlow: <path d="M4 18V6h3l5 6.5L17 6h3v12h-3.2v-6.6L12 17.5l-4.8-6.1V18z" />,
-};
-const WORKSPACES = [
-  { id: 'halden', name: 'Halden', site: 'halden.io', plan: 'Scale', tone: 'bg-accent-soft text-accent', bg: 'bg-accent', requests: 48210, cached: 39120, errors: 194 },
-  { id: 'northfield', name: 'Northfield Health', site: 'northfield.health', plan: 'Team', tone: 'bg-positive-soft text-positive', bg: 'bg-positive', requests: 26750, cached: 21880, errors: 252 },
-  { id: 'okafor', name: 'Okafor Studio', site: 'okafor.studio', plan: 'Team', tone: 'bg-positive-soft text-positive', bg: 'bg-violet', requests: 15390, cached: 11020, errors: 128 },
-  { id: 'brightwater', name: 'Brightwater', site: 'brightwater.app', plan: 'Scale', tone: 'bg-accent-soft text-accent', bg: 'bg-ink', requests: 64120, cached: 52300, errors: 459 },
-  { id: 'marlow', name: 'Marlow & Sons', site: 'marlow.co', plan: 'Starter', tone: 'bg-sunken text-ink-muted', bg: 'bg-magenta', requests: 31480, cached: 24960, errors: 317 },
-];
-const count = (n) => Math.round(n).toLocaleString('en-US');
-const compact = (n) => (n / 1000).toFixed(1) + 'K';
-const errorRate = (r) => (r.errors / r.requests * 100).toFixed(2) + '%';
+// #16 figures that change, or stack in a column, line up only in tabular figures. Quarry's time tracking: a timer
+// running on a job, its earnings climbing, today's finished entries stacked under it. In proportional figures the
+// clock wobbles every second and the durations never stack.
 
 /* ─────────────────────────────────────────────────────────
- * THE LEDGER'S CLOCK
- *   live      a tick every 110ms: about half the workspaces take a few requests
- *   landing   when the stage freezes it: three last ticks, slower each time, then still
+ * THE TIMER
+ *   running   one second a tick; what it has earned climbs with it
+ *   paused    by its own button, or frozen by the stage for plumber's look
  * ───────────────────────────────────────────────────────── */
-const CLOCK = { every: 110, landing: [90, 130, 180] };
-function step(rs) {
-  return rs.map((r) => {
-    if (Math.random() > 0.5) return r;
-    const n = 3 + Math.round(Math.random() * 37);
-    return { ...r, requests: r.requests + n, cached: r.cached + Math.round(n * (0.7 + Math.random() * 0.2)), errors: r.errors + (Math.random() > 0.9 ? 1 : 0) };
-  });
-}
-function useLedger(live) {
-  const [rows, setRows] = useState(WORKSPACES);
+const TIMER = { every: 1000, startedAgo: 6157, rate: 145, task: 'Moodboard review', job: 'Marlow Joinery · Showroom launch' };
+const EARLIER = [
+  { task: 'Wireframes, checkout', client: 'Brightwater Vets', seconds: 7578, rate: 130, dot: 'bg-accent' },
+  { task: 'Logo exploration', client: 'Halden & Co.', seconds: 4300, rate: 145, dot: 'bg-violet' },
+  { task: 'Kickoff call', client: 'Northfield Dental', seconds: 2885, rate: 120, dot: 'bg-positive' },
+  { task: 'Invoice review', client: 'Okafor Landscape', seconds: 1192, rate: 95, dot: 'bg-caution' },
+];
+const clock = (t) => `${Math.floor(t / 3600)}:${String(Math.floor(t / 60) % 60).padStart(2, '0')}:${String(t % 60).padStart(2, '0')}`;
+const dollars = (n) => '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const earned = (seconds, rate) => (seconds / 3600) * rate;
+function useTimer(live) {
+  const [t, setT] = useState(TIMER.startedAgo);
+  const [paused, setPaused] = useState(false);
   useEffect(() => {
-    if (live) { const t = setInterval(() => setRows(step), CLOCK.every); return () => clearInterval(t); }
-    let at = 0;
-    const ts = CLOCK.landing.map((ms) => setTimeout(() => setRows(step), (at += ms)));
-    return () => ts.forEach(clearTimeout);
-  }, [live]);
-  return rows;
+    if (!live || paused) return undefined;
+    const id = setInterval(() => setT((x) => x + 1), TIMER.every);
+    return () => clearInterval(id);
+  }, [live, paused]);
+  return { t, paused, toggle: () => setPaused((p) => !p) };
 }
 
-// every figure on the board, set in one place
-const Fig = ({ className = '', children }) => <span data-fig className={className}>{children}</span>;
-function Usage({ live = true }) {
-  const rows = useLedger(live);
-  const sum = (k) => rows.reduce((a, r) => a + r[k], 0);
-  const total = { requests: sum('requests'), cached: sum('cached'), errors: sum('errors') };
-  const cols = [
-    { label: 'Requests', total: compact(total.requests), delta: '+87.0%', of: (r) => count(r.requests) },
-    { label: 'Cached', total: compact(total.cached), delta: '+16.8%', of: (r) => count(r.cached) },
-    { label: 'Errors', total: count(total.errors), delta: '−4.2%', of: (r) => count(r.errors) },
-    { label: 'Error rate', total: errorRate(total), delta: '−0.1 pt', of: errorRate },
-  ];
+// every figure on the card, set in one place
+const Fig = ({ col, className = '', children }) => <span data-fig data-col={col} className={className}>{children}</span>;
+function Timesheet({ live = true }) {
+  const { t, paused, toggle } = useTimer(live);
+  const total = EARLIER.reduce((a, e) => a + e.seconds, 0) + t;
+  const totalEarned = EARLIER.reduce((a, e) => a + earned(e.seconds, e.rate), 0) + earned(t, TIMER.rate);
   return (
-    <div className="w-full max-w-[46rem] overflow-hidden rounded-card bg-surface ring-1 ring-line">
-      <table className="w-full table-fixed text-left">
-        <colgroup><col className="w-[36%]" /><col /><col /><col className="hidden @lg:table-column" /><col className="hidden @lg:table-column" /></colgroup>
-        <thead>
-          <tr className="border-b-hairline border-line align-top">
-            <th scope="col" className="border-r-hairline border-line px-4 pt-3 pb-4 font-normal">
-              <span className="flex flex-col gap-1">
-                <span className="text-xs text-ink-muted">Workspaces</span>
-                <span className="text-lg leading-6 font-medium">{rows.length} live</span>
-                <span className="text-xs text-ink-muted">Today, since 00:00 UTC</span>
+    <article className="w-full max-w-[31rem] rounded-[20px] bg-surface shadow-[0_1px_2px_oklch(0.21_0.02_264/0.05),0_16px_40px_-12px_oklch(0.21_0.02_264/0.14)] ring-1 ring-line">
+      <header className="flex flex-col gap-6 px-7 pt-6 pb-7">
+        <div className="flex items-center text-[13px] text-ink-muted">
+          <span className="flex items-center gap-2">
+            <span className="relative flex size-2">
+              {paused ? null : <span className="absolute inset-0 animate-ping rounded-full bg-positive/50 motion-reduce:animate-none" />}
+              <span className={'relative size-2 rounded-full ' + (paused ? 'bg-ink-subtle' : 'bg-positive')} />
+            </span>
+            {paused ? 'Paused' : 'Tracking'}
+          </span>
+        </div>
+        <div className="flex min-w-0 flex-col">
+          <span className="truncate text-[15px] font-medium">{TIMER.task}</span>
+          <span className="truncate text-sm text-ink-muted">{TIMER.job}</span>
+        </div>
+        <div className="flex flex-col gap-3">
+          {/* the control sits on what it controls: centred on the clock */}
+          <div className="flex items-center justify-between gap-6">
+            <Fig col="clock" className="text-[56px] leading-none font-light tracking-[-0.03em]">{clock(t)}</Fig>
+            <button type="button" onClick={toggle} aria-label={paused ? 'Resume timer' : 'Pause timer'}
+            className="grid size-12 shrink-0 place-items-center rounded-full bg-ink text-surface transition-[background-color,scale] duration-150 hover:bg-ink/85 active:scale-95 outline-offset-2 focus-visible:outline-2 focus-visible:outline-accent">
+            {paused
+              ? <svg viewBox="0 0 16 16" className="size-4 translate-x-px" fill="currentColor" aria-hidden="true"><path d="M4 2.8v10.4a.8.8 0 0 0 1.2.7l8.6-5.2a.8.8 0 0 0 0-1.4L5.2 2.1a.8.8 0 0 0-1.2.7" /></svg>
+              : <svg viewBox="0 0 16 16" className="size-4" fill="currentColor" aria-hidden="true"><rect x="3.5" y="2.5" width="3" height="11" rx="1" /><rect x="9.5" y="2.5" width="3" height="11" rx="1" /></svg>}
+            </button>
+          </div>
+          <span className="text-sm text-ink-muted"><Fig col="earned" className="text-ink">{dollars(earned(t, TIMER.rate))}</Fig> at ${TIMER.rate} an hour</span>
+        </div>
+      </header>
+      <section data-entries className="border-t-hairline border-line px-7 pt-5 pb-6">
+        <h3 className="text-[13px] font-normal text-ink-muted">Earlier today</h3>
+        <ul className="mt-1">
+          {EARLIER.map((e) => (
+            <li key={e.task} data-entry className="flex items-start gap-3 border-b-hairline border-line py-3.5">
+              <span className={'mt-[7px] size-2 shrink-0 rounded-full ' + e.dot} />
+              <span className="flex min-w-0 flex-1 flex-col">
+                <span className="truncate text-[15px] font-medium">{e.task}</span>
+                <span className="truncate text-[13px] text-ink-muted">{e.client}</span>
               </span>
-            </th>
-            {cols.map((c, i) => (
-              <th key={c.label} scope="col" className={'px-4 pt-3 pb-4 text-right font-normal ' + (i > 1 ? 'hidden @lg:table-cell' : '')}>
-                <span className="flex flex-col items-end gap-1">
-                  <span className="text-xs whitespace-nowrap text-ink-muted">{c.label}</span>
-                  <Fig className="text-lg leading-6 font-medium">{c.total}</Fig>
-                  <span className="text-xs text-positive">{c.delta}</span>
-                </span>
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody data-ledger>
-          {rows.map((r) => (
-            <tr key={r.id} className="border-b-hairline border-line last:border-0">
-              <td className="border-r-hairline border-line px-4 py-3">
-                <span className="flex items-center gap-3">
-                  <span className={'grid size-9 shrink-0 place-items-center rounded-control text-accent-ink ' + r.bg}>
-                    <svg viewBox="0 0 24 24" className="size-5" fill="currentColor" aria-hidden="true">{LOGOS[r.id]}</svg>
-                  </span>
-                  <span className="flex min-w-0 flex-col gap-0.5">
-                    <span className="truncate text-sm font-medium" title={r.name}>{r.name}</span>
-                    <span className="flex min-w-0 items-center gap-1.5 text-xs text-ink-muted">
-                      <span className="truncate">{r.site}</span>
-                      <span className={'shrink-0 rounded-chip px-1.5 font-medium ' + r.tone}>{r.plan}</span>
-                    </span>
-                  </span>
-                </span>
-              </td>
-              {cols.map((c, i) => (
-                <td key={c.label} data-col={i} className={'px-4 py-3 text-right align-top text-sm ' + (i > 1 ? 'hidden @lg:table-cell' : '')}><Fig>{c.of(r)}</Fig></td>
-              ))}
-            </tr>
+              <span className="flex flex-col items-end">
+                <Fig col="time" className="text-[15px]">{clock(e.seconds)}</Fig>
+                <Fig col="money" className="text-[13px] text-ink-muted">{dollars(earned(e.seconds, e.rate))}</Fig>
+              </span>
+            </li>
           ))}
-        </tbody>
-      </table>
-    </div>
+        </ul>
+        <div data-total className="flex items-baseline justify-between gap-3 pt-4">
+          <span className="text-[13px] text-ink-muted">Today so far</span>
+          <span className="flex flex-col items-end">
+            <Fig col="time" className="text-[17px] font-medium">{clock(total)}</Fig>
+            <Fig col="money" className="text-[13px] text-ink-muted">{dollars(totalEarned)}</Fig>
+          </span>
+        </div>
+      </section>
+    </article>
   );
 }
-Usage.stage = true;
-Usage.names = ['Proportional', 'Tabular'];
-Usage.lesson = {
-  why: 'Proportional figures are as wide as their shapes: a 1 is narrow, a 0 is wide. Each time a figure changes, every digit after it shifts sideways, so a live column shimmers and the places never stack.',
-  habit: 'Any number that changes, or sits above another, gets tabular figures: tables, totals, prices, timers, counters.',
+Timesheet.stage = true;
+Timesheet.names = ['Proportional', 'Tabular'];
+Timesheet.lesson = {
+  why: 'Proportional figures are as wide as their shapes: a 1 is narrow, a 0 is wide. A running clock changes width every second, so it wobbles, and durations stacked in a column never line up.',
+  habit: 'Any number that changes, or sits above another, gets tabular figures: timers, totals, prices, counters, tables.',
 };
-// What the eye sees: the edges of every digit, keyed by column, row and place, so a fix can glide them. Proportional,
-// they scatter; tabular, they stack. Each column's pill is the most one place drifts between rows (counted from the
-// right: the figures are aligned right).
-Usage.measure = (root) => {
-  const body = root?.querySelector('[data-ledger]'), head = root?.querySelector('thead [data-fig]');
-  if (!body) return null;
-  const b = body.getBoundingClientRect(), range = document.createRange();
+// What the eye sees: the edges of every digit in the stacked durations, keyed by row and place (counted from the
+// right: they're aligned right), so plumber's fix can glide them. The pill is the most one place drifts between rows.
+Timesheet.measure = (root) => {
+  // the rows only: the total is set larger, so its digits never stack with theirs, tabular or not
+  const list = root?.querySelector('[data-entries] ul');
+  if (!list) return null;
+  const { top, bottom } = list.getBoundingClientRect(), range = document.createRange();
   const lines = [], bands = [], pills = [];
-  let off = false, left = Infinity, right = -Infinity;
-  for (const i of [0, 1, 2, 3]) {
-    const figs = [...body.querySelectorAll(`[data-col="${i}"] [data-fig]`)].filter((f) => f.offsetParent);
-    if (!figs.length) continue;
+  let off = false;
+  for (const col of ['time']) { // the durations: the amounts share their stack, and two sets of stripes would merge
+    const figs = [...list.querySelectorAll(`[data-col="${col}"]`)];
     const places = [];
     let l = Infinity, r = -Infinity;
     figs.forEach((f, row) => {
-      const t = f.firstChild, n = t?.textContent.length ?? 0;
+      const text = f.firstChild, n = text?.textContent.length ?? 0;
       for (let c = 0; c < n; c++) {
-        range.setStart(t, c); range.setEnd(t, c + 1);
+        range.setStart(text, c); range.setEnd(text, c + 1);
         const g = range.getBoundingClientRect(), place = n - 1 - c;
-        lines.push({ key: `${i}-${row}-${place}-l`, x: g.left, top: b.top, bottom: b.bottom }, { key: `${i}-${row}-${place}-r`, x: g.right, top: b.top, bottom: b.bottom });
+        lines.push({ key: `${col}-${row}-${place}-l`, x: g.left, top, bottom }, { key: `${col}-${row}-${place}-r`, x: g.right, top, bottom });
         (places[place] ??= []).push(g.left);
         l = Math.min(l, g.left); r = Math.max(r, g.right);
       }
     });
     const drift = Math.max(0, ...places.filter((p) => p.length > 1).map((p) => Math.max(...p) - Math.min(...p)));
-    bands.push({ key: i, left: l, right: r, top: b.top, bottom: b.bottom });
-    pills.push({ key: i, x: (l + r) / 2, y: b.top, text: drift.toFixed(1), ok: drift < 0.3 });
-    off ||= drift >= 0.3; left = Math.min(left, l); right = Math.max(right, r);
+    bands.push({ key: col, left: l, right: r, top, bottom });
+    pills.push({ key: col, x: (l + r) / 2, y: top, text: drift.toFixed(1), ok: drift < 0.3 });
+    off ||= drift >= 0.3;
   }
-  if (!pills.length) return null;
-  const top = head ? head.getBoundingClientRect().top - 8 : b.top - 16; // the totals belong to the shot; their labels may crop
-  return { lines, bands, pills, off, subject: { left: left - 16, right: right + 16, top, bottom: b.bottom + 8 } };
+  const s = root.querySelector('[data-entries]').getBoundingClientRect();
+  return { lines, bands, pills, off, subject: { left: s.left, right: s.right, top: top - 12, bottom } };
 };
 
 // #1 sections down a page line up by their words, not their boxes: a filled notice between a heading and a list
@@ -715,5 +698,5 @@ NewClient.measure = (root) => {
 };
 NewClient.lesson = { why: 'An icon’s glyph box carries its own space around the drawing. With the same padding on both sides, the icon side looks looser than the text side and the label reads off-centre.', habit: 'On the side with the icon, take 2–4px of padding off.' };
 
-export const EXAMPLES = { 7: Grouping, 8: Templates, 9: Toolbar, 10: NewClient, 1: Billing, 2: Lesson, 3: Connected, 4: Notice, 5: Chips, 6: Price, 16: Usage };
+export const EXAMPLES = { 7: Grouping, 8: Templates, 9: Toolbar, 10: NewClient, 1: Billing, 2: Lesson, 3: Connected, 4: Notice, 5: Chips, 6: Price, 16: Timesheet };
 

@@ -63,6 +63,11 @@ screen. Ours used to be a teaching page with a still picture in it; that system 
   glides in and the pills turn to blue checks; the camera eases back out and the stage is clean. Nothing is drawn at
   rest. Detection is still `window.__plumb.craft({ scope: '[data-example]', hidden: true })`; nothing on the screen
   states a finding plumber didn't make.
+- **A benchmark is a source of qualities, never a template.** Take from it what it does and why (the flaw shown
+  live, a camera moment, the figures as the hero, room to breathe), then design our own component from our own
+  domain: its own layout, columns, labels, data and copy. Never reuse its numbers, strings, column set or structure
+  (#16's first ledger reused the video's figures, deltas and table shape: copying, not inspiration). Before showing
+  anything, diff it against the benchmark for copied data, words and layout.
 - **Motion is authored before it's built, and judged moving.** Measure the benchmark frame by frame (`ffmpeg -vf
   fps=10,tile=6x5`): every duration, the order, the zoom depth, when marks appear, how colour changes. Write the
   storyboard (interface-craft: named TIMING, one stage integer, springs in config) and the look in
@@ -152,3 +157,5 @@ Each line is something the owner had to say once; the sections above exist so th
 - 2026-11-04 · "the motion of the ui is so ass, the look and feel just feels awful": motion improvised with scattered
   sleeps and judged from three stills. → §3½ motion authored first (measured benchmark, storyboard, sign-off),
   judged moving.
+- 2026-11-04 · "you just copied the example, be inspired but don't copy": #16 reused the benchmark's figures
+  (48,210 · 39,120 …), deltas (+87.0%, +16.8%) and table shape. → §3½ a benchmark gives qualities, never a template.

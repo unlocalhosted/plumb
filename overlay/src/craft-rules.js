@@ -75,6 +75,14 @@ function cornerShows(el, s) {
   return s.overflow !== 'visible' && s.overflow !== '';
 }
 
+// a corner drawn only by borders shows only where a border meets it: a top border draws no bottom corner
+const SIDES = { tl: ['Top', 'Left'], tr: ['Top', 'Right'], bl: ['Bottom', 'Left'], br: ['Bottom', 'Right'] };
+function drawsCorner(el, s, corner) {
+  const bg = rgb(s.backgroundColor);
+  if (REPLACED.has(el.localName) || (bg && bg[3] > 0) || s.backgroundImage !== 'none' || s.boxShadow !== 'none' || (s.overflow !== 'visible' && s.overflow !== '')) return true;
+  return SIDES[corner].some((side) => px(s[`border${side}Width`]) > 0);
+}
+
 // #8 / #41. Nested radius = outer radius − padding, never below 0.
 export const concentricRadius = {
   id: 'craft/concentric-radius', family: 'craft', number: [8, 41], owns: ['radius'], once: 'ancestor', reads: ['rect', 'style', 'parent'],
@@ -99,7 +107,7 @@ export const concentricRadius = {
       { name: 'bl', prop: 'border-bottom-left-radius', at: Math.abs(cr.left - (pr.left + b.bl + b.pl)) < 1 && Math.abs(pr.bottom - b.bb - b.pb - cr.bottom) < 1, ix: cr.left - pr.left, iy: pr.bottom - cr.bottom },
       { name: 'br', prop: 'border-bottom-right-radius', at: Math.abs(pr.right - b.br - b.pr - cr.right) < 1 && Math.abs(pr.bottom - b.bb - b.pb - cr.bottom) < 1, ix: pr.right - cr.right, iy: pr.bottom - cr.bottom },
     ];
-    const c = corners.find((k) => k.at);
+    const c = corners.find((k) => k.at && drawsCorner(el, s, k.name));
     if (!c) return [];
     // unequal insets would want an elliptical corner: say nothing
     if (Math.abs(c.ix - c.iy) > 0.5) return [];
@@ -647,16 +655,23 @@ export const tracking = {
   },
 };
 
-// #16. Tabular numbers where numbers line up: a column of figures in a table.
+// #16. Tabular numbers where numbers line up: a column of figures in a table, or down the rows of a list.
 export const tabularNums = {
   id: 'craft/tabular-nums', family: 'craft', number: [16], owns: ['font-features'], once: 'ancestor', reads: ['style', 'text'],
   check({ el, facts }, theme) {
     const T = theme.spec(this.id);
-    if (!el.matches('td, th, [role="cell"], [role="gridcell"]')) return [];
+    const cell = el.matches('td, th, [role="cell"], [role="gridcell"]');
+    // a figure on its own in a row of a list (a timesheet's durations, an order list's totals) stacks just like a cell
+    if (!cell && (el.children.length || !el.closest('li, [role="listitem"]'))) return [];
     const text = words(el);
     if (!/^[\s$€£¥₹+\-−–.,:%()\d]+$/.test(text) || (text.match(/\d/g) ?? []).length < 2) return [];
-    const table = el.closest('table, [role="table"], [role="grid"]');
-    if (!table || rowsOf(facts, table) < T.rows) return [];
+    if (cell) {
+      const table = el.closest('table, [role="table"], [role="grid"]');
+      if (!table || rowsOf(facts, table) < T.rows) return [];
+    } else {
+      const list = el.closest('li, [role="listitem"]').parentElement;
+      if (!list || list.children.length < T.rows) return [];
+    }
     const s = facts.style(el);
     if (/tabular-nums/.test(s.fontVariantNumeric) || /"tnum"/.test(s.fontFeatureSettings)) return [];
     if (/mono/i.test(s.fontFamily)) return [];

@@ -210,7 +210,12 @@ function useMoment(Example, plumb, view) {
     });
     at(TIMING.marksOut, () => setStage(STAGE.marksOut));
     at(TIMING.cameraOut, () => { setLens({ k: 1, x: 0, y: 0 }); setStage(STAGE.cameraOut); });
-    at(TIMING.resume, () => { setStage(STAGE.rest); setLive(true); setMarks({ from: null, to: null }); plumb.ask(); });
+    at(TIMING.resume, async () => {
+      setStage(STAGE.rest); setLive(true); setMarks({ from: null, to: null });
+      // plumber measures pixels: ask only once the camera is truly back at 1×, never mid-ease
+      for (let i = 0; i < 40 && cam.current && cam.current.getBoundingClientRect().width / cam.current.offsetWidth > 1.001; i++) await new Promise((r) => setTimeout(r, 50));
+      plumb.ask();
+    });
   };
   const give = async () => { if (stage === STAGE.rest) await plumb.undo(); };
   const style = { transform: `translate(${lens.x}px, ${lens.y}px) scale(${lens.k})`, transformOrigin: '0 0', transition: still() ? 'none' : lens.k > 1 ? CAMERA.in : CAMERA.out };

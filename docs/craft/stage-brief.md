@@ -59,24 +59,33 @@ back     to the mistake: no camera, the glide reverses and the shimmer returns
 The benchmark's fix comes from a second click while zoomed. I propose **one click**, because the stage is a demo of
 plumber: the inspection and the fix run as one authored moment. That's open question 1.
 
-## Look
+## Look: qualities, never the benchmark's design
 
-- **Component:** hairline border (`ring-1 ring-line`), radius 12, no window shadow (the benchmark has none; the board
-  carries depth), photo thumbnails (36px, radius 6), totals in medium weight, labels xs grey, tags xs with a 1px
-  tinted ring. Numbers stay right-aligned: they are figures in a ledger.
-- **Marks:** stripes 1px at ~22% of the mark colour, fill ~4%; pills 16px tall, sans 10px medium, full radius,
-  the brighter magenta-red (`--color-magenta`) for wrong and the accent for right, colour interpolated through the
-  count-down.
-- **Camera:** the stage frame is the whole stage column, edge to edge, no mask. Zoom chosen so the subject fills
-  ~90% of the frame's width, up to 2.4×.
-- **Switch:** as the benchmark: a sunken track, a white thumb with a 1px shadow, 13px labels, and the thumb slides
-  (a spring) between sides instead of jumping.
+The benchmark gives qualities; our components are designed from our own domain (Quarry, the invoicing product the
+showcase lives in), with their own layout, words and data. Nothing is reused from the video: no figures, strings,
+column sets or structure. Every example is checked against it for copying before it is shown.
 
-## Open questions for you
+The qualities:
+- **Presentation scale.** A component meant to be looked at: generous room, larger type than an admin screen.
+- **One hero.** The thing the principle is about is the largest, calmest element; everything else steps back.
+- **Few, deliberate type styles.** One ramp, two greys, weight only where it carries meaning.
+- **Real words.** Labels a product team would ship: specific, short, no placeholders.
+- **Restraint.** No borders where space separates; one surface; depth from a soft shadow, not outlines.
 
-1. **One click or two?** One click runs the whole moment. Two clicks (the benchmark) means: hover or focus on
-   "Tabular" settles the figures and zooms in on what's wrong, and the click takes the fix.
-2. **The lesson below:** quieter but always there (one line of plumber's finding, then why/habit/fix as plain
-   paragraphs, no labels), or collapsed behind "Why this matters"?
-3. **Photos:** may I generate or source real thumbnails (client logos, project photos) for the ledger, or keep
-   drawn marks?
+### #16, concept
+
+- **Outcome:** someone tracking billable time sees the running timer and today's entries.
+- **Why figures change here:** a running timer ticks every second and its billable amount climbs with it. Proportional
+  digits make a ticking clock wobble and leave stacked durations ragged. That's the most recognisable place this
+  principle bites.
+- **Layout:**
+  - The running timer is the hero: its project and client, the time at display size, what it has earned, and a stop
+    button.
+  - Below it, today's finished entries: task, client and duration, with the amount under the duration.
+  - Then a total that climbs with the timer.
+- **What doesn't change:** one surface, one hero, durations stacked right so their places line up once tabular.
+- **Rejected:** analytics tables with summary headers and metric columns (the benchmark's shape).
+
+## Decisions
+
+Settled: one click runs the whole moment; the lesson is quiet and always there, below the fold.
