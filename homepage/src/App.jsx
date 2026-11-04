@@ -6,7 +6,6 @@ import { Hero } from './hero/Hero.jsx';
 import { Slop } from './sections/Slop.jsx';
 import { Live } from './sections/Live.jsx';
 import './foundations/foundations.css';
-import './surfaces.css';
 
 export function App() {
   const [scheme, setScheme] = useState(() => matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
