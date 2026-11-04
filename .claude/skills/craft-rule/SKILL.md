@@ -266,3 +266,9 @@ Each line is something the owner had to say once; the sections above exist so th
   card of text rows, built to plumber-correctness alone. → Before code, every screen gets a design pass:
   docs/craft/taste-checklist.md (a named product, a studied reference, the screen in its world, life, visual design,
   delivery), a comp critiqued in writing and compared side by side with #16, owner sign-off. Pilots: #16, #59, #57.
+- 2026-11-04 · after the pilots were built as app windows: "lets revert i dont like these they are distracting … go back
+  to individual thing we have before but may make them more rich and dense and up their quality". Cause (confirmed):
+  the screen's unit became the whole app, so sidebars, toolbars and chrome competed with the lesson's subject. → A
+  screen is the one component the lesson lives in, no app around it. Its richness goes inside it: real data drawn as
+  data, faces and photos, more rows and density. The design pass still runs (reference, comp, critique, sign-off), on
+  the component alone.
