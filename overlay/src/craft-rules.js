@@ -104,8 +104,9 @@ export const concentricRadius = {
     // unequal insets would want an elliptical corner: say nothing
     if (Math.abs(c.ix - c.iy) > 0.5) return [];
     const p = c.ix;
-    // flush in a corner the parent clips: the parent's own curve is the corner, the child's radius is never seen
-    if (p < 0.5 && ps.overflow !== 'visible') return [];
+    // flush in a corner the parent clips: the parent's own curve is the corner, the child's radius is never seen. A
+    // clip follows the inside of the parent's border, so a child whose only inset is that border is flush too
+    if (p - Math.max(b.bl, b.br, b.bt, b.bb) < 0.5 && ps.overflow !== 'visible') return [];
     // the parent's curve ends before the child's edge: no relation to keep
     if (p >= drawnR - 0.5) return [];
     const wanted = Math.max(0, drawnR - p);
