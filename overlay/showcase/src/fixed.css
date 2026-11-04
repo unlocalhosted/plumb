@@ -1,0 +1,44 @@
+/* Quarry, fixed: broken.css done right, selector for selector. Loaded only in Fixed mode. */
+
+/* #43 the fallback face is sized to the web font, so the swap moves nothing */
+@font-face { font-family: "Quarry Display"; src: url("./fonts/quarry-display.woff2") format("woff2"); font-display: swap; }
+@font-face { font-family: "Quarry Display Fallback"; src: local("Arial"); size-adjust: 104%; ascent-override: 92%; descent-override: 24%; line-gap-override: 0%; }
+
+/* #58 the dark theme says so, and the browser's own controls follow */
+.q-auto { color-scheme: light dark; }
+@media (prefers-color-scheme: dark) {
+  .q-auto { background: oklch(0.18 0.01 264); color: oklch(0.93 0.005 264); }
+}
+
+/* #28 hover only where a pointer can hover */
+@media (hover: hover) { .q-row:hover { background: var(--color-sunken); } }
+
+/* #30 the menu answers at once and settles */
+.q-menu { transition: opacity 150ms ease-out; }
+
+/* #32 the progress bar scales, on the compositor */
+.q-bar { transition: transform 300ms ease-out; }
+
+/* #29 focus is shown, set off from the field */
+.q-field:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+
+/* #47 tracking in em, so it scales with the type */
+.q-eyebrow { letter-spacing: 0.04em; }
+
+/* #69 the height the phone actually shows */
+.q-sheet { max-height: 100dvh; }
+
+/* #72 the scroll stays in the scroller */
+.q-scroll { overflow-y: auto; overscroll-behavior: contain; }
+
+/* #67 reduced motion keeps a fade, so a change can still be seen */
+@media (prefers-reduced-motion: reduce) { .q-panel { transition: opacity 150ms ease-out; } .q-panel[data-state=closed] { transform: none; } }
+
+/* #68 the panel leaves faster than it came; #64 every panel reverses from where it is, one transition both ways */
+.q-panel { transition: opacity 200ms ease-out, transform 200ms ease-out; }
+.q-panel[data-state=closed] { opacity: 0; transform: translateY(-4px) scale(0.98); pointer-events: none; transition-duration: 120ms; }
+.q-keyed { transition: opacity 200ms ease-out, transform 200ms ease-out; }
+.q-keyed[data-state=closed] { opacity: 0; transform: scale(0.98); pointer-events: none; transition-duration: 120ms; }
+
+/* #62 the command palette is simply there */
+.q-palette { animation: none; }

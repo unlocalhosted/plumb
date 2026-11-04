@@ -1,0 +1,45 @@
+/* Quarry, broken: the stylesheet a workspace ships after a year of quick fixes. Loaded only in Broken mode. Each rule
+   here is a habit `plumber` finds in source (#19 lives in Settings.jsx); fixed.css is the same sheet done right. */
+
+/* #43 a web font with no metric overrides on its fallback: the swap moves every line */
+@font-face { font-family: "Quarry Display"; src: url("./fonts/quarry-display.woff2") format("woff2"); font-display: swap; }
+
+/* #58 the system-theme preview goes dark with no color-scheme: its scrollbar and controls stay light */
+@media (prefers-color-scheme: dark) {
+  .q-auto { background: oklch(0.18 0.01 264); color: oklch(0.93 0.005 264); }
+}
+
+/* #28 a hover style with no hover gate: on a phone it sticks after a tap */
+.q-row:hover { background: var(--color-sunken); }
+
+/* #30 ease-in on a response: the menu starts slowly, just when the hand wants it */
+.q-menu { transition: opacity 150ms ease-in; }
+
+/* #32 the progress bar animates its width: layout on every frame */
+.q-bar { transition: width 300ms ease-out; }
+
+/* #29 focus taken away with nothing in its place */
+.q-field:focus { outline: none; }
+
+/* #47 tracking in pixels: right at one size, wrong at every other */
+.q-eyebrow { letter-spacing: 1px; }
+
+/* #69 the full height of the window, which on a phone hides under the browser's bars */
+.q-sheet { max-height: 100vh; }
+
+/* #72 a scroller whose scroll leaks to the page behind it once it reaches its end */
+.q-scroll { overflow-y: auto; }
+
+/* #67 reduced motion taken as no motion at all: state changes vanish */
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+
+/* #68 the panel leaves as slowly as it came; #64 the filters restart their keyframes when closed midway */
+.q-panel { transition: opacity 200ms ease-out, transform 200ms ease-out; }
+.q-panel[data-state=closed] { opacity: 0; transform: translateY(-4px) scale(0.98); pointer-events: none; }
+@keyframes q-in { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: none; } }
+@keyframes q-out { from { opacity: 1; transform: none; } to { opacity: 0; transform: scale(0.98); } }
+.q-keyed[data-state=open] { animation: q-in 250ms ease-out forwards; }
+.q-keyed[data-state=closed] { animation: q-out 150ms ease-out forwards; pointer-events: none; }
+
+/* #62 the command palette animates in, every one of the hundred times a day it's opened */
+.q-palette { animation: q-in 200ms ease-out both; }

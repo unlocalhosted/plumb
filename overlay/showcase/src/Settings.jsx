@@ -10,10 +10,10 @@ const Heading = ({ broken, id, children }) => <h3 id={id} className={'text-base 
 // #11 every gap is one of the theme's steps (broken: 5, 7, 10 and 13px by hand). #47 the eyebrow's tracking is in em.
 // #29 a field shows where focus is, with a ring set off from it.
 function Profile({ broken }) {
-  const field = 'h-10 rounded-control bg-sunken px-3 text-base ' + (broken ? 'outline-none' : 'outline-offset-2 focus-visible:outline-2 focus-visible:outline-accent');
+  const field = 'q-field h-10 rounded-control bg-sunken px-3 text-base ' + (broken ? 'outline-none' : 'outline-offset-2 focus-visible:outline-2 focus-visible:outline-accent');
   return (
     <div className={'flex flex-col ' + (broken ? 'gap-[13px]' : 'gap-4')}>
-      <span className={'text-xs font-medium text-ink-muted uppercase ' + (broken ? 'tracking-[1px]' : 'tracking-wide')}>Workspace</span>
+      <span className={'q-eyebrow text-xs font-medium text-ink-muted uppercase ' + (broken ? 'tracking-[1px]' : 'tracking-wide')}>Workspace</span>
       <Heading broken={broken} id="settings-profile">Profile</Heading>
       <div className={'grid grid-cols-2 ' + (broken ? 'gap-[10px]' : 'gap-3')}>
         <label className={'flex flex-col text-sm ' + (broken ? 'gap-[5px]' : 'gap-1')}>Business name<input className={field} defaultValue="Quarry Studio" /></label>
@@ -46,7 +46,9 @@ function Plan({ broken }) {
             <span className="text-sm text-ink-muted">Billed monthly, cancel any time</span>
           </div>
           <blockquote className="text-sm">
-            <p className={broken ? '' : '-indent-[0.45em]'}>{broken ? '"We stopped chasing invoices. Quarry does it for us..."' : '“We stopped chasing invoices. Quarry does it for us…”'}</p>
+            {broken
+              ? <p>"We stopped chasing invoices. Quarry does it for us..."</p>
+              : <p className="-indent-[0.45em]">“We stopped chasing invoices. Quarry does it for us…”</p>}
           </blockquote>
         </div>
       </div>
@@ -76,16 +78,21 @@ function Integrations({ broken }) {
   );
 }
 
-// #25 the dark theme's page is near black, not #000
+// #25 the dark theme's page is near black, not #000. The second pane follows the system (a source habit, #58), and in
+// the dark: #54 its card lifts by a lighter surface, not a shadow lost on black; #44 its words drop a weight.
 function Appearance({ broken }) {
+  const card = (dark) => 'flex flex-col gap-1 rounded-control px-4 pb-4 ' + (broken ? 'pt-4 ' : 'pt-3 ') + (dark ? 'bg-night-raised' : 'bg-surface shadow-overlay ' + (broken ? 'dark:bg-night dark:shadow-none' : 'dark:bg-night-raised dark:shadow-none'));
   return (
     <div className="flex flex-col gap-4">
       <Heading broken={broken} id="settings-appearance">Appearance</Heading>
-      <div className={'flex h-80 flex-col gap-3 rounded-card px-6 pb-6 ' + (broken ? 'bg-[#000] pt-6' : 'bg-night pt-5')}>
-        <span className="text-sm text-night-muted">Dark theme preview</span>
-        <div className={'flex flex-col gap-1 rounded-control bg-night-raised px-4 pb-4 ' + (broken ? 'pt-4' : 'pt-3')}>
-          <span className="text-sm font-medium text-night-ink">INV-2041 · Halden &amp; Co.</span>
-          <span className="text-sm text-night-muted">$4,820.00 · due Nov 12</span>
+      <div className="grid grid-cols-2 gap-4">
+        <div className={'flex h-96 flex-col gap-3 rounded-card px-6 pb-6 ' + (broken ? 'bg-[#000] pt-6' : 'bg-night pt-5')}>
+          <span className="text-sm text-night-muted">Dark</span>
+          <div className={card(true)}><span className="text-sm font-medium text-night-ink">INV-2041 · Halden &amp; Co.</span><span className="text-sm text-night-muted">$4,820.00 · due Nov 12</span></div>
+        </div>
+        <div className={'q-auto flex h-96 flex-col gap-3 rounded-card bg-sunken px-6 pb-6 ' + (broken ? 'pt-6' : 'pt-5')}>
+          <span className="text-sm text-ink-muted dark:text-night-muted">System</span>
+          <div className={card(false)}><span className={'text-sm font-medium text-ink dark:text-night-ink ' + (broken ? '' : 'dark:font-normal')}>INV-2041 · Halden &amp; Co.</span><span className="text-sm text-ink-muted dark:text-night-muted">$4,820.00 · due Nov 12</span></div>
         </div>
       </div>
     </div>

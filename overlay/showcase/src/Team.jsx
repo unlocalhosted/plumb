@@ -1,5 +1,6 @@
 // Team: who is in the workspace, their roles, and the invitations still out.
 import { Plus } from './icons.jsx';
+import { Grip } from './Interact.jsx';
 
 const Mail = ({ stroke = 1.75 }) => (
   <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth={stroke} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="shrink-0">
@@ -22,6 +23,7 @@ function Member({ broken, p, i }) {
   const odd = broken && i === 2;
   return (
     <li className="flex items-center gap-3 py-3">
+      <Grip broken={broken} label={p.name} />
       <span data-avatar className={'grid place-items-center rounded-full text-xs font-medium text-accent-ink ' + p.tint + (odd ? ' size-9' : ' size-8')}>{p.name.split(' ').map((w) => w[0]).join('')}</span>
       <div className="flex min-w-0 flex-1 flex-col">
         <span className="text-sm font-medium">{p.name}</span>

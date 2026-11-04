@@ -1,5 +1,6 @@
 // Invoices: the list on the left, the selected invoice open beside it (a split view, as Linear and Stripe do it).
-import { Close, More, Paperclip, Refresh } from './icons.jsx';
+import { Close, More, Paperclip } from './icons.jsx';
+import { Disclosure, SlideToPay, Toolbar } from './Interact.jsx';
 import receipt from './receipt.png';
 import site from './site.png';
 
@@ -31,7 +32,7 @@ function Tabs({ broken }) {
 // #38 the dividers are hairlines.
 function Row({ broken, inv, open }) {
   return (
-    <tr className={(broken ? 'border-b border-line ' : 'border-b-hairline border-line ') + (open ? 'bg-sunken' : '')}>
+    <tr className={'q-row ' + (broken ? 'border-b border-line ' : 'border-b-hairline border-line ') + (open ? 'bg-sunken' : '')}>
       <td className={'py-3 pr-4 pl-4 font-medium ' + (broken ? '' : 'case-forms')}>{inv.id}</td>
       <td className="py-3 pr-4">
         <p className="w-48 truncate" title={broken ? undefined : inv.client}>{inv.client}</p>
@@ -53,7 +54,7 @@ function Row({ broken, inv, open }) {
 function Table({ broken }) {
   return (
     <div className="flex min-w-0 flex-1 flex-col gap-3">
-      <div className={'max-h-96 overflow-y-auto rounded-card bg-surface shadow-raised ' + (broken ? '' : 'gutter-stable fade-bottom')}>
+      <div className={'q-scroll max-h-96 overflow-y-auto rounded-card bg-surface shadow-raised ' + (broken ? '' : 'gutter-stable fade-bottom')}>
         <table className="w-full text-left text-sm">
           <thead className="sticky top-0 bg-surface text-xs text-ink-muted">
             <tr><th className="py-2 pl-4 font-medium">Invoice</th><th className="font-medium">Client</th><th className="pr-4 text-right font-medium">Amount</th><th className="font-medium">Status</th><th className="font-medium">Due</th><th /></tr>
@@ -89,7 +90,7 @@ function Lines({ broken }) {
 function Detail({ broken }) {
   const path = 'uploads/2026/11/halden-and-co/receipts/INV-2041-signed-scan.pdf';
   return (
-    <aside aria-label="INV-2041" className={'flex w-[420px] shrink-0 flex-col rounded-card bg-surface p-5 shadow-overlay ' + (broken ? 'gap-5 border border-[#d0d5db]' : 'isolate gap-4 border border-line')}>
+    <aside aria-label="INV-2041" className={'q-sheet flex w-[420px] shrink-0 flex-col rounded-card bg-surface p-5 shadow-overlay ' + (broken ? 'gap-5 border border-[#d0d5db]' : 'isolate gap-4 border border-line')}>
       <header className={'relative flex items-start justify-between bg-surface ' + (broken ? 'z-[9999]' : 'z-10')}>
         <div className="flex flex-col gap-1">
           <h2 className={'text-lg font-semibold ' + (broken ? '' : 'case-forms')}>INV-2041</h2>
@@ -99,6 +100,7 @@ function Detail({ broken }) {
       </header>
       <Lines broken={broken} />
       <div className={'flex justify-between border-line pt-3 text-base font-semibold ' + (broken ? 'border-t' : 'border-t-hairline')}><span>Total</span><span className="tabular-nums">$4,820.00</span></div>
+      <SlideToPay broken={broken} />
       <div className="flex items-center gap-3">
         <img src={receipt} alt="Signed receipt for INV-2041" width="72" height="96" className={'rounded-chip ' + (broken ? '' : 'outline outline-1 -outline-offset-1 outline-line')} />
         <p className="text-sm text-ink-muted">Receipt, signed by M. Halden on Nov 2</p>
@@ -123,7 +125,9 @@ export function Invoices({ broken }) {
       <div className="flex items-center justify-between gap-4">
         <h2 id="invoices-title" className="text-xl font-semibold">Invoices</h2>
         <div className="flex items-center gap-2">
-          <button type="button" aria-label="Refresh" className="grid size-9 place-items-center rounded-control text-ink-muted hover:bg-sunken active:bg-line"><Refresh /></button>
+          <Toolbar broken={broken} />
+          <Disclosure label="Filters">{['Sent', 'Paid', 'Overdue'].map((f) => <label key={f} className="flex items-center gap-2"><input type="checkbox" defaultChecked />{f}</label>)}</Disclosure>
+          <Disclosure label="Columns" keyed>{['Client', 'Amount', 'Due'].map((f) => <label key={f} className="flex items-center gap-2"><input type="checkbox" defaultChecked />{f}</label>)}</Disclosure>
           {/* #31 Export answers the press like every other button */}
           <button type="button" className={'h-9 rounded-control bg-surface px-4 text-sm font-medium shadow-raised ' + (broken ? '' : 'active:bg-sunken')}>Export</button>
           <button type="button" className="h-9 rounded-control bg-accent px-4 text-sm font-medium text-accent-ink active:bg-ink">New invoice</button>

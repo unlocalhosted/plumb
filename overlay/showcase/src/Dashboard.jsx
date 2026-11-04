@@ -1,6 +1,7 @@
 // The dashboard: the greeting, four figures, the revenue chart, the date-range menu left open, a getting-started video
 // and the toast for an invoice just sent. Each mistake is one a dashboard really ships; the comment names its rule.
 import { Chevron, Play } from './icons.jsx';
+import { Activity } from './Interact.jsx';
 
 const CARD = 'rounded-card bg-surface shadow-raised corner-squircle';
 
@@ -41,7 +42,7 @@ function Revenue({ broken }) {
           <div className="h-2 overflow-hidden rounded-full bg-surface">
             {broken
               ? <div className="h-full rounded-full transition-[width] duration-300" style={{ width: '82%', backgroundImage: band }} />
-              : <div className="h-full origin-left scale-x-82 rounded-full bg-linear-to-r/oklch from-accent to-magenta transition-transform" />}
+              : <div className="q-bar h-full origin-left scale-x-82 rounded-full bg-linear-to-r/oklch from-accent to-magenta transition-transform" />}
           </div>
         </div>
       </div>
@@ -108,6 +109,7 @@ export function Dashboard({ broken }) {
         <Revenue broken={broken} />
         <Tour broken={broken} />
       </div>
+      <Activity broken={broken} />
       <Toast broken={broken} />
     </section>
   );

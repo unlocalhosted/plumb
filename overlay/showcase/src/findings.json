@@ -1,0 +1,165 @@
+{
+  "url": "http://127.0.0.1:4312",
+  "broken": {
+    "habits": [
+      {
+        "rule": "habits/composited-motion",
+        "file": "src/Dashboard.jsx",
+        "line": 44,
+        "title": "`transition-[width]` animates layout"
+      },
+      {
+        "rule": "habits/hover-gate",
+        "file": "src/broken.css",
+        "line": 13,
+        "title": "`.q-row:hover` also applies on touch screens"
+      },
+      {
+        "rule": "habits/no-ease-in",
+        "file": "src/broken.css",
+        "line": 16,
+        "title": "`.q-menu` starts feedback slowly with ease-in"
+      },
+      {
+        "rule": "habits/composited-motion",
+        "file": "src/broken.css",
+        "line": 19,
+        "title": "`.q-bar` animates layout"
+      },
+      {
+        "rule": "habits/focus-outline",
+        "file": "src/broken.css",
+        "line": 22,
+        "title": "`outline` removes the focus outline on .q-field:focus"
+      },
+      {
+        "rule": "habits/tracking-em",
+        "file": "src/broken.css",
+        "line": 25,
+        "title": "`.q-eyebrow` sets letter spacing in px"
+      },
+      {
+        "rule": "habits/viewport-dynamic",
+        "file": "src/broken.css",
+        "line": 28,
+        "title": "`100vh` uses vh, which jumps on mobile"
+      },
+      {
+        "rule": "habits/overscroll-contain",
+        "file": "src/broken.css",
+        "line": 31,
+        "title": ".q-scroll scrolls, and its scroll leaks to the page"
+      },
+      {
+        "rule": "habits/reduced-motion-fade",
+        "file": "src/broken.css",
+        "line": 34,
+        "title": "`*` turns every animation off for reduced motion"
+      },
+      {
+        "rule": "habits/reduced-motion-fade",
+        "file": "src/broken.css",
+        "line": 34,
+        "title": "`*` turns every animation off for reduced motion"
+      },
+      {
+        "rule": "habits/font-metrics",
+        "file": "src/broken.css",
+        "line": 5,
+        "title": "Web fonts load with no metric-matched fallback"
+      },
+      {
+        "rule": "habits/color-scheme",
+        "file": "src/Settings.jsx",
+        "line": 94,
+        "title": "The dark theme never sets color-scheme"
+      },
+      {
+        "rule": "habits/real-quotes",
+        "file": "src/Settings.jsx",
+        "line": 50,
+        "title": "`\"We stopped chasing invoices. Quarry does it …` uses straight typing marks"
+      }
+    ],
+    "used": [
+      {
+        "rule": "craft/spinner-timing",
+        "file": "src/Interact.jsx",
+        "line": 80,
+        "title": "The spinner shows 5ms after the press and flashes on quick replies."
+      },
+      {
+        "rule": "craft/exit-faster",
+        "file": "src/Interact.jsx",
+        "line": 94,
+        "title": "It opens and closes in 200ms. Close it in 150ms."
+      },
+      {
+        "rule": "craft/overdrag",
+        "file": "src/Interact.jsx",
+        "line": 108,
+        "title": "Drag it as far as you like and it follows, with no limit."
+      },
+      {
+        "rule": "craft/touch-manipulation",
+        "file": "src/Interact.jsx",
+        "line": 125,
+        "title": "Dragging this also scrolls the page on a phone."
+      },
+      {
+        "rule": "craft/press-feedback",
+        "file": "src/Invoices.jsx",
+        "line": 132,
+        "title": "Nothing changes while this is pressed."
+      }
+    ]
+  },
+  "fixed": {
+    "habits": [
+      {
+        "rule": "habits/composited-motion",
+        "file": "src/Dashboard.jsx",
+        "line": 44,
+        "title": "`transition-[width]` animates layout"
+      },
+      {
+        "rule": "habits/real-quotes",
+        "file": "src/Settings.jsx",
+        "line": 50,
+        "title": "`\"We stopped chasing invoices. Quarry does it …` uses straight typing marks"
+      }
+    ],
+    "used": [
+      {
+        "rule": "craft/spinner-timing",
+        "file": "src/Interact.jsx",
+        "line": 80,
+        "title": "The spinner shows 14ms after the press and flashes on quick replies."
+      },
+      {
+        "rule": "craft/exit-faster",
+        "file": "src/Interact.jsx",
+        "line": 94,
+        "title": "It opens and closes in 200ms. Close it in 150ms."
+      },
+      {
+        "rule": "craft/overdrag",
+        "file": "src/Interact.jsx",
+        "line": 108,
+        "title": "Drag it as far as you like and it follows, with no limit."
+      },
+      {
+        "rule": "craft/touch-manipulation",
+        "file": "src/Interact.jsx",
+        "line": 125,
+        "title": "Dragging this also scrolls the page on a phone."
+      },
+      {
+        "rule": "craft/press-feedback",
+        "file": "src/Invoices.jsx",
+        "line": 132,
+        "title": "Nothing changes while this is pressed."
+      }
+    ]
+  }
+}

@@ -4,6 +4,7 @@ import { Dashboard } from './Dashboard.jsx';
 import { Invoices } from './Invoices.jsx';
 import { Team } from './Team.jsx';
 import { Settings } from './Settings.jsx';
+import { Palette, UserMenu } from './Interact.jsx';
 
 const NAV = [
   { id: 'dashboard', label: 'Dashboard', icon: Home },
@@ -53,7 +54,7 @@ function TopBar({ broken }) {
       <div className="ml-auto flex items-center gap-3">
         <ModeSwitch broken={broken} />
         <button type="button" aria-label="Notifications" className="grid size-9 place-items-center rounded-control text-ink-muted hover:bg-sunken active:bg-line"><Bell /></button>
-        <span className="grid size-8 place-items-center rounded-full bg-violet text-xs font-medium text-accent-ink">AM</span>
+        <UserMenu broken={broken} />
       </div>
     </header>
   );
@@ -73,6 +74,7 @@ function ModeSwitch({ broken }) {
 export function Shell({ broken }) {
   return (
     <div className="flex min-h-dvh">
+      <Palette />
       <Sidebar broken={broken} active="invoices" />
       <div className="flex min-w-0 flex-1 flex-col">
         <TopBar broken={broken} />
