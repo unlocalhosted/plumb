@@ -1116,7 +1116,8 @@ ShareMenu.measure = (root) => {
     bands: [], off: a > 0.3,
     pills: [{ key: 'a', x: r.left - 22 * k, y: r.top + 16 * k, text: String(Math.round(a * 100) * k), ok: a <= 0.3 }],
     cut: { left: r.left - 30 * k, right: r.right + 30 * k, top: r.top - 30 * k, bottom: r.bottom + 30 * k, r: 8 * k },
-    subject: { left: r.left - 70 * k, right: r.right + 30 * k, top: r.top - 40 * k, bottom: r.top + 120 * k },
+    // the whole menu, every row of it over the photos, where the grey line glows
+    subject: { left: r.left - 60 * k, right: r.right + 30 * k, top: r.top - 30 * k, bottom: r.bottom + 30 * k },
   };
 };
 
@@ -1149,19 +1150,29 @@ DeleteDialog.lesson = {
   why: 'A single shadow can be soft or tight, not both. Tailwind’s largest shadow is one 50px blur pushed 25px down, so right under the dialog’s edge there’s almost nothing: no contact, and the dialog reads as hovering in a haze rather than resting above the page.',
   habit: 'Build shadows from layers: a small, dark one for contact and wider, fainter ones for distance, each doubling the last.',
 };
-// What the eye sees: the band just under the dialog's bottom edge, where contact should darken. The pill counts the
-// shadow's layers.
+// What the eye sees: the contact right under the dialog's edge. The pill is how dark the shadow is 2px below the edge,
+// in percent, from the shadow's own layers (each a Gaussian falloff of its blur, offset and spread, laid over each
+// other): one big blur leaves the edge floating; a small, dark layer gives it contact.
+const erf = (x) => { const t = 1 / (1 + 0.3275911 * Math.abs(x)), y = 1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-x * x); return x >= 0 ? y : -y; };
+const contactAt = (shadow, d) => {
+  const layers = shadow.split(/,(?![^(]*\))/).filter((l) => !/inset/.test(l)).map((l) => {
+    const a = parseFloat(l.match(/(?:rgba?|oklch|oklab)\([^)]*?[,/]\s*([\d.]+)\s*\)/)?.[1] ?? '1'), n = (l.replace(/(?:rgba?|oklch|oklab)\([^)]*\)/g, '').match(/-?[\d.]+px/g) ?? []).map(parseFloat);
+    return { a, y: n[1] ?? 0, blur: n[2] ?? 0, spread: n[3] ?? 0 };
+  }).filter((l) => l.a > 0 && (l.blur || l.y));
+  // coverage of each layer at d px below the edge; layers stack as over-painting
+  return 1 - layers.reduce((left, l) => { const sigma = Math.max(0.5, l.blur / 2), reach = l.y + l.spread, cov = 0.5 * (1 - erf((d - reach) / (sigma * Math.SQRT2))); return left * (1 - l.a * cov); }, 1);
+};
 DeleteDialog.measure = (root) => {
   const d = root?.querySelector('[data-dialog]');
   if (!d) return null;
-  const r = d.getBoundingClientRect(), k = r.width / d.offsetWidth || 1, layers = getComputedStyle(d).boxShadow.split(/,(?![^(]*\))/).filter((l) => !/inset/.test(l) && !/rgba\(0, 0, 0, 0\)|transparent/.test(l)).length;
+  const r = d.getBoundingClientRect(), k = r.width / d.offsetWidth || 1, contact = Math.round(contactAt(getComputedStyle(d).boxShadow, 2) * 100);
   return {
-    lines: [], off: layers < 2,
+    lines: [], off: contact < 25,
     rules: [{ key: 'edge', y: r.bottom, left: r.left, right: r.right }],
-    bands: [{ key: 'contact', left: r.left + 12 * k, right: r.right - 12 * k, top: r.bottom, bottom: r.bottom + 10 * k, pattern: 'hatch' }],
-    pills: [{ key: 'layers', x: r.right + 20 * k, y: r.bottom, text: String(layers * k), ok: layers >= 2 }],
+    bands: [{ key: 'contact', left: r.left + 12 * k, right: r.right - 12 * k, top: r.bottom, bottom: r.bottom + 4 * k, pattern: 'hatch' }],
+    pills: [{ key: 'contact', x: r.right + 24 * k, y: r.bottom, text: String(contact * k), ok: contact >= 25 }],
     cut: { left: r.left, right: r.right, top: r.top, bottom: r.bottom + 14 * k, r: 14 * k },
-    subject: { left: r.left - 20 * k, right: r.right + 40 * k, top: r.top - 20 * k, bottom: r.bottom + 40 * k },
+    subject: { left: r.left - 20 * k, right: r.right + 50 * k, top: r.top - 20 * k, bottom: r.bottom + 40 * k },
   };
 };
 
@@ -1276,7 +1287,8 @@ Inbox.measure = (root) => {
     bands: [{ key: 'mention', left: r.left - 2 * k, right: r.right + 2 * k, top: r.top, bottom: r.bottom, pattern: 'dots' }],
     pills: [{ key: 'faded', x: r.left + r.width / 2, y: r.bottom + 14 * k, text: String(faded * k), ok: faded === 0 }],
     cut: { left: line.left - 4 * k, right: line.right + 4 * k, top: line.top - 2 * k, bottom: line.bottom + 2 * k, r: 4 * k },
-    subject: { left: r.left - 40 * k, right: r.left + 200 * k, top: r.top - 50 * k, bottom: r.bottom + 40 * k },
+    // the whole preview line, the mention and the grey either side of it
+    subject: { left: line.left - 20 * k, right: line.right + 20 * k, top: r.top - 50 * k, bottom: r.bottom + 40 * k },
   };
 };
 
@@ -1497,7 +1509,8 @@ Widgets.measure = (root) => {
     bands: [{ key: 'corner', left: r.left, right: r.left + rad, top: r.top, bottom: r.top + rad, pattern: 'hatch' }],
     pills: [{ key: 'kink', x: r.left + rad + 26 * k, y: r.top - 14 * k, text: String(Math.max(kink, 0) * k), ok: !round }],
     off: round,
-    cut: { left: r.left - 2 * k, right: r.right + 2 * k, top: r.top - 2 * k, bottom: r.bottom + 2 * k, r: rad },
+    // clear of the corner, so a round hole never fights the squircle it frames
+    cut: { left: r.left - 10 * k, right: r.right + 10 * k, top: r.top - 10 * k, bottom: r.bottom + 10 * k, r: rad + 10 * k },
     subject: { left: r.left - 30 * k, right: r.left + 110 * k, top: r.top - 40 * k, bottom: r.top + 80 * k },
   };
 };
@@ -1631,7 +1644,7 @@ function Handbook() {
   const pane = useRef(null);
   useEffect(() => jump(pane.current, 'first-week'), []);
   return (
-    <article ref={pane} data-pane className="relative h-[20rem] w-full max-w-[28rem] overflow-y-auto rounded-card [scrollbar-gutter:stable] [mask-image:linear-gradient(to_bottom,black_80%,transparent)] bg-surface shadow-card">
+    <article ref={pane} data-pane className="relative h-[20rem] w-full max-w-[28rem] overflow-y-auto rounded-card [scrollbar-gutter:stable] [background:linear-gradient(#ffffff_30%,_transparent)_center_top_/_100%_40px_no-repeat_local,_linear-gradient(transparent,_#ffffff_70%)_center_bottom_/_100%_40px_no-repeat_local,_radial-gradient(farthest-side_at_50%_0,_rgb(0_0_0_/_0.12),_transparent)_center_top_/_100%_12px_no-repeat_scroll,_radial-gradient(farthest-side_at_50%_100%,_rgb(0_0_0_/_0.12),_transparent)_center_bottom_/_100%_12px_no-repeat_scroll,_#ffffff] shadow-card">
       <header data-header className="sticky top-0 z-10 flex flex-col gap-2 border-b-hairline border-line bg-surface/95 px-5 pt-4 pb-2.5 backdrop-blur">
         <span className="flex items-center gap-2 text-[15px] font-medium"><BookIcon size={16} texture="dither" className="text-ink-muted" />Team handbook</span>
         <nav aria-label="Sections" className="-my-0.5 flex gap-4 text-[13px]">
@@ -1733,7 +1746,8 @@ Projects.measure = (root) => {
   return {
     lines: [],
     bands: through ? [{ key: 'through', left: b.left, right: b.right, top: b.top, bottom: b.bottom, pattern: 'hatch' }] : [],
-    pills: [{ key: 'z', x: b.right + 26 * k, y: b.top + b.height / 2, text: String(z * k), ok: !through }],
+    // on the menu's own edge, level with the badge: outside the shade, beside what it pokes through
+    pills: [{ key: 'z', x: m.right + 22 * k, y: b.top + b.height / 2, text: String(z * k), ok: !through }],
     off: through,
     cut: { left: m.left, right: m.right, top: m.top, bottom: m.bottom, r: 10 * k },
     subject: { left: m.left - 30 * k, right: m.right + 60 * k, top: m.top - 30 * k, bottom: m.bottom + 30 * k },
@@ -1783,7 +1797,8 @@ ShareAccess.measure = (root) => {
   return {
     lines: [],
     rules: [{ key: 'edge', y: r.bottom, left: r.left, right: r.right }],
-    bands: [{ key: 'edge', left: r.left, right: r.right, top: r.bottom - 14 * k, bottom: r.bottom, pattern: 'hatch' }],
+    // the cut-off edge, hatched while nothing says there's more; it closes when the scroll shadow takes its place
+    bands: [{ key: 'edge', left: r.left, right: r.right, top: cue ? r.bottom : r.bottom - 14 * k, bottom: r.bottom, pattern: 'hatch' }],
     pills: [{ key: 'hidden', x: r.right - 24 * k, y: r.bottom + 14 * k, text: String(hidden * k), ok: cue }],
     off: !cue,
     cut: { left: r.left, right: r.right, top: r.top, bottom: r.bottom, r: 6 * k },
@@ -1867,7 +1882,8 @@ function NoNotes() {
   return (
     <article className="flex w-full max-w-[24rem] flex-col rounded-card bg-surface shadow-card">
       <label className="m-4 mb-0 flex h-9 items-center gap-2 rounded-control px-3 text-ink-muted ring-1 ring-line ring-inset">
-        <Magnifier size={16} />
+        {/* the set draws its stroke at one width whatever the size (as absoluteStrokeWidth does): 2px here too */}
+        <Magnifier size={16} className="[&_*]:[vector-effect:non-scaling-stroke]" />
         <input type="search" defaultValue="offsite budget" aria-label="Search notes" className="min-w-0 flex-1 bg-transparent text-base text-ink outline-none md:text-sm" />
       </label>
       <div data-empty className="flex flex-col items-center gap-3 px-8 pt-10 pb-12 text-center">
