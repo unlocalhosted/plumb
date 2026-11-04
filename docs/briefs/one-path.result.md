@@ -190,3 +190,21 @@ Run after the change: project-page-data, bare-* (4 files), doctor-three-lines, p
 - The page's own "set it up" button has no endpoint yet; `--yes` is the CLI side of it.
 - Step 1's D6 test change and the README line are in the commits for steps 6 and 2 respectively, not step 1 (found later).
 - No dev server was left running; the scratch crafting-ui copies are in the session's scratchpad only.
+
+## Review (Claude, 2026-11-04)
+
+Checked on a fresh crafting-ui copy and fixed on the branch before the merge:
+
+- **Cause order.** Causes were sorted by count, so the terminal led with font weight 500 (162 of 186 places are
+  Tailwind's own `font-medium`; no step to become, no fix). `causesOf` now ranks what renders nothing first, then
+  what your theme has a step for, then the rest, biggest first within each (0c19edb). crafting-ui now leads with
+  "You wrote white 4 ways, in 92 places. Your theme calls it on-accent. 24 render nothing."
+- **Set-up loop.** `--yes` said "already set up" (a config existed) while the plain version said "run npx plumber
+  --yes" (no state saved). One `setupGaps` now answers both: dev config, config, today's state; `--yes` saves
+  today's state against an existing config (5a374c5).
+- **Copy.** "font weight", not "text weight"; colour suggestions don't print an oklch() value.
+- **Tests.** The plain set-up test sets up with `--yes` in a committed Vite app; cli.test's broken-config cases
+  run `check` (b9be4e1).
+
+Suites the brief named, branch against main: the same 16 fail on both (pre-existing). Two runs took 50–60 minutes
+and failed; each passes in under 2s alone, with swap at 14 of 15 GB, so they were memory stalls.
