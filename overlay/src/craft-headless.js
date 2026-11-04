@@ -418,7 +418,17 @@ export const menuPointerdown = {
   id: 'craft/menu-pointerdown', family: 'craft', number: [61], owns: ['interaction'], once: 'ancestor', reads: ['probe:menu-down'],
   check({ el, facts }, theme) {
     const p = facts.probe(el, 'menu-down');
-    if (!p || p.down) return [];
+    if (!p) return [];
+    // open on the press, but a press-drag-release onto an item picked nothing: its items choose on click
+    if (p.down && p.picks === false) {
+      return [{
+        ...say(this.id, { release: true }),
+        key: `${this.id}@release`, text: 'menuitem', props: ['pointer-events'], value: 'click', n: 0,
+        evidence: { openedOnPress: true, pickedOnRelease: false, measured: true }, confidence: 0.86,
+        suggest: { kind: 'advice', text: 'Choose an item on pointerup over it too (Radix and Base UI do), so press, drag and release picks in one motion.' },
+      }];
+    }
+    if (p.down) return [];
     return [{
       ...say(this.id, {}),
       key: this.id, text: 'menu', props: ['touch-action'], value: 'click', n: 0,

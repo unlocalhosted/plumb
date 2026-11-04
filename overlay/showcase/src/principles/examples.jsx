@@ -738,23 +738,40 @@ IssueTable.lesson = {
 };
 // What the eye sees in "Assignee": the space between each pair of capitals, hatched. The pill is the letter spacing,
 // in hundredths of an em.
+// one 11px label needs a closer look than the stage's usual 2.4×
+IssueTable.maxZoom = 5;
+// What the eye sees on one label: the space between one capital's ink and the next (the hatch), nothing drawn over the
+// letters themselves. Placed
+// at the letters' real positions (the DOM's) with each glyph's own ink bounds (canvas measureText). The pill is the
+// tightest of those gaps, in px: where two capitals all but touch.
 IssueTable.measure = (root) => {
   const th = [...(root?.querySelectorAll('[data-label]') ?? [])][1];
   if (!th) return null;
-  const t = th.firstChild, k = th.getBoundingClientRect().width / th.offsetWidth || 1, range = document.createRange(), boxes = [];
-  for (let i = 0; i < t.length; i++) { range.setStart(t, i); range.setEnd(t, i + 1); boxes.push(range.getBoundingClientRect()); }
+  const t = th.firstChild, k = th.getBoundingClientRect().width / th.offsetWidth || 1, range = document.createRange();
+  const s = getComputedStyle(th), ctx = document.createElement('canvas').getContext('2d');
+  ctx.font = `${s.fontWeight} ${s.fontSize} ${s.fontFamily}`;
+  const ink = [];
+  for (let i = 0; i < t.length; i++) {
+    range.setStart(t, i); range.setEnd(t, i + 1);
+    const b = range.getBoundingClientRect(), ch = s.textTransform === 'uppercase' ? t.data[i].toUpperCase() : t.data[i];
+    if (!ch.trim()) continue;
+    const m = ctx.measureText(ch);
+    ink.push({ left: b.left + -m.actualBoundingBoxLeft * k, right: b.left + m.actualBoundingBoxRight * k, top: b.top, bottom: b.bottom, h: b.height });
+  }
   const bands = [], lines = [];
-  boxes.forEach((b, i) => {
-    lines.push({ key: `l${i}`, x: b.left, top: b.top + b.height * 0.2, bottom: b.bottom - b.height * 0.2 });
-    if (boxes[i + 1]) bands.push({ key: `g${i}`, left: b.right - 0.5 * k, right: boxes[i + 1].left + 0.5 * k, top: b.top + b.height * 0.25, bottom: b.bottom - b.height * 0.25, pattern: 'hatch' });
+  let tight = Infinity;
+  ink.forEach((g, i) => {
+    const n = ink[i + 1];
+    if (!n) return;
+    tight = Math.min(tight, (n.left - g.right) / k);
+    bands.push({ key: `g${i}`, left: g.right, right: Math.max(g.right + 0.5 * k, n.left), top: g.top + g.h * 0.3, bottom: g.bottom - g.h * 0.3, pattern: 'hatch' });
   });
-  const s = getComputedStyle(th), em = (s.letterSpacing === 'normal' ? 0 : parseFloat(s.letterSpacing)) / parseFloat(s.fontSize);
-  const first = boxes[0], last = boxes.at(-1);
+  const first = ink[0], last = ink.at(-1), ok = tight >= 1;
   return {
-    lines, bands, off: em < 0.04,
-    pills: [{ key: 'em', x: (first.left + last.right) / 2, y: first.top - 12 * k, text: (em * 100 * k).toFixed(0), ok: em >= 0.04 }],
+    lines, bands, off: !ok,
+    pills: [{ key: 'gap', x: (first.left + last.right) / 2, y: first.top - 10 * k, text: (Math.max(tight, 0.05) * k).toFixed(1), ok }],
     cut: { left: first.left - 4 * k, right: last.right + 4 * k, top: first.top - 2 * k, bottom: first.bottom + 2 * k },
-    subject: { left: first.left - 40 * k, right: last.right + 60 * k, top: first.top - 40 * k, bottom: first.bottom + 50 * k },
+    subject: { left: first.left - 12 * k, right: last.right + 12 * k, top: first.top - 22 * k, bottom: first.bottom + 14 * k },
   };
 };
 
@@ -893,8 +910,12 @@ BoardingPass.lesson = {
   why: 'Hyphens, dashes, colons and brackets are drawn to sit at the middle of lowercase letters. Between capitals that middle is too low, so in “07:55–12:30” the colon and dash sag below the figures around them.',
   habit: 'Text set in capitals turns on the font’s case-sensitive forms (font-feature-settings: "case"), so punctuation rises to the capitals.',
 };
-// What the eye sees in the time: the middle of its capitals (figures), carried across. The pill is 1 while the
-// punctuation sits on lowercase forms, and turns to ✓ once the case feature is on.
+// the time is 13px: the stage goes in closer than usual so a 1px rise can be seen
+BoardingPass.maxZoom = 5;
+// What the eye sees in the time: the middle of its capitals (figures), carried across, and where the colon's and the
+// dash's ink actually sit, measured from the default glyphs (canvas measureText). The hatch is the sag between; the
+// pill is the colon's sag in px. With the case forms on, the alternates rise to the middle (the browser draws them;
+// canvas can't, so the fixed side shows the middle and the glyphs themselves, zoomed).
 BoardingPass.measure = (root) => {
   const el = [...(root?.querySelectorAll('[data-caps]') ?? [])].find((e) => /\d:\d\d–/.test(e.textContent));
   if (!el) return null;
@@ -905,14 +926,19 @@ BoardingPass.measure = (root) => {
   const box = q.getClientRects()[0], base = box.top + ((box.height / k - (m.fontBoundingBoxAscent + m.fontBoundingBoxDescent)) / 2 + m.fontBoundingBoxAscent) * k;
   const mid = base - (m.actualBoundingBoxAscent / 2) * k, on = /case/.test(s.fontFeatureSettings);
   const at = (i) => { const c = document.createRange(); c.setStart(el.firstChild, i); c.setEnd(el.firstChild, i + 1); return c.getBoundingClientRect(); };
-  const colon = at(2), dash = at(5);
+  // the ink centre of a default glyph, in the page's pixels
+  const centre = (ch) => { const g = ctx.measureText(ch); return base - ((g.actualBoundingBoxAscent - g.actualBoundingBoxDescent) / 2) * k; };
+  const colon = at(2), dash = at(5), cy = centre(':'), dy = centre('–'), sag = Math.max(0, (cy - mid) / k);
   return {
-    lines: [{ key: 'colon', x: (colon.left + colon.right) / 2, top: mid - 6 * k, bottom: base + 2 * k }, { key: 'dash', x: (dash.left + dash.right) / 2, top: mid - 6 * k, bottom: base + 2 * k }],
-    rules: [{ key: 'mid', y: mid, left: r.left - 8 * k, right: r.right + 8 * k }],
-    bands: [], off: !on,
-    pills: [{ key: 'case', x: r.right + 18 * k, y: mid, text: on ? '0' : String(k), ok: on }],
+    lines: [],
+    rules: [{ key: 'mid', y: mid, left: r.left - 8 * k, right: r.right + 8 * k },
+      // with the case forms on, the sag closes: the glyphs' marks land on the middle (they glide there)
+      { key: 'colon', y: on ? mid : cy, left: colon.left - 2 * k, right: colon.right + 2 * k }, { key: 'dash', y: on ? mid : dy, left: dash.left - 1 * k, right: dash.right + 1 * k }],
+    bands: [{ key: 'csag', left: colon.left - 2 * k, right: colon.right + 2 * k, top: mid, bottom: on ? mid : cy, pattern: 'hatch' }, { key: 'dsag', left: dash.left - 1 * k, right: dash.right + 1 * k, top: mid, bottom: on ? mid : Math.max(mid, dy), pattern: 'hatch' }],
+    off: !on,
+    pills: [{ key: 'sag', x: r.right + 22 * k, y: mid, text: on ? '0' : (Math.max(sag, 0.05) * k).toFixed(1), ok: on }],
     cut: { left: r.left - 3 * k, right: r.right + 3 * k, top: r.top, bottom: r.bottom },
-    subject: { left: r.left - 50 * k, right: r.right + 70 * k, top: r.top - 50 * k, bottom: r.bottom + 40 * k },
+    subject: { left: r.left - 14 * k, right: r.right + 40 * k, top: r.top - 16 * k, bottom: r.bottom + 12 * k },
   };
 };
 
@@ -1090,7 +1116,8 @@ ShareMenu.measure = (root) => {
     bands: [], off: a > 0.3,
     pills: [{ key: 'a', x: r.left - 22 * k, y: r.top + 16 * k, text: String(Math.round(a * 100) * k), ok: a <= 0.3 }],
     cut: { left: r.left - 30 * k, right: r.right + 30 * k, top: r.top - 30 * k, bottom: r.bottom + 30 * k, r: 8 * k },
-    subject: { left: r.left - 70 * k, right: r.right + 30 * k, top: r.top - 40 * k, bottom: r.top + 120 * k },
+    // the whole menu, every row of it over the photos, where the grey line glows
+    subject: { left: r.left - 60 * k, right: r.right + 30 * k, top: r.top - 30 * k, bottom: r.bottom + 30 * k },
   };
 };
 
@@ -1123,19 +1150,29 @@ DeleteDialog.lesson = {
   why: 'A single shadow can be soft or tight, not both. Tailwind’s largest shadow is one 50px blur pushed 25px down, so right under the dialog’s edge there’s almost nothing: no contact, and the dialog reads as hovering in a haze rather than resting above the page.',
   habit: 'Build shadows from layers: a small, dark one for contact and wider, fainter ones for distance, each doubling the last.',
 };
-// What the eye sees: the band just under the dialog's bottom edge, where contact should darken. The pill counts the
-// shadow's layers.
+// What the eye sees: the contact right under the dialog's edge. The pill is how dark the shadow is 2px below the edge,
+// in percent, from the shadow's own layers (each a Gaussian falloff of its blur, offset and spread, laid over each
+// other): one big blur leaves the edge floating; a small, dark layer gives it contact.
+const erf = (x) => { const t = 1 / (1 + 0.3275911 * Math.abs(x)), y = 1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-x * x); return x >= 0 ? y : -y; };
+const contactAt = (shadow, d) => {
+  const layers = shadow.split(/,(?![^(]*\))/).filter((l) => !/inset/.test(l)).map((l) => {
+    const a = parseFloat(l.match(/(?:rgba?|oklch|oklab)\([^)]*?[,/]\s*([\d.]+)\s*\)/)?.[1] ?? '1'), n = (l.replace(/(?:rgba?|oklch|oklab)\([^)]*\)/g, '').match(/-?[\d.]+px/g) ?? []).map(parseFloat);
+    return { a, y: n[1] ?? 0, blur: n[2] ?? 0, spread: n[3] ?? 0 };
+  }).filter((l) => l.a > 0 && (l.blur || l.y));
+  // coverage of each layer at d px below the edge; layers stack as over-painting
+  return 1 - layers.reduce((left, l) => { const sigma = Math.max(0.5, l.blur / 2), reach = l.y + l.spread, cov = 0.5 * (1 - erf((d - reach) / (sigma * Math.SQRT2))); return left * (1 - l.a * cov); }, 1);
+};
 DeleteDialog.measure = (root) => {
   const d = root?.querySelector('[data-dialog]');
   if (!d) return null;
-  const r = d.getBoundingClientRect(), k = r.width / d.offsetWidth || 1, layers = getComputedStyle(d).boxShadow.split(/,(?![^(]*\))/).filter((l) => !/inset/.test(l) && !/rgba\(0, 0, 0, 0\)|transparent/.test(l)).length;
+  const r = d.getBoundingClientRect(), k = r.width / d.offsetWidth || 1, contact = Math.round(contactAt(getComputedStyle(d).boxShadow, 2) * 100);
   return {
-    lines: [], off: layers < 2,
+    lines: [], off: contact < 25,
     rules: [{ key: 'edge', y: r.bottom, left: r.left, right: r.right }],
-    bands: [{ key: 'contact', left: r.left + 12 * k, right: r.right - 12 * k, top: r.bottom, bottom: r.bottom + 10 * k, pattern: 'hatch' }],
-    pills: [{ key: 'layers', x: r.right + 20 * k, y: r.bottom, text: String(layers * k), ok: layers >= 2 }],
+    bands: [{ key: 'contact', left: r.left + 12 * k, right: r.right - 12 * k, top: r.bottom, bottom: r.bottom + 4 * k, pattern: 'hatch' }],
+    pills: [{ key: 'contact', x: r.right + 24 * k, y: r.bottom, text: String(contact * k), ok: contact >= 25 }],
     cut: { left: r.left, right: r.right, top: r.top, bottom: r.bottom + 14 * k, r: 14 * k },
-    subject: { left: r.left - 20 * k, right: r.right + 40 * k, top: r.top - 20 * k, bottom: r.bottom + 40 * k },
+    subject: { left: r.left - 20 * k, right: r.right + 50 * k, top: r.top - 20 * k, bottom: r.bottom + 40 * k },
   };
 };
 
@@ -1250,7 +1287,8 @@ Inbox.measure = (root) => {
     bands: [{ key: 'mention', left: r.left - 2 * k, right: r.right + 2 * k, top: r.top, bottom: r.bottom, pattern: 'dots' }],
     pills: [{ key: 'faded', x: r.left + r.width / 2, y: r.bottom + 14 * k, text: String(faded * k), ok: faded === 0 }],
     cut: { left: line.left - 4 * k, right: line.right + 4 * k, top: line.top - 2 * k, bottom: line.bottom + 2 * k, r: 4 * k },
-    subject: { left: r.left - 40 * k, right: r.left + 200 * k, top: r.top - 50 * k, bottom: r.bottom + 40 * k },
+    // the whole preview line, the mention and the grey either side of it
+    subject: { left: line.left - 20 * k, right: line.right + 20 * k, top: r.top - 50 * k, bottom: r.bottom + 40 * k },
   };
 };
 
@@ -1471,7 +1509,8 @@ Widgets.measure = (root) => {
     bands: [{ key: 'corner', left: r.left, right: r.left + rad, top: r.top, bottom: r.top + rad, pattern: 'hatch' }],
     pills: [{ key: 'kink', x: r.left + rad + 26 * k, y: r.top - 14 * k, text: String(Math.max(kink, 0) * k), ok: !round }],
     off: round,
-    cut: { left: r.left - 2 * k, right: r.right + 2 * k, top: r.top - 2 * k, bottom: r.bottom + 2 * k, r: rad },
+    // clear of the corner, so a round hole never fights the squircle it frames
+    cut: { left: r.left - 10 * k, right: r.right + 10 * k, top: r.top - 10 * k, bottom: r.bottom + 10 * k, r: rad + 10 * k },
     subject: { left: r.left - 30 * k, right: r.left + 110 * k, top: r.top - 40 * k, bottom: r.top + 80 * k },
   };
 };
@@ -1605,7 +1644,7 @@ function Handbook() {
   const pane = useRef(null);
   useEffect(() => jump(pane.current, 'first-week'), []);
   return (
-    <article ref={pane} data-pane className="relative h-[20rem] w-full max-w-[28rem] overflow-y-auto rounded-card [scrollbar-gutter:stable] [mask-image:linear-gradient(to_bottom,black_80%,transparent)] bg-surface shadow-card">
+    <article ref={pane} data-pane className="relative h-[20rem] w-full max-w-[28rem] overflow-y-auto rounded-card [scrollbar-gutter:stable] [background:linear-gradient(#ffffff_30%,_transparent)_center_top_/_100%_40px_no-repeat_local,_linear-gradient(transparent,_#ffffff_70%)_center_bottom_/_100%_40px_no-repeat_local,_radial-gradient(farthest-side_at_50%_0,_rgb(0_0_0_/_0.12),_transparent)_center_top_/_100%_12px_no-repeat_scroll,_radial-gradient(farthest-side_at_50%_100%,_rgb(0_0_0_/_0.12),_transparent)_center_bottom_/_100%_12px_no-repeat_scroll,_#ffffff] shadow-card">
       <header data-header className="sticky top-0 z-10 flex flex-col gap-2 border-b-hairline border-line bg-surface/95 px-5 pt-4 pb-2.5 backdrop-blur">
         <span className="flex items-center gap-2 text-[15px] font-medium"><BookIcon size={16} texture="dither" className="text-ink-muted" />Team handbook</span>
         <nav aria-label="Sections" className="-my-0.5 flex gap-4 text-[13px]">
@@ -1707,7 +1746,8 @@ Projects.measure = (root) => {
   return {
     lines: [],
     bands: through ? [{ key: 'through', left: b.left, right: b.right, top: b.top, bottom: b.bottom, pattern: 'hatch' }] : [],
-    pills: [{ key: 'z', x: b.right + 26 * k, y: b.top + b.height / 2, text: String(z * k), ok: !through }],
+    // on the menu's own edge, level with the badge: outside the shade, beside what it pokes through
+    pills: [{ key: 'z', x: m.right + 22 * k, y: b.top + b.height / 2, text: String(z * k), ok: !through }],
     off: through,
     cut: { left: m.left, right: m.right, top: m.top, bottom: m.bottom, r: 10 * k },
     subject: { left: m.left - 30 * k, right: m.right + 60 * k, top: m.top - 30 * k, bottom: m.bottom + 30 * k },
@@ -1757,7 +1797,8 @@ ShareAccess.measure = (root) => {
   return {
     lines: [],
     rules: [{ key: 'edge', y: r.bottom, left: r.left, right: r.right }],
-    bands: [{ key: 'edge', left: r.left, right: r.right, top: r.bottom - 14 * k, bottom: r.bottom, pattern: 'hatch' }],
+    // the cut-off edge, hatched while nothing says there's more; it closes when the scroll shadow takes its place
+    bands: [{ key: 'edge', left: r.left, right: r.right, top: cue ? r.bottom : r.bottom - 14 * k, bottom: r.bottom, pattern: 'hatch' }],
     pills: [{ key: 'hidden', x: r.right - 24 * k, y: r.bottom + 14 * k, text: String(hidden * k), ok: cue }],
     off: !cue,
     cut: { left: r.left, right: r.right, top: r.top, bottom: r.bottom, r: 6 * k },
@@ -1841,7 +1882,8 @@ function NoNotes() {
   return (
     <article className="flex w-full max-w-[24rem] flex-col rounded-card bg-surface shadow-card">
       <label className="m-4 mb-0 flex h-9 items-center gap-2 rounded-control px-3 text-ink-muted ring-1 ring-line ring-inset">
-        <Magnifier size={16} />
+        {/* the set draws its stroke at one width whatever the size (as absoluteStrokeWidth does): 2px here too */}
+        <Magnifier size={16} className="[&_*]:[vector-effect:non-scaling-stroke]" />
         <input type="search" defaultValue="offsite budget" aria-label="Search notes" className="min-w-0 flex-1 bg-transparent text-base text-ink outline-none md:text-sm" />
       </label>
       <div data-empty className="flex flex-col items-center gap-3 px-8 pt-10 pb-12 text-center">
@@ -2022,5 +2064,63 @@ LayerMenu.lesson = {
   habit: 'Use a menu with a safe triangle (Radix, Base UI, React Aria): from where the pointer left the item to the submenu’s near edge, it holds the submenu open while you head for it.',
 };
 
-export const EXAMPLES = { 8: RecentlyPlayed, 1: ClientProfile, 2: InvoiceWalkthrough, 3: Whiteboard, 4: DriveActivity, 5: ChatThread, 6: FitnessToday, 15: IssueTable, 16: Timesheet, 18: NewsFront, 45: LongRead, 46: BoardingPass, 21: Recipe, 25: FeatureCard, 37: ReadersChart, 38: Agenda, 39: GlazeBoard, 40: Widgets, 42: ProjectTabs, 50: NoNotes, 63: InsertMenu, 73: Handbook, 68: EventPreview, 74: Projects, 75: ShareAccess, 57: Inbox, 59: LayerMenu, 23: ShareMenu, 51: DeleteDialog, 55: Forecast, 56: Destination };
+// #20 one light source. A sprint board: every card rests with the theme's raised shadow, falling straight down. The card
+// being dragged gets a bigger, layered shadow to lift it, copied from a shot where the light came from the top left:
+// 8px right, 10px down. Now the board has two lights, and the dragged card looks pasted on rather than picked up. plumber reads the
+// page's own light from its shadows and turns this one to fall the same way, at the same length.
+const COLUMNS = [
+  { name: 'To do', cards: [['Pricing page copy', 'AO'], ['Press list, EU', 'LR']] },
+  { name: 'In progress', cards: [['Launch film, cut 4', 'JB'], ['Onboarding empty states', 'SP']], drag: 1 },
+  { name: 'Done', cards: [['Brand guidelines', 'AO'], ['Keynote outline', 'LR']] },
+];
+function SprintBoard() {
+  // Slate's primitives, with dithered icons
+  return (
+    <article className="flex w-full max-w-[40rem] flex-col gap-3 rounded-card bg-sunken p-4">
+      <header className="flex items-baseline justify-between px-1">
+        <span className="text-[17px] leading-6 font-medium tracking-[-0.01em]">Sprint 14</span>
+        <span className="text-[13px] text-ink-muted">Ends Friday</span>
+      </header>
+      <div className="grid grid-cols-3 gap-3">
+        {COLUMNS.map((col) => (
+          <section key={col.name} className="flex flex-col gap-2">
+            <span className="px-1 text-xs font-medium text-ink-muted">{col.name} <span className="text-ink-subtle tabular-nums">{col.cards.length}</span></span>
+            {col.cards.map(([title, who], i) => (
+              <div key={title} data-dragged={col.drag === i || undefined}
+                className={'flex flex-col gap-2 rounded-control bg-surface px-3 pt-1.5 pb-3 ' + (col.drag === i ? '-translate-y-1 shadow-[2px_3px_6px_rgb(18_35_61/0.12),8px_10px_24px_rgb(18_35_61/0.16)] ring-1 ring-accent/40' : 'shadow-raised')}>
+                <span className="text-[13px] leading-5 text-pretty">{title}</span>
+                <span className="grid size-5 place-items-center self-end rounded-full bg-accent-soft text-[9px] font-medium text-accent-deep">{who}</span>
+              </div>
+            ))}
+          </section>
+        ))}
+      </div>
+    </article>
+  );
+}
+SprintBoard.stage = true;
+SprintBoard.names = ['A second light', 'One light'];
+SprintBoard.lesson = {
+  why: 'A shadow says where the light is. Every card on the board casts straight down; the dragged one casts down and to the right, as if a second lamp stood beside it. The eye reads it as pasted on, not lifted.',
+  habit: 'Give every shadow on a page the same direction (usually straight down) and change only its size: a lifted thing casts further, not sideways.',
+};
+// What the eye sees: the dragged card's shadow spilling out to its right side and none on its left. The hatch is that
+// spill; the pill is how far the shadow's direction is from the page's light, in degrees.
+SprintBoard.measure = (root) => {
+  const card = root?.querySelector('[data-dragged]');
+  if (!card) return null;
+  const r = card.getBoundingClientRect(), k = r.width / card.offsetWidth || 1;
+  const cast = getComputedStyle(card).boxShadow.split(/,(?![^(]*\))/).map((l) => (l.replace(/rgba?\([^)]*\)|oklch\([^)]*\)/g, '').match(/-?[\d.]+px/g) ?? []).map(parseFloat)).filter((n) => n.length >= 3 && (n[0] || n[1])).sort((a, b) => Math.hypot(b[0], b[1]) - Math.hypot(a[0], a[1]))[0] ?? [0, 0];
+  const angle = Math.round(Math.abs((Math.atan2(cast[0], cast[1]) * 180) / Math.PI)), spill = Math.max(0, cast[0]);
+  return {
+    lines: [{ key: 'left', x: r.left, top: r.top + 8 * k, bottom: r.bottom + 6 * k }, { key: 'right', x: r.right, top: r.top + 8 * k, bottom: r.bottom + 6 * k }],
+    bands: [{ key: 'spill', left: r.right, right: r.right + Math.max(2, spill + 6) * k, top: r.top + 8 * k, bottom: r.bottom + 10 * k, pattern: 'hatch' }],
+    pills: [{ key: 'angle', x: r.right + 30 * k, y: r.top - 10 * k, text: String(Math.max(angle, 0.01) * k), ok: angle <= 10 }],
+    off: angle > 10,
+    cut: { left: r.left - 4 * k, right: r.right + 22 * k, top: r.top - 4 * k, bottom: r.bottom + 26 * k, r: 8 * k },
+    subject: { left: r.left - 40 * k, right: r.right + 70 * k, top: r.top - 40 * k, bottom: r.bottom + 50 * k },
+  };
+};
+
+export const EXAMPLES = { 8: RecentlyPlayed, 1: ClientProfile, 2: InvoiceWalkthrough, 3: Whiteboard, 4: DriveActivity, 5: ChatThread, 6: FitnessToday, 15: IssueTable, 16: Timesheet, 18: NewsFront, 45: LongRead, 46: BoardingPass, 21: Recipe, 25: FeatureCard, 20: SprintBoard, 37: ReadersChart, 38: Agenda, 39: GlazeBoard, 40: Widgets, 42: ProjectTabs, 50: NoNotes, 63: InsertMenu, 73: Handbook, 68: EventPreview, 74: Projects, 75: ShareAccess, 57: Inbox, 59: LayerMenu, 23: ShareMenu, 51: DeleteDialog, 55: Forecast, 56: Destination };
 

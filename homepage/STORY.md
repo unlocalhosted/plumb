@@ -18,7 +18,7 @@ homepage's style, never captured or embedded.
 
 | # | Section | Sells | Proof |
 |---|---|---|---|
-| 0 | Hero | it reviews your UI like a design engineer, and writes the fix | the page changing (to be redone for the new lead) |
+| 0 | Hero | it reviews your UI like a design engineer, and writes the fix | a design review on one screen: five mistakes pinned by name, each zoomed, measured and fixed in turn (Review.jsx) |
 | 1 | The insights | 77 patterns: the ones you'd only notice once shown | a gallery of real scenes, each flipping broken ↔ fixed, named with its principle and why |
 | 2 | Keep AI slop out | agents ship these mistakes too; Plumber catches them after every edit | the agent session, catching craft mistakes (a grey shadow, a box-centred icon) as well as made-up values |
 | 3 | Live editing | change it on the page, it lands in the exact line | a real recording of the overlay |

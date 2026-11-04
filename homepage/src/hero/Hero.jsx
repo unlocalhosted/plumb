@@ -1,10 +1,10 @@
 /* ─────────────────────────────────────────────────────────
- * HERO (page-plan.html, section 0; the owner's pick, comp A "the wipe"). Medium: the page itself changing. A centred
- * headline, the install, then one full-width app screen split by a line: as written on one side, after Plumber on
- * the other (Wipe.jsx). Set in the homepage's foundations.
+ * HERO (STORY.md, section 0; the owner's pick, 2026-11-04: comp B "the review" with comp C's moment). The lead:
+ * Plumber knows the patterns design engineers know. A centred headline, the install, then one app screen with five
+ * real mistakes, pinned like a design review and fixed one at a time (Review.jsx). Set in the homepage's foundations.
  * ───────────────────────────────────────────────────────── */
 import { CopyCommand } from './CopyCommand.jsx';
-import { Wipe } from './Wipe.jsx';
+import { Review } from './Review.jsx';
 
 export const INSTALL = 'npm install -D @unlocalhosted/react-plumber';
 
@@ -19,14 +19,14 @@ export function Hero() {
         </span>
       </nav>
       <header className="hero-head" id="top">
-        <h1 id="hero-title" className="display">Click a pixel.<br />Plumber edits the file.</h1>
-        <p className="lead">It reads your Tailwind theme, marks what’s off on the running page, and writes the fix into your JSX. <b>Keeps agent-written UI on your system</b>, without a prompt.</p>
+        <h1 id="hero-title" className="display">A design review<br />on every screen.</h1>
+        <p className="lead">Hold Alt on your running app. Plumber finds what a senior design engineer would, names the pattern, <b>and writes the fix into your JSX.</b></p>
         <div className="hero-cta">
           <CopyCommand command={INSTALL} />
           <a className="btn btn-ghost hero-docs" href="https://github.com/unlocalhosted/plumb#readme">Read the docs</a>
         </div>
       </header>
-      <Wipe />
+      <Review />
     </section>
   );
 }

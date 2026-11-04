@@ -183,10 +183,10 @@ function marksOf(m, cam) {
 
 // Where the camera goes (as measured): the subject fills the column's width and sits between the bar and the
 // switch; the rest of the component runs off the window's edges, like a camera's frame.
-function shot(subject, cam, view) {
+function shot(subject, cam, view, maxZoom = CAMERA.maxZoom) {
   const r = cam.getBoundingClientRect();
   const w = subject.right - subject.left, h = subject.bottom - subject.top;
-  const k = Math.max(1, Math.min(CAMERA.maxZoom, (view.width * CAMERA.fill) / w, (view.bottom - view.top) / h));
+  const k = Math.max(1, Math.min(maxZoom, (view.width * CAMERA.fill) / w, (view.bottom - view.top) / h));
   const cx = (subject.left + subject.right) / 2, cy = (subject.top + subject.bottom) / 2; // camera pixels
   return { k, x: view.left + view.width / 2 - r.left - cx * k, y: (view.top + view.bottom) / 2 - r.top - cy * k };
 }
@@ -294,7 +294,7 @@ function useMoment(Example, plumb, view) {
     at(TIMING.cameraIn, () => {
       const from = measure();
       setMarks({ from, to: null }); setCard(cardOf());
-      if (from && cam.current && view.current && !still()) setLens(shot(from.subject, cam.current, view.current()));
+      if (from && cam.current && view.current && !still()) setLens(shot(from.subject, cam.current, view.current(), Example?.maxZoom));
       setStage(STAGE.cameraIn);
     });
     at(TIMING.marksIn, () => setStage(STAGE.marks));

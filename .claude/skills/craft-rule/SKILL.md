@@ -261,3 +261,8 @@ Each line is something the owner had to say once; the sections above exist so th
 - 2026-11-04 · "feels right" (probe-marks.html's live section: your pointer is the probe); then "if i drag out of the
   container and then let my hand go … the drawer stays stuck" (rubber-band.html heard only its own pointerup). → §3¾
   hands-on demos, and a gesture ends however the hand ends it.
+- 2026-11-04 · "a lot of examples are really poor in terms of fidelity, delivery and overall taste"; "everything feels like
+  a high fidelity wireframe and like just filled with text only"; cause (owner): no design pass. Every screen was a white
+  card of text rows, built to plumber-correctness alone. → Before code, every screen gets a design pass:
+  docs/craft/taste-checklist.md (a named product, a studied reference, the screen in its world, life, visual design,
+  delivery), a comp critiqued in writing and compared side by side with #16, owner sign-off. Pilots: #16, #59, #57.

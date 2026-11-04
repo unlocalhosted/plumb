@@ -788,15 +788,55 @@ export const headingWidow = {
 };
 
 // #20. One light source: shadows fall the same way, down.
+// The page's light, as its shadows say it: the direction most cast shadows fall (degrees, 0 = straight down, positive =
+// to the right), and how many agree. Read once per pass.
+const castOf = (l) => ({ d: Math.hypot(l.x, l.y), a: (Math.atan2(l.x, l.y) * 180) / Math.PI });
+function pageLight(facts, T) {
+  if (facts.light !== undefined) return facts.light;
+  const angles = [];
+  for (const el of document.body.querySelectorAll('*')) {
+    if (el.closest('plumb-overlay') || !el.getClientRects().length) continue;
+    const v = getComputedStyle(el).boxShadow;
+    if (!v || v === 'none') continue;
+    const cast = shadows(v).filter((l) => !l.inset && l.blur >= T.blur && Math.hypot(l.x, l.y) >= 1).map(castOf).sort((p, q) => q.d - p.d)[0];
+    if (cast) angles.push(cast.a);
+  }
+  // the light most shadows agree on: the angle with the most others within 15° of it
+  let best = null;
+  for (const a of angles) { const n = angles.filter((b) => Math.abs(b - a) <= 15).length; if (!best || n > best.n) best = { a, n }; }
+  facts.light = best && best.n >= 3 && best.n / angles.length >= 0.6 ? best : null;
+  return facts.light;
+}
+
 export const oneLight = {
-  id: 'craft/one-light', family: 'craft', number: [20], owns: ['shadow'], once: 'ancestor', reads: ['style'],
+  id: 'craft/one-light', family: 'craft', number: [20], owns: ['shadow'], once: 'ancestor', reads: ['style', 'census'],
   check({ el, facts }, theme) {
     const T = theme.spec(this.id);
     const s = facts.style(el);
     if (s.position === 'fixed') return []; // a drawer may cast to its side
-    const off = shadows(s.boxShadow).filter((l) => !l.inset && l.blur >= T.blur && (l.y < 0 || Math.abs(l.x) > Math.abs(l.y) + 2));
+    const cast = shadows(s.boxShadow).filter((l) => !l.inset && l.blur >= T.blur && Math.hypot(l.x, l.y) >= 1);
+    if (!cast.length) return [];
+    const light = pageLight(facts, T), cls = utility(el, 'shadow');
+    // the page has a light (most of its shadows fall one way): a shadow that falls another way has a second light.
+    // The fix turns it to the page's direction at its own length, blur and colour
+    if (light) {
+      const odd = cast.map((l) => ({ l, ...castOf(l) })).find((c) => Math.abs(c.a - light.a) > 25);
+      if (!odd) return [];
+      const r = (light.a * Math.PI) / 180, x = Math.round(odd.d * Math.sin(r) * 10) / 10, y = Math.round(odd.d * Math.cos(r) * 10) / 10;
+      // the shadow's own layers: not Tailwind's empty ones, nor a ring (no offset, no blur: ring-* draws it, not shadow-*)
+      const layers = s.boxShadow.split(/,(?![^(]*\))/).map((v) => v.trim()).filter((v) => { const c = shadows(v)[0]; return c && !(c.x === 0 && c.y === 0 && c.blur === 0); });
+      const turned = layers.map((v) => { const c = shadows(v)[0]; if (!c || c.inset || Math.hypot(c.x, c.y) < 1) return v; const d = Math.hypot(c.x, c.y), px = Math.round(d * Math.sin(r) * 10) / 10, py = Math.round(d * Math.cos(r) * 10) / 10; return v.replace(/(-?[\d.]+)px (-?[\d.]+)px/, `${px}px ${py}px`); }).join(', ');
+      return [{
+        ...say(this.id, { odd: Math.round(odd.a), light: Math.round(light.a) }),
+        key: this.id, text: cls ?? 'box-shadow', props: ['box-shadow'], value: `${odd.l.x}px ${odd.l.y}px`, n: Math.round(odd.a - light.a),
+        evidence: { angle: Math.round(odd.a), light: Math.round(light.a), agree: light.n }, confidence: 0.84,
+        suggest: { kind: 'class', from: cls ?? '', to: `shadow-[${turned.replace(/ /g, '_')}]`, why: `falling the way the page's other ${light.n} shadows do`, sets: { boxShadow: turned } },
+      }];
+    }
+    // too few shadows to say where the light is: one that falls up or sideways still has none overhead
+    const off = cast.filter((l) => l.y < 0 || Math.abs(l.x) > Math.abs(l.y) + 2);
     if (!off.length) return [];
-    const l = off[0], cls = utility(el, 'shadow');
+    const l = off[0];
     return [{
       ...say(this.id, { up: l.y < 0 }),
       key: this.id, text: cls ?? 'box-shadow', props: ['box-shadow'], value: `${l.x}px ${l.y}px`, n: l.y,

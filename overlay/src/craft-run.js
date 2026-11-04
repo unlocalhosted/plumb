@@ -63,6 +63,13 @@ async function operate(options) {
     return at?.file ? { file: at.file, line: at.line, column: at.column, component: at.component ?? null } : null;
   }
   if (op === 'anchor') { const el = document.querySelector('main') ?? document.body.firstElementChild; return el ? pathKey(el) : ''; }
+  // the first item of the open menu, by its centre (a plain item: not one that opens a submenu)
+  if (op === 'menuitem') {
+    const item = [...document.querySelectorAll('[role="menu"] [role^="menuitem"]:not([aria-haspopup="menu"]):not([aria-disabled="true"])')].find((e) => e.getClientRects().length && !e.closest('plumb-overlay'));
+    if (!item) return null;
+    const r = item.getBoundingClientRect();
+    return { cx: r.x + r.width / 2, cy: r.y + r.height / 2, x: r.x, y: r.y, w: r.width, h: r.height };
+  }
   if (op === 'subtrigger') {
     const sub = [...document.querySelectorAll('[role="menu"] [aria-haspopup]:not([aria-haspopup="false"])')].find((e) => e.getClientRects().length);
     if (!sub) return null;

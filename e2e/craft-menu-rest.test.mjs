@@ -16,7 +16,8 @@ const menu = (name, press) => `function ${name}() {
       <button type="button" id="${name}" aria-haspopup="menu" aria-expanded={open} className="rounded border px-3 py-1" ${press
         ? 'onPointerDown={(e) => { if (e.button === 0) { e.preventDefault(); toggle(); } }} onClick={(e) => { if (e.detail === 0) toggle(); }}'
         : 'onClick={toggle}'}>Options</button>
-      {open && <div role="menu" className="absolute top-full left-0 z-10 flex w-32 flex-col bg-white"><div role="menuitem">Rename</div><div role="menuitem">Delete</div></div>}
+      {/* items pick on the release (as a menu should): this test is about the press, not the release */}
+      {open && <div role="menu" className="absolute top-full left-0 z-10 flex w-32 flex-col bg-white"><div role="menuitem" onPointerUp={() => setOpen(false)}>Rename</div><div role="menuitem" onPointerUp={() => setOpen(false)}>Delete</div></div>}
     </div>
   );
 }

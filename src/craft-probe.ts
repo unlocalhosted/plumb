@@ -151,12 +151,25 @@ async function menuDown({ page }: Session, keys: string[]): Promise<ProbeRecord[
     await page.mouse.down();
     await sleep(200);
     const s = await ask<{ expanded: boolean; menus: number; open: boolean }>(page, { op: 'state', key: k });
-    await page.mouse.move(2, 2);
-    await page.mouse.up();
+    const down = s.expanded || s.open || s.menus > 0;
+    // open on the press: then the other half, in the same motion. Drag onto an item and let go there: a menu that picks
+    // on the release closes; one that picks on click stays open (the press began on the trigger, so no click lands)
+    let picks: boolean | null = null;
+    const item = down ? await ask<Frame | null>(page, { op: 'menuitem' }) : null;
+    if (item) {
+      await page.mouse.move(item.cx, item.cy, { steps: 4 });
+      await sleep(80);
+      await page.mouse.up();
+      await sleep(200);
+      picks = (await ask<{ menus: number }>(page, { op: 'state', key: k })).menus === 0;
+    } else {
+      await page.mouse.move(2, 2);
+      await page.mouse.up();
+    }
     await sleep(100);
     await page.keyboard.press('Escape');
     await sleep(400);
-    out.push({ gesture: 'menu-down', k, rec: { down: s.expanded || s.open || s.menus > 0 } });
+    out.push({ gesture: 'menu-down', k, rec: { down, picks } });
   }
   return out;
 }

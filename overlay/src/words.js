@@ -102,7 +102,11 @@ export const CRAFT = {
     line: `“${word}” sits alone on the last line.`,
     reason: 'Balanced lines look intended.',
   }),
-  'one-light': ({ up }) => ({
+  'one-light': ({ up, odd, light }) => (odd !== undefined ? {
+    label: 'A second light',
+    line: `This shadow falls ${Math.abs(odd - light)}° away from every other shadow on the page.`,
+    reason: 'Shadows say where the light is. One that falls another way puts a second lamp in the room, and the thing looks pasted on.',
+  } : {
     label: 'Shadow from the wrong side',
     line: `This shadow falls ${up ? 'up' : 'sideways'}. Shadows on a page fall down.`,
     reason: 'Every shadow on a page should come from the same light.',
@@ -332,7 +336,11 @@ export const CRAFT = {
     line: 'Closed halfway, it jumps back to the start of its exit.',
     reason: 'Keyframes restart from the first frame. A transition reverses from where it is.',
   }),
-  'menu-pointerdown': () => ({
+  'menu-pointerdown': ({ release } = {}) => (release ? {
+    label: 'Release picks nothing',
+    line: 'Press, drag to an item and let go: nothing is picked.',
+    reason: 'The menu opens on the press, but its items choose on click, and a drag that began on the button never clicks them.',
+  } : {
     label: 'Menu opens late',
     line: 'This menu waits for the mouse button to come back up.',
     reason: 'Opening on the press feels instant, and lets people press, drag and release to pick.',
