@@ -1,0 +1,47 @@
+/* "Save tokens on iteration" as illustration, in the signed-off foundations. Line drawings: the prompt in quiet ink,
+ * the page in the on signal; keys drawn as the page draws keycaps. */
+.i-comp { padding-bottom: var(--s-9); }
+.i-art { margin: var(--s-8) 0 0; }
+.i-svg { display: block; width: 100%; height: auto; overflow: visible; font-family: var(--font); }
+.i-split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--s-8); align-items: center; }
+.i-split .i-art { margin: 0; }
+
+/* A · two routes */
+.i-route-long { fill: none; stroke: var(--ink-3); stroke-width: 1.5; stroke-dasharray: 2 6; stroke-linecap: round; }
+.i-route-short { fill: none; stroke: var(--on); stroke-width: 2; }
+.i-stop circle { fill: var(--g0); stroke: var(--ink-3); stroke-width: 1.5; }
+.i-stop text, .i-node text { font-size: 13px; fill: var(--ink-2); }
+.i-stop-you circle { fill: var(--accent); stroke: none; }
+.i-stop-you text { fill: var(--accent-ink); }
+.i-key rect { fill: var(--g1); stroke: rgb(from var(--on) r g b / 0.6); stroke-width: 1; }
+.i-key text { font: 500 12px/1 var(--mono); fill: var(--ink-1); }
+.i-end circle { fill: var(--g0); stroke: var(--ink-1); stroke-width: 2; }
+.i-end-done circle { fill: var(--on); stroke: none; }
+.i-end text { font: 510 14px/1 var(--font); fill: var(--ink-1); }
+.i-legend { display: flex; gap: var(--s-6); justify-content: center; margin-top: var(--s-5); font: var(--t-small); font-size: 13px; color: var(--ink-3); }
+.i-legend span { display: inline-flex; gap: 8px; align-items: center; }
+.i-legend i { width: 24px; height: 0; }
+.i-sw-long { border-top: 1.5px dashed var(--ink-3); }
+.i-sw-short { border-top: 2px solid var(--on); }
+
+/* B · the context */
+.i-ctx { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s-5); }
+.i-ctx-col { display: grid; gap: 10px; }
+.i-ctx-name { margin: 0; font: var(--t-label); font-size: 13px; color: var(--ink-2); }
+.i-ctx-box { display: flex; flex-direction: column-reverse; gap: 3px; height: 340px; padding: 6px; border-radius: var(--r-md); background: var(--g1); box-shadow: inset 0 0 0 1px var(--line); }
+.i-blk { display: flex; align-items: flex-start; height: var(--h); padding: 6px 8px; border-radius: 6px; background: var(--g3); font: 400 11px/1.2 var(--mono); color: var(--ink-2); }
+.i-blk-file { background: repeating-linear-gradient(0deg, var(--g2) 0 6px, var(--g3) 6px 7px); }
+.i-ctx-empty { flex-direction: column; justify-content: center; align-items: center; gap: 10px; }
+.i-ctx-empty small { font: 400 12px/1 var(--mono); color: var(--ink-3); }
+.i-ctx-foot { margin: 0; font: 400 12px/1.4 var(--font); color: var(--ink-3); }
+
+/* C · the loop */
+.i-loop .i-svg { max-width: 30rem; margin: 0 auto; }
+.i-ring { fill: none; stroke: var(--line-2); stroke-width: 1; }
+.i-ring-run { fill: none; stroke: var(--ink-3); stroke-width: 1.5; stroke-dasharray: 2 6; stroke-linecap: round; }
+.i-ring-run-2 { opacity: 0.55; }
+.i-node circle { fill: var(--g0); stroke: var(--ink-2); stroke-width: 1.5; }
+.i-chord { stroke: var(--on); stroke-width: 2; }
+.i-round { font: 400 12px/1 var(--font); fill: var(--ink-3); }
+
+@media (max-width: 64rem) { .i-split, .i-ctx { grid-template-columns: 1fr; } }
