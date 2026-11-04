@@ -1,0 +1,304 @@
+<!doctype html>
+<!-- THROWAWAY: #60 as a hands-on demo (docs/craft/tactile-demos.md). Your pointer is plumber's tooltip probe: real hover,
+     real timers. Marks and tokens as in probe-marks.html: sky measures, coral is broken, mint is fixed. Thresholds are
+     the rule's (overlay/src/craft-spec.js 'tooltip-delay', craft-headless.js tooltipKind): a first tooltip under 200ms is
+     'quick', a next one over 150ms is 'skip'; the fix is delayDuration 500, skipDelayDuration 300. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tooltip warm-up · live</title>
+<style>
+  :root {
+    --canvas: #f5f7fa; --surface: #fff; --sunken: #f3f5f9; --ink: #12233d; --ink-muted: #5a6779; --ink-subtle: #8792a2; --line: rgb(18 35 61 / 0.11);
+    --board: #eef1f5; --board-dot: #d6dce4;
+    --card: 0 0 0 0.5px rgb(18 35 61 / 0.08), 0 1px 2px rgb(18 35 61 / 0.05), 0 6px 16px rgb(18 35 61 / 0.06);
+    --m-sky: #2a7fd0; --m-coral: #e5503f; --m-mint: #1f9e64;
+    --pl-halo: rgb(255 255 255 / 0.9); --pl-ink-2: #6b665c; --pl-ink-3: #b3ad9f;
+    --pl-sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; --pl-mono: ui-monospace, "SF Mono", Menlo, monospace;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 48px 40px 64px; background: var(--board); background-image: radial-gradient(var(--board-dot) 1px, transparent 1px);
+    background-size: 16px 16px; font: 14px/20px Inter, system-ui, sans-serif; color: var(--ink); -webkit-font-smoothing: antialiased; }
+  h1 { margin: 0 0 4px; font-size: 17px; line-height: 24px; font-weight: 500; letter-spacing: -0.01em; }
+  .sub { margin: 0 0 32px; font-size: 13px; color: var(--ink-muted); max-width: 70ch; }
+  .frame { position: relative; width: 640px; height: 340px; border-radius: 14px; background: var(--sunken); overflow: hidden; box-shadow: 0 0 0 0.5px var(--line); }
+  .scene { position: absolute; left: 0; top: 0; transform-origin: 0 0; transform: scale(1.6); width: 400px; height: 212px; }
+
+  /* the example: an editor's toolbar */
+  .doc { position: absolute; left: 24px; top: 18px; width: 352px; height: 176px; background: var(--surface); border-radius: 10px; box-shadow: var(--card); }
+  .bar { position: absolute; left: 10px; top: 10px; display: flex; gap: 4px; }
+  .bar .sep { width: 1px; margin: 5px 3px; background: var(--line); }
+  .tool { width: 26px; height: 26px; display: grid; place-items: center; border: 0; padding: 0; background: transparent; border-radius: 6px; color: var(--ink-muted);
+    font: 500 13px/1 Inter, system-ui, sans-serif; cursor: default; }
+  .tool:hover { background: var(--sunken); color: var(--ink); }
+  .tool svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; }
+  .text { position: absolute; left: 20px; top: 52px; right: 20px; }
+  .text b { display: block; font-weight: 500; font-size: 13px; letter-spacing: -0.01em; }
+  .text p { margin: 4px 0 0; font-size: 11px; line-height: 17px; color: var(--ink-muted); }
+  .tip { position: absolute; top: 0; left: 0; translate: -50% 0; white-space: nowrap; padding: 4px 7px; border-radius: 6px; background: var(--ink); color: #fff;
+    font: 500 10.5px/14px Inter, system-ui, sans-serif; opacity: 0; pointer-events: none; transition: opacity 60ms; }
+  .tip kbd { font: inherit; color: rgb(255 255 255 / 0.6); margin-left: 6px; }
+  .tip.on { opacity: 1; }
+
+  /* plumber's layer */
+  svg.marks { position: absolute; left: 0; top: 0; width: 400px; height: 212px; overflow: visible; pointer-events: none; }
+  .dot { fill: var(--m-sky); }
+  .ring { fill: #fff; stroke: var(--m-sky); stroke-width: 1.5; vector-effect: non-scaling-stroke; }
+  .contact { fill: #fff; stroke: var(--m-sky); stroke-width: 1.5; vector-effect: non-scaling-stroke; }
+  .ghostline { fill: url(#hatch); stroke: var(--m-coral); stroke-width: 1; stroke-dasharray: 2 3; vector-effect: non-scaling-stroke; opacity: 0.8; }
+  .wait { stroke-width: 2; stroke-linecap: round; vector-effect: non-scaling-stroke; }
+  .wait.sky { stroke: var(--m-sky); } .wait.off { stroke: var(--m-coral); } .wait.on { stroke: var(--m-mint); }
+  .hatch-bg { fill: rgb(229 80 63 / 0.08); } .hatch-line { stroke: rgb(229 80 63 / 0.45); stroke-width: 1; }
+
+  .pill { position: absolute; translate: -50% -50%; white-space: nowrap; font: 600 11px/14px var(--pl-sans); padding: 3px 9px; border-radius: 999px;
+    color: #fff; box-shadow: 0 0 0 1px var(--pl-halo), 0 1px 2px rgb(0 0 0 / 0.12); pointer-events: none; }
+  .pill.off { background: var(--m-coral); } .pill.on { background: var(--m-mint); } .pill.sky { background: var(--m-sky); }
+
+  /* the time ruler: one row per run, a segment per wait */
+  .ruler { position: relative; height: 40px; width: 616px; margin: 0 12px; }
+  .ruler .axis { position: absolute; left: 0; right: 0; top: 16px; border-top: 1px solid var(--pl-ink-3); }
+  .ruler .tick { position: absolute; top: 12px; width: 1px; height: 8px; background: var(--pl-ink-3); }
+  .ruler .tick.minor { top: 14px; height: 4px; }
+  .ruler .lab { position: absolute; top: 22px; translate: -50% 0; font: 400 10.5px/14px var(--pl-mono); color: var(--pl-ink-2); }
+  .ruler .seg-w { position: absolute; top: 15px; height: 3px; border-radius: 2px; background: var(--m-sky); }
+  .ruler .seg-w.off { background: var(--m-coral); } .ruler .seg-w.on { background: var(--m-mint); }
+  .ruler .shown { position: absolute; top: 16px; height: 1px; background: var(--pl-ink-2); opacity: 0.5; }
+  .ruler .ev { position: absolute; top: 11px; width: 11px; height: 11px; margin-left: -5.5px; border-radius: 50%; box-shadow: 0 0 0 2px #fff; }
+  .ruler .ev.off { background: var(--m-coral); } .ruler .ev.on { background: var(--m-mint); } .ruler .ev.sky { background: var(--m-sky); }
+  .ruler .ev.plain { background: #fff; box-shadow: 0 0 0 1.5px var(--m-sky); width: 7px; height: 7px; margin-left: -3.5px; top: 13px; }
+  .ruler .head { position: absolute; top: 4px; width: 2px; height: 24px; margin-left: -1px; background: var(--m-sky); border-radius: 1px; box-shadow: 0 0 0 1px #fff; }
+  .ruler .speed { position: absolute; right: 0; top: -6px; font: 600 10.5px/14px var(--pl-sans); color: var(--pl-ink-2); }
+
+  .live { display: flex; flex-direction: column; gap: 10px; width: 640px; }
+  .head-row { display: flex; align-items: center; justify-content: space-between; }
+  .head-row b { font-weight: 500; font-size: 13px; }
+  .seg { display: flex; padding: 3px; background: var(--surface); border-radius: 999px; box-shadow: 0 0 0 0.5px var(--line), 0 1px 2px rgb(18 35 61 / 0.05); font-size: 13px; }
+  .seg button { font: inherit; border: 0; background: transparent; padding: 4px 12px; border-radius: 999px; color: var(--ink-muted); cursor: pointer; }
+  .seg button[aria-pressed="true"] { background: var(--ink); color: #fff; }
+  .hint { font-size: 13px; color: var(--ink-muted); margin: 0; min-height: 40px; }
+</style>
+</head>
+<body>
+<h1>Tooltip warm-up</h1>
+<p class="sub">#60. Your pointer is plumber’s tooltip probe: real hover, real timers. The first tooltip should wait a beat; the next ones, while you’re still exploring, shouldn’t. Thresholds are plumber’s rule: a first wait under 200ms flashes, a next wait over 150ms stutters.</p>
+<section class="live">
+  <div class="head-row"><b>Try it: explore the toolbar</b>
+    <div class="seg" role="group" aria-label="Tooltip delay">
+      <button type="button" data-mode="instant" aria-pressed="true">Instant</button><button type="button" data-mode="each" aria-pressed="false">Each waits</button><button type="button" data-mode="warm" aria-pressed="false">Warm-up</button>
+    </div>
+  </div>
+  <div class="frame" id="frame">
+    <div class="scene" id="scene">
+      <div class="doc">
+        <div class="bar" id="bar"></div>
+        <div class="text"><b>Release notes, 4.2</b><p>Shared folders now sync in the background, and the activity panel shows who changed what. Offline edits merge when you’re back, line by line.</p></div>
+      </div>
+      <div class="tip" id="tip"></div>
+      <svg class="marks" id="marks" viewBox="0 0 400 212" aria-hidden="true">
+        <defs><pattern id="hatch" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect class="hatch-bg" width="5" height="5"/><line class="hatch-line" x1="0" y1="0" x2="0" y2="5"/></pattern></defs>
+        <g id="layer"></g>
+      </svg>
+    </div>
+  </div>
+  <div id="ruler"></div>
+  <p class="hint" id="hint"></p>
+</section>
+
+<script>
+const K = 1.6, SPAN = 5000;               // the ruler: 5s of exploring
+const WANT = { first: 500, skip: 300 };   // the fix (craft-spec 'tooltip-delay')
+const QUICK = 200, SKIP = 150, FLASH = 250; // the rule's lines; a tooltip seen for under 250ms only flashed
+const ICON = {
+  link: '<svg viewBox="0 0 14 14"><path d="M6 8a2.5 2.5 0 0 0 3.5 0l2-2A2.5 2.5 0 0 0 8 2.5l-.7.7M8 6a2.5 2.5 0 0 0-3.5 0l-2 2A2.5 2.5 0 0 0 6 11.5l.7-.7"/></svg>',
+  quote: '<svg viewBox="0 0 14 14"><path d="M3 4.5h3v3H4.2c0 1.3.6 2 1.8 2.3M8 4.5h3v3H9.2c0 1.3.6 2 1.8 2.3"/></svg>',
+  list: '<svg viewBox="0 0 14 14"><path d="M5.5 3.5H12M5.5 7H12M5.5 10.5H12"/><circle cx="2.6" cy="3.5" r=".6" fill="currentColor"/><circle cx="2.6" cy="7" r=".6" fill="currentColor"/><circle cx="2.6" cy="10.5" r=".6" fill="currentColor"/></svg>',
+  code: '<svg viewBox="0 0 14 14"><path d="M5 3.5 1.8 7 5 10.5M9 3.5 12.2 7 9 10.5"/></svg>',
+  image: '<svg viewBox="0 0 14 14"><rect x="1.8" y="2.5" width="10.4" height="9" rx="1.6"/><path d="m2.5 10 3-3 2.5 2.5L9.5 8l2 2"/></svg>',
+};
+const TOOLS = [
+  ['<b>B</b>', 'Bold', '⌘B'], ['<i style="font-family:Georgia,serif">I</i>', 'Italic', '⌘I'], ['<u>U</u>', 'Underline', '⌘U'], ['<s>S</s>', 'Strikethrough', '⇧⌘X'], null,
+  [ICON.link, 'Link', '⌘K'], [ICON.quote, 'Quote', '⇧⌘9'], [ICON.list, 'Bulleted list', '⇧⌘8'], [ICON.code, 'Code', '⌘E'], [ICON.image, 'Image', ''],
+];
+const NS = 'http://www.w3.org/2000/svg';
+const el = (tag, attrs, parent) => { const n = document.createElementNS(NS, tag); for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, v); parent.append(n); return n; };
+const frame = document.getElementById('frame'), scene = document.getElementById('scene'), bar = document.getElementById('bar'), tip = document.getElementById('tip');
+const layer = document.getElementById('layer');
+
+const buttons = [];
+for (const t of TOOLS) {
+  if (!t) { bar.insertAdjacentHTML('beforeend', '<span class="sep"></span>'); continue; }
+  const b = document.createElement('button');
+  b.type = 'button'; b.className = 'tool'; b.innerHTML = t[0]; b.setAttribute('aria-label', t[1]);
+  b.dataset.i = buttons.length; buttons.push({ el: b, label: t[1], kbd: t[2] });
+  bar.append(b);
+}
+// a box in the scene's units (the scene is drawn at 1.6×)
+const box = (n) => { const f = frame.getBoundingClientRect(), r = n.getBoundingClientRect(); return { x: (r.left - f.left) / K, y: (r.top - f.top) / K, w: r.width / K, h: r.height / K }; };
+
+// ── the component: one tooltip at a time, opened by a real pointerenter, closed on pointerleave ──
+let mode = 'instant';
+const tt = { open: -1, timer: 0, lastClose: -Infinity };
+function delayFor(now) {
+  if (mode === 'instant') return 0;
+  if (mode === 'each') return WANT.first;
+  return now - tt.lastClose < WANT.skip ? 0 : WANT.first; // warm: the last one closed under 300ms ago
+}
+function show(i) {
+  const b = buttons[i], r = box(b.el);
+  tip.innerHTML = `${b.label}${b.kbd ? `<kbd>${b.kbd}</kbd>` : ''}`;
+  tip.style.left = `${r.x + r.w / 2}px`; tip.style.top = `${r.y + r.h + 6}px`;
+  tip.classList.add('on'); tt.open = i;
+  record.shown(i);
+}
+function hide() {
+  if (tt.open < 0) return;
+  tip.classList.remove('on'); tt.open = -1; tt.lastClose = performance.now();
+  record.hidden();
+}
+for (const b of buttons) {
+  b.el.addEventListener('pointerenter', (e) => {
+    const now = performance.now(), i = +b.el.dataset.i;
+    record.enter(i, e, now);
+    clearTimeout(tt.timer);
+    const d = delayFor(now);
+    if (d === 0) show(i); else tt.timer = setTimeout(() => show(i), d);
+  });
+  b.el.addEventListener('pointerleave', () => { clearTimeout(tt.timer); hide(); record.left(); });
+}
+
+// ── plumber's record: the trail, each visit (entered, shown, gone), the chain a visit belongs to ──
+// A visit is "next" when it starts under 300ms after a tooltip closed (the window a provider keeps them warm, and the
+// probe's own); otherwise it leads a new chain. The lead's kind speaks for its chain, as the rule's does for the page.
+let run = null;
+const fresh = () => ({ t0: null, samples: [], visits: [], held: false });
+run = fresh();
+const rel = (now) => now - run.t0;
+const record = {
+  enter(i, e, now) {
+    if (run.held) return;
+    if (run.t0 === null) run.t0 = now;
+    const f = frame.getBoundingClientRect();
+    const prev = run.visits.at(-1);
+    const next = prev && prev.shown !== null && prev.gone !== null && now - (run.t0 + prev.gone) < WANT.skip;
+    const chain = next ? prev.chain : (prev ? prev.chain + 1 : 0);
+    run.visits.push({ i, at: { x: (e.clientX - f.left) / K, y: (e.clientY - f.top) / K }, t: rel(now), shown: null, gone: null, next: !!next, chain, tip: null });
+    draw();
+  },
+  shown(i) {
+    const v = run.visits.at(-1);
+    if (!v || run.held || v.i !== i) return;
+    v.shown = rel(performance.now());
+    const r = box(tip); v.tip = r;
+    draw();
+  },
+  hidden() { const v = run.visits.at(-1); if (v && !run.held && v.shown !== null && v.gone === null) v.gone = rel(performance.now()); },
+  left() { draw(); },
+};
+// how plumber reads each visit: its wait, and whether that wait is wrong for where it falls
+function judge(v) {
+  if (v.shown === null) return { kind: 'pass' };
+  const wait = v.shown - v.t;
+  const lead = run.visits.find((o) => o.chain === v.chain);
+  const leadQuick = lead.shown !== null && lead.shown - lead.t < QUICK;
+  if (!v.next) return wait < QUICK ? { kind: 'off', wait, why: 'quick' } : { kind: 'sky', wait, why: 'warm-up' };
+  if (wait > SKIP) return { kind: 'off', wait, why: 'skip' };
+  return leadQuick ? { kind: 'off', wait, why: 'flash' } : { kind: 'on', wait, why: 'skipped' };
+}
+
+frame.addEventListener('pointermove', (e) => {
+  if (run.t0 === null || run.held) return;
+  const f = frame.getBoundingClientRect(), p = { x: (e.clientX - f.left) / K, y: (e.clientY - f.top) / K };
+  const last = run.samples.at(-1);
+  if (!last || Math.hypot(p.x - last.x, p.y - last.y) > 2.5) run.samples.push(p);
+  if (rel(performance.now()) > SPAN) { run.held = true; clearTimeout(tt.timer); hide(); }
+  draw();
+});
+frame.addEventListener('pointerleave', () => { clearTimeout(tt.timer); hide(); run = fresh(); draw(); });
+for (const b of document.querySelectorAll('.seg button')) b.onclick = () => {
+  mode = b.dataset.mode;
+  for (const o of document.querySelectorAll('.seg button')) o.setAttribute('aria-pressed', o === b);
+  clearTimeout(tt.timer); hide(); tt.lastClose = -Infinity; run = fresh(); draw();
+};
+
+function draw() {
+  layer.replaceChildren();
+  frame.querySelectorAll('.pill').forEach((n) => n.remove());
+  const now = run.t0 === null ? 0 : Math.min(SPAN, rel(performance.now()));
+  // the flicker made visible: every tooltip of a quick chain that was seen for less than 250ms leaves a hatched ghost
+  for (const v of run.visits) {
+    const j = judge(v);
+    if (v.tip && v.gone !== null && v.gone - v.shown < FLASH && j.kind === 'off' && (j.why === 'flash' || j.why === 'quick'))
+      el('rect', { class: 'ghostline', x: v.tip.x, y: v.tip.y, width: v.tip.w, height: v.tip.h, rx: 6 }, layer);
+  }
+  // the trail: every sample a dot, every fourth a ring, older ones fainter (the last 160)
+  const s = run.samples.slice(-160), n = s.length;
+  s.forEach((q, i) => {
+    const age = n > 1 ? i / (n - 1) : 1;
+    if (i % 4 === 0) el('circle', { class: 'ring', cx: q.x, cy: q.y, r: 1.9 }, layer);
+    else el('circle', { class: 'dot', cx: q.x, cy: q.y, r: 1.1, opacity: (0.2 + 0.6 * age).toFixed(2) }, layer);
+  });
+  // where you came onto each button: the contact ring; the live wait, filling under the button you're on
+  for (const v of run.visits) el('circle', { class: 'contact', cx: v.at.x, cy: v.at.y, r: 3 }, layer);
+  const cur = run.visits.at(-1);
+  if (cur && cur.shown === null && cur.gone === null && tt.timer && !run.held && buttons[cur.i].el.matches(':hover')) {
+    const r = box(buttons[cur.i].el), waited = now - cur.t, k = Math.min(1, waited / WANT.first);
+    const kind = cur.next && waited > SKIP ? 'off' : 'sky';
+    el('line', { class: `wait ${kind}`, x1: r.x + 3, y1: r.y + r.h + 2.5, x2: r.x + 3 + (r.w - 6) * k, y2: r.y + r.h + 2.5 }, layer);
+  }
+  // one pill: on the tooltip that's open, or the last one shown
+  const lastShown = [...run.visits].reverse().find((v) => v.shown !== null);
+  const waiting = cur && cur.shown === null && cur.gone === null;
+  const ms = (w) => (w < 5 ? 0 : Math.round(w));
+  if (lastShown && !waiting) {
+    const j = judge(lastShown), chain = run.visits.filter((v) => v.chain === lastShown.chain);
+    const flashed = chain.filter((v) => v.gone !== null && v.gone - v.shown < FLASH).length;
+    const text = j.why === 'quick' || j.why === 'flash' ? (flashed > 1 ? `no warm-up · ${flashed} flashed` : `${ms(j.wait)}ms · no warm-up`)
+      : j.why === 'skip' ? `waited ${ms(j.wait)}ms again` : j.why === 'warm-up' ? `${ms(j.wait)}ms · warm-up` : `${ms(j.wait)}ms · ✓`;
+    const r = lastShown.tip ?? box(tip);
+    // beside the tooltip, clear of the text under it
+    frame.insertAdjacentHTML('beforeend', `<span class="pill ${j.kind}" style="left:${(r.x + r.w + 5) * K}px;top:${(r.y + r.h / 2) * K}px;translate:0 -50%">${text}</span>`);
+  }
+  document.getElementById('ruler').innerHTML = ruler(now);
+  hint();
+}
+
+function ruler(now) {
+  const W = 616, x = (ms) => (Math.min(SPAN, ms) / SPAN) * W;
+  let h = `<div class="ruler"><span class="speed">live</span><div class="axis"></div>`;
+  for (let ms = 0; ms <= SPAN; ms += 250) h += `<div class="tick ${ms % 1000 ? 'minor' : ''}" style="left:${x(ms)}px"></div>${ms % 1000 ? '' : `<span class="lab" style="left:${Math.min(W - 14, Math.max(10, x(ms)))}px">${ms ? `${ms / 1000}s` : 0}</span>`}`;
+  for (const v of run.visits) {
+    const j = judge(v), end = v.shown ?? (v === run.visits.at(-1) && v.gone === null && !run.held ? now : v.t);
+    const kind = j.kind === 'pass' ? '' : j.kind;
+    if (v.shown !== null && v.gone !== null) h += `<div class="shown" style="left:${x(v.shown)}px;width:${x(v.gone) - x(v.shown)}px"></div>`;
+    if (v.shown !== null && v.gone === null) h += `<div class="shown" style="left:${x(v.shown)}px;width:${x(now) - x(v.shown)}px"></div>`;
+    if (end > v.t) h += `<div class="seg-w ${kind}" style="left:${x(v.t)}px;width:${Math.max(2, x(end) - x(v.t))}px"></div>`;
+    h += `<div class="ev plain" style="left:${x(v.t)}px"></div>`;
+    if (v.shown !== null) h += `<div class="ev ${j.kind}" style="left:${x(v.shown)}px"></div>`;
+  }
+  if (run.t0 !== null) h += `<div class="head" style="left:${x(now)}px"></div>`;
+  return h + '</div>';
+}
+
+function hint() {
+  const t = document.getElementById('hint');
+  if (run.held) { t.textContent = 'That’s five seconds. Leave the frame to start again.'; return; }
+  const shown = run.visits.filter((v) => v.shown !== null), last = shown.at(-1);
+  if (!last) {
+    t.textContent = mode === 'instant' ? 'Sweep across the toolbar on your way to the text, then rest on a button and move to the next.'
+      : mode === 'each' ? 'Rest on Bold until its tooltip shows, then slide to Italic, then Underline.'
+      : 'Rest on Bold until its tooltip shows, then slide to its neighbours. Then leave the toolbar for a moment and come back.';
+    return;
+  }
+  const j = judge(last);
+  t.textContent = j.why === 'quick' || j.why === 'flash' ? 'No warm-up: every button you cross flashes its tooltip, even when you’re only passing. Try Warm-up.'
+    : j.why === 'skip' ? `You were already reading tooltips, and ${buttons[last.i].label} made you wait ${Math.round(j.wait)}ms again. Every neighbour does. Try Warm-up.`
+    : j.why === 'warm-up' ? `The first one waited ${Math.round(j.wait)}ms: you meant to stop here. Now slide to a neighbour.`
+    : `Warm: ${buttons[last.i].label} opened at once. Leave the toolbar for more than 300ms and the next one waits again.`;
+}
+// the wait bar and the ruler's head move while you hold still
+(function tick() { if (run.t0 !== null && !run.held) draw(); requestAnimationFrame(tick); })();
+draw();
+</script>
+</body>
+</html>
