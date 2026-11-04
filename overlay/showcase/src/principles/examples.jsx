@@ -175,7 +175,7 @@ Lesson.measure = (root) => {
   const b = root.querySelector('[data-play]').getBoundingClientRect(), g = root.querySelector('[data-play] svg').getBoundingClientRect();
   const centre = b.left + b.width / 2, seen = g.left + g.width * (10.5 / 24);
   const d = centre - seen;
-  return { ticks: [{ x: centre, top: b.top - 6, bottom: b.bottom + 6 }, { x: seen, top: g.top, bottom: g.bottom }], broken: `weight ${px(d)} left`, fixed: 'centred ✓', off: Math.abs(d) > 0.6 };
+  return { focus: { x: centre, y: b.top + b.height / 2 }, ticks: [{ x: centre, top: b.top - 6, bottom: b.bottom + 6 }, { x: seen, top: g.top, bottom: g.bottom }], broken: `weight ${px(d)} left`, fixed: 'centred ✓', off: Math.abs(d) > 0.6 };
 };
 
 // #3 round logos are drawn a touch larger than square ones, or they look smaller
@@ -230,7 +230,8 @@ Connected.measure = (root) => {
     return { y: mid - size / 2, left: box.left + 2, right: box.right - 2, size, round: !!circle };
   });
   const rd = Math.min(...ticks.filter((t) => t.round).map((t) => t.size)), sq = Math.max(...ticks.filter((t) => !t.round).map((t) => t.size));
-  return { ticks, broken: Math.abs(rd - sq) < 0.6 ? `same ${px(sq)} · circle reads smaller` : `round ${px(rd)} · square ${px(sq)}`, fixed: 'reads the same ✓', off: rd < sq * 1.04 };
+  const near = [...root.querySelectorAll('[data-logos] svg')].slice(0, 2).map((g) => g.getBoundingClientRect());
+  return { focus: { x: (near[0].right + near[1].left) / 2, y: near[0].top + near[0].height / 2 }, ticks, broken: Math.abs(rd - sq) < 0.6 ? `same ${px(sq)} · circle reads smaller` : `round ${px(rd)} · square ${px(sq)}`, fixed: 'reads the same ✓', off: rd < sq * 1.04 };
 };
 
 // #4 an icon beside words sits on the capitals' middle (broken: pushed down with mt-1, for a font long gone)
@@ -264,35 +265,37 @@ function Notice({ broken }) {
 Notice.measure = (root) => {
   const row = root.querySelector('[data-notice]'), g = row.querySelector('svg').getBoundingClientRect(), t = lineOf(row.querySelector('span'));
   const icon = g.top + g.height / 2, d = icon - t.capMiddle;
-  return { ticks: [{ y: icon, left: g.left - 4, right: g.right + 2 }, { y: t.capMiddle, left: t.left - 2, right: t.left + 48 }], broken: `icon ${px(d)} low`, fixed: 'on the capitals ✓', off: Math.abs(d) > 0.6 };
+  return { focus: { x: g.right + 4, y: (icon + t.capMiddle) / 2 }, ticks: [{ y: icon, left: g.left - 4, right: g.right + 2 }, { y: t.capMiddle, left: t.left - 2, right: t.left + 48 }], broken: `icon ${px(d)} low`, fixed: 'on the capitals ✓', off: Math.abs(d) > 0.6 };
 };
 
-// #5 the padding around a line of words is measured from the letters, not from the line's invisible leading
+// #5 the padding around a line of words is measured from the letters, not from the line's leading: an announcement
+// bar built the way Tailwind UI builds it (text-sm/6 py-2) carries 5px of invisible leading inside its 8px padding
 function Chips({ broken }) {
   return (
-    <div className="flex w-full max-w-md flex-col gap-4">
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex flex-col gap-1.5">
-          <div className="flex items-center gap-2">
-            <h3 className="case-forms text-base font-semibold">INV-2041</h3>
-            <span data-chip className="rounded-full bg-accent-soft px-3 py-1.5 text-sm leading-6 font-medium text-accent">Awaiting payment</span>
-          </div>
-          <span className="text-sm text-ink-muted">Halden &amp; Co. · sent Nov 2 · due Nov 12</span>
-        </div>
-        <span className="text-xl font-semibold tabular-nums">$4,820.00</span>
+    <div className="flex w-full max-w-md flex-col gap-4 overflow-hidden">
+      <p data-chip className="-mx-6 -mt-5 bg-ink px-6 py-2 text-center text-sm leading-6 text-accent-ink sm:-mx-6">
+        Card payments are live. <a href="#banner" className="font-semibold underline underline-offset-2">See how</a>
+      </p>
+      <div className="flex items-center justify-between gap-3">
+        <h3 className="text-base font-semibold">Invoices</h3>
+        <button type="button" className="rounded-control bg-accent px-3 py-1.5 text-sm font-medium text-accent-ink active:bg-ink">New invoice</button>
       </div>
-      <div className="flex items-center gap-2 border-t-hairline border-line pt-3">
-        <button type="button" className="rounded-control bg-ink px-3 py-1.5 text-sm font-medium text-accent-ink active:bg-ink-muted">Send reminder</button>
-        <button type="button" className="rounded-control border border-line px-3 py-1.5 text-sm font-medium active:bg-sunken">Download PDF</button>
-        <span className="ml-auto text-xs text-ink-muted">Opened twice</span>
-      </div>
+      <ul className="flex flex-col">
+        {[['INV-2041', 'Halden & Co.', 'Sent', 'bg-accent-soft text-accent'], ['INV-2040', 'Northfield Dental', 'Paid', 'bg-positive-soft text-positive']].map(([id, who, st, tone]) => (
+          <li key={id} className="flex items-center gap-3 border-b-hairline border-line py-2.5 text-sm last:border-0">
+            <span className="case-forms w-20 text-ink-muted">{id}</span>
+            <span className="flex-1 font-medium">{who}</span>
+            <span className={'rounded-full px-2 py-0.5 text-xs font-medium ' + tone}>{st}</span>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
 Chips.measure = (root) => {
   const c = root.querySelector('[data-chip]'), r = c.getBoundingClientRect(), t = lineOf(c);
   const capTop = t.baseline - (t.baseline - t.capMiddle) * 2, above = capTop - r.top;
-  return { ticks: [{ y: r.top, left: r.left, right: r.right }, { y: capTop, left: r.left, right: r.right }], broken: `${px(above)} above the letters`, fixed: 'even padding ✓', off: above > 9 };
+  return { ticks: [{ y: r.top + 1, left: r.left + 24, right: r.left + 140 }, { y: capTop, left: r.left + 24, right: r.left + 140 }], broken: `${px(above)} above the letters`, fixed: 'even padding ✓', off: above > 9 };
 };
 
 // #6 a price and its unit, two sizes side by side, share a baseline

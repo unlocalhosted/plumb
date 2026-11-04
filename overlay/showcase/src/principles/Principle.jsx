@@ -66,7 +66,45 @@ function usePlumber() {
 // a check and the value its fix sets. It follows the elements while they glide, and sits outside the example, so
 // plumber never reads it.
 const pad = 6;
-function Annotations({ state, stage, measureOf, onAnchor }) {
+
+// The loupe: a live copy of the example, magnified on the spot the example's measure names, so a fix of a pixel or
+// two can be seen. The copy drops plumber's source stamps and the scope mark, so plumber never reads it.
+const ZOOM = 4, LENS_H = 112;
+function Loupe({ seen, stage, phase }) {
+  const host = useRef(null);
+  const [w, setW] = useState(256);
+  useEffect(() => {
+    const draw = () => {
+      const src = document.querySelector(SCOPE), into = host.current;
+      if (!src || !into || !seen?.focus || !stage.current) return;
+      const LW = into.clientWidth || 256;
+      setW(LW);
+      const copy = src.cloneNode(true);
+      copy.removeAttribute('data-example');
+      for (const e of [copy, ...copy.querySelectorAll('*')]) { e.removeAttribute('data-plumb-source'); e.removeAttribute('id'); }
+      const box = src.getBoundingClientRect(), s = stage.current.getBoundingClientRect();
+      const fx = seen.focus.x - (box.left - s.left), fy = seen.focus.y - (box.top - s.top);
+      Object.assign(copy.style, { position: 'absolute', left: '0', top: '0', width: `${box.width}px`, margin: '0', boxShadow: 'none', transformOrigin: '0 0', transform: `translate(${LW / 2 - fx * ZOOM}px, ${LENS_H / 2 - fy * ZOOM}px) scale(${ZOOM})` });
+      into.replaceChildren(copy);
+    };
+    draw();
+    const t = setTimeout(draw, 480); // again once plumber's glide has settled
+    return () => clearTimeout(t);
+  }, [seen?.focus?.x, seen?.focus?.y, phase, stage]);
+  if (!seen?.focus) return null;
+  return (
+    <div data-loupe aria-hidden="true" className="relative overflow-hidden rounded-control border border-line bg-surface" style={{ height: LENS_H }}>
+      <div ref={host} inert className="absolute inset-0" />
+      {/* the guides, at the loupe's scale */}
+      {seen.ticks.map((t, i) => (t.y === undefined
+        ? <span key={i} className={'absolute border-l border-dashed transition-[left] duration-300 ' + (seen.off ? 'border-negative/70' : 'border-accent/70')} style={{ left: w / 2 + (t.x - seen.focus.x) * ZOOM, top: 0, height: LENS_H }} />
+        : <span key={i} className={'absolute border-t border-dashed transition-[top] duration-300 ' + (seen.off ? 'border-negative/70' : 'border-accent/70')} style={{ top: LENS_H / 2 + (t.y - seen.focus.y) * ZOOM, left: 0, width: w }} />))}
+      <span className="absolute right-2 bottom-2 rounded-full bg-ink/80 px-1.5 font-mono text-[10px] text-accent-ink">{ZOOM}×</span>
+    </div>
+  );
+}
+
+function Annotations({ state, stage, measureOf, onAnchor, onSeen }) {
   const [boxes, setBoxes] = useState([]);
   const [seen, setSeen] = useState(null);
   const fixed = state.phase === 'fixing' || state.phase === 'fixed';
@@ -87,7 +125,8 @@ function Annotations({ state, stage, measureOf, onAnchor }) {
       if (first.length) onAnchor?.({ y: Math.round((Math.min(...first.map((r) => r.top)) + Math.max(...first.map((r) => r.bottom))) / 2 - s.top), reach: Math.round(s.right - Math.max(...first.map((r) => r.right)) - pad - 10) });
       // the example's own view of the harm, when it has one (where the eye sees the problem), in the stage's frame
       const m = measureOf?.(document.querySelector(SCOPE));
-      setSeen(m ? { ...m, ticks: m.ticks.map((t) => (t.y === undefined ? { x: t.x - s.left, top: t.top - s.top, bottom: t.bottom - s.top } : { y: t.y - s.top, left: t.left - s.left, right: t.right - s.left })) } : null);
+      const next = m ? { ...m, focus: m.focus ? { x: m.focus.x - s.left, y: m.focus.y - s.top } : null, ticks: m.ticks.map((t) => (t.y === undefined ? { x: t.x - s.left, top: t.top - s.top, bottom: t.bottom - s.top } : { y: t.y - s.top, left: t.left - s.left, right: t.right - s.left })) } : null;
+      setSeen(next); onSeen?.(next);
       if (performance.now() < until) frame = requestAnimationFrame(measure);
     };
     measure();
@@ -116,7 +155,7 @@ function Annotations({ state, stage, measureOf, onAnchor }) {
 
 // plumber's finding as a card floating beside the window, joined to what it found by a leader line: what it saw, why,
 // its fix as a chip, and where in the source. Once its fix is in, what plumber says when asked again.
-function FindingCard({ state, anchor }) {
+function FindingCard({ state, anchor, seen, stage }) {
   const fixed = state.phase === 'fixed';
   const f = state.found?.[0];
   const chip = (to, from) => { const t = `${from ? `${from} → ` : '+ '}${to}`; return <code title={t} className="block truncate rounded-chip bg-sunken px-1.5 py-0.5 font-mono text-[11px] text-ink-muted">{t}</code>; };
@@ -151,6 +190,7 @@ function FindingCard({ state, anchor }) {
           <span className="text-xs font-medium text-ink-muted">plumber</span>
           <span className={'rounded-full px-2 py-0.5 text-xs font-medium transition-colors duration-300 ' + (fixed ? 'bg-accent-soft text-accent' : 'bg-negative-soft text-negative')}>{fixed ? 'Fixed' : 'Found'}</span>
         </div>
+        {seen?.focus && state.phase !== 'asking' ? <Loupe seen={seen} stage={stage} phase={state.phase} /> : null}
         {body}
       </div>
     </aside>
@@ -173,6 +213,7 @@ export function Principle({ n }) {
   const { state, fix, undo } = usePlumber();
   const stage = useRef(null);
   const [anchor, setAnchor] = useState(null);
+  const [seen, setSeen] = useState(null);
   const prev = n > 1 ? n - 1 : null, next = n < PRINCIPLES.length ? n + 1 : null;
   const fixed = state.phase === 'fixing' || state.phase === 'fixed', ready = state.phase === 'broken' || state.phase === 'fixed';
   const live = Example && p.how === 'live';
@@ -219,9 +260,9 @@ export function Principle({ n }) {
             <section data-example aria-label="Example" className="flex w-full min-w-0 justify-center rounded-sheet corner-squircle border border-line bg-surface px-4 pt-4 pb-5 shadow-window sm:px-6 sm:pt-5 sm:pb-6">
               {Example ? <Example broken /> : <p className="text-sm text-ink-muted">This example isn’t built yet.</p>}
             </section>
-            {Example && state.found ? <Annotations state={state} stage={stage} measureOf={Example.measure} onAnchor={setAnchor} /> : null}
+            {Example && state.found ? <Annotations state={state} stage={stage} measureOf={Example.measure} onAnchor={setAnchor} onSeen={setSeen} /> : null}
           </div>
-          {live ? <FindingCard state={state} anchor={anchor} /> : <p className="max-w-72 text-sm text-ink-muted">{FOUND[p.how] ?? ''}</p>}
+          {live ? <FindingCard state={state} anchor={anchor} seen={seen} stage={stage} /> : <p className="max-w-72 text-sm text-ink-muted">{FOUND[p.how] ?? ''}</p>}
         </div>
       </main>
     </div>
