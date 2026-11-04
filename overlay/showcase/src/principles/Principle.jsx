@@ -62,7 +62,7 @@ function usePlumber() {
 // faded back, and a bracket with a pill carrying plumber's own value. Red as found; once plumber's fix is in, blue with
 // a check and the value its fix sets. It follows the elements while they glide, and sits outside the example, so
 // plumber never reads it.
-function Annotations({ state, stage, measureOf }) {
+function Annotations({ state, stage, measureOf, onAnchor }) {
   const [boxes, setBoxes] = useState([]);
   const [seen, setSeen] = useState(null);
   const fixed = state.phase === 'fixing' || state.phase === 'fixed';
@@ -79,6 +79,8 @@ function Annotations({ state, stage, measureOf }) {
         const was = `${f.text}: ${f.value}`, now = f.suggest?.kind === 'class' ? f.suggest.to : f.suggest?.text ?? f.action;
         return { key: f.rule + f.line, x, y, w, h, was, now };
       }).filter(Boolean));
+      const first = sitesOf(state.found[0] ?? {}).map((e) => e.getBoundingClientRect());
+      if (first.length) onAnchor?.(Math.round((Math.min(...first.map((r) => r.top)) + Math.max(...first.map((r) => r.bottom))) / 2 - s.top));
       // the example's own view of the harm, when it has one (where the eye sees the problem), in the stage's frame
       const m = measureOf?.(document.querySelector(SCOPE));
       setSeen(m ? { ...m, ticks: m.ticks.map((t) => ({ x: t.x - s.left, top: t.top - s.top, bottom: t.bottom - s.top })) } : null);
@@ -110,27 +112,36 @@ function Annotations({ state, stage, measureOf }) {
   );
 }
 
-const Finding = ({ f }) => (
-  <li className="flex flex-col gap-1">
-    <span className="text-sm font-medium">{f.title}</span>
-    <span className="text-sm text-ink-muted">{f.because}</span>
-    <span className="text-sm">{f.suggest?.kind === 'class' ? <>Fix: <code className="rounded-chip bg-sunken px-1 text-xs">{f.suggest.from ? `${f.suggest.from} → ` : '+ '}{f.suggest.to}</code></> : f.action}</span>
-    <span className="text-xs text-ink-muted">{f.rule} · {f.file}:{f.line}{f.count > 1 ? ` · ${f.count} places` : ''}</span>
-  </li>
-);
-
-// what plumber says, in its own words: what it found, and once its fix is in, what it finds when asked again
-function Said({ state }) {
-  if (state.phase === 'asking') return <p className="text-sm text-ink-muted">Asking plumber about this example…</p>;
-  if (state.phase === 'error') return <p className="text-sm text-negative">{state.error}</p>;
-  const list = (fs, none) => (fs.length ? <ul className="flex flex-col gap-4">{fs.map((f, i) => <Finding key={i} f={f} />)}</ul> : <p className="text-sm text-ink-muted">{none}</p>);
-  if (state.phase !== 'fixed') return <div className="flex flex-col gap-3"><h2 className="text-base font-semibold">What plumber finds</h2>{list(state.found, 'Nothing. plumber has no finding on this example.')}</div>;
-  return (
+// plumber's finding as a card floating beside the window, joined to what it found by a leader line: what it saw, why,
+// its fix as a chip, and where in the source. Once its fix is in, what plumber says when asked again.
+function FindingCard({ state, anchor }) {
+  const fixed = state.phase === 'fixed';
+  const f = state.found?.[0];
+  const chip = (to, from) => <code className="rounded-chip bg-sunken px-1.5 py-0.5 font-mono text-xs text-ink">{from ? `${from} → ` : '+ '}{to}</code>;
+  let body;
+  if (state.phase === 'asking') body = <p className="text-sm text-ink-muted">Asking plumber about this example…</p>;
+  else if (state.phase === 'error') body = <p className="text-sm text-negative">{state.error}</p>;
+  else if (!f) body = <p className="text-sm text-ink-muted">plumber has no finding on this example.</p>;
+  else body = (
     <div className="flex flex-col gap-3">
-      <h2 className="text-base font-semibold">Asked again, with its fix in</h2>
-      {state.applied ? null : <p className="text-sm text-ink-muted">plumber gave advice here, not a fix it can apply.</p>}
-      {list(state.after, 'Nothing. plumber is satisfied with its own fix.')}
+      <p className="text-sm font-medium text-pretty">{fixed ? (state.after?.length ? state.after[0].title : 'Nothing left to find. plumber is satisfied with its own fix.') : f.title}</p>
+      {fixed ? null : <p className="text-sm text-ink-muted text-pretty">{f.because}</p>}
+      {f.suggest?.kind === 'class' ? <div className="flex items-center gap-2 text-sm text-ink-muted">{fixed ? 'Applied' : 'Fix'} {chip(f.suggest.to, f.suggest.from)}</div> : <p className="text-sm">{f.action}</p>}
+      <p className="font-mono text-[11px] text-ink-muted">{f.rule} · {f.file.split('/').pop()}:{f.line}{f.count > 1 ? ` · ${f.count} places` : ''}</p>
     </div>
+  );
+  return (
+    <aside aria-label="What plumber finds" className="relative w-full md:mt-(--anchor) md:w-72 md:shrink-0" style={{ '--anchor': `${Math.max(0, (anchor ?? 40) - 40)}px` }}>
+      {/* the leader: from the window's edge to the card */}
+      <span aria-hidden="true" className={'absolute top-10 right-full hidden h-px w-10 transition-colors duration-300 md:block ' + (fixed ? 'bg-accent' : 'bg-negative')} />
+      <div className="flex flex-col gap-3 rounded-card border border-line bg-surface/90 px-4 pt-3 pb-4 shadow-overlay backdrop-blur">
+        <div className="flex items-center justify-between gap-3">
+          <span className="text-xs font-medium text-ink-muted">plumber</span>
+          <span className={'rounded-full px-2 py-0.5 text-xs font-medium transition-colors duration-300 ' + (fixed ? 'bg-accent-soft text-accent' : 'bg-negative-soft text-negative')}>{fixed ? 'Fixed' : 'Found'}</span>
+        </div>
+        {body}
+      </div>
+    </aside>
   );
 }
 
@@ -139,45 +150,54 @@ const FOUND = {
   habit: 'plumber finds it in the source: run plumber check in the project.',
 };
 
-const step = 'grid size-9 place-items-center rounded-control text-ink-muted hover:bg-sunken active:bg-line';
+const step = 'grid size-8 place-items-center rounded-full text-ink-muted hover:bg-sunken active:bg-line';
 
+// The page: the board is the hero. A slim bar floats at the top (where you are, the switch, prev and next); the
+// principle's name sits small above the window; plumber's card floats beside it.
 export function Principle({ n }) {
   const p = PRINCIPLES.find((x) => x.n === n);
   const Example = EXAMPLES[n];
   const { state, fix, undo } = usePlumber();
   const stage = useRef(null);
+  const [anchor, setAnchor] = useState(null);
   const prev = n > 1 ? n - 1 : null, next = n < PRINCIPLES.length ? n + 1 : null;
   const fixed = state.phase === 'fixing' || state.phase === 'fixed', ready = state.phase === 'broken' || state.phase === 'fixed';
-  const tab = (on) => 'inline-flex h-8 items-center rounded-[6px] px-3 text-sm disabled:text-ink-subtle ' + (on ? 'bg-surface font-medium text-ink shadow-raised' : 'text-ink-muted');
+  const live = Example && p.how === 'live';
+  const tab = (on) => 'inline-flex h-7 items-center rounded-full px-3 text-sm transition-colors disabled:text-ink-subtle ' + (on ? 'bg-ink font-medium text-accent-ink' : 'text-ink-muted hover:text-ink');
   return (
-    <main className="mx-auto flex max-w-2xl flex-col gap-6 px-4 py-6">
-      <nav aria-label="Principles" className="flex items-center gap-2 text-sm text-ink-muted">
-        <a href="/" className="rounded-chip px-2 py-1 hover:bg-sunken active:bg-line md:hidden">All principles</a>
-        <span className="min-w-0 flex-1 truncate" title={p.section}>{p.section} · {n} of {PRINCIPLES.length}</span>
-        {prev ? <a href={`/rule/${prev}`} aria-label={'Principle ' + prev} className={step}><Chevron className="rotate-180" /></a> : null}
-        {next ? <a href={`/rule/${next}`} aria-label={'Principle ' + next} className={step}><Chevron /></a> : null}
-      </nav>
-      <header className="flex flex-col gap-2">
-        <h1 className="text-2xl font-semibold tracking-tight text-balance">{p.title}</h1>
-        <p className="max-w-measure text-sm text-ink-muted text-pretty">{p.why}</p>
+    <div className="flex min-h-dvh flex-col">
+      <header className="sticky top-0 z-10 flex justify-center px-4 pt-4">
+        <nav aria-label="Principle" className="flex w-full max-w-3xl items-center gap-2 rounded-full border border-line bg-surface/85 py-1.5 pr-1.5 pl-4 shadow-raised backdrop-blur">
+          <a href="/" className="text-sm font-medium md:hidden">All</a>
+          <span className="min-w-0 flex-1 truncate text-sm text-ink-muted" title={p.section}>{p.section} · <span className="tabular-nums">{n}</span> of {PRINCIPLES.length}</span>
+          {live ? (
+            <div role="group" aria-label="Example" className="flex items-center gap-0.5 rounded-full bg-sunken p-0.5">
+              <button type="button" aria-pressed={!fixed} disabled={!ready} onClick={() => fixed && undo()} className={tab(!fixed)}>Broken</button>
+              <button type="button" aria-pressed={fixed} disabled={!ready} onClick={() => !fixed && fix()} className={tab(fixed)}>Fixed</button>
+            </div>
+          ) : null}
+          {prev ? <a href={`/rule/${prev}`} aria-label={'Principle ' + prev} className={step}><Chevron className="rotate-180" /></a> : null}
+          {next ? <a href={`/rule/${next}`} aria-label={'Principle ' + next} className={step}><Chevron /></a> : null}
+        </nav>
       </header>
-      {Example && p.how === 'live' ? (
-        <div role="group" aria-label="Example" className="flex items-center gap-0.5 self-start rounded-control bg-sunken p-0.5">
-          <button type="button" aria-pressed={!fixed} disabled={!ready} onClick={() => fixed && undo()} className={tab(!fixed)}>Broken</button>
-          <button type="button" aria-pressed={fixed} disabled={!ready} onClick={() => !fixed && fix()} className={tab(fixed)}>Fixed by plumber</button>
+      <main className="flex flex-1 flex-col items-center gap-6 px-4 pt-10 pb-16 sm:pt-14">
+        <div className="flex max-w-lg flex-col items-center gap-2 text-center">
+          <span className={'rounded-full px-2 py-0.5 font-mono text-[11px] font-medium transition-colors duration-300 ' + (fixed ? 'bg-accent text-accent-ink' : 'bg-negative text-accent-ink')}>#{n} · {fixed ? 'fixed' : 'broken'}</span>
+          <h1 className="text-xl font-semibold tracking-tight text-balance">{p.title}</h1>
+          <p className="text-sm text-ink-muted text-balance">{p.why}</p>
         </div>
-      ) : null}
-      <div ref={stage} className="relative">
-        {/* the board, and on it the example in its window: the window is what plumber reads */}
-        <div className="board grid place-items-center rounded-sheet corner-squircle px-4 py-8 sm:px-6 sm:py-10">
-          <section data-example aria-label="Example" className="flex w-full min-w-0 max-w-lg justify-center rounded-sheet corner-squircle border border-line bg-surface px-4 pt-4 pb-5 shadow-window sm:px-6 sm:pt-5 sm:pb-6">
-            {Example ? <Example broken /> : <p className="text-sm text-ink-muted">This example isn’t built yet.</p>}
-          </section>
+        <div className="flex w-full max-w-5xl flex-col items-center gap-6 md:flex-row md:items-start md:justify-center md:gap-10">
+          <div ref={stage} className="relative w-full max-w-lg">
+            {/* the window plumber reads */}
+            <section data-example aria-label="Example" className="flex w-full min-w-0 justify-center rounded-sheet corner-squircle border border-line bg-surface px-4 pt-4 pb-5 shadow-window sm:px-6 sm:pt-5 sm:pb-6">
+              {Example ? <Example broken /> : <p className="text-sm text-ink-muted">This example isn’t built yet.</p>}
+            </section>
+            {Example && state.found ? <Annotations state={state} stage={stage} measureOf={Example.measure} onAnchor={setAnchor} /> : null}
+          </div>
+          {live ? <FindingCard state={state} anchor={anchor} /> : <p className="max-w-72 text-sm text-ink-muted">{FOUND[p.how] ?? ''}</p>}
         </div>
-        {Example && state.found ? <Annotations state={state} stage={stage} measureOf={Example.measure} /> : null}
-      </div>
-      {Example && p.how === 'live' ? <Said state={state} /> : <p className="text-sm text-ink-muted">{FOUND[p.how] ?? ''}</p>}
-    </main>
+      </main>
+    </div>
   );
 }
 
@@ -211,11 +231,11 @@ function List({ current }) {
 // is its own page (/), and each principle links back to it.
 export function Layout({ current, children }) {
   return (
-    <div className="md:grid md:grid-cols-[18rem_1fr]">
-      <aside className="hidden md:sticky md:top-0 md:block md:h-dvh md:overflow-y-auto md:overscroll-contain md:gutter-stable md:border-r-hairline md:border-line md:bg-surface md:px-4 md:py-6">
+    <div className="board min-h-dvh md:pl-72">
+      <aside className="hidden md:fixed md:inset-y-4 md:left-4 md:block md:w-64 md:overflow-y-auto md:overscroll-contain md:rounded-card md:border md:border-line md:bg-surface/80 md:px-4 md:py-5 md:shadow-overlay md:backdrop-blur md:gutter-stable">
         <List current={current} />
       </aside>
-      <div className="min-w-0">{children}</div>
+      {children}
     </div>
   );
 }
