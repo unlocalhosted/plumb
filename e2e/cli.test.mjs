@@ -264,7 +264,7 @@ test('malformed config shapes, import errors and invalid CSS paths fail clearly'
   }
   for (const contents of ['export const config = {};', 'export default {', 'throw new Error("broken\\nconfig");']) {
     const directory = await project(t, { 'plumber.config.ts': contents });
-    usage(run(['--root', directory]), /Fix.*config/);
+    usage(run(['check', '--root', directory]), /Fix.*config/);
   }
 });
 

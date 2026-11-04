@@ -2,8 +2,9 @@
 // then exactly one next step. What the next step is depends on whether the project is set up.
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { appendFile } from 'node:fs/promises';
+import { appendFile, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
+import { spawnSync } from 'node:child_process';
 import { project } from './helpers/causes-project.mjs';
 import { opener, run } from './helpers/bare-cli.mjs';
 
@@ -39,7 +40,13 @@ test('no terminal: the 3 causes of a project that is not set up, then one way fo
 
 test('a project that is set up: nothing new, how many causes are still open, and press Alt+B', { timeout: 180000 }, async (t) => {
   const root = await project(t);
-  const recorded = run(['baseline', '--root', root]);
+  // set up the way a person does: a Vite app, then --yes (Plumber in the dev config, today's state saved)
+  const manifest = JSON.parse(await readFile(join(root, 'package.json'), 'utf8'));
+  await writeFile(join(root, 'package.json'), JSON.stringify({ ...manifest, type: 'module', devDependencies: { ...manifest.devDependencies, vite: '^8.0.0' } }));
+  await writeFile(join(root, 'vite.config.ts'), "import { defineConfig } from 'vite';\nimport react from '@vitejs/plugin-react';\nexport default defineConfig({ plugins: [react()] });\n");
+  // its own repo with everything committed, like an app on a clean checkout
+  for (const args of [['init', '-q'], ['add', '-A'], ['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'app']]) spawnSync('git', args, { cwd: root });
+  const recorded = run(['--yes', '--root', root]);
   assert.equal(recorded.code, 0, recorded.stdout + recorded.stderr);
   const second = run(['--root', root]);
   assert.equal(second.code, 0, second.stderr);
