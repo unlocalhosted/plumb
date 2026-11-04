@@ -18,7 +18,7 @@ export interface CraftRecord {
   evidence: Record<string, unknown>; soft?: boolean; judged?: boolean; file: string | null; line: number | null; column: number | null; component: string | null; tag: string; count: number;
 }
 export interface CraftPage { route: string; url: string; read: number; complete: boolean; findings: CraftRecord[]; spec?: unknown }
-export interface CraftRunOptions { url: string; routes: string[]; root: string; timeout: number; viewport?: { width: number; height: number }; pairs?: boolean; probe?: boolean; probeBudget?: number; probeDrag?: boolean; judge?: boolean }
+export interface CraftRunOptions { url: string; routes: string[]; root: string; timeout: number; viewport?: { width: number; height: number }; pairs?: boolean; probe?: boolean; probeBudget?: number; probeDrag?: boolean; judge?: boolean; scope?: string }
 
 const missing = `The headless run needs Playwright, an optional dependency.
   → npm i -D playwright && npx playwright install chromium
@@ -152,7 +152,7 @@ export async function craftRun(options: CraftRunOptions): Promise<CraftPage[]> {
         }
         // the grey band is looked at only when there is an eye to ask (--judge) or answers already kept
         const asking = options.judge === true, grey = asking || await hasAnswers(options.root);
-        const result = await page.evaluate((o) => (window as unknown as { __plumb: { craft(o: unknown): Promise<unknown> } }).__plumb.craft(o), { timeout: options.timeout, grey }) as Omit<CraftPage, 'route' | 'url'> & { route: string; url: string; grey?: Grey[] };
+        const result = await page.evaluate((o) => (window as unknown as { __plumb: { craft(o: unknown): Promise<unknown> } }).__plumb.craft(o), { timeout: options.timeout, grey, scope: options.scope ?? null }) as Omit<CraftPage, 'route' | 'url'> & { route: string; url: string; grey?: Grey[] };
         if (process.env.PLUMBER_DEBUG && result.grey) process.stderr.write(`craft: grey ${JSON.stringify(result.grey)?.slice(0, 800)}\n`);
         if (result.grey) {
           // a model is never asked when CI is set: the answers kept in the project are all there is
