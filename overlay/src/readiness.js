@@ -67,7 +67,7 @@ export const READY_CSS = `
   .rd .req .what { font: 600 13px/19px var(--pl-sans); color: var(--pl-ink); text-wrap: pretty; }
   .rd .chip { justify-self: start; display: inline-flex; align-items: center; gap: 4px; padding: 2px 6px; border-radius: var(--pl-radius-tag); font: var(--pl-text-label); letter-spacing: var(--pl-tracking-caps); text-transform: uppercase; }
   .rd .chip[data-tone="off"] { color: var(--pl-off); background: var(--pl-off-bg); }
-  .rd .chip[data-tone="soft"] { color: var(--pl-soft); background: var(--pl-soft-bg); }
+  .rd .chip[data-tone="soft"] { color: var(--pl-soft-text); background: var(--pl-soft-bg); }
   .rd .chip[data-tone="unknown"] { color: var(--pl-unknown); background: var(--pl-paper); }
   .rd .chip[data-tone="on"] { color: var(--pl-on); background: var(--pl-on-bg); }
   .rd .req .loses { font: var(--pl-card-body); color: var(--pl-ink-2); text-wrap: pretty; }

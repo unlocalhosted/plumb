@@ -41,7 +41,7 @@ export const FIX_CSS = `
   .ch .top .title { flex: 1; min-width: 0; font: 600 12.5px/18px var(--pl-sans); color: var(--pl-ink); white-space: normal; text-wrap: pretty; }
   .ch .top { height: auto; min-height: 32px; padding-block: 7px; align-items: flex-start; }
   .ch .top > .g { flex: none; width: 14px; height: 14px; margin-top: 2px; color: var(--pl-off); }
-  .ch .top > .g.quiet { color: var(--pl-ink-2); } .ch .top > .g.ok { color: var(--pl-on); } .ch .top > .g.soft { color: var(--pl-soft); }
+  .ch .top > .g.quiet { color: var(--pl-ink-2); } .ch .top > .g.ok { color: var(--pl-on); } .ch .top > .g.soft { color: var(--pl-soft-text); }
   .ch .top .ledger { margin-top: 2px; }
   .ch .top .close { margin-top: -3px; }
   .ch .read { padding: 10px 12px 12px; }
@@ -77,7 +77,7 @@ export const FIX_CSS = `
   .pl .file { padding: 8px 6px 2px; font: var(--pl-card-meta); color: var(--pl-ink-2); }
   .pl .row { all: unset; display: flex; align-items: center; gap: 8px; width: 100%; box-sizing: border-box; height: 28px; padding: 0 6px; border-radius: 5px; cursor: pointer; color: var(--pl-ink); }
   .pl .row .g { flex: none; width: 13px; height: 13px; color: var(--pl-off); }
-  .pl .row .g.ok { color: var(--pl-on); } .pl .row .g.quiet { color: var(--pl-ink-2); } .pl .row .g.soft { color: var(--pl-soft); }
+  .pl .row .g.ok { color: var(--pl-on); } .pl .row .g.quiet { color: var(--pl-ink-2); } .pl .row .g.soft { color: var(--pl-soft-text); }
   .pl .row code { font: var(--pl-card-meta); color: var(--pl-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .pl .row .arrow { color: var(--pl-ink-3); }
   .pl .row code.to { color: var(--pl-on); }

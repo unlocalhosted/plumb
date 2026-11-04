@@ -16,9 +16,12 @@
   /* the language's hues (docs/briefs/visual-language.md): one meaning each. A line colour, a pastel fill, and the
      deep ink that letters the fill */
   --pl-sky: #2a7fd0;    --pl-sky-soft: #c5e6fd;    --pl-sky-ink: #0b3554;     /* selected, measurements, focus */
-  --pl-coral: #e5503f;  --pl-coral-soft: #ffd3cd;  --pl-coral-ink: #5c160e;   /* not on your scale */
-  --pl-mint: #1f9e64;   --pl-mint-soft: #c9f2dd;   --pl-mint-ink: #0b3d26;    /* on your scale, or saved */
-  --pl-butter: #bd8500; --pl-butter-soft: #ffeab0; --pl-butter-ink: #4a3400;  /* minor problems (as a mark, 3.1:1 on the background) */
+  /* mint, butter and coral re-stepped 2026-11-04 (docs/design/page-primitives.md) so a deuteranope can tell them
+     apart: worst pair ΔE 7.7, legal because every meaning also carries a shape or a word. Butter is a mark colour only
+     (2.45:1 on paper); words in its tone use --pl-soft-text */
+  --pl-coral: #bf3a1e;  --pl-coral-soft: #ffd3cd;  --pl-coral-ink: #5c160e;   /* not on your scale */
+  --pl-mint: #1a9460;   --pl-mint-soft: #c9f2dd;   --pl-mint-ink: #0b3d26;    /* on your scale, or saved */
+  --pl-butter: #d19a00; --pl-butter-soft: #ffeab0; --pl-butter-ink: #4a3400;  /* your value, typed by hand; minor problems */
   --pl-pink: #e0369f;   --pl-pink-soft: #ffd0ec;   --pl-pink-ink: #5a0d3c;    /* actions */
   --pl-lilac: #7a5cf0;  --pl-lilac-soft: #e3dcff;  --pl-lilac-ink: #2b1a6b;   /* names */
 
@@ -41,6 +44,7 @@
   --pl-on: var(--pl-mint);      /* uses a token */
   --pl-off: var(--pl-coral);    /* off the scale, override, imitation, broken, setup that turns a capability off */
   --pl-soft: var(--pl-butter);  /* Tailwind default, wrong tier, setup that limits a capability */
+  --pl-soft-text: #8a6200;      /* a word or glyph in the soft tone: 5.3:1 on paper, where butter is 2.45:1 */
   --pl-unknown: #75736d;        /* computed at runtime, inherited, can't tell yet */
   --pl-on-bg: color-mix(in oklab, var(--pl-on) 12%, var(--pl-paper));
   --pl-off-bg: color-mix(in oklab, var(--pl-off) 10%, var(--pl-paper));
@@ -63,6 +67,7 @@
   --pl-page-small: 400 14px/22px var(--pl-sans);        /* supporting lines, a readout */
   --pl-page-meta: 400 13px/20px var(--pl-sans);         /* names on a drawing, a legend, captions */
   --pl-page-figure: 600 32px/36px var(--pl-sans);       /* a key number, tabular */
+  --pl-page-display-narrow: 600 30px/36px var(--pl-sans); /* the headline below the page's one breakpoint (720px) */
   --pl-tracking-display: -0.025em;
   --pl-tracking-title: -0.01em;
   --pl-tracking-label: 0.02em;
@@ -87,6 +92,9 @@
   --pl-page-space-3: 64px;      /* between sections; the bottom on a phone */
   --pl-page-space-4: 96px;      /* under the last card */
   --pl-page-inset: 24px;        /* a card's inset on a page */
+  --pl-page-max: 1120px;        /* a page's width; prose inside it keeps to 60ch. Its one breakpoint is 720px, written
+                                   as that number in each stylesheet because a media query can't read a variable */
+  --pl-chart-bar: 12px;         /* a bar's thickness: square at the baseline, --pl-radius-mark at the value end */
 
   /* instrument geometry */
   --pl-line: 1px;               /* every line Plumber draws, snapped to screen pixels */
@@ -118,6 +126,11 @@
   --pl-dur-drop: 140ms;         /* line grows to its tag */
   --pl-dur-card: 180ms;         /* card opens */
   --pl-dur-feedback: 120ms;     /* copy confirmation, row press */
+  /* a page: things arrive once per visit. A sequence never runs past 400ms, so a long list shares the time. Physics
+     springs (marks you pull, marks that fall into place) live in motion.js */
+  --pl-stagger: 40ms;           /* the gap between things arriving in sequence */
+  --pl-dur-build: 380ms;        /* one part fading in as the page builds */
+  --pl-dur-arrive: 600ms;       /* a drawing's arrival */
 
   /* blueprint: the page held under the instrument. One dim over any page, light or dark, which gives its colour up
      so colour means drift; drifted elements are cut out of it (docs/briefs/blueprint-v2.md, layer 2) */
@@ -148,6 +161,7 @@
     --pl-coral: #ff7a6b;  --pl-coral-soft: #eb1800;  --pl-coral-ink: #ffffff;
     --pl-mint: #7ee0b0;   --pl-mint-soft: #12874e;   --pl-mint-ink: #ffffff;
     --pl-butter: #ffd166; --pl-butter-soft: #9c6d00; --pl-butter-ink: #ffffff;
+    --pl-soft-text: var(--pl-butter);
     --pl-pink: #ff6ec7;   --pl-pink-soft: #e3008b;   --pl-pink-ink: #ffffff;
     --pl-lilac: #b9a6ff;  --pl-lilac-soft: #7b57ff;  --pl-lilac-ink: #ffffff;
     --pl-on-accent: #08263d;
@@ -174,6 +188,7 @@
     --pl-coral: #ff7a6b;  --pl-coral-soft: #eb1800;  --pl-coral-ink: #ffffff;
     --pl-mint: #7ee0b0;   --pl-mint-soft: #12874e;   --pl-mint-ink: #ffffff;
     --pl-butter: #ffd166; --pl-butter-soft: #9c6d00; --pl-butter-ink: #ffffff;
+    --pl-soft-text: var(--pl-butter);
     --pl-pink: #ff6ec7;   --pl-pink-soft: #e3008b;   --pl-pink-ink: #ffffff;
     --pl-lilac: #b9a6ff;  --pl-lilac-soft: #7b57ff;  --pl-lilac-ink: #ffffff;
     --pl-on-accent: #08263d;
@@ -192,5 +207,8 @@
     --pl-dur-drop: 0ms;
     --pl-dur-card: 0ms;
     --pl-dur-feedback: 0ms;
+    --pl-stagger: 0ms;          /* no drift, no fall, no stagger, no springs; numbers change at once */
+    --pl-dur-build: 120ms;      /* fades of 120ms or less stay */
+    --pl-dur-arrive: 0ms;
   }
 }

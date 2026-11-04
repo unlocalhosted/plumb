@@ -1,7 +1,8 @@
 # The project page's primitives (onboarding layer 3)
 
-Status: for review, 2026-11-04. The sheet is overlay/demo/page-primitives.html (it imports the real tokens, so it
-lives with the demo server rather than in docs/design/prototypes). Nothing here changes tokens.css until it's approved.
+Status: approved by the owner, 2026-11-04 ("Approve all"), and in tokens.css, motion.js, scale-marks.js and the design
+system's Foundations pages. The review sheet is overlay/demo/page-primitives.html (its "Today" column is the day
+colours before the re-step).
 
 The page is what `npx plumber` opens (docs/design/onboarding.md, "The page"). You read it once, closely, and come back
 after fixing things. It's numbers and drawings more than prose, and every colour on it means something about your code.

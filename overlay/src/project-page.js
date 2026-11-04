@@ -20,13 +20,13 @@ const PAGE_CSS = `
   .top .pl-rainbow { width: 22px; height: 12px; border-radius: 3px; }
   .top .read { font: var(--pl-card-meta); color: var(--pl-ink-2); }
   .top .pl-act { margin-left: auto; }
-  main { max-width: 1120px; margin: 0 auto; padding: var(--pl-page-space-2) var(--pl-page-space-1) var(--pl-page-space-4); color: var(--pl-ink); }
+  main { max-width: var(--pl-page-max); margin: 0 auto; padding: var(--pl-page-space-2) var(--pl-page-space-1) var(--pl-page-space-4); color: var(--pl-ink); }
   .eyebrow { font: var(--pl-page-meta); color: var(--pl-ink-2); }
   h1 { margin: 10px 0 14px; max-width: 26ch; font: var(--pl-page-display); letter-spacing: var(--pl-tracking-display); text-wrap: balance; }
   h1 .n { font-variant-numeric: tabular-nums; }
   h1 .off { color: var(--pl-coral); } h1 .on { color: var(--pl-mint); }
   .lede { max-width: 60ch; margin: 0 0 var(--pl-page-space-1); font: var(--pl-page-body); color: var(--pl-ink-2); text-wrap: pretty; }
-  @media (max-width: 720px) { main { padding: var(--pl-page-space-1) var(--pl-space-6) var(--pl-page-space-3); } .top { padding: 10px 16px; } h1 { font-size: 30px; line-height: 36px; } }
+  @media (max-width: 720px) { main { padding: var(--pl-page-space-1) var(--pl-space-6) var(--pl-page-space-3); } .top { padding: 10px 16px; } h1 { font: var(--pl-page-display-narrow); } }
 `;
 
 /** What the type scale says, in one heading and one paragraph. */

@@ -126,6 +126,39 @@ screen. Ours used to be a teaching page with a still picture in it; that system 
   plumber's fix in words (§5).
 - **Fit every width.** Lay out against the stage (container queries); check 1440, 1024 and a ~300px pane.
 
+## 3¾. Hands-on demos: the viewer's hand is the probe
+
+Some mistakes only exist while something happens, and are felt in the hand: a wait, a jump, a wall. For those, the
+viewer does the gesture and plumber's marks draw what happened, live. The approved reference is the live section of
+docs/design/prototypes/probe-marks.html (#59, owner: "feels right"); the sketches tooltip-warmup.html (#60),
+interrupt-marks.html (#64) and rubber-band.html (#65) follow it, and docs/craft/tactile-demos.md ranks the rest.
+
+- **Earn it three ways, or don't build it.** The mistake happens only during the gesture; it's felt, not just seen;
+  and plumber's probe (src/craft-probe.ts) records the very number the marks draw. A look (#63 scale from 0, #68 exit
+  speed) is slowed playback, not a demo. A mistake at rest stays a still screen.
+- **The component really behaves that way.** Real pointer, key and touch events, real timers, real CSS. Never
+  synthesize the viewer's input, and never imitate what a desktop browser can't do (iOS zoom on focus, half-pixel
+  blur): those are out. A slowed speed or a held reply is labelled ("¼ speed", a reply-speed dial) and applies to
+  both sides of the switch equally.
+- **Marks are a vocabulary, not a kit.** Each mark draws one number plumber's probe records and the lesson turns on;
+  a demo uses only the ones its own quantity needs. Sky measures, coral is broken, mint is fixed, always.
+  - *Trail* (a dot per move, a ring every fourth, older ones fainter): only when the path is the lesson (#59: the
+    pointer's route crosses the next item). Not for a wait, a pull or a press.
+  - *Contact ring*: where the gesture starts, when where matters (where you left the item, where you pressed).
+  - *Time ruler*: when time is the lesson (a wait, a delay, how long something stayed), with the rule's thresholds on it.
+  - *Hatch, dashed ghost, pill*: what was lost, what went or moved, and by how much, held where it went wrong.
+  - *Mint*: where the fix carries the same input through.
+  Thresholds are the rule's (craft-spec.js), never the demo's own.
+- **The switch names the technique, and the same input runs on both sides.** Going back to the start, or leaving the
+  frame, is a fresh try. One hint line says what to try, then what just happened, with its number.
+- **A gesture ends however the hand ends it.** Capture the pointer, follow moves on `window`, and let go on
+  `pointerup`, `pointercancel`, `lostpointercapture`, a `window` `pointerup`, `blur`, and a mouse move with
+  `buttons === 0`. A release outside the pane sends no `pointerup` to the element, and the drawer stays stuck.
+- **Measure from style, not layout, for what can hide.** A hidden element's `offsetWidth` is 0; marks held after it
+  hides collapse unless its size comes from its style.
+- **Check every state with a real hand**: each side, mid-gesture and held, a fast and a slow try, and for a drag a
+  release outside the frame.
+
 ## 4. plumber's fix is one you can take
 
 `suggest` is `{ kind: 'class', from, to, why, sets }`, not advice text, whenever a class can say it:
@@ -225,3 +258,6 @@ Each line is something the owner had to say once; the sections above exist so th
   triangle with dashed edges, rings on the samples. → A new kind of mark (time, a gesture) gets a marks sheet first,
   every state side by side, reviewed before any moment uses it. Look at the render before showing anything. In SVG,
   colours go through CSS (classes, `style`), never CSS functions in presentation attributes.
+- 2026-11-04 · "feels right" (probe-marks.html's live section: your pointer is the probe); then "if i drag out of the
+  container and then let my hand go … the drawer stays stuck" (rubber-band.html heard only its own pointerup). → §3¾
+  hands-on demos, and a gesture ends however the hand ends it.
