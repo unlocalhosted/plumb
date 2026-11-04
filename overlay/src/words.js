@@ -64,7 +64,7 @@ export const CRAFT = {
   }),
   'content-align': ({ pl }) => ({
     label: 'Text off the column',
-    line: `This row’s words start ${px(pl)} in from the others.`,
+    line: `These words start ${px(pl)} in from the words around them.`,
     reason: 'Line up the words, not the boxes. Let the background stick out.',
   }),
   'button-padding': ({ side }) => ({

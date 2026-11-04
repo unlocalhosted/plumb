@@ -80,7 +80,7 @@ function annotate(m, byId) {
 function compose(k, folded, el, byId, facts, theme) {
   let edit = k.craft.suggest;
   // without the values the kept edit sets, the page it leaves can't be read: nothing is stacked on a guess
-  if (edit?.kind !== 'class' || !folded.length || !edit.sets || !Object.keys(edit.sets).length || edit.target) return;
+  if (edit?.kind !== 'class' || !folded.length || !edit.sets || !Object.keys(edit.sets).length || edit.target || edit.moves) return;
   let list = applied(words(classesOf(el)), edit), sets = { ...(edit.sets ?? {}) };
   const whys = [edit.why].filter(Boolean), composed = [], by = {}; // by: class → the rule that wrote it
   for (const f of folded) {
@@ -152,9 +152,10 @@ function verify(k, el, byId, rules, facts, theme, before) {
   // 1. on the theme: a numeric or arbitrary step is rewritten to the theme's own, when the theme names its steps
   let list = applied(words(classesOf(el)), edit), rewritten = false;
   // a fix whose values land on a child (edit.target: the icon inside a control) can't be read on the page as it would
-  // be: what it moves is drawn inside the element, and the trial moves nothing. It is untried here, like a fix that
-  // says nothing of what it sets, and proved the honest way, by asking again once it is in.
-  const sets = edit.target ? {} : { ...(edit.sets ?? {}) };
+  // be: what it moves is drawn inside the element, and the trial moves nothing. So with a fix that moves layout (edit.moves:
+  // a bleed's negative margin), which the virtual page can't reflow. Both are untried here, like a fix that says
+  // nothing of what it sets, and proved the honest way, by asking again once they are in.
+  const sets = edit.target || edit.moves ? {} : { ...(edit.sets ?? {}) };
   for (const cls of words(edit.to)) {
     // a type step (letter spacing, line height, text size, weight) must be one the project's own theme names
     const t = /^!?(tracking|leading|text|font)-([a-z0-9]+(?:-[a-z0-9]+)*)!?$/.exec(cls);
@@ -196,7 +197,7 @@ function verify(k, el, byId, rules, facts, theme, before) {
 // A new token (docs/briefs/craft-spec.md §4 c): nothing on the page can wear it yet, so it is tried by what it sets.
 // Kept, the mark still says the theme has no step here (`whyNot: 'no-step'`), and the suggestion says what fills it.
 function verifyToken(k, el, rules, facts, theme, before) {
-  const edit = k.craft.suggest, sets = edit.target ? {} : edit.sets ?? {};
+  const edit = k.craft.suggest, sets = edit.target || edit.moves ? {} : edit.sets ?? {};
   const triable = Object.keys(sets).length > 0;
   if (triable) {
     const after = facts.with(el, { sets }, (virtual) => rules.flatMap((r) => {

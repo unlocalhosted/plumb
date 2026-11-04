@@ -429,9 +429,11 @@ export const contentAlign = {
     const mine = contentLeft(el, facts);
     if (mine === null || Math.abs(mine - column - pl) > 1) return [];
     const cls = utility(el, 'px') ?? utility(el, 'pl') ?? utility(el, 'p');
+    // what the bleed sets, so a preview can show it (and a project that hasn't generated the class yet still sees it)
     const rec = recommend({ family: 'spacing', prefix: '-mx', job: 'bleed', want: { min: pl - 0.5, max: pl + 0.5, target: pl }, from: '', token: false, theme,
+      sets: (v) => ({ marginLeft: -v, marginRight: -v }),
       advice: () => `Pull the row out by ${fmt(pl)} (margin-inline: -${fmt(pl)}).` });
-    if (rec.kind === 'class') rec.why = `pulls the row out by its ${fmt(pl)} padding`;
+    if (rec.kind === 'class') { rec.why = `pull the panel out by its ${fmt(pl)} padding`; rec.moves = true; } // a bleed moves layout: tried by asking again
     const suggest = cls && rec.kind === 'class' ? rec : { kind: 'advice', text: `Pull the row out by ${fmt(pl)} (margin-inline: -${fmt(pl)}).` };
     return [{
       ...say(this.id, { pl }),
