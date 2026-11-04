@@ -60,8 +60,8 @@ draw**, so the demo is the probe with a person's hand on it.
   *Instant* (no delay; shadcn's per-tooltip provider with `delayDuration={0}`): crossing the toolbar on the way to the
   text flashes a tooltip on every button passed. *Each waits* (one delay, no skip): every next button makes you wait
   the full half second again, so exploring is a stutter.
-- **Marks, live:** the trail and a blue contact ring where you entered each button. On the ruler, one segment per
-  button from entry to shown. Coral when it's wrong for that moment: a first tooltip shown under 200ms (`quick`), a
+- **Marks, live:** the wait filling under the button you're on (no trail: the route isn't the lesson). On the ruler,
+  one segment per button from entry to shown. Coral when it's wrong for that moment: a first tooltip shown under 200ms (`quick`), a
   next one that waited over 150ms (`skip`). In the scene, each tooltip that only flashed (shown under 150ms, then
   gone) leaves a hatched dashed ghost: the flicker made visible. A pill names the count or the wait.
 - **Fixed (Warm-up, 500 / 300):** the first waits 500ms, drawn in sky (the wait is intended); neighbours open at 0ms
@@ -97,8 +97,8 @@ draw**, so the demo is the probe with a person's hand on it.
 - **Does:** grabs a bottom sheet's handle and pulls it up, past fully open.
 - **Feels:** *Clamped*: the sheet stops dead at its limit while the hand keeps going, a wall. *Rubber-band*: it
   keeps coming, less and less (Vaul's damping), and springs back when let go.
-- **Marks, live:** the blue contact ring where you pressed; the trail of the pointer; the limit as a sky dashed
-  line. Past the limit, the gap between where your pointer is and where the sheet's edge is: broken, the whole gap
+- **Marks, live:** the blue contact ring where you pressed and a dot where your hand is now (no trail); the limit as
+  a sky dashed line. Past the limit, the gap between where your pointer is and where the sheet's edge is: broken, the whole gap
   hatched coral with a pill "stopped dead · 0 of 96px"; fixed, the part the sheet gave in mint, the pill "gave 22 of
   96px". On release (fixed) the spring back plays and the ruler shows it settling.
 - **Honest on desktop:** yes. Pointer-event dragging is how such sheets work with a mouse too (Vaul supports it),
@@ -199,3 +199,21 @@ a hint that says what to try and what just happened.
 
 Their glyphs are type or simple SVG, not dither icons, and they carry no photos: sketches of the marks and the
 feel, not screens. A screen built from one uses Slate, dither icons and real media like the rest.
+
+## Built into the showcase (2026-11-04)
+
+The owner asked for the next four as real rule screens, not sketches. They're components in
+`overlay/showcase/src/principles/hands-on.jsx` (`HANDS_ON`). Each takes `side` ('broken' | 'fixed', as the probe
+stage's examples do), draws plumber's marks live in a shadow root with plumber's tokens (plumber's scan of
+`[data-example]` never reads them), and says what just happened through `onStatus`. `/hands-on/:n` shows one alone with
+its switch; wiring them into `/rule/:n` is the probe stage's to do.
+
+| № | Screen | Switch | Marks (only the number the rule measures) | plumber's proof |
+| --- | --- | --- | --- | --- |
+| 42 | A project's tabs, Spring launch | Bold on hover / Darker on hover | resting edges, the hatch the tabs slid across, the tab that grew, "+1.8px · 3 slid" | in-page scan: exactly `craft/bold-hover` on broken, nothing on fixed |
+| 61 | A shared folder's View menu | Opens on click / Opens on press | where you pressed; the ruler from press to open ("13ms · on release" / "0ms · on the press"); a missed release's dashed ghost | probe only (`menuDown`); its drag-release half isn't probed, so it gets words, no mark |
+| 77 | Quarry's activity feed, Refresh | A generic skeleton / The rows' own shape | the skeleton's box (read while the reply is held), the growth hatched, "+72px · 3 → 3 rows", the link's old place with your pointer | held-reply pair only (`skeletonMatch`) |
+| 66 | A bank feed's Sync now | Spinner at once / After 200ms, for 500ms | the reply and the spinner on two lanes of the ruler, the rule's 200ms line, "flashed 129ms" / "no spinner · 124ms ✓" | probe and held pair only (`spinnerTiming`) |
+
+Real requests only: #77 and #66 call the showcase's own `/api`; a held reply is held on the client and says so ("reply
+held 0.9s", "held 1.4s"), as plumber holds a page's replies.
