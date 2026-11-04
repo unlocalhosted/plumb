@@ -47,7 +47,7 @@ async function operate(options) {
   if (op === 'sample') return rec.sample(options.key, options.props, options.ms);
   if (op === 'taken') return { frames: await rec.samples.get(options.id), events: JSON.parse(JSON.stringify(rec.events)) };
   if (op === 'since') return JSON.parse(JSON.stringify(rec.since(options.t0, options.except)));
-  if (op === 'tip') return rec.tip(options.ms, options.other, options.at);
+  if (op === 'tip') return rec.tip(options.ms, options.other, options.at, options.from);
   if (op === 'state') {
     const el = fromKey(options.key);
     const menus = [...document.querySelectorAll('[role="menu"]')].filter((m) => m.getClientRects().length);

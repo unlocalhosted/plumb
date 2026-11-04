@@ -67,6 +67,12 @@
     addEventListener(type, (e) => rec.events.push({ type, t: performance.now(), at: e.target?.nodeType === 1 ? key(e.target) : '' }), true);
   }
   addEventListener('pointermove', () => { rec.firstMove ??= performance.now(); }, true);
+  // when the pointer last left each element (it and every ancestor it left with it): a tooltip provider's clock starts there
+  rec.outs = new WeakMap();
+  addEventListener('pointerout', (e) => {
+    const t = performance.now();
+    for (let n = e.target; n?.nodeType === 1 && !n.contains(e.relatedTarget); n = n.parentElement) rec.outs.set(n, t);
+  }, true);
   // animations: every one that runs, seen on the next frame
   rec.anims = [];
   const seen = new WeakSet();
@@ -105,10 +111,12 @@
     }));
     return id;
   };
-  // how long a tooltip takes to show once the pointer moves in; `other` ignores the tooltip the last call found
-  rec.tip = (ms, other, at) => new Promise((done) => {
+  // how long a tooltip takes to show once the pointer moves in; `other` ignores the tooltip the last call found. With
+  // `from`, also how long the pointer was away: from leaving that trigger to coming onto this one, on the page's clock
+  rec.tip = (ms, other, at, from) => new Promise((done) => {
     const ignore = other ? rec.tipNode : null;
     const target = at ? find(at) : null;
+    const source = from ? find(from) : null;
     rec.firstMove = null;
     // the clock starts when the pointer comes onto the trigger, not when it sets off towards it
     const enter = (e) => { if (rec.firstMove === null && target?.contains(e.target)) rec.firstMove = performance.now(); };
@@ -118,8 +126,10 @@
     const tick = () => {
       const t = performance.now();
       const tips = [...document.querySelectorAll('[role="tooltip"]')].filter((n) => n !== ignore && n.isConnected);
-      if (tips.length && rec.firstMove !== null) { rec.tipNode = tips[0]; return stop({ ms: t - rec.firstMove }); }
-      if (t - t0 > ms) return stop(null);
+      const away = () => { const out = source ? rec.outs.get(source) : undefined; return out === undefined || rec.firstMove === null ? null : rec.firstMove - out; };
+      if (tips.length && rec.firstMove !== null) { rec.tipNode = tips[0]; return stop({ ms: t - rec.firstMove, away: away() }); }
+      // with `from`, a tooltip that never came still says how long the pointer was away
+      if (t - t0 > ms) return stop(source ? { ms, away: away() } : null);
       requestAnimationFrame(tick);
     };
     tick();
