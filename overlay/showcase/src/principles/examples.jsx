@@ -2,6 +2,7 @@
 // soft depth. Each takes `broken` and is wrong in exactly one way, the principle's; everything else on it is right, so
 // plumber, scoped to it, finds one thing. `measure` (optional) says where the eye sees the harm, for the ticks drawn
 // over the example; it reads the page, it never decides what is wrong (plumber does).
+import { useEffect, useState } from 'react';
 import { Bell, Play } from '../icons.jsx';
 import site from '../site.png';
 import receipt from '../receipt.png';
@@ -36,68 +37,154 @@ export function AppFrame({ children, bell, crumb = 'Studio' }) {
   );
 }
 
-const CLIENTS = [
-  { id: 'INV-2041', name: 'Halden & Co.', initials: 'HC', tint: 'bg-accent-soft text-accent', status: 'Sent', tone: 'bg-accent-soft text-accent', amount: '1,111.10' },
-  { id: 'INV-2040', name: 'Northfield Dental', initials: 'ND', tint: 'bg-positive-soft text-positive', status: 'Paid', tone: 'bg-positive-soft text-positive', amount: '8,808.00' },
-  { id: 'INV-2039', name: 'Okafor Landscape', initials: 'OL', tint: 'bg-accent-soft text-accent', status: 'Overdue', tone: 'bg-negative-soft text-negative', amount: '4,170.40' },
-  { id: 'INV-2038', name: 'Brightwater Vets', initials: 'BV', tint: 'bg-negative-soft text-negative', status: 'Paid', tone: 'bg-positive-soft text-positive', amount: '6,990.50' },
-];
+// #16 figures that change, or stack in a column, line up only in tabular figures. A live usage board for an API:
+// requests land many times a second, and in proportional figures every column shimmers as digits change width.
 
-// #16 amounts in a column line up only in tabular figures; proportional digits drift by their widths
-function Amounts({ broken }) {
+// each workspace's own mark, as its app icon
+const LOGOS = {
+  halden: <><rect x="5" y="6" width="14" height="4" rx="2" /><rect x="5" y="14" width="9" height="4" rx="2" /></>,
+  northfield: <path d="M3 18 9.5 7l4 6.5L16 10l5 8z" />,
+  okafor: <path fillRule="evenodd" d="M12 4a8 8 0 1 1 0 16 8 8 0 0 1 0-16m0 4.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7" />,
+  brightwater: <path d="M3 13c2.2-2.4 4.4-2.4 6.6 0s4.4 2.4 6.6 0c1.6-1.7 3.2-2.2 4.8-1.4V16c-1.6-.8-3.2-.3-4.8 1.4-2.2 2.4-4.4 2.4-6.6 0S5.2 15 3 17.4z" />,
+  marlow: <path d="M4 18V6h3l5 6.5L17 6h3v12h-3.2v-6.6L12 17.5l-4.8-6.1V18z" />,
+};
+const WORKSPACES = [
+  { id: 'halden', name: 'Halden', site: 'halden.io', plan: 'Scale', tone: 'bg-accent-soft text-accent', bg: 'bg-accent', requests: 48210, cached: 39120, errors: 194 },
+  { id: 'northfield', name: 'Northfield Health', site: 'northfield.health', plan: 'Team', tone: 'bg-positive-soft text-positive', bg: 'bg-positive', requests: 26750, cached: 21880, errors: 252 },
+  { id: 'okafor', name: 'Okafor Studio', site: 'okafor.studio', plan: 'Team', tone: 'bg-positive-soft text-positive', bg: 'bg-violet', requests: 15390, cached: 11020, errors: 128 },
+  { id: 'brightwater', name: 'Brightwater', site: 'brightwater.app', plan: 'Scale', tone: 'bg-accent-soft text-accent', bg: 'bg-ink', requests: 64120, cached: 52300, errors: 459 },
+  { id: 'marlow', name: 'Marlow & Sons', site: 'marlow.co', plan: 'Starter', tone: 'bg-sunken text-ink-muted', bg: 'bg-magenta', requests: 31480, cached: 24960, errors: 317 },
+];
+const count = (n) => Math.round(n).toLocaleString('en-US');
+const compact = (n) => (n / 1000).toFixed(1) + 'K';
+const errorRate = (r) => (r.errors / r.requests * 100).toFixed(2) + '%';
+
+/* ─────────────────────────────────────────────────────────
+ * THE LEDGER'S CLOCK
+ *   live      a tick every 110ms: about half the workspaces take a few requests
+ *   landing   when the stage freezes it: three last ticks, slower each time, then still
+ * ───────────────────────────────────────────────────────── */
+const CLOCK = { every: 110, landing: [90, 130, 180] };
+function step(rs) {
+  return rs.map((r) => {
+    if (Math.random() > 0.5) return r;
+    const n = 3 + Math.round(Math.random() * 37);
+    return { ...r, requests: r.requests + n, cached: r.cached + Math.round(n * (0.7 + Math.random() * 0.2)), errors: r.errors + (Math.random() > 0.9 ? 1 : 0) };
+  });
+}
+function useLedger(live) {
+  const [rows, setRows] = useState(WORKSPACES);
+  useEffect(() => {
+    if (live) { const t = setInterval(() => setRows(step), CLOCK.every); return () => clearInterval(t); }
+    let at = 0;
+    const ts = CLOCK.landing.map((ms) => setTimeout(() => setRows(step), (at += ms)));
+    return () => ts.forEach(clearTimeout);
+  }, [live]);
+  return rows;
+}
+
+// every figure on the board, set in one place
+const Fig = ({ className = '', children }) => <span data-fig className={className}>{children}</span>;
+function Usage({ live = true }) {
+  const rows = useLedger(live);
+  const sum = (k) => rows.reduce((a, r) => a + r[k], 0);
+  const total = { requests: sum('requests'), cached: sum('cached'), errors: sum('errors') };
+  const cols = [
+    { label: 'Requests', total: compact(total.requests), delta: '+87.0%', of: (r) => count(r.requests) },
+    { label: 'Cached', total: compact(total.cached), delta: '+16.8%', of: (r) => count(r.cached) },
+    { label: 'Errors', total: count(total.errors), delta: '−4.2%', of: (r) => count(r.errors) },
+    { label: 'Error rate', total: errorRate(total), delta: '−0.1 pt', of: errorRate },
+  ];
   return (
-    <div className="flex w-full max-w-md flex-col gap-4">
-      <div className="flex items-baseline justify-between">
-        <div className="flex flex-col gap-0.5">
-          <h3 className="text-base font-semibold">Invoices</h3>
-          <span className="text-sm text-ink-muted">November</span>
-        </div>
-        <span className="text-sm text-ink-muted">4 open</span>
-      </div>
-      <table className="w-full table-fixed text-left text-sm">
-        <colgroup><col /><col className="hidden w-24 sm:table-column" /><col className="w-28" /></colgroup>
-        <tbody>
-          {CLIENTS.map((c) => (
-            <tr key={c.id} className="border-b-hairline border-line last:border-0">
-              <td className="py-2.5 pr-3">
+    <div className="w-full max-w-[46rem] overflow-hidden rounded-card bg-surface ring-1 ring-line">
+      <table className="w-full table-fixed text-left">
+        <colgroup><col className="w-[36%]" /><col /><col /><col className="hidden @lg:table-column" /><col className="hidden @lg:table-column" /></colgroup>
+        <thead>
+          <tr className="border-b-hairline border-line align-top">
+            <th scope="col" className="border-r-hairline border-line px-4 pt-3 pb-4 font-normal">
+              <span className="flex flex-col gap-1">
+                <span className="text-xs text-ink-muted">Workspaces</span>
+                <span className="text-lg leading-6 font-medium">{rows.length} live</span>
+                <span className="text-xs text-ink-muted">Today, since 00:00 UTC</span>
+              </span>
+            </th>
+            {cols.map((c, i) => (
+              <th key={c.label} scope="col" className={'px-4 pt-3 pb-4 text-right font-normal ' + (i > 1 ? 'hidden @lg:table-cell' : '')}>
+                <span className="flex flex-col items-end gap-1">
+                  <span className="text-xs whitespace-nowrap text-ink-muted">{c.label}</span>
+                  <Fig className="text-lg leading-6 font-medium">{c.total}</Fig>
+                  <span className="text-xs text-positive">{c.delta}</span>
+                </span>
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody data-ledger>
+          {rows.map((r) => (
+            <tr key={r.id} className="border-b-hairline border-line last:border-0">
+              <td className="border-r-hairline border-line px-4 py-3">
                 <span className="flex items-center gap-3">
-                  <span data-avatar className={'grid size-8 shrink-0 place-items-center rounded-full text-xs font-semibold ' + c.tint}>{c.initials}</span>
-                  <span className="flex min-w-0 flex-col">
-                    <span className="truncate font-medium" title={c.name}>{c.name}</span>
-                    <span className="case-forms text-xs whitespace-nowrap text-ink-muted">{c.id}</span>
+                  <span className={'grid size-9 shrink-0 place-items-center rounded-control text-accent-ink ' + r.bg}>
+                    <svg viewBox="0 0 24 24" className="size-5" fill="currentColor" aria-hidden="true">{LOGOS[r.id]}</svg>
+                  </span>
+                  <span className="flex min-w-0 flex-col gap-0.5">
+                    <span className="truncate text-sm font-medium" title={r.name}>{r.name}</span>
+                    <span className="flex min-w-0 items-center gap-1.5 text-xs text-ink-muted">
+                      <span className="truncate">{r.site}</span>
+                      <span className={'shrink-0 rounded-chip px-1.5 font-medium ' + r.tone}>{r.plan}</span>
+                    </span>
                   </span>
                 </span>
               </td>
-              <td className="hidden py-2.5 pr-3 sm:table-cell"><span className={'rounded-full px-2 py-0.5 text-xs font-medium ' + c.tone}>{c.status}</span></td>
-              <td data-amount className={'py-2.5 text-right font-medium ' + (broken ? '' : 'tabular-nums')}>{'$' + c.amount}</td>
+              {cols.map((c, i) => (
+                <td key={c.label} data-col={i} className={'px-4 py-3 text-right align-top text-sm ' + (i > 1 ? 'hidden @lg:table-cell' : '')}><Fig>{c.of(r)}</Fig></td>
+              ))}
             </tr>
           ))}
         </tbody>
       </table>
-      <div className="flex items-baseline justify-between gap-3 border-t-hairline border-line pt-3 text-sm">
-        <span className="text-ink-muted">Total outstanding</span>
-        <span className="text-base font-semibold tabular-nums">$21,080.00</span>
-      </div>
     </div>
   );
 }
-
-// What the eye should see: where each amount's thousands comma falls. Proportional digits scatter them; tabular
-// digits put them on one line.
-Amounts.measure = (root) => {
-  const ticks = [...root.querySelectorAll('[data-amount]')].map((td) => {
-    const text = td.firstChild, i = text?.textContent.indexOf(',');
-    if (!text || i < 0) return null;
-    const range = document.createRange();
-    range.setStart(text, i); range.setEnd(text, i + 1);
-    const r = range.getBoundingClientRect();
-    return { x: r.left + r.width / 2, top: r.top - 2, bottom: r.bottom + 2 };
-  }).filter(Boolean);
-  if (ticks.length < 2) return null;
-  const xs = ticks.map((t) => t.x), drift = Math.max(...xs) - Math.min(...xs);
-  return { ticks, broken: `commas drift ${Math.round(drift * 10) / 10}px`, fixed: 'aligned ✓', off: drift > 0.5 };
+Usage.stage = true;
+Usage.names = ['Proportional', 'Tabular'];
+Usage.lesson = {
+  why: 'Proportional figures are as wide as their shapes: a 1 is narrow, a 0 is wide. Each time a figure changes, every digit after it shifts sideways, so a live column shimmers and the places never stack.',
+  habit: 'Any number that changes, or sits above another, gets tabular figures: tables, totals, prices, timers, counters.',
 };
-
+// What the eye sees: the edges of every digit, keyed by column, row and place, so a fix can glide them. Proportional,
+// they scatter; tabular, they stack. Each column's pill is the most one place drifts between rows (counted from the
+// right: the figures are aligned right).
+Usage.measure = (root) => {
+  const body = root?.querySelector('[data-ledger]'), head = root?.querySelector('thead [data-fig]');
+  if (!body) return null;
+  const b = body.getBoundingClientRect(), range = document.createRange();
+  const lines = [], bands = [], pills = [];
+  let off = false, left = Infinity, right = -Infinity;
+  for (const i of [0, 1, 2, 3]) {
+    const figs = [...body.querySelectorAll(`[data-col="${i}"] [data-fig]`)].filter((f) => f.offsetParent);
+    if (!figs.length) continue;
+    const places = [];
+    let l = Infinity, r = -Infinity;
+    figs.forEach((f, row) => {
+      const t = f.firstChild, n = t?.textContent.length ?? 0;
+      for (let c = 0; c < n; c++) {
+        range.setStart(t, c); range.setEnd(t, c + 1);
+        const g = range.getBoundingClientRect(), place = n - 1 - c;
+        lines.push({ key: `${i}-${row}-${place}-l`, x: g.left, top: b.top, bottom: b.bottom }, { key: `${i}-${row}-${place}-r`, x: g.right, top: b.top, bottom: b.bottom });
+        (places[place] ??= []).push(g.left);
+        l = Math.min(l, g.left); r = Math.max(r, g.right);
+      }
+    });
+    const drift = Math.max(0, ...places.filter((p) => p.length > 1).map((p) => Math.max(...p) - Math.min(...p)));
+    bands.push({ key: i, left: l, right: r, top: b.top, bottom: b.bottom });
+    pills.push({ key: i, x: (l + r) / 2, y: b.top, text: drift.toFixed(1), ok: drift < 0.3 });
+    off ||= drift >= 0.3; left = Math.min(left, l); right = Math.max(right, r);
+  }
+  if (!pills.length) return null;
+  const top = head ? head.getBoundingClientRect().top - 8 : b.top - 16; // the totals belong to the shot; their labels may crop
+  return { lines, bands, pills, off, subject: { left: left - 16, right: right + 16, top, bottom: b.bottom + 8 } };
+};
 
 // #1 sections down a page line up by their words, not their boxes: a filled notice between a heading and a list
 // keeps its box on the column, so its words sit in by its padding; it should bleed out by that padding instead
@@ -475,7 +562,6 @@ Connected.lesson = { why: 'A circle fills about 78% of its box, a square nearly 
 Notice.lesson = { why: 'items-center centres the line box, and the line box keeps room for descenders below the baseline. The capitals sit above its middle, so a centred icon reads low.', habit: "Line icons up with the capitals' middle, not the line box: nudge up by the gap, or make the line box as tall as the capitals." };
 Chips.lesson = { why: 'text-sm/6 puts a 24px line around 14px letters: 5px of invisible leading sits above and below them and adds itself to the padding, so even padding looks taller than it is wide.', habit: 'Measure padding from the letters: trim the text box to the capitals and baseline (text-box: trim-both cap alphabetic).' };
 Price.lesson = { why: 'items-center lines up the middles of the two boxes. Boxes of different sizes keep their baselines at different heights, so the unit floats beside the price.', habit: 'Text of different sizes side by side sits on one baseline: items-baseline.' };
-Amounts.lesson = { why: "Proportional digits are as wide as their shapes: a 1 is narrow, an 8 wide. Down a column, each amount's digits land in different places.", habit: 'Numbers that line up or change use tabular figures: every digit the same width.' };
 
 // ── Spacing and rhythm ─────────────────────────────────────
 
@@ -629,5 +715,5 @@ NewClient.measure = (root) => {
 };
 NewClient.lesson = { why: 'An icon’s glyph box carries its own space around the drawing. With the same padding on both sides, the icon side looks looser than the text side and the label reads off-centre.', habit: 'On the side with the icon, take 2–4px of padding off.' };
 
-export const EXAMPLES = { 7: Grouping, 8: Templates, 9: Toolbar, 10: NewClient, 1: Billing, 2: Lesson, 3: Connected, 4: Notice, 5: Chips, 6: Price, 16: Amounts };
+export const EXAMPLES = { 7: Grouping, 8: Templates, 9: Toolbar, 10: NewClient, 1: Billing, 2: Lesson, 3: Connected, 4: Notice, 5: Chips, 6: Price, 16: Usage };
 

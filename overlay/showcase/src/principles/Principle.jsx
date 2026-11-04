@@ -1,7 +1,6 @@
-// One principle, one example (docs/craft/showcase.md), all of it plumber's: /rule/16 opens the example inside
-// plumber's blueprint, scoped to it (the rest of the screen dimmed, the example's marks and gutters drawn); the switch
-// takes plumber's own fix in place with plumber's own glide (inplace.js: swapPreview and its GLIDE), and puts it back
-// the same way. Nothing reloads; the frame around the example is built to pass every rule.
+// One principle, one example (docs/craft/showcase.md, .claude/skills/craft-rule §3½), all of it plumber's: the example
+// lives on the board, plumber reads it scoped, and the switch takes plumber's own fix in place with plumber's own
+// glide (inplace.js: swapPreview and its GLIDE) during a camera moment, and puts it back the same way.
 import { useEffect, useRef, useState } from 'react';
 import { PRINCIPLES } from './catalogue.js';
 import { EXAMPLES } from './examples.jsx';
@@ -48,7 +47,10 @@ function usePlumber() {
       }
     }
     setState((s) => ({ ...s, phase: 'fixing' }));
-    await new Promise((r) => setTimeout(r, GLIDE.ms + 120));
+    return GLIDE.ms;
+  };
+  // asked again once the fix is in and the camera is back at rest
+  const again = async () => {
     const after = await ask();
     setState((s) => ({ ...s, phase: 'fixed', after, applied: taken.current.length }));
   };
@@ -58,169 +60,206 @@ function usePlumber() {
     taken.current = [];
     setState((s) => ({ ...s, phase: 'broken', after: null }));
   };
-  return { state, fix, undo };
+  return { state, fix, undo, ask: again };
 }
 
-// The finding on the page, as the reference demo draws it: the elements plumber named lit, the rest of the example
-// faded back, and a bracket with a pill carrying plumber's own value. Red as found; once plumber's fix is in, blue with
-// a check and the value its fix sets. It follows the elements while they glide, and sits outside the example, so
-// plumber never reads it.
-const pad = 6;
+/* ─────────────────────────────────────────────────────────
+ * THE MOMENT  (docs/craft/stage-brief.md, timings measured from the benchmark video)
+ *
+ * Read top-to-bottom. Each value is ms after the click on plumber's side of the switch.
+ *
+ *    0ms   the example's figures decelerate and land; the lesson fades back
+ *  400ms   camera eases in on what plumber measures (up to 2.4×)
+ * 1400ms   marks fade in: stripes, then pills (40ms later)
+ * 1600ms   hold on what's wrong
+ * 2800ms   plumber's fix lands; pills count to 0, magenta → blue, then ✓; stripes converge (400ms)
+ * 3200ms   hold on right
+ * 4500ms   marks fade out, checks first
+ * 4800ms   camera eases out to rest
+ * 5700ms   the example comes alive again; plumber is asked again at rest
+ *  back    to the mistake: no camera; the fix glides back and the example stays alive
+ * ───────────────────────────────────────────────────────── */
+const TIMING = {
+  cameraIn:  400,   // figures have landed; the camera starts in
+  marksIn:   1400,  // camera has landed; marks fade in
+  fix:       2800,  // plumber's fix lands, marks converge
+  marksOut:  4500,  // marks fade out
+  cameraOut: 4800,  // camera eases back to rest
+  resume:    5700,  // the example lives again; plumber asked again
+};
+const STAGE = { rest: 0, settle: 1, cameraIn: 2, marks: 3, fix: 4, marksOut: 5, cameraOut: 6 };
 
-// The loupe: a live copy of the example, magnified on the spot the example's measure names, so a fix of a pixel or
-// two can be seen. The copy drops plumber's source stamps and the scope mark, so plumber never reads it.
-const ZOOM = 4, LENS_H = 112;
-function Loupe({ seen, stage, phase }) {
-  const host = useRef(null);
-  const [w, setW] = useState(256);
-  useEffect(() => {
-    const draw = () => {
-      const src = document.querySelector(SCOPE), into = host.current;
-      if (!src || !into || !seen?.focus || !stage.current) return;
-      const LW = into.clientWidth || 256;
-      setW(LW);
-      const copy = src.cloneNode(true);
-      copy.removeAttribute('data-example');
-      for (const e of [copy, ...copy.querySelectorAll('*')]) { e.removeAttribute('data-plumb-source'); e.removeAttribute('id'); }
-      const box = src.getBoundingClientRect(), s = stage.current.getBoundingClientRect();
-      const fx = seen.focus.x - (box.left - s.left), fy = seen.focus.y - (box.top - s.top);
-      Object.assign(copy.style, { position: 'absolute', left: '0', top: '0', width: `${box.width}px`, margin: '0', boxShadow: 'none', transformOrigin: '0 0', transform: `translate(${LW / 2 - fx * ZOOM}px, ${LENS_H / 2 - fy * ZOOM}px) scale(${ZOOM})` });
-      into.replaceChildren(copy);
+/* The camera */
+const CAMERA = {
+  maxZoom: 2.4,                                   // never closer than this
+  fill:    0.92,                                  // the subject fills this much of the column's width
+  above:   20,                                    // px between the subject and the bar, and the switch
+  in:  'transform 1000ms cubic-bezier(0.7, 0, 0.3, 1)',  // slow start, slow finish (as measured)
+  out: 'transform 900ms cubic-bezier(0.7, 0, 0.3, 1)',
+};
+
+/* The marks */
+const MARKS = {
+  fade:     200,  // ms, stripes in
+  pillLag:  40,   // ms, pills after stripes
+  out:      300,  // ms, all out (checks first)
+  converge: 400,  // ms, the fix's count-down and stripe glide
+  stripe:   1,    // px on screen, at any zoom
+  pill:     18,   // px tall on screen, at any zoom
+  wrong:    'var(--color-magenta)',
+  right:    'var(--color-accent)',
+};
+
+const still = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+const lerp = (a, b, t) => a + (b - a) * t;
+const ease = (t) => 1 - (1 - t) ** 3;
+
+// An example's measure, in the camera's own (unscaled) pixels, so the marks scale with it. New examples hand over
+// keyed glyph edges and one pill per place; older ones hand over ticks, read as lines with one pill.
+function marksOf(m, cam) {
+  if (!m || !cam) return null;
+  const r = cam.getBoundingClientRect(), k = r.width / cam.offsetWidth || 1;
+  const X = (x) => (x - r.left) / k, Y = (y) => (y - r.top) / k;
+  if (m.pills) {
+    return {
+      off: m.off,
+      lines: m.lines.map((l, i) => ({ key: l.key ?? i, x: X(l.x), top: Y(l.top), bottom: Y(l.bottom) })),
+      bands: (m.bands ?? []).map((b, i) => ({ key: b.key ?? i, left: X(b.left), right: X(b.right), top: Y(b.top), bottom: Y(b.bottom) })),
+      pills: m.pills.map((p, i) => ({ key: p.key ?? i, x: X(p.x), y: Y(p.y), value: Number(p.text) || 0, ok: p.ok })),
+      subject: { left: X(m.subject.left), right: X(m.subject.right), top: Y(m.subject.top), bottom: Y(m.subject.bottom) },
     };
-    draw();
-    const t = setTimeout(draw, 480); // again once plumber's glide has settled
-    return () => clearTimeout(t);
-  }, [seen?.focus?.x, seen?.focus?.y, phase, stage]);
-  if (!seen?.focus) return null;
-  return (
-    <div data-loupe aria-hidden="true" className="relative overflow-hidden rounded-control border border-line bg-surface" style={{ height: LENS_H }}>
-      <div ref={host} inert className="absolute inset-0" />
-      {/* the guides, at the loupe's scale */}
-      {seen.ticks.map((t, i) => (t.y === undefined
-        ? <span key={i} className={'absolute border-l border-dashed transition-[left] duration-300 ' + (seen.off ? 'border-negative/70' : 'border-accent/70')} style={{ left: w / 2 + (t.x - seen.focus.x) * ZOOM, top: 0, height: LENS_H }} />
-        : <span key={i} className={'absolute border-t border-dashed transition-[top] duration-300 ' + (seen.off ? 'border-negative/70' : 'border-accent/70')} style={{ top: LENS_H / 2 + (t.y - seen.focus.y) * ZOOM, left: 0, width: w }} />))}
-      <span className="absolute right-2 bottom-2 rounded-full bg-ink/80 px-1.5 font-mono text-[10px] text-accent-ink">{ZOOM}×</span>
-    </div>
-  );
+  }
+  const v = m.ticks.filter((t) => t.y === undefined), a = m.around?.getBoundingClientRect?.();
+  const xs = [...v.map((t) => t.x), ...(a ? [a.left, a.right] : [])], ys = [...v.flatMap((t) => [t.top, t.bottom]), ...(a ? [a.top, a.bottom] : [])];
+  const subject = { left: X(Math.min(...xs)), right: X(Math.max(...xs)), top: Y(Math.min(...ys)), bottom: Y(Math.max(...ys)) };
+  return {
+    off: m.off, bands: [], subject,
+    lines: v.map((t, i) => ({ key: i, x: X(t.x), top: Y(t.top), bottom: Y(t.bottom) })),
+    pills: [{ key: 0, x: (subject.left + subject.right) / 2, y: subject.top, value: parseFloat(m.broken?.match(/[\d.]+/)?.[0]) || 0, ok: !m.off }],
+  };
 }
 
-function Annotations({ state, stage, measureOf, onAnchor, onSeen }) {
-  const [boxes, setBoxes] = useState([]);
-  const [seen, setSeen] = useState(null);
-  const fixed = state.phase === 'fixing' || state.phase === 'fixed';
-  useEffect(() => {
-    if (!stage.current || !state.found) return undefined;
-    let frame = 0, until = performance.now() + 900;
-    const measure = () => {
-      const s = stage.current.getBoundingClientRect();
-      setBoxes(state.found.map((f) => {
-        const rs = sitesOf(f).map((e) => e.getBoundingClientRect());
-        if (!rs.length) return null;
-        const x = Math.min(...rs.map((r) => r.left)) - s.left, y = Math.min(...rs.map((r) => r.top)) - s.top;
-        const w = Math.max(...rs.map((r) => r.right)) - s.left - x, h = Math.max(...rs.map((r) => r.bottom)) - s.top - y;
-        const was = `${f.text}: ${f.value}`, now = f.suggest?.kind === 'class' ? f.suggest.to : f.suggest?.text ?? f.action;
-        return { key: f.rule + f.line, x, y, w, h, was, now };
-      }).filter(Boolean));
-      const first = sitesOf(state.found[0] ?? {}).map((e) => e.getBoundingClientRect());
-      if (first.length && !measureOf) onAnchor?.({ y: Math.round((Math.min(...first.map((r) => r.top)) + Math.max(...first.map((r) => r.bottom))) / 2 - s.top), reach: Math.round(s.right - Math.max(...first.map((r) => r.right)) - pad - 10) });
-      // the example's own view of the harm, when it has one (where the eye sees the problem), in the stage's frame
-      const m = measureOf?.(document.querySelector(SCOPE));
-      const next = m ? { ...m, focus: m.focus ? { x: m.focus.x - s.left, y: m.focus.y - s.top } : null, ticks: m.ticks.map((t) => (t.y === undefined ? { x: t.x - s.left, top: t.top - s.top, bottom: t.bottom - s.top } : { y: t.y - s.top, left: t.left - s.left, right: t.right - s.left })) } : null;
-      if (next) {
-        // the subject: what the guides span, and the element they're about (so the pill clears its words)
-        const a = m.around?.getBoundingClientRect?.(), box = a ? [[a.left - s.left, a.top - s.top], [a.right - s.left, a.bottom - s.top]] : [];
-        const xs = [...next.ticks.flatMap((t) => (t.y === undefined ? [t.x] : [t.left, t.right])), ...box.map((p) => p[0])], ys = [...next.ticks.flatMap((t) => (t.y === undefined ? [t.top, t.bottom] : [t.y])), ...box.map((p) => p[1])];
-        next.subject = { left: Math.min(...xs), right: Math.max(...xs), top: Math.min(...ys), bottom: Math.max(...ys), width: s.width };
-        // the card lines up with the subject; its leader leaves from the window's edge, never across the example
-        onAnchor?.({ y: Math.round(next.focus ? next.focus.y : (next.subject.top + next.subject.bottom) / 2), reach: 0 });
-      }
-      setSeen(next); onSeen?.(next);
-      if (performance.now() < until) frame = requestAnimationFrame(measure);
-    };
-    measure();
-    addEventListener('resize', measure);
-    return () => { cancelAnimationFrame(frame); removeEventListener('resize', measure); };
-  }, [state.phase, state.found, stage]);
-  return (
-    <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden rounded-sheet corner-squircle">
-      {boxes.map((b) => (
-        <div key={b.key}>
-          {/* the spotlight: everything but the named elements fades back */}
-          <div className="absolute rounded-control transition-[box-shadow] duration-300" style={{ left: b.x - pad, top: b.y - pad, width: b.w + pad * 2, height: b.h + pad * 2, boxShadow: `0 0 0 9999px color-mix(in oklch, var(--color-surface) ${fixed ? 72 : 0}%, transparent)` }} />
-          {/* the bracket: the measured span, ticked at both ends (only where the example names no subject of its own) */}
-          {seen ? null : <div className={'absolute border-y border-r border-dashed transition-colors duration-300 ' + (fixed ? 'border-accent/50' : 'border-negative/50')} style={{ left: b.x + b.w + pad + 4, top: b.y, width: 5, height: b.h }} />}
-          {seen ? null : <span className={'absolute flex items-center gap-1 rounded-chip px-1.5 py-0.5 font-mono text-[11px] whitespace-nowrap text-accent-ink transition-colors duration-300 ' + (fixed ? 'bg-accent' : 'bg-negative')}
-            style={{ left: b.x + b.w + pad + 10, top: b.y - 30, transform: 'translateX(-100%)' }}>{seen ? (fixed && !seen.off ? seen.fixed : seen.broken) : fixed ? <>{b.now} ✓</> : b.was}</span>}
-        </div>
-      ))}
-
-      {/* where the eye sees it: a tick on each place the example measures, red while they disagree, blue once they line up */}
-      {seen?.ticks.map((t, i) => (t.y === undefined
-        ? <span key={i} className={'absolute border-l border-dashed transition-[left,border-color] duration-300 ' + (seen.off ? 'border-negative/60' : 'border-accent/60')} style={{ left: t.x - 0.5, top: t.top, height: t.bottom - t.top }} />
-        : <span key={i} className={'absolute border-t border-dashed transition-[top,border-color] duration-300 ' + (seen.off ? 'border-negative/60' : 'border-accent/60')} style={{ top: t.y - 0.5, left: t.left, width: t.right - t.left }} />))}
-    </div>
-  );
+// Where the camera goes (as measured): the subject fills the column's width and sits between the bar and the
+// switch; the rest of the component runs off the window's edges, like a camera's frame.
+function shot(subject, cam, view) {
+  const r = cam.getBoundingClientRect();
+  const w = subject.right - subject.left, h = subject.bottom - subject.top;
+  const k = Math.max(1, Math.min(CAMERA.maxZoom, (view.width * CAMERA.fill) / w, (view.bottom - view.top) / h));
+  const cx = (subject.left + subject.right) / 2, cy = (subject.top + subject.bottom) / 2; // camera pixels
+  return { k, x: view.left + view.width / 2 - r.left - cx * k, y: (view.top + view.bottom) / 2 - r.top - cy * k };
 }
 
-// plumber's finding as a card floating beside the window, joined to what it found by a leader line: what it saw, why,
-// its fix as a chip, and where in the source. Once its fix is in, what plumber says when asked again.
-const Part = ({ label, children }) => <div className="flex flex-col gap-1"><span className="text-xs font-medium text-ink-muted">{label}</span>{children}</div>;
-function FindingCard({ state, anchor, seen, stage, lesson }) {
-  const fixed = state.phase === 'fixed';
-  const f = state.found?.[0];
-  const chip = (to, from) => { const t = `${from ? `${from} → ` : '+ '}${to}`; return <code title={t} className="block truncate rounded-chip bg-sunken px-1.5 py-0.5 font-mono text-[11px] text-ink-muted">{t}</code>; };
-  let body;
-  if (state.phase === 'asking') body = (
-    <div aria-label="Asking plumber about this example" className="flex flex-col gap-2">
-      <span className="h-3.5 w-11/12 animate-pulse rounded-chip bg-sunken" /><span className="h-3.5 w-3/4 animate-pulse rounded-chip bg-sunken" /><span className="h-3.5 w-1/2 animate-pulse rounded-chip bg-sunken" />
-    </div>
-  );
-  else if (state.phase === 'error') body = <p className="text-sm text-negative">{state.error}</p>;
-  else if (!f) body = <p className="text-sm text-ink-muted">plumber has no finding on this example.</p>;
-  else body = (
-    <div key={fixed ? 'fixed' : 'found'} className="flex animate-rise flex-col gap-4 motion-reduce:animate-none">
-      {/* a lesson, not a diff: what plumber sees, why it happens, the habit to keep, then plumber's fix */}
-      {fixed ? (
-        <Part label="What changed">
-          <p className="text-sm text-pretty">plumber’s fix: {f.suggest?.why ?? f.action}.</p>
-          {f.suggest?.kind === 'class' ? chip(f.suggest.to, f.suggest.from) : null}
-          <p className="text-sm text-ink-muted text-pretty">{state.after?.length ? `Asked again: ${state.after[0].title}` : 'Asked again, plumber finds nothing.'}</p>
-        </Part>
-      ) : (
-        <>
-          <Part label="What plumber sees"><p className="text-sm font-medium text-pretty">{f.title}</p></Part>
-          <Part label="Why it happens"><p className="text-sm text-ink-muted text-pretty">{lesson?.why ?? f.because}</p></Part>
-        </>
-      )}
-      {lesson?.habit ? <p className="rounded-control bg-sunken px-3 pt-2 pb-2.5 text-sm text-pretty"><span className="font-medium">The habit: </span>{lesson.habit}</p> : null}
-      {fixed ? null : (
-        <Part label="plumber’s fix">
-          <p className="text-sm text-pretty">{f.suggest?.why ? f.suggest.why[0].toUpperCase() + f.suggest.why.slice(1) + '.' : f.action}</p>
-          {f.suggest?.kind === 'class' ? chip(f.suggest.to, f.suggest.from) : null}
-        </Part>
-      )}
-      <p className="font-mono text-[11px] text-ink-muted">{f.rule} · {f.file.split('/').pop()}:{f.line}{f.count > 1 ? ` · ${f.count} places` : ''}</p>
-    </div>
-  );
+// The marks: hairlines on the glyphs' own edges, a faint fill, and one pill per place with plumber's number.
+// During the fix (t from 0 to 1) the edges glide from where they were to where they are, the number counts down and
+// the colour runs from wrong to right. Sized in screen pixels at any zoom. Outside the example: plumber never reads it.
+function Marks({ from, to, t, k, shown, pills }) {
+  if (!from) return null;
+  const at = (list, key) => to?.[list].find((x) => x.key === key);
+  const e = ease(t), done = t >= 1 && to && !to.off;
+  const colour = `color-mix(in oklch, ${MARKS.right} ${Math.round(e * (to && !to.off ? 100 : 0))}%, ${MARKS.wrong})`;
   return (
-    <aside aria-label="What plumber finds" className="relative w-full max-w-2xl @5xl:mt-(--anchor) @5xl:w-72 @5xl:shrink-0" style={{ '--anchor': `${Math.max(0, (anchor?.y ?? 40) - 40)}px`, '--reach': `${40 + Math.max(0, anchor?.reach ?? 0)}px` }}>
-      {/* the leader: from the bracket, across the window's edge, to the card */}
-      <span aria-hidden="true" className={'absolute top-10 right-full hidden w-(--reach) border-t border-dashed transition-colors duration-300 @5xl:block ' + (fixed ? 'border-accent/50' : 'border-negative/50')} />
-      {/* the measurement, as a tab on plumber's card where the leader arrives: never over the example's words */}
-      {seen ? (
-        <span className={'absolute -top-3 left-4 z-10 rounded-chip px-1.5 py-0.5 font-mono text-[11px] whitespace-nowrap text-accent-ink transition-colors duration-300 ' + (state.phase === 'fixed' && !seen.off ? 'bg-accent' : 'bg-negative')}>
-          {state.phase === 'fixed' && !seen.off ? seen.fixed : seen.broken}
+    <div aria-hidden="true" className="pointer-events-none absolute inset-0" style={{ opacity: shown ? 1 : 0, transition: `opacity ${shown ? MARKS.fade : MARKS.out}ms ease-out` }}>
+      {from.bands.map((b) => { const n = at('bands', b.key) ?? b; return (
+        <span key={'b' + b.key} className="absolute" style={{ left: lerp(b.left, n.left, e), top: b.top, width: lerp(b.right - b.left, n.right - n.left, e), height: b.bottom - b.top, background: `color-mix(in oklch, ${colour} 5%, transparent)` }} />
+      ); })}
+      {from.lines.map((l) => { const n = at('lines', l.key) ?? l; return (
+        <span key={'l' + l.key} className="absolute" style={{ left: lerp(l.x, n.x, e), top: l.top, height: l.bottom - l.top, width: MARKS.stripe / k, background: `color-mix(in oklch, ${colour} 22%, transparent)` }} />
+      ); })}
+      {from.pills.map((p) => { const n = at('pills', p.key) ?? p; return (
+        <span key={'p' + p.key} className="absolute grid place-items-center rounded-full px-1.5 text-[10px] leading-none font-medium text-accent-ink tabular-nums"
+          style={{ left: lerp(p.x, n.x, e), top: p.y, height: MARKS.pill, minWidth: MARKS.pill * 1.9, background: colour, transform: `translate(-50%, -50%) scale(${1 / k})`,
+            opacity: pills ? 1 : 0, transition: `opacity ${pills ? MARKS.fade : MARKS.out / 2}ms ease-out ${pills ? MARKS.pillLag : 0}ms` }}>
+          {done ? '✓' : lerp(p.value, to ? n.value * (n.ok ? 0 : 1) : p.value, e).toFixed(1)}
         </span>
-      ) : null}
-      <div className="flex flex-col gap-3 rounded-card border border-line bg-surface/90 px-4 pt-3 pb-4 shadow-overlay backdrop-blur">
-        <div className="flex items-center justify-between gap-3">
-          <span className="text-xs font-medium text-ink-muted">plumber</span>
-          <span className={'rounded-full px-2 py-0.5 text-xs font-medium transition-colors duration-300 ' + (fixed ? 'bg-accent-soft text-accent' : 'bg-negative-soft text-negative')}>{fixed ? 'Fixed' : 'Found'}</span>
+      ); })}
+    </div>
+  );
+}
+
+// plumber's read as one authored moment, driven by a single stage.
+function useMoment(Example, plumb, view) {
+  const cam = useRef(null);
+  const [stage, setStage] = useState(STAGE.rest);
+  const [lens, setLens] = useState({ k: 1, x: 0, y: 0 });
+  const [marks, setMarks] = useState({ from: null, to: null });
+  const [t, setT] = useState(0);
+  const [live, setLive] = useState(true);
+  const timers = useRef([]);
+  useEffect(() => () => timers.current.forEach(clearTimeout), []);
+  const measure = () => (Example?.measure ? marksOf(Example.measure(document.querySelector(SCOPE)), cam.current) : null);
+  const tween = () => new Promise((done) => {
+    const start = performance.now();
+    const tick = (now) => { const p = Math.min(1, (now - start) / (still() ? 1 : MARKS.converge)); setT(p); p < 1 ? requestAnimationFrame(tick) : done(); };
+    requestAnimationFrame(tick);
+  });
+  const take = () => {
+    if (stage !== STAGE.rest) return;
+    const at = (ms, fn) => timers.current.push(setTimeout(fn, still() ? Math.min(ms, 600) : ms));
+    setT(0); setMarks({ from: null, to: null });
+    setStage(STAGE.settle); setLive(false);
+    at(TIMING.cameraIn, () => {
+      const from = measure();
+      setMarks({ from, to: null });
+      if (from && cam.current && view.current && !still()) setLens(shot(from.subject, cam.current, view.current()));
+      setStage(STAGE.cameraIn);
+    });
+    at(TIMING.marksIn, () => setStage(STAGE.marks));
+    at(TIMING.fix, async () => {
+      await plumb.fix();
+      requestAnimationFrame(() => { setMarks((m) => ({ ...m, to: measure() })); setStage(STAGE.fix); tween(); });
+    });
+    at(TIMING.marksOut, () => setStage(STAGE.marksOut));
+    at(TIMING.cameraOut, () => { setLens({ k: 1, x: 0, y: 0 }); setStage(STAGE.cameraOut); });
+    at(TIMING.resume, () => { setStage(STAGE.rest); setLive(true); setMarks({ from: null, to: null }); plumb.ask(); });
+  };
+  const give = async () => { if (stage === STAGE.rest) await plumb.undo(); };
+  const style = { transform: `translate(${lens.x}px, ${lens.y}px) scale(${lens.k})`, transformOrigin: '0 0', transition: still() ? 'none' : lens.k > 1 ? CAMERA.in : CAMERA.out };
+  const shown = stage >= STAGE.marks && stage < STAGE.marksOut;
+  return { cam, style, stage, live, take, give, marks: <Marks from={marks.from} to={marks.to} t={t} k={lens.k} shown={shown} pills={shown} /> };
+}
+
+const chip = (to, from) => { const t = `${from ? `${from} → ` : '+ '}${to}`; return <code title={t} className="rounded-chip bg-sunken px-1.5 py-0.5 font-mono text-[11px] text-ink-muted">{t}</code>; };
+
+// The teaching, quiet and off the stage: plumber's finding, why, the habit, its fix. Plain paragraphs, no labels.
+function Lesson({ state, lesson, away }) {
+  const f = state.found?.[0], fixed = state.phase === 'fixed';
+  return (
+    <section aria-label="What plumber finds" className="flex w-full max-w-xl flex-col gap-3 text-sm transition-opacity duration-500" style={{ opacity: away ? 0 : 1 }}>
+      {state.phase === 'asking' ? (
+        <div aria-label="Asking plumber about this example" className="flex flex-col gap-2">
+          <span className="h-3.5 w-3/4 animate-pulse rounded-chip bg-sunken" /><span className="h-3.5 w-1/2 animate-pulse rounded-chip bg-sunken" />
         </div>
-        {seen?.focus && state.phase !== 'asking' ? <Loupe seen={seen} stage={stage} phase={state.phase} /> : null}
-        {body}
-      </div>
-    </aside>
+      ) : state.phase === 'error' ? <p className="text-negative">{state.error}</p>
+        : !f ? <p className="text-ink-muted">plumber has no finding on this example.</p> : (
+          <>
+            <p className="font-medium text-pretty">{fixed ? (state.after?.length ? `Asked again: ${state.after[0].title}` : 'Asked again, plumber finds nothing.') : f.title}</p>
+            <p className="text-ink-muted text-pretty">{lesson?.why ?? f.because} {lesson?.habit}</p>
+            <p className="flex flex-wrap items-baseline gap-x-2 gap-y-1 text-ink-muted text-pretty">
+              <span>plumber’s fix: {f.suggest?.why ?? f.action}.</span>
+              {f.suggest?.kind === 'class' ? chip(f.suggest.to, f.suggest.from) : null}
+            </p>
+            <p className="font-mono text-[11px] text-ink-subtle">{f.rule} · {f.file.split('/').pop()}:{f.line}{f.count > 1 ? ` · ${f.count} places` : ''}</p>
+          </>
+        )}
+    </section>
+  );
+}
+
+// The switch names the two techniques. Its thumb slides between them.
+function Switch({ names, fixed, ready, onBack, onFix }) {
+  const track = useRef(null);
+  const [thumb, setThumb] = useState(null);
+  useEffect(() => {
+    const on = track.current?.querySelector('[aria-pressed="true"]');
+    if (on) setThumb({ left: on.offsetLeft, width: on.offsetWidth });
+  }, [fixed, names]);
+  const tab = 'relative z-10 inline-flex h-7 items-center rounded-[6px] px-3 text-[13px] whitespace-nowrap transition-colors duration-200 disabled:cursor-default ' + RING;
+  return (
+    <div ref={track} role="group" aria-label="Technique" className="relative flex items-center rounded-control bg-sunken p-0.5 ring-1 ring-line">
+      {thumb ? <span aria-hidden="true" className="absolute top-0.5 bottom-0.5 rounded-[6px] bg-surface shadow-raised transition-[left,width] duration-300 ease-(--ease-arrive)" style={thumb} /> : null}
+      <button type="button" aria-pressed={!fixed} disabled={!ready} onClick={onBack} title={`${names[0]} (B)`} className={tab + (fixed ? ' text-ink-muted hover:text-ink' : ' text-ink')}>{names[0]}</button>
+      <button type="button" aria-pressed={fixed} disabled={!ready} onClick={onFix} title={`${names[1]}, plumber’s fix (F)`} className={tab + (fixed ? ' text-ink' : ' text-ink-muted hover:text-ink')}>{names[1]}</button>
+    </div>
   );
 }
 
@@ -232,66 +271,61 @@ const FOUND = {
 const RING = 'outline-offset-2 focus-visible:outline-2 focus-visible:outline-accent';
 const step = 'grid size-8 shrink-0 place-items-center rounded-full text-ink-muted hover:bg-sunken active:bg-line ' + RING;
 
-// The page: the board is the hero. A slim bar floats at the top (where you are, the switch, prev and next); the
-// principle's name sits small above the window; plumber's card floats beside it.
+// The page: one live component alone on the board, the switch under it naming the two techniques, the lesson below.
+// Taking plumber's side is the moment above; the whole page is the camera's frame (the bar and the list float over).
 export function Principle({ n }) {
   const p = PRINCIPLES.find((x) => x.n === n);
   const Example = EXAMPLES[n];
-  const { state, fix, undo } = usePlumber();
-  const stage = useRef(null);
-  const [anchor, setAnchor] = useState(null);
-  const [seen, setSeen] = useState(null);
+  const plumb = usePlumber();
+  const { state } = plumb;
+  const bar = useRef(null), sw = useRef(null), main = useRef(null);
+  // the camera's frame: the column's width, from under the bar to just above the switch
+  const view = useRef(() => {
+    const m = main.current.getBoundingClientRect();
+    return { left: m.left + 16, width: m.width - 32, top: bar.current.getBoundingClientRect().bottom + CAMERA.above, bottom: sw.current.getBoundingClientRect().top - CAMERA.above };
+  });
+  const moment = useMoment(Example, plumb, view);
   const prev = n > 1 ? n - 1 : null, next = n < PRINCIPLES.length ? n + 1 : null;
-  const fixed = state.phase === 'fixing' || state.phase === 'fixed', ready = state.phase === 'broken' || state.phase === 'fixed';
+  const fixed = state.phase === 'fixing' || state.phase === 'fixed', ready = (state.phase === 'broken' || state.phase === 'fixed') && moment.stage === STAGE.rest;
   const live = Example && p.how === 'live';
+  const names = Example?.names ?? ['As built', 'plumber’s fix'];
   useEffect(() => { document.title = `${n} · ${p.title} · plumber`; }, [n, p.title]);
   useEffect(() => {
     const key = (e) => {
       if (e.metaKey || e.ctrlKey || e.altKey || /input|textarea|select/i.test(e.target.localName)) return;
       if (e.key === 'ArrowLeft' && prev) location.href = `/rule/${prev}`;
       else if (e.key === 'ArrowRight' && next) location.href = `/rule/${next}`;
-      else if (live && ready && e.key === 'f' && !fixed) fix();
-      else if (live && ready && e.key === 'b' && fixed) undo();
+      else if (live && ready && e.key === 'f' && !fixed) moment.take();
+      else if (live && ready && e.key === 'b' && fixed) moment.give();
     };
     addEventListener('keydown', key);
     return () => removeEventListener('keydown', key);
   });
-  const tab = (on) => 'inline-flex h-7 items-center rounded-full px-3 text-sm transition-colors disabled:text-ink-subtle ' + RING + ' ' + (on ? 'bg-ink font-medium text-accent-ink' : 'text-ink-muted hover:text-ink');
   return (
     <div className="flex min-h-dvh flex-col">
-      <header className="sticky top-0 z-10 flex justify-center px-4 pt-4">
-        <nav aria-label="Principle" className="flex w-full max-w-3xl items-center gap-2 rounded-full border border-line bg-surface/85 py-1.5 pr-1.5 pl-4 shadow-raised backdrop-blur">
-          {/* narrow: where you are is also the way to the list of all 77 */}
+      <header className="sticky top-0 z-20 flex justify-center px-4 pt-4">
+        <nav ref={bar} aria-label="Principle" className="flex w-full max-w-3xl items-center gap-2 rounded-full border border-line bg-surface/85 py-1.5 pr-1.5 pl-4 shadow-raised backdrop-blur">
           <a href="/" aria-label={`Principle ${n} of ${PRINCIPLES.length}: all principles`} className={'shrink-0 rounded-full text-sm font-medium tabular-nums sm:hidden ' + RING}>{n} / {PRINCIPLES.length}</a>
-          <span className="hidden min-w-0 flex-1 truncate text-sm text-ink-muted sm:inline" title={p.section}>{p.section} · <span className="tabular-nums">{n}</span> of {PRINCIPLES.length}</span>
+          <span className="hidden min-w-0 flex-1 truncate text-sm text-ink-muted sm:inline" title={`${p.section}: ${p.title}`}>{p.section} · <span className="tabular-nums">{n}</span> of {PRINCIPLES.length} · <span className="text-ink">{p.title}</span></span>
           <span className="flex-1 sm:hidden" />
-          {live ? (
-            <div role="group" aria-label="Example" className="flex items-center gap-0.5 rounded-full bg-sunken p-0.5">
-              <button type="button" aria-pressed={!fixed} disabled={!ready} onClick={() => fixed && undo()} title="Broken (B)" className={tab(!fixed)}>Broken</button>
-              <button type="button" aria-pressed={fixed} disabled={!ready} onClick={() => !fixed && fix()} title="Fixed by plumber (F)" className={tab(fixed)}>Fixed</button>
-            </div>
-          ) : null}
           {prev ? <a href={`/rule/${prev}`} aria-label={'Principle ' + prev} title="Previous (←)" className={step}><Chevron className="rotate-180" /></a> : null}
           {next ? <a href={`/rule/${next}`} aria-label={'Principle ' + next} title="Next (→)" className={step}><Chevron /></a> : null}
         </nav>
       </header>
-      <main className="@container flex flex-1 flex-col items-center gap-6 px-4 pt-10 pb-16 sm:pt-14">
-        <div className="flex max-w-lg flex-col items-center gap-2 text-center">
-          <span className={'rounded-full px-2 py-0.5 font-mono text-[11px] font-medium transition-colors duration-300 ' + (fixed ? 'bg-accent text-accent-ink' : 'bg-negative text-accent-ink')}>#{n} · {fixed ? 'fixed' : 'broken'}</span>
-          <h1 className="text-xl font-semibold tracking-tight text-balance">{p.title}</h1>
-          <p className="text-sm text-ink-muted text-balance">{p.why}</p>
-        </div>
-        {/* the card beside the window only where the page holds both (a container query, not the screen's width) */}
-        <div className="flex w-full max-w-5xl flex-col items-center gap-6 @5xl:flex-row @5xl:items-start @5xl:justify-center @5xl:gap-10">
-          <div ref={stage} className={'relative w-full min-w-0 ' + (Example?.wide || Example?.framed ? 'max-w-2xl' : 'max-w-lg')}>
-            {/* the window plumber reads */}
-            <section data-example aria-label="Example" className={'flex w-full min-w-0 justify-center overflow-hidden rounded-sheet corner-squircle bg-surface shadow-window ' + (Example?.framed ? 'ring-1 ring-line' : 'border border-line px-4 pt-4 pb-5 sm:px-6 sm:pt-5 sm:pb-6')}>
-              {Example ? <Example broken /> : <p className="text-sm text-ink-muted">This example isn’t built yet.</p>}
+      <main ref={main} className="@container flex flex-1 flex-col items-center gap-12 px-4 pb-16">
+        <div className="flex min-h-[calc(100dvh-4.5rem)] w-full max-w-3xl flex-col items-center justify-center gap-10 pt-6 pb-10">
+          {/* the camera: the example and its marks move together; nothing clips it but the page */}
+          <div ref={moment.cam} className="relative flex w-full justify-center" style={moment.style}>
+            <section data-example aria-label="Example" className={Example?.stage ? 'flex w-full min-w-0 justify-center' : 'flex w-full max-w-2xl min-w-0 justify-center overflow-hidden rounded-sheet corner-squircle bg-surface shadow-window ' + (Example?.framed ? 'ring-1 ring-line' : 'border border-line px-4 pt-4 pb-5 sm:px-6 sm:pt-5 sm:pb-6')}>
+              {Example ? <Example broken live={moment.live} /> : <p className="text-sm text-ink-muted">This example isn’t built yet.</p>}
             </section>
-            {Example && state.found ? <Annotations state={state} stage={stage} measureOf={Example.measure} onAnchor={setAnchor} onSeen={setSeen} /> : null}
+            {moment.marks}
           </div>
-          {live ? <FindingCard state={state} anchor={anchor} seen={seen} stage={stage} lesson={Example?.lesson} /> : <p className="max-w-72 text-sm text-ink-muted">{FOUND[p.how] ?? ''}</p>}
+          <div ref={sw} className="relative z-10">
+            {live ? <Switch names={names} fixed={fixed} ready={ready} onBack={() => fixed && moment.give()} onFix={() => !fixed && moment.take()} /> : null}
+          </div>
         </div>
+        {live ? <Lesson state={state} lesson={Example?.lesson} away={moment.stage !== STAGE.rest} /> : <p className="max-w-72 text-sm text-ink-muted">{FOUND[p.how] ?? ''}</p>}
       </main>
     </div>
   );
@@ -329,8 +363,8 @@ function List({ current }) {
 // is its own page (/), and each principle links back to it.
 export function Layout({ current, children }) {
   return (
-    <div className="board min-h-dvh md:pl-72">
-      <aside className="hidden md:fixed md:inset-y-4 md:left-4 md:block md:w-64 md:overflow-y-auto md:overscroll-contain md:rounded-card md:border md:border-line md:bg-surface/80 md:px-4 md:py-5 md:shadow-overlay md:backdrop-blur md:gutter-stable">
+    <div className="board min-h-dvh overflow-x-clip md:pl-72">
+      <aside className="z-30 hidden md:fixed md:inset-y-4 md:left-4 md:block md:w-64 md:overflow-y-auto md:overscroll-contain md:rounded-card md:border md:border-line md:bg-surface/80 md:px-4 md:py-5 md:shadow-overlay md:backdrop-blur md:gutter-stable">
         <List current={current} />
       </aside>
       {children}

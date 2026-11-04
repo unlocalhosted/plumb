@@ -42,34 +42,37 @@ Content alignment's fix had no `sets`, so it could not be previewed; the fix was
   (dashed guides, a measured pill: "commas drift 9.4px"), and for sub-pixel fixes a loupe. If you can't see the
   difference between broken and fixed, the example hasn't shown anything.
 
-## 3½. The screen it lives on (overlay/showcase/src/principles)
+## 3½. The stage: a staged moment, not an illustrated explanation (overlay/showcase/src/principles)
 
-- **One principle, one example, one screen** (`/rule/N`). Never a page carrying many problems: nobody can judge 50 at
-  once. The list of 77 sits at the left; the board (warm grey, faint dot grid) is the page; the example floats on it
-  in a window.
-- **Broken ↔ Fixed is a switch in place**, never a reload. Fixed is plumber's own fix taken with plumber's own
-  primitives (`inplace.js` `swapPreview` and its `GLIDE`), and Broken gives it back exactly. The change must be
-  watchable: what can move glides; what moves a pixel gets the loupe.
-- **Everything is plumber's.** Detection is `window.__plumb.craft({ scope: '[data-example]', hidden: true })`: scoped to
-  the example (the frame never pollutes it), hidden so asking doesn't flash the overlay. The fix is its `suggest`.
-  Nothing on the screen states a finding plumber didn't make.
-- **Quiet annotation, like the reference video.** Guides are thin dashed lines in a softened colour, on the subject
-  only, never solid and never on something else (a time stamp beside the icon). The one bold thing is the measured
-  pill, a tab on plumber's card. The leader leaves from the window's edge. On Fixed the rest of the example fades
-  back and red turns blue with a check.
-- **Rich, soothing, tasteful.** The example and the page around it get the same care: real content, calm colour,
-  soft depth, generous space, the type hierarchy a good product has.
-- **A product screen, not a component.** A lone list or callout in an empty window never sells the illusion. Put
-  the principle inside believable software: the shared app frame (app bar, product mark, search, the user), the
-  page it lives on, its neighbours, people and avatars, states, metadata, density. The principle is one detail of a
-  screen someone would use. Use `AppFrame` (examples.jsx) and set `Example.framed = true`: the window drops its padding
-  and draws its edge as a ring, so the app bar sits flush. Real containers clip (`overflow-hidden` on a popover or a
-  card), and dim what's behind an overlay.
-- **Restraint over boxes.** One surface divided by hairlines beats several bordered cards; mark the current or chosen
-  thing quietly (a small badge), keep one solid action, and keep copy short enough that no line wraps unless meant to.
-- **Fit every width the window has.** Lay out against the window (container queries), not the screen: three
-  columns only where the window holds them. The page too: the card sits beside the window only where the page holds
-  both (`@5xl` on main), and the window can shrink (`min-w-0`). Check 1440, 1024 and a ~300px pane; no sideways scroll.
+The benchmark is ~/Downloads/twitter_media_harvest/maybepratikk-2117890135945822554-01.mp4 (an analytics table whose
+numbers tick live; a "Proportional / Tabular" switch; on switching the camera zooms into the columns, stripes drawn
+from the glyphs and pink pills with the drift turn to blue checks, then it zooms out). Watch it before building a
+screen. Ours used to be a teaching page with a still picture in it; that system is retired.
+
+- **One principle, one screen** (`/rule/N`), the list of 77 on the left. Never a page carrying many problems.
+- **The stage is one dense, real component**, alone on the board: no app frame, no title block on the stage, no side
+  card. Richness comes from the content: real photos, a real brand, tags, deltas, metadata, density. Not chrome.
+- **The flaw happens live.** Every example has a driver that provokes its own mistake while you watch: numbers that
+  tick (tabular figures), text typing in (balance, widows), a width that breathes (fit, clamp), a hover that travels.
+  If the mistake only shows in a still frame, find the moment when it hurts and stage that.
+- **The switch names the technique, never "Broken / Fixed"**: "Proportional / Tabular", "Line box / Trimmed",
+  "Same radius / Concentric". It sits under the component, small, a segmented control. Default is the mistake; the
+  other side is plumber's own fix (`suggest`, taken with `inplace.js` `swapPreview`), and back gives it back exactly.
+- **plumber's read is a camera moment.** On switching: the camera eases in to the subject, plumber's measurements
+  are drawn from the geometry itself (glyph columns, edges, curves) with the measured number in red pills; the fix
+  glides in and the pills turn to blue checks; the camera eases back out and the stage is clean. Nothing is drawn at
+  rest. Detection is still `window.__plumb.craft({ scope: '[data-example]', hidden: true })`; nothing on the screen
+  states a finding plumber didn't make.
+- **Motion is authored before it's built, and judged moving.** Measure the benchmark frame by frame (`ffmpeg -vf
+  fps=10,tile=6x5`): every duration, the order, the zoom depth, when marks appear, how colour changes. Write the
+  storyboard (interface-craft: named TIMING, one stage integer, springs in config) and the look in
+  docs/craft/stage-brief.md, and get the owner's sign-off before code. Judge it by recording ours and comparing it
+  side by side with the benchmark, never from stills (a hidden pane freezes transitions). The world freezes for the
+  moment: settle, camera in, marks, hold, fix (pills count to zero, red → blue), hold, marks out, camera out, then
+  life resumes.
+- **Teaching sits off the stage**, below it, read after watching: what plumber sees, why it happens, the habit,
+  plumber's fix in words (§5).
+- **Fit every width.** Lay out against the stage (container queries); check 1440, 1024 and a ~300px pane.
 
 ## 4. plumber's fix is one you can take
 
@@ -143,3 +146,9 @@ Each line is something the owner had to say once; the sections above exist so th
 - 2026-11-04 · (own review) at a 1024px pane the window and the card overflowed sideways. → §3½ fit every width.
 - 2026-11-04 · (own review) #7's fix equalised inner and outer; #8's card said "4px: 12px minus 9px" and its lesson
   said 8px where plumber measured 9px. → §4 the fix expresses the principle; no false arithmetic.
+- 2026-11-04 · "look how bad our examples are and how good they can be" (the maybepratikk table video): a teaching
+  page with a still example. → §3½ rewritten: one dense live component, a switch naming the technique, a camera
+  moment for plumber's read, the teaching below the stage. Supersedes "a product screen inside AppFrame".
+- 2026-11-04 · "the motion of the ui is so ass, the look and feel just feels awful": motion improvised with scattered
+  sleeps and judged from three stills. → §3½ motion authored first (measured benchmark, storyboard, sign-off),
+  judged moving.
