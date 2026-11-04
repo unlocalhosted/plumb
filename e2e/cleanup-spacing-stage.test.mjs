@@ -74,7 +74,7 @@ async function stage(t) {
   const panel = () => page.evaluate(() => document.querySelector('plumb-overlay').shadowRoot.querySelector('.fx')?.innerText.replace(/\s+/g, ' ') ?? '');
   const until = (re, timeout = 60000) => page.waitForFunction((s) => new RegExp(s).test(document.querySelector('plumb-overlay')?.shadowRoot.querySelector('.fx:not([hidden])')?.innerText ?? ''), re.source, { timeout });
   const begin = async () => {
-    await page.keyboard.press('Alt+B'); await until(/Clean up this page/);
+    await page.keyboard.press('Alt+B'); await until(/Clean up/);
     await page.keyboard.press('c'); await until(/Apply to this page|already|Next/);
     await page.keyboard.press('ArrowRight'); await until(/spaces between things|already follows/);
   };

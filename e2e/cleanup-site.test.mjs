@@ -106,7 +106,7 @@ async function site(t) {
     const until = (re, timeout = 60000) => page.waitForFunction((s) => new RegExp(s).test(document.querySelector('plumb-overlay')?.shadowRoot.querySelector('.fx:not([hidden])')?.innerText ?? ''), re.source, { timeout });
     // the distinct computed font sizes among stamped elements, sorted (read in the page)
     const sizes = () => page.evaluate(() => [...new Set([...document.querySelectorAll('[data-plumb-source]')].map((e) => getComputedStyle(e).fontSize))].sort());
-    const begin = async () => { await page.keyboard.press('Alt+B'); await until(/Clean up this page/); await page.keyboard.press('c'); await until(/Apply to this page/); };
+    const begin = async () => { await page.keyboard.press('Alt+B'); await until(/Clean up/); await page.keyboard.press('c'); await until(/Apply to this page/); };
     // the ladder as the panel lists it: its sentence, and each row's name with its numbers
     const ladder = () => page.evaluate(() => {
       const fx = document.querySelector('plumb-overlay').shadowRoot.querySelector('.fx');
@@ -171,7 +171,12 @@ test('Apply is one step in the history, named for the pass with its law, and Und
   assert.notEqual(await readFile(join(s.root, FILE), 'utf8'), all[FILE], 'the write landed');
   await v.page.waitForFunction(() => document.querySelector('plumb-overlay')?.shadowRoot.querySelector('.dock')?.dataset.state === 'ready', null, { timeout: 90000 });
   // the history, opened from the dock like a person would
-  await v.page.locator('plumb-overlay').locator('.dock .history').click();
+  // in Blueprint the dock's tools are in the bar, behind ··· (docs/design/one-bar.md)
+  // the clean-up's done card is in front: Esc puts it down, back to the bar
+  await v.page.keyboard.press('Escape');
+  await v.page.locator('plumb-overlay').locator('.fx .bar .more').waitFor({ timeout: 30000 });
+  await v.page.locator('plumb-overlay').locator('.fx .bar .more').click();
+  await v.page.locator('plumb-overlay').locator('.fx .bar .tool[data-tool="history"]').click();
   await v.page.waitForFunction(() => document.querySelectorAll('plumb-overlay').length && document.querySelector('plumb-overlay').shadowRoot.querySelectorAll('.tt .tt-tick[data-i]').length > 0, null, { timeout: 30000 });
   const strip = () => v.page.evaluate(() => {
     const root = document.querySelector('plumb-overlay').shadowRoot;

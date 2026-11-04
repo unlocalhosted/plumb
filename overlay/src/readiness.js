@@ -134,6 +134,7 @@ export class Readiness {
   }
 
   get open() { return this.#open; }
+  get left() { return this.#missing().length; }
   rect() { return (this.#panel?.querySelector('.card') ?? this.#callout)?.getBoundingClientRect() ?? null; }
 
   // Read (or re-read) the engine's account. Called when the server becomes ready and after a fix lands.

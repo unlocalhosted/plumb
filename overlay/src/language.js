@@ -68,6 +68,13 @@ export const LANGUAGE_CSS = CARD_CSS + `
   .pl-act[aria-pressed="true"], .pl-act.quiet { background: var(--pl-paper); color: var(--pl-ink); box-shadow: inset 0 0 0 1px var(--pl-rule); }
   .pl-act[aria-pressed="true"]:hover, .pl-act.quiet:hover { background: var(--pl-paper-2); filter: none; }
 
+  /* an action's key: one key, the one it answers to, as a suffix cap (docs/design/one-bar.md). It follows the action's
+     colour; a quiet action's sits on the inset with a hairline. No key on a touch screen: there is none to press */
+  .pl-act kbd { display: inline-grid; place-items: center; min-width: 18px; height: 18px; padding: 0 5px; margin-left: 2px; box-sizing: border-box;
+    border-radius: 4px; font: 600 11px/1 var(--pl-mono); background: color-mix(in oklab, currentColor 12%, transparent); color: color-mix(in oklab, currentColor 70%, transparent); }
+  .pl-act.quiet kbd { background: var(--pl-paper-2); box-shadow: inset 0 0 0 1px var(--pl-rule); color: var(--pl-ink-2); }
+  @media (pointer: coarse) { .pl-act kbd { display: none; } }
+
   .pl-pop { animation: pl-pop 260ms var(--pl-spring-pop) both; }
   @keyframes pl-pop { from { opacity: 0; scale: 0.92; } }
 

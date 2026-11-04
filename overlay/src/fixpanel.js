@@ -44,6 +44,16 @@ const BURST = { pieces: 40, speed: [380, 760], spread: 1.1, gravity: 1100, spin:
 const SPRING = 'cubic-bezier(.3, 1.35, .5, 1)', EASE = 'cubic-bezier(.2, .8, .2, 1)';
 const SCALE = 0.62; // px of drawing per px of page, for padding specimens
 
+// the bar's tools (the dock's, pressed through the widget), shown only after ··· (docs/design/one-bar.md: tools stay out of
+// sight until asked for)
+const BAR_ICON = {
+  history: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 8a5.5 5.5 0 1 0 1.6-3.9"/><path d="M2.5 2.5v2.5H5"/><path d="M8 5v3l2 1.5"/></svg>',
+  help: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="8" r="6"/><path d="M6.3 6.3a1.8 1.8 0 1 1 2.4 1.7c-.5.2-.7.6-.7 1.1"/><path d="M8 11.3v.2"/></svg>',
+  pick: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><circle cx="8" cy="8" r="4.5"/><path d="M8 1.5v2.5M8 12v2.5M1.5 8H4M12 8h2.5"/></svg>',
+  more: '<svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><circle cx="3.5" cy="8" r="1.3"/><circle cx="8" cy="8" r="1.3"/><circle cx="12.5" cy="8" r="1.3"/></svg>',
+  x: '<svg class="x" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"/></svg>',
+};
+
 export const FIX_CSS = TEXT_EDITOR_CSS + ELEMENT_CARD_CSS + `
   /* the old pieces this panel replaces stay out of sight */
   .bpp, .cg, .sel { display: none !important; }
@@ -53,13 +63,46 @@ export const FIX_CSS = TEXT_EDITOR_CSS + ELEMENT_CARD_CSS + `
     box-shadow: 0 0 0 .5px rgb(0 0 0 / .09), 0 1px 1px rgb(0 0 0 / .04), 0 8px 20px -8px rgb(0 0 0 / .14), 0 28px 56px -24px rgb(0 0 0 / .18), inset 0 1px 0 rgb(255 255 255 / .9);
     transition: height ${TIMING.open}ms ${SPRING}; }
   .fx[hidden] { display: none; }
-  .fx button { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; }
-  .fx kbd { font: 500 10.5px/1 ui-monospace, monospace; color: #8b8a85; margin-left: 2px; }
+  .fx button:not(.pl-act) { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; }
+  .fx :not(.pl-act) > kbd { font: 500 10.5px/1 ui-monospace, monospace; color: #8b8a85; margin-left: 2px; }
   .fx .line { display: flex; align-items: center; gap: 10px; height: 46px; padding: 0 7px 0 16px; }
   .fx .dot { width: 7px; height: 7px; border-radius: 50%; background: #ff1f8f; box-shadow: 0 0 0 3px rgb(255 31 143 / .14); flex: none; }
   .fx .count { font-weight: 550; } .fx .count span { color: #8b8a85; font-weight: 450; }
   .fx .count .err { color: #c2304f; font-weight: 550; }
   .fx .grow { flex: 1; }
+  /* the bar at rest (docs/design/one-bar.md): one line, one count, each key on its action; it sits where the dock was */
+  .fx[data-rest] { width: min(720px, calc(100vw - 32px)); bottom: var(--pl-space-6, 24px); overflow: visible; }
+  .fx .bar { gap: 8px; height: 48px; padding: 0 7px 0 16px; }
+  .fx .bar .pl-act { flex: none; }
+  .fx .status { position: relative; display: inline-flex; align-items: center; gap: 8px; flex: none; padding: 6px 8px; margin-left: -8px; border-radius: 8px; outline: none; }
+  .fx .status:hover, .fx .status:focus-visible { background: rgb(0 0 0 / .045); }
+  .fx .status:focus-visible { box-shadow: 0 0 0 2px var(--pl-sky); }
+  .fx .readout { position: absolute; left: 0; bottom: calc(100% + 10px); padding: 8px 12px; border-radius: 12px; background: var(--pl-paper-2); color: var(--pl-ink-2);
+    box-shadow: 0 0 0 1px var(--pl-rule), 0 8px 20px -10px rgb(28 27 25 / .3); white-space: nowrap; font-weight: 500; opacity: 0; translate: 0 4px; pointer-events: none;
+    transition: opacity 120ms ${SPRING}, translate 120ms ${SPRING}; }
+  .fx .status:hover .readout, .fx .status:focus-visible .readout { opacity: 1; translate: 0 0; }
+  .fx .quiet-line { flex: 1; min-width: 0; color: #6b665c; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .fx .notice { display: inline-flex; align-items: center; gap: 8px; flex: none; padding-left: 10px; box-shadow: inset 1px 0 0 rgb(0 0 0 / .08); white-space: nowrap; }
+  .fx .notice b { color: #a8650f; font-weight: 600; }
+  .fx .notice .setup { color: var(--pl-sky); font-weight: 600; font-size: 12px; }
+  .fx .bar .more, .fx .bar .tool { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 8px; color: #6b665c; flex: none; }
+  .fx .bar .more:hover, .fx .bar .tool:hover, .fx .bar .more[aria-expanded="true"] { background: rgb(0 0 0 / .05); color: #1c1b19; }
+  .fx .bar .more svg, .fx .bar .tool svg { width: 16px; height: 16px; }
+  .fx .bar .tools { display: inline-flex; gap: 2px; animation: pl-pop 260ms var(--pl-spring-pop) both; }
+  .fx .bar .close { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 6px; border-radius: 8px; color: #8b8a85; font-weight: 600; font-size: 12px; flex: none; }
+  .fx .bar .close:hover { background: rgb(0 0 0 / .05); color: #1c1b19; }
+  .fx .bar .close kbd { display: inline-grid; place-items: center; height: 18px; padding: 0 5px; margin: 0; border-radius: 4px; font: 600 11px/1 var(--pl-mono, ui-monospace, monospace);
+    background: var(--pl-paper-2); box-shadow: inset 0 0 0 1px var(--pl-rule); color: var(--pl-ink-2); }
+  .fx .bar .close .x { display: none; width: 16px; height: 16px; }
+  .fx .bar.has-notice .long { display: none; }
+  @media (max-width: 560px) {
+    .fx .bar { padding: 0 4px 0 12px; gap: 4px; }
+    /* a phone's bar keeps the count, its two actions and Close; the tools are on the dock's mark once Blueprint closes */
+    .fx .bar .long, .fx .bar .notice, .fx .bar .more, .fx .bar .tools, .fx .bar .close .word, .fx .bar .close kbd { display: none; }
+    .fx .bar .pl-act.quiet kbd { display: none; } .fx .bar .pl-act { padding: 0 11px; }
+    .fx .bar .close .x { display: block; }
+  }
+  @media (prefers-reduced-motion: reduce) { .fx .readout { transition: none; } .fx .bar .tools { animation: none; } }
   .fx .primary { height: 32px; padding: 0 12px 0 14px; border-radius: 11px; background: #1c1b19; color: #fff; font-weight: 550; display: inline-flex; align-items: center; gap: 6px;
     box-shadow: inset 0 1px 0 rgb(255 255 255 / .12), 0 1px 2px rgb(0 0 0 / .2); transition: transform 160ms ${SPRING}, opacity 160ms; }
   .fx .primary:active { transform: scale(.97); } .fx .primary kbd { color: rgb(255 255 255 / .55); } .fx .primary[disabled] { opacity: .28; cursor: default; }
@@ -311,6 +354,10 @@ export class FixPanel {
       if (!b) return;
       if (b.classList.contains('start')) this.hold(0);
       else if (b.classList.contains('cleanup')) this.#cleanup.start();
+      else if (b.classList.contains('more')) { this.#tools = !this.#tools; this.#html = ''; this.render(); }
+      else if (b.classList.contains('tool')) this.#host.tool?.(b.dataset.tool);
+      else if (b.classList.contains('close')) this.#host.tool?.('bp-toggle');
+      else if (b.classList.contains('setup')) this.#host.openSetup?.();
       else if (b.classList.contains('sp')) this.#pick(+b.dataset.i);
       else if (b.classList.contains('take')) this.take();
       else if (b.classList.contains('skip') || b.classList.contains('next')) this.skip(1);
@@ -333,7 +380,7 @@ export class FixPanel {
     });
   }
   get rect() { return this.#el.hidden ? null : this.#el.getBoundingClientRect(); }
-  #editor; #card; #cleanup; #quiet = false;
+  #editor; #card; #cleanup; #quiet = false; #tools = false; // #tools: the bar's ··· is open (its tools shown inline)
   // Alt+click on words opens their editor; a cause in hand is put down first
   edit(el) { if (this.#holding) this.release(); this.#card.close(); this.#editor.edit(el); this.#html = ''; this.render(); }
   // Alt+click on anything else opens its card beside it. One owner of the screen: a cause in hand is put down first, and the panel is its one line while the card is open
@@ -732,7 +779,13 @@ export class FixPanel {
     const settledNow = this.#progress?.done ?? (!!this.#progress?.total && this.#progress.read === this.#progress.total);
     const settled = settledNow || (this.#steady?.path === location.pathname && !!this.#unsettledAt && performance.now() - this.#unsettledAt < BRIEF);
     let html;
-    const tidy = `<button class="ghost cleanup">${CLEANUP.start} <kbd>C</kbd></button>`;
+    const tidy = `<button class="pl-act quiet cleanup" aria-keyshortcuts="c">${esc(CLEANUP.bar)}<span class="long">&nbsp;${esc(CLEANUP.barLong)}</span> <kbd>C</kbd></button>`;
+    // the bar's end: ··· (its tools, only once asked for) and Close; and the setup steps left, said in the line
+    const B = FIX.bar, left = this.#host.setupLeft?.() ?? 0;
+    const end = `<button class="more" aria-expanded="${this.#tools}" aria-label="${esc(this.#tools ? B.less : B.more)}" title="${esc(this.#tools ? B.less : B.more)}">${BAR_ICON.more}</button>`
+      + (this.#tools ? `<span class="tools">${Object.entries(B.tools).map(([n, label]) => `<button class="tool" data-tool="${n}" aria-label="${esc(label)}" title="${esc(label)}">${BAR_ICON[n]}</button>`).join('')}</span>` : '')
+      + `<button class="close" aria-keyshortcuts="Escape" aria-label="${esc(B.close)}"><span class="word">${esc(B.close)}</span> <kbd>Esc</kbd>${BAR_ICON.x}</button>`;
+    const notice = left ? `<span class="notice"><b>${esc(B.setup(left))}</b><button class="setup">${esc(B.review)}</button></span>` : '';
     if (this.#cleanup.running) html = this.#cleanup.html();
     else if (this.#writing || this.#undoing) html = `<div class="writing"><i></i>${esc(this.#undoing ? FIX.undoing : this.#writingText ?? FIX.writing)}</div>`;
     else if (this.#done) html = `<div class="line done"><svg class="check" viewBox="0 0 20 20" aria-hidden="true"><path d="M5 10.5l3.2 3.2L15 6.8"/></svg><span class="words">${esc(this.#doneText ?? FIX.applied(this.#fixedCount))}</span></div>`;
@@ -746,10 +799,13 @@ export class FixPanel {
       if (settledNow) this.#steady = { places, causes, notes, path: location.pathname };
       else if (this.#steady?.path === location.pathname) ({ places, causes, notes } = this.#steady);
       const unchecked = this.#progress?.notChecked ? ` · <span title="${esc(FIX.uncheckedTitle)}">${esc(FIX.unchecked(this.#progress.notChecked))}</span>` : '';
-      const tail = `${notes ? ` · ${FIX.notes(notes)}` : ''}${unchecked}${settled ? '' : ` · ${FIX.stillChecking}`}`;
+      // one count in the line; the rest of it is one point away, in the count's readout (never in the line)
+      const rest = [places && causes ? FIX.fixes(causes) : null, notes && places ? FIX.notes(notes) : null, this.#progress?.notChecked ? FIX.unchecked(this.#progress.notChecked) : null, settled ? null : FIX.stillChecking].filter(Boolean).join(' · ');
+      const status = `<span class="status" tabindex="0"${rest ? ` aria-description="${esc(rest)}"` : ''}><i class="dot"></i><span class="count">${places ? FIX.problems(places) : FIX.notes(notes)}</span>${rest ? `<span class="readout" aria-hidden="true">${esc(rest)}</span>` : ''}</span>`;
+      void unchecked;
       html = places || notes
-        ? `<div class="line"><i class="dot"></i><span class="count">${this.#error ? `<span class="err">${esc(this.#error)}</span>` : places ? `${FIX.problems(places)} <span>· ${FIX.fixes(causes)}${tail}</span>` : `<span>${FIX.notes(notes)}${settled ? '' : ` · ${FIX.stillChecking}`}</span>`}</span><span class="grow"></span>${tidy}<button class="primary start">${FIX.start} <kbd>↵</kbd></button></div>`
-        : `<div class="line"><span class="count"><span>${esc(this.#error ?? (!settled ? (this.#host.scope?.() ? FIX.checkingElement : FIX.checking) : this.#progress?.notChecked ? FIX.clearChecked(this.#progress.notChecked) : FIX.clear))}</span></span><span class="grow"></span>${settled ? tidy : ''}</div>`;
+        ? `<div class="line bar${notice ? ' has-notice' : ''}">${this.#error ? `<span class="quiet-line err">${esc(this.#error)}</span>` : status}${notice}<span class="grow"></span>${tidy}<button class="pl-act start" aria-keyshortcuts="Enter">${FIX.start} <kbd>↵</kbd></button>${end}</div>`
+        : `<div class="line bar${notice ? ' has-notice' : ''}"><span class="quiet-line">${esc(this.#error ?? (!settled ? (this.#host.scope?.() ? FIX.checkingElement : FIX.checking) : this.#progress?.notChecked ? FIX.clearChecked(this.#progress.notChecked) : FIX.clear))}</span>${notice}${settled ? tidy : ''}${end}</div>`;
     } else {
       const mark = g.members[0].mark, kind = kindOf(mark);
       const head = `<div class="cause"><i class="dot"></i><span class="cls">${esc(nameOf(g))}</span><span class="nav"><button class="prev" aria-label="Previous fix">‹</button>${esc(FIX.position(g, live, noteOf))}<button class="next" aria-label="Next fix">›</button></span><span class="what">${[FIX.what(mark), ...FIX.places(placesOf(g), drawnOf(g, this.#host.scope?.()).here, !!this.#host.scope?.()).split(' · ')].map((part) => `<span>${esc(part)}</span>`).join(' · ')}</span></div>`;
@@ -801,6 +857,7 @@ export class FixPanel {
     }
     // the last fix written stays said above, with its Undo, until the next one is written
     if (this.#last && !this.#cleanup.running && !this.#writing && !this.#undoing && !this.#done) html = `<div class="said" role="status"><svg class="tick" viewBox="0 0 20 20" aria-hidden="true"><path d="M5 10.5l3.2 3.2L15 6.8"/></svg><span class="t">${esc(this.#last.text)}</span>${this.#last.undo?.length ? `<button class="ghost undo">${FIX.undo}</button>` : ''}</div>${html}`;
+    this.#el.toggleAttribute('data-rest', html.includes('class="line bar'));
     if (html === this.#html) return;
     this.#html = html;
     const still = matchMedia('(prefers-reduced-motion: reduce)').matches, from = this.#el.offsetHeight;

@@ -88,7 +88,7 @@ async function stage(t) {
   const drawn = () => page.evaluate(() => [Math.round(document.getElementById('small').getBoundingClientRect().width), Math.round(parseFloat(getComputedStyle(document.getElementById('wide')).columnGap)), getComputedStyle(document.getElementById('low')).translate].join());
   // Blueprint on, C, then on past text, spacing and colour to the icon pass
   const begin = async () => {
-    await page.keyboard.press('Alt+B'); await until(/Clean up this page/);
+    await page.keyboard.press('Alt+B'); await until(/Clean up/);
     await page.keyboard.press('c'); await until(/Apply to this page|already|Next/);
     for (let i = 0; i < 5 && !/off your icon system|already follow your icon system/.test(await panel()); i++) { await page.keyboard.press('ArrowRight'); await page.waitForTimeout(1800); }
     await until(/off your icon system/);
