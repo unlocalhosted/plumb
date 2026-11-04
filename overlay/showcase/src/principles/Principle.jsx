@@ -4,7 +4,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { Taken } from './taken.js';
 import { createPortal } from 'react-dom';
-import { PRINCIPLES } from './catalogue.js';
+import { PRINCIPLES as ALL } from './catalogue.js';
+import { MERGED, shown } from './curation.js';
+
+// the principles the showcase stages; the others are reached by their number and say why they have no screen
+const PRINCIPLES = ALL.filter((p) => shown(p.n));
 import { EXAMPLES } from './examples.jsx';
 import { Chevron } from '../icons.jsx';
 
@@ -376,8 +380,8 @@ const step = 'grid size-8 shrink-0 place-items-center rounded-full text-ink-mute
 // The page: one live component alone on the board, the switch under it naming the two techniques, the lesson below.
 // Taking plumber's side is the moment above; the whole page is the camera's frame (the bar and the list float over).
 export function Principle({ n }) {
-  const p = PRINCIPLES.find((x) => x.n === n);
-  const Example = EXAMPLES[n];
+  const p = ALL.find((x) => x.n === n);
+  const Example = shown(n) ? EXAMPLES[n] : null;
   const plumb = usePlumber(Example);
   const { state } = plumb;
   const bar = useRef(null), sw = useRef(null), main = useRef(null);
@@ -388,7 +392,10 @@ export function Principle({ n }) {
     return { left: m.left + 16, width: m.width - 32, top: bar.current.getBoundingClientRect().bottom + CAMERA.above, bottom: Math.min(sw.current.getBoundingClientRect().top, innerHeight) - CAMERA.above };
   });
   const moment = useMoment(Example, plumb, view);
-  const prev = n > 1 ? n - 1 : null, next = n < PRINCIPLES.length ? n + 1 : null;
+  // previous and next walk the staged principles only
+  const at = PRINCIPLES.findIndex((x) => x.n >= n), here = PRINCIPLES[at]?.n === n;
+  const prev = (here ? PRINCIPLES[at - 1] : PRINCIPLES[at - 1])?.n ?? null, next = (here ? PRINCIPLES[at + 1] : PRINCIPLES[at])?.n ?? null;
+  const staged = shown(n);
   const fixed = state.phase === 'fixing' || state.phase === 'fixed', ready = (state.phase === 'broken' || state.phase === 'fixed') && moment.stage === STAGE.rest;
   const live = Example && p.how === 'live';
   const names = Example?.names ?? ['As built', 'plumber’s fix'];
@@ -408,14 +415,15 @@ export function Principle({ n }) {
     <div className="flex min-h-dvh flex-col">
       <header className="sticky top-0 z-20 flex justify-center px-4 pt-4">
         <nav ref={bar} aria-label="Principle" className="flex w-full max-w-3xl items-center gap-2 rounded-full border border-line bg-surface/85 py-1.5 pr-1.5 pl-4 shadow-raised backdrop-blur">
-          <a href="/" aria-label={`Principle ${n} of ${PRINCIPLES.length}: all principles`} className={'shrink-0 rounded-full text-sm font-medium tabular-nums sm:hidden ' + RING}>{n} / {PRINCIPLES.length}</a>
-          <span className="hidden min-w-0 flex-1 truncate text-sm text-ink-muted sm:inline" title={`${p.section}: ${p.title}`}>{p.section} · <span className="tabular-nums">{n}</span> of {PRINCIPLES.length} · <span className="text-ink">{p.title}</span></span>
+          <a href="/" aria-label={`Principle ${n}: all principles`} className={'shrink-0 rounded-full text-sm font-medium tabular-nums sm:hidden ' + RING}>№ {n}</a>
+          <span className="hidden min-w-0 flex-1 truncate text-sm text-ink-muted sm:inline" title={`${p.section}: ${p.title}`}>{p.section} · <span className="tabular-nums">{n}</span> · <span className="text-ink">{p.title}</span></span>
           <span className="flex-1 sm:hidden" />
           {prev ? <a href={`/rule/${prev}`} aria-label={'Principle ' + prev} title="Previous (←)" className={step}><Chevron className="rotate-180" /></a> : null}
           {next ? <a href={`/rule/${next}`} aria-label={'Principle ' + next} title="Next (→)" className={step}><Chevron /></a> : null}
         </nav>
       </header>
       <main ref={main} className="@container flex flex-1 flex-col items-center gap-12 px-4 pb-16">
+        {staged ? (
         <div className="flex min-h-[calc(100dvh-4.5rem)] w-full max-w-3xl flex-col items-center justify-center gap-10 pt-6 pb-10">
           {/* the camera: the example and its marks move together; nothing clips it but the page */}
           {/* the camera's frame: while the moment runs, its bottom edge sits just above the switch (the sides and top
@@ -432,7 +440,14 @@ export function Principle({ n }) {
             {live ? <Switch names={names} fixed={fixed} ready={ready} onBack={() => fixed && moment.give()} onFix={() => !fixed && moment.take()} /> : null}
           </div>
         </div>
-        {live ? <Lesson state={state} lesson={Example?.lesson} away={moment.stage !== STAGE.rest} /> : <p className="max-w-72 text-sm text-ink-muted">{FOUND[p.how] ?? ''}</p>}
+        ) : <div className="h-24" />}
+        {live ? <Lesson state={state} lesson={Example?.lesson} away={moment.stage !== STAGE.rest} />
+          : !staged ? (
+            <p className="max-w-sm text-center text-sm text-ink-muted text-pretty">
+              {MERGED[n] ? <>Shown with <a href={`/rule/${MERGED[n]}`} className={'font-medium text-accent ' + RING}>№ {MERGED[n]}</a>, the same insight.</>
+                : 'Not staged here: plumber still checks it on every page, but it’s hygiene a review catches, not an insight to show.'}
+            </p>
+          ) : <p className="max-w-72 text-sm text-ink-muted">{FOUND[p.how] ?? ''}</p>}
       </main>
     </div>
   );
