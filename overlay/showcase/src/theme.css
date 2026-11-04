@@ -1,0 +1,75 @@
+/* Quarry's primitives: the one theme every screen of the showcase is built from, broken or fixed. A mistake on a
+   broken screen is a departure from these on purpose; the fixed screen uses them as they are. */
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+
+  /* space: one 4px step; every gap and padding is a whole number of them */
+  --spacing: 0.25rem;
+
+  /* type: each size with the line height it reads best at, falling as the size grows */
+  --text-xs: 0.75rem;
+  --text-xs--line-height: 1rem;
+  --text-sm: 0.875rem;
+  --text-sm--line-height: 1.25rem;
+  --text-base: 1rem;
+  --text-base--line-height: 1.5rem;
+  --text-lg: 1.125rem;
+  --text-lg--line-height: 1.75rem;
+  --text-xl: 1.25rem;
+  --text-xl--line-height: 1.75rem;
+  --text-2xl: 1.5rem;
+  --text-2xl--line-height: 2rem;
+  --text-3xl: 2rem;
+  --text-3xl--line-height: 2.25rem;
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --tracking-tight: -0.02em;
+  --tracking-wide: 0.04em;
+  --leading-tight: 1.15;
+  --leading-normal: 1.5;
+
+  /* three greys of text, one line colour, one accent: hierarchy by these, never by opacity */
+  --color-canvas: oklch(0.975 0.003 264);
+  --color-surface: oklch(1 0 0);
+  --color-sunken: oklch(0.955 0.004 264);
+  --color-ink: oklch(0.21 0.02 264);
+  --color-ink-muted: oklch(0.45 0.02 264);
+  --color-ink-subtle: oklch(0.56 0.018 264);
+  --color-line: oklch(0.21 0.02 264 / 0.1);
+  --color-accent: oklch(0.51 0.2 268);
+  --color-accent-ink: oklch(1 0 0);
+  --color-positive: oklch(0.52 0.13 155);
+  --color-caution: oklch(0.6 0.13 75);
+  --color-negative: oklch(0.55 0.19 25);
+  --color-violet: oklch(0.47 0.2 290);
+
+  /* dark: lighter surfaces lift, not shadows */
+  --color-night: oklch(0.18 0.01 264);
+  --color-night-raised: oklch(0.24 0.012 264);
+  --color-night-ink: oklch(0.93 0.005 264);
+  --color-night-muted: oklch(0.7 0.012 264);
+
+  /* corners: a surface, the control inside it at its padding, the chip inside that */
+  --radius-chip: 4px;
+  --radius-control: 8px;
+  --radius-card: 12px;
+  --radius-sheet: 16px;
+
+  /* elevation: each step about twice the blur of the one below, the offset a third of the blur, two layers each */
+  --shadow-raised: 0 1px 1px oklch(0.21 0.02 264 / 0.04), 0 1px 3px oklch(0.21 0.02 264 / 0.08);
+  --shadow-overlay: 0 2px 4px oklch(0.21 0.02 264 / 0.04), 0 6px 16px oklch(0.21 0.02 264 / 0.1);
+  --shadow-popover: 0 4px 8px oklch(0.21 0.02 264 / 0.05), 0 12px 32px oklch(0.21 0.02 264 / 0.14);
+
+  /* motion: one ease out, to arrive and (quicker) to leave */
+  --ease-arrive: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+body { background: var(--color-canvas); color: var(--color-ink); font-family: var(--font-sans); -webkit-font-smoothing: antialiased; }
+
+/* a hairline: one device pixel on a 2× screen (#38) */
+@utility border-r-hairline { border-right-width: 0.5px; border-right-style: solid; }
+@utility border-b-hairline { border-bottom-width: 0.5px; border-bottom-style: solid; }
+@utility border-t-hairline { border-top-width: 0.5px; border-top-style: solid; }
