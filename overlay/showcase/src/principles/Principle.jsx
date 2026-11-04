@@ -383,7 +383,8 @@ export function Principle({ n }) {
   // the camera's frame: the column's width, from under the bar to just above the switch
   const view = useRef(() => {
     const m = main.current.getBoundingClientRect();
-    return { left: m.left + 16, width: m.width - 32, top: bar.current.getBoundingClientRect().bottom + CAMERA.above, bottom: sw.current.getBoundingClientRect().top - CAMERA.above };
+    // a component taller than the window pushes the switch below the fold: the window's edge is the frame then
+    return { left: m.left + 16, width: m.width - 32, top: bar.current.getBoundingClientRect().bottom + CAMERA.above, bottom: Math.min(sw.current.getBoundingClientRect().top, innerHeight) - CAMERA.above };
   });
   const moment = useMoment(Example, plumb, view);
   const prev = n > 1 ? n - 1 : null, next = n < PRINCIPLES.length ? n + 1 : null;

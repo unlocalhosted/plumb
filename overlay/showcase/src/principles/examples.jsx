@@ -3,7 +3,7 @@
 // plumber, scoped to it, finds one thing. `measure` (optional) says where the eye sees the harm, for the ticks drawn
 // over the example; it reads the page, it never decides what is wrong (plumber does).
 import { useEffect, useState } from 'react';
-import { ArrowLeftIcon, ArrowRightIcon, BoltIcon, CheckIcon, FileIcon, FolderIcon, HeadphonesIcon, HeartIcon, HistoryIcon, LayersIcon, LockIcon, MessageIcon, PathIcon, PauseIcon, PlusIcon, SearchIcon, SendIcon, SparklesIcon, UploadIcon, UserIcon } from '@unlocalhosted/dither-icons';
+import { ArrowLeftIcon, ArrowRightIcon, BellIcon, BoltIcon, CheckIcon, FileIcon, FolderIcon, HeadphonesIcon, HeartIcon, HistoryIcon, LayersIcon, LockIcon, MailIcon, MessageIcon, PathIcon, PauseIcon, PlusIcon, SearchIcon, SendIcon, SparklesIcon, UploadIcon, UserIcon } from '@unlocalhosted/dither-icons';
 import receipt from '../receipt.png';
 import lowTide from '../media/low-tide.jpg';
 import paperCities from '../media/paper-cities.jpg';
@@ -904,5 +904,72 @@ CalendarWeek.measure = (root) => {
   };
 };
 
-export const EXAMPLES = { 7: PassengerStep, 8: RecentlyPlayed, 9: PullRequest, 10: CalendarWeek, 1: ClientProfile, 2: InvoiceWalkthrough, 3: Whiteboard, 4: DriveActivity, 5: ChatThread, 6: FitnessToday, 16: Timesheet };
+// #12 vertical rhythm: every stack keeps to the gaps the page keeps to. A team mail app's notification settings: rows
+// are 12px apart in every section but one, which was built on its own with gap-2, so its rows bunch 8px apart and the
+// page loses its beat. plumber brings it back to the page's 12px.
+const NOTIFY = [
+  { Icon: MailIcon, name: 'Email', gap: 'gap-3', rows: [['Daily digest', 'What you missed, at 8am', true], ['Replies to your threads', 'When someone answers you', true], ['Weekly summary', 'Mondays, your team at a glance', false]] },
+  { Icon: MessageIcon, name: 'Mentions', gap: 'gap-2', rows: [['@you', 'When someone mentions you by name', true], ['@channel', 'When a whole channel is called', false], ['Keywords', '“launch”, “review”, “urgent”', true]] },
+  { Icon: BellIcon, name: 'Push', gap: 'gap-3', rows: [['Direct messages', 'On your phone and desktop', true], ['Channel activity', 'Only channels you star', false], ['Reminders', 'The ones you set yourself', true]] },
+  { Icon: HistoryIcon, name: 'Calendar', gap: 'gap-3', rows: [['Invitations', 'New events and changes', true], ['Starting soon', '10 minutes before', true], ['Declines', 'When someone can’t make it', false]] },
+  { Icon: LockIcon, name: 'Security', gap: 'gap-3', rows: [['New sign-in', 'From a device we haven’t seen', true], ['Password changed', 'Always on', true], ['Apps connected', 'When an app gets access', true]] },
+];
+const Switch = ({ on }) => (
+  <button type="button" role="switch" aria-checked={on} className={'relative h-6 w-10 shrink-0 rounded-full transition-colors ' + (on ? 'bg-accent' : 'bg-line')}>
+    <span className={'absolute top-0.5 left-0.5 size-5 rounded-full bg-surface shadow-raised transition-transform ' + (on ? 'translate-x-4' : '')} />
+  </button>
+);
+function NotificationSettings() {
+  // Slate's primitives, with dithered icons
+  return (
+    <article className="w-full max-w-[28rem] rounded-card bg-surface shadow-card">
+      <header className="flex flex-col gap-0.5 border-b-hairline border-line px-6 pt-5 pb-4">
+        <span className="text-[17px] leading-6 font-medium tracking-[-0.01em]">Notifications</span>
+        <span className="text-[13px] text-ink-muted">Choose what reaches you, and where.</span>
+      </header>
+      <div className="flex flex-col gap-8 px-6 pt-5 pb-6">
+        {NOTIFY.map(({ Icon, name, gap, rows }) => (
+          <section key={name} className="flex flex-col gap-3">
+            <h3 className="flex items-center gap-2 text-xs font-medium text-ink-muted"><Icon size={14} texture="dither" />{name}</h3>
+            <ul data-rows={name} className={'flex flex-col ' + gap}>
+              {rows.map(([title, detail, on]) => (
+                <li key={title} className="flex items-center justify-between gap-4">
+                  <span className="flex min-w-0 flex-col"><span className="text-sm font-medium">{title}</span><span className="truncate text-[13px] text-ink-muted">{detail}</span></span>
+                  <Switch on={on} />
+                </li>
+              ))}
+            </ul>
+          </section>
+        ))}
+      </div>
+    </article>
+  );
+}
+NotificationSettings.stage = true;
+NotificationSettings.names = ['One-off gap', 'On the rhythm'];
+NotificationSettings.lesson = {
+  why: 'Every section keeps its rows 12px apart except Mentions, built on its own with 8px. The eye reads spacing as structure, so that section looks like a different kind of list and the page loses its beat.',
+  habit: 'Keep a page to a few gaps and reuse them: the same kind of stack gets the same gap everywhere.',
+};
+// What the eye sees: the gaps between rows in the Email section and in Mentions, hatched in the gutter. The pill is how
+// far Mentions' gap is off the page's.
+NotificationSettings.measure = (root) => {
+  const odd = root?.querySelector('[data-rows="Mentions"]'), even = root?.querySelector('[data-rows="Email"]');
+  if (!odd || !even) return null;
+  const k = odd.getBoundingClientRect().width / odd.offsetWidth || 1, bands = [];
+  const gaps = (list, key) => [...list.children].slice(0, -1).map((li, i) => {
+    const a = li.getBoundingClientRect(), b = li.nextElementSibling.getBoundingClientRect();
+    bands.push({ key: `${key}${i}`, left: a.left - 14 * k, right: a.left - 4 * k, top: a.bottom, bottom: b.top, pattern: 'hatch' });
+    return (b.top - a.bottom) / k;
+  });
+  const g = gaps(odd, 'm')[0], base = gaps(even, 'p')[0], off = g - base, r = odd.getBoundingClientRect(), top = even.getBoundingClientRect().top;
+  return {
+    lines: [], bands, off: Math.abs(off) > 2,
+    pills: [{ key: 'off', x: bands.find((b) => b.key === 'm0').left - 16 * k, y: (bands.find((b) => b.key === 'm0').top + bands.find((b) => b.key === 'm0').bottom) / 2, text: (Math.abs(off) * k).toFixed(1), ok: Math.abs(off) <= 2 }],
+    cut: { left: r.left, right: r.right, top: r.top, bottom: r.bottom },
+    subject: { left: r.left - 30 * k, right: r.left + r.width * 0.7, top: top - 20 * k, bottom: r.bottom + 10 * k },
+  };
+};
+
+export const EXAMPLES = { 7: PassengerStep, 8: RecentlyPlayed, 9: PullRequest, 10: CalendarWeek, 1: ClientProfile, 2: InvoiceWalkthrough, 3: Whiteboard, 4: DriveActivity, 5: ChatThread, 6: FitnessToday, 12: NotificationSettings, 16: Timesheet };
 

@@ -472,7 +472,15 @@ export const contentAlign = {
 const GREY = 0.7; // the grey band: measured, but too close to the line to stand behind alone (the headless judge decides)
 const CONTROL = 'button, [role="button"], a[href], input[type="button"], input[type="submit"], input[type="reset"], summary';
 const disabled = (el) => el.matches(':disabled, [aria-disabled="true"]') || !!el.closest('[disabled], [aria-disabled="true"]');
-const words = (el) => (el.textContent ?? '').replace(/\s+/g, ' ').trim();
+// the words a person reads in an element: its text, never what an svg, a style or a script carries (an animated icon
+// brings its own styles)
+const UNREAD = new Set(['svg', 'style', 'script', 'template']);
+function textNodes(el) {
+  const out = [], walk = document.createTreeWalker(el, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT, { acceptNode: (n) => (n.nodeType === 1 && UNREAD.has(n.localName) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT) });
+  for (let n = walk.nextNode(); n; n = walk.nextNode()) if (n.nodeType === 3) out.push(n);
+  return out;
+}
+const words = (el) => textNodes(el).map((n) => n.nodeValue).join('').replace(/\s+/g, ' ').trim();
 const alpha = (c) => c?.[3] ?? 0;
 // a over b, both [r, g, b, a]
 const over = (a, b) => [0, 1, 2].map((i) => a[i] * alpha(a) + b[i] * (1 - alpha(a))).concat(1);
@@ -1123,9 +1131,9 @@ export const textWrapRole = {
     const body = px(facts.style(document.body).fontSize) || 16, fs = px(s.fontSize);
     const heading = el.matches('h1, h2, h3, h4') || fs >= body * 1.5;
     // the lines as drawn: their widths, from the words' own boxes
-    const range = document.createRange(); range.selectNodeContents(el);
-    const rows = new Map();
-    for (const q of range.getClientRects()) { if (q.width < 1) continue; const k = Math.round(q.top); const row = rows.get(k) ?? { l: Infinity, r: -Infinity }; row.l = Math.min(row.l, q.left); row.r = Math.max(row.r, q.right); rows.set(k, row); }
+    const range = document.createRange(), rows = new Map(), boxes = [];
+    for (const t of textNodes(el)) { range.selectNodeContents(t); boxes.push(...range.getClientRects()); }
+    for (const q of boxes) { if (q.width < 1) continue; const k = Math.round(q.top); const row = rows.get(k) ?? { l: Infinity, r: -Infinity }; row.l = Math.min(row.l, q.left); row.r = Math.max(row.r, q.right); rows.set(k, row); }
     const widths = [...rows.entries()].sort((a, b) => a[0] - b[0]).map(([, w]) => w.r - w.l);
     const lines = widths.length;
     if (lines < 2) return [];
@@ -1574,6 +1582,10 @@ export const rhythm = {
     for (const k of c.clusters) { if (covered / c.sample >= T.majority) break; steps.push(k.value); covered += k.count; }
     // a minority: a tenth of the page or less, and a lone value always (on a small page one place is over a tenth)
     if (steps.some((v) => Math.abs(v - g) <= T.off) || c.share(g) > Math.max(0.1, 1.5 / c.sample)) return [];
+    // a stack of stacks spaces groups: its gap is meant to be wider than the gaps inside them (#7), so a wider gap there
+    // is the page's structure, not a stray value
+    const stacks = facts.kids(el).filter((k) => { const ks = facts.style(k); return /flex|grid/.test(ks.display) && facts.kids(k).length >= 2 && px(ks.rowGap === 'normal' ? 0 : ks.rowGap) > 0; });
+    if (stacks.length && g > Math.max(...steps)) return [];
     const near = steps.slice().sort((a, b) => Math.abs(a - g) - Math.abs(b - g))[0];
     const cls = utility(el, 'gap', { not: /^x(?:-|$)/ });
     const rec = recommend({ family: 'spacing', prefix: 'gap', job: 'stack', want: { min: near - 0.5, max: near + 0.5, target: near }, from: cls ?? '', token: false, sets: (v) => ({ rowGap: v, columnGap: v }), theme, advice: () => `Use ${fmt(near)}, the page’s rhythm.` });
