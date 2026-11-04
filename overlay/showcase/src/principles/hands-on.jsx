@@ -11,7 +11,7 @@
 // /hands-on/:n shows one alone with its switch (a viewer for building them; the stage wires them in).
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { FolderIcon, PlusIcon } from '@unlocalhosted/dither-icons';
+import { CheckIcon, FileIcon, FolderIcon, PlusIcon, SlidersIcon } from '@unlocalhosted/dither-icons';
 
 const TOKENS = '/__plumb/src/tokens.css';
 function MarksLayer({ children }) {
@@ -36,8 +36,8 @@ const Hatch = ({ x, y, w, h }) => (
 const Outline = ({ x, y, w, h, off, r = 4 }) => (
   <span style={{ position: 'absolute', left: x, top: y, width: w, height: h, borderRadius: r, boxShadow: `inset 0 0 0 1px ${hue(off)}`, opacity: 0.7 }} />
 );
-const Tag = ({ x, y, off, children }) => (
-  <span style={{ position: 'absolute', left: x, top: y, transform: 'translateY(-50%)', display: 'flex', alignItems: 'center', height: 20, padding: '0 var(--pl-space-3)',
+const Tag = ({ x, y, off, end, children }) => (
+  <span style={{ position: 'absolute', left: x, top: y, transform: end ? 'translate(-100%, -50%)' : 'translateY(-50%)', display: 'flex', alignItems: 'center', height: 20, padding: '0 var(--pl-space-3)',
     borderRadius: 'var(--pl-radius-tag)', font: '500 11px/1 var(--pl-mono)', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap',
     color: 'var(--pl-on-accent)', background: hue(off), boxShadow: '0 0 0 1px var(--pl-halo)', animation: 'none' }}>{children}</span>
 );
@@ -141,7 +141,194 @@ BoldHover.lesson = {
   habit: 'Show hover with colour, not weight. If a hover must be bold, reserve the bold width first (a hidden bold copy of the label).',
 };
 
-export const HANDS_ON = { 42: BoldHover };
+// The time ruler under an example (probe-marks.html's): 0 to `span` ms from the gesture's start, what has played, the
+// events on it. Drawn in the marks layer, under the component.
+function Ruler({ top, width, span, played, kind, events, label = 'live' }) {
+  const x = (ms) => (Math.min(span, Math.max(0, ms)) / span) * width;
+  const step = span <= 1200 ? 100 : 250, major = span <= 1200 ? 200 : 1000;
+  const ticks = [];
+  for (let ms = 0; ms <= span; ms += step) ticks.push(ms);
+  const col = (k) => (k === 'off' ? 'var(--pl-off)' : k === 'on' ? 'var(--pl-on)' : 'var(--pl-sky)');
+  return (
+    <div style={{ position: 'absolute', left: 0, top, width, height: 40 }}>
+      <span style={{ position: 'absolute', right: 0, top: -6, font: '600 10.5px/14px var(--pl-sans)', color: 'var(--pl-ink-2)' }}>{label}</span>
+      <span style={{ position: 'absolute', left: 0, right: 0, top: 16, borderTop: '1px solid var(--pl-ink-3)' }} />
+      {ticks.map((ms) => (
+        <span key={ms}>
+          <span style={{ position: 'absolute', left: x(ms), top: ms % major ? 14 : 12, width: 1, height: ms % major ? 4 : 8, background: 'var(--pl-ink-3)' }} />
+          {ms % major ? null : <span style={{ position: 'absolute', left: Math.min(width - 14, Math.max(8, x(ms))), top: 22, transform: 'translateX(-50%)', font: '400 10.5px/14px var(--pl-mono)', color: 'var(--pl-ink-2)' }}>{ms >= 1000 ? `${ms / 1000}s` : ms}</span>}
+        </span>
+      ))}
+      {played > 0 ? <span style={{ position: 'absolute', left: 0, top: 15, height: 3, width: x(played), borderRadius: 2, background: col(kind) }} /> : null}
+      {events.map(([ms, k], i) => (
+        <span key={i} style={{ position: 'absolute', left: x(ms), top: k ? 11 : 13, width: k ? 11 : 7, height: k ? 11 : 7, marginLeft: k ? -5.5 : -3.5, borderRadius: '50%',
+          background: k ? col(k) : '#fff', boxShadow: k ? '0 0 0 2px #fff' : '0 0 0 1.5px var(--pl-sky)' }} />
+      ))}
+      <span style={{ position: 'absolute', left: x(played), top: 4, width: 2, height: 24, marginLeft: -1, borderRadius: 1, background: 'var(--pl-sky)', boxShadow: '0 0 0 1px #fff' }} />
+    </div>
+  );
+}
+// hollow, so the word you pressed still reads through it
+const Contact = ({ x, y }) => <span style={{ position: 'absolute', left: x - 5, top: y - 5, width: 10, height: 10, borderRadius: '50%', boxShadow: '0 0 0 1.5px var(--pl-sky), 0 0 0 3px var(--pl-halo)' }} />;
+const Ghost = ({ x, y, w, h, r = 10 }) => <span style={{ position: 'absolute', left: x, top: y, width: w, height: h, borderRadius: r, border: '1px dashed var(--pl-off)', opacity: 0.6 }} />;
+
+// a clock that ticks while `on`, for marks that grow while you hold
+function useTicking(on) {
+  const [, tick] = useState(0);
+  useEffect(() => {
+    if (!on) return;
+    let id = requestAnimationFrame(function f() { tick((n) => n + 1); id = requestAnimationFrame(f); });
+    return () => cancelAnimationFrame(id);
+  }, [on]);
+}
+
+// ── #61 Menus open on pointerdown, with press-drag-release ─────────────────
+// A shared folder's View menu. Broken: the menu a hand-rolled one is, opened by onClick, so it opens when the button
+// comes back up. Fixed: opened on pointerdown, as Radix's DropdownMenu and Base UI's Menu do; held, the item under
+// the pointer is chosen when you let go, so press, drag, release picks in one motion.
+// plumber's probe (src/craft-probe.ts menuDown) presses and holds and reads whether the press alone opened it. The
+// marks are that: where you pressed, and the ruler from the press to the moment it opened. The drag-release half
+// isn't probed yet, so it gets no mark: the product shows it (the list re-sorts), the status says it in words.
+const FILES = [
+  ['Brand guidelines.pdf', '2 Mar', 4.8], ['Logo, final.svg', '28 Feb', 0.2], ['Launch film, cut 3.mov', '4 Mar', 812],
+  ['Press release.doc', '1 Mar', 0.3], ['Photography', '26 Feb', 240],
+];
+const SORTS = [['name', 'Name'], ['date', 'Date modified'], ['size', 'Size']];
+const dated = (d) => new Date(`${d} 2026`).getTime();
+const sortBy = { name: (a, b) => a[0].localeCompare(b[0]), date: (a, b) => dated(b[1]) - dated(a[1]), size: (a, b) => b[2] - a[2] };
+const sized = (mb) => (mb >= 1 ? `${mb >= 100 ? Math.round(mb) : mb} MB` : `${Math.round(mb * 1000)} KB`);
+function MenuPress({ side = 'broken', onStatus }) {
+  const root = useRef(null), sheet = useRef(null), trigger = useRef(null), menu = useRef(null);
+  const [open, setOpen] = useState(false);
+  const [sort, setSort] = useState('name');
+  const [over, setOver] = useState(null);
+  const [g, setG] = useState(null); // the press: { at, t0, held, opened, up, picked, missed }
+  const [footprint, setFootprint] = useState(null); // where the menu sits when open, for the ghost
+  const fixed = side === 'fixed';
+  useTicking(!!g?.held);
+  const now = () => performance.now();
+  const at = () => (root.current ? local(root.current) : null);
+  // where the menu sits (it keeps its box while closed, only invisible), for the ghost of a release that missed it
+  useLayoutEffect(() => { if (menu.current && root.current) setFootprint(at()(menu.current)); }, []);
+
+  const pick = (key) => { setSort(key); setOpen(false); setOver(null); };
+  const opened = () => setG((p) => (p && p.opened === null ? { ...p, opened: now() - p.t0 } : p));
+  useEffect(() => {
+    const down = (e) => { if (open && !root.current?.querySelector('[data-menu-area]')?.contains(e.target)) { setOpen(false); setOver(null); } };
+    const key = (e) => { if (e.key === 'Escape') { setOpen(false); setOver(null); } };
+    window.addEventListener('pointerdown', down); window.addEventListener('keydown', key);
+    return () => { window.removeEventListener('pointerdown', down); window.removeEventListener('keydown', key); };
+  }, [open]);
+
+  const onDown = (e) => {
+    if (e.button !== 0) return;
+    if (fixed) e.preventDefault(); // the press is the menu's: no focus ring, and the click after it is ignored
+    // a press that closes it is no try: the broken menu closes on its click, the fixed one on this press
+    if (open) { setG(null); if (fixed) { setOpen(false); setOver(null); } return; }
+    const o = root.current.getBoundingClientRect(), k = o.width / root.current.offsetWidth || 1;
+    setG({ at: { x: (e.clientX - o.left) / k, y: (e.clientY - o.top) / k }, t0: now(), held: true, opened: fixed ? 0 : null, up: null, picked: null, missed: null });
+    if (fixed) setOpen(true);
+  };
+  // the release: where the hand let go, wherever that is
+  useEffect(() => {
+    if (!g?.held) return;
+    const up = (e) => {
+      const t = now() - g.t0;
+      const item = document.elementFromPoint(e.clientX, e.clientY)?.closest?.('[data-sort]');
+      const onTrigger = trigger.current?.contains(document.elementFromPoint(e.clientX, e.clientY));
+      if (fixed && item && open) { pick(item.dataset.sort); setG((p) => ({ ...p, held: false, up: t, picked: item.dataset.sort })); return; }
+      // broken: a release away from the button is no click, so nothing opens; over where an item would be is a miss
+      const missed = !fixed && !onTrigger ? (footprint && (() => { const o = root.current.getBoundingClientRect(), k = o.width / root.current.offsetWidth || 1, p = { x: (e.clientX - o.left) / k, y: (e.clientY - o.top) / k }; return p.x >= footprint.x && p.x <= footprint.x + footprint.w && p.y >= footprint.y && p.y <= footprint.y + footprint.h; })()) : false;
+      setG((p) => ({ ...p, held: false, up: t, missed }));
+    };
+    window.addEventListener('pointerup', up);
+    return () => window.removeEventListener('pointerup', up);
+  }, [g?.held, open, fixed, footprint]);
+  const onClick = (e) => {
+    if (fixed && e.detail) return; // a pointer opened it already, on the press
+    if (e.detail === 0) setG(null); // a keyboard click: no press to time
+    else if (!open) opened();
+    setOpen(!open); setOver(null);
+  };
+
+  useEffect(() => {
+    const say = !g ? 'Press View and hold it. Then try it in one motion: press, drag down to Date modified, let go.'
+      : g.held ? (g.opened === null ? 'Holding… the menu hasn’t opened.' : 'Open on the press. Still holding: drag to an item and let go.')
+      : g.picked ? `Sorted by ${SORTS.find(([k]) => k === g.picked)[1].toLowerCase()}, in one press: down, drag, up.`
+      : g.missed ? 'You let go where the menu would be, but it opens on the click, and a release away from the button is no click. Nothing was picked.'
+      : g.opened !== null && !fixed ? `It opened only when you let go, ${Math.round(g.opened)}ms after the press.`
+      : g.opened === 0 ? 'It opened on the press and stays open; pick an item.'
+      : 'Nothing opened.';
+    onStatus?.(say);
+  }, [g, onStatus, fixed]);
+
+  const files = [...FILES].sort(sortBy[sort]);
+  const card = sheet.current ? { w: sheet.current.offsetWidth, h: sheet.current.offsetHeight } : null;
+  const t = g ? (g.held ? now() - g.t0 : g.opened ?? g.up ?? 0) : 0;
+  const late = g && g.opened !== null && g.opened > 0;
+  const kind = !g ? '' : g.opened === 0 ? 'on' : late || (g.up !== null && g.opened === null) ? 'off' : '';
+  return (
+    // the component, and room under it for plumber's ruler
+    <div ref={root} className="relative w-[30rem] max-w-full pb-14">
+    <article ref={sheet} className="rounded-card bg-surface shadow-card">
+      <header className="flex items-center gap-2 px-5 pt-4 pb-3">
+        <FolderIcon size={16} texture="dither" className="text-ink-muted" />
+        <span className="text-[17px] leading-6 font-medium tracking-[-0.01em]">Brand</span>
+        <span className="text-[13px] text-ink-subtle">· Shared drive</span>
+        <div data-menu-area className="relative ml-auto">
+          <button ref={trigger} type="button" aria-haspopup="menu" aria-expanded={open} onPointerDown={onDown} onClick={onClick}
+            className={'inline-flex h-7 items-center gap-1.5 rounded-control pr-2.5 pl-2 text-[13px] font-medium ring-1 ring-line ring-inset select-none ' + (open ? 'bg-sunken text-ink' : 'text-ink-muted hover:bg-sunken hover:text-ink')}>
+            <SlidersIcon size={14} texture="solid" />View
+          </button>
+          <div ref={menu} role="menu" aria-label="View" aria-hidden={!open} inert={!open} className={'absolute top-9 right-0 z-10 w-52 rounded-card bg-surface p-1 shadow-popover ring-1 ring-line ' + (open ? '' : 'invisible')}>
+            <p className="px-2 pt-1.5 pb-1 text-[11px] font-medium tracking-[0.04em] text-ink-subtle uppercase">Sort by</p>
+            {SORTS.map(([key, label]) => (
+              <button key={key} type="button" role="menuitemradio" aria-checked={sort === key} data-sort={key}
+                onPointerEnter={() => setOver(key)} onPointerLeave={() => setOver((o) => (o === key ? null : o))} onClick={() => pick(key)}
+                className={'flex h-8 w-full items-center gap-2 rounded-control px-2 text-left text-[13px] ' + (over === key ? 'bg-sunken' : '')}>
+                <span className="grid size-4 place-items-center text-accent">{sort === key ? <CheckIcon size={14} texture="solid" /> : null}</span>{label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </header>
+      <div className="grid grid-cols-[1fr_5rem_4.5rem] gap-3 border-b-hairline border-line px-5 pb-2 text-[11px] font-medium tracking-[0.04em] text-ink-subtle uppercase">
+        <span>Name</span><span>Modified</span><span className="text-right">Size</span>
+      </div>
+      <ul className="px-3 py-1.5">
+        {files.map(([name, date, mb]) => (
+          <li key={name} className="grid h-9 grid-cols-[1fr_5rem_4.5rem] items-center gap-3 px-2 text-[13px]">
+            <span className="flex min-w-0 items-center gap-2.5">{mb >= 100 && !name.includes('.') ? <FolderIcon size={14} texture="solid" className="shrink-0 text-ink-subtle" /> : <FileIcon size={14} texture="solid" className="shrink-0 text-ink-subtle" />}<span className="truncate">{name}</span></span>
+            <span className="text-ink-muted">{date}</span>
+            <span className="text-right text-ink-muted tabular-nums">{sized(mb)}</span>
+          </li>
+        ))}
+      </ul>
+    </article>
+      <MarksLayer>
+        {g ? <Contact {...g.at} /> : null}
+        {g?.missed && footprint ? <Ghost {...footprint} /> : null}
+        {g && card ? (() => {
+          const tr = at()?.(trigger.current);
+          return late || kind === 'on' || (g.up !== null && g.opened === null) ? (
+            <Tag end x={(tr?.x ?? 0) - 8} y={(tr?.y ?? 0) + (tr?.h ?? 0) / 2} off={kind !== 'on'}>
+              {kind === 'on' ? '0ms · on the press' : g.opened === null ? 'never opened while held' : `${Math.round(g.opened)}ms · on release`}
+            </Tag>
+          ) : null;
+        })() : null}
+        {card ? <Ruler top={card.h + 14} width={card.w} span={1000} played={t} kind={kind}
+          events={g ? [[0, ''], ...(g.opened !== null ? [[g.opened, g.opened === 0 ? 'on' : 'off']] : []), ...(g.up !== null && g.up !== g.opened ? [[g.up, '']] : [])] : []} /> : null}
+      </MarksLayer>
+    </div>
+  );
+}
+MenuPress.names = ['Opens on click', 'Opens on press'];
+MenuPress.lesson = {
+  why: 'A menu that opens on click waits for the button to come back up, so a press only opens it on release. And it can’t do what desktop menus do: press, drag to an item, let go. A release away from the button is no click at all.',
+  habit: 'Open menus on pointerdown, and pick the item under the pointer on pointerup. Radix’s DropdownMenu and Base UI’s Menu do both; a hand-rolled onClick menu does neither.',
+};
+
+export const HANDS_ON = { 42: BoldHover, 61: MenuPress };
 
 // ── /hands-on/:n, a viewer for building them ───────────────────────────────
 export function HandsOnPage({ n }) {
