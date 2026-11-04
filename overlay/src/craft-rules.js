@@ -1330,21 +1330,31 @@ export const baselineAlign = {
   },
 };
 
-// #4. An icon beside words is centred on the capitals' middle, not the line box.
+// #4. An icon beside words is centred on the capitals' middle (the first line's, in a row built to wrap), not the line box.
 export const iconCap = {
   id: 'craft/icon-cap', family: 'craft', number: [4], owns: ['transform'], once: 'ancestor', reads: ['style', 'kids', 'rect', 'metrics'],
   // judged from the row that holds the icon (the reader doesn't read inside svg), and drawn on that row
   check({ el, facts }, theme) {
     const T = theme.spec(this.id);
     const ps = facts.style(el);
-    if (!/flex/.test(ps.display) || /column/.test(ps.flexDirection) || !/center/.test(ps.alignItems)) return [];
+    if (!/flex/.test(ps.display) || /column/.test(ps.flexDirection)) return [];
+    // centred on the row (one line of words), or on top of it, the way a list row with a title and a time under it is
+    // built so its words can wrap: then the icon belongs on the first line's capitals
+    const centred = /center/.test(ps.alignItems), top = /^(?:normal|stretch|start|flex-start)$/.test(ps.alignItems);
+    if (!centred && !top) return [];
     const icon = [...el.children].find((k) => k.localName === 'svg');
     if (!icon) return [];
     const parent = el;
     const r = facts.rect(icon);
     if (r.height > T.icon || r.height < 4) return [];
-    const host = facts.text(parent) ? parent : facts.kids(parent).find((k) => k !== icon && facts.text(k));
-    if (!host || lineCount(host, facts) > 1) return [];
+    // the element whose own words make the first line (a title inside a column of title and time). An svg is never the
+    // words: icons can carry text of their own (an animated icon's styles), so the search never enters one
+    const own = (n) => [...n.childNodes].some((c) => c.nodeType === 3 && c.nodeValue.trim());
+    const first = (n) => (n.localName === 'svg' ? null : own(n) ? n : [...n.children].reduce((hit, k) => hit ?? first(k), null));
+    const host = centred
+      ? (facts.text(parent) ? parent : facts.kids(parent).find((k) => k !== icon && facts.text(k)))
+      : (own(parent) ? parent : facts.kids(parent).reduce((hit, k) => hit ?? (k === icon ? null : first(k)), null));
+    if (!host || (centred && lineCount(host, facts) > 1)) return [];
     const m = facts.metrics(host);
     if (!m?.baseline) return [];
     const off = (r.top + r.height / 2) - (m.baseline - m.capHeight / 2);

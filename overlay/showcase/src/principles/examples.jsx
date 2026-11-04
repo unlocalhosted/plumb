@@ -3,9 +3,7 @@
 // plumber, scoped to it, finds one thing. `measure` (optional) says where the eye sees the harm, for the ticks drawn
 // over the example; it reads the page, it never decides what is wrong (plumber does).
 import { useEffect, useState } from 'react';
-import { Bell, Play } from '../icons.jsx';
-import { HistoryIcon, LayersIcon, MessageIcon, SparklesIcon } from '@unlocalhosted/dither-icons';
-import site from '../site.png';
+import { FolderIcon, HistoryIcon, LayersIcon, MessageIcon, SparklesIcon, UploadIcon, UserIcon } from '@unlocalhosted/dither-icons';
 import receipt from '../receipt.png';
 
 // where a line of text sits, from its font: the baseline and the middle of its capitals, in page pixels
@@ -165,68 +163,6 @@ Timesheet.measure = (root) => {
   return { lines, bands, pills, off, subject: { left: s.left, right: s.right, top: top - 12, bottom } };
 };
 
-// #4 an icon beside words sits on the capitals' middle (broken: pushed down with mt-1, a nudge made for a font the app
-// no longer uses). The notifications popover, opened from the bell over the dashboard.
-const NOTES = [
-  { who: 'HC', tint: 'bg-accent-soft text-accent', title: 'Halden & Co. paid INV-2041', detail: '$4,820.00 · arrived in Studio checking', when: '2m', icon: 'paid', unread: true },
-  { who: 'ND', tint: 'bg-positive-soft text-positive', title: 'Northfield Dental opened INV-2040', detail: 'Viewed twice · Lisbon, Portugal', when: '1h', icon: 'seen', unread: true },
-  { who: 'OL', tint: 'bg-caution-soft text-ink', title: 'Reminder sent for INV-2039', detail: 'Okafor Landscape · 12 days overdue', when: '3h', icon: 'sent' },
-  { who: 'TR', tint: 'bg-sunken text-ink-muted', title: 'Tomás commented on INV-2037', detail: '“Can we split this into two payments?”', when: 'Yesterday', icon: 'note' },
-];
-const NoteIcon = ({ kind, className }) => (
-  <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className={'shrink-0 ' + className}>
-    {kind === 'paid' ? <><circle cx="8" cy="8" r="6" /><path d="m5.5 8.2 1.7 1.7 3.3-3.6" /></>
-      : kind === 'seen' ? <><path d="M1.5 8s2.4-4.5 6.5-4.5S14.5 8 14.5 8s-2.4 4.5-6.5 4.5S1.5 8 1.5 8Z" /><circle cx="8" cy="8" r="1.8" /></>
-      : kind === 'sent' ? <path d="M14 2 7 9M14 2l-4.5 12-2.5-5-5-2.5Z" />
-      : <path d="M3 3.5h10v7H7.5L4.5 13v-2.5H3z" />}
-  </svg>
-);
-function Notice({ broken }) {
-  return (
-    <AppFrame crumb="Dashboard" bell={<button type="button" aria-label="Notifications, 2 unread" className="relative grid size-8 place-items-center rounded-full bg-sunken text-ink active:bg-line"><Bell /><span className="absolute top-1 right-1 size-2 rounded-full bg-negative ring-2 ring-surface" /></button>}>
-      {/* the dashboard behind, quiet */}
-      <div className="flex flex-col gap-4 px-5 pt-4 pb-6 opacity-50" aria-hidden="true">
-        <span className="text-base font-semibold">Good morning, Ada</span>
-        <div className="grid grid-cols-3 gap-3">{['Outstanding', 'Paid', 'Overdue'].map((t) => <div key={t} className="flex flex-col gap-1 rounded-control bg-sunken px-3 pt-2 pb-3"><span className="text-xs text-ink-muted">{t}</span><span className="h-4 w-16 rounded-chip bg-line" /></div>)}</div>
-        <div className="h-24 rounded-control bg-sunken" />
-      </div>
-      {/* the popover, opened from the bell */}
-      <div className="absolute top-2 right-3 left-3 flex flex-col overflow-hidden rounded-card border border-line bg-surface shadow-popover sm:left-auto sm:w-96">
-        <div className="flex items-center justify-between gap-3 px-4 pt-3 pb-2">
-          <span className="text-sm font-semibold">Notifications</span>
-          <span className="text-xs font-medium text-accent">Mark all read</span>
-        </div>
-        <div className="flex gap-1 px-3 pb-2 text-xs">
-          {['All', 'Payments', 'Mentions'].map((t, i) => <span key={t} className={'rounded-full px-2.5 py-1 ' + (i === 0 ? 'bg-sunken font-medium text-ink' : 'text-ink-muted')}>{t}{i === 0 ? <span className="ml-1 text-ink-muted tabular-nums">4</span> : null}</span>)}
-        </div>
-        <ul className="flex flex-col border-t-hairline border-line">
-          {NOTES.map((n) => (
-            <li key={n.title} className="flex gap-3 border-b-hairline border-line px-4 py-3 last:border-0">
-              <span className={'grid size-8 shrink-0 place-items-center rounded-full text-[11px] font-semibold ' + n.tint}>{n.who}</span>
-              <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-                <span data-notice className="flex items-center gap-1.5 text-sm font-medium">
-                  <NoteIcon kind={n.icon} className={'text-ink-muted ' + (broken ? 'mt-1' : '')} />
-                  <span className="min-w-0 flex-1 truncate" title={n.title}>{n.title}</span>
-                  <span className="text-xs font-normal text-ink-muted tabular-nums">{n.when}</span>
-                </span>
-                <span className="truncate text-sm text-ink-muted" title={n.detail}>{n.detail}</span>
-              </span>
-              {n.unread ? <span aria-label="Unread" className="mt-2 size-2 shrink-0 rounded-full bg-accent" /> : <span className="w-2 shrink-0" />}
-            </li>
-          ))}
-        </ul>
-        <span className="border-t-hairline border-line px-4 py-2.5 text-center text-xs font-medium text-ink-muted">View all notifications</span>
-      </div>
-      <div className="h-[22rem]" aria-hidden="true" />
-    </AppFrame>
-  );
-}
-Notice.framed = true;
-Notice.measure = (root) => {
-  const row = root.querySelector('[data-notice]'), g = row.querySelector('svg').getBoundingClientRect(), t = lineOf(row.querySelectorAll('span')[0]);
-  const icon = g.top + g.height / 2, d = icon - t.capMiddle;
-  return { around: row, focus: { x: g.right + 3, y: (icon + t.capMiddle) / 2 }, ticks: [{ y: icon, left: g.left - 3, right: g.right + 2 }, { y: t.capMiddle, left: t.left - 2, right: t.left + 40 }], broken: `icon ${px(d)} low`, fixed: 'on the capitals ✓', off: Math.abs(d) > 0.6 };
-};
 // #5 padding meant to be even all round (p-3) is measured from the letters, not from the line's leading: one line of
 // text-sm/6 carries 5px of invisible leading above and below, so the top reads 17px against 12px at the sides
 const LINES = [['Brand workshop, two days', '2', '1,200.00', '2,400.00'], ['Website design, six pages', '1', '1,800.00', '1,800.00'], ['Hosting setup', '1', '420.00', '420.00']];
@@ -335,7 +271,6 @@ Price.measure = (root) => {
   return { around: row, ticks: [{ y: a.baseline, left: a.left, right: a.right }, { y: b.baseline, left: b.left, right: b.right }], broken: `baselines ${px(d)} apart`, fixed: 'one baseline ✓', off: Math.abs(d) > 0.6 };
 };
 
-Notice.lesson = { why: 'items-center centres the line box, and the line box keeps room for descenders below the baseline. The capitals sit above its middle, so a centred icon reads low.', habit: "Line icons up with the capitals' middle, not the line box: nudge up by the gap, or make the line box as tall as the capitals." };
 Chips.lesson = { why: 'text-sm/6 puts a 24px line around 14px letters: 5px of invisible leading sits above and below them and adds itself to the padding, so even padding looks taller than it is wide.', habit: 'Measure padding from the letters: trim the text box to the capitals and baseline (text-box: trim-both cap alphabetic).' };
 Price.lesson = { why: 'items-center lines up the middles of the two boxes. Boxes of different sizes keep their baselines at different heights, so the unit floats beside the price.', habit: 'Text of different sizes side by side sits on one baseline: items-baseline.' };
 
@@ -757,5 +692,75 @@ Whiteboard.measure = (root) => {
   };
 };
 
-export const EXAMPLES = { 7: Grouping, 8: Templates, 9: Toolbar, 10: NewClient, 1: ClientProfile, 2: InvoiceWalkthrough, 3: Whiteboard, 4: Notice, 5: Chips, 6: Price, 16: Timesheet };
+// #4 an icon beside words centres on the capitals, not the line box. A team drive's Activity panel: each row is an
+// icon beside a title that may wrap, with when under it, so the row is built to the top (items-start), and every icon
+// sits at the top of the line box, about 2.5px above the middle of its title's capitals. plumber nudges them down.
+const ACTIVITY = [
+  { Icon: UploadIcon, who: 'Mira', did: 'uploaded', what: 'Brand guidelines v3.pdf', where: 'Design', when: '4 min ago' },
+  { Icon: MessageIcon, who: 'Theo', did: 'commented on', what: 'Launch timeline', where: 'Planning', when: '22 min ago' },
+  { Icon: FolderIcon, who: 'Sana', did: 'moved 12 files to', what: 'Archive / 2025', where: 'Shared drive', when: '1 hr ago' },
+  { Icon: UserIcon, who: 'Jonas', did: 'joined', what: 'Spring launch', where: 'Invited by Mira', when: '3 hr ago' },
+];
+function DriveActivity() {
+  // Slate's primitives, with dithered icons
+  return (
+    <article className="w-full max-w-[28rem] rounded-card bg-surface shadow-card">
+      <header className="flex items-baseline justify-between px-5 pt-3.5 pb-3">
+        <span className="text-[17px] leading-6 font-medium tracking-[-0.01em]">Activity</span>
+        <span className="text-[13px] text-ink-muted">Today</span>
+      </header>
+      <ul data-activity className="px-5">
+        {ACTIVITY.map(({ Icon, who, did, what, where, when }) => (
+          <li key={what} className="flex items-start gap-3 border-t-hairline border-line py-3.5">
+            <Icon size={16} texture="dither" className="shrink-0 text-ink-muted" />
+            <span className="flex min-w-0 flex-col gap-0.5">
+              <span className="text-sm text-pretty text-ink-muted"><span className="font-medium text-ink">{who}</span> {did} <span className="font-medium text-ink">{what}</span></span>
+              <span className="text-[13px] text-ink-subtle">{where} · {when}</span>
+            </span>
+          </li>
+        ))}
+      </ul>
+      <footer className="border-t-hairline border-line px-5 pt-2 pb-3">
+        <a href="#activity" className="text-[13px] font-medium text-accent hover:text-accent-deep">View all activity</a>
+      </footer>
+    </article>
+  );
+}
+DriveActivity.stage = true;
+DriveActivity.names = ['Line box', 'Cap height'];
+DriveActivity.lesson = {
+  why: 'A row built to the top puts the icon at the top of the first line’s box, but a line box holds room above the capitals and below the baseline. The eye reads the capitals, so the icon sits high beside every title.',
+  habit: 'Centre an icon on the middle of the capitals beside it, not on the line box: in a row built to wrap, on the first line’s.',
+};
+// What the eye sees: in each row, the middle of the title's capitals and the middle of the icon, carried across as
+// guides; the hatch is the gap between them. The pill is the first row's gap, in px.
+DriveActivity.measure = (root) => {
+  const list = root?.querySelector('[data-activity]');
+  if (!list) return null;
+  const k = list.getBoundingClientRect().width / list.offsetWidth || 1;
+  const rules = [], bands = [];
+  let first = null;
+  [...list.children].forEach((li, i) => {
+    const icon = li.querySelector('svg').getBoundingClientRect(), words = li.querySelector('span span'), r = document.createRange();
+    r.selectNodeContents(words);
+    const q = r.getClientRects()[0], s = getComputedStyle(words);
+    ctx ??= document.createElement('canvas').getContext('2d');
+    ctx.font = `${s.fontWeight} ${s.fontSize} ${s.fontFamily}`;
+    const m = ctx.measureText('H'), asc = m.fontBoundingBoxAscent, desc = m.fontBoundingBoxDescent, cap = m.actualBoundingBoxAscent;
+    const capMid = q.top + ((q.height / k - (asc + desc)) / 2 + asc - cap / 2) * k, iconMid = icon.top + icon.height / 2;
+    // the guides stay in the gutter and the gap: never across the words
+    rules.push({ key: `cap${i}`, y: capMid, left: icon.left - 8 * k, right: q.left - 3 * k }, { key: `icon${i}`, y: iconMid, left: icon.left - 8 * k, right: icon.right + 3 * k });
+    bands.push({ key: `gap${i}`, left: icon.left, right: icon.right, top: Math.min(capMid, iconMid), bottom: Math.max(capMid, iconMid), pattern: 'hatch' });
+    first ??= { off: (iconMid - capMid) / k, x: icon.left + icon.width / 2, y: icon.top };
+  });
+  const lr = list.getBoundingClientRect();
+  return {
+    lines: [], rules, bands, off: Math.abs(first.off) > 1,
+    pills: [{ key: 'off', x: first.x, y: first.y - 16 * k, text: (Math.abs(first.off) * k).toFixed(1), ok: Math.abs(first.off) <= 1 }],
+    cut: { left: lr.left, right: lr.right, top: lr.top, bottom: lr.bottom },
+    subject: { left: lr.left - 8 * k, right: lr.left + lr.width * 0.62, top: lr.top - 30 * k, bottom: lr.bottom },
+  };
+};
+
+export const EXAMPLES = { 7: Grouping, 8: Templates, 9: Toolbar, 10: NewClient, 1: ClientProfile, 2: InvoiceWalkthrough, 3: Whiteboard, 4: DriveActivity, 5: Chips, 6: Price, 16: Timesheet };
 
