@@ -103,7 +103,12 @@ Amounts.measure = (root) => {
 const HISTORY = [['Nov 1, 2026', '96.00'], ['Oct 1, 2026', '96.00'], ['Sep 1, 2026', '72.00']];
 function Billing({ broken }) {
   return (
-    <div data-sections className="flex w-full max-w-md flex-col gap-6">
+    <AppFrame crumb="Settings">
+      <div className="flex gap-6 px-5 pt-4 pb-6">
+        <nav aria-label="Settings" className="hidden w-32 shrink-0 flex-col gap-0.5 text-sm sm:flex">
+          {['General', 'Members', 'Billing', 'Integrations', 'Notifications'].map((t) => <span key={t} className={'-mx-2 rounded-control px-2 py-1.5 ' + (t === 'Billing' ? 'bg-sunken font-medium text-ink' : 'text-ink-muted')}>{t}</span>)}
+        </nav>
+    <div data-sections className="flex min-w-0 flex-1 flex-col gap-6">
       <section className="flex items-start justify-between gap-4">
         <div className="flex flex-col gap-1">
           <h3 className="text-base font-semibold">Billing</h3>
@@ -141,8 +146,11 @@ function Billing({ broken }) {
         </ul>
       </section>
     </div>
+      </div>
+    </AppFrame>
   );
 }
+Billing.framed = true;
 // where each section's words begin
 Billing.measure = (root) => {
   const ticks = [...root.querySelectorAll('[data-sections] > section')].map((sec) => {
@@ -165,31 +173,50 @@ Billing.measure = (root) => {
 const CHAPTERS = [['Create a client', '1:08', 'done'], ['Send your first invoice', '2:14', 'now'], ['Get paid by card', '3:02', 'next']];
 function Lesson({ broken }) {
   return (
-    <div className="flex w-full max-w-md flex-col gap-4">
-      <span className="text-xs font-medium text-ink-muted">Quarry Academy · Getting paid</span>
-      <div className="relative overflow-hidden rounded-control">
-        <img src={site} alt="" width="480" height="270" className="aspect-video w-full object-cover" />
-        <div className="absolute inset-0 grid place-items-center">
-          <button type="button" aria-label="Play: Send your first invoice" data-play className="grid size-14 place-items-center rounded-full bg-surface text-ink shadow-overlay active:bg-sunken"><Play size={24} /></button>
+    <AppFrame crumb="Academy">
+      <div className="@container px-5 pt-4 pb-6">
+        <div className="flex flex-col gap-5 @xl:flex-row">
+          <div className="flex min-w-0 flex-1 flex-col gap-4">
+            <span className="text-xs font-medium text-ink-muted">Getting paid · Lesson 2 of 6</span>
+            <div className="relative overflow-hidden rounded-control">
+              <img src={site} alt="" width="480" height="270" className="aspect-video w-full object-cover" />
+              <div className="absolute inset-0 grid place-items-center">
+                <button type="button" aria-label="Play: Send your first invoice" data-play className="grid size-14 place-items-center rounded-full bg-surface text-ink shadow-overlay active:bg-sunken"><Play size={24} /></button>
+              </div>
+              <span className="absolute right-2 bottom-2 rounded-chip bg-ink px-1.5 py-0.5 text-xs font-medium text-accent-ink tabular-nums">2:14</span>
+            </div>
+            <div className="flex flex-col gap-1">
+              <h3 className="text-base font-semibold">Send your first invoice</h3>
+              <span className="text-sm text-ink-muted">From a draft to a paid invoice in under a minute.</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="grid size-8 shrink-0 place-items-center rounded-full bg-violet text-[11px] font-semibold text-accent-ink">AM</span>
+              <span className="flex flex-col"><span className="text-sm font-medium">Ada Morales</span><span className="text-xs text-ink-muted">Product, Quarry</span></span>
+            </div>
+          </div>
+          <aside className="flex flex-col gap-3 @xl:w-56 @xl:shrink-0">
+            <div className="flex flex-col gap-1.5">
+              <div className="flex justify-between text-xs text-ink-muted"><span>Course progress</span><span className="tabular-nums">1 of 6</span></div>
+              <div className="h-1.5 overflow-hidden rounded-full bg-sunken"><div className="h-full w-1/6 rounded-full bg-accent" /></div>
+            </div>
+            <ol className="flex flex-col border-t-hairline border-line">
+              {CHAPTERS.map(([title, time, at], i) => (
+                <li key={title} className="flex items-center gap-3 border-b-hairline border-line py-2 text-sm">
+                  <span className={'grid size-5 shrink-0 place-items-center rounded-full text-[11px] font-semibold ' + (at === 'done' ? 'bg-positive-soft text-positive' : at === 'now' ? 'bg-accent text-accent-ink' : 'bg-sunken text-ink-muted')}>{at === 'done' ? '✓' : i + 1}</span>
+                  <span className={'min-w-0 flex-1 truncate ' + (at === 'now' ? 'font-medium' : at === 'done' ? 'text-ink-muted' : '')} title={title}>{title}</span>
+                  <span className="text-xs text-ink-muted tabular-nums">{time}</span>
+                </li>
+              ))}
+            </ol>
+            <span className="text-xs font-medium text-ink-muted">Resources</span>
+            <span className="text-sm text-accent">Invoice template (.pdf)</span>
+          </aside>
         </div>
-        <span className="absolute right-2 bottom-2 rounded-chip bg-ink px-1.5 py-0.5 text-xs font-medium text-accent-ink tabular-nums">2:14</span>
       </div>
-      <div className="flex flex-col gap-1">
-        <h3 className="text-base font-semibold">Send your first invoice</h3>
-        <span className="text-sm text-ink-muted">Lesson 2 of 6 · with Ada Morales</span>
-      </div>
-      <ol className="flex flex-col border-t-hairline border-line">
-        {CHAPTERS.map(([title, time, at]) => (
-          <li key={title} className="flex items-center gap-3 border-b-hairline border-line py-2 text-sm">
-            <span className={'grid size-5 shrink-0 place-items-center rounded-full text-[11px] font-semibold ' + (at === 'done' ? 'bg-positive-soft text-positive' : at === 'now' ? 'bg-accent text-accent-ink' : 'bg-sunken text-ink-muted')}>{at === 'done' ? '✓' : CHAPTERS.findIndex((c) => c[0] === title) + 1}</span>
-            <span className={'flex-1 ' + (at === 'now' ? 'font-medium' : at === 'done' ? 'text-ink-muted' : '')}>{title}</span>
-            <span className="text-ink-muted tabular-nums">{time}</span>
-          </li>
-        ))}
-      </ol>
-    </div>
+    </AppFrame>
   );
 }
+Lesson.framed = true;
 Lesson.measure = (root) => {
   const b = root.querySelector('[data-play]').getBoundingClientRect(), g = root.querySelector('[data-play] svg').getBoundingClientRect();
   const centre = b.left + b.width / 2, seen = g.left + g.width * (10.5 / 24);

@@ -203,9 +203,9 @@ function FindingCard({ state, anchor, seen, stage, lesson }) {
     </div>
   );
   return (
-    <aside aria-label="What plumber finds" className="relative w-full md:mt-(--anchor) md:w-72 md:shrink-0" style={{ '--anchor': `${Math.max(0, (anchor?.y ?? 40) - 40)}px`, '--reach': `${40 + Math.max(0, anchor?.reach ?? 0)}px` }}>
+    <aside aria-label="What plumber finds" className="relative w-full max-w-2xl @5xl:mt-(--anchor) @5xl:w-72 @5xl:shrink-0" style={{ '--anchor': `${Math.max(0, (anchor?.y ?? 40) - 40)}px`, '--reach': `${40 + Math.max(0, anchor?.reach ?? 0)}px` }}>
       {/* the leader: from the bracket, across the window's edge, to the card */}
-      <span aria-hidden="true" className={'absolute top-10 right-full hidden w-(--reach) border-t border-dashed transition-colors duration-300 md:block ' + (fixed ? 'border-accent/50' : 'border-negative/50')} />
+      <span aria-hidden="true" className={'absolute top-10 right-full hidden w-(--reach) border-t border-dashed transition-colors duration-300 @5xl:block ' + (fixed ? 'border-accent/50' : 'border-negative/50')} />
       {/* the measurement, as a tab on plumber's card where the leader arrives: never over the example's words */}
       {seen ? (
         <span className={'absolute -top-3 left-4 z-10 rounded-chip px-1.5 py-0.5 font-mono text-[11px] whitespace-nowrap text-accent-ink transition-colors duration-300 ' + (state.phase === 'fixed' && !seen.off ? 'bg-accent' : 'bg-negative')}>
@@ -275,14 +275,15 @@ export function Principle({ n }) {
           {next ? <a href={`/rule/${next}`} aria-label={'Principle ' + next} title="Next (→)" className={step}><Chevron /></a> : null}
         </nav>
       </header>
-      <main className="flex flex-1 flex-col items-center gap-6 px-4 pt-10 pb-16 sm:pt-14">
+      <main className="@container flex flex-1 flex-col items-center gap-6 px-4 pt-10 pb-16 sm:pt-14">
         <div className="flex max-w-lg flex-col items-center gap-2 text-center">
           <span className={'rounded-full px-2 py-0.5 font-mono text-[11px] font-medium transition-colors duration-300 ' + (fixed ? 'bg-accent text-accent-ink' : 'bg-negative text-accent-ink')}>#{n} · {fixed ? 'fixed' : 'broken'}</span>
           <h1 className="text-xl font-semibold tracking-tight text-balance">{p.title}</h1>
           <p className="text-sm text-ink-muted text-balance">{p.why}</p>
         </div>
-        <div className="flex w-full max-w-5xl flex-col items-center gap-6 md:flex-row md:items-start md:justify-center md:gap-10">
-          <div ref={stage} className={'relative w-full ' + (Example?.wide || Example?.framed ? 'max-w-2xl' : 'max-w-lg')}>
+        {/* the card beside the window only where the page holds both (a container query, not the screen's width) */}
+        <div className="flex w-full max-w-5xl flex-col items-center gap-6 @5xl:flex-row @5xl:items-start @5xl:justify-center @5xl:gap-10">
+          <div ref={stage} className={'relative w-full min-w-0 ' + (Example?.wide || Example?.framed ? 'max-w-2xl' : 'max-w-lg')}>
             {/* the window plumber reads */}
             <section data-example aria-label="Example" className={'flex w-full min-w-0 justify-center overflow-hidden rounded-sheet corner-squircle bg-surface shadow-window ' + (Example?.framed ? 'ring-1 ring-line' : 'border border-line px-4 pt-4 pb-5 sm:px-6 sm:pt-5 sm:pb-6')}>
               {Example ? <Example broken /> : <p className="text-sm text-ink-muted">This example isn’t built yet.</p>}
