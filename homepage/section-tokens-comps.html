@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en" data-scheme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Save tokens · three comps</title>
+<link rel="stylesheet" href="/src/foundations/foundations.css" />
+<link rel="stylesheet" href="/src/section2-comps/comps.css" />
+<link rel="stylesheet" href="/src/tokens-comps/tokens.css" />
+</head>
+<body>
+<!--
+  Section 3 of the story (STORY.md): save tokens on iteration. Three static comps in the signed-off foundations. What's
+  true and checkable (README): edits made on the page call no model; `check --agent` "groups fixes by finding, lists
+  only new sites, includes compiled declarations and decision reasons, and gives exact edits when one candidate and the
+  authored syntax make the edit unambiguous"; "the loop stops on `0 new`"; `agent-docs` writes PLUMBER.md, the
+  project's token reference. No token counts are claimed: they can't be measured honestly here. The agent's loop in A
+  is marked as a typical one, not a measurement.
+    A  a 2px change     asking an agent for it beside doing it on the page
+    B  exact edits      what your agent reads from Plumber, instead of searching for it
+    C  build vs nudge   spend the model on features; nudges cost nothing
+-->
+<div class="bar"><span>Section 3 · “Save tokens on iteration” · three comps</span><button type="button" onclick="const r=document.documentElement; r.dataset.scheme = r.dataset.scheme==='dark'?'light':'dark'">Light / dark</button></div>
+
+<!-- ───────────── A · a 2px change ───────────── -->
+<p class="comp-name"><b>A</b> A 2px change: asking an agent for it, beside doing it on the page</p>
+<section class="comp t-a">
+  <header class="sec-head sec-head-center">
+    <span class="eyebrow">Save tokens</span>
+    <h2 class="title">A 2px change shouldn’t cost a prompt.</h2>
+    <p class="lead">Describing a nudge to an agent means it reads your files, finds the class, edits, and you check again. <b>On the page it’s three keys, and no model at all.</b></p>
+  </header>
+
+  <div class="t-a-pair">
+    <div class="surface t-col">
+      <header class="t-col-head"><span>Ask your agent</span><small>a typical loop</small></header>
+      <p class="turn-you"><span>You</span>The rows in Members feel loose. Tighten them a little?</p>
+      <ol class="t-loop">
+        <li><i></i>Searches the project for <code>Members</code></li>
+        <li><i></i>Reads <code>src/Members.jsx</code></li>
+        <li><i></i>Reads your theme to find a spacing step</li>
+        <li><i></i>Edits <code>gap-[10px]</code> → <code>gap-2</code></li>
+        <li class="t-you"><i></i>You: “closer to before, but still tighter”</li>
+        <li><i></i>Reads the file again, edits again</li>
+      </ol>
+      <div class="t-meter"><span>Agent turns</span><span class="t-bar"><i style="width:86%"></i></span><b class="tabular">2 prompts, 6 steps</b></div>
+    </div>
+
+    <div class="surface t-col t-col-on">
+      <header class="t-col-head"><span>Do it on the page</span><small>Plumber</small></header>
+      <ol class="t-keys">
+        <li><kbd>Alt</kbd><kbd>B</kbd><span>see <code>gap-[10px]</code> is off your scale</span></li>
+        <li><kbd>↑</kbd><kbd>↓</kbd><span>try 8px and 12px on every row, live</span></li>
+        <li><kbd>Enter</kbd><kbd>A</kbd><span>take 8px, write <code class="fix">gap-related</code></span></li>
+      </ol>
+      <div class="t-meter t-meter-on"><span>Model calls</span><span class="t-bar"><i style="width:0"></i></span><b class="tabular">0</b></div>
+    </div>
+  </div>
+</section>
+
+<!-- ───────────── B · exact edits ───────────── -->
+<p class="comp-name"><b>B</b> Exact edits: what your agent reads from Plumber, instead of searching for it</p>
+<section class="comp t-b">
+  <div class="t-b-grid">
+    <header class="sec-head">
+      <span class="eyebrow">Save tokens</span>
+      <h2 class="title">Your agent stops guessing.</h2>
+      <p class="lead">When an agent does the fixing, Plumber hands it <b>the file, the line and the class to write</b>, with your theme’s reason for it. No searching your config, no reading files to find the value.</p>
+      <ul class="t-b-facts">
+        <li><b>Only what’s new</b><span>Old debt never fills the context.</span></li>
+        <li><b>Your tokens, written down</b><span><code>plumber agent-docs</code> keeps a PLUMBER.md your agent reads instead of your theme.</span></li>
+        <li><b>A clear finish</b><span>The loop stops at 0 new.</span></li>
+      </ul>
+    </header>
+
+    <div class="code surface t-out">
+      <header><span>plumber check --changed --agent</span><span>what your agent reads</span></header>
+      <pre><span class="o-count">1 new</span>
+
+<span class="o-h">## 1 of 1  <span class="o-c">gap-[10px]</span> hardcodes 10px</span>
+<span class="o-k">Why:</span> Off-scale spacing makes layouts drift apart and can’t be changed from the theme.
+<span class="o-k">Tokens:</span>
+- 8px: use <span class="o-g">gap-related</span>; why: related parts
+- 12px: use <span class="o-g">gap-control</span>; why: a control’s padding
+<span class="o-k">Sites:</span> src/Members.jsx:19:22
+- src/Members.jsx:19:22  <span class="o-c">gap-[10px]</span>
+  Compiles to: gap: 10px (via class)
+  Choose a token using its reason, then edit at src/Members.jsx:19:22:
+    replace <span class="o-c">gap-[10px]</span> with <span class="o-g">gap-related</span>  (8px)
+    replace <span class="o-c">gap-[10px]</span> with <span class="o-g">gap-control</span>  (12px)</pre>
+    </div>
+  </div>
+</section>
+
+<!-- ───────────── C · build vs nudge ───────────── -->
+<p class="comp-name"><b>C</b> Build vs nudge: spend the model on features; nudges cost nothing</p>
+<section class="comp t-c">
+  <header class="sec-head sec-head-center">
+    <span class="eyebrow">Save tokens</span>
+    <h2 class="title">Spend your tokens on building,<br />not on nudging.</h2>
+    <p class="lead">Let the agent write the feature. <b>The last mile of a UI is a hundred small changes</b>, and each one is faster by hand on the page than in a prompt.</p>
+  </header>
+
+  <div class="t-c-board">
+    <div class="surface t-c-col">
+      <p class="t-c-label"><span class="t-dot t-dot-model"></span>With your agent</p>
+      <ul>
+        <li>Build the Members page</li>
+        <li>Add invites and roles</li>
+        <li>Wire it to the API</li>
+      </ul>
+      <p class="t-c-foot">where a model earns its tokens</p>
+    </div>
+    <div class="surface t-c-col t-c-wide">
+      <p class="t-c-label"><span class="t-dot t-dot-free"></span>On the page, with Plumber <span class="chip chip-on"><i></i>0 model calls</span></p>
+      <ul class="t-c-grid">
+        <li><kbd>Alt</kbd><kbd>B</kbd>Tighten the rows</li>
+        <li><kbd>Alt</kbd><kbd>B</kbd>Fix the heading’s size</li>
+        <li><kbd>Alt</kbd><kbd>B</kbd>Put padding on the scale</li>
+        <li><kbd>Alt</kbd><kbd>B</kbd>Put corners on the scale</li>
+        <li><kbd>Dbl-click</kbd>Retype the empty state</li>
+        <li><kbd>Dbl-click</kbd>Fix a button’s label</li>
+        <li><kbd>Alt</kbd><kbd>click</kbd>Find the line that made it</li>
+        <li><kbd>A</kbd>Apply all, one write per file</li>
+      </ul>
+    </div>
+  </div>
+</section>
+</body>
+</html>
