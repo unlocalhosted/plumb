@@ -52,9 +52,11 @@ screen. Ours used to be a teaching page with a still picture in it; that system 
 - **One principle, one screen** (`/rule/N`), the list of 77 on the left. Never a page carrying many problems.
 - **The stage is one dense, real component**, alone on the board: no app frame, no title block on the stage, no side
   card. Richness comes from the content: real photos, a real brand, tags, deltas, metadata, density. Not chrome.
-- **The flaw happens live.** Every example has a driver that provokes its own mistake while you watch: numbers that
-  tick (tabular figures), text typing in (balance, widows), a width that breathes (fit, clamp), a hover that travels.
-  If the mistake only shows in a still frame, find the moment when it hurts and stage that.
+- **Motion is earned, never required.** A screen is live only when the principle is about change: figures that tick
+  (tabular figures), hover, a width that changes, loading. Every other principle gets a still, real screen where the
+  mistake is the one people naturally ship. Never invent a mistake so that something can move (#1 once became a
+  command menu whose highlight alone had padding: "why would any UI have extra padding"). The camera moment still
+  runs on plumber's fix either way.
 - **The switch names the technique, never "Broken / Fixed"**: "Proportional / Tabular", "Line box / Trimmed",
   "Same radius / Concentric". It sits under the component, small, a segmented control. Default is the mistake; the
   other side is plumber's own fix (`suggest`, taken with `inplace.js` `swapPreview`), and back gives it back exactly.
@@ -167,3 +169,6 @@ Each line is something the owner had to say once; the sections above exist so th
   (48,210 · 39,120 …), deltas (+87.0%, +16.8%) and table shape. → §3½ a benchmark gives qualities, never a template.
 - 2026-11-04 · "follow the same primitives we have created for plumber, not just these orange and blue lines": the
   stage drew its own magenta/blue marks. → §3½ plumber's read is drawn with plumber's primitives, imported.
+- 2026-11-04 · "the first example is meaningless, why would any UI have extra padding, you don't have to make an
+  animated card all the time but something real": the brief's "flaw happens live" forced motion onto #1. → §3½ motion
+  is earned; #1 is sections down a page lined up by their boxes (the owner's own definition).

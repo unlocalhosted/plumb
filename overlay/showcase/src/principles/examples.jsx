@@ -169,77 +169,6 @@ Timesheet.measure = (root) => {
   return { lines, bands, pills, off, subject: { left: s.left, right: s.right, top: top - 12, bottom } };
 };
 
-// #1 sections down a page line up by their words, not their boxes: a filled notice between a heading and a list
-// keeps its box on the column, so its words sit in by its padding; it should bleed out by that padding instead
-const HISTORY = [['Nov 1, 2026', '96.00'], ['Oct 1, 2026', '96.00'], ['Sep 1, 2026', '72.00']];
-function Billing({ broken }) {
-  return (
-    <AppFrame crumb="Settings">
-      <div className="flex gap-6 px-5 pt-4 pb-6">
-        <nav aria-label="Settings" className="hidden w-32 shrink-0 flex-col gap-0.5 text-sm sm:flex">
-          {['General', 'Members', 'Billing', 'Integrations', 'Notifications'].map((t) => <span key={t} className={'-mx-2 rounded-control px-2 py-1.5 ' + (t === 'Billing' ? 'bg-sunken font-medium text-ink' : 'text-ink-muted')}>{t}</span>)}
-        </nav>
-    <div data-sections className="flex min-w-0 flex-1 flex-col gap-6">
-      <section className="flex items-start justify-between gap-4">
-        <div className="flex flex-col gap-1">
-          <h3 className="text-base font-semibold">Billing</h3>
-          <p className="text-sm text-ink-muted">Manage your plan, payment method and invoices.</p>
-        </div>
-        <button type="button" className="shrink-0 rounded-control border border-line bg-surface px-3 py-1.5 text-sm font-medium shadow-raised active:bg-sunken">Change plan</button>
-      </section>
-      <section className="flex gap-3 rounded-control bg-caution-soft px-4 pt-3 pb-4">
-        <span aria-hidden="true" className="mt-0.5 grid size-5 shrink-0 place-items-center rounded-full bg-caution text-[11px] font-bold text-accent-ink">!</span>
-        <div className="flex flex-col gap-1">
-          <span className="text-sm font-medium text-ink">Your card expires this month</span>
-          <span className="text-sm text-ink-muted">Update it before Dec 1 so reminders keep sending. <a href="#billing" className="font-medium text-ink underline decoration-line underline-offset-2">Update card</a></span>
-        </div>
-      </section>
-      <section className="flex flex-col gap-3">
-        <div className="flex items-baseline justify-between">
-          <span className="text-sm font-medium">Studio plan</span>
-          <span className="text-sm text-ink-muted"><span className="tabular-nums">$24</span> per seat / month</span>
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <div className="h-1.5 overflow-hidden rounded-full bg-sunken"><div className="h-full w-4/5 rounded-full bg-accent" /></div>
-          <span className="text-xs text-ink-muted"><span className="tabular-nums">4 of 5</span> seats used · next invoice <span className="tabular-nums">$96.00</span> on Dec 1</span>
-        </div>
-      </section>
-      <section className="flex flex-col gap-2">
-        <span className="text-xs font-medium text-ink-muted">Invoice history</span>
-        <ul className="flex flex-col">
-          {HISTORY.map(([date, amount]) => (
-            <li key={date} className="flex items-center gap-3 border-b-hairline border-line py-2 text-sm last:border-0">
-              <span className="flex-1">{date}</span>
-              <span className="rounded-full bg-positive-soft px-2 py-0.5 text-xs font-medium text-positive">Paid</span>
-              <span className="w-16 text-right font-medium tabular-nums">${amount}</span>
-            </li>
-          ))}
-        </ul>
-      </section>
-    </div>
-      </div>
-    </AppFrame>
-  );
-}
-Billing.framed = true;
-// where each section's words begin
-Billing.measure = (root) => {
-  const ticks = [...root.querySelectorAll('[data-sections] > section')].map((sec) => {
-    // where its content begins, as plumber reads it: an icon, or the first words
-    const icon = sec.querySelector('svg, img, [aria-hidden="true"]');
-    const walker = document.createTreeWalker(sec, NodeFilter.SHOW_TEXT, { acceptNode: (n) => (n.textContent.trim() && !n.parentElement.closest('[aria-hidden="true"]') ? 1 : 3) });
-    const text = walker.nextNode();
-    if (!text && !icon) return null;
-    const range = document.createRange(); if (text) range.selectNodeContents(text);
-    const xs = [text && range.getBoundingClientRect().left, icon?.getBoundingClientRect().left].filter((x) => x != null);
-    const box = sec.getBoundingClientRect();
-    return { x: Math.min(...xs), top: box.top, bottom: box.bottom };
-  }).filter(Boolean);
-  const xs = ticks.map((t) => t.x), d = Math.max(...xs) - Math.min(...xs);
-  const notice = root.querySelectorAll('[data-sections] > section')[1], nr = notice.getBoundingClientRect();
-  return { around: notice, focus: { x: nr.left + 16, y: nr.top + nr.height / 2 }, ticks, broken: `words ${px(d)} in`, fixed: 'one edge ✓', off: d > 0.5 };
-};
-
 // #2 a play triangle is centred by its weight, not its box: it leans toward its point
 const CHAPTERS = [['Create a client', '1:08', 'done'], ['Send your first invoice', '2:14', 'now'], ['Get paid by card', '3:02', 'next']];
 function Lesson({ broken }) {
@@ -539,7 +468,6 @@ Price.measure = (root) => {
   return { around: row, ticks: [{ y: a.baseline, left: a.left, right: a.right }, { y: b.baseline, left: b.left, right: b.right }], broken: `baselines ${px(d)} apart`, fixed: 'one baseline ✓', off: Math.abs(d) > 0.6 };
 };
 
-Billing.lesson = { why: "The notice's box sits on the column like the sections around it, so its padding pushes its words 16px in. The eye follows letters, not boxes, so the page reads as misaligned.", habit: 'A filled panel in a column bleeds out by its own padding: the background escapes the column, the words stay on it.' };
 Lesson.lesson = { why: "A triangle's weight sits toward its flat side. Centre its box and the point carries empty space, so the shape reads left of centre.", habit: 'Centre an uneven glyph by its weight, not its box: nudge it toward its point, about a twelfth of its width.' };
 Connected.lesson = { why: 'A circle fills about 78% of its box, a square nearly all of it. In the same box the circle has less ink, so it reads smaller.', habit: 'In one set, draw round marks a few percent larger than square ones (type designers call it overshoot).' };
 Notice.lesson = { why: 'items-center centres the line box, and the line box keeps room for descenders below the baseline. The capitals sit above its middle, so a centred icon reads low.', habit: "Line icons up with the capitals' middle, not the line box: nudge up by the gap, or make the line box as tall as the capitals." };
@@ -698,5 +626,83 @@ NewClient.measure = (root) => {
 };
 NewClient.lesson = { why: 'An icon’s glyph box carries its own space around the drawing. With the same padding on both sides, the icon side looks looser than the text side and the label reads off-centre.', habit: 'On the side with the icon, take 2–4px of padding off.' };
 
-export const EXAMPLES = { 7: Grouping, 8: Templates, 9: Toolbar, 10: NewClient, 1: Billing, 2: Lesson, 3: Connected, 4: Notice, 5: Chips, 6: Price, 16: Timesheet };
+// #1 align content, not boxes. A client's profile in Quarry: who they are, a note the team keeps about them, their
+// recent invoices. The note is a tinted panel with its own padding, sitting on the same column as the sections around
+// it, so its words start 16px in from every other line on the page. plumber's fix bleeds the panel out by that padding.
+const RECENT = [
+  { id: 'INV-2041', what: 'Brand refresh', state: 'Overdue', tone: 'bg-negative-soft text-negative', amount: '$4,820.00' },
+  { id: 'INV-2036', what: 'Signage', state: 'Paid', tone: 'bg-positive-soft text-positive', amount: '$1,950.00' },
+  { id: 'INV-2029', what: 'Retainer, October', state: 'Paid', tone: 'bg-positive-soft text-positive', amount: '$3,200.00' },
+];
+function ClientProfile() {
+  return (
+    <article className="w-full max-w-[34rem] rounded-[20px] bg-surface shadow-[0_1px_2px_oklch(0.21_0.02_264/0.05),0_16px_40px_-12px_oklch(0.21_0.02_264/0.14)] ring-1 ring-line">
+      <div data-profile className="flex flex-col gap-6 px-7 pt-7 pb-7">
+        <header className="flex items-center gap-4">
+          <span className="grid size-12 shrink-0 place-items-center rounded-[12px] bg-violet text-[15px] font-semibold text-accent-ink">HC</span>
+          <span className="flex min-w-0 flex-col">
+            <span className="truncate text-lg leading-6 font-medium">Halden & Co.</span>
+            <span className="truncate text-sm text-ink-muted">Brand studio · Copenhagen · client since 2023</span>
+          </span>
+        </header>
+        <dl className="grid grid-cols-[7.5rem_1fr] gap-x-4 gap-y-2 text-sm">
+          <dt className="text-ink-muted">Billing contact</dt><dd>Mette Halden</dd>
+          <dt className="text-ink-muted">Send invoices to</dt><dd className="truncate">accounts@halden.studio</dd>
+          <dt className="text-ink-muted">Terms</dt><dd>Net 14, in DKK</dd>
+        </dl>
+        <aside data-note className="rounded-[12px] bg-caution-soft px-4 pt-3 pb-3.5 text-sm">
+          <p className="font-medium">Note from Ana</p>
+          <p className="mt-1 text-pretty text-ink-muted">They need a PO number on every invoice since September. Mette approves anything over 5,000 kr.</p>
+        </aside>
+        <section className="flex flex-col">
+          <h3 className="text-[13px] font-normal text-ink-muted">Recent invoices</h3>
+          <ul className="mt-1">
+            {RECENT.map((r) => (
+              <li key={r.id} className="flex items-center gap-3 border-b-hairline border-line py-3 last:border-0">
+                <span className="flex min-w-0 flex-1 flex-col">
+                  <span className="truncate text-sm font-medium">{r.what}</span>
+                  <span className="case-forms text-[13px] text-ink-muted">{r.id}</span>
+                </span>
+                <span className={'rounded-full px-2 py-0.5 text-xs font-medium ' + r.tone}>{r.state}</span>
+                <span className="w-24 text-right text-sm tabular-nums">{r.amount}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      </div>
+    </article>
+  );
+}
+ClientProfile.stage = true;
+ClientProfile.names = ['Boxes aligned', 'Words aligned'];
+ClientProfile.lesson = {
+  why: 'The note’s box sits on the same column as the sections around it, so its padding pushes its words 16px in. The eye follows letters, not boxes: the page reads as if the note were indented.',
+  habit: 'A filled panel in a column bleeds out by its own padding: the fill escapes into the gutter, the words stay on the edge every other line shares.',
+};
+// What the eye sees: where each section's words start, against the column the page sets. The note's padding is the
+// hatch (plumber's pattern for padding); the pill is how far its words sit off the column.
+ClientProfile.measure = (root) => {
+  const page = root?.querySelector('[data-profile]'), note = root?.querySelector('[data-note]');
+  if (!page || !note) return null;
+  // on screen, under the camera's zoom: the padding is scaled with everything else
+  const ps = getComputedStyle(page), pr = page.getBoundingClientRect(), k = pr.width / page.offsetWidth || 1, column = pr.left + parseFloat(ps.paddingLeft) * k;
+  const lines = [...page.children].map((sec, i) => {
+    const first = sec === note ? note.firstElementChild : sec.querySelector('span span, dt, h3') ?? sec;
+    const b = sec.getBoundingClientRect(), r = document.createRange();
+    r.selectNodeContents(first);
+    return { key: 's' + i, x: r.getBoundingClientRect().left, top: b.top, bottom: b.bottom };
+  });
+  const top = pr.top + parseFloat(ps.paddingTop) * k, bottom = pr.bottom - parseFloat(ps.paddingBottom) * k;
+  lines.push({ key: 'column', x: column, top, bottom });
+  const n = note.getBoundingClientRect(), words = lines[[...page.children].indexOf(note)].x, off = words - column;
+  return {
+    lines, off: Math.abs(off) >= 0.5,
+    bands: [{ key: 'pad', left: n.left, right: words, top: n.top, bottom: n.bottom, pattern: 'hatch' }],
+    pills: [{ key: 'off', x: column, y: n.top - 14 * k, text: Math.abs(off).toFixed(1), ok: Math.abs(off) < 0.5 }],
+    cut: { left: n.left, right: n.right, top: n.top, bottom: n.bottom }, // blueprint cuts out the drifting element only
+    subject: { left: pr.left - 4 * k, right: pr.left + pr.width * 0.66, top: top - 8 * k, bottom: n.bottom + 64 * k },
+  };
+};
+
+export const EXAMPLES = { 7: Grouping, 8: Templates, 9: Toolbar, 10: NewClient, 1: ClientProfile, 2: Lesson, 3: Connected, 4: Notice, 5: Chips, 6: Price, 16: Timesheet };
 

@@ -413,8 +413,8 @@ function contentLeft(el, facts) {
   return null;
 }
 
-// #1. Align content, not boxes: a filled, padded row whose words fall off the column its siblings' words share bleeds
-// out by its padding (-mx-p px-p) so its fill escapes the column and its words stay on the line.
+// #1. Align content, not boxes: a filled, padded row or panel whose words fall off the column its siblings' words share
+// bleeds out by its padding (-mx-p px-p) so its fill escapes the column and its words stay on the line.
 export const contentAlign = {
   id: 'craft/content-align', family: 'craft', number: [1], owns: ['margin-x'], once: 'ancestor', reads: ['style', 'rect', 'kids', 'parent'],
   check({ el, facts }, theme) {
@@ -430,10 +430,14 @@ export const contentAlign = {
     const r = facts.rect(el), pr = facts.rect(parent);
     const column = pr.left + px(ps.borderLeftWidth) + px(ps.paddingLeft);
     if (Math.abs(r.left - column) > 0.5) return []; // the row already bleeds, or sits elsewhere
-    // the pattern is a highlighted row among rows like it (a selected item in a list), not a card in a column of
-    // mixed things: peers are siblings of the same kind and about the same height, at least one of them unfilled
+    // a highlighted row among rows like it (a selected item in a list), or an edgeless tint among the sections of a page
+    // (a note between a profile and its invoices): either way its words should share the edge its unfilled siblings'
+    // words share. A card with a shadow or a border is an object with an edge, and objects line up by their edges, so
+    // only rows like it count as its peers; an edgeless tint is compared with siblings of any kind and height
     const isFilled = (k) => { const ks = facts.style(k); return (rgb(ks.backgroundColor)?.[3] ?? 0) > 0 || ks.boxShadow !== 'none'; };
-    const peers = facts.kids(parent).filter((k) => k !== el && k.localName === el.localName && facts.rect(k).height >= r.height * 0.5 && facts.rect(k).height <= r.height * 2);
+    const edged = s.boxShadow !== 'none' || px(s.borderLeftWidth) > 0 || px(s.borderTopWidth) > 0;
+    const peers = facts.kids(parent).filter((k) => k !== el && facts.rect(k).height > 0
+      && (!edged || (k.localName === el.localName && facts.rect(k).height >= r.height * 0.5 && facts.rect(k).height <= r.height * 2)));
     if (!peers.some((k) => !isFilled(k))) return [];
     // the edge its peers' words share
     const edges = peers.filter((k) => !isFilled(k)).map((k) => contentLeft(k, facts)).filter((x) => x !== null);

@@ -1,6 +1,9 @@
 /* Quarry's primitives: the one theme every screen of the showcase is built from, broken or fixed. A mistake on a
    broken screen is a departure from these on purpose; the fixed screen uses them as they are. */
 @import "tailwindcss";
+/* plumber's fixes on live examples are taken as source edits (src/principles/Principle.jsx useTaken); in a project,
+   writing them makes Tailwind generate them. Here nothing is written, so the classes plumber hands over exist ahead. */
+@source inline("-mx-{0.5,1,1.5,2,2.5,3,3.5,4,5,6}");
 
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
