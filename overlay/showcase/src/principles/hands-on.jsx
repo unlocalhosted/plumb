@@ -8,7 +8,7 @@
 // plumber reading [data-example] never reads them. Each example says what just happened through `onStatus`.
 //
 // HANDS_ON[n] = Component, with .names (the switch, naming the technique) and .lesson ({ why, habit }).
-// /hands-on/:n shows one alone with its switch (a viewer for building them; the stage wires them in).
+// The rule page (Principle.jsx) shows them with their switch, what just happened, and the lesson.
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { CheckIcon, FileIcon, FolderIcon, HistoryIcon, PlusIcon, RetryIcon, SlidersIcon } from '@unlocalhosted/dither-icons';
@@ -565,24 +565,3 @@ SpinnerTiming.lesson = {
 };
 
 export const HANDS_ON = { 42: BoldHover, 61: MenuPress, 77: SkeletonLand, 66: SpinnerTiming };
-
-// ── /hands-on/:n, a viewer for building them ───────────────────────────────
-export function HandsOnPage({ n }) {
-  const Example = HANDS_ON[n];
-  const [side, setSide] = useState('broken');
-  const [status, setStatus] = useState('');
-  if (!Example) return <p className="p-10 text-sm text-ink-muted">No hands-on example for №{n}.</p>;
-  const seg = 'inline-flex h-7 items-center rounded-[6px] px-3 text-[13px] whitespace-nowrap';
-  return (
-    <main className="flex min-h-screen flex-col items-center justify-center gap-6 bg-board bg-[radial-gradient(var(--color-board-dot)_1px,transparent_1px)] bg-size-[16px_16px] p-10">
-      <section data-example aria-label="Example" className="w-fit"><Example key={side} side={side} onStatus={setStatus} /></section>
-      <div role="group" aria-label="Technique" className="flex items-center gap-0.5 rounded-control bg-sunken p-0.5 ring-1 ring-line">
-        {Example.names.map((name, i) => {
-          const s = i ? 'fixed' : 'broken';
-          return <button key={s} type="button" aria-pressed={side === s} onClick={() => setSide(s)} className={seg + (side === s ? ' bg-surface text-ink shadow-raised' : ' text-ink-muted hover:text-ink')}>{name}</button>;
-        })}
-      </div>
-      <p className="h-10 max-w-md text-center text-[13px] text-ink-muted text-pretty">{status}</p>
-    </main>
-  );
-}

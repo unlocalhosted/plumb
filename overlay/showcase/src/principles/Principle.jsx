@@ -7,6 +7,7 @@ import { createPortal } from 'react-dom';
 import { PRINCIPLES as ALL } from './catalogue.js';
 import { MERGED, shown } from './curation.js';
 import { ProbeStage } from './ProbeStage.jsx';
+import { HANDS_ON } from './hands-on.jsx';
 
 // the principles the showcase stages; the others are reached by their number and say why they have no screen
 const PRINCIPLES = ALL.filter((p) => shown(p.n));
@@ -382,7 +383,9 @@ const step = 'grid size-8 shrink-0 place-items-center rounded-full text-ink-mute
 // Taking plumber's side is the moment above; the whole page is the camera's frame (the bar and the list float over).
 export function Principle({ n }) {
   const p = ALL.find((x) => x.n === n);
-  const Example = shown(n) ? EXAMPLES[n] : null;
+  // a hands-on example (the viewer's own hand is the probe, principles/hands-on.jsx) takes the screen where there is one
+  const handsOn = shown(n) && !!HANDS_ON[n];
+  const Example = shown(n) ? (HANDS_ON[n] ?? EXAMPLES[n]) : null;
   const plumb = usePlumber(Example);
   const { state } = plumb;
   const bar = useRef(null), sw = useRef(null), main = useRef(null);
@@ -398,9 +401,10 @@ export function Principle({ n }) {
   const prev = (here ? PRINCIPLES[at - 1] : PRINCIPLES[at - 1])?.n ?? null, next = (here ? PRINCIPLES[at + 1] : PRINCIPLES[at])?.n ?? null;
   const staged = shown(n);
   const fixed = state.phase === 'fixing' || state.phase === 'fixed', ready = (state.phase === 'broken' || state.phase === 'fixed') && moment.stage === STAGE.rest;
-  const live = Example && p.how === 'live';
+  const live = Example && p.how === 'live' && !handsOn;
   // a probe example: two components, one per side; plumber probes each for real and the stage plays it back
   const probe = Example?.probe ?? null;
+  const [said, setSaid] = useState('');
   const [side, setSide] = useState(() => new URLSearchParams(location.search).get('side') ?? 'broken');
   // the route that probes a side asks for the page as it is: no playback there
   const probing = new URLSearchParams(location.search).has('side');
@@ -437,8 +441,9 @@ export function Principle({ n }) {
               run off the window); at rest nothing is clipped, so the component keeps its shadow */}
           <div className="relative w-full" style={moment.frame}>
           <div ref={moment.cam} className="relative flex w-full justify-center" style={moment.style}>
-            <section data-example aria-label="Example" className={probe ? 'w-fit' : Example?.stage ? 'flex w-full min-w-0 justify-center' : 'flex w-full max-w-2xl min-w-0 justify-center overflow-hidden rounded-sheet corner-squircle bg-surface shadow-window ' + (Example?.framed ? 'ring-1 ring-line' : 'border border-line px-4 pt-4 pb-5 sm:px-6 sm:pt-5 sm:pb-6')}>
-              {probe ? (probing ? <Example key={side} side={side} /> : <ProbeStage n={n} side={side} setSide={setSide} onState={setStage}><Example key={side} side={side} /></ProbeStage>)
+            <section data-example aria-label="Example" className={probe || handsOn ? 'w-fit' : Example?.stage ? 'flex w-full min-w-0 justify-center' : 'flex w-full max-w-2xl min-w-0 justify-center overflow-hidden rounded-sheet corner-squircle bg-surface shadow-window ' + (Example?.framed ? 'ring-1 ring-line' : 'border border-line px-4 pt-4 pb-5 sm:px-6 sm:pt-5 sm:pb-6')}>
+              {handsOn ? <Example key={side} side={side} onStatus={setSaid} />
+                : probe ? (probing ? <Example key={side} side={side} /> : <ProbeStage n={n} side={side} setSide={setSide} onState={setStage}><Example key={side} side={side} /></ProbeStage>)
                 : <Taken.Provider value={plumb.rewrite}>{Example ? <Example broken live={moment.live && !plumb.reading} /> : <p className="text-sm text-ink-muted">This example isn’t built yet.</p>}</Taken.Provider>}
             </section>
             {moment.marks}
@@ -446,19 +451,25 @@ export function Principle({ n }) {
           </div>
           <div ref={sw} className="relative z-10">
             {live ? <Switch names={names} fixed={fixed} ready={ready} onBack={() => fixed && moment.give()} onFix={() => !fixed && moment.take()} /> : null}
+            {handsOn ? <Switch names={names} fixed={side === 'fixed'} ready onBack={() => setSide('broken')} onFix={() => setSide('fixed')} /> : null}
+            {handsOn ? <p className="mt-3 h-10 max-w-md text-center text-[13px] text-ink-muted text-pretty">{said}</p> : null}
             {probe && !probing ? <Switch names={names} fixed={side === 'fixed'} ready={!stage?.busy} onBack={() => stage?.pick('broken')} onFix={() => stage?.pick('fixed')} /> : null}
             {probe && stage?.status ? <p className="mt-3 text-center text-[13px] text-ink-muted">{stage.status}</p> : null}
           </div>
         </div>
         ) : <div className="h-24" />}
-        {probe && stage?.lesson ? <Lesson state={stage.lesson} lesson={Example?.lesson} away={false} />
+        {handsOn ? (
+          <section aria-label="The lesson" className="flex w-full max-w-xl flex-col gap-3 text-sm">
+            <p className="text-ink-muted text-pretty">{Example.lesson?.why} {Example.lesson?.habit}</p>
+          </section>
+        ) : probe && stage?.lesson ? <Lesson state={stage.lesson} lesson={Example?.lesson} away={false} />
           : live ? <Lesson state={state} lesson={Example?.lesson} away={moment.stage !== STAGE.rest} />
           : !staged ? (
             <p className="max-w-sm text-center text-sm text-ink-muted text-pretty">
               {MERGED[n] ? <>Shown with <a href={`/rule/${MERGED[n]}`} className={'font-medium text-accent ' + RING}>№ {MERGED[n]}</a>, the same insight.</>
                 : 'Not staged here: plumber still checks it on every page, but it’s hygiene a review catches, not an insight to show.'}
             </p>
-          ) : probe ? null : <p className="max-w-72 text-sm text-ink-muted">{FOUND[p.how] ?? ''}</p>}
+          ) : probe || handsOn ? null : <p className="max-w-72 text-sm text-ink-muted">{FOUND[p.how] ?? ''}</p>}
       </main>
     </div>
   );
@@ -479,7 +490,7 @@ function List({ current }) {
             {PRINCIPLES.filter((p) => p.section === s).map((p) => (
               <li key={p.n} className="flex">
                 <a href={`/rule/${p.n}`} aria-current={p.n === current ? 'page' : undefined} ref={p.n === current ? intoView : undefined}
-                  className={'-mx-2 flex min-w-0 flex-1 items-baseline gap-2 rounded-chip px-2 py-1 text-sm hover:bg-sunken active:bg-line ' + RING + ' ' + (p.n === current ? 'bg-sunken font-medium text-ink' : EXAMPLES[p.n] ? 'text-ink' : 'text-ink-muted')}>
+                  className={'-mx-2 flex min-w-0 flex-1 items-baseline gap-2 rounded-chip px-2 py-1 text-sm hover:bg-sunken active:bg-line ' + RING + ' ' + (p.n === current ? 'bg-sunken font-medium text-ink' : EXAMPLES[p.n] || HANDS_ON[p.n] ? 'text-ink' : 'text-ink-muted')}>
                   <span className="w-5 shrink-0 text-right text-ink-muted tabular-nums">{p.n}</span>
                   <span className="truncate" title={p.title}>{p.title}</span>
                 </a>
