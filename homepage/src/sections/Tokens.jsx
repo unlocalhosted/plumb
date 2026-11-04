@@ -95,7 +95,9 @@ export function Tokens() {
   const [s, setS] = useState(() => step(reduced ? END : 0, null));
 
   useLayoutEffect(() => {
-    const measure = () => setFit(Math.min(1, area.current.clientWidth / W));
+    // on a phone the drawing keeps a readable size and the strip swipes sideways, rather than shrinking to specks
+    const phone = matchMedia('(max-width: 40rem)');
+    const measure = () => setFit(phone.matches ? 0.62 : Math.min(1, area.current.clientWidth / W));
     measure();
     const ro = new ResizeObserver(measure);
     ro.observe(area.current);
@@ -139,6 +141,15 @@ export function Tokens() {
     return () => { io.disconnect(); cancelAnimationFrame(raf); };
   }, [geo, reduced]);
 
+  // on a phone the strip follows the story: across to the fixed card when the page's route lands, back at the start
+  // of each loop; once you swipe it yourself, it's yours and stays put
+  const swiped = useRef(false);
+  useEffect(() => {
+    const el = area.current;
+    if (!el || swiped.current || el.scrollWidth <= el.clientWidth + 1) return;
+    el.scrollTo({ left: s.fixed ? el.scrollWidth - el.clientWidth : 0, behavior: reduced ? 'auto' : 'smooth' });
+  }, [s.fixed, s.sent, reduced]);
+
   return (
     <section className="tok" aria-labelledby="tok-title">
       <header className="tok-head">
@@ -147,7 +158,7 @@ export function Tokens() {
         <p className="lead">Ask an agent and it goes the long way: through your files, your theme, an edit, and back to you to check. <b>On the page it’s three keys and no model.</b></p>
       </header>
 
-      <div ref={area} className="tok-area" style={{ height: H * fit }}>
+      <div ref={area} className="tok-area" style={{ height: H * fit, '--stage-w': `${W * fit}px` }} onPointerDown={() => { swiped.current = true; }} onWheel={() => { swiped.current = true; }}>
         <div className="tok-stage" data-fading={s.fading} style={{ width: W, height: H, transform: `scale(${fit})` }} aria-hidden="true">
           {/* left: the prompt, and the element as it is */}
           <div className="tok-prompt" data-sent={s.sent}>

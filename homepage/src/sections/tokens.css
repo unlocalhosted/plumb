@@ -107,7 +107,14 @@
 .tok-sw-long { border-top: 1.5px dashed var(--ink-3); }
 .tok-sw-short { border-top: 2px solid var(--on); }
 
-@media (max-width: 40rem) { .tok { padding-left: var(--s-4); padding-right: var(--s-4); } }
+@media (max-width: 40rem) {
+  .tok { padding-left: var(--s-4); padding-right: var(--s-4); }
+  /* the drawing at a readable size, in a strip that swipes sideways */
+  .tok-area { overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; margin-left: calc(var(--s-4) * -1); margin-right: calc(var(--s-4) * -1); padding: 0 var(--s-4); }
+  .tok-area::after { content: ''; display: block; width: var(--stage-w); height: 1px; }
+  .tok-stage { left: var(--s-4); }
+  .tok-legend { flex-direction: column; align-items: center; gap: 8px; }
+}
 @media (prefers-reduced-motion: reduce) {
   .tok-caret, .tok-key[data-on='true'], .tok-prompt[data-sent='true'] .tok-send { animation: none; }
   .tok-card ul, .tok-badge, .tok-card, .tok-stop > circle, .tok-stop text, .tok-stage, .tok-card ul::after, .tok-card li::before, .tok-card li::after { transition: none; }

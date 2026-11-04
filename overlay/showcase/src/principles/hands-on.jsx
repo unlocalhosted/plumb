@@ -11,7 +11,8 @@
 // The rule page (Principle.jsx) shows them with their switch, what just happened, and the lesson.
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { CheckIcon, FileIcon, FolderIcon, HistoryIcon, PlusIcon, RetryIcon, SlidersIcon } from '@unlocalhosted/dither-icons';
+import valley from '../media/valley.jpg';
+import { ChartIcon, CheckIcon, CodeIcon, FileIcon, FolderIcon, HistoryIcon, PlusIcon, RetryIcon, SlidersIcon, SparklesIcon } from '@unlocalhosted/dither-icons';
 
 const TOKENS = '/__plumb/src/tokens.css';
 function MarksLayer({ children }) {
@@ -564,4 +565,364 @@ SpinnerTiming.lesson = {
   habit: 'Wait about 200ms before showing a spinner, and once it shows, keep it at least 500ms (spin-delay’s delay and minDuration). A fast reply shows none; a slow one shows a steady one.',
 };
 
-export const HANDS_ON = { 42: BoldHover, 61: MenuPress, 77: SkeletonLand, 66: SpinnerTiming };
+// ── #60 Tooltip warm-up and cool-down ────────────────────────────────────
+// A writing app's formatting toolbar, every button with a tooltip. Broken: tooltips that show the moment the pointer
+// arrives, the hand-rolled habit plumber's probe calls "quick": sweep along the toolbar and each one flashes up and
+// vanishes. Fixed: plumber's numbers, a provider's (Radix's delayDuration 500, skipDelayDuration 300): the first waits
+// half a second, and while you keep moving the next ones come at once.
+// The marks are the waits, the numbers the rule reads (craft-headless.js tooltipKind): the wait filling under the button
+// while it waits, a dashed ghost where a tooltip only flashed (on screen under 250ms), and one tag with the last wait.
+// No trail: the route isn't the lesson.
+const FIRST = 500, WARM = 300, QUICK = 200, FLASH = 250;
+const TOOLS = [
+  ['B', 'Bold', '⌘B', 'font-semibold'], ['I', 'Italic', '⌘I', 'italic font-serif'], ['U', 'Underline', '⌘U', 'underline underline-offset-2'], ['S', 'Strikethrough', '⇧⌘X', 'line-through'], null,
+  [CodeIcon, 'Code', '⌘E'], [FileIcon, 'Attach a file', ''], [ChartIcon, 'Insert a chart', ''], [SparklesIcon, 'Ask AI', '⌘J'],
+];
+function TooltipWarm({ side = 'broken', onStatus }) {
+  const root = useRef(null), tip = useRef(null);
+  const tt = useRef({ timer: 0, lastClose: -Infinity });
+  const [open, setOpen] = useState(null);      // { i, box } of the tooltip on screen
+  const [visits, setVisits] = useState([]);   // { i, t, shown, gone, next, box }
+  const fixed = side === 'fixed';
+  const btns = () => [...(root.current?.querySelectorAll('[data-tool]') ?? [])];
+  const now = () => performance.now();
+  const waiting = visits.length > 0 && visits.at(-1).shown === null && visits.at(-1).gone === null;
+  useTicking(waiting);
+  useEffect(() => () => clearTimeout(tt.current.timer), []);
+
+  const enter = (i) => {
+    const t = now(), warm = t - tt.current.lastClose < WARM;
+    setVisits((v) => [...v.slice(-24), { i, t, shown: null, gone: null, next: warm, box: null }]);
+    clearTimeout(tt.current.timer);
+    const wait = fixed ? (warm ? 0 : FIRST) : 0;
+    const show = () => {
+      const b = btns()[i], at = local(root.current)(b);
+      setOpen({ i, at });
+      setVisits((v) => v.map((x, j) => (j === v.length - 1 && x.i === i && x.shown === null ? { ...x, shown: now() } : x)));
+    };
+    if (wait) tt.current.timer = setTimeout(show, wait); else show();
+  };
+  const leave = () => {
+    clearTimeout(tt.current.timer);
+    setOpen((o) => { if (o) tt.current.lastClose = now(); return null; });
+    setVisits((v) => v.map((x, j) => (j === v.length - 1 && x.gone === null ? { ...x, gone: now(), box: x.box ?? (tip.current && root.current ? local(root.current)(tip.current) : null) } : x)));
+  };
+  // the tooltip's own box, once it's on screen (the ghost of a flash is drawn there)
+  useLayoutEffect(() => {
+    if (!open || !tip.current) return;
+    const box = local(root.current)(tip.current);
+    setVisits((v) => v.map((x, j) => (j === v.length - 1 ? { ...x, box } : x)));
+  }, [open]);
+
+  const shown = visits.filter((v) => v.shown !== null);
+  const last = shown.at(-1), flashed = visits.filter((v) => v.shown !== null && v.gone !== null && v.gone - v.shown < FLASH && v.box);
+  useEffect(() => {
+    if (!last) return onStatus?.('Sweep your pointer along the toolbar, then come back to one button.');
+    const wait = Math.round(last.shown - last.t);
+    onStatus?.(!fixed
+      ? `${shown.length} tooltip${shown.length === 1 ? '' : 's'} came up at once${flashed.length ? `, ${flashed.length} of them gone again in under ${FLASH}ms` : ''}: crossing the toolbar sets off every one.`
+      : last.next ? `This one skipped the wait (${wait}ms): you were already reading tooltips.` : `The first waited ${wait}ms, long enough to mean you stopped. Keep moving and the next ones come at once.`);
+  }, [last?.shown, flashed.length, fixed, onStatus]);
+
+  const cur = visits.at(-1), t = now();
+  const kind = (v) => (!fixed ? 'off' : v.next ? 'on' : 'sky');
+  const tagText = (v) => { const w = Math.round(v.shown - v.t); return !fixed ? `${w}ms · no warm-up` : v.next ? `${w}ms · warm ✓` : `${w}ms · warm-up`; };
+  return (
+    <article ref={root} onPointerLeave={leave} className="relative w-[30rem] max-w-full rounded-card bg-surface shadow-card">
+      <div role="toolbar" aria-label="Formatting" className="flex items-center gap-0.5 border-b-hairline border-line px-3 py-2">
+        {TOOLS.map((tool, i) => {
+          if (!tool) return <span key={'sep' + i} className="mx-1.5 h-4 w-px bg-line" />;
+          const [Glyph, label] = tool, at = TOOLS.slice(0, i).filter(Boolean).length;
+          return (
+            <button key={label} type="button" data-tool aria-label={label} onPointerEnter={() => enter(at)} onPointerLeave={leave}
+              className="grid size-8 place-items-center rounded-control text-[15px] text-ink-muted hover:bg-sunken hover:text-ink">
+              {typeof Glyph === 'string' ? <span className={tool[3]}>{Glyph}</span> : <Glyph size={16} texture="dither" />}
+            </button>
+          );
+        })}
+      </div>
+      <div className="flex flex-col gap-2 px-5 pt-4 pb-6 text-sm leading-6">
+        <span className="text-[17px] leading-6 font-medium tracking-[-0.01em]">Launch notes</span>
+        <p className="text-ink-muted text-pretty">The film goes out on Thursday at nine. Press gets the link an hour before; the pricing page flips at the same time.</p>
+      </div>
+      {open ? (() => {
+        const tool = TOOLS.filter(Boolean)[open.i];
+        return (
+          <span ref={tip} role="tooltip" style={{ left: open.at.x + open.at.w / 2, top: open.at.y + open.at.h + 6 }}
+            className="pointer-events-none absolute z-10 flex -translate-x-1/2 items-center gap-2 rounded-control bg-ink px-2 py-1 text-xs whitespace-nowrap text-surface">
+            {tool[1]}{tool[2] ? <kbd className="font-sans text-surface/60">{tool[2]}</kbd> : null}
+          </span>
+        );
+      })() : null}
+      <MarksLayer>
+        {!fixed ? flashed.slice(-6).map((v, j) => <Ghost key={j} {...v.box} r={6} />) : null}
+        {cur && waiting && fixed ? (() => {
+          const b = local(root.current)(btns()[cur.i]), k = Math.min(1, (t - cur.t) / FIRST);
+          return <span style={{ position: 'absolute', left: b.x + 4, top: b.y + b.h + 1, width: (b.w - 8) * k, height: 2, borderRadius: 1, background: 'var(--pl-sky)' }} />;
+        })() : null}
+        {last && last.box ? <Tag x={last.box.x + last.box.w + 8} y={last.box.y + last.box.h / 2} off={kind(last) === 'off'}>{tagText(last)}</Tag> : null}
+      </MarksLayer>
+    </article>
+  );
+}
+TooltipWarm.names = ['At once', 'Warm-up'];
+TooltipWarm.lesson = {
+  why: 'A tooltip that shows the moment the pointer arrives fires for everything you cross on the way somewhere else: sweep along a toolbar and they flash up and vanish, each one gone before you could read it.',
+  habit: 'Wait about half a second for the first, the pause that means someone stopped to look; then, while they keep moving, show the next ones at once (Radix: delayDuration 500, skipDelayDuration 300).',
+};
+
+// ── #64 Interruptible motion ────────────────────────────────────────────
+// A shared folder with a Details panel that slides in from the right. Broken: the entrance and the exit are two
+// keyframe animations (tailwindcss-animate's slide-in / slide-out): close it on the way in and the exit starts from its
+// own first frame, fully open, so the panel snaps out to the edge before it leaves. Fixed: one transition on the
+// panel's position, which the browser turns around from wherever it is.
+// plumber's toggle probe (src/craft-probe.ts) does what you do: opens, closes at 40%, and reads the panel every frame.
+// The marks are that reading: where the edge was when you changed your mind, the ground it snapped across (hatch, a
+// dashed ghost of the edge), and the openness over time as a trace, where a snap is a cliff. Slowed to ¼ so a hand
+// can catch it.
+const PANEL_W = 224, BASE_MS = 320;
+const FOLDER = [
+  ['Launch plan.pdf', 'Ama Owusu', 'Today'], ['Pricing, v4.sheet', 'Jonas Berg', 'Yesterday'], ['Press kit.zip', 'Lena Ruiz', 'Mon'],
+  ['Keynote draft.deck', 'Ama Owusu', 'Mon'], ['FAQ.doc', 'Sam Patel', '12 Sep'],
+];
+function InterruptPanel({ side = 'broken', onStatus }) {
+  const root = useRef(null), card = useRef(null), panel = useRef(null);
+  const keyframes = side === 'broken';
+  const [slow, setSlow] = useState(true);
+  const [run, setRun] = useState(null); // { samples: [{ t, v }], presses: [{ t, v }], done }
+  const open = useRef(false), live = useRef(null);
+  const dur = BASE_MS * (slow ? 4 : 1);
+  useTicking(!!run && !run.done);
+  // the panel's openness, read from where it is on screen: 0 tucked away, 1 all the way in
+  const openness = () => {
+    const p = panel.current, c = card.current;
+    if (!p || !c || p.hidden) return 0;
+    const at = local(c);
+    return Math.max(0, Math.min(1, (c.offsetWidth - at(p).x) / PANEL_W));
+  };
+  const reset = () => {
+    open.current = false; live.current = null; setRun(null);
+    const p = panel.current; if (p) { p.hidden = true; p.classList.remove('ho-in', 'ho-out', 'ho-open'); }
+  };
+  useEffect(reset, [side, slow]);
+  const toggle = () => {
+    const p = panel.current, t0 = performance.now(), v = openness();
+    if (!live.current || live.current.done) live.current = { t0, samples: [{ t: 0, v }], presses: [], done: false, quiet: t0 };
+    live.current.presses.push({ t: t0 - live.current.t0, v });
+    open.current = !open.current;
+    if (keyframes) {
+      // two animations: the exit replaces the entrance and starts from its own first frame
+      if (open.current) { p.hidden = false; p.classList.remove('ho-out'); p.classList.add('ho-in'); }
+      else { p.classList.remove('ho-in'); p.classList.add('ho-out'); }
+    } else {
+      // one transition: a new target, from wherever it is
+      p.hidden = false; p.getBoundingClientRect();
+      p.classList.toggle('ho-open', open.current);
+    }
+  };
+  // plumber's reading: every frame, until the panel has rested for 400ms
+  useEffect(() => {
+    let id;
+    const tick = () => {
+      const r = live.current;
+      if (r && !r.done) {
+        const now = performance.now(), v = openness(), last = r.samples.at(-1);
+        r.samples.push({ t: now - r.t0, v });
+        if (Math.abs(v - last.v) > 0.001) r.quiet = now;
+        if (now - r.quiet > 400 || now - r.t0 > dur * 3) r.done = true;
+        setRun({ samples: [...r.samples], presses: [...r.presses], done: r.done });
+      }
+      id = requestAnimationFrame(tick);
+    };
+    id = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(id);
+  }, [dur]);
+  const ended = (e) => { if (!open.current && (e.animationName === 'ho-panel-out' || e.type === 'transitionend')) { panel.current.hidden = true; panel.current.classList.remove('ho-out'); } };
+
+  // a step of over 20% within a frame or two of a press mid-motion is a snap; a press mid-motion without one, a turn
+  const snaps = [], turns = [];
+  if (run) {
+    const s = run.samples;
+    for (let i = 1; i < s.length; i++) if (Math.abs(s[i].v - s[i - 1].v) > 0.2 && run.presses.some((q, k) => k > 0 && s[i].t - q.t >= 0 && s[i].t - q.t < 60)) snaps.push({ from: s[i - 1], to: s[i] });
+    run.presses.forEach((q, k) => { if (k > 0 && q.v > 0.02 && q.v < 0.98 && !snaps.some((j) => Math.abs(j.from.t - q.t) < 60)) turns.push(q); });
+  }
+  const snap = snaps.at(-1), turn = turns.at(-1), pct = (v) => `${Math.round(v * 100)}%`;
+  useEffect(() => {
+    onStatus?.(!run ? `Open Details, then click it again while the panel is still sliding in${slow ? '' : ' (¼× gives you time)'}.`
+      : snap ? `You closed it at ${pct(snap.from.v)}; the exit started from its own first frame, so the panel snapped to ${pct(snap.to.v)} before leaving.`
+      : turn ? `It turned around at ${pct(turn.v)}, from where it was. Nothing snapped.`
+      : run.presses.length === 1 && !run.done ? 'Now click again before it settles.' : 'Click again while it’s moving.');
+  }, [run?.presses.length, !!snap, !!turn, run?.done, slow, onStatus]);
+
+  // the marks, in the card's pixels: the edge at a given openness
+  const W = card.current?.offsetWidth ?? 576, H = card.current?.offsetHeight ?? 288, edge = (v) => W - PANEL_W * v, top = 48;
+  const TW = W, TH = 52, span = dur * 3, tx = (t) => (Math.min(span, t) / span) * TW, ty = (v) => 8 + TH - v * TH;
+  return (
+    <div ref={root} className="relative w-[36rem] max-w-full pb-28">
+      <style>{`@keyframes ho-panel-in { from { translate: 100% 0 } to { translate: 0 0 } } @keyframes ho-panel-out { from { translate: 0 0 } to { translate: 100% 0 } }
+        .ho-panel { translate: 100% 0; } .ho-panel.ho-in { animation: ho-panel-in ${dur}ms var(--ease-arrive) both; } .ho-panel.ho-out { animation: ho-panel-out ${dur}ms var(--ease-arrive) both; }
+        .ho-t .ho-panel { transition: translate ${dur}ms var(--ease-arrive); } .ho-t .ho-panel.ho-open { translate: 0 0; }`}</style>
+      <article ref={card} className={'relative h-72 overflow-hidden rounded-card bg-surface shadow-card ' + (keyframes ? '' : 'ho-t')}>
+        <header className="flex h-12 items-center gap-2 border-b-hairline border-line px-4">
+          <FolderIcon size={16} texture="dither" className="text-ink-muted" />
+          <span className="text-[15px] font-medium">Q3 launch</span><span className="text-[13px] text-ink-subtle">· 5 files</span>
+          <button type="button" aria-expanded={open.current} onClick={toggle} className="ml-auto inline-flex h-8 items-center gap-1.5 rounded-control px-2.5 text-[13px] font-medium ring-1 ring-line ring-inset hover:bg-sunken">
+            <SlidersIcon size={14} texture="dither" className="text-ink-muted" />Details
+          </button>
+        </header>
+        <ul className="px-2 py-1.5">
+          {FOLDER.map(([name, who, when], i) => (
+            <li key={name} className={'flex h-9 items-center gap-3 rounded-control px-2.5 text-[13px] ' + (i === 0 ? 'bg-accent-soft' : '')}>
+              <FileIcon size={14} texture="dither" className="shrink-0 text-ink-muted" /><span className="min-w-0 flex-1 truncate">{name}</span>
+              <span className="w-24 truncate text-ink-muted">{who}</span><span className="w-16 text-right text-ink-subtle">{when}</span>
+            </li>
+          ))}
+        </ul>
+        <aside ref={panel} hidden onAnimationEnd={ended} onTransitionEnd={ended} className="ho-panel absolute top-12 right-0 bottom-0 flex w-56 flex-col gap-3 border-l-hairline border-line bg-surface p-4">
+          <span className="grid h-20 place-items-center rounded-control bg-sunken ring-1 ring-line ring-inset"><FileIcon size={28} texture="dither" className="text-ink-muted" /></span>
+          <span className="text-[13px] font-medium">Launch plan.pdf</span>
+          <dl className="grid grid-cols-[4.5rem_1fr] gap-x-2 gap-y-1.5 text-xs"><dt className="text-ink-subtle">Kind</dt><dd className="text-ink-muted">PDF, 18 pages</dd><dt className="text-ink-subtle">Size</dt><dd className="text-ink-muted">4.8 MB</dd><dt className="text-ink-subtle">Owner</dt><dd className="text-ink-muted">Ama Owusu</dd><dt className="text-ink-subtle">Modified</dt><dd className="text-ink-muted">Today, 9:41</dd></dl>
+        </aside>
+      </article>
+      <div className="absolute right-0 bottom-0 flex items-center gap-2 text-[12px] text-ink-muted">
+        Speed
+        <span role="group" aria-label="Speed" className="flex gap-0.5 rounded-control bg-sunken p-0.5 ring-1 ring-line">
+          {[[true, '¼×'], [false, '1×']].map(([v, l]) => <button key={l} type="button" aria-pressed={slow === v} onClick={() => setSlow(v)} className={'h-6 rounded-[5px] px-2 ' + (slow === v ? 'bg-surface text-ink shadow-raised' : 'hover:text-ink')}>{l}</button>)}
+        </span>
+      </div>
+      <MarksLayer>
+        {snaps.map((j, i) => {
+          const a = edge(j.from.v), b = edge(j.to.v);
+          return (
+            <span key={i}>
+              <Hatch x={Math.min(a, b)} y={top + 6} w={Math.abs(a - b)} h={H - top - 12} />
+              <Line x={a} y={top} h={H - top} off dashed />
+            </span>
+          );
+        })}
+        {turns.map((q, i) => <Line key={'t' + i} x={edge(q.v)} y={top} h={H - top} off={false} />)}
+        {snap ? <Tag x={Math.min(edge(snap.from.v), edge(snap.to.v)) - 8} y={top + 30} off end>jumped {pct(snap.from.v)} → {pct(snap.to.v)}</Tag>
+          : turn ? <Tag x={edge(turn.v) - 8} y={top + 30} off={false} end>turned back at {pct(turn.v)} ✓</Tag> : null}
+        {/* openness over time, as plumber samples it: a snap is a cliff */}
+        <svg width={TW} height={TH + 26} style={{ position: 'absolute', left: 0, top: H + 14, overflow: 'visible' }}>
+          <line x1="0" y1={ty(1)} x2={TW} y2={ty(1)} style={{ stroke: 'var(--pl-ink-3)', strokeDasharray: '2 3' }} />
+          <text x="0" y={ty(1) - 4} style={{ font: '600 10.5px var(--pl-sans)', fill: 'var(--pl-ink-2)' }}>open</text>
+          <text x={TW} y={ty(1) - 4} textAnchor="end" style={{ font: '600 10.5px var(--pl-sans)', fill: 'var(--pl-ink-2)' }}>{slow ? '¼ speed' : 'live'}</text>
+          <line x1="0" y1={ty(0)} x2={TW} y2={ty(0)} style={{ stroke: 'var(--pl-ink-3)' }} />
+          {run ? <polyline points={run.samples.map((q) => `${tx(q.t).toFixed(1)},${ty(q.v).toFixed(1)}`).join(' ')} style={{ fill: 'none', stroke: 'var(--pl-sky)', strokeWidth: 1.5, strokeLinejoin: 'round' }} /> : null}
+          {snaps.map((j, i) => <line key={i} x1={tx(j.from.t)} y1={ty(j.from.v)} x2={tx(j.to.t)} y2={ty(j.to.v)} style={{ stroke: 'var(--pl-off)', strokeWidth: 2.5 }} />)}
+          {run?.presses.map((q, i) => <circle key={i} cx={tx(q.t)} cy={ty(q.v)} r={i && turns.includes(q) ? 4 : 3} style={{ fill: i && turns.includes(q) ? 'var(--pl-on)' : '#fff', stroke: i && turns.includes(q) ? '#fff' : 'var(--pl-sky)', strokeWidth: 1.5 }} />)}
+        </svg>
+      </MarksLayer>
+    </div>
+  );
+}
+InterruptPanel.names = ['Keyframes', 'Transition'];
+InterruptPanel.lesson = {
+  why: 'An entrance and an exit written as two keyframe animations don’t know about each other. Change your mind halfway in and the exit starts from its own first frame, fully open: the panel snaps to the edge, then leaves.',
+  habit: 'Drive open and closed with one transition on the state (or a spring), so a close midway turns around from where it is.',
+};
+
+// ── #65 Rubber-band at the limits ───────────────────────────────────────
+// A maps app's place sheet, fully open. Pull it up past its top edge. Broken: its offset clamped at the limit, so the
+// sheet stops dead under a hand that keeps going. Fixed: past the limit it follows less and less (the classic
+// (1 − 1 / (x·0.55 / d + 1))·d), and springs back when you let go.
+// plumber's drag probe (src/craft-probe.ts, opt-in) pulls 40, 80, 120px past and reads how far the thing came:
+// 'dead' under 3px more. The marks are that reading: the limit, where you pressed, how far your hand went past, and what
+// the sheet gave (mint) or didn't (a coral wall). No trail and no ruler: the pull is the lesson, not the route or the time.
+const SHEET_D = 190, BAND_C = 0.55;
+const rubber = (x) => (1 - 1 / ((x * BAND_C) / SHEET_D + 1)) * SHEET_D;
+function PlaceSheet({ side = 'broken', onStatus }) {
+  const phone = useRef(null), sheet = useRef(null);
+  const elastic = side === 'fixed';
+  const [g, setG] = useState(null); // { contact, pull, gave, peak, live, hand }
+  const off = useRef(0), spring = useRef(null);
+  const place = () => { if (sheet.current) sheet.current.style.translate = `0 ${off.current}px`; };
+  useEffect(() => { setG(null); off.current = 0; spring.current = null; place(); }, [side]);
+  const at = (e) => { const r = phone.current.getBoundingClientRect(), k = r.width / phone.current.offsetWidth || 1; return { x: (e.clientX - r.left) / k, y: (e.clientY - r.top) / k }; };
+  const down = (e) => {
+    try { sheet.current.setPointerCapture(e.pointerId); } catch {}
+    spring.current = null; off.current = 0; place();
+    const p = at(e);
+    setG({ contact: p, hand: p, pull: 0, gave: 0, peak: { pull: 0, gave: 0, hand: p }, live: true });
+  };
+  const move = (e) => {
+    setG((s) => {
+      if (!s?.live) return s;
+      const p = at(e), dy = p.y - s.contact.y;
+      off.current = dy >= 0 ? dy : elastic ? -rubber(-dy) : 0; place();
+      const pull = Math.max(0, -dy), gave = Math.max(0, -off.current);
+      return { ...s, hand: p, pull, gave, peak: pull > s.peak.pull ? { pull, gave, hand: p } : s.peak };
+    });
+  };
+  const up = () => {
+    setG((s) => (s?.live ? { ...s, live: false } : s));
+    if (off.current !== 0) spring.current = { v: 0 };
+  };
+  // the spring back: stiffness 400, damping 32, per frame
+  useEffect(() => {
+    let id, last = performance.now();
+    const step = (now) => {
+      const dt = Math.min(0.032, (now - last) / 1000); last = now;
+      const sp = spring.current;
+      if (sp) { sp.v += (-400 * off.current - 32 * sp.v) * dt; off.current += sp.v * dt; if (Math.abs(off.current) < 0.3 && Math.abs(sp.v) < 4) { off.current = 0; spring.current = null; } place(); }
+      id = requestAnimationFrame(step);
+    };
+    id = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(id);
+  }, []);
+  const m = g ? (g.live ? g : g.peak) : null;
+  useEffect(() => {
+    onStatus?.(!m ? 'Grab the sheet and pull it up, past its top edge.'
+      : m.pull === 0 ? (g.live ? 'Keep going up, past the dashed line: that’s as open as it gets.' : 'You let go before the line. Pull it up past it.')
+      : !elastic ? `Your hand went ${Math.round(m.pull)}px past the end and the sheet didn’t move at all: a wall under your finger.`
+      : `It gave ${Math.round(m.gave)}px for your ${Math.round(m.pull)}px, less the further you pulled${g.live ? '' : ', then sprang back'}.`);
+  }, [m?.pull, m?.gave, g?.live, elastic, onStatus]);
+
+  const REST = 128, limit = REST, L = 10, R = 290;
+  const reach = m ? Math.max(2, limit - m.pull) : limit, top = m ? limit - m.gave : limit, hand = g ? (g.live ? g.hand : g.peak.hand) : null;
+  return (
+    <div className="relative w-[38rem] max-w-full">
+      <div ref={phone} className="relative mx-auto h-[22rem] w-[300px] touch-none overflow-hidden rounded-[28px] bg-ink shadow-card select-none" onPointerMove={move} onPointerUp={up} onPointerCancel={up} onLostPointerCapture={up}>
+        <img src={valley} alt="" draggable="false" className="absolute inset-0 size-full object-cover" />
+        <span className="absolute top-14 left-1/2 grid size-8 -translate-x-1/2 place-items-center rounded-full bg-accent text-[11px] font-medium text-accent-ink shadow-raised ring-2 ring-white">M</span>
+        <div ref={sheet} onPointerDown={down} className="absolute inset-x-0 h-[20rem] cursor-grab rounded-t-[18px] bg-surface px-4 pt-2 active:cursor-grabbing" style={{ top: REST }}>
+          <span className="mx-auto mb-3 block h-1 w-9 rounded-full bg-line" />
+          <span className="block text-[15px] font-medium tracking-[-0.01em]">Café Mona</span>
+          <span className="block text-[13px] text-ink-muted">Coffee · 6 min walk · Open until 18:00</span>
+          <span className="mt-3 flex gap-2">
+            <span className="inline-flex h-8 items-center rounded-control bg-accent px-3 text-[13px] font-medium text-accent-ink">Directions</span>
+            <span className="inline-flex h-8 items-center rounded-control px-3 text-[13px] font-medium ring-1 ring-line ring-inset">Save</span>
+          </span>
+          <span className="mt-4 block text-[13px] text-ink-muted text-pretty">Small, bright, by the river. Busiest before nine; quiet after two.</span>
+        </div>
+      </div>
+      <MarksLayer>
+        <div style={{ position: 'absolute', left: '50%', top: 0, width: 300, height: '100%', transform: 'translateX(-50%)' }}>
+          <span style={{ position: 'absolute', left: -12, right: -12, top: limit, borderTop: '1px dashed var(--pl-ink-3)' }} />
+          {m && m.pull > 0 ? (!elastic ? (
+            <span style={{ position: 'absolute', left: L, width: R - L, top: reach, height: limit - reach }}><Hatch x={0} y={0} w={R - L} h={limit - reach} /><Outline x={0} y={0} w={R - L} h={limit - reach} off r={8} /></span>
+          ) : (
+            <>
+              <Ghost x={L} y={reach} w={R - L} h={top - reach} r={8} off={false} />
+              {/* what it gave, measured at the sheet's edge (a bracket, so it doesn't cover the words) */}
+              <span style={{ position: 'absolute', left: R + 6, top, width: 0, height: limit - top, borderLeft: '2px solid var(--pl-on)' }} />
+              <span style={{ position: 'absolute', left: R + 2, top, width: 10, height: 0, borderTop: '2px solid var(--pl-on)' }} />
+              <span style={{ position: 'absolute', left: R + 2, top: limit - 1, width: 10, height: 0, borderTop: '2px solid var(--pl-on)' }} />
+            </>
+          )) : null}
+          {g ? <Contact x={g.contact.x} y={g.contact.y} /> : null}
+          {hand && m && m.pull > 0 ? <span style={{ position: 'absolute', left: hand.x - 5, top: hand.y - 5, width: 10, height: 10, borderRadius: '50%', background: hue(!elastic), boxShadow: '0 0 0 1.5px #fff' }} /> : null}
+          {m && m.pull > 0 ? <Tag x={R + 22} y={(reach + limit) / 2} off={!elastic}>{!elastic ? `0 of ${Math.round(m.pull)}px · dead` : `gave ${Math.round(m.gave)} of ${Math.round(m.pull)}px`}</Tag> : null}
+        </div>
+      </MarksLayer>
+    </div>
+  );
+}
+PlaceSheet.names = ['Clamped', 'Rubber-band'];
+PlaceSheet.lesson = {
+  why: 'A sheet clamped at its limit stops dead under a finger that keeps going: the hand moves, the thing doesn’t, and it feels broken or stuck rather than finished.',
+  habit: 'Past a limit, follow the pointer less and less (x = limit + over × a falling factor), then spring back on release. Vaul and Motion’s dragElastic do it for you.',
+};
+
+export const HANDS_ON = { 42: BoldHover, 60: TooltipWarm, 61: MenuPress, 64: InterruptPanel, 65: PlaceSheet, 77: SkeletonLand, 66: SpinnerTiming };
