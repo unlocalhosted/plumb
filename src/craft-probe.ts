@@ -5,11 +5,13 @@
 //   · a press is let go away from the control, so no click follows it
 //   · a navigation of the page is aborted, a request that is not a GET is aborted (it never reaches the server), a
 //     dialog is dismissed and a new window is closed
+import { mkdir, writeFile } from 'node:fs/promises';
+import { join } from 'node:path';
 import { ask, desktop, open, settle, sleep, RECORDER } from './craft-page.js';
 import type { Browser, Page } from './craft-page.js';
 
 export interface ProbeRecord { gesture: string; k: string; rec: Record<string, unknown> }
-export interface ProbeOptions { budget: number; drag: boolean }
+export interface ProbeOptions { budget: number; drag: boolean; scope?: string; record?: string }
 
 interface Session { page: Page; state: { armed: boolean; hold: number; fetches: number } }
 interface Frame { cx: number; cy: number; x: number; y: number; w: number; h: number }
@@ -17,8 +19,9 @@ interface Anim { t: number; at: string; kind: string; name: string; duration: nu
 interface Sampled { frames: { t: number; v: Record<string, string> | null }[]; events: { type: string; t: number; at: string }[] }
 
 /** A page of its own with the recorder in, the safety nets up, and the overlay present. */
-async function session<T>(browser: Browser, url: string, timeout: number, work: (s: Session) => Promise<T>): Promise<T> {
-  const context = await browser.newContext({ viewport: desktop, reducedMotion: 'no-preference' });
+async function session<T>(browser: Browser, url: string, timeout: number, work: (s: Session) => Promise<T>, scale = 1): Promise<T> {
+  // a recorded gesture is drawn at 2×: its frames are shown zoomed in, and must stay sharp there
+  const context = await browser.newContext({ viewport: desktop, reducedMotion: 'no-preference', deviceScaleFactor: scale });
   try {
     const page = await context.newPage();
     context.on('page', popup => { popup.close().catch(() => {}); });
@@ -140,6 +143,9 @@ async function menuDown({ page }: Session, keys: string[]): Promise<ProbeRecord[
   for (const k of keys) {
     const f = await frame(page, k);
     if (!f) continue;
+    // a menu already open (left by the last one, or open at rest) would be closed by the press and read as no open
+    for (let tries = 0; tries < 2 && (await ask<{ menus: number }>(page, { op: 'state', key: k })).menus; tries++) { await page.keyboard.press('Escape'); await sleep(300); }
+    if ((await ask<{ menus: number }>(page, { op: 'state', key: k })).menus) continue;
     await page.mouse.move(f.cx, f.cy);
     await sleep(60);
     await page.mouse.down();
@@ -156,9 +162,30 @@ async function menuDown({ page }: Session, keys: string[]): Promise<ProbeRecord[
 }
 
 // ── submenus (59): the pointer crosses the next item on its way to the submenu ──
-async function submenu({ page }: Session, keys: string[]): Promise<ProbeRecord[]> {
+type Box = { x: number; y: number; w: number; h: number; label?: string };
+/** What a recorded submenu probe leaves behind (--record-probe): frames of the page and the probe's own clock, in CSS px from the scope's top-left. */
+interface Recording { dir: string; scope?: string; browser: Browser }
+
+/** Frames of the page while a gesture runs: the scoped element captured in device pixels (a 2× page gives 2× frames,
+ * sharp when the stage zooms in) after each move the probe makes, each stamped with the wall clock its samples use. A
+ * screencast would keep the gesture's own pace, but headless it only sends frames at 1×. */
+async function snapshots(page: Page, box: Box) {
+  const cdp = await page.context().newCDPSession(page);
+  const shots: { at: number; data: string }[] = [];
+  // headless, the clip's scale is the only way to device pixels: the page's own ratio
+  const dpr = await page.evaluate(() => devicePixelRatio).catch(() => 1);
+  const snap = async () => {
+    const at = Date.now();
+    const r = await cdp.send('Page.captureScreenshot', { format: 'png', clip: { x: box.x, y: box.y, width: box.w, height: box.h, scale: dpr } }) as { data: string };
+    shots.push({ at, data: r.data });
+  };
+  return { shots, snap, dpr, stop: async () => { await cdp.detach().catch(() => {}); } };
+}
+
+async function submenu({ page }: Session, keys: string[], recording?: Recording): Promise<ProbeRecord[]> {
   const out: ProbeRecord[] = [];
-  type Sub = { key: string; cx: number; cy: number; h: number; menu: { x: number; y: number; w: number; h: number }; siblings: { x: number; y: number; w: number; h: number }[] };
+  let recorded = false;
+  type Sub = { key: string; label: string; cx: number; cy: number; h: number; menu: Box; siblings: Box[] };
   for (const k of keys) {
     const f = await frame(page, k);
     if (!f) continue;
@@ -169,12 +196,32 @@ async function submenu({ page }: Session, keys: string[]): Promise<ProbeRecord[]
     await sleep(500);
     const sub = await ask<Sub | null>(page, { op: 'subtrigger' });
     if (sub) {
-      await page.mouse.move(sub.cx, sub.cy);
-      let inner: { x: number; y: number; w: number; h: number } | null = null;
+      // the recording starts before the first move, so the frames hold the menu at rest first
+      const view = page.viewportSize() ?? desktop;
+      const scoped = recording?.scope ? await page.evaluate((sel) => { const r = document.querySelector(sel)?.getBoundingClientRect(); return r ? { x: r.x, y: r.y, w: r.width, h: r.height } : null; }, recording.scope) : null;
+      const cast = recording && !recorded ? await snapshots(page, scoped ?? { x: 0, y: 0, w: view.width, h: view.height }).catch(() => null) : null;
+      await cast?.snap().catch(() => {});
+      const samples: { t: number; x: number; y: number; step: number; open: boolean }[] = [];
+      let t0 = 0, inner: Box | null = null, opened: { subtrigger: Box; submenu: Box; siblings: Box[] } | null = null;
+      const move = async (x: number, y: number, step: number) => {
+        const at = Date.now();
+        if (!samples.length) t0 = at;
+        await page.mouse.move(x, y);
+        return { at, x, y, step };
+      };
+      const mark = (m: { at: number; x: number; y: number; step: number }, open: boolean) => samples.push({ t: m.at - t0, x: m.x, y: m.y, step: m.step, open });
+      const hover = await move(sub.cx, sub.cy, 0);
       for (let waited = 0; !inner && waited < 1000; waited += 100) { await sleep(100); inner = await ask(page, { op: 'submenu', key: sub.key }); }
+      mark(hover, !!inner);
+      await cast?.snap().catch(() => {});
+      if (inner && cast) {
+        const item = await ask<Frame | null>(page, { op: 'rect', key: sub.key });
+        opened = { subtrigger: item ? { x: item.x, y: item.y, w: item.w, h: item.h, label: sub.label } : { x: sub.cx, y: sub.cy - sub.h / 2, w: 0, h: sub.h, label: sub.label }, submenu: inner, siblings: sub.siblings };
+      }
+      let record: ProbeRecord | null = null;
       if (inner) {
         // from the item's middle to the submenu's far corner, over the items between; a path over no item is no test
-        const inside = (px: number, py: number, r: { x: number; y: number; w: number; h: number }) => px >= r.x && px <= r.x + r.w && py >= r.y && py <= r.y + r.h;
+        const inside = (px: number, py: number, r: Box) => px >= r.x && px <= r.x + r.w && py >= r.y && py <= r.y + r.h;
         const aim = (toY: number) => Array.from({ length: 11 }, (_, i) => ({ x: sub.cx + ((inner!.x + (inner!.x > sub.cx ? inner!.w : 0) - sub.cx) * i) / 10, y: sub.cy + ((toY - sub.cy) * i) / 10 }));
         let path = aim(inner.y + inner.h - 4);
         let crossed = sub.siblings.filter(r => path.some(p => inside(p.x, p.y, r))).length;
@@ -182,13 +229,44 @@ async function submenu({ page }: Session, keys: string[]): Promise<ProbeRecord[]
         if (crossed) {
           let step = -1;
           for (let i = 1; i < path.length; i++) {
-            await page.mouse.move(path[i]!.x, path[i]!.y);
+            const m = await move(path[i]!.x, path[i]!.y, i);
             await sleep(25);
-            if (step < 0 && !await ask(page, { op: 'submenu', key: sub.key })) step = i;
+            const open = !!await ask(page, { op: 'submenu', key: sub.key });
+            if (step < 0 && !open) step = i;
+            mark(m, open);
+            await cast?.snap().catch(() => {});
           }
-          out.push({ gesture: 'submenu', k, rec: { lost: step >= 0, step, crossed } });
+          record = { gesture: 'submenu', k, rec: { lost: step >= 0, step, crossed } };
+          out.push(record);
         }
       }
+      if (cast && recording) {
+        for (let i = 0; i < 3; i++) { await sleep(100); await cast.snap().catch(() => {}); } // what the page does after the last move
+        await cast.stop();
+        if (record && opened && samples.length) {
+          recorded = true;
+          const box: Box = scoped ?? { x: 0, y: 0, w: view.width, h: view.height };
+          const rel = (r: Box): Box => ({ x: r.x - box.x, y: r.y - box.y, w: r.w, h: r.h, ...(r.label !== undefined ? { label: r.label } : {}) });
+          // the menu at rest (taken before the first move), then the page after each move; already cropped to the scope
+          const kept = cast.shots;
+          const images = kept.map(s => s.data);
+          await mkdir(recording.dir, { recursive: true });
+          const frames = await Promise.all(images.map(async (data, i) => {
+            const file = `frame-${String(i).padStart(3, '0')}.png`;
+            await writeFile(join(recording.dir, file), Buffer.from(data, 'base64'));
+            // the first frame is the page at rest (a screencast sends one on start), so it is not later than the first move
+            return { t: i === 0 ? Math.min(0, Math.round(kept[i]!.at - t0)) : Math.round(kept[i]!.at - t0), file };
+          }));
+          // the ratio the frames were taken at (read again after the capture session detaches, Chromium reports 1)
+          const dpr = cast.dpr;
+          const pointer = samples.map(s => ({ t: s.t, x: Math.round((s.x - box.x) * 100) / 100, y: Math.round((s.y - box.y) * 100) / 100, step: s.step, open: s.open }));
+          const rec = record.rec as { lost: boolean; step: number; crossed: number };
+          await writeFile(join(recording.dir, 'probe.json'), JSON.stringify({
+            gesture: 'submenu', trigger: k, lost: rec.lost, step: rec.step, crossed: rec.crossed, box: { w: box.w, h: box.h }, dpr,
+            samples: pointer, subtrigger: rel(opened.subtrigger), submenu: rel(opened.submenu), siblings: opened.siblings.map(rel), frames,
+          }, null, 2));
+        }
+      } else if (cast) await cast.stop();
     }
     await page.keyboard.press('Escape');
     await sleep(200);
@@ -336,7 +414,7 @@ async function spinners({ page, state }: Session, keysIn: string[], url: string,
 /** Try each gesture on what the page offers, a family at a time, and return what each did. A family that fails says nothing. */
 export async function takeProbes(browser: Browser, url: string, timeout: number, options: ProbeOptions): Promise<ProbeRecord[]> {
   const quiet = (what: string) => (error: unknown) => { if (process.env.PLUMBER_DEBUG) process.stderr.write(`craft: probe ${what}: ${(error as Error).message}\n`); return [] as ProbeRecord[]; };
-  const found = await session(browser, url, timeout, ({ page }) => ask<{ presses: string[]; toggles: string[]; menus: string[]; tooltips: string[]; drags: string[] }>(page, { op: 'candidates' }))
+  const found = await session(browser, url, timeout, ({ page }) => ask<{ presses: string[]; toggles: string[]; menus: string[]; tooltips: string[]; drags: string[] }>(page, { op: 'candidates', ...(options.scope ? { scope: options.scope } : {}) }))
     .catch((error: unknown) => { quiet('candidates')(error); return null; });
   if (process.env.PLUMBER_DEBUG) process.stderr.write(`craft: probe candidates ${JSON.stringify(found)}\n`);
   if (!found) return [];
@@ -345,7 +423,7 @@ export async function takeProbes(browser: Browser, url: string, timeout: number,
     ['press', cap(found.presses), press],
     ['toggle', cap(found.toggles), toggle],
     ['menu-down', cap(found.menus), menuDown],
-    ['submenu', cap(found.menus).slice(0, 4), submenu],
+    ['submenu', cap(found.menus).slice(0, 4), (s, k) => submenu(s, k, options.record ? { dir: options.record, browser, ...(options.scope ? { scope: options.scope } : {}) } : undefined)],
     ['tooltip', cap(found.tooltips), tooltips],
     ['drag', options.drag ? cap(found.drags) : [], drag],
     ['keys', [], keys],
@@ -354,7 +432,7 @@ export async function takeProbes(browser: Browser, url: string, timeout: number,
   const out: ProbeRecord[] = [];
   for (const [name, list, run] of families) {
     if (name !== 'keys' && !list?.length) continue;
-    out.push(...await session(browser, url, timeout, s => run(s, list ?? [])).catch(quiet(name)));
+    out.push(...await session(browser, url, timeout, s => run(s, list ?? []), name === 'submenu' && options.record ? 2 : 1).catch(quiet(name)));
   }
   return out;
 }

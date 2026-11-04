@@ -205,10 +205,11 @@ export function heightsAt(keysIn) {
 
 // The elements a gesture may be tried on, by key. A control inside a form, a submit button, a link and a disabled
 // control are never in the list: a probe presses buttons, it never submits, follows or sends anything.
-export function candidates() {
+export function candidates(scope) {
+  const within = scope ? document.querySelector(scope) : null;
   const seen = (el) => { const r = el.getBoundingClientRect(); return r.width > 0 && r.height > 0 && getComputedStyle(el).visibility !== 'hidden' && !el.closest('plumb-overlay, [inert], [hidden]'); };
   const safe = (el) => !el.closest('form') && !el.form && !el.closest('a[href]') && el.getAttribute('type') !== 'submit' && !el.disabled && el.getAttribute('aria-disabled') !== 'true';
-  const all = [...document.body.querySelectorAll('button, [role="button"]')].filter((e) => seen(e) && safe(e));
+  const all = [...document.body.querySelectorAll('button, [role="button"]')].filter((e) => seen(e) && safe(e) && (!scope || (within && within.contains(e))));
   const keysOf = (list) => list.map(pathKey);
   return {
     presses: keysOf(all.filter((e) => !e.matches('[aria-pressed], [aria-expanded], [aria-haspopup], [role="tab"]'))),

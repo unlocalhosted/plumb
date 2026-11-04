@@ -1,0 +1,304 @@
+<!doctype html>
+<!-- THROWAWAY: the marks plumber draws for a gesture (probe stage, docs/craft/probe-stage-brief.md), every state side by
+     side, before any moment uses them. Benchmark qualities (owner's reference): a sampled dotted trail, a translucent
+     triangle with dashed edges, rings on the samples. Colours are plumber's (overlay/src/tokens.css): sky measures,
+     coral is broken, mint is fixed. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gesture marks · sheet</title>
+<style>
+  :root {
+    --canvas: #f5f7fa; --surface: #fff; --sunken: #f3f5f9; --ink: #12233d; --ink-muted: #5a6779; --line: rgb(18 35 61 / 0.11);
+    --board: #eef1f5; --board-dot: #d6dce4;
+    --popover: 0 0 0 0.5px rgb(18 35 61 / 0.08), 0 4px 8px rgb(18 35 61 / 0.05), 0 12px 32px rgb(18 35 61 / 0.12);
+    /* the marks: plumber's tokens (overlay/src/tokens.css scopes them to :host, the overlay's shadow root, so a plain
+       page copies the few it uses) */
+    --m-sky: #2a7fd0; --m-coral: #e5503f; --m-mint: #1f9e64;
+    --pl-halo: rgb(255 255 255 / 0.9); --pl-ink-2: #6b665c; --pl-ink-3: #b3ad9f;
+    --pl-sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; --pl-mono: ui-monospace, "SF Mono", Menlo, monospace;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 48px 40px 64px; background: var(--board); background-image: radial-gradient(var(--board-dot) 1px, transparent 1px);
+    background-size: 16px 16px; font: 14px/20px Inter, system-ui, sans-serif; color: var(--ink); -webkit-font-smoothing: antialiased; }
+  h1 { margin: 0 0 4px; font-size: 17px; line-height: 24px; font-weight: 500; letter-spacing: -0.01em; }
+  .sub { margin: 0 0 32px; font-size: 13px; color: var(--ink-muted); max-width: 70ch; }
+  .grid { display: grid; grid-template-columns: repeat(2, 640px); gap: 28px 32px; }
+  figure { margin: 0; display: flex; flex-direction: column; gap: 10px; }
+  figcaption { display: flex; gap: 10px; align-items: baseline; font-size: 13px; }
+  figcaption b { font-weight: 500; }
+  figcaption span { color: var(--ink-muted); }
+  .frame { position: relative; width: 640px; height: 340px; border-radius: 14px; background: var(--sunken); overflow: hidden;
+    box-shadow: 0 0 0 0.5px var(--line); }
+
+  /* the example: a context menu at 1.6×, as the camera shows it */
+  .scene { position: absolute; left: 0; top: 0; transform-origin: 0 0; transform: scale(1.6); width: 400px; height: 206px; }
+  .menu, .submenu { position: absolute; width: 168px; padding: 4px; background: var(--surface); border-radius: 10px; box-shadow: var(--popover); font-size: 13px; }
+  .item { height: 30px; display: flex; align-items: center; justify-content: space-between; padding: 0 10px; border-radius: 6px; }
+  .item.hover { background: var(--sunken); }
+  .item kbd { font: 11.5px system-ui; color: var(--ink-muted); }
+  .item .chev { color: var(--ink-muted); font-size: 11px; }
+  .submenu.ghost { background: transparent; box-shadow: none; }
+  .submenu.ghost .item { visibility: hidden; }
+
+  /* plumber's layer, in the scene's coordinates; lines keep their width at any zoom */
+  svg.marks { position: absolute; left: 0; top: 0; width: 400px; height: 206px; overflow: visible; }
+  .tri { fill: rgb(42 127 208 / 0.13); stroke: var(--m-sky); stroke-width: 1.25; stroke-dasharray: 4 3; vector-effect: non-scaling-stroke; stroke-linejoin: round; }
+  .edge { stroke: var(--m-sky); stroke-width: 1.25; stroke-dasharray: 4 3; vector-effect: non-scaling-stroke; }
+  .dot { fill: var(--m-sky); }
+  .ring { fill: #fff; stroke: var(--m-sky); stroke-width: 1.5; vector-effect: non-scaling-stroke; }
+  .ring.off { fill: var(--m-coral); stroke: #fff; }
+  .ring.on { fill: var(--m-mint); stroke: #fff; }
+  .halo { fill: none; stroke: rgb(229 80 63 / 0.35); stroke-width: 6; vector-effect: non-scaling-stroke; }
+  .ghostline { fill: none; stroke: var(--m-coral); stroke-width: 1; stroke-dasharray: 2 4; stroke-linecap: round; vector-effect: non-scaling-stroke; opacity: 0.55; }
+  .crossed { fill: url(#hatch); }
+  .crossed-edge { fill: none; stroke: var(--m-coral); stroke-width: 1; vector-effect: non-scaling-stroke; opacity: 0.7; }
+  .reached { fill: rgb(31 158 100 / 0.10); stroke: var(--m-mint); stroke-width: 1; vector-effect: non-scaling-stroke; }
+  .cursor path { fill: #fff; stroke: var(--ink); stroke-width: 1; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+  .hatch-bg { fill: rgb(229 80 63 / 0.08); } .hatch-line { stroke: rgb(229 80 63 / 0.45); stroke-width: 1; }
+
+  /* pills: plumber's, unscaled (they live outside the scene) */
+  .pill { position: absolute; translate: -50% -50%; white-space: nowrap; font: 600 11px/14px var(--pl-sans); padding: 3px 9px; border-radius: 999px;
+    color: #fff; box-shadow: 0 0 0 1px var(--pl-halo), 0 1px 2px rgb(0 0 0 / 0.12); }
+  .pill.off { background: var(--m-coral); } .pill.on { background: var(--m-mint); } .pill.sky { background: var(--m-sky); }
+
+  /* the time ruler */
+  .ruler { position: relative; height: 40px; width: 616px; margin: 0 12px; }
+  .ruler .axis { position: absolute; left: 0; right: 0; top: 16px; border-top: 1px solid var(--pl-ink-3); }
+  .ruler .tick { position: absolute; top: 12px; width: 1px; height: 8px; background: var(--pl-ink-3); }
+  .ruler .tick.minor { top: 14px; height: 4px; }
+  .ruler .lab { position: absolute; top: 22px; translate: -50% 0; font: 400 10.5px/14px var(--pl-mono); color: var(--pl-ink-2); }
+  .ruler .played { position: absolute; left: 0; top: 15px; height: 3px; background: var(--m-sky); border-radius: 2px; }
+  .ruler .played.off { background: var(--m-coral); } .ruler .played.on { background: var(--m-mint); }
+  .ruler .ev { position: absolute; top: 11px; width: 11px; height: 11px; margin-left: -5.5px; border-radius: 50%; box-shadow: 0 0 0 2px #fff; }
+  .ruler .ev.off { background: var(--m-coral); } .ruler .ev.on { background: var(--m-mint); } .ruler .ev.plain { background: #fff; box-shadow: 0 0 0 1.5px var(--m-sky); }
+  .ruler .head { position: absolute; top: 4px; width: 2px; height: 24px; margin-left: -1px; background: var(--m-sky); border-radius: 1px; box-shadow: 0 0 0 1px #fff; }
+  .ruler .speed { position: absolute; right: 0; top: -6px; font: 600 10.5px/14px var(--pl-sans); color: var(--pl-ink-2); }
+
+  /* the live playground: your pointer is the probe */
+  .live { display: flex; flex-direction: column; gap: 10px; width: 640px; margin-bottom: 44px; }
+  .live .frame { cursor: default; }
+  .live .head-row { display: flex; align-items: center; justify-content: space-between; }
+  .live .head-row b { font-weight: 500; font-size: 13px; }
+  .seg { display: flex; padding: 3px; background: var(--surface); border-radius: 999px; box-shadow: 0 0 0 0.5px var(--line), 0 1px 2px rgb(18 35 61 / 0.05); font-size: 13px; }
+  .seg button { font: inherit; border: 0; background: transparent; padding: 4px 12px; border-radius: 999px; color: var(--ink-muted); cursor: pointer; }
+  .seg button[aria-pressed="true"] { background: var(--ink); color: #fff; }
+  .live .hint { font-size: 13px; color: var(--ink-muted); }
+  .live .submenu { transition: opacity 90ms; }
+  .live .submenu.shut { opacity: 0; }
+  .contact { fill: #fff; stroke: var(--m-sky); stroke-width: 1.5; vector-effect: non-scaling-stroke; }
+</style>
+</head>
+<body>
+<h1>Gesture marks</h1>
+<p class="sub">What plumber draws when it shows a gesture it performed. #59, the safe triangle: from Arrange to the submenu’s far corner, the path plumber’s probe takes (11 samples). Each state as the moment shows it, at the camera’s 1.6×.</p>
+<section class="live" id="live">
+  <div class="head-row"><b>Try it: your pointer is plumber’s probe</b>
+    <div class="seg" role="group" aria-label="Menu"><button type="button" data-mode="hand" aria-pressed="true">Hand-rolled</button><button type="button" data-mode="safe" aria-pressed="false">Safe triangle</button></div>
+  </div>
+  <div id="live-slot"></div>
+  <p class="hint" id="live-hint">Rest on Arrange, then head straight for “Send to back”. Come back to Arrange to try again.</p>
+</section>
+<div class="grid" id="grid"></div>
+
+<template id="scene">
+  <div class="frame">
+    <div class="scene">
+      <div class="menu" style="left:40px;top:22px">
+        <div class="item">Rename <kbd>⌘R</kbd></div>
+        <div class="item" data-arrange>Arrange <span class="chev">▸</span></div>
+        <div class="item" data-group>Group <kbd>⌘G</kbd></div>
+        <div class="item">Hide <kbd>⇧⌘H</kbd></div>
+        <div class="item">Delete <kbd>⌫</kbd></div>
+      </div>
+      <div class="submenu" style="left:204px;top:52px">
+        <div class="item">Bring to front</div><div class="item">Bring forward</div><div class="item">Send backward</div><div class="item" data-target>Send to back</div>
+      </div>
+      <svg class="marks" viewBox="0 0 400 206" aria-hidden="true">
+        <defs>
+          <pattern id="hatch" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect class="hatch-bg" width="5" height="5"/><line class="hatch-line" x1="0" y1="0" x2="0" y2="5"/></pattern>
+        </defs>
+      </svg>
+    </div>
+  </div>
+</template>
+
+<script>
+// geometry, in the scene's units (the frame shows it at 1.6×)
+const K = 1.6;
+const M = { x: 40, y: 22, w: 168, pad: 4, row: 30 }, SUB = { x: 204, y: 52, w: 168, h: 4 * 30 + 8 };
+const row = (i) => ({ x: M.x + M.pad, y: M.y + M.pad + i * M.row, w: M.w - 2 * M.pad, h: M.row });
+const subRow = (i) => ({ x: SUB.x + 4, y: SUB.y + 4 + i * 30, w: SUB.w - 8, h: 30 });
+const A = row(1), G = row(2);
+// plumber's probe path (src/craft-probe.ts): the item's middle to the submenu's far corner, 11 samples
+const start = { x: A.x + A.w / 2, y: A.y + A.h / 2 }, end = { x: SUB.x + SUB.w - 8, y: SUB.y + SUB.h - 6 };
+const sample = (i) => ({ x: start.x + ((end.x - start.x) * i) / 10, y: start.y + ((end.y - start.y) * i) / 10 });
+const inside = (p, r) => p.x >= r.x && p.x <= r.x + r.w && p.y >= r.y && p.y <= r.y + r.h;
+const lost = [...Array(11).keys()].find((i) => i > 0 && inside(sample(i), G) && sample(i).x < M.x + M.w); // the step it closed at
+const NS = 'http://www.w3.org/2000/svg';
+const el = (tag, attrs, parent) => { const n = document.createElementNS(NS, tag); for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, v); parent.append(n); return n; };
+
+// the trail: rings on the probe's samples, small dots between them, fainter the older they are
+function trail(svg, upTo, endRing = '') {
+  const last = sample(upTo);
+  for (let i = 0; i < upTo; i++) {
+    const a = sample(i), b = sample(i + 1), d = Math.hypot(b.x - a.x, b.y - a.y), n = Math.max(1, Math.round(d / 5));
+    for (let j = 1; j < n; j++) {
+      const q = { x: a.x + ((b.x - a.x) * j) / n, y: a.y + ((b.y - a.y) * j) / n };
+      const age = (i + j / n) / Math.max(1, upTo);
+      el('circle', { class: 'dot', cx: q.x, cy: q.y, r: 1.1, opacity: (0.2 + 0.6 * age).toFixed(2) }, svg);
+    }
+  }
+  for (let i = 0; i <= upTo; i++) { const s = sample(i); el('circle', { class: `ring ${i === upTo ? endRing : ''}`, cx: s.x, cy: s.y, r: i === upTo && endRing ? 3.2 : 1.9 }, svg); }
+  return last;
+}
+function cursor(svg, p) {
+  const g = el('g', { class: 'cursor', transform: `translate(${p.x + 3} ${p.y + 2})` }, svg);
+  el('path', { d: 'M0 0 L0 13.5 L3.4 10.4 L5.9 16 L8.1 15.1 L5.7 9.6 L10 9.6 Z' }, g);
+}
+const triangle = (svg, p) => {
+  el('polygon', { class: 'tri', points: `${p.x},${p.y} ${SUB.x},${SUB.y} ${SUB.x},${SUB.y + SUB.h}` }, svg);
+};
+const pill = (frame, text, kind, at) => frame.insertAdjacentHTML('beforeend', `<span class="pill ${kind}" style="left:${at.x * K}px;top:${at.y * K}px">${text}</span>`);
+
+// the ruler under a frame: 0–600ms of gesture, what played, the events
+function ruler(played, kind, events) {
+  const W = 616, x = (ms) => (ms / 600) * W;
+  let h = `<div class="ruler"><span class="speed">½ speed</span><div class="axis"></div>`;
+  for (let ms = 0; ms <= 600; ms += 50) h += `<div class="tick ${ms % 100 ? 'minor' : ''}" style="left:${x(ms)}px"></div>${ms % 100 ? '' : `<span class="lab" style="left:${Math.min(W - 12, Math.max(10, x(ms)))}px">${ms}</span>`}`;
+  h += `<div class="played ${kind}" style="width:${x(played)}px"></div>`;
+  for (const [ms, k] of events) h += `<div class="ev ${k}" style="left:${x(ms)}px"></div>`;
+  return h + `<div class="head" style="left:${x(played)}px"></div></div>`;
+}
+
+const STATES = [
+  { title: 'At rest', note: 'plumber’s pointer on Arrange, the submenu open. Nothing drawn yet but the pointer.',
+    draw(svg, f) { f.querySelector('[data-arrange]').classList.add('hover'); cursor(svg, start); return ruler(0, '', [[0, 'plain']]); } },
+  { title: 'Moving', note: 'the trail writes itself behind the pointer: a ring per sample plumber took, dots between, older ones fainter.',
+    draw(svg, f) { f.querySelector('[data-arrange]').classList.add('hover'); const p = trail(svg, 2); cursor(svg, p); return ruler(120, '', [[0, 'plain']]); } },
+  { title: 'Closed', note: 'hand-rolled: the pointer touched Group and the submenu went. The frame holds; the sample where it closed is coral, the item it crossed is hatched, the submenu is a dashed ghost.',
+    draw(svg, f) {
+      f.querySelector('[data-group]').classList.add('hover');
+      f.querySelector('.submenu').classList.add('ghost');
+      el('rect', { class: 'crossed', x: G.x, y: G.y, width: G.w, height: G.h, rx: 6 }, svg);
+      el('rect', { class: 'ghostline', x: SUB.x, y: SUB.y, width: SUB.w, height: SUB.h, rx: 10 }, svg);
+      const p = trail(svg, lost, 'off');
+      el('circle', { class: 'halo', cx: p.x, cy: p.y, r: 7 }, svg);
+      cursor(svg, p);
+      pill(f, 'closed · crossed Group', 'off', { x: SUB.x + SUB.w / 2, y: SUB.y + SUB.h / 2 });
+      return ruler(lost * 60, 'off', [[0, 'plain'], [lost * 60, 'off']]);
+    } },
+  { title: 'Reached', note: 'Radix: the safe triangle (from the pointer to the submenu’s near edge) keeps it open; the same path reaches Send to back. The last sample is mint.',
+    draw(svg, f) {
+      f.querySelector('[data-target]').classList.add('hover');
+      triangle(svg, start);
+      el('line', { class: 'edge', x1: SUB.x, y1: SUB.y, x2: SUB.x, y2: SUB.y + SUB.h }, svg);
+      const t = subRow(3);
+      el('rect', { class: 'reached', x: t.x, y: t.y, width: t.w, height: t.h, rx: 6 }, svg);
+      const p = trail(svg, 10, 'on');
+      cursor(svg, p);
+      pill(f, 'reached · ✓', 'on', { x: SUB.x + SUB.w / 2, y: SUB.y + SUB.h + 16 });
+      return ruler(600, 'on', [[0, 'plain'], [600, 'on']]);
+    } },
+];
+
+const grid = document.getElementById('grid'), tpl = document.getElementById('scene');
+
+// ── the live playground ─────────────────────────────────────
+{
+  const slot = document.getElementById('live-slot');
+  const frame = tpl.content.firstElementChild.cloneNode(true);
+  slot.append(frame);
+  slot.insertAdjacentHTML('beforeend', '<div id="live-ruler"></div>');
+  const svg = frame.querySelector('svg'), sub = frame.querySelector('.submenu'), scene = frame.querySelector('.scene');
+  const rows = [...frame.querySelectorAll('.menu .item')], subRows = [...sub.querySelectorAll('.item')];
+  const layer = el('g', {}, svg);
+  let mode = 'hand';
+  // the gesture: open on Arrange; where the pointer left it (the contact point); its samples; how it ended
+  const g = { open: true, active: 1, contact: null, t0: 0, samples: [], end: null, crossed: null, at: null, overSub: -1 };
+  const reset = () => Object.assign(g, { open: true, active: 1, contact: null, t0: 0, samples: [], end: null, crossed: null, at: null, overSub: -1 });
+  for (const b of document.querySelectorAll('.seg button')) b.onclick = () => {
+    mode = b.dataset.mode;
+    for (const o of document.querySelectorAll('.seg button')) o.setAttribute('aria-pressed', o === b);
+    reset(); draw();
+  };
+  const rowAt = (p) => [0, 1, 2, 3, 4].find((i) => inside(p, row(i)));
+  const subAt = (p) => [0, 1, 2, 3].find((i) => inside(p, subRow(i)));
+  const inTri = (p, a, b, c) => { const s = (p1, p2, p3) => (p1.x - p3.x) * (p2.y - p3.y) - (p2.x - p3.x) * (p1.y - p3.y); const d1 = s(p, a, b), d2 = s(p, b, c), d3 = s(p, c, a); return !((d1 < 0 || d2 < 0 || d3 < 0) && (d1 > 0 || d2 > 0 || d3 > 0)); };
+  // Radix's grace area: from where you left the item to the submenu's near edge, padded a little
+  const tri = () => [g.contact, { x: SUB.x, y: SUB.y - 4 }, { x: SUB.x, y: SUB.y + SUB.h + 4 }];
+
+  frame.addEventListener('pointermove', (e) => {
+    const r = frame.getBoundingClientRect(), p = { x: (e.clientX - r.left) / K, y: (e.clientY - r.top) / K }, now = performance.now();
+    const onRow = rowAt(p), onSub = g.open ? subAt(p) : undefined;
+    // back on Arrange: a fresh try
+    if (onRow === 1) { if (g.end || g.contact) reset(); g.last = p; g.lastT = now; draw(); return; }
+    // held (closed): the frame stops. Reached: the trail goes on inside the submenu
+    if (g.end === 'closed') { draw(); return; }
+    // the moment you leave Arrange is the contact point: the triangle starts there, the clock starts there
+    if (!g.contact && g.last) { g.contact = g.last; g.t0 = g.lastT ?? now; g.samples.push({ ...g.contact, t: 0 }); }
+    g.last = p;
+    if (!g.contact) { draw(); return; }
+    const last = g.samples.at(-1);
+    if (!last || Math.hypot(p.x - last.x, p.y - last.y) > 2.5) g.samples.push({ ...p, t: now - g.t0 });
+    if (g.end === 'reached') { if (onSub !== undefined) g.overSub = onSub; }
+    else if (onSub !== undefined) { g.end = 'reached'; g.at = p; g.overSub = onSub; g.ms = now - g.t0; }
+    else if (onRow !== undefined && g.open) {
+      const safe = mode === 'safe' && inTri(p, ...tri());
+      if (!safe) { g.open = false; g.end = 'closed'; g.crossed = onRow; g.at = p; g.ms = now - g.t0; }
+    }
+    draw();
+  });
+  frame.addEventListener('pointerleave', () => { if (!g.end) { reset(); draw(); } });
+
+  function draw() {
+    layer.replaceChildren();
+    frame.querySelectorAll('.pill').forEach((n) => n.remove());
+    rows.forEach((n, i) => n.classList.toggle('hover', g.end === 'closed' ? i === g.crossed : i === 1));
+    subRows.forEach((n, i) => n.classList.toggle('hover', g.end === 'reached' && i === g.overSub));
+    sub.classList.toggle('shut', !g.open);
+    if (mode === 'safe' && g.contact && g.end !== 'closed') {
+      el('polygon', { class: 'tri', points: tri().map((q) => `${q.x},${q.y}`).join(' ') }, layer);
+      el('line', { class: 'edge', x1: SUB.x, y1: SUB.y - 4, x2: SUB.x, y2: SUB.y + SUB.h + 4 }, layer);
+    }
+    if (g.end === 'closed') {
+      const c = row(g.crossed);
+      el('rect', { class: 'crossed', x: c.x, y: c.y, width: c.w, height: c.h, rx: 6 }, layer);
+      el('rect', { class: 'ghostline', x: SUB.x, y: SUB.y, width: SUB.w, height: SUB.h, rx: 10 }, layer);
+    }
+    if (g.end === 'reached') { const t = subRow(g.overSub); el('rect', { class: 'reached', x: t.x, y: t.y, width: t.w, height: t.h, rx: 6 }, layer); }
+    // the trail: every sample a dot, every fourth a ring, older ones fainter
+    const n = g.samples.length;
+    g.samples.forEach((q, i) => {
+      const age = n > 1 ? i / (n - 1) : 1;
+      if (i % 4 === 0) el('circle', { class: 'ring', cx: q.x, cy: q.y, r: 1.9 }, layer);
+      else el('circle', { class: 'dot', cx: q.x, cy: q.y, r: 1.1, opacity: (0.2 + 0.6 * age).toFixed(2) }, layer);
+    });
+    if (g.contact) el('circle', { class: 'contact', cx: g.contact.x, cy: g.contact.y, r: 3 }, layer);
+    if (g.at) {
+      if (g.end === 'closed') el('circle', { class: 'halo', cx: g.at.x, cy: g.at.y, r: 7 }, layer);
+      el('circle', { class: `ring ${g.end === 'closed' ? 'off' : 'on'}`, cx: g.at.x, cy: g.at.y, r: 3.2 }, layer);
+    }
+    if (g.end === 'closed') pill(frame, `closed · crossed ${rows[g.crossed].firstChild.textContent.trim()}`, 'off', { x: SUB.x + SUB.w / 2, y: SUB.y + SUB.h / 2 });
+    if (g.end === 'reached') pill(frame, 'reached · ✓', 'on', { x: SUB.x + SUB.w / 2, y: SUB.y + SUB.h + 16 });
+    const ms = Math.min(600, g.end ? g.ms : g.samples.at(-1)?.t ?? 0);
+    document.getElementById('live-ruler').innerHTML = ruler(ms, g.end === 'closed' ? 'off' : g.end === 'reached' ? 'on' : '', [[0, 'plain'], ...(g.end ? [[ms, g.end === 'closed' ? 'off' : 'on']] : [])]).replace('½ speed', 'live');
+    document.getElementById('live-hint').textContent = !g.contact ? 'Rest on Arrange, then head straight for “Send to back”. Come back to Arrange to try again.'
+      : g.end === 'closed' ? `It closed ${Math.round(g.ms)}ms after you left Arrange. Back to Arrange to try again${mode === 'hand' ? ', or turn the safe triangle on' : ''}.`
+      : g.end === 'reached' ? `Reached in ${Math.round(g.ms)}ms. Back to Arrange to try again.` : '…';
+  }
+  draw();
+}
+
+for (const s of STATES) {
+  const fig = document.createElement('figure');
+  const frame = tpl.content.firstElementChild.cloneNode(true);
+  fig.append(frame);
+  const r = s.draw(frame.querySelector('svg'), frame);
+  fig.insertAdjacentHTML('beforeend', r + `<figcaption><b>${s.title}</b><span>${s.note}</span></figcaption>`);
+  grid.append(fig);
+}
+</script>
+</body>
+</html>

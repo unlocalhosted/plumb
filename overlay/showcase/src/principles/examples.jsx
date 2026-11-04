@@ -3,6 +3,7 @@
 // plumber, scoped to it, finds one thing. `measure` (optional) says where the eye sees the harm, for the ticks drawn
 // over the example; it reads the page, it never decides what is wrong (plumber does).
 import { useEffect, useRef, useState } from 'react';
+import * as Menu from '@radix-ui/react-dropdown-menu';
 import { ArrowRightIcon, BoltIcon, CopyIcon, DownloadIcon, ExternalLinkIcon, FolderIcon, HeadphonesIcon, HeartIcon, HistoryIcon, LayersIcon, MailIcon, SunIcon, BookIcon, FileIcon, ChartIcon, CodeIcon, MessageIcon, PathIcon, PauseIcon, PlusIcon, SearchIcon, SendIcon, SparklesIcon, TrashIcon, UploadIcon, UserIcon } from '@unlocalhosted/dither-icons';
 import lowTide from '../media/low-tide.jpg';
 import paperCities from '../media/paper-cities.jpg';
@@ -1924,5 +1925,102 @@ InsertMenu.measure = (root) => {
   };
 };
 
-export const EXAMPLES = { 8: RecentlyPlayed, 1: ClientProfile, 2: InvoiceWalkthrough, 3: Whiteboard, 4: DriveActivity, 5: ChatThread, 6: FitnessToday, 15: IssueTable, 16: Timesheet, 18: NewsFront, 45: LongRead, 46: BoardingPass, 21: Recipe, 25: FeatureCard, 37: ReadersChart, 38: Agenda, 39: GlazeBoard, 40: Widgets, 42: ProjectTabs, 50: NoNotes, 63: InsertMenu, 73: Handbook, 68: EventPreview, 74: Projects, 75: ShareAccess, 57: Inbox, 23: ShareMenu, 51: DeleteDialog, 55: Forecast, 56: Destination };
+// #59 safe triangle for submenus. A design tool's layer menu: ⋯ on the selected layer opens it, Arrange opens a
+// submenu to the right. Two sides, two components (the fix is a change of component, not a class):
+//   broken  a hand-rolled menu: the submenu closes the moment the pointer enters another item, so the straight way to
+//           it, across Group, loses it
+//   fixed   Radix's DropdownMenu: a safe triangle from where the pointer left Arrange holds the submenu open
+// Both are probed by plumber for real (src/craft-probe.ts, the submenu gesture), and the stage plays back what it did.
+const ROWS = [['Rename', '⌘R'], ['Arrange', null], ['Group', '⌘G'], ['Hide', '⇧⌘H'], ['Delete', '⌫']];
+const ORDER = ['Bring to front', 'Bring forward', 'Send backward', 'Send to back'];
+const menuBox = 'z-10 flex w-42 flex-col rounded-card bg-surface p-1 text-[13px] font-normal text-ink shadow-popover outline-none';
+const itemBox = 'flex h-[30px] cursor-default items-center justify-between rounded-control px-2.5 outline-none select-none';
+function LayerTool({ children }) {
+  return (
+    <article data-tool className="relative h-[21rem] w-[40rem] overflow-hidden rounded-card bg-surface shadow-card">
+      <header className="flex h-10 items-center gap-2 border-b-hairline border-line px-4 text-[13px]"><span className="text-ink-muted">Spring launch /</span><span>Hero</span><span className="ml-auto text-ink-muted tabular-nums">100%</span></header>
+      <div className="grid h-[calc(100%-2.5rem)] grid-cols-[11rem_1fr]">
+        <div className="flex flex-col gap-px border-r-hairline border-line px-2 py-2.5 text-[13px]">
+          <span className="px-2 pb-1.5 text-[11px] font-medium text-ink-subtle">Layers</span>
+          <span className="rounded-control px-2 py-1 text-ink-muted">Background</span>
+          <span className="flex items-center justify-between rounded-control bg-accent-soft py-1 pr-0.5 pl-2 font-medium text-accent-deep">Hero card{children}</span>
+          <span className="rounded-control px-2 py-1 text-ink-muted">Headline</span>
+          <span className="rounded-control px-2 py-1 text-ink-muted">Button</span>
+        </div>
+        <div className="relative bg-sunken">
+          <span className="absolute top-10 left-[17rem] h-32 w-36 rounded-[12px] bg-accent outline-[1.5px] outline-offset-[3px] outline-accent" />
+        </div>
+      </div>
+    </article>
+  );
+}
+const MoreButton = (props) => <button type="button" aria-label="More" {...props} className="grid size-6 place-items-center rounded-chip text-accent-deep hover:bg-accent/10 data-[state=open]:bg-accent/10"><span aria-hidden="true" className="text-[15px] leading-none">⋯</span></button>;
+
+// the broken side: a menu written by hand, the way they usually are
+function HandRolledMenu() {
+  const [open, setOpen] = useState(true), [sub, setSub] = useState(true), [hot, setHot] = useState(1);
+  useEffect(() => {
+    const esc = (e) => { if (e.key === 'Escape') { setSub(false); setOpen(false); } };
+    addEventListener('keydown', esc);
+    return () => removeEventListener('keydown', esc);
+  }, []);
+  return (
+    <span className="relative">
+      {/* it opens on the press, as a menu should (#61): this side is wrong in one way, its submenu */}
+      <MoreButton aria-haspopup="menu" aria-expanded={open} data-state={open ? 'open' : 'closed'}
+        onPointerDown={(e) => { if (e.button === 0) { e.preventDefault(); setOpen((o) => !o); setSub(false); setHot(-1); } }}
+        onClick={(e) => { if (e.detail === 0) { setOpen((o) => !o); setSub(false); setHot(-1); } }} />
+      {open ? (
+        <div role="menu" aria-label="Hero card" className={`${menuBox} absolute top-0 left-[calc(100%+0.5rem)]`}>
+          {ROWS.map(([label, key], i) => (
+            <div key={label} role="menuitem" tabIndex={-1} aria-haspopup={key === null ? 'menu' : undefined} aria-expanded={key === null ? sub : undefined}
+              onPointerEnter={() => { setHot(i); setSub(key === null); }} className={`${itemBox} ${hot === i ? 'bg-sunken' : ''}`}>
+              {label}{key === null ? <span aria-hidden="true" className="text-[11px] text-ink-muted">▸</span> : <kbd className="font-sans text-[11.5px] text-ink-muted">{key}</kbd>}
+            </div>
+          ))}
+          {sub ? (
+            <div role="menu" aria-label="Arrange" className={`${menuBox} absolute top-[26px] left-[calc(100%-4px)]`}>
+              {ORDER.map((label) => <div key={label} role="menuitem" tabIndex={-1} className={`${itemBox} hover:bg-sunken`}>{label}</div>)}
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+    </span>
+  );
+}
+
+// the fixed side: Radix's DropdownMenu, the same look; its submenu keeps a safe triangle from where you left Arrange
+function RadixMenu() {
+  // open at rest like the other side: the menu, and Arrange's submenu
+  const [sub, setSub] = useState(true);
+  return (
+    <Menu.Root defaultOpen modal={false}>
+      <Menu.Trigger asChild><MoreButton /></Menu.Trigger>
+      <Menu.Content side="right" align="start" sideOffset={8} className={menuBox} aria-label="Hero card">
+        {ROWS.map(([label, key]) => key === null ? (
+          <Menu.Sub key={label} open={sub} onOpenChange={setSub}>
+            <Menu.SubTrigger className={`${itemBox} data-[highlighted]:bg-sunken data-[state=open]:bg-sunken`}>{label}<span aria-hidden="true" className="text-[11px] text-ink-muted">▸</span></Menu.SubTrigger>
+            <Menu.SubContent sideOffset={0} alignOffset={-4} className={menuBox} aria-label="Arrange">
+              {ORDER.map((o) => <Menu.Item key={o} className={`${itemBox} data-[highlighted]:bg-sunken`}>{o}</Menu.Item>)}
+            </Menu.SubContent>
+          </Menu.Sub>
+        ) : (
+          <Menu.Item key={label} className={`${itemBox} data-[highlighted]:bg-sunken`}>{label}<kbd className="font-sans text-[11.5px] text-ink-muted">{key}</kbd></Menu.Item>
+        ))}
+      </Menu.Content>
+    </Menu.Root>
+  );
+}
+function LayerMenu({ side = 'broken' }) {
+  // Slate's primitives; the two sides differ only in the menu component
+  return <LayerTool>{side === 'fixed' ? <RadixMenu /> : <HandRolledMenu />}</LayerTool>;
+}
+LayerMenu.probe = 'submenu';
+LayerMenu.names = ['Hand-rolled menu', 'Radix menu'];
+LayerMenu.lesson = {
+  why: 'A submenu that closes the moment the pointer touches another item can’t be reached on a diagonal: the straight way there cuts across the item below. You have to steer right, then down, every time.',
+  habit: 'Use a menu with a safe triangle (Radix, Base UI, React Aria): from where the pointer left the item to the submenu’s near edge, it holds the submenu open while you head for it.',
+};
+
+export const EXAMPLES = { 8: RecentlyPlayed, 1: ClientProfile, 2: InvoiceWalkthrough, 3: Whiteboard, 4: DriveActivity, 5: ChatThread, 6: FitnessToday, 15: IssueTable, 16: Timesheet, 18: NewsFront, 45: LongRead, 46: BoardingPass, 21: Recipe, 25: FeatureCard, 37: ReadersChart, 38: Agenda, 39: GlazeBoard, 40: Widgets, 42: ProjectTabs, 50: NoNotes, 63: InsertMenu, 73: Handbook, 68: EventPreview, 74: Projects, 75: ShareAccess, 57: Inbox, 59: LayerMenu, 23: ShareMenu, 51: DeleteDialog, 55: Forecast, 56: Destination };
 

@@ -1,0 +1,241 @@
+<!doctype html>
+<!-- THROWAWAY: #65 as a hands-on demo (docs/craft/tactile-demos.md). You pull a sheet past its fully-open edge; plumber's
+     drag probe does the same (40, 80, 120px past, src/craft-probe.ts) and reads how far it followed: 'dead' (under 3px
+     more), 'elastic' or 'free'. Clamped = the sheet's offset clamped at its limit; Rubber-band = the classic damping
+     (1 − 1 / (x·0.55 / d + 1))·d, then a spring back on release. Real pointer events, with capture: a finger works too.
+     Marks and tokens as in probe-marks.html: sky measures, coral is broken, mint is fixed. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rubber-band · live</title>
+<style>
+  :root {
+    --canvas: #f5f7fa; --surface: #fff; --sunken: #f3f5f9; --ink: #12233d; --ink-muted: #5a6779; --ink-subtle: #8792a2; --line: rgb(18 35 61 / 0.11);
+    --board: #eef1f5; --board-dot: #d6dce4;
+    --m-sky: #2a7fd0; --m-coral: #e5503f; --m-mint: #1f9e64;
+    --pl-halo: rgb(255 255 255 / 0.9); --pl-ink-2: #6b665c; --pl-ink-3: #b3ad9f;
+    --pl-sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; --pl-mono: ui-monospace, "SF Mono", Menlo, monospace;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 48px 40px 64px; background: var(--board); background-image: radial-gradient(var(--board-dot) 1px, transparent 1px);
+    background-size: 16px 16px; font: 14px/20px Inter, system-ui, sans-serif; color: var(--ink); -webkit-font-smoothing: antialiased; }
+  h1 { margin: 0 0 4px; font-size: 17px; line-height: 24px; font-weight: 500; letter-spacing: -0.01em; }
+  .sub { margin: 0 0 32px; font-size: 13px; color: var(--ink-muted); max-width: 70ch; }
+  .frame { position: relative; width: 640px; height: 340px; border-radius: 14px; background: var(--sunken); overflow: hidden; box-shadow: 0 0 0 0.5px var(--line); }
+
+  /* the example: a photo, and its share sheet, open */
+  .screen { position: absolute; left: 40px; top: 20px; width: 300px; height: 300px; border-radius: 18px; overflow: hidden;
+    background: linear-gradient(160deg, #9fb7cf 0%, #c9b8a6 55%, #8d9a8a 100%); box-shadow: 0 0 0 0.5px rgb(18 35 61 / 0.12), 0 8px 24px rgb(18 35 61 / 0.10); }
+  .screen .cap { position: absolute; left: 16px; top: 14px; font: 500 12px/16px Inter, system-ui, sans-serif; color: rgb(255 255 255 / 0.92); }
+  .screen .cap span { display: block; font-weight: 400; color: rgb(255 255 255 / 0.7); }
+  .sheet { position: absolute; left: 0; right: 0; top: 110px; height: 300px; background: var(--surface); border-radius: 16px 16px 0 0; padding: 8px 16px 0;
+    box-shadow: 0 -1px 0 rgb(18 35 61 / 0.06), 0 -8px 24px rgb(18 35 61 / 0.12); touch-action: none; cursor: grab; user-select: none; }
+  .sheet:active { cursor: grabbing; }
+  .grab { width: 36px; height: 4px; border-radius: 2px; background: rgb(18 35 61 / 0.18); margin: 0 auto 12px; }
+  .sheet b { display: block; font-weight: 500; font-size: 13px; letter-spacing: -0.01em; }
+  .people { display: flex; gap: 14px; margin: 12px 0 14px; }
+  .people span { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 10.5px; color: var(--ink-muted); }
+  .people i { width: 40px; height: 40px; border-radius: 50%; background: var(--sunken); box-shadow: inset 0 0 0 1px var(--line); display: grid; place-items: center;
+    font: 500 12px/1 Inter, system-ui, sans-serif; font-style: normal; color: var(--ink-muted); }
+  .act { height: 36px; display: flex; align-items: center; border-top: 1px solid var(--line); font-size: 13px; }
+
+  /* plumber's layer */
+  svg.marks { position: absolute; inset: 0; width: 640px; height: 340px; overflow: visible; pointer-events: none; }
+  .contact { fill: #fff; stroke: var(--m-sky); stroke-width: 1.5; }
+  .limit { stroke: var(--m-sky); stroke-width: 1.25; stroke-dasharray: 4 3; }
+  .wall { fill: url(#hatch); }
+  .wall-edge { fill: none; stroke: var(--m-coral); stroke-width: 1; stroke-dasharray: 2 4; stroke-linecap: round; opacity: 0.8; }
+  .gave { fill: rgb(31 158 100 / 0.12); stroke: var(--m-mint); stroke-width: 1; }
+  .reach { fill: none; stroke: var(--m-sky); stroke-width: 1; stroke-dasharray: 2 4; stroke-linecap: round; opacity: 0.7; }
+  .hand { fill: var(--m-sky); }
+  .hand.off { fill: var(--m-coral); } .hand.on { fill: var(--m-mint); }
+  .halo { fill: none; stroke: rgb(229 80 63 / 0.35); stroke-width: 6; }
+  .hatch-bg { fill: rgb(229 80 63 / 0.08); } .hatch-line { stroke: rgb(229 80 63 / 0.45); stroke-width: 1; }
+  .pill { position: absolute; translate: 0 -50%; white-space: nowrap; font: 600 11px/14px var(--pl-sans); padding: 3px 9px; border-radius: 999px;
+    color: #fff; box-shadow: 0 0 0 1px var(--pl-halo), 0 1px 2px rgb(0 0 0 / 0.12); pointer-events: none; }
+  .pill.off { background: var(--m-coral); } .pill.on { background: var(--m-mint); } .pill.sky { background: var(--m-sky); }
+
+  /* the time ruler */
+  .ruler { position: relative; height: 40px; width: 616px; margin: 0 12px; }
+  .ruler .axis { position: absolute; left: 0; right: 0; top: 16px; border-top: 1px solid var(--pl-ink-3); }
+  .ruler .tick { position: absolute; top: 12px; width: 1px; height: 8px; background: var(--pl-ink-3); }
+  .ruler .tick.minor { top: 14px; height: 4px; }
+  .ruler .lab { position: absolute; top: 22px; translate: -50% 0; font: 400 10.5px/14px var(--pl-mono); color: var(--pl-ink-2); }
+  .ruler .played { position: absolute; top: 15px; height: 3px; background: var(--m-sky); border-radius: 2px; }
+  .ruler .played.off { background: var(--m-coral); } .ruler .played.on { background: var(--m-mint); }
+  .ruler .ev { position: absolute; top: 11px; width: 11px; height: 11px; margin-left: -5.5px; border-radius: 50%; box-shadow: 0 0 0 2px #fff; }
+  .ruler .ev.off { background: var(--m-coral); } .ruler .ev.on { background: var(--m-mint); } .ruler .ev.plain { background: #fff; box-shadow: 0 0 0 1.5px var(--m-sky); }
+  .ruler .head { position: absolute; top: 4px; width: 2px; height: 24px; margin-left: -1px; background: var(--m-sky); border-radius: 1px; box-shadow: 0 0 0 1px #fff; }
+  .ruler .speed { position: absolute; right: 0; top: -6px; font: 600 10.5px/14px var(--pl-sans); color: var(--pl-ink-2); }
+
+  .live { display: flex; flex-direction: column; gap: 10px; width: 640px; }
+  .head-row { display: flex; align-items: center; justify-content: space-between; }
+  .head-row b { font-weight: 500; font-size: 13px; }
+  .seg { display: flex; padding: 3px; background: var(--surface); border-radius: 999px; box-shadow: 0 0 0 0.5px var(--line), 0 1px 2px rgb(18 35 61 / 0.05); font-size: 13px; }
+  .seg button { font: inherit; border: 0; background: transparent; padding: 4px 12px; border-radius: 999px; color: var(--ink-muted); cursor: pointer; }
+  .seg button[aria-pressed="true"] { background: var(--ink); color: #fff; }
+  .hint { font-size: 13px; color: var(--ink-muted); margin: 0; min-height: 40px; }
+</style>
+</head>
+<body>
+<h1>Rubber-band</h1>
+<p class="sub">#65. The share sheet is fully open. Pull it further up. plumber’s drag probe does the same and reads how far it followed past its end: a dead stop feels like a wall; something that gives, then springs back, feels like a material.</p>
+<section class="live">
+  <div class="head-row"><b>Try it: grab the sheet and pull it up</b>
+    <div class="seg" role="group" aria-label="Limit"><button type="button" data-mode="clamp" aria-pressed="true">Clamped</button><button type="button" data-mode="band" aria-pressed="false">Rubber-band</button></div>
+  </div>
+  <div class="frame" id="frame">
+    <div class="screen" id="screen">
+      <div class="cap">Lisbon, March<span>12 photos</span></div>
+      <div class="sheet" id="sheet">
+        <div class="grab"></div>
+        <b>Share photo</b>
+        <div class="people"><span><i>AO</i>Ama</span><span><i>JB</i>Jonas</span><span><i>LR</i>Lena</span><span><i>SP</i>Sam</span><span><i>+</i>More</span></div>
+        <div class="act">Copy link</div><div class="act">Save to files</div><div class="act">Print</div>
+      </div>
+    </div>
+    <svg class="marks" viewBox="0 0 640 340" aria-hidden="true">
+      <defs><pattern id="hatch" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect class="hatch-bg" width="5" height="5"/><line class="hatch-line" x1="0" y1="0" x2="0" y2="5"/></pattern></defs>
+      <g id="layer"></g>
+    </svg>
+  </div>
+  <div id="ruler"></div>
+  <p class="hint" id="hint"></p>
+</section>
+
+<script>
+const SPAN = 3000, D = 190, C = 0.55;                // the ruler; the sheet's open height (the damping's dimension), Apple's constant
+const REST = 110;                                    // the sheet's top in the screen when fully open: its limit
+const SCREEN = { x: 40, y: 20, w: 300, h: 300 };
+const NS = 'http://www.w3.org/2000/svg';
+const el = (tag, attrs, parent) => { const n = document.createElementNS(NS, tag); for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, v); parent.append(n); return n; };
+const frame = document.getElementById('frame'), sheet = document.getElementById('sheet'), layer = document.getElementById('layer');
+let mode = 'clamp';
+
+// ── the component: the sheet's offset from its open position (negative = above it) ──
+// Down follows the hand 1:1 (that's where it closes from); up is past the limit.
+const band = (x) => (1 - 1 / ((x * C) / D + 1)) * D;
+const follow = (dy) => (dy >= 0 ? dy : mode === 'clamp' ? 0 : -band(-dy));
+let offset = 0, spring = null;
+const place = () => { sheet.style.translate = `0 ${offset}px`; };
+
+// ── plumber's record: the contact, how far past the limit it pulled and how far the sheet came ──
+let g = null;
+const at = (e) => { const f = frame.getBoundingClientRect(); return { x: e.clientX - f.left, y: e.clientY - f.top }; };
+sheet.addEventListener('pointerdown', (e) => {
+  try { sheet.setPointerCapture(e.pointerId); } catch {} // a finger or the mouse: the drag goes on outside the sheet
+  spring = null; offset = 0; place();
+  const p = at(e);
+  g = { contact: p, t0: performance.now(), pull: 0, gave: 0, peak: { pull: 0, gave: 0, hand: p }, hit: null, up: null, settled: null, live: true };
+  draw();
+});
+window.addEventListener('pointermove', (e) => {
+  if (!g?.live) return;
+  if (e.pointerType === 'mouse' && e.buttons === 0) { release(); return; } // the button came up where we didn't hear it
+  const p = at(e), now = performance.now() - g.t0, dy = p.y - g.contact.y;
+  offset = follow(dy); place();
+  g.pull = Math.max(0, -dy); g.gave = Math.max(0, -offset); g.hand = p;
+  if (g.pull > 0 && g.hit === null) g.hit = now;
+  if (g.pull > g.peak.pull) g.peak = { pull: g.pull, gave: g.gave, hand: p };
+  draw();
+});
+const release = () => {
+  if (!g?.live) return;
+  g.live = false; g.up = performance.now() - g.t0;
+  if (offset !== 0) { spring = { v: 0 }; } else g.settled = g.up;
+  draw();
+};
+// let go however the press ends: released on the sheet, outside it, outside the window (capture can be lost there and
+// no pointerup arrives), a cancelled touch, or the window losing focus
+sheet.addEventListener('pointerup', release);
+sheet.addEventListener('pointercancel', release);
+sheet.addEventListener('lostpointercapture', release);
+window.addEventListener('pointerup', release);
+window.addEventListener('blur', release);
+
+// the spring back: stiffness 400, damping 32 (critically damped near enough), per frame
+let last = performance.now();
+(function step(now) {
+  const dt = Math.min(0.032, (now - last) / 1000); last = now;
+  if (spring) {
+    spring.v += (-400 * offset - 32 * spring.v) * dt; offset += spring.v * dt; place();
+    if (Math.abs(offset) < 0.3 && Math.abs(spring.v) < 4) { offset = 0; place(); spring = null; if (g) g.settled = performance.now() - g.t0; }
+    draw();
+  } else if (g?.live) draw();
+  requestAnimationFrame(step);
+})(last);
+
+for (const b of document.querySelectorAll('.seg button')) b.onclick = () => {
+  mode = b.dataset.mode;
+  for (const o of document.querySelectorAll('.seg button')) o.setAttribute('aria-pressed', o === b);
+  g = null; spring = null; offset = 0; place(); draw();
+};
+
+const pill = (text, kind, p) => frame.insertAdjacentHTML('beforeend', `<span class="pill ${kind}" style="left:${p.x}px;top:${p.y}px">${text}</span>`);
+function draw() {
+  layer.replaceChildren(); frame.querySelectorAll('.pill').forEach((n) => n.remove());
+  const limitY = SCREEN.y + REST, L = SCREEN.x + 10, R = SCREEN.x + SCREEN.w - 10;
+  if (g) {
+    // while you pull, the marks follow your hand; once you let go they hold at the furthest point
+    const m = g.live ? { pull: g.pull, gave: g.gave } : g.peak;
+    const reach = Math.max(SCREEN.y + 2, limitY - m.pull), top = limitY - m.gave;
+    el('line', { class: 'limit', x1: SCREEN.x - 12, y1: limitY, x2: SCREEN.x + SCREEN.w + 12, y2: limitY }, layer);
+    if (m.pull > 0) {
+      if (mode === 'clamp') {
+        // the wall: everything between the limit and where your hand asked the sheet to be, and it didn't come
+        el('rect', { class: 'wall', x: L, y: reach, width: R - L, height: limitY - reach }, layer);
+        el('rect', { class: 'wall-edge', x: L, y: reach, width: R - L, height: limitY - reach, rx: 8 }, layer);
+      } else {
+        // what it gave (mint), and the rest of the way your hand went (a dashed reach)
+        el('rect', { class: 'reach', x: L, y: reach, width: R - L, height: top - reach, rx: 8 }, layer);
+        el('rect', { class: 'gave', x: L, y: top, width: R - L, height: limitY - top }, layer);
+      }
+    }
+    // the pull is the lesson, not the route: where you pressed, and where your hand is now (no trail)
+    el('circle', { class: 'contact', cx: g.contact.x, cy: g.contact.y, r: 4.5 }, layer);
+    const hand = g.live ? g.hand ?? g.contact : g.peak.hand;
+    if (m.pull > 0) {
+      const kind = mode === 'clamp' ? 'off' : 'on';
+      if (kind === 'off') el('circle', { class: 'halo', cx: hand.x, cy: hand.y, r: 10 }, layer);
+      el('circle', { class: `hand ${kind}`, cx: hand.x, cy: hand.y, r: 5, stroke: '#fff', 'stroke-width': 1.5 }, layer);
+      const px = { x: SCREEN.x + SCREEN.w + 18, y: (reach + limitY) / 2 };
+      pill(mode === 'clamp' ? `stopped dead · 0 of ${Math.round(m.pull)}px` : `gave ${Math.round(m.gave)} of ${Math.round(m.pull)}px`, kind, px);
+    } else if (!g.live && g.peak.pull === 0) pill('pull it up, past the line', 'sky', { x: SCREEN.x + SCREEN.w + 18, y: limitY });
+  }
+  document.getElementById('ruler').innerHTML = ruler();
+  hint();
+}
+
+function ruler() {
+  const W = 616, x = (ms) => (Math.min(SPAN, ms) / SPAN) * W;
+  let h = `<div class="ruler"><span class="speed">live</span><div class="axis"></div>`;
+  for (let ms = 0; ms <= SPAN; ms += 100) h += `<div class="tick ${ms % 500 ? 'minor' : ''}" style="left:${x(ms)}px"></div>${ms % 500 ? '' : `<span class="lab" style="left:${Math.min(W - 14, Math.max(10, x(ms)))}px">${ms >= 1000 ? `${ms / 1000}s` : ms}</span>`}`;
+  if (!g) return h + '</div>';
+  const now = g.live ? performance.now() - g.t0 : g.settled ?? performance.now() - g.t0;
+  const up = g.up ?? now;
+  // held: sky until the limit; past it, coral when it's a wall (until you let go); the spring back in mint
+  const hit = g.hit ?? up;
+  h += `<div class="played" style="left:0;width:${x(hit)}px"></div>`;
+  if (g.hit !== null) h += `<div class="played ${mode === 'clamp' ? 'off' : ''}" style="left:${x(hit)}px;width:${x(up) - x(hit)}px"></div>`;
+  if (!g.live && g.settled !== null && g.settled > g.up) h += `<div class="played on" style="left:${x(g.up)}px;width:${x(g.settled) - x(g.up)}px"></div>`;
+  if (!g.live && spring && mode === 'band') h += `<div class="played on" style="left:${x(g.up)}px;width:${x(now) - x(g.up)}px"></div>`;
+  h += `<div class="ev plain" style="left:0"></div>`;
+  if (g.hit !== null) h += `<div class="ev ${mode === 'clamp' ? 'off' : 'plain'}" style="left:${x(g.hit)}px"></div>`;
+  if (!g.live) h += `<div class="ev plain" style="left:${x(g.up)}px"></div>`;
+  if (!g.live && g.settled !== null && g.settled > g.up) h += `<div class="ev on" style="left:${x(g.settled)}px"></div>`;
+  return h + `<div class="head" style="left:${x(now)}px"></div></div>`;
+}
+
+function hint() {
+  const t = document.getElementById('hint');
+  if (!g) { t.textContent = 'Grab the sheet anywhere and pull it up, past its top edge. Let go when you like.'; return; }
+  const m = g.live ? g : g.peak;
+  if (m.pull === 0) { t.textContent = g.live ? 'Keep going up, past the dashed line: that’s as open as it gets.' : 'You let go before the line. Pull it up past it.'; return; }
+  if (mode === 'clamp') t.textContent = g.live ? `Your hand is ${Math.round(m.pull)}px past the end; the sheet hasn’t moved. A wall. Try Rubber-band.` : `You pulled ${Math.round(m.pull)}px past the end and it never moved. Try Rubber-band.`;
+  else t.textContent = g.live ? `It follows, less and less: ${Math.round(m.gave)}px for your ${Math.round(m.pull)}px. Let go.` : g.settled !== null ? `It gave ${Math.round(m.gave)} of ${Math.round(m.pull)}px, and sprang back in ${Math.round(g.settled - g.up)}ms when you let go.` : 'Springing back…';
+}
+draw();
+</script>
+</body>
+</html>

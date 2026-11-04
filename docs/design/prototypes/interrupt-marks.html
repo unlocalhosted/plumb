@@ -1,0 +1,286 @@
+<!doctype html>
+<!-- THROWAWAY: #64 as a hands-on demo (docs/craft/tactile-demos.md). You change your mind halfway through the panel's
+     entrance; plumber's toggle probe does the same (Escape at 40%, src/craft-probe.ts) and reads whether the exit
+     restarts from its own first frame. Here the panel's real position is read every frame (getBoundingClientRect), as the
+     probe samples it. Keyframes = tailwindcss-animate's animate-in / animate-out; Transition = one translate transition.
+     Marks and tokens as in probe-marks.html: sky measures, coral is broken, mint is fixed. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Interruptible motion · live</title>
+<style>
+  :root {
+    --canvas: #f5f7fa; --surface: #fff; --sunken: #f3f5f9; --ink: #12233d; --ink-muted: #5a6779; --ink-subtle: #8792a2; --line: rgb(18 35 61 / 0.11);
+    --board: #eef1f5; --board-dot: #d6dce4;
+    --card: 0 0 0 0.5px rgb(18 35 61 / 0.08), 0 1px 2px rgb(18 35 61 / 0.05), 0 6px 16px rgb(18 35 61 / 0.06);
+    --m-sky: #2a7fd0; --m-coral: #e5503f; --m-mint: #1f9e64;
+    --pl-halo: rgb(255 255 255 / 0.9); --pl-ink-2: #6b665c; --pl-ink-3: #b3ad9f;
+    --pl-sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; --pl-mono: ui-monospace, "SF Mono", Menlo, monospace;
+    --d: 320ms; --ease: cubic-bezier(0.32, 0.72, 0, 1);
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 48px 40px 64px; background: var(--board); background-image: radial-gradient(var(--board-dot) 1px, transparent 1px);
+    background-size: 16px 16px; font: 14px/20px Inter, system-ui, sans-serif; color: var(--ink); -webkit-font-smoothing: antialiased; }
+  h1 { margin: 0 0 4px; font-size: 17px; line-height: 24px; font-weight: 500; letter-spacing: -0.01em; }
+  .sub { margin: 0 0 32px; font-size: 13px; color: var(--ink-muted); max-width: 70ch; }
+  .frame { position: relative; width: 640px; height: 340px; border-radius: 14px; background: var(--sunken); overflow: hidden; box-shadow: 0 0 0 0.5px var(--line); }
+
+  /* the example: a folder, and its Details panel */
+  .files { position: absolute; left: 24px; top: 20px; width: 592px; height: 300px; background: var(--surface); border-radius: 12px; box-shadow: var(--card); overflow: hidden; }
+  .top { height: 52px; display: flex; align-items: center; justify-content: space-between; padding: 0 14px 0 18px; border-bottom: 1px solid var(--line); }
+  .top b { font-weight: 500; font-size: 14px; letter-spacing: -0.01em; } .top b span { color: var(--ink-subtle); font-weight: 400; }
+  .btn { font: 500 13px/1 Inter, system-ui, sans-serif; height: 28px; padding: 0 10px 0 8px; display: inline-flex; align-items: center; gap: 6px; border: 0; border-radius: 7px;
+    background: transparent; color: var(--ink-muted); box-shadow: inset 0 0 0 1px var(--line); cursor: pointer; }
+  .btn:hover { background: var(--sunken); color: var(--ink); }
+  .btn[aria-expanded="true"] { background: var(--sunken); color: var(--ink); }
+  .btn svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 1.4; }
+  .btn kbd { font: 11px system-ui; color: var(--ink-subtle); margin-left: 2px; }
+  .rows { padding: 4px 8px; }
+  .row { height: 40px; display: grid; grid-template-columns: 24px 1fr 120px 90px; align-items: center; gap: 10px; padding: 0 10px; border-radius: 7px; font-size: 13px; }
+  .row.sel { background: rgb(42 127 208 / 0.07); }
+  .row i { width: 18px; height: 22px; border-radius: 3px; background: var(--sunken); box-shadow: inset 0 0 0 1px var(--line); }
+  .row span { color: var(--ink-muted); font-size: 12px; }
+  .panel { position: absolute; top: 52px; right: 0; bottom: 0; width: 236px; background: var(--surface); border-left: 1px solid var(--line);
+    box-shadow: -8px 0 24px rgb(18 35 61 / 0.06); padding: 16px; translate: 100% 0; }
+  .panel .thumb { height: 92px; border-radius: 8px; background: linear-gradient(135deg, #dfe7f1, #c9d6e6); box-shadow: inset 0 0 0 1px var(--line); }
+  .panel h3 { margin: 12px 0 8px; font-size: 13px; font-weight: 500; }
+  .panel dl { margin: 0; display: grid; grid-template-columns: 70px 1fr; gap: 6px 8px; font-size: 12px; }
+  .panel dt { color: var(--ink-subtle); } .panel dd { margin: 0; color: var(--ink-muted); }
+  /* Keyframes: the entrance and the exit are two animations (tailwindcss-animate's slide-in/out) */
+  @keyframes in { from { translate: 100% 0; } to { translate: 0 0; } }
+  @keyframes out { from { translate: 0 0; } to { translate: 100% 0; } }
+  .k .panel.open { animation: in var(--d) var(--ease) both; }
+  .k .panel.closing { animation: out var(--d) var(--ease) both; }
+  /* Transition: one property, turned around wherever it is */
+  .t .panel { transition: translate var(--d) var(--ease); }
+  .t .panel.open { translate: 0 0; }
+
+  /* plumber's layer */
+  svg.marks { position: absolute; inset: 0; width: 640px; height: 340px; overflow: visible; pointer-events: none; }
+  .contact { fill: #fff; stroke: var(--m-sky); stroke-width: 1.5; }
+  .ghostline { fill: none; stroke: var(--m-coral); stroke-width: 1; stroke-dasharray: 2 4; stroke-linecap: round; opacity: 0.8; }
+  .snap { fill: url(#hatch); }
+  .turn { stroke: var(--m-mint); stroke-width: 1.5; stroke-dasharray: 4 3; }
+  .hatch-bg { fill: rgb(229 80 63 / 0.08); } .hatch-line { stroke: rgb(229 80 63 / 0.45); stroke-width: 1; }
+  .pill { position: absolute; translate: -50% -50%; white-space: nowrap; font: 600 11px/14px var(--pl-sans); padding: 3px 9px; border-radius: 999px;
+    color: #fff; box-shadow: 0 0 0 1px var(--pl-halo), 0 1px 2px rgb(0 0 0 / 0.12); pointer-events: none; }
+  .pill.off { background: var(--m-coral); } .pill.on { background: var(--m-mint); }
+
+  /* the trace: time across, how open up; the ruler's axis under it */
+  .trace { width: 616px; margin: 0 12px; height: 104px; overflow: visible; display: block; }
+  .trace .axis { stroke: var(--pl-ink-3); stroke-width: 1; }
+  .trace .grid { stroke: var(--pl-ink-3); stroke-width: 1; stroke-dasharray: 1 3; opacity: 0.7; }
+  .trace .tick { stroke: var(--pl-ink-3); stroke-width: 1; }
+  .trace .lab { font: 400 10.5px var(--pl-mono); fill: var(--pl-ink-2); }
+  .trace .speed { font: 600 10.5px var(--pl-sans); fill: var(--pl-ink-2); }
+  .trace .line { fill: none; stroke: var(--m-sky); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+  .trace .cliff { stroke: var(--m-coral); stroke-width: 2; stroke-dasharray: 3 3; }
+  .trace .halo { fill: none; stroke: rgb(229 80 63 / 0.35); stroke-width: 6; }
+  .trace .ev { fill: #fff; stroke: var(--m-sky); stroke-width: 1.5; }
+  .trace .ev.off { fill: var(--m-coral); stroke: #fff; } .trace .ev.on { fill: var(--m-mint); stroke: #fff; }
+  .trace .head { stroke: var(--m-sky); stroke-width: 2; }
+
+  .live { display: flex; flex-direction: column; gap: 10px; width: 640px; }
+  .head-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .head-row b { font-weight: 500; font-size: 13px; }
+  .switches { display: flex; gap: 8px; }
+  .seg { display: flex; padding: 3px; background: var(--surface); border-radius: 999px; box-shadow: 0 0 0 0.5px var(--line), 0 1px 2px rgb(18 35 61 / 0.05); font-size: 13px; }
+  .seg button { font: inherit; border: 0; background: transparent; padding: 4px 12px; border-radius: 999px; color: var(--ink-muted); cursor: pointer; }
+  .seg button[aria-pressed="true"] { background: var(--ink); color: #fff; }
+  .hint { font-size: 13px; color: var(--ink-muted); margin: 0; min-height: 40px; }
+</style>
+</head>
+<body>
+<h1>Interruptible motion</h1>
+<p class="sub">#64. Open the panel and change your mind before it has finished. plumber’s probe does the same, closing it 40% of the way in, and reads the panel every frame: the motion should turn around where it is.</p>
+<section class="live">
+  <div class="head-row"><b>Try it: open Details, then close it on the way</b>
+    <div class="switches">
+      <div class="seg" role="group" aria-label="Speed" id="speed"><button type="button" data-speed="1" aria-pressed="false">1×</button><button type="button" data-speed="4" aria-pressed="true">¼×</button></div>
+      <div class="seg" role="group" aria-label="Motion" id="modes"><button type="button" data-mode="k" aria-pressed="true">Keyframes</button><button type="button" data-mode="t" aria-pressed="false">Transition</button></div>
+    </div>
+  </div>
+  <div class="frame" id="frame">
+    <div class="files k" id="files">
+      <div class="top"><b>Q3 launch <span>· 6 files</span></b>
+        <button class="btn" id="toggle" type="button" aria-expanded="false" aria-controls="panel"><svg viewBox="0 0 14 14"><rect x="1.8" y="2.3" width="10.4" height="9.4" rx="1.8"/><path d="M8.6 2.3v9.4"/></svg>Details <kbd>I</kbd></button>
+      </div>
+      <div class="rows">
+        <div class="row sel"><i></i>Launch plan.pdf<span>Ama Owusu</span><span>Today</span></div>
+        <div class="row"><i></i>Pricing, v4.sheet<span>Jonas Berg</span><span>Yesterday</span></div>
+        <div class="row"><i></i>Press kit.zip<span>Lena Ruiz</span><span>Mon</span></div>
+        <div class="row"><i></i>Keynote draft.deck<span>Ama Owusu</span><span>Mon</span></div>
+        <div class="row"><i></i>FAQ.doc<span>Sam Patel</span><span>12 Sep</span></div>
+        <div class="row"><i></i>Hero shots<span>Lena Ruiz</span><span>9 Sep</span></div>
+      </div>
+      <aside class="panel" id="panel" hidden>
+        <div class="thumb"></div>
+        <h3>Launch plan.pdf</h3>
+        <dl><dt>Owner</dt><dd>Ama Owusu</dd><dt>Size</dt><dd>2.4 MB</dd><dt>Modified</dt><dd>Today, 09:12</dd><dt>Shared</dt><dd>4 people</dd></dl>
+      </aside>
+    </div>
+    <svg class="marks" viewBox="0 0 640 340" aria-hidden="true">
+      <defs><pattern id="hatch" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect class="hatch-bg" width="5" height="5"/><line class="hatch-line" x1="0" y1="0" x2="0" y2="5"/></pattern></defs>
+      <g id="layer"></g>
+    </svg>
+  </div>
+  <svg class="trace" id="trace" viewBox="0 0 616 104" aria-hidden="true"></svg>
+  <p class="hint" id="hint"></p>
+</section>
+
+<script>
+const BASE = 320; // the panel's duration at 1×
+const NS = 'http://www.w3.org/2000/svg';
+const el = (tag, attrs, parent) => { const n = document.createElementNS(NS, tag); for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, v); parent.append(n); return n; };
+const frame = document.getElementById('frame'), files = document.getElementById('files'), panel = document.getElementById('panel'), button = document.getElementById('toggle');
+const layer = document.getElementById('layer'), trace = document.getElementById('trace');
+let mode = 'k', speed = 4, open = false;
+const dur = () => BASE * speed;
+
+// ── the component ──
+// Keyframes: open plays `in`; close swaps it for `out`, which starts at its own first frame; when `out` ends it hides.
+// Transition: open and close set one translate; the browser turns the running transition around.
+function setOpen(next) {
+  open = next;
+  button.setAttribute('aria-expanded', String(open));
+  if (mode === 'k') {
+    if (open) { panel.hidden = false; panel.classList.remove('closing'); panel.classList.add('open'); }
+    else { panel.classList.remove('open'); panel.classList.add('closing'); }
+  } else {
+    panel.hidden = false;
+    panel.getBoundingClientRect(); // a panel just shown starts from where it is
+    panel.classList.toggle('open', open);
+  }
+}
+panel.addEventListener('animationend', (e) => { if (e.animationName === 'out' && !open) { panel.classList.remove('closing'); panel.hidden = true; } });
+panel.addEventListener('transitionend', () => { if (!open) panel.hidden = true; });
+
+// ── plumber's record: the panel's openness every frame, from the first press at rest until it rests again ──
+let run = null;
+const PANEL = 236; // its width (.panel); read from the style, a hidden panel measures 0
+const geometry = () => { const f = files.getBoundingClientRect(); return { right: f.right, w: PANEL, f }; };
+const openness = () => {
+  if (panel.hidden) return 0;
+  const { right, w } = geometry(), r = panel.getBoundingClientRect();
+  return Math.max(0, Math.min(1, (right - r.left) / w));
+};
+function press(e) {
+  const now = performance.now(), v = openness();
+  const atRest = !run || run.done;
+  if (atRest) run = { t0: now, samples: [{ t: 0, v }], presses: [], done: false, quiet: now };
+  const f = frame.getBoundingClientRect();
+  const at = e && e.clientX ? { x: e.clientX - f.left, y: e.clientY - f.top } : null;
+  run.presses.push({ t: now - run.t0, v, at, opening: !open, edge: panel.hidden ? null : panel.getBoundingClientRect().left - f.left });
+  setOpen(!open);
+}
+button.addEventListener('click', (e) => press(e.detail ? e : null));
+window.addEventListener('keydown', (e) => { if ((e.key === 'i' || e.key === 'I') && !e.metaKey && !e.ctrlKey) { e.preventDefault(); press(null); } });
+
+// what plumber reads from the samples: a frame-to-frame step far bigger than the motion's own is a jump
+function read() {
+  if (!run) return { jumps: [], turns: [] };
+  const s = run.samples, jumps = [], turns = [];
+  for (let i = 1; i < s.length; i++) {
+    const d = Math.abs(s[i].v - s[i - 1].v);
+    // a press mid-motion, then a step of over 20% within a frame or two of it
+    if (d > 0.2 && run.presses.some((q, k) => k > 0 && s[i].t - q.t >= 0 && s[i].t - q.t < 60)) jumps.push({ from: s[i - 1], to: s[i] });
+  }
+  run.presses.forEach((q, k) => { if (k > 0 && q.v > 0.02 && q.v < 0.98 && !jumps.some((j) => Math.abs(j.from.t - q.t) < 60)) turns.push(q); });
+  return { jumps, turns };
+}
+
+(function sample() {
+  if (run && !run.done) {
+    const now = performance.now(), v = openness(), last = run.samples.at(-1);
+    run.samples.push({ t: now - run.t0, v });
+    if (Math.abs(v - last.v) > 0.001) run.quiet = now;
+    const span = dur() * 3;
+    if (now - run.quiet > 400 || now - run.t0 > span) run.done = true;
+    draw();
+  }
+  requestAnimationFrame(sample);
+})();
+
+for (const b of document.querySelectorAll('#modes button')) b.onclick = () => {
+  mode = b.dataset.mode; files.className = `files ${mode}`;
+  for (const o of document.querySelectorAll('#modes button')) o.setAttribute('aria-pressed', o === b);
+  reset();
+};
+for (const b of document.querySelectorAll('#speed button')) b.onclick = () => {
+  speed = +b.dataset.speed; document.documentElement.style.setProperty('--d', `${dur()}ms`);
+  for (const o of document.querySelectorAll('#speed button')) o.setAttribute('aria-pressed', o === b);
+  reset();
+};
+function reset() {
+  open = false; button.setAttribute('aria-expanded', 'false');
+  panel.classList.remove('open', 'closing'); panel.hidden = true; run = null; draw();
+}
+document.documentElement.style.setProperty('--d', `${dur()}ms`);
+
+const pill = (text, kind, at) => frame.insertAdjacentHTML('beforeend', `<span class="pill ${kind}" style="left:${at.x}px;top:${at.y}px">${text}</span>`);
+const pct = (v) => `${Math.round(v * 100)}%`;
+function draw() {
+  layer.replaceChildren(); frame.querySelectorAll('.pill').forEach((n) => n.remove());
+  const { jumps, turns } = read(), g = geometry(), f = frame.getBoundingClientRect();
+  const top = g.f.top - f.top + 52, bottom = g.f.bottom - f.top, right = g.f.right - f.left, edgeAt = (v) => right - g.w * v;
+  if (run) {
+    // the press: where your pointer was
+    for (const q of run.presses) if (q.at) el('circle', { class: 'contact', cx: q.at.x, cy: q.at.y, r: 3.5 }, layer);
+    // Keyframes: where the panel's edge was when you changed your mind (dashed ghost), and what it snapped across (hatch)
+    for (const j of jumps) {
+      const a = edgeAt(j.from.v), b = edgeAt(j.to.v);
+      el('rect', { class: 'snap', x: Math.min(a, b), y: top, width: Math.abs(a - b), height: bottom - top }, layer);
+      el('line', { class: 'ghostline', x1: a, y1: top, x2: a, y2: bottom }, layer);
+    }
+    // Transition: where it turned around
+    for (const q of turns) { const x = edgeAt(q.v); el('line', { class: 'turn', x1: x, y1: top, x2: x, y2: bottom }, layer); }
+    const j = jumps.at(-1), t = turns.at(-1);
+    if (j) pill(`jumped ${pct(j.from.v)} → ${pct(j.to.v)}`, 'off', { x: Math.max(edgeAt(j.from.v), edgeAt(j.to.v)) - Math.abs(edgeAt(j.from.v) - edgeAt(j.to.v)) / 2, y: top + 110 });
+    else if (t) pill(`turned back at ${pct(t.v)}`, 'on', { x: Math.max(90, edgeAt(t.v) - 6), y: top + 110 });
+  }
+  drawTrace(jumps, turns);
+  hint(jumps, turns);
+}
+
+function drawTrace(jumps, turns) {
+  trace.replaceChildren();
+  const W = 616, H = 64, y0 = 8, span = dur() * 3, x = (t) => (Math.min(span, t) / span) * W, y = (v) => y0 + H - v * H;
+  el('line', { class: 'grid', x1: 0, y1: y(1), x2: W, y2: y(1) }, trace);
+  el('text', { class: 'lab', x: 0, y: y(1) - 3 }, trace).textContent = 'open';
+  el('line', { class: 'axis', x1: 0, y1: y(0), x2: W, y2: y(0) }, trace);
+  const step = speed === 1 ? 100 : 250, lab = speed === 1 ? 200 : 1000;
+  for (let ms = 0; ms <= span; ms += step) {
+    el('line', { class: 'tick', x1: x(ms), y1: y(0) - (ms % lab ? 2 : 4), x2: x(ms), y2: y(0) + (ms % lab ? 2 : 4) }, trace);
+    if (!(ms % lab)) el('text', { class: 'lab', x: Math.min(W - 18, x(ms)), y: y(0) + 18, 'text-anchor': ms ? 'middle' : 'start' }, trace).textContent = ms >= 1000 ? `${ms / 1000}s` : String(ms);
+  }
+  el('text', { class: 'speed', x: W, y: y(1) - 3, 'text-anchor': 'end' }, trace).textContent = speed === 1 ? 'live' : '¼ speed';
+  if (!run) return;
+  // the openness, as sampled: sky; a jump is drawn as a coral cliff between the two frames
+  const pts = run.samples.map((s) => `${x(s.t).toFixed(1)},${y(s.v).toFixed(1)}`);
+  el('polyline', { class: 'line', points: pts.join(' ') }, trace);
+  for (const j of jumps) {
+    el('line', { class: 'cliff', x1: x(j.from.t), y1: y(j.from.v), x2: x(j.to.t), y2: y(j.to.v) }, trace);
+    el('circle', { class: 'halo', cx: x(j.to.t), cy: y(j.to.v), r: 7 }, trace);
+    el('circle', { class: 'ev off', cx: x(j.to.t), cy: y(j.to.v), r: 4 }, trace);
+  }
+  run.presses.forEach((q, k) => {
+    const turned = turns.includes(q);
+    el('circle', { class: `ev ${turned ? 'on' : ''}`, cx: x(q.t), cy: y(q.v), r: turned ? 4 : 3 }, trace);
+  });
+  if (!run.done) { const t = run.samples.at(-1).t; el('line', { class: 'head', x1: x(t), y1: y(1) - 4, x2: x(t), y2: y(0) + 4 }, trace); }
+}
+
+function hint(jumps, turns) {
+  const h = document.getElementById('hint');
+  if (!run) { h.textContent = `Click Details (or press I), and click it again while the panel is still sliding in.${speed === 1 ? ' At 1× it’s quick: ¼× gives you time.' : ''}`; return; }
+  const j = jumps.at(-1), t = turns.at(-1);
+  if (j) h.textContent = `You closed it at ${pct(j.from.v)}; the exit began at its own first frame, so the panel snapped to ${pct(j.to.v)} before leaving. Try Transition.`;
+  else if (t) h.textContent = `It turned around at ${pct(t.v)}, from where it was. Nothing snapped.`;
+  else if (run.presses.length === 1 && !run.done) h.textContent = 'Now click again before it settles.';
+  else h.textContent = run.done && run.presses.length === 1 ? 'It finished before you changed your mind. Close it, open it, and click again on the way in.' : 'Click again while it’s moving.';
+}
+draw();
+</script>
+</body>
+</html>

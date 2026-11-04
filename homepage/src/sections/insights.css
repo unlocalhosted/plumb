@@ -1,7 +1,7 @@
 /* The insights: nine principles from the showcase, redrawn in the homepage's foundations, each on a card (the gallery
  * card: frame, inset stage, foot). The scenes keep their own colours where the principle is about colour (a saffron
  * page, a forecast's blue and amber); everything else is our grounds and inks. */
-.ins-x { max-width: 72rem; margin: 0 auto; padding: var(--s-10) var(--s-6) var(--s-9); color: var(--ink-1); }
+.ins-x { --ins-ease: cubic-bezier(0.22, 1, 0.36, 1); max-width: 72rem; margin: 0 auto; padding: var(--s-10) var(--s-6) var(--s-9); color: var(--ink-1); }
 .ins-x-head { max-width: 44rem; margin: 0 auto; text-align: center; }
 .ins-x-eyebrow { display: inline-block; margin-bottom: var(--s-4); font: var(--t-label); color: var(--accent-ink); }
 .ins-x .title { margin-bottom: var(--s-4); }
@@ -21,11 +21,18 @@
 .ins-state { position: absolute; left: 10px; top: 10px; display: inline-flex; gap: 6px; align-items: center; height: 22px; padding: 0 8px; border-radius: 6px;
   font: 500 11px/1 var(--mono); color: var(--off); background: color-mix(in oklab, var(--off) 12%, var(--g1)); transition: color 200ms ease, background-color 200ms ease; }
 .ins-state i { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.ins-state { z-index: 3; overflow: hidden; }
+.ins-swap { display: inline-block; animation: ins-swap-in 320ms var(--ins-ease) both; }
+@keyframes ins-swap-in { from { opacity: 0; translate: 0 8px; filter: blur(3px); } }
 .ins-state[data-fixed='true'] { color: var(--on); background: color-mix(in oklab, var(--on) 12%, var(--g1)); }
-.ins-switch { position: absolute; right: 10px; bottom: 10px; display: flex; padding: 2px; border-radius: 8px; background: var(--g1); box-shadow: inset 0 0 0 1px var(--line-2); }
-.ins-switch button { height: 22px; padding: 0 8px; border: 0; border-radius: 6px; background: transparent; color: var(--ink-3); font: var(--t-label); font-size: 11px; cursor: pointer;
-  transition: background-color 150ms var(--ease), color 150ms var(--ease); }
-.ins-switch button[aria-pressed='true'] { background: var(--g3); color: var(--ink-1); }
+.ins-switch { position: absolute; z-index: 3; right: 10px; bottom: 10px; display: grid; grid-template-columns: 1fr 1fr; padding: 2px; border-radius: 8px; background: var(--g1); box-shadow: inset 0 0 0 1px var(--line-2); }
+.ins-switch button { position: relative; z-index: 1; height: 22px; padding: 0 9px; border: 0; border-radius: 6px; background: transparent; color: var(--ink-3); font: var(--t-label); font-size: 11px; cursor: pointer;
+  transition: color 200ms var(--ins-ease); }
+.ins-switch button[aria-pressed='true'] { color: var(--ink-1); }
+/* the thumb slides under the chosen side and overshoots a touch (transitions.dev's toggle) */
+.ins-thumb { position: absolute; left: 2px; top: 2px; bottom: 2px; width: calc(50% - 2px); border-radius: 6px; background: var(--g3);
+  transition: translate 420ms linear(0, 0.22 8%, 0.62 20%, 0.94 34%, 1.06 46%, 1.03 60%, 1 76%, 1); }
+.ins-switch[data-fixed='true'] .ins-thumb { translate: 100% 0; }
 .ins-switch button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 .ins-foot { display: flex; gap: 12px; align-items: flex-start; padding: 14px 6px 6px; }
 .ins-n { display: grid; place-items: center; flex: none; width: 28px; height: 28px; border-radius: 8px; background: var(--g2); box-shadow: inset 0 0 0 1px var(--line); font: 500 11px/1 var(--mono); color: var(--ink-2); }
@@ -33,7 +40,31 @@
 .ins-text b { font: 510 14px/19px var(--font); }
 .ins-text span { font: 400 13px/18px var(--font); color: var(--ink-3); }
 
+/* ── the guides and the pill (the overlay's marks: 1px stripes, a 22px pill), over the scene, never scaled ── */
+.ins-marks { position: absolute; inset: 0; z-index: 2; pointer-events: none; --mk: var(--off); transition: opacity 300ms var(--ins-ease), filter 300ms var(--ins-ease); }
+.ins-marks[data-on='true'] { --mk: var(--on); }
+.ins-marks[data-out='true'] { opacity: 0; filter: blur(3px); }
+.ins-marks svg { position: absolute; inset: 0; overflow: visible; }
+.ins-guide { fill: none; stroke: var(--mk); stroke-width: 1; stroke-dasharray: 1; stroke-dashoffset: 1; animation: ins-draw 300ms var(--ins-ease) forwards; transition: stroke 300ms ease; }
+@keyframes ins-draw { to { stroke-dashoffset: 0; } }
+.ins-cross line { stroke: var(--mk); stroke-width: 1.25; transition: stroke 300ms ease; }
+.ins-pill { position: absolute; display: inline-flex; gap: 6px; align-items: center; height: 22px; padding: 0 8px; translate: -50% 0; border-radius: 6px;
+  background: var(--mk); color: #fff; font: 600 11px/1 var(--mono); white-space: nowrap; box-shadow: 0 6px 14px -6px rgb(from var(--mk) r g b / 0.6);
+  animation: ins-pop 360ms var(--ins-ease) 40ms both; transition: background-color 300ms ease, box-shadow 300ms ease; }
+@keyframes ins-pop { from { opacity: 0; scale: 0.8; filter: blur(4px); translate: -50% 4px; } }
+.ins-digits { display: inline-flex; }
+/* a character that changes flips in with a blur; the rest stay */
+.ins-digit { display: inline-block; animation: ins-flip 220ms var(--ins-ease) both; }
+@keyframes ins-flip { from { opacity: 0; translate: 0 5px; filter: blur(2px); } }
+/* the check lands as transitions.dev's copy-to-check: from a quarter size, blurred */
+.ins-check { display: grid; place-items: center; width: 0; overflow: hidden; opacity: 0; scale: 0.25; filter: blur(4px);
+  transition: width 240ms var(--ins-ease), opacity 300ms var(--ins-ease), scale 300ms var(--ins-ease), filter 300ms var(--ins-ease); }
+.ins-check[data-on='true'] { width: 12px; opacity: 1; scale: 1; filter: blur(0); }
+.ins-check svg { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
 /* ── the scenes ── */
+.ins-cam { position: absolute; inset: 0; transform-origin: 0 0; transition: transform 900ms cubic-bezier(0.7, 0, 0.3, 1); will-change: transform; }
+.ins-cam[data-moving='true'] { transition-duration: 1000ms; }
 .sc { position: absolute; inset: 0; display: grid; place-items: center; padding: 40px 0 46px; font-family: var(--font); } /* clear of the state pill above and the switch below */
 
 /* #2 play button */
@@ -41,13 +72,13 @@
   background: linear-gradient(160deg, oklch(0.42 0.06 250), oklch(0.28 0.04 270)); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.06); }
 .sc-video small { position: absolute; left: 10px; bottom: 9px; font-size: 11px; color: rgb(255 255 255 / 0.8); }
 .sc-play-btn { display: grid; place-items: center; width: 58px; height: 58px; border-radius: 50%; background: rgb(255 255 255 / 0.95); box-shadow: 0 8px 20px -8px rgb(0 0 0 / 0.5); }
-.sc-play-btn svg { width: 26px; height: 26px; fill: oklch(0.25 0.03 260); transition: translate 280ms var(--ease); }
+.sc-play-btn svg { width: 26px; height: 26px; fill: oklch(0.25 0.03 260); translate: -1.08px 0; transition: translate 420ms var(--ins-ease); } /* the triangle's box (7–19 of 24) on the circle's centre */
 /* the triangle's box is centred on the path 7..19 (13 wide); its weight sits at x≈11, so it reads left. Nudged by weight: */
-.sc-play[data-fixed='true'] .sc-play-btn svg { translate: 2.5px 0; }
+.sc-play[data-fixed='true'] .sc-play-btn svg { translate: 1.08px 0; } /* its weight (x 11 of 24) on the circle's centre */
 
 /* #8 nested radius */
 .sc-tile { width: 128px; padding: 8px; border-radius: 20px; background: var(--g2); box-shadow: inset 0 0 0 1px var(--line); }
-.sc-cover { aspect-ratio: 1; border-radius: 20px; background: linear-gradient(140deg, oklch(0.72 0.1 220), oklch(0.5 0.12 260)); transition: border-radius 300ms var(--ease); }
+.sc-cover { aspect-ratio: 1; border-radius: 20px; background: linear-gradient(140deg, oklch(0.72 0.1 220), oklch(0.5 0.12 260)); transition: border-radius 420ms var(--ins-ease); }
 .sc-album[data-fixed='true'] .sc-cover { border-radius: 12px; } /* 20 − 8 */
 .sc-tile b { display: block; margin: 8px 2px 2px; font: 590 13px/1 var(--font); }
 .sc-tile small { display: block; margin: 0 2px 2px; font-size: 11px; color: var(--ink-3); }
@@ -71,7 +102,7 @@
 /* #21 tinted shadow: a saffron page, a card on it */
 .sc-shadow { background: oklch(0.86 0.09 80); }
 .sc-recipe { display: grid; gap: 4px; width: 210px; padding: 14px 16px; border-radius: 14px; background: oklch(0.97 0.02 85); color: oklch(0.28 0.04 60);
-  box-shadow: 0 2px 4px rgb(0 0 0 / 0.25), 0 18px 32px -10px rgb(0 0 0 / 0.5); transition: box-shadow 300ms ease; }
+  box-shadow: 0 2px 4px rgb(0 0 0 / 0.25), 0 18px 32px -10px rgb(0 0 0 / 0.5); transition: box-shadow 450ms var(--ins-ease); }
 .sc-shadow[data-fixed='true'] .sc-recipe { box-shadow: 0 2px 4px oklch(0.55 0.13 65 / 0.4), 0 18px 32px -10px oklch(0.52 0.15 58 / 0.7); }
 .sc-recipe small { font-size: 11px; color: oklch(0.5 0.06 60); }
 .sc-recipe b { font: 590 17px/1.2 var(--font); }
@@ -82,13 +113,15 @@
 .sc-day { display: grid; grid-template-columns: 34px 220px; align-items: center; font-size: 12px; color: var(--ink-2); }
 .sc-day i { position: relative; height: 8px; border-radius: 4px; background: var(--g2); }
 .sc-day b { position: absolute; top: 0; bottom: 0; border-radius: 4px; background: linear-gradient(in srgb 90deg, #2f6fe4, #f5a524); }
-.sc-forecast[data-fixed='true'] .sc-day b { background: linear-gradient(in oklab 90deg, #2f6fe4, #f5a524); }
+.sc-day b em { position: absolute; inset: 0; border-radius: inherit; background: linear-gradient(in oklch 90deg, #2f6fe4, #f5a524); opacity: 0; filter: blur(2px);
+  transition: opacity 450ms var(--ins-ease), filter 450ms var(--ins-ease); }
+.sc-forecast[data-fixed='true'] .sc-day b em { opacity: 1; filter: blur(0); }
 
 /* #39 image outline: a pale photo on a pale card */
 .sc-photo { background: #ece9e3; }
 .sc-pin { width: 140px; padding: 8px 8px 10px; border-radius: 12px; background: #fbfaf7; box-shadow: 0 6px 16px -8px rgb(60 50 40 / 0.35); color: #2a2723; }
 .sc-glaze { position: relative; aspect-ratio: 4 / 3; border-radius: 6px; background: radial-gradient(120% 90% at 30% 20%, #fdfcf9, #ede9e0 60%, #e3ddd0); }
-.sc-glaze::after { content: ''; position: absolute; inset: 0; border-radius: inherit; box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.1); opacity: 0; transition: opacity 250ms ease; }
+.sc-glaze::after { content: ''; position: absolute; inset: 0; border-radius: inherit; box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.1); opacity: 0; transition: opacity 450ms var(--ins-ease); }
 .sc-photo[data-fixed='true'] .sc-glaze::after { opacity: 1; }
 .sc-pin b { display: block; margin-top: 8px; font: 590 12px/1 var(--font); }
 .sc-pin small { font-size: 10.5px; color: #8a847a; }
@@ -116,5 +149,6 @@
 @media (max-width: 64rem) { .ins-x-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 40rem) { .ins-x { padding-left: var(--s-4); padding-right: var(--s-4); } .ins-x-grid { grid-template-columns: 1fr; } }
 @media (prefers-reduced-motion: reduce) {
-  .ins-state, .sc-play-btn svg, .sc-cover, .sc-recipe, .sc-glaze::after, .sc-pop, .ins-card { transition: none; }
+  .ins-state, .sc-play-btn svg, .sc-cover, .sc-recipe, .sc-glaze::after, .sc-pop, .ins-card, .ins-thumb, .ins-cam, .sc-day b em { transition: none; }
+  .ins-swap { animation: none; }
 }
