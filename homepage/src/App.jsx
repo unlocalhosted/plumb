@@ -4,6 +4,7 @@
 import { useEffect, useState } from 'react';
 import { Hero } from './hero/Hero.jsx';
 import { Slop } from './sections/Slop.jsx';
+import { Live } from './sections/Live.jsx';
 import './foundations/foundations.css';
 import './surfaces.css';
 
@@ -15,6 +16,7 @@ export function App() {
       <main className="pb-page-4">
         <Hero />
         <Slop />
+        <Live />
       </main>
       {import.meta.env.DEV && (
         <aside aria-label="Light or dark" className="picker">
