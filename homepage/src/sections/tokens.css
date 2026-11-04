@@ -1,6 +1,8 @@
 /* "Save tokens on iteration" (illustration A, two routes), in the homepage's foundations. A stage of 1104 × 470 scaled
  * to fit; the routes are line drawing: the prompt's in quiet ink, the page's in the on signal. */
 @property --rowgap { syntax: '<length>'; inherits: true; initial-value: 14px; }
+/* a spring with a small settle, for the rows snapping onto the step (about 3% overshoot) */
+.tok { --tok-spring: linear(0, 0.18 7%, 0.56 17%, 0.87 28%, 1.02 40%, 1.04 50%, 1.01 64%, 1 80%, 1); --tok-ease: cubic-bezier(0.25, 1, 0.5, 1); }
 
 .tok { max-width: 72rem; margin: 0 auto; padding: var(--s-9) var(--s-6) var(--s-10); color: var(--ink-1); }
 .tok-head { max-width: 40rem; margin: 0 auto; text-align: center; }
@@ -9,7 +11,9 @@
 .tok .lead { margin: 0 auto; }
 
 .tok-area { position: relative; margin-top: var(--s-8); }
-.tok-stage { position: absolute; left: 0; top: 0; transform-origin: 0 0; font-family: var(--font); }
+.tok-stage { position: absolute; left: 0; top: 0; transform-origin: 0 0; font-family: var(--font); transition: opacity 350ms ease; }
+/* between loops the drawing fades out and back in, never a jump cut */
+.tok-stage[data-fading='true'] { opacity: 0; }
 .tok-routes { position: absolute; inset: 0; overflow: visible; }
 
 /* ── the prompt ── */
@@ -33,37 +37,50 @@
 .tok-el-label { display: block; margin-bottom: 8px; font: 500 11px/1 var(--mono); color: var(--ink-3); }
 .tok-card { padding: 14px; border-radius: var(--r-md); background: var(--g1); box-shadow: inset 0 0 0 1px var(--line), var(--drop); }
 .tok-card b { display: block; margin-bottom: 10px; font: 590 14px/1 var(--font); }
-.tok-card ul { display: grid; gap: var(--rowgap); margin: 0; padding: 0; list-style: none; transition: --rowgap 700ms cubic-bezier(0.32, 0.72, 0, 1); }
+.tok-card ul { position: relative; display: grid; gap: var(--rowgap); margin: 0; padding: 0; list-style: none; transition: --rowgap 760ms var(--tok-spring); }
 .tok-card li { position: relative; display: flex; gap: 10px; align-items: center; padding: 9px 10px; border-radius: var(--r-sm); background: var(--g2); font-size: 13px; }
 .tok-card li i { display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; font: 590 11px/1 var(--font); font-style: normal;
   color: oklch(0.86 0.06 var(--h)); background: oklch(0.36 0.07 var(--h)); }
 :root[data-scheme='light'] .tok-card li i { color: oklch(0.42 0.1 var(--h)); background: oklch(0.92 0.04 var(--h)); }
 .tok-card li span { flex: 1; }
 .tok-card li small { font-size: 11px; color: var(--ink-3); }
-/* the gap between rows, marked as the overlay marks a gap: off in coral, on in green */
-.tok-card li + li::before { content: ''; position: absolute; left: 6px; right: 6px; bottom: 100%; height: var(--rowgap);
-  background: repeating-linear-gradient(135deg, rgb(from var(--c) r g b / 0.55) 0 1px, transparent 1px 4px); }
-.tok-el { --c: var(--off); }
-.tok-el[data-tight='true'] { --c: var(--on); --rowgap: 6px; }
-.tok-after:not([data-lit='true']) .tok-card { opacity: 0.35; }
-.tok-after .tok-card { transition: opacity 400ms ease; }
-.tok-after[data-lit='true'] .tok-el-label { color: var(--on); }
+/* the gap between rows, marked as the overlay marks a gap: off in coral, on in green, crossfading as it settles */
+.tok-card li + li::before, .tok-card li + li::after { content: ''; position: absolute; left: 6px; right: 6px; bottom: 100%; height: var(--rowgap); transition: opacity 300ms ease; }
+.tok-card li + li::before { background: repeating-linear-gradient(135deg, rgb(from var(--off) r g b / 0.55) 0 1px, transparent 1px 4px); }
+.tok-card li + li::after { background: repeating-linear-gradient(135deg, rgb(from var(--on) r g b / 0.55) 0 1px, transparent 1px 4px); opacity: 0; }
+.tok-el[data-tight='true'] { --rowgap: 6px; }
+.tok-el[data-tight='true'] li + li::before { opacity: 0; }
+.tok-el[data-tight='true'] li + li::after { opacity: 1; transition-delay: 120ms; }
+.tok-el-label { transition: color 300ms ease; }
+.tok-after[data-tight='true'] .tok-el-label { color: var(--on); }
+/* it lands: one soft pulse round the card */
+.tok-card { transition: box-shadow 400ms ease; }
+.tok-after[data-tight='true'] .tok-card { animation: tok-pulse 1100ms var(--tok-ease); }
+@keyframes tok-pulse { 0% { box-shadow: inset 0 0 0 1px var(--line), 0 0 0 0 rgb(from var(--on) r g b / 0.45), var(--drop); }
+  100% { box-shadow: inset 0 0 0 1px var(--line), 0 0 0 14px rgb(from var(--on) r g b / 0), var(--drop); } }
+/* on the page starts on the element: its rows outlined, as holding Alt outlines them */
+.tok-card ul::after { content: ''; position: absolute; inset: -5px; border-radius: 10px; box-shadow: 0 0 0 1.5px var(--measured), 0 0 0 5px var(--measured-soft);
+  opacity: 0; scale: 1.02; transition: opacity 200ms ease, scale 260ms var(--tok-ease); pointer-events: none; }
+.tok-before[data-picked='true'] .tok-card ul::after { opacity: 1; scale: 1; }
 
 /* ── the routes ── */
 .tok-long { fill: none; stroke: var(--ink-3); stroke-width: 1.5; stroke-dasharray: 2 6; stroke-linecap: round; }
 .tok-trail { fill: none; stroke: var(--ink-2); stroke-width: 1.5; opacity: 0.6; }
 .tok-short-base { fill: none; stroke: var(--line-2); stroke-width: 2; }
 .tok-short { fill: none; stroke: var(--on); stroke-width: 2; }
-.tok-stop circle { fill: var(--g0); stroke: var(--ink-3); stroke-width: 1.5; transition: fill 200ms ease, stroke 200ms ease; }
+.tok-stop > circle { fill: var(--g0); stroke: var(--ink-3); stroke-width: 1.5; transition: fill 200ms ease, stroke 200ms ease; }
 .tok-stop text { font-size: 12.5px; fill: var(--ink-2); opacity: 0.4; transition: opacity 200ms ease; }
 /* a halo in the page's own colour behind every label on the drawing: a line passing near one stops short of its
    letters instead of cutting through them */
+.tok-wait { fill: none; stroke: var(--accent); stroke-width: 1.5; opacity: 0; transform-box: fill-box; transform-origin: center; pointer-events: none; }
+.tok-wait[data-shown='true'] { animation: tok-wait 900ms var(--tok-ease) infinite; }
+@keyframes tok-wait { from { opacity: 0.9; transform: scale(1); } to { opacity: 0; transform: scale(2.6); } }
 .tok-stop text, .tok-route-name { paint-order: stroke; stroke: var(--g0); stroke-width: 8px; stroke-linejoin: round; }
-.tok-stop[data-lit='true'] circle { fill: var(--ink-2); stroke: var(--ink-2); }
+.tok-stop[data-lit='true'] > circle { fill: var(--ink-2); stroke: var(--ink-2); }
 .tok-stop[data-lit='true'] text { opacity: 1; }
-.tok-stop-you circle { fill: rgb(from var(--accent) r g b / 0.3); stroke: none; }
+.tok-stop-you > circle { fill: color-mix(in oklab, var(--accent) 30%, var(--g0)); stroke: none; } /* opaque: it sits on the route */
 .tok-stop-you text { fill: var(--accent-ink); }
-.tok-stop-you[data-lit='true'] circle { fill: var(--accent); stroke: none; }
+.tok-stop-you[data-lit='true'] > circle { fill: var(--accent); stroke: none; }
 .tok-key rect { fill: var(--g1); stroke: var(--line-2); stroke-width: 1; transition: fill 200ms ease, stroke 200ms ease; }
 .tok-key text { font: 500 12px/1 var(--mono); fill: var(--ink-2); }
 /* a key sits on the line, so its fill is opaque in every state: the line never shows through its letters */
@@ -71,6 +88,8 @@
 .tok-key[data-on='true'] text { fill: var(--ink-1); }
 .tok-key[data-on='true'] { animation: tok-tap 260ms cubic-bezier(0.25, 1, 0.5, 1); transform-box: fill-box; transform-origin: center; }
 @keyframes tok-tap { 40% { transform: translateY(1.5px) scale(0.95); } }
+.tok-dot-long, .tok-dot-short { will-change: transform; transition: opacity 200ms ease; }
+.tok-dot-long[data-shown='false'], .tok-dot-short[data-shown='false'] { opacity: 0; }
 .tok-dot-long { fill: var(--ink-1); }
 .tok-dot-short { fill: var(--on); filter: drop-shadow(0 0 6px rgb(from var(--on) r g b / 0.8)); }
 .tok-route-name { font: 400 12px/1 var(--font); fill: var(--on); opacity: 0.8; }
@@ -80,7 +99,7 @@
   opacity: 0; translate: 0 4px; transition: opacity 300ms ease, translate 400ms cubic-bezier(0.25, 1, 0.5, 1); }
 .tok-badge[data-shown='true'] { opacity: 1; translate: 0 0; }
 .tok-badge-short { top: 358px; background: var(--on-soft); color: var(--on); }
-.tok-badge-long { top: 358px; left: 936px; background: var(--g2); color: var(--ink-2); }
+.tok-badge-long { top: 386px; left: 842px; background: var(--g2); color: var(--ink-2); }
 
 .tok-legend { display: flex; flex-wrap: wrap; gap: var(--s-6); justify-content: center; margin: var(--s-5) 0 0; font: var(--t-small); font-size: 13px; color: var(--ink-3); }
 .tok-legend span { display: inline-flex; gap: 8px; align-items: center; }
@@ -91,5 +110,6 @@
 @media (max-width: 40rem) { .tok { padding-left: var(--s-4); padding-right: var(--s-4); } }
 @media (prefers-reduced-motion: reduce) {
   .tok-caret, .tok-key[data-on='true'], .tok-prompt[data-sent='true'] .tok-send { animation: none; }
-  .tok-card ul, .tok-badge, .tok-after .tok-card, .tok-stop circle, .tok-stop text { transition: none; }
+  .tok-card ul, .tok-badge, .tok-card, .tok-stop > circle, .tok-stop text, .tok-stage, .tok-card ul::after, .tok-card li::before, .tok-card li::after { transition: none; }
+  .tok-after[data-tight='true'] .tok-card, .tok-wait[data-shown='true'] { animation: none; }
 }
