@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { Hero } from './hero/Hero.jsx';
 import { Slop } from './sections/Slop.jsx';
 import { Live } from './sections/Live.jsx';
+import { Tokens } from './sections/Tokens.jsx';
 import './foundations/foundations.css';
 
 export function App() {
@@ -16,6 +17,7 @@ export function App() {
         <Hero />
         <Slop />
         <Live />
+        <Tokens />
       </main>
       {import.meta.env.DEV && (
         <aside aria-label="Light or dark" className="picker">
