@@ -1337,7 +1337,8 @@ export const trimLeading = {
   id: 'craft/trim-leading', family: 'craft', number: [5], owns: ['text-box'], once: 'ancestor', reads: ['style', 'metrics'],
   check({ el, facts }, theme) {
     const T = theme.spec(this.id);
-    if (el.matches('input, textarea, select') || !oneLine(el, facts) || facts.kids(el).length) return [];
+    // one line of words, with the inline things a line carries (a link, a bold word): a banner or a button as built
+    if (el.matches('input, textarea, select') || !oneLine(el, facts) || facts.kids(el).some((k) => !/^inline(?!-(?:block|flex|grid))/.test(facts.style(k).display))) return [];
     const s = facts.style(el);
     if (/trim/.test(s.textBoxTrim ?? s.getPropertyValue('text-box-trim') ?? '')) return [];
     if (!((rgb(s.backgroundColor)?.[3] ?? 0) > 0 || px(s.borderTopWidth) > 0)) return [];
