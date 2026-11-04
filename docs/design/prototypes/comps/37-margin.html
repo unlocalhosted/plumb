@@ -1,0 +1,163 @@
+<!doctype html>
+<!-- COMP #37 (never land on half pixels). Margin, a newsletter's stats page: readers per day, the pointer on Monday's
+     spike, a two-line tooltip pinned beside the point. Drawn here centred by layout; plumber's mistake is planted on
+     that tooltip ([data-tip]): top-1/2 with -translate-y-1/2, half of its 46.4px height, so its words land between
+     pixel rows. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Margin · Stats (comp)</title>
+<style>
+  :root {
+    --surface: #fff; --sunken: #f3f5f9; --ink: #12233d; --ink-muted: #5a6779; --ink-subtle: #6f7c90;
+    --line: rgb(18 35 61 / 0.09); --line-strong: rgb(18 35 61 / 0.14); --accent: #5550d8; --accent-soft: #efeefd; --accent-deep: #3631a6;
+    --positive: #0f6f58; --positive-soft: #e5f4ef; --board: #e9edf2; --board-dot: #d3d9e2;
+    --window: 0 1px 2px rgb(18 35 61 / 0.05), 0 8px 24px rgb(18 35 61 / 0.08), 0 24px 64px rgb(18 35 61 / 0.12);
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 48px; background: var(--board);
+    background-image: radial-gradient(var(--board-dot) 1px, transparent 1px); background-size: 16px 16px;
+    font: 13px/18px Inter, -apple-system, system-ui, sans-serif; color: var(--ink); -webkit-font-smoothing: antialiased; font-feature-settings: "cv11", "ss01"; }
+  .num { font-variant-numeric: tabular-nums; }
+  svg.i { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 1.45; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+  img { display: block; }
+  .window { width: 984px; height: 604px; display: grid; grid-template-columns: 200px 1fr; border-radius: 12px; overflow: hidden; background: var(--surface); box-shadow: var(--window), 0 0 0 0.5px rgb(18 35 61 / 0.18); }
+  .side { background: #f7f8fa; border-right: 0.5px solid var(--line-strong); display: flex; flex-direction: column; padding: 12px 10px; gap: 1px; }
+  .lights { display: flex; gap: 7px; padding: 4px 6px 14px; } .lights i { width: 11px; height: 11px; border-radius: 50%; background: #d9dde3; }
+  .pub { display: flex; align-items: center; gap: 9px; padding: 2px 8px 14px; }
+  .pub b { width: 26px; height: 26px; border-radius: 7px; background: #1d2b44; color: #f3efe6; display: grid; place-items: center; font: 600 15px/1 Georgia, 'Times New Roman', serif; font-style: italic; }
+  .pub span { display: flex; flex-direction: column; line-height: 16px; } .pub strong { font-weight: 600; font-size: 13.5px; } .pub small { color: var(--ink-subtle); font-size: 11.5px; }
+  .new { height: 32px; margin: 0 2px 12px; border-radius: 8px; background: var(--ink); color: #fff; display: flex; align-items: center; justify-content: center; gap: 6px; font-weight: 500; box-shadow: 0 1px 2px rgb(18 35 61 / 0.2); }
+  .nav { display: flex; align-items: center; gap: 9px; height: 30px; padding: 0 8px; border-radius: 6px; color: var(--ink-muted); }
+  .nav.on { background: rgb(18 35 61 / 0.06); color: var(--ink); font-weight: 500; }
+  .nav .n { margin-left: auto; font-size: 12px; color: var(--ink-subtle); }
+  .label { margin: 16px 8px 6px; font-size: 11px; font-weight: 500; color: var(--ink-subtle); }
+  .draft { display: flex; flex-direction: column; padding: 5px 8px; line-height: 16px; }
+  .draft b { font-weight: 500; font-size: 12.5px; } .draft small { color: var(--ink-subtle); font-size: 11.5px; }
+  .draft small i { font-style: normal; color: #965a03; }
+  .me { margin-top: auto; display: flex; align-items: center; gap: 9px; padding: 8px; }
+  .me img { width: 26px; height: 26px; border-radius: 50%; object-fit: cover; }
+  .me span { display: flex; flex-direction: column; font-size: 12.5px; line-height: 16px; } .me small { color: var(--ink-subtle); font-size: 11.5px; }
+
+  .main { display: flex; flex-direction: column; min-width: 0; }
+  .bar { display: flex; align-items: center; gap: 12px; height: 54px; padding: 0 22px; border-bottom: 0.5px solid var(--line-strong); }
+  .bar h1 { margin: 0; font-size: 15px; font-weight: 600; letter-spacing: -0.01em; }
+  .seg { display: flex; padding: 2px; border-radius: 8px; background: var(--sunken); margin-left: 8px; }
+  .seg span { height: 26px; display: grid; place-items: center; padding: 0 11px; border-radius: 6px; color: var(--ink-muted); font-size: 12.5px; }
+  .seg span.on { background: #fff; color: var(--ink); font-weight: 500; box-shadow: 0 1px 2px rgb(18 35 61 / 0.1), 0 0 0 0.5px rgb(18 35 61 / 0.1); }
+  .btn { margin-left: auto; height: 30px; display: inline-flex; align-items: center; gap: 6px; padding: 0 12px; border-radius: 7px; font-weight: 500; box-shadow: inset 0 0 0 1px var(--line-strong); }
+
+  .content { padding: 18px 22px 0; display: flex; flex-direction: column; gap: 16px; }
+  .kpis { display: grid; grid-template-columns: repeat(4, 1fr); border-radius: 10px; box-shadow: inset 0 0 0 0.5px var(--line-strong); }
+  .kpi { padding: 12px 14px; display: flex; flex-direction: column; gap: 2px; border-left: 0.5px solid var(--line-strong); }
+  .kpi:first-child { border-left: 0; }
+  .kpi small { font-size: 12px; color: var(--ink-subtle); }
+  .kpi b { font-size: 21px; line-height: 26px; font-weight: 500; letter-spacing: -0.02em; }
+  .kpi .d { font-size: 12px; color: var(--positive); font-weight: 500; }
+  .kpi .d.flat { color: var(--ink-subtle); font-weight: 400; }
+  .kpi.on { box-shadow: inset 0 -2px 0 var(--accent); }
+
+  .chart { position: relative; height: 196px; margin-left: 38px; }
+  .chart svg.plot { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+  .ylab { position: absolute; left: -38px; width: 30px; text-align: right; font-size: 11px; color: var(--ink-subtle); transform: translateY(-8px); }
+  .xlab { position: absolute; bottom: -30px; width: 60px; margin-left: -30px; text-align: center; font-size: 11px; color: var(--ink-subtle); }
+  .xlab.on { color: var(--ink); font-weight: 500; }
+  .dot { position: absolute; width: 11px; height: 11px; margin: -5.5px 0 0 -5.5px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 2.5px #fff, 0 0 0 7px rgb(85 80 216 / 0.16); }
+  .sent { position: absolute; bottom: 0; z-index: 1; box-shadow: 0 0 0 2px #fff; width: 18px; height: 18px; margin-left: -9px; border-radius: 5px; background: var(--accent-soft); color: var(--accent-deep); display: grid; place-items: center; transform: translateY(50%); }
+  .sent svg { width: 11px; height: 11px; }
+  /* the tooltip, pinned to the point by a zero-height anchor */
+  .anchor { position: absolute; height: 0; }
+  .tip { position: absolute; left: 14px; top: -23px; display: flex; flex-direction: column; padding: 6px 10px; border-radius: 7px; background: var(--ink); color: #fff; white-space: nowrap; box-shadow: 0 4px 12px rgb(18 35 61 / 0.18); }
+  .tip small { font-size: 12px; line-height: 1.375; color: rgb(255 255 255 / 0.68); }
+  .tip b { font-size: 13px; line-height: 1.375; font-weight: 500; }
+  .tip b em { font-style: normal; color: #9fe0c9; font-weight: 500; margin-left: 6px; font-size: 12px; }
+
+  .lower { display: grid; grid-template-columns: 1.25fr 1fr; gap: 26px; margin-top: 30px; }
+  .lower h2 { margin: 0 0 4px; font-size: 12px; font-weight: 500; color: var(--ink-subtle); }
+  .post { display: grid; grid-template-columns: 36px 1fr auto; gap: 11px; align-items: center; height: 46px; border-bottom: 0.5px solid var(--line); }
+  .post img { width: 36px; height: 36px; border-radius: 6px; object-fit: cover; box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.1); }
+  .post span { display: flex; flex-direction: column; line-height: 16px; min-width: 0; }
+  .post b { font-weight: 500; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .post small { font-size: 12px; color: var(--ink-subtle); }
+  .post .r { align-items: flex-end; } .post .r b { font-size: 13px; }
+  .ref { display: grid; grid-template-columns: 92px 1fr 46px; gap: 10px; align-items: center; height: 31px; font-size: 12.5px; }
+  .ref .track { height: 8px; border-radius: 4px; background: var(--sunken); overflow: hidden; }
+  .ref .track i { display: block; height: 100%; border-radius: 4px; background: #b8b5f0; }
+  .ref:first-of-type .track i { background: var(--accent); }
+  .ref .v { text-align: right; color: var(--ink-muted); }
+</style>
+</head>
+<body>
+<div class="window">
+  <aside class="side">
+    <div class="lights"><i></i><i></i><i></i></div>
+    <div class="pub"><b>F</b><span><strong>Field Notes</strong><small class="num">4,812 subscribers</small></span></div>
+    <div class="new"><svg class="i" viewBox="0 0 16 16"><path d="M8 3v10M3 8h10"/></svg>New post</div>
+    <div class="nav"><svg class="i" viewBox="0 0 16 16"><path d="M4 2h6l3 3v9H4z"/><path d="M6.5 8.5h4M6.5 11h4"/></svg>Posts<span class="n num">38</span></div>
+    <div class="nav on"><svg class="i" viewBox="0 0 16 16"><path d="M2.5 12.5 6 8l3 2.5 4.5-6"/></svg>Stats</div>
+    <div class="nav"><svg class="i" viewBox="0 0 16 16"><circle cx="6" cy="6" r="2.5"/><path d="M1.8 13.5a4.2 4.2 0 0 1 8.4 0M11 4.2a2.3 2.3 0 0 1 0 4.4M12.2 10.6a3.6 3.6 0 0 1 2 2.9"/></svg>Subscribers</div>
+    <div class="nav"><svg class="i" viewBox="0 0 16 16"><circle cx="8" cy="8" r="2"/><path d="M8 1.8v1.8M8 12.4v1.8M1.8 8h1.8M12.4 8h1.8M3.6 3.6l1.3 1.3M11.1 11.1l1.3 1.3M3.6 12.4l1.3-1.3M11.1 4.9l1.3-1.3"/></svg>Settings</div>
+    <div class="label">Drafts</div>
+    <div class="draft"><b>What the river kept</b><small class="num">2,140 words · <i>Sends Fri 7:00</i></small></div>
+    <div class="draft"><b>Notes on walking slowly</b><small class="num">Edited yesterday</small></div>
+    <div class="me"><img src="../../../../overlay/showcase/src/media/people/person-04.jpg" alt=""><span>Walter Brandt<small>Writer</small></span></div>
+  </aside>
+
+  <main class="main">
+    <div class="bar">
+      <h1>Stats</h1>
+      <div class="seg"><span class="on">7 days</span><span>30 days</span><span>12 months</span></div>
+      <span class="btn"><svg class="i" viewBox="0 0 16 16"><path d="M8 2.5v8M4.8 7.5 8 10.7l3.2-3.2M3 13.5h10"/></svg>Export</span>
+    </div>
+    <div class="content">
+      <div class="kpis num">
+        <div class="kpi on"><small>Readers</small><b>7,244</b><span class="d">↑ 18% on last week</span></div>
+        <div class="kpi"><small>Open rate</small><b>61.4%</b><span class="d">↑ 2.1 pts</span></div>
+        <div class="kpi"><small>New subscribers</small><b>+86</b><span class="d">↑ 31</span></div>
+        <div class="kpi"><small>Read time</small><b>4m 12s</b><span class="d flat">About the same</span></div>
+      </div>
+
+      <div class="chart" id="chart"></div>
+
+      <div class="lower">
+        <section>
+          <h2>Posts read this week</h2>
+          <div class="post"><img src="../../../../overlay/showcase/src/media/low-tide.jpg" alt=""><span><b>The case for slow mail</b><small>Sent Mon 3 Nov</small></span><span class="r num"><b>3,912</b><small>68% opened</small></span></div>
+          <div class="post"><img src="../../../../overlay/showcase/src/media/valley.jpg" alt=""><span><b>A week on the Lofoten ferry</b><small>Sent 27 Oct</small></span><span class="r num"><b>1,806</b><small>59% opened</small></span></div>
+        </section>
+        <section>
+          <h2>Where readers came from</h2>
+          <div class="ref num"><span>Email</span><span class="track"><i style="width:74%"></i></span><span class="v">5,360</span></div>
+          <div class="ref num"><span>Direct link</span><span class="track"><i style="width:15%"></i></span><span class="v">1,088</span></div>
+          <div class="ref num"><span>Search</span><span class="track"><i style="width:7%"></i></span><span class="v">512</span></div>
+        </section>
+      </div>
+    </div>
+  </main>
+</div>
+<script>
+// readers per day, Thu 30 Oct to Wed 5 Nov; the pointer rests on Monday, the day the post went out
+const R = [820, 910, 880, 1040, 1284, 1190, 1120], DAYS = ['Thu 30', 'Fri 31', 'Sat 1', 'Sun 2', 'Mon 3', 'Tue 4', 'Wed 5'], AT = 4, MAX = 1500;
+const el = document.getElementById('chart'), W = el.clientWidth, H = el.clientHeight, pad = 12;
+const x = (i) => pad + (i / (R.length - 1)) * (W - pad * 2), y = (v) => H - (v / MAX) * H;
+// a smooth line through the days
+const pts = R.map((v, i) => [x(i), y(v)]);
+let d = `M${pts[0]}`;
+for (let i = 1; i < pts.length; i++) { const [a, b] = [pts[i - 1], pts[i]], m = (b[0] - a[0]) / 2.4; d += ` C${a[0] + m},${a[1]} ${b[0] - m},${b[1]} ${b[0]},${b[1]}`; }
+const grid = [0, 500, 1000, 1500].map((v) => `<line x1="0" x2="${W}" y1="${y(v)}" y2="${y(v)}" stroke="rgb(18 35 61 / ${v ? 0.07 : 0.16})" stroke-width="${v ? 1 : 1}" ${v ? 'stroke-dasharray="2 4"' : ''}/>`).join('');
+el.innerHTML = `<svg class="plot" viewBox="0 0 ${W} ${H}">
+  <defs><linearGradient id="fill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5550d8" stop-opacity="0.18"/><stop offset="1" stop-color="#5550d8" stop-opacity="0"/></linearGradient></defs>
+  ${grid}
+  <path d="${d} L${x(R.length - 1)},${H} L${x(0)},${H} Z" fill="url(#fill)"/>
+  <line x1="${x(AT)}" x2="${x(AT)}" y1="0" y2="${H}" stroke="rgb(18 35 61 / 0.22)" stroke-dasharray="3 3"/>
+  <path d="${d}" fill="none" stroke="#5550d8" stroke-width="2.25" stroke-linecap="round"/>
+</svg>`
+  + [0, 500, 1000, 1500].map((v) => `<span class="ylab num" style="top:${y(v)}px">${v ? v.toLocaleString('en') : '0'}</span>`).join('')
+  + DAYS.map((t, i) => `<span class="xlab num${i === AT ? ' on' : ''}" style="left:${x(i)}px">${t}</span>`).join('')
+  + `<span class="sent" style="left:${x(AT)}px" title="Post sent"><svg class="i" viewBox="0 0 16 16" style="width:11px;height:11px"><rect x="2" y="3.5" width="12" height="9" rx="1.5"/><path d="m2.5 4.5 5.5 4 5.5-4"/></svg></span>`
+  + `<span class="dot" style="left:${x(AT)}px;top:${y(R[AT])}px"></span>`
+  + `<span class="anchor" style="left:${x(AT)}px;top:${y(R[AT])}px"><span class="tip" data-tip><small>Mon 3 Nov · post sent</small><b class="num">1,284 readers<em>+23%</em></b></span></span>`;
+</script>
+</body>
+</html>

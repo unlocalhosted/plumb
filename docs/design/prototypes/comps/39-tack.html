@@ -1,0 +1,171 @@
+<!doctype html>
+<!-- COMP #39 (images get a faint inner outline). Tack, a moodboard app; Ama Ceramics' board of glaze tests for the
+     spring line. The lead pin is a product shot on a white sweep, the one photo whose edge is the card's own white.
+     Drawn here with the 10% inner outline on every photo; plumber's mistake is planted on the lead pin's image
+     ([data-light]): no outline, so the mugs float loose in the card. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tack · Glaze tests (comp)</title>
+<style>
+  :root {
+    --surface: #fff; --sunken: #f3f5f9; --ink: #12233d; --ink-muted: #5a6779; --ink-subtle: #6f7c90;
+    --line: rgb(18 35 61 / 0.09); --line-strong: rgb(18 35 61 / 0.14); --accent: #5550d8; --accent-soft: #efeefd; --accent-deep: #3631a6;
+    --positive: #0f6f58; --positive-soft: #e5f4ef; --caution: #965a03; --caution-soft: #fcf1dd;
+    --board: #e9edf2; --board-dot: #d3d9e2;
+    --window: 0 1px 2px rgb(18 35 61 / 0.05), 0 8px 24px rgb(18 35 61 / 0.08), 0 24px 64px rgb(18 35 61 / 0.12);
+    --pin: 0 0 0 0.5px rgb(18 35 61 / 0.12), 0 1px 2px rgb(18 35 61 / 0.05), 0 3px 10px rgb(18 35 61 / 0.05);
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 48px; background: var(--board);
+    background-image: radial-gradient(var(--board-dot) 1px, transparent 1px); background-size: 16px 16px;
+    font: 13px/18px Inter, -apple-system, system-ui, sans-serif; color: var(--ink); -webkit-font-smoothing: antialiased; font-feature-settings: "cv11", "ss01"; }
+  .num { font-variant-numeric: tabular-nums; }
+  svg.i { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 1.45; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+  img { display: block; }
+  .window { width: 984px; height: 612px; display: grid; grid-template-columns: 196px 1fr; border-radius: 12px; overflow: hidden; background: var(--surface); box-shadow: var(--window), 0 0 0 0.5px rgb(18 35 61 / 0.18); }
+  .side { background: #f7f8fa; border-right: 0.5px solid var(--line-strong); display: flex; flex-direction: column; padding: 12px 10px; gap: 1px; }
+  .lights { display: flex; gap: 7px; padding: 4px 6px 14px; } .lights i { width: 11px; height: 11px; border-radius: 50%; background: #d9dde3; }
+  .ws { display: flex; align-items: center; gap: 8px; padding: 2px 8px 12px; }
+  .ws b { width: 22px; height: 22px; border-radius: 6px; background: #c9643b; color: #fff; display: grid; place-items: center; font-size: 11px; font-weight: 600; box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.2); }
+  .ws span { font-weight: 600; font-size: 13.5px; letter-spacing: -0.01em; }
+  .nav { display: flex; align-items: center; gap: 9px; height: 30px; padding: 0 8px; border-radius: 6px; color: var(--ink-muted); }
+  .label { margin: 14px 8px 6px; font-size: 11px; font-weight: 500; color: var(--ink-subtle); }
+  .board { display: grid; grid-template-columns: 30px 1fr; gap: 9px; align-items: center; padding: 5px 8px; border-radius: 7px; }
+  .board.on { background: rgb(18 35 61 / 0.06); }
+  .board .mosaic { width: 30px; height: 30px; border-radius: 6px; overflow: hidden; display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: #fff; box-shadow: 0 0 0 0.5px rgb(18 35 61 / 0.14); }
+  .board .mosaic img, .board .mosaic i { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .board span { display: flex; flex-direction: column; line-height: 16px; min-width: 0; }
+  .board b { font-weight: 500; font-size: 12.5px; } .board small { font-size: 11.5px; color: var(--ink-subtle); }
+  .me { margin-top: auto; display: flex; align-items: center; gap: 9px; padding: 8px; }
+  .me img { width: 26px; height: 26px; border-radius: 50%; object-fit: cover; }
+  .me span { display: flex; flex-direction: column; font-size: 12.5px; line-height: 16px; } .me small { color: var(--ink-subtle); font-size: 11.5px; }
+
+  .main { display: flex; flex-direction: column; min-width: 0; background: var(--sunken); }
+  .bar { display: flex; align-items: center; gap: 12px; height: 56px; padding: 0 20px; border-bottom: 0.5px solid var(--line-strong); background: #fff; }
+  .bar h1 { margin: 0; font-size: 15px; font-weight: 600; letter-spacing: -0.01em; }
+  .bar .sub { color: var(--ink-subtle); }
+  .faces { display: flex; margin-left: auto; }
+  .faces img { width: 26px; height: 26px; border-radius: 50%; object-fit: cover; box-shadow: 0 0 0 2px #fff; margin-left: -7px; }
+  .faces img:first-child { margin-left: 0; }
+  .faces .live { box-shadow: 0 0 0 2px #fff, 0 0 0 3.5px #2f9a7e; }
+  .btn { height: 30px; display: inline-flex; align-items: center; gap: 6px; padding: 0 12px; border-radius: 7px; font-weight: 500; box-shadow: inset 0 0 0 1px var(--line-strong); }
+  .btn.p { background: var(--ink); color: #fff; box-shadow: 0 1px 2px rgb(18 35 61 / 0.2); }
+
+  .wall { flex: 1; padding: 18px 20px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; align-items: start; overflow: hidden; }
+  .col { display: flex; flex-direction: column; gap: 14px; }
+  .pin { background: #fff; border-radius: 10px; padding: 8px; box-shadow: var(--pin); display: flex; flex-direction: column; gap: 8px; }
+  /* every photo gets its inner outline: an edge for the light one, invisible on the dark */
+  .ph { position: relative; border-radius: 6px; overflow: hidden; }
+  .ph img { width: 100%; height: 100%; object-fit: cover; }
+  .ph::after { content: ''; position: absolute; inset: 0; border-radius: inherit; box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.1); pointer-events: none; }
+  .cap { display: flex; flex-direction: column; padding: 0 3px 2px; line-height: 17px; }
+  .cap b { font-weight: 500; font-size: 13px; }
+  .cap span { font-size: 12px; color: var(--ink-muted); }
+  .tags { display: flex; gap: 5px; padding: 0 3px 2px; flex-wrap: wrap; }
+  .tag { font-size: 11px; font-weight: 500; height: 20px; display: inline-flex; align-items: center; padding: 0 7px; border-radius: 99px; background: var(--sunken); color: var(--ink-muted); }
+  .tag.ok { background: var(--positive-soft); color: var(--positive); }
+  .tag.try { background: var(--caution-soft); color: var(--caution); }
+  .foot { display: flex; align-items: center; gap: 6px; padding: 6px 3px 0; border-top: 0.5px solid var(--line); font-size: 12px; color: var(--ink-subtle); }
+  .foot img { width: 18px; height: 18px; border-radius: 50%; object-fit: cover; }
+  .foot .c { margin-left: auto; display: inline-flex; align-items: center; gap: 4px; }
+  .foot .c svg { width: 13px; height: 13px; }
+
+  .lead { grid-column: span 2; }
+  .swatches { display: flex; height: 44px; border-radius: 6px; overflow: hidden; box-shadow: inset 0 0 0 0.5px rgb(0 0 0 / 0.1); }
+  .swatches i { flex: 1; }
+  .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .lead .ph { height: 268px; }
+
+  /* the test tiles, drawn: each glaze as fired on a stoneware tile */
+  .tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; padding: 2px; }
+  .tile { aspect-ratio: 3/4; border-radius: 4px 4px 9px 9px; position: relative; overflow: hidden; box-shadow: inset 0 0 0 0.5px rgb(0 0 0 / 0.15); }
+  .tile::before { content: ''; position: absolute; inset: 0; background: radial-gradient(120% 60% at 30% 15%, rgb(255 255 255 / 0.4), transparent 55%); }
+  .tile::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 26%; background: #cdb89c; box-shadow: inset 0 1px 0 rgb(0 0 0 / 0.08); }
+  .tile.speck { background-image: radial-gradient(circle at 20% 30%, rgb(58 42 28 / 0.7) 0.5px, transparent 0.9px), radial-gradient(circle at 70% 60%, rgb(58 42 28 / 0.55) 0.5px, transparent 0.9px), radial-gradient(circle at 45% 80%, rgb(58 42 28 / 0.6) 0.4px, transparent 0.8px); background-size: 11px 13px, 17px 11px, 7px 15px; }
+  .tile small { position: absolute; left: 0; right: 0; bottom: 2px; z-index: 1; text-align: center; font-size: 9.5px; font-weight: 600; color: #6b5640; letter-spacing: 0.02em; }
+
+  .note { background: #fff8e8; box-shadow: 0 0 0 0.5px rgb(150 90 3 / 0.18), 0 1px 2px rgb(18 35 61 / 0.05); padding: 12px 13px; font-size: 12.5px; line-height: 18px; color: #4b3a1c; }
+  .note b { display: block; font-weight: 600; margin-bottom: 3px; color: #3b2c12; }
+
+  .curve svg { width: 100%; height: 86px; display: block; }
+  .curve .head { display: flex; justify-content: space-between; padding: 0 3px; font-size: 12px; color: var(--ink-subtle); }
+  .curve .head b { color: var(--ink); font-weight: 500; font-size: 13px; }
+
+  .cursor { position: absolute; display: flex; align-items: flex-start; gap: 2px; pointer-events: none; }
+  .cursor svg { width: 16px; height: 16px; filter: drop-shadow(0 1px 1px rgb(0 0 0 / 0.2)); }
+  .cursor span { margin-top: 12px; font-size: 11px; font-weight: 500; color: #fff; background: #2f9a7e; padding: 2px 7px; border-radius: 99px 99px 99px 4px; }
+</style>
+</head>
+<body>
+<div class="window">
+  <aside class="side">
+    <div class="lights"><i></i><i></i><i></i></div>
+    <div class="ws"><b>AC</b><span>Ama Ceramics</span></div>
+    <div class="nav"><svg class="i" viewBox="0 0 16 16"><rect x="2" y="2" width="5" height="5" rx="1.2"/><rect x="9" y="2" width="5" height="5" rx="1.2"/><rect x="2" y="9" width="5" height="5" rx="1.2"/><rect x="9" y="9" width="5" height="5" rx="1.2"/></svg>All boards</div>
+    <div class="nav"><svg class="i" viewBox="0 0 16 16"><path d="M3 2.5h10v11l-5-3-5 3z"/></svg>Saved pins</div>
+    <div class="label">Boards</div>
+    <div class="board on"><span class="mosaic"><img src="../../../../overlay/showcase/src/media/ceramic.jpg" alt=""><img src="../../../../overlay/showcase/src/media/lake.jpg" alt=""><img src="../../../../overlay/showcase/src/media/peak.jpg" alt=""><i style="background:#2d4f9e"></i></span><span><b>Glaze tests</b><small class="num">14 pins</small></span></div>
+    <div class="board"><span class="mosaic"><img src="../../../../overlay/showcase/src/media/low-tide.jpg" alt=""><img src="../../../../overlay/showcase/src/media/valley.jpg" alt=""><i style="background:#d9a33a"></i><i style="background:#e9d3b8"></i></span><span><b>Spring colours</b><small class="num">31 pins</small></span></div>
+    <div class="board"><span class="mosaic"><img src="../../../../overlay/showcase/src/media/paper-cities.jpg" alt=""><i style="background:#ece6dc"></i><i style="background:#cdb89c"></i><img src="../../../../overlay/showcase/src/media/afterglow.jpg" alt=""></span><span><b>Shop photography</b><small class="num">9 pins</small></span></div>
+    <div class="me"><img src="../../../../overlay/showcase/src/media/people/person-03.jpg" alt=""><span>Ama Boateng<small>Owner</small></span></div>
+  </aside>
+
+  <main class="main">
+    <div class="bar">
+      <h1>Glaze tests</h1><span class="sub">Spring line · cone 6</span>
+      <span class="faces"><img src="../../../../overlay/showcase/src/media/people/person-03.jpg" alt=""><img class="live" src="../../../../overlay/showcase/src/media/people/person-08.jpg" alt=""><img src="../../../../overlay/showcase/src/media/people/person-10.jpg" alt=""></span>
+      <span class="btn">Share</span><span class="btn p"><svg class="i" viewBox="0 0 16 16"><path d="M8 3v10M3 8h10"/></svg>Add pin</span>
+    </div>
+    <div class="wall" style="position:relative">
+      <div class="lead col">
+        <article class="pin">
+          <div class="ph"><img data-light src="../../../../overlay/showcase/src/media/ceramic.jpg" alt="Two stacked mugs, cobalt over honey" style="object-position:50% 46%"></div>
+          <div class="cap"><b>Cobalt over honey</b><span>Two dips, cone 6 · the one for the spring mugs</span></div>
+          <div class="tags"><span class="tag ok">Chosen</span><span class="tag">Mugs</span><span class="tag">Photo for the shop</span></div>
+          <div class="foot"><img src="../../../../overlay/showcase/src/media/people/person-03.jpg" alt=""><span>Ama · 2h ago</span><span class="c num"><svg class="i" viewBox="0 0 16 16"><path d="M2.5 3.5h11v7.5H7l-3 2.5v-2.5H2.5z"/></svg>4</span></div>
+        </article>
+        <div class="pair">
+          <article class="pin"><div class="ph" style="height:120px"><img src="../../../../overlay/showcase/src/media/peak.jpg" alt=""></div><div class="cap"><b>Iron speckle</b><span>Reduction, test 3</span></div></article>
+          <article class="pin"><div class="ph" style="height:120px"><img src="../../../../overlay/showcase/src/media/valley.jpg" alt=""></div><div class="cap"><b>River-stone matte</b><span>Too dry at cone 6</span></div></article>
+        </div>
+      </div>
+      <div class="col">
+        <article class="pin">
+          <div class="ph" style="height:150px"><img src="../../../../overlay/showcase/src/media/lake.jpg" alt=""></div>
+          <div class="cap"><b>Celadon</b><span>The colour to aim for</span></div>
+        </article>
+        <article class="pin note"><b>Firing Saturday</b>Load the honey tests on the top shelf; last time they ran onto the batts. Slow cool from 1,100°.</article>
+        <article class="pin"><div class="swatches"><i style="background:#2d4f9e"></i><i style="background:#d9a33a"></i><i style="background:#8fbfa8"></i><i style="background:#e8dcc6"></i><i style="background:#5b2f17"></i></div><div class="cap"><b>Spring palette</b><span>From the chosen tests</span></div></article>
+      </div>
+      <div class="col">
+        <article class="pin">
+          <div class="tiles">
+            <span class="tile" style="background-color:#2d4f9e"><small>C-4</small></span>
+            <span class="tile" style="background-color:#d9a33a"><small>H-2</small></span>
+            <span class="tile speck" style="background-color:#e8dcc6"><small>S-1</small></span>
+            <span class="tile" style="background-color:#8fbfa8"><small>CL-3</small></span>
+            <span class="tile" style="background-color:#5b2f17;background-image:linear-gradient(170deg,#7d4320,#2b160b)"><small>T-1</small></span>
+            <span class="tile speck" style="background-color:#9c7a54"><small style="color:#3b2c12">IS-3</small></span>
+          </div>
+          <div class="cap"><b>Test tiles, batch 7</b><span class="num">6 of 9 kept</span></div>
+        </article>
+        <article class="pin curve">
+          <div class="head"><b>Last firing</b><span class="num">9h 40m</span></div>
+          <svg viewBox="0 0 160 86" preserveAspectRatio="none">
+            <path d="M0 22H160M0 50H160" stroke="rgb(18 35 61 / 0.08)" stroke-dasharray="2 3"/>
+            <path d="M2 80 C30 72 52 34 78 14 L96 12 C112 28 132 52 158 66" fill="none" stroke="#c9643b" stroke-width="2" stroke-linecap="round"/>
+            <path d="M2 80 C30 72 52 34 78 14 L96 12 C112 28 132 52 158 66 V86 H2Z" fill="#c9643b" opacity="0.08"/>
+            <circle cx="87" cy="12.5" r="3" fill="#c9643b" stroke="#fff" stroke-width="1.5"/>
+          </svg>
+          <div class="head num"><span>Peak 1,222°</span><span>Cone 6 ✓</span></div>
+        </article>
+        <article class="pin"><div class="ph" style="height:110px"><img src="../../../../overlay/showcase/src/media/low-tide.jpg" alt=""></div><div class="cap"><b>Honey at dusk</b><span>For the ombré dip</span></div></article>
+      </div>
+      <div class="cursor" style="left:660px;top:300px"><svg viewBox="0 0 16 16"><path d="M2 1.5 13 8l-5 1.2L5.6 14z" fill="#2f9a7e" stroke="#fff" stroke-width="1.2" stroke-linejoin="round"/></svg><span>Kwame</span></div>
+    </div>
+  </main>
+</div>
+</body>
+</html>

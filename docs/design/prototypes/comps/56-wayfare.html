@@ -1,0 +1,167 @@
+<!doctype html>
+<!-- COMP #56 (eased gradients for scrims). Wayfare, a trip planner's Explore view: the featured destination card's
+     title sits on its photo over a scrim. Drawn here with the eased scrim; plumber's mistake (a straight two-stop
+     from-black/70 to-transparent fade over the lower two thirds, [data-scrim]) is planted on the featured card. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Wayfare · Explore (comp)</title>
+<style>
+  :root {
+    --surface: #fff; --sunken: #f3f5f9; --ink: #12233d; --ink-muted: #5a6779; --ink-subtle: #6f7c90;
+    --line: rgb(18 35 61 / 0.09); --line-strong: rgb(18 35 61 / 0.14); --accent: #5550d8; --accent-soft: #efeefd; --accent-deep: #3631a6;
+    --board: #e9edf2; --board-dot: #d3d9e2; --negative: #b02a3a; --caution: #965a03;
+    --window: 0 1px 2px rgb(18 35 61 / 0.05), 0 8px 24px rgb(18 35 61 / 0.08), 0 24px 64px rgb(18 35 61 / 0.12);
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 48px; background: var(--board);
+    background-image: radial-gradient(var(--board-dot) 1px, transparent 1px); background-size: 16px 16px;
+    font: 13px/18px Inter, -apple-system, system-ui, sans-serif; color: var(--ink); -webkit-font-smoothing: antialiased; font-feature-settings: "cv11", "ss01"; }
+  .num { font-variant-numeric: tabular-nums; }
+  svg.i { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 1.45; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+  img { display: block; }
+  .window { width: 984px; height: 606px; display: grid; grid-template-columns: 200px 1fr; border-radius: 12px; overflow: hidden; background: var(--surface); box-shadow: var(--window), 0 0 0 0.5px rgb(18 35 61 / 0.18); }
+  .side { background: #f7f8fa; border-right: 0.5px solid var(--line-strong); display: flex; flex-direction: column; padding: 12px 10px; gap: 1px; }
+  .lights { display: flex; gap: 7px; padding: 4px 6px 14px; } .lights i { width: 11px; height: 11px; border-radius: 50%; background: #d9dde3; }
+  .brand { display: flex; align-items: center; gap: 8px; padding: 2px 8px 12px; font-weight: 600; font-size: 14px; letter-spacing: -0.01em; }
+  .brand b { width: 22px; height: 22px; border-radius: 6px; background: linear-gradient(145deg, #6c67ea, #4a44c9); display: grid; place-items: center; color: #fff; box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.25); }
+  .brand b svg { width: 13px; height: 13px; stroke: #fff; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .nav { display: flex; align-items: center; gap: 9px; height: 30px; padding: 0 8px; border-radius: 6px; color: var(--ink-muted); }
+  .nav.on { background: rgb(18 35 61 / 0.06); color: var(--ink); font-weight: 500; }
+  .nav .n { margin-left: auto; font-size: 12px; color: var(--ink-subtle); }
+  .label { margin: 16px 8px 6px; font-size: 11px; font-weight: 500; color: var(--ink-subtle); }
+  .trip { display: grid; grid-template-columns: 34px 1fr; gap: 9px; align-items: center; padding: 6px 8px; border-radius: 8px; }
+  .trip img { width: 34px; height: 34px; border-radius: 7px; object-fit: cover; box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.1); }
+  .trip span { display: flex; flex-direction: column; min-width: 0; line-height: 16px; }
+  .trip b { font-weight: 500; font-size: 12.5px; }
+  .trip small { font-size: 11.5px; color: var(--ink-subtle); }
+  .trip .soon { color: var(--accent-deep); font-weight: 500; }
+  .me { margin-top: auto; display: flex; align-items: center; gap: 9px; padding: 8px; }
+  .me img { width: 26px; height: 26px; border-radius: 50%; object-fit: cover; }
+  .me span { display: flex; flex-direction: column; font-size: 12.5px; line-height: 16px; }
+  .me small { color: var(--ink-subtle); font-size: 11.5px; }
+
+  .main { display: flex; flex-direction: column; min-width: 0; }
+  .bar { display: flex; align-items: center; gap: 12px; height: 56px; padding: 0 22px; border-bottom: 0.5px solid var(--line-strong); }
+  .search { flex: 1; max-width: 360px; height: 34px; display: flex; align-items: center; gap: 8px; padding: 0 12px; border-radius: 9px; background: var(--sunken); color: var(--ink-subtle); }
+  .search b { color: var(--ink); font-weight: 500; }
+  .field { height: 34px; display: inline-flex; align-items: center; gap: 7px; padding: 0 12px; border-radius: 9px; box-shadow: inset 0 0 0 1px var(--line-strong); color: var(--ink); font-weight: 500; }
+  .field small { color: var(--ink-subtle); font-weight: 400; font-size: 12.5px; }
+  .bar .faces { margin-left: auto; }
+
+  .content { flex: 1; padding: 18px 22px 0; display: flex; flex-direction: column; gap: 14px; overflow: hidden; }
+  .head { display: flex; align-items: baseline; gap: 10px; }
+  .head h1 { margin: 0; font-size: 19px; line-height: 24px; font-weight: 600; letter-spacing: -0.015em; }
+  .head span { color: var(--ink-subtle); }
+  .chips { display: flex; gap: 6px; margin-left: auto; }
+  .chip { height: 28px; display: inline-flex; align-items: center; gap: 6px; padding: 0 11px; border-radius: 99px; box-shadow: inset 0 0 0 1px var(--line-strong); color: var(--ink-muted); font-size: 12.5px; }
+  .chip.on { background: var(--ink); color: #fff; box-shadow: none; font-weight: 500; }
+
+  .grid { display: grid; grid-template-columns: 372px 1fr; gap: 16px; min-height: 0; }
+  /* the featured card: the lesson lives in its scrim */
+  .feature { position: relative; height: 470px; border-radius: 14px; overflow: hidden; box-shadow: 0 1px 2px rgb(18 35 61 / 0.08), 0 10px 30px rgb(18 35 61 / 0.12); }
+  .feature > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 30% 50%; }
+  .feature::after { content: ''; position: absolute; inset: 0; border-radius: inherit; box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.08); }
+  .scrim { position: absolute; inset: auto 0 0 0; height: 66%;
+    background: linear-gradient(to top, rgb(9 14 24 / 0.78) 0%, rgb(9 14 24 / 0.71) 13%, rgb(9 14 24 / 0.6) 25%, rgb(9 14 24 / 0.46) 37%, rgb(9 14 24 / 0.32) 49%, rgb(9 14 24 / 0.2) 61%, rgb(9 14 24 / 0.11) 72%, rgb(9 14 24 / 0.05) 83%, rgb(9 14 24 / 0.015) 92%, rgb(9 14 24 / 0) 100%); }
+  .top { position: absolute; top: 14px; left: 14px; right: 14px; display: flex; justify-content: space-between; align-items: center; }
+  .pick { height: 26px; display: inline-flex; align-items: center; gap: 6px; padding: 0 10px; border-radius: 99px; background: rgb(255 255 255 / 0.92); color: var(--ink); font-size: 12px; font-weight: 500; box-shadow: 0 1px 3px rgb(0 0 0 / 0.12); backdrop-filter: blur(8px); }
+  .pick i { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+  .heart { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; background: rgb(255 255 255 / 0.92); box-shadow: 0 1px 3px rgb(0 0 0 / 0.12); color: var(--negative); }
+  .heart svg { width: 16px; height: 16px; fill: currentColor; stroke: none; }
+  .words { position: absolute; left: 0; right: 0; bottom: 0; padding: 20px 22px 20px; color: #fff; display: flex; flex-direction: column; gap: 6px; }
+  .kick { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; opacity: 0.86; }
+  .title { font-size: 27px; line-height: 31px; font-weight: 600; letter-spacing: -0.022em; text-wrap: balance; }
+  .meta { display: flex; align-items: center; gap: 10px; margin-top: 6px; font-size: 12.5px; color: rgb(255 255 255 / 0.88); }
+  .faces { display: flex; }
+  .faces img { width: 24px; height: 24px; border-radius: 50%; object-fit: cover; box-shadow: 0 0 0 2px #fff; margin-left: -7px; }
+  .faces img:first-child { margin-left: 0; }
+  .meta .faces img { width: 22px; height: 22px; box-shadow: 0 0 0 1.5px rgb(20 26 38); }
+  .meta .price { margin-left: auto; height: 32px; display: inline-flex; align-items: center; padding: 0 13px; border-radius: 99px; background: #fff; color: var(--ink); font-weight: 600; font-size: 12.5px; }
+
+  .side-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px 14px; align-content: start; }
+  .card { display: flex; flex-direction: column; gap: 8px; }
+  .card .ph { position: relative; height: 140px; border-radius: 10px; overflow: hidden; }
+  .card .ph img { width: 100%; height: 100%; object-fit: cover; }
+  .card .ph::after { content: ''; position: absolute; inset: 0; border-radius: inherit; box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.08); }
+  .card .ph .hrt { position: absolute; top: 8px; right: 8px; width: 26px; height: 26px; border-radius: 50%; background: rgb(255 255 255 / 0.9); display: grid; place-items: center; color: var(--ink-muted); }
+  .card .ph .hrt svg { width: 13px; height: 13px; }
+  .card .t { display: flex; justify-content: space-between; gap: 8px; line-height: 17px; }
+  .card .t b { font-weight: 500; font-size: 13.5px; }
+  .card .t .r { color: var(--ink-muted); font-size: 12.5px; display: inline-flex; gap: 3px; align-items: center; }
+  .card .s { font-size: 12.5px; color: var(--ink-subtle); line-height: 16px; margin-top: -5px; }
+  .card .s em { font-style: normal; color: var(--ink); font-weight: 500; }
+  .note { grid-column: 1 / -1; display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 10px; background: var(--sunken); }
+  .note .bars { display: flex; align-items: flex-end; gap: 3px; height: 30px; }
+  .note .bars i { width: 7px; border-radius: 2px; background: #cfd5e0; }
+  .note .bars i.lo { background: var(--accent); }
+  .note .tx { display: flex; flex-direction: column; line-height: 17px; }
+  .note b { font-weight: 500; }
+  .note small { color: var(--ink-muted); font-size: 12.5px; }
+  .note .go { margin-left: auto; white-space: nowrap; font-weight: 500; color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="window">
+  <aside class="side">
+    <div class="lights"><i></i><i></i><i></i></div>
+    <div class="brand"><b><svg viewBox="0 0 16 16"><path d="M2.5 11.5 8 3l5.5 8.5"/><path d="M5 11.5h6"/></svg></b>Wayfare</div>
+    <div class="nav on"><svg class="i" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"/><path d="m10.4 5.6-1.6 3.2-3.2 1.6 1.6-3.2z"/></svg>Explore</div>
+    <div class="nav"><svg class="i" viewBox="0 0 16 16"><rect x="2" y="3.5" width="12" height="10" rx="2"/><path d="M5.5 3.5V2.5h5v1"/></svg>Trips<span class="n num">2</span></div>
+    <div class="nav"><svg class="i" viewBox="0 0 16 16"><path d="M8 13.5S2.5 10.3 2.5 6.4A2.9 2.9 0 0 1 8 5a2.9 2.9 0 0 1 5.5 1.4C13.5 10.3 8 13.5 8 13.5z"/></svg>Saved<span class="n num">18</span></div>
+    <div class="nav"><svg class="i" viewBox="0 0 16 16"><path d="M2.5 3.5 6 2.5l4 1.5 3.5-1v10l-3.5 1-4-1.5-3.5 1z"/><path d="M6 2.5v10M10 4v10"/></svg>Map</div>
+    <div class="label">Upcoming</div>
+    <div class="trip"><img src="../../../../overlay/showcase/src/media/low-tide.jpg" alt=""><span><b>Big Sur, by car</b><small class="soon">In 9 days · 3 nights</small></span></div>
+    <div class="trip"><img src="../../../../overlay/showcase/src/media/peak.jpg" alt=""><span><b>Banff in March</b><small>12 – 18 Mar · 5 going</small></span></div>
+    <div class="me"><img src="../../../../overlay/showcase/src/media/people/person-07.jpg" alt=""><span>Hana Sato<small>Traveller since 2021</small></span></div>
+  </aside>
+
+  <main class="main">
+    <div class="bar">
+      <div class="search"><svg class="i" viewBox="0 0 16 16"><circle cx="7" cy="7" r="4.5"/><path d="m10.5 10.5 3 3"/></svg><b>California</b> · anywhere</div>
+      <span class="field">Dec 11 – 15 <small>4 nights</small></span>
+      <span class="field">2 adults</span>
+      <div class="faces"><img src="../../../../overlay/showcase/src/media/people/person-07.jpg" alt=""><img src="../../../../overlay/showcase/src/media/people/person-08.jpg" alt=""></div>
+    </div>
+    <div class="content">
+      <div class="head"><h1>Explore California</h1><span class="num">48 stays</span>
+        <div class="chips"><span class="chip on">Architecture</span><span class="chip">Coast</span><span class="chip">Mountains</span><span class="chip">Food</span></div>
+      </div>
+      <div class="grid">
+        <article class="feature">
+          <img src="../../../../overlay/showcase/src/media/paper-cities.jpg" alt="The Getty Center's white stone">
+          <div class="scrim" data-scrim></div>
+          <div class="top"><span class="pick"><i></i>Editors’ pick</span><span class="heart"><svg viewBox="0 0 16 16"><path d="M8 13.8S2.2 10.4 2.2 6.3A3 3 0 0 1 8 4.9a3 3 0 0 1 5.8 1.4c0 4.1-5.8 7.5-5.8 7.5z"/></svg></span></div>
+          <div class="words">
+            <span class="kick">Los Angeles · 4 nights</span>
+            <span class="title">Light and stone at the Getty</span>
+            <span class="meta">
+              <span class="faces"><img src="../../../../overlay/showcase/src/media/people/person-03.jpg" alt=""><img src="../../../../overlay/showcase/src/media/people/person-06.jpg" alt=""><img src="../../../../overlay/showcase/src/media/people/person-10.jpg" alt=""></span>
+              <span class="num">Saved by 1,312</span>
+              <span class="price num">from $684</span>
+            </span>
+          </div>
+        </article>
+
+        <div class="side-grid">
+          <div class="card"><div class="ph"><img src="../../../../overlay/showcase/src/media/low-tide.jpg" alt=""><span class="hrt"><svg class="i" viewBox="0 0 16 16"><path d="M8 13.5S2.5 10.3 2.5 6.4A2.9 2.9 0 0 1 8 5a2.9 2.9 0 0 1 5.5 1.4C13.5 10.3 8 13.5 8 13.5z"/></svg></span></div>
+            <span class="t"><b>Big Sur coast</b><span class="r num">★ 4.92</span></span><span class="s num">Cliff cabins · <em>$212</em> night</span></div>
+          <div class="card"><div class="ph"><img src="../../../../overlay/showcase/src/media/afterglow.jpg" alt=""><span class="hrt"><svg class="i" viewBox="0 0 16 16"><path d="M8 13.5S2.5 10.3 2.5 6.4A2.9 2.9 0 0 1 8 5a2.9 2.9 0 0 1 5.5 1.4C13.5 10.3 8 13.5 8 13.5z"/></svg></span></div>
+            <span class="t"><b>DTLA neon walk</b><span class="r num">★ 4.81</span></span><span class="s num">Tour · <em>$38</em> person</span></div>
+          <div class="card"><div class="ph"><img src="../../../../overlay/showcase/src/media/valley.jpg" alt=""><span class="hrt"><svg class="i" viewBox="0 0 16 16"><path d="M8 13.5S2.5 10.3 2.5 6.4A2.9 2.9 0 0 1 8 5a2.9 2.9 0 0 1 5.5 1.4C13.5 10.3 8 13.5 8 13.5z"/></svg></span></div>
+            <span class="t"><b>Sierra lakes</b><span class="r num">★ 4.88</span></span><span class="s num">Lodge · <em>$264</em> night</span></div>
+          <div class="card"><div class="ph"><img src="../../../../overlay/showcase/src/media/lake.jpg" alt=""><span class="hrt"><svg class="i" viewBox="0 0 16 16"><path d="M8 13.5S2.5 10.3 2.5 6.4A2.9 2.9 0 0 1 8 5a2.9 2.9 0 0 1 5.5 1.4C13.5 10.3 8 13.5 8 13.5z"/></svg></span></div>
+            <span class="t"><b>Emerald Bay</b><span class="r num">★ 4.95</span></span><span class="s num">Cabin · <em>$318</em> night</span></div>
+          <div class="note">
+            <span class="bars"><i style="height:62%"></i><i style="height:80%"></i><i class="lo" style="height:38%"></i><i style="height:55%"></i><i style="height:90%"></i><i style="height:70%"></i></span>
+            <span class="tx"><b>Mid-December is quiet in LA</b><small class="num">Stays run 22% under the month’s average</small></span>
+            <span class="go">See dates</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+</body>
+</html>

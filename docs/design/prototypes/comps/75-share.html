@@ -1,0 +1,124 @@
+<!doctype html>
+<!-- COMP #75 (scroll shadows). Outline, a team's planning docs; the Share dialog for "Q3 plan" is open over the doc.
+     People with access sit in a box of fixed height: four show, four more are below. Drawn here with the scroll
+     shadow at the bottom edge; plumber's mistake is planted on that list ([data-list]): no cue, so with the Mac's
+     scrollbar hidden at rest the fourth row's edge reads as the end. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Outline · Share (comp)</title>
+<style>
+  :root {
+    --surface: #fff; --sunken: #f3f5f9; --ink: #12233d; --ink-muted: #5a6779; --ink-subtle: #6f7c90;
+    --line: rgb(18 35 61 / 0.09); --line-strong: rgb(18 35 61 / 0.14); --accent: #5550d8; --accent-soft: #efeefd; --accent-deep: #3631a6;
+    --positive: #0f6f58; --positive-soft: #e5f4ef; --caution: #965a03; --caution-soft: #fcf1dd;
+    --board: #e9edf2; --board-dot: #d3d9e2;
+    --window: 0 1px 2px rgb(18 35 61 / 0.05), 0 8px 24px rgb(18 35 61 / 0.08), 0 24px 64px rgb(18 35 61 / 0.12);
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 48px; background: var(--board);
+    background-image: radial-gradient(var(--board-dot) 1px, transparent 1px); background-size: 16px 16px;
+    font: 13px/18px Inter, -apple-system, system-ui, sans-serif; color: var(--ink); -webkit-font-smoothing: antialiased; font-feature-settings: "cv11", "ss01"; }
+  .num { font-variant-numeric: tabular-nums; }
+  svg.i { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 1.45; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+  img { display: block; }
+  .window { position: relative; width: 984px; height: 620px; display: grid; grid-template-columns: 200px 1fr; border-radius: 12px; overflow: hidden; background: var(--surface); box-shadow: var(--window), 0 0 0 0.5px rgb(18 35 61 / 0.18); }
+  .side { background: #f7f8fa; border-right: 0.5px solid var(--line-strong); display: flex; flex-direction: column; padding: 12px 10px; gap: 1px; }
+  .lights { display: flex; gap: 7px; padding: 4px 6px 14px; } .lights i { width: 11px; height: 11px; border-radius: 50%; background: #d9dde3; }
+  .ws { display: flex; align-items: center; gap: 8px; padding: 2px 8px 12px; font-weight: 600; font-size: 13.5px; }
+  .ws b { width: 22px; height: 22px; border-radius: 6px; background: var(--ink); color: #fff; display: grid; place-items: center; font-size: 12px; }
+  .nav { display: flex; align-items: center; gap: 9px; height: 30px; padding: 0 8px; border-radius: 6px; color: var(--ink-muted); }
+  .nav.on { background: rgb(18 35 61 / 0.06); color: var(--ink); font-weight: 500; }
+  .label { margin: 14px 8px 4px; font-size: 11px; font-weight: 500; color: var(--ink-subtle); }
+
+  .main { display: flex; flex-direction: column; min-width: 0; }
+  .bar { display: flex; align-items: center; gap: 8px; height: 46px; padding: 0 20px; border-bottom: 0.5px solid var(--line-strong); color: var(--ink-muted); }
+  .bar b { color: var(--ink); font-weight: 500; }
+  .bar .share { margin-left: auto; height: 28px; padding: 0 12px; display: grid; place-items: center; border-radius: 7px; background: var(--accent); color: #fff; font-weight: 500; }
+  .doc { padding: 34px 90px 0; }
+  .doc h1 { margin: 0; font-size: 28px; line-height: 34px; font-weight: 600; letter-spacing: -0.025em; }
+  .doc .by { margin-top: 6px; color: var(--ink-subtle); }
+  .doc p { font-size: 14.5px; line-height: 24px; color: var(--ink-muted); max-width: 600px; }
+  .goal { display: grid; grid-template-columns: 1fr 180px 50px; gap: 16px; align-items: center; height: 42px; border-bottom: 0.5px solid var(--line); max-width: 640px; font-size: 13.5px; }
+  .goal .t { height: 6px; border-radius: 3px; background: var(--sunken); overflow: hidden; } .goal .t i { display: block; height: 100%; border-radius: 3px; background: var(--accent); }
+
+  .scrim { position: absolute; inset: 0; background: rgb(18 35 61 / 0.24); }
+  /* the dialog */
+  .dlg { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 440px; padding: 20px; border-radius: 14px; background: #fff; display: flex; flex-direction: column; gap: 14px;
+    box-shadow: 0 0 0 0.5px rgb(18 35 61 / 0.14), 0 4px 8px rgb(18 35 61 / 0.06), 0 24px 60px rgb(18 35 61 / 0.28); }
+  .dlg .h { display: flex; align-items: center; gap: 10px; }
+  .dlg .h .ic { width: 30px; height: 30px; border-radius: 8px; background: var(--accent-soft); color: var(--accent-deep); display: grid; place-items: center; }
+  .dlg .h b { font-size: 15px; font-weight: 600; letter-spacing: -0.01em; }
+  .dlg .h .x { margin-left: auto; color: var(--ink-subtle); font-size: 16px; }
+  .add { display: flex; gap: 8px; }
+  .field { flex: 1; height: 36px; display: flex; align-items: center; gap: 8px; padding: 0 6px 0 11px; border-radius: 8px; box-shadow: inset 0 0 0 1px var(--line-strong); color: var(--ink-subtle); }
+  .field .role { margin-left: auto; height: 26px; display: inline-flex; align-items: center; gap: 4px; padding: 0 8px; border-radius: 6px; color: var(--ink-muted); background: var(--sunken); font-size: 12.5px; }
+  .invite { height: 36px; padding: 0 14px; display: grid; place-items: center; border-radius: 8px; background: var(--ink); color: #fff; font-weight: 500; opacity: 0.4; }
+  .sub { display: flex; justify-content: space-between; font-size: 12px; font-weight: 500; color: var(--ink-muted); margin-bottom: -6px; }
+  .sub span { font-weight: 400; color: var(--ink-subtle); }
+  /* people with access: a box of fixed height, a shadow where more are hidden */
+  .list { height: 192px; overflow: hidden; margin: 0 -8px; position: relative; }
+  .list::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 14px; background: radial-gradient(farthest-side at 50% 100%, rgb(18 35 61 / 0.14), transparent); pointer-events: none; }
+  .p { height: 48px; display: flex; align-items: center; gap: 11px; padding: 0 8px; border-radius: 8px; }
+  .p img { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; }
+  .p .mono { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; background: var(--caution-soft); color: var(--caution); font-size: 12px; font-weight: 600; }
+  .p .who { display: flex; flex-direction: column; line-height: 17px; min-width: 0; flex: 1; }
+  .p b { font-weight: 500; font-size: 13.5px; } .p small { font-size: 12px; color: var(--ink-subtle); }
+  .p .r { flex: none; display: inline-flex; align-items: center; gap: 4px; color: var(--ink-muted); font-size: 12.5px; }
+  .p .r.own { color: var(--ink-subtle); }
+  .p.hov { background: var(--sunken); }
+  .pend { font-size: 11px; font-weight: 500; padding: 1px 6px; border-radius: 99px; background: var(--caution-soft); color: var(--caution); margin-left: 6px; }
+  .general { display: flex; align-items: center; gap: 11px; padding-top: 12px; border-top: 0.5px solid var(--line-strong); }
+  .general .g { width: 32px; height: 32px; border-radius: 50%; background: var(--positive-soft); color: var(--positive); display: grid; place-items: center; }
+  .general .who { display: flex; flex-direction: column; line-height: 17px; flex: 1; }
+  .general b { font-weight: 500; } .general small { font-size: 12px; color: var(--ink-subtle); }
+  .general .r { color: var(--ink-muted); font-size: 12.5px; }
+  .foot { display: flex; align-items: center; gap: 8px; }
+  .copy { height: 32px; display: inline-flex; align-items: center; gap: 6px; padding: 0 11px; border-radius: 7px; box-shadow: inset 0 0 0 1px var(--line-strong); font-weight: 500; }
+  .done { margin-left: auto; height: 32px; padding: 0 16px; display: grid; place-items: center; border-radius: 7px; background: var(--accent); color: #fff; font-weight: 500; }
+</style>
+</head>
+<body>
+<div class="window">
+  <aside class="side">
+    <div class="lights"><i></i><i></i><i></i></div>
+    <div class="ws"><b>N</b>Northwind</div>
+    <div class="nav"><svg class="i" viewBox="0 0 16 16"><circle cx="8" cy="8" r="5.5"/><path d="M8 5v3l2 1.3"/></svg>Recent</div>
+    <div class="nav"><svg class="i" viewBox="0 0 16 16"><path d="M8 2l1.8 3.8 4.2.5-3.1 2.9.8 4.1L8 11.3l-3.7 2 .8-4.1L2 6.3l4.2-.5z"/></svg>Starred</div>
+    <div class="label">Planning</div>
+    <div class="nav on"><svg class="i" viewBox="0 0 16 16"><path d="M4 2h5.5L12.5 5v9h-8.5z"/></svg>Q3 plan</div>
+    <div class="nav"><svg class="i" viewBox="0 0 16 16"><path d="M4 2h5.5L12.5 5v9h-8.5z"/></svg>Q2 review</div>
+    <div class="nav"><svg class="i" viewBox="0 0 16 16"><path d="M4 2h5.5L12.5 5v9h-8.5z"/></svg>Hiring plan</div>
+    <div class="nav"><svg class="i" viewBox="0 0 16 16"><path d="M4 2h5.5L12.5 5v9h-8.5z"/></svg>Offsite agenda</div>
+  </aside>
+  <main class="main">
+    <div class="bar">Planning <span style="color:var(--ink-subtle)">/</span> <b>Q3 plan</b><span class="share">Share</span></div>
+    <div class="doc">
+      <h1>Q3 plan</h1>
+      <div class="by">Anika Rao · updated 2 hours ago</div>
+      <p>Three goals this quarter, in order. If something new comes up, it replaces one of these rather than joining them.</p>
+      <div class="goal"><span>Ship the new onboarding</span><span class="t"><i style="width:64%"></i></span><span class="num">64%</span></div>
+      <div class="goal"><span>Halve support replies over 24h</span><span class="t"><i style="width:41%"></i></span><span class="num">41%</span></div>
+      <div class="goal"><span>Open the Lisbon office</span><span class="t"><i style="width:18%"></i></span><span class="num">18%</span></div>
+    </div>
+  </main>
+
+  <div class="scrim"></div>
+  <section class="dlg" role="dialog">
+    <div class="h"><span class="ic"><svg class="i" viewBox="0 0 16 16"><circle cx="6" cy="6" r="2.5"/><path d="M1.8 13.5a4.2 4.2 0 0 1 8.4 0M11 4.2a2.3 2.3 0 0 1 0 4.4M12.2 10.6a3.6 3.6 0 0 1 2 2.9"/></svg></span><b>Share “Q3 plan”</b><span class="x">×</span></div>
+    <div class="add"><span class="field">Add people by name or email<span class="role">Can view ▾</span></span><span class="invite">Invite</span></div>
+    <div class="sub"><b style="font-weight:500">People with access</b><span>Anika manages access</span></div>
+    <div class="list" data-list>
+      <div class="p"><img src="../../../../overlay/showcase/src/media/people/person-01.jpg" alt=""><span class="who"><b>Anika Rao</b><small>anika@northwind.co</small></span><span class="r own">Owner</span></div>
+      <div class="p hov"><img src="../../../../overlay/showcase/src/media/people/person-06.jpg" alt=""><span class="who"><b>Jonas Weber</b><small>jonas@northwind.co</small></span><span class="r">Can edit ▾</span></div>
+      <div class="p"><img src="../../../../overlay/showcase/src/media/people/person-09.jpg" alt=""><span class="who"><b>Priya Nair</b><small>priya@northwind.co</small></span><span class="r">Can edit ▾</span></div>
+      <div class="p"><span class="mono">TL</span><span class="who"><b>Theo Lambert<span class="pend">Invited</span></b><small>theo.lambert@gmail.com</small></span><span class="r">Can view ▾</span></div>
+      <div class="p"><img src="../../../../overlay/showcase/src/media/people/person-03.jpg" alt=""><span class="who"><b>Mira Okafor</b><small>mira@northwind.co</small></span><span class="r">Can view ▾</span></div>
+    </div>
+    <div class="general"><span class="g"><svg class="i" viewBox="0 0 16 16"><circle cx="8" cy="8" r="5.5"/><path d="M2.5 8h11M8 2.5c1.6 1.6 2.4 3.4 2.4 5.5S9.6 11.9 8 13.5M8 2.5C6.4 4.1 5.6 5.9 5.6 8s.8 3.9 2.4 5.5"/></svg></span><span class="who"><b>Anyone at Northwind</b><small>can find and view this doc</small></span><span class="r">Can view ▾</span></div>
+    <div class="foot"><span class="copy"><svg class="i" viewBox="0 0 16 16"><path d="M6.5 9.5 9.5 6.5M7 4.5l1.3-1.3a2.5 2.5 0 0 1 3.5 3.5L10.5 8M9 11.5l-1.3 1.3a2.5 2.5 0 0 1-3.5-3.5L5.5 8"/></svg>Copy link</span><span class="done">Done</span></div>
+  </section>
+</div>
+</body>
+</html>
