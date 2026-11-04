@@ -57,9 +57,13 @@ export function Wipe() {
   }, []);
 
   // the marks and the counts, read from the two screens as drawn (in the screen's own units, before scaling)
-  useLayoutEffect(() => {
-    setMarks({ messy: measure(messy.current), clean: measure(clean.current) });
-    setCounts({ messy: count(messy.current), clean: count(clean.current) });
+  // read after the first paint, so the headline and the screen show at once and the measuring never holds them up
+  useEffect(() => {
+    const id = requestAnimationFrame(() => {
+      setMarks({ messy: measure(messy.current), clean: measure(clean.current) });
+      setCounts({ messy: count(messy.current), clean: count(clean.current) });
+    });
+    return () => cancelAnimationFrame(id);
   }, []);
 
   // the line is yours: drag it anywhere on the frame, or use the arrow keys on it

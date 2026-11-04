@@ -42,6 +42,33 @@ const SAMPLES = 480;
 const PEOPLE = [['Maya Okafor', 'Owner', 330], ['Daniel Reyes', 'Admin', 230], ['Priya Nair', 'Member', 80]];
 
 const clamp = v => Math.max(0, Math.min(1, v));
+
+// A route's points at SAMPLES + 1 even steps along its length, and its length. The routes are only M, L and C commands
+// (absolute), so each piece is walked finely in arithmetic, then the walk is resampled at even lengths.
+function route(d) {
+  const nums = d.match(/[MLC]|-?[\d.]+/g), walk = [];
+  let x = 0, y = 0, cmd = '';
+  for (let i = 0; i < nums.length;) {
+    if (/[MLC]/.test(nums[i])) cmd = nums[i++];
+    const n = () => +nums[i++];
+    if (cmd === 'M') { x = n(); y = n(); walk.push({ x, y }); }
+    else if (cmd === 'L') { const x1 = n(), y1 = n(); for (let k = 1; k <= 40; k++) walk.push({ x: x + (x1 - x) * k / 40, y: y + (y1 - y) * k / 40 }); x = x1; y = y1; }
+    else { const [a, b, c, e, f, g] = [n(), n(), n(), n(), n(), n()];
+      for (let k = 1; k <= 40; k++) { const t = k / 40, u = 1 - t;
+        walk.push({ x: u * u * u * x + 3 * u * u * t * a + 3 * u * t * t * c + t * t * t * f, y: u * u * u * y + 3 * u * u * t * b + 3 * u * t * t * e + t * t * t * g }); }
+      x = f; y = g; }
+  }
+  const acc = [0];
+  for (let i = 1; i < walk.length; i++) acc.push(acc[i - 1] + Math.hypot(walk[i].x - walk[i - 1].x, walk[i].y - walk[i - 1].y));
+  const len = acc.at(-1), pts = [];
+  for (let k = 0, j = 1; k <= SAMPLES; k++) {
+    const want = (len * k) / SAMPLES;
+    while (j < acc.length - 1 && acc[j] < want) j++;
+    const r = (want - acc[j - 1]) / (acc[j] - acc[j - 1] || 1);
+    pts.push({ x: walk[j - 1].x + (walk[j].x - walk[j - 1].x) * r, y: walk[j - 1].y + (walk[j].y - walk[j - 1].y) * r });
+  }
+  return [pts, len];
+}
 const easeOut = v => 1 - (1 - v) ** 3;
 
 // the prompt's progress at a given moment: a steady walk, standing still for T.wait at each stop where it waits for you
@@ -72,10 +99,9 @@ export function Tokens() {
     measure();
     const ro = new ResizeObserver(measure);
     ro.observe(area.current);
-    // both routes sampled once; every frame after reads these points instead of measuring the path again
-    const L = longRef.current.getTotalLength(), S = shortRef.current.getTotalLength();
-    const sample = (path, len) => Array.from({ length: SAMPLES + 1 }, (_, i) => path.getPointAtLength((len * i) / SAMPLES));
-    const longPts = sample(longRef.current, L), shortPts = sample(shortRef.current, S);
+    // both routes sampled once, in plain arithmetic (the browser's path measuring costs ~0.17ms a call, 80ms a route);
+    // every frame after reads these points instead of measuring the path again
+    const [longPts, L] = route(LONG), [shortPts, S] = route(SHORT);
     const at = STOPS.map(([, [x, y]]) => longPts.reduce((b, p, i) => (Math.hypot(p.x - x, p.y - y) < b.d ? { d: Math.hypot(p.x - x, p.y - y), f: i / SAMPLES } : b), { d: Infinity, f: 0 }).f);
     const youAt = STOPS.map((st, i) => [i, at[i], st[3]]).filter(x => x[2]).map(([i, f]) => [i, f]);
     setGeo({ L, S, longPts, shortPts, at, youAt });
