@@ -244,7 +244,7 @@ const css = `
   .pin.on-arc { background: var(--pl-paper); border-radius: 50%; }
   .pin.quiet { color: var(--pl-ink-3); }
   .pin[aria-current="true"] { color: var(--pl-off); }
-  .pin.soft[aria-current="true"] { color: var(--pl-soft); }
+  .pin.soft[aria-current="true"] { color: var(--pl-soft-text); }
   .pin.ok, .pin.ok[aria-current="true"] { color: var(--pl-on); }
   .pin:focus-visible { outline: 1px solid var(--pl-instrument); outline-offset: 1px; }
   @media (hover: hover) and (pointer: fine) { .pin:not([aria-current="true"]):hover { color: var(--pl-ink); } }
@@ -254,7 +254,7 @@ const css = `
   .read.swapping { opacity: 0; }
   .read .t { display: flex; align-items: flex-start; gap: 8px; font: 600 13px/18px var(--pl-sans); text-wrap: pretty; }
   .read .t > .g { flex: none; width: 14px; height: 14px; margin-top: 2px; color: var(--pl-off); }
-  .read .t > .g.soft { color: var(--pl-soft); } .read .t > .g.ok { color: var(--pl-on); } .read .t > .g.quiet { color: var(--pl-ink-2); }
+  .read .t > .g.soft { color: var(--pl-soft-text); } .read .t > .g.ok { color: var(--pl-on); } .read .t > .g.quiet { color: var(--pl-ink-2); }
   .read .t code { font: var(--pl-card-code); font-size: 12.5px; }
   .read .t .title { flex: 1; min-width: 0; }
   .ledger { flex: none; margin-top: 1px; padding: 2px 6px; border-radius: 4px; font: var(--pl-text-label); letter-spacing: .04em; text-transform: uppercase; }
@@ -265,7 +265,7 @@ const css = `
   /* the change: what is written → what it becomes */
   .change { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; font: var(--pl-card-code); font-size: 12px; }
   .change .from { padding: 1px 6px; border-radius: 4px; color: var(--pl-off); background: color-mix(in oklab, var(--pl-off) 9%, transparent); text-decoration: line-through; text-decoration-thickness: 1px; overflow-wrap: anywhere; }
-  .change .from.soft { color: var(--pl-soft); background: color-mix(in oklab, var(--pl-soft) 11%, transparent); }
+  .change .from.soft { color: var(--pl-soft-text); background: color-mix(in oklab, var(--pl-soft) 11%, transparent); }
   .change .arrow { color: var(--pl-ink-3); }
   .change .to { padding: 1px 6px; border-radius: 4px; color: var(--pl-on); background: color-mix(in oklab, var(--pl-on) 11%, transparent); animation: pl-in var(--pl-dur-move, 200ms) var(--pl-ease-out); }
   .change .to.waiting { color: var(--pl-ink-2); background: none; outline: 1px dashed var(--pl-ink-3); outline-offset: -1px; animation: pl-nudge 900ms var(--pl-ease-out) 700ms 1 both; }
@@ -293,7 +293,7 @@ const css = `
   .synced { display: flex; align-items: center; gap: 8px; padding: 8px 12px 0; border-top: 1px solid var(--pl-rule); }
   .synced .state { font: var(--pl-card-body); font-size: 12px; color: var(--pl-ink-2); display: flex; align-items: center; gap: 8px; min-width: 0; }
   .synced .state::before { content: ""; flex: none; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
-  .synced .state.live { color: var(--pl-instrument); } .synced .state.ok { color: var(--pl-on); } .synced .state.warn { color: var(--pl-soft); } .synced .state.err { color: var(--pl-off); }
+  .synced .state.live { color: var(--pl-instrument); } .synced .state.ok { color: var(--pl-on); } .synced .state.warn { color: var(--pl-soft-text); } .synced .state.err { color: var(--pl-off); }
   .foot { display: flex; align-items: center; gap: 4px; padding: 6px 6px 6px 8px; }
   .synced[hidden] + .foot { border-top: 1px solid var(--pl-rule); }
   .btn { display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 10px; border: 0; border-radius: 6px; background: transparent; color: var(--pl-ink-2);

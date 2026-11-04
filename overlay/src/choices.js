@@ -138,7 +138,7 @@ export const CHOICES_CSS = `
   .scale .you { position: absolute; top: 0; display: flex; flex-direction: column; align-items: center; transform: translateX(-50%); pointer-events: none; }
   .scale .you em { font: var(--pl-text-label); font-style: normal; color: var(--pl-off); font-variant-numeric: tabular-nums; white-space: nowrap; }
   .scale .you i { width: 0; height: 0; margin-top: 1px; border-inline: 4px solid transparent; border-top: 6px solid var(--pl-off); }
-  .scale .you.soft em { color: var(--pl-soft); } .scale .you.soft i { border-top-color: var(--pl-soft); }
+  .scale .you.soft em { color: var(--pl-soft-text); } .scale .you.soft i { border-top-color: var(--pl-soft); }
   .scale .gap { position: absolute; top: 21px; height: 3px; background: color-mix(in oklab, var(--pl-off) 35%, transparent); border-radius: 2px; }
   .scale .opt kbd { font: 500 9px/11px var(--pl-sans); color: var(--pl-ink-3); opacity: 0; transition: opacity var(--pl-dur-feedback); }
   @media (hover: hover) and (pointer: fine) { .scale:hover .opt kbd { opacity: 1; } }

@@ -22,13 +22,12 @@
  *  empty      nothing typed by hand, or no sizes in the theme: the plot says so and the action goes
  * ───────────────────────────────────────────────────────── */
 import { esc } from './choices.js';
-import { step as stepMark, count as countMark, rollCount } from './scale-marks.js';
+import { step as stepMark, place, drawPlace, count as countMark, rollCount } from './scale-marks.js';
+import { SETTLE, DETENT, spring, ms, stagger } from './motion.js';
 
 const nf = new Intl.NumberFormat('en');
 const plural = (n, one, many) => `${nf.format(n)} ${n === 1 ? one : many}`;
 const fmt = (px) => `${+(+px).toFixed(2)}px`;
-// the springs, stepped per frame in seconds: a = −k(x − target) − c·v (settle: home; detent: into a step)
-const SETTLE = { k: 300, c: 30 }, DETENT = { k: 600, c: 35 };
 
 export const GRAVITY_CSS = `
   .gv { position: relative; overflow: hidden; }
@@ -37,12 +36,12 @@ export const GRAVITY_CSS = `
   .gv-head p { margin: 2px 0 0; font: var(--pl-page-small); color: var(--pl-ink-2); }
   .gv-key { display: flex; flex-wrap: wrap; gap: 6px 16px; margin-left: auto; font: var(--pl-page-meta); color: var(--pl-ink-2); }
   .gv-key span { display: inline-flex; align-items: center; gap: 7px; }
-  .gv-key i { width: 8px; height: 8px; border-radius: 2px; }
+  .gv-key .sc-place { scale: 1.34; }
   .gv-plot { position: relative; height: 320px; }
   .gv-plot canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; outline: none; touch-action: manipulation; }
   .gv-plot canvas:focus-visible { box-shadow: inset 0 0 0 2px var(--pl-sky); }
   .gv-steps { position: absolute; inset: 0; pointer-events: none; }
-  .gv-steps .sc-step { position: absolute; translate: -50% calc(-26px - var(--r)); opacity: 0; transition: opacity 380ms var(--pl-ease-out); }
+  .gv-steps .sc-step { position: absolute; translate: -50% calc(-26px - var(--r)); opacity: 0; transition: opacity var(--pl-dur-build) var(--pl-ease-out); }
   .gv-steps .sc-step.in { opacity: 1; }
   .gv-read { position: absolute; z-index: 2; max-width: 300px; padding: 10px 12px; border-radius: var(--pl-radius-row); pointer-events: none; background: var(--pl-paper-2);
     box-shadow: 0 0 0 1px var(--pl-rule), 0 12px 32px -16px rgb(0 0 0 / .45); font: var(--pl-page-meta); color: var(--pl-ink-2); }
@@ -80,7 +79,7 @@ export class Gravity {
     const empty = !steps.length ? ['No scale to draw yet', 'Add text sizes to your theme, and this fills in.'] : !byHand ? ['Every text size uses your scale', 'Nothing typed by hand.'] : null;
     this.el.innerHTML = `<div class="gv pl-card sc-quiet">
       <div class="gv-head"><div><h2>Where your text sizes land</h2><p>Each dot is a place in your code that types a size by hand, next to the size it's closest to.</p></div>
-        <div class="gv-key" aria-hidden="true"><span><i style="background:var(--pl-mint)"></i>On your scale</span><span><i style="background:var(--pl-butter)"></i>Your size, typed by hand</span><span><i style="background:var(--pl-coral)"></i>Not on your scale</span></div></div>
+        <div class="gv-key" aria-hidden="true"><span>${place('on')}On your scale</span><span>${place('typed')}Your size, typed by hand</span><span>${place('off')}Not on your scale</span></div></div>
       <div class="gv-plot">${empty ? `<div class="gv-empty"><span>${esc(empty[0])}<small>${esc(empty[1])}</small></span></div>` : `<canvas tabindex="0" role="img" aria-describedby="gv-table" aria-label="${esc(`Your ${steps.length} text sizes with ${plural(byHand, 'hand-typed place', 'hand-typed places')} around them`)}"></canvas><div class="gv-steps"></div>`}</div>
       <div class="gv-foot">${countMark(onScale, 'places use your scale')}${empty ? '' : '<button type="button" class="pl-act" aria-pressed="false">Snap to your scale</button>'}</div>
       <table class="sr" id="gv-table"><caption>Your text sizes, and the places that type a size close to each</caption><tr><th>Size</th><th>Pixels</th><th>Places that use it</th><th>Places typed by hand close to it</th></tr>${steps.map((s) => `<tr><td>${esc(s.name)}</td><td>${fmt(s.px)}</td><td>${s.uses}</td><td>${strays.filter((x) => x.near === s.name).reduce((n, x) => n + x.places, 0)}</td></tr>`).join('')}</table>
@@ -95,7 +94,7 @@ export class Gravity {
     let T = {}, W = 0, H = 0, raf = 0, visible = true, hover = null, focus = -1, every = false, said = onScale, shown = onScale;
     const read = () => { const cs = getComputedStyle(root); for (const n of ['--pl-coral', '--pl-butter', '--pl-mint', '--pl-sky', '--pl-rule']) T[n] = cs.getPropertyValue(n).trim(); };
     read();
-    const t0 = performance.now(); let last = t0, snapAt = 0;
+    const t0 = performance.now(), arrive = ms(root, '--pl-dur-arrive'); let last = t0, snapAt = 0;
     const lo = Math.log(8), hi = Math.log(64), M = 56;
     const X = (px) => M + ((Math.log(Math.min(Math.max(px, 8), 64)) - lo) / (hi - lo)) * (W - 2 * M);
     const cy = () => H * 0.48;
@@ -106,7 +105,7 @@ export class Gravity {
     const anchors = steps.map((s, i) => {
       const at = document.createElement('div'); at.innerHTML = stepMark({ name: s.name.replace(/^text-/, ''), n: s.px, uses: s.uses });
       const mark = at.firstElementChild; layer.append(mark);
-      setTimeout(() => mark.classList.add('in'), reduce ? 0 : i * 40);
+      setTimeout(() => mark.classList.add('in'), reduce ? 0 : stagger(root, i, steps.length));
       return { s, mark, inside: 0, state: '', took: -1, r: 0 };
     });
     const anchorOf = (name) => anchors.find((a) => a.s.name === name);
@@ -145,7 +144,7 @@ export class Gravity {
           continue;
         }
         if (reduce) { p.x = tx; p.y = ty; }
-        else { const { k, c } = going ? DETENT : SETTLE; p.vx += (-k * (p.x - tx) - c * p.vx) * dt; p.vy += (-k * (p.y - ty) - c * p.vy) * dt; p.x += p.vx * dt; p.y += p.vy * dt; }
+        else spring(p, tx, ty, going ? DETENT : SETTLE, dt);
         p.home = !going;
         if (going && Math.hypot(tx - p.x, ty - p.y) < 3) p.a.inside++;
       }
@@ -170,12 +169,14 @@ export class Gravity {
       ctx.clearRect(0, 0, W, H);
       ctx.strokeStyle = T['--pl-rule']; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(20, cy()); ctx.lineTo(W - 20, cy()); ctx.stroke();
       const lit = hover?.stray ? (p) => p.s === hover.stray : hover?.a ? (p) => p.a === hover.a : focus >= 0 ? (p) => p.a === anchors[focus] : null;
-      const intro = reduce ? 1 : Math.min(1, (now - t0) / 600);
+      const intro = reduce || !arrive ? 1 : Math.min(1, (now - t0) / arrive);
       for (const p of parts) {
         if (p.mode === 'wait') continue;
         ctx.globalAlpha = (lit && !lit(p) ? 0.14 : p.s.scaled ? 0.7 : 1) * intro;
-        ctx.fillStyle = wants(p) && !p.home ? T['--pl-mint'] : p.s.copy ? T['--pl-butter'] : T['--pl-coral'];
-        ctx.fillRect(p.x - 2, p.y - 2, 4, 4);
+        // two cues: a mint disc on your scale, a butter ring your size typed by hand, a coral square not on your scale
+        const tone = wants(p) && !p.home ? 'on' : p.s.copy ? 'typed' : 'off';
+        ctx.fillStyle = ctx.strokeStyle = T[tone === 'on' ? '--pl-mint' : tone === 'typed' ? '--pl-butter' : '--pl-coral'];
+        drawPlace(ctx, tone, p.x, p.y);
       }
       ctx.globalAlpha = 1;
       if (hover?.stray && hover.a) {

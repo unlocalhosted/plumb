@@ -2,8 +2,8 @@
  * SCALE MARKS · React Plumber overlay
  *
  * The marks for a scale and the places that use it (docs/design/onboarding.md, "The page": Gravity). Built from the
- * language (language.js, tokens.css): a step is a sky ring named by a lilac tag, a place is a small square mark in its
- * verdict hue, a count rolls like the show's chips.
+ * language (language.js, tokens.css): a step is a sky ring named by a lilac tag, a place is a small mark whose hue and
+ * shape both say its verdict, a count rolls like the show's chips.
  *
  *  step     one step of your scale: a ring whose size grows with the places that use it, its name in a lilac tag
  *             rest      sky line, a faint sky fill (how much it's used)
@@ -11,10 +11,11 @@
  *             pointed   the ring fills with the sky hatch and a sky pill gives its value above it
  *             pulled    places snapped in: the ring takes the mint, its pill counts what it took
  *             off       a value your scale doesn't have: a coral ring with no tag, only its value
- *  place    one place in your code: a 4px square, its hue its verdict
- *             off       coral: a value your scale doesn't have
- *             typed     butter: a value your scale has, typed by hand
- *             on        mint: on your scale (snapped, or written)
+ *  place    one place in your code, two cues for its verdict so colour is never the only one
+ *             off       a coral square: a value your scale doesn't have
+ *             typed     a butter ring: a value your scale has, typed by hand
+ *             on        a mint disc: on your scale (snapped, or written)
+ *           drawPlace() draws the same three on a canvas, for hundreds
  *           and how it shows: rest, dim (another step is pointed at), lit (its step is pointed at), arrive (pops in)
  *  count    a number that rolls to its value digit by digit, on the overlay's spring, with the sentence that says what
  *           it counts under it: one block, the figure first
@@ -43,11 +44,11 @@ export const SCALE_CSS = `
   .sc-step[data-state="pulled"] .v { --pill-soft: var(--pl-mint-soft); --pill-ink: var(--pl-mint-ink); }
   .sc-step[data-state="off"] .v { --pill-soft: var(--pl-coral-soft); --pill-ink: var(--pl-coral-ink); }
 
-  .sc-place { display: inline-block; width: 4px; height: 4px; border-radius: 1px; background: var(--pl-coral); transition: opacity 160ms var(--pl-ease-out), scale 260ms var(--pl-spring-pop); }
-  .sc-place[data-tone="typed"] { background: var(--pl-butter); }
-  .sc-place[data-tone="on"] { background: var(--pl-mint); }
+  .sc-place { display: inline-block; width: 5px; height: 5px; box-sizing: border-box; background: var(--pl-coral); transition: opacity 160ms var(--pl-ease-out), scale 260ms var(--pl-spring-pop); }
+  .sc-place[data-tone="typed"] { width: 6px; height: 6px; border-radius: 50%; background: none; box-shadow: inset 0 0 0 1.5px var(--pl-butter); }
+  .sc-place[data-tone="on"] { width: 6px; height: 6px; border-radius: 50%; background: var(--pl-mint); }
   .sc-place[data-show="dim"] { opacity: .16; }
-  .sc-place[data-show="lit"] { scale: 1.5; box-shadow: 0 0 0 1.5px color-mix(in oklab, var(--pl-paper) 90%, transparent); }
+  .sc-place[data-show="lit"] { scale: 1.5; outline: 1.5px solid color-mix(in oklab, var(--pl-paper) 90%, transparent); }
   .sc-place[data-show="arrive"] { animation: pl-pop 260ms var(--pl-spring-pop) both; }
   .sc-places { display: inline-flex; flex-direction: column-reverse; gap: 2px; }
 
@@ -79,6 +80,13 @@ export function step({ name, n, uses = 0, took = 0, state = uses ? 'rest' : 'unu
 
 // one place, or a column of them
 export const place = (tone = 'off', show = 'rest') => `<span class="sc-place" data-tone="${tone}" data-show="${show}"></span>`;
+// the same three on a canvas, centred on x, y; the caller sets fillStyle/strokeStyle to the tone's hue
+export function drawPlace(ctx, tone, x, y) {
+  if (tone === 'off') { ctx.fillRect(x - 2.5, y - 2.5, 5, 5); return; }
+  ctx.beginPath();
+  if (tone === 'typed') { ctx.arc(x, y, 2.25, 0, 6.2832); ctx.lineWidth = 1.5; ctx.stroke(); }
+  else { ctx.arc(x, y, 3, 0, 6.2832); ctx.fill(); }
+}
 export const places = (n, tone, show) => `<span class="sc-places">${Array.from({ length: n }, () => place(tone, show)).join('')}</span>`;
 
 // a count: digit columns that roll to the value
