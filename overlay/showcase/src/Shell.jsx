@@ -1,5 +1,6 @@
 // The workspace's frame: the sidebar, the top bar, and the screens down the page. `broken` is the whole app's mode.
 import { Bell, Gear, Home, Invoice, People, Search } from './icons.jsx';
+import { Dashboard } from './Dashboard.jsx';
 
 const NAV = [
   { id: 'dashboard', label: 'Dashboard', icon: Home },
@@ -73,7 +74,7 @@ export function Shell({ broken }) {
       <div className="flex min-w-0 flex-1 flex-col">
         <TopBar broken={broken} />
         <main className="flex flex-col gap-10 px-8 py-8">
-          <section id="dashboard" className="scroll-mt-20"><h1 className="text-2xl font-semibold tracking-tight">Good morning, Ada</h1></section>
+          <Dashboard broken={broken} />
         </main>
       </div>
     </div>

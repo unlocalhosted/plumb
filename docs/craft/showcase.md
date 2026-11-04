@@ -89,3 +89,12 @@ Where each rule lives (B = broken, F = fixed):
 | 75 | invoices · wide table | no cue it scrolls | an edge fade |
 | 76 | invoice drawer · attachment path | cut at the end | cut in the middle |
 | 77 | invoices · loading | a skeleton a different height | the final shape |
+
+## False positives the showcase has found
+
+Marks in Fixed mode, on a screen built right. Each is a rule to fix, not the page.
+
+| rule | where | what it says | why it's wrong |
+|---|---|---|---|
+| craft/rhythm (#12) | dashboard · the section's own stack | "This stack is 24px apart; the page keeps to 12px and 16px." | a section gap is meant to differ from the gaps inside the section; the rule compares every stack to the page's majority |
+| drift (theme provenance) | dashboard · target bar, `bg-linear-to-r/oklch` | "This works out to linear-gradient(var(--tw-gradient-stops))." | a gradient's direction and space are not theme values; nothing in a theme can name them |

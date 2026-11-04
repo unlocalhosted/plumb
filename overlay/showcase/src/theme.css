@@ -45,12 +45,13 @@
   --color-caution: oklch(0.6 0.13 75);
   --color-negative: oklch(0.55 0.19 25);
   --color-violet: oklch(0.47 0.2 290);
+  --color-magenta: oklch(0.66 0.21 354);
 
   /* dark: lighter surfaces lift, not shadows */
   --color-night: oklch(0.18 0.01 264);
   --color-night-raised: oklch(0.24 0.012 264);
   --color-night-ink: oklch(0.93 0.005 264);
-  --color-night-muted: oklch(0.7 0.012 264);
+  --color-night-muted: oklch(0.8 0.012 264);
 
   /* corners: a surface, the control inside it at its padding, the chip inside that */
   --radius-chip: 4px;
@@ -65,6 +66,8 @@
 
   /* motion: one ease out, to arrive and (quicker) to leave */
   --ease-arrive: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --default-transition-duration: 200ms;
+  --default-transition-timing-function: var(--ease-arrive);
 }
 
 body { background: var(--color-canvas); color: var(--color-ink); font-family: var(--font-sans); -webkit-font-smoothing: antialiased; }
@@ -73,3 +76,14 @@ body { background: var(--color-canvas); color: var(--color-ink); font-family: va
 @utility border-r-hairline { border-right-width: 0.5px; border-right-style: solid; }
 @utility border-b-hairline { border-bottom-width: 0.5px; border-bottom-style: solid; }
 @utility border-t-hairline { border-top-width: 0.5px; border-top-style: solid; }
+
+/* continuous corners where the browser draws them (#40) */
+@utility corner-squircle { corner-shape: squircle; }
+
+/* the toast's entrance: from 95% (#63); the broken one starts from nothing */
+@theme {
+  --animate-toast: toast-in 200ms var(--ease-arrive);
+  --animate-toast-zero: toast-in-zero 200ms var(--ease-arrive);
+  @keyframes toast-in { from { opacity: 0; transform: scale(0.95); } }
+  @keyframes toast-in-zero { from { transform: scale(0); } }
+}

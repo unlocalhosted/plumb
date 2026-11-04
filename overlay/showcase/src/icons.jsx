@@ -19,6 +19,6 @@ export const Refresh = glyph(<><path d="M20 11a8 8 0 1 0-2.3 5.7" /><path d="M20
 export const Paperclip = glyph(<path d="m20 11-8.5 8.5a5 5 0 0 1-7-7L13 4a3.5 3.5 0 0 1 5 5l-8.5 8.5a2 2 0 0 1-3-3L14 7" />);
 export const Close = glyph(<path d="M6 6l12 12M18 6 6 18" />);
 // filled marks: the play triangle and the integrations' round and square logos
-export const Play = ({ size = 16, className = '' }) => <svg viewBox="0 0 24 24" width={size} height={size} aria-hidden="true" className={'shrink-0 ' + className}><path d="M7 4.5v15l12-7.5z" fill="currentColor" /></svg>;
+export const Play = ({ size = 16, className = '' }) => <svg viewBox="0 0 24 24" width={size} height={size} aria-hidden="true" className={'shrink-0 ' + className}><path d="M3 3v18l18-9z" fill="currentColor" /></svg>;
 export const Round = ({ size = 20, className = '' }) => <svg viewBox="0 0 24 24" width={size} height={size} aria-hidden="true" className={'shrink-0 ' + className}><circle cx="12" cy="12" r="10" fill="currentColor" /></svg>;
 export const Square = ({ size = 20, className = '' }) => <svg viewBox="0 0 24 24" width={size} height={size} aria-hidden="true" className={'shrink-0 ' + className}><rect x="2" y="2" width="20" height="20" rx="3" fill="currentColor" /></svg>;
