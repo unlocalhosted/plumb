@@ -1,7 +1,17 @@
 /* The hero (comp A, the wipe), in the homepage's foundations. Motion: the line's sweep and the clip behind it
  * (clip-path, transform); one ease-in-out curve for the sweep, ease-out for the rest. Reduced motion shows the end. */
 
-.hero { max-width: 72rem; margin: 0 auto; padding: 0 var(--s-6) var(--s-9); color: var(--ink-1); }
+.hero { display: flex; flex-direction: column; max-width: 72rem; margin: 0 auto; padding: 0 var(--s-6) var(--s-9); color: var(--ink-1); }
+/* on a wide window the hero is exactly one viewport: the head keeps its size and the wipe takes what's left */
+@media (min-width: 48rem) {
+  .hero { height: 100svh; min-height: 40rem; padding-bottom: clamp(16px, 3vh, 40px); }
+  /* the head gives way on short windows, so the screen keeps most of the height: type and gaps follow the height */
+  .hero-head { max-width: 52rem; margin-top: clamp(8px, 4svh, 72px); }
+  .hero-head .display { font-size: clamp(44px, 7.2svh, 72px); }
+  .hero-head .lead { max-width: 40rem; margin-top: clamp(12px, 2.6svh, 24px); font-size: clamp(17px, 2.3svh, 20px); }
+  .hero-cta { margin-top: clamp(16px, 3.5svh, 32px); }
+  .wipe { flex: 1 1 0; min-height: 0; margin-top: clamp(20px, 4svh, 56px); }
+}
 .hero code { font-family: var(--mono); }
 
 /* ── nav ── */
@@ -13,11 +23,11 @@
 @media (hover: hover) and (pointer: fine) { .hero-links a:hover { color: var(--ink-1); background: var(--g2); } }
 
 /* ── head ── */
-.hero-head { max-width: 46rem; margin: var(--s-9) auto 0; text-align: center; }
+.hero-head { flex: none; width: 100%; max-width: 46rem; margin: var(--s-9) auto 0; text-align: center; }
 .hero-head .lead { margin: var(--s-5) auto 0; }
 .hero-cta { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: var(--s-6); }
 .hero-docs { height: 40px; text-decoration: none; }
-.install { display: inline-flex; align-items: center; gap: 12px; max-width: 100%; height: 40px; padding: 0 4px 0 14px; border-radius: var(--r-sm); background: var(--g1);
+.install { display: inline-flex; flex: 0 1 auto; align-items: center; gap: 12px; min-width: 0; max-width: 100%; height: 40px; padding: 0 4px 0 14px; border-radius: var(--r-sm); background: var(--g1);
   box-shadow: inset 0 0 0 1px var(--line-2); font: 400 13px/1 var(--mono); color: var(--ink-2); }
 .install code { min-width: 0; overflow-x: auto; white-space: nowrap; scrollbar-width: none; }
 .install-copy { flex: none; height: 32px; padding: 0 12px; border: 0; border-radius: 6px; cursor: pointer; background: var(--accent); color: #fff; font: var(--t-label);
@@ -28,7 +38,7 @@
 .install-copy[data-state='copied'] { background: var(--on); }
 
 /* ── the wipe ── */
-.wipe { margin: var(--s-8) 0 0; }
+.wipe { position: relative; display: grid; place-items: start center; margin: var(--s-8) 0 0; }
 .wipe-frame { position: relative; overflow: hidden; cursor: ew-resize; touch-action: pan-y; user-select: none; }
 .wipe-fit { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
 .wipe-layer { position: absolute; inset: 0; }
@@ -50,11 +60,9 @@
 .wipe-label-l { left: calc(var(--at) - 12px); translate: -100% 0; }
 .wipe-label-r { left: calc(var(--at) + 12px); }
 .wipe-frame[data-sweeping='true'] .wipe-label { transition: left 1400ms cubic-bezier(0.65, 0, 0.35, 1); }
-.wipe-counts { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: center; min-height: 24px; margin-top: var(--s-5);
-  opacity: 0; translate: 0 4px; transition: opacity 400ms var(--ease), translate 500ms var(--ease); }
-.wipe-counts[data-shown='true'] { opacity: 1; translate: 0 0; }
-.wipe-to { color: var(--ink-3); }
-.wipe-sep { width: 20px; }
+.wipe-label b { font-weight: 500; opacity: 0; transition: opacity 400ms var(--ease); }
+.wipe-label-l b { color: var(--off); } .wipe-label-r b { color: var(--on); }
+.wipe-label b[data-shown='true'] { opacity: 1; }
 
 /* ── the app screen, drawn at 1104 × 540 ── */
 .scr { position: relative; display: grid; grid-template-columns: 13rem 1fr; width: 100%; height: 100%; background: var(--g0); color: var(--ink-1); font-family: var(--font); }
@@ -102,7 +110,7 @@
   .wipe-line i { width: 26px; height: 26px; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .wipe-counts, .install-copy, .wipe-line i { transition: none; }
+  .wipe-label b, .install-copy, .wipe-line i { transition: none; }
 }
 
 /* dev-only picker: chrome, not a contestant */

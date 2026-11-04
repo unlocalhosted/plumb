@@ -7,7 +7,7 @@
  * STORYBOARD (on load; reduced motion shows the end)
  *      0ms   the whole screen as written, marked; the line parked at the right edge
  *    700ms   the line sweeps left to the middle (1400ms, ease-in-out): the page settles behind it
- *   2100ms   the counts appear; from here the line is yours: drag it, or focus it and use ← →
+ *   2100ms   each side's label adds its counts; from here the line is yours: drag it, or focus it and use ← →
  * ───────────────────────────────────────────────────────── */
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 
@@ -26,7 +26,7 @@ const PROJECTS = [
 
 export function Wipe() {
   const reduced = typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const frame = useRef(null), messy = useRef(null), clean = useRef(null);
+  const area = useRef(null), frame = useRef(null), messy = useRef(null), clean = useRef(null);
   const [at, setAt] = useState(reduced ? REST : 100);
   const [sweeping, setSweeping] = useState(false);
   const [settled, setSettled] = useState(reduced);
@@ -41,12 +41,19 @@ export function Wipe() {
     return () => { clearTimeout(a); clearTimeout(b); };
   }, [reduced]);
 
+  // the screen fits the space the hero leaves it: its width always; on a wide window, its height too, so the whole
+  // hero is one viewport (hero.css makes the hero exactly that tall and gives the wipe what remains)
   useLayoutEffect(() => {
-    const measure = () => setFit(Math.min(1, frame.current.clientWidth / W));
+    const wide = matchMedia('(min-width: 48rem)');
+    const measure = () => {
+      const w = area.current.clientWidth, h = area.current.clientHeight;
+      setFit(Math.min(1, w / W, wide.matches && h > 0 ? h / H : Infinity));
+    };
     measure();
     const ro = new ResizeObserver(measure);
-    ro.observe(frame.current);
-    return () => ro.disconnect();
+    ro.observe(area.current);
+    wide.addEventListener('change', measure);
+    return () => { ro.disconnect(); wide.removeEventListener('change', measure); };
   }, []);
 
   // the marks and the counts, read from the two screens as drawn (in the screen's own units, before scaling)
@@ -73,26 +80,20 @@ export function Wipe() {
   };
 
   return (
-    <figure className="wipe" aria-label="A Projects dashboard as written, and after Plumber’s clean-up">
-      <div ref={frame} className="wipe-frame surface" style={{ height: H * fit, '--at': `${at}%` }} data-sweeping={sweeping} onPointerDown={drag}>
+    <figure ref={area} className="wipe" aria-label="A Projects dashboard as written, and after Plumber’s clean-up">
+      <div ref={frame} className="wipe-frame surface" style={{ width: W * fit, height: H * fit, '--at': `${at}%` }} data-sweeping={sweeping} onPointerDown={drag}>
         <div className="wipe-fit" style={{ width: W, height: H, transform: `scale(${fit})` }} aria-hidden="true">
           <div className="wipe-layer"><Screen kind="messy" ref={messy} marks={marks.messy} tone="off" /></div>
           <div className="wipe-layer wipe-clean"><Screen kind="clean" ref={clean} marks={marks.clean} tone="on" /></div>
         </div>
-        <span className="wipe-label wipe-label-l" aria-hidden="true">as written</span>
-        <span className="wipe-label wipe-label-r" aria-hidden="true">after Plumber</span>
+        {/* each side's label carries its own counts, measured from its screen */}
+        <span className="wipe-label wipe-label-l">as written{counts && <b data-shown={settled}> · {counts.messy.text} text sizes · {counts.messy.space} spaces</b>}</span>
+        <span className="wipe-label wipe-label-r">after Plumber{counts && <b data-shown={settled}> · {counts.clean.text} styles · {counts.clean.space} steps</b>}</span>
         <span className="wipe-line" role="slider" tabIndex={0} aria-label="Compare the page as written with the page after Plumber"
           aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(at)} aria-valuetext={`${Math.round(100 - at)}% of the page shown after Plumber`} onKeyDown={key}>
           <i />
         </span>
       </div>
-      <figcaption className="wipe-counts" data-shown={settled && !!counts}>
-        {counts && <>
-          <span className="chip chip-off"><i />{counts.messy.text} text sizes</span><span className="wipe-to" aria-hidden="true">→</span><span className="chip chip-on"><i />{counts.clean.text} styles</span>
-          <span className="wipe-sep" aria-hidden="true" />
-          <span className="chip chip-off"><i />{counts.messy.space} spaces</span><span className="wipe-to" aria-hidden="true">→</span><span className="chip chip-on"><i />{counts.clean.space} steps</span>
-        </>}
-      </figcaption>
     </figure>
   );
 }
