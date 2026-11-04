@@ -217,6 +217,8 @@ route is gone.
 | 60 | A writing app's formatting toolbar | At once / Warm-up | the wait filling under the button, a dashed ghost where a tooltip only flashed (under 250ms), one tag with the last wait ("1ms · no warm-up" / "2ms · warm ✓") | probe only (`tooltips`) |
 | 64 | A shared folder's Details panel | Keyframes / Transition | the edge where you changed your mind, the hatched snap, the openness over time as a trace (a snap is a cliff), "jumped 46% → 100%" / "turned back at 46% ✓"; ¼ speed by default | probe only (`toggle`) |
 | 65 | A maps app's place sheet | Clamped / Rubber-band | the limit, where you pressed, a coral wall where the hand went and the sheet didn't, or a mint bracket for what it gave ("gave 39 of 90px") | probe only (`drag`, opt-in) |
+| 63 | A docs editor's Insert menu | From 0 / From 95% | the menu's real outline as it came in, as onion skins (its first painted frame, a quarter, half), "1st frame 8% · from 0" / "1st frame 95% ✓"; ¼ speed | in-page: plumber's `scale-from-zero` reads `starting:scale-0` |
+| 68 | A calendar's event preview | Same both ways / Faster out | the two durations as the browser ran them (transitionrun → transitionend), bars to one scale, "no quicker out" / "out ⅔ of in ✓"; ¼ speed | in-page: plumber's `exit-faster` reads the classes |
 | 66 | A bank feed's Sync now | Spinner at once / After 200ms, for 500ms | the reply and the spinner on two lanes of the ruler, the rule's 200ms line, "flashed 129ms" / "no spinner · 124ms ✓" | probe and held pair only (`spinnerTiming`) |
 
 Real requests only: #77 and #66 call the showcase's own `/api`; a held reply is held on the client and says so ("reply

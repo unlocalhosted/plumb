@@ -12,7 +12,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import valley from '../media/valley.jpg';
-import { ChartIcon, CheckIcon, CodeIcon, FileIcon, FolderIcon, HistoryIcon, PlusIcon, RetryIcon, SlidersIcon, SparklesIcon } from '@unlocalhosted/dither-icons';
+import { ChartIcon, CheckIcon, CodeIcon, LayersIcon, FileIcon, FolderIcon, HistoryIcon, PlusIcon, RetryIcon, SlidersIcon, SparklesIcon } from '@unlocalhosted/dither-icons';
 
 const TOKENS = '/__plumb/src/tokens.css';
 function MarksLayer({ children }) {
@@ -925,4 +925,156 @@ PlaceSheet.lesson = {
   habit: 'Past a limit, follow the pointer less and less (x = limit + over × a falling factor), then spring back on release. Vaul and Motion’s dragElastic do it for you.',
 };
 
-export const HANDS_ON = { 42: BoldHover, 60: TooltipWarm, 61: MenuPress, 64: InterruptPanel, 65: PlaceSheet, 77: SkeletonLand, 66: SpinnerTiming };
+// ── #68 Exits faster than entrances ─────────────────────────────────────
+// A calendar's event preview. Broken: one transition both ways, 300ms in and 300ms out (the same duration-300 for both
+// states). Fixed: plumber's fix, data-[state=closed]:duration-200: the close takes its own, shorter time.
+// The marks are the two durations as the browser ran them (transitionrun → transitionend on the popover): two bars to
+// one scale, the exit's coral when it's no quicker than the entrance. Slowed to ¼ so the difference can be felt.
+function ExitFaster({ side = 'broken', onStatus }) {
+  const pop = useRef(null);
+  const [open, setOpen] = useState(false), [slow, setSlow] = useState(true);
+  const [ran, setRan] = useState({ in: null, out: null }); // measured ms, at 1×
+  const started = useRef(null);
+  const k = slow ? 4 : 1, enter = 300 * k, exit = (side === 'fixed' ? 200 : 300) * k;
+  useEffect(() => { setOpen(false); setRan({ in: null, out: null }); }, [side, slow]);
+  // timed from the browser's own transition events on the popover (not from our state: what ran, not what we asked)
+  const openNow = useRef(open); openNow.current = open;
+  useEffect(() => {
+    const el = pop.current;
+    const run = (e) => { if (e.target === el && e.propertyName === 'opacity') started.current = { t: performance.now(), open: openNow.current }; };
+    const end = (e) => {
+      if (e.target !== el || e.propertyName !== 'opacity' || !started.current) return;
+      const ms = (performance.now() - started.current.t) / k, which = started.current.open ? 'in' : 'out';
+      started.current = null;
+      setRan((r) => ({ ...r, [which]: ms }));
+    };
+    el.addEventListener('transitionrun', run); el.addEventListener('transitionend', end);
+    return () => { el.removeEventListener('transitionrun', run); el.removeEventListener('transitionend', end); };
+  }, [k]);
+  useEffect(() => {
+    onStatus?.(ran.in === null ? 'Open the event, then close it: click it, or Close.'
+      : ran.out === null ? `It came in over ${Math.round(ran.in)}ms. Now close it, and feel how long it stays.`
+      : side === 'broken' ? `${Math.round(ran.in)}ms in, ${Math.round(ran.out)}ms out: you’d already decided to close it, and it lingered just as long.`
+      : `${Math.round(ran.in)}ms in, ${Math.round(ran.out)}ms out: it leaves as quickly as you moved on.`);
+  }, [ran.in, ran.out, side, onStatus]);
+  const x = (ms) => (ms / 300) * 220, off = ran.out !== null && ran.in !== null && ran.out > ran.in * 0.8;
+  return (
+    <div className="relative w-[30rem] max-w-full pb-24">
+      <article className="relative h-[19rem] rounded-card bg-surface shadow-card">
+        <header className="flex items-baseline justify-between px-5 pt-4 pb-3">
+          <span className="text-[17px] leading-6 font-medium tracking-[-0.01em]">Thursday</span>
+          <span className="text-[13px] text-ink-muted">6 November</span>
+        </header>
+        <button type="button" aria-expanded={open} onClick={() => setOpen((o) => !o)} className="mx-5 flex w-[calc(100%-2.5rem)] items-baseline gap-3 rounded-control bg-accent-soft px-3 py-2 text-left hover:bg-accent/15">
+          <span className="text-[13px] text-accent-deep tabular-nums">9:00</span><span className="text-sm font-medium text-accent-deep">Design crit</span>
+        </button>
+        <div ref={pop} role="dialog" aria-label="Design crit" data-state={open ? 'open' : 'closed'}
+          style={{ transitionDuration: `${open ? enter : exit}ms` }}
+          className="absolute top-[6.5rem] left-10 flex w-64 origin-top-left flex-col gap-3 rounded-card bg-surface p-4 shadow-popover transition-[opacity,scale] ease-arrive data-[state=closed]:pointer-events-none data-[state=closed]:scale-95 data-[state=closed]:opacity-0">
+          <span className="flex flex-col gap-1"><span className="text-[15px] font-medium">Design crit</span><span className="text-[13px] text-ink-muted tabular-nums">9:00 – 9:30 · Studio 2</span></span>
+          <span className="text-[13px] text-pretty text-ink-muted">Bring the onboarding flows. We’ll go through the empty states first.</span>
+          <span className="flex gap-2">
+            <span className="inline-flex h-8 items-center rounded-control bg-accent px-3 text-[13px] font-medium text-accent-ink">Join</span>
+            <button type="button" onClick={() => setOpen(false)} className="h-8 rounded-control px-3 text-[13px] font-medium ring-1 ring-line ring-inset hover:bg-sunken">Close</button>
+          </span>
+        </div>
+      </article>
+      <div className="absolute right-0 bottom-0 flex items-center gap-2 text-[12px] text-ink-muted">
+        Speed
+        <span role="group" aria-label="Speed" className="flex gap-0.5 rounded-control bg-sunken p-0.5 ring-1 ring-line">
+          {[[true, '¼×'], [false, '1×']].map(([v, l]) => <button key={l} type="button" aria-pressed={slow === v} onClick={() => setSlow(v)} className={'h-6 rounded-[5px] px-2 ' + (slow === v ? 'bg-surface text-ink shadow-raised' : 'hover:text-ink')}>{l}</button>)}
+        </span>
+      </div>
+      <MarksLayer>
+        {/* the two durations, measured, to one scale */}
+        <div style={{ position: 'absolute', left: 0, top: 'calc(19rem + 14px)', width: '100%' }}>
+          {[['in', ran.in, 'var(--pl-sky)'], ['out', ran.out, off ? 'var(--pl-off)' : 'var(--pl-on)']].map(([label, ms, col], i) => (
+            <span key={label} style={{ position: 'absolute', left: 0, top: i * 18, display: 'flex', alignItems: 'center', gap: 8, font: '600 10.5px/14px var(--pl-sans)', color: 'var(--pl-ink-2)' }}>
+              <span style={{ width: 22 }}>{label}</span>
+              <span style={{ height: 6, width: ms === null ? 0 : x(ms), borderRadius: 3, background: col, transition: 'width 200ms var(--pl-ease-out)' }} />
+              {ms !== null ? <span style={{ font: '500 11px var(--pl-mono)', color: 'var(--pl-ink-2)' }}>{Math.round(ms)}ms</span> : null}
+            </span>
+          ))}
+          {ran.out !== null && ran.in !== null ? <Tag x={30 + x(Math.max(ran.in, ran.out)) + 64} y={25} off={off}>{off ? 'no quicker out' : 'out ⅔ of in ✓'}</Tag> : null}
+        </div>
+      </MarksLayer>
+    </div>
+  );
+}
+ExitFaster.names = ['Same both ways', 'Faster out'];
+ExitFaster.lesson = {
+  why: 'Opening and closing aren’t the same moment. Coming in, 300ms reads as the popover arriving. Going out, you’ve already decided, and the same 300ms keeps it in front of what you want to do next: it feels slow to leave.',
+  habit: 'Give the exit its own, shorter duration: about 70% of the entrance (data-[state=closed]:duration-200 against a 300 in).',
+};
+
+// ── #63 Never scale from 0 ──────────────────────────────────────────────
+// A docs editor's Insert menu, opened from the + beside an empty line, with its entrance written as a transition from
+// its starting style. Broken: starting:scale-0, so it grows out of a point. Fixed: plumber's fix, starting:scale-95.
+// The marks are the menu's real outline as it came in, sampled from the page every frame and drawn as onion skins at
+// moments of the entrance (its first painted frame, a quarter, half): from 0 the first is a speck; from 95% it's nearly
+// the menu from the first frame. Slowed to ¼ so a hand can follow it.
+const INSERTS = [['Heading', FileIcon], ['Table', LayersIcon], ['Chart', ChartIcon], ['Code block', CodeIcon]];
+function ScaleFromZero({ side = 'broken', onStatus }) {
+  const root = useRef(null), menu = useRef(null);
+  const [open, setOpen] = useState(false), [slow, setSlow] = useState(true);
+  const [skins, setSkins] = useState([]); // { p, box } at fixed fractions of the entrance
+  const k = slow ? 4 : 1, dur = 200 * k, from = side === 'fixed' ? 0.95 : 0;
+  useEffect(() => { setOpen(false); setSkins([]); }, [side, slow]);
+  // sample the real menu every frame of its entrance, keep the frames nearest each fraction
+  useEffect(() => {
+    if (!open) return;
+    let id; const t0 = performance.now(), at = local(root.current), seen = [];
+    const tick = (now) => {
+      if (menu.current) seen.push({ p: (now - t0) / dur, box: at(menu.current) });
+      if (now - t0 < dur + 50) id = requestAnimationFrame(tick);
+      // the first frame it was painted at all, then a quarter and half way in
+      else { const near = (f) => seen.reduce((a, b) => (Math.abs(b.p - f) < Math.abs(a.p - f) ? b : a), seen[0]); setSkins([seen.find((q) => q.box.w > 1), near(0.25), near(0.5)].filter(Boolean)); }
+    };
+    id = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(id);
+  }, [open, dur]);
+  const full = menu.current && root.current && open ? local(root.current)(menu.current) : null;
+  const first = skins[0], share = first && full ? Math.round((first.box.w / full.w) * 100) : null;
+  useEffect(() => {
+    onStatus?.(!skins.length ? 'Click + to open the Insert menu, and watch the first frames.'
+      : side === 'broken' ? `Its first frame was ${share}% of its size: a speck by the +, growing out of nowhere, not a menu opening.`
+      : `Its first frame was already ${share}% of its size: it opens from the +, it doesn’t inflate.`);
+  }, [skins.length, share, side, onStatus]);
+  const off = side === 'broken';
+  return (
+    <div ref={root} className="relative w-[30rem] max-w-full pb-10">
+      <style>{`.ho-insert { transition: scale ${dur}ms var(--ease-arrive), opacity ${dur}ms var(--ease-arrive); } @starting-style { .ho-insert { scale: ${from}; opacity: 0; } }`}</style>
+      <article className="relative h-[19rem] rounded-card bg-surface px-6 pt-5 shadow-card">
+        <span className="text-[22px] leading-7 font-medium tracking-[-0.015em]">Offsite plan</span>
+        <p className="pt-2 text-sm leading-relaxed text-ink-muted">Two days in Lisbon, the second week of March. The budget covers travel, rooms and one team dinner.</p>
+        <span className="flex items-center gap-2 pt-3">
+          <button type="button" aria-label="Insert" aria-expanded={open} onClick={() => { setSkins([]); setOpen((o) => !o); }} className="grid size-6 place-items-center rounded-chip text-ink-muted ring-1 ring-line ring-inset hover:bg-sunken"><PlusIcon size={14} texture="solid" /></button>
+          <span className="text-sm text-ink-subtle">Type / for blocks</span>
+        </span>
+        {open ? (
+          <div ref={menu} role="menu" className="ho-insert absolute top-[10.25rem] left-6 flex w-48 origin-top-left flex-col rounded-card bg-surface p-1 shadow-popover">
+            {INSERTS.map(([label, Icon]) => <span key={label} role="menuitem" className="flex h-8 items-center gap-2.5 rounded-control px-2 text-[13px] hover:bg-sunken"><Icon size={14} texture="dither" className="text-ink-muted" />{label}</span>)}
+          </div>
+        ) : null}
+      </article>
+      <div className="absolute right-0 bottom-0 flex items-center gap-2 text-[12px] text-ink-muted">
+        Speed
+        <span role="group" aria-label="Speed" className="flex gap-0.5 rounded-control bg-sunken p-0.5 ring-1 ring-line">
+          {[[true, '¼×'], [false, '1×']].map(([v, l]) => <button key={l} type="button" aria-pressed={slow === v} onClick={() => setSlow(v)} className={'h-6 rounded-[5px] px-2 ' + (slow === v ? 'bg-surface text-ink shadow-raised' : 'hover:text-ink')}>{l}</button>)}
+        </span>
+      </div>
+      <MarksLayer>
+        {skins.map((sk, i) => <Ghost key={i} {...sk.box} r={10} off={off} />)}
+        {skins.map((sk, i) => <span key={'l' + i} style={{ position: 'absolute', left: sk.box.x + sk.box.w + 4, top: sk.box.y + sk.box.h - 6, font: '500 10px var(--pl-mono)', color: 'var(--pl-ink-2)' }}>{['1st', '¼', '½'][i]}</span>)}
+        {full && first ? <Tag x={full.x + full.w + 14} y={full.y + 14} off={off}>{off ? `1st frame ${share}% · from 0` : `1st frame ${share}% ✓`}</Tag> : null}
+      </MarksLayer>
+    </div>
+  );
+}
+ScaleFromZero.names = ['From 0', 'From 95%'];
+ScaleFromZero.lesson = {
+  why: 'Something that grows from scale 0 starts as a point: for its first frames it’s a speck, then a smear of tiny words. Nothing real grows out of nothing, so it reads as appearing from nowhere instead of opening from the button that asked for it.',
+  habit: 'Start entrances at 0.9–0.97 with opacity 0, with transform-origin at the trigger. It opens; it doesn’t inflate.',
+};
+
+export const HANDS_ON = { 42: BoldHover, 60: TooltipWarm, 63: ScaleFromZero, 61: MenuPress, 64: InterruptPanel, 65: PlaceSheet, 68: ExitFaster, 77: SkeletonLand, 66: SpinnerTiming };
