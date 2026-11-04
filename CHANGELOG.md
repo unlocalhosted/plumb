@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.3.0 · 2026-11-04
+
+Everything since 0.2.0, as a person using it sees it.
+
+- **Alt+click opens the element's card.** It reads only that element. Words open a value card with a spring drag and the hierarchy marked on the scale; layout and spacing are edited on the element itself; Shadow and Motion are shown as the element itself and tuned by handles. A fix is written the moment it is taken, with its own Undo, and only the fix in hand is lit. **Tidy this card** previews a card's hierarchy fixes at once and writes them in one go with one Undo.
+- **Clean up this page.** Four passes in the panel: text, spacing, colour and icons. Each works inside the app's own scale and keeps what is already on it; refining the scale is opt-in. A write that partly lands is a step, kept with its Undo across its reload.
+- **History is a timeline.** A tick per change and a segment per step; pointing at a change outlines its elements on the page; **Go back to here** undoes the rest in one write. Every change a write makes is traced, so any one change, or a group, can be undone on its own.
+- **One bar for Blueprint**, each key on the action it presses; the dock at rest is its mark. Blueprint counts every place in the files the page renders, shown or not, reading the page from source once.
+- **Causes.** Findings are grouped by what the author meant, across rules, in `check --json` and on the server. Every cause ends in an action: accept, adopt a default, or name the token that gives a value a class; `POST /__plumb/apply-all` takes a whole cause, written per file.
+- **Recipes.** Shadow and motion values are read from any source into one model, mapped onto the project's own, and written in its idiom. A pick can add its class at a component usage that forwards `className`.
+- **The type system a codebase reaches for.** Text is measured on every route; `POST /__plumb/system` proposes roles, bundles, cost and the write, and Blueprint offers the text styles the page reaches for. Colour is resolved by role on the signed-off colour system.
+- **Libraries.** Base UI, Radix and shadcn adapters: their own variables are never dead or drift, portals, `asChild`, Slot and render props are followed, and declarations name the state they apply in. Detectors for Nx, Lerna, Deno, Turborepo, clsx, tailwind-merge, Ark UI and React Aria. styled-components, Emotion, StyleX and Linaria are named as unsupported; a mixed app still has its Tailwind judged.
+- **Craft rules.** Every rule names the laws of UX it measures. New: an elevation ladder (a shadow a hair off a level the page uses more takes that level) and four spacing rules (heading lead, pair spacing, card optical padding).
+- **CLI.** `npx plumber` opens a page about your project; with no browser it names the 3 biggest causes and one next step. `npx plumber --yes` sets up with no page and no question. A problem is one line for what is wrong and one for the fix; `plumber doctor` is three lines (`--verbose` keeps the detail). A finding line names the state it applies in.
+- **Writes go where the classes are written**, never the shared component's line; a usage reaches its component through the project's own module resolution (barrels, aliases, re-exports). A Tailwind v4 `--spacing` multiplier gives the spacing scale its steps only when the project defines `--spacing` itself.
+
 ## 0.2.0 · 2026-10-28
 
 Everything since 0.1.0, as a person using it sees it.
