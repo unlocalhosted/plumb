@@ -62,6 +62,7 @@ function usePlumber() {
 // faded back, and a bracket with a pill carrying plumber's own value. Red as found; once plumber's fix is in, blue with
 // a check and the value its fix sets. It follows the elements while they glide, and sits outside the example, so
 // plumber never reads it.
+const pad = 6;
 function Annotations({ state, stage, measureOf, onAnchor }) {
   const [boxes, setBoxes] = useState([]);
   const [seen, setSeen] = useState(null);
@@ -80,7 +81,7 @@ function Annotations({ state, stage, measureOf, onAnchor }) {
         return { key: f.rule + f.line, x, y, w, h, was, now };
       }).filter(Boolean));
       const first = sitesOf(state.found[0] ?? {}).map((e) => e.getBoundingClientRect());
-      if (first.length) onAnchor?.(Math.round((Math.min(...first.map((r) => r.top)) + Math.max(...first.map((r) => r.bottom))) / 2 - s.top));
+      if (first.length) onAnchor?.({ y: Math.round((Math.min(...first.map((r) => r.top)) + Math.max(...first.map((r) => r.bottom))) / 2 - s.top), reach: Math.round(s.right - Math.max(...first.map((r) => r.right)) - pad - 10) });
       // the example's own view of the harm, when it has one (where the eye sees the problem), in the stage's frame
       const m = measureOf?.(document.querySelector(SCOPE));
       setSeen(m ? { ...m, ticks: m.ticks.map((t) => ({ x: t.x - s.left, top: t.top - s.top, bottom: t.bottom - s.top })) } : null);
@@ -90,7 +91,6 @@ function Annotations({ state, stage, measureOf, onAnchor }) {
     addEventListener('resize', measure);
     return () => { cancelAnimationFrame(frame); removeEventListener('resize', measure); };
   }, [state.phase, state.found, stage]);
-  const pad = 6;
   return (
     <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden rounded-sheet corner-squircle">
       {boxes.map((b) => (
@@ -119,11 +119,15 @@ function FindingCard({ state, anchor }) {
   const f = state.found?.[0];
   const chip = (to, from) => <code className="rounded-chip bg-sunken px-1.5 py-0.5 font-mono text-xs text-ink">{from ? `${from} → ` : '+ '}{to}</code>;
   let body;
-  if (state.phase === 'asking') body = <p className="text-sm text-ink-muted">Asking plumber about this example…</p>;
+  if (state.phase === 'asking') body = (
+    <div aria-label="Asking plumber about this example" className="flex flex-col gap-2">
+      <span className="h-3.5 w-11/12 animate-pulse rounded-chip bg-sunken" /><span className="h-3.5 w-3/4 animate-pulse rounded-chip bg-sunken" /><span className="h-3.5 w-1/2 animate-pulse rounded-chip bg-sunken" />
+    </div>
+  );
   else if (state.phase === 'error') body = <p className="text-sm text-negative">{state.error}</p>;
   else if (!f) body = <p className="text-sm text-ink-muted">plumber has no finding on this example.</p>;
   else body = (
-    <div className="flex flex-col gap-3">
+    <div key={fixed ? 'fixed' : 'found'} className="flex animate-rise flex-col gap-3 motion-reduce:animate-none">
       <p className="text-sm font-medium text-pretty">{fixed ? (state.after?.length ? state.after[0].title : 'Nothing left to find. plumber is satisfied with its own fix.') : f.title}</p>
       {fixed ? null : <p className="text-sm text-ink-muted text-pretty">{f.because}</p>}
       {f.suggest?.kind === 'class' ? <div className="flex items-center gap-2 text-sm text-ink-muted">{fixed ? 'Applied' : 'Fix'} {chip(f.suggest.to, f.suggest.from)}</div> : <p className="text-sm">{f.action}</p>}
@@ -131,9 +135,9 @@ function FindingCard({ state, anchor }) {
     </div>
   );
   return (
-    <aside aria-label="What plumber finds" className="relative w-full md:mt-(--anchor) md:w-72 md:shrink-0" style={{ '--anchor': `${Math.max(0, (anchor ?? 40) - 40)}px` }}>
-      {/* the leader: from the window's edge to the card */}
-      <span aria-hidden="true" className={'absolute top-10 right-full hidden h-px w-10 transition-colors duration-300 md:block ' + (fixed ? 'bg-accent' : 'bg-negative')} />
+    <aside aria-label="What plumber finds" className="relative w-full md:mt-(--anchor) md:w-72 md:shrink-0" style={{ '--anchor': `${Math.max(0, (anchor?.y ?? 40) - 40)}px`, '--reach': `${40 + Math.max(0, anchor?.reach ?? 0)}px` }}>
+      {/* the leader: from the bracket, across the window's edge, to the card */}
+      <span aria-hidden="true" className={'absolute top-10 right-full hidden h-px w-(--reach) transition-colors duration-300 md:block ' + (fixed ? 'bg-accent' : 'bg-negative')} />
       <div className="flex flex-col gap-3 rounded-card border border-line bg-surface/90 px-4 pt-3 pb-4 shadow-overlay backdrop-blur">
         <div className="flex items-center justify-between gap-3">
           <span className="text-xs font-medium text-ink-muted">plumber</span>
@@ -150,7 +154,8 @@ const FOUND = {
   habit: 'plumber finds it in the source: run plumber check in the project.',
 };
 
-const step = 'grid size-8 place-items-center rounded-full text-ink-muted hover:bg-sunken active:bg-line';
+const RING = 'outline-offset-2 focus-visible:outline-2 focus-visible:outline-accent';
+const step = 'grid size-8 shrink-0 place-items-center rounded-full text-ink-muted hover:bg-sunken active:bg-line ' + RING;
 
 // The page: the board is the hero. A slim bar floats at the top (where you are, the switch, prev and next); the
 // principle's name sits small above the window; plumber's card floats beside it.
@@ -163,21 +168,35 @@ export function Principle({ n }) {
   const prev = n > 1 ? n - 1 : null, next = n < PRINCIPLES.length ? n + 1 : null;
   const fixed = state.phase === 'fixing' || state.phase === 'fixed', ready = state.phase === 'broken' || state.phase === 'fixed';
   const live = Example && p.how === 'live';
-  const tab = (on) => 'inline-flex h-7 items-center rounded-full px-3 text-sm transition-colors disabled:text-ink-subtle ' + (on ? 'bg-ink font-medium text-accent-ink' : 'text-ink-muted hover:text-ink');
+  useEffect(() => { document.title = `${n} · ${p.title} · plumber`; }, [n, p.title]);
+  useEffect(() => {
+    const key = (e) => {
+      if (e.metaKey || e.ctrlKey || e.altKey || /input|textarea|select/i.test(e.target.localName)) return;
+      if (e.key === 'ArrowLeft' && prev) location.href = `/rule/${prev}`;
+      else if (e.key === 'ArrowRight' && next) location.href = `/rule/${next}`;
+      else if (live && ready && e.key === 'f' && !fixed) fix();
+      else if (live && ready && e.key === 'b' && fixed) undo();
+    };
+    addEventListener('keydown', key);
+    return () => removeEventListener('keydown', key);
+  });
+  const tab = (on) => 'inline-flex h-7 items-center rounded-full px-3 text-sm transition-colors disabled:text-ink-subtle ' + RING + ' ' + (on ? 'bg-ink font-medium text-accent-ink' : 'text-ink-muted hover:text-ink');
   return (
     <div className="flex min-h-dvh flex-col">
       <header className="sticky top-0 z-10 flex justify-center px-4 pt-4">
         <nav aria-label="Principle" className="flex w-full max-w-3xl items-center gap-2 rounded-full border border-line bg-surface/85 py-1.5 pr-1.5 pl-4 shadow-raised backdrop-blur">
-          <a href="/" className="text-sm font-medium md:hidden">All</a>
-          <span className="min-w-0 flex-1 truncate text-sm text-ink-muted" title={p.section}>{p.section} · <span className="tabular-nums">{n}</span> of {PRINCIPLES.length}</span>
+          {/* narrow: where you are is also the way to the list of all 77 */}
+          <a href="/" aria-label={`Principle ${n} of ${PRINCIPLES.length}: all principles`} className={'shrink-0 rounded-full text-sm font-medium tabular-nums sm:hidden ' + RING}>{n} / {PRINCIPLES.length}</a>
+          <span className="hidden min-w-0 flex-1 truncate text-sm text-ink-muted sm:inline" title={p.section}>{p.section} · <span className="tabular-nums">{n}</span> of {PRINCIPLES.length}</span>
+          <span className="flex-1 sm:hidden" />
           {live ? (
             <div role="group" aria-label="Example" className="flex items-center gap-0.5 rounded-full bg-sunken p-0.5">
-              <button type="button" aria-pressed={!fixed} disabled={!ready} onClick={() => fixed && undo()} className={tab(!fixed)}>Broken</button>
-              <button type="button" aria-pressed={fixed} disabled={!ready} onClick={() => !fixed && fix()} className={tab(fixed)}>Fixed</button>
+              <button type="button" aria-pressed={!fixed} disabled={!ready} onClick={() => fixed && undo()} title="Broken (B)" className={tab(!fixed)}>Broken</button>
+              <button type="button" aria-pressed={fixed} disabled={!ready} onClick={() => !fixed && fix()} title="Fixed by plumber (F)" className={tab(fixed)}>Fixed</button>
             </div>
           ) : null}
-          {prev ? <a href={`/rule/${prev}`} aria-label={'Principle ' + prev} className={step}><Chevron className="rotate-180" /></a> : null}
-          {next ? <a href={`/rule/${next}`} aria-label={'Principle ' + next} className={step}><Chevron /></a> : null}
+          {prev ? <a href={`/rule/${prev}`} aria-label={'Principle ' + prev} title="Previous (←)" className={step}><Chevron className="rotate-180" /></a> : null}
+          {next ? <a href={`/rule/${next}`} aria-label={'Principle ' + next} title="Next (→)" className={step}><Chevron /></a> : null}
         </nav>
       </header>
       <main className="flex flex-1 flex-col items-center gap-6 px-4 pt-10 pb-16 sm:pt-14">
@@ -203,6 +222,8 @@ export function Principle({ n }) {
 
 // The 77, grouped by catalogue section; the open one is filled and its fill bleeds out by its padding (#1), so every
 // row's words share one edge.
+// the open principle is brought into the list's view once, when the page opens, not on every render
+const intoView = (el) => { if (el && !el.dataset.shown) { el.dataset.shown = '1'; el.scrollIntoView({ block: 'center' }); } };
 function List({ current }) {
   const sections = [...new Set(PRINCIPLES.map((p) => p.section))];
   return (
@@ -213,8 +234,8 @@ function List({ current }) {
           <ol className="flex flex-col">
             {PRINCIPLES.filter((p) => p.section === s).map((p) => (
               <li key={p.n} className="flex">
-                <a href={`/rule/${p.n}`} aria-current={p.n === current ? 'page' : undefined}
-                  className={'-mx-2 flex min-w-0 flex-1 items-baseline gap-2 rounded-chip px-2 py-1 text-sm hover:bg-sunken active:bg-line ' + (p.n === current ? 'bg-sunken font-medium text-ink' : EXAMPLES[p.n] ? 'text-ink' : 'text-ink-muted')}>
+                <a href={`/rule/${p.n}`} aria-current={p.n === current ? 'page' : undefined} ref={p.n === current ? intoView : undefined}
+                  className={'-mx-2 flex min-w-0 flex-1 items-baseline gap-2 rounded-chip px-2 py-1 text-sm hover:bg-sunken active:bg-line ' + RING + ' ' + (p.n === current ? 'bg-sunken font-medium text-ink' : EXAMPLES[p.n] ? 'text-ink' : 'text-ink-muted')}>
                   <span className="w-5 shrink-0 text-right text-ink-muted tabular-nums">{p.n}</span>
                   <span className="truncate" title={p.title}>{p.title}</span>
                 </a>

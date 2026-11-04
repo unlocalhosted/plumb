@@ -97,6 +97,9 @@ body { background: var(--color-canvas); color: var(--color-ink); font-family: va
 @theme {
   --animate-toast: toast-in 200ms var(--ease-arrive);
   --animate-pulse: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  /* something arriving: rises 4px into place as it fades in */
+  --animate-rise: rise 320ms var(--ease-arrive) both;
+  @keyframes rise { from { opacity: 0; transform: translateY(4px); } }
   @keyframes pulse { 50% { opacity: 0.5; } }
   --animate-toast-zero: toast-in-zero 200ms var(--ease-arrive);
   @keyframes toast-in { from { opacity: 0; transform: scale(0.95); } }
