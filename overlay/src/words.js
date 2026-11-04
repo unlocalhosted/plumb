@@ -268,7 +268,7 @@ export const CRAFT = {
   }),
   overshoot: ({ rd, sq }) => ({
     label: 'Round icon looks smaller',
-    line: `The round icon is ${px(rd)}, the square ones ${px(sq)}. Make it a bit bigger.`,
+    line: Math.abs(rd - sq) <= 0.5 ? `The round icons are drawn the same ${px(sq)} as the square ones, so they read smaller.` : `The round icon is ${px(rd)}, the square ones ${px(sq)}. Make it a bit bigger.`,
     reason: 'A circle covers less than a square of the same width, so it reads smaller.',
   }),
   'stroke-weight': ({ w, usual, big }) => ({

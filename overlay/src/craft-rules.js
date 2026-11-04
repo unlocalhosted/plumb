@@ -1626,8 +1626,9 @@ export const overshoot = {
     return [{
       ...say(this.id, { rd, sq }),
       key: this.id, text: 'svg', props: ['width', 'height'], value: fmt(rd), n: rd / sq,
-      // as big as the squares but not over them is the grey band: stroke icons' ink is a soft measure
-      evidence: { round: Math.round(rd * 10) / 10, square: Math.round(sq * 10) / 10 }, confidence: rd >= sq ? GREY : 0.8,
+      // drawn the same size as the squares is the mistake itself (the natural one: one box for every logo), and filled
+      // shapes are measured exactly, so it is sure; only a round one already a little larger, short of the overshoot, is grey
+      evidence: { round: Math.round(rd * 10) / 10, square: Math.round(sq * 10) / 10 }, confidence: rd > sq + 0.5 ? GREY : 0.8,
       // the scale that brings the smallest round one to the squares' size and the overshoot past it
       suggest: ((at, k) => (at.length && at.every((i) => i > 0)
         ? { kind: 'class', from: '', to: `[&>svg:is(${at.map((i) => `:nth-child(${i})`).join(',')})]:scale-[${k}]`, target: at.map((i) => `:scope > svg:nth-child(${i})`).join(', '), why: 'round drawn a touch larger', sets: { scale: String(k) },
