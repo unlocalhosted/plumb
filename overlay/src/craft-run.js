@@ -10,6 +10,7 @@
  *    text, value, confidence, evidence, file, line, column, component, tag, count }] }
  *
  *  dedupe  rows of a list share one site: one finding per rule, text and source site, `count` says how many elements
+ *  hidden  read without drawing: the overlay's blueprint stays out of sight while it reads (a page asking for itself)
  *  scope   a CSS selector: only that element and what's inside it is read, as an Alt+click reads one element, so a
  *          census rule counts that subtree alone; nothing matching it is an error, never a silent whole-page read
  *
@@ -148,7 +149,7 @@ async function greyPass() {
   return out.slice(0, 12);
 }
 
-export async function craftRun(overlay, { timeout = 60000, quiet = 600, op, grey = false, scope = null, ...rest } = {}) {
+export async function craftRun(overlay, { timeout = 60000, quiet = 600, op, grey = false, scope = null, hidden = false, ...rest } = {}) {
   if (op) return operate({ op, ...rest });
   resetKeys();
   await prepareSources();
@@ -157,6 +158,8 @@ export async function craftRun(overlay, { timeout = 60000, quiet = 600, op, grey
   const within = scope ? document.querySelector(scope) : null;
   if (scope && !within) throw new Error(`Nothing on this page matches the scope ${scope}.`);
   const was = blueprint.active;
+  const host = hidden ? document.querySelector('plumb-overlay') : null, shown = host?.style.visibility ?? '';
+  if (host) host.style.visibility = 'hidden';
   const started = performance.now();
   let complete = true;
   try {
@@ -201,5 +204,6 @@ export async function craftRun(overlay, { timeout = 60000, quiet = 600, op, grey
   } finally {
     if (!was || within) blueprint.leave({ instant: true });
     if (was && within) blueprint.enter({ instant: true });
+    if (host) host.style.visibility = shown;
   }
 }

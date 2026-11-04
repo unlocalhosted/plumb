@@ -1,48 +1,104 @@
-// One principle, one example (docs/craft/showcase.md): /rule/16 is principle #16 broken, /rule/16/fixed the same
-// example built right. The frame around the example is built to pass every rule, so the only mark the overlay can draw
-// on this screen is the example's.
+// One principle, one example (docs/craft/showcase.md), all of it plumber's: /rule/16 opens the example inside
+// plumber's blueprint, scoped to it (the rest of the screen dimmed, the example's marks and gutters drawn); the switch
+// takes plumber's own fix in place with plumber's own glide (inplace.js: swapPreview and its GLIDE), and puts it back
+// the same way. Nothing reloads; the frame around the example is built to pass every rule.
+import { useEffect, useRef, useState } from 'react';
 import { PRINCIPLES } from './catalogue.js';
 import { EXAMPLES } from './examples.jsx';
-import { useEffect, useState } from 'react';
 import { Chevron } from '../icons.jsx';
 
-// plumber, asked about the example alone: window.__plumb.craft scoped to it, as an Alt+click on it would read it
-const ask = async () => {
+const SCOPE = '[data-example]';
+const plumber = async () => {
   for (let i = 0; i < 80 && !window.__plumb?.craft; i++) await new Promise((r) => setTimeout(r, 100));
   if (!window.__plumb?.craft) throw new Error('The React Plumber overlay isn’t on this page.');
-  return (await window.__plumb.craft({ scope: '[data-example]', timeout: 30000 })).findings;
+  return window.__plumb;
 };
-// plumber's own fix, applied where it found the problem: its class swap and the values it says that class sets
-function apply(findings) {
-  const done = [];
-  for (const f of findings) {
-    const s = f.suggest;
-    if (s?.kind !== 'class') continue;
-    const els = [...document.querySelectorAll('[data-example] [data-plumb-source]')].filter((e) => e.getAttribute('data-plumb-source').startsWith(`${f.file}:${f.line}:${f.column}#`));
-    for (const e of els) {
-      if (s.from) e.classList.remove(...s.from.split(/\s+/));
-      e.classList.add(...s.to.split(/\s+/));
-      Object.assign(e.style, s.sets ?? {});
-    }
-    if (els.length) done.push({ rule: f.rule, from: s.from, to: s.to, tag: f.tag, count: els.length });
-  }
-  return done;
-}
-// broken: what plumber finds. fixed: what it found, its fix applied, and what it finds when asked again.
-function usePlumber(fixed) {
+// plumber's own in-place primitives, as the overlay serves them
+const INPLACE = '/__plumb/src/inplace.js'; // served by the overlay at runtime, not bundled with the app
+const inplace = () => import(/* @vite-ignore */ INPLACE);
+// what plumber finds in the example, read without drawing (the blueprint then draws it, scoped)
+const ask = async () => (await (await plumber()).craft({ scope: SCOPE, timeout: 30000, hidden: true })).findings;
+const sitesOf = (f) => [...document.querySelectorAll(`${SCOPE} [data-plumb-source]`)].filter((e) => e.getAttribute('data-plumb-source').startsWith(`${f.file}:${f.line}:${f.column}#`));
+const kebab = (o = {}) => Object.fromEntries(Object.entries(o).map(([k, v]) => [k.replace(/[A-Z]/g, (c) => '-' + c.toLowerCase()), v]));
+
+// The example's life: plumber reads it, the blueprint opens on it, and the switch takes plumber's fix or gives it back.
+function usePlumber() {
   const [state, setState] = useState({ phase: 'asking' });
+  const taken = useRef([]);
   useEffect(() => {
     let live = true;
     (async () => {
       const found = await ask();
-      if (!fixed) { if (live) setState({ phase: 'done', found }); return; }
-      const applied = apply(found);
-      const after = await ask();
-      if (live) setState({ phase: 'done', found, applied, after });
+      if (live) setState({ phase: 'broken', found });
     })().catch((e) => live && setState({ phase: 'error', error: e.message }));
     return () => { live = false; };
-  }, [fixed]);
-  return state;
+  }, []);
+  const fix = async () => {
+    const { swapPreview, GLIDE } = await inplace();
+    taken.current = [];
+    for (const f of state.found) {
+      if (f.suggest?.kind !== 'class') continue;
+      for (const el of sitesOf(f)) {
+        const memo = {};
+        swapPreview(el, { from: f.suggest.from, to: f.suggest.to }, true, memo, kebab(f.suggest.sets));
+        taken.current.push({ el, memo });
+      }
+    }
+    setState((s) => ({ ...s, phase: 'fixing' }));
+    await new Promise((r) => setTimeout(r, GLIDE.ms + 120));
+    const after = await ask();
+    setState((s) => ({ ...s, phase: 'fixed', after, applied: taken.current.length }));
+  };
+  const undo = async () => {
+    const { swapPreview } = await inplace();
+    for (const { el, memo } of taken.current) swapPreview(el, null, false, memo);
+    taken.current = [];
+    setState((s) => ({ ...s, phase: 'broken', after: null }));
+  };
+  return { state, fix, undo };
+}
+
+// The finding on the page, as the reference demo draws it: the elements plumber named lit, the rest of the example
+// faded back, and a bracket with a pill carrying plumber's own value. Red as found; once plumber's fix is in, blue with
+// a check and the value its fix sets. It follows the elements while they glide, and sits outside the example, so
+// plumber never reads it.
+function Annotations({ state, stage }) {
+  const [boxes, setBoxes] = useState([]);
+  const fixed = state.phase === 'fixing' || state.phase === 'fixed';
+  useEffect(() => {
+    if (!stage.current || !state.found) return undefined;
+    let frame = 0, until = performance.now() + 900;
+    const measure = () => {
+      const s = stage.current.getBoundingClientRect();
+      setBoxes(state.found.map((f) => {
+        const rs = sitesOf(f).map((e) => e.getBoundingClientRect());
+        if (!rs.length) return null;
+        const x = Math.min(...rs.map((r) => r.left)) - s.left, y = Math.min(...rs.map((r) => r.top)) - s.top;
+        const w = Math.max(...rs.map((r) => r.right)) - s.left - x, h = Math.max(...rs.map((r) => r.bottom)) - s.top - y;
+        const was = `${f.text}: ${f.value}`, now = f.suggest?.kind === 'class' ? f.suggest.to : f.suggest?.text ?? f.action;
+        return { key: f.rule + f.line, x, y, w, h, was, now };
+      }).filter(Boolean));
+      if (performance.now() < until) frame = requestAnimationFrame(measure);
+    };
+    measure();
+    addEventListener('resize', measure);
+    return () => { cancelAnimationFrame(frame); removeEventListener('resize', measure); };
+  }, [state.phase, state.found, stage]);
+  const pad = 6;
+  return (
+    <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden rounded-sheet">
+      {boxes.map((b) => (
+        <div key={b.key}>
+          {/* the spotlight: everything but the named elements fades back */}
+          <div className="absolute rounded-control transition-[box-shadow] duration-300" style={{ left: b.x - pad, top: b.y - pad, width: b.w + pad * 2, height: b.h + pad * 2, boxShadow: `0 0 0 9999px color-mix(in oklch, var(--color-sunken) ${fixed ? 70 : 0}%, transparent)` }} />
+          {/* the bracket: the measured span, ticked at both ends */}
+          <div className={'absolute border-y-2 transition-colors duration-300 ' + (fixed ? 'border-accent' : 'border-negative')} style={{ left: b.x + b.w + pad + 4, top: b.y, width: 6, height: b.h, borderRightWidth: 2, borderRightStyle: 'solid' }} />
+          <span className={'absolute flex items-center gap-1 rounded-chip px-1.5 py-0.5 font-mono text-[11px] whitespace-nowrap text-accent-ink transition-colors duration-300 ' + (fixed ? 'bg-accent' : 'bg-negative')}
+            style={{ left: b.x + b.w + pad + 14, top: b.y + b.h / 2 - 10 }}>{fixed ? <>{b.now} ✓</> : b.was}</span>
+        </div>
+      ))}
+    </div>
+  );
 }
 
 const Finding = ({ f }) => (
@@ -54,60 +110,61 @@ const Finding = ({ f }) => (
   </li>
 );
 
-// what plumber said about this example, in its own words
-function Said({ state, fixed }) {
+// what plumber says, in its own words: what it found, and once its fix is in, what it finds when asked again
+function Said({ state }) {
   if (state.phase === 'asking') return <p className="text-sm text-ink-muted">Asking plumber about this example…</p>;
   if (state.phase === 'error') return <p className="text-sm text-negative">{state.error}</p>;
   const list = (fs, none) => (fs.length ? <ul className="flex flex-col gap-4">{fs.map((f, i) => <Finding key={i} f={f} />)}</ul> : <p className="text-sm text-ink-muted">{none}</p>);
-  if (!fixed) return <div className="flex flex-col gap-3"><h2 className="text-base font-semibold">What plumber finds</h2>{list(state.found, 'Nothing. plumber has no finding on this example.')}</div>;
+  if (state.phase !== 'fixed') return <div className="flex flex-col gap-3"><h2 className="text-base font-semibold">What plumber finds</h2>{list(state.found, 'Nothing. plumber has no finding on this example.')}</div>;
   return (
     <div className="flex flex-col gap-3">
-      <h2 className="text-base font-semibold">plumber’s fix, applied</h2>
-      {state.applied.length
-        ? <ul className="flex flex-col gap-1 text-sm">{state.applied.map((a, i) => <li key={i}><code className="rounded-chip bg-sunken px-1 text-xs">{a.from ? `${a.from} → ` : '+ '}{a.to}</code> on {a.count} {a.tag}</li>)}</ul>
-        : <p className="text-sm text-ink-muted">plumber gave no fix it can apply here{state.found.length ? ', only advice:' : '.'}</p>}
-      {!state.applied.length && state.found.length ? list(state.found, '') : null}
-      <h2 className="text-base font-semibold">Asked again</h2>
+      <h2 className="text-base font-semibold">Asked again, with its fix in</h2>
+      {state.applied ? null : <p className="text-sm text-ink-muted">plumber gave advice here, not a fix it can apply.</p>}
       {list(state.after, 'Nothing. plumber is satisfied with its own fix.')}
     </div>
   );
 }
 
 const FOUND = {
-  live: 'The overlay marks it where it is: press Alt+B.',
   probe: 'plumber craft finds it by using the page: pressing, hovering, dragging, or reading it dark, on touch or on a slow reply.',
   habit: 'plumber finds it in the source: run plumber check in the project.',
 };
 
 const step = 'grid size-9 place-items-center rounded-control text-ink-muted hover:bg-sunken active:bg-line';
 
-export function Principle({ n, broken }) {
+export function Principle({ n }) {
   const p = PRINCIPLES.find((x) => x.n === n);
   const Example = EXAMPLES[n];
-  const state = usePlumber(!broken);
-  const at = (k, fixed) => `/rule/${k}${fixed ? '/fixed' : ''}`;
+  const { state, fix, undo } = usePlumber();
+  const stage = useRef(null);
   const prev = n > 1 ? n - 1 : null, next = n < PRINCIPLES.length ? n + 1 : null;
-  const tab = (on) => 'inline-flex h-8 items-center rounded-[6px] px-3 text-sm ' + (on ? 'bg-surface font-medium text-ink shadow-raised' : 'text-ink-muted');
+  const fixed = state.phase === 'fixing' || state.phase === 'fixed', ready = state.phase === 'broken' || state.phase === 'fixed';
+  const tab = (on) => 'inline-flex h-8 items-center rounded-[6px] px-3 text-sm disabled:text-ink-subtle ' + (on ? 'bg-surface font-medium text-ink shadow-raised' : 'text-ink-muted');
   return (
     <main className="mx-auto flex max-w-2xl flex-col gap-6 px-4 py-6">
       <nav aria-label="Principles" className="flex items-center gap-2 text-sm text-ink-muted">
         <a href="/" className="rounded-chip px-2 py-1 hover:bg-sunken active:bg-line md:hidden">All principles</a>
         <span className="min-w-0 flex-1 truncate" title={p.section}>{p.section} · {n} of {PRINCIPLES.length}</span>
-        {prev ? <a href={at(prev, !broken)} aria-label={'Principle ' + prev} className={step}><Chevron className="rotate-180" /></a> : null}
-        {next ? <a href={at(next, !broken)} aria-label={'Principle ' + next} className={step}><Chevron /></a> : null}
+        {prev ? <a href={`/rule/${prev}`} aria-label={'Principle ' + prev} className={step}><Chevron className="rotate-180" /></a> : null}
+        {next ? <a href={`/rule/${next}`} aria-label={'Principle ' + next} className={step}><Chevron /></a> : null}
       </nav>
       <header className="flex flex-col gap-2">
         <h1 className="text-2xl font-semibold tracking-tight text-balance">{p.title}</h1>
         <p className="max-w-measure text-sm text-ink-muted text-pretty">{p.why}</p>
       </header>
-      <nav aria-label="Example" className="flex items-center gap-0.5 self-start rounded-control bg-sunken p-0.5">
-        <a href={at(n, false)} aria-current={broken ? 'page' : undefined} className={tab(broken)}>Broken</a>
-        <a href={at(n, true)} aria-current={broken ? undefined : 'page'} className={tab(!broken)}>Fixed by plumber</a>
-      </nav>
-      <section data-example aria-label="Example" className="rounded-sheet corner-squircle bg-sunken px-4 pt-5 pb-6">
-        {Example ? <Example broken /> : <p className="text-sm text-ink-muted">This example isn’t built yet.</p>}
-      </section>
-      {Example && p.how === 'live' ? <Said state={state} fixed={!broken} /> : <p className="text-sm text-ink-muted">{FOUND[p.how]}</p>}
+      {Example && p.how === 'live' ? (
+        <div role="group" aria-label="Example" className="flex items-center gap-0.5 self-start rounded-control bg-sunken p-0.5">
+          <button type="button" aria-pressed={!fixed} disabled={!ready} onClick={() => fixed && undo()} className={tab(!fixed)}>Broken</button>
+          <button type="button" aria-pressed={fixed} disabled={!ready} onClick={() => !fixed && fix()} className={tab(fixed)}>Fixed by plumber</button>
+        </div>
+      ) : null}
+      <div ref={stage} className="relative">
+        <section data-example aria-label="Example" className="rounded-sheet corner-squircle bg-sunken px-4 pt-5 pb-6">
+          {Example ? <Example broken /> : <p className="text-sm text-ink-muted">This example isn’t built yet.</p>}
+        </section>
+        {Example && state.found ? <Annotations state={state} stage={stage} /> : null}
+      </div>
+      {Example && p.how === 'live' ? <Said state={state} /> : <p className="text-sm text-ink-muted">{FOUND[p.how] ?? ''}</p>}
     </main>
   );
 }

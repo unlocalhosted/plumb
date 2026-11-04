@@ -1,6 +1,6 @@
 // Quarry: the craft showcase (docs/craft/showcase.md).
 //   /                 the 77 principles, each opening one example
-//   /rule/16          principle #16's example, broken; /rule/16/fixed the same example built right
+//   /rule/16          principle #16: its example, and plumber's fix taken in place with the switch
 //   /all, /all/fixed  the whole workspace with every mistake at once
 // Each mode loads its own sheet of source habits (broken.css or fixed.css).
 import { createRoot } from 'react-dom/client';
@@ -14,5 +14,5 @@ const all = path.match(/^\/all(\/fixed)?$/);
 const broken = rule ? !rule[2] : all ? !all[1] : true;
 await (broken ? import('./broken.css') : import('./fixed.css'));
 createRoot(document.getElementById('root')).render(
-  rule ? <Layout current={Number(rule[1])}><Principle n={Number(rule[1])} broken={broken} /></Layout> : all ? <Shell broken={broken} /> : <Index />,
+  rule ? <Layout current={Number(rule[1])}><Principle n={Number(rule[1])} /></Layout> : all ? <Shell broken={broken} /> : <Index />,
 );
