@@ -12,6 +12,9 @@ import lake from '../media/lake.jpg';
 import valley from '../media/valley.jpg';
 import peak from '../media/peak.jpg';
 import ceramic from '../media/ceramic.jpg';
+import nadia from '../media/people/person-05.jpg';
+import { Plate } from './world/plate.jsx';
+import { Relay } from './world/relay.jsx';
 
 // one canvas for reading font metrics, shared by the measures below
 let ctx;
@@ -26,12 +29,14 @@ let ctx;
  *   paused    by its own button, or frozen by the stage for plumber's look
  * ───────────────────────────────────────────────────────── */
 const TIMER = { every: 1000, startedAgo: 6157, rate: 145, task: 'Moodboard review', job: 'Marlow Joinery · Showroom launch' };
+// each client keeps one colour everywhere in Quarry: the sidebar's dot, its blocks on the day, its entries' bar
 const EARLIER = [
-  { task: 'Wireframes, checkout', client: 'Brightwater Vets', seconds: 7578, rate: 130 },
-  { task: 'Logo exploration', client: 'Halden & Co.', seconds: 4300, rate: 145 },
-  { task: 'Kickoff call', client: 'Northfield Dental', seconds: 2885, rate: 120 },
-  { task: 'Invoice review', client: 'Okafor Landscape', seconds: 1192, rate: 95 },
+  { task: 'Wireframes, checkout', client: 'Brightwater Vets', seconds: 7578, rate: 130, span: '8:54 – 11:00', color: '#3a9d8f', at: [0.09, 0.21] },
+  { task: 'Logo exploration', client: 'Halden & Co.', seconds: 4300, rate: 145, span: '11:06 – 12:17', color: '#c8a23a', at: [0.31, 0.118] },
+  { task: 'Kickoff call', client: 'Northfield Dental', seconds: 2885, rate: 120, span: '12:36 – 13:24', color: '#5d83d6', at: [0.46, 0.08] },
+  { task: 'Invoice review', client: 'Okafor Landscape', seconds: 1192, rate: 95, span: '13:30 – 13:50', color: '#9a6fd0', at: [0.55, 0.033] },
 ];
+const RUNNING = { client: 'Marlow Joinery', mark: 'MJ', color: '#e2725b', at: 0.6 };
 const clock = (t) => `${Math.floor(t / 3600)}:${String(Math.floor(t / 60) % 60).padStart(2, '0')}:${String(t % 60).padStart(2, '0')}`;
 const dollars = (n) => '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const earned = (seconds, rate) => (seconds / 3600) * rate;
@@ -48,63 +53,99 @@ function useTimer(live) {
 
 // every figure on the card, set in one place
 const Fig = ({ col, className = '', children }) => <span data-fig data-col={col} className={className}>{children}</span>;
+// Quarry's Today, in its window (the comp: docs/design/prototypes/pilots/16-quarry.html): the sidebar of today's
+// clients, the week, the running timer, the day drawn as blocks, today's entries, the total against the day's goal.
+const hm = (t) => `${Math.floor(t / 3600)}:${String(Math.floor(t / 60) % 60).padStart(2, '0')}`;
 function Timesheet({ live = true }) {
   const { t, paused, toggle } = useTimer(live);
   const total = EARLIER.reduce((a, e) => a + e.seconds, 0) + t;
   const totalEarned = EARLIER.reduce((a, e) => a + earned(e.seconds, e.rate), 0) + earned(t, TIMER.rate);
-  // Quarry's Slate primitives only: the card, the type ramp (figure, title, body, meta, label), one brand colour
+  const goal = 7 * 3600, nav = 'flex h-7.5 items-center gap-2.5 rounded-control px-2 text-[13px]';
   return (
-    <article className="w-full max-w-[30rem] rounded-card bg-surface shadow-card">
-      <header className="flex flex-col gap-5 p-6">
-        <span className="flex items-center gap-2 text-xs font-medium text-ink-muted">
-          <span className={'size-1.5 rounded-full ' + (paused ? 'bg-ink-subtle' : 'bg-positive')} />
-          {paused ? 'Paused' : 'Tracking'}
-        </span>
-        <span className="flex min-w-0 flex-col">
-          <span className="truncate text-[17px] leading-6 font-medium tracking-[-0.01em]">{TIMER.task}</span>
-          <span className="truncate text-[13px] text-ink-muted">{TIMER.job}</span>
-        </span>
-        <span className="flex flex-col gap-2">
-          {/* the control sits on what it controls: centred on the clock */}
-          <span className="flex items-center justify-between gap-6">
-            <Fig col="clock" className="text-[48px] leading-none font-medium tracking-[-0.025em]">{clock(t)}</Fig>
-            <button type="button" onClick={toggle} aria-label={paused ? 'Resume timer' : 'Pause timer'}
-              className="grid size-10 shrink-0 place-items-center rounded-full bg-accent text-accent-ink transition-[background-color,scale] duration-150 hover:bg-accent-deep active:scale-95 outline-offset-2 focus-visible:outline-2 focus-visible:outline-accent">
-              {paused
-                ? <svg viewBox="0 0 16 16" className="size-3.5 translate-x-px" fill="currentColor" aria-hidden="true"><path d="M4 2.8v10.4a.8.8 0 0 0 1.2.7l8.6-5.2a.8.8 0 0 0 0-1.4L5.2 2.1a.8.8 0 0 0-1.2.7" /></svg>
-                : <svg viewBox="0 0 16 16" className="size-3.5" fill="currentColor" aria-hidden="true"><rect x="3.5" y="2.5" width="3" height="11" rx="1" /><rect x="9.5" y="2.5" width="3" height="11" rx="1" /></svg>}
+    <article className="grid h-[38rem] w-[58rem] grid-cols-[13rem_1fr] overflow-hidden rounded-[12px] bg-surface shadow-window ring-[0.5px] ring-ink/20">
+      <aside className="flex flex-col gap-0.5 border-r-hairline border-line bg-[#f7f8fa] px-2.5 py-3">
+        <span className="flex gap-[7px] px-1.5 pt-1 pb-3.5">{[0, 1, 2].map((i) => <i key={i} className="size-[11px] rounded-full bg-[#d9dde3]" />)}</span>
+        <span className="flex items-center gap-2 px-2 pb-3 text-sm font-semibold tracking-[-0.01em]"><span className="grid size-[22px] place-items-center rounded-[6px] bg-accent text-xs text-accent-ink">Q</span>Quarry</span>
+        <span className={nav + ' bg-ink/6 font-medium'}><HistoryIcon size={15} texture="dither" />Today</span>
+        <span className={nav + ' text-ink-muted'}><LayersIcon size={15} texture="dither" />This week<span className="ml-auto text-xs text-ink-subtle">31h</span></span>
+        <span className={nav + ' text-ink-muted'}><ChartIcon size={15} texture="dither" />Reports</span>
+        <span className={nav + ' text-ink-muted'}><FileIcon size={15} texture="dither" />Invoices<span className="ml-auto text-xs text-ink-subtle">2</span></span>
+        <span className="mx-2 mt-4 mb-1.5 text-[11px] font-medium text-ink-subtle">Clients today</span>
+        {[{ client: RUNNING.client, color: RUNNING.color, seconds: t, live: true }, ...EARLIER].map((c) => (
+          <span key={c.client} className={nav}>
+            <i className="size-2 rounded-[2.5px]" style={{ background: c.color }} />{c.client}
+            <span className={'ml-auto text-xs ' + (c.live ? 'font-medium text-accent-deep' : 'text-ink-subtle')}>{hm(c.seconds)}</span>
+          </span>
+        ))}
+        <span className="mt-auto flex items-center gap-2.5 p-2"><img src={nadia} alt="" className="size-[26px] rounded-full" /><span className="flex flex-col text-[12.5px] leading-4">Nadia Ferreira<small className="text-[11.5px] text-ink-subtle">Studio Ferreira</small></span></span>
+      </aside>
+      <main className="flex min-w-0 flex-col">
+        <header className="flex h-[54px] items-center gap-3.5 border-b-hairline border-line px-5.5">
+          <span className="flex items-baseline gap-3.5"><span className="text-[15px] font-semibold tracking-[-0.01em]">Today</span><span className="text-[13px] text-ink-subtle">Thursday, 6 November</span></span>
+          <span className="ml-4 flex gap-0.5">
+            {[['Mon', '7:12'], ['Tue', '6:48'], ['Wed', '7:30'], ['Thu', hm(total)], ['Fri', '–']].map(([d, h]) => (
+              <span key={d} className={'flex w-11 flex-col items-center rounded-[7px] py-1 text-[11px] ' + (d === 'Thu' ? 'bg-accent-soft text-accent-deep' : 'text-ink-subtle')}>
+                <b className={'text-xs font-medium ' + (d === 'Thu' ? 'text-accent-deep' : 'text-ink-muted')}>{d}</b>{h}
+              </span>
+            ))}
+          </span>
+          <span className="ml-auto inline-flex h-[30px] items-center gap-1.5 rounded-[7px] px-3 text-[13px] font-medium ring-1 ring-line ring-inset"><PlusIcon size={13} texture="solid" />New entry</span>
+        </header>
+        {/* the running timer: the one thing that moves */}
+        <section className="mx-5.5 mt-4 grid grid-cols-[auto_1fr_auto] items-center gap-4 rounded-[12px] bg-accent-soft/70 px-4.5 py-4 ring-1 ring-accent/15 ring-inset">
+          <span className="grid size-[42px] place-items-center rounded-[10px] text-[13px] font-semibold text-white" style={{ background: RUNNING.color }}>{RUNNING.mark}</span>
+          <span className="flex min-w-0 flex-col gap-0.5">
+            <span className="text-[15px] font-semibold tracking-[-0.01em]">{TIMER.task}</span>
+            <span className="text-[13px] text-ink-muted"><span className="mr-2 inline-flex items-center gap-1.5 font-medium text-accent-deep"><i className={'size-1.5 rounded-full ' + (paused ? 'bg-ink-subtle' : 'animate-pulse bg-accent')} />{paused ? 'Paused' : 'Tracking'}</span>{TIMER.job}</span>
+          </span>
+          <span className="flex items-center gap-3.5">
+            <span className="flex flex-col items-end">
+              <Fig col="clock" className="text-[34px] leading-[38px] font-medium tracking-[-0.03em]">{clock(t)}</Fig>
+              <span className="text-[12.5px] text-ink-muted"><Fig col="earned">{dollars(earned(t, TIMER.rate))}</Fig> at ${TIMER.rate}/h</span>
+            </span>
+            <button type="button" onClick={toggle} aria-label={paused ? 'Resume timer' : 'Stop timer'} className="grid size-[42px] place-items-center rounded-full bg-ink text-surface shadow-raised hover:bg-ink/85 active:scale-95">
+              {paused ? <svg viewBox="0 0 16 16" className="size-3.5 translate-x-px" fill="currentColor" aria-hidden="true"><path d="M4 2.8v10.4a.8.8 0 0 0 1.2.7l8.6-5.2a.8.8 0 0 0 0-1.4L5.2 2.1a.8.8 0 0 0-1.2.7" /></svg> : <i className="size-3 rounded-[2.5px] bg-surface" />}
             </button>
           </span>
-          <span className="text-[13px] text-ink-muted"><Fig col="earned" className="text-ink">{dollars(earned(t, TIMER.rate))}</Fig> at ${TIMER.rate} an hour</span>
-        </span>
-      </header>
-      <section data-entries className="border-t-hairline border-line px-6 pt-4 pb-5">
-        <h3 className="text-xs font-medium text-ink-muted">Earlier today</h3>
-        <ul className="mt-1">
-          {EARLIER.map((e) => (
-            <li key={e.task} data-entry className="flex items-start gap-3 border-b-hairline border-line py-3">
-              <span className="flex min-w-0 flex-1 flex-col">
-                <span className="truncate text-sm font-medium">{e.task}</span>
-                <span className="truncate text-[13px] text-ink-muted">{e.client}</span>
-              </span>
-              <span className="flex flex-col items-end">
-                <Fig col="time" className="text-sm">{clock(e.seconds)}</Fig>
-                <Fig col="money" className="text-[13px] text-ink-muted">{dollars(earned(e.seconds, e.rate))}</Fig>
-              </span>
-            </li>
-          ))}
-        </ul>
-        <div data-total className="flex items-baseline justify-between gap-3 pt-3.5">
-          <span className="text-xs font-medium text-ink-muted">Today so far</span>
-          <span className="flex flex-col items-end">
-            <Fig col="time" className="text-[17px] font-medium tracking-[-0.01em]">{clock(total)}</Fig>
-            <Fig col="money" className="text-[13px] text-ink-muted">{dollars(totalEarned)}</Fig>
+        </section>
+        {/* the day, drawn: a block per entry in its client's colour, the gaps, now */}
+        <section className="mx-5.5 mt-4.5">
+          <span className="mb-2 flex justify-between text-xs text-ink-subtle"><span>Your day</span><span>{hm(total).replace(':', 'h ')}m tracked · 1h 20m of gaps</span></span>
+          <span className="relative block h-[34px] rounded-[8px] bg-sunken">
+            {EARLIER.map((e) => <span key={e.task} className="absolute inset-y-[5px] rounded-[5px]" style={{ left: `${e.at[0] * 100}%`, width: `${e.at[1] * 100}%`, background: e.color }} />)}
+            <span className="absolute inset-y-[5px] rounded-[5px] bg-[repeating-linear-gradient(-45deg,rgb(255_255_255/0.3)_0_5px,transparent_5px_10px)]" style={{ left: `${RUNNING.at * 100}%`, width: '6.7%', backgroundColor: RUNNING.color }} />
+            <span className="absolute -inset-y-[3px] w-0.5 rounded-full bg-ink" style={{ left: '66.7%' }}><span className="absolute -top-4 left-1/2 -translate-x-1/2 bg-surface px-0.5 text-[10.5px] font-semibold">14:42</span></span>
+          </span>
+          <span className="mt-1.5 flex justify-between text-[10.5px] text-ink-subtle">{['8:00', '10:00', '12:00', '14:00', '16:00', '18:00'].map((h) => <span key={h}>{h}</span>)}</span>
+        </section>
+        <section data-entries className="mx-5.5 mt-3">
+          <ul>
+            {EARLIER.map((e) => (
+              <li key={e.task} data-entry className="grid h-[50px] grid-cols-[4px_1fr_auto_5rem] items-center gap-3.5 border-b-hairline border-line">
+                <span className="h-[26px] w-1 rounded-full" style={{ background: e.color }} />
+                <span className="flex min-w-0 flex-col"><span className="truncate text-[13.5px] font-medium">{e.task}</span><span className="truncate text-[12.5px] text-ink-muted">{e.client}</span></span>
+                <span className="text-[12.5px] text-ink-subtle tabular-nums">{e.span}</span>
+                <span className="flex flex-col items-end">
+                  <Fig col="time" className="text-[13.5px] font-medium">{clock(e.seconds)}</Fig>
+                  <Fig col="money" className="text-xs text-ink-subtle">{dollars(earned(e.seconds, e.rate))}</Fig>
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+        <div data-total className="mx-5.5 mt-auto flex items-center gap-3.5 border-t-hairline border-line pt-3.5 pb-4.5">
+          <svg viewBox="0 0 34 34" className="size-[34px]" aria-hidden="true"><circle cx="17" cy="17" r="14" fill="none" stroke="#e7eaf0" strokeWidth="4" /><circle cx="17" cy="17" r="14" fill="none" stroke="var(--color-accent)" strokeWidth="4" strokeLinecap="round" strokeDasharray="88" strokeDashoffset={88 * (1 - Math.min(1, total / goal))} transform="rotate(-90 17 17)" /></svg>
+          <span className="flex flex-col"><span className="text-[13px] font-medium">{hm(total).replace(':', 'h ')}m of 7h</span><span className="text-xs text-ink-subtle">{Math.max(0, Math.round((goal - total) / 60))} minutes to today’s goal</span></span>
+          <span className="ml-auto flex flex-col items-end">
+            <Fig col="total" className="text-xl font-medium tracking-[-0.02em]">{clock(total)}</Fig>
+            <span className="text-[12.5px] text-ink-muted"><Fig col="money">{dollars(totalEarned)}</Fig> today</span>
           </span>
         </div>
-      </section>
+      </main>
     </article>
   );
 }
+Timesheet.wide = true;
 Timesheet.stage = true;
 Timesheet.names = ['Proportional', 'Tabular'];
 Timesheet.lesson = {
@@ -2122,5 +2163,5 @@ SprintBoard.measure = (root) => {
   };
 };
 
-export const EXAMPLES = { 8: RecentlyPlayed, 1: ClientProfile, 2: InvoiceWalkthrough, 3: Whiteboard, 4: DriveActivity, 5: ChatThread, 6: FitnessToday, 15: IssueTable, 16: Timesheet, 18: NewsFront, 45: LongRead, 46: BoardingPass, 21: Recipe, 25: FeatureCard, 20: SprintBoard, 37: ReadersChart, 38: Agenda, 39: GlazeBoard, 40: Widgets, 42: ProjectTabs, 50: NoNotes, 63: InsertMenu, 73: Handbook, 68: EventPreview, 74: Projects, 75: ShareAccess, 57: Inbox, 59: LayerMenu, 23: ShareMenu, 51: DeleteDialog, 55: Forecast, 56: Destination };
+export const EXAMPLES = { 8: RecentlyPlayed, 1: ClientProfile, 2: InvoiceWalkthrough, 3: Whiteboard, 4: DriveActivity, 5: ChatThread, 6: FitnessToday, 15: IssueTable, 16: Timesheet, 18: NewsFront, 45: LongRead, 46: BoardingPass, 21: Recipe, 25: FeatureCard, 20: SprintBoard, 37: ReadersChart, 38: Agenda, 39: GlazeBoard, 40: Widgets, 42: ProjectTabs, 50: NoNotes, 63: InsertMenu, 73: Handbook, 68: EventPreview, 74: Projects, 75: ShareAccess, 57: Relay ?? Inbox, 59: Plate ?? LayerMenu, 23: ShareMenu, 51: DeleteDialog, 55: Forecast, 56: Destination };
 

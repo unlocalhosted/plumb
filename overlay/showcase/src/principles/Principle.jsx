@@ -435,7 +435,8 @@ export function Principle({ n }) {
       </header>
       <main ref={main} className="@container flex flex-1 flex-col items-center gap-12 px-4 pb-16">
         {staged ? (
-        <div className="flex min-h-[calc(100dvh-4.5rem)] w-full max-w-3xl flex-col items-center justify-center gap-10 pt-6 pb-10">
+        <div className={'flex min-h-[calc(100dvh-4.5rem)] w-full flex-col items-center justify-center gap-10 pt-6 pb-10 ' + (Example?.wide ? 'max-w-[60rem]' : 'max-w-3xl')}>
+          {/* an example shown in its whole app (a window, Example.wide) takes the wider column */}
           {/* the camera: the example and its marks move together; nothing clips it but the page */}
           {/* the camera's frame: while the moment runs, its bottom edge sits just above the switch (the sides and top
               run off the window); at rest nothing is clipped, so the component keeps its shadow */}
