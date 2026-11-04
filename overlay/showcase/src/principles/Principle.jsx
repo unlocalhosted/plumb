@@ -62,8 +62,9 @@ function usePlumber() {
 // faded back, and a bracket with a pill carrying plumber's own value. Red as found; once plumber's fix is in, blue with
 // a check and the value its fix sets. It follows the elements while they glide, and sits outside the example, so
 // plumber never reads it.
-function Annotations({ state, stage }) {
+function Annotations({ state, stage, measureOf }) {
   const [boxes, setBoxes] = useState([]);
+  const [seen, setSeen] = useState(null);
   const fixed = state.phase === 'fixing' || state.phase === 'fixed';
   useEffect(() => {
     if (!stage.current || !state.found) return undefined;
@@ -78,6 +79,9 @@ function Annotations({ state, stage }) {
         const was = `${f.text}: ${f.value}`, now = f.suggest?.kind === 'class' ? f.suggest.to : f.suggest?.text ?? f.action;
         return { key: f.rule + f.line, x, y, w, h, was, now };
       }).filter(Boolean));
+      // the example's own view of the harm, when it has one (where the eye sees the problem), in the stage's frame
+      const m = measureOf?.(document.querySelector(SCOPE));
+      setSeen(m ? { ...m, ticks: m.ticks.map((t) => ({ x: t.x - s.left, top: t.top - s.top, bottom: t.bottom - s.top })) } : null);
       if (performance.now() < until) frame = requestAnimationFrame(measure);
     };
     measure();
@@ -86,16 +90,21 @@ function Annotations({ state, stage }) {
   }, [state.phase, state.found, stage]);
   const pad = 6;
   return (
-    <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden rounded-sheet">
+    <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden rounded-sheet corner-squircle">
       {boxes.map((b) => (
         <div key={b.key}>
           {/* the spotlight: everything but the named elements fades back */}
-          <div className="absolute rounded-control transition-[box-shadow] duration-300" style={{ left: b.x - pad, top: b.y - pad, width: b.w + pad * 2, height: b.h + pad * 2, boxShadow: `0 0 0 9999px color-mix(in oklch, var(--color-sunken) ${fixed ? 70 : 0}%, transparent)` }} />
+          <div className="absolute rounded-control transition-[box-shadow] duration-300" style={{ left: b.x - pad, top: b.y - pad, width: b.w + pad * 2, height: b.h + pad * 2, boxShadow: `0 0 0 9999px color-mix(in oklch, var(--color-surface) ${fixed ? 72 : 0}%, transparent)` }} />
           {/* the bracket: the measured span, ticked at both ends */}
           <div className={'absolute border-y-2 transition-colors duration-300 ' + (fixed ? 'border-accent' : 'border-negative')} style={{ left: b.x + b.w + pad + 4, top: b.y, width: 6, height: b.h, borderRightWidth: 2, borderRightStyle: 'solid' }} />
           <span className={'absolute flex items-center gap-1 rounded-chip px-1.5 py-0.5 font-mono text-[11px] whitespace-nowrap text-accent-ink transition-colors duration-300 ' + (fixed ? 'bg-accent' : 'bg-negative')}
-            style={{ left: b.x + b.w + pad + 14, top: b.y + b.h / 2 - 10 }}>{fixed ? <>{b.now} ✓</> : b.was}</span>
+            style={{ left: b.x + b.w + pad + 10, top: b.y - 30, transform: 'translateX(-100%)' }}>{seen ? (fixed && !seen.off ? seen.fixed : seen.broken) : fixed ? <>{b.now} ✓</> : b.was}</span>
         </div>
+      ))}
+      {/* where the eye sees it: a tick on each place the example measures, red while they disagree, blue once they line up */}
+      {seen?.ticks.map((t, i) => (
+        <span key={i} className={'absolute w-0.5 rounded-full transition-[left,background-color] duration-300 ' + (seen.off ? 'bg-negative' : 'bg-accent')}
+          style={{ left: t.x - 1, top: t.top, height: t.bottom - t.top }} />
       ))}
     </div>
   );
@@ -159,10 +168,13 @@ export function Principle({ n }) {
         </div>
       ) : null}
       <div ref={stage} className="relative">
-        <section data-example aria-label="Example" className="rounded-sheet corner-squircle bg-sunken px-4 pt-5 pb-6">
-          {Example ? <Example broken /> : <p className="text-sm text-ink-muted">This example isn’t built yet.</p>}
-        </section>
-        {Example && state.found ? <Annotations state={state} stage={stage} /> : null}
+        {/* the board, and on it the example in its window: the window is what plumber reads */}
+        <div className="board grid place-items-center rounded-sheet corner-squircle px-4 py-8 sm:px-6 sm:py-10">
+          <section data-example aria-label="Example" className="flex w-full min-w-0 max-w-lg justify-center rounded-sheet corner-squircle border border-line bg-surface px-4 pt-4 pb-5 shadow-window sm:px-6 sm:pt-5 sm:pb-6">
+            {Example ? <Example broken /> : <p className="text-sm text-ink-muted">This example isn’t built yet.</p>}
+          </section>
+        </div>
+        {Example && state.found ? <Annotations state={state} stage={stage} measureOf={Example.measure} /> : null}
       </div>
       {Example && p.how === 'live' ? <Said state={state} /> : <p className="text-sm text-ink-muted">{FOUND[p.how] ?? ''}</p>}
     </main>

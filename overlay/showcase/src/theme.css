@@ -47,6 +47,14 @@
   --color-caution: oklch(0.6 0.13 75);
   --color-negative: oklch(0.55 0.19 25);
   --color-violet: oklch(0.47 0.2 290);
+  /* soft tints: a status's ground, quiet enough to sit in a list, with its own colour as the words on it */
+  --color-positive-soft: oklch(0.95 0.035 155);
+  --color-caution-soft: oklch(0.95 0.045 80);
+  --color-negative-soft: oklch(0.95 0.03 25);
+  --color-accent-soft: oklch(0.95 0.03 268);
+  /* the board an example is shown on: a warm, quiet grey, with a dot grid fainter than any line in the app */
+  --color-board: oklch(0.955 0.004 85);
+  --color-board-dot: oklch(0.86 0.006 85);
   --color-magenta: oklch(0.66 0.21 354);
 
   /* dark: lighter surfaces lift, not shadows */
@@ -65,6 +73,8 @@
   --shadow-raised: 0 1px 1px oklch(0.21 0.02 264 / 0.04), 0 1px 3px oklch(0.21 0.02 264 / 0.08);
   --shadow-overlay: 0 2px 4px oklch(0.21 0.02 264 / 0.04), 0 6px 16px oklch(0.21 0.02 264 / 0.1);
   --shadow-violet: 0 2px 4px oklch(0.3 0.12 290 / 0.2), 0 8px 16px oklch(0.3 0.15 290 / 0.35);
+  /* a window resting on the board: the top of the ladder, softest and widest */
+  --shadow-window: 0 1px 2px oklch(0.21 0.02 264 / 0.04), 0 8px 24px oklch(0.21 0.02 264 / 0.06), 0 24px 64px oklch(0.21 0.02 264 / 0.08);
   --shadow-popover: 0 4px 8px oklch(0.21 0.02 264 / 0.05), 0 12px 32px oklch(0.21 0.02 264 / 0.14);
 
   /* motion: one ease out, to arrive and (quicker) to leave */
@@ -105,3 +115,6 @@ body { background: var(--color-canvas); color: var(--color-ink); font-family: va
 /* capitals with digits and dashes (an invoice number): the case feature lifts the dash to their height (#46) */
 @utility case-forms { font-feature-settings: 'case'; }
 @utility divide-y-hairline { & > :not(:last-child) { border-bottom-width: 0.5px; border-bottom-style: solid; } }
+
+/* the board's dot grid (an example's stage) */
+@utility board { background-color: var(--color-board); background-image: radial-gradient(var(--color-board-dot) 1px, transparent 1px); background-size: 16px 16px; }
