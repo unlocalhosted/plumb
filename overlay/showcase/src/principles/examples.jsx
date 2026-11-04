@@ -3,7 +3,7 @@
 // plumber, scoped to it, finds one thing. `measure` (optional) says where the eye sees the harm, for the ticks drawn
 // over the example; it reads the page, it never decides what is wrong (plumber does).
 import { useEffect, useState } from 'react';
-import { ArrowRightIcon, BoltIcon, FolderIcon, HeadphonesIcon, HeartIcon, HistoryIcon, LayersIcon, LockIcon, MessageIcon, PathIcon, PauseIcon, PlusIcon, SearchIcon, SendIcon, SparklesIcon, UploadIcon, UserIcon } from '@unlocalhosted/dither-icons';
+import { ArrowLeftIcon, ArrowRightIcon, BoltIcon, CheckIcon, FileIcon, FolderIcon, HeadphonesIcon, HeartIcon, HistoryIcon, LayersIcon, LockIcon, MessageIcon, PathIcon, PauseIcon, PlusIcon, SearchIcon, SendIcon, SparklesIcon, UploadIcon, UserIcon } from '@unlocalhosted/dither-icons';
 import receipt from '../receipt.png';
 import lowTide from '../media/low-tide.jpg';
 import paperCities from '../media/paper-cities.jpg';
@@ -170,83 +170,6 @@ Timesheet.measure = (root) => {
 // ── Spacing and rhythm ─────────────────────────────────────
 
 
-
-// #9 a text button takes about twice as much padding across as up and down (broken: p-2, copied from the icon
-// buttons beside it)
-const Ico = ({ d }) => <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={d} /></svg>;
-const ROWS = [['INV-2041', 'Halden & Co.', 'Sent', '4,820.00'], ['INV-2040', 'Northfield Dental', 'Paid', '1,240.50'], ['INV-2039', 'Okafor Landscape', 'Overdue', '12,000.00']];
-const TONES = { Sent: 'bg-accent-soft text-accent', Paid: 'bg-positive-soft text-positive', Overdue: 'bg-negative-soft text-negative' };
-function Toolbar({ broken }) {
-  return (
-    <AppFrame crumb="Invoices">
-      <div className="flex flex-col gap-4 px-5 pt-4 pb-6">
-        <div className="flex items-center justify-between gap-3">
-          <h3 className="text-base font-semibold">Invoices</h3>
-          <div className="flex items-center gap-1.5">
-            <button type="button" aria-label="Filter" className="grid size-8 place-items-center rounded-control border border-line text-ink-muted active:bg-sunken"><Ico d="M2.5 4h11M4.5 8h7M6.5 12h3" /></button>
-            <button type="button" aria-label="Sort" className="grid size-8 place-items-center rounded-control border border-line text-ink-muted active:bg-sunken"><Ico d="M5 3v10m0 0-2-2m2 2 2-2M11 13V3m0 0-2 2m2-2 2 2" /></button>
-            <button type="button" data-export className="rounded-control border border-line p-2 text-sm leading-4 font-medium active:bg-sunken">Export</button>
-            <button type="button" className="rounded-control bg-accent px-3 py-2 text-sm leading-4 font-medium text-accent-ink active:bg-ink">New invoice</button>
-          </div>
-        </div>
-        <table className="w-full text-left text-sm">
-          <tbody>
-            {ROWS.map(([id, client, st, amt]) => (
-              <tr key={id} className="border-t-hairline border-line">
-                <td className="case-forms py-2.5 pr-3 text-ink-muted">{id}</td>
-                <td className="py-2.5 pr-3 font-medium">{client}</td>
-                <td className="py-2.5 pr-3"><span className={'rounded-full px-2 py-0.5 text-xs font-medium ' + TONES[st]}>{st}</span></td>
-                <td className="py-2.5 text-right font-medium tabular-nums">${amt}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </AppFrame>
-  );
-}
-Toolbar.framed = true;
-Toolbar.measure = (root) => {
-  const b = root.querySelector('[data-export]'), r = b.getBoundingClientRect(), s = getComputedStyle(b), pl = parseFloat(s.paddingLeft), pt = parseFloat(s.paddingTop);
-  return { around: b, focus: { x: r.left + r.width / 2, y: r.top + r.height / 2 }, ticks: [{ x: r.left + pl, top: r.top, bottom: r.bottom }, { x: r.right - parseFloat(s.paddingRight), top: r.top, bottom: r.bottom }],
-    broken: `${px(pl)} across · ${px(pt)} up`, fixed: `${px(pl)} across ✓`, off: pl < pt * 1.6 };
-};
-Toolbar.lesson = { why: 'Words are wide and short. With the same padding on every side, the label looks squeezed from the sides and the button looks taller than it is wide.', habit: 'Text buttons take about twice as much padding across as up and down; only icon buttons are square.' };
-
-// #10 the icon side of a button takes less padding: an icon carries its own whitespace inside its glyph box
-const PEOPLE = [['Halden & Co.', 'billing@halden.example', 'HC', 'bg-accent-soft text-accent'], ['Northfield Dental', 'accounts@northfield.example', 'ND', 'bg-positive-soft text-positive'], ['Okafor Landscape', 'pay@okafor.example', 'OL', 'bg-sunken text-ink']];
-function NewClient({ broken }) {
-  return (
-    <AppFrame crumb="Clients">
-      <div className="flex flex-col gap-4 px-5 pt-4 pb-6">
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex flex-col gap-0.5">
-            <h3 className="text-base font-semibold">Clients</h3>
-            <span className="text-sm text-ink-muted">38 active · 4 with invoices due</span>
-          </div>
-          <button type="button" data-new className="flex items-center gap-1.5 rounded-control bg-ink px-4 py-2 text-sm font-medium text-accent-ink active:bg-ink-muted"><Ico d="M8 3v10M3 8h10" />New client</button>
-        </div>
-        <ul className="flex flex-col">
-          {PEOPLE.map(([name, email, ini, tint]) => (
-            <li key={name} className="flex items-center gap-3 border-t-hairline border-line py-2.5">
-              <span className={'grid size-8 shrink-0 place-items-center rounded-full text-[11px] font-semibold ' + tint}>{ini}</span>
-              <span className="flex min-w-0 flex-col"><span className="text-sm font-medium">{name}</span><span className="truncate text-xs text-ink-muted">{email}</span></span>
-            </li>
-          ))}
-        </ul>
-      </div>
-    </AppFrame>
-  );
-}
-NewClient.framed = true;
-NewClient.measure = (root) => {
-  const b = root.querySelector('[data-new]'), r = b.getBoundingClientRect(), g = b.querySelector('svg').getBoundingClientRect();
-  const t = document.createRange(); t.selectNodeContents(b.lastChild); const tr = t.getBoundingClientRect();
-  const left = g.left - r.left, right = r.right - tr.right;
-  return { around: b, focus: { x: g.left, y: r.top + r.height / 2 }, ticks: [{ x: r.left, top: r.top, bottom: r.bottom }, { x: g.left, top: r.top, bottom: r.bottom }, { x: tr.right, top: r.top, bottom: r.bottom }, { x: r.right, top: r.top, bottom: r.bottom }],
-    broken: `${px(left)} by the icon · ${px(right)} by the text`, fixed: 'icon side lighter ✓', off: left >= right - 1 };
-};
-NewClient.lesson = { why: 'An icon’s glyph box carries its own space around the drawing. With the same padding on both sides, the icon side looks looser than the text side and the label reads off-centre.', habit: 'On the side with the icon, take 2–4px of padding off.' };
 
 // #1 align content, not boxes. A client's profile in Quarry: who they are, a note the team keeps about them, their
 // recent invoices. The note is a tinted panel with its own padding, sitting on the same column as the sections around
@@ -858,5 +781,128 @@ RecentlyPlayed.measure = (root) => {
   };
 };
 
-export const EXAMPLES = { 7: PassengerStep, 8: RecentlyPlayed, 9: Toolbar, 10: NewClient, 1: ClientProfile, 2: InvoiceWalkthrough, 3: Whiteboard, 4: DriveActivity, 5: ChatThread, 6: FitnessToday, 16: Timesheet };
+// #9 equal padding isn't equal. A code review tool's pull request header: the two review buttons are p-2, the same 8px
+// on every side, copied from the icon buttons beside them. Words are wide and short, so the labels look squeezed from
+// the sides. plumber's fix: twice the padding across as up and down.
+const ReviewButton = ({ primary, children }) => (
+  <button type="button" data-review className={'rounded-control p-2 text-sm leading-4 font-medium ' + (primary ? 'bg-accent text-accent-ink hover:bg-accent-deep' : 'bg-surface text-ink ring-1 ring-line ring-inset hover:bg-sunken')}>{children}</button>
+);
+function PullRequest() {
+  // Slate's primitives, with dithered icons
+  return (
+    <article className="w-full max-w-[34rem] rounded-card bg-surface shadow-card">
+      <div className="flex flex-col gap-4 p-6">
+        <div className="flex flex-col gap-2">
+          <span className="flex items-center gap-2 text-[13px] text-ink-muted">
+            <span className="inline-flex h-5 items-center gap-1 rounded-full bg-positive-soft px-2 text-xs font-medium text-positive ring-1 ring-positive/15 ring-inset">Open</span>
+            <span className="font-mono text-xs">mira/retry-queue → main</span>
+          </span>
+          <span className="text-[17px] leading-6 font-medium tracking-[-0.01em]">Fix the flaky retry in the upload queue <span className="font-normal text-ink-muted">#482</span></span>
+        </div>
+        <div className="flex items-center gap-4 text-[13px] text-ink-muted">
+          <span className="flex items-center gap-1.5"><CheckIcon size={14} texture="dither" className="text-positive" />All checks passed</span>
+          <span className="flex items-center gap-1.5"><FileIcon size={14} texture="dither" />3 files</span>
+          <span className="font-mono text-xs"><span className="text-positive">+48</span> <span className="text-negative">−12</span></span>
+        </div>
+        <div className="flex items-center gap-3 border-t-hairline border-line pt-4">
+          <span className="flex -space-x-1.5" aria-label="Reviewers: Theo and Sana">
+            {[['T', 'bg-accent-soft text-accent-deep'], ['S', 'bg-positive-soft text-positive']].map(([l, c]) => <span key={l} className={'grid size-7 place-items-center rounded-full text-xs font-semibold ring-2 ring-surface ' + c}>{l}</span>)}
+          </span>
+          <span className="text-[13px] text-ink-muted">Theo asked for your review</span>
+          <span className="ml-auto flex items-center gap-2">
+            <ReviewButton>Request changes</ReviewButton>
+            <ReviewButton primary>Approve</ReviewButton>
+          </span>
+        </div>
+      </div>
+    </article>
+  );
+}
+PullRequest.stage = true;
+PullRequest.names = ['Equal', 'Wider sides'];
+PullRequest.lesson = {
+  why: 'Words are wide and short. With the same 8px on every side, the label looks squeezed from the sides and the button looks taller than it is wide, a square box around a long word.',
+  habit: 'Text buttons take about twice as much padding across as up and down; only icon buttons are square.',
+};
+// What the eye sees on Approve: its padding, hatched on all four sides. The pill is the padding across, which wants to
+// be about twice the padding up and down.
+PullRequest.measure = (root) => {
+  const b = [...(root?.querySelectorAll('[data-review]') ?? [])].at(-1);
+  if (!b) return null;
+  const r = b.getBoundingClientRect(), k = r.width / b.offsetWidth || 1, s = getComputedStyle(b);
+  const [pt, pr, pb, pl] = ['Top', 'Right', 'Bottom', 'Left'].map((side) => parseFloat(s[`padding${side}`]));
+  const ok = pl >= pt * 1.75;
+  return {
+    lines: [], off: !ok,
+    bands: [
+      { key: 'l', left: r.left, right: r.left + pl * k, top: r.top, bottom: r.bottom, pattern: 'hatch' },
+      { key: 'r', left: r.right - pr * k, right: r.right, top: r.top, bottom: r.bottom, pattern: 'hatch' },
+      { key: 't', left: r.left + pl * k, right: r.right - pr * k, top: r.top, bottom: r.top + pt * k, pattern: 'hatch' },
+      { key: 'b', left: r.left + pl * k, right: r.right - pr * k, top: r.bottom - pb * k, bottom: r.bottom, pattern: 'hatch' },
+    ],
+    pills: [{ key: 'across', x: (r.left + r.right) / 2, y: r.top - 14 * k, text: (pl * k).toFixed(1), ok }],
+    cut: { left: r.left, right: r.right, top: r.top, bottom: r.bottom, r: 6 * k },
+    subject: { left: r.left - 150 * k, right: r.right + 30 * k, top: r.top - 50 * k, bottom: r.bottom + 40 * k },
+  };
+};
+
+// #10 the icon side of a button gets less padding. A calendar's week: the New event button has a + icon before its
+// words and the same 16px on both sides. An icon's glyph box carries space of its own, so the icon side looks looser
+// and the label reads off-centre. plumber takes 4px off the icon side.
+const WEEK = [
+  { day: 'Mon', date: 9, events: [{ at: '9:30', what: 'Standup', tone: 'bg-accent-soft text-accent-deep' }] },
+  { day: 'Tue', date: 10, events: [{ at: '11:00', what: 'Design review', tone: 'bg-positive-soft text-positive' }, { at: '15:00', what: '1:1 Mira', tone: 'bg-accent-soft text-accent-deep' }] },
+  { day: 'Wed', date: 11, today: true, events: [{ at: '10:00', what: 'Launch sync', tone: 'bg-caution-soft text-caution' }] },
+  { day: 'Thu', date: 12, events: [{ at: '14:30', what: 'Hiring panel', tone: 'bg-positive-soft text-positive' }] },
+  { day: 'Fri', date: 13, events: [] },
+];
+function CalendarWeek() {
+  // Slate's primitives, with dithered icons
+  return (
+    <article className="w-full max-w-[34rem] rounded-card bg-surface shadow-card">
+      <header className="flex items-center gap-2 border-b-hairline border-line px-5 py-3">
+        <span className="text-[17px] leading-6 font-medium tracking-[-0.01em]">November 2026</span>
+        <span className="ml-1 flex items-center">
+          <button type="button" aria-label="Previous week" className="grid size-8 place-items-center rounded-control text-ink-muted hover:bg-sunken hover:text-ink"><ArrowLeftIcon size={16} texture="dither" /></button>
+          <button type="button" aria-label="Next week" className="grid size-8 place-items-center rounded-control text-ink-muted hover:bg-sunken hover:text-ink"><ArrowRightIcon size={16} texture="dither" /></button>
+        </span>
+        <button type="button" data-new className="ml-auto flex items-center gap-1.5 rounded-control bg-ink px-4 py-2 text-sm font-medium text-surface hover:bg-ink/85"><PlusIcon size={16} texture="dither" />New event</button>
+      </header>
+      <div className="grid grid-cols-5 divide-x divide-line">
+        {WEEK.map((d) => (
+          <div key={d.day} className="flex min-h-40 flex-col gap-1.5 p-2">
+            <span className="flex items-baseline gap-1 px-1 text-xs text-ink-muted">{d.day}<span className={'tabular-nums ' + (d.today ? 'font-semibold text-accent' : 'text-ink')}>{d.date}</span></span>
+            {d.events.map((e) => <span key={e.what} className={'flex flex-col rounded-chip px-1.5 py-1 text-xs ' + e.tone}><span className="font-medium">{e.what}</span><span className="tabular-nums">{e.at}</span></span>)}
+          </div>
+        ))}
+      </div>
+    </article>
+  );
+}
+CalendarWeek.stage = true;
+CalendarWeek.names = ['Even', 'Icon side lighter'];
+CalendarWeek.lesson = {
+  why: 'An icon’s glyph box carries space of its own around the drawing. With the same 16px on both sides, the icon side looks looser than the text side and the whole label reads off-centre.',
+  habit: 'On the side with the icon, take 2–4px of padding off.',
+};
+// What the eye sees: the button's padding on the icon side and on the text side, hatched. The pill is how much more
+// the icon side has than the text side (it should have less).
+CalendarWeek.measure = (root) => {
+  const b = root?.querySelector('[data-new]');
+  if (!b) return null;
+  const r = b.getBoundingClientRect(), k = r.width / b.offsetWidth || 1, s = getComputedStyle(b);
+  const pl = parseFloat(s.paddingLeft), pr = parseFloat(s.paddingRight), extra = pl - pr + 1;
+  return {
+    lines: [], off: extra > 0,
+    bands: [
+      { key: 'icon', left: r.left, right: r.left + pl * k, top: r.top, bottom: r.bottom, pattern: 'hatch' },
+      { key: 'text', left: r.right - pr * k, right: r.right, top: r.top, bottom: r.bottom, pattern: 'hatch' },
+    ],
+    pills: [{ key: 'icon', x: r.left + (pl * k) / 2, y: r.top - 14 * k, text: (pl * k).toFixed(1), ok: extra <= 0 }],
+    cut: { left: r.left, right: r.right, top: r.top, bottom: r.bottom, r: 6 * k },
+    subject: { left: r.left - 60 * k, right: r.right + 30 * k, top: r.top - 40 * k, bottom: r.bottom + 60 * k },
+  };
+};
+
+export const EXAMPLES = { 7: PassengerStep, 8: RecentlyPlayed, 9: PullRequest, 10: CalendarWeek, 1: ClientProfile, 2: InvoiceWalkthrough, 3: Whiteboard, 4: DriveActivity, 5: ChatThread, 6: FitnessToday, 16: Timesheet };
 
