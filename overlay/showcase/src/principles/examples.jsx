@@ -2022,5 +2022,63 @@ LayerMenu.lesson = {
   habit: 'Use a menu with a safe triangle (Radix, Base UI, React Aria): from where the pointer left the item to the submenu’s near edge, it holds the submenu open while you head for it.',
 };
 
-export const EXAMPLES = { 8: RecentlyPlayed, 1: ClientProfile, 2: InvoiceWalkthrough, 3: Whiteboard, 4: DriveActivity, 5: ChatThread, 6: FitnessToday, 15: IssueTable, 16: Timesheet, 18: NewsFront, 45: LongRead, 46: BoardingPass, 21: Recipe, 25: FeatureCard, 37: ReadersChart, 38: Agenda, 39: GlazeBoard, 40: Widgets, 42: ProjectTabs, 50: NoNotes, 63: InsertMenu, 73: Handbook, 68: EventPreview, 74: Projects, 75: ShareAccess, 57: Inbox, 59: LayerMenu, 23: ShareMenu, 51: DeleteDialog, 55: Forecast, 56: Destination };
+// #20 one light source. A sprint board: every card rests with the theme's raised shadow, falling straight down. The card
+// being dragged gets a bigger, layered shadow to lift it, copied from a shot where the light came from the top left:
+// 8px right, 10px down. Now the board has two lights, and the dragged card looks pasted on rather than picked up. plumber reads the
+// page's own light from its shadows and turns this one to fall the same way, at the same length.
+const COLUMNS = [
+  { name: 'To do', cards: [['Pricing page copy', 'AO'], ['Press list, EU', 'LR']] },
+  { name: 'In progress', cards: [['Launch film, cut 4', 'JB'], ['Onboarding empty states', 'SP']], drag: 1 },
+  { name: 'Done', cards: [['Brand guidelines', 'AO'], ['Keynote outline', 'LR']] },
+];
+function SprintBoard() {
+  // Slate's primitives, with dithered icons
+  return (
+    <article className="flex w-full max-w-[40rem] flex-col gap-3 rounded-card bg-sunken p-4">
+      <header className="flex items-baseline justify-between px-1">
+        <span className="text-[17px] leading-6 font-medium tracking-[-0.01em]">Sprint 14</span>
+        <span className="text-[13px] text-ink-muted">Ends Friday</span>
+      </header>
+      <div className="grid grid-cols-3 gap-3">
+        {COLUMNS.map((col) => (
+          <section key={col.name} className="flex flex-col gap-2">
+            <span className="px-1 text-xs font-medium text-ink-muted">{col.name} <span className="text-ink-subtle tabular-nums">{col.cards.length}</span></span>
+            {col.cards.map(([title, who], i) => (
+              <div key={title} data-dragged={col.drag === i || undefined}
+                className={'flex flex-col gap-2 rounded-control bg-surface px-3 pt-1.5 pb-3 ' + (col.drag === i ? '-translate-y-1 shadow-[2px_3px_6px_rgb(18_35_61/0.12),8px_10px_24px_rgb(18_35_61/0.16)] ring-1 ring-accent/40' : 'shadow-raised')}>
+                <span className="text-[13px] leading-5 text-pretty">{title}</span>
+                <span className="grid size-5 place-items-center self-end rounded-full bg-accent-soft text-[9px] font-medium text-accent-deep">{who}</span>
+              </div>
+            ))}
+          </section>
+        ))}
+      </div>
+    </article>
+  );
+}
+SprintBoard.stage = true;
+SprintBoard.names = ['A second light', 'One light'];
+SprintBoard.lesson = {
+  why: 'A shadow says where the light is. Every card on the board casts straight down; the dragged one casts down and to the right, as if a second lamp stood beside it. The eye reads it as pasted on, not lifted.',
+  habit: 'Give every shadow on a page the same direction (usually straight down) and change only its size: a lifted thing casts further, not sideways.',
+};
+// What the eye sees: the dragged card's shadow spilling out to its right side and none on its left. The hatch is that
+// spill; the pill is how far the shadow's direction is from the page's light, in degrees.
+SprintBoard.measure = (root) => {
+  const card = root?.querySelector('[data-dragged]');
+  if (!card) return null;
+  const r = card.getBoundingClientRect(), k = r.width / card.offsetWidth || 1;
+  const cast = getComputedStyle(card).boxShadow.split(/,(?![^(]*\))/).map((l) => (l.replace(/rgba?\([^)]*\)|oklch\([^)]*\)/g, '').match(/-?[\d.]+px/g) ?? []).map(parseFloat)).filter((n) => n.length >= 3 && (n[0] || n[1])).sort((a, b) => Math.hypot(b[0], b[1]) - Math.hypot(a[0], a[1]))[0] ?? [0, 0];
+  const angle = Math.round(Math.abs((Math.atan2(cast[0], cast[1]) * 180) / Math.PI)), spill = Math.max(0, cast[0]);
+  return {
+    lines: [{ key: 'left', x: r.left, top: r.top + 8 * k, bottom: r.bottom + 6 * k }, { key: 'right', x: r.right, top: r.top + 8 * k, bottom: r.bottom + 6 * k }],
+    bands: [{ key: 'spill', left: r.right, right: r.right + Math.max(2, spill + 6) * k, top: r.top + 8 * k, bottom: r.bottom + 10 * k, pattern: 'hatch' }],
+    pills: [{ key: 'angle', x: r.right + 30 * k, y: r.top - 10 * k, text: String(Math.max(angle, 0.01) * k), ok: angle <= 10 }],
+    off: angle > 10,
+    cut: { left: r.left - 4 * k, right: r.right + 22 * k, top: r.top - 4 * k, bottom: r.bottom + 26 * k, r: 8 * k },
+    subject: { left: r.left - 40 * k, right: r.right + 70 * k, top: r.top - 40 * k, bottom: r.bottom + 50 * k },
+  };
+};
+
+export const EXAMPLES = { 8: RecentlyPlayed, 1: ClientProfile, 2: InvoiceWalkthrough, 3: Whiteboard, 4: DriveActivity, 5: ChatThread, 6: FitnessToday, 15: IssueTable, 16: Timesheet, 18: NewsFront, 45: LongRead, 46: BoardingPass, 21: Recipe, 25: FeatureCard, 20: SprintBoard, 37: ReadersChart, 38: Agenda, 39: GlazeBoard, 40: Widgets, 42: ProjectTabs, 50: NoNotes, 63: InsertMenu, 73: Handbook, 68: EventPreview, 74: Projects, 75: ShareAccess, 57: Inbox, 59: LayerMenu, 23: ShareMenu, 51: DeleteDialog, 55: Forecast, 56: Destination };
 

@@ -188,8 +188,9 @@ function useTicking(on) {
 // comes back up. Fixed: opened on pointerdown, as Radix's DropdownMenu and Base UI's Menu do; held, the item under
 // the pointer is chosen when you let go, so press, drag, release picks in one motion.
 // plumber's probe (src/craft-probe.ts menuDown) presses and holds and reads whether the press alone opened it. The
-// marks are that: where you pressed, and the ruler from the press to the moment it opened. The drag-release half
-// isn't probed yet, so it gets no mark: the product shows it (the list re-sorts), the status says it in words.
+// marks are that: where you pressed, and the ruler from the press to the moment it opened. The probe also drags onto
+// an item and lets go (a menu that opens on the press but picks on click is marked for it); here the product shows it,
+// the list re-sorting under the release.
 const FILES = [
   ['Brand guidelines.pdf', '2 Mar', 4.8], ['Logo, final.svg', '28 Feb', 0.2], ['Launch film, cut 3.mov', '4 Mar', 812],
   ['Press release.doc', '1 Mar', 0.3], ['Photography', '26 Feb', 240],

@@ -4,6 +4,8 @@
 /* plumber's fixes on live examples are taken as source edits (src/principles/Principle.jsx useTaken); in a project,
    writing them makes Tailwind generate them. Here nothing is written, so the classes plumber hands over exist ahead. */
 @source inline("-mx-{0.5,1,1.5,2,2.5,3,3.5,4,5,6}");
+/* the dragged card's shadow turned to the page's light, as plumber writes it (#20) */
+@source inline("shadow-[rgba(18,_35,_61,_0.12)_0px_3.6px_6px_0px,_rgba(18,_35,_61,_0.16)_0px_12.8px_24px_0px]");
 /* scroll shadows on a white surface, as plumber writes them (#75) */
 @source inline("[background:linear-gradient(#ffffff_30%,_transparent)_center_top_/_100%_40px_no-repeat_local,_linear-gradient(transparent,_#ffffff_70%)_center_bottom_/_100%_40px_no-repeat_local,_radial-gradient(farthest-side_at_50%_0,_rgb(0_0_0_/_0.12),_transparent)_center_top_/_100%_12px_no-repeat_scroll,_radial-gradient(farthest-side_at_50%_100%,_rgb(0_0_0_/_0.12),_transparent)_center_bottom_/_100%_12px_no-repeat_scroll,_#ffffff]");
 @source inline("border-{t,b,l,r}-[0.5px] h-[0.5px] w-[0.5px] [corner-shape:squircle] inset-y-0 my-auto h-fit scroll-mt-{12,14,16,18,20,24} data-[state=closed]:duration-{75,100,150,200,300} [&>svg_*]:[vector-effect:non-scaling-stroke] starting:scale-{90,95}");
