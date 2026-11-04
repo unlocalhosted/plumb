@@ -1,25 +1,23 @@
 /* ─────────────────────────────────────────────────────────
- * IT READS YOUR THEME, told as a scene. The words stay pinned on the left; the scene on the right moves with them as
- * you scroll. Every dot is one place in a real app's code; nothing is boxed. Motion follows the animations.dev
- * rules: transform and opacity only, custom ease-out curves, hover only where there is hover, reduced motion shows
- * the end.
+ * EVERY FIX USES YOUR THEME. The doubt it answers: "will its fixes match my design system, or bring their own?"
+ * The proof, as in the hero, is a real screen being fixed: a team's Members panel, its spaces picked by eye. The toy:
+ * your theme is a sheet of stickers. Plumber reads the sheet, then peels the right sticker for each space and slaps
+ * it on, picked by the space's job, not by the nearest number (21px of card padding becomes card, 16px, not 24). The
+ * JSX under the screen changes as each one lands.
  *
- * BEATS (one per stretch of scroll)
- *   0  a real app's spaces float at their true sizes, coral; a few carry their value as a pill
- *   1  the theme's steps draw up from the floor, left to right, each with its name and reason
- *   2  a thread draws from each place to the step its job belongs to
- *   3  the places fall into columns on their steps (steep curve, small landing bounce, left to right) and turn mint;
- *      each column counts its places up as they land
- *   4  the count: 23 → 5
- *
- * MICRO-INTERACTIONS (each with a job)
- *   point at a dot      a card pops from it: the place, its value, and (once settled) the step it's on
- *   point at a column   the step appears at its real size, with its reason
- *   the rail            five points beside the words: where you are; click one to go there
+ * STORYBOARD (starts when the frame scrolls into view; "Again" replays it; reduced motion shows the end)
+ *      0ms   the screen as written: five spaces picked one at a time
+ *    700ms   marked: each space drawn as the box model draws it, coral, with its value
+ *   1700ms   your theme is read: a scan runs down the sticker sheet, each step lifts as it's read
+ *   3000ms   one space at a time (900ms apart): its sticker peels off the sheet, arcs over and slaps onto the space;
+ *            the space glides to the step, its band turns mint, its line of JSX swaps
+ *   7900ms   done: the marks lift, the stickers stay; "0 new values" slaps onto the frame
  * ───────────────────────────────────────────────────────── */
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { BLOCK_ICONS } from '../../../overlay/src/boxmodel.js';
 import './settle.css';
 
+// The theme: the steps it names, and why each exists (what @theme says in the app's own CSS).
 const STEPS = [
   { name: 'tight', px: 4, why: 'inside a group' },
   { name: 'related', px: 8, why: 'related parts' },
@@ -27,177 +25,225 @@ const STEPS = [
   { name: 'card', px: 16, why: 'card padding' },
   { name: 'stack', px: 24, why: 'between groups' },
 ];
-// A real app's spaces as written, with how many places use each (an app three months in, written by many hands).
-const WRITTEN = [[3, 3], [4, 5], [5, 2], [6, 4], [7, 2], [8, 6], [9, 2], [10, 4], [11, 2], [12, 6], [13, 3], [14, 3],
-  [15, 2], [16, 5], [17, 1], [18, 3], [19, 1], [20, 3], [21, 1], [22, 2], [24, 2], [26, 1], [28, 1]];
-// Where those spaces live, so each dot is a place you can name.
-const WHERE = ['Toolbar gap', 'Card padding', 'Invite button', 'Avatar row', 'Modal padding', 'List row', 'Tab padding',
-  'Toast padding', 'Search field', 'Badge padding', 'Sidebar gap', 'Menu item', 'Table cell', 'Dialog footer', 'Chip gap', 'Header gap'];
-const MAX = 30; // px at the right edge of the scene
-const FLOOR = 0.74; // how far down the scene the floor is
-const DOT = 9; // px between dots in a settled column
-
-const nearest = px => STEPS.reduce((b, s) => (Math.abs(s.px - px) <= Math.abs(b.px - px) ? s : b));
-const rand = i => { const x = Math.sin(i * 12.9898) * 43758.5453; return x - Math.floor(x); }; // the same scatter every time
-const PLACES = WRITTEN.flatMap(([px, n]) => Array.from({ length: n }, (_, k) => ({ px, k })))
-  .map((p, i) => ({ ...p, i, where: WHERE[(i * 7) % WHERE.length], step: nearest(p.px) }));
-{ const row = {}; for (const p of PLACES) p.row = (row[p.step.name] = (row[p.step.name] ?? 0) + 1) - 1; }
-const TOTALS = Object.fromEntries(STEPS.map(s => [s.name, PLACES.filter(p => p.step === s).length]));
-const PILLED = new Set([2, 9, 17, 26, 31, 40, 47, 55]); // a few places show their value at rest
-
-const BEATS = [
-  { glyph: 'scatter', text: <>A real app, three months in. Its spaces were picked one at a time: <b>{WRITTEN.length} different values</b> across <b>{PLACES.length} places</b>.</> },
-  { glyph: 'steps', text: <>Your theme already decided <b>five steps</b>, and wrote down why each one exists.</> },
-  { glyph: 'threads', text: <>Plumber reads what each space does, and finds the step your own reason gives it.</> },
-  { glyph: 'columns', text: <>Then it puts each one there. Every place, on one of your steps.</> },
-  { glyph: 'count', text: <><b>{WRITTEN.length} values became 5.</b> Nothing new was invented: every space is one you had already decided.</> },
+const STEP = Object.fromEntries(STEPS.map(s => [s.name, s]));
+// The five spaces, in the order Plumber fixes them. Three of them are picked by their job against their number: 21px
+// is nearest 24 but it's a card's padding; 13px and 11px are nearest 12 but one sits between groups, one inside a row.
+const SPOTS = [
+  { id: 'card', written: 21, cls: 'p', tag: 'section', step: 'card', said: 'The card’s padding, 21px, becomes card: 16px. Not 24, the nearest number: its job is card padding.' },
+  { id: 'stack', written: 13, cls: 'gap', tag: 'div', step: 'stack', said: 'The space between the invite and the list, 13px, becomes stack: 24px, between groups.' },
+  { id: 'control', written: 9, cls: 'px', tag: 'input', step: 'control', said: 'The field’s padding, 9px, becomes control: 12px, a control’s padding.' },
+  { id: 'related', written: 11, cls: 'gap', tag: 'li', step: 'related', said: 'Avatar to name, 11px, becomes related: 8px. They belong together.' },
+  { id: 'tight', written: 3, cls: 'gap', tag: 'span', step: 'tight', said: 'Name to email, 3px, becomes tight: 4px, inside a group.' },
+];
+const TIMING = { marked: 700, read: 1700, first: 3000, each: 900 };
+const DONE = SPOTS.length + 3; // stage after the last space is fixed
+const STAGES = [0, TIMING.marked, TIMING.read, ...SPOTS.map((_, i) => TIMING.first + i * TIMING.each), TIMING.first + SPOTS.length * TIMING.each];
+const SAID = [
+  'A Members screen, written in a hurry: five spaces, each picked by eye.',
+  'Plumber marks each space with the value it was given.',
+  'It reads your theme: five steps, and why each one exists.',
+  ...SPOTS.map(s => s.said),
+  'Every space is now one of your steps. No new values.',
+];
+const PEOPLE = [
+  { name: 'Ada Okafor', mail: 'ada@northwind.studio', role: 'Owner', hue: 'pink' },
+  { name: 'Ravi Menon', mail: 'ravi@northwind.studio', role: 'Editor', hue: 'sky' },
+  { name: 'Lena Brandt', mail: 'lena@northwind.studio', role: 'Viewer', hue: 'butter' },
 ];
 
 export function Settle() {
-  const scroller = useRef(null), scene = useRef(null);
   const reduced = typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const [beat, setBeat] = useState(reduced ? BEATS.length - 1 : 0);
-  // null until the scene has measured itself: the marks are drawn only then, so none is first placed for a guessed
-  // width and then sent flying (or left hanging past a phone's edge) when the real one arrives
-  const [size, setSize] = useState(null);
-  const [dot, setDot] = useState(null);      // the place being pointed at
-  const [column, setColumn] = useState(null); // the step being pointed at
+  const art = useRef(null);
+  const [run, setRun] = useState(reduced ? 1 : 0); // 0 waiting to be seen; each replay counts up, to restart
+  const [stage, setStage] = useState(reduced ? DONE : 0);
+  const [marks, setMarks] = useState({});
 
   useEffect(() => {
     if (reduced) return;
-    const on = () => {
-      const r = scroller.current.getBoundingClientRect();
-      const t = Math.min(1, Math.max(0, -r.top / Math.max(1, r.height - innerHeight)));
-      setBeat(Math.min(BEATS.length - 1, Math.floor(t * BEATS.length)));
-    };
-    on();
-    addEventListener('scroll', on, { passive: true });
-    return () => removeEventListener('scroll', on);
+    const io = new IntersectionObserver(([e]) => { if (e.isIntersecting) { setRun(1); io.disconnect(); } }, { threshold: 0.4 });
+    io.observe(art.current);
+    return () => io.disconnect();
   }, [reduced]);
+  useEffect(() => {
+    if (!run || reduced) return;
+    setStage(0);
+    const timers = STAGES.slice(1).map((t, i) => setTimeout(() => setStage(i + 1), t));
+    return () => timers.forEach(clearTimeout);
+  }, [run, reduced]);
 
+  const fixed = i => stage >= 3 + i;
+  const px = (s, i) => (fixed(i) ? STEP[s.step].px : s.written);
+  const sp = Object.fromEntries(SPOTS.map((s, i) => [s.id, px(s, i)]));
+
+  // where each space and each sticker sits on the frame, read from the browser, again once the spaces have glided
   useLayoutEffect(() => {
-    const measure = () => setSize({ w: scene.current.clientWidth, h: scene.current.clientHeight });
+    const measure = () => setMarks(measure_(art.current));
     measure();
+    const t = setTimeout(measure, 460);
     const ro = new ResizeObserver(measure);
-    ro.observe(scene.current);
-    return () => ro.disconnect();
-  }, []);
-
-  // the rail: go to a beat by scrolling to its stretch
-  const go = k => {
-    const r = scroller.current.getBoundingClientRect();
-    const run = r.height - innerHeight;
-    scrollTo({ top: scrollY + r.top + run * (k + 0.5) / BEATS.length, behavior: reduced ? 'auto' : 'smooth' });
-  };
-
-  const { w, h } = size ?? { w: 0, h: 0 };
-  const X = px => (px / MAX) * w;
-  const floor = h * FLOOR;
-  const free = p => ({ x: X(p.px) + (rand(p.i) - 0.5) * 10, y: h * (0.06 + rand(p.i + 99) * 0.46) });
-  const settled = p => ({ x: X(p.step.px), y: floor - 6 - p.row * DOT });
-  const landed = beat >= 3;
+    ro.observe(art.current);
+    return () => { clearTimeout(t); ro.disconnect(); };
+  }, [stage]);
 
   return (
-    <section ref={scroller} className="settle" style={{ '--beats': BEATS.length }} aria-labelledby="settle-title">
-      <div className="settle-pin">
-        <div className="settle-words">
-          <h2 id="settle-title" className="m-0 text-title font-strong">It reads your theme.</h2>
-          {/* the narration: each line carries its own point on the rail, and a small drawing of what happens in it */}
-          <ol className="settle-beats" aria-label="The story, a part at a time">
-            {BEATS.map((b, i) => {
-              const state = i < beat ? 'past' : i === beat ? 'now' : 'next';
+    <section className="settle" aria-labelledby="theme-title">
+      <div className="settle-head">
+        <h2 id="theme-title" className="m-0">Every fix uses <span className="settle-yours" data-on={stage >= DONE}>your theme</span>.</h2>
+        <p>Plumber reads the steps your Tailwind theme names, and why each one exists. Each space gets the step its job calls for, never a new number.</p>
+      </div>
+
+      <div ref={art} className="settle-field pl-light" data-stage={stage} data-run={run}>
+        <div className="field-glow" aria-hidden="true"><i /></div>
+        <span className="toy-deco toy-dither" aria-hidden="true" />
+        <span className="toy-deco toy-checker" aria-hidden="true" />
+
+        {/* your theme, as a sheet of stickers */}
+        <aside className="sheet" aria-label="Your theme’s spacing steps">
+          <p className="sheet-file"><i aria-hidden="true" />app.css</p>
+          <p className="sheet-at">@theme</p>
+          <ul>
+            {STEPS.map((s, k) => {
+              const used = SPOTS.findIndex(x => x.step === s.name);
               return (
-                <li key={i} data-state={state} aria-current={i === beat}>
-                  <button type="button" className="settle-node" data-state={state} aria-label={`Go to part ${i + 1} of ${BEATS.length}`} onClick={() => go(i)} />
-                  <span className="settle-beat"><Glyph kind={b.glyph} /><span>{b.text}</span></span>
+                <li key={s.name} style={{ '--k': k }} data-peeling={stage === 3 + used}>
+                  <span className="sheet-sticker" data-step={s.name}>{s.name}</span>
+                  <code className="tabular">{s.px}px</code>
+                  <small>{s.why}</small>
                 </li>
               );
             })}
-          </ol>
-        </div>
+          </ul>
+          <i className="sheet-scan" aria-hidden="true" />
+        </aside>
 
-        <div className="settle-field pl-light">
-        <div className="field-glow" aria-hidden="true"><i /></div>
-        <div ref={scene} className="settle-scene" data-beat={beat} style={{ '--floor': `${floor}px` }}>
-          <div className="settle-floor" aria-hidden="true" />
-
-          {size && <>
-          {STEPS.map((s, k) => (
-            <div key={s.name} className="settle-step" style={{ transform: `translateX(${X(s.px)}px)`, '--k': k }}
-              onPointerEnter={() => setColumn(s.name)} onPointerLeave={() => setColumn(null)}>
-              <i className="settle-line" aria-hidden="true" />
-              <span className="settle-label">
-                <b>{s.name}</b> <span className="tabular">{s.px}px</span>
-                <small>{s.why}</small>
-                <em className="tabular" data-shown={landed}><Count to={TOTALS[s.name]} on={landed} delay={k * 120} /> places</em>
-              </span>
-              {column === s.name && (
-                <span className="settle-specimen" aria-hidden="true"><i /><span style={{ width: s.px * 2 }} /><i /><small>{s.px}px, {s.why}</small></span>
-              )}
+        {/* the screen being fixed */}
+        <div className="settle-work">
+          <section className="app" data-spot="card" style={{ padding: sp.card }} aria-label="Example: a team’s Members screen">
+            <header className="app-head">
+              <h3>Members</h3>
+              <p>3 of 5 seats · Northwind Studio</p>
+            </header>
+            <div className="app-body" data-spot="stack" style={{ gap: sp.stack }}>
+              <form className="app-invite" onSubmit={e => e.preventDefault()}>
+                <input data-spot="control" style={{ paddingInline: sp.control }} placeholder="name@northwind.studio" aria-label="Email to invite" tabIndex={-1} />
+                <button type="button" tabIndex={-1}>Invite</button>
+              </form>
+              <ul className="app-people">
+                {PEOPLE.map((p, i) => (
+                  <li key={p.name} data-spot={i === 0 ? 'related' : undefined} style={{ gap: sp.related }}>
+                    <i className="app-avatar" style={{ background: `var(--pl-${p.hue}-soft)`, color: `var(--pl-${p.hue}-ink)` }} aria-hidden="true">{p.name[0]}</i>
+                    <span className="app-who" data-spot={i === 0 ? 'tight' : undefined} style={{ gap: sp.tight }}><b>{p.name}</b><small>{p.mail}</small></span>
+                    <span className="app-role">{p.role}</span>
+                  </li>
+                ))}
+              </ul>
             </div>
-          ))}
+          </section>
 
-          <svg className="settle-threads" data-shown={beat === 2} width={w} height={h} aria-hidden="true">
-            {PLACES.map(p => {
-              const a = free(p);
-              return <line key={p.i} x1={a.x} y1={a.y} x2={X(p.step.px)} y2={floor} pathLength="1" style={{ transitionDelay: `${beat === 2 ? p.px * 14 : 0}ms` }} />;
-            })}
-          </svg>
-
-          {PLACES.map(p => {
-            const at = landed ? settled(p) : free(p);
-            const pointed = dot === p.i;
-            return (
-              <span key={p.i} className="settle-dot" data-on={landed} data-pointed={pointed}
-                style={{ transform: `translate(${at.x}px, ${at.y}px)`, transitionDelay: `${landed ? p.px * 22 + p.k * 14 : (p.i % 9) * 8}ms`, '--d': p.i * 70 }}
-                onPointerEnter={() => setDot(p.i)} onPointerLeave={() => setDot(null)}>
-                <i aria-hidden="true" />
-                {!landed && beat < 2 && PILLED.has(p.i) && <em className="settle-pill tabular">{p.px}px</em>}
-                {pointed && (
-                  <span className="settle-card" role="tooltip">
-                    <b>{p.where}</b>
-                    <span className="tabular">{landed ? <>{p.px}px → <strong>{p.step.name}</strong>, {p.step.px}px</> : <>{p.px}px, written by hand</>}</span>
-                  </span>
-                )}
-              </span>
-            );
-          })}
-
-          </>}
-
-          <p className="settle-count tabular" data-shown={beat >= 4} aria-hidden={beat < 4}>
-            <b>{WRITTEN.length}</b><span>→</span><b>5</b>
-          </p>
+          {/* the JSX, as it changes */}
+          <figure className="diff" aria-label="The change Plumber writes">
+            <figcaption><span>Members.jsx</span><span className="tabular">{stage >= DONE ? '5 classes · 0 new values' : `${Math.max(0, stage - 2)} of 5`}</span></figcaption>
+            <ol>
+              {SPOTS.map((s, i) => (
+                <li key={s.id} data-state={fixed(i) ? 'fixed' : stage >= 1 ? 'off' : 'rest'}>
+                  <span className="diff-sign" aria-hidden="true">{fixed(i) ? '+' : stage >= 1 ? '−' : ' '}</span>
+                  <code>&lt;{s.tag} className="<span className="diff-val" key={fixed(i) ? 'f' : 'w'}>{fixed(i) ? `${s.cls}-${s.step}` : `${s.cls}-[${s.written}px]`}</span>"&gt;</code>
+                </li>
+              ))}
+            </ol>
+          </figure>
         </div>
-        </div>
+
+        {/* the marks: each space as the box model draws it, coral while off, mint once on a step */}
+        {stage >= 1 && SPOTS.map((s, i) => marks[s.id] && (
+          <Mark key={s.id} m={marks[s.id]} on={fixed(i)} delay={i * 70} />
+        ))}
+
+        {/* beside the screen, each space's label: first the number it was given, then the sticker from your theme that
+            peels off the sheet, arcs over and slaps onto it */}
+        {stage >= 1 && SPOTS.map((s, i) => marks[s.id] && (
+          <span key={`l${s.id}`} className="settle-label" data-on={fixed(i)} data-side={marks.side} style={{ left: marks[s.id].lx, top: marks[s.id].ly, '--lead': `${marks.lead}px` }} aria-hidden="true">
+            <em className="settle-pill tabular" style={{ animationDelay: `${i * 70 + 120}ms` }}>{s.written}px</em>
+          </span>
+        ))}
+        {SPOTS.map((s, i) => fixed(i) && marks[s.id] && marks[`step:${s.step}`] && (
+          <span key={`${run}-${s.id}`} className="stuck" aria-hidden="true" data-quiet={reduced}
+            data-side={marks.side} style={{ left: marks[s.id].lx, top: marks[s.id].ly, '--fx': `${marks[`step:${s.step}`].left - marks[s.id].lx}px`, '--fy': `${marks[`step:${s.step}`].cy - marks[s.id].ly}px`,
+              '--tilt': `${[-5, 4, -3, 5, -4][i]}deg` }}>
+            <b>{s.step}</b>
+          </span>
+        ))}
+
+        {stage >= DONE && <span className="toy-float settle-none" aria-hidden="true">0 new values</span>}
+        <p className="sr-only" aria-live="polite">{SAID[stage]}</p>
+      </div>
+
+      <div className="settle-foot">
+        <p className="settle-said" aria-hidden="true" data-done={stage >= DONE}>{SAID[stage]}</p>
+        <button type="button" className="settle-again" onClick={() => setRun(r => r + 1)} disabled={reduced}>↺ Again</button>
       </div>
     </section>
   );
 }
 
-/* A number that counts up once its column has landed (it starts after the column's dots have fallen). */
-function Count({ to, on, delay }) {
-  const [n, setN] = useState(on ? to : 0);
-  useEffect(() => {
-    if (!on) { setN(0); return; }
-    let raf, start;
-    const t = setTimeout(() => {
-      const step = now => { start ??= now; const k = Math.min(1, (now - start) / 600); setN(Math.round(to * (1 - (1 - k) ** 3))); if (k < 1) raf = requestAnimationFrame(step); };
-      raf = requestAnimationFrame(step);
-    }, 300 + delay);
-    return () => { clearTimeout(t); cancelAnimationFrame(raf); };
-  }, [on, to, delay]);
-  return n;
+/* One space, drawn as the overlay's box model draws it (hero.css .mk): padding a band inside the edge, a gap the band
+ * between two children; its block icon when the band is big enough. */
+function Mark({ m, on, delay }) {
+  return (
+    <span className="settle-mark" style={{ left: m.left, top: m.top, width: m.width, height: m.height }} aria-hidden="true">
+      <span className={`mk mk-${m.kind} pop`} data-tone={on ? 'mint' : 'coral'}
+        style={{ inset: 0, padding: m.padding, borderRadius: m.radius, animationDelay: `${delay}ms` }}>
+        {m.icon && <span className="mk-icon" style={m.icon} dangerouslySetInnerHTML={{ __html: BLOCK_ICONS[m.kind === 'pad' ? 'p' : 'g'] }} />}
+      </span>
+    </span>
+  );
 }
 
-/* Each beat's small drawing: what happens in it, at a glance. */
-function Glyph({ kind }) {
-  const d = {
-    scatter: <><circle cx="4" cy="6" r="1.6" /><circle cx="11" cy="3.5" r="1.6" /><circle cx="16" cy="9" r="1.6" /><circle cx="7" cy="13" r="1.6" /><circle cx="14" cy="15" r="1.6" /></>,
-    steps: <><path d="M3 17V7M8 17V4M13 17V9M18 17V6" /><path d="M1.5 17h18" /></>,
-    threads: <><circle cx="4" cy="4" r="1.6" /><circle cx="16" cy="5" r="1.6" /><path d="M4 4l5 13M16 5l-7 12" /><path d="M1.5 17h18" /></>,
-    columns: <><circle cx="5" cy="15" r="1.6" /><circle cx="5" cy="11" r="1.6" /><circle cx="10" cy="15" r="1.6" /><circle cx="10" cy="11" r="1.6" /><circle cx="10" cy="7" r="1.6" /><circle cx="15" cy="15" r="1.6" /><path d="M1.5 17.5h18" /></>,
-    count: <><path d="M3 6h5M3 10h5M3 14h5" /><path d="M11 10h4M13.5 7.5 16 10l-2.5 2.5" /></>,
-  }[kind];
-  return <svg className={`settle-glyph settle-glyph-${kind}`} viewBox="0 0 21 20" aria-hidden="true">{d}</svg>;
+const ICON = 12; // a band too small for its icon keeps only its tint (the overlay's rule)
+function measure_(root) {
+  if (!root) return {};
+  const b = root.getBoundingClientRect();
+  const local = r => ({ left: r.left - b.left, top: r.top - b.top, width: r.width, height: r.height });
+  const out = {};
+  for (const el of root.querySelectorAll('[data-spot]')) {
+    const css = getComputedStyle(el), r = el.getBoundingClientRect(), id = el.dataset.spot;
+    let m;
+    if (css.display.includes('grid') || css.display.includes('flex')) {
+      const [a, z] = [...el.children].map(k => k.getBoundingClientRect());
+      m = z.top >= a.bottom - 1
+        ? { kind: 'gap', ...local({ left: r.left, top: a.bottom, width: r.width, height: z.top - a.bottom }) }
+        : { kind: 'gap', ...local({ left: a.right, top: r.top, width: z.left - a.right, height: r.height }) };
+      if (Math.min(m.width, m.height) >= ICON) m.icon = { left: '50%', top: '50%' };
+    } else {
+      m = { kind: 'pad', ...local(r), padding: css.padding, radius: css.borderRadius };
+      const pad = parseFloat(css.paddingLeft);
+      if (parseFloat(css.paddingTop) >= ICON) m.icon = { left: '50%', top: parseFloat(css.paddingTop) / 2 };
+      else if (pad >= ICON) m.icon = { left: pad / 2, top: '50%' };
+    }
+    m.right = r.right - b.left;
+    out[id] = m;
+  }
+  // the labels: a column just right of the screen, each at its space's height, never closer than one label apart; where
+  // there's no room beside it (a phone), each sits inside the right end of its own space instead
+  const app = local(root.querySelector('.app').getBoundingClientRect());
+  const outside = b.width - (app.left + app.width) > 120;
+  out.side = outside ? 'out' : 'over';
+  out.lead = outside ? 14 : 0;
+  const LABEL = 34;
+  let last = -Infinity;
+  for (const id of Object.keys(out).filter(k => out[k].kind).sort((a, z) => anchor(out[a]) - anchor(out[z]))) {
+    out[id].lx = outside ? app.left + app.width + 14 : out[id].right - 6;
+    out[id].ly = last = Math.max(anchor(out[id]), last + LABEL);
+  }
+  for (const el of root.querySelectorAll('[data-step]')) {
+    const r = local(el.getBoundingClientRect());
+    out[`step:${el.dataset.step}`] = { left: outside ? r.left : r.left + r.width, cy: r.top + r.height / 2 };
+  }
+  return out;
 }
+// the height a space's label sits at: a gap's middle; a padding's top band, or the middle when it pads only the sides
+const anchor = m => {
+  if (m.kind === 'gap') return m.top + m.height / 2;
+  const top = parseFloat(m.padding);
+  return top >= 8 ? m.top + top / 2 : m.top + m.height / 2;
+};

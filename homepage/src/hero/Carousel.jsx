@@ -236,11 +236,12 @@ function useCounts() {
     const host = document.createElement('div');
     host.style.cssText = 'position:absolute;left:-10000px;top:0;width:880px;height:520px;visibility:hidden';
     document.body.append(host);
-    import('react-dom/client').then(({ createRoot }) => {
+    Promise.all([import('react-dom/client'), import('react-dom')]).then(([{ createRoot }, { flushSync }]) => {
       const root = createRoot(host);
-      root.render(<>{ITEMS.map(it => ['m', 'c'].map(k => (
+      // drawn at once, so the reads below never find it still empty
+      flushSync(() => root.render(<>{ITEMS.map(it => ['m', 'c'].map(k => (
         <div key={it.id + k} data-measure={`${it.id}:${k}`} style={{ height: 520 }}><it.Piece clean={Object.fromEntries(PASSES.map(p => [p, k === 'c']))} /></div>
-      )))}</>);
+      )))}</>));
       requestAnimationFrame(() => requestAnimationFrame(() => {
         // every value in reading order, so the messy and cleaned drawings pair up element by element
         const read = (id, k) => {
