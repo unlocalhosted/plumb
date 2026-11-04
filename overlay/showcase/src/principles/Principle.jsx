@@ -2,6 +2,7 @@
 // lives on the board, plumber reads it scoped, and the switch takes plumber's own fix in place with plumber's own
 // glide (inplace.js: swapPreview and its GLIDE) during a camera moment, and puts it back the same way.
 import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { PRINCIPLES } from './catalogue.js';
 import { EXAMPLES } from './examples.jsx';
 import { Chevron } from '../icons.jsx';
@@ -100,14 +101,16 @@ const CAMERA = {
 
 /* The marks */
 const MARKS = {
-  fade:     200,  // ms, stripes in
-  pillLag:  40,   // ms, pills after stripes
+  fade:     200,  // ms, lines and the shade in
+  pillLag:  40,   // ms, pills after lines
   out:      300,  // ms, all out (checks first)
-  converge: 400,  // ms, the fix's count-down and stripe glide
-  stripe:   1,    // px on screen, at any zoom
-  pill:     18,   // px tall on screen, at any zoom
-  wrong:    'var(--color-magenta)',
-  right:    'var(--color-accent)',
+  converge: 400,  // ms, the fix's count-down and line glide
+  stripe:   1,    // px on screen, at any zoom (plumber's --pl-line)
+  pill:     22,   // px tall on screen, at any zoom (plumber's tag)
+  pop:      0.6,  // pills appear from this scale on plumber's --pl-spring-pop
+  cut:      6,    // px the shade's cut-out clears the measured column by
+  off:      'var(--pl-off)',  // plumber's coral: off
+  on:       'var(--pl-on)',   // plumber's mint: on your scale, fixed
 };
 
 const still = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -149,30 +152,60 @@ function shot(subject, cam, view) {
   return { k, x: view.left + view.width / 2 - r.left - cx * k, y: (view.top + view.bottom) / 2 - r.top - cy * k };
 }
 
-// The marks: hairlines on the glyphs' own edges, a faint fill, and one pill per place with plumber's number.
-// During the fix (t from 0 to 1) the edges glide from where they were to where they are, the number counts down and
-// the colour runs from wrong to right. Sized in screen pixels at any zoom. Outside the example: plumber never reads it.
-function Marks({ from, to, t, k, shown, pills }) {
+// plumber's read, drawn with plumber's own primitives: its tokens (overlay/src/tokens.css, served by the overlay and
+// scoped to a shadow root's :host, exactly as the overlay uses them), so the moment looks like plumber on a real page.
+const TOKENS = '/__plumb/src/tokens.css';
+function PlumbLayer({ children }) {
+  const host = useRef(null);
+  const [root, setRoot] = useState(null);
+  useEffect(() => {
+    const r = host.current.shadowRoot ?? host.current.attachShadow({ mode: 'open' });
+    r.innerHTML = `<link rel="stylesheet" href="${TOKENS}"><style>:host { position: absolute; inset: 0; pointer-events: none; }</style>`;
+    setRoot(r);
+  }, []);
+  // the board is light, so plumber's light values (its night values are for dark pages)
+  return <div ref={host} data-scheme="light" aria-hidden="true" className="pointer-events-none absolute inset-0">{root ? createPortal(children, root) : null}</div>;
+}
+
+// The marks, as blueprint draws drift: the page under the scrim and gone grey so colour means drift, the measured
+// column cut out of it at full colour; 1px lines on the glyphs' own edges; heat dots
+// where it's off; and a blueprint tag per place with plumber's number, white on coral. During the fix (t from 0 to 1)
+// the edges glide to where they are, the number counts down and coral turns mint, then ✓.
+function Marks({ from, to, t, k, shown, pills, card }) {
   if (!from) return null;
   const at = (list, key) => to?.[list].find((x) => x.key === key);
   const e = ease(t), done = t >= 1 && to && !to.off;
-  const colour = `color-mix(in oklch, ${MARKS.right} ${Math.round(e * (to && !to.off ? 100 : 0))}%, ${MARKS.wrong})`;
+  const hue = `color-mix(in oklab, ${MARKS.on} ${Math.round(e * (to && !to.off ? 100 : 0))}%, ${MARKS.off})`;
+  const fade = (on, ms) => ({ opacity: on ? 1 : 0, transition: `opacity ${ms}ms var(--pl-ease-out)` });
+  // the lines skip plumber's white halo: it lets one line show over any page, but side by side on every glyph edge it
+  // whites the digits out, and inside the cut-out the ground is already white. The tag keeps its halo.
+  // the shade over the card, with the measured columns cut out (even-odd: the holes stay clear)
+  const holes = from.bands.map((b) => { const n = at('bands', b.key) ?? b, l = Math.min(b.left, n.left) - MARKS.cut, r = Math.max(b.right, n.right) + MARKS.cut;
+    return `M${l - card.left} ${b.top - card.top - MARKS.cut}H${r - card.left}V${b.bottom - card.top + MARKS.cut}H${l - card.left}Z`; }).join('');
   return (
-    <div aria-hidden="true" className="pointer-events-none absolute inset-0" style={{ opacity: shown ? 1 : 0, transition: `opacity ${shown ? MARKS.fade : MARKS.out}ms ease-out` }}>
-      {from.bands.map((b) => { const n = at('bands', b.key) ?? b; return (
-        <span key={'b' + b.key} className="absolute" style={{ left: lerp(b.left, n.left, e), top: b.top, width: lerp(b.right - b.left, n.right - n.left, e), height: b.bottom - b.top, background: `color-mix(in oklch, ${colour} 5%, transparent)` }} />
-      ); })}
-      {from.lines.map((l) => { const n = at('lines', l.key) ?? l; return (
-        <span key={'l' + l.key} className="absolute" style={{ left: lerp(l.x, n.x, e), top: l.top, height: l.bottom - l.top, width: MARKS.stripe / k, background: `color-mix(in oklch, ${colour} 22%, transparent)` }} />
-      ); })}
+    <PlumbLayer>
+      {card ? <div style={{ position: 'absolute', left: card.left, top: card.top, width: card.right - card.left, height: card.bottom - card.top, borderRadius: card.radius,
+        background: 'var(--pl-scrim)', backdropFilter: 'var(--pl-dim-filter)', WebkitBackdropFilter: 'var(--pl-dim-filter)',
+        clipPath: `path(evenodd, "M0 0H${card.right - card.left}V${card.bottom - card.top}H0Z${holes}")`, ...fade(shown, shown ? 160 : MARKS.out) }} /> : null}
+      <div style={{ position: 'absolute', inset: 0, ...fade(shown, shown ? MARKS.fade : MARKS.out) }}>
+        {from.bands.map((b) => { const n = at('bands', b.key) ?? b; return (
+          <span key={'b' + b.key} style={{ position: 'absolute', left: lerp(b.left, n.left, e), top: b.top, width: lerp(b.right - b.left, n.right - n.left, e), height: b.bottom - b.top, opacity: 0.4,
+            backgroundImage: `radial-gradient(circle, ${hue} ${0.95 / k}px, transparent ${1.25 / k}px)`, backgroundSize: `${3.5 / k}px ${3.5 / k}px` }} />
+        ); })}
+        {from.lines.map((l) => { const n = at('lines', l.key) ?? l; return (
+          <span key={'l' + l.key} style={{ position: 'absolute', left: lerp(l.x, n.x, e), top: l.top, height: l.bottom - l.top, width: MARKS.stripe / k, background: hue, opacity: 0.55 }} />
+        ); })}
+      </div>
       {from.pills.map((p) => { const n = at('pills', p.key) ?? p; return (
-        <span key={'p' + p.key} className="absolute grid place-items-center rounded-full px-1.5 text-[10px] leading-none font-medium text-accent-ink tabular-nums"
-          style={{ left: lerp(p.x, n.x, e), top: p.y, height: MARKS.pill, minWidth: MARKS.pill * 1.9, background: colour, transform: `translate(-50%, -50%) scale(${1 / k})`,
-            opacity: pills ? 1 : 0, transition: `opacity ${pills ? MARKS.fade : MARKS.out / 2}ms ease-out ${pills ? MARKS.pillLag : 0}ms` }}>
+        <span key={'p' + p.key} style={{ position: 'absolute', left: lerp(p.x, n.x, e), top: p.y, display: 'flex', alignItems: 'center', justifyContent: 'center', boxSizing: 'border-box',
+          height: MARKS.pill, minWidth: MARKS.pill * 1.6, padding: '0 var(--pl-space-3)', borderRadius: 'var(--pl-radius-tag)', font: '500 11px/1 var(--pl-mono)', fontVariantNumeric: 'tabular-nums',
+          color: 'var(--pl-on-accent)', background: hue, boxShadow: '0 0 0 1px var(--pl-halo)',
+          transform: `translate(-50%, -50%) scale(${(pills ? 1 : MARKS.pop) / k})`, opacity: pills ? 1 : 0,
+          transition: `transform 320ms var(--pl-spring-pop) ${pills ? MARKS.pillLag : 0}ms, opacity ${pills ? MARKS.fade : MARKS.out / 2}ms var(--pl-ease-out) ${pills ? MARKS.pillLag : 0}ms` }}>
           {done ? '✓' : lerp(p.value, to ? n.value * (n.ok ? 0 : 1) : p.value, e).toFixed(1)}
         </span>
       ); })}
-    </div>
+    </PlumbLayer>
   );
 }
 
@@ -187,6 +220,14 @@ function useMoment(Example, plumb, view) {
   const timers = useRef([]);
   useEffect(() => () => timers.current.forEach(clearTimeout), []);
   const measure = () => (Example?.measure ? marksOf(Example.measure(document.querySelector(SCOPE)), cam.current) : null);
+  // the card under the shade, in camera pixels (the component the example draws)
+  const cardOf = () => {
+    const el = document.querySelector(SCOPE)?.firstElementChild, c = cam.current;
+    if (!el || !c) return null;
+    const r = el.getBoundingClientRect(), o = c.getBoundingClientRect(), k = o.width / c.offsetWidth || 1;
+    return { left: (r.left - o.left) / k, top: (r.top - o.top) / k, right: (r.right - o.left) / k, bottom: (r.bottom - o.top) / k, radius: getComputedStyle(el).borderTopLeftRadius };
+  };
+  const [card, setCard] = useState(null);
   const tween = () => new Promise((done) => {
     const start = performance.now();
     const tick = (now) => { const p = Math.min(1, (now - start) / (still() ? 1 : MARKS.converge)); setT(p); p < 1 ? requestAnimationFrame(tick) : done(); };
@@ -199,7 +240,7 @@ function useMoment(Example, plumb, view) {
     setStage(STAGE.settle); setLive(false);
     at(TIMING.cameraIn, () => {
       const from = measure();
-      setMarks({ from, to: null });
+      setMarks({ from, to: null }); setCard(cardOf());
       if (from && cam.current && view.current && !still()) setLens(shot(from.subject, cam.current, view.current()));
       setStage(STAGE.cameraIn);
     });
@@ -220,7 +261,7 @@ function useMoment(Example, plumb, view) {
   const give = async () => { if (stage === STAGE.rest) await plumb.undo(); };
   const style = { transform: `translate(${lens.x}px, ${lens.y}px) scale(${lens.k})`, transformOrigin: '0 0', transition: still() ? 'none' : lens.k > 1 ? CAMERA.in : CAMERA.out };
   const shown = stage >= STAGE.marks && stage < STAGE.marksOut;
-  return { cam, style, stage, live, take, give, marks: <Marks from={marks.from} to={marks.to} t={t} k={lens.k} shown={shown} pills={shown} /> };
+  return { cam, style, stage, live, take, give, marks: <Marks from={marks.from} to={marks.to} t={t} k={lens.k} shown={shown} pills={shown} card={card} /> };
 }
 
 const chip = (to, from) => { const t = `${from ? `${from} → ` : '+ '}${to}`; return <code title={t} className="rounded-chip bg-sunken px-1.5 py-0.5 font-mono text-[11px] text-ink-muted">{t}</code>; };

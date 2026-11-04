@@ -75,6 +75,12 @@ screen. Ours used to be a teaching page with a still picture in it; that system 
   side by side with the benchmark, never from stills (a hidden pane freezes transitions). The world freezes for the
   moment: settle, camera in, marks, hold, fix (pills count to zero, red → blue), hold, marks out, camera out, then
   life resumes.
+- **#16 is the bar** (Quarry's running timer, commit ce37e8a): every screen is held to it.
+- **plumber's read is drawn with plumber's own primitives,** imported from overlay/src/tokens.css and the blueprint
+  marks, never invented: coral (`--pl-off`) for off, mint (`--pl-on`) once fixed, 1px lines with the white halo, the
+  blueprint tag as the value pill (mono, white on the hue), heat dots where it's off, the blueprint shade over the rest,
+  `--pl-spring-pop` for marks appearing. Owner: "follow the same primitives we have created for plumber, not just
+  these orange and blue lines".
 - **Teaching sits off the stage**, below it, read after watching: what plumber sees, why it happens, the habit,
   plumber's fix in words (§5).
 - **Fit every width.** Lay out against the stage (container queries); check 1440, 1024 and a ~300px pane.
@@ -159,3 +165,5 @@ Each line is something the owner had to say once; the sections above exist so th
   judged moving.
 - 2026-11-04 · "you just copied the example, be inspired but don't copy": #16 reused the benchmark's figures
   (48,210 · 39,120 …), deltas (+87.0%, +16.8%) and table shape. → §3½ a benchmark gives qualities, never a template.
+- 2026-11-04 · "follow the same primitives we have created for plumber, not just these orange and blue lines": the
+  stage drew its own magenta/blue marks. → §3½ plumber's read is drawn with plumber's primitives, imported.
