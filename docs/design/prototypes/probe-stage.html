@@ -1,0 +1,266 @@
+<!doctype html>
+<!-- THROWAWAY: the #59 moment on the probe stage (docs/craft/probe-stage-brief.md), drawn with the approved gesture
+     marks (probe-marks.html). The probe is simulated here on plumber's real path; the real stage plays frames plumber
+     recorded. Judged here: the order of the moment, the hold on coral, the flip to the safe triangle, the ruler. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Probe stage · #59</title>
+<style>
+  :root {
+    --canvas: #f5f7fa; --surface: #fff; --sunken: #f3f5f9; --ink: #12233d; --ink-muted: #5a6779; --ink-subtle: #6f7c90; --line: rgb(18 35 61 / 0.11);
+    --accent: #5550d8; --accent-soft: #efeefd; --accent-deep: #3631a6; --board: #eef1f5; --board-dot: #d6dce4;
+    --popover: 0 0 0 0.5px rgb(18 35 61 / 0.08), 0 4px 8px rgb(18 35 61 / 0.05), 0 12px 32px rgb(18 35 61 / 0.12);
+    --card: 0 0 0 1px rgb(18 35 61 / 0.11), 0 1px 1px rgb(18 35 61 / 0.03), 0 2px 6px rgb(18 35 61 / 0.04);
+    /* plumber's marks (overlay/src/tokens.css, scoped to :host there) */
+    --m-sky: #2a7fd0; --m-coral: #e5503f; --m-mint: #1f9e64; --pl-halo: rgb(255 255 255 / 0.9); --pl-ink-2: #6b665c; --pl-ink-3: #b3ad9f;
+    --pl-sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; --pl-mono: ui-monospace, "SF Mono", Menlo, monospace;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 72px 24px 40px; background: var(--board);
+    background-image: radial-gradient(var(--board-dot) 1px, transparent 1px); background-size: 16px 16px;
+    font: 14px/20px Inter, system-ui, sans-serif; color: var(--ink); -webkit-font-smoothing: antialiased; }
+  .bar { position: fixed; top: 16px; left: 50%; translate: -50% 0; display: flex; gap: 10px; align-items: center; padding: 6px 6px 6px 16px;
+    background: var(--surface); border-radius: 999px; box-shadow: 0 0 0 0.5px var(--line), 0 2px 8px rgb(18 35 61 / 0.06); font-size: 13px; }
+  .bar .sec { color: var(--ink-muted); } .bar b { font-weight: 500; }
+  .bar button { font: inherit; border: 0; background: var(--sunken); border-radius: 999px; padding: 4px 12px; cursor: pointer; color: var(--ink); }
+  .stage { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+
+  .view { position: relative; width: 760px; height: 430px; border-radius: 16px; overflow: hidden; }
+  .camera { position: absolute; left: 0; top: 0; transform-origin: 0 0; will-change: transform; }
+  /* the app: a design tool, the hero card right-clicked */
+  .card { position: absolute; left: 30px; top: 25px; width: 700px; height: 380px; border-radius: 10px; background: var(--surface); box-shadow: var(--card); overflow: hidden;
+    display: grid; grid-template-rows: 40px 1fr; }
+  .top { display: flex; align-items: center; gap: 8px; padding: 0 14px; border-bottom: 0.5px solid var(--line); font-size: 13px; }
+  .top .crumb { color: var(--ink-muted); } .top .zoom { margin-left: auto; color: var(--ink-muted); font-variant-numeric: tabular-nums; }
+  .body { display: grid; grid-template-columns: 160px 1fr; min-height: 0; }
+  .layers { border-right: 0.5px solid var(--line); padding: 10px 8px; display: flex; flex-direction: column; gap: 1px; font-size: 13px; }
+  .layers .h { padding: 2px 8px 6px; font-size: 11px; font-weight: 500; color: var(--ink-subtle); }
+  .layers span:not(.h) { padding: 4px 8px; border-radius: 6px; color: var(--ink-muted); }
+  .layers .on { background: var(--accent-soft); color: var(--accent-deep) !important; font-weight: 500; }
+  .canvas { position: relative; background: var(--sunken); }
+  .shape { position: absolute; left: 14px; top: 46px; width: 110px; height: 130px; border-radius: 12px; background: var(--accent); }
+  .shape::after { content: ''; position: absolute; inset: -4px; border-radius: 15px; border: 1.5px solid var(--accent); }
+  .shape i { position: absolute; left: 14px; bottom: 18px; width: 70px; height: 8px; border-radius: 4px; background: rgb(255 255 255 / 0.5); }
+  .shape i + i { bottom: 34px; width: 46px; background: rgb(255 255 255 / 0.85); }
+
+  .menu, .submenu { position: absolute; width: 168px; padding: 4px; background: var(--surface); border-radius: 10px; box-shadow: var(--popover); font-size: 13px; }
+  .item { height: 30px; display: flex; align-items: center; justify-content: space-between; padding: 0 10px; border-radius: 6px; }
+  .item.hover { background: var(--sunken); }
+  .item kbd { font: 11.5px system-ui; color: var(--ink-muted); }
+  .item .chev { color: var(--ink-muted); font-size: 11px; }
+  .submenu { transition: opacity 90ms; } .submenu.shut { opacity: 0; }
+
+  /* plumber's layer, in the card's coordinates (the card sits at 30,25 in the camera) */
+  svg.marks { position: absolute; left: 30px; top: 25px; width: 700px; height: 380px; overflow: visible; pointer-events: none; transition: opacity 250ms; }
+  .tri { fill: rgb(42 127 208 / 0.13); stroke: var(--m-sky); stroke-width: 1.25; stroke-dasharray: 4 3; vector-effect: non-scaling-stroke; stroke-linejoin: round; transition: opacity 250ms; }
+  .edge { stroke: var(--m-sky); stroke-width: 1.25; stroke-dasharray: 4 3; vector-effect: non-scaling-stroke; }
+  .dot { fill: var(--m-sky); }
+  .ring { fill: #fff; stroke: var(--m-sky); stroke-width: 1.5; vector-effect: non-scaling-stroke; }
+  .ring.off { fill: var(--m-coral); stroke: #fff; } .ring.on { fill: var(--m-mint); stroke: #fff; }
+  .contact { fill: #fff; stroke: var(--m-sky); stroke-width: 1.5; vector-effect: non-scaling-stroke; }
+  .halo { fill: none; stroke: rgb(229 80 63 / 0.35); stroke-width: 6; vector-effect: non-scaling-stroke; }
+  .ghostline { fill: none; stroke: var(--m-coral); stroke-width: 1; stroke-dasharray: 2 4; stroke-linecap: round; vector-effect: non-scaling-stroke; opacity: 0.55; }
+  .crossed { fill: url(#hatch); }
+  .reached { fill: rgb(31 158 100 / 0.10); stroke: var(--m-mint); stroke-width: 1; vector-effect: non-scaling-stroke; }
+  .cursor path { fill: #fff; stroke: var(--ink); stroke-width: 1; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+  .hatch-bg { fill: rgb(229 80 63 / 0.08); } .hatch-line { stroke: rgb(229 80 63 / 0.45); stroke-width: 1; }
+
+  /* the shade: the page dims around what's measured */
+  .shade { position: absolute; border-radius: 14px; pointer-events: none; box-shadow: 0 0 0 3000px rgb(29 27 23 / 0.32); opacity: 0; transition: opacity 300ms; }
+  .pill { position: absolute; translate: -50% -50%; white-space: nowrap; font: 600 11px/14px var(--pl-sans); padding: 3px 9px; border-radius: 999px;
+    color: #fff; box-shadow: 0 0 0 1px var(--pl-halo), 0 1px 2px rgb(0 0 0 / 0.12); transition: opacity 200ms, background-color 200ms; }
+  .pill.off { background: var(--m-coral); } .pill.on { background: var(--m-mint); }
+
+  /* the time ruler, under the view, outside the camera */
+  .ruler { position: relative; height: 40px; width: 676px; transition: opacity 300ms; }
+  .ruler .axis { position: absolute; left: 0; right: 0; top: 16px; border-top: 1px solid var(--pl-ink-3); }
+  .ruler .tick { position: absolute; top: 12px; width: 1px; height: 8px; background: var(--pl-ink-3); }
+  .ruler .tick.minor { top: 14px; height: 4px; }
+  .ruler .lab { position: absolute; top: 22px; translate: -50% 0; font: 400 10.5px/14px var(--pl-mono); color: var(--pl-ink-2); }
+  .ruler .played { position: absolute; left: 0; top: 15px; height: 3px; background: var(--m-sky); border-radius: 2px; }
+  .ruler .played.off { background: var(--m-coral); } .ruler .played.on { background: var(--m-mint); }
+  .ruler .ev { position: absolute; top: 11px; width: 11px; height: 11px; margin-left: -5.5px; border-radius: 50%; box-shadow: 0 0 0 2px #fff; }
+  .ruler .ev.off { background: var(--m-coral); } .ruler .ev.on { background: var(--m-mint); } .ruler .ev.plain { background: #fff; box-shadow: 0 0 0 1.5px var(--m-sky); }
+  .ruler .head { position: absolute; top: 4px; width: 2px; height: 24px; margin-left: -1px; background: var(--m-sky); border-radius: 1px; box-shadow: 0 0 0 1px #fff; }
+  .ruler .cap { position: absolute; top: -6px; font: 600 10.5px/14px var(--pl-sans); color: var(--pl-ink-2); }
+  .ruler .cap.r { right: 0; }
+
+  .seg { display: flex; padding: 3px; background: var(--surface); border-radius: 999px; box-shadow: 0 0 0 0.5px var(--line), 0 1px 2px rgb(18 35 61 / 0.05); font-size: 13px; }
+  .seg button { font: inherit; border: 0; background: transparent; padding: 5px 14px; border-radius: 999px; color: var(--ink-muted); cursor: pointer; transition: background-color 200ms, color 200ms; }
+  .seg button[aria-pressed="true"] { background: var(--ink); color: #fff; }
+  .lesson { width: 600px; margin: 4px 0 0; font-size: 13px; line-height: 19px; color: var(--ink-muted); text-align: center; text-wrap: pretty; }
+</style>
+</head>
+<body>
+<div class="bar"><span class="sec">Interaction feel · 59 ·</span><b>Safe triangle for submenus</b><button id="replay" type="button">Replay</button></div>
+
+<div class="stage">
+  <div class="view" id="view">
+    <div class="camera" id="camera">
+      <div class="card">
+        <div class="top"><span class="crumb">Spring launch /</span><span>Hero</span><span class="zoom">100%</span></div>
+        <div class="body">
+          <div class="layers"><span class="h">Layers</span><span>Background</span><span class="on">Hero card</span><span>Headline</span><span>Button</span></div>
+          <div class="canvas"><div class="shape"><i></i><i></i></div></div>
+        </div>
+      </div>
+      <!-- the context menu, in the card's coordinates + (30,25) -->
+      <div class="menu" id="menu" style="left:360px;top:135px">
+        <div class="item">Rename <kbd>⌘R</kbd></div>
+        <div class="item">Arrange <span class="chev">▸</span></div>
+        <div class="item">Group <kbd>⌘G</kbd></div>
+        <div class="item">Hide <kbd>⇧⌘H</kbd></div>
+        <div class="item">Delete <kbd>⌫</kbd></div>
+      </div>
+      <div class="submenu" id="sub" style="left:524px;top:165px">
+        <div class="item">Bring to front</div><div class="item">Bring forward</div><div class="item">Send backward</div><div class="item">Send to back</div>
+      </div>
+      <svg class="marks" id="marks" viewBox="0 0 700 380" aria-hidden="true">
+        <defs><pattern id="hatch" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect class="hatch-bg" width="5" height="5"/><line class="hatch-line" x1="0" y1="0" x2="0" y2="5"/></pattern></defs>
+        <g id="layer"></g>
+      </svg>
+      <div class="shade" id="shade"></div>
+    </div>
+    <span class="pill off" id="pill" style="opacity:0"></span>
+  </div>
+
+  <div class="ruler" id="ruler" style="opacity:0"></div>
+  <div class="seg" role="group" aria-label="Menu">
+    <button type="button" id="m-hand" aria-pressed="true">Hand-rolled menu</button>
+    <button type="button" id="m-safe" aria-pressed="false">Radix menu</button>
+  </div>
+  <p class="lesson">A submenu that closes the moment the pointer touches another item can’t be reached on a diagonal: the straight way there cuts across the item below. A safe triangle, from where you left the item to the submenu’s near edge, holds it open while you head for it.</p>
+</div>
+
+<script>
+/* ─────────────────────────────────────────────────────────
+ * THE #59 MOMENT (stage ms)
+ *     0   rest: the tool, the hero card right-clicked, Arrange open
+ *   500   camera in on the menu and its submenu (900ms, ease in-out)
+ *  1500   shade, ruler and plumber's contact point on Arrange
+ *  1800   hand-rolled: plumber's probe plays at ½ speed (600ms of gesture over 1200ms)
+ * ≈2040   it touches Group, the submenu closes → the frame holds, coral (1.8s)
+ *  3900   the switch flips to Radix; the trail clears; the triangle draws in from the contact point
+ *  4300   the same path plays: the triangle holds the submenu open → mint at Send to back
+ *  7000   marks out (300ms) · 7300 camera out (900ms) · 8200 rest · 9400 again
+ * ───────────────────────────────────────────────────────── */
+const T = { camIn: 500, camDur: 900, marksIn: 1500, play1: 1800, flip: 3900, triIn: 4100, play2: 4300, marksOut: 7000, camOut: 7300, loop: 9400 };
+const GESTURE = 600, SPEED = 0.5, W = 676;
+const $ = (id) => document.getElementById(id);
+const NS = 'http://www.w3.org/2000/svg';
+const el = (tag, attrs, parent) => { const n = document.createElementNS(NS, tag); for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, v); parent.append(n); return n; };
+
+// geometry in the card's coordinates
+const M = { x: 330, y: 110, w: 168 }, SUB = { x: 494, y: 140, w: 168, h: 128 };
+const row = (i) => ({ x: M.x + 4, y: M.y + 4 + i * 30, w: M.w - 8, h: 30 });
+const subRow = (i) => ({ x: SUB.x + 4, y: SUB.y + 4 + i * 30, w: SUB.w - 8, h: 30 });
+const inside = (p, r) => p.x >= r.x && p.x <= r.x + r.w && p.y >= r.y && p.y <= r.y + r.h;
+const A = row(1), G = row(2);
+// plumber's probe (src/craft-probe.ts): from the item's middle to the submenu's far corner, 11 samples, 60ms apart here
+const start = { x: A.x + A.w / 2, y: A.y + A.h / 2 }, end = { x: SUB.x + SUB.w - 8, y: SUB.y + SUB.h - 6 };
+const at = (p) => ({ x: start.x + (end.x - start.x) * p, y: start.y + (end.y - start.y) * p });
+const lost = [...Array(11).keys()].find((i) => i > 0 && inside(at(i / 10), G) && at(i / 10).x < M.x + M.w) / 10;
+const tri = [start, { x: SUB.x, y: SUB.y - 4 }, { x: SUB.x, y: SUB.y + SUB.h + 4 }];
+const items = [...$('menu').querySelectorAll('.item')], subItems = [...$('sub').querySelectorAll('.item')];
+
+// the camera frames the menu, the submenu and room for the pill
+const frame = { x: M.x - 40, y: M.y - 28, w: SUB.x + SUB.w + 40 - (M.x - 40), h: SUB.y + SUB.h + 52 - (M.y - 28) };
+const ease = (t) => (t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2);
+const clamp = (v) => Math.max(0, Math.min(1, v));
+
+function ruler(ms, kind, events, label) {
+  const x = (v) => (v / GESTURE) * W;
+  let h = `<span class="cap">${label}</span><span class="cap r">½ speed</span><div class="axis"></div>`;
+  for (let v = 0; v <= GESTURE; v += 50) h += `<div class="tick ${v % 100 ? 'minor' : ''}" style="left:${x(v)}px"></div>${v % 100 ? '' : `<span class="lab" style="left:${x(v)}px">${v}</span>`}`;
+  h += `<div class="played ${kind}" style="width:${x(ms)}px"></div>`;
+  for (const [v, k] of events) h += `<div class="ev ${k}" style="left:${x(v)}px"></div>`;
+  return h + `<div class="head" style="left:${x(ms)}px"></div>`;
+}
+
+let t0 = performance.now(), solo = null;
+const setMode = (m) => { $('m-hand').setAttribute('aria-pressed', m === 'hand'); $('m-safe').setAttribute('aria-pressed', m === 'safe'); };
+$('replay').onclick = () => { solo = null; t0 = performance.now(); };
+// the switch replays one side alone, camera already in
+$('m-hand').onclick = () => { solo = 'hand'; t0 = performance.now(); };
+$('m-safe').onclick = () => { solo = 'safe'; t0 = performance.now(); };
+
+function render(now) {
+  let t = now - t0;
+  // one side alone: start at its own playback, hold, then out
+  if (solo === 'hand') t = t < 3000 ? T.marksIn + t : T.marksOut + (t - 3000);
+  if (solo === 'safe') t = t < 3200 ? T.flip + t : T.marksOut + (t - 3200);
+  const mode = t < T.flip ? 'hand' : 'safe';
+  setMode(mode);
+
+  // camera
+  const c = ease(clamp((t - T.camIn) / T.camDur)) * (1 - ease(clamp((t - T.camOut) / T.camDur)));
+  const view = $('view'), Z = Math.min(view.clientWidth / frame.w, view.clientHeight / frame.h);
+  const k = 1 + (Z - 1) * c;
+  const tx = (-(frame.x + 30) * Z + (view.clientWidth - frame.w * Z) / 2) * c, ty = (-(frame.y + 25) * Z + (view.clientHeight - frame.h * Z) / 2) * c;
+  $('camera').style.transform = `translate(${tx}px, ${ty}px) scale(${k})`;
+  const toView = (p) => ({ x: tx + (p.x + 30) * k, y: ty + (p.y + 25) * k });
+
+  const on = t >= T.marksIn && t < T.marksOut;
+  $('marks').style.opacity = on ? 1 : 0;
+  $('ruler').style.opacity = on ? 1 : 0;
+  const shade = $('shade');
+  Object.assign(shade.style, { left: `${frame.x + 30 + 8}px`, top: `${frame.y + 25 + 8}px`, width: `${frame.w - 16}px`, height: `${frame.h - 16}px`, opacity: on ? 1 : 0 });
+
+  // the probe's clock, at ½ speed
+  const play = mode === 'hand' ? T.play1 : T.play2;
+  let p = clamp(((t - play) * SPEED) / GESTURE);
+  const closed = mode === 'hand' && p >= lost;
+  if (closed) p = lost; // the frame holds where it closed
+  const pt = at(p), moving = t >= play;
+  const onSub = [0, 1, 2, 3].find((i) => inside(pt, subRow(i)));
+
+  // the page as the gesture leaves it
+  items.forEach((n, i) => n.classList.toggle('hover', closed ? i === 2 : onSub === undefined && i === 1));
+  subItems.forEach((n, i) => n.classList.toggle('hover', !closed && i === onSub));
+  $('sub').classList.toggle('shut', closed);
+
+  // marks
+  const layer = $('layer');
+  layer.replaceChildren();
+  if (mode === 'safe') { const tp = el('polygon', { class: 'tri', points: tri.map((q) => `${q.x},${q.y}`).join(' ') }, layer); tp.style.opacity = clamp((t - T.triIn) / 250); el('line', { class: 'edge', x1: SUB.x, y1: SUB.y - 4, x2: SUB.x, y2: SUB.y + SUB.h + 4 }, layer).style.opacity = clamp((t - T.triIn) / 250); }
+  if (closed) {
+    el('rect', { class: 'crossed', x: G.x, y: G.y, width: G.w, height: G.h, rx: 6 }, layer);
+    el('rect', { class: 'ghostline', x: SUB.x, y: SUB.y, width: SUB.w, height: SUB.h, rx: 10 }, layer);
+  }
+  const reached = mode === 'safe' && p >= 1;
+  if (reached) { const r = subRow(3); el('rect', { class: 'reached', x: r.x, y: r.y, width: r.w, height: r.h, rx: 6 }, layer); }
+  // the trail: a ring per sample plumber took, dots between, older fainter
+  if (moving) {
+    const upTo = p * 10;
+    for (let i = 0; i < Math.ceil(upTo); i++) {
+      const a = at(i / 10), b = at(Math.min(upTo, i + 1) / 10), d = Math.hypot(b.x - a.x, b.y - a.y), n = Math.max(1, Math.round(d / 5));
+      for (let j = 1; j < n; j++) el('circle', { class: 'dot', cx: a.x + ((b.x - a.x) * j) / n, cy: a.y + ((b.y - a.y) * j) / n, r: 1.1, opacity: (0.2 + 0.6 * ((i + j / n) / Math.max(1, upTo))).toFixed(2) }, layer);
+    }
+    for (let i = 1; i <= Math.floor(upTo + 1e-6); i++) { const s = at(i / 10); el('circle', { class: 'ring', cx: s.x, cy: s.y, r: 1.9 }, layer); }
+  }
+  el('circle', { class: 'contact', cx: start.x, cy: start.y, r: 3 }, layer);
+  if (closed) { el('circle', { class: 'halo', cx: pt.x, cy: pt.y, r: 7 }, layer); el('circle', { class: 'ring off', cx: pt.x, cy: pt.y, r: 3.2 }, layer); }
+  if (reached) el('circle', { class: 'ring on', cx: pt.x, cy: pt.y, r: 3.2 }, layer);
+  const cur = el('g', { class: 'cursor', transform: `translate(${pt.x + 3} ${pt.y + 2}) scale(${1 / k})` }, layer);
+  el('path', { d: 'M0 0 L0 13.5 L3.4 10.4 L5.9 16 L8.1 15.1 L5.7 9.6 L10 9.6 Z' }, cur);
+
+  // the pill, in the view (it doesn't zoom)
+  const pill = $('pill');
+  pill.style.opacity = on && (closed || reached) ? 1 : 0;
+  if (closed) { pill.className = 'pill off'; pill.textContent = 'closed · crossed Group'; const v = toView({ x: SUB.x + SUB.w / 2, y: SUB.y + SUB.h / 2 }); pill.style.left = `${v.x}px`; pill.style.top = `${v.y}px`; }
+  if (reached) { pill.className = 'pill on'; pill.textContent = 'reached · ✓'; const v = toView({ x: SUB.x + SUB.w / 2, y: SUB.y + SUB.h + 18 }); pill.style.left = `${v.x}px`; pill.style.top = `${v.y}px`; }
+
+  // the ruler, on the probe's own clock
+  const ms = moving ? p * GESTURE : 0;
+  $('ruler').innerHTML = ruler(ms, closed ? 'off' : reached ? 'on' : '', [[0, 'plain'], ...(closed ? [[ms, 'off']] : []), ...(reached ? [[ms, 'on']] : [])],
+    mode === 'hand' ? 'plumber’s probe · hand-rolled menu' : 'plumber’s probe · Radix menu');
+
+  if (t > T.loop) { solo = null; t0 = now; }
+  requestAnimationFrame(render);
+}
+requestAnimationFrame(render);
+</script>
+</body>
+</html>

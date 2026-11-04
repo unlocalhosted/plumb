@@ -214,3 +214,9 @@ Each line is something the owner had to say once; the sections above exist so th
   free-licensed and credited.
 - 2026-11-04 · "most of the rules you are showing is just changing padding … not the insightful stuff, the tacit
   knowledge"; #9 and #10 "aren't real mistakes". → §0 only insights get a screen; the rest are off the showcase.
+- 2026-11-04 · "this is trash, black opaque items really? put some craft behind": the probe-stage prototype drew its
+  hatch and triangle with `color-mix()` in SVG attributes (they render black), and was built as a whole moment with no
+  designed marks and no look before showing. Benchmark for gesture marks: a sampled dotted trail, a translucent
+  triangle with dashed edges, rings on the samples. → A new kind of mark (time, a gesture) gets a marks sheet first,
+  every state side by side, reviewed before any moment uses it. Look at the render before showing anything. In SVG,
+  colours go through CSS (classes, `style`), never CSS functions in presentation attributes.
