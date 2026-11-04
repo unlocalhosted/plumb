@@ -4,6 +4,7 @@
 // over the example; it reads the page, it never decides what is wrong (plumber does).
 import { useEffect, useState } from 'react';
 import { Bell, Play } from '../icons.jsx';
+import { HistoryIcon, LayersIcon, MessageIcon, SparklesIcon } from '@unlocalhosted/dither-icons';
 import site from '../site.png';
 import receipt from '../receipt.png';
 
@@ -162,80 +163,6 @@ Timesheet.measure = (root) => {
   }
   const s = root.querySelector('[data-entries]').getBoundingClientRect();
   return { lines, bands, pills, off, subject: { left: s.left, right: s.right, top: top - 12, bottom } };
-};
-
-// #3 round logos are drawn a touch larger than square ones, or they look smaller
-const Mark = ({ shape, r, tone, letter, size = 28 }) => (
-  <svg viewBox="0 0 24 24" width={size} height={size} aria-hidden="true" className={'shrink-0 ' + tone}>
-    {shape === 'round' ? <circle cx="12" cy="12" r={r} fill="currentColor" /> : <rect x="3" y="3" width="18" height="18" rx="4" fill="currentColor" />}
-    <text x="12" y="16" textAnchor="middle" fontSize="10" fontWeight="700" fill="white">{letter}</text>
-  </svg>
-);
-const APPS = [
-  { name: 'Ledgerline', what: 'Books every paid invoice', shape: 'square', tone: 'text-accent', letter: 'L', on: true },
-  { name: 'Orbit Mail', what: 'Sends reminders from your address', shape: 'round', tone: 'text-violet', letter: 'O', on: true },
-  { name: 'Tallyhook', what: 'Imports hours from your tracker', shape: 'square', tone: 'text-positive', letter: 'T', on: true },
-  { name: 'Copperbank', what: 'Matches payments to invoices', shape: 'round', tone: 'text-caution', letter: 'C', on: false },
-];
-// every logo drawn in the same box at the same size, the way a logo strip is made; the circles read smaller
-const SETTINGS = ['General', 'Members', 'Billing', 'Integrations', 'Notifications'];
-const CATALOG = [
-  { name: 'Ledgerline', what: 'Books every paid invoice', shape: 'square', tone: 'text-accent', letter: 'L', state: 'Connected' },
-  { name: 'Orbit Mail', what: 'Reminders from your address', shape: 'round', tone: 'text-violet', letter: 'O', state: 'Connected' },
-  { name: 'Tallyhook', what: 'Imports tracked hours', shape: 'square', tone: 'text-positive', letter: 'T', state: 'Connected' },
-  { name: 'Copperbank', what: 'Matches payments to invoices', shape: 'round', tone: 'text-caution', letter: 'C', state: 'Connect' },
-];
-function Connected({ broken }) {
-  return (
-    <AppFrame crumb="Settings">
-      <div className="flex gap-6 px-5 pt-4 pb-6">
-        <nav aria-label="Settings" className="hidden w-32 shrink-0 flex-col gap-0.5 text-sm sm:flex">
-          {SETTINGS.map((t) => <span key={t} className={'-mx-2 rounded-control px-2 py-1.5 ' + (t === 'Integrations' ? 'bg-sunken font-medium text-ink' : 'text-ink-muted')}>{t}</span>)}
-        </nav>
-        <div className="flex min-w-0 flex-1 flex-col gap-4">
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex flex-col gap-0.5">
-              <h3 className="text-base font-semibold">Integrations</h3>
-              <span className="text-sm text-ink-muted">Three connected · synced 4 min ago</span>
-            </div>
-            {/* the strip of what's connected: every mark drawn in one box, at one size */}
-            <div data-logos aria-label="Ledgerline, Orbit Mail, Tallyhook, Copperbank" className="flex items-center gap-1">
-              {CATALOG.map((a) => <Mark key={a.name} shape={a.shape} r={9} tone={a.tone} letter={a.letter} />)}
-            </div>
-          </div>
-          <div className="flex flex-wrap gap-1.5 text-xs">
-            {['All', 'Accounting', 'Payments', 'Email'].map((t, i) => <span key={t} className={'rounded-full px-2.5 py-1 ' + (i === 0 ? 'bg-ink font-medium text-accent-ink' : 'bg-sunken text-ink-muted')}>{t}</span>)}
-          </div>
-          <div className="grid gap-3 @container sm:grid-cols-2">
-            {CATALOG.map((a) => (
-              <div key={a.name} className="flex flex-col gap-3 rounded-control border border-line px-3 pt-2.5 pb-3">
-                <div className="flex items-center gap-3">
-                  <span className="grid size-9 shrink-0 place-items-center rounded-control bg-sunken"><Mark shape={a.shape} r={9.75} tone={a.tone} letter={a.letter} size={20} /></span>
-                  <span className="flex min-w-0 flex-col">
-                    <span className="text-sm font-medium">{a.name}</span>
-                    <span className="truncate text-xs text-ink-muted" title={a.what}>{a.what}</span>
-                  </span>
-                </div>
-                <span className={'self-start rounded-full px-2 py-0.5 text-xs font-medium ' + (a.state === 'Connected' ? 'bg-positive-soft text-positive' : 'bg-sunken text-ink')}>{a.state}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    </AppFrame>
-  );
-}
-Connected.framed = true;
-Connected.measure = (root) => {
-  const ticks = [...root.querySelectorAll('[data-logos] svg')].map((g) => {
-    const box = g.getBoundingClientRect(), circle = g.querySelector('circle');
-    const half = circle ? Number(circle.getAttribute('r')) : 9, size = (box.height / 24) * half * 2 * (parseFloat(getComputedStyle(g).scale) || 1);
-    const mid = box.top + box.height / 2;
-    return { y: mid - size / 2, left: box.left + 2, right: box.right - 2, size, round: !!circle };
-  });
-  const rd = Math.min(...ticks.filter((t) => t.round).map((t) => t.size)), sq = Math.max(...ticks.filter((t) => !t.round).map((t) => t.size));
-  const near = [...root.querySelectorAll('[data-logos] svg')].slice(0, 2).map((g) => g.getBoundingClientRect());
-  return { around: root.querySelector('[data-logos]'), focus: { x: (near[0].right + near[1].left) / 2, y: near[0].top + near[0].height / 2 }, ticks, broken: Math.abs(rd - sq) < 0.6 ? `same ${px(sq)} · circle reads smaller` : `round ${px(rd)} · square ${px(sq)}`, fixed: 'reads the same ✓', off: rd < sq * 1.04 };
 };
 
 // #4 an icon beside words sits on the capitals' middle (broken: pushed down with mt-1, a nudge made for a font the app
@@ -408,7 +335,6 @@ Price.measure = (root) => {
   return { around: row, ticks: [{ y: a.baseline, left: a.left, right: a.right }, { y: b.baseline, left: b.left, right: b.right }], broken: `baselines ${px(d)} apart`, fixed: 'one baseline ✓', off: Math.abs(d) > 0.6 };
 };
 
-Connected.lesson = { why: 'A circle fills about 78% of its box, a square nearly all of it. In the same box the circle has less ink, so it reads smaller.', habit: 'In one set, draw round marks a few percent larger than square ones (type designers call it overshoot).' };
 Notice.lesson = { why: 'items-center centres the line box, and the line box keeps room for descenders below the baseline. The capitals sit above its middle, so a centred icon reads low.', habit: "Line icons up with the capitals' middle, not the line box: nudge up by the gap, or make the line box as tall as the capitals." };
 Chips.lesson = { why: 'text-sm/6 puts a 24px line around 14px letters: 5px of invisible leading sits above and below them and adds itself to the padding, so even padding looks taller than it is wide.', habit: 'Measure padding from the letters: trim the text box to the capitals and baseline (text-box: trim-both cap alphabetic).' };
 Price.lesson = { why: 'items-center lines up the middles of the two boxes. Boxes of different sizes keep their baselines at different heights, so the unit floats beside the price.', habit: 'Text of different sizes side by side sits on one baseline: items-baseline.' };
@@ -744,5 +670,92 @@ InvoiceWalkthrough.measure = (root) => {
   };
 };
 
-export const EXAMPLES = { 7: Grouping, 8: Templates, 9: Toolbar, 10: NewClient, 1: ClientProfile, 2: InvoiceWalkthrough, 3: Connected, 4: Notice, 5: Chips, 6: Price, 16: Timesheet };
+// #3 round shapes are drawn a touch larger than square ones. A whiteboard in a team's design tool, with the Shapes
+// picker open: square, circle, triangle and diamond all drawn in the same 20px box. A circle fills about 78% of its
+// box and a square nearly all of it, so the circle reads smaller. plumber's fix draws it 4% larger (overshoot).
+const SHAPES_PICKER = [
+  { name: 'Square', shape: <rect x="2" y="2" width="20" height="20" rx="1" /> },
+  { name: 'Circle', shape: <circle cx="12" cy="12" r="10" /> },
+  { name: 'Triangle', shape: <path d="M12 2.5 22 21H2z" /> },
+  { name: 'Diamond', shape: <path d="M12 1.5 22.5 12 12 22.5 1.5 12z" /> },
+];
+const TOOLS = [
+  { name: 'Layers', Icon: LayersIcon },
+  { name: 'Comment', Icon: MessageIcon },
+  { name: 'Ideas', Icon: SparklesIcon },
+];
+function Whiteboard() {
+  // Slate's primitives, with dithered icons for the tool's own controls
+  return (
+    <article className="w-full max-w-[36rem] overflow-hidden rounded-card bg-surface shadow-card">
+      <header className="flex h-12 items-center gap-3 border-b-hairline border-line px-4">
+        <span className="text-sm font-medium">Spring launch</span>
+        <span className="text-[13px] text-ink-muted">Board</span>
+        <span className="ml-auto flex -space-x-1.5" aria-label="Mira, Theo and Sana are here">
+          {[['M', 'bg-accent-soft text-accent-deep'], ['T', 'bg-positive-soft text-positive'], ['S', 'bg-caution-soft text-caution']].map(([l, c]) => (
+            <span key={l} className={'grid size-6 place-items-center rounded-full text-[11px] font-semibold ring-2 ring-surface ' + c}>{l}</span>
+          ))}
+        </span>
+        <button type="button" aria-label="History" className="grid size-8 place-items-center rounded-control text-ink-muted hover:bg-sunken hover:text-ink"><HistoryIcon size={18} texture="dither" /></button>
+        <button type="button" className="h-8 rounded-control bg-accent px-3 text-[13px] font-medium text-accent-ink hover:bg-accent-deep">Share</button>
+      </header>
+      {/* the board: a dotted canvas with the team's notes on it */}
+      <div className="relative h-[19rem] bg-canvas [background-image:radial-gradient(var(--color-line)_1px,transparent_1px)] [background-size:16px_16px]">
+        <div className="absolute top-6 left-6 w-40 rotate-[-1.5deg] rounded-[4px] bg-caution-soft p-3 text-[13px] leading-5 shadow-raised">Landing page copy by Friday</div>
+        <svg aria-hidden="true" className="absolute top-12 left-[12.5rem] h-10 w-32 text-ink/45" viewBox="0 0 128 40" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M4 30C40 4 84 4 120 22" /><path d="m112 14 9 8-11 3" /></svg>
+        <div className="absolute top-8 right-8 w-36 rotate-[1deg] rounded-[4px] bg-accent-soft p-3 text-[13px] leading-5 shadow-raised">Ask Sana for the hero photo</div>
+        <div className="absolute top-[8.75rem] left-8 grid h-12 w-28 place-items-center rounded-full border-[1.5px] border-ink/50 text-[13px] text-ink-muted">Launch</div>
+        {/* the Shapes picker, open above the toolbar */}
+        <div className="absolute bottom-[4.25rem] left-1/2 flex -translate-x-1/2 flex-col gap-2 rounded-card bg-surface p-2.5 shadow-popover">
+          <span className="px-1 text-xs font-medium text-ink-muted">Shapes</span>
+          <div data-shapes className="flex gap-1">
+            {SHAPES_PICKER.map((s) => (
+              <button key={s.name} type="button" aria-label={s.name} className="grid size-11 place-items-center rounded-control text-ink hover:bg-sunken">
+                <svg viewBox="0 0 24 24" className="size-6" fill="currentColor" aria-hidden="true">{s.shape}</svg>
+              </button>
+            ))}
+          </div>
+        </div>
+        {/* the toolbar */}
+        <div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 items-center gap-1 rounded-card bg-surface p-1.5 shadow-overlay">
+          {TOOLS.map(({ name, Icon }) => (
+            <button key={name} type="button" aria-label={name} className="grid size-9 place-items-center rounded-chip text-ink-muted hover:bg-sunken hover:text-ink"><Icon size={20} texture="dither" /></button>
+          ))}
+          <button type="button" aria-label="Shapes" aria-expanded="true" className="grid size-9 place-items-center rounded-chip bg-accent-soft text-accent-deep">
+            <svg viewBox="0 0 24 24" className="size-5" fill="currentColor" aria-hidden="true"><rect x="3" y="3" width="10" height="10" rx="1" /><circle cx="16" cy="16" r="5.5" /></svg>
+          </button>
+        </div>
+      </div>
+    </article>
+  );
+}
+Whiteboard.stage = true;
+Whiteboard.names = ['Same box', 'Overshoot'];
+Whiteboard.lesson = {
+  why: 'A circle fills about 78% of its box, a square nearly all of it. Drawn in the same box, the circle carries less ink, so it reads smaller than the square beside it.',
+  habit: 'In one set, draw round shapes a few percent larger than square ones. Type designers call it overshoot: an O is taller than an H.',
+};
+// What the eye sees: the square's top and bottom edges carried across to the circle, which falls short of them. The
+// pill is how much larger the circle has to be (to the square's size and the 4% overshoot past it), in px.
+Whiteboard.measure = (root) => {
+  const row = root?.querySelector('[data-shapes]');
+  if (!row) return null;
+  const [sq, ci] = [row.querySelector('rect'), row.querySelector('circle')].map((n) => n.getBoundingClientRect());
+  const k = row.getBoundingClientRect().width / row.offsetWidth || 1, want = sq.height * 1.04, short = (want - ci.height) / k;
+  const left = sq.left - 6 * k, right = ci.right + 6 * k;
+  return {
+    lines: [],
+    rules: [
+      { key: 'sq-top', y: sq.top, left, right }, { key: 'sq-bottom', y: sq.bottom, left, right },
+      { key: 'ci-top', y: ci.top, left: ci.left, right: ci.right }, { key: 'ci-bottom', y: ci.bottom, left: ci.left, right: ci.right },
+    ],
+    bands: [{ key: 'short', left: ci.left, right: ci.right, top: sq.top, bottom: ci.top, pattern: 'hatch' }],
+    pills: [{ key: 'short', x: (ci.left + ci.right) / 2, y: sq.top - 14 * k, text: (Math.max(0, short) * k).toFixed(1), ok: short < 0.3 }],
+    off: short >= 0.3,
+    cut: (() => { const r = row.getBoundingClientRect(); return { left: r.left, right: r.right, top: r.top, bottom: r.bottom, r: 6 * k }; })(),
+    subject: { left: sq.left - 40 * k, right: ci.right + 40 * k, top: sq.top - 50 * k, bottom: sq.bottom + 40 * k },
+  };
+};
+
+export const EXAMPLES = { 7: Grouping, 8: Templates, 9: Toolbar, 10: NewClient, 1: ClientProfile, 2: InvoiceWalkthrough, 3: Whiteboard, 4: Notice, 5: Chips, 6: Price, 16: Timesheet };
 

@@ -6,5 +6,8 @@
   "scripts": {
     "dev": "vite --config vite.config.mjs",
     "findings": "node scripts/findings.mjs"
+  },
+  "dependencies": {
+    "@unlocalhosted/dither-icons": "^0.2.6"
   }
 }

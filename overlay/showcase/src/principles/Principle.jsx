@@ -155,6 +155,8 @@ function marksOf(m, cam) {
     return {
       off: m.off && !settled,
       lines: m.lines.map((l, i) => ({ key: l.key ?? i, x: X(l.x), top: Y(l.top), bottom: Y(l.bottom) })),
+      // horizontal guides: an edge running across, for a size or a baseline
+      rules: (m.rules ?? []).map((l, i) => ({ key: l.key ?? i, y: Y(l.y), left: X(l.left), right: X(l.right) })),
       bands: (m.bands ?? []).map((b, i) => ({ key: b.key ?? i, pattern: b.pattern, left: X(b.left), right: X(b.right), top: Y(b.top), bottom: Y(b.bottom) })),
       // a pill's number is measured on screen; in the component's own pixels it doesn't grow with the camera
       pills: m.pills.map((p, i) => { const value = (Number(p.text) || 0) / k; return { key: p.key ?? i, x: X(p.x), y: Y(p.y), value, ok: p.ok || value < 0.5 }; }),
@@ -230,6 +232,9 @@ function Marks({ from, to, t, k, shown, pills, card }) {
             ...(b.pattern === 'hatch'
               ? { backgroundImage: `repeating-linear-gradient(45deg, ${hue} 0 ${1 / k}px, transparent ${1 / k}px ${4 / k}px)` }
               : { backgroundImage: `radial-gradient(circle, ${hue} ${0.95 / k}px, transparent ${1.25 / k}px)`, backgroundSize: `${3.5 / k}px ${3.5 / k}px` }) }} />
+        ); })}
+        {(from.rules ?? []).map((l) => { const n = to?.rules?.find((x) => x.key === l.key) ?? l; return (
+          <span key={'h' + l.key} style={{ position: 'absolute', top: lerp(l.y, n.y, e), left: lerp(l.left, n.left, e), width: lerp(l.right - l.left, n.right - n.left, e), height: MARKS.stripe / k, background: hue, opacity: 0.55 }} />
         ); })}
         {from.lines.map((l) => { const n = at('lines', l.key) ?? l; return (
           <span key={'l' + l.key} style={{ position: 'absolute', left: lerp(l.x, n.x, e), top: l.top, height: l.bottom - l.top, width: MARKS.stripe / k, background: hue, opacity: 0.55 }} />

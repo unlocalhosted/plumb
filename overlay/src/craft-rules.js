@@ -846,7 +846,10 @@ export const mediaSize = {
   check({ el, facts }, theme) {
     const T = theme.spec(this.id);
     if (!el.matches('img, svg, [data-avatar]')) return [];
-    const r = facts.rect(el);
+    // the size a list shares is the box: a scale drawn on top is an optical correction made on purpose (a round icon's
+    // overshoot, #3), so it is taken out before sizes are compared
+    const scaleOf = (n) => { const ns = facts.style(n), sc = ns.scale && ns.scale !== 'none' ? parseFloat(ns.scale) : 1, m = /matrix\(([^,]+)/.exec(ns.transform ?? ''); return (sc || 1) * (m ? parseFloat(m[1]) || 1 : 1); };
+    const r = facts.rect(el), width = (n) => facts.rect(n).width / scaleOf(n);
     if (r.width < T.min) return [];
     // the row it sits in: the nearest ancestor (three levels up at most) with siblings of its own kind
     let row = el.parentElement;
@@ -858,10 +861,10 @@ export const mediaSize = {
     const path = []; for (let n = el; n !== row; n = n.parentElement) path.unshift([...n.parentElement.children].indexOf(n));
     const peers = [...row.parentElement.children].filter((k) => k.localName === row.localName && k.className === row.className);
     if (peers.length < 3) return [];
-    const sizes = peers.map((p) => { let n = p; for (const i of path) n = n?.children[i]; return n && n.localName === el.localName ? Math.round(facts.rect(n).width) : null; }).filter((w) => w !== null);
+    const sizes = peers.map((p) => { let n = p; for (const i of path) n = n?.children[i]; return n && n.localName === el.localName ? Math.round(width(n)) : null; }).filter((w) => w !== null);
     const count = new Map(); for (const w of sizes) count.set(w, (count.get(w) ?? 0) + 1);
     const [mode, times] = [...count].sort((a, b) => b[1] - a[1])[0] ?? [];
-    const mine = Math.round(r.width);
+    const mine = Math.round(width(el));
     if (!mode || mine === mode || times < 2 || times <= sizes.length / 2 || Math.abs(mine - mode) > T.near) return [];
     const cls = utility(el, 'size') ?? utility(el, 'w');
     return [{
@@ -1657,12 +1660,20 @@ export const overshoot = {
       // drawn the same size as the squares is the mistake itself (the natural one: one box for every logo), and filled
       // shapes are measured exactly, so it is sure; only a round one already a little larger, short of the overshoot, is grey
       evidence: { round: Math.round(rd * 10) / 10, square: Math.round(sq * 10) / 10 }, confidence: rd > sq + 0.5 ? GREY : 0.8,
-      // the scale that brings the smallest round one to the squares' size and the overshoot past it
-      suggest: ((at, k) => (at.length && at.every((i) => i > 0)
-        ? { kind: 'class', from: '', to: `[&>svg:is(${at.map((i) => `:nth-child(${i})`).join(',')})]:scale-[${k}]`, target: at.map((i) => `:scope > svg:nth-child(${i})`).join(', '), why: 'round drawn a touch larger', sets: { scale: String(k) },
-          text: `Draw the round icons ${Math.round((k - 1) * 100)}% bigger (scale-[${k}]) so they read the same size.` }
-        : { kind: 'advice', text: `Draw the round icons ${Math.round((k - 1) * 100)}% bigger (scale-[${k}]) so they read the same size.` }))(
-        svgs.filter((g, i) => round.includes(inks[i])).map((g) => (g.parentElement === el ? [...el.children].indexOf(g) + 1 : 0)), Math.ceil((sq * T.over / rd) * 100) / 100),
+      // the scale that brings the smallest round one to the squares' size and the overshoot past it, on the round svgs:
+      // a set's own svgs (svg:nth-child), or the svg inside a set's icon-only controls (:nth-child > svg), the usual case
+      suggest: ((at, k) => {
+        const text = `Draw the round icons ${Math.round((k - 1) * 100)}% bigger (scale-[${k}]) so they read the same size.`;
+        if (!at.length || at.some((a) => !a.i)) return { kind: 'advice', text };
+        const own = at.every((a) => a.own), nth = at.map((a) => `:nth-child(${a.i})`);
+        if (!own && at.some((a) => a.own)) return { kind: 'advice', text };
+        const pick = nth.length === 1 ? nth[0] : `:is(${nth.join(',')})`;
+        return { kind: 'class', from: '', to: own ? `[&>svg${pick}]:scale-[${k}]` : `[&>${pick}>svg]:scale-[${k}]`,
+          target: nth.map((n) => (own ? `:scope > svg${n}` : `:scope > ${n} > svg`)).join(', '), why: 'round drawn a touch larger', sets: { scale: String(k) }, text };
+      })(svgs.filter((g, i) => round.includes(inks[i])).map((g) => {
+        const own = g.parentElement === el, child = own ? g : g.parentElement?.parentElement === el ? g.parentElement : null;
+        return { own, i: child ? [...el.children].indexOf(child) + 1 : 0 };
+      }), Math.ceil((sq * T.over / rd) * 100) / 100),
     }];
   },
 };
