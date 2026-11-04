@@ -62,7 +62,9 @@ Content alignment's fix had no `sets`, so it could not be previewed; the fix was
 - **A product screen, not a component.** A lone list or callout in an empty window never sells the illusion. Put
   the principle inside believable software: the shared app frame (app bar, product mark, search, the user), the
   page it lives on, its neighbours, people and avatars, states, metadata, density. The principle is one detail of a
-  screen someone would use.
+  screen someone would use. Use `AppFrame` (examples.jsx) and set `Example.framed = true`: the window drops its padding
+  and draws its edge as a ring, so the app bar sits flush. Real containers clip (`overflow-hidden` on a popover or a
+  card), and dim what's behind an overlay.
 - **Restraint over boxes.** One surface divided by hairlines beats several bordered cards; mark the current or chosen
   thing quietly (a small badge), keep one solid action, and keep copy short enough that no line wraps unless meant to.
 - **Fit every width the window has.** Lay out against the window (container queries), not the screen: three

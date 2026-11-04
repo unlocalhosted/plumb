@@ -17,6 +17,24 @@ function lineOf(el) {
 }
 const px = (n) => `${Math.round(Math.abs(n) * 10) / 10}px`;
 
+// Quarry's app frame: every framed example is a screen of the product, not a component alone in a window. The app
+// bar carries the mark, the workspace, search, the bell and the user; `bell` opens what the screen is about.
+export function AppFrame({ children, bell, crumb = 'Studio' }) {
+  return (
+    <div className="flex w-full flex-col">
+      <header className="flex h-12 items-center gap-3 border-b-hairline border-line px-4">
+        <span className="grid size-6 shrink-0 place-items-center rounded-control bg-accent text-xs font-semibold text-accent-ink">Q</span>
+        <span className="text-sm font-semibold">Quarry</span>
+        <span className="hidden text-sm text-ink-muted sm:inline">/ {crumb}</span>
+        <span className="ml-auto hidden h-8 w-48 items-center gap-2 rounded-full bg-sunken px-3 text-xs text-ink-muted md:flex">Search invoices, clients<kbd className="ml-auto font-sans">⌘K</kbd></span>
+        <span className="relative ml-auto md:ml-0">{bell}</span>
+        <span className="grid size-7 shrink-0 place-items-center rounded-full bg-violet text-[11px] font-semibold text-accent-ink">AM</span>
+      </header>
+      <div className="relative min-h-0 flex-1">{children}</div>
+    </div>
+  );
+}
+
 const CLIENTS = [
   { id: 'INV-2041', name: 'Halden & Co.', initials: 'HC', tint: 'bg-accent-soft text-accent', status: 'Sent', tone: 'bg-accent-soft text-accent', amount: '1,111.10' },
   { id: 'INV-2040', name: 'Northfield Dental', initials: 'ND', tint: 'bg-positive-soft text-positive', status: 'Paid', tone: 'bg-positive-soft text-positive', amount: '8,808.00' },
@@ -193,36 +211,54 @@ const APPS = [
   { name: 'Copperbank', what: 'Matches payments to invoices', shape: 'round', tone: 'text-caution', letter: 'C', on: false },
 ];
 // every logo drawn in the same box at the same size, the way a logo strip is made; the circles read smaller
+const SETTINGS = ['General', 'Members', 'Billing', 'Integrations', 'Notifications'];
+const CATALOG = [
+  { name: 'Ledgerline', what: 'Books every paid invoice', shape: 'square', tone: 'text-accent', letter: 'L', state: 'Connected' },
+  { name: 'Orbit Mail', what: 'Reminders from your address', shape: 'round', tone: 'text-violet', letter: 'O', state: 'Connected' },
+  { name: 'Tallyhook', what: 'Imports tracked hours', shape: 'square', tone: 'text-positive', letter: 'T', state: 'Connected' },
+  { name: 'Copperbank', what: 'Matches payments to invoices', shape: 'round', tone: 'text-caution', letter: 'C', state: 'Connect' },
+];
 function Connected({ broken }) {
-  const r = 9;
   return (
-    <div className="flex w-full max-w-md flex-col gap-4">
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex flex-col gap-0.5">
-          <h3 className="text-base font-semibold">Integrations</h3>
-          <span className="text-sm text-ink-muted">Three connected · synced 4 min ago</span>
-        </div>
-        <div data-logos aria-label="Ledgerline, Orbit Mail, Tallyhook, Copperbank" className="flex items-center -space-x-1">
-          {APPS.map((a) => <Mark key={a.name} shape={a.shape} r={r} tone={a.tone} letter={a.letter} />)}
+    <AppFrame crumb="Settings">
+      <div className="flex gap-6 px-5 pt-4 pb-6">
+        <nav aria-label="Settings" className="hidden w-32 shrink-0 flex-col gap-0.5 text-sm sm:flex">
+          {SETTINGS.map((t) => <span key={t} className={'-mx-2 rounded-control px-2 py-1.5 ' + (t === 'Integrations' ? 'bg-sunken font-medium text-ink' : 'text-ink-muted')}>{t}</span>)}
+        </nav>
+        <div className="flex min-w-0 flex-1 flex-col gap-4">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex flex-col gap-0.5">
+              <h3 className="text-base font-semibold">Integrations</h3>
+              <span className="text-sm text-ink-muted">Three connected · synced 4 min ago</span>
+            </div>
+            {/* the strip of what's connected: every mark drawn in one box, at one size */}
+            <div data-logos aria-label="Ledgerline, Orbit Mail, Tallyhook, Copperbank" className="flex items-center gap-1">
+              {CATALOG.map((a) => <Mark key={a.name} shape={a.shape} r={9} tone={a.tone} letter={a.letter} />)}
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-1.5 text-xs">
+            {['All', 'Accounting', 'Payments', 'Email'].map((t, i) => <span key={t} className={'rounded-full px-2.5 py-1 ' + (i === 0 ? 'bg-ink font-medium text-accent-ink' : 'bg-sunken text-ink-muted')}>{t}</span>)}
+          </div>
+          <div className="grid gap-3 @container sm:grid-cols-2">
+            {CATALOG.map((a) => (
+              <div key={a.name} className="flex flex-col gap-3 rounded-control border border-line px-3 pt-2.5 pb-3">
+                <div className="flex items-center gap-3">
+                  <span className="grid size-9 shrink-0 place-items-center rounded-control bg-sunken"><Mark shape={a.shape} r={9.75} tone={a.tone} letter={a.letter} size={20} /></span>
+                  <span className="flex min-w-0 flex-col">
+                    <span className="text-sm font-medium">{a.name}</span>
+                    <span className="truncate text-xs text-ink-muted" title={a.what}>{a.what}</span>
+                  </span>
+                </div>
+                <span className={'self-start rounded-full px-2 py-0.5 text-xs font-medium ' + (a.state === 'Connected' ? 'bg-positive-soft text-positive' : 'bg-sunken text-ink')}>{a.state}</span>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
-      <ul className="flex flex-col rounded-control border border-line">
-        {APPS.map((a) => (
-          <li key={a.name} className="flex items-center gap-3 border-b-hairline border-line px-3 py-2.5 last:border-0">
-            <span className="grid size-9 shrink-0 place-items-center rounded-control bg-sunken"><Mark shape={a.shape} r={9.75} tone={a.tone} letter={a.letter} size={20} /></span>
-            <span className="flex min-w-0 flex-1 flex-col">
-              <span className="text-sm font-medium">{a.name}</span>
-              <span className="truncate text-xs text-ink-muted" title={a.what}>{a.what}</span>
-            </span>
-            <span role="switch" aria-checked={a.on} aria-label={a.name} className={'relative h-6 w-11 shrink-0 rounded-full ' + (a.on ? 'bg-accent' : 'bg-line')}>
-              <span className={'absolute top-0.5 size-5 rounded-full bg-surface shadow-raised ' + (a.on ? 'left-5.5' : 'left-0.5')} />
-            </span>
-          </li>
-        ))}
-      </ul>
-    </div>
+    </AppFrame>
   );
 }
+Connected.framed = true;
 Connected.measure = (root) => {
   const ticks = [...root.querySelectorAll('[data-logos] svg')].map((g) => {
     const box = g.getBoundingClientRect(), circle = g.querySelector('circle');
@@ -235,64 +271,116 @@ Connected.measure = (root) => {
   return { around: root.querySelector('[data-logos]'), focus: { x: (near[0].right + near[1].left) / 2, y: near[0].top + near[0].height / 2 }, ticks, broken: Math.abs(rd - sq) < 0.6 ? `same ${px(sq)} · circle reads smaller` : `round ${px(rd)} · square ${px(sq)}`, fixed: 'reads the same ✓', off: rd < sq * 1.04 };
 };
 
-// #4 an icon beside words sits on the capitals' middle (broken: pushed down with mt-1, for a font long gone)
+// #4 an icon beside words sits on the capitals' middle (broken: pushed down with mt-1, a nudge made for a font the app
+// no longer uses). The notifications popover, opened from the bell over the dashboard.
 const NOTES = [
-  ['Halden & Co. paid INV-2041', '$4,820.00 arrived in Studio checking', '2m'],
-  ['Northfield Dental opened INV-2040', 'Viewed twice, from Lisbon', '1h'],
-  ['Reminder sent for INV-2039', 'Okafor Landscape · 12 days overdue', '3h'],
+  { who: 'HC', tint: 'bg-accent-soft text-accent', title: 'Halden & Co. paid INV-2041', detail: '$4,820.00 · arrived in Studio checking', when: '2m', icon: 'paid', unread: true },
+  { who: 'ND', tint: 'bg-positive-soft text-positive', title: 'Northfield Dental opened INV-2040', detail: 'Viewed twice · Lisbon, Portugal', when: '1h', icon: 'seen', unread: true },
+  { who: 'OL', tint: 'bg-caution-soft text-ink', title: 'Reminder sent for INV-2039', detail: 'Okafor Landscape · 12 days overdue', when: '3h', icon: 'sent' },
+  { who: 'TR', tint: 'bg-sunken text-ink-muted', title: 'Tomás commented on INV-2037', detail: '“Can we split this into two payments?”', when: 'Yesterday', icon: 'note' },
 ];
+const NoteIcon = ({ kind, className }) => (
+  <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className={'shrink-0 ' + className}>
+    {kind === 'paid' ? <><circle cx="8" cy="8" r="6" /><path d="m5.5 8.2 1.7 1.7 3.3-3.6" /></>
+      : kind === 'seen' ? <><path d="M1.5 8s2.4-4.5 6.5-4.5S14.5 8 14.5 8s-2.4 4.5-6.5 4.5S1.5 8 1.5 8Z" /><circle cx="8" cy="8" r="1.8" /></>
+      : kind === 'sent' ? <path d="M14 2 7 9M14 2l-4.5 12-2.5-5-5-2.5Z" />
+      : <path d="M3 3.5h10v7H7.5L4.5 13v-2.5H3z" />}
+  </svg>
+);
 function Notice({ broken }) {
   return (
-    <div className="flex w-full max-w-md flex-col gap-2">
-      <div className="flex items-baseline justify-between pb-1">
-        <h3 className="text-base font-semibold">Notifications</h3>
-        <span className="text-sm text-accent">Mark all read</span>
+    <AppFrame crumb="Dashboard" bell={<button type="button" aria-label="Notifications, 2 unread" className="relative grid size-8 place-items-center rounded-full bg-sunken text-ink active:bg-line"><Bell /><span className="absolute top-1 right-1 size-2 rounded-full bg-negative ring-2 ring-surface" /></button>}>
+      {/* the dashboard behind, quiet */}
+      <div className="flex flex-col gap-4 px-5 pt-4 pb-6 opacity-50" aria-hidden="true">
+        <span className="text-base font-semibold">Good morning, Ada</span>
+        <div className="grid grid-cols-3 gap-3">{['Outstanding', 'Paid', 'Overdue'].map((t) => <div key={t} className="flex flex-col gap-1 rounded-control bg-sunken px-3 pt-2 pb-3"><span className="text-xs text-ink-muted">{t}</span><span className="h-4 w-16 rounded-chip bg-line" /></div>)}</div>
+        <div className="h-24 rounded-control bg-sunken" />
       </div>
-      <ul className="flex flex-col">
-        {NOTES.map(([title, detail, when], i) => (
-          <li key={title} className={'flex flex-col gap-0.5 border-b-hairline border-line py-2.5 last:border-0 ' + (i === 0 ? '' : '')}>
-            <div data-notice className="flex items-center gap-2.5 text-sm font-medium">
-              <Bell className={'text-accent ' + (broken ? 'mt-1' : '')} />
-              <span className="min-w-0 flex-1 truncate" title={title}>{title}</span>
-              <span className="text-xs font-normal text-ink-muted tabular-nums">{when}</span>
-            </div>
-            <p className="pl-6.5 text-sm text-ink-muted">{detail}</p>
-          </li>
-        ))}
-      </ul>
-    </div>
+      {/* the popover, opened from the bell */}
+      <div className="absolute top-2 right-3 left-3 flex flex-col overflow-hidden rounded-card border border-line bg-surface shadow-popover sm:left-auto sm:w-96">
+        <div className="flex items-center justify-between gap-3 px-4 pt-3 pb-2">
+          <span className="text-sm font-semibold">Notifications</span>
+          <span className="text-xs font-medium text-accent">Mark all read</span>
+        </div>
+        <div className="flex gap-1 px-3 pb-2 text-xs">
+          {['All', 'Payments', 'Mentions'].map((t, i) => <span key={t} className={'rounded-full px-2.5 py-1 ' + (i === 0 ? 'bg-sunken font-medium text-ink' : 'text-ink-muted')}>{t}{i === 0 ? <span className="ml-1 text-ink-muted tabular-nums">4</span> : null}</span>)}
+        </div>
+        <ul className="flex flex-col border-t-hairline border-line">
+          {NOTES.map((n) => (
+            <li key={n.title} className="flex gap-3 border-b-hairline border-line px-4 py-3 last:border-0">
+              <span className={'grid size-8 shrink-0 place-items-center rounded-full text-[11px] font-semibold ' + n.tint}>{n.who}</span>
+              <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                <span data-notice className="flex items-center gap-1.5 text-sm font-medium">
+                  <NoteIcon kind={n.icon} className={'text-ink-muted ' + (broken ? 'mt-1' : '')} />
+                  <span className="min-w-0 flex-1 truncate" title={n.title}>{n.title}</span>
+                  <span className="text-xs font-normal text-ink-muted tabular-nums">{n.when}</span>
+                </span>
+                <span className="truncate text-sm text-ink-muted" title={n.detail}>{n.detail}</span>
+              </span>
+              {n.unread ? <span aria-label="Unread" className="mt-2 size-2 shrink-0 rounded-full bg-accent" /> : <span className="w-2 shrink-0" />}
+            </li>
+          ))}
+        </ul>
+        <span className="border-t-hairline border-line px-4 py-2.5 text-center text-xs font-medium text-ink-muted">View all notifications</span>
+      </div>
+      <div className="h-[22rem]" aria-hidden="true" />
+    </AppFrame>
   );
 }
+Notice.framed = true;
 Notice.measure = (root) => {
-  const row = root.querySelector('[data-notice]'), g = row.querySelector('svg').getBoundingClientRect(), t = lineOf(row.querySelector('span'));
+  const row = root.querySelector('[data-notice]'), g = row.querySelector('svg').getBoundingClientRect(), t = lineOf(row.querySelectorAll('span')[0]);
   const icon = g.top + g.height / 2, d = icon - t.capMiddle;
-  return { around: row, focus: { x: g.right + 4, y: (icon + t.capMiddle) / 2 }, ticks: [{ y: icon, left: g.left - 4, right: g.right + 2 }, { y: t.capMiddle, left: t.left - 2, right: t.left + 48 }], broken: `icon ${px(d)} low`, fixed: 'on the capitals ✓', off: Math.abs(d) > 0.6 };
+  return { around: row, focus: { x: g.right + 3, y: (icon + t.capMiddle) / 2 }, ticks: [{ y: icon, left: g.left - 3, right: g.right + 2 }, { y: t.capMiddle, left: t.left - 2, right: t.left + 40 }], broken: `icon ${px(d)} low`, fixed: 'on the capitals ✓', off: Math.abs(d) > 0.6 };
 };
-
 // #5 padding meant to be even all round (p-3) is measured from the letters, not from the line's leading: one line of
 // text-sm/6 carries 5px of invisible leading above and below, so the top reads 17px against 12px at the sides
+const LINES = [['Brand workshop, two days', '2', '1,200.00', '2,400.00'], ['Website design, six pages', '1', '1,800.00', '1,800.00'], ['Hosting setup', '1', '420.00', '420.00']];
 function Chips({ broken }) {
   return (
-    <div className="flex w-full max-w-md flex-col gap-4">
-      <p data-chip className="rounded-control bg-ink p-3 text-sm leading-6 text-accent-ink">
-        Card payments are live. <a href="#banner" className="font-semibold underline underline-offset-2">See how</a>
-      </p>
-      <div className="flex items-center justify-between gap-3">
-        <h3 className="text-base font-semibold">Invoices</h3>
-        <button type="button" className="rounded-control bg-accent px-3 py-1.5 text-sm font-medium text-accent-ink active:bg-ink">New invoice</button>
+    <AppFrame crumb="Invoices / INV-2042">
+      <div className="flex flex-col gap-5 px-5 pt-4 pb-6">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <h3 className="case-forms text-base font-semibold">INV-2042</h3>
+            <span className="rounded-full bg-sunken px-2 py-0.5 text-xs font-medium text-ink-muted">Draft</span>
+          </div>
+          <div className="flex gap-2">
+            <button type="button" className="rounded-control border border-line px-3 py-1.5 text-sm font-medium active:bg-sunken">Preview</button>
+            <button type="button" className="rounded-control bg-ink px-3 py-1.5 text-sm font-medium text-accent-ink active:bg-ink-muted">Send invoice</button>
+          </div>
+        </div>
+        {/* the callout: padded evenly, one line of text-sm/6 */}
+        <p data-chip className="rounded-control bg-accent-soft p-3 text-sm leading-6 text-ink">Card payments are on: Halden &amp; Co. can pay this invoice by card. <a href="#settings" className="font-medium text-accent underline underline-offset-2">Settings</a></p>
+        <div className="flex items-center gap-3">
+          <span className="grid size-9 shrink-0 place-items-center rounded-full bg-accent-soft text-xs font-semibold text-accent">HC</span>
+          <div className="flex flex-col">
+            <span className="text-sm font-medium">Halden &amp; Co.</span>
+            <span className="text-xs text-ink-muted">billing@halden.example · Due Dec 12</span>
+          </div>
+        </div>
+        <table className="w-full text-left text-sm">
+          <thead className="text-xs text-ink-muted"><tr><th className="pb-2 font-medium">Item</th><th className="pb-2 text-right font-medium">Qty</th><th className="hidden pb-2 text-right font-medium sm:table-cell">Rate</th><th className="pb-2 text-right font-medium">Amount</th></tr></thead>
+          <tbody>
+            {LINES.map(([item, qty, rate, amount]) => (
+              <tr key={item} className="border-t-hairline border-line">
+                <td className="py-2 pr-3">{item}</td>
+                <td className="py-2 text-right tabular-nums">{qty}</td>
+                <td className="hidden py-2 text-right tabular-nums sm:table-cell">${rate}</td>
+                <td className="py-2 text-right font-medium tabular-nums">${amount}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <div className="flex flex-col gap-1 self-end text-sm">
+          <div className="flex justify-between gap-10 text-ink-muted"><span>Tax (5%)</span><span className="tabular-nums">$231.00</span></div>
+          <div className="flex justify-between gap-10 font-semibold"><span>Total</span><span className="tabular-nums">$4,851.00</span></div>
+        </div>
       </div>
-      <ul className="flex flex-col">
-        {[['INV-2041', 'Halden & Co.', 'Sent', 'bg-accent-soft text-accent'], ['INV-2040', 'Northfield Dental', 'Paid', 'bg-positive-soft text-positive']].map(([id, who, st, tone]) => (
-          <li key={id} className="flex items-center gap-3 border-b-hairline border-line py-2.5 text-sm last:border-0">
-            <span className="case-forms w-20 text-ink-muted">{id}</span>
-            <span className="flex-1 font-medium">{who}</span>
-            <span className={'rounded-full px-2 py-0.5 text-xs font-medium ' + tone}>{st}</span>
-          </li>
-        ))}
-      </ul>
-    </div>
+    </AppFrame>
   );
 }
+Chips.framed = true;
 Chips.measure = (root) => {
   const c = root.querySelector('[data-chip]'), r = c.getBoundingClientRect(), t = lineOf(c);
   const capTop = t.baseline - (t.baseline - t.capMiddle) * 2, above = capTop - r.top;
