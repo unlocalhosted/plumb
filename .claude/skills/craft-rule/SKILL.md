@@ -47,6 +47,9 @@ tinted row") measured the other way round (4.1 broken, 3.7 fixed), so the lesson
 @mention). Paint colours on a canvas to read what the browser shows; never parse `oklch()` as rgb.
 Headless Chromium computes a 0.5px border as 1px even at deviceScaleFactor 2, so a device-pixel rule (#38) can't be
 proved in `screen.mjs`: read it with `DPR=2`, and prove its fix in a real browser (the app's pane).
+Measure the harm on real pixels before building a rendering screen. #37's rule marked half a pixel across too, but a
+screenshot of the letters (the share of grey fringe pixels) showed Chrome places words across at sub-pixel precision:
+only a fraction down blurs (0.44 → 0.60 at 1×). The rule changed to match what was measured.
 
 ## 3. The example is real software, built well everywhere else
 

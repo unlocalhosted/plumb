@@ -599,7 +599,7 @@ export const PRINCIPLES = [
   "title": "Scroll shadows",
   "detail": "where content is hidden (Lea Verou's background-attachment: local trick).",
   "why": "Shows there's more without a scrollbar.",
-  "how": "probe"
+  "how": "live"
  },
  {
   "n": 76,

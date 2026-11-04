@@ -240,19 +240,28 @@ export const halfPixel = {
     if (e === 0 && f === 0) return [];
     if (s.animationName !== 'none') return [];
     const hairline = r.width <= 1.01 || r.height <= 1.01;
-    if (!facts.text(el) && !hairline) return [];
+    // a translation moves everything inside: a box holding words (a tooltip of two lines) blurs them all
+    if (!facts.text(el) && !el.textContent?.trim() && !hairline) return [];
     const T = theme.spec(this.id);
     const dpr = devicePixelRatio || 1, { slack } = T;
     const off = (v) => { const dv = Math.abs(v * dpr - Math.round(v * dpr)); return dv > slack && dv < 1 - slack; };
-    const fx = off(e), fy = off(f);
+    // words are placed across at sub-pixel precision anyway, so only a fraction down blurs them (measured: grey fringe
+    // 0.44 → 0.60 at 1×); a hairline blurs either way
+    const fx = hairline && off(e), fy = off(f);
     if (!fx && !fy) return [];
     const cls = utility(el, 'translate');
     const text = cls ?? 'transform';
     const half = cls && /1\/2$/.test(cls);
     const size = fx ? r.width : r.height, even = Math.ceil(size / 2) * 2;
-    const suggest = { kind: 'advice', text: half
-      ? `Make it ${even}px ${fx ? 'wide' : 'tall'}, so half of it is a whole number.`
-      : 'Move it by whole pixels.' };
+    // centred down by half its own height (top-1/2 -translate-y-1/2): centre it by layout instead, which lands on whole
+    // pixels: pinned top and bottom, auto margins, its own height
+    const own = classesOf(el).split(/\s+/);
+    const pinned = fy && /absolute|fixed/.test(s.position) && own.includes('top-1/2') && own.includes('-translate-y-1/2');
+    const suggest = pinned
+      ? { kind: 'class', from: 'top-1/2 -translate-y-1/2', to: 'inset-y-0 my-auto h-fit', why: 'centred by layout, on whole pixels', sets: { top: '0px', bottom: '0px', marginTop: 'auto', marginBottom: 'auto', height: 'fit-content', translate: 'none' }, moves: true }
+      : { kind: 'advice', text: half
+        ? `Make it ${even}px ${fx ? 'wide' : 'tall'}, so half of it is a whole number.`
+        : 'Move it by whole pixels.' };
     return [{
       ...say(this.id, { x: e, y: f, line: hairline }),
       key: this.id, text, props: ['transform'], value: `${e}px ${f}px`, n: fx ? e : f,
@@ -1010,7 +1019,12 @@ export const boldHover = {
       ...say(this.id, {}),
       key: this.id, text: cls ?? 'font-weight', props: ['font-weight'], value: facts.style(el).fontWeight, n: 0,
       evidence: { hover: cls ?? 'stylesheet' }, confidence: 0.85,
-      suggest: { kind: 'advice', text: 'Reserve the bold width with a hidden bold copy, or change the colour instead.' },
+      // on the class: the hover darkens to the theme's strongest text colour instead of growing heavier, so nothing
+      // around it moves (a bold copy reserving the width needs markup, so it stays advice)
+      suggest: ((ink) => cls && ink
+        ? { kind: 'class', from: cls, to: `${cls.replace(/font-[a-z]+$/, '')}text-${ink.short}`, why: 'a darker colour, the same width' }
+        : { kind: 'advice', text: 'Reserve the bold width with a hidden bold copy, or change the colour instead.' })(
+        theme.colors().find((t) => t.own !== false && /^(ink|foreground|fg|text|text-primary|content)$/.test(t.short))),
     }];
   },
 };
@@ -1105,6 +1119,10 @@ export const inputZoom = {
     if (!el.matches('input:not([type="checkbox"], [type="radio"], [type="range"], [type="color"], [type="file"], [type="hidden"], [type="button"], [type="submit"], [type="reset"], [type="image"]), textarea, select') || disabled(el)) return [];
     const fs = px(facts.style(el).fontSize);
     if (fs >= T.min) return [];
+    // the zoom happens on a phone: a field 16px at phone width (text-base, then smaller from md up) is the fix, on any
+    // window this page is read in
+    const phone = classesOf(el).split(/\s+/).filter((c) => !c.includes(':'));
+    if (phone.some((c) => /^text-(?:base|lg|xl|[2-9]xl)$/.test(c) || (/^text-\[(\d+(?:\.\d+)?)px\]$/.exec(c)?.[1] ?? 0) >= T.min)) return [];
     // only a class known to be a size under 16px is swapped; a theme's own size name (text-small) gets advice
     const cls = classesOf(el).split(/\s+/).find((c) => /^text-(?:xs|sm)$/.test(c) || (/^text-\[(\d+(?:\.\d+)?)px\]$/.exec(c)?.[1] ?? 99) < 16);
     return [{
@@ -1118,18 +1136,30 @@ export const inputZoom = {
 
 // The sticky or fixed header across the top of the page, measured once per pass.
 const headers = new WeakMap();
-function stickyHeader(facts) {
-  if (headers.has(facts)) return headers.get(facts);
+// The header that stays at the top of what the target scrolls in: the page's, or a pane's own (a docs column, an app
+// panel that scrolls by itself), as wide as most of it.
+function stickyHeader(facts, target) {
+  let pane = null;
+  for (let n = target?.parentElement; n && n !== document.body && n !== document.documentElement; n = n.parentElement) {
+    const o = facts.style(n).overflowY;
+    if ((o === 'auto' || o === 'scroll') && n.scrollHeight > n.clientHeight + 1) { pane = n; break; }
+  }
+  const memo = headers.get(facts) ?? new Map();
+  headers.set(facts, memo);
+  if (memo.has(pane)) return memo.get(pane);
   let found = null;
-  for (const el of document.querySelectorAll('header, nav, [role="banner"], body > div > *:first-child, body > *')) {
+  const wide = pane ? pane.clientWidth : innerWidth;
+  const list = pane ? pane.querySelectorAll('header, nav, [role="banner"], :scope > *') : document.querySelectorAll('header, nav, [role="banner"], body > div > *:first-child, body > *');
+  for (const el of list) {
     if (el.closest('plumb-overlay')) continue;
     const s = facts.style(el);
     if (s.position !== 'sticky' && s.position !== 'fixed') continue;
-    const r = facts.rect(el);
-    if (px(s.top) > 0.5 || r.width < innerWidth * 0.6 || r.height < 32 || r.height > 160) continue;
-    found = r.height; break;
+    // its layout size (the page may be drawn scaled; the margin it needs is in CSS pixels)
+    const w = el.offsetWidth || facts.rect(el).width, h = el.offsetHeight || facts.rect(el).height;
+    if (px(s.top) > 0.5 || w < wide * 0.6 || h < 32 || h > 160) continue;
+    found = h; break;
   }
-  headers.set(facts, found);
+  memo.set(pane, found);
   return found;
 }
 
@@ -1141,13 +1171,15 @@ export const anchorOffset = {
     // an id is only a place people land when something links to it (a link on the page, or the address itself)
     facts.linked ??= new Set([...document.querySelectorAll('a[href*="#"]')].map((a) => decodeURIComponent(a.hash.slice(1))).concat(decodeURIComponent(location.hash.slice(1))).filter(Boolean));
     if (!facts.linked.has(el.id)) return [];
-    const h = stickyHeader(facts);
+    const h = stickyHeader(facts, el);
     if (!h) return [];
     const s = facts.style(el);
     if (px(s.scrollMarginTop) >= h - 0.5) return [];
     const parentMargin = [...document.querySelectorAll('html, body')].some((n) => px(facts.style(n).scrollPaddingTop) >= h - 0.5);
     if (parentMargin) return [];
-    const rec = recommend({ family: 'spacing', prefix: 'scroll-mt', job: 'header', want: { min: Math.ceil(h), target: Math.ceil(h) }, round: 'up', from: utility(el, 'scroll-mt') ?? '', token: false, sets: (v) => ({ scrollMarginTop: v }), theme,
+    // up to a whole step of the spacing scale: 77px becomes 80 (scroll-mt-20), the way it would be written
+    const unit = theme.unit?.() || 4, need = Math.ceil(h / unit - 1e-6) * unit;
+    const rec = recommend({ family: 'spacing', prefix: 'scroll-mt', job: 'header', want: { min: Math.ceil(h), target: need }, round: 'up', from: utility(el, 'scroll-mt') ?? '', token: false, sets: (v) => ({ scrollMarginTop: v }), theme,
       advice: () => `Give it scroll-margin-top: ${fmt(Math.ceil(h))}, the header’s height.` });
     return [{
       ...say(this.id, { id: el.id, header: h }),
@@ -1840,6 +1872,14 @@ export const strokeWeight = {
 };
 
 // #75 (static half). A scroll area with no scrollbar shows nothing at its edge: people don't know there is more.
+// Scroll shadows drawn in the background (Lea Verou's): a soft shadow at an edge where more is hidden, covered by a
+// patch of the ground that scrolls with the content, so it's gone once you reach that end. One class, on the ground's
+// own colour.
+function scrollShadows(ground) {
+  const g = hex(ground);
+  const v = `linear-gradient(${g} 30%, transparent) center top / 100% 40px no-repeat local, linear-gradient(transparent, ${g} 70%) center bottom / 100% 40px no-repeat local, radial-gradient(farthest-side at 50% 0, rgb(0 0 0 / 0.12), transparent) center top / 100% 12px no-repeat scroll, radial-gradient(farthest-side at 50% 100%, rgb(0 0 0 / 0.12), transparent) center bottom / 100% 12px no-repeat scroll, ${g}`;
+  return { kind: 'class', from: '', to: `[background:${v.replace(/ /g, '_')}]`, why: 'a shadow at the edge while more is hidden', sets: { background: v, backgroundAttachment: 'local, local, scroll, scroll' } };
+}
 export const scrollCue = {
   id: 'craft/scroll-cue', family: 'craft', number: [75], owns: ['scroll'], once: 'ancestor', reads: ['style', 'box'],
   check({ el, facts }, theme) {
@@ -1859,7 +1899,7 @@ export const scrollCue = {
       ...say(this.id, { x }),
       key: this.id, text: utility(el, 'overflow') ?? 'overflow', props: [y ? 'overflow-y' : 'overflow-x'], value: y ? s.overflowY : s.overflowX, n: 0,
       evidence: { hidden: Math.round(y ? el.scrollHeight - el.clientHeight : el.scrollWidth - el.clientWidth) }, confidence: 0.8,
-      suggest: { kind: 'advice', text: `Fade the ${x ? 'sides' : 'bottom'} where more is hidden: a mask-image gradient, or a background with background-attachment: local.` },
+      suggest: y ? scrollShadows(facts.ground(el)) : { kind: 'advice', text: 'Fade the sides where more is hidden: a mask-image gradient, or a background with background-attachment: local.' },
     }];
   },
 };

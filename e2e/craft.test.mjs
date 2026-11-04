@@ -178,7 +178,7 @@ test('Text colour via opacity (#57): faded text is marked and told the token it 
   assert.deepEqual(errors, []);
 });
 
-test('Half pixels (#37): a 33px label translated −50% lands on −16.5px and is marked with the even size to use; the 34px one is not', { timeout: 120000 }, async (t) => {
+test('Half pixels (#37): a 33px-tall label translated up −50% lands on −16.5px and is marked with the even size to use; the 34px one is not', { timeout: 120000 }, async (t) => {
   const launched = await browser(t);
   if (!launched) return;
   const { url } = await fixture(t, PAGE);
@@ -187,20 +187,20 @@ test('Half pixels (#37): a 33px label translated −50% lands on −16.5px and i
   await page.waitForFunction(() => [...document.querySelector('plumb-overlay').shadowRoot.querySelectorAll('.bp .hit')].some((h) => h.dataset.id.includes(':craft/half-pixel')), null, { timeout: 10000 });
   const marks = (await craftMarks(page)).filter((m) => m.rule === 'half-pixel');
   assert.equal(marks.length, 1, JSON.stringify(marks));
-  assert.match(marks[0].label, /^Moved by -16\.5px, 0px, so it lands between pixels\./);
+  assert.match(marks[0].label, /^Moved by 0px, -16\.5px, so it lands between pixels\./);
   const bad = await rectOf(page, 'hp-bad');
   assert.ok(Math.abs(marks[0].x - bad.x) < 2 && Math.abs(marks[0].y - bad.y) < 2, `the box is on the label: ${JSON.stringify({ mark: marks[0], bad })}`);
   const words = await openMark(page, overlay, marks[0].id);
-  assert.deepEqual([words.cls, words.what], ['-translate-x-1/2', 'Blurry text · 1 place']);
+  assert.deepEqual([words.cls, words.what], ['-translate-y-1/2', 'Blurry text · 1 place']);
   const glow = words.glow;
   const good = await rectOf(page, 'hp-good');
   assert.ok(glow.some((g) => same(g, bad)) && !glow.some((g) => same(g, good)), `the odd label lights, the even one does not: ${JSON.stringify(glow)}`);
-  assert.match(words.hinted, /Make it 34px wide, so half of it is a whole number\./);
+  assert.match(words.hinted, /Make it 34px tall, so half of it is a whole number\./);
   // advice: the sentence is all there is; nothing to pick, nothing to take
   assert.equal((await engineMark(page, 'hp-bad', 'craft/half-pixel')).suggest.kind, 'advice');
   assert.equal(words.target, null, 'advice: nothing to pick');
   assert.equal(await overlay.locator('.fx .take').count(), 0, 'advice: nothing to take');
-  assert.match(`${words.line} ${words.say}`, /Moved by -16\.5px, 0px, so it lands between pixels\..* Make it 34px wide, so half of it is a whole number\./);
+  assert.match(`${words.line} ${words.say}`, /Moved by 0px, -16\.5px, so it lands between pixels\..* Make it 34px tall, so half of it is a whole number\./);
   assert.deepEqual(errors, []);
 });
 

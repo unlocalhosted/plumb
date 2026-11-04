@@ -2,8 +2,8 @@
 // soft depth. Each takes `broken` and is wrong in exactly one way, the principle's; everything else on it is right, so
 // plumber, scoped to it, finds one thing. `measure` (optional) says where the eye sees the harm, for the ticks drawn
 // over the example; it reads the page, it never decides what is wrong (plumber does).
-import { useEffect, useState } from 'react';
-import { ArrowRightIcon, BoltIcon, CopyIcon, DownloadIcon, ExternalLinkIcon, FolderIcon, HeadphonesIcon, HeartIcon, HistoryIcon, LayersIcon, MailIcon, MessageIcon, PathIcon, PauseIcon, PlusIcon, SearchIcon, SendIcon, SparklesIcon, TrashIcon, UploadIcon, UserIcon } from '@unlocalhosted/dither-icons';
+import { useEffect, useRef, useState } from 'react';
+import { ArrowRightIcon, BoltIcon, CopyIcon, DownloadIcon, ExternalLinkIcon, FolderIcon, HeadphonesIcon, HeartIcon, HistoryIcon, LayersIcon, MailIcon, SunIcon, BookIcon, MessageIcon, PathIcon, PauseIcon, PlusIcon, SearchIcon, SendIcon, SparklesIcon, TrashIcon, UploadIcon, UserIcon } from '@unlocalhosted/dither-icons';
 import lowTide from '../media/low-tide.jpg';
 import paperCities from '../media/paper-cities.jpg';
 import afterglow from '../media/afterglow.jpg';
@@ -1102,7 +1102,7 @@ function DeleteDialog() {
     <article className="relative w-full max-w-[26rem] overflow-hidden rounded-card bg-surface shadow-card">
       <PhotoGrid selected={[1, 3, 5]} />
       <div className="absolute inset-0 bg-ink/35" />
-      <div data-dialog role="alertdialog" aria-label="Delete 3 photos?" className="absolute inset-x-8 top-1/2 flex -translate-y-1/2 flex-col gap-3 rounded-sheet bg-surface p-5 shadow-2xl">
+      <div data-dialog role="alertdialog" aria-label="Delete 3 photos?" className="absolute inset-x-8 inset-y-0 my-auto flex h-fit flex-col gap-3 rounded-sheet bg-surface p-5 shadow-2xl">
         <span className="grid size-9 place-items-center rounded-full bg-negative-soft text-negative"><TrashIcon size={18} texture="dither" /></span>
         <span className="flex flex-col gap-1">
           <span className="text-[15px] font-medium">Delete 3 photos?</span>
@@ -1418,5 +1418,351 @@ GlazeBoard.measure = (root) => {
   };
 };
 
-export const EXAMPLES = { 8: RecentlyPlayed, 1: ClientProfile, 2: InvoiceWalkthrough, 3: Whiteboard, 4: DriveActivity, 5: ChatThread, 6: FitnessToday, 15: IssueTable, 16: Timesheet, 18: NewsFront, 45: LongRead, 46: BoardingPass, 21: Recipe, 25: FeatureCard, 38: Agenda, 39: GlazeBoard, 57: Inbox, 23: ShareMenu, 51: DeleteDialog, 55: Forecast, 56: Destination };
+// #40 continuous corners. A phone's widget picker: large tiles with a 22px border-radius, the way CSS rounds a corner:
+// a quarter circle joined to a straight edge. Where they meet the curve starts all at once, and at this size the eye
+// sees the kink, a shape that looks pressed from a cookie cutter beside the system's own smooth icons. plumber keeps
+// the radius and changes the curve: corner-shape: squircle eases in from the edge.
+function Widgets() {
+  // Slate's primitives, with dithered icons
+  return (
+    <article className="w-full max-w-[26rem] rounded-sheet bg-sunken p-5">
+      <header className="flex items-baseline justify-between pb-4">
+        <span className="text-[17px] leading-6 font-medium tracking-[-0.01em]">Add a widget</span>
+        <span className="text-[13px] text-ink-muted">Small</span>
+      </header>
+      <ul className="grid grid-cols-2 gap-4">
+        <li data-widget className="flex aspect-square flex-col justify-between rounded-[22px] bg-accent p-4 text-accent-ink">
+          <span className="flex items-center justify-between text-[13px] font-medium"><span>Lisbon</span><SunIcon size={18} texture="dither" /></span>
+          <span className="flex flex-col">
+            <span className="text-[40px] leading-none font-medium tracking-[-0.03em] tabular-nums">21°</span>
+            <span className="pt-1.5 text-xs text-accent-soft">Clear until 6pm</span>
+          </span>
+        </li>
+        <li className="flex aspect-square flex-col justify-between rounded-[22px] bg-surface p-4 shadow-card">
+          <span className="text-[13px] leading-none font-medium text-negative">Thursday</span>
+          <span className="flex flex-col gap-1">
+            <span className="text-[40px] leading-none font-medium tracking-[-0.03em] tabular-nums">6</span>
+            <span className="truncate pt-1 text-xs text-ink-muted">Design crit · 9:00</span>
+          </span>
+        </li>
+      </ul>
+    </article>
+  );
+}
+Widgets.stage = true;
+Widgets.names = ['Round', 'Continuous'];
+Widgets.lesson = {
+  why: 'border-radius draws a quarter circle, and a circle bends at full strength from its very first point: straight, then suddenly curved. On a small button nobody sees it; at widget size the eye catches the kink where the edge turns, and the tile looks stamped out rather than shaped.',
+  habit: 'For large rounded surfaces, ease the curve in: corner-shape: squircle (continuous corners), at the same radius.',
+};
+// What the eye sees at the first widget's top-left corner: where the straight edge ends and the curve begins. The pill
+// is how hard the curve bends at that join, as a share of its tightest bend: a circle starts at full bend (100), a
+// squircle at none.
+Widgets.measure = (root) => {
+  const w = root?.querySelector('[data-widget]');
+  if (!w) return null;
+  const r = w.getBoundingClientRect(), k = r.width / w.offsetWidth || 1, s = getComputedStyle(w);
+  const rad = parseFloat(s.borderTopLeftRadius) * k, round = /^(round|superellipse\(1\))?$/.test(s.getPropertyValue('corner-shape').trim());
+  const kink = round ? 100 : 0;
+  return {
+    lines: [{ key: 'join-x', x: r.left + rad, top: r.top - 10 * k, bottom: r.top + 10 * k }],
+    rules: [{ key: 'join-y', y: r.top + rad, left: r.left - 10 * k, right: r.left + 10 * k }],
+    bands: [{ key: 'corner', left: r.left, right: r.left + rad, top: r.top, bottom: r.top + rad, pattern: 'hatch' }],
+    pills: [{ key: 'kink', x: r.left + rad + 26 * k, y: r.top - 14 * k, text: String(Math.max(kink, 0) * k), ok: !round }],
+    off: round,
+    cut: { left: r.left - 2 * k, right: r.right + 2 * k, top: r.top - 2 * k, bottom: r.bottom + 2 * k, r: rad },
+    subject: { left: r.left - 30 * k, right: r.left + 110 * k, top: r.top - 40 * k, bottom: r.top + 80 * k },
+  };
+};
+
+// #42 bold on hover must not move anything. A project tool's view tabs darken and go semibold on hover. Bold letters
+// are wider, so the hovered tab grows by a few pixels and every tab after it slides right as the pointer passes:
+// the row jitters under the cursor. plumber keeps the hover, as a colour: darker, the same width.
+const VIEWS = ['Overview', 'Board', 'Timeline', 'Files', 'Settings'];
+function ProjectTabs() {
+  // Slate's primitives, with dithered icons
+  return (
+    <article className="w-full max-w-[30rem] rounded-card bg-surface shadow-card">
+      <header className="flex items-center gap-2 px-5 pt-4 pb-3">
+        <FolderIcon size={16} texture="dither" className="text-ink-muted" />
+        <span className="text-[17px] leading-6 font-medium tracking-[-0.01em]">Spring launch</span>
+      </header>
+      <nav aria-label="Views" className="flex gap-5 border-b-hairline border-line px-5">
+        {VIEWS.map((v, i) => (
+          <a key={v} href={`#${v.toLowerCase()}`} data-tab={i === 1 || undefined} aria-current={i === 0 ? 'page' : undefined}
+            className={i === 0 ? '-mb-px border-b-2 border-ink py-2.5 text-sm font-semibold' : 'border-b-2 border-transparent py-2.5 text-sm text-ink-muted hover:font-semibold'}>{v}</a>
+        ))}
+      </nav>
+      <p className="px-5 py-4 text-[13px] text-ink-muted">12 tasks open · 4 due this week</p>
+    </article>
+  );
+}
+ProjectTabs.stage = true;
+ProjectTabs.names = ['Bold on hover', 'Darker on hover'];
+ProjectTabs.lesson = {
+  why: 'Bold letters are wider than regular ones. When a tab turns semibold under the pointer it grows a few pixels, and every tab after it slides over: move along the row and the whole row jitters under your cursor.',
+  habit: 'Show hover with colour, not weight. If a hover must be bold, reserve the bold width first (a hidden bold copy of the label).',
+};
+// What the eye sees on hover: the second tab, and how far the tabs after it would move. The pill is the shift, in px.
+const WEIGHT = { medium: 500, semibold: 600, bold: 700 };
+ProjectTabs.measure = (root) => {
+  const tab = root?.querySelector('[data-tab]');
+  if (!tab) return null;
+  const r = tab.getBoundingClientRect(), k = r.width / tab.offsetWidth || 1;
+  const hover = /(?:^|\s)hover:font-(medium|semibold|bold)(?:\s|$)/.exec(tab.className)?.[1];
+  let shift = 0;
+  if (hover) {
+    const copy = tab.cloneNode(true);
+    Object.assign(copy.style, { position: 'absolute', visibility: 'hidden', fontWeight: String(WEIGHT[hover]) });
+    tab.parentElement.append(copy);
+    shift = copy.offsetWidth - tab.offsetWidth;
+    copy.remove();
+  }
+  const next = tab.nextElementSibling.getBoundingClientRect();
+  return {
+    lines: [{ key: 'next', x: next.left, top: next.top, bottom: next.bottom }, ...(shift ? [{ key: 'moved', x: next.left + shift * k, top: next.top, bottom: next.bottom }] : [])],
+    bands: [{ key: 'shift', left: next.left, right: next.left + Math.max(shift, 0) * k, top: next.top + 6 * k, bottom: next.bottom - 6 * k, pattern: 'hatch' }],
+    pills: [{ key: 'shift', x: next.left + 10 * k, y: next.top - 12 * k, text: (shift * k).toFixed(1), ok: shift < 0.5 }],
+    off: shift >= 0.5,
+    cut: { left: r.left - 6 * k, right: next.right + 6 * k, top: r.top, bottom: r.bottom, r: 4 * k },
+    subject: { left: r.left - 30 * k, right: next.right + 50 * k, top: r.top - 40 * k, bottom: r.bottom + 30 * k },
+  };
+};
+
+// #37 never land on half pixels. A reading app's stats chart pins a tooltip beside the hovered point, centred on it
+// the usual way: top-1/2 and -translate-y-1/2, half its own height up. Two snug lines make it 46.4px tall, so it moves
+// up 23.19px and its words land between pixel rows: every letter is smeared across two, soft beside the sharp labels
+// around it. plumber centres it by layout, which lands on whole pixels.
+const READERS = [820, 910, 880, 1040, 1284, 1190, 1120];
+function ReadersChart() {
+  // Slate's primitives, with dithered icons
+  const max = 1400, at = 4, x = (i) => (i / (READERS.length - 1)) * 100, y = (v) => 100 - (v / max) * 100;
+  return (
+    <article className="w-full max-w-[28rem] rounded-card bg-surface shadow-card">
+      <header className="flex items-baseline justify-between px-5 pt-4">
+        <span className="text-[17px] leading-6 font-medium tracking-[-0.01em]">Readers this week</span>
+        <span className="text-[13px] text-ink-muted tabular-nums">7,244</span>
+      </header>
+      <div className="relative mx-5 mt-8 mb-5 h-36">
+        <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="absolute inset-0 size-full overflow-visible" aria-hidden="true">
+          <polyline points={READERS.map((v, i) => `${x(i)},${y(v)}`).join(' ')} fill="none" stroke="var(--color-accent)" strokeWidth="2" vectorEffect="non-scaling-stroke" strokeLinejoin="round" />
+          <line x1={x(at)} x2={x(at)} y1="0" y2="100" stroke="var(--color-line)" vectorEffect="non-scaling-stroke" />
+        </svg>
+        <span className="absolute size-2.5 -translate-1/2 rounded-full border-2 border-surface bg-accent" style={{ left: `${x(at)}%`, top: `${y(READERS[at])}%` }} />
+        {/* the tooltip, pinned to the point: a zero-height anchor, and the tip centred on it */}
+        <span className="absolute h-0" style={{ left: `${x(at)}%`, top: `${y(READERS[at])}%` }}>
+          <span data-tip className="absolute top-1/2 left-3 flex -translate-y-1/2 flex-col rounded-control bg-ink px-2.5 py-1.5 whitespace-nowrap text-surface">
+            <span className="text-xs leading-snug text-surface/70">Thu 6 Nov</span>
+            <span className="text-[13px] leading-snug font-medium tabular-nums">1,284 readers</span>
+          </span>
+        </span>
+      </div>
+    </article>
+  );
+}
+ReadersChart.stage = true;
+ReadersChart.names = ['Centred by transform', 'Centred by layout'];
+ReadersChart.lesson = {
+  why: 'translate moves a box by exactly what you ask, fractions included, and a fraction of a pixel down is a place no pixel row is. Half of a 46.4px tooltip is 23.19px, so its words sit between rows and each letter is smeared across two: soft, beside the sharp labels around it.',
+  habit: 'Centre with layout (inset-y-0 my-auto, flex or grid), which lands on whole pixels; translate by whole pixels only.',
+};
+// What the eye sees: the tooltip's words and the pixel rows they fall between. The pill is how far off the nearest row
+// the tooltip sits, in hundredths of a pixel.
+ReadersChart.measure = (root) => {
+  const tip = root?.querySelector('[data-tip]');
+  if (!tip) return null;
+  const r = tip.getBoundingClientRect(), k = r.width / tip.offsetWidth || 1;
+  const s = getComputedStyle(tip), ty = /%$/.test(s.translate.split(' ')[1] ?? '') ? (parseFloat(s.translate.split(' ')[1]) / 100) * tip.offsetHeight : parseFloat(s.translate.split(' ')[1]) || 0;
+  const dpr = devicePixelRatio || 1, frac = Math.abs(ty * dpr - Math.round(ty * dpr)) / dpr, off = Math.round(frac * 100);
+  return {
+    lines: [], off: off >= 5,
+    rules: [{ key: 'top', y: r.top, left: r.left - 8 * k, right: r.right + 8 * k }],
+    bands: [{ key: 'words', left: r.left, right: r.right, top: r.top, bottom: r.bottom, pattern: 'dots' }],
+    pills: [{ key: 'off', x: r.right + 24 * k, y: r.top, text: String(off * k), ok: off < 5 }],
+    cut: { left: r.left - 4 * k, right: r.right + 4 * k, top: r.top - 4 * k, bottom: r.bottom + 4 * k, r: 8 * k },
+    subject: { left: r.left - 60 * k, right: r.right + 60 * k, top: r.top - 40 * k, bottom: r.bottom + 40 * k },
+  };
+};
+
+// #73 scroll-margin-top on anchor targets. A team handbook scrolls in its own pane under a sticky header that holds
+// the section links. Jump to "First week" and the browser puts the heading at the very top of the pane, which is
+// exactly where the header sits: you land on the section with its title hidden. plumber gives the headings a scroll
+// margin the header's height, so a jump stops just below it.
+const HANDBOOK = [
+  { id: 'before', title: 'Before you start', body: 'You’ll get a laptop and your accounts on the Friday before. Set up two-factor sign-in first; everything else asks for it.' },
+  { id: 'first-week', title: 'First week', body: 'Each day has one thing to finish: meet your buddy, ship a small fix, sit in on a design crit, and write down three things that confused you.' },
+  { id: 'tools', title: 'Tools', body: 'We plan in the tracker, talk in threads, and keep decisions in the handbook itself, so the reason for a choice outlives the chat about it.' },
+  { id: 'people', title: 'People', body: 'Your buddy is your first stop for anything. Your lead sets goals with you at the end of week two.' },
+];
+const jump = (pane, id) => {
+  // what the browser does on a jump to #id: the heading's top, less its scroll margin, at the top of the pane
+  const h = pane?.querySelector(`#${id}`);
+  if (h) pane.scrollTop = h.offsetTop - (parseFloat(getComputedStyle(h).scrollMarginTop) || 0);
+};
+function Handbook() {
+  // Slate's primitives, with dithered icons
+  const pane = useRef(null);
+  useEffect(() => jump(pane.current, 'first-week'), []);
+  return (
+    <article ref={pane} data-pane className="relative h-[20rem] w-full max-w-[28rem] overflow-y-auto rounded-card [scrollbar-gutter:stable] [mask-image:linear-gradient(to_bottom,black_80%,transparent)] bg-surface shadow-card">
+      <header data-header className="sticky top-0 z-10 flex flex-col gap-2 border-b-hairline border-line bg-surface/95 px-5 pt-4 pb-2.5 backdrop-blur">
+        <span className="flex items-center gap-2 text-[15px] font-medium"><BookIcon size={16} texture="dither" className="text-ink-muted" />Team handbook</span>
+        <nav aria-label="Sections" className="-my-0.5 flex gap-4 text-[13px]">
+          {HANDBOOK.map((sec) => (
+            <a key={sec.id} href={`#${sec.id}`} onClick={(e) => { e.preventDefault(); jump(pane.current, sec.id); }}
+              aria-current={sec.id === 'first-week' ? 'location' : undefined} className={`inline-flex min-h-6 items-center ${sec.id === 'first-week' ? 'font-medium text-ink' : 'text-ink-muted hover:text-ink'}`}>{sec.title}</a>
+          ))}
+        </nav>
+      </header>
+      <div className="flex flex-col gap-6 px-5 pt-5 pb-48">
+        {HANDBOOK.map((sec) => (
+          <section key={sec.id} className="flex flex-col gap-1.5">
+            <h3 id={sec.id} data-target={sec.id === 'first-week' || undefined} className="text-[15px] font-medium">{sec.title}</h3>
+            <p className="text-sm leading-relaxed text-ink-muted">{sec.body}</p>
+          </section>
+        ))}
+      </div>
+    </article>
+  );
+}
+Handbook.stage = true;
+Handbook.names = ['No scroll margin', 'Scroll margin'];
+Handbook.lesson = {
+  why: 'A jump to #first-week scrolls the heading to the very top of the scrolling area, and a sticky header lives at the very top too. So every link in the header lands you on a section with its title underneath the header.',
+  habit: 'Give anchor targets scroll-margin-top the height of the sticky header (scroll-mt-*), or set scroll-padding-top on what scrolls.',
+};
+// What the eye sees after the jump: the header's bottom edge and the heading you jumped to. The hatch is the part of
+// the heading under the header; the pill is how much of it is hidden, in px.
+Handbook.measure = (root) => {
+  const pane = root?.querySelector('[data-pane]'), header = pane?.querySelector('[data-header]'), target = pane?.querySelector('[data-target]');
+  if (!target) return null;
+  jump(pane, target.id);
+  const hr = header.getBoundingClientRect(), tr = target.getBoundingClientRect(), k = hr.width / header.offsetWidth || 1;
+  const hidden = Math.max(0, Math.round((hr.bottom - tr.top) / k));
+  return {
+    lines: [],
+    rules: [{ key: 'header', y: hr.bottom, left: hr.left, right: hr.right }, { key: 'heading', y: tr.top, left: tr.left, right: tr.left + 140 * k }],
+    bands: [{ key: 'hidden', left: tr.left, right: tr.left + 140 * k, top: Math.min(tr.top, hr.bottom), bottom: hr.bottom, pattern: 'hatch' }],
+    pills: [{ key: 'hidden', x: tr.left + 170 * k, y: hr.bottom, text: String(hidden * k), ok: hidden === 0 }],
+    off: hidden > 0,
+    cut: { left: hr.left, right: hr.right, top: hr.top, bottom: Math.max(tr.bottom, hr.bottom) + 30 * k, r: 10 * k },
+    subject: { left: hr.left - 20 * k, right: hr.right + 20 * k, top: hr.top - 30 * k, bottom: Math.max(tr.bottom, hr.bottom) + 70 * k },
+  };
+};
+
+// #74 isolation instead of z-index wars. A projects grid: each cover zooms a little on hover, which lifted it over the
+// card's "Live" badge, so someone gave the badge z-[999]. Now the badge beats everything on the page, including the
+// app's own Sort menu (z-50): open the menu over the grid and the badge pokes through it. plumber brings the badge
+// back to a small number; it only needs to beat its own cover.
+const PROJECTS = [
+  { name: 'Lakeside cabins', cover: lake, live: true, when: 'Edited 2h ago' },
+  { name: 'Valley trail map', cover: valley, when: 'Edited yesterday' },
+  { name: 'Summit guide', cover: peak, live: true, when: 'Edited Mon' },
+];
+function Projects() {
+  // Slate's primitives, with dithered icons and real photos
+  return (
+    <article className="relative w-full max-w-[32rem] rounded-card bg-surface p-4 shadow-card">
+      <header className="flex items-center justify-between pb-3">
+        <button type="button" aria-expanded="true" className="inline-flex h-8 items-center gap-1.5 rounded-control px-2.5 text-[13px] font-medium ring-1 ring-line ring-inset">Sort: Recent <span aria-hidden="true" className="text-ink-muted">▾</span></button>
+        <span className="text-[13px] text-ink-muted">3 projects</span>
+      </header>
+      {/* the app's menu, open over the grid */}
+      <div data-menu role="menu" className="absolute top-14 left-4 z-50 flex w-44 flex-col rounded-card bg-surface p-1 shadow-popover">
+        {['Recent', 'Name', 'Created', 'Owner'].map((o) => (
+          <button key={o} type="button" role="menuitem" className={`flex h-8 items-center rounded-control px-2.5 text-left text-[13px] ${o === 'Recent' ? 'bg-sunken font-medium' : 'hover:bg-sunken'}`}>{o}</button>
+        ))}
+      </div>
+      <ul className="grid grid-cols-3 gap-3">
+        {PROJECTS.map((p, i) => (
+          <li key={p.name} className="flex flex-col gap-2">
+            <span className="relative block overflow-hidden rounded-control">
+              <img src={p.cover} alt="" width="160" height="120" className="aspect-[4/3] w-full object-cover transition-transform duration-300 hover:scale-105" />
+              {p.live ? <span data-badge={i === 0 || undefined} className="absolute top-2 left-2 z-[999] rounded-chip bg-surface px-1.5 py-0.5 text-[11px] font-medium text-positive">Live</span> : null}
+            </span>
+            <span className="flex flex-col px-0.5">
+              <span className="truncate text-[13px] font-medium">{p.name}</span>
+              <span className="truncate text-xs text-ink-muted">{p.when}</span>
+            </span>
+          </li>
+        ))}
+      </ul>
+    </article>
+  );
+}
+Projects.stage = true;
+Projects.names = ['z-[999]', 'z-10'];
+Projects.lesson = {
+  why: 'A z-index isn’t local. The badge only had to sit above its own cover, but 999 puts it above everything that shares its stacking context: the app’s menus, popovers and toasts at 50 lose to a status label.',
+  habit: 'Give a component its own stacking context (isolation: isolate) and keep the numbers inside it small: 1, 10. Save high layers for the app’s overlays.',
+};
+// What the eye sees: the open menu and the badge under it. The hatch is the badge where it shows through the menu;
+// the pill is the badge's z-index against the menu's 50.
+Projects.measure = (root) => {
+  const badge = root?.querySelector('[data-badge]'), menu = root?.querySelector('[data-menu]');
+  if (!badge || !menu) return null;
+  const b = badge.getBoundingClientRect(), m = menu.getBoundingClientRect(), k = m.width / menu.offsetWidth || 1;
+  const z = parseInt(getComputedStyle(badge).zIndex, 10) || 0, through = z > 50;
+  return {
+    lines: [],
+    bands: through ? [{ key: 'through', left: b.left, right: b.right, top: b.top, bottom: b.bottom, pattern: 'hatch' }] : [],
+    pills: [{ key: 'z', x: b.right + 26 * k, y: b.top + b.height / 2, text: String(z * k), ok: !through }],
+    off: through,
+    cut: { left: m.left, right: m.right, top: m.top, bottom: m.bottom, r: 10 * k },
+    subject: { left: m.left - 30 * k, right: m.right + 60 * k, top: m.top - 30 * k, bottom: m.bottom + 30 * k },
+  };
+};
+
+// #75 scroll shadows. A share dialog lists the people with access in a box of fixed height. On a Mac (and on phones)
+// the scrollbar only appears while you scroll, so at rest the list looks complete: four people, cut off at a row edge
+// that reads as the end. plumber draws a soft shadow at the bottom while more are hidden, gone once you reach the end.
+const PEOPLE = [
+  ['Anika Rao', 'Owner'], ['Jonas Weber', 'Can edit'], ['Priya Nair', 'Can edit'], ['Theo Lambert', 'Can view'],
+  ['Mira Okafor', 'Can view'], ['Sana Iqbal', 'Can edit'], ['Leo Brandt', 'Can view'], ['Ines Duarte', 'Can view'],
+];
+function ShareAccess() {
+  // Slate's primitives, with dithered icons
+  return (
+    <article className="flex w-full max-w-[24rem] flex-col gap-3 rounded-sheet bg-surface p-5 shadow-popover">
+      <span className="flex items-center gap-2 text-[15px] leading-none font-medium"><UserIcon size={16} texture="dither" className="text-ink-muted" />Share “Q3 plan”</span>
+      <input type="text" aria-label="Add people" placeholder="Add people by name or email" className="h-9 rounded-control bg-transparent px-3 text-base ring-1 md:text-[13px] ring-line outline-none ring-inset placeholder:text-ink-subtle focus-visible:ring-2 focus-visible:ring-accent" />
+      <span className="pt-1 text-xs font-medium text-ink-muted">People with access</span>
+      <ul data-list className="-mx-2 flex h-48 flex-col overflow-y-auto">
+        {PEOPLE.map(([name, role]) => (
+          <li key={name} className="flex h-12 shrink-0 items-center gap-3 rounded-control px-2 hover:bg-sunken">
+            <span className="grid size-8 shrink-0 place-items-center rounded-full bg-accent-soft text-xs font-medium text-accent-deep">{name.split(' ').map((w) => w[0]).join('')}</span>
+            <span className="min-w-0 flex-1 truncate text-sm">{name}</span>
+            <span className="text-[13px] text-ink-muted">{role}</span>
+          </li>
+        ))}
+      </ul>
+    </article>
+  );
+}
+ShareAccess.stage = true;
+ShareAccess.names = ['No cue', 'Scroll shadows'];
+ShareAccess.lesson = {
+  why: 'Where scrollbars only appear while you scroll (macOS, phones), a list that ends on a row edge looks finished. Four people show; four more are below, and nothing says so.',
+  habit: 'Give every scrolling box a cue at the edge where more is hidden: scroll shadows (background-attachment: local) or a fade, gone at the end.',
+};
+// What the eye sees: the list's bottom edge, where it cuts off. The hatch is the edge; the pill is how many people are
+// below it.
+ShareAccess.measure = (root) => {
+  const list = root?.querySelector('[data-list]');
+  if (!list) return null;
+  const r = list.getBoundingClientRect(), k = r.width / list.offsetWidth || 1;
+  const hidden = [...list.children].filter((li) => li.getBoundingClientRect().top >= r.bottom - 1).length;
+  const cue = /local/.test(getComputedStyle(list).backgroundAttachment) || /gradient/.test(getComputedStyle(list).maskImage);
+  return {
+    lines: [],
+    rules: [{ key: 'edge', y: r.bottom, left: r.left, right: r.right }],
+    bands: [{ key: 'edge', left: r.left, right: r.right, top: r.bottom - 14 * k, bottom: r.bottom, pattern: 'hatch' }],
+    pills: [{ key: 'hidden', x: r.right - 24 * k, y: r.bottom + 14 * k, text: String(hidden * k), ok: cue }],
+    off: !cue,
+    cut: { left: r.left, right: r.right, top: r.top, bottom: r.bottom, r: 6 * k },
+    subject: { left: r.left - 20 * k, right: r.right + 20 * k, top: r.bottom - 120 * k, bottom: r.bottom + 40 * k },
+  };
+};
+
+export const EXAMPLES = { 8: RecentlyPlayed, 1: ClientProfile, 2: InvoiceWalkthrough, 3: Whiteboard, 4: DriveActivity, 5: ChatThread, 6: FitnessToday, 15: IssueTable, 16: Timesheet, 18: NewsFront, 45: LongRead, 46: BoardingPass, 21: Recipe, 25: FeatureCard, 37: ReadersChart, 38: Agenda, 39: GlazeBoard, 40: Widgets, 42: ProjectTabs, 73: Handbook, 74: Projects, 75: ShareAccess, 57: Inbox, 23: ShareMenu, 51: DeleteDialog, 55: Forecast, 56: Destination };
 

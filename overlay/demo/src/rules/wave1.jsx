@@ -20,10 +20,10 @@ export function App() {
       <p id="op-bad" className="text-body opacity-65">Faded through opacity</p>
       <p id="op-good" className="text-body text-ink-muted">Coloured with a token</p>
       <div className="relative h-10 rounded-card bg-surface" style={{ width: 300 }}>
-        <span id="hp-bad" className="absolute left-1/2 top-0 -translate-x-1/2 text-small" style={{ width: 33 }}>odd</span>
+        <span id="hp-bad" className="absolute top-0 left-s3 -translate-y-1/2 text-small" style={{ height: 33 }}>odd</span>
       </div>
       <div className="relative h-10 rounded-card bg-surface" style={{ width: 300 }}>
-        <span id="hp-good" className="absolute left-1/2 top-0 -translate-x-1/2 text-small" style={{ width: 34 }}>even</span>
+        <span id="hp-good" className="absolute top-0 left-s3 -translate-y-1/2 text-small" style={{ height: 34 }}>even</span>
       </div>
     </main>
   );
