@@ -164,11 +164,13 @@ import { defineConfig } from '@unlocalhosted/react-plumber'
 
 export default defineConfig({
   css: 'src/styles.css',
-  source: ['src/**/*.{tsx,jsx,ts,js,css}'],
+  source: ['src/**/*.{tsx,jsx,ts,js,css}'], // an override, not needed: see below
   markers: ['js-*'],
   classHelpers: ['joinStyles'],
 })
 ```
+
+Without `source`, your code is what the rule says it is: every file under the project that is neither installed (`node_modules`, a package manager's store) nor generated (git-ignored, or a build's output folder), in whatever folder it sits, plus your own packages reached through workspace links and tsconfig aliases. `plumber init` writes no `source` for that reason. Set `source` only to narrow or widen that: it is then taken as written.
 
 The default report starts with token coverage (lowest first), then commands for broken styles, setup gaps, component overrides and off-token values. Before a baseline, it shows counts and the four most common classes/values. With a ledger, it shows only new sites in detail (up to 20 finding groups), followed by the known debt count.
 
