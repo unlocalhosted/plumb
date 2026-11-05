@@ -5,7 +5,7 @@ import { createHash } from 'node:crypto';
 import { cp, mkdir, readdir, readFile, symlink, writeFile } from 'node:fs/promises';
 import { existsSync, realpathSync } from 'node:fs';
 import { basename, dirname, join } from 'node:path';
-import { mainCheckout, repo } from './lib.mjs';
+import { mainCheckout, nodeModulesHome, repo } from './lib.mjs';
 
 // Where the screens live. A worktree cut before they were committed has none; then the main checkout's are used and
 // the report says so.
@@ -37,11 +37,15 @@ export async function copyShowcaseSource(showcase, dest) {
   await cp(join(from, 'media'), join(dest, 'src/media'), { recursive: true });
   await cp(join(from, 'theme.css'), join(dest, 'src/theme.css'));
   if (existsSync(join(showcase.dir, 'plumber.config.ts'))) await cp(join(showcase.dir, 'plumber.config.ts'), join(dest, 'plumber.config.ts'));
-  // @unlocalhosted/dither-icons is installed beside the showcase, not in the repo.
-  const icons = join(showcase.dir, 'node_modules/@unlocalhosted/dither-icons');
-  if (existsSync(icons)) {
-    await mkdir(join(dest, 'node_modules/@unlocalhosted'), { recursive: true });
-    await symlink(realpathSync(icons), join(dest, 'node_modules/@unlocalhosted/dither-icons'), 'dir');
+  // The showcase's own dependencies (dither-icons, Radix) are installed beside it, not in the repo. A worktree's
+  // showcase has no node_modules of its own, so the main checkout's install stands in, then the repo's own.
+  const { dependencies = {} } = JSON.parse(await readFile(join(showcase.dir, 'package.json'), 'utf8'));
+  const homes = [join(showcase.dir, 'node_modules'), join(mainCheckout(), 'overlay/showcase/node_modules'), join(nodeModulesHome(), 'node_modules')];
+  for (const name of Object.keys(dependencies)) {
+    const found = homes.map(home => join(home, name)).find(existsSync);
+    if (!found) throw new Error(`The showcase depends on ${name}, installed in neither ${homes.join(' nor ')}. Run npm install in overlay/showcase.`);
+    await mkdir(dirname(join(dest, 'node_modules', name)), { recursive: true });
+    await symlink(realpathSync(found), join(dest, 'node_modules', name), 'dir');
   }
 }
 

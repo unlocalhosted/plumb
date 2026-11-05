@@ -54,9 +54,13 @@ async function runShowcaseHost(browser, host, showcase, screens, opts, sink) {
       server = await startNext(dest, bundler);
     }
     log(host, 'up at', server.url, `(${Math.round(performance.now() - t0)} ms)`);
+    // Three failures in a row share a cause (a host or setup fault), so the rest of the host is skipped, not waited on.
+    let failedInRow = 0;
     for (const screen of screens) {
+      if (failedInRow >= 3) { sink.screenFailures.push({ host, screen: screen.id, why: 'skipped: the 3 screens before it failed on this host' }); continue; }
       const t1 = performance.now();
       const result = await measureWithRetry(browser, screenUrl(server.url, host, screen), { rootSelector: '#bench-root', cap: opts.cap });
+      failedInRow = result.failed ? failedInRow + 1 : 0;
       if (result.failed) { sink.screenFailures.push({ host, screen: screen.id, why: result.failed }); log(host, screen.id, 'FAILED', result.failed.slice(0, 120)); continue; }
       if (!result.rows.length) { sink.screenFailures.push({ host, screen: screen.id, why: 'rendered no elements' }); continue; }
       sink.rows.push(...tag(result.rows, { corpus: 'showcase', host, screen: screen.id }));

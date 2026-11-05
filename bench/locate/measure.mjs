@@ -88,28 +88,39 @@ export async function settle(page, { rootSelector, waitMs = 150_000 }) {
   }));
 }
 
-// One page: load, settle, measure. A reload mid-measure (dependency re-optimisation) throws; the caller retries once.
-export async function measurePage(browser, url, { rootSelector, cap = 150, timeoutMs = 20_000 }) {
+// A screen whose module cannot load (an import that does not resolve) never draws its root; waiting on it is waste.
+class BrokenPage extends Error {}
+const broken = (message) => /dynamically imported module|Failed to resolve import|Cannot find module|is not defined|is not a function/.test(message);
+
+// One page: load, settle, measure, all inside one deadline, so no page can hold the run. A reload mid-measure
+// (dependency re-optimisation) throws; the caller retries once. A page that cannot load fails at once, without a retry.
+export async function measurePage(browser, url, { rootSelector, cap = 150, timeoutMs = 20_000, deadlineMs = 240_000 }) {
   const page = await browser.newPage({ viewport: { width: 1280, height: 900 }, reducedMotion: 'reduce' });
   const errors = [];
-  let navigations = 0;
-  page.on('pageerror', (e) => errors.push(String(e.message).slice(0, 300)));
+  let navigations = 0, fail, timer;
+  const failed = new Promise((_, reject) => { fail = reject; });
+  failed.catch(() => {});
+  timer = setTimeout(() => fail(new Error(`page deadline: ${deadlineMs} ms`)), deadlineMs);
+  page.on('pageerror', (e) => { const message = String(e.message).slice(0, 300); errors.push(message); if (broken(message)) fail(new BrokenPage(message)); });
   page.on('framenavigated', (frame) => { if (frame === page.mainFrame()) navigations++; });
   try {
-    const t0 = performance.now();
-    await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 150_000 });
-    await settle(page, { rootSelector });
-    const loadMs = performance.now() - t0;
-    const before = navigations;
-    const out = await page.evaluate(inPage, { rootSelector, cap, timeoutMs });
-    if (navigations !== before) throw new Error('page navigated while measuring');
-    return { ...out, loadMs, pageErrors: errors };
-  } finally { await page.close().catch(() => {}); }
+    return await Promise.race([failed, (async () => {
+      const t0 = performance.now();
+      await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 150_000 });
+      await settle(page, { rootSelector });
+      const loadMs = performance.now() - t0;
+      const before = navigations;
+      const out = await page.evaluate(inPage, { rootSelector, cap, timeoutMs });
+      if (navigations !== before) throw new Error('page navigated while measuring');
+      return { ...out, loadMs, pageErrors: errors };
+    })()]);
+  } finally { clearTimeout(timer); await page.close().catch(() => {}); }
 }
 
 export async function measureWithRetry(browser, url, options) {
   try { return await measurePage(browser, url, options); }
   catch (first) {
+    if (first instanceof BrokenPage) return { failed: 'page could not load: ' + first.message };
     await delay(1000);
     try { return { ...(await measurePage(browser, url, options)), retried: String(first.message).slice(0, 200) }; }
     catch (second) { return { failed: String(second.message).slice(0, 600) }; }
