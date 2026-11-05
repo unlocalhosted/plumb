@@ -42,6 +42,7 @@ const mainOf = html => { const match = /<main id="main"[\s\S]*?<\/main>/.exec(ht
 async function ready(url) {
   for (let i = 0; i < 3000; i++) {
     const health = await fetch(url + '/__plumb/health').then(response => response.json()).catch(() => ({ status: 'starting' }));
+    if (health.status === undefined) return; // Next's route answers only the overlay (token); its own ready() waits below
     if (health.status !== 'starting') { assert.equal(health.status, 'ready', JSON.stringify(health)); return; }
     await delay(20);
   }
