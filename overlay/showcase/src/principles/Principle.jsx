@@ -12,6 +12,9 @@ import { HANDS_ON } from './hands-on.jsx';
 // the principles the showcase stages; the others are reached by their number and say why they have no screen
 const PRINCIPLES = ALL.filter((p) => shown(p.n));
 import { EXAMPLES } from './examples.jsx';
+
+// one file per screen (screens/kit.jsx): each takes the place of the old example for its number
+const SCREENS = Object.fromEntries(Object.entries(import.meta.glob('./screens/[0-9]*.jsx', { eager: true })).map(([, m]) => [m.n, m]));
 import { Chevron } from '../icons.jsx';
 
 const SCOPE = '[data-example]';
@@ -384,8 +387,9 @@ const step = 'grid size-8 shrink-0 place-items-center rounded-full text-ink-mute
 export function Principle({ n }) {
   const p = ALL.find((x) => x.n === n);
   // a hands-on example (the viewer's own hand is the probe, principles/hands-on.jsx) takes the screen where there is one
-  const handsOn = shown(n) && !!HANDS_ON[n];
-  const Example = shown(n) ? (HANDS_ON[n] ?? EXAMPLES[n]) : null;
+  const screen = SCREENS[n];
+  const handsOn = shown(n) && (screen ? !!screen.handsOn : !!HANDS_ON[n]);
+  const Example = shown(n) ? (screen?.default ?? HANDS_ON[n] ?? EXAMPLES[n]) : null;
   const plumb = usePlumber(Example);
   const { state } = plumb;
   const bar = useRef(null), sw = useRef(null), main = useRef(null);

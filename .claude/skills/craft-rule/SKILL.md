@@ -60,7 +60,11 @@ menus sit at z-10). Hold on what the gesture is about to lose before it moves, a
 
 - A convincing piece of a product (a billing page, an integrations panel, an invoice table), with real content, real
   hierarchy and real detail. Not a fixture: no coloured squares standing in for logos, no empty boxes.
-- It is wrong in **one** way, its principle's. Everything else follows good UI: type hierarchy (a chip's text is
+- It is wrong in **one** way, its principle's, and wrong **everywhere that slip would really recur**: every row, every
+  icon beside text, every number column, at least three places spread across the card. One rule, many instances, so
+  Fixed visibly changes the whole card, not one pixel in one corner (owner, 2026-11-05: a single tiny slip makes the
+  demo fall flat). Rules that are a pixel by nature (#2, #37, #38, #39) repeat the same way and lean on the stage's
+  camera moment to zoom into one instance. Everything else follows good UI: type hierarchy (a chip's text is
   smaller than the label beside it), tap targets ≥24px, padding trimmed on top, tabular figures in columns, contrast.
   Prove it: plumber scoped to the example (`window.__plumb.craft({ scope: '[data-example]' })`) finds exactly one
   rule. A second finding means the example is broken in another way; fix the example, not the second rule.
@@ -282,3 +286,7 @@ Each line is something the owner had to say once; the sections above exist so th
   page back on under the other), the rest were real slips in the screens. → When a screen shows a stray, ask first
   whether the rule misreads how the screen draws it; when a scoped read names something outside its scope, suspect two
   reads at once. Reads now run one at a time (craft-run.js).
+- 2026-11-05 · "Point errors in more than one place … not a one-pixel change in the whole card, then the demo falls."
+  Cause: "wrong in one way" was read as one place, so rich cards carried a single small slip and Fixed changed
+  nothing you could see. → One rule, planted at every natural recurrence (≥3, spread across the card); tiny rules
+  repeat too and the camera zooms into one (§3).
