@@ -86,6 +86,7 @@ async function dispatchRequest(session: Session, method: string, raw: unknown, o
     root: session.root, ...(session.config === undefined ? {} : { config: session.config }),
     ...(options.readinessProject?.rootOverride ? { rootOverride: true } : {}),
     ...(options.readiness === undefined ? {} : { runtime: options.readiness }), report: () => session.report(),
+    ...(params.stamps === '0' || params.stamps === '1' ? { observed: { stamps: params.stamps === '1' } } : {}),
     sourceEvidence: async () => (await session.health()).outsideSource ?? [],
   }, method, params);
   if (method === 'report') {

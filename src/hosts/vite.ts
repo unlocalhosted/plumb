@@ -26,16 +26,16 @@ async function dispose(id: string, entry: Entry): Promise<void> {
 
 /** Mount React Plumber on Vite's dev server; process ownership survives server restarts. */
 export interface PlumbViteOptions extends SessionOptions {
-  /** Stamp JSX with its source position in dev (default true). Turn it off for an app that hydrates HTML prerendered
-   * outside the dev server: that HTML carries no stamps, so React reports a mismatch and renders the page again. */
-  stamp?: boolean;
   /** Explicit static demo opt-in: stamp production JSX and mount the real overlay after this replay module.
    * The module must install its transport synchronously. Paths are relative to the Vite root.
    * Ordinary production builds still contain no React Plumber client or stamps. */
   demo?: { replay: string; guard?: boolean };
 }
 
-export function plumb({ stamp = true, demo, ...options }: PlumbViteOptions = {}): Plugin {
+export function plumb({ demo, ...options }: PlumbViteOptions = {}): Plugin {
+  // Stamping is what the plugin does; there is no public switch. The static demo and the owner-stack regression tests
+  // run without stamps on purpose, through this internal one: the host then tells the overlay stamps are off by choice.
+  const { stamp = true } = options as { stamp?: boolean };
   let restarts = 0;
   let release: (() => Promise<void>) | undefined;
   let root: string, production = false;
@@ -165,7 +165,7 @@ export function plumb({ stamp = true, demo, ...options }: PlumbViteOptions = {})
         client: true, servedRoot: server.config.root,
         readinessProject: { root, rootOverride: options.root !== undefined, ...(options.config === undefined ? {} : { config: options.config }) },
         readiness: {
-          host: 'vite', development: !server.config.isProduction, plugin: true,
+          host: 'vite', development: !server.config.isProduction, plugin: true, stamping: stamp,
           fastRefresh: server.config.plugins.some(plugin => /^vite:react(?:-|:|$)/.test(plugin.name)),
           hmr: server.config.server.hmr !== false, watching: server.config.server.watch !== null,
           polling: server.config.server.watch !== null && server.config.server.watch?.usePolling === true,

@@ -194,6 +194,18 @@ async function readFrames(fiber) {
   });
 }
 
+// Whether the host stamps JSX (the readiness report says), and whether any element on the page carries a stamp. When
+// the host stamps and the page has none, an element whose own JSX is in your files is refused rather than guessed from
+// the owner stack: stamping is not running, and the setup panel says so.
+let stampsExpected = false;
+/** The host fibers whose own creation frame proved a JSX opening in your files: their JSX is yours, not a library's. */
+const ownHosts = new WeakSet();
+export function expectStamps(value) { stampsExpected = value === true; }
+export function pageStamped() {
+  for (const node of document.querySelectorAll('[data-plumb-source]')) if (/^(.+):(\d+):(\d+)#[a-f0-9]{12}$/.test(node.getAttribute('data-plumb-source'))) return true;
+  return false;
+}
+
 export async function locate(element, options = {}) {
   const fiber = element?.nodeType === 1 ? hostOf(element) : null;
   const stamp = fiber?.memoizedProps?.['data-plumb-source'];
@@ -216,6 +228,11 @@ export async function locate(element, options = {}) {
   }
   const owner = await locateOwner(element, { ...options, explain: true });
   if (owner?.reason === 'resolve-refusal' && owner.detail?.file) return options.explain ? owner : null;
+  // The element's own JSX is in your files, yet it carries no stamp and nothing on the page does: stamping is not
+  // running. The owner stack would be a guess; say why instead. A host a library drew keeps its owner-stack answer.
+  if (!confirmed && !match && fiber && ownHosts.has(fiber) && stampsExpected && !pageStamped()) {
+    return options.explain ? { location: null, reason: 'no-stamps', detail: { file: owner.file, line: owner.line, column: owner.column } } : null;
+  }
   if (!confirmed && !match && fiber && (!owner || owner.location === null) && !options.signal?.aborted) {
     // A host a library drew (an icon's <path>, a primitive's inner <div>) carries no stamp of its own. The component that
     // drew it was stamped where it is used, in its props, so the nearest stamped owner is the usage site: exact, and no
@@ -388,6 +405,7 @@ async function locateOwner(element, options = {}) {
     return asked.get(key);
   };
   const chain = [], seen = new Map();
+  let ownProven = false;
   let last = [];
   const tryFrame = async frame => {
     if (frame?.failure) {
@@ -491,6 +509,7 @@ async function locateOwner(element, options = {}) {
     const unmapped = own?.failure?.reason === 'map' && frames.some(frame => frame.fileName && frame.lineNumber);
     if (own && !unmapped) {
       const failure = await tryFrame(own);
+      if (owner === fiber && failure?.proven) ownProven = true;
       // A module Turbopack hot-updated runs from eval with its own inline map, which Next traces a line off. That
       // position is the map's, not evidence the element was made without JSX; refuse it as unreadable until a reload.
       if ((failure?.reason === 'no-jsx' || failure?.reason === 'map') && !own.hash && /[?&]id=/.test(own.raw ?? '')) return refuse('map', { ...failure.detail, step: 'hot-update-map' });
@@ -503,6 +522,9 @@ async function locateOwner(element, options = {}) {
     let ownerStackProven = false;
     for (const [i, frame] of candidates.entries()) {
       const result = await tryFrame(frame);
+      // The element's own creation frame (the stack's first), proved in your files: its JSX is yours. A library's host
+      // has its first frame in the library, and the first candidate is only where the library was used.
+      if (owner === fiber && frame === frames[0] && result?.proven) ownProven = true;
       // Only an element's own creation frame draws the no-JSX boundary. Later frames in a stack are the code that
       // called it, such as App calling items.map(...): not JSX, and not a reason to refuse.
       if (result?.reason === 'no-jsx' && !(unmapped && i === 0)) continue;
@@ -525,5 +547,6 @@ async function locateOwner(element, options = {}) {
   }
   const index = Math.max(0, chain.findIndex(link => !shared(link.file)));
   const at = chain[index];
+  if (ownProven) ownHosts.add(fiber);
   return { file: at.file, line: at.line, column: at.column, component: at.component, tag: element.localName, via: 'owner-stack', chain, index };
 }

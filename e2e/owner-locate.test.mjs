@@ -10,11 +10,8 @@ import react from '@vitejs/plugin-react';
 import { plumb } from '@unlocalhosted/react-plumber/vite';
 
 // These regressions deliberately exercise owner-stack locate without stamps.
-function unstamped(options) {
-  const plugin = plumb(options);
-  delete plugin.transform;
-  return plugin;
-}
+// The internal switch: the host then tells the overlay stamps are off by choice, so project elements still answer.
+function unstamped(options) { return plumb({ ...options, stamp: false }); }
 
 const repo = fileURLToPath(new URL('../', import.meta.url));
 export const source = `import React from 'react';

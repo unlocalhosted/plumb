@@ -14,11 +14,8 @@ import { Session } from '../dist/session/index.js';
 import { plumb } from '@unlocalhosted/react-plumber/vite';
 
 // These regressions deliberately exercise owner-stack locate without stamps.
-function unstamped(options) {
-  const plugin = plumb(options);
-  delete plugin.transform;
-  return plugin;
-}
+// The internal switch: the host then tells the overlay stamps are off by choice, so project elements still answer.
+function unstamped(options) { return plumb({ ...options, stamp: false }); }
 
 const repo = fileURLToPath(new URL('../', import.meta.url));
 const source = `"use client";
@@ -307,7 +304,8 @@ for (const bundler of ['webpack', 'turbopack']) test(`Next 16 ${bundler}: instal
   await writeFile(join(root, 'app/layout.jsx'), `import { PlumbOverlay } from '@unlocalhosted/react-plumber/next';\nexport default function Layout({children}) { return <html><body>{children}<PlumbOverlay /></body></html>; }\n`);
   await writeFile(join(root, 'app/page.jsx'), `import App from '../src/App.jsx'; import Large from '../src/Large.jsx'; export default function Page() { return <><App /><Large /></>; }\n`);
   await writeFile(join(root, 'next.config.mjs'), `import { withPlumb } from '@unlocalhosted/react-plumber/next/config';\nexport default withPlumb({ experimental: { agentUpgrade: false }, watchOptions: { pollIntervalMs: 100 }, turbopack: { root: ${JSON.stringify(repo)} } });\n`);
-  const env = { ...process.env, NEXT_TELEMETRY_DISABLED: '1', WATCHPACK_POLLING: 'true' }; delete env.NODE_ENV;
+  // these regressions exercise the owner stack: the internal switch runs Next without stamps on purpose
+  const env = { ...process.env, NEXT_TELEMETRY_DISABLED: '1', WATCHPACK_POLLING: 'true', PLUMB_INTERNAL_UNSTAMPED: '1' }; delete env.NODE_ENV;
   const grouped = process.platform !== 'win32';
   const child = spawn(process.execPath, [join(repo, 'node_modules/next/dist/bin/next'), 'dev', '--' + bundler, '--hostname', '127.0.0.1', '--port', '0'], { cwd: root, env, detached: grouped, stdio: ['ignore', 'pipe', 'pipe'] });
   let output = ''; child.stdout.on('data', chunk => output += chunk); child.stderr.on('data', chunk => output += chunk);

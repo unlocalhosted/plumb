@@ -7,6 +7,6 @@ export function handler(options: SessionOptions, token: string) {
   return createWebHandler(Session.create(options), {
     token, client: true, servedRoot: process.cwd(),
     readinessProject: { root: options.root ?? process.cwd(), rootOverride: options.root !== undefined, ...(options.config === undefined ? {} : { config: options.config }) },
-    readiness: { host: process.env.TURBOPACK ? 'next-turbopack' : 'next-webpack', development: process.env.NODE_ENV === 'development', plugin: true, fastRefresh: true },
+    readiness: { host: process.env.TURBOPACK ? 'next-turbopack' : 'next-webpack', development: process.env.NODE_ENV === 'development', plugin: true, fastRefresh: true, stamping: process.env.PLUMB_INTERNAL_UNSTAMPED !== '1' },
   });
 }
