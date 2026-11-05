@@ -81,6 +81,7 @@ test('your setup: the note, a first-time callout that stays out of the way, tick
   await page.waitForFunction(() => document.querySelector('plumb-overlay').shadowRoot.querySelector('.dock .ready'));
   await page.waitForTimeout(300);
   assert.equal(await page.evaluate(() => !!document.querySelector('plumb-overlay').shadowRoot.querySelector('.rd-callout')), false);
+  await page.locator('plumb-overlay').locator('.dock').hover(); await page.waitForTimeout(300); // at rest the dock is its mark alone; its tools come out when it is pointed at
   await page.locator('plumb-overlay').locator('.dock .ready').click();
   await page.waitForFunction(() => document.querySelector('plumb-overlay').shadowRoot.querySelector('.rd'));
   s = await state(page);
@@ -141,6 +142,7 @@ test('your setup: Apply writes the ticked change to the project config, shown fi
   await page.waitForFunction(() => window.__plumb?.overlay);
   await page.evaluate(() => window.__plumb.ready());
   const overlay = page.locator('plumb-overlay');
+  await overlay.locator('.dock').hover(); await page.waitForTimeout(300); // at rest the dock is its mark alone; its tools come out when it is pointed at
   await overlay.locator('.dock .ready').click();
   await overlay.locator('.rd').waitFor();
 
