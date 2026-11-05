@@ -47,7 +47,7 @@ export async function startFontMock() {
   const css = `/* latin */\n@font-face {\n  font-family: 'BenchFont';\n  font-style: normal;\n  font-weight: 400;\n  font-display: swap;\n  src: url(${origin}/bench.woff2) format('woff2');\n  unicode-range: U+0000-00FF;\n}\n`;
   const known = {};
   // Turbopack serialises the module, so the URLs the corpus apps ask for are plain keys; webpack's lookup falls through to the Proxy
-  for (const family of ['Geist:wght@100..900', 'Geist+Mono:wght@400', 'Inter:wght@100..900', 'Noto+Sans+Arabic:wght@100..900', 'Noto+Sans+Hebrew:wght@100..900']) known[`https://fonts.googleapis.com/css2?family=${family}&display=swap`] = css;
+  for (const family of ['Geist:wght@100..900', 'Geist+Mono:wght@400', 'Inter:wght@100..900', 'Noto+Sans+Arabic:wght@100..900', 'Noto+Sans+Hebrew:wght@100..900', 'Vazirmatn:wght@100..900']) known[`https://fonts.googleapis.com/css2?family=${family}&display=swap`] = css;
   fontMockPath = join(workRoot, 'font-mock.cjs');
   await mkdir(workRoot, { recursive: true });
   await writeFile(fontMockPath, `const known = ${JSON.stringify(known)};\nconst css = ${JSON.stringify(css)};\nmodule.exports = new Proxy(known, { get: (t, url) => (typeof url === 'string' && url.startsWith('http') ? css : t[url]) });\n`);
