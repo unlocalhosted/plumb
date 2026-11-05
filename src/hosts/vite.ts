@@ -93,6 +93,14 @@ export function plumb({ demo, ...options }: PlumbViteOptions = {}): Plugin {
     held.ending = { expected, timer: setTimeout(releaseHeld, 2000) };
     if ([...expected].every(file => held!.files.has(file))) releaseHeld();
   };
+  // A file the session wrote is told to Vite at once, as the watcher would tell it a poll later: the page's update does
+  // not wait on the watcher, and a reload in that window gets the new module, not a 304 of the old one. The watcher's
+  // own report of the same write, when it comes, carries nothing new and goes nowhere (`echo`), unless a transaction holds it.
+  const onWritten = (file: string) => {
+    if (!hotServer || held || !file.startsWith(root + '/')) return;
+    hotServer.watcher.emit('change', file);
+    released.set(file, { hash: readFile(file, 'utf8').then(sourceHash, () => ''), until: Date.now() + 2000 });
+  };
   const hold = async (file: string, modules: readonly ModuleNode[], read: () => string | Promise<string>): Promise<[] | undefined> => {
     if (!file.startsWith(root + '/') || file.includes('/node_modules/')) return undefined;
     if (!held || !hotServer) return await echo(file) ? [] : undefined;
@@ -141,10 +149,10 @@ export function plumb({ demo, ...options }: PlumbViteOptions = {}): Plugin {
         void starting.session.catch(() => { if (registry.get(id) === starting) registry.delete(id); });
       }
       const owned = entry, owner = Symbol(); owned.owners.add(owner);
-      void owned.session.then(session => session.on('transaction', onTransaction)).catch(() => {});
+      void owned.session.then(session => { session.on('transaction', onTransaction); session.on('written', onWritten); }).catch(() => {});
       const relinquish = async () => { owned.owners.delete(owner); releaseHeld();
         // never wait on a Session still starting: a restart mid-startup would hang until it is ready
-        void owned.session.then(session => session.off('transaction', onTransaction)).catch(() => {}); await dispose(id, owned); };
+        void owned.session.then(session => { session.off('transaction', onTransaction); session.off('written', onWritten); }).catch(() => {}); await dispose(id, owned); };
       void release?.();
       release = relinquish;
       // Vite 6/7 close before configuring the replacement; Vite 8 configures it first.

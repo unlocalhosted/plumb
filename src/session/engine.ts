@@ -1582,6 +1582,8 @@ export class Session extends EventEmitter {
   private record(path: string, before: string, hashAfter: string, line: number, label: string, perLine = false): UndoHandle {
     const file = relative(this.root, path).replaceAll('\\', '/');
     this.progress();
+    // the host hears every write at once, so its hot update never waits on a watcher's poll
+    this.emit('written', path);
     const id = `w${++this.writes}`;
     this.written.push({ id, file, line, label, at: new Date().toISOString(), path, before, hashAfter });
     this.evict();
