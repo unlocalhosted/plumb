@@ -43,7 +43,8 @@ test('packed release rebuilds stale dist and installs the shipped CLI', { timeou
   const files = command(root, 'tar', ['-tzf', tarball]).trim().split('\n').map(path => path.replace(/^package\//, ''));
   assert.ok(files.includes('dist/cli.js'));
   for (const path of files.filter(path => path.startsWith('dist/'))) {
-    assert.match(path, /(?:\.d\.ts|\.js)$/);
+    // compiled modules and their declarations, and the JSON data modules tsc copies beside them
+    assert.match(path, /(?:\.d\.ts|\.js|\.json)$/);
     const source = path.replace(/^dist\//, 'src/').replace(/(?:\.d\.ts|\.js)$/, '.ts');
     await assert.doesNotReject(readFile(join(candidate, source)), `${path} must have source ${source}`);
   }
