@@ -1,6 +1,7 @@
 import type { NextConfig } from 'next';
 import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
+import { writeNextHost } from './next-host.js';
 import { resolve } from 'node:path';
 
 type Rules = Record<string, unknown>;
@@ -38,8 +39,11 @@ function stamping(nextConfig: NextConfig): Partial<NextConfig> {
 export function withPlumb(nextConfig: NextConfig = {}): NextConfig {
   if (process.env.NODE_ENV !== 'development') return nextConfig;
   // The overlay asks Next to trace browser frames the way Next's own overlay does, by their file in this directory.
-  process.env.PLUMBER_NEXT_DIST_DIR = resolve(nextConfig.distDir ?? '.next', 'dev');
-  process.env.PLUMBER_NEXT_SERVER_MODULE = new URL('./next-dev.js', import.meta.url).href;
+  const distDir = resolve(nextConfig.distDir ?? '.next', 'dev'), serverModule = new URL('./next-dev.js', import.meta.url).href;
+  process.env.PLUMBER_NEXT_DIST_DIR = distDir;
+  process.env.PLUMBER_NEXT_SERVER_MODULE = serverModule;
+  // the process that serves may not be this one (Next 15.5 + webpack, a config that is a function): the file carries them too
+  writeNextHost({ distDir, serverModule });
   // Stamping is what withPlumb does; there is no public switch. The owner-stack regression tests run Next without
   // stamps on purpose, through this internal one: the host then tells the overlay stamps are off by choice.
   return { ...nextConfig, ...(process.env.PLUMB_INTERNAL_UNSTAMPED === '1' ? {} : stamping(nextConfig)),

@@ -150,7 +150,8 @@ export class Readiness {
     catch { this.#report = null; }
     finally { this.#loading = false; }
     if (this.#report && !Array.isArray(this.#report.capabilities)) this.#report = null;
-    expectStamps(this.#report?.stamping === true);
+    // only a report that came says whether the host stamps; a read that failed leaves it unknown
+    if (this.#report) expectStamps(this.#report.stamping === true);
     // Read before the page rendered its elements: look once more when it has.
     if (!stamps && this.#report?.stamping === true && !this.#reread) { this.#reread = true; setTimeout(() => { if (pageStamped()) void this.read(); }, 1500); }
     const missing = this.#missing(), ids = new Set(missing.map((q) => q.id));

@@ -6,7 +6,7 @@ import type { Finding } from './report.js';
 import { matchesPath } from './collect/pattern.js';
 import { glob } from 'tinyglobby';
 import { containsPath, ownSourcePath, sourceBoundary, sourceSelectors } from './source-boundary.js';
-import { linkedSourceFolders } from './source-identity.js';
+import { linkedSourceFolders, sourceIdentity } from './source-identity.js';
 import { projectIgnore, staticIgnore } from './project-facts/checkouts.js';
 import { tailwindInstalled } from './project-facts/index.js';
 import { userMessage, UsageError } from './errors.js';
@@ -15,8 +15,11 @@ import type { FileCounts, Report } from './report.js';
 
 /** The static part; `projectIgnore(root)` adds the nested checkouts (worktrees, submodules, vendored clones). */
 export const ignore = staticIgnore;
-export const defaultSource = ['src/**/*.{tsx,jsx,ts,js,css}', 'app/**/*.{tsx,jsx,ts,js,css}'];
-/** With no `source` configured: the app's own folders, plus its own code reached through links (a workspace package, a tsconfig alias), each inside the boundary. */
+// With no `source` configured, your code is what the rule says it is (src/source-identity.ts): every file under the
+// root that is neither installed nor generated, whatever folder it sits in (src/, app/, components/, lib/, registry/…),
+// plus your own code reached through links. `source` in the config is the override.
+export const defaultSource = ['**/*.{tsx,jsx,ts,js,css}'];
+/** With no `source` configured: the app's own files, plus its own code reached through links (a workspace package, a tsconfig alias), each inside the boundary. */
 export async function defaultSourceSelectors(root: string): Promise<string[]> {
   const boundary = sourceBoundary(root);
   const linked = (await linkedSourceFolders(root)).filter(folder => containsPath(boundary, folder));
@@ -106,7 +109,9 @@ export async function discoverProject(root: string, config: PlumbConfig, known?:
 
 export async function projectSourceFiles(root: string, config: PlumbConfig, known?: readonly string[]): Promise<string[]> {
   const files = await matchProjectFiles(root, sourceSelectors(root, config.source ?? await defaultSourceSelectors(root)), known);
-  const owned = await Promise.all(files.map(file => ownSourcePath(root, file)));
+  // with no `source`, the rule decides (a git-ignored or installed file under the root is not yours); a configured
+  // selection is the override and is taken as written
+  const owned = await Promise.all(files.map(async file => await ownSourcePath(root, file) && (config.source !== undefined || await sourceIdentity(root, file) !== null)));
   return files.filter((_, index) => owned[index]).sort();
 }
 

@@ -161,10 +161,12 @@ test('the yours rule decides stamps, and a stamped workspace or alias element re
     assert.equal(await readFile(absoluteFile, 'utf8'), source.replace(token, choice.to), 'the write went to the repository file');
   }
   assert.equal(await readFile(join(app, 'src/App.jsx'), 'utf8'), APP, 'the app file is untouched');
-  // Vendored code at the repository root is stamped (it is yours), and resolves to its place; the default `source`
-  // selection is still the app's own folders and its linked code, so it is not a tracked file until `source` names it.
+  // Vendored code at the repository root, reached by a relative import only (no link, no alias): stamped, since it is
+  // yours, and resolved to its place; the app's default selection is the app's own files plus its linked code, so it
+  // is not tracked until `source` names it. The stamp's refusal says where it is; nothing is guessed.
   const vendored = await locate('#third-party');
-  assert.equal(vendored.location, null); assert.equal(vendored.detail?.file, '../../third_party/Vendored.jsx', JSON.stringify(vendored).slice(0, 300));
+  assert.equal(vendored.location, null); assert.equal(vendored.reason, 'resolve-refusal');
+  assert.equal(vendored.detail?.response?.untracked, '../../third_party/Vendored.jsx', JSON.stringify(vendored).slice(0, 300));
   // Not yours answers from the owner stack: a generated or installed file never carries a stamp.
   for (const selector of ['#generated', '#installed', '#global']) assert.equal(await page.getAttribute(selector, 'data-plumb-source'), null, selector);
   assert.deepEqual(errors, []);

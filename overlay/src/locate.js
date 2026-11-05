@@ -10,6 +10,7 @@ import { getOwnerStack, getRawOwnerStack, isSourceFile } from '../vendor/bippy/s
 import { request } from './api.js';
 import { sourceMapVersion, mapFrame } from './sourcemap.js';
 import { FIX } from './words.js';
+import { pageHydrated, whenHydrated } from './hydration.js';
 
 // Next's ?id names an eval module, and some versions reuse that id on later
 // saves. Only new Error evidence checks its current source version; retained
@@ -270,16 +271,30 @@ async function usageOf(element, fiber, options) {
 }
 
 export async function locate(element, options = {}) {
-  const fiber = element?.nodeType === 1 ? hostOf(element) : null;
+  let fiber = element?.nodeType === 1 ? hostOf(element) : null;
+  // A click before React has hydrated the page (a server-rendered page right after load): wait for it, bounded,
+  // then read. A page that never hydrates is said so, not mistaken for one React did not draw.
+  if (!fiber && element?.nodeType === 1 && !pageHydrated()) {
+    const hydrated = await whenHydrated({ timeout: 15000, signal: options.signal });
+    fiber = hostOf(element);
+    if (!fiber && !hydrated) return options.explain ? { location: null, reason: 'not-hydrated', detail: {} } : null;
+  }
   const stamp = fiber?.memoizedProps?.['data-plumb-source'];
   const match = typeof stamp === 'string' && /^(.+):(\d+):(\d+)#([a-f0-9]{12})$/.exec(stamp);
-  let confirmed;
+  let confirmed, refusal;
   if (match && typeof fiber.type === 'string' && !options.signal?.aborted) {
     try {
       const answer = await request('resolve', { source: match[1], line: match[2], column: match[3], hash: match[4], tag: fiber.type, stamp: '1' }, { explain: true, batch: options.batch, ...(options.signal ? { signal: options.signal } : {}) });
       if (answer?.file && answer.line && answer.column) confirmed = answer;
-    } catch (error) { if (error?.starting || error?.failed) throw error; }
+      else refusal = { reason: answer?.refused === 'source-mismatch' ? 'source-mismatch' : 'resolve-refusal', detail: { source: match[1], line: Number(match[2]), column: Number(match[3]), response: answer?.refused ?? answer } };
+    } catch (error) {
+      if (error?.starting || error?.failed) throw error;
+      refusal = { reason: error?.reason ?? 'resolve-refusal', detail: { source: match[1], line: Number(match[2]), column: Number(match[3]), ...(error?.detail ?? { error: String(error?.message ?? error) }) } };
+    }
   }
+  // A stamp that does not resolve (the file changed, the server refused, the network dropped) is the answer: said as
+  // such, never replaced by a guess from the owner stack.
+  if (refusal && !confirmed) return options.explain ? { location: null, ...refusal } : null;
   // A confirmed host stamp is the answer. The chain above it (for Alt+↑/↓) comes from the owner stack, which costs a few
   // hundred milliseconds; the overlay asks for it after the reading is up, with { chain: true }.
   if (confirmed && !options.chain && !options.signal?.aborted) {
