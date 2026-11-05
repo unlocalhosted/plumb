@@ -51,12 +51,12 @@ async function ready(url) {
 const chromiumPath = () => (process.env.PLUMBER_CHROMIUM ?? process.env.PLUMB_CHROMIUM) || undefined;
 
 /** The hydrated DOM of #main, with the menu opened so its items (a portal) are in the page, as the page's own text. */
-async function hydrated(page, url) {
-  await ready(url);
+async function hydrated(page, url, overlay = true) {
+  if (overlay) await ready(url);
   await page.goto(url, { timeout: 120000 });
   await page.waitForSelector('#menu-button');
-  await page.waitForFunction(() => window.__plumb?.ready);
-  await page.evaluate(() => window.__plumb.ready());
+  if (overlay) { await page.waitForFunction(() => window.__plumb?.ready); await page.evaluate(() => window.__plumb.ready()); }
+  else await page.waitForFunction(() => document.querySelector('#menu-button')?.getAttribute('aria-controls') || document.querySelector('#menu-button')?.getAttribute('aria-expanded') !== null);
   await page.click('#menu-button');
   await page.waitForSelector('a[href="#item"]', { state: 'attached' });
   return page.evaluate(() => {
@@ -128,8 +128,10 @@ test('Next (Turbopack): the server HTML and hydrated DOM with stamps are the one
   t.after(() => browser.close());
   const rendered = {}, served = {};
   for (const stamp of [true, false]) {
-    await file(root, 'next.config.mjs', `import { withPlumb } from '@unlocalhosted/react-plumber/next/config';
-export default withPlumb({ experimental: { agentUpgrade: false }, turbopack: { root: ${JSON.stringify(tpRoot)} } }${stamp ? ', { stamp: true }' : ''});
+    // withPlumb always stamps; the page without stamps is the page without React Plumber at all.
+    await file(root, 'next.config.mjs', stamp ? `import { withPlumb } from '@unlocalhosted/react-plumber/next/config';
+export default withPlumb({ experimental: { agentUpgrade: false }, turbopack: { root: ${JSON.stringify(tpRoot)} } });
+` : `export default { experimental: { agentUpgrade: false }, turbopack: { root: ${JSON.stringify(tpRoot)} } };
 `);
     const env = { ...process.env, NEXT_TELEMETRY_DISABLED: '1' }; delete env.NODE_ENV;
     const child = spawn(process.execPath, [join(repo, 'node_modules/next/dist/bin/next'), 'dev', '--turbopack', '--hostname', '127.0.0.1', '--port', '0'], { cwd: root, env, stdio: ['ignore', 'pipe', 'pipe'] });
@@ -148,7 +150,7 @@ export default withPlumb({ experimental: { agentUpgrade: false }, turbopack: { r
       const html = await (await fetch(url).catch((error) => { throw new Error(error.message + '\n' + logs); })).text();
       assert.equal(/<h1[^>]* data-plumb-source="app\/page\.jsx:/.test(html), stamp, 'server HTML stamping is ' + (stamp ? 'on' : 'off'));
       served[stamp] = strip(mainOf(html));
-      rendered[stamp] = await hydrated(page, url);
+      rendered[stamp] = await hydrated(page, url, stamp);
       assert.deepEqual(errors, [], 'no errors with stamping ' + (stamp ? 'on' : 'off'));
       assert.doesNotMatch(logs, /Failed to compile|Passing props on Fragment/);
     } finally {

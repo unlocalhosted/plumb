@@ -1,4 +1,4 @@
-// withPlumb(config, { stamp: true }) on a real Next app, on both bundlers: a server component and a client component
+// withPlumb(config) on a real Next app, on both bundlers: a server component and a client component
 // each reach the DOM with data-plumb-source, and the overlay's own locate answers via 'stamp' with the exact file:line:col.
 import assert from 'node:assert/strict';
 import { spawn, spawnSync } from 'node:child_process';
@@ -57,9 +57,9 @@ test('Next stamp loader: server and client components are located via stamp on w
   metadata.dependencies.next = '^16.4.0';
   await writeFile(join(root, 'package.json'), JSON.stringify(metadata));
   run([process.execPath, join(root, 'node_modules/@unlocalhosted/react-plumber/dist/cli.js'), 'install', '--overlay', '--write']);
-  // the install wrapped the config in withPlumb(); the stamp option is what this test is about
+  // the install wrapped the config in withPlumb(); the stamps it writes are what this test is about
   await file(root, 'next.config.mjs', `import { withPlumb } from '@unlocalhosted/react-plumber/next/config';
-export default withPlumb({ experimental: { agentUpgrade: false }, turbopack: { root: ${JSON.stringify(tpRoot)} } }, { stamp: true });
+export default withPlumb({ experimental: { agentUpgrade: false }, turbopack: { root: ${JSON.stringify(tpRoot)} } });
 `);
   const browser = await chromium.launch({ headless: true, executablePath: process.env.PLUMBER_CHROMIUM ?? process.env.PLUMB_CHROMIUM });
   t.after(() => browser.close());
