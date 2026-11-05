@@ -1,7 +1,7 @@
 import { loadConfig } from '../config.js';
 import { projectSourceFiles } from '../project.js';
 import { stampedSource } from '../source-identity.js';
-import { stampJSX } from './source-stamping.js';
+import { stampJSX, storeIndex } from './source-stamping.js';
 
 interface LoaderContext {
   resourcePath: string;
@@ -36,6 +36,8 @@ export default function plumbStampLoader(this: LoaderContext, source: string | B
     const identity = await stampedSource(root, file, loaded.value, async () => (await projectSourceFiles(root, loaded.value, [file])).includes(file));
     const stamped = identity && stampJSX(code, file, identity.path);
     if (!stamped) return callback(null, code);
+    void storeIndex(root, identity.path, stamped.index);
+    if (stamped.code === null) return callback(null, code);
     callback(null, stamped.code, JSON.parse(stamped.map.toString()));
   })().catch(() => callback(null, code)); // never break the host's own compile
 }

@@ -28,6 +28,8 @@ export const methods = [
   { http: 'classes', engine: 'classes', read: true, json: true },
   // over HTTP only: it needs the root the page is served from, which a stdio line does not have
   { http: 'resolve', engine: 'resolveSource', read: true, json: true, rpc: false },
+  // the JSX index of one file (every opening and creator call the build saw), for the overlay's usage answers
+  { http: 'index', engine: 'sourceIndex', read: true, json: true, rpc: false },
   { http: 'edits', engine: 'edits', read: true, json: true },
   { http: 'text', engine: 'text', read: true, json: true },
   { http: 'text-at', engine: 'textAt', read: true, json: true },

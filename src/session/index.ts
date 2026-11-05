@@ -93,6 +93,7 @@ export class Session extends EventEmitter {
   /** What the project page draws: the scales, the strays beside them, and the 3 biggest causes (src/project-page/system.ts). */
   async projectSystem(): Promise<import('../project-page/system.js').SystemData> { return systemOf(await this.report()); }
   resolveSource(...args: Parameters<Engine['resolveSource']>) { return this.call('resolveSource', args); }
+  sourceIndex(...args: Parameters<Engine['sourceIndex']>) { return this.call('sourceIndex', args); }
   site(...args: Parameters<Engine['site']>) { return this.call('site', args); }
   many(...args: Parameters<Engine['many']>) { return this.call('many', args); }
   text(...args: Parameters<Engine['text']>) { return this.call('text', args); }

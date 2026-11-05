@@ -46,6 +46,8 @@ import { atSite } from '../surfaces/sites.js';
 import { resolveTextAt, textTargets } from './text-at.js';
 import type { TextAtResult } from './text-at.js';
 import { containsPath, ownSourcePath, sourceBoundary, sourcePath } from '../source-boundary.js';
+import { indexJSX, indexPath } from '../hosts/source-stamping.js';
+import type { IndexRow } from '../hosts/source-stamping.js';
 import { forgetProjectFacts } from '../project-facts/index.js';
 import { encodeJSXText, encodeTextLiteral, textWriteErrors } from './text-encoding.js';
 import type { TextResult } from './text.js';
@@ -579,8 +581,8 @@ export class Session extends EventEmitter {
       }
       return [...paths];
     }
-    if (method === 'resolveSource') {
-      const expected = args[3] as { servedRoot?: string; stamp?: boolean } | undefined;
+    if (method === 'resolveSource' || method === 'sourceIndex') {
+      const expected = (method === 'sourceIndex' ? args[1] : args[3]) as { servedRoot?: string; stamp?: boolean } | undefined;
       const file = await this.resolveFile(args[0] as string, expected?.servedRoot, expected?.stamp);
       return typeof file === 'string' ? [file] : [];
     }
@@ -708,6 +710,24 @@ export class Session extends EventEmitter {
       return { file: inside, line: location.line, column: location.column,
         ...(expected.owner ? { authoredOwner: jsxAuthoredOwner(file, text, location) } : {}),
         ...(expected.component || anyOpening && isComponentJSX(location.tag) ? { component: location.tag } : {}) };
+    });
+  }
+  /** The JSX index of one tracked file, as the host built it (from the cache by hash), else from the file in one parse. */
+  sourceIndex(source: string, expected: { servedRoot?: string } = {}): Promise<SourceResolution | { file: string; hash: string; rows: IndexRow[] }> {
+    return this.serializeRead(async () => {
+      const classified = await this.resolveFile(source, expected.servedRoot);
+      if (typeof classified !== 'string') return classified;
+      const file = classified, inside = relative(this.root, file).replaceAll('\\', '/');
+      if (!this.batchRead) await this.reconcile([file]);
+      if (!this.sourceFiles.has(file)) return { library: true, untracked: inside };
+      const text = await readFile(file, 'utf8'), hash = sourceHash(text).slice(0, 12);
+      try {
+        const stored = JSON.parse(await readFile(indexPath(this.root, hash), 'utf8')) as { rows: IndexRow[] };
+        return { file: inside, hash, rows: stored.rows };
+      } catch { /* not built by a host in this project yet */ }
+      const index = indexJSX(text, file);
+      if (!index) return { refused: 'source-mismatch' };
+      return { file: inside, hash, rows: index.rows };
     });
   }
   site(file: string, line: number, column?: number): Promise<SiteResult> {

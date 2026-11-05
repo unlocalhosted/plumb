@@ -118,6 +118,7 @@ async function dispatchRequest(session: Session, method: string, raw: unknown, o
     return read('classes', [text(params, 'file')!, position(params, 'line')!, position(params, 'column')!, params.classes]);
   }
   if (method === 'resolve') return read('resolveSource', [...resolveArgs(params)]);
+  if (method === 'index') return read('sourceIndex', [text(params, 'source')!, { ...(options.servedRoot === undefined ? {} : { servedRoot: options.servedRoot }) }]);
   if (method === 'text') return read('text', [text(params, 'file')!, position(params, 'line')!, position(params, 'column')!]);
   if (method === 'text-at') return read('textAt', [text(params, 'file')!, position(params, 'line')!, position(params, 'column')!, text(params, 'text')!, text(params, 'owners', true)]);
   if (method === 'edits') return read('edits', [text(params, 'file')!, position(params, 'line')!, position(params, 'column', true)]);
