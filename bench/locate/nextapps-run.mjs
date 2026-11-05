@@ -1,11 +1,26 @@
 // Runs the nextapps corpus: per app, per bundler (its own, then the other), a stamped run and a plain run, each a
 // real `next dev` on port 0 killed with its tree. Rows are tagged corpus=<app>, host=<bundler>-<stamped|plain>.
+import { execFileSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { mkdir, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import { freeMemoryPercent, workRoot } from './lib.mjs';
 import { measureWithRetry } from './measure.mjs';
 import { corpusRoot, nextApps, prepareCopy, startFontMock, startNextApp, stopFontMock, waitForMemory } from './nextapps.mjs';
+
+// Resident memory of everything this bench started (dev server tree and Chrome), in GB: every descendant of this process.
+export function treeRssGB() {
+  try {
+    const rows = execFileSync('ps', ['-axo', 'pid=,ppid=,rss='], { encoding: 'utf8' }).trim().split('\n').map((l) => l.trim().split(/\s+/).map(Number));
+    const kids = new Map();
+    for (const [pid, ppid, rss] of rows) (kids.get(ppid) ?? kids.set(ppid, []).get(ppid)).push([pid, rss]);
+    let total = 0;
+    const stack = [process.pid];
+    while (stack.length) for (const [pid, rss] of kids.get(stack.pop()) ?? []) { total += rss; stack.push(pid); }
+    return total / 1024 / 1024;
+  } catch { return 0; }
+}
+export const MEMORY_CAP_GB = 4;
 
 const log = (...a) => console.log(new Date().toISOString().slice(11, 19), ...a);
 
@@ -36,6 +51,7 @@ export async function runNextApps(browser, keys, opts, sink) {
         await waitForMemory(log);
         ({ app, edits: info.edits } = await prepareCopy(key, destRoot));
       } catch (error) { info.notRun.push({ what: 'copy', why: String(error.message).slice(0, 600) }); log(key, 'COPY FAILED', error.message); continue; }
+      const overCap = new Set();
       const other = def.ownBundler === 'turbopack' ? 'webpack' : 'turbopack';
       for (const bundler of (opts.bundlers ? [def.ownBundler, other].filter((b) => opts.bundlers.includes(b)) : [def.ownBundler, other]).filter((b) => {
         if (def.skipBundlers?.[b]) { info.notRun.push({ what: b, why: def.skipBundlers[b] }); log(key, b, 'NOT RUN:', def.skipBundlers[b].slice(0, 100)); return false; }
@@ -44,8 +60,10 @@ export async function runNextApps(browser, keys, opts, sink) {
         // stamped first. If full stamping leaves no route rendering, the run is recorded as failed and repeated with
         // host tags only, which then serves as the ground truth.
         let fullStampWorks = true;
+        if (overCap.has(bundler)) continue;
         for (const mode of ['full', 'host', 'plain']) {
           if (mode === 'host' && fullStampWorks) continue;
+          if (overCap.has(bundler)) continue;
           const stamp = mode === 'plain' ? false : mode;
           const host = mode === 'plain' ? `${bundler}-plain` : `${bundler}-stamped`;
           const run = { host, mode, startMs: null, routes: [] };
@@ -60,8 +78,14 @@ export async function runNextApps(browser, keys, opts, sink) {
             // the overlay's own script must be served, or no page can ever report ready: fail the run at once
             const client = await fetch(new URL('/__plumb/client.js', server.url)).catch((e) => ({ status: 0, text: async () => e.message }));
             if (client.status !== 200) throw new Error(`/__plumb/client.js answered ${client.status}: ` + (server.logs().replace(/\x1b\[[0-9;]*m/g, '').match(/(?:⨯|Error)[^\n]{0,240}/)?.[0] ?? ''));
-            let failedInRow = 0;
+            let failedInRow = 0, peakGB = 0;
+            const watcher = setInterval(() => {
+              const gb = treeRssGB(); peakGB = Math.max(peakGB, gb);
+              if (gb > MEMORY_CAP_GB && !run.stopped) { run.stopped = `stopped: over ${MEMORY_CAP_GB} GB memory (${gb.toFixed(1)} GB)`; server.stop(); }
+            }, 5000);
+            run.stopWatch = () => { clearInterval(watcher); run.peakGB = Number(peakGB.toFixed(1)); };
             for (const route of def.routes.filter((r) => !opts.routes || opts.routes.includes(r))) {
+              if (run.stopped) break;
               if (failedInRow >= 3) { sink.screenFailures.push({ host: `${key} ${host} ${mode}`, screen: route, why: 'skipped: the 3 routes before it failed on this run' }); continue; }
               const t = performance.now();
               const url = new URL(route, server.url).href;
@@ -73,6 +97,8 @@ export async function runNextApps(browser, keys, opts, sink) {
               run.routes.push({ route, total: result.total, sampled: result.rows.length, loadMs: Math.round(result.loadMs), pageErrors: result.pageErrors.slice(0, 5) });
               log(key, host, mode, route, `${result.rows.length}/${result.total} elements, ${Math.round(performance.now() - t)} ms`);
             }
+            run.stopWatch?.();
+            if (run.stopped) { overCap.add(bundler); info.notRun.push({ what: `${bundler} ${mode}`, why: run.stopped }); }
             if (mode === 'full' && !run.routes.some((r) => !r.failed)) { fullStampWorks = false; run.rowsDiscarded = 0; }
           } catch (error) {
             run.failed = String(error.message).slice(0, 800);
@@ -80,6 +106,7 @@ export async function runNextApps(browser, keys, opts, sink) {
             info.notRun.push({ what: `${bundler} ${mode}`, why: run.failed });
             log(key, host, mode, 'FAILED', run.failed.slice(0, 300));
           } finally {
+            run.stopWatch?.();
             await server?.stop();
             if (server) run.logTail = server.logs().slice(-1500);
           }
