@@ -1,7 +1,7 @@
 // Which files are yours, and the one name a stamp gives each of them (docs/briefs/stamping-everywhere.md, "Codebase
 // shapes"). The Vite transform, the Next loader and the server's resolve all answer through here, so a stamp written by
 // one host is read back by the server the same way for every app in the repository.
-import { readFile, realpath } from 'node:fs/promises';
+import { readFile, realpath, stat as statFile } from 'node:fs/promises';
 import { dirname, join, relative, resolve, sep } from 'node:path';
 import { matchesPath } from './collect/pattern.js';
 import type { PlumbConfig } from './config.js';
@@ -15,10 +15,13 @@ export interface SourceIdentity { file: string; path: string }
 export function repositoryRoot(root: string): string { return repoOf(root).value ?? resolve(root); }
 
 // Installed means a package manager put it there: an unlinked node_modules package, pnpm's store, Yarn's cache or
-// Plug'n'Play data. Generated means a build wrote it. Both are judged on the real path, so a workspace member reached
-// through a node_modules link is still yours, and a store copy linked into src/ is still not.
+// Plug'n'Play data. Generated means a build wrote it: git-ignored, a tool's dotted folder anywhere, or an output
+// folder at a package's top level (the repository root or a folder holding a package.json). A folder of yours named
+// build or out deeper down is still yours. All judged on the real path, so a workspace member reached through a
+// node_modules link is still yours, and a store copy linked into src/ is still not.
 const installed = /(?:^|\/)(?:node_modules|\.pnpm|\.pnpm-store|\.yarn\/(?:cache|unplugged|__virtual__)|\.pnp\.(?:cjs|js|data\.json))(?:\/|$)/;
-const generated = /(?:^|\/)(?:\.git|dist|build|out|coverage|\.next|\.nuxt|\.turbo|\.nx|\.cache|\.vite-cache|\.plumb-cache|\.plumber\/cache|\.plumb\/cache|bazel-(?:out|bin|testlogs))(?:\/|$)/;
+const generated = /(?:^|\/)(?:\.git|\.next|\.nuxt|\.turbo|\.nx|\.cache|\.vite-cache|\.plumb-cache|\.plumber\/cache|\.plumb\/cache|bazel-(?:out|bin|testlogs))(?:\/|$)/;
+const outputFolders = new Set(['dist', 'build', 'out', 'coverage']);
 
 /**
  * The rule: a file is yours when its real path is inside the repository and it is neither installed nor generated
@@ -31,9 +34,18 @@ export async function sourceIdentity(root: string, file: string): Promise<Source
   try { real = await realpath(file); } catch { return null; }
   if (!containsPath(repo, real) || repo === real) return null;
   const path = relative(repo, real).split(sep).join('/');
-  if (installed.test(path) || generated.test(path) || await gitIgnored(repo, path)) return null;
+  if (installed.test(path) || generated.test(path) || await inOutputFolder(repo, path) || await gitIgnored(repo, path)) return null;
   return { file: real, path };
 }
+async function inOutputFolder(repo: string, path: string): Promise<boolean> {
+  const segments = path.split('/');
+  for (let depth = 0; depth < segments.length - 1; depth++) {
+    if (!outputFolders.has(segments[depth]!)) continue;
+    if (depth === 0 || await exists(join(repo, ...segments.slice(0, depth), 'package.json'))) return true;
+  }
+  return false;
+}
+async function exists(path: string): Promise<boolean> { try { await statFile(path); return true; } catch { return false; } }
 
 /**
  * What a host stamps: yours by the rule, named from the repository root. `source` in the config is the override: when

@@ -30,6 +30,8 @@ import { Installed } from 'fake-installed';
 import { Legacy } from './vendor/Legacy.jsx';
 import { Generated } from './__generated__/Gen.jsx';
 import { Vendored } from '../../../third_party/Vendored.jsx';
+import { Builder } from './features/build/Builder.jsx';
+import { Out } from './out/Out.jsx';
 export default function App() {
   return <main id="main">
     <Button>Workspace</Button>
@@ -38,6 +40,8 @@ export default function App() {
     <Legacy />
     <Generated />
     <Vendored />
+    <Builder />
+    <Out />
     <svg id="icon" viewBox="0 0 10 10"><path id="path" d="M0 0h10v10z" /></svg>
     <Menu>
       <MenuButton id="menu-button">Open</MenuButton>
@@ -63,6 +67,10 @@ async function fixture(t) {
   await file(app, 'package.json', '{"name":"web","private":true,"type":"module","dependencies":{"@acme/ui":"workspace:*","fake-installed":"1.0.0"}}');
   await file(app, 'tsconfig.json', '{ "compilerOptions": { "baseUrl": ".", "paths": { "@libs/ui/*": ["../../libs/ui/src/*"] } } }');
   await file(app, '.gitignore', 'src/__generated__/\n');
+  // Output folders count at a package's top level; a folder of yours named build or out, deeper down, is still yours.
+  await file(app, 'src/features/build/Builder.jsx', 'export function Builder() { return <q id="builder">Builder</q>; }\n');
+  await file(app, 'src/out/Out.jsx', 'export function Out() { return <s id="out">Out</s>; }\n');
+  await file(app, 'build/Built.jsx', 'export function Built() { return <b id="built">Built</b>; }\n');
   await file(app, 'src/App.jsx', APP);
   await file(app, 'src/vendor/Legacy.jsx', 'export function Legacy() { return <i id="vendored">Legacy</i>; }\n');
   await file(app, 'src/__generated__/Gen.jsx', 'export function Generated() { return <b id="generated">Generated</b>; }\n');
@@ -100,6 +108,9 @@ test('the yours rule decides stamps, and a stamped workspace or alias element re
   assert.match(await stampIn('/@fs/' + join(top, 'third_party/Vendored.jsx')), /^third_party\/Vendored\.jsx:/);
   // Not yours: generated (git-ignored) and installed, even when the import sits in src/ or the package is a dependency.
   assert.equal(await stampIn('/src/__generated__/Gen.jsx'), null);
+  assert.equal(await stampIn('/build/Built.jsx'), null, 'an output folder at the package top level');
+  assert.match(await stampIn('/src/features/build/Builder.jsx'), /^apps\/web\/src\/features\/build\/Builder\.jsx:/, 'a folder of yours named build');
+  assert.match(await stampIn('/src/out/Out.jsx'), /^apps\/web\/src\/out\/Out\.jsx:/, 'a folder of yours named out');
   assert.equal(await stampIn('/node_modules/fake-installed/index.jsx'), null);
 
   const browser = await chromium.launch({ headless: true, executablePath: (process.env.PLUMBER_CHROMIUM ?? process.env.PLUMB_CHROMIUM) || undefined });
