@@ -322,6 +322,10 @@ const ICON = {
   close: '<svg viewBox="0 0 10 10" aria-hidden="true"><path d="M1.5 1.5l7 7M8.5 1.5l-7 7" stroke="currentColor" stroke-width="1.2" fill="none"/></svg>',
 };
 
+// a layer the page opened over itself and is showing: a menu, a dialog, a listbox (not the overlay's own)
+const pageLayerOpen = () => [...document.querySelectorAll('[role="menu"], [role="dialog"], [role="alertdialog"], [role="listbox"]')]
+  .some((e) => !e.closest('plumb-overlay') && e.getClientRects().length && getComputedStyle(e).visibility !== 'hidden');
+
 class PlumbOverlay extends HTMLElement {
   #blueprint; #bp = { state: 'off', progress: null }; #marksCache = new WeakMap(); #traces = new Map();
   #root; #cache = new WeakMap(); #armed = false; #sticky = false; #health = 'starting'; #healthTimer = 0; #foldTimer = 0; #startedAt = performance.now(); #readyAt = 0; #hover = null; #hoverTimer = 0; #pinned = null; #frame = 0; #focusBack = null; #decisions = null; #decisionsLoading = null; #scales = new Map(); #ready = null;
@@ -840,6 +844,8 @@ class PlumbOverlay extends HTMLElement {
     // L: the punch list, when nothing on the page is being typed into
     // L (the old list) is retired: the fix bar is the one panel
     else if (event.key === 'Escape' && this.#pinned) { event.preventDefault(); event.stopPropagation(); this.close(); }
+    // a menu, dialog or list the page opened over itself is on top of blueprint: its Esc is the page's to hear
+    else if (event.key === 'Escape' && this.#blueprint?.active && pageLayerOpen()) return;
     else if (event.key === 'Escape' && this.#blueprint?.active && this.#blueprint.deselect()) { event.preventDefault(); event.stopPropagation(); }
     else if (event.key === 'Escape' && this.#blueprint?.active) { event.preventDefault(); event.stopPropagation(); this.#toggleBlueprint(); }
   };
