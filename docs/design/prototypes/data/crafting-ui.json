@@ -4519,5 +4519,1116 @@
     "to-accent"
    ]
   }
- ]
+ ],
+ "causes": [
+  {
+   "id": "value:color:#ffffff",
+   "family": "color",
+   "label": "white",
+   "value": "#ffffff",
+   "said": "You wrote white 4 ways, in 96 places. Your theme calls it on-accent. 26 render nothing.",
+   "count": 96,
+   "rendersNothing": 26,
+   "spellings": [
+    {
+     "text": "#ffffff",
+     "count": 49
+    },
+    {
+     "text": "white",
+     "count": 26
+    },
+    {
+     "text": "in code",
+     "count": 20
+    },
+    {
+     "text": "#fff",
+     "count": 1
+    }
+   ],
+   "suggestion": {
+    "name": "on-accent",
+    "exact": true
+   },
+   "files": [
+    {
+     "file": "src/motion/lesson/FilmTransport.tsx",
+     "places": [
+      {
+       "line": 64,
+       "text": "text-white",
+       "rendersNothing": true
+      },
+      {
+       "line": 64,
+       "text": "focus-visible:ring-white",
+       "rendersNothing": true
+      },
+      {
+       "line": 66,
+       "text": "text-white",
+       "rendersNothing": true
+      },
+      {
+       "line": 67,
+       "text": "focus-visible:ring-white",
+       "rendersNothing": true
+      },
+      {
+       "line": 67,
+       "text": "text-white",
+       "rendersNothing": true
+      },
+      {
+       "line": 68,
+       "text": "bg-white",
+       "rendersNothing": true
+      },
+      {
+       "line": 68,
+       "text": "focus-visible:ring-white",
+       "rendersNothing": true
+      },
+      {
+       "line": 72,
+       "text": "focus-visible:ring-white",
+       "rendersNothing": true
+      },
+      {
+       "line": 72,
+       "text": "text-white",
+       "rendersNothing": true
+      },
+      {
+       "line": 85,
+       "text": "focus-visible:ring-white",
+       "rendersNothing": true
+      },
+      {
+       "line": 89,
+       "text": "bg-white",
+       "rendersNothing": true
+      },
+      {
+       "line": 90,
+       "text": "bg-white",
+       "rendersNothing": true
+      },
+      {
+       "line": 93,
+       "text": "border-white",
+       "rendersNothing": true
+      },
+      {
+       "line": 93,
+       "text": "bg-white",
+       "rendersNothing": true
+      },
+      {
+       "line": 93,
+       "text": "hover:border-white",
+       "rendersNothing": true
+      }
+     ]
+    },
+    {
+     "file": "src/motion/examples/FanOutExample.tsx",
+     "places": [
+      {
+       "line": 150,
+       "text": "text-[#ffffff]",
+       "rendersNothing": false
+      },
+      {
+       "line": 156,
+       "text": "border-[#ffffff]",
+       "rendersNothing": false
+      },
+      {
+       "line": 156,
+       "text": "background: art",
+       "rendersNothing": false
+      },
+      {
+       "line": 161,
+       "text": "bg-[#ffffff]",
+       "rendersNothing": false
+      },
+      {
+       "line": 163,
+       "text": "background: 'repeating-linear-gradient(#8E8E93 0 0.25cqw, #ffffff 0.25cqw 0.5cqw)'",
+       "rendersNothing": false
+      },
+      {
+       "line": 165,
+       "text": "text-[#ffffff]",
+       "rendersNothing": false
+      },
+      {
+       "line": 207,
+       "text": "text-[#ffffff]",
+       "rendersNothing": false
+      },
+      {
+       "line": 223,
+       "text": "text-[#ffffff]",
+       "rendersNothing": false
+      }
+     ]
+    },
+    {
+     "file": "src/motion/examples/BeatCutExample.tsx",
+     "places": [
+      {
+       "line": 70,
+       "text": "background: ground",
+       "rendersNothing": false
+      },
+      {
+       "line": 75,
+       "text": "fill: ink",
+       "rendersNothing": false
+      },
+      {
+       "line": 76,
+       "text": "fill: ink",
+       "rendersNothing": false
+      },
+      {
+       "line": 77,
+       "text": "fill: ink",
+       "rendersNothing": false
+      },
+      {
+       "line": 78,
+       "text": "fill: ink",
+       "rendersNothing": false
+      }
+     ]
+    },
+    {
+     "file": "src/motion/harness/apps/lock-screen.tsx",
+     "places": [
+      {
+       "line": 27,
+       "text": "text-[#ffffff]",
+       "rendersNothing": false
+      },
+      {
+       "line": 32,
+       "text": "bg-[#ffffff]",
+       "rendersNothing": false
+      },
+      {
+       "line": 49,
+       "text": "text-[#ffffff]",
+       "rendersNothing": false
+      },
+      {
+       "line": 54,
+       "text": "bg-[#ffffff]",
+       "rendersNothing": false
+      },
+      {
+       "line": 108,
+       "text": "bg-[#ffffff]",
+       "rendersNothing": false
+      }
+     ]
+    },
+    {
+     "file": "src/motion/harness/film-sets.tsx",
+     "places": [
+      {
+       "line": 74,
+       "text": "bg-[#ffffff]",
+       "rendersNothing": false
+      },
+      {
+       "line": 92,
+       "text": "text-[#ffffff]",
+       "rendersNothing": false
+      },
+      {
+       "line": 119,
+       "text": "text-[#ffffff]",
+       "rendersNothing": false
+      },
+      {
+       "line": 120,
+       "text": "backgroundImage: 'linear-gradient(#fff 0.15cqw, transparent 0.15cqw), linear-gradient(90deg, #fff 0.15cqw, transparent 0.15cqw)'",
+       "rendersNothing": false
+      },
+      {
+       "line": 132,
+       "text": "bg-[#ffffff]",
+       "rendersNothing": false
+      }
+     ]
+    },
+    {
+     "file": "src/motion/harness/apps/apple-pay.tsx",
+     "places": [
+      {
+       "line": 45,
+       "text": "bg-[#ffffff]",
+       "rendersNothing": false
+      },
+      {
+       "line": 47,
+       "text": "background: '#ffffff'",
+       "rendersNothing": false
+      },
+      {
+       "line": 75,
+       "text": "bg-[#ffffff]",
+       "rendersNothing": false
+      },
+      {
+       "line": 82,
+       "text": "text-[#ffffff]",
+       "rendersNothing": false
+      }
+     ]
+    },
+    {
+     "file": "src/motion/harness/apps/gmail.tsx",
+     "places": [
+      {
+       "line": 266,
+       "text": "bg-[#ffffff]",
+       "rendersNothing": false
+      },
+      {
+       "line": 268,
+       "text": "text-[#ffffff]",
+       "rendersNothing": false
+      },
+      {
+       "line": 293,
+       "text": "bg-[#ffffff]",
+       "rendersNothing": false
+      },
+      {
+       "line": 300,
+       "text": "bg-[#ffffff]",
+       "rendersNothing": false
+      }
+     ]
+    },
+    {
+     "file": "src/motion/harness/ios.tsx",
+     "places": [
+      {
+       "line": 46,
+       "text": "bg-[#ffffff]",
+       "rendersNothing": false
+      },
+      {
+       "line": 59,
+       "text": "color: ink",
+       "rendersNothing": false
+      },
+      {
+       "line": 66,
+       "text": "background: ink",
+       "rendersNothing": false
+      },
+      {
+       "line": 72,
+       "text": "background: ink",
+       "rendersNothing": false
+      }
+     ]
+    },
+    {
+     "file": "src/motion/source/FilmVolume.tsx",
+     "places": [
+      {
+       "line": 28,
+       "text": "text-white",
+       "rendersNothing": true
+      },
+      {
+       "line": 37,
+       "text": "bg-white",
+       "rendersNothing": true
+      },
+      {
+       "line": 38,
+       "text": "border-white",
+       "rendersNothing": true
+      },
+      {
+       "line": 38,
+       "text": "bg-white",
+       "rendersNothing": true
+      }
+     ]
+    },
+    {
+     "file": "src/motion/examples/OvershootExample.tsx",
+     "places": [
+      {
+       "line": 61,
+       "text": "bg-[#ffffff]",
+       "rendersNothing": false
+      },
+      {
+       "line": 62,
+       "text": "bg-[#ffffff]",
+       "rendersNothing": false
+      },
+      {
+       "line": 64,
+       "text": "text-[#ffffff]",
+       "rendersNothing": false
+      }
+     ]
+    },
+    {
+     "file": "src/pages/sloppy/SloppyChatPage.tsx",
+     "places": [
+      {
+       "line": 17,
+       "text": "bg-[#ffffff]",
+       "rendersNothing": false
+      },
+      {
+       "line": 52,
+       "text": "bg-[#ffffff]",
+       "rendersNothing": false
+      },
+      {
+       "line": 54,
+       "text": "bg-[#ffffff]",
+       "rendersNothing": false
+      }
+     ]
+    },
+    {
+     "file": "src/remotion/compositions/NotesTransfer.tsx",
+     "places": [
+      {
+       "line": 173,
+       "text": "background: s.lift < 0.5 ? BRAND_SOFT : '#FFFFFF'",
+       "rendersNothing": false
+      },
+      {
+       "line": 258,
+       "text": "background: '#FFFFFF'",
+       "rendersNothing": false
+      },
+      {
+       "line": 259,
+       "text": "background: '#FFFFFF'",
+       "rendersNothing": false
+      }
+     ]
+    },
+    {
+     "file": "src/motion/examples/ShapeMorphExample.tsx",
+     "places": [
+      {
+       "line": 345,
+       "text": "text-[#ffffff]",
+       "rendersNothing": false
+      },
+      {
+       "line": 346,
+       "text": "text-[#ffffff]",
+       "rendersNothing": false
+      }
+     ]
+    },
+    {
+     "file": "src/motion/examples/stage-shell.tsx",
+     "places": [
+      {
+       "line": 113,
+       "text": "background: chrome?.dark ? '#000000' : '#ffffff'",
+       "rendersNothing": false
+      },
+      {
+       "line": 183,
+       "text": "background: kind === 'window' ? (chrome?.dark ? '#000000' : '#ffffff') : undefined",
+       "rendersNothing": false
+      }
+     ]
+    },
+    {
+     "file": "src/motion/harness/apps/app-library.tsx",
+     "places": [
+      {
+       "line": 46,
+       "text": "color: '#FFFFFF'",
+       "rendersNothing": false
+      },
+      {
+       "line": 63,
+       "text": "color: '#FFFFFF'",
+       "rendersNothing": false
+      }
+     ]
+    },
+    {
+     "file": "src/motion/harness/apps/mail-ios.tsx",
+     "places": [
+      {
+       "line": 39,
+       "text": "text-[#ffffff]",
+       "rendersNothing": false
+      },
+      {
+       "line": 55,
+       "text": "bg-[#ffffff]",
+       "rendersNothing": false
+      }
+     ]
+    },
+    {
+     "file": "src/motion/harness/apps/x.tsx",
+     "places": [
+      {
+       "line": 88,
+       "text": "color: XS.text",
+       "rendersNothing": false
+      },
+      {
+       "line": 93,
+       "text": "color: XS.text",
+       "rendersNothing": false
+      }
+     ]
+    },
+    {
+     "file": "src/pages/home/MatHero.tsx",
+     "places": [
+      {
+       "line": 181,
+       "text": "backgroundColor: on ? DRAW : MAT",
+       "rendersNothing": false
+      },
+      {
+       "line": 232,
+       "text": "backgroundColor: MAT",
+       "rendersNothing": false
+      }
+     ]
+    },
+    {
+     "file": "src/pages/MultiplaneBuilder.tsx",
+     "places": [
+      {
+       "line": 492,
+       "text": "border-white",
+       "rendersNothing": true
+      },
+      {
+       "line": 529,
+       "text": "border-white",
+       "rendersNothing": true
+      }
+     ]
+    },
+    {
+     "file": "src/pages/sloppy/SloppyIssuesPage.tsx",
+     "places": [
+      {
+       "line": 42,
+       "text": "bg-[#ffffff]",
+       "rendersNothing": false
+      },
+      {
+       "line": 87,
+       "text": "bg-[#ffffff]",
+       "rendersNothing": false
+      }
+     ]
+    },
+    {
+     "file": "src/pages/TemplatesPage.tsx",
+     "places": [
+      {
+       "line": 136,
+       "text": "border-white",
+       "rendersNothing": true
+      },
+      {
+       "line": 162,
+       "text": "border-white",
+       "rendersNothing": true
+      }
+     ]
+    },
+    {
+     "file": "src/scene/Annotate.tsx",
+     "places": [
+      {
+       "line": 147,
+       "text": "color: ink",
+       "rendersNothing": false
+      },
+      {
+       "line": 161,
+       "text": "color: ink",
+       "rendersNothing": false
+      }
+     ]
+    },
+    {
+     "file": "src/motion/examples/ContinuousExample.tsx",
+     "places": [
+      {
+       "line": 163,
+       "text": "bg-[#ffffff]",
+       "rendersNothing": false
+      }
+     ]
+    },
+    {
+     "file": "src/motion/examples/GapCloseExample.tsx",
+     "places": [
+      {
+       "line": 195,
+       "text": "text-[#ffffff]",
+       "rendersNothing": false
+      }
+     ]
+    },
+    {
+     "file": "src/motion/examples/LiftExample.tsx",
+     "places": [
+      {
+       "line": 130,
+       "text": "background: '#FFFFFF'",
+       "rendersNothing": false
+      }
+     ]
+    },
+    {
+     "file": "src/motion/examples/MagicPlusScene.tsx",
+     "places": [
+      {
+       "line": 184,
+       "text": "bg-[#ffffff]",
+       "rendersNothing": false
+      }
+     ]
+    },
+    {
+     "file": "src/motion/examples/TypeOnExample.tsx",
+     "places": [
+      {
+       "line": 66,
+       "text": "background: '#FFFFFF'",
+       "rendersNothing": false
+      }
+     ]
+    },
+    {
+     "file": "src/motion/examples/WeightShiftExample.tsx",
+     "places": [
+      {
+       "line": 78,
+       "text": "background: '#FFFFFF'",
+       "rendersNothing": false
+      }
+     ]
+    },
+    {
+     "file": "src/motion/harness/apps/app-store.tsx",
+     "places": [
+      {
+       "line": 134,
+       "text": "bg-[#ffffff]",
+       "rendersNothing": false
+      }
+     ]
+    },
+    {
+     "file": "src/motion/harness/apps/things.tsx",
+     "places": [
+      {
+       "line": 182,
+       "text": "background: '#FFFFFF'",
+       "rendersNothing": false
+      }
+     ]
+    },
+    {
+     "file": "src/pages/home/Play.tsx",
+     "places": [
+      {
+       "line": 216,
+       "text": "bg-white",
+       "rendersNothing": true
+      }
+     ]
+    },
+    {
+     "file": "src/pages/home/Plumber.tsx",
+     "places": [
+      {
+       "line": 92,
+       "text": "text-white",
+       "rendersNothing": true
+      }
+     ]
+    },
+    {
+     "file": "src/pages/StickersPage.tsx",
+     "places": [
+      {
+       "line": 96,
+       "text": "border-white",
+       "rendersNothing": true
+      }
+     ]
+    },
+    {
+     "file": "src/remotion/compositions/fernway/film/FernwayFilm.tsx",
+     "places": [
+      {
+       "line": 428,
+       "text": "color: '#fff'",
+       "rendersNothing": false
+      }
+     ]
+    },
+    {
+     "file": "src/remotion/compositions/saar/KeepLack.tsx",
+     "places": [
+      {
+       "line": 94,
+       "text": "color: '#FFFFFF'",
+       "rendersNothing": false
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "value:color:#000000",
+   "family": "color",
+   "label": "black",
+   "value": "#000000",
+   "said": "You wrote black 4 ways, in 39 places. 3 render nothing.",
+   "count": 39,
+   "rendersNothing": 3,
+   "spellings": [
+    {
+     "text": "in code",
+     "count": 21
+    },
+    {
+     "text": "#000000",
+     "count": 9
+    },
+    {
+     "text": "#000",
+     "count": 6
+    },
+    {
+     "text": "black",
+     "count": 3
+    }
+   ],
+   "suggestion": null,
+   "files": [
+    {
+     "file": "src/motion/harness/ios.tsx",
+     "places": [
+      {
+       "line": 46,
+       "text": "color: IOS.label",
+       "rendersNothing": false
+      },
+      {
+       "line": 59,
+       "text": "color: ink",
+       "rendersNothing": false
+      },
+      {
+       "line": 61,
+       "text": "bg-[#000000]",
+       "rendersNothing": false
+      },
+      {
+       "line": 66,
+       "text": "background: ink",
+       "rendersNothing": false
+      },
+      {
+       "line": 72,
+       "text": "background: ink",
+       "rendersNothing": false
+      }
+     ]
+    },
+    {
+     "file": "src/motion/harness/film-sets.tsx",
+     "places": [
+      {
+       "line": 87,
+       "text": "bg-[#000000]",
+       "rendersNothing": false
+      },
+      {
+       "line": 98,
+       "text": "bg-[#000000]",
+       "rendersNothing": false
+      },
+      {
+       "line": 99,
+       "text": "bg-[#000000]",
+       "rendersNothing": false
+      }
+     ]
+    },
+    {
+     "file": "src/motion/lesson/FilmTransport.tsx",
+     "places": [
+      {
+       "line": 68,
+       "text": "text-black",
+       "rendersNothing": true
+      },
+      {
+       "line": 68,
+       "text": "focus-visible:ring-offset-black",
+       "rendersNothing": true
+      },
+      {
+       "line": 93,
+       "text": "text-black",
+       "rendersNothing": true
+      }
+     ]
+    },
+    {
+     "file": "src/motion/examples/BeatCutExample.tsx",
+     "places": [
+      {
+       "line": 70,
+       "text": "background: ground",
+       "rendersNothing": false
+      },
+      {
+       "line": 74,
+       "text": "fill: inside ? s.type : '#000000'",
+       "rendersNothing": false
+      }
+     ]
+    },
+    {
+     "file": "src/motion/examples/BurstExample.tsx",
+     "places": [
+      {
+       "line": 140,
+       "text": "background: XS.bg",
+       "rendersNothing": false
+      },
+      {
+       "line": 171,
+       "text": "background: XS.bg",
+       "rendersNothing": false
+      }
+     ]
+    },
+    {
+     "file": "src/motion/examples/EaseOutExample.tsx",
+     "places": [
+      {
+       "line": 100,
+       "text": "bg-[#000000]",
+       "rendersNothing": false
+      },
+      {
+       "line": 123,
+       "text": "bg-[#000000]",
+       "rendersNothing": false
+      }
+     ]
+    },
+    {
+     "file": "src/motion/examples/stage-shell.tsx",
+     "places": [
+      {
+       "line": 113,
+       "text": "background: chrome?.dark ? '#000000' : '#ffffff'",
+       "rendersNothing": false
+      },
+      {
+       "line": 183,
+       "text": "background: kind === 'window' ? (chrome?.dark ? '#000000' : '#ffffff') : undefined",
+       "rendersNothing": false
+      }
+     ]
+    },
+    {
+     "file": "src/motion/harness/apps/apple-pay.tsx",
+     "places": [
+      {
+       "line": 78,
+       "text": "color: item === 'Total' ? IOS.label : IOS.secondary",
+       "rendersNothing": false
+      },
+      {
+       "line": 82,
+       "text": "bg-[#000000]",
+       "rendersNothing": false
+      }
+     ]
+    },
+    {
+     "file": "src/motion/harness/kit/ios.tsx",
+     "places": [
+      {
+       "line": 74,
+       "text": "color: IOS.label",
+       "rendersNothing": false
+      },
+      {
+       "line": 89,
+       "text": "color: IOS.label",
+       "rendersNothing": false
+      }
+     ]
+    },
+    {
+     "file": "src/motion/content/techniques/before-after-figure.tsx",
+     "places": [
+      {
+       "line": 95,
+       "text": "background: '#000'",
+       "rendersNothing": false
+      }
+     ]
+    },
+    {
+     "file": "src/motion/examples/CollapseExample.tsx",
+     "places": [
+      {
+       "line": 107,
+       "text": "background: '#000'",
+       "rendersNothing": false
+      }
+     ]
+    },
+    {
+     "file": "src/motion/examples/GlitchExample.tsx",
+     "places": [
+      {
+       "line": 88,
+       "text": "background: G.ground",
+       "rendersNothing": false
+      }
+     ]
+    },
+    {
+     "file": "src/motion/examples/SlamExample.tsx",
+     "places": [
+      {
+       "line": 60,
+       "text": "background: SL.ground",
+       "rendersNothing": false
+      }
+     ]
+    },
+    {
+     "file": "src/motion/examples/StrikeThroughExample.tsx",
+     "places": [
+      {
+       "line": 96,
+       "text": "background: X.ground",
+       "rendersNothing": false
+      }
+     ]
+    },
+    {
+     "file": "src/motion/harness/android.tsx",
+     "places": [
+      {
+       "line": 50,
+       "text": "bg-[#000000]",
+       "rendersNothing": false
+      }
+     ]
+    },
+    {
+     "file": "src/motion/harness/apps/app-store.tsx",
+     "places": [
+      {
+       "line": 134,
+       "text": "color: IOS.label",
+       "rendersNothing": false
+      }
+     ]
+    },
+    {
+     "file": "src/motion/harness/apps/mail-ios.tsx",
+     "places": [
+      {
+       "line": 55,
+       "text": "color: IOS.label",
+       "rendersNothing": false
+      }
+     ]
+    },
+    {
+     "file": "src/motion/harness/apps/x.tsx",
+     "places": [
+      {
+       "line": 84,
+       "text": "bg-[#000000]",
+       "rendersNothing": false
+      }
+     ]
+    },
+    {
+     "file": "src/remotion/compositions/AnnotationCamera.tsx",
+     "places": [
+      {
+       "line": 185,
+       "text": "background: '#000'",
+       "rendersNothing": false
+      }
+     ]
+    },
+    {
+     "file": "src/remotion/compositions/DepthParallax.tsx",
+     "places": [
+      {
+       "line": 117,
+       "text": "background: e > 0 ? mix(COLOR.ground, e) : COLOR.hole",
+       "rendersNothing": false
+      }
+     ]
+    },
+    {
+     "file": "src/remotion/compositions/saar/KeepLack.tsx",
+     "places": [
+      {
+       "line": 68,
+       "text": "background: '#000'",
+       "rendersNothing": false
+      }
+     ]
+    },
+    {
+     "file": "src/remotion/compositions/saar/Opening.tsx",
+     "places": [
+      {
+       "line": 105,
+       "text": "background: grey ? FIELD : '#000'",
+       "rendersNothing": false
+      }
+     ]
+    },
+    {
+     "file": "src/remotion/compositions/saar/QuitSeesaw.tsx",
+     "places": [
+      {
+       "line": 107,
+       "text": "background: '#000'",
+       "rendersNothing": false
+      }
+     ]
+    },
+    {
+     "file": "src/remotion/compositions/webflow-copy/WebflowCopyFull.tsx",
+     "places": [
+      {
+       "line": 66,
+       "text": "background: '#000'",
+       "rendersNothing": false
+      }
+     ]
+    },
+    {
+     "file": "src/scene/Scene.tsx",
+     "places": [
+      {
+       "line": 38,
+       "text": "background: scene.background ?? '#000'",
+       "rendersNothing": false
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "value:color:#ffffff/30",
+   "family": "color",
+   "label": "white at 30%",
+   "value": "#ffffff/30",
+   "said": "You wrote white at 30% 2 ways, in 6 places. The closest in your colours is on-accent. 5 render nothing.",
+   "count": 6,
+   "rendersNothing": 5,
+   "spellings": [
+    {
+     "text": "white/30",
+     "count": 5
+    },
+    {
+     "text": "#ffffff4c",
+     "count": 1
+    }
+   ],
+   "suggestion": {
+    "name": "on-accent",
+    "exact": false
+   },
+   "files": [
+    {
+     "file": "src/motion/lesson/FilmTransport.tsx",
+     "places": [
+      {
+       "line": 64,
+       "text": "hover:bg-white/30",
+       "rendersNothing": true
+      },
+      {
+       "line": 67,
+       "text": "hover:bg-white/30",
+       "rendersNothing": true
+      },
+      {
+       "line": 72,
+       "text": "hover:bg-white/30",
+       "rendersNothing": true
+      },
+      {
+       "line": 87,
+       "text": "bg-white/30",
+       "rendersNothing": true
+      }
+     ]
+    },
+    {
+     "file": "src/motion/harness/film-sets.tsx",
+     "places": [
+      {
+       "line": 90,
+       "text": "bg-[#ffffff4c]",
+       "rendersNothing": false
+      }
+     ]
+    },
+    {
+     "file": "src/motion/source/FilmVolume.tsx",
+     "places": [
+      {
+       "line": 28,
+       "text": "hover:bg-white/30",
+       "rendersNothing": true
+      }
+     ]
+    }
+   ]
+  }
+ ],
+ "open": 469
 }

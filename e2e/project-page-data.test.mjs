@@ -6,6 +6,7 @@ import { test } from 'node:test';
 import { request } from 'node:http';
 import { serve } from '../dist/session/server.js';
 import { check, project } from './helpers/causes-project.mjs';
+import { run } from './helpers/bare-cli.mjs';
 
 async function page(t) {
   const root = await project(t);
@@ -24,7 +25,7 @@ test('GET / is the page shell with the project name, and loads the page module',
   // the credential is in the body, never in a URL
   assert.ok(html.includes(server.info.token));
   assert.ok(!html.includes('?token') && !html.includes('token='));
-  for (const module of ['project-page.js', 'gravity.js', 'scale-marks.js', 'tokens.css']) {
+  for (const module of ['project-page.js', 'gravity.js', 'specimen.js', 'cause-list.js', 'scale-marks.js', 'tokens.css']) {
     const served = await fetch(`${base}/__plumb/src/${module}`);
     assert.equal(served.status, 200, module);
     assert.ok((await served.text()).length > 100, module);
@@ -50,6 +51,16 @@ test('GET /__plumb/system answers the page data: scales, strays beside them, and
   const printed = check(root).causes;
   assert.deepEqual(data.causes.map(c => [c.id, c.count]), printed.slice(0, 3).map(c => [c.id, c.count]));
   assert.ok(data.causes.length <= 3);
+  assert.ok(data.causes.length > 0);
+  assert.equal(data.open, printed.length);
+  // each in the terminal's own words: the plain version on the same project says the same sentences
+  const plain = run(['--root', root]).stdout.replace(/\s+/g, ' ');
+  for (const cause of data.causes) assert.ok(plain.includes(cause.said), `${cause.said}\n---\n${plain}`);
+  // its places by file, from the project's folder: nothing about the machine leaves it
+  for (const cause of data.causes) {
+    assert.equal(cause.files.reduce((n, f) => n + f.places.length, 0), cause.count);
+    for (const f of cause.files) assert.ok(!f.file.startsWith('/') && !f.file.includes(root) && !/^[A-Z]:/.test(f.file), f.file);
+  }
 });
 
 test('the numbers are the person\'s own: no token is refused, and a page from another site cannot read the shell', { timeout: 90000 }, async (t) => {
