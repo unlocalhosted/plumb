@@ -187,17 +187,11 @@ test('Vite stamps prove exact host JSX, preserve usage and refuse stale evidence
   });
 });
 
-test('React first warns and serves no stamps; Vitest is skipped', { timeout: 30000 }, async t => {
+test('React first stops the dev server with the line to move; the internal switch and Vitest serve no stamps', { timeout: 30000 }, async t => {
   const root = await fixture(t);
-  // React first: the dev server still starts, says how to get stamps, and serves none.
-  const warnings = [];
-  const logger = { info() {}, warn: message => warnings.push(message), warnOnce: message => warnings.push(message), error() {}, clearScreen() {}, hasErrorLogged: () => false, hasWarned: false };
-  const late = await createServer({ ...settings(root), customLogger: logger, plugins: [react(), plumb({ watch: false })] });
-  try {
-    assert.match(warnings.join('\n'), /Source stamping is off: plumb\(\) runs after vite:react-babel/);
-    assert.ok(!(await late.transformRequest('/src/entry.jsx')).code.includes('data-plumb-source'));
-  } finally { await late.close(); }
-  // stamp: false keeps the overlay and serves no stamps, for apps that hydrate HTML prerendered elsewhere.
+  // React first: the JSX would be compiled before a stamp could be placed. The server does not start; the message says what to move.
+  await assert.rejects(createServer({ ...settings(root), plugins: [react(), plumb({ watch: false })] }), /React Plumber must run before vite:react-babel\. In vite\.config\.ts, move plumb\(\) before the plugin that compiles JSX \(react\(\)\) in plugins/);
+  // The internal switch (the static demo, the owner-stack regression tests) keeps the overlay and serves no stamps; it is not a public option.
   const off = await createServer({ ...settings(root), plugins: [plumb({ watch: false, stamp: false }), react()] });
   try { assert.ok(!(await off.transformRequest('/src/entry.jsx')).code.includes('data-plumb-source')); } finally { await off.close(); }
   const server = await createServer({ ...settings(root), test: {}, plugins: [react(), plumb({ watch: false })] });

@@ -1,5 +1,5 @@
 import type { Plugin } from 'vite';
-import { isAbsolute, resolve } from 'node:path';
+import { isAbsolute, relative, resolve } from 'node:path';
 import MagicString from 'magic-string';
 import { parseSync, visitorKeys } from 'oxc-parser';
 import type { Node } from 'oxc-parser';
@@ -46,7 +46,6 @@ export function stampJSX(code: string, file: string, path: string) {
 export function sourceStamping(options: SessionOptions, production = false): Plugin {
   let root: string;
   let config: ReturnType<typeof loadConfig> | undefined;
-  let disabled = false;
   return {
     name: 'plumb',
     enforce: 'pre',
@@ -57,14 +56,16 @@ export function sourceStamping(options: SessionOptions, production = false): Plu
       root = options.root === undefined ? resolved.root : resolve(resolved.root, options.root);
       config = undefined;
       const before = resolved.plugins.slice(0, resolved.plugins.findIndex(plugin => plugin.name === 'plumb'));
-      const react = before.find(plugin => /^vite:react[-:]/.test(plugin.name));
-      // React's transform would see the JSX first, so stamps could not be placed. The dev server keeps running: the
-      // overlay falls back to the owner chain, and the warning says how to get exact stamps.
-      disabled = Boolean(react);
-      if (react) resolved.logger.warn(`[plumb] Source stamping is off: plumb() runs after ${react.name}. Put plumb() before react() in plugins for exact locations.`);
+      const react = before.find(plugin => /^vite:react[-:]|^vite:preact|babel/i.test(plugin.name));
+      // A JSX transform ahead of this one would compile the JSX before a stamp can be placed, and every element on the
+      // page would then be a guess. That is not a mode: the dev server stops here and says which line to move.
+      if (react) {
+        const file = resolved.configFile ? relative(resolved.root, resolved.configFile) : 'vite.config.ts';
+        throw new Error(`[plumb] React Plumber must run before ${react.name}. In ${file}, move plumb() before the plugin that compiles JSX (react()) in plugins, so it reads your JSX first.`);
+      }
     },
     async transform(code, id) {
-      if (disabled || id.includes('\0') || id.startsWith('virtual:')) return null;
+      if (id.includes('\0') || id.startsWith('virtual:')) return null;
       const file = id.replace(/[?#].*$/, '');
       if (!isAbsolute(file) || !/\.[cm]?[jt]sx?$/.test(file) || !code.includes('<')) return null;
       // Yours by the rule (inside the repository, neither installed nor generated), or by the config's `source`.
