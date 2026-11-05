@@ -148,7 +148,8 @@ test('Alt+B registers the page against the system: no dim, no boxes; heat only w
   await panel(overlay).locator('.cause .cls').filter({ hasText: 'gap-[10px]' }).waitFor({ timeout: 5000 });
   await page.keyboard.press('Escape');
   await panel(overlay).locator('.line').waitFor({ timeout: 5000 });
-  assert.equal(await overlay.getByRole('button', { name: 'Blueprint', exact: true }).getAttribute('aria-pressed'), 'true');
+  // the dock steps aside while Blueprint is on (its bar is the surface), so its Blueprint button is read by its state, not its role
+  assert.equal(await overlay.locator('.dock .bp-toggle').getAttribute('aria-pressed'), 'true');
   assert.deepEqual(errors, []);
 });
 
@@ -201,9 +202,11 @@ test('Only drift is drawn, and the fix panel counts it by cause: one line at res
   for (const sel of ['.bpp', '.cg', '.sel']) assert.equal(await shown(page, sel), false, `${sel} is not shown`);
   // at rest the fix panel is one line: the problems on the page (more than the view holds, once it is read), in causes
   await overlay.locator('.fx[data-settled]').waitFor({ timeout: 20000 });
-  await panel(overlay).locator('.line').filter({ hasText: /^\d+ problems? · \d+ fix(es)?/ }).waitFor({ timeout: 10000 });
+  // (the bar's line says the problems; the causes are one point away, in the count's readout)
+  await panel(overlay).locator('.line .count').filter({ hasText: /^\d+ problems?$/ }).waitFor({ timeout: 10000 });
   const drift = await hits(overlay).evaluateAll((rects) => rects.filter((r) => r.dataset.ledger === 'new').length);
-  const [, places, causes] = (await panel(overlay).locator('.line .count').innerText()).match(/^(\d+) problems? · (\d+) fix(?:es)?/).map(Number);
+  const places = Number((await panel(overlay).locator('.line .count').innerText()).match(/^(\d+) problems?/)[1]);
+  const causes = Number((await panel(overlay).locator('.line .readout').textContent()).match(/(\d+) fix(?:es)?/)[1]);
   assert.ok(drift > 0, 'marks are drawn');
   assert.equal(places, await page.evaluate(() => window.__plumb.overlay.progress.drift), 'the line and the dock say the same number');
   assert.ok(causes >= 3 && causes <= places, `several causes: ${causes}`);
@@ -246,7 +249,7 @@ test('Only drift is drawn, and the fix panel counts it by cause: one line at res
   // Esc puts it down and the panel is one line again; blueprint stays
   await page.keyboard.press('Escape');
   await panel(overlay).locator('.line .count').waitFor({ timeout: 5000 });
-  assert.equal(await overlay.getByRole('button', { name: 'Blueprint', exact: true }).getAttribute('aria-pressed'), 'true');
+  assert.equal(await overlay.locator('.dock .bp-toggle').getAttribute('aria-pressed'), 'true');
   // D is an ordinary key now: nothing on the page changes
   await page.keyboard.down('d');
   await page.waitForTimeout(150);
@@ -534,7 +537,7 @@ test('With motion: the heat map stays out of sight as Blueprint arrives (the pag
   await page.waitForTimeout(2800);
   const still = await page.evaluate(() => [...document.querySelector('plumb-overlay').shadowRoot.querySelectorAll('.bp .heat .zone')].every((z) => z.getAnimations().length === 0));
   assert.ok(still, 'no zone moves at rest');
-  assert.equal(await overlay.getByRole('button', { name: 'Blueprint', exact: true }).getAttribute('aria-pressed'), 'true');
+  assert.equal(await overlay.locator('.dock .bp-toggle').getAttribute('aria-pressed'), 'true');
 
   await page.evaluate(() => document.querySelector('plumb-overlay').remove());
   assert.equal(await footprint(page), before, 'removing the overlay mid-mode leaves nothing behind');
