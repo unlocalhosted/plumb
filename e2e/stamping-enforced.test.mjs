@@ -80,12 +80,12 @@ test('Vite: a page whose stamps never reach the DOM gets the setup row and a typ
   await page.waitForFunction(() => document.querySelector('plumb-overlay').shadowRoot.querySelector('.rd'));
   const causes = await page.evaluate(() => [...document.querySelector('plumb-overlay').shadowRoot.querySelectorAll('.rd .req[data-status="missing"] .what')].map(e => e.textContent));
   assert.ok(causes.some(text => /Source stamping isn’t running/.test(text)), JSON.stringify(causes));
-  // Your own element: refused with the reason, and where the owner stack would have guessed. A library's host keeps its answer.
+  // Your own element: refused with the reason, and where the owner stack would have guessed. A library's host answers with its usage.
   const own = await page.evaluate(() => window.__plumb.locate(document.querySelector('#heading'), { explain: true }));
   assert.equal(own.location, null); assert.equal(own.reason, 'no-stamps'); assert.equal(own.detail?.file, 'src/App.jsx');
   assert.equal(await page.evaluate(() => window.__plumb.locate(document.querySelector('#heading'))), null);
   const library = await page.evaluate(() => window.__plumb.locate(document.querySelector('#library'), { explain: true }));
-  assert.equal(library?.via, 'owner-stack', JSON.stringify(library)); assert.equal(library?.file, 'src/App.jsx');
+  assert.equal(library?.via, 'usage', JSON.stringify(library)); assert.equal(library?.file, 'src/App.jsx'); assert.equal(library?.component, 'Button');
   assert.deepEqual(errors, [], 'nothing thrown into the page');
 });
 

@@ -62,7 +62,9 @@ async function hydrated(page, url, overlay = true) {
   return page.evaluate(() => {
     const main = document.getElementById('main').outerHTML;
     const items = [...document.querySelectorAll('a[href="#item"]')].map(a => a.closest('[role="menu"]')?.outerHTML ?? a.outerHTML).join('');
-    return (main + items).replace(/ data-plumb-source="[^"]*"/g, '').replace(/_r_[a-z0-9]+_/g, '_r_').replace(/ style="[^"]*"/g, '');
+    // Headless UI's hover/active state attributes land in whichever order the pointer's timing gives: not the page's structure.
+    return (main + items).replace(/ data-plumb-source="[^"]*"/g, '').replace(/_r_[a-z0-9]+_/g, '_r_').replace(/ style="[^"]*"/g, '')
+      .replace(/ data-(?:hover|active|focus|open)=""/g, '').replace(/ data-headlessui-state="[^"]*"/g, '');
   });
 }
 

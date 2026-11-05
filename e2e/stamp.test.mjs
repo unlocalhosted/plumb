@@ -123,21 +123,23 @@ test('Vite stamps prove exact host JSX, preserve usage and refuse stale evidence
     });
     assert.equal(noMaps.via, 'stamp'); assert.equal(noMaps.line, expected.line);
   });
-  await t.test('a component gets no stamp; its rendered host locates through the owner stack', async () => {
+  await t.test('a component gets no stamp; the host it draws answers with its usage, exactly on the indexed opening', async () => {
     // A stamp is a prop a component may reject (Headless UI's Menu renders a Fragment and throws on extra props), so
-    // only DOM tags carry one. The library's <button> keeps the spread's own value and answers from React's owner stack.
+    // only DOM tags carry one. The library's <button> keeps the spread's own value and answers with where Button is used.
     assert.equal(await page.getAttribute('#usage', 'data-plumb-source'), 'spread');
-    const located = await page.$eval('#usage', element => window.__plumb.locate(element, { chain: true }));
-    assert.equal(located.via, 'owner-stack');
-    assert.ok(located.chain.some(link => link.file === file && link.line === position(source, '<Button id="usage"').line), JSON.stringify(located));
-    assert.ok(!located.chain.some(link => link.usage), 'no usage link without a component stamp');
+    const located = await page.$eval('#usage', element => window.__plumb.locate(element, { explain: true }));
+    assert.equal(located.via, 'usage', JSON.stringify(located));
+    assert.deepEqual({ file: located.file, line: located.line, column: located.column, component: located.component, props: located.props }, { file, ...position(source, '<Button id="usage"'), component: 'Button', props: ['className'] });
+    assert.equal(located.chain.length, 1, 'nothing below a library usage is yours');
   });
   await t.test('author wins only its opening; fragments remain untouched; disk unchanged', async () => {
     const transformed = observed.get(file); assert.ok(transformed);
     assert.match(transformed.code, /<aside id="authored" \{\.\.\.spread\} data-plumb-source="author">/);
     for (const opening of ['<>', '<Fragment>', '<React.Fragment>']) assert.ok(transformed.code.includes(opening), opening);
     assert.equal(await page.getAttribute('#authored', 'data-plumb-source'), 'author');
-    assert.equal((await page.$eval('#authored', element => window.__plumb.locate(element))).via, 'owner-stack');
+    // the author's value is no stamp; the element's own creation frame answers, accepted where the index has that opening
+    const authored = await page.$eval('#authored', element => window.__plumb.locate(element));
+    assert.equal(authored.via, 'frame'); assert.deepEqual({ file: authored.file, line: authored.line, column: authored.column }, { file, ...position(source, '<aside id="authored"') });
     for (const id of ['shorthand', 'fragment', 'member']) assert.match(await page.getAttribute('#' + id, 'data-plumb-source'), /#[a-f0-9]{12}$/);
     assert.equal(await readFile(join(root, file), 'utf8'), source);
     assert.deepEqual(errors, [], 'no Fragment prop warnings or browser errors');
