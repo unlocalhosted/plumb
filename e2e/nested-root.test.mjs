@@ -113,3 +113,38 @@ test('a project below its repository top counts each place once, the same as the
   assert.equal(atTop.places, 3, JSON.stringify(atTop.sites));
   assert.ok(atTop.sites.every((s) => s.includes(' src/App.jsx:') && s.endsWith('×1')), JSON.stringify(atTop.sites));
 });
+
+// A stamped locate is one GET resolve with the stamp's name, line, column and hash: a lookup, not work. Warm, it is
+// single-digit milliseconds on the server; through the overlay's locate (hydration check, the fetch, the answer) it
+// stays well under 30 ms at the 95th percentile, for an app below its repository top (where a stamp's name and the
+// project's name of the file differ). A flat cost on this path (a timer, a per-request rescan) fails here.
+test('a warm stamped locate on a project below its repository top is a lookup: under 30 ms p95 over 20 elements', { timeout: 180000 }, async (t) => {
+  const launched = await browser(t); if (!launched) return;
+  const outer = await mkdtemp(join(tmpdir(), 'plumb-outer-perf-'));
+  t.after(() => rm(outer, { recursive: true, force: true }));
+  execFileSync('git', ['init', '-q'], { cwd: outer });
+  const root = join(outer, 'apps', 'web');
+  await app(root);
+  await writeFile(join(root, 'src/App.jsx'), `export function App() {\n  return <main className="mx-auto flex max-w-3xl flex-col gap-s4 px-s4 py-s6">\n${Array.from({ length: 20 }, (_, i) => `    <section id="s${i}" className="rounded-card bg-surface p-[${10 + i}px] text-body">${i}</section>`).join('\n')}\n  </main>;\n}\n`);
+  const url = await serve(t, root);
+  const page = await launched.newPage({ reducedMotion: 'reduce', viewport: { width: 1200, height: 900 } });
+  const errors = []; page.on('pageerror', (error) => errors.push(error.message));
+  await page.goto(url);
+  await page.waitForFunction(() => window.__plumb?.overlay); await page.evaluate(() => window.__plumb.ready());
+  // the server's first reads (readiness, the first report) are startup, not the warm path
+  await page.waitForTimeout(1500);
+  const { first, warm } = await page.evaluate(async () => {
+    const els = Array.from({ length: 20 }, (_, i) => document.getElementById('s' + i));
+    const first = await window.__plumb.locate(els[0], { explain: true });
+    const warm = [];
+    for (let round = 0; round < 4; round++) for (const el of els) { const t0 = performance.now(); const found = await window.__plumb.locate(el, { explain: true }); if (round) warm.push([performance.now() - t0, found?.via, found?.file]); }
+    return { first, warm };
+  });
+  assert.equal(first.via, 'stamp', JSON.stringify(first));
+  assert.equal(first.file, 'src/App.jsx');
+  assert.ok(warm.every(([, via, file]) => via === 'stamp' && file === 'src/App.jsx'), JSON.stringify(warm.filter(([, via]) => via !== 'stamp')));
+  const ms = warm.map(([t]) => t).sort((a, b) => a - b), p50 = ms[Math.floor(ms.length / 2)], p95 = ms[Math.floor(ms.length * 0.95)];
+  t.diagnostic(`warm stamped locate: n=${ms.length} p50=${p50.toFixed(1)}ms p95=${p95.toFixed(1)}ms max=${ms.at(-1).toFixed(1)}ms`);
+  assert.ok(p95 < 30, `p95 ${p95.toFixed(1)} ms (p50 ${p50.toFixed(1)}, max ${ms.at(-1).toFixed(1)})`);
+  assert.deepEqual(errors, []);
+});
