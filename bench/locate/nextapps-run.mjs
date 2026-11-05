@@ -11,7 +11,7 @@ const log = (...a) => console.log(new Date().toISOString().slice(11, 19), ...a);
 // A route that answers 5xx is not a page; the body's first lines say why (a Next error page).
 async function preflight(url, lastError = () => null) {
   try {
-    const res = await fetch(url, { signal: AbortSignal.timeout(300_000) });
+    const res = await fetch(url, { signal: AbortSignal.timeout(600_000) });
     if (res.status < 500) return null;
     const body = (await res.text()).replace(/<[^>]+>/g, ' ').replace(/&quot;/g, '"').replace(/\s+/g, ' ');
     // the page's own error text is not in the 500 body (Next sends it to the dev server log); keep the server's last error line

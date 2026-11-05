@@ -16,8 +16,8 @@ export const corpusRoot = join(here, '.corpus');
 export const nextApps = {
   tailwindcss: {
     name: 'tailwindcss.com', clone: 'tailwindcss', sha: '7f92c22', dir: '.', ownBundler: 'turbopack', next: '16.2.6',
-    routes: ['/', '/docs/padding', '/docs/installation/using-vite', '/blog', '/showcase'],
-    note: 'Licence is education-only: no code from this app is committed, only numbers.',
+    routes: ['/', '/docs/padding', '/docs/installation/using-vite', '/showcase', '/partners'],
+    note: 'Licence is education-only: no code from this app is committed, only numbers. /blog is not measured: the unmodified app\'s own dev server runs out of heap there (6 GB, in JSON.parse), with or without Plumber; /partners replaces it.',
   },
   magicui: {
     name: 'magicui', clone: 'magicui', sha: '37ce829', dir: 'apps/www', ownBundler: 'webpack', next: '15.5.28',
@@ -117,7 +117,7 @@ export async function startNextApp(key, app, bundler, stamp) {
   const def = nextApps[key];
   const major = Number(def.next.split('.')[0]);
   const flag = bundler === 'turbopack' ? ['--turbopack'] : major >= 16 ? ['--webpack'] : [];
-  const env = { NEXT_TELEMETRY_DISABLED: '1', PLUMB_CACHE_DIR: join(app, '.plumb-cache'), PLUMB_BENCH_STAMP: stamp ? '1' : '0', PLUMB_STAMP_HOST_ONLY: stamp === 'host' ? '1' : '0', NODE_OPTIONS: '--max-old-space-size=6144', NODE_ENV: undefined, ...(def.env ?? {}) };
+  const env = { NEXT_TELEMETRY_DISABLED: '1', PLUMB_CACHE_DIR: join(app, '.plumb-cache'), PLUMB_BENCH_STAMP: stamp ? '1' : '0', PLUMB_STAMP_HOST_ONLY: stamp === 'host' ? '1' : '0', NODE_OPTIONS: '--max-old-space-size=6144', NEXT_FONT_GOOGLE_MOCKED_RESPONSES: join(here, 'font-mock.cjs'), NODE_ENV: undefined, ...(def.env ?? {}) };
   return spawnHost({
     file: join(app, 'node_modules/next/dist/bin/next'), args: ['dev', ...flag, '--hostname', '127.0.0.1', '--port', '0'],
     cwd: app, env, label: `${def.name} ${bundler} ${stamp ? 'stamped' : 'plain'}${stamp === 'host' ? ' (host tags only)' : ''}`, timeoutMs: 300_000,
