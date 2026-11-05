@@ -57,3 +57,27 @@ Inter isn't installed here, so the renders use the system face (as card-16.png d
 
 ## Against #16
 #57, #61 and #64 come closest to the bar: each has data drawn as data (invite, space bar, histogram), faces, density and one accent. #59 and #60 are richer than before, but their lesson is invisible in a still, so their pictures can only sell the product, not the lesson. #63 deliberately shows the broken frame. All six need the owner's eye on the new hues (component violet, file kinds) and on the serif before any build.
+
+## Credits
+Photos from Unsplash, under the Unsplash License (free to use, no permission needed), vendored into
+overlay/showcase/src/media at most 1600px on the long side, quality 80. Logos from simple-icons 13.21.0 (CC0 paths; the
+marks are their companies' trademarks, shown as senders in a demo).
+
+| File | Photo | Photographer |
+| --- | --- | --- |
+| s57-crit-wall.jpg | https://unsplash.com/photos/HUuWNQmW58A (photo-1641355527446-232d7f1f2c10, a wall of post-it notes) | Annie Vo |
+| s59-cabin.jpg | https://unsplash.com/photos/FKJgBUDoVC0 (photo-1449158743715-0a90ebb6d2d8, a wooden cabin in a pine forest) | @olivier_twwli |
+| s60-tide.jpg | https://unsplash.com/photos/sLAk1guBG90 (photo-1505142468610-359e7d316be0, aerial photo of a seashore) | Shifaaz Shamoon (@sotti) |
+| s61-campaign.jpg | https://unsplash.com/photos/HlVjI5WmoQY (photo-1613915617430-8ab0fd7c6baf, a person in a blazer, black and white) | Chyntia Juls (@chyntiajuls) |
+| s61-film.jpg | https://unsplash.com/photos/GW7AiVXuuuY (photo-1597099911706-1f7c9ba6839b, a waterfall between pines) | Joshua Woroniecki (@joshuaworoniecki) |
+| s63-cottage.jpg | https://unsplash.com/photos/jBI5n6d8ZwY (photo-1579627559241-aa855a66df15, a thatched brick cottage) | @liv_escapes |
+| s64-ridge.jpg | https://unsplash.com/photos/Cd3Ek7rNXSk (photo-1551801691-f0bce83d4f68, the Quiraing under cloud) | Bjorn Snelders (@bjorns) |
+| s64-storr.jpg | https://unsplash.com/photos/ND2jxuy569c (photo-1763332183284-a40cb9111665, the Old Man of Storr) | Diane Rish (@dianerish) |
+| s64-cattle.jpg | https://unsplash.com/photos/PTwcNxVfNWI (photo-1618651310777-acc5fe06493a, Highland cattle on a hill) | Piotr Musioł (@szamanm) |
+| s64-road.jpg | https://unsplash.com/photos/IHKBF23A_iw (photo-1476990789491-712b869b91a5, a road through the Trotternish hills) | @v2osk |
+| s64-stones.jpg | https://unsplash.com/photos/-6hvB84fyYA (photo-1576405515541-cb47b7da4fa7, rock pinnacles on a green hillside at dusk) | Massimiliano Morosinotto (@therawhunter) |
+| s64-sheep.jpg | https://unsplash.com/photos/slI38tNPHcs (photo-1761147950077-0c5d58759ff2, sheep on a hillside, mountains beyond) | Duwaraka Murugadas (@duwa) |
+| s64-bluebells.jpg | https://unsplash.com/photos/APesM3x0wRg (photo-1719457844066-53a8854cc364, a wood full of bluebells) | Suzanne Rushton (@suzanne_ella) |
+| s64-path.jpg | https://unsplash.com/photos/XQUcjQOGGCg (photo-1638627740211-32f29fe69912, a path between tall pines) | Abhishek Banik (@abphotography) |
+| s64-river.jpg | https://unsplash.com/photos/Nj7gBJ7-JUo (photo-1680038409811-81fcb9e1f789, a river through a forest) | Adrian Mag (@l2space) |
+| logos/github.svg, logos/linear.svg | simple-icons 13.21.0 | simple-icons |
