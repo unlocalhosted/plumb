@@ -66,6 +66,9 @@ export function App() {
 }
 `;
 const panel = (overlay) => overlay.locator('.fx');
+// the bar's count as one sentence: the line says the problems; the causes (and notes) are one point away, in the count's readout
+const counted = (overlay) => panel(overlay).locator('.line').evaluate((line) => [line.querySelector('.count')?.textContent, line.querySelector('.readout')?.textContent].filter(Boolean).join(' · ').replace(/\s+/g, ' '));
+const countsAre = (page, re) => page.waitForFunction((source) => { const line = document.querySelector('plumb-overlay').shadowRoot.querySelector('.fx .line'); return new RegExp(source).test([line?.querySelector('.count')?.textContent, line?.querySelector('.readout')?.textContent].filter(Boolean).join(' · ')); }, re.source, { timeout: 10000 });
 // what the last fix written changed, said above the panel with its Undo
 const said = (overlay) => panel(overlay).locator('.said .t');
 const padding = (page, id) => page.locator(`#${id}`).evaluate((el) => getComputedStyle(el).paddingTop);
@@ -77,7 +80,7 @@ test('At rest one line counts problems and causes; Enter puts a cause in hand an
   const { page, errors, overlay } = await open(t, launched, url);
   const source = () => readFile(join(root, 'src/App.jsx'), 'utf8');
   // rest: one line, nothing else of the old flow drawn
-  await panel(overlay).locator('.line').filter({ hasText: /2 problems · 1 fix/ }).waitFor({ timeout: 10000 });
+  await countsAre(page, /2 problems · 1 fix/);
   for (const sel of ['.bpp', '.cg', '.sel']) assert.equal(await visible(page, sel), false, `${sel} is not shown`);
   // Enter: the cause in hand, its options as specimens, the suggestion tried at both places
   await page.keyboard.press('Enter');
@@ -109,7 +112,7 @@ test('A glow clicked puts its cause in hand; → skips to the next cause, ← ba
   const launched = await browser(t); if (!launched) return;
   const { url } = await fixture(t, PAGE.replace('<section id="b"', '<p id="w" className="text-body font-[650]">Weight</p>\n      <section id="b"'));
   const { page, errors, overlay } = await open(t, launched, url);
-  await panel(overlay).locator('.line').filter({ hasText: /problems? · 2 fixes/ }).waitFor({ timeout: 10000 });
+  await countsAre(page, /problems? · 2 fixes/);
   // a click on the second card's glow (its zone's own point) holds the padding cause
   // a glow says its place in the panel's words, to a screen reader too: never the rule's own wording
   const labels = await overlay.locator('.bp .hit').evaluateAll((hits) => [...new Set(hits.map((h) => h.getAttribute('aria-label')))]);
@@ -323,9 +326,13 @@ export function App() {
   // the page comes back read in full: the three are gone and only the cause nobody touched is left
   await page.waitForFunction(() => document.getElementById('t1')?.className.includes('tracking-track-ak'), null, { timeout: 20000 });
   await overlay.locator('.fx[data-settled]').waitFor({ timeout: 20000 });
-  // the panel has moved on to the one fix left
-  await panel(overlay).locator('.cause .cls').filter({ hasText: 'gap-[7px]' }).waitFor({ timeout: 20000 }).catch(async (e) => { throw new Error(`${e.message}\npanel: ${(await panel(overlay).innerText()).replace(/\s+/g, ' ')}\ntheme: ${(await theme()).match(/--(tracking|leading)[^;]*;/g)}`); });
-  assert.match(await panel(overlay).locator('.cause .nav').innerText(), /1 of 1/);
+  // the panel has moved on to the causes nobody touched: the gap, and the card's inset as craft sees it. The keep was for the
+  // value typed by hand; "Text off the column" is another cause of the same class, so it is still offered
+  await panel(overlay).locator('.cause').waitFor({ timeout: 20000 });
+  await hold(/gap-\[7px\]/);
+  assert.match(await panel(overlay).locator('.cause .nav').innerText(), /\d of 2/);
+  await hold(/p-\[13px\]/);
+  assert.equal(await panel(overlay).locator('.cause .what span').first().innerText(), 'Text off the column');
   assert.deepEqual(errors, []);
 });
 
@@ -483,7 +490,7 @@ export function App() {
   const counts = [];
   for (let i = 0; i < 3; i++) {
     if (i) { await page.keyboard.press('Alt+B'); await page.keyboard.press('Alt+B'); await overlay.locator('.fx[data-settled]').waitFor({ timeout: 20000 }); await page.waitForTimeout(500); }
-    counts.push((await panel(overlay).locator('.line .count').innerText()).replace(/\s+/g, ' '));
+    counts.push(await counted(overlay));
   }
   assert.equal(new Set(counts).size, 1, `the same count every time: ${counts.join(' | ')}`);
   assert.match(counts[0], /^1 problem · 1 fix/, counts[0]);
