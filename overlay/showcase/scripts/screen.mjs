@@ -19,14 +19,20 @@ const ctx = await browser.newContext({ viewport: { width: 1280, height: 800 }, d
 const page = await ctx.newPage();
 const errors = [];
 page.on('pageerror', (e) => errors.push(e.message));
-await page.goto(`${base}/rule/${n}`);
-await page.waitForFunction(() => { const l = document.querySelector('[aria-label="What plumber finds"]'); return l && !l.querySelector('[aria-label^="Asking"]') && l.innerText.length > 20; }, null, { timeout: 60000 }).catch(() => errors.push('plumber never answered'));
+// a card too big for the window rests scaled to fit and plumber measures pixels: the static read asks for the page as
+// it is (?side=, never scaled); the moment runs on the stage itself, which lifts the card to 1× for its own reads
+await page.goto(`${base}/rule/${n}?side=broken`);
+// that page draws no lesson to wait on: wait for plumber, then for the page to settle
+await page.waitForFunction(() => window.__plumb?.craft, null, { timeout: 60000 }).catch(() => errors.push('plumber never loaded'));
+await page.waitForTimeout(1500);
 const found = await page.evaluate(async () => (await window.__plumb.craft({ scope: '[data-example]', timeout: 20000, hidden: true })).findings.map((f) => {
   const el = [...document.querySelectorAll('[data-plumb-source]')].find((e) => e.getAttribute('data-plumb-source').startsWith(`${f.file}:${f.line}:${f.column}#`));
   return `${f.rule.replace('craft/', '')} ×${f.count} | ${f.title} | ${f.suggest?.to ?? f.suggest?.text ?? f.action ?? ''} | <${el?.localName} class="${String(el?.className?.baseVal ?? el?.className ?? '').slice(0, 70)}">`;
 })).catch((e) => [`(read failed: ${e.message})`]);
 console.log(found.length ? found.join('\n') : '(nothing)');
 if (flag === '--record') {
+  await page.goto(`${base}/rule/${n}`);
+  await page.waitForFunction(() => { const l = document.querySelector('[aria-label="What plumber finds"]'); return l && !l.querySelector('[aria-label^="Asking"]') && l.innerText.length > 20; }, null, { timeout: 60000 }).catch(() => errors.push('plumber never answered'));
   await page.waitForTimeout(2500);
   await page.keyboard.press('f');
   await page.waitForFunction(() => /Asked again/.test(document.body.innerText), null, { timeout: 30000 }).catch(() => {});

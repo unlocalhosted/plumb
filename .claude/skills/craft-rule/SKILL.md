@@ -129,6 +129,11 @@ screen. Ours used to be a teaching page with a still picture in it; that system 
 - **Teaching sits off the stage**, below it, read after watching: what plumber sees, why it happens, the habit,
   plumber's fix in words (§5).
 - **Fit every width.** Lay out against the stage (container queries); check 1440, 1024 and a ~300px pane.
+- **The card and its switch are always in the window.** A card taller or wider than the room rests scaled to fit
+  (Principle.jsx, the fit); build the card at its real size, never shrink it for the stage. plumber measures pixels and
+  a scaled card reads wrong (targets look small, edges fall between pixels), so the card lifts to 1× whenever plumber
+  reads it, while the blueprint or inspector is on, and from the camera's way out until plumber has asked again.
+  Anything that reads from outside asks for the page as it is (`?side=`, never scaled); `scripts/screen.mjs` does.
 
 ## 3¾. Hands-on demos: the viewer's hand is the probe
 
@@ -290,3 +295,6 @@ Each line is something the owner had to say once; the sections above exist so th
   Cause: "wrong in one way" was read as one place, so rich cards carried a single small slip and Fixed changed
   nothing you could see. → One rule, planted at every natural recurrence (≥3, spread across the card); tiny rules
   repeat too and the camera zooms into one (§3).
+- 2026-11-05 · Owner chose "Scale to fit" for cards taller or wider than the window (21 put the switch below an
+  800px window, 10 ran off a phone). Cause: the stage set a fixed-size card above the switch and left the window to
+  scroll. → The stage fits the card; plumber always reads it at 1× (§3½).
