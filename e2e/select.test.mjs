@@ -69,7 +69,7 @@ export function App() {
         <h1 id="title" className="text-body font-semibold">Team settings</h1>
         <button id="invite" className="flex items-center gap-s2 rounded-control bg-accent px-s3 py-s3 text-body text-surface"><Icon />Invite</button>
       </header>
-      <section className="flex flex-col gap-s3 rounded-card bg-surface p-s4">
+      <section className="flex flex-col gap-s3 rounded-card bg-surface px-s4 pb-s4 pt-s3">
         <span id="status" className="text-[11px] uppercase text-ink-muted">Status</span>
         <p id="quiet" className="text-body">Three people can see this workspace.</p>
         <ul className="flex flex-col gap-s2">
@@ -242,7 +242,9 @@ test('No step the theme has: the cause is a new token; the panel says what takin
   const [x, y] = await center(page, 'status', 0.3, 0.5);
   await click(page, x, y);
   await inHand(overlay).waitFor({ timeout: 10000 });
-  for (let i = 0; i < 12 && !(await panel(overlay).locator('.note').count()); i++) { await page.keyboard.press('ArrowRight'); await page.waitForTimeout(300); }
+  // (a Tailwind default's cause has a note too, "Add it to your theme and it’s yours": keep walking to the token's)
+  const note = async () => ((await panel(overlay).locator('.note').count()) ? panel(overlay).locator('.note').innerText() : '');
+  for (let i = 0; i < 12 && !/Your theme has no step for this/.test(await note()); i++) { await page.keyboard.press('ArrowRight'); await page.waitForTimeout(300); }
   // in plain words, then the step it adds and where
   assert.match(await panel(overlay).locator('.note').innerText(), /Your theme has no step for this\. This adds it, then uses it here\./);
   assert.match(await panel(overlay).locator('.hint').innerText(), /--tracking-caps: 0\.06em/);
