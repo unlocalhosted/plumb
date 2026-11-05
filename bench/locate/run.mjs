@@ -1,13 +1,13 @@
 #!/usr/bin/env node
 // Measures how well the overlay finds an element's source on each host. Layer 1 of the locate plan: measurement only.
 //   node bench/locate/run.mjs [--hosts vite-stamped,next-webpack] [--corpus showcase,algorecall,craftingattention]
-//                             [--screens 01,16] [--cap 150] [--out docs/verification/locate-baseline] [--ignore-swap]
+//                             [--screens 01,16] [--cap 150] [--out docs/verification/locate-baseline] [--ignore-memory]
 // Needs an existing `npm run build` (dist). One host at a time, each its own process tree on port 0, killed when done.
 import { mkdir, rm } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { chromium } from 'playwright';
 import { appDefs, freeze, startApp } from './apps.mjs';
-import { chromiumPath, exists, gitHead, repo, spawnHost, swapUsedMB, workRoot, here, nodeModulesHome } from './lib.mjs';
+import { chromiumPath, exists, gitHead, repo, spawnHost, freeMemoryPercent, workRoot, here, nodeModulesHome } from './lib.mjs';
 import { measureWithRetry } from './measure.mjs';
 import { startNext, writeNextApp } from './next-app.mjs';
 import { buildReport, writeReport } from './report.mjs';
@@ -26,13 +26,13 @@ function parse(argv) {
     else if (a === '--cap') opts.cap = Number(next());
     else if (a === '--out') opts.out = resolve(next());
     else if (a === '--showcase') opts.showcase = resolve(next());
-    else if (a === '--ignore-swap') opts.ignoreSwap = true;
+    else if (a === '--ignore-memory') opts.ignoreMemory = true;
     else if (a === '--help') { console.log(readHelp()); process.exit(0); }
     else throw new Error('Unknown argument ' + a);
   }
   return opts;
 }
-const readHelp = () => 'node bench/locate/run.mjs [--hosts a,b] [--corpus showcase,algorecall,craftingattention] [--screens 01,16] [--cap 150] [--out prefix] [--showcase dir] [--ignore-swap]\nhosts: ' + SHOWCASE_HOSTS.join(', ') + ' (apps: ' + APP_HOSTS.join(', ') + '). plumber serve is not covered.';
+const readHelp = () => 'node bench/locate/run.mjs [--hosts a,b] [--corpus showcase,algorecall,craftingattention] [--screens 01,16] [--cap 150] [--out prefix] [--showcase dir] [--ignore-memory]\nhosts: ' + SHOWCASE_HOSTS.join(', ') + ' (apps: ' + APP_HOSTS.join(', ') + '). plumber serve is not covered.';
 
 const log = (...a) => console.log(new Date().toISOString().slice(11, 19), ...a);
 const tag = (rows, extra) => rows.map((r) => ({ ...extra, ...r }));
@@ -106,8 +106,8 @@ async function runApp(browser, name, hosts, opts, sink) {
 export async function main(argv = process.argv.slice(2)) {
   const opts = parse(argv);
   if (!exists(join(repo, 'dist/hosts/vite.js'))) throw new Error('No dist: run `npm run build` first.');
-  const swap = swapUsedMB();
-  if (swap > 512 && !opts.ignoreSwap) throw new Error(`Swap is in use (${swap} MB). 16 GB is not enough for a host plus Chrome now; free memory, or pass --ignore-swap.`);
+  const free = freeMemoryPercent();
+  if (free < 20 && !opts.ignoreMemory) throw new Error(`Only ${free}% of memory is free; a host plus Chrome would swap. Free memory, or pass --ignore-memory.`);
   const wanted = opts.hosts;
   const wantsShowcase = opts.corpus.includes('showcase');
   const apps = opts.corpus.filter((c) => c !== 'showcase');

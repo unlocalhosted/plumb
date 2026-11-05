@@ -30,13 +30,15 @@ export const gitHead = () => {
   try { return execFileSync('git', ['-C', repo, 'rev-parse', '--short', 'HEAD'], { encoding: 'utf8' }).trim(); } catch { return null; }
 };
 
-export function swapUsedMB() {
-  if (process.platform !== 'darwin') return 0;
+// The share of memory the system says is free. Swap used is no guide on macOS: pages swapped out hours ago stay
+// counted long after memory frees up. Below 20% a host plus Chrome starts swapping.
+export function freeMemoryPercent() {
+  if (process.platform !== 'darwin') return 100;
   try {
-    const text = execFileSync('sysctl', ['-n', 'vm.swapusage'], { encoding: 'utf8' });
-    const used = /used = ([\d.]+)M/.exec(text);
-    return used ? Number(used[1]) : 0;
-  } catch { return 0; }
+    const text = execFileSync('memory_pressure', ['-Q'], { encoding: 'utf8' });
+    const free = /free percentage: (\d+)%/.exec(text);
+    return free ? Number(free[1]) : 100;
+  } catch { return 100; }
 }
 
 export const chromiumPath = () => (process.env.PLUMBER_CHROMIUM ?? process.env.PLUMB_CHROMIUM) || undefined;

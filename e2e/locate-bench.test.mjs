@@ -8,16 +8,16 @@ import { join } from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { main } from '../bench/locate/run.mjs';
-import { swapUsedMB } from '../bench/locate/lib.mjs';
+import { freeMemoryPercent } from '../bench/locate/lib.mjs';
 
 const repo = fileURLToPath(new URL('../', import.meta.url));
 
 test('locate bench: 2 screens on vite-stamped and next-turbopack, stamped host matches its own truth', { timeout: 600000 }, async (t) => {
-  if (swapUsedMB() > 512 && !process.env.PLUMB_BENCH_FORCE) return t.skip('Swap is in use; set PLUMB_BENCH_FORCE=1 to run anyway.');
+  if (freeMemoryPercent() < 20 && !process.env.PLUMB_BENCH_FORCE) return t.skip('Under 20% of memory is free; set PLUMB_BENCH_FORCE=1 to run anyway.');
   const dir = await mkdtemp(join(tmpdir(), 'locate-bench-'));
   t.after(() => rm(dir, { recursive: true, force: true }));
   const out = join(dir, 'report');
-  await main(['--hosts', 'vite-stamped,next-turbopack', '--corpus', 'showcase', '--screens', '01,50', '--cap', '40', '--out', out, '--ignore-swap']);
+  await main(['--hosts', 'vite-stamped,next-turbopack', '--corpus', 'showcase', '--screens', '01,50', '--cap', '40', '--out', out, '--ignore-memory']);
   const report = JSON.parse(await readFile(out + '.json', 'utf8'));
   const markdown = await readFile(out + '.md', 'utf8');
   assert.match(markdown, /## The 10 worst misses/);
