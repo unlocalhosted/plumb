@@ -50,3 +50,22 @@ installed on this machine, so they render in the system face, as card-16.png doe
 
 ## Against #16
 All six are single components with no app chrome, and each carries data drawn as data: a crowd chart, a seat map and zone bar, match bars, a storage meter, a temperature curve and ranges, a price chart. Each also has faces. Five use real photos; #55 uses drawn weather icons instead. Flattest: #50, because the empty state is quiet by nature. Riskiest new colour: the four product brand hues (pink, teal, terracotta, sky). Each is confined to its own product, but the owner should confirm them.
+
+## Credits
+Photos from Unsplash, under the Unsplash License (free to use, no permission needed), vendored into
+overlay/showcase/src/media for the built screens.
+
+| File | Photo | Photographer |
+| --- | --- | --- |
+| s45-ferry.jpg | https://unsplash.com/photos/a-large-boat-traveling-across-a-large-body-of-water-PEBWNRkdeDg (photo-1649947985558-1e95901310e8, a ferry crossing the Tagus) | @feiffert |
+| s51-pena.jpg | https://unsplash.com/photos/gray-and-yellow-castle-at-the-top-of-a-hill-ZQjujHKWcak (photo-1565865735988-fd5752a02846, Pena Palace above the plain) | @katiadejuan |
+| s51-castle.jpg | https://unsplash.com/photos/castle-during-day-SGIZ0zKPQPY (photo-1561706459-d5da99226f57, Pena Palace's yellow and red towers) | @jeancarloemer |
+| s51-coast.jpg | https://unsplash.com/photos/rock-formations-on-sea-QuH0G0TdtZM (photo-1572976555155-684bbc82a282, sea stacks and a cliff path) | @rvguitard |
+| s51-pena-dusk.jpg | https://unsplash.com/photos/yellow-and-red-painted-wall-building-pg8YdG3bnXg (photo-1548689092-7c81eaadd04c, Pena Palace at dusk) | @lucasmiguel |
+| s51-tiles.jpg | https://unsplash.com/photos/white-and-blue-floral-tiles-BAj9EOZiDaE (photo-1541320779116-ec4a3d4692bc, blue azulejos) | @anniespratt |
+| s51-well.jpg | https://unsplash.com/photos/a-round-window-in-a-stone-building-with-a-skylight-PGWQ8C8XTCY (photo-1697394492565-daa47c160723, Quinta da Regaleira's well) | @find_something_pretty_everyday |
+| s51-fountain.jpg | https://unsplash.com/photos/stone-fountain-in-a-lush-green-garden-path-peAKGVh_IYs (photo-1778650794029-f91e1846af36, a garden path and fountain) | @hdbernd |
+| s56-getty.jpg | photo-1483366774565-c783b9f70e2c (worm's-eye view of a concrete building; the same photo as paper-cities.jpg, at 1600px) | @kimonmaritz |
+| s56-griffith.jpg | https://unsplash.com/photos/white-dome-building-near-green-trees-during-daytime-JDcKrfcwblc (photo-1622041173895-cb3665044a52, Griffith Observatory at dusk) | @ventiviews |
+| s56-venice.jpg | https://unsplash.com/photos/a-group-of-palm-trees-on-a-beach-p-W4vl0UvI8 (photo-1649260347674-b6b97f6f50a8, palms on Venice Beach) | @gieling |
+| s56-broad.jpg | https://unsplash.com/photos/white-concrete-building-under-blue-sky-during-daytime-ZMZ2jbQ6bXA (photo-1581486956754-0904dd2ddc2a, The Broad's facade) | @lawzhileong |
