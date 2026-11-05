@@ -4,7 +4,7 @@ import { mkdir, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import { freeMemoryPercent, workRoot } from './lib.mjs';
 import { measureWithRetry } from './measure.mjs';
-import { nextApps, prepareCopy, startNextApp, waitForMemory } from './nextapps.mjs';
+import { nextApps, prepareCopy, startFontMock, startNextApp, stopFontMock, waitForMemory } from './nextapps.mjs';
 
 const log = (...a) => console.log(new Date().toISOString().slice(11, 19), ...a);
 
@@ -24,6 +24,7 @@ export async function runNextApps(browser, keys, opts, sink) {
   const destRoot = join(workRoot, `nextapps-${process.pid}`);
   await mkdir(destRoot, { recursive: true });
   sink.nextapps ??= {};
+  await startFontMock();
   try {
     for (const key of keys) {
       const def = nextApps[key];
@@ -81,6 +82,6 @@ export async function runNextApps(browser, keys, opts, sink) {
       }
       await rm(join(destRoot, def.clone), { recursive: true, force: true });
     }
-  } finally { await rm(destRoot, { recursive: true, force: true }).catch(() => {}); }
+  } finally { stopFontMock(); await rm(destRoot, { recursive: true, force: true }).catch(() => {}); }
 }
 export { freeMemoryPercent };

@@ -5,6 +5,7 @@
 // The copy gets three bench-only edits, listed in the report: the app's next.config is renamed and wrapped, the root
 // layout gets <PlumbOverlay />, and a route file serves /__plumb. Nothing in .corpus is touched.
 import { spawnSync } from 'node:child_process';
+import { createServer } from 'node:http';
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { cp, mkdir, readFile, rename, rm, symlink, writeFile } from 'node:fs/promises';
 import { dirname, join, relative } from 'node:path';
@@ -32,6 +33,24 @@ export const nextApps = {
     note: 'Needs generated styles/ from `registry:build --style all`; the bench runs `next dev` directly (its dev script also starts icons:dev).',
   },
 };
+
+// Next's own test hook (NEXT_FONT_GOOGLE_MOCKED_RESPONSES) answers next/font/google's stylesheet request, so a dev server
+// never goes to fonts.googleapis.com. The stylesheet points at a font file on a local server (Turbopack downloads it;
+// webpack does not), so nothing leaves the machine. The bench measures source location, not fonts.
+let fontMockPath = null, fontServer = null;
+export async function startFontMock() {
+  fontServer = createServer((_, res) => { res.setHeader('content-type', 'font/woff2'); res.end('bench'); });
+  await new Promise((done) => fontServer.listen(0, '127.0.0.1', done));
+  const origin = `http://127.0.0.1:${fontServer.address().port}`;
+  const css = `/* latin */\n@font-face {\n  font-family: 'BenchFont';\n  font-style: normal;\n  font-weight: 400;\n  font-display: swap;\n  src: url(${origin}/bench.woff2) format('woff2');\n  unicode-range: U+0000-00FF;\n}\n`;
+  const known = {};
+  // Turbopack serialises the module, so the URLs the corpus apps ask for are plain keys; webpack's lookup falls through to the Proxy
+  for (const family of ['Geist:wght@100..900', 'Geist+Mono:wght@400', 'Inter:wght@100..900']) known[`https://fonts.googleapis.com/css2?family=${family}&display=swap`] = css;
+  fontMockPath = join(workRoot, 'font-mock.cjs');
+  await mkdir(workRoot, { recursive: true });
+  await writeFile(fontMockPath, `const known = ${JSON.stringify(known)};\nconst css = ${JSON.stringify(css)};\nmodule.exports = new Proxy(known, { get: (t, url) => (typeof url === 'string' && url.startsWith('http') ? css : t[url]) });\n`);
+}
+export const stopFontMock = () => fontServer?.close();
 
 // Waits until memory is not under pressure (20% free), up to 5 minutes; the harness's guard, applied before every heavy step.
 export async function waitForMemory(log = () => {}) {
@@ -121,7 +140,7 @@ export async function startNextApp(key, app, bundler, stamp) {
   // /__plumb does not have them (seen while measuring), so the bench sets them in the dev server's own environment,
   // to the values withPlumb computes.
   const handoff = major < 16 ? { PLUMBER_NEXT_DIST_DIR: join(app, '.next', 'dev'), PLUMBER_NEXT_SERVER_MODULE: new URL('../../dist/hosts/next-dev.js', import.meta.url).href } : {};
-  const env = { ...handoff, NEXT_TELEMETRY_DISABLED: '1', PLUMB_CACHE_DIR: join(app, '.plumb-cache'), PLUMB_BENCH_STAMP: stamp ? '1' : '0', PLUMB_STAMP_HOST_ONLY: stamp === 'host' ? '1' : '0', NODE_OPTIONS: '--max-old-space-size=6144', NEXT_FONT_GOOGLE_MOCKED_RESPONSES: join(here, 'font-mock.cjs'), NODE_ENV: undefined, ...(def.env ?? {}) };
+  const env = { ...handoff, NEXT_TELEMETRY_DISABLED: '1', PLUMB_CACHE_DIR: join(app, '.plumb-cache'), PLUMB_BENCH_STAMP: stamp ? '1' : '0', PLUMB_STAMP_HOST_ONLY: stamp === 'host' ? '1' : '0', NODE_OPTIONS: '--max-old-space-size=6144', NEXT_FONT_GOOGLE_MOCKED_RESPONSES: fontMockPath, NODE_ENV: undefined, ...(def.env ?? {}) };
   return spawnHost({
     file: join(app, 'node_modules/next/dist/bin/next'), args: ['dev', ...flag, '--hostname', '127.0.0.1', '--port', '0'],
     cwd: app, env, label: `${def.name} ${bundler} ${stamp ? 'stamped' : 'plain'}${stamp === 'host' ? ' (host tags only)' : ''}`, timeoutMs: 300_000,
