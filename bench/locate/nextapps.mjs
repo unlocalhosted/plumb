@@ -30,7 +30,8 @@ export const nextApps = {
     name: 'shadcn/ui (apps/v4)', clone: 'shadcn', sha: '8a35366', dir: 'apps/v4', ownBundler: 'turbopack', next: '16.4.2',
     routes: ['/', '/examples/dashboard', '/docs/components/button', '/charts/area', '/blocks'],
     env: { NEXT_PUBLIC_V0_URL: 'https://v0.dev', NEXT_PUBLIC_APP_URL: 'http://localhost:4000' },
-    note: 'Needs generated styles/ from `registry:build --style all`; the bench runs `next dev` directly (its dev script also starts icons:dev).',
+    prerequisite: { path: 'apps/v4/styles/base-nova', why: 'the generated styles/ folder does not exist (run the registry build first), so next.config.mjs throws in dev.' },
+    note: 'Needs generated styles/. `pnpm registry:build --style all` ends in `bun run ./scripts/build-registry.mts`, which fails under the installed bun 1.1.30 (SyntaxError: Export named EnvHttpProxyAgent not found in module undici). The packages it builds first (@shadcn/react, @shadcn/helpers, shadcn) built; the script itself was then run with `pnpm exec tsx ./scripts/build-registry.mts --style all` under node 25 with `globalThis.React` preloaded (without it: ReferenceError: React is not defined at registry/styles.tsx:7). Installed with pnpm 11.14 (cached), which ran the pinned pnpm 10.33.4: `install --frozen-lockfile --ignore-scripts --filter v4...`. `fumadocs-mdx` (the app postinstall) was run by hand. The bench runs `next dev` directly (the dev script also starts icons:dev).',
   },
 };
 

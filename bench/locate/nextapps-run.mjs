@@ -1,10 +1,11 @@
 // Runs the nextapps corpus: per app, per bundler (its own, then the other), a stamped run and a plain run, each a
 // real `next dev` on port 0 killed with its tree. Rows are tagged corpus=<app>, host=<bundler>-<stamped|plain>.
+import { existsSync } from 'node:fs';
 import { mkdir, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import { freeMemoryPercent, workRoot } from './lib.mjs';
 import { measureWithRetry } from './measure.mjs';
-import { nextApps, prepareCopy, startFontMock, startNextApp, stopFontMock, waitForMemory } from './nextapps.mjs';
+import { corpusRoot, nextApps, prepareCopy, startFontMock, startNextApp, stopFontMock, waitForMemory } from './nextapps.mjs';
 
 const log = (...a) => console.log(new Date().toISOString().slice(11, 19), ...a);
 
@@ -29,6 +30,7 @@ export async function runNextApps(browser, keys, opts, sink) {
     for (const key of keys) {
       const def = nextApps[key];
       const info = sink.nextapps[key] = { name: def.name, sha: def.sha, next: def.next, ownBundler: def.ownBundler, note: def.note, edits: [], runs: [], notRun: [] };
+      if (def.prerequisite && !existsSync(join(corpusRoot, def.clone, def.prerequisite.path))) { info.notRun.push({ what: 'everything', why: def.prerequisite.why }); log(key, 'NOT RUN:', def.prerequisite.why.slice(0, 120)); continue; }
       let app;
       try {
         await waitForMemory(log);
