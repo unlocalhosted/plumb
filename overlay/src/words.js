@@ -740,7 +740,7 @@ export const SETUP = {
       'remember.baseline': { title: 'Start from today’s problems', loses: 'Every problem counts as new, so CI fails on all of them. Record today’s once you’ve looked them over, and only new ones fail.' },
       'write.watcher': { title: 'Check that saving updates the page', loses: 'Save any file once. If the page doesn’t update, applied changes won’t show until you reload.' },
       'locate.react-dev': { title: 'Use the development build', loses: 'In a production build, clicking an element may not find its component.' },
-      'locate.stamps': { title: 'Source stamping isn’t running', loses: 'Your elements don’t carry their place in your code, so clicking one finds nothing. Plumber won’t guess.' },
+      'locate.stamps': { title: 'Source stamping isn’t running', loses: 'Plumber can’t see where your elements are written, so clicking one finds nothing. It won’t guess.' },
     }[q.id] ?? { title: q.title, loses: q.loses };
   },
 };
