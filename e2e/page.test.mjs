@@ -5,7 +5,8 @@ import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { test } from 'node:test';
 import { cp, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import { join, relative } from 'node:path';
+import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { serve } from '../dist/session/server.js';
 
@@ -33,12 +34,16 @@ async function project(t) {
     const response = await fetch(url, { method: verb, headers: { 'x-plumb-token': server.info.token, 'Content-Type': 'application/json' }, ...(verb === 'POST' ? { body: JSON.stringify(params) } : {}) });
     return { status: response.status, body: await response.json() };
   };
+  // a stamp names its file from the repository root, as the host writes it (src/source-identity.ts): for a project at
+  // the top of its repository that is the project path; for one nested in a repository (this fixture) it is longer
+  const top = spawnSync('git', ['rev-parse', '--show-toplevel'], { cwd: root, encoding: 'utf8' });
+  const named = relative(top.status === 0 ? top.stdout.trim() : root, join(root, 'src/App.tsx')).replaceAll('\\', '/');
   const stampOf = async (id, tag) => {
     const text = await readFile(join(root, 'src/App.tsx'), 'utf8'), lines = text.split('\n');
     const line = lines.findIndex(l => l.includes(`id="${id}"`) || l.includes(`id={'${id}`) || l.includes(id)) + 1, column = lines[line - 1].indexOf(`<${tag}`) + 1;
-    return { stamp: `src/App.tsx:${line}:${column}#${hash12(text)}`, line, column };
+    return { stamp: `${named}:${line}:${column}#${hash12(text)}`, line, column };
   };
-  return { root, call, stampOf };
+  return { root, call, stampOf, named };
 }
 
 test('page answers every stamped element at once, the same as site and classes, cached by file content until the file changes', { timeout: 60000 }, async (t) => {
@@ -48,7 +53,7 @@ test('page answers every stamped element at once, the same as site and classes, 
     { stamp: plain.stamp, tag: 'p' },
     { stamp: passed.stamp, tag: 'div', classes: 'gap-[13px]' },
     { stamp: row.stamp, tag: 'li' }, { stamp: row.stamp, tag: 'li' }, { stamp: row.stamp, tag: 'li' },
-    { stamp: 'src/App.tsx:1:1#000000000000', tag: 'div' },
+    { stamp: `${api.named}:1:1#000000000000`, tag: 'div' },
   ];
   const first = await api.call('page', { items }, 'POST');
   assert.equal(first.status, 200, JSON.stringify(first.body));
@@ -67,7 +72,7 @@ test('page answers every stamped element at once, the same as site and classes, 
   assert.deepEqual(answers.slice(2, 5).map(a => a.site.findings.length), [answers[2].site.findings.length, answers[2].site.findings.length, answers[2].site.findings.length]);
   assert.ok(answers[2].site.findings.some(f => f.sites.some(s => s.text === 'm-[7px]')));
   // a stamp whose hash is not the file's: unplaced, never a guess
-  assert.deepEqual(answers[5], { stamp: 'src/App.tsx:1:1#000000000000', tag: 'div', status: 'unplaced' });
+  assert.deepEqual(answers[5], { stamp: `${api.named}:1:1#000000000000`, tag: 'div', status: 'unplaced' });
   // the same page again: served from the cache, identical
   const second = await api.call('page', { items }, 'POST');
   assert.deepEqual(second.body.items.map(a => a.cached), [true, true, true, true, true, undefined]);
@@ -115,6 +120,7 @@ test('once a theme write lands, the next page and places readings no longer repo
   const item = { stamp: type.stamp, tag: 'p' };
   const rules = answer => answer.items[0].site.findings.filter(f => f.sites.some(s => s.text === 'leading-relaxed')).map(f => f.rule);
   const before = await api.call('page', { items: [item] }, 'POST');
+  assert.equal(before.body.items?.[0]?.status, 'ready', JSON.stringify(before.body));
   assert.deepEqual(rules(before.body), ['provenance/type/framework']);
   const adopt = before.body.items[0].site.findings.find(f => f.rule === 'provenance/type/framework').adopt;
   assert.deepEqual(adopt, { name: '--leading-relaxed', value: '1.625' });
