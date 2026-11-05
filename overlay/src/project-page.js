@@ -16,7 +16,7 @@ const esc = (s) => String(s).replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`)
 const PAGE_CSS = `
   :host { display: block; min-height: 100vh; background: var(--pl-desk); }
   .top { position: sticky; top: 0; z-index: 3; display: flex; align-items: center; gap: 12px; padding: 12px var(--pl-page-space-1); background: color-mix(in oklab, var(--pl-paper) 88%, transparent); backdrop-filter: blur(12px); box-shadow: 0 1px 0 var(--pl-rule); }
-  .top b { font: 600 14px var(--pl-sans); color: var(--pl-ink); }
+  .top b { font: 600 14px var(--pl-sans); color: var(--pl-ink); white-space: nowrap; }
   .top .pl-rainbow { width: 22px; height: 12px; border-radius: 3px; }
   .top .read { font: var(--pl-card-meta); color: var(--pl-ink-2); }
   .top .pl-act { margin-left: auto; }
@@ -26,7 +26,7 @@ const PAGE_CSS = `
   h1 .n { font-variant-numeric: tabular-nums; }
   h1 .off { color: var(--pl-coral); } h1 .on { color: var(--pl-mint); }
   .lede { max-width: 60ch; margin: 0 0 var(--pl-page-space-1); font: var(--pl-page-body); color: var(--pl-ink-2); text-wrap: pretty; }
-  @media (max-width: 720px) { main { padding: var(--pl-page-space-1) var(--pl-space-6) var(--pl-page-space-3); } .top { padding: 10px 16px; } h1 { font: var(--pl-page-display-narrow); } }
+  @media (max-width: 720px) { main { padding: var(--pl-page-space-1) var(--pl-space-6) var(--pl-page-space-3); } .top { padding: 10px 16px; } .top .read { display: none; } h1 { font: var(--pl-page-display-narrow); } }
 `;
 
 /** What the type scale says, in one heading and one paragraph. */
