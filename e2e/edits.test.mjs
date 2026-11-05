@@ -282,8 +282,9 @@ for (const race of ['atomic-save', 'concurrent-save']) test(`finding 3: ${race} 
       injected = true;
       if (race === 'atomic-save') { await rename(result.file, join(root, 'src/Previous.tsx')); await writeFile(result.file, original); }
       else {
-        const truncate = handle.truncate.bind(handle);
-        handle.truncate = async (...values) => { await truncate(...values); await writeFile(result.file, concurrent); };
+        // the editor saves the moment Plumber's new file is in place (the descriptor it checked is closed last)
+        const close = handle.close.bind(handle);
+        handle.close = async (...values) => { await close(...values); await writeFile(result.file, concurrent); };
       }
     }
     return handle;

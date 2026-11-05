@@ -4,8 +4,8 @@ import { randomBytes } from 'node:crypto';
 import { ChangeLog, byLine, locate } from './changes.js';
 import type { ChangeRecord, TraceEntry } from './changes.js';
 import type { FSWatcher } from 'node:fs';
-import { stat, lstat, readdir, readFile, realpath, open } from 'node:fs/promises';
-import { dirname, isAbsolute, relative, resolve, sep } from 'node:path';
+import { stat, lstat, readdir, readFile, realpath, open, rename, unlink, writeFile } from 'node:fs/promises';
+import { basename, dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { Worker } from 'node:worker_threads';
 import { EventEmitter } from 'node:events';
 import { glob, isDynamicPattern } from 'tinyglobby';
@@ -879,9 +879,7 @@ export class Session extends EventEmitter {
         if (sourceHash(before) !== hash) throw new UsageError(staleFile);
         parsesAsBefore(path, before, next);
         if (/\.css$/.test(path) && topBlocks(next).length < topBlocks(before).length - blocksRemoved) throw new UsageError('The change would leave the stylesheet unreadable, so nothing was written.');
-        await this.sameFile(path, identity);
-        await handle.writeFile(next, 'utf8'); await handle.truncate(Buffer.byteLength(next));
-        await this.sameFile(path, identity);
+        await this.replaceFile(path, identity, next);
       } finally { await handle.close(); }
       await this.reconcile([path]);
       this.recipeProject = undefined;
@@ -1109,9 +1107,7 @@ export class Session extends EventEmitter {
         next = `${before.replace(/\s*$/, '')}\n\n${block}\n`;
         const added = block.match(/^@utility\b|^[^\s{]/gm)?.length ?? 1;
         if (topBlocks(next).length < topBlocks(before).length || topBlocks(next).length > topBlocks(before).length + added) throw new UsageError('The change would leave the stylesheet unreadable, so nothing was written.');
-        await this.sameFile(path, identity);
-        await handle.writeFile(next, 'utf8'); await handle.truncate(Buffer.byteLength(next));
-        await this.sameFile(path, identity);
+        await this.replaceFile(path, identity, next);
       } finally { await handle.close(); }
       await this.reconcile([path]);
       const hashAfter = sourceHash(next);
@@ -1410,9 +1406,7 @@ export class Session extends EventEmitter {
         // the stylesheet's last guard: the same blocks as before (or one more), and every declaration in it
         const blocksBefore = topBlocks(before).length, blocksAfter = topBlocks(next).length;
         if (!(blocksAfter === blocksBefore || blocksAfter === blocksBefore + 1) || writing.some(({ name, value }) => !next!.includes(`${name}: ${value};`))) throw new UsageError('The change would leave the stylesheet unreadable, so nothing was written.');
-        await this.sameFile(path, identity);
-        await handle.writeFile(next, 'utf8'); await handle.truncate(Buffer.byteLength(next));
-        await this.sameFile(path, identity);
+        await this.replaceFile(path, identity, next);
         for (const { index } of writing) results[index]!.written = true;
       } finally { await handle.close(); }
       await this.reconcile([path]);
@@ -1523,9 +1517,7 @@ export class Session extends EventEmitter {
         next = source.slice(0, start) + replacement + source.slice(end);
         siteLine = sourceSite({ file, text: source, lineStarts: lineStarts(source) }, at, '').line;
         parsesAsBefore(file, source, next);
-        await this.sameFile(file, identity);
-        await handle.writeFile(next, 'utf8'); await handle.truncate(Buffer.byteLength(next));
-        await this.sameFile(file, identity);
+        await this.replaceFile(file, identity, next);
       } finally { await handle.close(); }
       await this.reconcile([file]);
       const snapshot = await this.request<{ hash: string; remaining: Report['findings'] }>('remaining', { file, sites: [{ line: siteLine }] });
@@ -1569,10 +1561,7 @@ export class Session extends EventEmitter {
         next = source;
         for (const edit of ordered.toReversed()) next = next.slice(0, edit.start) + edit.to + next.slice(edit.end);
         parsesAsBefore(file, source, next);
-        await this.sameFile(file, identity);
-        await handle.writeFile(next, 'utf8');
-        await handle.truncate(Buffer.byteLength(next));
-        await this.sameFile(file, identity);
+        await this.replaceFile(file, identity, next);
       } finally { await handle.close(); }
       await this.reconcile([file]);
       // Earlier replacements can shift later columns. Query the resulting authored sites.
@@ -1680,9 +1669,7 @@ export class Session extends EventEmitter {
       let offset = 0;
       while (offset < bytes.length) { const { bytesRead } = await handle.read(bytes, offset, bytes.length - offset, offset); if (!bytesRead) break; offset += bytesRead; }
       if (sourceHash(bytes.subarray(0, offset).toString('utf8')) !== entry.hashAfter) throw new UsageError('The file changed since this write. Undo the newer writes first, or edit it by hand.');
-      await this.sameFile(file, identity);
-      await handle.writeFile(entry.before, 'utf8'); await handle.truncate(Buffer.byteLength(entry.before));
-      await this.sameFile(file, identity);
+      await this.replaceFile(file, identity, entry.before);
     } finally { await handle.close(); }
     this.written = this.written.filter(item => item.id !== id);
     try { this.log.drop(new Set([`${this.nonce}:${id}`])); } catch { /* the trace keeps them; they read as changed */ }
@@ -1876,6 +1863,22 @@ export class Session extends EventEmitter {
     if (!current.isFile() || current.nlink !== 1) throw new UsageError('Apply requires a regular source file without hard links.');
     return identity;
   }
+  /**
+   * The write itself: the checked file is replaced whole. The new text goes to a temporary file beside it and is renamed
+   * into place, so a watcher, a formatter or the host never reads a file that is half written. The old inode, held open
+   * and checked above, is the one being replaced; what is there afterwards is checked to still be the project's own file.
+   */
+  private async replaceFile(file: string, identity: { dev: number; ino: number }, next: string): Promise<void> {
+    await this.sameFile(file, identity);
+    const temporary = join(dirname(file), `.${basename(file)}.plumb-${process.pid}-${++this.temporaries}`);
+    try {
+      await writeFile(temporary, next, { encoding: 'utf8', flag: 'wx' });
+      await this.sameFile(file, identity);
+      await rename(temporary, file);
+    } catch (error) { await unlink(temporary).catch(() => {}); throw error; }
+    await this.editableFile(file);
+  }
+  private temporaries = 0;
   private async sameFile(file: string, identity: { dev: number; ino: number }): Promise<void> {
     const current = await this.editableFile(file);
     if (current.dev !== identity.dev || current.ino !== identity.ino) throw new UsageError(staleFile);
