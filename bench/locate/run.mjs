@@ -129,10 +129,15 @@ async function mainNextApps(opts, argv) {
   // --merge: keep the apps of an earlier report at the same path that this run did not redo, so the apps can run one at a time
   if (opts.merge && existsSync(out + '.json')) {
     const before = JSON.parse(readFileSync(out + '.json', 'utf8'));
-    for (const [k, v] of Object.entries(before.meta.nextapps ?? {})) if (!sink.nextapps[k]) {
-      sink.nextapps[k] = v;
-      sink.rows.push(...before.rows.filter((r) => r.corpus === k));
-      sink.screenFailures.push(...(before.meta.screenFailures ?? []).filter((x) => x.host.startsWith(k + ' ')));
+    for (const [k, v] of Object.entries(before.meta.nextapps ?? {})) {
+      const now = sink.nextapps[k];
+      const rerun = new Set(now ? now.runs.map((r) => (r.mode === 'plain' ? 'plain' : 'stamped') + '|' + r.host.split('-')[0]) : []);
+      const keepRuns = v.runs.filter((r) => !rerun.has((r.mode === 'plain' ? 'plain' : 'stamped') + '|' + r.host.split('-')[0]));
+      const keepHosts = new Set(keepRuns.map((r) => r.host));
+      if (!now) sink.nextapps[k] = v; else now.runs.unshift(...keepRuns);
+      if (now) { now.notRun.unshift(...v.notRun.filter((n) => keepRuns.some((r) => n.what.startsWith(r.host.split('-')[0])))); }
+      sink.rows.push(...before.rows.filter((r) => r.corpus === k && (!now || keepHosts.has(r.host) && !now.runs.some((x) => x.host === r.host && x.mode === r.mode && !keepRuns.includes(x)))));
+      sink.screenFailures.push(...(before.meta.screenFailures ?? []).filter((x) => x.host.startsWith(k + ' ') && (!now || keepRuns.some((r) => x.host.includes(r.host)))));
     }
   }
   const meta = {
