@@ -103,7 +103,7 @@ test('setup: workspace lists Next, Vite and library with commands; chosen app ru
   await run(pnpm, [], 'This is a workspace with 2 apps. Pick one:\n' + workspaceRow('apps/web', 'Next.js · no Tailwind') + workspaceRow('packages/ui', 'library · no Tailwind'));
   // Two sibling React apps with nothing declared are not a workspace: the folder you are in is the project.
   const implicit = await fixture(t, { 'package.json': {}, ...siblings });
-  await run(implicit, [], `✗ Found no .tsx, .jsx or .css files under ${implicit.root}. Is this the right folder?\n  Looked in: src/**/*.{tsx,jsx,ts,js,css}, app/**/*.{tsx,jsx,ts,js,css} (default source globs)\n  → change \`source\`, or run in your app's folder\n`);
+  await run(implicit, [], `✗ Found no .tsx, .jsx or .css files under ${implicit.root}. Is this the right folder?\n  Looked in: **/*.{tsx,jsx,ts,js,css} (default source globs)\n  → change \`source\`, or run in your app's folder\n`);
 });
 
 test('setup: a pnpm-workspace.yaml without packages is settings, so the folder is one project', async t => {

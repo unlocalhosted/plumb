@@ -70,7 +70,9 @@ export async function prepareCliAnalysis(root: string, configPath?: string, snip
     if (!read) {
       const patterns = loaded.value.source ?? defaultSource;
       const source = patterns.join(', ') || '(empty source list)';
-      const folder = patterns.length === 1 ? patterns[0]!.split(/[?*{[]/, 1)[0] || '.' : root;
+      // the one glob's static start (src/), else the root itself (the default **/ has no static start)
+      const base = patterns.length === 1 ? patterns[0]!.split(/[?*{[]/, 1)[0]! : '';
+      const folder = base || root;
       throw new UsageError(`Found no .tsx, .jsx or .css files under ${folder}. Is this the right folder?\n` +
         `  Looked in: ${source} (${loaded.path ? `from ${basename(loaded.path)} \u0060source\u0060` : 'default source globs'})\n  → change \u0060source\u0060, or run in your app's folder`);
     }
