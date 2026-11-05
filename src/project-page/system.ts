@@ -1,9 +1,10 @@
-import { basename } from 'node:path';
+import { basename, relative } from 'node:path';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { Report } from '../report.js';
 import { causesOf } from '../causes.js';
 import type { Cause } from '../causes.js';
+import { sayCause } from '../say-cause.js';
 
 /**
  * The data the project page draws: for each scale (text size, weight, radius, colour) the theme's steps with how many
@@ -27,8 +28,40 @@ export interface SystemData {
   weight: { used: { weight: number; places: number; written: Written[] }[] };
   colour: { steps: ColourStep[]; strays: ColourStray[] };
   dead: { class: string; places: number; meant: string[] }[];
-  /** The three biggest causes, biggest first. */
-  causes: Cause[];
+  /** The three biggest causes, biggest first, in the terminal's words. */
+  causes: PageCause[];
+  /** How many causes there are in all. */
+  open: number;
+}
+/** A cause as the page draws it: the terminal's sentence, how it was written, and its places by file, busiest first. */
+export interface PageCause {
+  id: string;
+  family: string;
+  label: string;
+  value: string;
+  said: string;
+  count: number;
+  rendersNothing: number;
+  spellings: Cause['spellings'];
+  suggestion: { name: string; exact: boolean } | null;
+  files: { file: string; places: { line: number; text: string; rendersNothing: boolean }[] }[];
+}
+
+function pageCause(cause: Cause, report: Report): PageCause {
+  const files = new Map<string, PageCause['files'][number]['places']>();
+  for (const p of cause.places) {
+    // a path from the project's folder: what a person reads, and nothing about the machine leaves it
+    const file = relative(report.root, p.file).replaceAll('\\', '/');
+    const list = files.get(file) ?? [];
+    list.push({ line: p.line, text: p.text, rendersNothing: p.rendersNothing });
+    files.set(file, list);
+  }
+  return {
+    id: cause.id, family: cause.family, label: cause.label, value: cause.value, said: sayCause(cause, report),
+    count: cause.count, rendersNothing: cause.rendersNothing, spellings: cause.spellings,
+    suggestion: cause.suggestion ? { name: cause.suggestion.name, exact: cause.suggestion.exact } : null,
+    files: [...files].map(([file, places]) => ({ file, places })).sort((a, b) => b.places.length - a.places.length || a.file.localeCompare(b.file)),
+  };
 }
 
 type Decl = Report['declarations'][number] & { decisionRefs?: string[] };
@@ -200,6 +233,7 @@ export function systemOf(report: Report): SystemData {
   }
 
   const files = report.files as unknown as Record<string, number> | number;
+  const causes = report.causes ?? causesOf(report);
   return {
     project: projectName(report.root),
     files: typeof files === 'number' ? files : Object.values(files).reduce((sum, n) => sum + n, 0),
@@ -208,7 +242,8 @@ export function systemOf(report: Report): SystemData {
     weight: weights(),
     colour: colours(),
     dead: dead(),
-    causes: (report.causes ?? causesOf(report)).slice(0, 3),
+    causes: causes.slice(0, 3).map(cause => pageCause(cause, report)),
+    open: causes.length,
   };
 }
 

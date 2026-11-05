@@ -24,6 +24,17 @@ test('bare plumber on a terminal prints the short report, opens the page, serves
   const token = /'x-plumb-token': "([0-9a-f]{64})"/.exec(html)[1];
   const data = await (await fetch(url + '/__plumb/system', { headers: { 'x-plumb-token': token } })).json();
   assert.deepEqual(data.causes.map(c => c.id), check(root).causes.slice(0, 3).map(c => c.id));
+  // every module the page imports is served, or the browser draws nothing
+  const seen = new Set(), queue = ['project-page.js'];
+  while (queue.length) {
+    const name = queue.shift();
+    if (seen.has(name)) continue;
+    seen.add(name);
+    const res = await fetch(`${url}/__plumb/src/${name}`);
+    assert.equal(res.status, 200, `${name} isn't served`);
+    for (const [, dep] of (await res.text()).matchAll(/from '\.\/([\w-]+\.js)'/g)) queue.push(dep);
+  }
+  assert.ok(seen.has('gravity.js') && seen.has('specimen.js') && seen.has('cause-list.js') && seen.has('motion.js'), [...seen].join(', '));
   const done = await running.stop();
   assert.equal(done.code, 0, done.stderr);
   assert.match(done.stdout, /Press Ctrl\+C here when you're done\.\n\nNo changes made\.\n$/);

@@ -43,11 +43,13 @@ export const GRAVITY_CSS = `
   .gv-steps { position: absolute; inset: 0; pointer-events: none; }
   .gv-steps .sc-step { position: absolute; translate: -50% calc(-26px - var(--r)); opacity: 0; transition: opacity var(--pl-dur-build) var(--pl-ease-out); }
   .gv-steps .sc-step.in { opacity: 1; }
+  .gv-steps .sc-step[data-crowded]:not([data-state="pointed"]) .pl-tag { opacity: 0; }
   .gv-read { position: absolute; z-index: 2; max-width: 300px; padding: 10px 12px; border-radius: var(--pl-radius-row); pointer-events: none; background: var(--pl-paper-2);
     box-shadow: 0 0 0 1px var(--pl-rule), 0 12px 32px -16px rgb(0 0 0 / .45); font: var(--pl-page-meta); color: var(--pl-ink-2); }
   .gv-read b { display: block; margin-bottom: 2px; font: 600 14px/20px var(--pl-sans); color: var(--pl-ink); }
   .gv-read code { display: block; margin-bottom: 4px; font: 500 12px/18px var(--pl-mono); color: var(--pl-ink-2); }
   .gv-read .to { color: var(--pl-ink); }
+  .gv[data-empty] .gv-plot { height: 160px; }
   .gv-empty { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; font: var(--pl-page-title); }
   .gv-empty small { display: block; font: var(--pl-page-small); color: var(--pl-ink-2); }
   .gv-foot { display: flex; align-items: center; gap: 16px; padding: var(--pl-space-6) var(--pl-page-inset) var(--pl-page-inset); border-top: 1px solid var(--pl-rule); }
@@ -77,9 +79,9 @@ export class Gravity {
   render() {
     const { steps, strays, onScale, byHand } = this;
     const empty = !steps.length ? ['No scale to draw yet', 'Add text sizes to your theme, and this fills in.'] : !byHand ? ['Every text size uses your scale', 'Nothing typed by hand.'] : null;
-    this.el.innerHTML = `<div class="gv pl-card sc-quiet">
-      <div class="gv-head"><div><h2>Where your text sizes land</h2><p>Each dot is a place in your code that types a size by hand, next to the size it's closest to.</p></div>
-        <div class="gv-key" aria-hidden="true"><span>${place('on')}On your scale</span><span>${place('typed')}Your size, typed by hand</span><span>${place('off')}Not on your scale</span></div></div>
+    this.el.innerHTML = `<div class="gv pl-card sc-quiet"${empty ? ' data-empty' : ''}>
+      <div class="gv-head"><div><h2>Where your text sizes land</h2>${empty ? '' : `<p>Each mark is a place in your code that types a size by hand, next to the size it's closest to.</p>`}</div>
+        ${empty ? '' : `<div class="gv-key" aria-hidden="true"><span>${place('on')}On your scale</span><span>${place('typed')}Your size, typed by hand</span><span>${place('off')}Not on your scale</span></div>`}</div>
       <div class="gv-plot">${empty ? `<div class="gv-empty"><span>${esc(empty[0])}<small>${esc(empty[1])}</small></span></div>` : `<canvas tabindex="0" role="img" aria-describedby="gv-table" aria-label="${esc(`Your ${steps.length} text sizes with ${plural(byHand, 'hand-typed place', 'hand-typed places')} around them`)}"></canvas><div class="gv-steps"></div>`}</div>
       <div class="gv-foot">${countMark(onScale, 'places use your scale')}${empty ? '' : '<button type="button" class="pl-act" aria-pressed="false">Snap to your scale</button>'}</div>
       <table class="sr" id="gv-table"><caption>Your text sizes, and the places that type a size close to each</caption><tr><th>Size</th><th>Pixels</th><th>Places that use it</th><th>Places typed by hand close to it</th></tr>${steps.map((s) => `<tr><td>${esc(s.name)}</td><td>${fmt(s.px)}</td><td>${s.uses}</td><td>${strays.filter((x) => x.near === s.name).reduce((n, x) => n + x.places, 0)}</td></tr>`).join('')}</table>
@@ -91,7 +93,7 @@ export class Gravity {
     const root = this.el.querySelector('.gv'), canvas = root.querySelector('canvas'), ctx = canvas.getContext('2d'), layer = root.querySelector('.gv-steps');
     const button = root.querySelector('.pl-act'), countEl = root.querySelector('.sc-count'), live = root.querySelector('[aria-live]');
     const { steps, strays, reduce, onScale } = this;
-    let T = {}, W = 0, H = 0, raf = 0, visible = true, hover = null, focus = -1, every = false, said = onScale, shown = onScale;
+    let T = {}, W = 0, H = 0, raf = 0, visible = true, hover = null, focus = -1, every = false, said = onScale, shown = onScale, input = 'mouse';
     const read = () => { const cs = getComputedStyle(root); for (const n of ['--pl-coral', '--pl-butter', '--pl-mint', '--pl-sky', '--pl-rule']) T[n] = cs.getPropertyValue(n).trim(); };
     read();
     const t0 = performance.now(), arrive = ms(root, '--pl-dur-arrive'); let last = t0, snapAt = 0;
@@ -120,6 +122,14 @@ export class Gravity {
       const dpr = devicePixelRatio || 1; W = canvas.clientWidth; H = canvas.clientHeight;
       canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       for (const a of anchors) { a.mark.style.left = `${X(a.s.px)}px`; a.mark.style.top = `${cy()}px`; }
+      // names that would touch a busier step's name are hidden at rest and shown while pointed at
+      const taken = [];
+      for (const a of anchors.slice().sort((p, q) => q.s.uses - p.s.uses)) {
+        const w = (a.mark.querySelector('.pl-tag')?.offsetWidth ?? 24) / 2 + 4, x = X(a.s.px);
+        const crowded = taken.some(([l, r]) => x - w < r && x + w > l);
+        a.mark.toggleAttribute('data-crowded', crowded);
+        if (!crowded) taken.push([x - w, x + w]);
+      }
       for (const p of parts) {
         p.hx = X(p.s.px) + p.jx; p.hy = cy() + Math.max(-cy() + 20, Math.min(H - cy() - 64, p.jy));
         if (p.mode === 'wait') { p.x = p.hx; p.y = -10 - rand() * H * 0.5; p.wake = 420 + (p.hx / W) * 520 + rand() * 420; }
@@ -199,18 +209,20 @@ export class Gravity {
     };
     const sayStep = (a) => {
       const n = strays.filter((s) => s.near === a.s.name).reduce((k, s) => k + s.places, 0);
-      readout.innerHTML = `<b>${esc(a.s.name)} · ${fmt(a.s.px)}</b>${a.s.uses ? plural(a.s.uses, 'place uses it', 'places use it') : 'Not used anywhere'}${n ? `<br>${plural(n, 'place types', 'places type')} a size close to it<br><span class="to">${a.local || every ? 'Click to let them go' : 'Click to pull them in'}</span>` : ''}`;
+      readout.innerHTML = `<b>${esc(a.s.name)} · ${fmt(a.s.px)}</b>${a.s.uses ? plural(a.s.uses, 'place uses it', 'places use it') : 'Not used anywhere'}${n ? `<br>${plural(n, 'place types', 'places type')} a size close to it<br><span class="to">${{ key: 'Enter', touch: 'Tap' }[input] ?? 'Click'} to ${a.local || every ? 'let them go' : 'pull them in'}</span>` : ''}`;
       const x = X(a.s.px); readout.hidden = false; readout.style.left = `${Math.min(x + 18, W - 310)}px`; readout.style.top = `${cy() + radius(a) + 34}px`;
     };
     const hush = () => { readout.hidden = true; };
-    canvas.addEventListener('pointermove', (e) => {
+    const point = (e) => {
+      input = e.pointerType === 'touch' ? 'touch' : 'mouse';
       const r = canvas.getBoundingClientRect(), mx = e.clientX - r.left, my = e.clientY - r.top;
       const a = anchors.find((a) => Math.hypot(mx - X(a.s.px), my - cy()) < radius(a) + 8);
       if (a) { hover = { a }; canvas.style.cursor = 'pointer'; sayStep(a); run(); return; }
       const s = Math.abs(my - cy()) < 150 && !every ? strays.slice().sort((p, q) => Math.abs(X(p.px) - mx) - Math.abs(X(q.px) - mx) || q.places - p.places)[0] : null;
       if (s && Math.abs(X(s.px) - mx) < 7) { hover = { stray: s, a: anchorOf(s.near) }; canvas.style.cursor = ''; sayCluster(s, mx, my); run(); return; }
       hover = null; canvas.style.cursor = ''; hush();
-    });
+    };
+    canvas.addEventListener('pointermove', point);
     canvas.addEventListener('pointerleave', () => { hover = null; hush(); });
     const toggle = (a) => {
       a.local = !a.local; snapAt = performance.now();
@@ -219,12 +231,13 @@ export class Gravity {
       if (hover?.a === a || focus >= 0) sayStep(a);
       run();
     };
-    canvas.addEventListener('click', () => { if (hover?.a && !hover.stray) toggle(hover.a); });
+    // a click or tap reads where it landed: a tap has no pointermove before it
+    canvas.addEventListener('click', (e) => { point(e); if (hover?.a && !hover.stray) toggle(hover.a); });
     const firstFocus = () => { if (focus < 0) focus = anchors.reduce((b, a, i) => (a.s.uses > anchors[b].s.uses ? i : b), 0); };
-    canvas.addEventListener('focus', () => { firstFocus(); sayStep(anchors[focus]); run(); });
+    canvas.addEventListener('focus', () => { if (!canvas.matches(':focus-visible')) return; input = 'key'; firstFocus(); sayStep(anchors[focus]); run(); });
     canvas.addEventListener('blur', () => { focus = -1; hush(); });
     canvas.addEventListener('keydown', (e) => {
-      firstFocus();
+      input = 'key'; hover = null; firstFocus();
       if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') { e.preventDefault(); focus = (focus + (e.key === 'ArrowRight' ? 1 : -1) + anchors.length) % anchors.length; sayStep(anchors[focus]); }
       else if (e.key === 'Home' || e.key === 'End') { e.preventDefault(); focus = e.key === 'Home' ? 0 : anchors.length - 1; sayStep(anchors[focus]); }
       else if ((e.key === 'Enter' || e.key === ' ') && focus >= 0) { e.preventDefault(); toggle(anchors[focus]); }
