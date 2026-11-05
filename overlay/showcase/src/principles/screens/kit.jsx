@@ -9,7 +9,7 @@ export function Face({ src, brand, size = 'size-8' }) {
       <img src={src} alt="" className="size-full rounded-full object-cover outline-1 -outline-offset-1 outline-black/10" />
       {brand ? (
         <span className="absolute -right-1 -bottom-1 grid size-[17px] place-items-center rounded-[5px] ring-2 ring-surface" style={{ background: brand.color }}>
-          <span className="size-[9px]" style={{ background: brand.glyph ?? '#fff', mask: `url(${brand.logo}) center / contain no-repeat` }} />
+          <span className="size-[9px]" style={{ background: brand.glyph ?? '#fff', mask: `url("${brand.logo}") center / contain no-repeat` }} />
         </span>
       ) : null}
     </span>

@@ -94,3 +94,13 @@ Faces mean one person everywhere: 01 Ines (Figma), 07 Ana (Quay), 05 Mira, 02 Th
   unpadded cover, the mini cover sits in an unrounded footer. Fix: `rounded-[6px]` (or a 6px step).
 - **Weak.** The mix tile reuses the three covers, as playlists do, but here it's also because there's no non-lake
   photo left. The week labels are 10px and only just fit under their bars.
+
+## Credits
+
+Built 2026-11-05 (overlay/showcase/src/principles/screens/0{1,2,3,4,5,6,8}-*.jsx). New media, for CREDITS.md:
+
+| File | Photo | Photographer | Licence |
+| --- | --- | --- | --- |
+| s04-shelves.jpg | https://unsplash.com/photos/assorted-color-ceramic-bowls-and-saucers-lot-on-white-wooden-shelves-KyUmKlXrhAM (photo-1484632152040-840235adc262, stacked handmade bowls and plates on white shelves; #4's homepage frames) | Brooke Lark (@brookelark) | Unsplash License |
+| s05-shed.jpg | https://unsplash.com/photos/an-empty-warehouse-with-a-lot-of-windows-cYyvktFS3Pk (photo-1634834576400-56f5e1ad8db8, a long empty rail shed with tall windows, Denver; #5's location photo) | Dillon Wanner (@dillydallying) | Unsplash License |
+| logos/{visa,mastercard}.svg | simple-icons 13.21.0 (CC0 paths; the marks are their companies' trademarks, shown as payment methods in a demo) | simple-icons | CC0 |

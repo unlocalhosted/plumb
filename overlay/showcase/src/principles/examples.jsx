@@ -79,7 +79,7 @@ function Face({ src, brand, size = 'size-8' }) {
     <span className={'relative shrink-0 ' + size}>
       <img src={src} alt="" className="size-full rounded-full object-cover outline-1 -outline-offset-1 outline-black/10" />
       <span className="absolute -right-1 -bottom-1 grid size-[17px] place-items-center rounded-[5px] ring-2 ring-surface" style={{ background: b.color }}>
-        <span className="size-[9px]" style={{ background: b.glyph ?? '#fff', mask: `url(${b.logo}) center / contain no-repeat` }} />
+        <span className="size-[9px]" style={{ background: b.glyph ?? '#fff', mask: `url("${b.logo}") center / contain no-repeat` }} />
       </span>
     </span>
   );
