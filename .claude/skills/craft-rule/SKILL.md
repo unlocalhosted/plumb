@@ -214,6 +214,10 @@ for the screenshot pass so end states are true, and say what motion you did not 
 3. Run the noise test (`e2e/craft.test.mjs`, a well-built page yields no finding) whenever a rule gets stricter.
 4. New showcase files are invisible to the overlay until the dev server restarts (a known bug): restart after adding
    one.
+5. Every craft finding links to its rule's page (overlay/src/rule-docs.js `docsUrl`: the fix panel's "i", the CLI's
+   "Read more" line, `docs` in `--json`). The page is the rules reference (site/src/docs/pages/rules.mdx), generated
+   by scripts/docs/gen-reference.mjs from the rule's `number`, its principle in the showcase catalogue and laws.js. A
+   new rule, or a new `number`, means regenerating it; a rule with `number: []` gets a page with no principle.
 
 ## Feedback this skill came from (add to it every time)
 

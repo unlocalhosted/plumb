@@ -33,6 +33,7 @@ import { ElementCard, ELEMENT_CARD_CSS } from './elementcard.js';
 import { esc } from './choices.js';
 import { groundIsDark } from './geometry.js';
 import { FIX, CLEANUP, written } from './words.js'; // every sentence the panel says
+import { docsUrl } from './rule-docs.js'; // where a craft rule is read about
 import { Cleanup, CLEANUP_CSS } from './cleanup.js'; // "Clean up this page": the passes, one at a time
 import { groupsOf, isNote } from './blueprint-panel.js';
 import { glide } from './inplace.js'; // the text styles the code is reaching for
@@ -123,6 +124,15 @@ export const FIX_CSS = TEXT_EDITOR_CSS + ELEMENT_CARD_CSS + `
   .fx .cause .nav { grid-row: span 2; grid-column: 3; display: flex; align-items: center; gap: 2px; color: #8b8a85; font: 500 11.5px/1 ui-monospace, monospace; font-variant-numeric: tabular-nums; }
   .fx .cause .nav button { width: 26px; height: 26px; border-radius: 8px; display: grid; place-items: center; color: #55544f; }
   .fx .cause .nav button:hover { background: rgb(0 0 0 / .05); }
+  /* the "i" after a craft finding's name: the glyph sits on the text, its 24px target overhangs the line, never moves it */
+  .fx .cause .info { display: inline-grid; place-items: center; width: 24px; height: 24px; margin: -6px -3px -6px 1px; vertical-align: middle; border-radius: 50%;
+    color: #8b8a85; text-decoration: none; transition: color 120ms, background-color 120ms, transform 160ms ${SPRING}; }
+  .fx .cause .info svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 1.3; stroke-linecap: round; }
+  .fx .cause .info .tittle { fill: currentColor; stroke: none; }
+  .fx .cause .info:hover { color: #1c1b19; background: rgb(0 0 0 / .05); }
+  .fx .cause .info:active { transform: scale(.88); background: rgb(0 0 0 / .08); }
+  .fx .cause .info:focus-visible { outline: 2px solid #3b6cff; outline-offset: -2px; color: #1c1b19; }
+  @media (prefers-reduced-motion: reduce) { .fx .cause .info { transition: none; } .fx .cause .info:active { transform: none; } }
   .fx .note { margin: 2px 18px 0; padding: 8px 10px; border-radius: 10px; background: rgb(0 0 0 / .035); color: #55544f; font-size: 12px; line-height: 1.45; }
   .fx .note code { font: 600 11.5px/1 ui-monospace, monospace; color: #1c1b19; }
   .fx .say { padding: 8px 18px 14px; color: #55544f; max-width: 52ch; }
@@ -175,6 +185,7 @@ export const FIX_CSS = TEXT_EDITOR_CSS + ELEMENT_CARD_CSS + `
     .fx[data-scheme="dark"] .ghost { color: #c9c8c2; } .fx[data-scheme="dark"] .note { background: rgb(255 255 255 / .06); color: #c9c8c2; } .fx[data-scheme="dark"] .note code, .fx[data-scheme="dark"] .cause .cls { color: #f1f0ec; }
     .fx[data-scheme="dark"] .sp[aria-pressed="true"] { background: #2a2a2e; --word: #f1f0ec; box-shadow: 0 0 0 1.5px #f1f0ec; } .fx[data-scheme="dark"] .sp[aria-pressed="true"] .v { color: #f1f0ec; }
     .fx[data-scheme="dark"] .say, .fx[data-scheme="dark"] .hint, .fx[data-scheme="dark"] .cause .what, .fx[data-scheme="dark"] .field { color: #a3a29c; }
+    .fx[data-scheme="dark"] .cause .info { color: #a3a29c; } .fx[data-scheme="dark"] .cause .info:hover, .fx[data-scheme="dark"] .cause .info:focus-visible { color: #f1f0ec; background: rgb(255 255 255 / .08); } .fx[data-scheme="dark"] .cause .info:active { background: rgb(255 255 255 / .12); }
     .fx[data-scheme="dark"] .field { background: #2a2a2e; box-shadow: inset 0 0 0 1px rgb(255 255 255 / .16); } .fx[data-scheme="dark"] .field input, .fx[data-scheme="dark"] .hint code { color: #f1f0ec; }
     .fx[data-scheme="dark"] .check path { stroke: #f1f0ec; } .fx[data-scheme="dark"] .writing i { border-color: #f1f0ec; border-top-color: transparent; }
 ${CLEANUP_CSS}
@@ -725,7 +736,7 @@ export class FixPanel {
     // glow a click left focused is that cause's, and Enter takes it)
     if (k === 'Enter') {
       const a = this.#el.getRootNode().activeElement;
-      if (a && this.#el.contains(a) && a.matches('button:not(.sp)')) { a.click(); return true; }
+      if (a && this.#el.contains(a) && a.matches('button:not(.sp), a[href]')) { a.click(); return true; }
       if (!this.#holding && a?.classList?.contains('hit')) return false;
     }
     if (!this.#holding && this.#editor.open) {
@@ -746,6 +757,8 @@ export class FixPanel {
     if (k === 'ArrowUp' || k === 'ArrowDown') { if (v?.ready) this.#pick(Math.max(0, Math.min(v.options.length - 1, v.at + (k === 'ArrowUp' ? 1 : -1)))); return true; }
     if (k === 'Enter') { this.take(); return true; }
     if (k === 'k' || k === 'K') { this.keep(); return true; }
+    // I: the "i" of a craft finding in hand, its rule's page in a new tab (Tab is the next fix here, so it has a key)
+    if (k === 'i' || k === 'I') { const info = this.#el.querySelector('.cause .info'); if (info) { info.click(); return true; } return false; }
     if (k === 'ArrowRight' || k === 'Tab') { this.skip(1); return true; }
     if (k === 'ArrowLeft') { this.skip(-1); return true; }
     if (k === 'Escape') { this.release(); return true; }
@@ -810,7 +823,10 @@ export class FixPanel {
         : `<div class="line bar${notice ? ' has-notice' : ''}"><span class="quiet-line">${esc(this.#error ?? (!settled ? (this.#host.scope?.() ? FIX.checkingElement : FIX.checking) : this.#progress?.notChecked ? FIX.clearChecked(this.#progress.notChecked) : FIX.clear))}</span>${notice}${settled ? tidy : ''}${end}</div>`;
     } else {
       const mark = g.members[0].mark, kind = kindOf(mark);
-      const head = `<div class="cause"><i class="dot"></i><span class="cls">${esc(nameOf(g))}</span><span class="nav"><button class="prev" aria-label="Previous fix">‹</button>${esc(FIX.position(g, live, noteOf))}<button class="next" aria-label="Next fix">›</button></span><span class="what">${[FIX.what(mark), ...FIX.places(placesOf(g), drawnOf(g, this.#host.scope?.()).here, !!this.#host.scope?.()).split(' · ')].map((part) => `<span>${esc(part)}</span>`).join(' · ')}</span></div>`;
+      // a craft finding's name carries an "i": its rule's page, where the why is told in full
+      const docs = docsUrl(mark.rule), what = FIX.what(mark);
+      const info = docs ? `<a class="info" href="${esc(docs)}" target="_blank" rel="noopener" title="${esc(FIX.why)} · I" aria-keyshortcuts="I" aria-label="${esc(FIX.whyLabel(what))}"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.25"/><path d="M8 7.25v4"/><circle class="tittle" cx="8" cy="4.9" r=".9"/></svg></a>` : '';
+      const head = `<div class="cause"><i class="dot"></i><span class="cls">${esc(nameOf(g))}</span><span class="nav"><button class="prev" aria-label="Previous fix">‹</button>${esc(FIX.position(g, live, noteOf))}<button class="next" aria-label="Next fix">›</button></span><span class="what">${[what, ...FIX.places(placesOf(g), drawnOf(g, this.#host.scope?.()).here, !!this.#host.scope?.()).split(' · ')].map((part, i) => `<span>${esc(part)}${i ? '' : info}</span>`).join(' · ')}</span></div>`;
       const file = (f) => esc(String(f ?? '').split('/').slice(-2).join('/'));
       const adds = (name, value, f) => `<div class="hint"><code>${esc(name)}: ${esc(value)}</code> in <code>${file(f)}</code></div>`;
       let middle = '', canTake = false;
