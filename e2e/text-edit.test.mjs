@@ -197,7 +197,7 @@ test('words in something clickable: a plain double-click leaves them be; Alt + d
   assert.deepEqual(errors, []);
 });
 
-test('every write is in the dock\'s history, newest first, and each can be undone from there', { timeout: 120000 }, async (t) => {
+test('every write is in the dock\'s history, which opens at the newest, and each can be undone from there', { timeout: 120000 }, async (t) => {
   const launched = await browser(t);
   if (!launched) return;
   const { url, source } = await demo(t);
@@ -218,20 +218,33 @@ test('every write is in the dock\'s history, newest first, and each can be undon
   await write('second words');
   await page.waitForFunction(() => window.__plumb?.overlay);
   await page.evaluate(() => window.__plumb.ready());
+  await overlay.locator('.dock').hover(); await page.waitForTimeout(300); // at rest the dock is its mark alone; its tools come out when it is pointed at
   await overlay.getByRole('button', { name: 'History' }).click();
-  const list = overlay.getByRole('dialog', { name: 'History' });
-  await list.locator('.row').nth(1).waitFor();
-  const labels = await list.locator('.row .label').allInnerTexts();
-  assert.match(labels[0], /“first” → “second”/, `newest first: ${labels}`);
-  assert.match(labels[1], /first words/);
-  // the newest is undone from the list, then the older one: the file is as it was
-  await list.locator('.row').first().getByRole('button', { name: 'Undo' }).click();
+  // the history is a strip with a tick for each change (docs/briefs/time-travel.md); the slider says the one it points at
+  const strip = overlay.getByRole('dialog', { name: 'History' });
+  const track = strip.getByRole('slider');
+  await track.waitFor();
+  await page.waitForFunction(() => document.querySelector('plumb-overlay').shadowRoot.querySelectorAll('.tt .tt-tick[data-i]').length >= 2);
+  assert.match(await track.getAttribute('aria-valuetext'), /first to second/, 'it opens at Now: the newest write, named by its words');
+  await page.keyboard.press('ArrowLeft');
+  assert.match(await track.getAttribute('aria-valuetext'), /print to words/, '← points at the write before it: the older words are in the history too');
+  // the newest is undone from the strip (⌫ on the pointed change), then the older one (Home, ⇧⌫): the file is as it was
+  await page.keyboard.press('ArrowRight');
+  await page.keyboard.press('Backspace');
+  for (let i = 0; i < 100 && !(await fileHas(source, '>first words</span>')); i++) await page.waitForTimeout(100);
   assert.ok(await fileHas(source, '>first words</span>'), 'the newest write was undone');
   await page.waitForTimeout(1500);
   await page.waitForFunction(() => window.__plumb?.overlay);
   await page.evaluate(() => window.__plumb.ready());
-  await overlay.getByRole('button', { name: 'History' }).click();
-  await list.locator('.row').filter({ hasText: 'first words' }).getByRole('button', { name: 'Undo' }).click();
+  // the page reloads after a write: the strip is open again, or the dock is to open it from
+  if (!(await track.isVisible())) {
+    await overlay.locator('.dock').hover(); await page.waitForTimeout(300); // at rest the dock is its mark alone; its tools come out when it is pointed at
+    await overlay.getByRole('button', { name: 'History' }).click();
+  }
+  await track.waitFor();
+  await page.keyboard.press('Home');
+  assert.match(await track.getAttribute('aria-valuetext'), /tiny to first/, 'Home points at the first change: the original words');
+  await page.keyboard.press('Shift+Backspace');
   for (let i = 0; i < 100 && (await readFile(source, 'utf8')) !== was; i++) await page.waitForTimeout(100);
   assert.equal(await readFile(source, 'utf8'), was, 'both undone: the file is exactly as it was');
   assert.deepEqual(errors, []);
