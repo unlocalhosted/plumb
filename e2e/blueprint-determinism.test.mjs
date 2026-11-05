@@ -107,7 +107,7 @@ async function opening(page) {
   const result = await page.evaluate(() => {
     const p = window.__plumb.overlay.progress;
     const fixes = window.__plumb.overlay.places.filter((m) => m.ledger === 'new').map((m) => `${m.rule} ${m.text} ${m.file}:${m.line}:${m.column}`).sort();
-    return { problems: p.drift, fixes, notes: p.notes, total: p.total, read: p.read, places: p.places, unrendered: p.unrendered, lazyMounted: !!document.getElementById('below-0'), list: [...new Set(fixes)] };
+    return { problems: p.drift, drift: window.__plumb.overlay.problems, fixes, notes: p.notes, total: p.total, read: p.read, places: p.places, unrendered: p.unrendered, lazyMounted: !!document.getElementById('below-0'), list: [...new Set(fixes)] };
   });
   await page.keyboard.press('Alt+B');
   await page.waitForFunction(() => document.querySelector('plumb-overlay').shadowRoot.querySelector('.bp')?.hidden !== false);
@@ -128,6 +128,10 @@ test('the same page gives the same problems, fixes and notes under every viewpor
   const runs = {};
   const { page, errors } = await fresh(s.browser, s.url, { width: 1200, height: 800 });
   runs.first = await opening(page);
+  // a problem is counted where it can be placed: every counted problem names a file, a line and a column (a craft
+  // reading of the page with no source position is a note on its element, never a problem), so places >= problems
+  assert.equal(runs.first.drift.length, runs.first.problems, JSON.stringify(runs.first.drift));
+  assert.deepEqual(runs.first.drift.filter((key) => /undefined|null|NaN/.test(key)), [], 'no problem without a place');
   assert.ok(runs.first.problems > 10 && runs.first.places >= runs.first.problems, JSON.stringify(runs.first));
   assert.equal(runs.first.read, runs.first.total);
   // the lazy section has not mounted at the top; its places are counted all the same

@@ -587,9 +587,11 @@ class PlumbOverlay extends HTMLElement {
   get blueprintReader() { return this.#blueprint; } // the headless craft run (craft-run.js)
   get progress() { return this.#bp.progress; }
   // the places Blueprint counted last (blueprint-reader.js): one row per class site in the page's code, with how many elements render it
-  #places = [];
-  placesRead(places) { this.#places = places; }
+  #places = []; #problems = [];
+  placesRead(places, problems = []) { this.#places = places; this.#problems = problems; }
   get places() { return this.#places; }
+  // the problems it counted: one key per (place, cause), the number the dock and the fix panel's line say
+  get problems() { return this.#problems; }
   get pinnedElement() { return this.#pinned?.element ?? null; }
   occluders() {
     return [...['.w:not([hidden]) .card', '.dock'].map(sel => this.#root.querySelector(sel)).filter(Boolean).map(el => el.getBoundingClientRect()), ...[this.#blueprint?.panelRect?.()].filter(Boolean), ...(this.#help?.occluders() ?? []), ...(this.#history?.occluders() ?? []), ...[this.#ready?.rect()].filter(Boolean)];

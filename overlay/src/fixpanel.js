@@ -34,7 +34,7 @@ import { esc } from './choices.js';
 import { groundIsDark } from './geometry.js';
 import { FIX, CLEANUP, written } from './words.js'; // every sentence the panel says
 import { Cleanup, CLEANUP_CSS } from './cleanup.js'; // "Clean up this page": the passes, one at a time
-import { groupsOf, isNote } from './blueprint-panel.js';
+import { groupsOf, isNote, placeKey } from './blueprint-panel.js';
 import { glide } from './inplace.js'; // the text styles the code is reaching for
 
 const TIMING = { open: 260, next: 180, click: 60, clickGap: 45, breath: 480, check: 600, fold: 2300 };
@@ -231,7 +231,7 @@ function specimen(kind, mark, n, label, swatch) {
 const darkGround = () => groundIsDark();
 const plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`;
 // advice with no exact edit (a craft rule's words only): a note, shown after the causes and never counted
-const noteOf = (g) => g.members.every((m) => isNote(m.mark));
+const noteOf = (g) => g.members.every((m) => isNote(m.mark, fileOf(m)));
 // what a cause is called: its class, as written in your code; a craft rule with no class to point at names a tag
 // (a tap target, an icon inside it) or a CSS property (gap): those name the element instead, so neither passes for a
 // class. (Decided by the name, not the element's classes: a fix being tried has swapped them.)
@@ -256,7 +256,9 @@ const UNDOING = 'plumb:undoing';
 const saveUndoing = (rest) => { try { if (rest?.undo?.length || rest?.group) sessionStorage.setItem(UNDOING, JSON.stringify({ ...rest, at: Date.now() })); else sessionStorage.removeItem(UNDOING); } catch {} };
 const undoing_ = () => { try { const u = JSON.parse(sessionStorage.getItem(UNDOING) ?? 'null'); return u && Date.now() - u.at < 30000 ? u : null; } catch { return null; } };
 const RESUME_WAIT = 4000; // ms a reloaded page's readings may still have the fix just written, before the panel moves on anyway
-const placesOf = (g) => new Set(g.members.map((m) => `${fileOf(m)}:${m.mark.line}:${m.mark.column}`)).size;
+// the places of a cause: one per file:line:column its members are at (placeKey), none for a member with no place
+const placeOfMember = (m) => placeKey(m.mark, fileOf(m));
+const placesOf = (g) => new Set(g.members.map(placeOfMember).filter(Boolean)).size;
 const drawn = (g) => g.members.some((m) => m.el);
 // the other elements on the page drawn by the same line of code as this one (its stamp), outside it
 const stampMates = (el) => { const at = el?.getAttribute('data-plumb-source'); return at ? [...document.querySelectorAll(`[data-plumb-source="${CSS.escape(at)}"]`)].filter((x) => x !== el && !el.contains(x)).length : 0; };
@@ -432,7 +434,7 @@ export class FixPanel {
   #problemsIn(el) {
     if (!el) return 0;
     let n = 0;
-    for (const g of this.#live()) if (!noteOf(g)) n += new Set(g.members.filter((m) => m.el && el.contains(m.el)).map((m) => `${fileOf(m)}:${m.mark.line}:${m.mark.column}`)).size;
+    for (const g of this.#live()) if (!noteOf(g)) n += new Set(g.members.filter((m) => m.el && el.contains(m.el)).map(placeOfMember).filter(Boolean)).size;
     return n;
   }
   #live() { const open = this.#groups.filter((g) => !this.#taken.has(g.key)); return [...open.filter((g) => !noteOf(g)), ...open.filter(noteOf)]; }
