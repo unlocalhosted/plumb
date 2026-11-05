@@ -2,6 +2,14 @@ const base = new URL('../', import.meta.url).href;
 const script = [...document.querySelectorAll('script[type="module"][src]')].find(script => script.src === base + 'client.js');
 const token = script?.dataset.plumbToken;
 
+// The module generation a question is asked against. A hot update (plumb:updated, sent when the source maps are
+// invalidated) starts a new one: an answer that comes back for an older generation describes code that is gone, so it
+// is dropped and the question is asked again, once, against the code on screen.
+let generation = 0;
+globalThis.addEventListener?.('plumb:updated', () => { generation++; });
+export const moduleGeneration = () => generation;
+const unreachable = error => Object.assign(new Error('React Plumber’s server is not reachable; if the dev server is restarting, it will be back.'), { unreachable: true, cause: error });
+
 // Resolve and site questions asked with { batch: true } in the same turn of the event loop go to the server as one
 // batch: the blueprint's reader asks about a view's worth of elements as one round trip and one read cohort, not
 // one per element behind a six-connection limit. A single reading (the Alt card) goes on its own, as it always
@@ -50,6 +58,16 @@ const options404 = (q, error) => q.options.explain ? Object.assign(new Error(err
 const resolved = new Map();
 export function forgetResolved() { resolved.clear(); }
 export async function request(method, params, options = {}) {
+  for (let asked = 0;; asked++) {
+    const sent = generation;
+    const answer = await ask(method, params, options);
+    // the answer belongs to the generation it was asked in; after an update, ask again (once) rather than show it
+    if (generation === sent || asked > 0 || !['resolve', 'site', 'index', 'class-site', 'text', 'props', 'edits'].includes(method)) return answer;
+  }
+}
+function ask(method, params, options) {
+  // a question with its own signal is the caller's alone: it is not shared, and its fetch is aborted with it
+  if (options.signal) return direct(method, params, options);
   if (method === 'resolve') {
     const key = JSON.stringify([params, !!options.explain]);
     let answer = resolved.get(key);
@@ -69,10 +87,11 @@ async function direct(method, params, options = {}) {
   const url = new URL(method, base);
   for (const [key, value] of Object.entries(params)) url.searchParams.set(key, value);
   let response;
-  try { response = await fetch(url, { cache: 'no-store', headers: token ? { 'x-plumb-token': token } : {} }); }
+  try { response = await fetch(url, { cache: 'no-store', headers: token ? { 'x-plumb-token': token } : {}, ...(options.signal ? { signal: options.signal } : {}) }); }
   catch (error) {
-    if (options.explain) throw Object.assign(new Error(error.message), { reason: 'resolve-refusal', detail: { method, source: params.source, error: error.message } });
-    throw error;
+    if (error?.name === 'AbortError') throw Object.assign(new Error('The question was withdrawn.'), { aborted: true, reason: 'map', detail: { step: 'cancelled', method } });
+    if (options.explain) throw Object.assign(new Error(error.message), { reason: 'resolve-refusal', unreachable: true, detail: { method, source: params.source, error: error.message, unreachable: true } });
+    throw unreachable(error);
   }
   // The project is still being read for the first time: a state to show, not a refusal.
   if (response.status === 503) {
@@ -89,8 +108,18 @@ async function direct(method, params, options = {}) {
 }
 
 // Writes go through the same token and origin policy as reads; the server re-derives every edit from current source.
+// Every write carries an idempotency key: a retry after a dropped response gets the first answer and applies nothing twice.
 export async function post(method, body) {
-  const response = await fetch(new URL(method, base), { method: 'POST', cache: 'no-store', headers: { 'Content-Type': 'application/json', ...(token ? { 'x-plumb-token': token } : {}) }, body: JSON.stringify(body) });
+  const key = body?.key ?? (globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`);
+  const payload = JSON.stringify({ ...body, key });
+  const send = () => fetch(new URL(method, base), { method: 'POST', cache: 'no-store', headers: { 'Content-Type': 'application/json', ...(token ? { 'x-plumb-token': token } : {}) }, body: payload });
+  let response;
+  try { response = await send(); }
+  catch (error) {
+    // the network dropped: the server may have applied the write; the same key asks for its answer, not a second write
+    await new Promise(resolve => setTimeout(resolve, 300));
+    try { response = await send(); } catch (again) { throw unreachable(again); }
+  }
   const result = await response.json().catch(() => ({}));
   if (!response.ok) throw Object.assign(new Error(result.error ?? `React Plumber refused ${method}.`), { status: response.status });
   return result;

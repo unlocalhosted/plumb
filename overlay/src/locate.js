@@ -214,7 +214,7 @@ async function indexOf(source, options) {
   const key = source;
   let pending = indexes.get(key);
   if (!pending) {
-    pending = request('index', { source }, { explain: true, batch: options.batch }).then(answer => answer?.rows ? answer : null, error => { if (error?.starting || error?.failed) throw error; return null; });
+    pending = request('index', { source }, { explain: true, batch: options.batch, ...(options.signal ? { signal: options.signal } : {}) }).then(answer => answer?.rows ? answer : null, error => { if (error?.starting || error?.failed) throw error; return null; });
     indexes.set(key, pending);
     // a file changes under a running page: the next question reads the index again
     pending.then(() => setTimeout(() => { if (indexes.get(key) === pending) indexes.delete(key); }, 2000), () => indexes.delete(key));
@@ -276,7 +276,7 @@ export async function locate(element, options = {}) {
   let confirmed;
   if (match && typeof fiber.type === 'string' && !options.signal?.aborted) {
     try {
-      const answer = await request('resolve', { source: match[1], line: match[2], column: match[3], hash: match[4], tag: fiber.type, stamp: '1' }, { explain: true, batch: options.batch });
+      const answer = await request('resolve', { source: match[1], line: match[2], column: match[3], hash: match[4], tag: fiber.type, stamp: '1' }, { explain: true, batch: options.batch, ...(options.signal ? { signal: options.signal } : {}) });
       if (answer?.file && answer.line && answer.column) confirmed = answer;
     } catch (error) { if (error?.starting || error?.failed) throw error; }
   }
