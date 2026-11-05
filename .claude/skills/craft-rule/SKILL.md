@@ -276,3 +276,9 @@ Each line is something the owner had to say once; the sections above exist so th
   whole CSS pixel, so the 0.5px border plumber suggested for #38, and every `border-*-hairline` in the showcase, drew two
   device pixels. → A fix is proved by what the screen draws, not by the value written: count the device pixels in a 2×
   screenshot. Hairlines are a half-pixel inset shadow (showcase utilities, rule #38's border fix) or a 0.5px-tall box.
+- 2026-11-05 · Stray findings on #4, #59, #60, #64, #65. Three were rules reading a new idiom wrongly (a one-side inset
+  shadow taken for a box with corners; a white ring taken for a grey shadow; Lc 59.7 printed as "60, needs 60"), one was
+  plumber's reads overlapping (the stage's own read and the checker's scoped one: the first to finish turned the whole
+  page back on under the other), the rest were real slips in the screens. → When a screen shows a stray, ask first
+  whether the rule misreads how the screen draws it; when a scoped read names something outside its scope, suspect two
+  reads at once. Reads now run one at a time (craft-run.js).

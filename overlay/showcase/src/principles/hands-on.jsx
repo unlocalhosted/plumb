@@ -766,8 +766,8 @@ function InterruptPanel({ side = 'broken', onStatus }) {
       <article ref={card} className={'relative h-72 overflow-hidden rounded-card bg-surface shadow-card ' + (keyframes ? '' : 'ho-t')}>
         <header className="flex h-12 items-center gap-2 border-b-hairline border-line px-4">
           <FolderIcon size={16} texture="dither" className="text-ink-muted" />
-          <span className="text-[15px] font-medium">Q3 launch</span><span className="text-[13px] text-ink-subtle">· 5 files</span>
-          <button type="button" aria-expanded={open.current} onClick={toggle} className="ml-auto inline-flex h-8 items-center gap-1.5 rounded-control px-2.5 text-[13px] font-medium ring-1 ring-line ring-inset hover:bg-sunken">
+          <span className="flex items-baseline gap-2"><span className="text-[15px] font-medium">Q3 launch</span><span className="text-[13px] text-ink-subtle">· 5 files</span></span>
+          <button type="button" aria-expanded={open.current} onClick={toggle} className="ml-auto inline-flex h-8 items-center gap-1.5 rounded-control pr-2.5 pl-1.5 text-[13px] font-medium ring-1 ring-line ring-inset hover:bg-sunken">
             <SlidersIcon size={14} texture="dither" className="text-ink-muted" />Details
           </button>
         </header>
@@ -775,7 +775,7 @@ function InterruptPanel({ side = 'broken', onStatus }) {
           {FOLDER.map(([name, who, when], i) => (
             <li key={name} className={'flex h-9 items-center gap-3 rounded-control px-2.5 text-[13px] ' + (i === 0 ? 'bg-accent-soft' : '')}>
               <FileIcon size={14} texture="dither" className="shrink-0 text-ink-muted" /><span className="min-w-0 flex-1 truncate">{name}</span>
-              <span className="w-24 truncate text-ink-muted">{who}</span><span className="w-16 text-right text-ink-subtle">{when}</span>
+              <span className="w-24 truncate text-ink-muted">{who}</span><span className="w-16 text-right text-ink-muted">{when}</span>
             </li>
           ))}
         </ul>
@@ -884,10 +884,10 @@ function PlaceSheet({ side = 'broken', onStatus }) {
   const reach = m ? Math.max(2, limit - m.pull) : limit, top = m ? limit - m.gave : limit, hand = g ? (g.live ? g.hand : g.peak.hand) : null;
   return (
     <div className="relative w-[38rem] max-w-full">
-      <div ref={phone} className="relative mx-auto h-[22rem] w-[300px] touch-none overflow-hidden rounded-[28px] bg-ink shadow-card select-none" onPointerMove={move} onPointerUp={up} onPointerCancel={up} onLostPointerCapture={up}>
+      <div ref={phone} className="relative mx-auto h-[22rem] w-[300px] touch-none overflow-hidden rounded-[28px] corner-squircle bg-ink shadow-card select-none" onPointerMove={move} onPointerUp={up} onPointerCancel={up} onLostPointerCapture={up}>
         <img src={valley} alt="" draggable="false" className="absolute inset-0 size-full object-cover" />
-        <span className="absolute top-14 left-1/2 grid size-8 -translate-x-1/2 place-items-center rounded-full bg-accent text-[11px] font-medium text-accent-ink shadow-raised ring-2 ring-white">M</span>
-        <div ref={sheet} onPointerDown={down} className="absolute inset-x-0 h-[20rem] cursor-grab rounded-t-[18px] bg-surface px-4 pt-2 active:cursor-grabbing" style={{ top: REST }}>
+        <span className="absolute top-14 left-1/2 grid size-8 -translate-x-1/2 place-items-center rounded-full bg-accent text-[11px] font-medium text-accent-ink ring-2 ring-white">M</span>
+        <div ref={sheet} onPointerDown={down} className="absolute inset-x-0 h-[20rem] cursor-grab rounded-t-[18px] corner-squircle bg-surface px-4 pt-2 active:cursor-grabbing" style={{ top: REST }}>
           <span className="mx-auto mb-3 block h-1 w-9 rounded-full bg-line" />
           <span className="block text-[15px] font-medium tracking-[-0.01em]">Café Mona</span>
           <span className="block text-[13px] text-ink-muted">Coffee · 6 min walk · Open until 18:00</span>

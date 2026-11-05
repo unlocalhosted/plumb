@@ -2068,7 +2068,7 @@ function LayerTool({ children }) {
     </article>
   );
 }
-const MoreButton = (props) => <button type="button" aria-label="More" {...props} className="grid size-6 place-items-center rounded-chip text-accent-deep hover:bg-accent/10 data-[state=open]:bg-accent/10"><span aria-hidden="true" className="text-[15px] leading-none">⋯</span></button>;
+const MoreButton = (props) => <button type="button" aria-label="More" {...props} className="grid size-6 place-items-center rounded-chip text-accent-deep hover:bg-accent/10 active:bg-accent/15 data-[state=open]:bg-accent/10"><span aria-hidden="true" className="text-[15px] leading-none">⋯</span></button>;
 
 // the broken side: a menu written by hand, the way they usually are
 function HandRolledMenu() {

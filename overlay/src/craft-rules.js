@@ -79,8 +79,23 @@ function cornerShows(el, s) {
 const SIDES = { tl: ['Top', 'Left'], tr: ['Top', 'Right'], bl: ['Bottom', 'Left'], br: ['Bottom', 'Right'] };
 function drawsCorner(el, s, corner) {
   const bg = rgb(s.backgroundColor);
-  if (REPLACED.has(el.localName) || (bg && bg[3] > 0) || s.backgroundImage !== 'none' || s.boxShadow !== 'none' || (s.overflow !== 'visible' && s.overflow !== '')) return true;
-  return SIDES[corner].some((side) => px(s[`border${side}Width`]) > 0);
+  if (REPLACED.has(el.localName) || (bg && bg[3] > 0) || s.backgroundImage !== 'none' || (s.overflow !== 'visible' && s.overflow !== '')) return true;
+  // a hairline drawn as an inset shadow on one side is a border on that side: it draws only that side's corners
+  const lines = lineSides(s.boxShadow);
+  if (lines === true) return true;
+  return SIDES[corner].some((side) => px(s[`border${side}Width`]) > 0 || lines.has(side));
+}
+
+// the sides a box-shadow draws as plain lines (inset, unblurred, offset on one axis), or true when any layer draws a
+// whole box (a ring, a drop shadow). Transparent layers draw nothing
+function lineSides(value) {
+  const sides = new Set(), raw = value && value !== 'none' ? value.split(/,(?![^(]*\))/) : [];
+  for (const [i, l] of shadows(value).entries()) {
+    if (alpha(rgb(raw[i].match(COLOUR)?.[0])) === 0) continue;
+    if (!l.inset || l.blur || l.spread || (l.x !== 0) === (l.y !== 0)) return true;
+    sides.add(l.y > 0 ? 'Top' : l.y < 0 ? 'Bottom' : l.x > 0 ? 'Left' : 'Right');
+  }
+  return sides;
 }
 
 // #8 / #41. Nested radius = outer radius − padding, never below 0.
@@ -920,10 +935,12 @@ export const contrast = {
     const lc = Math.abs(apca(text, ground));
     if (lc >= need) return [];
     if (muted < 1 && Math.abs(apca(over([c[0], c[1], c[2], alpha(c) * fade / muted], ground), ground)) >= need) return [];
+    // rounded down: 59.7 short of 60 must not read as "60, needs 60"
+    const shown = Math.floor(lc);
     return [{
-      ...say(this.id, { lc: Math.round(lc), size: fs, need, large }),
-      key: this.id, text: colourClass(el, 'text', theme) ?? 'color', props: ['color'], value: `Lc ${Math.round(lc)}`, n: Math.round(lc),
-      evidence: { lc: Math.round(lc), need, color: hex(text), ground: hex(ground), fontSize: fs, weight: w }, confidence: 0.85,
+      ...say(this.id, { lc: shown, size: fs, need, large }),
+      key: this.id, text: colourClass(el, 'text', theme) ?? 'color', props: ['color'], value: `Lc ${shown}`, n: shown,
+      evidence: { lc: shown, need, color: hex(text), ground: hex(ground), fontSize: fs, weight: w }, confidence: 0.85,
       suggest: { kind: 'advice', text: `${(0.2126 * ground[0] + 0.7152 * ground[1] + 0.0722 * ground[2]) / 255 < 0.5 ? 'Lighten' : 'Darken'} the text, or make it bigger or bolder.` },
     }];
   },
@@ -1365,7 +1382,8 @@ export const tintedShadow = {
     const T = theme.spec(this.id);
     const s = facts.style(el);
     if (s.boxShadow === 'none' || !el.parentElement) return [];
-    const layers = s.boxShadow.split(/,(?![^(]*\))/).filter((l) => !/inset/.test(l));
+    // a ring (spread alone, no offset or blur: Tailwind's ring-*) is an edge drawn in its own colour, not a shadow
+    const layers = s.boxShadow.split(/,(?![^(]*\))/).filter((l) => { const [d] = shadows(l); return !d.inset && (d.x || d.y || d.blur); });
     // Tailwind's shadow-sm…xl are exactly 10% black: at the line counts
     const colours = layers.map((l) => rgb(l.match(COLOUR)?.[0])).filter((c) => c && c[3] >= T.alpha);
     if (!colours.length) return [];
