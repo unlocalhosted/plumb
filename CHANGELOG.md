@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.4.0 · 2026-11-06
+
+Everything since 0.3.0, as a person using it sees it.
+
+- **Alt+click finds the line on Next.js.** `withPlumb` now stamps every DOM tag of your JSX with its file, line and column in development, on webpack and Turbopack, server components included. On tailwindcss.com the share of elements found went from 15–40 % to 89–98 %, and server components from none to 97 %.
+- **Stamping is no longer optional.** On Vite, `plumb()` after the plugin that compiles JSX stops the dev server and names the line to move. On Next, a config that keeps the loader out stops at config load with the fix. A page whose elements carry no stamp says so in the overlay ("Source stamping isn't running") and Plumber refuses rather than guesses. `plumber doctor` exits 1 until it is fixed.
+- **Stamps never break a library.** Only DOM tags get the attribute; component tags get nothing, so a component that rejects extra props (Headless UI's `Menu`) renders as it does without Plumber. The page with stamps is the page without them, apart from the attribute.
+- **Elements a library drew answer with your usage.** An icon's `<svg>` and every `<path>` in it, a dialog in a portal, `next/link`'s `<a>`: the answer is the line where you used the component, with the props you can change there (`className`, `tone`, `variant`). It is accepted only on an exact JSX opening of that file version, never a nearby line; otherwise Plumber says the element is not in your code and which library drew it.
+- **Your code, in any repository shape.** One rule decides what is yours: inside the repository and neither installed nor generated. Workspace packages linked through `node_modules`, tsconfig path aliases, `file:` and `link:` packages, vendored folders and a `src/features/build` folder are yours; installed packages, the pnpm store and Yarn's cache are not. Stamps name files from the repository root, so two apps sharing one `packages/ui` file write to one place.
+- **A click right after load answers.** The overlay is ready only once React has hydrated the page (and Next has synced), and a click before that waits, then answers; a page that never hydrates says "Still loading". A stamp that can't be resolved is said as a refusal, never replaced by a guess.
+- **Next 15 and monorepos.** Plumber's routes answer on Next 15 with webpack, including a `next.config` that exports a function. With no `source` configured, everything the rule calls yours is tracked, so a `components/` folder at the app root (as in many Next apps) is read and editable; `plumber init` no longer writes `source`.
+- **Writes are safe under hot reload.** A write replaces the file whole through a temporary file, so a watcher never reads half of it; every write and undo checks the file first and refuses if your editor or formatter changed it; a retry after a dropped response returns the first result instead of writing twice; a question asked before a hot update is asked again after it, on Vite and Next; a dev server restart is a named failure, not a hang; Vite hears each write at once.
+- **The page about your project** leads with what to stop first: the three biggest causes in the terminal's own words, with their places; the Specimen shows every size of your theme with the sizes typed by hand that should become it.
+- **Craft.** `plumber craft --scope <selector>` reads one element the way Alt+click does. Optical centre, overshoot and icon-on-capitals give fixes you can take; colours in oklch, oklab and `color(srgb)` are read; fixes to concentric corners, card padding, trim leading, hairlines and the elevation ladder.
+- **Compatibility and performance** are in the README, as the locate bench measured them.
+
+### Upgrading from 0.3.0
+
+- Remove `stamp: false` from `plumb()` and the second argument from `withPlumb()`; both are gone. Stamping is always on in development and never in production builds.
+- On Vite, put `plumb()` before `react()` in `plugins` (`plumber install --overlay --write` does it).
+- On Next, if your `next.config` sets `webpack`, it must be a function that returns the config it is given.
+
 ## 0.3.0 · 2026-11-04
 
 Everything since 0.2.0, as a person using it sees it.
