@@ -234,6 +234,12 @@ Wrong answers first (wrong file, then wrong line, then wrong column), then refus
 | 14 | `/` | server | `div` `…:1/div:0/section:1/div:0/div:0/div:0/div:1/div:3/div:1/div:1` | app/(app)/(root)/cards/skeleton/payout-threshold.tsx:22:9 | – | – | refused · runtime-only-frames / no-project-frame |
 | 15 | `/` | server | `div` `…:0/section:1/div:0/div:0/div:0/div:1/div:3/div:1/div:1/div:2` | app/(app)/(root)/cards/skeleton/payout-threshold.tsx:28:11 | – | – | refused · runtime-only-frames / no-project-frame |
 
+## Limits of this report
+
+- Stopped by the owner: shadcn/ui was killed after one run used about 10 GB (dev server 8 GB, Chromium 2.5 GB). Its numbers below are from that run (Turbopack only; /charts/area and /blocks did not measure on every run). Webpack on shadcn: not measured, see What did not run. No further shadcn run was made.
+- tailwindcss.com was measured before the browser was restricted to localhost (its pages loaded remote images and the analytics script); a rerun under the restriction and the 4 GB memory cap was started twice and was killed from outside both times (Chrome closed under the run), so the earlier numbers stand. No run stopped on the 4 GB cap.
+- Rows kept from earlier runs of the same file lack their owner-file lists, so their wrong-file split between ancestor and other can read "other"; the wrong-file total is not affected.
+
 ## What did not run
 
 - **shadcn/ui (apps/v4)** webpack: Next 16.4.2 + webpack: the first two routes never reported ready (page.waitForFunction timed out after 150 s, twice per route, on / and /examples/dashboard); the dev server dropped client chunk requests (ERR_EMPTY_RESPONSE, then ERR_CONNECTION_REFUSED) and a manual load of / did not reach domcontentloaded in 200 s. The server log showed no error line. Not measured.
@@ -256,3 +262,13 @@ Wrong answers first (wrong file, then wrong line, then wrong column), then refus
 | tailwindcss webpack-stamped full | /docs/installation/using-vite | HTTP 500: dev server log: ⨯ Error: Passing props on "Fragment"! The current component <Menu /> is rendering a "Fragment". However we need to passthrough the following props: |
 | tailwindcss webpack-stamped full | /showcase | skipped: the 3 routes before it failed on this run |
 | tailwindcss webpack-stamped full | /partners | skipped: the 3 routes before it failed on this run |
+
+## Seen while measuring
+
+Not fixed here; found while running the nextapps corpus.
+
+- `overlay/src/locate.js:524` refuses with `runtime-only-frames / no-project-frame` for essentially every server-component element on a plain run (tailwindcss.com: 0 % found on server elements, about 96 % on client elements). Owner-stack reconstruction has nothing to read there; only stamps answer.
+- `src/hosts/source-stamping.ts:21` (`stampJSX`) stamps component usages as well as DOM tags. Headless UI's `<Menu>` renders a Fragment and throws "Passing props on Fragment" on the extra `data-plumb-source` prop, so full stamping returns HTTP 500 on every route of tailwindcss.com (both bundlers). The Vite host has the same stamper. `hostOnly` (added here, off by default) avoids it; truth for that app is host-tags-only stamps.
+- `src/hosts/next-config.ts:35-36` sets `PLUMBER_NEXT_DIST_DIR` and `PLUMBER_NEXT_SERVER_MODULE` in the process that loads the config. On Next 15.5.28 + webpack (magicui) the process that serves `/__plumb` does not have them, so `src/hosts/next.ts:17` falls back to `./next-dev.js`, which does not exist in `.next/server/app/...`, and `/__plumb/client.js` answers 500. The bench sets both variables in the dev server's environment for Next 15.
+- The same stamper on Turbopack and webpack worked on magicui (Next 15.5) and shadcn/ui (Next 16.4, Turbopack) with full stamping.
+- On monorepo apps (magicui `apps/www`, shadcn `apps/v4`) the stamps reach the DOM but locate mostly does not answer from them: DOM stamps are relative to the app folder (`components/site-header.tsx:15:9#…`, the loader's root is `process.cwd()`), and locate answers `resolve-refusal` or `runtime-only-frames / no-project-frame` for most of them (magicui: stamp answers 199 of about 1,076 elements per run). Only the Vite-style single-root case (tailwindcss.com, repo root = app) answers `stamp` at 87 to 97 %. Likely the overlay resolves stamp paths against the workspace root, not the app root; not investigated (`overlay/src/locate.js`, the stamp branch near line 244).

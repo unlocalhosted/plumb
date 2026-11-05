@@ -28,6 +28,7 @@ export function buildNextReport(rows, meta) {
       const plainBy = new Map(P.map((r) => [rowKey(r), r]));
       const truthBy = new Map();
       for (const r of S) { const t = truthOf(r); if (t) truthBy.set(rowKey(r), t); }
+      for (const r of S) { r.ownerFiles ??= []; }
       for (const r of S) { r.verdict = judge(r, truthOf(r)); r.split = r.kind; r.matched = plainBy.has(rowKey(r)) && plainBy.get(rowKey(r)).tag === r.tag; }
       for (const r of P) {
         const mate = stampedBy.get(rowKey(r));
@@ -60,7 +61,7 @@ export function buildNextReport(rows, meta) {
       worst.push(...w.map((r) => ({ app, bundler, route: r.screen, key: r.key, tag: r.tag, kind: r.split, verdict: r.verdict, expected: r.truth, got: r.found ? { file: r.file, line: r.line, column: r.column, via: r.via } : null, reason: r.reason ?? null, step: r.step ?? null })));
     }
   }
-  const slim = rows.map(({ chain, ownerFiles, detail, ...r }) => r);
+  const slim = rows.map(({ chain, detail, ...r }) => (r.host.endsWith('stamped') ? r : (({ ownerFiles, ...x }) => x)(r)));
   return { meta, summary: out, worst, rows: slim };
 }
 
