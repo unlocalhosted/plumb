@@ -5,7 +5,8 @@ import { unreadable } from './diagnostics.js';
 import type { Finding } from './report.js';
 import { matchesPath } from './collect/pattern.js';
 import { glob } from 'tinyglobby';
-import { ownSourcePath, sourceSelectors } from './source-boundary.js';
+import { containsPath, ownSourcePath, sourceBoundary, sourceSelectors } from './source-boundary.js';
+import { linkedSourceFolders } from './source-identity.js';
 import { projectIgnore, staticIgnore } from './project-facts/checkouts.js';
 import { tailwindInstalled } from './project-facts/index.js';
 import { userMessage, UsageError } from './errors.js';
@@ -15,6 +16,12 @@ import type { FileCounts, Report } from './report.js';
 /** The static part; `projectIgnore(root)` adds the nested checkouts (worktrees, submodules, vendored clones). */
 export const ignore = staticIgnore;
 export const defaultSource = ['src/**/*.{tsx,jsx,ts,js,css}', 'app/**/*.{tsx,jsx,ts,js,css}'];
+/** With no `source` configured: the app's own folders, plus its own code reached through links (a workspace package, a tsconfig alias), each inside the boundary. */
+export async function defaultSourceSelectors(root: string): Promise<string[]> {
+  const boundary = sourceBoundary(root);
+  const linked = (await linkedSourceFolders(root)).filter(folder => containsPath(boundary, folder));
+  return [...defaultSource, ...linked.map(folder => `${relative(root, folder).replaceAll('\\', '/')}/**/*.{tsx,jsx,ts,js,css}`)];
+}
 const tailwindImport = /@import\s+(?:url\(\s*)?["']tailwindcss(?:\/[^"']*)?["']/;
 
 /** Warm hosts already own membership; filter their retained names instead of crawling again. */
@@ -26,7 +33,9 @@ export async function matchProjectFiles(root: string, patterns: string | string[
   const matches = known.filter(file => {
     const path = relative(root, file);
     const matches = (pattern: string) => matchesPath(isAbsolute(pattern) ? file : path, pattern) || matchesPath(isAbsolute(pattern) ? file : path, pattern + '/**');
-    return !ignore.some(pattern => matchesPath(path, pattern)) && positive.some(matches) && !negative.some(matches);
+    // A linked folder above the root is matched by its `../` path; the ignore list reads it from its first real segment.
+    const within = path.replace(/^(?:\.\.\/)+/, '');
+    return !ignore.some(pattern => matchesPath(path, pattern) || matchesPath(within, pattern)) && positive.some(matches) && !negative.some(matches);
   });
   // A changed config can introduce an external source location before its
   // worker has published those locations to the Session. Discover that bounded
@@ -96,7 +105,7 @@ export async function discoverProject(root: string, config: PlumbConfig, known?:
 }
 
 export async function projectSourceFiles(root: string, config: PlumbConfig, known?: readonly string[]): Promise<string[]> {
-  const files = await matchProjectFiles(root, sourceSelectors(root, config.source ?? defaultSource), known);
+  const files = await matchProjectFiles(root, sourceSelectors(root, config.source ?? await defaultSourceSelectors(root)), known);
   const owned = await Promise.all(files.map(file => ownSourcePath(root, file)));
   return files.filter((_, index) => owned[index]).sort();
 }

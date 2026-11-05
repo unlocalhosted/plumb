@@ -4,7 +4,7 @@ import { resolve } from 'node:path';
 
 /** Discover overlay routes and externalize their Node implementation only in development. */
 export interface PlumbNextOptions {
-  /** Stamp data-plumb-source on every JSX opening of the app's own .jsx/.tsx, as the Vite host does. Default false. */
+  /** Stamp data-plumb-source on every DOM-tag JSX opening of your own .jsx/.tsx, as the Vite host does. Default false. */
   stamp?: boolean;
 }
 

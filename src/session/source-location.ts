@@ -5,13 +5,14 @@ import type { Node } from 'oxc-parser';
 import { UsageError } from '../errors.js';
 import { lineStarts, sourceSite } from '../collect/source.js';
 import { sourcePath } from '../source-boundary.js';
+import { repositoryRoot } from '../source-identity.js';
 
 /** Decode host spellings only. Membership and real-path checks belong to Session. */
 export function sourcePaths(root: string, source: string, servedRoot?: string, stamped = false): string[] {
-  // A stamp is an encoded project-relative path, not a bundler URL. Decode
-  // once, preserving literal colons, query/hash delimiters and percent signs.
+  // A stamp is an encoded path from the repository root, not a bundler URL: one name for a file however many apps in
+  // the repository render it. Decode once, preserving literal colons, query/hash delimiters and percent signs.
   if (stamped) {
-    try { return [sourcePath(root, decodeURIComponent(source))]; }
+    try { return [sourcePath(repositoryRoot(root), decodeURIComponent(source))]; }
     catch { throw new UsageError('Source must have valid URL encoding.'); }
   }
   let path = source;

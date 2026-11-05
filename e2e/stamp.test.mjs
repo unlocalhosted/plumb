@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { createHash } from 'node:crypto';
+import { spawnSync } from 'node:child_process';
 import { chromium } from 'playwright';
 import { build, createServer } from 'vite';
 import react from '@vitejs/plugin-react';
@@ -39,6 +40,7 @@ const stampAt = fragment => {
 async function fixture(t) {
   const root = await mkdtemp(join(repo, 'fixtures/.stamp-'));
   t.after(() => rm(root, { recursive: true, force: true }));
+  spawnSync('git', ['init', '-q'], { cwd: root }); // its own repository: stamps name files from the repository root
   await cp(join(repo, 'fixtures/spacing'), root, { recursive: true, filter: path => !path.split('/').includes('.plumb-cache') });
   await rm(join(root, 'src/App.tsx'));
   await writeFile(join(root, file), source);
@@ -121,20 +123,14 @@ test('Vite stamps prove exact host JSX, preserve usage and refuse stale evidence
     });
     assert.equal(noMaps.via, 'stamp'); assert.equal(noMaps.line, expected.line);
   });
-  await t.test('library forwarded component stamp is usage; existing default and chain survive', async () => {
-    assert.equal(await page.getAttribute('#usage', 'data-plumb-source'), stampAt('<Button id="usage"'));
-    const located = await page.$eval('#usage', element => window.__plumb.locate(element));
-    const without = await page.$eval('#usage', async element => {
-      const fiber = element[Object.keys(element).find(key => key.startsWith('__reactFiber$'))];
-      const props = fiber.memoizedProps;
-      fiber.memoizedProps = { ...props, 'data-plumb-source': undefined };
-      try { return await window.__plumb.locate(element); } finally { fiber.memoizedProps = props; }
-    });
-    assert.deepEqual({ ...located, chain: without.chain }, without, 'default selection unchanged');
-    assert.deepEqual(located.chain.slice(0, without.chain.length).map(({ usage, ...link }) => link), without.chain, 'original navigation links retained');
-    assert.ok(located.chain.some(link => link.usage && link.file === file && link.line === position(source, '<Button id="usage"').line));
-    const resolved = await resolve({ ...proof, ...position(source, '<Button id="usage"') });
-    assert.equal(resolved.usage, true); assert.equal(resolved.component, 'Button');
+  await t.test('a component gets no stamp; its rendered host locates through the owner stack', async () => {
+    // A stamp is a prop a component may reject (Headless UI's Menu renders a Fragment and throws on extra props), so
+    // only DOM tags carry one. The library's <button> keeps the spread's own value and answers from React's owner stack.
+    assert.equal(await page.getAttribute('#usage', 'data-plumb-source'), 'spread');
+    const located = await page.$eval('#usage', element => window.__plumb.locate(element, { chain: true }));
+    assert.equal(located.via, 'owner-stack');
+    assert.ok(located.chain.some(link => link.file === file && link.line === position(source, '<Button id="usage"').line), JSON.stringify(located));
+    assert.ok(!located.chain.some(link => link.usage), 'no usage link without a component stamp');
   });
   await t.test('author wins only its opening; fragments remain untouched; disk unchanged', async () => {
     const transformed = observed.get(file); assert.ok(transformed);

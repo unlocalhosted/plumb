@@ -4,6 +4,7 @@ import { cp, mkdir, mkdtemp, readFile, rm, symlink, writeFile } from 'node:fs/pr
 import { join } from 'node:path';
 import { test } from 'node:test';
 import { setTimeout as delay } from 'node:timers/promises';
+import { spawnSync } from 'node:child_process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { chromium } from 'playwright';
 import { build, createServer } from 'vite';
@@ -22,6 +23,8 @@ async function project(t, workspace) {
   t.after(async () => { try { await server?.close(); } finally { await rm(parent, { recursive: true, force: true }); } });
   await cp(join(repo, 'fixtures/linked-package'), parent, { recursive: true });
   const app = join(parent, 'app'), library = join(parent, 'library'), root = workspace ? parent : app;
+  // The project is its own repository: a sibling library outside it is another repository's code, linked in.
+  spawnSync('git', ['init', '-q'], { cwd: root });
   // npm's local file: dependency layout, without a network install per test.
   await mkdir(join(app, 'node_modules'), { recursive: true });
   await symlink(library, join(app, 'node_modules/plumb-linked-library'));

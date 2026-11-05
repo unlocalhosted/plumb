@@ -43,6 +43,7 @@ test('Next stamp loader: server and client components are located via stamp on w
   const tpRoot = await turbopackRoot();
   const root = await mkdtemp(join(repo, 'fixtures/.next-stamp-'));
   t.after(() => rm(root, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }));
+  spawnSync('git', ['init', '-q'], { cwd: root }); // its own repository: stamps name files from the repository root
   await file(root, 'next.config.mjs', `export default { experimental: { agentUpgrade: false }, turbopack: { root: ${JSON.stringify(tpRoot)} } };\n`);
   await file(root, 'app/layout.jsx', 'export default function Layout({ children }) { return <html><body>{children}</body></html>; }\n');
   await file(root, 'app/page.jsx', SERVER);
