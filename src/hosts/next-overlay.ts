@@ -1,6 +1,7 @@
 import { createElement, Fragment } from 'react';
 import type { ReactElement } from 'react';
 import { state } from './next-state.js';
+import { nextHost } from './next-host.js';
 
 // The host's hot updates start a new module generation for the overlay, the way hosts/vite.ts hooks vite:afterUpdate:
 // Next's dev client takes its updates over a WebSocket at /_next/hmr (webpack and Turbopack alike); a second socket on
@@ -29,6 +30,6 @@ export function PlumbOverlay(): ReactElement | null {
   if (process.env.NODE_ENV === 'production') return null;
   return createElement(Fragment, null,
     createElement('script', { type: 'module', src: '/__plumb/client.js', 'data-plumb-token': state().token,
-      'data-plumb-next-dist': process.env.PLUMBER_NEXT_DIST_DIR ?? process.env.PLUMB_NEXT_DIST_DIR }),
+      'data-plumb-next-dist': nextHost('distDir') }),
     createElement('script', { type: 'module', dangerouslySetInnerHTML: { __html: updates } }));
 }
