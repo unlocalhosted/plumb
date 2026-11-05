@@ -3,7 +3,7 @@
 // e2e/blueprint-next-performance.test.mjs and e2e/next-install.test.mjs.
 import { spawnSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
-import { mkdir, symlink, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, symlink, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { commonAncestor, here, nodeModulesHome, repo, spawnHost } from './lib.mjs';
 import { apiBody, copyShowcaseSource } from './showcase.mjs';
@@ -24,6 +24,10 @@ export function ensureTailwindPostcss() {
 export async function writeNextApp(dest, showcase, { bundler }) {
   const w = async (path, text) => { await mkdir(dirname(join(dest, path)), { recursive: true }); await writeFile(join(dest, path), text); };
   await copyShowcaseSource(showcase, dest);
+  // @tailwindcss/postcss detects sources from the repo above the app, docs and e2e included, and one malformed class
+  // there breaks the CSS; scan only the app's own folders, as the Vite host's root does.
+  const theme = join(dest, 'src/theme.css');
+  await writeFile(theme, (await readFile(theme, 'utf8')).replace(/@import\s+["']tailwindcss["'];/, `@import "tailwindcss" source(none);\n@source "./";\n@source "../app";`));
   await w('package.json', JSON.stringify({ name: 'locate-bench-next', private: true, type: 'module', dependencies: { next: '^16.4.0', react: '^19.3.0', 'react-dom': '^19.3.0' } }));
   const tools = ensureTailwindPostcss();
   // plugins resolve from the app; the tools folder holds @tailwindcss/postcss and its own dependencies
