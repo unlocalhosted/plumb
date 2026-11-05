@@ -105,3 +105,27 @@ BROKEN. The two hands-on comps (#36, #42) draw plumber's marks from live measure
 
 All six have faces or real marks, data drawn as data and one live moment. The strongest beside #16 are #37 and #38.
 The flattest are #36 (a sidebar is mostly text by nature) and #42 (the lesson is a 1.8px motion).
+
+## Built (2026-11-05)
+
+Built as overlay/showcase/src/principles/screens/{36-thread-channels,37-margin-readers,38-daybook-agenda,39-tack-glaze,
+40-widget-gallery,42-tandem-tabs}.jsx. Changes from the comps: #36 shows eight channels at rest (the list is
+`max-h-[272px]`, so it is 256px tall and over the rule's 200px floor before the click too); #37's slip is on every
+label pinned to a point (the tooltip and the three y-axis labels, one `Pin`), ×4; #39's pin photo has no outline on
+any pin, and three pins are white-sweep shots (the chosen mugs, a satin white cup, a celadon vase), ×3; #40's rings are
+conic fills (an SVG ring read as a big icon to the stroke rule); #42's road runs 15 Sep to 19 Dec, so today sits in
+November. The comps' painted plumber marks are left out; #36 and #42 draw them live after the gesture, as before.
+
+## Credits
+
+Photos from Unsplash, under the Unsplash License (free to use, no permission needed). Resized to 800px (400px for
+the post covers).
+
+| File | Photo | Photographer |
+| --- | --- | --- |
+| s37-causeway.jpg | https://unsplash.com/photos/rocky-causeway-stretches-towards-a-distant-island-castle-DGQzEOEkhhI (photo-1783108079876-1f97aad5c981) | @jcorl |
+| s37-harbour.jpg | https://unsplash.com/photos/white-and-black-boat-on-dock-during-night-time-EgK47RHZgKM (photo-1614158026438-a2eeaec25401) | @fonsheijnsbroek_amsterdam_photos |
+| s39-satin-white.jpg | https://unsplash.com/photos/white-ceramic-mug-on-white-surface-AJsdrXaRhHk (photo-1587411768065-fd9b9dd13359) | @mockupgraphics |
+| s39-celadon-vase.jpg | https://unsplash.com/photos/a-ceramic-vase-with-a-brown-top-on-a-white-surface-7TB3xKdB-iw (photo-1642582615780-35343a19fd65) | @mark_huang |
+| s40-lisbon-tram.jpg | https://unsplash.com/photos/yellow-and-white-tram-on-street-during-daytime-anrBiSm4iFQ (photo-1599069158346-684fee0e414a) | @andrelergier |
+| logos/{bluesky,google,reddit,duolingo}.svg | simple-icons 13.21.0 (CC0 paths; the marks are their companies' trademarks, shown as sources and a client in a demo) | simple-icons |
