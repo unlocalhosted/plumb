@@ -316,6 +316,7 @@ function createRoute(session: Session | Promise<Session>, options: HandlerOption
         if (requested.some(header => !['content-type', tokenHeader].includes(header))) return refuse(403, 'Request headers are not allowed.');
         headers['Access-Control-Allow-Methods'] = expected;
         headers['Access-Control-Allow-Headers'] = `Content-Type, ${tokenHeader}`;
+        headers['Access-Control-Max-Age'] = '600'; // one preflight per endpoint, not one per question
         return { status: 204, headers, body: '' };
       }
     }

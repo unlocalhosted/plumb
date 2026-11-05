@@ -1,5 +1,8 @@
 const base = new URL('../', import.meta.url).href;
-const script = [...document.querySelectorAll('script[type="module"][src]')].find(script => script.src === base + 'client.js');
+// The page's own tag for this client carries the token. It names the client on the page's origin; on Next the module
+// itself is loaded from the route's sidecar (hosts/next-dev.ts), another origin, so the tag is found by its path.
+const clientPath = new URL(base).pathname + 'client.js';
+const script = [...document.querySelectorAll('script[type="module"][src]')].find(script => script.src === base + 'client.js' || new URL(script.src, location.href).pathname === clientPath);
 const token = script?.dataset.plumbToken;
 
 // The module generation a question is asked against. A hot update (plumb:updated, sent when the source maps are
