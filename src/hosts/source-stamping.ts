@@ -12,7 +12,7 @@ import type { SessionOptions } from '../session/index.js';
 import { containsPath, sourceBoundary } from '../source-boundary.js';
 
 /** Inserts only props; authored bytes and their positions remain in the map. */
-export function stampJSX(code: string, file: string, path: string) {
+export function stampJSX(code: string, file: string, path: string, options: { hostOnly?: boolean } = {}) {
   const parsed = parseSync(file, code);
   if (parsed.errors.length) return null; // Let the host report its normal parser diagnostic.
   const text = new MagicString(code), starts = lineStarts(code);
@@ -22,7 +22,10 @@ export function stampJSX(code: string, file: string, path: string) {
     if (node.type === 'JSXOpeningElement') {
       const tag = nodeName(node.name);
       const authored = node.attributes.some(attribute => attribute.type === 'JSXAttribute' && nodeName(attribute.name) === 'data-plumb-source');
-      if (tag !== 'Fragment' && !tag.endsWith('.Fragment') && !authored) {
+      // hostOnly: stamp only DOM tags. A stamp on a component is a prop that component may reject (Headless UI's Menu
+      // renders a Fragment and throws on extra props).
+      const component = /^[A-Z]/.test(tag) || tag.includes('.');
+      if (tag !== 'Fragment' && !tag.endsWith('.Fragment') && !authored && !(options.hostOnly && component)) {
         const at = sourceSite({ file, text: code, lineStarts: starts }, node.start, '');
         text.appendLeft(node.end - (node.selfClosing ? 2 : 1), ` data-plumb-source="${encoded}:${at.line}:${at.column}#${hash}"`);
       }

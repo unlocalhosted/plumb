@@ -3,7 +3,7 @@ import { stampJSX } from './source-stamping.js';
 
 interface LoaderContext {
   resourcePath: string;
-  getOptions?: () => { root?: string };
+  getOptions?: () => { root?: string; hostOnly?: boolean };
   query?: unknown;
   callback(error: Error | null, code?: string, map?: unknown): void;
   async?: () => (error: Error | null, code?: string, map?: unknown) => void;
@@ -17,11 +17,12 @@ interface LoaderContext {
 export default function plumbStampLoader(this: LoaderContext, source: string | Buffer): void {
   const code = typeof source === 'string' ? source : source.toString('utf8');
   const file = this.resourcePath;
-  const root = this.getOptions?.().root ?? process.cwd();
+  const options = this.getOptions?.() ?? {};
+  const root = options.root ?? process.cwd();
   const path = relative(root, file).split(sep).join('/');
   if (!code.includes('<') || !path || path.startsWith('..') || /(?:^|\/)(?:node_modules|\.next|\.git)(?:\/|$)/.test(path)) return this.callback(null, code);
   try {
-    const stamped = stampJSX(code, file, path);
+    const stamped = stampJSX(code, file, path, { hostOnly: options.hostOnly === true || process.env.PLUMB_STAMP_HOST_ONLY === '1' });
     if (!stamped) return this.callback(null, code);
     this.callback(null, stamped.code, JSON.parse(stamped.map.toString()));
   } catch {
