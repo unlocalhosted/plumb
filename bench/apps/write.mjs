@@ -16,7 +16,7 @@ async function requestEvidence(url) {
 }
 export const hasExactEdit = rows => rows.some(row => row.reading?.marks?.some(mark => mark.choices?.length === 1 && mark.choices[0].edit));
 
-// Closed by default. Only the selected page's one exact overlay request can consume this allowance.
+// Closed by default. Only the selected page's one exact overlay request (the fix panel's Apply: POST swaps) can consume this allowance.
 export function writeGate(origin, failures) {
   let allowance, consumed = 0;
   return {
@@ -26,12 +26,15 @@ export function writeGate(origin, failures) {
     async route(route) {
       const request = route.request(), url = new URL(request.url());
       if (request.method() === 'GET' && !/\/(apply|try|refresh)$/.test(url.pathname)) return route.continue();
+      // The fix panel reads the page and its places with POSTs that write nothing (src/session/methods.ts: read: true).
+      if (request.method() === 'POST' && url.origin === origin && /^\/__plumb\/(page|places|system|batch|recipes\/preview)$/.test(url.pathname)) return route.continue();
       let body;
       try { body = request.postDataJSON(); } catch { /* A malformed write never passes. */ }
       if (allowance && consumed === 0 && request.method() === 'POST' && url.origin === origin
-        && url.pathname === '/__plumb/apply' && !url.search && request.frame().page() === allowance.page
+        && url.pathname === '/__plumb/swaps' && !url.search && request.frame().page() === allowance.page
         && body?.file === allowance.file && body.hash === allowance.hash && body.edits?.length === 1
-        && body.edits[0].id === allowance.id) {
+        // the swap names the element's own site, the mark the class text's: the edit itself (from, to) must agree
+        && ['from', 'to'].every(key => body.edits[0][key] === allowance[key])) {
         consumed++; allowance = undefined;
         return route.continue();
       }
@@ -89,7 +92,8 @@ async function target(page, i, props) {
 
 // Reads and token picks remain in the real overlay. Node only checks source bytes and invokes the CLI.
 export async function writeInteraction(page, rows, app, scratch, gate, remember) {
-  const dialog = page.locator('plumb-overlay').getByRole('dialog');
+  // pin() opens blueprint with the element's own cause in hand in the fix panel (the reading card is retired)
+  const panel = page.locator('plumb-overlay').locator('.fx');
   const candidates = rows.flatMap(row => (row.reading?.marks ?? []).flatMap(mark =>
     mark.choices?.length === 1 && mark.choices[0].edit ? [{ row, mark }] : []));
   // Try differing token values first, but prove the difference with computed styles below.
@@ -115,22 +119,31 @@ export async function writeInteraction(page, rows, app, scratch, gate, remember)
       await window.__plumb.overlay.read(element, true);
       await window.__plumb.overlay.pin(element);
     }, row.i);
-    await dialog.waitFor({ timeout: 10_000 });
+    const held = panel.locator('.cause .cls');
+    await held.waitFor({ timeout: 20_000 });
     const reading = await page.evaluate(i => window.__plumb.overlay.read(window.__plumbVerification.elements[i]), row.i);
     const index = reading.marks.findIndex(current => current.key === mark.key && current.choices?.length === 1
       && current.choices[0].edit?.id === mark.choices[0].edit.id);
     assert.ok(index >= 0, 'Exact edit must still exist in the current reading');
-    // Marks on animated SVG elements can overlap in the diagram. Use the overlay's
-    // accessible keyboard control, without forcing a pointer through another mark.
-    const marker = dialog.locator(`.pin[data-i="${index}"]`);
-    await marker.focus();
-    await marker.press('Enter');
-    await page.waitForFunction(() => !document.querySelector('plumb-overlay')?.shadowRoot?.querySelector('.read')?.classList.contains('swapping'));
-    const token = dialog.locator('.read .opt[data-pick="0"]');
-    await token.waitFor({ state: 'visible' });
-    await token.focus(); await token.press('Enter');
-    await page.waitForTimeout(250);
-    const preview = await target(page, row.i, mark.props);
+    // The element's causes are stepped through with the panel's own Next until the selected one is in hand.
+    for (let step = 0; step < 30 && (await held.innerText()).trim() !== mark.text; step++) {
+      await panel.locator('.nav .next').click();
+      await page.waitForTimeout(150);
+    }
+    assert.equal((await held.innerText()).trim(), mark.text, 'The selected cause must be reachable in the fix panel');
+    // The suggested token is tried as soon as the cause is in hand; pick the selected one when it is another option.
+    const name = String(mark.choices[0].name);
+    const option = panel.locator('button.sp').filter({ has: page.locator('.tk, .v', { hasText: new RegExp(`(^|-)${name.replace(/^[a-z]+-/, '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`) }) }).first();
+    await panel.locator('button.sp[aria-pressed="true"]').waitFor({ timeout: 10_000 });
+    if (await option.count() && (await option.getAttribute('aria-pressed')) !== 'true') await option.click();
+    // The panel eases a tried value in; read it once the computed values stop moving.
+    let preview = await target(page, row.i, mark.props);
+    for (let settled = 0; preview && settled < 3;) {
+      await page.waitForTimeout(150);
+      const next = await target(page, row.i, mark.props);
+      settled = next && JSON.stringify(next.values) === JSON.stringify(preview.values) ? settled + 1 : 0;
+      preview = next;
+    }
     if (!preview) { detached++; return null; }
     return { ...candidate, reading, before, preview, changesStyle: JSON.stringify(before.values) !== JSON.stringify(preview.values) };
   };
@@ -184,15 +197,14 @@ export async function writeInteraction(page, rows, app, scratch, gate, remember)
         });
       } catch { /* A full page reload also proves the dev update. */ }
     }, { i: row.i, file: reading.file });
-    gate.arm({ page, file: reading.file, hash: reading.hash, id: edit.id });
-    const button = dialog.getByRole('button', { name: 'Write 1 edit', exact: true });
-    await button.focus();
+    gate.arm({ page, file: reading.file, hash: reading.hash, line: mark.line, column: mark.column, from: edit.from, to: edit.to });
+    const button = panel.locator('button.take');
     page.on('response', onResponse);
     const started = performance.now();
     const [apply] = await Promise.all([
-      page.waitForResponse(response => response.url() === new URL('/__plumb/apply', page.url()).href
+      page.waitForResponse(response => response.url() === new URL('/__plumb/swaps', page.url()).href
         && response.request().method() === 'POST', { timeout: 30_000 }),
-      button.press('Enter'),
+      button.click(),
     ]);
     result.apply = { status: apply.status(), body: await apply.json(), requests: gate.consumed };
     assert.ok(apply.ok(), `Overlay apply returned ${apply.status()}`);
@@ -210,14 +222,14 @@ export async function writeInteraction(page, rows, app, scratch, gate, remember)
           for (const index of path) element = element?.children[index];
           if (!element?.isConnected || element.localName !== tag || !window.__plumb?.overlay) return null;
           const root = document.querySelector('plumb-overlay')?.shadowRoot;
-          const pending = root?.querySelector('.state')?.textContent ?? '';
+          const pending = root?.querySelector('.fx .said .t')?.textContent ?? '';
           // Let the overlay's own reread finish before asking for independent proof.
-          if (!/Applied 1 change/.test(pending) || /Reload to see/.test(pending)) return null;
+          if (!/^Changed /.test(pending) || /Reload to see/.test(pending)) return null;
           const reading = await window.__plumb.overlay.read(element, true);
           const probe = window.__plumbWriteProbe;
           const updated = !probe || probe.element !== element || probe.updates.length || element.getAttribute('class') !== classes;
           if (reading.status !== 'ready' || reading.hash === hash || reading.marks.some(mark => mark.key === key && mark.text === from)
-            || !updated || !/Applied 1 change/.test(pending) || /Reload to see/.test(pending)) return null;
+            || !updated || !/^Changed /.test(pending) || /Reload to see/.test(pending)) return null;
           // Closing removes any retained preview. Computed values must come from the app's own updated source.
           window.__plumb.overlay.close();
           await new Promise(resolveSettle => setTimeout(resolveSettle, 250));
