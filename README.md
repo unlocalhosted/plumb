@@ -104,9 +104,9 @@ When the theme has no step that would settle a rule, the option is a new token, 
 
 Every write is checked against the file on disk: the file's hash, that it still parses, that the class is still there as written. A stale file is refused with "This file changed after we checked it", never overwritten. Writes land in place, so the dev server's hot reload picks them up, and each one returns an undo handle.
 
-If your app hydrates HTML that was prerendered outside the dev server (a build script that bakes pages into `index.html`), that HTML has no stamps, and React reports a hydration mismatch in dev and renders the page again. Use `plumb({ stamp: false })` there; React Plumber then finds positions through React's owner chain instead.
+Stamping is not optional: `plumb()` goes before the plugin that compiles JSX (`react()`) in `plugins`, and the dev server stops with that line to move when it does not. If your app hydrates HTML that was prerendered outside the dev server (a build script that bakes pages into `index.html`), that HTML has no stamps: React reports a hydration mismatch in development and renders the page again, so in development serve the page from the dev server. When a page renders without stamps, the setup panel says "Source stamping isn’t running" with the fix, and clicking your own elements finds nothing rather than a guess.
 
-React Plumber writes only to a position it has proven. In development, `plumb()` stamps each JSX tag in your tracked sources with its file, line and column, in the served code only; your files are untouched and production builds carry nothing. React Plumber then confirms the position against the file on disk before it edits. When it can't prove a position, it says why instead of guessing.
+React Plumber writes only to a position it has proven. In development, `plumb()` and `withPlumb()` stamp each DOM tag in your JSX with its file, line and column, in the served code only; your files are untouched and production builds carry nothing. React Plumber then confirms the position against the file on disk before it edits. When it can't prove a position, it says why instead of guessing.
 
 ### 3. Craft in CI
 
