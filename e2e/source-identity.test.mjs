@@ -32,6 +32,7 @@ import { Generated } from './__generated__/Gen.jsx';
 import { Vendored } from '../../../third_party/Vendored.jsx';
 import { Builder } from './features/build/Builder.jsx';
 import { Out } from './out/Out.jsx';
+import { Global } from './scratch/Global.jsx';
 export default function App() {
   return <main id="main">
     <Button>Workspace</Button>
@@ -42,6 +43,7 @@ export default function App() {
     <Vendored />
     <Builder />
     <Out />
+    <Global />
     <svg id="icon" viewBox="0 0 10 10"><path id="path" d="M0 0h10v10z" /></svg>
     <Menu>
       <MenuButton id="menu-button">Open</MenuButton>
@@ -71,6 +73,10 @@ async function fixture(t) {
   await file(app, 'src/features/build/Builder.jsx', 'export function Builder() { return <q id="builder">Builder</q>; }\n');
   await file(app, 'src/out/Out.jsx', 'export function Out() { return <s id="out">Out</s>; }\n');
   await file(app, 'build/Built.jsx', 'export function Built() { return <b id="built">Built</b>; }\n');
+  // Git's own ignore rules, wherever they are written: a global excludes file names the scratch folder.
+  await file(top, '.config/ignore', 'scratch/\n');
+  spawnSync('git', ['config', 'core.excludesFile', join(top, '.config/ignore')], { cwd: top });
+  await file(app, 'src/scratch/Global.jsx', 'export function Global() { return <small id="global">Global</small>; }\n');
   await file(app, 'src/App.jsx', APP);
   await file(app, 'src/vendor/Legacy.jsx', 'export function Legacy() { return <i id="vendored">Legacy</i>; }\n');
   await file(app, 'src/__generated__/Gen.jsx', 'export function Generated() { return <b id="generated">Generated</b>; }\n');
@@ -108,6 +114,7 @@ test('the yours rule decides stamps, and a stamped workspace or alias element re
   assert.match(await stampIn('/@fs/' + join(top, 'third_party/Vendored.jsx')), /^third_party\/Vendored\.jsx:/);
   // Not yours: generated (git-ignored) and installed, even when the import sits in src/ or the package is a dependency.
   assert.equal(await stampIn('/src/__generated__/Gen.jsx'), null);
+  assert.equal(await stampIn('/src/scratch/Global.jsx'), null, 'ignored by the global excludes file');
   assert.equal(await stampIn('/build/Built.jsx'), null, 'an output folder at the package top level');
   assert.match(await stampIn('/src/features/build/Builder.jsx'), /^apps\/web\/src\/features\/build\/Builder\.jsx:/, 'a folder of yours named build');
   assert.match(await stampIn('/src/out/Out.jsx'), /^apps\/web\/src\/out\/Out\.jsx:/, 'a folder of yours named out');
@@ -159,6 +166,6 @@ test('the yours rule decides stamps, and a stamped workspace or alias element re
   const vendored = await locate('#third-party');
   assert.equal(vendored.location, null); assert.equal(vendored.detail?.file, '../../third_party/Vendored.jsx', JSON.stringify(vendored).slice(0, 300));
   // Not yours answers from the owner stack: a generated or installed file never carries a stamp.
-  for (const selector of ['#generated', '#installed']) assert.equal(await page.getAttribute(selector, 'data-plumb-source'), null, selector);
+  for (const selector of ['#generated', '#installed', '#global']) assert.equal(await page.getAttribute(selector, 'data-plumb-source'), null, selector);
   assert.deepEqual(errors, []);
 });

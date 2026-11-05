@@ -1,8 +1,10 @@
 // Which files are yours, and the one name a stamp gives each of them (docs/briefs/stamping-everywhere.md, "Codebase
 // shapes"). The Vite transform, the Next loader and the server's resolve all answer through here, so a stamp written by
 // one host is read back by the server the same way for every app in the repository.
+import { execFile } from 'node:child_process';
 import { readFile, realpath, stat as statFile } from 'node:fs/promises';
 import { dirname, join, relative, resolve, sep } from 'node:path';
+import { promisify } from 'node:util';
 import { matchesPath } from './collect/pattern.js';
 import type { PlumbConfig } from './config.js';
 import { repoOf } from './project-facts/index.js';
@@ -67,9 +69,44 @@ async function realRepository(root: string): Promise<string> {
   return entry.real;
 }
 
-// Git's ignore rules, read in process: every transform asks, and a `git check-ignore` per file would cost more than
-// the stamp. .gitignore files from the repository root down to the file's folder, plus .git/info/exclude; the last
-// matching rule wins, a deeper file after a shallower one; a rule on a folder covers everything in it.
+// Git's ignore rules are git's to state: for a checkout, one `git ls-files --others --ignored --exclude-standard
+// --directory` per repository lists every ignored file and folder, including rules from core.excludesFile and
+// .git/info/exclude. The listing is kept until an ignore file on the asked path changes, and a file written after the
+// listing is asked about with `git check-ignore`. Without git (no checkout, or no git on PATH) the rules in the
+// .gitignore files are read in process, as a fallback that knows only the common pattern forms.
+const run = promisify(execFile);
+interface Listing { at: number; stamps: Map<string, string>; ignored: Promise<Set<string> | null>; asked: Map<string, Promise<boolean>> }
+const listings = new Map<string, Listing>();
+async function gitIgnored(repo: string, path: string): Promise<boolean> {
+  const folders = [''];
+  for (const segment of path.split('/').slice(0, -1)) folders.push(folders.at(-1) ? `${folders.at(-1)}/${segment}` : segment);
+  const ignoreFiles = [join(repo, '.git/info/exclude'), ...folders.map(folder => join(repo, folder, '.gitignore'))];
+  if (!await exists(join(repo, '.git'))) return parsedIgnore(ignoreFiles, folders, path);
+  const stamps = await Promise.all(ignoreFiles.map(mtime));
+  let listing = listings.get(repo);
+  const stale = !listing || Date.now() - listing.at > ttl && ignoreFiles.some((file, index) => listing!.stamps.get(file) !== undefined && listing!.stamps.get(file) !== stamps[index]);
+  if (stale) {
+    listing = { at: Date.now(), stamps: new Map(), asked: new Map(),
+      ignored: run('git', ['ls-files', '--others', '--ignored', '--exclude-standard', '--directory', '-z'], { cwd: repo, maxBuffer: 64 * 1024 * 1024 })
+        .then(({ stdout }) => new Set(stdout.split('\0').filter(Boolean).map(entry => entry.replace(/\/$/, ''))), () => null) };
+    listings.set(repo, listing);
+  }
+  ignoreFiles.forEach((file, index) => listing!.stamps.set(file, stamps[index]!));
+  const ignored = await listing!.ignored;
+  if (ignored === null) return parsedIgnore(ignoreFiles, folders, path);
+  if (ignored.has(path) || folders.some(folder => folder && ignored.has(folder))) return true;
+  // Written after the listing: git has not been asked about it yet.
+  const written = await mtime(join(repo, path));
+  if (written === '-' || Number(written) < listing!.at) return false;
+  let asked = listing!.asked.get(path);
+  if (!asked) {
+    asked = run('git', ['check-ignore', '-q', '--', path], { cwd: repo }).then(() => true, error => (error as { code?: number }).code === 1 ? false : parsedIgnore(ignoreFiles, folders, path));
+    listing!.asked.set(path, asked);
+  }
+  return asked;
+}
+async function mtime(path: string): Promise<string> { try { return String((await statFile(path)).mtimeMs); } catch { return '-'; } }
+
 interface Rule { glob: string; negated: boolean; folderOnly: boolean }
 const ignoreFiles = new Map<string, { at: number; rules: Promise<Rule[]> }>();
 async function rulesIn(file: string): Promise<Rule[]> {
@@ -89,11 +126,9 @@ function parseIgnore(text: string): Rule[] {
   }
   return rules;
 }
-async function gitIgnored(repo: string, path: string): Promise<boolean> {
-  const folders = [''];
-  for (const segment of path.split('/').slice(0, -1)) folders.push(folders.at(-1) ? `${folders.at(-1)}/${segment}` : segment);
+/** The fallback: .git/info/exclude then each .gitignore from the root down; the last matching rule wins; a rule on a folder covers everything in it. */
+async function parsedIgnore(files: string[], folders: string[], path: string): Promise<boolean> {
   let ignored = false;
-  const files = [join(repo, '.git/info/exclude'), ...folders.map(folder => join(repo, folder, '.gitignore'))];
   const bases = ['', ...folders];
   for (const [index, file] of files.entries()) {
     const base = bases[index]!, inside = base ? path.slice(base.length + 1) : path;
