@@ -108,6 +108,33 @@ test('At rest one line counts problems and causes; Enter puts a cause in hand an
   assert.deepEqual(errors, []);
 });
 
+// One action, one write. Enter on the focused Use button is the button's own press; the panel's Enter (take) must not
+// fire for the same key, or the fix is written twice (two POST swaps, two history steps for one choice).
+test('Enter on the focused Use button writes once: one POST swaps, one history step', { timeout: 120000 }, async (t) => {
+  const launched = await browser(t); if (!launched) return;
+  const { root, url } = await fixture(t, PAGE);
+  const { page, errors, overlay } = await open(t, launched, url);
+  await countsAre(page, /2 problems · 1 fix/);
+  await page.keyboard.press('Enter');
+  await panel(overlay).locator('.cause .cls').filter({ hasText: 'p-[18px]' }).waitFor({ timeout: 10000 });
+  await panel(overlay).locator('.sp[aria-pressed="true"]').waitFor({ timeout: 10000 });
+  const posts = [];
+  page.on('request', (r) => { if (r.method() === 'POST' && /\/__plumb\/(swaps|apply|apply-all)$/.test(r.url())) posts.push(r.url().replace(/.*__plumb\//, '')); });
+  const take = panel(overlay).locator('button.take');
+  await take.waitFor({ timeout: 10000 });
+  await take.focus();
+  await take.press('Enter');
+  await said(overlay).filter({ hasText: /^Changed p-\[18px\] to p-s\d at 2 places$/ }).waitFor({ timeout: 10000 });
+  for (let i = 0; i < 100 && (await readFile(join(root, 'src/App.jsx'), 'utf8')).includes('p-[18px]'); i++) await page.waitForTimeout(100);
+  await page.waitForTimeout(500); // a second write, had there been one, is sent by now
+  assert.deepEqual(posts, ['swaps'], `one write per press: ${posts.join(', ')}`);
+  // the server's history says the same: one step
+  const token = await page.evaluate(() => [...document.querySelectorAll('script[type="module"][src]')].find((s) => /\/client\.js$/.test(s.src))?.dataset.plumbToken);
+  const history = await (await fetch(new URL('/__plumb/history', url), { headers: { 'x-plumb-token': token } })).json();
+  assert.equal(history.writes.length, 1, JSON.stringify(history.writes.map((w) => w.label)));
+  assert.deepEqual(errors, []);
+});
+
 test('A glow clicked puts its cause in hand; → skips to the next cause, ← back; Esc puts it down and the page is as it was', { timeout: 120000 }, async (t) => {
   const launched = await browser(t); if (!launched) return;
   const { url } = await fixture(t, PAGE.replace('<section id="b"', '<p id="w" className="text-body font-[650]">Weight</p>\n      <section id="b"'));
