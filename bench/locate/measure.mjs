@@ -143,7 +143,15 @@ export function truthOf(row) {
   return { ...row.stamp, kind, ownerFiles: row.ownerFiles, tag: row.tag };
 }
 
-const same = (a, b) => a.file === b.file;
+// A stamp names a file from the repository root (apps/www/components/x.tsx); locate answers from the project root
+// (components/x.tsx, or ../../packages/ui/x.tsx for a sibling package). One file, two spellings: compare by suffix.
+const sameFile = (answer, truth) => {
+  if (!answer || !truth) return false;
+  if (answer === truth) return true;
+  const bare = answer.replace(/^(?:\.\.\/)+/, '');
+  return truth === bare || truth.endsWith('/' + bare);
+};
+const same = (a, b) => sameFile(a.file, b.file);
 export function judge(row, truth) {
   if (!row.connected) return 'detached';
   if (!truth) return row.found ? 'unjudged-found' : 'unjudged-refused';
@@ -151,13 +159,14 @@ export function judge(row, truth) {
   if (truth.kind === 'unconfirmed') return row.found ? 'unjudged-found' : 'unjudged-refused';
   if (!row.found) return truth.kind === 'usage' ? 'usage-refused' : 'refused';
   if (truth.kind === 'usage') {
-    const atUsage = (l) => l === `${truth.file}:${truth.line}:${truth.column}`;
-    return `${row.file}:${row.line}:${row.column}` === `${truth.file}:${truth.line}:${truth.column}` || row.chain.some((l) => atUsage(l.split(' ')[0])) ? 'usage-match' : 'usage-miss';
+    const at = (file, line, column) => sameFile(file, truth.file) && Number(line) === truth.line && Number(column) === truth.column;
+    const atLink = (l) => { const m = /^(.*):(\d+):(\d+)$/.exec(l); return !!m && at(m[1], m[2], m[3]); };
+    return at(row.file, row.line, row.column) || row.chain.some((l) => atLink(l.split(' ')[0])) ? 'usage-match' : 'usage-miss';
   }
   if (same(row, truth)) {
     if (row.line === truth.line) return row.column === truth.column ? 'exact' : 'line-only';
     return 'file-only';
   }
-  return truth.ownerFiles.includes(row.file) ? 'wrong-file-ancestor' : 'wrong-file-other';
+  return truth.ownerFiles.some((owner) => sameFile(row.file, owner)) ? 'wrong-file-ancestor' : 'wrong-file-other';
 }
 export const inChain = (row, truth) => !!truth && row.found && row.chain.some((l) => l.split(' ')[0] === `${truth.file}:${truth.line}:${truth.column}`);

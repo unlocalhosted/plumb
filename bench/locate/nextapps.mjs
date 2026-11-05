@@ -142,7 +142,7 @@ export async function startNextApp(key, app, bundler, stamp) {
   // /__plumb does not have them (seen while measuring), so the bench sets them in the dev server's own environment,
   // to the values withPlumb computes.
   const handoff = major < 16 ? { PLUMBER_NEXT_DIST_DIR: join(app, '.next', 'dev'), PLUMBER_NEXT_SERVER_MODULE: new URL('../../dist/hosts/next-dev.js', import.meta.url).href } : {};
-  const env = { ...handoff, NEXT_TELEMETRY_DISABLED: '1', PLUMB_CACHE_DIR: join(app, '.plumb-cache'), PLUMB_BENCH_STAMP: stamp ? '1' : '0', PLUMB_STAMP_HOST_ONLY: stamp === 'host' ? '1' : '0', NODE_OPTIONS: '--max-old-space-size=6144', NEXT_FONT_GOOGLE_MOCKED_RESPONSES: fontMockPath, NODE_ENV: undefined, ...(def.env ?? {}) };
+  const env = { ...handoff, NEXT_TELEMETRY_DISABLED: '1', PLUMB_CACHE_DIR: join(app, '.plumb-cache'), PLUMB_BENCH_STAMP: stamp ? '1' : '0', ...(stamp ? {} : { PLUMB_INTERNAL_UNSTAMPED: '1' }), PLUMB_STAMP_HOST_ONLY: stamp === 'host' ? '1' : '0', NODE_OPTIONS: '--max-old-space-size=6144', NEXT_FONT_GOOGLE_MOCKED_RESPONSES: fontMockPath, NODE_ENV: undefined, ...(def.env ?? {}) };
   return spawnHost({
     file: join(app, 'node_modules/next/dist/bin/next'), args: ['dev', ...flag, '--hostname', '127.0.0.1', '--port', '0'],
     cwd: app, env, label: `${def.name} ${bundler} ${stamp ? 'stamped' : 'plain'}${stamp === 'host' ? ' (host tags only)' : ''}`, timeoutMs: 300_000,
