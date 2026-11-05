@@ -1,6 +1,6 @@
 // What the screens share. A screen is one file here (screens/NN-name.jsx): `export const n = NN`, the component as the
 // default export with its statics (.names, .lesson, .measure, .stage), and `export const handsOn = true` when the
-// viewer's own hand is the probe (principles/hands-on.jsx). A screen file takes the place of the old example for its n.
+// viewer's own hand is the probe. The stage (Principle.jsx) finds each screen by its number.
 
 // a person's face, with their company's logo on its corner in the brand's colour: brand = { color, logo, glyph? }
 export function Face({ src, brand, size = 'size-8' }) {

@@ -13,7 +13,7 @@ import sol from '../../media/people/person-10.jpg';
 
 export const n = 39;
 
-// sRGB (0–1) to OKLab, for a colour's lightness as the eye sees it (copied from examples.jsx)
+// sRGB (0–1) to OKLab, for a colour's lightness as the eye sees it
 const lin = (c) => (c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
 const toLab = (c) => {
   const [r, g, b] = c.map(lin), l = Math.cbrt(0.4122 * r + 0.5363 * g + 0.0514 * b), m = Math.cbrt(0.2119 * r + 0.6807 * g + 0.1074 * b), s2 = Math.cbrt(0.0883 * r + 0.2817 * g + 0.6299 * b);

@@ -23,7 +23,7 @@ import priya from '../../media/people/person-05.jpg';
 export const n = 36;
 export const handsOn = true;
 
-// plumber's marks, as hands-on.jsx draws them (copied: that file is shared): a shadow root with plumber's tokens
+// plumber's marks: a shadow root with plumber's tokens
 const TOKENS = '/__plumb/src/tokens.css';
 function MarksLayer({ children }) {
   const host = useRef(null);

@@ -27,7 +27,7 @@ import ines from '../../media/people/person-01.jpg';
 export const n = 64;
 export const handsOn = true;
 
-// plumber's marks layer (as hands-on.jsx's), and the marks this demo uses
+// plumber's marks layer (as the stage's PlumbLayer), and the marks this demo uses
 const TOKENS = '/__plumb/src/tokens.css';
 function MarksLayer({ children }) {
   const host = useRef(null);

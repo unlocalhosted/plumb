@@ -17,7 +17,7 @@ import owen from '../../media/people/person-08.jpg';
 export const n = 60;
 export const handsOn = true;
 
-// plumber's marks layer (as hands-on.jsx's): a shadow root with plumber's tokens, so plumber reading the example never reads them
+// plumber's marks layer (as the stage's PlumbLayer): a shadow root with plumber's tokens, so plumber reading the example never reads them
 const TOKENS = '/__plumb/src/tokens.css';
 function MarksLayer({ children }) {
   const host = useRef(null);

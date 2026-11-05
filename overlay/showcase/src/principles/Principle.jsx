@@ -7,13 +7,10 @@ import { createPortal } from 'react-dom';
 import { PRINCIPLES as ALL } from './catalogue.js';
 import { MERGED, shown } from './curation.js';
 import { ProbeStage } from './ProbeStage.jsx';
-import { HANDS_ON } from './hands-on.jsx';
 
 // the principles the showcase stages; the others are reached by their number and say why they have no screen
 const PRINCIPLES = ALL.filter((p) => shown(p.n));
-import { EXAMPLES } from './examples.jsx';
-
-// one file per screen (screens/kit.jsx): each takes the place of the old example for its number
+// one file per screen (screens/kit.jsx), found by its number
 const SCREENS = Object.fromEntries(Object.entries(import.meta.glob('./screens/[0-9]*.jsx', { eager: true })).map(([, m]) => [m.n, m]));
 import { Chevron } from '../icons.jsx';
 
@@ -386,10 +383,10 @@ const step = 'grid size-8 shrink-0 place-items-center rounded-full text-ink-mute
 // Taking plumber's side is the moment above; the whole page is the camera's frame (the bar and the list float over).
 export function Principle({ n }) {
   const p = ALL.find((x) => x.n === n);
-  // a hands-on example (the viewer's own hand is the probe, principles/hands-on.jsx) takes the screen where there is one
+  // a hands-on screen (the viewer's own hand is the probe: `export const handsOn = true`) takes the screen where there is one
   const screen = SCREENS[n];
-  const handsOn = shown(n) && (screen ? !!screen.handsOn : !!HANDS_ON[n]);
-  const Example = shown(n) ? (screen?.default ?? HANDS_ON[n] ?? EXAMPLES[n]) : null;
+  const handsOn = shown(n) && !!screen?.handsOn;
+  const Example = shown(n) ? (screen?.default ?? null) : null;
   const plumb = usePlumber(Example);
   const { state } = plumb;
   const bar = useRef(null), sw = useRef(null), main = useRef(null);
@@ -495,7 +492,7 @@ function List({ current }) {
             {PRINCIPLES.filter((p) => p.section === s).map((p) => (
               <li key={p.n} className="flex">
                 <a href={`/rule/${p.n}`} aria-current={p.n === current ? 'page' : undefined} ref={p.n === current ? intoView : undefined}
-                  className={'-mx-2 flex min-w-0 flex-1 items-baseline gap-2 rounded-chip px-2 py-1 text-sm hover:bg-sunken active:bg-line ' + RING + ' ' + (p.n === current ? 'bg-sunken font-medium text-ink' : EXAMPLES[p.n] || HANDS_ON[p.n] ? 'text-ink' : 'text-ink-muted')}>
+                  className={'-mx-2 flex min-w-0 flex-1 items-baseline gap-2 rounded-chip px-2 py-1 text-sm hover:bg-sunken active:bg-line ' + RING + ' ' + (p.n === current ? 'bg-sunken font-medium text-ink' : SCREENS[p.n] ? 'text-ink' : 'text-ink-muted')}>
                   <span className="w-5 shrink-0 text-right text-ink-muted tabular-nums">{p.n}</span>
                   <span className="truncate" title={p.title}>{p.title}</span>
                 </a>
