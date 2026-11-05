@@ -677,6 +677,7 @@ export const TAG = {
   checking: 'Checking…',
   outside: 'Outside this project',
   notReact: 'Not drawn by React',
+  notHydrated: 'Still loading',
   library: 'Drawn by a library',
   noMap: 'No source map',
   notPlaced: 'Not in your code',

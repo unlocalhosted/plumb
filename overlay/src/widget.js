@@ -22,6 +22,7 @@ const WALK = { step: 48, pause: 260 };
 const reachable = (el) => { while (el?.ownerSVGElement) el = el.ownerSVGElement; return el; }; // px of scroll per level; ms of stillness that resets the travel
 const TIMING = { hoverRead: 90, light: 120, swap: 140, reread: [250, 600, 1200, 2400], starting: 1000, maxDrawing: 160, healthStarting: 1000, healthReady: 10000, dockFold: 4000, dockCount: 3000, side: 3000 };
 
+import { pageHydrated } from './hydration.js';
 import { DOCK, TAG } from './words.js'; // the dock's and the hover tag's words
 import { locate, componentOf } from './locate.js';
 import { request, post, forgetResolved } from './api.js';
@@ -63,6 +64,7 @@ function unplaced(found) {
     if (!detail.file) try { file = decodeURIComponent(new URL(file, location.href).pathname).replace(/^\/@fs/, ''); } catch {}
     return { short: TAG.outside, message: `Written in \`${file}\`, outside this project's source. Add it to \`source\` to check it.` };
   }
+  if (found?.reason === 'not-hydrated') return { short: TAG.notHydrated, message: 'The page is still loading. Try again in a moment.' };
   if (found?.reason === 'no-fiber') return { short: TAG.notReact, message: 'Not drawn by React, so it isn’t in your code.' };
   if (found?.reason === 'runtime-only-frames' || found?.reason === 'owner-unproven')
     return { short: TAG.library, message: 'A library drew this, and the line of your code that used it can’t be proven. Point at the component around it.' };
@@ -646,6 +648,9 @@ class PlumbOverlay extends HTMLElement {
     try { const h = await request('health', {}); next = h?.status === 'ready' ? 'ready' : h?.status === 'failed' ? 'failed' : 'starting'; this.#reason = h?.diagnostic ?? h?.error ?? ''; }
     catch (error) { next = error?.failed ? 'failed' : error?.starting ? 'starting' : 'lost'; this.#reason = error?.message ?? ''; }
     if (!this.isConnected) return;
+    // the engine is ready before the page is: until React has hydrated it there is nothing to read (bounded: a page
+    // without React, or one that takes longer than half a minute, is shown ready as it is)
+    if (next === 'ready' && !pageHydrated() && performance.now() - this.#startedAt < 30000) next = 'starting';
     if (next !== this.#health) this.#blueprint?.healthChanged(next);
     if (next === 'ready' && this.#health !== 'ready') this.#ready?.read();
     this.#health = next; this.#dock();
