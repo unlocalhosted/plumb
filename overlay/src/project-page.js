@@ -9,6 +9,7 @@
 import { LANGUAGE_CSS } from './language.js';
 import { SCALE_CSS } from './scale-marks.js';
 import { GRAVITY_CSS, Gravity } from './gravity.js';
+import { SPECIMEN_CSS, Specimen } from './specimen.js';
 
 const nf = new Intl.NumberFormat('en');
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
@@ -25,6 +26,7 @@ const PAGE_CSS = `
   h1 { margin: 10px 0 14px; max-width: 26ch; font: var(--pl-page-display); letter-spacing: var(--pl-tracking-display); text-wrap: balance; }
   h1 .n { font-variant-numeric: tabular-nums; }
   h1 .off { color: var(--pl-coral); } h1 .on { color: var(--pl-mint); }
+  #specimen:not(:empty) { display: block; margin-top: var(--pl-page-space-1); }
   .lede { max-width: 60ch; margin: 0 0 var(--pl-page-space-1); font: var(--pl-page-body); color: var(--pl-ink-2); text-wrap: pretty; }
   @media (max-width: 720px) { main { padding: var(--pl-page-space-1) var(--pl-space-6) var(--pl-page-space-3); } .top { padding: 10px 16px; } .top .read { display: none; } h1 { font: var(--pl-page-display-narrow); } }
 `;
@@ -57,10 +59,11 @@ function typeScale(size) {
 export function mountProjectPage(host, data, tokens) {
   const doc = host.ownerDocument, root = host.attachShadow({ mode: 'open' });
   const type = typeScale(data.size);
-  root.innerHTML = `<style>${tokens}${LANGUAGE_CSS}${SCALE_CSS}${GRAVITY_CSS}${PAGE_CSS}</style>
+  root.innerHTML = `<style>${tokens}${LANGUAGE_CSS}${SCALE_CSS}${GRAVITY_CSS}${SPECIMEN_CSS}${PAGE_CSS}</style>
   <header class="top"><span class="pl-rainbow"></span><b>React Plumber</b><span class="pl-tag">${esc(data.project)}</span><span class="read">${nf.format(data.files)} files read</span><button type="button" class="pl-act quiet" id="scheme">Day</button></header>
-  <main>${type.html}<div id="gravity"></div></main>`;
+  <main>${type.html}<div id="gravity"></div><div id="specimen"></div></main>`;
   const gravity = new Gravity(root.getElementById('gravity'), { steps: type.steps, strays: type.strays });
+  const specimen = new Specimen(root.getElementById('specimen'), { steps: type.steps, strays: type.strays });
 
   // the body around the root shows on overscroll and at the edges, so it takes the desk colour the root resolves
   doc.body.style.margin = '0';
@@ -74,5 +77,5 @@ export function mountProjectPage(host, data, tokens) {
   setScheme(asked ? asked === 'dark' : doc.defaultView.matchMedia('(prefers-color-scheme: dark)').matches);
   doc.defaultView.addEventListener('message', (e) => { if (e.origin === doc.defaultView.location.origin && e.data?.scheme) setScheme(e.data.scheme === 'dark'); });
   button.addEventListener('click', () => setScheme(host.dataset.scheme !== 'dark'));
-  return { root, gravity };
+  return { root, gravity, specimen };
 }

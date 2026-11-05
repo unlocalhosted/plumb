@@ -38,6 +38,7 @@
   import { SHOW_CSS, chipsHtml, roll } from '../src/show.js';
   import { BLOCK_ICONS, BOXMODEL_CSS, boxModel, pointAt } from '../src/boxmodel.js';
   import { GRAVITY_CSS, Gravity } from '../src/gravity.js';
+  import { SPECIMEN_CSS, Specimen } from '../src/specimen.js';
   import { MARKS_CSS, MarkLayer, HEAT } from '../src/blueprint-marks.js';
   import CRAFTING from '../../docs/design/prototypes/data/crafting-ui.json';
   import { GLYPHS, GLYPH_CSS, glyph } from '../src/glyphs.js';
@@ -67,7 +68,7 @@
     { id: 'welcome', label: 'Welcome' },
     { label: 'Foundations', items: [['colour', 'Colour'], ['type', 'Typography'], ['spacing', 'Spacing'], ['shape', 'Shape'], ['elevation', 'Elevation'], ['motion', 'Motion'], ['charts', 'Charts'], ['texture', 'Texture'], ['icons', 'Iconography'], ['voice', 'Voice and tone'], ['tokens', 'Tokens']] },
     { label: 'Components', items: [['pill', 'Pill'], ['tag', 'Tag'], ['action', 'Action'], ['stepper', 'Stepper'], ['swatches', 'Swatches'], ['segments', 'Segments'], ['chip', 'Role chip'], ['step', 'Step'], ['place', 'Place'], ['count', 'Count'], ['readout', 'Readout']] },
-    { label: 'Patterns', items: [['boxmodel', 'Box model'], ['gravity', 'Gravity'], ['show', 'The clean-up show'], ['marks', 'Blueprint marks']] },
+    { label: 'Patterns', items: [['boxmodel', 'Box model'], ['gravity', 'Gravity'], ['specimen', 'Specimen'], ['show', 'The clean-up show'], ['marks', 'Blueprint marks']] },
     { label: 'Layout', items: [['card', 'Card'], ['page', 'Page']] },
     { label: 'Resources', items: [['gallery', 'Gallery'], ['briefs', 'Briefs'], ['source', 'Source']] },
   ];
@@ -512,6 +513,17 @@ rollCount(host.querySelector('.sc-count'), 621);</code></pre>`)],
       ],
     }),
 
+    specimen: () => ({
+      title: 'Specimen',
+      lede: 'Every size in your theme, set at that size, with the sizes typed by hand that should become it. It sits under Gravity on the project page: Gravity shows the shape, the specimen the detail.',
+      sections: [
+        sec('live', 'Live, on crafting-ui', `<p>Real numbers from crafting-ui. Point at a size typed by hand to see it snap to its step, or Tab to the list and use ↑ ↓.</p><div id="specimen-live"></div>`),
+        sec('rows', 'Rows', `<table class="tok"><thead><tr><th>Row</th><th>What it shows</th></tr></thead><tbody>${[['Step', 'A size of your theme: its name in lilac, its value, the sample at its size, and a mint bar of the places that use it. Places that type its exact value by hand show as a butter ring and a count.'], ['Unused step', 'The name and sample in ink-3, and a dashed outline where the bar would be.'], ['Typed by hand', 'Three places or more: its value, how it’s written, the sample at its size, and a coral square with its count.'], ['Also typed by hand', 'The rest of a step’s hand-typed sizes, in one line.']].map(([a, b]) => `<tr><td><b>${a}</b></td><td>${b}</td></tr>`).join('')}</tbody></table><p>The ladder keeps one order, largest first: a hand-typed size sits above its step when it’s bigger and below it when it’s smaller.</p>`),
+        sec('states', 'States', `<ul class="plain"><li><b>Arrival</b> the rows fade up once, the first time the list is on screen, within 400ms.</li><li><b>Point</b> a size typed by hand: its sample snaps to its step’s size on the spring, “→ sm” fades in, and the step lights in sky. Pointing a step lights the sizes that become it.</li><li><b>Keyboard</b> the hand-typed sizes are one Tab stop; ↑ ↓ Home End move between them. A mouse click never leaves a row lit.</li><li><b>Narrow</b> below 720px the value and count sit on one line above the sample.</li><li><b>Reduced motion</b> no fade and no snap motion; the new size shows at once.</li><li><b>Empty</b> with no sizes in your theme, nothing is drawn; the headline says so.</li></ul>`),
+        sec('read', 'Screen readers', `<p>Each row is a list item that reads as one sentence, like “15px, typed by hand in 65 places, as text-[0.9375rem]. Nearest on your scale: sm, 14px”. The samples and marks are hidden from readers.</p>`),
+      ],
+    }),
+
     show: () => ({
       title: 'The clean-up show',
       lede: 'When Plumber cleans up a page, it shows each change one at a time: a chip lights up, the places it changes are marked in its colour and pattern, its value rolls, and the page animates to the new value.',
@@ -701,7 +713,7 @@ root.innerHTML = \`&lt;style&gt;\${tokens}\${LANGUAGE_CSS}&lt;/style&gt;
 
   // ---------- the shell ----------
   const host = document.getElementById('system'), root = host.attachShadow({ mode: 'open' });
-  root.innerHTML = `<style>${tokens}${LANGUAGE_CSS}${PRIMITIVES_CSS}${SCALE_CSS}${SHOW_CSS}${GLYPH_CSS}${BOXMODEL_CSS}${GRAVITY_CSS}
+  root.innerHTML = `<style>${tokens}${LANGUAGE_CSS}${PRIMITIVES_CSS}${SCALE_CSS}${SHOW_CSS}${GLYPH_CSS}${BOXMODEL_CSS}${GRAVITY_CSS}${SPECIMEN_CSS}
     :host { display: block; color: var(--pl-ink); font: var(--pl-page-body); }
     a { color: inherit; }
     code { font: 500 12.5px/1.5 var(--pl-mono); }
@@ -933,6 +945,8 @@ root.innerHTML = \`&lt;style&gt;\${tokens}\${LANGUAGE_CSS}&lt;/style&gt;
     drawBoxes();
     const gv = page.querySelector('#gravity-live');
     if (gv) new Gravity(gv, { steps: CRAFTING.size.steps, strays: CRAFTING.size.strays.filter((x) => x.px >= 6) });
+    const sp = page.querySelector('#specimen-live');
+    if (sp) new Specimen(sp, { steps: CRAFTING.size.steps, strays: CRAFTING.size.strays.filter((x) => x.px >= 6) });
     page.querySelector('[data-show]')?.addEventListener('click', async (e) => {
       const chips = [...page.querySelectorAll('.chips-demo .sh-chip')], to = [16, 12, 24], marks = [...page.querySelectorAll('[data-role]')];
       e.target.disabled = true;
