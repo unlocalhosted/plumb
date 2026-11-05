@@ -3,6 +3,7 @@
 //   node bench/locate/run.mjs [--hosts vite-stamped,next-webpack] [--corpus showcase,algorecall,craftingattention]
 //                             [--screens 01,16] [--cap 150] [--out docs/verification/locate-baseline] [--ignore-memory]
 // Needs an existing `npm run build` (dist). One host at a time, each its own process tree on port 0, killed when done.
+import { existsSync, readFileSync } from 'node:fs';
 import { mkdir, rm } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { chromium } from 'playwright';
@@ -11,6 +12,9 @@ import { chromiumPath, exists, gitHead, repo, spawnHost, freeMemoryPercent, work
 import { measureWithRetry } from './measure.mjs';
 import { startNext, writeNextApp } from './next-app.mjs';
 import { buildReport, writeReport } from './report.mjs';
+import { runNextApps } from './nextapps-run.mjs';
+import { nextApps } from './nextapps.mjs';
+import { buildNextReport, writeNextReport } from './report-nextapps.mjs';
 import { copyShowcaseSource, findShowcase, screenUrl, writeViteProject } from './showcase.mjs';
 
 const SHOWCASE_HOSTS = ['vite-stamped', 'vite-unstamped', 'next-webpack', 'next-turbopack'];
@@ -24,8 +28,12 @@ function parse(argv) {
     else if (a === '--corpus') opts.corpus = next().split(',');
     else if (a === '--screens') opts.screens = next().split(',');
     else if (a === '--cap') opts.cap = Number(next());
-    else if (a === '--out') opts.out = resolve(next());
+    else if (a === '--out') { opts.out = resolve(next()); opts.outGiven = true; }
     else if (a === '--showcase') opts.showcase = resolve(next());
+    else if (a === '--merge') opts.merge = true;
+    else if (a === '--apps') opts.apps = next().split(',');
+    else if (a === '--routes') opts.routes = next().split(',');
+    else if (a === '--bundlers') opts.bundlers = next().split(',');
     else if (a === '--ignore-memory') opts.ignoreMemory = true;
     else if (a === '--help') { console.log(readHelp()); process.exit(0); }
     else throw new Error('Unknown argument ' + a);
@@ -107,8 +115,42 @@ async function runApp(browser, name, hosts, opts, sink) {
   }
 }
 
+async function mainNextApps(opts, argv) {
+  const free = freeMemoryPercent();
+  if (free < 20 && !opts.ignoreMemory) throw new Error(`Only ${free}% of memory is free; wait or free memory, or pass --ignore-memory.`);
+  const keys = opts.apps ?? Object.keys(nextApps);
+  for (const k of keys) if (!nextApps[k]) throw new Error('Unknown app ' + k);
+  const sink = { rows: [], screenFailures: [], nextapps: {} };
+  const started = Date.now();
+  const browser = await chromium.launch({ headless: true, executablePath: chromiumPath() });
+  const version = browser.version();
+  try { await runNextApps(browser, keys, opts, sink); } finally { await browser.close().catch(() => {}); await rm(workRoot, { recursive: true, force: true }).catch(() => {}); }
+  const out = opts.outGiven ? opts.out : join(repo, 'docs/verification/locate-real-next');
+  // --merge: keep the apps of an earlier report at the same path that this run did not redo, so the apps can run one at a time
+  if (opts.merge && existsSync(out + '.json')) {
+    const before = JSON.parse(readFileSync(out + '.json', 'utf8'));
+    for (const [k, v] of Object.entries(before.meta.nextapps ?? {})) if (!sink.nextapps[k]) {
+      sink.nextapps[k] = v;
+      sink.rows.push(...before.rows.filter((r) => r.corpus === k));
+      sink.screenFailures.push(...(before.meta.screenFailures ?? []).filter((x) => x.host.startsWith(k + ' ')));
+    }
+  }
+  const meta = {
+    date: new Date().toISOString().slice(0, 10), commit: gitHead(), args: argv.join(' '), cap: opts.cap,
+    versions: `Chrome ${version}, node ${process.version}, apps run on their own pinned Next versions`, durationS: Math.round((Date.now() - started) / 1000),
+    jsonName: out.split('/').pop() + '.json', nextapps: sink.nextapps, screenFailures: sink.screenFailures,
+    seen: existsSync(join(here, 'seen-real-next.md')) ? readFileSync(join(here, 'seen-real-next.md'), 'utf8').trim() : null,
+  };
+  const report = buildNextReport(sink.rows, meta);
+  await mkdir(resolve(out, '..'), { recursive: true });
+  await writeNextReport(report, out);
+  log('wrote', out + '.json', out + '.md');
+  return report;
+}
+
 export async function main(argv = process.argv.slice(2)) {
   const opts = parse(argv);
+  if (opts.corpus.length === 1 && opts.corpus[0] === 'nextapps') return mainNextApps(opts, argv);
   if (!exists(join(repo, 'dist/hosts/vite.js'))) throw new Error('No dist: run `npm run build` first.');
   const free = freeMemoryPercent();
   if (free < 20 && !opts.ignoreMemory) throw new Error(`Only ${free}% of memory is free; a host plus Chrome would swap. Free memory, or pass --ignore-memory.`);

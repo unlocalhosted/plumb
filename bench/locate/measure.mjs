@@ -59,7 +59,10 @@ async function inPage({ rootSelector, cap, timeoutMs }) {
     for (let o = fiber?._debugOwner, i = 0; o && i < 64; o = o._debugOwner, i++) { const s = stampOf(o); if (s) owners.add(s.file); }
     // files of the components that own it and of the elements above it: a wrong answer in one of them is an "ancestor"
     for (let p = el.parentElement, i = 0; p && i < 64; p = p.parentElement, i++) { const s = stampOf(fiberOf(p)); if (s) owners.add(s.file); }
-    const row = { key, tag: el.localName, stamp: stampOf(fiber), ownerFiles: [...owners], connected: true };
+    // which kind of component drew it: a fiber owner is a client component; an owner without a fiber is a server component's debug info
+    const owner = fiber?._debugOwner;
+    const kind = !owner ? 'unknown' : owner.tag !== undefined && owner.stateNode !== undefined ? 'client' : 'server';
+    const row = { key, tag: el.localName, stamp: stampOf(fiber), domStamp: el.getAttribute('data-plumb-source'), kind, ownerFiles: [...owners], connected: true };
     if (!el.isConnected) { row.connected = false; rows.push(row); continue; }
     const first = await timed(el);
     row.coldMs = first.ms; Object.assign(row, first.result);
