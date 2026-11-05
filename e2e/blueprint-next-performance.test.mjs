@@ -61,7 +61,8 @@ async function sweep(page, requests) {
   const start = performance.now(); await page.keyboard.press('Alt+B');
   await page.waitForFunction(() => { const p = window.__plumb.overlay.progress; return p?.total > 200 && p.read === p.total; }, null, { timeout: 60000 });
   const elapsedMs = performance.now() - start;
-  await page.waitForFunction(() => document.querySelector('plumb-overlay').shadowRoot.querySelectorAll('.bp .hit').length === window.__plumb.overlay.progress.drift);
+  // problems are places (the 216 cards are one site), heat is per element: 216 cards and the header, each drawn once
+  await page.waitForFunction(() => document.querySelector('plumb-overlay').shadowRoot.querySelectorAll('.bp .hit').length === 217);
   const reading = await page.evaluate(() => ({ progress: window.__plumb.overlay.progress, labels: [...document.querySelector('plumb-overlay').shadowRoot.querySelectorAll('.bp .hit')].map(el => el.getAttribute('aria-label')).sort() }));
   return { elapsedMs, ...reading, ...counts(requests) };
 }
@@ -76,7 +77,8 @@ test('Next unstamped 216-card blueprint shares module reads, batches waves and i
     const requests = traffic(page);
     results[kind] = await sweep(page, requests);
     assert.ok(results[kind].progress.checked >= 216, JSON.stringify(results[kind]));
-    assert.equal(results[kind].progress.drift, 217);
+    assert.equal(results[kind].progress.drift, 2, 'two places: the cards\' one inline style and the header\'s');
+    assert.equal(results[kind].labels.length, 217, 'every one of the 217 elements is marked');
     if (kind === 'next') {
       assert.deepEqual(results.next.labels, results.vite.labels, 'same readings and label multiplicity as stamped source');
       // Each card also agrees with its authored site, rather than merely both hosts agreeing on a wrong count.
