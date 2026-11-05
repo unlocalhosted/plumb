@@ -280,6 +280,91 @@ When the host serves a subdirectory, add `--served-root apps/web` (relative to t
 
 The second command prints one script tag with the running server's port and token. Paste it into development pages only; rerun after restarting React Plumber, because the token changes. Without a running overlay server, install prints a startup command and a script template. CORS permits only the configured origin, including preflight for `x-plumb-token` and JSON requests. API routes still require the process token; the public client module contains no token. Existing `plumber serve` and stdio behavior are unchanged.
 
+## Compatibility and performance
+
+What finds the line an element came from, where, and how fast, as measured. Every number below comes from the locate
+bench (`npm run bench:locate`), which clicks each sampled element through the overlay's own `locate` and checks the
+answer against the exact position the stamp records. Measured 2026-11-05 and 2026-11-06 on an Apple-silicon laptop,
+Chrome 156, Node 25.
+
+### Hosts and bundlers
+
+| Host | Stamps | Notes |
+|---|---|---|
+| Vite 8, React 19 | yes, when `plumb()` runs before `react()`; otherwise the dev server stops with the line to move | the reference: 99.9 % exact on 40 showcase screens |
+| Next.js 15 and 16, webpack | yes, through `withPlumb` | answers once React has hydrated the page (see "Known limits") |
+| Next.js 16, Turbopack | yes, through `withPlumb` | |
+| `plumber serve --overlay` (any other host) | no build step of its own | finds lines from React's debug stacks only |
+| React 17 and 18 | read from React's own `_debugSource` | |
+
+A component tag never receives a stamp; only DOM tags do, as one `data-plumb-source` attribute, so a library that
+rejects extra props (Headless UI's `Menu` rendering a Fragment) renders as it does without React Plumber. The page with
+stamps is the page without them, apart from that attribute, on Vite and on Next.
+
+### What counts as your code
+
+A file is yours when its real path is inside the repository and it is neither an installed package nor generated
+(git-ignored, or a build folder at a package's top level). That covers pnpm, yarn and npm workspaces linked through
+`node_modules`, tsconfig path aliases (Nx), `file:` and `link:` packages and submodules inside the repository, vendored
+folders, and folders named `build` or `out` inside `src`. Installed packages, the pnpm store and Yarn's cache are not.
+`source` in the config overrides it. Not yet covered by a test: Yarn Plug'n'Play end to end, git submodules end to end,
+Bazel and Buck.
+
+### Elements a library drew
+
+An icon's `<svg>` and every `<path>` in it, a dialog's inner `<div>` in a portal, `next/link`'s `<a>`: these answer
+with the line where you used the library component, and the props you can change there (`className`, a `tone` or
+`variant` prop). The answer is accepted only when it lands exactly on a JSX opening the build recorded for that file
+version; otherwise React Plumber says the element is not in your code, and from which library. It never moves to a
+nearby line.
+
+### Measured on real Next.js apps
+
+Share of sampled elements whose source was found, before stamping on Next (0.3.0) and with DOM-tag stamps. When an
+answer was given it was the right file in every run (0 % wrong file).
+
+| App | Bundler | Found, 0.3.0 | Found, with stamps | Server components, 0.3.0 → with stamps |
+|---|---|---|---|---|
+| tailwindcss.com | Turbopack | 40.5 % | 97.5 % | 0 % → 97.3 % |
+| tailwindcss.com | webpack | 15.1 % | 88.8 % | 0 % → 97.3 % |
+| shadcn/ui (`apps/v4`) | Turbopack | 26.1 % | 45.2 % | |
+| magicui (`apps/www`) | Turbopack | 0 % | 20.2 % | |
+| magicui (`apps/www`) | webpack | 0 % | 18.5 % | |
+
+The "with stamps" column predates library-usage answers and the hydration wait, which target the rest: magicui and
+shadcn/ui are mostly library-drawn elements. These rows will be measured again on them.
+
+### Timings
+
+| Host | First click on a page | Later clicks (median / 95th percentile) |
+|---|---|---|
+| Vite, stamped (showcase screens) | 4.6 ms median | 1.8 / 3 ms |
+| Next, webpack, 0.3.0 (showcase screens) | 393 ms median | 11.2 / 21.4 ms |
+| Next, Turbopack, 0.3.0 (showcase screens) | 74 ms median | 15.3 / 28 ms |
+| Next, webpack, stamped (tailwindcss.com) | 15.2 ms median | 7.4 / 12 ms |
+| Next, Turbopack, stamped (tailwindcss.com) | 18.4 ms median | 8.1 / 15.8 ms |
+
+### Writes, hot reload and the network
+
+- Every write and every undo checks the file's content first; if your editor or a formatter changed it, the write is
+  refused with "the file changed" and nothing is overwritten. With an editor saving every 150 ms during writes, the
+  file always parsed and no edit was lost.
+- A write replaces the file whole, through a temporary file renamed into place, so a watcher never reads half of it.
+- A write carries a key; a retry after a dropped response returns the first result instead of writing twice.
+- Writes are taken one at a time; two pages writing one file take turns, and both show the result.
+- A question asked before a hot update never answers about the old code: it is asked again once the page has the
+  update, on Vite and on Next (webpack and Turbopack). A question for an element that goes away stops at once.
+- If the dev server restarts mid-request, the overlay gets a named failure, not a hang.
+
+### Known limits
+
+- On Next webpack, the first load compiles on request and Next may reload the page once before React hydrates it. Until
+  it has, a click finds no React element; the overlay waiting for hydration is in progress.
+- Writes are taken one at a time across the whole project, so a long write to one file delays a write to another.
+- On Next, hot updates are seen when Next reports them built (about 80 ms before the page applies them); answers come
+  from disk and stale positions are refused, so this costs a retry, never a wrong line.
+- Undo history lives in the running dev server; after a restart, older writes can't be undone from the overlay.
+
 ## Layer 9 surfaces
 
 ```sh
