@@ -118,3 +118,24 @@ build has to vendor them into `overlay/showcase/src/media/` and add them to CRED
 Licences were read from Unsplash pages through a fetch tool. The aurora and the tram were checked on their own photo
 pages. The rest come from search listings that marked them free, not Unsplash+, so re-check each photo page when
 vendoring.
+
+## Credits
+
+Each licence read on the photo's own Unsplash page (2026-11-05): Unsplash License, free, not Unsplash+. The comp's grandad-and-child photo (photo-1602178041104, Tim Mossholder) could not be traced to its page, so #23 uses s23-man-child.jpg instead.
+
+- s21-risotto.jpg: Imad 786 (@imad8321), https://unsplash.com/photos/6DXfs2sl5pQ, Unsplash License
+- s18-aurora.jpg: Niklas Jonasson (@niklasjonasson), https://unsplash.com/photos/ZPbfvIN4NXs, Unsplash License
+- s18-tram.jpg: Daniel van den Berg (@danielvandenberg), https://unsplash.com/photos/0SoFH0IkBHg, Unsplash License
+- s18-wind-farm.jpg: Jesse De Meulenaere (@jessefotograaf), https://unsplash.com/photos/a-group-of-wind-turbines-in-the-ocean--IaTiYqRTL8, Unsplash License
+- s23-bixby-bridge.jpg: Spencer Davis (@spencerdavis), https://unsplash.com/photos/4AsQEW-6Lk0, Unsplash License
+- s23-sunset-walk.jpg: Kevin Delvecchio (@kevindelvecchio), https://unsplash.com/photos/silhouette-photo-of-five-person-walking-on-seashore-during-golden-hour-7noZJ_4nhU8, Unsplash License
+- s23-dusk-father-son.jpg: Dvir Adler (@dvir_adler), https://unsplash.com/photos/silhouette-of-man-and-kid-on-seashore-uSj_ce8vtyE, Unsplash License
+- s23-coast-aerial.jpg: Thomas Ciszewski (@coc6), https://unsplash.com/photos/aerial-view-photography-of-mountain-near-body-of-water-erApmfRX7eo, Unsplash License
+- s23-dark-coast.jpg: George Cox (@georgeallancox), https://unsplash.com/photos/green-mountain-beside-body-of-water-during-daytime-NFpvXe7sSJM, Unsplash License
+- s23-coast-road.jpg: Iris Papillon (@papillon), https://unsplash.com/photos/birds-eye-photography-of-road-near-ocean-FuxRM_jOFHY, Unsplash License
+- s23-family-surf.jpg: Natalya Zaritskaya (@goodmood77), https://unsplash.com/photos/man-woman-and-child-holding-hands-on-seashore-SIOdjcYotms, Unsplash License
+- s23-baby-shoulders.jpg: Lawrence Crayton (@lawrencecrayton), https://unsplash.com/photos/family-on-beach-with-baby-cf1cN3ofKUM, Unsplash License
+- s23-mother-son.jpg: Xavier Mouton Photographie (@mxcaptures), https://unsplash.com/photos/ry_sD0P1ZL0, Unsplash License
+- s23-girl-floats.jpg: Leo Rivas (@leorivas), https://unsplash.com/photos/girl-playing-beside-body-of-water-during-daytime-R_BLOGXpsOg, Unsplash License
+- s23-cove-waterfall.jpg: Braxton Stuntz (@braxton), https://unsplash.com/photos/seashore-during-daytime-XAB31T9hgkM, Unsplash License
+- s23-man-child.jpg: Cameorn Steele (@cameronsteele), https://unsplash.com/photos/man-holding-a-child-on-a-sunny-beach-aa7D-kZZbfs, Unsplash License
