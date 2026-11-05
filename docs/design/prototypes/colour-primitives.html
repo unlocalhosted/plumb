@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Colour primitives</title>
+<style>
+  /* Layer 1 of Plumber's own UI (docs/design/onboarding.md): the colour system, before any component. Three complete
+     directions, each in day and night side by side, with three treatments for the action. Every pairing shows its
+     contrast, measured here, against the bar: words 4.5:1 on their ground, marks (dots, rings) 3:1, pill lettering
+     4.5:1 on its pill. Owner picks; nothing is built on these until then. */
+  :root { color-scheme: light; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #ececee; color: #18181b; font: 14px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; -webkit-font-smoothing: antialiased; }
+  .top { position: sticky; top: 0; z-index: 3; display: flex; align-items: center; gap: 16px; padding: 12px 28px; background: rgb(236 236 238 / .9); backdrop-filter: blur(10px); border-bottom: 1px solid rgb(0 0 0 / .08); }
+  .top h1 { margin: 0; font-size: 15px; }
+  .tabs { display: flex; gap: 2px; padding: 3px; border-radius: 9px; background: rgb(0 0 0 / .06); }
+  .tabs button { font: 600 12.5px/1 system-ui; padding: 8px 12px; border: 0; border-radius: 7px; background: none; color: #555; cursor: pointer; }
+  .tabs button[aria-selected="true"] { background: #fff; color: #111; box-shadow: 0 1px 2px rgb(0 0 0 / .12); }
+  .why { max-width: 1240px; margin: 20px auto 0; padding: 0 28px; color: #444; }
+  .why b { color: #111; }
+  .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; max-width: 1240px; margin: 16px auto 48px; padding: 0 28px; }
+  @media (max-width: 1000px) { .pair { grid-template-columns: 1fr; } }
+
+  /* one theme panel: everything inside reads only the direction's tokens */
+  .panel { border-radius: 16px; overflow: hidden; background: var(--ground); color: var(--text-1); box-shadow: 0 1px 2px rgb(0 0 0 / .08), 0 20px 50px -30px rgb(0 0 0 / .4); }
+  .panel .head { display: flex; align-items: center; justify-content: space-between; padding: 14px 20px; border-bottom: 1px solid var(--line); font: 600 12px/1 ui-monospace, monospace; color: var(--text-2); letter-spacing: .04em; text-transform: uppercase; }
+  .sec { padding: 18px 20px; border-bottom: 1px solid var(--line); }
+  .sec:last-child { border-bottom: 0; }
+  .sec h3 { margin: 0 0 10px; font: 600 11px/1 ui-monospace, monospace; letter-spacing: .06em; text-transform: uppercase; color: var(--text-3); }
+  .swatches { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+  .sw { display: grid; grid-template-columns: 30px 1fr; gap: 2px 10px; align-items: center; font-size: 12.5px; }
+  .sw i { grid-row: span 2; width: 30px; height: 30px; border-radius: 8px; box-shadow: inset 0 0 0 1px var(--line); }
+  .sw b { font-weight: 600; }
+  .sw small { color: var(--text-2); font-family: ui-monospace, monospace; font-size: 11px; }
+  .ratio { font-family: ui-monospace, monospace; font-size: 11px; padding: 0 5px; border-radius: 4px; }
+  .ratio.ok { color: var(--text-2); }
+  .ratio.fail { background: #ff2d2d; color: #fff; }
+  .reason { margin: 8px 0 0; font-size: 12.5px; color: var(--text-2); }
+
+  /* the preview: a slice of the page in this direction */
+  .hero { font: 700 30px/1.1 system-ui; letter-spacing: -.03em; margin: 0 0 8px; }
+  .num { display: inline-block; padding: 0 8px; border-radius: 8px; font-variant-numeric: tabular-nums; }
+  .lede { margin: 0; color: var(--text-2); font-size: 14px; }
+  .card { margin-top: 14px; border-radius: 12px; background: var(--surface); box-shadow: inset 0 0 0 1px var(--line); overflow: hidden; }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px; padding: 12px 14px 0; }
+  .pill { display: inline-flex; align-items: center; padding: 2px 9px; border-radius: 7px; font: 500 12px/18px ui-monospace, monospace; }
+  .card svg { display: block; width: 100%; height: auto; }
+  .foot { display: flex; align-items: center; gap: 14px; padding: 12px 14px; border-top: 1px solid var(--line); }
+  .count { font: 700 30px/1 ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+  .foot span { color: var(--text-2); font-size: 13px; }
+  .foot .grow { flex: 1; }
+  .tip { position: absolute; padding: 8px 10px; border-radius: 9px; background: var(--tip); color: var(--tip-text); font-size: 12px; line-height: 17px; box-shadow: 0 8px 24px -10px rgb(0 0 0 / .5); }
+  .tip b { font-family: ui-monospace, monospace; display: block; }
+
+  /* the action, in three treatments; every state laid out in a row */
+  .acts { display: grid; gap: 10px; }
+  .act-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+  .act-row > span:first-child { width: 132px; font-size: 12px; color: var(--text-2); }
+  .btn { position: relative; height: 36px; padding: 0 16px; border: 0; border-radius: 8px; font: 600 13px/1 system-ui; cursor: pointer; transition: transform 140ms cubic-bezier(.25,.46,.45,.94), filter 160ms ease, background 160ms ease; }
+  .btn small { display: block; position: absolute; left: 0; right: 0; top: 40px; font: 500 10px/1 ui-monospace, monospace; color: var(--text-3); }
+  .btn-wrap { position: relative; padding-bottom: 16px; }
+  .btn:active, .btn.pressed { transform: scale(.97); }
+  .btn:disabled { cursor: not-allowed; }
+  .btn.focus { outline: 2px solid var(--select); outline-offset: 2px; }
+  /* sky */
+  .a-sky { background: var(--select); color: var(--on-select); }
+  .a-sky:hover, .a-sky.hover { background: var(--select-hover); }
+  .a-sky:disabled { background: var(--raised); color: var(--text-3); }
+  /* ink */
+  .a-ink { background: var(--text-1); color: var(--ground); }
+  .a-ink:hover, .a-ink.hover { filter: brightness(var(--ink-hover)); }
+  .a-ink:disabled { background: var(--raised); color: var(--text-3); filter: none; }
+  /* ink with the rainbow edge: the four data hues as a 3px band along the bottom, the one place the rainbow lives */
+  .a-rain { background: var(--text-1); color: var(--ground); overflow: hidden; }
+  .a-rain::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: linear-gradient(90deg, var(--off) 0 25%, var(--soft) 25% 50%, var(--on) 50% 75%, var(--select) 75%); }
+  .a-rain:hover, .a-rain.hover { filter: brightness(var(--ink-hover)); }
+  .a-rain:disabled { background: var(--raised); color: var(--text-3); filter: none; }
+  .a-rain:disabled::after { opacity: .35; }
+</style>
+</head>
+<body>
+<header class="top">
+  <h1>Colour primitives</h1>
+  <nav class="tabs" role="tablist" aria-label="Direction">
+    <button role="tab" data-d="instrument" aria-selected="true">A · Instrument</button>
+    <button role="tab" data-d="toy" aria-selected="false">B · Toy</button>
+    <button role="tab" data-d="signal" aria-selected="false">C · Signal</button>
+  </nav>
+</header>
+<p class="why" id="why"></p>
+<div class="pair" id="pair"></div>
+
+<script>
+/* Each direction is one complete set, day and night. Roles:
+   ground / surface / raised / line       where things sit
+   text-1 / text-2 / text-3               words: titles, supporting, quiet (text-3 never carries meaning alone)
+   select (+ on-select, select-hover)     selection, focus, measuring (and the action, in the sky treatment)
+   on / off / soft                        verdicts: on your system, off it, your value typed by hand
+   name                                   tags that name a step or a component
+   each hue also has a pill pair: a fill and the ink lettered on it */
+const D = {
+  instrument: {
+    why: '<b>A · Instrument.</b> The UI is calm, cool, true-neutral greys, so nothing in the chrome competes with the drawing. One blue does selection and focus (the reference\'s selection blue). The four verdict and name hues are vivid and appear only where the drawing says something. Day uses deep candy tones, not pastels, so marks clear 3:1 on white.',
+    day: { ground: '#f6f6f7', surface: '#ffffff', raised: '#ececef', line: 'rgb(16 16 24 / .09)', 'text-1': '#111116', 'text-2': '#55555f', 'text-3': '#8c8c97',
+      select: '#1a6ff0', 'on-select': '#ffffff', 'select-hover': '#1260d6', on: '#0b9f5f', off: '#e5402f', soft: '#c98200', name: '#6b47f5',
+      fills: { on: ['#d4f5e5', '#04402a'], off: ['#ffe0dc', '#5c1208'], soft: ['#ffefc7', '#4a3000'], name: ['#e9e2ff', '#2a1670'], select: ['#dbe9ff', '#0a2d66'] },
+      tip: '#111116', 'tip-text': '#ffffff', 'ink-hover': '1.35' },
+    night: { ground: '#1c1c1e', surface: '#242427', raised: '#303034', line: 'rgb(255 255 255 / .08)', 'text-1': '#f5f5f7', 'text-2': '#a3a3ad', 'text-3': '#6e6e78',
+      select: '#4c9dff', 'on-select': '#04162e', 'select-hover': '#6bb0ff', on: '#5fe0a1', off: '#ff7a68', soft: '#ffcb52', name: '#ad99ff',
+      fills: { on: ['#5fe0a1', '#03301c'], off: ['#ff7a68', '#3a0a04'], soft: ['#ffcb52', '#3a2700'], name: ['#ad99ff', '#1b0f45'], select: ['#4c9dff', '#04162e'] },
+      tip: '#f5f5f7', 'tip-text': '#111116', 'ink-hover': '.88' },
+  },
+  toy: {
+    why: '<b>B · Toy.</b> The brief\'s spirit: friendly like a toy, precise like an instrument. Warm neutrals, and the candy hues live in the chrome too: every chip, tag and count is a soft pastel lettered in its own deep ink. Night is the brief\'s charcoal and pastels as written; day keeps the pastels for fills and deepens the marks so they stay visible.',
+    day: { ground: '#fbf9f5', surface: '#ffffff', raised: '#f1eee7', line: 'rgb(40 30 10 / .09)', 'text-1': '#1a1714', 'text-2': '#625c52', 'text-3': '#9a9387',
+      select: '#2b86e8', 'on-select': '#ffffff', 'select-hover': '#1f74d0', on: '#14a46a', off: '#ee4f3d', soft: '#bd7a00', name: '#7a55f0',
+      fills: { on: ['#c9f2dd', '#0b3d26'], off: ['#ffd3cd', '#5c160e'], soft: ['#ffeab0', '#4a3400'], name: ['#e3dcff', '#2b1a6b'], select: ['#c5e6fd', '#0b3554'] },
+      tip: '#1a1714', 'tip-text': '#fbf9f5', 'ink-hover': '1.4' },
+    night: { ground: '#1c1c1e', surface: '#26262a', raised: '#323236', line: 'rgb(255 255 255 / .07)', 'text-1': '#f4f3ef', 'text-2': '#a8a6a0', 'text-3': '#76736c',
+      select: '#7cc4fa', 'on-select': '#08263d', 'select-hover': '#9bd3fc', on: '#7ee0b0', off: '#ff7a6b', soft: '#ffd166', name: '#b9a6ff',
+      fills: { on: ['#7ee0b0', '#06301d'], off: ['#ff7a6b', '#3a0b06'], soft: ['#ffd166', '#3a2a00'], name: ['#b9a6ff', '#1d1240'], select: ['#7cc4fa', '#08263d'] },
+      tip: '#f4f3ef', 'tip-text': '#1c1c1e', 'ink-hover': '.88' },
+  },
+  signal: {
+    why: '<b>C · Signal.</b> The loudest: pure neutrals (true white, true black) and full-strength flat hues, lettered in white or black for maximum punch, like a signal board. Colour reads instantly and from across the room; the cost is that it can feel aggressive next to a calm product UI.',
+    day: { ground: '#ffffff', surface: '#ffffff', raised: '#f0f0f0', line: 'rgb(0 0 0 / .1)', 'text-1': '#000000', 'text-2': '#4d4d4d', 'text-3': '#8a8a8a',
+      select: '#0a5cff', 'on-select': '#ffffff', 'select-hover': '#004ae0', on: '#00a35c', off: '#f2361f', soft: '#c07800', name: '#6a35ff',
+      fills: { on: ['#007d45', '#ffffff'], off: ['#d6261a', '#ffffff'], soft: ['#ffb400', '#000000'], name: ['#6a35ff', '#ffffff'], select: ['#0a5cff', '#ffffff'] },
+      tip: '#000000', 'tip-text': '#ffffff', 'ink-hover': '1.6' },
+    night: { ground: '#000000', surface: '#0e0e10', raised: '#1c1c1f', line: 'rgb(255 255 255 / .1)', 'text-1': '#ffffff', 'text-2': '#a6a6a6', 'text-3': '#6b6b6b',
+      select: '#3d8bff', 'on-select': '#ffffff', 'select-hover': '#5c9dff', on: '#00e07a', off: '#ff4b33', soft: '#ffc400', name: '#9466ff',
+      fills: { on: ['#00e07a', '#000000'], off: ['#ff4b33', '#000000'], soft: ['#ffc400', '#000000'], name: ['#9466ff', '#000000'], select: ['#3d8bff', '#000000'] },
+      tip: '#ffffff', 'tip-text': '#000000', 'ink-hover': '.85' },
+  },
+};
+
+/* contrast, WCAG 2: relative luminance of sRGB; rgb(… / a) is composited onto its ground first */
+function rgbOf(c, under = [255, 255, 255]) {
+  if (c.startsWith('#')) { const h = c.slice(1); return [0, 2, 4].map(i => parseInt(h.slice(i, i + 2), 16)); }
+  const m = c.match(/rgb\(([\d.]+) ([\d.]+) ([\d.]+)(?: \/ ([\d.]+))?\)/);
+  const a = m[4] === undefined ? 1 : +m[4];
+  return [1, 2, 3].map((i, k) => +m[i] * a + under[k] * (1 - a));
+}
+const lum = rgb => { const [r, g, b] = rgb.map(v => { v /= 255; return v <= .03928 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4; }); return .2126 * r + .7152 * g + .0722 * b; };
+const ratio = (a, b) => { const [x, y] = [lum(rgbOf(a)), lum(rgbOf(b))].sort((p, q) => q - p); return (x + .05) / (y + .05); };
+const badge = (fg, bg, need) => { const r = ratio(fg, bg); return `<span class="ratio ${r >= need ? 'ok' : 'fail'}" title="needs ${need}:1">${r.toFixed(1)}:1</span>`; };
+
+function panel(name, t, mode) {
+  const vars = Object.entries(t).filter(([k]) => typeof t[k] === 'string').map(([k, v]) => `--${k}:${v}`).join(';');
+  const sw = (key, label, need, on = t.surface) => `<div class="sw"><i style="background:${t[key]}"></i><b>${label}</b><small>${t[key]} ${badge(t[key], on, need)}</small></div>`;
+  const pill = (k, text) => `<span class="pill" style="background:${t.fills[k][0]};color:${t.fills[k][1]}">${text}</span>`;
+  const pillRatio = k => badge(t.fills[k][1], t.fills[k][0], 4.5);
+  // a slice of Gravity: the line, five rings, the dots in three verdicts, one ring pointed at (hatch and size pill)
+  let dots = ''; const rnd = (() => { let a = 7; return () => (a = a * 16807 % 2147483647) / 2147483647; })();
+  const cols = [[60, 'off', 9], [96, 'soft', 14], [128, 'off', 7], [160, 'soft', 10], [196, 'off', 12], [236, 'off', 6], [276, 'soft', 5], [318, 'off', 8], [380, 'off', 4], [420, 'off', 6]];
+  for (const [x, k, n] of cols) for (let i = 0; i < n; i++) dots += `<rect x="${x + (rnd() - .5) * 6}" y="${70 + (rnd() - .5) * (24 + n * 5)}" width="3.5" height="3.5" fill="${t[k]}"/>`;
+  const rings = [[96, 'xs', 1], [160, 'sm', 1], [236, 'md', 1], [300, 'lg', 1], [400, 'xl', 0]].map(([x, n, used], i) => {
+    const hot = i === 1, r = 11;
+    return `${hot ? `<clipPath id="c${name}${mode}"><circle cx="${x}" cy="70" r="${r}"/></clipPath><g clip-path="url(#c${name}${mode})" stroke="${t.select}" stroke-width="1" opacity=".6">${Array.from({ length: 10 }, (_, k) => `<line x1="${x - 22 + k * 5}" y1="${70 + r}" x2="${x - 22 + k * 5 + 22}" y2="${70 - r}"/>`).join('')}</g>` : ''}` +
+      `<circle cx="${x}" cy="70" r="${r}" fill="${used ? t.select : 'none'}" fill-opacity="${used ? .14 : 0}" stroke="${used || hot ? t.select : t['text-3']}" stroke-width="${hot ? 2 : 1.5}" ${used ? '' : 'stroke-dasharray="3 3"'}/>` +
+      `<rect x="${x - 13}" y="${70 + r + 6}" width="26" height="16" rx="5" fill="${used ? t.fills.name[0] : t.raised}"/><text x="${x}" y="${70 + r + 17.5}" text-anchor="middle" font-family="ui-monospace,monospace" font-size="10" font-weight="600" fill="${used ? t.fills.name[1] : t['text-3']}">${n}</text>` +
+      (hot ? `<rect x="${x - 11}" y="${70 - r - 22}" width="22" height="16" rx="5" fill="${t.fills.select[0]}"/><text x="${x}" y="${70 - r - 10.5}" text-anchor="middle" font-family="ui-monospace,monospace" font-size="10" font-weight="600" fill="${t.fills.select[1]}">14</text>` : '');
+  }).join('');
+  const states = (cls, label) => `<div class="act-row"><span>${label}</span>` +
+    ['rest', 'hover', 'pressed', 'focus'].map(s => `<span class="btn-wrap"><button class="btn ${cls} ${s === 'rest' ? '' : s}">Snap to your scale<small>${s}</small></button></span>`).join('') +
+    `<span class="btn-wrap"><button class="btn ${cls}" disabled>Snap to your scale<small>disabled</small></button></span></div>`;
+  return `<section class="panel" style="${vars}">
+    <div class="head"><span>${mode}</span><span>${name}</span></div>
+    <div class="sec"><h3>Where things sit, and words</h3><div class="swatches">
+      ${sw('ground', 'Ground', 1, t.ground)}${sw('surface', 'Surface', 1)}${sw('raised', 'Raised', 1)}
+      ${sw('text-1', 'Titles', 4.5)}${sw('text-2', 'Supporting', 4.5)}${sw('text-3', 'Quiet', 3)}</div>
+      <p class="reason">Words are measured on the surface. Quiet text is for hints and must never carry meaning alone.</p></div>
+    <div class="sec"><h3>Meaning: marks on the surface (3:1) and pills (4.5:1)</h3><div class="swatches">
+      ${sw('select', 'Selected, focus', 3)}${sw('on', 'On your system', 3)}${sw('off', 'Off your system', 3)}${sw('soft', 'Yours, typed by hand', 3)}${sw('name', 'Names', 3)}</div>
+      <div class="legend" style="padding:12px 0 0">${pill('on', 'on your scale ' + pillRatio('on'))}${pill('soft', 'typed by hand ' + pillRatio('soft'))}${pill('off', 'not on your scale ' + pillRatio('off'))}${pill('name', 'text-sm ' + pillRatio('name'))}${pill('select', '14 ' + pillRatio('select'))}</div></div>
+    <div class="sec"><h3>In use</h3>
+      <p class="hero"><span class="num" style="background:${t.fills.off[0]};color:${t.fills.off[1]}">576</span> places type a size by hand. <span class="num" style="background:${t.fills.on[0]};color:${t.fills.on[1]}">45</span> use your scale.</p>
+      <p class="lede">Your theme has 10 text sizes; your code uses 49.</p>
+      <div class="card" style="position:relative">
+        <div class="legend">${pill('on', 'uses your scale')}${pill('soft', 'yours, typed by hand')}${pill('off', 'not on your scale')}</div>
+        <svg viewBox="0 0 470 140"><line x1="20" x2="450" y1="70" y2="70" stroke="${t.line}"/>${dots}${rings}</svg>
+        <div class="tip" style="left:178px;top:58px"><b>text-sm · 14px</b>15 places use it<br>86 places sit close to it</div>
+        <div class="foot"><span class="count">45</span><span>places use your scale</span><span class="grow"></span><button class="btn a-sky">Snap to your scale</button></div>
+      </div></div>
+    <div class="sec"><h3>The action: three treatments, every state</h3><div class="acts">
+      ${states('a-sky', 'Sky (the selection blue)')}${states('a-ink', 'Solid ink')}${states('a-rain', 'Ink, rainbow edge')}</div>
+      <p class="reason">Sky: the action and the selection share one colour, so "what you can do" and "what you picked" read as one hand. Ink: colour stays only for meaning; the action is the strongest neutral. Rainbow edge: ink, with the four meaning hues as one band, the single playful mark.</p></div>
+  </section>`;
+}
+
+function show(d) {
+  document.querySelectorAll('.tabs button').forEach(b => b.setAttribute('aria-selected', b.dataset.d === d));
+  document.getElementById('why').innerHTML = D[d].why;
+  document.getElementById('pair').innerHTML = panel(d, D[d].day, 'Day') + panel(d, D[d].night, 'Night');
+  try { localStorage.setItem('colour-primitives', d); } catch {}
+}
+document.querySelectorAll('.tabs button').forEach(b => b.addEventListener('click', () => show(b.dataset.d)));
+let first = 'instrument'; try { first = localStorage.getItem('colour-primitives') || first; } catch {}
+show(first);
+</script>
+</body>
+</html>

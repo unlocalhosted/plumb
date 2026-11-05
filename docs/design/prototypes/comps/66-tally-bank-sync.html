@@ -1,0 +1,179 @@
+<!doctype html>
+<!-- COMP, #66 Spinners: wait ~200ms, then hold ≥ ~500ms (hands-on; docs/craft/taste-checklist.md, group 4). Tally,
+     bookkeeping for a small design studio, on its bank feeds. The lesson lives in the business account's Sync now: the
+     viewer pressed it, the reply came in 122ms, and the spinner showed on the press and went with the reply, a blink.
+     plumber's marks: a tag over the button, and under the window the two lanes (reply, spinner) on the time ruler with
+     the rule's 200ms line. The Reply switch (as it comes / held 1.4s) is the showcase's control and sits with the
+     marks. Slate's tokens. Throwaway. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Tally · Bank feeds (comp)</title>
+<style>
+  :root {
+    --surface: #fff; --sunken: #f3f5f9; --ink: #12233d; --ink-muted: #5a6779; --ink-subtle: #6f7c90;
+    --line: rgb(18 35 61 / 0.09); --line-strong: rgb(18 35 61 / 0.14); --accent: #5550d8; --accent-soft: #efeefd; --accent-deep: #3631a6;
+    --positive: #0f6f58; --positive-soft: #e5f4ef; --caution: #965a03; --caution-soft: #fcf1dd; --negative: #b02a3a;
+    --board: #e9edf2; --board-dot: #d3d9e2;
+    --window: 0 1px 2px rgb(18 35 61 / 0.05), 0 8px 24px rgb(18 35 61 / 0.08), 0 24px 64px rgb(18 35 61 / 0.12);
+    --pl-sky: #2a7fd0; --pl-off: #bf3a1e; --pl-on: #1a9460; --pl-ink-2: #6b665c; --pl-ink-3: #b3ad9f; --pl-halo: rgb(255 255 255 / 0.9);
+    --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, monospace;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 48px 48px 32px; background: var(--board);
+    background-image: radial-gradient(var(--board-dot) 1px, transparent 1px); background-size: 16px 16px;
+    font: 14px/20px Inter, -apple-system, system-ui, sans-serif; color: var(--ink); -webkit-font-smoothing: antialiased; }
+  .num { font-variant-numeric: tabular-nums; }
+  .stage { position: relative; padding-bottom: 132px; }
+  .window { width: 1000px; height: 548px; display: grid; grid-template-columns: 204px 1fr; border-radius: 12px; overflow: hidden; background: var(--surface); box-shadow: var(--window), 0 0 0 0.5px rgb(18 35 61 / 0.18); }
+
+  .side { background: #f7f8fa; border-right: 0.5px solid var(--line-strong); display: flex; flex-direction: column; padding: 12px 10px; gap: 1px; }
+  .lights { display: flex; gap: 7px; padding: 4px 6px 14px; }
+  .lights i { width: 11px; height: 11px; border-radius: 50%; background: #d9dde3; box-shadow: inset 0 0 0 0.5px rgb(0 0 0 / 0.08); }
+  .org { display: flex; align-items: center; gap: 8px; padding: 2px 8px 12px; font-weight: 600; font-size: 13.5px; }
+  .org b { width: 22px; height: 22px; border-radius: 6px; background: #c8a23a; color: #fff; display: grid; place-items: center; font-size: 11px; }
+  .org small { display: block; font-weight: 400; font-size: 11.5px; color: var(--ink-subtle); line-height: 14px; }
+  .nav { display: flex; align-items: center; gap: 9px; height: 28px; padding: 0 8px; border-radius: 6px; color: var(--ink-muted); font-size: 13px; white-space: nowrap; }
+  .nav svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 1.5; flex: none; }
+  .nav .n { margin-left: auto; font-size: 11.5px; color: var(--ink-subtle); }
+  .nav .n.due { color: var(--caution); font-weight: 500; }
+  .nav.on { background: rgb(18 35 61 / 0.06); color: var(--ink); font-weight: 500; }
+  .label { margin: 14px 8px 4px; font-size: 11px; font-weight: 500; color: var(--ink-subtle); }
+  .cash { margin-top: auto; padding: 10px 8px; border-radius: 8px; background: #fff; box-shadow: inset 0 0 0 0.5px var(--line-strong); }
+  .cash span { font-size: 11.5px; color: var(--ink-subtle); }
+  .cash b { display: block; font-size: 16px; font-weight: 600; letter-spacing: -0.01em; }
+  .cash small { font-size: 11.5px; color: var(--positive); }
+
+  .main { display: flex; flex-direction: column; min-width: 0; }
+  .top { display: flex; align-items: center; gap: 10px; height: 52px; padding: 0 22px; border-bottom: 0.5px solid var(--line); }
+  .top h1 { margin: 0; font-size: 15px; font-weight: 600; }
+  .top .meta { font-size: 12.5px; color: var(--ink-subtle); }
+  .top .btn { margin-left: auto; }
+  .btn { height: 30px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 0 11px; border-radius: 7px; font-size: 13px; font-weight: 500; box-shadow: inset 0 0 0 1px var(--line-strong); color: var(--ink-muted); background: #fff; }
+  .btn svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 1.7; }
+  .content { padding: 16px 22px 0; }
+  .accts { display: flex; flex-direction: column; border-radius: 12px; box-shadow: 0 0 0 0.5px var(--line-strong), 0 1px 2px rgb(18 35 61 / 0.04); overflow: hidden; }
+  .acct { display: grid; grid-template-columns: 38px 1fr 150px 130px 124px; align-items: center; gap: 14px; height: 66px; padding: 0 16px; border-top: 0.5px solid var(--line); }
+  .acct:first-child { border: 0; background: linear-gradient(180deg, #fbfbff, #f7f7fe); }
+  .bank { width: 38px; height: 38px; border-radius: 9px; display: grid; place-items: center; color: #fff; font-size: 12px; font-weight: 700; letter-spacing: 0.02em; box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.18); }
+  .acct .w b { display: block; font-size: 14px; font-weight: 500; }
+  .acct .w span { font-size: 12px; color: var(--ink-subtle); }
+  .acct .w .fresh { color: var(--positive); font-weight: 500; }
+  .acct .bal { text-align: right; }
+  .acct .bal b { display: block; font-size: 15px; font-weight: 600; letter-spacing: -0.01em; }
+  .acct .bal span { font-size: 12px; color: var(--ink-subtle); }
+  .acct .btn { width: 124px; }
+  .acct .btn.sub { color: var(--ink-subtle); box-shadow: none; }
+  .sec { display: flex; align-items: baseline; gap: 10px; margin: 22px 0 8px; }
+  .sec b { font-size: 14px; font-weight: 600; }
+  .sec span { font-size: 12.5px; color: var(--ink-subtle); }
+  .sec .new { margin-left: 0; height: 18px; padding: 0 6px; border-radius: 9px; background: var(--accent); color: #fff; font-size: 11px; font-weight: 600; display: inline-grid; place-items: center; }
+  .tx { display: grid; grid-template-columns: 56px 1fr 170px 100px; align-items: center; gap: 12px; height: 44px; padding: 0 4px; border-bottom: 0.5px solid var(--line); font-size: 13px; }
+  .tx .d { color: var(--ink-subtle); font-size: 12.5px; }
+  .tx .p small { display: block; font-size: 11.5px; color: var(--ink-subtle); line-height: 14px; }
+  .tx .amt { text-align: right; font-weight: 500; }
+  .tx .amt.in { color: var(--positive); }
+  .cat { justify-self: start; height: 24px; padding: 0 9px; border-radius: 6px; display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 500; }
+  .cat.sug { background: var(--accent-soft); color: var(--accent-deep); }
+  .cat.sug::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+  .cat.none { box-shadow: inset 0 0 0 1px var(--line-strong); color: var(--ink-subtle); border: 0; }
+  .tx.new { background: linear-gradient(90deg, rgb(85 80 216 / 0.06), transparent 60%); }
+
+  .marks { position: absolute; inset: 0; pointer-events: none; z-index: 10; }
+  .mk { position: absolute; }
+  .tag { display: flex; align-items: center; height: 20px; padding: 0 6px; border-radius: 6px; font: 500 11px/1 var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; color: #fff; background: var(--pl-off); box-shadow: 0 0 0 1px var(--pl-halo); transform: translate(-100%, -50%); }
+  .cursor { position: absolute; width: 18px; height: 24px; filter: drop-shadow(0 1px 1.5px rgb(0 0 0 / 0.3)); }
+  .r-lab { position: absolute; font: 600 10.5px/14px system-ui, sans-serif; color: var(--pl-ink-2); white-space: nowrap; }
+  .r-num { position: absolute; font: 400 10.5px/14px var(--mono); color: var(--pl-ink-2); transform: translateX(-50%); }
+  .ctl { position: absolute; display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--ink-subtle); }
+  .ctl .seg { display: flex; padding: 2px; border-radius: 6px; background: var(--sunken); box-shadow: inset 0 0 0 1px var(--line); }
+  .ctl .seg span { padding: 1px 8px; border-radius: 5px; }
+  .ctl .seg span.on { background: #fff; color: var(--ink); box-shadow: 0 1px 2px rgb(18 35 61 / 0.1); }
+</style>
+</head>
+<body>
+<div class="stage">
+<div class="window">
+  <aside class="side">
+    <div class="lights"><i></i><i></i><i></i></div>
+    <div class="org"><b>H</b><span>Halden &amp; Co.<small>Tally · FY 2025/26</small></span></div>
+    <div class="nav"><svg viewBox="0 0 16 16"><path d="M2.5 13.5V7l5.5-4.5L13.5 7v6.5z"/></svg>Overview</div>
+    <div class="nav on"><svg viewBox="0 0 16 16"><path d="M2 6 8 2.5 14 6M3.5 6.5v5.5M6.5 6.5v5.5M9.5 6.5v5.5M12.5 6.5v5.5M2 13.5h12"/></svg>Bank feeds<span class="n num">14</span></div>
+    <div class="nav"><svg viewBox="0 0 16 16"><path d="M4 2h6l3 3v9H4z"/><path d="M6.5 8.5h4M6.5 11h4"/></svg>Invoices<span class="n due num">2 due</span></div>
+    <div class="nav"><svg viewBox="0 0 16 16"><rect x="2.5" y="3.5" width="11" height="9" rx="1.5"/><path d="M2.5 6.5h11"/></svg>Bills</div>
+    <div class="nav"><svg viewBox="0 0 16 16"><path d="M3 13V8M8 13V3M13 13V6"/></svg>Reports</div>
+    <div class="label">This quarter</div>
+    <div class="nav"><svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="5.5"/><path d="M8 5v6M6 6.5h3a1.2 1.2 0 0 1 0 2.4H7a1.2 1.2 0 0 0 0 2.4h3"/></svg>VAT return<span class="n num">7 Feb</span></div>
+    <div class="cash"><span>Cash in the bank</span><b class="num">£31,902.15</b><small class="num">+£4,210 this month</small></div>
+  </aside>
+
+  <main class="main">
+    <div class="top"><h1>Bank feeds</h1><span class="meta">3 accounts</span><span class="btn"><svg viewBox="0 0 16 16"><path d="M8 3v10M3 8h10"/></svg>Connect a bank</span></div>
+    <div class="content">
+      <div class="accts">
+        <div class="acct"><span class="bank" style="background:linear-gradient(150deg,#2f5f9e,#1d3f73)">NB</span>
+          <span class="w"><b>Business current</b><span class="num">Northfield Bank •••• 4821 · <span class="fresh">Synced just now</span></span></span>
+          <svg viewBox="0 0 150 34" width="150" height="34"><path d="M0 26 L15 24 L30 27 L45 18 L60 20 L75 14 L90 16 L105 10 L120 13 L135 6 L150 8" fill="none" stroke="var(--accent)" stroke-width="1.6" stroke-linejoin="round"/><path d="M0 26 L15 24 L30 27 L45 18 L60 20 L75 14 L90 16 L105 10 L120 13 L135 6 L150 8 V34 H0Z" fill="var(--accent)" opacity="0.08"/></svg>
+          <span class="bal"><b class="num">£24,318.40</b><span class="num">+£1,840 today</span></span>
+          <span class="btn" id="sync"><svg viewBox="0 0 16 16"><path d="M13 8a5 5 0 1 1-1.5-3.6M13 2.5v3h-3"/></svg>Sync now</span></div>
+        <div class="acct"><span class="bank" style="background:linear-gradient(150deg,#2f5f9e,#1d3f73)">NB</span>
+          <span class="w"><b>Tax reserve</b><span class="num">Northfield Bank •••• 9930 · Synced 2 h ago</span></span>
+          <svg viewBox="0 0 150 34" width="150" height="34"><path d="M0 24 L30 24 L32 18 L80 18 L82 12 L150 12" fill="none" stroke="#8a95a6" stroke-width="1.6"/></svg>
+          <span class="bal"><b class="num">£6,420.00</b><span>No change</span></span>
+          <span class="btn sub"><svg viewBox="0 0 16 16"><path d="M13 8a5 5 0 1 1-1.5-3.6M13 2.5v3h-3"/></svg>Sync now</span></div>
+        <div class="acct"><span class="bank" style="background:linear-gradient(150deg,#e2725b,#b9503b)">KP</span>
+          <span class="w"><b>Company card</b><span class="num">Kestrel Pay •••• 1167 · Synced 2 h ago</span></span>
+          <svg viewBox="0 0 150 34" width="150" height="34"><path d="M0 8 L20 10 L40 9 L60 15 L80 14 L100 20 L120 19 L150 25" fill="none" stroke="#8a95a6" stroke-width="1.6" stroke-linejoin="round"/></svg>
+          <span class="bal"><b class="num">−£1,163.75</b><span>Due 28 Feb</span></span>
+          <span class="btn sub"><svg viewBox="0 0 16 16"><path d="M13 8a5 5 0 1 1-1.5-3.6M13 2.5v3h-3"/></svg>Sync now</span></div>
+      </div>
+      <div class="sec"><b>To review</b><span class="new num">3 new</span><span class="num">14 transactions · Business current</span></div>
+      <div class="tx new"><span class="d num">Today</span><span class="p">Northfield Dental<small>Faster payment · INV-2040</small></span><span class="cat sug">Sales · INV-2040</span><span class="amt in num">+£1,840.00</span></div>
+      <div class="tx new"><span class="d num">Today</span><span class="p">Adobe<small>Card · subscription</small></span><span class="cat sug">Software</span><span class="amt num">−£56.98</span></div>
+      <div class="tx new"><span class="d num">Today</span><span class="p">GWR<small>Card · London Paddington</small></span><span class="cat none">Choose a category</span><span class="amt num">−£84.20</span></div>
+      <div class="tx"><span class="d num">Yesterday</span><span class="p">Paper &amp; Ink Ltd<small>Direct debit</small></span><span class="cat sug">Office supplies</span><span class="amt num">−£212.40</span></div>
+    </div>
+  </main>
+</div>
+<div class="marks" id="marks"></div>
+</div>
+<script>
+const stage = document.querySelector('.stage'), marks = document.getElementById('marks');
+const box = (el) => { const o = stage.getBoundingClientRect(), r = el.getBoundingClientRect(); return { x: r.left - o.left, y: r.top - o.top, w: r.width, h: r.height }; };
+const mk = (cls, s, html = '') => { const e = document.createElement('span'); e.className = 'mk ' + cls; for (const [k, v] of Object.entries(s)) e.style[k] = typeof v === 'number' ? v + 'px' : v; e.innerHTML = html; marks.appendChild(e); return e; };
+const COL = { off: 'var(--pl-off)', on: 'var(--pl-on)', '': 'var(--pl-sky)' };
+function ruler(x0, top, width, span, played, kind, events, label) {
+  const x = (ms) => x0 + (Math.min(span, ms) / span) * width, step = span <= 1200 ? 100 : 250, major = span <= 1200 ? 200 : 1000;
+  mk('r-lab', { left: x0 + width, top: top - 6, transform: 'translateX(-100%)' }, label);
+  mk('', { left: x0, top: top + 16, width, height: 0, borderTop: '1px solid var(--pl-ink-3)' });
+  for (let ms = 0; ms <= span; ms += step) {
+    const M = ms % major === 0;
+    mk('', { left: x(ms), top: top + (M ? 12 : 14), width: 1, height: M ? 8 : 4, background: 'var(--pl-ink-3)' });
+    if (M) mk('r-num', { left: Math.min(x0 + width - 14, Math.max(x0 + 8, x(ms))), top: top + 22 }, ms >= 1000 ? `${ms / 1000}s` : ms);
+  }
+  mk('', { left: x0, top: top + 15, height: 3, width: x(played) - x0, borderRadius: 2, background: COL[kind] });
+  for (const [ms, k] of events) mk('', { left: x(ms), top: top + (k ? 11 : 13), width: k ? 11 : 7, height: k ? 11 : 7, marginLeft: k ? -5.5 : -3.5, borderRadius: '50%', background: k ? COL[k] : '#fff', boxShadow: k ? '0 0 0 2px #fff' : '0 0 0 1.5px var(--pl-sky)' });
+  mk('', { left: x(played), top: top + 4, width: 2, height: 24, marginLeft: -1, borderRadius: 1, background: 'var(--pl-sky)', boxShadow: '0 0 0 1px #fff' });
+}
+document.fonts.ready.then(() => {
+  const b = box(document.getElementById('sync')), main = box(document.querySelector('.main')), w = box(document.querySelector('.window'));
+  mk('tag', { left: b.x + b.w, top: b.y - 14 }, 'flashed 122ms');
+  mk('cursor', { left: b.x + b.w * 0.42, top: b.y + b.h * 0.6 }, '<svg viewBox="0 0 18 24" width="18" height="24"><path d="M1.5 1.5v17.2l4.3-4.1 2.9 6.6 2.7-1.2-2.8-6.4h6z" fill="#111" stroke="#fff" stroke-width="1.3" stroke-linejoin="round"/></svg>');
+  // under the window: the showcase's Reply switch, then plumber's two lanes on one ruler
+  const x0 = main.x + 22, W = main.w - 44, y = w.y + w.h + 16, span = 1600, X = (ms) => x0 + (ms / span) * W;
+  mk('ctl', { left: x0, top: y }, 'Reply <span class="seg"><span class="on">as it comes</span><span>held 1.4s</span></span>');
+  const lane = (top, label, a, b, kind) => {
+    mk('r-lab', { left: x0 - 8, top, transform: 'translateX(-100%)', fontWeight: 500 }, label);
+    mk('', { left: x0, top: top + 6, width: W, height: 0, borderTop: '1px dashed var(--pl-ink-3)' });
+    mk('', { left: X(a), top: top + 4, height: 5, width: Math.max(2, X(b) - X(a)), borderRadius: 3, background: COL[kind] });
+  };
+  const L = y + 44;
+  lane(L, 'reply', 0, 122, '');
+  lane(L + 18, 'spinner', 0, 122, 'off');
+  mk('', { left: X(200), top: L - 4, height: 40, borderLeft: '1px dashed var(--pl-sky)', opacity: 0.7 });
+  mk('', { left: X(200) + 4, top: L - 6, font: '500 10px/12px var(--mono)', color: 'var(--pl-sky)' }, '200');
+  ruler(x0, L + 30, W, span, 122, 'off', [[0, ''], [122, '']], 'live');
+});
+</script>
+</body>
+</html>

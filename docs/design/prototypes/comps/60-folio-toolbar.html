@@ -1,0 +1,174 @@
+<!doctype html>
+<!-- COMP, #60 Tooltip warm-up and cool-down (hands-on; docs/craft/taste-checklist.md, group 4). Folio, a writing app
+     for a small travel magazine, mid-edit on a feature. The lesson lives in the formatting toolbar: the viewer's pointer
+     swept from Bold to Strikethrough, and with tooltips that show at once, each one flashed up and was gone; the last
+     is on screen now. plumber's marks: a dashed coral ghost where each tooltip only flashed (under 250ms), and one tag
+     with the last wait. Ghosts are measured from real tooltips. Slate's tokens. Throwaway. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Folio · Low tide (comp)</title>
+<style>
+  :root {
+    --canvas: #f5f7fa; --surface: #fff; --sunken: #f3f5f9; --ink: #12233d; --ink-muted: #5a6779; --ink-subtle: #6f7c90;
+    --line: rgb(18 35 61 / 0.09); --line-strong: rgb(18 35 61 / 0.14); --accent: #5550d8; --accent-soft: #efeefd; --accent-deep: #3631a6;
+    --caution: #965a03; --caution-soft: #fcf1dd;
+    --board: #e9edf2; --board-dot: #d3d9e2;
+    --window: 0 1px 2px rgb(18 35 61 / 0.05), 0 8px 24px rgb(18 35 61 / 0.08), 0 24px 64px rgb(18 35 61 / 0.12);
+    --pl-sky: #2a7fd0; --pl-off: #bf3a1e; --pl-on: #1a9460; --pl-ink-2: #6b665c; --pl-ink-3: #b3ad9f; --pl-halo: rgb(255 255 255 / 0.9);
+    --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, monospace;
+    --serif: "Iowan Old Style", "Charter", Georgia, serif;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 48px; background: var(--board);
+    background-image: radial-gradient(var(--board-dot) 1px, transparent 1px); background-size: 16px 16px;
+    font: 14px/20px Inter, -apple-system, system-ui, sans-serif; color: var(--ink); -webkit-font-smoothing: antialiased; }
+  .num { font-variant-numeric: tabular-nums; }
+  .stage { position: relative; }
+  .window { width: 1000px; height: 620px; display: grid; grid-template-columns: 220px 1fr; border-radius: 12px; overflow: hidden; background: var(--surface); box-shadow: var(--window), 0 0 0 0.5px rgb(18 35 61 / 0.18); }
+
+  .side { background: #f7f8fa; border-right: 0.5px solid var(--line-strong); display: flex; flex-direction: column; padding: 12px 10px; }
+  .lights { display: flex; gap: 7px; padding: 4px 6px 14px; }
+  .lights i { width: 11px; height: 11px; border-radius: 50%; background: #d9dde3; box-shadow: inset 0 0 0 0.5px rgb(0 0 0 / 0.08); }
+  .brand { display: flex; align-items: center; gap: 8px; padding: 2px 8px 14px; font: 600 16px/20px var(--serif); letter-spacing: -0.01em; }
+  .brand b { width: 22px; height: 22px; border-radius: 6px; background: #1f2b3f; color: #fff; display: grid; place-items: center; font: italic 600 14px/1 var(--serif); }
+  .label { margin: 12px 8px 4px; font-size: 11px; font-weight: 500; color: var(--ink-subtle); display: flex; justify-content: space-between; }
+  .doc { display: flex; flex-direction: column; gap: 1px; padding: 7px 8px; border-radius: 7px; }
+  .doc b { font-weight: 500; font-size: 13px; line-height: 17px; }
+  .doc span { font-size: 11.5px; color: var(--ink-subtle); display: flex; align-items: center; gap: 6px; }
+  .doc.on { background: rgb(18 35 61 / 0.06); }
+  .st { display: inline-flex; height: 16px; padding: 0 5px; border-radius: 4px; font-size: 10.5px; font-weight: 500; align-items: center; }
+  .st.edit { background: var(--caution-soft); color: var(--caution); }
+  .st.live { background: #e5f4ef; color: #0f6f58; }
+  .st.draft { background: var(--sunken); color: var(--ink-muted); box-shadow: inset 0 0 0 0.5px var(--line-strong); }
+
+  .main { display: flex; flex-direction: column; min-width: 0; position: relative; }
+  .top { display: flex; align-items: center; gap: 10px; height: 48px; padding: 0 20px; border-bottom: 0.5px solid var(--line); font-size: 13px; color: var(--ink-subtle); }
+  .top b { color: var(--ink); font-weight: 500; }
+  .saved { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; }
+  .saved i { width: 6px; height: 6px; border-radius: 50%; background: #1a9460; }
+  .faces { margin-left: auto; display: flex; }
+  .faces span { position: relative; margin-left: -5px; }
+  .faces img { width: 26px; height: 26px; border-radius: 50%; box-shadow: 0 0 0 2px #fff; display: block; }
+  .faces span::after { content: ''; position: absolute; right: -1px; bottom: -1px; width: 8px; height: 8px; border-radius: 50%; background: var(--c, #1a9460); box-shadow: 0 0 0 2px #fff; }
+  .btn { height: 30px; display: inline-flex; align-items: center; gap: 6px; padding: 0 12px; border-radius: 7px; font-size: 13px; font-weight: 500; box-shadow: inset 0 0 0 1px var(--line-strong); color: var(--ink); }
+  .btn.primary { background: var(--accent); color: #fff; box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.15), 0 1px 2px rgb(54 49 166 / 0.3); }
+
+  /* the subject: the formatting toolbar */
+  .toolbar { display: flex; align-items: center; gap: 2px; height: 48px; padding: 0 16px; border-bottom: 0.5px solid var(--line); position: relative; z-index: 2; background: #fff; }
+  .tb { width: 34px; height: 32px; border-radius: 6px; display: grid; place-items: center; color: var(--ink-muted); font-size: 15.5px; }
+  .tb svg { width: 17px; height: 17px; stroke: currentColor; fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+  .tb.hover { background: var(--sunken); color: var(--ink); }
+  .tb.on { color: var(--accent-deep); background: var(--accent-soft); }
+  .sep { width: 1px; height: 18px; background: var(--line-strong); margin: 0 7px; }
+  .style { height: 30px; display: inline-flex; align-items: center; gap: 8px; padding: 0 8px 0 10px; border-radius: 6px; font-size: 13px; color: var(--ink); box-shadow: inset 0 0 0 1px var(--line); margin-right: 8px; }
+  .style svg { width: 10px; height: 10px; stroke: var(--ink-subtle); fill: none; stroke-width: 1.6; }
+  .tip { position: absolute; z-index: 5; transform: translateX(-50%); display: flex; align-items: center; gap: 8px; padding: 4px 8px; border-radius: 6px; background: var(--ink); color: #fff; font-size: 12px; line-height: 16px; white-space: nowrap; box-shadow: 0 4px 12px rgb(18 35 61 / 0.18); }
+  .tip kbd { font: inherit; color: rgb(255 255 255 / 0.6); }
+  .words { margin-left: auto; font-size: 12px; color: var(--ink-subtle); }
+
+  .page { flex: 1; overflow: hidden; display: grid; grid-template-columns: 1fr 200px; }
+  .copy { padding: 30px 0 0 64px; max-width: 590px; }
+  .kicker { font-size: 11.5px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent-deep); }
+  .copy h1 { font: 600 30px/36px var(--serif); letter-spacing: -0.015em; margin: 8px 0 6px; }
+  .by { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--ink-subtle); margin-bottom: 18px; }
+  .by img { width: 20px; height: 20px; border-radius: 50%; }
+  .copy p { font: 16px/27px var(--serif); color: #24324a; margin: 0 0 16px; }
+  .sel { background: #dcdafb; border-radius: 2px; box-shadow: 0 0 0 1px #dcdafb; }
+  .caret { display: inline-block; width: 1.5px; height: 20px; background: var(--accent); vertical-align: -4px; margin-left: 1px; }
+  .fig { margin: 4px 0 0; display: grid; grid-template-columns: 300px 1fr; gap: 16px; align-items: end; }
+  .fig span { display: block; height: 190px; border-radius: 6px; background: url(../../../../overlay/showcase/src/media/low-tide.jpg) center 12% / cover; }
+  .fig small { display: block; line-height: 17px; font-size: 12px; color: var(--ink-subtle); }
+  .margin { padding: 150px 18px 0 0; }
+  .note { background: #fff; border-radius: 10px; padding: 10px 12px; box-shadow: 0 0 0 0.5px var(--line-strong), 0 2px 6px rgb(18 35 61 / 0.06); font-size: 12.5px; line-height: 18px; }
+  .note .who { display: flex; align-items: center; gap: 7px; margin-bottom: 4px; font-weight: 500; }
+  .note .who img { width: 20px; height: 20px; border-radius: 50%; }
+  .note .who small { margin-left: auto; color: var(--ink-subtle); font-weight: 400; font-size: 11.5px; }
+  .note p { margin: 0; color: var(--ink-muted); }
+  .note.ghosted { margin-top: 12px; opacity: 0.6; box-shadow: 0 0 0 0.5px var(--line); }
+  .hl { background: #fff1c7; border-bottom: 1.5px solid #e0b03a; }
+
+  .marks { position: absolute; inset: 0; pointer-events: none; z-index: 10; }
+  .mk { position: absolute; }
+  .ghost { border: 1px dashed var(--pl-off); border-radius: 6px; opacity: 0.75; background: rgb(191 58 30 / 0.05); }
+  .tag { display: flex; align-items: center; height: 20px; padding: 0 6px; border-radius: 6px; font: 500 11px/1 var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; color: #fff; background: var(--pl-off); box-shadow: 0 0 0 1px var(--pl-halo); transform: translateY(-50%); }
+  .tiny { font: 500 10px/12px var(--mono); color: var(--pl-off); transform: translateX(-50%); white-space: nowrap; }
+  .cursor { position: absolute; width: 18px; height: 24px; filter: drop-shadow(0 1px 1.5px rgb(0 0 0 / 0.3)); }
+</style>
+</head>
+<body>
+<div class="stage">
+<div class="window">
+  <aside class="side">
+    <div class="lights"><i></i><i></i><i></i></div>
+    <div class="brand"><b>f</b>Folio</div>
+    <div class="label"><span>Spring issue</span><span class="num">6 pieces</span></div>
+    <div class="doc on"><b>Low tide at Saltburn</b><span><span class="st edit">In edit</span><span class="num">1,840 words</span></span></div>
+    <div class="doc"><b>Twelve hours in Porto</b><span><span class="st live">Published</span>Tue</span></div>
+    <div class="doc"><b>The night train north</b><span><span class="st draft">Draft</span>Ines</span></div>
+    <div class="doc"><b>A field guide to rock pools</b><span><span class="st draft">Draft</span>Kofi</span></div>
+    <div class="doc"><b>Letters</b><span><span class="st edit">In edit</span><span class="num">14 letters</span></span></div>
+    <div class="label" style="margin-top:18px"><span>Winter issue</span><span class="num">9</span></div>
+    <div class="doc"><b>Salt, smoke and herring</b><span><span class="st live">Published</span>Jan</span></div>
+  </aside>
+
+  <main class="main">
+    <div class="top"><span>Spring issue</span><span>/</span><b>Low tide at Saltburn</b><span class="saved"><i></i>Saved</span>
+      <span class="faces"><span style="--c:#d98a1f"><img src="../../../../overlay/showcase/src/media/people/person-03.jpg" alt=""></span><span><img src="../../../../overlay/showcase/src/media/people/person-06.jpg" alt=""></span></span>
+      <span class="btn">Preview</span><span class="btn primary">Send to copy desk</span>
+    </div>
+    <div class="toolbar" id="toolbar">
+      <span class="style">Body text<svg viewBox="0 0 10 10"><path d="m2 3.5 3 3 3-3"/></svg></span>
+      <span class="tb" data-tip="Bold" data-k="⌘B"><b style="font-weight:700">B</b></span>
+      <span class="tb" data-tip="Italic" data-k="⌘I"><i style="font-family:var(--serif)">I</i></span>
+      <span class="tb" data-tip="Underline" data-k="⌘U"><u style="text-underline-offset:2px">U</u></span>
+      <span class="tb hover" data-tip="Strikethrough" data-k="⇧⌘X" id="cur"><s>S</s></span>
+      <span class="sep"></span>
+      <span class="tb" data-tip="Link" data-k="⌘K"><svg viewBox="0 0 16 16"><path d="M6.8 9.2a2.6 2.6 0 0 0 3.7 0l2.3-2.3a2.6 2.6 0 0 0-3.7-3.7l-.8.8M9.2 6.8a2.6 2.6 0 0 0-3.7 0L3.2 9.1a2.6 2.6 0 0 0 3.7 3.7l.8-.8"/></svg></span>
+      <span class="tb"><svg viewBox="0 0 16 16"><path d="M3.5 4.5h9M3.5 8h9M3.5 11.5h5"/><path d="M1.6 4.5h.1M1.6 8h.1M1.6 11.5h.1"/></svg></span>
+      <span class="tb"><svg viewBox="0 0 16 16"><path d="M4 6.5h8M4 9.5h5"/><path d="M2.5 2.5h11v8H8l-3 3v-3H2.5z"/></svg></span>
+      <span class="sep"></span>
+      <span class="tb"><svg viewBox="0 0 16 16"><rect x="2" y="3" width="12" height="10" rx="1.8"/><circle cx="5.8" cy="6.4" r="1.2"/><path d="m2.5 11.5 3.5-3 2.5 2 2-1.5 3 2.5"/></svg></span>
+      <span class="tb"><svg viewBox="0 0 16 16"><path d="M5 4.5 2 8l3 3.5M11 4.5 14 8l-3 3.5"/></svg></span>
+      <span class="words num">1,840 words · 8 min read</span>
+    </div>
+    <div class="page">
+      <div class="copy">
+        <div class="kicker">Coast · Spring issue</div>
+        <h1>Low tide at Saltburn</h1>
+        <div class="by"><img src="../../../../overlay/showcase/src/media/people/person-03.jpg" alt="">Words by Nia Adebayo · Photographs by Owen Hale</div>
+        <p>The sea goes out so far here that the pier seems to stand on nothing. By seven the sand is ribbed and silver, and the <span class="sel">dog walkers come down the cliff lift in pairs</span><span class="caret"></span>, coats zipped to the chin.</p>
+        <p>We walked the <span class="hl">mile to the scar</span> before the tide turned, and back with wet boots.</p>
+        <div class="fig"><span></span><small>The moon up before dark, the water still going out. Photograph: Owen Hale</small></div>
+      </div>
+      <div class="margin">
+        <div class="note"><div class="who"><img src="../../../../overlay/showcase/src/media/people/person-06.jpg" alt="">Owen<small>4 min</small></div><p>“The scar” needs a line for readers who’ve never been. It’s the reef.</p></div>
+        <div class="note ghosted"><div class="who"><img src="../../../../overlay/showcase/src/media/people/person-03.jpg" alt="">Nia<small>now</small></div><p>Good call, adding it.</p></div>
+      </div>
+    </div>
+  </main>
+</div>
+<div class="marks" id="marks"></div>
+</div>
+<script>
+const stage = document.querySelector('.stage'), marks = document.getElementById('marks');
+const box = (el) => { const o = stage.getBoundingClientRect(), r = el.getBoundingClientRect(); return { x: r.left - o.left, y: r.top - o.top, w: r.width, h: r.height }; };
+const mk = (cls, s, html = '') => { const e = document.createElement('span'); e.className = 'mk ' + cls; for (const [k, v] of Object.entries(s)) e.style[k] = typeof v === 'number' ? v + 'px' : v; e.innerHTML = html; (cls === 'tip' ? stage : marks).appendChild(e); return e; };
+const tipFor = (b) => { const at = box(b); return mk('tip', { left: at.x + at.w / 2, top: at.y + at.h + 6 }, `${b.dataset.tip}<kbd>${b.dataset.k}</kbd>`); };
+document.fonts.ready.then(() => {
+  const sweep = [...document.querySelectorAll('[data-tip]')].slice(0, 4);
+  // the three the pointer crossed: each flashed (shown at once, gone under 250ms); drawn where they stood
+  const flashes = [[0, 96], [1, 71], [2, 118]];
+  for (const [i, ms] of flashes) {
+    const t = tipFor(sweep[i]), at = box(t); t.remove();
+    mk('ghost', { left: at.x, top: at.y, width: at.w, height: at.h });
+  }
+  // the one on screen now
+  const cur = tipFor(sweep[3]), at = box(cur);
+  mk('tag', { left: at.x + at.w + 8, top: at.y + at.h / 2 }, '0ms · no warm-up');
+  const b = box(sweep[3]);
+  mk('cursor', { left: b.x + b.w * 0.55, top: b.y + b.h * 0.45 }, '<svg viewBox="0 0 18 24" width="18" height="24"><path d="M1.5 1.5v17.2l4.3-4.1 2.9 6.6 2.7-1.2-2.8-6.4h6z" fill="#111" stroke="#fff" stroke-width="1.3" stroke-linejoin="round"/></svg>');
+});
+</script>
+</body>
+</html>

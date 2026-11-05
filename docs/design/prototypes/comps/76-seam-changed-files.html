@@ -1,0 +1,163 @@
+<!doctype html>
+<!-- COMP, #76 Truncate in the middle for paths and IDs (hands-on; docs/craft/taste-checklist.md, group 4). Seam, a
+     code review tool, on a pull request that touches four form inputs. The lesson lives in the Changed files panel: the
+     viewer dragged its edge narrower, and with each path cut at its end, the four rows now read the same
+     (src/components/forms/i…). plumber's marks: a coral outline on each row that reads alike, one tag. The rows' text
+     is the browser's own truncation. Slate's tokens. Throwaway. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Seam · #482 (comp)</title>
+<style>
+  :root {
+    --surface: #fff; --sunken: #f3f5f9; --ink: #12233d; --ink-muted: #5a6779; --ink-subtle: #6f7c90;
+    --line: rgb(18 35 61 / 0.09); --line-strong: rgb(18 35 61 / 0.14); --accent: #5550d8; --accent-soft: #efeefd; --accent-deep: #3631a6;
+    --positive: #0f6f58; --positive-soft: #e5f4ef; --caution: #965a03; --caution-soft: #fcf1dd; --negative: #b02a3a; --negative-soft: #fbeaed;
+    --board: #e9edf2; --board-dot: #d3d9e2;
+    --window: 0 1px 2px rgb(18 35 61 / 0.05), 0 8px 24px rgb(18 35 61 / 0.08), 0 24px 64px rgb(18 35 61 / 0.12);
+    --pl-sky: #2a7fd0; --pl-off: #bf3a1e; --pl-on: #1a9460; --pl-ink-2: #6b665c; --pl-ink-3: #b3ad9f; --pl-halo: rgb(255 255 255 / 0.9);
+    --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, monospace;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 48px; background: var(--board);
+    background-image: radial-gradient(var(--board-dot) 1px, transparent 1px); background-size: 16px 16px;
+    font: 14px/20px Inter, -apple-system, system-ui, sans-serif; color: var(--ink); -webkit-font-smoothing: antialiased; }
+  .num { font-variant-numeric: tabular-nums; }
+  .stage { position: relative; }
+  .window { width: 1000px; height: 600px; display: flex; flex-direction: column; border-radius: 12px; overflow: hidden; background: var(--surface); box-shadow: var(--window), 0 0 0 0.5px rgb(18 35 61 / 0.18); }
+
+  .chrome { display: flex; align-items: center; gap: 12px; height: 44px; padding: 0 16px; background: #f7f8fa; border-bottom: 0.5px solid var(--line-strong); font-size: 13px; color: var(--ink-subtle); }
+  .lights { display: flex; gap: 7px; margin-right: 8px; }
+  .lights i { width: 11px; height: 11px; border-radius: 50%; background: #d9dde3; box-shadow: inset 0 0 0 0.5px rgb(0 0 0 / 0.08); }
+  .logo { width: 20px; height: 20px; border-radius: 5px; background: #12233d; display: grid; place-items: center; }
+  .logo svg { width: 12px; height: 12px; stroke: #fff; fill: none; stroke-width: 1.8; }
+  .chrome b { color: var(--ink); font-weight: 500; }
+  .chrome .me { margin-left: auto; width: 24px; height: 24px; border-radius: 50%; }
+
+  .pr { padding: 14px 20px 12px; border-bottom: 0.5px solid var(--line-strong); }
+  .pr h1 { margin: 0; font-size: 18px; line-height: 24px; font-weight: 600; letter-spacing: -0.015em; display: flex; align-items: center; gap: 10px; }
+  .pr h1 span { color: var(--ink-subtle); font-weight: 400; }
+  .meta { display: flex; align-items: center; gap: 10px; margin-top: 8px; font-size: 12.5px; color: var(--ink-muted); }
+  .open { display: inline-flex; align-items: center; gap: 5px; height: 22px; padding: 0 8px; border-radius: 11px; background: var(--positive-soft); color: var(--positive); font-weight: 600; font-size: 12px; }
+  .open svg { width: 12px; height: 12px; stroke: currentColor; fill: none; stroke-width: 1.8; }
+  .meta img { width: 20px; height: 20px; border-radius: 50%; }
+  .br { font: 12px/1 var(--mono); padding: 4px 6px; border-radius: 5px; background: var(--accent-soft); color: var(--accent-deep); }
+  .checks { margin-left: auto; display: flex; align-items: center; gap: 6px; }
+  .checks i { width: 14px; height: 14px; border-radius: 50%; background: var(--positive); position: relative; }
+  .checks i::after { content: ''; position: absolute; left: 4.5px; top: 2.5px; width: 3px; height: 6px; border: solid #fff; border-width: 0 1.5px 1.5px 0; transform: rotate(45deg); }
+  .revs { display: flex; padding-left: 6px; }
+  .revs span { position: relative; margin-left: -6px; }
+  .revs img { width: 24px; height: 24px; border-radius: 50%; box-shadow: 0 0 0 2px #fff; display: block; }
+  .revs span b { position: absolute; right: -2px; bottom: -2px; width: 11px; height: 11px; border-radius: 50%; box-shadow: 0 0 0 2px #fff; }
+  .btn { height: 30px; display: inline-flex; align-items: center; padding: 0 12px; border-radius: 7px; font-size: 13px; font-weight: 500; background: var(--positive); color: #fff; box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.15); }
+
+  .split { flex: 1; display: flex; min-height: 0; }
+  /* the subject: changed files, dragged narrow */
+  .files { position: relative; width: 212px; flex: none; border-right: 0.5px solid var(--line-strong); background: #fbfbfc; padding: 10px 0; }
+  .files header { display: flex; align-items: center; gap: 8px; padding: 2px 14px 8px; font-size: 12.5px; font-weight: 600; }
+  .files header span { margin-left: auto; font-weight: 400; color: var(--ink-subtle); }
+  .filter { margin: 0 10px 8px; height: 26px; border-radius: 6px; box-shadow: inset 0 0 0 0.5px var(--line-strong); background: #fff; font-size: 12px; color: var(--ink-subtle); display: flex; align-items: center; padding: 0 8px; }
+  .f { display: flex; align-items: center; gap: 8px; height: 32px; padding: 0 14px; color: var(--ink-muted); min-width: 0; }
+  .f.on { background: var(--accent-soft); color: var(--accent-deep); box-shadow: inset 2px 0 0 var(--accent); }
+  .f .st { width: 6px; height: 6px; border-radius: 50%; background: #d19a00; flex: none; }
+  .f .p { font: 12px/1 var(--mono); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+  .files .seen { margin: 52px 14px 0; font-size: 11.5px; color: var(--ink-subtle); }
+  .files .seen .bar { height: 4px; border-radius: 2px; background: #e3e7ee; margin-top: 6px; overflow: hidden; }
+  .files .seen .bar i { display: block; height: 100%; width: 25%; background: var(--accent); }
+  .handle { position: absolute; top: 12px; bottom: 12px; right: -6px; width: 12px; border-radius: 6px; background: rgb(85 80 216 / 0.14); }
+  .handle::after { content: ''; position: absolute; left: 5px; top: 0; bottom: 0; width: 2px; border-radius: 1px; background: var(--accent); }
+
+  .diff { flex: 1; min-width: 0; overflow: hidden; padding: 12px 16px; }
+  .fh { display: flex; align-items: center; gap: 10px; height: 36px; padding: 0 12px; border-radius: 8px 8px 0 0; background: var(--sunken); box-shadow: inset 0 0 0 0.5px var(--line-strong); font: 12.5px/1 var(--mono); }
+  .fh .c { margin-left: auto; font-family: Inter, system-ui; font-size: 12px; }
+  .fh .c b { color: var(--positive); font-weight: 600; } .fh .c s { color: var(--negative); text-decoration: none; font-weight: 600; margin-left: 4px; }
+  .fh .vw { font: 500 12px Inter, system-ui; color: var(--ink-muted); display: flex; align-items: center; gap: 6px; }
+  .fh .vw i { width: 13px; height: 13px; border-radius: 3px; box-shadow: inset 0 0 0 1.25px rgb(18 35 61 / 0.35); }
+  .code { box-shadow: inset 0 0 0 0.5px var(--line-strong); border-top: 0; border-radius: 0 0 8px 8px; overflow: hidden; font: 12px/21px var(--mono); }
+  .ln { display: grid; grid-template-columns: 36px 36px 16px 1fr; color: #2a3850; white-space: pre; }
+  .ln > span:nth-child(-n+2) { text-align: right; padding-right: 8px; color: #9aa3b2; }
+  .ln.hunk { background: #f2f4fb; color: var(--ink-subtle); }
+  .ln.add { background: #ecf7f2; } .ln.add > span:nth-child(3) { color: var(--positive); }
+  .ln.del { background: #fcf0f1; } .ln.del > span:nth-child(3) { color: var(--negative); }
+  .ln.add em { background: #c9ecdb; font-style: normal; border-radius: 2px; }
+  .ln.del em { background: #f5cdd2; font-style: normal; border-radius: 2px; }
+  .k { color: #7a3fb3; } .s { color: #0f6f58; } .t { color: #2f63b5; }
+  .thread { margin: 0 12px 0 88px; padding: 10px 12px; border-left: 2px solid var(--accent); background: #fff; box-shadow: 0 0 0 0.5px var(--line-strong); border-radius: 0 8px 8px 0; font: 13px/19px Inter, system-ui; white-space: normal; }
+  .thread .who { display: flex; align-items: center; gap: 7px; font-weight: 500; }
+  .thread .who img { width: 20px; height: 20px; border-radius: 50%; }
+  .thread .who small { color: var(--ink-subtle); font-weight: 400; }
+  .thread p { margin: 4px 0 0; color: var(--ink-muted); }
+  .thread code { font: 12px var(--mono); background: var(--sunken); padding: 1px 4px; border-radius: 4px; }
+
+  .marks { position: absolute; inset: 0; pointer-events: none; z-index: 10; }
+  .mk { position: absolute; }
+  .outline { border-radius: 4px; box-shadow: inset 0 0 0 1px var(--pl-off); opacity: 0.8; }
+  .tag { display: flex; align-items: center; height: 20px; padding: 0 6px; border-radius: 6px; font: 500 11px/1 var(--mono); white-space: nowrap; color: #fff; background: var(--pl-off); box-shadow: 0 0 0 1px var(--pl-halo); transform: translateY(-50%); }
+  .cursor { position: absolute; transform: translate(-50%, -50%); filter: drop-shadow(0 1px 1.5px rgb(0 0 0 / 0.3)); }
+</style>
+</head>
+<body>
+<div class="stage">
+<div class="window">
+  <div class="chrome"><span class="lights"><i></i><i></i><i></i></span><span class="logo"><svg viewBox="0 0 12 12"><path d="M2 3h8M2 9h8M6 3v6"/></svg></span>tessera / <b>web-app</b> <span>/</span> Pull requests
+    <img class="me" src="../../../../overlay/showcase/src/media/people/person-03.jpg" alt=""></div>
+  <div class="pr">
+    <h1>Forms: one focus ring for every input <span class="num">#482</span></h1>
+    <div class="meta"><span class="open"><svg viewBox="0 0 12 12"><circle cx="3" cy="2.5" r="1.3"/><circle cx="3" cy="9.5" r="1.3"/><circle cx="9" cy="9.5" r="1.3"/><path d="M3 4v4M9 8V5.5a2 2 0 0 0-2-2H5.5"/></svg>Open</span>
+      <img src="../../../../overlay/showcase/src/media/people/person-02.jpg" alt=""><span><b style="font-weight:500;color:var(--ink)">Dev Malhotra</b> wants to merge into</span><span class="br">main</span><span>from</span><span class="br">dev/focus-rings</span>
+      <span class="checks"><i></i><span class="num">8 of 8 checks</span></span>
+      <span class="revs"><span><img src="../../../../overlay/showcase/src/media/people/person-03.jpg" alt=""><b style="background:#d19a00"></b></span><span><img src="../../../../overlay/showcase/src/media/people/person-06.jpg" alt=""><b style="background:var(--positive)"></b></span></span>
+      <span class="btn">Approve</span></div>
+  </div>
+  <div class="split">
+    <aside class="files" id="files">
+      <header>Changed files<span class="num">4</span></header>
+      <div class="filter">Filter files…</div>
+      <div class="f on"><span class="st"></span><span class="p">src/components/forms/inputs/TextField.tsx</span></div>
+      <div class="f"><span class="st"></span><span class="p">src/components/forms/inputs/Checkbox.tsx</span></div>
+      <div class="f"><span class="st"></span><span class="p">src/components/forms/inputs/Select.tsx</span></div>
+      <div class="f"><span class="st"></span><span class="p">src/components/forms/inputs/RadioGroup.tsx</span></div>
+      <div class="seen"><span class="num">1 of 4 viewed</span><div class="bar"><i></i></div></div>
+      <span class="handle" id="handle"></span>
+    </aside>
+    <section class="diff">
+      <div class="fh"><span>src/components/forms/inputs/<b>TextField.tsx</b></span><span class="c num"><b>+12</b><s>−7</s></span><span class="vw"><i></i>Viewed</span></div>
+      <div class="code">
+        <div class="ln hunk"><span></span><span></span><span></span><span class="tx">@@ -18,13 +18,18 @@ export function TextField({ label, error, ...props }) {</span></div>
+        <div class="ln"><span>18</span><span>18</span><span> </span><span class="tx">  <span class="k">return</span> (</span></div>
+        <div class="ln"><span>19</span><span>19</span><span> </span><span class="tx">    &lt;<span class="t">label</span> className=<span class="s">"flex flex-col gap-1.5"</span>&gt;</span></div>
+        <div class="ln del"><span>20</span><span></span><span>−</span><span class="tx">      &lt;<span class="t">input</span> className=<span class="s">"h-9 rounded-md border <em>focus:ring-2 focus:ring-blue-500</em>"</span></span></div>
+        <div class="ln add"><span></span><span>20</span><span>+</span><span class="tx">      &lt;<span class="t">input</span> className=<span class="s">"h-9 rounded-md border <em>focus-visible:ring-focus</em>"</span></span></div>
+        <div class="ln add"><span></span><span>21</span><span>+</span><span class="tx">        aria-invalid={<span class="k">!!</span>error}</span></div>
+        <div class="ln add"><span></span><span>22</span><span>+</span><span class="tx">        aria-describedby={error ? errorId : <span class="k">undefined</span>}</span></div>
+        <div class="ln"><span>21</span><span>23</span><span> </span><span class="tx">        {...props} /&gt;</span></div>
+        <div class="thread"><div class="who"><img src="../../../../overlay/showcase/src/media/people/person-06.jpg" alt="">Jonas Berg<small>· 12 min ago</small></div><p>Nice. Does <code>ring-focus</code> pick up the error colour when <code>aria-invalid</code> is set, or is that the next PR?</p></div>
+        <div class="ln"><span>22</span><span>24</span><span> </span><span class="tx">      {error ? &lt;<span class="t">p</span> id={errorId} className=<span class="s">"text-sm text-negative"</span>&gt;{error}&lt;/<span class="t">p</span>&gt; : <span class="k">null</span>}</span></div>
+        <div class="ln"><span>23</span><span>25</span><span> </span><span class="tx">    &lt;/<span class="t">label</span>&gt;</span></div>
+        <div class="ln"><span>24</span><span>26</span><span> </span><span class="tx">  );</span></div>
+      </div>
+      <div class="fh" style="margin-top:12px;border-radius:8px"><span>src/components/forms/inputs/<b>Checkbox.tsx</b></span><span class="c num"><b>+4</b><s>−2</s></span><span class="vw"><i></i>Viewed</span></div>
+      <div class="fh" style="margin-top:8px;border-radius:8px"><span>src/components/forms/inputs/<b>Select.tsx</b></span><span class="c num"><b>+6</b><s>−3</s></span><span class="vw"><i></i>Viewed</span></div>
+    </section>
+  </div>
+</div>
+<div class="marks" id="marks"></div>
+</div>
+<script>
+const stage = document.querySelector('.stage'), marks = document.getElementById('marks');
+const box = (el) => { const o = stage.getBoundingClientRect(), r = el.getBoundingClientRect(); return { x: r.left - o.left, y: r.top - o.top, w: r.width, h: r.height }; };
+const mk = (cls, s, html = '') => { const e = document.createElement('span'); e.className = 'mk ' + cls; for (const [k, v] of Object.entries(s)) e.style[k] = typeof v === 'number' ? v + 'px' : v; e.innerHTML = html; marks.appendChild(e); return e; };
+document.fonts.ready.then(() => {
+  // what each row shows, read back from the browser's own truncation: all alike, so each is marked
+  const rows = [...document.querySelectorAll('.f')];
+  for (const r of rows) { const t = box(r.querySelector('.p')), b = box(r); mk('outline', { left: t.x - 3, top: b.y + 7, width: t.w + 6, height: b.h - 14 }); }
+  const files = box(document.getElementById('files')), first = box(rows[0]);
+  const last = box(rows.at(-1));
+  mk('tag', { left: files.x + 14, top: last.y + last.h + 20 }, `${rows.length} rows read the same`);
+  // the viewer's hand on the panel's edge, mid-drag
+  const h = box(document.getElementById('handle'));
+  mk('cursor', { left: h.x + h.w / 2, top: first.y + 70 }, '<svg viewBox="0 0 24 18" width="24" height="18"><path d="M9 2v14M15 2v14M2 9l4-4v8zM22 9l-4-4v8z" fill="#111" stroke="#fff" stroke-width="1.2" stroke-linejoin="round"/></svg>');
+});
+</script>
+</body>
+</html>
