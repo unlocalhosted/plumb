@@ -52,6 +52,7 @@
     "build": "node scripts/clean-dist.mjs && tsc -p tsconfig.json && node scripts/executable-cli.mjs && npm run notices",
     "notices": "node scripts/third-party-notices.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit",
+    "bench:locate": "node bench/locate/run.mjs",
     "test": "npm run build && node scripts/test.mjs",
     "prepack": "npm run build",
     "prepublishOnly": "npm run build && npm test"

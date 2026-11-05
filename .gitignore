@@ -20,3 +20,7 @@ dist/
 
 /overlay/showcase/.probe-cache/
 /docs/design/references/
+
+# bench/locate: throwaway hosts and the one tool it installs
+/bench/locate/.work/
+/bench/locate/.tools/

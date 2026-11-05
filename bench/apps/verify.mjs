@@ -16,7 +16,7 @@ import { setTimeout as delay } from 'node:timers/promises';
 
 const here = fileURLToPath(import.meta.url);
 const repo = resolve(dirname(here), '../..');
-const workspace = dirname(repo);
+const workspace = process.env.PLUMB_WORKSPACE ?? dirname(repo); // PLUMB_WORKSPACE: the folder holding the apps, when this repo is a worktree
 const output = join(repo, 'docs/verification');
 const grabFile = join(workspace, 'algorecall/node_modules/react-grab/dist/index.global.js');
 const timeout = 60_000;
@@ -160,7 +160,8 @@ export async function withVerification(own, app, scratch, configFile) {
     return resolved?.id.split('?')[0] === routeTree.tree ? routeTree.out : null;
   } });
   if (app.depsInProject) adaptations.push('Vite dependency cache inside the project (node_modules/.vite-plumb-verify): a cache outside breaks its CommonJS interop.');
-  const grab = (process.env.PLUMBER_VERIFY_BASELINE ?? process.env.PLUMB_VERIFY_BASELINE) === '1' ? '' : await fsp.readFile(app.toolRoot ? join(app.toolRoot, 'react-grab.js') : grabFile, 'utf8');
+  const noOracle = process.env.PLUMB_VERIFY_NO_ORACLE === '1'; // bench/locate: no react-grab beside the overlay
+  const grab = (process.env.PLUMBER_VERIFY_BASELINE ?? process.env.PLUMB_VERIFY_BASELINE) === '1' || noOracle ? '' : await fsp.readFile(app.toolRoot ? join(app.toolRoot, 'react-grab.js') : grabFile, 'utf8');
   const { Session } = await import(pathToFileURL(join(app.toolRoot ?? repo, 'dist/session/index.js')).href);
   let release;
   const gate = new Promise(resolveGate => { release = resolveGate; });
@@ -198,13 +199,13 @@ export async function withVerification(own, app, scratch, configFile) {
     });
   } };
   if (!baseline) {
-    own.plugins.unshift(plumb({ root: app.root, ...(app.config ? { config: app.config } : {}) }));
+    own.plugins.unshift(plumb({ root: app.root, ...(app.config ? { config: app.config } : {}), ...(process.env.PLUMB_VERIFY_STAMP === '0' ? { stamp: false } : {}) }));
     adaptations.push('React Plumber source stamping runs before application React transforms.');
   }
   adaptations.push("Vite serves installed dependency directories read-only through the copy's symlinks.");
   return vite.mergeConfig(own, {
     configFile: false, root: own.root ?? app.app, cacheDir: depsCache(app, scratch), logLevel: 'warn',
-    plugins: baseline ? [bridge] : [oracle, bridge],
+    plugins: baseline || noOracle ? [bridge] : [oracle, bridge],
     server: { host: '127.0.0.1', port: 0, strictPort: false, open: false,
       fs: { allow: [vite.searchForWorkspaceRoot(app.app), scratch, ...(app.dependencyRoots ?? []), ...(own.server?.fs?.allow ?? [])] } },
   });
