@@ -9,7 +9,7 @@ import { createInterface } from 'node:readline';
 import type { Readable, Writable } from 'node:stream';
 import { Session } from './index.js';
 import type { ReadArgs, ReadMethod, SessionOptions } from './index.js';
-import { answersSerialized, isEndpoint, isRpcMethod, tracedWrites, verbOf } from './methods.js';
+import { answersSerialized, isEndpoint, isRpcMethod, isWriteEndpoint, tracedWrites, verbOf } from './methods.js';
 import type { CheckOptions } from '../index.js';
 import { BusyError, errorDiagnostic, errorMessage, UsageError } from '../errors.js';
 import { isIP } from 'node:net';
@@ -52,6 +52,27 @@ function position(params: Record<string, unknown>, name: string, optional = fals
 export async function dispatch(session: Session, method: string, raw: unknown = {}, options: Pick<HandlerOptions, 'servedRoot' | 'readiness' | 'readinessProject'> = {}): Promise<unknown> {
   return dispatchRequest(session, method, raw, options, false);
 }
+// A write may carry an idempotency `key`: a retry after a dropped response (the same key, the same body) returns the
+// first answer, success or refusal, and never applies twice. A different body under a used key is refused. The last
+// 256 keys per session are kept; the overlay sends a fresh key for every write.
+const answered = new WeakMap<Session, Map<string, { body: string; result: Promise<unknown> }>>();
+function idempotent(session: Session, method: string, params: Record<string, unknown>, run: () => Promise<unknown>): Promise<unknown> {
+  const key = params.key;
+  if (typeof key !== 'string' || !key.trim() || key.length > 128) throw new UsageError('key must be a string of at most 128 characters.');
+  let keys = answered.get(session);
+  if (!keys) { keys = new Map(); answered.set(session, keys); }
+  const { key: _, ...rest } = params;
+  const body = JSON.stringify([method, rest]);
+  const seen = keys.get(key);
+  if (seen) {
+    if (seen.body !== body) throw new UsageError('That key was already used for a different write. Send a new key.');
+    return seen.result;
+  }
+  const result = run();
+  keys.set(key, { body, result });
+  if (keys.size > 256) keys.delete(keys.keys().next().value!);
+  return result;
+}
 // The writes a request's `trace` tag follows (engine traced): every change they record carries its group and meta (methods.ts).
 function tracing(session: Session, tag: unknown): Session {
   if (tag !== undefined && !object(tag)) throw new UsageError('trace must be an object: { group, meta }.');
@@ -77,6 +98,10 @@ function pinOf(edit: Record<string, unknown>): { at?: { line: number; column: nu
 }
 async function dispatchRequest(session: Session, method: string, raw: unknown, options: Pick<HandlerOptions, 'servedRoot' | 'readiness' | 'readinessProject'>, json: boolean): Promise<unknown> {
   if (!object(raw)) throw new UsageError('Parameters must be a JSON object.');
+  if (raw.key !== undefined && isWriteEndpoint(method)) return idempotent(session, method, raw, () => dispatchOnce(session, method, raw, options, json));
+  return dispatchOnce(session, method, raw, options, json);
+}
+async function dispatchOnce(session: Session, method: string, raw: Record<string, unknown>, options: Pick<HandlerOptions, 'servedRoot' | 'readiness' | 'readinessProject'>, json: boolean): Promise<unknown> {
   const params = raw;
   // one request, one group: every write it makes is traced, under the caller's tag when it sends one
   session = tracing(session, params.trace);

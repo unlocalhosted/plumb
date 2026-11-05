@@ -97,3 +97,5 @@ export const patientMethods: ReadonlySet<string> = engineNames(row => row.patien
 const readMethods = engineNames(row => row.read === true);
 /** May the coordinator batch this method with other reads? A method it does not know runs alone in order, as the writes do. */
 export const isReadMethod = (name: string): boolean => readMethods.has(name);
+/** An endpoint that writes (a POST that is not a read cohort): the ones an idempotency key applies to. */
+export const isWriteEndpoint = (name: string): boolean => { const row = byHttp.get(name); return row?.post === true && row.read !== true; };
