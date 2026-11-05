@@ -108,8 +108,19 @@ test('habit detail rows keep reason columns populated in pipes and 80/100-column
     assert.match(output, /^\s+!\s+color: red {2,}also applies/m);
     assert.match(output, /^\s+!\s+outline: none {2,}removes the focus/m);
     assert.match(output, /^\s+!\s+transition: all 1s ease-in {2,}transitions/m);
-    const text = output.replace(/\s+/g, ' ');
-    for (const reason of ['also applies on touch screens [habits/hover-gate]', 'removes the focus outline on .removed [habits/focus-outline]', 'transitions every property [habits/transition-named]']) assert.ok(text.includes(reason), reason);
+    // a prose column folds onto the lines under it (at spaces and after a slash), so its words sit beside the location
+    // column's: read each row's reason column alone, from the columns the row's first line sets, and compare without spaces
+    const lines = output.split('\n');
+    const reasons = [];
+    lines.forEach((line, at) => {
+      const row = /^(\s+!\s+)(\S.*?)(\s{2,})(\S.*?)(\s{2,})(\S.*)$/d.exec(line);
+      if (!row) return;
+      const [from, to] = [row.indices[4][0], row.indices[6][0]];
+      const words = [row[4]];
+      for (let next = at + 1; lines[next]?.trim() && !/^\s*→/.test(lines[next]) && !lines[next].slice(0, from).trim(); next++) words.push(lines[next].slice(from, to).trim());
+      reasons.push(words.join('').replace(/\s+/g, ''));
+    });
+    for (const reason of ['also applies on touch screens [habits/hover-gate]', 'removes the focus outline on .removed [habits/focus-outline]', 'transitions every property [habits/transition-named]']) assert.ok(reasons.includes(reason.replace(/\s+/g, '')), `${reason} in ${JSON.stringify(reasons)}`);
     assert.ok(output.split('\n').every(line => [...line].length <= columns));
   }
 });
