@@ -37,7 +37,10 @@ export async function runNextApps(browser, keys, opts, sink) {
         ({ app, edits: info.edits } = await prepareCopy(key, destRoot));
       } catch (error) { info.notRun.push({ what: 'copy', why: String(error.message).slice(0, 600) }); log(key, 'COPY FAILED', error.message); continue; }
       const other = def.ownBundler === 'turbopack' ? 'webpack' : 'turbopack';
-      for (const bundler of opts.bundlers ? [def.ownBundler, other].filter((b) => opts.bundlers.includes(b)) : [def.ownBundler, other]) {
+      for (const bundler of (opts.bundlers ? [def.ownBundler, other].filter((b) => opts.bundlers.includes(b)) : [def.ownBundler, other]).filter((b) => {
+        if (def.skipBundlers?.[b]) { info.notRun.push({ what: b, why: def.skipBundlers[b] }); log(key, b, 'NOT RUN:', def.skipBundlers[b].slice(0, 100)); return false; }
+        return true;
+      })) {
         // stamped first. If full stamping leaves no route rendering, the run is recorded as failed and repeated with
         // host tags only, which then serves as the ground truth.
         let fullStampWorks = true;
