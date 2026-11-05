@@ -158,7 +158,11 @@ test('Next: a config that keeps the loader out throws at config load, with the f
         if (/Ready in/.test(logs)) { url = /http:\/\/127\.0\.0\.1:\d+/.exec(logs)?.[0]; if (url) break; }
         await delay(50);
       }
-      return { logs, url, exited: child.exitCode, html: url ? await (await fetch(url)).text() : '' };
+      // Next 16 can print Ready before it loads next.config, so a config that throws shows up on the first request:
+      // the server answers nothing, or exits.
+      const html = url ? await fetch(url).then(response => response.ok ? response.text() : '', () => '') : '';
+      await delay(500);
+      return { logs, url, exited: child.exitCode, html };
     } finally {
       if (child.exitCode === null && child.signalCode === null) child.kill('SIGTERM');
       await done;
@@ -169,8 +173,7 @@ test('Next: a config that keeps the loader out throws at config load, with the f
   const broken = await dev(`import { withPlumb } from '@unlocalhosted/react-plumber/next/config';
 export default withPlumb({ experimental: { agentUpgrade: false }, turbopack: { root: ${JSON.stringify(tpRoot)} }, webpack: { rules: [] } });
 `);
-  assert.equal(broken.url, undefined, broken.logs);
-  assert.notEqual(broken.exited, 0, broken.logs);
+  assert.doesNotMatch(broken.html, /id="main"/, broken.logs);
   assert.match(broken.logs, /In next\.config\.mjs, webpack must be a function \(config, context\) => config\. React Plumber adds its source loader/);
   // withPlumb alone stamps: the server HTML carries the stamps before any script runs.
   const fixed = await dev(`import { withPlumb } from '@unlocalhosted/react-plumber/next/config';
