@@ -51,13 +51,16 @@ export async function runNextApps(browser, keys, opts, sink) {
             server = await startNextApp(key, app, bundler, stamp);
             run.startMs = Math.round(server.startMs);
             log(key, host, mode, 'up at', server.url);
+            // the overlay's own script must be served, or no page can ever report ready: fail the run at once
+            const client = await fetch(new URL('/__plumb/client.js', server.url)).catch((e) => ({ status: 0, text: async () => e.message }));
+            if (client.status !== 200) throw new Error(`/__plumb/client.js answered ${client.status}: ` + (server.logs().replace(/\x1b\[[0-9;]*m/g, '').match(/(?:⨯|Error)[^\n]{0,240}/)?.[0] ?? ''));
             let failedInRow = 0;
             for (const route of def.routes.filter((r) => !opts.routes || opts.routes.includes(r))) {
               if (failedInRow >= 3) { sink.screenFailures.push({ host: `${key} ${host} ${mode}`, screen: route, why: 'skipped: the 3 routes before it failed on this run' }); continue; }
               const t = performance.now();
               const url = new URL(route, server.url).href;
               const probe = await preflight(url, () => /(?:⨯|Error:)[^\n]{0,200}(?:\n[^\n]{0,200}){0,3}/.exec(server.logs().slice(-3000).replace(/\x1b\[[0-9;]*m/g, ''))?.[0]?.replace(/\s+/g, ' '));
-              const result = probe ? { failed: probe } : await measureWithRetry(browser, url, { rootSelector: null, cap: opts.cap, deadlineMs: 420_000 });
+              const result = probe ? { failed: probe } : await measureWithRetry(browser, url, { rootSelector: null, cap: opts.cap, deadlineMs: 420_000, localOnly: true });
               failedInRow = result.failed ? failedInRow + 1 : 0;
               if (result.failed) { sink.screenFailures.push({ host: `${key} ${host} ${mode}`, screen: route, why: result.failed }); run.routes.push({ route, failed: result.failed }); log(key, host, mode, route, 'FAILED', result.failed.slice(0, 160)); continue; }
               sink.rows.push(...result.rows.map((r) => ({ corpus: key, host, mode, screen: route, ...r })));

@@ -97,8 +97,10 @@ const broken = (message) => /dynamically imported module|Failed to resolve impor
 
 // One page: load, settle, measure, all inside one deadline, so no page can hold the run. A reload mid-measure
 // (dependency re-optimisation) throws; the caller retries once. A page that cannot load fails at once, without a retry.
-export async function measurePage(browser, url, { rootSelector, cap = 150, timeoutMs = 20_000, deadlineMs = 240_000 }) {
+export async function measurePage(browser, url, { rootSelector, cap = 150, timeoutMs = 20_000, deadlineMs = 240_000, localOnly = false }) {
   const page = await browser.newPage({ viewport: { width: 1280, height: 900 }, reducedMotion: 'reduce' });
+  // real apps load remote images, video and fonts; the bench goes to the dev server only
+  if (localOnly) await page.route((u) => !['127.0.0.1', 'localhost'].includes(u.hostname) && u.protocol.startsWith('http'), (route) => route.abort());
   const errors = [];
   let navigations = 0, fail, timer;
   const failed = new Promise((_, reject) => { fail = reject; });
