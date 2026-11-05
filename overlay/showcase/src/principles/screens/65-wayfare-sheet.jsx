@@ -122,7 +122,7 @@ export default function PlaceSheet({ side = 'broken', onStatus }) {
   const span = (a, b) => ({ y: Math.min(a, b), h: Math.abs(a - b) });
   return (
     <div className="relative w-[40rem] max-w-full">
-      <div ref={phone} className="relative mx-auto h-[640px] w-[340px] touch-none overflow-hidden rounded-[36px] corner-squircle bg-[#ecefe7] shadow-window ring-1 ring-ink/12 select-none">
+      <div ref={phone} className="relative mx-auto h-[640px] w-[340px] touch-none overflow-clip rounded-[36px] corner-squircle bg-[#ecefe7] shadow-window ring-1 ring-ink/12 select-none">
         {/* the city, drawn as a map: blocks, parks, the river, streets, a walk to the café */}
         <svg viewBox={`0 0 ${W} ${H}`} className="absolute inset-0 size-full" aria-hidden="true">
           <rect width={W} height={H} fill="#ecefe7" />
@@ -151,7 +151,7 @@ export default function PlaceSheet({ side = 'broken', onStatus }) {
         </span>
         {/* the sheet: its top at OPEN, moved by its offset; it travels between its stops */}
         <section ref={sheet} onPointerDown={down} aria-label="Café Mona"
-          className="absolute inset-x-0 cursor-grab rounded-t-[20px] corner-squircle bg-surface px-[18px] pt-2 shadow-[0_0_12px_rgb(18_35_61/0.12)] active:cursor-grabbing" style={{ top: OPEN, height: H - OPEN + 120 }}>
+          className="absolute inset-x-0 cursor-grab touch-none rounded-t-[20px] corner-squircle bg-surface px-[18px] pt-2 shadow-[0_0_12px_rgb(18_35_61/0.12)] active:cursor-grabbing" style={{ top: OPEN, height: H - OPEN + 120 }}>
           <span className="mx-auto mb-3 block h-1 w-9 rounded-full bg-ink/16" />
           <span className="flex items-start gap-2.5">
             <span className="flex flex-col">
