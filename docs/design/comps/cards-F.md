@@ -125,3 +125,18 @@ Relay (#57). The lake photo is not used. valley.jpg and peak.jpg both show water
 real. #68 is the richest but the noisiest at its flaw moment. #76 is honest but thin. None introduces a second mistake
 by eye. Lists use one avatar size, the figures are tabular, targets are at least 24px, images have inner outlines, and
 nested radii were checked at the corners. Plumber still has to confirm each once it's coded.
+
+## Credits
+Photos from Unsplash, under the Unsplash License. Resized to 1600px on the long side, quality 80.
+
+| File | Photo | Photographer |
+| --- | --- | --- |
+| s65-cafe.jpg | https://unsplash.com/photos/a-cup-of-coffee-on-a-marble-table-ztWQ2IsKAU4 (photo-1678569187178-eab3ece6f778, a latte on a marble café table) | @omariko |
+| s74-lodge.jpg | https://unsplash.com/photos/brown-wooden-house-in-the-middle-of-snow-covered-pine-trees-bTQRVLiOXps (photo-1622066869975-df6a5029338a, an A-frame cabin in snowy pines) | @katertottz |
+| s74-trail.jpg | https://unsplash.com/photos/a-winding-dirt-path-leads-through-rolling-hills-mAYAhMwyFF4 (photo-1774462524607-e89868e006bc, a hill path) | @beewhy001 |
+| s74-architecture.jpg | https://unsplash.com/photos/modern-brutalist-architecture-with-concrete-textures-and-ceiling-lights-0I0lfvXvOhw (photo-1761850149117-ec0df2bfb141, board-formed concrete) | @creative_hina |
+| s74-neon.jpg | https://unsplash.com/photos/teal-and-purple-nightclub-spotlights-QOajY0MNp8Y (photo-1657208431551-cbf415b8ef26, stage spotlights) | @scarlettalt |
+| s74-pottery.jpg | https://unsplash.com/photos/hands-sculpt-a-clay-pot-on-the-potters-wheel-miTlsTvoLVg (photo-1753164726043-31e583f8a9b8, a pot on the wheel) | @silverkblack |
+| s74-sea.jpg | https://unsplash.com/photos/sunrise-over-the-ocean-xBMNXN8_-ng (photo-1743360557314-38213aefc925, sunrise over the sea) | @tizio1964 |
+| s77-design.jpg | https://unsplash.com/photos/website-wireframe-sketch-on-paper-4UGmm3WRUoQ (photo-1600132806608-231446b2e7af, wireframe sketches) | @sigmund |
+| logos/{monzo,github,slack,airbnb,linear,googlemeet}.svg | simple-icons 13.21.0 (CC0 paths; the marks are their companies' trademarks), vendored if missing | simple-icons |

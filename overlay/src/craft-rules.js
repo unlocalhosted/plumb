@@ -1265,14 +1265,21 @@ export const anchorOffset = {
   },
 };
 
+// already cut in the middle: the truncating part is the path's start, and a sibling after it keeps the end whole
+// (src/components/… then Checkbox.tsx)
+function cutInMiddle(el, facts) {
+  const next = el.nextElementSibling;
+  return !!next && !!words(next).trim() && !truncated(next, facts.style(next));
+}
+
 // #76. Truncate paths and ids in the middle: their ends carry the meaning.
 export const middleTruncate = {
   id: 'craft/middle-truncate', family: 'craft', number: [76], owns: ['text-flow'], once: 'ancestor', refines: ['craft/truncate-intent'],
-  scope: ({ el, facts }) => truncated(el, facts.style(el)) && pathLike(words(el)), reads: ['style'],
+  scope: ({ el, facts }) => truncated(el, facts.style(el)) && pathLike(words(el)) && !cutInMiddle(el, facts), reads: ['style'],
   check({ el, facts }, theme) {
     const s = facts.style(el);
     const t = words(el);
-    if (!truncated(el, s) || !pathLike(t)) return [];
+    if (!truncated(el, s) || !pathLike(t) || cutInMiddle(el, facts)) return [];
     return [{
       ...say(this.id, { text: t.length > 40 ? t.slice(0, 37) + '…' : t }),
       key: this.id, text: utility(el, 'truncate') ?? 'text-overflow', props: ['text-overflow'], value: 'ellipsis', n: 0,
