@@ -1,0 +1,97 @@
+<!doctype html>
+<!-- COMP #25, the one component (owner 2026-11-05: no app window; richness goes inside). Inkwell, a notes app,
+     announces Focus sessions with a dark card on its Today page. Inside it, the feature itself mid-use: a session
+     running on a real note (its words fading in), the four sessions of the day as segments, the week's focus drawn as
+     bars, friends focusing right now as faces. Quarry's tokens (overlay/showcase/src/theme.css); white words by
+     opacity steps on the dark, as the current build does.
+     BROKEN: the card is bg-black, #000 under white words: 21:1 over a large area. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Inkwell feature card (comp)</title>
+<style>
+  :root { --board: #eef1f5; --board-dot: #d6dce4; --accent: #5550d8; }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 48px; background: var(--board);
+    background-image: radial-gradient(var(--board-dot) 1px, transparent 1px); background-size: 16px 16px;
+    font: 14px/20px Inter, -apple-system, system-ui, sans-serif; color: #12233d; -webkit-font-smoothing: antialiased; }
+  .num { font-variant-numeric: tabular-nums; }
+  /* THE PLANTED MISTAKE: pure black for a 448 × 560 surface */
+  .card { width: 448px; border-radius: 10px; background: #000; color: #fff; padding: 24px; display: flex; flex-direction: column; gap: 20px; }
+
+  .live { display: flex; flex-direction: column; border-radius: 6px; box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.1); }
+  .live .bar { display: flex; align-items: center; gap: 8px; padding: 12px 16px; font-size: 13px; color: rgb(255 255 255 / 0.7); box-shadow: inset 0 -0.5px 0 rgb(255 255 255 / 0.14); }
+  .live .bar .r { margin-left: auto; }
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: #7cd4a9; box-shadow: 0 0 0 3px rgb(124 212 169 / 0.2); }
+  .timer { display: flex; align-items: flex-end; justify-content: space-between; padding: 18px 16px 0; }
+  .big { font-size: 56px; line-height: 1; font-weight: 500; letter-spacing: -0.03em; }
+  .left { font-size: 13px; color: rgb(255 255 255 / 0.7); text-align: right; }
+  .left b { display: block; font-size: 15px; font-weight: 500; color: #fff; }
+  .segs { display: flex; gap: 4px; padding: 14px 16px 0; }
+  .segs i { flex: 1; height: 4px; border-radius: 2px; background: rgb(255 255 255 / 0.12); overflow: hidden; }
+  .segs i.done { background: #fff; }
+  .segs i b { display: block; height: 100%; width: 75%; background: #fff; border-radius: 2px; }
+  .note { margin: 16px 16px 0; padding-left: 12px; box-shadow: inset 2px 0 0 rgb(255 255 255 / 0.16); font-size: 13px; line-height: 20px; color: rgb(255 255 255 / 0.7);
+    -webkit-mask-image: linear-gradient(to bottom, #000 45%, transparent); mask-image: linear-gradient(to bottom, #000 45%, transparent); height: 60px; }
+  .note b { font-weight: 500; color: #fff; }
+  .caret { display: inline-block; width: 1.5px; height: 15px; margin-left: 1px; vertical-align: -2px; background: #fff; }
+  .week { display: flex; align-items: flex-end; gap: 12px; padding: 4px 16px 16px; }
+  .week .lbl { font-size: 12px; line-height: 16px; color: rgb(255 255 255 / 0.7); }
+  .week .lbl b { display: block; font-size: 15px; line-height: 20px; font-weight: 500; color: #fff; }
+  .bars { margin-left: auto; display: flex; align-items: flex-end; gap: 6px; }
+  .bars span { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 10px; line-height: 12px; color: rgb(255 255 255 / 0.7); }
+  .bars i { width: 14px; border-radius: 3px; background: rgb(255 255 255 / 0.22); }
+  .bars .today i { background: #fff; }
+  .bars .today { color: #fff; font-weight: 600; }
+
+  .friends { display: flex; align-items: center; gap: 10px; font-size: 13px; color: rgb(255 255 255 / 0.7); }
+  .friends .st { display: flex; }
+  .friends img { width: 24px; height: 24px; border-radius: 50%; object-fit: cover; box-shadow: 0 0 0 2px #000; margin-left: -6px; }
+  .friends img:first-child { margin-left: 0; }
+  .friends b { color: #fff; font-weight: 500; }
+
+  .copy { display: flex; flex-direction: column; gap: 6px; }
+  .eyebrow { font-size: 12px; line-height: 16px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: rgb(255 255 255 / 0.7); }
+  .title { font-size: 22px; line-height: 28px; font-weight: 500; letter-spacing: -0.015em; }
+  .body { font-size: 14px; line-height: 22px; color: rgb(255 255 255 / 0.8); text-wrap: pretty; }
+  .actions { display: flex; gap: 8px; }
+  .btn { height: 36px; padding: 0 14px; border-radius: 6px; display: inline-flex; align-items: center; font-size: 14px; font-weight: 500; }
+  .btn.primary { background: #fff; color: #000; }
+  .btn.ghost { color: rgb(255 255 255 / 0.8); }
+</style>
+</head>
+<body>
+<article class="card">
+  <!-- the feature itself, mid-session -->
+  <section class="live">
+    <div class="bar"><span class="dot"></span><span>Focusing on <span style="color:#fff;font-weight:500">Q3 offsite plan</span></span><span class="r num">Session 2 of 4</span></div>
+    <div class="timer"><span class="big num">18:42</span><span class="left num"><b>6:18 left</b>412 words so far</span></div>
+    <div class="segs"><i class="done"></i><i><b></b></i><i></i><i></i></div>
+    <div class="note"><b>Day one, Lisbon.</b> Land by noon, drop bags at the guesthouse in Alfama, walk the team down to the river for lunch. Workshop starts at three in the old print shop<span class="caret"></span></div>
+    <div class="week">
+      <span class="lbl">This week<b class="num">6h 20m</b></span>
+      <span class="bars num">
+        <span><i style="height:18px"></i>M</span><span><i style="height:30px"></i>T</span><span class="today"><i style="height:38px"></i>W</span><span><i style="height:4px"></i>T</span><span><i style="height:4px"></i>F</span><span><i style="height:4px"></i>S</span><span><i style="height:4px"></i>S</span>
+      </span>
+    </div>
+  </section>
+
+  <div class="friends">
+    <span class="st">
+      <img src="../../../../overlay/showcase/src/media/people/person-07.jpg" alt="">
+      <img src="../../../../overlay/showcase/src/media/people/person-03.jpg" alt="">
+      <img src="../../../../overlay/showcase/src/media/people/person-08.jpg" alt="">
+    </span>
+    <span><b>Hana, Ama and Leo</b> are in a session now</span>
+  </div>
+
+  <div class="copy">
+    <span class="eyebrow">New in Inkwell</span>
+    <span class="title">Focus sessions</span>
+    <span class="body">Pick a note, set a time, and everything else in Inkwell goes quiet until the timer ends. Your sessions add up on the Today page.</span>
+  </div>
+  <div class="actions"><span class="btn primary">Try a session</span><span class="btn ghost">Not now</span></div>
+</article>
+</body>
+</html>

@@ -1,0 +1,116 @@
+<!doctype html>
+<!-- COMP #21, the one component (owner 2026-11-05: no app window; richness goes inside). Larder, a home cook's recipe
+     app: tonight's recipe card, mid-shop (two ingredients ticked off), on the dish's own saffron ground. A real photo of
+     the dish, the cook's face and the recipe's rating, the 35 minutes drawn as their three stages, the step you're on
+     with its timer. Quarry's tokens (overlay/showcase/src/theme.css) for the white card; the ground is the recipe's.
+     BROKEN: the ingredients card floats on saffron with Tailwind's shadow-lg, 10% black: a grey smudge at its edge. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Larder recipe card (comp)</title>
+<style>
+  :root {
+    --surface: #fff; --sunken: #f3f5f9; --ink: #12233d; --ink-muted: #5a6779; --ink-subtle: #6f7c90;
+    --line: rgb(18 35 61 / 0.11); --board: #eef1f5; --board-dot: #d6dce4;
+    /* the recipe's own ground, its ink, and the saffron itself */
+    --ground: #f4e2c3; --g-ink: #3d2a12; --g-muted: #6e5128; --saffron: #c9781c; --hl: 0.5px;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 48px; background: var(--board);
+    background-image: radial-gradient(var(--board-dot) 1px, transparent 1px); background-size: 16px 16px;
+    font: 14px/20px Inter, -apple-system, system-ui, sans-serif; color: var(--ink); -webkit-font-smoothing: antialiased; }
+  .num { font-variant-numeric: tabular-nums; }
+  .card { width: 408px; border-radius: 10px; overflow: hidden; background: var(--ground); color: var(--g-ink); padding: 12px 12px 20px; display: flex; flex-direction: column; gap: 18px; }
+
+  .photo { position: relative; height: 224px; margin: -12px -12px 0; overflow: hidden; }
+  .photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .photo .save { position: absolute; top: 10px; right: 10px; width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; background: rgb(255 255 255 / 0.9); color: var(--g-ink); }
+
+  .head { padding: 0 16px; }
+  .meta { font-size: 12px; line-height: 16px; font-weight: 500; color: var(--g-muted); }
+  .title { margin-top: 4px; font-size: 24px; line-height: 30px; font-weight: 600; letter-spacing: -0.02em; }
+  .by { display: flex; align-items: center; gap: 8px; margin-top: 10px; font-size: 13px; color: var(--g-muted); }
+  .by img { width: 24px; height: 24px; border-radius: 50%; object-fit: cover; outline: 1px solid rgb(61 42 18 / 0.15); outline-offset: -1px; }
+  .by b { font-weight: 500; color: var(--g-ink); }
+  .stars { margin-left: auto; display: flex; align-items: center; gap: 4px; }
+  .stars svg { color: var(--saffron); }
+
+  /* the 35 minutes, drawn: three stages, the one you're in marked */
+  .time { padding: 0 16px; }
+  .stages { display: flex; gap: 3px; height: 6px; }
+  .stages i { border-radius: 3px; }
+  .labels { display: flex; margin-top: 6px; font-size: 11px; line-height: 16px; color: var(--g-muted); }
+  .labels span { white-space: nowrap; }
+
+  /* THE PLANTED MISTAKE: shadow-lg, 10% black, on a saffron ground */
+  .ing { border-radius: 10px; background: var(--surface); color: var(--ink); padding: 4px 16px 6px;
+    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1); }
+  .ing .h { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; box-shadow: inset 0 calc(-1 * var(--hl)) 0 var(--line); }
+  .ing .h .t { font-size: 15px; font-weight: 600; letter-spacing: -0.01em; }
+  .ing .h .t span { font-weight: 400; color: var(--ink-muted); font-size: 13px; margin-left: 6px; }
+  .step { display: flex; align-items: center; height: 28px; border-radius: 6px; box-shadow: inset 0 0 0 1px var(--line); }
+  .step span { width: 28px; text-align: center; color: var(--ink-muted); }
+  .step b { min-width: 20px; text-align: center; font-weight: 600; font-size: 13px; }
+  .row { display: grid; grid-template-columns: 18px 1fr auto; align-items: center; gap: 12px; padding: 9px 0; box-shadow: inset 0 calc(-1 * var(--hl)) 0 var(--line); font-size: 14px; }
+  .row:last-child { box-shadow: none; }
+  .box { width: 18px; height: 18px; border-radius: 4px; box-shadow: inset 0 0 0 1.5px rgb(18 35 61 / 0.22); display: grid; place-items: center; }
+  .row.got .box { background: var(--g-ink); box-shadow: none; }
+  .row.got .what { color: var(--ink-subtle); text-decoration: line-through; text-decoration-color: rgb(18 35 61 / 0.35); }
+  .row .q { color: var(--ink-muted); }
+
+  /* where you are in the method */
+  .now { display: flex; align-items: center; gap: 14px; padding: 12px 16px; border-radius: 6px; background: rgb(255 255 255 / 0.45); }
+  .ring { width: 48px; height: 48px; flex: none; }
+  .now .k { font-size: 12px; line-height: 16px; font-weight: 500; color: var(--g-muted); }
+  .now .d { font-size: 13px; line-height: 18px; margin-top: 2px; text-wrap: pretty; }
+  .go { height: 40px; border-radius: 6px; display: flex; align-items: center; justify-content: center; gap: 8px; background: var(--g-ink); color: var(--ground); font-size: 14px; font-weight: 500; }
+</style>
+</head>
+<body>
+<article class="card">
+  <div class="photo">
+    <img src="https://images.unsplash.com/photo-1687630433653-e6c9faec95b3?w=816&h=432&fit=crop&q=75" alt="Saffron risotto in a white bowl">
+    <span class="save"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 14s-5.5-3.3-5.5-7.4A3 3 0 0 1 8 4.3a3 3 0 0 1 5.5 2.3C13.5 10.7 8 14 8 14z"/></svg></span>
+  </div>
+
+  <header class="head">
+    <div class="meta">Dinner · 35 min · serves 4</div>
+    <div class="title">Saffron risotto</div>
+    <div class="by">
+      <img src="../../../../overlay/showcase/src/media/people/person-10.jpg" alt="">
+      <span>From <b>Lucia Ferraro</b></span>
+      <span class="stars num"><svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1.5l1.9 4 4.4.5-3.3 3 .9 4.4L8 11.2l-3.9 2.2.9-4.4-3.3-3 4.4-.5z"/></svg><b>4.8</b> · 412 cooks</span>
+    </div>
+  </header>
+
+  <section class="time">
+    <div class="stages">
+      <i style="flex:10;background:var(--g-ink)"></i><i style="flex:22;background:var(--saffron)"></i><i style="flex:3;background:rgb(61 42 18 / 0.18)"></i>
+    </div>
+    <div class="labels num"><span style="flex:10">Prep 10</span><span style="flex:22">Stir 22 · you’re here</span><span style="flex:3;text-align:right">Rest 3</span></div>
+  </section>
+
+  <section class="ing">
+    <div class="h">
+      <span class="t">Ingredients<span>2 of 7 ready</span></span>
+      <span class="step num"><span>−</span><b>4</b><span>+</span></span>
+    </div>
+    <div class="row got"><span class="box"><svg width="10" height="10" viewBox="0 0 12 12"><path d="M2.5 6.2l2.4 2.4 4.6-5" stroke="#f4e2c3" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="what">Carnaroli rice</span><span class="q num">320 g</span></div>
+    <div class="row got"><span class="box"><svg width="10" height="10" viewBox="0 0 12 12"><path d="M2.5 6.2l2.4 2.4 4.6-5" stroke="#f4e2c3" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="what">Saffron threads</span><span class="q num">1 pinch</span></div>
+    <div class="row"><span class="box"></span><span class="what">Warm chicken stock</span><span class="q num">1.2 l</span></div>
+    <div class="row"><span class="box"></span><span class="what">Shallots, finely chopped</span><span class="q num">2</span></div>
+    <div class="row"><span class="box"></span><span class="what">Dry white wine</span><span class="q num">120 ml</span></div>
+    <div class="row"><span class="box"></span><span class="what">Butter, cold</span><span class="q num">50 g</span></div>
+    <div class="row"><span class="box"></span><span class="what">Parmesan, grated</span><span class="q num">60 g</span></div>
+  </section>
+
+  <section class="now">
+    <svg class="ring" viewBox="0 0 48 48"><circle cx="24" cy="24" r="20" fill="none" stroke="rgb(61 42 18 / 0.14)" stroke-width="4"/><circle cx="24" cy="24" r="20" fill="none" stroke="var(--saffron)" stroke-width="4" stroke-linecap="round" stroke-dasharray="83.8 125.7" transform="rotate(-90 24 24)"/><text x="24" y="28" text-anchor="middle" font-size="11" font-weight="600" fill="#3d2a12" font-family="Inter, -apple-system, system-ui, sans-serif">6:42</text></svg>
+    <span><div class="k">Step 3 of 6 · stir</div><div class="d">Add the stock a ladle at a time, stirring, until the rice is just tender.</div></span>
+  </section>
+
+  <span class="go">Continue to step 4<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h10M9 4l4 4-4 4"/></svg></span>
+</article>
+</body>
+</html>

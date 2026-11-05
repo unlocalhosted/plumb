@@ -1,0 +1,183 @@
+<!doctype html>
+<!-- COMP #46 capitals get case-sensitive forms, the one component (owner 2026-11-05). Tern, a small Lisbon airline
+     (renamed from Northwind Air: #75 owns "Northwind"), its boarding pass on the morning of the flight: the route drawn
+     with the flight's length, gate, boarding time and seat as the big fields, the seat on a slice of the cabin, the
+     boarding zones as a bar, and the stub with the passenger's face and the code. Set in capitals, as passes are.
+     BROKEN state: .caps has no font-feature-settings: "case", so every dash, colon and bracket between capitals hangs
+     at lowercase height: TN–754, 07:15–07:40 (the measured line), 14A (WINDOW), ECONOMY (Y). Fixed: .caps gets "case". -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tern boarding pass (comp)</title>
+<style>
+  :root {
+    --surface: #fff; --sunken: #f3f5f9; --ink: #12233d; --ink-muted: #5a6779; --ink-subtle: #6f7c90;
+    --line: rgb(18 35 61 / 0.11); --board: #eef1f5; --board-dot: #d6dce4; --hl: 0.5px;
+    --positive: #0f6f58; --positive-soft: #e5f4ef;
+    --r-card: 10px; --r-control: 6px; --r-chip: 4px;
+    --shadow-card: 0 0 0 1px rgb(18 35 61 / 0.11), 0 1px 1px rgb(18 35 61 / 0.03), 0 2px 6px rgb(18 35 61 / 0.04);
+    --shadow-window: 0 1px 2px oklch(0.21 0.02 264 / 0.04), 0 8px 24px oklch(0.21 0.02 264 / 0.06), 0 24px 64px oklch(0.21 0.02 264 / 0.08);
+    /* Tern's own colour: a deep Atlantic teal for the band, and its bright tint for what you act on (the gate) */
+    --brand: #0b4f5c; --brand-ink: #e6f3f3; --brand-bright: #0e7c86; --brand-soft: #e3f2f2;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 48px; background: var(--board);
+    background-image: radial-gradient(var(--board-dot) 1px, transparent 1px); background-size: 16px 16px;
+    font: 14px/20px Inter, -apple-system, system-ui, sans-serif; color: var(--ink); -webkit-font-smoothing: antialiased; }
+  .num { font-variant-numeric: tabular-nums; }
+  /* capitals, tracked as small capitals are. BROKEN: no "case" here. Fixed: font-feature-settings: "case" */
+  .caps { text-transform: uppercase; letter-spacing: 0.04em; }
+  .lbl { font-size: 11px; line-height: 14px; font-weight: 500; color: var(--ink-subtle); text-transform: uppercase; letter-spacing: 0.06em; }
+
+  .pass { width: 440px; filter: drop-shadow(0 1px 1px rgb(18 35 61 / 0.05)) drop-shadow(0 6px 14px rgb(18 35 61 / 0.08)); }
+  .main, .stub { background: var(--surface); }
+  .main { border-radius: var(--r-card) var(--r-card) 0 0; overflow: hidden;
+    -webkit-mask: radial-gradient(circle 10px at 0 100%, transparent 9.5px, #000 10px) left / 51% 100% no-repeat, radial-gradient(circle 10px at 100% 100%, transparent 9.5px, #000 10px) right / 51% 100% no-repeat; }
+  .stub { border-radius: 0 0 var(--r-card) var(--r-card);
+    -webkit-mask: radial-gradient(circle 10px at 0 0, transparent 9.5px, #000 10px) left / 51% 100% no-repeat, radial-gradient(circle 10px at 100% 0, transparent 9.5px, #000 10px) right / 51% 100% no-repeat; }
+
+  .band { display: flex; align-items: center; gap: 10px; padding: 14px 24px; background: var(--brand); color: var(--brand-ink); }
+  .band .mark { width: 22px; height: 22px; border-radius: 6px; background: var(--brand-ink); display: grid; place-items: center; }
+  .band .name { font-size: 15px; font-weight: 600; letter-spacing: -0.01em; color: #fff; }
+  .band .kind { margin-left: auto; font-size: 11px; line-height: 14px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; opacity: 1; color: #b9dcdc; }
+
+  /* the route: the two codes, the flight's length drawn between them */
+  .route { display: grid; grid-template-columns: auto 1fr auto; align-items: end; gap: 16px; padding: 20px 24px 0; }
+  .city { font-size: 12px; line-height: 16px; color: var(--ink-muted); }
+  .code { font-size: 42px; line-height: 1; font-weight: 600; letter-spacing: -0.02em; margin-top: 4px; }
+  .time { margin-top: 6px; font-size: 13px; line-height: 18px; font-weight: 500; }
+  .end { text-align: right; }
+  .arc { position: relative; height: 64px; }
+  .arc svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+  .arc .dur { position: absolute; left: 0; right: 0; bottom: 0; text-align: center; font-size: 12px; line-height: 16px; color: var(--ink-muted); }
+
+  /* the big three */
+  .big { display: grid; grid-template-columns: repeat(3, 1fr); margin: 20px 24px 0; border-radius: var(--r-control); background: var(--sunken); }
+  .big > div { padding: 10px 14px 12px; }
+  .big > div + div { box-shadow: inset var(--hl) 0 0 var(--line); }
+  .big .v { margin-top: 4px; font-size: 22px; line-height: 26px; font-weight: 600; letter-spacing: -0.01em; }
+  .big .gate .v { color: var(--brand-bright); }
+
+  /* the row fields */
+  .rows { display: grid; grid-template-columns: 1.15fr 1fr 1fr; gap: 14px 16px; padding: 18px 24px 0; }
+  .rows .v { margin-top: 3px; font-size: 13px; line-height: 18px; font-weight: 500; }
+
+  /* the seat on a slice of the cabin, and the boarding zones */
+  .data { display: grid; grid-template-columns: auto 1fr; gap: 24px; align-items: start; padding: 18px 24px 22px; }
+  .cabin { display: grid; grid-template-columns: 22px repeat(3, 14px) 10px repeat(3, 14px); gap: 4px; align-items: center; }
+  .cabin span { font-size: 10px; line-height: 14px; color: var(--ink-subtle); text-align: center; font-variant-numeric: tabular-nums; }
+  .cabin span.r { text-align: left; }
+  .cabin i { height: 14px; border-radius: 3px 3px 4px 4px; background: var(--surface); box-shadow: inset 0 0 0 1px rgb(18 35 61 / 0.16); }
+  .cabin i.x { background: rgb(18 35 61 / 0.12); box-shadow: none; }
+  .cabin i.me { background: var(--brand-bright); box-shadow: 0 0 0 2px var(--brand-soft); }
+  .cabin b { display: block; }
+  .zones .bar { display: grid; grid-template-columns: repeat(5, 1fr); gap: 3px; margin-top: 8px; }
+  .zones .bar i { height: 8px; border-radius: 2px; background: var(--sunken); box-shadow: inset 0 0 0 1px var(--line); }
+  .zones .bar i.done { background: rgb(18 35 61 / 0.22); box-shadow: none; }
+  .zones .bar i.you { background: var(--brand-bright); box-shadow: none; }
+  .zones .ticks { display: grid; grid-template-columns: repeat(5, 1fr); gap: 3px; margin-top: 4px; font-size: 10px; line-height: 14px; color: var(--ink-subtle); font-variant-numeric: tabular-nums; }
+  .zones .ticks span:nth-child(2) { color: var(--brand-bright); font-weight: 600; }
+  .status { display: flex; align-items: center; gap: 6px; margin-top: 12px; font-size: 12px; line-height: 16px; color: var(--ink-muted); }
+  .chip { display: inline-flex; align-items: center; gap: 5px; height: 20px; padding: 0 7px; border-radius: 99px; background: var(--positive-soft); color: var(--positive); font-size: 11px; font-weight: 500; }
+  .chip i { width: 5px; height: 5px; border-radius: 50%; background: var(--positive); }
+
+  /* the tear */
+  .tear { height: 0; margin: 0 20px; border-top: 1.5px dashed rgb(18 35 61 / 0.18); position: relative; z-index: 1; }
+
+  .stub { display: grid; grid-template-columns: 1fr auto; gap: 16px; align-items: center; padding: 18px 24px 20px; }
+  .who { display: flex; align-items: center; gap: 12px; }
+  .who img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; outline: 1px solid rgb(0 0 0 / 0.08); outline-offset: -1px; }
+  .who .v { font-size: 14px; line-height: 20px; font-weight: 600; }
+  .meta { display: flex; gap: 20px; margin-top: 12px; }
+  .meta .v { margin-top: 3px; font-size: 13px; line-height: 18px; font-weight: 500; }
+  .qr { width: 92px; height: 92px; padding: 6px; border-radius: var(--r-control); box-shadow: inset 0 0 0 1px var(--line); }
+  .qr svg { display: block; width: 100%; height: 100%; }
+</style>
+</head>
+<body>
+<article class="pass">
+  <div class="main">
+    <header class="band">
+      <span class="mark"><svg width="14" height="14" viewBox="0 0 16 16"><path d="M1.5 9.5c2.6-.3 4.6-1.5 6-3.9.6 2 1.9 3.2 4.1 3.5 1-.1 1.9-.6 2.9-1.4-.7 2-2.3 3.4-4.6 3.6-2.4.1-4.5-.6-8.4-1.8Z" fill="#0b4f5c"/></svg></span>
+      <span class="name">Tern</span>
+      <span class="kind">Boarding pass</span>
+    </header>
+
+    <div class="route">
+      <div><div class="city">Lisbon</div><div class="code caps">LIS</div><div class="time num">07:55</div></div>
+      <div class="arc">
+        <svg viewBox="0 0 200 64" preserveAspectRatio="none" aria-hidden="true">
+          <path d="M4 44 C 60 6, 140 6, 196 44" fill="none" stroke="rgb(18 35 61 / 0.22)" stroke-width="1.5" stroke-dasharray="1 5" stroke-linecap="round" vector-effect="non-scaling-stroke"/>
+          <circle cx="4" cy="44" r="3" fill="var(--brand-bright)"/><circle cx="196" cy="44" r="3" fill="none" stroke="var(--brand-bright)" stroke-width="1.5" vector-effect="non-scaling-stroke"/>
+        </svg>
+        <svg style="left:50%;top:6px;width:18px;height:18px;margin-left:-9px" viewBox="0 0 16 16"><path d="M15 8c0-.6-.5-1-1.1-1H10L6.6 1.5H5.2L7 7H3.6L2.4 5.4H1.2L2 8l-.8 2.6h1.2L3.6 9H7l-1.8 5.5h1.4L10 9h3.9c.6 0 1.1-.4 1.1-1Z" fill="var(--ink)"/></svg>
+        <span class="dur num">3h 35m · direct</span>
+      </div>
+      <div class="end"><div class="city">Copenhagen</div><div class="code caps">CPH</div><div class="time num">12:30</div></div>
+    </div>
+
+    <div class="big">
+      <div class="gate"><div class="lbl">Gate</div><div class="v caps">B12</div></div>
+      <div><div class="lbl">Boards</div><div class="v num">07:15</div></div>
+      <div><div class="lbl">Seat</div><div class="v caps">14A</div></div>
+    </div>
+
+    <div class="rows">
+      <div><div class="lbl">Flight</div><div class="v caps num">TN–754</div></div>
+      <div><div class="lbl">Class</div><div class="v caps">Economy (Y)</div></div>
+      <div><div class="lbl">Terminal</div><div class="v caps">T1</div></div>
+      <div><div class="lbl">Boarding</div><div class="v caps num" data-measured>07:15–07:40</div></div>
+      <div><div class="lbl">Seat</div><div class="v caps">14A (Window)</div></div>
+      <div><div class="lbl">Aircraft</div><div class="v caps">A321neo</div></div>
+    </div>
+
+    <div class="data">
+      <!-- the seat on a slice of the cabin: rows 12 to 16 -->
+      <div class="cabin" aria-label="Seat 14A, a window seat on row 14">
+        <span></span><span>A</span><span>B</span><span>C</span><span></span><span>D</span><span>E</span><span>F</span>
+        <span class="r">12</span><i class="x"></i><i class="x"></i><i></i><b></b><i class="x"></i><i></i><i class="x"></i>
+        <span class="r">13</span><i class="x"></i><i></i><i class="x"></i><b></b><i class="x"></i><i class="x"></i><i class="x"></i>
+        <span class="r" style="color:var(--brand-bright);font-weight:600">14</span><i class="me"></i><i class="x"></i><i class="x"></i><b></b><i></i><i class="x"></i><i class="x"></i>
+        <span class="r">15</span><i class="x"></i><i class="x"></i><i></i><b></b><i class="x"></i><i class="x"></i><i></i>
+        <span class="r">16</span><i></i><i class="x"></i><i class="x"></i><b></b><i class="x"></i><i></i><i class="x"></i>
+      </div>
+      <div class="zones">
+        <div class="lbl">Boarding by zone</div>
+        <div class="bar"><i class="done"></i><i class="you"></i><i></i><i></i><i></i></div>
+        <div class="ticks"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span></div>
+        <div class="status"><span class="chip"><i></i>On time</span><span class="num">Zone 2 boards in 38 min</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div style="background:var(--surface);height:0"></div>
+  <div class="tear" aria-hidden="true"></div>
+
+  <div class="stub">
+    <div>
+      <div class="who">
+        <img src="../../../../overlay/showcase/src/media/people/person-03.jpg" alt="">
+        <span><div class="lbl">Passenger</div><div class="v caps">Okafor / Sana Ms</div></span>
+      </div>
+      <div class="meta">
+        <div><div class="lbl">Booking</div><div class="v caps num">K7QX2M</div></div>
+        <div><div class="lbl">Bags</div><div class="v caps num">1 × 23 kg</div></div>
+        <div><div class="lbl">Seq</div><div class="v num">041</div></div>
+      </div>
+    </div>
+    <div class="qr" id="qr" aria-label="Boarding code"></div>
+  </div>
+</article>
+<script>
+  // a QR-like code drawn from the booking reference: three finder squares and a seeded field of modules
+  const n = 25, s = [...'K7QX2M-TN754-14A'].reduce((a, c) => (a * 31 + c.charCodeAt(0)) >>> 0, 7);
+  let seed = s; const rnd = () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 2 ** 32);
+  const finder = (x, y) => `<rect x="${x}" y="${y}" width="7" height="7" fill="#12233d"/><rect x="${x + 1}" y="${y + 1}" width="5" height="5" fill="#fff"/><rect x="${x + 2}" y="${y + 2}" width="3" height="3" fill="#12233d"/>`;
+  const inFinder = (x, y) => (x < 8 && y < 8) || (x > n - 9 && y < 8) || (x < 8 && y > n - 9);
+  let cells = '';
+  for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) if (!inFinder(x, y) && rnd() < 0.48) cells += `M${x} ${y}h1v1h-1z`;
+  document.getElementById('qr').innerHTML = `<svg viewBox="0 0 ${n} ${n}" shape-rendering="crispEdges">${finder(0, 0)}${finder(n - 7, 0)}${finder(0, n - 7)}<path d="${cells}" fill="#12233d"/></svg>`;
+</script>
+</body>
+</html>

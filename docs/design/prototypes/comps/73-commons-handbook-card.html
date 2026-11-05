@@ -1,0 +1,112 @@
+<!doctype html>
+<!-- COMP #73, the one component (owner 2026-11-05: no app around it, rich inside). Commons, a team wiki: Halyard's
+     onboarding page in its own scrolling pane, a sticky header with the section links. Slate's tokens
+     (overlay/showcase/src/theme.css). Drawn as the screen shows at rest, broken: First week was just jumped to, and with
+     no scroll margin its heading (and the first lines under it) sits under the sticky header. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Commons handbook (comp)</title>
+<style>
+  :root {
+    --surface: #fff; --sunken: #f3f5f9; --ink: #12233d; --ink-muted: #5a6779; --ink-subtle: #6f7c90;
+    --line: rgb(18 35 61 / 0.11); --accent: #5550d8; --accent-soft: #efeefd; --accent-deep: #3631a6;
+    --positive: #0f6f58; --positive-soft: #e5f4ef; --caution: #965a03; --caution-soft: #fcf1dd;
+    --board: #eef1f5; --board-dot: #d6dce4;
+    --shadow-card: 0 0 0 1px rgb(18 35 61 / 0.11), 0 1px 1px rgb(18 35 61 / 0.03), 0 2px 6px rgb(18 35 61 / 0.04);
+    --hl: 0.5px;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 48px; background: var(--board);
+    background-image: radial-gradient(var(--board-dot) 1px, transparent 1px); background-size: 16px 16px;
+    font: 14px/20px Inter, -apple-system, system-ui, sans-serif; color: var(--ink); -webkit-font-smoothing: antialiased; }
+  .num { font-variant-numeric: tabular-nums; }
+  .face { border-radius: 50%; object-fit: cover; outline: 1px solid rgb(0 0 0 / 0.08); outline-offset: -1px; }
+  .mark { -webkit-mask: var(--m) center / contain no-repeat; mask: var(--m) center / contain no-repeat; background: var(--g, #fff); }
+
+  .pane { position: relative; width: 480px; height: 560px; overflow: hidden; border-radius: 10px; background: var(--surface); box-shadow: var(--shadow-card); }
+
+  /* the sticky header */
+  .top { position: absolute; inset: 0 0 auto 0; z-index: 1; padding: 14px 24px 0; background: rgb(255 255 255 / 0.95); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); box-shadow: inset 0 calc(-1 * var(--hl)) 0 var(--line); }
+  .crumb { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--ink-subtle); }
+  .crumb .ws { width: 16px; height: 16px; border-radius: 4px; background: #0e5a6d; color: #fff; font-size: 10px; font-weight: 600; display: grid; place-items: center; }
+  .crumb .eds { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+  .crumb .eds span { display: flex; }
+  .crumb .eds img { width: 20px; height: 20px; margin-left: -5px; box-shadow: 0 0 0 2px var(--surface); }
+  .ttl { display: flex; align-items: baseline; gap: 10px; margin-top: 6px; }
+  .ttl h1 { margin: 0; font-size: 18px; line-height: 24px; font-weight: 600; letter-spacing: -0.015em; }
+  .ttl span { font-size: 12px; color: var(--ink-subtle); }
+  nav { display: flex; gap: 18px; margin-top: 8px; font-size: 13px; color: var(--ink-muted); }
+  nav a { display: inline-flex; align-items: center; height: 32px; color: inherit; text-decoration: none; }
+  nav a.on { color: var(--ink); font-weight: 500; box-shadow: inset 0 -2px 0 var(--accent); }
+
+  /* the page, scrolled so First week's heading is at the very top of the pane */
+  .page { position: absolute; left: 0; right: 0; top: 0; padding: 0 24px; }
+  h2 { margin: 0; font-size: 21px; line-height: 28px; font-weight: 600; letter-spacing: -0.015em; }
+  .page p { margin: 8px 0 0; font-size: 14px; line-height: 22px; color: var(--ink-muted); max-width: 26rem; }
+  .days { margin-top: 16px; border-radius: 10px; box-shadow: inset 0 0 0 1px var(--line); }
+  .day { display: grid; grid-template-columns: 22px 44px 1fr auto; align-items: center; gap: 10px; padding: 10px 14px; box-shadow: inset 0 calc(-1 * var(--hl)) 0 var(--line); }
+  .day:last-child { box-shadow: none; }
+  .check { width: 18px; height: 18px; border-radius: 5px; box-shadow: inset 0 0 0 1.5px rgb(18 35 61 / 0.22); display: grid; place-items: center; }
+  .check.done { background: var(--positive); box-shadow: none; }
+  .day .d { font-size: 12px; font-weight: 500; color: var(--ink-subtle); }
+  .day .w { font-size: 13.5px; }
+  .day.done .w { color: var(--ink-muted); text-decoration: line-through; text-decoration-color: rgb(18 35 61 / 0.3); }
+  .day .who { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--ink-subtle); }
+  .day .who img { width: 22px; height: 22px; }
+  .day.now { background: var(--accent-soft); }
+  .day.now .d { color: var(--accent-deep); }
+  .pill { height: 20px; padding: 0 7px; border-radius: 4px; display: inline-flex; align-items: center; font-size: 11.5px; font-weight: 500; background: var(--surface); color: var(--accent-deep); }
+  .buddy { display: flex; align-items: center; gap: 12px; margin-top: 12px; padding: 12px 14px; border-radius: 10px; background: var(--sunken); }
+  .buddy img { width: 40px; height: 40px; }
+  .buddy .t { font-size: 13.5px; font-weight: 500; }
+  .buddy .s { font-size: 12.5px; color: var(--ink-muted); }
+  .buddy .b { margin-left: auto; height: 32px; padding: 0 12px; display: inline-flex; align-items: center; border-radius: 6px; background: var(--surface); font-size: 13px; font-weight: 500; box-shadow: inset 0 0 0 1px var(--line), 0 1px 1px rgb(18 35 61 / 0.04); }
+  h2.next { margin-top: 28px; }
+  .tools { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
+  .tool { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px; box-shadow: inset 0 0 0 1px var(--line); }
+  .tool .lg { width: 28px; height: 28px; border-radius: 7px; display: grid; place-items: center; background: var(--b); }
+  .tool .lg i { width: 14px; height: 14px; }
+  .tool .t { font-size: 13px; font-weight: 500; }
+  .tool .s { font-size: 12px; color: var(--ink-subtle); }
+  .thumb { position: absolute; right: 3px; top: 214px; width: 6px; height: 120px; border-radius: 3px; background: rgb(18 35 61 / 0.22); }
+</style>
+</head>
+<body>
+<article class="pane" data-pane>
+  <!-- the page under the header: First week's heading at y 0, where the jump put it -->
+  <div class="page">
+    <h2 id="first-week">First week</h2>
+    <p>Each day has one thing to finish. By Friday you’ll have shipped something small and written down what confused you.</p>
+    <div class="days">
+      <div class="day done"><span class="check done"><svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 5.2 4.2 7.4 8 3"/></svg></span><span class="d">Mon</span><span class="w">Meet your buddy</span><span class="who"><img class="face" src="../../../../overlay/showcase/src/media/people/person-05.jpg" alt=""></span></div>
+      <div class="day done"><span class="check done"><svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 5.2 4.2 7.4 8 3"/></svg></span><span class="d">Tue</span><span class="w">Ship a small fix</span><span class="who"><img class="face" src="../../../../overlay/showcase/src/media/people/person-08.jpg" alt=""></span></div>
+      <div class="day now"><span class="check"></span><span class="d">Wed</span><span class="w">Sit in on a design crit</span><span class="who"><span class="pill num">Today, 15:00</span><img class="face" src="../../../../overlay/showcase/src/media/people/person-07.jpg" alt=""></span></div>
+      <div class="day"><span class="check"></span><span class="d">Thu</span><span class="w">Pair on a support ticket</span><span class="who"><img class="face" src="../../../../overlay/showcase/src/media/people/person-02.jpg" alt=""></span></div>
+      <div class="day"><span class="check"></span><span class="d">Fri</span><span class="w">Write down three questions</span><span class="who">You</span></div>
+    </div>
+    <div class="buddy">
+      <img class="face" src="../../../../overlay/showcase/src/media/people/person-05.jpg" alt="">
+      <span><div class="t">Your buddy: Maya Chen</div><div class="s">Product designer · Lisbon, an hour behind</div></span>
+      <span class="b">Message</span>
+    </div>
+    <h2 class="next">Tools</h2>
+    <p>We plan in Linear, talk in Slack, and keep every decision here.</p>
+    <div class="tools">
+      <div class="tool"><span class="lg" style="--b:#5e6ad2"><i class="mark" style="--m:url(https://cdn.jsdelivr.net/npm/simple-icons@13.21.0/icons/linear.svg)"></i></span><span><div class="t">Linear</div><div class="s">Plans and issues</div></span></div>
+      <div class="tool"><span class="lg" style="--b:#4a154b"><i class="mark" style="--m:url(https://cdn.jsdelivr.net/npm/simple-icons@13.21.0/icons/slack.svg)"></i></span><span><div class="t">Slack</div><div class="s">#design, #help</div></span></div>
+    </div>
+  </div>
+
+  <header class="top" data-header>
+    <div class="crumb"><span class="ws">H</span>Halyard<span>/</span>Handbook
+      <span class="eds"><span><img class="face" src="../../../../overlay/showcase/src/media/people/person-07.jpg" alt=""><img class="face" src="../../../../overlay/showcase/src/media/people/person-06.jpg" alt=""></span>Edited by Ruth · 3d</span>
+    </div>
+    <div class="ttl"><h1>Onboarding</h1><span>6 min read</span></div>
+    <nav aria-label="Sections"><a href="#before">Before you start</a><a class="on" href="#first-week" aria-current="location">First week</a><a href="#tools">Tools</a><a href="#people">People</a></nav>
+  </header>
+  <span class="thumb"></span>
+</article>
+</body>
+</html>

@@ -1,0 +1,136 @@
+<!doctype html>
+<!-- COMP #65, the one component (owner 2026-11-05: no app around it, rich inside). Wayfare's city map on a phone, a
+     café's place sheet fully open over it. Slate's tokens (overlay/showcase/src/theme.css). Hands-on: drawn the moment
+     the flaw shows on the broken side: the hand pressed on the sheet and pulled 80px up past its open limit; the sheet,
+     clamped, didn't move. plumber's marks: the limit (dashed), where you pressed (ring), your hand now (coral dot), the
+     ground your hand crossed with nothing following (hatch, outline), the tag. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Wayfare place sheet (comp)</title>
+<style>
+  :root {
+    --surface: #fff; --sunken: #f3f5f9; --ink: #12233d; --ink-muted: #5a6779; --ink-subtle: #6f7c90;
+    --line: rgb(18 35 61 / 0.11); --accent: #5550d8; --accent-soft: #efeefd; --accent-deep: #3631a6;
+    --positive: #0f6f58; --caution: #965a03; --board: #eef1f5; --board-dot: #d6dce4;
+    --shadow-card: 0 0 0 1px rgb(18 35 61 / 0.11), 0 1px 1px rgb(18 35 61 / 0.03), 0 2px 6px rgb(18 35 61 / 0.04);
+    --shadow-window: 0 1px 2px rgb(18 35 61 / 0.04), 0 8px 24px rgb(18 35 61 / 0.06), 0 24px 64px rgb(18 35 61 / 0.08);
+    --hl: 0.5px;
+    --pl-off: #bf3a1e; --pl-on: #1a9460; --pl-sky: #2a7fd0; --pl-ink-3: #b3ad9f; --pl-halo: rgb(255 255 255 / 0.9);
+    --pl-mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, monospace;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 48px; background: var(--board);
+    background-image: radial-gradient(var(--board-dot) 1px, transparent 1px); background-size: 16px 16px;
+    font: 14px/20px Inter, -apple-system, system-ui, sans-serif; color: var(--ink); -webkit-font-smoothing: antialiased; }
+  .num { font-variant-numeric: tabular-nums; }
+  .stage { position: relative; width: 560px; display: flex; justify-content: center; }
+  .phone { position: relative; width: 340px; height: 640px; border-radius: 36px; overflow: hidden; background: #e9ece4; box-shadow: var(--shadow-window), 0 0 0 1px rgb(18 35 61 / 0.12); }
+  .map { position: absolute; inset: 0; }
+  .map text { font: 500 9.5px Inter, system-ui; fill: #6b7a66; letter-spacing: 0.02em; }
+
+  .search { position: absolute; top: 18px; left: 14px; right: 14px; height: 44px; display: flex; align-items: center; gap: 10px; padding: 0 6px 0 14px; border-radius: 22px; background: var(--surface); box-shadow: 0 1px 2px rgb(18 35 61 / 0.08), 0 4px 12px rgb(18 35 61 / 0.1); font-size: 14px; color: var(--ink-muted); }
+  .search img { margin-left: auto; width: 32px; height: 32px; border-radius: 50%; object-fit: cover; outline: 1px solid rgb(0 0 0 / 0.08); outline-offset: -1px; }
+  .chips { position: absolute; top: 72px; left: 14px; display: flex; gap: 6px; }
+  .chip { height: 30px; padding: 0 12px; display: inline-flex; align-items: center; gap: 6px; border-radius: 15px; background: var(--surface); font-size: 13px; font-weight: 500; box-shadow: 0 1px 2px rgb(18 35 61 / 0.08), 0 2px 6px rgb(18 35 61 / 0.06); }
+  .chip.on { background: var(--ink); color: #fff; }
+
+  .sheet { position: absolute; left: 0; right: 0; top: 232px; bottom: 0; border-radius: 20px 20px 0 0; background: var(--surface); padding: 8px 18px 0; box-shadow: 0 -2px 12px rgb(18 35 61 / 0.1); }
+  .grab { display: block; margin: 0 auto 12px; width: 36px; height: 4px; border-radius: 2px; background: rgb(18 35 61 / 0.16); }
+  .title { display: flex; align-items: flex-start; gap: 10px; }
+  .title h1 { margin: 0; font-size: 20px; line-height: 26px; font-weight: 600; letter-spacing: -0.015em; }
+  .title .meta { font-size: 13px; color: var(--ink-muted); }
+  .title .meta .star { color: #c98a04; }
+  .title .meta b { font-weight: 500; color: var(--positive); }
+  .x { margin-left: auto; flex: none; width: 30px; height: 30px; border-radius: 50%; background: var(--sunken); display: grid; place-items: center; color: var(--ink-muted); }
+  .acts { display: grid; grid-template-columns: 1.3fr 1fr 1fr 1fr; gap: 6px; margin-top: 14px; }
+  .act { height: 52px; border-radius: 10px; background: var(--sunken); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font-size: 12px; font-weight: 500; color: var(--accent-deep); }
+  .act.go { background: var(--accent); color: #fff; }
+  .act svg { width: 17px; height: 17px; }
+  .media { display: grid; grid-template-columns: 112px 1fr; gap: 8px; margin-top: 14px; }
+  .media img.photo { width: 112px; height: 104px; border-radius: 10px; object-fit: cover; outline: 1px solid rgb(0 0 0 / 0.06); outline-offset: -1px; }
+  .review { border-radius: 10px; background: var(--sunken); padding: 10px 12px; }
+  .review .by { display: flex; align-items: center; gap: 8px; font-size: 12.5px; font-weight: 500; }
+  .review .by img { width: 22px; height: 22px; border-radius: 50%; object-fit: cover; outline: 1px solid rgb(0 0 0 / 0.08); outline-offset: -1px; }
+  .review .by span { margin-left: auto; font-weight: 400; color: var(--ink-subtle); font-size: 12px; }
+  .review p { margin: 6px 0 0; font-size: 12.5px; line-height: 18px; color: var(--ink-muted); }
+  .busy { margin-top: 16px; }
+  .busy .h { display: flex; justify-content: space-between; font-size: 13px; font-weight: 500; }
+  .busy .h span { font-weight: 400; color: var(--ink-muted); font-size: 12.5px; }
+  .bars { display: flex; align-items: flex-end; gap: 4px; height: 54px; margin-top: 10px; }
+  .bars i { flex: 1; border-radius: 3px 3px 1px 1px; background: #dcdbf7; }
+  .bars i.now { background: var(--accent); }
+  .hours { display: flex; justify-content: space-between; margin-top: 5px; font-size: 11px; color: var(--ink-subtle); }
+
+  /* plumber's marks */
+  .limit { position: absolute; left: 98px; right: 98px; border-top: 1px dashed var(--pl-ink-3); }
+  .wall { position: absolute; border-radius: 8px; box-shadow: inset 0 0 0 1px var(--pl-off); }
+  .wall::before { content: ""; position: absolute; inset: 0; border-radius: 8px; opacity: 0.55; background-image: repeating-linear-gradient(45deg, var(--pl-off) 0 1px, transparent 1px 4px); }
+  .ring { position: absolute; width: 10px; height: 10px; margin: -5px 0 0 -5px; border-radius: 50%; box-shadow: 0 0 0 1.5px var(--pl-sky), 0 0 0 3px var(--pl-halo); }
+  .hand { position: absolute; width: 10px; height: 10px; margin: -5px 0 0 -5px; border-radius: 50%; background: var(--pl-off); box-shadow: 0 0 0 1.5px #fff; }
+  .tag { position: absolute; transform: translateY(-50%); display: flex; align-items: center; height: 20px; padding: 0 8px; border-radius: 6px; font: 500 11px/1 var(--pl-mono); color: #fff; background: var(--pl-off); box-shadow: 0 0 0 1px var(--pl-halo); white-space: nowrap; }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="phone">
+    <!-- the city, drawn as a map: blocks, a park, the river, streets, a walking route to the café -->
+    <svg class="map" viewBox="0 0 340 620" preserveAspectRatio="xMidYMid slice">
+      <rect width="340" height="620" fill="#ecefe7"/>
+      <path d="M-10 118 L120 96 L150 140 L40 196 L-10 200Z" fill="#cfe3c4"/>
+      <path d="M224 136 L340 116 L350 176 L236 190Z" fill="#d6e8cc"/>
+      <path d="M-10 214 C60 196 120 222 180 200 C240 178 300 196 350 172 L350 200 C300 222 246 206 190 228 C130 250 70 226 -10 244Z" fill="#b8d5ee"/>
+      <g fill="#f8f9f6"><rect x="0" y="252" width="340" height="9" transform="rotate(-7 170 256)"/><rect x="160" y="0" width="10" height="620" transform="rotate(6 165 300)"/><rect x="0" y="66" width="340" height="7" transform="rotate(-9 170 70)"/><rect x="60" y="0" width="6" height="300" transform="rotate(-14 63 150)"/><rect x="250" y="0" width="7" height="300" transform="rotate(10 253 150)"/></g>
+      <rect x="164" y="0" width="5" height="620" fill="#f1d9a4" transform="rotate(6 165 300)"/>
+      <text x="18" y="134">ASHBY GARDENS</text><text x="262" y="160">MILL PARK</text><text x="22" y="226" transform="rotate(-6 22 226)" fill="#5d86ab">RIVER WEND</text>
+      <!-- the walk: you to the café -->
+      <path d="M58 170 C100 172 150 150 196 168" fill="none" stroke="#5550d8" stroke-width="3" stroke-linecap="round" stroke-dasharray="0.1 6"/>
+      <circle cx="58" cy="170" r="14" fill="#5550d8" opacity="0.14"/><circle cx="58" cy="170" r="6" fill="#5550d8" stroke="#fff" stroke-width="2.5"/>
+      <g transform="translate(196 168)"><path d="M0 0 C-10 -12 -14 -17 -14 -24 A14 14 0 0 1 14 -24 C14 -17 10 -12 0 0Z" fill="#5550d8" stroke="#fff" stroke-width="2"/><path d="M-6 -29 h9 v5 a4 4 0 0 1 -4 4 h-1 a4 4 0 0 1 -4 -4z M3 -27 h2 a2 2 0 0 1 0 4 h-2" fill="none" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"/></g>
+      <g fill="#fff" stroke="#8a93a3" stroke-width="1.5"><circle cx="300" cy="122" r="5"/><circle cx="176" cy="126" r="5"/><circle cx="232" cy="212" r="5"/></g>
+    </svg>
+    <div class="search"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="7" cy="7" r="4.8"/><path d="m10.6 10.6 3.4 3.4" stroke-linecap="round"/></svg>Coffee near you<img src="../../../../overlay/showcase/src/media/people/person-03.jpg" alt=""></div>
+    <div class="chips"><span class="chip on">Coffee</span><span class="chip">Open now</span><span class="chip">Bakeries</span><span class="chip">Parks</span></div>
+
+    <!-- the sheet, at its open limit (top: 232px) and clamped there -->
+    <section class="sheet">
+      <span class="grab"></span>
+      <div class="title">
+        <div>
+          <h1>Café Mona</h1>
+          <div class="meta"><span class="star">★</span> <span class="num">4.7</span> (312) · Coffee · 6 min walk</div>
+          <div class="meta"><b>Open</b> until 18:00 · 14 Mill Road</div>
+        </div>
+        <span class="x"><svg width="12" height="12" viewBox="0 0 12 12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M3 3l6 6M9 3l-6 6"/></svg></span>
+      </div>
+      <div class="acts">
+        <span class="act go"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M8 1.8 13.2 14 8 11.2 2.8 14Z"/></svg>Directions</span>
+        <span class="act"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M3.5 2h2.4l1.2 3-1.6 1.1a7.6 7.6 0 0 0 4.4 4.4L11 8.9l3 1.2v2.4a1.5 1.5 0 0 1-1.6 1.5A11 11 0 0 1 2 3.6 1.5 1.5 0 0 1 3.5 2Z"/></svg>Call</span>
+        <span class="act"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M4 2h8v12l-4-3-4 3Z"/></svg>Save</span>
+        <span class="act"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 10V2M5 4.8 8 2l3 2.8M3.5 8v5.5h9V8"/></svg>Share</span>
+      </div>
+      <div class="media">
+        <img class="photo" src="../../../../overlay/showcase/src/media/ceramic.jpg" alt="">
+        <div class="review">
+          <div class="by"><img src="../../../../overlay/showcase/src/media/people/person-04.jpg" alt="">Graham<span>2 days ago</span></div>
+          <p>“Best flat white on the river. Sit by the window before nine.”</p>
+        </div>
+      </div>
+      <div class="busy">
+        <div class="h">Popular times<span>Usually quiet now</span></div>
+        <div class="bars"><i style="height:22%"></i><i style="height:48%"></i><i style="height:92%"></i><i style="height:80%"></i><i style="height:52%"></i><i style="height:42%"></i><i style="height:46%"></i><i class="now" style="height:26%"></i><i style="height:22%"></i><i style="height:30%"></i><i style="height:24%"></i><i style="height:10%"></i></div>
+        <div class="hours num"><span>7</span><span>9</span><span>11</span><span>13</span><span>15</span><span>17</span></div>
+      </div>
+    </section>
+  </div>
+
+  <!-- plumber's read of the pull: limit at the sheet's open top (232), pressed at 262, hand now 80px past the limit -->
+  <span class="limit" style="top:232px"></span>
+  <span class="wall" style="left:120px;width:320px;top:152px;height:80px"></span>
+  <span class="ring" style="left:330px;top:250px"></span>
+  <span class="hand" style="left:330px;top:170px"></span>
+  <span class="tag" style="left:452px;top:192px">0 of 80px · dead</span>
+</div>
+</body>
+</html>

@@ -1,0 +1,119 @@
+<!doctype html>
+<!-- COMP #56 eased gradients for scrims, the one component (owner 2026-11-05). Wayfare, a trip planner (no name on
+     screen), its featured destination card: the photo sells the place (the Getty's white stone, paper-cities.jpg), the
+     title sits on it over a scrim with the people who saved it, and under the photo what decides a trip: the rating,
+     the price a night drawn across December's weeks with the chosen dates, and the button.
+     BROKEN state: [data-scrim] is a straight two-stop fade, from rgb(0 0 0 / 0.7) at the bottom to transparent, over
+     the lower two thirds (Tailwind bg-linear-to-t from-black/70 to-transparent). On this pale stone its top edge shows
+     as a grey band across the building. Fixed: the eased thirteen-stop scrim plumber writes. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Wayfare destination card (comp)</title>
+<style>
+  :root {
+    --surface: #fff; --sunken: #f3f5f9; --ink: #12233d; --ink-muted: #5a6779; --ink-subtle: #6f7c90;
+    --line: rgb(18 35 61 / 0.11); --accent: #5550d8; --accent-soft: #efeefd; --accent-deep: #3631a6;
+    --board: #eef1f5; --board-dot: #d6dce4; --hl: 0.5px;
+    --r-card: 10px; --r-control: 6px; --r-chip: 4px;
+    --shadow-card: 0 0 0 1px rgb(18 35 61 / 0.11), 0 1px 1px rgb(18 35 61 / 0.03), 0 2px 6px rgb(18 35 61 / 0.04);
+    --shadow-window: 0 1px 2px oklch(0.21 0.02 264 / 0.04), 0 8px 24px oklch(0.21 0.02 264 / 0.06), 0 24px 64px oklch(0.21 0.02 264 / 0.08);
+    /* Wayfare's warm terracotta, for the chosen dates and the button */
+    --brand: #c4572e; --brand-deep: #9c3f1c; --brand-soft: #fbece5; --heart: #e5484d;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 48px; background: var(--board);
+    background-image: radial-gradient(var(--board-dot) 1px, transparent 1px); background-size: 16px 16px;
+    font: 14px/20px Inter, -apple-system, system-ui, sans-serif; color: var(--ink); -webkit-font-smoothing: antialiased; }
+  .num { font-variant-numeric: tabular-nums; }
+
+  .card { width: 384px; border-radius: var(--r-card); background: var(--surface); box-shadow: var(--shadow-card), var(--shadow-window); overflow: hidden; }
+
+  .photo { position: relative; aspect-ratio: 4 / 5; }
+  .photo img.bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  /* the subject. BROKEN: a straight two-stop fade */
+  .scrim { position: absolute; left: 0; right: 0; bottom: 0; height: 66.667%; background: linear-gradient(to top, rgb(0 0 0 / 0.7), transparent); }
+  .pick { position: absolute; top: 12px; left: 12px; display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 10px 0 8px; border-radius: 99px; background: rgb(255 255 255 / 0.92); font-size: 12px; font-weight: 500; box-shadow: 0 1px 2px rgb(18 35 61 / 0.12); }
+  .pick i { width: 6px; height: 6px; border-radius: 50%; background: var(--brand); }
+  .save { position: absolute; top: 10px; right: 10px; width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; background: rgb(255 255 255 / 0.92); box-shadow: 0 1px 2px rgb(18 35 61 / 0.12); color: var(--heart); }
+  .count { position: absolute; top: 14px; right: 50px; height: 22px; padding: 0 7px; border-radius: 99px; background: rgb(18 35 61 / 0.5); color: #fff; font-size: 11px; line-height: 22px; font-weight: 500; }
+  .over { position: absolute; left: 0; right: 0; bottom: 0; padding: 20px; color: #fff; }
+  .kicker { font-size: 12px; line-height: 16px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em; font-feature-settings: "case"; }
+  .title { margin-top: 6px; font-size: 26px; line-height: 31px; font-weight: 600; letter-spacing: -0.02em; text-wrap: balance; }
+  .savers { display: flex; align-items: center; gap: 8px; margin-top: 12px; font-size: 13px; line-height: 18px; }
+  .stack { display: flex; }
+  .stack img { width: 22px; height: 22px; border-radius: 50%; object-fit: cover; box-shadow: 0 0 0 1.5px rgb(255 255 255 / 0.9); }
+  .stack img + img { margin-left: -6px; }
+
+  .info { padding: 14px 20px 18px; }
+  .row { display: flex; align-items: baseline; justify-content: space-between; }
+  .rate { display: flex; align-items: center; gap: 6px; font-size: 13px; line-height: 18px; color: var(--ink-muted); }
+  .rate b { color: var(--ink); font-weight: 600; }
+  .rate svg { color: #e8a317; align-self: center; }
+  .price { font-size: 13px; color: var(--ink-muted); }
+  .price b { font-size: 17px; line-height: 22px; font-weight: 600; color: var(--ink); letter-spacing: -0.01em; }
+
+  /* the price a night across December, a bar a night; the chosen four in the brand */
+  .chart { margin-top: 14px; }
+  .chart .h { display: flex; justify-content: space-between; font-size: 12px; line-height: 16px; color: var(--ink-muted); }
+  .chart .h b { color: var(--ink); font-weight: 500; }
+  .bars { position: relative; isolation: isolate; display: grid; grid-template-columns: repeat(31, 1fr); gap: 2px; align-items: end; height: 44px; margin-top: 10px; }
+  .bars i { display: block; border-radius: 1.5px; background: rgb(18 35 61 / 0.14); }
+  .bars i.on { background: var(--brand); }
+  .bars .sel { position: absolute; top: -4px; bottom: -4px; border-radius: 4px; background: var(--brand-soft); z-index: -1; }
+  .axis { position: relative; height: 14px; margin-top: 6px; font-size: 11px; line-height: 14px; color: var(--ink-subtle); font-variant-numeric: tabular-nums; }
+  .book { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 16px; padding-top: 14px; box-shadow: inset 0 var(--hl) 0 var(--line); }
+  .book .d { font-size: 13px; line-height: 18px; }
+  .book .d span { display: block; font-size: 12px; line-height: 16px; color: var(--ink-muted); }
+  .btn { height: 36px; padding: 0 16px; border-radius: var(--r-control); background: var(--brand); color: #fff; font-size: 14px; line-height: 36px; font-weight: 500; box-shadow: 0 1px 2px rgb(156 63 28 / 0.3), inset 0 1px 0 rgb(255 255 255 / 0.16); }
+</style>
+</head>
+<body>
+<article class="card">
+  <div class="photo">
+    <img class="bg" src="../../../../overlay/showcase/src/media/paper-cities.jpg" alt="The Getty's white stone, curving against the sky">
+    <div class="scrim" data-scrim></div>
+    <span class="pick"><i></i>Editors’ pick</span>
+    <span class="count num">1 / 24</span>
+    <span class="save" aria-label="Saved"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 14s-5.5-3.2-5.5-7.4A3.1 3.1 0 0 1 8 4.4a3.1 3.1 0 0 1 5.5 2.2C13.5 10.8 8 14 8 14Z"/></svg></span>
+    <div class="over">
+      <div class="kicker">Los Angeles · 4 nights</div>
+      <div class="title">Light and stone at the Getty</div>
+      <div class="savers">
+        <span class="stack">
+          <img src="../../../../overlay/showcase/src/media/people/person-09.jpg" alt="">
+          <img src="../../../../overlay/showcase/src/media/people/person-04.jpg" alt="">
+          <img src="../../../../overlay/showcase/src/media/people/person-08.jpg" alt="">
+        </span>
+        <span class="num">Saved by Tomi and 1,311 travellers</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="info">
+    <div class="row">
+      <span class="rate"><svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1.8l1.9 3.9 4.3.6-3.1 3 .7 4.3L8 11.6l-3.8 2 .7-4.3-3.1-3 4.3-.6Z"/></svg><b class="num">4.8</b><span class="num">212 reviews · Brentwood</span></span>
+      <span class="price">from <b class="num">$162</b> a night</span>
+    </div>
+
+    <div class="chart">
+      <div class="h"><span>A night in December</span><b class="num">Dec 11–15 · $173 avg</b></div>
+      <div class="bars" id="bars"><span class="sel" style="left:calc(10 / 31 * 100%);width:calc(4 / 31 * 100% - 2px)"></span></div>
+      <div class="axis"><span style="position:absolute;left:1.61%;transform:translateX(-50%)">1</span><span style="position:absolute;left:24.19%;transform:translateX(-50%)">8</span><span style="position:absolute;left:46.77%;transform:translateX(-50%)">15</span><span style="position:absolute;left:69.35%;transform:translateX(-50%)">22</span><span style="position:absolute;left:91.94%;transform:translateX(-50%)">29</span></div>
+    </div>
+
+    <div class="book">
+      <span class="d num">Thu, Dec 11 – Mon, Dec 15<span>2 guests · $692 for 4 nights</span></span>
+      <span class="btn">Plan this trip</span>
+    </div>
+  </div>
+</article>
+<script>
+  // nightly prices for December: weekends dearer, the holidays dearest; the chosen nights (11–14) in the brand
+  const p = [192,205,214,188,176,181,198,168,162,170,166,174,182,196,171,178,190,224,238,252,246,260,288,302,296,284,270,262,276,310,318];
+  const max = 330;
+  document.getElementById('bars').insertAdjacentHTML('beforeend', p.map((v, i) => `<i class="${i >= 10 && i <= 13 ? 'on' : ''}" style="height:${(v - 110) / (max - 110) * 100}%"></i>`).join(''));
+</script>
+</body>
+</html>

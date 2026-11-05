@@ -1,0 +1,145 @@
+<!doctype html>
+<!-- COMP #59, the one component (owner 2026-11-04/05: no app window, richness inside). Plate, a design tool: its Layers
+     panel, the Hero frame open, Story card selected, ⋯ on it pressed, the layer menu open and Arrange's submenu open
+     beside it. The panel is rich inside: layer kinds by icon, an image layer's own thumbnail, a component instance, a
+     hidden layer, a teammate's face where she is working. Slate's tokens (overlay/showcase/src/theme.css).
+     The moment: the pointer has just left Arrange on the straight line to "Send to back". The build's hand-rolled menu
+     closes the submenu the moment the pointer enters Hide, the item under Arrange, which that line crosses. Behaviour,
+     not style: nothing on this picture is wrong to look at. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Plate layers card (comp)</title>
+<style>
+  :root {
+    --surface: #fff; --sunken: #f3f5f9; --ink: #12233d; --ink-muted: #5a6779; --ink-subtle: #6f7c90; --line: rgb(18 35 61 / 0.11);
+    --accent: #5550d8; --accent-soft: #efeefd; --accent-deep: #3631a6;
+    --board: #eef1f5; --board-dot: #d6dce4; --hl: 0.5px;
+    --r-chip: 4px; --r-control: 6px; --r-card: 10px; --r-sheet: 14px;
+    --shadow-window: 0 1px 2px oklch(0.21 0.02 264 / 0.04), 0 8px 24px oklch(0.21 0.02 264 / 0.06), 0 24px 64px oklch(0.21 0.02 264 / 0.08), 0 0 0 1px rgb(18 35 61 / 0.06);
+    --shadow-popover: 0 4px 8px oklch(0.21 0.02 264 / 0.05), 0 12px 32px oklch(0.21 0.02 264 / 0.14), 0 0 0 1px rgb(18 35 61 / 0.07);
+    --component: #8a4fd8;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 56px; background: var(--board);
+    background-image: radial-gradient(var(--board-dot) 1px, transparent 1px); background-size: 16px 16px;
+    font: 13px/18px Inter, -apple-system, system-ui, sans-serif; color: var(--ink); -webkit-font-smoothing: antialiased; }
+  .num { font-variant-numeric: tabular-nums; }
+  svg.i { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+  .stage { position: relative; width: 690px; height: 530px; }
+
+  /* the panel */
+  .panel { position: absolute; left: 0; top: 0; width: 272px; border-radius: var(--r-sheet); background: var(--surface); box-shadow: var(--shadow-window); overflow: hidden; }
+  .ph { display: flex; align-items: center; gap: 2px; padding: 10px 10px 0 14px; }
+  .ph .t { height: 30px; padding: 0 8px; display: grid; place-items: center; border-radius: var(--r-control); font-weight: 500; color: var(--ink-muted); }
+  .ph .t.on { color: var(--ink); background: var(--sunken); }
+  .ph .t:first-child { margin-left: -8px; }
+  .ph .sp { margin-left: auto; width: 28px; height: 28px; display: grid; place-items: center; color: var(--ink-muted); }
+  .page { margin: 8px 10px 6px; height: 32px; display: flex; align-items: center; gap: 8px; padding: 0 8px; border-radius: var(--r-control); box-shadow: inset 0 0 0 var(--hl) var(--line); }
+  .page .n { font-weight: 500; }
+  .page .c { margin-left: auto; font-size: 12px; color: var(--ink-subtle); }
+  .page .thumb { width: 22px; height: 16px; border-radius: 3px; object-fit: cover; outline: 1px solid rgb(0 0 0 / 0.08); outline-offset: -1px; }
+  .sec { padding: 8px 14px 4px; font-size: 11px; font-weight: 500; color: var(--ink-subtle); display: flex; justify-content: space-between; }
+
+  .tree { padding: 0 6px 10px; }
+  .L { position: relative; height: 28px; display: flex; align-items: center; gap: 6px; padding-right: 4px; border-radius: var(--r-control); color: var(--ink); }
+  .L .tw { width: 12px; height: 12px; display: grid; place-items: center; color: var(--ink-subtle); flex: none; }
+  .L .tw svg { width: 8px; height: 8px; fill: currentColor; }
+  .L .k { color: var(--ink-subtle); display: grid; place-items: center; width: 16px; flex: none; }
+  .L .k img { width: 16px; height: 16px; border-radius: 3px; object-fit: cover; outline: 1px solid rgb(0 0 0 / 0.08); outline-offset: -1px; }
+  .L .name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .L.frame .name { font-weight: 500; }
+  .L.child { color: var(--ink); }
+  .L.comp .k, .L.comp .name { color: var(--component); }
+  .L.off .name, .L.off .k { color: var(--ink-subtle); }
+  .L .r { margin-left: auto; display: flex; align-items: center; gap: 4px; color: var(--ink-subtle); }
+  .L .r svg { width: 14px; height: 14px; }
+  .L .who { width: 18px; height: 18px; border-radius: 50%; object-fit: cover; box-shadow: 0 0 0 1.5px var(--surface), 0 0 0 3px #e0802a; }
+  .L.sel { background: var(--accent-soft); color: var(--accent-deep); }
+  .L.sel .k, .L.sel .tw { color: var(--accent-deep); }
+  .L.sel .name { font-weight: 500; }
+  .L.inside { background: rgb(85 80 216 / 0.05); border-radius: 0; }
+  .L.inside.first { border-radius: 0; }
+  .L.inside.last { border-radius: 0 0 var(--r-control) var(--r-control); }
+  .L.sel { border-radius: var(--r-control) var(--r-control) 0 0; }
+  .more { width: 24px; height: 24px; border-radius: var(--r-chip); display: grid; place-items: center; background: rgb(85 80 216 / 0.12); color: var(--accent-deep); font-size: 15px; line-height: 1; }
+
+  /* the menu and its submenu */
+  .menu { position: absolute; width: 208px; padding: 4px; border-radius: var(--r-card); background: var(--surface); box-shadow: var(--shadow-popover); }
+  .mi { height: 30px; display: flex; align-items: center; gap: 8px; padding: 0 10px; border-radius: var(--r-control); white-space: nowrap; }
+  .mi .ic { color: var(--ink-muted); display: grid; }
+  .mi kbd { margin-left: auto; font: 12px/1 Inter, -apple-system, system-ui, sans-serif; color: var(--ink-subtle); letter-spacing: 0.02em; }
+  .mi .chev { margin-left: auto; color: var(--ink-muted); }
+  .mi.hot { background: var(--sunken); }
+  .mi.danger { color: #b02a3a; }
+  .mi.danger .ic { color: #b02a3a; }
+  .sep { height: var(--hl); margin: 4px 6px; background: var(--line); }
+  .mlab { padding: 6px 10px 4px; font-size: 11px; font-weight: 500; color: var(--ink-subtle); }
+
+  .foot { display: flex; align-items: center; gap: 8px; height: 40px; padding: 0 14px; font-size: 12px; color: var(--ink-muted); background: var(--sunken); box-shadow: inset 0 var(--hl) 0 var(--line); }
+  .foot span:first-child { color: var(--ink); font-weight: 500; }
+  .foot .sw { width: 12px; height: 12px; border-radius: 3px; background: #10241f; box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.12); }
+  .foot .fill { margin-left: auto; }
+  .cursor { position: absolute; width: 18px; height: 22px; filter: drop-shadow(0 1px 1.5px rgb(0 0 0 / 0.3)); }
+</style>
+</head>
+<body>
+<div class="stage">
+  <aside class="panel">
+    <div class="ph">
+      <span class="t on">Layers</span><span class="t">Assets</span>
+      <span class="sp"><svg class="i" viewBox="0 0 16 16"><circle cx="7" cy="7" r="4.5"/><path d="m10.5 10.5 3 3"/></svg></span>
+    </div>
+    <div class="page">
+      <img class="thumb" src="../../../../overlay/showcase/src/media/fig-thumb.jpg" alt="">
+      <span class="n">Hero</span><span class="c">Page 1 of 3</span>
+      <svg class="i" viewBox="0 0 16 16" style="color:var(--ink-subtle)"><path d="m5 6.5 3 3 3-3"/></svg>
+    </div>
+    <div class="sec"><span>Spring launch</span></div>
+    <div class="tree">
+      <div class="L frame" style="padding-left:4px"><span class="tw"><svg viewBox="0 0 8 8"><path d="M1 2.5h6L4 6.5z"/></svg></span><span class="k"><svg class="i" viewBox="0 0 16 16"><path d="M5 2v12M11 2v12M2 5h12M2 11h12"/></svg></span><span class="name">Hero, desktop</span><span class="r num" style="font-size:11px">1440</span></div>
+      <div class="L" style="padding-left:22px"><span class="tw"></span><span class="k"><svg class="i" viewBox="0 0 16 16"><path d="M3 4.5h10M3 8h10M3 11.5h10"/></svg></span><span class="name">Nav</span></div>
+      <div class="L sel" style="padding-left:22px"><span class="tw"><svg viewBox="0 0 8 8"><path d="M1 2.5h6L4 6.5z"/></svg></span><span class="k"><svg class="i" viewBox="0 0 16 16"><rect x="2.5" y="2.5" width="11" height="11" rx="2.5"/></svg></span><span class="name">Story card</span><span class="r"><span class="more">⋯</span></span></div>
+      <div class="L inside first" style="padding-left:40px"><span class="tw"></span><span class="k"><img src="https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=64&h=64&fit=crop&q=70" alt=""></span><span class="name">Lake at dawn</span></div>
+      <div class="L inside" style="padding-left:40px"><span class="tw"></span><span class="k"><svg class="i" viewBox="0 0 16 16"><path d="M4 3.5h8M8 3.5v9"/></svg></span><span class="name">Kicker</span></div>
+      <div class="L inside" style="padding-left:40px"><span class="tw"></span><span class="k"><svg class="i" viewBox="0 0 16 16"><path d="M4 3.5h8M8 3.5v9"/></svg></span><span class="name">Headline</span></div>
+      <div class="L inside" style="padding-left:40px"><span class="tw"></span><span class="k"><svg class="i" viewBox="0 0 16 16"><path d="M4 3.5h8M8 3.5v9"/></svg></span><span class="name">Body</span></div>
+      <div class="L inside last comp" style="padding-left:40px"><span class="tw"></span><span class="k"><svg class="i" viewBox="0 0 16 16"><path d="M8 2.5 13.5 8 8 13.5 2.5 8z"/></svg></span><span class="name">Book a stay</span></div>
+      <div class="L" style="padding-left:22px"><span class="tw"><svg viewBox="0 0 8 8"><path d="M2.5 1v6L6.5 4z"/></svg></span><span class="k"><svg class="i" viewBox="0 0 16 16"><path d="M2.5 5.5h11M2.5 10.5h11"/><rect x="2.5" y="2.5" width="11" height="11" rx="2"/></svg></span><span class="name">Price strip</span><span class="r"><img class="who" src="../../../../overlay/showcase/src/media/people/person-01.jpg" alt=""></span></div>
+      <div class="L comp" style="padding-left:22px"><span class="tw"></span><span class="k"><svg class="i" viewBox="0 0 16 16"><path d="M8 2.5 13.5 8 8 13.5 2.5 8z"/></svg></span><span class="name">Footer</span></div>
+      <div class="L off" style="padding-left:22px"><span class="tw"></span><span class="k"><svg class="i" viewBox="0 0 16 16"><rect x="2.5" y="2.5" width="11" height="11" rx="1"/></svg></span><span class="name">Background</span><span class="r"><svg class="i" viewBox="0 0 16 16"><path d="M2 8s2.2-4 6-4 6 4 6 4-2.2 4-6 4-6-4-6-4z"/><path d="M3 13 13 3"/></svg></span></div>
+      <div class="L frame" style="padding-left:4px"><span class="tw"><svg viewBox="0 0 8 8"><path d="M2.5 1v6L6.5 4z"/></svg></span><span class="k"><svg class="i" viewBox="0 0 16 16"><path d="M5 2v12M11 2v12M2 5h12M2 11h12"/></svg></span><span class="name">Hero, tablet</span><span class="r num" style="font-size:11px">834</span></div>
+      <div class="L frame" style="padding-left:4px"><span class="tw"><svg viewBox="0 0 8 8"><path d="M2.5 1v6L6.5 4z"/></svg></span><span class="k"><svg class="i" viewBox="0 0 16 16"><path d="M5 2v12M11 2v12M2 5h12M2 11h12"/></svg></span><span class="name">Hero, mobile</span><span class="r"><img class="who" style="box-shadow:0 0 0 1.5px var(--surface),0 0 0 3px #1f9d6b" src="../../../../overlay/showcase/src/media/people/person-06.jpg" alt=""><span class="num" style="font-size:11px;margin-left:4px">390</span></span></div>
+    </div>
+    <footer class="foot"><span>Story card</span><span class="num">250 × 365</span><span class="sw fill"></span><span class="num">10241F</span></footer>
+  </aside>
+
+  <!-- the layer menu, from ⋯ on Story card -->
+  <div class="menu" style="left:270px;top:166px">
+    <div class="mlab">Story card</div>
+    <div class="mi"><span class="ic"><svg class="i" viewBox="0 0 16 16"><rect x="5.5" y="5.5" width="8" height="8" rx="1.5"/><path d="M10.5 3.5v-.5a1 1 0 0 0-1-1h-6a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h.5"/></svg></span>Copy<kbd>⌘C</kbd></div>
+    <div class="mi"><span class="ic"><svg class="i" viewBox="0 0 16 16"><rect x="3" y="3" width="10" height="10" rx="2"/><path d="M8 6v4M6 8h4"/></svg></span>Duplicate<kbd>⌘D</kbd></div>
+    <div class="mi"><span class="ic"><svg class="i" viewBox="0 0 16 16"><path d="M6 3.5h4M6 12.5h4M8 3.5v9"/></svg></span>Rename<kbd>⌘R</kbd></div>
+    <div class="sep"></div>
+    <div class="mi"><span class="ic"><svg class="i" viewBox="0 0 16 16"><rect x="2.5" y="2.5" width="11" height="11" rx="2" stroke-dasharray="2 2"/></svg></span>Group selection<kbd>⌘G</kbd></div>
+    <div class="mi hot"><span class="ic"><svg class="i" viewBox="0 0 16 16"><rect x="2.5" y="5.5" width="7" height="7" rx="1.5"/><path d="M6.5 3.5h5a1 1 0 0 1 1 1v5"/></svg></span>Arrange<span class="chev"><svg class="i" viewBox="0 0 16 16"><path d="m6.5 4.5 3.5 3.5-3.5 3.5"/></svg></span></div>
+    <div class="mi"><span class="ic"><svg class="i" viewBox="0 0 16 16"><path d="M2 8s2.2-4 6-4 6 4 6 4-2.2 4-6 4-6-4-6-4z"/><circle cx="8" cy="8" r="1.8"/></svg></span>Hide<kbd>⇧⌘H</kbd></div>
+    <div class="mi"><span class="ic"><svg class="i" viewBox="0 0 16 16"><rect x="3.5" y="7.5" width="9" height="6" rx="1.5"/><path d="M5.5 7.5V5.5a2.5 2.5 0 0 1 5 0v2"/></svg></span>Lock<kbd>⇧⌘L</kbd></div>
+    <div class="sep"></div>
+    <div class="mi danger"><span class="ic"><svg class="i" viewBox="0 0 16 16"><path d="M3 4.5h10M6.5 4.5V3h3v1.5M4.5 4.5l.6 8.2a1 1 0 0 0 1 .8h3.8a1 1 0 0 0 1-.8l.6-8.2"/></svg></span>Delete<kbd style="color:inherit;opacity:1">⌫</kbd></div>
+  </div>
+
+  <!-- Arrange's submenu, its first item level with Arrange -->
+  <div class="menu" style="left:474px;top:323px;width:212px">
+    <div class="mi"><span class="ic"><svg class="i" viewBox="0 0 16 16"><rect x="5.5" y="2.5" width="8" height="8" rx="1.5" fill="currentColor" fill-opacity=".18"/><path d="M2.5 7v5.5a1 1 0 0 0 1 1H9"/></svg></span>Bring to front<kbd>⌥⌘]</kbd></div>
+    <div class="mi"><span class="ic"><svg class="i" viewBox="0 0 16 16"><path d="M8 12.5v-9M4.5 7 8 3.5 11.5 7"/></svg></span>Bring forward<kbd>⌘]</kbd></div>
+    <div class="mi"><span class="ic"><svg class="i" viewBox="0 0 16 16"><path d="M8 3.5v9M4.5 9 8 12.5 11.5 9"/></svg></span>Send backward<kbd>⌘[</kbd></div>
+    <div class="mi"><span class="ic"><svg class="i" viewBox="0 0 16 16"><rect x="2.5" y="5.5" width="8" height="8" rx="1.5" fill="currentColor" fill-opacity=".18"/><path d="M13.5 9V3.5a1 1 0 0 0-1-1H7"/></svg></span>Send to back<kbd>⌥⌘[</kbd></div>
+  </div>
+
+  <!-- the pointer, just off Arrange, heading for Send to back: the straight line there crosses Hide -->
+  <svg class="cursor" style="left:432px;top:343px" viewBox="0 0 18 22"><path d="M1.5 1.5v15.6l3.9-3.7 2.6 6 2.8-1.2-2.6-5.9h5.5z" fill="#111" stroke="#fff" stroke-width="1.4" stroke-linejoin="round"/></svg>
+</div>
+</body>
+</html>

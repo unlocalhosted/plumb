@@ -1,0 +1,145 @@
+<!doctype html>
+<!-- COMP #1, the one component (2026-11-05 bar: no app around it, rich inside). Quarry's client page for Figma, as Quay
+     Studio sees it: who they are, the year billed drawn as bars, who signs off, Ana's note, the recent invoices.
+     Planted (and drawn here): the note is the one filled panel in the column, on the column with 16px padding, so its
+     words start 16px in from every other line. plumber's fix bleeds it out by its padding (-mx-4). -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Quarry client card (comp)</title>
+<style>
+  /* Quarry's Slate primitives, from overlay/showcase/src/theme.css */
+  :root {
+    --canvas: #f5f7fa; --surface: #ffffff; --sunken: #f3f5f9; --ink: #12233d; --ink-muted: #5a6779; --ink-subtle: #6f7c90;
+    --line: rgb(18 35 61 / 0.11); --accent: #5550d8; --accent-soft: #efeefd; --accent-deep: #3631a6; --accent-ink: #fff;
+    --positive: #0f6f58; --positive-soft: #e5f4ef; --caution: #965a03; --caution-soft: #fcf1dd; --negative: #b02a3a; --negative-soft: #fbeaed;
+    --board: #eef1f5; --board-dot: #d6dce4;
+    --r-chip: 4px; --r-control: 6px; --r-card: 10px; --r-sheet: 14px;
+    --shadow-raised: 0 1px 1px oklch(0.21 0.02 264 / 0.04), 0 1px 3px oklch(0.21 0.02 264 / 0.08);
+    --shadow-overlay: 0 2px 4px oklch(0.21 0.02 264 / 0.04), 0 6px 16px oklch(0.21 0.02 264 / 0.1);
+    --shadow-popover: 0 4px 8px oklch(0.21 0.02 264 / 0.05), 0 12px 32px oklch(0.21 0.02 264 / 0.14);
+    --shadow-card: 0 0 0 1px rgb(18 35 61 / 0.11), 0 1px 1px rgb(18 35 61 / 0.03), 0 2px 6px rgb(18 35 61 / 0.04);
+    /* a hairline: one device pixel at 2x, drawn as a half-pixel inset shadow (theme.css) */
+    --hl: 0.5px;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 48px; background-color: var(--board);
+    background-image: radial-gradient(var(--board-dot) 1px, transparent 1px); background-size: 16px 16px;
+    font: 14px/20px Inter, ui-sans-serif, system-ui, -apple-system, sans-serif; color: var(--ink); -webkit-font-smoothing: antialiased; }
+  p, h1, h2, h3, ul, dl, dd, figure { margin: 0; padding: 0; }
+  ul { list-style: none; }
+  button { font: inherit; color: inherit; border: 0; background: none; padding: 0; cursor: default; }
+  .num { font-variant-numeric: tabular-nums; }
+  .card { border-radius: var(--r-card); background: var(--surface); box-shadow: var(--shadow-card); }
+  .hl-t { box-shadow: inset 0 var(--hl) 0 var(--line); }
+  .hl-b { box-shadow: inset 0 calc(-1 * var(--hl)) 0 var(--line); }
+  .face { border-radius: 50%; object-fit: cover; outline: 1px solid rgb(0 0 0 / 0.1); outline-offset: -1px; display: block; flex: none; }
+  .logo { display: block; background: var(--g, #fff); -webkit-mask: var(--m) center / contain no-repeat; mask: var(--m) center / contain no-repeat; }
+  .muted { color: var(--ink-muted); } .subtle { color: var(--ink-subtle); }
+  .di-icon { flex: none; display: block; }
+
+  .card { width: 520px; }
+  .col { display: flex; flex-direction: column; gap: 20px; padding: 24px; }
+
+  .who { display: flex; align-items: center; gap: 14px; }
+  .mark { width: 44px; height: 44px; border-radius: var(--r-card); background: #f24e1e; display: grid; place-items: center; flex: none; }
+  .mark .logo { width: 20px; height: 20px; }
+  .who .t { font-size: 17px; line-height: 24px; font-weight: 500; letter-spacing: -0.01em; }
+  .who .s { font-size: 13px; color: var(--ink-muted); }
+  .pill { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 10px; border-radius: 99px; font-size: 12px; font-weight: 500; white-space: nowrap; }
+  .pill.neg { background: var(--negative-soft); color: var(--negative); box-shadow: inset 0 0 0 1px rgb(176 42 58 / 0.15); }
+  .pill.pos { background: var(--positive-soft); color: var(--positive); box-shadow: inset 0 0 0 1px rgb(15 111 88 / 0.15); }
+  .pill.due { background: var(--sunken); color: var(--ink-muted); }
+  .who .pill { margin-left: auto; }
+
+  /* the year in figures and in bars: no fill, words on the column */
+  .figs { display: grid; grid-template-columns: 1.15fr 1fr 1fr; gap: 16px; }
+  .figs .l { font-size: 12px; color: var(--ink-muted); }
+  .figs .v { font-size: 22px; line-height: 28px; font-weight: 500; letter-spacing: -0.02em; }
+  .figs .v.neg { color: var(--negative); }
+  .figs .d { font-size: 12px; color: var(--ink-subtle); }
+  .chart { display: flex; flex-direction: column; gap: 6px; margin-top: -4px; }
+  .bars { display: grid; grid-template-columns: repeat(12, 1fr); gap: 10px; align-items: end; height: 52px; }
+  .bars i { display: block; border-radius: 3px 3px 1px 1px; background: var(--accent); }
+  .bars i.over { background-color: var(--negative); background-image: repeating-linear-gradient(-45deg, rgb(255 255 255 / 0.35) 0 3px, transparent 3px 6px); }
+  .bars i.open { background: transparent; box-shadow: inset 0 0 0 1px rgb(18 35 61 / 0.16); }
+  .bars i.none { height: 2px; background: var(--line); }
+  .months { display: grid; grid-template-columns: repeat(12, 1fr); gap: 10px; font-size: 11px; line-height: 16px; color: var(--ink-subtle); text-align: center; }
+  .key { display: flex; gap: 14px; font-size: 12px; color: var(--ink-muted); }
+  .key span { display: inline-flex; align-items: center; gap: 6px; }
+  .key i { width: 8px; height: 8px; border-radius: 2px; }
+
+  dl { display: grid; grid-template-columns: 112px 1fr; row-gap: 10px; column-gap: 16px; font-size: 14px; }
+  dt { color: var(--ink-muted); }
+  dd { min-width: 0; }
+  dd .face { display: inline-block; width: 20px; height: 20px; vertical-align: -5px; margin-right: 8px; }
+  dd .x { color: var(--ink-muted); }
+
+  /* PLANTED: a filled panel on the column, padded 16px, so its words sit 16px in */
+  .note { background: var(--sunken); border-radius: var(--r-control); padding: 12px 16px 14px; font-size: 14px; }
+  .note .by { display: flex; align-items: center; gap: 8px; font-weight: 500; color: var(--ink); }
+  .note .by .face { width: 20px; height: 20px; margin-left: auto; }
+  .note .by .when { font-weight: 400; font-size: 12px; color: var(--ink-subtle); }
+  .note p { margin-top: 2px; color: var(--ink-muted); text-wrap: pretty; }
+
+  .inv h3 { display: flex; justify-content: space-between; font-size: 12px; line-height: 16px; font-weight: 500; color: var(--ink-muted); }
+  .inv ul { margin-top: 4px; }
+  .inv li { display: grid; grid-template-columns: 1fr auto 96px; align-items: center; gap: 12px; padding: 10px 0; }
+  .inv li + li { box-shadow: inset 0 var(--hl) 0 var(--line); }
+  .inv .t { font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .inv .s { font-size: 13px; color: var(--ink-muted); font-feature-settings: 'case'; }
+  .inv .a { text-align: right; font-size: 14px; }
+  .inv .a.neg { color: var(--negative); font-weight: 500; }
+</style>
+</head>
+<body>
+<article class="card">
+  <div class="col" data-profile>
+    <header class="who">
+      <span class="mark"><i class="logo" style="--m:url(https://cdn.jsdelivr.net/npm/simple-icons@13.21.0/icons/figma.svg)"></i></span>
+      <span style="min-width:0">
+        <div class="t">Figma</div>
+        <div class="s">Design tools · San Francisco · client since 2023</div>
+      </span>
+    </header>
+
+    <section class="figs">
+      <span><div class="l">Billed in 2026</div><div class="v num">$38,420</div><div class="d">9 invoices · 265 hours</div></span>
+      <span><div class="l">Outstanding</div><div class="v neg num">$4,820</div><div class="d">12 days late</div></span>
+      <span><div class="l">Pays in</div><div class="v num">11 days</div><div class="d">on average</div></span>
+    </section>
+
+    <section class="chart" aria-label="Billed each month of 2026">
+      <div class="bars">
+        <i class="paid" style="height:38%"></i><i class="paid" style="height:52%"></i><i class="none"></i><i class="paid" style="height:71%"></i>
+        <i class="paid" style="height:44%"></i><i class="paid" style="height:60%"></i><i class="paid" style="height:33%"></i><i class="paid" style="height:86%"></i>
+        <i class="paid" style="height:100%"></i><i class="over" style="height:78%"></i><i class="open" style="height:24%"></i><i class="none"></i>
+      </div>
+      <div class="months"><span>J</span><span>F</span><span>M</span><span>A</span><span>M</span><span>J</span><span>J</span><span>A</span><span>S</span><span>O</span><span>N</span><span>D</span></div>
+    </section>
+
+    <dl>
+      <dt>Billing contact</dt><dd><img class="face" src="../../../../overlay/showcase/src/media/people/person-01.jpg" alt="">Ines Moreau <span class="x">· Brand events</span></dd>
+      <dt>Terms</dt><dd>Net 30, in USD</dd>
+      <dt>Rate</dt><dd><span class="num">$145</span> an hour <span class="x">· since January</span></dd>
+    </dl>
+
+    <aside class="note" data-note>
+      <p class="by">Note from Ana <span class="when">12 Sep</span><img class="face" src="../../../../overlay/showcase/src/media/people/person-07.jpg" alt=""></p>
+      <p>Their accounts team rejects any invoice without a PO number. Ines approves anything over $5,000, so bill the keynote by phase.</p>
+    </aside>
+
+    <section class="inv">
+      <h3>Recent invoices<span>9 this year</span></h3>
+      <ul>
+        <li><span style="min-width:0"><div class="t">Config keynote, phase 2</div><div class="s"><span class="num">INV-2041</span> · PO-7716 · due 24 Oct</div></span><span class="pill neg">Overdue</span><span class="a neg num">$4,820.00</span></li>
+        <li><span style="min-width:0"><div class="t">Config keynote, phase 1</div><div class="s"><span class="num">INV-2036</span> · PO-7702 · paid in 9 days</div></span><span class="pill pos">Paid</span><span class="a num">$4,350.00</span></li>
+        <li><span style="min-width:0"><div class="t">FigJam template pack</div><div class="s"><span class="num">INV-2029</span> · PO-7655 · paid in 14 days</div></span><span class="pill pos">Paid</span><span class="a num">$3,200.00</span></li>
+        <li><span style="min-width:0"><div class="t">Event photography edit</div><div class="s"><span class="num">INV-2017</span> · PO-7590 · paid in 10 days</div></span><span class="pill pos">Paid</span><span class="a num">$2,610.00</span></li>
+      </ul>
+    </section>
+  </div>
+</article>
+</body>
+</html>

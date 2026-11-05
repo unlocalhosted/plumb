@@ -1,0 +1,111 @@
+<!doctype html>
+<!-- COMP #75, the one component (owner 2026-11-05: no app around it, rich inside). Outline, a team's planning docs:
+     the share dialog for "Q3 plan", with the doc's own card at its top, the people with access as faces, and who else
+     can open it. Slate's tokens (overlay/showcase/src/theme.css). Drawn as the screen shows at rest, broken: the people
+     list is a box four rows tall (4 × 48px) holding eight; macOS hides the scrollbar at rest, so the list ends exactly
+     on Theo's row edge and looks complete. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Outline share dialog (comp)</title>
+<style>
+  :root {
+    --surface: #fff; --sunken: #f3f5f9; --ink: #12233d; --ink-muted: #5a6779; --ink-subtle: #6f7c90;
+    --line: rgb(18 35 61 / 0.11); --accent: #5550d8; --accent-soft: #efeefd; --accent-deep: #3631a6;
+    --positive: #0f6f58; --positive-soft: #e5f4ef; --caution: #965a03; --caution-soft: #fcf1dd;
+    --board: #eef1f5; --board-dot: #d6dce4;
+    --shadow-popover: 0 0 0 1px rgb(18 35 61 / 0.08), 0 4px 8px rgb(18 35 61 / 0.05), 0 12px 32px rgb(18 35 61 / 0.14);
+    --hl: 0.5px;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 48px; background: var(--board);
+    background-image: radial-gradient(var(--board-dot) 1px, transparent 1px); background-size: 16px 16px;
+    font: 14px/20px Inter, -apple-system, system-ui, sans-serif; color: var(--ink); -webkit-font-smoothing: antialiased; }
+  .num { font-variant-numeric: tabular-nums; }
+  .face { border-radius: 50%; object-fit: cover; outline: 1px solid rgb(0 0 0 / 0.08); outline-offset: -1px; }
+  .dlg { width: 420px; border-radius: 14px; background: var(--surface); box-shadow: var(--shadow-popover); }
+  .in { padding: 20px 20px 0; }
+  .hd { display: flex; align-items: center; gap: 12px; }
+  .doc { width: 40px; height: 40px; flex: none; border-radius: 8px; background: var(--accent-soft); display: grid; place-items: center; color: var(--accent-deep); }
+  .hd .t { font-size: 15px; font-weight: 600; letter-spacing: -0.01em; }
+  .hd .s { font-size: 12.5px; color: var(--ink-muted); }
+  .hd .x { margin-left: auto; width: 28px; height: 28px; border-radius: 6px; display: grid; place-items: center; color: var(--ink-subtle); }
+  .goals { display: flex; gap: 6px; margin-top: 14px; }
+  .goal { flex: 1; padding: 8px 10px; border-radius: 8px; background: var(--sunken); }
+  .goal .l { font-size: 11.5px; color: var(--ink-muted); white-space: nowrap; }
+  .goal .v { font-size: 13px; font-weight: 500; }
+  .goal .gb { height: 4px; margin-top: 6px; border-radius: 2px; background: rgb(18 35 61 / 0.08); overflow: hidden; }
+  .goal .gb i { display: block; height: 100%; border-radius: 2px; background: var(--accent); }
+  .add { display: flex; gap: 8px; margin-top: 16px; }
+  .field { flex: 1; height: 36px; display: flex; align-items: center; gap: 8px; padding: 0 10px; border-radius: 6px; box-shadow: inset 0 0 0 1px var(--line); font-size: 13px; color: var(--ink-subtle); }
+  .field .role { margin-left: auto; color: var(--ink-muted); font-weight: 500; }
+  .invite { height: 36px; padding: 0 14px; display: grid; place-items: center; border-radius: 6px; background: var(--accent); color: #fff; font-size: 13px; font-weight: 500; opacity: 1; }
+  .invite[aria-disabled] { background: var(--sunken); color: var(--ink-subtle); }
+  .lbl { display: flex; justify-content: space-between; margin-top: 16px; font-size: 12px; font-weight: 500; color: var(--ink-muted); }
+  .lbl span:last-child { font-weight: 400; color: var(--ink-subtle); }
+  ul { list-style: none; margin: 4px -8px 0; padding: 0; height: 192px; overflow: hidden; }
+  li { display: flex; align-items: center; gap: 12px; height: 48px; padding: 0 8px; border-radius: 6px; }
+  li img, li .mono { width: 32px; height: 32px; flex: none; }
+  li .mono { border-radius: 50%; display: grid; place-items: center; background: var(--sunken); color: var(--ink-muted); font-size: 11px; font-weight: 600; box-shadow: inset 0 0 0 1px var(--line); }
+  li .n { font-size: 13.5px; font-weight: 500; }
+  li .n em { font-style: normal; font-weight: 400; color: var(--ink-subtle); }
+  li .e { font-size: 12px; color: var(--ink-subtle); }
+  li .r { margin-left: auto; display: inline-flex; align-items: center; gap: 4px; height: 28px; padding: 0 8px; border-radius: 6px; font-size: 12.5px; color: var(--ink-muted); }
+  li .r.own { color: var(--ink-subtle); }
+  li.hov { background: var(--sunken); }
+  li.hov .r { background: var(--surface); box-shadow: inset 0 0 0 1px var(--line); }
+  .chip { height: 18px; padding: 0 6px; border-radius: 4px; display: inline-flex; align-items: center; font-size: 11px; font-weight: 500; background: var(--caution-soft); color: var(--caution); margin-left: 6px; vertical-align: 1px; }
+  .gen { display: flex; align-items: center; gap: 12px; margin-top: 8px; padding: 14px 0 16px; box-shadow: inset 0 var(--hl) 0 var(--line); }
+  .gen .g { width: 32px; height: 32px; border-radius: 8px; display: grid; place-items: center; background: var(--positive-soft); color: var(--positive); flex: none; }
+  .gen .t { font-size: 13.5px; font-weight: 500; }
+  .gen .s { font-size: 12px; color: var(--ink-subtle); }
+  .gen .r { margin-left: auto; font-size: 12.5px; color: var(--ink-muted); }
+  .foot { display: flex; align-items: center; gap: 8px; padding: 12px 20px; border-radius: 0 0 14px 14px; background: var(--sunken); box-shadow: inset 0 var(--hl) 0 var(--line); }
+  .b { height: 32px; padding: 0 12px; display: inline-flex; align-items: center; gap: 6px; border-radius: 6px; font-size: 13px; font-weight: 500; background: var(--surface); box-shadow: inset 0 0 0 1px var(--line), 0 1px 1px rgb(18 35 61 / 0.04); }
+  .b.go { margin-left: auto; background: var(--ink); color: #fff; box-shadow: none; }
+</style>
+</head>
+<body>
+<article class="dlg" role="dialog" aria-label="Share Q3 plan">
+  <div class="in">
+    <div class="hd">
+      <span class="doc"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M4 2.5h6.5L14 6v9.5H4Z"/><path d="M10 2.5V6.5h4M6.5 9.5h5M6.5 12h3.5" stroke-linecap="round"/></svg></span>
+      <span><div class="t">Share “Q3 plan”</div><div class="s">Brindle · Planning · edited 20 min ago</div></span>
+      <span class="x"><svg width="12" height="12" viewBox="0 0 12 12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M3 3l6 6M9 3l-6 6"/></svg></span>
+    </div>
+    <!-- the doc's three goals, as the doc draws them -->
+    <div class="goals num">
+      <div class="goal"><div class="l">Self-serve signups</div><div class="v">2,140 of 3,000</div><div class="gb"><i style="width:71%"></i></div></div>
+      <div class="goal"><div class="l">Churn under 3%</div><div class="v">3.4%</div><div class="gb"><i style="width:44%"></i></div></div>
+      <div class="goal"><div class="l">Mobile beta</div><div class="v">Week 6 of 8</div><div class="gb"><i style="width:75%"></i></div></div>
+    </div>
+    <div class="add">
+      <span class="field">Add people by name or email<span class="role">Can edit ▾</span></span>
+      <span class="invite" aria-disabled="true">Invite</span>
+    </div>
+    <div class="lbl"><span>People with access</span><span>Sorted by role</span></div>
+    <!-- 192px: four rows show, four more are below the edge -->
+    <ul data-list>
+      <li><img class="face" src="../../../../overlay/showcase/src/media/people/person-07.jpg" alt=""><span><div class="n">Anika Rao <em>(you)</em></div><div class="e">anika@brindle.io</div></span><span class="r own">Owner</span></li>
+      <li class="hov"><img class="face" src="../../../../overlay/showcase/src/media/people/person-08.jpg" alt=""><span><div class="n">Jonas Weber</div><div class="e">jonas@brindle.io</div></span><span class="r">Can edit ▾</span></li>
+      <li><img class="face" src="../../../../overlay/showcase/src/media/people/person-03.jpg" alt=""><span><div class="n">Priya Nair</div><div class="e">priya@brindle.io</div></span><span class="r">Can edit ▾</span></li>
+      <li><img class="face" src="../../../../overlay/showcase/src/media/people/person-02.jpg" alt=""><span><div class="n">Theo Lambert</div><div class="e">theo@brindle.io</div></span><span class="r">Can view ▾</span></li>
+      <li><img class="face" src="../../../../overlay/showcase/src/media/people/person-10.jpg" alt=""><span><div class="n">Mira Okafor</div><div class="e">mira@brindle.io</div></span><span class="r">Can view ▾</span></li>
+      <li><img class="face" src="../../../../overlay/showcase/src/media/people/person-05.jpg" alt=""><span><div class="n">Sana Iqbal</div><div class="e">sana@brindle.io</div></span><span class="r">Can edit ▾</span></li>
+      <li><img class="face" src="../../../../overlay/showcase/src/media/people/person-04.jpg" alt=""><span><div class="n">Leo Brandt</div><div class="e">leo@brindle.io</div></span><span class="r">Can view ▾</span></li>
+      <li><span class="mono">ID</span><span><div class="n">ines.duarte@kestrel.vc<span class="chip">Invited</span></div><div class="e">Outside Brindle</div></span><span class="r">Can view ▾</span></li>
+    </ul>
+    <div class="gen">
+      <span class="g"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="8" cy="8" r="5.8"/><path d="M2.2 8h11.6M8 2.2c1.7 1.8 2.4 3.7 2.4 5.8S9.7 12 8 13.8C6.3 12 5.6 10.1 5.6 8S6.3 4 8 2.2Z"/></svg></span>
+      <span><div class="t">Anyone at Brindle</div><div class="s">can find and view this doc</div></span>
+      <span class="r">Can view ▾</span>
+    </div>
+  </div>
+  <footer class="foot">
+    <span class="b"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M6 8a2.6 2.6 0 0 0 3.7 0l2-2a2.6 2.6 0 0 0-3.7-3.7l-.6.6M8 6a2.6 2.6 0 0 0-3.7 0l-2 2a2.6 2.6 0 0 0 3.7 3.7l.6-.6"/></svg>Copy link</span>
+    <span class="b go">Done</span>
+  </footer>
+</article>
+</body>
+</html>

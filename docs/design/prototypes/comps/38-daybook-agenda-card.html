@@ -1,0 +1,159 @@
+<!doctype html>
+<!-- COMP #38 (card pass, 2026-11-05): the one component, rich inside. Daybook, a calendar; Ruth Calder's Thursday as
+     an agenda card: the week drawn as booked hours, seven events with their people, the now line, the next call ready
+     to join. Slate's tokens (overlay/showcase/src/theme.css). Drawn BROKEN: the rows' dividers are border-b, 1px
+     (.row, [data-row] on the first), two device pixels at 2×. Every other line here is a half-pixel inset shadow. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Daybook agenda card (comp)</title>
+<style>
+  :root {
+    --surface: #fff; --sunken: #f3f5f9; --ink: #12233d; --ink-muted: #5a6779; --ink-subtle: #6f7c90;
+    --line: rgb(18 35 61 / 0.11); --accent: #5550d8; --accent-soft: #efeefd; --accent-deep: #3631a6;
+    --positive: #0f6f58; --positive-soft: #e5f4ef; --caution: #965a03; --caution-soft: #fcf1dd; --negative: #b02a3a;
+    --board: #eef1f5; --board-dot: #d6dce4;
+    --card: 0 1px 2px rgb(18 35 61 / 0.05), 0 6px 16px rgb(18 35 61 / 0.07), 0 18px 44px rgb(18 35 61 / 0.09);
+    --hl: 0.5px;
+    /* calendars: one colour each, everywhere (the bar on an event, the week's bars) */
+    --cal-work: #5550d8; --cal-hire: #1f9d6b; --cal-home: #d9822b;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 48px; background: var(--board);
+    background-image: radial-gradient(var(--board-dot) 1px, transparent 1px); background-size: 16px 16px;
+    font: 14px/20px Inter, -apple-system, system-ui, sans-serif; color: var(--ink); -webkit-font-smoothing: antialiased; }
+  .num { font-variant-numeric: tabular-nums; }
+  .card { width: 480px; border-radius: 10px; background: var(--surface); box-shadow: var(--card), 0 0 0 0.5px rgb(18 35 61 / 0.1); overflow: hidden; }
+
+  /* the day and its week */
+  .top { padding: 20px 24px 16px; box-shadow: inset 0 calc(-1 * var(--hl)) 0 var(--line); }
+  .title { display: flex; align-items: baseline; gap: 8px; }
+  .title .d { font-size: 22px; line-height: 28px; font-weight: 600; letter-spacing: -0.015em; }
+  .title .m { font-size: 14px; color: var(--ink-muted); }
+  .wx { margin-left: auto; display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--ink-muted); }
+  .wx b { color: var(--ink); font-weight: 500; }
+  .week { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin-top: 16px; }
+  .day { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 6px 0 8px; border-radius: 6px; }
+  .day .l { font-size: 11px; font-weight: 500; color: var(--ink-subtle); }
+  .day .n { font-size: 14px; font-weight: 500; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; }
+  .day.today .n { background: var(--accent); color: #fff; }
+  .day.today { background: var(--accent-soft); }
+  .day.today .l { color: var(--accent-deep); }
+  .day.off .n { color: var(--ink-subtle); }
+  .load { display: flex; gap: 2px; height: 4px; width: 32px; }
+  .load i { height: 100%; border-radius: 2px; }
+
+  /* the agenda */
+  .sum { display: flex; justify-content: space-between; padding: 14px 24px 4px; font-size: 12px; font-weight: 500; color: var(--ink-subtle); }
+  ul { list-style: none; margin: 0; padding: 0 24px 6px; position: relative; isolation: isolate; }
+  /* PLANTED (#38): border-b border-line, 1px, the thinnest line Tailwind names: two device pixels on a 2× screen */
+  .row { display: grid; grid-template-columns: 44px 3px 1fr auto; gap: 12px; align-items: center; padding: 11px 0; border-bottom: 1px solid var(--line); }
+  .row:last-child { border-bottom: 0; }
+  .when { align-self: start; padding-top: 1px; }
+  .when .a { font-size: 13px; font-weight: 500; }
+  .when .b { font-size: 12px; color: var(--ink-subtle); }
+  .bar { align-self: stretch; border-radius: 2px; }
+  .what .t { font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 6px; }
+  .what .s { font-size: 12.5px; color: var(--ink-muted); display: flex; align-items: center; gap: 6px; }
+  .past .when .a, .past .what .t { color: var(--ink-muted); }
+  .past .bar { opacity: 0.35; }
+  .faces { display: flex; align-items: center; }
+  .faces img, .faces .more { width: 24px; height: 24px; border-radius: 50%; object-fit: cover; box-shadow: 0 0 0 2px var(--surface); }
+  .faces img { outline: 1px solid rgb(0 0 0 / 0.1); outline-offset: -1px; }
+  .faces > * + * { margin-left: -6px; }
+  .faces .more { display: grid; place-items: center; background: var(--sunken); color: var(--ink-muted); font-size: 10.5px; font-weight: 600; }
+  .logo { width: 16px; height: 16px; border-radius: 4px; background: var(--b); display: inline-grid; place-items: center; flex: none; }
+  .logo::before { content: ""; width: 9px; height: 9px; background: #fff; -webkit-mask: var(--m) center / contain no-repeat; mask: var(--m) center / contain no-repeat; }
+  .soon { display: inline-flex; align-items: center; height: 20px; padding: 0 7px; border-radius: 4px; background: var(--caution-soft); color: var(--caution); font-size: 11.5px; font-weight: 500; }
+  .next { position: relative; }
+  .next::before { content: ""; position: absolute; inset: 5px -12px; border-radius: 6px; background: var(--accent-soft); z-index: -1; }
+  .join { display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 12px; border-radius: 6px; background: var(--accent); color: #fff; font-size: 13px; font-weight: 500;
+    box-shadow: 0 1px 2px rgb(54 49 166 / 0.3), inset 0 1px 0 rgb(255 255 255 / 0.18); }
+  .end { display: flex; align-items: center; gap: 8px; }
+  /* now: a 2px rule in the calendar's red, not a divider */
+  .now { position: relative; height: 0; }
+  .now span { position: absolute; left: 48px; right: 0; top: -1px; height: 2px; border-radius: 1px; background: var(--negative); }
+  .now span::before { content: ""; position: absolute; left: -4px; top: -3px; width: 8px; height: 8px; border-radius: 50%; background: var(--negative); }
+  .now b { position: absolute; left: 0; top: -8px; height: 16px; padding: 0 4px; border-radius: 4px; background: var(--negative); color: #fff; font-size: 10.5px; line-height: 16px; font-weight: 600; font-variant-numeric: tabular-nums; }
+
+  /* tomorrow, at the foot */
+  .foot { display: flex; align-items: center; gap: 12px; padding: 14px 24px 16px; background: var(--sunken); box-shadow: inset 0 var(--hl) 0 var(--line); font-size: 12.5px; color: var(--ink-muted); }
+  .foot b { color: var(--ink); font-weight: 500; }
+  .foot .chips { margin-left: auto; display: flex; gap: 4px; }
+  .foot .chips i { width: 18px; height: 6px; border-radius: 3px; }
+</style>
+</head>
+<body>
+<article class="card">
+  <header class="top">
+    <div class="title">
+      <span class="d">Thursday</span><span class="m">6 November</span>
+      <span class="wx"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M4.5 10.5a3 3 0 0 1 .4-6 3.8 3.8 0 0 1 7.1 1.2 2.4 2.4 0 0 1-.4 4.8z"/><path d="M5.5 13l-.5 1.2M8.5 13 8 14.2M11.5 13l-.5 1.2"/></svg><b class="num">12°</b> Showers till 11</span>
+    </div>
+    <!-- the week: each day's booked hours as a bar per calendar, so a heavy day reads before you open it -->
+    <div class="week">
+      <div class="day off"><span class="l">Mon</span><span class="n num">3</span><span class="load"><i style="width:14px;background:var(--cal-work)"></i><i style="width:6px;background:var(--cal-hire)"></i></span></div>
+      <div class="day off"><span class="l">Tue</span><span class="n num">4</span><span class="load"><i style="width:22px;background:var(--cal-work)"></i></span></div>
+      <div class="day off"><span class="l">Wed</span><span class="n num">5</span><span class="load"><i style="width:10px;background:var(--cal-work)"></i><i style="width:10px;background:var(--cal-hire)"></i><i style="width:4px;background:var(--cal-home)"></i></span></div>
+      <div class="day today"><span class="l">Thu</span><span class="n num">6</span><span class="load"><i style="width:18px;background:var(--cal-work)"></i><i style="width:6px;background:var(--cal-hire)"></i><i style="width:5px;background:var(--cal-home)"></i></span></div>
+      <div class="day"><span class="l">Fri</span><span class="n num">7</span><span class="load"><i style="width:8px;background:var(--cal-work)"></i></span></div>
+      <div class="day"><span class="l">Sat</span><span class="n num">8</span><span class="load"><i style="width:6px;background:var(--cal-home)"></i></span></div>
+      <div class="day"><span class="l">Sun</span><span class="n num">9</span><span class="load"></span></div>
+    </div>
+  </header>
+
+  <div class="sum"><span>7 events · 5h 15m booked</span><span>Next free <span class="num">15:30</span></span></div>
+  <ul>
+    <li class="row past" data-row>
+      <span class="when"><div class="a num">9:00</div><div class="b num">9:30</div></span>
+      <span class="bar" style="background:var(--cal-work)"></span>
+      <span class="what"><div class="t">Design crit</div><div class="s">Studio 2</div></span>
+      <span class="faces"><img src="../../../../overlay/showcase/src/media/people/person-07.jpg" alt=""><img src="../../../../overlay/showcase/src/media/people/person-02.jpg" alt=""><img src="../../../../overlay/showcase/src/media/people/person-10.jpg" alt=""><span class="more num">+4</span></span>
+    </li>
+    <li class="row past">
+      <span class="when"><div class="a num">10:00</div><div class="b num">10:45</div></span>
+      <span class="bar" style="background:var(--cal-work)"></span>
+      <span class="what"><div class="t">1:1 with Theo</div><div class="s">Corner room</div></span>
+      <span class="faces"><img src="../../../../overlay/showcase/src/media/people/person-08.jpg" alt=""></span>
+    </li>
+    <li class="row past">
+      <span class="when"><div class="a num">11:00</div><div class="b num">12:00</div></span>
+      <span class="bar" style="background:var(--cal-hire)"></span>
+      <span class="what"><div class="t">Interview: Priya Nair</div><div class="s">Video call · Senior designer</div></span>
+      <span class="faces"><img src="../../../../overlay/showcase/src/media/people/person-05.jpg" alt=""><img src="../../../../overlay/showcase/src/media/people/person-06.jpg" alt=""></span>
+    </li>
+    <li class="row past">
+      <span class="when"><div class="a num">13:00</div><div class="b num">13:45</div></span>
+      <span class="bar" style="background:var(--cal-home)"></span>
+      <span class="what"><div class="t">Lunch with Jonas</div><div class="s">Café Mona, Kastanienallee</div></span>
+      <span class="faces"><img src="../../../../overlay/showcase/src/media/people/person-04.jpg" alt=""></span>
+    </li>
+    <li class="now" aria-hidden="true"><span></span><b>14:42</b></li>
+    <li class="row next">
+      <span class="when"><div class="a num">15:00</div><div class="b num">15:30</div></span>
+      <span class="bar" style="background:var(--cal-work)"></span>
+      <span class="what"><div class="t"><span class="logo" style="--b:#f24e1e;--m:url(https://cdn.jsdelivr.net/npm/simple-icons@13.21.0/icons/figma.svg)"></span>Config talk run-through</div><div class="s"><span class="soon num">in 18 min</span>Video call</div></span>
+      <span class="end"><span class="faces"><img src="../../../../overlay/showcase/src/media/people/person-01.jpg" alt=""><img src="../../../../overlay/showcase/src/media/people/person-09.jpg" alt=""></span><span class="join">Join</span></span>
+    </li>
+    <li class="row">
+      <span class="when"><div class="a num">16:00</div><div class="b num">17:00</div></span>
+      <span class="bar" style="background:var(--cal-work)"></span>
+      <span class="what"><div class="t">Release review</div><div class="s">Room 4B</div></span>
+      <span class="faces"><img src="../../../../overlay/showcase/src/media/people/person-03.jpg" alt=""><img src="../../../../overlay/showcase/src/media/people/person-07.jpg" alt=""><img src="../../../../overlay/showcase/src/media/people/person-08.jpg" alt=""><span class="more num">+9</span></span>
+    </li>
+    <li class="row">
+      <span class="when"><div class="a num">17:30</div><div class="b num">18:15</div></span>
+      <span class="bar" style="background:var(--cal-home)"></span>
+      <span class="what"><div class="t">Ada’s swimming lesson</div><div class="s">Stadtbad Oderberger</div></span>
+      <span class="faces"></span>
+    </li>
+  </ul>
+
+  <footer class="foot">
+    <span>Tomorrow <b>3 events</b>, first at <b class="num">10:00</b></span>
+    <span class="chips"><i style="background:var(--cal-work)"></i><i style="background:var(--cal-work)"></i><i style="background:var(--cal-home)"></i></span>
+  </footer>
+</article>
+</body>
+</html>

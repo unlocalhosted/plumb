@@ -1,0 +1,148 @@
+<!doctype html>
+<!-- COMP #61, the one component (owner 2026-11-04/05: no app window, richness inside). Stowe, a team drive: a studio's
+     Brand drive as a file list. The drive's space drawn as data (what fills it, by kind), every file with its own
+     thumbnail (a frame of the film with its length, the photo, coloured kind tiles), the owner's face, dates, sizes.
+     Slate's tokens (overlay/showcase/src/theme.css).
+     The moment: the viewer pressed View and held it, meaning to drag down to Date modified and let go. Nothing opened
+     while they held; the menu has only just appeared, on the release, with the pointer still on the button (the build's
+     broken side opens it in onClick). Behaviour, not style: the open menu is drawn right. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stowe drive card (comp)</title>
+<style>
+  :root {
+    --surface: #fff; --sunken: #f3f5f9; --ink: #12233d; --ink-muted: #5a6779; --ink-subtle: #6f7c90; --line: rgb(18 35 61 / 0.11);
+    --accent: #5550d8; --accent-soft: #efeefd; --accent-deep: #3631a6;
+    --board: #eef1f5; --board-dot: #d6dce4; --hl: 0.5px;
+    --r-chip: 4px; --r-control: 6px; --r-card: 10px; --r-sheet: 14px;
+    --shadow-window: 0 1px 2px oklch(0.21 0.02 264 / 0.04), 0 8px 24px oklch(0.21 0.02 264 / 0.06), 0 24px 64px oklch(0.21 0.02 264 / 0.08), 0 0 0 1px rgb(18 35 61 / 0.06);
+    --shadow-popover: 0 4px 8px oklch(0.21 0.02 264 / 0.05), 0 12px 32px oklch(0.21 0.02 264 / 0.14), 0 0 0 1px rgb(18 35 61 / 0.07);
+    /* one colour per kind of file, everywhere: the space bar, its key, the tile on the row */
+    --video: #ef7d32; --image: #5550d8; --doc: #2f6fe4; --pdf: #c8323f; --vector: #12917f;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 56px; background: var(--board);
+    background-image: radial-gradient(var(--board-dot) 1px, transparent 1px); background-size: 16px 16px;
+    font: 14px/20px Inter, -apple-system, system-ui, sans-serif; color: var(--ink); -webkit-font-smoothing: antialiased; }
+  .num { font-variant-numeric: tabular-nums; }
+  svg.i { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+
+  .card { position: relative; width: 600px; border-radius: var(--r-sheet); background: var(--surface); box-shadow: var(--shadow-window); }
+
+  /* the drive */
+  .head { display: flex; align-items: center; gap: 12px; padding: 18px 20px 0; }
+  .drive { width: 36px; height: 36px; border-radius: var(--r-card); display: grid; place-items: center; background: var(--accent-soft); color: var(--accent-deep); }
+  .head .t { font-size: 17px; line-height: 24px; font-weight: 500; letter-spacing: -0.01em; }
+  .head .s { font-size: 13px; color: var(--ink-muted); }
+  .faces { margin-left: auto; display: flex; }
+  .faces img { width: 26px; height: 26px; border-radius: 50%; object-fit: cover; box-shadow: 0 0 0 2px var(--surface); }
+  .faces img + img { margin-left: -7px; }
+  .faces span { margin-left: -7px; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; background: var(--sunken); box-shadow: 0 0 0 2px var(--surface); font-size: 11px; font-weight: 600; color: var(--ink-muted); }
+  .view { position: relative; display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 10px 0 8px; border-radius: var(--r-control); font-size: 13px; font-weight: 500; box-shadow: inset 0 0 0 1px var(--line); color: var(--ink); background: var(--sunken); }
+  .view svg { color: var(--ink-muted); }
+
+  /* its space, by kind */
+  .space { padding: 16px 20px 14px; }
+  .space .l { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-muted); }
+  .space .l b { font-weight: 500; color: var(--ink); }
+  .stack { display: flex; gap: 2px; height: 8px; margin-top: 8px; border-radius: 4px; overflow: hidden; background: var(--sunken); }
+  .stack i { display: block; height: 100%; }
+  .key { display: flex; gap: 14px; margin-top: 8px; font-size: 12px; color: var(--ink-muted); }
+  .key span { display: flex; align-items: center; gap: 6px; }
+  .key i { width: 8px; height: 8px; border-radius: 2px; }
+
+  /* the files */
+  .cols, .f { display: grid; grid-template-columns: 1fr 148px 72px 64px; gap: 12px; align-items: center; padding: 0 20px; }
+  .cols { height: 32px; font-size: 11px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-subtle); box-shadow: inset 0 var(--hl) 0 var(--line), inset 0 calc(-1 * var(--hl)) 0 var(--line); }
+  .cols .on { color: var(--ink); display: flex; align-items: center; gap: 4px; }
+  .cols .on svg { width: 12px; height: 12px; }
+  .f { height: 52px; position: relative; font-size: 13px; }
+  .f + .f::before { content: ""; position: absolute; top: 0; left: 64px; right: 20px; height: var(--hl); background: var(--line); }
+  .name { display: flex; align-items: center; gap: 12px; min-width: 0; }
+  .name .n { font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .name .k { font-size: 12px; color: var(--ink-subtle); }
+  .th { position: relative; width: 32px; height: 32px; flex: none; border-radius: var(--r-control); overflow: hidden; display: grid; place-items: center; }
+  .th img { width: 100%; height: 100%; object-fit: cover; outline: 1px solid rgb(0 0 0 / 0.08); outline-offset: -1px; border-radius: var(--r-control); }
+  .th.tile { color: #fff; font-size: 8.5px; font-weight: 700; letter-spacing: 0.04em; font-feature-settings: 'case'; }
+  .th .len { position: absolute; left: 2px; right: 2px; bottom: 2px; height: 11px; border-radius: 3px; background: rgb(0 0 0 / 0.6); color: #fff; font-size: 8px; line-height: 11px; font-weight: 600; text-align: center; }
+  .th.folder { background: var(--sunken); color: var(--ink-muted); box-shadow: inset 0 0 0 var(--hl) var(--line); }
+  .owner { display: flex; align-items: center; gap: 8px; color: var(--ink-muted); white-space: nowrap; }
+  .owner img { width: 22px; height: 22px; border-radius: 50%; object-fit: cover; outline: 1px solid rgb(0 0 0 / 0.08); outline-offset: -1px; }
+  .when { color: var(--ink-muted); }
+  .size { text-align: right; color: var(--ink-muted); }
+
+  /* the View menu, open below its button, right edges together */
+  .menu { position: absolute; z-index: 2; width: 224px; padding: 4px; border-radius: var(--r-card); background: var(--surface); box-shadow: var(--shadow-popover); }
+  .mlab { padding: 8px 8px 4px; font-size: 11px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-subtle); }
+  .mi { height: 32px; display: flex; align-items: center; gap: 8px; padding: 0 8px; border-radius: var(--r-control); font-size: 13px; }
+  .mi .ck { width: 16px; display: grid; place-items: center; color: var(--accent); }
+  .mi kbd { margin-left: auto; font: 12px/1 Inter, -apple-system, system-ui, sans-serif; color: var(--ink-subtle); letter-spacing: 0.02em; }
+  .mi .dir { margin-left: auto; font-size: 12px; color: var(--ink-subtle); }
+  .sep { height: var(--hl); margin: 4px 6px; background: var(--line); }
+
+  .cursor { position: absolute; z-index: 3; width: 18px; height: 22px; filter: drop-shadow(0 1px 1.5px rgb(0 0 0 / 0.3)); }
+</style>
+</head>
+<body>
+<article class="card">
+  <header class="head">
+    <span class="drive"><svg class="i" viewBox="0 0 16 16"><path d="M2.5 9.5 4.3 3.8a1 1 0 0 1 1-.8h5.4a1 1 0 0 1 1 .8l1.8 5.7M2.5 9.5v3a1 1 0 0 0 1 1h9a1 1 0 0 0 1-1v-3M2.5 9.5h11"/><circle cx="11" cy="11.5" r=".6" fill="currentColor"/></svg></span>
+    <span><div class="t">Brand</div><div class="s">Shared drive · <span class="num">214</span> items</div></span>
+    <span class="faces"><img src="../../../../overlay/showcase/src/media/people/person-02.jpg" alt=""><img src="../../../../overlay/showcase/src/media/people/person-10.jpg" alt=""><img src="../../../../overlay/showcase/src/media/people/person-06.jpg" alt=""><span class="num">+4</span></span>
+    <span class="view"><svg class="i" viewBox="0 0 16 16"><path d="M2.5 4.5h6M11.5 4.5h2M2.5 11.5h2M7.5 11.5h6"/><circle cx="10" cy="4.5" r="1.5"/><circle cx="6" cy="11.5" r="1.5"/></svg>View<svg class="i" viewBox="0 0 16 16" style="width:14px;height:14px"><path d="m5 6.5 3 3 3-3"/></svg></span>
+  </header>
+
+  <!-- the drive's space, drawn by kind -->
+  <section class="space">
+    <div class="l"><span><b class="num">31.6 GB</b> of 50 GB used</span><span class="num">18.4 GB free</span></div>
+    <div class="stack"><i style="width:42.8%;background:var(--video)"></i><i style="width:12.4%;background:var(--image)"></i><i style="width:4.2%;background:var(--pdf)"></i><i style="width:1.8%;background:var(--doc)"></i><i style="width:2%;background:var(--vector)"></i></div>
+    <div class="key"><span><i style="background:var(--video)"></i>Video</span><span><i style="background:var(--image)"></i>Images</span><span><i style="background:var(--pdf)"></i>PDFs</span><span><i style="background:var(--doc)"></i>Documents</span><span><i style="background:var(--vector)"></i>Vectors</span></div>
+  </section>
+
+  <div class="cols"><span class="on">Name<svg class="i" viewBox="0 0 16 16"><path d="M8 12.5v-9M4.5 7 8 3.5 11.5 7"/></svg></span><span>Owner</span><span>Modified</span><span style="text-align:right">Size</span></div>
+
+  <!-- sorted by name, folders first -->
+  <div class="f">
+    <span class="name"><span class="th folder"><svg class="i" viewBox="0 0 16 16"><path d="M2.5 4.5a1 1 0 0 1 1-1h3l1.5 1.5h4.5a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1h-9a1 1 0 0 1-1-1z"/></svg></span><span><div class="n">Photography</div><div class="k num">126 items</div></span></span>
+    <span class="owner"><img src="../../../../overlay/showcase/src/media/people/person-10.jpg" alt="">Ruth Okafor</span><span class="when">26 Feb</span><span class="size num">2.4 GB</span>
+  </div>
+  <div class="f">
+    <span class="name"><span class="th tile" style="background:var(--pdf)">PDF</span><span><div class="n">Brand guidelines.pdf</div><div class="k num">48 pages</div></span></span>
+    <span class="owner"><img src="../../../../overlay/showcase/src/media/people/person-06.jpg" alt="">Felix Brandt</span><span class="when">2 Mar</span><span class="size num">4.8 MB</span>
+  </div>
+  <div class="f">
+    <span class="name"><span class="th"><img src="https://images.unsplash.com/photo-1494500764479-0c8f2919a3d8?w=96&h=96&fit=crop&q=70" alt=""></span><span><div class="n">Campaign, hero.jpg</div><div class="k num">6000 × 4000</div></span></span>
+    <span class="owner"><img src="../../../../overlay/showcase/src/media/people/person-10.jpg" alt="">Ruth Okafor</span><span class="when">3 Mar</span><span class="size num">18.4 MB</span>
+  </div>
+  <div class="f">
+    <span class="name"><span class="th"><img src="https://images.unsplash.com/photo-1433086966358-54859d0ed716?w=96&h=96&fit=crop&q=70" alt=""><span class="len num">2:14</span></span><span><div class="n">Launch film, cut 3.mov</div><div class="k num">4K · 2 min 14 s</div></span></span>
+    <span class="owner"><img src="../../../../overlay/showcase/src/media/people/person-02.jpg" alt="">Jonas Berg</span><span class="when">4 Mar</span><span class="size num">812 MB</span>
+  </div>
+  <div class="f">
+    <span class="name"><span class="th tile" style="background:var(--vector)">SVG</span><span><div class="n">Logo, final.svg</div><div class="k">Vector</div></span></span>
+    <span class="owner"><img src="../../../../overlay/showcase/src/media/people/person-06.jpg" alt="">Felix Brandt</span><span class="when">28 Feb</span><span class="size num">184 KB</span>
+  </div>
+  <div class="f" style="margin-bottom:6px">
+    <span class="name"><span class="th tile" style="background:var(--doc)">DOC</span><span><div class="n">Press release.doc</div><div class="k num">1,120 words</div></span></span>
+    <span class="owner"><img src="../../../../overlay/showcase/src/media/people/person-02.jpg" alt="">Jonas Berg</span><span class="when">1 Mar</span><span class="size num">312 KB</span>
+  </div>
+
+  <!-- the View menu: open only now, on the release; the pointer still on the button it had to come back up on -->
+  <div class="menu" style="right:20px;top:62px">
+    <div class="mlab">Sort by</div>
+    <div class="mi"><span class="ck"><svg class="i" viewBox="0 0 16 16" style="stroke-width:2"><path d="m3.5 8.5 3 3 6-7"/></svg></span>Name<span class="dir">A to Z</span></div>
+    <div class="mi"><span class="ck"></span>Date modified</div>
+    <div class="mi"><span class="ck"></span>Size</div>
+    <div class="mi"><span class="ck"></span>Owner</div>
+    <div class="sep"></div>
+    <div class="mlab">Show</div>
+    <div class="mi"><span class="ck"><svg class="i" viewBox="0 0 16 16" style="stroke-width:2"><path d="m3.5 8.5 3 3 6-7"/></svg></span>Folders first<kbd>⇧⌘F</kbd></div>
+    <div class="mi"><span class="ck"><svg class="i" viewBox="0 0 16 16" style="stroke-width:2"><path d="m3.5 8.5 3 3 6-7"/></svg></span>Thumbnails</div>
+    <div class="mi"><span class="ck"><svg class="i" viewBox="0 0 16 16" style="stroke-width:2"><path d="m3.5 8.5 3 3 6-7"/></svg></span>Space by kind</div>
+  </div>
+  <svg class="cursor" style="right:18px;top:34px" viewBox="0 0 18 22"><path d="M1.5 1.5v15.6l3.9-3.7 2.6 6 2.8-1.2-2.6-5.9h5.5z" fill="#111" stroke="#fff" stroke-width="1.4" stroke-linejoin="round"/></svg>
+</article>
+</body>
+</html>

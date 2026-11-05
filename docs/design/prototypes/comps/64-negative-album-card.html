@@ -1,0 +1,134 @@
+<!doctype html>
+<!-- COMP #64, the one component (owner 2026-11-04/05: no app window, richness inside). Negative, a photo library for a
+     small studio: an album from a shoot in the Highlands, as a grid by day, with the Info panel that slides in from the right
+     over it. The panel is data drawn as data: the photo, its histogram, the exposure as four readings, who shot it.
+     Slate's tokens (overlay/showcase/src/theme.css).
+     The moment: Info was clicked, and clicked again while the panel was still sliding in, here 55% of the way. The
+     build writes its entrance and exit as two keyframe animations (data-[state=open]:animate-in slide-in-from-right,
+     data-[state=closed]:animate-out slide-out-to-right), so the exit starts from its own first frame, fully open: on
+     the next frame the panel snaps to 100%, then leaves. Drawn: the frame of the second press. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Negative album card (comp)</title>
+<style>
+  :root {
+    --surface: #fff; --sunken: #f3f5f9; --ink: #12233d; --ink-muted: #5a6779; --ink-subtle: #6f7c90; --line: rgb(18 35 61 / 0.11);
+    --accent: #5550d8; --accent-soft: #efeefd; --accent-deep: #3631a6;
+    --board: #eef1f5; --board-dot: #d6dce4; --hl: 0.5px;
+    --r-chip: 4px; --r-control: 6px; --r-card: 10px; --r-sheet: 14px;
+    --shadow-window: 0 1px 2px oklch(0.21 0.02 264 / 0.04), 0 8px 24px oklch(0.21 0.02 264 / 0.06), 0 24px 64px oklch(0.21 0.02 264 / 0.08), 0 0 0 1px rgb(18 35 61 / 0.06);
+    --shadow-raised: 0 1px 1px oklch(0.21 0.02 264 / 0.04), 0 1px 3px oklch(0.21 0.02 264 / 0.08);
+    --u: https://images.unsplash.com/photo-;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 56px; background: var(--board);
+    background-image: radial-gradient(var(--board-dot) 1px, transparent 1px); background-size: 16px 16px;
+    font: 14px/20px Inter, -apple-system, system-ui, sans-serif; color: var(--ink); -webkit-font-smoothing: antialiased; }
+  .num { font-variant-numeric: tabular-nums; }
+  svg.i { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+
+  .card { position: relative; width: 680px; height: 536px; border-radius: var(--r-sheet); background: var(--surface); box-shadow: var(--shadow-window); overflow: hidden; }
+
+  /* the album */
+  .head { display: flex; align-items: center; gap: 12px; height: 60px; padding: 0 16px 0 20px; box-shadow: inset 0 calc(-1 * var(--hl)) 0 var(--line); }
+  .head .t { font-size: 17px; line-height: 24px; font-weight: 500; letter-spacing: -0.01em; }
+  .head .s { font-size: 13px; color: var(--ink-muted); }
+  .faces { display: flex; margin-left: 4px; }
+  .faces img { width: 24px; height: 24px; border-radius: 50%; object-fit: cover; box-shadow: 0 0 0 2px var(--surface); }
+  .faces img + img { margin-left: -6px; }
+  .seg { margin-left: auto; display: flex; gap: 2px; padding: 2px; border-radius: var(--r-control); background: var(--sunken); box-shadow: inset 0 0 0 var(--hl) var(--line); }
+  .seg span { height: 26px; padding: 0 10px; border-radius: 5px; display: grid; place-items: center; font-size: 13px; color: var(--ink-muted); }
+  .seg .on { background: var(--surface); color: var(--ink); box-shadow: var(--shadow-raised); }
+  .info { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 10px 0 8px; border-radius: var(--r-control); font-size: 13px; font-weight: 500; color: var(--accent-deep); background: var(--accent-soft); box-shadow: inset 0 0 0 1px rgb(85 80 216 / 0.18); scale: 0.97; }
+
+  /* the grid, by day */
+  .grid { padding: 4px 20px 20px; }
+  .day { display: flex; align-items: baseline; gap: 8px; padding: 14px 0 8px; font-size: 13px; }
+  .day b { font-weight: 500; }
+  .day span { color: var(--ink-muted); }
+  .day em { margin-left: auto; font-style: normal; font-size: 12px; color: var(--ink-subtle); }
+  .row { display: flex; gap: 4px; height: 132px; }
+  .row + .row { margin-top: 4px; }
+  .ph { position: relative; height: 100%; border-radius: 4px; overflow: hidden; }
+  .ph img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .ph.sel { box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--accent); }
+  .ph .fav { position: absolute; left: 6px; bottom: 6px; width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; background: rgb(0 0 0 / 0.35); color: #fff; }
+  .ph .fav svg { width: 12px; height: 12px; fill: currentColor; stroke: none; }
+  .ph .tick { position: absolute; right: 6px; top: 6px; width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; background: var(--accent); color: #fff; box-shadow: 0 0 0 1.5px #fff; }
+  .ph .tick svg { width: 12px; height: 12px; stroke-width: 2.2; }
+
+  /* the Info panel, frozen 55% of the way in */
+  .panel { position: absolute; top: 60px; right: 0; bottom: 0; width: 264px; padding: 16px; background: var(--surface); box-shadow: inset var(--hl) 0 0 var(--line); translate: 45% 0; display: flex; flex-direction: column; gap: 14px; }
+  .panel .pv { width: 100%; height: 148px; border-radius: var(--r-control); object-fit: cover; display: block; outline: 1px solid rgb(0 0 0 / 0.06); outline-offset: -1px; }
+  .panel .fn { display: flex; justify-content: space-between; align-items: baseline; font-size: 13px; }
+  .panel .fn b { font-weight: 500; }
+  .panel .fn span { font-size: 12px; color: var(--ink-subtle); }
+  .hist { height: 56px; border-radius: var(--r-control); background: var(--sunken); overflow: hidden; }
+  .hist svg { width: 100%; height: 100%; display: block; }
+  .exif { display: grid; grid-template-columns: repeat(4, 1fr); border-radius: var(--r-control); box-shadow: inset 0 0 0 var(--hl) var(--line); }
+  .exif span { display: flex; flex-direction: column; align-items: center; padding: 7px 0 6px; font-size: 13px; font-weight: 500; }
+  .exif span + span { box-shadow: inset var(--hl) 0 0 var(--line); }
+  .exif small { font-size: 11px; font-weight: 400; color: var(--ink-subtle); }
+  .meta { display: grid; grid-template-columns: 64px 1fr; row-gap: 6px; font-size: 12.5px; }
+  .meta dt { color: var(--ink-subtle); }
+  .meta dd { margin: 0; display: flex; align-items: center; gap: 6px; }
+  .meta img { width: 18px; height: 18px; border-radius: 50%; object-fit: cover; }
+
+  .cursor { position: absolute; z-index: 3; width: 18px; height: 22px; filter: drop-shadow(0 1px 1.5px rgb(0 0 0 / 0.3)); }
+</style>
+</head>
+<body>
+<article class="card">
+  <header class="head">
+    <span><div class="t">Highlands, May</div><div class="s num">86 photos · 14–16 May</div></span>
+    <span class="faces"><img src="../../../../overlay/showcase/src/media/people/person-04.jpg" alt=""><img src="../../../../overlay/showcase/src/media/people/person-09.jpg" alt=""></span>
+    <span class="seg"><span class="on">Grid</span><span>Map</span></span>
+    <span class="info"><svg class="i" viewBox="0 0 16 16"><rect x="2.5" y="2.5" width="11" height="11" rx="2"/><path d="M9.5 2.5v11"/></svg>Info</span>
+  </header>
+
+  <section class="grid">
+    <div class="day"><b>Tue 14 May</b><span>Quiraing</span><em class="num">32 photos</em></div>
+    <div class="row">
+      <span class="ph" style="flex:1.5"><img src="https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=480&h=300&fit=crop&q=70" alt=""><span class="fav"><svg viewBox="0 0 16 16"><path d="M8 13.5S2.5 10.3 2.5 6.4A2.9 2.9 0 0 1 8 5a2.9 2.9 0 0 1 5.5 1.4C13.5 10.3 8 13.5 8 13.5z"/></svg></span></span>
+      <span class="ph sel" style="flex:1"><img src="https://images.unsplash.com/photo-1472214103451-9374bd1c798e?w=320&h=300&fit=crop&q=70" alt=""><span class="tick"><svg class="i" viewBox="0 0 16 16"><path d="m3.5 8.5 3 3 6-7"/></svg></span></span>
+      <span class="ph" style="flex:1.3"><img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=420&h=300&fit=crop&q=70" alt=""></span>
+    </div>
+    <div class="row">
+      <span class="ph" style="flex:1"><img src="https://images.unsplash.com/photo-1418065460487-3e41a6c84dc5?w=320&h=300&fit=crop&q=70" alt=""></span>
+      <span class="ph" style="flex:1.6"><img src="https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?w=520&h=300&fit=crop&q=70" alt=""></span>
+      <span class="ph" style="flex:1.2"><img src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=400&h=300&fit=crop&q=70" alt=""></span>
+    </div>
+    <div class="day"><b>Wed 15 May</b><span>into the woods</span><em class="num">41 photos</em></div>
+    <div class="row" style="height:96px">
+      <span class="ph" style="flex:1.2"><img src="https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=400&h=240&fit=crop&q=70" alt=""></span>
+      <span class="ph" style="flex:1"><img src="https://images.unsplash.com/photo-1447752875215-b2761acb3c5d?w=320&h=240&fit=crop&q=70" alt=""></span>
+      <span class="ph" style="flex:1.4"><img src="https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=440&h=240&fit=crop&q=70" alt=""></span>
+    </div>
+  </section>
+
+  <!-- the panel, 55% in when Info was pressed again -->
+  <aside class="panel">
+    <img class="pv" src="https://images.unsplash.com/photo-1472214103451-9374bd1c798e?w=560&h=320&fit=crop&q=75" alt="">
+    <div class="fn"><b>DSC_0418.ARW</b><span class="num">61 MP · 24.6 MB</span></div>
+    <!-- the histogram: the photo's tones, shadows to highlights, each channel in its own colour -->
+    <div class="hist"><svg viewBox="0 0 232 56" preserveAspectRatio="none">
+      <path d="M0 56 L0 50 C14 46 22 30 34 28 C46 26 52 40 64 36 C80 30 88 12 104 10 C120 8 128 26 142 30 C158 34 168 22 182 24 C198 26 210 44 222 50 L232 54 L232 56Z" fill="rgb(31 157 107 / 0.30)"/>
+      <path d="M0 56 L0 52 C16 50 24 40 38 38 C52 36 60 44 74 40 C92 34 100 22 116 20 C130 18 140 32 152 34 C168 36 176 30 190 32 C204 34 214 46 232 52 L232 56Z" fill="rgb(47 111 228 / 0.28)"/>
+      <path d="M0 56 L0 54 C18 52 28 46 44 44 C58 42 70 48 86 44 C102 40 110 30 126 30 C142 30 150 40 164 42 C180 44 190 38 204 40 C216 42 224 50 232 54 L232 56Z" fill="rgb(208 70 59 / 0.26)"/>
+      <path d="M0 50 C14 46 22 30 34 28 C46 26 52 40 64 36 C80 30 88 12 104 10 C120 8 128 26 142 30 C158 34 168 22 182 24 C198 26 210 44 222 50 L232 54" fill="none" stroke="rgb(18 35 61 / 0.35)" stroke-width="1"/>
+    </svg></div>
+    <div class="exif"><span>ƒ/8<small>aperture</small></span><span class="num">1/250<small>shutter</small></span><span class="num">100<small>ISO</small></span><span class="num">24mm<small>lens</small></span></div>
+    <dl class="meta">
+      <dt>Taken</dt><dd class="num">Tue 14 May, 07:42</dd>
+      <dt>Camera</dt><dd>Sony A7R IV</dd>
+      <dt>By</dt><dd><img src="../../../../overlay/showcase/src/media/people/person-04.jpg" alt="">Walt Okoro</dd>
+    </dl>
+  </aside>
+
+  <!-- the second press, on Info -->
+  <svg class="cursor" style="right:26px;top:32px" viewBox="0 0 18 22"><path d="M1.5 1.5v15.6l3.9-3.7 2.6 6 2.8-1.2-2.6-5.9h5.5z" fill="#111" stroke="#fff" stroke-width="1.4" stroke-linejoin="round"/></svg>
+</article>
+</body>
+</html>

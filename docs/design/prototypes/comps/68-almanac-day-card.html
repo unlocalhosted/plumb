@@ -1,0 +1,149 @@
+<!doctype html>
+<!-- COMP #68, the one component (owner 2026-11-05: no app around it, rich inside). Almanac's day card for Thursday:
+     the week strip, the morning drawn as a timeline of events in their calendars' colours with who's coming, and the
+     Design crit preview open from its block. Slate's tokens (overlay/showcase/src/theme.css). Hands-on (ExitFaster) and
+     still (EventPreview): drawn the moment the flaw shows on the broken side: Close was pressed and the pointer has
+     moved on to the 1:1 below, but the preview is still only halfway out (300ms both ways, at ¼ speed). plumber's two
+     measured bars under the card, the exit coral. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Almanac day card (comp)</title>
+<style>
+  :root {
+    --surface: #fff; --sunken: #f3f5f9; --ink: #12233d; --ink-muted: #5a6779; --ink-subtle: #6f7c90;
+    --line: rgb(18 35 61 / 0.11); --accent: #5550d8; --accent-soft: #efeefd; --accent-deep: #3631a6;
+    --positive: #0f6f58; --positive-soft: #e5f4ef; --board: #eef1f5; --board-dot: #d6dce4;
+    --shadow-card: 0 0 0 1px rgb(18 35 61 / 0.11), 0 1px 1px rgb(18 35 61 / 0.03), 0 2px 6px rgb(18 35 61 / 0.04);
+    --shadow-popover: 0 0 0 1px rgb(18 35 61 / 0.08), 0 4px 8px rgb(18 35 61 / 0.05), 0 12px 32px rgb(18 35 61 / 0.14);
+    --hl: 0.5px;
+    /* a colour per calendar: Design (the brand), Hiring, Personal */
+    --cal-design: #5550d8; --cal-design-soft: #efeefd; --cal-design-ink: #3631a6;
+    --cal-hire: #0f8a8a; --cal-hire-soft: #e2f4f3; --cal-hire-ink: #0b5e5e;
+    --cal-life: #c2571a; --cal-life-soft: #fbece2; --cal-life-ink: #8a3a0c;
+    --pl-off: #bf3a1e; --pl-on: #1a9460; --pl-sky: #2a7fd0; --pl-ink-2: #6b665c; --pl-ink-3: #b3ad9f; --pl-halo: rgb(255 255 255 / 0.9);
+    --pl-mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, monospace;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 48px; background: var(--board);
+    background-image: radial-gradient(var(--board-dot) 1px, transparent 1px); background-size: 16px 16px;
+    font: 14px/20px Inter, -apple-system, system-ui, sans-serif; color: var(--ink); -webkit-font-smoothing: antialiased; }
+  .num { font-variant-numeric: tabular-nums; }
+  .face { border-radius: 50%; object-fit: cover; outline: 1px solid rgb(0 0 0 / 0.08); outline-offset: -1px; }
+  .stage { position: relative; width: 520px; }
+  .card { position: relative; border-radius: 10px; background: var(--surface); box-shadow: var(--shadow-card); }
+
+  header { display: flex; align-items: baseline; justify-content: space-between; padding: 18px 20px 0; }
+  header .t { font-size: 17px; line-height: 24px; font-weight: 500; letter-spacing: -0.01em; }
+  header .s { font-size: 13px; color: var(--ink-muted); }
+  .week { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; padding: 12px 16px 14px; box-shadow: inset 0 calc(-1 * var(--hl)) 0 var(--line); }
+  .wd { height: 48px; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font-size: 11px; color: var(--ink-subtle); }
+  .wd b { font-size: 15px; font-weight: 500; color: var(--ink); }
+  .wd i { display: flex; gap: 2px; height: 4px; }
+  .wd i u { width: 4px; height: 4px; border-radius: 50%; background: var(--c); }
+  .wd.today { background: var(--accent); color: rgb(255 255 255 / 0.85); }
+  .wd.today b { color: #fff; }
+  .wd.today i u { background: #fff; }
+  .wd.off b { color: var(--ink-subtle); }
+
+  .grid { position: relative; padding: 6px 20px 16px 64px; }
+  .hour { position: relative; height: 52px; }
+  .hour span { position: absolute; left: -46px; top: -7px; width: 34px; text-align: right; font-size: 11px; color: var(--ink-subtle); }
+  .hour::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: var(--hl); background: var(--line); }
+  .ev { position: absolute; left: 64px; right: 20px; border-radius: 6px; padding: 6px 10px; display: flex; gap: 8px; background: var(--soft); box-shadow: inset 3px 0 0 var(--c); overflow: hidden; }
+  .ev .w { font-size: 13px; font-weight: 500; color: var(--ink2); }
+  .ev .m { font-size: 12px; color: var(--ink2); opacity: 1; }
+  .ev .fs { margin-left: auto; display: flex; align-self: center; }
+  .ev .fs img { width: 22px; height: 22px; margin-left: -6px; box-shadow: 0 0 0 2px var(--soft); }
+  .ev .fs em { margin-left: -6px; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; background: var(--surface); box-shadow: 0 0 0 2px var(--soft); font: normal 500 10px/1 Inter, system-ui; color: var(--ink-muted); }
+  .ev.sel { box-shadow: inset 3px 0 0 var(--c), inset 0 0 0 1.5px var(--c); }
+  .ev.hover { background: #e2e1fb; }
+  .now { position: absolute; left: 58px; right: 20px; height: 2px; background: #d93a3a; }
+  .now::before { content: ""; position: absolute; left: -4px; top: -3px; width: 8px; height: 8px; border-radius: 50%; background: #d93a3a; }
+
+  /* the preview, caught halfway out */
+  .pop { position: absolute; left: 132px; top: 206px; width: 272px; border-radius: 10px; background: var(--surface); box-shadow: var(--shadow-popover); padding: 16px;
+    transform-origin: top left; opacity: 0.85; transform: scale(0.985); }
+  .pop .ttl { display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 500; }
+  .pop .ttl i { width: 10px; height: 10px; border-radius: 3px; background: var(--cal-design); }
+  .pop .when { margin-top: 2px; padding-left: 18px; font-size: 13px; color: var(--ink-muted); }
+  .pop .row { display: flex; align-items: center; gap: 10px; margin-top: 12px; font-size: 13px; }
+  .pop .meet { width: 28px; height: 28px; border-radius: 6px; display: grid; place-items: center; background: var(--sunken); }
+  .pop .meet i { width: 16px; height: 16px; background: #00897b; -webkit-mask: var(--m) center / contain no-repeat; mask: var(--m) center / contain no-repeat; }
+  .pop .row .s { font-size: 12px; color: var(--ink-subtle); }
+  .fs2 { display: flex; padding-left: 6px; }
+  .fs2 img { width: 24px; height: 24px; margin-left: -6px; box-shadow: 0 0 0 2px var(--surface); }
+  .ppl { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; padding-top: 12px; box-shadow: inset 0 var(--hl) 0 var(--line); }
+  .ppl .h { font-size: 12px; font-weight: 500; color: var(--ink-subtle); display: flex; justify-content: space-between; }
+  .p { display: flex; align-items: center; gap: 10px; font-size: 13px; }
+  .p img { width: 24px; height: 24px; }
+  .p .r { margin-left: auto; font-size: 12px; color: var(--ink-subtle); }
+  .p .r.yes { color: var(--positive); }
+  .note { margin-top: 12px; font-size: 13px; line-height: 19px; color: var(--ink-muted); }
+  .btns { display: flex; gap: 8px; margin-top: 14px; }
+  .b { height: 32px; padding: 0 12px; display: inline-flex; align-items: center; border-radius: 6px; font-size: 13px; font-weight: 500; box-shadow: inset 0 0 0 1px var(--line); }
+  .b.go { background: var(--accent); color: #fff; box-shadow: none; }
+  .cursor { position: absolute; width: 18px; height: 22px; }
+
+  .speed { position: absolute; right: 0; top: -4px; display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--ink-muted); }
+  .seg { display: flex; gap: 2px; padding: 2px; border-radius: 6px; background: var(--sunken); box-shadow: inset 0 0 0 1px var(--line); }
+  .seg span { height: 24px; padding: 0 8px; display: grid; place-items: center; border-radius: 5px; }
+  .seg .on { background: var(--surface); color: var(--ink); box-shadow: 0 1px 1px rgb(18 35 61 / 0.04), 0 1px 3px rgb(18 35 61 / 0.08); }
+  .bars { position: relative; height: 44px; margin-top: 44px; }
+  .bars .r { position: absolute; left: 0; display: flex; align-items: center; gap: 8px; font: 600 10.5px/14px Inter, system-ui; color: var(--pl-ink-2); }
+  .bars .r b { width: 22px; font-weight: 600; }
+  .bars .r i { height: 6px; border-radius: 3px; }
+  .bars .r em { font: normal 500 11px var(--pl-mono); }
+  .tag { position: absolute; transform: translateY(-50%); display: flex; align-items: center; height: 20px; padding: 0 8px; border-radius: 6px; font: 500 11px/1 var(--pl-mono); color: #fff; background: var(--pl-off); box-shadow: 0 0 0 1px var(--pl-halo); white-space: nowrap; }
+</style>
+</head>
+<body>
+<div class="stage">
+  <article class="card">
+    <header><span class="t">Thursday</span><span class="s">6 November · Week 45</span></header>
+    <div class="week num">
+      <div class="wd">Mon<b>3</b><i><u style="--c:var(--cal-design)"></u><u style="--c:var(--cal-hire)"></u></i></div>
+      <div class="wd">Tue<b>4</b><i><u style="--c:var(--cal-design)"></u></i></div>
+      <div class="wd">Wed<b>5</b><i><u style="--c:var(--cal-hire)"></u><u style="--c:var(--cal-life)"></u></i></div>
+      <div class="wd today">Thu<b>6</b><i><u></u><u></u><u></u></i></div>
+      <div class="wd">Fri<b>7</b><i><u style="--c:var(--cal-design)"></u></i></div>
+      <div class="wd off">Sat<b>8</b><i><u style="--c:var(--cal-life)"></u></i></div>
+      <div class="wd off">Sun<b>9</b><i></i></div>
+    </div>
+    <div class="grid num">
+      <div class="hour"><span>8:00</span></div><div class="hour"><span>9:00</span></div><div class="hour"><span>10:00</span></div>
+      <div class="hour"><span>11:00</span></div><div class="hour"><span>12:00</span></div><div class="hour"><span>13:00</span></div>
+    </div>
+    <!-- the morning: each event in its calendar's colour; the crit is the one opened -->
+    <div class="ev" style="top:135px;height:24px;padding-top:2px;--c:var(--cal-life);--soft:var(--cal-life-soft);--ink2:var(--cal-life-ink)"><span class="w">School run</span><span class="m">8:15</span></div>
+    <div class="ev sel" style="top:175px;height:24px;padding-top:2px;--c:var(--cal-design);--soft:var(--cal-design-soft);--ink2:var(--cal-design-ink)"><span class="w">Design crit</span><span class="m num">9:00 – 9:30 · Studio 2</span></div>
+    <div class="ev hover" style="top:227px;height:44px;--c:var(--cal-design);--soft:var(--cal-design-soft);--ink2:var(--cal-design-ink)"><span><div class="w">1:1 with Tomi</div><div class="m num">10:00 – 10:45</div></span><span class="fs"><img class="face" src="../../../../overlay/showcase/src/media/people/person-09.jpg" alt=""></span></div>
+    <div class="ev" style="top:279px;height:64px;--c:var(--cal-hire);--soft:var(--cal-hire-soft);--ink2:var(--cal-hire-ink)"><span><div class="w">Portfolio review, Senior designer</div><div class="m num">11:00 – 12:15 · Ines, Arlo</div></span><span class="fs"><img class="face" src="../../../../overlay/showcase/src/media/people/person-01.jpg" alt=""><img class="face" src="../../../../overlay/showcase/src/media/people/person-06.jpg" alt=""><img class="face" src="../../../../overlay/showcase/src/media/people/person-07.jpg" alt=""><em>+2</em></span></div>
+    <div class="ev" style="top:357px;height:24px;padding-top:2px;--c:var(--cal-life);--soft:var(--cal-life-soft);--ink2:var(--cal-life-ink)"><span class="w">Lunch with Remy</span><span class="m num">12:30</span></div>
+    <div class="ev" style="top:383px;height:52px;--c:var(--cal-design);--soft:var(--cal-design-soft);--ink2:var(--cal-design-ink)"><span><div class="w">Onboarding flows, ship review</div><div class="m num">13:00 – 14:00 · Room 4</div></span></div>
+    <span class="now" style="top:210px"></span>
+
+    <!-- Design crit's preview: Close pressed, the hand already on the 1:1, and the preview still only half gone -->
+    <div class="pop" role="dialog" aria-label="Design crit">
+      <div class="ttl"><i></i>Design crit</div>
+      <div class="when num">Thu 6 Nov · 9:00 – 9:30 · Studio 2</div>
+      <div class="row"><span class="meet"><i style="--m:url(https://cdn.jsdelivr.net/npm/simple-icons@13.21.0/icons/googlemeet.svg)"></i></span><span><div>Google Meet</div><div class="s">meet.google.com/qrv-tkzp-hfd</div></span></div>
+      <div class="row"><span class="fs2"><img class="face" src="../../../../overlay/showcase/src/media/people/person-07.jpg" alt=""><img class="face" src="../../../../overlay/showcase/src/media/people/person-02.jpg" alt=""><img class="face" src="../../../../overlay/showcase/src/media/people/person-05.jpg" alt=""><img class="face" src="../../../../overlay/showcase/src/media/people/person-10.jpg" alt=""></span><span><div>Ruth, Sam and 3 more</div><div class="s">3 going · 1 maybe</div></span></div>
+      <div class="note">Bring the onboarding flows. We’ll go through the empty states first.</div>
+      <div class="btns"><span class="b go">Join with Meet</span><span class="b">Close</span></div>
+    </div>
+    <!-- the pointer, already on the next thing -->
+    <svg class="cursor" style="left:440px;top:244px" viewBox="0 0 18 22"><path d="M2 2v15.5l4.2-3.8 2.7 6.1 2.6-1.1-2.6-6h5.7Z" fill="#12233d" stroke="#fff" stroke-width="1.4" stroke-linejoin="round"/></svg>
+  </article>
+
+  <!-- plumber's read: the two durations as the browser ran them, to one scale (300ms = 220px) -->
+  <div class="bars">
+    <div class="speed">Speed <span class="seg"><span class="on">¼×</span><span>1×</span></span></div>
+    <span class="r" style="top:0"><b>in</b><i style="width:220px;background:var(--pl-sky)"></i><em>300ms</em></span>
+    <span class="r" style="top:18px"><b>out</b><i style="width:220px;background:var(--pl-off)"></i><em>300ms</em></span>
+    <span class="tag" style="left:314px;top:25px">no quicker out</span>
+  </div>
+</div>
+</body>
+</html>

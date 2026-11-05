@@ -1,0 +1,131 @@
+<!doctype html>
+<!-- COMP #50 icon strokes keep their weight, the one component (owner 2026-11-05). Quire, a team's notes app, mid-search:
+     the field with its 16px magnifier, the folder scope as chips with counts, the empty result for this folder (the
+     subject: the same magnifier at 48px), and where the words were found instead: notes in other folders, each with
+     its folder's colour, its author's face, the matched words marked and how many times they match.
+     One stroked set, drawn at 1.75px at every size (vector-effect: non-scaling-stroke on every icon's shapes).
+     BROKEN state: the 48px magnifier (.empty svg) lacks vector-effect, so its 1.75 stroke in a 24 box draws 3.5px. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Quire search (comp)</title>
+<style>
+  :root {
+    --surface: #fff; --sunken: #f3f5f9; --ink: #12233d; --ink-muted: #5a6779; --ink-subtle: #6f7c90;
+    --line: rgb(18 35 61 / 0.11); --accent: #5550d8; --accent-soft: #efeefd; --accent-deep: #3631a6;
+    --board: #eef1f5; --board-dot: #d6dce4; --hl: 0.5px;
+    --r-card: 10px; --r-control: 6px; --r-chip: 4px;
+    --shadow-card: 0 0 0 1px rgb(18 35 61 / 0.11), 0 1px 1px rgb(18 35 61 / 0.03), 0 2px 6px rgb(18 35 61 / 0.04);
+    --shadow-window: 0 1px 2px oklch(0.21 0.02 264 / 0.04), 0 8px 24px oklch(0.21 0.02 264 / 0.06), 0 24px 64px oklch(0.21 0.02 264 / 0.08);
+    /* folder colours: each folder keeps one, on its chip and its notes */
+    --f-personal: #5550d8; --f-ops: #0e7c86; --f-shared: #c2366f; --f-archive: #8a6a2f;
+    --match: #fdf0b8;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 48px; background: var(--board);
+    background-image: radial-gradient(var(--board-dot) 1px, transparent 1px); background-size: 16px 16px;
+    font: 14px/20px Inter, -apple-system, system-ui, sans-serif; color: var(--ink); -webkit-font-smoothing: antialiased; }
+  .num { font-variant-numeric: tabular-nums; }
+  /* the set: every icon's shapes keep their drawn stroke at any size */
+  .i * { vector-effect: non-scaling-stroke; }
+
+  .card { width: 420px; border-radius: var(--r-card); background: var(--surface); box-shadow: var(--shadow-card), var(--shadow-window); overflow: hidden; }
+
+  .top { padding: 16px 16px 0; }
+  .field { display: flex; align-items: center; gap: 8px; height: 40px; padding: 0 8px 0 12px; border-radius: var(--r-control); color: var(--ink-muted);
+    box-shadow: inset 0 0 0 1px var(--accent), 0 0 0 3px rgb(85 80 216 / 0.16); }
+  .field .q { flex: 1; font-size: 15px; color: var(--ink); }
+  .field .q::after { content: ""; display: inline-block; width: 1.5px; height: 18px; margin-left: 1px; vertical-align: -4px; background: var(--accent); }
+  .clear { width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; color: var(--ink-subtle); background: var(--sunken); }
+  .kbd { font-size: 11px; line-height: 16px; padding: 0 5px; border-radius: var(--r-chip); color: var(--ink-subtle); box-shadow: inset 0 0 0 1px var(--line); }
+
+  .scope { display: flex; gap: 6px; padding: 12px 0 14px; box-shadow: inset 0 calc(-1 * var(--hl)) 0 var(--line); margin: 0 -16px; padding-left: 16px; padding-right: 16px; }
+  .chip { white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 10px; border-radius: 99px; font-size: 13px; color: var(--ink-muted); box-shadow: inset 0 0 0 1px var(--line); }
+  .chip i { width: 7px; height: 7px; border-radius: 2px; }
+  .chip b { font-weight: 500; color: var(--ink-subtle); }
+  .chip.on { background: var(--ink); color: #fff; box-shadow: none; }
+  .chip.on b { color: rgb(255 255 255 / 0.7); }
+  .chip.on b { color: #c3c9d4; }
+
+  /* the empty result: the subject */
+  .empty { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 14px; padding: 32px 32px 28px; }
+  .empty .glyph { color: var(--ink-subtle); }
+  .empty .t { font-size: 15px; line-height: 20px; font-weight: 500; }
+  .empty .s { margin-top: 4px; font-size: 13px; line-height: 18px; color: var(--ink-muted); text-wrap: pretty; }
+
+  /* where the words were found instead */
+  .else { padding: 0 16px 8px; }
+  .else h3 { display: flex; justify-content: space-between; margin: 0; padding: 14px 0 6px; font-size: 12px; line-height: 16px; font-weight: 500; color: var(--ink-muted); box-shadow: inset 0 var(--hl) 0 var(--line); margin: 0 -16px; padding-left: 16px; padding-right: 16px; }
+  .note { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; padding: 10px 0; box-shadow: inset 0 calc(-1 * var(--hl)) 0 var(--line); }
+  .note:last-child { box-shadow: none; }
+  .note .t { font-size: 14px; line-height: 20px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .note .x { grid-column: 1; font-size: 13px; line-height: 18px; color: var(--ink-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  mark { background: var(--match); color: inherit; border-radius: 2px; }
+  .note .meta { grid-column: 1 / -1; display: flex; align-items: center; gap: 8px; margin-top: 4px; font-size: 12px; line-height: 16px; color: var(--ink-muted); }
+  .note .meta img { width: 20px; height: 20px; border-radius: 50%; object-fit: cover; outline: 1px solid rgb(0 0 0 / 0.08); outline-offset: -1px; }
+  .folder { display: inline-flex; align-items: center; gap: 5px; height: 20px; padding: 0 7px; border-radius: var(--r-chip); background: var(--sunken); color: var(--ink-muted); font-weight: 500; }
+  .folder i { width: 6px; height: 6px; border-radius: 2px; }
+  /* how many times the words match: a short bar and its count */
+  .hits { grid-row: 1; grid-column: 2; display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--ink-subtle); }
+  .hits span { display: flex; gap: 2px; }
+  .hits span i { width: 3px; height: 10px; border-radius: 1px; background: rgb(18 35 61 / 0.12); }
+  .hits span i.on { background: var(--accent); }
+  .foot { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; background: var(--sunken); box-shadow: inset 0 var(--hl) 0 var(--line); font-size: 12px; line-height: 16px; color: var(--ink-muted); }
+  .foot a { display: inline-flex; align-items: center; gap: 4px; color: var(--accent-deep); font-weight: 500; }
+</style>
+</head>
+<body>
+<article class="card">
+  <div class="top">
+    <label class="field">
+      <svg class="i" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M16.5 16.5 21 21"/></svg>
+      <span class="q">offsite budget</span>
+      <span class="clear" aria-label="Clear"><svg class="i" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><path d="M7 7l10 10M17 7 7 17"/></svg></span>
+      <span class="kbd">esc</span>
+    </label>
+    <div class="scope">
+      <span class="chip on"><i style="background:var(--f-personal);box-shadow:0 0 0 1.5px #fff"></i>Personal <b class="num">0</b></span>
+      <span class="chip"><i style="background:var(--f-ops)"></i>Ops <b class="num">2</b></span>
+      <span class="chip"><i style="background:var(--f-shared)"></i>Shared <b class="num">1</b></span>
+      <span class="chip"><i style="background:var(--f-archive)"></i>Archive <b class="num">1</b></span>
+    </div>
+  </div>
+
+  <!-- the subject: the set's magnifier at 48px. BROKEN: its stroke scales with it (no vector-effect here) -->
+  <div class="empty">
+    <svg class="glyph" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M16.5 16.5 21 21"/></svg>
+    <div>
+      <div class="t">No notes in Personal match “offsite budget”</div>
+      <div class="s">Searched 214 notes and their attachments. The words turn up in 3 other folders.</div>
+    </div>
+  </div>
+
+  <section class="else">
+    <h3><span>Found in other folders</span><span class="num">4 notes</span></h3>
+    <div class="note">
+      <div class="t"><mark>Offsite</mark> 2027, venues and <mark>budget</mark></div>
+      <div class="hits"><span><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i></span><b class="num" style="font-weight:500">9</b></div>
+      <div class="x" title="Sintra holds 40 for €18,400 all in; the budget line we agreed was €22,000, so there is room for the boat.">Sintra holds 40 for €18,400 all in; the <mark>budget</mark> line we agreed was…</div>
+      <div class="meta"><img src="../../../../overlay/showcase/src/media/people/person-01.jpg" alt=""><span>Inês Duarte</span><span class="folder"><i style="background:var(--f-ops)"></i>Ops</span><span class="num">Edited 2h ago</span></div>
+    </div>
+    <div class="note">
+      <div class="t">Q1 <mark>offsite</mark>, agenda draft</div>
+      <div class="hits"><span><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i><i></i></span><b class="num" style="font-weight:500">4</b></div>
+      <div class="x" title="Day two is the budget review, morning only, then the walk up to the castle.">Day two is the <mark>budget</mark> review, morning only, then the walk…</div>
+      <div class="meta"><img src="../../../../overlay/showcase/src/media/people/person-06.jpg" alt=""><span>Arlo Brandt</span><span class="folder"><i style="background:var(--f-ops)"></i>Ops</span><span class="num">Edited Mon</span></div>
+    </div>
+    <div class="note">
+      <div class="t">Travel <mark>budget</mark> for the design team</div>
+      <div class="hits"><span><i class="on"></i><i class="on"></i><i></i><i></i><i></i><i></i></span><b class="num" style="font-weight:500">2</b></div>
+      <div class="x" title="Flights for the offsite come out of this, not the events line.">Flights for the <mark>offsite</mark> come out of this, not the events line.</div>
+      <div class="meta"><img src="../../../../overlay/showcase/src/media/people/person-05.jpg" alt=""><span>Lena Park</span><span class="folder"><i style="background:var(--f-shared)"></i>Shared</span><span class="num">Edited 12 Oct</span></div>
+    </div>
+  </section>
+  <div class="foot">
+    <span class="num">1 more in Archive</span>
+    <a>Search all folders<svg class="i" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></a>
+  </div>
+</article>
+</body>
+</html>

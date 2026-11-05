@@ -1,0 +1,188 @@
+<!doctype html>
+<!-- COMP #42 (card pass, 2026-11-05; hands-on): the one component, rich inside. Tandem, a project tracker; a studio's
+     "Spring campaign site" for Duolingo, on its Overview: the project's road from kickoff to launch drawn as a track,
+     this week's tasks with their owners, the budget burnt. Slate's tokens (overlay/showcase/src/theme.css). Drawn
+     BROKEN, at the moment the flaw shows: the pointer rests on Board, whose hover is font-semibold (planted as
+     hover:font-semibold hover:text-ink), so it grew and Timeline, Files and Settings slid right. plumber's marks are
+     measured live from the tabs below: resting edges dashed, the ground slid across hatched, the tab that grew
+     outlined, one tag. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tandem project tabs (comp)</title>
+<style>
+  :root {
+    --surface: #fff; --sunken: #f3f5f9; --ink: #12233d; --ink-muted: #5a6779; --ink-subtle: #6f7c90;
+    --line: rgb(18 35 61 / 0.11); --accent: #5550d8; --accent-soft: #efeefd; --accent-deep: #3631a6;
+    --positive: #0f6f58; --positive-soft: #e5f4ef; --caution: #965a03; --caution-soft: #fcf1dd;
+    --board: #eef1f5; --board-dot: #d6dce4;
+    --card: 0 1px 2px rgb(18 35 61 / 0.05), 0 6px 16px rgb(18 35 61 / 0.07), 0 18px 44px rgb(18 35 61 / 0.09);
+    --hl: 0.5px;
+    /* plumber's marks (overlay/src/tokens.css) */
+    --pl-off: #bf3a1e; --pl-halo: rgb(255 255 255 / 0.9); --pl-mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, monospace;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 48px; background: var(--board);
+    background-image: radial-gradient(var(--board-dot) 1px, transparent 1px); background-size: 16px 16px;
+    font: 14px/20px Inter, -apple-system, system-ui, sans-serif; color: var(--ink); -webkit-font-smoothing: antialiased; }
+  .num { font-variant-numeric: tabular-nums; }
+  .card { position: relative; width: 520px; border-radius: 10px; background: var(--surface); box-shadow: var(--card), 0 0 0 0.5px rgb(18 35 61 / 0.1); }
+
+  .top { display: flex; align-items: center; gap: 12px; padding: 18px 20px 14px; }
+  .client { width: 36px; height: 36px; border-radius: 8px; background: #58cc02; display: grid; place-items: center; flex: none; }
+  .client::before { content: ""; width: 20px; height: 20px; background: #fff; -webkit-mask: url(https://cdn.jsdelivr.net/npm/simple-icons@13.21.0/icons/duolingo.svg) center / contain no-repeat; mask: url(https://cdn.jsdelivr.net/npm/simple-icons@13.21.0/icons/duolingo.svg) center / contain no-repeat; }
+  .top .t { font-size: 17px; line-height: 24px; font-weight: 500; letter-spacing: -0.01em; }
+  .top .s { font-size: 13px; color: var(--ink-muted); }
+  .team { margin-left: auto; display: flex; }
+  .team img { width: 26px; height: 26px; border-radius: 50%; object-fit: cover; display: block; box-shadow: 0 0 0 2px var(--surface); outline: 1px solid rgb(0 0 0 / 0.1); outline-offset: -1px; }
+  .team img + img { margin-left: -6px; }
+  .new { display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 10px 0 8px; border-radius: 6px; font-size: 13px; font-weight: 500; color: var(--ink-muted); box-shadow: inset 0 0 0 1px var(--line); }
+
+  /* the views */
+  nav { display: flex; gap: 20px; padding: 0 20px; box-shadow: inset 0 calc(-1 * var(--hl)) 0 var(--line); }
+  nav a { padding: 10px 0; font-size: 14px; color: var(--ink-muted); text-decoration: none; border-bottom: 2px solid transparent; }
+  nav a[aria-current] { color: var(--ink); font-weight: 600; border-bottom-color: var(--ink); }
+  /* PLANTED (#42): hover:font-semibold hover:text-ink. Drawn hovered on Board (.hover stands for :hover in a still) */
+  nav a.hover { color: var(--ink); font-weight: 600; }
+  .cursor { position: absolute; pointer-events: none; filter: drop-shadow(0 1px 1px rgb(0 0 0 / 0.25)); }
+
+  /* the road to launch */
+  .road { padding: 18px 20px 16px; }
+  .head { display: flex; justify-content: space-between; font-size: 12px; font-weight: 500; color: var(--ink-subtle); }
+  .track { position: relative; height: 6px; margin: 20px 6px 0; border-radius: 3px; background: var(--sunken); }
+  .track .done { position: absolute; left: 0; top: 0; bottom: 0; width: 58%; border-radius: 3px; background: var(--accent); }
+  .ms { position: absolute; top: 50%; width: 12px; height: 12px; margin: -6px 0 0 -6px; border-radius: 50%; background: var(--surface); box-shadow: inset 0 0 0 2px #c7cdd8; }
+  .ms.ok { background: var(--accent); box-shadow: 0 0 0 2px var(--surface); }
+  .today { position: absolute; top: -8px; bottom: -8px; width: 2px; margin-left: -1px; border-radius: 1px; background: var(--ink); }
+  .labels { position: relative; height: 34px; margin: 10px 6px 0; }
+  .labels > span { position: absolute; transform: translateX(-50%); text-align: center; white-space: nowrap; font-size: 12px; line-height: 16px; color: var(--ink-muted); }
+  .labels > span b { display: block; font-weight: 500; color: var(--ink); }
+  .labels .first { transform: none; text-align: left; }
+  .labels .last { transform: translateX(-100%); text-align: right; }
+
+  /* this week */
+  .tasks { padding: 4px 20px 8px; box-shadow: inset 0 var(--hl) 0 var(--line); }
+  .tasks .head { padding: 12px 0 4px; }
+  .task { display: grid; grid-template-columns: 16px 1fr auto 24px 56px; gap: 12px; align-items: center; height: 44px; box-shadow: inset 0 calc(-1 * var(--hl)) 0 var(--line); }
+  .task:last-child { box-shadow: none; }
+  .task .t { font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .task .t.doneT { color: var(--ink-muted); text-decoration: line-through; text-decoration-color: rgb(18 35 61 / 0.3); }
+  .tag { height: 20px; padding: 0 6px; border-radius: 4px; display: inline-grid; place-items: center; font-size: 11.5px; font-weight: 500; background: var(--sunken); color: var(--ink-muted); }
+  .task img { width: 24px; height: 24px; border-radius: 50%; object-fit: cover; outline: 1px solid rgb(0 0 0 / 0.1); outline-offset: -1px; }
+  .due { height: 22px; border-radius: 4px; display: grid; place-items: center; font-size: 12px; font-weight: 500; color: var(--ink-subtle); font-variant-numeric: tabular-nums; }
+  .due.soon { background: var(--caution-soft); color: var(--caution); }
+
+  /* budget */
+  .foot { display: flex; align-items: center; gap: 14px; padding: 14px 20px 16px; background: var(--sunken); border-radius: 0 0 10px 10px; box-shadow: inset 0 var(--hl) 0 var(--line); }
+  .foot .l { font-size: 12px; font-weight: 500; color: var(--ink-subtle); }
+  .foot .v { font-size: 15px; font-weight: 600; }
+  .foot .v small { font-size: 12.5px; font-weight: 400; color: var(--ink-muted); }
+  .burn { flex: 1; height: 8px; border-radius: 4px; background: rgb(18 35 61 / 0.07); overflow: hidden; display: flex; }
+  .burn i { height: 100%; }
+
+  /* plumber's marks */
+  .marks { position: absolute; inset: 0; pointer-events: none; }
+  .mk { position: absolute; }
+  .mk.line { width: 0; border-left: 1px dashed var(--pl-off); opacity: 0.8; }
+  .mk.hatch { opacity: 0.55; background-image: repeating-linear-gradient(45deg, var(--pl-off) 0 1px, transparent 1px 4px); }
+  .mk.outline { border-radius: 4px; box-shadow: inset 0 0 0 1px var(--pl-off); opacity: 0.7; }
+  .mk.tag { display: flex; align-items: center; height: 20px; padding: 0 6px; border-radius: 6px; font: 500 11px/1 var(--pl-mono); font-variant-numeric: tabular-nums; white-space: nowrap; color: #fff; background: var(--pl-off); box-shadow: 0 0 0 1px var(--pl-halo); transform: translateY(-50%); }
+</style>
+</head>
+<body>
+<article class="card" id="card">
+  <header class="top">
+    <span class="client"></span>
+    <span><div class="t">Spring campaign site</div><div class="s">Duolingo · week <span class="num">8</span> of <span class="num">14</span></div></span>
+    <span class="team">
+      <img src="../../../../overlay/showcase/src/media/people/person-05.jpg" alt=""><img src="../../../../overlay/showcase/src/media/people/person-08.jpg" alt=""><img src="../../../../overlay/showcase/src/media/people/person-03.jpg" alt=""><img src="../../../../overlay/showcase/src/media/people/person-06.jpg" alt="">
+    </span>
+    <span class="new"><svg width="14" height="14" viewBox="0 0 14 14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M7 2.5v9M2.5 7h9"/></svg>New task</span>
+  </header>
+
+  <nav aria-label="Views" id="nav">
+    <a href="#overview" aria-current="page">Overview</a>
+    <a href="#board" data-tab>Board</a>
+    <a href="#timeline">Timeline</a>
+    <a href="#files">Files</a>
+    <a href="#settings">Settings</a>
+  </nav>
+
+  <!-- kickoff to launch: done milestones filled, today's line, launch ahead -->
+  <section class="road">
+    <div class="head"><span>Road to launch</span><span><span class="num">58%</span> · on track</span></div>
+    <div class="track">
+      <span class="done"></span>
+      <span class="ms ok" style="left:0%"></span>
+      <span class="ms ok" style="left:45%"></span>
+      <span class="today" style="left:58%"></span>
+      <span class="ms" style="left:80%"></span>
+      <span class="ms" style="left:100%"></span>
+    </div>
+    <div class="labels">
+      <span class="first" style="left:0%"><b>Kickoff</b><span class="num">6 Jan</span></span>
+      <span style="left:45%"><b>Designs signed</b><span class="num">7 Feb</span></span>
+      <span style="left:80%"><b>Copy freeze</b><span class="num">4 Mar</span></span>
+      <span class="last" style="left:100%"><b>Launch</b><span class="num">14 Mar</span></span>
+    </div>
+  </section>
+
+  <section class="tasks">
+    <div class="head"><span>Due this week</span><span><span class="num">4</span> of <span class="num">12</span> open</span></div>
+    <div class="task">
+      <svg width="16" height="16" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.5" fill="none" stroke="#1f9d6b" stroke-width="1.5"/><path d="M5 8.2l2 2 4-4.2" fill="none" stroke="#1f9d6b" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span class="t doneT">Hero animation, final cut</span><span class="tag">Motion</span>
+      <img src="../../../../overlay/showcase/src/media/people/person-08.jpg" alt=""><span class="due">Mon</span>
+    </div>
+    <div class="task">
+      <svg width="16" height="16" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.5" fill="none" stroke="#5550d8" stroke-width="1.5"/><path d="M8 3.5a4.5 4.5 0 0 1 0 9z" fill="#5550d8"/></svg>
+      <span class="t">Streak calculator, mobile layout</span><span class="tag">Build</span>
+      <img src="../../../../overlay/showcase/src/media/people/person-05.jpg" alt=""><span class="due soon">Today</span>
+    </div>
+    <div class="task">
+      <svg width="16" height="16" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.5" fill="none" stroke="#5550d8" stroke-width="1.5"/><path d="M8 3.5a4.5 4.5 0 0 1 4.5 4.5H8z" fill="#5550d8"/></svg>
+      <span class="t">Localise the pricing page, 9 languages</span><span class="tag">Content</span>
+      <img src="../../../../overlay/showcase/src/media/people/person-03.jpg" alt=""><span class="due soon">Fri</span>
+    </div>
+    <div class="task">
+      <svg width="16" height="16" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.5" fill="none" stroke="#a3acb9" stroke-width="1.5" stroke-dasharray="2.2 2"/></svg>
+      <span class="t">Accessibility pass on the quiz</span><span class="tag">QA</span>
+      <img src="../../../../overlay/showcase/src/media/people/person-06.jpg" alt=""><span class="due">Fri</span>
+    </div>
+  </section>
+
+  <footer class="foot">
+    <span><div class="l">Budget used</div><div class="v num">182h <small>of 300h</small></div></span>
+    <span class="burn"><i style="width:61%;background:var(--accent);border-radius:4px"></i></span>
+    <span class="l num">61%</span>
+  </footer>
+
+  <svg class="cursor" id="cursor" width="16" height="20" viewBox="0 0 16 20"><path d="M1 1v15.5l4.2-4 2.7 6.2 2.6-1.1-2.6-6.1H14z" fill="#12233d" stroke="#fff" stroke-width="1.2" stroke-linejoin="round"/></svg>
+  <div class="marks" id="marks"></div>
+</article>
+<script>
+  // what the showcase does live: read where every tab rests with nothing hovered, hover Board, read again, and draw
+  // only what moved and by how much
+  document.fonts.ready.then(() => {
+    const card = document.getElementById('card'), marks = document.getElementById('marks');
+    const tabs = [...document.querySelectorAll('#nav a')], c = card.getBoundingClientRect();
+    const at = (el) => { const r = el.getBoundingClientRect(); return { x: r.left - c.left, y: r.top - c.top, w: r.width, h: r.height }; };
+    const rest = tabs.map(at);
+    const i = 1; tabs[i].classList.add('hover');
+    const now = tabs.map(at), after = now.map((_, j) => j).filter((j) => j > i);
+    const shift = Math.max(0, ...after.map((j) => now[j].x - rest[j].x));
+    const mk = (cls, s, text = '') => { const e = document.createElement('span'); e.className = 'mk ' + cls; for (const [k, v] of Object.entries(s)) e.style[k] = v + 'px'; e.textContent = text; marks.append(e); };
+    mk('outline', { left: now[i].x - 3, top: now[i].y + 6, width: now[i].w + 6, height: now[i].h - 12 });
+    for (const j of after) {
+      mk('line', { left: rest[j].x, top: rest[j].y + 6, height: rest[j].h - 12 });
+      mk('hatch', { left: rest[j].x, top: rest[j].y + 10, width: now[j].x - rest[j].x, height: rest[j].h - 20 });
+    }
+    const last = now.at(-1);
+    mk('tag', { left: last.x + last.w + 12, top: last.y + last.h / 2 }, `+${shift.toFixed(1)}px · ${after.length} slid`);
+    const cur = document.getElementById('cursor');
+    cur.style.left = (now[i].x + now[i].w * 0.7) + 'px'; cur.style.top = (now[i].y + now[i].h - 13) + 'px';
+  });
+</script>
+</body>
+</html>

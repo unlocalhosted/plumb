@@ -1,0 +1,172 @@
+<!doctype html>
+<!-- COMP #15, the one component (owner 2026-11-05: no app window; richness goes inside). Burrow, an issue tracker: one
+     project's issue table mid-cycle. The cycle drawn as data (a segmented bar by status), every assignee's face, status
+     drawn as Burrow's progress glyphs, priority as bars. Quarry's tokens (overlay/showcase/src/theme.css).
+     BROKEN: the column labels are 11px semibold capitals with no letter spacing (th: uppercase, no tracking-*). -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Burrow issue table (comp)</title>
+<style>
+  :root {
+    --surface: #fff; --sunken: #f3f5f9; --ink: #12233d; --ink-muted: #5a6779; --ink-subtle: #6f7c90;
+    --line: rgb(18 35 61 / 0.11); --accent: #5550d8; --accent-soft: #efeefd; --accent-deep: #3631a6;
+    --positive: #0f6f58; --caution: #965a03; --negative: #b02a3a; --caution-mark: #d99a21; --positive-mark: #1f9d6b;
+    --board: #eef1f5; --board-dot: #d6dce4;
+    --card: 0 0 0 1px rgb(18 35 61 / 0.11), 0 1px 1px rgb(18 35 61 / 0.03), 0 2px 6px rgb(18 35 61 / 0.04);
+    --hl: 0.5px;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 48px; background: var(--board);
+    background-image: radial-gradient(var(--board-dot) 1px, transparent 1px); background-size: 16px 16px;
+    font: 14px/20px Inter, -apple-system, system-ui, sans-serif; color: var(--ink); -webkit-font-smoothing: antialiased; }
+  .num { font-variant-numeric: tabular-nums; }
+  .card { width: 680px; border-radius: 10px; background: var(--surface); box-shadow: var(--card); overflow: hidden; }
+
+  /* header: the project, its team, its cycle */
+  .top { display: flex; align-items: center; gap: 12px; padding: 18px 20px 14px; }
+  .proj { width: 32px; height: 32px; border-radius: 6px; background: var(--accent-soft); display: grid; place-items: center; flex: none; }
+  .top .t { font-size: 17px; line-height: 24px; font-weight: 500; letter-spacing: -0.01em; }
+  .top .s { font-size: 13px; color: var(--ink-muted); }
+  .stack { margin-left: auto; display: flex; align-items: center; }
+  .stack img { width: 24px; height: 24px; border-radius: 50%; object-fit: cover; box-shadow: 0 0 0 2px var(--surface); margin-left: -6px; }
+  .stack .more { margin-left: 6px; font-size: 12px; color: var(--ink-muted); }
+
+  /* the cycle, drawn: one segment per issue, coloured by status */
+  .cycle { padding: 0 20px 16px; }
+  .seg { display: flex; gap: 2px; height: 8px; }
+  .seg i { flex: 1; border-radius: 2px; }
+  .legend { display: flex; gap: 14px; margin-top: 8px; font-size: 12px; color: var(--ink-muted); }
+  .legend span { display: flex; align-items: center; gap: 6px; }
+  .legend b { font-weight: 500; color: var(--ink); }
+  .legend .end { margin-left: auto; }
+  .sw { width: 8px; height: 8px; border-radius: 2px; }
+
+  table { width: 100%; border-collapse: collapse; table-layout: fixed; text-align: left; }
+  thead tr { background: rgb(243 245 249 / 0.6); box-shadow: inset 0 var(--hl) 0 var(--line), inset 0 calc(-1 * var(--hl)) 0 var(--line); }
+  /* THE PLANTED MISTAKE: capitals at 11px, semibold, letter-spacing normal */
+  th { padding: 8px 0; font-size: 11px; line-height: 16px; font-weight: 600; color: var(--ink-muted); text-transform: uppercase; letter-spacing: normal; }
+  th:first-child, td:first-child { padding-left: 20px; padding-right: 20px; }
+  th:last-child, td:last-child { padding-right: 20px; text-align: right; }
+  tbody tr { box-shadow: inset 0 calc(-1 * var(--hl)) 0 var(--line); }
+  tbody tr:last-child { box-shadow: none; }
+  tbody tr.hot { background: rgb(239 238 253 / 0.55); }
+  td { padding: 10px 0; vertical-align: middle; }
+  .issue { display: grid; grid-template-columns: 16px 1fr; gap: 10px; align-items: center; }
+  .issue .t { font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .meta { display: flex; align-items: center; gap: 8px; font-size: 12px; line-height: 16px; color: var(--ink-muted); }
+  .id { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-feature-settings: "case"; }
+  .tag { display: inline-flex; align-items: center; gap: 5px; }
+  .tag i { width: 6px; height: 6px; border-radius: 50%; }
+  .who { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+  .who img, .who .none { width: 20px; height: 20px; border-radius: 50%; object-fit: cover; flex: none; outline: 1px solid rgb(0 0 0 / 0.08); outline-offset: -1px; }
+  .who .none { outline: 0; border: 1px dashed rgb(18 35 61 / 0.3); }
+  .who .nobody { color: var(--ink-subtle); }
+  .st { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+  .when { font-size: 13px; color: var(--ink-muted); }
+  .when .c { display: inline-flex; align-items: center; gap: 3px; margin-right: 10px; color: var(--ink-subtle); }
+</style>
+</head>
+<body>
+<article class="card">
+  <header class="top">
+    <span class="proj"><svg width="16" height="16" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.5" fill="none" stroke="var(--accent)" stroke-width="1.5" opacity=".3"/><path d="M8 1.5A6.5 6.5 0 1 1 2.3 11.2" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round"/><circle cx="8" cy="8" r="3" fill="var(--accent)"/></svg></span>
+    <span><div class="t">Upload pipeline</div><div class="s">Platform · cycle 14 · ships Thursday 20 November</div></span>
+    <span class="stack">
+      <img src="../../../../overlay/showcase/src/media/people/person-07.jpg" alt="">
+      <img src="../../../../overlay/showcase/src/media/people/person-02.jpg" alt="">
+      <img src="../../../../overlay/showcase/src/media/people/person-03.jpg" alt="">
+      <img src="../../../../overlay/showcase/src/media/people/person-06.jpg" alt="">
+      <span class="more">+2</span>
+    </span>
+  </header>
+
+  <section class="cycle">
+    <div class="seg">
+      <i style="background:var(--positive-mark)"></i><i style="background:var(--positive-mark)"></i><i style="background:var(--positive-mark)"></i><i style="background:var(--positive-mark)"></i><i style="background:var(--positive-mark)"></i><i style="background:var(--positive-mark)"></i><i style="background:var(--positive-mark)"></i><i style="background:var(--positive-mark)"></i><i style="background:var(--positive-mark)"></i>
+      <i style="background:var(--accent)"></i><i style="background:var(--accent)"></i>
+      <i style="background:var(--caution-mark)"></i><i style="background:var(--caution-mark)"></i><i style="background:var(--caution-mark)"></i>
+      <i style="background:#dfe3ea"></i><i style="background:#dfe3ea"></i><i style="background:#dfe3ea"></i><i style="background:#dfe3ea"></i>
+    </div>
+    <div class="legend">
+      <span><i class="sw" style="background:var(--positive-mark)"></i><b class="num">9</b> done</span>
+      <span><i class="sw" style="background:var(--accent)"></i><b class="num">2</b> in review</span>
+      <span><i class="sw" style="background:var(--caution-mark)"></i><b class="num">3</b> in progress</span>
+      <span><i class="sw" style="background:#dfe3ea"></i><b class="num">4</b> to do</span>
+      <span class="end"><b class="num">64%</b> · 6 days left</span>
+    </div>
+  </section>
+
+  <table>
+    <colgroup><col><col style="width:128px"><col style="width:128px"><col style="width:96px"></colgroup>
+    <thead><tr><th scope="col">Issue</th><th scope="col">Assignee</th><th scope="col">Status</th><th scope="col">Updated</th></tr></thead>
+    <tbody>
+      <tr class="hot">
+        <td><span class="issue">
+          <svg width="16" height="16" viewBox="0 0 16 16"><rect x="1" y="1" width="14" height="14" rx="4" fill="var(--negative)"/><rect x="7.1" y="4" width="1.8" height="5.2" rx=".9" fill="#fff"/><circle cx="8" cy="11.4" r="1" fill="#fff"/></svg>
+          <span style="min-width:0"><div class="t">Upload queue retries forever on a 413</div><div class="meta"><span class="id">PLM-214</span><span class="tag"><i style="background:var(--negative)"></i>Bug</span></div></span>
+        </span></td>
+        <td><span class="who"><img src="../../../../overlay/showcase/src/media/people/person-07.jpg" alt="">Mira</span></td>
+        <td><span class="st"><svg width="14" height="14" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6" fill="none" stroke="var(--accent)" stroke-width="1.5"/><path d="M7 3.5a3.5 3.5 0 0 1 0 7z" fill="var(--accent)"/></svg>In review</span></td>
+        <td class="when num"><span class="c"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2.5 3.5h11v7h-6l-3 2.5v-2.5h-2z" stroke-linejoin="round"/></svg>6</span>2h</td>
+      </tr>
+      <tr>
+        <td><span class="issue">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="var(--ink-muted)"><rect x="2" y="9" width="3" height="5" rx="1"/><rect x="6.5" y="6" width="3" height="8" rx="1"/><rect x="11" y="3" width="3" height="11" rx="1"/></svg>
+          <span style="min-width:0"><div class="t" title="Resume a paused upload after the laptop sleeps">Resume a paused upload after the laptop sleeps</div><div class="meta"><span class="id">PLM-221</span><span class="tag"><i style="background:var(--accent)"></i>Feature</span></div></span>
+        </span></td>
+        <td><span class="who"><img src="../../../../overlay/showcase/src/media/people/person-02.jpg" alt="">Jonas</span></td>
+        <td><span class="st"><svg width="14" height="14" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6" fill="none" stroke="var(--accent)" stroke-width="1.5"/><path d="M7 3.5a3.5 3.5 0 0 1 0 7z" fill="var(--accent)"/></svg>In review</span></td>
+        <td class="when num">4h</td>
+      </tr>
+      <tr>
+        <td><span class="issue">
+          <svg width="16" height="16" viewBox="0 0 16 16"><rect x="2" y="9" width="3" height="5" rx="1" fill="var(--ink-muted)"/><rect x="6.5" y="6" width="3" height="8" rx="1" fill="var(--ink-muted)"/><rect x="11" y="3" width="3" height="11" rx="1" fill="#d3d8e0"/></svg>
+          <span style="min-width:0"><div class="t">Dark mode loses focus rings in menus</div><div class="meta"><span class="id">PLM-209</span><span class="tag"><i style="background:var(--negative)"></i>Bug</span><span class="tag"><i style="background:var(--ink-subtle)"></i>Accessibility</span></div></span>
+        </span></td>
+        <td><span class="who"><img src="../../../../overlay/showcase/src/media/people/person-08.jpg" alt="">Theo</span></td>
+        <td><span class="st"><svg width="14" height="14" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6" fill="none" stroke="var(--caution-mark)" stroke-width="1.5"/><path d="M7 3.5a3.5 3.5 0 0 1 3.5 3.5H7z" fill="var(--caution-mark)"/></svg>In progress</span></td>
+        <td class="when num"><span class="c"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2.5 3.5h11v7h-6l-3 2.5v-2.5h-2z" stroke-linejoin="round"/></svg>2</span>5h</td>
+      </tr>
+      <tr>
+        <td><span class="issue">
+          <svg width="16" height="16" viewBox="0 0 16 16"><rect x="2" y="9" width="3" height="5" rx="1" fill="var(--ink-muted)"/><rect x="6.5" y="6" width="3" height="8" rx="1" fill="var(--ink-muted)"/><rect x="11" y="3" width="3" height="11" rx="1" fill="#d3d8e0"/></svg>
+          <span style="min-width:0"><div class="t">Chunk size follows the connection</div><div class="meta"><span class="id">PLM-217</span><span class="tag"><i style="background:var(--positive-mark)"></i>Performance</span></div></span>
+        </span></td>
+        <td><span class="who"><img src="../../../../overlay/showcase/src/media/people/person-03.jpg" alt="">Sana</span></td>
+        <td><span class="st"><svg width="14" height="14" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6" fill="none" stroke="var(--caution-mark)" stroke-width="1.5"/><path d="M7 3.5a3.5 3.5 0 0 1 3.5 3.5H7z" fill="var(--caution-mark)"/></svg>In progress</span></td>
+        <td class="when num">1d</td>
+      </tr>
+      <tr>
+        <td><span class="issue">
+          <svg width="16" height="16" viewBox="0 0 16 16"><rect x="2" y="9" width="3" height="5" rx="1" fill="var(--ink-muted)"/><rect x="6.5" y="6" width="3" height="8" rx="1" fill="#d3d8e0"/><rect x="11" y="3" width="3" height="11" rx="1" fill="#d3d8e0"/></svg>
+          <span style="min-width:0"><div class="t">Name the file when an upload fails</div><div class="meta"><span class="id">PLM-224</span><span class="tag"><i style="background:var(--accent)"></i>Feature</span></div></span>
+        </span></td>
+        <td><span class="who"><img src="../../../../overlay/showcase/src/media/people/person-06.jpg" alt="">David</span></td>
+        <td><span class="st"><svg width="14" height="14" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6" fill="none" stroke="var(--caution-mark)" stroke-width="1.5"/><path d="M7 3.5a3.5 3.5 0 0 1 3.5 3.5H7z" fill="var(--caution-mark)"/></svg>In progress</span></td>
+        <td class="when num">1d</td>
+      </tr>
+      <tr>
+        <td><span class="issue">
+          <svg width="16" height="16" viewBox="0 0 16 16"><rect x="2" y="9" width="3" height="5" rx="1" fill="var(--ink-muted)"/><rect x="6.5" y="6" width="3" height="8" rx="1" fill="var(--ink-muted)"/><rect x="11" y="3" width="3" height="11" rx="1" fill="var(--ink-muted)"/></svg>
+          <span style="min-width:0"><div class="t">Search ignores accents in file names</div><div class="meta"><span class="id">PLM-198</span><span class="tag"><i style="background:var(--negative)"></i>Bug</span></div></span>
+        </span></td>
+        <td><span class="who"><img src="../../../../overlay/showcase/src/media/people/person-05.jpg" alt="">Lea</span></td>
+        <td><span class="st"><svg width="14" height="14" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6" fill="none" stroke="var(--ink-subtle)" stroke-width="1.5" stroke-dasharray="2.2 2"/></svg>To do</span></td>
+        <td class="when num">2d</td>
+      </tr>
+      <tr>
+        <td><span class="issue">
+          <svg width="16" height="16" viewBox="0 0 16 16"><rect x="2" y="9" width="3" height="5" rx="1" fill="var(--ink-muted)"/><rect x="6.5" y="6" width="3" height="8" rx="1" fill="#d3d8e0"/><rect x="11" y="3" width="3" height="11" rx="1" fill="#d3d8e0"/></svg>
+          <span style="min-width:0"><div class="t">Drag a folder in and keep its structure</div><div class="meta"><span class="id">PLM-226</span><span class="tag"><i style="background:var(--accent)"></i>Feature</span></div></span>
+        </span></td>
+        <td><span class="who"><span class="none"></span><span class="nobody">No one</span></span></td>
+        <td><span class="st"><svg width="14" height="14" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6" fill="none" stroke="var(--ink-subtle)" stroke-width="1.5" stroke-dasharray="2.2 2"/></svg>To do</span></td>
+        <td class="when num">3d</td>
+      </tr>
+    </tbody>
+  </table>
+</article>
+</body>
+</html>

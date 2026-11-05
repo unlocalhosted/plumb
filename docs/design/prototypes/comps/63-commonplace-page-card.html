@@ -1,0 +1,129 @@
+<!doctype html>
+<!-- COMP #63, the one component (owner 2026-11-04/05: no app window, richness inside). Commonplace, a team wiki: the
+     page planning a design team's offsite. A cover photo, the page's properties (dates, host, booked, who's going as
+     faces), a checklist, the rooms as a small table with who sleeps where. Slate's tokens (overlay/showcase/src/theme.css).
+     The moment: + beside the empty line was just clicked and the Insert menu is on its way in. The build writes the
+     entrance as starting:scale-0 (with origin-top-left at the +), so a quarter of the way through its 200ms it is still
+     a shrunken smear of words growing out of the +: drawn here frozen at that frame (scale 0.6, opacity 0.6). At rest
+     the menu is the full-size box its own comment marks below. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Commonplace page card (comp)</title>
+<style>
+  :root {
+    --surface: #fff; --sunken: #f3f5f9; --ink: #12233d; --ink-muted: #5a6779; --ink-subtle: #6f7c90; --line: rgb(18 35 61 / 0.11);
+    --accent: #5550d8; --accent-soft: #efeefd; --accent-deep: #3631a6;
+    --positive: #0f6f58; --positive-soft: #e5f4ef;
+    --board: #eef1f5; --board-dot: #d6dce4; --hl: 0.5px;
+    --r-chip: 4px; --r-control: 6px; --r-card: 10px; --r-sheet: 14px;
+    --shadow-window: 0 1px 2px oklch(0.21 0.02 264 / 0.04), 0 8px 24px oklch(0.21 0.02 264 / 0.06), 0 24px 64px oklch(0.21 0.02 264 / 0.08), 0 0 0 1px rgb(18 35 61 / 0.06);
+    --shadow-popover: 0 4px 8px oklch(0.21 0.02 264 / 0.05), 0 12px 32px oklch(0.21 0.02 264 / 0.14), 0 0 0 1px rgb(18 35 61 / 0.07);
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 56px; background: var(--board);
+    background-image: radial-gradient(var(--board-dot) 1px, transparent 1px); background-size: 16px 16px;
+    font: 14px/20px Inter, -apple-system, system-ui, sans-serif; color: var(--ink); -webkit-font-smoothing: antialiased; }
+  .num { font-variant-numeric: tabular-nums; }
+  svg.i { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+
+  .card { position: relative; width: 600px; border-radius: var(--r-sheet); background: var(--surface); box-shadow: var(--shadow-window); }
+  .cover { display: block; border-radius: var(--r-sheet) var(--r-sheet) 0 0; width: 100%; height: 128px; object-fit: cover; object-position: 50% 88%; }
+  .doc { padding: 22px 48px 28px; }
+  .crumb { font-size: 12px; color: var(--ink-subtle); }
+  h1 { margin: 4px 0 0; font-size: 26px; line-height: 32px; font-weight: 600; letter-spacing: -0.02em; }
+
+  /* the page's properties */
+  .props { display: grid; grid-template-columns: 80px 1fr; row-gap: 6px; margin-top: 14px; font-size: 13px; }
+  .props dt { color: var(--ink-subtle); height: 24px; display: flex; align-items: center; }
+  .props dd { margin: 0; display: flex; align-items: center; gap: 8px; height: 24px; }
+  .props dd img.one { width: 20px; height: 20px; border-radius: 50%; object-fit: cover; outline: 1px solid rgb(0 0 0 / 0.08); outline-offset: -1px; }
+  .badge { height: 20px; padding: 0 7px; border-radius: var(--r-chip); display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 500; background: var(--positive-soft); color: var(--positive); }
+  .badge i { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+  .going { display: flex; }
+  .going img { width: 22px; height: 22px; border-radius: 50%; object-fit: cover; box-shadow: 0 0 0 2px var(--surface); }
+  .going img + img { margin-left: -6px; }
+  .muted { color: var(--ink-muted); }
+
+  p { margin: 16px 0 0; font-size: 14px; line-height: 22px; color: var(--ink); max-width: 480px; text-wrap: pretty; }
+  .todo { margin-top: 10px; display: flex; flex-direction: column; gap: 4px; font-size: 14px; }
+  .todo span { display: flex; align-items: center; gap: 10px; height: 26px; }
+  .box { width: 16px; height: 16px; border-radius: 4px; box-shadow: inset 0 0 0 1.5px rgb(18 35 61 / 0.28); display: grid; place-items: center; }
+  .box.on { background: var(--accent); box-shadow: none; color: #fff; }
+  .box.on svg { width: 12px; height: 12px; stroke-width: 2.2; }
+  .done { color: var(--ink-subtle); text-decoration: line-through; text-decoration-color: rgb(18 35 61 / 0.3); }
+
+  /* the empty line, and the + that opened the menu */
+  .empty { position: relative; display: flex; align-items: center; gap: 8px; height: 28px; margin: 8px 0 0 -32px; }
+  .plus { width: 24px; height: 24px; border-radius: var(--r-chip); display: grid; place-items: center; color: var(--ink); background: var(--sunken); box-shadow: inset 0 0 0 1px var(--line); }
+  .plus svg { width: 14px; height: 14px; }
+  .empty .ph { margin-left: 8px; color: var(--ink-subtle); font-size: 14px; }
+  .empty .ph::before { content: ""; display: inline-block; width: 1.5px; height: 18px; margin-right: 2px; vertical-align: -4px; background: var(--ink); }
+
+  /* rooms */
+  .h2 { margin-top: 16px; font-size: 15px; font-weight: 600; letter-spacing: -0.01em; }
+  table { width: 100%; margin-top: 8px; border-collapse: collapse; font-size: 13px; }
+  th { height: 30px; text-align: left; font-weight: 500; font-size: 12px; color: var(--ink-subtle); box-shadow: inset 0 calc(-1 * var(--hl)) 0 var(--line); }
+  td { height: 40px; box-shadow: inset 0 calc(-1 * var(--hl)) 0 var(--line); }
+  tr:last-child td { box-shadow: none; }
+  td .ppl { display: flex; align-items: center; gap: 8px; color: var(--ink-muted); }
+  td .ppl img { width: 22px; height: 22px; border-radius: 50%; object-fit: cover; box-shadow: 0 0 0 2px var(--surface); }
+  td .ppl img + img { margin-left: -14px; }
+  .r { text-align: right; color: var(--ink-muted); }
+
+  /* the Insert menu: the frame a quarter of the way in, grown from the + (origin top left) */
+  .menu { position: absolute; z-index: 2; width: 272px; padding: 4px; border-radius: var(--r-card); background: var(--surface); box-shadow: var(--shadow-popover); transform-origin: 0 0; scale: 0.6; opacity: 0.6; }
+  /* the menu at rest (open this file with #rest): where the entrance ends */
+  :target .menu, .rest .menu { scale: 1; opacity: 1; }
+  .mlab { padding: 8px 8px 4px; font-size: 11px; font-weight: 500; color: var(--ink-subtle); }
+  .mi { display: flex; align-items: center; gap: 10px; height: 44px; padding: 0 8px; border-radius: var(--r-control); }
+  .mi.hot { background: var(--sunken); }
+  .mi .tile { width: 30px; height: 30px; flex: none; border-radius: var(--r-control); display: grid; place-items: center; background: var(--surface); box-shadow: inset 0 0 0 1px var(--line); color: var(--ink-muted); font-size: 12px; font-weight: 600; }
+  .mi .w div:first-child { font-size: 13px; line-height: 17px; font-weight: 500; }
+  .mi .w div:last-child { font-size: 12px; line-height: 16px; color: var(--ink-subtle); }
+  .mi kbd { margin-left: auto; font: 12px/1 Inter, -apple-system, system-ui, sans-serif; color: var(--ink-subtle); }
+</style>
+</head>
+<body>
+<article class="card">
+  <img class="cover" src="https://images.unsplash.com/photo-1439066615861-d1af74d74000?w=1200&h=800&fit=crop&q=75" alt="">
+  <div class="doc">
+    <div class="crumb">Design team / Team life</div>
+    <h1>Offsite, the lake house</h1>
+    <dl class="props">
+      <dt>When</dt><dd class="num">Thu 12 – Fri 13 March</dd>
+      <dt>Host</dt><dd><img class="one" src="../../../../overlay/showcase/src/media/people/person-07.jpg" alt="">Priya Raman</dd>
+      <dt>Status</dt><dd><span class="badge"><i></i>Booked</span><span class="muted">House, minibus, dinner</span></dd>
+      <dt>Going</dt><dd><span class="going"><img src="../../../../overlay/showcase/src/media/people/person-01.jpg" alt=""><img src="../../../../overlay/showcase/src/media/people/person-02.jpg" alt=""><img src="../../../../overlay/showcase/src/media/people/person-03.jpg" alt=""><img src="../../../../overlay/showcase/src/media/people/person-05.jpg" alt=""><img src="../../../../overlay/showcase/src/media/people/person-06.jpg" alt=""><img src="../../../../overlay/showcase/src/media/people/person-08.jpg" alt=""><img src="../../../../overlay/showcase/src/media/people/person-10.jpg" alt=""></span><span class="muted num">9 of 11 · Sam and Leo to answer</span></dd>
+    </dl>
+    <p>Two days by the water, no laptops after six. Bring boots for the ridge walk on Friday; the minibus leaves the studio at eight.</p>
+    <div class="todo">
+      <span><i class="box on"><svg class="i" viewBox="0 0 16 16"><path d="m3.5 8.5 3 3 6-7"/></svg></i><span class="done">Book the house and the minibus</span></span>
+      <span><i class="box"></i>Agenda for the Thursday workshop</span>
+    </div>
+    <div class="empty"><span class="plus"><svg class="i" viewBox="0 0 16 16"><path d="M8 3v10M3 8h10"/></svg></span><span class="ph">Type / for blocks</span></div>
+
+    <div class="h2">Rooms</div>
+    <table>
+      <tr><th>Room</th><th>Who</th><th class="r">Sleeps</th></tr>
+      <tr><td>Boathouse loft</td><td><span class="ppl"><img src="../../../../overlay/showcase/src/media/people/person-07.jpg" alt=""><img src="../../../../overlay/showcase/src/media/people/person-03.jpg" alt="">Priya, Ama</span></td><td class="r num">2</td></tr>
+      <tr><td>Garden room</td><td><span class="ppl"><img src="../../../../overlay/showcase/src/media/people/person-02.jpg" alt=""><img src="../../../../overlay/showcase/src/media/people/person-08.jpg" alt="">Theo, Owen</span></td><td class="r num">2</td></tr>
+      <tr><td>The bunk room</td><td><span class="ppl"><img src="../../../../overlay/showcase/src/media/people/person-01.jpg" alt=""><img src="../../../../overlay/showcase/src/media/people/person-05.jpg" alt=""><img src="../../../../overlay/showcase/src/media/people/person-10.jpg" alt="">Ines, Amara, Ruth</span></td><td class="r num">4</td></tr>
+      <tr><td>Lake cabin</td><td><span class="ppl"><img src="../../../../overlay/showcase/src/media/people/person-06.jpg" alt="">Felix</span></td><td class="r num">1</td></tr>
+    </table>
+  </div>
+
+  <!-- a quarter of the way in: 60% of its size, growing out of the + -->
+  <div class="menu" style="left:16px;top:500px">
+    <div class="mlab">Basic blocks</div>
+    <div class="mi hot"><span class="tile">H1</span><span class="w"><div>Heading</div><div>A section title</div></span><kbd>#</kbd></div>
+    <div class="mi"><span class="tile"><svg class="i" viewBox="0 0 16 16"><rect x="2.5" y="3" width="11" height="10" rx="1.5"/><path d="M2.5 6.5h11M6.5 6.5v6.5"/></svg></span><span class="w"><div>Table</div><div>Rows and columns</div></span></div>
+    <div class="mi"><span class="tile"><svg class="i" viewBox="0 0 16 16"><path d="M3 2.5v11h10.5"/><path d="M6 10.5V8M9 10.5V5.5M12 10.5V7"/></svg></span><span class="w"><div>Chart</div><div>From a table on this page</div></span></div>
+    <div class="mi"><span class="tile"><svg class="i" viewBox="0 0 16 16"><path d="m6 4.5-3.5 3.5 3.5 3.5M10 4.5l3.5 3.5-3.5 3.5"/></svg></span><span class="w"><div>Code block</div><div>With syntax colours</div></span></div>
+    <div class="mi"><span class="tile"><svg class="i" viewBox="0 0 16 16"><path d="M3.5 4.5h9M3.5 8h9M3.5 11.5h5"/><rect x="1.5" y="2" width="13" height="12" rx="2"/></svg></span><span class="w"><div>Callout</div><div>A note that stands out</div></span></div>
+  </div>
+</article>
+<script>if (location.hash === "#rest") document.body.classList.add("rest");</script>
+</body>
+</html>

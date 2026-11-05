@@ -1,0 +1,105 @@
+<!doctype html>
+<!-- COMP #23, the one component (owner 2026-11-05: no app window; richness goes inside). Lumen, a family photo library:
+     one day of a trip down the coast, three photos picked, the Share menu open from its button, sitting over the
+     evening's dark shots. Real photos (Unsplash, credited in docs/design/comps/cards-B.md), the people in them as faces,
+     a video tile, the menu's own faces to send to. Quarry's tokens (overlay/showcase/src/theme.css).
+     BROKEN: the menu is built the usual way, a solid 1px gray-200 border (#e5e7eb) under shadow-lg: over the dark
+     photos the light line glows like a frame. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lumen share menu (comp)</title>
+<style>
+  :root {
+    --surface: #fff; --sunken: #f3f5f9; --ink: #12233d; --ink-muted: #5a6779; --ink-subtle: #6f7c90;
+    --line: rgb(18 35 61 / 0.11); --accent: #5550d8; --accent-soft: #efeefd; --accent-deep: #3631a6;
+    --board: #eef1f5; --board-dot: #d6dce4;
+    --card: 0 0 0 1px rgb(18 35 61 / 0.11), 0 1px 1px rgb(18 35 61 / 0.03), 0 2px 6px rgb(18 35 61 / 0.04);
+    --hl: 0.5px;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 48px; background: var(--board);
+    background-image: radial-gradient(var(--board-dot) 1px, transparent 1px); background-size: 16px 16px;
+    font: 14px/20px Inter, -apple-system, system-ui, sans-serif; color: var(--ink); -webkit-font-smoothing: antialiased; }
+  .num { font-variant-numeric: tabular-nums; }
+  .card { position: relative; width: 448px; border-radius: 10px; background: var(--surface); box-shadow: var(--card); overflow: hidden; }
+
+  .top { display: flex; align-items: center; gap: 12px; padding: 14px 16px 14px; }
+  .top .t { font-size: 15px; line-height: 20px; font-weight: 500; letter-spacing: -0.01em; }
+  .top .s { display: flex; align-items: center; gap: 5px; font-size: 13px; color: var(--ink-muted); }
+  .share { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px 0 10px; border-radius: 6px; background: var(--accent-soft); color: var(--accent-deep); font-size: 13px; font-weight: 500; }
+  .stack { margin-left: auto; display: flex; }
+  .stack img { width: 24px; height: 24px; border-radius: 50%; object-fit: cover; box-shadow: 0 0 0 2px var(--surface); margin-left: -6px; }
+  .people { display: flex; align-items: center; gap: 8px; padding: 0 16px 12px; font-size: 12px; color: var(--ink-muted); }
+  .people .f { display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 10px 0 3px; border-radius: 13px; background: var(--sunken); color: var(--ink); font-size: 12px; font-weight: 500; }
+  .people img { width: 20px; height: 20px; border-radius: 50%; object-fit: cover; }
+  .people .sel { margin-left: auto; color: var(--accent-deep); font-weight: 500; }
+
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; }
+  .tile { position: relative; aspect-ratio: 1; overflow: hidden; background: var(--sunken); }
+  .tile img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .tile.on img { transform: scale(0.88); border-radius: 4px; }
+  .tile.on { background: var(--accent-soft); }
+  .tick { position: absolute; top: 8px; left: 8px; width: 20px; height: 20px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 2px #fff; display: grid; place-items: center; }
+  .dur { position: absolute; right: 6px; bottom: 6px; display: inline-flex; align-items: center; gap: 4px; padding: 1px 6px; border-radius: 4px; background: rgb(0 0 0 / 0.55); color: #fff; font-size: 11px; line-height: 16px; font-weight: 500; }
+
+  /* THE PLANTED MISTAKE: a solid light-grey border on an elevated surface (border border-gray-200 shadow-lg) */
+  .menu { position: absolute; top: 58px; right: 12px; width: 232px; padding: 4px; border-radius: 6px; background: #fff;
+    border: 1px solid #e5e7eb; box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1); }
+  .send { padding: 8px 8px 10px; box-shadow: inset 0 calc(-1 * var(--hl)) 0 var(--line); margin-bottom: 4px; }
+  .send .k { font-size: 12px; line-height: 16px; font-weight: 500; color: var(--ink-muted); }
+  .faces { display: flex; justify-content: space-between; margin-top: 8px; }
+  .faces span { display: flex; flex-direction: column; align-items: center; gap: 4px; width: 44px; font-size: 11px; line-height: 14px; color: var(--ink-muted); }
+  .faces img, .faces .more { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; outline: 1px solid rgb(0 0 0 / 0.08); outline-offset: -1px; }
+  .faces .more { outline: 0; background: var(--sunken); display: grid; place-items: center; color: var(--ink-muted); }
+  .item { display: flex; align-items: center; gap: 10px; height: 34px; padding: 0 8px; border-radius: 4px; font-size: 14px; }
+  .item svg { color: var(--ink-muted); flex: none; }
+  .item.hover { background: var(--sunken); }
+  .item kbd { margin-left: auto; font: inherit; font-size: 12px; color: var(--ink-subtle); }
+</style>
+</head>
+<body>
+<article class="card">
+  <header class="top">
+    <span>
+      <div class="t">Sunday, 2 November</div>
+      <div class="s"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 14.5s4.5-4.2 4.5-8a4.5 4.5 0 0 0-9 0c0 3.8 4.5 8 4.5 8z"/><circle cx="8" cy="6.5" r="1.6"/></svg>Big Sur · <span class="num">3 of 12 selected</span></div>
+    </span>
+    <span class="stack"><img src="../../../../overlay/showcase/src/media/people/person-05.jpg" alt=""><img src="../../../../overlay/showcase/src/media/people/person-02.jpg" alt=""><img src="../../../../overlay/showcase/src/media/people/person-10.jpg" alt=""></span>
+    <span class="share"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 10V2.5M5 5.5l3-3 3 3M3.5 9v3.5a1 1 0 0 0 1 1h7a1 1 0 0 0 1-1V9"/></svg>Share</span>
+  </header>
+
+  <div class="grid">
+    <span class="tile on"><img src="https://images.unsplash.com/photo-1581790061118-2cd9a40164b0?w=300&h=300&fit=crop&q=70" alt=""><i class="tick"><svg width="10" height="10" viewBox="0 0 12 12"><path d="M2.5 6.2l2.4 2.4 4.6-5" stroke="#fff" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></i></span>
+    <span class="tile"><img src="https://images.unsplash.com/photo-1496275068113-fff8c90750d1?w=300&h=300&fit=crop&q=70" alt=""></span>
+    <span class="tile"><img src="https://images.unsplash.com/photo-1506456331400-7088248a8db1?w=300&h=300&fit=crop&q=70" alt=""></span>
+    <span class="tile"><img src="https://images.unsplash.com/photo-1519335337423-a3357c2cd12e?w=300&h=300&fit=crop&q=70" alt=""></span>
+    <span class="tile"><img src="https://images.unsplash.com/photo-1623169840544-0982db65d00e?w=300&h=300&fit=crop&q=70" alt=""></span>
+    <span class="tile"><img src="https://images.unsplash.com/photo-1446630073557-fca43d580fbe?w=300&h=300&fit=crop&q=70" alt=""><span class="dur num"><svg width="8" height="8" viewBox="0 0 16 16" fill="#fff"><path d="M4 2.8v10.4a.8.8 0 0 0 1.2.7l8.6-5.2a.8.8 0 0 0 0-1.4L5.2 2.1a.8.8 0 0 0-1.2.7"/></svg>0:24</span></span>
+    <span class="tile"><img src="https://images.unsplash.com/photo-1475503572774-15a45e5d60b9?w=300&h=300&fit=crop&q=70" alt=""></span>
+    <span class="tile on"><img src="https://images.unsplash.com/photo-1597524678053-5e6fef52d8a3?w=300&h=300&fit=crop&q=70" alt=""><i class="tick"><svg width="10" height="10" viewBox="0 0 12 12"><path d="M2.5 6.2l2.4 2.4 4.6-5" stroke="#fff" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></i></span>
+    <span class="tile"><img src="https://images.unsplash.com/photo-1602178041104-f974b84751d3?w=300&h=300&fit=crop&q=70" alt=""></span>
+    <span class="tile"><img src="https://images.unsplash.com/photo-1531983412531-1f49a365ffed?w=300&h=300&fit=crop&q=70" alt=""></span>
+    <span class="tile on"><img src="https://images.unsplash.com/photo-1472586662442-3eec04b9dbda?w=300&h=300&fit=crop&q=70" alt=""><i class="tick"><svg width="10" height="10" viewBox="0 0 12 12"><path d="M2.5 6.2l2.4 2.4 4.6-5" stroke="#fff" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></i></span>
+    <span class="tile"><img src="https://images.unsplash.com/photo-1508107222753-0c236c337911?w=300&h=300&fit=crop&q=70" alt=""></span>
+  </div>
+
+  <div class="menu" role="menu">
+    <div class="send">
+      <div class="k">Send to</div>
+      <div class="faces">
+        <span><img src="../../../../overlay/showcase/src/media/people/person-05.jpg" alt="">Maya</span>
+        <span><img src="../../../../overlay/showcase/src/media/people/person-10.jpg" alt="">Grandma</span>
+        <span><img src="../../../../overlay/showcase/src/media/people/person-08.jpg" alt="">Leo</span>
+        <span><i class="more"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M8 3v10M3 8h10"/></svg></i>More</span>
+      </div>
+    </div>
+    <div class="item"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 9.5l3-3M7 4.5l1.2-1.2a2.8 2.8 0 0 1 4 4L11 8.5M9 11.5l-1.2 1.2a2.8 2.8 0 0 1-4-4L5 7.5"/></svg>Copy link<kbd>⌘L</kbd></div>
+    <div class="item hover"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2.5V10M5 7l3 3 3-3M3.5 12.5h9"/></svg>Download 3 photos<kbd>⇧⌘S</kbd></div>
+    <div class="item"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><rect x="2.5" y="3.5" width="11" height="9" rx="1.5"/><path d="M2.5 10l3-2.5 2.5 2 2-1.5 3.5 2.5" stroke-linecap="round"/></svg>Add to album</div>
+    <div class="item"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 2.5h4v4M13.5 2.5l-6 6M11.5 9.5v3a1 1 0 0 1-1 1h-7a1 1 0 0 1-1-1v-7a1 1 0 0 1 1-1h3"/></svg>Open in editor</div>
+  </div>
+</article>
+</body>
+</html>
