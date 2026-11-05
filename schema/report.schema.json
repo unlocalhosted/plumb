@@ -51,8 +51,13 @@
     "decisions": { "type": "array", "items": { "$ref": "#/$defs/decision" } },
     "numericSpacing": {
       "type": "object", "additionalProperties": false,
-      "required": ["unit", "replaced"],
-      "properties": { "unit": { "$ref": "#/$defs/decision" }, "replaced": { "type": "boolean" } }
+      "required": ["unit", "replaced", "reset", "own"],
+      "properties": {
+        "unit": { "$ref": "#/$defs/decision" },
+        "replaced": { "type": "boolean", "description": "Named steps or a reset stand in for the numeric scale when judging." },
+        "reset": { "type": "boolean", "description": "The theme dropped the scale itself (`--spacing-*: initial`), so an editor has no multiplier to step by." },
+        "own": { "type": "boolean", "description": "The project itself defines `--spacing`, not only Tailwind's default." }
+      }
     },
     "decisionInventory": { "type": "array", "items": { "$ref": "#/$defs/decision" } },
     "deadDecisions": {
