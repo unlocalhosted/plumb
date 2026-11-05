@@ -156,6 +156,9 @@ export default withPlumb({ experimental: { agentUpgrade: false }, turbopack: { r
       const done = once(child, 'exit');
       let logs = ''; child.stdout.on('data', chunk => logs += chunk); child.stderr.on('data', chunk => logs += chunk);
       const page = await browser.newPage();
+      const navigations = [], consoleLines = [];
+      page.on('framenavigated', frame => { if (frame === page.mainFrame()) navigations.push(`${Date.now()} ${frame.url()}`); });
+      page.on('console', message => consoleLines.push(message.text().slice(0, 160)));
       try {
         let url;
         for (let i = 0; i < 1200; i++) {
@@ -165,10 +168,14 @@ export default withPlumb({ experimental: { agentUpgrade: false }, turbopack: { r
         }
         assert.ok(url, logs);
         await page.goto(url, { timeout: 120000 });
-        await page.waitForFunction(() => window.__plumb?.overlay, undefined, { timeout: 60000 });
+        // The page settles the way a user's does: webpack compiles the client on first request and Next's own client
+        // reloads once on a changed bundle hash ("sync"); then React hydrates. Only a hydrated element has a fiber.
+        await page.waitForLoadState('networkidle', { timeout: 60000 });
+        await page.waitForFunction(() => { const link = document.querySelector('#link'); return !!link && Object.keys(link).some(key => key.startsWith('__reactFiber$')) && !!window.__plumb?.overlay; }, undefined, { timeout: 60000, polling: 100 });
         await page.evaluate(() => window.__plumb.ready());
         assert.equal(await page.getAttribute('#link', 'data-plumb-source'), null, 'a component tag gets no stamp');
-        const found = await page.evaluate(() => window.__plumb.locate(document.querySelector('#link'), { explain: true }));
+        const readyAt = Date.now();
+        const found = await page.evaluate(() => window.__plumb.locate(document.querySelector('#link'), { explain: true })).catch(error => { throw new Error(error.message + '\nready at ' + readyAt + '\nnavigations: ' + navigations.join(' | ') + '\nconsole: ' + consoleLines.slice(-12).join(' | ') + '\nnext: ' + logs.split('\n').slice(-12).join(' | ')); });
         assert.deepEqual({ via: found.via, file: found.file, line: found.line, column: found.column, component: found.component, props: found.props }, expected, JSON.stringify(found).slice(0, 400));
         assert.doesNotMatch(logs, /Failed to compile|Unexpected character/);
       } finally {
