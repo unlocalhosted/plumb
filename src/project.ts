@@ -1,4 +1,9 @@
+import { readFileSync } from 'node:fs';
 import { readFile, stat } from 'node:fs/promises';
+import { parseSync } from 'oxc-parser';
+import { moduleImports } from './collect/modules.js';
+import type { ModuleImport } from './collect/modules.js';
+import { projectModules } from './session/modules.js';
 import { dirname, extname, isAbsolute, relative, resolve, sep } from 'node:path';
 import { appTailwindEntry } from './collect/entries.js';
 import { unreadable } from './diagnostics.js';
@@ -112,7 +117,43 @@ export async function projectSourceFiles(root: string, config: PlumbConfig, know
   // with no `source`, the rule decides (a git-ignored or installed file under the root is not yours); a configured
   // selection is the override and is taken as written
   const owned = await Promise.all(files.map(async file => await ownSourcePath(root, file) && (config.source !== undefined || await sourceIdentity(root, file) !== null)));
-  return files.filter((_, index) => owned[index]).sort();
+  const yours = files.filter((_, index) => owned[index]);
+  return (config.source === undefined ? defaultSelection(root, yours) : yours).sort();
+}
+
+// The rest of the default selection, over files that are yours by the rule. A tool's config file (vite.config.ts,
+// tailwind.config.js, plumber.config.ts, eslint.config.mjs…) configures a tool: it is never your code. A dot folder
+// (.storybook/, .theme/, .github/…) is a tool's too, until the app's own import graph reaches a file in it: that file is
+// yours then, the way a linked package's are. `source` in the config is the override and never comes here.
+const toolConfig = /(?:^|\/)[^/]*\.config\.[cm]?[jt]s$/;
+const dotted = (path: string) => path.split('/').some(segment => segment !== '..' && segment !== '.' && segment.startsWith('.'));
+const moduleFile = (file: string) => /\.[cm]?[jt]sx?$/.test(file) && !/\.d\.[cm]?ts$/.test(file);
+function defaultSelection(root: string, files: string[]): string[] {
+  const path = (file: string) => relative(root, file).replaceAll('\\', '/');
+  const kept = files.filter(file => !toolConfig.test(path(file)));
+  const hidden = new Set(kept.filter(file => dotted(path(file))));
+  if (!hidden.size) return kept;
+  const plain = kept.filter(file => !hidden.has(file));
+  // the walk: every import written in a plain module, resolved the way the project's bundler resolves it; a dotted file
+  // it lands on is yours, and its own imports are followed in turn. Only run when a dot folder has candidates.
+  const texts = new Map<string, string | undefined>();
+  const read = (file: string) => { if (!texts.has(file)) { try { texts.set(file, readFileSync(file, 'utf8')); } catch { texts.set(file, undefined); } } return texts.get(file); };
+  const resolveModule = projectModules(root, read);
+  const reached = new Set<string>();
+  const queue = plain.filter(moduleFile);
+  for (let index = 0; index < queue.length; index++) {
+    const file = queue[index]!, text = read(file);
+    if (text === undefined) continue;
+    let edges: ModuleImport[];
+    try { edges = moduleImports(parseSync(file, text).module, text); } catch { continue; }
+    for (const edge of edges) {
+      const target = resolveModule(file, edge.specifier)?.path ?? (edge.specifier.startsWith('.') ? resolve(dirname(file), edge.specifier) : undefined);
+      if (target === undefined || !hidden.has(target) || reached.has(target)) continue;
+      reached.add(target);
+      if (moduleFile(target)) queue.push(target);
+    }
+  }
+  return kept.filter(file => !hidden.has(file) || reached.has(file));
 }
 
 export async function sourceFiles(root: string, config: PlumbConfig): Promise<string[]> {

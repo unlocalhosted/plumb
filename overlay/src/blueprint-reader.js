@@ -42,7 +42,7 @@
  *             { unrendered: true } (the panel must know how to hold one). Where a mark is drawn is the layer's business
  * ───────────────────────────────────────────────────────── */
 
-import { inCode, isNote } from './blueprint-panel.js';
+import { inCode, isNote, placeKey } from './blueprint-panel.js';
 
 const WAVE = 128; // per-element readings in flight at once (each is batched by api.js into one round trip per tick)
 const PAGE = 1024; // stamped elements per page request; every chunk is sent at once
@@ -308,7 +308,8 @@ export class Reader {
   }
 
   // The places: one per class site, from the page's code and from the rendered elements, each with the elements that
-  // render it. A place from the code and the same place rendered are one place.
+  // render it. A place from the code and the same place rendered are one place. A mark with no place in the code (a
+  // craft reading of the page, placeKey null) is not one: it stays on its element as a note.
   #places(enriched) {
     const places = new Map();
     // a mark's key is its line and column within its file: the place is the file and that key, so two files' marks
@@ -319,8 +320,8 @@ export class Reader {
       if (!place) places.set(id, (place = { key: mark.key, file: at, site: { file: at, line: mark.line, column: mark.column, text: mark.text }, mark, elements: [] }));
       return place;
     };
-    for (const file of this.#code.values()) for (const mark of file.marks) add(mark, file.file);
-    for (const item of enriched) for (const mark of item.marks) if (mark.family !== 'craft') add(mark, item.file).elements.push(item.el);
+    for (const file of this.#code.values()) for (const mark of file.marks) if (placeKey(mark, file.file)) add(mark, file.file);
+    for (const item of enriched) for (const mark of item.marks) if (placeKey(mark, item.file)) add(mark, item.file).elements.push(item.el);
     return places;
   }
 
@@ -339,19 +340,21 @@ export class Reader {
     // problems are places in the code, one each however many elements render it; what the craft rules measured on
     // the page are notes, per element, never problems
     const places = this.#places(enriched);
-    // drift: distinct (place, cause) pairs, place = file:line:column and cause = rule + class text (what the fix panel
-    // groups by), over new marks that are not in-code notes, so the dock and the panel's "N problems" agree
-    // (inCode and isNote are the fix panel's own, so its line and the dock say one number)
+    // drift: distinct (place, cause) pairs, place = file:line:column (placeKey: the same rule the places above are
+    // made by, so a problem is counted where it can be placed and never with a hole in its key) and cause = rule +
+    // class text (what the fix panel groups by), over new marks that are not in-code notes, so the dock and the
+    // panel's "N problems" agree (inCode, isNote and placeKey are the fix panel's own, so its line and the dock say
+    // one number)
     const problems = new Set();
     let unrendered = 0, notes = 0;
-    const count = (m, file) => { if (m.ledger === 'new' && !inCode(m) && !isNote(m)) problems.add(`${m.file ?? file}:${m.line}:${m.column}|${m.rule}|${m.text}`); };
+    const count = (m, file) => { const at = placeKey(m, file); if (at && m.ledger === 'new' && !inCode(m) && !isNote(m, file)) problems.add(`${at}|${m.rule}|${m.text}`); };
     for (const file of this.#code.values()) for (const m of file.marks) count(m, file.file);
-    for (const i of enriched) for (const m of i.marks) { if (isNote(m)) notes++; else count(m, i.file); }
+    for (const i of enriched) for (const m of i.marks) { if (isNote(m, i.file)) notes++; else count(m, i.file); }
     for (const place of places.values()) if (!place.elements.length) unrendered++;
     const drift = problems.size;
     const on = all.reduce((n, i) => n + i.dims.length, 0);
     // the places themselves, for whoever asks the host (the headless run, a test): one row per place
-    this.#host.placesRead?.([...places.values()].map((p) => ({ key: p.key, file: p.file, line: p.mark.line, column: p.mark.column, text: p.mark.text, rule: p.mark.rule, ledger: p.mark.ledger, elements: p.elements.length })));
+    this.#host.placesRead?.([...places.values()].map((p) => ({ key: p.key, file: p.file, line: p.mark.line, column: p.mark.column, text: p.mark.text, rule: p.mark.rule, ledger: p.mark.ledger, elements: p.elements.length })), [...problems]);
     const done = this.settled;
     const key = `${read}/${all.length}/${drift}/${on}/${notChecked}/${outsideSource}/${notes}/${places.size}/${unrendered}/${done}`;
     if (key !== this.#progress) {

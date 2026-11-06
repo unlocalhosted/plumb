@@ -94,16 +94,24 @@ export function plumb({ demo, ...options }: PlumbViteOptions = {}): Plugin {
     if ([...expected].every(file => held!.files.has(file))) releaseHeld();
   };
   // A file the session wrote is told to Vite at once, as the watcher would tell it a poll later: the page's update does
-  // not wait on the watcher, and a reload in that window gets the new module, not a 304 of the old one. The watcher's
-  // own report of the same write, when it comes, carries nothing new and goes nowhere (`echo`), unless a transaction holds it.
+  // not wait on the watcher (a polling watcher under load reports seconds late, and misses a second write landing
+  // within the same tick), and a reload in that window gets the new module, not a 304 of the old one. The report Vite
+  // makes of that word is the one that goes out (`told`); the watcher's own report of the same write, when it comes,
+  // carries nothing new and goes nowhere (`echo`). Under a transaction the word still reaches Vite: the module is held
+  // with the others and goes out in the one release.
+  const told = new Map<string, number>();
   const onWritten = (file: string) => {
-    if (!hotServer || held || !file.startsWith(root + '/')) return;
+    if (!hotServer || !file.startsWith(root + '/')) return;
+    told.set(file, Date.now()); released.delete(file);
     hotServer.watcher.emit('change', file);
-    released.set(file, { hash: readFile(file, 'utf8').then(sourceHash, () => ''), until: Date.now() + 2000 });
   };
   const hold = async (file: string, modules: readonly ModuleNode[], read: () => string | Promise<string>): Promise<[] | undefined> => {
     if (!file.startsWith(root + '/') || file.includes('/node_modules/')) return undefined;
-    if (!held || !hotServer) return await echo(file) ? [] : undefined;
+    if (!held || !hotServer) {
+      const at = told.get(file); told.delete(file);
+      if (at !== undefined && Date.now() - at < 2000) { released.set(file, { hash: readFile(file, 'utf8').then(sourceHash, () => ''), until: Date.now() + 2000 }); return undefined; }
+      return await echo(file) ? [] : undefined;
+    }
     held.files.add(file); alive();
     for (const module of modules) held.modules.set(module.id ?? module.url, module);
     // a stylesheet that sets the theme, or a file no module reads, would reload the whole page

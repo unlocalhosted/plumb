@@ -516,15 +516,18 @@ class PlumbOverlay extends HTMLElement {
     return promise;
   }
   // The page's code (blueprint-reader.js, docs/briefs/count-from-code.md): every finding at the places in the files
-  // the page renders (POST places), each file's marks built the way an element's are. null where there is no
-  // server for it (the docs replay): the reader counts from the rendered elements alone there.
+  // the page renders (POST places), each file's marks built the way an element's are. A file may be asked for by its
+  // stamp's name (from the repository root) or by the name the page answers gave (from the project root); the server
+  // answers each file once, by the project name, and that name is kept: it is the one every element's `file` carries,
+  // so a place from the code and the same place rendered are one place. null where there is no server for it (the
+  // docs replay): the reader counts from the rendered elements alone there.
   async readCode(files) {
     if (!files.length) return [];
     let answer;
     try { answer = await post('places', { files }); }
     catch (error) { if (error?.status === 404 || error?.status === 405) return null; throw error?.status === 503 ? Object.assign(error, { starting: true }) : error; }
     return (answer?.files ?? []).map((entry) => {
-      const file = files.find((f) => entry.file === f || entry.file.endsWith('/' + f)) ?? entry.file;
+      const file = entry.file;
       const location = { file, line: 1, column: 1, tag: null, via: 'code', chain: [], index: 0 };
       const r = reading(location, { findings: entry.findings ?? [], declarations: entry.declarations ?? [] }, undefined);
       return { file, hash: entry.hash, marks: r.marks.filter((m) => m.ledger !== 'exception') };
@@ -587,9 +590,11 @@ class PlumbOverlay extends HTMLElement {
   get blueprintReader() { return this.#blueprint; } // the headless craft run (craft-run.js)
   get progress() { return this.#bp.progress; }
   // the places Blueprint counted last (blueprint-reader.js): one row per class site in the page's code, with how many elements render it
-  #places = [];
-  placesRead(places) { this.#places = places; }
+  #places = []; #problems = [];
+  placesRead(places, problems = []) { this.#places = places; this.#problems = problems; }
   get places() { return this.#places; }
+  // the problems it counted: one key per (place, cause), the number the dock and the fix panel's line say
+  get problems() { return this.#problems; }
   get pinnedElement() { return this.#pinned?.element ?? null; }
   occluders() {
     return [...['.w:not([hidden]) .card', '.dock'].map(sel => this.#root.querySelector(sel)).filter(Boolean).map(el => el.getBoundingClientRect()), ...[this.#blueprint?.panelRect?.()].filter(Boolean), ...(this.#help?.occluders() ?? []), ...(this.#history?.occluders() ?? []), ...[this.#ready?.rect()].filter(Boolean)];

@@ -587,7 +587,7 @@ export class Session extends EventEmitter {
       return typeof file === 'string' ? [file] : [];
     }
     if (method === 'places') {
-      const files = (args[0] as string[]).map(file => this.file(file));
+      const files = (args[0] as string[]).map(file => this.placeFile(file));
       for (const file of files) await this.readableSource(file).catch(() => {});
       return files.filter(file => this.sourceFiles.has(file));
     }
@@ -1805,11 +1805,31 @@ export class Session extends EventEmitter {
   }
   /** The craft spec in effect (docs/briefs/craft-spec.md): the standard, the project's config over it, the token target. */
   spec(): Promise<ProjectSpec> { return this.read('spec'); }
-  /** The places in these files: the findings whose sites are in each (sites filtered to it) and its declarations. */
-  places(files: string[]): Promise<PlacesResult> {
+  /**
+   * The places in these files: the findings whose sites are in each (sites filtered to it) and its declarations. A
+   * file may be asked for by either name the page knows it by (placeFile); it is answered once, under the one name
+   * every page answer uses: its path from the project root.
+   */
+  async places(files: string[]): Promise<PlacesResult> {
     if (!Array.isArray(files) || files.length > 4096 || files.some(file => typeof file !== 'string' || !file.trim())) throw new UsageError('places takes a list of at most 4096 files.');
-    const paths = [...new Set(files.map(file => this.file(file)))];
-    return this.read('places', { files: paths, revision: this.revision });
+    const paths = [...new Set(files.map(file => this.placeFile(file)))];
+    const answer = await this.read<PlacesResult>('places', { files: paths, revision: this.revision });
+    return { ...answer, files: answer.files.map(entry => ({ ...entry, file: relative(this.root, entry.file).replaceAll('\\', '/') })) };
+  }
+  /**
+   * One file, one identity, whichever of its two names the page asks by: its path from the project root (how every
+   * page answer names it) or its stamp's path from the repository root (src/source-identity.ts). The two differ when
+   * the project sits below the repository top (an app in a monorepo, a folder under a worktree): read as two files,
+   * every place in it would be counted twice. The project path wins when both name a source file.
+   */
+  private placeFile(file: string): string {
+    const path = this.file(file);
+    if (this.sourceFiles.has(path)) return path;
+    try {
+      const stamped = sourcePaths(this.root, file, undefined, true)[0]!;
+      if (stamped !== path && this.sourceFiles.has(stamped) && containsPath(sourceBoundary(this.root), stamped)) return stamped;
+    } catch { /* not a stamp spelling: the project path stands */ }
+    return path;
   }
   why(file: string, line: number): Promise<Awaited<ReturnType<typeof import('../ledger/commands.js').inspectLedger>>> { return this.read('why', { file: this.file(file), line: this.position(line) }); }
   try(code: string, options: Pick<TryOptions, 'lang' | 'as' | 'verbose'> = {}): Promise<Report> { return this.read('try', { code, ...options }); }
