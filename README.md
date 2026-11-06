@@ -294,8 +294,8 @@ Chrome 156, Node 25.
 | Host | Stamps | Notes |
 |---|---|---|
 | Vite 8, React 19 | yes, when `plumb()` runs before `react()`; otherwise the dev server stops with the line to move | the reference: 99.9 % exact on 40 showcase screens |
-| Next.js 15 and 16, webpack | yes, through `withPlumb` | answers once React has hydrated the page (see "Known limits") |
-| Next.js 16, Turbopack | yes, through `withPlumb` | |
+| Next.js 15 and 16, webpack | yes, through `withPlumb` | the overlay is ready once React has hydrated the page; a click before that waits, then answers |
+| Next.js 15 and 16, Turbopack | yes, through `withPlumb` | |
 | `plumber serve --overlay` (any other host) | no build step of its own | finds lines from React's debug stacks only |
 | React 17 and 18 | read from React's own `_debugSource` | |
 
@@ -322,29 +322,35 @@ nearby line.
 
 ### Measured on real Next.js apps
 
-Share of sampled elements whose source was found, before stamping on Next (0.3.0) and with DOM-tag stamps. When an
-answer was given it was the right file in every run (0 % wrong file).
+Share of sampled elements whose source was found, with stamping off (as in 0.3.0) and in 0.4.0. "Exact" is judged
+against the stamp the build wrote for that element; library-drawn elements have no stamp of their own and are answered
+with your usage line instead. Measured 2026-11-06.
 
-| App | Bundler | Found, 0.3.0 | Found, with stamps | Server components, 0.3.0 → with stamps |
-|---|---|---|---|---|
-| tailwindcss.com | Turbopack | 40.5 % | 97.5 % | 0 % → 97.3 % |
-| tailwindcss.com | webpack | 15.1 % | 88.8 % | 0 % → 97.3 % |
-| shadcn/ui (`apps/v4`) | Turbopack | 26.1 % | 45.2 % | |
-| magicui (`apps/www`) | Turbopack | 0 % | 20.2 % | |
-| magicui (`apps/www`) | webpack | 0 % | 18.5 % | |
+| App | Bundler | Found, stamping off | Found, 0.4.0 | Exact, 0.4.0 | Wrong file, 0.4.0 | Server components, off → 0.4.0 |
+|---|---|---|---|---|---|---|
+| tailwindcss.com | Turbopack | 40.2 % | 99.3 % | 842 of 842 | 0 | 0 % → 98.9 % |
+| magicui (`apps/www`) | Turbopack | 42.9 % | 97.8 % | 713 of 713 | 0 | 0 % → 99.8 % |
+| magicui (`apps/www`) | webpack | 17.2 % | 90.8 % | 560 of 560 | 0 | 0 % → 96.1 % |
 
-The "with stamps" column predates library-usage answers and the hydration wait, which target the rest: magicui and
-shadcn/ui are mostly library-drawn elements. These rows will be measured again on them.
+With stamping off, the guesses that were given pointed at the wrong file 23 % of the time on magicui (Turbopack) and
+25 % on webpack. On magicui with webpack, elements a library drew are answered with your usage line less often than on
+Turbopack (92 against 228), because webpack's creation stacks for library code map back to your files less often;
+those elements say "not in your code" rather than guess. shadcn/ui (`apps/v4`) was left out: its dev server alone used
+about 10 GB.
 
 ### Timings
 
-| Host | First click on a page | Later clicks (median / 95th percentile) |
+| Host | First click on a page (median / 95th percentile) | Later clicks (median / 95th percentile) |
 |---|---|---|
 | Vite, stamped (showcase screens) | 4.6 ms median | 1.8 / 3 ms |
-| Next, webpack, 0.3.0 (showcase screens) | 393 ms median | 11.2 / 21.4 ms |
-| Next, Turbopack, 0.3.0 (showcase screens) | 74 ms median | 15.3 / 28 ms |
-| Next, webpack, stamped (tailwindcss.com) | 15.2 ms median | 7.4 / 12 ms |
-| Next, Turbopack, stamped (tailwindcss.com) | 18.4 ms median | 8.1 / 15.8 ms |
+| Next, Turbopack, tailwindcss.com, 0.4.0 | 8.1 / 28.7 ms | 7.7 / 16.4 ms |
+| Next, Turbopack, magicui `/docs`, 0.4.0 | 16 / 56 ms | 12.6 / 17.1 ms |
+| Next, Turbopack, magicui `/docs`, before the side server | 255 / 334 ms | 255.5 / 297.7 ms |
+
+On a large Next app every route-handler request costs Next itself about 230 ms (the app's own `/robots.txt` route took
+the same), so after the first request the overlay talks to a small server React Plumber opens beside the route, on
+127.0.0.1, for the page's own origin and with the same token. Where the browser can't reach it, the overlay keeps
+using the route.
 
 ### Writes, hot reload and the network
 
@@ -360,8 +366,11 @@ shadcn/ui are mostly library-drawn elements. These rows will be measured again o
 
 ### Known limits
 
-- On Next webpack, the first load compiles on request and Next may reload the page once before React hydrates it. Until
-  it has, a click finds no React element; the overlay waiting for hydration is in progress.
+- On Next webpack, the first load compiles on request and Next may reload the page once before React hydrates it; a
+  click in that window waits for hydration (up to 15 s), then answers, or says "Still loading".
+- Library-drawn elements inside server components, and lines inside MDX pages, are not answered yet.
+- CSS Modules, PostCSS-generated declarations, Tailwind v3 and CSS-in-JS are found by line (stamps work with any
+  styling) but not yet judged or fixed in full; `plumber doctor` says what is supported in your project.
 - Writes are taken one at a time across the whole project, so a long write to one file delays a write to another.
 - On Next, hot updates are seen when Next reports them built (about 80 ms before the page applies them); answers come
   from disk and stale positions are refused, so this costs a retry, never a wrong line.
