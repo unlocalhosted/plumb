@@ -368,6 +368,8 @@ using the route.
 
 - On Next webpack, the first load compiles on request and Next may reload the page once before React hydrates it; a
   click in that window waits for hydration (up to 15 s), then answers, or says "Still loading".
+  In about one first click in six, React has not yet linked that element, and the answer comes from React's stacks
+  instead of the stamp (docs/briefs/hydration-first-click.md).
 - Library-drawn elements inside server components, and lines inside MDX pages, are not answered yet.
 - CSS Modules, PostCSS-generated declarations, Tailwind v3 and CSS-in-JS are found by line (stamps work with any
   styling) but not yet judged or fixed in full; `plumber doctor` says what is supported in your project.
