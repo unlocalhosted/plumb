@@ -1,9 +1,22 @@
-const base = new URL('../', import.meta.url).href;
-// The page's own tag for this client carries the token. It names the client on the page's origin; on Next the module
-// itself is loaded from the route's sidecar (hosts/next-dev.ts), another origin, so the tag is found by its path.
+// Where questions go: the server this client was loaded from. On Next that is the route's sidecar (hosts/next-dev.ts),
+// another loopback origin; the page's own /__plumb/ (the route) is the door that always answers. When the sidecar stops
+// answering (its process gone, the port closed), every question moves to the door, once, and stays there.
+let base = new URL('../', import.meta.url).href;
+const door = new URL('/__plumb/', location.href).href;
+// The page's own tag for this client carries the token. It names the client on the page's origin, so it is found by
+// its path, whichever origin the module itself came from.
 const clientPath = new URL(base).pathname + 'client.js';
 const script = [...document.querySelectorAll('script[type="module"][src]')].find(script => script.src === base + 'client.js' || new URL(script.src, location.href).pathname === clientPath);
 const token = script?.dataset.plumbToken;
+/** fetch at `base`; a network failure at a sidecar moves base to the door and asks there, once; at the door it fails as it is. */
+async function reach(path, init) {
+  try { return await fetch(new URL(path, base), init); }
+  catch (error) {
+    if (error?.name === 'AbortError' || base === door) throw error;
+    base = door;
+    return fetch(new URL(path, base), init);
+  }
+}
 
 // The module generation a question is asked against. A hot update (plumb:updated, sent when the source maps are
 // invalidated) starts a new one: an answer that comes back for an older generation describes code that is gone, so it
@@ -37,7 +50,7 @@ async function flush() {
   while (queued.length) {
     const wave = queued.splice(0, BATCH);
     let response;
-    try { response = await fetch(new URL('batch', base), { method: 'POST', cache: 'no-store', headers: { 'Content-Type': 'application/json', ...(token ? { 'x-plumb-token': token } : {}) }, body: JSON.stringify({ calls: wave.map(({ method, params }) => ({ method, params: Object.fromEntries(Object.entries(params).map(([k, v]) => [k, String(v)])) })) }) }); }
+    try { response = await reach('batch', { method: 'POST', cache: 'no-store', headers: { 'Content-Type': 'application/json', ...(token ? { 'x-plumb-token': token } : {}) }, body: JSON.stringify({ calls: wave.map(({ method, params }) => ({ method, params: Object.fromEntries(Object.entries(params).map(([k, v]) => [k, String(v)])) })) }) }); }
     catch (error) { for (const q of wave) q.reject(options404(q, error)); continue; }
     if (response.status === 503) { const body = await response.json().catch(() => ({})); for (const q of wave) q.reject(starting(body)); continue; }
     // a host that does not answer batches (an older server, the docs' replay) refuses the whole wave: every
@@ -87,10 +100,10 @@ function ask(method, params, options) {
 }
 
 async function direct(method, params, options = {}) {
-  const url = new URL(method, base);
-  for (const [key, value] of Object.entries(params)) url.searchParams.set(key, value);
+  const query = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) query.set(key, value);
   let response;
-  try { response = await fetch(url, { cache: 'no-store', headers: token ? { 'x-plumb-token': token } : {}, ...(options.signal ? { signal: options.signal } : {}) }); }
+  try { response = await reach(`${method}?${query}`, { cache: 'no-store', headers: token ? { 'x-plumb-token': token } : {}, ...(options.signal ? { signal: options.signal } : {}) }); }
   catch (error) {
     if (error?.name === 'AbortError') throw Object.assign(new Error('The question was withdrawn.'), { aborted: true, reason: 'map', detail: { step: 'cancelled', method } });
     if (options.explain) throw Object.assign(new Error(error.message), { reason: 'resolve-refusal', unreachable: true, detail: { method, source: params.source, error: error.message, unreachable: true } });
@@ -115,7 +128,7 @@ async function direct(method, params, options = {}) {
 export async function post(method, body) {
   const key = body?.key ?? (globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`);
   const payload = JSON.stringify({ ...body, key });
-  const send = () => fetch(new URL(method, base), { method: 'POST', cache: 'no-store', headers: { 'Content-Type': 'application/json', ...(token ? { 'x-plumb-token': token } : {}) }, body: payload });
+  const send = () => reach(method, { method: 'POST', cache: 'no-store', headers: { 'Content-Type': 'application/json', ...(token ? { 'x-plumb-token': token } : {}) }, body: payload });
   let response;
   try { response = await send(); }
   catch (error) {
