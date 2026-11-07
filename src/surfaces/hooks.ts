@@ -1,11 +1,11 @@
-import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
-import { dirname, relative, resolve } from 'node:path';
+import { relative, resolve } from 'node:path';
 import MagicString from 'magic-string';
 import { parseSync } from 'oxc-parser';
 import type { Node } from 'oxc-parser';
 import { diff } from '../adoption/overlay.js';
 import { UsageError } from '../errors.js';
 import { packageManagerOf } from '../project-facts/index.js';
+import { readSourceIfExists, writeSource } from '../write/source-file.js';
 
 const check = 'plumber check --changed --agent --strict-ledger';
 // A hook runs in a plain shell: node_modules/.bin is not on its PATH. npx (it ships with Node) runs the project's own
@@ -13,7 +13,8 @@ const check = 'plumber check --changed --agent --strict-ledger';
 // Plug'n'Play has no node_modules, so yarn runs it there.
 const runners = { npm: 'npx --no-install', pnpm: 'npx --no-install', yarn: 'yarn', bun: 'npx --no-install', deno: 'npx --no-install' } as const;
 const object = (value: unknown): value is Record<string, unknown> => value !== null && typeof value === 'object' && !Array.isArray(value);
-interface Plan { file: string; root: string; before: string; after: string }
+/** `hash`: of `before`, the text the plan was made from; null when there is no settings file yet. */
+interface Plan { file: string; root: string; before: string; hash: string | null; after: string }
 
 type Expression = Extract<Node, { type: 'ObjectExpression' | 'ArrayExpression' | 'Literal' }>;
 type Property = import('@oxc-project/types').ObjectProperty;
@@ -58,8 +59,7 @@ class Settings {
 
 async function plan(root: string, name: string, event: string, entry: { matcher?: string; hooks?: { type: string; command: string }[]; command?: string }, cursor: boolean, command: string): Promise<Plan> {
   const file = resolve(root, name);
-  let before = '';
-  try { before = await readFile(file, 'utf8'); } catch (e) { if ((e as NodeJS.ErrnoException).code !== 'ENOENT') throw e; }
+  const current = await readSourceIfExists(root, file), before = current?.text ?? '', hash = current?.hash ?? null;
   let settings: unknown;
   try { settings = before ? JSON.parse(before) : {}; } catch { throw new UsageError(`Invalid JSON in ${name}; no hook settings changed.`); }
   if (!object(settings) || (settings.hooks !== undefined && !object(settings.hooks))) throw new UsageError(`Expected object settings/hooks in ${name}; no hook settings changed.`);
@@ -70,11 +70,11 @@ async function plan(root: string, name: string, event: string, entry: { matcher?
   // a plumber hook already there, written with this command or an older one (a bare `plumber check …`)
   const ours = (value: unknown) => typeof value === 'string' && value.endsWith(command.slice(command.indexOf(check)));
   const commands = (item: unknown): unknown[] => !object(item) ? [] : cursor ? [item.command] : item.matcher === 'Edit|Write|MultiEdit' && Array.isArray(item.hooks) ? item.hooks.map(h => object(h) && h.type === 'command' ? h.command : undefined) : [];
-  if (existing.some(item => commands(item).includes(command))) return { file, root, before, after: before };
+  if (existing.some(item => commands(item).includes(command))) return { file, root, before, hash, after: before };
   if (!before.trim()) {
     const fresh: Record<string, unknown> = cursor ? { version: 1 } : {};
     fresh.hooks = { [event]: [entry] };
-    return { file, root, before, after: JSON.stringify(fresh, null, 2) + '\n' };
+    return { file, root, before, hash, after: JSON.stringify(fresh, null, 2) + '\n' };
   }
   const edit = new Settings(before, name);
   const older = existing.findIndex(item => commands(item).some(ours));
@@ -100,7 +100,7 @@ async function plan(root: string, name: string, event: string, entry: { matcher?
   }
   const after = edit.text.toString();
   try { JSON.parse(after); } catch { throw new UsageError(`Could not add the hook to ${name} without rewriting it; no hook settings changed.`); }
-  return { file, root, before, after };
+  return { file, root, before, hash, after };
 }
 export async function planHooks(root: string, agents: ('claude' | 'cursor')[] = ['claude', 'cursor'], project?: string): Promise<Plan[]> {
   const runner = runners[packageManagerOf(root).value ?? 'npm'];
@@ -115,14 +115,11 @@ export async function planHooks(root: string, agents: ('claude' | 'cursor')[] = 
 /** Write each changed settings file and say what changed, as a diff of the changed lines with paths from `shown`. */
 export async function writeHooks(plans: Plan[], list = false, shown?: string): Promise<string> {
   const output: string[] = [];
-  for (const { file, root, before, after } of plans) {
+  for (const { file, root, before, hash, after } of plans) {
     const name = relative(shown ?? root, file).replaceAll('\\', '/');
     if (list) { output.push(`Would write ${name}.`); continue; }
     if (after === before) { output.push(`Kept ${name}.`); continue; }
-    await mkdir(dirname(file), { recursive: true });
-    const temp = `${file}.plumb-${process.pid}.tmp`;
-    await writeFile(temp, after, { flag: 'wx' });
-    await rename(temp, file);
+    await writeSource(root, file, { expectHash: hash, next: after });
     output.push(diff({ file, before: before || undefined, after }, shown ?? root) + `Wrote ${name}.`);
   }
   return output.join('\n\n') + '\n';
