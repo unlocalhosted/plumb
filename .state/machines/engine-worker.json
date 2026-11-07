@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "id": "engine-worker",
+  "binding": { "file": "src/session/engine.ts", "owner": "Session", "flags": ["lost", "starting", "closed"] },
+  "initial": "running",
+  "cancel": ["close"],
+  "states": {
+    "running":  { "is": { "lost": null,  "starting": null,  "closed": false },
+                  "on": { "request": "running", "exited": "lost", "inputsChanged": "lost", "close": "closed" } },
+    "starting": { "is": { "lost": null,  "starting": "set", "closed": false },
+                  "on": { "booted": "running", "exited": "lost", "close": "closed" } },
+    "lost":     { "is": { "lost": "set", "starting": null,  "closed": false },
+                  "on": { "request": "starting", "inputsChanged": "starting", "close": "closed" } },
+    "closed":   { "is": { "lost": null,  "starting": null,  "closed": true }, "final": true }
+  }
+}

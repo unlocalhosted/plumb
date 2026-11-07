@@ -1,0 +1,10 @@
+{
+  "schema": 1,
+  "id": "engine-transaction",
+  "binding": { "file": "src/session/engine.ts", "owner": "Session", "flags": ["transaction"] },
+  "initial": "idle",
+  "states": {
+    "idle":     { "is": { "transaction": false }, "on": { "apply": "applying" } },
+    "applying": { "is": { "transaction": true },  "on": { "applied": "idle", "failed": "idle", "apply": "applying" } }
+  }
+}
