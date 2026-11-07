@@ -25,16 +25,24 @@ ${line3}
 </>;
 `;
 const hash = text => createHash('sha256').update(text).digest('hex');
-async function files(t, theme) {
+async function files(t, theme, crafting = false) {
   const root = await mkdtemp(join(repo, 'fixtures/.write-path-'));
   t.after(() => rm(root, { recursive: true, force: true }));
-  await cp(join(repo, 'fixtures/messages'), root, { recursive: true });
-  await writeFile(join(root, APP), source);
+  if (crafting) {
+    // a project whose type system proposes a utilities block (apply-all writes only blocks the engine proposed)
+    await cp(join(repo, 'overlay/demo/src'), join(root, 'src'), { recursive: true });
+    await cp(join(repo, 'overlay/demo/index.html'), join(root, 'index.html'));
+    await cp(join(repo, 'fixtures/crafting-ui-standards/src'), join(root, 'src'), { recursive: true });
+    await writeFile(join(root, 'src/App.jsx'), `import { MotionStandardsPage } from './pages/MotionStandardsPage.tsx';\nexport function App() { return <MotionStandardsPage />; }\n`);
+  } else {
+    await cp(join(repo, 'fixtures/messages'), root, { recursive: true });
+    await writeFile(join(root, APP), source);
+  }
   if (theme) await writeFile(join(root, THEME), theme(await readFile(join(root, THEME))));
   return root;
 }
-async function project(t, { theme } = {}) {
-  const root = await files(t, theme);
+async function project(t, { theme, crafting } = {}) {
+  const root = await files(t, theme, crafting);
   const server = await serve({ root, watch: false }); t.after(() => server.close());
   const base = `http://127.0.0.1:${server.info.port}`;
   const call = async (method, params, verb = 'GET') => {
@@ -83,7 +91,7 @@ test('a file that is not UTF-8 is refused and left byte for byte as it was (them
 });
 
 test('a CRLF stylesheet stays CRLF after a token and a utilities block are added, and the block is not added twice', async t => {
-  const api = await project(t, { theme: original => Buffer.from(original.toString('utf8').replace(/\r?\n/g, '\r\n'), 'utf8') });
+  const api = await project(t, { crafting: true, theme: original => Buffer.from(original.toString('utf8').replace(/\r?\n/g, '\r\n'), 'utf8') });
   assert.ok(!loneLf(await readFile(join(api.root, THEME), 'utf8')));
   const token = await api.call('token', { file: THEME, hash: await api.themeHash(), name: '--spacing-gutter', value: '24px', why: 'The page gutter.' }, 'POST');
   assert.equal(token.status, 200, JSON.stringify(token.body));
@@ -91,17 +99,18 @@ test('a CRLF stylesheet stays CRLF after a token and a utilities block are added
   assert.ok(theme.includes('--spacing-gutter: 24px;'), 'the token is there');
   assert.ok(!loneLf(theme), `every line break is CRLF:\n${JSON.stringify(theme)}`);
 
-  const css = '@utility text-body {\n  font-size: var(--text-body);\n}';
+  const css = (await api.call('system', {}, 'POST')).body.proposal.write.css[0].css;
+  assert.match(css, /@utility type-/, 'the engine proposes a utilities block for this project');
   const first = await api.call('apply-all', { css: [{ file: THEME, hash: token.body.hash, css }] }, 'POST');
   assert.equal(first.status, 200, JSON.stringify(first.body));
   assert.deepEqual(first.body.results.css.map(r => [r.ok, r.written]), [[true, true]]);
   theme = await readFile(join(api.root, THEME), 'utf8');
   assert.ok(!loneLf(theme), `the block went in with CRLF:\n${JSON.stringify(theme)}`);
-  assert.equal(theme.split('@utility text-body').length, 2);
+  assert.equal(theme.split('@utility type-display-large').length, 2);
   const again = await api.call('apply-all', { css: [{ file: THEME, hash: await api.themeHash(), css }] }, 'POST');
   assert.equal(again.status, 200, JSON.stringify(again.body));
   assert.deepEqual(again.body.results.css.map(r => [r.ok, r.written]), [[true, false]], 'already there: nothing written');
-  assert.equal((await readFile(join(api.root, THEME), 'utf8')).split('@utility text-body').length, 2, 'and not a second copy');
+  assert.equal((await readFile(join(api.root, THEME), 'utf8')).split('@utility type-display-large').length, 2, 'and not a second copy');
 });
 
 test('a save that lands right after the write is reported as a change, never as success', async t => {

@@ -271,6 +271,8 @@ export class Session extends EventEmitter {
   private changeLog: ChangeLog | undefined;
   private get log(): ChangeLog { return this.changeLog ??= new ChangeLog(resolve(cacheDirectory(this.root), 'changes.jsonl')); }
   private tag: { group: string; meta?: unknown } | undefined;
+  /** the stylesheet blocks this process proposed (system), the only ones apply-all may write (docs/invariants/api-contract.md §4) */
+  private proposedCss: string[] = [];
   private undoing: ChangeRecord[] | undefined;
   private native = false;
   private events = new Set<string>();
@@ -1102,6 +1104,8 @@ export class Session extends EventEmitter {
     const { file, hash, css } = options ?? {} as CssOptions;
     if (typeof file !== 'string' || !file.trim() || typeof hash !== 'string' || !hash.trim() || typeof css !== 'string' || !css.trim()) throw new UsageError('A stylesheet write requires file, hash and css.');
     if (css.length > 20000 || /<\/?script|@import|url\(/i.test(css)) throw new UsageError('A stylesheet block is at most twenty thousand characters of plain CSS.');
+    // only what this engine proposed goes into the theme: client text is never CSS (boundaries.md B5)
+    if (!this.proposedCss.includes(css.trim())) throw new UsageError('This stylesheet block is not one React Plumber proposed, so nothing was written. Ask for the system again and apply what it answers.');
     const spec = await this.request<ProjectSpec>('spec');
     if (!spec.tokens.file || file.replaceAll('\\', '/') !== spec.tokens.file) throw new UsageError(`Styles go in ${spec.tokens.file ?? 'your theme file'}, not ${file}.`);
     const path = this.file(file), block = css.trim();
@@ -1210,6 +1214,7 @@ export class Session extends EventEmitter {
     const swaps: SystemWrite['swaps'] = [];
     for (const swap of proposal.write.swaps) { const text = await readFile(this.file(swap.file), 'utf8').catch(() => null); if (text !== null) swaps.push({ ...swap, hash: sourceHash(text) }); }
     const write: SystemWrite = { tokens: proposal.write.tokens.map(t => ({ ...t, file: theme, hash: themeHash })), css: proposal.write.css ? [{ file: theme, hash: themeHash, css: proposal.write.css }] : [], swaps };
+    if (proposal.write.css) { this.proposedCss = [...this.proposedCss.filter(block => block !== proposal.write.css!.trim()), proposal.write.css.trim()].slice(-32); }
     return { revision: this.revision, proposal: { ...proposal, write } };
   }
   /** Set one property of an element to one of its steps: replace the class that sets it, or add one. */
