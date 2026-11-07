@@ -61,7 +61,9 @@ export function extractMachines(file, parsed, text) {
     if (other) {
       m.findings.push(fmt(file, lines, m, m.spans.owner, 'sm/machine-owner-duplicate', m.table.owner,
         `\`${m.table.owner}\` already has machine \`${other.id}\`.`, 'One machine per owner. Merge them, or split the owner.'));
-    } else byOwner.set(m.table.owner, m);
+      continue; // the owner belongs to the first machine; the duplicate is not bound, so no lint runs for it
+    }
+    byOwner.set(m.table.owner, m);
     bind(file, lines, program, m);
   }
   for (const m of machines) findings.push(...m.findings);
@@ -364,8 +366,8 @@ function readTable(file, lines, m) {
   if (m.findings.length > before || !idNode || !ownerNode || !fieldNode || !initialNode || !statesObj) return;
   m.table = {
     id: m.id, owner: ownerNode.value, field: fieldNode.value,
-    token: tokenNode ? tokenNode.value : isModule ? 'flight' : '#flight',
-    send: sendNode ? sendNode.value : isModule ? 'send' : '#send',
+    token: tokenNode ? tokenNode.value : isModule || !fieldNode.value.startsWith('#') ? 'flight' : '#flight',
+    send: sendNode ? sendNode.value : isModule || !fieldNode.value.startsWith('#') ? 'send' : '#send',
     initial: initialNode.value, cancel: [...cancel].sort(cmp), states, flights,
   };
   m.canonical = canonical(m.table);

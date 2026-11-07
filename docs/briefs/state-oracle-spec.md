@@ -994,3 +994,53 @@ Kept apart so nothing above depends on it.
 - **ESLint adapter** for editors: `sm check --format eslint`.
 - **MCP wrapper**: `tools/sm/mcp.mjs`, one tool per command, no logic of its own.
 - **Human view** of the log (layer 7).
+
+## Build notes (layers 1 and 2, 2026-11-07)
+
+Choices made where the spec was ambiguous or met real code. Each keeps the spec's intent; none is silent.
+
+1. **`check` arrived in layer 1**, with format, graph and `sm/parse` findings, `files`/`skipped`/`summary`/`suppressed`,
+   `--baseline <path>` (read only), `--staged` and `--changed-since`; layer 2 added the lint rules. The format and
+   graph tests assert through the finding schema, which needed `check`. `--hook` and `baseline write` stay in layer 5.
+2. **Two grades of format error.** Table errors (grammar, keys, names, targets, flights, final) make a machine
+   invalid: not in `list.machines`, `show`/`on`/`paths` answer `unknown-machine`, no graph or lint. Binding errors
+   (`owner-missing`, `owner-duplicate`, `field-missing`, `token-missing`, `id-duplicate`) leave the table answerable,
+   so an agent can still ask `on`/`paths`; `owner-missing`, `field-missing` and `owner-duplicate` switch lint off for
+   that owner, `token-missing` does not. `list.invalid` lists every file with any format finding, so a file can appear
+   in both lists.
+3. **`machine-id-duplicate`** is reported by whole-repo `check` and `list` only (a single-file `check` cannot see the
+   other file); both machines leave `list.machines` while the id is ambiguous.
+4. **Default `send` and `token` follow the field's spelling**: `field: '#phase'` → `#send`/`#flight`;
+   `field: 'worker'` (TS `private`, JS public) → `send`/`flight`; module owners → `send`/`flight`. Section 2.4's own
+   example (`private send`, no `send` key) needs this; 1.2's flat default of `#send` would reject it.
+5. **`machine-not-literal` for a literal of the wrong shape** fills `<kind>` with the shape and what the key takes:
+   "an array (`id` takes a string) is not allowed." A number, identifier, call, template, function, spread, computed
+   key or `null` is named plainly.
+6. **`machine-key-missing`** covers `id`, `owner`, `field`, `initial`, `states` and an empty `states`. A state's
+   `flight` with no `flights` entry is `machine-flight-unknown`; a missing token is `machine-token-missing`; an
+   `ifLeft` with an unknown value is `machine-flight-undecided`. Never two findings for one gap.
+7. **Positions**: `machine-not-exported` at the tagged statement; `machine-token-missing` at the `owner` value;
+   `send-missing` at the class name (module: the machine's `send` key, else its `id`); `send-shape` at the send
+   method's key; graph findings at the state's key; `single-writer` on the initializer at the initializer.
+   `line` in `list`/`show` is the `export` statement's line.
+8. **`single-writer` fix text** fills `<event>` with the assigned string literal when there is one
+   (`this.#state = 'idle'` → "Call `this.#send('idle')` instead…"), else the word `event`.
+9. **`flight-check`**: a `send` call after an await reads "`#send` (which writes `#phase`) is called after an await…",
+   the writing-method form, since `send` is one. Only the function's own body counts (spec: "in the same function
+   body"): a nested function is never after the enclosing function's awaits; nested async functions and
+   then/catch/finally callbacks are analysed on their own. Only `!==`/`===` are token tests. A captured id is taken
+   from the function and every enclosing function, at any position.
+10. **`check <files>`** resolves names against the cwd (as every CLI does) and reports them repo-relative; a name
+    outside `include`, or not a file, goes to `skipped`.
+11. **`@machine` must be a block comment** right before the statement (whitespace only between); a `//` comment or a
+    comment before a class member is not a tag.
+12. **Graph**: the initial state is its own way home (a path of length 0); `no-way-home` is checked only on states
+    with a non-empty `on` (an empty one is `dead-end` already).
+13. **Tests**: `e2e/sm-helpers.mjs` holds the temp-root and spawn helper (not a test file; nothing from `tools/sm`
+    is imported). `flight-check/engine-traced.ts` is the pair `flight-check/engine-traced/before.ts`/`after.ts`;
+    `send-shape/canonical-ts` and `flight-check/capture-in-parent` are `after.*` alone (must pass);
+    `send-shape/missing` was added for `sm/send-missing`. Exit 3 is proven with an unreadable (mode 000) file.
+    `sm/parse` findings carry scope `module` and an empty detail.
+14. **Bench**: `hyperfine` is not installed; `node tools/sm/bench/cli.mjs --runs 20` spawns each command 20 times
+    after 2 warm-ups and prints min/median/max. Layer 1 and 2 medians: Node start-up 31 ms; `sm on` 53 ms;
+    `sm check` on one file 50–70 ms; whole repo (253 files) 417 ms with no cache.
