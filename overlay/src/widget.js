@@ -328,7 +328,9 @@ class PlumbOverlay extends HTMLElement {
 
   connectedCallback() {
     addEventListener('plumb:updated', this.#updated);
-    this.#root = this.attachShadow({ mode: 'open' });
+    // connected again after a move (a page that re-parents <html>'s children): the root it already has is drawn afresh;
+    // attachShadow a second time throws (docs/invariants/overlay.md #5)
+    this.#root = this.shadowRoot ?? this.attachShadow({ mode: 'open' });
     this.#root.innerHTML = `<style>${tokensCss}${LANGUAGE_CSS}${GLYPH_CSS}${CHOICES_CSS}${css}${BLUEPRINT_CSS}${READY_CSS}${TEXT_EDIT_CSS}${HELP_CSS}${HISTORY_CSS}</style>
       <i class="tick" data-c="tl" hidden></i><i class="tick" data-c="tr" hidden></i><i class="tick" data-c="bl" hidden></i><i class="tick" data-c="br" hidden></i>
       <div class="tag" hidden aria-hidden="true"></div>
