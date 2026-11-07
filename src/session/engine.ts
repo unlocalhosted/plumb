@@ -1,7 +1,7 @@
 import { environment, stateDirectory, statePath, configurationNames, isLedgerPath, cacheDirectory, ignoreCache } from '../paths.js';
 import { readFileSync, watch } from 'node:fs';
-import { randomBytes } from 'node:crypto';
-import { ChangeLog, byLine, hunks, locate } from './changes.js';
+import { AsyncLocalStorage } from 'node:async_hooks';
+import { ChangeLog, byLine, hunks, locate, mintId } from './changes.js';
 import type { ChangeRecord, TraceEntry } from './changes.js';
 import type { FSWatcher } from 'node:fs';
 import { stat, lstat, readdir, readFile, realpath } from 'node:fs/promises';
@@ -255,6 +255,9 @@ export class Session extends EventEmitter {
   private batchRead = false;
   private reconciliations = 0;
   private queue: Promise<unknown> = Promise.resolve();
+  /** the worker's own lifecycle: `lost` once the current worker exits while the Session is open, `starting` while one boots */
+  private lost: Error | undefined;
+  private starting: Promise<void> | undefined;
   private failure: Error | undefined;
   private failurePaths: string[] = [];
   private stamps = new Map<string, string>();
@@ -268,13 +271,14 @@ export class Session extends EventEmitter {
   private written: Recorded[] = [];
   /** The batches of writes made as one, by their id: history, eviction and undo all read this one structure. */
   private batches = new Map<string, Batch>();
-  private writes = 0;
   // per-change trace (changes.ts): the tag of the write in progress, the changes it takes back, this session's write ids
   private changeLog: ChangeLog | undefined;
   private get log(): ChangeLog { return this.changeLog ??= new ChangeLog(resolve(cacheDirectory(this.root), 'changes.jsonl')); }
-  private tag: { group: string; meta?: unknown } | undefined;
-  private undoing: ChangeRecord[] | undefined;
-  private nonce = randomBytes(4).toString('hex');
+  // Each call's own attribution, carried through its awaits (never a shared field: two writes in flight at once would
+  // record under each other's group, or as part of each other's undo)
+  private attribution = new AsyncLocalStorage<{ tag?: { group: string; meta?: unknown }; undoing?: ChangeRecord[] }>();
+  /** the stylesheet blocks this process proposed (system), the only ones apply-all may write (docs/invariants/api-contract.md §4) */
+  private proposedCss: string[] = [];
   private native = false;
   private events = new Set<string>();
   private inventoryDirty = false;
@@ -304,8 +308,9 @@ export class Session extends EventEmitter {
     if (this.closed) throw new UsageError('Session is closed. Start a new session.');
     const inventory = this.directories.size ? this.retainedFiles() : undefined;
     const worker = this.worker = new Worker(new URL('./worker.js', import.meta.url), { workerData: { ...this.options, root: this.root, inventory } });
+    this.lost = undefined;
     await new Promise<void>((resolveReady, rejectReady) => {
-      this.worker.on('message', message => {
+      worker.on('message', message => {
         if (message.health) this.healthSnapshot = message.health;
         if (message.ready) { this.dependencies.clear(); for (const file of message.dependencies) this.dependencies.add(file);
           this.patterns = message.patterns; this.patternsDirty = true; this.sourceFiles.clear(); for (const file of message.files) this.sourceFiles.add(file);
@@ -331,13 +336,25 @@ export class Session extends EventEmitter {
         if (message.judged) this.lastStats = { ...(this.lastStats as object ?? {}), judged: message.judged };
         if (message.error) pending.reject(failure(message.error)); else pending.resolve(message.result);
       });
-      this.worker.on('error', error => { rejectReady(error); this.rejectPending(error); });
-      worker.on('exit', code => { if (this.worker === worker && code !== 0) { const error = new Error(`Analysis worker exited with code ${code}.`); rejectReady(error); if (!this.closed) this.rejectPending(error); } });
+      worker.on('error', error => { rejectReady(error); if (this.worker === worker) this.rejectPending(error); });
+      // Any exit of the current worker while the Session is open leaves it lost: what was asked of it fails now, and the
+      // next request starts a new one (restart) instead of posting to a dead thread and waiting forever.
+      worker.on('exit', code => {
+        if (this.worker !== worker) return;
+        const error = new Error(`Analysis worker exited with code ${code}.`); rejectReady(error);
+        if (!this.closed) { this.lost = error; this.rejectPending(error); }
+      });
     });
   }
+  /** Starts a new worker, sharing one start between everyone who asks while it boots. */
+  private restart(): Promise<void> {
+    return this.starting ??= this.start().finally(() => { this.starting = undefined; });
+  }
   private rejectPending(error: Error): void { for (const p of this.pending.values()) p.reject(error); this.pending.clear(); }
-  private request<T>(method: string, params: object = {}): Promise<T> {
-    if (this.closed) return Promise.reject(new UsageError('Session is closed. Start a new session.'));
+  private async request<T>(method: string, params: object = {}): Promise<T> {
+    if (this.closed) throw new UsageError('Session is closed. Start a new session.');
+    if (this.lost || this.starting) await this.restart();
+    if (this.closed) throw new UsageError('Session is closed. Start a new session.');
     const id = ++this.id;
     return new Promise<T>((resolveValue, reject) => { this.pending.set(id, { resolve: value => resolveValue(value as T), reject }); this.worker.postMessage({ id, method, params }); });
   }
@@ -493,7 +510,7 @@ export class Session extends EventEmitter {
     if (!changed.length) { if (this.failure) throw this.failure; return []; }
     const broad = changed.some(path => !isLedgerPath(path) && (this.configurationFiles.has(path) || !/\.(?:[jt]sx?|css)$/.test(path) || !this.sourceFiles.has(path) && !this.dependencies.has(path) || !this.hashes.has(path)));
     try {
-      if (broad || this.failure) { await this.worker.terminate(); this.rejectPending(new Error('Session inputs changed.')); await this.start(); }
+      if (broad || this.failure) { await this.worker.terminate(); this.rejectPending(new Error('Session inputs changed.')); await this.restart(); }
       else {
         const result = await this.request<{ dependencyDelta: string[]; dependencyQueries: [string, string[]][]; queryDependencies: [string, string[]][] }>('refresh', { paths: changed });
         for (const path of result.dependencyDelta) this.dependencies.add(path);
@@ -1105,6 +1122,8 @@ export class Session extends EventEmitter {
     const { file, hash, css } = options ?? {} as CssOptions;
     if (typeof file !== 'string' || !file.trim() || typeof hash !== 'string' || !hash.trim() || typeof css !== 'string' || !css.trim()) throw new UsageError('A stylesheet write requires file, hash and css.');
     if (css.length > 20000 || /<\/?script|@import|url\(/i.test(css)) throw new UsageError('A stylesheet block is at most twenty thousand characters of plain CSS.');
+    // only what this engine proposed goes into the theme: client text is never CSS (boundaries.md B5)
+    if (!this.proposedCss.includes(css.trim())) throw new UsageError('This stylesheet block is not one React Plumber proposed, so nothing was written. Ask for the system again and apply what it answers.');
     const spec = await this.request<ProjectSpec>('spec');
     if (!spec.tokens.file || file.replaceAll('\\', '/') !== spec.tokens.file) throw new UsageError(`Styles go in ${spec.tokens.file ?? 'your theme file'}, not ${file}.`);
     const path = this.file(file), block = css.trim();
@@ -1213,6 +1232,7 @@ export class Session extends EventEmitter {
     const swaps: SystemWrite['swaps'] = [];
     for (const swap of proposal.write.swaps) { const text = await readFile(this.file(swap.file), 'utf8').catch(() => null); if (text !== null) swaps.push({ ...swap, hash: sourceHash(text) }); }
     const write: SystemWrite = { tokens: proposal.write.tokens.map(t => ({ ...t, file: theme, hash: themeHash })), css: proposal.write.css ? [{ file: theme, hash: themeHash, css: proposal.write.css }] : [], swaps };
+    if (proposal.write.css) { this.proposedCss = [...this.proposedCss.filter(block => block !== proposal.write.css!.trim()), proposal.write.css.trim()].slice(-32); }
     return { revision: this.revision, proposal: { ...proposal, write } };
   }
   /** Set one property of an element to one of its steps: replace the class that sets it, or add one. */
@@ -1541,13 +1561,14 @@ export class Session extends EventEmitter {
   private record(path: string, before: string, hashAfter: string, line: number, label: string, perLine = false): UndoHandle {
     const file = relative(this.root, path).replaceAll('\\', '/');
     this.progress();
-    const id = `w${++this.writes}`;
+    const id = mintId('w');
     this.written.push({ id, file, line, label, at: new Date().toISOString(), path, before, hashAfter });
     this.evict();
     // each change in it, for the trace; the trace never fails a write that already landed
     try {
       const after = readFileSync(path, 'utf8');
-      if (sourceHash(after) === hashAfter) this.log.add({ write: `${this.nonce}:${id}`, file, group: this.tag?.group ?? this.log.group(), ...(this.tag?.meta === undefined ? {} : { meta: this.tag.meta }), ...(this.undoing ? { undoing: this.undoing } : {}) }, before, after, (from, to) => changed(from, to, ''), perLine ? byLine : undefined);
+      const { tag, undoing } = this.attribution.getStore() ?? {};
+      if (sourceHash(after) === hashAfter) this.log.add({ write: id, file, group: tag?.group ?? this.log.group(), ...(tag?.meta === undefined ? {} : { meta: tag.meta }), ...(undoing ? { undoing } : {}) }, before, after, (from, to) => changed(from, to, ''), perLine ? byLine : undefined);
     } catch { /* the write stands; only its trace is missing */ }
     return { id, file, label };
   }
@@ -1570,7 +1591,7 @@ export class Session extends EventEmitter {
   /** Writes made as one: a batch of its own, named by a handle of its own (the last file's, a new id). */
   private asOneWrite(handles: UndoHandle[], label: string): UndoHandle {
     if (handles.length < 2) return handles[0]!;
-    const id = `w${++this.writes}`;
+    const id = mintId('w');
     this.batches.set(id, { label, members: handles.map(h => h.id) });
     this.evict();
     return { id, file: handles.at(-1)!.file, label };
@@ -1620,7 +1641,7 @@ export class Session extends EventEmitter {
     try { await this.commit(file, current, entry.before); }
     catch (error) { throw error instanceof UsageError && error.message === staleFile ? stale(since) : error; }
     this.written = this.written.filter(item => item.id !== id);
-    try { this.log.drop(new Set([`${this.nonce}:${id}`])); } catch { /* the trace keeps them; they read as changed */ }
+    try { this.log.drop(new Set([id])); } catch { /* the trace keeps them; they read as changed */ }
     const snapshot = await this.request<{ hash: string; remaining: Report['findings'] }>('remaining', { file, sites: [{ line: entry.line }] });
     if (snapshot.hash !== sourceHash(entry.before) || snapshot.hash !== this.hashes.get(file)) throw stale();
     return { revision: this.revision, file, hash: snapshot.hash, undone: id, remaining: snapshot.remaining };
@@ -1649,10 +1670,10 @@ export class Session extends EventEmitter {
     if (tag !== undefined && (!tag || typeof tag !== 'object' || Array.isArray(tag))) throw new UsageError('trace must be an object: { group, meta }.');
     if (tag?.group !== undefined && (typeof tag.group !== 'string' || !/^[\w:.-]{1,64}$/.test(tag.group))) throw new UsageError('trace.group must be at most 64 letters, digits, _ : . or -.');
     if (tag?.meta !== undefined && JSON.stringify(tag.meta).length > 4000) throw new UsageError('trace.meta must be at most 4000 characters of JSON.');
-    const previous = this.tag, group = tag?.group ?? this.log.group();
-    this.tag = { group, ...(tag?.meta === undefined ? {} : { meta: tag.meta }) };
+    const group = tag?.group ?? this.log.group(), own = { group, ...(tag?.meta === undefined ? {} : { meta: tag.meta }) };
     // the answer names the step its changes went into, so the caller can take back exactly that step (the write toast's Undo)
-    try { const result = await (this[method as keyof this] as (...a: unknown[]) => Promise<unknown>).apply(this, args); return result && typeof result === 'object' && !Array.isArray(result) ? { ...result, trace: { group } } : result; } finally { this.tag = previous; }
+    const result = await this.attribution.run({ tag: own }, () => (this[method as keyof this] as (...a: unknown[]) => Promise<unknown>).apply(this, args));
+    return result && typeof result === 'object' && !Array.isArray(result) ? { ...result, trace: { group } } : result;
   }
   /** The site's spacing as the census read it: every row-level distance between a stack's children, on every route
    * (the page works out its rhythm with overlay/src/stacks.js rhythmOf, the same reader that measured them). */
@@ -1678,10 +1699,10 @@ export class Session extends EventEmitter {
     return { icons: kept.icons.map(row => ({ ...row, route: row.route ?? '' })), routes: kept.census.routes.length, installed: await installedIconSets(this.root) };
   }
   /** Every change written, newest first, each live, undone or changed since (by a later change or by hand). */
-  async trace(group?: string): Promise<{ changes: TraceEntry[] }> {
+  async trace(group?: string): Promise<{ changes: TraceEntry[]; /** lines of the log that are not records this build can read */ skipped: number }> {
     if (group !== undefined && (typeof group !== 'string' || !group.trim())) throw new UsageError('group must be a non-empty string.');
     const changes = this.log.trace(this.reader());
-    return { changes: group === undefined ? changes : changes.filter(change => change.group === group) };
+    return { changes: group === undefined ? changes : changes.filter(change => change.group === group), skipped: this.log.skipped };
   }
   /** Take back one change: its inverse, written where the change is found now. */
   undoChange(id: string): Promise<UndoChangesResult> {
@@ -1718,10 +1739,9 @@ export class Session extends EventEmitter {
     const files = new Map<string, ChangeRecord[]>();
     for (const r of targets) files.set(r.file, [...files.get(r.file) ?? [], r]);
     const done: UndoHandle[] = [], hashes: Record<string, string> = {};
-    const previous = this.tag;
-    this.tag = { group: previous?.group ?? this.log.group(), ...(previous?.meta === undefined ? {} : { meta: previous.meta }) };
-    this.undoing = targets;
-    try {
+    const outer = this.attribution.getStore()?.tag;
+    const tag = { group: outer?.group ?? this.log.group(), ...(outer?.meta === undefined ? {} : { meta: outer.meta }) };
+    try { await this.attribution.run({ tag, undoing: targets }, async () => {
       for (const [file, list] of files) {
         const path = this.file(file), text = await readFile(path, 'utf8');
         const placed = list.map(r => ({ r, at: locate(text, r) })).sort((x, y) => (y.at ?? 0) - (x.at ?? 0));
@@ -1734,10 +1754,11 @@ export class Session extends EventEmitter {
         const result = await this.rewrite(path, sourceHash(text), next, `undo ${list.map(r => r.label).join(', ')}`.slice(0, 120), blocksRemoved);
         done.push(result.undo); hashes[file] = result.hash;
       }
-    } catch (error) {
-      this.undoing = undefined;
-      await this.putBack(done, error);
-    } finally { this.undoing = undefined; this.tag = previous; }
+    }); } catch (error) {
+      // putting back the files already written is not part of the undo: same step, no `undoing`; what could not go back
+      // is named in the error (putBack), never swallowed
+      await this.attribution.run({ tag }, () => this.putBack(done, error));
+    }
     return { revision: this.revision, undone: ids, undo: done, files: hashes };
   }
   decisions(): Promise<Report['decisions']> { return this.read('decisions'); }

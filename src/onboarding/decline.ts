@@ -1,6 +1,6 @@
 import { UsageError } from '../errors.js';
 import { author } from '../ledger/git.js';
-import { readLedger, writeLedger } from '../ledger/store.js';
+import { updateLedger } from '../ledger/store.js';
 import { canonical, measures } from './harvest.js';
 import type { Measure } from './harvest.js';
 
@@ -9,10 +9,10 @@ import type { Measure } from './harvest.js';
  * never offers it again (docs/briefs/onboarding.md section 2.3, "Reviewable").
  */
 export async function declineValues(root: string, inputs: string[]): Promise<string> {
-  const ledger = await readLedger(root);
-  const entries = new Map(ledger.entries.map(entry => [entry.key, entry]));
   const by = author(root), stamp = { on: new Date().toISOString().slice(0, 10), ...(by ? { by } : {}) };
   const lines: string[] = [];
+  await updateLedger(root, ledger => {
+  const entries = new Map(ledger.entries.map(entry => [entry.key, entry]));
   for (const input of inputs) {
     const at = input.indexOf('=');
     const measure = (at < 0 ? '' : input.slice(0, at)) as Measure, value = at < 0 ? '' : input.slice(at + 1).trim();
@@ -24,6 +24,7 @@ export async function declineValues(root: string, inputs: string[]): Promise<str
     entries.set(name, { key: name, kind: 'declined', family: measure, value, ...stamp });
     lines.push(`Declined ${measure} ${value}. It won't be proposed again.`);
   }
-  await writeLedger(root, [...entries.values()]);
+  return [...entries.values()];
+  });
   return lines.join('\n') + '\n';
 }
