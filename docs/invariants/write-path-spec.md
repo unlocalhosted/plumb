@@ -33,6 +33,10 @@ through `src/write/source-file.ts`. Nothing else in `src/` calls `writeFile`, `h
   `O_NOFOLLOW` handle whose `fstat` matches the `lstat` identity, immediately before the write (row 4, row 10). A
   mismatch is `staleFile`, the message the overlay already knows. `expectHash: null` means "create": the file must not
   exist, and the parent is made.
+- `expectIdentity` is the `{ dev, ino }` the plan was read from. The engine passes the identity of its own read
+  (`readForWrite`), so a file an editor saved anew between that read and the write (a new inode, even with the same
+  bytes) is refused as stale: the user is editing it. This is the rule `e2e/edits.test.mjs` "finding 3: atomic-save"
+  encodes, kept on purpose.
 - Line endings (row 9): when the file is `'crlf'`, every lone `\n` in `next` becomes `\r\n`. In a pure-CRLF file every
   lone `\n` in `next` was inserted by the writer, so this is exactly the inserted text and nothing else.
 - BOM: when the file had one and `next` does not start with U+FEFF, it is put back.
@@ -86,7 +90,13 @@ Chosen: **temp file in the same directory, `fsync`, `rename`.**
   have the same limit); macOS extended attributes on the file are not carried over; `mode` is preserved explicitly.
 - The lost-update window (row 10) is the same order as before: between the last `lstat`/hash check and the `rename`,
   a concurrent save of the same path by another process would be replaced. Before, it was between the last read and
-  `writeFile`. Both are microseconds and both are inside `serialize()` for the engine's own writes.
+  `writeFile`. Both are microseconds and both are inside `serialize()` for the engine's own writes. A save that lands
+  right after the rename is caught by the verified re-read and reported as a change, never as success
+  (`e2e/write-path.test.mjs`).
+- One existing test no longer fits the mechanism: `e2e/edits.test.mjs` "finding 3: concurrent-save" injects its
+  concurrent write by hooking `handle.truncate` on the engine's `O_RDWR` handle, which the rename path never opens or
+  calls, so its injection never fires and the apply succeeds. The guarantee it stood for is the one above; the test
+  itself is left for the owner to retire or rewrite (it hooks an implementation detail, not a boundary).
 
 ## Which invariant each rule enforces
 
@@ -101,6 +111,12 @@ Chosen: **temp file in the same directory, `fsync`, `rename`.**
 | 8 | `hashFor`: content-addressed items rebase, positional items are re-derived or refused |
 | 9 | `eol` detection; inserted `\n` → `\r\n` in a pure-CRLF file |
 | 10 | hash + identity re-check inside the module, in the same call that writes |
+
+## Testing it
+
+The session server (`serve`, the HTTP boundary) runs the engine in a worker thread, so a test that injects a race by
+patching `fs.promises` must drive the engine `Session` directly in its own thread, as `e2e/edits.test.mjs` does;
+everything else goes through HTTP or the CLI.
 
 ## Writers moved
 
