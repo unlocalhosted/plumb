@@ -103,8 +103,8 @@ empty). `?` marks optional. Lists carry their bounds. Response shapes name the e
 | `places` | `{ files: [str] }` (≤ 4096) | `PlacesResult` |
 | `system` | `{ files?: [str], census?: [{ stamp: str, tag: str, list?, elements?, computed? }] (≤ 20000), scope?: 'page' \| 'project', route?: str, exclude?: [str], roles?: object }` | `SystemResult`; `proposal.write.css[]` is what `apply-all` may send back (section 4) |
 | `apply` | `{ file, hash, edits: [{ id: str }] }` (≥ 1) | `ApplyResult` |
-| `apply-text` | `{ file, hash, run: str, from: str*, to: str }` (`to` ≤ 500) | `ApplyResult` |
-| `apply-text-at` | `{ file, hash, id: str, from: str*, to: str }` | `ApplyResult` |
+| `apply-text` | `{ file, hash, run: str, from: str*, to: str* }` (the engine refuses a blank or over-500 `to` in its own words, `refused`) | `ApplyResult` |
+| `apply-text-at` | `{ file, hash, id: str, from: str*, to: str* }` (same) | `ApplyResult` |
 | `undo` | `{ id: str }` | `UndoResult` |
 | `undo-change` | `{ id: str }` | `UndoChangesResult` |
 | `undo-group` | `{ group: str }` | `UndoChangesResult` or `nothing-in-group` |

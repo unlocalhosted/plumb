@@ -62,7 +62,10 @@ test('homepage text replay writes only DOM, validates refusals and commutes with
       [{ ...valid, to: '' }, 'Replacement text must not be empty.'],
       [{ ...valid, to: 'x'.repeat(501) }, 'Replacement text must be at most 500 characters.'],
     ]) {
-      assert.deepEqual(await call('apply-text', params, 'POST'), { status: 400, body: { error: reason } });
+      const answer = await call('apply-text', params, 'POST');
+      assert.equal(answer.status, 400, JSON.stringify(answer.body));
+      assert.equal(answer.body.error, reason);
+      assert.equal(typeof answer.body.code, 'string', 'every refusal carries a code');
       assert.equal((await read('name')).body.hash, valid.hash);
       assert.equal(await page.locator('[data-drift="name"]').textContent(), 'Grace Hopper');
       assert.equal(await readFile(path, 'utf8'), source);
@@ -88,9 +91,9 @@ test('homepage text replay writes only DOM, validates refusals and commutes with
     assert.equal(await page.locator('[data-drift="name"]').textContent(), 'Final');
     const latest = (await read('name')).body;
     await page.locator('[data-drift="name"]').evaluate(node => { node.firstChild.data = 'tampered'; });
-    assert.deepEqual(await call('apply-text', { ...params, hash: latest.hash, run: latest.runs[0].id, from: 'Final' }, 'POST'), {
-      status: 400, body: { error: 'The demo element changed since Plumber read it. Read it again.' },
-    });
+    const tampered = await call('apply-text', { ...params, hash: latest.hash, run: latest.runs[0].id, from: 'Final' }, 'POST');
+    assert.equal(tampered.status, 400);
+    assert.equal(tampered.body.error, 'The demo element changed since Plumber read it. Read it again.');
     assert.equal((await read('name')).body.hash, latest.hash);
     assert.equal((await call('apply-text', params)).status, 405);
     assert.equal((await call('text', positions.name, 'POST')).status, 405);
