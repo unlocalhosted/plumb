@@ -159,7 +159,7 @@ export async function initProject(root: string, options: InitOptions, print: (te
     // the config and the ledger land together: a ledger that cannot be written takes the config back, and says so if it can't
     const landing = new Transaction(root);
     await landing.write(destination, { expectHash: current?.hash ?? null, next: text });
-    try { await writeLedger(root, [...accepted.values()]); }
+    try { await writeLedger(root, [...accepted.values()], { expect: ledger.hash }); }
     catch (error) { throw withRollback(error, (await landing.rollback()).failed); }
     undoTheme = undefined;
     await rm(statePath(root, '.baseline-pending'), { force: true });

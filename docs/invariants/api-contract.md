@@ -25,8 +25,8 @@ what it was before codes existed: 400 for a refused request, 401, 403, 404, 405,
 for a read that could not be admitted; `503 { "status": "starting" }` before the session exists (not an error envelope; `health`
 answers it with 200). JSON-RPC errors carry the same code as `error.data.code`.
 
-Per-item answers inside a 200 (`apply-all`'s `results.*[]`, `swaps`' `refused[]`) carry `error` and `code` the same way
-when the item failed.
+Per-item answers inside a 200 (`apply-all`'s `results.*[]`) carry `error` and `code` the same way when the item failed.
+A batch call's refused slot (`{ error, usage, code }`) does too.
 
 ### Codes
 
@@ -111,7 +111,7 @@ empty). `?` marks optional. Lists carry their bounds. Response shapes name the e
 | `undo-changes` | `{ ids: [str] }` (1–500) | `UndoChangesResult` |
 | `set` | `{ file, hash, line, column, key: str, token: str, at?: { line, column } }` | `ApplyResult` |
 | `swap` | `{ file, hash, line, column, from?: str*, to: str, at?: { line, column }, of?: { file, line, column, chain?: [{ file, line, column }] } }` | `ApplyResult` |
-| `swaps` | `{ file, hash, edits: [{ line, column, from?: str*, to: str, at?, of? }] }` (1–200) | `ApplyResult` with `refused: RefusedSwap[]` (each `{ line, column, from, to, reason, code }`) |
+| `swaps` | `{ file, hash, edits: [{ line, column, from?: str*, to: str, at?, of? }] }` (1–200) | `ApplyResult` with `refused: RefusedSwap[]` (each `{ line, column, from, to, reason }`: a place's reason, not an error envelope) |
 | `prop` | `{ file, hash, line, column, name: str, value: string \| number \| boolean }` | `ApplyResult` |
 | `token` | `{ file, hash, name: str, value: str, why?: str, then?: { file, hash, line, column, from?: str*, to: str } }` | `TokenResult` |
 | `accept` | `{ rule: str, why: str, sites: [{ file: str, line, column, text: str* }] }` (1–200) | `AcceptResult` |
@@ -155,8 +155,10 @@ One JSON object per line, appended, never rewritten from memory:
 One JSON object per line, `parseLedger` shape plus `v: 1` on every line this build writes (`src/ledger/store.ts`).
 
 - Read: a line that is not JSON, not an entry, of a `kind` this build does not know, a duplicate key (the first is kept),
-  or `v` above 1 is skipped and counted. `readLedger` answers `{ exists, entries, skipped, hash }`; the report's ledger
-  summary message and a report note say how many lines were skipped. A read never throws on a line.
+  or `v` above 1 is skipped and counted. `readLedger` answers `{ exists, entries, skipped, kept, notes, hash }` (`kept`: the
+  skipped lines verbatim; `notes`: one sentence per skipped line, `<path>:<line> skipped: <why>.`); the report's ledger
+  summary `message` ends with how many lines could not be read, and `notes` carries each sentence. A read never throws on
+  a line.
 - Write: every read-modify-write (`accept`, `accept-decisions`, `baseline`, `ledger`, `propose --decline`) runs under the
   lock as one `updateLedger(root, change)`: re-read under the lock, change, write. A writer that read the ledger earlier
   (`init`) passes the `hash` it read; a ledger changed since is refused (`refused`), never overwritten. Lines a read

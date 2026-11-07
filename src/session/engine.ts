@@ -1,7 +1,6 @@
 import { environment, stateDirectory, statePath, configurationNames, isLedgerPath, cacheDirectory, ignoreCache } from '../paths.js';
 import { readFileSync, watch } from 'node:fs';
-import { randomBytes } from 'node:crypto';
-import { ChangeLog, byLine, hunks, locate } from './changes.js';
+import { ChangeLog, byLine, hunks, locate, mintId } from './changes.js';
 import type { ChangeRecord, TraceEntry } from './changes.js';
 import type { FSWatcher } from 'node:fs';
 import { stat, lstat, readdir, readFile, realpath } from 'node:fs/promises';
@@ -268,13 +267,11 @@ export class Session extends EventEmitter {
   private written: Recorded[] = [];
   /** The batches of writes made as one, by their id: history, eviction and undo all read this one structure. */
   private batches = new Map<string, Batch>();
-  private writes = 0;
   // per-change trace (changes.ts): the tag of the write in progress, the changes it takes back, this session's write ids
   private changeLog: ChangeLog | undefined;
   private get log(): ChangeLog { return this.changeLog ??= new ChangeLog(resolve(cacheDirectory(this.root), 'changes.jsonl')); }
   private tag: { group: string; meta?: unknown } | undefined;
   private undoing: ChangeRecord[] | undefined;
-  private nonce = randomBytes(4).toString('hex');
   private native = false;
   private events = new Set<string>();
   private inventoryDirty = false;
@@ -1541,13 +1538,13 @@ export class Session extends EventEmitter {
   private record(path: string, before: string, hashAfter: string, line: number, label: string, perLine = false): UndoHandle {
     const file = relative(this.root, path).replaceAll('\\', '/');
     this.progress();
-    const id = `w${++this.writes}`;
+    const id = mintId('w');
     this.written.push({ id, file, line, label, at: new Date().toISOString(), path, before, hashAfter });
     this.evict();
     // each change in it, for the trace; the trace never fails a write that already landed
     try {
       const after = readFileSync(path, 'utf8');
-      if (sourceHash(after) === hashAfter) this.log.add({ write: `${this.nonce}:${id}`, file, group: this.tag?.group ?? this.log.group(), ...(this.tag?.meta === undefined ? {} : { meta: this.tag.meta }), ...(this.undoing ? { undoing: this.undoing } : {}) }, before, after, (from, to) => changed(from, to, ''), perLine ? byLine : undefined);
+      if (sourceHash(after) === hashAfter) this.log.add({ write: id, file, group: this.tag?.group ?? this.log.group(), ...(this.tag?.meta === undefined ? {} : { meta: this.tag.meta }), ...(this.undoing ? { undoing: this.undoing } : {}) }, before, after, (from, to) => changed(from, to, ''), perLine ? byLine : undefined);
     } catch { /* the write stands; only its trace is missing */ }
     return { id, file, label };
   }
@@ -1570,7 +1567,7 @@ export class Session extends EventEmitter {
   /** Writes made as one: a batch of its own, named by a handle of its own (the last file's, a new id). */
   private asOneWrite(handles: UndoHandle[], label: string): UndoHandle {
     if (handles.length < 2) return handles[0]!;
-    const id = `w${++this.writes}`;
+    const id = mintId('w');
     this.batches.set(id, { label, members: handles.map(h => h.id) });
     this.evict();
     return { id, file: handles.at(-1)!.file, label };
@@ -1620,7 +1617,7 @@ export class Session extends EventEmitter {
     try { await this.commit(file, current, entry.before); }
     catch (error) { throw error instanceof UsageError && error.message === staleFile ? stale(since) : error; }
     this.written = this.written.filter(item => item.id !== id);
-    try { this.log.drop(new Set([`${this.nonce}:${id}`])); } catch { /* the trace keeps them; they read as changed */ }
+    try { this.log.drop(new Set([id])); } catch { /* the trace keeps them; they read as changed */ }
     const snapshot = await this.request<{ hash: string; remaining: Report['findings'] }>('remaining', { file, sites: [{ line: entry.line }] });
     if (snapshot.hash !== sourceHash(entry.before) || snapshot.hash !== this.hashes.get(file)) throw stale();
     return { revision: this.revision, file, hash: snapshot.hash, undone: id, remaining: snapshot.remaining };
@@ -1678,10 +1675,10 @@ export class Session extends EventEmitter {
     return { icons: kept.icons.map(row => ({ ...row, route: row.route ?? '' })), routes: kept.census.routes.length, installed: await installedIconSets(this.root) };
   }
   /** Every change written, newest first, each live, undone or changed since (by a later change or by hand). */
-  async trace(group?: string): Promise<{ changes: TraceEntry[] }> {
+  async trace(group?: string): Promise<{ changes: TraceEntry[]; /** lines of the log that are not records this build can read */ skipped: number }> {
     if (group !== undefined && (typeof group !== 'string' || !group.trim())) throw new UsageError('group must be a non-empty string.');
     const changes = this.log.trace(this.reader());
-    return { changes: group === undefined ? changes : changes.filter(change => change.group === group) };
+    return { changes: group === undefined ? changes : changes.filter(change => change.group === group), skipped: this.log.skipped };
   }
   /** Take back one change: its inverse, written where the change is found now. */
   undoChange(id: string): Promise<UndoChangesResult> {
