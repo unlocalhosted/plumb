@@ -13,6 +13,7 @@
  *  preview   the changes live on the page as inline styles the overlay owns until they are written or dropped
  * ───────────────────────────────────────────────────────── */
 import { esc } from './choices.js';
+import { errorIs } from './api.js';
 import { BLOCK_ICONS } from './boxmodel.js';
 import { glide } from './inplace.js';
 
@@ -190,7 +191,7 @@ export class Changes {
       } else {
         item.why = r.why ?? 'Couldn’t apply.';
         // the file moved on: the next Apply reads it again (the edit is still checked against the element's classes)
-        if (/changed after/i.test(item.why)) item.site = null;
+        if (errorIs(item.why, 'stale-file')) item.site = null;
       }
     }
     this.#sending.clear();

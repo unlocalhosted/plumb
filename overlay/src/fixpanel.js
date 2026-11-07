@@ -29,6 +29,7 @@
  * Keys (while blueprint is on): Enter starts or fixes (written at once) · ↑ ↓ try · K keep it · → Tab skip · ← back · Esc put it down
  * ───────────────────────────────────────────────────────── */
 import { TextEditor, TEXT_EDITOR_CSS } from './texteditor.js';
+import { errorIs } from './api.js';
 import { ElementCard, ELEMENT_CARD_CSS } from './elementcard.js';
 import { esc } from './choices.js';
 import { groundIsDark } from './geometry.js';
@@ -724,7 +725,7 @@ export class FixPanel {
       try { await this.#host.undoGroup(last.group); }
       catch (error) {
         // a write the trace missed (it never fails the write) has only its handles: taken back as before
-        if (!rest && /Nothing in that group/i.test(error?.message ?? '') && handles.length) byGroup = false;
+        if (!rest && errorIs(error, 'nothing-in-group') && handles.length) byGroup = false;
         else if (!rest) why = error?.message ?? '';
       }
     }

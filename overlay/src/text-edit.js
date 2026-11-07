@@ -18,7 +18,7 @@
  *             refresh reloads the page after a write, and blueprint, if it was on, comes back with it
  *  refused    words that can't be edited say why, beside the words, and where to change them by hand
  * ───────────────────────────────────────────────────────── */
-import { request, post } from './api.js';
+import { errorIs, request, post } from './api.js';
 import { locate } from './locate.js';
 import { esc } from './choices.js';
 
@@ -126,7 +126,7 @@ export class TextEditor {
       const r = await request('text-at', { ...at, text: words, owners }, { throws: true });
       if (r) return r.editable ? { ...r, via: 'text-at' } : r;
     } catch (error) {
-      if (error?.status !== 404 && !/unknown|not found|404/i.test(error?.message ?? '')) throw error;
+      if (!errorIs(error, 'not-found')) throw error;
     }
     // an older server: the element's own JSX text
     const t = await request('text', at);
@@ -261,7 +261,7 @@ export class TextEditor {
     } catch (error) {
       try { sessionStorage.removeItem(RESUME); } catch {}
       ed.node.data = ed.before;
-      const stale = /changed since/i.test(error?.message ?? '');
+      const stale = errorIs(error, 'stale-file');
       this.#phase = 'error';
       this.#say('error', stale ? 'This file changed after we checked it. Double-click to try again.' : (error?.message ?? 'Couldn’t apply the edit.'));
       clearTimeout(this.#endTimer);

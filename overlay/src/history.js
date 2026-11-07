@@ -25,7 +25,7 @@
  *            strip's edge turns sky, those ticks go hollow, and Go back to here (↵) undoes them all in one write. Esc,
  *            or the playhead back at Now, puts the page back exactly
  * ───────────────────────────────────────────────────────── */
-import { request, post } from './api.js';
+import { errorIs, request, post } from './api.js';
 import { esc } from './choices.js';
 import { TIMELINE as T } from './words.js';
 
@@ -284,7 +284,7 @@ export class History {
       this.#host.announce?.(said);
     } catch (error) {
       const message = error?.message ?? '';
-      this.#say(group ? whyNot(message) : /changed since/i.test(message) ? `${short(handle?.file)} changed after this was applied, so it can’t be undone here. Undo it in your editor.` : T.failed(message || 'Check again.'), false, 'error');
+      this.#say(group ? whyNot(message) : errorIs(error, 'stale-file') ? `${short(handle?.file)} changed after this was applied, so it can’t be undone here. Undo it in your editor.` : T.failed(message || 'Check again.'), false, 'error');
     }
     if (this.open) this.#load();
     this.#host.changed?.();

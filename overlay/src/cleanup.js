@@ -20,7 +20,7 @@
  * Keys while it runs (from the fix panel): Enter apply · P preview · → skip the pass · Esc cancel the preview, then close;
  * held Space compares while previewing (its own listener, only then: Blueprint's keys never carry keyup)
  * ───────────────────────────────────────────────────────── */
-import { answered, post, request } from './api.js';
+import { answered, errorIs, post, request } from './api.js';
 import { esc } from './choices.js';
 import { glide } from './inplace.js';
 import { namesOf, rolesInOrder, StylePreview } from './typesystem.js';
@@ -193,7 +193,7 @@ export class Cleanup {
       this.#state = this.#page.moves ? 'ready' : 'nothing';
     } catch (error) {
       if (run !== this.#run) return;
-      this.#state = /no census/i.test(error?.message ?? '') ? 'no-census' : 'error';
+      this.#state = errorIs(error, 'no-census') ? 'no-census' : 'error';
       this.#err = error?.message ?? null;
     }
     this.#host.render();
@@ -209,7 +209,7 @@ export class Cleanup {
       this.#state = page.places ? 'ready' : 'nothing';
     } catch (error) {
       if (run !== this.#run) return;
-      this.#state = /no census/i.test(error?.message ?? '') ? 'no-census' : 'error';
+      this.#state = errorIs(error, 'no-census') ? 'no-census' : 'error';
       this.#err = error?.message ?? null;
     }
     this.#host.render();

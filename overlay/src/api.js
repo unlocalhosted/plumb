@@ -84,17 +84,19 @@ async function direct(method, params, options = {}) {
   if (!response.ok) {
     if (options.explain) throw Object.assign(new Error('Resolver refused source.'), { reason: 'resolve-refusal', detail: { method, source: params.source, status: response.status, response: await response.text() } });
     // a caller that tells a refusal from an older server (404) asks for the error itself; the rest read "no answer"
-    if (options.throws) { const body = await response.json().catch(() => ({})); throw Object.assign(new Error(body?.error ?? `${method} answered ${response.status}`), { status: response.status }); }
+    if (options.throws) { const body = await response.json().catch(() => ({})); throw Object.assign(new Error(body?.error ?? `${method} answered ${response.status}`), { status: response.status, code: body?.code ?? null }); }
     return null;
   }
   return response.json();
 }
 
 // Writes go through the same token and origin policy as reads; the server re-derives every edit from current source.
+export { errorIs } from './errors.js';
+
 export async function post(method, body) {
   const response = await fetch(new URL(method, base), { method: 'POST', cache: 'no-store', headers: { 'Content-Type': 'application/json', ...(token ? { 'x-plumb-token': token } : {}) }, body: JSON.stringify(body) });
   const result = await response.json().catch(() => ({}));
-  if (!response.ok) throw Object.assign(new Error(result.error ?? `React Plumber refused ${method}.`), { status: response.status });
+  if (!response.ok) throw Object.assign(new Error(result.error ?? `React Plumber refused ${method}.`), { status: response.status, code: result.code ?? null });
   return result;
 }
 
