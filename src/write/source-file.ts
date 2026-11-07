@@ -18,6 +18,8 @@ import { sourceHash } from '../collect/cache.js';
 import { errorMessage, UsageError } from '../errors.js';
 
 export const staleFile = 'The file changed since the overlay read it. Read it again.';
+/** The refusal every writer gives a hash or identity that is not the file's now (code `stale-file`). */
+export const stale = (message: string = staleFile) => new UsageError(message, 'stale-file');
 export type Eol = 'lf' | 'crlf';
 export interface Identity { dev: number; ino: number }
 export interface SourceText { path: string; text: string; hash: string; eol: Eol; bom: boolean; identity: Identity; mode: number }
@@ -44,7 +46,7 @@ export const hardLink = 'Apply requires a regular source file without hard links
 /** The text of a source file's bytes, or a refusal: nothing is decoded lossily. */
 export function decodeSource(bytes: Uint8Array, name: string): string {
   try { return decoder.decode(bytes); }
-  catch { throw new UsageError(`${name} isn't UTF-8, so nothing was written. Save it as UTF-8 first.`); }
+  catch { throw new UsageError(`${name} isn't UTF-8, so nothing was written. Save it as UTF-8 first.`, 'not-utf8'); }
 }
 /** `crlf` only when every line break is one: a mixed file is left mixed, since nothing outside the edit may change. */
 export function eolOf(text: string): Eol {
@@ -100,7 +102,7 @@ export async function readSource(root: string, file: string, boundary?: string):
   const handle = await open(path, constants.O_RDONLY | constants.O_NOFOLLOW);
   try {
     const info = await handle.stat();
-    if (info.dev !== identity.dev || info.ino !== identity.ino) throw new UsageError(staleFile);
+    if (info.dev !== identity.dev || info.ino !== identity.ino) throw stale();
     const text = decodeSource(await readAll(handle, info.size), inside);
     return { path, text, hash: sourceHash(text), eol: eolOf(text), bom: text.startsWith(BOM), identity: { dev: identity.dev, ino: identity.ino }, mode: identity.mode & 0o7777 };
   } finally { await handle.close(); }
@@ -126,7 +128,7 @@ export async function writeSource(root: string, file: string, { expectHash, expe
     return verify(root, path, boundary, made, next, null);
   }
   const current = await readSource(root, path, boundary);
-  if (current.hash !== expectHash || expectIdentity && (current.identity.dev !== expectIdentity.dev || current.identity.ino !== expectIdentity.ino)) throw new UsageError(staleFile);
+  if (current.hash !== expectHash || expectIdentity && (current.identity.dev !== expectIdentity.dev || current.identity.ino !== expectIdentity.ino)) throw stale();
   let text = withEol(next, current.eol);
   if (current.bom && !text.startsWith(BOM)) text = BOM + text;
   const made = await publish(path, Buffer.from(text, 'utf8'), current, false);
@@ -148,7 +150,7 @@ async function publish(path: string, bytes: Buffer, current: SourceText | undefi
     else {
       // the path still names what the hash was checked against
       const again = await lstat(path);
-      if (again.isSymbolicLink() || again.dev !== current!.identity.dev || again.ino !== current!.identity.ino) throw new UsageError(staleFile);
+      if (again.isSymbolicLink() || again.dev !== current!.identity.dev || again.ino !== current!.identity.ino) throw stale();
       await rename(temporary, path);
     }
     return made;
@@ -156,7 +158,7 @@ async function publish(path: string, bytes: Buffer, current: SourceText | undefi
 }
 async function verify(root: string, path: string, boundary: string | undefined, made: Identity, text: string, before: string | null): Promise<Written> {
   const after = await readSource(root, path, boundary);
-  if (after.identity.dev !== made.dev || after.identity.ino !== made.ino || after.text !== text) throw new UsageError(`${relative(root, path).replaceAll('\\', '/')} changed while it was being written. Read it again.`);
+  if (after.identity.dev !== made.dev || after.identity.ino !== made.ino || after.text !== text) throw stale(`${relative(root, path).replaceAll('\\', '/')} changed while it was being written. Read it again.`);
   return { path, text, hash: after.hash, identity: made, before };
 }
 
@@ -178,7 +180,7 @@ export class Transaction {
       try {
         if (entry.created) {
           const current = await readSource(this.root, entry.path, this.boundary);
-          if (current.hash !== entry.hashAfter) throw new UsageError('it changed since');
+          if (current.hash !== entry.hashAfter) throw stale('it changed since');
           await rm(entry.path);
         } else await writeSource(this.root, entry.path, { expectHash: entry.hashAfter, next: entry.before, ...(this.boundary === undefined ? {} : { boundary: this.boundary }) });
         restored.push(name);
@@ -197,7 +199,7 @@ export class Transaction {
 export function withRollback(error: unknown, failed: RollbackFailure[]): Error {
   if (!failed.length) return error instanceof Error ? error : new Error(String(error));
   const message = `${errorMessage(error)} ${failed.map(f => `${f.file} could not be put back (${f.error}); it still holds the change.`).join(' ')}`;
-  const out = error instanceof UsageError ? new UsageError(message) : new Error(message);
+  const out = error instanceof UsageError ? new UsageError(message, 'rolled-back-partly') : new Error(message);
   out.cause = error;
   return out;
 }

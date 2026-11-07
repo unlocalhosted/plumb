@@ -134,8 +134,8 @@ test('HTTP apply-text refuses invalid, stale, dynamic and unsafe writes without 
     assert.deepEqual(await readFile(file), before);
   };
   for (const [params, error, file, want] of [
-    [{ ...valid, from: 'Other' }, 'The text changed since the overlay read it. Read it again.'],
-    [{ ...valid, run: 'unknown' }, "Unknown text run id. Read the element's text again."],
+    [{ ...valid, from: 'Other' }, 'The text changed since the overlay read it. Read it again.', undefined, 'stale-file'],
+    [{ ...valid, run: 'unknown' }, "Unknown text run id. Read the element's text again.", undefined, 'not-found'],
     [{ ...valid, to: '' }, 'Replacement text must not be empty.'],
     [{ ...valid, to: '   ' }, 'Replacement text must not be empty.'],
     [{ ...valid, to: 'a'.repeat(501) }, 'Replacement text must be at most 500 characters.'],
@@ -144,11 +144,11 @@ test('HTTP apply-text refuses invalid, stale, dynamic and unsafe writes without 
     [{ ...valid, file: '../outside.tsx' }, 'File must be inside the project root.'],
   ]) await refuse(params, error, file, want);
   await writeFile(api.file, code + '// changed\n');
-  await refuse(valid, 'The file changed since the overlay read it. Read it again.');
+  await refuse(valid, 'The file changed since the overlay read it. Read it again.', undefined, 'stale-file');
   await writeFile(api.file, code);
   for (const anchor of ['<p id="expression"', '<p id="translation"', '<Trans>']) {
     assert.equal((await api.text(anchor)).body.editable, false);
-    await refuse({ ...valid, run: hash(JSON.stringify([valid.hash, code.indexOf(anchor), code.indexOf(anchor) + 1])) }, "Unknown text run id. Read the element's text again.");
+    await refuse({ ...valid, run: hash(JSON.stringify([valid.hash, code.indexOf(anchor), code.indexOf(anchor) + 1])) }, "Unknown text run id. Read the element's text again.", undefined, 'not-found');
   }
   await symlink(api.file, join(api.root, 'src/Alias.tsx'));
   await refuse({ ...valid, file: 'src/Alias.tsx' }, 'Apply cannot edit symbolic links or paths outside the project root.');

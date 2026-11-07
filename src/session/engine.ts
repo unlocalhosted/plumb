@@ -12,7 +12,8 @@ import { glob, isDynamicPattern } from 'tinyglobby';
 import type { CheckOptions } from '../index.js';
 import type { Report } from '../report.js';
 import type { TryOptions } from '../try.js';
-import { errorMessage, UsageError } from '../errors.js';
+import { errorCode, errorMessage, UsageError } from '../errors.js';
+import type { ErrorCode } from '../errors.js';
 import { ledgerCommand } from '../ledger/commands.js';
 import { findingGroups } from '../ledger/keys.js';
 import { ledgerPath } from '../ledger/store.js';
@@ -38,7 +39,7 @@ import type { ProjectSpec } from '../craft-spec.js';
 import { readText, textSites } from './text.js';
 import { addTokens, topBlocks } from '../onboarding/write.js';
 import { loadConfig } from '../config.js';
-import { readSource, staleFile, withEol, withRollback, writeSource } from '../write/source-file.js';
+import { readSource, stale, staleFile, withEol, withRollback, writeSource } from '../write/source-file.js';
 import type { SourceText, Written } from '../write/source-file.js';
 import { isTypeProp, proposeTypeRoles, px } from '../rules/type-roles.js';
 import type { RoleOverride, TypeBundle, TypeClass, TypeMember, TypeProposal } from '../rules/type-roles.js';
@@ -68,7 +69,7 @@ export interface SessionOptions extends CheckOptions { watch?: boolean; pollInte
 }
 export interface SiteResult { file: string; line: number; column?: number; declarations: Report['declarations']; findings: Report['findings'] }
 export type ManyCall = { method: 'resolveSource'; args: Parameters<Session['resolveSource']> } | { method: 'site'; args: Parameters<Session['site']> } | { method: 'classes'; args: Parameters<Session['classes']> };
-export type ManyResult = { value: unknown } | { error: string; usage: boolean };
+export type ManyResult = { value: unknown } | { error: string; usage: boolean; code: ErrorCode };
 export interface EditsResult { revision: number; file: string; hash: string; edits: StructuredEdit[]; refused: RefusedSite[] }
 export interface ClassesResult {
   revision: number; file: string; line: number; column: number;
@@ -115,11 +116,11 @@ export type TokenThen = CauseSwap | { swaps: SwapsOptions[] };
 export interface ApplyAllOptions { tokens?: (Omit<TokenOptions, 'then'> & { then?: TokenThen })[]; /** stylesheet blocks appended to the theme after the tokens (a type role's @utility) */ css?: CssOptions[]; swaps?: (SwapsOptions | CauseSwap)[]; accepts?: AcceptOptions[] }
 export interface ApplyAllResult {
   results: {
-    tokens: { name: string; ok: boolean; error?: string }[];
-    css: { file: string; ok: boolean; written: boolean; error?: string }[];
+    tokens: { name: string; ok: boolean; error?: string; code?: ErrorCode }[];
+    css: { file: string; ok: boolean; written: boolean; error?: string; code?: ErrorCode }[];
     /** one entry per file; a whole cause carries the places it found in all, and the cause it answers */
-    swaps: { file: string; ok: boolean; applied: string[]; refused: RefusedSwap[]; places?: number; cause?: Cause; /** the token this swap followed */ token?: string; error?: string }[];
-    accepts: { rule: string; ok: boolean; accepted: number; error?: string }[];
+    swaps: { file: string; ok: boolean; applied: string[]; refused: RefusedSwap[]; places?: number; cause?: Cause; /** the token this swap followed */ token?: string; error?: string; code?: ErrorCode }[];
+    accepts: { rule: string; ok: boolean; accepted: number; error?: string; code?: ErrorCode }[];
   };
   undo: UndoHandle[];
   labels: string[];
@@ -312,7 +313,7 @@ export class Session extends EventEmitter {
           this.inputs = message.inputs; this.inputPatterns = message.inputPatterns; this.selectAnalysisInputs(); this.queryDependencies.clear(); for (const [file, paths] of message.queryDependencies) this.queryDependencies.set(file, paths);
           resolveReady(); return; }
         const failure = (text: string): Error => {
-          const error = message.usageError ? new UsageError(text) : new Error(text);
+          const error = message.usageError ? new UsageError(text, message.errorCode) : new Error(text);
           if (message.errorStack) error.stack = message.errorStack;
           return error;
         };
@@ -683,7 +684,7 @@ export class Session extends EventEmitter {
       try {
         return await Promise.all(calls.map(async call => {
           try { return { value: await (this[call.method] as (...args: unknown[]) => Promise<unknown>)(...call.args) }; }
-          catch (error) { return { error: errorMessage(error), usage: error instanceof UsageError }; }
+          catch (error) { return { error: errorMessage(error), usage: error instanceof UsageError, code: errorCode(error) }; }
         }));
       } finally { this.batchRead = wasBatch; }
     });
@@ -714,7 +715,7 @@ export class Session extends EventEmitter {
         if (location.tag === 'Fragment' || location.tag.endsWith('.Fragment')) return { refused: 'source-mismatch' };
         return { file: inside, line, column, hash, ...(usage ? { component: location.tag, usage: true as const } : {}) };
       }
-      if (expected.hash !== undefined && expected.hash !== hash) throw new UsageError(staleFile);
+      if (expected.hash !== undefined && expected.hash !== hash) throw stale();
       if (line === undefined && column === undefined) return { file: inside, ...(expected.snapshot ? { hash: hash! } : {}) };
       if (line === undefined || column === undefined) throw new UsageError('Source location requires both line and column.');
       const anyOpening = !expected.component && expected.tag === undefined;
@@ -745,7 +746,7 @@ export class Session extends EventEmitter {
     const params = { file: this.file(file), line: this.position(line), ...(column === undefined ? {} : { column: this.position(column) }) };
     return this.serializeRead(async () => {
       const result = await this.settledRead<Omit<EditsResult, 'revision'>>('edits', params);
-      if (result.hash !== this.hashes.get(params.file)) throw new UsageError(staleFile);
+      if (result.hash !== this.hashes.get(params.file)) throw stale();
       return { revision: this.revision, ...result };
     });
   }
@@ -770,8 +771,8 @@ export class Session extends EventEmitter {
       // Re-derive the run from the held file, never trust a client range or text.
       const site = textSites(_file, source).find(site => site.runs.some(run => run.id === id));
       const run = site?.runs.find(run => run.id === id);
-      if (!site || !run) throw new UsageError(textWriteErrors.unknown);
-      if (run.text !== from) throw new UsageError(textWriteErrors.mismatch);
+      if (!site || !run) throw new UsageError(textWriteErrors.unknown, 'not-found');
+      if (run.text !== from) throw stale(textWriteErrors.mismatch);
       const start = run.literal?.start ?? run.start, end = run.literal?.end ?? run.end;
       return { start, end, at: site.element.openingElement.start,
         replacement: run.literal ? encodeTextLiteral(to, run.literal.quote) : encodeJSXText(source.slice(start, end), to) };
@@ -797,11 +798,11 @@ export class Session extends EventEmitter {
   }
   async recipesApply(params: PlanParams & { file: string; line: number; column: number; chain?: ChainLink[]; hash?: string; hashes?: Record<string, string> }): Promise<{ revision: number; applied: string[]; undo: UndoHandle[]; files: Record<string, string>; choice: string; verdict: unknown; nearest: unknown; notes: string[]; uses?: unknown }> {
     const context = await this.recipeContext(params.file, params.line, params.column, params.chain);
-    if (params.hash !== undefined && sourceHash(context.element.text) !== params.hash) throw new UsageError(staleFile);
+    if (params.hash !== undefined && sourceHash(context.element.text) !== params.hash) throw stale();
     const { plan, writes } = recipesPlan(context, params);
     if (!plan.ok) throw new UsageError(plan.refused ?? 'This recipe cannot be written here.');
     if (!writes.length) return { revision: this.revision, applied: [], undo: [], files: {}, choice: plan.choice, verdict: plan.verdict, nearest: plan.nearest, notes: plan.notes, ...(plan.uses ? { uses: plan.uses } : {}) };
-    for (const w of writes) if (params.hashes?.[w.file] !== undefined && params.hashes[w.file] !== w.hash) throw new UsageError(staleFile);
+    for (const w of writes) if (params.hashes?.[w.file] !== undefined && params.hashes[w.file] !== w.hash) throw stale();
     const done: UndoHandle[] = [], files: Record<string, string> = {};
     try {
       for (const w of writes) {
@@ -866,7 +867,7 @@ export class Session extends EventEmitter {
   private async rewrite(path: string, hash: string, next: string, label: string, blocksRemoved = 0): Promise<{ hash: string; undo: UndoHandle }> {
     return this.serialize(async () => {
       const current = await this.readForWrite(path), before = current.text;
-      if (current.hash !== hash) throw new UsageError(staleFile);
+      if (current.hash !== hash) throw stale();
       parsesAsBefore(path, before, next);
       if (/\.css$/.test(path) && topBlocks(next).length < topBlocks(before).length - blocksRemoved) throw new UsageError('The change would leave the stylesheet unreadable, so nothing was written.');
       const written = await this.commit(path, current, next);
@@ -888,7 +889,7 @@ export class Session extends EventEmitter {
     const location = jsxLocation(path, text, line, column, undefined, 'any');
     if (!location) throw new UsageError('Source position does not identify an authored JSX element.');
     const [site, decisions, unit] = await Promise.all([this.site(path, location.line, location.column), this.decisions(), this.spacingUnit()]);
-    if (sourceHash(await readFile(path, 'utf8')) !== sourceHash(text)) throw new UsageError(staleFile);
+    if (sourceHash(await readFile(path, 'utf8')) !== sourceHash(text)) throw stale();
     return { text, location, site, decisions, unit };
   }
   /**
@@ -953,7 +954,7 @@ export class Session extends EventEmitter {
       const path = this.file(file); await begin(path);
       if (sent === latest.get(path)) return sent;
       if (sent === began.get(path)!.hash) return latest.get(path)!;
-      throw new UsageError(staleFile);
+      throw stale();
     };
     /** a swap's edits with their places found again in the text the file has now, when it was written since the batch
      * began; a place inside a run the earlier write changed is refused, never guessed */
@@ -961,9 +962,9 @@ export class Session extends EventEmitter {
       const path = this.file(swap.file); await begin(path);
       const was = began.get(path)!, now = latest.get(path)!;
       if (swap.hash === now) return { swap, refused: [] };
-      if (swap.hash !== was.hash) throw new UsageError(staleFile);
+      if (swap.hash !== was.hash) throw stale();
       const text = await readFile(path, 'utf8');
-      if (sourceHash(text) !== now) throw new UsageError(staleFile);
+      if (sourceHash(text) !== now) throw stale();
       const moves = hunks(was.text, text), refused: RefusedSwap[] = [], edits: SwapsOptions['edits'] = [];
       for (const e of swap.edits) {
         const place = relocate(was.text, text, moves, e.line, e.column), at = e.at ? relocate(was.text, text, moves, e.at.line, e.at.column) : undefined;
@@ -974,6 +975,8 @@ export class Session extends EventEmitter {
     };
     const moved = (file: string, hash: string) => latest.set(this.file(file), hash);
     const message = (error: unknown) => error instanceof UsageError ? error.message : errorMessage(error);
+    /** what a failed item answers: its sentence and its code */
+    const failed = (error: unknown) => ({ error: message(error), code: errorCode(error) });
     const swapFile = async (swap: SwapsOptions, token?: string) => {
       const tag = token === undefined ? {} : { token };
       try {
@@ -983,7 +986,7 @@ export class Session extends EventEmitter {
         moved(swap.file, written.hash);
         result.undo.push(written.undo); result.labels.push(written.undo.label);
         result.results.swaps.push({ file: swap.file, ok: true, applied: written.applied, refused: [...based.refused, ...written.refused ?? []], ...tag });
-      } catch (error) { result.results.swaps.push({ file: String(swap?.file), ok: false, applied: [], refused: [], ...tag, error: message(error) }); }
+      } catch (error) { result.results.swaps.push({ file: String(swap?.file), ok: false, applied: [], refused: [], ...tag, ...failed(error) }); }
     };
     // a token's own class goes to the places its cause had before the theme changed: once the token is in the theme
     // the value matches it, and the finding that named those places is gone
@@ -994,7 +997,7 @@ export class Session extends EventEmitter {
       const file = String(tokens[k]?.file), run: typeof tokens = [];
       while (k < tokens.length && String(tokens[k]?.file) === file) run.push(tokens[k++]!);
       this.progress();
-      const fail = (token: typeof run[number], error: unknown) => result.results.tokens.push({ name: String(token?.name), ok: false, error: message(error) });
+      const fail = (token: typeof run[number], error: unknown) => result.results.tokens.push({ name: String(token?.name), ok: false, ...failed(error) });
       // a token whose hash is already stale fails on its own; the rest go in with the hash the file has now
       const live: typeof run = [];
       let hash: string | undefined;
@@ -1014,7 +1017,7 @@ export class Session extends EventEmitter {
           const { then } = token;
           if (then && 'cause' in then) await this.swapCause(then, result, moved, before, token.name);
           else if (then) for (const swap of then.swaps ?? []) await swapFile(swap, token.name);
-        } catch (error) { result.results.swaps.push({ file, ok: false, applied: [], refused: [], token: token.name, error: message(error) }); }
+        } catch (error) { result.results.swaps.push({ file, ok: false, applied: [], refused: [], token: token.name, ...failed(error) }); }
       }
     }
     // the stylesheet blocks (a type role's utilities), after the tokens they read
@@ -1025,7 +1028,7 @@ export class Session extends EventEmitter {
         moved(block.file, written.hash);
         if (written.undo) { result.undo.push(written.undo); result.labels.push(written.undo.label); }
         result.results.css.push({ file: block.file, ok: true, written: written.written });
-      } catch (error) { result.results.css.push({ file: String(block?.file), ok: false, written: false, error: message(error) }); }
+      } catch (error) { result.results.css.push({ file: String(block?.file), ok: false, written: false, ...failed(error) }); }
     }
     for (const swap of swaps) {
       this.progress();
@@ -1036,7 +1039,7 @@ export class Session extends EventEmitter {
       try {
         const done = await this.accept(accept);
         result.results.accepts.push({ rule: accept.rule, ok: true, accepted: done.accepted });
-      } catch (error) { result.results.accepts.push({ rule: String(accept?.rule), ok: false, accepted: 0, error: message(error) }); }
+      } catch (error) { result.results.accepts.push({ rule: String(accept?.rule), ok: false, accepted: 0, ...failed(error) }); }
     }
     return result;
   }
@@ -1066,7 +1069,7 @@ export class Session extends EventEmitter {
       const file = relative(this.root, path).replaceAll('\\', '/');
       const refused: RefusedSwap[] = [];
       let source: string;
-      try { source = await readFile(path, 'utf8'); } catch (error) { entry(file, { places: places.length, error: errorMessage(error) }); continue; }
+      try { source = await readFile(path, 'utf8'); } catch (error) { entry(file, { places: places.length, error: errorMessage(error), code: 'internal' }); continue; }
       const starts = lineStarts(source);
       const edits: { line: number; column: number; start: number; end: number; to: string }[] = [];
       for (const { site, declaration } of group) {
@@ -1085,7 +1088,7 @@ export class Session extends EventEmitter {
       try {
         const hash = sourceHash(source);
         const written = await this.writeText(path, hash, `cause:${cause.rule}:${cause.text}`, cause.text, edits[0]!.to, (_file, text) => {
-          if (sourceHash(text) !== hash) throw new UsageError(staleFile);
+          if (sourceHash(text) !== hash) throw stale();
           let next = text;
           for (const e of edits.toReversed()) next = next.slice(0, e.start) + e.to + next.slice(e.end);
           return { start: 0, end: text.length, replacement: next, at: edits[0]!.start };
@@ -1093,7 +1096,7 @@ export class Session extends EventEmitter {
         moved(file, written.hash);
         result.undo.push(written.undo); result.labels.push(written.undo.label);
         entry(file, { ok: true, applied: edits.map(e => `swap:${e.line}:${e.column}`), refused, places: places.length });
-      } catch (error) { entry(file, { places: places.length, refused, error: error instanceof UsageError ? error.message : errorMessage(error) }); }
+      } catch (error) { entry(file, { places: places.length, refused, error: error instanceof UsageError ? error.message : errorMessage(error), code: errorCode(error) }); }
     }
   }
   /** A stylesheet block (a type role's @utility) appended to the theme file, with the token write's guards: the
@@ -1108,7 +1111,7 @@ export class Session extends EventEmitter {
     return this.serialize(async () => {
       if (!/\.css$/.test(path)) throw new UsageError('Styles are written to a stylesheet.');
       const current = await this.readForWrite(path), before = current.text;
-      if (current.hash !== hash) throw new UsageError(staleFile);
+      if (current.hash !== hash) throw stale();
       if (before.includes(withEol(block, current.eol))) return { revision: this.revision, file: path, hash, applied: [], written: false, undo: null };
       const next = `${before.replace(/\s*$/, '')}\n\n${block}\n`;
       const added = block.match(/^@utility\b|^[^\s{]/gm)?.length ?? 1;
@@ -1129,7 +1132,7 @@ export class Session extends EventEmitter {
     if (scope === 'project') {
       // one ladder for the project: every route's text as last measured, the page's own (fresher) entries over it
       const kept = await projectCensus(this.root);
-      if (!kept) throw new UsageError('There is no census of the project yet.\n  → plumber census --url <your dev server>');
+      if (!kept) throw new UsageError('There is no census of the project yet.\n  → plumber census --url <your dev server>', 'no-census');
       // the page's own census replaces what was kept for its route, nothing else: a header drawn on forty routes keeps
       // its other thirty-nine readings, so the ladder is the same whichever page asks
       census = [...kept.entries.filter(e => !route || (e as { route?: string }).route !== route), ...(Array.isArray(census) && route ? census : [])];
@@ -1218,12 +1221,12 @@ export class Session extends EventEmitter {
     if (typeof file !== 'string' || !file.trim() || typeof hash !== 'string' || !hash.trim() || typeof key !== 'string' || !key.trim() || typeof token !== 'string' || !token.trim()) throw new UsageError('Set requires file, hash, line, column, key and token.');
     const path = this.file(file); this.position(line); this.position(column);
     const facts = await this.elementFacts(path, line, column);
-    if (sourceHash(facts.text) !== hash) throw new UsageError(staleFile);
+    if (sourceHash(facts.text) !== hash) throw stale();
     const roles = await this.roleDecisions();
     const current = elementProps(path, facts.text, facts.location.start, facts.location.tag, facts.decisions, facts.site.declarations, { roles, ...(facts.unit ? { unit: facts.unit } : {}) }).props.find(item => item.key === key);
     const label = `${key}: ${current?.token ?? current?.value ?? 'unset'} → ${token}`;
     return this.writeText(path, hash, `set:${key}`, current?.class ?? key, token, (_file, source) => {
-      if (sourceHash(source) !== hash) throw new UsageError(staleFile);
+      if (sourceHash(source) !== hash) throw stale();
       const change = setProp(_file, source, facts.location.start, facts.location.tag, facts.decisions, facts.site.declarations, key, token, { roles, ...(facts.unit ? { unit: facts.unit } : {}) }, at ? offsetOf(source, at) : undefined);
       return { ...change, replacement: change.replacement };
     }, label);
@@ -1236,12 +1239,12 @@ export class Session extends EventEmitter {
     if (names(from).length > 8 || names(to).length > 8) throw new UsageError('Swap changes at most eight classes.');
     const path = this.file(file); this.position(line); this.position(column);
     const facts = await this.elementFacts(path, line, column);
-    if (sourceHash(facts.text) !== hash) throw new UsageError(staleFile);
+    if (sourceHash(facts.text) !== hash) throw stale();
     // a component's usage is not the element that was measured: a class added there may land elsewhere or nowhere
     if (!at && !names(from).length && isComponentJSX(facts.location.tag)) throw new UsageError(`<${facts.location.tag}> is a component; add the class inside it, by hand.`);
     const pinned = at ? await this.pinned(path, facts, { line, column, at, ...(of ? { of } : {}) }, pinWrite(names(from), names(to))) : undefined;
     return this.writeText(path, hash, `swap:${from}`, from || '∅', to, (_file, source) => {
-      if (sourceHash(source) !== hash) throw new UsageError(staleFile);
+      if (sourceHash(source) !== hash) throw stale();
       return swapClasses(_file, source, facts.location.start, names(from), names(to), pinned);
     }, changed(from, to, ''));
   }
@@ -1333,9 +1336,9 @@ export class Session extends EventEmitter {
     if (!['string', 'number', 'boolean'].includes(typeof value) || (typeof value === 'number' && !Number.isFinite(value)) || (typeof value === 'string' && /[\r\n]/.test(value))) throw new UsageError('A prop edit sets a string, a number or a boolean.');
     const path = this.file(file); this.position(line); this.position(column);
     const facts = await this.elementFacts(path, line, column);
-    if (sourceHash(facts.text) !== hash) throw new UsageError(staleFile);
+    if (sourceHash(facts.text) !== hash) throw stale();
     return this.writeText(path, hash, `prop:${name}`, name, String(value), (_file, source) => {
-      if (sourceHash(source) !== hash) throw new UsageError(staleFile);
+      if (sourceHash(source) !== hash) throw stale();
       return setJsxProp(_file, source, facts.location.start, name, value);
     }, `${name}={${JSON.stringify(value)}}`);
   }
@@ -1377,7 +1380,7 @@ export class Session extends EventEmitter {
       if (spec.tokens.new) throw new UsageError(`Create ${spec.tokens.file} first (plumber propose --write makes it), then add tokens to it.`);
       if (!/\.css$/.test(path)) throw new UsageError('Tokens are written to a stylesheet.');
       const current = await this.readForWrite(path), before = current.text;
-      if (current.hash !== hash) throw new UsageError(staleFile);
+      if (current.hash !== hash) throw stale();
       const nothing = () => ({ revision: this.revision, file: path, hash, applied: [], written: false, undo: null, results });
       const writing: { index: number; name: string; value: string; why: string }[] = [];
       const seen = new Set<string>();
@@ -1430,7 +1433,7 @@ export class Session extends EventEmitter {
     for (const e of unique) {
       try {
         const facts = await this.elementFacts(path, e.line, e.column);
-        if (sourceHash(facts.text) !== hash) throw new UsageError(staleFile);
+        if (sourceHash(facts.text) !== hash) throw stale();
         if (!e.at && !names(e.from).length && isComponentJSX(facts.location.tag)) throw new UsageError(`<${facts.location.tag}> is a component; add the class inside it, by hand.`);
         const pin = e.at ? await this.pinned(path, facts, { line: e.line, column: e.column, at: e.at, ...(e.of ? { of: e.of } : {}) }, pinWrite(names(e.from), names(e.to))) : undefined;
         starts.push({ edit: e, start: facts.location.start, from: names(e.from), to: names(e.to), ...(pin ? { pin } : {}) });
@@ -1440,7 +1443,7 @@ export class Session extends EventEmitter {
     const nothing = () => new UsageError(`${refused.length === 1 ? 'The change could not be written' : 'None of these changes could be written'}: ${[...new Set(refused.toSorted(order).map(r => r.reason))].join(' ')}`);
     if (!starts.length) throw nothing();
     const result = await this.writeText(path, hash, `swaps:${unique.length}`, unique.map(e => e.from || '∅').join(', '), unique.map(e => e.to).join(', '), (_file, source) => {
-      if (sourceHash(source) !== hash) throw new UsageError(staleFile);
+      if (sourceHash(source) !== hash) throw stale();
       const changes: (ReturnType<typeof swapClasses> & { edit: SwapsOptions['edits'][number] })[] = [];
       for (const s of starts) {
         try { changes.push({ ...swapClasses(_file, source, s.start, s.from, s.to, s.pin), edit: s.edit }); }
@@ -1468,8 +1471,8 @@ export class Session extends EventEmitter {
     const { file, hash, id, from, to } = options ?? {} as ApplyTextAtOptions;
     return this.writeText(file, hash, id, from, to, (_file, source) => {
       const target = textTargets(_file, source).targets.find(target => target.id === id);
-      if (!target) throw new UsageError(textWriteErrors.unknown);
-      if (target.text !== from) throw new UsageError(textWriteErrors.mismatch);
+      if (!target) throw new UsageError(textWriteErrors.unknown, 'not-found');
+      if (target.text !== from) throw stale(textWriteErrors.mismatch);
       if (target.plain && /[\r\n]/.test(to)) throw new UsageError('An attribute holds one line of text.');
       return { start: target.start, end: target.end, replacement: target.replace(to), at: target.start };
     });
@@ -1482,7 +1485,7 @@ export class Session extends EventEmitter {
     const file = this.file(path);
     return this.serialize(async () => {
       const current = await this.readForWrite(file), source = current.text;
-      if (current.hash !== hash) throw new UsageError(staleFile);
+      if (current.hash !== hash) throw stale();
       await this.reconcile([file]);
       if (!this.sourceFiles.has(file) || !/\.[cm]?[jt]sx?$/.test(file)) throw new UsageError('Text edits require a tracked JSX source file.');
       const { start, end, replacement, at } = find(file, source);
@@ -1492,7 +1495,7 @@ export class Session extends EventEmitter {
       // the write re-checks the hash on the bytes: text that changed under the plan is refused, never written over
       const written = await this.commit(file, current, next);
       const snapshot = await this.request<{ hash: string; remaining: Report['findings'] }>('remaining', { file, sites: [{ line: siteLine }] });
-      if (snapshot.hash !== written.hash || snapshot.hash !== this.hashes.get(file)) throw new UsageError(staleFile);
+      if (snapshot.hash !== written.hash || snapshot.hash !== this.hashes.get(file)) throw stale();
       const undo = this.record(file, source, snapshot.hash, siteLine, label ?? changed(from, to));
       return { revision: this.revision, file, hash: snapshot.hash, applied: [id], remaining: snapshot.remaining, undo };
     });
@@ -1505,13 +1508,13 @@ export class Session extends EventEmitter {
     const file = this.file(options.file), hash = options.hash, ids = options.edits.map(edit => edit.id);
     return this.serialize(async () => {
       const read = await this.readForWrite(file), source = read.text;
-      if (read.hash !== hash) throw new UsageError(staleFile);
+      if (read.hash !== hash) throw stale();
       await this.reconcile([file]);
       // Re-derive every choice from the current source and decisions, never from client text.
       const current = await this.request<Omit<EditsResult, 'revision'>>('edits', { file });
-      if (current.hash !== hash || this.hashes.get(file) !== hash) throw new UsageError(staleFile);
+      if (current.hash !== hash || this.hashes.get(file) !== hash) throw stale();
       const known = new Map(current.edits.map(edit => [edit.id, edit]));
-      const selected = ids.map(id => { const edit = known.get(id); if (!edit) throw new UsageError(`Unknown edit id: ${id}. Read the site's edits again.`); return edit; });
+      const selected = ids.map(id => { const edit = known.get(id); if (!edit) throw new UsageError(`Unknown edit id: ${id}. Read the site's edits again.`, 'not-found'); return edit; });
       // the replacements in the file's own line endings, so the positions below are the written text's
       const ordered = selected.toSorted((a, b) => a.start - b.start || a.end - b.end).map(edit => ({ ...edit, to: withEol(edit.to, read.eol) }));
       for (let i = 1; i < ordered.length; i++) if (ordered[i]!.start < ordered[i - 1]!.end) throw new UsageError('Edits overlap. Choose one edit for each source range.');
@@ -1529,7 +1532,7 @@ export class Session extends EventEmitter {
         return { line: site.line };
       });
       const snapshot = await this.request<{ hash: string; remaining: Report['findings'] }>('remaining', { file, sites });
-      if (snapshot.hash !== written.hash || snapshot.hash !== this.hashes.get(file)) throw new UsageError(staleFile);
+      if (snapshot.hash !== written.hash || snapshot.hash !== this.hashes.get(file)) throw stale();
       const undo = this.record(file, source, snapshot.hash, sites[0]!.line, ordered.map(edit => changed(edit.from, edit.to, '')).join(', '));
       return { revision: this.revision, file, hash: snapshot.hash, applied: ids, remaining: snapshot.remaining, undo };
     });
@@ -1601,7 +1604,7 @@ export class Session extends EventEmitter {
     return this.serialize(async () => {
       if (this.batches.has(id)) return this.undoBatch(id);
       const entry = this.written.find(item => item.id === id);
-      if (!entry) throw new UsageError('That write is not in the history; only the last 20 writes can be undone, and each only once.');
+      if (!entry) throw new UsageError('That write is not in the history; only the last 20 writes can be undone, and each only once.', 'not-found');
       if (this.batchOf(id) !== undefined) throw new UsageError('That write is part of one made as one; undo that one, whole.');
       return this.undoOne(entry);
     });
@@ -1611,15 +1614,15 @@ export class Session extends EventEmitter {
     const id = entry.id;
     const file = this.file(entry.path), since = 'The file changed since this write. Undo the newer writes first, or edit it by hand.';
     const current = await this.readForWrite(file);
-    if (current.hash !== entry.hashAfter) throw new UsageError(since);
+    if (current.hash !== entry.hashAfter) throw stale(since);
     await this.reconcile([file]);
-    if (this.hashes.get(file) !== entry.hashAfter) throw new UsageError(since);
+    if (this.hashes.get(file) !== entry.hashAfter) throw stale(since);
     try { await this.commit(file, current, entry.before); }
-    catch (error) { throw error instanceof UsageError && error.message === staleFile ? new UsageError(since) : error; }
+    catch (error) { throw error instanceof UsageError && error.message === staleFile ? stale(since) : error; }
     this.written = this.written.filter(item => item.id !== id);
     try { this.log.drop(new Set([`${this.nonce}:${id}`])); } catch { /* the trace keeps them; they read as changed */ }
     const snapshot = await this.request<{ hash: string; remaining: Report['findings'] }>('remaining', { file, sites: [{ line: entry.line }] });
-    if (snapshot.hash !== sourceHash(entry.before) || snapshot.hash !== this.hashes.get(file)) throw new UsageError(staleFile);
+    if (snapshot.hash !== sourceHash(entry.before) || snapshot.hash !== this.hashes.get(file)) throw stale();
     return { revision: this.revision, file, hash: snapshot.hash, undone: id, remaining: snapshot.remaining };
   }
   /** Take back writes made as one, under the one lock the caller holds: every file is checked before any is written, then
@@ -1630,7 +1633,7 @@ export class Session extends EventEmitter {
     if (members.some(entry => !entry)) throw new UsageError('Part of that write is no longer in the history, so it can\'t be undone whole; edit it by hand.');
     // a file written twice in the batch holds what its newest write left
     const newest = [...new Map((members as Recorded[]).map(entry => [entry.path, entry])).values()];
-    for (const entry of newest) if (sourceHash(await readFile(entry.path, 'utf8').catch(() => '')) !== entry.hashAfter) throw new UsageError(`${entry.file} changed since this write. Undo the newer writes first, or edit it by hand.`);
+    for (const entry of newest) if (sourceHash(await readFile(entry.path, 'utf8').catch(() => '')) !== entry.hashAfter) throw stale(`${entry.file} changed since this write. Undo the newer writes first, or edit it by hand.`);
     let last: UndoResult | undefined;
     try { for (const entry of (members as Recorded[]).toReversed()) last = await this.undoOne(entry); }
     finally {
@@ -1655,23 +1658,23 @@ export class Session extends EventEmitter {
    * (the page works out its rhythm with overlay/src/stacks.js rhythmOf, the same reader that measured them). */
   async rhythm(): Promise<{ distances: number[]; gaps: { d: number; em: number | null }[]; routes: number }> {
     const kept = await projectCensus(this.root);
-    if (!kept) throw new UsageError('There is no census of the project yet.\n  → plumber census --url <your dev server>');
+    if (!kept) throw new UsageError('There is no census of the project yet.\n  → plumber census --url <your dev server>', 'no-census');
     return { distances: kept.gaps.map(gap => gap.d), gaps: kept.gaps.map(gap => ({ d: gap.d, em: gap.em ?? null })), routes: kept.census.routes.length };
   }
   /** The site's colours as the census read them: every place's text, background and border colour (composited over its
    * ground, in oklab) with the class that sets it and the route, on every route (overlay/src/colours.js reads them). */
   async palette(): Promise<{ colours: { prop: 'text' | 'bg' | 'border'; oklab: [number, number, number]; cls: string | null; data?: boolean; route: string }[]; routes: number }> {
     const kept = await projectCensus(this.root);
-    if (!kept) throw new UsageError('There is no census of the project yet.\n  → plumber census --url <your dev server>');
-    if (!kept.colours) throw new UsageError('The census was taken before colours were read.\n  → plumber census --url <your dev server>');
+    if (!kept) throw new UsageError('There is no census of the project yet.\n  → plumber census --url <your dev server>', 'no-census');
+    if (!kept.colours) throw new UsageError('The census was taken before colours were read.\n  → plumber census --url <your dev server>', 'no-census');
     return { colours: kept.colours.map(row => ({ prop: row.prop, oklab: row.oklab, cls: row.cls, ...(row.data ? { data: true } : {}), route: row.route ?? '' })), routes: kept.census.routes.length };
   }
   /** The site's icons as the census read them: every icon place (an svg's origin, size, stroke, gap, the class that sizes it; an emoji
    * standing in for one) on every route, and the icon sets the project has installed (overlay/src/icons.js reads them). */
   async icons(): Promise<{ icons: (CensusIcon & { route: string })[]; routes: number; installed: InstalledIconSet[] }> {
     const kept = await projectCensus(this.root);
-    if (!kept) throw new UsageError('There is no census of the project yet.\n  → plumber census --url <your dev server>');
-    if (!kept.icons) throw new UsageError('The census was taken before icons were read.\n  → plumber census --url <your dev server>');
+    if (!kept) throw new UsageError('There is no census of the project yet.\n  → plumber census --url <your dev server>', 'no-census');
+    if (!kept.icons) throw new UsageError('The census was taken before icons were read.\n  → plumber census --url <your dev server>', 'no-census');
     return { icons: kept.icons.map(row => ({ ...row, route: row.route ?? '' })), routes: kept.census.routes.length, installed: await installedIconSets(this.root) };
   }
   /** Every change written, newest first, each live, undone or changed since (by a later change or by hand). */
@@ -1689,7 +1692,7 @@ export class Session extends EventEmitter {
   undoGroup(group: string): Promise<UndoChangesResult> {
     if (typeof group !== 'string' || !group.trim()) throw new UsageError('Undo takes the id of a group.');
     const standing = this.log.trace(this.reader()).filter(change => change.group === group && change.state !== 'undone');
-    if (!standing.length) throw new UsageError('Nothing in that group is left to undo.');
+    if (!standing.length) throw new UsageError('Nothing in that group is left to undo.', 'nothing-in-group');
     return this.undoChanges(standing.map(change => change.id));
   }
   private reader(): (file: string) => string | undefined {
@@ -1707,9 +1710,9 @@ export class Session extends EventEmitter {
     const records = this.log.all(), states = new Map(this.log.trace(this.reader()).map(entry => [entry.id, entry]));
     const targets = ids.map(id => {
       const record = records.find(r => r.id === id), state = states.get(id);
-      if (!record || !state) throw new UsageError(`There is no change ${id} in the trace.`);
-      if (state.state === 'undone') throw new UsageError(`${id} is already undone (by ${state.undoneBy}).`);
-      if (state.state === 'changed') throw new UsageError(`${id} can't be undone: its place no longer holds what it wrote${state.by ? `; changed since by ${state.by.join(', ')}` : '; it was edited outside React Plumber'}.`);
+      if (!record || !state) throw new UsageError(`There is no change ${id} in the trace.`, 'not-found');
+      if (state.state === 'undone') throw new UsageError(`${id} is already undone (by ${state.undoneBy}).`, 'already-undone');
+      if (state.state === 'changed') throw new UsageError(`${id} can't be undone: its place no longer holds what it wrote${state.by ? `; changed since by ${state.by.join(', ')}` : '; it was edited outside React Plumber'}.`, state.by ? 'changed-later' : 'changed-by-hand');
       return record;
     });
     const files = new Map<string, ChangeRecord[]>();
