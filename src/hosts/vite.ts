@@ -50,16 +50,19 @@ export function plumb({ demo, ...options }: PlumbViteOptions = {}): Plugin {
   // every write, so a long apply is never released, and reloaded, mid-write). Next.js has no such hook (webpack, Fast Refresh): there
   // apply-all writes back to back, and the page reloads as it would for any save.
   let held: Held | undefined, hotServer: ViteDevServer | undefined;
-  // What each released file held when the page was reloaded with it. The watcher reports a write a poll later, so a
-  // transaction's last write of a file can be reported after the release (every expected file was seen already, for
-  // an earlier write): that report carries nothing the page does not have, and goes nowhere instead of reloading it.
-  const released = new Map<string, { hash: Promise<string>; until: number }>();
+  // What the session wrote, by content: the hash of each file as the session left it, and whether the page has had
+  // it (one report went out, or the transaction's release did). The watcher reports a write a poll later, sometimes
+  // seconds later under load: its report of a file whose content is still what the session wrote carries nothing the
+  // page does not have and goes nowhere, however late it comes. Different content is someone else's save (an editor)
+  // and goes out as any save would. Content, not a time window, is what tells the two apart.
+  const ours = new Map<string, { hash: Promise<string>; sent: boolean }>();
+  const hashOf = (file: string) => readFile(file, 'utf8').then(sourceHash, () => '');
   const releaseHeld = () => {
     const current = held; held = undefined;
     if (!current) return;
     clearTimeout(current.timer); clearTimeout(current.ending?.timer);
     if (!hotServer || !current.files.size) return;
-    for (const file of current.files) released.set(file, { hash: readFile(file, 'utf8').then(sourceHash, () => ''), until: Date.now() + 2000 });
+    for (const file of current.files) ours.set(file, { hash: hashOf(file), sent: true });
     if (current.full || !current.modules.size) hotServer.ws.send({ type: 'full-reload', path: '*' });
     else for (const module of current.modules.values()) {
       // hotUpdate (Vite 6+) holds an environment's module: it reloads through that environment (server.reloadModule
@@ -69,15 +72,6 @@ export function plumb({ demo, ...options }: PlumbViteOptions = {}): Plugin {
       const reload = async () => { if (environment && !own) throw new Error('no such environment'); await (own ? own.reloadModule(module) : server.reloadModule(module)); };
       void reload().catch(() => server.ws.send({ type: 'full-reload', path: '*' }));
     }
-  };
-  const echo = async (file: string): Promise<boolean> => {
-    const entry = released.get(file);
-    if (!entry) return false;
-    released.delete(file);
-    if (Date.now() > entry.until) return false;
-    const same = await entry.hash === await readFile(file, 'utf8').then(sourceHash, () => undefined);
-    if (same) released.set(file, entry);
-    return same;
   };
   const alive = () => { if (held && !held.ending) { clearTimeout(held.timer); held.timer = setTimeout(() => releaseHeld(), 5000); } };
   const onTransaction = (event: Transaction) => {
@@ -95,22 +89,24 @@ export function plumb({ demo, ...options }: PlumbViteOptions = {}): Plugin {
   };
   // A file the session wrote is told to Vite at once, as the watcher would tell it a poll later: the page's update does
   // not wait on the watcher (a polling watcher under load reports seconds late, and misses a second write landing
-  // within the same tick), and a reload in that window gets the new module, not a 304 of the old one. The report Vite
-  // makes of that word is the one that goes out (`told`); the watcher's own report of the same write, when it comes,
-  // carries nothing new and goes nowhere (`echo`). Under a transaction the word still reaches Vite: the module is held
-  // with the others and goes out in the one release.
-  const told = new Map<string, number>();
+  // within the same tick), and a reload in that window gets the new module, not a 304 of the old one. The first report
+  // Vite makes of that content goes out; every later report of the same content (the watcher's own, whenever it
+  // comes) goes nowhere. Under a transaction the word still reaches Vite: the module is held with the others and goes
+  // out in the one release, and the watcher's later report of it is recognised the same way.
   const onWritten = (file: string) => {
     if (!hotServer || !file.startsWith(root + '/')) return;
-    told.set(file, Date.now()); released.delete(file);
+    ours.set(file, { hash: hashOf(file), sent: false });
     hotServer.watcher.emit('change', file);
   };
   const hold = async (file: string, modules: readonly ModuleNode[], read: () => string | Promise<string>): Promise<[] | undefined> => {
     if (!file.startsWith(root + '/') || file.includes('/node_modules/')) return undefined;
     if (!held || !hotServer) {
-      const at = told.get(file); told.delete(file);
-      if (at !== undefined && Date.now() - at < 2000) { released.set(file, { hash: readFile(file, 'utf8').then(sourceHash, () => ''), until: Date.now() + 2000 }); return undefined; }
-      return await echo(file) ? [] : undefined;
+      const entry = ours.get(file);
+      if (!entry) return undefined;
+      const now = sourceHash(await Promise.resolve(read()).catch(() => ''));
+      if (await entry.hash !== now) { ours.delete(file); return undefined; } // another hand's save: out it goes
+      if (!entry.sent) { entry.sent = true; return undefined; } // the session's word, reported once: out it goes
+      return []; // the same content again: the watcher's echo
     }
     held.files.add(file); alive();
     for (const module of modules) held.modules.set(module.id ?? module.url, module);
