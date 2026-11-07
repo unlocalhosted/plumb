@@ -1,10 +1,10 @@
 import { environment, stateDirectory, statePath, configurationNames, isLedgerPath, cacheDirectory, ignoreCache } from '../paths.js';
-import { constants, readFileSync, watch } from 'node:fs';
+import { readFileSync, watch } from 'node:fs';
 import { randomBytes } from 'node:crypto';
-import { ChangeLog, byLine, locate } from './changes.js';
+import { ChangeLog, byLine, hunks, locate } from './changes.js';
 import type { ChangeRecord, TraceEntry } from './changes.js';
 import type { FSWatcher } from 'node:fs';
-import { stat, lstat, readdir, readFile, realpath, open } from 'node:fs/promises';
+import { stat, lstat, readdir, readFile, realpath } from 'node:fs/promises';
 import { dirname, isAbsolute, relative, resolve, sep } from 'node:path';
 import { Worker } from 'node:worker_threads';
 import { EventEmitter } from 'node:events';
@@ -38,6 +38,8 @@ import type { ProjectSpec } from '../craft-spec.js';
 import { readText, textSites } from './text.js';
 import { addTokens, topBlocks } from '../onboarding/write.js';
 import { loadConfig } from '../config.js';
+import { readSource, staleFile, withEol, withRollback, writeSource } from '../write/source-file.js';
+import type { SourceText, Written } from '../write/source-file.js';
 import { isTypeProp, proposeTypeRoles, px } from '../rules/type-roles.js';
 import type { RoleOverride, TypeBundle, TypeClass, TypeMember, TypeProposal } from '../rules/type-roles.js';
 import { classEdit } from '../messages.js';
@@ -186,7 +188,6 @@ function changed(from: string, to: string, quote = '“”'): string {
   return `${wrap(a.slice(head, a.length - tail))} → ${wrap(b.slice(head, b.length - tail))}`;
 }
 export type SourceResolution = { file: string; line?: number; column?: number; hash?: string; component?: string; authoredOwner?: boolean; usage?: true } | { library: true; untracked?: string } | { refused: 'not-jsx'; at: PositionKind } | { refused: 'source-mismatch' };
-const staleFile = 'The file changed since the overlay read it. Read it again.';
 const ignored = ['**/node_modules/**', '**/.git/**', '**/dist/**', '**/build/**', '**/.next/**', '**/.cache/**', '**/.plumb-cache/**', '**/.plumber/cache/**', '**/.plumb/cache/**'];
 const tracked = (file: string) => /\.(?:[cm]?[jt]sx?|css|json|jsonl)$/.test(file) && !/(?:^|\/)(?:node_modules|\.git|dist|build|\.next|\.cache|\.plumb-cache|\.plumber\/cache|\.plumb\/cache)(?:\/|$)/.test(file) && !/(?:^|\/)\.plumb(?:er)?\/serve\.json$/.test(file);
 const ignoredDirectory = (file: string) => /(?:^|\/)(?:node_modules|\.git|dist|build|\.next|\.cache|\.plumb-cache|\.plumber\/cache|\.plumb\/cache)(?:\/|$)/.test(file);
@@ -792,8 +793,7 @@ export class Session extends EventEmitter {
       }
     } catch (error) {
       // nothing half done: the files already written go back as they were, and their history entries and trace go with them
-      for (const handle of done.toReversed()) await this.undo(handle.id).catch(() => {});
-      throw error;
+      await this.putBack(done, error);
     }
     // one recipe, one entry in the history and one undo, however many files it wrote
     const label = `${plan.choice} ${plan.uses?.class ?? plan.uses?.token ?? 'recipe'}`;
@@ -848,28 +848,15 @@ export class Session extends EventEmitter {
    * regular file, a result that still parses, one undo handle. */
   private async rewrite(path: string, hash: string, next: string, label: string, blocksRemoved = 0): Promise<{ hash: string; undo: UndoHandle }> {
     return this.serialize(async () => {
-      const identity = await this.editableFile(path);
-      const handle = await open(path, constants.O_RDWR | constants.O_NOFOLLOW);
-      let before: string;
-      try {
-        const info = await handle.stat();
-        if (!info.isFile() || info.nlink !== 1) throw new UsageError('Apply requires a regular source file without hard links.');
-        if (info.dev !== identity.dev || info.ino !== identity.ino) throw new UsageError(staleFile);
-        before = await readFile(path, 'utf8');
-        if (sourceHash(before) !== hash) throw new UsageError(staleFile);
-        parsesAsBefore(path, before, next);
-        if (/\.css$/.test(path) && topBlocks(next).length < topBlocks(before).length - blocksRemoved) throw new UsageError('The change would leave the stylesheet unreadable, so nothing was written.');
-        await this.sameFile(path, identity);
-        await handle.writeFile(next, 'utf8'); await handle.truncate(Buffer.byteLength(next));
-        await this.sameFile(path, identity);
-      } finally { await handle.close(); }
-      await this.reconcile([path]);
+      const current = await this.readForWrite(path), before = current.text;
+      if (current.hash !== hash) throw new UsageError(staleFile);
+      parsesAsBefore(path, before, next);
+      if (/\.css$/.test(path) && topBlocks(next).length < topBlocks(before).length - blocksRemoved) throw new UsageError('The change would leave the stylesheet unreadable, so nothing was written.');
+      const written = await this.commit(path, current, next);
       this.recipeProject = undefined;
-      const hashAfter = sourceHash(next);
-      if (sourceHash(await readFile(path, 'utf8')) !== hashAfter) throw new UsageError(staleFile);
-      const was = before.split('\n'), now = next.split('\n');
+      const was = before.split('\n'), now = written.text.split('\n');
       let line = 0; while (line < was.length && line < now.length && was[line] === now[line]) line++;
-      return { hash: hashAfter, undo: this.record(path, before, hashAfter, line + 1, label) };
+      return { hash: written.hash, undo: this.record(path, before, written.hash, line + 1, label) };
     });
   }
   /** The owner's decisions per type role, from the config (config.system.type.roles). */
@@ -1074,30 +1061,16 @@ export class Session extends EventEmitter {
     if (!spec.tokens.file || file.replaceAll('\\', '/') !== spec.tokens.file) throw new UsageError(`Styles go in ${spec.tokens.file ?? 'your theme file'}, not ${file}.`);
     const path = this.file(file), block = css.trim();
     return this.serialize(async () => {
-      const identity = await this.editableFile(path);
       if (!/\.css$/.test(path)) throw new UsageError('Styles are written to a stylesheet.');
-      const handle = await open(path, constants.O_RDWR | constants.O_NOFOLLOW);
-      let next: string, before: string;
-      try {
-        const info = await handle.stat();
-        if (!info.isFile() || info.nlink !== 1) throw new UsageError('Apply requires a regular source file without hard links.');
-        if (info.dev !== identity.dev || info.ino !== identity.ino) throw new UsageError(staleFile);
-        await this.sameFile(path, identity);
-        before = await readFile(path, 'utf8');
-        if (sourceHash(before) !== hash) throw new UsageError(staleFile);
-        if (before.includes(block)) return { revision: this.revision, file: path, hash, applied: [], written: false, undo: null };
-        next = `${before.replace(/\s*$/, '')}\n\n${block}\n`;
-        const added = block.match(/^@utility\b|^[^\s{]/gm)?.length ?? 1;
-        if (topBlocks(next).length < topBlocks(before).length || topBlocks(next).length > topBlocks(before).length + added) throw new UsageError('The change would leave the stylesheet unreadable, so nothing was written.');
-        await this.sameFile(path, identity);
-        await handle.writeFile(next, 'utf8'); await handle.truncate(Buffer.byteLength(next));
-        await this.sameFile(path, identity);
-      } finally { await handle.close(); }
-      await this.reconcile([path]);
-      const hashAfter = sourceHash(next);
-      if (sourceHash(await readFile(path, 'utf8')) !== hashAfter) throw new UsageError(staleFile);
-      const undo = this.record(path, before, hashAfter, 1, `${block.match(/@utility\s+([\w-]+)/g)?.length ?? 1} type role classes`);
-      return { revision: this.revision, file: path, hash: hashAfter, applied: ['css'], written: true, undo };
+      const current = await this.readForWrite(path), before = current.text;
+      if (current.hash !== hash) throw new UsageError(staleFile);
+      if (before.includes(withEol(block, current.eol))) return { revision: this.revision, file: path, hash, applied: [], written: false, undo: null };
+      const next = `${before.replace(/\s*$/, '')}\n\n${block}\n`;
+      const added = block.match(/^@utility\b|^[^\s{]/gm)?.length ?? 1;
+      if (topBlocks(next).length < topBlocks(before).length || topBlocks(next).length > topBlocks(before).length + added) throw new UsageError('The change would leave the stylesheet unreadable, so nothing was written.');
+      const written = await this.commit(path, current, next);
+      const undo = this.record(path, before, written.hash, 1, `${block.match(/@utility\s+([\w-]+)/g)?.length ?? 1} type role classes`);
+      return { revision: this.revision, file: path, hash: written.hash, applied: ['css'], written: true, undo };
     });
   }
   /**
@@ -1337,8 +1310,7 @@ export class Session extends EventEmitter {
       return { ...write, then: swapped };
     } catch (error) {
       // the class could not follow: the theme goes back as it was, so nothing is half done
-      if (write.undo) await this.undo(write.undo.id).catch(() => {});
-      throw error;
+      return this.putBack(write.undo ? [write.undo] : [], error);
     }
   }
   /** Several tokens into the theme file as one guarded write (one reload, one history entry, one undo handle), each
@@ -1358,50 +1330,33 @@ export class Session extends EventEmitter {
     const path = this.file(file), shape = spec.tokens.shape ?? 'theme';
     return this.serialize(async (): Promise<TokensResult> => {
       if (spec.tokens.new) throw new UsageError(`Create ${spec.tokens.file} first (plumber propose --write makes it), then add tokens to it.`);
-      const identity = await this.editableFile(path);
       if (!/\.css$/.test(path)) throw new UsageError('Tokens are written to a stylesheet.');
-      const handle = await open(path, constants.O_RDWR | constants.O_NOFOLLOW);
-      let next: string | null = null, before: string;
+      const current = await this.readForWrite(path), before = current.text;
+      if (current.hash !== hash) throw new UsageError(staleFile);
       const nothing = () => ({ revision: this.revision, file: path, hash, applied: [], written: false, undo: null, results });
-      try {
-        const info = await handle.stat();
-        if (!info.isFile() || info.nlink !== 1) throw new UsageError('Apply requires a regular source file without hard links.');
-        if (info.dev !== identity.dev || info.ino !== identity.ino) throw new UsageError(staleFile);
-        await this.sameFile(path, identity);
-        const bytes = Buffer.alloc(info.size);
-        let offset = 0;
-        while (offset < bytes.length) { const { bytesRead } = await handle.read(bytes, offset, bytes.length - offset, offset); if (!bytesRead) break; offset += bytesRead; }
-        before = bytes.subarray(0, offset).toString('utf8');
-        if (sourceHash(before) !== hash) throw new UsageError(staleFile);
-        const writing: { index: number; name: string; value: string; why: string }[] = [];
-        const seen = new Set<string>();
-        for (const [index, token] of tokens.entries()) {
-          if (!results[index]!.ok) continue;
-          const name = token.name, clean = token.value.trim();
-          const declared = new RegExp(`(?:^|[\\s;{])${name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*:\\s*([^;}]+)`).exec(before);
-          if (declared && declared[1]!.trim() === clean) continue; // already there: nothing to write
-          if (declared) { refuse(index, new UsageError(`${name} is already ${declared[1]!.trim()} in ${file}. Pick another name.`)); continue; }
-          if (seen.has(name)) { refuse(index, new UsageError(`${name} is sent twice in this write.`)); continue; }
-          seen.add(name);
-          writing.push({ index, name, value: clean, why: token.why ?? 'added by React Plumber' });
-        }
-        if (!writing.length) return nothing();
-        next = addTokens(before, shape, writing.map(({ name, value, why }) => ({ name, value, why })) as Parameters<typeof addTokens>[2]).css;
-        // the stylesheet's last guard: the same blocks as before (or one more), and every declaration in it
-        const blocksBefore = topBlocks(before).length, blocksAfter = topBlocks(next).length;
-        if (!(blocksAfter === blocksBefore || blocksAfter === blocksBefore + 1) || writing.some(({ name, value }) => !next!.includes(`${name}: ${value};`))) throw new UsageError('The change would leave the stylesheet unreadable, so nothing was written.');
-        await this.sameFile(path, identity);
-        await handle.writeFile(next, 'utf8'); await handle.truncate(Buffer.byteLength(next));
-        await this.sameFile(path, identity);
-        for (const { index } of writing) results[index]!.written = true;
-      } finally { await handle.close(); }
-      await this.reconcile([path]);
-      const hashAfter = sourceHash(next);
-      if (sourceHash(await readFile(path, 'utf8')) !== hashAfter) throw new UsageError(staleFile);
+      const writing: { index: number; name: string; value: string; why: string }[] = [];
+      const seen = new Set<string>();
+      for (const [index, token] of tokens.entries()) {
+        if (!results[index]!.ok) continue;
+        const name = token.name, clean = token.value.trim();
+        const declared = new RegExp(`(?:^|[\\s;{])${name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*:\\s*([^;}]+)`).exec(before);
+        if (declared && declared[1]!.trim() === clean) continue; // already there: nothing to write
+        if (declared) { refuse(index, new UsageError(`${name} is already ${declared[1]!.trim()} in ${file}. Pick another name.`)); continue; }
+        if (seen.has(name)) { refuse(index, new UsageError(`${name} is sent twice in this write.`)); continue; }
+        seen.add(name);
+        writing.push({ index, name, value: clean, why: token.why ?? 'added by React Plumber' });
+      }
+      if (!writing.length) return nothing();
+      const next = addTokens(before, shape, writing.map(({ name, value, why }) => ({ name, value, why })) as Parameters<typeof addTokens>[2]).css;
+      // the stylesheet's last guard: the same blocks as before (or one more), and every declaration in it
+      const blocksBefore = topBlocks(before).length, blocksAfter = topBlocks(next).length;
+      if (!(blocksAfter === blocksBefore || blocksAfter === blocksBefore + 1) || writing.some(({ name, value }) => !next.includes(`${name}: ${value};`))) throw new UsageError('The change would leave the stylesheet unreadable, so nothing was written.');
+      const made = await this.commit(path, current, next);
+      for (const { index } of writing) results[index]!.written = true;
       const written = results.filter(r => r.written);
       const label = written.length === 1 ? `${written[0]!.name}: ${tokens.find(t => t.name === written[0]!.name)!.value.trim()}` : `${written.length} tokens`;
-      const undo = this.record(path, before, hashAfter, 1, label, true);
-      return { revision: this.revision, file: path, hash: hashAfter, applied: written.map(r => `token:${r.name}`), written: true, undo, results };
+      const undo = this.record(path, before, made.hash, 1, label, true);
+      return { revision: this.revision, file: path, hash: made.hash, applied: written.map(r => `token:${r.name}`), written: true, undo, results };
     });
   }
   /** Several class swaps in one file, written together in one guarded write (one reload, one undo): the changes a person
@@ -1481,36 +1436,19 @@ export class Session extends EventEmitter {
     if (to.length > 500) throw new UsageError(textWriteErrors.length);
     const file = this.file(path);
     return this.serialize(async () => {
-      await this.editableFile(file);
-      if (sourceHash(await readFile(file, 'utf8')) !== hash) throw new UsageError(staleFile);
+      const current = await this.readForWrite(file), source = current.text;
+      if (current.hash !== hash) throw new UsageError(staleFile);
       await this.reconcile([file]);
       if (!this.sourceFiles.has(file) || !/\.[cm]?[jt]sx?$/.test(file)) throw new UsageError('Text edits require a tracked JSX source file.');
-      const identity = await this.editableFile(file);
-      const handle = await open(file, constants.O_RDWR | constants.O_NOFOLLOW);
-      let next: string, siteLine: number, before: string;
-      try {
-        const info = await handle.stat();
-        if (!info.isFile() || info.nlink !== 1) throw new UsageError('Apply requires a regular source file without hard links.');
-        if (info.dev !== identity.dev || info.ino !== identity.ino) throw new UsageError(staleFile);
-        await this.sameFile(file, identity);
-        const bytes = Buffer.alloc(info.size);
-        let offset = 0;
-        while (offset < bytes.length) { const { bytesRead } = await handle.read(bytes, offset, bytes.length - offset, offset); if (!bytesRead) break; offset += bytesRead; }
-        const source = bytes.subarray(0, offset).toString('utf8');
-        if (sourceHash(source) !== hash) throw new UsageError(staleFile);
-        before = source;
-        const { start, end, replacement, at } = find(file, source);
-        next = source.slice(0, start) + replacement + source.slice(end);
-        siteLine = sourceSite({ file, text: source, lineStarts: lineStarts(source) }, at, '').line;
-        parsesAsBefore(file, source, next);
-        await this.sameFile(file, identity);
-        await handle.writeFile(next, 'utf8'); await handle.truncate(Buffer.byteLength(next));
-        await this.sameFile(file, identity);
-      } finally { await handle.close(); }
-      await this.reconcile([file]);
+      const { start, end, replacement, at } = find(file, source);
+      const next = source.slice(0, start) + withEol(replacement, current.eol) + source.slice(end);
+      const siteLine = sourceSite({ file, text: source, lineStarts: lineStarts(source) }, at, '').line;
+      parsesAsBefore(file, source, next);
+      // the write re-checks the hash on the bytes: text that changed under the plan is refused, never written over
+      const written = await this.commit(file, current, next);
       const snapshot = await this.request<{ hash: string; remaining: Report['findings'] }>('remaining', { file, sites: [{ line: siteLine }] });
-      if (snapshot.hash !== sourceHash(next) || snapshot.hash !== this.hashes.get(file) || sourceHash(await readFile(file, 'utf8')) !== snapshot.hash) throw new UsageError(staleFile);
-      const undo = this.record(file, before, snapshot.hash, siteLine, label ?? changed(from, to));
+      if (snapshot.hash !== written.hash || snapshot.hash !== this.hashes.get(file)) throw new UsageError(staleFile);
+      const undo = this.record(file, source, snapshot.hash, siteLine, label ?? changed(from, to));
       return { revision: this.revision, file, hash: snapshot.hash, applied: [id], remaining: snapshot.remaining, undo };
     });
   }
@@ -1521,40 +1459,22 @@ export class Session extends EventEmitter {
     }
     const file = this.file(options.file), hash = options.hash, ids = options.edits.map(edit => edit.id);
     return this.serialize(async () => {
-      await this.editableFile(file);
-      if (sourceHash(await readFile(file, 'utf8')) !== hash) throw new UsageError(staleFile);
+      const read = await this.readForWrite(file), source = read.text;
+      if (read.hash !== hash) throw new UsageError(staleFile);
       await this.reconcile([file]);
       // Re-derive every choice from the current source and decisions, never from client text.
       const current = await this.request<Omit<EditsResult, 'revision'>>('edits', { file });
       if (current.hash !== hash || this.hashes.get(file) !== hash) throw new UsageError(staleFile);
       const known = new Map(current.edits.map(edit => [edit.id, edit]));
       const selected = ids.map(id => { const edit = known.get(id); if (!edit) throw new UsageError(`Unknown edit id: ${id}. Read the site's edits again.`); return edit; });
-      const ordered = selected.toSorted((a, b) => a.start - b.start || a.end - b.end);
+      // the replacements in the file's own line endings, so the positions below are the written text's
+      const ordered = selected.toSorted((a, b) => a.start - b.start || a.end - b.end).map(edit => ({ ...edit, to: withEol(edit.to, read.eol) }));
       for (let i = 1; i < ordered.length; i++) if (ordered[i]!.start < ordered[i - 1]!.end) throw new UsageError('Edits overlap. Choose one edit for each source range.');
-      // Refuse aliases and hard links, and hold the source descriptor throughout the write.
-      const identity = await this.editableFile(file);
-      const handle = await open(file, constants.O_RDWR | constants.O_NOFOLLOW);
-      let next: string, before: string;
-      try {
-        const info = await handle.stat();
-        if (!info.isFile() || info.nlink !== 1) throw new UsageError('Apply requires a regular source file without hard links.');
-        if (info.dev !== identity.dev || info.ino !== identity.ino) throw new UsageError(staleFile);
-        await this.sameFile(file, identity);
-        const bytes = Buffer.alloc(info.size);
-        let offset = 0;
-        while (offset < bytes.length) { const { bytesRead } = await handle.read(bytes, offset, bytes.length - offset, offset); if (!bytesRead) break; offset += bytesRead; }
-        const source = bytes.subarray(0, offset).toString('utf8');
-        if (sourceHash(source) !== hash) throw new UsageError(staleFile);
-        before = source;
-        next = source;
-        for (const edit of ordered.toReversed()) next = next.slice(0, edit.start) + edit.to + next.slice(edit.end);
-        parsesAsBefore(file, source, next);
-        await this.sameFile(file, identity);
-        await handle.writeFile(next, 'utf8');
-        await handle.truncate(Buffer.byteLength(next));
-        await this.sameFile(file, identity);
-      } finally { await handle.close(); }
-      await this.reconcile([file]);
+      let next = source;
+      for (const edit of ordered.toReversed()) next = next.slice(0, edit.start) + edit.to + next.slice(edit.end);
+      parsesAsBefore(file, source, next);
+      // the write re-checks the hash on the bytes and refuses aliases and hard links
+      const written = await this.commit(file, read, next);
       // Earlier replacements can shift later columns. Query the resulting authored sites.
       const starts = lineStarts(next);
       let delta = 0;
@@ -1564,8 +1484,8 @@ export class Session extends EventEmitter {
         return { line: site.line };
       });
       const snapshot = await this.request<{ hash: string; remaining: Report['findings'] }>('remaining', { file, sites });
-      if (snapshot.hash !== sourceHash(next) || snapshot.hash !== this.hashes.get(file) || sourceHash(await readFile(file, 'utf8')) !== snapshot.hash) throw new UsageError(staleFile);
-      const undo = this.record(file, before, snapshot.hash, sites[0]!.line, ordered.map(edit => changed(edit.from, edit.to, '')).join(', '));
+      if (snapshot.hash !== written.hash || snapshot.hash !== this.hashes.get(file)) throw new UsageError(staleFile);
+      const undo = this.record(file, source, snapshot.hash, sites[0]!.line, ordered.map(edit => changed(edit.from, edit.to, '')).join(', '));
       return { revision: this.revision, file, hash: snapshot.hash, applied: ids, remaining: snapshot.remaining, undo };
     });
   }
@@ -1644,29 +1564,15 @@ export class Session extends EventEmitter {
   /** One write taken back; the caller holds the lock (serialize). */
   private async undoOne(entry: Recorded): Promise<UndoResult> {
     const id = entry.id;
-    const file = this.file(entry.path);
-    await this.editableFile(file);
-    if (sourceHash(await readFile(file, 'utf8')) !== entry.hashAfter) throw new UsageError('The file changed since this write. Undo the newer writes first, or edit it by hand.');
+    const file = this.file(entry.path), since = 'The file changed since this write. Undo the newer writes first, or edit it by hand.';
+    const current = await this.readForWrite(file);
+    if (current.hash !== entry.hashAfter) throw new UsageError(since);
     await this.reconcile([file]);
-    if (this.hashes.get(file) !== entry.hashAfter) throw new UsageError('The file changed since this write. Undo the newer writes first, or edit it by hand.');
-    const identity = await this.editableFile(file);
-    const handle = await open(file, constants.O_RDWR | constants.O_NOFOLLOW);
-    try {
-      const info = await handle.stat();
-      if (!info.isFile() || info.nlink !== 1) throw new UsageError('Apply requires a regular source file without hard links.');
-      if (info.dev !== identity.dev || info.ino !== identity.ino) throw new UsageError(staleFile);
-      await this.sameFile(file, identity);
-      const bytes = Buffer.alloc(info.size);
-      let offset = 0;
-      while (offset < bytes.length) { const { bytesRead } = await handle.read(bytes, offset, bytes.length - offset, offset); if (!bytesRead) break; offset += bytesRead; }
-      if (sourceHash(bytes.subarray(0, offset).toString('utf8')) !== entry.hashAfter) throw new UsageError('The file changed since this write. Undo the newer writes first, or edit it by hand.');
-      await this.sameFile(file, identity);
-      await handle.writeFile(entry.before, 'utf8'); await handle.truncate(Buffer.byteLength(entry.before));
-      await this.sameFile(file, identity);
-    } finally { await handle.close(); }
+    if (this.hashes.get(file) !== entry.hashAfter) throw new UsageError(since);
+    try { await this.commit(file, current, entry.before); }
+    catch (error) { throw error instanceof UsageError && error.message === staleFile ? new UsageError(since) : error; }
     this.written = this.written.filter(item => item.id !== id);
     try { this.log.drop(new Set([`${this.nonce}:${id}`])); } catch { /* the trace keeps them; they read as changed */ }
-    await this.reconcile([file]);
     const snapshot = await this.request<{ hash: string; remaining: Report['findings'] }>('remaining', { file, sites: [{ line: entry.line }] });
     if (snapshot.hash !== sourceHash(entry.before) || snapshot.hash !== this.hashes.get(file)) throw new UsageError(staleFile);
     return { revision: this.revision, file, hash: snapshot.hash, undone: id, remaining: snapshot.remaining };
@@ -1782,8 +1688,7 @@ export class Session extends EventEmitter {
       }
     } catch (error) {
       this.undoing = undefined;
-      for (const handle of done.toReversed()) await this.undo(handle.id).catch(() => {});
-      throw error;
+      await this.putBack(done, error);
     } finally { this.undoing = undefined; this.tag = previous; }
     return { revision: this.revision, undone: ids, undo: done, files: hashes };
   }
@@ -1844,21 +1749,30 @@ export class Session extends EventEmitter {
   private async readableSource(file: string): Promise<void> {
     if (!containsPath(this.root, file) && !await ownSourcePath(this.root, file)) throw new UsageError('Shared source cannot read symbolic links or paths outside the repository/workspace root.');
   }
-  private async editableFile(file: string): Promise<{ dev: number; ino: number }> {
-    this.file(file);
-    const inside = relative(this.root, file).replaceAll('\\', '/');
+  /** The engine's policy on a file about to be written, on top of the write module's own checks (src/write/source-file.ts:
+   * containment, no symbolic or hard link, fatal UTF-8, hash on the bytes): inside the project, never React Plumber's config
+   * or .plumb files. */
+  private editable(file: string): string {
+    const path = this.file(file);
+    const inside = relative(this.root, path).replaceAll('\\', '/');
     if (/(?:^|\/)plumb(?:er)?\.config\.[^/]+$/.test(inside) || /(?:^|\/)\.plumb(?:er)?(?:\/|$)/.test(inside)) throw new UsageError('Apply cannot edit React Plumber config or .plumb files.');
-    const identity = await lstat(file);
-    const root = await realpath(this.root), path = await realpath(file);
-    if (path !== resolve(root, inside)) throw new UsageError('Apply cannot edit symbolic links or paths outside the project root.');
-    const current = await lstat(file);
-    if (identity.dev !== current.dev || identity.ino !== current.ino) throw new UsageError(staleFile);
-    if (!current.isFile() || current.nlink !== 1) throw new UsageError('Apply requires a regular source file without hard links.');
-    return identity;
+    return path;
   }
-  private async sameFile(file: string, identity: { dev: number; ino: number }): Promise<void> {
-    const current = await this.editableFile(file);
-    if (current.dev !== identity.dev || current.ino !== identity.ino) throw new UsageError(staleFile);
+  /** A file read for a write, under the policy. */
+  private readForWrite(file: string): Promise<SourceText> { return readSource(this.root, this.editable(file), sourceBoundary(this.root)); }
+  /** The one guarded write, under the policy: the hash re-checked on the bytes, the file's line endings and BOM kept, a
+   * rename no reader sees half done, the result re-read and verified; then the engine's inventory moves on. */
+  private async commit(file: string, read: Pick<SourceText, 'hash' | 'identity'>, next: string): Promise<Written> {
+    const written = await writeSource(this.root, this.editable(file), { expectHash: read.hash, expectIdentity: read.identity, next, boundary: sourceBoundary(this.root) });
+    await this.reconcile([written.path]);
+    return written;
+  }
+  /** The files a multi-file write already wrote go back as they were, through undo (their history entries and trace go
+   * with them); one that cannot go back is named in the error the caller gets, never swallowed. */
+  private async putBack(done: UndoHandle[], error: unknown): Promise<never> {
+    const failed: { file: string; error: string }[] = [];
+    for (const handle of done.toReversed()) { try { await this.undo(handle.id); } catch (reason) { failed.push({ file: handle.file, error: errorMessage(reason) }); } }
+    throw withRollback(error, failed);
   }
   private position(value: number): number { if (!Number.isSafeInteger(value) || value < 1) throw new UsageError('Line and column must be positive integers.'); return value; }
   async close(): Promise<void> {
