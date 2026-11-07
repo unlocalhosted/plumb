@@ -134,7 +134,7 @@ async function assertions(page, version = 19) {
     return window.__plumb.site(element);
   }), null);
   // The request goes through the host's auth/origin core, never a mocked resolver.
-  for (const source of [join(repo, 'src/index.ts'), 'node_modules/react/index.js', 'untracked.jsx', 'webpack://_N_E/../../src/index.ts']) {
+  for (const source of [join(repo, 'src/index.ts'), 'node_modules/react/index.js', '.scratch/untracked.jsx', 'webpack://_N_E/../../src/index.ts']) {
     const result = await page.evaluate(async source => {
       const token = document.querySelector('script[data-plumb-token]')?.dataset.plumbToken;
       return (await fetch('/__plumb/resolve?' + new URLSearchParams({ source }), { headers: token ? { 'x-plumb-token': token } : {} })).json();
@@ -336,7 +336,9 @@ for (const bundler of ['webpack', 'turbopack']) test(`Next 16 ${bundler}: instal
 
 test('resolve validates tracked source identity and site queries select only exact JSX attributes', async t => {
   const root = await project(t);
-  await writeFile(join(root, 'untracked.jsx'), 'export default () => <div />;');
+  // a file the rule leaves out: under a dot folder nothing imports (every file under the root is otherwise yours)
+  await mkdir(join(root, '.scratch'), { recursive: true });
+  await writeFile(join(root, '.scratch/untracked.jsx'), 'export default () => <div />;');
   await writeFile(join(root, 'index.html'), '<html><head></head><body>Host</body></html>');
   await symlink(join(repo, 'src/index.ts'), join(root, 'src/escape.ts'));
   await mkdir(join(root, 'node_modules/local'), { recursive: true });
@@ -368,7 +370,7 @@ test('resolve validates tracked source identity and site queries select only exa
     assert.deepEqual(await response.json(), { file: 'src/App.jsx', ...at, component });
   }
   assert.equal((await resolve('src/App.jsx', { ...position('<section'), tag: 'span' })).status, 400, 'span cannot resolve to caller section');
-  for (const source of [join(repo, 'src/index.ts'), pathToFileURL(join(repo, 'src/index.ts')).href, 'file:///src/App.jsx', 'node_modules/local/index.jsx', '/@fs/' + join(root, 'node_modules/local/index.jsx'), 'untracked.jsx', 'src/escape.ts', 'webpack://_N_E/../../src/index.ts', '%2e%2e/%2e%2e/src/index.ts', 'webpack://_N_E/./node_modules/local/index.jsx']) {
+  for (const source of [join(repo, 'src/index.ts'), pathToFileURL(join(repo, 'src/index.ts')).href, 'file:///src/App.jsx', 'node_modules/local/index.jsx', '/@fs/' + join(root, 'node_modules/local/index.jsx'), '.scratch/untracked.jsx', 'src/escape.ts', 'webpack://_N_E/../../src/index.ts', '%2e%2e/%2e%2e/src/index.ts', 'webpack://_N_E/./node_modules/local/index.jsx']) {
     const response = await resolve(source); assert.equal(response.status, 200, source);
     const result = await response.json(); assert.equal(result.library, true, source); assert.equal(result.file, undefined, source);
   }
