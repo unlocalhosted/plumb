@@ -366,7 +366,8 @@ export class FixPanel {
       // while it runs, the problems' heat steps back (nothing lit): the page shows the clean-up's marks, not the fixes'
       render: () => { const on = this.#cleanup.running; if (on !== this.#quiet) { this.#quiet = on; this.#host.spotlight(on ? ['cleanup'] : []); } this.#html = ''; this.render(); },
       announce: (t) => this.#host.announce?.(t),
-      wrote: (r, text) => { this.#last = { text, undo: r?.undo ?? [], group: r?.trace?.group ?? null, key: null }; },
+      // a step written while the panel is open is said above it, with Undo; closed meanwhile, History says it
+      wrote: (r, text) => { const last = { text, undo: r?.undo ?? [], group: r?.trace?.group ?? null, key: null }; if (this.#on) this.#last = last; else if (last.undo.length || last.group) this.#host.handOff?.({ undo: last.undo, trace: { group: last.group } }, text); },
       // the one write of text styles (blueprint.js): remembered across the reload it may cause, its files read again
       write: (w, said, meta) => this.#host.applyStyles(w, said, meta),
       undo: (group) => this.#host.undoGroup(group),
