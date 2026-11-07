@@ -189,6 +189,23 @@ function changed(from: string, to: string, quote = '“”'): string {
 }
 export type SourceResolution = { file: string; line?: number; column?: number; hash?: string; component?: string; authoredOwner?: boolean; usage?: true } | { library: true; untracked?: string } | { refused: 'not-jsx'; at: PositionKind } | { refused: 'source-mismatch' };
 const ignored = ['**/node_modules/**', '**/.git/**', '**/dist/**', '**/build/**', '**/.next/**', '**/.cache/**', '**/.plumb-cache/**', '**/.plumber/cache/**', '**/.plumb/cache/**'];
+/** A position computed on one text, in the text that replaced it: moved past the runs changed before it; null when it
+ * lies inside a changed run (its place was rewritten) or past the end. */
+function relocate(before: string, after: string, moves: ReturnType<typeof hunks>, line: number, column: number): { line: number; column: number } | null {
+  const start = lineStarts(before)[line - 1];
+  if (start === undefined) return null;
+  const offset = start + column - 1;
+  let delta = 0;
+  for (const h of moves) {
+    if (offset < h.start) break;
+    if (offset < h.end) return null;
+    delta += h.to.length - h.from.length;
+  }
+  const moved = offset + delta, starts = lineStarts(after);
+  if (moved > after.length) return null;
+  let at = 0; while (at + 1 < starts.length && starts[at + 1]! <= moved) at++;
+  return { line: at + 1, column: moved - starts[at]! + 1 };
+}
 const tracked = (file: string) => /\.(?:[cm]?[jt]sx?|css|json|jsonl)$/.test(file) && !/(?:^|\/)(?:node_modules|\.git|dist|build|\.next|\.cache|\.plumb-cache|\.plumber\/cache|\.plumb\/cache)(?:\/|$)/.test(file) && !/(?:^|\/)\.plumb(?:er)?\/serve\.json$/.test(file);
 const ignoredDirectory = (file: string) => /(?:^|\/)(?:node_modules|\.git|dist|build|\.next|\.cache|\.plumb-cache|\.plumber\/cache|\.plumb\/cache)(?:\/|$)/.test(file);
 const missing = (error: unknown) => ['ENOENT', 'ENOTDIR'].includes((error as NodeJS.ErrnoException).code ?? '');
@@ -904,7 +921,10 @@ export class Session extends EventEmitter {
    * The whole Apply in one request, in order: theme tokens, then class swaps per file, then the ledger. Each item
    * stands alone (one refusal stops nothing else) and each file's hash moves on within the batch: an item may send the
    * hash the file had when the batch began or the hash after the previous write to it; only a hash that was already
-   * stale fails that item. Every written file gets its own history entry and undo handle, as the single endpoints do.
+   * stale fails that item. An item found by content (a token, a stylesheet block) simply moves on; an item with
+   * positions (a swap's line and column) sent against the batch-start text of a file written since has each place
+   * found again in the text the file has now, or that place refused: nothing is applied against positions computed on
+   * other text. Every written file gets its own history entry and undo handle, as the single endpoints do.
    */
   async applyAll(options: ApplyAllOptions): Promise<ApplyAllResult> {
     const { tokens = [], css = [], swaps = [], accepts = [] } = options ?? {};
@@ -921,23 +941,48 @@ export class Session extends EventEmitter {
   /** The transaction is alive: the host's dead-transaction timer measures silence, so a long apply is never released mid-write. */
   private progress(): void { if (this.transaction) this.emit('transaction', { phase: 'progress' }); }
   private async applyEach({ tokens, css, swaps, accepts }: Required<ApplyAllOptions>, result: ApplyAllResult): Promise<ApplyAllResult> {
-    // the hash each file had when the batch began, and the hash it has now
-    const began = new Map<string, string>(), latest = new Map<string, string>();
+    // each file as it was when the batch began (its text, for the positions computed on it), and the hash it has now
+    const began = new Map<string, { hash: string; text: string }>(), latest = new Map<string, string>();
+    const begin = async (path: string) => {
+      if (began.has(path)) return;
+      const text = await readFile(path, 'utf8').catch(() => ''), hash = sourceHash(text);
+      began.set(path, { hash, text }); latest.set(path, hash);
+    };
+    /** the hash an item found by content is written with: the batch-start hash moves on to the latest */
     const hashFor = async (file: string, sent: string): Promise<string> => {
-      const path = this.file(file);
-      if (!began.has(path)) { const text = await readFile(path, 'utf8').catch(() => ''); began.set(path, sourceHash(text)); latest.set(path, sourceHash(text)); }
-      if (sent === began.get(path) || sent === latest.get(path)) return latest.get(path)!;
+      const path = this.file(file); await begin(path);
+      if (sent === latest.get(path)) return sent;
+      if (sent === began.get(path)!.hash) return latest.get(path)!;
       throw new UsageError(staleFile);
+    };
+    /** a swap's edits with their places found again in the text the file has now, when it was written since the batch
+     * began; a place inside a run the earlier write changed is refused, never guessed */
+    const rebase = async (swap: SwapsOptions): Promise<{ swap: SwapsOptions; refused: RefusedSwap[] }> => {
+      const path = this.file(swap.file); await begin(path);
+      const was = began.get(path)!, now = latest.get(path)!;
+      if (swap.hash === now) return { swap, refused: [] };
+      if (swap.hash !== was.hash) throw new UsageError(staleFile);
+      const text = await readFile(path, 'utf8');
+      if (sourceHash(text) !== now) throw new UsageError(staleFile);
+      const moves = hunks(was.text, text), refused: RefusedSwap[] = [], edits: SwapsOptions['edits'] = [];
+      for (const e of swap.edits) {
+        const place = relocate(was.text, text, moves, e.line, e.column), at = e.at ? relocate(was.text, text, moves, e.at.line, e.at.column) : undefined;
+        if (!place || e.at && !at) { refused.push({ line: e.line, column: e.column, from: e.from, to: e.to, reason: 'This place was written earlier in this apply; read it again.' }); continue; }
+        edits.push({ ...e, ...place, ...(at ? { at } : {}) });
+      }
+      return { swap: { ...swap, hash: now, edits }, refused };
     };
     const moved = (file: string, hash: string) => latest.set(this.file(file), hash);
     const message = (error: unknown) => error instanceof UsageError ? error.message : errorMessage(error);
     const swapFile = async (swap: SwapsOptions, token?: string) => {
       const tag = token === undefined ? {} : { token };
       try {
-        const written = await this.swaps({ ...swap, hash: await hashFor(swap.file, swap.hash) });
+        const based = await rebase(swap);
+        if (!based.swap.edits.length) throw new UsageError(`${based.refused.length === 1 ? 'The change could not be written' : 'None of these changes could be written'}: ${based.refused[0]!.reason}`);
+        const written = await this.swaps(based.swap);
         moved(swap.file, written.hash);
         result.undo.push(written.undo); result.labels.push(written.undo.label);
-        result.results.swaps.push({ file: swap.file, ok: true, applied: written.applied, refused: written.refused ?? [], ...tag });
+        result.results.swaps.push({ file: swap.file, ok: true, applied: written.applied, refused: [...based.refused, ...written.refused ?? []], ...tag });
       } catch (error) { result.results.swaps.push({ file: String(swap?.file), ok: false, applied: [], refused: [], ...tag, error: message(error) }); }
     };
     // a token's own class goes to the places its cause had before the theme changed: once the token is in the theme
