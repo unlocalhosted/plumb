@@ -121,13 +121,46 @@ function nums(b) {
   return `${size}${Number(b.lineHeight) > 0 ? ` · ${+Number(b.lineHeight).toFixed(2)} line height` : ''}${b.weight && b.weight !== 400 ? ` · weight ${b.weight}` : ''}`;
 }
 
+// The clean-up's one phase (docs/state-machines/cleanup-spec.md, read by `sm`: docs/briefs/state-oracle-spec.md). A pass
+// is read, then shown (`preview`), then written as one step; `stop` (close, Esc with nothing to cancel) ends it from
+// anywhere. After a reload its own write caused, the kept record brings it back writing (its trace asked) or done.
+/** @machine */
+export const CLEANUP = {
+  id: 'cleanup',
+  owner: 'Cleanup',
+  field: '#state',
+  token: '#run',
+  initial: 'idle',
+  cancel: ['stop'],
+  states: {
+    idle:     { on: { read: 'reading', resumeWriting: 'writing', resumeDone: 'done' }, ignores: ['stop'] },
+    reading:  { flight: 'read', on: { ready: 'ready', nothing: 'nothing', failed: 'error', noCensus: 'noCensus', stop: 'idle' } },
+    ready:    { on: { preview: 'preview', read: 'reading', finished: 'done', stop: 'idle' } }, // Apply shows first, then writes from `preview`
+    nothing:  { on: { read: 'reading', finished: 'done', stop: 'idle' } },
+    preview:  { on: { cancel: 'ready', write: 'writing', stop: 'idle' } },
+    writing:  { flight: 'write', on: { landed: 'done', failed: 'error', notLanded: 'idle', stop: 'idle' } }, // notLanded: the page reloaded mid-write and the trace shows nothing
+    done:     { on: { read: 'reading', failed: 'error', stop: 'idle' } }, // read: the next pass, or the page again after Undo; failed: the undo refused
+    error:    { on: { read: 'reading', stop: 'idle' } },
+    noCensus: { on: { read: 'reading', stop: 'idle' } },
+  },
+  flights: {
+    read: { ifLeft: 'drop' },
+    write: { ifLeft: 'handOff' }, // closed while it was written: the step goes to History, with its Undo
+  },
+};
+
 export class Cleanup {
   #show = null; #marks = null; // the show playing: its stop, and the marks it draws on the page
-  #host; #el = null; #pass = 0; #done = new Map(); #state = 'idle'; #p = null; #page = null; #err = null; #preview = new StylePreview(); #held = false; #saved = null;
+  #host; #el = null; #pass = 0; #done = new Map(); #state = CLEANUP.initial; #p = null; #page = null; #err = null; #preview = new StylePreview(); #held = false; #saved = null;
   #swaps = { spacing: new SpacingPass(), colour: new ColourPass(), icons: new IconPass() };
   // One run at a time (docs/state-machines/cleanup-spec.md): every move the person makes (start, a pass read, Esc out of
   // the preview, Apply, Undo, stop) is a new run; an answer that comes back for an older run changes nothing on screen
   #run = 0;
+  #send(event) {
+    const next = CLEANUP.states[this.#state]?.on?.[event];
+    if (next) this.#state = next;
+    return !!next;
+  }
   get #sw() { return this.#swaps[PASSES[this.#pass]]; } // the pass in hand, when it is a class-swap pass
   get #words() { return this.#sw ? W[PASSES[this.#pass]] : W; }
   #hasNext() { return !!this.#swaps[PASSES[this.#pass + 1]]; }
@@ -141,41 +174,50 @@ export class Cleanup {
     this.#pass = 0; this.#done.clear(); this.#saved = null;
     await this.#read();
   }
-  stop() { this.#run++; this.#settle(); keep(null); this.#listen(false); this.#held = false; this.#preview.clear((el, f) => f()); for (const sw of Object.values(this.#swaps)) sw.clear(); this.#state = 'idle'; this.#p = null; this.#host.render(); }
+  stop() { this.#run++; this.#settle(); keep(null); this.#listen(false); this.#held = false; this.#preview.clear((el, f) => f()); for (const sw of Object.values(this.#swaps)) sw.clear(); this.#send('stop'); this.#p = null; this.#host.render(); }
 
   // back after a reload its own write or undo caused: the step written (with its Undo), or the page read again
-  async resume() {
-    let v = kept();
+  resume() {
+    const v = kept();
     if (!v || this.running) return;
-    const pass = v.pass ?? 0, run = ++this.#run;
-    // the page went while its write was saving: the server's trace says whether the step landed (it may still be
-    // finishing, so it is asked a few times); landed, it comes back done with its Undo, else the page is read again
-    if (v.state === 'writing' && v.group) {
-      this.#page = v.page; if (this.#swaps[PASSES[pass]]) this.#swaps[PASSES[pass]].page = v.swap; this.#done = new Map(Object.entries(v.done ?? {}));
-      this.#state = 'writing'; this.#pass = pass; this.#host.render();
-      let changes = [];
-      for (let i = 0; i < 6 && !changes.length; i++) {
-        if (i) await new Promise((r) => setTimeout(r, 1000));
-        changes = ((await request('trace', { group: v.group }).catch(() => null))?.changes ?? []).filter((c) => c.state === 'live');
-      }
-      if (run !== this.#run) return; // closed while the trace was asked
-      if (changes.length) {
-        const done = { ...(v.done ?? {}), [PASSES[pass]]: 'done' };
-        const said = v.said;
-        v = { state: 'done', pass, saved: v.saved, page: v.page, swap: v.swap, done };
-        keep(v);
-        this.#host.wrote?.({ undo: changes.map(({ id, file, label }) => ({ change: id, file, label })), trace: { group: v.saved.group } }, said);
-      } else { this.#state = 'idle'; v = { ...v, state: 'read', said: W.reloaded }; }
+    const pass = v.pass ?? 0;
+    if (v.state === 'writing' && v.group) return this.#resumeWriting(v, pass);
+    this.#run++;
+    if (v.state === 'done') { this.#send('resumeDone'); this.#resumeDone(v, pass); }
+    else this.#resumeRead(v, pass);
+  }
+  // the page went while its write was saving: the server's trace says whether the step landed (it may still be
+  // finishing, so it is asked a few times); landed, it comes back done with its Undo, else the page is read again
+  async #resumeWriting(v, pass) {
+    const run = ++this.#run;
+    this.#page = v.page; if (this.#swaps[PASSES[pass]]) this.#swaps[PASSES[pass]].page = v.swap; this.#done = new Map(Object.entries(v.done ?? {}));
+    this.#send('resumeWriting'); this.#pass = pass; this.#host.render();
+    let changes = [];
+    for (let i = 0; i < 6 && !changes.length; i++) {
+      if (i) await new Promise((r) => setTimeout(r, 1000));
+      changes = ((await request('trace', { group: v.group }).catch(() => null))?.changes ?? []).filter((c) => c.state === 'live');
     }
-    if (v.state === 'done') { this.#saved = v.saved; this.#page = v.page; this.#done = new Map(Object.entries(v.done ?? {})); this.#pass = pass; if (this.#swaps[PASSES[pass]]) this.#swaps[PASSES[pass]].page = v.swap; this.#state = 'done'; this.#host.render(); this.#host.announce?.(`${W.pass[PASSES[pass]]}: ${this.#savedLine(v.saved)}`); }
-    else if (pass > 0) { this.#done = new Map(Object.entries(v.done ?? {})); this.#readPass(pass).then(() => v.said && this.#host.announce?.(v.said)); }
-    else { this.start().then(() => v.said && this.#host.announce?.(v.said)); }
+    if (run !== this.#run) return; // closed while the trace was asked
+    if (changes.length) {
+      const done = { ...(v.done ?? {}), [PASSES[pass]]: 'done' };
+      const landed = { state: 'done', pass, saved: v.saved, page: v.page, swap: v.swap, done };
+      keep(landed);
+      this.#host.wrote?.({ undo: changes.map(({ id, file, label }) => ({ change: id, file, label })), trace: { group: landed.saved.group } }, v.said);
+      this.#send('landed'); this.#resumeDone(landed, pass);
+    } else { this.#send('notLanded'); this.#resumeRead({ ...v, state: 'read', said: W.reloaded }, pass); }
+  }
+  // the kept step, back on screen with its Undo (the phase is done already)
+  #resumeDone(v, pass) { this.#saved = v.saved; this.#page = v.page; this.#done = new Map(Object.entries(v.done ?? {})); this.#pass = pass; if (this.#swaps[PASSES[pass]]) this.#swaps[PASSES[pass]].page = v.swap; this.#host.render(); this.#host.announce?.(`${W.pass[PASSES[pass]]}: ${this.#savedLine(v.saved)}`); }
+  // the page read again where the clean-up was, and what the reload was for said once it is
+  #resumeRead(v, pass) {
+    if (pass > 0) { this.#done = new Map(Object.entries(v.done ?? {})); this.#readPass(pass).then(() => v.said && this.#host.announce?.(v.said)); }
+    else this.start().then(() => v.said && this.#host.announce?.(v.said));
   }
 
   // the text pass: the project's ladder, this page's places in it
   async #read() {
     const run = ++this.#run;
-    this.#state = 'reading'; this.#err = null; this.#host.render();
+    this.#send('read'); this.#err = null; this.#host.render();
     const census = pageCensus(), stamps = new Set(census.map((c) => c.stamp));
     try {
       const said = await post('system', { census, scope: 'project', route: location.pathname });
@@ -190,10 +232,10 @@ export class Cleanup {
       const before = sizes(census.map((c) => c.computed.size));
       const after = sizes(roles.filter((x) => x.here.length).map((x) => sizeOf(x.role.bundle) ?? x.role.bundle.sizeText));
       this.#page = { census, roles, before, after, moves: roles.reduce((n, x) => n + x.moves.length, 0), places: roles.reduce((n, x) => n + x.here.length, 0) };
-      this.#state = this.#page.moves ? 'ready' : 'nothing';
+      this.#send(this.#page.moves ? 'ready' : 'nothing');
     } catch (error) {
       if (run !== this.#run) return;
-      this.#state = errorIs(error, 'no-census') ? 'no-census' : 'error';
+      this.#send(errorIs(error, 'no-census') ? 'noCensus' : 'failed');
       this.#err = error?.message ?? null;
     }
     this.#host.render();
@@ -202,14 +244,14 @@ export class Cleanup {
   // a class-swap pass (spacing, colour): this page against the site's, kept to what the app already has
   async #readPass(i) {
     const run = ++this.#run;
-    this.#pass = i; this.#saved = null; this.#state = 'reading'; this.#err = null; this.#host.render();
+    this.#pass = i; this.#saved = null; this.#send('read'); this.#err = null; this.#host.render();
     try {
       const page = await this.#sw.read();
       if (run !== this.#run) return;
-      this.#state = page.places ? 'ready' : 'nothing';
+      this.#send(page.places ? 'ready' : 'nothing');
     } catch (error) {
       if (run !== this.#run) return;
-      this.#state = errorIs(error, 'no-census') ? 'no-census' : 'error';
+      this.#send(errorIs(error, 'no-census') ? 'noCensus' : 'failed');
       this.#err = error?.message ?? null;
     }
     this.#host.render();
@@ -219,7 +261,7 @@ export class Cleanup {
     const k = PASSES[this.#pass];
     if (!this.#done.has(k)) this.#done.set(k, 'skipped');
     if (this.#hasNext()) return this.#readPass(this.#pass + 1);
-    this.#state = 'done'; this.#host.render();
+    this.#send('finished'); this.#host.render();
   }
   #savedLine(saved) { return (saved?.pass ? W[PASSES[saved.pass]] : W).saved(saved.places, saved.files); }
   #moves() { return this.#sw ? this.#sw.page?.places ?? 0 : this.#page?.moves ?? 0; }
@@ -242,7 +284,7 @@ export class Cleanup {
     const s = this.#state, acts = (inner) => `<div class="acts">${inner}</div>`;
     const close = `<button type="button" class="cu-btn quiet" data-cu="close">${esc(W.close)}<kbd>esc</kbd></button>`;
     if (s === 'reading') return `<div class="body"><div class="sub" role="status">${esc(this.#words.reading)}</div></div>`;
-    if (s === 'no-census') return `<div class="body"><div class="head">${esc(W.noCensus)}</div><div class="sub">${esc(W.noCensusWhy)}</div>`
+    if (s === 'noCensus') return `<div class="body"><div class="head">${esc(W.noCensus)}</div><div class="sub">${esc(W.noCensusWhy)}</div>`
       + `<div class="cmd"><code>plumber census --url ${esc(this.#host.url?.() ?? location.origin + '/')}</code><button type="button" class="cu-btn quiet" data-cu="copy">${esc(W.copy)}</button></div></div>${acts(`<button type="button" class="cu-btn" data-cu="retry">${esc(W.retry)}</button><span class="grow"></span>${close}`)}`;
     if (s === 'error') return `<div class="body"><div class="head">${esc(this.#words.couldNot)}</div><div class="error">${esc(this.#err ?? '')}</div></div>${acts(`<button type="button" class="cu-btn" data-cu="retry">${esc(W.retry)}</button><span class="grow"></span>${close}`)}`;
     if (s === 'writing') return `<div class="body"><div class="sub" role="status">${esc(W.writing(this.#moves()))}</div></div>`;
@@ -329,19 +371,21 @@ export class Cleanup {
   async #play() {
     this.#show?.abort();
     const stop = (this.#show = new AbortController());
+    const run = this.#run; // the show belongs to the move that started it; a later move settles it itself
     this.#marks ??= new Marks(this.#el.getRootNode());
     const chips = [...this.#el.querySelectorAll('.sh-chip')];
     const steps = this.#steps().map((x, i) => ({ ...x, chip: chips[i] }));
     await (this.#sw?.beat === 'all' ? playAll : play)(steps, { marks: this.#marks, signal: stop.signal });
+    if (run !== this.#run) return;
     if (this.#show === stop) this.#show = null;
   }
   #settle() { this.#show?.abort(); this.#show = null; this.#marks?.clear(); }
   #togglePreview(on) {
     if (on && this.#state === 'ready') {
-      this.#state = 'preview'; this.#listen(true); this.#host.render(); this.#host.announce?.(W.previewing(this.#moves()));
+      this.#send('preview'); this.#listen(true); this.#host.render(); this.#host.announce?.(W.previewing(this.#moves()));
       return this.#play();
     }
-    if (!on && this.#state === 'preview') { this.#run++; this.#settle(); if (this.#sw) this.#sw.clear(); else this.#preview.clear(glide); this.#state = 'ready'; this.#listen(false); this.#held = false; }
+    if (!on && this.#state === 'preview') { this.#run++; this.#settle(); if (this.#sw) this.#sw.clear(); else this.#preview.clear(glide); this.#send('cancel'); this.#listen(false); this.#held = false; }
     this.#host.render();
   }
 
@@ -357,14 +401,14 @@ export class Cleanup {
     if (run !== this.#run || this.#state !== 'preview') return;
     this.#settle(); this.#listen(false);
     if (this.#held) { this.#held = false; this.#preview.show(this.#p, null); }
-    this.#state = 'writing'; this.#host.render();
+    this.#send('write'); this.#host.render();
     const group = `cleanup-text-${Date.now().toString(36)}`;
     const files = new Set(swaps.map((f) => f.file)).size, places = swaps.reduce((n, f) => n + f.edits.length, 0), said = W.saved(places, files);
     const landed = (undo = []) => {
       // closed while it was written: the step is History's to say (the host hands it on), nothing comes back on screen
       if (run === this.#run) {
         this.#saved = { group, places, files, refused: this.#saved?.group === group ? this.#saved.refused : 0 };
-        this.#done.set('text', 'done'); this.#state = 'done';
+        this.#done.set('text', 'done'); this.#send('landed');
         keep({ state: 'done', pass: 0, saved: this.#saved, page: kept_, done: Object.fromEntries(this.#done) });
       }
       this.#host.wrote?.({ undo, trace: { group } }, said);
@@ -386,7 +430,7 @@ export class Cleanup {
       // the page now draws the styles from its own classes: the preview's inline values (the same) are let go
       requestAnimationFrame(() => this.#preview.clear((el, f) => f()));
       this.#host.announce?.(`${W.pass.text}: ${said}`);
-    } catch (error) { if (run === this.#run) { keep(null); this.#preview.clear(glide); this.#state = 'error'; this.#err = error?.message ?? W.couldNot; } }
+    } catch (error) { if (run === this.#run) { keep(null); this.#preview.clear(glide); this.#send('failed'); this.#err = error?.message ?? W.couldNot; } }
     finally { removeEventListener('plumb:applied', heard); }
     this.#host.render();
   }
@@ -398,7 +442,7 @@ export class Cleanup {
     if (run !== this.#run || this.#state !== 'preview') return; // taken back by Esc, or taken over by a second Enter
     this.#settle(); this.#listen(false);
     if (this.#held) { this.#held = false; sw.show(); }
-    this.#state = 'writing'; this.#host.render();
+    this.#send('write'); this.#host.render();
     const group = `cleanup-${k}-${Date.now().toString(36)}`;
     try {
       const { swaps, refused, places: wrote } = await sw.edits();
@@ -409,7 +453,7 @@ export class Cleanup {
       const landed = (undo = []) => {
         if (run === this.#run) {
           this.#saved = { group, places, files, pass: i, refused: refused.length };
-          this.#done.set(k, 'done'); this.#state = 'done';
+          this.#done.set(k, 'done'); this.#send('landed');
           keep({ state: 'done', pass: i, saved: this.#saved, page, swap: sw.page, done: Object.fromEntries(this.#done) });
         }
         this.#host.wrote?.({ undo, trace: { group } }, said);
@@ -423,7 +467,7 @@ export class Cleanup {
       // the page now draws the change from its own classes: the preview's inline values (the same) are let go
       requestAnimationFrame(() => sw.clear());
       this.#host.announce?.(`${W.pass[k]}: ${said}`);
-    } catch (error) { if (run === this.#run) { keep(null); sw.clear(); this.#state = 'error'; this.#err = error?.message ?? S.couldNot; } }
+    } catch (error) { if (run === this.#run) { keep(null); sw.clear(); this.#send('failed'); this.#err = error?.message ?? S.couldNot; } }
     this.#host.render();
   }
   async #undo() {
@@ -436,10 +480,11 @@ export class Cleanup {
       if (run !== this.#run) return; // closed while it was taken back
       this.#saved = null;
       this.#done.delete(k);
-      if (i) await this.#readPass(i); else { this.#pass = 0; await this.#read(); }
+      if (!i) this.#pass = 0;
+      await (i ? this.#readPass(i) : this.#read());
       this.#host.announce?.(said);
     }
-    catch (error) { if (run !== this.#run) return; keep(null); this.#err = error?.message ?? W.couldNot; this.#state = 'error'; this.#host.render(); }
+    catch (error) { if (run !== this.#run) return; keep(null); this.#err = error?.message ?? W.couldNot; this.#send('failed'); this.#host.render(); }
   }
 
   // keys while a clean-up runs (the fix panel passes the key's name): true when handled

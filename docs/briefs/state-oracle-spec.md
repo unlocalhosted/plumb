@@ -1044,3 +1044,43 @@ Choices made where the spec was ambiguous or met real code. Each keeps the spec'
 14. **Bench**: `hyperfine` is not installed; `node tools/sm/bench/cli.mjs --runs 20` spawns each command 20 times
     after 2 warm-ups and prints min/median/max. Layer 1 and 2 medians: Node start-up 31 ms; `sm on` 53 ms;
     `sm check` on one file 50–70 ms; whole repo (253 files) 417 ms with no cache.
+
+## Build notes (layer 3, 2026-11-07)
+
+The three hand-converted owners now declare their tables (`fix-panel`, 6 states; `text-edit`, 5; `cleanup`, 9), with
+`#send` as the only writer and the flight token as 2.3 says. A refactor: nothing the person sees changes. Where the
+code and the spec disagreed, the code's behaviour won and the table says what the code does.
+
+15. **`flight-check`'s "after" test was wider than 3.3's definition.** It took `a.end <= w.end`, which also matches a
+    write *inside* the await (`await this.#read()`: the call is the await's operand and runs before the function
+    suspends). Now: A ends before W starts, or A sits inside W. Fixture `flight-check/await-call` (must pass). The
+    rule stays positional: an `if` with an await in each branch reports the second branch's writes as after the first
+    branch's await (`#undo` in `cleanup.js` now puts both reads under one `await (i ? … : …)`). Not changed; noted.
+16. **The fix panel's token guard is vacuous, by the spec's own table.** 1.1 declares `closed.on.openWriting`, so the
+    token must survive `close` (show(true) reads its kind); the table forbids a second flight, so nothing ever replaces
+    it; and the canonical left branch (2.3) writes nothing, so it could not clear a token nobody else clears. Hence the
+    guard is there (the rule's shape, and what a future second flight would hit) and "closed while it ran" is decided
+    by the phase after it (`mine`), where the `handOff` lives. 11's risk note ("`mine` must become a token guard; the
+    behaviour is the same") does not hold for an owner whose flight state can be re-entered; the spec should say that
+    an owner with an `open<Flight>` event decides `ifLeft` by phase after the token guard.
+17. **Fix panel table against 1.1's example**: `keeping` also takes `take` (Enter with the why field unfocused wrote
+    the fix before the table; kept, and now visible: a bug to fix on its own) and `hold` (the ‹ › buttons); `escape`
+    in `keeping` goes to `resting` (the panel's own Esc path is `release`; the field's Esc is `closeKeep` → holding);
+    `resting`, `writing` and `undoing` *ignore* `escape`, because there Esc is Blueprint's, which closes the panel
+    (`close`); `undoing` lands by `landedResting`/`landedHolding`/`landedKeeping` (back where it was, as
+    `docs/state-machines/fixpanel-spec.md` says); `cancel` is `['escape', 'close']`: the panel has no destroy, so no
+    `unmount` exists to declare.
+18. **Fix panel, two non-phase writes after an await**: the text card's `write` callback kept the step's group in
+    `#textGroup` for `said`; it is the card's bookkeeping, now a constructor closure. `#readFromCode`'s `.finally`
+    redraw is skipped when a write or undo started meanwhile (its landing redraws).
+19. **Words editor**: events `cancel` (Esc, and Enter with the words unchanged) and `unmount`; `destroy()` sends
+    `unmount` and clears the token, so a lookup or a write still out lands on no one. A write that lands after destroy
+    still reaches `host.wrote` (`ifLeft: 'handOff'`); before, it also re-ran `#end()` on a destroyed editor. `#end()`
+    no longer writes the phase; each caller sends its event.
+20. **Clean-up**: `no-census` is `noCensus` (name rule); `resume()` is sync and hands the writing case to
+    `#resumeWriting`, with `#resumeDone`/`#resumeRead` shared, so the guard and the writes share one block; `#play`
+    captures the run (a later move settles the show itself); `done.on.failed → error` (an undo refused, or a lost
+    answer after the page heard the apply) and `ready|nothing.on.finished → done` (the last pass skipped).
+21. **Not proven here**: the three browser proofs (`blueprint` "Esc while a fix", `text-edit` "being saved", `cleanup`
+    "Esc during the show") were not run; the laptop had under 1 GB free with swap in use. `sm check` on the three
+    files is clean, `sm paths fix-panel keeping` answers, and `e2e/sm-*.test.mjs` (51) pass.

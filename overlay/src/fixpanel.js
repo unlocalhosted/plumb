@@ -279,31 +279,49 @@ const elsewhere = (g, scope) => (scope ? drawnOf(g, scope).elsewhere : 0);
 const elsOf = (g) => [...new Set(g.members.map((m) => m.el).filter(Boolean))];
 const shown = (el) => el?.isConnected && (el.checkVisibility?.({ visibilityProperty: true }) ?? true) && el.getClientRects().length > 0;
 
-// The panel's one machine (docs/state-machines/fixpanel-spec.md): what it shows is its phase; a write or undo running
-// against the server is its flight, kept apart so closing the panel mid-write never loses the write. Every move between
-// phases is one of these; any other is refused and said in the console.
-const MOVES = {
-  closed: ['resting', 'writing', 'undoing'], // opened (with a flight in the air: the flight is shown)
-  resting: ['closed', 'holding', 'undoing'],
-  holding: ['closed', 'resting', 'keeping', 'writing', 'undoing'],
-  keeping: ['closed', 'resting', 'holding', 'writing', 'undoing'],
-  writing: ['closed', 'resting', 'holding'], // landed: the next cause in hand, or none left
-  undoing: ['closed', 'resting', 'holding', 'keeping'], // landed: back where it was
+// The panel's one machine (docs/state-machines/fixpanel-spec.md, read by `sm`: docs/briefs/state-oracle-spec.md): what
+// it shows is its phase; a write or undo running against the server is its flight, kept apart so closing the panel
+// mid-write never loses the write. Every move between phases is an event in this table, sent through #send; any other
+// is refused and said in the console. Esc is the panel's own only with a cause in hand (`escape`); at rest, or while a
+// flight is out, it is Blueprint's, which closes the panel (`close`). Keeping takes `take` too: Enter with the why field
+// unfocused writes the fix, as it did before the table.
+/** @machine */
+export const FIX_PANEL = {
+  id: 'fix-panel',
+  owner: 'FixPanel',
+  field: '#phase',
+  token: '#flight',
+  initial: 'closed',
+  cancel: ['escape', 'close'],
+  states: {
+    closed:  { on: { open: 'resting', openWriting: 'writing', openUndoing: 'undoing' }, ignores: ['escape', 'close'] }, // opened with a flight in the air: the flight is shown
+    resting: { on: { hold: 'holding', undo: 'undoing', close: 'closed' }, ignores: ['escape'] },
+    holding: { on: { take: 'writing', keep: 'keeping', release: 'resting', hold: 'holding', undo: 'undoing', escape: 'resting', close: 'closed' } },
+    keeping: { on: { keepIt: 'writing', take: 'writing', closeKeep: 'holding', hold: 'holding', release: 'resting', undo: 'undoing', escape: 'resting', close: 'closed' } },
+    writing: { flight: 'write', on: { landedNext: 'holding', landedNone: 'resting', close: 'closed' }, ignores: ['escape'] }, // landed: the next cause in hand, or none left
+    undoing: { flight: 'undo', on: { landedResting: 'resting', landedHolding: 'holding', landedKeeping: 'keeping', close: 'closed' }, ignores: ['escape'] }, // landed: back where it was
+  },
+  flights: {
+    write: { ifLeft: 'handOff' }, // closed while it ran: History says it, with its Undo
+    undo: { ifLeft: 'drop' },
+  },
 };
 
 export class FixPanel {
-  #phase = 'closed';
+  #phase = FIX_PANEL.initial;
   #flight = null; // { kind: 'writing' | 'undoing' } while a write or an undo runs, whether the panel is open or not
   get #on() { return this.#phase !== 'closed'; }
   get #holding() { return this.#phase === 'holding' || this.#phase === 'keeping'; } // a cause is in hand
   get #keeping() { return this.#phase === 'keeping'; } // the why field is open for the cause in hand
   get #writing() { return this.#phase === 'writing'; }
   get #undoing() { return this.#phase === 'undoing'; }
-  #to(next) {
-    if (next === this.#phase) return true;
-    if (!MOVES[this.#phase].includes(next)) { console.warn(`plumb: fix panel can't go from ${this.#phase} to ${next}`); return false; }
-    this.#phase = next;
-    return true;
+  // the one writer of #phase: the table says what the event does in the phase in hand (nothing, on purpose, when it is
+  // in `ignores`; nothing, and a warning, when the table has no answer)
+  #send(event) {
+    const next = FIX_PANEL.states[this.#phase]?.on?.[event];
+    if (next) this.#phase = next;
+    else if (!FIX_PANEL.states[this.#phase]?.ignores?.includes(event)) console.warn(`plumb: fix panel can't ${event} while ${this.#phase}`);
+    return !!next;
   }
   get phase() { return this.#phase; }
   #el; #host; #groups = []; #code = 0; #at = 0; #held = null; #pending = null; #error = null; #progress = null; #taken = new Map(); #tokens = new Map(); #done = false; #previewed = null; #fixed = []; #fixedCount = 0;
@@ -315,7 +333,7 @@ export class FixPanel {
   #names = new Map(); // cause key → the new token's name as typed
   #fromCode = new Map(); // cause key → { reading } | { plan, writes, at } | { none }: a cause no element renders, its options read from the code
   #swaps = new Map();    // cause key → { writes }: taken from the code alone
-  #last = null; #textGroup = null;          // the last write: { text, undo: [handle] } (undo empty: nothing to take back), said above the panel
+  #last = null;          // the last write: { text, undo: [handle] } (undo empty: nothing to take back), said above the panel
   #writingText = null;   // what is being written, when it isn't a single fix
   #resumeAt = null;      // after a write reloaded the page: { at, key, since }, the place to hold once a reading no longer has the fix written
 
@@ -328,10 +346,11 @@ export class FixPanel {
     this.#el.setAttribute('aria-label', 'Fix');
     root.append(this.#el);
     // Alt+click on words: a card beside them with their own values, problem or not (texteditor.js)
+    let textGroup = null; // the step the card's last write made, until the card says it (the card's own bookkeeping, not the panel's)
     this.#editor = new TextEditor(root, {
       // the text card's write is one step: its group comes back with the answer, and its Undo is that step's
-      write: async (at, key, token, said) => { const r = await this.#host.set(at, key, token, said); this.#textGroup = r?.group ?? null; return r; },
-      said: (text, undo, group = this.#textGroup) => { this.#textGroup = null; this.#last = { text, undo, group, key: null }; this.#html = ''; this.render(); this.#host.announce?.(text); },
+      write: async (at, key, token, said) => { const r = await this.#host.set(at, key, token, said); textGroup = r?.group ?? null; return r; },
+      said: (text, undo, group = textGroup) => { textGroup = null; this.#last = { text, undo, group, key: null }; this.#html = ''; this.render(); this.#host.announce?.(text); },
       problems: () => this.#problemsIn(this.#editor.target),
       // the problems inside are the fix panel's: the card steps aside for them
       show: () => this.#handOver(this.#editor),
@@ -424,7 +443,7 @@ export class FixPanel {
   #handOver(card) { const el = card.target; card.close(); if (!el || !this.holdEl(el, 'none')) this.hold(0); }
 
   // each opening starts unread: the last one's count and its settled mark never stand in for this reading
-  show(on) { if (on) { const rest = undoing_(); if (rest) queueMicrotask(() => this.#undo(rest)); this.#el.dataset.scheme = darkGround() ? 'dark' : 'light'; for (const w of written_()) if (!this.#taken.has(w.key)) this.#taken.set(w.key, { key: w.key, members: [] }); } if (on !== this.#on) { this.#groups = []; this.#progress = null; this.#steady = null; this.#notice = null; clearTimeout(this.#noticeTimer); this.#el.removeAttribute('data-settled'); this.#to(on ? this.#flight?.kind ?? 'resting' : 'closed'); } this.#el.hidden = !on; if (!on) { this.#editor.close(); this.#card.close(); this.#letGo(false); this.#done = false; const last = this.#last; if (last?.undo?.length || last?.group) this.#host.handOff?.({ undo: last.undo ?? [], trace: { group: last.group ?? null } }, last.text); this.#last = null; this.#resumeAt = null; if (this.#cleanup.running) this.#cleanup.stop(); } else this.#cleanup.resume(); this.render(); }
+  show(on) { if (on) { const rest = undoing_(); if (rest) queueMicrotask(() => this.#undo(rest)); this.#el.dataset.scheme = darkGround() ? 'dark' : 'light'; for (const w of written_()) if (!this.#taken.has(w.key)) this.#taken.set(w.key, { key: w.key, members: [] }); } if (on !== this.#on) { this.#groups = []; this.#progress = null; this.#steady = null; this.#notice = null; clearTimeout(this.#noticeTimer); this.#el.removeAttribute('data-settled'); this.#send(on ? (this.#flight?.kind === 'undoing' ? 'openUndoing' : this.#flight?.kind === 'writing' ? 'openWriting' : 'open') : 'close'); } this.#el.hidden = !on; if (!on) { this.#editor.close(); this.#card.close(); this.#letGo(false); this.#done = false; const last = this.#last; if (last?.undo?.length || last?.group) this.#host.handOff?.({ undo: last.undo ?? [], trace: { group: last.group ?? null } }, last.text); this.#last = null; this.#resumeAt = null; if (this.#cleanup.running) this.#cleanup.stop(); } else this.#cleanup.resume(); this.render(); }
   // the reader handed on the page: causes, most places first; a cause taken stays taken until it is written
   // While a cause is in hand the page is read as previewed (its fix, and what that fix also mends, gone from it): the
   // causes stay as they were read before, and the new reading is taken when the cause is put down
@@ -479,7 +498,7 @@ export class FixPanel {
   hold(i, lead, reveal = lead ? 'none' : 'show') {
     const live = this.#live();
     // nothing is put in hand while a write or an undo is out (the one that lands moves the panel on itself)
-    if (!live.length || this.#flight || !this.#to('holding')) return;
+    if (!live.length || this.#flight || !this.#send('hold')) return;
     // a cause in hand owns the screen: a card open is closed first
     if (this.#card.open) { this.#card.close(); this.#html = ''; }
     if (this.#editor.open) { this.#editor.close(); this.#html = ''; }
@@ -547,13 +566,18 @@ export class FixPanel {
     this.#resumeAt = null;
     if (!this.#holding) return false;
     const g = this.#cause();
+    this.#send('release');
+    this.#putDown(g);
+    return true;
+  }
+  // the cause is out of hand (the phase has moved): its token preview undone, the reading made while it was tried let
+  // go, the page's hold and light released
+  #putDown(g) {
     if (g) this.#unpreviewToken(g);
-    this.#to('resting');
     this.#letGo(false);
     this.#host.release();
     this.#host.spotlight([]);
     this.render();
-    return true;
   }
   skip(by) {
     if (!this.#holding) return;
@@ -578,9 +602,11 @@ export class FixPanel {
     if (this.#fromCode.has(g.key) || mark.family === 'craft' || !mark.choices?.length || !this.#host.fromCode) return;
     const places = [...new Map(g.members.map((m) => [`${fileOf(m)}:${m.mark.line}:${m.mark.column}`, { file: fileOf(m), line: m.mark.line, column: m.mark.column }])).values()];
     this.#fromCode.set(g.key, { reading: true });
+    const flight = this.#flight; // null: nothing is put in hand while a write or an undo is out
     this.#host.fromCode(mark, places)
       .then((r) => this.#fromCode.set(g.key, r ? { ...r, at: r.plan.at } : { none: true }), () => this.#fromCode.set(g.key, { none: true }))
-      .finally(() => { if (this.#held?.key === g.key) { this.#html = ''; this.render(); } });
+      // a write or an undo started meanwhile draws the panel itself when it lands
+      .finally(() => { if (this.#flight !== flight) return; if (this.#held?.key === g.key) { this.#html = ''; this.render(); } });
   }
   // settled: every element read (the resting line never changes under the person after it)
   #settled(done = !!this.#progress && (this.#progress.done ?? this.#progress.read === this.#progress.total)) {
@@ -629,17 +655,17 @@ export class FixPanel {
   // Keep it: the cause is intended. Its why is asked in one line; every place is recorded as kept on Apply
   keep() {
     const g = this.#cause();
-    if (!g || this.#keeping || !this.#to('keeping')) return;
+    if (!g || this.#keeping || !this.#send('keep')) return;
     this.#why = ''; this.#html = ''; this.render();
     this.#el.querySelector('input[name="why"]')?.focus();
   }
-  #closeKeep() { this.#to('holding'); this.#html = ''; this.render(); }
+  #closeKeep() { this.#send('closeKeep'); this.#html = ''; this.render(); }
   #keepIt() {
     const g = this.#cause(), why = this.#why.trim();
     if (!g || why.length < 3) return;
     this.#keeps.set(g.key, { rule: g.members[0].mark.rule, why, els: elsOf(g), sites: g.members.map((m) => ({ file: fileOf(m), line: m.mark.line, column: m.mark.column, text: m.mark.text })) });
     this.#taken.set(g.key, g);
-    this.#write(this.#saying(g), g.key);
+    this.#write(this.#saying(g), g.key, true);
   }
   // What the theme can do for a cause with nothing to swap to: make a Tailwind default yours, or add the step it lacks
   #action(g, v) {
@@ -670,9 +696,9 @@ export class FixPanel {
   }
   // A fix is written the moment it is taken (one guarded write; there is no queue): the panel says what it changed and
   // where, with Undo, and moves on to the next fix. What didn't land comes back in hand, with why.
-  async #write(said, key) {
-    if (!this.#taken.size || this.#flight || !this.#to('writing')) return;
-    this.#flight = { kind: 'writing' };
+  async #write(said, key, keep = false) {
+    if (!this.#taken.size || this.#flight || !this.#send(keep ? 'keepIt' : 'take')) return;
+    const flight = (this.#flight = { kind: 'writing' }); // this write's token; show(true) reads its kind while it is out
     const at = this.#at, g = this.#taken.get(key);
     this.#fixed = g ? elsOf(g) : [];
     this.#fixedCount = 1;
@@ -683,7 +709,9 @@ export class FixPanel {
     const meta = { step: g ? nameOf(g) : FIX.card.steps.fix, laws: g ? g.members.flatMap((m) => m.mark?.laws ?? []) : [] };
     try { left = (await this.#host.applyAll([...this.#tokens.values()], [...this.#keeps.values()], 1, [...this.#swaps.values()], said, { at, key, meta })) ?? left; }
     catch (error) { left = { count: 1, why: error?.message }; }
-    // still the panel's: it moves on. Closed while it ran: the write is History's to say, with its Undo
+    // replaced while it ran (the table forbids a second flight, so never): the write would be History's alone
+    if (this.#flight !== flight) { if (left.undo?.length || left.group) this.#host.handOff?.({ undo: left.undo ?? [], trace: { group: left.group ?? null } }, said); return; }
+    // still the panel's: it moves on. Closed while it ran, and not opened again: the write is History's to say, with its Undo
     const mine = this.#phase === 'writing';
     this.#flight = null;
     const ok = !left.count;
@@ -698,7 +726,7 @@ export class FixPanel {
     const p = this.#pending; this.#pending = null;
     if (p) ({ groups: this.#groups, code: this.#code } = groupsOf(p));
     const live = this.#live();
-    if (live.length) this.hold(Math.min(at, live.length - 1)); else { this.#to('resting'); this.#letGo(true); this.#html = ''; this.render(); }
+    if (live.length) { this.#send('landedNext'); this.hold(Math.min(at, live.length - 1)); } else { this.#send('landedNone'); this.#letGo(true); this.#html = ''; this.render(); }
     if (!ok) { this.#error = left.why ?? FIX.couldNot; this.#html = ''; this.render(); }
   }
   // Undo: the last fix's writes taken back, newest first; the page is read again and the fix comes back
@@ -706,8 +734,8 @@ export class FixPanel {
     const last = rest ?? this.#last;
     if ((rest ? !last?.undo?.length && !last?.group : !last?.undo?.length) || !this.#on || this.#flight) return;
     const back = this.#phase;
-    if (!this.#to('undoing')) return;
-    this.#flight = { kind: 'undoing' };
+    if (!this.#send('undo')) return;
+    const flight = (this.#flight = { kind: 'undoing' }); // this undo's token
     this.#html = ''; this.render();
     let why = null;
     // newest first; what is left is kept in the tab before each one, so an undo that reloads the page (a source file
@@ -737,10 +765,11 @@ export class FixPanel {
     removeEventListener('pagehide', leave);
     if (leaving) return; // the page is going: the reloaded one goes on with what's left
     saveUndoing(null);
+    if (this.#flight !== flight) return; // replaced while it ran (the table forbids a second flight, so never)
     // still the panel's: back where it was. Closed while it ran: only said
     const mine = this.#phase === 'undoing';
     this.#flight = null;
-    if (mine) this.#to(back === 'writing' || back === 'undoing' ? 'resting' : back);
+    if (mine) this.#send(back === 'holding' ? 'landedHolding' : back === 'keeping' ? 'landedKeeping' : 'landedResting');
     // a step undone by its group is said by History's toast, which carries the Undo: the panel says nothing more
     const word = why === null && byGroup ? null : { text: why === null ? FIX.undone : FIX.couldNotUndo(why), undo: [] };
     if (mine) this.#last = word;
@@ -786,7 +815,7 @@ export class FixPanel {
     if (k === 'k' || k === 'K') { this.keep(); return true; }
     if (k === 'ArrowRight' || k === 'Tab') { this.skip(1); return true; }
     if (k === 'ArrowLeft') { this.skip(-1); return true; }
-    if (k === 'Escape') { this.release(); return true; }
+    if (k === 'Escape') { const g = this.#cause(); this.#send('escape'); this.#putDown(g); return true; }
     return false;
   }
 

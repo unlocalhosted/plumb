@@ -61,11 +61,40 @@ function caretAt(x, y) {
   return range ? { node: range.startContainer, offset: range.startOffset } : null;
 }
 
+// One phase (docs/state-machines/text-edit-spec.md, read by `sm`: docs/briefs/state-oracle-spec.md): idle → resolving →
+// editing → saving → idle, or → error → idle. Only `editing` owns the keys; saving and error are said beside the words
+// while the page's keys work as ever. `cancel` is Esc, and Enter with the words unchanged; `unmount` is the overlay
+// going (destroy), which also lets go of a lookup or a write still out (its token).
+/** @machine */
+export const TEXT_EDIT = {
+  id: 'text-edit',
+  owner: 'TextEditor',
+  field: '#phase',
+  token: '#flight',
+  initial: 'idle',
+  cancel: ['cancel', 'unmount'],
+  states: {
+    idle:      { on: { start: 'resolving' }, ignores: ['cancel', 'unmount'] },
+    resolving: { flight: 'resolve', on: { edit: 'editing', refused: 'idle', gone: 'idle', unmount: 'idle' }, ignores: ['cancel'] }, // a second double-click is the first's
+    editing:   { on: { save: 'saving', cancel: 'idle', unmount: 'idle' } },
+    saving:    { flight: 'write', on: { saved: 'idle', failed: 'error', unmount: 'idle' }, ignores: ['cancel'] }, // the keys are the page's: Esc is not the edit's
+    error:     { on: { dismiss: 'idle', expired: 'idle', unmount: 'idle' }, ignores: ['cancel'] },
+  },
+  flights: {
+    resolve: { ifLeft: 'drop' },
+    write: { ifLeft: 'handOff' }, // destroyed while it was written: History still says it
+  },
+};
+
 export class TextEditor {
   #root; #host; #ring; #tag; #edit = null; #hideTimer = 0; #endTimer = 0;
-  // One phase (docs/state-machines/text-edit-spec.md): idle → resolving → editing → saving → idle, or → error → idle.
-  // Only `editing` owns the keys; saving and error are said beside the words while the page's keys work as ever.
-  #phase = 'idle';
+  #phase = TEXT_EDIT.initial;
+  #flight = null; // the lookup or the write out: {} per run; destroy() lets it go
+  #send(event) {
+    const next = TEXT_EDIT.states[this.#phase]?.on?.[event];
+    if (next) this.#phase = next;
+    return !!next;
+  }
 
   // host: editing(on, rect) lets the edit through blueprint's glass; announce(text); changed(); inBlueprint() and
   // blueprint() say whether blueprint is on and turn it back on after a reload
@@ -104,14 +133,15 @@ export class TextEditor {
   async start(node, offset = null) {
     // one edit at a time: a second double-click while the first is read is the first's. A failed save's message gives
     // way to the next try
-    if (this.#phase === 'error') { clearTimeout(this.#endTimer); this.#end(); }
-    if (this.#phase !== 'idle') return false;
-    this.#phase = 'resolving';
+    if (this.#phase === 'error') { clearTimeout(this.#endTimer); this.#send('dismiss'); this.#end(); }
+    if (!this.#send('start')) return false;
+    const flight = (this.#flight = {});
     const el = node.parentElement, words = norm(node.data);
     const target = await this.#resolve(el, words).catch((error) => ({ editable: false, reason: error?.message ?? "React Plumber couldn't read this text." }));
-    if (this.#phase !== 'resolving') return false; // let go meanwhile (destroyed)
-    if (!node.isConnected) { this.#phase = 'idle'; return false; }
-    if (!target.editable) { this.#phase = 'idle'; this.#refusal(node, target); return true; }
+    if (this.#flight !== flight) return false; // let go meanwhile (destroyed)
+    this.#flight = null;
+    if (!node.isConnected) { this.#send('gone'); return false; }
+    if (!target.editable) { this.#send('refused'); this.#refusal(node, target); return true; }
     this.#begin(node, target, offset);
     return true;
   }
@@ -142,7 +172,7 @@ export class TextEditor {
     const lead = node.data.match(/^\s*/)[0], trail = node.data.match(/\s*$/)[0];
     const ed = { node, el, target, leaf, lead, trail, before: node.data, area: null, done: false, prior: el.getAttribute('contenteditable'), kids: [...el.childNodes] };
     this.#edit = ed;
-    this.#phase = 'editing';
+    this.#send('edit');
     this.#host.editing?.(true, () => this.#rect());
     if (leaf) {
       el.setAttribute('contenteditable', 'plaintext-only');
@@ -247,25 +277,33 @@ export class TextEditor {
     getSelection()?.removeAllRanges();
     const keep = save && typed && typed !== norm(ed.target.from);
     ed.node.data = keep ? ed.lead + typed + ed.trail : ed.before;
-    if (!keep) return this.#end();
+    if (!keep) { this.#send('cancel'); return this.#end(); }
     // saving: the keys are the page's again (Esc, Alt+B); the words stay as typed until the write answers
-    this.#phase = 'saving';
+    this.#send('save');
+    const flight = (this.#flight = {});
     this.#host.editing?.(false);
     this.#say('saving');
     try { sessionStorage.setItem(RESUME, JSON.stringify({ at: Date.now(), blueprint: !!this.#host.inBlueprint?.() })); } catch {}
+    const said = `${changed(norm(ed.target.from), typed)} in ${short(ed.target.file)}`;
     try {
       const result = await this.#write(ed.target, ed.target.from, typed);
+      // destroyed while it was written: the write landed all the same, so History says it
+      if (this.#flight !== flight) { this.#host.wrote?.(result, said); return; }
+      this.#flight = null;
+      this.#send('saved');
       this.#end();
-      this.#host.wrote?.(result, `${changed(norm(ed.target.from), typed)} in ${short(ed.target.file)}`);
+      this.#host.wrote?.(result, said);
       this.#host.announce?.(`Applied in ${short(ed.target.file)}`);
     } catch (error) {
+      if (this.#flight !== flight) return; // destroyed while it was written: nothing to show it on
+      this.#flight = null;
       try { sessionStorage.removeItem(RESUME); } catch {}
       ed.node.data = ed.before;
       const stale = errorIs(error, 'stale-file');
-      this.#phase = 'error';
+      this.#send('failed');
       this.#say('error', stale ? 'This file changed after we checked it. Double-click to try again.' : (error?.message ?? 'Couldn’t apply the edit.'));
       clearTimeout(this.#endTimer);
-      this.#endTimer = setTimeout(() => { if (this.#phase === 'error' && this.#edit === ed) this.#end(); }, 2400);
+      this.#endTimer = setTimeout(() => { if (this.#phase === 'error' && this.#edit === ed) { this.#send('expired'); this.#end(); } }, 2400);
     }
   }
 
@@ -275,9 +313,9 @@ export class TextEditor {
       : post('apply-text', { file: target.file, hash: target.hash, run: target.id, from, to });
   }
 
+  // the edit is over (the phase has moved to idle): nothing on screen, the host told
   #end() {
     this.#edit = null;
-    this.#phase = 'idle';
     this.#ring.hidden = true;
     this.#tag.hidden = true;
     this.#host.editing?.(false);
@@ -302,7 +340,8 @@ export class TextEditor {
 
   destroy() {
     if (this.#phase === 'editing') this.#finish(false);
-    this.#phase = 'idle';
+    this.#send('unmount');
+    this.#flight = null; // a lookup or a write still out lands on no one
     clearTimeout(this.#hideTimer); clearTimeout(this.#endTimer);
   }
 }

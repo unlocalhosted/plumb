@@ -124,7 +124,7 @@ for (const c of cases) {
   });
 }
 
-for (const [dir, file] of [['flight-check/capture-in-parent', 'after.js'], ['send-shape/canonical-ts', 'after.ts']]) {
+for (const [dir, file] of [['flight-check/capture-in-parent', 'after.js'], ['flight-check/await-call', 'after.js'], ['send-shape/canonical-ts', 'after.ts']]) {
   test(`lint: ${dir} must pass`, () => {
     const root = repo({ [file]: fixture(dir, file) });
     try {

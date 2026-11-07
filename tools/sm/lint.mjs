@@ -373,9 +373,12 @@ function flightCheck(ctx) {
     });
     const scope = scopeOf(ctx, [...parents, fn]);
     const fix = `Before the await: \`const flight = (${self(ctx, ctx.token)} = {});\` (or \`const run = ++${self(ctx, ctx.token)};\`). After it: \`if (${self(ctx, ctx.token)} !== flight) return;\` then the write.`;
+    // W is after A when A ends before W starts, or A sits inside W (`this.#page = await read()` completes after the
+    // await). W inside A (`await this.#read()`: the call is the await's operand) runs before the function suspends.
+    const after = (/** @type {{ start: number, end: number }} */ a, /** @type {Node} */ w) => a.end <= w.start || (a.start >= w.start && a.end <= w.end);
     for (const w of writes) {
       let last = -1;
-      for (const a of awaits) if (a.end <= w.node.end && a.end > last) last = a.end;
+      for (const a of awaits) if (after(a, w.node) && a.end > last) last = a.end;
       if (last < 0) continue;
       const guarded = guards.some(g => {
         if (g.node.start < last) return false;
