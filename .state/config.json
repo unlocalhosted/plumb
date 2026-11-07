@@ -1,0 +1,5 @@
+{
+  "schema": 1,
+  "include": ["overlay/src/**/*.js", "src/**/*.ts"],
+  "exclude": ["**/*.test.*", "**/fixtures/**", "src/**/*.d.ts"]
+}

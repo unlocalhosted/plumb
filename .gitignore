@@ -19,3 +19,8 @@ dist/
 **/.plumb/cache/
 
 /overlay/showcase/.probe-cache/
+
+# state oracle (tools/sm): the log and cache are local
+/.state/log*.jsonl
+/.state/open.json
+/.state/cache/

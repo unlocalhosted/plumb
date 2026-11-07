@@ -54,7 +54,8 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "npm run build && node scripts/test.mjs",
     "prepack": "npm run build",
-    "prepublishOnly": "npm run build && npm test"
+    "prepublishOnly": "npm run build && npm test",
+    "sm": "node tools/sm/bin.mjs"
   },
   "devDependencies": {
     "@base-ui/react": "^1.8.0",
