@@ -1,0 +1,11 @@
+{
+  "schema": 1,
+  "id": "vite-hold",
+  "binding": { "file": "src/hosts/vite.ts", "owner": "module", "function": "plumb", "flags": ["held"] },
+  "initial": "idle",
+  "cancel": ["relinquish"],
+  "states": {
+    "idle":    { "is": { "held": null },  "on": { "start": "holding" }, "ignores": ["end", "progress", "seen", "silence", "relinquish"] },
+    "holding": { "is": { "held": "set" }, "on": { "start": "holding", "progress": "holding", "seen": "holding", "end": "idle", "silence": "idle", "relinquish": "idle" } }
+  }
+}
