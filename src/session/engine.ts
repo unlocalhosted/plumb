@@ -236,6 +236,9 @@ export class Session extends EventEmitter {
   private batchRead = false;
   private reconciliations = 0;
   private queue: Promise<unknown> = Promise.resolve();
+  /** the worker's own lifecycle: `lost` once the current worker exits while the Session is open, `starting` while one boots */
+  private lost: Error | undefined;
+  private starting: Promise<void> | undefined;
   private failure: Error | undefined;
   private failurePaths: string[] = [];
   private stamps = new Map<string, string>();
@@ -285,8 +288,9 @@ export class Session extends EventEmitter {
     if (this.closed) throw new UsageError('Session is closed. Start a new session.');
     const inventory = this.directories.size ? this.retainedFiles() : undefined;
     const worker = this.worker = new Worker(new URL('./worker.js', import.meta.url), { workerData: { ...this.options, root: this.root, inventory } });
+    this.lost = undefined;
     await new Promise<void>((resolveReady, rejectReady) => {
-      this.worker.on('message', message => {
+      worker.on('message', message => {
         if (message.health) this.healthSnapshot = message.health;
         if (message.ready) { this.dependencies.clear(); for (const file of message.dependencies) this.dependencies.add(file);
           this.patterns = message.patterns; this.patternsDirty = true; this.sourceFiles.clear(); for (const file of message.files) this.sourceFiles.add(file);
@@ -312,13 +316,25 @@ export class Session extends EventEmitter {
         if (message.judged) this.lastStats = { ...(this.lastStats as object ?? {}), judged: message.judged };
         if (message.error) pending.reject(failure(message.error)); else pending.resolve(message.result);
       });
-      this.worker.on('error', error => { rejectReady(error); this.rejectPending(error); });
-      worker.on('exit', code => { if (this.worker === worker && code !== 0) { const error = new Error(`Analysis worker exited with code ${code}.`); rejectReady(error); if (!this.closed) this.rejectPending(error); } });
+      worker.on('error', error => { rejectReady(error); if (this.worker === worker) this.rejectPending(error); });
+      // Any exit of the current worker while the Session is open leaves it lost: what was asked of it fails now, and the
+      // next request starts a new one (restart) instead of posting to a dead thread and waiting forever.
+      worker.on('exit', code => {
+        if (this.worker !== worker) return;
+        const error = new Error(`Analysis worker exited with code ${code}.`); rejectReady(error);
+        if (!this.closed) { this.lost = error; this.rejectPending(error); }
+      });
     });
   }
+  /** Starts a new worker, sharing one start between everyone who asks while it boots. */
+  private restart(): Promise<void> {
+    return this.starting ??= this.start().finally(() => { this.starting = undefined; });
+  }
   private rejectPending(error: Error): void { for (const p of this.pending.values()) p.reject(error); this.pending.clear(); }
-  private request<T>(method: string, params: object = {}): Promise<T> {
-    if (this.closed) return Promise.reject(new UsageError('Session is closed. Start a new session.'));
+  private async request<T>(method: string, params: object = {}): Promise<T> {
+    if (this.closed) throw new UsageError('Session is closed. Start a new session.');
+    if (this.lost || this.starting) await this.restart();
+    if (this.closed) throw new UsageError('Session is closed. Start a new session.');
     const id = ++this.id;
     return new Promise<T>((resolveValue, reject) => { this.pending.set(id, { resolve: value => resolveValue(value as T), reject }); this.worker.postMessage({ id, method, params }); });
   }
@@ -474,7 +490,7 @@ export class Session extends EventEmitter {
     if (!changed.length) { if (this.failure) throw this.failure; return []; }
     const broad = changed.some(path => !isLedgerPath(path) && (this.configurationFiles.has(path) || !/\.(?:[jt]sx?|css)$/.test(path) || !this.sourceFiles.has(path) && !this.dependencies.has(path) || !this.hashes.has(path)));
     try {
-      if (broad || this.failure) { await this.worker.terminate(); this.rejectPending(new Error('Session inputs changed.')); await this.start(); }
+      if (broad || this.failure) { await this.worker.terminate(); this.rejectPending(new Error('Session inputs changed.')); await this.restart(); }
       else {
         const result = await this.request<{ dependencyDelta: string[]; dependencyQueries: [string, string[]][]; queryDependencies: [string, string[]][] }>('refresh', { paths: changed });
         for (const path of result.dependencyDelta) this.dependencies.add(path);
