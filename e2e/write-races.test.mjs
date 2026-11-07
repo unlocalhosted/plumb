@@ -34,15 +34,16 @@ async function project(t) {
   const start = async () => { server = await serve({ root, watch: false }); };
   await start();
   t.after(() => server?.close());
-  const call = async (method, params = {}, verb = 'GET') => {
+  // a write's idempotency key goes in its own header, never in the body (where `key` is an endpoint's own field)
+  const call = async (method, params = {}, verb = 'GET', { key } = {}) => {
     const url = new URL('/__plumb/' + method, `http://127.0.0.1:${server.info.port}`);
     if (verb === 'GET') url.search = new URLSearchParams(params);
-    const response = await fetch(url, { method: verb, headers: { 'x-plumb-token': server.info.token, 'Content-Type': 'application/json' }, ...(verb === 'POST' ? { body: JSON.stringify(params) } : {}) });
+    const response = await fetch(url, { method: verb, headers: { 'x-plumb-token': server.info.token, 'Content-Type': 'application/json', ...(key ? { 'Idempotency-Key': key } : {}) }, ...(verb === 'POST' ? { body: JSON.stringify(params) } : {}) });
     return { status: response.status, body: await response.json() };
   };
   const read = () => readFile(join(root, 'src/App.tsx'), 'utf8');
   const hash = async () => (await call('props', { file: 'src/App.tsx', line: 3, column: 3 })).body.hash;
-  const swap = (line, from, to, extra = {}) => call('swaps', { file: 'src/App.tsx', hash: extra.hash, edits: [{ line, column: 3, from, to }], ...extra }, 'POST');
+  const swap = (line, from, to, { key, ...extra } = {}) => call('swaps', { file: 'src/App.tsx', hash: extra.hash, edits: [{ line, column: 3, from, to }], ...extra }, 'POST', { key });
   return { root, call, read, hash, swap, restart: async () => { await server.close(); await start(); }, stop: () => server.close(), port: () => server.info.port };
 }
 

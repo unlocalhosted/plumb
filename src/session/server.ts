@@ -52,17 +52,17 @@ function position(params: Record<string, unknown>, name: string, optional = fals
 export async function dispatch(session: Session, method: string, raw: unknown = {}, options: Pick<HandlerOptions, 'servedRoot' | 'readiness' | 'readinessProject'> = {}): Promise<unknown> {
   return dispatchRequest(session, method, raw, options, false);
 }
-// A write may carry an idempotency `key`: a retry after a dropped response (the same key, the same body) returns the
-// first answer, success or refusal, and never applies twice. A different body under a used key is refused. The last
-// 256 keys per session are kept; the overlay sends a fresh key for every write.
+// A write may carry an idempotency key in the Idempotency-Key header: a retry after a dropped response (the same key,
+// the same body) returns the first answer, success or refusal, and never applies twice. A different body under a used
+// key is refused. The last 256 keys per session are kept; the overlay sends a fresh key for every write. The header,
+// not the body: `key` in a body is the endpoint's own (set's prop key), and means what it always meant.
+export const idempotencyHeader = 'idempotency-key';
 const answered = new WeakMap<Session, Map<string, { body: string; result: Promise<unknown> }>>();
-function idempotent(session: Session, method: string, params: Record<string, unknown>, run: () => Promise<unknown>): Promise<unknown> {
-  const key = params.key;
-  if (typeof key !== 'string' || !key.trim() || key.length > 128) throw new UsageError('key must be a string of at most 128 characters.');
+function idempotent(session: Session, method: string, params: Record<string, unknown>, key: string, run: () => Promise<unknown>): Promise<unknown> {
+  if (!key.trim() || key.length > 128) throw new UsageError('Idempotency-Key must be at most 128 characters.');
   let keys = answered.get(session);
   if (!keys) { keys = new Map(); answered.set(session, keys); }
-  const { key: _, ...rest } = params;
-  const body = JSON.stringify([method, rest]);
+  const body = JSON.stringify([method, params]);
   const seen = keys.get(key);
   if (seen) {
     if (seen.body !== body) throw new UsageError('That key was already used for a different write. Send a new key.');
@@ -96,9 +96,9 @@ function pinOf(edit: Record<string, unknown>): { at?: { line: number; column: nu
   return { ...(object(at) ? { at: { line: Number(at.line), column: Number(at.column) } } : {}),
     ...(object(of) ? { of: { file: text(of, 'file')!, line: position(of, 'line')!, column: position(of, 'column')!, chain: chainOf(of.chain) } } : {}) };
 }
-async function dispatchRequest(session: Session, method: string, raw: unknown, options: Pick<HandlerOptions, 'servedRoot' | 'readiness' | 'readinessProject'>, json: boolean): Promise<unknown> {
+async function dispatchRequest(session: Session, method: string, raw: unknown, options: Pick<HandlerOptions, 'servedRoot' | 'readiness' | 'readinessProject'>, json: boolean, idempotencyKey?: string): Promise<unknown> {
   if (!object(raw)) throw new UsageError('Parameters must be a JSON object.');
-  if (raw.key !== undefined && isWriteEndpoint(method)) return idempotent(session, method, raw, () => dispatchOnce(session, method, raw, options, json));
+  if (idempotencyKey !== undefined && isWriteEndpoint(method)) return idempotent(session, method, raw, idempotencyKey, () => dispatchOnce(session, method, raw, options, json));
   return dispatchOnce(session, method, raw, options, json);
 }
 async function dispatchOnce(session: Session, method: string, raw: Record<string, unknown>, options: Pick<HandlerOptions, 'servedRoot' | 'readiness' | 'readinessProject'>, json: boolean): Promise<unknown> {
@@ -313,9 +313,9 @@ function createRoute(session: Session | Promise<Session>, options: HandlerOption
         if (!known) return refuse(404, 'Endpoint not found.');
         if (request.header('access-control-request-method') !== expected) { headers.Allow = expected; return refuse(405, `Use ${expected} for this endpoint.`); }
         const requested = request.header('access-control-request-headers')?.split(',').map(header => header.trim().toLowerCase()) ?? [];
-        if (requested.some(header => !['content-type', tokenHeader].includes(header))) return refuse(403, 'Request headers are not allowed.');
+        if (requested.some(header => !['content-type', tokenHeader, idempotencyHeader].includes(header))) return refuse(403, 'Request headers are not allowed.');
         headers['Access-Control-Allow-Methods'] = expected;
-        headers['Access-Control-Allow-Headers'] = `Content-Type, ${tokenHeader}`;
+        headers['Access-Control-Allow-Headers'] = `Content-Type, ${tokenHeader}, Idempotency-Key`;
         headers['Access-Control-Max-Age'] = '600'; // one preflight per endpoint, not one per question
         return { status: 204, headers, body: '' };
       }
@@ -366,7 +366,7 @@ function createRoute(session: Session | Promise<Session>, options: HandlerOption
       }
       const json = answersSerialized(method);
       let result: unknown;
-      if (current) result = await dispatchRequest(current, method, params, options, json);
+      if (current) result = await dispatchRequest(current, method, params, options, json, request.header(idempotencyHeader));
       else {
         const context = { ...options.readinessProject!, ...(options.readiness ? { runtime: options.readiness } : {}) };
         if (!object(params)) throw new UsageError('Parameters must be a JSON object.');

@@ -126,9 +126,10 @@ async function direct(method, params, options = {}) {
 // Writes go through the same token and origin policy as reads; the server re-derives every edit from current source.
 // Every write carries an idempotency key: a retry after a dropped response gets the first answer and applies nothing twice.
 export async function post(method, body) {
-  const key = body?.key ?? (globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`);
-  const payload = JSON.stringify({ ...body, key });
-  const send = () => reach(method, { method: 'POST', cache: 'no-store', headers: { 'Content-Type': 'application/json', ...(token ? { 'x-plumb-token': token } : {}) }, body: payload });
+  // the key travels in its own header: `key` in a body belongs to the endpoint (set's prop key)
+  const key = globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  const payload = JSON.stringify(body ?? {});
+  const send = () => reach(method, { method: 'POST', cache: 'no-store', headers: { 'Content-Type': 'application/json', 'Idempotency-Key': key, ...(token ? { 'x-plumb-token': token } : {}) }, body: payload });
   let response;
   try { response = await send(); }
   catch (error) {
