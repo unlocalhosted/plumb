@@ -429,6 +429,11 @@ export function siteMates(element, site) {
   if (!own) return 0;
   const same = [...document.querySelectorAll(`[data-plumb-source="${CSS.escape(own)}"]`)].filter((x) => x !== element && !element.contains(x));
   if (!site?.usage) return same.length;
+  // Only DOM tags carry stamps: every <a> a Link draws has the Link's own line. The rows of one list are told apart by
+  // the component they were made with and the classes that usage passed it (the site's prop, as a plain string):
+  // the first component fiber above each host, compared with the element's own.
+  const madeBy = (x) => { const key = fiberKey(x); for (let f = key ? x[key] : null, n = 0; f && n < 64; f = f.return, n++) if (typeof f.type !== 'string') return f; return null; };
+  const mine = madeBy(element), prop = site.prop ?? 'className', passed = mine?.memoizedProps?.[prop];
   const there = (stamp) => {
     const m = typeof stamp === 'string' && /^(.+):(\d+):\d+#/.exec(stamp);
     if (!m || +m[2] !== site.line) return false;
@@ -436,6 +441,9 @@ export function siteMates(element, site) {
     return site.file === file || site.file.endsWith('/' + file);
   };
   return same.filter((x) => {
+    const made = madeBy(x);
+    if (mine && made && made.type === mine.type && typeof passed === 'string' && made.memoizedProps?.[prop] === passed) return true;
+    // a host whose component carries the usage's stamp (a forwarded data-plumb-source): the old way, still honoured
     const key = fiberKey(x);
     for (let f = key ? x[key] : null, n = 0; f && n < 64; f = f.return, n++) if (typeof f.type !== 'string' && there(f.memoizedProps?.['data-plumb-source'])) return true;
     return false;
