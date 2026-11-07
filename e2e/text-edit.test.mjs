@@ -83,6 +83,30 @@ test('a double-click edits the words in place; Enter writes them to source; Undo
   assert.deepEqual(errors, []);
 });
 
+// The words editor's phases (text-edit.js): only `editing` owns the keys. While the words are saved, the page's keys
+// work as ever: Alt+B, pressed while the write is out, turns Blueprint on (it used to be swallowed until the write answered).
+test('while the words are being saved the keys are the page’s again: Alt+B turns Blueprint on', { timeout: 120000 }, async (t) => {
+  const launched = await browser(t);
+  if (!launched) return;
+  const { url, source } = await demo(t);
+  const { page, errors, overlay } = await open(t, launched, url);
+  await dblclickWords(page, '#tiny');
+  await editable(page, '#tiny');
+  await page.keyboard.press('ControlOrMeta+a');
+  await page.keyboard.type('small print');
+  // the write is held for a moment, as a slow disk or a busy dev server would
+  let release;
+  const held = new Promise((r) => { release = r; });
+  await page.route('**/apply-text*', async (route) => { await held; await route.continue(); });
+  await page.keyboard.press('Enter');
+  await overlay.locator('.tx-tag[data-kind="saving"]').waitFor({ timeout: 5000 });
+  await page.keyboard.press('Alt+B');
+  await page.waitForFunction(() => document.querySelector('plumb-overlay').shadowRoot.querySelector('.bp')?.hidden === false, null, { timeout: 5000 });
+  release();
+  assert.ok(await fileHas(source, '>small print</span>'), 'the write still lands');
+  assert.deepEqual(errors, []);
+});
+
 test('Esc puts the words back and writes nothing; clicking away saves', { timeout: 120000 }, async (t) => {
   const launched = await browser(t);
   if (!launched) return;

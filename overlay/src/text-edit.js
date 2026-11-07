@@ -62,7 +62,10 @@ function caretAt(x, y) {
 }
 
 export class TextEditor {
-  #root; #host; #ring; #tag; #edit = null; #hideTimer = 0;
+  #root; #host; #ring; #tag; #edit = null; #hideTimer = 0; #endTimer = 0;
+  // One phase (docs/state-machines/text-edit-spec.md): idle → resolving → editing → saving → idle, or → error → idle.
+  // Only `editing` owns the keys; saving and error are said beside the words while the page's keys work as ever.
+  #phase = 'idle';
 
   // host: editing(on, rect) lets the edit through blueprint's glass; announce(text); changed(); inBlueprint() and
   // blueprint() say whether blueprint is on and turn it back on after a reload
@@ -83,11 +86,12 @@ export class TextEditor {
     if (saved && Date.now() - saved.at < 15000 && saved.blueprint) this.#host.blueprint?.();
   }
 
-  get editing() { return !!this.#edit; }
+  get editing() { return this.#phase === 'editing'; }
+  get phase() { return this.#phase; }
 
   // A double-click at a point on the page. True when it was taken (the words are being edited or explained).
   async dblclick(event) {
-    if (this.#edit) return false;
+    if (this.#phase !== 'idle' && this.#phase !== 'error') return false;
     const hit = caretAt(event.clientX, event.clientY);
     const node = hit?.node;
     if (node?.nodeType !== Node.TEXT_NODE || !norm(node.data)) return false;
@@ -98,10 +102,16 @@ export class TextEditor {
 
   // Edit one text node: resolve it, then make it editable where it is.
   async start(node, offset = null) {
+    // one edit at a time: a second double-click while the first is read is the first's. A failed save's message gives
+    // way to the next try
+    if (this.#phase === 'error') { clearTimeout(this.#endTimer); this.#end(); }
+    if (this.#phase !== 'idle') return false;
+    this.#phase = 'resolving';
     const el = node.parentElement, words = norm(node.data);
     const target = await this.#resolve(el, words).catch((error) => ({ editable: false, reason: error?.message ?? "React Plumber couldn't read this text." }));
-    if (!node.isConnected) return false;
-    if (!target.editable) { this.#refusal(node, target); return true; }
+    if (this.#phase !== 'resolving') return false; // let go meanwhile (destroyed)
+    if (!node.isConnected) { this.#phase = 'idle'; return false; }
+    if (!target.editable) { this.#phase = 'idle'; this.#refusal(node, target); return true; }
     this.#begin(node, target, offset);
     return true;
   }
@@ -132,6 +142,7 @@ export class TextEditor {
     const lead = node.data.match(/^\s*/)[0], trail = node.data.match(/\s*$/)[0];
     const ed = { node, el, target, leaf, lead, trail, before: node.data, area: null, done: false, prior: el.getAttribute('contenteditable') };
     this.#edit = ed;
+    this.#phase = 'editing';
     this.#host.editing?.(true, () => this.#rect());
     if (leaf) {
       el.setAttribute('contenteditable', 'plaintext-only');
@@ -220,7 +231,7 @@ export class TextEditor {
   // Save or cancel. Saving writes at once; the words stay as typed while the write runs and come back if it is refused.
   async #finish(save) {
     const ed = this.#edit;
-    if (!ed || ed.done) return;
+    if (!ed || ed.done || this.#phase !== 'editing') return;
     ed.done = true;
     const typed = norm(ed.leaf ? ed.el.textContent : ed.area.value);
     // put the element back the way it was, then show the words that stand
@@ -234,6 +245,9 @@ export class TextEditor {
     const keep = save && typed && typed !== norm(ed.target.from);
     ed.node.data = keep ? ed.lead + typed + ed.trail : ed.before;
     if (!keep) return this.#end();
+    // saving: the keys are the page's again (Esc, Alt+B); the words stay as typed until the write answers
+    this.#phase = 'saving';
+    this.#host.editing?.(false);
     this.#say('saving');
     try { sessionStorage.setItem(RESUME, JSON.stringify({ at: Date.now(), blueprint: !!this.#host.inBlueprint?.() })); } catch {}
     try {
@@ -245,8 +259,10 @@ export class TextEditor {
       try { sessionStorage.removeItem(RESUME); } catch {}
       ed.node.data = ed.before;
       const stale = /changed since/i.test(error?.message ?? '');
+      this.#phase = 'error';
       this.#say('error', stale ? 'This file changed after we checked it. Double-click to try again.' : (error?.message ?? 'Couldn’t apply the edit.'));
-      setTimeout(() => this.#end(), 2400);
+      clearTimeout(this.#endTimer);
+      this.#endTimer = setTimeout(() => { if (this.#phase === 'error' && this.#edit === ed) this.#end(); }, 2400);
     }
   }
 
@@ -258,6 +274,7 @@ export class TextEditor {
 
   #end() {
     this.#edit = null;
+    this.#phase = 'idle';
     this.#ring.hidden = true;
     this.#tag.hidden = true;
     this.#host.editing?.(false);
@@ -281,7 +298,8 @@ export class TextEditor {
   }
 
   destroy() {
-    if (this.#edit) this.#finish(false);
-    clearTimeout(this.#hideTimer);
+    if (this.#phase === 'editing') this.#finish(false);
+    this.#phase = 'idle';
+    clearTimeout(this.#hideTimer); clearTimeout(this.#endTimer);
   }
 }
