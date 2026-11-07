@@ -35,7 +35,7 @@ import { Walkthrough, WALK_CSS } from './walkthrough.js'; // the first time: one
 import { FixPanel, FIX_CSS } from './fixpanel.js'; // the one place you act: a cause in hand, its options, Take, Apply
 import { FIX } from './words.js';
 import { hasText } from './texteditor.js';
-import { post, request } from './api.js';
+import { errorIs, post, request } from './api.js';
 import { locate } from './locate.js';
 
 const FADE_IN = 160, FADE_OUT = 120; // ms, the same as --pl-dur-dim and --pl-dur-undim
@@ -328,18 +328,18 @@ export class Blueprint {
       // is said. Forgetting it would leave changed files behind a reload with no word and no Undo (found on crafting-ui:
       // one swap of seventeen refused, classes split across a template string)
       const wrote = [...(results.tokens ?? []), ...(results.css ?? []), ...(results.swaps ?? [])].some((x) => x.ok && (!Array.isArray(x.applied) || x.applied.length));
-      const why = failed.length ? (/changed since/i.test(failed[0].error ?? '') ? FIX.changedSince : failed[0].error ?? failed[0].refused?.[0]?.reason ?? FIX.couldNot) : null;
+      const why = failed.length ? (errorIs(failed[0], 'stale-file') ? FIX.changedSince : failed[0].error ?? failed[0].refused?.[0]?.reason ?? FIX.couldNot) : null;
       if (failed.length && !wrote) { this.#host.forgetResume?.(); return { ok: false, undo, group: trace.group, why }; }
       this.#host.remember?.(said, undo, null, trace.group);
       const left = failed.flatMap((f) => (f.refused?.length ? f.refused.map((r) => ({ file: f.file, ...r })) : [{ file: f.file, reason: f.error ?? why }]));
       return { ok: true, undo, group: trace.group, refused: left };
-    } catch (error) { this.#host.forgetResume?.(); return { ok: false, why: /changed since/i.test(error?.message ?? '') ? FIX.changedSince : error?.message ?? FIX.couldNot }; }
+    } catch (error) { this.#host.forgetResume?.(); return { ok: false, why: errorIs(error, 'stale-file') ? FIX.changedSince : error?.message ?? FIX.couldNot }; }
     finally { removeEventListener('plumb:applied', heard); }
   }
   // A cause no element renders right now: its theme choices, each with its exact edit at every place, read from the
   // code (GET edits per place). The plan is the one a drawn element gets (swapPlanOf); writes[i] is choice i's edits.
   async #fromCode(mark, places) {
-    const read = await Promise.all(places.map((p) => request('edits', { file: p.file, line: p.line, column: p.column }).then((r) => ({ ...p, hash: r.hash, edits: r.edits ?? [] }))));
+    const read = await Promise.all(places.map((p) => request('edits', { file: p.file, line: p.line, column: p.column }, { throws: true }).then((r) => ({ ...p, hash: r.hash, edits: r.edits ?? [] }))));
     const here = (p, name) => p.edits.find((e) => e.token === name && e.line === p.line && e.column === p.column);
     const plan = swapPlanOf({ ...mark, choices: mark.choices.map((c) => ({ ...c, edit: here(read[0], c.name) ?? null })) });
     if (!plan) return null;
@@ -378,7 +378,7 @@ export class Blueprint {
       } catch (error) {
         this.#host.forgetResume?.();
         for (const s of f.of) if (!refused.includes(s)) refused.push(s);
-        why ??= /changed since/i.test(error?.message ?? '') ? FIX.changedSince : error?.message ?? FIX.couldNot;
+        why ??= errorIs(error, 'stale-file') ? FIX.changedSince : error?.message ?? FIX.couldNot;
       }
     }
     // then the rest in one request the server runs to the end (POST apply-all): new tokens' classes at every place,
@@ -405,7 +405,7 @@ export class Blueprint {
       const outcome = (results) => {
         const refused = [];
         let said = null;
-        const miss = (item, error) => { if (item && !refused.includes(item)) refused.push(item); said ??= /changed since/i.test(error ?? '') ? FIX.changedSince : error ?? FIX.couldNot; };
+        const miss = (item, error) => { if (item && !refused.includes(item)) refused.push(item); said ??= errorIs(error ?? '', 'stale-file') ? FIX.changedSince : error ?? FIX.couldNot; };
         results.tokens.forEach((r, i) => { if (!r.ok) miss(tokens[i], r.error); });
         for (const r of results.swaps) if (!r.ok || r.refused?.length) miss(tokens.find((t) => t.suggest.name === r.token), r.error ?? r.refused?.[0]?.reason);
         results.accepts.forEach((r, i) => { if (!r.ok) miss(keeps[i], r.error); });
@@ -464,7 +464,7 @@ export class Blueprint {
         if (f.els.includes(this.#walk.element)) this.#walk.applied(true);
       } catch (error) {
         this.#host.forgetResume?.();
-        const why = /changed since/i.test(error?.message ?? '') ? FIX.changedSince : error?.message ?? 'Couldn’t apply.';
+        const why = errorIs(error, 'stale-file') ? FIX.changedSince : error?.message ?? 'Couldn’t apply.';
         for (const el of f.els) out.push({ el, ok: false, why });
       }
     }

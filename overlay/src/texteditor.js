@@ -852,7 +852,7 @@ export class TextEditor {
       choose(Math.max(0, Math.min(d.w, d.hand)));
     };
     const end = (keep) => {
-      removeEventListener('pointermove', move); removeEventListener('pointerup', up);
+      removeEventListener('pointermove', move); removeEventListener('pointerup', up); removeEventListener('pointercancel', cancel);
       host?.removeAttribute('data-dragging');
       if (!d) return;
       if (!keep) { d.at = home; this.#unpeek(); }
@@ -869,8 +869,11 @@ export class TextEditor {
       if (STILL()) d.done();
     };
     const up = () => end(true);
+    // the browser took the pointer (a touch turned scroll, a system gesture): the drag is put back, as Esc does
+    const cancel = () => end(false);
     addEventListener('pointermove', move);
     addEventListener('pointerup', up);
+    addEventListener('pointercancel', cancel);
   }
 
   // ── keys ────────────────────────────────────────────────

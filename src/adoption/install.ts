@@ -1,6 +1,6 @@
 import { statePath } from '../paths.js';
 import { existsSync } from 'node:fs';
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { readFile } from 'node:fs/promises';
 import { spawnSync } from 'node:child_process';
 import { dirname, join, relative, resolve, matchesGlob } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -10,6 +10,7 @@ import { readDiscovery } from '../session/discovery.js';
 import { writeOverlay } from './overlay.js';
 import { overlaySetupNotice } from '../setup-messages.js';
 import { manifestAt, packageManagerOf, projectFacts } from '../project-facts/index.js';
+import { readSourceIfExists, writeSource } from '../write/source-file.js';
 
 export const agentNames = ['claude', 'cursor', 'codex', 'copilot', 'gemini', 'windsurf', 'generic'] as const;
 export type AgentName = typeof agentNames[number];
@@ -166,12 +167,13 @@ export async function installProject(root: string, options: InstallOptions = {})
   const body = skill.slice(frontmatter[0].length);
   const description = /^description: (.*)$/m.exec(frontmatter[1]!)?.[1];
   if (!description) throw new UsageError('Packaged React Plumber skill is missing description.');
-  const plans: { file: string; before?: string; after: string }[] = [];
+  // each plan carries the root it is contained in (the CI workflow lives at the repository's) and the hash of what it was planned from
+  const plans: { file: string; root: string; before?: string; hash: string | null; after: string }[] = [];
   async function add(name: string, render: (before: string | undefined) => string): Promise<void> {
     const file = join(root, name);
     if (plans.some(plan => plan.file === file)) return;
-    const before = await content(file);
-    plans.push({ file, ...(before === undefined ? {} : { before }), after: render(before) });
+    const current = await readSourceIfExists(root, file), before = current?.text;
+    plans.push({ file, root, ...(before === undefined ? {} : { before }), hash: current?.hash ?? null, after: render(before) });
   }
   for (const agent of selected) {
     if (agent === 'claude') await add('.claude/skills/plumber/SKILL.md', () => skill);
@@ -184,8 +186,8 @@ export async function installProject(root: string, options: InstallOptions = {})
   }
   const ciPlan = options.ci ? await workflow(root) : undefined;
   if (ciPlan) {
-    const before = await content(ciPlan.file);
-    plans.push({ file: ciPlan.file, ...(before === undefined ? {} : { before }), after: before ?? ciPlan.text });
+    const current = await readSourceIfExists(repo, ciPlan.file), before = current?.text;
+    plans.push({ file: ciPlan.file, root: repo, ...(before === undefined ? {} : { before }), hash: current?.hash ?? null, after: before ?? ciPlan.text });
   }
   const hooks = [];
   for (const scope of scopes) {
@@ -203,8 +205,7 @@ export async function installProject(root: string, options: InstallOptions = {})
   if (hookOutput) output.push(hookOutput.trimEnd());
   for (const plan of plans) {
     if (plan.before === plan.after) { output.push('Kept ' + name(plan.file) + '.'); continue; }
-    await mkdir(dirname(plan.file), { recursive: true });
-    await writeFile(plan.file, plan.after, { flag: plan.before === undefined ? 'wx' : 'w' });
+    await writeSource(plan.root, plan.file, { expectHash: plan.hash, next: plan.after });
     output.push('Wrote ' + name(plan.file) + '.');
   }
   if (ciPlan && plans.find(plan => plan.file === ciPlan.file)?.before === undefined) output.push(...ciPlan.notes);

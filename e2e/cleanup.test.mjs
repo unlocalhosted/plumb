@@ -93,6 +93,32 @@ test('held Space shows the page as it was, and letting go brings the preview bac
   assert.deepEqual(s.errors, []);
 });
 
+// One run at a time (cleanup.js, docs/state-machines/cleanup-spec.md). Apply plays the show before it writes, and the
+// show takes a moment: Esc during it used to put the page back yet write anyway, and a second Enter wrote twice.
+test('Esc during the show Apply plays writes nothing; Enter twice during it writes once', { timeout: 300000 }, async (t) => {
+  const s = await standards(t);
+  const original = await readFile(join(s.root, FILE), 'utf8');
+  let writes = 0;
+  s.page.on('request', (r) => { if (r.method() === 'POST' && /\/apply-all\b/.test(r.url())) writes++; });
+  await s.begin();
+  // Enter plays the show, then writes; Esc while it plays takes it all back
+  await s.page.keyboard.press('Enter');
+  await s.until(/Hold Space to compare/, 10000);
+  await s.page.keyboard.press('Escape');
+  await s.until(/Apply to this page/);
+  await s.page.waitForTimeout(4000); // longer than the show: the old code wrote once it ended
+  assert.equal(writes, 0, 'Esc during the show writes nothing');
+  assert.equal(await readFile(join(s.root, FILE), 'utf8'), original);
+  // Enter, and Enter again while the show plays: one write
+  await s.page.keyboard.press('Enter');
+  await s.until(/Hold Space to compare/, 10000);
+  await s.page.keyboard.press('Enter');
+  for (let i = 0; i < 4; i++) { try { await s.until(/Undo/, 120000); break; } catch (e) { if (!/context was destroyed|navigation/.test(e.message)) throw e; } }
+  await s.page.waitForTimeout(3000);
+  assert.equal(writes, 1, 'one Apply, one write');
+  assert.deepEqual(s.errors, []);
+});
+
 test('the write reloads the page: the clean-up comes back done, with its Undo, and Undo puts every file back', { timeout: 300000 }, async (t) => {
   const s = await standards(t);
   const original = await readFile(join(s.root, FILE), 'utf8'), all = await snapshot(s.root);

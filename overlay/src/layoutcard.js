@@ -174,6 +174,7 @@ export class Spacing {
     root.append(this.#layer, this.#bub);
   }
   get active() { return !!this.#act; }
+  #unhand = null; // the band drag's listeners, let go however the drag ends (up, cancel, Esc, off)
   on() {
     if (this.#on) return;
     this.#on = true;
@@ -186,6 +187,7 @@ export class Spacing {
   }
   off() {
     if (!this.#on) return;
+    this.#unhand?.();
     this.#end(false);
     this.#on = false; this.#hover = null; this.#draw();
     removeEventListener('pointermove', this.#move, { capture: true });
@@ -251,15 +253,20 @@ export class Spacing {
     this.#start(b, true);
     const p0 = vertical ? e.clientY : e.clientX;
     let done = 0;
+    const stop = () => { removeEventListener('pointermove', move, true); removeEventListener('pointerup', up, true); removeEventListener('pointercancel', cancel, true); if (this.#unhand === stop) this.#unhand = null; };
     const move = (ev) => {
+      if (!this.#act) return stop(); // ended under the drag (Esc): its listeners go with it
       this.#modsOf(ev);
       const want = Math.trunc((((vertical ? ev.clientY : ev.clientX) - p0) * sign) / 10);
       while (done !== want) { const dir = want > done ? 1 : -1; this.#step(dir); done += dir; }
       this.#at = [ev.clientX, ev.clientY];
       this.#draw();
     };
-    const up = () => { removeEventListener('pointermove', move, true); removeEventListener('pointerup', up, true); this.#swallow = true; setTimeout(() => { this.#swallow = false; }, 0); this.#end(true); };
-    addEventListener('pointermove', move, true); addEventListener('pointerup', up, true);
+    const up = () => { stop(); this.#swallow = true; setTimeout(() => { this.#swallow = false; }, 0); this.#end(true); };
+    // the browser took the pointer: the band goes back, as Esc does
+    const cancel = () => { stop(); this.#end(false); };
+    this.#unhand = stop;
+    addEventListener('pointermove', move, true); addEventListener('pointerup', up, true); addEventListener('pointercancel', cancel, true);
   };
   // the pointer on one of the overlay's own surfaces (the fix bar over a large element) points at it, not at the page
   #onSurface(x, y) { return (this.#host.avoid?.() ?? []).some((r) => r && x >= r.left && x <= r.right && y >= r.top && y <= r.bottom); }
@@ -593,8 +600,11 @@ export class Layout {
       else { if (!fr(cols0[i])) cols[i] = `${Math.round(a / 4) * 4}px`; if (!fr(cols0[i + 1])) cols[i + 1] = `${Math.round(b / 4) * 4}px`; }
       this.#s.cols = cols; this.#show();
     };
-    const up = () => { removeEventListener('pointermove', move); removeEventListener('pointerup', up); this.#changed(); };
-    addEventListener('pointermove', move); addEventListener('pointerup', up);
+    const stop = () => { removeEventListener('pointermove', move); removeEventListener('pointerup', up); removeEventListener('pointercancel', cancel); l.removeAttribute('data-held'); };
+    const up = () => { stop(); this.#changed(); };
+    // the browser took the pointer: the columns go back as they were
+    const cancel = () => { stop(); this.#s.cols = cols0; this.#show(); };
+    addEventListener('pointermove', move); addEventListener('pointerup', up); addEventListener('pointercancel', cancel);
   }
 }
 const sameLayout = (a, b) => !!a && !!b && a.mode === b.mode && (a.mode !== 'flex' || (a.dir === b.dir && a.wrap === b.wrap)) && (a.mode !== 'grid' || (JSON.stringify(a.cols) === JSON.stringify(b.cols) && !!a.sub === !!b.sub));

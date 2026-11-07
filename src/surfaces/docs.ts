@@ -1,5 +1,5 @@
-import { writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
+import { readSourceIfExists, writeSource } from '../write/source-file.js';
 import type { PlumbConfig } from '../config.js';
 import type { Report } from '../report.js';
 import { renderLoop } from './agent.js';
@@ -35,7 +35,8 @@ export function agentDocs(report: Report, config: PlumbConfig): string {
   return sections.join('\n\n') + '\n';
 }
 export async function writeAgentDocs(report: Report, config: PlumbConfig): Promise<string> {
-  await writeFile(resolve(report.root, 'PLUMBER.md'), agentDocs(report, config), 'utf8');
+  const file = resolve(report.root, 'PLUMBER.md'), current = await readSourceIfExists(report.root, file);
+  await writeSource(report.root, file, { expectHash: current?.hash ?? null, next: agentDocs(report, config) });
   return 'Wrote PLUMBER.md. Add this block to AGENTS.md or CLAUDE.md:\n\n' +
     'Read PLUMBER.md for design decisions and reasons.\nRun `plumber check --changed --agent` after edits; stop on "0 new".\n' +
     'Never edit config, ledger, or theme to pass. If no decision fits, report NEEDS-DECISION.\n';

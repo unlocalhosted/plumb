@@ -1,4 +1,14 @@
-export class UsageError extends Error {}
+/** The stable codes an error answer carries next to its sentence (docs/invariants/api-contract.md): callers branch on these, never on the English. */
+export type ErrorCode =
+  | 'bad-request' | 'unauthorized' | 'forbidden' | 'not-found' | 'method-not-allowed' | 'busy' | 'internal'
+  | 'refused' | 'stale-file' | 'not-utf8' | 'nothing-in-group' | 'no-census' | 'rolled-back-partly' | 'already-undone' | 'changed-later' | 'changed-by-hand';
+/** A request the engine refuses on purpose: one sentence for people and a code for programs. `refused` is the default; the router's shape checks say `bad-request`. */
+export class UsageError extends Error {
+  readonly code: ErrorCode;
+  constructor(message: string, code: ErrorCode = 'refused') { super(message); this.code = code; }
+}
+/** The code of any error as the wire carries it: a UsageError's own, `internal` for a crash. */
+export const errorCode = (error: unknown): ErrorCode => error instanceof UsageError ? error.code : 'internal';
 
 export function errorMessage(error: unknown): string {
   return (error instanceof Error ? error.message : String(error)).replace(/\s+/g, ' ').trim();
