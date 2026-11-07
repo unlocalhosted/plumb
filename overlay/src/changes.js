@@ -63,7 +63,8 @@ const X = '<svg viewBox="0 0 12 12" width="11" height="11"><path d="M3 3l6 6M9 3
 
 export class Changes {
   #el; #items = new Map(); // element → { name, props: Map<prop, { from, to, original: [value, priority] }>, why }
-  #at = null; #busy = false; #onAccept; #onSelect; #onShow; #onDiscard; #onPut; #rows = [];
+  #at = null; #busy = false; #sending = new Map(); // el → { props: Map<prop, to>, swaps: Map<key, change> }: what Apply sent and is writing now
+  #unused = null; #onAccept; #onSelect; #onShow; #onDiscard; #onPut; #rows = [];
 
   // onAccept([{ el, name, props: [{ prop, from, to }] }]) → Promise<[{ el, ok, why? }]>; onSelect(el) lights it
   // onShow(shown): the sidebar appears or goes (what sits where it opens makes room, then takes it back)
@@ -145,9 +146,11 @@ export class Changes {
   }
 
   // An element back as it was: every property it changed, its inline styles as they were.
+  // An element whose changes are being written can't be put back: the write is already sent and will land. Its Undo is
+  // History's once it has (docs/invariants/overlay.md, row 1). False when nothing was put back.
   discard(el) {
     const item = this.#items.get(el);
-    if (!item) return;
+    if (!item || this.#sending.has(el)) return false;
     // back as it was, gliding (a change put back moves the page the way taking it did)
     glide(el, () => { for (const [prop, c] of item.props) { const [v, p] = c.original ?? ['', '']; if (v) el.style.setProperty(prop, v, p); else el.style.removeProperty(prop); } });
     for (const c of item.swaps.values()) c.undo?.();
@@ -156,29 +159,41 @@ export class Changes {
     this.#items.delete(el);
     if (this.#at === el) this.#at = [...this.#items.keys()][0] ?? null;
     this.render();
+    return true;
   }
+  // every element not being written; what is being written lands, and Apply's own landing lifts its preview
   discardAll() { for (const el of [...this.#items.keys()]) this.discard(el); }
 
   async accept() {
     if (this.#busy || !this.#items.size) return;
     this.#busy = true; this.render();
+    // what is sent, exactly: a change made while it is written (a new step, another fix) is not part of it, and stays
+    for (const [el, i] of this.#items) this.#sending.set(el, { props: new Map([...i.props].map(([prop, c]) => [prop, c.to])), swaps: new Map(i.swaps) });
     const batch = [...this.#items].map(([el, i]) => ({ el, name: i.name, classes: i.classes, props: [...i.props].map(([prop, c]) => ({ prop, from: c.from, to: c.to })), writes: [...i.swaps.values()].map((c) => c.write), site: i.site ?? null }));
     const results = (await this.#onAccept?.(batch).catch((error) => batch.map((b) => ({ el: b.el, ok: false, why: error?.message })))) ?? [];
     for (const r of results) {
       const item = this.#items.get(r.el);
       if (!item) continue;
       if (r.ok) {
-        // the source carries it now: the preview's inline styles go, the page shows what was written
-        for (const [prop, c] of item.props) { const [v, p] = c.original ?? ['', '']; if (v) r.el.style.setProperty(prop, v, p); else r.el.style.removeProperty(prop); }
-        for (const c of item.swaps.values()) c.release?.();
+        // the source carries what was sent: its preview's inline styles go, the page shows what was written. A change
+        // made while it was written stays in Changes, to be applied (or discarded) on its own
+        const sent = this.#sending.get(r.el);
+        for (const [prop, c] of [...item.props]) {
+          if (sent && sent.props.get(prop) !== c.to) continue;
+          const [v, p] = c.original ?? ['', '']; if (v) r.el.style.setProperty(prop, v, p); else r.el.style.removeProperty(prop);
+          item.props.delete(prop);
+        }
+        for (const [key, c] of [...item.swaps]) { if (sent && sent.swaps.get(key) !== c) continue; c.release?.(); item.swaps.delete(key); }
         if (!r.el.getAttribute('style')?.trim()) r.el.removeAttribute('style');
-        this.#items.delete(r.el);
+        if (!item.props.size && !item.swaps.size) this.#items.delete(r.el);
+        else { item.classes = (r.el.getAttribute('class') ?? '').split(/\s+/).filter(Boolean); item.site = null; }
       } else {
         item.why = r.why ?? 'Couldn’t apply.';
         // the file moved on: the next Apply reads it again (the edit is still checked against the element's classes)
         if (/changed after/i.test(item.why)) item.site = null;
       }
     }
+    this.#sending.clear();
     this.#busy = false;
     if (!this.#items.has(this.#at)) this.#at = [...this.#items.keys()][0] ?? null;
     this.render();
@@ -204,7 +219,7 @@ export class Changes {
     const elements = this.#items.size;
     this.#el.innerHTML = `<div class="top"><b>Changes</b><span>${elements} element${elements === 1 ? '' : 's'} · ${n} change${n === 1 ? '' : 's'}</span></div>
       <div class="rows" role="list">${rows.map((r, k) => `<div class="el" role="listitem" tabindex="0" data-i="${k}"${r.els.includes(this.#at) ? ' aria-current="true"' : ''}>
-        <div class="name"><span class="pl-tag">${esc(r.name)}${r.els.length > 1 ? ` ×${r.els.length}` : ''}</span><button type="button" class="x" aria-label="Discard the changes to ${esc(r.name)}" title="Discard">${X}</button></div>
+        <div class="name"><span class="pl-tag">${esc(r.name)}${r.els.length > 1 ? ` ×${r.els.length}` : ''}</span><button type="button" class="x" aria-label="Discard the changes to ${esc(r.name)}" title="Discard"${r.els.some((el) => this.#sending.has(el)) ? ' disabled' : ''}>${X}</button></div>
         ${r.lines}
         ${r.why ? `<div class="why">${esc(r.why)}</div>` : ''}</div>`).join('')}</div>
       <div class="foot"><button type="button" class="all">Discard all</button><button type="button" class="ok"${this.#busy ? ' disabled' : ''}>${this.#busy ? 'Applying…' : `Apply ${n} change${n === 1 ? '' : 's'}`}</button></div>`;

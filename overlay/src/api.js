@@ -83,6 +83,8 @@ async function direct(method, params, options = {}) {
   }
   if (!response.ok) {
     if (options.explain) throw Object.assign(new Error('Resolver refused source.'), { reason: 'resolve-refusal', detail: { method, source: params.source, status: response.status, response: await response.text() } });
+    // a caller that tells a refusal from an older server (404) asks for the error itself; the rest read "no answer"
+    if (options.throws) { const body = await response.json().catch(() => ({})); throw Object.assign(new Error(body?.error ?? `${method} answered ${response.status}`), { status: response.status }); }
     return null;
   }
   return response.json();

@@ -339,7 +339,7 @@ export class Blueprint {
   // A cause no element renders right now: its theme choices, each with its exact edit at every place, read from the
   // code (GET edits per place). The plan is the one a drawn element gets (swapPlanOf); writes[i] is choice i's edits.
   async #fromCode(mark, places) {
-    const read = await Promise.all(places.map((p) => request('edits', { file: p.file, line: p.line, column: p.column }).then((r) => ({ ...p, hash: r.hash, edits: r.edits ?? [] }))));
+    const read = await Promise.all(places.map((p) => request('edits', { file: p.file, line: p.line, column: p.column }, { throws: true }).then((r) => ({ ...p, hash: r.hash, edits: r.edits ?? [] }))));
     const here = (p, name) => p.edits.find((e) => e.token === name && e.line === p.line && e.column === p.column);
     const plan = swapPlanOf({ ...mark, choices: mark.choices.map((c) => ({ ...c, edit: here(read[0], c.name) ?? null })) });
     if (!plan) return null;

@@ -123,7 +123,7 @@ export class TextEditor {
     const at = { file: found.file, line: found.line, column: found.column };
     const owners = (found.chain ?? []).filter((c) => c?.file).map((c) => `${c.file}:${c.line}:${c.column}`).join(',');
     try {
-      const r = await request('text-at', { ...at, text: words, owners });
+      const r = await request('text-at', { ...at, text: words, owners }, { throws: true });
       if (r) return r.editable ? { ...r, via: 'text-at' } : r;
     } catch (error) {
       if (error?.status !== 404 && !/unknown|not found|404/i.test(error?.message ?? '')) throw error;
@@ -140,7 +140,7 @@ export class TextEditor {
     const el = node.parentElement;
     const leaf = [...el.childNodes].every((n) => n === node || (n.nodeType === Node.TEXT_NODE && !n.data.trim()));
     const lead = node.data.match(/^\s*/)[0], trail = node.data.match(/\s*$/)[0];
-    const ed = { node, el, target, leaf, lead, trail, before: node.data, area: null, done: false, prior: el.getAttribute('contenteditable') };
+    const ed = { node, el, target, leaf, lead, trail, before: node.data, area: null, done: false, prior: el.getAttribute('contenteditable'), kids: [...el.childNodes] };
     this.#edit = ed;
     this.#phase = 'editing';
     this.#host.editing?.(true, () => this.#rect());
@@ -238,8 +238,11 @@ export class TextEditor {
     if (ed.leaf) {
       ed.el.removeEventListener('keydown', this.#key); ed.el.removeEventListener('blur', this.#blur); ed.el.removeEventListener('input', this.#input);
       if (ed.prior === null) ed.el.removeAttribute('contenteditable'); else ed.el.setAttribute('contenteditable', ed.prior);
-      // the browser may have split or replaced the text node while editing: the original node carries the words again
-      if (!ed.node.isConnected || ed.el.childNodes.length !== 1 || ed.el.firstChild !== ed.node) ed.el.replaceChildren(ed.node);
+      // the browser may have split or replaced the text node while editing: the element's own nodes go back, every one
+      // of them (React owns the whitespace beside the words too: a node it no longer finds breaks its next update), and
+      // the original node carries the words again
+      const kids = [...ed.el.childNodes];
+      if (kids.length !== ed.kids.length || kids.some((n, i) => n !== ed.kids[i])) ed.el.replaceChildren(...ed.kids);
     } else ed.area.remove();
     getSelection()?.removeAllRanges();
     const keep = save && typed && typed !== norm(ed.target.from);
