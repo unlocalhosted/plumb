@@ -36,8 +36,11 @@ function stamping(nextConfig: NextConfig): Partial<NextConfig> {
 }
 
 /** Discover overlay routes, externalize their Node implementation and stamp your JSX, only in development. */
+/** The mark on a config withPlumb returned: a second call (a plugin chain wrapping it again) gets it back unchanged. */
+const wired = Symbol.for('@unlocalhosted/plumb/withPlumb');
 export function withPlumb(nextConfig: NextConfig = {}): NextConfig {
   if (process.env.NODE_ENV !== 'development') return nextConfig;
+  if ((nextConfig as NextConfig & { [wired]?: true })[wired]) return nextConfig;
   // The overlay asks Next to trace browser frames the way Next's own overlay does, by their file in this directory.
   const distDir = resolve(nextConfig.distDir ?? '.next', 'dev'), serverModule = new URL('./next-dev.js', import.meta.url).href;
   process.env.PLUMBER_NEXT_DIST_DIR = distDir;
@@ -46,8 +49,11 @@ export function withPlumb(nextConfig: NextConfig = {}): NextConfig {
   writeNextHost({ distDir, serverModule });
   // Stamping is what withPlumb does; there is no public switch. The owner-stack regression tests run Next without
   // stamps on purpose, through this internal one: the host then tells the overlay stamps are off by choice.
-  return { ...nextConfig, ...(process.env.PLUMB_INTERNAL_UNSTAMPED === '1' ? {} : stamping(nextConfig)),
+  const config: NextConfig = { ...nextConfig, ...(process.env.PLUMB_INTERNAL_UNSTAMPED === '1' ? {} : stamping(nextConfig)),
     pageExtensions: [...new Set([...(nextConfig.pageExtensions ?? ['tsx', 'ts', 'jsx', 'js']), 'plumb.ts', 'plumb.tsx'])],
     serverExternalPackages: [...new Set([...(nextConfig.serverExternalPackages ?? []), '@unlocalhosted/react-plumber'])],
   };
+  // not enumerable: Next's own reading and serialising of the config never see it
+  Object.defineProperty(config, wired, { value: true, enumerable: false });
+  return config;
 }
