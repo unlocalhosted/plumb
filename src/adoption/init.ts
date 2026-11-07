@@ -159,7 +159,6 @@ export async function initProject(root: string, options: InitOptions, print: (te
     try { await writeLedger(root, [...accepted.values()]); }
     catch (error) { if (loaded.path) await writeFile(destination, before); else await rm(destination); throw error; }
     undoTheme = undefined;
-    await rm(statePath(root, '.baseline-pending'), { force: true });
     const accepts = currentDecisions(adopted).length;
     const left = !skippedFamilies.length ? '' : options.unattended && !options.families?.size
       ? `\nLeft your theme as it is (no terminal to ask): ${skippedFamilies.join(', ')}. To add them: ${skippedIds.map(id => `plumber propose --family ${id} --write`).join(' · ')}.`

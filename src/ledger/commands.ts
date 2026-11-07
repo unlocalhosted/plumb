@@ -1,5 +1,4 @@
-import { statePath } from '../paths.js';
-import { readFile, rm } from 'node:fs/promises';
+import { readFile } from 'node:fs/promises';
 import { relative, resolve } from 'node:path';
 import { UsageError } from '../errors.js';
 import { count } from '../messages.js';
@@ -80,13 +79,11 @@ export async function ledgerCommand(command: string, report: Report, options: Co
   const moves: { from: string; to: string }[] = [];
   let message = '';
   const attribution = stamp(report.root);
-  const pendingPath = statePath(report.root, '.baseline-pending');
   if (command === 'baseline') {
     const old = new Map(entries.map(entry => [entry.key, entry]));
     const debt = [...current.values()].filter(entry => old.get(entry.key)?.kind !== 'exception');
     const growth = debt.filter(entry => old.get(entry.key)?.kind !== 'debt' || entryCount(entry) > entryCount(old.get(entry.key)!));
-    const pending = await readFile(pendingPath, 'utf8').then(() => entries.every(entry => entry.kind === 'decision')).catch(error => { if ((error as NodeJS.ErrnoException).code === 'ENOENT') return false; throw error; });
-    if (ledger.exists && !pending && growth.length && !options.force) throw new UsageError(`Baseline refuses debt growth (${count(growth.length, 'key')}); fix new findings or use plumber baseline --force after review.`);
+    if (ledger.exists && growth.length && !options.force) throw new UsageError(`Baseline refuses debt growth (${count(growth.length, 'key')}); fix new findings or use plumber baseline --force after review.`);
     entries = [...entries.filter(entry => entry.kind !== 'debt'), ...debt.map(entry => ({ ...entry, ...(old.get(entry.key)?.kind === 'debt' ? old.get(entry.key)! : attribution), count: entry.count!, resolved: entry.resolved! }))];
     if (!ledger.exists) entries = acceptSet(report, entries, undefined, true);
     message = `Baseline recorded ${count(debt.reduce((sum, entry) => sum + entryCount(entry), 0), 'place')} as known debt.`;
@@ -140,7 +137,6 @@ export async function ledgerCommand(command: string, report: Report, options: Co
     message = moves.map(move => `Moved ${move.from} -> ${move.to}`).join('\n') || `Ledger has ${count(entries.length, 'entry', 'entries')}.`;
   } else throw new UsageError(`Unknown ledger command: ${command}.`);
   await writeLedger(report.root, entries);
-  if (command === 'baseline') await rm(pendingPath, { force: true });
   return { message, entries, moves };
 }
 export async function inspectLedger(command: 'show' | 'why', input: string, report: Report) {
