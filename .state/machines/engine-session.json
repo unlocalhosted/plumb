@@ -1,0 +1,18 @@
+{
+  "schema": 1,
+  "id": "engine-session",
+  "binding": { "file": "src/session/engine.ts", "owner": "Session", "flags": ["lost", "starting", "closed", "transaction"] },
+  "initial": "running",
+  "cancel": ["close"],
+  "states": {
+    "running":  { "is": { "lost": null,  "starting": null,  "closed": false, "transaction": false },
+                  "on": { "request": "running", "exited": "lost", "inputsChanged": "lost", "apply": "applying", "close": "closed" } },
+    "starting": { "is": { "lost": null,  "starting": "set", "closed": false, "transaction": false },
+                  "on": { "booted": "running", "exited": "lost", "close": "closed" } },
+    "lost":     { "is": { "lost": "set", "starting": null,  "closed": false, "transaction": false },
+                  "on": { "request": "starting", "inputsChanged": "starting", "close": "closed" } },
+    "applying": { "is": { "lost": null,  "starting": null,  "closed": false, "transaction": true },
+                  "on": { "applied": "running", "failed": "running", "exited": "lost", "close": "closed" } },
+    "closed":   { "is": { "lost": null,  "starting": null,  "closed": true,  "transaction": false }, "final": true }
+  }
+}
