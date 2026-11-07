@@ -276,7 +276,7 @@ export class Reader {
     } else if (state?.status === 'ready') {
       item.state = 'ready';
       item.checked = true; item.outsideSource = false;
-      item.file = state.file;
+      item.file = state.file; item.line = state.line; item.column = state.column; // where its JSX opens: a craft mark's place
       if (item.file && !this.#code.has(item.file) && !this.#noCode && !this.#scope) this.#readCode();
       item.marks = state.marks.filter((m) => m.ledger !== 'exception');
       item.dims = state.dims ?? [];
@@ -315,7 +315,7 @@ export class Reader {
     // a mark's key is its line and column within its file: the place is the file and that key, so two files' marks
     // at the same line and column are two places, each joined to its own elements
     const add = (mark, file) => {
-      const at = mark.file ?? file, id = `${at}|${mark.key}`;
+      const at = mark.file ?? file, id = `${at}:${mark.line}:${mark.column}`;
       let place = places.get(id);
       if (!place) places.set(id, (place = { key: mark.key, file: at, site: { file: at, line: mark.line, column: mark.column, text: mark.text }, mark, elements: [] }));
       return place;
@@ -331,7 +331,7 @@ export class Reader {
     // craft: every read element goes through the craft engine first, so the counts below and the items handed on
     // agree on what is drawn (its marks are appended to the element's own), once over the whole page
     const all = [...this.#items.values()];
-    const ready = all.filter((i) => i.state === 'ready').map(({ id, el, marks, dims, file, checked }) => ({ id, el, marks, dims, file, checked }));
+    const ready = all.filter((i) => i.state === 'ready').map(({ id, el, marks, dims, file, line, column, checked }) => ({ id, el, marks, dims, file, line, column, checked }));
     const enriched = this.#enrich ? this.#enrich(ready) : ready;
     const read = ready.length;
     const checked = all.filter((i) => i.state === 'ready' && i.checked).length;

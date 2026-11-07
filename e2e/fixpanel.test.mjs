@@ -353,14 +353,12 @@ export function App() {
   // the page comes back read in full: the three are gone and only the cause nobody touched is left
   await page.waitForFunction(() => document.getElementById('t1')?.className.includes('tracking-track-ak'), null, { timeout: 20000 });
   await overlay.locator('.fx[data-settled]').waitFor({ timeout: 20000 });
-  // the panel has moved on to what nobody touched: the gap is the one cause left. The keep was for the value typed by
-  // hand; "Text off the column" is craft's reading of the same class on the page, with a fix but no place in the code
-  // to count it at, so it stays on the card as a note, still offered, never a problem
+  // the panel has moved on to the causes nobody touched: the gap, and the card's inset as craft sees it. The keep was for the
+  // value typed by hand; "Text off the column" is another cause of the same class, placed where the card's JSX opens, so it is still offered
   await panel(overlay).locator('.cause').waitFor({ timeout: 20000 });
   await hold(/gap-\[7px\]/);
-  assert.match(await panel(overlay).locator('.cause .nav').innerText(), /^‹\s*1 of 1\s*›$/);
+  assert.match(await panel(overlay).locator('.cause .nav').innerText(), /\d of 2/);
   await hold(/p-\[13px\]/);
-  assert.match(await panel(overlay).locator('.cause .nav').innerText(), /Note 1 of 1/);
   assert.equal(await panel(overlay).locator('.cause .what span').first().innerText(), 'Text off the column');
   assert.deepEqual(errors, []);
 });
