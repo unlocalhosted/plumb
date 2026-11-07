@@ -163,7 +163,8 @@ function stepsOf(changes) {
 const live = (c) => c?.state === 'live';
 // why a change can't be undone here, in words, from its state
 // the server's refusal, in the timeline's words
-const whyNot = (message) => (/outside React Plumber/.test(message) ? T.changedByHand : /changed since by/.test(message) ? T.changedLater : /already undone/.test(message) ? T.undoneAlready : T.failed(message));
+// why an undo was refused, by the server's code (its old wording from an older server)
+const whyNot = (error) => (errorIs(error, 'changed-by-hand') ? T.changedByHand : errorIs(error, 'changed-later') ? T.changedLater : errorIs(error, 'already-undone') ? T.undoneAlready : T.failed(error?.message ?? ''));
 const reasonOf = (c) => (c.state === 'undone' ? T.undoneAlready : c.by?.length ? T.changedLater : T.changedByHand);
 
 // The elements on the page drawn by the JSX that holds a change: the last JSX start at or before the change's line and
@@ -284,7 +285,7 @@ export class History {
       this.#host.announce?.(said);
     } catch (error) {
       const message = error?.message ?? '';
-      this.#say(group ? whyNot(message) : errorIs(error, 'stale-file') ? `${short(handle?.file)} changed after this was applied, so it can’t be undone here. Undo it in your editor.` : T.failed(message || 'Check again.'), false, 'error');
+      this.#say(group ? whyNot(error) : errorIs(error, 'stale-file') ? `${short(handle?.file)} changed after this was applied, so it can’t be undone here. Undo it in your editor.` : T.failed(message || 'Check again.'), false, 'error');
     }
     if (this.open) this.#load();
     this.#host.changed?.();
@@ -503,7 +504,7 @@ export class History {
     } catch (error) {
       this.#busy = false;
       const message = error?.message ?? '';
-      this.#refuse(c, whyNot(message), 'warn');
+      this.#refuse(c, whyNot(error), 'warn');
     }
   }
 
@@ -531,7 +532,7 @@ export class History {
     } catch (error) {
       this.#busy = false;
       const message = error?.message ?? '';
-      this.#refuse(c, whyNot(message), 'warn');
+      this.#refuse(c, whyNot(error), 'warn');
     }
   }
 
