@@ -42,7 +42,9 @@ export class CheckCache {
   private selected = new Set<string>();
   private constructor(readonly root: string, private directory: string, private config: string, private css: string | null, private patterns: string[], private tokenPatterns: string[]) {}
   static async create(options: CheckOptions): Promise<CheckCache | undefined> {
-    if (options.base !== undefined || options.changed || options.strictLedger || options.ledger === false || options.listHabits || options.suggestImitation || options.entry !== undefined) return;
+    // a run without the ledger (plumber decisions) is cached too, under its own key: the saved report is the one the
+    // ledger did not touch, so a second run reads it instead of compiling Tailwind again
+    if (options.base !== undefined || options.changed || options.strictLedger || options.listHabits || options.suggestImitation || options.entry !== undefined) return;
     const root = resolve(options.root ?? process.cwd());
     const config = options.config ? resolve(root, options.config) : allConfigNames.map(name => join(root, name)).find(existsSync);
     if (!config) return;
@@ -71,7 +73,7 @@ export class CheckCache {
     // Package metadata determines the reported compiler version even when
     // every stylesheet byte stays the same. Resolve it afresh at admission.
     const compilerPackage = tailwindInstall(css ? dirname(css) : root).file ?? undefined; // plain CSS can have no Tailwind package
-    const key = hash(JSON.stringify(['checked-v3', buildId(), process.versions.v8, root, config, text, !!options.verbose,
+    const key = hash(JSON.stringify(['checked-v3', buildId(), process.versions.v8, root, config, text, !!options.verbose, options.ledger === false,
       compilerPackage, compilerPackage ? fileHash(compilerPackage) : null]));
     return new CheckCache(root, join(base, 'checked', key), config, css, patterns, tokenPatterns);
   }
