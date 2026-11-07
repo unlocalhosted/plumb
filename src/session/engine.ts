@@ -1,6 +1,7 @@
 import { environment, stateDirectory, statePath, configurationNames, isLedgerPath, cacheDirectory, ignoreCache } from '../paths.js';
 import { constants, readFileSync, watch } from 'node:fs';
 import { randomBytes } from 'node:crypto';
+import { AsyncLocalStorage } from 'node:async_hooks';
 import { ChangeLog, byLine, locate } from './changes.js';
 import type { ChangeRecord, TraceEntry } from './changes.js';
 import type { FSWatcher } from 'node:fs';
@@ -256,8 +257,9 @@ export class Session extends EventEmitter {
   // per-change trace (changes.ts): the tag of the write in progress, the changes it takes back, this session's write ids
   private changeLog: ChangeLog | undefined;
   private get log(): ChangeLog { return this.changeLog ??= new ChangeLog(resolve(cacheDirectory(this.root), 'changes.jsonl')); }
-  private tag: { group: string; meta?: unknown } | undefined;
-  private undoing: ChangeRecord[] | undefined;
+  // Each call's own attribution, carried through its awaits (never a shared field: two writes in flight at once would
+  // record under each other's group, or as part of each other's undo)
+  private attribution = new AsyncLocalStorage<{ tag?: { group: string; meta?: unknown }; undoing?: ChangeRecord[] }>();
   private nonce = randomBytes(4).toString('hex');
   private native = false;
   private events = new Set<string>();
@@ -1595,7 +1597,8 @@ export class Session extends EventEmitter {
     // each change in it, for the trace; the trace never fails a write that already landed
     try {
       const after = readFileSync(path, 'utf8');
-      if (sourceHash(after) === hashAfter) this.log.add({ write: `${this.nonce}:${id}`, file, group: this.tag?.group ?? this.log.group(), ...(this.tag?.meta === undefined ? {} : { meta: this.tag.meta }), ...(this.undoing ? { undoing: this.undoing } : {}) }, before, after, (from, to) => changed(from, to, ''), perLine ? byLine : undefined);
+      const { tag, undoing } = this.attribution.getStore() ?? {};
+      if (sourceHash(after) === hashAfter) this.log.add({ write: `${this.nonce}:${id}`, file, group: tag?.group ?? this.log.group(), ...(tag?.meta === undefined ? {} : { meta: tag.meta }), ...(undoing ? { undoing } : {}) }, before, after, (from, to) => changed(from, to, ''), perLine ? byLine : undefined);
     } catch { /* the write stands; only its trace is missing */ }
     return { id, file, label };
   }
@@ -1711,10 +1714,10 @@ export class Session extends EventEmitter {
     if (tag !== undefined && (!tag || typeof tag !== 'object' || Array.isArray(tag))) throw new UsageError('trace must be an object: { group, meta }.');
     if (tag?.group !== undefined && (typeof tag.group !== 'string' || !/^[\w:.-]{1,64}$/.test(tag.group))) throw new UsageError('trace.group must be at most 64 letters, digits, _ : . or -.');
     if (tag?.meta !== undefined && JSON.stringify(tag.meta).length > 4000) throw new UsageError('trace.meta must be at most 4000 characters of JSON.');
-    const previous = this.tag, group = tag?.group ?? this.log.group();
-    this.tag = { group, ...(tag?.meta === undefined ? {} : { meta: tag.meta }) };
+    const group = tag?.group ?? this.log.group(), own = { group, ...(tag?.meta === undefined ? {} : { meta: tag.meta }) };
     // the answer names the step its changes went into, so the caller can take back exactly that step (the write toast's Undo)
-    try { const result = await (this[method as keyof this] as (...a: unknown[]) => Promise<unknown>).apply(this, args); return result && typeof result === 'object' && !Array.isArray(result) ? { ...result, trace: { group } } : result; } finally { this.tag = previous; }
+    const result = await this.attribution.run({ tag: own }, () => (this[method as keyof this] as (...a: unknown[]) => Promise<unknown>).apply(this, args));
+    return result && typeof result === 'object' && !Array.isArray(result) ? { ...result, trace: { group } } : result;
   }
   /** The site's spacing as the census read it: every row-level distance between a stack's children, on every route
    * (the page works out its rhythm with overlay/src/stacks.js rhythmOf, the same reader that measured them). */
@@ -1780,10 +1783,9 @@ export class Session extends EventEmitter {
     const files = new Map<string, ChangeRecord[]>();
     for (const r of targets) files.set(r.file, [...files.get(r.file) ?? [], r]);
     const done: UndoHandle[] = [], hashes: Record<string, string> = {};
-    const previous = this.tag;
-    this.tag = { group: previous?.group ?? this.log.group(), ...(previous?.meta === undefined ? {} : { meta: previous.meta }) };
-    this.undoing = targets;
-    try {
+    const outer = this.attribution.getStore()?.tag;
+    const tag = { group: outer?.group ?? this.log.group(), ...(outer?.meta === undefined ? {} : { meta: outer.meta }) };
+    try { await this.attribution.run({ tag, undoing: targets }, async () => {
       for (const [file, list] of files) {
         const path = this.file(file), text = await readFile(path, 'utf8');
         const placed = list.map(r => ({ r, at: locate(text, r) })).sort((x, y) => (y.at ?? 0) - (x.at ?? 0));
@@ -1796,11 +1798,11 @@ export class Session extends EventEmitter {
         const result = await this.rewrite(path, sourceHash(text), next, `undo ${list.map(r => r.label).join(', ')}`.slice(0, 120), blocksRemoved);
         done.push(result.undo); hashes[file] = result.hash;
       }
-    } catch (error) {
-      this.undoing = undefined;
-      for (const handle of done.toReversed()) await this.undo(handle.id).catch(() => {});
+    }); } catch (error) {
+      // putting back the files already written is not part of the undo: same step, no `undoing`
+      await this.attribution.run({ tag }, async () => { for (const handle of done.toReversed()) await this.undo(handle.id).catch(() => {}); });
       throw error;
-    } finally { this.undoing = undefined; this.tag = previous; }
+    }
     return { revision: this.revision, undone: ids, undo: done, files: hashes };
   }
   decisions(): Promise<Report['decisions']> { return this.read('decisions'); }
