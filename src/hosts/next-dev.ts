@@ -71,7 +71,9 @@ export function handler(options: SessionOptions, token: string) {
   };
   return async (request: Request): Promise<Response> => {
     const url = new URL(request.url);
-    if (request.method === 'GET' && url.pathname === '/__plumb/client.js' && !url.searchParams.has('direct')) {
+    // the bridge is for the page's own <script> tag, which names the page in Referer; a fetch with no page behind it
+    // (a tool, a test reading the module) gets the client itself
+    if (request.method === 'GET' && url.pathname === '/__plumb/client.js' && !url.searchParams.has('direct') && request.headers.get('referer')) {
       try {
         const page = pageUrl(request, url);
         const at = await sidecar(page.origin);
