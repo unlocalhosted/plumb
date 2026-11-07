@@ -474,7 +474,10 @@ export class Craft {
       if (quiet.has(rule.id)) return [];
       let found = [];
       try { found = rule.check({ el, facts }, this.#theme) ?? []; } catch { found = []; } // a rule's error is its own, never the page's
-      return found.filter((f) => (f.confidence ?? 0) >= FLOOR).map((f) => markOf({ tier: rule.tier, ...f, rule: rule.id, key: f.key ?? rule.id, suggest: important(f.suggest) }));
+      // a mark's key is unique on its element: a rule that finds two things here without keys of its own gets #2, #3…, so
+      // taking one never marks the other taken, and one preview never undoes the other (docs/invariants/overlay.md #10)
+      const kept = found.filter((f) => (f.confidence ?? 0) >= FLOOR), seen = new Map();
+      return kept.map((f) => { const base = f.key ?? rule.id, n = (seen.get(base) ?? 0) + 1; seen.set(base, n); return markOf({ tier: rule.tier, ...f, rule: rule.id, key: n === 1 ? base : `${base}#${n}`, suggest: important(f.suggest) }); });
     };
     const pageWide = (rule) => (rule.reads ?? []).includes('census');
     let hit = this.#cache.get(el);

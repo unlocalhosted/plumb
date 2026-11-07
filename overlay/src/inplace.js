@@ -72,7 +72,9 @@ export function planOf(problem, el, steps, tokenOf) {
   });
   if (!props.length || props.some((p) => !p.to.token)) return null;
   const main = props.reduce((a, b) => (Math.abs(b.to.n - b.from.n) > Math.abs(a.to.n - a.from.n) ? b : a));
+  // the step it moves to is one of the scale's steps, or there is no plan: an index of -1 broke every redraw
   const at = steps.findIndex((s) => s.token === main.to.token);
+  if (at < 0) return null;
   return { props, main, steps, at, edit: { from: fix.from, to: fix.to }, ghost: ghostOf(el, props) };
 }
 
@@ -216,7 +218,7 @@ export function swapPlanOf(problem) {
   const msOf = (value) => { const m = /^(-?[\d.]+)(ms|s)$/.exec(String(value ?? '').trim()); return m ? Number(m[1]) * (m[2] === 's' ? 1000 : 1) : null; };
   const nOf = (value, n) => (length ? pxOf(value, null, prop) ?? n ?? null : problem.family === 'motion' ? msOf(value) ?? n ?? null : n ?? null);
   return { kind: 'swap', facet: problem.facets?.[0], drift: true, options: choices.map((c) => ({ token: c.label ?? c.name, label: c.label ?? c.name, n: nOf(c.value, c.n), swatch: problem.family === 'color' ? c.value : null, write: c.edit ? { from: c.edit.from, to: c.edit.to } : null, styles: styleOf(c) })),
-    at: problem.pick ?? 0, now: { label: problem.text ?? String(problem.value ?? ''), n: nOf(problem.value, problem.n), swatch: problem.family === 'color' ? problem.value : null } };
+    at: Math.max(0, Math.min(choices.length - 1, Number.isInteger(problem.pick) ? problem.pick : 0)), now: { label: problem.text ?? String(problem.value ?? ''), n: nOf(problem.value, problem.n), swatch: problem.family === 'color' ? problem.value : null } };
 }
 
 // An option previewed on the element (its classes swapped, and the values it stands for as inline styles the overlay
