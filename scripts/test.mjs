@@ -5,6 +5,7 @@
 //   node scripts/test.mjs verdict census  files whose name contains a word
 //   node scripts/test.mjs --cores 6       cores to fill (default: every core)
 //   node scripts/test.mjs --memory 8      GB to fill (default: what is free, less 2 GB)
+//   node scripts/test.mjs --timeout 10    minutes before a file is killed (default 6)
 //   node scripts/test.mjs --serial        one file at a time, as before
 //   node scripts/test.mjs --list          print each file's tier and stop
 //
@@ -29,7 +30,6 @@ const COST = {
   host: { cores: 1.5, mb: 1200 },
 };
 const RESERVE_MB = 2000; // left for the machine and whatever else lives on it
-const TIMEOUT = 20 * 60 * 1000; // a file that runs this long is killed and counted as failed
 
 // Files that cannot share the machine, and why.
 const ALONE = {
@@ -66,6 +66,10 @@ function numberOf(name, env) {
   return value > 0 ? value : 0;
 }
 const askedCores = numberOf('--cores', 'PLUMB_TEST_CORES'), askedGb = numberOf('--memory', 'PLUMB_TEST_MEMORY_GB');
+// A file that runs this long is killed and counted as failed. The slowest file on vm-agent takes 72 s; one hung
+// file at the old 20 minutes held a whole run open for that long.
+const TIMEOUT_MIN = numberOf('--timeout', 'PLUMB_TEST_TIMEOUT_MIN') || 6;
+const TIMEOUT = TIMEOUT_MIN * 60 * 1000;
 const flag = (name) => args.includes(name);
 const words = args.filter((a) => !a.startsWith('--'));
 const tiers = words.filter((w) => w in COST || w === 'alone');
@@ -181,7 +185,7 @@ for (const r of [...results].sort((a, b) => b.seconds - a.seconds).slice(0, 10))
 if (bad.length) {
   console.log('\nFailed:');
   for (const r of bad) {
-    console.log(`  ${r.label}${r.timedOut ? '  (killed after 20 min)' : ''}  → ${r.log}`);
+    console.log(`  ${r.label}${r.timedOut ? `  (killed after ${TIMEOUT_MIN} min)` : ''}  → ${r.log}`);
     for (const name of r.failed) console.log(`      ${name}`);
   }
 }
