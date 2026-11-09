@@ -24,6 +24,7 @@ import type { ClassTraceLimit } from '../collect/computed.js';
 import type { StructuredEdit, RefusedSite } from '../surfaces/edits.js';
 import { isComponentJSX, jsxLocation, jsxAuthoredOwner, positionKind, sourcePaths } from './source-location.js';
 import type { PositionKind } from './source-location.js';
+import { parseStamp, stampHash } from '../stamp.js';
 import { elementProps, setJsxProp, setProp, swapClasses } from './props.js';
 import { classSites, pinWrite, pinnedString } from './class-site.js';
 import type { Located, ModuleFacts, PinWrite } from './class-site.js';
@@ -610,9 +611,9 @@ export class Session extends EventEmitter {
     if (!Array.isArray(items) || items.length > 8192) throw new UsageError('A page is a list of at most 8192 stamped elements.');
     const parse = (item: PageItem) => {
       if (!item || typeof item.stamp !== 'string' || typeof item.tag !== 'string' || item.classes !== undefined && typeof item.classes !== 'string') throw new UsageError('Each element is { stamp, tag, classes? }.');
-      const match = /^(.+):(\d+):(\d+)#([a-f0-9]{12})$/.exec(item.stamp);
-      if (!match || item.classes && item.classes.length > 65536) throw new UsageError(`Not a stamp: ${item.stamp.slice(0, 80)}`);
-      return { source: match[1]!, line: Number(match[2]), column: Number(match[3]), hash: match[4]! };
+      const stamp = parseStamp(item.stamp);
+      if (!stamp || item.classes && item.classes.length > 65536) throw new UsageError(`Not a stamp: ${item.stamp.slice(0, 80)}`);
+      return stamp;
     };
     const keyOf = (item: PageItem) => `${item.stamp}\0${item.tag}\0${item.classes ?? ''}`;
     const unique = new Map<string, PageItem>();
@@ -720,7 +721,7 @@ export class Session extends EventEmitter {
       const file = classified, inside = relative(this.root, file).replaceAll('\\', '/');
       if (!this.batchRead) await this.reconcile([file]);
       if (!this.sourceFiles.has(file)) return { library: true, untracked: inside };
-      const text = await readFile(file, 'utf8'), hash = sourceHash(text).slice(0, 12);
+      const text = await readFile(file, 'utf8'), hash = stampHash(text);
       try {
         const stored = JSON.parse(await readFile(indexPath(this.root, hash), 'utf8')) as { rows: IndexRow[] };
         return { file: inside, hash, rows: stored.rows };

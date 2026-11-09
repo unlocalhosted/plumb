@@ -62,3 +62,21 @@ test('no file-presence decision about project identity lives outside src/project
   }
   assert.deepEqual(offenders, [], 'route these through projectFacts / the detectors in src/project-facts/');
 });
+
+// docs/briefs/engine-architecture-review.md, step 1: a stamp is built, taken apart and turned into a file in
+// src/stamp.ts only. When its path changed meaning and the census still read it the old way, every kept reading was
+// dropped in silence; the attribute's name or the stamp's shape written out anywhere else is how that happens again.
+test('no stamp is built or taken apart outside src/stamp.ts', async () => {
+  const { readdir } = await import('node:fs/promises');
+  const src = new URL('../src/', import.meta.url);
+  const offenders = [];
+  for (const entry of await readdir(src, { recursive: true, withFileTypes: true })) {
+    if (!entry.isFile() || !entry.name.endsWith('.ts') || entry.name === 'stamp.ts') continue;
+    const file = join(entry.parentPath, entry.name), text = await readFile(file, 'utf8');
+    text.split('\n').forEach((line, index) => {
+      const code = line.replace(/^\s*(?:\/\/|\*|\/\*).*$/, '');
+      if (/['"`[ ]data-plumb-source|:\\d\+:\\d\+|#\(\[a-f0-9\]/.test(code)) offenders.push(`${file.slice(file.indexOf('/src/') + 1)}:${index + 1}: ${line.trim().slice(0, 120)}`);
+    });
+  }
+  assert.deepEqual(offenders, [], 'use STAMP_ATTRIBUTE, parseStamp, formatStamp and stampedFile from src/stamp.ts');
+});

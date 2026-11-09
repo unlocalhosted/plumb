@@ -4,12 +4,12 @@ import { isAbsolute, join, relative, resolve } from 'node:path';
 import MagicString from 'magic-string';
 import { parseSync, visitorKeys } from 'oxc-parser';
 import type { Node } from 'oxc-parser';
-import { sourceHash } from '../collect/cache.js';
 import { lineStarts, nodeName, sourceSite } from '../collect/source.js';
 import { loadConfig } from '../config.js';
 import { projectSourceFiles } from '../project.js';
 import type { SessionOptions } from '../session/index.js';
 import { stampedSource } from '../source-identity.js';
+import { STAMP_ATTRIBUTE, formatStamp, stampHash, stampSource } from '../stamp.js';
 import { cacheDirectory } from '../paths.js';
 
 /**
@@ -33,11 +33,10 @@ export function stampJSX(code: string, file: string, path: string) {
   const parsed = parseSync(file, code);
   if (parsed.errors.length) return null; // Let the host report its normal parser diagnostic.
   const text = new MagicString(code), starts = lineStarts(code);
-  const hash = sourceHash(code).slice(0, 12);
-  const encoded = path.split('/').map(encodeURIComponent).join('/');
+  const hash = stampHash(code), source = stampSource(path);
   const rows = walkJSX(parsed.program, file, code, starts, (node, at, domTag) => {
-    const authored = node.attributes.some(attribute => attribute.type === 'JSXAttribute' && nodeName(attribute.name) === 'data-plumb-source');
-    if (domTag && !authored) text.appendLeft(node.end - (node.selfClosing ? 2 : 1), ` data-plumb-source="${encoded}:${at.line}:${at.column}#${hash}"`);
+    const authored = node.attributes.some(attribute => attribute.type === 'JSXAttribute' && nodeName(attribute.name) === STAMP_ATTRIBUTE);
+    if (domTag && !authored) text.appendLeft(node.end - (node.selfClosing ? 2 : 1), ` ${STAMP_ATTRIBUTE}="${formatStamp({ source, line: at.line, column: at.column, hash })}"`);
   });
   const index: SourceIndex = { hash, rows };
   return text.hasChanged() ? { code: text.toString(), map: text.generateMap({ source: file, includeContent: true, hires: true }), index } : { code: null, map: null, index };
@@ -47,7 +46,7 @@ export function stampJSX(code: string, file: string, path: string) {
 export function indexJSX(code: string, file: string): SourceIndex | null {
   const parsed = parseSync(file, code);
   if (parsed.errors.length) return null;
-  return { hash: sourceHash(code).slice(0, 12), rows: walkJSX(parsed.program, file, code, lineStarts(code), () => {}) };
+  return { hash: stampHash(code), rows: walkJSX(parsed.program, file, code, lineStarts(code), () => {}) };
 }
 
 type Opening = Node & { type: 'JSXOpeningElement'; attributes: Node[]; selfClosing: boolean; end: number; start: number; name: Node };
