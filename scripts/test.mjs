@@ -3,7 +3,7 @@
 //   node scripts/test.mjs                 every file
 //   node scripts/test.mjs cli             one tier: cli | browser | host | alone
 //   node scripts/test.mjs verdict census  files whose name contains a word
-//   node scripts/test.mjs --cores 6       cores to fill (default: every core)
+//   node scripts/test.mjs --cores 6       cores to fill (default: every core that is not already busy)
 //   node scripts/test.mjs --memory 8      GB to fill (default: what is free, less 2 GB)
 //   node scripts/test.mjs --timeout 10    minutes before a file is killed (default 6)
 //   node scripts/test.mjs --serial        one file at a time, as before
@@ -15,7 +15,7 @@
 import { readdir, readFile, mkdir, rm, writeFile } from 'node:fs/promises';
 import { createWriteStream } from 'node:fs';
 import { spawn } from 'node:child_process';
-import { availableParallelism, freemem, platform, totalmem } from 'node:os';
+import { availableParallelism, freemem, loadavg, platform, totalmem } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { join } from 'node:path';
 
@@ -90,11 +90,15 @@ if (flag('--list')) {
 }
 if (!jobs.length) { console.error('No test file matches.'); process.exit(1); }
 
-// The budgets. Cores: every core. Memory: what is free now, less the reserve. Linux reports what is really
-// available; macOS reports only untouched pages, so half the machine stands in for it there.
+// The budgets, from what the machine has free right now, because it is shared: other projects run on vm-agent and
+// other sessions on the laptop. Cores: every core not already busy (the one-minute load), never fewer than two.
+// Memory: what is free, less the reserve. Linux reports what is really available; macOS reports only untouched
+// pages, so half the machine stands in for it there.
+const busy = Math.round(loadavg()[0]);
 const freeMb = (platform() === 'linux' ? freemem() : totalmem() / 2) / 1e6;
 const budget = flag('--serial') ? { cores: 0, mb: 0 }
-  : { cores: askedCores || availableParallelism(), mb: askedGb ? askedGb * 1000 : Math.max(COST.browser.mb, freeMb - RESERVE_MB) };
+  : { cores: askedCores || Math.max(2, availableParallelism() - busy), mb: askedGb ? askedGb * 1000 : Math.max(COST.browser.mb, freeMb - RESERVE_MB) };
+if (!flag('--serial') && !askedCores && busy >= 2) console.log(`The machine is already busy (load ${busy}): using ${budget.cores} of ${availableParallelism()} cores.`);
 
 await rm(logs, { recursive: true, force: true });
 await mkdir(logs, { recursive: true });
