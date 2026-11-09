@@ -78,6 +78,26 @@ const slots = flag('--serial') ? 1 : asked > 0 ? asked : Math.max(1, Math.min(av
 await rm(logs, { recursive: true, force: true });
 await mkdir(logs, { recursive: true });
 
+// Every process a file starts, however deep. Playwright starts Chromium in a process group of its own, so killing
+// the file's group is not enough: the tree is read every two seconds while files run, and whatever a file's tree
+// ever held is killed when the file ends.
+const trees = new Map(); // the file's pid → every pid seen under it
+function readTrees() {
+  if (!trees.size) return;
+  const ps = spawn('ps', ['-eo', 'pid=,ppid='], { stdio: ['ignore', 'pipe', 'ignore'] });
+  let text = '';
+  ps.stdout.on('data', (chunk) => { text += chunk; });
+  ps.once('close', () => {
+    const parent = new Map(text.trim().split('\n').map((line) => line.trim().split(/\s+/).map(Number)));
+    // a pid that has gone is forgotten at once, so a number the system hands out again is never killed
+    for (const seen of trees.values()) for (const pid of seen) if (!parent.has(pid)) seen.delete(pid);
+    for (const [pid, up] of parent) {
+      for (const [top, seen] of trees) if (up === top || seen.has(up)) seen.add(pid);
+    }
+  });
+}
+setInterval(readTrees, 2000).unref();
+
 function run(job) {
   return new Promise((resolve) => {
     const began = Date.now();
@@ -87,7 +107,12 @@ function run(job) {
     const child = spawn(process.execPath, [...(FLAGS[job.file] ?? []), '--test', '--test-concurrency=1', '--test-reporter=tap', job.file], {
       cwd: root, env: { ...process.env, ...job.env }, stdio: ['ignore', 'pipe', 'pipe'], detached: true,
     });
-    const sweep = () => { try { process.kill(-child.pid, 'SIGKILL'); } catch { /* the group is already gone */ } };
+    const seen = new Set();
+    trees.set(child.pid, seen);
+    const sweep = () => {
+      trees.delete(child.pid);
+      for (const pid of [-child.pid, ...seen]) { try { process.kill(pid, 'SIGKILL'); } catch { /* already gone */ } }
+    };
     const timer = setTimeout(() => { job.timedOut = true; sweep(); }, TIMEOUT);
     for (const stream of [child.stdout, child.stderr]) stream.on('data', (chunk) => { text += chunk; out.write(chunk); });
     child.once('close', (code) => {
