@@ -25,7 +25,7 @@ const TIMING = { hoverRead: 90, light: 120, swap: 140, reread: [250, 600, 1200, 
 import { pageHydrated } from './hydration.js';
 import { DOCK, TAG } from './words.js'; // the dock's and the hover tag's words
 import { locate, componentOf } from './locate.js';
-import { request, post, forgetResolved } from './api.js';
+import { request, post, forgetResolved, isStale } from './api.js';
 import { reading, offCount } from './model.js';
 import { regionFor, outlineOf, childrenOf, groundIsDark, hostGround } from './geometry.js';
 import { GLYPH_CSS, glyph } from './glyphs.js';
@@ -1640,7 +1640,7 @@ class PlumbOverlay extends HTMLElement {
       await this.#reread(p, classes, text, texts.length > 0);
     } catch (error) {
       try { sessionStorage.removeItem(RESUME); } catch {}
-      const stale = /changed since/i.test(error.message);
+      const stale = isStale(error);
       p.status = { kind: 'error', stale, text: stale ? 'The file changed since React Plumber read it.' : error.message };
       this.#updateSync();
     }

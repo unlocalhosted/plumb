@@ -123,6 +123,10 @@ async function direct(method, params, options = {}) {
   return response.json();
 }
 
+// Whether a refusal, or one item of a batch's results, says what was read has changed since (src/errors.ts): the
+// answer is always "read again". Asked of the code, never of the sentence, which is free to be reworded.
+export const isStale = (refusal) => refusal?.code === 'stale-file' || refusal?.code === 'stale-text' || refusal?.code === 'stale-config';
+
 // Writes go through the same token and origin policy as reads; the server re-derives every edit from current source.
 // Every write carries an idempotency key: a retry after a dropped response gets the first answer and applies nothing twice.
 export async function post(method, body) {
@@ -138,7 +142,8 @@ export async function post(method, body) {
     try { response = await send(); } catch (again) { throw unreachable(again); }
   }
   const result = await response.json().catch(() => ({}));
-  if (!response.ok) throw Object.assign(new Error(result.error ?? `React Plumber refused ${method}.`), { status: response.status });
+  // `code` is the server's kind of refusal (src/errors.ts): callers branch on it, never on the sentence
+  if (!response.ok) throw Object.assign(new Error(result.error ?? `React Plumber refused ${method}.`), { status: response.status, ...(result.code ? { code: result.code } : {}) });
   return result;
 }
 

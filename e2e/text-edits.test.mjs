@@ -127,7 +127,9 @@ test('HTTP apply-text refuses invalid, stale, dynamic and unsafe writes without 
   const valid = { file: 'src/App.tsx', hash: reading.hash, run: reading.runs[0].id, from: 'Send', to: 'Go' };
   const refuse = async (params, error, file = api.file) => {
     const before = await readFile(file);
-    assert.deepEqual(await api.call('apply-text', params, 'POST'), { status: 400, body: { error } });
+    // a refusal that means "read again" says so as a code beside its sentence (src/errors.ts)
+    const code = /^The (text|file) changed since/.test(error) ? { code: error.startsWith('The text') ? 'stale-text' : 'stale-file' } : {};
+    assert.deepEqual(await api.call('apply-text', params, 'POST'), { status: 400, body: { error, ...code } });
     assert.deepEqual(await readFile(file), before);
   };
   for (const [params, error] of [

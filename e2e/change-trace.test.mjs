@@ -73,6 +73,7 @@ test('a batch is one group of single changes; any one undoes alone, even after a
   const again = await api.trace();
   assert.deepEqual(again.map(c => [c.id, c.state]), all.map(c => [c.id, c.state]));
   assert.equal((await api.call('undo-change', { id: by(first, 'p-3').id }, 'POST')).status, 400, 'already undone');
+  assert.equal((await api.call('undo-change', { id: by(first, 'p-3').id }, 'POST')).body.code, 'undo-undone', 'and says so as a code');
 });
 
 test('a place edited by hand refuses its undo and leaves the file alone; a whole group undoes all or nothing', async t => {
@@ -85,6 +86,7 @@ test('a place edited by hand refuses its undo and leaves the file alone; a whole
   const refused = await api.call('undo-change', { id: by(changes, 'mt-2.5').id }, 'POST');
   assert.equal(refused.status, 400);
   assert.match(refused.body.error, /no longer holds what it wrote; it was edited outside React Plumber/);
+  assert.equal(refused.body.code, 'undo-changed-by-hand');
   const group = await api.call('undo-group', { group: 'tidy' }, 'POST');
   assert.equal(group.status, 400, 'one changed place refuses the group');
   assert.equal(await api.read(), typed, 'nothing written');

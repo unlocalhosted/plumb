@@ -280,12 +280,12 @@ export async function applyReadinessFix(options: ReadinessOptions, request: { id
   try {
     const report = await readiness(options), requirement = report.requirements.find(item => item.id === request.id), fix = requirement?.fix;
     if (!fix || fix.kind !== 'diff') throw new UsageError('This requirement has no applicable diff. Follow its step, then run plumber doctor.');
-    if (fix.hash !== request.hash) throw new UsageError('Config changed since the diff was shown. Read readiness again.');
+    if (fix.hash !== request.hash) throw new UsageError('Config changed since the diff was shown. Read readiness again.', 'stale-config');
     const file = resolve(root, fix.file);
     await ownConfig(root, file);
     if (dirty(root, file) && request.allowDirty !== true) throw new UsageError('Config has uncommitted changes. Confirm the dirty file before applying (allowDirty: true).');
     const current = await readFile(file, 'utf8');
-    if (hash(current) !== request.hash) throw new UsageError('Config changed since the diff was shown. Read readiness again.');
+    if (hash(current) !== request.hash) throw new UsageError('Config changed since the diff was shown. Read readiness again.', 'stale-config');
     const host = request.id === 'locate.source' ? undefined : await hostConfig(root);
     const source = request.id === 'locate.source' ? await sourceChange(options, file) : undefined;
     const after = source?.after ?? host?.changes[request.id];

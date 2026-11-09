@@ -22,7 +22,7 @@
  *             its own reading. Sites drawn by one JSX line share one edit, written once
  *  leave      leaving blueprint lifts every preview and drops the queue: nothing is left on the page
  * ───────────────────────────────────────────────────────── */
-import { post, request } from './api.js';
+import { post, request, isStale } from './api.js';
 import { locate } from './locate.js';
 import { choicesHtml, bindChoices, toPx, fmtPx, esc, code, VALUED } from './choices.js';
 import { glyph } from './glyphs.js';
@@ -563,7 +563,7 @@ export class Fixer {
         this.#invalidate({ file });
         this.#liftWhenReloaded([p, ...twins]);
       } catch (error) {
-        const stale = /changed since/i.test(error?.message ?? '');
+        const stale = isStale(error);
         for (const q of [p, ...twins]) q.state = stale ? 'stale' : 'picked';
         refused.push({ file, stale, message: error?.message ?? 'React Plumber refused the write.' });
       }
@@ -581,7 +581,7 @@ export class Fixer {
         this.#invalidate({ file });
         this.#liftWhenReloaded(group);
       } catch (error) {
-        const stale = /changed since/i.test(error?.message ?? '');
+        const stale = isStale(error);
         for (const p of group) p.state = stale ? 'stale' : 'picked';
         refused.push({ file, stale, message: error?.message ?? 'React Plumber refused the write.' });
       }

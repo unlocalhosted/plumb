@@ -598,7 +598,7 @@ export const FIX = {
   undo: 'Undo',
   undoing: 'Undoing…',
   undone: 'Undone. Your code is back as it was.',
-  couldNotUndo: (why) => /changed since/i.test(why ?? '') ? 'This file changed after the fix, so it can’t be undone here. Undo it in your editor.' : `Couldn’t undo. ${why ?? 'Check again.'}`,
+  couldNotUndo: (why, stale = false) => stale ? 'This file changed after the fix, so it can’t be undone here. Undo it in your editor.' : `Couldn’t undo. ${why ?? 'Check again.'}`,
   couldNot: 'Couldn’t apply. Check again.',
   changedSince: 'This file changed after we checked it. Check again.',
   // a cause whose places no element renders right now: in your code, in a part this page shows only sometimes

@@ -11,7 +11,8 @@ import { Session } from './index.js';
 import type { ReadArgs, ReadMethod, SessionOptions } from './index.js';
 import { answersSerialized, isEndpoint, isRpcMethod, isWriteEndpoint, tracedWrites, verbOf } from './methods.js';
 import type { CheckOptions } from '../index.js';
-import { BusyError, errorDiagnostic, errorMessage, UsageError } from '../errors.js';
+import { BusyError, errorCode, errorDiagnostic, errorMessage, UsageError } from '../errors.js';
+import type { ErrorCode } from '../errors.js';
 import { isIP } from 'node:net';
 import { overlayClient, overlayModules } from '../hosts/client.js';
 
@@ -295,7 +296,7 @@ function createRoute(session: Session | Promise<Session>, options: HandlerOption
     if (!url.pathname.startsWith(prefix)) return;
     const headers: Record<string, string> = { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', 'Cross-Origin-Resource-Policy': 'same-origin' };
     const respond = (status: number, value: unknown): TransportResponse => ({ status, headers, body: JSON.stringify(value) });
-    const refuse = (status: number, error: string) => respond(status, { error });
+    const refuse = (status: number, error: string, code?: ErrorCode) => respond(status, { error, ...(code ? { code } : {}) });
     // GET system is the project page's data; the POST of that name is the engine's proposal (methods.ts)
     const named = url.pathname.slice(prefix.length);
     const method = named === 'system' && request.method === 'GET' ? 'system-page' : named;
@@ -373,7 +374,7 @@ function createRoute(session: Session | Promise<Session>, options: HandlerOption
         result = await dispatchReadiness(context, method, params);
       }
       return json ? { status: 200, headers, body: result as string } : respond(200, result);
-    } catch (error) { if (error instanceof BusyError) { headers["Retry-After"] = "1"; return respond(503, { status: "busy" }); } return refuse(error instanceof UsageError ? 400 : 500, errorMessage(error)); }
+    } catch (error) { if (error instanceof BusyError) { headers["Retry-After"] = "1"; return respond(503, { status: "busy" }); } return refuse(error instanceof UsageError ? 400 : 500, errorMessage(error), errorCode(error)); }
   };
 }
 
@@ -502,7 +503,7 @@ export async function serveStdio(options: SessionOptions = {}, input: Readable =
         }
         const result = await dispatch(session, method, request.params ?? {});
         if (request.id !== undefined) await write({ jsonrpc: '2.0', id: request.id, result });
-      } catch (error) { if (request.id !== undefined) await write({ jsonrpc: '2.0', id: request.id, error: { code: -32602, message: errorMessage(error) } }); }
+      } catch (error) { if (request.id !== undefined) await write({ jsonrpc: '2.0', id: request.id, error: { code: -32602, message: errorMessage(error), ...(errorCode(error) ? { data: { code: errorCode(error) } } : {}) } }); }
     }
   } finally { lines.close(); await session.close(); }
 }

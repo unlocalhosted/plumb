@@ -396,7 +396,7 @@ test('A write the server refuses as stale writes nothing: the fix comes back in 
   let refused = 0;
   await page.route('**/swaps', (route) => {
     refused++;
-    route.fulfill({ status: 409, contentType: 'application/json', body: JSON.stringify({ error: 'The file changed since the overlay read it. Read it again.' }) });
+    route.fulfill({ status: 409, contentType: 'application/json', body: JSON.stringify({ error: 'The file changed since the overlay read it. Read it again.', code: 'stale-file' }) });
   });
   const file = join(root, 'src/App.jsx');
   await panel(overlay).locator('.take:not([disabled])').waitFor({ timeout: 10000 });
