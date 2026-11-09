@@ -27,3 +27,4 @@ dist/
 
 # bench/locate: real Next apps cloned for the nextapps corpus (never committed; tailwindcss.com is education-only)
 /bench/locate/.corpus/
+.test-logs/
