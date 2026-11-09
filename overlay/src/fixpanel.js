@@ -36,6 +36,7 @@ import { FIX, CLEANUP, written } from './words.js'; // every sentence the panel 
 import { Cleanup, CLEANUP_CSS } from './cleanup.js'; // "Clean up this page": the passes, one at a time
 import { groupsOf, isNote, placeKey } from './blueprint-panel.js';
 import { glide } from './inplace.js'; // the text styles the code is reaching for
+import { stampOf, parseStamp, sameStamp, stampNames } from './stamp.js';
 
 const TIMING = { open: 260, next: 180, click: 60, clickGap: 45, breath: 480, check: 600, fold: 2300 };
 const CLICK = { drop: 3, over: -1, ms: 420 };
@@ -261,17 +262,17 @@ const placeOfMember = (m) => placeKey(m.mark, fileOf(m));
 const placesOf = (g) => new Set(g.members.map(placeOfMember).filter(Boolean)).size;
 const drawn = (g) => g.members.some((m) => m.el);
 // the other elements on the page drawn by the same line of code as this one (its stamp), outside it
-const stampMates = (el) => { const at = el?.getAttribute('data-plumb-source'); return at ? [...document.querySelectorAll(`[data-plumb-source="${CSS.escape(at)}"]`)].filter((x) => x !== el && !el.contains(x)).length : 0; };
+const stampMates = (el) => { const at = stampOf(el); return at ? [...document.querySelectorAll(sameStamp(at))].filter((x) => x !== el && !el.contains(x)).length : 0; };
 // an Alt+click reads one element (scope): a fix changes its line of code, so the places outside it that the same line
 // draws change too. Counted by stamp, only where the element's stamp is the fix's own line (a caller's classes are not)
 // One unit for both counts (F8-05): what the fix's line draws, counted once by its stamp, inside the element read
 // ("here") and outside it; a cause whose classes come from a caller (no stamp of its own line) counts its own elements
-const stampsOf = (g) => { const stamps = new Set(); for (const m of g.members) { const stamp = m.el?.getAttribute('data-plumb-source'); if (stamp?.startsWith(`${fileOf(m)}:${m.mark.line}:`)) stamps.add(stamp); } return stamps; };
+const stampsOf = (g) => { const stamps = new Set(); for (const m of g.members) { const stamp = stampOf(m.el), parsed = parseStamp(stamp); if (parsed && parsed.line === m.mark.line && stampNames(parsed, fileOf(m))) stamps.add(stamp); } return stamps; };
 const drawnOf = (g, scope) => {
   const stamps = stampsOf(g), own = elsOf(g);
   if (!scope || !stamps.size) return { here: own.length, elsewhere: 0 };
   const drawn = new Set(own);
-  for (const stamp of stamps) for (const el of document.querySelectorAll(`[data-plumb-source="${CSS.escape(stamp)}"]`)) drawn.add(el);
+  for (const stamp of stamps) for (const el of document.querySelectorAll(sameStamp(stamp))) drawn.add(el);
   let here = 0, elsewhere = 0;
   for (const el of drawn) if (scope.contains(el)) here++; else elsewhere++;
   return { here, elsewhere };

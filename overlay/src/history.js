@@ -28,6 +28,7 @@
 import { request, post } from './api.js';
 import { esc } from './choices.js';
 import { TIMELINE as T } from './words.js';
+import { STAMP_ATTRIBUTE, STAMPED, stampOf, parseStamp, stampNames } from './stamp.js';
 
 export const HISTORY_ICON = '<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2.2 4.2A4.25 4.25 0 1 1 1.75 6.5" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><path d="M1.6 1.8v2.6h2.6" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 3.75V6l1.6 1" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>';
 const CLOSE_ICON = '<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M3 3l6 6M9 3l-6 6" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>';
@@ -172,14 +173,11 @@ const reasonOf = (c) => (c.state === 'undone' ? T.undoneAlready : c.by?.length ?
 // and a component's at its usage (<Lettering className="…">), on its fiber's props, whose elements are the top DOM
 // elements it renders (the className it is given lands on those).
 const MARKS = 24;
-const STAMP = /^(.+):(\d+):(\d+)#[a-f0-9]+$/;
 const fiberOf = (el) => { for (const k in el) if (k.startsWith('__reactFiber$')) return el[k]; return null; };
 function placeOf(stamp, c) {
-  const m = typeof stamp === 'string' && STAMP.exec(stamp);
-  if (!m) return null;
-  let file = m[1]; try { file = decodeURIComponent(file); } catch {}
-  if (file !== c.file && !file.endsWith('/' + c.file) && !c.file.endsWith('/' + file)) return null;
-  const line = +m[2], column = +m[3];
+  const parsed = parseStamp(stamp);
+  if (!parsed || !stampNames(parsed, c.file)) return null;
+  const { line, column } = parsed;
   return line < c.line || (line === c.line && column <= c.column) ? { line, column } : null;
 }
 // the top DOM elements a fiber renders: its host descendants with no host between
@@ -196,9 +194,9 @@ function hostsOf(fiber) {
 // stamped at its usage. Many changes are matched against one read (the past view matches every change to the right).
 function pageIndex() {
   const out = [], roots = new Set();
-  for (const el of document.querySelectorAll('[data-plumb-source]')) {
+  for (const el of document.querySelectorAll(STAMPED)) {
     if (el.closest('plumb-overlay')) continue;
-    out.push([el.getAttribute('data-plumb-source'), [el]]);
+    out.push([stampOf(el), [el]]);
     if (roots.size < 8) { let f = fiberOf(el); while (f?.return) f = f.return; if (f) roots.add(f); }
   }
   for (const root of roots) {
@@ -207,7 +205,7 @@ function pageIndex() {
       const f = stack.pop();
       if (f.sibling) stack.push(f.sibling);
       if (f.child) stack.push(f.child);
-      const stamp = typeof f.type !== 'string' && f.memoizedProps?.['data-plumb-source'];
+      const stamp = typeof f.type !== 'string' && f.memoizedProps?.[STAMP_ATTRIBUTE];
       if (stamp) out.push([stamp, hostsOf(f)]);
     }
   }

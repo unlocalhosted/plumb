@@ -22,6 +22,7 @@
 import { esc } from './choices.js';
 import { FIX } from './words.js';
 import { clearOf } from './geometry.js';
+import { STAMP_ATTRIBUTE, placeOf, atPlace } from './stamp.js';
 
 const W = FIX.card;
 const STILL = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -118,7 +119,7 @@ export function freeze(el) {
     if (i === 0) for (const p of cs) css += `${p}:${cs.getPropertyValue(p)};`;
     else for (const p of DRAWN) { const v = cs.getPropertyValue(p); if (v) css += `${p}:${v};`; }
     d.setAttribute('style', css);
-    d.removeAttribute('id'); d.removeAttribute('data-plumb-source'); d.removeAttribute('contenteditable');
+    d.removeAttribute('id'); d.removeAttribute(STAMP_ATTRIBUTE); d.removeAttribute('contenteditable');
     d.setAttribute('inert', '');
   });
   Object.assign(copy.style, { position: 'relative', inset: 'auto', margin: '0', transform: 'none', transition: 'none', animation: 'none', pointerEvents: 'none' });
@@ -151,8 +152,7 @@ class Inline {
   get on() { return this.#had.size > 0; }
 }
 // the line an element is written on (a list's rows share one): its stamp
-const stampOf = (el) => el.getAttribute('data-plumb-source')?.split('#')[0] ?? null;
-const matesOf = (el) => { const s = stampOf(el); return s ? [...document.querySelectorAll(`[data-plumb-source^="${CSS.escape(s)}#"]`)].filter((x) => x !== el).length : 0; };
+const matesOf = (el) => { const s = placeOf(el); return s ? [...document.querySelectorAll(atPlace(s))].filter((x) => x !== el).length : 0; };
 
 // ── the spacing grammar ──────────────────────────────────
 // host: { release(), target() → el | null, name(el) → words, scale() → [{ px, token }] (0 first), write([{ el, from, to }],
@@ -512,10 +512,10 @@ export class Layout {
     if (subNow !== subWas) {
       const seen = new Set();
       for (const r of kids(t)) {
-        const key = stampOf(r) ?? r; if (seen.has(key)) continue; seen.add(key);
+        const key = placeOf(r) ?? r; if (seen.has(key)) continue; seen.add(key);
         const has = classesOf(r).filter((c) => ROW_CLASS.test(c)), want = subNow ? ['col-span-full', 'grid', 'grid-cols-subgrid'] : ['flex'];
         const g = has.filter((c) => !want.includes(c)), a = want.filter((c) => !has.includes(c));
-        if (g.length || a.length) out.push({ el: r, from: g.join(' '), to: a.join(' '), rows: kids(t).filter((x) => (stampOf(x) ?? x) === key).length });
+        if (g.length || a.length) out.push({ el: r, from: g.join(' '), to: a.join(' '), rows: kids(t).filter((x) => (placeOf(x) ?? x) === key).length });
       }
     }
     return out;

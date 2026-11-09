@@ -11,6 +11,7 @@ import { request } from './api.js';
 import { sourceMapVersion, mapFrame } from './sourcemap.js';
 import { FIX } from './words.js';
 import { pageHydrated, whenHydrated } from './hydration.js';
+import { STAMP_ATTRIBUTE, STAMPED, stampOf, parseStamp, sameStamp, stampNames } from './stamp.js';
 
 // Next's ?id names an eval module, and some versions reuse that id on later
 // saves. Only new Error evidence checks its current source version; retained
@@ -200,7 +201,7 @@ let stampsExpected = null, settle;
 const known = new Promise(resolve => { settle = resolve; });
 export function expectStamps(value) { stampsExpected = value === true; settle(); }
 export function pageStamped() {
-  for (const node of document.querySelectorAll('[data-plumb-source]')) if (/^(.+):(\d+):(\d+)#[a-f0-9]{12}$/.test(node.getAttribute('data-plumb-source'))) return true;
+  for (const node of document.querySelectorAll(STAMPED)) if (parseStamp(stampOf(node))) return true;
   return false;
 }
 
@@ -279,8 +280,10 @@ export async function locate(element, options = {}) {
     fiber = hostOf(element);
     if (!fiber && !hydrated) return options.explain ? { location: null, reason: 'not-hydrated', detail: {} } : null;
   }
-  const stamp = fiber?.memoizedProps?.['data-plumb-source'];
-  const match = typeof stamp === 'string' && /^(.+):(\d+):(\d+)#([a-f0-9]{12})$/.exec(stamp);
+  const stamp = fiber?.memoizedProps?.[STAMP_ATTRIBUTE];
+  const parsed = parseStamp(stamp);
+  // the request's fields, as the stamp writes them
+  const match = parsed && [stamp, parsed.source, String(parsed.line), String(parsed.column), parsed.hash];
   let confirmed, refusal;
   if (match && typeof fiber.type === 'string' && !options.signal?.aborted) {
     try {
@@ -425,27 +428,22 @@ export async function classEditsOf(element, from, to) {
 // The other elements on the page drawn from an element's class site, outside it: the elements with its own stamp, and
 // when the site is a usage, only those whose component was used at that line (the rows of one list, not every Link).
 export function siteMates(element, site) {
-  const own = element?.getAttribute('data-plumb-source');
+  const own = stampOf(element);
   if (!own) return 0;
-  const same = [...document.querySelectorAll(`[data-plumb-source="${CSS.escape(own)}"]`)].filter((x) => x !== element && !element.contains(x));
+  const same = [...document.querySelectorAll(sameStamp(own))].filter((x) => x !== element && !element.contains(x));
   if (!site?.usage) return same.length;
   // Only DOM tags carry stamps: every <a> a Link draws has the Link's own line. The rows of one list are told apart by
   // the component they were made with and the classes that usage passed it (the site's prop, as a plain string):
   // the first component fiber above each host, compared with the element's own.
   const madeBy = (x) => { const key = fiberKey(x); for (let f = key ? x[key] : null, n = 0; f && n < 64; f = f.return, n++) if (typeof f.type !== 'string') return f; return null; };
   const mine = madeBy(element), prop = site.prop ?? 'className', passed = mine?.memoizedProps?.[prop];
-  const there = (stamp) => {
-    const m = typeof stamp === 'string' && /^(.+):(\d+):\d+#/.exec(stamp);
-    if (!m || +m[2] !== site.line) return false;
-    const file = decodeURIComponent(m[1]);
-    return site.file === file || site.file.endsWith('/' + file);
-  };
+  const there = (stamp) => { const parsed = parseStamp(stamp); return !!parsed && parsed.line === site.line && stampNames(parsed, site.file); };
   return same.filter((x) => {
     const made = madeBy(x);
     if (mine && made && made.type === mine.type && typeof passed === 'string' && made.memoizedProps?.[prop] === passed) return true;
     // a host whose component carries the usage's stamp (a forwarded data-plumb-source): the old way, still honoured
     const key = fiberKey(x);
-    for (let f = key ? x[key] : null, n = 0; f && n < 64; f = f.return, n++) if (typeof f.type !== 'string' && there(f.memoizedProps?.['data-plumb-source'])) return true;
+    for (let f = key ? x[key] : null, n = 0; f && n < 64; f = f.return, n++) if (typeof f.type !== 'string' && there(f.memoizedProps?.[STAMP_ATTRIBUTE])) return true;
     return false;
   }).length;
 }

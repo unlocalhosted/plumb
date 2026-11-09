@@ -29,6 +29,7 @@ import { SpacingPass } from './spacing-pass.js';
 import { ColourPass } from './colour-pass.js';
 import { IconPass } from './icon-pass.js';
 import { CLEANUP as W } from './words.js';
+import { STAMPED, stampOf, sameStamp } from './stamp.js';
 
 const LAWS = [{ id: 'similarity', name: 'Law of similarity' }, { id: 'cognitive-load', name: 'Cognitive load' }];
 // the passes written as class swaps (spacing-pass.js, colour-pass.js): one shape, so the panel runs them one way
@@ -99,9 +100,9 @@ ${SHOW_CSS}
 
 // the page's text, as Blueprint reads it (blueprint.js #system): every stamped element with words of its own
 function pageCensus() {
-  return [...document.body.querySelectorAll('[data-plumb-source]')].filter((el) => !el.closest('plumb-overlay') && [...el.childNodes].some((n) => n.nodeType === 3 && /[\p{L}\p{N}]/u.test(n.nodeValue))).map((el) => {
+  return [...document.body.querySelectorAll(STAMPED)].filter((el) => !el.closest('plumb-overlay') && [...el.childNodes].some((n) => n.nodeType === 3 && /[\p{L}\p{N}]/u.test(n.nodeValue))).map((el) => {
     const cs = getComputedStyle(el);
-    return { stamp: el.getAttribute('data-plumb-source'), tag: el.localName, list: !!el.closest('li, ul, ol, dl'), computed: { size: parseFloat(cs.fontSize), lineHeight: cs.lineHeight === 'normal' ? null : parseFloat(cs.lineHeight), letterSpacing: cs.letterSpacing === 'normal' ? 0 : parseFloat(cs.letterSpacing), weight: parseInt(cs.fontWeight, 10), transform: cs.textTransform } };
+    return { stamp: stampOf(el), tag: el.localName, list: !!el.closest('li, ul, ol, dl'), computed: { size: parseFloat(cs.fontSize), lineHeight: cs.lineHeight === 'normal' ? null : parseFloat(cs.lineHeight), letterSpacing: cs.letterSpacing === 'normal' ? 0 : parseFloat(cs.letterSpacing), weight: parseInt(cs.fontWeight, 10), transform: cs.textTransform } };
   });
 }
 const sizeOf = (b) => (Number.isFinite(b?.size) ? b.size : null);
@@ -304,7 +305,7 @@ export class Cleanup {
     // a size as the page draws it: the most common computed size among the places (a fluid style at this width)
     const drawn = (els) => { const n = els.map((el) => parseFloat(getComputedStyle(el).fontSize)).filter(Number.isFinite); return n.sort((a, b) => n.filter((v) => v === b).length - n.filter((v) => v === a).length)[0] ?? null; };
     return this.#page.roles.filter((x) => x.here.length).map(({ role, here }) => {
-      const els = () => here.flatMap((m) => [...document.querySelectorAll(`[data-plumb-source="${CSS.escape(m.stamp)}"]`)]);
+      const els = () => here.flatMap((m) => [...document.querySelectorAll(sameStamp(m.stamp))]);
       const from = drawn(els()), to = fluidPx(role.bundle) ?? from;
       return {
         // its icon: "Ag" in the style's own weight, sized by its rank (every text role is one property, so the drawing is the style)

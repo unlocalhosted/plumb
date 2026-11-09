@@ -5,6 +5,7 @@
  * text pass (cleanup.js): each style's plain name ("Body small"), the styles largest first, and the page drawn in them.
  * People see "text styles", named in plain words; the code names (type-body-large) appear only where code is shown.
  * ───────────────────────────────────────────────────────── */
+import { sameStamp } from './stamp.js';
 
 // a style's name in plain words, from its role (display/headline/title/body/label × large/medium/small): the largest
 // of its group present is the group's own name, the next ones "small"
@@ -42,7 +43,7 @@ export class StylePreview {
       if (!m.stamp) continue;
       const lh = m.variant === 'compact' ? role.variants?.compact?.lineHeight : b.lineHeight;
       const sets = { 'font-size': b.sizeText ?? `${b.size}px`, 'letter-spacing': `${b.letterSpacing ?? 0}em`, 'font-weight': String(b.weight ?? 400), 'text-transform': b.transform ?? 'none', ...(Number(lh) > 0 ? { 'line-height': String(lh) } : {}) };
-      for (const el of document.querySelectorAll(`[data-plumb-source="${CSS.escape(m.stamp)}"]`)) {
+      for (const el of document.querySelectorAll(sameStamp(m.stamp))) {
         if (this.#had.has(el)) continue;
         this.#had.set(el, Object.keys(sets).map((p) => [p, el.style.getPropertyValue(p), el.style.getPropertyPriority(p)]));
         const set = () => { for (const [p, v] of Object.entries(sets)) el.style.setProperty(p, v, 'important'); };

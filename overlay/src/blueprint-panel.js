@@ -30,6 +30,7 @@
  * ───────────────────────────────────────────────────────── */
 import { FIX } from './words.js';
 import { esc } from './choices.js';
+import { placeOf as stampPlace } from './stamp.js';
 
 export const PANEL_CSS = `
   .bpp { position: fixed; inset-inline-end: var(--pl-space-6); inset-block-start: var(--pl-space-6); max-height: calc(100vh - 2 * var(--pl-space-6) - var(--pl-tag-h) - 18px);
@@ -127,7 +128,7 @@ export function groupsOf(items) {
     let g = groups.get(key);
     if (!g) groups.set(key, (g = { key, text, what: whatOf(mark), soft: soft(mark), members: [], stamps: new Set() }));
     g.members.push({ el: item.el, mark, id: `${item.id}:${k}:${mark.key}`, item });
-    g.stamps.add(item.el?.getAttribute('data-plumb-source')?.split('#')[0] ?? item.site?.file ?? `${item.id}`);
+    g.stamps.add(stampPlace(item.el) ?? item.site?.file ?? `${item.id}`);
   });
   const list = [...groups.values()].sort((a, b) => b.members.length - a.members.length || a.text.localeCompare(b.text));
   for (const g of list) g.lines = g.stamps.size;

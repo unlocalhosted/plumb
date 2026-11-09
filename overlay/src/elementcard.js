@@ -36,6 +36,7 @@ import { clearOf } from './geometry.js';
 import { Spacing, Layout, LAYOUT_CSS, freeze, fitCopy, groundOf } from './layoutcard.js';
 import { lawsOf } from './laws.js';
 import { Tidy } from './tidycard.js'; // layer 3: Tidy this card // layer 2: Layout › and the spacing on the element
+import { placeOf, atPlace } from './stamp.js';
 
 const W = FIX.card;
 const WIDTH = 276, GAP = 16, EDGE = 12;
@@ -322,7 +323,7 @@ export class ElementCard {
       // a re-render may still be under way: the element is looked for again for a moment before the card lets go
       let again = null;
       for (let i = 0; i < 8 && !again && this.#target; i++) {
-        again = this.#stamp ? document.querySelector(`[data-plumb-source^="${CSS.escape(this.#stamp)}#"]`) : null;
+        again = this.#stamp ? document.querySelector(atPlace(this.#stamp)) : null;
         if (!again) await new Promise((r) => setTimeout(r, 150));
       }
       if (!this.#target) return;
@@ -334,7 +335,7 @@ export class ElementCard {
 
   async #read() {
     const el = this.#target, seq = ++this.#seq;
-    this.#stamp = el.getAttribute('data-plumb-source')?.split('#')[0] ?? null;
+    this.#stamp = placeOf(el);
     try {
       const at = this.#at ?? await locate(el);
       if (seq !== this.#seq) return;

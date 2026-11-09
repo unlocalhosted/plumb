@@ -80,3 +80,20 @@ test('no stamp is built or taken apart outside src/stamp.ts', async () => {
   }
   assert.deepEqual(offenders, [], 'use STAMP_ATTRIBUTE, parseStamp, formatStamp and stampedFile from src/stamp.ts');
 });
+
+// The same on the page: overlay/src/stamp.js is the overlay's only reader of the attribute and the shape. Before it,
+// 19 files held 57 copies, three of them comparing a stamp's file with the server's in three different ways.
+test('no stamp is read or taken apart in the overlay outside overlay/src/stamp.js', async () => {
+  const { readdir } = await import('node:fs/promises');
+  const src = new URL('../overlay/src/', import.meta.url);
+  const offenders = [];
+  for (const name of await readdir(src)) {
+    if (!name.endsWith('.js') || name === 'stamp.js') continue;
+    const text = await readFile(new URL(name, src), 'utf8');
+    text.split('\n').forEach((line, index) => {
+      const code = line.replace(/^\s*(?:\/\/|\*|\/\*).*$/, '').replace(/\/\/ .*$/, '');
+      if (/data-plumb-source|:\\d\+:\\d\+#|\(\\d\+\):\(\\d\+\)#/.test(code)) offenders.push(`overlay/src/${name}:${index + 1}: ${line.trim().slice(0, 120)}`);
+    });
+  }
+  assert.deepEqual(offenders, [], 'use stampOf, placeOf, parseStamp, sameStamp, atPlace and stampNames from overlay/src/stamp.js');
+});

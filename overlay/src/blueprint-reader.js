@@ -43,6 +43,7 @@
  * ───────────────────────────────────────────────────────── */
 
 import { inCode, isNote, placeKey } from './blueprint-panel.js';
+import { STAMP_ATTRIBUTE, stampOf, parseStamp } from './stamp.js';
 
 const WAVE = 128; // per-element readings in flight at once (each is batched by api.js into one round trip per tick)
 const PAGE = 1024; // stamped elements per page request; every chunk is sent at once
@@ -82,10 +83,10 @@ export class Reader {
     this.#scope = scope;
     this.#mo = new MutationObserver((records) => {
       const pinned = this.#host.pinnedElement;
-      const relevant = records.some((r) => !r.target.closest?.('plumb-overlay') && r.target !== pinned && (!this.#scope || this.#scope.contains(r.target)) && (r.type === 'childList' || r.attributeName === 'class' || r.attributeName === 'data-plumb-source'));
+      const relevant = records.some((r) => !r.target.closest?.('plumb-overlay') && r.target !== pinned && (!this.#scope || this.#scope.contains(r.target)) && (r.type === 'childList' || r.attributeName === 'class' || r.attributeName === STAMP_ATTRIBUTE));
       if (relevant) { this.#changed(); this.#throttled(() => this.#scan(true)); }
     });
-    this.#mo.observe(document.body, { subtree: true, childList: true, attributes: true, attributeFilter: ['class', 'open', 'hidden', 'data-plumb-source'] });
+    this.#mo.observe(document.body, { subtree: true, childList: true, attributes: true, attributeFilter: ['class', 'open', 'hidden', STAMP_ATTRIBUTE] });
     this.#startedAt = performance.now();
     this.#changed();
     this.#scan(false);
@@ -165,7 +166,7 @@ export class Reader {
     const pool = this.#scope ? (this.#scope.isConnected ? [this.#scope, ...this.#scope.querySelectorAll('*')] : []) : document.body.querySelectorAll('*');
     for (const el of pool) {
       // inside an <svg>, only authored JSX (stamped) is read: a <text> with a type class is a decision, a library's paths are drawing
-      const stamp = el.getAttribute('data-plumb-source') ?? null;
+      const stamp = stampOf(el) ?? null;
       if ((el.ownerSVGElement && !stamp) || el.closest('plumb-overlay') || el.localName === 'script' || el.localName === 'style') continue;
       const classes = el.getAttribute('class')?.trim() ?? '';
       const sig = `${stamp}|${classes}`;
@@ -205,7 +206,7 @@ export class Reader {
   #files() {
     const files = new Set();
     for (const item of this.#items.values()) {
-      const named = item.stamp && /^(.+):\d+:\d+#[a-f0-9]{12}$/.exec(item.stamp)?.[1];
+      const named = parseStamp(item.stamp)?.source;
       if (named) files.add(named);
       if (item.state === 'ready' && item.checked && item.file) files.add(item.file);
     }

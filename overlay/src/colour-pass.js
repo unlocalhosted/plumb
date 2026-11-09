@@ -19,12 +19,13 @@ import { request } from './api.js';
 import { classEditsOf } from './locate.js';
 import { ease } from './show.js';
 import { loadPalette, paletteOf, proposeColours, readColours } from './colours.js';
+import { placeOf } from './stamp.js';
 
 const PROP = { text: 'color', bg: 'background-color', border: 'border-color' };
 const ORDER = { text: 0, bg: 1, border: 2 };
 const WAVE = 24, WAVE_MAX = 240; // ms between places down the page, and the whole wave's longest delay
 const still = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
-const keyOf = (el, prop, cls) => `${(el.getAttribute('data-plumb-source') ?? '').split('#')[0]}|${prop}|${cls}`;
+const keyOf = (el, prop, cls) => `${(placeOf(el) ?? '')}|${prop}|${cls}`;
 const short = (cls) => (cls ?? '').replace(/^(text|bg|border)-/, '').replace(/^\[(.*)\]$/, '$1');
 const mostOf = (vs) => vs.sort((a, b) => vs.filter((v) => v === b).length - vs.filter((v) => v === a).length)[0];
 

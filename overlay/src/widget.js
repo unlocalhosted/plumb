@@ -38,12 +38,13 @@ import { History, HISTORY_CSS, HISTORY_ICON } from './history.js';
 import { Craft } from './craft.js';
 import { setSource } from './craft-headless.js';
 import { choicesHtml, bindChoices, whyLine, toPx, fmtPx, esc, code, VALUED, CHOICES_CSS } from './choices.js';
+import { placeOf, atPlace } from './stamp.js';
 
 const tokensCss = await (await fetch(new URL('./tokens.css', import.meta.url))).text();
 // the element an Alt+click read, kept across a reload: where it is written (its stamp without the file's hash, which a
 // write changes) and which of the elements written there it was
-const stampedAt = (at) => document.querySelectorAll(`[data-plumb-source^="${CSS.escape(at)}#"]`);
-const scopeKey = (el) => { const at = el?.getAttribute('data-plumb-source')?.split('#')[0]; return at ? { at, nth: [...stampedAt(at)].indexOf(el) } : null; };
+const stampedAt = (at) => document.querySelectorAll(atPlace(at));
+const scopeKey = (el) => { const at = placeOf(el); return at ? { at, nth: [...stampedAt(at)].indexOf(el) } : null; };
 const scopeOf = (key) => key?.at ? stampedAt(key.at)[key.nth] ?? null : null;
 const RESUME = 'plumb:resume';
 
@@ -501,7 +502,7 @@ class PlumbOverlay extends HTMLElement {
   readsFor(stamp) { return this.#readCounts.get(stamp) ?? 0; }
   readMarks(element, fresh = false, { computed = true } = {}) {
     if (!fresh && this.#marksCache.has(element)) return this.#marksCache.get(element);
-    const stamp = element.getAttribute?.('data-plumb-source')?.split('#')[0];
+    const stamp = placeOf(element);
     if (stamp) this.#readCounts.set(stamp, this.#readCounts.get(stamp) + 1 || 1);
     const promise = (async () => {
       const found = await locate(element, { explain: true, batch: true });
