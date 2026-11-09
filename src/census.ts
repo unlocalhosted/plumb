@@ -16,6 +16,7 @@ import { resolve } from 'node:path';
 import { atomicWrite } from './atomic-write.js';
 import { sourceHash } from './collect/cache.js';
 import { cacheDirectory, ignoreCache } from './paths.js';
+import { repositoryRoot } from './source-identity.js';
 import type { CensusEntry } from './session/engine.js';
 
 export interface CensusRoute { route: string; elements: number }
@@ -95,8 +96,10 @@ export async function projectCensus(root: string): Promise<{ census: ProjectCens
   try { census = JSON.parse(await readFile(censusPath(root), 'utf8')) as ProjectCensus; } catch { return null; }
   if (census?.schemaVersion !== 1 || !Array.isArray(census.entries)) return null;
   const hashes = new Map<string, string | null>();
+  // a stamp names its file from the repository root (src/source-identity.ts), which is above `root` in a monorepo
+  const from = repositoryRoot(root);
   const current = async (file: string) => {
-    if (!hashes.has(file)) hashes.set(file, await readFile(resolve(root, file), 'utf8').then(text => sourceHash(text).slice(0, 12), () => null));
+    if (!hashes.has(file)) hashes.set(file, await readFile(resolve(from, file), 'utf8').then(text => sourceHash(text).slice(0, 12), () => null));
     return hashes.get(file);
   };
   const fresh = async (stamp: string) => {
