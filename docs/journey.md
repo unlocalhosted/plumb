@@ -44,8 +44,39 @@ Next.js never did, so every answer there was a guess from React's debug stacks: 
 **Media hooks.** A before/after table per app (the README numbers); a screen recording of Alt+click on a
 tailwindcss.com server component, 0.3.0 vs 0.4.0; the magicui click timing, 255 ms → 13 ms.
 
+## Chapter 2 · The tests could not tell a bug from a tired laptop (2026-11-10 →)
+
+**The itch.** Releasing 0.4.0, every answer to "will fixing these bugs make the suite green?" got worse: 8 failures,
+then 15, then 50, while one run was still going. The owner: "tests are just thrown as second order effect and we
+really haven't spent much time thinking about how to put them properly for maximum iteration speed", and
+"playwright test keep hoggin all the memory and keep being a bottleneck".
+
+**How we found it.** By sorting the 50 failures in the release log by kind instead of by subsystem. 41 were
+time-outs (24 child processes that never came back, 13 tests past their limit, 4 browser waits); about 9 were real
+assertions. The laptop had 2.1 GB of swap in use. One test "ran" for 65 minutes.
+
+**The system behind it.** 195 test files, each written alone with its own copy of the setup: `fixture()` in 39
+files, `browser()` in 37. A fresh Chromium and a cold dev server per test. One runner command, everything, one file
+at a time. Nothing killed what a timed-out test left running, so each failure made the next more likely. Full
+numbers: `docs/briefs/test-system.md`.
+
+**What we tried, what we chose.** The owner asked whether Bun would be faster. Not tried: Node starts in 0.17 s, and
+the time is in browsers, dev servers and installs. Chosen: five layers, the runner first because it needs no change
+to any test file. Files get a cost tier read from their source, run side by side inside a slot budget, and each
+runs in a process group that is killed when it ends.
+
+**The fix and the proof.** Layer 1 is built (`scripts/test.mjs`). So far proven only in the small: three files side
+by side in 18 s on the laptop, with the two census failures from the release log reproduced by name in 8.6 s.
+The full comparison (one at a time against side by side, on vm-agent, same commit) is running; its numbers go here.
+
+**Media hooks.** A bar of the 50 failures split by kind (41 time-outs, 9 assertions); the wall-time before/after
+once the vm-agent runs finish; the memory sampler's line (`mem.log`) for both runs.
+
 ## Open gaps
 
+- Test system, layers 2–5 (shared harness with one browser per file, run-what-changed, time budgets that fail, one
+  command for the full run on vm-agent) are specified in `docs/briefs/test-system.md` and not built.
+- The side-by-side runner is not yet proven against the one-at-a-time run on the full suite.
 - A first click during React hydration on Next webpack answers from React's stacks about 1 time in 6; an unproven
   fix is kept at `docs/briefs/hydration-first-click.patch`.
 - Library-drawn elements inside server components, and lines inside MDX pages, are not answered yet.
