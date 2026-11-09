@@ -3,23 +3,32 @@
 //   node scripts/test.mjs                 every file
 //   node scripts/test.mjs cli             one tier: cli | browser | host | alone
 //   node scripts/test.mjs verdict census  files whose name contains a word
-//   node scripts/test.mjs --jobs 4        slots to fill (default: from cores and memory)
+//   node scripts/test.mjs --cores 6       cores to fill (default: every core)
+//   node scripts/test.mjs --memory 8      GB to fill (default: what is free, less 2 GB)
 //   node scripts/test.mjs --serial        one file at a time, as before
 //   node scripts/test.mjs --list          print each file's tier and stop
 //
-// Each file has a cost tier, read from its own source, and takes that many slots. Files run side by side until the
-// slots are full; `alone` files run after the rest, one at a time. A file runs in its own process group, and the
-// whole group is killed when the file ends or times out, so no browser or dev server outlives its test.
+// Each file has a cost tier, read from its own source: the cores and the memory a file of that tier was measured
+// to use. Files run side by side while both budgets hold; `alone` files run after the rest, one at a time. A file's
+// whole process tree is killed when it ends or times out, so no browser or dev server outlives its test.
 import { readdir, readFile, mkdir, rm, writeFile } from 'node:fs/promises';
 import { createWriteStream } from 'node:fs';
 import { spawn } from 'node:child_process';
-import { availableParallelism, totalmem } from 'node:os';
+import { availableParallelism, freemem, platform, totalmem } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { join } from 'node:path';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 const logs = join(root, '.test-logs');
-const SLOTS = { cli: 1, browser: 2, host: 3 };
+// What one file of a tier uses while it runs, measured on vm-agent (8 cores, 2026-11-10) from each file's process
+// tree and the machine's load: a CLI file spawns the CLI over and over, so it is light on memory and heavy on cores;
+// a browser file holds its dev servers in one Node process, and Chromium beside it.
+const COST = {
+  cli: { cores: 1.7, mb: 250 },
+  browser: { cores: 1.2, mb: 1300 },
+  host: { cores: 1.5, mb: 1200 },
+};
+const RESERVE_MB = 2000; // left for the machine and whatever else lives on it
 const TIMEOUT = 20 * 60 * 1000; // a file that runs this long is killed and counted as failed
 
 // Files that cannot share the machine, and why.
@@ -50,11 +59,16 @@ async function tierOf(file) {
 }
 
 const args = process.argv.slice(2);
-const jobsAt = args.indexOf('--jobs');
-const asked = jobsAt >= 0 ? Number(args.splice(jobsAt, 2)[1]) : 0;
+// a flag with a number (`--cores 6`), or the same from the environment (`PLUMB_TEST_CORES=6`)
+function numberOf(name, env) {
+  const at = args.indexOf(name);
+  const value = at >= 0 ? Number(args.splice(at, 2)[1]) : Number(process.env[env]);
+  return value > 0 ? value : 0;
+}
+const askedCores = numberOf('--cores', 'PLUMB_TEST_CORES'), askedGb = numberOf('--memory', 'PLUMB_TEST_MEMORY_GB');
 const flag = (name) => args.includes(name);
 const words = args.filter((a) => !a.startsWith('--'));
-const tiers = words.filter((w) => w in SLOTS || w === 'alone');
+const tiers = words.filter((w) => w in COST || w === 'alone');
 const names = words.filter((w) => !tiers.includes(w));
 
 const every = (await readdir(join(root, 'e2e'))).filter((f) => f.endsWith('.test.mjs')).sort().map((f) => `e2e/${f}`);
@@ -72,8 +86,11 @@ if (flag('--list')) {
 }
 if (!jobs.length) { console.error('No test file matches.'); process.exit(1); }
 
-// Slots: one per core, less one for the machine, and no more than a slot per 1.5 GB of memory.
-const slots = flag('--serial') ? 1 : asked > 0 ? asked : Math.max(1, Math.min(availableParallelism() - 1, Math.floor(totalmem() / 1.5e9)));
+// The budgets. Cores: every core. Memory: what is free now, less the reserve. Linux reports what is really
+// available; macOS reports only untouched pages, so half the machine stands in for it there.
+const freeMb = (platform() === 'linux' ? freemem() : totalmem() / 2) / 1e6;
+const budget = flag('--serial') ? { cores: 0, mb: 0 }
+  : { cores: askedCores || availableParallelism(), mb: askedGb ? askedGb * 1000 : Math.max(COST.browser.mb, freeMb - RESERVE_MB) };
 
 await rm(logs, { recursive: true, force: true });
 await mkdir(logs, { recursive: true });
@@ -134,18 +151,20 @@ function report(r) {
 }
 
 const started = Date.now();
-// Side by side: dearest first, so the long files don't end up running alone at the end.
-const queue = jobs.filter((j) => j.tier !== 'alone').sort((a, b) => SLOTS[b.tier] - SLOTS[a.tier]);
+// Side by side: the tiers that hold the most memory first, so the long files don't end up running alone at the end.
+// A file starts when both budgets have room for it; one file always runs, whatever the budgets say.
+const queue = jobs.filter((j) => j.tier !== 'alone').sort((a, b) => COST[b.tier].mb - COST[a.tier].mb);
+let most = 0;
 await new Promise((resolve) => {
-  let used = 0, running = 0;
+  let cores = 0, mb = 0, running = 0;
   const next = () => {
     if (!queue.length && !running) return resolve();
     for (let i = 0; i < queue.length;) {
-      const cost = Math.min(SLOTS[queue[i].tier], slots);
-      if (used + cost > slots) { i += 1; continue; }
+      const cost = COST[queue[i].tier];
+      if (running && (cores + cost.cores > budget.cores || mb + cost.mb > budget.mb)) { i += 1; continue; }
       const [job] = queue.splice(i, 1);
-      used += cost; running += 1;
-      run(job).then((r) => { used -= cost; running -= 1; report(r); next(); });
+      cores += cost.cores; mb += cost.mb; running += 1; most = Math.max(most, running);
+      run(job).then((r) => { cores -= cost.cores; mb -= cost.mb; running -= 1; report(r); next(); });
     }
   };
   next();
@@ -155,7 +174,8 @@ for (const job of jobs.filter((j) => j.tier === 'alone')) report(await run(job))
 const wall = (Date.now() - started) / 1000;
 const bad = results.filter((r) => r.code !== 0);
 const sum = (pick) => results.reduce((n, r) => n + pick(r), 0);
-console.log(`\n${results.length} runs in ${(wall / 60).toFixed(1)} min on ${slots} slots: ${sum((r) => r.passed)} tests passed, ${sum((r) => r.failed.length)} failed, ${bad.length} files failed`);
+const room = flag('--serial') ? 'one at a time' : `${budget.cores} cores and ${(budget.mb / 1000).toFixed(1)} GB, up to ${most} files at once`;
+console.log(`\n${results.length} runs in ${(wall / 60).toFixed(1)} min on ${room}: ${sum((r) => r.passed)} tests passed, ${sum((r) => r.failed.length)} failed, ${bad.length} files failed`);
 console.log('\nSlowest files:');
 for (const r of [...results].sort((a, b) => b.seconds - a.seconds).slice(0, 10)) console.log(`  ${r.seconds.toFixed(1).padStart(7)}s  ${r.label}`);
 if (bad.length) {
@@ -165,5 +185,5 @@ if (bad.length) {
     for (const name of r.failed) console.log(`      ${name}`);
   }
 }
-await writeFile(join(logs, 'summary.json'), JSON.stringify({ wall, slots, results: results.map(({ env, ...r }) => r) }, null, 1));
+await writeFile(join(logs, 'summary.json'), JSON.stringify({ wall, budget, most, results: results.map(({ env, ...r }) => r) }, null, 1));
 process.exit(bad.length ? 1 : 0);
