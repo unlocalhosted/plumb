@@ -22,6 +22,11 @@ keep being a bottleneck".
 | Laptop run | 757 pass, 50 fail; 41 of the 50 are timeouts; 2.1 GB swap in use | `/tmp/release-22.log` |
 | Laptop time | 768 minutes of test time summed; 37 tests over a minute hold 720 of them; 650 tests under 5 s hold 15 | same log |
 | CLI cold start | 0.17 s | `time node dist/cli.js --version` on vm-agent |
+| Chromium launch | 0.10–0.21 s; a fresh page in a running browser 0.045 s | timed on the laptop, 3 and 5 times |
+| One test's setup (copy fixture, start Vite, page ready) | 0.65 s; the same with a shared warm cache (0.62 s) | timed on the laptop, 3 times each |
+| Memory the test process keeps per dev server it starts | about 80 MB, never given back: 432 → 810 MB over six servers | `process.memoryUsage().rss` after each |
+| A browser file's Node process on vm-agent | 0.65–1.3 GB | `ps`, per process tree |
+| One file's cost | CLI 1.7 cores, 0.25 GB; browser 1.2 cores, 1.3 GB; host 1.5 cores, 1.2 GB | process trees and load on vm-agent |
 
 ## The system behind it
 
@@ -30,7 +35,10 @@ test. So:
 
 1. **No budget.** Nothing knows a file is cheap (a CLI call) or dear (Chromium, a dev server, an `npm install`), so
    all 195 wait in one line, and the only safe speed is one at a time.
-2. **No shared setup.** Each browser test pays for a fresh Chromium and a cold dev server, hundreds of times.
+2. **No shared setup, and a dev server per test that is never let go.** Launching Chromium per test costs little
+   (0.1–0.2 s). The memory goes to the test's own Node process: every dev server a test starts leaves about 80 MB
+   behind, so a file with a dozen tests holds over a gigabyte. What looked like "Playwright eating memory" is this.
+   (First guess, wrong: a cold dependency cache per test. Measured, a shared warm cache changes nothing.)
 3. **No clean-up owner.** A test that times out leaves its browser and server running; the next test starts on a
    machine with less memory, times out too, and the failure count grows while the suite runs.
 4. **No small run.** The only command is "everything", so a one-line fix waits an hour to be proven.
@@ -45,9 +53,11 @@ Five layers. Each is finished and proven before the next starts.
    its own process group and kills the whole group when the file ends or times out, and prints which files failed,
    which were slowest, and the wall time. It takes a tier or file names, so a small run exists.
    Proof: the same pass/fail set as the one-at-a-time run on vm-agent, in less wall time.
-2. **Shared harness.** One `e2e/harness/` module: one Chromium per file with a fresh context per test, one fixture
-   copier, one dev-server starter with a warm shared dependency cache. Files move to it tier by tier.
-   Proof: peak memory and per-file time before and after, from the sampler.
+2. **Shared harness.** One `e2e/harness/` module: one dev server per file where tests can share it, and one that is
+   really freed where they cannot (find what keeps the 80 MB: the plugin's session, Tailwind, or Vite); one
+   Chromium per file with a fresh context per test; one fixture copier. Files move to it tier by tier.
+   Proof: the test process's memory after N tests, before and after, and the number of browser files vm-agent can
+   run at once.
 3. **Run what changed.** A map from source areas to test files, so `node scripts/test.mjs --changed` runs the files a
    diff can break.
 4. **Budgets that fail.** Each file's time is recorded; a file that grows past its budget fails the run.
@@ -64,6 +74,18 @@ Five layers. Each is finished and proven before the next starts.
 | `alone` | rebuilds `dist`, packs the package, holds a fixed port, or gates on latency | whole machine | named in the runner, or a `// @tier alone` line |
 
 A `// @tier <name>` comment in a file overrides what the scan finds.
+
+## Not another browser
+
+Asked by the owner: is there something better than Playwright with Chromium? Not for these tests, and it is not
+where the cost is (see the table: 0.1–0.2 s a launch, 0.045 s a page).
+
+- jsdom and happy-dom have no layout and no real CSS. 59 test files read computed styles and 62 read boxes; the
+  product is an overlay that measures a rendered page. They would test nothing.
+- Vitest's browser mode, Puppeteer and raw CDP drive the same Chromium.
+- Browsers without rendering (Lightpanda and the like) have no boxes to measure.
+- WebKit or Firefox through Playwright are not lighter, and are not what most users of the overlay run.
+- vm-agent already uses Chromium's headless shell, the light build.
 
 ## Not Bun
 
