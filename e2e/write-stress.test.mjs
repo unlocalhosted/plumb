@@ -39,16 +39,20 @@ async function session(t) {
   const start = async () => { server = await serve({ root, watch: false }); };
   await start();
   t.after(() => server?.close().catch(() => {}));
-  const call = async (method, params = {}, verb = 'GET') => {
+  const call = async (method, params = {}, verb = 'GET', { key } = {}) => {
     const url = new URL('/__plumb/' + method, `http://127.0.0.1:${server.info.port}`);
     if (verb === 'GET') url.search = new URLSearchParams(params);
-    const response = await fetch(url, { method: verb, headers: { 'x-plumb-token': server.info.token, 'Content-Type': 'application/json' }, ...(verb === 'POST' ? { body: JSON.stringify(params) } : {}) });
+    // a write's idempotency key goes in its own header, never in the body (where `key` is an endpoint's own field)
+    const response = await fetch(url, { method: verb, headers: { 'x-plumb-token': server.info.token, 'Content-Type': 'application/json', ...(key ? { 'Idempotency-Key': key } : {}) }, ...(verb === 'POST' ? { body: JSON.stringify(params) } : {}) });
     return { status: response.status, body: await response.json() };
   };
   const path = join(root, 'src/App.tsx');
   const read = () => readFile(path, 'utf8');
   const hash = async () => (await call('props', { file: 'src/App.tsx', line: 3, column: 3 })).body.hash;
-  const swap = (line, from, to, extra = {}) => call('swaps', { file: 'src/App.tsx', hash: extra.hash, edits: [{ line, column: 3, from, to }], ...extra }, 'POST');
+  const swap = (line, from, to, extra = {}) => {
+    const { key, ...rest } = extra;
+    return call('swaps', { file: 'src/App.tsx', hash: rest.hash, edits: [{ line, column: 3, from, to }], ...rest }, 'POST', { key });
+  };
   return { root, path, call, read, hash, swap, restart: async () => { await server.close(); await start(); }, stop: () => server.close(), port: () => server.info.port };
 }
 
