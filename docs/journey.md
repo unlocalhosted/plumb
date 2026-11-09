@@ -72,8 +72,31 @@ The full comparison (one at a time against side by side, on vm-agent, same commi
 **Media hooks.** A bar of the 50 failures split by kind (41 time-outs, 9 assertions); the wall-time before/after
 once the vm-agent runs finish; the memory sampler's line (`mem.log`) for both runs.
 
+## Chapter 3 · A stamp was a habit, not a thing (2026-11-10)
+
+**The itch.** The project's type ladder came out different depending on which page asked. Three tests in the
+release run said so (`census.test.mjs` twice, "one site, one ladder" in `cleanup-site.test.mjs`).
+
+**How we found it.** The new runner reproduced the census failures in 8.6 seconds, which made them cheap to chase.
+One assertion said 55 kept readings were stale when none should be: every reading, not some.
+
+**The system behind it.** A stamp is the string `file:line:col#hash` on each element. A commit in 0.4.0 made its
+path count from the repository root. The census still counted from the project root, so in any project that is
+not the repository root no file was found and every reading was dropped. Nothing failed to compile, because a
+stamp is parsed by hand in 23 files; it is a habit, not a type.
+
+**The fix and the proof.** One line in `src/census.ts` (788a11d): look the file up from the repository root.
+`e2e/census.test.mjs` went from 2 failed to 2 passed, and "one site, one ladder" passes. Not fixed: the habit.
+`docs/briefs/engine-architecture-review.md` proposes making `Stamp` one module, first of eight steps.
+
+**Media hooks.** The before/after of the census test (8 seconds each); the count "23 files parse a stamp by hand".
+
 ## Open gaps
 
+- Engine architecture: eight proposed steps in `docs/briefs/engine-architecture-review.md`, none built, waiting on
+  the owner's order.
+- Still failing and not diagnosed: `decisions-spacing` (spacing policies), and "Apply is one step in the history"
+  in `cleanup-site`.
 - Test system, layers 2–5 (shared harness with one browser per file, run-what-changed, time budgets that fail, one
   command for the full run on vm-agent) are specified in `docs/briefs/test-system.md` and not built.
 - The side-by-side runner is not yet proven against the one-at-a-time run on the full suite.
