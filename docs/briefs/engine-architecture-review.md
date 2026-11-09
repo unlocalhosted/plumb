@@ -3,7 +3,11 @@
 Asked by the owner: can the engine be made more extensible, reliable and adaptable, and better to work with for
 people and for agents; and would functional patterns, XState or state machines help?
 
-Status: a review and a proposed order. Nothing here is built. Each step needs the owner's go-ahead.
+Status (2026-11-10, later the same day): the owner chose "Stamp module first".
+- Step 1 is built on both sides: `src/stamp.ts` (aa72337) and `overlay/src/stamp.js` (634eca2), each with a guard test.
+- Step 2 has its first slice (761f1a0): six codes, carried across threads and HTTP; the overlay's 14 text matches
+  are gone. About 420 errors still have no code.
+- Steps 3 to 8 are not started.
 
 ## How this was read
 
@@ -90,10 +94,15 @@ From the state-machines audit, verified there:
 Each is one layer: finished, proven and committed before the next. The test system (`docs/briefs/test-system.md`)
 comes first in time, because none of these can be proven while a full run takes an hour.
 
-1. **`Stamp` as one module.** `parse`, `format`, `fileFrom(root)`. Node side first, then the overlay's 20 files.
-   Proof: the census tests, the locate tests, and a grep that finds no stamp regex outside the module.
-2. **Error codes.** A closed list, a `code` on every `UsageError`, carried over HTTP and the CLI's `--json`.
-   Proof: tests assert codes; the overlay shows the same sentences as before.
+1. **`Stamp` as one module.** Done. What it turned up beyond the census bug: three overlay callers compared a
+   stamp's file with the server's in three different ways, and the fix panel's version never matched in a project
+   below its repository's root (the copy count came out NaN; `F8-05` passes now). Also found: the overlay modules a
+   host serves are a hand-kept list in `src/hosts/client.ts`; a new file is a 404 and a blank overlay until it is
+   added. That list should be read from the folder.
+2. **Error codes.** First slice done: the six kinds the overlay already told apart by matching sentences. Next
+   slices, each small: the refusals `locate` distinguishes (`source-mismatch`, `not-jsx`, already half-coded as
+   `refused`/`reason`), then "not a project source", then the CLI's `--json`. Proof so far: the codes asserted
+   through HTTP in `write-races`, `change-trace` and `text-edits`.
 3. **One `commit` for every write.** Atomic, the same guards for all six paths, and a roll-back that reports what
    it could not restore. Proof: a kill between write and truncate leaves the old or the new file, never a mix.
 4. **Three machines as reducers:** worker lifecycle, write transaction (replacing `tag`/`undoing`/`transaction`),

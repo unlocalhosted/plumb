@@ -89,14 +89,30 @@ stamp is parsed by hand in 23 files; it is a habit, not a type.
 `e2e/census.test.mjs` went from 2 failed to 2 passed, and "one site, one ladder" passes. Not fixed: the habit.
 `docs/briefs/engine-architecture-review.md` proposes making `Stamp` one module, first of eight steps.
 
-**Media hooks.** The before/after of the census test (8 seconds each); the count "23 files parse a stamp by hand".
+**Then the habit itself.** The owner chose the stamp as the first engine step. One module on each side now owns
+it (`src/stamp.ts`, `overlay/src/stamp.js`), and a guard test fails when a stamp is taken apart anywhere else.
+Moving 19 overlay files onto it showed a second bug of the same family: three callers compared a stamp's file with
+the server's in three ways, and the fix panel's never matched below a repository's root, so "N copies" came out NaN.
+One comparison (`stampNames`) fixed it; `F8-05` in `e2e/qa-fixes-2-overlay.test.mjs` passes. A dead end on the way:
+the new overlay file was a 404 and the whole overlay went blank, because the files a host serves are a hand-kept
+list. Found in one failing 3-second test.
+
+**And the sentences.** The overlay decided what to do by matching the server's error sentences in 14 places
+(`/changed since/`, `/already undone/`). A refusal now carries a code from a closed list, across threads and HTTP,
+and the overlay reads the code. Proof: the codes asserted through HTTP in three test files.
+
+**Media hooks.** The before/after of the census test (8 seconds each); the count "23 files parse a stamp by hand";
+the fix panel's "NaN copies" against the right number.
 
 ## Open gaps
 
 - Engine architecture: eight proposed steps in `docs/briefs/engine-architecture-review.md`, none built, waiting on
   the owner's order.
-- Still failing and not diagnosed: `decisions-spacing` (spacing policies), and "Apply is one step in the history"
-  in `cleanup-site`.
+- Still failing and not diagnosed: `decisions-spacing` (spacing policies); and a history cluster that looks like one
+  cause: "Apply is one step in the history" (`cleanup-site`), "timeline 3 + 4" (`qa-fixes-2-overlay`), and the first
+  test of `timeline`.
+- `e2e/site-text` cannot start anywhere: `site/` has its own dependencies and no step installs them.
+- About 420 engine errors still carry no code.
 - Test system, layers 2–5 (shared harness with one browser per file, run-what-changed, time budgets that fail, one
   command for the full run on vm-agent) are specified in `docs/briefs/test-system.md` and not built.
 - The side-by-side runner is not yet proven against the one-at-a-time run on the full suite.
