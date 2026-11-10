@@ -154,7 +154,22 @@ race, built for the old in-place write) was rewritten for the new write path (`e
 - **Not done:** the state oracle doesn't read this shape yet (it knows string phases), so this machine is checked by
   the type checker only.
 
+### 5. Three machines nothing could reach
+- **The itch:** the audits kept listing machines that no code path starts. They cost reading time on every sweep and
+  still shipped to the browser.
+- **How we found it:** grep for who imports or constructs them: nothing imported `blueprint-fix.js` (the old chooser,
+  759 lines), nothing called `new Panel(` (the old docked panel, 197 lines), and the walkthrough's only starter
+  returned on its first line.
+- **The fix and the proof:** all three are deleted, with the walkthrough's words and its calls in `blueprint.js`.
+  `e2e/blueprint.test.mjs` and `e2e/select.test.mjs`: 19 pass and the same 6 fail before and after the removal (the 6
+  fail on `main` on this laptop too; three are time-outs).
+- **Not done:** the fourth, the old pinned reading card inside `widget.js` (about 600 lines and a dozen
+  always-false guards), is still there; it needs its own pass with `e2e/walk.test.mjs`. `PANEL_CSS` was not pruned.
+
 ## Open gaps
+- 6 tests of `e2e/blueprint.test.mjs` fail on `main` on the laptop (three time-outs, three assertions); not looked at.
+- `e2e/hosts.test.mjs` "install --overlay detects hosts" expects the folder to be named `plumb`, so it fails in every
+  worktree.
 - The full test suite hasn't run on `explicit-machines`; this blocks the merge.
 - 22 overlay and 17 engine state machines are still implicit. The biggest is Esc and key routing, which is still a
   chain of `if`s in `widget.js`.

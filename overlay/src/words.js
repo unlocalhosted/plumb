@@ -684,14 +684,6 @@ export const TAG = {
   known: 'Known, recorded as intended',
 };
 
-// the first time: one fix, walked through
-export const WALK = {
-  1: (line) => `${line} Click it.`,
-  2: '↑ ↓ to try another option. Enter puts it in your code.',
-  3: 'In your code now. Undo is right above it.',
-  4: 'Fixed. Nothing left to fix here.',
-};
-
 export const DOCK = {
   starting: 'Checking your project…',
   failed: 'Couldn’t start. Check your dev server’s terminal.',

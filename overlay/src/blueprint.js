@@ -31,7 +31,6 @@ import { Craft, spec } from './craft.js'; // craft: the mentor's rules, read on 
 import { Selection, SELECT_CSS } from './select.js'; // the element is the target: a click anywhere on it selects it
 import { Changes, CHANGES_CSS } from './changes.js'; // what was changed on the page, per element, until it is applied
 import { elementEdit, planOf, swapPlanOf } from './inplace.js';
-import { Walkthrough, WALK_CSS } from './walkthrough.js'; // the first time: one proven fix, walked find → quiet
 import { FixPanel, FIX_CSS } from './fixpanel.js'; // the one place you act: a cause in hand, its options, Take, Apply
 import { FIX } from './words.js';
 import { hasText } from './texteditor.js';
@@ -57,7 +56,7 @@ const traceOf = ({ step = FIX.card.steps.edit, laws = [], group = null } = {}) =
   meta: { step, laws: [...new Map((laws ?? []).filter((l) => l?.id || typeof l === 'string').map((l) => (typeof l === 'string' ? [l, { id: l, name: l }] : [l.id, { id: l.id, name: l.name }]))).values()] },
 });
 
-export const BLUEPRINT_CSS = GLASS_CSS + MARKS_CSS + LAYER_CSS + PANEL_CSS + SELECT_CSS + CHANGES_CSS + WALK_CSS + FIX_CSS;
+export const BLUEPRINT_CSS = GLASS_CSS + MARKS_CSS + LAYER_CSS + PANEL_CSS + SELECT_CSS + CHANGES_CSS + FIX_CSS;
 
 const still = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -65,7 +64,7 @@ export class Blueprint {
   #host; #layer; #marks; #reader; #glass; #onState; #onProgress;
   #state = 'off';
   #timer = 0;
-  #craft; #items = []; #selection; #changes; #walk;
+  #craft; #items = []; #selection; #changes;
   #scope = null; // an Alt+click: the element read, with what's inside it; null is the whole page (Alt+B)
 
   // host: the overlay element (readMarks, pin, pinnedElement, occluders); root: its shadow root;
@@ -79,9 +78,8 @@ export class Blueprint {
     this.#layer = Object.assign(document.createElement('div'), { className: 'bp', hidden: true });
     root.appendChild(this.#layer);
     this.#glass = new Glass(root, host);
-    this.#walk = new Walkthrough(root);
-    this.#changes = new Changes(root, { onAccept: (batch) => this.#apply(batch), onSelect: (el) => this.#selection.select(el, this.#itemOf(el)), onShow: () => queueMicrotask(() => this.#focus()), onDiscard: (el) => this.#selection.discarded(el), onPut: (el) => this.#walk.taken(el) });
-    this.#selection = new Selection(root, { onFrame: () => this.#marks.invalidate(), tokenOf: (family, n) => this.#craft.theme.nearest(family, n, 0.5)?.short ?? null, health: () => host.health, onChange: (el) => { this.#marks.select(el); this.#walk.selected(el); this.#focus(); },
+    this.#changes = new Changes(root, { onAccept: (batch) => this.#apply(batch), onSelect: (el) => this.#selection.select(el, this.#itemOf(el)), onShow: () => queueMicrotask(() => this.#focus()), onDiscard: (el) => this.#selection.discarded(el) });
+    this.#selection = new Selection(root, { onFrame: () => this.#marks.invalidate(), tokenOf: (family, n) => this.#craft.theme.nearest(family, n, 0.5)?.short ?? null, health: () => host.health, onChange: (el) => { this.#marks.select(el); this.#focus(); },
       onDraw: () => this.#fix?.render(), changes: this.#changes, read: (el) => host.read(el), site: (el) => this.#siteOf(el), steps: (family) => this.#craft.theme.scale(family).filter((x) => Number.isFinite(x.px)).map((x) => ({ token: x.short, n: x.px })).sort((a, b) => a.n - b.n) });
     this.#glass.onPress = (e) => this.#selection.press(e);
     this.#glass.onClick = this.#click;
@@ -120,7 +118,7 @@ export class Blueprint {
     });
     // the fix panel counts every place in the code the page renders, on the page or not; what is drawn, listed and
     // selected is what the page shows
-    this.#reader = new Reader(host, { unrendered: true, onChange: (all) => { const items = all.filter((i) => i.el); this.#items = items; this.#marks.set(items); this.#fix.set(all); this.#selection.refresh(this.#itemOf(this.#selection.el)); this.#offerWalk(); if (this.#want) this.#holdWanted(this.#settled); }, onProgress: (p) => { this.#fix.progress(p); this.#onProgress?.(p); this.#clearAfterWrite(p); this.#settled = p.done ?? (!!p.total && p.read === p.total); if (this.#want && this.#settled) { const want = this.#want; setTimeout(() => { if (this.#want === want) this.#holdWanted(true); }, 300); } }, enrich: (items) => this.#craft.enrich(items) });
+    this.#reader = new Reader(host, { unrendered: true, onChange: (all) => { const items = all.filter((i) => i.el); this.#items = items; this.#marks.set(items); this.#fix.set(all); this.#selection.refresh(this.#itemOf(this.#selection.el)); if (this.#want) this.#holdWanted(this.#settled); }, onProgress: (p) => { this.#fix.progress(p); this.#onProgress?.(p); this.#clearAfterWrite(p); this.#settled = p.done ?? (!!p.total && p.read === p.total); if (this.#want && this.#settled) { const want = this.#want; setTimeout(() => { if (this.#want === want) this.#holdWanted(true); }, 300); } }, enrich: (items) => this.#craft.enrich(items) });
   }
 
   // A key while blueprint is on (the widget asks only when nothing is pinned or being typed): true when used.
@@ -196,7 +194,6 @@ export class Blueprint {
     this.#glass.off(); // the page is usable again the moment blueprint is let go, not after the fade
     this.#selection.clear();
     this.#changes.discardAll(); // nothing previewed is left on the page
-    this.#walk.end();
     this.#layer.removeAttribute('data-on');
     this.#marks.dim('shown');
     this.#marks.clear();
@@ -240,24 +237,12 @@ export class Blueprint {
     if (this.active) this.#reader.healthChanged(status);
   }
 
-  #invalidate = () => { this.#marks.invalidate(); this.#selection.draw(); this.#walk.draw(); this.#focus(); };
-  // what the person is working on (the selection, else the walkthrough's element): the chrome keeps clear of it
+  #invalidate = () => { this.#marks.invalidate(); this.#selection.draw(); this.#focus(); };
+  // what the person is working on (the selection): the chrome keeps clear of it
   #focus() {
-    const el = this.#selection.el ?? (this.#walk.active ? this.#walk.element : null);
+    const el = this.#selection.el;
     const r = el?.isConnected ? el.getBoundingClientRect() : null;
     if (r) this.#changes.avoid(r);
-  }
-  // the walkthrough's first element: one whose first problem has a fix the verdict proved (or a theme choice)
-  #offerWalk() {
-    return; // the fix panel walks you through causes itself (Enter on Fix); the old walkthrough named the ring and Changes
-    if (this.#state !== 'on' || this.#walk.active) return;
-    const steps = this.#craft.theme.scale('spacing').filter((x) => Number.isFinite(x.px)).map((x) => ({ token: x.short, n: x.px })).sort((a, b) => a.n - b.n);
-    this.#walk.offer(this.#items, (i) => {
-      const m = i.marks.find((x) => x.family === 'craft' || x.ledger === 'new');
-      if (!m || m.family !== 'craft' || m.craft?.suggest?.kind !== 'class') return false;
-      return !!(planOf(m, i.el, steps, (n) => this.#craft.theme.nearest('spacing', n, 0.5)?.short ?? null) ?? swapPlanOf(m));
-    });
-    this.#focus();
   }
   // the page element under the pointer, looking through the glass and the overlay's own marks
   #under = (x, y) => document.elementsFromPoint(x, y).find((el) => !el.closest('plumb-overlay')) ?? null;
@@ -461,7 +446,6 @@ export class Blueprint {
         if (result?.undo) this.#undos.push(result.undo);
         this.invalidate({ file });
         for (const el of f.els) out.push({ el, ok: true });
-        if (f.els.includes(this.#walk.element)) this.#walk.applied(true);
       } catch (error) {
         this.#host.forgetResume?.();
         const why = errorIs(error, 'stale-file') ? FIX.changedSince : error?.message ?? 'Couldn’t apply.';
@@ -645,7 +629,6 @@ export class Blueprint {
     this.#marks.dim('on');
     this.#set('on');
     this.#marks.invalidate();
-    this.#offerWalk();
   }
 
   #off() {
