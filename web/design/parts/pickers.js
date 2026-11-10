@@ -13,6 +13,17 @@ import { TOY_DEFS, toyOf } from '../../../overlay/src/toys.js';
 import { PICKER_CSS, picker as pick } from '../../../overlay/src/picker.js';
 import { GLYPH_CSS, glyph } from '../../../overlay/src/glyphs.js';
 import { BUTTON_CSS, button } from '../../../overlay/src/kit.js';
+import { COLOUR_PICK_CSS, colourPick } from '../../../overlay/src/colourpick.js';
+
+// someone's colour tokens: each with its role, its light value and its dark value. The button's fill is a hard-coded
+// #2f6fed, near the accent but not it
+const COLOURS = [
+  { name: 'fg', role: 'text', l: '#101828', d: '#f5f5f6' }, { name: 'muted', role: 'text', l: '#475467', d: '#94969c' }, { name: 'faint', role: 'text', l: '#98a2b3', d: '#61646c' },
+  { name: 'bg', role: 'surface', l: '#ffffff', d: '#0c111d' }, { name: 'surface', role: 'surface', l: '#f9fafb', d: '#161b26' }, { name: 'sunken', role: 'surface', l: '#f2f4f7', d: '#1f242f' },
+  { name: 'line', role: 'line', l: '#eaecf0', d: '#1f242f' }, { name: 'line-strong', role: 'line', l: '#d0d5dd', d: '#333741' },
+  { name: 'accent', role: 'accent', l: '#2563eb', d: '#5b8def' }, { name: 'accent-hover', role: 'accent', l: '#1d4ed8', d: '#7aa5f5' }, { name: 'accent-soft', role: 'accent', l: '#dbeafe', d: '#172554' }, { name: 'on-accent', role: 'accent', l: '#ffffff', d: '#ffffff' },
+  { name: 'success', role: 'status', l: '#12b76a', d: '#47cd89' }, { name: 'warning', role: 'status', l: '#f79009', d: '#fdb022' }, { name: 'danger', role: 'status', l: '#d92d20', d: '#f97066' },
+];
 
 // the options in order of size; the hard-coded value sits among them where it falls, so you can drag back to it
 const RADIUS = [{ name: 'none', v: 0 }, { name: '5px', v: 5, hard: true }, { name: 'tag', v: 6 }, { name: 'control', v: 8 }, { name: 'card', v: 12 }, { name: 'full', v: 999 }];
@@ -48,7 +59,25 @@ export function mount(host, root, css) {
   const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const px = (v) => `${v}px`;
 
-  root.innerHTML = `<style>${css}${LANGUAGE_CSS}${PICKER_CSS}${GLYPH_CSS}${BUTTON_CSS}
+  root.innerHTML = `<style>${css}${LANGUAGE_CSS}${PICKER_CSS}${GLYPH_CSS}${BUTTON_CSS}${COLOUR_PICK_CSS}
+    /* ── the real UI for colour: an invite card, as someone's app draws it, light or dark ── */
+    .inv { --bg: #fff; --fg: #101828; --muted: #475467; --line: #eaecf0; --sunken: #f2f4f7; position: relative; width: 320px; padding: 20px; border-radius: 14px; background: var(--bg); color: var(--fg); box-shadow: 0 1px 2px rgb(16 24 40 / .06), 0 12px 32px -14px rgb(16 24 40 / .25); font: 14px/20px system-ui, -apple-system, sans-serif; transition: background-color 240ms, color 240ms; }
+    .inv[data-scheme="dark"] { --bg: #0c111d; --fg: #f5f5f6; --muted: #94969c; --line: #1f242f; --sunken: #161b26; box-shadow: 0 12px 32px -14px rgb(0 0 0 / .6), 0 0 0 1px #1f242f; }
+    .inv .ah { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .inv .ah b { font: 600 16px/22px system-ui, sans-serif; }
+    .inv p { margin: 6px 0 14px; color: var(--muted); }
+    .inv .field { padding: 9px 12px; border-radius: 8px; border: 1px solid var(--line); background: var(--sunken); color: var(--muted); }
+    .inv .acts { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+    .inv .acts button { padding: 8px 14px; border-radius: 8px; font: 600 14px/20px system-ui, sans-serif; border: 1px solid var(--line); background: var(--bg); color: var(--fg); }
+    .inv .acts .go { border-color: transparent; background: var(--btn, #2f6fed); color: #fff; transition: background-color 200ms; }
+    .inv .sch { display: inline-grid; grid-auto-flow: column; padding: 2px; border-radius: 8px; background: var(--sunken); }
+    .inv .sch button { all: unset; padding: 3px 8px; border-radius: 6px; font: 600 11px/1.2 system-ui, sans-serif; color: var(--muted); cursor: pointer; }
+    .inv .sch button[aria-pressed="true"] { background: var(--bg); color: var(--fg); box-shadow: 0 1px 2px rgb(0 0 0 / .12); }
+    .inv .ring { display: inline-block; border-radius: 10px; outline: 1.5px dashed var(--pl-coral); outline-offset: 3px; transition: outline-color 160ms; }
+    .inv .ring.on-token { outline: 1.5px solid var(--pl-sky); }
+    .inv .ring.written { outline: 1.5px solid var(--pl-mint); }
+    #colour .stage { min-height: 540px; place-items: start start; padding-top: 48px; }
+    @media (prefers-reduced-motion: reduce) { .inv, .inv .acts .go, .inv .ring { transition: none; } }
     :host { display: block; font-family: var(--pl-sans); color: var(--pl-ink); }
     .scene { margin: 0 0 40px; }
     .scene h2 { margin: 0 0 4px; }
@@ -275,6 +304,11 @@ export function mount(host, root, css) {
       <p class="hint">drag the title to resize · double-click to edit the words · <kbd>↑</kbd> <kbd>↓</kbd> step · <kbd>↵</kbd> write · <kbd>Esc</kbd> put back</p>
     </div>
   </section>
+  <section class="scene" id="colour">
+    <h2>Colour</h2>
+    <p>The button’s fill is a hard-coded #2f6fed. The picker leads with the answer: your colour, then the three of your tokens nearest it, said in words. Point at one to see it on the button; click to pick it; click it again (or Enter) to write it. Every colour is under All colours, by what it is for, opening on Accent because a button’s fill is an accent. Each swatch is its light and its dark value: switch the app to Dark to see a token follow it and a hard-coded colour not.</p>
+    <div class="stage" tabindex="0"><div class="inv" data-scheme="light"><div class="ah"><b>Invite your team</b><span class="sch" role="group" aria-label="App scheme"><button type="button" data-s="light" aria-pressed="true">Light</button><button type="button" data-s="dark" aria-pressed="false">Dark</button></span></div><p>Work on the same projects. They get an email with a link.</p><div class="field">name@company.com</div><div class="acts"><button type="button">Copy link</button><span class="ring"><button type="button" class="go">Send invites</button></span></div></div></div>
+  </section>
   <section class="scene" id="textcard">
     <h2>Put together: the text card</h2>
     <p>The element’s editor, laid out like a visual editor’s panel. The heading is on no text style: its font, size, line height and colour are hard-coded, in coral. Pick a style and the type values move together. Font size can differ per screen: switch Phone, Tablet, Desktop and the heading resizes to match; Tablet uses the phone size until you change it. Letter spacing is locked: it is set by the Heading component’s props, not here. Case, alignment, decoration and wrap are buttons; colour a swatch. One button writes every change.</p>
@@ -416,6 +450,17 @@ export function mount(host, root, css) {
     words(stage, title, stage.querySelector('.edittag'), (on) => { lines.classList.toggle('editing', on); if (!on) fp.layout(); });
   }
 
+
+  // ── colour: the invite card's button, nearest first, every colour by role ──
+  {
+    const stage = root.querySelector('#colour .stage'), app = stage.querySelector('.inv'), btn = app.querySelector('.go'), ring = app.querySelector('.ring');
+    let now = { l: '#2f6fed', d: '#2f6fed' };
+    const paint = () => btn.style.setProperty('--btn', app.dataset.scheme === 'dark' ? now.d : now.l);
+    app.querySelector('.sch').addEventListener('click', (e) => { const b = e.target.closest('[data-s]'); if (!b) return; app.dataset.scheme = b.dataset.s; for (const x of app.querySelectorAll('[data-s]')) x.setAttribute('aria-pressed', String(x === b)); paint(); });
+    colourPick(stage, { tokens: COLOURS, hard: { name: '#2f6fed', l: '#2f6fed' }, role: 'accent',
+      apply: (t, { token, written }) => { now = t; paint(); ring.classList.toggle('on-token', token); ring.classList.toggle('written', written); },
+      place: (box) => { const r = rel(stage, app); box.style.left = `${r.right + 14}px`; box.style.top = `${Math.max(12, r.top + 18)}px`; } });
+  }
 
   // ── the text card: a visual editor's panel for the heading, built from compact pickers. The style moves the four type
   // values together; a change to one of them finds the style it now matches (or "No style"); case and colour; one

@@ -67,6 +67,10 @@ pickers.
     press and drag changes the property in hand; Alt+click opens the element's editor. While content is being
     edited, a drag selects text and the keys belong to the text. (Owner: "with font it should also allow us to edit
     it".)
+18c. **Where there is no order, lead with the answer.** Colour has no size to drag through and a theme has many, so
+    its picker shows your colour, then the three tokens nearest it, said in words ("close", "near"), measured by how
+    alike they look; every colour is one click away, grouped by what it is for, opening on the element's own role. A
+    click picks, a second click (or Enter) writes. Every swatch shows its light and its dark value. (Owner: "B with C".)
 19. **The hard-coded value is an option, not an error message.** It is listed and reachable, in coral, marked
     "hard-coded". Keeping it is just picking it.
 

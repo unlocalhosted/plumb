@@ -577,7 +577,12 @@ race, built for the old in-place write) was rewritten for the new write path (`e
   away; **C**, role then shade: pick what it is for (guessed: a button's fill is Accent), then that role's shades.
 - **Proof:** in B, picking `accent` and switching the app to dark turns the button the theme's lighter dark accent
   with a green ring; in C, still hard-coded, it stays the same strong blue on the dark card.
-- **Waiting on:** the owner's pick.
+- **The pick: "B with C".** Built as a shared piece of the overlay, so the product's text card can use it next, and
+  shown as the Colour scene on the Token pickers page: your colour, the three nearest tokens in words, and "All 15
+  colours" opening C's role tabs (on Accent for a button's fill) with each role's shades. Point to preview, click to
+  pick (blue ring, pale green tick), click again or Enter to write (green), Esc to put back. Proof: picking
+  `accent-hover` from the Accent tab and writing it showed the solid tick in both places and a green ring; in dark,
+  the button took the token's dark value. Added to the interaction principles as 18c.
 
 ## Open gaps
 - The contrast check knows colours, not sizes or weights, and is not run by CI yet.

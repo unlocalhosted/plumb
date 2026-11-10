@@ -23,7 +23,7 @@ export const GROUPS = [
     { id: 'inputs', hue: 'sky', toy: 'input', name: 'Inputs', says: 'Naming a token, searching, typing a reason. Caret, focus, error, disabled.' },
     { id: 'text-ideas', hue: 'sky', toy: 'type', name: 'Text: four new ideas', says: 'Putting hard-coded text on a style without a panel. Four prototypes on one page.', ready: true,
       lede: 'A heading has hard-coded type and you want it on the right style, fast and sure. Four ways that let the page and plumber do the work instead of a panel of controls. Each runs on the same piece of someone’s app.' },
-    { id: 'colour-ideas', hue: 'pink', toy: 'fill', name: 'Colour picker: three ideas', says: 'Which of your colour tokens should a hard-coded colour be? Three prototypes on one page.', ready: true,
+    { id: 'colour-ideas', hue: 'pink', toy: 'fill', name: 'Colour picker: three ideas', says: 'Decided: nearest first, with every colour by role (B with C). Now on Token pickers. Kept as the record.', ready: true,
       lede: 'Colour isn’t like the other pickers: no size to order by, many tokens in roles, and a light and a dark value each. A hard-coded colour stays the same in dark mode; a token follows it. Three ways to pick, on the same piece of someone’s app.' },
     { id: 'pickers', hue: 'mint', toy: 'slider', name: 'Token pickers', says: 'The control on an element that moves a hard-coded value onto your tokens. One per property.', ready: true,
       lede: 'When a value is hard-coded, the element gets the control a visual editor gives that property, made small, snapping to your tokens. One property at a time, each on a real piece of UI.' },
