@@ -173,8 +173,8 @@ race, built for the old in-place write) was rewritten for the new write path (`e
   listener was cleared by hand, in whichever exits someone remembered.
 - **What we chose:** `overlay/src/scope.js`. A `Scope` hands out listeners, timeouts, frames and awaited answers, and
   ends all of them together. The owner's `#send` ends the old state's scope and opens the next one in the same line
-  as the transition, so there is no exit to forget. The oracle's rule for `#send` had to allow that line (`sm`, branch
-  `send-ends-scope`).
+  as the transition, so there is no exit to forget. The oracle's rule for `#send` had to allow that line (`sm` 0.3.1,
+  pushed 2026-11-10).
 - **First owner, the words editor (`text-edit.js`):** the phase has a scope (the keys while editing, the 2.4 s timer
   of a failed save), the edit on screen has one (the frame loop that keeps the ring on the words), and the note
   beside words that can't be edited has one.
@@ -190,8 +190,6 @@ race, built for the old in-place write) was rewritten for the new write path (`e
 - `e2e/text-edit.test.mjs` "every write is in the dock's history" times out on `main` on the laptop; not looked at.
 - The scope is used by one owner. 18 oracle findings are left: fix panel 8, clean-up 2, and 8 in owners with no
   declared machine. Nothing bans a bare `setTimeout` or `addEventListener` in a new owner yet.
-- `sm` branch `send-ends-scope` is not merged or pushed; plumb's CI reads the pushed `sm`, so the words editor's
-  `#send` fails `sm/send-shape` there until it is.
 - 6 tests of `e2e/blueprint.test.mjs` fail on `main` on the laptop (three time-outs, three assertions); not looked at.
 - `e2e/hosts.test.mjs` "install --overlay detects hosts" expects the folder to be named `plumb`, so it fails in every
   worktree.
