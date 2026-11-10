@@ -200,5 +200,6 @@ Pictures are learnt, so the words are always one hover away.
 
 ## Block colours (2026-11-10)
 A block of colour you press (a button's top, the page you are on) takes `--pl-<hue>-block` and is lettered in
-`--pl-<hue>-block-on`: the hue and its `-on` in light, the deep hue lettered in white at night. Never dark lettering
-on a bright block.
+`--pl-<hue>-block-on`. In both schemes that is the scheme's own accent hue and its dark `-on` tint: at night the
+pastel (pink #ff6ec7, mint #7ee0b0, coral #ff7a6b). Never the deep `-soft` hue at night (it burns on a dark page) and
+never a darkened, greyed-down block (owner: "mute with like white color thing like the accent color we have in token").

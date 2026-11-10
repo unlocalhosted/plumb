@@ -634,6 +634,11 @@ race, built for the old in-place write) was rewritten for the new write path (`e
   site bar's soft buttons, the site's current-page tab and the identity page's sample all use them. Measured, white
   on: deep pink 4.53, deep mint 4.56, deep coral 4.50 (all just over 4.5). Light is unchanged: white on pink 3.36 and
   on mint 3.85 still fall short; coral is 5.47.
+- **"too bold, feels like burning my eyes" → "mute with white, like the accent colour in the tokens".** The deep
+  hues were the wrong turn: fully saturated and large on a dark page. I then offered darkened, greyed tones (quiet,
+  muted, soft-bright); the owner rejected those too ("not this grayed out"), pointing at the night pastel in the token
+  table. Night buttons now take the scheme's own pastel accent, lettered in the hue's dark tint: the block tokens
+  simply follow each scheme's hue. Measured, lettering on the pastel: pink 5.33, mint 7.71, coral 5.23.
 
 ## Open gaps
 - White on the pink and mint buttons is under 4.5:1 in light (3.36, 3.85); dark now passes, just. Nothing yet stops the faintest ink being used for text again.

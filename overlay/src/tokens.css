@@ -36,9 +36,10 @@
   --pl-sky-on: #ffffff; --pl-coral-on: #ffffff; --pl-mint-on: #ffffff; --pl-pink-on: #ffffff; --pl-lilac-on: #ffffff;
   --pl-butter-on: var(--pl-butter-ink);   /* yellow can't hold white */
   --pl-cut: #ffffff;                      /* a hole cut in a solid body */
-  /* a block of colour you press (a button's top, the page you are on): its hue and its lettering. Light: the hue,
-     lettered in its -on. Night: the deep version of the hue, lettered in white (owner, 2026-11-10: "Deep hue, white
-     text"), never dark lettering on a bright block */
+  /* a block of colour you press (a button's top, the page you are on): its hue and its lettering, in both schemes the
+     hue and its -on. At night that is the scheme's own pastel (pink #ff6ec7), lettered in the hue's dark tint: the
+     accent colour, mixed with white, never a deep or greyed-down block (owner, 2026-11-10: "mute with like white
+     color thing like the accent color we have in token") */
   --pl-pink-block: var(--pl-pink);   --pl-pink-block-on: var(--pl-pink-on);
   --pl-mint-block: var(--pl-mint);   --pl-mint-block-on: var(--pl-mint-on);
   --pl-coral-block: var(--pl-coral); --pl-coral-block-on: var(--pl-coral-on);
@@ -184,9 +185,6 @@
     --pl-lilac: #b9a6ff;  --pl-lilac-soft: #7b57ff;  --pl-lilac-ink: #ffffff;
     --pl-sky-on: #0b3554; --pl-coral-on: #5c160e; --pl-mint-on: #0b3d26; --pl-pink-on: #5a0d3c; --pl-lilac-on: #2b1a6b; --pl-butter-on: #5c3a00;
     --pl-cut: #1f1e1d;
-    --pl-pink-block: var(--pl-pink-soft);   --pl-pink-block-on: var(--pl-pink-ink);
-    --pl-mint-block: var(--pl-mint-soft);   --pl-mint-block-on: var(--pl-mint-ink);
-    --pl-coral-block: var(--pl-coral-soft); --pl-coral-block-on: var(--pl-coral-ink);
     --pl-on-accent: #08263d;
     --pl-heat: #ff4fa7;
     --pl-sys: #2bb8ff;
@@ -216,9 +214,6 @@
     --pl-lilac: #b9a6ff;  --pl-lilac-soft: #7b57ff;  --pl-lilac-ink: #ffffff;
     --pl-sky-on: #0b3554; --pl-coral-on: #5c160e; --pl-mint-on: #0b3d26; --pl-pink-on: #5a0d3c; --pl-lilac-on: #2b1a6b; --pl-butter-on: #5c3a00;
     --pl-cut: #1f1e1d;
-    --pl-pink-block: var(--pl-pink-soft);   --pl-pink-block-on: var(--pl-pink-ink);
-    --pl-mint-block: var(--pl-mint-soft);   --pl-mint-block-on: var(--pl-mint-ink);
-    --pl-coral-block: var(--pl-coral-soft); --pl-coral-block-on: var(--pl-coral-ink);
     --pl-on-accent: #08263d;
     --pl-heat: #ff4fa7;
     --pl-sys: #2bb8ff;
