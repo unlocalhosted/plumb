@@ -5,6 +5,6 @@
   "initial": "idle",
   "states": {
     "idle":     { "is": { "transaction": false }, "on": { "apply": "applying" } },
-    "applying": { "is": { "transaction": true },  "on": { "applied": "idle", "failed": "idle", "apply": "applying" } }
+    "applying": { "is": { "transaction": true },  "on": { "applied": "idle", "failed": "idle" } }
   }
 }

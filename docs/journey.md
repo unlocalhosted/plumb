@@ -127,6 +127,17 @@ race, built for the old in-place write) was rewritten for the new write path (`e
 - **Media hooks:** the two event logs side by side: `in a, in b, out b, out a` before, `in a, out a, in b, out b`
   after.
 
+### 3. Two Applies at once ended each other's hold
+- **The itch:** while Apply writes, the dev server holds hot updates so the page reloads once, at the end. Two Applies
+  running together shared one on/off flag: the first to finish switched the second one's hold off mid-write.
+- **How we found it:** the first audit (engine row 4), then `e2e/apply-all-overlap.test.mjs` on the engine itself. The
+  events before: `start progress start progress progress end end`.
+- **The system behind it:** "an Apply is running" was one boolean, and nothing stopped a second Apply from starting.
+- **What we chose:** one Apply at a time; a second one waits for the first to end. Counting open Applies was the other
+  option, but the host's hold is one-at-a-time too, and the items take the write lock one by one anyway.
+- **The fix and the proof:** the test passes, the events read start … end, start … end, and the 16 apply-all tests
+  pass. The declared table (`engine-transaction`) loses its `applying → applying` row.
+
 ## Open gaps
 - The full test suite hasn't run on `explicit-machines`; this blocks the merge.
 - 22 overlay and 17 engine state machines are still implicit. The biggest is Esc and key routing, which is still a
@@ -155,3 +166,5 @@ Not merged yet, so nothing is shipped this week. When `explicit-machines` lands:
 On branch `state-by-design`, not merged yet:
 - Two plumber processes on one project can no longer write the ledger or the change log at the same time, even when
   one of them is slow or has died. [Chapter 2](#chapter-2--state-that-cant-go-wrong-by-design-2026-11-10)
+- Two Applies sent at the same moment no longer reload the page in the middle of a write; the second waits for the
+  first. [Chapter 2](#chapter-2--state-that-cant-go-wrong-by-design-2026-11-10)
