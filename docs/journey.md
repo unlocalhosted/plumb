@@ -60,8 +60,15 @@
 - **The fix and the proof:** yellow #facc15 and lime #84cc16 keep their colour with dark text (Lc 75.2, 61.6), where yellow moved 18 lightness points before. Mid-tones move at most 3.5 points: teal 70.4% → 73.9% and green 72.3% → 73.3% for dark text; sky 68.5% → 67% and orange 70.5% → 69.5% for white. crafting-ui's accent, its draw blue and violet are unchanged with white text. The ramp now also writes `--color-text-on-accent`.
 - **Media hooks:** docs/media/accent-ramps-dark-text-2026-11-10.jpg.
 
+## One brand colour → the whole colour system (2026-11-10)
+- **The itch:** the token spec's colour layers (raw ramps, job-named tokens, one dark block) existed only on paper.
+- **What we built:** `overlay/src/colour-system.js`: one brand colour (and an optional grey tint) in; out come 68 raw colours (a neutral ramp on Tailwind's neutral curve, the brand ramp, four fixed status ramps so meaning never follows the brand) and 36 job-named tokens, written once for light in `:root` and once for dark in `.dark`. Dark surfaces and soft fills use alpha over the canvas.
+- **The proof:** `overlay/demo/colour-system.html`: a sample screen (nav, card, field, three button kinds, status badges, an alert) that uses only the job-named tokens, light and dark side by side, with a brand picker and a grey-tint slider. Red brand: white button text (Lc 70.9). Yellow brand with warm greys: dark button text (Lc 75.2), brand kept.
+- **Media hooks:** docs/media/colour-system-red-2026-11-10.jpg, docs/media/colour-system-yellow-2026-11-10.jpg.
+
 ## Open gaps
-- Colour layer 5 (writing primitives, semantic tokens and a dark block) not built; the ramp is not offered anywhere in the product yet.
+- The colour system is generated and shown, not yet written into a project: no file write, no mapping of a project's old colour tokens onto the new names, not offered in the product.
+- A yellow or amber brand sits next to the warning status hue; plumber does not yet warn when the brand and a status colour are too close.
 - crafting-ui's draw blue is a wide-gamut (P3) colour; the ramp keeps it in sRGB, so its 500 loses a little chroma (0.289 → 0.278).
 - Token spec layers 2–6 not built; four owner decisions open (§6).
 - e2e/type-roles.test.mjs still expects the old Material names; rewrite when the owner calls for tests.

@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Colour system</title>
+<style id="system"></style>
+<style>
+  body { font: 14px/1.43 system-ui, sans-serif; margin: 0; background: #e9e9e9; color: #111; }
+  header { padding: 16px 24px; display: flex; gap: 20px; align-items: center; flex-wrap: wrap; }
+  header h1 { font-size: 16px; margin: 0; }
+  header label { display: inline-flex; gap: 8px; align-items: center; }
+  .pair { display: grid; grid-template-columns: 1fr 1fr; }
+  /* the sample screen: only semantic tokens below this line */
+  .screen { background: var(--color-background-full); color: var(--color-text-primary); padding: 24px; display: grid; grid-template-columns: 150px 1fr; gap: 20px; min-height: 520px; }
+  nav { display: grid; gap: 2px; align-content: start; }
+  nav a { padding: 6px 10px; border-radius: 6px; color: var(--color-text-secondary); text-decoration: none; }
+  nav a:hover { background: var(--color-background-primary-hover); }
+  nav a.on { background: var(--color-accent-soft); color: var(--color-text-primary); font-weight: 500; }
+  .card { background: var(--color-background-primary-default); border: 1px solid var(--color-border-default); border-radius: 10px; padding: 18px; display: grid; gap: 12px; align-content: start; }
+  .card h2 { margin: 0; font-size: 18px; line-height: 24px; font-weight: 600; }
+  .muted { color: var(--color-text-secondary); margin: 0; }
+  .meta { color: var(--color-text-tertiary); font-size: 12px; }
+  .field { display: grid; gap: 4px; }
+  .field span { font-size: 13px; color: var(--color-text-secondary); }
+  input { font: inherit; padding: 8px 10px; border-radius: 6px; border: 1px solid var(--color-border-strong); background: var(--color-background-primary-default); color: var(--color-text-primary); }
+  input::placeholder { color: var(--color-text-placeholder); }
+  input:focus { outline: 2px solid var(--color-border-focus-ring); outline-offset: 1px; }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .btn { font: inherit; font-weight: 500; padding: 8px 14px; border-radius: 6px; border: 1px solid transparent; cursor: pointer; }
+  .primary { background: var(--color-accent-default); color: var(--color-text-on-accent); }
+  .primary:hover { background: var(--color-accent-hover); }
+  .secondary { background: var(--color-background-secondary-default); color: var(--color-text-primary); border-color: var(--color-border-default); }
+  .secondary:hover { background: var(--color-background-secondary-hover); }
+  .ghost { background: transparent; color: var(--color-text-secondary); }
+  .ghost:hover { background: var(--color-background-primary-hover); }
+  .well { background: var(--color-background-secondary-default); border-radius: 8px; padding: 12px; }
+  .badge { font-size: 12px; font-weight: 500; padding: 2px 8px; border-radius: 99px; }
+  .alert { border-radius: 8px; padding: 10px 12px; font-size: 13px; display: flex; gap: 8px; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 5px; flex: none; }
+  hr { border: 0; border-top: 1px solid var(--color-border-default); margin: 4px 0; width: 100%; }
+</style>
+</head>
+<body>
+<header>
+  <h1>One brand colour → the whole colour system</h1>
+  <label>Brand <input type="color" id="accent" value="#e5484d"></label>
+  <label>Grey tint <input type="range" id="tint" min="0" max="0.03" step="0.002" value="0"></label>
+  <span id="note"></span>
+</header>
+<div class="pair" id="pair"></div>
+<template id="tpl">
+  <div class="screen">
+    <nav><a class="on" href="#">Overview</a><a href="#">Projects</a><a href="#">Members</a><a href="#">Billing</a><a href="#">Settings</a></nav>
+    <main style="display:grid; gap:16px; align-content:start">
+      <div class="card">
+        <h2>Invite your team</h2>
+        <p class="muted">Members can edit projects and see billing. You can change roles later.</p>
+        <label class="field"><span>Email address</span><input placeholder="name@company.com"></label>
+        <div class="row"><button class="btn primary">Send invite</button><button class="btn secondary">Copy link</button><button class="btn ghost">Cancel</button></div>
+        <hr>
+        <div class="row"><span class="badge" style="background:var(--color-state-success-background);color:var(--color-state-success-text)">Active</span><span class="badge" style="background:var(--color-state-warning-background);color:var(--color-state-warning-text)">Pending</span><span class="badge" style="background:var(--color-state-danger-background);color:var(--color-state-danger-text)">Removed</span><span class="badge" style="background:var(--color-state-info-background);color:var(--color-state-info-text)">Owner</span><span class="meta">Updated 2 min ago</span></div>
+      </div>
+      <div class="well"><div class="alert" style="background:var(--color-state-danger-background);color:var(--color-state-danger-text)"><span class="dot" style="background:var(--color-state-danger-base)"></span>Two invites bounced. Check the addresses and send again.</div></div>
+    </main>
+  </div>
+</template>
+<script type="module">
+  import { colourSystem } from '../src/colour-system.js';
+  const pair = document.getElementById('pair'), tpl = document.getElementById('tpl');
+  for (const scheme of ['light', 'dark']) { const w = document.createElement('div'); if (scheme === 'dark') w.className = 'dark'; w.append(tpl.content.cloneNode(true)); pair.append(w); }
+  const draw = () => {
+    const sys = colourSystem({ accent: document.getElementById('accent').value, neutralChroma: Number(document.getElementById('tint').value) });
+    document.getElementById('system').textContent = sys.css;
+    const r = sys.accent;
+    document.getElementById('note').textContent = `${Object.keys(sys.primitives).length} primitives · ${Object.keys(sys.light).length} semantic tokens · ${r.onAccent.text} text on the brand (Lc ${r.lc})${r.adjusted ? `, brand moved ${r.adjusted.from} → ${r.adjusted.to}` : ''}`;
+  };
+  document.getElementById('accent').addEventListener('input', draw);
+  document.getElementById('tint').addEventListener('input', draw);
+  draw();
+</script>
+</body>
+</html>

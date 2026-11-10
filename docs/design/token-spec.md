@@ -133,7 +133,7 @@ Fixed words. Plumber never invents a new state word.
 | `foreground` | `icon-primary`, `icon-secondary`, `icon-tertiary`, `full` | `hover`, `disabled`, `error` | icons and marks on a surface |
 | `background` | `full` (the page canvas), `primary`, `secondary`, `tertiary`, `quaternary` (levels, each a step deeper or raised) | `default`, `hover`, `active`, `disabled`, `error` | surfaces and controls |
 | `border` | `default`, `strong`, `separator`, `focus-ring`, `input` | `hover`, `active`, `error` | lines |
-| `accent` | ramp `50`–`950` | (stops serve as states: 500 rest, 600 hover, 700 pressed, 100 soft) | the one action colour |
+| `accent` | ramp `50`–`950` (primitive); semantic `accent-default`, `-hover`, `-active`, `-soft` | light: 500, 600, 700, 50; dark: 500, 400, 600, 950 at 60% | the one action colour |
 | `state` | `success`, `warning`, `danger`, `info` | `text`, `base`, `background` | meaning only |
 | `status` (optional) | named hues for tags and badges: `lime`, `yellow`, `rose`, `cyan`, `blue`, `purple` | `background`, `text` | labels that are categories, not states |
 | `chart` | `1`–`8`, `track`, `cursor`, `neutral` | `active` (one stop darker) | data |
