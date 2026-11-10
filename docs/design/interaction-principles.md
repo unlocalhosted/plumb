@@ -63,6 +63,10 @@ pickers.
     keys to step; Enter to write; Esc to put it back. All of them move the same position through the same ordered
     options, including your hard-coded value, which sits among the tokens where it falls so you can always go back
     to it.
+18b. **One gesture grammar on the element.** Double-click edits its content (words), as everywhere in React Plumber;
+    press and drag changes the property in hand; Alt+click opens the element's editor. While content is being
+    edited, a drag selects text and the keys belong to the text. (Owner: "with font it should also allow us to edit
+    it".)
 19. **The hard-coded value is an option, not an error message.** It is listed and reachable, in coral, marked
     "hard-coded". Keeping it is just picking it.
 

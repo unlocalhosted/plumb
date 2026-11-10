@@ -410,6 +410,10 @@ race, built for the old in-place write) was rewritten for the new write path (`e
   title and drag up for bigger, down for smaller. Two type lines, at the top of its capitals and at its baseline,
   say it is type and carry the state colour (coral dashed, blue, green). The list draws each option as "Aa" at a
   relative size. On the running page, dragging the title up 40px took it from 19px to 3xl (30px).
+- **"with font it should also allow us to edit it":** a double-click on the title edits its words in place, the same
+  gesture and look as the product's text editing (a ring around the words, a tag under them, Enter or clicking away
+  keeps, Esc puts back); a press and drag still resizes. Tried with a real mouse and keyboard: typed " fast", Enter
+  kept it, the size stayed 19px. Added to the principles as one gesture grammar on the element.
 - **Open:** margin; one value per side (padding-x vs padding-y) is not handled; the type lines are placed from an
   estimate of the face's cap height, not measured; drag sensitivity untested by hand.
 

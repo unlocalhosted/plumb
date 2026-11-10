@@ -175,6 +175,11 @@ export function mount(host, root, css) {
     .typelines.on-token::before, .typelines.on-token::after { border-top: 1.5px solid var(--pl-sky); }
     .typelines.written::before, .typelines.written::after { border-top: 1.5px solid var(--pl-mint); }
     .typelines.dragging { transition: none; }
+    .post h3[contenteditable] { cursor: text; outline: 1.5px solid var(--pl-sky); outline-offset: 3px; border-radius: 3px; caret-color: var(--pl-sky); }
+    .typelines.editing { opacity: 0; }
+    .edittag { position: absolute; z-index: 4; padding: 4px 8px; border-radius: 8px; background: var(--pl-ink); color: var(--pl-paper); font: 600 11px/1.2 var(--pl-sans); white-space: nowrap; pointer-events: none; }
+    .edittag[hidden] { display: none; }
+    .edittag kbd { font: 600 10.5px/1 var(--pl-mono); opacity: .8; }
     .list .aa { width: 22px; text-align: center; font-family: system-ui, sans-serif; font-weight: 600; line-height: 1; color: var(--pl-ink-2); }
     .list .hard .aa { color: var(--pl-coral); }
     .hint { position: absolute; left: 0; right: 0; bottom: 14px; text-align: center; font: 500 12.5px/1 var(--pl-sans); color: var(--pl-ink-3); }
@@ -220,11 +225,12 @@ export function mount(host, root, css) {
   </section>
   <section class="scene" id="font">
     <h2>Font size</h2>
-    <p>The article’s title is a hard-coded 19px. The text itself is the handle: press on the title and drag up to make it bigger, down to make it smaller. Two lines at the top of its capitals and at its baseline say it is type. The value and the list work as before.</p>
+    <p>The article’s title is a hard-coded 19px. The text itself is the handle: press on the title and drag up to make it bigger, down to make it smaller. Double-click it to edit the words, as anywhere in React Plumber: Enter or clicking away keeps them, Esc puts them back. Two lines at the top of its capitals and at its baseline say it is type.</p>
     <div class="stage" tabindex="0">
       <div class="post"><small>Design systems</small><h3>Why your spacing drifts</h3><p>Six hard-coded values in one card, and how a theme keeps them in line.</p></div>
       <i class="typelines" role="presentation"></i>
-      <p class="hint">drag the title or the value · <kbd>↑</kbd> <kbd>↓</kbd> step · <kbd>↵</kbd> write · <kbd>Esc</kbd> put back</p>
+      <span class="edittag" hidden><kbd>↵</kbd> keep · <kbd>Esc</kbd> put back</span>
+      <p class="hint">drag the title to resize · double-click to edit the words · <kbd>↑</kbd> <kbd>↓</kbd> step · <kbd>↵</kbd> write · <kbd>Esc</kbd> put back</p>
     </div>
   </section>`;
 
@@ -314,12 +320,13 @@ export function mount(host, root, css) {
     const STEP = 26;
     val.addEventListener('pointerdown', (e) => { if (e.button === 0) { e.preventDefault(); drag(val, e, (dx, dy) => (dx - dy) / STEP); } });
     scrub.addEventListener('pointerdown', (e) => { e.preventDefault(); drag(scrub, e, (dx, dy) => (dx - dy) / STEP); });
-    for (const h of handles) h.el.addEventListener('pointerdown', (e) => { e.preventDefault(); h.el.classList.add('dragging'); drag(h.el, e, h.perPx, () => h.el.classList.remove('dragging')); });
+    for (const h of handles) h.el.addEventListener('pointerdown', (e) => { if (h.skip?.()) return; e.preventDefault(); h.el.classList.add('dragging'); drag(h.el, e, h.perPx, () => h.el.classList.remove('dragging')); });
     // a keyboard press on the value still opens the list
     val.addEventListener('click', (e) => { if (e.detail === 0 && !written) { list.hidden = !list.hidden; val.setAttribute('aria-expanded', String(!list.hidden)); } });
     list.addEventListener('click', (e) => { const o = e.target.closest('[data-at]'); if (!o) return; go(Number(o.dataset.at)); list.hidden = true; val.setAttribute('aria-expanded', 'false'); });
     ok.addEventListener('click', () => (written ? putBack() : write()));
     stage.addEventListener('keydown', (e) => {
+      if (e.target.isContentEditable) return;
       if (e.key === 'ArrowRight' || e.key === 'ArrowUp') { e.preventDefault(); go(at + 1); }
       else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') { e.preventDefault(); go(at - 1); }
       else if (e.key === 'Enter') { e.preventDefault(); write(); }
@@ -408,11 +415,41 @@ export function mount(host, root, css) {
         list.style.left = row.style.left; list.style.top = `${r.top + Math.min(r.height, lh) / 2 + 22}px`;
       },
       // the title: up is bigger
-      handles: [{ el: title, perPx: (dx, dy) => -dy / 14 }],
+      handles: [{ el: title, perPx: (dx, dy) => -dy / 14, skip: () => title.isContentEditable }],
     });
     // the title changes width as it grows: keep the lines and the row on it
     new ResizeObserver(() => fp.layout()).observe(title);
     title.addEventListener('pointerdown', () => lines.classList.add('dragging'));
     title.addEventListener('pointerup', () => lines.classList.remove('dragging'));
+    // ── the words: a double-click edits them in place, as the product's text editing does (overlay/src/text-edit.js):
+    // the browser's own caret, a ring around the words and a tag under them; Enter or clicking away keeps them, Esc
+    // puts them back. While editing, dragging selects text instead of resizing ──
+    const tag = stage.querySelector('.edittag');
+    let before = null;
+    const caretAt = (x, y) => {
+      const pos = document.caretPositionFromPoint?.(x, y, { shadowRoots: [root] });
+      const sel = root.getSelection ? root.getSelection() : getSelection();
+      if (pos && title.contains(pos.offsetNode)) { sel.collapse(pos.offsetNode, pos.offset); return; }
+      sel.selectAllChildren(title); sel.collapseToEnd();
+    };
+    const stop = (keep) => {
+      if (before === null) return;
+      if (!keep) title.textContent = before;
+      before = null; title.removeAttribute('contenteditable'); tag.hidden = true; lines.classList.remove('editing'); fp.layout();
+    };
+    title.addEventListener('dblclick', (e) => {
+      if (title.isContentEditable) return;
+      before = title.textContent;
+      title.setAttribute('contenteditable', 'plaintext-only'); title.focus(); caretAt(e.clientX, e.clientY);
+      lines.classList.add('editing');
+      const r = rel(stage, title); tag.hidden = false; tag.style.left = `${r.left}px`; tag.style.top = `${r.bottom + 10}px`;
+    });
+    title.addEventListener('keydown', (e) => {
+      if (!title.isContentEditable) return;
+      if (e.key === 'Enter') { e.preventDefault(); stop(true); title.blur(); }
+      else if (e.key === 'Escape') { e.preventDefault(); stop(false); title.blur(); }
+    });
+    title.addEventListener('blur', () => stop(true));
   }
+
 }
