@@ -1,6 +1,7 @@
 # The visual language: toys
 
 Status: proposed, 2026-11-10. The living system is the site's design section (`web/`, run `npx next dev web`, open `/design`), which is drawn with it.
+How things behave, speak and are laid out is in `interaction-principles.md`, beside this page.
 This page is the source for anything drawn in React Plumber: icons, marks on the page, controls, bars, empty states,
 illustrations. If a new piece can't be explained by this page, the page is changed first, then the piece is drawn.
 
