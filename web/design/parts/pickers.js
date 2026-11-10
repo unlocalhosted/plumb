@@ -87,12 +87,14 @@ export function mount(host, root, css) {
     .slot.hard b, .slot.hard span { color: var(--pl-coral); }
     .row.dragging .val { cursor: ns-resize; }
     :host(.grabbing) { cursor: ns-resize; }
-    /* ── the bar in the field: where you are among the options, like a slider. A soft fill grows from the left inside
+    /* ── the bar in the field, shown only while you drag: where you are among the options, like a slider. A soft fill grows from the left inside
        the field with a grip at its end, and a dot for each option along the bottom (coral for your hard-coded one).
        It follows the pointer while you drag, gives a little past either end, and springs onto the option when you
        let go ── */
     .row .val { overflow: visible; }
-    .track { position: absolute; inset: 2px; border-radius: 7px; pointer-events: none; }
+    /* only while dragging: it fades in as the drag starts, and out once the fill has sprung onto the option */
+    .track { position: absolute; inset: 2px; border-radius: 7px; pointer-events: none; opacity: 0; transition: opacity 220ms var(--pl-ease-out) 380ms; }
+    .row.dragging .track { opacity: 1; transition: opacity 120ms var(--pl-ease-out) 0ms; }
     .track .fill { position: absolute; left: 0; top: 0; bottom: 0; width: calc(12px + var(--f, 0) * (100% - 12px)); border-radius: 7px; background: color-mix(in oklab, var(--pl-sky) 14%, transparent);
       transition: width 420ms cubic-bezier(.34, 1.56, .64, 1), background-color 200ms var(--pl-ease-out); }
     .track .fill::after { content: ''; position: absolute; right: 3px; top: 50%; width: 2.5px; height: 12px; translate: 0 -50%; border-radius: 2px; background: var(--pl-sky); opacity: .75; transition: height 200ms var(--pl-spring-pop), opacity 200ms; }
