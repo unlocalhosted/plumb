@@ -37,6 +37,25 @@ export function mount(host, root, css) {
   const s2 = { steps: spacing, current: null, drift: { n: 64, label: '64' } };
   const s3 = { steps: spacing, current: null, picked: 's2', drift: { n: 7, label: '7' } };
 
+
+  // ── proposed (a trial): the bar says what is wrong, and only that. The choice is made on the element ──
+  // One rule for all three: the bar has one coloured thing, the wrong value. What you can do about it (the steps,
+  // Use, Keep) is on the element, where the change will happen. The bar's right end is only where you are in the list.
+  const trialOn = (i) => `<div class="on" style="top: 78px; right: 30px;"><span class="ctl">${radius('Corner', { steps: radii, current: null, picked: 'tag', drift: { n: 5, label: '5' } })}</span>${button('Use tag', { cls: 'sm', key: '↵' })}${button('Keep 5', { cls: 'sm quiet', key: 'K' })}</div>`;
+  const queue = `<span class="sep"></span><span class="nav"><button type="button" aria-label="The one before">‹</button><span>3 of 60</span><button type="button" aria-label="The next one">›</button></span>`;
+  const ruler = () => { const x = (n) => 8 + (n / 14) * 116; return `<span class="ruler" role="img" aria-label="5 sits before your steps 6, 8 and 12"><i class="line"></i>${[6, 8, 12].map((n) => `<i class="tick" style="left:${x(n)}px"></i><small style="left:${x(n)}px">${n}</small>`).join('')}<i class="off" style="left:${x(5)}px"></i><b style="left:${x(5)}px">5</b></span>`; };
+  const trialBars = {
+    a: `<div class="ib pl-card" role="status"><i class="ic">${toyOf('corner')}</i><span class="say">This corner is <span class="pl-pill" data-hue="coral">5px</span></span><span class="more">Your steps are 6, 8 and 12</span><span class="more">16 places</span>${queue}</div>`,
+    b: `<div class="ib pl-card" role="status"><i class="ic">${toyOf('corner')}</i><span class="say">Corner</span>${ruler()}<span class="more">16 places</span>${queue}</div>`,
+    c: `<div class="ib two pl-card" role="status"><i class="ic big">${toyOf('corner')}</i><span class="lines"><span class="say">This corner isn’t one of your steps</span><span class="more"><span class="pl-pill" data-hue="coral">5px</span> on 16 tags. Your steps are 6, 8 and 12.</span></span>${queue}</div>`,
+  };
+  const trial = (k, title, note) => scene(`p${k}`, title, note, `<div class="page">${rowsOf(true)}</div>${trialOn(k)}${trialBars[k]}`);
+  const trials = `<h2 class="part">Proposed: the bar says what is wrong</h2><p class="lead">Three ways to say it. In all three the bar has one job and one coloured thing, the wrong value. The steps, Use and Keep have moved onto the element, where the change happens. The right end only says where you are in the list.</p>`
+    + trial('a', 'A · One sentence', 'Read left to right like a sentence: what it is, what is wrong with it, then (quieter) why and how many.')
+    + trial('b', 'B · A picture of why', 'The value drawn on your own scale: your steps are the ticks, the wrong value is the red mark that misses them. Nothing to read.')
+    + trial('c', 'C · A headline and a detail', 'Two lines. The top line is the problem in plain words; the line under it has the numbers. Taller, but the eye has one place to start.')
+    + `<h2 class="part">Today</h2><p class="lead">The bar as it is now, for comparison.</p>`;
+
   root.innerHTML = `<style>${css}${LANGUAGE_CSS}${PRIMITIVES_CSS}${SHOW_CSS}${SCALE_CSS}${BUTTON_CSS}
     :host { display: block; font-family: var(--pl-sans); color: var(--pl-ink); }
     /* a trial for the dark scheme, in this comp only: the surfaces lifted from near-black (#1c1c1e) to a warm graphite,
@@ -102,12 +121,33 @@ export function mount(host, root, css) {
     .fb .acts { display: inline-flex; gap: 6px; padding-top: 2px; }
     .fb[data-written] .go { --hue: var(--pl-mint); --base: color-mix(in oklab, var(--pl-mint) 72%, #000); }
     .fb .inbar { display: inline-flex; align-items: center; }
+    /* ── the trial: a bar that only says what is wrong ── */
+    h2.part { margin: 0 0 4px; } h2.part:not(:first-of-type) { margin-top: 44px; } p.lead { margin: 0 0 22px; }
+    .ib { position: absolute; left: 50%; bottom: 16px; translate: -50% 0; max-width: calc(100% - 24px); box-sizing: border-box; display: flex; align-items: center; gap: 12px; height: 50px; padding: 0 10px 0 13px; border-radius: 25px; white-space: nowrap; }
+    .ib .ic { display: block; width: 26px; height: 26px; flex: none; } .ib .ic svg { display: block; width: 100%; height: 100%; overflow: visible; }
+    .ib .say { display: inline-flex; align-items: center; gap: 7px; font: 650 14.5px/1 var(--pl-sans); color: var(--pl-ink); }
+    .ib .more { display: inline-flex; align-items: center; gap: 6px; font: 500 13px/1 var(--pl-sans); color: var(--pl-ink-2); }
+    .ib .sep { width: 1px; height: 22px; margin: 0 2px; background: var(--pl-rule); }
+    .ib .nav { display: inline-flex; align-items: center; gap: 2px; font: 500 12px/1 var(--pl-mono); color: var(--pl-ink-2); }
+    .ib .nav button { all: unset; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 6px; cursor: pointer; color: var(--pl-ink-2); }
+    .ib .nav button:hover { background: var(--pl-paper-2); }
+    .ib.two { height: 64px; border-radius: 22px; padding-left: 12px; }
+    .ib .ic.big { width: 36px; height: 36px; }
+    .ib .lines { display: flex; flex-direction: column; gap: 7px; }
+    .ruler { position: relative; display: block; width: 132px; height: 36px; }
+    .ruler .line { position: absolute; left: 4px; right: 4px; top: 17px; height: 2px; border-radius: 1px; background: var(--pl-rule); }
+    .ruler .tick { position: absolute; top: 12px; width: 2.5px; height: 12px; margin-left: -1.25px; border-radius: 2px; background: var(--pl-sky); }
+    .ruler small { position: absolute; top: 26px; translate: -50% 0; font: 500 9.5px/1 var(--pl-mono); color: var(--pl-ink-3); }
+    .ruler .off { position: absolute; top: 13px; width: 10px; height: 10px; margin-left: -5px; border-radius: 3px; rotate: 45deg; background: var(--pl-coral); }
+    .ruler b { position: absolute; top: 0; translate: -50% 0; font: 700 10.5px/1 var(--pl-mono); color: var(--pl-coral); }
+    #pa .on, #pb .on, #pc .on { gap: 6px; padding-right: 8px; }
     .again { position: absolute; left: 50%; translate: -50% 0; bottom: 78px; font: 500 12px/1 var(--pl-sans); color: var(--pl-ink-2); background: none; border: 0; cursor: pointer; text-decoration: underline; }
     .again[hidden] { display: none; }
     @keyframes click { 28% { translate: 0 2px; } 62% { translate: 0 -1px; } }
     .page .chip.click { animation: click 320ms var(--pl-ease-out); }
     @media (prefers-reduced-motion: reduce) { .page .chip { transition: none; } .page .chip.click { animation: none; } .fb .name.swap { animation: none; } }
   </style>${TOY_DEFS}
+  ${trials}
   ${scene('one', '1 · A step your scale has (live)', 'The chip’s corner is 5px, between two of your steps. The steps pop out of the chip itself. Moving between them rounds every place on the page and rolls the value in the bar; the outline goes blue once it sits on a step. Enter writes it: the places click in one after another and their marks turn green.', '')}
   ${scene('two', '2 · A value your scale doesn’t have', '64px is past your largest step, so the fix is a new step. It is named where the steps are: the name is the only thing you type. Enter adds it to your theme.',
     `<div class="page">${rowsOf(false)}</div>
@@ -181,7 +221,7 @@ export function mount(host, root, css) {
   });
   reset();
 
-  bind(root.querySelector('#two'), {}); bind(root.querySelector('#three'), {});
-  for (const group of root.querySelectorAll('#two .ep[role="radiogroup"], #three .ep[role="radiogroup"]')) place(group);
+  for (const id of ['two', 'three', 'pa', 'pb', 'pc']) bind(root.querySelector('#' + id), {});
+  for (const group of root.querySelectorAll(':is(#two, #three, #pa, #pb, #pc) .ep[role="radiogroup"]')) place(group);
   for (const c of root.querySelectorAll('#two .sh-chip, #three .sh-chip')) c.setAttribute('data-on', '');
 }
