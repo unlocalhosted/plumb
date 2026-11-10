@@ -33,3 +33,4 @@ dist/
 /.state/log*.jsonl
 /.state/open.json
 /.state/cache/
+.test-logs-remote/

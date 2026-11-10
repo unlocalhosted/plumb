@@ -6,7 +6,7 @@
 #   PLUMB_TEST_HOST=other scripts/test-remote.sh
 #
 # Sends the commit with its history (some tests read git), installs when the lockfile changed, builds, runs, and
-# brings the log and the per-file logs back to .test-logs/remote/. Uncommitted changes are not sent.
+# brings the log and the per-file logs back to .test-logs-remote/. Uncommitted changes are not sent.
 set -eu
 host=${PLUMB_TEST_HOST:-vm-agent}
 dir=projects/plumb-ci
@@ -50,10 +50,10 @@ until $ssh_ "test -f $dir/test.exit" 2>/dev/null; do sleep 30; done
 code=""
 for try in 1 2 3 4 5 6; do code=$($ssh_ "cat $dir/test.exit" 2>/dev/null) && [ -n "$code" ] && break; sleep 10; done
 [ -n "$code" ] || { echo "The run finished on $host but its result could not be fetched. Read it there: $dir/test.log"; exit 2; }
-rm -rf "$root/.test-logs/remote"; mkdir -p "$root/.test-logs/remote"
+rm -rf "$root/.test-logs-remote"; mkdir -p "$root/.test-logs-remote"
 fetched=""
-for try in 1 2 3 4 5 6; do scp -q -r -o BatchMode=yes -o ConnectTimeout=20 "$host:$dir/test.log" "$host:$dir/mem.log" "$host:$dir/.test-logs" "$root/.test-logs/remote/" 2>/dev/null && fetched=1 && break; sleep 10; done
+for try in 1 2 3 4 5 6; do scp -q -r -o BatchMode=yes -o ConnectTimeout=20 "$host:$dir/test.log" "$host:$dir/mem.log" "$host:$dir/.test-logs" "$root/.test-logs-remote/" 2>/dev/null && fetched=1 && break; sleep 10; done
 [ -n "$fetched" ] || { echo "The run exited $code on $host but its logs could not be fetched. Read them there: $dir/test.log"; exit 2; }
-sed -n '/ runs in /,$p' "$root/.test-logs/remote/test.log"
-echo "Peak memory: $(sed -E 's/.*used_mb=([0-9]+).*/\1/' "$root/.test-logs/remote/mem.log" | sort -n | tail -1) MB. Logs: .test-logs/remote/"
+sed -n '/ runs in /,$p' "$root/.test-logs-remote/test.log"
+echo "Peak memory: $(sed -E 's/.*used_mb=([0-9]+).*/\1/' "$root/.test-logs-remote/mem.log" | sort -n | tail -1) MB. Logs: .test-logs-remote/"
 exit "$code"
