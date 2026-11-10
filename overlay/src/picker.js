@@ -43,7 +43,7 @@ export const PICKER_CSS = `
     .row .val:hover, .row .val[aria-expanded="true"] { background: var(--pl-paper-2); }
     .row .val:focus-visible { outline: 2px solid var(--pl-sky); }
     .row .val b { font: 600 13px/1 var(--pl-sans); color: var(--pl-ink); }
-    .row .val span { font: 500 12px/1 var(--pl-mono); color: var(--pl-ink-3); }
+    .row .val span { font: 500 12px/1 var(--pl-mono); color: var(--pl-ink-2); }
     .row .val.hard b { color: var(--pl-coral); }
     .row .val .car { width: 8px; height: 8px; margin-left: 2px; border-right: 1.5px solid var(--pl-ink-3); border-bottom: 1.5px solid var(--pl-ink-3); rotate: 45deg; translate: 0 -2px; }
     .row .ok { all: unset; display: grid; place-items: center; width: 28px; height: 28px; border-radius: 8px; color: var(--pl-ink-3); cursor: pointer; }
@@ -62,7 +62,7 @@ export const PICKER_CSS = `
     .list[hidden] { display: none; }
     .list button { all: unset; box-sizing: border-box; display: grid; grid-template-columns: 22px 1fr auto; align-items: center; gap: 10px; width: 100%; height: 32px; padding: 0 8px; border-radius: 8px; cursor: pointer; font: 500 13px/1 var(--pl-sans); }
     .list button:hover, .list button[aria-selected="true"] { background: var(--pl-paper-2); }
-    .list button span { font: 500 12px/1 var(--pl-mono); color: var(--pl-ink-3); }
+    .list button span { font: 500 12px/1 var(--pl-mono); color: var(--pl-ink-2); }
     .list .hard { color: var(--pl-coral); }
     .list hr { margin: 4px 6px; border: 0; border-top: 1px solid var(--pl-rule); }
 
@@ -74,7 +74,7 @@ export const PICKER_CSS = `
     .drum { position: relative; display: block; width: 112px; height: 28px; overflow: hidden; }
     .slot { position: absolute; inset: 0; display: flex; align-items: center; gap: 6px; will-change: transform, opacity, filter; }
     .slot b { font: 600 13px/1 var(--pl-sans); color: var(--pl-ink); }
-    .slot span { font: 500 12px/1 var(--pl-mono); color: var(--pl-ink-3); }
+    .slot span { font: 500 12px/1 var(--pl-mono); color: var(--pl-ink-2); }
     .slot.hard b, .slot.hard span { color: var(--pl-coral); }
     .row.dragging .val { cursor: ns-resize; }
     :host(.grabbing) { cursor: ns-resize; }

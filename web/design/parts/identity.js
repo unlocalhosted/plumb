@@ -18,7 +18,7 @@ export function mount(host, root, css) {
     .toy { display: block; width: 42px; height: 42px; } .toy svg { display: block; width: 100%; height: 100%; overflow: visible; }
     .why { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin: 16px 0 8px; }
     .why div { padding: 16px 16px 14px; border-radius: 20px; background: var(--pl-paper-2); }
-    .why small { font: 600 12px/1 var(--pl-mono); color: var(--pl-ink-3); }
+    .why small { font: 600 12px/1 var(--pl-mono); color: var(--pl-ink-2); }
     .why b { display: block; margin: 8px 0 4px; font: var(--pl-round-w, 600) 18px/22px var(--pl-round); }
     .why span { font: 500 14.5px/21px var(--pl-sans); color: var(--pl-ink-2); }
     .pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-top: 16px; }
@@ -55,7 +55,7 @@ export function mount(host, root, css) {
     .face { margin-top: 16px; padding: 26px 26px 22px; border-radius: 22px; background: var(--pl-paper-2); }
     .face b { display: block; font: var(--pl-round-w, 600) 44px/46px var(--pl-round); letter-spacing: -0.02em; color: var(--pl-ink); text-wrap: balance; max-width: 560px; }
     .face p { margin: 12px 0 0; font: 450 17px/27px var(--pl-sans); color: var(--pl-ink-2); max-width: 560px; }
-    .face small { display: block; margin-top: 14px; font: 600 12px/1.3 var(--pl-mono); color: var(--pl-ink-3); }
+    .face small { display: block; margin-top: 14px; font: 600 12px/1.3 var(--pl-mono); color: var(--pl-ink-2); }
     @media (max-width: 820px) { .why { grid-template-columns: repeat(2, minmax(0, 1fr)); } .pair { grid-template-columns: 1fr; } }
   </style>${TOY_DEFS}
   <h2>Where the delight comes from</h2>

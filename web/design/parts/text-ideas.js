@@ -96,8 +96,8 @@ export function mount(host, root, css) {
     .rung + .rung { border-top: 1px solid var(--pl-rule); }
     .rung:hover, .rung.over { background: color-mix(in oklab, var(--pl-sky) 12%, transparent); }
     .rung .ag { font-family: system-ui, sans-serif; color: var(--pl-ink); text-align: center; line-height: 1; }
-    .rung b { font: 600 12.5px/1.2 var(--pl-sans); } .rung b small { display: block; font: 500 11px/1.3 var(--pl-mono); color: var(--pl-ink-3); }
-    .rung .n { font: 600 11px/1 var(--pl-sans); color: var(--pl-ink-3); }
+    .rung b { font: 600 12.5px/1.2 var(--pl-sans); } .rung b small { display: block; font: 500 11px/1.3 var(--pl-mono); color: var(--pl-ink-2); }
+    .rung .n { font: 600 11px/1 var(--pl-sans); color: var(--pl-ink-2); }
     .chip { position: absolute; z-index: 3; left: 8px; right: 8px; display: flex; align-items: center; gap: 6px; height: 26px; padding: 0 8px; border-radius: 8px; background: var(--pl-coral); color: var(--pl-coral-on); font: 600 11.5px/1 var(--pl-sans); cursor: grab; touch-action: none; box-shadow: 0 6px 14px -6px color-mix(in oklab, var(--pl-coral) 80%, transparent); transition: top 320ms var(--pl-spring-pop), background-color 160ms; }
     .chip.dragging { cursor: grabbing; transition: none; scale: 1.04; }
     .chip.kept { background: var(--pl-mint); color: var(--pl-mint-on); box-shadow: none; }
@@ -115,7 +115,7 @@ export function mount(host, root, css) {
     .answer .big b { font: var(--pl-round-w, 600) 17px/1.15 var(--pl-round); } .answer .big b small { display: block; margin-top: 3px; font: 500 12px/1.3 var(--pl-sans); color: var(--pl-ink-2); }
     .answer ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 4px; font: 500 12.5px/1.4 var(--pl-sans); color: var(--pl-ink-2); }
     .answer li::before { content: '✓'; display: inline-block; width: 16px; color: var(--pl-mint-ink); font-weight: 700; }
-    .answer li.minus::before { content: '±'; color: var(--pl-ink-3); }
+    .answer li.minus::before { content: '±'; color: var(--pl-ink-2); }
     .answer .row2 { display: flex; align-items: center; gap: 8px; }
     .answer .other { all: unset; margin-left: auto; font: 600 12px/1 var(--pl-sans); color: var(--pl-ink-2); cursor: pointer; }
     .answer .other:hover { color: var(--pl-ink); }
@@ -123,7 +123,7 @@ export function mount(host, root, css) {
     .answer .alts[hidden] { display: none; }
     .answer .alts button { all: unset; display: grid; grid-template-columns: 1fr auto; gap: 8px; padding: 7px 8px; border-radius: 8px; cursor: pointer; font: 600 12.5px/1 var(--pl-sans); }
     .answer .alts button:hover { background: var(--pl-paper-2); }
-    .answer .alts span { font: 500 11.5px/1 var(--pl-mono); color: var(--pl-ink-3); }
+    .answer .alts span { font: 500 11.5px/1 var(--pl-mono); color: var(--pl-ink-2); }
     @media (prefers-reduced-motion: reduce) { .site h1, .chip, .dots i { transition: none !important; } }
   </style>
   ${scene('a', 'A · Try styles on the element', 'No panel. Point at the hero heading and scroll (or drag up and down on it): it becomes each of your text styles in place, starting with the closest, while a coral ghost of the original stays behind it so you see what changes. The pill says which style and how many places use it. The first step is always the closest style. Click to keep; Esc puts it back.')}

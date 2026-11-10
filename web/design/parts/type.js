@@ -69,7 +69,7 @@ export function mount(host, root, css) {
     .style .meta b { font: 600 15px/20px var(--pl-sans); text-transform: capitalize; }
     .style .nums { font: 500 12px/16px var(--pl-mono); color: var(--pl-ink-2); }
     .style .meta p { margin: 4px 0 6px; font: 400 13px/18px var(--pl-sans); color: var(--pl-ink-2); }
-    .style .w { font: 400 11px/14px var(--pl-sans); color: var(--pl-ink-3); margin-top: 3px; }
+    .style .w { font: 400 11px/14px var(--pl-sans); color: var(--pl-ink-2); margin-top: 3px; }
     .style .spec { color: var(--pl-ink); min-width: 0; overflow-wrap: anywhere; }
     .tok { color: var(--pl-ink); cursor: copy; border-radius: 5px; outline: none; }
     .tok:hover, .tok:focus-visible { background: var(--pl-sky-soft); color: var(--pl-sky-ink); box-shadow: 0 0 0 3px var(--pl-sky-soft); }
@@ -78,7 +78,7 @@ export function mount(host, root, css) {
     .rung { display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 1; min-width: 56px; }
     .rung i { display: block; width: 100%; max-width: 46px; border-radius: 7px 7px 3px 3px; background: var(--pl-sky); }
     .rung b { font: 600 13px/1 var(--pl-mono); }
-    .rung small { font: 400 10px/12px var(--pl-sans); color: var(--pl-ink-3); text-align: center; text-transform: capitalize; }
+    .rung small { font: 400 10px/12px var(--pl-sans); color: var(--pl-ink-2); text-align: center; text-transform: capitalize; }
     .tbl { margin-top: 14px; border-radius: 16px; background: var(--pl-paper); box-shadow: 0 0 0 1px var(--pl-rule); overflow: hidden; }
     .tr { display: grid; grid-template-columns: minmax(190px, 1fr) minmax(0, 2fr) minmax(0, 1.6fr); gap: 14px; align-items: center; padding: 10px 16px; border-top: 1px solid var(--pl-rule); }
     .tr.th { border-top: 0; padding: 9px 16px; background: var(--pl-paper-2); font: 600 11px/1 var(--pl-sans); letter-spacing: .05em; text-transform: uppercase; color: var(--pl-ink-2); }

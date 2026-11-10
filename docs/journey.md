@@ -612,7 +612,26 @@ race, built for the old in-place write) was rewritten for the new write path (`e
   side, row "all sides"; the tick wrote all four (green frame). Margin dragged to 32px (2xl), ring blue.
 - **Added to the principles** as 18d.
 
+### 20. The dark mode check
+- **How we looked:** every finished design page (9) opened in dark and in light, and every piece of our own text on
+  each measured against the colour it actually sits on (the apps drawn inside the stages left out).
+- **What it found, by cause:**
+  - **The faintest ink was used for words.** Our tokens keep it for ticks and dividers, "never text", but 27 places
+    used it for text: every hint line under a stage, the text card's section labels, captions under buttons and
+    icons, units, notes. About 1.8:1 in dark and about 2:1 in light, so it was broken in both schemes. All now use
+    the secondary ink; the two icon uses (the picker's tick, the lock) keep the faint one.
+  - **My own bug from chapter 19:** the margin scene's notification cards used the class name `note`, which the
+    text card's note also uses, so in dark the note became a white slab with grey text. Renamed.
+- **After:** dark: identity, colour, type, icons, colour ideas, pickers pass; light: the same, plus pickers.
+- **Left for the owner (a colour-system choice, not a slip):** the coloured buttons. In dark they are bright pink,
+  mint and coral with dark lettering (readable, about 4.7:1), but our night rule says a coloured block is a deep
+  version of its hue lettered in white, and the buttons page itself says the label is "cut out of it in white". In
+  light, white on pink is 3.4:1 and on mint 3.9:1, under the 4.5:1 that small text needs. Not changed.
+- **Not checked:** things that aren't text (borders, shadows, rings that vanish on a dark ground).
+
 ## Open gaps
+- The coloured buttons break our own night rule (dark lettering on bright hues), and white on pink and mint is
+  under 4.5:1 in light. Waiting on the owner. Nothing yet stops the faintest ink being used for text again.
 - The contrast check knows colours, not sizes or weights, and is not run by CI yet.
 - `web/docs/pages` is a copy of `site/src/docs/pages`; two copies until the old Vite site is removed.
 - The repository root still installs Next.js 16.4.0 (used by the Next host's tests); `web/` is on 16.4.6.

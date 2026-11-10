@@ -76,7 +76,7 @@ export function mount(host, root, css) {
     .steps { display: grid; grid-template-columns: repeat(3, 1fr); border-top: 1px solid var(--pl-rule); }
     .steps div { padding: 16px 20px 18px; border-left: 1px solid var(--pl-rule); }
     .steps div:first-child { border-left: 0; }
-    .steps small { font: 500 11px/1 var(--pl-mono); color: var(--pl-ink-3); }
+    .steps small { font: 500 11px/1 var(--pl-mono); color: var(--pl-ink-2); }
     .steps b { display: block; margin: 8px 0 3px; font: 600 14px/20px var(--pl-sans); }
     .steps span { font: 400 13px/19px var(--pl-sans); color: var(--pl-ink-2); }
     /* the six hues */
@@ -107,7 +107,7 @@ export function mount(host, root, css) {
     .sw { flex: none; width: 22px; height: 22px; border-radius: 7px; box-shadow: inset 0 0 0 1px rgb(0 0 0 / .1); }
     .sw.dark { box-shadow: inset 0 0 0 1px rgb(255 255 255 / .14), 0 0 0 3px #1c1c1e; margin: 0 3px; }
     .pairs .tr { grid-template-columns: minmax(130px, 1fr) minmax(130px, 1fr) minmax(0, 2fr) 100px 100px; }
-    .pairs .for small { display: block; font: 500 11.5px/15px var(--pl-sans); color: var(--pl-ink-3); }
+    .pairs .for small { display: block; font: 500 11.5px/15px var(--pl-sans); color: var(--pl-ink-2); }
     .pair { display: grid; place-items: center; flex: none; width: 38px; height: 28px; border-radius: 9px; font: var(--pl-round-w2, 700) 14px/1 var(--pl-round); font-style: normal; }
     .val code.pass { color: var(--pl-mint); font-weight: 700; }
     .val code.fail { padding: 2px 6px; border-radius: 6px; background: var(--pl-coral); color: var(--pl-coral-on); font-weight: 700; }

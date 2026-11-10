@@ -148,11 +148,11 @@ export function mount(host, root, css) {
     .row .side { padding: 0 2px 0 0; font: 600 11.5px/1 var(--pl-sans); color: var(--pl-ink-2); white-space: nowrap; }
     /* ── the real UI for margin: a notification feed, as someone's app draws it ── */
     .feed { width: 320px; }
-    .note { display: flex; gap: 10px; align-items: flex-start; padding: 12px 14px; border-radius: 12px; background: #fff; box-shadow: 0 1px 2px rgb(16 24 40 / .06), 0 8px 20px -12px rgb(16 24 40 / .2); font: 13px/18px system-ui, -apple-system, sans-serif; color: #475467; }
-    .note + .note { margin-top: 12px; }
-    .note.held { margin-top: var(--m, 18px); transition: margin-top 220ms var(--pl-spring-pop); }
-    .note i { flex: none; width: 28px; height: 28px; border-radius: 50%; background: #e9d7fe; }
-    .note b { display: block; color: #101828; font: 600 13px/18px system-ui, sans-serif; }
+    .notif { display: flex; gap: 10px; align-items: flex-start; padding: 12px 14px; border-radius: 12px; background: #fff; box-shadow: 0 1px 2px rgb(16 24 40 / .06), 0 8px 20px -12px rgb(16 24 40 / .2); font: 13px/18px system-ui, -apple-system, sans-serif; color: #475467; }
+    .notif + .notif { margin-top: 12px; }
+    .notif.held { margin-top: var(--m, 18px); transition: margin-top 220ms var(--pl-spring-pop); }
+    .notif i { flex: none; width: 28px; height: 28px; border-radius: 50%; background: #e9d7fe; }
+    .notif b { display: block; color: #101828; font: 600 13px/18px system-ui, sans-serif; }
     /* the margin is the handle: the space it makes, drawn in margin's pattern (butter dots) */
     .mband { position: absolute; z-index: 3; cursor: ns-resize; touch-action: none; border-radius: 3px;
       background: radial-gradient(circle, color-mix(in oklab, var(--pl-butter) 85%, transparent) 1.25px, transparent 1.7px) 0 0 / 6px 6px;
@@ -161,7 +161,7 @@ export function mount(host, root, css) {
     .mband.on-token { outline: 1.5px solid var(--pl-sky); }
     .mband.written { outline: 1.5px solid var(--pl-mint); }
     .mband:hover, .mband.dragging { scale: 1.02 1; }
-    .mband.dragging, .feed.dragging .note.held { transition: none; }
+    .mband.dragging, .feed.dragging .notif.held { transition: none; }
     .list .mg { width: 16px; height: 16px; background: radial-gradient(circle, var(--pl-ink-2) 1px, transparent 1.4px) 0 0 / 4px 4px; border-radius: 3px; }
     .list .hard .mg { background-image: radial-gradient(circle, var(--pl-coral) 1px, transparent 1.4px); }
     .padframe { position: absolute; z-index: 2; pointer-events: none; border-radius: 13px; outline: 1.5px dashed var(--pl-coral); outline-offset: 3px; transition: outline-color 160ms; }
@@ -208,9 +208,9 @@ export function mount(host, root, css) {
     .hero.done .h { outline: 1.5px solid var(--pl-mint); outline-offset: 6px; border-radius: 4px; }
     .tcard { position: absolute; z-index: 4; width: 272px; padding: 12px 12px 12px; border-radius: 16px; background: var(--pl-paper); box-shadow: var(--pl-shadow-card); display: grid; gap: 12px; }
     .tcard header { display: flex; align-items: baseline; gap: 8px; padding: 0 2px; font: var(--pl-round-w, 600) 15px/1 var(--pl-round); color: var(--pl-ink); }
-    .tcard header small { margin-left: auto; font: 500 11.5px/1 var(--pl-mono); color: var(--pl-ink-3); }
+    .tcard header small { margin-left: auto; font: 500 11.5px/1 var(--pl-mono); color: var(--pl-ink-2); }
     .tcard section { position: relative; display: grid; gap: 6px; }
-    .tcard section > b { padding: 0 2px; font: 600 11.5px/1 var(--pl-sans); color: var(--pl-ink-3); }
+    .tcard section > b { padding: 0 2px; font: 600 11.5px/1 var(--pl-sans); color: var(--pl-ink-2); }
     .tcard .grid { position: relative; display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
     .tcard .one { position: relative; display: grid; }
     .tcard .row.compact .slot.hard span { display: none; }
@@ -246,17 +246,17 @@ export function mount(host, root, css) {
     .seg.wrap3 { grid-template-columns: repeat(3, 1fr); }
     .seg.wrap3 button { font: 600 11.5px/1 var(--pl-sans); }
     .tcard section > .lbl { display: flex; align-items: center; gap: 8px; padding: 0 2px; }
-    .tcard section > .lbl b { font: 600 11.5px/1 var(--pl-sans); color: var(--pl-ink-3); }
+    .tcard section > .lbl b { font: 600 11.5px/1 var(--pl-sans); color: var(--pl-ink-2); }
     .screens { margin-left: auto; display: inline-grid; grid-auto-flow: column; gap: 1px; padding: 2px; border-radius: 8px; background: var(--pl-paper-2); }
-    .screens button { all: unset; padding: 4px 7px; border-radius: 6px; cursor: pointer; font: 600 11px/1 var(--pl-sans); color: var(--pl-ink-3); }
+    .screens button { all: unset; padding: 4px 7px; border-radius: 6px; cursor: pointer; font: 600 11px/1 var(--pl-sans); color: var(--pl-ink-2); }
     .screens button[aria-pressed="true"] { background: var(--pl-paper); color: var(--pl-ink); box-shadow: 0 1px 2px rgb(0 0 0 / .1); }
     .tcard .grid .row[hidden] { display: none; }
-    .row.inherited .slot b, .row.inherited .slot span { color: var(--pl-ink-3); font-style: italic; }
+    .row.inherited .slot b, .row.inherited .slot span { color: var(--pl-ink-2); font-style: italic; }
     .row.locked { opacity: .62; }
     .row.locked .val, .row.locked .scrub { pointer-events: none; }
     .row.locked::after { content: ''; position: absolute; right: 8px; top: 50%; width: 9px; height: 11px; translate: 0 -50%; background: currentColor; color: var(--pl-ink-3);
       -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 9 11'%3E%3Cpath d='M2 5V3.5a2.5 2.5 0 0 1 5 0V5' fill='none' stroke='black' stroke-width='1.3'/%3E%3Crect x='.5' y='5' width='8' height='5.5' rx='1.2'/%3E%3C/svg%3E") center / contain no-repeat; }
-    .tcard .note { margin: 0; padding: 0 2px; font: 500 11.5px/1.4 var(--pl-sans); color: var(--pl-ink-3); }
+    .tcard .note { margin: 0; padding: 0 2px; font: 500 11.5px/1.4 var(--pl-sans); color: var(--pl-ink-2); }
     .tcard .note:empty { display: none; }
     .tcard .fam .slot b { font-family: var(--ff); }
     #textcard .stage { min-height: 1000px; }
@@ -274,7 +274,7 @@ export function mount(host, root, css) {
     .list .hard .lh::before, .list .hard .lh::after { background: var(--pl-coral); }
     .list .ls { width: 22px; text-align: center; font: 600 11px/1 system-ui, sans-serif; color: var(--pl-ink-2); }
     .list .wt { width: 22px; text-align: center; font: 13px/1 system-ui, sans-serif; color: var(--pl-ink-2); }
-    .hint { position: absolute; left: 0; right: 0; bottom: 14px; text-align: center; font: 500 12.5px/1 var(--pl-sans); color: var(--pl-ink-3); }
+    .hint { position: absolute; left: 0; right: 0; bottom: 14px; text-align: center; font: 500 12.5px/1 var(--pl-sans); color: var(--pl-ink-2); }
     .hint kbd { font: 600 11px/1 var(--pl-mono); padding: 2px 5px; border-radius: 5px; background: var(--pl-paper); box-shadow: 0 1px 0 var(--pl-rule); }
     @media (prefers-reduced-motion: reduce) { .handle { transition: none; } }
   </style>${TOY_DEFS}
@@ -319,7 +319,7 @@ export function mount(host, root, css) {
     <h2>Margin</h2>
     <p>The middle notification has a hard-coded 18px of margin above it; the others sit 12px apart. The margin is drawn in its own pattern, butter dots, in the space it makes outside the card. Drag it down to make it bigger, up to make it smaller.</p>
     <div class="stage" tabindex="0">
-      <div class="feed">${[['Maya commented', 'Love the new pricing page.'], ['Deploy finished', 'main · 2 minutes ago'], ['Invoice paid', 'INV-2041 · $480.00']].map(([t, d], i) => `<div class="note${i === 1 ? ' held' : ''}"><i></i><div><b>${t}</b><span>${d}</span></div></div>`).join('')}</div>
+      <div class="feed">${[['Maya commented', 'Love the new pricing page.'], ['Deploy finished', 'main · 2 minutes ago'], ['Invoice paid', 'INV-2041 · $480.00']].map(([t, d], i) => `<div class="notif${i === 1 ? ' held' : ''}"><i></i><div><b>${t}</b><span>${d}</span></div></div>`).join('')}</div>
       <i class="mband" role="presentation"></i>
       <p class="hint">drag the margin or the value · <kbd>↑</kbd> <kbd>↓</kbd> step · <kbd>↵</kbd> write · <kbd>Esc</kbd> put back</p>
     </div>
@@ -492,7 +492,7 @@ export function mount(host, root, css) {
 
   // ── margin: the feed's middle notification, the space above it as the handle ──
   {
-    const stage = root.querySelector('#margin .stage'), feed = stage.querySelector('.feed'), note = feed.querySelector('.note.held'), band = stage.querySelector('.mband');
+    const stage = root.querySelector('#margin .stage'), feed = stage.querySelector('.feed'), note = feed.querySelector('.notif.held'), band = stage.querySelector('.mband');
     picker(stage, {
       name: 'Margin top', toy: 'margin', options: MARGIN,
       mark: (t) => `<i class="mg" style="height:${Math.max(4, Math.min(16, t.v / 2))}px"></i>`,

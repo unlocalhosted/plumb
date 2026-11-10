@@ -31,7 +31,7 @@ export function mount(host, root, css) {
     .cell { padding: 12px; border-radius: 14px; background: var(--pl-paper-2); display: flex; flex-direction: column; gap: 3px; }
     .cell .stage { display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap; min-height: 64px; padding: 6px 0 10px; }
     .cell b { font: 600 13px/16px var(--pl-sans); }
-    .cell small { font: 400 11px/14px var(--pl-sans); color: var(--pl-ink-3); }
+    .cell small { font: 400 11px/14px var(--pl-sans); color: var(--pl-ink-2); }
     .cell.wide { grid-column: span 2; }
     .anat { display: grid; grid-template-columns: auto 1fr; gap: 22px; align-items: center; margin-top: 14px; }
     .anat .big { padding: 26px 34px; border-radius: 14px; background: var(--pl-paper-2); }

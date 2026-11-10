@@ -18,7 +18,7 @@ export function mount(host, root, css) {
     .band:first-of-type { margin-top: 0; }
     .set { margin: 0 0 14px; padding: 16px 16px 18px; border-radius: 18px; background: var(--pl-paper); box-shadow: 0 0 0 1px var(--pl-rule); }
     .set h2 { margin: 0; font: 600 15px/20px var(--pl-sans); }
-    .set h2 span { margin-left: 8px; font: 500 12px/1 var(--pl-mono); color: var(--pl-ink-3); }
+    .set h2 span { margin-left: 8px; font: 500 12px/1 var(--pl-mono); color: var(--pl-ink-2); }
     .set p { margin: 3px 0 0; font: 400 13px/19px var(--pl-sans); color: var(--pl-ink-2); max-width: 760px; }
     ol.rules { margin: 10px 0 0; padding: 0 0 0 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: 4px 28px; font: 400 13px/19px var(--pl-sans); color: var(--pl-ink-2); }
     ol.rules b { color: var(--pl-ink); font-weight: 600; }
@@ -38,7 +38,7 @@ export function mount(host, root, css) {
     .toy:hover .mid, .toy:focus-visible .mid { rotate: 7deg; scale: 1.08; }
     .toy:hover .sm, .toy:focus-visible .sm { rotate: -5deg; }
     .toy figcaption { font: 600 13px/16px var(--pl-sans); color: var(--pl-ink); }
-    .toy figcaption small { display: block; font: 400 11px/14px var(--pl-sans); color: var(--pl-ink-3); }
+    .toy figcaption small { display: block; font: 400 11px/14px var(--pl-sans); color: var(--pl-ink-2); }
     .was { display: flex; flex-wrap: wrap; gap: 14px 22px; margin-top: 12px; align-items: center; }
     .was span { display: inline-flex; align-items: center; gap: 7px; font: 500 12px/1 var(--pl-sans); color: var(--pl-ink-2); }
     .was i { display: block; width: 16px; height: 16px; color: var(--pl-ink-2); }

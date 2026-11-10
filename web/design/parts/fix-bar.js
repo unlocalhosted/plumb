@@ -103,7 +103,7 @@ export function mount(host, root, css) {
     .on.docked::before { top: auto; bottom: -5px; right: auto; left: calc(50% - 5px); box-shadow: 1px 1px 0 0 var(--pl-rule); }
     .on .ic { display: grid; place-items: center; width: 18px; height: 18px; color: var(--pl-ink-2); }
     .on .ic svg { width: 18px; height: 18px; display: block; }
-    .on .keys { font: 500 11px/1 var(--pl-mono); color: var(--pl-ink-3); padding-left: 2px; }
+    .on .keys { font: 500 11px/1 var(--pl-mono); color: var(--pl-ink-2); padding-left: 2px; }
     .on .name { display: inline-flex; align-items: center; height: 26px; padding: 0 8px; border-radius: 8px; font: 500 12px/1 var(--pl-mono); color: var(--pl-ink-2); box-shadow: inset 0 0 0 1px var(--pl-rule); }
     .on .name b { font-weight: 600; color: var(--pl-ink); border-bottom: 1.5px solid var(--pl-sky); padding-bottom: 1px; margin-left: 1px; }
     /* the bar */
@@ -121,7 +121,7 @@ export function mount(host, root, css) {
     .fb .move { display: inline-flex; align-items: center; gap: 5px; }
     .fb .move .sh-chips { flex-wrap: nowrap; }
     .fb .move .sh-chip { color: var(--pl-ink); }
-    .fb .to { color: var(--pl-ink-3); font-size: 12px; }
+    .fb .to { color: var(--pl-ink-2); font-size: 12px; }
     .fb .name { height: 20px; padding: 0 7px; font-size: 11px; }
     .fb .name.swap { animation: pl-pop 260ms var(--pl-spring-pop) both; }
     .fb .marks { display: inline-flex; align-items: center; }
@@ -150,7 +150,7 @@ export function mount(host, root, css) {
     .ruler { position: relative; display: block; width: 132px; height: 36px; }
     .ruler .line { position: absolute; left: 4px; right: 4px; top: 17px; height: 2px; border-radius: 1px; background: var(--pl-rule); }
     .ruler .tick { position: absolute; top: 12px; width: 2.5px; height: 12px; margin-left: -1.25px; border-radius: 2px; background: var(--pl-sky); }
-    .ruler small { position: absolute; top: 26px; translate: -50% 0; font: 500 9.5px/1 var(--pl-mono); color: var(--pl-ink-3); }
+    .ruler small { position: absolute; top: 26px; translate: -50% 0; font: 500 9.5px/1 var(--pl-mono); color: var(--pl-ink-2); }
     .ruler .off { position: absolute; top: 13px; width: 10px; height: 10px; margin-left: -5px; border-radius: 3px; rotate: 45deg; background: var(--pl-coral); }
     .ruler b { position: absolute; top: 0; translate: -50% 0; font: 700 10.5px/1 var(--pl-mono); color: var(--pl-coral); }
     #pc .on { gap: 6px; padding-right: 8px; }
