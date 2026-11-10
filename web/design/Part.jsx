@@ -6,15 +6,15 @@ import { useScheme } from '../site/Bar.jsx';
 import { soften } from '../../overlay/src/soft.js';
 
 const PAGE_CSS = `
-  :host { --pl-round: var(--font-round), ui-rounded, "SF Pro Rounded", "Arial Rounded MT Bold", system-ui, sans-serif;
+  :host { --pl-round-w: 750; --pl-round-w2: 800; --pl-round: var(--font-round), ui-rounded, "SF Pro Rounded", "Arial Rounded MT Bold", system-ui, sans-serif;
     --pl-sans: var(--font-body), system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
-  h2, .set h2 { margin: 0 0 6px; font: 600 28px/32px var(--pl-round); letter-spacing: -0.01em; color: var(--pl-ink); }
+  h2, .set h2 { margin: 0 0 6px; font: var(--pl-round-w, 600) 28px/32px var(--pl-round); letter-spacing: -0.01em; color: var(--pl-ink); }
   h2:not(:first-child) { margin-top: 56px; }
   h2 + p, .set > p, .prose p { font: 500 16.5px/26px var(--pl-sans); color: var(--pl-ink-2); max-width: 660px; }
   .set { margin: 0 0 56px; padding: 0; background: none; box-shadow: none; border-radius: 0; }
   .band { display: none; }
   .cell, figure.toy { border-radius: 20px; }
-  .cell b, figure.toy figcaption, .hue .top b, .style .meta b, .card .hd h3, .steps b, .chip b, .rung b, .anat ol b { font-family: var(--pl-round); font-weight: 600; letter-spacing: 0; }
+  .cell b, figure.toy figcaption, .hue .top b, .style .meta b, .card .hd h3, .steps b, .chip b, .rung b, .anat ol b { font-family: var(--pl-round); font-weight: var(--pl-round-w, 600); letter-spacing: 0; }
   figure.toy figcaption small, .cell small { font-family: var(--pl-sans); font-weight: 400; letter-spacing: 0; }
   .card, .tbl, .styles, .ladder, .open, .hue, ol.rules { box-shadow: none; background: var(--pl-paper-2); border-radius: 22px; }
   .tr.th { background: none; }

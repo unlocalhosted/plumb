@@ -108,7 +108,7 @@ export function mount(host, root, css) {
     .sw.dark { box-shadow: inset 0 0 0 1px rgb(255 255 255 / .14), 0 0 0 3px #1c1c1e; margin: 0 3px; }
     .pairs .tr { grid-template-columns: minmax(130px, 1fr) minmax(130px, 1fr) minmax(0, 2fr) 100px 100px; }
     .pairs .for small { display: block; font: 500 11.5px/15px var(--pl-sans); color: var(--pl-ink-3); }
-    .pair { display: grid; place-items: center; flex: none; width: 38px; height: 28px; border-radius: 9px; font: 700 14px/1 var(--pl-round); font-style: normal; }
+    .pair { display: grid; place-items: center; flex: none; width: 38px; height: 28px; border-radius: 9px; font: var(--pl-round-w2, 700) 14px/1 var(--pl-round); font-style: normal; }
     .val code.pass { color: var(--pl-mint); font-weight: 700; }
     .val code.fail { padding: 2px 6px; border-radius: 6px; background: var(--pl-coral); color: var(--pl-coral-on); font-weight: 700; }
     .open { margin-top: 14px; padding: 14px 18px 14px 34px; border-radius: 16px; background: var(--pl-paper); box-shadow: 0 0 0 1px var(--pl-rule); font: 400 13px/21px var(--pl-sans); color: var(--pl-ink-2); }

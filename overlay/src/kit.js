@@ -12,7 +12,7 @@ export const BUTTON_CSS = `
        moves, so nothing around the button shifts. */
     .tb { --hue: var(--pl-pink); --base: color-mix(in oklab, var(--pl-pink) 70%, #000); --on: var(--pl-pink-on); --lift: 4px; --h: 36px;
       all: unset; position: relative; display: inline-block; box-sizing: border-box; height: calc(var(--h) + 4px); padding-top: 4px; border-radius: 13px; cursor: pointer;
-      background: linear-gradient(var(--base), var(--base)) bottom / 100% 50% no-repeat; font: 700 13.5px/1 var(--pl-round); letter-spacing: 0.005em; color: var(--on); -webkit-tap-highlight-color: transparent; user-select: none;
+      background: linear-gradient(180deg, transparent 25%, var(--base) 60%); font: var(--pl-round-w2, 700) 13.5px/1 var(--pl-round); letter-spacing: 0.005em; color: var(--on); -webkit-tap-highlight-color: transparent; user-select: none;
       box-shadow: 0 9px 12px -8px color-mix(in oklab, var(--hue) 75%, transparent); transition: box-shadow 240ms var(--pl-ease-out); }
     /* the top is lit from above: a bright rim on its top edge, a darker one on its bottom. It is anchored at its
        bottom edge, because it is pressed down against its side (the press itself: overlay/src/soft.js) */

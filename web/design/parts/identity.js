@@ -19,15 +19,15 @@ export function mount(host, root, css) {
     .why { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin: 16px 0 8px; }
     .why div { padding: 16px 16px 14px; border-radius: 20px; background: var(--pl-paper-2); }
     .why small { font: 600 12px/1 var(--pl-mono); color: var(--pl-ink-3); }
-    .why b { display: block; margin: 8px 0 4px; font: 600 18px/22px var(--pl-round); }
+    .why b { display: block; margin: 8px 0 4px; font: var(--pl-round-w, 600) 18px/22px var(--pl-round); }
     .why span { font: 500 14.5px/21px var(--pl-sans); color: var(--pl-ink-2); }
     .pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-top: 16px; }
     .show { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 26px; min-height: 400px; padding: 40px 24px 30px; border-radius: 26px; background: var(--pl-paper-2); }
-    .show > small { align-self: flex-start; margin: -16px 0 auto; font: 600 13px/1 var(--pl-round); color: var(--pl-ink-2); }
+    .show > small { align-self: flex-start; margin: -16px 0 auto; font: var(--pl-round-w, 600) 13px/1 var(--pl-round); color: var(--pl-ink-2); }
     .row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; justify-content: center; }
     .shelf { display: grid; grid-template-columns: repeat(auto-fill, minmax(186px, 1fr)); gap: 22px 18px; margin-top: 18px; padding: 34px 26px 30px; border-radius: 26px; background: var(--pl-paper-2); }
     .a-box .in { display: flex; flex-direction: column; }
-    .a-box .in b { font: 600 24px/27px var(--pl-round); }
+    .a-box .in b { font: var(--pl-round-w, 600) 24px/27px var(--pl-round); }
     .a-box .in em { margin-top: 5px; font: 600 14.5px/20px var(--pl-sans); font-style: normal; }
 
     /* ── today: the raised key. Two flat tones; it moves up and down ── */
@@ -36,7 +36,7 @@ export function mount(host, root, css) {
     .a-box .plate { display: grid; place-items: center; width: 64px; height: 64px; margin-bottom: 14px; border-radius: 18px; background: var(--pl-cut); }
     .a-box:hover { --lift: 8px; } .a-box:active { --lift: 1px; }
     .a-btn { padding-top: 3px; border-radius: 13px; background: color-mix(in oklab, var(--pl-pink) 72%, #000); --lift: 3px; }
-    .a-btn span { display: block; padding: 10px 16px; border-radius: 13px; background: var(--pl-pink); color: var(--pl-pink-on); font: 600 15px/1 var(--pl-round); translate: 0 calc(-1 * var(--lift)); transition: translate 260ms var(--pl-spring-pop); }
+    .a-btn span { display: block; padding: 10px 16px; border-radius: 13px; background: var(--pl-pink); color: var(--pl-pink-on); font: var(--pl-round-w, 600) 15px/1 var(--pl-round); translate: 0 calc(-1 * var(--lift)); transition: translate 260ms var(--pl-spring-pop); }
     .a-btn:hover { --lift: 4px; } .a-btn:active { --lift: 1px; }
     .a-btn.q { background: var(--pl-rule); } .a-btn.q span { background: var(--pl-paper); color: var(--pl-ink); box-shadow: inset 0 0 0 1.5px var(--pl-rule); }
 
@@ -45,9 +45,9 @@ export function mount(host, root, css) {
 
     /* ── the timeline: slow every motion on this page down, hold it, and drag through it ── */
     .tl { position: sticky; bottom: 16px; z-index: 5; display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; margin: 18px 0 0; padding: 12px 14px; border-radius: 20px; background: var(--pl-ink); color: var(--pl-paper); box-shadow: 0 14px 30px -16px rgb(0 0 0 / .5); }
-    .tl b { font: 600 14px/1 var(--pl-round); }
+    .tl b { font: var(--pl-round-w, 600) 14px/1 var(--pl-round); }
     .tl .grp { display: inline-flex; gap: 2px; padding: 3px; border-radius: 12px; background: color-mix(in oklab, var(--pl-paper) 14%, transparent); }
-    .tl button { padding: 7px 10px; border-radius: 9px; font: 600 13px/1 var(--pl-round); color: inherit; }
+    .tl button { padding: 7px 10px; border-radius: 9px; font: var(--pl-round-w, 600) 13px/1 var(--pl-round); color: inherit; }
     .tl button:hover { background: color-mix(in oklab, var(--pl-paper) 16%, transparent); }
     .tl button[aria-pressed="true"] { background: var(--pl-paper); color: var(--pl-ink); }
     .tl input[type="range"] { flex: 1; min-width: 180px; accent-color: var(--pl-pink); }

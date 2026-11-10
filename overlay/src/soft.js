@@ -16,12 +16,13 @@ export const SOFT_CSS = `
        lit       one light, from above: a bright rim along the top edge, a darker one along the bottom, and a
                  shadow of the block's own colour on the ground
        weight    it sits on a side of its own strong colour; pointed at, it comes straight up to meet the finger
-       the side  is painted only under the lower half of the block, so when the top is pressed down and squashed
-                 nothing of the side shows above it
+       the side  fades in down the block and is solid only under its lower part, so when the top is pressed down
+                 and squashed nothing of the side shows above it, and when it stretches thin no hard step
+                 shows at its edges
        answers   pressed, it goes down onto its side and squashes a hair wider; let go, it springs back past where
                  it was and settles. That part is the script below (soften) */
     .s-box { --h: var(--pl-pink); --hs: var(--pl-pink-soft); --hi: var(--pl-pink-ink); --side: var(--h); --lift: 7px;
-      position: relative; display: block; padding-top: 7px; border-radius: 28px; background: linear-gradient(var(--side), var(--side)) bottom / 100% 50% no-repeat; color: var(--hi); text-decoration: none; -webkit-tap-highlight-color: transparent;
+      position: relative; display: block; padding-top: 7px; border-radius: 28px; background: linear-gradient(180deg, transparent 25%, var(--side) 60%); color: var(--hi); text-decoration: none; -webkit-tap-highlight-color: transparent;
       box-shadow: 0 16px 24px -14px color-mix(in oklab, var(--h) 70%, transparent), 0 3px 5px -2px color-mix(in oklab, var(--h) 40%, transparent);
       transition: box-shadow 300ms var(--pl-ease-out); }
     .s-box[data-hue="sky"] { --h: var(--pl-sky); --hs: var(--pl-sky-soft); --hi: var(--pl-sky-ink); }
@@ -34,7 +35,7 @@ export const SOFT_CSS = `
       box-shadow: inset 0 2px 0 0 color-mix(in oklab, #fff 75%, transparent), inset 0 -2.5px 0 0 color-mix(in oklab, var(--h) 22%, transparent);
       transform: translateY(calc(-1 * var(--lift))); transform-origin: 50% 100%; transition: transform 320ms var(--pl-spring-pop); will-change: transform; }
     ${dark('.s-box .in', 'background: linear-gradient(180deg, color-mix(in oklab, var(--hs) 88%, #fff), var(--hs)); box-shadow: inset 0 2px 0 0 color-mix(in oklab, #fff 22%, transparent), inset 0 -2.5px 0 0 color-mix(in oklab, #000 22%, transparent);')}
-    .s-box .in b { font: 600 24px/27px var(--pl-round); }
+    .s-box .in b { font: var(--pl-round-w, 600) 24px/27px var(--pl-round); }
     .s-box .in em { margin-top: 5px; font: 600 14.5px/20px var(--pl-sans); font-style: normal; opacity: .86; }
     .s-box .plate { display: grid; place-items: center; width: 64px; height: 64px; margin-bottom: 14px; border-radius: 19px; background: var(--pl-paper); transform-origin: 50% 100%;
       box-shadow: 0 5px 8px -5px color-mix(in oklab, var(--h) 75%, transparent), inset 0 -2px 0 0 color-mix(in oklab, var(--h) 14%, transparent);
@@ -54,14 +55,14 @@ export const SOFT_CSS = `
     .s-box.soon .toy, .s-box.soon:hover .toy { --big: 1; width: 24px; height: 24px; filter: grayscale(1); opacity: .6; }
     .s-box.soon .in b { font-size: 17px; line-height: 21px; }
     .s-box.soon .in em { font-size: 13px; line-height: 18px; opacity: .8; }
-    .s-box .when { position: absolute; top: 14px; right: 14px; padding: 4px 9px; border-radius: 10px; font: 700 11.5px/1.2 var(--pl-round); font-style: normal; background: color-mix(in oklab, var(--pl-ink) 7%, transparent); color: var(--pl-ink-2); }
+    .s-box .when { position: absolute; top: 14px; right: 14px; padding: 4px 9px; border-radius: 10px; font: var(--pl-round-w2, 700) 11.5px/1.2 var(--pl-round); font-style: normal; background: color-mix(in oklab, var(--pl-ink) 7%, transparent); color: var(--pl-ink-2); }
 
     /* ── a button is the same block, small. The action keeps the strong colour on top: it is the one loud thing ── */
     .s-btn { --h: var(--pl-pink); --side: color-mix(in oklab, var(--h) 70%, #000); --lift: 4px;
-      position: relative; display: inline-block; box-sizing: border-box; margin: 0; padding: 4px 0 0; border: 0; border-radius: 14px; background: linear-gradient(var(--side), var(--side)) bottom / 100% 50% no-repeat; cursor: pointer; text-decoration: none; -webkit-tap-highlight-color: transparent; user-select: none;
+      position: relative; display: inline-block; box-sizing: border-box; margin: 0; padding: 4px 0 0; border: 0; border-radius: 14px; background: linear-gradient(180deg, transparent 25%, var(--side) 60%); cursor: pointer; text-decoration: none; -webkit-tap-highlight-color: transparent; user-select: none;
       box-shadow: 0 9px 12px -8px color-mix(in oklab, var(--h) 75%, transparent); transition: box-shadow 240ms var(--pl-ease-out); }
     .s-btn > span { display: flex; align-items: center; justify-content: center; gap: 7px; padding: 10px 16px; border-radius: 14px; background: linear-gradient(180deg, color-mix(in oklab, var(--h) 88%, #fff), var(--h)); color: var(--pl-pink-on); white-space: nowrap;
-      font: 600 15px/1 var(--pl-round); box-shadow: inset 0 1.5px 0 0 color-mix(in oklab, #fff 45%, transparent), inset 0 -2px 0 0 color-mix(in oklab, #000 12%, transparent);
+      font: var(--pl-round-w, 600) 15px/1 var(--pl-round); box-shadow: inset 0 1.5px 0 0 color-mix(in oklab, #fff 45%, transparent), inset 0 -2px 0 0 color-mix(in oklab, #000 12%, transparent);
       transform: translateY(calc(-1 * var(--lift))); transform-origin: 50% 100%; transition: transform 300ms var(--pl-spring-pop); will-change: transform; }
     .s-btn:hover, .s-btn.hov { --lift: 6px; box-shadow: 0 14px 16px -10px color-mix(in oklab, var(--h) 75%, transparent); }
     .s-btn.down { box-shadow: 0 3px 5px -4px color-mix(in oklab, var(--h) 75%, transparent); }
