@@ -650,6 +650,12 @@ race, built for the old in-place write) was rewritten for the new write path (`e
 - **"add a bit of noise onto the cards":** the coloured soft cards now have a fine grain on their face (an SVG
   fractal noise, grey, blended as overlay at 32%), under the words and only on cards with their colour; cards not drawn
   yet stay plain. One rule in the soft block, so every card gets it in both schemes.
+- **"did changing the colour in dark mode also affect light? they look too washed out":** no light value had
+  changed (checked in every token edit of the day), and the grain made no visible difference. The light cards had
+  always used the pale chip tint (about 15% colour); next to the richer night cards it read washed out. A first try
+  at more colour mixed the strong hue with white and came out grey; the second kept the hue and added colour at a
+  slightly lower lightness, every hue by the same amount so mint didn't turn neon. The owner picked "More colour".
+  It is a token of its own, `--pl-<hue>-face`, so chips keep their pale tint; at night the face is the `-soft` tone.
 
 ## Open gaps
 - White on the pink and mint buttons is under 4.5:1 in light (3.36, 3.85); dark now passes, just. Nothing yet stops the faintest ink being used for text again.

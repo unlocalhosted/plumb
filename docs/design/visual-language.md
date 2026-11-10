@@ -204,3 +204,9 @@ is lettered in `--pl-<hue>-block-on`. Light: the hue, lettered in its `-on`. Nig
 white. The night `-soft` tones are "Between 2" (owner, 2026-11-10): white letters at 4.6:1 or more, more colour than
 a greyed mid-tone, a step short of the full hue, which glared. Never dark lettering on a night block, never a darkened
 or greyed block. Night values: pink #d42e87, mint #21834f, coral #d83422, sky #1d77c8, lilac #775ceb, butter #976b0f.
+
+## Card faces (2026-11-10)
+A block you go to (a part's card, a callout) has a face colour of its own, `--pl-<hue>-face`, separate from the chip
+tint `--pl-<hue>-soft`. Light: the hue with more colour than the chip tint, a little darker, never mixed toward grey
+("More colour": pink #ffbdd7, sky #b5d7ff, butter #ffd98a, mint #99f0bf, lilac #d1cfff, coral #ffc1b3), lettered in
+the hue's ink. Night: the `-soft` tone, lettered in white.

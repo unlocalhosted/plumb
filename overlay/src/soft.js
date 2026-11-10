@@ -21,14 +21,14 @@ export const SOFT_CSS = `
                  shows at its edges
        answers   pressed, it goes down onto its side and squashes a hair wider; let go, it springs back past where
                  it was and settles. That part is the script below (soften) */
-    .s-box { --h: var(--pl-pink); --hs: var(--pl-pink-soft); --hi: var(--pl-pink-ink); --side: var(--h); --lift: 7px;
+    .s-box { --h: var(--pl-pink); --hs: var(--pl-pink-face); --hi: var(--pl-pink-ink); --side: var(--h); --lift: 7px;
       position: relative; display: block; padding-top: 7px; border-radius: 28px; background: linear-gradient(180deg, transparent 25%, var(--side) 60%); color: var(--hi); text-decoration: none; -webkit-tap-highlight-color: transparent;
       box-shadow: 0 16px 24px -14px color-mix(in oklab, var(--h) 70%, transparent), 0 3px 5px -2px color-mix(in oklab, var(--h) 40%, transparent);
       transition: box-shadow 300ms var(--pl-ease-out); }
-    .s-box[data-hue="sky"] { --h: var(--pl-sky); --hs: var(--pl-sky-soft); --hi: var(--pl-sky-ink); }
-    .s-box[data-hue="butter"] { --h: var(--pl-butter); --hs: var(--pl-butter-soft); --hi: var(--pl-butter-ink); }
-    .s-box[data-hue="mint"] { --h: var(--pl-mint); --hs: var(--pl-mint-soft); --hi: var(--pl-mint-ink); }
-    .s-box[data-hue="lilac"] { --h: var(--pl-lilac); --hs: var(--pl-lilac-soft); --hi: var(--pl-lilac-ink); }
+    .s-box[data-hue="sky"] { --h: var(--pl-sky); --hs: var(--pl-sky-face); --hi: var(--pl-sky-ink); }
+    .s-box[data-hue="butter"] { --h: var(--pl-butter); --hs: var(--pl-butter-face); --hi: var(--pl-butter-ink); }
+    .s-box[data-hue="mint"] { --h: var(--pl-mint); --hs: var(--pl-mint-face); --hi: var(--pl-mint-ink); }
+    .s-box[data-hue="lilac"] { --h: var(--pl-lilac); --hs: var(--pl-lilac-face); --hi: var(--pl-lilac-ink); }
     ${dark('.s-box', '--side: color-mix(in oklab, var(--hs) 58%, #000);')}
     /* the top. Anchored at its bottom edge, because it is pressed down against its side */
     .s-box .in { position: relative; display: flex; flex-direction: column; padding: 18px; border-radius: 28px; background: linear-gradient(180deg, color-mix(in oklab, var(--hs) 82%, #fff), var(--hs));

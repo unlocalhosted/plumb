@@ -36,6 +36,10 @@
   --pl-sky-on: #ffffff; --pl-coral-on: #ffffff; --pl-mint-on: #ffffff; --pl-pink-on: #ffffff; --pl-lilac-on: #ffffff;
   --pl-butter-on: var(--pl-butter-ink);   /* yellow can't hold white */
   --pl-cut: #ffffff;                      /* a hole cut in a solid body */
+  /* a card's face: the colour of a block you go to (a part, a callout). Light: the hue with more colour than the
+     chip tint (-soft), a little darker, never mixed toward grey (owner, 2026-11-10: "More colour"). Night: the -soft
+     tone, lettered in white */
+  --pl-pink-face: #ffbdd7; --pl-sky-face: #b5d7ff; --pl-butter-face: #ffd98a; --pl-mint-face: #99f0bf; --pl-lilac-face: #d1cfff; --pl-coral-face: #ffc1b3;
   /* a block of colour you press (a button's top, the page you are on): its hue and its lettering. Light: the hue,
      lettered in its -on. Night: the hue's -soft tone lettered in white (owner, 2026-11-10, "Between 2": white letters,
      more colour than a greyed mid-tone, a step short of the full hue that glared) */
@@ -185,6 +189,7 @@
     --pl-lilac: #b9a6ff;  --pl-lilac-soft: #775ceb;  --pl-lilac-ink: #ffffff;
     --pl-sky-on: #0b3554; --pl-coral-on: #5c160e; --pl-mint-on: #0b3d26; --pl-pink-on: #5a0d3c; --pl-lilac-on: #2b1a6b; --pl-butter-on: #5c3a00;
     --pl-cut: #1f1e1d;
+    --pl-pink-face: var(--pl-pink-soft); --pl-sky-face: var(--pl-sky-soft); --pl-butter-face: var(--pl-butter-soft); --pl-mint-face: var(--pl-mint-soft); --pl-lilac-face: var(--pl-lilac-soft); --pl-coral-face: var(--pl-coral-soft);
     --pl-pink-block: var(--pl-pink-soft);   --pl-pink-block-on: var(--pl-pink-ink);
     --pl-mint-block: var(--pl-mint-soft);   --pl-mint-block-on: var(--pl-mint-ink);
     --pl-coral-block: var(--pl-coral-soft); --pl-coral-block-on: var(--pl-coral-ink);
@@ -217,6 +222,7 @@
     --pl-lilac: #b9a6ff;  --pl-lilac-soft: #775ceb;  --pl-lilac-ink: #ffffff;
     --pl-sky-on: #0b3554; --pl-coral-on: #5c160e; --pl-mint-on: #0b3d26; --pl-pink-on: #5a0d3c; --pl-lilac-on: #2b1a6b; --pl-butter-on: #5c3a00;
     --pl-cut: #1f1e1d;
+    --pl-pink-face: var(--pl-pink-soft); --pl-sky-face: var(--pl-sky-soft); --pl-butter-face: var(--pl-butter-soft); --pl-mint-face: var(--pl-mint-soft); --pl-lilac-face: var(--pl-lilac-soft); --pl-coral-face: var(--pl-coral-soft);
     --pl-pink-block: var(--pl-pink-soft);   --pl-pink-block-on: var(--pl-pink-ink);
     --pl-mint-block: var(--pl-mint-soft);   --pl-mint-block-on: var(--pl-mint-ink);
     --pl-coral-block: var(--pl-coral-soft); --pl-coral-block-on: var(--pl-coral-ink);
