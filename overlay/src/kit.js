@@ -11,7 +11,7 @@ export const BUTTON_CSS = `
        back. The base never moves, so nothing around the button shifts. */
     .tb { --hue: var(--pl-pink); --base: color-mix(in oklab, var(--pl-pink) 68%, var(--pl-pink-ink)); --on: #fff; --lift: 3px; --h: 36px;
       all: unset; position: relative; display: inline-block; box-sizing: border-box; height: calc(var(--h) + 3px); padding-top: 3px; border-radius: 12px; cursor: pointer;
-      background: var(--base); font: 600 13px/1 var(--pl-sans); color: var(--on); -webkit-tap-highlight-color: transparent; user-select: none; }
+      background: var(--base); font: 700 13.5px/1 var(--pl-round); letter-spacing: 0.005em; color: var(--on); -webkit-tap-highlight-color: transparent; user-select: none; }
     .tb .top { display: flex; align-items: center; justify-content: center; gap: 7px; height: var(--h); padding: 0 14px; box-sizing: border-box; border-radius: 12px; background: var(--hue);
       translate: 0 calc(-1 * var(--lift)); transition: translate 260ms var(--pl-spring-pop), background-color 200ms var(--pl-ease-out); white-space: nowrap; }
     .tb:hover, .tb[data-show="hover"] { --lift: 4px; }

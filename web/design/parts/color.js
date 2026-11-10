@@ -98,10 +98,6 @@ export function mount(host, root, css) {
     @media (max-width: 720px) { .steps { grid-template-columns: 1fr; } .steps div { border-left: 0; border-top: 1px solid var(--pl-rule); } .tr { grid-template-columns: 1fr 1fr; } .tr.th span:nth-child(2), .tr .for { display: none; } }
     @media (prefers-reduced-motion: reduce) { .hue .toy { transition: none; } }
   </style>${TOY_DEFS}
-  <a class="back" href="/design">← The kit</a>
-  <div class="head"><h1>Colour</h1>${button('Dark', { cls: 'sm quiet', attrs: 'id="scheme"' })}</div>
-  <p class="lede">Six hues with one meaning each, a handful of warm neutrals, and the roles that parts ask for. Every table on this page is read from the token file itself, so it can’t disagree with the product.</p>
-
   <h2>How the system works</h2>
   <div class="prose">
     <p>Colour is in two layers. <b>Hues</b> are the raw palette: six of them, each with three values (the hue, its <b>soft</b>, its <b>ink</b>), plus seven neutrals for surfaces and words. <b>Roles</b> sit on top and point at a hue by purpose: what the colour is <i>for</i>, never what it looks like. <code>--pl-action</code> says “the thing you can press”, not “pink”.</p>
@@ -133,7 +129,7 @@ export function mount(host, root, css) {
   </ul>`;
 
   const flip = () => host.dispatchEvent(new CustomEvent('kit:flip', { bubbles: true }));
-  root.getElementById('scheme').onclick = flip; root.getElementById('flip').onclick = flip;
+  root.getElementById('flip').onclick = flip;
   // a token name copies itself
   const copy = (el) => { navigator.clipboard?.writeText(el.textContent).catch(() => {}); el.setAttribute('data-copied', ''); setTimeout(() => el.removeAttribute('data-copied'), 900); };
   root.addEventListener('click', (e) => { const t = e.target.closest('.tok'); if (t) copy(t); });

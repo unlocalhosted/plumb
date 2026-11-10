@@ -27,16 +27,20 @@ export function useScheme() {
   return [scheme, flip];
 }
 
+// the mark: a plumb bob on its line
+const BOB = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.500v6" fill="none" stroke="var(--pl-ink)" stroke-width="2.200" stroke-linecap="round"/><path d="M6.200 8.800h11.600L12 22z" fill="var(--pl-pink)" stroke="var(--pl-pink)" stroke-width="2.400" stroke-linejoin="round"/><circle cx="12" cy="12.400" r="1.700" fill="#fff"/></svg>';
+
 export function Bar() {
   const path = usePathname();
   const [scheme, flip] = useScheme();
+  const here = (href) => (href === '/' ? path === '/' : path.startsWith(href));
   return (
     <header className="bar">
-      <Link className="name" href="/"><i aria-hidden="true" />React Plumber</Link>
+      <Link className="name" href="/"><i className="toy" style={{ width: 26, height: 26 }} dangerouslySetInnerHTML={{ __html: BOB }} />React Plumber</Link>
       <nav aria-label="Site">
-        {PLACES.map(([href, text]) => <Link key={href} href={href} aria-current={(href === '/' ? path === '/' : path.startsWith(href)) ? 'page' : undefined}>{text}</Link>)}
+        {PLACES.map(([href, text]) => <Link key={href} href={href} className={`key ${here(href) ? 'on' : 'bare'}`} aria-current={here(href) ? 'page' : undefined}><span>{text}</span></Link>)}
       </nav>
-      <span className="end"><button type="button" onClick={flip}>{scheme === 'dark' ? 'Light' : 'Dark'}</button></span>
+      <span className="end"><button type="button" className="key" onClick={flip} aria-label={scheme === 'dark' ? 'Switch to light' : 'Switch to dark'}><span>{scheme === 'dark' ? 'Light' : 'Dark'}</span></button></span>
     </header>
   );
 }

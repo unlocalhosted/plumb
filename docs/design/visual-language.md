@@ -1,6 +1,6 @@
 # The visual language: toys
 
-Status: proposed, 2026-11-10. The living sheet is `overlay/demo/icons.html` (run the overlay demo, open `/icons.html`).
+Status: proposed, 2026-11-10. The living system is the site's design section (`web/`, run `npx next dev web`, open `/design`), which is drawn with it.
 This page is the source for anything drawn in React Plumber: icons, marks on the page, controls, bars, empty states,
 illustrations. If a new piece can't be explained by this page, the page is changed first, then the piece is drawn.
 
@@ -67,6 +67,34 @@ The hues are the overlay's own (`overlay/src/tokens.css`). Each has three values
 - **Depth:** a second body offset down and right, in ink at about 30%, and only where depth is the meaning (shadow, a
   pressed key).
 
+## Type
+
+Two faces, each with one job.
+
+- **The toy face** (`--pl-round`): rounded and heavy. For what a toy would have printed on it: a title, a name, a
+  button, a number. Never for a paragraph. The site ships Fredoka for it; the overlay, which may not fetch a font
+  inside someone else's app, names the system's rounded face and falls back to its plain one.
+- **The reading face** (`--pl-sans`): for sentences. The site ships Nunito, so even the reading text has soft ends.
+- **Mono** is only for real code.
+- Titles are big and few. A page has one headline (54), sections are 28, a name on a box is 24. A size that is only
+  a point or two from its neighbour is not a step; remove one.
+- Words on a solid hue are white, except on butter, which takes its own ink.
+
+## A page
+
+A page is a shelf of toys, not a document with boxes drawn around things.
+
+- **White ground.** Nothing is cream. A part is told apart by being a solid thing, not by an outline.
+- **No outlined cards.** A pale fill with a hairline around it is a wireframe (rule 2). A section is a heading and
+  what is under it, with room around it. Where a ground is needed (a row of tiles, a table), it is the one inset
+  tone, with no edge.
+- **Things you can go to are boxes you can pick up:** solid in their hue, on a base, with their toy on a white
+  plate and their name in the toy face. They rise when pointed at and go down when pressed, like a button.
+- **What isn't there yet is pale and flat** (rule 7), with its toy faded. It doesn't pretend to be pressable.
+- **The current place is pink**, because pink is "what is current". Other places are plain words until pointed at.
+- **Every page opens the same way:** its toy, large, beside its name; one or two sentences under it.
+- **Room.** 52 or more between sections; 16 to 18 between boxes. Crowding reads as cheap.
+
 ## The three patterns
 
 | Space | Pattern | Hue | How it is drawn |
@@ -131,4 +159,5 @@ Pictures are learnt, so the words are always one hover away.
 - The set lives on the review sheet only. The overlay still uses the grey line icons (`BLOCK_ICONS`, the family glyphs,
   the words card's and the editor's private sets).
 - Breadcrumb, pagination, skeleton and label are the weakest on the sheet.
-- The dark scheme's lifted surfaces are a trial in the comps, not yet in `tokens.css`.
+- The overlay's own cards still set their titles in the plain face. `--pl-round` is in the token file and used by the
+  site and the toy button only.

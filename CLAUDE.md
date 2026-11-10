@@ -12,5 +12,5 @@ the next one right after the assignment.
 ## Look
 
 Anything drawn (an icon, a mark, a control, a state) follows `docs/design/visual-language.md`: solid toys in the
-overlay's hues, details cut out or drawn on, patterns only for space, words on hover. The sheet is
-`overlay/demo/icons.html`. If a piece can't be explained by that page, change the page first.
+overlay's hues, details cut out or drawn on, patterns only for space, words on hover, the toy face for titles and
+names, no outlined cards. The living system is the site's design section (`web/`, `/design`), drawn with it. If a piece can't be explained by that page, change the page first.

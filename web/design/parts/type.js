@@ -88,10 +88,6 @@ export function mount(host, root, css) {
     .open b { color: var(--pl-ink); font-weight: 600; }
     @media (max-width: 720px) { .style { grid-template-columns: 1fr; gap: 10px; } .tr { grid-template-columns: 1fr 1fr; } .tr .for { display: none; } }
   </style>
-  <a class="back" href="/design">← The kit</a>
-  <div class="head"><h1>Type</h1>${button('Dark', { cls: 'sm quiet', attrs: 'id="scheme"' })}</div>
-  <p class="lede">Twelve styles in two families: five for anything the size of a card, seven for a page. System faces only, so the overlay never fetches a font. Every style here is read from the token file itself.</p>
-
   <h2>How the system works</h2>
   <div class="prose">
     <p>Every style is <b>one token that sets everything at once</b>: weight, size, line height and face, as a single <code>font</code> value. You write <code>font: var(--pl-card-title)</code>. You never put a size, a weight and a line height together by hand, so two parts can’t end up almost the same.</p>
@@ -106,9 +102,9 @@ export function mount(host, root, css) {
   ${FAMILIES.map(([title, why, names]) => `<h2>${title}</h2><p>${why}</p><div class="styles">${names.map(style).join('')}</div>`).join('')}
 
   <h2>Faces and spacing between letters</h2>
-  <p>Two faces, both the system’s own. Four letter-spacing values, each tied to a job.</p>
+  <p>Three faces, all the system’s own. Four letter-spacing values, each tied to a job.</p>
   <div class="tbl" role="table"><div class="tr th" role="row"><span>Token</span><span>What it is for</span><span>Value</span></div>
-    ${row('sans', 'the system’s sans')}${row('mono', 'the system’s mono')}
+    ${row('round', 'the system’s rounded face')}${row('sans', 'the system’s sans')}${row('mono', 'the system’s mono')}
     ${['tracking-display', 'tracking-title', 'tracking-label', 'tracking-caps'].map((n) => row(n)).join('')}</div>
 
   <h2>What is still open</h2>
@@ -116,11 +112,11 @@ export function mount(host, root, css) {
     <li><b>Four sizes within three pixels.</b> 11, 12, 13 and 14 all live on a card. Side by side, 12 and 13 are hard to tell apart; the scale would be clearer with one of them gone.</li>
     <li><b>Three older names still exist.</b> <code>--pl-text-title</code>, <code>--pl-text-row</code> and <code>--pl-text-reading</code> duplicate card styles and should be removed once nothing uses them.</li>
     <li><b>The label is the only style not named for where it lives.</b> <code>--pl-text-label</code> should be <code>--pl-card-label</code>.</li>
-    <li><b>The toy language hasn’t reached type yet.</b> The icons and buttons are rounder and bolder than these styles. Whether headings get heavier, or a rounder face, is not decided.</li>
+    <li><b>The round face is on the site and on buttons, not yet in the product’s cards.</b> <code>--pl-round</code> is in the token file; the card and page styles above still name the plain face. Moving titles and names to it is the next step.</li>
+    <li><b>No rounded face on some systems.</b> Apple’s systems have one. Where there is none, the list falls back to the system’s plain face, so the feeling is lost there unless the site ships a font of its own.</li>
   </ul>`;
 
   const flip = () => host.dispatchEvent(new CustomEvent('kit:flip', { bubbles: true }));
-  root.getElementById('scheme').onclick = flip;
   const copy = (el) => { navigator.clipboard?.writeText(el.textContent).catch(() => {}); el.setAttribute('data-copied', ''); setTimeout(() => el.removeAttribute('data-copied'), 900); };
   root.addEventListener('click', (e) => { const t = e.target.closest('.tok'); if (t) copy(t); });
   root.addEventListener('keydown', (e) => { const t = e.target.closest?.('.tok'); if (t && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); copy(t); } });

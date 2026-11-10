@@ -1,15 +1,25 @@
 import Link from 'next/link';
+import { Toy } from '../site/Toy.jsx';
+
+const PLACES = [
+  { href: '/design', hue: 'pink', toy: 'icon', name: 'Design', says: 'The design system this site is drawn with.', ready: true },
+  { href: '/docs', hue: 'sky', toy: 'text', name: 'Docs', says: 'Install it, run it, read what it tells you.' },
+  { href: '/demo', hue: 'mint', toy: 'cursor', name: 'Demo', says: 'A page that moves, with the overlay on it.' },
+  { href: '/', hue: 'lilac', toy: 'image', name: 'Homepage', says: 'The product page.' },
+];
 
 export default function Home() {
   return (
     <main className="wrap">
-      <h1>React Plumber</h1>
-      <p className="lede">Keep your app on your design system. This is the new home of the site: the homepage, the docs with a live demo, and the design system, in one place.</p>
-      <div className="tiles">
-        <Link className="tile" href="/design"><b>Design</b><span>The design system: colour, type, icons, buttons, the fix bar.</span><em className="review">here</em></Link>
-        <div className="tile"><b>Homepage</b><span>The product page. Still in <code>homepage/</code>; moves here next.</span><em className="soon">to move</em></div>
-        <Link className="tile" href="/docs"><b>Docs</b><span>How to install and use it. Still in <code>site/</code>; moves here next.</span><em className="soon">to move</em></Link>
-        <Link className="tile" href="/demo"><b>Demo</b><span>A page that moves, with the overlay on it.</span><em className="soon">to move</em></Link>
+      <div className="title"><h1>Keep your app on your design system.</h1></div>
+      <p className="lede">React Plumber shows where a page drifts from your scale and fixes it in your code. This is the new home of the site. <b>Design is here</b>; the rest moves in next.</p>
+      <div className="boxes">
+        {PLACES.map((p) => {
+          const inside = <span><span className="plate"><Toy name={p.toy} size={p.ready ? 42 : 30} /></span><b>{p.name}</b><em>{p.says}</em></span>;
+          return p.ready
+            ? <Link key={p.name} className="box" data-hue={p.hue} href={p.href}>{inside}</Link>
+            : <div key={p.name} className="box later" data-hue={p.hue}>{inside}<i className="when">moving in</i></div>;
+        })}
       </div>
     </main>
   );

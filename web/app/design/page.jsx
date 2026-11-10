@@ -1,21 +1,25 @@
 import Link from 'next/link';
 import { GROUPS } from '../../design/registry.js';
+import { Toy } from '../../site/Toy.jsx';
 
 export const metadata = { title: 'Design' };
+
+function Box({ part }) {
+  const inside = <span><span className="plate"><Toy name={part.toy} size={part.ready ? 42 : 30} /></span><b>{part.name}</b><em>{part.says}</em></span>;
+  return part.ready
+    ? <Link className="box" data-hue={part.hue} href={`/design/${part.id}`}>{inside}</Link>
+    : <div className="box later" data-hue={part.hue}>{inside}<i className="when">to draw</i></div>;
+}
 
 export default function Design() {
   return (
     <main className="wrap">
-      <h1>Design</h1>
-      <p className="lede">React Plumber’s design system, one page per part, drawn with the product’s own code and tokens. A part is done when its page shows every state.</p>
+      <div className="title"><Toy name="grid" size={56} /><h1>Design</h1></div>
+      <p className="lede">React Plumber’s design system, one box per part. <b>This site is drawn with it</b>: the same tokens, the same toys, the same buttons the product ships.</p>
       {GROUPS.map(([title, parts]) => (
         <section key={title}>
-          <h2>{title}</h2>
-          <div className="tiles">
-            {parts.map((p) => p.ready
-              ? <Link key={p.id} className="tile" href={`/design/${p.id}`}><b>{p.name}</b><span>{p.says}</span><em className="review">in review</em></Link>
-              : <div key={p.id} className="tile"><b>{p.name}</b><span>{p.says}</span><em className="todo">to draw</em></div>)}
-          </div>
+          <h2 className="shelf">{title}<small>{parts.filter((p) => p.ready).length} of {parts.length} drawn</small></h2>
+          <div className="boxes">{parts.map((p) => <Box key={p.id} part={p} />)}</div>
         </section>
       ))}
     </main>
