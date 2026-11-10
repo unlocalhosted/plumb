@@ -104,8 +104,41 @@ and the overlay reads the code. Proof: the codes asserted through HTTP in three 
 **Media hooks.** The before/after of the census test (8 seconds each); the count "23 files parse a stamp by hand";
 the fix panel's "NaN copies" against the right number.
 
+## Chapter 4 · Every Apply reloaded the page, and it was us (2026-11-10)
+
+**The itch.** The owner: "even in vite, during apply changes the whole app reloads, this is not the experience i
+like to have".
+
+**How we found it.** A throwaway script: a page with a clicked counter and a typed input, a write, then count the
+page's `load` events and read the hot-update socket. A plain class change hot-swapped in an app with Fast Refresh.
+An Apply with a theme token did not: the socket showed `full-reload`, sent by our own Vite plugin. Logging what the
+plugin held showed the file behind it: `.plumber/cache/changes.jsonl`.
+
+**The system behind it.** Three things, one of them ours and silly. Our plugin reloaded the page for any written
+file that no module reads, and our own change log is such a file, written by every traced Apply. It also reloaded
+for theme stylesheets on a guess that measuring disproved. And the demo and 85 test fixtures run with no Fast
+Refresh at all, so we built and tested the overlay on a page that always reloads, and grew a whole "put back what
+was open after the reload" machinery around it, which is where the flaky history tests came from (chapter 3's
+last gap).
+
+**What we tried, what we chose.** First try: stop forcing a reload for theme stylesheets. The measurement script
+went green, the real test did not; the change log was still forcing it. Second: only the page's own HTML forces a
+reload. That broke the "exactly one reload" promise for apps without Fast Refresh (Vite reloaded once per module),
+so the plugin now checks, as Vite does, whether something accepts each held module, and sends one reload when
+something does not. Considered and not chosen: patching the DOM ourselves when nothing accepts the update; it would
+hide a page that disagrees with its file.
+
+**The fix and the proof.** `src/hosts/vite.ts` (d379af4). `e2e/apply-all-hot.test.mjs`: with Fast Refresh, an Apply
+that adds a token and changes two files causes no reload, the counter still says "clicked 1" and the typed words
+are still there; without it, one reload as before. The plan for the rest: `docs/briefs/no-reload-writes.md`.
+
+**Media hooks.** A screen recording: type in a field, press Apply, the words stay (before: the page blinks and the
+field is empty). The table of five writes, before and after.
+
 ## Open gaps
 
+- Writes without a reload: the demo and the fixtures still run with no Fast Refresh; Next (webpack, Turbopack) is
+  not measured; no readiness row says "Fast Refresh is off". See `docs/briefs/no-reload-writes.md`.
 - Engine architecture: eight proposed steps in `docs/briefs/engine-architecture-review.md`, none built, waiting on
   the owner's order.
 - Still failing and not diagnosed: `decisions-spacing` (spacing policies).
