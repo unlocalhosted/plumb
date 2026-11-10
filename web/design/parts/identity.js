@@ -53,7 +53,11 @@ export function mount(host, root, css) {
     .s-box { --h: var(--pl-pink); --hs: var(--pl-pink-soft); --hi: var(--pl-pink-ink); --side: var(--h); --lift: 7px; --rx: 0deg; --ry: 0deg; --gx: 50%; --gy: 0%;
       position: relative; display: block; width: 250px; max-width: 100%; padding-top: 7px; border-radius: 28px; background: var(--side); color: var(--hi);
       box-shadow: 0 16px 24px -14px color-mix(in oklab, var(--h) 70%, transparent), 0 3px 5px -2px color-mix(in oklab, var(--h) 40%, transparent);
-      transform: rotateX(var(--rx)) rotateY(var(--ry)); transform-style: preserve-3d; transition: transform 500ms var(--pl-spring-pop), box-shadow 300ms var(--pl-ease-out); }
+      transform: rotateX(var(--rx)) rotateY(var(--ry)); transform-style: preserve-3d; transition: transform 500ms var(--pl-spring-pop), box-shadow 300ms var(--pl-ease-out);
+      /* a block is always on its own layers: lifted into 3D only while pointed at, its words were redrawn (a visible
+         flicker) each time it went flat again */
+      will-change: transform; backface-visibility: hidden; }
+    .s-box .in, .s-box .plate, .s-box .toy, .s-box b, .s-box em { will-change: transform; backface-visibility: hidden; }
     .s-box[data-hue="sky"] { --h: var(--pl-sky); --hs: var(--pl-sky-soft); --hi: var(--pl-sky-ink); }
     .s-box[data-hue="butter"] { --h: var(--pl-butter); --hs: var(--pl-butter-soft); --hi: var(--pl-butter-ink); }
     .s-box[data-hue="mint"] { --h: var(--pl-mint); --hs: var(--pl-mint-soft); --hi: var(--pl-mint-ink); }
@@ -61,25 +65,62 @@ export function mount(host, root, css) {
     :host([data-scheme="dark"]) .s-box { --side: color-mix(in oklab, var(--hs) 58%, #000); }
     .s-box .in { position: relative; padding: 18px; border-radius: 28px; background: linear-gradient(180deg, color-mix(in oklab, var(--hs) 82%, #fff), var(--hs));
       box-shadow: inset 0 2px 0 0 color-mix(in oklab, #fff 75%, transparent), inset 0 -2.5px 0 0 color-mix(in oklab, var(--h) 22%, transparent);
-      transform: translateY(calc(-1 * var(--lift))); transform-style: preserve-3d; transition: transform 320ms var(--pl-spring-pop); }
+      transform: translateY(calc(-1 * var(--lift))); transform-origin: 50% 100%; transform-style: preserve-3d; transition: transform 320ms var(--pl-spring-pop); }
     :host([data-scheme="dark"]) .s-box .in { background: linear-gradient(180deg, color-mix(in oklab, var(--hs) 88%, #fff), var(--hs)); box-shadow: inset 0 2px 0 0 color-mix(in oklab, #fff 22%, transparent), inset 0 -2.5px 0 0 color-mix(in oklab, #000 22%, transparent); }
     /* the light: a soft glint that follows the pointer across the top */
     .s-box .in::after { content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; opacity: 0; transition: opacity 240ms var(--pl-ease-out);
       background: radial-gradient(180px circle at var(--gx) var(--gy), color-mix(in oklab, #fff 70%, transparent), transparent 70%); }
     .s-box:hover .in::after { opacity: .55; }
-    .s-box .plate { display: grid; place-items: center; width: 64px; height: 64px; margin-bottom: 14px; border-radius: 19px; background: var(--pl-paper);
+    .s-box .plate { display: grid; place-items: center; width: 64px; height: 64px; margin-bottom: 14px; border-radius: 19px; background: var(--pl-paper); transform-origin: 50% 100%;
       box-shadow: 0 6px 10px -6px color-mix(in oklab, var(--h) 75%, transparent), inset 0 -2px 0 0 color-mix(in oklab, var(--h) 14%, transparent);
-      transform: translateZ(0); transition: transform 420ms var(--pl-spring-pop); }
-    .s-box .toy { transition: transform 420ms var(--pl-spring-pop); }
-    .s-box b, .s-box em { transition: transform 420ms var(--pl-spring-pop); }
+      transform: translateZ(0.01px); transition: transform 420ms var(--pl-spring-pop); }
+    .s-box .toy { transform: translateZ(0.01px); transition: transform 420ms var(--pl-spring-pop); }
+    .s-box b, .s-box em { transform: translateZ(0.01px); transition: transform 420ms var(--pl-spring-pop); }
     .s-box em { opacity: .86; }
     .s-box:hover { --lift: 11px; box-shadow: 0 26px 30px -18px color-mix(in oklab, var(--h) 70%, transparent), 0 4px 6px -2px color-mix(in oklab, var(--h) 36%, transparent); }
     .s-box:hover .plate { transform: translateZ(26px); }
     .s-box:hover .toy { transform: translateZ(18px) scale(1.08); }
     .s-box:hover b { transform: translateZ(14px); }
     .s-box:hover em { transform: translateZ(8px); }
-    .s-box:active { --lift: 1px; box-shadow: 0 6px 10px -8px color-mix(in oklab, var(--h) 70%, transparent); }
-    .s-box:active .in { transform: translateY(-1px) scale(1.014, 0.982); transition-duration: 80ms; transition-timing-function: var(--pl-ease-out); }
+    /* ── the squash ──
+       A soft block is pressed from above against the ground, so it is anchored at its bottom edge and keeps its
+       volume: what it loses in height it gains in width.
+       down     90ms. It sinks onto its side, 4% shorter and 2.4% wider. Its shadow tightens to nothing: it is on the
+                ground. The plate on it is squashed too, a beat behind.
+       let go   620ms, in four beats, as a soft thing does:
+                  rebound   it shoots up past where it rests, stretched 3.5% tall and thinner
+                  settle    comes down a little wide
+                  again     a last small stretch
+                  rest
+                The toy on the plate leaves late and lands late (it is loose), with a small hop of its own.
+       The button does the same, more of it: it is smaller, so it gives more under a finger. */
+    .s-box.down { --lift: 1px; box-shadow: 0 5px 8px -7px color-mix(in oklab, var(--h) 70%, transparent); }
+    .s-box.down .in { transform: translateY(-1px) scale(1.024, 0.96); transition: transform 90ms var(--pl-ease-out); }
+    .s-box.down .plate { transform: translateZ(4px) scale(1.035, 0.94); transition: transform 110ms 20ms var(--pl-ease-out); }
+    .s-box.down .toy { transform: translateZ(2px) scale(1.04, 0.92); transition: transform 110ms 30ms var(--pl-ease-out); }
+    .s-box.rel .in { animation: s-rebound 620ms linear both; }
+    .s-box.rel .plate { animation: s-plate 620ms 30ms linear both; }
+    .s-box.rel .toy { animation: s-hop 640ms 60ms linear both; }
+    @keyframes s-rebound {
+      0%   { transform: translateY(-1px) scale(1.024, 0.96); animation-timing-function: cubic-bezier(.2, .9, .3, 1); }
+      30%  { transform: translateY(calc(-1 * var(--lift) - 5px)) scale(0.982, 1.035); animation-timing-function: cubic-bezier(.4, 0, .6, 1); }
+      56%  { transform: translateY(calc(-1 * var(--lift) + 1.5px)) scale(1.01, 0.988); animation-timing-function: cubic-bezier(.4, 0, .6, 1); }
+      78%  { transform: translateY(calc(-1 * var(--lift) - 1px)) scale(0.996, 1.006); animation-timing-function: cubic-bezier(.4, 0, .6, 1); }
+      100% { transform: translateY(calc(-1 * var(--lift))) scale(1, 1); }
+    }
+    @keyframes s-plate {
+      0%   { transform: translateZ(4px) scale(1.035, 0.94); animation-timing-function: cubic-bezier(.2, .9, .3, 1); }
+      34%  { transform: translateZ(30px) scale(0.975, 1.05); animation-timing-function: cubic-bezier(.4, 0, .6, 1); }
+      62%  { transform: translateZ(24px) scale(1.012, 0.985); animation-timing-function: cubic-bezier(.4, 0, .6, 1); }
+      100% { transform: translateZ(26px) scale(1, 1); }
+    }
+    @keyframes s-hop {
+      0%   { transform: translateZ(2px) translateY(0) scale(1.04, 0.92); animation-timing-function: cubic-bezier(.2, .9, .3, 1); }
+      36%  { transform: translateZ(22px) translateY(-7px) scale(0.96, 1.1) rotate(-6deg); animation-timing-function: cubic-bezier(.5, 0, .7, 1); }
+      64%  { transform: translateZ(18px) translateY(1px) scale(1.06, 0.94) rotate(2deg); animation-timing-function: cubic-bezier(.4, 0, .6, 1); }
+      84%  { transform: translateZ(18px) translateY(-1px) scale(0.99, 1.02) rotate(0deg); }
+      100% { transform: translateZ(18px) translateY(0) scale(1.08) rotate(0deg); }
+    }
     .s-box:focus-visible { outline: 3px solid var(--pl-sky); outline-offset: 5px; }
     /* a button is the same block, small. The action keeps the strong colour on top: it is the one loud thing */
     .s-btn { --h: var(--pl-pink); --side: color-mix(in oklab, var(--h) 70%, #000); --lift: 4px; position: relative; padding-top: 4px; border-radius: 14px; background: var(--side);
@@ -88,8 +129,17 @@ export function mount(host, root, css) {
       font: 600 15px/1 var(--pl-round); box-shadow: inset 0 1.5px 0 0 color-mix(in oklab, #fff 45%, transparent), inset 0 -2px 0 0 color-mix(in oklab, #000 12%, transparent);
       transform: translateY(calc(-1 * var(--lift))); transition: transform 300ms var(--pl-spring-pop); }
     .s-btn:hover { --lift: 6px; box-shadow: 0 14px 16px -10px color-mix(in oklab, var(--h) 75%, transparent); }
-    .s-btn:active { --lift: 0px; box-shadow: 0 3px 5px -4px color-mix(in oklab, var(--h) 75%, transparent); }
-    .s-btn:active span { transform: translateY(0) scale(1.02, 0.96); transition-duration: 70ms; transition-timing-function: var(--pl-ease-out); }
+    .s-btn span { transform-origin: 50% 100%; will-change: transform; }
+    .s-btn.down { --lift: 0px; box-shadow: 0 3px 5px -4px color-mix(in oklab, var(--h) 75%, transparent); }
+    .s-btn.down span { transform: translateY(0) scale(1.045, 0.89); transition: transform 80ms var(--pl-ease-out); }
+    .s-btn.rel span { animation: s-btn 520ms linear both; }
+    @keyframes s-btn {
+      0%   { transform: translateY(0) scale(1.045, 0.89); animation-timing-function: cubic-bezier(.2, .9, .3, 1); }
+      32%  { transform: translateY(calc(-1 * var(--lift) - 4px)) scale(0.97, 1.09); animation-timing-function: cubic-bezier(.4, 0, .6, 1); }
+      60%  { transform: translateY(calc(-1 * var(--lift) + 1px)) scale(1.015, 0.97); animation-timing-function: cubic-bezier(.4, 0, .6, 1); }
+      82%  { transform: translateY(calc(-1 * var(--lift) - .5px)) scale(0.995, 1.012); }
+      100% { transform: translateY(calc(-1 * var(--lift))) scale(1, 1); }
+    }
     .s-btn.q { --h: var(--pl-ink-3); --side: var(--pl-rule); box-shadow: 0 9px 12px -9px rgb(0 0 0 / .28); }
     .s-btn.q span { background: linear-gradient(180deg, var(--pl-paper), var(--pl-paper-2)); color: var(--pl-ink); box-shadow: inset 0 1.5px 0 0 color-mix(in oklab, #fff 90%, transparent), inset 0 0 0 1.5px var(--pl-rule); }
 
@@ -102,7 +152,7 @@ export function mount(host, root, css) {
     .f2 b { font-family: var(--font-trial-a); font-weight: 750; font-variation-settings: 'opsz' 60; } .f2 p { font-family: var(--font-trial-b); font-weight: 450; }
     .f3 b { font-family: var(--font-trial-b); font-weight: 650; letter-spacing: -0.03em; } .f3 p { font-family: var(--font-trial-b); font-weight: 450; }
     @media (max-width: 820px) { .why { grid-template-columns: repeat(2, minmax(0, 1fr)); } .pair, .faces { grid-template-columns: 1fr; } }
-    @media (prefers-reduced-motion: reduce) { .s-box, .s-box .in, .s-box .plate, .s-box .toy, .s-box b, .s-box em, .s-btn span { transition: none; } }
+    @media (prefers-reduced-motion: reduce) { .s-box, .s-box .in, .s-box .plate, .s-box .toy, .s-box b, .s-box em, .s-btn span { transition: none !important; animation: none !important; } }
   </style>${TOY_DEFS}
   <h2>Where the delight comes from</h2>
   <p>Taking the raised key apart. It is not the two tones. It is four things the hand and eye read at once.</p>
@@ -114,7 +164,7 @@ export function mount(host, root, css) {
   </div>
 
   <h2>Today, and soft blocks</h2>
-  <p>The same card and buttons, twice. Left: what the site does now, two flat tones that move up and down. Right: rebuilt from the four things above. Move the pointer across the right one, then press and hold.</p>
+  <p>The same card and buttons, twice. Left: what the site does now, two flat tones that move up and down. Right: rebuilt from the four things above. Move the pointer across the right one, then press, hold, and let go.</p>
   <div class="pair">
     <div class="show"><small>Today</small><a class="a-box" href="#" onclick="return false">${inside('fill', 'Colour', 'Six hues with one meaning each, the neutrals, the roles.')}</a>
       <div class="row"><button class="a-btn"><span>Use rounded-tag</span></button><button class="a-btn q"><span>Keep</span></button></div></div>
@@ -144,5 +194,15 @@ export function mount(host, root, css) {
       el.style.setProperty('--gy', `${y * 100}%`);
     });
     el.addEventListener('pointerleave', () => { for (const p of ['--rx', '--ry']) el.style.removeProperty(p); });
+  }
+  // answers: down while it is held (a pointer or a key), then let go, which plays the rebound once
+  for (const el of root.querySelectorAll('.s-box, .s-btn')) {
+    const down = () => { el.classList.remove('rel'); el.classList.add('down'); };
+    const up = () => { if (!el.classList.contains('down')) return; el.classList.remove('down'); el.classList.add('rel'); };
+    el.addEventListener('pointerdown', down);
+    for (const type of ['pointerup', 'pointercancel', 'pointerleave', 'blur']) el.addEventListener(type, up);
+    el.addEventListener('keydown', (e) => { if ((e.key === 'Enter' || e.key === ' ') && !e.repeat) down(); });
+    el.addEventListener('keyup', (e) => { if (e.key === 'Enter' || e.key === ' ') up(); });
+    el.addEventListener('animationend', (e) => { if (e.animationName === 's-rebound' || e.animationName === 's-btn') el.classList.remove('rel'); });
   }
 }
