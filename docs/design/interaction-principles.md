@@ -111,6 +111,10 @@ pickers.
     stretchy jump of the toy was liked; it stayed when everything around it was rebuilt.
 33. **A raised thing doesn't follow the pointer.** No tilt toward the cursor: "it doesn't look like a button, more of
     a hovering card." Pointed at, it comes straight up.
+33b. **An icon moves the way its property does.** Pointed at or dragged, a property's icon acts out its property:
+    font size, the small A grows and the big one makes room; line height, the rules move apart; letter spacing, the
+    rules move out to the sides; weight, the thin A turns heavy. It doesn't also tip and grow like a toy. (Owner:
+    "animate them semantically as well".)
 34. **No hover repaint.** Leaving a hovered thing must not flash or redraw it; if it does, remove the property that
     causes it (it was 3D tilt).
 35. **Reduced motion:** states change at once; nothing slides, rolls or bounces.

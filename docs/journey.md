@@ -451,6 +451,9 @@ race, built for the old in-place write) was rewritten for the new write path (`e
   tile, with no reference, came out wobbly. The owner chose: set the letters in a real font, and drop the tile. The
   four are now glyphs in the product's hairline family (`overlay/src/glyphs.js`, the 1px drafting pen): ink, A's
   typeset in Bricolage, the pen's rules around them. The font-size toy on the shelf is back as it was.
+- **"animate them semantically as well":** each glyph acts out its property when its row is pointed at or dragged
+  (the small A grows, line-height rules part, letter-spacing rules move out, the thin A turns heavy). Checked by
+  rendering each at rest and moving, side by side. Added to the principles.
 - **Open:** the product's own text card (`overlay/src/texteditor.js`) is not yet rebuilt from the picker; style,
   case and colour rows are not drawn yet (colour needs its own picker).
 

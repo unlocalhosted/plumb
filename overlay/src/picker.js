@@ -27,6 +27,8 @@ export const PICKER_CSS = `
     /* a glyph (the editor's hairline icons) is ink, darker when pointed at */
     .row .scrub .g { width: 20px; height: 20px; color: var(--pl-ink-2); transition: color 140ms var(--pl-ease-out), scale 320ms var(--pl-spring-pop), rotate 320ms var(--pl-spring-pop); }
     .row .scrub:hover .g { color: var(--pl-ink); }
+    /* a glyph says what it does by its own motion (glyphs.js), so it doesn't also tip and grow */
+    .row .scrub:hover svg.g, .row .scrub:active svg.g { scale: 1; rotate: 0deg; }
     .row .scrub svg { transition: scale 320ms var(--pl-spring-pop), rotate 320ms var(--pl-spring-pop); }
     .row .scrub:hover svg { scale: 1.14; rotate: -6deg; }
     .row .scrub:active svg { scale: 1.04 0.92; rotate: 0deg; transition-duration: 90ms; }
@@ -117,7 +119,7 @@ export function picker(stage, { name, toy, options: S, mark, apply, place, handl
   const last = S.length - 1, HARD = S.findIndex((o) => o.hard), FIRST = start ?? HARD;
   into.insertAdjacentHTML('beforeend', `
     <div class="row" role="group" aria-label="${name}">
-      <span class="scrub" data-tip="${name}" aria-label="${name}: drag to change">${toy.startsWith('<') ? toy : toyOf(toy)}</span>
+      <span class="scrub live" data-tip="${name}" aria-label="${name}: drag to change">${toy.startsWith('<') ? toy : toyOf(toy)}</span>
       <button type="button" class="val" aria-haspopup="listbox" aria-expanded="false"><span class="track" aria-hidden="true"><i class="fill"></i><span class="dots"></span></span><span class="drum"></span><i class="car"></i></button>
       <button type="button" class="ok" aria-label="Write it">${TICK}</button>
     </div>
@@ -185,7 +187,7 @@ export function picker(stage, { name, toy, options: S, mark, apply, place, handl
     let moved = false;
     const move = (m) => {
       if (!moved && Math.abs(m.clientX - x0) + Math.abs(m.clientY - y0) < 4) return;
-      if (!moved) { moved = true; list.hidden = true; val.setAttribute('aria-expanded', 'false'); row.classList.add('dragging'); grab.classList.add('grabbing'); }
+      if (!moved) { moved = true; list.hidden = true; val.setAttribute('aria-expanded', 'false'); row.classList.add('dragging'); scrub.classList.add('on'); grab.classList.add('grabbing'); }
       const raw = from + perPx(m.clientX - x0, m.clientY - y0);
       const over = raw < -0.5 ? raw + 0.5 : raw > last + 0.5 ? raw - last - 0.5 : 0;
       land(Math.max(0, Math.min(last, Math.round(raw))));
@@ -194,7 +196,7 @@ export function picker(stage, { name, toy, options: S, mark, apply, place, handl
     };
     const up = () => {
       el.removeEventListener('pointermove', move); el.removeEventListener('pointerup', up); el.removeEventListener('pointercancel', up);
-      grab.classList.remove('grabbing'); row.classList.remove('dragging');
+      grab.classList.remove('grabbing'); row.classList.remove('dragging'); scrub.classList.remove('on');
       fill(at / last); done?.();
       if (!moved) { if (el === val) toggle(); return; }
       const cur = drum.querySelector('.slot:not(.gone)');
