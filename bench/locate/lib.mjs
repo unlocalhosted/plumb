@@ -7,7 +7,11 @@ import { fileURLToPath } from 'node:url';
 
 export const here = dirname(fileURLToPath(import.meta.url));
 export const repo = resolve(here, '../..');
-export const workRoot = join(here, '.work');
+// Where the bench builds the projects it measures. It must be a folder React Plumber calls yours, or nothing in it is
+// stamped or tracked and the bench judges nothing: inside the repository, not git-ignored, and not under a dotted
+// folder of the project itself. bench/locate/.work was git-ignored, which 0.4.0's own rule reads as generated; the
+// test fixtures' folder is where every other throwaway project already lives.
+export const workRoot = join(repo, 'fixtures', '.bench-locate');
 
 // The checkout that holds node_modules for this tree (a worktree links it from the main checkout).
 export function nodeModulesHome() {
