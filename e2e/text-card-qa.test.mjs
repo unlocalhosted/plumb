@@ -24,6 +24,7 @@ const EXTRA = `
         <p id="qa-dyn" className={'text-body font-semibold ' + tone}>Words built in code</p>
         <Box id="qa-box" className="text-[9px] text-ink-muted">box words</Box>
         <p id="qa-styled" className="type-body-medium" style={{ fontSize: 14 }}>Styled words</p>
+        <p id="qa-onstyle" className="type-body-medium">Words on a style</p>
         <p id="qa-semi" className="text-title font-semibold">Semibold words</p>
         <div style={{ color: 'oklab(0.5 0.1 0.05 / 0.5)' }}><p id="qa-oklab" className="text-body">Words in a mixed colour</p></div>
         <div style={{ color: 'color-mix(in oklab, #15181b, #15181b)' }}><p id="qa-inkmix" className="text-body">Words in ink, mixed</p></div>
@@ -381,5 +382,22 @@ test('a click on a level in the header opens that level’s card', { timeout: 12
   await card.locator('.hd .ups .up[data-up="1"]').click();
   await overlay.locator('.ec .hd .at').filter({ hasText: new RegExp(`App\\.jsx:${line}$`) }).waitFor({ timeout: 20000 });
   assert.equal(await overlay.locator('.tc').isVisible(), false);
+  assert.deepEqual(errors, []);
+});
+
+// the style follows the values: a size moved off the words' text style reads No style; moved back, the style again,
+// with nothing left to write
+test('the style follows the values: a size moved off the text style reads No style, and back again the style', { timeout: 120000 }, async (t) => {
+  const o = await open(t, '#qa-onstyle'); if (!o) return;
+  const { page, card, errors } = o;
+  const style = row(card, 'Text style');
+  const before = await shows(style);
+  assert.match(before, /Body/, `the words are on the Body medium style: ${before}`);
+  await row(card, 'Font size').locator('.val').focus();
+  await page.keyboard.press('ArrowUp');
+  await page.waitForFunction(() => /No style/.test(document.querySelector('plumb-overlay').shadowRoot.querySelector('.tc .pk .row[aria-label="Text style"] .slot:not(.gone)')?.textContent ?? ''), null, { timeout: 5000 });
+  await page.keyboard.press('ArrowDown');
+  await page.waitForFunction((was) => (document.querySelector('plumb-overlay').shadowRoot.querySelector('.tc .pk .row[aria-label="Text style"] .slot:not(.gone)')?.innerText ?? '').replace(/\s+/g, ' ').trim() === was, before, { timeout: 5000 });
+  assert.match(await text(card.locator('[data-do="write"]')), /^Write\s*↵?$/, 'back where it started, nothing to write');
   assert.deepEqual(errors, []);
 });

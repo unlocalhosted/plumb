@@ -394,8 +394,6 @@ export class TextEditor {
       this.#target = again;
     }
     await this.#read();
-    // a Write of several values: each one re-reads the file, then the next is written
-    if (this.#queue) this.#next();
   }
   #stamp = null;
 
@@ -637,7 +635,8 @@ export class TextEditor {
   }
 
   // beside the element: right when it fits, else left, else below; the caret on the element's middle
-  #follow = () => { if (this.#target) requestAnimationFrame(() => this.#place()); };
+  // the page scrolled or resized: the card follows its words. Its own body scrolling is not the page moving
+  #follow = (e) => { if (e?.composedPath?.().includes(this.#el)) return; if (this.#target) requestAnimationFrame(() => this.#place()); };
   #place() {
     const el = this.#target;
     if (!el?.isConnected) return;
@@ -903,7 +902,11 @@ export class TextEditor {
     if (i < 0 || (token === r.current && !r.byHand)) return this.#next();
     if (!this.#queue.length) this.#queue = null; // the last one: its re-read ends the Write
     const ok = await this.#write(key, i);
-    if (!ok) { this.#held.set(key, token); this.#queue = null; this.#refresh(); }
+    if (!ok) { this.#held.set(key, token); this.#queue = null; this.#refresh(); return; }
+    // the next one is written against the file as it is now: read it again here, whether or not the overlay's own
+    // reader (Blueprint) is on to do it
+    await this.#read();
+    if (this.#queue) this.#next();
   }
 
   // the choice previewed is ringed and the field in hand marked, without drawing the card again
@@ -1109,9 +1112,12 @@ export class TextEditor {
     // a picker in hand: ← → ↑ ↓ step it, Enter writes what is held, Esc closes its list, then puts every value back
     const a = this.#el.getRootNode().activeElement, inRow = a && this.#el.contains(a) ? a.closest('.pk .row') : null;
     // inside the colour picker its own keys move through the colours and Esc folds it; Enter writes what is held
-    if (a && this.#el.contains(a) && a.closest('.pk .cp')) {
+    // (the overlay takes every key first, so the picker hears them from here)
+    if (a && this.#el.contains(a) && (a.closest('.pk .cp') || a.closest('.pk .cf'))) {
       if (k === 'Enter') { this.#writeAll(); return true; }
-      return ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Escape'].includes(k);
+      if (a.closest('.pk .cf') && k !== 'Escape') return false;
+      if (a.closest('.pk .cf')) { if (!this.#colour?.box.hidden) { this.#colour.key('Escape'); return true; } return false; }
+      return this.#colour?.key(k) ?? false;
     }
     const f = inRow ? [...this.#pk.values()].find((x) => x.p.row === inRow) : null;
     if (f && !f.r.disabled) {

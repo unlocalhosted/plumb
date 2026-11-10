@@ -1,8 +1,8 @@
 // Alt+click on words opens the text card: a visual editor's panel (docs/journey.md, chapter 17). The text style and the
 // four type values are token pickers; case is four buttons; colour is a small field that opens the colour picker
 // (nearest tokens first, every colour by role). A change previews on the words at once and is held; one Write saves
-// every held change to the element's line, each with its Undo; Esc puts things back. A value moved off the element's
-// text style turns the style field to "No style". The card stays light on any page and any computer scheme.
+// every held change to the element's line, each with its Undo; Esc puts things back. The card stays light on any page
+// and any computer scheme. (The style following the values is tested where the app has a text style: text-card-qa.)
 //
 // One browser for the file, a fresh page (and a fresh copy of the demo app) per test.
 import assert from 'node:assert/strict';
@@ -67,7 +67,8 @@ const writeButton = (overlay) => overlay.locator('.tc [data-do="write"]');
 test('Alt+click on words opens the panel: the text style, the four type values, case and colour; a hard-coded size reads so', { timeout: 120000 }, async (t) => {
   const o = await open(t); if (!o) return;
   const { overlay, errors } = o;
-  for (const name of ['Text style', 'Font size', 'Line height', 'Letter spacing', 'Weight']) assert.equal(await field(overlay, name).count(), 1, `${name} is a picker`);
+  // (the demo app defines no text styles, so there is no style picker here; the QA file's app has one)
+  for (const name of ['Font size', 'Line height', 'Letter spacing', 'Weight']) assert.equal(await field(overlay, name).count(), 1, `${name} is a picker`);
   assert.equal(await overlay.locator('.tc .pk [data-case]').count(), 4, 'case is four buttons');
   assert.equal(await overlay.locator('.tc .pk .cf').count(), 1, 'colour is a field');
   // 9px is on none of your tokens: it reads as itself, hard-coded
@@ -133,22 +134,6 @@ test('Two changes, one Write: case and colour both land on the line', { timeout:
   for (let i = 0; i < 100 && !(/\buppercase\b/.test(await line()) && new RegExp(`\\btext-${token}\\b`).test(await line())); i++) await new Promise((r) => setTimeout(r, 200));
   assert.match(await line(), /\buppercase\b/, 'the case is on the line');
   assert.match(await line(), new RegExp(`\\btext-${token}\\b`), `the colour ${token} is on the line`);
-  assert.deepEqual(errors, []);
-});
-
-test('The style follows the values: a size moved off the element’s text style reads No style, and back again reads the style', { timeout: 120000 }, async (t) => {
-  const o = await open(t, 'prose'); if (!o) return;
-  const { page, overlay, errors } = o;
-  const style = field(overlay, 'Text style');
-  const before = await shown(style);
-  assert.doesNotMatch(before, /No style/, 'the words are on a style');
-
-  await field(overlay, 'Font size').locator('.val').focus();
-  await page.keyboard.press('ArrowUp');
-  await page.waitForFunction(() => /No style/.test(document.querySelector('plumb-overlay').shadowRoot.querySelector('.tc .pk .row[aria-label="Text style"] .slot:not(.gone)')?.textContent ?? ''));
-  await page.keyboard.press('ArrowDown');
-  await page.waitForFunction((was) => (document.querySelector('plumb-overlay').shadowRoot.querySelector('.tc .pk .row[aria-label="Text style"] .slot:not(.gone)')?.textContent ?? '').trim() === was.trim(), before);
-  assert.match(await writeButton(overlay).innerText(), /^Write\s*↵?$/, 'back where it started, nothing to write');
   assert.deepEqual(errors, []);
 });
 

@@ -888,7 +888,8 @@ export class ElementCard {
   }
 
   // ── placement: texteditor.js's, unchanged ──
-  #follow = () => { if (this.#target) requestAnimationFrame(() => { this.#place(); this.#layout.follow(); }); };
+  // the page scrolled or resized: the card follows. Its own body scrolling is not the page moving
+  #follow = (e) => { if (e?.composedPath?.().includes(this.#el)) return; if (this.#target) requestAnimationFrame(() => { this.#place(); this.#layout.follow(); }); };
   #place() {
     const el = this.#target;
     if (!el?.isConnected) return;

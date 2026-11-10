@@ -175,18 +175,24 @@ export function colourPick(stage, { tokens, hard, role: guess, apply, place, int
     if (written) { if (t === at) putBack(); return; }
     if (t === at && !t.hard) write(); else pick(t);
   });
-  box.addEventListener('keydown', (e) => {
+  // the keys, as one function: heard here on a page where the picker gets its own keys, and called by a host that takes
+  // every key first (the overlay's text card): ↑ ↓ (← → among the swatches) move and pick, Enter writes, Esc folds
+  const key = (k) => {
     const items = [...box.querySelectorAll('[data-n]')].filter((b) => !b.closest('[hidden]'));
-    const i = items.indexOf(box.getRootNode().activeElement);
-    if (e.key === 'ArrowDown' || e.key === 'ArrowUp' || ((e.key === 'ArrowRight' || e.key === 'ArrowLeft') && e.target.closest('.shade'))) {
-      e.preventDefault(); const d = e.key === 'ArrowDown' || e.key === 'ArrowRight' ? 1 : -1;
-      const n = items[Math.max(0, Math.min(items.length - 1, (i < 0 ? 0 : i + d)))]; n.focus(); pick(byName(n.dataset.n));
-    } else if (e.key === 'Enter' && e.target.closest('[data-n]')) { e.preventDefault(); write(); }
-    else if (e.key === 'Escape') { e.preventDefault(); if (!every.hidden) { every.hidden = true; all.setAttribute('aria-expanded', 'false'); layout(); } else if (onEscape) onEscape(); else if (field) fold(false); else putBack(); }
-  });
+    const focused = box.getRootNode().activeElement, i = items.indexOf(focused);
+    if (k === 'ArrowDown' || k === 'ArrowUp' || ((k === 'ArrowRight' || k === 'ArrowLeft') && focused?.closest?.('.shade'))) {
+      const d = k === 'ArrowDown' || k === 'ArrowRight' ? 1 : -1;
+      const n = items[Math.max(0, Math.min(items.length - 1, (i < 0 ? 0 : i + d)))]; n?.focus(); if (n) pick(byName(n.dataset.n));
+      return true;
+    }
+    if (k === 'Enter' && focused?.closest?.('[data-n]')) { write(); return true; }
+    if (k === 'Escape') { if (!every.hidden) { every.hidden = true; all.setAttribute('aria-expanded', 'false'); all.focus(); layout(); } else if (onEscape) onEscape(); else if (field) fold(false); else putBack(); return true; }
+    return false;
+  };
+  box.addEventListener('keydown', (e) => { if (key(e.key)) e.preventDefault(); });
   new ResizeObserver(layout).observe(stage);
   mark(); show(HARD); layout();
   // seal: a card's one Write wrote it (a folded picker doesn't write on its own)
   const seal = () => { if (at.hard) return; written = true; show(at); mark(); };
-  return { box, field, layout, seal, set: (n) => pick(byName(n)), at: () => at, written: () => written, write, putBack, ready: () => !at.hard && !written };
+  return { box, field, layout, seal, key, set: (n) => pick(byName(n)), at: () => at, written: () => written, write, putBack, ready: () => !at.hard && !written };
 }
