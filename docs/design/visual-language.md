@@ -47,6 +47,14 @@ The hues are the overlay's own (`overlay/src/tokens.css`). Each has three values
 | Sky | `--pl-sky` | measurements and type; containers you type into or look into |
 | Coral | `--pl-coral` | only "this is wrong": off your scale, an error |
 
+- **Hues are bodies first.** Each is tuned to be as clear and bright as it can be as a big solid shape. A hue that
+  looks muddy as a large fill is wrong, whatever it does as a thin line (the first butter was an ochre chosen for
+  hairlines; the owner: "muddy... dull... the excitement isn't there").
+- **Butter is a true yellow, lettered in its own ink.** White vanishes on it, so on butter small marks are drawn in
+  `--pl-butter-ink`; only a large shape (a card's picture) may be white. As a thin mark on paper, where the yellow
+  itself would vanish, use `--pl-butter-line`.
+- **White lettering on pink, sky and mint is bold.** They hold white at a little over 3:1, enough for bold words at
+  14 and up, not for small regular text. Small regular text goes on paper, in ink.
 - White (`#fff`) is the cut-out colour on a solid. On paper, a cut-out is the paper's own colour.
 - Ink text (`--pl-ink`) may be used for plain words inside a piece (the lines of a list), never for a body.
 - No greys in a piece. If something needs to be quiet, it is the hue's soft, and rule 7 says when that is allowed.

@@ -45,7 +45,7 @@ export const SCALE_CSS = `
   .sc-step[data-state="off"] .v { --pill-soft: var(--pl-coral-soft); --pill-ink: var(--pl-coral-ink); }
 
   .sc-place { display: inline-block; width: 5px; height: 5px; box-sizing: border-box; background: var(--pl-coral); transition: opacity 160ms var(--pl-ease-out), scale 260ms var(--pl-spring-pop); }
-  .sc-place[data-tone="typed"] { width: 6px; height: 6px; border-radius: 50%; background: none; box-shadow: inset 0 0 0 1.5px var(--pl-butter); }
+  .sc-place[data-tone="typed"] { width: 6px; height: 6px; border-radius: 50%; background: none; box-shadow: inset 0 0 0 1.5px var(--pl-butter-line); }
   .sc-place[data-tone="on"] { width: 6px; height: 6px; border-radius: 50%; background: var(--pl-mint); }
   .sc-place[data-show="dim"] { opacity: .16; }
   .sc-place[data-show="lit"] { scale: 1.5; outline: 1.5px solid color-mix(in oklab, var(--pl-paper) 90%, transparent); }

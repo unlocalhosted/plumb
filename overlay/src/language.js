@@ -33,7 +33,7 @@ export const LANGUAGE_CSS = CARD_CSS + `
   .pl-tag[data-hue="sky"] { --pill-soft: var(--pl-sky-soft); --pill-ink: var(--pl-sky-ink); --pill-line: var(--pl-sky); }
   .pl-pill[data-hue="coral"], .pl-tag[data-hue="coral"] { --pill-soft: var(--pl-coral-soft); --pill-ink: var(--pl-coral-ink); --pill-line: var(--pl-coral); }
   .pl-pill[data-hue="mint"], .pl-tag[data-hue="mint"] { --pill-soft: var(--pl-mint-soft); --pill-ink: var(--pl-mint-ink); --pill-line: var(--pl-mint); }
-  .pl-pill[data-hue="butter"], .pl-tag[data-hue="butter"] { --pill-soft: var(--pl-butter-soft); --pill-ink: var(--pl-butter-ink); --pill-line: var(--pl-butter); }
+  .pl-pill[data-hue="butter"], .pl-tag[data-hue="butter"] { --pill-soft: var(--pl-butter-soft); --pill-ink: var(--pl-butter-ink); --pill-line: var(--pl-butter-line); }
   .pl-pill[data-hue="pink"], .pl-tag[data-hue="pink"] { --pill-soft: var(--pl-pink-soft); --pill-ink: var(--pl-pink-ink); --pill-line: var(--pl-pink); }
   .pl-pill[data-hue="lilac"], .pl-tag[data-hue="lilac"] { --pill-soft: var(--pl-lilac-soft); --pill-ink: var(--pl-lilac-ink); --pill-line: var(--pl-lilac); }
   .pl-tag { display: inline-flex; align-items: center; gap: 5px; height: 22px; padding: 0 8px 0 6px; border-radius: var(--pl-radius-tag); box-sizing: border-box;

@@ -240,6 +240,17 @@ race, built for the old in-place write) was rewritten for the new write path (`e
   (`docs/references.md`). Colour and type are now written that way, with every table read from the token file.
 - **Not done:** nothing of the new look is in the product. Nine parts are listed and not drawn.
 
+### 4. "it has this muddy feeling": butter
+- **The itch:** with the site drawn as solid boxes, the owner pointed at the yellow one: "this color across the app
+  isn't cutting it... it has this muddy feeling which makes it feel dull and the excitement isn't there".
+- **The system behind it:** the hues had been tuned as thin marks on white paper, where a yellow has to be darkened to
+  an ochre to be seen at all. The toy language turned hues into big solid bodies, and an ochre as a large fill is mud.
+- **The fix:** hues are bodies first. Butter is a true yellow (`#ffc21f`) lettered in its own ink; thin butter marks
+  on paper got their own token (`--pl-butter-line`). Pink and sky were lifted a little (`#f24a9f`, `#3391ee`).
+- **The cost, measured:** white on the new pink is 3.36:1 and on sky 3.27:1 (mint 3.85, lilac 4.55): fine for bold
+  words, below the 4.5 asked of small regular text. Butter's ink on butter is 6.3:1.
+- **Media hooks:** the Icons box before (ochre) and after (yellow).
+
 ## Open gaps
 - The new look (toys, the fix bar, the toy button) exists only as kit pages; the product still ships the old one.
 - `e2e/text-edit.test.mjs` "every write is in the dock's history" times out on `main` on the laptop; not looked at.
