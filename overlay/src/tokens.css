@@ -36,10 +36,9 @@
   --pl-sky-on: #ffffff; --pl-coral-on: #ffffff; --pl-mint-on: #ffffff; --pl-pink-on: #ffffff; --pl-lilac-on: #ffffff;
   --pl-butter-on: var(--pl-butter-ink);   /* yellow can't hold white */
   --pl-cut: #ffffff;                      /* a hole cut in a solid body */
-  /* a block of colour you press (a button's top, the page you are on): its hue and its lettering, in both schemes the
-     hue and its -on. At night that is the scheme's own pastel (pink #ff6ec7), lettered in the hue's dark tint: the
-     accent colour, mixed with white, never a deep or greyed-down block (owner, 2026-11-10: "mute with like white
-     color thing like the accent color we have in token") */
+  /* a block of colour you press (a button's top, the page you are on): its hue and its lettering. Light: the hue,
+     lettered in its -on. Night: the hue's -soft tone lettered in white (owner, 2026-11-10, "Between 2": white letters,
+     more colour than a greyed mid-tone, a step short of the full hue that glared) */
   --pl-pink-block: var(--pl-pink);   --pl-pink-block-on: var(--pl-pink-on);
   --pl-mint-block: var(--pl-mint);   --pl-mint-block-on: var(--pl-mint-on);
   --pl-coral-block: var(--pl-coral); --pl-coral-block-on: var(--pl-coral-on);
@@ -165,8 +164,9 @@
 /* Night surfaces are a warm graphite, lifted from near-black (owner, 2026-11-10), so a dark bar on a light page is not
    a black slab.
    Night (owner, 2026-11-03, after comparing five strengths in the gallery): lines, rings and marks are the brief's
-   pastels; a pill is a deep, saturated version of its hue lettered in white (4.5:1 or more), never dark lettering on a
-   bright block. Butter can only carry white as an ochre. */
+   pastels; a pill or a block is the hue's -soft tone lettered in white (4.5:1 or more), never dark lettering on a
+   bright block. The -soft tones were the full saturated hue until 2026-11-10, when the owner found them glaring on a
+   dark page and chose a step less colour ("Between 2"), not greyer and not darker. Butter can only carry white as an ochre. */
 @media (prefers-color-scheme: dark) {
   :host(:not([data-scheme="light"])) {
     --pl-paper: #2e2d2b;
@@ -176,15 +176,18 @@
     --pl-ink: #f4f3ef;
     --pl-ink-2: #a8a6a0;
     --pl-ink-3: #5f5d58;
-    --pl-sky: #7cc4fa;    --pl-sky-soft: #0077d1;    --pl-sky-ink: #ffffff;
-    --pl-coral: #ff7a6b;  --pl-coral-soft: #eb1800;  --pl-coral-ink: #ffffff;
-    --pl-mint: #7ee0b0;   --pl-mint-soft: #12874e;   --pl-mint-ink: #ffffff;
-    --pl-butter: #ffd166; --pl-butter-soft: #9c6d00; --pl-butter-ink: #ffffff; --pl-butter-line: #ffd166;
+    --pl-sky: #7cc4fa;    --pl-sky-soft: #1d77c8;    --pl-sky-ink: #ffffff;
+    --pl-coral: #ff7a6b;  --pl-coral-soft: #d83422;  --pl-coral-ink: #ffffff;
+    --pl-mint: #7ee0b0;   --pl-mint-soft: #21834f;   --pl-mint-ink: #ffffff;
+    --pl-butter: #ffd166; --pl-butter-soft: #976b0f; --pl-butter-ink: #ffffff; --pl-butter-line: #ffd166;
     --pl-soft-text: var(--pl-butter);
-    --pl-pink: #ff6ec7;   --pl-pink-soft: #e3008b;   --pl-pink-ink: #ffffff;
-    --pl-lilac: #b9a6ff;  --pl-lilac-soft: #7b57ff;  --pl-lilac-ink: #ffffff;
+    --pl-pink: #ff6ec7;   --pl-pink-soft: #d42e87;   --pl-pink-ink: #ffffff;
+    --pl-lilac: #b9a6ff;  --pl-lilac-soft: #775ceb;  --pl-lilac-ink: #ffffff;
     --pl-sky-on: #0b3554; --pl-coral-on: #5c160e; --pl-mint-on: #0b3d26; --pl-pink-on: #5a0d3c; --pl-lilac-on: #2b1a6b; --pl-butter-on: #5c3a00;
     --pl-cut: #1f1e1d;
+    --pl-pink-block: var(--pl-pink-soft);   --pl-pink-block-on: var(--pl-pink-ink);
+    --pl-mint-block: var(--pl-mint-soft);   --pl-mint-block-on: var(--pl-mint-ink);
+    --pl-coral-block: var(--pl-coral-soft); --pl-coral-block-on: var(--pl-coral-ink);
     --pl-on-accent: #08263d;
     --pl-heat: #ff4fa7;
     --pl-sys: #2bb8ff;
@@ -205,15 +208,18 @@
     --pl-ink: #f4f3ef;
     --pl-ink-2: #a8a6a0;
     --pl-ink-3: #5f5d58;
-    --pl-sky: #7cc4fa;    --pl-sky-soft: #0077d1;    --pl-sky-ink: #ffffff;
-    --pl-coral: #ff7a6b;  --pl-coral-soft: #eb1800;  --pl-coral-ink: #ffffff;
-    --pl-mint: #7ee0b0;   --pl-mint-soft: #12874e;   --pl-mint-ink: #ffffff;
-    --pl-butter: #ffd166; --pl-butter-soft: #9c6d00; --pl-butter-ink: #ffffff; --pl-butter-line: #ffd166;
+    --pl-sky: #7cc4fa;    --pl-sky-soft: #1d77c8;    --pl-sky-ink: #ffffff;
+    --pl-coral: #ff7a6b;  --pl-coral-soft: #d83422;  --pl-coral-ink: #ffffff;
+    --pl-mint: #7ee0b0;   --pl-mint-soft: #21834f;   --pl-mint-ink: #ffffff;
+    --pl-butter: #ffd166; --pl-butter-soft: #976b0f; --pl-butter-ink: #ffffff; --pl-butter-line: #ffd166;
     --pl-soft-text: var(--pl-butter);
-    --pl-pink: #ff6ec7;   --pl-pink-soft: #e3008b;   --pl-pink-ink: #ffffff;
-    --pl-lilac: #b9a6ff;  --pl-lilac-soft: #7b57ff;  --pl-lilac-ink: #ffffff;
+    --pl-pink: #ff6ec7;   --pl-pink-soft: #d42e87;   --pl-pink-ink: #ffffff;
+    --pl-lilac: #b9a6ff;  --pl-lilac-soft: #775ceb;  --pl-lilac-ink: #ffffff;
     --pl-sky-on: #0b3554; --pl-coral-on: #5c160e; --pl-mint-on: #0b3d26; --pl-pink-on: #5a0d3c; --pl-lilac-on: #2b1a6b; --pl-butter-on: #5c3a00;
     --pl-cut: #1f1e1d;
+    --pl-pink-block: var(--pl-pink-soft);   --pl-pink-block-on: var(--pl-pink-ink);
+    --pl-mint-block: var(--pl-mint-soft);   --pl-mint-block-on: var(--pl-mint-ink);
+    --pl-coral-block: var(--pl-coral-soft); --pl-coral-block-on: var(--pl-coral-ink);
     --pl-on-accent: #08263d;
     --pl-heat: #ff4fa7;
     --pl-sys: #2bb8ff;

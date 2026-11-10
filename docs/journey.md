@@ -639,6 +639,14 @@ race, built for the old in-place write) was rewritten for the new write path (`e
   muted, soft-bright); the owner rejected those too ("not this grayed out"), pointing at the night pastel in the token
   table. Night buttons now take the scheme's own pastel accent, lettered in the hue's dark tint: the block tokens
   simply follow each scheme's hue. Measured, lettering on the pastel: pink 5.33, mint 7.71, coral 5.23.
+- **Night colour, settled: "Between 2".** The pastel with dark lettering was rejected ("I don't like the black
+  colour text"), and a calm mid-tone with white read as grey ("looks really bad"). The answer was in between on
+  colour, not on lightness: four strengths with white lettering, each a little more colourful at the same lightness,
+  from the greyed mid-tone to the glaring deep hue; the owner picked the second step from the deep end. Made a rule of
+  the tokens: the night `-soft` tone of every hue is now that strength (pink #d42e87, mint #21834f, coral #d83422, sky
+  #1d77c8, lilac #775ceb, butter #976b0f, white at 4.6 to 4.8:1), and night blocks use it with white. Buttons, the
+  Design page's cards, docs callouts, token chips and the bar's current tab all follow it. The comparison was removed
+  from the Buttons page.
 
 ## Open gaps
 - White on the pink and mint buttons is under 4.5:1 in light (3.36, 3.85); dark now passes, just. Nothing yet stops the faintest ink being used for text again.

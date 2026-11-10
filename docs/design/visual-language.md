@@ -199,7 +199,8 @@ Pictures are learnt, so the words are always one hover away.
   site and the toy button only.
 
 ## Block colours (2026-11-10)
-A block of colour you press (a button's top, the page you are on) takes `--pl-<hue>-block` and is lettered in
-`--pl-<hue>-block-on`. In both schemes that is the scheme's own accent hue and its dark `-on` tint: at night the
-pastel (pink #ff6ec7, mint #7ee0b0, coral #ff7a6b). Never the deep `-soft` hue at night (it burns on a dark page) and
-never a darkened, greyed-down block (owner: "mute with like white color thing like the accent color we have in token").
+A block of colour you press or go to (a button's top, a soft card, the page you are on) takes `--pl-<hue>-block` and
+is lettered in `--pl-<hue>-block-on`. Light: the hue, lettered in its `-on`. Night: the hue's `-soft` tone lettered in
+white. The night `-soft` tones are "Between 2" (owner, 2026-11-10): white letters at 4.6:1 or more, more colour than
+a greyed mid-tone, a step short of the full hue, which glared. Never dark lettering on a night block, never a darkened
+or greyed block. Night values: pink #d42e87, mint #21834f, coral #d83422, sky #1d77c8, lilac #775ceb, butter #976b0f.
