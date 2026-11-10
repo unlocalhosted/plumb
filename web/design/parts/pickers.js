@@ -6,13 +6,14 @@
 // a swatch. It snaps to your tokens and says the token's name; your hard-coded value is where it starts. Little UI: one
 // row beside the element, and a handle on the element itself where the property has a natural one.
 //
-// One property at a time, on a real piece of UI. Border radius, then gap. The row, the list, the rolling value, drag
+// One property at a time, on a real piece of UI. Border radius, then gap, then padding. The row, the list, the rolling value, drag
 // mode and the tick are one piece (picker() below); each property brings its element, its handle and its list mark.
 import { LANGUAGE_CSS } from '../../../overlay/src/language.js';
 import { TOY_DEFS, toyOf } from '../../../overlay/src/toys.js';
 
 // the options in order of size; the hard-coded value sits among them where it falls, so you can drag back to it
 const RADIUS = [{ name: 'none', v: 0 }, { name: '5px', v: 5, hard: true }, { name: 'tag', v: 6 }, { name: 'control', v: 8 }, { name: 'card', v: 12 }, { name: 'full', v: 999 }];
+const PADDING = [{ name: 'xs', v: 4 }, { name: 'sm', v: 8 }, { name: 'md', v: 12 }, { name: '14px', v: 14, hard: true }, { name: 'lg', v: 16 }, { name: 'xl', v: 24 }];
 const GAP = [{ name: 'xs', v: 4 }, { name: 'sm', v: 8 }, { name: 'md', v: 12 }, { name: '13px', v: 13, hard: true }, { name: 'lg', v: 16 }, { name: 'xl', v: 24 }];
 
 export function mount(host, root, css) {
@@ -136,6 +137,28 @@ export function mount(host, root, css) {
     .list .g { display: flex; gap: var(--lg); align-items: center; justify-content: center; width: 20px; }
     .list .g::before, .list .g::after { content: ''; width: 4px; height: 12px; border-radius: 1.5px; background: var(--pl-ink-2); }
     .list .hard .g::before, .list .hard .g::after { background: var(--pl-coral); }
+
+    /* ── the real UI for padding: an alert, as someone's app draws it ── */
+    .alert { position: relative; display: flex; gap: 12px; width: 340px; box-sizing: border-box; padding: var(--p); border-radius: 12px; background: #fff; box-shadow: 0 1px 2px rgb(16 24 40 / .06), 0 12px 32px -14px rgb(16 24 40 / .25); border: 1px solid #fecdca; font: 14px/20px system-ui, -apple-system, sans-serif; color: #101828; }
+    .alert .ico { flex: none; display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; background: #fee4e2; color: #d92d20; font: 700 16px/1 system-ui, sans-serif; }
+    .alert b { display: block; font: 600 14px/20px system-ui, sans-serif; }
+    .alert span { color: #475467; }
+    .alert a { display: inline-block; margin-top: 8px; color: #b42318; font-weight: 600; text-decoration: none; }
+    /* the padding itself is the handle: each side drawn in padding's pattern (mint hatch), each one dragged inward makes
+       all four sides bigger */
+    .padband { position: absolute; z-index: 3; touch-action: none; pointer-events: auto;
+      background: repeating-linear-gradient(45deg, color-mix(in oklab, var(--pl-mint) 55%, transparent) 0 2px, transparent 2px 5px);
+      transition: left 220ms var(--pl-spring-pop), top 220ms var(--pl-spring-pop), width 220ms var(--pl-spring-pop), height 220ms var(--pl-spring-pop), opacity 160ms; }
+    .padband[data-side="top"], .padband[data-side="bottom"] { cursor: ns-resize; }
+    .padband[data-side="left"], .padband[data-side="right"] { cursor: ew-resize; }
+    .padband:hover, .padband.dragging { background: repeating-linear-gradient(45deg, color-mix(in oklab, var(--pl-mint) 85%, transparent) 0 2px, transparent 2px 5px); }
+    .padband.dragging, .pads.dragging .padband { transition: none; }
+    .padframe { position: absolute; z-index: 2; pointer-events: none; border-radius: 13px; outline: 1.5px dashed var(--pl-coral); outline-offset: 3px; transition: outline-color 160ms; }
+    .padframe.on-token { outline: 1.5px solid var(--pl-sky); outline-offset: 3px; }
+    .padframe.written { outline: 1.5px solid var(--pl-mint); outline-offset: 3px; }
+    .list .pd { width: 16px; height: 16px; box-sizing: border-box; border-radius: 3px; background: repeating-linear-gradient(45deg, var(--pl-ink-3) 0 1px, transparent 1px 3px); position: relative; }
+    .list .pd::after { content: ''; position: absolute; inset: var(--ip); border-radius: 2px; background: var(--pl-paper); box-shadow: inset 0 0 0 1.5px var(--pl-ink-2); }
+    .list .hard .pd { background: repeating-linear-gradient(45deg, var(--pl-coral) 0 1px, transparent 1px 3px); }
     .hint { position: absolute; left: 0; right: 0; bottom: 14px; text-align: center; font: 500 12.5px/1 var(--pl-sans); color: var(--pl-ink-3); }
     .hint kbd { font: 600 11px/1 var(--pl-mono); padding: 2px 5px; border-radius: 5px; background: var(--pl-paper); box-shadow: 0 1px 0 var(--pl-rule); }
     @media (prefers-reduced-motion: reduce) { .handle { transition: none; } }
@@ -165,6 +188,16 @@ export function mount(host, root, css) {
       </div>
       <i class="gapband" role="presentation"></i>
       <p class="hint">drag the gap or the value · <kbd>↑</kbd> <kbd>↓</kbd> step · <kbd>↵</kbd> write · <kbd>Esc</kbd> put back</p>
+    </div>
+  </section>
+  <section class="scene" id="padding">
+    <h2>Padding</h2>
+    <p>The alert has a hard-coded 14px of padding. The padding itself is drawn in its pattern on all four sides: drag any side inward to make it bigger, outward to make it smaller. The value and the list work as before.</p>
+    <div class="stage" tabindex="0">
+      <div class="alert"><i class="ico">!</i><div><b>Payment failed</b><span>Your card was declined. Update your billing details to keep your plan.</span><br><a href="#" tabindex="-1" onclick="return false">Update billing</a></div></div>
+      <i class="padframe" role="presentation"></i>
+      ${['top', 'right', 'bottom', 'left'].map((side) => `<i class="padband" data-side="${side}" role="presentation"></i>`).join('')}
+      <p class="hint">drag a side of the padding or the value · <kbd>↑</kbd> <kbd>↓</kbd> step · <kbd>↵</kbd> write · <kbd>Esc</kbd> put back</p>
     </div>
   </section>`;
 
@@ -307,5 +340,27 @@ export function mount(host, root, css) {
       handles: [{ el: band, perPx: (dx) => dx / 16 }],
     });
     if (still) band.style.transition = 'none';
+  }
+
+  // ── padding: the alert, with each side of its padding as a handle ──
+  {
+    const stage = root.querySelector('#padding .stage'), el = stage.querySelector('.alert'), frame = stage.querySelector('.padframe');
+    const bands = [...stage.querySelectorAll('.padband')];
+    // dragging a side inward makes the padding bigger
+    const inward = { top: (dx, dy) => dy, bottom: (dx, dy) => -dy, left: (dx) => dx, right: (dx) => -dx };
+    picker(stage, {
+      name: 'Padding', toy: 'padding', options: PADDING,
+      mark: (t) => `<i class="pd" style="--ip:${Math.min(5, Math.round(t.v / 4))}px"></i>`,
+      apply: (o, { token, written }) => { el.style.setProperty('--p', `${o.v}px`); frame.classList.toggle('on-token', token); frame.classList.toggle('written', written); },
+      place: (row, list) => {
+        const r = rel(stage, el), p = parseFloat(getComputedStyle(el).paddingTop) || 0, b = 1;
+        frame.style.cssText = `left:${r.left}px;top:${r.top}px;width:${r.width}px;height:${r.height}px`;
+        const box = { top: [r.left + b, r.top + b, r.width - 2 * b, p], bottom: [r.left + b, r.bottom - b - p, r.width - 2 * b, p], left: [r.left + b, r.top + b + p, p, r.height - 2 * b - 2 * p], right: [r.right - b - p, r.top + b + p, p, r.height - 2 * b - 2 * p] };
+        for (const band of bands) { const [x, y, w, h] = box[band.dataset.side]; band.style.cssText = `left:${x}px;top:${y}px;width:${w}px;height:${h}px`; }
+        row.style.left = `${r.right + 14}px`; row.style.top = `${r.top + 12}px`;
+        list.style.left = row.style.left; list.style.top = `${r.top + 51}px`;
+      },
+      handles: bands.map((band) => ({ el: band, perPx: (dx, dy) => inward[band.dataset.side](dx, dy) / 12 })),
+    });
   }
 }

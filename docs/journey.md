@@ -402,7 +402,11 @@ race, built for the old in-place write) was rewritten for the new write path (`e
   value and tick are shared, so every property behaves the same.
 - **Proof:** on the running page, dragging the gap 15px to the right moved it from 13px to xl (24px) and the buttons
   followed; border radius still works through the same piece.
-- **Open:** padding and margin; drag sensitivity untested by hand.
+- **Padding, the same way:** an alert ("Payment failed") with a hard-coded 14px. All four sides of its padding are
+  drawn in padding's pattern (mint hatch); drag any side inward to make all four bigger, outward to make them
+  smaller. Coral dashed outline while hard-coded, blue on a token, green once written. On the running page, dragging
+  the left side 18px inward took it from 14px to xl (24px).
+- **Open:** margin; one value per side (padding-x vs padding-y) is not handled; drag sensitivity untested by hand.
 
 ## Open gaps
 - The contrast check knows colours, not sizes or weights, and is not run by CI yet.
