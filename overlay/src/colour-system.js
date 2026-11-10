@@ -66,3 +66,36 @@ export function colourSystem({ accent, neutralHue, neutralChroma = 0 } = {}) {
   ].join('\n');
   return { primitives, light, dark, css, accent: ramp };
 }
+
+// ── renaming a project's colour tokens onto the job-named paths (token-spec §3.3) ──
+
+// each role's new name; hover and pressed follow the surface they sit on
+const NEW_NAME = {
+  ground: 'background-full', surface: 'background-primary-default', sunken: 'background-secondary-default', hover: 'background-primary-hover', pressed: 'background-primary-active',
+  fg: 'text-primary', muted: 'text-secondary', faint: 'text-tertiary', 'on-accent': 'text-on-accent',
+  line: 'border-default', 'line-strong': 'border-strong',
+  accent: 'accent-default', 'accent-hover': 'accent-hover', 'accent-soft': 'accent-soft',
+  ink2: 'ink2-default', 'ink2-hover': 'ink2-hover', 'ink2-soft': 'ink2-soft',
+  success: 'state-success-base', warning: 'state-warning-base', danger: 'state-danger-base', info: 'state-info-base',
+};
+
+/**
+ * Which of a project's colour tokens becomes which job-named token. Each token's role (`kind`, colours.js) gives its
+ * new name; a token whose role has no name here, or whose new name another token already takes (the one named most
+ * plainly for the role wins: `line` over `draw-line`), keeps its own name and says why. Same tokens in, same map out.
+ * @param {{ short: string, kind: string }[]} tokens  the theme's colour tokens, `short` without `--color-`
+ * @returns {{ map: Record<string, string>, kept: { short: string, why: string }[] }}
+ */
+export function renameMap(tokens) {
+  const map = {}, kept = [], taken = new Map();
+  // the plainest name for a role first: its name is the role word itself, then the shortest
+  const plain = (t) => (t.short === t.kind ? 0 : 1) * 100 + t.short.length;
+  for (const t of [...tokens].sort((a, b) => plain(a) - plain(b) || a.short.localeCompare(b.short))) {
+    const next = NEW_NAME[t.kind];
+    if (!next) { kept.push({ short: t.short, why: `not a UI role (${t.kind})` }); continue; }
+    if (taken.has(next)) { kept.push({ short: t.short, why: `${next} is ${taken.get(next)}` }); continue; }
+    if (next === t.short) continue;
+    taken.set(next, t.short); map[t.short] = next;
+  }
+  return { map, kept };
+}

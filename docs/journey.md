@@ -66,8 +66,16 @@
 - **The proof:** `overlay/demo/colour-system.html`: a sample screen (nav, card, field, three button kinds, status badges, an alert) that uses only the job-named tokens, light and dark side by side, with a brand picker and a grey-tint slider. Red brand: white button text (Lc 70.9). Yellow brand with warm greys: dark button text (Lc 75.2), brand kept.
 - **Media hooks:** docs/media/colour-system-red-2026-11-10.jpg, docs/media/colour-system-yellow-2026-11-10.jpg.
 
+## crafting-ui's colours, renamed by job (2026-11-11)
+- **The itch:** the colour system could be generated and shown, but never written into a real project.
+- **What we chose and why:** crafting-ui says "one print, no dark mode" in its own stylesheet, so this write is a rename, not a recolour: every value stays, only names move to the job-named paths, and no dark block is written. `renameMap` (overlay/src/colour-system.js) gives each token its new name from its role; a token whose role has no new name, or whose new name a plainer token already took, keeps its own name and says why.
+- **The fix and the proof:** on the side copy (`../crafting-ui-type`), 18 tokens renamed (`fg` → `text-primary`, `surface` → `background-primary-default`, `line` → `border-default`, `draw` → `ink2-default` …), 3 kept (`scrim`: not a UI role; `draw-line`: `border-default` is `line`; `draw-tint`: `ink2-soft` is `draw-soft`). 1,684 class uses in 101 files. Every element's computed text, background, border, fill and stroke colour on 5 pages (6,121 elements) recorded before and after: 0 differ. No old class names left on the page.
+- **Dead ends:** the rename was applied by a script outside plumber; plumber has no project-wide rename write yet.
+
 ## Open gaps
-- The colour system is generated and shown, not yet written into a project: no file write, no mapping of a project's old colour tokens onto the new names, not offered in the product.
+- Colour rename is planned by plumber (`renameMap`) but applied by a script: plumber needs its own project-wide rename write (theme lines + every class use, one undo).
+- The second ink is named `ink2-*`; crafting-ui calls it `draw`, a meaningful word. Naming decision for the owner.
+- Code samples shown as text on crafting-ui pages may have been renamed too; not checked.
 - A yellow or amber brand sits next to the warning status hue; plumber does not yet warn when the brand and a status colour are too close.
 - crafting-ui's draw blue is a wide-gamut (P3) colour; the ramp keeps it in sRGB, so its 500 loses a little chroma (0.289 → 0.278).
 - Token spec layers 2–6 not built; four owner decisions open (§6).
