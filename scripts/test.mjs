@@ -94,7 +94,8 @@ if (!jobs.length) { console.error('No test file matches.'); process.exit(1); }
 // other sessions on the laptop. Cores: every core not already busy (the one-minute load), never fewer than two.
 // Memory: what is free, less the reserve. Linux reports what is really available; macOS reports only untouched
 // pages, so half the machine stands in for it there.
-const busy = Math.round(loadavg()[0]);
+// on a CI runner nothing else is running: the load there is this job's own install and build, a moment ago
+const busy = process.env.CI ? 0 : Math.round(loadavg()[0]);
 const freeMb = (platform() === 'linux' ? freemem() : totalmem() / 2) / 1e6;
 const budget = flag('--serial') ? { cores: 0, mb: 0 }
   : { cores: askedCores || Math.max(2, availableParallelism() - busy), mb: askedGb ? askedGb * 1000 : Math.max(COST.browser.mb, freeMb - RESERVE_MB) };
