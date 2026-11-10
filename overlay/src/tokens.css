@@ -157,7 +157,7 @@
   --pl-scrim: rgb(20 20 22 / 0.46);
   --pl-dim-filter: grayscale(1);
   --pl-dur-dim: 160ms;          /* Blueprint's dimming fades in; fading out is quicker */
-  --pl-dur-undim: 120ms;
+  --pl-dur-undim: 120ms;        /* Blueprint's dimming fades out */
 
   /* stacking: above everything on any page */
   --pl-z: 2147483647;

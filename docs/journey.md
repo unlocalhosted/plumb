@@ -826,6 +826,14 @@ race, built for the old in-place write) was rewritten for the new write path (`e
   cubic-bezier), Selection travels (one fill slides between Body, Title and Label on the spring). Each piece uses the
   product's own rule, and each row says when its time is written as a number: Picked up, Arrives, Lands and Numbers
   roll have no time token; A card opens and Selection travels do. Checked in light and dark.
+- **"Keep going": the drag spring and the open list.** A seventh moment, Pulled into a step: a knob you drag and let
+  go of, run by the overlay's own spring step (k 600, c 35), landing on the nearest of five steps (arrows and Play
+  too). Its graph is simulated with that same function, with the softer coming-home spring (k 300) drawn faint.
+  The page ends like Spacing: every motion token in a table read from the token file (the undim token got its
+  missing note), then what is still open, counted on 2026-11-11 by grepping transitions and animations in
+  overlay/src: 161 times written as numbers across 20 files against 71 token uses; 9 hand-written cubic-bezier
+  curves (14 uses) and 34 browser keywords against 127 curve-token uses; a third spring private to the text card
+  (k 1400 held, k 520 let go); and the soft blocks' squash, not drawn yet. Checked in light and dark.
 
 ## Open gaps
 - The overlay writes about 180 corners as numbers (radius tokens about 45 times), many off its own scale; 6px is

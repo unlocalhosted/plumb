@@ -3,7 +3,8 @@
 // itself with drafting guides, a dot tracing the curve in step with the piece. Curves are read from the token file.
 import { LANGUAGE_CSS } from '../../../overlay/src/language.js';
 import { TOY_DEFS, toyOf } from '../../../overlay/src/toys.js';
-import { probe } from '../tokens.js';
+import { readTokens, probe } from '../tokens.js';
+import { spring, DETENT, SETTLE } from '../../../overlay/src/motion.js';
 import { SCALE_CSS, count, rollCount } from '../../../overlay/src/scale-marks.js';
 
 // a CSS linear() easing as points [t, v], t and v from 0 to 1 (stops without a place are spread between their
@@ -27,11 +28,21 @@ export function bezierPoints(value) {
   return Array.from({ length: 61 }, (_, i) => i / 60).map((u) => [b(x1, x2, u), b(y1, y2, u)]);
 }
 export const curvePoints = (value) => (/^\s*cubic-bezier/.test(value) ? bezierPoints(value) : linearPoints(value));
+// a physics spring's step from 0 to 1, run with the overlay's own step function until it rests; the points are on
+// its own time, and `ms` is how long it took
+export function springPoints(sp) {
+  const p = { x: 0, y: 0, vx: 0, vy: 0 }, dt = 1 / 600, raw = [[0, 0]];
+  let n = 0; while (n < 6000) { spring(p, 1, 0, sp, dt); n++; raw.push([n * dt, p.x]); if (Math.abs(p.x - 1) < 0.002 && Math.abs(p.vx) < 0.02) break; }
+  const end = n * dt; return { ms: Math.round(end * 1000), pts: raw.filter((_, i) => i % 4 === 0 || i === raw.length - 1).map(([t, v]) => [t / end, v]) };
+}
 const at = (pts, t) => { for (let i = 1; i < pts.length; i++) if (t <= pts[i][0]) { const [t0, v0] = pts[i - 1], [t1, v1] = pts[i]; return v0 + ((v1 - v0) * (t - t0)) / (t1 - t0 || 1); } return 1; };
 
 export function mount(host, root, css) {
   const value = probe(css, 'light');
   const px = (name) => parseFloat(value(`--pl-${name}`));
+  const tokens = readTokens(css), by = new Map(tokens.map((t) => [t.name, t]));
+  const MOTION = ['ease-out', 'spring', 'spring-pop', 'dur-feedback', 'dur-drop', 'dur-card', 'dur-travel', 'dur-build', 'dur-arrive', 'stagger', 'dur-dim', 'dur-undim'];
+  const trow = (name) => `<div class="tr" role="row"><span><code class="tok" tabindex="0">--pl-${name}</code></span><span class="for">${by.get(name)?.note || '—'}</span><span class="val"><code>${by.get(name)?.light ?? ''}</code></span></div>`;
 
   // the moments, one row each; `ms` is what the product writes today (a token name, or a number when it has none)
   const MOMENTS = [
@@ -53,12 +64,17 @@ export function mount(host, root, css) {
     { id: 'travel', name: 'Selection travels', says: 'The current choice slides to the next one as one piece, rather than one fading out and another in.',
       curve: 'spring', ms: 220, msToken: 'dur-travel', piece: 'travel',
       what: 'One fill moves and stretches to the next option; the words stay where they are.' },
+    { id: 'pulled', name: 'Pulled into a step', says: 'Let go of something you drag and it springs onto the nearest step. It never stops between steps. Drag the knob.',
+      physics: DETENT, ghost: SETTLE, piece: 'detent',
+      what: 'A real spring, run a frame at a time, so a new pull starts from wherever it is. A mark coming home uses a softer one, drawn faint.' },
   ];
+  for (const m of MOMENTS) if (m.physics) { m.sim = springPoints(m.physics); m.ms = m.sim.ms; }
 
   // a curve, drawn with its guides: the rest line, the line it ends on, the peak it overshoots to, and the time axis
   const W = 360, H = 170, L = 44, R = 16, T = 22, B = 34;
+  const ptsOf = (m) => (m.physics ? m.sim.pts : curvePoints(value(`--pl-${m.curve}`)));
   const graph = (m) => {
-    const pts = curvePoints(value(`--pl-${m.curve}`)), peak = Math.max(...pts.map(([, v]) => v));
+    const pts = ptsOf(m), peak = Math.max(...pts.map(([, v]) => v));
     const lo = 0, hi = Math.max(1.08, peak + 0.04);
     const x = (t) => L + t * (W - L - R), y = (v) => T + (1 - (v - lo) / (hi - lo)) * (H - T - B);
     const tp = pts.find(([, v]) => v === peak)[0] * (m.stagger ? m.ms / (m.ms + 2 * px(m.stagger)) : 1);
@@ -77,6 +93,7 @@ export function mount(host, root, css) {
       <text class="gl" x="${W - R}" y="${H - 12}" text-anchor="end">${m.stagger ? m.ms + 2 * px(m.stagger) : m.ms}ms</text>
       ${m.stagger ? [2, 1].map((k) => { const off = (k * px(m.stagger)) / (m.ms + 2 * px(m.stagger)); const sc = m.ms / (m.ms + 2 * px(m.stagger));
         return `<path class="line ghost" d="${pts.map(([t, v], i) => `${i ? 'L' : 'M'} ${x(off + t * sc).toFixed(1)} ${y(v).toFixed(1)}`).join(' ')}"/>`; }).join('') : ''}
+      ${m.ghost ? (() => { const g = springPoints(m.ghost), sc = g.ms / m.ms; return `<path class="line ghost" d="${g.pts.map(([t, v], i) => `${i ? 'L' : 'M'} ${x(Math.min(1, t * sc)).toFixed(1)} ${y(v).toFixed(1)}`).join(' ')}"/>`; })() : ''}
       <path class="line" d="${m.stagger ? pts.map(([t, v], i) => `${i ? 'L' : 'M'} ${x(t * m.ms / (m.ms + 2 * px(m.stagger))).toFixed(1)} ${y(v).toFixed(1)}`).join(' ') : path}"/>
       <line class="head" x1="${L}" y1="${T - 6}" x2="${L}" y2="${y(0)}"/>
       <circle class="dot" cx="${x(0)}" cy="${y(0)}" r="5"/>
@@ -89,6 +106,7 @@ export function mount(host, root, css) {
     lands: () => `<div class="stage lands">${['padding', 'gap', 'corner'].map((n) => `<i>${toyOf(n)}</i>`).join('')}</div>`,
     roll: () => `<div class="stage roll"><span class="sc-count-demo">${count(128, 'on the scale')}</span></div>`,
     card: () => `<div class="stage card"><div class="mini"><b>Padding</b><span>16px, on the scale</span></div></div>`,
+    detent: () => `<div class="stage detent"><span class="track">${[0, 1, 2, 3, 4].map((i) => `<i class="tick" style="left:${i * 25}%"></i>`).join('')}<span class="knob" tabindex="0" role="slider" aria-label="Drag to a step" aria-valuemin="0" aria-valuemax="4" aria-valuenow="1"></span></span></div>`,
     travel: () => `<div class="stage travel"><span class="seg"><i class="fill"></i><span>Body</span><span>Title</span><span>Label</span></span></div>`,
   };
   const piece = (m) => PIECES[m.piece]();
@@ -99,8 +117,9 @@ export function mount(host, root, css) {
       <header><h3>${m.name}</h3><p>${m.says}</p></header>
       ${graph(m)}
       <dl>
-        <div><dt>Curve</dt><dd><code class="tok" tabindex="0">--pl-${m.curve}</code></dd></div>
-        <div><dt>Time</dt><dd>${m.msToken ? `<code class="tok" tabindex="0">--pl-${m.msToken}</code> ` : ''}<b>${m.ms}ms</b>${m.msToken ? '' : '<span class="hc">written as a number</span>'}</dd></div>
+        ${m.physics ? `<div><dt>Spring</dt><dd><b>k ${m.physics.k}, c ${m.physics.c}</b><span class="hc quiet">in code, not a token</span></dd></div>
+        <div><dt>Time</dt><dd>rests in about <b>${m.ms}ms</b></dd></div>` : `<div><dt>Curve</dt><dd><code class="tok" tabindex="0">--pl-${m.curve}</code></dd></div>
+        <div><dt>Time</dt><dd>${m.msToken ? `<code class="tok" tabindex="0">--pl-${m.msToken}</code> ` : ''}<b>${m.ms}ms</b>${m.msToken ? '' : '<span class="hc">written as a number</span>'}</dd></div>`}
         ${m.stagger ? `<div><dt>Apart</dt><dd><code class="tok" tabindex="0">--pl-${m.stagger}</code> <b>${px(m.stagger)}ms</b></dd></div>` : ''}
         <div class="wide"><dt>What moves</dt><dd>${m.what}</dd></div>
       </dl>
@@ -176,6 +195,20 @@ export function mount(host, root, css) {
     .seg > span[data-on] { color: var(--pl-text-primary); }
     .seg .fill { position: absolute; z-index: 0; top: 3px; left: 0; height: 26px; border-radius: var(--pl-radius-tag); background: var(--pl-bg-selected);
       transition: translate var(--pl-dur-travel) var(--pl-spring), width var(--pl-dur-travel) var(--pl-spring); }
+    .stage.detent { width: 100%; padding: 0 8px; }
+    .track { position: relative; display: block; width: 100%; height: 4px; border-radius: 2px; background: var(--pl-border-default); touch-action: none; }
+    .track .tick { position: absolute; top: -4px; width: 2px; height: 12px; margin-left: -1px; border-radius: 1px; background: var(--pl-border-strong); }
+    .track .knob { position: absolute; top: 50%; left: 0; width: 22px; height: 22px; margin: -11px 0 0 -11px; border-radius: 50%; background: var(--pl-bg-surface);
+      box-shadow: var(--pl-shadow-tag), inset 0 0 0 2px var(--pl-border-focus); cursor: grab; outline: none; }
+    .track .knob:focus-visible { box-shadow: var(--pl-shadow-tag), inset 0 0 0 2px var(--pl-border-focus), 0 0 0 4px var(--pl-bg-selected); }
+    .track .knob[data-held] { cursor: grabbing; }
+    .hc.quiet { color: var(--pl-text-secondary); }
+    .tr { display: grid; grid-template-columns: minmax(150px, 1fr) minmax(0, 2fr) minmax(0, 1.4fr); gap: 14px; align-items: center; padding: 10px 16px; border-top: 1px solid var(--pl-border-default); }
+    .tr.th { border-top: 0; padding: 9px 16px; background: var(--pl-bg-inset); font: 600 11px/1 var(--pl-sans); letter-spacing: .05em; text-transform: uppercase; color: var(--pl-text-secondary); }
+    .tr .for { font: 400 13px/18px var(--pl-sans); color: var(--pl-text-secondary); }
+    .val code { color: var(--pl-text-secondary); overflow-wrap: anywhere; font-size: 11px; }
+    .open { margin-top: 14px; padding: 14px 18px 14px 34px; border-radius: 16px; background: var(--pl-bg-surface); box-shadow: 0 0 0 1px var(--pl-border-default); font: 400 13px/21px var(--pl-sans); color: var(--pl-text-secondary); }
+    .open li + li { margin-top: 6px; } .open b { color: var(--pl-text-primary); font-weight: 600; }
     @media (prefers-reduced-motion: reduce) { .stage.toy i, .stage.card .mini, .seg .fill { transition: none; } .stage[data-go] .chip, .stage.lands[data-go] i { animation: none; } }
     @media (max-width: 720px) { .moment { grid-template-columns: 1fr; } }
   </style>${TOY_DEFS}
@@ -185,12 +218,23 @@ export function mount(host, root, css) {
     <p>Each moment below is the real piece doing it, next to its curve, drawn from the token. Point at a piece, or press Play: the dot runs along the curve in step with it.</p>
   </div>
   <h2>Moments</h2>
-  <div class="panel">${MOMENTS.map(row).join('')}</div>`;
+  <div class="panel">${MOMENTS.map(row).join('')}</div>
+
+  <h2>Every token</h2>
+  <div class="panel" role="table"><div class="tr th" role="row"><span>Token</span><span>What it is for</span><span>Value</span></div>${MOTION.filter((n) => by.has(n)).map(trow).join('')}</div>
+
+  <h2>What is still open</h2>
+  <ul class="open">
+    <li><b>The overlay writes its times as numbers.</b> Counted on 2026-11-11: the time tokens are used 71 times, but 161 times in its transitions and animations are written as numbers, across 20 files: 120ms (34 times), 200ms (24), 160ms (15), 260ms (12), 140ms (11), 320ms (9). Four of the moments above have no time token at all.</li>
+    <li><b>Nine curves of its own.</b> The curve tokens are used 127 times, but 9 different hand-written cubic-bezier curves sit beside them (14 uses, most of them bouncy ones like <code>cubic-bezier(.34, 1.56, .64, 1)</code>), and 34 of the browser's own (<code>ease-out</code> 21, <code>linear</code> 7, <code>ease-in-out</code> 5).</li>
+    <li><b>A third spring, private to the text card.</b> The drag springs are shared from one place (k 600 pulled into a step, k 300 coming home), but the text card's slider defines its own: k 1400 while held and k 520 on letting go. None of the springs are tokens; CSS can't run them.</li>
+    <li><b>The soft blocks' squash isn't here yet.</b> A button's press is worked out from its height, in code; it needs its own moment.</li>
+  </ul>`;
 
   // playing a moment: the piece moves, and the dot follows the curve for the same time (the toy goes there and back)
   for (const m of MOMENTS) {
     const el = root.querySelector(`.moment[data-id="${m.id}"]`), stage = el.querySelector('.stage'), dot = el.querySelector('.dot'), head = el.querySelector('.head');
-    const pts = curvePoints(value(`--pl-${m.curve}`)), peak = Math.max(...pts.map(([, v]) => v)), hi = Math.max(1.08, peak + 0.04);
+    const pts = ptsOf(m), peak = Math.max(...pts.map(([, v]) => v)), hi = Math.max(1.08, peak + 0.04);
     const total = m.stagger ? m.ms + 2 * px(m.stagger) : m.ms, sc = m.ms / total;
     const x = (t) => L + t * (W - L - R), y = (v) => T + (1 - v / hi) * (H - T - B);
     stage.style.setProperty('--ms', `${m.ms}ms`);
@@ -214,6 +258,23 @@ export function mount(host, root, css) {
     const place = () => { const opts = seg.querySelectorAll(':scope > span'), o = opts[pick], f = seg.querySelector('.fill');
       opts.forEach((s, i) => s.toggleAttribute('data-on', i === pick)); f.style.width = `${o.offsetWidth}px`; f.style.translate = `${o.offsetLeft}px 0`; };
     if (seg) requestAnimationFrame(place);
+    const knob = stage.querySelector('.knob');
+    if (knob) {
+      const track = knob.parentElement, p = { x: 25, y: 0, vx: 0, vy: 0 }; let target = 25, held = false, last = 0, loop = 0;
+      const draw = () => { knob.style.left = `${p.x}%`; knob.setAttribute('aria-valuenow', Math.round(target / 25)); };
+      const go = (to) => { target = to; if (reduce()) { p.x = to; p.vx = 0; draw(); return; } trace(true); cancelAnimationFrame(loop); last = performance.now();
+        const step = (now) => { const dt = Math.min(0.032, (now - last) / 1000); last = now; for (let i = 0; i < 4; i++) spring(p, target, 0, m.physics, dt / 4); draw();
+          if (!held && (Math.abs(p.x - target) > 0.05 || Math.abs(p.vx) > 0.5)) loop = requestAnimationFrame(step); else if (!held) { p.x = target; p.vx = 0; draw(); } };
+        loop = requestAnimationFrame(step); };
+      const at = (e) => { const r = track.getBoundingClientRect(); return Math.max(0, Math.min(100, ((e.clientX - r.left) / r.width) * 100)); };
+      knob.addEventListener('pointerdown', (e) => { held = true; cancelAnimationFrame(loop); knob.setPointerCapture(e.pointerId); knob.setAttribute('data-held', ''); });
+      knob.addEventListener('pointermove', (e) => { if (!held) return; const nx = at(e); p.vx = (nx - p.x) * 60; p.x = nx; draw(); });
+      knob.addEventListener('pointerup', () => { held = false; knob.removeAttribute('data-held'); go(Math.round(p.x / 25) * 25); });
+      knob.addEventListener('keydown', (e) => { const d = { ArrowRight: 25, ArrowUp: 25, ArrowLeft: -25, ArrowDown: -25 }[e.key]; if (d) { e.preventDefault(); go(Math.max(0, Math.min(100, target + d))); } });
+      draw();
+      el.querySelector('.play').addEventListener('click', () => go(target >= 100 ? 0 : target + 25));
+      continue;
+    }
     const run = () => {
       if (m.piece === 'arrive' || m.piece === 'lands') { stage.removeAttribute('data-go'); void stage.offsetWidth; stage.setAttribute('data-go', ''); }
       if (m.piece === 'roll') { n = n === 128 ? 1406 : 128; rollCount(stage.querySelector('.sc-count'), n); }
