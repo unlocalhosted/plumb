@@ -810,6 +810,17 @@ race, built for the old in-place write) was rewritten for the new write path (`e
   tokens. A full dashed circle per corner was tried and dropped: on the key it crossed the letter. Checked in light and
   dark.
 
+### 24. The Motion page, one moment at a time
+- **What we chose:** the last foundation still "to draw". Counted first: 3 curves and 9 time tokens, two physics
+  springs in code, and about 200 times written as plain numbers in the overlay (120ms 36 times, 200ms 28), plus 7
+  curves off the tokens. Having missed twice on the Corners row by drawing before asking, I showed three sketched
+  directions first; the owner chose "live piece + its curve".
+- **First row, Picked up:** the real toy on the left tips 9° and grows to 114% when pointed at (or on Play); on the
+  right its curve is drawn from the `--pl-spring-pop` token itself, with guides for start, end and the 4% it goes
+  past, and a dot and playhead tracing the curve in step with the toy, there and back. The time, 420ms, has no token
+  and the row says so. Checked in light and dark.
+- **Media hooks:** a clip of pointing at the toy while the dot runs the curve.
+
 ## Open gaps
 - The overlay writes about 180 corners as numbers (radius tokens about 45 times), many off its own scale; 6px is
   its most-used gap; --pl-card-pad and --pl-card-gap are unused; the soft blocks' corners aren't tokens.

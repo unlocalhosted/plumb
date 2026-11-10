@@ -13,7 +13,8 @@ export const GROUPS = [
       lede: 'Solid, in colour, each one drawn for what the thing does. Point at one.' },
     { id: 'space', hue: 'mint', toy: 'padding', name: 'Spacing and radius', says: 'Two ladders of space, a corner per object, two shadows. Drawn as real space.', ready: true,
       lede: 'Space on a card is a ladder of 4; on a page, four big steps. A corner belongs to an object, not a size. Only two things are lifted. Every step is drawn as real space, marked the way Plumber marks yours.' },
-    { id: 'motion', hue: 'mint', toy: 'motion', name: 'Motion', says: 'Picked up, arrives, lands, rolls. The springs and the times.' },
+    { id: 'motion', hue: 'mint', toy: 'motion', name: 'Motion', says: 'Picked up, arrives, lands, rolls. Each one live, next to its curve.', ready: true,
+      lede: 'Pieces behave like objects with a little weight. Each moment is the real piece doing it, beside its curve drawn from the token. Point at one.' },
   ]],
   ['Parts', [
     { id: 'buttons', hue: 'pink', toy: 'button', name: 'Buttons', says: 'What you press. Every kind, state and size, with keys and with pictures.', ready: true,
