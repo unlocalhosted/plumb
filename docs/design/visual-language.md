@@ -25,7 +25,10 @@ them.
    `-on` colour. Never a pale fill with an outline around it: that is a wireframe, not a toy.
 3. **It says what the thing does, not what it looks like in a wireframe.** A switch is on. A tag has a hole for its
    string. An input has a caret waiting. A toast is already timing out. A tooltip points at the thing it is about.
-4. **It reads at 16.** Drawn on a 24 grid; nothing finer than 1.5; four parts at most. If it only works large, it is
+4. **It reads at 16.** Drawn on a 24 grid; nothing finer than 1.5 for a body or a line on paper; four parts at most.
+   **Marks cut out of a tile are hairlines:** 1.2 to 1.4 (about one pixel where they are used), so a letter and the
+   rules around it have room. The thick 2.2 marks made the text icons look congested (owner: "our hairline is too
+   thick to be put in icon, we need thinner hairline inside icons"). If it only works large, it is
    not finished.
 5. **A pattern only ever means space.** Hatched is padding. Dotted is margin. Striped is a gap. Nothing else gets a
    pattern, so the three are never diluted.
@@ -63,7 +66,9 @@ The hues are the overlay's own (`overlay/src/tokens.css`). Each has three values
   sky, because they are all type. They are told apart by their marks, drawn on one construction (the same tile, one
   live area, the same strokes), not by colour. Distinct hues per row were tried and rejected: butter and mint would
   have said margin and padding. Not by shade either: a pale tile would mean "not there" (rule 7). Each mark draws the
-  property itself: two lines with an arrow beside them; two letters with an arrow under them; a heavy B.
+  property the way visual editors do, with real letters in hairlines: a small A and a big one (font size), an A
+  between two rules above and below (line height), an A between two rules either side (letter spacing), a thin A
+  beside a heavy one (weight).
 - A piece takes its hue from what it is, by the table above, so the same thing is the same colour everywhere: padding
   is mint in an icon, in the box model, in a chip and in the burst.
 

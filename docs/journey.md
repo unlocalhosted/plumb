@@ -439,6 +439,14 @@ race, built for the old in-place write) was rewritten for the new write path (`e
   tile, one live area, the same strokes) and told apart only by their marks; a space is drawn as the thing plus a
   large arrow beside it (the first arrows, squeezed into a 4 unit gap, read as blobs). Checked at 150, 24 and 16 on
   a keyline grid. The visual language now says an editor card keeps the hue table.
+- **Still not right, three more rounds:** "2 icons are ass, also no hovered state"; then "all of them are ass, A and B
+  don't make sense, the middle 2 look congested and have no meaning". Asked what they should be; the owner chose
+  "show the effect". Letter blocks were tried (they read as signal bars, a menu, a pause button). Then the owner
+  named the cause: "our hairline is too thick to be put in icons, we need thinner hairlines inside icons", and
+  pointed at what Figma does. Now: real letters in hairlines (1.4 on the 24 grid), drawn as visual editors draw
+  them: a small A and a big one (font size), an A between rules above and below (line height), an A between rules
+  either side (letter spacing), a thin A beside a heavy one (weight). The hairline rule is in the visual language.
+  The row icons also got a hover state: they tip and grow, say their name above, squash when pressed.
 - **Open:** the product's own text card (`overlay/src/texteditor.js`) is not yet rebuilt from the picker; style,
   case and colour rows are not drawn yet (colour needs its own picker).
 

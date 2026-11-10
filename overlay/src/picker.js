@@ -21,6 +21,17 @@ const still = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
 const px = (v) => `${v}px`;
 
 export const PICKER_CSS = `
+    /* the property's icon is a toy: pointed at, it tips and grows on the pop spring and says its name above it; pressed
+       (the start of a drag), it squashes */
+    .row .scrub { position: relative; }
+    .row .scrub svg { transition: scale 320ms var(--pl-spring-pop), rotate 320ms var(--pl-spring-pop); }
+    .row .scrub:hover svg { scale: 1.14; rotate: -6deg; }
+    .row .scrub:active svg { scale: 1.04 0.92; rotate: 0deg; transition-duration: 90ms; }
+    .row .scrub::after { content: attr(data-tip); position: absolute; left: 50%; bottom: calc(100% + 6px); translate: -50% 4px; padding: 4px 8px; border-radius: 8px; background: var(--pl-ink); color: var(--pl-paper);
+      font: 600 11px/1.2 var(--pl-sans); white-space: nowrap; opacity: 0; pointer-events: none; z-index: 8; transition: opacity 140ms var(--pl-ease-out), translate 220ms var(--pl-spring-pop); }
+    .row .scrub:hover::after { opacity: 1; translate: -50% 0; }
+    .row.dragging .scrub::after { opacity: 0; }
+    @media (prefers-reduced-motion: reduce) { .row .scrub svg { transition: none; } }
     /* ── the row: what a visual editor shows for this property, one line, beside the element ── */
     .row { position: absolute; z-index: 4; display: flex; align-items: center; gap: 2px; height: 34px; padding: 0 4px 0 2px; border-radius: 11px; background: var(--pl-paper); box-shadow: var(--pl-shadow-card); font: 500 13px/1 var(--pl-sans); white-space: nowrap; }
     .row .scrub { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 8px; cursor: ew-resize; touch-action: none; }
@@ -103,7 +114,7 @@ export function picker(stage, { name, toy, options: S, mark, apply, place, handl
   const last = S.length - 1, HARD = S.findIndex((o) => o.hard), FIRST = start ?? HARD;
   into.insertAdjacentHTML('beforeend', `
     <div class="row" role="group" aria-label="${name}">
-      <span class="scrub" title="${name}: drag to change">${toy.startsWith('<') ? toy : toyOf(toy)}</span>
+      <span class="scrub" data-tip="${name}" aria-label="${name}: drag to change">${toy.startsWith('<') ? toy : toyOf(toy)}</span>
       <button type="button" class="val" aria-haspopup="listbox" aria-expanded="false"><span class="track" aria-hidden="true"><i class="fill"></i><span class="dots"></span></span><span class="drum"></span><i class="car"></i></button>
       <button type="button" class="ok" aria-label="Write it">${TICK}</button>
     </div>
