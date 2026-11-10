@@ -46,24 +46,24 @@ export function mount(host, root, css) {
   //   clean up     the whole page is the thing being changed, so the bar is the only place to say what is going on:
   //                the pass in hand as the headline, what it changes as the detail, the four passes along the right.
   //                Each pass is shown on the page first and written only when you press Apply.
-  // Words: what you'd say to a person. No "steps", no "scale", no class names; "your theme" is the thing they own.
+  // Words: the owner's. A value is "hard-coded" or "on your tokens"; never "steps", "scale", "typed by hand", class names.
   const elementOn = `<div class="on" style="top: 78px; right: 30px;"><span class="ctl">${radius('Corner', { steps: radii, current: null, picked: 'tag', drift: { n: 5, label: '5' } })}</span>${button('Use 6px', { cls: 'sm', key: '↵' })}${button('Keep 5px', { cls: 'sm quiet', key: 'K' })}</div>`;
   const PASSES = [
-    { toy: 'type', name: 'Text', doing: 'Text sizes', says: '9 sizes become 5 of your theme’s', n: 14 },
-    { toy: 'gap', name: 'Spacing', doing: 'Spacing', says: 'Gaps and padding move to your theme’s spacing', n: 24 },
-    { toy: 'fill', name: 'Colour', doing: 'Colour', says: '7 near-greys become your theme’s 3', n: 12 },
-    { toy: 'icon', name: 'Icons', doing: 'Icon sizes', says: 'Icons line up with the text beside them', n: 10 },
+    { toy: 'type', name: 'Text', doing: 'Text sizes', says: '9 hard-coded sizes move to your 5 text tokens', n: 14 },
+    { toy: 'gap', name: 'Spacing', doing: 'Spacing', says: 'Hard-coded gaps and padding move to your spacing tokens', n: 24 },
+    { toy: 'fill', name: 'Colour', doing: 'Colour', says: '7 hard-coded greys move to your 3 grey tokens', n: 12 },
+    { toy: 'icon', name: 'Icons', doing: 'Icon sizes', says: 'Icon sizes move to your icon tokens', n: 10 },
   ];
   const strip = (at, done) => `<span class="passes" role="list" aria-label="The clean-up, in four passes">${PASSES.map((p, i) =>
     `<i role="listitem" class="ps ${i < done ? 'done' : i === at ? 'now' : 'soon'}" data-tip="${p.name}${i < done ? ': done' : ''}" aria-label="${p.name}${i < done ? ', done' : i === at ? ', now' : ''}">${toyOf(p.toy)}</i>`).join('')}</span>`;
-  const one = `<i class="ic big">${toyOf('corner')}</i><span class="lines"><span class="say">16 tags have a corner typed by hand</span><span class="more">They’re <span class="pl-pill" data-hue="coral">5px</span>. Your theme’s corners are 6, 8 and 12px.</span></span>
+  const one = `<i class="ic big">${toyOf('corner')}</i><span class="lines"><span class="say">16 tags have a hard-coded corner</span><span class="more"><span class="pl-pill" data-hue="coral">5px</span> isn’t one of your corner tokens: 6, 8 and 12px.</span></span>
     <span class="sep"></span><span class="nav"><button type="button" aria-label="The one before">‹</button><span>3 of 60</span><button type="button" aria-label="The next one">›</button></span>
     ${button('Clean up all', { cls: 'sm quiet', attrs: 'data-do="all"', icon: toyOf('icon') })}`;
   const cleaning = (at) => { const p = PASSES[at]; return `<i class="ic big pop">${toyOf(p.toy)}</i><span class="lines"><span class="say">${p.doing}, on ${p.n} places</span><span class="more">${p.says}. This is a preview.</span></span>
     <span class="sep"></span>${strip(at, at)}${button('Apply', { cls: 'sm', key: '↵', attrs: 'data-do="apply"' })}${button('Stop', { cls: 'sm quiet', key: 'Esc', attrs: 'data-do="stop"' })}`; };
-  const cleaned = `<i class="ic big pop">${toyOf('checkbox')}</i><span class="lines"><span class="say">Cleaned up 60 places</span><span class="more">Text 14 · Spacing 24 · Colour 12 · Icons 10. All in your code now.</span></span>
+  const cleaned = `<i class="ic big pop">${toyOf('checkbox')}</i><span class="lines"><span class="say">Cleaned up 60 places</span><span class="more">Text 14 · Spacing 24 · Colour 12 · Icons 10. Now on your tokens, in your code.</span></span>
     <span class="sep"></span>${strip(-1, 4)}${button('Undo all', { cls: 'sm quiet', attrs: 'data-do="undo"' })}`;
-  const trials = `<h2 class="part">Proposed: the bar says what is wrong</h2><p class="lead">The bar has one job at a time. With one place in hand it says what was done by hand, in plain words, and the choice is made on the element. Press <b>Clean up all</b> and the same bar carries the whole-page clean-up: one pass at a time, shown on the page, written when you press Apply.</p>`
+  const trials = `<h2 class="part">Proposed: the bar says what is wrong</h2><p class="lead">The bar has one job at a time. With one place in hand it says which value is hard-coded and what your tokens are, and the choice is made on the element. Press <b>Clean up all</b> and the same bar carries the whole-page clean-up: one pass at a time, shown on the page, written when you press Apply.</p>`
     + scene('pc', 'The bar, both jobs (live)', 'Press Clean up all, then Apply four times (or Enter). Stop goes back to the one place you were on.', `<div class="page">${rowsOf(true)}</div>${elementOn}<div class="ib two pl-card" role="status" aria-live="polite">${one}</div>`)
     + `<h2 class="part">Today</h2><p class="lead">The bar as it is now, for comparison.</p>`;
 

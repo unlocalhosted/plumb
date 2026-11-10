@@ -345,7 +345,8 @@ race, built for the old in-place write) was rewritten for the new write path (`e
 - **What we tried:** three bars that only say what is wrong (one sentence; a picture of the scale; a headline and a
   detail). The owner picked the headline and detail.
 - **What we chose:** the bar has one job at a time. With one place in hand: a headline saying what was done by hand,
-  in the owner's words ("16 tags have a corner typed by hand"), and a detail with the value and what the theme has;
+  ("16 tags have a hard-coded corner"; the owner rejected "typed by hand" for "hard-coded" and "tokens"), and a
+  detail with the value and the tokens it should be;
   the choice is made on the element. "Clean up all" turns the same bar into the whole-page clean-up: the pass in
   hand as the headline, the four passes as toys along the right, Apply per pass, then one line of what changed and
   Undo all.
