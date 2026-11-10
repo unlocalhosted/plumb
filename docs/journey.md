@@ -724,6 +724,12 @@ race, built for the old in-place write) was rewritten for the new write path (`e
   and quiet roles. Pills and tags keep their hues, because they take a hue for what it means. Checked on the
   design site: light is unchanged (#ffd0ec with #5a0d3c words); in dark the action follows the night rule, the calmer
   pink with white.
+- **The seventh part: the overlay's shell** (the dock, the tags on your page, the inspector panel, the element
+  drawing). 79 ink and paper uses became roles: words primary or secondary (counts that were in the faint ink are now
+  readable), icon buttons and pins the icon roles, separators, arrows and the drawing's outlines the tick colour,
+  surfaces, hovers and pressed items the surface, hover and inset backgrounds, rules the default border, the pressed
+  button the inverse block. The verdict colours and the instrument blue were already roles. Checked on crafting-ui in
+  both schemes: light (#1d1b17 words, #6b665c dock icons, white tags) and dark (#f4f3ef words, graphite tags).
 
 ## Open gaps
 - White on the pink and mint buttons is under 4.5:1 in light (3.36, 3.85); dark now passes, just. Nothing yet stops the faintest ink being used for text again.
