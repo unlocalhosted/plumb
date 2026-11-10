@@ -612,6 +612,10 @@ export class History {
     }, HOLD);
   }
 
+  // this page came back from a reload with something History heard before it and says again now
+  #resumed = false;
+  get resumed() { return this.#resumed; }
+
   #resume() {
     let open;
     try { open = JSON.parse(sessionStorage.getItem(RESUME_TT) ?? 'null'); } catch {}
@@ -625,6 +629,7 @@ export class History {
     let saved;
     try { saved = JSON.parse(sessionStorage.getItem(RESUME) ?? 'null'); } catch { return; }
     if (!saved || Date.now() - saved.at > 15000) return;
+    this.#resumed = true;
     this.#last = { handle: saved.handle ?? null, group: saved.group ?? null };
     setTimeout(() => this.#say(saved.text, true), 150);
   }

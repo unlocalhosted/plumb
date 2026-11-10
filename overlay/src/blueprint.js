@@ -112,10 +112,10 @@ export class Blueprint {
       recipe: (at, body, said, meta) => this.#applyRecipe(at, body, said, meta),
       swaps: (writes, said, meta) => this.#swapsWrite(writes, said, meta),
       batch: (steps, said, meta) => this.#batchWrite(steps, said, meta),
-      // a step's undo is said by History alone (its toast carries the Undo). What is remembered for the page that
-      // comes back is where Blueprint was (scope, card), with no sentence: with one, the panel said "Undone" too
-      // whenever the reloaded page restored it after the panel's own undo had finished
-      undoGroup: async (group) => { this.#host.remember?.(null); try { return await this.#undoGroup(group); } catch (error) { if (answeredNo(error)) this.#host.forgetResume?.(); throw error; } },
+      // a step's undo is History's to say (its toast carries the Undo). The sentence is still remembered for the page
+      // that comes back, marked as History's: the panel says it only if the reload came before History heard the
+      // answer (an undo across two files reloads at the first), and stays quiet when History has it
+      undoGroup: async (group) => { this.#host.remember?.(FIX.undone, undefined, null, null, { history: true }); try { return await this.#undoGroup(group); } catch (error) { if (answeredNo(error)) this.#host.forgetResume?.(); throw error; } },
       unwant: () => { this.#want = null; },
       climb: (el) => this.climbTo(el),
       // why an element can't be placed in the source, as the panel says it
