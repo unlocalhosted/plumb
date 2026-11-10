@@ -39,32 +39,37 @@ export function mount(host, root, css) {
     .b-box .in { padding: 18px; }
     /* the padding: a hatched band between the edge and the content */
     .b-box::before, .b-btn::before { content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; opacity: 0; transition: opacity 160ms var(--pl-ease-out);
-      background: repeating-linear-gradient(45deg, color-mix(in oklab, var(--on) 60%, transparent) 0 2px, transparent 2px 7px);
+      /* padding is mint and hatched, as in its toy: a pale mint band with the hatch on it, around the solid content */
+      background: repeating-linear-gradient(45deg, var(--pl-mint) 0 2.4px, transparent 2.4px 7.5px), var(--pl-mint-soft);
       -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); mask-composite: exclude; }
     .b-box::before { padding: 18px; }
     /* the margin: a dotted halo outside it */
     .b-box::after { content: ''; position: absolute; inset: -16px; border-radius: 40px; pointer-events: none; opacity: 0; transition: opacity 160ms var(--pl-ease-out);
-      background-image: radial-gradient(var(--pl-butter-line) 1.7px, transparent 2px); background-size: 9px 9px; padding: 16px;
+      /* margin is butter and dotted */
+      background-image: radial-gradient(var(--pl-butter) 2.3px, transparent 2.6px); background-size: 10px 10px; padding: 16px;
       -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); mask-composite: exclude; }
-    .b-box:hover::before { opacity: .55; } .b-box:hover::after { opacity: 1; }
+    .b-box:hover::before { opacity: 1; } .b-box:hover::after { opacity: 1; }
     .b-box:active { scale: .985; }
     /* its sizes, said in the scale's own names, only while pointed at */
     .b-box .tag, .b-btn .tag { position: absolute; z-index: 2; padding: 3px 7px; border-radius: 7px; font: 600 11px/1.2 var(--pl-mono); white-space: nowrap; opacity: 0; scale: .9; transition: opacity 140ms var(--pl-ease-out), scale 220ms var(--pl-spring-pop); pointer-events: none; }
-    .b-box .tag.p { top: 4px; left: 50%; translate: -50% 0; background: var(--pl-mint); color: var(--pl-mint-on); }
+    .b-box .tag.p { top: -1px; left: 50%; translate: -50% 0; background: var(--pl-mint); color: var(--pl-mint-on); }
     .b-box .tag.m { top: -13px; right: -34px; background: var(--pl-butter); color: var(--pl-butter-on); }
     .b-box:hover .tag, .b-btn:hover .tag { opacity: 1; scale: 1; }
     .b-btn { position: relative; padding: 10px 16px; border-radius: 12px; background: var(--h); color: var(--on); font: 600 15px/1 var(--pl-round); transition: padding 180ms var(--pl-spring-pop), margin 180ms var(--pl-spring-pop); }
     .b-btn::before { padding: 10px 16px; }
-    .b-btn:hover::before { opacity: .6; }
+    .b-btn:hover::before { opacity: 1; }
     /* pressed, its padding is squeezed (and its margin gives the room back, so nothing around it moves) */
     .b-btn:active { padding: 8px 13px; margin: 2px 3px; }
     .b-btn:active::before { padding: 8px 13px; }
     .b-btn .tag { bottom: calc(100% + 6px); left: 50%; translate: -50% 0; background: var(--pl-mint); color: var(--pl-mint-on); }
-    .b-btn.q { background: var(--pl-paper); color: var(--pl-ink); box-shadow: inset 0 0 0 1.5px var(--pl-rule); --on: var(--pl-ink); }
+    .b-btn.q { background: var(--pl-paper); color: var(--pl-ink); box-shadow: inset 0 0 0 1.5px var(--pl-rule); }
+    .b-btn { z-index: 0; } .b-btn::before { z-index: -1; }
     .b-gap { display: flex; align-items: center; }
-    .b-gap i { width: 12px; height: 26px; margin: 0 0; border-radius: 3px; opacity: 0; transition: opacity 160ms var(--pl-ease-out);
-      background: repeating-linear-gradient(0deg, var(--pl-lilac) 0 2px, transparent 2px 5px); }
-    .b-gap:hover i { opacity: 1; }
+    /* a gap is lilac and striped */
+    .b-gap > i { position: relative; width: 14px; height: 30px; border-radius: 3px; opacity: 0; transition: opacity 160ms var(--pl-ease-out);
+      background: repeating-linear-gradient(0deg, var(--pl-lilac) 0 2.4px, transparent 2.4px 6px); }
+    .b-gap > i .tag { position: absolute; top: calc(100% + 6px); left: 50%; translate: -50% 0; padding: 3px 7px; border-radius: 7px; font: 600 11px/1.2 var(--pl-mono); font-style: normal; white-space: nowrap; background: var(--pl-lilac); color: var(--pl-lilac-on); }
+    .b-gap:hover > i { opacity: 1; }
 
     /* ── C · it hangs plumb: everything hangs from a line and settles true; pointed at, it swings once ── */
     .c-hang { position: relative; padding-top: 34px; }
@@ -103,8 +108,8 @@ export function mount(host, root, css) {
   ${way('a', 'The raised key', 'What the site does today. A solid top on a darker base; it goes down when pressed.',
     box('a-box') + `<div class="row"><button class="a-btn"><span>Use rounded-tag</span></button><button class="a-btn q"><span>Keep</span></button></div>`,
     ['Feels good under the finger.', 'Borrowed: this is how a great many playful products look. Nothing about it says Plumber.'])}
-  ${way('b', 'It shows its box', 'Flat and solid at rest. Pointed at, a thing draws its own spacing: padding hatched, margin dotted, a gap striped, each with its step’s name. The site measures itself.',
-    box('b-box', '<i class="tag p">p · s5</i><i class="tag m">m · s4</i>') + `<div class="row b-gap"><button class="b-btn">Use rounded-tag<i class="tag">px · s4</i></button><i></i><button class="b-btn q">Keep</button></div>`,
+  ${way('b', 'It shows its box', 'Flat and solid at rest. Pointed at, a thing draws its own spacing in the language’s own colours: padding in hatched mint, margin in dotted butter, a gap in striped lilac, each with its step’s name. The site measures itself.',
+    box('b-box', '<i class="tag p">p · s5</i><i class="tag m">m · s4</i>') + `<div class="row b-gap"><button class="b-btn">Use rounded-tag<i class="tag">px · s4</i></button><i><span class="tag">gap · s3</span></i><button class="b-btn q">Keep</button></div>`,
     ['Only Plumber can do this: the three patterns are ours, and showing spacing is the whole product.', 'Every hover teaches what the product does.', 'Pressed, a button’s padding is squeezed, not pushed down.', 'Risk: busy if everything does it at once. It would need to be quick and quiet.'])}
   ${way('c', 'It hangs plumb', 'Everything hangs from a line, like the bob in the logo, and settles true. Pointed at, it swings once and comes to rest.',
     `<div class="c-hang">${box('c-box', '<i class="eye"></i>')}</div><div class="c-rail"><button class="c-btn">Use rounded-tag</button><button class="c-btn q">Keep</button></div>`,
