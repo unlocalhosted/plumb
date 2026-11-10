@@ -62,6 +62,8 @@ export async function doctorVerbose(root: string, configPath?: string): Promise<
   try {
     const ledger = await readLedger(root);
     if (!ledger.exists) line('Ledger', false, 'no .plumber/ledger.jsonl', configured ? 'Run plumber baseline.' : 'Run plumber init.', false);
+    // a line the reader skips (broken, or from a newer React Plumber) is kept, never lost, but it must still be seen
+    else if (ledger.skipped) line('Ledger', false, `${count(ledger.skipped, 'line')} can't be read: ${ledger.notes[0] ?? ''}`.trim(), 'Repair .plumber/ledger.jsonl, then rerun plumber doctor.');
     else if (!valid) line('Ledger', false, `${count(ledger.entries.length, 'entry', 'entries')} parsed; token and debt checks need a valid config`, 'Fix the config, then rerun plumber doctor.');
     else {
       const report = await check({ root, ...(configPath === undefined ? {} : { config: configPath }) });

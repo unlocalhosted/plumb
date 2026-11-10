@@ -24,4 +24,15 @@ jobs:
       - run: npm ci --prefix site
       - run: npx playwright install --with-deps chromium
       - run: npm run typecheck
+      # The state oracle (../sm locally, a private sibling repo): debt already in .state/baseline.json passes, any new
+      # finding fails. Needs ORACLE_TOKEN, a token that can read github.com/unlocalhosted/sm; without it the step says
+      # so and passes, so a fork's CI is not broken by a repo it cannot see.
+      - name: state oracle
+        env:
+          ORACLE_TOKEN: ${{ secrets.ORACLE_TOKEN }}
+        run: |
+          if [ -z "$ORACLE_TOKEN" ]; then echo "::notice::ORACLE_TOKEN is not set, so sm check did not run."; exit 0; fi
+          git clone --quiet --depth 1 "https://x-access-token:${ORACLE_TOKEN}@github.com/unlocalhosted/sm.git" "$RUNNER_TEMP/sm"
+          npm ci --prefix "$RUNNER_TEMP/sm"
+          node "$RUNNER_TEMP/sm/src/bin.mjs" check --baseline .state/baseline.json --no-log
       - run: npm test

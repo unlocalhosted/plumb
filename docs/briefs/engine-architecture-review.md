@@ -1,5 +1,13 @@
 # Engine architecture review (2026-11-10)
 
+> **Correction, the same day.** This review was read from the `release-0.4.0` branch. `main` was 41 commits ahead of
+> it in other directions and had already built much of what is proposed below: error codes on every refusal with an
+> API contract (step 2), one guarded write path in `src/write/source-file.ts` (step 3), request schemas in
+> `src/session/schema.ts` (step 6), and several lifecycles as declared machines (step 4), all acting on the three
+> audits this review calls "not yet acted on". My own step 2 was a duplicate and was reverted when the branches were
+> joined (`integrate-0.4.0`). What this review still adds: the Stamp module (step 1, built), the snapshot split
+> (step 5), one value resolver (step 7). Read the counts below as the release branch's, not the merged tree's.
+
 Asked by the owner: can the engine be made more extensible, reliable and adaptable, and better to work with for
 people and for agents; and would functional patterns, XState or state machines help?
 

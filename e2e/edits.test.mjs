@@ -250,13 +250,14 @@ test('finding 1: token-less writes require trusted Host, exact Origin and same-o
   assert.equal(await readFile(result.file, 'utf8'), before);
 });
 
-async function injectOpen(t, run, probe) {
+async function injectOpen(t, run, probe) { return injectFs('open', run, probe); }
+async function injectFs(name, run, probe) {
   const { default: fs } = await import('node:fs');
   const { syncBuiltinESMExports } = await import('node:module');
-  const original = fs.promises.open;
-  fs.promises.open = async (...args) => probe(original, args);
+  const original = fs.promises[name];
+  fs.promises[name] = async (...args) => probe(original, args);
   syncBuiltinESMExports();
-  try { await run(); } finally { fs.promises.open = original; syncBuiltinESMExports(); }
+  try { await run(); } finally { fs.promises[name] = original; syncBuiltinESMExports(); }
 }
 
 test('finding 2: parent symlink swap cannot write another project', async t => {
@@ -276,18 +277,18 @@ for (const race of ['atomic-save', 'concurrent-save']) test(`finding 3: ${race} 
   const root = await project(t), session = await transport(t, root, 'Engine'), result = await session.edits('src/App.tsx', 1);
   const original = await readFile(result.file, 'utf8'), concurrent = original + '// concurrent editor\n';
   const { rename } = await import('node:fs/promises'); let injected = false;
-  await injectOpen(t, () => assert.rejects(session.apply(selection(result)), /changed/), async (open, args) => {
+  const applying = () => assert.rejects(session.apply(selection(result)), /changed/);
+  if (race === 'atomic-save') await injectOpen(t, applying, async (open, args) => {
     const handle = await open(...args);
-    if (!injected && args[0] === result.file) {
-      injected = true;
-      if (race === 'atomic-save') { await rename(result.file, join(root, 'src/Previous.tsx')); await writeFile(result.file, original); }
-      else {
-        // the editor saves the moment Plumber's new file is in place (the descriptor it checked is closed last)
-        const close = handle.close.bind(handle);
-        handle.close = async (...values) => { await close(...values); await writeFile(result.file, concurrent); };
-      }
-    }
+    if (!injected && args[0] === result.file) { injected = true; await rename(result.file, join(root, 'src/Previous.tsx')); await writeFile(result.file, original); }
     return handle;
+  });
+  // the write lands by rename (src/write/source-file.ts); an editor that saves right after it, before the write is
+  // read back, must turn the write's success into "changed"
+  else await injectFs('rename', applying, async (rename, args) => {
+    const out = await rename(...args);
+    if (!injected && args[1] === result.file) { injected = true; await writeFile(result.file, concurrent); }
+    return out;
   });
   assert.ok(injected); assert.equal(await readFile(result.file, 'utf8'), race === 'atomic-save' ? original : concurrent);
   const fresh = await session.edits(result.file, 1);

@@ -127,6 +127,8 @@ export async function applyLedger(report: Report, options: LedgerOptions = {}, s
   for (const finding of diagnostics) if (finding.rule === 'ledger/grew') finding.title = `This change adds ${count(summary.growth, 'ledger entry', 'ledger entries')}`;
   report.findings.push(...diagnostics);
   summary.message = ledger.exists ? `${summary.new} new, ${summary.debt} debt, ${count(summary.exceptions, 'exception site')}; ${summary.stale} stale, ${summary.growth} ledger/config growth.` : 'No ledger. Run plumber baseline to record current debt and accept the current decisions.';
+  // lines this build could not read are skipped and kept as they are: a newer build's entries, a merge conflict's markers
+  if (ledger.skipped) { summary.message += ` ${count(ledger.skipped, 'ledger line')} could not be read and ${plural(ledger.skipped, 'is', 'are')} kept as ${plural(ledger.skipped, 'it is', 'they are')}.`; report.notes.push(...ledger.notes); }
   report.ledger = summary;
   report.notes.push(summary.message);
   const elapsed = performance.now() - start;

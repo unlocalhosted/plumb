@@ -62,6 +62,9 @@ export class Reader {
   #running = false;
   #inflight = 0; // readings in flight: page requests and per-element readings alike
   #run = 0; // which reading this is: an answer from a reading that was stopped counts against nothing
+  // an answer counts only for the reading that asked: a reading stopped and started again (widen, leave and enter) is a
+  // new one, so an old answer, or an old failure, never lands on it or parks it (docs/state-machines/overlay.md #4)
+  #live(run) { return this.#running && run === this.#run; }
   #pending = false; // the server was still starting: the read goes again when it is ready
   #noPage = false; // a server without POST page (older, or the docs' replay): every element is read on its own
   #startedAt = 0; #changedAt = 0; #quiet = 0; // when the reader started, the last relevant mutation, the timer for the quiet window
@@ -223,11 +226,11 @@ export class Reader {
     const run = this.#run;
     this.#host.readCode(files)
       .then((answer) => {
-        if (!this.#running || key !== this.#codeKey) return;
+        if (!this.#live(run) || key !== this.#codeKey) return;
         if (answer === null) { this.#noCode = true; return; }
         this.#code = new Map(answer.map((file) => [file.file, file]));
       })
-      .catch((error) => { if (this.#running && key === this.#codeKey) { this.#codeKey = ''; this.#parked([], error); } })
+      .catch((error) => { if (this.#live(run) && key === this.#codeKey) { this.#codeKey = ''; this.#parked([], error); } })
       .finally(() => { if (run === this.#run) this.#codeInflight--, this.#settle(); });
   }
 
@@ -237,11 +240,11 @@ export class Reader {
     const run = this.#run;
     this.#host.readPage(items.map((item) => ({ el: item.el, stamp: item.stamp, tag: item.tag, classes: item.classes })))
       .then((states) => {
-        if (!this.#running) return;
+        if (!this.#live(run)) return;
         items.forEach((item, i) => this.#landed(item, states[i]));
       })
       .catch((error) => {
-        if (!this.#running) return;
+        if (!this.#live(run)) return;
         // no whole-page answer here: each of these elements is read on its own, now and from here on
         if (error?.status === 404) { this.#noPage = true; for (const item of items) if (item.state === 'reading') item.state = 'queued'; this.#elements(items.filter((item) => item.state === 'queued')); return; }
         this.#parked(items, error);
@@ -260,8 +263,8 @@ export class Reader {
         this.#inflight++;
         const run = this.#run;
         this.#host.readMarks(item.el, fresh || item.caller === true, { computed: true })
-          .then((state) => { if (this.#running) this.#landed(item, state); })
-          .catch((error) => { if (this.#running) this.#parked([item], error); })
+          .then((state) => { if (this.#live(run)) this.#landed(item, state); })
+          .catch((error) => { if (this.#live(run)) this.#parked([item], error); })
           .finally(() => { if (run === this.#run) this.#inflight--, pump(), this.#settle(); });
       }
     };

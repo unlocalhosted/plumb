@@ -55,11 +55,13 @@ export async function takeCensus(options: CensusOptions): Promise<ProjectCensus>
   const base = await reachable(options.url), origin = new URL(base).origin, max = options.max ?? 120, timeout = options.timeout ?? 30000;
   const given = (options.routes ?? []).filter(Boolean), queue = given.length ? [...given] : ['/'], seen = new Set(queue.map(r => new URL(r, base).pathname));
   const browser = await launchChromium(), routes: CensusRoute[] = [], entries: ProjectCensus['entries'] = [], gaps: CensusGap[] = [], colours: CensusColour[] = [], icons: CensusIcon[] = [];
-  let taken = 0;
+  // `failed` ends the crawl for both readers: a reader that throws leaves its route taken and never counted, so the
+  // other must not keep waiting for it to land
+  let taken = 0, failed = false;
   const reader = async () => {
     const page = await browser.newPage({ viewport: desktop, reducedMotion: 'reduce' });
     try {
-      for (;;) {
+      while (!failed) {
         const route = queue.shift();
         if (route === undefined) { if (taken - routes.length > 0) { await new Promise(r => setTimeout(r, 200)); continue; } return; }
         if (taken >= max) { queue.unshift(route); return; }
@@ -80,7 +82,7 @@ export async function takeCensus(options: CensusOptions): Promise<ProjectCensus>
           seen.add(at.pathname); queue.push(at.pathname);
         }
       }
-    } finally { await page.close(); }
+    } catch (error) { failed = true; throw error; } finally { await page.close().catch(() => {}); }
   };
   try { await Promise.all([reader(), reader()]); } finally { await browser.close(); }
   const census: ProjectCensus = { schemaVersion: 1, at: new Date().toISOString(), url: base, viewport: desktop, routes: routes.filter(r => r.elements > 0 || given.includes(r.route)), entries, gaps, colours, icons, left: queue.length };

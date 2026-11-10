@@ -1,6 +1,8 @@
 import type { Declaration, Finding, Site } from '../report.js';
 
 export interface LedgerEntry {
+  /** the entry's shape version (store.ts LEDGER_VERSION); an old line has none */
+  v?: number;
   key: string;
   kind: 'debt' | 'exception' | 'decision' | 'declined';
   count?: number;

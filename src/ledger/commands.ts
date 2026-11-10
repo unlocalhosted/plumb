@@ -1,5 +1,4 @@
-import { statePath } from '../paths.js';
-import { readFile, rm } from 'node:fs/promises';
+import { readFile } from 'node:fs/promises';
 import { relative, resolve } from 'node:path';
 import { UsageError } from '../errors.js';
 import { count } from '../messages.js';
@@ -13,7 +12,7 @@ import type { Report } from '../report.js';
 import { initProject } from '../adoption/init.js';
 import { author } from './git.js';
 import { currentDecisions, decisionEntry, decisionKey, findingGroups } from './keys.js';
-import { entryCount, ledgerPath, readLedger, writeLedger } from './store.js';
+import { entryCount, ledgerPath, readLedger, updateLedger } from './store.js';
 import type { LedgerEntry } from './types.js';
 
 export interface CommandOptions { force?: boolean; why?: string; key?: string; rule?: string; site?: string; ratchet?: boolean; prune?: boolean; rebase?: boolean }
@@ -72,21 +71,20 @@ export async function ledgerCommand(command: string, report: Report, options: Co
     ...(report.config.path ? { config: report.config.path } : {}),
     ...(options.force === undefined ? {} : { force: options.force }),
   }, text => process.stdout.write(text));
-  const ledger = await readLedger(report.root);
   const groups = findingGroups(report);
   // A family with no tokens is a setup step (read.tokens.<family>), never debt to carry.
   const current = new Map([...groups].filter(([, group]) => group.finding.rule !== 'config/no-tokens').map(([key, group]) => [key, group.entry]));
-  let entries = [...ledger.entries];
   const moves: { from: string; to: string }[] = [];
   let message = '';
   const attribution = stamp(report.root);
-  const pendingPath = statePath(report.root, '.baseline-pending');
+  // one read-modify-write under the ledger's lock (store.ts): the overlay's accept and a terminal's never lose each other's entry
+  const entries = await updateLedger(report.root, async ledger => {
+  let entries = [...ledger.entries];
   if (command === 'baseline') {
     const old = new Map(entries.map(entry => [entry.key, entry]));
     const debt = [...current.values()].filter(entry => old.get(entry.key)?.kind !== 'exception');
     const growth = debt.filter(entry => old.get(entry.key)?.kind !== 'debt' || entryCount(entry) > entryCount(old.get(entry.key)!));
-    const pending = await readFile(pendingPath, 'utf8').then(() => entries.every(entry => entry.kind === 'decision')).catch(error => { if ((error as NodeJS.ErrnoException).code === 'ENOENT') return false; throw error; });
-    if (ledger.exists && !pending && growth.length && !options.force) throw new UsageError(`Baseline refuses debt growth (${count(growth.length, 'key')}); fix new findings or use plumber baseline --force after review.`);
+    if (ledger.exists && growth.length && !options.force) throw new UsageError(`Baseline refuses debt growth (${count(growth.length, 'key')}); fix new findings or use plumber baseline --force after review.`);
     entries = [...entries.filter(entry => entry.kind !== 'debt'), ...debt.map(entry => ({ ...entry, ...(old.get(entry.key)?.kind === 'debt' ? old.get(entry.key)! : attribution), count: entry.count!, resolved: entry.resolved! }))];
     if (!ledger.exists) entries = acceptSet(report, entries, undefined, true);
     message = `Baseline recorded ${count(debt.reduce((sum, entry) => sum + entryCount(entry), 0), 'place')} as known debt.`;
@@ -139,8 +137,8 @@ export async function ledgerCommand(command: string, report: Report, options: Co
     if (options.prune) entries = entries.filter(entry => entry.kind === 'declined' || (entry.kind === 'decision' ? decisionKeys.has(entry.key) : current.has(entry.key)));
     message = moves.map(move => `Moved ${move.from} -> ${move.to}`).join('\n') || `Ledger has ${count(entries.length, 'entry', 'entries')}.`;
   } else throw new UsageError(`Unknown ledger command: ${command}.`);
-  await writeLedger(report.root, entries);
-  if (command === 'baseline') await rm(pendingPath, { force: true });
+  return entries;
+  });
   return { message, entries, moves };
 }
 export async function inspectLedger(command: 'show' | 'why', input: string, report: Report) {

@@ -5,13 +5,20 @@
  * (whitespace, quotes, braces and `=` split words, so each class in a className is its own word) and keeps each run
  * of changed words as a change: where it is, what it was, what it became, and the text on either side, so it can be
  * found again after later writes move it. An undo writes the inverse at the place the change is found now; a place
- * that no longer holds what the change wrote is refused, never guessed. The log is JSON lines under .plumber/cache.
+ * that no longer holds what the change wrote is refused, never guessed. The log is JSON lines under .plumber/cache,
+ * shared with every other engine on the project (docs/invariants/api-contract.md §3): ids are unique across processes,
+ * every line is checked on read and a line that is not a record is skipped and counted, the file is re-read whenever it
+ * moved, and it is appended under its lock, never rewritten from a stale copy.
  */
-import { appendFileSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { appendFileSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
+import { randomBytes } from 'node:crypto';
 import { dirname } from 'node:path';
 import { lineStarts } from '../collect/source.js';
+import { lockSync } from '../write/lock.js';
 
 export interface ChangeRecord {
+  /** the record's shape version (RECORD_VERSION); an old line has none and is read as version 1 */
+  v?: number;
   id: string; at: string;
   /** every change written by one call shares a group (a caller may name it, so several calls form one step) */
   group: string;
@@ -28,7 +35,7 @@ export interface ChangeRecord {
   undoes?: string[];
 }
 export type ChangeState = 'live' | 'undone' | 'changed';
-export interface TraceEntry extends Omit<ChangeRecord, 'prefix' | 'suffix' | 'write'> { state: ChangeState; /** changed: later changes at the same place, when known */ by?: string[]; /** undone: the change that took it back */ undoneBy?: string }
+export interface TraceEntry extends Omit<ChangeRecord, 'prefix' | 'suffix' | 'write' | 'v'> { state: ChangeState; /** changed: later changes at the same place, when known */ by?: string[]; /** undone: the change that took it back */ undoneBy?: string }
 
 const CONTEXT = 32;
 const LIMIT = 2000;
@@ -105,48 +112,85 @@ export function locate(text: string, change: Pick<ChangeRecord, 'line' | 'column
   return change.to ? nearest(here(all(change.to, 0))) : null;
 }
 
-/** The log: read once, appended per write, rewritten only to drop records or keep it under its limit. */
+/** The shape version written on every new line; a line of another version is skipped, never read as this one. */
+export const RECORD_VERSION = 1;
+/** An id no other process or restart can mint: a prefix (`c` change, `g` group, `w` write), the time in base 36, 6 hex characters of randomness. */
+export const mintId = (prefix: 'c' | 'g' | 'w'): string => `${prefix}${Date.now().toString(36)}${randomBytes(3).toString('hex')}`;
+const positive = (n: unknown) => typeof n === 'number' && Number.isSafeInteger(n) && n >= 1;
+/** Is this parsed line a record this build can act on? */
+export function isChangeRecord(value: unknown): value is ChangeRecord {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+  const r = value as Record<string, unknown>;
+  if (r.v !== undefined && r.v !== RECORD_VERSION) return false;
+  if (['id', 'at', 'group', 'write', 'file'].some(k => typeof r[k] !== 'string' || !(r[k] as string).trim())) return false;
+  if (['from', 'to', 'prefix', 'suffix', 'label'].some(k => typeof r[k] !== 'string')) return false;
+  if (!positive(r.line) || !positive(r.column)) return false;
+  if (r.undoes !== undefined && (!Array.isArray(r.undoes) || r.undoes.some(u => typeof u !== 'string'))) return false;
+  return true;
+}
+
+/** The log as it is on disk: re-read whenever the file moved, appended under its lock, rewritten (to drop records or
+ * keep it under its limit) only from what was read under that lock, with the lines it could not read kept verbatim. */
 export class ChangeLog {
-  private records: ChangeRecord[] | undefined;
-  private next = 0;
-  private groups = 0;
+  private records: ChangeRecord[] = [];
+  /** the lines skipped on read, kept in place when the file is rewritten (another build's records are not ours to drop) */
+  private kept: string[] = [];
+  /** the file as last read, so another process's appends are seen */
+  private seen: string | undefined;
+  /** how many lines of the file are not records this build can read */
+  skipped = 0;
   constructor(private path: string) {}
-  all(): ChangeRecord[] {
-    if (this.records) return this.records;
+  private signature(): string { try { const info = statSync(this.path); return `${info.size}:${info.mtimeMs}:${info.ino}`; } catch { return 'none'; } }
+  private load(): void {
+    const now = this.signature();
+    if (now === this.seen) return;
     let lines: string[] = [];
-    try { lines = readFileSync(this.path, 'utf8').split('\n').filter(Boolean); } catch { /* no log yet */ }
-    this.records = lines.flatMap(line => { try { return [JSON.parse(line) as ChangeRecord]; } catch { return []; } });
-    for (const r of this.records) { this.next = Math.max(this.next, Number(r.id.slice(1)) || 0); this.groups = Math.max(this.groups, Number(/^g(\d+)$/.exec(r.group)?.[1]) || 0); }
-    return this.records;
+    try { lines = readFileSync(this.path, 'utf8').split('\n').filter(line => line.trim()); } catch { /* no log yet */ }
+    const records: ChangeRecord[] = [], kept: string[] = [];
+    for (const line of lines) {
+      let parsed: unknown; try { parsed = JSON.parse(line); } catch { kept.push(line); continue; }
+      if (isChangeRecord(parsed)) records.push(parsed); else kept.push(line);
+    }
+    this.records = records; this.kept = kept; this.skipped = kept.length; this.seen = now;
   }
-  group(): string { this.all(); return `g${++this.groups}`; }
+  all(): ChangeRecord[] { this.load(); return this.records; }
+  group(): string { return mintId('g'); }
   /** Record a write's changes: the diff of the file before and after it. */
   add(write: { write: string; file: string; group: string; meta?: unknown; undoing?: ChangeRecord[] }, before: string, after: string, label: (from: string, to: string) => string, split: (list: ReturnType<typeof hunks>) => ReturnType<typeof hunks> = list => list): ChangeRecord[] {
-    const records = this.all(), at = new Date().toISOString(), starts = lineStarts(after);
+    const at = new Date().toISOString(), starts = lineStarts(after);
     const made = split(hunks(before, after)).map(h => {
       let line = 1; while (line < starts.length && starts[line]! <= h.at) line++;
       const undoes = write.undoing?.filter(o => o.to === h.from && o.from === h.to).map(o => o.id);
       return {
-        id: `c${++this.next}`, at, group: write.group, write: write.write, file: write.file, line, column: h.at - starts[line - 1]! + 1,
+        v: RECORD_VERSION, id: mintId('c'), at, group: write.group, write: write.write, file: write.file, line, column: h.at - starts[line - 1]! + 1,
         from: h.from, to: h.to, prefix: after.slice(Math.max(0, h.at - CONTEXT), h.at), suffix: after.slice(h.at + h.to.length, h.at + h.to.length + CONTEXT),
         label: label(h.from, h.to), ...(write.meta === undefined ? {} : { meta: write.meta }),
         ...(write.undoing ? { undoes: undoes?.length ? undoes : write.undoing.map(o => o.id) } : {}),
       } satisfies ChangeRecord;
     });
     if (!made.length) return made;
-    records.push(...made);
-    mkdirSync(dirname(this.path), { recursive: true });
-    if (records.length > LIMIT) { records.splice(0, records.length - LIMIT); this.save(); }
-    else appendFileSync(this.path, made.map(r => JSON.stringify(r) + '\n').join(''));
+    lockSync(this.path, () => {
+      this.load();
+      if (this.records.length + made.length > LIMIT) { this.records = [...this.records, ...made].slice(-LIMIT); this.save(); }
+      else { appendFileSync(this.path, made.map(r => JSON.stringify(r) + '\n').join('')); this.records.push(...made); this.seen = this.signature(); }
+    });
     return made;
   }
   /** Forget the changes of writes that were taken back whole (a file-level undo, a rolled-back group). */
   drop(writes: Set<string>): void {
-    const records = this.all(), kept = records.filter(r => !writes.has(r.write));
-    if (kept.length === records.length) return;
-    this.records = kept; this.save();
+    lockSync(this.path, () => {
+      this.load();
+      const kept = this.records.filter(r => !writes.has(r.write));
+      if (kept.length === this.records.length) return;
+      this.records = kept; this.save();
+    });
   }
-  private save(): void { mkdirSync(dirname(this.path), { recursive: true }); writeFileSync(this.path, this.records!.map(r => JSON.stringify(r) + '\n').join('')); }
+  /** Under the lock, from what was read under it: the lines this build could not read first, then the records. */
+  private save(): void {
+    mkdirSync(dirname(this.path), { recursive: true });
+    writeFileSync(this.path, [...this.kept, ...this.records.map(r => JSON.stringify(r))].map(line => line + '\n').join(''));
+    this.seen = this.signature();
+  }
 
   /** Every change, newest first, with its state against the files as they are now. */
   trace(read: (file: string) => string | undefined): TraceEntry[] {
@@ -155,7 +199,7 @@ export class ChangeLog {
       const r = records[k]!;
       // a change is undone when a later undo of it still stands; that undo's state is already known (newer first)
       const undoneBy = records.slice(k + 1).find(u => u.undoes?.includes(r.id) && states.get(u.id)?.state !== 'undone');
-      const { prefix: _p, suffix: _s, write: _w, ...shown } = r;
+      const { prefix: _p, suffix: _s, write: _w, v: _v, ...shown } = r;
       if (undoneBy) { states.set(r.id, { ...shown, state: 'undone', undoneBy: undoneBy.id }); continue; }
       const text = read(r.file);
       if (text !== undefined && locate(text, r) !== null) { states.set(r.id, { ...shown, state: 'live' }); continue; }

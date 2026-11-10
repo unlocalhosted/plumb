@@ -1,12 +1,15 @@
-import { lstat, mkdir, readFile, realpath, writeFile } from 'node:fs/promises';
-import { dirname, isAbsolute, join, relative } from 'node:path';
+import { realpath } from 'node:fs/promises';
+import { join, relative } from 'node:path';
 import MagicString from 'magic-string';
 import { parseSync, visitorKeys } from 'oxc-parser';
 import type { Node, Program } from 'oxc-parser';
 import { nodeName, unwrap } from '../collect/source.js';
 import { UsageError } from '../errors.js';
+import { readSourceIfExists, symbolic, writeSource } from '../write/source-file.js';
 
 interface Edit { file: string; before: string | undefined; after: string }
+/** An edit with the hash of the text it was planned from (null: the file is to be created). */
+interface Planned extends Edit { hash: string | null }
 const viteModule = '@unlocalhosted/react-plumber/vite';
 const nextModule = '@unlocalhosted/react-plumber/next/config';
 const overlayModule = '@unlocalhosted/react-plumber/next/overlay';
@@ -14,38 +17,19 @@ const route = "import { createPlumbRoute } from '@unlocalhosted/react-plumber/ne
 
 function refuse(message: string): never { throw new UsageError(`Overlay setup refused: ${message}`); }
 
-// Validate every existing ancestor, including for files that will be created.
-// A path lexically inside the root can still escape through a symlink.
-async function inside(root: string, file: string): Promise<void> {
-  let ancestor = file;
-  for (;;) {
-    try {
-      const path = relative(root, await realpath(ancestor)).replaceAll('\\', '/');
-      if (path === '..' || path.startsWith('../') || isAbsolute(path)) refuse(`${relative(root, file)} resolves outside the project root.`);
-      return;
-    } catch (error) {
-      if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
-      const entry = await lstat(ancestor).catch(missing => {
-        if ((missing as NodeJS.ErrnoException).code !== 'ENOENT') throw missing;
-        return undefined;
-      });
-      if (entry?.isSymbolicLink()) refuse(`${relative(root, ancestor)} is a dangling symlink.`);
-      const parent = dirname(ancestor);
-      if (parent === ancestor) throw error;
-      ancestor = parent;
-    }
+/** The file as the write module reads it (contained, no symbolic link on the way, UTF-8), in this setup's own words. */
+async function content(root: string, file: string): Promise<{ text: string; hash: string } | undefined> {
+  try { return await readSourceIfExists(root, file); }
+  catch (error) {
+    if (error instanceof UsageError && (error.message === symbolic || error.message.includes('outside the project root'))) refuse(`${relative(root, file)} resolves outside the project root.`);
+    throw error;
   }
 }
-async function content(root: string, file: string): Promise<string | undefined> {
-  await inside(root, file);
-  try { return await readFile(file, 'utf8'); }
-  catch (error) { if ((error as NodeJS.ErrnoException).code === 'ENOENT') return undefined; throw error; }
-}
-async function find(root: string, names: string[]): Promise<{ file: string; source: string }> {
-  const found: { file: string; source: string }[] = [];
+async function find(root: string, names: string[]): Promise<{ file: string; source: string; hash: string }> {
+  const found: { file: string; source: string; hash: string }[] = [];
   for (const name of names) {
-    const file = join(root, name), source = await content(root, file);
-    if (source !== undefined) found.push({ file, source });
+    const file = join(root, name), current = await content(root, file);
+    if (current !== undefined) found.push({ file, source: current.text, hash: current.hash });
   }
   if (found.length !== 1) refuse(`expected one of ${names.join(', ')}; found ${found.length}.`);
   return found[0]!;
@@ -272,29 +256,26 @@ function diff(edit: Edit, root: string): string {
 
 /** Plan and validate all files before writing; no package manager or parent-repo discovery. */
 export async function writeOverlay(project: string, host: 'vite' | 'next' | undefined): Promise<string> {
-  const root = await realpath(project), edits: Edit[] = [];
+  const root = await realpath(project), edits: Planned[] = [];
   if (host === 'vite') {
-    const { file, source } = await find(root, ['ts', 'mts', 'js', 'mjs'].map(extension => `vite.config.${extension}`));
-    edits.push({ file, before: source, after: viteConfig(file, source) });
+    const { file, source, hash } = await find(root, ['ts', 'mts', 'js', 'mjs'].map(extension => `vite.config.${extension}`));
+    edits.push({ file, before: source, hash, after: viteConfig(file, source) });
   } else if (host === 'next') {
     const config = await find(root, ['ts', 'mts', 'js', 'mjs', 'cjs'].map(extension => `next.config.${extension}`));
-    edits.push({ file: config.file, before: config.source, after: nextConfig(config.file, config.source) });
+    edits.push({ file: config.file, before: config.source, hash: config.hash, after: nextConfig(config.file, config.source) });
     // Next gives app/ precedence over src/app/. Mirror that without guessing.
     const extensions = ['tsx', 'jsx', 'js'];
     const topLevel = await Promise.all(extensions.map(extension => content(root, join(root, `app/layout.${extension}`))));
     const app = topLevel.some(source => source !== undefined) ? 'app' : 'src/app';
     const layout = await find(root, extensions.map(extension => `${app}/layout.${extension}`));
-    edits.push({ file: layout.file, before: layout.source, after: nextLayout(layout.file, layout.source) });
-    const file = join(root, app, '%5F_plumb/[...path]/route.plumb.ts'), before = await content(root, file);
+    edits.push({ file: layout.file, before: layout.source, hash: layout.hash, after: nextLayout(layout.file, layout.source) });
+    const file = join(root, app, '%5F_plumb/[...path]/route.plumb.ts'), current = await content(root, file), before = current?.text;
     if (before !== undefined && before.replace(/[\s;]/g, '') !== route.replace(/[\s;]/g, '')) refuse(`${relative(root, file)} already exists with different content; keep it and wire manually.`);
-    edits.push({ file, before, after: before ?? route });
+    edits.push({ file, before, hash: current?.hash ?? null, after: before ?? route });
   } else refuse('--write supports Vite and Next.js App Router projects; this host needs manual wiring.');
   const changed = edits.filter(edit => edit.before !== edit.after);
-  for (const edit of changed) await inside(root, edit.file);
-  for (const edit of changed) {
-    await mkdir(dirname(edit.file), { recursive: true });
-    await writeFile(edit.file, edit.after, { flag: edit.before === undefined ? 'wx' : 'w' });
-  }
+  // each write re-checks that the file still holds what it was planned from, and lands whole or not at all
+  for (const edit of changed) await writeSource(root, edit.file, { expectHash: edit.hash, next: edit.after });
   return changed.length ? changed.map(edit => diff(edit, root) + `Wrote ${relative(root, edit.file)}.\n`).join('\n') : 'Overlay already set up; no files changed.\n';
 }
 

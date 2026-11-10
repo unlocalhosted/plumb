@@ -5,7 +5,7 @@ import { isReadMethod } from './methods.js';
 
 interface Call { id: number; method: string; args: unknown[]; deadline: number; json?: boolean }
 const port = parentPort!;
-const errorDetails = (error: unknown) => ({ errorStack: error instanceof Error ? error.stack : undefined, usageError: error instanceof UsageError });
+const errorDetails = (error: unknown) => ({ errorStack: error instanceof Error ? error.stack : undefined, usageError: error instanceof UsageError, ...(error instanceof UsageError ? { errorCode: error.code } : {}) });
 const queue: Call[] = [];
 let running = false;
 const read = (call: Call) => isReadMethod(call.method);

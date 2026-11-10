@@ -1,0 +1,25 @@
+{
+  "keys": [
+    "sm/listener-pair|overlay/src/craft-record.js|module|pointermove:(anonymous)|1",
+    "sm/listener-pair|overlay/src/craft-record.js|module|pointerout:(anonymous)|1",
+    "sm/listener-pair|overlay/src/elementcard.js|ElementCard.constructor|keydown:space|1",
+    "sm/listener-pair|overlay/src/elementcard.js|ElementCard.constructor|keyup:space|1",
+    "sm/listener-pair|overlay/src/gravity.js|Gravity.start|visibilitychange:run|1",
+    "sm/listener-pair|overlay/src/history.js|History.constructor|resize:follow|1",
+    "sm/listener-pair|overlay/src/history.js|History.constructor|scroll:follow|1",
+    "sm/pointer-pair|overlay/src/scrub.js|module||1",
+    "sm/timer-handle|overlay/src/cleanup.js|Cleanup.#applySwaps|requestAnimationFrame|1",
+    "sm/timer-handle|overlay/src/cleanup.js|Cleanup.#apply|requestAnimationFrame|1",
+    "sm/timer-handle|overlay/src/fixpanel.js|FixPanel.#burst|requestAnimationFrame|1",
+    "sm/timer-handle|overlay/src/fixpanel.js|FixPanel.#burst|requestAnimationFrame|2",
+    "sm/timer-handle|overlay/src/fixpanel.js|FixPanel.celebrate|setTimeout|1",
+    "sm/timer-handle|overlay/src/fixpanel.js|FixPanel.hold|requestAnimationFrame|1",
+    "sm/timer-handle|overlay/src/fixpanel.js|FixPanel.hold|setTimeout|1",
+    "sm/timer-handle|overlay/src/fixpanel.js|FixPanel.render|setTimeout|1",
+    "sm/timer-handle|overlay/src/fixpanel.js|FixPanel.render|setTimeout|2",
+    "sm/timer-handle|overlay/src/fixpanel.js|FixPanel.resumed|setTimeout|1",
+    "sm/timer-handle|overlay/src/text-edit.js|TextEditor.#follow|requestAnimationFrame|1",
+    "sm/timer-handle|overlay/src/text-edit.js|TextEditor.#refusal|setTimeout|1"
+  ],
+  "schema": 1
+}

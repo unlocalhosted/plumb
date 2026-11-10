@@ -1,5 +1,5 @@
 import { statePath } from '../paths.js';
-import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { hasShadcnConfig } from '../project-facts/index.js';
 import { tmpdir } from 'node:os';
@@ -21,6 +21,8 @@ import type { JudgedFamily } from '../rules/families.js';
 import { checkProject, declinedValues, describeFamily, propose } from '../onboarding/propose.js';
 import { readState } from '../onboarding/state.js';
 import { applyTheme, describePlan, planTheme } from '../onboarding/write.js';
+import { readSource, Transaction, withRollback } from '../write/source-file.js';
+import type { Rollback } from '../write/source-file.js';
 import { asked } from '../onboarding/ask.js';
 import type { Asker } from '../onboarding/ask.js';
 import { familyFor } from '../decisions/index.js';
@@ -68,7 +70,7 @@ export async function initProject(root: string, options: InitOptions, print: (te
   if (loaded.path && !options.force) throw new UsageError(`Config already exists: ${pathFrom(root, loaded.path)}.\n  Review the diff before replacing it.\n  → plumber init --force`);
   const ledger = await readLedger(root); // Refuse malformed state before writing config.
   const scratch = await mkdtemp(join(tmpdir(), 'plumb-init-'));
-  let undoTheme: (() => Promise<void>) | undefined;
+  let undoTheme: (() => Promise<Rollback>) | undefined;
   try {
     const temporary = join(scratch, 'config.mjs');
     await writeFile(temporary, 'export default {};\n');
@@ -154,19 +156,19 @@ export async function initProject(root: string, options: InitOptions, print: (te
       if (previous?.kind !== 'exception') accepted.set(entry.key, { ...entry, ...stamp });
     }
     const destination = loaded.path ?? resolve(root, options.config ?? 'plumber.config.ts');
-    const before = loaded.path ? await readFile(destination, 'utf8') : '';
+    const current = loaded.path ? await readSource(root, destination) : undefined, before = current?.text ?? '';
     if (loaded.path && before !== text) print(diff({ file: destination, before, after: text }, root));
-    await mkdir(resolve(destination, '..'), { recursive: true });
-    await writeFile(destination, text, { flag: loaded.path ? 'w' : 'wx' });
-    try { await writeLedger(root, [...accepted.values()]); }
-    catch (error) { if (loaded.path) await writeFile(destination, before); else await rm(destination); throw error; }
+    // the config and the ledger land together: a ledger that cannot be written takes the config back, and says so if it can't
+    const landing = new Transaction(root);
+    await landing.write(destination, { expectHash: current?.hash ?? null, next: text });
+    try { await writeLedger(root, [...accepted.values()], { expect: ledger.hash }); }
+    catch (error) { throw withRollback(error, (await landing.rollback()).failed); }
     undoTheme = undefined;
-    await rm(statePath(root, '.baseline-pending'), { force: true });
     const accepts = currentDecisions(adopted).length;
     const left = !skippedFamilies.length ? '' : options.unattended && !options.families?.size
       ? `\nLeft your theme as it is (no terminal to ask): ${skippedFamilies.join(', ')}. To add them: ${skippedIds.map(id => `plumber propose --family ${id} --write`).join(' · ')}.`
       : `\nLeft for later: ${skippedFamilies.join(', ')}. plumber propose --family <name> shows what would be written.`;
     return { message: `Wrote ${pathFrom(root, destination)} with your token sources.\n${written ? `${written}\n` : ''}Components: ${components.length} found${from && useShadcn ? ` from ${from}` : ''}.\nBaseline: ${count(debt.reduce((sum, entry) => sum + entryCount(entry), 0), 'place')} recorded as known debt in ${pathFrom(root, statePath(root, 'ledger.jsonl'))}.\nAccepted ${count(accepts, 'token')} as inferred.${left}\nNext:\n  plumber install --overlay --write   see and fix drift on the page, in dev (Vite or Next.js)\n  plumber install --ci                fail CI only on new drift`, entries: [...accepted.values()], moves: [] };
-  } catch (error) { await undoTheme?.(); throw error; }
+  } catch (error) { throw withRollback(error, (await undoTheme?.())?.failed ?? []); }
   finally { await rm(scratch, { recursive: true, force: true }); }
 }

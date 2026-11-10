@@ -1,18 +1,19 @@
 import { environment, stateDirectory, statePath, configurationNames, isLedgerPath, cacheDirectory, ignoreCache } from '../paths.js';
-import { constants, readFileSync, watch } from 'node:fs';
-import { randomBytes } from 'node:crypto';
-import { ChangeLog, byLine, locate } from './changes.js';
+import { readFileSync, watch } from 'node:fs';
+import { AsyncLocalStorage } from 'node:async_hooks';
+import { ChangeLog, byLine, hunks, locate, mintId } from './changes.js';
 import type { ChangeRecord, TraceEntry } from './changes.js';
 import type { FSWatcher } from 'node:fs';
-import { stat, lstat, readdir, readFile, realpath, open, rename, unlink, writeFile } from 'node:fs/promises';
-import { basename, dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
+import { stat, lstat, readdir, readFile, realpath } from 'node:fs/promises';
+import { dirname, isAbsolute, relative, resolve, sep } from 'node:path';
 import { Worker } from 'node:worker_threads';
 import { EventEmitter } from 'node:events';
 import { glob, isDynamicPattern } from 'tinyglobby';
 import type { CheckOptions } from '../index.js';
 import type { Report } from '../report.js';
 import type { TryOptions } from '../try.js';
-import { errorMessage, UsageError } from '../errors.js';
+import { errorCode, errorMessage, UsageError } from '../errors.js';
+import type { ErrorCode } from '../errors.js';
 import { ledgerCommand } from '../ledger/commands.js';
 import { findingGroups } from '../ledger/keys.js';
 import { ledgerPath } from '../ledger/store.js';
@@ -39,6 +40,8 @@ import type { ProjectSpec } from '../craft-spec.js';
 import { readText, textSites } from './text.js';
 import { addTokens, topBlocks } from '../onboarding/write.js';
 import { loadConfig } from '../config.js';
+import { readSource, stale, staleFile, withEol, withRollback, writeSource } from '../write/source-file.js';
+import type { SourceText, Written } from '../write/source-file.js';
 import { isTypeProp, proposeTypeRoles, px } from '../rules/type-roles.js';
 import type { RoleOverride, TypeBundle, TypeClass, TypeMember, TypeProposal } from '../rules/type-roles.js';
 import { classEdit } from '../messages.js';
@@ -69,7 +72,7 @@ export interface SessionOptions extends CheckOptions { watch?: boolean; pollInte
 }
 export interface SiteResult { file: string; line: number; column?: number; declarations: Report['declarations']; findings: Report['findings'] }
 export type ManyCall = { method: 'resolveSource'; args: Parameters<Session['resolveSource']> } | { method: 'site'; args: Parameters<Session['site']> } | { method: 'classes'; args: Parameters<Session['classes']> };
-export type ManyResult = { value: unknown } | { error: string; usage: boolean };
+export type ManyResult = { value: unknown } | { error: string; usage: boolean; code: ErrorCode };
 export interface EditsResult { revision: number; file: string; hash: string; edits: StructuredEdit[]; refused: RefusedSite[] }
 export interface ClassesResult {
   revision: number; file: string; line: number; column: number;
@@ -116,11 +119,11 @@ export type TokenThen = CauseSwap | { swaps: SwapsOptions[] };
 export interface ApplyAllOptions { tokens?: (Omit<TokenOptions, 'then'> & { then?: TokenThen })[]; /** stylesheet blocks appended to the theme after the tokens (a type role's @utility) */ css?: CssOptions[]; swaps?: (SwapsOptions | CauseSwap)[]; accepts?: AcceptOptions[] }
 export interface ApplyAllResult {
   results: {
-    tokens: { name: string; ok: boolean; error?: string }[];
-    css: { file: string; ok: boolean; written: boolean; error?: string }[];
+    tokens: { name: string; ok: boolean; error?: string; code?: ErrorCode }[];
+    css: { file: string; ok: boolean; written: boolean; error?: string; code?: ErrorCode }[];
     /** one entry per file; a whole cause carries the places it found in all, and the cause it answers */
-    swaps: { file: string; ok: boolean; applied: string[]; refused: RefusedSwap[]; places?: number; cause?: Cause; /** the token this swap followed */ token?: string; error?: string }[];
-    accepts: { rule: string; ok: boolean; accepted: number; error?: string }[];
+    swaps: { file: string; ok: boolean; applied: string[]; refused: RefusedSwap[]; places?: number; cause?: Cause; /** the token this swap followed */ token?: string; error?: string; code?: ErrorCode }[];
+    accepts: { rule: string; ok: boolean; accepted: number; error?: string; code?: ErrorCode }[];
   };
   undo: UndoHandle[];
   labels: string[];
@@ -189,8 +192,24 @@ function changed(from: string, to: string, quote = '“”'): string {
   return `${wrap(a.slice(head, a.length - tail))} → ${wrap(b.slice(head, b.length - tail))}`;
 }
 export type SourceResolution = { file: string; line?: number; column?: number; hash?: string; component?: string; authoredOwner?: boolean; usage?: true } | { library: true; untracked?: string } | { refused: 'not-jsx'; at: PositionKind } | { refused: 'source-mismatch' };
-const staleFile = 'The file changed since the overlay read it. Read it again.';
 const ignored = ['**/node_modules/**', '**/.git/**', '**/dist/**', '**/build/**', '**/.next/**', '**/.cache/**', '**/.plumb-cache/**', '**/.plumber/cache/**', '**/.plumb/cache/**'];
+/** A position computed on one text, in the text that replaced it: moved past the runs changed before it; null when it
+ * lies inside a changed run (its place was rewritten) or past the end. */
+function relocate(before: string, after: string, moves: ReturnType<typeof hunks>, line: number, column: number): { line: number; column: number } | null {
+  const start = lineStarts(before)[line - 1];
+  if (start === undefined) return null;
+  const offset = start + column - 1;
+  let delta = 0;
+  for (const h of moves) {
+    if (offset < h.start) break;
+    if (offset < h.end) return null;
+    delta += h.to.length - h.from.length;
+  }
+  const moved = offset + delta, starts = lineStarts(after);
+  if (moved > after.length) return null;
+  let at = 0; while (at + 1 < starts.length && starts[at + 1]! <= moved) at++;
+  return { line: at + 1, column: moved - starts[at]! + 1 };
+}
 const tracked = (file: string) => /\.(?:[cm]?[jt]sx?|css|json|jsonl)$/.test(file) && !/(?:^|\/)(?:node_modules|\.git|dist|build|\.next|\.cache|\.plumb-cache|\.plumber\/cache|\.plumb\/cache)(?:\/|$)/.test(file) && !/(?:^|\/)\.plumb(?:er)?\/serve\.json$/.test(file);
 const ignoredDirectory = (file: string) => /(?:^|\/)(?:node_modules|\.git|dist|build|\.next|\.cache|\.plumb-cache|\.plumber\/cache|\.plumb\/cache)(?:\/|$)/.test(file);
 const missing = (error: unknown) => ['ENOENT', 'ENOTDIR'].includes((error as NodeJS.ErrnoException).code ?? '');
@@ -239,6 +258,9 @@ export class Session extends EventEmitter {
   private batchRead = false;
   private reconciliations = 0;
   private queue: Promise<unknown> = Promise.resolve();
+  /** the worker's own lifecycle: `lost` once the current worker exits while the Session is open, `starting` while one boots */
+  private lost: Error | undefined;
+  private starting: Promise<void> | undefined;
   private failure: Error | undefined;
   private failurePaths: string[] = [];
   private stamps = new Map<string, string>();
@@ -252,13 +274,14 @@ export class Session extends EventEmitter {
   private written: Recorded[] = [];
   /** The batches of writes made as one, by their id: history, eviction and undo all read this one structure. */
   private batches = new Map<string, Batch>();
-  private writes = 0;
   // per-change trace (changes.ts): the tag of the write in progress, the changes it takes back, this session's write ids
   private changeLog: ChangeLog | undefined;
   private get log(): ChangeLog { return this.changeLog ??= new ChangeLog(resolve(cacheDirectory(this.root), 'changes.jsonl')); }
-  private tag: { group: string; meta?: unknown } | undefined;
-  private undoing: ChangeRecord[] | undefined;
-  private nonce = randomBytes(4).toString('hex');
+  // Each call's own attribution, carried through its awaits (never a shared field: two writes in flight at once would
+  // record under each other's group, or as part of each other's undo)
+  private attribution = new AsyncLocalStorage<{ tag?: { group: string; meta?: unknown }; undoing?: ChangeRecord[] }>();
+  /** the stylesheet blocks this process proposed (system), the only ones apply-all may write (docs/invariants/api-contract.md §4) */
+  private proposedCss: string[] = [];
   private native = false;
   private events = new Set<string>();
   private inventoryDirty = false;
@@ -288,8 +311,9 @@ export class Session extends EventEmitter {
     if (this.closed) throw new UsageError('Session is closed. Start a new session.');
     const inventory = this.directories.size ? this.retainedFiles() : undefined;
     const worker = this.worker = new Worker(new URL('./worker.js', import.meta.url), { workerData: { ...this.options, root: this.root, inventory } });
+    this.lost = undefined;
     await new Promise<void>((resolveReady, rejectReady) => {
-      this.worker.on('message', message => {
+      worker.on('message', message => {
         if (message.health) this.healthSnapshot = message.health;
         if (message.ready) { this.dependencies.clear(); for (const file of message.dependencies) this.dependencies.add(file);
           this.patterns = message.patterns; this.patternsDirty = true; this.sourceFiles.clear(); for (const file of message.files) this.sourceFiles.add(file);
@@ -297,7 +321,7 @@ export class Session extends EventEmitter {
           this.inputs = message.inputs; this.inputPatterns = message.inputPatterns; this.selectAnalysisInputs(); this.queryDependencies.clear(); for (const [file, paths] of message.queryDependencies) this.queryDependencies.set(file, paths);
           resolveReady(); return; }
         const failure = (text: string): Error => {
-          const error = message.usageError ? new UsageError(text) : new Error(text);
+          const error = message.usageError ? new UsageError(text, message.errorCode) : new Error(text);
           if (message.errorStack) error.stack = message.errorStack;
           return error;
         };
@@ -315,13 +339,25 @@ export class Session extends EventEmitter {
         if (message.judged) this.lastStats = { ...(this.lastStats as object ?? {}), judged: message.judged };
         if (message.error) pending.reject(failure(message.error)); else pending.resolve(message.result);
       });
-      this.worker.on('error', error => { rejectReady(error); this.rejectPending(error); });
-      worker.on('exit', code => { if (this.worker === worker && code !== 0) { const error = new Error(`Analysis worker exited with code ${code}.`); rejectReady(error); if (!this.closed) this.rejectPending(error); } });
+      worker.on('error', error => { rejectReady(error); if (this.worker === worker) this.rejectPending(error); });
+      // Any exit of the current worker while the Session is open leaves it lost: what was asked of it fails now, and the
+      // next request starts a new one (restart) instead of posting to a dead thread and waiting forever.
+      worker.on('exit', code => {
+        if (this.worker !== worker) return;
+        const error = new Error(`Analysis worker exited with code ${code}.`); rejectReady(error);
+        if (!this.closed) { this.lost = error; this.rejectPending(error); }
+      });
     });
   }
+  /** Starts a new worker, sharing one start between everyone who asks while it boots. */
+  private restart(): Promise<void> {
+    return this.starting ??= this.start().finally(() => { this.starting = undefined; });
+  }
   private rejectPending(error: Error): void { for (const p of this.pending.values()) p.reject(error); this.pending.clear(); }
-  private request<T>(method: string, params: object = {}): Promise<T> {
-    if (this.closed) return Promise.reject(new UsageError('Session is closed. Start a new session.'));
+  private async request<T>(method: string, params: object = {}): Promise<T> {
+    if (this.closed) throw new UsageError('Session is closed. Start a new session.');
+    if (this.lost || this.starting) await this.restart();
+    if (this.closed) throw new UsageError('Session is closed. Start a new session.');
     const id = ++this.id;
     return new Promise<T>((resolveValue, reject) => { this.pending.set(id, { resolve: value => resolveValue(value as T), reject }); this.worker.postMessage({ id, method, params }); });
   }
@@ -477,7 +513,7 @@ export class Session extends EventEmitter {
     if (!changed.length) { if (this.failure) throw this.failure; return []; }
     const broad = changed.some(path => !isLedgerPath(path) && (this.configurationFiles.has(path) || !/\.(?:[jt]sx?|css)$/.test(path) || !this.sourceFiles.has(path) && !this.dependencies.has(path) || !this.hashes.has(path)));
     try {
-      if (broad || this.failure) { await this.worker.terminate(); this.rejectPending(new Error('Session inputs changed.')); await this.start(); }
+      if (broad || this.failure) { await this.worker.terminate(); this.rejectPending(new Error('Session inputs changed.')); await this.restart(); }
       else {
         const result = await this.request<{ dependencyDelta: string[]; dependencyQueries: [string, string[]][]; queryDependencies: [string, string[]][] }>('refresh', { paths: changed });
         for (const path of result.dependencyDelta) this.dependencies.add(path);
@@ -668,7 +704,7 @@ export class Session extends EventEmitter {
       try {
         return await Promise.all(calls.map(async call => {
           try { return { value: await (this[call.method] as (...args: unknown[]) => Promise<unknown>)(...call.args) }; }
-          catch (error) { return { error: errorMessage(error), usage: error instanceof UsageError }; }
+          catch (error) { return { error: errorMessage(error), usage: error instanceof UsageError, code: errorCode(error) }; }
         }));
       } finally { this.batchRead = wasBatch; }
     });
@@ -699,7 +735,7 @@ export class Session extends EventEmitter {
         if (location.tag === 'Fragment' || location.tag.endsWith('.Fragment')) return { refused: 'source-mismatch' };
         return { file: inside, line, column, hash, ...(usage ? { component: location.tag, usage: true as const } : {}) };
       }
-      if (expected.hash !== undefined && expected.hash !== hash) throw new UsageError(staleFile);
+      if (expected.hash !== undefined && expected.hash !== hash) throw stale();
       if (line === undefined && column === undefined) return { file: inside, ...(expected.snapshot ? { hash: hash! } : {}) };
       if (line === undefined || column === undefined) throw new UsageError('Source location requires both line and column.');
       const anyOpening = !expected.component && expected.tag === undefined;
@@ -748,7 +784,7 @@ export class Session extends EventEmitter {
     const params = { file: this.file(file), line: this.position(line), ...(column === undefined ? {} : { column: this.position(column) }) };
     return this.serializeRead(async () => {
       const result = await this.settledRead<Omit<EditsResult, 'revision'>>('edits', params);
-      if (result.hash !== this.hashes.get(params.file)) throw new UsageError(staleFile);
+      if (result.hash !== this.hashes.get(params.file)) throw stale();
       return { revision: this.revision, ...result };
     });
   }
@@ -773,8 +809,8 @@ export class Session extends EventEmitter {
       // Re-derive the run from the held file, never trust a client range or text.
       const site = textSites(_file, source).find(site => site.runs.some(run => run.id === id));
       const run = site?.runs.find(run => run.id === id);
-      if (!site || !run) throw new UsageError(textWriteErrors.unknown);
-      if (run.text !== from) throw new UsageError(textWriteErrors.mismatch);
+      if (!site || !run) throw new UsageError(textWriteErrors.unknown, 'not-found');
+      if (run.text !== from) throw stale(textWriteErrors.mismatch);
       const start = run.literal?.start ?? run.start, end = run.literal?.end ?? run.end;
       return { start, end, at: site.element.openingElement.start,
         replacement: run.literal ? encodeTextLiteral(to, run.literal.quote) : encodeJSXText(source.slice(start, end), to) };
@@ -800,11 +836,11 @@ export class Session extends EventEmitter {
   }
   async recipesApply(params: PlanParams & { file: string; line: number; column: number; chain?: ChainLink[]; hash?: string; hashes?: Record<string, string> }): Promise<{ revision: number; applied: string[]; undo: UndoHandle[]; files: Record<string, string>; choice: string; verdict: unknown; nearest: unknown; notes: string[]; uses?: unknown }> {
     const context = await this.recipeContext(params.file, params.line, params.column, params.chain);
-    if (params.hash !== undefined && sourceHash(context.element.text) !== params.hash) throw new UsageError(staleFile);
+    if (params.hash !== undefined && sourceHash(context.element.text) !== params.hash) throw stale();
     const { plan, writes } = recipesPlan(context, params);
     if (!plan.ok) throw new UsageError(plan.refused ?? 'This recipe cannot be written here.');
     if (!writes.length) return { revision: this.revision, applied: [], undo: [], files: {}, choice: plan.choice, verdict: plan.verdict, nearest: plan.nearest, notes: plan.notes, ...(plan.uses ? { uses: plan.uses } : {}) };
-    for (const w of writes) if (params.hashes?.[w.file] !== undefined && params.hashes[w.file] !== w.hash) throw new UsageError(staleFile);
+    for (const w of writes) if (params.hashes?.[w.file] !== undefined && params.hashes[w.file] !== w.hash) throw stale();
     const done: UndoHandle[] = [], files: Record<string, string> = {};
     try {
       for (const w of writes) {
@@ -813,8 +849,7 @@ export class Session extends EventEmitter {
       }
     } catch (error) {
       // nothing half done: the files already written go back as they were, and their history entries and trace go with them
-      for (const handle of done.toReversed()) await this.undo(handle.id).catch(() => {});
-      throw error;
+      await this.putBack(done, error);
     }
     // one recipe, one entry in the history and one undo, however many files it wrote
     const label = `${plan.choice} ${plan.uses?.class ?? plan.uses?.token ?? 'recipe'}`;
@@ -869,26 +904,15 @@ export class Session extends EventEmitter {
    * regular file, a result that still parses, one undo handle. */
   private async rewrite(path: string, hash: string, next: string, label: string, blocksRemoved = 0): Promise<{ hash: string; undo: UndoHandle }> {
     return this.serialize(async () => {
-      const identity = await this.editableFile(path);
-      const handle = await open(path, constants.O_RDWR | constants.O_NOFOLLOW);
-      let before: string;
-      try {
-        const info = await handle.stat();
-        if (!info.isFile() || info.nlink !== 1) throw new UsageError('Apply requires a regular source file without hard links.');
-        if (info.dev !== identity.dev || info.ino !== identity.ino) throw new UsageError(staleFile);
-        before = await readFile(path, 'utf8');
-        if (sourceHash(before) !== hash) throw new UsageError(staleFile);
-        parsesAsBefore(path, before, next);
-        if (/\.css$/.test(path) && topBlocks(next).length < topBlocks(before).length - blocksRemoved) throw new UsageError('The change would leave the stylesheet unreadable, so nothing was written.');
-        await this.replaceFile(path, identity, next);
-      } finally { await handle.close(); }
-      await this.reconcile([path]);
+      const current = await this.readForWrite(path), before = current.text;
+      if (current.hash !== hash) throw stale();
+      parsesAsBefore(path, before, next);
+      if (/\.css$/.test(path) && topBlocks(next).length < topBlocks(before).length - blocksRemoved) throw new UsageError('The change would leave the stylesheet unreadable, so nothing was written.');
+      const written = await this.commit(path, current, next);
       this.recipeProject = undefined;
-      const hashAfter = sourceHash(next);
-      if (sourceHash(await readFile(path, 'utf8')) !== hashAfter) throw new UsageError(staleFile);
-      const was = before.split('\n'), now = next.split('\n');
+      const was = before.split('\n'), now = written.text.split('\n');
       let line = 0; while (line < was.length && line < now.length && was[line] === now[line]) line++;
-      return { hash: hashAfter, undo: this.record(path, before, hashAfter, line + 1, label) };
+      return { hash: written.hash, undo: this.record(path, before, written.hash, line + 1, label) };
     });
   }
   /** The owner's decisions per type role, from the config (config.system.type.roles). */
@@ -903,7 +927,7 @@ export class Session extends EventEmitter {
     const location = jsxLocation(path, text, line, column, undefined, 'any');
     if (!location) throw new UsageError('Source position does not identify an authored JSX element.');
     const [site, decisions, unit] = await Promise.all([this.site(path, location.line, location.column), this.decisions(), this.spacingUnit()]);
-    if (sourceHash(await readFile(path, 'utf8')) !== sourceHash(text)) throw new UsageError(staleFile);
+    if (sourceHash(await readFile(path, 'utf8')) !== sourceHash(text)) throw stale();
     return { text, location, site, decisions, unit };
   }
   /**
@@ -936,7 +960,10 @@ export class Session extends EventEmitter {
    * The whole Apply in one request, in order: theme tokens, then class swaps per file, then the ledger. Each item
    * stands alone (one refusal stops nothing else) and each file's hash moves on within the batch: an item may send the
    * hash the file had when the batch began or the hash after the previous write to it; only a hash that was already
-   * stale fails that item. Every written file gets its own history entry and undo handle, as the single endpoints do.
+   * stale fails that item. An item found by content (a token, a stylesheet block) simply moves on; an item with
+   * positions (a swap's line and column) sent against the batch-start text of a file written since has each place
+   * found again in the text the file has now, or that place refused: nothing is applied against positions computed on
+   * other text. Every written file gets its own history entry and undo handle, as the single endpoints do.
    */
   async applyAll(options: ApplyAllOptions): Promise<ApplyAllResult> {
     const { tokens = [], css = [], swaps = [], accepts = [] } = options ?? {};
@@ -953,24 +980,51 @@ export class Session extends EventEmitter {
   /** The transaction is alive: the host's dead-transaction timer measures silence, so a long apply is never released mid-write. */
   private progress(): void { if (this.transaction) this.emit('transaction', { phase: 'progress' }); }
   private async applyEach({ tokens, css, swaps, accepts }: Required<ApplyAllOptions>, result: ApplyAllResult): Promise<ApplyAllResult> {
-    // the hash each file had when the batch began, and the hash it has now
-    const began = new Map<string, string>(), latest = new Map<string, string>();
+    // each file as it was when the batch began (its text, for the positions computed on it), and the hash it has now
+    const began = new Map<string, { hash: string; text: string }>(), latest = new Map<string, string>();
+    const begin = async (path: string) => {
+      if (began.has(path)) return;
+      const text = await readFile(path, 'utf8').catch(() => ''), hash = sourceHash(text);
+      began.set(path, { hash, text }); latest.set(path, hash);
+    };
+    /** the hash an item found by content is written with: the batch-start hash moves on to the latest */
     const hashFor = async (file: string, sent: string): Promise<string> => {
-      const path = this.file(file);
-      if (!began.has(path)) { const text = await readFile(path, 'utf8').catch(() => ''); began.set(path, sourceHash(text)); latest.set(path, sourceHash(text)); }
-      if (sent === began.get(path) || sent === latest.get(path)) return latest.get(path)!;
-      throw new UsageError(staleFile);
+      const path = this.file(file); await begin(path);
+      if (sent === latest.get(path)) return sent;
+      if (sent === began.get(path)!.hash) return latest.get(path)!;
+      throw stale();
+    };
+    /** a swap's edits with their places found again in the text the file has now, when it was written since the batch
+     * began; a place inside a run the earlier write changed is refused, never guessed */
+    const rebase = async (swap: SwapsOptions): Promise<{ swap: SwapsOptions; refused: RefusedSwap[] }> => {
+      const path = this.file(swap.file); await begin(path);
+      const was = began.get(path)!, now = latest.get(path)!;
+      if (swap.hash === now) return { swap, refused: [] };
+      if (swap.hash !== was.hash) throw stale();
+      const text = await readFile(path, 'utf8');
+      if (sourceHash(text) !== now) throw stale();
+      const moves = hunks(was.text, text), refused: RefusedSwap[] = [], edits: SwapsOptions['edits'] = [];
+      for (const e of swap.edits) {
+        const place = relocate(was.text, text, moves, e.line, e.column), at = e.at ? relocate(was.text, text, moves, e.at.line, e.at.column) : undefined;
+        if (!place || e.at && !at) { refused.push({ line: e.line, column: e.column, from: e.from, to: e.to, reason: 'This place was written earlier in this apply; read it again.' }); continue; }
+        edits.push({ ...e, ...place, ...(at ? { at } : {}) });
+      }
+      return { swap: { ...swap, hash: now, edits }, refused };
     };
     const moved = (file: string, hash: string) => latest.set(this.file(file), hash);
     const message = (error: unknown) => error instanceof UsageError ? error.message : errorMessage(error);
+    /** what a failed item answers: its sentence and its code */
+    const failed = (error: unknown) => ({ error: message(error), code: errorCode(error) });
     const swapFile = async (swap: SwapsOptions, token?: string) => {
       const tag = token === undefined ? {} : { token };
       try {
-        const written = await this.swaps({ ...swap, hash: await hashFor(swap.file, swap.hash) });
+        const based = await rebase(swap);
+        if (!based.swap.edits.length) throw new UsageError(`${based.refused.length === 1 ? 'The change could not be written' : 'None of these changes could be written'}: ${based.refused[0]!.reason}`);
+        const written = await this.swaps(based.swap);
         moved(swap.file, written.hash);
         result.undo.push(written.undo); result.labels.push(written.undo.label);
-        result.results.swaps.push({ file: swap.file, ok: true, applied: written.applied, refused: written.refused ?? [], ...tag });
-      } catch (error) { result.results.swaps.push({ file: String(swap?.file), ok: false, applied: [], refused: [], ...tag, error: message(error) }); }
+        result.results.swaps.push({ file: swap.file, ok: true, applied: written.applied, refused: [...based.refused, ...written.refused ?? []], ...tag });
+      } catch (error) { result.results.swaps.push({ file: String(swap?.file), ok: false, applied: [], refused: [], ...tag, ...failed(error) }); }
     };
     // a token's own class goes to the places its cause had before the theme changed: once the token is in the theme
     // the value matches it, and the finding that named those places is gone
@@ -981,7 +1035,7 @@ export class Session extends EventEmitter {
       const file = String(tokens[k]?.file), run: typeof tokens = [];
       while (k < tokens.length && String(tokens[k]?.file) === file) run.push(tokens[k++]!);
       this.progress();
-      const fail = (token: typeof run[number], error: unknown) => result.results.tokens.push({ name: String(token?.name), ok: false, error: message(error) });
+      const fail = (token: typeof run[number], error: unknown) => result.results.tokens.push({ name: String(token?.name), ok: false, ...failed(error) });
       // a token whose hash is already stale fails on its own; the rest go in with the hash the file has now
       const live: typeof run = [];
       let hash: string | undefined;
@@ -1001,7 +1055,7 @@ export class Session extends EventEmitter {
           const { then } = token;
           if (then && 'cause' in then) await this.swapCause(then, result, moved, before, token.name);
           else if (then) for (const swap of then.swaps ?? []) await swapFile(swap, token.name);
-        } catch (error) { result.results.swaps.push({ file, ok: false, applied: [], refused: [], token: token.name, error: message(error) }); }
+        } catch (error) { result.results.swaps.push({ file, ok: false, applied: [], refused: [], token: token.name, ...failed(error) }); }
       }
     }
     // the stylesheet blocks (a type role's utilities), after the tokens they read
@@ -1012,7 +1066,7 @@ export class Session extends EventEmitter {
         moved(block.file, written.hash);
         if (written.undo) { result.undo.push(written.undo); result.labels.push(written.undo.label); }
         result.results.css.push({ file: block.file, ok: true, written: written.written });
-      } catch (error) { result.results.css.push({ file: String(block?.file), ok: false, written: false, error: message(error) }); }
+      } catch (error) { result.results.css.push({ file: String(block?.file), ok: false, written: false, ...failed(error) }); }
     }
     for (const swap of swaps) {
       this.progress();
@@ -1023,7 +1077,7 @@ export class Session extends EventEmitter {
       try {
         const done = await this.accept(accept);
         result.results.accepts.push({ rule: accept.rule, ok: true, accepted: done.accepted });
-      } catch (error) { result.results.accepts.push({ rule: String(accept?.rule), ok: false, accepted: 0, error: message(error) }); }
+      } catch (error) { result.results.accepts.push({ rule: String(accept?.rule), ok: false, accepted: 0, ...failed(error) }); }
     }
     return result;
   }
@@ -1053,7 +1107,7 @@ export class Session extends EventEmitter {
       const file = relative(this.root, path).replaceAll('\\', '/');
       const refused: RefusedSwap[] = [];
       let source: string;
-      try { source = await readFile(path, 'utf8'); } catch (error) { entry(file, { places: places.length, error: errorMessage(error) }); continue; }
+      try { source = await readFile(path, 'utf8'); } catch (error) { entry(file, { places: places.length, error: errorMessage(error), code: 'internal' }); continue; }
       const starts = lineStarts(source);
       const edits: { line: number; column: number; start: number; end: number; to: string }[] = [];
       for (const { site, declaration } of group) {
@@ -1072,7 +1126,7 @@ export class Session extends EventEmitter {
       try {
         const hash = sourceHash(source);
         const written = await this.writeText(path, hash, `cause:${cause.rule}:${cause.text}`, cause.text, edits[0]!.to, (_file, text) => {
-          if (sourceHash(text) !== hash) throw new UsageError(staleFile);
+          if (sourceHash(text) !== hash) throw stale();
           let next = text;
           for (const e of edits.toReversed()) next = next.slice(0, e.start) + e.to + next.slice(e.end);
           return { start: 0, end: text.length, replacement: next, at: edits[0]!.start };
@@ -1080,7 +1134,7 @@ export class Session extends EventEmitter {
         moved(file, written.hash);
         result.undo.push(written.undo); result.labels.push(written.undo.label);
         entry(file, { ok: true, applied: edits.map(e => `swap:${e.line}:${e.column}`), refused, places: places.length });
-      } catch (error) { entry(file, { places: places.length, refused, error: error instanceof UsageError ? error.message : errorMessage(error) }); }
+      } catch (error) { entry(file, { places: places.length, refused, error: error instanceof UsageError ? error.message : errorMessage(error), code: errorCode(error) }); }
     }
   }
   /** A stylesheet block (a type role's @utility) appended to the theme file, with the token write's guards: the
@@ -1089,32 +1143,22 @@ export class Session extends EventEmitter {
     const { file, hash, css } = options ?? {} as CssOptions;
     if (typeof file !== 'string' || !file.trim() || typeof hash !== 'string' || !hash.trim() || typeof css !== 'string' || !css.trim()) throw new UsageError('A stylesheet write requires file, hash and css.');
     if (css.length > 20000 || /<\/?script|@import|url\(/i.test(css)) throw new UsageError('A stylesheet block is at most twenty thousand characters of plain CSS.');
+    // only what this engine proposed goes into the theme: client text is never CSS (boundaries.md B5)
+    if (!this.proposedCss.includes(css.trim())) throw new UsageError('This stylesheet block is not one React Plumber proposed, so nothing was written. Ask for the system again and apply what it answers.');
     const spec = await this.request<ProjectSpec>('spec');
     if (!spec.tokens.file || file.replaceAll('\\', '/') !== spec.tokens.file) throw new UsageError(`Styles go in ${spec.tokens.file ?? 'your theme file'}, not ${file}.`);
     const path = this.file(file), block = css.trim();
     return this.serialize(async () => {
-      const identity = await this.editableFile(path);
       if (!/\.css$/.test(path)) throw new UsageError('Styles are written to a stylesheet.');
-      const handle = await open(path, constants.O_RDWR | constants.O_NOFOLLOW);
-      let next: string, before: string;
-      try {
-        const info = await handle.stat();
-        if (!info.isFile() || info.nlink !== 1) throw new UsageError('Apply requires a regular source file without hard links.');
-        if (info.dev !== identity.dev || info.ino !== identity.ino) throw new UsageError(staleFile);
-        await this.sameFile(path, identity);
-        before = await readFile(path, 'utf8');
-        if (sourceHash(before) !== hash) throw new UsageError(staleFile);
-        if (before.includes(block)) return { revision: this.revision, file: path, hash, applied: [], written: false, undo: null };
-        next = `${before.replace(/\s*$/, '')}\n\n${block}\n`;
-        const added = block.match(/^@utility\b|^[^\s{]/gm)?.length ?? 1;
-        if (topBlocks(next).length < topBlocks(before).length || topBlocks(next).length > topBlocks(before).length + added) throw new UsageError('The change would leave the stylesheet unreadable, so nothing was written.');
-        await this.replaceFile(path, identity, next);
-      } finally { await handle.close(); }
-      await this.reconcile([path]);
-      const hashAfter = sourceHash(next);
-      if (sourceHash(await readFile(path, 'utf8')) !== hashAfter) throw new UsageError(staleFile);
-      const undo = this.record(path, before, hashAfter, 1, `${block.match(/@utility\s+([\w-]+)/g)?.length ?? 1} type role classes`);
-      return { revision: this.revision, file: path, hash: hashAfter, applied: ['css'], written: true, undo };
+      const current = await this.readForWrite(path), before = current.text;
+      if (current.hash !== hash) throw stale();
+      if (before.includes(withEol(block, current.eol))) return { revision: this.revision, file: path, hash, applied: [], written: false, undo: null };
+      const next = `${before.replace(/\s*$/, '')}\n\n${block}\n`;
+      const added = block.match(/^@utility\b|^[^\s{]/gm)?.length ?? 1;
+      if (topBlocks(next).length < topBlocks(before).length || topBlocks(next).length > topBlocks(before).length + added) throw new UsageError('The change would leave the stylesheet unreadable, so nothing was written.');
+      const written = await this.commit(path, current, next);
+      const undo = this.record(path, before, written.hash, 1, `${block.match(/@utility\s+([\w-]+)/g)?.length ?? 1} type role classes`);
+      return { revision: this.revision, file: path, hash: written.hash, applied: ['css'], written: true, undo };
     });
   }
   /**
@@ -1128,7 +1172,7 @@ export class Session extends EventEmitter {
     if (scope === 'project') {
       // one ladder for the project: every route's text as last measured, the page's own (fresher) entries over it
       const kept = await projectCensus(this.root);
-      if (!kept) throw new UsageError('There is no census of the project yet.\n  → plumber census --url <your dev server>');
+      if (!kept) throw new UsageError('There is no census of the project yet.\n  → plumber census --url <your dev server>', 'no-census');
       // the page's own census replaces what was kept for its route, nothing else: a header drawn on forty routes keeps
       // its other thirty-nine readings, so the ladder is the same whichever page asks
       census = [...kept.entries.filter(e => !route || (e as { route?: string }).route !== route), ...(Array.isArray(census) && route ? census : [])];
@@ -1209,6 +1253,7 @@ export class Session extends EventEmitter {
     const swaps: SystemWrite['swaps'] = [];
     for (const swap of proposal.write.swaps) { const text = await readFile(this.file(swap.file), 'utf8').catch(() => null); if (text !== null) swaps.push({ ...swap, hash: sourceHash(text) }); }
     const write: SystemWrite = { tokens: proposal.write.tokens.map(t => ({ ...t, file: theme, hash: themeHash })), css: proposal.write.css ? [{ file: theme, hash: themeHash, css: proposal.write.css }] : [], swaps };
+    if (proposal.write.css) { this.proposedCss = [...this.proposedCss.filter(block => block !== proposal.write.css!.trim()), proposal.write.css.trim()].slice(-32); }
     return { revision: this.revision, proposal: { ...proposal, write } };
   }
   /** Set one property of an element to one of its steps: replace the class that sets it, or add one. */
@@ -1217,12 +1262,12 @@ export class Session extends EventEmitter {
     if (typeof file !== 'string' || !file.trim() || typeof hash !== 'string' || !hash.trim() || typeof key !== 'string' || !key.trim() || typeof token !== 'string' || !token.trim()) throw new UsageError('Set requires file, hash, line, column, key and token.');
     const path = this.file(file); this.position(line); this.position(column);
     const facts = await this.elementFacts(path, line, column);
-    if (sourceHash(facts.text) !== hash) throw new UsageError(staleFile);
+    if (sourceHash(facts.text) !== hash) throw stale();
     const roles = await this.roleDecisions();
     const current = elementProps(path, facts.text, facts.location.start, facts.location.tag, facts.decisions, facts.site.declarations, { roles, ...(facts.unit ? { unit: facts.unit } : {}) }).props.find(item => item.key === key);
     const label = `${key}: ${current?.token ?? current?.value ?? 'unset'} → ${token}`;
     return this.writeText(path, hash, `set:${key}`, current?.class ?? key, token, (_file, source) => {
-      if (sourceHash(source) !== hash) throw new UsageError(staleFile);
+      if (sourceHash(source) !== hash) throw stale();
       const change = setProp(_file, source, facts.location.start, facts.location.tag, facts.decisions, facts.site.declarations, key, token, { roles, ...(facts.unit ? { unit: facts.unit } : {}) }, at ? offsetOf(source, at) : undefined);
       return { ...change, replacement: change.replacement };
     }, label);
@@ -1235,12 +1280,12 @@ export class Session extends EventEmitter {
     if (names(from).length > 8 || names(to).length > 8) throw new UsageError('Swap changes at most eight classes.');
     const path = this.file(file); this.position(line); this.position(column);
     const facts = await this.elementFacts(path, line, column);
-    if (sourceHash(facts.text) !== hash) throw new UsageError(staleFile);
+    if (sourceHash(facts.text) !== hash) throw stale();
     // a component's usage is not the element that was measured: a class added there may land elsewhere or nowhere
     if (!at && !names(from).length && isComponentJSX(facts.location.tag)) throw new UsageError(`<${facts.location.tag}> is a component; add the class inside it, by hand.`);
     const pinned = at ? await this.pinned(path, facts, { line, column, at, ...(of ? { of } : {}) }, pinWrite(names(from), names(to))) : undefined;
     return this.writeText(path, hash, `swap:${from}`, from || '∅', to, (_file, source) => {
-      if (sourceHash(source) !== hash) throw new UsageError(staleFile);
+      if (sourceHash(source) !== hash) throw stale();
       return swapClasses(_file, source, facts.location.start, names(from), names(to), pinned);
     }, changed(from, to, ''));
   }
@@ -1332,9 +1377,9 @@ export class Session extends EventEmitter {
     if (!['string', 'number', 'boolean'].includes(typeof value) || (typeof value === 'number' && !Number.isFinite(value)) || (typeof value === 'string' && /[\r\n]/.test(value))) throw new UsageError('A prop edit sets a string, a number or a boolean.');
     const path = this.file(file); this.position(line); this.position(column);
     const facts = await this.elementFacts(path, line, column);
-    if (sourceHash(facts.text) !== hash) throw new UsageError(staleFile);
+    if (sourceHash(facts.text) !== hash) throw stale();
     return this.writeText(path, hash, `prop:${name}`, name, String(value), (_file, source) => {
-      if (sourceHash(source) !== hash) throw new UsageError(staleFile);
+      if (sourceHash(source) !== hash) throw stale();
       return setJsxProp(_file, source, facts.location.start, name, value);
     }, `${name}={${JSON.stringify(value)}}`);
   }
@@ -1354,8 +1399,7 @@ export class Session extends EventEmitter {
       return { ...write, then: swapped };
     } catch (error) {
       // the class could not follow: the theme goes back as it was, so nothing is half done
-      if (write.undo) await this.undo(write.undo.id).catch(() => {});
-      throw error;
+      return this.putBack(write.undo ? [write.undo] : [], error);
     }
   }
   /** Several tokens into the theme file as one guarded write (one reload, one history entry, one undo handle), each
@@ -1375,48 +1419,33 @@ export class Session extends EventEmitter {
     const path = this.file(file), shape = spec.tokens.shape ?? 'theme';
     return this.serialize(async (): Promise<TokensResult> => {
       if (spec.tokens.new) throw new UsageError(`Create ${spec.tokens.file} first (plumber propose --write makes it), then add tokens to it.`);
-      const identity = await this.editableFile(path);
       if (!/\.css$/.test(path)) throw new UsageError('Tokens are written to a stylesheet.');
-      const handle = await open(path, constants.O_RDWR | constants.O_NOFOLLOW);
-      let next: string | null = null, before: string;
+      const current = await this.readForWrite(path), before = current.text;
+      if (current.hash !== hash) throw stale();
       const nothing = () => ({ revision: this.revision, file: path, hash, applied: [], written: false, undo: null, results });
-      try {
-        const info = await handle.stat();
-        if (!info.isFile() || info.nlink !== 1) throw new UsageError('Apply requires a regular source file without hard links.');
-        if (info.dev !== identity.dev || info.ino !== identity.ino) throw new UsageError(staleFile);
-        await this.sameFile(path, identity);
-        const bytes = Buffer.alloc(info.size);
-        let offset = 0;
-        while (offset < bytes.length) { const { bytesRead } = await handle.read(bytes, offset, bytes.length - offset, offset); if (!bytesRead) break; offset += bytesRead; }
-        before = bytes.subarray(0, offset).toString('utf8');
-        if (sourceHash(before) !== hash) throw new UsageError(staleFile);
-        const writing: { index: number; name: string; value: string; why: string }[] = [];
-        const seen = new Set<string>();
-        for (const [index, token] of tokens.entries()) {
-          if (!results[index]!.ok) continue;
-          const name = token.name, clean = token.value.trim();
-          const declared = new RegExp(`(?:^|[\\s;{])${name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*:\\s*([^;}]+)`).exec(before);
-          if (declared && declared[1]!.trim() === clean) continue; // already there: nothing to write
-          if (declared) { refuse(index, new UsageError(`${name} is already ${declared[1]!.trim()} in ${file}. Pick another name.`)); continue; }
-          if (seen.has(name)) { refuse(index, new UsageError(`${name} is sent twice in this write.`)); continue; }
-          seen.add(name);
-          writing.push({ index, name, value: clean, why: token.why ?? 'added by React Plumber' });
-        }
-        if (!writing.length) return nothing();
-        next = addTokens(before, shape, writing.map(({ name, value, why }) => ({ name, value, why })) as Parameters<typeof addTokens>[2]).css;
-        // the stylesheet's last guard: the same blocks as before (or one more), and every declaration in it
-        const blocksBefore = topBlocks(before).length, blocksAfter = topBlocks(next).length;
-        if (!(blocksAfter === blocksBefore || blocksAfter === blocksBefore + 1) || writing.some(({ name, value }) => !next!.includes(`${name}: ${value};`))) throw new UsageError('The change would leave the stylesheet unreadable, so nothing was written.');
-        await this.replaceFile(path, identity, next);
-        for (const { index } of writing) results[index]!.written = true;
-      } finally { await handle.close(); }
-      await this.reconcile([path]);
-      const hashAfter = sourceHash(next);
-      if (sourceHash(await readFile(path, 'utf8')) !== hashAfter) throw new UsageError(staleFile);
+      const writing: { index: number; name: string; value: string; why: string }[] = [];
+      const seen = new Set<string>();
+      for (const [index, token] of tokens.entries()) {
+        if (!results[index]!.ok) continue;
+        const name = token.name, clean = token.value.trim();
+        const declared = new RegExp(`(?:^|[\\s;{])${name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*:\\s*([^;}]+)`).exec(before);
+        if (declared && declared[1]!.trim() === clean) continue; // already there: nothing to write
+        if (declared) { refuse(index, new UsageError(`${name} is already ${declared[1]!.trim()} in ${file}. Pick another name.`)); continue; }
+        if (seen.has(name)) { refuse(index, new UsageError(`${name} is sent twice in this write.`)); continue; }
+        seen.add(name);
+        writing.push({ index, name, value: clean, why: token.why ?? 'added by React Plumber' });
+      }
+      if (!writing.length) return nothing();
+      const next = addTokens(before, shape, writing.map(({ name, value, why }) => ({ name, value, why })) as Parameters<typeof addTokens>[2]).css;
+      // the stylesheet's last guard: the same blocks as before (or one more), and every declaration in it
+      const blocksBefore = topBlocks(before).length, blocksAfter = topBlocks(next).length;
+      if (!(blocksAfter === blocksBefore || blocksAfter === blocksBefore + 1) || writing.some(({ name, value }) => !next.includes(`${name}: ${value};`))) throw new UsageError('The change would leave the stylesheet unreadable, so nothing was written.');
+      const made = await this.commit(path, current, next);
+      for (const { index } of writing) results[index]!.written = true;
       const written = results.filter(r => r.written);
       const label = written.length === 1 ? `${written[0]!.name}: ${tokens.find(t => t.name === written[0]!.name)!.value.trim()}` : `${written.length} tokens`;
-      const undo = this.record(path, before, hashAfter, 1, label, true);
-      return { revision: this.revision, file: path, hash: hashAfter, applied: written.map(r => `token:${r.name}`), written: true, undo, results };
+      const undo = this.record(path, before, made.hash, 1, label, true);
+      return { revision: this.revision, file: path, hash: made.hash, applied: written.map(r => `token:${r.name}`), written: true, undo, results };
     });
   }
   /** Several class swaps in one file, written together in one guarded write (one reload, one undo): the changes a person
@@ -1445,7 +1474,7 @@ export class Session extends EventEmitter {
     for (const e of unique) {
       try {
         const facts = await this.elementFacts(path, e.line, e.column);
-        if (sourceHash(facts.text) !== hash) throw new UsageError(staleFile);
+        if (sourceHash(facts.text) !== hash) throw stale();
         if (!e.at && !names(e.from).length && isComponentJSX(facts.location.tag)) throw new UsageError(`<${facts.location.tag}> is a component; add the class inside it, by hand.`);
         const pin = e.at ? await this.pinned(path, facts, { line: e.line, column: e.column, at: e.at, ...(e.of ? { of: e.of } : {}) }, pinWrite(names(e.from), names(e.to))) : undefined;
         starts.push({ edit: e, start: facts.location.start, from: names(e.from), to: names(e.to), ...(pin ? { pin } : {}) });
@@ -1455,7 +1484,7 @@ export class Session extends EventEmitter {
     const nothing = () => new UsageError(`${refused.length === 1 ? 'The change could not be written' : 'None of these changes could be written'}: ${[...new Set(refused.toSorted(order).map(r => r.reason))].join(' ')}`);
     if (!starts.length) throw nothing();
     const result = await this.writeText(path, hash, `swaps:${unique.length}`, unique.map(e => e.from || '∅').join(', '), unique.map(e => e.to).join(', '), (_file, source) => {
-      if (sourceHash(source) !== hash) throw new UsageError(staleFile);
+      if (sourceHash(source) !== hash) throw stale();
       const changes: (ReturnType<typeof swapClasses> & { edit: SwapsOptions['edits'][number] })[] = [];
       for (const s of starts) {
         try { changes.push({ ...swapClasses(_file, source, s.start, s.from, s.to, s.pin), edit: s.edit }); }
@@ -1483,8 +1512,8 @@ export class Session extends EventEmitter {
     const { file, hash, id, from, to } = options ?? {} as ApplyTextAtOptions;
     return this.writeText(file, hash, id, from, to, (_file, source) => {
       const target = textTargets(_file, source).targets.find(target => target.id === id);
-      if (!target) throw new UsageError(textWriteErrors.unknown);
-      if (target.text !== from) throw new UsageError(textWriteErrors.mismatch);
+      if (!target) throw new UsageError(textWriteErrors.unknown, 'not-found');
+      if (target.text !== from) throw stale(textWriteErrors.mismatch);
       if (target.plain && /[\r\n]/.test(to)) throw new UsageError('An attribute holds one line of text.');
       return { start: target.start, end: target.end, replacement: target.replace(to), at: target.start };
     });
@@ -1496,34 +1525,19 @@ export class Session extends EventEmitter {
     if (to.length > 500) throw new UsageError(textWriteErrors.length);
     const file = this.file(path);
     return this.serialize(async () => {
-      await this.editableFile(file);
-      if (sourceHash(await readFile(file, 'utf8')) !== hash) throw new UsageError(staleFile);
+      const current = await this.readForWrite(file), source = current.text;
+      if (current.hash !== hash) throw stale();
       await this.reconcile([file]);
       if (!this.sourceFiles.has(file) || !/\.[cm]?[jt]sx?$/.test(file)) throw new UsageError('Text edits require a tracked JSX source file.');
-      const identity = await this.editableFile(file);
-      const handle = await open(file, constants.O_RDWR | constants.O_NOFOLLOW);
-      let next: string, siteLine: number, before: string;
-      try {
-        const info = await handle.stat();
-        if (!info.isFile() || info.nlink !== 1) throw new UsageError('Apply requires a regular source file without hard links.');
-        if (info.dev !== identity.dev || info.ino !== identity.ino) throw new UsageError(staleFile);
-        await this.sameFile(file, identity);
-        const bytes = Buffer.alloc(info.size);
-        let offset = 0;
-        while (offset < bytes.length) { const { bytesRead } = await handle.read(bytes, offset, bytes.length - offset, offset); if (!bytesRead) break; offset += bytesRead; }
-        const source = bytes.subarray(0, offset).toString('utf8');
-        if (sourceHash(source) !== hash) throw new UsageError(staleFile);
-        before = source;
-        const { start, end, replacement, at } = find(file, source);
-        next = source.slice(0, start) + replacement + source.slice(end);
-        siteLine = sourceSite({ file, text: source, lineStarts: lineStarts(source) }, at, '').line;
-        parsesAsBefore(file, source, next);
-        await this.replaceFile(file, identity, next);
-      } finally { await handle.close(); }
-      await this.reconcile([file]);
+      const { start, end, replacement, at } = find(file, source);
+      const next = source.slice(0, start) + withEol(replacement, current.eol) + source.slice(end);
+      const siteLine = sourceSite({ file, text: source, lineStarts: lineStarts(source) }, at, '').line;
+      parsesAsBefore(file, source, next);
+      // the write re-checks the hash on the bytes: text that changed under the plan is refused, never written over
+      const written = await this.commit(file, current, next);
       const snapshot = await this.request<{ hash: string; remaining: Report['findings'] }>('remaining', { file, sites: [{ line: siteLine }] });
-      if (snapshot.hash !== sourceHash(next) || snapshot.hash !== this.hashes.get(file) || sourceHash(await readFile(file, 'utf8')) !== snapshot.hash) throw new UsageError(staleFile);
-      const undo = this.record(file, before, snapshot.hash, siteLine, label ?? changed(from, to));
+      if (snapshot.hash !== written.hash || snapshot.hash !== this.hashes.get(file)) throw stale();
+      const undo = this.record(file, source, snapshot.hash, siteLine, label ?? changed(from, to));
       return { revision: this.revision, file, hash: snapshot.hash, applied: [id], remaining: snapshot.remaining, undo };
     });
   }
@@ -1534,37 +1548,22 @@ export class Session extends EventEmitter {
     }
     const file = this.file(options.file), hash = options.hash, ids = options.edits.map(edit => edit.id);
     return this.serialize(async () => {
-      await this.editableFile(file);
-      if (sourceHash(await readFile(file, 'utf8')) !== hash) throw new UsageError(staleFile);
+      const read = await this.readForWrite(file), source = read.text;
+      if (read.hash !== hash) throw stale();
       await this.reconcile([file]);
       // Re-derive every choice from the current source and decisions, never from client text.
       const current = await this.request<Omit<EditsResult, 'revision'>>('edits', { file });
-      if (current.hash !== hash || this.hashes.get(file) !== hash) throw new UsageError(staleFile);
+      if (current.hash !== hash || this.hashes.get(file) !== hash) throw stale();
       const known = new Map(current.edits.map(edit => [edit.id, edit]));
-      const selected = ids.map(id => { const edit = known.get(id); if (!edit) throw new UsageError(`Unknown edit id: ${id}. Read the site's edits again.`); return edit; });
-      const ordered = selected.toSorted((a, b) => a.start - b.start || a.end - b.end);
+      const selected = ids.map(id => { const edit = known.get(id); if (!edit) throw new UsageError(`Unknown edit id: ${id}. Read the site's edits again.`, 'not-found'); return edit; });
+      // the replacements in the file's own line endings, so the positions below are the written text's
+      const ordered = selected.toSorted((a, b) => a.start - b.start || a.end - b.end).map(edit => ({ ...edit, to: withEol(edit.to, read.eol) }));
       for (let i = 1; i < ordered.length; i++) if (ordered[i]!.start < ordered[i - 1]!.end) throw new UsageError('Edits overlap. Choose one edit for each source range.');
-      // Refuse aliases and hard links, and hold the source descriptor throughout the write.
-      const identity = await this.editableFile(file);
-      const handle = await open(file, constants.O_RDWR | constants.O_NOFOLLOW);
-      let next: string, before: string;
-      try {
-        const info = await handle.stat();
-        if (!info.isFile() || info.nlink !== 1) throw new UsageError('Apply requires a regular source file without hard links.');
-        if (info.dev !== identity.dev || info.ino !== identity.ino) throw new UsageError(staleFile);
-        await this.sameFile(file, identity);
-        const bytes = Buffer.alloc(info.size);
-        let offset = 0;
-        while (offset < bytes.length) { const { bytesRead } = await handle.read(bytes, offset, bytes.length - offset, offset); if (!bytesRead) break; offset += bytesRead; }
-        const source = bytes.subarray(0, offset).toString('utf8');
-        if (sourceHash(source) !== hash) throw new UsageError(staleFile);
-        before = source;
-        next = source;
-        for (const edit of ordered.toReversed()) next = next.slice(0, edit.start) + edit.to + next.slice(edit.end);
-        parsesAsBefore(file, source, next);
-        await this.replaceFile(file, identity, next);
-      } finally { await handle.close(); }
-      await this.reconcile([file]);
+      let next = source;
+      for (const edit of ordered.toReversed()) next = next.slice(0, edit.start) + edit.to + next.slice(edit.end);
+      parsesAsBefore(file, source, next);
+      // the write re-checks the hash on the bytes and refuses aliases and hard links
+      const written = await this.commit(file, read, next);
       // Earlier replacements can shift later columns. Query the resulting authored sites.
       const starts = lineStarts(next);
       let delta = 0;
@@ -1574,8 +1573,8 @@ export class Session extends EventEmitter {
         return { line: site.line };
       });
       const snapshot = await this.request<{ hash: string; remaining: Report['findings'] }>('remaining', { file, sites });
-      if (snapshot.hash !== sourceHash(next) || snapshot.hash !== this.hashes.get(file) || sourceHash(await readFile(file, 'utf8')) !== snapshot.hash) throw new UsageError(staleFile);
-      const undo = this.record(file, before, snapshot.hash, sites[0]!.line, ordered.map(edit => changed(edit.from, edit.to, '')).join(', '));
+      if (snapshot.hash !== written.hash || snapshot.hash !== this.hashes.get(file)) throw stale();
+      const undo = this.record(file, source, snapshot.hash, sites[0]!.line, ordered.map(edit => changed(edit.from, edit.to, '')).join(', '));
       return { revision: this.revision, file, hash: snapshot.hash, applied: ids, remaining: snapshot.remaining, undo };
     });
   }
@@ -1585,13 +1584,14 @@ export class Session extends EventEmitter {
     this.progress();
     // the host hears every write at once, so its hot update never waits on a watcher's poll
     this.emit('written', path);
-    const id = `w${++this.writes}`;
+    const id = mintId('w');
     this.written.push({ id, file, line, label, at: new Date().toISOString(), path, before, hashAfter });
     this.evict();
     // each change in it, for the trace; the trace never fails a write that already landed
     try {
       const after = readFileSync(path, 'utf8');
-      if (sourceHash(after) === hashAfter) this.log.add({ write: `${this.nonce}:${id}`, file, group: this.tag?.group ?? this.log.group(), ...(this.tag?.meta === undefined ? {} : { meta: this.tag.meta }), ...(this.undoing ? { undoing: this.undoing } : {}) }, before, after, (from, to) => changed(from, to, ''), perLine ? byLine : undefined);
+      const { tag, undoing } = this.attribution.getStore() ?? {};
+      if (sourceHash(after) === hashAfter) this.log.add({ write: id, file, group: tag?.group ?? this.log.group(), ...(tag?.meta === undefined ? {} : { meta: tag.meta }), ...(undoing ? { undoing } : {}) }, before, after, (from, to) => changed(from, to, ''), perLine ? byLine : undefined);
     } catch { /* the write stands; only its trace is missing */ }
     return { id, file, label };
   }
@@ -1614,7 +1614,7 @@ export class Session extends EventEmitter {
   /** Writes made as one: a batch of its own, named by a handle of its own (the last file's, a new id). */
   private asOneWrite(handles: UndoHandle[], label: string): UndoHandle {
     if (handles.length < 2) return handles[0]!;
-    const id = `w${++this.writes}`;
+    const id = mintId('w');
     this.batches.set(id, { label, members: handles.map(h => h.id) });
     this.evict();
     return { id, file: handles.at(-1)!.file, label };
@@ -1648,7 +1648,7 @@ export class Session extends EventEmitter {
     return this.serialize(async () => {
       if (this.batches.has(id)) return this.undoBatch(id);
       const entry = this.written.find(item => item.id === id);
-      if (!entry) throw new UsageError('That write is not in the history; only the last 20 writes can be undone, and each only once.');
+      if (!entry) throw new UsageError('That write is not in the history; only the last 20 writes can be undone, and each only once.', 'not-found');
       if (this.batchOf(id) !== undefined) throw new UsageError('That write is part of one made as one; undo that one, whole.');
       return this.undoOne(entry);
     });
@@ -1656,29 +1656,17 @@ export class Session extends EventEmitter {
   /** One write taken back; the caller holds the lock (serialize). */
   private async undoOne(entry: Recorded): Promise<UndoResult> {
     const id = entry.id;
-    const file = this.file(entry.path);
-    await this.editableFile(file);
-    if (sourceHash(await readFile(file, 'utf8')) !== entry.hashAfter) throw new UsageError('The file changed since this write. Undo the newer writes first, or edit it by hand.');
+    const file = this.file(entry.path), since = 'The file changed since this write. Undo the newer writes first, or edit it by hand.';
+    const current = await this.readForWrite(file);
+    if (current.hash !== entry.hashAfter) throw stale(since);
     await this.reconcile([file]);
-    if (this.hashes.get(file) !== entry.hashAfter) throw new UsageError('The file changed since this write. Undo the newer writes first, or edit it by hand.');
-    const identity = await this.editableFile(file);
-    const handle = await open(file, constants.O_RDWR | constants.O_NOFOLLOW);
-    try {
-      const info = await handle.stat();
-      if (!info.isFile() || info.nlink !== 1) throw new UsageError('Apply requires a regular source file without hard links.');
-      if (info.dev !== identity.dev || info.ino !== identity.ino) throw new UsageError(staleFile);
-      await this.sameFile(file, identity);
-      const bytes = Buffer.alloc(info.size);
-      let offset = 0;
-      while (offset < bytes.length) { const { bytesRead } = await handle.read(bytes, offset, bytes.length - offset, offset); if (!bytesRead) break; offset += bytesRead; }
-      if (sourceHash(bytes.subarray(0, offset).toString('utf8')) !== entry.hashAfter) throw new UsageError('The file changed since this write. Undo the newer writes first, or edit it by hand.');
-      await this.replaceFile(file, identity, entry.before);
-    } finally { await handle.close(); }
+    if (this.hashes.get(file) !== entry.hashAfter) throw stale(since);
+    try { await this.commit(file, current, entry.before); }
+    catch (error) { throw error instanceof UsageError && error.message === staleFile ? stale(since) : error; }
     this.written = this.written.filter(item => item.id !== id);
-    try { this.log.drop(new Set([`${this.nonce}:${id}`])); } catch { /* the trace keeps them; they read as changed */ }
-    await this.reconcile([file]);
+    try { this.log.drop(new Set([id])); } catch { /* the trace keeps them; they read as changed */ }
     const snapshot = await this.request<{ hash: string; remaining: Report['findings'] }>('remaining', { file, sites: [{ line: entry.line }] });
-    if (snapshot.hash !== sourceHash(entry.before) || snapshot.hash !== this.hashes.get(file)) throw new UsageError(staleFile);
+    if (snapshot.hash !== sourceHash(entry.before) || snapshot.hash !== this.hashes.get(file)) throw stale();
     return { revision: this.revision, file, hash: snapshot.hash, undone: id, remaining: snapshot.remaining };
   }
   /** Take back writes made as one, under the one lock the caller holds: every file is checked before any is written, then
@@ -1689,7 +1677,7 @@ export class Session extends EventEmitter {
     if (members.some(entry => !entry)) throw new UsageError('Part of that write is no longer in the history, so it can\'t be undone whole; edit it by hand.');
     // a file written twice in the batch holds what its newest write left
     const newest = [...new Map((members as Recorded[]).map(entry => [entry.path, entry])).values()];
-    for (const entry of newest) if (sourceHash(await readFile(entry.path, 'utf8').catch(() => '')) !== entry.hashAfter) throw new UsageError(`${entry.file} changed since this write. Undo the newer writes first, or edit it by hand.`);
+    for (const entry of newest) if (sourceHash(await readFile(entry.path, 'utf8').catch(() => '')) !== entry.hashAfter) throw stale(`${entry.file} changed since this write. Undo the newer writes first, or edit it by hand.`);
     let last: UndoResult | undefined;
     try { for (const entry of (members as Recorded[]).toReversed()) last = await this.undoOne(entry); }
     finally {
@@ -1705,39 +1693,39 @@ export class Session extends EventEmitter {
     if (tag !== undefined && (!tag || typeof tag !== 'object' || Array.isArray(tag))) throw new UsageError('trace must be an object: { group, meta }.');
     if (tag?.group !== undefined && (typeof tag.group !== 'string' || !/^[\w:.-]{1,64}$/.test(tag.group))) throw new UsageError('trace.group must be at most 64 letters, digits, _ : . or -.');
     if (tag?.meta !== undefined && JSON.stringify(tag.meta).length > 4000) throw new UsageError('trace.meta must be at most 4000 characters of JSON.');
-    const previous = this.tag, group = tag?.group ?? this.log.group();
-    this.tag = { group, ...(tag?.meta === undefined ? {} : { meta: tag.meta }) };
+    const group = tag?.group ?? this.log.group(), own = { group, ...(tag?.meta === undefined ? {} : { meta: tag.meta }) };
     // the answer names the step its changes went into, so the caller can take back exactly that step (the write toast's Undo)
-    try { const result = await (this[method as keyof this] as (...a: unknown[]) => Promise<unknown>).apply(this, args); return result && typeof result === 'object' && !Array.isArray(result) ? { ...result, trace: { group } } : result; } finally { this.tag = previous; }
+    const result = await this.attribution.run({ tag: own }, () => (this[method as keyof this] as (...a: unknown[]) => Promise<unknown>).apply(this, args));
+    return result && typeof result === 'object' && !Array.isArray(result) ? { ...result, trace: { group } } : result;
   }
   /** The site's spacing as the census read it: every row-level distance between a stack's children, on every route
    * (the page works out its rhythm with overlay/src/stacks.js rhythmOf, the same reader that measured them). */
   async rhythm(): Promise<{ distances: number[]; gaps: { d: number; em: number | null }[]; routes: number }> {
     const kept = await projectCensus(this.root);
-    if (!kept) throw new UsageError('There is no census of the project yet.\n  → plumber census --url <your dev server>');
+    if (!kept) throw new UsageError('There is no census of the project yet.\n  → plumber census --url <your dev server>', 'no-census');
     return { distances: kept.gaps.map(gap => gap.d), gaps: kept.gaps.map(gap => ({ d: gap.d, em: gap.em ?? null })), routes: kept.census.routes.length };
   }
   /** The site's colours as the census read them: every place's text, background and border colour (composited over its
    * ground, in oklab) with the class that sets it and the route, on every route (overlay/src/colours.js reads them). */
   async palette(): Promise<{ colours: { prop: 'text' | 'bg' | 'border'; oklab: [number, number, number]; cls: string | null; data?: boolean; route: string }[]; routes: number }> {
     const kept = await projectCensus(this.root);
-    if (!kept) throw new UsageError('There is no census of the project yet.\n  → plumber census --url <your dev server>');
-    if (!kept.colours) throw new UsageError('The census was taken before colours were read.\n  → plumber census --url <your dev server>');
+    if (!kept) throw new UsageError('There is no census of the project yet.\n  → plumber census --url <your dev server>', 'no-census');
+    if (!kept.colours) throw new UsageError('The census was taken before colours were read.\n  → plumber census --url <your dev server>', 'no-census');
     return { colours: kept.colours.map(row => ({ prop: row.prop, oklab: row.oklab, cls: row.cls, ...(row.data ? { data: true } : {}), route: row.route ?? '' })), routes: kept.census.routes.length };
   }
   /** The site's icons as the census read them: every icon place (an svg's origin, size, stroke, gap, the class that sizes it; an emoji
    * standing in for one) on every route, and the icon sets the project has installed (overlay/src/icons.js reads them). */
   async icons(): Promise<{ icons: (CensusIcon & { route: string })[]; routes: number; installed: InstalledIconSet[] }> {
     const kept = await projectCensus(this.root);
-    if (!kept) throw new UsageError('There is no census of the project yet.\n  → plumber census --url <your dev server>');
-    if (!kept.icons) throw new UsageError('The census was taken before icons were read.\n  → plumber census --url <your dev server>');
+    if (!kept) throw new UsageError('There is no census of the project yet.\n  → plumber census --url <your dev server>', 'no-census');
+    if (!kept.icons) throw new UsageError('The census was taken before icons were read.\n  → plumber census --url <your dev server>', 'no-census');
     return { icons: kept.icons.map(row => ({ ...row, route: row.route ?? '' })), routes: kept.census.routes.length, installed: await installedIconSets(this.root) };
   }
   /** Every change written, newest first, each live, undone or changed since (by a later change or by hand). */
-  async trace(group?: string): Promise<{ changes: TraceEntry[] }> {
+  async trace(group?: string): Promise<{ changes: TraceEntry[]; /** lines of the log that are not records this build can read */ skipped: number }> {
     if (group !== undefined && (typeof group !== 'string' || !group.trim())) throw new UsageError('group must be a non-empty string.');
     const changes = this.log.trace(this.reader());
-    return { changes: group === undefined ? changes : changes.filter(change => change.group === group) };
+    return { changes: group === undefined ? changes : changes.filter(change => change.group === group), skipped: this.log.skipped };
   }
   /** Take back one change: its inverse, written where the change is found now. */
   undoChange(id: string): Promise<UndoChangesResult> {
@@ -1748,7 +1736,7 @@ export class Session extends EventEmitter {
   undoGroup(group: string): Promise<UndoChangesResult> {
     if (typeof group !== 'string' || !group.trim()) throw new UsageError('Undo takes the id of a group.');
     const standing = this.log.trace(this.reader()).filter(change => change.group === group && change.state !== 'undone');
-    if (!standing.length) throw new UsageError('Nothing in that group is left to undo.');
+    if (!standing.length) throw new UsageError('Nothing in that group is left to undo.', 'nothing-in-group');
     return this.undoChanges(standing.map(change => change.id));
   }
   private reader(): (file: string) => string | undefined {
@@ -1766,18 +1754,17 @@ export class Session extends EventEmitter {
     const records = this.log.all(), states = new Map(this.log.trace(this.reader()).map(entry => [entry.id, entry]));
     const targets = ids.map(id => {
       const record = records.find(r => r.id === id), state = states.get(id);
-      if (!record || !state) throw new UsageError(`There is no change ${id} in the trace.`);
-      if (state.state === 'undone') throw new UsageError(`${id} is already undone (by ${state.undoneBy}).`);
-      if (state.state === 'changed') throw new UsageError(`${id} can't be undone: its place no longer holds what it wrote${state.by ? `; changed since by ${state.by.join(', ')}` : '; it was edited outside React Plumber'}.`);
+      if (!record || !state) throw new UsageError(`There is no change ${id} in the trace.`, 'not-found');
+      if (state.state === 'undone') throw new UsageError(`${id} is already undone (by ${state.undoneBy}).`, 'already-undone');
+      if (state.state === 'changed') throw new UsageError(`${id} can't be undone: its place no longer holds what it wrote${state.by ? `; changed since by ${state.by.join(', ')}` : '; it was edited outside React Plumber'}.`, state.by ? 'changed-later' : 'changed-by-hand');
       return record;
     });
     const files = new Map<string, ChangeRecord[]>();
     for (const r of targets) files.set(r.file, [...files.get(r.file) ?? [], r]);
     const done: UndoHandle[] = [], hashes: Record<string, string> = {};
-    const previous = this.tag;
-    this.tag = { group: previous?.group ?? this.log.group(), ...(previous?.meta === undefined ? {} : { meta: previous.meta }) };
-    this.undoing = targets;
-    try {
+    const outer = this.attribution.getStore()?.tag;
+    const tag = { group: outer?.group ?? this.log.group(), ...(outer?.meta === undefined ? {} : { meta: outer.meta }) };
+    try { await this.attribution.run({ tag, undoing: targets }, async () => {
       for (const [file, list] of files) {
         const path = this.file(file), text = await readFile(path, 'utf8');
         const placed = list.map(r => ({ r, at: locate(text, r) })).sort((x, y) => (y.at ?? 0) - (x.at ?? 0));
@@ -1790,11 +1777,11 @@ export class Session extends EventEmitter {
         const result = await this.rewrite(path, sourceHash(text), next, `undo ${list.map(r => r.label).join(', ')}`.slice(0, 120), blocksRemoved);
         done.push(result.undo); hashes[file] = result.hash;
       }
-    } catch (error) {
-      this.undoing = undefined;
-      for (const handle of done.toReversed()) await this.undo(handle.id).catch(() => {});
-      throw error;
-    } finally { this.undoing = undefined; this.tag = previous; }
+    }); } catch (error) {
+      // putting back the files already written is not part of the undo: same step, no `undoing`; what could not go back
+      // is named in the error (putBack), never swallowed
+      await this.attribution.run({ tag }, () => this.putBack(done, error));
+    }
     return { revision: this.revision, undone: ids, undo: done, files: hashes };
   }
   decisions(): Promise<Report['decisions']> { return this.read('decisions'); }
@@ -1874,37 +1861,30 @@ export class Session extends EventEmitter {
   private async readableSource(file: string): Promise<void> {
     if (!containsPath(this.root, file) && !await ownSourcePath(this.root, file)) throw new UsageError('Shared source cannot read symbolic links or paths outside the repository/workspace root.');
   }
-  private async editableFile(file: string): Promise<{ dev: number; ino: number }> {
-    this.file(file);
-    const inside = relative(this.root, file).replaceAll('\\', '/');
+  /** The engine's policy on a file about to be written, on top of the write module's own checks (src/write/source-file.ts:
+   * containment, no symbolic or hard link, fatal UTF-8, hash on the bytes): inside the project, never React Plumber's config
+   * or .plumb files. */
+  private editable(file: string): string {
+    const path = this.file(file);
+    const inside = relative(this.root, path).replaceAll('\\', '/');
     if (/(?:^|\/)plumb(?:er)?\.config\.[^/]+$/.test(inside) || /(?:^|\/)\.plumb(?:er)?(?:\/|$)/.test(inside)) throw new UsageError('Apply cannot edit React Plumber config or .plumb files.');
-    const identity = await lstat(file);
-    const root = await realpath(this.root), path = await realpath(file);
-    if (path !== resolve(root, inside)) throw new UsageError('Apply cannot edit symbolic links or paths outside the project root.');
-    const current = await lstat(file);
-    if (identity.dev !== current.dev || identity.ino !== current.ino) throw new UsageError(staleFile);
-    if (!current.isFile() || current.nlink !== 1) throw new UsageError('Apply requires a regular source file without hard links.');
-    return identity;
+    return path;
   }
-  /**
-   * The write itself: the checked file is replaced whole. The new text goes to a temporary file beside it and is renamed
-   * into place, so a watcher, a formatter or the host never reads a file that is half written. The old inode, held open
-   * and checked above, is the one being replaced; what is there afterwards is checked to still be the project's own file.
-   */
-  private async replaceFile(file: string, identity: { dev: number; ino: number }, next: string): Promise<void> {
-    await this.sameFile(file, identity);
-    const temporary = join(dirname(file), `.${basename(file)}.plumb-${process.pid}-${++this.temporaries}`);
-    try {
-      await writeFile(temporary, next, { encoding: 'utf8', flag: 'wx' });
-      await this.sameFile(file, identity);
-      await rename(temporary, file);
-    } catch (error) { await unlink(temporary).catch(() => {}); throw error; }
-    await this.editableFile(file);
+  /** A file read for a write, under the policy. */
+  private readForWrite(file: string): Promise<SourceText> { return readSource(this.root, this.editable(file), sourceBoundary(this.root)); }
+  /** The one guarded write, under the policy: the hash re-checked on the bytes, the file's line endings and BOM kept, a
+   * rename no reader sees half done, the result re-read and verified; then the engine's inventory moves on. */
+  private async commit(file: string, read: Pick<SourceText, 'hash' | 'identity'>, next: string): Promise<Written> {
+    const written = await writeSource(this.root, this.editable(file), { expectHash: read.hash, expectIdentity: read.identity, next, boundary: sourceBoundary(this.root) });
+    await this.reconcile([written.path]);
+    return written;
   }
-  private temporaries = 0;
-  private async sameFile(file: string, identity: { dev: number; ino: number }): Promise<void> {
-    const current = await this.editableFile(file);
-    if (current.dev !== identity.dev || current.ino !== identity.ino) throw new UsageError(staleFile);
+  /** The files a multi-file write already wrote go back as they were, through undo (their history entries and trace go
+   * with them); one that cannot go back is named in the error the caller gets, never swallowed. */
+  private async putBack(done: UndoHandle[], error: unknown): Promise<never> {
+    const failed: { file: string; error: string }[] = [];
+    for (const handle of done.toReversed()) { try { await this.undo(handle.id); } catch (reason) { failed.push({ file: handle.file, error: errorMessage(reason) }); } }
+    throw withRollback(error, failed);
   }
   private position(value: number): number { if (!Number.isSafeInteger(value) || value < 1) throw new UsageError('Line and column must be positive integers.'); return value; }
   async close(): Promise<void> {

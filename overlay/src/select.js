@@ -188,7 +188,7 @@ export class Selection {
   key(key) {
     if (!this.#el) return false;
     if (key === 'i') { const n = 2 + (this.current?.also?.length ?? 0); this.#why = (this.#why + 1) % n; this.draw(); return true; }
-    if (key === 'Backspace' && this.#changes?.has(this.#el)) { this.#changes.discard(this.#el); this.#taken = new Set(); this.#plan = null; this.draw(); return true; }
+    if (key === 'Backspace' && this.#changes?.has(this.#el)) { if (!this.#changes.discard(this.#el)) return true; /* being written: it lands */ this.#taken = new Set(); this.#plan = null; this.draw(); return true; }
     const plan = this.#plan;
     if (!plan) return false;
     const by = { ArrowUp: 1, ArrowRight: 1, ArrowDown: -1, ArrowLeft: -1 }[key];

@@ -777,7 +777,7 @@ export class ElementCard {
     host?.setAttribute('data-holding', '');
     const move = (ev) => { onMove(ev.clientX - box.left, ev.clientY - box.top, ev.clientX - x0, ev.clientY - y0); this.#ask(); };
     const end = (keep) => {
-      removeEventListener('pointermove', move); removeEventListener('pointerup', up);
+      removeEventListener('pointermove', move); removeEventListener('pointerup', up); removeEventListener('pointercancel', cancel);
       host?.removeAttribute('data-holding'); h.removeAttribute('data-held');
       this.#hand = null;
       if (!keep) { this.#dials = start; this.#ease = kept.ease; this.#ms = kept.ms; this.#ask(); }
@@ -785,9 +785,12 @@ export class ElementCard {
       if (this.#view === 'motion') this.#playNow();
     };
     const up = () => end(true);
-    this.#hand = { cancel: () => end(false) };
+    // the browser took the pointer (a touch turned scroll, a system gesture): the dials go back, as Esc does
+    const cancel = () => end(false);
+    this.#hand = { cancel };
     addEventListener('pointermove', move);
     addEventListener('pointerup', up);
+    addEventListener('pointercancel', cancel);
   }
   #curveMove() {
     const svg = this.#el.querySelector('[data-curve]'); if (!svg) return;

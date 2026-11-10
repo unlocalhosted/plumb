@@ -25,7 +25,7 @@ const TIMING = { hoverRead: 90, light: 120, swap: 140, reread: [250, 600, 1200, 
 import { pageHydrated } from './hydration.js';
 import { DOCK, TAG } from './words.js'; // the dock's and the hover tag's words
 import { locate, componentOf } from './locate.js';
-import { request, post, forgetResolved } from './api.js';
+import { errorIs, request, post, forgetResolved } from './api.js';
 import { reading, offCount } from './model.js';
 import { regionFor, outlineOf, childrenOf, groundIsDark, hostGround } from './geometry.js';
 import { GLYPH_CSS, glyph } from './glyphs.js';
@@ -335,7 +335,9 @@ class PlumbOverlay extends HTMLElement {
 
   connectedCallback() {
     addEventListener('plumb:updated', this.#updated);
-    this.#root = this.attachShadow({ mode: 'open' });
+    // connected again after a move (a page that re-parents <html>'s children): the root it already has is drawn afresh;
+    // attachShadow a second time throws (docs/invariants/overlay.md #5)
+    this.#root = this.shadowRoot ?? this.attachShadow({ mode: 'open' });
     this.#root.innerHTML = `<style>${tokensCss}${LANGUAGE_CSS}${GLYPH_CSS}${CHOICES_CSS}${css}${BLUEPRINT_CSS}${READY_CSS}${TEXT_EDIT_CSS}${HELP_CSS}${HISTORY_CSS}</style>
       <i class="tick" data-c="tl" hidden></i><i class="tick" data-c="tr" hidden></i><i class="tick" data-c="bl" hidden></i><i class="tick" data-c="br" hidden></i>
       <div class="tag" hidden aria-hidden="true"></div>
@@ -416,7 +418,9 @@ class PlumbOverlay extends HTMLElement {
       const writes = (h?.writes ?? []).filter((w) => Date.parse(w.at) >= since && !w.stale).reverse().map(({ id, file, label }) => ({ id, file, label }));
       if (writes.length) { saved.undo = writes; saved.pending = false; try { sessionStorage.setItem(RESUME, JSON.stringify(saved)); } catch {} }
     }
-    if (saved.fix) this.#blueprint?.resumed?.(saved.fix, saved.undo ?? [], saved.place ?? null, saved.group ?? null);
+    // back in Blueprint, the panel says it; left before the write landed, History does, with its Undo
+    if (saved.fix && saved.blueprint) this.#blueprint?.resumed?.(saved.fix, saved.undo ?? [], saved.place ?? null, saved.group ?? null);
+    else if (saved.fix && (saved.undo?.length || saved.group)) this.#history?.wrote({ undo: saved.undo ?? [], trace: { group: saved.group ?? null } }, saved.fix);
     // the old reading card is retired: a write never comes back as a card pinned to its element
   }
 
@@ -617,12 +621,16 @@ class PlumbOverlay extends HTMLElement {
   tool(name) { this.#$(`.dock .${name}`)?.click(); }
   setupLeft() { return this.#ready?.left ?? 0; }
   openSetup() { this.#ready?.toggle(true); }
-  remember(text, undo, place = null, group = null) { try { sessionStorage.setItem(RESUME, JSON.stringify({ at: Date.now(), blueprint: true, fix: text, undo: undo ?? [], group, pending: undo === undefined, place, scope: scopeKey(this.#blueprint?.scope), card: !!this.#blueprint?.carding })); } catch {} }
+  remember(text, undo, place = null, group = null) { try { sessionStorage.setItem(RESUME, JSON.stringify({ at: Date.now(), blueprint: !!this.#blueprint?.active, fix: text, undo: undo ?? [], group, pending: undo === undefined, place, scope: scopeKey(this.#blueprint?.scope), card: !!this.#blueprint?.carding })); } catch {} }
   forgetResume() { try { sessionStorage.removeItem(RESUME); } catch {} }
+  #resumeOutside() { try { const saved = JSON.parse(sessionStorage.getItem(RESUME) ?? 'null'); if (saved?.blueprint) sessionStorage.setItem(RESUME, JSON.stringify({ ...saved, blueprint: false, card: false, scope: null })); } catch {} }
 
   #blueprintState(state) {
     if (state === 'refused') return this.#announce('Blueprint waits until React Plumber is running.');
     this.#bp.state = state;
+    // left by the person while a write is out: the page a reload brings back stays out of Blueprint, and the write is
+    // History's to say (fixpanel-spec.md, rule 4)
+    if (state === 'leaving') this.#resumeOutside();
     if (state === 'entering') this.#bp.progress = null;
     // blueprint is the person's own page, dimmed: the overlay's cards keep the scheme they have everywhere else
     // one owner of the screen: the setup callout steps aside for Blueprint; the hint only when no card is open (the card
@@ -1640,7 +1648,7 @@ class PlumbOverlay extends HTMLElement {
       await this.#reread(p, classes, text, texts.length > 0);
     } catch (error) {
       try { sessionStorage.removeItem(RESUME); } catch {}
-      const stale = /changed since/i.test(error.message);
+      const stale = errorIs(error, 'stale-file');
       p.status = { kind: 'error', stale, text: stale ? 'The file changed since React Plumber read it.' : error.message };
       this.#updateSync();
     }
