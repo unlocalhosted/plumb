@@ -65,7 +65,9 @@ const around = async (page, marks, selectors) => {
 // (a write reloads the demo app, which has no hot update in these tests: while it does, there is no overlay, and the
 // waits below keep waiting instead of failing)
 // what the strip shows: steps with their ticks, the pointed one, the pill, the slider's words, the actions
-const strip = (page) => page.evaluate(() => {
+// (a read that lands mid-reload is read again once the page is back)
+const strip = async (page) => { for (let i = 0; ; i++) { try { return await readStrip(page); } catch (e) { if (i > 20 || !/context was destroyed|navigation/i.test(e.message)) throw e; await page.waitForLoadState('load').catch(() => {}); await page.waitForTimeout(250); } } };
+const readStrip = (page) => page.evaluate(() => {
   const root = document.querySelector('plumb-overlay')?.shadowRoot, tt = root?.querySelector('.tt');
   if (!tt || tt.hidden) return null;
   const track = tt.querySelector('.tt-track');
