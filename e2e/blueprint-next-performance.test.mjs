@@ -39,7 +39,9 @@ async function host(t, kind) {
   await writeFile(join(route, 'route.plumb.ts'), "import { createPlumbRoute } from '@unlocalhosted/react-plumber/next'; export const runtime = 'nodejs'; export const { GET, POST } = createPlumbRoute({ watch: false });");
   await writeFile(join(root, 'app/layout.jsx'), "import { PlumbOverlay } from '@unlocalhosted/react-plumber/next'; import './styles.css'; export default function Layout({ children }) { return <html><body>{children}<PlumbOverlay /></body></html>; }");
   await writeFile(join(root, 'next.config.mjs'), `import { withPlumb } from '@unlocalhosted/react-plumber/next/config'; export default withPlumb({ experimental: { agentUpgrade: false }, turbopack: { root: ${JSON.stringify(repo)} } });`);
-  const env = { ...process.env, NEXT_TELEMETRY_DISABLED: '1' }; delete env.NODE_ENV;
+  // this test measures the unstamped path (reading 216 cards through React's own records). withPlumb always stamps
+  // since 0.4.0, so the internal switch turns it off here, as e2e/locate.test.mjs does
+  const env = { ...process.env, NEXT_TELEMETRY_DISABLED: '1', PLUMB_INTERNAL_UNSTAMPED: '1' }; delete env.NODE_ENV;
   const child = spawn(process.execPath, [join(repo, 'node_modules/next/dist/bin/next'), 'dev', '--turbopack', '--hostname', '127.0.0.1', '--port', '0'], { cwd: root, env, stdio: ['ignore', 'pipe', 'pipe'] });
   const done = once(child, 'exit'); let logs = '';
   child.stdout.on('data', chunk => logs += chunk); child.stderr.on('data', chunk => logs += chunk);
