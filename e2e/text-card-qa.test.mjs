@@ -395,15 +395,15 @@ test('the style follows the values: a size moved off the text style leaves it, a
   assert.match(before, /Body/, `the words are on the Body medium style: ${before}`);
   const now = () => page.evaluate(() => (document.querySelector('plumb-overlay').shadowRoot.querySelector('.tc .pk .row[aria-label="Text style"] .slot:not(.gone)')?.innerText ?? '').replace(/\s+/g, ' ').trim());
   await row(card, 'Font size').locator('.val').focus();
-  // a size up: the words no longer make Body medium (No style, or the style that size makes)
+  // a size down (16px is this app's largest): the words no longer make Body medium (No style, or the style that size makes)
   const sizeBefore = await shows(row(card, 'Font size'));
-  await page.keyboard.press('ArrowUp');
+  await page.keyboard.press('ArrowDown');
   const state = async () => `size ${sizeBefore} → ${await shows(row(card, 'Font size'))} (${await row(card, 'Font size').getAttribute('class')}); style ${await now()}; write ${await text(card.locator('[data-do="write"]'))}`;
   await page.waitForFunction((was) => (document.querySelector('plumb-overlay').shadowRoot.querySelector('.tc .pk .row[aria-label="Text style"] .slot:not(.gone)')?.innerText ?? '').replace(/\s+/g, ' ').trim() !== was, before, { timeout: 5000 })
     .catch(async () => assert.fail(`the style did not follow: ${await state()}`));
   assert.doesNotMatch(await now(), /Body/, `off the style: ${await now()}`);
-  // back down: Body medium again, nothing left to write
-  await page.keyboard.press('ArrowDown');
+  // back up: Body medium again, nothing left to write
+  await page.keyboard.press('ArrowUp');
   await page.waitForFunction((was) => (document.querySelector('plumb-overlay').shadowRoot.querySelector('.tc .pk .row[aria-label="Text style"] .slot:not(.gone)')?.innerText ?? '').replace(/\s+/g, ' ').trim() === was, before, { timeout: 5000 });
   assert.match(await text(card.locator('[data-do="write"]')), /^Write\s*↵?$/, 'back where it started, nothing to write');
   assert.deepEqual(errors, []);
