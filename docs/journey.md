@@ -554,8 +554,16 @@ race, built for the old in-place write) was rewritten for the new write path (`e
   doesn't count against a style. The style field only shows this; the values are still written one by one. Checked on
   crafting-ui: the heading's font size up one step read "No style" and "Write 1 change"; down again read "Headline"
   and "Write".
-- **Not done yet:** several values in one Write (built, not tried end to end); typing a number; dragging the words themselves; colour and case are still the old
-  controls; the old card's tests still expect the old fields.
+- **"Colour and case":** both joined the panel. Case is four buttons, colour a picker with the swatch as its icon and
+  your colour tokens in a list; both are held and counted like the type values, and written by the same Write.
+  Inside the card a list now opens in place, under its field, and scrolls in itself: the card scrolls, so a floating
+  list was cut off at its edge.
+- **A bug found by writing two at once:** only the first change landed. After each write the card is drawn again, and
+  building each field reset it to where it started, which dropped every change still waiting. Building a field no
+  longer touches what is held. Proof: on crafting-ui, upper case and the `draw` colour, "Write 2 changes", and the
+  heading's code got `uppercase text-draw`.
+- **Not done yet:** typing a number; dragging the words themselves; colour and case are still the old
+  controls (now done, below); the old card's tests still expect the old fields.
 
 ## Open gaps
 - The contrast check knows colours, not sizes or weights, and is not run by CI yet.

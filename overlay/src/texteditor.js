@@ -38,7 +38,7 @@ import { glyph } from './glyphs.js';
 import { BUTTON_CSS, button } from './kit.js';
 
 // the panel's names for the values: the CSS names, said plainly (owner: "use correct terminology")
-const NAMES = { style: 'Text style', 'font-size': 'Font size', 'line-height': 'Line height', 'letter-spacing': 'Letter spacing', 'font-weight': 'Weight' };
+const NAMES = { style: 'Text style', 'font-size': 'Font size', 'line-height': 'Line height', 'letter-spacing': 'Letter spacing', 'font-weight': 'Weight', color: 'Colour' };
 
 const W = FIX.text, WC = FIX.card;
 const ORDER = ['style', 'font-size', 'line-height', 'letter-spacing', 'font-weight', 'text-transform', 'color'];
@@ -245,6 +245,12 @@ export const TEXT_EDITOR_CSS = `
   .tc .pk .row.locked { opacity: .62; }
   .tc .pk .row.locked .val, .tc .pk .row.locked .scrub { pointer-events: none; }
   .tc.grabbing, .tc.grabbing * { cursor: ns-resize !important; }
+  .tc .pk .seg { margin: 0; }
+  /* the card scrolls, so a list opens in place under its field (the full width) and pushes the rest down, never cut
+     off by the card's edge; a long list scrolls inside itself */
+  .tc .pk .list, .tc .pk .row.inline.compact + .list { position: static; grid-column: 1 / -1; max-height: 232px; overflow: auto; overscroll-behavior: contain; box-shadow: 0 0 0 1px var(--pl-rule), 0 6px 16px -8px rgb(28 27 25 / .25); }
+  .tc .pk .sw { display: block; width: 16px; height: 16px; border-radius: 5px; background: var(--sw, transparent); box-shadow: inset 0 0 0 1px rgb(0 0 0 / .14); font-style: normal; }
+  .tc .pk .list .sw { width: 14px; height: 14px; }
   .tc .wr { display: flex; justify-content: flex-end; padding: 2px 12px 12px; }
   @media (prefers-reduced-motion: reduce) { .tc, .tc .rail[data-new], .tc .menu { animation: none; } }
 `;
@@ -322,6 +328,8 @@ export class TextEditor {
     this.#el.addEventListener('click', (e) => {
       if (e.target.closest('.show')) return this.#host.show?.();
       if (e.target.closest('[data-do="write"]')) return this.#writeAll();
+      const cs = e.target.closest('.pk [data-case]');
+      if (cs) return this.#pickCase(cs.dataset.case);
       if (e.target.closest('.pk')) return;
       const up = e.target.closest('.up[data-up]');
       if (up) return this.#climb(+up.dataset.up);
@@ -590,27 +598,18 @@ export class TextEditor {
       const inHand = keys[this.#row];
       const family = esc(getComputedStyle(el).fontFamily);
       void inHand; void family;
-      // the style and the type values: token pickers, mounted once the card is drawn (#mount)
-      const style = by.get('style'), values = VALUES.map((k) => by.get(k)).filter(Boolean);
-      if (style?.steps.length || values.length) body += `<div class="pk">${style?.steps.length ? `<section class="style"><b>Style</b><div class="one"></div></section>` : ''}${values.length ? `<section><b>Type</b><div class="grid"></div></section>` : ''}</div>`;
+      // the panel: style, type values, case and colour. The pickers are mounted once the card is drawn (#mount); case is
+      // four buttons. Nothing is written until Write
+      const style = by.get('style'), values = VALUES.map((k) => by.get(k)).filter(Boolean), kase = by.get('text-transform'), color = by.get('color');
+      // case: what is held, else what is set, else nothing set (the text as written)
+      const caseNow = kase && (this.#held.get('text-transform') ?? kase.current ?? (kase.steps.some((s) => s.token === 'none') && (!kase.p.default || kase.p.default === 'none') ? 'none' : null));
+      const segHtml = kase?.steps.length ? `<section><b>Case</b><div class="seg" role="radiogroup" aria-label="${esc(kase.label)}">${kase.steps.map((s, k) => `<button type="button" class="ch" role="radio" data-case="${esc(s.token)}" data-i="${k}" aria-checked="${s.token === caseNow}" aria-label="${esc(s.label)}"${kase.disabled ? ' disabled' : ''}>${CASE_GLYPH[s.token] ?? esc(s.label)}</button>`).join('')}</div></section>` : '';
+      const any = style?.steps.length || values.length || segHtml || color?.steps.length;
+      if (any) body += `<div class="pk">${style?.steps.length ? `<section class="style"><b>Style</b><div class="one"></div></section>` : ''}${values.length ? `<section><b>Type</b><div class="grid"></div></section>` : ''}${segHtml}${color?.steps.length ? `<section class="colour"><b>Colour</b><div class="one"></div></section>` : ''}</div>`;
       const open = this.#editing && by.get(this.#editing.key);
       if (open) body += this.#rail(open); else this.#railFor = null;
-      const kase = by.get('text-transform');
-      // nothing set is the text as written
-      const kc = kase && { ...kase, current: kase.current ?? (kase.steps.some((s) => s.token === 'none') && (!kase.p.default || kase.p.default === 'none') ? 'none' : null) };
-      if (kc?.steps.length) body += `<div class="seg" role="radiogroup" aria-label="${esc(kc.label)}"${inHand === 'text-transform' ? ' data-at' : ''}>${kc.steps.map((s, k) => this.#ch(kc, k, CASE_GLYPH[s.token] ?? esc(s.label), s.label)).join('')}</div>`;
-      const color = by.get('color');
-      if (color) {
-        const shows = this.#read0?.values.color;
-        const value = [color.p.value, color.p.default, shows].find((v) => isColor(v));
-        // the colour is one of the theme's even when it isn't named here (inherited, or mixed to the same value)
-        const cur = color.steps.find((s) => s.token === color.current) ?? (value ? color.steps.find((s) => sameColor(s.value, value)) : null);
-        const swatch = cur?.value ?? value ?? 'transparent';
-        body += `<div class="fields"><button type="button" class="fld wide pick" data-menu="color" aria-haspopup="listbox" aria-expanded="${this.#menu === 'color'}"${inHand === 'color' ? ' data-at' : ''}${color.disabled ? ' aria-disabled="true"' : ''}><span class="chip" style="background:${esc(swatch)}"></span><span class="val"${cur ? '' : ' style="color:var(--ink-3)"'}>${esc(cur?.token ?? said('color', value ?? shows ?? '', el))}</span><span class="chev">▾</span></button></div>`;
-        if (this.#menu === 'color') body += `<div class="menu" role="listbox" aria-label="${esc(color.label)}"><div class="tc-swatches">${color.steps.map((s, k) => this.#ch(color, k, '', s.token, ` style="background:${esc(s.value)}" title="${esc(s.token)}"`)).join('')}</div></div>`;
-      }
       // one button writes every value picked in the panel
-      if (style?.steps.length || values.length) body += `<div class="wr">${button('Write', { cls: 'sm', key: '↵', attrs: 'data-do="write" disabled' })}</div>`;
+      if (any) body += `<div class="wr">${button('Write', { cls: 'sm', key: '↵', attrs: 'data-do="write" disabled' })}</div>`;
     }
     // a write that was refused says why, under the values (the value stays as it was, to try again)
     if (this.#rowError && !this.#editing) body += `<div class="down" role="alert">${esc(this.#rowError.text)}</div>`;
@@ -740,6 +739,7 @@ export class TextEditor {
     this.#refresh();
   }
   #mounting = false;
+  #restoring = false;
   #build(box) {
     const rows = this.#rows(), el = this.#target, none = document.createElement('i');
     const optionsOf = (r) => {
@@ -791,17 +791,38 @@ export class TextEditor {
       const opts = optionsOf(r); for (const o of opts) if (!o.hard) o.name = fmt[k](o);
       mk(grid, r, { options: opts, start: startOf(r, opts), toy: glyph(k), format: (o) => (o.step ? o.step.token : o.inherit ? 'inherited' : ''), mark: mark[k] });
     }
+    // colour: your colour tokens in the theme's order, the swatch the field's icon; a hard-coded colour among them in
+    // coral, and a colour the words get from above shown as itself until you pick one
+    const color = rows.find((r) => r.key === 'color'), cbox = box.querySelector('.colour .one');
+    if (color?.steps.length && cbox) {
+      const shows = this.#read0?.values.color, value = [color.p.value, color.p.default, shows].find((v) => isColor(v));
+      const opts = color.steps.map((s, i) => ({ name: s.token, v: i + 1, css: s.value, step: s }));
+      let start;
+      if (color.p.source === 'class' && !color.p.token && isColor(color.p.value)) opts.unshift({ name: plainColor(color.p.value), v: 0, css: color.p.value, hard: true });
+      else {
+        start = opts.findIndex((o) => o.step.token === color.current);
+        if (start < 0 && value) start = opts.findIndex((o) => sameColor(o.css, value));
+        if (start < 0) { opts.unshift({ name: plainColor(value ?? shows ?? ''), v: 0, css: value ?? shows, inherit: true }); start = 0; }
+      }
+      const sw = (o) => `<i class="sw" style="background:${esc(o.css ?? 'transparent')}"></i>`;
+      const p = mk(cbox, color, { options: opts, start, toy: '<i class="sw"></i>', format: (o) => (o.hard ? '' : o.inherit ? 'inherited' : ''), mark: sw });
+      const paint = () => p.row.style.setProperty('--sw', opts[p.at()]?.css ?? 'transparent');
+      paint(); p.row.addEventListener('pointerup', () => requestAnimationFrame(paint)); p.row.addEventListener('keyup', paint);
+      this.#pk.get('color').paint = paint;
+    }
     // what was picked before this draw is picked again
     // (the style first, so a value picked after it lands over it)
     for (const [key, token] of [...this.#held].sort(([a], [b]) => (a === 'style' ? -1 : b === 'style' ? 1 : 0))) {
       const f = this.#pk.get(key); if (!f) continue;
       const i = f.opts.findIndex((o) => o.step?.token === token);
-      if (i >= 0 && i !== f.p.at()) f.p.set(i);
+      if (i >= 0 && i !== f.p.at()) { this.#restoring = true; try { f.p.set(i); } finally { this.#restoring = false; } }
     }
     this.#refresh();
   }
   // a picker moved: what it holds now (nothing, when it is back where it started or on the hard-coded value)
   #hold(key, o, first) {
+    // a field being built shows where it starts: that is no change, and never drops what is held (restored after)
+    if (this.#mounting && !this.#restoring) return;
     // the style field moved by the values (it follows them): it says which style they make, and holds nothing itself
     if (this.#syncing && key === 'style') return;
     if (this.#syncing && key !== 'style') { this.#held.delete(key); }
@@ -819,6 +840,7 @@ export class TextEditor {
       }
       this.#syncing = false;
     }
+    if (key === 'color') this.#pk.get('color')?.paint?.();
     // a value changed by hand: the style field follows, to the style these values make, or No style
     if (key !== 'style' && !this.#syncing && !this.#mounting) this.#match();
     this.#showHeld();
@@ -835,13 +857,22 @@ export class TextEditor {
     if (i === s.p.at()) return;
     this.#syncing = true; s.p.set(i); this.#syncing = false;
   }
+  // case: one of four buttons; held like a picked value (the one it already uses holds nothing)
+  #pickCase(token) {
+    const r = this.#rows().find((x) => x.key === 'text-transform');
+    if (!r || r.disabled || !r.steps.some((s) => s.token === token)) return;
+    const was = r.current ?? (!r.p.default || r.p.default === 'none' ? 'none' : null);
+    if (token === was) this.#held.delete('text-transform'); else this.#held.set('text-transform', token);
+    for (const b of this.#el.querySelectorAll('.pk [data-case]')) b.setAttribute('aria-checked', String(b.dataset.case === token));
+    this.#showHeld(); this.#refresh();
+  }
   // the held values, shown on the element (the style first, a value picked after it over it)
   #showHeld() {
     const el = this.#target; if (!el) return;
     this.#pend.clear(el);
-    const keys = [...this.#held.keys()].sort((a, b) => (a === 'style' ? -1 : b === 'style' ? 1 : 0));
+    const keys = [...this.#held.keys()].sort((a, b) => (a === 'style' ? -1 : b === 'style' ? 1 : 0)), rows = keys.length ? this.#rows() : [];
     for (const key of keys) {
-      const f = this.#pk.get(key), step = f?.opts.find((o) => o.step?.token === this.#held.get(key))?.step;
+      const step = rows.find((x) => x.key === key)?.steps.find((t) => t.token === this.#held.get(key));
       if (!step) continue;
       for (const [prop, v] of Object.entries(this.#valuesOf(key, step))) if (v !== '' && v !== null && v !== undefined) this.#pend.set(el, prop, v);
     }
