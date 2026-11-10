@@ -220,7 +220,7 @@ export async function loadPresets(root: string, project: PlumbConfig): Promise<{
   const dependencies = dependenciesFor(manifest);
   async function loadModule(file: string, directory: string, packageName?: string): Promise<void> {
     files.add(file);
-    try { const module = await import(pathToFileURL(file).href); await add(module.default, directory, relative(root, file), packageName); }
+    try { const module = await import(/* webpackIgnore: true */ /* turbopackIgnore: true */ pathToFileURL(file).href); await add(module.default, directory, relative(root, file), packageName); }
     catch (error) { throw new UsageError(`Load preset ${relative(root, file)}: ${errorMessage(error)}`); }
   }
   for (const name of dependencies) {
