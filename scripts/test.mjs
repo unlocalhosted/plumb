@@ -148,8 +148,10 @@ function run(job) {
       sweep(); // anything the file left running: browsers, dev servers
       out.end();
       const failed = [...text.matchAll(/^not ok \d+ - (.*)$/gm)].map((m) => m[1]);
-      const passed = (text.match(/^ok \d+ - /gm) ?? []).length;
-      resolve({ ...job, code: job.timedOut ? 1 : code ?? 1, seconds: (Date.now() - began) / 1000, passed, failed, log: `.test-logs/${name}.log` });
+      // a skipped test is reported as `ok … # SKIP`: it did not pass, it did not run
+      const skipped = (text.match(/^ok \d+ - .*# SKIP/gm) ?? []).length;
+      const passed = (text.match(/^ok \d+ - /gm) ?? []).length - skipped;
+      resolve({ ...job, code: job.timedOut ? 1 : code ?? 1, seconds: (Date.now() - began) / 1000, passed, skipped, failed, log: `.test-logs/${name}.log` });
     });
   });
 }
@@ -186,7 +188,7 @@ const wall = (Date.now() - started) / 1000;
 const bad = results.filter((r) => r.code !== 0);
 const sum = (pick) => results.reduce((n, r) => n + pick(r), 0);
 const room = flag('--serial') ? 'one at a time' : `${budget.cores} cores and ${(budget.mb / 1000).toFixed(1)} GB, up to ${most} files at once`;
-console.log(`\n${results.length} runs in ${(wall / 60).toFixed(1)} min on ${room}: ${sum((r) => r.passed)} tests passed, ${sum((r) => r.failed.length)} failed, ${bad.length} files failed`);
+console.log(`\n${results.length} runs in ${(wall / 60).toFixed(1)} min on ${room}: ${sum((r) => r.passed)} tests passed, ${sum((r) => r.failed.length)} failed, ${sum((r) => r.skipped)} skipped, ${bad.length} files failed`);
 console.log('\nSlowest files:');
 for (const r of [...results].sort((a, b) => b.seconds - a.seconds).slice(0, 10)) console.log(`  ${r.seconds.toFixed(1).padStart(7)}s  ${r.label}`);
 if (bad.length) {
