@@ -2,6 +2,7 @@
 // the overlay's token file as text, and the scheme; it draws with the overlay's own source.
 import { LANGUAGE_CSS } from '../../../overlay/src/language.js';
 import { readTokens, probe, say } from '../tokens.js';
+import { PAIRS, NEED } from '../../../overlay/src/pairs.js';
 import { TOY_DEFS, toyOf } from '../../../overlay/src/toys.js';
 import { BUTTON_CSS, button } from '../../../overlay/src/kit.js';
 
@@ -9,6 +10,17 @@ export function mount(host, root, css) {
 
   const tokens = readTokens(css), by = new Map(tokens.map((t) => [t.name, t]));
   const inLight = probe(css, 'light'), inDark = probe(css, 'dark');
+
+  // contrast, the way scripts/contrast.mjs works it out (WCAG 2), for the table of pairs
+  const rgb = (v) => { const m = v.trim().match(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i); if (!m) return null; const x = m[1].length === 3 ? [...m[1]].map((c) => c + c).join('') : m[1]; return [0, 2, 4].map((i) => parseInt(x.slice(i, i + 2), 16) / 255); };
+  const lum = ([r, g, b]) => { const f = (c) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4); return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b); };
+  const ratioOf = (read, pair) => { const a = rgb(read(`--pl-${pair.fg}`)), b = rgb(read(`--pl-${pair.bg}`)); if (!a || !b) return null; const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p); return (x + 0.05) / (y + 0.05); };
+  const WORD = { text: 'any words', bold: 'bold words', mark: 'a shape' };
+  const sample = (read, pair) => `<i class="pair" style="background:${read(`--pl-${pair.bg}`)};color:${read(`--pl-${pair.fg}`)}">${pair.need === 'mark' ? '<svg viewBox="0 0 24 24" width="16" height="16"><path d="M5.5 12.6l4.200 4.200 8.800-10" fill="none" stroke="currentColor" stroke-width="3.200" stroke-linecap="round" stroke-linejoin="round"/></svg>' : 'Ag'}</i>`;
+  const score = (read, pair) => { const r = ratioOf(read, pair); const ok = r !== null && r >= NEED[pair.need]; return `<span class="val">${sample(read, pair)}<code class="${ok ? 'pass' : 'fail'}">${r === null ? 'n/a' : r.toFixed(2)}</code></span>`; };
+  const pairsTable = `<div class="tbl pairs" role="table"><div class="tr th" role="row"><span>On top</span><span>Underneath</span><span>Used for</span><span>Light</span><span>Dark</span></div>${PAIRS.map((pair) => `
+    <div class="tr" role="row"><span><code class="tok" tabindex="0">--pl-${pair.fg}</code></span><span><code class="tok" tabindex="0">--pl-${pair.bg}</code></span><span class="for">${pair.use}<small>${WORD[pair.need]} · needs ${NEED[pair.need]} : 1</small></span>${score(inLight, pair)}${score(inDark, pair)}</div>`).join('')}</div>`;
+  const failing = PAIRS.flatMap((pair) => [inLight, inDark].map((read) => ratioOf(read, pair))).filter((r, i) => r === null || r < NEED[PAIRS[Math.floor(i / 2)].need]).length;
 
   // what each hue means in the visual language (docs/design/visual-language.md), and a toy that shows it
   const HUES = [
@@ -37,9 +49,9 @@ export function mount(host, root, css) {
       <div class="top"><i class="toy">${toyOf(toy)}</i><b>${hue}</b></div>
       <p>${means}</p>
       <div class="three">
-        <span class="chip" style="background: var(--h); color: ${hue === 'butter' ? 'var(--hi)' : '#fff'}"><b>${hue}</b><code class="tok" tabindex="0">--pl-${hue}</code><small>the body of a piece</small></span>
+        <span class="chip" style="background: var(--h); color: var(--pl-${hue}-on)"><b>${hue}</b><code class="tok" tabindex="0">--pl-${hue}</code><small>the body of a piece</small></span>
         <span class="chip" style="background: var(--hs); color: var(--hi)"><b>soft</b><code class="tok" tabindex="0">--pl-${hue}-soft</code><small>what is not there</small></span>
-        <span class="chip" style="background: var(--hi); color: #fff"><b>ink</b><code class="tok" tabindex="0">--pl-${hue}-ink</code><small>marks drawn on the hue</small></span>
+        <span class="chip" style="background: var(--hi); color: var(--hs)"><b>ink</b><code class="tok" tabindex="0">--pl-${hue}-ink</code><small>marks drawn on the hue</small></span>
       </div></article>`;
 
   root.innerHTML = `<style>${css}${LANGUAGE_CSS}${BUTTON_CSS}
@@ -94,6 +106,11 @@ export function mount(host, root, css) {
     .val code { color: var(--pl-ink-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .sw { flex: none; width: 22px; height: 22px; border-radius: 7px; box-shadow: inset 0 0 0 1px rgb(0 0 0 / .1); }
     .sw.dark { box-shadow: inset 0 0 0 1px rgb(255 255 255 / .14), 0 0 0 3px #1c1c1e; margin: 0 3px; }
+    .pairs .tr { grid-template-columns: minmax(130px, 1fr) minmax(130px, 1fr) minmax(0, 2fr) 100px 100px; }
+    .pairs .for small { display: block; font: 500 11.5px/15px var(--pl-sans); color: var(--pl-ink-3); }
+    .pair { display: grid; place-items: center; flex: none; width: 38px; height: 28px; border-radius: 9px; font: 700 14px/1 var(--pl-round); font-style: normal; }
+    .val code.pass { color: var(--pl-mint); font-weight: 700; }
+    .val code.fail { padding: 2px 6px; border-radius: 6px; background: var(--pl-coral); color: var(--pl-coral-on); font-weight: 700; }
     .open { margin-top: 14px; padding: 14px 18px 14px 34px; border-radius: 16px; background: var(--pl-paper); box-shadow: 0 0 0 1px var(--pl-rule); font: 400 13px/21px var(--pl-sans); color: var(--pl-ink-2); }
     .open b { color: var(--pl-ink); font-weight: 600; }
     @media (max-width: 720px) { .steps { grid-template-columns: 1fr; } .steps div { border-left: 0; border-top: 1px solid var(--pl-rule); } .tr { grid-template-columns: 1fr 1fr; } .tr.th span:nth-child(2), .tr .for { display: none; } }
@@ -121,12 +138,15 @@ export function mount(host, root, css) {
 
   ${GROUPS.map(([title, why, has]) => `<h2>${title}</h2><p>${why}</p>${table(tokens.map((t) => t.name).filter(has))}`).join('')}
 
+  <h2>What may go on what</h2>
+  <p>Every pairing the system allows, with how well it is seen in each scheme. A part asks for a hue’s <code>-on</code> for its lettering and for <code>--pl-cut</code> for a hole in it; it never writes white itself. ${failing ? `<b>${failing} of these fail right now.</b>` : `<b>All ${PAIRS.length * 2} pass.</b>`} The same list is checked by <code>node scripts/contrast.mjs</code>, which fails when a pair can’t be read.</p>
+  ${pairsTable}
+
   <h2>What is still open</h2>
   <ul class="open">
     <li><b>The action role is pale today.</b> Buttons in the product use <code>--pl-action-soft</code> with dark pink words. In the toy language pale means “not there”, so the role should be the solid pink with white on it (see Buttons).</li>
-    <li><b>The dark surfaces are near black.</b> <code>--pl-paper</code> in dark is ${inDark('--pl-paper')}; the comps try a lifted warm graphite (#2e2d2b). Not in the token file yet.</li>
-    <li><b>Butter can’t carry words.</b> It is 2.45:1 on paper, so text in its tone uses <code>--pl-soft-text</code>. Keep butter for bodies and marks.</li>
-    <li><b>Two names for one colour.</b> <code>--pl-accent</code> and <code>--pl-instrument</code> are the same sky; one of them should go.</li>
+    <li><b>Butter can’t carry white.</b> Words and marks on it use <code>--pl-butter-on</code>; a word in its tone on paper uses <code>--pl-soft-text</code>.</li>
+    <li><b>The check knows colours, not sizes.</b> It can say bold words on pink are fine and small regular words are not; it can’t see whether a part actually set its words bold. That still takes a person looking.</li>
   </ul>`;
 
   const flip = () => host.dispatchEvent(new CustomEvent('kit:flip', { bubbles: true }));

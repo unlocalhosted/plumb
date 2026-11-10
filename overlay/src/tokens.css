@@ -30,6 +30,13 @@
   --pl-pink: #f24a9f;   --pl-pink-soft: #ffd0ec;   --pl-pink-ink: #5a0d3c;    /* actions */
   --pl-lilac: #7a5cf0;  --pl-lilac-soft: #e3dcff;  --pl-lilac-ink: #2b1a6b;   /* names */
 
+  /* what goes ON a hue. A part never writes #fff on a hue: it asks for the hue's -on (its lettering) or for the cut
+     (a hole in a body, which shows the paper). Both change with the scheme, and scripts/contrast.mjs checks every
+     pair in overlay/src/pairs.js against WCAG, so a pairing that can't be read fails before anyone sees it */
+  --pl-sky-on: #ffffff; --pl-coral-on: #ffffff; --pl-mint-on: #ffffff; --pl-pink-on: #ffffff; --pl-lilac-on: #ffffff;
+  --pl-butter-on: var(--pl-butter-ink);   /* yellow can't hold white */
+  --pl-cut: #ffffff;                      /* a hole cut in a solid body */
+
   /* Blueprint: magenta where the page has too much (space, size, weight), cyan where space is missing. Outside the six
      hues on purpose: they sit on your page, not on Plumber's cards, and must read on any colour under them */
   --pl-heat: #ff1f8f;
@@ -169,6 +176,8 @@
     --pl-soft-text: var(--pl-butter);
     --pl-pink: #ff6ec7;   --pl-pink-soft: #e3008b;   --pl-pink-ink: #ffffff;
     --pl-lilac: #b9a6ff;  --pl-lilac-soft: #7b57ff;  --pl-lilac-ink: #ffffff;
+    --pl-sky-on: #0b3554; --pl-coral-on: #5c160e; --pl-mint-on: #0b3d26; --pl-pink-on: #5a0d3c; --pl-lilac-on: #2b1a6b; --pl-butter-on: #5c3a00;
+    --pl-cut: #1f1e1d;
     --pl-on-accent: #08263d;
     --pl-heat: #ff4fa7;
     --pl-sys: #2bb8ff;
@@ -196,6 +205,8 @@
     --pl-soft-text: var(--pl-butter);
     --pl-pink: #ff6ec7;   --pl-pink-soft: #e3008b;   --pl-pink-ink: #ffffff;
     --pl-lilac: #b9a6ff;  --pl-lilac-soft: #7b57ff;  --pl-lilac-ink: #ffffff;
+    --pl-sky-on: #0b3554; --pl-coral-on: #5c160e; --pl-mint-on: #0b3d26; --pl-pink-on: #5a0d3c; --pl-lilac-on: #2b1a6b; --pl-butter-on: #5c3a00;
+    --pl-cut: #1f1e1d;
     --pl-on-accent: #08263d;
     --pl-heat: #ff4fa7;
     --pl-sys: #2bb8ff;

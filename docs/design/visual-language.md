@@ -20,8 +20,8 @@ them.
 
 1. **One body, one hue.** A piece is one solid shape you could cut out of card. A second hue appears only when it is a
    second thing: the sun in an image, the knob on a slider, the online dot on an avatar.
-2. **Details are cut out or drawn on.** White for a hole in the body. The hue's own ink (its dark shade) for a mark on
-   it. Never a pale fill with an outline around it: that is a wireframe, not a toy.
+2. **Details are cut out or drawn on.** A hole in the body shows the ground (`--pl-cut`). A mark on it is the hue's
+   `-on` colour. Never a pale fill with an outline around it: that is a wireframe, not a toy.
 3. **It says what the thing does, not what it looks like in a wireframe.** A switch is on. A tag has a hole for its
    string. An input has a caret waiting. A toast is already timing out. A tooltip points at the thing it is about.
 4. **It reads at 16.** Drawn on a 24 grid; nothing finer than 1.5; four parts at most. If it only works large, it is
@@ -60,6 +60,22 @@ The hues are the overlay's own (`overlay/src/tokens.css`). Each has three values
 - No greys in a piece. If something needs to be quiet, it is the hue's soft, and rule 7 says when that is allowed.
 - A piece takes its hue from what it is, by the table above, so the same thing is the same colour everywhere: padding
   is mint in an icon, in the box model, in a chip and in the burst.
+
+## What may go on what (the check)
+
+Colour pairings are not left to the eye. They are a list, and the list is checked.
+
+- **The list:** `overlay/src/pairs.js`. Every pairing a part may use: what is on top, what is underneath, and what it
+  is used for (any words, bold words, a shape). If a pairing isn't in the list, a part may not use it.
+- **The check:** `npm run contrast` (`scripts/contrast.mjs`). It reads the token file, works out WCAG 2 contrast for
+  every pair in the light and the dark scheme, and exits 1 if one falls short: 4.5 : 1 for any words, 3 : 1 for bold
+  words (14px and up) and for a shape that carries meaning. The design site's colour page shows the same table.
+- **Never write a colour on a hue by hand.** Words and marks on a hue use its `--pl-<hue>-on`. A hole in a body uses
+  `--pl-cut`. Both change with the scheme: at night the bodies are pastels, so what goes on them is deep, not white.
+  (This is what was missing when the colour page showed white words on a pale green chip in the dark scheme: white
+  had been typed in, and nothing was there to object.)
+- **What it can't see:** sizes and weights. It knows bold words on pink are fine and small regular ones are not; it
+  doesn't know which a part set. A person still looks.
 
 ## Form
 

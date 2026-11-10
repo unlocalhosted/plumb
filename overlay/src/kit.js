@@ -9,7 +9,7 @@ export const BUTTON_CSS = `
        Two parts: the base (the button's own darker shade) and the top (the solid hue, the label on it). At rest the
        top sits 3px above the base. Pointed at, it rises to 4. Pressed, it goes down to 1, fast; let go, it springs
        back. The base never moves, so nothing around the button shifts. */
-    .tb { --hue: var(--pl-pink); --base: color-mix(in oklab, var(--pl-pink) 68%, var(--pl-pink-ink)); --on: #fff; --lift: 3px; --h: 36px;
+    .tb { --hue: var(--pl-pink); --base: color-mix(in oklab, var(--pl-pink) 68%, var(--pl-pink-ink)); --on: var(--pl-pink-on); --lift: 3px; --h: 36px;
       all: unset; position: relative; display: inline-block; box-sizing: border-box; height: calc(var(--h) + 3px); padding-top: 3px; border-radius: 12px; cursor: pointer;
       background: var(--base); font: 700 13.5px/1 var(--pl-round); letter-spacing: 0.005em; color: var(--on); -webkit-tap-highlight-color: transparent; user-select: none; }
     .tb .top { display: flex; align-items: center; justify-content: center; gap: 7px; height: var(--h); padding: 0 14px; box-sizing: border-box; border-radius: 12px; background: var(--hue);
@@ -27,8 +27,8 @@ export const BUTTON_CSS = `
     .tb.quiet { --hue: var(--pl-paper); --base: var(--pl-rule); --on: var(--pl-ink); }
     .tb.quiet .top { box-shadow: inset 0 0 0 1.5px var(--pl-rule); }
     .tb.quiet kbd { background: var(--pl-paper-2); color: var(--pl-ink-2); box-shadow: 0 1.5px 0 0 var(--pl-rule); }
-    .tb.done { --hue: var(--pl-mint); --base: color-mix(in oklab, var(--pl-mint) 68%, var(--pl-mint-ink)); }
-    .tb.wrong { --hue: var(--pl-coral); --base: color-mix(in oklab, var(--pl-coral) 68%, var(--pl-coral-ink)); }
+    .tb.done { --on: var(--pl-mint-on); --hue: var(--pl-mint); --base: color-mix(in oklab, var(--pl-mint) 68%, var(--pl-mint-ink)); }
+    .tb.wrong { --on: var(--pl-coral-on); --hue: var(--pl-coral); --base: color-mix(in oklab, var(--pl-coral) 68%, var(--pl-coral-ink)); }
     /* not there: pale, flat on its base, nothing to press (the language: pale is for what is not there) */
     .tb:disabled, .tb[data-show="disabled"] { --hue: var(--pl-paper-2); --base: transparent; --on: var(--pl-ink-3); --lift: 0px; cursor: not-allowed; }
     .tb:disabled .top { box-shadow: inset 0 0 0 1.5px var(--pl-rule); }

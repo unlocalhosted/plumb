@@ -266,7 +266,20 @@ race, built for the old in-place write) was rewritten for the new write path (`e
 - **A bill avoided:** Next.js 16.4.0 reported a known security vulnerability on start. `web/` is on 16.4.6
   (`npm audit`: 0 vulnerabilities). The repository's own dev dependency is still 16.4.0.
 
+### 6. "dont we have accessibility guideline to detect such issues": no, and now yes
+- **The itch:** in the dark scheme the colour page showed white words on a pale green chip, and a white chip with
+  nothing readable on it. The owner: "dont we have accessibility guideline to detect such issues".
+- **The system behind it:** we had rules in words and nothing that checked them. Parts typed `#fff` on a hue, which
+  holds in the light scheme and fails at night, where the hues are pastels.
+- **The fix:** what goes on a hue has a name (`--pl-<hue>-on`, and `--pl-cut` for a hole), valued per scheme. The
+  allowed pairings are a list (`overlay/src/pairs.js`) and a script checks them (`npm run contrast`).
+- **The proof:** first run: 57 of 58 ok, 1 fail (marks on butter at night, 1.44 : 1). After drawing marks in the
+  `-on` colour: 56 of 56 ok in both schemes. The closest calls are five dark pill pairings at 4.50 to 4.56 against
+  4.5, and the thin butter line on white at 3.03 against 3.
+- **Media hooks:** the dark colour page before (white on pale green) and after; the table of pairs.
+
 ## Open gaps
+- The contrast check knows colours, not sizes or weights, and is not run by CI yet.
 - `web/docs/pages` is a copy of `site/src/docs/pages`; two copies until the old Vite site is removed.
 - The repository root still installs Next.js 16.4.0 (used by the Next host's tests); `web/` is on 16.4.6.
 - The new look (toys, the fix bar, the toy button) exists only as kit pages; the product still ships the old one.

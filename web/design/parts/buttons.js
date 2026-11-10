@@ -68,7 +68,7 @@ export function mount(host, root, css) {
   ${set('Kinds', 'Hue says what pressing does. Pink acts. Paper is the quiet choice beside it. Mint has landed. Coral destroys.',
     cell('Action', b('Add to theme', { key: '↵' }), 'the one thing this moment is for')
     + cell('Quiet', b('Keep', { cls: 'quiet', key: 'K' }), 'a real choice, not the main one')
-    + cell('Done', b('Written', { cls: 'done', icon: CHECK('#fff') }), 'what an action turns into')
+    + cell('Done', b('Written', { cls: 'done', icon: CHECK('currentColor') }), 'what an action turns into')
     + cell('Destroys', b('Discard all', { cls: 'wrong' }), 'only for what can’t be put back'))}
 
   ${set('States', 'The same button in each state it can be in. The first four you can also do yourself on any button on this page.',
@@ -77,7 +77,7 @@ export function mount(host, root, css) {
     + cell('Pressed', b('Apply', { key: 'A', attrs: 'data-show="pressed"' }), 'down to 1, in 70ms')
     + cell('Focused', b('Apply', { key: 'A', attrs: 'data-show="focus"' }), 'a sky ring, keyboard only')
     + cell('Working', `<button type="button" class="tb" aria-busy="true"><span class="top"><span class="lb">Apply</span>${kbd('A')}</span>${DOTS}</button>`, 'held down; keeps its width')
-    + cell('Landed', b('Applied', { cls: 'done landed', icon: CHECK('#fff') }), 'turns mint, the tick pops')
+    + cell('Landed', b('Applied', { cls: 'done landed', icon: CHECK('currentColor') }), 'turns mint, the tick pops')
     + cell('Not there', b('Apply', { key: 'A', attrs: 'disabled' }), 'pale and flat: nothing to press')
     + cell('Refused', b('Try again', { cls: 'quiet', icon: UNDO('var(--pl-coral)') }), 'quiet, with what to do next'))}
 
@@ -91,9 +91,9 @@ export function mount(host, root, css) {
     + cell('Large · 44', b('Use rounded-tag', { cls: 'lg', key: '↵' })))}
 
   ${set('With a picture', 'On a solid top a picture is cut out in white. On a quiet top it keeps its colour. A picture alone is a square, and says its name when pointed at.',
-    cell('Cut out', b('Clean up', { icon: SPARK('#fff') }))
+    cell('Cut out', b('Clean up', { icon: SPARK('currentColor') }))
     + cell('In colour', b('Undo', { cls: 'quiet', icon: UNDO('var(--pl-lilac)') }))
-    + cell('Alone', b('', { cls: 'only quiet', icon: UNDO('var(--pl-lilac)'), attrs: 'data-tip="Undo" aria-label="Undo"' }) + b('', { cls: 'only quiet', icon: CLOSE('var(--pl-ink-2)'), attrs: 'data-tip="Close" aria-label="Close"' }) + b('', { cls: 'only', icon: SPARK('#fff'), attrs: 'data-tip="Clean up" aria-label="Clean up"' }), 'point at one'))}
+    + cell('Alone', b('', { cls: 'only quiet', icon: UNDO('var(--pl-lilac)'), attrs: 'data-tip="Undo" aria-label="Undo"' }) + b('', { cls: 'only quiet', icon: CLOSE('var(--pl-ink-2)'), attrs: 'data-tip="Close" aria-label="Close"' }) + b('', { cls: 'only', icon: SPARK('currentColor'), attrs: 'data-tip="Clean up" aria-label="Clean up"' }), 'point at one'))}
 
   ${set('Together', 'In the fix bar: one action, then the quiet ones. Never two pink buttons side by side.',
     `<div class="cell full"><div class="stage"><span class="bar"><i class="toy" data-tip="corner">${toyOf('corner')}</i><code>rounded-[5px]</code><span class="in">on a</span><i class="toy" data-tip="tag">${toyOf('tag')}</i>${b('Use rounded-tag', { cls: 'sm', key: '↵' })}${b('Keep', { cls: 'sm quiet', key: 'K' })}${b('Skip', { cls: 'sm quiet', key: '→' })}</span></div><b>The fix bar’s three</b><small>the cause opens with its toys; then one action and the quiet ones</small></div>`)}
@@ -110,7 +110,7 @@ export function mount(host, root, css) {
     if (el.getAttribute('aria-busy')) return;
     el.setAttribute('aria-busy', 'true'); el.insertAdjacentHTML('beforeend', DOTS);
     setTimeout(() => {
-      stage.innerHTML = b('Applied', { cls: 'done landed', icon: CHECK('#fff') }) + b('Undo', { cls: 'quiet', icon: UNDO('var(--pl-lilac)'), attrs: 'id="undo"' });
+      stage.innerHTML = b('Applied', { cls: 'done landed', icon: CHECK('currentColor') }) + b('Undo', { cls: 'quiet', icon: UNDO('var(--pl-lilac)'), attrs: 'id="undo"' });
       root.getElementById('undo').onclick = rest;
     }, 1500);
   }
