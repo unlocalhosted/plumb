@@ -21,10 +21,10 @@
 - **The itch:** the ladder would squeeze crafting-ui's reading paragraphs from 1.5–1.6 line-height to the ladder's UI leading (about 1.375); 98 places were "low confidence".
 - **What we chose and why:** the owner picked a prose modifier over loosening the ladder: the ladder stays exact for UI text, and reading text gets one extra class, `leading-prose`, with one shared value. A place is prose when its code sets a line-height of 1.45 or more, at 20px or smaller, not caps.
 - **The fix and the proof:** live on crafting-ui (`POST /__plumb/system`): 137 places marked prose at 1.5 (the most common value in the code); low-confidence places 98 → 34, the rest now being display headings whose size moves more than 2px. Example swap: `text-[1.1875rem] leading-[1.6]` → `text-title-2-regular leading-prose`.
+- **Owner's call:** prose reads at 1.6, not the code's 1.5; written in crafting-ui's plumber config (`prose: { lineHeight: 1.6 }`), replacing its old Material-named decisions. Low-confidence places 34 → 32.
 
 ## Open gaps
 - Token spec layers 2–6 not built; four owner decisions open (§6).
-- Prose leading lands on 1.5 (the code's mode); an earlier owner decision had body text at 1.6. Set `system.type.roles.prose.lineHeight` if 1.6 is wanted.
 - e2e/type-roles.test.mjs still expects the old Material names; rewrite when the owner calls for tests.
 - The clean-up text panel with the new names was not looked at in the browser.
 
