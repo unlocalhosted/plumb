@@ -95,6 +95,38 @@ race, built for the old in-place write) was rewritten for the new write path (`e
 - A chart: 48 state machines and 62 invariants found → fixed, by area. The numbers are in the audit docs.
 - The memory breakdown from step 3, as the reason the tests moved to vm-agent.
 
+## Chapter 2 · State that can't go wrong by design (2026-11-10)
+
+### 1. "find all implicit state machine in the code and in the engine", again
+- **The itch:** three days after the first audit, the owner asked the same question. The first list was 48; how many
+  are there now, and did the fixes hold?
+- **How we found it:** the state oracle (`sm check`) on `main`, a sweep of every file for mutable fields, timers,
+  listeners and run tokens, then reading every file the first audit skipped.
+- **The system behind it:** the oracle's rule for spotting undeclared machines (`sm/mode-flags`) gave no advice on
+  any file, so nothing finds a new implicit machine when it is written. The list only grows by hand.
+- **What we found:** 21 more (13 overlay, 8 engine); 60 live and implicit. 6 are declared. The three declared overlay
+  machines still carry 12 of the oracle's 20 findings, all dropped timer handles: a table names the states, it doesn't
+  own what a state started. Full list: `docs/state-machines/addendum-2026-11-10.md`.
+- **What we chose:** not 60 local fixes and not a rewrite. Fix the three that can corrupt data, delete the dead
+  machines, then build small primitives (a scope that owns a state's listeners, timers and awaits; state as a tagged
+  union; one lease per shared resource) and convert one owner at a time.
+
+### 2. The record-file lock let two processes in
+- **The itch:** the ledger and the change log are shared by every plumber process on a project. The lock that guards
+  them could be held by two at once. Chapter 1 left this in Open gaps.
+- **How we found it:** reading `src/write/lock.ts` in the sweep, then `e2e/record-lock.test.mjs` with real processes.
+  On the old lock: `in a, in b, out b, out a` (work longer than the stale time was taken over while it ran);
+  `in a, in b, out a, in c, out c, out b` (the first holder's release removed the second holder's lock); and once in
+  three runs `in d, in b, out d, out b` (two waiters both took over one dead lock).
+- **The system behind it:** the lock was "a file exists", with no owner in it. Staleness was the file's age, which a
+  working holder never refreshed, and anyone could remove the file.
+- **The fix and the proof:** the lock file holds its owner's token. A working holder touches it; a stale one is
+  removed under a second exclusive file where it is looked at again; a holder removes the lock only while it still
+  holds its token. The three tests pass five runs in a row, and the 13 tests of its callers pass
+  (`change-trace`, `trace-concurrent`, `baseline-guard`, `write-path`).
+- **Media hooks:** the two event logs side by side: `in a, in b, out b, out a` before, `in a, out a, in b, out b`
+  after.
+
 ## Open gaps
 - The full test suite hasn't run on `explicit-machines`; this blocks the merge.
 - 22 overlay and 17 engine state machines are still implicit. The biggest is Esc and key routing, which is still a
@@ -105,8 +137,10 @@ race, built for the old in-place write) was rewritten for the new write path (`e
   (B4) are open.
 - 7 overlay fixes (reader runs, drags, Changes while writing, React's nodes, plan index, mark keys, reconnect) have no
   test yet.
-- Lock risks: two processes taking over an abandoned lock at the same moment can both hold it, and the synchronous
-  wait can pause the dev server for up to 5 s.
+- Lock: the synchronous wait can pause the dev server for up to 5 s. A synchronous holder that blocks longer than
+  10 s can still be taken over while it works (it can't touch its lock); it no longer removes the new holder's lock.
+- 60 state machines are implicit (33 overlay, 27 engine); the list is `docs/state-machines/addendum-2026-11-10.md`.
+  Nothing finds a new one when it is written.
 
 ## Shipped · 2026-W45
 Not merged yet, so nothing is shipped this week. When `explicit-machines` lands:
@@ -116,3 +150,8 @@ Not merged yet, so nothing is shipped this week. When `explicit-machines` lands:
   [Chapter 1](#chapter-1--the-apps-hidden-rules-2026-11-07)
 - Two dev processes on one project no longer mix up each other's undo history.
   [Chapter 1](#chapter-1--the-apps-hidden-rules-2026-11-07)
+
+## Shipped · 2026-W46
+On branch `state-by-design`, not merged yet:
+- Two plumber processes on one project can no longer write the ledger or the change log at the same time, even when
+  one of them is slow or has died. [Chapter 2](#chapter-2--state-that-cant-go-wrong-by-design-2026-11-10)
