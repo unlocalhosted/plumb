@@ -52,3 +52,12 @@ Everything shared or found as a reference for React Plumber: what it is, why, wh
   in the field with a blur at speed, neighbours open above and below, it gives past either end and settles on
   release. Journey, Chapter 3, entry 11.
 
+## 2026-11-10 · BoardUI colour spec (shared by the owner)
+- **What:** https://www.boardui.com/components/color: a two-tier colour system (primitives, then semantic tokens named
+  `--color-<group>-<role>-<state>`), tables of Token / class / Light / Dark per group (Foreground, Text, Background,
+  Border, Graphs, State).
+- **Why shared:** "can we write our color spec similar to … it would be better if we state all possible state tokens
+  like background and what not".
+- **What it changed:** our token file gained a role-and-state tier (`--pl-text-*`, `--pl-icon-*`, `--pl-bg-*`,
+  `--pl-border-*`, `--pl-action-*`, `--pl-done-*`, `--pl-danger-*`, `--pl-quiet-*`, `--pl-state-*`, `--pl-mark-*`), and
+  the Colour page shows it as Token / What it is for / Light / Dark tables above the palette. Journey chapter 21.

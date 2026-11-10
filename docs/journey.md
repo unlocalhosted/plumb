@@ -657,6 +657,20 @@ race, built for the old in-place write) was rewritten for the new write path (`e
   slightly lower lightness, every hue by the same amount so mint didn't turn neon. The owner picked "More colour".
   It is a token of its own, `--pl-<hue>-face`, so chips keep their pale tint; at night the face is the `-soft` tone.
 
+### 21. A colour spec with every state (after BoardUI's)
+- **The itch:** "state all possible state tokens like background and what not", pointing at BoardUI's colour spec.
+- **The system behind it:** we had the palette (hues, inks, papers) and a handful of roles, but no named states, so
+  each part picked raw colours itself (paper-2 was hover in one place and an inset strip in another).
+- **What we made:** a role-and-state tier in the token file, 49 tokens named `--pl-<group>-<role>-<state>`: Text (7),
+  Icons (5), Backgrounds (8: page, surface, hover, pressed, inset, selected, disabled, scrim), Borders and rings (6),
+  Actions (13: action with hover, pressed, disabled; done; danger; quiet), States of a value (9: hard-coded, on a
+  token, written, minor, unknown), Marks (3). Each points at the palette, so dark follows by itself. The Colour page
+  shows them first, one table per group with what each is for and its light and dark value, read from the file;
+  the palette sits under it. Card faces and blocks are a group of their own.
+- **Proof:** the contrast check now also covers card faces and buttons: 74 pairings, 74 pass in both schemes.
+- **Not done:** the product's parts don't use the new names yet; moving them is part by part. Mixed values (the state
+  grounds) can't be judged by the contrast check yet.
+
 ## Open gaps
 - White on the pink and mint buttons is under 4.5:1 in light (3.36, 3.85); dark now passes, just. Nothing yet stops the faintest ink being used for text again.
 - The contrast check knows colours, not sizes or weights, and is not run by CI yet.

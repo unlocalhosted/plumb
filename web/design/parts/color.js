@@ -31,6 +31,17 @@ export function mount(host, root, css) {
     ['sky', 'Measurements and type. Things you type into or look into.', 'input'],
     ['coral', 'Only “this is wrong”: off your scale, an error.', 'error'],
   ];
+  // the roles and states a part asks for (--pl-<group>-<role>-<state>), one table per group, read from the token file
+  const STATES = [
+    ['Text', 'Every word. Primary for what is read first, secondary for everything else; the faint ink only on something you can’t press.', (n) => /^text-/.test(n)],
+    ['Icons', 'Icons and the marks drawn in ink. Ticks, carets and dividers take the faint ink; an icon you read takes the full one.', (n) => /^icon-/.test(n)],
+    ['Backgrounds', 'Surfaces and their states: at rest, pointed at, held, sunk in, selected, disabled.', (n) => /^bg-/.test(n)],
+    ['Borders and rings', 'Edges, dividers and the rings that say what state a value is in. Focus is the same ring everywhere.', (n) => /^border-/.test(n)],
+    ['Actions', 'The blocks you press, by what pressing does: act, done, destroy, or the quiet choice. Each has its top and its lettering; the action also has its hover, pressed and disabled.', (n) => /^(action-(bg|text)|done-|danger-|quiet-)/.test(n)],
+    ['Card faces and blocks', 'A block you go to (a card) has a face; a block you press has a top. In light the face carries more colour than a chip’s tint; at night both are the hue’s calmer tone, lettered in white.', (n) => /^([a-z]+-face|[a-z]+-block(-on)?)$/.test(n)],
+    ['States of a value', 'Hard-coded, on a token, written, minor, unknown: a ground, its words and its ring for each.', (n) => /^state-/.test(n)],
+    ['Marks on your page', 'Each kind of space has its own hue and pattern.', (n) => /^mark-/.test(n)],
+  ];
   // the sections of the token table: a title, what the group is, and which tokens are in it (by name)
   const GROUPS = [
     ['Ground and words', 'Every surface and every word. Warm neutrals, so the overlay sits apart from whatever page is under it.', (n) => /^(paper|paper-2|desk|rule|ink|ink-2|ink-3)$/.test(n)],
@@ -41,7 +52,7 @@ export function mount(host, root, css) {
   const sw = (value, cls = '') => `<i class="sw ${cls}" style="background:${value}"></i>`;
   const cellOf = (name, scheme) => {
     const t = by.get(name), authored = scheme === 'dark' ? (t.dark ?? t.light) : t.light, shown = (scheme === 'dark' ? inDark : inLight)(`--pl-${name}`);
-    return `<span class="val">${sw(shown, scheme)}<code>${say(authored).replace(/color-mix\(in oklab, (\S+) (\d+)%, (\S+)\)/, '$2% $1 in $3')}</code></span>`;
+    return `<span class="val">${sw(shown, scheme)}<code>${say(authored).replace(/color-mix\(in oklab, (\S+) (\d+)%, (#fff|#000)\)/, (m, a, n, w) => `${a} + ${100 - n}% ${w === '#fff' ? 'white' : 'black'}`).replace(/color-mix\(in oklab, (\S+) (\d+)%, (\S+)\)/, '$2% $1 in $3')}</code></span>`;
   };
   const table = (names) => `<div class="tbl" role="table"><div class="tr th" role="row"><span>Token</span><span>What it is for</span><span>Light</span><span>Dark</span></div>${names.map((n) => `
     <div class="tr" role="row"><span><code class="tok" title="Click to copy" tabindex="0">--pl-${n}</code></span><span class="for">${by.get(n).note || '—'}</span>${cellOf(n, 'light')}${cellOf(n, 'dark')}</div>`).join('')}</div>`;
@@ -56,6 +67,7 @@ export function mount(host, root, css) {
 
   root.innerHTML = `<style>${css}${LANGUAGE_CSS}${BUTTON_CSS}
     :host { display: block; font-family: var(--pl-sans); color: var(--pl-ink); }
+    h3.grp { margin: 28px 0 4px; font: var(--pl-round-w, 700) 17px/1.25 var(--pl-round); }
     a.back { font: 500 13px/1 var(--pl-sans); color: var(--pl-ink-2); text-decoration: none; }
     a.back:hover { color: var(--pl-ink); }
     .head { display: flex; align-items: flex-start; gap: 16px; margin: 14px 0 6px; }
@@ -136,7 +148,16 @@ export function mount(host, root, css) {
   <p>Each one is a solid for the body of a piece, a soft for what is not there, and an ink for marks drawn on it. Click a token name to copy it.</p>
   <div class="hues">${HUES.map(hueCard).join('')}</div>
 
-  ${GROUPS.map(([title, why, has]) => `<h2>${title}</h2><p>${why}</p>${table(tokens.map((t) => t.name).filter(has))}`).join('')}
+  <h2>Roles and states</h2>
+  <div class="prose">
+    <p>What a part asks for. Each name is a path: <code>--pl-&lt;group&gt;-&lt;role&gt;-&lt;state&gt;</code>, as <code>--pl-bg-surface-hover</code> is the background of a surface, pointed at. The groups are Text, Icons, Backgrounds, Borders, Actions, Card faces and blocks, States of a value, and Marks. The states are default (no suffix), <code>hover</code>, <code>pressed</code>, <code>selected</code>, <code>disabled</code> and <code>focus</code>, and for a value <code>hard-coded</code>, <code>on-token</code>, <code>written</code>, <code>minor</code>.</p>
+    <p>Each one points at the palette further down, so the dark scheme follows by itself. A part takes one of these first; a hue only for what the hue itself means.</p>
+  </div>
+  ${STATES.map(([title, why, has]) => `<h3 class="grp">${title}</h3><p>${why}</p>${table(tokens.map((t) => t.name).filter(has))}`).join('')}
+
+  <h2>The palette underneath</h2>
+  <p>The raw values the roles point at. A part reaches for these only when no role says what it needs.</p>
+  ${GROUPS.map(([title, why, has]) => `<h3 class="grp">${title}</h3><p>${why}</p>${table(tokens.map((t) => t.name).filter(has))}`).join('')}
 
   <h2>What may go on what</h2>
   <p>Every pairing the system allows, with how well it is seen in each scheme. A part asks for a hue’s <code>-on</code> for its lettering and for <code>--pl-cut</code> for a hole in it; it never writes white itself. ${failing ? `<b>${failing} of these fail right now.</b>` : `<b>All ${PAIRS.length * 2} pass.</b>`} The same list is checked by <code>node scripts/contrast.mjs</code>, which fails when a pair can’t be read.</p>
@@ -144,7 +165,7 @@ export function mount(host, root, css) {
 
   <h2>What is still open</h2>
   <ul class="open">
-    <li><b>The action role is pale today.</b> Buttons in the product use <code>--pl-action-soft</code> with dark pink words. In the toy language pale means “not there”, so the role should be the solid pink with white on it (see Buttons).</li>
+    <li><b>The product’s parts don’t use the role names yet.</b> They still name palette colours directly; moving each part onto <code>--pl-text-*</code>, <code>--pl-bg-*</code> and <code>--pl-border-*</code> is the next step, one part at a time.</li>
     <li><b>Butter can’t carry white.</b> Words and marks on it use <code>--pl-butter-on</code>; a word in its tone on paper uses <code>--pl-soft-text</code>.</li>
     <li><b>The check knows colours, not sizes.</b> It can say bold words on pink are fine and small regular words are not; it can’t see whether a part actually set its words bold. That still takes a person looking.</li>
   </ul>`;

@@ -25,4 +25,8 @@ export const PAIRS = [
   // a hue as a shape on the ground
   ...HUES.filter((h) => h !== 'butter').map((h) => ({ fg: h, bg: 'paper', need: 'mark', use: `a ${h} toy or line on a card` })),
   { fg: 'butter-line', bg: 'paper', need: 'mark', use: 'a thin butter mark on a card' },
+  // a card's face, lettered in the hue's ink (light: the richer face; night: the calmer tone in white)
+  ...HUES.map((h) => ({ fg: `${h}-ink`, bg: `${h}-face`, need: 'text', use: `words on a ${h} card` })),
+  // a block you press, lettered (the roles --pl-action-*, --pl-done-*, --pl-danger-* point here)
+  ...['pink', 'mint', 'coral'].map((h) => ({ fg: `${h}-block-on`, bg: `${h}-block`, need: 'bold', use: `words on a ${h} button` })),
 ];
