@@ -22,6 +22,7 @@ const PAGE_CSS = `
 `;
 
 const LOAD = {
+  identity: () => import('./parts/identity.js'),
   color: () => import('./parts/color.js'),
   type: () => import('./parts/type.js'),
   icons: () => import('./parts/icons.js'),

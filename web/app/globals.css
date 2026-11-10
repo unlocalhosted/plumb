@@ -27,7 +27,7 @@ a { color: inherit; }
 .key:active { --lift: 1px; }
 .key:active > span { transition-duration: 70ms; transition-timing-function: var(--pl-ease-out); }
 .key:focus-visible { outline: 2.5px solid var(--pl-sky); outline-offset: 3px; }
-.key.on { --hue: var(--pl-pink); --base: color-mix(in oklab, var(--pl-pink) 68%, var(--pl-pink-ink)); --on: var(--pl-pink-on); }
+.key.on { --hue: var(--pl-pink); --base: color-mix(in oklab, var(--pl-pink) 72%, #000); --on: var(--pl-pink-on); }
 .key.bare { --hue: transparent; --base: transparent; --lift: 0px; color: var(--pl-ink-2); }
 .key.bare:hover { --hue: var(--pl-paper-2); color: var(--pl-ink); }
 
@@ -56,7 +56,7 @@ h2.shelf small { font: 600 14px/1 var(--pl-round); color: var(--pl-ink-2); }
    drawn yet is pale and flat, because pale is for what is not there ── */
 .boxes { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 18px 16px; }
 .box { --h: var(--pl-pink); --hi: var(--pl-pink-ink); --hs: var(--pl-pink-soft); --on: var(--pl-pink-on); --lift: 5px;
-  position: relative; display: block; padding-top: 5px; border-radius: 26px; background: color-mix(in oklab, var(--h) 66%, var(--hi)); color: var(--on); text-decoration: none; -webkit-tap-highlight-color: transparent; }
+  position: relative; display: block; padding-top: 5px; border-radius: 26px; background: color-mix(in oklab, var(--h) 72%, #000); color: var(--on); text-decoration: none; -webkit-tap-highlight-color: transparent; }
 .box > span { display: flex; flex-direction: column; gap: 6px; min-height: 196px; padding: 18px 18px 16px; border-radius: 26px; background: var(--h);
   translate: 0 calc(-1 * var(--lift)); transition: translate 300ms var(--pl-spring-pop); }
 a.box:hover { --lift: 8px; }

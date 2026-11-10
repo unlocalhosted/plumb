@@ -100,7 +100,7 @@ export function mount(host, root, css) {
     .fb .nav button { all: unset; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 6px; cursor: pointer; color: var(--pl-ink-2); }
     .fb .nav button:hover { background: var(--pl-paper-2); }
     .fb .acts { display: inline-flex; gap: 6px; padding-top: 2px; }
-    .fb[data-written] .go { --hue: var(--pl-mint); --base: color-mix(in oklab, var(--pl-mint) 68%, var(--pl-mint-ink)); }
+    .fb[data-written] .go { --hue: var(--pl-mint); --base: color-mix(in oklab, var(--pl-mint) 72%, #000); }
     .fb .inbar { display: inline-flex; align-items: center; }
     .again { position: absolute; left: 50%; translate: -50% 0; bottom: 78px; font: 500 12px/1 var(--pl-sans); color: var(--pl-ink-2); background: none; border: 0; cursor: pointer; text-decoration: underline; }
     .again[hidden] { display: none; }
