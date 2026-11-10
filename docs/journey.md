@@ -132,13 +132,19 @@ hide a page that disagrees with its file.
 that adds a token and changes two files causes no reload, the counter still says "clicked 1" and the typed words
 are still there; without it, one reload as before. The plan for the rest: `docs/briefs/no-reload-writes.md`.
 
+**Next, measured.** The owner asked for Next first. `bench/hot-writes/next.mjs` ran on vm-agent: eight writes
+(a class in a client component, in a server component, an Apply across both, an Apply with a new theme token; on
+webpack and on Turbopack). Zero reloads, state kept every time, the new class on the page in 0.6 to 1.5 seconds.
+Next was never the problem; the reload was Vite-only and ours.
+
 **Media hooks.** A screen recording: type in a field, press Apply, the words stay (before: the page blinks and the
-field is empty). The table of five writes, before and after.
+field is empty). The table of five writes, before and after. The Next table: eight rows of zero.
 
 ## Open gaps
 
-- Writes without a reload: the demo and the fixtures still run with no Fast Refresh; Next (webpack, Turbopack) is
-  not measured; no readiness row says "Fast Refresh is off". See `docs/briefs/no-reload-writes.md`.
+- Writes without a reload: the demo and the fixtures still run with no Fast Refresh, and no readiness row says
+  "Fast Refresh is off". Next 15, the pages router and layout writes are not measured. See
+  `docs/briefs/no-reload-writes.md`.
 - Engine architecture: eight proposed steps in `docs/briefs/engine-architecture-review.md`, none built, waiting on
   the owner's order.
 - Still failing and not diagnosed: `decisions-spacing` (spacing policies).

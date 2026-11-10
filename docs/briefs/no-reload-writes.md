@@ -1,6 +1,7 @@
 # Writes without a reload
 
-Status: the Vite host is fixed (d379af4). The rest is specified here and not built.
+Status: the Vite host is fixed (d379af4). Next is measured and needs no fix (webpack and Turbopack, below). The
+demo, the fixtures and the readiness row are specified here and not built.
 
 ## The itch
 
@@ -22,6 +23,26 @@ A page with a clicked counter and a typed input, then a write. "Kept" means the 
 
 Source: a throwaway script that counted `load` events and read the HMR socket; the last row is now
 `e2e/apply-all-hot.test.mjs`.
+
+## What was measured on Next.js 16.4 (vm-agent, `bench/hot-writes/next.mjs`)
+
+The same page idea: a client component with a clicked counter and a typed input, and a server component. Tailwind
+through `@tailwindcss/postcss`. The box was busy with another project, so the times are upper bounds.
+
+| Bundler | Write | Page reloads | State kept | New class on the page |
+|---|---|---|---|---|
+| webpack | a class in a client component | 0 | yes | 985 ms |
+| webpack | a class in a server component | 0 | yes | 1,052 ms |
+| webpack | apply-all: both files | 0 | yes | 1,449 ms |
+| webpack | apply-all: a new theme token and a class | 0 | yes | 1,527 ms |
+| Turbopack | a class in a client component | 0 | yes | 611 ms |
+| Turbopack | a class in a server component | 0 | yes | 621 ms |
+| Turbopack | apply-all: both files | 0 | yes | 923 ms |
+| Turbopack | apply-all: a new theme token and a class | 0 | yes | 906 ms |
+
+Next's Fast Refresh is always on, the host asks for nothing, and a server component's change arrives as a server
+component refresh that keeps client state. Nothing to fix. Not measured: Next 15, the pages router, and a write to
+a layout or to `next.config`.
 
 ## The system behind it
 
@@ -49,11 +70,11 @@ machinery that exists today, not the path everything is built on.
 
 | Layer | What it does | State |
 |---|---|---|
-| 1. Never force | No host sends a reload for a file no module reads or for a stylesheet. Only a page's own HTML does. | Vite: done. Next: the host forces nothing (read, not measured). |
+| 1. Never force | No host sends a reload for a file no module reads or for a stylesheet. Only a page's own HTML does. | Vite: done. Next: the host forces nothing (measured). |
 | 2. One reload when it is unavoidable | When a held module has nothing to accept it, one reload, never one per module. | Vite: done. |
 | 3. Say so | A readiness row: "Fast Refresh is off, so each fix reloads the page", with the fix (`@vitejs/plugin-react`). The overlay already has readiness rows and fixes. | Not built. |
 | 4. Live where users live | The demo and the test fixtures run Fast Refresh, as an app from Vite's React template does. A few fixtures stay without it, on purpose, to keep the reload path proven. | Not built. Changes 85 fixtures: do it inside the shared test harness (test-system layer 2), not by hand. |
-| 5. Measure Next | The same measurement on Next with webpack and with Turbopack, client and server components: reloads, kept state. On vm-agent (a Next dev server is too heavy for the laptop beside other work). | Not done. |
+| 5. Measure Next | The same measurement on Next with webpack and with Turbopack, client and server components: reloads, kept state. | Done: no reload in any of eight writes. |
 | 6. Settled, the easy way | With no reload, "the write has landed" is a hot-update event on a page that never went away. The "settled after a write" signal becomes: the host's update applied (Vite `vite:afterUpdate`, Next's `built`/`sync` messages the overlay already hears) and the overlay has re-read. | Not built. |
 
 ### A fallback that was considered and not chosen (yet)
