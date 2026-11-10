@@ -166,9 +166,9 @@
 }
 
 /* Roles and states, in a rule of their own so they are worked out again wherever a part sets its own scheme. A part
-   that stays light on any page (a card held over your app) adds the class pl-light: it gets the light palette above
-   and these roles worked out from it. A part that restates some colours itself adds pl-scheme. */
-:host, .pl-scheme, .pl-light {
+   that stays light on any page (a card held over your app) adds the class pl-light, and one that follows the page's
+   own ground (the fix bar) adds pl-light or pl-dark: it gets that palette and these roles worked out from it. A part that restates some colours itself adds pl-scheme. */
+:host, .pl-scheme, .pl-light, .pl-dark {
   /* ── roles and states: what a part asks for, named --pl-<group>-<role>-<state> (like a Figma variable path). Every
      one points at the palette above, so the dark scheme follows by itself. A part takes one of these before a hue ── */
   /* text */
@@ -273,7 +273,7 @@
 }
 
 /* An explicit scheme wins over the OS, both ways. */
-:host([data-scheme="dark"]) {
+:host([data-scheme="dark"]), .pl-dark {
     --pl-paper: #2e2d2b;
     --pl-desk: #1f1e1d;
     --pl-paper-2: #3a3936;

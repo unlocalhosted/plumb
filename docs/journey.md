@@ -706,6 +706,17 @@ race, built for the old in-place write) was rewritten for the new write path (`e
   hand-made copy is deleted. Checked on crafting-ui with the computer in dark: both cards' pieces resolve to the light
   colours (white card, #f6f6f4 rows, #6b665c meta, navy and green state words, white arrow). The contrast check read
   the palette by its rule's old opening line and briefly judged only 37 of 74 pairs; it now reads the new rules, 74 of 74.
+- **The fifth part: the fix bar.** It follows the page under it, not the computer, and kept a hand-written dark
+  copy of itself (about 30 colours written twice). The token file gained `pl-dark`, the night twin of `pl-light`; the
+  bar carries one or the other as the page's ground decides, so both looks come from one set of role names and the
+  dark copy is deleted (only its deeper shadow stays its own). Its 79 raw colours became roles and states: text
+  primary and secondary, the surface and its hover, the inset for notes, the focus border, hard-coded text for
+  errors, soft text for the setup notice, the heat colour for the problem dot, and the inverse block for its dark
+  primary button. Checked on crafting-ui: on the light page the bar is `pl-light` (white glass, #1d1b17 words); with
+  the page painted dark it is `pl-dark` (graphite glass, #f4f3ef words, Fix in the calmer night pink with white).
+- **A mix-up while checking:** another session had started its own copy of crafting-ui on the port my copy uses, so
+  one check read that app (which runs the main overlay) and I briefly blamed a build step. My copy now runs on 5182;
+  the other session's server was left alone.
 
 ## Open gaps
 - White on the pink and mint buttons is under 4.5:1 in light (3.36, 3.85); dark now passes, just. Nothing yet stops the faintest ink being used for text again.
