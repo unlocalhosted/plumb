@@ -38,7 +38,7 @@ export function mount(host, root, css) {
   const s3 = { steps: spacing, current: null, picked: 's2', drift: { n: 7, label: '7' } };
 
 
-  // ── proposed: the bar says what is wrong, and the page is where you change it ──
+  // ── the bar (decided 2026-11-10): it says what is wrong, and the page is where you change it ──
   // The bar is one object with two jobs, never both at once:
   //   one place    a headline (what was done by hand, in your words) and a detail (what it is, what your theme has).
   //                The choice is made on the element, where the change happens. The right end: where you are, and
@@ -65,27 +65,9 @@ export function mount(host, root, css) {
   const cleaned = `<i class="ic big pop">${toyOf('checkbox')}</i><span class="lines"><span class="say">Cleaned up 60 places</span><span class="more">Font size 14 · Spacing 24 · Colour 12 · Icon size 10. Now on your tokens, in your code.</span></span>
     <span class="sep"></span>${strip(-1, 4)}${button('Undo all', { cls: 'sm quiet', attrs: 'data-do="undo"' })}`;
 
-  // ── proposed: the picker on the element ──
-  // It answers one question: which of your tokens should this be? So every option is a token, shown as its name and
-  // its value, drawn as the element itself at that radius. The hard-coded value is the first option, in coral, and
-  // choosing it is "keep". Picking previews on the page at once; one button writes what is picked. It sits beside the
-  // element it changes, never over another place.
-  const TOKENS = [{ name: '5px', value: 5, hard: true }, { name: 'tag', value: 6 }, { name: 'control', value: 8 }, { name: 'card', value: 12 }];
-  const swatches = (picked) => `<div class="pk" role="radiogroup" aria-label="Border radius">${TOKENS.map((t, i) =>
-    `<button type="button" role="radio" class="sw${t.hard ? ' hard' : ''}" data-i="${i}" aria-checked="${i === picked}"><i class="mini" style="border-radius:${t.value}px">Bug</i><b>${t.hard ? '5px' : t.name}</b><small>${t.hard ? 'hard-coded' : t.value + 'px'}</small></button>`).join('')}</div>`;
-  const rx = (v) => 18 + ((v - 4) / 9) * 270;
-  const ruler2 = (picked) => `<div class="rl" role="slider" tabindex="0" aria-label="Border radius" aria-valuemin="6" aria-valuemax="12" aria-valuenow="${TOKENS[picked].value}" aria-valuetext="${TOKENS[picked].hard ? '5px, hard-coded' : TOKENS[picked].name + ', ' + TOKENS[picked].value + 'px'}">
-      <i class="track"></i>${TOKENS.map((t, i) => `<span class="stop${t.hard ? ' hard' : ''}${i === picked ? ' here' : ''}" data-i="${i}" style="left:${rx(t.value)}px"><i></i><b>${t.hard ? '5px' : t.name}</b><small>${t.hard ? 'yours' : t.value}</small></span>`).join('')}
-      <span class="knob" style="left:${rx(TOKENS[picked].value)}px"><i class="mini" style="border-radius:${TOKENS[picked].value}px"></i></span></div>`;
-  const applyLabel = (i) => (TOKENS[i].hard ? 'Keep 5px' : `Use ${TOKENS[i].name} · ${TOKENS[i].value}px`);
-  const picker = (kind, i) => `<div class="pick" data-kind="${kind}"><span class="hd">Border radius</span>${kind === 'sw' ? swatches(i) : ruler2(i)}${button(applyLabel(i), { cls: 'sm' + (TOKENS[i].hard ? ' quiet' : ''), key: '↵', attrs: 'data-do="write"' })}</div>`;
-  const pickers = `<h2 class="part">Proposed: the picker on the element</h2><p class="lead">It answers one question: which of your tokens should this be? Every option is a token with its name and value, drawn as the element at that radius. Your hard-coded value is the first option, so keeping it is just picking it. Picking shows it on the page at once; one button writes it.</p>`
-    + scene('pk1', 'D · Swatches (live)', 'Each token drawn as the tag itself. Click one, or use ← →; Enter writes it.', `<div class="page">${rowsOf(true)}</div>${picker('sw', 1)}`)
-    + scene('pk2', 'E · A ruler (live)', 'Your tokens as stops on a line, your value as the coral one off them. Click a stop, or ← →; Enter writes it.', `<div class="page">${rowsOf(true)}</div>${picker('rl', 1)}`);
-  const trials = `<h2 class="part">Proposed: the bar says what is wrong</h2><p class="lead">The bar has one job at a time. With one place in hand it says which value is hard-coded and what your tokens are, and the choice is made on the element. Press <b>Clean up all</b> and the same bar carries the whole-page clean-up: one pass at a time, shown on the page, written when you press Apply.</p>`
-    + scene('pc', 'The bar, both jobs (live)', 'Press Clean up all, then Apply four times (or Enter). Stop goes back to the one place you were on.', `<div class="page">${rowsOf(true)}</div>${elementOn}<div class="ib two pl-card" role="status" aria-live="polite">${one}</div>`)
-    + pickers
-    + `<h2 class="part">Today</h2><p class="lead">The bar as it is now, for comparison.</p>`;
+  const trials = `<h2 class="part">The bar</h2><p class="lead">Decided 2026-11-10. The bar has one job at a time. With one place in hand it says which value is hard-coded and what your tokens are, and the choice is made on the element. Press <b>Clean up all</b> and the same bar carries the whole-page clean-up: one pass at a time, shown on the page, written when you press Apply.</p>`
+    + scene('pc', 'Both jobs (live)', 'Press Clean up all, then Apply four times (or Enter). Stop goes back to the one place you were on.', `<div class="page">${rowsOf(true)}</div>${elementOn}<div class="ib two pl-card" role="status" aria-live="polite">${one}</div>`)
+    + `<h2 class="part">What the product has today</h2><p class="lead">The bar the overlay still ships, until the one above replaces it. Its picker on the element is still to be redesigned.</p>`;
 
   root.innerHTML = `<style>${css}${LANGUAGE_CSS}${PRIMITIVES_CSS}${SHOW_CSS}${SCALE_CSS}${BUTTON_CSS}
     :host { display: block; font-family: var(--pl-sans); color: var(--pl-ink); }
@@ -187,32 +169,6 @@ export function mount(host, root, css) {
     #pc .page .chip { transition: border-radius 520ms var(--pl-spring), outline-color 240ms var(--pl-ease-out), padding 520ms var(--pl-spring), font-size 520ms var(--pl-spring), opacity 300ms; }
     #pc[data-mode="clean"] .page .t, #pc[data-mode="clean"] .page .id { opacity: 1; transition: opacity 300ms; }
 
-    /* ── the proposed picker ── */
-    .pick { position: absolute; top: 12px; right: 100px; display: flex; align-items: center; gap: 12px; padding: 10px 12px 10px 14px; border-radius: 18px; background: var(--pl-paper); box-shadow: var(--pl-shadow-card); }
-    .pick::after { content: ''; position: absolute; top: 22px; right: -5px; width: 10px; height: 10px; rotate: 45deg; background: var(--pl-paper); box-shadow: 1px -1px 0 0 var(--pl-rule); }
-    .pick .hd { writing-mode: vertical-rl; rotate: 180deg; font: 600 10.5px/1 var(--pl-sans); letter-spacing: .02em; color: var(--pl-ink-3); }
-    .pk { display: flex; gap: 4px; padding: 4px; border-radius: 14px; background: var(--pl-paper-2); }
-    .sw { all: unset; display: grid; justify-items: center; gap: 2px; width: 68px; white-space: nowrap; padding: 8px 4px 6px; border-radius: 11px; cursor: pointer; transition: background-color 160ms var(--pl-ease-out), box-shadow 160ms var(--pl-ease-out); }
-    .sw:hover { background: color-mix(in oklab, var(--pl-paper) 60%, transparent); }
-    .sw[aria-checked="true"] { background: var(--pl-paper); box-shadow: 0 1px 2px rgb(0 0 0 / .08), 0 0 0 1.5px var(--pl-sky); }
-    .sw:focus-visible { outline: 2px solid var(--pl-sky); outline-offset: 1px; }
-    .mini { display: grid; place-items: center; width: 40px; height: 22px; margin-bottom: 5px; background: #fee4e2; color: #b42318; font: 500 11px/1 system-ui, sans-serif; font-style: normal; transition: border-radius 300ms var(--pl-spring); }
-    .sw b, .rl b { font: var(--pl-round-w, 600) 12.5px/1.1 var(--pl-round); color: var(--pl-ink); }
-    .sw small, .rl small { font: 500 11px/1.2 var(--pl-mono); color: var(--pl-ink-3); }
-    .sw.hard .mini { outline: 1.5px dashed var(--pl-coral); outline-offset: 2px; }
-    .sw.hard b, .sw.hard small, .rl .hard b, .rl .hard small { color: var(--pl-coral); }
-    .rl { position: relative; width: 306px; height: 74px; outline: none; cursor: pointer; }
-    .rl:focus-visible { outline: 2px solid var(--pl-sky); outline-offset: 4px; border-radius: 8px; }
-    .rl .track { position: absolute; left: 6px; right: 6px; top: 30px; height: 4px; border-radius: 2px; background: var(--pl-paper-2); }
-    .rl .stop { position: absolute; top: 24px; display: grid; justify-items: center; translate: -50% 0; gap: 3px; }
-    .rl .stop > i { width: 4px; height: 16px; border-radius: 2px; background: var(--pl-sky); margin-bottom: 6px; }
-    .rl .stop.hard > i { background: var(--pl-coral); height: 10px; margin: 3px 0 9px; }
-    .rl .stop.hard { top: 0; grid-template-areas: 'b' 's' 'i'; }
-    .rl .stop.hard > i { grid-area: i; margin: 3px 0 0; height: 10px; } .rl .stop.hard b { grid-area: b; } .rl .stop.hard small { grid-area: s; }
-    .rl .stop.here b { color: var(--pl-sky-ink); }
-    .rl .knob { position: absolute; top: 23px; translate: -50% 0; transition: left 320ms var(--pl-spring-pop); }
-    .rl .knob .mini { width: 34px; height: 18px; margin: 0; box-shadow: 0 0 0 2px var(--pl-paper), 0 0 0 3.5px var(--pl-sky); font-size: 0; }
-    .pick[data-written] { box-shadow: var(--pl-shadow-card), 0 0 0 2px var(--pl-mint); }
     .again { position: absolute; left: 50%; translate: -50% 0; bottom: 78px; font: 500 12px/1 var(--pl-sans); color: var(--pl-ink-2); background: none; border: 0; cursor: pointer; text-decoration: underline; }
     .again[hidden] { display: none; }
     @keyframes click { 28% { translate: 0 2px; } 62% { translate: 0 -1px; } }
@@ -297,24 +253,6 @@ export function mount(host, root, css) {
   for (const group of root.querySelectorAll(':is(#two, #three, #pc) .ep[role="radiogroup"]')) place(group);
 
 
-  // ── the proposed pickers, live ──
-  for (const id of ['pk1', 'pk2']) {
-    const sc = root.querySelector('#' + id), stage = sc.querySelector('.stage');
-    const kind = id === 'pk1' ? 'sw' : 'rl';
-    let i = 1;
-    const showOnPage = () => { for (const c of stage.querySelectorAll('.chip.lit')) { c.style.borderRadius = `${TOKENS[i].value}px`; c.style.outlineColor = TOKENS[i].hard ? '' : 'var(--pl-sky)'; } };
-    const draw = () => { stage.querySelector('.pick').outerHTML = picker(kind, i); showOnPage(); };
-    const to = (n) => { const k = Math.max(0, Math.min(TOKENS.length - 1, n)); if (k !== i) { i = k; draw(); } };
-    const write = () => { for (const c of stage.querySelectorAll('.chip.lit')) c.style.outlineColor = 'var(--pl-mint)'; const pk = stage.querySelector('.pick'); pk.setAttribute('data-written', ''); pk.querySelector('.tb .lb').textContent = TOKENS[i].hard ? 'Kept 5px' : `Written · ${TOKENS[i].name}`; };
-    stage.addEventListener('click', (e) => { const o = e.target.closest('[data-i]'); if (o) { to(Number(o.dataset.i)); return; } if (e.target.closest('[data-do="write"]')) write(); });
-    stage.tabIndex = 0;
-    stage.addEventListener('keydown', (e) => {
-      if (e.key === 'ArrowRight' || e.key === 'ArrowUp') { e.preventDefault(); to(i + 1); }
-      else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') { e.preventDefault(); to(i - 1); }
-      else if (e.key === 'Enter') { e.preventDefault(); write(); }
-    });
-    showOnPage();
-  }
   // ── the proposed bar, live: one place, then the clean-up, pass by pass ──
   const pc = root.querySelector('#pc'), ib = pc.querySelector('.ib');
   // what each pass does to the page, shown before it is written (a stand-in for the real show)

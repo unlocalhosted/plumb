@@ -17,8 +17,8 @@ export const GROUPS = [
   ['Parts', [
     { id: 'buttons', hue: 'pink', toy: 'button', name: 'Buttons', says: 'What you press. Every kind, state and size, with keys and with pictures.', ready: true,
       lede: 'A button is a soft block, small: a lit top on a side of its own colour. It goes down under the finger, gives a little, and springs back. Everything here is live: point, press, tab.' },
-    { id: 'fix-bar', hue: 'lilac', toy: 'corner', name: 'Fix bar', says: 'The cause in hand as one line; the choice made on the element. Three states, the first one live.', ready: true,
-      lede: 'The cause in hand is one line at the bottom; the choice is made on the element. The first one is live: click a step or press ↑ ↓, then Enter.' },
+    { id: 'fix-bar', hue: 'lilac', toy: 'corner', name: 'Fix bar', says: 'What is hard-coded, in one line; the whole-page clean-up in the same bar.', ready: true,
+      lede: 'One line at the bottom says what is hard-coded, in plain words, and the same bar carries the whole-page clean-up. The choice itself is made on the element.' },
     { id: 'pills', hue: 'lilac', toy: 'tag', name: 'Pills, tags and chips', says: 'A value, a name, a property with its value rolling.' },
     { id: 'inputs', hue: 'sky', toy: 'input', name: 'Inputs', says: 'Naming a token, searching, typing a reason. Caret, focus, error, disabled.' },
     { id: 'steps', hue: 'mint', toy: 'slider', name: 'Token pickers', says: 'Spacing, border radius, colour and shadow. Each token drawn as what it makes.' },

@@ -165,7 +165,7 @@ Pictures are learnt, so the words are always one hover away.
 | Icons | everything above |
 | Pills, tags, chips | the hue table; a chip's icon is the property's toy |
 | Buttons | pink is the action; a key cap sits on the button; a soft block (`overlay/src/soft.js`): it squashes onto its side and springs back as one body, by an amount sized to it |
-| The fix bar | the property's toy, the class, "on a", the element's toy; words on hover |
+| The fix bar | one job at a time. One place: the property's toy, a headline saying what is hard-coded in plain words ("16 tags have a hard-coded border radius"), a detail with the value (coral, the only colour) and the tokens it should be; where you are in the list; Clean up all. The choice is made on the element, never in the bar. Clean up: the pass in hand as the headline, the four passes as toys (done ticked, coming grey), Apply and Stop; then one line of what changed and Undo all |
 | Marks on the page | the three patterns in their hues; coral only for "off your scale" |
 | Step controls | each step drawn as what it makes; the current value as a notch between steps |
 | Empty, loading, error states | a 44 toy and one sentence |
