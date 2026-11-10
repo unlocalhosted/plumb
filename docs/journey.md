@@ -498,6 +498,8 @@ race, built for the old in-place write) was rewritten for the new write path (`e
     another heading, what else changes) and one button; other styles folded away.
 - **Proof:** each run on the page: A's first scroll goes to the closest style; B lights "How it works" from its rung;
   C matched heading-lg from the section heading; D's card shows the guess and its reasons.
+- **The owner's call:** "nope, let's go back to the previous one, I think that's fine." The text card as a visual
+  editor's panel (entry 14) stays the direction; the four ideas stay on their page as a record, not built further.
 
 ## Open gaps
 - The contrast check knows colours, not sizes or weights, and is not run by CI yet.
