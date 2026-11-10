@@ -28,16 +28,19 @@ export function mount(host, root, css) {
   // a page step: the real gap between two blocks, at its own size
   const pageStep = (name) => `<div class="pstep"><span class="blk"></span><i class="gapband" style="height:${px(name)}px"></i><span class="blk"></span>
     <b>${px(name)}px</b><code class="tok" tabindex="0">--pl-${name}</code><small>${by.get(name)?.note ?? ''}</small></div>`;
-  // each corner on the object it belongs to
-  const OBJ = {
-    'radius-mark': `<span class="o-mark"><i></i><i></i><i></i></span>`,
-    'radius-tag': `<span class="o-tag">button · 6px</span>`,
-    'radius-pill': `<span class="o-pill">16px</span>`,
-    'radius-row': `<span class="o-row"><i></i>Radius<b>6px</b></span>`,
-    'radius-card': `<span class="o-card"><b>Spacing not in your theme</b><i></i><i></i></span>`,
+  // every corner drawn the same way, so the only thing that changes is the radius: a quarter corner magnified 4×, its
+  // centre, and a line from the centre to the curve; the object it belongs to is said in words under it
+  const OBJECT = { 'radius-mark': 'A mark', 'radius-tag': 'A tag, a key', 'radius-pill': 'A value pill', 'radius-row': 'A row, a field', 'radius-card': 'A card, a bar' };
+  const corner = (name) => {
+    const r = px(name), R = r * 4, o = 14, e = 96, c = o + R;
+    const tip = c - R * Math.SQRT1_2;
+    return `<figure class="corner">
+      <svg viewBox="0 0 110 110" aria-hidden="true">
+        <path class="side" d="M ${o} ${e + 6} V ${c} A ${R} ${R} 0 0 1 ${c} ${o} H ${e + 6}"/>
+        ${R ? `<line class="dim" x1="${c}" y1="${c}" x2="${tip}" y2="${tip}"/><circle class="ctr" cx="${c}" cy="${c}" r="1.6"/>` : ''}
+      </svg>
+      <figcaption><b>${r}px</b><span class="obj">${OBJECT[name]}</span><code class="tok" tabindex="0">--pl-${name}</code></figcaption></figure>`;
   };
-  const corner = (name) => `<figure class="corner"><div class="stage" style="--r:${px(name)}px">${OBJ[name]}</div>
-    <figcaption><b>${px(name)}px</b><code class="tok" tabindex="0">--pl-${name}</code><span>${by.get(name)?.note ?? ''}</span></figcaption></figure>`;
   const row = (name) => `<div class="tr" role="row"><span><code class="tok" tabindex="0">--pl-${name}</code></span><span class="for">${by.get(name)?.note || '—'}</span><span class="val"><code>${by.get(name)?.light ?? ''}</code></span></div>`;
 
   root.innerHTML = `<style>${css}${LANGUAGE_CSS}
@@ -91,23 +94,18 @@ export function mount(host, root, css) {
     .pstep code { margin-top: 4px; }
     .pstep small { margin-top: 4px; font: 400 12px/16px var(--pl-sans); color: var(--pl-text-secondary); }
 
-    /* ── corners on their objects ── */
+    /* ── corners, each drawn the same way ── */
     .corners { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); }
-    .corner { margin: 0; border-left: 1px solid var(--pl-border-default); }
+    .corner { margin: 0; display: grid; justify-items: center; gap: 12px; padding: 22px 12px 18px; border-left: 1px solid var(--pl-border-default); }
     .corner:first-child { border-left: 0; }
-    .corner .stage { display: grid; place-items: center; height: 120px; background: var(--pl-bg-inset); }
-    .corner figcaption { display: grid; gap: 4px; padding: 12px 14px 14px; font: 400 12px/16px var(--pl-sans); color: var(--pl-text-secondary); }
-    .corner figcaption b { font: 600 14px/1 var(--pl-mono); color: var(--pl-text-primary); }
-    .o-mark { display: flex; align-items: flex-end; gap: 6px; height: 54px; }
-    .o-mark i { width: 12px; border-radius: 0 0 0 0; border-top-left-radius: var(--r); border-top-right-radius: var(--r); background: var(--pl-sky); }
-    .o-mark i:nth-child(1) { height: 26px; } .o-mark i:nth-child(2) { height: 48px; } .o-mark i:nth-child(3) { height: 36px; }
-    .o-tag { padding: 4px 8px; border-radius: var(--r); background: var(--pl-bg-surface); box-shadow: var(--pl-shadow-tag); font: var(--pl-card-label); }
-    .o-pill { padding: 5px 10px; border-radius: var(--r); background: var(--pl-coral-soft); color: var(--pl-coral-ink); font: 600 12px/1 var(--pl-mono); }
-    .o-row { display: flex; align-items: center; gap: 8px; width: 80%; height: 32px; padding: 0 10px; box-sizing: border-box; border-radius: var(--r); background: var(--pl-bg-surface); box-shadow: 0 0 0 1px var(--pl-border-default); font: var(--pl-card-meta); }
-    .o-row i { width: 10px; height: 10px; border-radius: 3px; background: var(--pl-mint); } .o-row b { margin-left: auto; font: 600 12px/1 var(--pl-mono); }
-    .o-card { display: grid; gap: 6px; width: 80%; padding: 12px; box-sizing: border-box; border-radius: var(--r); background: var(--pl-bg-surface); box-shadow: var(--pl-shadow-card); }
-    .o-card b { font: var(--pl-card-label); } .o-card i { height: 6px; border-radius: 3px; background: var(--pl-bg-inset); } .o-card i:last-child { width: 60%; }
-
+    .corner svg { width: 110px; height: 110px; overflow: visible; }
+    .corner .side { fill: none; stroke: var(--pl-icon-primary); stroke-width: 1.5; stroke-linecap: round; }
+    .corner .dim { stroke: var(--pl-border-focus); stroke-width: 1; stroke-dasharray: 2 2; }
+    .corner .ctr { fill: var(--pl-border-focus); }
+    .corner figcaption { display: grid; justify-items: center; gap: 4px; text-align: center; }
+    .corner figcaption b { font: 600 15px/1 var(--pl-mono); color: var(--pl-text-primary); }
+    .corner .obj { font: 500 13px/1.3 var(--pl-sans); color: var(--pl-text-secondary); }
+    .corner code { font-size: 11px; }
     /* ── shadows ── */
     .shadows { display: grid; grid-template-columns: 1fr 1fr; gap: 0; }
     .shadow { display: grid; grid-template-rows: 150px auto; border-left: 1px solid var(--pl-border-default); }
@@ -161,7 +159,7 @@ export function mount(host, root, css) {
   <div class="panel pages">${PAGE.map(pageStep).join('')}</div>
 
   <h2>Corners</h2>
-  <p>Each corner on the object it belongs to.</p>
+  <p>Each corner drawn the same way, four times its size, so the only thing that changes is the radius.</p>
   <div class="panel corners">${RADII.map(corner).join('')}</div>
 
   <h2>Lifted things</h2>

@@ -794,6 +794,12 @@ race, built for the old in-place write) was rewritten for the new write path (`e
   in other apps, in its own code. 6px is the most-used gap (35 times as a number). `--pl-card-pad` and `--pl-card-gap`
   are used nowhere. The soft blocks' corners (28px cards, 13 to 14px buttons) aren't tokens. A tag (6) and a pill (7)
   are a pixel apart. Checked in light and dark.
+- **"Very chaotic examples":** the owner looked at the Corners row and said "this whole row can be made better", then
+  "very chaotic examples". The system behind it: each corner sat on a different object (bars, a tag, a coral pill, a
+  row, a card), so five sizes, colours and shapes changed at once and the radius, the one thing the row is about, was
+  the hardest thing to see. Now every step is the same drafting detail: one quarter corner at four times its size, its
+  centre point and a dashed radius line, then the px value, the object in words, and the token. Only the radius
+  changes from one to the next. Checked in light and dark.
 
 ## Open gaps
 - The overlay writes about 180 corners as numbers (radius tokens about 45 times), many off its own scale; 6px is
