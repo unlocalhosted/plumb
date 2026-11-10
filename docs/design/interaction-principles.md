@@ -71,6 +71,10 @@ pickers.
     its picker shows your colour, then the three tokens nearest it, said in words ("close", "near"), measured by how
     alike they look; every colour is one click away, grouped by what it is for, opening on the element's own role. A
     click picks, a second click (or Enter) writes. Every swatch shows its light and its dark value. (Owner: "B with C".)
+18d. **A side at a time, the product's keys for more.** A property with sides (padding, margin) has each side as
+    its own handle, drawn in its pattern (padding hatched mint, margin butter dots). A drag moves that side alone; ⇧
+    as it starts moves the pair (top and bottom, or left and right), ⌘ all four: the keys the product's spacing
+    already uses. The row says which sides are in hand ("top + bottom"); one tick writes every side that changed.
 19. **The hard-coded value is an option, not an error message.** It is listed and reachable, in coral, marked
     "hard-coded". Keeping it is just picking it.
 

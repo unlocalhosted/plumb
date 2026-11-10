@@ -600,6 +600,18 @@ race, built for the old in-place write) was rewritten for the new write path (`e
   light values are near-white); it now suggests `fg`, "looks the same". Fixed while checking: after a pick the field
   read as inherited (grey italics), and its swatch showed the light value on a dark ground.
 
+### 19. "Margin and per-side"
+- **The itch:** padding moved all four sides at once, which isn't how anyone fixes padding, and margin had no picker.
+- **What we made:** on the Token pickers page, each side of the alert's padding is now its own handle: a drag moves
+  that side alone; ⇧ as it starts moves its pair, ⌘ all four. Those are the keys the product's element card already
+  uses for spacing, so the design and the product say the same thing. The row beside the alert names what is in hand
+  ("right", "top + bottom", "all sides"), and one tick writes every side that changed. A new Margin scene: a
+  notification feed whose middle card has a hard-coded 18px above it, the margin drawn as butter dots in the space
+  it makes, dragged down to grow.
+- **Proof:** right alone → 14 24 14 14; top with ⇧ → 24 24 24 14, row "top + bottom"; left with ⌘ → 24 on every
+  side, row "all sides"; the tick wrote all four (green frame). Margin dragged to 32px (2xl), ring blue.
+- **Added to the principles** as 18d.
+
 ## Open gaps
 - The contrast check knows colours, not sizes or weights, and is not run by CI yet.
 - `web/docs/pages` is a copy of `site/src/docs/pages`; two copies until the old Vite site is removed.

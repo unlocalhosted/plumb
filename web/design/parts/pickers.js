@@ -51,6 +51,7 @@ const ALIGN = [['left', LINE('M3 4h10M3 8h6M3 12h8'), 'Left'], ['center', LINE('
 const WRAP = [['wrap', 'Wrap', 'Lines wrap as they fall'], ['balance', 'Balance', 'Lines kept even in length'], ['clamp', '1 line', 'Cut to one line, with an ellipsis']];
 const CASES = [['none', '—', 'As written'], ['uppercase', 'AG', 'Uppercase'], ['lowercase', 'ag', 'Lowercase'], ['capitalize', 'Ag', 'Capitalised']];
 const WEIGHT = [{ name: 'normal', v: 400 }, { name: 'medium', v: 500 }, { name: 'semibold', v: 600 }, { name: 'bold', v: 700 }];
+const MARGIN = [{ name: 'none', v: 0 }, { name: 'sm', v: 8 }, { name: 'md', v: 12 }, { name: 'lg', v: 16 }, { name: '18px', v: 18, hard: true }, { name: 'xl', v: 24 }, { name: '2xl', v: 32 }];
 const GAP = [{ name: 'xs', v: 4 }, { name: 'sm', v: 8 }, { name: 'md', v: 12 }, { name: '13px', v: 13, hard: true }, { name: 'lg', v: 16 }, { name: 'xl', v: 24 }];
 
 export function mount(host, root, css) {
@@ -127,7 +128,7 @@ export function mount(host, root, css) {
     .list .hard .g::before, .list .hard .g::after { background: var(--pl-coral); }
 
     /* ── the real UI for padding: an alert, as someone's app draws it ── */
-    .alert { position: relative; display: flex; gap: 12px; width: 340px; box-sizing: border-box; padding: var(--p); border-radius: 12px; background: #fff; box-shadow: 0 1px 2px rgb(16 24 40 / .06), 0 12px 32px -14px rgb(16 24 40 / .25); border: 1px solid #fecdca; font: 14px/20px system-ui, -apple-system, sans-serif; color: #101828; }
+    .alert { position: relative; display: flex; gap: 12px; width: 340px; box-sizing: border-box; padding: var(--pt, 14px) var(--pr, 14px) var(--pb, 14px) var(--pl, 14px); border-radius: 12px; background: #fff; box-shadow: 0 1px 2px rgb(16 24 40 / .06), 0 12px 32px -14px rgb(16 24 40 / .25); border: 1px solid #fecdca; font: 14px/20px system-ui, -apple-system, sans-serif; color: #101828; }
     .alert .ico { flex: none; display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; background: #fee4e2; color: #d92d20; font: 700 16px/1 system-ui, sans-serif; }
     .alert b { display: block; font: 600 14px/20px system-ui, sans-serif; }
     .alert span { color: #475467; }
@@ -141,6 +142,28 @@ export function mount(host, root, css) {
     .padband[data-side="left"], .padband[data-side="right"] { cursor: ew-resize; }
     .padband:hover, .padband.dragging { background: repeating-linear-gradient(45deg, color-mix(in oklab, var(--pl-mint) 85%, transparent) 0 2px, transparent 2px 5px); }
     .padband.dragging, .pads.dragging .padband { transition: none; }
+    /* one side in hand: its band darker; the row names the sides it moves */
+    .padband.here { background: repeating-linear-gradient(45deg, color-mix(in oklab, var(--pl-mint) 95%, transparent) 0 2px, transparent 2px 5px); }
+    .row[hidden], .list[hidden] { display: none; }
+    .row .side { padding: 0 2px 0 0; font: 600 11.5px/1 var(--pl-sans); color: var(--pl-ink-2); white-space: nowrap; }
+    /* ── the real UI for margin: a notification feed, as someone's app draws it ── */
+    .feed { width: 320px; }
+    .note { display: flex; gap: 10px; align-items: flex-start; padding: 12px 14px; border-radius: 12px; background: #fff; box-shadow: 0 1px 2px rgb(16 24 40 / .06), 0 8px 20px -12px rgb(16 24 40 / .2); font: 13px/18px system-ui, -apple-system, sans-serif; color: #475467; }
+    .note + .note { margin-top: 12px; }
+    .note.held { margin-top: var(--m, 18px); transition: margin-top 220ms var(--pl-spring-pop); }
+    .note i { flex: none; width: 28px; height: 28px; border-radius: 50%; background: #e9d7fe; }
+    .note b { display: block; color: #101828; font: 600 13px/18px system-ui, sans-serif; }
+    /* the margin is the handle: the space it makes, drawn in margin's pattern (butter dots) */
+    .mband { position: absolute; z-index: 3; cursor: ns-resize; touch-action: none; border-radius: 3px;
+      background: radial-gradient(circle, color-mix(in oklab, var(--pl-butter) 85%, transparent) 1.25px, transparent 1.7px) 0 0 / 6px 6px;
+      outline: 1.5px dashed var(--pl-coral); outline-offset: 2px;
+      transition: top 220ms var(--pl-spring-pop), height 220ms var(--pl-spring-pop), scale 160ms var(--pl-ease-out); }
+    .mband.on-token { outline: 1.5px solid var(--pl-sky); }
+    .mband.written { outline: 1.5px solid var(--pl-mint); }
+    .mband:hover, .mband.dragging { scale: 1.02 1; }
+    .mband.dragging, .feed.dragging .note.held { transition: none; }
+    .list .mg { width: 16px; height: 16px; background: radial-gradient(circle, var(--pl-ink-2) 1px, transparent 1.4px) 0 0 / 4px 4px; border-radius: 3px; }
+    .list .hard .mg { background-image: radial-gradient(circle, var(--pl-coral) 1px, transparent 1.4px); }
     .padframe { position: absolute; z-index: 2; pointer-events: none; border-radius: 13px; outline: 1.5px dashed var(--pl-coral); outline-offset: 3px; transition: outline-color 160ms; }
     .padframe.on-token { outline: 1.5px solid var(--pl-sky); outline-offset: 3px; }
     .padframe.written { outline: 1.5px solid var(--pl-mint); outline-offset: 3px; }
@@ -284,12 +307,21 @@ export function mount(host, root, css) {
   </section>
   <section class="scene" id="padding">
     <h2>Padding</h2>
-    <p>The alert has a hard-coded 14px of padding. The padding itself is drawn in its pattern on all four sides: drag any side inward to make it bigger, outward to make it smaller. The value and the list work as before.</p>
+    <p>The alert has a hard-coded 14px of padding on every side. Each side is drawn in padding’s pattern and is its own handle: drag a side inward to make it bigger, outward to make it smaller. That side alone changes; hold <kbd>⇧</kbd> as you start to move its pair (top and bottom, or left and right) with it, <kbd>⌘</kbd> to move all four. The row beside the alert says which side is in hand.</p>
     <div class="stage" tabindex="0">
       <div class="alert"><i class="ico">!</i><div><b>Payment failed</b><span>Your card was declined. Update your billing details to keep your plan.</span><br><a href="#" tabindex="-1" onclick="return false">Update billing</a></div></div>
       <i class="padframe" role="presentation"></i>
       ${['top', 'right', 'bottom', 'left'].map((side) => `<i class="padband" data-side="${side}" role="presentation"></i>`).join('')}
-      <p class="hint">drag a side of the padding or the value · <kbd>↑</kbd> <kbd>↓</kbd> step · <kbd>↵</kbd> write · <kbd>Esc</kbd> put back</p>
+      <p class="hint">drag a side · <kbd>⇧</kbd> the pair · <kbd>⌘</kbd> all sides · <kbd>↑</kbd> <kbd>↓</kbd> step · <kbd>↵</kbd> write · <kbd>Esc</kbd> put back</p>
+    </div>
+  </section>
+  <section class="scene" id="margin">
+    <h2>Margin</h2>
+    <p>The middle notification has a hard-coded 18px of margin above it; the others sit 12px apart. The margin is drawn in its own pattern, butter dots, in the space it makes outside the card. Drag it down to make it bigger, up to make it smaller.</p>
+    <div class="stage" tabindex="0">
+      <div class="feed">${[['Maya commented', 'Love the new pricing page.'], ['Deploy finished', 'main · 2 minutes ago'], ['Invoice paid', 'INV-2041 · $480.00']].map(([t, d], i) => `<div class="note${i === 1 ? ' held' : ''}"><i></i><div><b>${t}</b><span>${d}</span></div></div>`).join('')}</div>
+      <i class="mband" role="presentation"></i>
+      <p class="hint">drag the margin or the value · <kbd>↑</kbd> <kbd>↓</kbd> step · <kbd>↵</kbd> write · <kbd>Esc</kbd> put back</p>
     </div>
   </section>
   <section class="scene" id="font">
@@ -401,26 +433,82 @@ export function mount(host, root, css) {
     if (still) band.style.transition = 'none';
   }
 
-  // ── padding: the alert, with each side of its padding as a handle ──
+  // ── padding: the alert, each side of its padding its own handle. A drag moves that side; ⇧ when it starts moves the
+  // pair with it, ⌘ all four (the keys the product's spacing uses). One row shows the side in hand ──
   {
     const stage = root.querySelector('#padding .stage'), el = stage.querySelector('.alert'), frame = stage.querySelector('.padframe');
-    const bands = [...stage.querySelectorAll('.padband')];
+    const bands = [...stage.querySelectorAll('.padband')], SIDES = ['top', 'right', 'bottom', 'left'];
+    const PAIR = { top: 'bottom', bottom: 'top', left: 'right', right: 'left' };
     // dragging a side inward makes the padding bigger
     const inward = { top: (dx, dy) => dy, bottom: (dx, dy) => -dy, left: (dx) => dx, right: (dx) => -dx };
+    const sides = {};
+    let hand = 'top', link = ['top'];
+    const said = () => (link.length === 4 ? 'all sides' : link.length === 2 ? `${link[0]} + ${link[1]}` : hand);
+    // the frame: coral while any side is hard-coded, blue when every side is on a token, green once all are written
+    const state = () => {
+      const all = SIDES.map((k) => sides[k]).filter(Boolean); if (all.length < 4) return;
+      const hard = all.some((p) => PADDING[p.at()].hard), written = all.every((p) => p.row.classList.contains('written'));
+      frame.classList.toggle('on-token', !hard); frame.classList.toggle('written', written);
+    };
+    const place = (row, list) => {
+      const r = rel(stage, el), cs = getComputedStyle(el), b = 1, p = Object.fromEntries(SIDES.map((k) => [k, parseFloat(cs[`padding${k[0].toUpperCase()}${k.slice(1)}`]) || 0]));
+      frame.style.cssText = `left:${r.left}px;top:${r.top}px;width:${r.width}px;height:${r.height}px`;
+      const box = { top: [r.left + b, r.top + b, r.width - 2 * b, p.top], bottom: [r.left + b, r.bottom - b - p.bottom, r.width - 2 * b, p.bottom], left: [r.left + b, r.top + b + p.top, p.left, r.height - 2 * b - p.top - p.bottom], right: [r.right - b - p.right, r.top + b + p.top, p.right, r.height - 2 * b - p.top - p.bottom] };
+      for (const band of bands) { const [x, y, w, h] = box[band.dataset.side]; band.style.cssText = `left:${x}px;top:${y}px;width:${w}px;height:${h}px`; }
+      row.style.left = `${r.right + 14}px`; row.style.top = `${r.top + 12}px`;
+      list.style.left = row.style.left; list.style.top = `${r.top + 51}px`;
+    };
+    // the side in hand: its row shows (naming the sides it moves), its band darker
+    const take = (side, keys = {}) => {
+      hand = side; link = keys.metaKey || keys.ctrlKey ? [...SIDES] : keys.shiftKey ? [side, PAIR[side]] : [side];
+      for (const k of SIDES) { sides[k].row.hidden = k !== side; if (k !== side) sides[k].row.nextElementSibling.hidden = true; }
+      for (const band of bands) band.classList.toggle('here', link.includes(band.dataset.side));
+      sides[side].row.querySelector('.side').textContent = said();
+      sides[side].layout();
+    };
+    for (const side of SIDES) {
+      const band = bands.find((x) => x.dataset.side === side);
+      // the keys are read as the press starts (before the picker's own drag begins)
+      band.addEventListener('pointerdown', (e) => take(side, e), { capture: true });
+      sides[side] = picker(stage, {
+        name: `Padding ${side}`, toy: 'padding', options: PADDING, keys: 'row',
+        mark: (t) => `<i class="pd" style="--ip:${Math.min(5, Math.round(t.v / 4))}px"></i>`,
+        apply: (o) => { el.style.setProperty(`--p${side[0]}`, `${o.v}px`); state(); },
+        // the side in hand moves the sides linked to it
+        changed: () => { if (side !== hand) return; for (const k of link) if (k !== side && sides[k].at() !== sides[side].at()) sides[k].set(sides[side].at()); state(); },
+        place, handles: [{ el: band, perPx: (dx, dy) => inward[side](dx, dy) / 12 }],
+      });
+      sides[side].row.querySelector('.scrub').insertAdjacentHTML('afterend', '<span class="side"></span>');
+      // the tick (or Enter) writes every side that has a token to write, not just the one shown
+      const writeAll = () => { for (const k of SIDES) if (k !== side && sides[k].ready()) sides[k].write(); state(); };
+      sides[side].row.querySelector('.ok').addEventListener('click', writeAll);
+      sides[side].row.addEventListener('keydown', (e) => { if (e.key === 'Enter') writeAll(); });
+    }
+    // a drag that ended lets go of the pair or all four: the next change is one side again (the row keeps its name until then)
+    addEventListener('pointerup', () => { link = [hand]; });
+    take('top');
+    new ResizeObserver(() => sides[hand].layout()).observe(el);
+  }
+
+  // ── margin: the feed's middle notification, the space above it as the handle ──
+  {
+    const stage = root.querySelector('#margin .stage'), feed = stage.querySelector('.feed'), note = feed.querySelector('.note.held'), band = stage.querySelector('.mband');
     picker(stage, {
-      name: 'Padding', toy: 'padding', options: PADDING,
-      mark: (t) => `<i class="pd" style="--ip:${Math.min(5, Math.round(t.v / 4))}px"></i>`,
-      apply: (o, { token, written }) => { el.style.setProperty('--p', `${o.v}px`); frame.classList.toggle('on-token', token); frame.classList.toggle('written', written); },
+      name: 'Margin top', toy: 'margin', options: MARGIN,
+      mark: (t) => `<i class="mg" style="height:${Math.max(4, Math.min(16, t.v / 2))}px"></i>`,
+      apply: (o, { token, written }) => { note.style.setProperty('--m', `${o.v}px`); band.classList.toggle('on-token', token); band.classList.toggle('written', written); },
       place: (row, list) => {
-        const r = rel(stage, el), p = parseFloat(getComputedStyle(el).paddingTop) || 0, b = 1;
-        frame.style.cssText = `left:${r.left}px;top:${r.top}px;width:${r.width}px;height:${r.height}px`;
-        const box = { top: [r.left + b, r.top + b, r.width - 2 * b, p], bottom: [r.left + b, r.bottom - b - p, r.width - 2 * b, p], left: [r.left + b, r.top + b + p, p, r.height - 2 * b - 2 * p], right: [r.right - b - p, r.top + b + p, p, r.height - 2 * b - 2 * p] };
-        for (const band of bands) { const [x, y, w, h] = box[band.dataset.side]; band.style.cssText = `left:${x}px;top:${y}px;width:${w}px;height:${h}px`; }
-        row.style.left = `${r.right + 14}px`; row.style.top = `${r.top + 12}px`;
-        list.style.left = row.style.left; list.style.top = `${r.top + 51}px`;
+        const n = rel(stage, note), m = parseFloat(getComputedStyle(note).marginTop) || 0;
+        band.style.cssText = `left:${n.left}px;top:${n.top - m}px;width:${n.width}px;height:${Math.max(2, m)}px`;
+        row.style.left = `${n.right + 14}px`; row.style.top = `${n.top - m / 2 - 17}px`;
+        list.style.left = row.style.left; list.style.top = `${n.top - m / 2 + 22}px`;
       },
-      handles: bands.map((band) => ({ el: band, perPx: (dx, dy) => inward[band.dataset.side](dx, dy) / 12 })),
+      // the margin: dragging down makes it bigger
+      handles: [{ el: band, perPx: (dx, dy) => dy / 12 }],
     });
+    band.addEventListener('pointerdown', () => feed.classList.add('dragging'));
+    addEventListener('pointerup', () => feed.classList.remove('dragging'));
+    if (still) band.style.transition = 'none';
   }
 
   // ── font size: the article's title, with the text itself as the handle ──
