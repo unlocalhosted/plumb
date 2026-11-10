@@ -158,8 +158,12 @@ export function mount(host, root, css) {
   // which is the stretch. `plate` chases press and `toy` chases plate, each looser, so what sits on the block arrives
   // late. `lift` is how far the top sits above its side: more while pointed at. A spring keeps where it is and how
   // fast it is going when its target changes, so any motion can be interrupted by any other.
-  const SPRINGS = { down: { k: 1200, c: 64 }, up: { k: 400, c: 21 }, plate: { k: 300, c: 19 }, toy: { k: 210, c: 13 }, lift: { k: 320, c: 30 } };
-  const SHAPE = { box: { rest: 7, hover: 10, wide: 0.024, short: 0.04 }, btn: { rest: 4, hover: 6, wide: 0.045, short: 0.11 } };
+  // The jelly is the point (owner: the stretch and the toy's jump are what feel good): letting go is a loose spring
+  // that swings well past rest and back a few times; the plate and the toy are looser still, so the toy jumps.
+  const SPRINGS = { down: { k: 1200, c: 64 }, up: { k: 380, c: 11 }, plate: { k: 300, c: 14 }, toy: { k: 210, c: 9 }, lift: { k: 320, c: 30 } };
+  // squashed (press above 0): `wide` and `short` per unit. Stretched (press below 0, the rebound): `thin` and `tall` per
+  // unit, and `over` px above its resting height. A soft thing stretches further than it squashes.
+  const SHAPE = { box: { rest: 7, hover: 10, wide: 0.024, short: 0.04, thin: 0.045, tall: 0.088, over: 12 }, btn: { rest: 4, hover: 6, wide: 0.045, short: 0.11, thin: 0.075, tall: 0.2, over: 10 } };
   const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const things = [...root.querySelectorAll('.s-box, .s-btn')].map((el) => {
     const kind = el.classList.contains('s-btn') ? 'btn' : 'box', shape = SHAPE[kind];
@@ -169,10 +173,18 @@ export function mount(host, root, css) {
   const byEl = new Map(things.map((t) => [t.el, t]));
   const pull = (o, target, { k, c }, dt) => { o.v += (-k * (o.x - target) - c * o.v) * dt; o.x += o.v * dt; };
   const draw = (t) => {
-    const { shape } = t, p = t.press.x, y = -t.lift.x + (t.lift.x - (t.plate ? 1 : 0)) * p;
-    t.top.style.transform = `translateY(${y.toFixed(2)}px) scale(${(1 + shape.wide * p).toFixed(4)}, ${(1 - shape.short * p).toFixed(4)})`;
-    if (t.plate) { const q = t.platePress.x; t.plate.style.transform = `translateY(${(Math.min(0, q) * 6).toFixed(2)}px) scale(${(1 + 0.035 * q).toFixed(4)}, ${(1 - 0.06 * q).toFixed(4)})`; }
-    if (t.toy) { const q = t.toyPress.x, up = (t.lift.x - shape.rest) / (shape.hover - shape.rest); t.toy.style.transform = `translateY(${(Math.min(0, q) * 16).toFixed(2)}px) rotate(${(Math.min(0, q) * 14).toFixed(2)}deg) scale(${(1 + 0.07 * up + 0.04 * q).toFixed(4)}, ${(1 + 0.07 * up - 0.08 * q).toFixed(4)})`; }
+    const { shape } = t, p = t.press.x, down = Math.max(0, p), up = Math.min(0, p);
+    const y = -t.lift.x + (t.lift.x - (t.plate ? 1 : 0)) * down + shape.over * up;
+    t.top.style.transform = `translateY(${y.toFixed(2)}px) scale(${(1 + shape.wide * down + shape.thin * up).toFixed(4)}, ${(1 - shape.short * down - shape.tall * up).toFixed(4)})`;
+    if (t.plate) {
+      const q = t.platePress.x, qd = Math.max(0, q), qu = Math.min(0, q);
+      t.plate.style.transform = `translateY(${(qu * 8).toFixed(2)}px) scale(${(1 + 0.035 * qd + 0.06 * qu).toFixed(4)}, ${(1 - 0.06 * qd - 0.12 * qu).toFixed(4)})`;
+    }
+    if (t.toy) {
+      // the toy is loose on its plate: it is flattened with it, then thrown up, tipping as it goes, and lands
+      const q = t.toyPress.x, qd = Math.max(0, q), qu = Math.min(0, q), big = 1 + 0.07 * ((t.lift.x - shape.rest) / (shape.hover - shape.rest));
+      t.toy.style.transform = `translateY(${(qu * 13).toFixed(2)}px) rotate(${(qu * 11).toFixed(2)}deg) scale(${(big + 0.04 * qd + 0.07 * qu).toFixed(4)}, ${(big - 0.08 * qd - 0.18 * qu).toFixed(4)})`;
+    }
   };
   const live = new Set();
   let last = 0, loop = 0;
