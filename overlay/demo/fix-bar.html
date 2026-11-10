@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fix bar · React Plumber</title>
+<style>
+  body { margin: 0; padding: 32px 16px 64px; background: #ecebe7; font: 14px/1.5 system-ui, sans-serif; color: #1c1b19; }
+  body.dark { background: #0f0f11; color: #eeede9; }
+  header { max-width: 1040px; margin: 0 auto 20px; display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap; }
+  header h1 { font-size: 18px; margin: 0; }
+  header p { margin: 0; opacity: .7; font-size: 13px; max-width: 720px; }
+  header button { margin-left: auto; font: inherit; font-size: 12px; padding: 4px 10px; border-radius: 6px; border: 1px solid currentColor; background: none; color: inherit; cursor: pointer; }
+  #board { max-width: 1040px; margin: 0 auto; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Fix bar</h1>
+  <p>A comp, not the product. The cause in hand is one line at the bottom; the choice is made on the element, with the same control the element editors use. Three states.</p>
+  <button id="scheme" type="button">Dark</button>
+</header>
+<div id="board"></div>
+<script type="module">
+  import tokens from '../src/tokens.css?raw';
+  import { LANGUAGE_CSS } from '../src/language.js';
+  import { BLOCK_ICONS } from '../src/boxmodel.js';
+  import { PRIMITIVES_CSS, stepper, radius, bind, place } from '../src/editor-primitives.js';
+  import { GLYPH_CSS, glyph } from '../src/glyphs.js';
+
+  const host = document.getElementById('board');
+  const root = host.attachShadow({ mode: 'open' });
+  host.dataset.scheme = 'light'; // the comp opens light, whatever the system is; the button flips it
+  const radii = [['tag', 6], ['control', 8], ['card', 12]].map(([token, n]) => ({ token, n, label: `${n}`, value: `${n}px` }));
+  const spacing = ['s1', 's2', 's3', 's4', 's6'].map((t, i) => ({ token: t, n: [4, 8, 12, 16, 24][i], label: `${[4, 8, 12, 16, 24][i]}`, value: `${[4, 8, 12, 16, 24][i]}px` }));
+  const kbd = (k) => `<kbd>${k}</kbd>`;
+
+  // The bar: what is wrong (its family's glyph, the class, what it is and what it becomes), where you are, what you can do.
+  const bar = ({ family, cls, from, to, toHue = 'mint', places, at, act, extra = '' }) => `
+    <div class="fb pl-card" role="toolbar" aria-label="The cause in hand">
+      <span class="what">${glyph(family)}<code>${cls}</code></span>
+      <span class="move"><span class="pl-pill" data-hue="coral">${from}</span><span class="to" aria-hidden="true">→</span><span class="pl-pill" data-hue="${toHue}">${to}</span></span>
+      ${places ? `<span class="where">${places}</span>` : ''}
+      ${extra}
+      <span class="nav"><button type="button" aria-label="The cause before">‹</button><span>${at} of 60</span><button type="button" aria-label="The next cause">›</button></span>
+      <span class="acts"><button type="button" class="pl-act">${act} ${kbd('↵')}</button><button type="button" class="pl-act quiet">Keep ${kbd('K')}</button><button type="button" class="pl-act quiet">Skip ${kbd('→')}</button></span>
+    </div>`;
+  // A piece of a page under the dimmed blueprint, with the element in hand lit and its control attached under it.
+  const scene = (title, note, page, barHtml) => `<section class="scene"><h2>${title}</h2><p class="note">${note}</p><div class="stage">${page}${barHtml}</div></section>`;
+  const rowsOf = (lit) => ['Undo loses the last change after a reload', 'Spacing drag jumps when the row re-renders', 'History strip covers the toast'].map((t, i) =>
+    `<div class="row"><span class="id">PLM-2${14 - i * 5}</span><span class="t">${t}</span><span class="chip${lit ? ' lit' : ''}">${['Bug', 'Bug', 'Feature'][i]}</span></div>`).join('');
+
+  const s1 = { steps: radii, current: null, picked: 'tag', drift: { n: 5, label: '5' } };
+  const s2 = { steps: spacing, current: null, drift: { n: 64, label: '64' } };
+  const s3 = { steps: spacing, current: null, picked: 's2', drift: { n: 7, label: '7' } };
+
+  root.innerHTML = `<style>${tokens}${LANGUAGE_CSS}${PRIMITIVES_CSS}${GLYPH_CSS}
+    :host { display: block; font-family: var(--pl-sans); color: var(--pl-ink); }
+    .scene { margin: 0 0 28px; }
+    .scene h2 { margin: 0 0 2px; font: 600 14px/20px var(--pl-sans); }
+    .scene .note { margin: 0 0 10px; font: 400 13px/19px var(--pl-sans); color: var(--pl-ink-2); max-width: 760px; }
+    .stage { position: relative; height: 330px; border-radius: 14px; overflow: hidden; background: #f3f4f6; box-shadow: inset 0 0 0 1px var(--pl-rule); }
+    /* the page, as blueprint leaves it: quiet, with only the places of the cause lit */
+    .page { position: absolute; inset: 22px 22px auto; border-radius: 12px; background: #fff; box-shadow: 0 1px 2px rgb(0 0 0 / .08); font: 14px/20px system-ui, sans-serif; color: #15181b; }
+    .page .row { display: flex; align-items: center; gap: 12px; padding: 9px 16px; border-bottom: 1px solid #e6e8ec; opacity: .45; }
+    .page .row:last-child { border-bottom: 0; }
+    .page .id { width: 62px; font-size: 12px; color: #5b6370; }
+    .page .t { flex: 1; }
+    .page .chip { padding: 2px 7px; border-radius: 5px; font-size: 11px; font-weight: 500; background: #fee4e2; color: #b42318; }
+    .page .row:has(.lit) { opacity: 1; }
+    .page .row:has(.lit) .id, .page .row:has(.lit) .t { opacity: .45; }
+    .chip.lit { outline: 1.5px solid var(--pl-pink); outline-offset: 2px; }
+    .chip.lit.first { border-radius: 6px; outline-width: 2px; }
+    /* the control, on the element: no card around it, only the steps on a paper strip with a pointer to its element */
+    .on { position: absolute; display: flex; align-items: center; gap: 8px; padding: 6px 8px 6px 10px; border-radius: 12px; background: var(--pl-paper); box-shadow: var(--pl-shadow-card); }
+    .on::before { content: ''; position: absolute; top: -5px; right: 26px; width: 10px; height: 10px; rotate: 45deg; background: var(--pl-paper); box-shadow: -1px -1px 0 0 var(--pl-rule); }
+    .on .ic { display: grid; place-items: center; width: 18px; height: 18px; color: var(--pl-ink-2); }
+    .on .ic svg { width: 16px; height: 16px; }
+    .on .keys { font: 500 11px/1 var(--pl-mono); color: var(--pl-ink-3); padding-left: 2px; }
+    .on .name { display: inline-flex; align-items: center; height: 26px; padding: 0 8px; border-radius: 8px; font: 500 12px/1 var(--pl-mono); color: var(--pl-ink-2); box-shadow: inset 0 0 0 1px var(--pl-rule); }
+    .on .name b { font-weight: 600; color: var(--pl-ink); border-bottom: 1.5px solid var(--pl-sky); padding-bottom: 1px; margin-left: 1px; }
+    /* the bar */
+    .fb { position: absolute; left: 50%; bottom: 16px; translate: -50% 0; display: flex; align-items: center; gap: 11px; height: 50px; padding: 0 8px 0 14px; border-radius: 25px; white-space: nowrap; }
+    .fb .what { display: inline-flex; align-items: center; gap: 8px; }
+    .fb .what .g { width: 20px; height: 20px; color: var(--pl-pink-ink); }
+    .fb code { font: 600 13px/1 var(--pl-mono); color: var(--pl-ink); }
+    .fb .move { display: inline-flex; align-items: center; gap: 5px; }
+    .fb .to { color: var(--pl-ink-3); font-size: 12px; }
+    .fb .where { font: 500 12px/1 var(--pl-sans); color: var(--pl-ink-2); }
+    .fb .nav { display: inline-flex; align-items: center; gap: 2px; margin-left: 4px; font: 500 12px/1 var(--pl-mono); color: var(--pl-ink-2); }
+    .fb .nav button { all: unset; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 6px; cursor: pointer; color: var(--pl-ink-2); }
+    .fb .nav button:hover { background: var(--pl-paper-2); }
+    .fb .acts { display: inline-flex; gap: 6px; }
+    .fb .pl-tag svg { width: 13px; height: 13px; }
+    .fb .inbar { display: inline-flex; align-items: center; }
+  </style>
+  ${scene('1 · A step your scale has', 'The chip’s corner is 5px, between two of your steps. The steps appear at the chip itself; ↑ ↓ or a click moves between them and the page shows it. Enter writes it at all 16 places.',
+    `<div class="page">${rowsOf(true)}</div>
+     <div class="on" style="top: 74px; right: 30px;"><span class="ic" title="Corner">${BLOCK_ICONS.r}</span>${radius('Corner', s1)}<span class="keys">↑ ↓</span></div>`,
+    bar({ family: 'radius', cls: 'rounded-[5px]', from: '5px', to: 'tag · 6px', places: '16 places', at: 3, act: 'Use rounded-tag' }))}
+  ${scene('2 · A value your scale doesn’t have', '64px is past your largest step, so the fix is a new step. It is named where the steps are: the name is the only thing you type. Enter adds it to your theme.',
+    `<div class="page">${rowsOf(false)}</div>
+     <div class="on" style="top: 150px; left: 40px;"><span class="ic" title="Spacing">${BLOCK_ICONS.p}</span>${stepper('Spacing', s2)}<span class="name">--spacing-<b>gutter</b></span></div>`,
+    bar({ family: 'spacing', cls: 'bottom-[64px]', from: '64px', to: 'new · gutter', toHue: 'sky', places: '1 place', at: 32, act: 'Add to theme' }))}
+  ${scene('3 · A place that isn’t on the page right now', 'The place is in a part the page shows only sometimes (a toast). There is no element to put the steps on, so they sit in the bar, with one tag saying why.',
+    `<div class="page">${rowsOf(false)}</div>`,
+    bar({ family: 'spacing', cls: 'px-[7px]', from: '7px', to: 's2 · 8px', places: '', at: 41, act: 'Use px-s2',
+      extra: `<span class="pl-tag" data-hue="butter" title="In a part this page shows only sometimes. Fixing it still changes your code.">Not showing now</span><span class="inbar">${stepper('Spacing', s3)}</span>` }))}`;
+
+  bind(root, {});
+  for (const group of root.querySelectorAll('.ep[role="radiogroup"]')) place(group);
+  document.getElementById('scheme').onclick = (e) => { const dark = document.body.classList.toggle('dark'); host.dataset.scheme = dark ? 'dark' : 'light'; e.target.textContent = dark ? 'Light' : 'Dark'; };
+</script>
+</body>
+</html>
