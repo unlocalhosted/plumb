@@ -42,7 +42,14 @@
 - **What the owner chose:** a tight ladder (display steps 32px and up at about 1.1: 64/70, 56/62, 48/53, 40/44, 32/36) over a heading modifier or BoardUI's numbers; and fluid titles up to 48px. The second became a rule, not a setting: a fluid style keeps the clamp whose top is nearest its ladder size (48px is exactly Display 2).
 - **The fix and the proof:** re-written on the side copy: 22 styles, sizes 34 → 12, low-confidence places 46 → 20, 74 writes with none refused. /motion/standards at 1280 wide: the h1 is `text-display-2-medium`, 46.08px on 50.9px lines.
 
+## Plumber reads colour tokens named by job (2026-11-10)
+- **The itch:** a project that follows the new colour spec (BoardUI-style names) would be misread: plumber matched words anywhere in a name, so `text-primary`, `background-primary-default` and `foreground-icon-primary` all read as the accent, `background-secondary-default` as the page, and chart and status-hue colours as accents it could fold onto.
+- **How we found it:** ran plumber's token-name reader over 30 BoardUI-style names: 14 read wrong.
+- **The system behind it:** the reader was built for flat names (`fg`, `muted`, `surface`), where a word like "primary" means the brand colour. In a path name the first word is the category and decides the family.
+- **The fix and the proof:** a path reader runs first: category, then role, then state. All 30 names now read right; the 14 flat names crafting-ui-style projects use and 12 shadcn names read exactly as before (same output before and after). crafting-ui has no path-style names, so its colour pass is unchanged.
+
 ## Open gaps
+- Colour layer 4 (accent ramp from one colour) and layer 5 (writing primitives, semantic tokens and a dark block) not built; the colour pass still never proposes new token names.
 - Token spec layers 2–6 not built; four owner decisions open (§6).
 - e2e/type-roles.test.mjs still expects the old Material names; rewrite when the owner calls for tests.
 - The clean-up text panel with the new names was not looked at in the browser.

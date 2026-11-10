@@ -1,6 +1,6 @@
 # Plumber's token spec: colour and type
 
-Status: spec; type layer 1 and the prose modifier built (2026-11-10). Owner direction: move plumber's own idea of a "good token system" to the
+Status: spec; type layers 1–2 built and written on crafting-ui (side copy); colour name reading built (2026-11-10). Owner direction: move plumber's own idea of a "good token system" to the
 shape BoardUI uses (references below), because it scales to large apps better than what plumber proposes today.
 This replaces the *naming and layering* plumber suggests. It does not replace how plumber reads a page into roles
 (docs/research/type-roles.md, docs/research/colour-system.md): that reading stays, it just lands on new names.
@@ -166,6 +166,15 @@ Fixed words. Plumber never invents a new state word.
 5. **Focus ring is its own token**, the same in both schemes unless the person changes it.
 6. **Contrast is checked, not trusted.** BoardUI states no contrast rule; ours stays: APCA for text against its
    ground, WCAG 3:1 for control borders (colour-system.md).
+
+### 3.4b How plumber reads a project's token names (built 2026-11-10)
+
+A name whose first word is a category (`text`, `foreground`, `background`, `border`, `separator`, `accent-<stop>`,
+`state`, `status`, `chart`) is read as a path: the category decides the family, the rest the role and state
+(`text-primary` → first grey, `background-secondary-default` → sunken, `background-primary-hover` → hover,
+`accent-600` → accent hover, `state-success-text` → success). Focus rings, disabled backgrounds, accent stops other than
+50/100/500/600, status hues and chart colours are not UI roles: plumber never folds a colour onto them. Any other name
+(`fg`, `muted`, shadcn's `primary-foreground`) is read by its words, as before.
 
 ### 3.5 How plumber reads a usage into a token
 

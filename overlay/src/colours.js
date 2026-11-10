@@ -74,8 +74,46 @@ const near = (a, b) => a && b && Math.abs(a[0] - b[0]) <= 1.5 && Math.abs(a[1] -
 // default-palette names are Tailwind's, not the project's (craft-rules.js PALETTE)
 const DEFAULT = /^(?:black|white|transparent|current|inherit|(?:slate|gray|zinc|neutral|stone|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose)-\d{2,3})$/;
 
-// the role of a token: by name first (fg, muted, surface, line, accent, success …), by value second (L, chroma and alpha)
+// a token named as a path, category first (docs/design/token-spec.md §3): `text-secondary`, `background-primary-hover`,
+// `border-focus-ring`, `accent-600`, `state-success-text`. The category decides the family, so `primary` in
+// `text-primary` is the first grey, not the accent. Null when the name is not a path; the word match below reads it.
+const STATUS = { success: 'success', positive: 'success', warning: 'warning', caution: 'warning', error: 'danger', danger: 'danger', destructive: 'danger', negative: 'danger', info: 'info' };
+const statusIn = (parts) => { for (const w of parts) if (STATUS[w]) return STATUS[w]; return null; };
+const GREY = (parts) => parts.some((w) => /^(secondary)$/.test(w)) ? 'muted' : parts.some((w) => /^(tertiary|quaternary|placeholder|disabled)$/.test(w)) ? 'faint' : 'fg';
+export function pathOf(short) {
+  const [cat, ...rest] = short.toLowerCase().split('-');
+  if (cat === 'text' || cat === 'foreground') {
+    const st = statusIn(rest); if (st) return { role: 'status', kind: st };
+    if (rest.some((w) => w === 'white' || w === 'on')) return { role: 'text', kind: 'on-accent' };
+    return { role: 'text', kind: GREY(rest) };
+  }
+  if (cat === 'background') {
+    const st = statusIn(rest); if (st) return { role: 'status', kind: st };
+    if (!rest.length || rest[0] === 'full') return { role: 'surface', kind: 'ground' }; // `background` alone is the page (shadcn)
+    const state = rest.at(-1);
+    if (state === 'hover') return { role: 'surface', kind: 'hover' };
+    if (state === 'active' || state === 'pressed') return { role: 'surface', kind: 'pressed' };
+    if (state === 'disabled') return { role: 'other', kind: 'other' };
+    return { role: 'surface', kind: /^(secondary|tertiary|quaternary)$/.test(rest[0] ?? '') ? 'sunken' : 'surface' };
+  }
+  if (cat === 'border' || cat === 'separator') {
+    if (rest.some((w) => w === 'focus' || w === 'ring')) return { role: 'other', kind: 'other' };
+    const st = statusIn(rest); if (st) return { role: 'status', kind: st };
+    return { role: 'line', kind: rest.some((w) => /^(strong|heavy|bold)$/.test(w)) ? 'line-strong' : 'line' };
+  }
+  if (cat === 'accent' && /^\d{2,3}$/.test(rest[0] ?? '')) {
+    // the ramp: 500 rests, 600 is its hover, 50/100 its tint; the other stops are not roles of their own
+    const stop = Number(rest[0]);
+    return stop === 500 ? { role: 'accent', kind: 'accent' } : stop === 600 ? { role: 'accent', kind: 'accent-hover' } : stop <= 100 ? { role: 'accent', kind: 'accent-soft' } : { role: 'other', kind: 'other' };
+  }
+  if (cat === 'state') { const st = statusIn(rest); return st ? { role: 'status', kind: st } : { role: 'other', kind: 'other' }; }
+  if (cat === 'status' || cat === 'chart') return { role: 'other', kind: 'other' }; // categories and data: content, not UI roles
+  return null;
+}
+
+// the role of a token: a path name first, then by name (fg, muted, surface, line, accent, success …), then by value
 export function roleOf(short, lab, alpha) {
+  const path = pathOf(short); if (path) return path.role;
   const n = short.toLowerCase();
   if (/(^|-)(success|warning|danger|error|destructive|negative|positive|caution)(-|$)/.test(n)) return 'status';
   if (/(^|-)info(-|$)/.test(n)) return 'status';
@@ -92,6 +130,7 @@ export function roleOf(short, lab, alpha) {
 
 // the spec role of a token (§2.2): by name first (§4.1), value second (§4.2). `role` above is the coarse family
 export function kindOf(short, role) {
+  const path = pathOf(short); if (path && path.role === role) return path.kind;
   const n = short.toLowerCase(), has = (re) => re.test(n);
   if (role === 'status') return has(/info/) ? 'info' : has(/success|positive/) ? 'success' : has(/warning|caution/) ? 'warning' : 'danger';
   if (role === 'line') return has(/(^|-)(strong|heavy|bold)(-|$)/) ? 'line-strong' : 'line';
