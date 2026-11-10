@@ -166,7 +166,32 @@ race, built for the old in-place write) was rewritten for the new write path (`e
 - **Not done:** the fourth, the old pinned reading card inside `widget.js` (about 600 lines and a dozen
   always-false guards), is still there; it needs its own pass with `e2e/walk.test.mjs`. `PANEL_CSS` was not pruned.
 
+### 6. A scope: what a state started ends when the state is left
+- **The itch:** the three owners that had declared their machine still held 12 of the oracle's 20 findings, every
+  one a timer or frame whose handle was dropped. Declaring the states had not made their timers anyone's.
+- **The system behind it:** a table says which states exist. It doesn't own what a state starts, so each timer and
+  listener was cleared by hand, in whichever exits someone remembered.
+- **What we chose:** `overlay/src/scope.js`. A `Scope` hands out listeners, timeouts, frames and awaited answers, and
+  ends all of them together. The owner's `#send` ends the old state's scope and opens the next one in the same line
+  as the transition, so there is no exit to forget. The oracle's rule for `#send` had to allow that line (`sm`, branch
+  `send-ends-scope`).
+- **First owner, the words editor (`text-edit.js`):** the phase has a scope (the keys while editing, the 2.4 s timer
+  of a failed save), the edit on screen has one (the frame loop that keeps the ring on the words), and the note
+  beside words that can't be edited has one.
+- **A bug it turned up:** that note's 4 s timer was never cancelled by a new edit. Double-click words that can't be
+  edited, then edit other words within 4 s: the edit's tag (the file, Enter, Esc) vanished mid-edit. The new test in
+  `e2e/text-edit.test.mjs` fails on the old editor with "the edit still says where it writes and how to leave" and
+  passes now.
+- **The proof:** `sm check` baseline 20 → 18 (both words-editor findings gone, none new). `e2e/text-edit.test.mjs`:
+  7 of 8 pass; the 8th (History in the dock) times out on `main` too.
+- **Media hooks:** a clip of the tag vanishing mid-edit before, and staying after.
+
 ## Open gaps
+- `e2e/text-edit.test.mjs` "every write is in the dock's history" times out on `main` on the laptop; not looked at.
+- The scope is used by one owner. 18 oracle findings are left: fix panel 8, clean-up 2, and 8 in owners with no
+  declared machine. Nothing bans a bare `setTimeout` or `addEventListener` in a new owner yet.
+- `sm` branch `send-ends-scope` is not merged or pushed; plumb's CI reads the pushed `sm`, so the words editor's
+  `#send` fails `sm/send-shape` there until it is.
 - 6 tests of `e2e/blueprint.test.mjs` fail on `main` on the laptop (three time-outs, three assertions); not looked at.
 - `e2e/hosts.test.mjs` "install --overlay detects hosts" expects the folder to be named `plumb`, so it fails in every
   worktree.
@@ -201,3 +226,5 @@ On branch `state-by-design`, not merged yet:
   first. [Chapter 2](#chapter-2--state-that-cant-go-wrong-by-design-2026-11-10)
 - If React Plumber's background thread crashes, the next request starts it again; you no longer have to restart
   your dev server. [Chapter 2](#chapter-2--state-that-cant-go-wrong-by-design-2026-11-10)
+- Editing words right after a "this can't be edited here" note no longer loses the tag that says where the edit is
+  written. [Chapter 2](#chapter-2--state-that-cant-go-wrong-by-design-2026-11-10)

@@ -17,9 +17,7 @@
     "sm/timer-handle|overlay/src/fixpanel.js|FixPanel.hold|setTimeout|1",
     "sm/timer-handle|overlay/src/fixpanel.js|FixPanel.render|setTimeout|1",
     "sm/timer-handle|overlay/src/fixpanel.js|FixPanel.render|setTimeout|2",
-    "sm/timer-handle|overlay/src/fixpanel.js|FixPanel.resumed|setTimeout|1",
-    "sm/timer-handle|overlay/src/text-edit.js|TextEditor.#follow|requestAnimationFrame|1",
-    "sm/timer-handle|overlay/src/text-edit.js|TextEditor.#refusal|setTimeout|1"
+    "sm/timer-handle|overlay/src/fixpanel.js|FixPanel.resumed|setTimeout|1"
   ],
   "schema": 1
 }
