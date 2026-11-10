@@ -717,6 +717,13 @@ race, built for the old in-place write) was rewritten for the new write path (`e
 - **A mix-up while checking:** another session had started its own copy of crafting-ui on the port my copy uses, so
   one check read that app (which runs the main overlay) and I briefly blamed a build step. My copy now runs on 5182;
   the other session's server was left alone.
+- **The sixth part: the shared language styles** (the card, pills, tags, patterns and the product's current action
+  button, used across the overlay). The card takes the surface and primary text; the checkerboard the inset; the
+  marching ants, hatch and dither default to the selected ring; the current action button keeps its look through the
+  existing action roles (`--pl-action-soft`, `--pl-on-action`), its disabled and quiet versions take the new disabled
+  and quiet roles. Pills and tags keep their hues, because they take a hue for what it means. Checked on the
+  design site: light is unchanged (#ffd0ec with #5a0d3c words); in dark the action follows the night rule, the calmer
+  pink with white.
 
 ## Open gaps
 - White on the pink and mint buttons is under 4.5:1 in light (3.36, 3.85); dark now passes, just. Nothing yet stops the faintest ink being used for text again.
