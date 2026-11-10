@@ -375,6 +375,7 @@ export class TextEditor {
     addEventListener('resize', this.#follow);
     this.#draw();
     await this.#read();
+    if (this.#state === 'ready') this.#resume();
   }
   close() {
     this.#seq++; // a read still out lands on a closed card: it is no one's now
@@ -896,15 +897,37 @@ export class TextEditor {
     this.#refresh();
     this.#next();
   }
+  // the changes still to write, kept across a reload: [[key, token], …] for this element, or null when none are left
+  #keep(left) {
+    try {
+      if (left?.length && this.#stamp) sessionStorage.setItem('plumb:text-card', JSON.stringify({ stamp: this.#stamp, left, at: Date.now() }));
+      else sessionStorage.removeItem('plumb:text-card');
+    } catch {}
+  }
+  // the card opened on an element with changes still to write from before a reload: they are held again and written
+  #resume() {
+    let kept = null;
+    try { kept = JSON.parse(sessionStorage.getItem('plumb:text-card') ?? 'null'); } catch {}
+    if (!kept || kept.stamp !== this.#stamp || Date.now() - kept.at > 60000 || this.#queue) return;
+    try { sessionStorage.removeItem('plumb:text-card'); } catch {}
+    for (const [k, token] of kept.left) if (token) this.#held.set(k, token);
+    this.#queue = kept.left.map(([k]) => k).filter((k) => this.#held.has(k));
+    if (!this.#queue.length) { this.#queue = null; return; }
+    this.#draw();
+    this.#next();
+  }
   async #next() {
     const key = this.#queue?.shift();
-    if (!key) { this.#queue = null; this.#refresh(); return; }
+    if (!key) { this.#queue = null; this.#keep(null); this.#refresh(); return; }
     const token = this.#held.get(key), r = this.#rows().find((x) => x.key === key), i = r?.steps.findIndex((s) => s.token === token) ?? -1;
     this.#held.delete(key);
     if (i < 0 || (token === r.current && !r.byHand)) return this.#next();
     if (!this.#queue.length) this.#queue = null; // the last one: its re-read ends the Write
+    // a write can reload the page (where the app has no hot update): what is still to go is kept in this tab, tied to
+    // the element's place in the code, and picked up when the card opens on it again (#resume)
+    this.#keep(this.#queue ? this.#queue.map((k) => [k, this.#held.get(k)]) : null);
     const ok = await this.#write(key, i);
-    if (!ok) { this.#held.set(key, token); this.#queue = null; this.#refresh(); return; }
+    if (!ok) { this.#held.set(key, token); this.#queue = null; this.#keep(null); this.#refresh(); return; }
     // the next one is written against the file as it is now: read it again here, whether or not the overlay's own
     // reader (Blueprint) is on to do it
     await this.#read();
