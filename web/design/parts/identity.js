@@ -71,8 +71,8 @@ export function mount(host, root, css) {
     .s-box em { opacity: .86; }
     /* pointed at: it comes up to meet the finger, straight up, and its shadow grows. It does not lean or follow the
        pointer: a thing that tilts under the pointer reads as a card to look at, not a key to press */
-    .s-box:hover { --lift: 10px; box-shadow: 0 22px 28px -16px color-mix(in oklab, var(--h) 70%, transparent), 0 4px 6px -2px color-mix(in oklab, var(--h) 36%, transparent); }
-    .s-box:hover .toy { transform: scale(1.07); }
+    .s-box:hover, .s-box.hov { --lift: 10px; box-shadow: 0 22px 28px -16px color-mix(in oklab, var(--h) 70%, transparent), 0 4px 6px -2px color-mix(in oklab, var(--h) 36%, transparent); }
+    .s-box:hover .toy, .s-box.hov .toy { transform: scale(1.07); }
     /* ── the squash ──
        A soft block is pressed from above against the ground, so it is anchored at its bottom edge and keeps its
        volume: what it loses in height it gains in width.
@@ -116,7 +116,7 @@ export function mount(host, root, css) {
     .s-btn span { display: block; padding: 10px 16px; border-radius: 14px; background: linear-gradient(180deg, color-mix(in oklab, var(--h) 88%, #fff), var(--h)); color: var(--pl-pink-on);
       font: 600 15px/1 var(--pl-round); box-shadow: inset 0 1.5px 0 0 color-mix(in oklab, #fff 45%, transparent), inset 0 -2px 0 0 color-mix(in oklab, #000 12%, transparent);
       transform: translateY(calc(-1 * var(--lift))); transition: transform 300ms var(--pl-spring-pop); }
-    .s-btn:hover { --lift: 6px; box-shadow: 0 14px 16px -10px color-mix(in oklab, var(--h) 75%, transparent); }
+    .s-btn:hover, .s-btn.hov { --lift: 6px; box-shadow: 0 14px 16px -10px color-mix(in oklab, var(--h) 75%, transparent); }
     .s-btn span { transform-origin: 50% 100%; will-change: transform; }
     .s-btn.down { --lift: 0px; box-shadow: 0 3px 5px -4px color-mix(in oklab, var(--h) 75%, transparent); }
     .s-btn.down span { transform: translateY(0) scale(1.045, 0.89); transition: transform 80ms var(--pl-ease-out); }
@@ -131,6 +131,15 @@ export function mount(host, root, css) {
     .s-btn.q { --h: var(--pl-ink-3); --side: var(--pl-rule); box-shadow: 0 9px 12px -9px rgb(0 0 0 / .28); }
     .s-btn.q span { background: linear-gradient(180deg, var(--pl-paper), var(--pl-paper-2)); color: var(--pl-ink); box-shadow: inset 0 1.5px 0 0 color-mix(in oklab, #fff 90%, transparent), inset 0 0 0 1.5px var(--pl-rule); }
 
+    /* ── the timeline: slow every motion on this page down, hold it, and drag through it ── */
+    .tl { position: sticky; bottom: 16px; z-index: 5; display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; margin: 18px 0 0; padding: 12px 14px; border-radius: 20px; background: var(--pl-ink); color: var(--pl-paper); box-shadow: 0 14px 30px -16px rgb(0 0 0 / .5); }
+    .tl b { font: 600 14px/1 var(--pl-round); }
+    .tl .grp { display: inline-flex; gap: 2px; padding: 3px; border-radius: 12px; background: color-mix(in oklab, var(--pl-paper) 14%, transparent); }
+    .tl button { padding: 7px 10px; border-radius: 9px; font: 600 13px/1 var(--pl-round); color: inherit; }
+    .tl button:hover { background: color-mix(in oklab, var(--pl-paper) 16%, transparent); }
+    .tl button[aria-pressed="true"] { background: var(--pl-paper); color: var(--pl-ink); }
+    .tl input[type="range"] { flex: 1; min-width: 180px; accent-color: var(--pl-pink); }
+    .tl output { font: 500 12px/1 var(--pl-mono); min-width: 190px; opacity: .85; }
     .faces { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin-top: 16px; }
     .face { padding: 22px 22px 18px; border-radius: 22px; background: var(--pl-paper-2); }
     .face b { display: block; font-size: 34px; line-height: 37px; letter-spacing: -0.02em; color: var(--pl-ink); text-wrap: balance; }
@@ -160,6 +169,15 @@ export function mount(host, root, css) {
       <div class="row"><button class="s-btn"><span>Use rounded-tag</span></button><button class="s-btn q"><span>Keep</span></button></div></div>
   </div>
 
+  <div class="tl" role="group" aria-label="Timeline">
+    <b>Timeline</b>
+    <span class="grp" role="group" aria-label="Speed">${[['1', '1×'], ['0.25', '¼×'], ['0.1', '⅒×'], ['0.03', '1/30×']].map(([v, t], i) => `<button type="button" data-rate="${v}" aria-pressed="${i === 0}">${t}</button>`).join('')}</span>
+    <span class="grp" role="group" aria-label="Do it"><button type="button" data-do="in">Point at</button><button type="button" data-do="out">Leave</button><button type="button" data-do="down">Press</button><button type="button" data-do="up">Let go</button></span>
+    <button type="button" data-do="freeze" aria-pressed="false" class="grp">Hold</button>
+    <input type="range" min="0" max="1000" value="0" aria-label="Drag through the motion" disabled>
+    <output>nothing moving</output>
+  </div>
+
   <h2>A shelf of them</h2>
   <p>All five hues. The pale top is calm enough to sit five in a row; the strong colour is on the side, the toy and the shadow.</p>
   <div class="shelf">${PARTS.map(soft).join('')}</div>
@@ -182,4 +200,42 @@ export function mount(host, root, css) {
     el.addEventListener('keyup', (e) => { if (e.key === 'Enter' || e.key === ' ') up(); });
     el.addEventListener('animationend', (e) => { if (e.animationName === 's-rebound' || e.animationName === 's-btn') el.classList.remove('rel'); });
   }
+
+  // ── the timeline ──
+  // Every motion inside this page (a transition or a keyframe animation) is slowed to the chosen speed as it starts.
+  // Hold stops them where they are, and the slider drags all of them through their length together. The four buttons
+  // do to the first soft block and button what a pointer would, so a motion can be started while held and then dragged.
+  const tl = root.querySelector('.tl'), slider = tl.querySelector('input'), out = tl.querySelector('output');
+  const targets = [root.querySelector('.pair .s-box'), root.querySelector('.pair .s-btn')];
+  let rate = 1, held = false;
+  const moving = () => root.getAnimations().filter((a) => a.playState !== 'finished' && a.playState !== 'idle');
+  const lengthOf = (a) => Number(a.effect?.getComputedTiming().endTime) || 0;
+  const say = () => {
+    const all = moving();
+    slider.disabled = !held || !all.length;
+    if (!all.length) { out.textContent = 'nothing moving'; return; }
+    const longest = Math.max(...all.map(lengthOf)), at = Math.max(...all.map((a) => Number(a.currentTime) || 0));
+    out.textContent = `${all.length} moving · ${Math.round(at)} of ${Math.round(longest)}ms`;
+    if (root.activeElement !== slider) slider.value = String(Math.round((at / Math.max(1, longest)) * 1000));
+  };
+  const take = () => { for (const a of moving()) { a.playbackRate = rate; if (held) a.pause(); } say(); };
+  for (const type of ['transitionrun', 'animationstart']) root.addEventListener(type, () => queueMicrotask(take), true);
+  for (const type of ['transitionend', 'transitioncancel', 'animationend']) root.addEventListener(type, () => queueMicrotask(say), true);
+  let ticking = 0;
+  const tick = () => { say(); ticking = moving().length && !held ? requestAnimationFrame(tick) : 0; };
+  root.addEventListener('transitionrun', () => { if (!ticking) ticking = requestAnimationFrame(tick); }, true);
+  root.addEventListener('animationstart', () => { if (!ticking) ticking = requestAnimationFrame(tick); }, true);
+  tl.addEventListener('click', (e) => {
+    const b = e.target.closest('button'); if (!b) return;
+    if (b.dataset.rate) { rate = Number(b.dataset.rate); for (const x of tl.querySelectorAll('[data-rate]')) x.setAttribute('aria-pressed', String(x === b)); take(); return; }
+    const act = b.dataset.do;
+    if (act === 'freeze') { held = !held; b.setAttribute('aria-pressed', String(held)); for (const a of moving()) { if (held) a.pause(); else a.play(); } say(); if (!held && !ticking) ticking = requestAnimationFrame(tick); return; }
+    for (const el of targets) {
+      if (act === 'in') el.classList.add('hov');
+      if (act === 'out') el.classList.remove('hov');
+      if (act === 'down') { el.classList.remove('rel'); el.classList.add('down'); }
+      if (act === 'up' && el.classList.contains('down')) { el.classList.remove('down'); el.classList.add('rel'); }
+    }
+  });
+  slider.addEventListener('input', () => { for (const a of moving()) { a.pause(); a.currentTime = (slider.value / 1000) * lengthOf(a); } say(); });
 }
