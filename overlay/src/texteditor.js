@@ -734,6 +734,13 @@ export class TextEditor {
     this.#pk.clear();
     const box = this.#el.querySelector('.pk');
     if (!box || this.#state !== 'ready') return;
+    this.#mounting = true; // the style field follows the values only once they are all there
+    try { this.#build(box); } finally { this.#mounting = false; }
+    if ([...this.#held.keys()].some((k) => k !== 'style')) this.#match();
+    this.#refresh();
+  }
+  #mounting = false;
+  #build(box) {
     const rows = this.#rows(), el = this.#target, none = document.createElement('i');
     const optionsOf = (r) => {
       const opts = r.steps.map((s) => ({ name: s.token, v: s.n, step: s }));
@@ -765,8 +772,9 @@ export class TextEditor {
     const style = rows.find((r) => r.key === 'style');
     if (style?.steps.length) {
       const opts = style.steps.map((s) => ({ name: s.label, v: pxOf(s.size, el), lh: s.lineHeight, fw: s.weight, step: s })).sort((a, b) => a.v - b.v);
-      const at = opts.findIndex((o) => o.step.token === style.current);
-      if (at < 0) opts.unshift({ name: W.noStyle, v: 0, hard: true });
+      // No style is always there: a value moved off the style lands the field on it
+      opts.unshift({ name: W.noStyle, v: 0, hard: true });
+      const at = opts.findIndex((o) => o.step?.token === style.current);
       mk(box.querySelector('.style .one'), style, {
         options: opts, start: at < 0 ? undefined : at, toy: glyph('type'),
         format: (o) => (o.hard ? '' : `${Math.round(o.v)} / ${o.lh ?? '–'}`),
@@ -794,6 +802,8 @@ export class TextEditor {
   }
   // a picker moved: what it holds now (nothing, when it is back where it started or on the hard-coded value)
   #hold(key, o, first) {
+    // the style field moved by the values (it follows them): it says which style they make, and holds nothing itself
+    if (this.#syncing && key === 'style') return;
     if (this.#syncing && key !== 'style') { this.#held.delete(key); }
     else if (o === first || o.hard || !o.step) this.#held.delete(key);
     else this.#held.set(key, o.step.token);
@@ -809,7 +819,21 @@ export class TextEditor {
       }
       this.#syncing = false;
     }
+    // a value changed by hand: the style field follows, to the style these values make, or No style
+    if (key !== 'style' && !this.#syncing && !this.#mounting) this.#match();
     this.#showHeld();
+  }
+  // which style the type values make now (a locked value is outside the card's say, so it doesn't count against one)
+  #match() {
+    const s = this.#pk.get('style'); if (!s || s.r.disabled) return;
+    const now = {};
+    for (const k of VALUES) { const f = this.#pk.get(k); if (f && !f.r.disabled) now[k] = f.opts[f.p.at()]?.v; }
+    const near = (a, b) => Number.isFinite(a) && Number.isFinite(b) && Math.abs(a - b) < 1e-3;
+    const of = (o) => ({ 'font-size': o.v, 'line-height': o.lh != null ? +o.lh : NaN, 'font-weight': o.fw != null ? +o.fw : NaN, 'letter-spacing': o.step?.letterSpacing != null ? +o.step.letterSpacing : 0 });
+    let i = s.opts.findIndex((o) => !o.hard && Object.entries(now).every(([k, v]) => { const want = of(o)[k]; return !Number.isFinite(want) || near(want, v); }));
+    if (i < 0) i = s.opts.findIndex((o) => o.hard);
+    if (i === s.p.at()) return;
+    this.#syncing = true; s.p.set(i); this.#syncing = false;
   }
   // the held values, shown on the element (the style first, a value picked after it over it)
   #showHeld() {

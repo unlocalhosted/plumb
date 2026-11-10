@@ -549,8 +549,12 @@ race, built for the old in-place write) was rewritten for the new write path (`e
   own light tokens.
 - **Proof:** on a copy of crafting-ui, the "React Plumber" heading dragged from 24px to 33px, Write 1 change, and the
   code got `text-3xl` with "Changed size to 33px on Plumber · Undo".
-- **Not done yet:** several values in one Write (built, not tried end to end); the style doesn't switch to "No style"
-  when a value moves off it; typing a number; dragging the words themselves; colour and case are still the old
+- **"Style follows values":** a value changed by hand now moves the style field with it: to the style the values
+  make, or "No style" (coral) when they make none; put the value back and the style comes back. A locked value
+  doesn't count against a style. The style field only shows this; the values are still written one by one. Checked on
+  crafting-ui: the heading's font size up one step read "No style" and "Write 1 change"; down again read "Headline"
+  and "Write".
+- **Not done yet:** several values in one Write (built, not tried end to end); typing a number; dragging the words themselves; colour and case are still the old
   controls; the old card's tests still expect the old fields.
 
 ## Open gaps
