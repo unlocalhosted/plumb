@@ -18,7 +18,7 @@
  *             refresh reloads the page after a write, and blueprint, if it was on, comes back with it
  *  refused    words that can't be edited say why, beside the words, and where to change them by hand
  * ───────────────────────────────────────────────────────── */
-import { request, post, isStale } from './api.js';
+import { request, post } from './api.js';
 import { locate } from './locate.js';
 import { esc } from './choices.js';
 
@@ -244,7 +244,7 @@ export class TextEditor {
     } catch (error) {
       try { sessionStorage.removeItem(RESUME); } catch {}
       ed.node.data = ed.before;
-      const stale = isStale(error);
+      const stale = /changed since/i.test(error?.message ?? '');
       this.#say('error', stale ? 'This file changed after we checked it. Double-click to try again.' : (error?.message ?? 'Couldn’t apply the edit.'));
       setTimeout(() => this.#end(), 2400);
     }

@@ -41,7 +41,7 @@ export class Session extends EventEmitter {
           if (message.stats !== undefined) session.lastStats = message.stats;
           if (message.ready) { ready(); return; }
           const failure = (text: string): Error => {
-            const error = message.usageError ? new UsageError(text, message.code) : new Error(text);
+            const error = message.usageError ? new UsageError(text) : new Error(text);
             if (message.errorStack) error.stack = message.errorStack;
             return error;
           };

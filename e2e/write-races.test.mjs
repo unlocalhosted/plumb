@@ -82,8 +82,6 @@ test('a write carries an idempotency key: the same key again returns the first r
   // a different key is a new write: the hash moved on, so it is refused as stale rather than applied over the top
   const other = await swap(3, 'gap-2', 'gap-3', { hash: h0, key: key + '-2' });
   assert.equal(other.status, 400, JSON.stringify(other.body));
-  // the kind of refusal travels as a code, so a caller knows to read again without parsing the sentence
-  assert.equal(other.body.code, 'stale-file', JSON.stringify(other.body));
 });
 
 test('a dev server restart mid-request fails typed, and the server there next answers', { timeout: 60000 }, async t => {

@@ -11,7 +11,7 @@ import { causesOf } from '../causes.js';
 import { applyLedger } from '../ledger/check.js';
 import { inspectLedger } from '../ledger/commands.js';
 import { WarmState } from './state.js';
-import { errorMessage, UsageError, withCode } from '../errors.js';
+import { errorMessage, UsageError } from '../errors.js';
 import { performance } from 'node:perf_hooks';
 import { Focus } from './focus.js';
 import { readLedger } from '../ledger/store.js';
@@ -277,7 +277,7 @@ async function dispatch(method: string, params: Record<string, unknown>): Promis
         const view = await localReport(candidate.file);
         const source = await readFile(candidate.file, 'utf8');
         const hash = state.sourceHash(candidate.file) ?? sourceHash(source);
-        if (!hash || sourceHash(source) !== hash) throw new UsageError('The file changed since the overlay read it. Read it again.', 'stale-file');
+        if (!hash || sourceHash(source) !== hash) throw new UsageError('The file changed since the overlay read it. Read it again.');
         index(view, localReports.get(candidate.file) === view ? candidate.file : undefined);
         const at = { file: candidate.file, line: candidate.line, column: candidate.column,
           declarations: classDeclarations(view, candidate), findings: columnFindings.get(candidate.file)?.get(candidate.line)?.get(candidate.column) ?? [] };
@@ -362,7 +362,7 @@ parentPort!.on('message', ({ id, method, params }) => {
           [...new Set([...analysis.inputs, ...analysis.queryDependencies.flatMap(([, paths]) => paths as string[])])] } } : {}) });
       metadataDirty = false; metadataFull = false; queryChanges.clear();
     }
-    catch (error) { parentPort!.postMessage({ id, error: errorMessage(error), errorStack: error instanceof Error ? error.stack : undefined, usageError: error instanceof UsageError, ...withCode(error) }); }
+    catch (error) { parentPort!.postMessage({ id, error: errorMessage(error), errorStack: error instanceof Error ? error.stack : undefined, usageError: error instanceof UsageError }); }
   });
 });
 try {
@@ -371,4 +371,4 @@ try {
   index(await report());
   sharedInputs = new Set([...state.configurationFiles, ...state.compilerFiles, ...raw.decisions.map(d => d.source.file), ...raw.decisionInventory?.map(d => d.source.file) ?? []]);
   parentPort!.postMessage({ ready: true, health: await dispatch('health', {}), dependencies: dependencies(), patterns: [...state.patterns], files: sourceFiles(), configurationFiles: [...state.configurationFiles], ...queryInputs() });
-} catch (error) { parentPort!.postMessage({ startupError: errorMessage(error), errorStack: error instanceof Error ? error.stack : undefined, usageError: error instanceof UsageError, ...withCode(error) }); }
+} catch (error) { parentPort!.postMessage({ startupError: errorMessage(error), errorStack: error instanceof Error ? error.stack : undefined, usageError: error instanceof UsageError }); }

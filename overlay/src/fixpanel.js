@@ -31,7 +31,6 @@
 import { TextEditor, TEXT_EDITOR_CSS } from './texteditor.js';
 import { ElementCard, ELEMENT_CARD_CSS } from './elementcard.js';
 import { esc } from './choices.js';
-import { isStale } from './api.js';
 import { groundIsDark } from './geometry.js';
 import { FIX, CLEANUP, written } from './words.js'; // every sentence the panel says
 import { Cleanup, CLEANUP_CSS } from './cleanup.js'; // "Clean up this page": the passes, one at a time
@@ -681,7 +680,7 @@ export class FixPanel {
     const last = rest ?? this.#last;
     if ((rest ? !last?.undo?.length && !last?.group : !last?.undo?.length) || this.#undoing || this.#writing) return;
     this.#undoing = true; this.#html = ''; this.render();
-    let why = null, stale = false;
+    let why = null;
     // newest first; what is left is kept in the tab before each one, so an undo that reloads the page (a source file
     // the dev server can't hot-swap) goes on with the rest when the page is back
     // write handles only (a step rebuilt from the trace after a reload lists its changes, which undo-group takes back)
@@ -698,20 +697,20 @@ export class FixPanel {
       catch (error) {
         // a write the trace missed (it never fails the write) has only its handles: taken back as before
         if (!rest && /Nothing in that group/i.test(error?.message ?? '') && handles.length) byGroup = false;
-        else if (!rest) { why = error?.message ?? ''; stale = isStale(error); }
+        else if (!rest) why = error?.message ?? '';
       }
     }
     if (!byGroup) for (let i = 0; i < handles.length && !leaving; i++) {
       saveUndoing({ undo: handles.slice(i + 1), key: last.key ?? null });
       // carried on after a reload, a handle the page before already took back is passed over, not a failure
-      try { await this.#host.undo(handles[i]); } catch (error) { if (!rest) { why = error?.message ?? ''; stale = isStale(error); break; } }
+      try { await this.#host.undo(handles[i]); } catch (error) { if (!rest) { why = error?.message ?? ''; break; } }
     }
     removeEventListener('pagehide', leave);
     if (leaving) return; // the page is going: the reloaded one goes on with what's left
     saveUndoing(null);
     this.#undoing = false;
     // a step undone by its group is said by History's toast, which carries the Undo: the panel says nothing more
-    this.#last = why === null && byGroup ? null : { text: why === null ? FIX.undone : FIX.couldNotUndo(why, stale), undo: [] };
+    this.#last = why === null && byGroup ? null : { text: why === null ? FIX.undone : FIX.couldNotUndo(why), undo: [] };
     if (this.#last) this.#host.announce?.(this.#last.text);
     // the fix undone is offered again (the others written stay written)
     if (why === null && last.key) { this.#taken.delete(last.key); saveWritten(written_().filter((w) => w.key !== last.key)); }

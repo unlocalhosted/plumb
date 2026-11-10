@@ -73,7 +73,7 @@ async function apply(params, file) {
     const position = fixture.positions.find(position => position.stamp === node.getAttribute('data-plumb-source'));
     return position?.key === group.key && node.classList.contains(edit.from);
   }) }));
-  if (changes.some(change => !change.nodes.length)) return answer({ error: 'The demo element changed since Plumber read it. Read it again.', code: 'stale-text' }, 400);
+  if (changes.some(change => !change.nodes.length)) return answer({ error: 'The demo element changed since Plumber read it. Read it again.' }, 400);
   const replacements = selected.map(({ edit, group }) => ({ ...classRanges.get(group.key + ':' + edit.from), to: edit.to, from: edit.from }));
   if (replacements.some(edit => source.slice(edit.start, edit.end) !== edit.from)) return answer({ error: 'The file changed since the overlay read it. Read it again.' }, 400);
   for (const edit of replacements.sort((a, b) => b.start - a.start)) replaceSource(edit.start, edit.end, edit.to);
@@ -90,8 +90,7 @@ async function apply(params, file) {
 }
 
 async function applyText(params, file) {
-  // `code` is the kind of refusal the overlay acts on, as the real server sends it (src/errors.ts)
-  const refuse = (error, code) => answer({ error, ...(code ? { code } : {}) }, 400);
+  const refuse = error => answer({ error }, 400);
   if (typeof params.file !== 'string' || !params.file.trim() || typeof params.hash !== 'string' || !params.hash.trim() || typeof params.run !== 'string' || !params.run.trim() || typeof params.from !== 'string' || typeof params.to !== 'string') return refuse(textWriteErrors.parameters);
   if (!params.to.trim()) return refuse(textWriteErrors.empty);
   if (params.to.length > 500) return refuse(textWriteErrors.length);
@@ -109,7 +108,7 @@ async function applyText(params, file) {
   const hosts = [...document.querySelectorAll('[data-plumb-source]')].filter(node => node.getAttribute('data-plumb-source') === position.stamp);
   const targets = hosts.map(host => [...host.childNodes].filter(node => node.nodeType === Node.TEXT_NODE &&
     (run.domText !== undefined ? node.data === run.domText : run.literal ? node.data === run.text : node.data.trim() === run.text)));
-  if (!targets.length || targets.some(nodes => nodes.length !== 1)) return refuse('The demo element changed since Plumber read it. Read it again.', 'stale-text');
+  if (!targets.length || targets.some(nodes => nodes.length !== 1)) return refuse('The demo element changed since Plumber read it. Read it again.');
   const node = targets[0][0];
   const padding = run.domPadding ?? (run.literal ? ['', ''] : [node.data.match(/^\s*/)?.[0] || '', node.data.match(/\s*$/)?.[0] || '']);
   const start = run.literal?.start ?? run.start, end = run.literal?.end ?? run.end;

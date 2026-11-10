@@ -1,11 +1,11 @@
 import { parentPort, workerData } from 'node:worker_threads';
 import { Session } from './engine.js';
-import { errorMessage, UsageError, withCode } from '../errors.js';
+import { errorMessage, UsageError } from '../errors.js';
 import { isReadMethod } from './methods.js';
 
 interface Call { id: number; method: string; args: unknown[]; deadline: number; json?: boolean }
 const port = parentPort!;
-const errorDetails = (error: unknown) => ({ errorStack: error instanceof Error ? error.stack : undefined, usageError: error instanceof UsageError, ...withCode(error) });
+const errorDetails = (error: unknown) => ({ errorStack: error instanceof Error ? error.stack : undefined, usageError: error instanceof UsageError });
 const queue: Call[] = [];
 let running = false;
 const read = (call: Call) => isReadMethod(call.method);
