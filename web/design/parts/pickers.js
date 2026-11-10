@@ -172,8 +172,9 @@ export function mount(host, root, css) {
     .tcard .style .row.compact .val, .tcard .style .row.compact .drum { height: 40px; }
     .tcard .style .slot b { font: var(--pl-round-w, 600) 15px/1 var(--pl-round); }
     .tcard .style .slot.hard b { font-family: var(--pl-sans); font-size: 13px; }
-    .tcard .style .slot::before { content: 'Ag'; display: grid; place-items: center; flex: none; width: 34px; height: 30px; border-radius: 7px; background: var(--pl-paper); color: var(--pl-ink); font: var(--sw, 600) var(--ss, 15px)/1 system-ui, sans-serif; }
-    .tcard .style .slot.hard::before { color: var(--pl-coral); }
+    /* the style's sample belongs to each option, so the one leaving keeps its own size as the next rolls in */
+    .tcard .style .slot .smp { display: grid; place-items: center; flex: none; width: 34px; height: 30px; border-radius: 7px; background: var(--pl-paper); color: var(--pl-ink); font-family: system-ui, sans-serif; line-height: 1; font-style: normal; }
+    .tcard .style .slot.hard .smp { color: var(--pl-coral); }
     /* case: four buttons, each drawn as what it does */
     .seg { display: grid; grid-template-columns: repeat(4, 1fr); gap: 2px; padding: 2px; border-radius: 9px; background: var(--pl-paper-2); }
     .seg button { all: unset; display: grid; place-items: center; height: 26px; border-radius: 7px; cursor: pointer; font: 600 12.5px/1 system-ui, sans-serif; color: var(--pl-ink-2); transition: background-color 140ms var(--pl-ease-out), color 140ms; }
@@ -466,11 +467,12 @@ export function mount(host, root, css) {
     card.querySelector('.screens').addEventListener('click', (e) => { const b = e.target.closest('[data-screen]'); if (b) pickScreen(b.dataset.screen); });
 
     // the style: picking one sets the four; it is drawn as a sample of itself ('Ag' at its size and weight)
-    const style = field(styleBox, { name: 'Text style', toy: glyph('type'), options: STYLES,
+    // the style's own change never asks which style it matches (that check is for a change to one of the values)
+    const style = field(styleBox, { name: 'Text style', toy: glyph('type'), options: STYLES, changed: () => refresh(true),
       format: (o) => (o.hard ? 'hard-coded' : `${o.v} / ${o.lh}`),
       mark: (t) => `<i class="sty" style="font-size:${t.hard ? 13 : Math.round(11 + (t.v - 16) * 0.25)}px;font-weight:${t.fw || 600}">Ag</i>`,
+      lead: (o) => `<i class="smp" style="font-size:${o.hard ? 14 : Math.round(12 + (o.v - 16) * 0.15)}px;font-weight:${o.fw || 600}">Ag</i>`,
       apply: (o) => {
-        styleBox.style.setProperty('--ss', `${o.hard ? 14 : Math.round(12 + (o.v - 16) * 0.15)}px`); styleBox.style.setProperty('--sw', String(o.fw || 600));
         if (syncing || o.hard) return;
         syncing = true;
         for (const [p, opts, key] of parts()) if (!p.row.classList.contains('locked')) p.set(opts.findIndex((t) => !t.hard && t.v === o[key]));
@@ -478,8 +480,10 @@ export function mount(host, root, css) {
       } });
     // a change to one value: the style it now matches, or No style
     const match = () => {
-      const now = Object.fromEntries(parts().map(([p, opts, key]) => [key, opts[p.at()].hard ? null : opts[p.at()].v]));
-      const i = STYLES.findIndex((t) => !t.hard && ['v', 'lh', 'fw', 'ls'].every((k) => t[k] === now[k]));
+      // a locked value is outside this card's say, so it doesn't count against a style
+      const free = parts().filter(([p]) => !p.row.classList.contains('locked'));
+      const now = Object.fromEntries(free.map(([p, opts, key]) => [key, opts[p.at()].hard ? null : opts[p.at()].v]));
+      const i = STYLES.findIndex((t) => !t.hard && Object.keys(now).every((k) => t[k] === now[k]));
       syncing = true; style.set(i >= 0 ? i : STYLES.findIndex((t) => t.hard)); syncing = false;
     };
 
@@ -512,8 +516,8 @@ export function mount(host, root, css) {
     // the one button: how many changes there are to write, and writing them
     const pending = () => all.filter((p) => p !== style && p.ready()).length + Object.values(toggles).filter((t) => t.now !== t.was).length;
     const lb = () => go.querySelector('.lb');
-    function refresh() {
-      if (!syncing && all.includes(style)) match();
+    function refresh(fromStyle = false) {
+      if (!syncing && !fromStyle && all.includes(style)) match();
       const n = pending(), hard = all.some((p) => p !== style && !p.row.hidden && p.row.querySelector('.val.on-hard'));
       sizes.tablet.row.classList.toggle('inherited', !tabletOwn);
       note.textContent = screen === 'tablet' && !tabletOwn ? 'Tablet uses the phone size until you change it.' : 'Letter spacing is set by the Heading component’s props (Heading.tsx).';

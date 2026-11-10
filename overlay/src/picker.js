@@ -13,6 +13,7 @@
 //   place(row, list, o)   where the row and its list sit (a row inside a card can leave this out)
 //   handles   the element's own handles: [{ el, perPx(dx, dy), skip?() }]
 //   start     where it starts when nothing is hard-coded (an index); format(o) how a value reads (default: px)
+//   lead(o)   something drawn before the value, belonging to that option (a text style's sample), so it rolls with it
 //   into      where the row goes (default: the stage); keys: where its keys are heard ('row' for a row in a card of
 //             several); grab: where the grabbing cursor shows
 import { toyOf } from './toys.js';
@@ -126,7 +127,7 @@ const TICK = '<svg viewBox="0 0 16 16"><path d="M3.5 8.5l3 3 6-7" fill="none" st
 // ── one picker: the row beside the element (the property's icon, the value that rolls, the tick), its list, drag
 // mode and the keys. A property brings: its options, its icon, the mark each option gets in the list, what an
 // option does to the element, where the row sits, and the element's own handles ──
-export function picker(stage, { name, toy, options: S, mark, apply, place, handles = [], into = stage, keys = stage, grab = stage, start, format = (o) => px(o.v), compact = false, changed }) {
+export function picker(stage, { name, toy, options: S, mark, apply, place, handles = [], into = stage, keys = stage, grab = stage, start, format = (o) => px(o.v), compact = false, changed, lead }) {
   const last = S.length - 1, HARD = S.findIndex((o) => o.hard), FIRST = start ?? HARD;
   into.insertAdjacentHTML('beforeend', `
     <div class="row" role="group" aria-label="${name}">
@@ -145,9 +146,12 @@ export function picker(stage, { name, toy, options: S, mark, apply, place, handl
   if (compact) row.classList.add('compact');
 
   // the field: the option in hand. A change rolls it, in the direction of travel
-  const slotOf = (o) => { const el = document.createElement('span'); el.className = `slot${o.hard ? ' hard' : ''}`; el.innerHTML = `<b>${o.name}</b><span>${o.hard ? 'hard-coded' : format(o)}</span>`; return el; };
+  const slotOf = (o) => { const el = document.createElement('span'); el.className = `slot${o.hard ? ' hard' : ''}`; el.innerHTML = `${lead ? lead(o) : ''}<b>${o.name}</b><span>${o.hard ? 'hard-coded' : format(o)}</span>`; return el; };
   const roll = (from, to) => {
     const dir = Math.sign(to - from) || 1, next = slotOf(S[to]);
+    // a fast drag passes options quicker than they can leave: anything still on its way out goes at once, so the
+    // field never holds more than the one leaving and the one arriving
+    for (const g of drum.querySelectorAll('.slot.gone')) g.remove();
     for (const old of drum.querySelectorAll('.slot:not(.gone)')) {
       old.classList.add('gone');
       if (still()) { old.remove(); continue; }

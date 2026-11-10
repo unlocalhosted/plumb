@@ -521,6 +521,13 @@ race, built for the old in-place write) was rewritten for the new write path (`e
   the fill is clipped to its track; pulled past an end, the track gives with resistance up to the field's own edge
   and no further, and the grip at the fill's end squashes (shorter, wider) as it presses; it springs back on release.
   Measured: pulled far past the end, the track's edge stops at the field's edge (205.1 against 205.5).
+- **"the option feels like infinite rendering or some distortion when I move past one option to another"** (the text
+  style field): three causes. Letter spacing is locked, so a style that needs another letter spacing (display) never
+  "matched", and the check that finds the style for the current values reset the field to No style mid-drag; the
+  drag and the check fought, re-rolling the field again and again. The style's own change no longer runs that check,
+  and a locked value no longer counts against a style. The "Ag" sample read one shared size, so the option leaving
+  took the new size as it left; each option now carries its own sample. A fast drag piled up leaving values; now at
+  most one leaves while one arrives.
 - **A bug found while checking:** every standalone picker's value read "[object Object]px" since the picker learned
   other units; the default format now reads the option's value.
 
