@@ -35,9 +35,9 @@
   const kbd = (k) => `<kbd>${k}</kbd>`;
 
   // The bar: what is wrong (its family's glyph, the class, what it is and what it becomes), where you are, what you can do.
-  const bar = ({ family, cls, from, to, toHue = 'mint', places, at, act, extra = '' }) => `
+  const bar = ({ icon, cls, from, to, toHue = 'mint', places, at, act, extra = '' }) => `
     <div class="fb pl-card" role="toolbar" aria-label="The cause in hand">
-      <span class="what">${glyph(family)}<code>${cls}</code></span>
+      <span class="what"><i class="ic" aria-hidden="true">${BLOCK_ICONS[icon]}</i><code>${cls}</code></span>
       <span class="move"><span class="pl-pill" data-hue="coral">${from}</span><span class="to" aria-hidden="true">→</span><span class="pl-pill" data-hue="${toHue}">${to}</span></span>
       ${places ? `<span class="where">${places}</span>` : ''}
       ${extra}
@@ -55,6 +55,10 @@
 
   root.innerHTML = `<style>${tokens}${LANGUAGE_CSS}${PRIMITIVES_CSS}${GLYPH_CSS}
     :host { display: block; font-family: var(--pl-sans); color: var(--pl-ink); }
+    /* a trial for the dark scheme, in this comp only: the surfaces lifted from near-black (#1c1c1e) to a warm graphite,
+       with a lighter edge and a softer shadow, so a dark bar on a light page is not a black slab */
+    :host([data-scheme="dark"]) { --pl-paper: #2e2d2b; --pl-paper-2: #3a3936; --pl-rule: #4a4844; --pl-ink: #f4f3ef;
+      --pl-shadow-card: 0 0 0 1px var(--pl-rule), 0 1px 1px rgb(0 0 0 / 0.18), 0 14px 32px -14px rgb(0 0 0 / 0.45); }
     .scene { margin: 0 0 28px; }
     .scene h2 { margin: 0 0 2px; font: 600 14px/20px var(--pl-sans); }
     .scene .note { margin: 0 0 10px; font: 400 13px/19px var(--pl-sans); color: var(--pl-ink-2); max-width: 760px; }
@@ -81,7 +85,9 @@
     /* the bar */
     .fb { position: absolute; left: 50%; bottom: 16px; translate: -50% 0; display: flex; align-items: center; gap: 11px; height: 50px; padding: 0 8px 0 14px; border-radius: 25px; white-space: nowrap; }
     .fb .what { display: inline-flex; align-items: center; gap: 8px; }
-    .fb .what .g { width: 20px; height: 20px; color: var(--pl-pink-ink); }
+    /* the property's own icon, the one the box model and the chips use (boxmodel.js BLOCK_ICONS) */
+    .fb .what .ic { display: grid; place-items: center; width: 24px; height: 24px; border-radius: 7px; background: var(--pl-pink-soft); color: var(--pl-pink-ink); }
+    .fb .what .ic svg { width: 16px; height: 16px; display: block; }
     .fb code { font: 600 13px/1 var(--pl-mono); color: var(--pl-ink); }
     .fb .move { display: inline-flex; align-items: center; gap: 5px; }
     .fb .to { color: var(--pl-ink-3); font-size: 12px; }
@@ -96,14 +102,14 @@
   ${scene('1 · A step your scale has', 'The chip’s corner is 5px, between two of your steps. The steps appear at the chip itself; ↑ ↓ or a click moves between them and the page shows it. Enter writes it at all 16 places.',
     `<div class="page">${rowsOf(true)}</div>
      <div class="on" style="top: 74px; right: 30px;"><span class="ic" title="Corner">${BLOCK_ICONS.r}</span>${radius('Corner', s1)}<span class="keys">↑ ↓</span></div>`,
-    bar({ family: 'radius', cls: 'rounded-[5px]', from: '5px', to: 'tag · 6px', places: '16 places', at: 3, act: 'Use rounded-tag' }))}
+    bar({ icon: 'r', cls: 'rounded-[5px]', from: '5px', to: 'tag · 6px', places: '16 places', at: 3, act: 'Use rounded-tag' }))}
   ${scene('2 · A value your scale doesn’t have', '64px is past your largest step, so the fix is a new step. It is named where the steps are: the name is the only thing you type. Enter adds it to your theme.',
     `<div class="page">${rowsOf(false)}</div>
      <div class="on" style="top: 150px; left: 40px;"><span class="ic" title="Spacing">${BLOCK_ICONS.p}</span>${stepper('Spacing', s2)}<span class="name">--spacing-<b>gutter</b></span></div>`,
-    bar({ family: 'spacing', cls: 'bottom-[64px]', from: '64px', to: 'new · gutter', toHue: 'sky', places: '1 place', at: 32, act: 'Add to theme' }))}
+    bar({ icon: 'm', cls: 'bottom-[64px]', from: '64px', to: 'new · gutter', toHue: 'sky', places: '1 place', at: 32, act: 'Add to theme' }))}
   ${scene('3 · A place that isn’t on the page right now', 'The place is in a part the page shows only sometimes (a toast). There is no element to put the steps on, so they sit in the bar, with one tag saying why.',
     `<div class="page">${rowsOf(false)}</div>`,
-    bar({ family: 'spacing', cls: 'px-[7px]', from: '7px', to: 's2 · 8px', places: '', at: 41, act: 'Use px-s2',
+    bar({ icon: 'p', cls: 'px-[7px]', from: '7px', to: 's2 · 8px', places: '', at: 41, act: 'Use px-s2',
       extra: `<span class="pl-tag" data-hue="butter" title="In a part this page shows only sometimes. Fixing it still changes your code.">Not showing now</span><span class="inbar">${stepper('Spacing', s3)}</span>` }))}`;
 
   bind(root, {});
