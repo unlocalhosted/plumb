@@ -54,9 +54,14 @@
 - **The fix and the proof:** `overlay/src/ramp.js`, with a live page at `overlay/demo/ramp.html` (colour picker). crafting-ui's accent (Lc 77.9), its draw blue (85.7) and violet #7c3aed (82.8) are kept as chosen; teal #14b8a6 is darkened 70.4% → 66.4% lightness (Lc 53.4 → 60.1); yellow #facc15 from 86.1% to 68.1% (Lc 27.6 → 60.3).
 - **Media hooks:** docs/media/accent-ramps-2026-11-10.jpg, five ramps side by side.
 
+## Keep the brand, change the text (2026-11-10)
+- **The itch:** the ramp's guard darkened a yellow brand to mustard so white text could sit on it; the owner chose "dark text instead".
+- **What we chose:** the words on the accent are white when they read (APCA Lc 60), else the ramp's own darkest step, else a near-black of the same hue. Only mid-tones neither reads on move, the shorter way (lighter under dark text, darker under white).
+- **The fix and the proof:** yellow #facc15 and lime #84cc16 keep their colour with dark text (Lc 75.2, 61.6), where yellow moved 18 lightness points before. Mid-tones move at most 3.5 points: teal 70.4% → 73.9% and green 72.3% → 73.3% for dark text; sky 68.5% → 67% and orange 70.5% → 69.5% for white. crafting-ui's accent, its draw blue and violet are unchanged with white text. The ramp now also writes `--color-text-on-accent`.
+- **Media hooks:** docs/media/accent-ramps-dark-text-2026-11-10.jpg.
+
 ## Open gaps
 - Colour layer 5 (writing primitives, semantic tokens and a dark block) not built; the ramp is not offered anywhere in the product yet.
-- A light brand colour (yellow) is darkened to mustard to carry white text; the better answer for such brands may be dark text on the accent. Owner decision.
 - crafting-ui's draw blue is a wide-gamut (P3) colour; the ramp keeps it in sRGB, so its 500 loses a little chroma (0.289 → 0.278).
 - Token spec layers 2–6 not built; four owner decisions open (§6).
 - e2e/type-roles.test.mjs still expects the old Material names; rewrite when the owner calls for tests.

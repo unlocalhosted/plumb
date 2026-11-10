@@ -161,8 +161,10 @@ Fixed words. Plumber never invents a new state word.
 3. **Dark values may use alpha** over the canvas (`neutral-800 / 60%`) so layered surfaces stay distinct; plumber
    compares them composited over their ground, as it does today.
 4. **The accent is one input.** The person picks one colour; plumber puts it at 500 and derives the other ten stops
-   in OKLCH (same hue, lightness spread like the neutral ramp, chroma tapered at the ends). Guard: white text on
-   `accent-500` must pass APCA Lc 60 (body) or plumber darkens 500 before writing.
+   in OKLCH (same hue, lightness spread like Tailwind's ramps, chroma tapered at the ends). The words on it
+   (`text-on-accent`) must pass APCA Lc 60 (body). Keep the brand, change the text (owner, 2026-11-10): white when it
+   reads; else the ramp's own 950; else a near-black of the same hue. Only a mid-tone neither reads on (teal, sky,
+   orange, green) moves its lightness, the shorter way, and plumber says by how much.
 5. **Focus ring is its own token**, the same in both schemes unless the person changes it.
 6. **Contrast is checked, not trusted.** BoardUI states no contrast rule; ours stays: APCA for text against its
    ground, WCAG 3:1 for control borders (colour-system.md).

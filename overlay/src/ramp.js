@@ -6,9 +6,9 @@
  * colour's own hue, with chroma tapered toward both ends the same way. Every stop is kept inside sRGB by lowering its
  * chroma, never its lightness or hue.
  *
- * Guard: the accent carries white words (primary buttons), so white on 500 must reach APCA Lc 60 (body text). A colour
- * that misses is darkened in small lightness steps until it passes, and the ramp is built on the darkened colour; the
- * result says so (`adjusted`).
+ * Guard: the accent carries words (primary buttons), and they must reach APCA Lc 60 (body text) on 500. White when it
+ * reads; else the ramp's own 950, so a light brand keeps its colour; only when neither reads is the colour darkened in
+ * small lightness steps for white words, and the result says so (`adjusted`).
  * ───────────────────────────────────────────────────────── */
 
 import { apca } from './craft-rules.js';
@@ -58,7 +58,6 @@ export function parse(colour) {
   return toOklch([n >> 16, (n >> 8) & 255, n & 255]);
 }
 
-const lcWhiteOn = (base) => Math.abs(apca([255, 255, 255], rgbOf(fit(base)).map(clamp8)));
 
 function build(base) {
   const out = {};
@@ -74,18 +73,34 @@ function build(base) {
   return out;
 }
 
+const lcOn = (text, base) => Math.abs(apca(text, rgbOf(fit(base)).map(clamp8)));
+
 /**
- * The accent ramp for one chosen colour.
- * → { stops: { 50: { l, c, h, css, hex }, … }, lc: |APCA| of white on 500, adjusted: null | { from, to, lcBefore } }
+ * The accent ramp for one chosen colour, and the words that sit on it (owner, 2026-11-10: keep the brand, change the text).
+ * White words when they reach Lc 60 on the colour; else the ramp's own 950, else a near-black of the same hue, so a
+ * light brand (yellow, lime) keeps its colour. A mid-tone neither reads on (teal, sky, orange) moves the shorter way: lighter
+ * under the near-black, or darker under white.
+ * → { stops: { 50: { l, c, h, css, hex }, … }, onAccent: { text: 'white' | 'dark', css, hex }, lc: |APCA| of those words
+ *   on 500, adjusted: null | { from, to, lcBefore } }
  */
 export function rampOf(colour) {
   const chosen = fit(parse(colour));
-  let base = chosen;
-  const lcBefore = lcWhiteOn(chosen);
-  while (lcWhiteOn(base) < MIN_LC && base.l > BOTTOM + 0.05) base = fit({ ...base, l: base.l - 0.005, c: chosen.c });
-  const stops = build(base);
-  return { stops, lc: Math.round(lcWhiteOn(base) * 10) / 10, adjusted: base === chosen ? null : { from: cssOf(chosen), to: cssOf(base), lcBefore: Math.round(lcBefore * 10) / 10 } };
+  const white = { text: 'white', css: '#fff', hex: '#ffffff', rgb: [255, 255, 255] };
+  if (lcOn(white.rgb, chosen) >= MIN_LC) return done(build(chosen), white, chosen, null);
+  const stops = build(chosen), dark = stops[950], darkRgb = rgbOf(dark).map(clamp8);
+  if (lcOn(darkRgb, chosen) >= MIN_LC) return done(stops, { text: 'dark', css: dark.css, hex: dark.hex, rgb: darkRgb }, chosen, null);
+  // the ramp's 950 not dark enough on a mid-tone colour: a near-black of the same hue
+  const ink = fit({ l: 0.18, c: Math.min(chosen.c * 0.25, 0.03), h: chosen.h }), inkRgb = rgbOf(ink).map(clamp8);
+  if (lcOn(inkRgb, chosen) >= MIN_LC) return done(stops, { text: 'dark', css: cssOf(ink), hex: hexOf(inkRgb), rgb: inkRgb }, chosen, null);
+  // neither reads (a mid-tone): move the colour the shorter way, lighter under the near-black or darker under white, and
+  // say so; the brand moves as little as it can
+  const shift = (text, dir) => { let b = chosen, n = 0; while (lcOn(text, b) < MIN_LC && n < 120) { b = fit({ ...b, l: b.l + dir * 0.005, c: chosen.c }); n++; } return { b, n }; };
+  const up = shift(inkRgb, +1), down = shift(white.rgb, -1);
+  const lcBefore = Math.round(Math.max(lcOn(white.rgb, chosen), lcOn(inkRgb, chosen)) * 10) / 10;
+  if (up.n <= down.n) { const ink2 = fit({ ...ink }); return done(build(up.b), { text: 'dark', css: cssOf(ink2), hex: hexOf(inkRgb), rgb: inkRgb }, up.b, { from: cssOf(chosen), to: cssOf(up.b), lcBefore }); }
+  return done(build(down.b), white, down.b, { from: cssOf(chosen), to: cssOf(down.b), lcBefore });
 }
+const done = (stops, on, base, adjusted) => ({ stops, onAccent: { text: on.text, css: on.css, hex: on.hex }, lc: Math.round(lcOn(on.rgb, base) * 10) / 10, adjusted });
 
-/** The ramp as CSS custom properties: `--color-accent-50: oklch(…);` one per line. */
-export const rampCss = (ramp, name = 'accent') => STOPS.map((s) => `--color-${name}-${s}: ${ramp.stops[s].css};`).join('\n');
+/** The ramp as CSS custom properties, `--color-accent-50: oklch(…);` one per line, and the words on it. */
+export const rampCss = (ramp, name = 'accent') => [...STOPS.map((s) => `--color-${name}-${s}: ${ramp.stops[s].css};`), `--color-text-on-${name}: ${ramp.onAccent.css};`].join('\n');
