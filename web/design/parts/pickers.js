@@ -10,11 +10,12 @@
 import { LANGUAGE_CSS } from '../../../overlay/src/language.js';
 import { TOY_DEFS, toyOf } from '../../../overlay/src/toys.js';
 
-const RADIUS = { hard: 5, tokens: [{ name: 'none', v: 0 }, { name: 'tag', v: 6 }, { name: 'control', v: 8 }, { name: 'card', v: 12 }, { name: 'full', v: 999 }] };
+// the options in order of size; the hard-coded value sits among them where it falls, so you can drag back to it
+const RADIUS = [{ name: 'none', v: 0 }, { name: '5px', v: 5, hard: true }, { name: 'tag', v: 6 }, { name: 'control', v: 8 }, { name: 'card', v: 12 }, { name: 'full', v: 999 }];
 
 export function mount(host, root, css) {
   const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const px = (v) => (v >= 999 ? 'full' : `${v}px`);
+  const px = (v) => `${v}px`;
 
   root.innerHTML = `<style>${css}${LANGUAGE_CSS}
     :host { display: block; font-family: var(--pl-sans); color: var(--pl-ink); }
@@ -74,13 +75,40 @@ export function mount(host, root, css) {
     .list .hard .c { border-color: var(--pl-coral); border-style: dashed; }
     .list hr { margin: 4px 6px; border: 0; border-top: 1px solid var(--pl-rule); }
 
+
+    /* ── the value as a reel: the options stacked in order, the field a window onto one of them. At rest only the
+       one in the window shows; a step rolls the reel. Dragging opens the window up and down, so the neighbours
+       show above and below, fading with distance, and the reel follows the pointer ── */
+    .row .val { position: relative; padding: 0 6px 0 8px; }
+    .drum { position: relative; display: block; width: 112px; height: 28px; overflow: hidden; }
+    .reel { position: absolute; left: 0; right: 0; top: 0; will-change: transform; transition: transform 340ms var(--pl-spring-pop); }
+    .reel .it { display: flex; align-items: center; gap: 6px; height: 28px; transition: opacity 200ms var(--pl-ease-out); }
+    .reel .it b { font: 600 13px/1 var(--pl-sans); color: var(--pl-ink); }
+    .reel .it span { font: 500 12px/1 var(--pl-mono); color: var(--pl-ink-3); }
+    .reel .it.hard b, .reel .it.hard span { color: var(--pl-coral); }
+    .row.dragging, .row.dragging .val { overflow: visible; }
+    .row.dragging .drum { overflow: visible; }
+    .row.dragging .val { background: var(--pl-paper-2); cursor: grabbing; }
+    .row.dragging .reel { transition: none; }
+    .row.settling .drum { overflow: visible; }
+    /* the window: two hairlines that hold the one in hand while the reel is open */
+    .drum::before, .drum::after { content: ''; position: absolute; left: -8px; right: -6px; height: 1px; background: var(--pl-rule); opacity: 0; transition: opacity 160ms var(--pl-ease-out); }
+    .drum::before { top: -1px; } .drum::after { bottom: -1px; }
+    .row.dragging .drum::before, .row.dragging .drum::after { opacity: 1; }
+    /* a paper behind the open reel, so its neighbours read over the page */
+    .row .sheet { position: absolute; left: 32px; width: 130px; top: 50%; height: 28px; translate: 0 -50%; border-radius: 12px; background: var(--pl-paper); box-shadow: var(--pl-shadow-card); opacity: 0; pointer-events: none; z-index: -1;
+      transition: height 300ms var(--pl-spring-pop), opacity 160ms var(--pl-ease-out); }
+    .row.dragging .sheet { height: 156px; opacity: 1; }
+    .row .val.bump { animation: bump 180ms var(--pl-ease-out); }
+    @keyframes bump { 40% { scale: 1.05; } }
+    body.grabbing, :host(.grabbing) { cursor: grabbing; }
     .hint { position: absolute; left: 0; right: 0; bottom: 14px; text-align: center; font: 500 12.5px/1 var(--pl-sans); color: var(--pl-ink-3); }
     .hint kbd { font: 600 11px/1 var(--pl-mono); padding: 2px 5px; border-radius: 5px; background: var(--pl-paper); box-shadow: 0 1px 0 var(--pl-rule); }
     @media (prefers-reduced-motion: reduce) { .handle { transition: none; } }
   </style>${TOY_DEFS}
   <section class="scene" id="radius">
     <h2>Border radius</h2>
-    <p>The “Popular” badge has a hard-coded 5px. Drag the dot on its corner, drag the icon left or right, or open the value to pick a token by name. It snaps to your tokens and the badge follows. Enter writes it; Esc puts it back.</p>
+    <p>The “Popular” badge has a hard-coded 5px. Press on the value and drag up or down (anywhere on the screen): the options roll past in the field and the badge follows. The dot on the badge’s corner and the icon drag the same way. A click on the value opens the list instead. Enter writes it; Esc puts it back.</p>
     <div class="stage" tabindex="0">
       <div class="app">
         <div class="top"><h3>Pro</h3><span class="badge held">Popular</span></div>
@@ -91,68 +119,95 @@ export function mount(host, root, css) {
       <i class="handle" role="presentation"></i>
       <div class="row" role="group" aria-label="Border radius">
         <span class="scrub" title="Drag to change">${toyOf('corner')}</span>
-        <button type="button" class="val" aria-haspopup="listbox" aria-expanded="false"></button>
+        <i class="sheet" aria-hidden="true"></i>
+        <button type="button" class="val" aria-haspopup="listbox" aria-expanded="false"><span class="drum"><span class="reel"></span></span><i class="car"></i></button>
         <button type="button" class="ok" aria-label="Write it"><svg viewBox="0 0 16 16"><path d="M3.5 8.5l3 3 6-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
       </div>
       <div class="list" role="listbox" aria-label="Your radius tokens" hidden></div>
-      <p class="hint"><kbd>←</kbd> <kbd>→</kbd> step through tokens · <kbd>↵</kbd> write · <kbd>Esc</kbd> put back</p>
+      <p class="hint">drag the value up or down · <kbd>↑</kbd> <kbd>↓</kbd> step · <kbd>↵</kbd> write · <kbd>Esc</kbd> put back</p>
     </div>
   </section>`;
 
   // ── border radius ──
   const sc = root.querySelector('#radius'), stage = sc.querySelector('.stage');
   const badge = stage.querySelector('.badge'), handle = stage.querySelector('.handle'), row = stage.querySelector('.row'), val = row.querySelector('.val'), ok = row.querySelector('.ok'), list = stage.querySelector('.list');
-  const T = RADIUS.tokens;
-  // where it is: -1 is the hard-coded value, otherwise a token
-  let at = -1, written = false;
-  const value = () => (at < 0 ? RADIUS.hard : T[at].v);
+  const reel = row.querySelector('.reel'), scrub = row.querySelector('.scrub');
+  const S = RADIUS, H = 28, last = S.length - 1, HARD = S.findIndex((o) => o.hard);
+  reel.innerHTML = S.map((o) => `<span class="it${o.hard ? ' hard' : ''}"><b>${o.name}</b><span>${o.hard ? 'hard-coded' : px(o.v)}</span></span>`).join('');
+  const items = [...reel.children];
+  // where it is: an index into S; while dragging, `pos` is the reel's continuous position
+  let at = HARD, pos = HARD, written = false, dragging = false;
   const shown = (v) => Math.min(v, badge.offsetHeight / 2);
   const place = () => {
     const s = stage.getBoundingClientRect(), b = badge.getBoundingClientRect(), card = badge.closest('.app').getBoundingClientRect();
-    const r = shown(value()), inset = r * (1 - Math.SQRT1_2);
+    const inset = shown(S[at].v) * (1 - Math.SQRT1_2);
     handle.style.left = `${b.left - s.left + inset}px`; handle.style.top = `${b.top - s.top + inset}px`;
     row.style.left = `${card.right - s.left + 14}px`; row.style.top = `${b.top - s.top + b.height / 2 - 17}px`;
     list.style.left = row.style.left; list.style.top = `${b.top - s.top + b.height / 2 + 22}px`;
   };
+  // the reel at a position: open while dragging (neighbours fade with distance), shut at rest
+  const roll = (p, blur = 0) => {
+    reel.style.transform = `translateY(${-p * H}px)`;
+    reel.style.filter = blur > 0.2 ? `blur(${blur.toFixed(2)}px)` : '';
+    items.forEach((el, i) => { el.style.opacity = dragging ? String(Math.max(0, 1 - Math.abs(i - p) * 0.4)) : ''; });
+  };
   const draw = () => {
-    badge.style.setProperty('--r', `${value()}px`);
-    badge.classList.toggle('on-token', at >= 0); handle.classList.toggle('on-token', at >= 0);
-    val.classList.toggle('hard', at < 0);
-    val.innerHTML = at < 0 ? `<b>${RADIUS.hard}px</b><span>hard-coded</span><i class="car"></i>` : `<b>${T[at].name}</b><span>${px(T[at].v)}</span><i class="car"></i>`;
-    if (at >= 0 && !written) ok.setAttribute('data-ready', ''); else ok.removeAttribute('data-ready');
-    list.innerHTML = `<button type="button" role="option" class="hard" data-at="-1" aria-selected="${at < 0}"><i class="c"></i>${RADIUS.hard}px<span>hard-coded</span></button><hr>`
-      + T.map((t, i) => `<button type="button" role="option" data-at="${i}" aria-selected="${at === i}"><i class="c" style="border-top-left-radius:${Math.min(t.v, 16)}px"></i>${t.name}<span>${px(t.v)}</span></button>`).join('');
+    const o = S[at], token = !o.hard;
+    badge.style.setProperty('--r', `${o.v}px`);
+    badge.classList.toggle('on-token', token); handle.classList.toggle('on-token', token);
+    if (token && !written) ok.setAttribute('data-ready', ''); else ok.removeAttribute('data-ready');
+    list.innerHTML = S.map((t, i) => `<button type="button" role="option" class="${t.hard ? 'hard' : ''}" data-at="${i}" aria-selected="${at === i}"><i class="c" style="border-top-left-radius:${Math.min(t.v, 16)}px"></i>${t.name}<span>${t.hard ? 'hard-coded' : px(t.v)}</span></button>`).join('');
+    val.setAttribute('aria-label', `Border radius: ${o.hard ? '5px, hard-coded' : `${o.name}, ${px(o.v)}`}`);
     requestAnimationFrame(place);
   };
-  const go = (n) => { if (written) return; at = Math.max(-1, Math.min(T.length - 1, n)); draw(); };
-  // the token nearest to a radius: the hard-coded value is a stop too, so you can drag back to it
-  const nearest = (v) => {
-    const stops = [{ at: -1, v: RADIUS.hard }, ...T.map((t, i) => ({ at: i, v: Math.min(t.v, badge.offsetHeight / 2) }))];
-    return stops.reduce((a, b) => (Math.abs(b.v - v) < Math.abs(a.v - v) ? b : a)).at;
+  // a new option in hand: the badge takes it, the field gives a small bump you can feel
+  const land = (n) => {
+    if (n === at) return;
+    at = n; draw();
+    val.classList.remove('bump'); void val.offsetWidth; val.classList.add('bump');
   };
-  const write = () => { if (written || at < 0) return; written = true; badge.classList.add('written'); row.classList.add('written'); list.hidden = true; draw(); };
-  const putBack = () => { written = false; badge.classList.remove('written'); row.classList.remove('written'); list.hidden = true; at = -1; draw(); };
+  const go = (n) => { if (written) return; const k = Math.max(0, Math.min(last, n)); pos = k; land(k); roll(k); };
+  const write = () => { if (written || S[at].hard) return; written = true; badge.classList.add('written'); row.classList.add('written'); list.hidden = true; draw(); };
+  const putBack = () => { written = false; badge.classList.remove('written'); row.classList.remove('written'); list.hidden = true; go(HARD); };
 
-  // the handle: dragging in from the corner makes the radius bigger
-  handle.addEventListener('pointerdown', (e) => {
+  // ── drag mode: press and move, anywhere on the screen. Up (or right) is bigger. Past either end it gives a little
+  // and springs back. Let go and the reel settles on the nearest option ──
+  const drag = (el, e, perPx) => {
     if (written) return;
-    e.preventDefault(); handle.setPointerCapture(e.pointerId); handle.classList.add('dragging');
-    const b = badge.getBoundingClientRect();
-    const move = (m) => { const d = Math.max(0, ((m.clientX - b.left) + (m.clientY - b.top)) / 2) / (1 - Math.SQRT1_2); const n = nearest(d); if (n !== at) { at = n; draw(); } };
-    const up = () => { handle.classList.remove('dragging'); handle.removeEventListener('pointermove', move); handle.removeEventListener('pointerup', up); requestAnimationFrame(place); };
-    handle.addEventListener('pointermove', move); handle.addEventListener('pointerup', up);
-  });
-  // the icon: drag left or right to step, like a visual editor's scrubbable label
-  const scrub = row.querySelector('.scrub');
-  scrub.addEventListener('pointerdown', (e) => {
-    if (written) return;
-    e.preventDefault(); scrub.setPointerCapture(e.pointerId);
-    const x0 = e.clientX, from = at;
-    const move = (m) => go(from + Math.round((m.clientX - x0) / 18));
-    const up = () => { scrub.removeEventListener('pointermove', move); scrub.removeEventListener('pointerup', up); };
-    scrub.addEventListener('pointermove', move); scrub.addEventListener('pointerup', up);
-  });
-  val.addEventListener('click', () => { if (written) return; list.hidden = !list.hidden; val.setAttribute('aria-expanded', String(!list.hidden)); });
+    try { el.setPointerCapture(e.pointerId); } catch {}
+    const x0 = e.clientX, y0 = e.clientY, from = at;
+    let moved = false, prev = pos, t0 = performance.now();
+    const move = (m) => {
+      const d = perPx(m.clientX - x0, m.clientY - y0);
+      if (!moved && Math.abs(m.clientX - x0) + Math.abs(m.clientY - y0) < 4) return;
+      if (!moved) { moved = true; dragging = true; list.hidden = true; row.classList.add('dragging'); host.classList.add('grabbing'); }
+      const raw = from + d;
+      const over = raw < 0 ? raw : raw > last ? raw - last : 0;
+      pos = over ? (over < 0 ? 0 : last) + Math.sign(over) * Math.min(0.55, Math.abs(over) * 0.35) : raw;
+      const now = performance.now(), speed = Math.abs(pos - prev) / Math.max(8, now - t0) * 16;
+      prev = pos; t0 = now;
+      roll(pos, Math.min(2.4, speed * 3));
+      land(Math.max(0, Math.min(last, Math.round(pos))));
+    };
+    const up = () => {
+      el.removeEventListener('pointermove', move); el.removeEventListener('pointerup', up); el.removeEventListener('pointercancel', up);
+      host.classList.remove('grabbing');
+      if (!moved) { if (el === val) { list.hidden = !list.hidden; val.setAttribute('aria-expanded', String(!list.hidden)); } return; }
+      dragging = false; pos = at;
+      row.classList.remove('dragging'); row.classList.add('settling');
+      roll(at);
+      setTimeout(() => row.classList.remove('settling'), 340);
+    };
+    el.addEventListener('pointermove', move); el.addEventListener('pointerup', up); el.addEventListener('pointercancel', up);
+  };
+  const STEP = 26;
+  val.addEventListener('pointerdown', (e) => { if (e.button === 0) { e.preventDefault(); drag(val, e, (dx, dy) => (dx - dy) / STEP); } });
+  scrub.addEventListener('pointerdown', (e) => { e.preventDefault(); drag(scrub, e, (dx, dy) => (dx - dy) / STEP); });
+  // the dot on the corner: pulling it in along the diagonal rounds the corner more
+  handle.addEventListener('pointerdown', (e) => { e.preventDefault(); handle.classList.add('dragging'); drag(handle, e, (dx, dy) => (dx + dy) / 2 / 14); });
+  handle.addEventListener('pointerup', () => { handle.classList.remove('dragging'); requestAnimationFrame(place); });
+  // a keyboard press on the value still opens the list
+  val.addEventListener('click', (e) => { if (e.detail === 0 && !written) { list.hidden = !list.hidden; val.setAttribute('aria-expanded', String(!list.hidden)); } });
   list.addEventListener('click', (e) => { const o = e.target.closest('[data-at]'); if (!o) return; go(Number(o.dataset.at)); list.hidden = true; val.setAttribute('aria-expanded', 'false'); });
   ok.addEventListener('click', () => (written ? putBack() : write()));
   stage.addEventListener('keydown', (e) => {
@@ -162,6 +217,6 @@ export function mount(host, root, css) {
     else if (e.key === 'Escape') { e.preventDefault(); putBack(); }
   });
   new ResizeObserver(place).observe(stage);
-  if (still) handle.style.transition = 'none';
-  draw();
+  if (still) { handle.style.transition = 'none'; reel.style.transition = 'none'; }
+  roll(at); draw();
 }

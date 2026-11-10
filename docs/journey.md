@@ -374,6 +374,11 @@ race, built for the old in-place write) was rewritten for the new write path (`e
   tokens. Border radius first, on a pricing card's "Popular" badge: a handle on the badge's corner, a one-line row
   beside the card (the radius icon you can drag to scrub, the value as a token name you can open as a list, a tick
   to write it). On the design site's new Token pickers page.
+- **Drag mode (after the owner's reference clip, see references):** the value is a reel of the options in order of
+  size, your hard-coded 5px among them. A click opens the list; press and drag (anywhere on screen) and the reel
+  opens, the options roll past in the field, neighbours fade above and below, a small bump on each new option, a
+  blur at speed, a little give past either end, and it settles on the nearest option when let go. The corner dot
+  and the icon drag the same reel.
 
 ## Open gaps
 - The contrast check knows colours, not sizes or weights, and is not run by CI yet.

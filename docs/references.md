@@ -38,3 +38,17 @@ Everything shared or found as a reference for React Plumber: what it is, why, wh
   Nunito are gone from the site.
 - **Where it was used:** `web/app/layout.jsx`; journey, Chapter 3, entry 9.
 
+## 2026-11-10 · A drag slider with a rolling number · shared by the owner
+
+- **What:** a short clip of a pill slider ("2 days" … "7 days"): a dark fill stretches as you drag, the number in it
+  rolls with a blur as it changes, the drag keeps working with the pointer well below the control, and the fill
+  gives a little past the end. `~/Downloads/twitter_media_harvest/nitishkmrk-2119695845679665608-01.mp4`
+  (https://x.com/nitishkmrk/status/2119695845679665608).
+- **Why they shared it:** "the drag control should allow me to drag all over, and the drag should feel like an
+  interface in itself, it should give me feedback and change values like a slider." Then: keep the dropdown, but
+  dragging gets "a drag mode", "going across the value in a vertical manner... rolling updates in the field... going
+  up and down across the options".
+- **What it changed here:** the token picker's value became a reel: press and drag anywhere, the options roll past
+  in the field with a blur at speed, neighbours open above and below, it gives past either end and settles on
+  release. Journey, Chapter 3, entry 11.
+
