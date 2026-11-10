@@ -67,6 +67,15 @@ export class Claims {
     this.#held.get(el).add(prop);
     show(el, prop, entry);
   }
+  /** End this part's claim on one property of one element. */
+  unset(el, prop) {
+    const props = this.#held.get(el), entry = props?.has(prop) ? entryOf(el, prop, false) : null;
+    if (!entry) return;
+    entry.slots[this.#level] = undefined;
+    show(el, prop, entry);
+    props.delete(prop);
+    if (!props.size) this.#held.delete(el);
+  }
   /** End this part's claims on one element, or on all of them. */
   clear(el) {
     for (const [held, props] of el ? [[el, this.#held.get(el) ?? []]] : this.#held) {

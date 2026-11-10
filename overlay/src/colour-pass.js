@@ -19,6 +19,7 @@ import { request } from './api.js';
 import { classEditsOf } from './locate.js';
 import { ease } from './show.js';
 import { loadPalette, paletteOf, proposeColours, readColours } from './colours.js';
+import { Claims, LEVEL } from './claims.js';
 
 const PROP = { text: 'color', bg: 'background-color', border: 'border-color' };
 const ORDER = { text: 0, bg: 1, border: 2 };
@@ -29,7 +30,7 @@ const short = (cls) => (cls ?? '').replace(/^(text|bg|border)-/, '').replace(/^\
 const mostOf = (vs) => vs.sort((a, b) => vs.filter((v) => v === b).length - vs.filter((v) => v === a).length)[0];
 
 export class ColourPass {
-  #writes = []; #held = new Map(); #timers = []; // el → { prop: [value, priority] } as the page had it
+  #writes = []; #claims = new Claims(LEVEL.cleanup); #timers = []; // el → { prop: [value, priority] } as the page had it
   page = null; // { writes, places, before, after, site, refused, content }
 
   async read() {
@@ -89,20 +90,13 @@ export class ColourPass {
     }
   }
   #set(el, prop, value, animate) {
-    if (!this.#held.has(el)) this.#held.set(el, {});
-    const was = this.#held.get(el);
-    if (!(prop in was)) was[prop] = [el.style.getPropertyValue(prop), el.style.getPropertyPriority(prop)];
-    const set = () => el.style.setProperty(prop, value, 'important');
+    const set = () => this.#claims.set(el, prop, value);
     if (animate) ease(el, set, { props: [prop] }); else set();
   }
   clear() {
     for (const t of this.#timers) clearTimeout(t);
     this.#timers = [];
-    for (const [el, was] of this.#held) {
-      for (const [prop, [v, pr]] of Object.entries(was)) { if (v) el.style.setProperty(prop, v, pr); else el.style.removeProperty(prop); }
-      if (!el.getAttribute('style')?.trim()) el.removeAttribute('style');
-    }
-    this.#held.clear();
+    this.#claims.clear();
   }
 
   // the swaps for apply-all, one guarded write per file; a class that can't be reached is left as is with its reason

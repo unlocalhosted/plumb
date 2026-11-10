@@ -15,6 +15,7 @@ import { classEditsOf } from './locate.js';
 import { esc } from './choices.js';
 import { FIX } from './words.js';
 import { tidy, levelsOf } from './hierarchy.js';
+import { Claims, LEVEL } from './claims.js';
 
 const W = FIX.card.tidy;
 const WEIGHT = { 100: 'thin', 200: 'extralight', 300: 'light', 400: 'normal', 500: 'medium', 600: 'semibold', 700: 'bold', 800: 'extrabold', 900: 'black' };
@@ -47,7 +48,7 @@ const named = (el) => { const t = [...el.childNodes].filter((n) => n.nodeType ==
 
 // host: { target(), props() → the element's props (its steps), name(el) }
 export class Tidy {
-  #host; #changes = []; #shown = new Map(); #before = false;
+  #host; #changes = []; #claims = new Claims(LEVEL.card); #before = false;
   constructor(host) { this.#host = host; }
   // a card with text levels in it: something tidy can read
   static offered(el) { try { return levelsOf(el).length >= 2; } catch { return false; } }
@@ -123,14 +124,11 @@ export class Tidy {
     this.#unshow();
     if (this.#before) return;
     for (const c of this.#changes) for (const k of c.els ?? [c.el]) for (const [p, v] of Object.entries(PREVIEW[c.prop](+c.to, c))) {
-      let m = this.#shown.get(k); if (!m) this.#shown.set(k, (m = new Map()));
-      if (!m.has(p)) m.set(p, [k.style.getPropertyValue(p), k.style.getPropertyPriority(p)]);
-      k.style.setProperty(p, v, 'important');
+      this.#claims.set(k, p, v);
     }
   }
   #unshow() {
-    for (const [el, m] of this.#shown) for (const [p, [v, pr]] of m) { if (v) el.style.setProperty(p, v, pr); else el.style.removeProperty(p); }
-    this.#shown.clear();
+    this.#claims.clear();
   }
   hold(on) { if (on === this.#before) return; this.#before = on; this.#show(); }
   lift() { this.#unshow(); }

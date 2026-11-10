@@ -38,6 +38,7 @@ import { Cleanup, CLEANUP_CSS } from './cleanup.js'; // "Clean up this page": th
 import { groupsOf, isNote } from './blueprint-panel.js';
 import { Scope } from './scope.js';
 import { glide } from './inplace.js'; // the text styles the code is reaching for
+import { Claims, LEVEL } from './claims.js';
 
 const TIMING = { open: 260, next: 180, click: 60, clickGap: 45, breath: 480, check: 600, fold: 2300 };
 const CLICK = { drop: 3, over: -1, ms: 420 };
@@ -829,19 +830,16 @@ export class FixPanel {
   // a token's preview: the value it would set, on every place, as inline styles the panel owns. A suggestion's `sets`
   // are px for the element its finding is on (a line height is 1.5 × that element's size), so each place is previewed
   // with its own finding's values when it offers the same fix, and a number is written as px (inplace.js does the same)
-  #tokenPreview = new Map(); // el → [[prop, value, priority]]
+  #tokenPreview = new Claims(LEVEL.fix); // a new token tried at its places; claims.js keeps what the page had
   #previewToken(g, suggest) {
     if (this.#tokenPreview.size) return;
     const own = new Map(g.members.map((m) => { const s = m.mark?.craft?.suggest; return [m.el, s?.to === suggest.to && s?.sets ? s.sets : null]; }));
     for (const el of elsOf(g)) {
-      const had = [];
-      for (const [k, v] of Object.entries(own.get(el) ?? suggest.sets ?? {})) { const prop = k.replace(/[A-Z]/g, (m) => '-' + m.toLowerCase()); had.push([prop, el.style.getPropertyValue(prop), el.style.getPropertyPriority(prop)]); el.style.setProperty(prop, typeof v === 'number' ? `${v}px` : String(v), 'important'); }
-      this.#tokenPreview.set(el, had);
+      for (const [k, v] of Object.entries(own.get(el) ?? suggest.sets ?? {})) { const prop = k.replace(/[A-Z]/g, (m) => '-' + m.toLowerCase()); this.#tokenPreview.set(el, prop, typeof v === 'number' ? `${v}px` : v); }
     }
   }
   #unpreviewToken(g) {
     if (this.#tokens.has(g.key)) return; // taken: it stays until it is written
-    for (const [el, had] of this.#tokenPreview) for (const [p, v, pr] of had) { if (v) el.style.setProperty(p, v, pr); else el.style.removeProperty(p); }
     this.#tokenPreview.clear();
   }
 

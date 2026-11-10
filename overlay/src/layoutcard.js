@@ -22,6 +22,7 @@
 import { esc } from './choices.js';
 import { FIX } from './words.js';
 import { clearOf } from './geometry.js';
+import { Claims, LEVEL } from './claims.js';
 
 const W = FIX.card;
 const STILL = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -136,19 +137,13 @@ export function fitCopy(copy, el) {
 }
 // inline values put on an element and taken off exactly
 class Inline {
-  #had = new Map(); // el → Map(prop → [value, priority])
+  #claims; // claims.js keeps what the page had
+  constructor(level) { this.#claims = new Claims(level); }
   set(el, props) {
-    let m = this.#had.get(el); if (!m) this.#had.set(el, (m = new Map()));
-    for (const [p, v] of Object.entries(props)) {
-      if (!m.has(p)) m.set(p, [el.style.getPropertyValue(p), el.style.getPropertyPriority(p)]);
-      if (v === null) { const [was, pr] = m.get(p); if (was) el.style.setProperty(p, was, pr); else el.style.removeProperty(p); } else el.style.setProperty(p, String(v), 'important');
-    }
+    for (const [p, v] of Object.entries(props)) { if (v === null) this.#claims.unset(el, p); else this.#claims.set(el, p, v); }
   }
-  clear() {
-    for (const [el, m] of this.#had) for (const [p, [v, pr]] of m) { if (v) el.style.setProperty(p, v, pr); else el.style.removeProperty(p); }
-    this.#had.clear();
-  }
-  get on() { return this.#had.size > 0; }
+  clear() { this.#claims.clear(); }
+  get on() { return this.#claims.size > 0; }
 }
 // the line an element is written on (a list's rows share one): its stamp
 const stampOf = (el) => el.getAttribute('data-plumb-source')?.split('#')[0] ?? null;
@@ -163,7 +158,7 @@ export class Spacing {
   #host; #layer; #bub; #root;
   #on = false; #hover = null; #act = null; #at = [0, 0];
   #mods = { shift: false, meta: false };
-  #inline = new Inline();
+  #inline = new Inline(LEVEL.drag);
   #swallow = false;
 
   constructor(root, host) {
@@ -468,7 +463,7 @@ const linedCols = (el) => linesUp(el) ? Array.from({ length: rowParts(el) }, (_,
 
 // host: { target() → el, redraw(), restrip() }
 export class Layout {
-  #host; #layer; #from = null; #s = null; #inline = new Inline(); #peek = null; #line = null;
+  #host; #layer; #from = null; #s = null; #inline = new Inline(LEVEL.card); #peek = null; #line = null;
   constructor(root, host) {
     this.#host = host;
     this.#layer = Object.assign(document.createElement('div'), { className: 'lay-h' });

@@ -32,6 +32,7 @@ import { esc } from './choices.js';
 import { namesOf } from './typesystem.js';
 import { FIX } from './words.js';
 import { contextOf } from './hierarchy.js'; // the element's place among its peers: the step that fits, the ones that break the order
+import { Claims, LEVEL } from './claims.js';
 
 const W = FIX.text, WC = FIX.card;
 const ORDER = ['style', 'font-size', 'line-height', 'letter-spacing', 'font-weight', 'text-transform', 'color'];
@@ -247,7 +248,7 @@ export class TextEditor {
   #target = null; #at = null; #props = null; #state = 'off'; #error = null; #rowError = null;
   #row = 0;            // the field in hand (↑ ↓), an index into the fields shown
   #peek = null;        // { key, i } the choice previewed on the element
-  #shown = new Map();  // prop → the inline value the preview replaced
+  #shown = new Claims(LEVEL.peek); // what a peek shows on the element; claims.js keeps what the page had
   #seq = 0;
   #editing = null;     // { key, at, typed, moved } a value open, its scale shown; null at rest
   #menu = null;        // 'style' | 'color' while its list is open
@@ -649,15 +650,13 @@ export class TextEditor {
     this.#peek = { key, i };
     for (const [prop, v] of Object.entries(this.#valuesOf(key, step))) {
       if (v === '' || v === null || v === undefined) continue;
-      this.#shown.set(prop, [this.#target.style.getPropertyValue(prop), this.#target.style.getPropertyPriority(prop)]);
-      this.#target.style.setProperty(prop, String(v), 'important');
+      this.#shown.set(this.#target, prop, v);
     }
     this.#mark();
     this.#ring.setAttribute('data-peek', '');
     this.#follow();
   }
   #unpeek(redraw = false) {
-    for (const [prop, [v, pr]] of this.#shown) { if (v) this.#target?.style.setProperty(prop, v, pr); else this.#target?.style.removeProperty(prop); }
     this.#shown.clear();
     const had = !!this.#peek;
     this.#peek = null;

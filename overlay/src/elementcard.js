@@ -37,6 +37,7 @@ import { Spacing, Layout, LAYOUT_CSS, freeze, fitCopy, groundOf } from './layout
 import { lawsOf } from './laws.js';
 import { Tidy } from './tidycard.js'; // layer 3: Tidy this card // layer 2: Layout › and the spacing on the element
 import { Scope } from './scope.js';
+import { Claims, LEVEL } from './claims.js';
 
 const W = FIX.card;
 const WIDTH = 276, GAP = 16, EDGE = 12;
@@ -217,7 +218,7 @@ export class ElementCard {
   #pseq = 0; #asking = false; #again = false;
   #life = new Scope(); // the card's own, for as long as the overlay is on the page
   #hand = null;         // a handle held: the card is moved in place, never redrawn
-  #shown = new Map();   // prop → the inline value a preview replaced
+  #shown = new Claims(LEVEL.peek); // what a preview shows on the element; claims.js keeps what the page had
   #loops = [];
   #writing = false; #wrong = null;
   #props = null;        // the element's props, read at its class site: that line's hash, and the spacing scale
@@ -491,13 +492,11 @@ export class ElementCard {
   #show(props) {
     this.#unshow();
     for (const [prop, v] of Object.entries(props)) {
-      this.#shown.set(prop, [this.#target.style.getPropertyValue(prop), this.#target.style.getPropertyPriority(prop)]);
-      this.#target.style.setProperty(prop, String(v), 'important');
+      this.#shown.set(this.#target, prop, v);
     }
     this.#ring.setAttribute('data-peek', '');
   }
   #unshow() {
-    for (const [prop, [v, pr]] of this.#shown) { if (v) this.#target?.style.setProperty(prop, v, pr); else this.#target?.style.removeProperty(prop); }
     this.#shown.clear();
     this.#ring?.removeAttribute('data-peek');
   }

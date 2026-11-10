@@ -29,6 +29,7 @@ import { errorIs, request, post } from './api.js';
 import { esc } from './choices.js';
 import { TIMELINE as T } from './words.js';
 import { Scope } from './scope.js';
+import { Claims, LEVEL } from './claims.js';
 
 export const HISTORY_ICON = '<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2.2 4.2A4.25 4.25 0 1 1 1.75 6.5" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><path d="M1.6 1.8v2.6h2.6" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 3.75V6l1.6 1" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>';
 const CLOSE_ICON = '<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M3 3l6 6M9 3l-6 6" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>';
@@ -232,6 +233,7 @@ export class History {
   #loads = 0;          // the read in flight: only the newest one's answer is drawn
   #toastScope = null;  // the toast on screen: its time, and the moment it takes to leave
   #decl = new Map(); #shown = []; #past = false;
+  #pastStyles = new Claims(LEVEL.past);
 
   // button: the dock's history button; host: announce(text), changed()
   constructor(root, { button, host }) {
@@ -562,6 +564,7 @@ export class History {
   #show(at, index) {
     for (const undo of this.#shown.reverse()) undo();
     this.#shown = [];
+    this.#pastStyles.clear(); // the styles an earlier state had: the page's own come back (claims.js)
     const last = this.#flat.length - 1, past = at >= 0 && at < last && this.#status === 'ready';
     if (past !== this.#past) { this.#past = past; this.#strip.toggleAttribute('data-past', past); if (past) this.#host.announce?.(T.past(this.#flat.slice(at + 1).filter(live).length)); }
     if (!past) return;
@@ -577,11 +580,10 @@ export class History {
     const added = words(c.to), taken = words(c.from);
     const isClass = added.length ? added.every((t) => el.classList.contains(t)) : taken.length && taken.every((t) => this.#decl.get(t)?.length);
     if (isClass) {
-      const off = added.filter((t) => el.classList.contains(t)), hadStyle = el.hasAttribute('style');
+      const off = added.filter((t) => el.classList.contains(t));
       el.classList.remove(...off);
-      const was = [];
-      for (const t of taken) for (const [prop, value] of this.#decl.get(t) ?? []) { was.push([prop, el.style.getPropertyValue(prop), el.style.getPropertyPriority(prop)]); el.style.setProperty(prop, value, 'important'); }
-      this.#shown.push(() => { el.classList.add(...off); for (const [prop, v, pr] of was.reverse()) { if (v) el.style.setProperty(prop, v, pr); else el.style.removeProperty(prop); } if (!hadStyle && !el.getAttribute('style')) el.removeAttribute('style'); });
+      for (const t of taken) for (const [prop, value] of this.#decl.get(t) ?? []) this.#pastStyles.set(el, prop, value);
+      this.#shown.push(() => el.classList.add(...off));
       return;
     }
     // words: the text node that holds what the change wrote gets back what it said before
