@@ -88,14 +88,14 @@ const NEW_NAME = {
  */
 export function renameMap(tokens) {
   const map = {}, kept = [], taken = new Map();
-  // the plainest name for a role first: its name is the role word itself, then the shortest
-  const plain = (t) => (t.short === t.kind ? 0 : 1) * 100 + t.short.length;
+  // first a token already named for its job, then the plainest (its name is the role word itself), then the shortest
+  const plain = (t) => (NEW_NAME[t.kind] === t.short ? -1 : t.short === t.kind ? 0 : 1) * 100 + t.short.length;
   for (const t of [...tokens].sort((a, b) => plain(a) - plain(b) || a.short.localeCompare(b.short))) {
     const next = NEW_NAME[t.kind];
     if (!next) { kept.push({ short: t.short, why: `not a UI role (${t.kind})` }); continue; }
     if (taken.has(next)) { kept.push({ short: t.short, why: `${next} is ${taken.get(next)}` }); continue; }
-    if (next === t.short) continue;
-    taken.set(next, t.short); map[t.short] = next;
+    taken.set(next, t.short);
+    if (next !== t.short) map[t.short] = next; // already named for its job: it keeps the name, and no other token takes it
   }
   return { map, kept };
 }

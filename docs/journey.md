@@ -83,8 +83,20 @@
 - **What broke on the way:** the colour step imports the new colour-system module, which plumber's dev host did not serve, so the whole overlay failed to load (on the test copy and on the main crafting-ui server, which loads plumber from this checkout). Fixed by serving it and the ramp module; both servers restarted and serve them (HTTP 200).
 - **Not yet seen:** the section was not looked at in the browser; the owner was using the pane.
 
+## Rename button, tried for real (2026-11-11)
+- **How we found it:** drove the clean-up on a fresh crafting-ui copy: Alt+B, C, skip to Colour, open the names, Rename everywhere, Undo.
+- **What broke and why:**
+  - The rename reloads the page (101 files change), and the panel came back without its done line or Undo: the rename went straight to the server instead of through the overlay's write path, which notes the write and reopens the overlay after a reload. Now it goes through that path (like the text styles' write), and the panel resumes on the colour step with "Renamed 18 colour names in 101 files" and Undo.
+  - After Undo the plan shrank (14, then 2 names): the dev stylesheet still holds utility classes for names it saw before the undo, and the panel worked out its plan while the server was still re-reading the theme. The plan now reads only the tokens the theme declares (from the server), waits until the undone names are gone, and is worked out after that, not during the undo's redraws.
+  - Plumber could not read its own `ink2-*` names (read `ink2-soft` as a surface), so after a rename it suggested folding `draw-tint` into it. `ink2` is now a category it reads.
+  - A token already named for its job now keeps that name; no other token takes it.
+  - Looks: rows grouped by job (text, background, border, accent, states), roomier, and the section's buttons have a resting fill so they read as buttons.
+- **The proof:** last run: 18 names listed (scrim, draw-line, draw-tint kept), Rename → reload → panel back with Undo; Undo → files back (no diff) → section offers the same 18 again. The home headline renders with `text-text-primary` (its blank moment after each reload is its own entrance animation).
+- **Media hooks:** docs/media/colour-rename-list-2026-11-11.jpg, docs/media/colour-rename-done-2026-11-11.jpg.
+
 ## Open gaps
-- The colour step's rename section has not been looked at running; try it on the test copy (port 5182): Alt+B, C, skip to Colour.
+- Undo of a 101-file rename takes about 30 seconds, and the page shows wrong (black) borders while files go back one at a time.
+- The clean-up's pass names are not clickable, and the text step's error screen (no census) has no skip.
 - The second ink is named `ink2-*`; crafting-ui calls it `draw`, a meaningful word. Naming decision for the owner.
 - Code samples shown as text on crafting-ui pages may have been renamed too; not checked.
 - A yellow or amber brand sits next to the warning status hue; plumber does not yet warn when the brand and a status colour are too close.

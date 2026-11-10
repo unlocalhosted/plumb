@@ -106,6 +106,11 @@ export function pathOf(short) {
     const stop = Number(rest[0]);
     return stop === 500 ? { role: 'accent', kind: 'accent' } : stop === 600 ? { role: 'accent', kind: 'accent-hover' } : stop <= 100 ? { role: 'accent', kind: 'accent-soft' } : { role: 'other', kind: 'other' };
   }
+  if (cat === 'ink2') {
+    // plumber's own name for a second ink (token-spec §3.3): its default, hover and soft, like the accent's
+    const state = rest.at(-1);
+    return { role: 'accent', kind: state === 'hover' ? 'ink2-hover' : state === 'soft' || state === 'tint' ? 'ink2-soft' : 'ink2' };
+  }
   if (cat === 'state') { const st = statusIn(rest); return st ? { role: 'status', kind: st } : { role: 'other', kind: 'other' }; }
   if (cat === 'status' || cat === 'chart') return { role: 'other', kind: 'other' }; // categories and data: content, not UI roles
   return null;
@@ -141,12 +146,12 @@ export function kindOf(short, role) {
 }
 
 // §2.3 / §9.2: one accent; a second hued family the theme names (draw beside accent) is a second ink, a role of its own
-const baseOf = (short) => short.toLowerCase().replace(/-(hover|pressed|soft|tint|subtle|strong)$/, '');
+const baseOf = (short) => short.toLowerCase().replace(/-(default|hover|pressed|active|soft|tint|subtle|strong)$/, '');
 function assignInks(tokens) {
   const bases = [];
   for (const t of tokens) if (t.role === 'accent' && !bases.includes(baseOf(t.short))) bases.push(baseOf(t.short));
   const opaque = (b) => tokens.some((t) => baseOf(t.short) === b && t.role === 'accent' && t.rgb[3] >= 1 && chroma(t.oklab) > 0.06);
-  const primary = bases.find((b) => /^(accent|primary|brand)$/.test(b) && opaque(b)) ?? bases.find(opaque);
+  const primary = bases.find((b) => /^(accent|primary|brand)$/.test(b) && opaque(b)) ?? bases.find((b) => !/^ink2/.test(b) && opaque(b)) ?? bases.find(opaque);
   for (const t of tokens) {
     if (t.role !== 'accent' || baseOf(t.short) === primary || !bases.some(opaque)) continue;
     if (opaque(baseOf(t.short))) { t.kind = t.kind.replace('accent', 'ink2'); t.ink = 'ink2'; }
@@ -154,6 +159,9 @@ function assignInks(tokens) {
 }
 
 let decisions = null; // the server's decisions, once loadPalette has them
+/** The colour tokens the project's theme declares (short names), from the server; null before loadPalette has them. Leftover
+ * utility classes in a dev stylesheet (a name the build saw before an undo) are not tokens. */
+export const declaredColours = () => decisions ? new Set(decisions.filter((d) => d.family === 'color' && /^--color-/.test(d.name) && d.origin !== 'framework').map((d) => d.name.slice(8))) : null;
 let known = null;     // the last palette read, for readColours when none is given
 
 const probeBox = () => { const b = document.createElement('div'); b.style.cssText = 'position:absolute;visibility:hidden;pointer-events:none;contain:strict;'; return b; };
@@ -209,8 +217,8 @@ export function paletteOf() {
 }
 
 /** The palette with the server's decisions in: awaits them once. A page with a theme written as `@theme inline` needs them. */
-export async function loadPalette() {
-  if (!decisions) {
+export async function loadPalette(fresh = false) {
+  if (!decisions || fresh) {
     try { const { request } = await import('./api.js'); const d = await request('decisions', {}); if (Array.isArray(d)) decisions = d; } catch { /* the page's own variables are what is left */ }
   }
   return paletteOf();

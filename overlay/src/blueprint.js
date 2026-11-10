@@ -107,6 +107,7 @@ export class Blueprint {
       tokens: () => spec.value?.tokens ?? null,
       fromCode: (mark, places) => this.#fromCode(mark, places),
       applyStyles: (write, said, meta) => this.#applyStyles(write, said, meta),
+      renameColours: (map, said, meta) => this.#renameColours(map, said, meta),
       scope: () => this.#scope,
       set: (at, key, token, said) => this.#setProp(at, key, token, said),
       recipe: (at, body, said, meta) => this.#applyRecipe(at, body, said, meta),
@@ -335,6 +336,20 @@ export class Blueprint {
       return { ok: true, undo, group: trace.group, refused: left };
     } catch (error) { this.#host.forgetResume?.(); return { ok: false, why: /changed since/i.test(error?.message ?? '') ? FIX.changedSince : error?.message ?? FIX.couldNot }; }
     finally { removeEventListener('plumb:applied', heard); }
+  }
+  // The colour tokens renamed by job across the project (POST rename): like the text styles, a theme write that may
+  // reload the page, so the overlay is told to come back with its Undo before the write goes out
+  async #renameColours(map, said, meta) {
+    const trace = traceOf(meta);
+    this.#host.remember?.(said, undefined, null, trace.group);
+    try {
+      const answer = await post('rename', { map, trace });
+      const files = (answer?.files ?? []).filter((f) => f.ok);
+      for (const f of files) this.invalidate({ file: f.file });
+      if (!files.length) { this.#host.forgetResume?.(); return { ok: false, why: answer?.files?.find((f) => f.error)?.error ?? FIX.couldNot }; }
+      this.#host.remember?.(said, answer.undo ?? [], null, trace.group);
+      return { ok: true, undo: answer.undo ?? [], group: trace.group, files: files.length };
+    } catch (error) { this.#host.forgetResume?.(); return { ok: false, why: error?.message ?? FIX.couldNot }; }
   }
   // A cause no element renders right now: its theme choices, each with its exact edit at every place, read from the
   // code (GET edits per place). The plan is the one a drawn element gets (swapPlanOf); writes[i] is choice i's edits.

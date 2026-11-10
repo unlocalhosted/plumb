@@ -29,7 +29,7 @@ import { SpacingPass } from './spacing-pass.js';
 import { ColourPass } from './colour-pass.js';
 import { IconPass } from './icon-pass.js';
 import { CLEANUP as W } from './words.js';
-import { paletteOf } from './colours.js';
+import { declaredColours, loadPalette, paletteOf } from './colours.js';
 import { renameMap } from './colour-system.js';
 
 const LAWS = [{ id: 'similarity', name: 'Law of similarity' }, { id: 'cognitive-load', name: 'Cognitive load' }];
@@ -97,9 +97,11 @@ export const CLEANUP_CSS = `
   .cu .roles { padding: 12px 14px 0; }
   .cu .names { margin: 12px 0 0; padding: 12px 16px 0; border-top: 1px solid #ecebe6; display: grid; gap: 4px; }
   .cu .names .nhead { font-weight: 600; font-size: 13px; line-height: 1.35; text-wrap: balance; }
-  .cu .names .nacts { display: flex; gap: 4px; margin: 6px 0 0 -12px; }
+  .cu .names .nacts { display: flex; gap: 4px; margin: 8px 0 0; }
+  .cu button.cu-btn.soft { background: #f4f3ef; } .cu button.cu-btn.soft:hover { background: #ecebe6; }
   .cu .names .nlist { margin: 4px 0; max-height: min(30vh, 240px); }
-  .cu .names .nlist li { grid-template-columns: 20px 1fr; min-height: 30px; }
+  .cu .names .nlist { gap: 2px; outline: none; }
+  .cu .names .nlist li { grid-template-columns: 20px 1fr; min-height: 38px; padding: 4px 8px 4px 4px; }
   .cu .names .sw { width: 14px; height: 14px; border-radius: 4px; justify-self: center; box-shadow: inset 0 0 0 1px rgb(0 0 0 / .12); }
   .cu .names .nm { font: 550 12px/1.3 var(--pl-mono, ui-monospace, monospace); } .cu .names .nm small { font-family: var(--pl-sans, system-ui); }
   .cu .names .error { padding: 0; }
@@ -157,6 +159,19 @@ export class Cleanup {
     let v = kept();
     if (!v || this.running) return;
     const pass = v.pass ?? 0;
+    // the colour names were being renamed when the page went: the trace says whether it landed
+    if (v.state === 'renaming' && v.group) {
+      let live = [];
+      for (let i = 0; i < 6 && !live.length; i++) {
+        if (i) await new Promise((r) => setTimeout(r, 1000));
+        live = ((await request('trace', { group: v.group }).catch(() => null))?.changes ?? []).filter((c) => c.state === 'live');
+      }
+      const files = new Set(live.map((c) => c.file)).size;
+      v = live.length ? { state: 'read', pass, names: { ...v.names, files }, done: v.done } : { state: 'read', pass, done: v.done, said: W.colour.names.failed };
+      keep(v);
+      if (live.length) { this.#host.wrote?.({ undo: live.map(({ id, file, label }) => ({ change: id, file, label })), trace: { group: v.names.group } }, W.colour.names.done(v.names.names, files)); this.#host.announce?.(W.colour.names.done(v.names.names, files)); }
+    }
+    if (v.names) this.#rn = { plan: null, open: false, busy: false, err: null, done: v.names };
     // the page went while its write was saving: the server's trace says whether the step landed (it may still be
     // finishing, so it is asked a few times); landed, it comes back done with its Undo, else the page is read again
     if (v.state === 'writing' && v.group) {
@@ -302,41 +317,52 @@ export class Cleanup {
   #namesPlan() {
     if (this.#rn) return this.#rn;
     let plan = null;
-    try { const tokens = paletteOf(); const r = renameMap(tokens.map((t) => ({ short: t.short, kind: t.kind }))); const css = new Map(tokens.map((t) => [t.short, t.css])); if (Object.keys(r.map).length) plan = { ...r, css }; } catch { plan = null; }
+    try { const declared = declaredColours(), tokens = paletteOf().filter((t) => !declared || declared.has(t.short)); const r = renameMap(tokens.map((t) => ({ short: t.short, kind: t.kind }))); const css = new Map(tokens.map((t) => [t.short, t.css])); if (Object.keys(r.map).length) plan = { ...r, css }; } catch { plan = null; }
     this.#rn = { plan, open: false, busy: false, done: null, err: null };
     return this.#rn;
   }
   #namesHtml() {
     const N = W.colour.names, rn = this.#namesPlan(), plan = rn.plan;
     if (!plan && !rn.done) return '';
-    if (rn.done) return `<div class="names"><div class="sub">${esc(N.done(rn.done.names, rn.done.files))}</div><div class="nacts"><button type="button" class="cu-btn" data-cu="names-undo"${rn.busy ? ' disabled' : ''}>${esc(N.undo)}</button></div></div>`;
-    const pairs = Object.entries(plan.map), [from, to] = pairs.find(([k]) => k === 'fg' || k === 'foreground') ?? pairs[0];
-    if (!rn.open) return `<div class="names"><div class="nhead">${esc(N.head(pairs.length))}</div><div class="sub">${esc(N.sub(from, to))}</div><div class="nacts"><button type="button" class="cu-btn" data-cu="names-open">${esc(N.open)}</button></div></div>`;
+    if (rn.done) return `<div class="names"><div class="sub">${esc(N.done(rn.done.names, rn.done.files))}</div><div class="nacts"><button type="button" class="cu-btn soft" data-cu="names-undo"${rn.busy ? ' disabled' : ''}>${esc(N.undo)}</button></div></div>`;
+    const ORDER = ['text', 'background', 'border', 'accent', 'ink2', 'state'], rank = (n) => { const i = ORDER.indexOf(n.split('-')[0]); return i < 0 ? ORDER.length : i; };
+    const pairs = Object.entries(plan.map).sort((a, b) => rank(a[1]) - rank(b[1]) || a[1].localeCompare(b[1])), [from, to] = pairs.find(([k]) => k === 'fg' || k === 'foreground') ?? pairs[0];
+    if (!rn.open) return `<div class="names"><div class="nhead">${esc(N.head(pairs.length))}</div><div class="sub">${esc(N.sub(from, to))}</div><div class="nacts"><button type="button" class="cu-btn soft" data-cu="names-open">${esc(N.open)}</button></div></div>`;
     const rows = pairs.map(([old, next]) => `<li><span class="sw" aria-hidden="true" style="background:${esc(plan.css.get(old) ?? 'transparent')}"></span><span class="nm">${esc(next)}<small>${esc(N.was(old))}</small></span></li>`).join('');
     const keptNames = plan.kept.map((k) => k.short);
     const kept = keptNames.length ? `<div class="sub">${esc(N.kept(keptNames.length > 1 ? `${keptNames.slice(0, -1).join(', ')} and ${keptNames.at(-1)}` : keptNames[0]))}</div>` : '';
     return `<div class="names"><div class="nhead">${esc(N.head(pairs.length))}</div><ol class="ladder nlist" aria-label="${esc(N.list)}">${rows}</ol>${kept}<div class="sub">${esc(N.everywhere)}</div>`
       + (rn.err ? `<div class="error">${esc(rn.err)}</div>` : '')
-      + `<div class="nacts"><button type="button" class="cu-btn" data-cu="names-go"${rn.busy ? ' disabled' : ''}>${esc(rn.busy ? N.renaming : rn.err ? N.retry : N.rename)}</button><button type="button" class="cu-btn quiet" data-cu="names-close"${rn.busy ? ' disabled' : ''}>${esc(N.notNow)}</button></div></div>`;
+      + `<div class="nacts"><button type="button" class="cu-btn soft" data-cu="names-go"${rn.busy ? ' disabled' : ''}>${esc(rn.busy ? N.renaming : rn.err ? N.retry : N.rename)}</button><button type="button" class="cu-btn quiet" data-cu="names-close"${rn.busy ? ' disabled' : ''}>${esc(N.notNow)}</button></div></div>`;
   }
   async #rename() {
     const rn = this.#rn; if (!rn?.plan || rn.busy) return;
     rn.busy = true; rn.err = null; this.#host.render();
-    const group = `cleanup-names-${Date.now().toString(36)}`;
-    try {
-      const r = await post('rename', { map: rn.plan.map, trace: { group, meta: { step: W.pass.colour, laws: ['similarity'] } } });
-      const files = (r.files ?? []).filter((f) => f.ok).length;
-      if (!files) throw new Error(r.files?.find((f) => f.error)?.error ?? W.colour.names.failed);
-      rn.done = { names: Object.keys(rn.plan.map).length, files, group }; rn.open = false;
-      this.#host.wrote?.({ undo: r.undo ?? [], trace: { group } }, W.colour.names.done(rn.done.names, files));
-      this.#host.announce?.(W.colour.names.done(rn.done.names, files));
-    } catch (error) { rn.err = error?.message || W.colour.names.failed; }
+    const N = W.colour.names, i = this.#pass, group = `cleanup-names-${Date.now().toString(36)}`, names = Object.keys(rn.plan.map).length;
+    // the write may reload the page: kept first, so the panel comes back on this step with its Undo (resume)
+    keep({ state: 'renaming', pass: i, group, names: { names, files: 0, group, to: Object.values(rn.plan.map) }, done: Object.fromEntries(this.#done) });
+    const r = await answered(this.#host.rename(rn.plan.map, N.done(names, 0), { step: W.pass.colour, laws: ['similarity'], group }), group);
+    if (r?.ok || r?.landed) {
+      rn.done = { names, files: r.files ?? 0, group, to: Object.values(rn.plan.map) }; rn.open = false;
+      keep({ state: 'read', pass: i, names: rn.done, done: Object.fromEntries(this.#done) });
+      this.#host.wrote?.({ undo: r.undo ?? [], trace: { group } }, N.done(names, rn.done.files));
+      this.#host.announce?.(N.done(names, rn.done.files));
+    } else { keep(null); rn.err = r?.why || N.failed; }
     rn.busy = false; this.#host.render();
+  }
+  // the server reads the theme again after an undo: ask until the names the undo took away are gone (about 5 seconds at most)
+  async #settledTheme(gone) {
+    for (let i = 0; i < 10; i++) {
+      await loadPalette(true).catch(() => {});
+      const declared = declaredColours();
+      if (!declared || !gone.some((n) => declared.has(n))) return;
+      await new Promise((r) => setTimeout(r, 500));
+    }
   }
   async #renameUndo() {
     const rn = this.#rn; if (!rn?.done || rn.busy) return;
     rn.busy = true; this.#host.render();
-    try { await this.#host.undo(rn.done.group); this.#host.announce?.(W.colour.names.undone); this.#rn = null; }
+    try { await this.#host.undo(rn.done.group); this.#host.announce?.(W.colour.names.undone); this.#rn = null; keep({ state: 'read', pass: this.#pass, done: Object.fromEntries(this.#done) }); await this.#settledTheme(rn.done.to ?? Object.values(rn.plan?.map ?? {})); this.#rn = null; await this.#readPass(this.#pass); return; }
     catch (error) { rn.busy = false; rn.err = error?.message || W.colour.names.failed; }
     this.#host.render();
   }
