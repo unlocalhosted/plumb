@@ -746,6 +746,8 @@ export class TextEditor {
     const optionsOf = (r) => {
       const opts = r.steps.map((s) => ({ name: s.token, v: s.n, step: s }));
       if (r.drift && !r.drift.fluid) { const at = opts.findIndex((o) => o.v > r.drift.n); opts.splice(at < 0 ? opts.length : at, 0, { name: r.drift.label, v: r.drift.n, hard: true }); }
+      // a value the page works out (clamp, var): what it measures now, marked fluid (it can only change in the code)
+      if (r.drift?.fluid && Number.isFinite(r.drift.n)) { const at = opts.findIndex((o) => o.v > r.drift.n); opts.splice(at < 0 ? opts.length : at, 0, { v: r.drift.n, fluid: true }); return opts; }
       // not set here and on none of the tokens (a style's own value): shown as it is, among them, until you pick one
       const now = this.#nowOf(r);
       if (!r.drift && !r.current && Number.isFinite(now) && !opts.some((o) => Math.abs(o.v - now) < 1e-6)) { const at = opts.findIndex((o) => o.v > now); opts.splice(at < 0 ? opts.length : at, 0, { v: now, inherit: true }); }
@@ -753,7 +755,7 @@ export class TextEditor {
     };
     const startOf = (r, opts) => {
       if (opts.some((o) => o.hard)) return undefined;
-      const i = opts.findIndex((o) => (r.current ? o.step?.token === r.current : o.inherit));
+      const i = opts.findIndex((o) => (r.current ? o.step?.token === r.current : o.inherit || o.fluid));
       if (i >= 0) return i;
       const now = this.#nowOf(r); let best = 0;
       if (Number.isFinite(now)) opts.forEach((o, k) => { if (Math.abs(o.v - now) < Math.abs(opts[best].v - now)) best = k; });
@@ -784,13 +786,13 @@ export class TextEditor {
       });
     }
     const grid = box.querySelector('.grid');
-    const fmt = { 'font-size': (o) => `${pxRound(o.v)}px`, 'line-height': (o) => String(round(o.v)), 'letter-spacing': (o) => `${round(o.v)}em`, 'font-weight': (o) => String(o.v) };
+    const fmt = { 'font-size': (o) => `${o.fluid ? Math.round(o.v) : pxRound(o.v)}px`, 'line-height': (o) => String(round(o.v)), 'letter-spacing': (o) => `${round(o.v)}em`, 'font-weight': (o) => String(o.v) };
     const mark = { 'font-size': (o) => `<i class="aa" style="font-size:${Math.min(18, Math.max(9, Math.round(o.v * 0.6)))}px">Aa</i>`, 'line-height': () => '<i class="aa">≡</i>', 'letter-spacing': (o) => `<i class="aa" style="letter-spacing:${Math.max(-0.1, o.v * 2)}em">AV</i>`, 'font-weight': (o) => `<i class="aa" style="font-weight:${o.v}">Aa</i>` };
     // in the half-width fields the value comes first and the token's name after it (names can be long)
     if (grid) for (const k of VALUES) {
       const r = rows.find((x) => x.key === k); if (!r) continue;
       const opts = optionsOf(r); for (const o of opts) if (!o.hard) o.name = fmt[k](o);
-      mk(grid, r, { options: opts, start: startOf(r, opts), toy: glyph(k), format: (o) => (o.step ? o.step.token : o.inherit ? 'inherited' : ''), mark: mark[k] });
+      mk(grid, r, { options: opts, start: startOf(r, opts), toy: glyph(k), format: (o) => (o.step ? o.step.token : o.inherit ? 'inherited' : o.fluid ? 'fluid' : ''), mark: mark[k] });
     }
     // colour: a compact field at rest (the colour as a swatch, its name); a click opens the colour picker inside the
     // card (colourpick.js): your colour, the three tokens nearest it, every colour by what it is for. A pick is held
