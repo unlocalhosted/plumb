@@ -31,12 +31,16 @@
 - **The fix and the proof:** census of 60 routes → 22 styles, sizes 34 → 12, 163 caps places, 101 prose places at 1.6. Write: 28 tokens, one CSS block, 279 swaps in 34 files. Computed on /motion/standards: caps labels 11px / 0.88px uppercase; prose 20px/32px, 16px/25.6px, 14px/22.4px; headings 18px/24px semibold.
 - **Media hooks:** before/after screenshots of / and /motion/standards on the side copy.
 
+## Big files refused the write (2026-11-10)
+- **The itch:** 3 of crafting-ui's 34 files refused the type write with "Replacement text must be at most 500 characters."
+- **The system behind it:** all of a file's class swaps are written as one change, and its history label joins every new class name; a limit meant for text a person types fired on that label, not on any code change.
+- **The fix and the proof:** the label lists each distinct value once and is cut to fit (`… (N in all)`). Re-applied on the side copy: 78 swaps in the 3 files, 0 refused; nothing left pending for the project.
+
 ## Open gaps
 - Token spec layers 2–6 not built; four owner decisions open (§6).
 - e2e/type-roles.test.mjs still expects the old Material names; rewrite when the owner calls for tests.
 - The clean-up text panel with the new names was not looked at in the browser.
 - Writing from source without a census gets inherited caps wrong; the no-census proposal should refuse to write, or read ancestors.
-- 3 files refused the write: a swap's replacement over the 500-character limit (MotionIndexPage, TemplatesPage, PrinciplePage).
 - 46 low-confidence places, mostly page titles between ladder sizes; the owner decides the title sizes.
 - The tailwind-merge trap is untested: crafting-ui does not use it.
 

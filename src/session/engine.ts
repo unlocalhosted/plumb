@@ -1439,7 +1439,9 @@ export class Session extends EventEmitter {
     const written: SwapsOptions['edits'] = [];
     const nothing = () => new UsageError(`${refused.length === 1 ? 'The change could not be written' : 'None of these changes could be written'}: ${[...new Set(refused.toSorted(order).map(r => r.reason))].join(' ')}`);
     if (!starts.length) throw nothing();
-    const result = await this.writeText(path, hash, `swaps:${unique.length}`, unique.map(e => e.from || '∅').join(', '), unique.map(e => e.to).join(', '), (_file, source) => {
+    // the history label: each distinct value once, cut to fit the text guard (a big file's swaps are one write)
+    const summary = (xs: string[]) => { const all = [...new Set(xs)].join(', '); return all.length <= 500 ? all : `${all.slice(0, 470).replace(/,[^,]*$/, '')} … (${xs.length} in all)`; };
+    const result = await this.writeText(path, hash, `swaps:${unique.length}`, summary(unique.map(e => e.from || '∅')), summary(unique.map(e => e.to)), (_file, source) => {
       if (sourceHash(source) !== hash) throw new UsageError(staleFile);
       const changes: (ReturnType<typeof swapClasses> & { edit: SwapsOptions['edits'][number] })[] = [];
       for (const s of starts) {
