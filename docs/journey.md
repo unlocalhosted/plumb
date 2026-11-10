@@ -800,6 +800,15 @@ race, built for the old in-place write) was rewritten for the new write path (`e
   the hardest thing to see. Now every step is the same drafting detail: one quarter corner at four times its size, its
   centre point and a dashed radius line, then the px value, the object in words, and the token. Only the radius
   changes from one to the next. Checked in light and dark.
+- **"This is even worse":** the identical drafting details lost what the page says, that a corner belongs to an
+  object. The system behind both misses: I drew the row twice from my own idea without showing a direction first. This
+  time I asked, with three sketched directions, and the owner chose one nested object, then asked for guidelines that
+  put the weight on the radius. Now it is a real piece of the overlay at two and a half times its size (a card holding
+  a row, holding a colour pill with its swatch and a key), and each corner carries drafting guides: the square corner
+  it cuts off (dashed), the arc in blue, its centre and radius, and a leader out to its value, its object and its
+  token. Labels sit in a column each side, pushed apart so none touch; the guides are measured, so they follow the
+  tokens. A full dashed circle per corner was tried and dropped: on the key it crossed the letter. Checked in light and
+  dark.
 
 ## Open gaps
 - The overlay writes about 180 corners as numbers (radius tokens about 45 times), many off its own scale; 6px is

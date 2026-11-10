@@ -28,19 +28,9 @@ export function mount(host, root, css) {
   // a page step: the real gap between two blocks, at its own size
   const pageStep = (name) => `<div class="pstep"><span class="blk"></span><i class="gapband" style="height:${px(name)}px"></i><span class="blk"></span>
     <b>${px(name)}px</b><code class="tok" tabindex="0">--pl-${name}</code><small>${by.get(name)?.note ?? ''}</small></div>`;
-  // every corner drawn the same way, so the only thing that changes is the radius: a quarter corner magnified 4×, its
-  // centre, and a line from the centre to the curve; the object it belongs to is said in words under it
-  const OBJECT = { 'radius-mark': 'A mark', 'radius-tag': 'A tag, a key', 'radius-pill': 'A value pill', 'radius-row': 'A row, a field', 'radius-card': 'A card, a bar' };
-  const corner = (name) => {
-    const r = px(name), R = r * 4, o = 14, e = 96, c = o + R;
-    const tip = c - R * Math.SQRT1_2;
-    return `<figure class="corner">
-      <svg viewBox="0 0 110 110" aria-hidden="true">
-        <path class="side" d="M ${o} ${e + 6} V ${c} A ${R} ${R} 0 0 1 ${c} ${o} H ${e + 6}"/>
-        ${R ? `<line class="dim" x1="${c}" y1="${c}" x2="${tip}" y2="${tip}"/><circle class="ctr" cx="${c}" cy="${c}" r="1.6"/>` : ''}
-      </svg>
-      <figcaption><b>${r}px</b><span class="obj">${OBJECT[name]}</span><code class="tok" tabindex="0">--pl-${name}</code></figcaption></figure>`;
-  };
+  // the corners: one real piece of the overlay drawn twice its size, a card holding a row holding a colour pill (with
+  // its swatch, a mark) and a key tag, so each corner sits inside the next; guides are drawn on top, measured
+  const OBJECT = { 'radius-mark': 'a mark', 'radius-tag': 'a tag, a key', 'radius-pill': 'a value pill', 'radius-row': 'a row, a field', 'radius-card': 'a card, a bar' };
   const row = (name) => `<div class="tr" role="row"><span><code class="tok" tabindex="0">--pl-${name}</code></span><span class="for">${by.get(name)?.note || '—'}</span><span class="val"><code>${by.get(name)?.light ?? ''}</code></span></div>`;
 
   root.innerHTML = `<style>${css}${LANGUAGE_CSS}
@@ -94,18 +84,32 @@ export function mount(host, root, css) {
     .pstep code { margin-top: 4px; }
     .pstep small { margin-top: 4px; font: 400 12px/16px var(--pl-sans); color: var(--pl-text-secondary); }
 
-    /* ── corners, each drawn the same way ── */
-    .corners { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); }
-    .corner { margin: 0; display: grid; justify-items: center; gap: 12px; padding: 22px 12px 18px; border-left: 1px solid var(--pl-border-default); }
-    .corner:first-child { border-left: 0; }
-    .corner svg { width: 110px; height: 110px; overflow: visible; }
-    .corner .side { fill: none; stroke: var(--pl-icon-primary); stroke-width: 1.5; stroke-linecap: round; }
-    .corner .dim { stroke: var(--pl-border-focus); stroke-width: 1; stroke-dasharray: 2 2; }
-    .corner .ctr { fill: var(--pl-border-focus); }
-    .corner figcaption { display: grid; justify-items: center; gap: 4px; text-align: center; }
-    .corner figcaption b { font: 600 15px/1 var(--pl-mono); color: var(--pl-text-primary); }
-    .corner .obj { font: 500 13px/1.3 var(--pl-sans); color: var(--pl-text-secondary); }
-    .corner code { font-size: 11px; }
+    /* ── corners: one nested object at twice its size, with drafting guides ── */
+    .nest { position: relative; padding: 36px 0 44px; display: grid; justify-content: center; }
+    .nest .obj { --z: 2.5; width: calc(150px * var(--z)); padding: calc(12px * var(--z)); border-radius: calc(var(--pl-radius-card) * var(--z));
+      background: var(--pl-bg-surface); box-shadow: inset 0 0 0 1px var(--pl-border-default); display: grid; gap: calc(8px * var(--z)); }
+    .nest .obj .ttl { font: 600 calc(12px * var(--z))/1 var(--pl-sans); color: var(--pl-text-secondary); }
+    .nest .r { display: flex; align-items: center; justify-content: space-between; height: calc(36px * var(--z)); padding: 0 calc(6px * var(--z));
+      border-radius: calc(var(--pl-radius-row) * var(--z)); background: var(--pl-bg-inset); }
+    .nest .p { display: inline-flex; align-items: center; gap: calc(6px * var(--z)); height: calc(24px * var(--z)); padding: 0 calc(8px * var(--z));
+      border-radius: calc(var(--pl-radius-pill) * var(--z)); background: var(--pl-bg-surface); box-shadow: inset 0 0 0 1px var(--pl-border-default);
+      font: 500 calc(12px * var(--z))/1 var(--pl-sans); color: var(--pl-text-primary); }
+    .nest .m { width: calc(10px * var(--z)); height: calc(10px * var(--z)); border-radius: calc(var(--pl-radius-mark) * var(--z)); background: var(--pl-coral-block); }
+    .nest .k { display: inline-grid; place-items: center; width: calc(18px * var(--z)); height: calc(18px * var(--z)); border-radius: calc(var(--pl-radius-tag) * var(--z));
+      background: var(--pl-bg-surface); box-shadow: inset 0 0 0 1px var(--pl-border-default), 0 1px 0 var(--pl-border-default); font: 600 calc(10px * var(--z))/1 var(--pl-mono); color: var(--pl-text-secondary); }
+    .nest svg.guides { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+    .guides .sq { fill: none; stroke: var(--pl-text-secondary); stroke-width: 1; stroke-dasharray: 3 3; opacity: .7; }
+    .guides .arc { fill: none; stroke: var(--pl-border-focus); stroke-width: 3; stroke-linecap: round; }
+    .guides .rad { stroke: var(--pl-border-focus); stroke-width: 1; }
+    .guides .ctr { fill: var(--pl-border-focus); }
+    .guides .lead { fill: none; stroke: var(--pl-border-strong, var(--pl-border-default)); stroke-width: 1; }
+    .guides .tip { fill: var(--pl-border-strong, var(--pl-border-default)); }
+    .nest .lbl { position: absolute; display: grid; gap: 2px; white-space: nowrap; transform: translateY(-50%); }
+    .nest .lbl.l { text-align: right; justify-items: end; }
+    .nest .lbl b { font: 600 15px/1 var(--pl-mono); color: var(--pl-text-primary); }
+    .nest .lbl b span { font: 500 13px/1 var(--pl-sans); color: var(--pl-text-secondary); margin-left: 6px; }
+    .nest .lbl.l b span { margin: 0 6px 0 0; }
+    .nest .lbl code { font-size: 11px; justify-self: inherit; }
     /* ── shadows ── */
     .shadows { display: grid; grid-template-columns: 1fr 1fr; gap: 0; }
     .shadow { display: grid; grid-template-rows: 150px auto; border-left: 1px solid var(--pl-border-default); }
@@ -124,7 +128,7 @@ export function mount(host, root, css) {
     .open b { color: var(--pl-text-primary); font-weight: 600; }
     @media (max-width: 720px) {
       .step { grid-template-columns: 1fr auto; } .step .band { grid-column: 1 / -1; } .step .for { grid-column: 1 / -1; }
-      .measured { grid-template-columns: 1fr; } .pages { grid-template-columns: 1fr 1fr; } .corners { grid-template-columns: 1fr 1fr; } .shadows { grid-template-columns: 1fr; }
+      .measured { grid-template-columns: 1fr; } .pages { grid-template-columns: 1fr 1fr; } .shadows { grid-template-columns: 1fr; }
       .tr { grid-template-columns: 1fr 1fr; } .tr .for { display: none; }
     }
   </style>
@@ -159,8 +163,11 @@ export function mount(host, root, css) {
   <div class="panel pages">${PAGE.map(pageStep).join('')}</div>
 
   <h2>Corners</h2>
-  <p>Each corner drawn the same way, four times its size, so the only thing that changes is the radius.</p>
-  <div class="panel corners">${RADII.map(corner).join('')}</div>
+  <p>One piece of the overlay at two and a half times its size: a card holding a row, holding a colour pill and a key. Each corner is drawn with the square it cuts off, its centre and its radius, so you can see each one is smaller than the one around it.</p>
+  <div class="panel nest"><div class="obj">
+    <span class="ttl">Colour</span>
+    <div class="r" data-r="radius-row"><span class="p" data-r="radius-pill"><i class="m" data-r="radius-mark"></i>Ink 2 ▾</span><span class="k" data-r="radius-tag">C</span></div>
+  </div><svg class="guides" aria-hidden="true"></svg></div>
 
   <h2>Lifted things</h2>
   <p>Two shadows, one per thing that is lifted. In dark mode both are deeper, so a lifted thing still reads on a dark page.</p>
@@ -194,6 +201,39 @@ export function mount(host, root, css) {
     for (let i = 1; i < bs.length; i++) add(bs[i - 1].right, bs[i].top, bs[i].left - bs[i - 1].right, bs[i].height);
   };
   new ResizeObserver(mark).observe(card); mark();
+  // the corner guides: each corner's square, circle, centre and radius, with a leader out to its label; labels sit in
+  // a column each side, pushed apart so none touches another (measured, so they follow the tokens)
+  const nest = root.querySelector('.nest'), obj = nest.querySelector('.obj');
+  obj.dataset.r = 'radius-card';
+  const SIDES = { 'radius-card': ['tr', 'r'], 'radius-row': ['tr', 'r'], 'radius-tag': ['br', 'r'], 'radius-pill': ['bl', 'l'], 'radius-mark': ['tl', 'l'] };
+  const guide = () => {
+    nest.querySelectorAll('.lbl').forEach((l) => l.remove());
+    const n = nest.getBoundingClientRect(), o = obj.getBoundingClientRect(), Z = 2.5, svg = [];
+    const lanes = { r: [], l: [] };
+    for (const el of nest.querySelectorAll('[data-r]')) {
+      const name = el.dataset.r, [c, side] = SIDES[name], b = el.getBoundingClientRect(), r = px(name) * Z;
+      const x0 = b.left - n.left, y0 = b.top - n.top, x1 = b.right - n.left, y1 = b.bottom - n.top;
+      const right = c[1] === 'r', bottom = c[0] === 'b';
+      const X = right ? x1 : x0, Y = bottom ? y1 : y0, sx = right ? -1 : 1, sy = bottom ? -1 : 1;
+      const cx = X + sx * r, cy = Y + sy * r, d = r * Math.SQRT1_2;
+      svg.push(`<path class="sq" d="M ${X} ${Y + sy * (r + 10)} V ${Y} H ${X + sx * (r + 10)}"/>`,
+        `<path class="arc" d="M ${X} ${cy} A ${r} ${r} 0 0 ${(sx * sy > 0) ? 1 : 0} ${cx} ${Y}"/>`,
+        `<line class="rad" x1="${cx}" y1="${cy}" x2="${cx - sx * d}" y2="${cy - sy * d}"/>`, `<circle class="ctr" cx="${cx}" cy="${cy}" r="2"/>`);
+      lanes[side].push({ name, X, Y });
+    }
+    for (const side of ['r', 'l']) {
+      const list = lanes[side].sort((a, b) => a.Y - b.Y), edge = side === 'r' ? o.right - n.left + 30 : o.left - n.left - 30;
+      let last = -Infinity;
+      for (const it of list) {
+        const ly = Math.max(it.Y, last + 46); last = ly;
+        const kx = side === 'r' ? edge - 12 : edge + 12;
+        svg.push(`<path class="lead" d="M ${it.X} ${it.Y} L ${it.X + (side === 'r' ? 1 : -1) * Math.min(Math.abs(kx - it.X), 6)} ${it.Y} L ${kx} ${ly} H ${edge}"/>`, `<circle class="tip" cx="${it.X}" cy="${it.Y}" r="2.5"/>`);
+        nest.insertAdjacentHTML('beforeend', `<div class="lbl ${side}" style="${side === 'r' ? `left:${edge + 8}px` : `right:${n.width - edge + 8}px`};top:${ly}px"><b>${side === 'l' ? `<span>${OBJECT[it.name]}</span>` : ''}${px(it.name)}px${side === 'r' ? `<span>${OBJECT[it.name]}</span>` : ''}</b><code class="tok" tabindex="0">--pl-${it.name}</code></div>`);
+      }
+    }
+    nest.querySelector('svg.guides').innerHTML = svg.join('');
+  };
+  new ResizeObserver(guide).observe(nest); guide();
   const copy = (el) => { navigator.clipboard?.writeText(el.textContent).catch(() => {}); el.setAttribute('data-copied', ''); setTimeout(() => el.removeAttribute('data-copied'), 900); };
   root.addEventListener('click', (e) => { const t = e.target.closest('.tok'); if (t) copy(t); });
   root.addEventListener('keydown', (e) => { const t = e.target.closest?.('.tok'); if (t && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); copy(t); } });
