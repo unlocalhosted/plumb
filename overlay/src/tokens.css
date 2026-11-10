@@ -2,7 +2,7 @@
    one accent for actions and the instrument lines, and colour otherwise kept to verdicts. Every value the components
    use comes from here (approved 2026-10-23, docs/briefs/readiness.md). Scoped to :host so nothing leaks either way. */
 
-:host {
+:host, .pl-light {
   /* ground and words: warm-biased neutrals, so the overlay separates from the page under it and nothing competes
      with the one accent. Every surface and every word comes from these. */
   --pl-paper: #ffffff;          /* card background: white (owner, 2026-11-10: no cream) */
@@ -165,9 +165,10 @@
   color-scheme: light;
 }
 
-/* Roles and states, in a rule of their own so they are worked out again wherever a part sets its own scheme: a part
-   that restates the palette (a card that stays light on a dark page) adds the class pl-scheme, and its roles follow. */
-:host, .pl-scheme {
+/* Roles and states, in a rule of their own so they are worked out again wherever a part sets its own scheme. A part
+   that stays light on any page (a card held over your app) adds the class pl-light: it gets the light palette above
+   and these roles worked out from it. A part that restates some colours itself adds pl-scheme. */
+:host, .pl-scheme, .pl-light {
   /* ── roles and states: what a part asks for, named --pl-<group>-<role>-<state> (like a Figma variable path). Every
      one points at the palette above, so the dark scheme follows by itself. A part takes one of these before a hue ── */
   /* text */

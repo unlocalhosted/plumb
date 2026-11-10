@@ -221,12 +221,7 @@ export const TEXT_EDITOR_CSS = `
   /* ── the panel: the style and the type values as token pickers (picker.js), laid out like a visual editor's panel.
      The picker's rules are nested under the card so they never reach the overlay's other rows and lists ── */
   .tc .pk { ${PICKER_CSS} }
-  /* the card is light on any page, so its pickers take the light tokens whatever the computer's scheme */
-  .tc, .tc-caret { --pl-paper: #ffffff; --pl-paper-2: #f6f6f4; --pl-rule: #e9e8e4; --pl-ink: #1d1b17; --pl-ink-2: #6b665c; --pl-ink-3: #b3ad9f; --pl-sky: #3391ee; --pl-coral: #bf3a1e;
-    --pl-mint: #1a9460; --pl-mint-ink: #0b3d26; --pl-mint-on: #ffffff; --pl-pink: #f24a9f; --pl-pink-on: #ffffff; color-scheme: light;
-    --pl-sky-ink: #0b3554; --pl-coral-ink: #5c160e; --pl-mint-block: var(--pl-mint); --pl-mint-block-on: var(--pl-mint-on);
-    --pl-on-bg: color-mix(in oklab, var(--pl-mint) 12%, var(--pl-paper)); --pl-off-bg: color-mix(in oklab, var(--pl-coral) 10%, var(--pl-paper));
-    --pl-shadow-card: 0 0 0 1px var(--pl-rule), 0 1px 2px rgb(28 27 25 / 0.06), 0 14px 32px -14px rgb(28 27 25 / 0.28); }
+  /* the card is light on any page: it carries the class pl-light (tokens.css), so its palette and roles are the light ones */
   .tc { ${BUTTON_CSS} }
   .tc .pk { display: grid; gap: 10px; padding: 2px 12px 10px; }
   .tc .pk section { position: relative; display: grid; gap: 6px; }
@@ -314,9 +309,9 @@ export class TextEditor {
   // problems() → n, show(), closed(), elsewhere(el) → n, dark() → bool, why(el) → Promise<words | null> }
   constructor(root, host) {
     this.#host = host;
-    this.#el = Object.assign(document.createElement('div'), { className: 'tc pl-scheme', hidden: true });
+    this.#el = Object.assign(document.createElement('div'), { className: 'tc pl-light', hidden: true });
     this.#el.setAttribute('role', 'dialog'); // named for the element when it opens ("Edit Lettering")
-    this.#caret = Object.assign(document.createElement('div'), { className: 'tc-caret pl-scheme', hidden: true });
+    this.#caret = Object.assign(document.createElement('div'), { className: 'tc-caret pl-light', hidden: true });
     this.#ring = Object.assign(document.createElement('div'), { className: 'tc-ring', hidden: true });
     root.append(this.#ring, this.#el, this.#caret);
     this.#el.addEventListener('pointerdown', (e) => { const f = e.target.closest('.fld[data-key]'); if (f && e.button === 0) this.#press(e, f.dataset.key); });

@@ -694,6 +694,17 @@ race, built for the old in-place write) was rewritten for the new write path (`e
   The arrow beside the card now takes the card's light colours too, so it can't turn dark next to a light card.
   Checked on crafting-ui with the computer in dark: the card, its labels and its arrow come out light, and the ring on
   the page takes the night sky. Contrast still 74 of 74.
+- **The fourth part: the element card** (Alt+click on anything that isn't words). Same mapping as the text card:
+  its five private colour names (`--sky`, `--coral`, `--ink-2`, `--ink-3`, `--wash`) and about 30 written-in
+  values became roles and states; the "same" and "close" chips take the written and on-a-token states, the dark Use
+  button is the card's one inverse block (primary text as its fill, surface as its lettering). Left on purpose: the
+  code-diff panel and the drawings in the shadow and motion editors (a sun, a pad, stand-in boxes), which are pictures,
+  not roles.
+- **The pattern, made one thing:** the text card kept its light look by restating the light palette by hand, and the
+  element card would have needed the same copy. The token file now offers one class, `pl-light`: anything carrying it
+  gets the light palette and its roles, on any page and any computer scheme. Both cards and their arrows use it; the
+  hand-made copy is deleted. Checked on crafting-ui with the computer in dark: both cards' pieces resolve to the light
+  colours (white card, #f6f6f4 rows, #6b665c meta, navy and green state words, white arrow). Contrast 74 of 74.
 
 ## Open gaps
 - White on the pink and mint buttons is under 4.5:1 in light (3.36, 3.85); dark now passes, just. Nothing yet stops the faintest ink being used for text again.
