@@ -60,7 +60,12 @@ export function mount(host, root, css) {
     .row .val .car { width: 8px; height: 8px; margin-left: 2px; border-right: 1.5px solid var(--pl-ink-3); border-bottom: 1.5px solid var(--pl-ink-3); rotate: 45deg; translate: 0 -2px; }
     .row .ok { all: unset; display: grid; place-items: center; width: 28px; height: 28px; border-radius: 8px; color: var(--pl-ink-3); cursor: pointer; }
     .row .ok:hover { background: var(--pl-paper-2); color: var(--pl-ink); }
-    .row .ok[data-ready] { background: var(--pl-pink); color: var(--pl-pink-on); }
+    /* the tick answers at once: on one of your tokens it turns green (pale, a pop each time a new token lands);
+       written, it is solid green. On the hard-coded value it stays grey: nothing to write */
+    .row .ok { transition: background-color 180ms var(--pl-ease-out), color 180ms var(--pl-ease-out); }
+    .row .ok[data-ready] { background: color-mix(in oklab, var(--pl-mint) 22%, transparent); color: var(--pl-mint-ink); }
+    .row .ok.pop { animation: okpop 320ms cubic-bezier(.34, 1.56, .64, 1); }
+    @keyframes okpop { 0% { scale: .8; } 60% { scale: 1.12; } 100% { scale: 1; } }
     .row .ok svg { width: 16px; height: 16px; display: block; }
     .row.written .ok { background: var(--pl-mint); color: var(--pl-mint-on); }
 
@@ -173,6 +178,7 @@ export function mount(host, root, css) {
     badge.style.setProperty('--r', `${o.v}px`);
     badge.classList.toggle('on-token', token); handle.classList.toggle('on-token', token);
     if (token && !written) ok.setAttribute('data-ready', ''); else ok.removeAttribute('data-ready');
+    if (token && !still) { ok.classList.remove('pop'); void ok.offsetWidth; ok.classList.add('pop'); }
     list.innerHTML = S.map((t, i) => `<button type="button" role="option" class="${t.hard ? 'hard' : ''}" data-at="${i}" aria-selected="${at === i}"><i class="c" style="border-top-left-radius:${Math.min(t.v, 16)}px"></i>${t.name}<span>${t.hard ? 'hard-coded' : px(t.v)}</span></button>`).join('');
     val.classList.toggle('on-hard', !!o.hard);
     dots.forEach((d, i) => d.classList.toggle('here', i === at));
