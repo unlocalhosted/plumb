@@ -260,7 +260,8 @@ field is empty). The table of five writes, before and after. The Next table: eig
 - CSS Modules, PostCSS output, Tailwind v3 and CSS-in-JS are found by line but not yet judged or fixed in full.
 - shadcn/ui was left out of the runs: its dev server alone used about 10 GB.
 - The homepage's recorded demo (`site/src/hero/replay.js`) still answers the retired reading card; it needs
-  re-recording before the site is deployed again.
+  re-recording before the site is deployed again. Its two tests (`e2e/site-replay`, `e2e/site-text`) are skipped for 0.4.0 with
+  a note, by the owner's decision on 2026-11-10; they come back on when the demo is recorded again.
 - The full test suite hasn't run on `explicit-machines`; this blocks the merge.
 - 22 overlay and 17 engine state machines are still implicit. The biggest is Esc and key routing, which is still a
   chain of `if`s in `widget.js`.
