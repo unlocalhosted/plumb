@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Icons · React Plumber</title>
+<style>
+  body { margin: 0; padding: 32px 16px 64px; background: #ecebe7; font: 14px/1.5 system-ui, sans-serif; color: #1c1b19; }
+  body.dark { background: #0f0f11; color: #eeede9; }
+  header { max-width: 1040px; margin: 0 auto 20px; display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap; }
+  header h1 { font-size: 18px; margin: 0; }
+  header p { margin: 0; opacity: .7; font-size: 13px; max-width: 760px; }
+  header button { margin-left: auto; font: inherit; font-size: 12px; padding: 4px 10px; border-radius: 6px; border: 1px solid currentColor; background: none; color: inherit; cursor: pointer; }
+  #board { max-width: 1040px; margin: 0 auto; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Icons</h1>
+  <p>A review sheet. First what the overlay has today, set by set, as it is. Then what is proposed: properties that have no icon, and the elements and patterns a page is made of. Proposals live on this page only until they are approved.</p>
+  <button id="scheme" type="button">Dark</button>
+</header>
+<div id="board"></div>
+<script type="module">
+  import tokens from '../src/tokens.css?raw';
+  import { LANGUAGE_CSS } from '../src/language.js';
+  import { BLOCK_ICONS } from '../src/boxmodel.js';
+  import { GLYPHS, GLYPH_CSS, glyph } from '../src/glyphs.js';
+
+  const host = document.getElementById('board');
+  const root = host.attachShadow({ mode: 'open' });
+  host.dataset.scheme = 'light';
+
+  // ── what exists ──
+  // the box properties (boxmodel.js, exported): the set the box model, the clean-up chips and the fix bar use
+  const BOX = [['p', 'padding'], ['m', 'margin'], ['g', 'gap'], ['b', 'border'], ['r', 'corner'], ['line', 'type'], ['c', 'size']].map(([k, name]) => ({ name, svg: BLOCK_ICONS[k] }));
+  // the type properties (texteditor.js, private to the words card: copied here as they are)
+  const TYPE = [
+    ['size', '<svg viewBox="0 0 14 14"><path d="M2 3.5h7M5.5 3.5v8M9.5 7h3M11 7v4.5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>'],
+    ['line height', '<svg viewBox="0 0 14 14"><path d="M4 3h8M4 7h8M4 11h8M1.5 2.5v9" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>'],
+    ['letter spacing', '<svg viewBox="0 0 14 14"><path d="M1.5 2v10M12.5 2v10M4.5 10l2.5-6 2.5 6M5.4 8h3.2" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>'],
+    ['weight', '<svg viewBox="0 0 14 14"><path d="M4 2.5h3.6a2.2 2.2 0 0 1 0 4.4H4zM4 6.9h4.3a2.3 2.3 0 0 1 0 4.6H4z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>'],
+  ].map(([name, svg]) => ({ name, svg }));
+  // the layout options (editor-primitives.js, private: copied here as they are)
+  const LAYOUT = [
+    ['row', '<svg viewBox="0 0 12 12"><path d="M1.5 6h9M7.5 3l3 3-3 3" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>'],
+    ['column', '<svg viewBox="0 0 12 12"><path d="M6 1.5v9M3 7.5l3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>'],
+    ['wrap', '<svg viewBox="0 0 12 12"><path d="M1.5 3h7a2 2 0 0 1 0 4h-4M6 5l-1.5 2L6 9" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>'],
+    ['one line', '<svg viewBox="0 0 12 12"><path d="M1.5 6h9" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>'],
+    ['cover', '<svg viewBox="0 0 12 12"><rect x="1.5" y="1.5" width="9" height="9" rx="1" fill="currentColor" opacity=".35"/><rect x="1.5" y="1.5" width="9" height="9" rx="1" fill="none" stroke="currentColor" stroke-width="1.2"/></svg>'],
+    ['contain', '<svg viewBox="0 0 12 12"><rect x="1.5" y="1.5" width="9" height="9" rx="1" fill="none" stroke="currentColor" stroke-width="1.2"/><rect x="1.5" y="4" width="9" height="4" fill="currentColor" opacity=".35"/></svg>'],
+  ].map(([name, svg]) => ({ name, svg }));
+  const FAMILIES = Object.keys(GLYPHS).map((name) => ({ name, svg: glyph(name) }));
+
+  // ── what is proposed ──
+  // Drawn to the box set's rules: a 16 grid, a 1.5 line with round ends and joins, one solid accent at most, nothing
+  // thinner than the line. `o` draws the line parts, `f` the solid ones; `dim` is a second line at 55%.
+  const mk = (o = '', f = '', dim = '') => `<svg viewBox="0 0 16 16"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">${o}${dim ? `<g opacity=".55">${dim}</g>` : ''}</g>${f ? `<g fill="currentColor">${f}</g>` : ''}</svg>`;
+  const PROPS = [
+    ['position', 'top, right, bottom, left: how far from an edge', mk('<rect x="2" y="2" width="12" height="12" rx="3"/><path d="M8 10.4v3.4"/>', '<rect x="5.5" y="4.6" width="5" height="4" rx="1.2"/>')],
+    ['width', '', mk('<path d="M2.5 3.5v9M13.5 3.5v9M5 8h6M6.4 6.4 4.8 8l1.6 1.6M9.6 6.4 11.2 8 9.6 9.6"/>')],
+    ['height', '', mk('<path d="M3.5 2.5h9M3.5 13.5h9M8 5v6M6.4 6.4 8 4.8l1.6 1.6M6.4 9.6 8 11.2l1.6-1.6"/>')],
+    ['text colour', '', mk('<path d="M4.6 10.2 8 2.8l3.4 7.4M5.9 7.6h4.2"/>', '<rect x="3" y="12" width="10" height="2.2" rx="1.1"/>')],
+    ['fill', 'background', mk('<path d="M8 2.2c2.5 3 4.2 5.1 4.2 7.3a4.2 4.2 0 0 1-8.4 0C3.8 7.3 5.5 5.2 8 2.2z"/>', '<path d="M5.3 9.4h5.4a2.7 2.7 0 0 1-5.4 0z"/>')],
+    ['shadow', '', mk('<rect x="2.5" y="2.5" width="8.5" height="8.5" rx="2.3"/>', '', '<path d="M13.5 6.2v5a2.3 2.3 0 0 1-2.3 2.3h-5"/>')],
+    ['opacity', '', mk('<circle cx="8" cy="8" r="5.5"/>', '<path d="M8 2.5a5.5 5.5 0 0 1 0 11z"/>')],
+    ['layer', 'z-index: what sits on top', mk('<path d="M8 2.6 13.4 5.6 8 8.6 2.6 5.6z"/>', '', '<path d="M2.6 8.6 8 11.6l5.4-3"/>')],
+    ['motion', 'duration and easing', mk('<path d="M2.5 12.5c4.2 0 4.6-8.8 9.2-8.9"/>', '<circle cx="12.8" cy="3.6" r="1.5"/>')],
+    ['alignment', '', mk('<path d="M2.6 3v10"/><path d="M5.6 5h7.6M5.6 8h4.4M5.6 11h6"/>')],
+  ].map(([name, note, svg]) => ({ name, note, svg, fresh: true }));
+  const PARTS = [
+    ['button', '', mk('<rect x="1.75" y="4.5" width="12.5" height="7" rx="3.5"/><path d="M5.6 8h4.8"/>')],
+    ['link', '', mk('<path d="M6.9 9.1a2.5 2.5 0 0 0 3.6 0l1.9-1.9a2.5 2.5 0 0 0-3.6-3.6l-.6.6"/><path d="M9.1 6.9a2.5 2.5 0 0 0-3.6 0L3.6 8.8a2.5 2.5 0 0 0 3.6 3.6l.6-.6"/>')],
+    ['field', 'input, textarea', mk('<rect x="1.75" y="4" width="12.5" height="8" rx="2.3"/><path d="M5 6.4v3.2"/>')],
+    ['select', 'a menu of options', mk('<rect x="1.75" y="4" width="12.5" height="8" rx="2.3"/><path d="M9 7.2l1.6 1.6 1.6-1.6"/>')],
+    ['checkbox', '', mk('<rect x="2.5" y="2.5" width="11" height="11" rx="2.8"/><path d="M5.3 8.2 7.2 10l3.5-4"/>')],
+    ['switch', '', mk('<rect x="1.75" y="4.5" width="12.5" height="7" rx="3.5"/>', '<circle cx="10.75" cy="8" r="1.9"/>')],
+    ['heading', '', mk('<path d="M4 3.2v9.6M12 3.2v9.6M4 8h8"/>')],
+    ['text', 'a paragraph, a label', mk('<path d="M3 4.2h10M3 8h10M3 11.8h6"/>')],
+    ['image', '', mk('<rect x="2" y="3" width="12" height="10" rx="2.3"/><path d="M2.8 11.4 6.3 8.4l2.3 1.9 2-1.7 2.6 2.3"/>', '<circle cx="5.7" cy="6.5" r="1.15"/>')],
+    ['icon', 'an svg mark', mk('<rect x="2.5" y="2.5" width="11" height="11" rx="2.8"/>', '<path d="M8 5 11 8 8 11 5 8z"/>')],
+    ['avatar', '', mk('<circle cx="8" cy="8" r="5.75"/><circle cx="8" cy="6.7" r="1.8"/><path d="M4.6 12.3a3.8 3.8 0 0 1 6.8 0"/>')],
+    ['chip', 'a tag, a badge', mk('<rect x="2" y="5" width="12" height="6" rx="3"/><path d="M7.6 8h3.6"/>', '<circle cx="5.1" cy="8" r="1.1"/>')],
+    ['card', '', mk('<rect x="2" y="2.5" width="12" height="11" rx="2.6"/><path d="M4.8 6.2h4M4.8 9.4h6.4"/>')],
+    ['list', '', mk('<path d="M6 4.2h7.4M6 8h7.4M6 11.8h7.4"/>', '<circle cx="3" cy="4.2" r="1"/><circle cx="3" cy="8" r="1"/><circle cx="3" cy="11.8" r="1"/>')],
+    ['row', 'one item of a list', mk('<path d="M6.8 8h6"/>', '<circle cx="4" cy="8" r="1.15"/>', '<path d="M2 4.4h12M2 11.6h12"/>')],
+    ['table', '', mk('<rect x="2" y="2.5" width="12" height="11" rx="2.3"/><path d="M2 6.2h12M2 9.9h12M6.5 2.5v11"/>')],
+    ['tabs', '', mk('<path d="M2 12.4h12"/><path d="M3 12.4V6.3A1.8 1.8 0 0 1 4.8 4.5h2.2a1.8 1.8 0 0 1 1.8 1.8v6.1"/>', '', '<path d="M10.8 9h2.6"/>')],
+    ['navigation', 'a sidebar, a header', mk('<rect x="2" y="2.5" width="12" height="11" rx="2.4"/><path d="M6.3 2.5v11"/>')],
+    ['dialog', '', mk('<rect x="3" y="3.5" width="10" height="9" rx="2.3"/><path d="M5.6 6.6h4.8M9.4 9.8h1.4"/>')],
+    ['tooltip', 'a popover, a menu', mk('<path d="M4.3 3h7.4A2.3 2.3 0 0 1 14 5.3v3.4A2.3 2.3 0 0 1 11.7 11H9.6L8 13l-1.6-2H4.3A2.3 2.3 0 0 1 2 8.7V5.3A2.3 2.3 0 0 1 4.3 3z"/>')],
+    ['toast', '', mk('<rect x="2.5" y="8.6" width="11" height="4.9" rx="2.45"/>', '', '<path d="M5 5.6h6"/><path d="M6.6 3h2.8"/>')],
+  ].map(([name, note, svg]) => ({ name, note, svg, fresh: true }));
+
+  // one icon: at its drawn size, at 24, and on the fix bar's tile; its name
+  const tile = (i) => `<figure class="ico"${i.fresh ? ' data-new' : ''}${i.note ? ` title="${i.note}"` : ''}>
+    <span class="row"><i class="s16">${i.svg}</i><i class="s24">${i.svg}</i><i class="chip">${i.svg}</i></span>
+    <figcaption>${i.name}${i.note ? `<small>${i.note}</small>` : ''}</figcaption></figure>`;
+  const set = (title, facts, icons, note = '') => `<section class="set"><div class="head"><h2>${title}</h2><span class="facts">${facts}</span></div>${note ? `<p class="why">${note}</p>` : ''}<div class="grid">${icons.map(tile).join('')}</div></section>`;
+
+  root.innerHTML = `<style>${tokens}${LANGUAGE_CSS}${GLYPH_CSS}
+    :host { display: block; font-family: var(--pl-sans); color: var(--pl-ink); }
+    :host([data-scheme="dark"]) { --pl-paper: #2e2d2b; --pl-paper-2: #3a3936; --pl-rule: #4a4844; --pl-ink: #f4f3ef; }
+    .band { margin: 26px 0 12px; font: 600 12px/1 var(--pl-sans); letter-spacing: .06em; text-transform: uppercase; color: var(--pl-ink-2); }
+    .band:first-child { margin-top: 0; }
+    .set { margin: 0 0 14px; padding: 14px 16px 16px; border-radius: 14px; background: var(--pl-paper); box-shadow: 0 0 0 1px var(--pl-rule); }
+    .head { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+    .head h2 { margin: 0; font: 600 14px/20px var(--pl-sans); }
+    .facts { font: 500 11px/1 var(--pl-mono); color: var(--pl-ink-3); }
+    .why { margin: 4px 0 0; font: 400 13px/19px var(--pl-sans); color: var(--pl-ink-2); max-width: 760px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(128px, 1fr)); gap: 8px; margin-top: 12px; }
+    .ico { margin: 0; padding: 10px 10px 9px; border-radius: 10px; background: var(--pl-paper-2); display: flex; flex-direction: column; gap: 8px; }
+    .ico[data-new] { background: none; box-shadow: inset 0 0 0 1px var(--pl-rule); }
+    .ico .row { display: flex; align-items: center; gap: 12px; height: 26px; color: var(--pl-ink); }
+    .ico i { display: grid; place-items: center; flex: none; }
+    .ico svg { display: block; width: 100%; height: 100%; }
+    .ico .s16 { width: 16px; height: 16px; }
+    .ico .s24 { width: 24px; height: 24px; color: var(--pl-ink-2); }
+    .ico .chip { width: 24px; height: 24px; border-radius: 7px; background: var(--pl-pink-soft); color: var(--pl-pink-ink); }
+    .ico .chip svg { width: 16px; height: 16px; }
+    .ico figcaption { font: 500 12px/15px var(--pl-sans); color: var(--pl-ink); }
+    .ico figcaption small { display: block; font: 400 11px/14px var(--pl-sans); color: var(--pl-ink-3); }
+    ul.notes { margin: 0 0 14px; padding: 12px 16px 12px 32px; border-radius: 14px; background: var(--pl-paper); box-shadow: 0 0 0 1px var(--pl-rule); font: 400 13px/20px var(--pl-sans); color: var(--pl-ink-2); }
+    ul.notes b { color: var(--pl-ink); font-weight: 600; }
+  </style>
+  <div class="band">What the overlay has today</div>
+  <ul class="notes">
+    <li><b>Four sets, four grids.</b> The same job (naming a property) is drawn on a 16, a 14, a 12 and a 24 grid, with lines from 1 to 2.6 thick. Side by side they don’t read as one family.</li>
+    <li><b>Two of the four are private.</b> The type icons live inside the words card and the layout icons inside the editor controls, so nothing else can use them.</li>
+    <li><b>Type is drawn twice.</b> The box set has one “type” icon; the words card has four finer ones for size, line height, letter spacing and weight.</li>
+    <li>Each tile shows the icon at its own size, at 24, and on the fix bar’s pink tile.</li>
+  </ul>
+  ${set('Box properties', 'boxmodel.js · 16 grid · line 1.3 to 2.6', BOX, 'The set the box model, the clean-up chips and the fix bar use. The strongest of the four.')}
+  ${set('Type properties', 'texteditor.js · 14 grid · line 1.3 to 1.6 · private', TYPE)}
+  ${set('Layout options', 'editor-primitives.js · 12 grid · line 1.2 to 1.3 · private', LAYOUT)}
+  ${set('Families', 'glyphs.js · 24 grid · line 1', FAMILIES, 'One per kind of thing Plumber judges. Drawn as drafting marks with a hairline, so at 16 they go thin next to the box set.')}
+  <div class="band">Proposed</div>
+  ${set('Properties with no icon', 'new · 16 grid · line 1.5', PROPS, 'What a fix can touch today and has nothing to show for it. Drawn to the box set’s rules so they sit beside padding, margin and corner.')}
+  ${set('Elements and patterns', 'new · 16 grid · line 1.5', PARTS, 'What a page is made of. For saying what the thing in hand is (a button, a row of a list, a dialog) with a picture instead of a tag name.')}`;
+
+  document.getElementById('scheme').onclick = (e) => { const dark = document.body.classList.toggle('dark'); host.dataset.scheme = dark ? 'dark' : 'light'; e.target.textContent = dark ? 'Light' : 'Dark'; };
+</script>
+</body>
+</html>

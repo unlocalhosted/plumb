@@ -87,13 +87,16 @@
     .on[data-gone] { opacity: 0; scale: .9; pointer-events: none; }
     .on::before { content: ''; position: absolute; top: -5px; right: 26px; width: 10px; height: 10px; rotate: 45deg; background: var(--pl-paper); box-shadow: -1px -1px 0 0 var(--pl-rule); }
     .on.left::before { right: auto; left: 26px; }
+    /* no element to sit on: the same strip, docked on the bar it belongs to, so the bar itself never grows */
+    .on.docked { left: 50%; bottom: 76px; translate: -50% 0; }
+    .on.docked::before { top: auto; bottom: -5px; right: auto; left: calc(50% - 5px); box-shadow: 1px 1px 0 0 var(--pl-rule); }
     .on .ic { display: grid; place-items: center; width: 18px; height: 18px; color: var(--pl-ink-2); }
     .on .ic svg { width: 16px; height: 16px; }
     .on .keys { font: 500 11px/1 var(--pl-mono); color: var(--pl-ink-3); padding-left: 2px; }
     .on .name { display: inline-flex; align-items: center; height: 26px; padding: 0 8px; border-radius: 8px; font: 500 12px/1 var(--pl-mono); color: var(--pl-ink-2); box-shadow: inset 0 0 0 1px var(--pl-rule); }
     .on .name b { font-weight: 600; color: var(--pl-ink); border-bottom: 1.5px solid var(--pl-sky); padding-bottom: 1px; margin-left: 1px; }
     /* the bar */
-    .fb { position: absolute; left: 50%; bottom: 16px; translate: -50% 0; display: flex; align-items: center; gap: 11px; height: 50px; padding: 0 8px 0 13px; border-radius: 25px; white-space: nowrap; }
+    .fb { position: absolute; left: 50%; bottom: 16px; translate: -50% 0; max-width: calc(100% - 24px); box-sizing: border-box; display: flex; align-items: center; gap: 11px; height: 50px; padding: 0 8px 0 13px; border-radius: 25px; white-space: nowrap; }
     .fb .what { display: inline-flex; align-items: center; gap: 8px; }
     /* the property's own icon, the one the box model and the chips use (boxmodel.js BLOCK_ICONS) */
     .fb .what .ic { display: grid; place-items: center; width: 24px; height: 24px; border-radius: 7px; background: var(--pl-pink-soft); color: var(--pl-pink-ink); transition: background-color 240ms var(--pl-ease-out), color 240ms var(--pl-ease-out); }
@@ -127,10 +130,11 @@
     `<div class="page">${rowsOf(false)}</div>
      <div class="on left" style="top: 150px; left: 40px;"><span class="ic" title="Spacing">${BLOCK_ICONS.m}</span>${stepper('Spacing', s2)}<span class="name">--spacing-<b>gutter</b></span></div>`
     + bar({ icon: 'm', cls: 'bottom-[64px]', from: '64', to: 64, name: 'new · gutter', nameHue: 'sky', marks: 1, at: 32, act: 'Add to theme' }))}
-  ${scene('three', '3 · A place that isn’t on the page right now', 'The place is in a part the page shows only sometimes (a toast). There is no element to put the steps on, so they sit in the bar, with one tag saying why.',
-    `<div class="page">${rowsOf(false)}</div>`
+  ${scene('three', '3 · A place that isn’t on the page right now', 'The place is in a part the page shows only sometimes (a toast). There is no element to put the steps on, so the same strip docks on the bar, and one tag says why. The bar keeps its width.',
+    `<div class="page">${rowsOf(false)}</div>
+     <div class="on docked"><span class="ic" title="Padding">${BLOCK_ICONS.p}</span>${stepper('Spacing', s3)}<span class="keys">↑ ↓</span></div>`
     + bar({ icon: 'p', cls: 'px-[7px]', from: '7', to: 8, name: 's2', at: 41, act: 'Use px-s2',
-      extra: `<span class="pl-tag" data-hue="butter" title="In a part this page shows only sometimes. Fixing it still changes your code.">Not showing now</span><span class="inbar">${stepper('Spacing', s3)}</span>` }))}`;
+      extra: `<span class="pl-tag" data-hue="butter" title="In a part this page shows only sometimes. Fixing it still changes your code.">Not showing now</span>` }))}`;
 
   // ── the live one ──
   const stage = root.querySelector('#one .stage');
