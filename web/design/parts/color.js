@@ -37,7 +37,7 @@ export function mount(host, root, css) {
       <div class="top"><i class="toy">${toyOf(toy)}</i><b>${hue}</b></div>
       <p>${means}</p>
       <div class="three">
-        <span class="chip" style="background: var(--h); color: #fff"><b>${hue}</b><code class="tok" tabindex="0">--pl-${hue}</code><small>the body of a piece</small></span>
+        <span class="chip" style="background: var(--h); color: ${hue === 'butter' ? 'var(--hi)' : '#fff'}"><b>${hue}</b><code class="tok" tabindex="0">--pl-${hue}</code><small>the body of a piece</small></span>
         <span class="chip" style="background: var(--hs); color: var(--hi)"><b>soft</b><code class="tok" tabindex="0">--pl-${hue}-soft</code><small>what is not there</small></span>
         <span class="chip" style="background: var(--hi); color: #fff"><b>ink</b><code class="tok" tabindex="0">--pl-${hue}-ink</code><small>marks drawn on the hue</small></span>
       </div></article>`;
@@ -76,10 +76,11 @@ export function mount(host, root, css) {
     .hue .toy svg { display: block; width: 100%; height: 100%; overflow: visible; }
     .hue .top b { font: 600 17px/22px var(--pl-sans); text-transform: capitalize; }
     .hue p { margin: 8px 0 12px; font: 400 13px/19px var(--pl-sans); color: var(--pl-ink-2); min-height: 38px; }
-    .three { display: grid; grid-template-columns: 1.3fr 1fr 1fr; gap: 6px; }
+    .three { display: grid; grid-template-columns: 1.2fr 1fr 1fr; gap: 6px; }
     .chip { display: flex; flex-direction: column; gap: 2px; padding: 10px 10px 9px; border-radius: 12px; min-width: 0; }
     .chip b { font: 600 13px/16px var(--pl-sans); text-transform: capitalize; }
-    .chip code { font-size: 10px; opacity: .85; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: copy; }
+    .chip code, .chip .tok { font-size: 11px; color: inherit; opacity: .9; overflow-wrap: anywhere; cursor: copy; }
+    .chip .tok:hover, .chip .tok:focus-visible, .chip .tok[data-copied] { background: color-mix(in oklab, currentColor 18%, transparent); color: inherit; box-shadow: 0 0 0 3px color-mix(in oklab, currentColor 18%, transparent); }
     .chip small { font: 400 11px/14px var(--pl-sans); opacity: .8; }
     /* the tables */
     .tbl { margin-top: 14px; border-radius: 16px; background: var(--pl-paper); box-shadow: 0 0 0 1px var(--pl-rule); overflow: hidden; }
