@@ -36,6 +36,7 @@ import { clearOf } from './geometry.js';
 import { Spacing, Layout, LAYOUT_CSS, freeze, fitCopy, groundOf } from './layoutcard.js';
 import { lawsOf } from './laws.js';
 import { Tidy } from './tidycard.js'; // layer 3: Tidy this card // layer 2: Layout › and the spacing on the element
+import { Scope } from './scope.js';
 
 const W = FIX.card;
 const WIDTH = 276, GAP = 16, EDGE = 12;
@@ -214,6 +215,7 @@ export class ElementCard {
   #scope = 'one';       // shadow: 'one' (the default) | 'add' | 'move'
   #preview = null;      // the engine's answer for the option in hand as tuned, or { error }
   #pseq = 0; #asking = false; #again = false;
+  #life = new Scope(); // the card's own, for as long as the overlay is on the page
   #hand = null;         // a handle held: the card is moved in place, never redrawn
   #shown = new Map();   // prop → the inline value a preview replaced
   #loops = [];
@@ -253,7 +255,7 @@ export class ElementCard {
       if (e.type === 'keydown' && e.repeat) return;
       this.#tidy.hold(e.type === 'keydown'); this.#draw();
     };
-    addEventListener('keydown', space, true); addEventListener('keyup', space, true);
+    this.#life.listen(window, 'keydown', space, true); this.#life.listen(window, 'keyup', space, true);
     this.#layout = new Layout(root, {
       target: () => this.#target, redraw: () => this.#draw(), restrip: () => this.#stripDraw(),
     });
@@ -303,6 +305,7 @@ export class ElementCard {
     await this.#read();
   }
   close() {
+    this.#seq++; this.#pseq++; // a read or a preview still out lands on a closed card: it is no one's now
     this.#spacing.off();
     this.#reset();
     this.#target = null; this.#state = 'off'; this.#data = null;

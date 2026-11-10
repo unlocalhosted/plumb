@@ -190,10 +190,30 @@ race, built for the old in-place write) was rewritten for the new write path (`e
   height put back and the ✓'s burst are the panel's own. Baseline 18 → 8. `cleanup` and `cleanup-colour` tests 7 of
   7; `fixpanel` tests 8 pass and the same 4 fail before and after.
 
+### 7. One batch: the leftovers of the oracle's list, and four stale-answer bugs
+- **The itch:** the owner: "do a meaningful chunk of work and then run the tests"; testing after every small change had
+  turned each step into an hour.
+- **What changed, in one batch, tested once:**
+  - History: only the newest read of the timeline is drawn (overlapping reads used to be last-arrival-wins); a toast
+    can no longer be hidden by the previous toast's leave timer; its scroll and resize listeners are its scope's.
+  - Element card and words card: closing the card drops a read still out, so it can't draw on a closed card.
+  - Scrub: a pointer the browser takes away, or the window losing focus, puts the value back like Esc.
+  - API: a host that refused a batch is asked one question at a time for 30 s, then batches are tried again (it used
+    to be one question at a time for the rest of the page's life).
+  - Gravity plot: its observers, listeners and frame loop end with `destroy()`.
+- **The proof:** oracle baseline 8 → 2 (both in the headless recorder, which lives as long as its page). One run of
+  the six test files of these owners: 18 pass, 3 fail, and the 3 are the `select` tests that fail on `main` too.
+- **Not done:** none of these fixes has a test of its own yet. The old pinned card in `widget.js` is still there: its
+  only safety net is the Blueprint tests, which are red on `main`, so it waits for them.
+
 ## Open gaps
 - `e2e/text-edit.test.mjs` "every write is in the dock's history" times out on `main` on the laptop; not looked at.
-- 8 oracle findings are left, all in owners with no declared machine (history, element card, scrub, gravity plot,
-  the headless recorder). Nothing bans a bare `setTimeout` or `addEventListener` in a new owner yet.
+- 2 oracle findings are left, both in the headless recorder. Nothing bans a bare `setTimeout` or `addEventListener`
+  in a new owner yet.
+- The batch of 2026-11-10 (history, the two cards, scrub, the API batcher, the gravity plot) has no tests of its own.
+- The full suite on vm-agent was killed ten minutes in (exit 137) on a busy box; it has not run to the end.
+- The Blueprint tests are red on `main` on both machines (8 of 8 in `blueprint-corners`, 3 in `blueprint`, 3 in
+  `select`, 4 in `fixpanel`): they wait for dock words or a button the page doesn't show. Not looked into.
 - 4 tests of `e2e/fixpanel.test.mjs` fail on `main` on the laptop, the same four with and without the scope; not
   looked at.
 - 6 tests of `e2e/blueprint.test.mjs` fail on `main` on the laptop (three time-outs, three assertions); not looked at.

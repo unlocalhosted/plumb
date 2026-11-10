@@ -324,6 +324,7 @@ export class TextEditor {
     await this.#read();
   }
   close() {
+    this.#seq++; // a read still out lands on a closed card: it is no one's now
     this.#drag?.cancel();
     this.#editing = null; this.#menu = null;
     this.#unpeek(); this.#target = null; this.#state = 'off'; this.#props = null;

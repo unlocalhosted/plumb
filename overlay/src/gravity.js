@@ -24,6 +24,7 @@
 import { esc } from './choices.js';
 import { step as stepMark, place, drawPlace, count as countMark, rollCount } from './scale-marks.js';
 import { SETTLE, DETENT, spring, ms, stagger } from './motion.js';
+import { Scope } from './scope.js';
 
 const nf = new Intl.NumberFormat('en');
 const plural = (n, one, many) => `${nf.format(n)} ${n === 1 ? one : many}`;
@@ -260,12 +261,18 @@ export class Gravity {
     };
     button.addEventListener('click', () => snap(!every));
 
-    new ResizeObserver(() => { size(); run(); }).observe(canvas);
-    new IntersectionObserver(([e]) => { visible = e.isIntersecting; run(); }).observe(canvas);
-    document.addEventListener('visibilitychange', run);
+    // everything the plot listens to is its scope's: destroy() ends it all
+    const scope = (this.scope = new Scope());
+    const sizes = new ResizeObserver(() => { size(); run(); }), seen = new IntersectionObserver(([e]) => { visible = e.isIntersecting; run(); });
+    sizes.observe(canvas); seen.observe(canvas);
+    scope.listen(document, 'visibilitychange', run);
     // the hues follow the scheme: read them again when it changes
-    new MutationObserver(() => { read(); run(); }).observe(this.el.getRootNode().host ?? document.documentElement, { attributes: true, attributeFilter: ['data-scheme', 'class'] });
-    matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { read(); run(); });
+    const scheme = new MutationObserver(() => { read(); run(); });
+    scheme.observe(this.el.getRootNode().host ?? document.documentElement, { attributes: true, attributeFilter: ['data-scheme', 'class'] });
+    scope.listen(matchMedia('(prefers-color-scheme: dark)'), 'change', () => { read(); run(); });
+    scope.onEnd(() => { sizes.disconnect(); seen.disconnect(); scheme.disconnect(); cancelAnimationFrame(raf); raf = -1; });
     size(); run();
   }
+  /** The plot is leaving the page: its observers, listeners and frame loop end. */
+  destroy() { this.scope?.end(); }
 }

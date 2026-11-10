@@ -103,6 +103,8 @@ export function scrub(event, { el, prop, steps, from, host, onStep, onDone }) {
   const end = (keep) => {
     removeEventListener('pointermove', move, true);
     removeEventListener('pointerup', up, true);
+    removeEventListener('pointercancel', cancel, true);
+    removeEventListener('blur', cancel);
     removeEventListener('keydown', key, true);
     document.removeEventListener('pointerlockchange', onLock);
     if (document.pointerLockElement) document.exitPointerLock();
@@ -113,9 +115,13 @@ export function scrub(event, { el, prop, steps, from, host, onStep, onDone }) {
     onDone?.(keep ? steps[at] : null);
   };
   const up = (e) => { e.preventDefault(); e.stopPropagation(); end(at !== first || steps[first].n !== from); };
+  const cancel = () => end(false);
   const key = (e) => { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); end(false); } };
   addEventListener('pointermove', move, true);
   addEventListener('pointerup', up, true);
+  // a pointer the browser took away (a touch interrupted, the window left): the value goes back, like Esc
+  addEventListener('pointercancel', cancel, true);
+  addEventListener('blur', cancel);
   addEventListener('keydown', key, true);
   event.preventDefault();
 }

@@ -28,6 +28,7 @@
 import { errorIs, request, post } from './api.js';
 import { esc } from './choices.js';
 import { TIMELINE as T } from './words.js';
+import { Scope } from './scope.js';
 
 export const HISTORY_ICON = '<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2.2 4.2A4.25 4.25 0 1 1 1.75 6.5" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><path d="M1.6 1.8v2.6h2.6" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 3.75V6l1.6 1" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>';
 const CLOSE_ICON = '<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M3 3l6 6M9 3l-6 6" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>';
@@ -224,9 +225,12 @@ function elementsOf(c, index = pageIndex()) {
 }
 
 export class History {
-  #toast; #strip; #button; #host; #timer = 0; #last = null;
+  #toast; #strip; #button; #host; #last = null;
   #steps = []; #flat = []; #at = -1; #busy = false; #status = 'idle'; #warn = null; #seen = new Set(); #press = false;
   #marks; #marked = []; #follow = 0;
+  #life = new Scope(); // History's own, for as long as the overlay is on the page
+  #loads = 0;          // the read in flight: only the newest one's answer is drawn
+  #toastScope = null;  // the toast on screen: its time, and the moment it takes to leave
   #decl = new Map(); #shown = []; #past = false;
 
   // button: the dock's history button; host: announce(text), changed()
@@ -242,8 +246,8 @@ export class History {
     root.append(this.#marks, this.#toast, this.#strip);
     // the marks stay on their elements as the page scrolls or resizes, one read per frame
     const follow = () => { if (this.#follow || !this.#marked.length) return; this.#follow = requestAnimationFrame(() => { this.#follow = 0; this.#place(); }); };
-    addEventListener('scroll', follow, { passive: true, capture: true });
-    addEventListener('resize', follow, { passive: true });
+    this.#life.listen(window, 'scroll', follow, { passive: true, capture: true });
+    this.#life.listen(window, 'resize', follow, { passive: true });
     button.addEventListener('click', () => this.toggle());
     this.#toast.addEventListener('click', (e) => { if (e.target.closest('.undo') && this.#last) this.undo(this.#last); });
     this.#strip.addEventListener('click', (e) => {
@@ -335,14 +339,17 @@ export class History {
   }
 
   async #load(tries = 0) {
+    const run = ++this.#loads;
     try {
       const said = await request('trace', {});
+      if (run !== this.#loads) return; // a newer read was asked meanwhile: its answer is the one to draw
       this.#steps = stepsOf(said?.changes ?? []);
       this.#flat = this.#steps.flatMap((s) => s.changes.map((c) => ({ ...c, step: s })));
       this.#status = this.#flat.length ? 'ready' : 'empty';
     } catch {
       // reopened after a reload, the server may still be starting: wait for it a little
-      if (tries > 0) { setTimeout(() => this.#load(tries - 1), 500); return; }
+      if (run !== this.#loads) return;
+      if (tries > 0) { this.#life.timeout(() => { if (run === this.#loads) this.#load(tries - 1); }, 500); return; }
       this.#status = 'error';
     }
     if (this.#at < 0 || this.#at >= this.#flat.length) this.#at = this.#flat.length - 1;
@@ -600,16 +607,18 @@ export class History {
   }
 
   #say(text, undo = false, kind = '') {
-    clearTimeout(this.#timer);
+    // the toast before this one: its time and its leaving end here, so neither can hide this one
+    this.#toastScope?.end();
+    const toast = (this.#toastScope = this.#life.child());
     this.#toast.dataset.kind = kind;
     this.#toast.innerHTML = `<span class="what">${esc(text)}</span>${undo ? '<button type="button" class="undo">Undo</button>' : ''}`;
     this.#toast.hidden = false;
     // the timeline open in the same corner: the toast sits above it, never under it
     this.#toast.style.insetBlockEnd = this.open ? `${innerHeight - this.#strip.getBoundingClientRect().top + 8}px` : '';
-    requestAnimationFrame(() => this.#toast.setAttribute('data-on', ''));
-    this.#timer = setTimeout(() => {
+    toast.frame(() => this.#toast.setAttribute('data-on', ''));
+    toast.timeout(() => {
       this.#toast.removeAttribute('data-on');
-      setTimeout(() => { this.#toast.hidden = true; }, 160);
+      toast.timeout(() => { this.#toast.hidden = true; toast.end(); }, 160);
       try { sessionStorage.removeItem(RESUME); } catch {}
     }, HOLD);
   }
