@@ -20,6 +20,7 @@
  *            cursor moving
  * ───────────────────────────────────────────────────────── */
 import { esc } from './choices.js';
+import { Claims, LEVEL } from './claims.js';
 
 const STEP = 22; // px of movement per step of the scale
 // The notch: an underdamped spring from the last step to the new one (about 10% past it, settled in ~220ms)
@@ -56,7 +57,7 @@ export function scrub(event, { el, prop, steps, from, host, onStep, onDone }) {
   // the step the value starts from: its own, else the nearest (an off-scale value starts between two)
   let at = steps.reduce((best, s, i) => (Math.abs(s.n - from) < Math.abs(steps[best].n - from) ? i : best), 0);
   const first = at;
-  const inline = el.style.getPropertyValue(prop), priority = el.style.getPropertyPriority(prop);
+  const drag = new Claims(LEVEL.drag); // the value under the finger; claims.js keeps what the page had
   const glyph = document.createElement('div');
   glyph.className = 'scrub-at';
   glyph.dataset.axis = axis;
@@ -69,7 +70,7 @@ export function scrub(event, { el, prop, steps, from, host, onStep, onDone }) {
   // the value lands on its step through the notch: x(t) = to + (from − to)·e^(−ζωt)·cos(ω√(1−ζ²)t)
   const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
   let shown = from, spring = 0;
-  const set = (v) => { shown = v; el.style.setProperty(prop, `${Math.round(v * 100) / 100}px`, 'important'); };
+  const set = (v) => { shown = v; drag.set(el, prop, `${Math.round(v * 100) / 100}px`); };
   const apply = () => {
     const to = steps[at].n, was = shown;
     cancelAnimationFrame(spring);
@@ -111,8 +112,9 @@ export function scrub(event, { el, prop, steps, from, host, onStep, onDone }) {
     cancelAnimationFrame(spring);
     if (keep) set(steps[at].n);
     glyph.remove();
-    if (!keep) { if (inline) el.style.setProperty(prop, inline, priority); else el.style.removeProperty(prop); if (!el.getAttribute('style')?.trim()) el.removeAttribute('style'); }
+    // kept: whoever takes the step claims it in onDone, then the drag lets go and the page doesn't move
     onDone?.(keep ? steps[at] : null);
+    drag.clear();
   };
   const up = (e) => { e.preventDefault(); e.stopPropagation(); end(at !== first || steps[first].n !== from); };
   const cancel = () => end(false);

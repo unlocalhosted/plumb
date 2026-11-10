@@ -13,7 +13,8 @@
  * Levels, most direct last (the one the person is acting through wins):
  *   past     the History view of an earlier state
  *   cleanup  a clean-up pass shown on the whole page
- *   fix      a fix being tried at its places
+ *   fix      a change taken and waiting for Apply, and a new token tried at its places
+ *   trial    the fix being tried on the selected element right now
  *   card     an open card's preview
  *   peek     an option pointed at
  *   drag     a value being dragged
@@ -21,7 +22,7 @@
  * If the page itself writes the property while it is claimed (a re-render), that becomes the page's own value: the
  * claim still shows, and the page's new value is what comes back when the claims end.
  */
-export const LEVEL = { past: 0, cleanup: 1, fix: 2, card: 3, peek: 4, drag: 5 };
+export const LEVEL = { past: 0, cleanup: 1, fix: 2, trial: 3, card: 4, peek: 5, drag: 6 };
 const LEVELS = Object.keys(LEVEL).length;
 
 // el → Map<prop, { base: [value, priority], slots: (string|undefined)[], shown: string|null }>

@@ -21,7 +21,7 @@ import { LANGUAGE_CSS } from './language.js';
 import { facetOf } from './craft-facets.js';
 import { PRIMITIVES_CSS, stepper, swatches } from './editor-primitives.js';
 import { esc } from './choices.js';
-import { planOf, moved, preview, glide, GLIDE, GLYPHS, SPACING_PROPS, swapPlanOf, swapPreview, swapRelease, FACET_SAID, glyphOf } from './inplace.js';
+import { planOf, moved, preview, glide, GLIDE, GLYPHS, SPACING_PROPS, swapPlanOf, swapPreview, swapRelease, swapTake, TRIAL, FACET_SAID, glyphOf } from './inplace.js';
 import { scrub, SCRUB_CSS, cursorOf } from './scrub.js';
 
 export const SELECT_CSS = `
@@ -228,7 +228,7 @@ export class Selection {
     const plan = this.#plan, el = this.#el, problem = this.current;
     if (!plan || !el || !this.#changes || !problem) return false;
     // the other places' previews hand over to Changes: put back, then recorded and shown again below
-    for (const g of this.#group) { const m = this.#gmemo.get(g.el); if (!m) continue; if (m.memo.done) swapPreview(g.el, null, false, m.memo); for (const [pp, v, pr] of m.had) { if (v) g.el.style.setProperty(pp, v, pr); else g.el.style.removeProperty(pp); } }
+    for (const g of this.#group) { const m = this.#gmemo.get(g.el); if (!m) continue; if (m.memo.done) swapPreview(g.el, null, false, m.memo); for (const pp of m.had) TRIAL.unset(g.el, pp); }
     this.#gmemo.clear();
     if (plan.kind === 'swap') {
       const opt = plan.options[plan.at];
@@ -237,24 +237,21 @@ export class Selection {
       // the sidebar keeps the classes as written: the preview is put back while it records them, then shown again
       swapPreview(el, null, false, memo);
       this.#changes.put(el, el.localName, problem.key, { label: FACET_SAID[plan.facet] ?? plan.facet ?? 'class', from: plan.now?.label ?? opt.write.from, to: opt.label, write: opt.write, undo: () => swapPreview(el, null, false, memo), release: () => swapRelease(el, memo) });
-      swapPreview(el, opt.write, true, memo, opt.styles);
+      swapPreview(el, opt.write, true, memo, opt.styles); swapTake(el, memo);
       // the same edit at every other place of the cause whose classes carry it
       for (const g of this.#group) {
         if (!String(opt.write.from).split(/\s+/).filter(Boolean).every((c) => g.el.classList.contains(c))) continue;
         const m = {};
         this.#changes.put(g.el, g.el.localName, g.key ?? problem.key, { label: FACET_SAID[plan.facet] ?? plan.facet ?? 'class', from: plan.now?.label ?? opt.write.from, to: opt.label, write: opt.write, undo: () => swapPreview(g.el, null, false, m), release: () => swapRelease(g.el, m) });
-        swapPreview(g.el, opt.write, true, m, opt.styles);
+        swapPreview(g.el, opt.write, true, m, opt.styles); swapTake(g.el, m);
       }
       this.#memo = {};
     } else {
+      // the trial becomes the taken change: Changes claims the step, then the trial lets go (the page doesn't move)
       preview(el, plan, true);
-      for (const p of plan.props) this.#changes.set(el, el.localName, p.prop, p.from, p.to, p.original);
+      for (const p of plan.props) { this.#changes.set(el, el.localName, p.prop, p.from, p.to); TRIAL.unset(el, p.prop); }
       // every other place of the cause takes the same steps
-      for (const g of this.#group) for (const p of plan.props) {
-        const original = [g.el.style.getPropertyValue(p.prop), g.el.style.getPropertyPriority(p.prop)];
-        glide(g.el, () => g.el.style.setProperty(p.prop, `${p.to.n}px`, 'important'));
-        this.#changes.set(g.el, g.el.localName, p.prop, p.from, p.to, original);
-      }
+      for (const g of this.#group) for (const p of plan.props) glide(g.el, () => this.#changes.set(g.el, g.el.localName, p.prop, p.from, p.to));
     }
     this.#previewing = false; // Changes owns the preview now
     // the file as it is now, for every element that just took its first change
@@ -276,12 +273,11 @@ export class Selection {
     const steps = this.#steps?.('spacing') ?? [];
     if (!steps.length) return false;
     const el = this.#el, prop = band.prop;
-    const original = [el.style.getPropertyValue(prop), el.style.getPropertyPriority(prop)];
     const from = { token: this.#tokenOf('spacing', band.n), n: band.n };
     this.#unpreview();
     pointAt(this.#pill, [], 0, 0);
     scrub(e, { el, prop, steps, from: band.n, host: this.#layer, onStep: () => this.draw(), onDone: (step) => {
-      if (step) this.#changes.set(el, el.localName, prop, from, step, original);
+      if (step) this.#changes.set(el, el.localName, prop, from, step);
       this.draw();
     } });
     return true;
@@ -300,7 +296,7 @@ export class Selection {
     return band ? cursorOf(band.prop) : '';
   }
   // Every other place of the cause previews what the selected one previews, and goes back with it
-  #gmemo = new Map(); // el → { memo (a class swap's), had: [[prop, value, priority]] (a spacing preview's) }
+  #gmemo = new Map(); // el → { memo (a class swap's), had: [prop] (the properties a spacing trial claims on it) }
   #groupPreview(on) {
     const plan = this.#plan;
     for (const g of this.#group) {
@@ -308,7 +304,7 @@ export class Selection {
       let m = this.#gmemo.get(g.el);
       if (!on) {
         if (!m) continue;
-        glide(g.el, () => { if (m.memo.done) swapPreview(g.el, null, false, m.memo); for (const [pp, v, pr] of m.had) { if (v) g.el.style.setProperty(pp, v, pr); else g.el.style.removeProperty(pp); } });
+        glide(g.el, () => { if (m.memo.done) swapPreview(g.el, null, false, m.memo); for (const pp of m.had) TRIAL.unset(g.el, pp); });
         this.#gmemo.delete(g.el);
         continue;
       }
@@ -318,7 +314,7 @@ export class Selection {
         const opt = plan.options[plan.at];
         if (String(opt.write?.from ?? '').split(/\s+/).filter(Boolean).every((c) => g.el.classList.contains(c))) swapPreview(g.el, opt.write, true, m.memo, opt.styles);
       } else {
-        glide(g.el, () => { for (const pr of plan.props) { if (!m.had.some(([x]) => x === pr.prop)) m.had.push([pr.prop, g.el.style.getPropertyValue(pr.prop), g.el.style.getPropertyPriority(pr.prop)]); g.el.style.setProperty(pr.prop, `${pr.to.n}px`, 'important'); } });
+        glide(g.el, () => { for (const pr of plan.props) { if (!m.had.includes(pr.prop)) m.had.push(pr.prop); TRIAL.set(g.el, pr.prop, `${pr.to.n}px`); } });
       }
     }
   }
@@ -326,7 +322,7 @@ export class Selection {
     this.#groupPreview(false);
     if (this.#previewing && this.#el && this.#plan) {
       if (this.#plan.kind === 'swap') swapPreview(this.#el, null, false, this.#memo);
-      else if (!this.#changes?.has(this.#el)) preview(this.#el, this.#plan, false);
+      else preview(this.#el, this.#plan, false); // a change already taken on it stays: it is Changes' claim, under this one
       this.#follow();
     }
     this.#previewing = false;
