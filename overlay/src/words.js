@@ -543,6 +543,8 @@ export const FIX = {
     spacing: 'Spacing',
     spacingHint: 'point at an edge on the element',
     spacingKeys: [['Scroll', 'or drag a band, a step at a time'], ['⇧', 'the pair'], ['⌘', 'all sides']],
+    // a side whose value the element's own style sets: a class never wins over a style, so it takes no step
+    spacingInStyle: 'Set in the element’s own style, which a class can’t override. Change it in your code.',
     sides: { top: 'top', right: 'right', bottom: 'bottom', left: 'left' },
     what: (kind, sides) => kind === 'gap' ? 'gap' : `${kind === 'pad' ? 'padding' : 'margin'} ${sides.length === 4 ? 'all sides' : sides.length === 2 ? `${sides[0]} and ${sides[1]}` : sides[0]}`,
     mates: (n) => `${n + 1} like it, one line of code`,
@@ -873,6 +875,24 @@ export const CLEANUP = {
     next: 'Next: the icons.',
     notYet: 'Icons come to Plumber next.',
     couldNot: 'Couldn’t read this page’s colours.',
+    // renaming the project's colour tokens by their job (docs/design/token-spec.md §3.3): names only, never a colour
+    names: {
+      head: (n) => `${n} of your colour names don’t say what they’re for`,
+      sub: (from, to) => `For example, ${from} becomes ${to}. Every colour stays the same; only the names change.`,
+      open: 'See the new names',
+      list: 'New colour names',
+      was: (old) => `was ${old}`,
+      kept: (names) => `${names} keep${names.includes(',') || names.includes(' and ') ? '' : 's'} ${names.includes(',') || names.includes(' and ') ? 'their names' : 'its name'}.`,
+      everywhere: 'This changes the names in every file that uses them. You can undo it.',
+      rename: 'Rename everywhere',
+      renaming: 'Renaming…',
+      notNow: 'Not now',
+      done: (n, files) => `Renamed ${n} colour ${n === 1 ? 'name' : 'names'} in ${files} ${files === 1 ? 'file' : 'files'}. Every colour looks the same.`,
+      undo: 'Undo',
+      undone: 'Colour names put back.',
+      failed: 'Couldn’t rename the colours.',
+      retry: 'Try again',
+    },
   },
   icons: {
     reading: 'Reading the icons on this page…',

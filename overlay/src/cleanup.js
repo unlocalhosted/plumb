@@ -29,6 +29,8 @@ import { SpacingPass } from './spacing-pass.js';
 import { ColourPass } from './colour-pass.js';
 import { IconPass } from './icon-pass.js';
 import { CLEANUP as W } from './words.js';
+import { paletteOf } from './colours.js';
+import { renameMap } from './colour-system.js';
 
 const LAWS = [{ id: 'similarity', name: 'Law of similarity' }, { id: 'cognitive-load', name: 'Cognitive load' }];
 // the passes written as class swaps (spacing-pass.js, colour-pass.js): one shape, so the panel runs them one way
@@ -93,6 +95,14 @@ export const CLEANUP_CSS = `
   @keyframes cu-live { 0% { box-shadow: 0 0 0 0 rgb(42 127 208 / .4); } 70% { box-shadow: 0 0 0 6px transparent; } 100% { box-shadow: 0 0 0 0 transparent; } }
   @media (prefers-reduced-motion: reduce) { .cu .bar .live { animation: none; } }
   .cu .roles { padding: 12px 14px 0; }
+  .cu .names { margin: 12px 0 0; padding: 12px 16px 0; border-top: 1px solid #ecebe6; display: grid; gap: 4px; }
+  .cu .names .nhead { font-weight: 600; font-size: 13px; line-height: 1.35; text-wrap: balance; }
+  .cu .names .nacts { display: flex; gap: 4px; margin: 6px 0 0 -12px; }
+  .cu .names .nlist { margin: 4px 0; max-height: min(30vh, 240px); }
+  .cu .names .nlist li { grid-template-columns: 20px 1fr; min-height: 30px; }
+  .cu .names .sw { width: 14px; height: 14px; border-radius: 4px; justify-self: center; box-shadow: inset 0 0 0 1px rgb(0 0 0 / .12); }
+  .cu .names .nm { font: 550 12px/1.3 var(--pl-mono, ui-monospace, monospace); } .cu .names .nm small { font-family: var(--pl-sans, system-ui); }
+  .cu .names .error { padding: 0; }
   .cu .ladder .sp-ic { display: inline-grid; place-items: center; width: 16px; height: 16px; color: #6b665c; } .cu .ladder .sp-ic svg { width: 16px; height: 16px; display: block; }
 ${SHOW_CSS}
 `;
@@ -125,6 +135,8 @@ export class Cleanup {
   #show = null; #marks = null; // the show playing: its stop, and the marks it draws on the page
   #host; #el = null; #pass = 0; #done = new Map(); #state = 'idle'; #p = null; #page = null; #err = null; #preview = new StylePreview(); #held = false; #saved = null;
   #swaps = { spacing: new SpacingPass(), colour: new ColourPass(), icons: new IconPass() };
+  // renaming the colour tokens by job: null until the colour step reads a plan; then { plan, open, busy, done, err }
+  #rn = null;
   get #sw() { return this.#swaps[PASSES[this.#pass]]; } // the pass in hand, when it is a class-swap pass
   get #words() { return this.#sw ? W[PASSES[this.#pass]] : W; }
   #hasNext() { return !!this.#swaps[PASSES[this.#pass + 1]]; }
@@ -135,7 +147,7 @@ export class Cleanup {
   get previewing() { return this.#state === 'preview'; }
 
   async start() {
-    this.#pass = 0; this.#done.clear(); this.#saved = null;
+    this.#pass = 0; this.#done.clear(); this.#saved = null; this.#rn = null;
     await this.#read();
   }
   stop() { this.#settle(); keep(null); this.#listen(false); this.#held = false; this.#preview.clear((el, f) => f()); for (const sw of Object.values(this.#swaps)) sw.clear(); this.#state = 'idle'; this.#p = null; this.#host.render(); }
@@ -263,6 +275,12 @@ export class Cleanup {
   }
 
   #swapHtml(acts, close) {
+    const html = this.#swapBody(acts, close);
+    if (PASSES[this.#pass] !== 'colour' || this.#state === 'writing' || this.#state === 'reading') return html;
+    const names = this.#namesHtml(), at = html.lastIndexOf('<div class="acts"');
+    return names && at > 0 ? html.slice(0, at) + names + html.slice(at) : html + names;
+  }
+  #swapBody(acts, close) {
     const S = this.#words, s = this.#state, p = this.#sw.page, more = this.#hasNext();
     if (s === 'done') {
       const did = this.#done.get(PASSES[this.#pass]) === 'done';
@@ -280,6 +298,49 @@ export class Cleanup {
       + acts(`<button type="button" class="cu-btn primary" data-cu="apply">${esc(W.apply)}<kbd>↵</kbd></button><button type="button" class="cu-btn" data-cu="preview">${esc(W.preview)}<kbd>P</kbd></button><span class="grow"></span><button type="button" class="cu-btn quiet" data-cu="skip">${esc(W.skip(W.pass[PASSES[this.#pass]].toLowerCase()))}<kbd>→</kbd></button>`);
   }
 
+  // the colour tokens renamed by their job: one plan for the project, read once from the theme's own tokens
+  #namesPlan() {
+    if (this.#rn) return this.#rn;
+    let plan = null;
+    try { const tokens = paletteOf(); const r = renameMap(tokens.map((t) => ({ short: t.short, kind: t.kind }))); const css = new Map(tokens.map((t) => [t.short, t.css])); if (Object.keys(r.map).length) plan = { ...r, css }; } catch { plan = null; }
+    this.#rn = { plan, open: false, busy: false, done: null, err: null };
+    return this.#rn;
+  }
+  #namesHtml() {
+    const N = W.colour.names, rn = this.#namesPlan(), plan = rn.plan;
+    if (!plan && !rn.done) return '';
+    if (rn.done) return `<div class="names"><div class="sub">${esc(N.done(rn.done.names, rn.done.files))}</div><div class="nacts"><button type="button" class="cu-btn" data-cu="names-undo"${rn.busy ? ' disabled' : ''}>${esc(N.undo)}</button></div></div>`;
+    const pairs = Object.entries(plan.map), [from, to] = pairs.find(([k]) => k === 'fg' || k === 'foreground') ?? pairs[0];
+    if (!rn.open) return `<div class="names"><div class="nhead">${esc(N.head(pairs.length))}</div><div class="sub">${esc(N.sub(from, to))}</div><div class="nacts"><button type="button" class="cu-btn" data-cu="names-open">${esc(N.open)}</button></div></div>`;
+    const rows = pairs.map(([old, next]) => `<li><span class="sw" aria-hidden="true" style="background:${esc(plan.css.get(old) ?? 'transparent')}"></span><span class="nm">${esc(next)}<small>${esc(N.was(old))}</small></span></li>`).join('');
+    const keptNames = plan.kept.map((k) => k.short);
+    const kept = keptNames.length ? `<div class="sub">${esc(N.kept(keptNames.length > 1 ? `${keptNames.slice(0, -1).join(', ')} and ${keptNames.at(-1)}` : keptNames[0]))}</div>` : '';
+    return `<div class="names"><div class="nhead">${esc(N.head(pairs.length))}</div><ol class="ladder nlist" aria-label="${esc(N.list)}">${rows}</ol>${kept}<div class="sub">${esc(N.everywhere)}</div>`
+      + (rn.err ? `<div class="error">${esc(rn.err)}</div>` : '')
+      + `<div class="nacts"><button type="button" class="cu-btn" data-cu="names-go"${rn.busy ? ' disabled' : ''}>${esc(rn.busy ? N.renaming : rn.err ? N.retry : N.rename)}</button><button type="button" class="cu-btn quiet" data-cu="names-close"${rn.busy ? ' disabled' : ''}>${esc(N.notNow)}</button></div></div>`;
+  }
+  async #rename() {
+    const rn = this.#rn; if (!rn?.plan || rn.busy) return;
+    rn.busy = true; rn.err = null; this.#host.render();
+    const group = `cleanup-names-${Date.now().toString(36)}`;
+    try {
+      const r = await post('rename', { map: rn.plan.map, trace: { group, meta: { step: W.pass.colour, laws: ['similarity'] } } });
+      const files = (r.files ?? []).filter((f) => f.ok).length;
+      if (!files) throw new Error(r.files?.find((f) => f.error)?.error ?? W.colour.names.failed);
+      rn.done = { names: Object.keys(rn.plan.map).length, files, group }; rn.open = false;
+      this.#host.wrote?.({ undo: r.undo ?? [], trace: { group } }, W.colour.names.done(rn.done.names, files));
+      this.#host.announce?.(W.colour.names.done(rn.done.names, files));
+    } catch (error) { rn.err = error?.message || W.colour.names.failed; }
+    rn.busy = false; this.#host.render();
+  }
+  async #renameUndo() {
+    const rn = this.#rn; if (!rn?.done || rn.busy) return;
+    rn.busy = true; this.#host.render();
+    try { await this.#host.undo(rn.done.group); this.#host.announce?.(W.colour.names.undone); this.#rn = null; }
+    catch (error) { rn.busy = false; rn.err = error?.message || W.colour.names.failed; }
+    this.#host.render();
+  }
+
   // a click inside the panel's body; true when it was ours
   click(target) {
     const act = target.closest?.('[data-cu]')?.dataset.cu;
@@ -289,6 +350,10 @@ export class Cleanup {
     else if (act === 'cancel') this.#togglePreview(false);
     else if (act === 'skip' || act === 'next') this.#next();
     else if (act === 'undo') this.#undo();
+    else if (act === 'names-open') { this.#rn.open = true; this.#host.render(); }
+    else if (act === 'names-close') { this.#rn.open = false; this.#rn.err = null; this.#host.render(); }
+    else if (act === 'names-go') this.#rename();
+    else if (act === 'names-undo') this.#renameUndo();
     else if (act === 'retry') { if (this.#sw) this.#readPass(this.#pass); else this.#read(); }
     else if (act === 'copy') { const t = this.#el?.querySelector?.('.cmd code')?.textContent ?? ''; navigator.clipboard?.writeText(t).catch(() => {}); this.#host.announce?.(W.copied); }
     else if (act === 'close') this.#host.close();
