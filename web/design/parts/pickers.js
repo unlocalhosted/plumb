@@ -11,6 +11,7 @@
 import { LANGUAGE_CSS } from '../../../overlay/src/language.js';
 import { TOY_DEFS, toyOf } from '../../../overlay/src/toys.js';
 import { PICKER_CSS, picker as pick } from '../../../overlay/src/picker.js';
+import { GLYPH_CSS, glyph } from '../../../overlay/src/glyphs.js';
 
 // the options in order of size; the hard-coded value sits among them where it falls, so you can drag back to it
 const RADIUS = [{ name: 'none', v: 0 }, { name: '5px', v: 5, hard: true }, { name: 'tag', v: 6 }, { name: 'control', v: 8 }, { name: 'card', v: 12 }, { name: 'full', v: 999 }];
@@ -27,7 +28,7 @@ export function mount(host, root, css) {
   const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const px = (v) => `${v}px`;
 
-  root.innerHTML = `<style>${css}${LANGUAGE_CSS}${PICKER_CSS}
+  root.innerHTML = `<style>${css}${LANGUAGE_CSS}${PICKER_CSS}${GLYPH_CSS}
     :host { display: block; font-family: var(--pl-sans); color: var(--pl-ink); }
     .scene { margin: 0 0 40px; }
     .scene h2 { margin: 0 0 4px; }
@@ -337,14 +338,14 @@ export function mount(host, root, css) {
       const row = [...rows.querySelectorAll(':scope > .row')].pop();
       return { p, row };
     };
-    const size = add({ name: 'Font size', toy: 'type', options: HERO_SIZE, format: (o) => `${o.v}px`,
+    const size = add({ name: 'Font size', toy: glyph('font-size'), options: HERO_SIZE, format: (o) => `${o.v}px`,
       mark: (t) => `<i class="aa" style="font-size:${Math.round(10 + (t.v - 20) * 0.3)}px">Aa</i>`,
       apply: (o) => h1.style.setProperty('--fs', `${o.v}px`), handles: [{ el: h1, perPx: (dx, dy) => -dy / 14, skip: () => h1.isContentEditable }] });
-    add({ name: 'Line height', toy: 'line-height', options: LEADING, format: (o) => String(o.v),
+    add({ name: 'Line height', toy: glyph('line-height'), options: LEADING, format: (o) => String(o.v),
       mark: (t) => `<i class="lh" style="--g:${Math.round((t.v - 1) * 10)}px"></i>`, apply: (o) => h1.style.setProperty('--lh', String(o.v)) });
-    add({ name: 'Letter spacing', toy: 'letter-spacing', options: TRACKING, start: 1, format: (o) => `${o.v}em`,
+    add({ name: 'Letter spacing', toy: glyph('letter-spacing'), options: TRACKING, start: 1, format: (o) => `${o.v}em`,
       mark: (t) => `<i class="ls" style="letter-spacing:${t.v * 2}em">AV</i>`, apply: (o) => h1.style.setProperty('--ls', `${o.v}em`) });
-    add({ name: 'Weight', toy: 'font-weight', options: WEIGHT, start: 2, format: (o) => String(o.v),
+    add({ name: 'Weight', toy: glyph('font-weight'), options: WEIGHT, start: 2, format: (o) => String(o.v),
       mark: (t) => `<i class="wt" style="font-weight:${t.v}">Aa</i>`, apply: (o) => h1.style.setProperty('--fw', String(o.v)) });
     words(stage, h1, stage.querySelector('#textcard .edittag'), () => {});
     new ResizeObserver(placeCard).observe(stage); placeCard(); state();

@@ -26,9 +26,7 @@ them.
 3. **It says what the thing does, not what it looks like in a wireframe.** A switch is on. A tag has a hole for its
    string. An input has a caret waiting. A toast is already timing out. A tooltip points at the thing it is about.
 4. **It reads at 16.** Drawn on a 24 grid; nothing finer than 1.5 for a body or a line on paper; four parts at most.
-   **Marks cut out of a tile are hairlines:** 1.2 to 1.4 (about one pixel where they are used), so a letter and the
-   rules around it have room. The thick 2.2 marks made the text icons look congested (owner: "our hairline is too
-   thick to be put in icon, we need thinner hairline inside icons"). If it only works large, it is
+   Icons inside an editor are glyphs, drawn with a 1px pen (see Colour, below).
    not finished.
 5. **A pattern only ever means space.** Hatched is padding. Dotted is margin. Striped is a gap. Nothing else gets a
    pattern, so the three are never diluted.
@@ -62,13 +60,13 @@ The hues are the overlay's own (`overlay/src/tokens.css`). Each has three values
 - White (`#fff`) is the cut-out colour on a solid. On paper, a cut-out is the paper's own colour.
 - Ink text (`--pl-ink`) may be used for plain words inside a piece (the lines of a list), never for a body.
 - No greys in a piece. If something needs to be quiet, it is the hue's soft, and rule 7 says when that is allowed.
-- **An editor card keeps the hue table.** Every text property (font size, line height, letter spacing, weight) is
-  sky, because they are all type. They are told apart by their marks, drawn on one construction (the same tile, one
-  live area, the same strokes), not by colour. Distinct hues per row were tried and rejected: butter and mint would
-  have said margin and padding. Not by shade either: a pale tile would mean "not there" (rule 7). Each mark draws the
-  property the way visual editors do, with real letters in hairlines: a small A and a big one (font size), an A
-  between two rules above and below (line height), an A between two rules either side (letter spacing), a thin A
-  beside a heavy one (weight).
+- **An editor card's rows use glyphs, not toys.** Inside an editor (the text card, a picker row) the property icons
+  are the hairline glyphs (`overlay/src/glyphs.js`): ink, the pen's 1px line, no coloured tile, and letters typeset
+  in the face rather than drawn as strokes. Font size: a small A and a big one. Line height: an A between rules above
+  and below. Letter spacing: an A between rules either side. Weight: the same A thin and heavy. Toys stay for the
+  page, the bar and the shelf, where a thing has to be seen. (Five rounds of tiles were rejected: distinct hues broke
+  the hue table, all-sky tiles with hand-drawn letters looked crude and congested. The owner chose "set letters in a
+  real font" and "drop the blue tile".)
 - A piece takes its hue from what it is, by the table above, so the same thing is the same colour everywhere: padding
   is mint in an icon, in the box model, in a chip and in the burst.
 

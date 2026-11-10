@@ -447,6 +447,10 @@ race, built for the old in-place write) was rewritten for the new write path (`e
   them: a small A and a big one (font size), an A between rules above and below (line height), an A between rules
   either side (letter spacing), a thin A beside a heavy one (weight). The hairline rule is in the visual language.
   The row icons also got a hover state: they tip and grow, say their name above, squash when pressed.
+- **"still not up to the mark":** stopped drawing and asked what the cause was. Hand-coded letter strokes on a blue
+  tile, with no reference, came out wobbly. The owner chose: set the letters in a real font, and drop the tile. The
+  four are now glyphs in the product's hairline family (`overlay/src/glyphs.js`, the 1px drafting pen): ink, A's
+  typeset in Bricolage, the pen's rules around them. The font-size toy on the shelf is back as it was.
 - **Open:** the product's own text card (`overlay/src/texteditor.js`) is not yet rebuilt from the picker; style,
   case and colour rows are not drawn yet (colour needs its own picker).
 

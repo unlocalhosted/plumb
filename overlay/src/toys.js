@@ -32,14 +32,6 @@ const turning = [[12, 4], [17.66, 6.34], [20, 12], [17.66, 17.66], [12, 20], [6.
 export const PROPS = [
   ['padding', 'the cushion inside: hatched', svg(`<g clip-path="url(#pad-clip)"><rect x="2" y="2" width="20" height="20" fill="url(#hatch-mint)"/></g><rect x="3" y="3" width="18" height="18" rx="5" fill="none" stroke="${h('mint')}" stroke-width="2"/>${box(8, 8, 8, 8, 2.4, h('mint'))}`)],
   ['margin', 'the room outside: dotted', svg(halo + box(6.6, 6.6, 10.8, 10.8, 3.2, h('butter')))],
-  // the text properties: one construction, one hue (they are all type, so sky, by the hue table), drawn the way visual
-  // editors draw them, with real letters, in hairlines (1.4 on the 24 grid: about one pixel at the size they are
-  // used), so a letter and the rules around it have room. Font size: a small A and a big one. Line height: an A
-  // between the top and bottom of its line. Letter spacing: an A between its neighbours' edges. Weight: a thin A
-  // beside a heavy one
-  ['line-height', 'a letter between the top and bottom of its line', svg(tile('sky', line('M6.600 6.800h10.800M6.600 17.200h10.800', on('sky'), 1.4) + line('M9.2 14.8 12 9.4 14.8 14.8M10.32 12.86h3.36', on('sky'), 1.4)))],
-  ['letter-spacing', 'a letter between its neighbours', svg(tile('sky', line('M6.800 6.600v10.800M17.200 6.600v10.800', on('sky'), 1.4) + line('M9.2 14.8 12 9.4 14.8 14.8M10.32 12.86h3.36', on('sky'), 1.4)))],
-  ['font-weight', 'a thin letter beside a heavy one', svg(tile('sky', line('M5.6 16 7.7 8.4 9.8 16M6.44 13.26h2.52', on('sky'), 1.2) + line('M12.4 16 15.2 8.4 18 16M13.52 13.26h3.36', on('sky'), 2.6)))],
   ['gap', 'the space between: striped', svg(box(2, 4, 7.2, 16, 2.6, h('lilac')) + box(14.8, 4, 7.2, 16, 2.6, h('lilac')) + [6.4, 9.55, 12.7, 15.85].map((y) => box(10.3, y, 3.4, 1.75, 0.875, h('lilac'))).join(''))],
   ['corner', 'the arc, and the arc inside it', svg(`<path d="M3.500 20.500V12a8.500 8.500 0 0 1 8.500-8.500h8.500v17z" fill="${h('pink')}"/>${line('M8.500 20.500V13a4.500 4.500 0 0 1 4.500-4.500h7.500', W, 1.9)}`)],
   ['border', 'only the edge', svg(`<rect x="4.300" y="4.300" width="15.400" height="15.400" rx="4.800" fill="none" stroke="${h('sky')}" stroke-width="4.600"/>`)],
@@ -50,7 +42,7 @@ export const PROPS = [
   ['position', 'a pin where it sits', svg(`<path d="M12 2.200a7.300 7.300 0 0 1 7.300 7.300c0 5.200-7.300 12.300-7.300 12.300S4.700 14.700 4.700 9.500A7.300 7.300 0 0 1 12 2.200z" fill="${h('lilac')}"/>${dot(12, 9.5, 2.7, W)}`)],
   ['layer', 'what sits on top', svg(`<path d="M12 12.600 21.500 17 12 21.400 2.500 17z" fill="${h('sky')}"/><path d="M12 8.100 21.500 12.500 12 16.900 2.500 12.500z" fill="${h('butter')}"/><path d="M12 3.600 21.500 8 12 12.400 2.500 8z" fill="${h('pink')}"/>`)],
   ['rotate', 'turned about its middle', svg(`<rect x="7.500" y="9.800" width="9" height="9" rx="2.600" fill="${h('pink')}" transform="rotate(-13 12 14.300)"/>${line('M3.640 7.150A10.200 10.200 0 0 1 20.350 7.150', ink('pink'), 2.2)}${line('M20.350 3.900v3.250l-3 -1', ink('pink'), 2.2)}`), 1],
-  ['type', 'a small letter and a big one', svg(tile('sky', line('M6.2 16.8 8.2 11.8 10.2 16.8M7 15h2.4', on('sky'), 1.4) + line('M10.8 16.8 14.3 7 17.8 16.8M12.2 13.27h4.2', on('sky'), 1.4)))],
+  ['type', '', svg(tile('sky', line('M7.600 17 12 6.800 16.400 17M9.400 13.400h5.200', W, 2.3)))],
   ['weight', 'how heavy the letters are', svg(tile('sky', `<path d="M8.600 6.800h4.200a2.600 2.600 0 0 1 0 5.200H8.600zM8.600 12h4.900a2.600 2.600 0 0 1 0 5.200H8.600z" fill="none" stroke="${W}" stroke-width="2.4" stroke-linejoin="round"/>`)), 1],
   ['line height', 'the air between lines', svg(tile('sky', box(10.6, 7, 7.6, 2.6, 1.3, W) + box(10.6, 14.4, 7.6, 2.6, 1.3, W) + line('M7 7.400v9.200', W, 1.9) + line('M5.400 9 7 7.400 8.600 9M5.400 15 7 16.600 8.600 15', W, 1.9))), 1],
   ['letter spacing', 'the air between letters', svg(tile('sky', line('M6.400 7v10M17.600 7v10', W, 2) + line('M9.500 16 12 9.200 14.500 16', W, 2))), 1],

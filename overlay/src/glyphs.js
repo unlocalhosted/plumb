@@ -41,6 +41,17 @@ export const GLYPHS = {
   // craft: two rounded frames sharing one centre, the concentric corner a mentor points at
   craft: '<rect x="3.5" y="3.5" width="17" height="17" rx="4"/><rect x="8" y="8" width="8" height="8" rx="1.5"/><path class="fill" d="M3.5 7.5v-4h4L3.5 7.5z"/>',
 
+  // the text properties, as an editor's panel shows them: real letters, typeset in the face (never drawn as strokes),
+  // with the pen's 1px rules around them where the property is a space
+  // font size: a small A and a big one
+  'font-size': '<text x="3" y="19" font-size="10">A</text><text x="10.2" y="19" font-size="17">A</text>',
+  // line height: an A between the top and bottom of its line
+  'line-height': '<path d="M4 4.5h16M4 19.5h16"/><text x="12" y="16.2" font-size="12" text-anchor="middle">A</text>',
+  // letter spacing: an A between its neighbours' edges
+  'letter-spacing': '<path d="M4.5 4v16M19.5 4v16"/><text x="12" y="16.2" font-size="12" text-anchor="middle">A</text>',
+  // weight: the same A thin and heavy
+  'font-weight': '<text x="2.5" y="18" font-size="14" font-weight="200">A</text><text x="12" y="18" font-size="14" font-weight="800">A</text>',
+
   // a rule with nothing in it
   existence: '<path d="M9.5 4.5H9A2.5 2.5 0 0 0 6.5 7v2.5c0 1.4-.9 2.5-2.25 2.5 1.35 0 2.25 1.1 2.25 2.5V17A2.5 2.5 0 0 0 9 19.5h.5M14.5 4.5h.5A2.5 2.5 0 0 1 17.5 7v2.5c0 1.4.9 2.5 2.25 2.5-1.35 0-2.25 1.1-2.25 2.5V17a2.5 2.5 0 0 1-2.5 2.5h-.5"/>',
 };
@@ -50,6 +61,7 @@ export const GLYPH_CSS = `
   .g path, .g rect, .g circle { fill: none; stroke: currentColor; stroke-width: 1px; vector-effect: non-scaling-stroke; stroke-linecap: butt; stroke-linejoin: miter; }
   .g .fill { fill: currentColor; stroke: none; }
   .g .soft { fill-opacity: .4; }
+  .g text { fill: currentColor; stroke: none; font-family: var(--pl-round, system-ui); font-weight: 600; }
 `;
 
 export const glyph = (family, cls = '') =>

@@ -24,6 +24,9 @@ export const PICKER_CSS = `
     /* the property's icon is a toy: pointed at, it tips and grows on the pop spring and says its name above it; pressed
        (the start of a drag), it squashes */
     .row .scrub { position: relative; }
+    /* a glyph (the editor's hairline icons) is ink, darker when pointed at */
+    .row .scrub .g { width: 20px; height: 20px; color: var(--pl-ink-2); transition: color 140ms var(--pl-ease-out), scale 320ms var(--pl-spring-pop), rotate 320ms var(--pl-spring-pop); }
+    .row .scrub:hover .g { color: var(--pl-ink); }
     .row .scrub svg { transition: scale 320ms var(--pl-spring-pop), rotate 320ms var(--pl-spring-pop); }
     .row .scrub:hover svg { scale: 1.14; rotate: -6deg; }
     .row .scrub:active svg { scale: 1.04 0.92; rotate: 0deg; transition-duration: 90ms; }
