@@ -10,7 +10,7 @@ export const BUTTON_CSS = `
        (the solid hue, the label on it). At rest the top sits 4px above the side. Pointed at, it rises to 6. Pressed,
        it goes down onto its side and squashes a hair wider; let go, it springs back as one body. The side never
        moves, so nothing around the button shifts. */
-    .tb { --hue: var(--pl-pink); --base: color-mix(in oklab, var(--pl-pink) 70%, #000); --on: var(--pl-pink-on); --lift: 4px; --h: 36px;
+    .tb { --hue: var(--pl-pink-block); --base: color-mix(in oklab, var(--pl-pink-block) 70%, #000); --on: var(--pl-pink-block-on); --lift: 4px; --h: 36px;
       all: unset; position: relative; display: inline-block; box-sizing: border-box; height: calc(var(--h) + 4px); padding-top: 4px; border-radius: 13px; cursor: pointer;
       background: linear-gradient(180deg, transparent 25%, var(--base) 60%); font: var(--pl-round-w2, 700) 13.5px/1 var(--pl-round); letter-spacing: 0.005em; color: var(--on); -webkit-tap-highlight-color: transparent; user-select: none;
       box-shadow: 0 9px 12px -8px color-mix(in oklab, var(--hue) 75%, transparent); transition: box-shadow 240ms var(--pl-ease-out); }
@@ -34,8 +34,8 @@ export const BUTTON_CSS = `
     .tb.quiet { --hue: var(--pl-paper); --base: var(--pl-rule); --on: var(--pl-ink); box-shadow: 0 9px 12px -9px rgb(0 0 0 / .28); }
     .tb.quiet .top { background: linear-gradient(180deg, var(--pl-paper), var(--pl-paper-2)); box-shadow: inset 0 0 0 1.5px var(--pl-rule); }
     .tb.quiet kbd { background: var(--pl-paper-2); color: var(--pl-ink-2); box-shadow: 0 1.5px 0 0 var(--pl-rule); }
-    .tb.done { --on: var(--pl-mint-on); --hue: var(--pl-mint); --base: color-mix(in oklab, var(--pl-mint) 70%, #000); }
-    .tb.wrong { --on: var(--pl-coral-on); --hue: var(--pl-coral); --base: color-mix(in oklab, var(--pl-coral) 70%, #000); }
+    .tb.done { --on: var(--pl-mint-block-on); --hue: var(--pl-mint-block); --base: color-mix(in oklab, var(--pl-mint-block) 70%, #000); }
+    .tb.wrong { --on: var(--pl-coral-block-on); --hue: var(--pl-coral-block); --base: color-mix(in oklab, var(--pl-coral-block) 70%, #000); }
     /* not there: pale, flat on its base, nothing to press (the language: pale is for what is not there) */
     .tb:disabled, .tb[data-show="disabled"] { --hue: var(--pl-paper-2); --base: transparent; --on: var(--pl-ink-3); --lift: 0px; cursor: not-allowed; box-shadow: none; }
     .tb:disabled .top, .tb[data-show="disabled"] .top { background: var(--pl-paper-2); box-shadow: inset 0 0 0 1.5px var(--pl-rule); }

@@ -58,10 +58,10 @@ export const SOFT_CSS = `
     .s-box .when { position: absolute; top: 14px; right: 14px; padding: 4px 9px; border-radius: 10px; font: var(--pl-round-w2, 700) 11.5px/1.2 var(--pl-round); font-style: normal; background: color-mix(in oklab, var(--pl-ink) 7%, transparent); color: var(--pl-ink-2); }
 
     /* ── a button is the same block, small. The action keeps the strong colour on top: it is the one loud thing ── */
-    .s-btn { --h: var(--pl-pink); --side: color-mix(in oklab, var(--h) 70%, #000); --lift: 4px;
+    .s-btn { --h: var(--pl-pink-block); --side: color-mix(in oklab, var(--h) 70%, #000); --lift: 4px;
       position: relative; display: inline-block; box-sizing: border-box; margin: 0; padding: 4px 0 0; border: 0; border-radius: 14px; background: linear-gradient(180deg, transparent 25%, var(--side) 60%); cursor: pointer; text-decoration: none; -webkit-tap-highlight-color: transparent; user-select: none;
       box-shadow: 0 9px 12px -8px color-mix(in oklab, var(--h) 75%, transparent); transition: box-shadow 240ms var(--pl-ease-out); }
-    .s-btn > span { display: flex; align-items: center; justify-content: center; gap: 7px; padding: 10px 16px; border-radius: 14px; background: linear-gradient(180deg, color-mix(in oklab, var(--h) 88%, #fff), var(--h)); color: var(--pl-pink-on); white-space: nowrap;
+    .s-btn > span { display: flex; align-items: center; justify-content: center; gap: 7px; padding: 10px 16px; border-radius: 14px; background: linear-gradient(180deg, color-mix(in oklab, var(--h) 88%, #fff), var(--h)); color: var(--pl-pink-block-on); white-space: nowrap;
       font: var(--pl-round-w, 600) 15px/1 var(--pl-round); box-shadow: inset 0 1.5px 0 0 color-mix(in oklab, #fff 45%, transparent), inset 0 -2px 0 0 color-mix(in oklab, #000 12%, transparent);
       transform: translateY(calc(-1 * var(--lift))); transform-origin: 50% 100%; transition: transform 300ms var(--pl-spring-pop); will-change: transform; }
     .s-btn:hover, .s-btn.hov { --lift: 6px; box-shadow: 0 14px 16px -10px color-mix(in oklab, var(--h) 75%, transparent); }

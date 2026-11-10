@@ -628,10 +628,15 @@ race, built for the old in-place write) was rewritten for the new write path (`e
   version of its hue lettered in white, and the buttons page itself says the label is "cut out of it in white". In
   light, white on pink is 3.4:1 and on mint 3.9:1, under the 4.5:1 that small text needs. Not changed.
 - **Not checked:** things that aren't text (borders, shadows, rings that vanish on a dark ground).
+- **"Deep hue, white text":** coloured buttons in dark are now the deep version of their hue, lettered in white, as
+  our night rule always said. Made a rule of the token file, not a patch: new "block" colours (`--pl-pink-block`,
+  mint, coral, each with its `-on` lettering) are the hue in light and the deep hue in dark; the toy buttons, the
+  site bar's soft buttons, the site's current-page tab and the identity page's sample all use them. Measured, white
+  on: deep pink 4.53, deep mint 4.56, deep coral 4.50 (all just over 4.5). Light is unchanged: white on pink 3.36 and
+  on mint 3.85 still fall short; coral is 5.47.
 
 ## Open gaps
-- The coloured buttons break our own night rule (dark lettering on bright hues), and white on pink and mint is
-  under 4.5:1 in light. Waiting on the owner. Nothing yet stops the faintest ink being used for text again.
+- White on the pink and mint buttons is under 4.5:1 in light (3.36, 3.85); dark now passes, just. Nothing yet stops the faintest ink being used for text again.
 - The contrast check knows colours, not sizes or weights, and is not run by CI yet.
 - `web/docs/pages` is a copy of `site/src/docs/pages`; two copies until the old Vite site is removed.
 - The repository root still installs Next.js 16.4.0 (used by the Next host's tests); `web/` is on 16.4.6.

@@ -36,7 +36,7 @@ export function mount(host, root, css) {
     .a-box .plate { display: grid; place-items: center; width: 64px; height: 64px; margin-bottom: 14px; border-radius: 18px; background: var(--pl-cut); }
     .a-box:hover { --lift: 8px; } .a-box:active { --lift: 1px; }
     .a-btn { padding-top: 3px; border-radius: 13px; background: color-mix(in oklab, var(--pl-pink) 72%, #000); --lift: 3px; }
-    .a-btn span { display: block; padding: 10px 16px; border-radius: 13px; background: var(--pl-pink); color: var(--pl-pink-on); font: var(--pl-round-w, 600) 15px/1 var(--pl-round); translate: 0 calc(-1 * var(--lift)); transition: translate 260ms var(--pl-spring-pop); }
+    .a-btn span { display: block; padding: 10px 16px; border-radius: 13px; background: var(--pl-pink-block); color: var(--pl-pink-block-on); font: var(--pl-round-w, 600) 15px/1 var(--pl-round); translate: 0 calc(-1 * var(--lift)); transition: translate 260ms var(--pl-spring-pop); }
     .a-btn:hover { --lift: 4px; } .a-btn:active { --lift: 1px; }
     .a-btn.q { background: var(--pl-rule); } .a-btn.q span { background: var(--pl-paper); color: var(--pl-ink); box-shadow: inset 0 0 0 1.5px var(--pl-rule); }
 

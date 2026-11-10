@@ -65,7 +65,7 @@ h2.shelf small { font: var(--pl-round-w, 600) 14px/1 var(--pl-round); color: var
 .side b { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; font: var(--pl-round-w, 600) 16px/20px var(--pl-round); }
 .side a, .side .planned { display: block; padding: 6px 10px; margin-left: 20px; border-radius: 10px; font: 600 14.5px/20px var(--pl-sans); color: var(--pl-ink-2); text-decoration: none; }
 .side a:hover { background: var(--pl-paper-2); color: var(--pl-ink); }
-.side a[aria-current="page"] { background: var(--pl-pink); color: var(--pl-pink-on); }
+.side a[aria-current="page"] { background: var(--pl-pink-block); color: var(--pl-pink-block-on); }
 .side .planned { opacity: .5; }
 .prose { font: 500 17px/29px var(--pl-sans); color: var(--pl-ink); min-width: 0; }
 .prose .over { display: flex; align-items: center; gap: 8px; margin: 0 0 10px; font: var(--pl-round-w, 600) 15px/1 var(--pl-round); color: var(--pl-ink-2); }

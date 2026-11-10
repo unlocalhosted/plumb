@@ -197,3 +197,8 @@ Pictures are learnt, so the words are always one hover away.
 - Breadcrumb, pagination, skeleton and label are the weakest on the sheet.
 - The overlay's own cards still set their titles in the plain face. `--pl-round` is in the token file and used by the
   site and the toy button only.
+
+## Block colours (2026-11-10)
+A block of colour you press (a button's top, the page you are on) takes `--pl-<hue>-block` and is lettered in
+`--pl-<hue>-block-on`: the hue and its `-on` in light, the deep hue lettered in white at night. Never dark lettering
+on a bright block.
