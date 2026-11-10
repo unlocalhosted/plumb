@@ -48,8 +48,16 @@
 - **The system behind it:** the reader was built for flat names (`fg`, `muted`, `surface`), where a word like "primary" means the brand colour. In a path name the first word is the category and decides the family.
 - **The fix and the proof:** a path reader runs first: category, then role, then state. All 30 names now read right; the 14 flat names crafting-ui-style projects use and 12 shadcn names read exactly as before (same output before and after). crafting-ui has no path-style names, so its colour pass is unchanged.
 
+## One brand colour builds the accent ramp (2026-11-10)
+- **The itch:** the token spec says a person picks one brand colour and gets its whole 50–950 ramp, checked for readable white text; nothing did that.
+- **What we chose and why:** the chosen colour lands on 500 exactly; the other ten stops follow the lightness curve of Tailwind's OKLCH ramps, stretched so the curve passes through the chosen colour, at its own hue, with chroma tapered toward both ends the same way. Stops outside sRGB lose chroma, never lightness or hue. Guard: white text on 500 must reach APCA Lc 60; a colour that misses is darkened in small steps until it passes, and plumber says so.
+- **The fix and the proof:** `overlay/src/ramp.js`, with a live page at `overlay/demo/ramp.html` (colour picker). crafting-ui's accent (Lc 77.9), its draw blue (85.7) and violet #7c3aed (82.8) are kept as chosen; teal #14b8a6 is darkened 70.4% → 66.4% lightness (Lc 53.4 → 60.1); yellow #facc15 from 86.1% to 68.1% (Lc 27.6 → 60.3).
+- **Media hooks:** docs/media/accent-ramps-2026-11-10.jpg, five ramps side by side.
+
 ## Open gaps
-- Colour layer 4 (accent ramp from one colour) and layer 5 (writing primitives, semantic tokens and a dark block) not built; the colour pass still never proposes new token names.
+- Colour layer 5 (writing primitives, semantic tokens and a dark block) not built; the ramp is not offered anywhere in the product yet.
+- A light brand colour (yellow) is darkened to mustard to carry white text; the better answer for such brands may be dark text on the accent. Owner decision.
+- crafting-ui's draw blue is a wide-gamut (P3) colour; the ramp keeps it in sRGB, so its 500 loses a little chroma (0.289 → 0.278).
 - Token spec layers 2–6 not built; four owner decisions open (§6).
 - e2e/type-roles.test.mjs still expects the old Material names; rewrite when the owner calls for tests.
 - The clean-up text panel with the new names was not looked at in the browser.
