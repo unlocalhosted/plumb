@@ -1,12 +1,13 @@
 import type { NextConfig } from 'next';
-import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { writeNextHost } from './next-host.js';
 import { resolve } from 'node:path';
+import { nextConfigName } from '../project-facts/project/host-config.js';
 
 type Rules = Record<string, unknown>;
 const STAMP_GLOB = '*.{jsx,tsx}';
-const configName = () => ['next.config.ts', 'next.config.mjs', 'next.config.js', 'next.config.mts', 'next.config.cjs'].find(name => existsSync(resolve(name))) ?? 'next.config';
+// which file a message names is a fact about the project: project-facts is the one place that looks for it
+const configName = () => nextConfigName();
 
 /**
  * Stamping is what withPlumb does in development, on webpack and Turbopack, merged with the app's own rules: the
