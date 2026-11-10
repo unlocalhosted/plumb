@@ -19,6 +19,13 @@ export function mount(host, root, css) {
   const set = (title, why, body) => `<section class="set"><h2>${title}</h2>${why ? `<p>${why}</p>` : ''}<div class="cells">${body}</div></section>`;
 
   root.innerHTML = `<style>${css}${LANGUAGE_CSS}
+    /* the night strengths, side by side on the dark page, whatever the site's scheme */
+    .night { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; padding: 14px; border-radius: 22px; background: #1f1e1d; }
+    .nopt { display: grid; gap: 8px; align-content: start; padding: 16px 14px; border-radius: 16px; background: #2e2d2b; color: #f4f3ef; }
+    .nopt .nbtns { display: grid; justify-items: start; gap: 12px; margin-bottom: 6px; }
+    .nopt b { font: var(--pl-round-w, 700) 14px/1.2 var(--pl-round); }
+    .nopt small { font: 400 12px/1.4 var(--pl-sans); color: #a8a6a0; }
+    @media (max-width: 760px) { .night { grid-template-columns: 1fr 1fr; } }
     :host { display: block; font-family: var(--pl-sans); color: var(--pl-ink); }
     :host([data-scheme="dark"]) { --pl-paper: #2a2930; --pl-paper-2: #35343c; --pl-rule: #45444d; --pl-ink: #f4f3ef; }
 
@@ -57,6 +64,8 @@ export function mount(host, root, css) {
     @media (max-width: 640px) { .anat { grid-template-columns: 1fr; } .cell.wide { grid-column: auto; } }
   </style>${TOY_DEFS}
 
+  <section class="set" id="night"><h2>At night: how strong should a button be?</h2><p>Coloured buttons at night, on the dark page. Now they are the deep hue lettered in white, which is loud. Three muted strengths, each lettered in a pale tint of its own hue. Pick one, and it becomes the night block colour everywhere.</p>
+    <div class="night"><div class="nopt" style="--pl-pink-block:#e3008b;--pl-pink-block-on:#ffffff;--pl-mint-block:#12874e;--pl-mint-block-on:#ffffff;--pl-coral-block:#eb1800;--pl-coral-block-on:#ffffff"><div class="nbtns">${b('Add to theme', { key: '↵' })}${b('Written', { cls: 'done' })}${b('Discard all', { cls: 'wrong' })}</div><b>Now: deep</b><small>The deep hue, white letters. Loud on a dark ground.</small></div><div class="nopt" style="--pl-pink-block:#582d42;--pl-pink-block-on:#f9d1e3;--pl-mint-block:#124830;--pl-mint-block-on:#c2e9d3;--pl-coral-block:#5c2e25;--pl-coral-block-on:#fdd3ca"><div class="nbtns">${b('Add to theme', { key: '↵' })}${b('Written', { cls: 'done' })}${b('Discard all', { cls: 'wrong' })}</div><b>A · Quiet</b><small>Dark, little colour, letters a pale tint of the hue. 8:1.</small></div><div class="nopt" style="--pl-pink-block:#743355;--pl-pink-block-on:#ffdbed;--pl-mint-block:#005d39;--pl-mint-block-on:#ccf3dd;--pl-coral-block:#7a3528;--pl-coral-block-on:#ffdcd3"><div class="nbtns">${b('Add to theme', { key: '↵' })}${b('Written', { cls: 'done' })}${b('Discard all', { cls: 'wrong' })}</div><b>B · Muted</b><small>A step up: the hue is clear, still calm. 7:1.</small></div><div class="nopt" style="--pl-pink-block:#973f6e;--pl-pink-block-on:#ffedf8;--pl-mint-block:#007948;--pl-mint-block-on:#e5fcee;--pl-coral-block:#a04130;--pl-coral-block-on:#ffeee9"><div class="nbtns">${b('Add to theme', { key: '↵' })}${b('Written', { cls: 'done' })}${b('Discard all', { cls: 'wrong' })}</div><b>C · Soft-bright</b><small>The most colour that is still muted. 5 to 6:1.</small></div></div></section>
   <section class="set"><h2>What a button is made of</h2><p>Press this one and hold it.</p>
     <div class="anat"><div class="big">${b('Use rounded-tag', { key: '↵' })}</div>
       <ol>
