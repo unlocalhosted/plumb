@@ -221,7 +221,10 @@ test('Noise: a well-built page yields no craft finding; the demo with every corn
     const overlayBars = await page.evaluate(() => { const d = Object.assign(document.createElement('div'), { style: 'overflow:scroll;width:50px;height:50px;position:absolute' }); document.body.append(d); const w = d.offsetWidth - d.clientWidth; d.remove(); return w === 0; });
     const want = [...known[app ? 'GOOD' : 'demo'], ...(!app && overlayBars ? ['scroll-cue'] : [])].sort();
     const marks = await craftMarks(page);
-    assert.deepEqual([...new Set(marks.map((m) => m.rule))].sort(), want, `craft marks on ${app ? 'the well-built page' : 'the demo'}: ${JSON.stringify(marks.map((m) => m.label))}`);
+    // one more is real on some machines: the demo centres two text sizes in a row, and how far apart their
+    // baselines land depends on the system font (under the rule's threshold on a Mac, 1.8px with Linux's fonts)
+    const found = [...new Set(marks.map((m) => m.rule))].filter((rule) => app || rule !== 'baseline-align').sort();
+    assert.deepEqual(found, want, `craft marks on ${app ? 'the well-built page' : 'the demo'}: ${JSON.stringify(marks.map((m) => m.label))}`);
     // the fix panel agrees: nothing to fix on the well-built page; on the demo at least one cause for each rule
     const line = (await overlay.locator('.fx .line').innerText()).replace(/\s+/g, ' ');
     if (app) assert.match(line, /Nothing to fix|^0 problems/, `the well-built page has nothing to fix: ${line}`);
