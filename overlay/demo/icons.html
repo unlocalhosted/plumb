@@ -4,8 +4,8 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Icons · React Plumber</title>
 <style>
-  body { margin: 0; padding: 32px 16px 64px; background: #ecebe7; font: 14px/1.5 system-ui, sans-serif; color: #1c1b19; }
-  body.dark { background: #0f0f11; color: #eeede9; }
+  body { margin: 0; padding: 32px 16px 64px; background: #f6f1e6; font: 14px/1.5 system-ui, sans-serif; color: #1c1b19; }
+  body.dark { background: #17161a; color: #eeede9; }
   header { max-width: 1040px; margin: 0 auto 20px; display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap; }
   header h1 { font-size: 18px; margin: 0; }
   header p { margin: 0; opacity: .7; font-size: 13px; max-width: 760px; }
@@ -16,7 +16,7 @@
 <body>
 <header>
   <h1>Icons</h1>
-  <p>A review sheet. First what the overlay has today, set by set, as it is. Then what is proposed: properties that have no icon, and the elements and patterns a page is made of. Proposals live on this page only until they are approved.</p>
+  <p>A review sheet. The toy set: solid, in colour, each property in its own hue and its own pattern, the way the pieces fly out when a fix lands. Point at one. Proposals live on this page only until they are approved.</p>
   <button id="scheme" type="button">Dark</button>
 </header>
 <div id="board"></div>
@@ -24,118 +24,117 @@
   import tokens from '../src/tokens.css?raw';
   import { LANGUAGE_CSS } from '../src/language.js';
   import { BLOCK_ICONS } from '../src/boxmodel.js';
-  import { GLYPHS, GLYPH_CSS, glyph } from '../src/glyphs.js';
 
   const host = document.getElementById('board');
   const root = host.attachShadow({ mode: 'open' });
   host.dataset.scheme = 'light';
 
-  // ── what exists ──
-  // the box properties (boxmodel.js, exported): the set the box model, the clean-up chips and the fix bar use
-  const BOX = [['p', 'padding'], ['m', 'margin'], ['g', 'gap'], ['b', 'border'], ['r', 'corner'], ['line', 'type'], ['c', 'size']].map(([k, name]) => ({ name, svg: BLOCK_ICONS[k] }));
-  // the type properties (texteditor.js, private to the words card: copied here as they are)
-  const TYPE = [
-    ['size', '<svg viewBox="0 0 14 14"><path d="M2 3.5h7M5.5 3.5v8M9.5 7h3M11 7v4.5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>'],
-    ['line height', '<svg viewBox="0 0 14 14"><path d="M4 3h8M4 7h8M4 11h8M1.5 2.5v9" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>'],
-    ['letter spacing', '<svg viewBox="0 0 14 14"><path d="M1.5 2v10M12.5 2v10M4.5 10l2.5-6 2.5 6M5.4 8h3.2" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>'],
-    ['weight', '<svg viewBox="0 0 14 14"><path d="M4 2.5h3.6a2.2 2.2 0 0 1 0 4.4H4zM4 6.9h4.3a2.3 2.3 0 0 1 0 4.6H4z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>'],
-  ].map(([name, svg]) => ({ name, svg }));
-  // the layout options (editor-primitives.js, private: copied here as they are)
-  const LAYOUT = [
-    ['row', '<svg viewBox="0 0 12 12"><path d="M1.5 6h9M7.5 3l3 3-3 3" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>'],
-    ['column', '<svg viewBox="0 0 12 12"><path d="M6 1.5v9M3 7.5l3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>'],
-    ['wrap', '<svg viewBox="0 0 12 12"><path d="M1.5 3h7a2 2 0 0 1 0 4h-4M6 5l-1.5 2L6 9" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>'],
-    ['one line', '<svg viewBox="0 0 12 12"><path d="M1.5 6h9" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>'],
-    ['cover', '<svg viewBox="0 0 12 12"><rect x="1.5" y="1.5" width="9" height="9" rx="1" fill="currentColor" opacity=".35"/><rect x="1.5" y="1.5" width="9" height="9" rx="1" fill="none" stroke="currentColor" stroke-width="1.2"/></svg>'],
-    ['contain', '<svg viewBox="0 0 12 12"><rect x="1.5" y="1.5" width="9" height="9" rx="1" fill="none" stroke="currentColor" stroke-width="1.2"/><rect x="1.5" y="4" width="9" height="4" fill="currentColor" opacity=".35"/></svg>'],
-  ].map(([name, svg]) => ({ name, svg }));
-  const FAMILIES = Object.keys(GLYPHS).map((name) => ({ name, svg: glyph(name) }));
+  // ── the toy set ──
+  // Rules: a 24 grid; solid shapes in the overlay's own hues; white for what sits on a solid; a pattern says "space"
+  // (padding is hatched, margin is dotted, a gap is striped: the same three the page is drawn with); no hairlines, no
+  // grey; one small joke allowed per icon.
+  const HUES = ['mint', 'butter', 'lilac', 'pink', 'sky'];
+  const h = (hue) => `var(--pl-${hue})`, ink = (hue) => `var(--pl-${hue}-ink)`, soft = (hue) => `var(--pl-${hue}-soft)`;
+  const W = '#fff';
+  const line = (d, color, w = 2.2) => `<path d="${d}" fill="none" stroke="${color}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"/>`;
+  const svg = (body) => `<svg viewBox="0 0 24 24" aria-hidden="true">${body}</svg>`;
+  const tileOf = (hue, mark) => `<rect x="2.5" y="2.5" width="19" height="19" rx="5.5" fill="${h(hue)}"/>${mark}`;
+  // the patterns, one of each per hue (a pattern takes its colour from where it is defined, not where it is used)
+  const defs = `<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>${HUES.map((hue) => `
+    <pattern id="hatch-${hue}" width="3.4" height="3.4" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="1.5" height="3.4" fill="${h(hue)}"/></pattern>
+    <pattern id="dots-${hue}" width="3.6" height="3.6" patternUnits="userSpaceOnUse"><circle cx="1.8" cy="1.8" r="1" fill="${h(hue)}"/></pattern>
+    <pattern id="stripes-${hue}" width="4" height="3" patternUnits="userSpaceOnUse"><rect width="4" height="1.4" fill="${h(hue)}"/></pattern>
+    <pattern id="check-${hue}" width="5" height="5" patternUnits="userSpaceOnUse"><rect width="2.5" height="2.5" fill="${h(hue)}" opacity=".55"/><rect x="2.5" y="2.5" width="2.5" height="2.5" fill="${h(hue)}" opacity=".55"/></pattern>`).join('')}</defs></svg>`;
 
-  // ── what is proposed ──
-  // Drawn to the box set's rules: a 16 grid, a 1.5 line with round ends and joins, one solid accent at most, nothing
-  // thinner than the line. `o` draws the line parts, `f` the solid ones; `dim` is a second line at 55%.
-  const mk = (o = '', f = '', dim = '') => `<svg viewBox="0 0 16 16"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">${o}${dim ? `<g opacity=".55">${dim}</g>` : ''}</g>${f ? `<g fill="currentColor">${f}</g>` : ''}</svg>`;
   const PROPS = [
-    ['position', 'top, right, bottom, left: how far from an edge', mk('<rect x="2" y="2" width="12" height="12" rx="3"/><path d="M8 10.4v3.4"/>', '<rect x="5.5" y="4.6" width="5" height="4" rx="1.2"/>')],
-    ['width', '', mk('<path d="M2.5 3.5v9M13.5 3.5v9M5 8h6M6.4 6.4 4.8 8l1.6 1.6M9.6 6.4 11.2 8 9.6 9.6"/>')],
-    ['height', '', mk('<path d="M3.5 2.5h9M3.5 13.5h9M8 5v6M6.4 6.4 8 4.8l1.6 1.6M6.4 9.6 8 11.2l1.6-1.6"/>')],
-    ['text colour', '', mk('<path d="M4.6 10.2 8 2.8l3.4 7.4M5.9 7.6h4.2"/>', '<rect x="3" y="12" width="10" height="2.2" rx="1.1"/>')],
-    ['fill', 'background', mk('<path d="M8 2.2c2.5 3 4.2 5.1 4.2 7.3a4.2 4.2 0 0 1-8.4 0C3.8 7.3 5.5 5.2 8 2.2z"/>', '<path d="M5.3 9.4h5.4a2.7 2.7 0 0 1-5.4 0z"/>')],
-    ['shadow', '', mk('<rect x="2.5" y="2.5" width="8.5" height="8.5" rx="2.3"/>', '', '<path d="M13.5 6.2v5a2.3 2.3 0 0 1-2.3 2.3h-5"/>')],
-    ['opacity', '', mk('<circle cx="8" cy="8" r="5.5"/>', '<path d="M8 2.5a5.5 5.5 0 0 1 0 11z"/>')],
-    ['layer', 'z-index: what sits on top', mk('<path d="M8 2.6 13.4 5.6 8 8.6 2.6 5.6z"/>', '', '<path d="M2.6 8.6 8 11.6l5.4-3"/>')],
-    ['motion', 'duration and easing', mk('<path d="M2.5 12.5c4.2 0 4.6-8.8 9.2-8.9"/>', '<circle cx="12.8" cy="3.6" r="1.5"/>')],
-    ['alignment', '', mk('<path d="M2.6 3v10"/><path d="M5.6 5h7.6M5.6 8h4.4M5.6 11h6"/>')],
-  ].map(([name, note, svg]) => ({ name, note, svg, fresh: true }));
+    ['padding', 'the space inside: hatched', svg(`<rect x="2.5" y="2.5" width="19" height="19" rx="5.5" fill="${soft('mint')}"/><rect x="2.5" y="2.5" width="19" height="19" rx="5.5" fill="url(#hatch-mint)"/><rect x="7.5" y="7.5" width="9" height="9" rx="2.6" fill="${h('mint')}"/>`)],
+    ['margin', 'the space outside: dotted', svg(`<rect x="1.5" y="1.5" width="21" height="21" rx="6.5" fill="url(#dots-butter)"/><rect x="6.5" y="6.5" width="11" height="11" rx="3.2" fill="${h('butter')}"/>`)],
+    ['gap', 'the space between: striped', svg(`<rect x="2" y="4" width="7.4" height="16" rx="2.6" fill="${h('lilac')}"/><rect x="14.6" y="4" width="7.4" height="16" rx="2.6" fill="${h('lilac')}"/><rect x="10" y="6.5" width="4" height="11" rx="1" fill="url(#stripes-lilac)"/>`)],
+    ['corner', '', svg(`<path d="M3.5 20.5V12a8.5 8.5 0 0 1 8.5-8.5h8.5v17z" fill="${h('pink')}"/>${line('M8.5 20.5V13a4.5 4.5 0 0 1 4.5-4.5h7.5', W, 1.8)}`)],
+    ['border', '', svg(`<rect x="4.2" y="4.2" width="15.6" height="15.6" rx="5" fill="${soft('sky')}" stroke="${h('sky')}" stroke-width="4.4"/>`)],
+    ['type', '', svg(tileOf('sky', line('M7.6 17 12 6.8 16.4 17M9.4 13.4h5.2', W, 2.3)))],
+    ['size', '', svg(`<path d="M2 12 7.6 6.4v3.4h8.8V6.4L22 12l-5.6 5.6v-3.4H7.6v3.4z" fill="${h('mint')}"/>`)],
+    ['position', 'how far from an edge', svg(`<rect x="2.5" y="2.5" width="19" height="19" rx="5.5" fill="${soft('lilac')}"/><rect x="7.5" y="4.8" width="9" height="7.6" rx="2.4" fill="${h('lilac')}"/>${line('M12 14.2v5M9.4 19.2h5.2', ink('lilac'), 2)}`)],
+    ['width', '', svg(`<rect x="2.2" y="3.5" width="3.4" height="17" rx="1.7" fill="${ink('sky')}"/><rect x="18.4" y="3.5" width="3.4" height="17" rx="1.7" fill="${ink('sky')}"/><rect x="7" y="8.4" width="10" height="7.2" rx="2.4" fill="${h('sky')}"/>`)],
+    ['height', '', svg(`<rect x="3.5" y="2.2" width="17" height="3.4" rx="1.7" fill="${ink('sky')}"/><rect x="3.5" y="18.4" width="17" height="3.4" rx="1.7" fill="${ink('sky')}"/><rect x="8.4" y="7" width="7.2" height="10" rx="2.4" fill="${h('sky')}"/>`)],
+    ['text colour', '', svg(`${line('M6.8 14.6 12 3.2l5.2 11.4M8.9 10.6h6.2', 'var(--pl-ink)', 2.5)}<rect x="2.5" y="17.6" width="5.2" height="4" rx="2" fill="${h('pink')}"/><rect x="7.1" y="17.6" width="5" height="4" fill="${h('butter')}"/><rect x="11.9" y="17.6" width="5" height="4" fill="${h('mint')}"/><rect x="16.3" y="17.6" width="5.2" height="4" rx="2" fill="${h('sky')}"/>`)],
+    ['fill', 'background', svg(`<path d="M12 2c4 4.8 6.6 8 6.6 11.4a6.6 6.6 0 0 1-13.2 0C5.4 10 8 6.800 12 2z" fill="${h('pink')}"/>${line('M8.8 13.8a3.2 3.2 0 0 0 2.6 3.4', W, 1.8)}`)],
+    ['shadow', '', svg(`<rect x="6.5" y="7" width="15.5" height="14.5" rx="4.4" fill="${ink('butter')}" opacity=".3"/><rect x="2" y="2.5" width="15.5" height="14.5" rx="4.4" fill="${h('butter')}"/>`)],
+    ['opacity', '', svg(`<circle cx="12" cy="12" r="9.5" fill="url(#check-lilac)"/><path d="M12 2.500a9.5 9.5 0 0 0 0 19z" fill="${h('lilac')}"/><circle cx="12" cy="12" r="8.6" fill="none" stroke="${h('lilac')}" stroke-width="1.8"/>`)],
+    ['layer', 'what sits on top', svg(`<path d="M12 12.6 21.5 17 12 21.4 2.5 17z" fill="${h('sky')}"/><path d="M12 8.1 21.5 12.500 12 16.9 2.5 12.500z" fill="${h('butter')}"/><path d="M12 3.6 21.5 8 12 12.4 2.500 8z" fill="${h('pink')}"/>`)],
+    ['motion', 'it bounces', svg(`<circle cx="4.200" cy="18.5" r="1.3" fill="${h('mint')}" opacity=".35"/><circle cx="7.600" cy="13.8" r="1.9" fill="${h('mint')}" opacity=".55"/><circle cx="11.6" cy="10" r="2.500" fill="${h('mint')}" opacity=".78"/><circle cx="17" cy="7" r="4.6" fill="${h('mint')}"/><circle cx="15.5" cy="5.500" r="1.100" fill="${W}" opacity=".9"/>`)],
+    ['alignment', '', svg(`<rect x="2.500" y="2.500" width="3" height="19" rx="1.500" fill="${ink('lilac')}"/><rect x="7.500" y="4.500" width="14" height="4.200" rx="2.100" fill="${h('lilac')}"/><rect x="7.500" y="9.900" width="8" height="4.200" rx="2.100" fill="${h('pink')}"/><rect x="7.500" y="15.300" width="11" height="4.200" rx="2.100" fill="${h('lilac')}"/>`)],
+  ].map(([name, note, icon]) => ({ name, note, icon }));
+
   const PARTS = [
-    ['button', '', mk('<rect x="1.75" y="4.5" width="12.5" height="7" rx="3.5"/><path d="M5.6 8h4.8"/>')],
-    ['link', '', mk('<path d="M6.9 9.1a2.5 2.5 0 0 0 3.6 0l1.9-1.9a2.5 2.5 0 0 0-3.6-3.6l-.6.6"/><path d="M9.1 6.9a2.5 2.5 0 0 0-3.6 0L3.6 8.8a2.5 2.5 0 0 0 3.6 3.6l.6-.6"/>')],
-    ['field', 'input, textarea', mk('<rect x="1.75" y="4" width="12.5" height="8" rx="2.3"/><path d="M5 6.4v3.2"/>')],
-    ['select', 'a menu of options', mk('<rect x="1.75" y="4" width="12.5" height="8" rx="2.3"/><path d="M9 7.2l1.6 1.6 1.6-1.6"/>')],
-    ['checkbox', '', mk('<rect x="2.5" y="2.5" width="11" height="11" rx="2.8"/><path d="M5.3 8.2 7.2 10l3.5-4"/>')],
-    ['switch', '', mk('<rect x="1.75" y="4.5" width="12.5" height="7" rx="3.5"/>', '<circle cx="10.75" cy="8" r="1.9"/>')],
-    ['heading', '', mk('<path d="M4 3.2v9.6M12 3.2v9.6M4 8h8"/>')],
-    ['text', 'a paragraph, a label', mk('<path d="M3 4.2h10M3 8h10M3 11.8h6"/>')],
-    ['image', '', mk('<rect x="2" y="3" width="12" height="10" rx="2.3"/><path d="M2.8 11.4 6.3 8.4l2.3 1.9 2-1.7 2.6 2.3"/>', '<circle cx="5.7" cy="6.5" r="1.15"/>')],
-    ['icon', 'an svg mark', mk('<rect x="2.5" y="2.5" width="11" height="11" rx="2.8"/>', '<path d="M8 5 11 8 8 11 5 8z"/>')],
-    ['avatar', '', mk('<circle cx="8" cy="8" r="5.75"/><circle cx="8" cy="6.7" r="1.8"/><path d="M4.6 12.3a3.8 3.8 0 0 1 6.8 0"/>')],
-    ['chip', 'a tag, a badge', mk('<rect x="2" y="5" width="12" height="6" rx="3"/><path d="M7.6 8h3.6"/>', '<circle cx="5.1" cy="8" r="1.1"/>')],
-    ['card', '', mk('<rect x="2" y="2.5" width="12" height="11" rx="2.6"/><path d="M4.8 6.2h4M4.8 9.4h6.4"/>')],
-    ['list', '', mk('<path d="M6 4.2h7.4M6 8h7.4M6 11.8h7.4"/>', '<circle cx="3" cy="4.2" r="1"/><circle cx="3" cy="8" r="1"/><circle cx="3" cy="11.8" r="1"/>')],
-    ['row', 'one item of a list', mk('<path d="M6.8 8h6"/>', '<circle cx="4" cy="8" r="1.15"/>', '<path d="M2 4.4h12M2 11.6h12"/>')],
-    ['table', '', mk('<rect x="2" y="2.5" width="12" height="11" rx="2.3"/><path d="M2 6.2h12M2 9.9h12M6.5 2.5v11"/>')],
-    ['tabs', '', mk('<path d="M2 12.4h12"/><path d="M3 12.4V6.3A1.8 1.8 0 0 1 4.8 4.5h2.2a1.8 1.8 0 0 1 1.8 1.8v6.1"/>', '', '<path d="M10.8 9h2.6"/>')],
-    ['navigation', 'a sidebar, a header', mk('<rect x="2" y="2.5" width="12" height="11" rx="2.4"/><path d="M6.3 2.5v11"/>')],
-    ['dialog', '', mk('<rect x="3" y="3.5" width="10" height="9" rx="2.3"/><path d="M5.6 6.6h4.8M9.4 9.8h1.4"/>')],
-    ['tooltip', 'a popover, a menu', mk('<path d="M4.3 3h7.4A2.3 2.3 0 0 1 14 5.3v3.4A2.3 2.3 0 0 1 11.7 11H9.6L8 13l-1.6-2H4.3A2.3 2.3 0 0 1 2 8.7V5.3A2.3 2.3 0 0 1 4.3 3z"/>')],
-    ['toast', '', mk('<rect x="2.5" y="8.6" width="11" height="4.9" rx="2.45"/>', '', '<path d="M5 5.6h6"/><path d="M6.6 3h2.8"/>')],
-  ].map(([name, note, svg]) => ({ name, note, svg, fresh: true }));
+    ['button', 'with something to press it', svg(`<rect x="1.800" y="5.500" width="20.400" height="11.500" rx="5.750" fill="${h('pink')}"/><rect x="6.500" y="10.200" width="9" height="2.200" rx="1.100" fill="${W}"/><path d="M14.800 12.800 21.600 15.800l-2.900 .900-.900 2.900z" fill="${ink('pink')}" stroke="${W}" stroke-width="1" stroke-linejoin="round"/>`)],
+    ['link', '', svg(`<rect x="2.300" y="8.300" width="11.400" height="7.400" rx="3.700" fill="none" stroke="${h('sky')}" stroke-width="2.800"/><rect x="10.300" y="8.300" width="11.400" height="7.400" rx="3.700" fill="none" stroke="${h('mint')}" stroke-width="2.800"/>`)],
+    ['field', 'input, textarea', svg(`<rect x="2" y="5" width="20" height="14" rx="4.400" fill="${soft('sky')}" stroke="${h('sky')}" stroke-width="1.800"/><rect x="6" y="8.600" width="2.200" height="6.800" rx="1.100" fill="${ink('sky')}"/><circle cx="11.400" cy="12" r="1.100" fill="${h('sky')}"/><circle cx="14.600" cy="12" r="1.100" fill="${h('sky')}"/><circle cx="17.800" cy="12" r="1.100" fill="${h('sky')}"/>`)],
+    ['select', 'a menu of options', svg(`<rect x="2" y="5" width="20" height="14" rx="4.400" fill="${soft('lilac')}" stroke="${h('lilac')}" stroke-width="1.800"/><rect x="13" y="7.200" width="6.800" height="9.600" rx="2.400" fill="${h('lilac')}"/>${line('M14.800 11.200l1.600 1.700 1.600-1.700', W, 1.700)}<rect x="5" y="10.900" width="5.500" height="2.200" rx="1.100" fill="${ink('lilac')}"/>`)],
+    ['checkbox', '', svg(`<rect x="3" y="3" width="18" height="18" rx="5.600" fill="${h('mint')}"/>${line('M7.400 12.400l3.100 3.100 6.100-7', W, 2.600)}`)],
+    ['switch', '', svg(`<rect x="1.800" y="5.800" width="20.400" height="12.400" rx="6.200" fill="${h('mint')}"/><circle cx="16" cy="12" r="4.300" fill="${W}"/>`)],
+    ['heading', '', svg(tileOf('pink', line('M8 7.200v9.600M16 7.200v9.600M8 12h8', W, 2.500)))],
+    ['text', 'a paragraph, a label', svg(`<rect x="3" y="4.200" width="18" height="3.800" rx="1.900" fill="${h('lilac')}"/><rect x="3" y="10.100" width="18" height="3.800" rx="1.900" fill="${h('lilac')}"/><rect x="3" y="16" width="10.500" height="3.800" rx="1.900" fill="${h('lilac')}" opacity=".55"/>`)],
+    ['image', 'sun, hills', svg(`<rect x="2" y="3.500" width="20" height="17" rx="4.800" fill="${h('sky')}"/><circle cx="8" cy="8.800" r="2.500" fill="${h('butter')}"/><path d="M2.300 17.800 8.600 12.200l3.800 3.300 3.300-2.800 6 5.100a4.800 4.800 0 0 1-4.500 2.700H6.800a4.800 4.800 0 0 1-4.500-2.700z" fill="${h('mint')}"/>`)],
+    ['icon', 'an svg mark', svg(`<path d="M12 1.800 14.500 9.500 22.200 12l-7.700 2.500L12 22.200l-2.500-7.700L1.800 12l7.700-2.500z" fill="${h('butter')}"/><circle cx="19.200" cy="4.800" r="1.600" fill="${h('pink')}"/>`)],
+    ['avatar', 'says hello', svg(`<circle cx="12" cy="12" r="9.800" fill="${h('pink')}"/><circle cx="8.700" cy="10.200" r="1.300" fill="${ink('pink')}"/><circle cx="15.300" cy="10.200" r="1.300" fill="${ink('pink')}"/>${line('M8.200 14.200a4.400 4.400 0 0 0 7.600 0', ink('pink'), 1.800)}`)],
+    ['chip', 'a tag, a badge', svg(`<rect x="1.800" y="7" width="20.400" height="10" rx="5" fill="${soft('lilac')}" stroke="${h('lilac')}" stroke-width="1.800"/><circle cx="7" cy="12" r="2.200" fill="${h('lilac')}"/><rect x="10.600" y="10.900" width="8" height="2.200" rx="1.100" fill="${ink('lilac')}"/>`)],
+    ['card', '', svg(`<rect x="2.500" y="2.500" width="19" height="19" rx="5" fill="${soft('butter')}" stroke="${h('butter')}" stroke-width="1.800"/><rect x="5.600" y="5.600" width="12.800" height="6" rx="2" fill="${h('butter')}"/><rect x="5.600" y="13.800" width="9" height="2.100" rx="1.050" fill="${ink('butter')}" opacity=".7"/><rect x="5.600" y="17.100" width="6" height="2.100" rx="1.050" fill="${ink('butter')}" opacity=".4"/>`)],
+    ['list', '', svg(`<circle cx="4.500" cy="5.800" r="2.200" fill="${h('pink')}"/><circle cx="4.500" cy="12" r="2.200" fill="${h('butter')}"/><circle cx="4.500" cy="18.200" r="2.200" fill="${h('mint')}"/><rect x="9" y="4.300" width="12.500" height="3" rx="1.500" fill="var(--pl-ink)" opacity=".8"/><rect x="9" y="10.500" width="9.500" height="3" rx="1.500" fill="var(--pl-ink)" opacity=".8"/><rect x="9" y="16.700" width="11.500" height="3" rx="1.500" fill="var(--pl-ink)" opacity=".8"/>`)],
+    ['row', 'one item of a list', svg(`<rect x="1.800" y="6.500" width="20.400" height="11" rx="3.600" fill="${soft('sky')}"/><circle cx="6.600" cy="12" r="2.600" fill="${h('sky')}"/><rect x="10.800" y="10.800" width="6.500" height="2.400" rx="1.200" fill="${ink('sky')}"/>${line('M19 10.400l1.500 1.600-1.500 1.600', h('sky'), 1.700)}`)],
+    ['table', '', svg(`<rect x="2" y="3" width="20" height="18" rx="4.400" fill="${soft('mint')}"/><path d="M6.400 3h11.200A4.400 4.400 0 0 1 22 7.400V9H2V7.400A4.400 4.400 0 0 1 6.400 3z" fill="${h('mint')}"/>${line('M2.500 14.800h19M9 9.500v11M15.500 9.500v11', h('mint'), 1.500)}`)],
+    ['tabs', '', svg(`<path d="M2 19.500V9a3.200 3.200 0 0 1 3.200-3.200h3.600A3.200 3.200 0 0 1 12 9v10.500z" fill="${h('pink')}"/><rect x="13.200" y="9.200" width="4" height="10.300" rx="1.600" fill="${soft('pink')}"/><rect x="18.200" y="9.200" width="3.800" height="10.300" rx="1.600" fill="${soft('pink')}"/><rect x="1.500" y="18.800" width="21" height="2.400" rx="1.200" fill="${ink('pink')}"/>`)],
+    ['navigation', 'a sidebar, a header', svg(`<rect x="2" y="3" width="20" height="18" rx="4.600" fill="${soft('lilac')}"/><path d="M6.600 3H9.500v18H6.600A4.600 4.600 0 0 1 2 16.400V7.600A4.600 4.600 0 0 1 6.600 3z" fill="${h('lilac')}"/><circle cx="5.750" cy="7.800" r="1.200" fill="${W}"/><circle cx="5.750" cy="12" r="1.200" fill="${W}" opacity=".6"/><circle cx="5.750" cy="16.200" r="1.200" fill="${W}" opacity=".6"/>`)],
+    ['dialog', 'three dots, of course', svg(`<rect x="2" y="3.500" width="20" height="17" rx="4.600" fill="${soft('sky')}"/><path d="M6.600 3.500h10.800A4.600 4.600 0 0 1 22 8.100V9.400H2V8.100A4.600 4.600 0 0 1 6.600 3.500z" fill="${h('sky')}"/><circle cx="5.800" cy="6.500" r="1.150" fill="${h('pink')}"/><circle cx="9.200" cy="6.500" r="1.150" fill="${h('butter')}"/><circle cx="12.600" cy="6.500" r="1.150" fill="${h('mint')}"/><rect x="12.500" y="14" width="6.500" height="3.800" rx="1.900" fill="${h('pink')}"/>`)],
+    ['tooltip', 'a popover, a menu', svg(`<path d="M5.500 2.800h13A3.800 3.800 0 0 1 22.300 6.600v6.800a3.800 3.800 0 0 1-3.800 3.800h-3.300L12 21.200l-3.200-4H5.500a3.800 3.800 0 0 1-3.800-3.800V6.600A3.800 3.800 0 0 1 5.500 2.800z" fill="${h('butter')}"/><circle cx="7.800" cy="10" r="1.500" fill="${W}"/><circle cx="12" cy="10" r="1.500" fill="${W}"/><circle cx="16.200" cy="10" r="1.500" fill="${W}"/>`)],
+    ['toast', 'it is toast', svg(`<path d="M5.200 10.200C2.600 9.200 2.400 5.200 6.200 4c2.600-.800 9-.800 11.600 0 3.800 1.200 3.600 5.200 1 6.200V18a3 3 0 0 1-3 3H8.200a3 3 0 0 1-3-3z" fill="${h('butter')}" stroke="${ink('butter')}" stroke-width="1.500" stroke-linejoin="round"/><circle cx="9.400" cy="12.600" r="1.050" fill="${ink('butter')}"/><circle cx="14.600" cy="12.600" r="1.050" fill="${ink('butter')}"/>${line('M9.800 15.600a2.800 2.800 0 0 0 4.400 0', ink('butter'), 1.500)}`)],
+  ].map(([name, note, icon]) => ({ name, note, icon }));
 
-  // one icon: at its drawn size, at 24, and on the fix bar's tile; its name
-  const tile = (i) => `<figure class="ico"${i.fresh ? ' data-new' : ''}${i.note ? ` title="${i.note}"` : ''}>
-    <span class="row"><i class="s16">${i.svg}</i><i class="s24">${i.svg}</i><i class="chip">${i.svg}</i></span>
-    <figcaption>${i.name}${i.note ? `<small>${i.note}</small>` : ''}</figcaption></figure>`;
-  const set = (title, facts, icons, note = '') => `<section class="set"><div class="head"><h2>${title}</h2><span class="facts">${facts}</span></div>${note ? `<p class="why">${note}</p>` : ''}<div class="grid">${icons.map(tile).join('')}</div></section>`;
+  const toy = (i) => `<figure class="toy" tabindex="0"><span class="row"><i class="big">${i.icon}</i><i class="mid">${i.icon}</i><i class="sm">${i.icon}</i></span><figcaption>${i.name}${i.note ? `<small>${i.note}</small>` : ''}</figcaption></figure>`;
+  const OLD = [['p', 'padding'], ['m', 'margin'], ['g', 'gap'], ['b', 'border'], ['r', 'corner'], ['line', 'type'], ['c', 'size']];
 
-  root.innerHTML = `<style>${tokens}${LANGUAGE_CSS}${GLYPH_CSS}
+  root.innerHTML = `<style>${tokens}${LANGUAGE_CSS}
     :host { display: block; font-family: var(--pl-sans); color: var(--pl-ink); }
-    :host([data-scheme="dark"]) { --pl-paper: #2e2d2b; --pl-paper-2: #3a3936; --pl-rule: #4a4844; --pl-ink: #f4f3ef; }
-    .band { margin: 26px 0 12px; font: 600 12px/1 var(--pl-sans); letter-spacing: .06em; text-transform: uppercase; color: var(--pl-ink-2); }
-    .band:first-child { margin-top: 0; }
-    .set { margin: 0 0 14px; padding: 14px 16px 16px; border-radius: 14px; background: var(--pl-paper); box-shadow: 0 0 0 1px var(--pl-rule); }
-    .head { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
-    .head h2 { margin: 0; font: 600 14px/20px var(--pl-sans); }
-    .facts { font: 500 11px/1 var(--pl-mono); color: var(--pl-ink-3); }
-    .why { margin: 4px 0 0; font: 400 13px/19px var(--pl-sans); color: var(--pl-ink-2); max-width: 760px; }
-    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(128px, 1fr)); gap: 8px; margin-top: 12px; }
-    .ico { margin: 0; padding: 10px 10px 9px; border-radius: 10px; background: var(--pl-paper-2); display: flex; flex-direction: column; gap: 8px; }
-    .ico[data-new] { background: none; box-shadow: inset 0 0 0 1px var(--pl-rule); }
-    .ico .row { display: flex; align-items: center; gap: 12px; height: 26px; color: var(--pl-ink); }
-    .ico i { display: grid; place-items: center; flex: none; }
-    .ico svg { display: block; width: 100%; height: 100%; }
-    .ico .s16 { width: 16px; height: 16px; }
-    .ico .s24 { width: 24px; height: 24px; color: var(--pl-ink-2); }
-    .ico .chip { width: 24px; height: 24px; border-radius: 7px; background: var(--pl-pink-soft); color: var(--pl-pink-ink); }
-    .ico .chip svg { width: 16px; height: 16px; }
-    .ico figcaption { font: 500 12px/15px var(--pl-sans); color: var(--pl-ink); }
-    .ico figcaption small { display: block; font: 400 11px/14px var(--pl-sans); color: var(--pl-ink-3); }
-    ul.notes { margin: 0 0 14px; padding: 12px 16px 12px 32px; border-radius: 14px; background: var(--pl-paper); box-shadow: 0 0 0 1px var(--pl-rule); font: 400 13px/20px var(--pl-sans); color: var(--pl-ink-2); }
-    ul.notes b { color: var(--pl-ink); font-weight: 600; }
-  </style>
+    :host([data-scheme="dark"]) { --pl-paper: #2a2930; --pl-paper-2: #35343c; --pl-rule: #45444d; --pl-ink: #f4f3ef; }
+    .band { margin: 28px 0 12px; font: 600 12px/1 var(--pl-sans); letter-spacing: .06em; text-transform: uppercase; color: var(--pl-ink-2); }
+    .band:first-of-type { margin-top: 0; }
+    .set { margin: 0 0 14px; padding: 16px 16px 18px; border-radius: 18px; background: var(--pl-paper); box-shadow: 0 0 0 1px var(--pl-rule); }
+    .set h2 { margin: 0; font: 600 15px/20px var(--pl-sans); }
+    .set p { margin: 3px 0 0; font: 400 13px/19px var(--pl-sans); color: var(--pl-ink-2); max-width: 760px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; margin-top: 14px; }
+    .toy { margin: 0; padding: 14px 12px 11px; border-radius: 14px; background: var(--pl-paper-2); display: flex; flex-direction: column; gap: 10px; outline: none; cursor: default;
+      transition: background-color 200ms var(--pl-ease-out), translate 300ms var(--pl-spring-pop); }
+    .toy .row { display: flex; align-items: flex-end; gap: 12px; height: 46px; }
+    .toy i { display: block; flex: none; transform-origin: 50% 80%; transition: rotate 420ms var(--pl-spring-pop), scale 420ms var(--pl-spring-pop); }
+    .toy svg { display: block; width: 100%; height: 100%; overflow: visible; }
+    .toy .big { width: 44px; height: 44px; }
+    .toy .mid { width: 24px; height: 24px; }
+    .toy .sm { width: 16px; height: 16px; }
+    /* pointed at, the toy is picked up: it tips and grows, the small ones lean the other way */
+    .toy:hover, .toy:focus-visible { translate: 0 -2px; background: color-mix(in oklab, var(--pl-butter-soft) 55%, var(--pl-paper-2)); }
+    .toy:hover .big, .toy:focus-visible .big { rotate: -9deg; scale: 1.14; }
+    .toy:hover .mid, .toy:focus-visible .mid { rotate: 7deg; scale: 1.08; }
+    .toy:hover .sm, .toy:focus-visible .sm { rotate: -5deg; }
+    .toy figcaption { font: 600 13px/16px var(--pl-sans); color: var(--pl-ink); }
+    .toy figcaption small { display: block; font: 400 11px/14px var(--pl-sans); color: var(--pl-ink-3); }
+    .was { display: flex; flex-wrap: wrap; gap: 14px 22px; margin-top: 12px; align-items: center; }
+    .was span { display: inline-flex; align-items: center; gap: 7px; font: 500 12px/1 var(--pl-sans); color: var(--pl-ink-2); }
+    .was i { display: block; width: 16px; height: 16px; color: var(--pl-ink-2); }
+    .was svg { display: block; width: 100%; height: 100%; }
+    /* the bar, with a toy in it */
+    .bars { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+    .fb { display: inline-flex; align-items: center; gap: 9px; height: 46px; padding: 0 14px 0 9px; border-radius: 23px; white-space: nowrap; }
+    .fb i { display: block; width: 28px; height: 28px; }
+    .fb svg { display: block; width: 100%; height: 100%; }
+    .fb code { font: 600 13px/1 var(--pl-mono); color: var(--pl-ink); }
+    @media (prefers-reduced-motion: reduce) { .toy, .toy i { transition: none; } }
+  </style>${defs}
+  <div class="band">The toy set · proposed</div>
+  <section class="set"><h2>Properties</h2><p>Padding is hatched, margin is dotted, a gap is striped: the same three patterns the page is drawn with, each in its own colour. The rest follow: solid shapes, the overlay’s five hues, white for what sits on a solid.</p><div class="grid">${PROPS.map(toy).join('')}</div></section>
+  <section class="set"><h2>Elements and patterns</h2><p>What a page is made of, for saying what the thing in hand is with a picture. Each has one small joke.</p><div class="grid">${PARTS.map(toy).join('')}</div></section>
+  <section class="set"><h2>In the fix bar</h2><p>How a cause would open: its toy, then the class.</p><div class="bars">${[[PROPS[3], 'rounded-[5px]'], [PROPS[0], 'px-[7px]'], [PROPS[2], 'gap-[13px]'], [PROPS[1], 'mt-[10px]'], [PROPS[5], 'text-[13px]'], [PROPS[12], 'shadow-[0_1px_2px]']].map(([i, cls]) => `<span class="fb pl-card"><i>${i.icon}</i><code>${cls}</code></span>`).join('')}</div></section>
   <div class="band">What the overlay has today</div>
-  <ul class="notes">
-    <li><b>Four sets, four grids.</b> The same job (naming a property) is drawn on a 16, a 14, a 12 and a 24 grid, with lines from 1 to 2.6 thick. Side by side they don’t read as one family.</li>
-    <li><b>Two of the four are private.</b> The type icons live inside the words card and the layout icons inside the editor controls, so nothing else can use them.</li>
-    <li><b>Type is drawn twice.</b> The box set has one “type” icon; the words card has four finer ones for size, line height, letter spacing and weight.</li>
-    <li>Each tile shows the icon at its own size, at 24, and on the fix bar’s pink tile.</li>
-  </ul>
-  ${set('Box properties', 'boxmodel.js · 16 grid · line 1.3 to 2.6', BOX, 'The set the box model, the clean-up chips and the fix bar use. The strongest of the four.')}
-  ${set('Type properties', 'texteditor.js · 14 grid · line 1.3 to 1.6 · private', TYPE)}
-  ${set('Layout options', 'editor-primitives.js · 12 grid · line 1.2 to 1.3 · private', LAYOUT)}
-  ${set('Families', 'glyphs.js · 24 grid · line 1', FAMILIES, 'One per kind of thing Plumber judges. Drawn as drafting marks with a hairline, so at 16 they go thin next to the box set.')}
-  <div class="band">Proposed</div>
-  ${set('Properties with no icon', 'new · 16 grid · line 1.5', PROPS, 'What a fix can touch today and has nothing to show for it. Drawn to the box set’s rules so they sit beside padding, margin and corner.')}
-  ${set('Elements and patterns', 'new · 16 grid · line 1.5', PARTS, 'What a page is made of. For saying what the thing in hand is (a button, a row of a list, a dialog) with a picture instead of a tag name.')}`;
+  <section class="set"><h2>The grey line set</h2><p>The box icons the overlay uses now, for comparison. The toy set would take their place.</p><div class="was">${OLD.map(([k, name]) => `<span><i>${BLOCK_ICONS[k]}</i>${name}</span>`).join('')}</div></section>`;
 
   document.getElementById('scheme').onclick = (e) => { const dark = document.body.classList.toggle('dark'); host.dataset.scheme = dark ? 'dark' : 'light'; e.target.textContent = dark ? 'Light' : 'Dark'; };
 </script>
