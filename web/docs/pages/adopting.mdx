@@ -1,0 +1,106 @@
+A big repo has years of drift in it. You don't fix that before you can start. Plumber records what you have today as **debt**, fails only on what's new, and lets the debt fall as you fix it.
+
+## 1. Look first
+
+```sh
+npx plumber check
+```
+
+With no config and no ledger this is advisory: it exits 0 and fits on one screen. It shows where you stand family by family, what to fix first with the command that lists it, and the next step:
+
+```text
+React Plumber  my-app · Tailwind 4.1 · theme src/index.css · 214 files · 2.3s
+
+On your tokens
+  spacing    ██████████████████░░   91%     38 off
+  color      █████████████░░░░░░░   64%    412 off
+  motion     ░░░░░░░░░░░░░░░░░░░░    0%      9 off
+
+Fix first
+  ✗ 3 broken styles              the browser drops them        plumber check --broken
+  ! 1 setup gap                  no motion tokens yet          plumber check --rule config
+  · 459 values off your tokens   most in color                 plumber check --rule provenance
+
+This is your first run, so all of this counts as new.
+  plumber baseline      record today's drift as debt; from then on only new drift fails
+  Alt+B in dev          see every drift on the page and fix it there
+
+More: --all (every finding) · --family <name> · --file <path> · --json
+```
+
+Every row in **Fix first** ends with the command that lists just those findings. `--all` prints every finding.
+
+A line like *"Your theme has no motion tokens"* means a family has nothing to check against yet. That's a gap in your decisions, not in your code.
+
+## 2. Set up and record today
+
+```sh
+npx plumber init
+```
+
+```text
+Wrote plumber.config.ts with inferred token sources.
+Components: 2 found from directory:src/components/ui.
+Baseline: 9 debt entries (9 locations) in .plumber/ledger.jsonl.
+Accepted 3 tokens as inferred.
+Next steps: run plumber install --ci.
+```
+
+`init` finds where your tokens live, finds your components, turns on four habits, writes `plumber.config.ts`, and records every current finding as debt in `.plumber/ledger.jsonl`. It also counts how often each habit would break, so you can see the cost of the ones it leaves off:
+
+```ts
+"habits": [
+  "hover-gate", // 1 breaks
+  "focus-outline", // 1 breaks
+  "transition-named", // 1 breaks
+  "no-ease-in", // 1 breaks
+  // "logical-inline", // 1 breaks
+  // "viewport-dynamic", // 1 breaks
+  // "overscroll-contain", // 1 breaks
+]
+```
+
+From here, `plumber check` passes until someone adds new drift.
+
+## 3. Review your decisions
+
+`init` marks the tokens it found as inferred. Go through them with whoever owns the design system: are the sources right, do the tokens have [reasons](/docs/decisions)? Then accept them:
+
+```sh
+npx plumber accept-decisions
+```
+
+## 4. Turn on the guards
+
+```sh
+npx plumber install --ci                # check every pull request
+npx plumber install --agent claude      # check every agent edit
+```
+
+See [CI and pull requests](/docs/ci) and [Agents](/docs/agents).
+
+## 5. Pay the debt down
+
+Fix debt in small, reviewed slices: a component at a time, or a family at a time. `npx plumber check --verbose` lists the debt; the [overlay](/docs/overlay) shows it on the page and writes the fixes. Each fix lowers the count. Lock the progress in so it can't come back:
+
+```sh
+npx plumber ledger --ratchet   # lower each debt count to what's left
+npx plumber ledger --prune     # drop entries for drift and tokens that are gone
+```
+
+Run them after a batch of fixes and commit the ledger with the fixes.
+
+## The rules that keep it honest
+
+- **Debt can't grow.** `plumb baseline` refuses to record more debt than you had:
+
+  ```text
+  plumb: Baseline refuses debt growth (1 keys); fix new findings or use plumb baseline --force after review.
+  ```
+
+- **Exceptions need a reason**, and in CI, an approver. `plumber accept --rule <rule> --site <file:line> --why "…"`.
+- **`--strict-ledger` stops quiet growth.** In agent hooks it fails any change that adds an exception or a token, raises debt or adds config, while still letting debt fall.
+
+<Callout kind="note" title="Already have a config?">
+`plumb baseline` records today's findings as debt without touching your config. `init` refuses to overwrite a config unless you pass `--force`, and even then won't record more debt than the ledger already allows.
+</Callout>

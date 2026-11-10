@@ -251,7 +251,24 @@ race, built for the old in-place write) was rewritten for the new write path (`e
   words, below the 4.5 asked of small regular text. Butter's ink on butter is 6.3:1.
 - **Media hooks:** the Icons box before (ochre) and after (yellow).
 
+### 5. One site, on Next.js
+- **The itch:** the owner: "lets use next.js for this site and move the product homepage, this and documentation with
+  demo on there i think we never decided for this part", and "i want the design system to be the reflection of the
+  site itself".
+- **What we chose:** one Next.js app in `web/` with its own dependencies: `/` (homepage), `/docs`, `/demo`, `/design`
+  (also `design.react-plumber.com`). The site puts the overlay's token file on its own root and draws with the
+  overlay's source, so the site is the design system in use.
+- **What is in:** the design section (colour, type, icons, buttons, fix bar) and the docs: all 15 pages, with a rail,
+  toy-styled prose, code blocks, tables, callouts and family marks.
+- **What is not:** the docs' 5 figures, 4 reference tables and the live overlay are placeholders that say so; the
+  homepage and the demo have not moved; the docs' pages are a copy of `site/src/docs/pages` until the old site is
+  removed.
+- **A bill avoided:** Next.js 16.4.0 reported a known security vulnerability on start. `web/` is on 16.4.6
+  (`npm audit`: 0 vulnerabilities). The repository's own dev dependency is still 16.4.0.
+
 ## Open gaps
+- `web/docs/pages` is a copy of `site/src/docs/pages`; two copies until the old Vite site is removed.
+- The repository root still installs Next.js 16.4.0 (used by the Next host's tests); `web/` is on 16.4.6.
 - The new look (toys, the fix bar, the toy button) exists only as kit pages; the product still ships the old one.
 - `e2e/text-edit.test.mjs` "every write is in the dock's history" times out on `main` on the laptop; not looked at.
 - 2 oracle findings are left, both in the headless recorder. Nothing bans a bare `setTimeout` or `addEventListener`
