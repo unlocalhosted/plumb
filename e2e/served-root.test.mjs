@@ -66,7 +66,9 @@ createRoot(document.getElementById('root')).render(<App />);
   return { url: `http://127.0.0.1:${server.httpServer.address().port}`, headers: {} };
 }
 async function child(t, args, cwd) {
-  const env = { ...process.env, NEXT_TELEMETRY_DISABLED: '1', WATCHPACK_POLLING: 'true' }; delete env.NODE_ENV;
+  // unstamped on purpose, like the Vite host above (stamp: false): these tests exercise the owner-stack fallback. Since
+  // 0.4.0 withPlumb always stamps, so the internal switch turns it off (as e2e/locate.test.mjs does)
+  const env = { ...process.env, NEXT_TELEMETRY_DISABLED: '1', WATCHPACK_POLLING: 'true', PLUMB_INTERNAL_UNSTAMPED: '1' }; delete env.NODE_ENV;
   const spawned = spawn(process.execPath, args, { cwd, env, stdio: ['ignore', 'pipe', 'pipe'] });
   let output = ''; spawned.stdout.on('data', chunk => output += chunk); spawned.stderr.on('data', chunk => output += chunk);
   const done = once(spawned, 'exit');

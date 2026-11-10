@@ -21,6 +21,10 @@ test('component modules provide CSS existence proof across workspace and package
   const directory = await mkdtemp(join(tmpdir(), 'plumb-module-css-'));
   t.after(() => rm(directory, { recursive: true, force: true }));
   await cp(join(root, 'fixtures/module-css'), directory, { recursive: true });
+  // 0.4.0: with no `source` configured, a workspace package inside the repository is your code and is read directly.
+  // This test is about a package that is NOT your source, reached only through the app's imports, so the app's own
+  // folder is named as the source (the override), as a project that keeps a kit apart would.
+  await writeFile(join(directory, 'plumber.config.ts'), "export default { source: ['src/**/*.{tsx,jsx,ts,js,css}'] };\n");
   const cold = run(directory).report;
   assert.deepEqual(cold.findings.map(finding => finding.declaration.value), ['kit-unused']);
   assert.match(cold.findings[0].title, /unreachable.css, but nothing imports/);

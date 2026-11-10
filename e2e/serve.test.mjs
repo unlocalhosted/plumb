@@ -428,8 +428,10 @@ test('startup inventory and reconciled directory listings agree on symlinks, ign
   for (const alias of aliases) assert.ok(!expected.includes(join(root, alias)));
   session.inventory = () => { throw new Error('directory reconciliation must not re-glob'); };
   const report = await session.report();
-  assert.ok(report.declarations.some(d => d.site.file === join(root, 'src/.hidden/Probe.tsx')));
-  assert.ok(report.declarations.some(d => d.site.file === join(root, 'src/.Probe.tsx')));
+  // 0.4.0: with no `source` configured, a dotted folder or file is a tool's, not your code, until the app imports it
+  // (src/project.ts, defaultSelection). Nothing imports these two: they stay in the inventory and are not read.
+  assert.ok(!report.declarations.some(d => d.site.file === join(root, 'src/.hidden/Probe.tsx')));
+  assert.ok(!report.declarations.some(d => d.site.file === join(root, 'src/.Probe.tsx')));
   assert.deepEqual([...session.hashes.keys()].sort(), expected, 're-listing retains exactly startup inventory membership');
   assert.equal((await session.health()).status, 'ready');
 });

@@ -119,7 +119,15 @@ test('spacing policies enforce origin, tier and reference identity and refresh o
   await writeFile(join(directory, 'node_modules/scale/theme.css'), '@theme { --spacing-scale: 12px; }');
   await writeFile(join(directory, 'src/styles.css'), '@import "tailwindcss"; @import "scale";');
   await writeFile(join(directory, 'src/App.tsx'), "import './styles.css'; <div className='gap-scale' />;");
-  assert.equal(run(directory).findings[0].rule, 'config/no-tokens');
+  // 0.4.0: with no `source` configured, every stylesheet of yours is tracked. node_modules-scale.css is yours (its
+  // name only looks installed), so its @theme is the project's and the step has a project origin: nothing to report
+  let scaled = run(directory);
+  assert.deepEqual(scaled.findings, []);
+  assert.deepEqual(scaled.decisions.filter(d => d.name === '--spacing-scale').map(d => [d.origin, d.source.file.endsWith('node_modules-scale.css')]), [['project', true]]);
+  // without it the step comes from the package alone: a framework origin, so the project has no tokens of its own
+  await rm(join(directory, 'node_modules-scale.css'));
+  scaled = run(directory);
+  assert.equal(scaled.findings[0].rule, 'config/no-tokens');
   await writeFile(join(directory, 'plumber.config.ts'), "export default { decisions: { spacing: { from: 'theme:--spacing-*', origins: ['project', 'framework'] } } };");
   assert.deepEqual(run(directory).findings, []);
 });
