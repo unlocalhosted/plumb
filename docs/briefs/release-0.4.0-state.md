@@ -84,6 +84,19 @@ Rows 7, 9, 10, 11 of the table above: 7 was a product bug (History's outline at 
 an out-of-date test (986011b); 11 was a product bug (a bundler warning on linked installs, eae5d23); 9 (`bare-page`)
 passed in this run and was not reproduced.
 
+## Fourth full run (d8fe451, the pushed commit; vm-agent, 4 cores, 34.4 min)
+
+1,032 passed, 15 failed in 14 files. 10 of the 15 are on `main`'s list.
+
+| Failed here, not on `main` | State |
+|---|---|
+| `session-burst` (2 tests) | Latency gates on a shared machine |
+| `timeline`: first test | Known flaky |
+| `hydration`: a click the moment the overlay exists | The known first-click gap on Next webpack (about 1 in 6), already in Open gaps |
+| `bare-page`: opens the page on a real terminal | Failed in 2 of 4 runs here, passes locally and on `main`. When interrupted, the closing line is sometimes not printed. Possibly a real race on Linux; not diagnosed |
+
+`blueprint-late-mount`, `locate-bench` and `craft-structure` pass in this run.
+
 ## What publishing needs
 
 1. A decision on rows 1 to 6: intended, or bug. Intended ones get their tests updated; bugs get fixed.
