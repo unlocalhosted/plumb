@@ -34,6 +34,12 @@ const STYLES = [
 ];
 // the text colours, darkest first; the heading's own colour is a hard-coded near-white
 const INK = [{ name: 'muted', v: '#94969c' }, { name: 'secondary', v: '#cecfd2' }, { name: '#f0f0f1', v: '#f0f0f1', hard: true }, { name: 'primary', v: '#f5f5f6' }, { name: 'white', v: '#ffffff' }];
+// font families: the project's three, and the heading's own hard-coded face
+const FAMILY = [{ name: 'sans', v: 'system-ui, -apple-system, sans-serif' }, { name: 'Helvetica Neue', v: '"Helvetica Neue", Arial, sans-serif', hard: true }, { name: 'display', v: 'var(--font-round), system-ui, sans-serif' }, { name: 'serif', v: 'Georgia, "Times New Roman", serif' }, { name: 'mono', v: 'ui-monospace, Menlo, monospace' }];
+const SCREENS = [['phone', 'Phone', 300], ['tablet', 'Tablet', 340], ['desktop', 'Desktop', 380]];
+const LINE = (d) => `<svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true"><path d="${d}" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>`;
+const ALIGN = [['left', LINE('M3 4h10M3 8h6M3 12h8'), 'Left'], ['center', LINE('M3 4h10M5 8h6M4 12h8'), 'Centre'], ['right', LINE('M3 4h10M7 8h6M5 12h8'), 'Right']];
+const WRAP = [['wrap', 'Wrap', 'Lines wrap as they fall'], ['balance', 'Balance', 'Lines kept even in length'], ['clamp', '1 line', 'Cut to one line, with an ellipsis']];
 const CASES = [['none', '—', 'As written'], ['uppercase', 'AG', 'Uppercase'], ['lowercase', 'ag', 'Lowercase'], ['capitalize', 'Ag', 'Capitalised']];
 const WEIGHT = [{ name: 'normal', v: 400 }, { name: 'medium', v: 500 }, { name: 'semibold', v: 600 }, { name: 'bold', v: 700 }];
 const GAP = [{ name: 'xs', v: 4 }, { name: 'sm', v: 8 }, { name: 'md', v: 12 }, { name: '13px', v: 13, hard: true }, { name: 'lg', v: 16 }, { name: 'xl', v: 24 }];
@@ -178,6 +184,37 @@ export function mount(host, root, css) {
     .sw { display: block; width: 16px; height: 16px; border-radius: 5px; box-shadow: inset 0 0 0 1px rgb(0 0 0 / .14); }
     .tcard .foot { display: flex; justify-content: flex-end; gap: 6px; padding-top: 2px; }
     .tcard .list { z-index: 6; }
+
+    /* more of the card: a full-width font field, toggles, the screen switch, a locked value, a note */
+    .tcard .pair { display: grid; grid-template-columns: 1fr auto; gap: 6px; }
+    .tg { display: inline-grid; grid-auto-flow: column; gap: 2px; padding: 2px; border-radius: 9px; background: var(--pl-paper-2); }
+    .tg button { all: unset; display: grid; place-items: center; min-width: 26px; height: 26px; padding: 0 4px; border-radius: 7px; cursor: pointer; font: 600 12.5px/1 system-ui, sans-serif; color: var(--pl-ink-2); }
+    .tg button:hover { color: var(--pl-ink); }
+    .tg button[aria-pressed="true"] { background: var(--pl-paper); color: var(--pl-ink); box-shadow: 0 1px 2px rgb(0 0 0 / .1); }
+    .tg button:focus-visible { outline: 2px solid var(--pl-sky); }
+    .seg.wrap3 { grid-template-columns: repeat(3, 1fr); }
+    .seg.wrap3 button { font: 600 11.5px/1 var(--pl-sans); }
+    .tcard section > .lbl { display: flex; align-items: center; gap: 8px; padding: 0 2px; }
+    .tcard section > .lbl b { font: 600 11.5px/1 var(--pl-sans); color: var(--pl-ink-3); }
+    .screens { margin-left: auto; display: inline-grid; grid-auto-flow: column; gap: 1px; padding: 2px; border-radius: 8px; background: var(--pl-paper-2); }
+    .screens button { all: unset; padding: 4px 7px; border-radius: 6px; cursor: pointer; font: 600 11px/1 var(--pl-sans); color: var(--pl-ink-3); }
+    .screens button[aria-pressed="true"] { background: var(--pl-paper); color: var(--pl-ink); box-shadow: 0 1px 2px rgb(0 0 0 / .1); }
+    .tcard .grid .row[hidden] { display: none; }
+    .row.inherited .slot b, .row.inherited .slot span { color: var(--pl-ink-3); font-style: italic; }
+    .row.locked { opacity: .62; }
+    .row.locked .val, .row.locked .scrub { pointer-events: none; }
+    .row.locked::after { content: ''; position: absolute; right: 8px; top: 50%; width: 9px; height: 11px; translate: 0 -50%; background: currentColor; color: var(--pl-ink-3);
+      -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 9 11'%3E%3Cpath d='M2 5V3.5a2.5 2.5 0 0 1 5 0V5' fill='none' stroke='black' stroke-width='1.3'/%3E%3Crect x='.5' y='5' width='8' height='5.5' rx='1.2'/%3E%3C/svg%3E") center / contain no-repeat; }
+    .tcard .note { margin: 0; padding: 0 2px; font: 500 11.5px/1.4 var(--pl-sans); color: var(--pl-ink-3); }
+    .tcard .note:empty { display: none; }
+    .tcard .fam .slot b { font-family: var(--ff); }
+    #textcard .stage { min-height: 760px; }
+    .hero { width: var(--hw, 380px); transition: width 320ms var(--pl-spring-pop); }
+    .hero h1 { font-family: var(--ff, "Helvetica Neue", Arial, sans-serif) !important; text-align: var(--ta, left); font-style: var(--fst, normal); text-decoration: var(--td, none); text-decoration-thickness: 2px; }
+    .hero .h { text-align: var(--ta, left); }
+    .hero.balance h1 { text-wrap: balance; }
+    .hero.clamp .h { display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
+    .hero.clamp h1 { display: inline; }
     .list .sty { width: 30px; text-align: center; font-family: system-ui, sans-serif; line-height: 1; color: var(--pl-ink); }
     .list .hard .sty { color: var(--pl-coral); }
     .list .chip { width: 14px; height: 14px; border-radius: 4px; box-shadow: inset 0 0 0 1px rgb(0 0 0 / .14); }
@@ -239,14 +276,17 @@ export function mount(host, root, css) {
   </section>
   <section class="scene" id="textcard">
     <h2>Put together: the text card</h2>
-    <p>The element’s editor, laid out like a visual editor’s panel. The heading is on no text style: its size (34px), line height (1.2) and colour are hard-coded, in coral. Pick a style and the four type values move together; change one value and the style follows. Case is four buttons, colour a swatch. One button writes every change. Drag the heading to resize it; double-click it to edit the words.</p>
+    <p>The element’s editor, laid out like a visual editor’s panel. The heading is on no text style: its font, size, line height and colour are hard-coded, in coral. Pick a style and the type values move together. Font size can differ per screen: switch Phone, Tablet, Desktop and the heading resizes to match; Tablet uses the phone size until you change it. Letter spacing is locked: it is set by the Heading component’s props, not here. Case, alignment, decoration and wrap are buttons; colour a swatch. One button writes every change.</p>
     <div class="stage" tabindex="0">
       <div class="hero held"><span class="h"><h1>Keep your app on your theme.</h1></span><p>See every hard-coded value, and move it onto your tokens in one place.</p></div>
       <div class="tcard" role="group" aria-label="Text">
         <header>Text<small>h1</small></header>
         <section class="style"><b>Style</b><div class="one"></div></section>
-        <section><b>Type</b><div class="grid"></div></section>
+        <section class="fam"><b>Font</b><div class="one"></div></section>
+        <section><div class="lbl"><b>Type</b><span class="screens" role="group" aria-label="Screen size">${SCREENS.map(([k, t], i) => `<button type="button" data-screen="${k}" aria-pressed="${i === 2}">${t}</button>`).join('')}</span></div><div class="grid"></div><p class="note"></p></section>
         <section><b>Case</b><div class="seg" role="group" aria-label="Case">${CASES.map(([v, l, t]) => `<button type="button" data-case="${v}" aria-label="${t}" aria-pressed="${v === 'none'}">${l}</button>`).join('')}</div></section>
+        <section><b>Align and decoration</b><div class="pair"><span class="tg" data-set="align" role="group" aria-label="Alignment">${ALIGN.map(([v, svg, t], i) => `<button type="button" data-v="${v}" aria-label="${t}" aria-pressed="${i === 0}">${svg}</button>`).join('')}</span><span class="tg" data-set="deco" role="group" aria-label="Decoration"><button type="button" data-v="italic" aria-label="Italic" aria-pressed="false" style="font-style:italic;font-family:Georgia,serif">I</button><button type="button" data-v="underline" aria-label="Underline" aria-pressed="false" style="text-decoration:underline">U</button><button type="button" data-v="line-through" aria-label="Strikethrough" aria-pressed="false" style="text-decoration:line-through">S</button></span></div></section>
+        <section><b>Wrap</b><div class="seg wrap3" data-set="wrap" role="group" aria-label="Wrap">${WRAP.map(([v, l, t], i) => `<button type="button" data-v="${v}" title="${t}" aria-pressed="${i === 0}">${l}</button>`).join('')}</div></section>
         <section class="colour"><b>Colour</b><div class="one"></div></section>
         <div class="foot">${button('Write', { cls: 'sm', key: '↵', attrs: 'data-do="write" disabled' })}</div>
       </div>
@@ -381,24 +421,49 @@ export function mount(host, root, css) {
   // button writes everything that changed ──
   {
     const stage = root.querySelector('#textcard .stage'), hero = stage.querySelector('.hero'), h1 = hero.querySelector('h1'), card = stage.querySelector('.tcard');
-    const styleBox = card.querySelector('.style .one'), grid = card.querySelector('.grid'), colourBox = card.querySelector('.colour .one');
+    const styleBox = card.querySelector('.style .one'), grid = card.querySelector('.grid'), colourBox = card.querySelector('.colour .one'), famBox = card.querySelector('.fam .one'), note = card.querySelector('.note');
     const go = card.querySelector('[data-do="write"]');
-    const placeCard = () => { const r = rel(stage, hero); card.style.left = `${r.right + 16}px`; card.style.top = `${Math.max(16, r.top + r.height / 2 - card.offsetHeight / 2)}px`; };
+    const placeCard = () => { const r = rel(stage, hero); card.style.left = `${Math.max(r.right + 16, 440)}px`; card.style.top = '16px'; };
     let caseNow = 'none', caseWritten = 'none', syncing = false, done = false;
     const all = [];
     const field = (into, spec) => { const p = picker(stage, { into, keys: 'row', compact: true, changed: () => refresh(), ...spec }); all.push(p); return p; };
 
-    // the four type values
-    const size = field(grid, { name: 'Font size', toy: glyph('font-size'), options: HERO_SIZE, format: (o) => `${o.v}px`,
-      mark: (t) => `<i class="aa" style="font-size:${Math.round(10 + (t.v - 16) * 0.3)}px">Aa</i>`,
-      apply: (o) => h1.style.setProperty('--fs', `${o.v}px`), handles: [{ el: h1, perPx: (dx, dy) => -dy / 14, skip: () => h1.isContentEditable }] });
+    // the font
+    field(famBox, { name: 'Font', toy: glyph('type'), options: FAMILY, format: (o) => (o.hard ? 'hard-coded' : ''),
+      mark: (t) => `<i class="sty" style="font-family:${t.v.replaceAll('"', "'")};font-size:14px">Ag</i>`,
+      apply: (o) => { h1.style.setProperty('--ff', o.v); famBox.style.setProperty('--ff', o.v); } });
+
+    // font size, one per screen. The heading shows the size of the screen in hand; Tablet takes the phone's size until
+    // it is given its own
+    const sizes = {}, val = { phone: 24, tablet: 24, desktop: 34 };
+    let screen = 'desktop', tabletOwn = false;
+    const showSize = () => h1.style.setProperty('--fs', `${val[screen === 'tablet' && !tabletOwn ? 'phone' : screen]}px`);
+    for (const [k, t] of SCREENS) {
+      const startAt = HERO_SIZE.findIndex((o) => !o.hard && o.v === 24);
+      sizes[k] = field(grid, { name: `Font size, ${t.toLowerCase()}`, toy: glyph('font-size'), options: HERO_SIZE, format: (o) => `${o.v}px`, start: k === 'desktop' ? undefined : startAt,
+        mark: (o) => `<i class="aa" style="font-size:${Math.round(10 + (o.v - 16) * 0.3)}px">Aa</i>`,
+        apply: (o) => { val[k] = o.v; if (k === 'phone' && !tabletOwn) { val.tablet = o.v; } showSize(); },
+        changed: () => { if (k === 'tablet') tabletOwn = true; refresh(); },
+        handles: [{ el: h1, perPx: (dx, dy) => -dy / 14, skip: () => h1.isContentEditable || screen !== k }] });
+    }
+    const size = () => sizes[screen];
     const weight = field(grid, { name: 'Weight', toy: glyph('font-weight'), options: WEIGHT, start: 2, format: (o) => String(o.v),
       mark: (t) => `<i class="wt" style="font-weight:${t.v}">Aa</i>`, apply: (o) => h1.style.setProperty('--fw', String(o.v)) });
     const leading = field(grid, { name: 'Line height', toy: glyph('line-height'), options: LEADING, format: (o) => String(o.v),
       mark: (t) => `<i class="lh" style="--g:${Math.round((t.v - 1) * 10)}px"></i>`, apply: (o) => h1.style.setProperty('--lh', String(o.v)) });
     const tracking = field(grid, { name: 'Letter spacing', toy: glyph('letter-spacing'), options: TRACKING, start: 1, format: (o) => `${o.v}em`,
       mark: (t) => `<i class="ls" style="letter-spacing:${t.v * 2}em">AV</i>`, apply: (o) => h1.style.setProperty('--ls', `${o.v}em`) });
-    const parts = [[size, HERO_SIZE, 'v'], [leading, LEADING, 'lh'], [weight, WEIGHT, 'fw'], [tracking, TRACKING, 'ls']];
+    // letter spacing is set by the Heading component's own props, so it is shown but can't be changed here
+    tracking.row.classList.add('locked'); tracking.row.title = 'Set by the Heading component’s props (Heading.tsx), not on this element';
+    const parts = () => [[size(), HERO_SIZE, 'v'], [leading, LEADING, 'lh'], [weight, WEIGHT, 'fw'], [tracking, TRACKING, 'ls']];
+    const pickScreen = (k) => {
+      screen = k;
+      for (const b of card.querySelectorAll('[data-screen]')) b.setAttribute('aria-pressed', String(b.dataset.screen === k));
+      for (const [key] of SCREENS) sizes[key].row.hidden = key !== k;
+      hero.style.setProperty('--hw', `${SCREENS.find(([key]) => key === k)[2]}px`);
+      showSize(); refresh();
+    };
+    card.querySelector('.screens').addEventListener('click', (e) => { const b = e.target.closest('[data-screen]'); if (b) pickScreen(b.dataset.screen); });
 
     // the style: picking one sets the four; it is drawn as a sample of itself ('Ag' at its size and weight)
     const style = field(styleBox, { name: 'Text style', toy: glyph('type'), options: STYLES,
@@ -408,12 +473,12 @@ export function mount(host, root, css) {
         styleBox.style.setProperty('--ss', `${o.hard ? 14 : Math.round(12 + (o.v - 16) * 0.15)}px`); styleBox.style.setProperty('--sw', String(o.fw || 600));
         if (syncing || o.hard) return;
         syncing = true;
-        for (const [p, opts, key] of parts) p.set(opts.findIndex((t) => !t.hard && t.v === o[key]));
+        for (const [p, opts, key] of parts()) if (!p.row.classList.contains('locked')) p.set(opts.findIndex((t) => !t.hard && t.v === o[key]));
         syncing = false;
       } });
     // a change to one value: the style it now matches, or No style
     const match = () => {
-      const now = Object.fromEntries(parts.map(([p, opts, key]) => [key, opts[p.at()].hard ? null : opts[p.at()].v]));
+      const now = Object.fromEntries(parts().map(([p, opts, key]) => [key, opts[p.at()].hard ? null : opts[p.at()].v]));
       const i = STYLES.findIndex((t) => !t.hard && ['v', 'lh', 'fw', 'ls'].every((k) => t[k] === now[k]));
       syncing = true; style.set(i >= 0 ? i : STYLES.findIndex((t) => t.hard)); syncing = false;
     };
@@ -423,27 +488,46 @@ export function mount(host, root, css) {
       mark: (t) => `<i class="chip" style="background:${t.v}"></i>`,
       apply: (o) => { h1.style.setProperty('--ink', o.v); colourBox.style.setProperty('--ink', o.v); } });
 
-    // case
-    const seg = card.querySelector('.seg');
-    seg.addEventListener('click', (e) => { const b = e.target.closest('[data-case]'); if (!b || done) return; caseNow = b.dataset.case; for (const x of seg.children) x.setAttribute('aria-pressed', String(x === b)); h1.style.setProperty('--tt', caseNow); refresh(); });
+    // case, alignment, decoration and wrap: buttons. Each remembers what was written, so a change counts once
+    const toggles = { case: { now: 'none', was: 'none' }, align: { now: 'left', was: 'left' }, deco: { now: '', was: '' }, wrap: { now: 'wrap', was: 'wrap' } };
+    const showToggles = () => {
+      h1.style.setProperty('--tt', toggles.case.now); h1.style.setProperty('--ta', toggles.align.now); hero.style.setProperty('--ta', toggles.align.now);
+      const deco = toggles.deco.now.split(' ').filter(Boolean);
+      h1.style.setProperty('--fst', deco.includes('italic') ? 'italic' : 'normal');
+      h1.style.setProperty('--td', deco.filter((d) => d !== 'italic').join(' ') || 'none');
+      hero.classList.toggle('balance', toggles.wrap.now === 'balance'); hero.classList.toggle('clamp', toggles.wrap.now === 'clamp');
+      for (const [k, t] of Object.entries(toggles)) {
+        const box = k === 'case' ? card.querySelector('.seg:not([data-set])') : card.querySelector(`[data-set="${k}"]`);
+        for (const b of box.querySelectorAll('button')) { const v = b.dataset.v ?? b.dataset.case; b.setAttribute('aria-pressed', String(k === 'deco' ? t.now.split(' ').includes(v) : t.now === v)); }
+      }
+    };
+    card.addEventListener('click', (e) => {
+      const b = e.target.closest('.seg button, .tg button'); if (!b || done) return;
+      const box = b.parentElement, k = b.dataset.case ? 'case' : box.dataset.set, v = b.dataset.v ?? b.dataset.case;
+      if (k === 'deco') { const on = new Set(toggles.deco.now.split(' ').filter(Boolean)); on.has(v) ? on.delete(v) : on.add(v); toggles.deco.now = [...on].sort().join(' '); }
+      else toggles[k].now = v;
+      showToggles(); refresh();
+    });
 
     // the one button: how many changes there are to write, and writing them
-    const pending = () => all.filter((p) => p !== style && p.ready()).length + (caseNow !== caseWritten ? 1 : 0);
+    const pending = () => all.filter((p) => p !== style && p.ready()).length + Object.values(toggles).filter((t) => t.now !== t.was).length;
     const lb = () => go.querySelector('.lb');
     function refresh() {
       if (!syncing && all.includes(style)) match();
-      const n = pending(), hard = all.some((p) => p !== style && p.row.querySelector('.val.on-hard'));
+      const n = pending(), hard = all.some((p) => p !== style && !p.row.hidden && p.row.querySelector('.val.on-hard'));
+      sizes.tablet.row.classList.toggle('inherited', !tabletOwn);
+      note.textContent = screen === 'tablet' && !tabletOwn ? 'Tablet uses the phone size until you change it.' : 'Letter spacing is set by the Heading component’s props (Heading.tsx).';
       if (!done) { go.disabled = n === 0; lb().textContent = n ? `Write ${n} change${n > 1 ? 's' : ''}` : 'Write'; }
       // the heading's ring: coral while anything is still hard-coded, blue when it is all on tokens, green once written
       hero.classList.toggle('held', hard); hero.classList.toggle('clean', !hard && !done); hero.classList.toggle('done', !hard && done);
     }
     go.addEventListener('click', () => {
-      if (done) { done = false; go.classList.remove('done'); for (const p of all) p.putBack(); caseNow = caseWritten = 'none'; for (const x of seg.children) x.setAttribute('aria-pressed', String(x.dataset.case === 'none')); h1.style.setProperty('--tt', 'none'); refresh(); return; }
+      if (done) { done = false; go.classList.remove('done'); for (const p of all) p.putBack(); tabletOwn = false; for (const t of Object.values(toggles)) t.now = t.was = { case: 'none', align: 'left', deco: '', wrap: 'wrap' }[Object.keys(toggles).find((k) => toggles[k] === t)]; showToggles(); showSize(); refresh(); return; }
       for (const p of all) if (p !== style) p.write();
-      caseWritten = caseNow; done = true; go.classList.add('done'); lb().textContent = 'Written · undo'; refresh();
+      for (const t of Object.values(toggles)) t.was = t.now; done = true; go.classList.add('done'); lb().textContent = 'Written · undo'; refresh();
     });
     card.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.target.closest('.row') && !go.disabled) { e.preventDefault(); go.click(); } });
     words(stage, h1, stage.querySelector('#textcard .edittag'), () => {});
-    new ResizeObserver(placeCard).observe(stage); placeCard(); refresh();
+    new ResizeObserver(placeCard).observe(stage); pickScreen('desktop'); showToggles(); placeCard(); refresh();
   }
 }

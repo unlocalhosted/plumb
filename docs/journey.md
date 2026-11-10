@@ -501,6 +501,23 @@ race, built for the old in-place write) was rewritten for the new write path (`e
 - **The owner's call:** "nope, let's go back to the previous one, I think that's fine." The text card as a visual
   editor's panel (entry 14) stays the direction; the four ideas stay on their page as a record, not built further.
 
+### 16. "is this good enough for all text needs?" No: more editing options
+
+- **The gap, named:** the card covered style, the four type values, case and colour. Missing for real text: the
+  font, sizes per screen size (`text-2xl md:text-4xl`), where a value comes from (inherited, or locked by a
+  component's props), alignment, decoration, and how long text wraps.
+- **Added to the text card:** a Font field (the project's sans, display, serif, mono; the heading's hard-coded
+  Helvetica Neue in coral, each option drawn in its face). A Phone / Tablet / Desktop switch on the Type section: font
+  size is kept per screen, the heading narrows to the screen and takes its size, and Tablet shows the phone's size in
+  grey italics ("Tablet uses the phone size until you change it") until it gets its own. Letter spacing locked, with a
+  lock and a note (it is set by the Heading component's props). Alignment (left, centre, right) and decoration
+  (italic, underline, strikethrough) as small button groups; Wrap (wrap, balance, one line with an ellipsis). Every
+  one counts toward the one Write button.
+- **A bug on the way:** a field that started on a token counted as a change because its list also held a hard-coded
+  value; a field now counts as changed by where it started.
+- **Proof:** on the running page: Write starts empty; Tablet shows 24px inherited with its note; centre, italic and
+  balance applied to the heading and made "Write 3 changes".
+
 ## Open gaps
 - The contrast check knows colours, not sizes or weights, and is not run by CI yet.
 - `web/docs/pages` is a copy of `site/src/docs/pages`; two copies until the old Vite site is removed.

@@ -134,8 +134,8 @@ export function picker(stage, { name, toy, options: S, mark, apply, place, handl
   const row = [...into.querySelectorAll(':scope > .row')].pop(), val = row.querySelector('.val'), ok = row.querySelector('.ok'), list = [...into.querySelectorAll(':scope > .list')].pop();
   const drum = row.querySelector('.drum'), scrub = row.querySelector('.scrub');
   let at = FIRST, written = false;
-  // something to write: a token in hand where the value was hard-coded, or a different token where it wasn't
-  const isReady = () => !S[at].hard && !written && (HARD >= 0 || at !== FIRST);
+  // something to write: a token in hand where the value started hard-coded, or a different token where it didn't
+  const isReady = () => !S[at].hard && !written && (!!S[FIRST]?.hard || at !== FIRST);
   const layout = () => (place ? place(row, list, S[at]) : (list.style.left = `${row.offsetLeft}px`, list.style.top = `${row.offsetTop + row.offsetHeight + 4}px`));
   if (into !== stage || !place) row.classList.add('inline');
   if (compact) row.classList.add('compact');
@@ -184,7 +184,7 @@ export function picker(stage, { name, toy, options: S, mark, apply, place, handl
   list.addEventListener('picker:close', close);
   stage.addEventListener('pointerdown', (e) => { if (!list.hidden && !list.contains(e.target) && !val.contains(e.target)) close(); }, true);
   const go = (n) => { if (written) return; land(Math.max(0, Math.min(last, n))); };
-  const write = () => { if (written || S[at].hard || (HARD < 0 && at === FIRST)) return; written = true; row.classList.add('written'); list.hidden = true; draw(); };
+  const write = () => { if (written || S[at].hard || (!S[FIRST]?.hard && at === FIRST)) return; written = true; row.classList.add('written'); list.hidden = true; draw(); };
   const putBack = () => { written = false; row.classList.remove('written'); list.hidden = true; draw(); go(FIRST); changed?.(); };
 
   // ── drag mode: press and move, anywhere on the screen. Up (or right) is bigger; each option rolls into the
