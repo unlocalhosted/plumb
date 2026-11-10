@@ -311,7 +311,7 @@ export class Cleanup {
         role, chip: { label: `${names.get(role.name)}: ${shown(from)} to ${shown(to)}`, icon: `<span class="ag" style="font-size:${Math.max(9, Math.min(15, 6 + (to ?? 14) / 4))}px;font-weight:${role.bundle.weight ?? 400};text-transform:${role.bundle.transform === 'uppercase' ? 'uppercase' : 'none'}">${role.bundle.transform === 'uppercase' ? 'AG' : 'Ag'}</span>`, from },
         to,
         bands: () => els().map((el) => ({ rect: () => el.getBoundingClientRect(), kind: 'line' })),
-        morph: (animate) => this.#preview.setRole(role, animate ? (el, set) => ease(el, set, { blur: true }) : null),
+        morph: (animate) => this.#preview.setRole(role, animate ? (el, set) => ease(el, set, { blur: true }) : null, this.#p?.prose?.lineHeight),
       };
     });
   }

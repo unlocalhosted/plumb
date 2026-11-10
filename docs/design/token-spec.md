@@ -1,6 +1,6 @@
 # Plumber's token spec: colour and type
 
-Status: spec, nothing built (2026-11-10). Owner direction: move plumber's own idea of a "good token system" to the
+Status: spec; type layer 1 and the prose modifier built (2026-11-10). Owner direction: move plumber's own idea of a "good token system" to the
 shape BoardUI uses (references below), because it scales to large apps better than what plumber proposes today.
 This replaces the *naming and layering* plumber suggests. It does not replace how plumber reads a page into roles
 (docs/research/type-roles.md, docs/research/colour-system.md): that reading stays, it just lands on new names.
@@ -73,6 +73,12 @@ Weights: `regular` 400, `medium` 500, `semibold` 600, `bold` 700.
 6. **Font family is a separate token** (`--font-sans`, `--font-mono`); a step never fixes the family. Mono numbers
    are `body-2` or `caption-1` with `--font-mono`.
 
+7. **Reading text keeps its leading.** The ladder's line-heights suit UI text. A place whose code sets a line-height of
+   1.45 or more, at 20px or smaller and not caps, is prose: it takes its style plus `leading-prose`, one shared value
+   (`--leading-prose`, the most common prose leading in the code to 0.05, or the owner's `system.type.roles.prose.lineHeight`).
+   The style classes read `line-height: var(--tw-leading, var(--text-<step>--line-height))`, so `leading-prose` wins
+   whatever the class order.
+
 ### 2.3 How plumber reads a page onto the ladder
 
 The reading in type-roles.md §6 stays (bundle + context clustering). Only the landing changes:
@@ -81,8 +87,7 @@ The reading in type-roles.md §6 stays (bundle + context clustering). Only the l
 2. Snap each cluster's size to the nearest ladder step within ±1px (scope keep) or ±2px (refine). Outside that, the
    cluster is listed, not forced.
 3. Read weight separately: each cluster's most common weight, snapped to 400/500/600/700.
-4. Line-height and tracking come from the step, not the cluster. A cluster whose line-height differs from the step by
-   more than 0.1 is noted (prose at 1.65 is a choice; it becomes `body` + a `prose` modifier only if repeated).
+4. Line-height and tracking come from the step, not the cluster, except reading text (§2.2 rule 7).
 5. Mapping from today's role names, so existing proposals translate:
 
 | Today (M3) | Ladder |

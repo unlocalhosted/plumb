@@ -27,7 +27,7 @@ export interface TypeMember {
 }
 /** a text style: a ladder step crossed with a weight, `body-medium`, `caption-1-medium-caps` (docs/design/token-spec.md §2) */
 export type RoleName = string;
-export interface RoleMember { site: TypeMember['site']; stamp?: string; tag: string; classes: string[]; current: TypeBundle; delta: { size: number | null; lineHeight: number | null; letterSpacing: number; weight: number }; variant?: 'compact'; confidence: 'ok' | 'low'; elements: number; fixed?: string }
+export interface RoleMember { site: TypeMember['site']; stamp?: string; tag: string; classes: string[]; current: TypeBundle; delta: { size: number | null; lineHeight: number | null; letterSpacing: number; weight: number }; variant?: 'compact' | 'prose'; confidence: 'ok' | 'low'; elements: number; fixed?: string }
 /** the owner's decisions, keyed by a ladder step (`body`) or a style (`body-medium`); `compact` is read by config and ignored */
 export interface RoleOverride { size?: number; lineHeight?: number; letterSpacing?: number; weight?: number; compact?: { lineHeight: number } }
 export interface TypeRole {
@@ -46,6 +46,8 @@ export interface TypeProposal {
   cost: { places: number; elements: number; moves: Record<'size' | 'lineHeight' | 'letterSpacing' | 'weight', Record<string, number>>; classesRemoved: number; sizesBefore: number; sizesAfter: number; weightsBefore: number; weightsAfter: number };
   /** the styles up the ladder, each with the ratio of its size to the next smaller size (null for a fluid size) */
   ladder: { role: RoleName; step: StepName; size: number | null; sizeText?: string; ratio: number | null }[];
+  /** reading text: places whose code sets a roomy line-height keep one shared leading, written as `leading-prose` beside the style (token-spec §2.2 rule 7) */
+  prose: { lineHeight: number; places: number; from: 'decision' | 'mode' } | null;
   /** styles with too few places, folded into the nearest kept style */
   merged: { from: RoleName; into: RoleName; why: string }[];
   write: { tokens: { name: string; value: string; why: string }[]; css: string; swaps: { file: string; edits: { line: number; column: number; from: string; to: string }[] }[] };
@@ -93,6 +95,9 @@ export const CAPS_TRACKING = 0.08;
 const POSTER = 80;
 /** a style needs this many places to stand on its own; fewer join a neighbour */
 export const MIN_PLACES = 3;
+/** reading text: a place whose code sets at least this line-height, at a step no larger than PROSE_MAX_PX, not caps */
+export const PROSE_MIN_LH = 1.45, PROSE_MAX_PX = 20;
+export const PROSE_CLASS = 'leading-prose', PROSE_TOKEN = '--leading-prose';
 
 /** the step a size reaches for: the nearest; a tie goes to the larger (more readable) step */
 export function stepFor(size: number): typeof LADDER[number] {
@@ -152,6 +157,12 @@ export function proposeTypeRoles(members: TypeMember[], options: { exclude?: str
     into.ms.push(...small.ms); byStyle.delete(small.pick.name);
     merged.push({ from: small.pick.name, into: into.pick.name, why: `${small.ms.length} ${small.ms.length === 1 ? 'place' : 'places'}; joins the nearest kept style` });
   }
+  // reading text keeps its leading: one shared value (the owner's `prose` decision, else the mode of what the code sets, to 0.05)
+  const isProse = (m: TypeMember, pick: ReturnType<typeof roleFor>) => !pick.caps && pick.step.size <= PROSE_MAX_PX && m.current.lineHeight !== null && m.current.lineHeight >= PROSE_MIN_LH;
+  const proseMembers = new Set<TypeMember>();
+  for (const { pick, ms } of byStyle.values()) for (const m of ms) if (isProse(m, pick)) proseMembers.add(m);
+  const proseDecision = overrides['prose']?.lineHeight;
+  const proseLh = proseDecision ?? (proseMembers.size ? mode([...proseMembers].map(m => Math.round(m.current.lineHeight! * 20) / 20), 1.6) : null);
   const order = [...byStyle.values()].sort((a, b) => stepIndex(a.pick.step.step) - stepIndex(b.pick.step.step) || weightOrder(a.pick.weight) - weightOrder(b.pick.weight) || Number(a.pick.caps) - Number(b.pick.caps));
 
   const roles: TypeRole[] = [], low: TypeProposal['low'] = [], exceptions: TypeProposal['exceptions'] = [];
@@ -177,15 +188,16 @@ export function proposeTypeRoles(members: TypeMember[], options: { exclude?: str
     const fileSet = new Set<string>();
     for (const m of ms) {
       const refSize = bundle.size ?? m.current.size ?? 16;
+      const prose = proseLh !== null && proseMembers.has(m), lh = prose ? proseLh : bundle.lineHeight;
       const delta = {
         size: bundle.size !== null && m.current.size !== null ? round(bundle.size - m.current.size, 2) : null,
-        lineHeight: bundle.lineHeight !== null && m.current.lineHeight !== null ? round((bundle.lineHeight - m.current.lineHeight) * refSize, 1) : m.current.lineHeight === null ? 0 : null,
+        lineHeight: lh !== null && m.current.lineHeight !== null ? round((lh - m.current.lineHeight) * refSize, 1) : m.current.lineHeight === null ? 0 : null,
         letterSpacing: round((bundle.letterSpacing - m.current.letterSpacing) * refSize, 2),
         weight: bundle.weight - m.current.weight,
       };
       const confidence: RoleMember['confidence'] = (delta.size !== null && Math.abs(delta.size) > 2) || Math.abs(delta.weight) >= 200 || (delta.lineHeight !== null && Math.abs(delta.lineHeight) > 3) ? 'low' : 'ok';
       const classes = m.classes.map(c => c.text);
-      roleMembers.push({ site: m.site, ...(m.stamp ? { stamp: m.stamp } : {}), tag: m.tag, classes, current: m.current, delta, confidence, elements: m.elements, ...(m.fixed ? { fixed: m.fixed } : {}) });
+      roleMembers.push({ site: m.site, ...(m.stamp ? { stamp: m.stamp } : {}), tag: m.tag, classes, current: m.current, delta, ...(prose ? { variant: 'prose' as const } : {}), confidence, elements: m.elements, ...(m.fixed ? { fixed: m.fixed } : {}) });
       contexts.set(m.tag, (contexts.get(m.tag) ?? 0) + 1); fileSet.add(m.site.file);
       places++; elements += m.elements;
       bucket(moves.size, delta.size, [0, 1, 2]); bucket(moves.lineHeight, delta.lineHeight, [0, 1, 2]); bucket(moves.letterSpacing, delta.letterSpacing, [0, 0.5, 1]); bucket(moves.weight, delta.weight, [0, 100]);
@@ -194,7 +206,7 @@ export function proposeTypeRoles(members: TypeMember[], options: { exclude?: str
       if (!classes.length) continue;
       classesRemoved += classes.length;
       const edits = swapsByFile.get(m.site.file) ?? []; swapsByFile.set(m.site.file, edits);
-      edits.push({ line: m.site.line, column: m.site.column, from: classes.join(' '), to: roleClass(name) });
+      edits.push({ line: m.site.line, column: m.site.column, from: classes.join(' '), to: prose ? `${roleClass(name)} ${PROSE_CLASS}` : roleClass(name) });
     }
     roles.push({ name, step: step.step, weightName: weight, caps, bundle, members: roleMembers, places: ms.length, elements: ms.reduce((n, m) => n + m.elements, 0), files: fileSet.size, contexts: [...contexts].sort((a, b) => b[1] - a[1]).map(([tag, n]) => ({ tag, places: n })), sizeFrom: fluidText ? 'fluid' : override.size !== undefined ? 'decision' : 'ladder', ...(clamps.length ? { clamps } : {}) });
     // the write: the step's size, leading and tracking once (shared by its weights), then one class per style that sets the whole bundle
@@ -208,13 +220,14 @@ export function proposeTypeRoles(members: TypeMember[], options: { exclude?: str
     }
     const body = [
       fluidText ? `font-size: ${fluidText};` : `font-size: var(${token});`,
-      `line-height: var(${token}--line-height);`,
+      `line-height: var(--tw-leading, var(${token}--line-height));`,
       caps ? `letter-spacing: ${CAPS_TRACKING}em;` : `letter-spacing: var(${token}--letter-spacing);`,
       `font-weight: ${bundle.weight};`,
       caps ? 'text-transform: uppercase;' : '',
     ].filter(Boolean);
     utilities.push(`@utility ${roleClass(name)} {\n  ${body.join('\n  ')}\n}`);
   }
+  if (proseLh !== null) tokens.push({ name: PROSE_TOKEN, value: String(proseLh), why: `reading text: ${proseMembers.size} places keep this leading` });
   // dedupe tokens by name, first wins
   const seen = new Set<string>();
   const uniqueTokens = tokens.filter(t => (seen.has(t.name) ? false : (seen.add(t.name), true)));
@@ -229,6 +242,6 @@ export function proposeTypeRoles(members: TypeMember[], options: { exclude?: str
     ladder.push({ role: role.name, step: role.step, size: role.bundle.size, ...(role.bundle.sizeText ? { sizeText: role.bundle.sizeText } : {}), ratio: role.bundle.size !== null && belowSize !== null ? round(role.bundle.size / belowSize, 3) : null });
   }
   return { rule: 'system/type-roles', kind: 'system', family: 'type', roles, outside, low, exceptions,
-    cost: { places, elements, moves, classesRemoved, sizesBefore, sizesAfter, weightsBefore, weightsAfter }, ladder, merged,
+    cost: { places, elements, moves, classesRemoved, sizesBefore, sizesAfter, weightsBefore, weightsAfter }, ladder, prose: proseLh !== null ? { lineHeight: proseLh, places: proseMembers.size, from: proseDecision !== undefined ? 'decision' : 'mode' } : null, merged,
     write: { tokens: uniqueTokens, css: utilities.length ? `/* React Plumber text styles: one class per ladder step × weight, each sets the whole bundle (docs/design/token-spec.md) */\n${utilities.join('\n')}\n` : '', swaps: [...swapsByFile].map(([file, edits]) => ({ file, edits })) } };
 }
