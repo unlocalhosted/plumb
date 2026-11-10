@@ -406,7 +406,12 @@ race, built for the old in-place write) was rewritten for the new write path (`e
   drawn in padding's pattern (mint hatch); drag any side inward to make all four bigger, outward to make them
   smaller. Coral dashed outline while hard-coded, blue on a token, green once written. On the running page, dragging
   the left side 18px inward took it from 14px to xl (24px).
-- **Open:** margin; one value per side (padding-x vs padding-y) is not handled; drag sensitivity untested by hand.
+- **Font size:** an article card whose title is a hard-coded 19px. The text itself is the handle: press on the
+  title and drag up for bigger, down for smaller. Two type lines, at the top of its capitals and at its baseline,
+  say it is type and carry the state colour (coral dashed, blue, green). The list draws each option as "Aa" at a
+  relative size. On the running page, dragging the title up 40px took it from 19px to 3xl (30px).
+- **Open:** margin; one value per side (padding-x vs padding-y) is not handled; the type lines are placed from an
+  estimate of the face's cap height, not measured; drag sensitivity untested by hand.
 
 ## Open gaps
 - The contrast check knows colours, not sizes or weights, and is not run by CI yet.

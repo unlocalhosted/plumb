@@ -6,7 +6,7 @@
 // a swatch. It snaps to your tokens and says the token's name; your hard-coded value is where it starts. Little UI: one
 // row beside the element, and a handle on the element itself where the property has a natural one.
 //
-// One property at a time, on a real piece of UI. Border radius, then gap, then padding. The row, the list, the rolling value, drag
+// One property at a time, on a real piece of UI. Border radius, then gap, then padding, then font size. The row, the list, the rolling value, drag
 // mode and the tick are one piece (picker() below); each property brings its element, its handle and its list mark.
 import { LANGUAGE_CSS } from '../../../overlay/src/language.js';
 import { TOY_DEFS, toyOf } from '../../../overlay/src/toys.js';
@@ -14,6 +14,7 @@ import { TOY_DEFS, toyOf } from '../../../overlay/src/toys.js';
 // the options in order of size; the hard-coded value sits among them where it falls, so you can drag back to it
 const RADIUS = [{ name: 'none', v: 0 }, { name: '5px', v: 5, hard: true }, { name: 'tag', v: 6 }, { name: 'control', v: 8 }, { name: 'card', v: 12 }, { name: 'full', v: 999 }];
 const PADDING = [{ name: 'xs', v: 4 }, { name: 'sm', v: 8 }, { name: 'md', v: 12 }, { name: '14px', v: 14, hard: true }, { name: 'lg', v: 16 }, { name: 'xl', v: 24 }];
+const FONT = [{ name: 'sm', v: 14 }, { name: 'base', v: 16 }, { name: 'lg', v: 18 }, { name: '19px', v: 19, hard: true }, { name: 'xl', v: 20 }, { name: '2xl', v: 24 }, { name: '3xl', v: 30 }];
 const GAP = [{ name: 'xs', v: 4 }, { name: 'sm', v: 8 }, { name: 'md', v: 12 }, { name: '13px', v: 13, hard: true }, { name: 'lg', v: 16 }, { name: 'xl', v: 24 }];
 
 export function mount(host, root, css) {
@@ -159,6 +160,23 @@ export function mount(host, root, css) {
     .list .pd { width: 16px; height: 16px; box-sizing: border-box; border-radius: 3px; background: repeating-linear-gradient(45deg, var(--pl-ink-3) 0 1px, transparent 1px 3px); position: relative; }
     .list .pd::after { content: ''; position: absolute; inset: var(--ip); border-radius: 2px; background: var(--pl-paper); box-shadow: inset 0 0 0 1.5px var(--pl-ink-2); }
     .list .hard .pd { background: repeating-linear-gradient(45deg, var(--pl-coral) 0 1px, transparent 1px 3px); }
+
+    /* ── the real UI for font size: an article card, as someone's blog draws it ── */
+    .post { position: relative; width: 360px; padding: 20px; border-radius: 14px; background: #fff; box-shadow: 0 1px 2px rgb(16 24 40 / .06), 0 12px 32px -14px rgb(16 24 40 / .25); font: 14px/20px system-ui, -apple-system, sans-serif; color: #475467; }
+    .post small { display: block; margin-bottom: 8px; color: #6941c6; font: 600 13px/18px system-ui, sans-serif; }
+    .post h3 { display: inline-block; margin: 0 0 8px; font: 600 var(--fs)/1.3 system-ui, -apple-system, sans-serif; color: #101828; letter-spacing: -0.01em; cursor: ns-resize; touch-action: none; transition: font-size 220ms var(--pl-spring-pop); }
+    .post h3.dragging { transition: font-size 90ms linear; }
+    .post p { margin: 0; }
+    /* the text itself is the handle: drag it up to make it bigger, down to make it smaller. Two type lines (the top of
+       its capitals and its baseline) say it is type and hold the state colour */
+    .typelines { position: absolute; z-index: 2; pointer-events: none; transition: left 220ms var(--pl-spring-pop), top 220ms var(--pl-spring-pop), width 220ms var(--pl-spring-pop), height 220ms var(--pl-spring-pop); }
+    .typelines::before, .typelines::after { content: ''; position: absolute; left: -10px; right: -10px; height: 0; border-top: 1.5px dashed var(--pl-coral); }
+    .typelines::before { top: 0; } .typelines::after { bottom: 0; }
+    .typelines.on-token::before, .typelines.on-token::after { border-top: 1.5px solid var(--pl-sky); }
+    .typelines.written::before, .typelines.written::after { border-top: 1.5px solid var(--pl-mint); }
+    .typelines.dragging { transition: none; }
+    .list .aa { width: 22px; text-align: center; font-family: system-ui, sans-serif; font-weight: 600; line-height: 1; color: var(--pl-ink-2); }
+    .list .hard .aa { color: var(--pl-coral); }
     .hint { position: absolute; left: 0; right: 0; bottom: 14px; text-align: center; font: 500 12.5px/1 var(--pl-sans); color: var(--pl-ink-3); }
     .hint kbd { font: 600 11px/1 var(--pl-mono); padding: 2px 5px; border-radius: 5px; background: var(--pl-paper); box-shadow: 0 1px 0 var(--pl-rule); }
     @media (prefers-reduced-motion: reduce) { .handle { transition: none; } }
@@ -198,6 +216,15 @@ export function mount(host, root, css) {
       <i class="padframe" role="presentation"></i>
       ${['top', 'right', 'bottom', 'left'].map((side) => `<i class="padband" data-side="${side}" role="presentation"></i>`).join('')}
       <p class="hint">drag a side of the padding or the value · <kbd>↑</kbd> <kbd>↓</kbd> step · <kbd>↵</kbd> write · <kbd>Esc</kbd> put back</p>
+    </div>
+  </section>
+  <section class="scene" id="font">
+    <h2>Font size</h2>
+    <p>The article’s title is a hard-coded 19px. The text itself is the handle: press on the title and drag up to make it bigger, down to make it smaller. Two lines at the top of its capitals and at its baseline say it is type. The value and the list work as before.</p>
+    <div class="stage" tabindex="0">
+      <div class="post"><small>Design systems</small><h3>Why your spacing drifts</h3><p>Six hard-coded values in one card, and how a theme keeps them in line.</p></div>
+      <i class="typelines" role="presentation"></i>
+      <p class="hint">drag the title or the value · <kbd>↑</kbd> <kbd>↓</kbd> step · <kbd>↵</kbd> write · <kbd>Esc</kbd> put back</p>
     </div>
   </section>`;
 
@@ -300,6 +327,7 @@ export function mount(host, root, css) {
     });
     new ResizeObserver(layout).observe(stage);
     drum.append(slotOf(S[at])); draw();
+    return { layout };
   }
   const rel = (stage, el) => { const s = stage.getBoundingClientRect(), b = el.getBoundingClientRect(); return { left: b.left - s.left, top: b.top - s.top, right: b.right - s.left, bottom: b.bottom - s.top, width: b.width, height: b.height }; };
 
@@ -362,5 +390,29 @@ export function mount(host, root, css) {
       },
       handles: bands.map((band) => ({ el: band, perPx: (dx, dy) => inward[band.dataset.side](dx, dy) / 12 })),
     });
+  }
+
+  // ── font size: the article's title, with the text itself as the handle ──
+  {
+    const stage = root.querySelector('#font .stage'), title = stage.querySelector('.post h3'), lines = stage.querySelector('.typelines'), post = stage.querySelector('.post');
+    const fp = picker(stage, {
+      name: 'Font size', toy: 'type', options: FONT,
+      mark: (t) => `<i class="aa" style="font-size:${Math.round(10 + (t.v - 14) * 0.45)}px">Aa</i>`,
+      apply: (o, { token, written }) => { title.style.setProperty('--fs', `${o.v}px`); lines.classList.toggle('on-token', token); lines.classList.toggle('written', written); },
+      place: (row, list, o) => {
+        const r = rel(stage, title), c = rel(stage, post), fs = o.v, lh = fs * 1.3;
+        // the first line's cap height and baseline, from the font size (system faces: caps about 0.7 of the size)
+        const base = r.top + (lh - fs) / 2 + fs * 0.92, cap = base - fs * 0.7;
+        lines.style.cssText = `left:${r.left}px;top:${cap}px;width:${r.width}px;height:${base - cap}px`;
+        row.style.left = `${c.right + 14}px`; row.style.top = `${r.top + Math.min(r.height, lh) / 2 - 17}px`;
+        list.style.left = row.style.left; list.style.top = `${r.top + Math.min(r.height, lh) / 2 + 22}px`;
+      },
+      // the title: up is bigger
+      handles: [{ el: title, perPx: (dx, dy) => -dy / 14 }],
+    });
+    // the title changes width as it grows: keep the lines and the row on it
+    new ResizeObserver(() => fp.layout()).observe(title);
+    title.addEventListener('pointerdown', () => lines.classList.add('dragging'));
+    title.addEventListener('pointerup', () => lines.classList.remove('dragging'));
   }
 }
