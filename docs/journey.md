@@ -479,6 +479,26 @@ race, built for the old in-place write) was rewritten for the new write path (`e
 - **Open:** the product's own text card (`overlay/src/texteditor.js`) is not swapped yet; typing a number and the
   "not set" and "locked" states from the old card are not in the picker yet.
 
+### 15. "think of a few novel interfaces, solve the problem for real"
+
+- **The itch:** the panel looked better but was still a panel: "I want to think of a few novel interfaces, like
+  solve the problem for real."
+- **The real problem, restated:** a heading has hard-coded type and you want it on the right text style, fast and
+  sure. A panel of controls makes you do the work; plumber knows the page and the styles, so it should do more.
+- **Four prototypes, one page** (the design site's "Text: four new ideas"), all on the same piece of someone's app
+  (a landing page with a hard-coded hero heading among headings, card titles and body text that use styles):
+  - **A · Try styles on the element:** no panel; scroll or drag on the heading and it becomes each style in place,
+    the closest first, with a coral ghost of the original behind it and a label with the style and how many places
+    use it. Click keeps.
+  - **B · The page's type ladder:** every style on the page as rungs with their use counts; pointing at one lights
+    its elements; the heading is a coral chip hanging where its size falls; drag it onto a rung.
+  - **C · Make it like that one:** press Match, point at any text, the heading previews its look; click to take its
+    style ("Matched heading-lg · now 2 places").
+  - **D · One answer, then why:** plumber's best guess (heading-lg) with three reasons (nearest size, already used by
+    another heading, what else changes) and one button; other styles folded away.
+- **Proof:** each run on the page: A's first scroll goes to the closest style; B lights "How it works" from its rung;
+  C matched heading-lg from the section heading; D's card shows the guess and its reasons.
+
 ## Open gaps
 - The contrast check knows colours, not sizes or weights, and is not run by CI yet.
 - `web/docs/pages` is a copy of `site/src/docs/pages`; two copies until the old Vite site is removed.

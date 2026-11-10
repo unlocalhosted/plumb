@@ -21,6 +21,8 @@ export const GROUPS = [
       lede: 'One line at the bottom says what is hard-coded, in plain words, and the same bar carries the whole-page clean-up. The choice itself is made on the element.' },
     { id: 'pills', hue: 'lilac', toy: 'tag', name: 'Pills, tags and chips', says: 'A value, a name, a property with its value rolling.' },
     { id: 'inputs', hue: 'sky', toy: 'input', name: 'Inputs', says: 'Naming a token, searching, typing a reason. Caret, focus, error, disabled.' },
+    { id: 'text-ideas', hue: 'sky', toy: 'type', name: 'Text: four new ideas', says: 'Putting hard-coded text on a style without a panel. Four prototypes on one page.', ready: true,
+      lede: 'A heading has hard-coded type and you want it on the right style, fast and sure. Four ways that let the page and plumber do the work instead of a panel of controls. Each runs on the same piece of someone’s app.' },
     { id: 'pickers', hue: 'mint', toy: 'slider', name: 'Token pickers', says: 'The control on an element that moves a hard-coded value onto your tokens. One per property.', ready: true,
       lede: 'When a value is hard-coded, the element gets the control a visual editor gives that property, made small, snapping to your tokens. One property at a time, each on a real piece of UI.' },
     { id: 'hover', hue: 'butter', toy: 'tooltip', name: 'Words on hover', says: 'The name label, the sentence note, the key hint.' },

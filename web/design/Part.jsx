@@ -30,6 +30,7 @@ const LOAD = {
   buttons: () => import('./parts/buttons.js'),
   'fix-bar': () => import('./parts/fix-bar.js'),
   pickers: () => import('./parts/pickers.js'),
+  'text-ideas': () => import('./parts/text-ideas.js'),
 };
 
 export function Part({ id, css }) {
