@@ -16,7 +16,7 @@ export const GROUPS = [
   ]],
   ['Parts', [
     { id: 'buttons', hue: 'pink', toy: 'button', name: 'Buttons', says: 'What you press. Every kind, state and size, with keys and with pictures.', ready: true,
-      lede: 'A button is a toy key: a solid top on a darker base, and pressing it pushes the top down onto the base. Everything here is live: point, press, tab.' },
+      lede: 'A button is a soft block, small: a lit top on a side of its own colour. It goes down under the finger, gives a little, and springs back. Everything here is live: point, press, tab.' },
     { id: 'fix-bar', hue: 'lilac', toy: 'corner', name: 'Fix bar', says: 'The cause in hand as one line; the choice made on the element. Three states, the first one live.', ready: true,
       lede: 'The cause in hand is one line at the bottom; the choice is made on the element. The first one is live: click a step or press ↑ ↓, then Enter.' },
     { id: 'pills', hue: 'lilac', toy: 'tag', name: 'Pills, tags and chips', says: 'A value, a name, a property with its value rolling.' },

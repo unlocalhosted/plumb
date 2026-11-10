@@ -35,7 +35,8 @@ export function mount(host, root, css) {
     .cell.wide { grid-column: span 2; }
     .anat { display: grid; grid-template-columns: auto 1fr; gap: 22px; align-items: center; margin-top: 14px; }
     .anat .big { padding: 26px 34px; border-radius: 14px; background: var(--pl-paper-2); }
-    .anat .big .tb { --h: 56px; font-size: 19px; border-radius: 18px; padding-top: 5px; height: calc(var(--h) + 5px); --lift: 5px; }
+    .anat .big .tb { --h: 56px; font-size: 19px; border-radius: 18px; padding-top: 6px; height: calc(var(--h) + 6px); --lift: 6px; }
+    .anat .big .tb:hover { --lift: 9px; }
     .anat .big .tb .top { border-radius: 18px; padding: 0 24px; gap: 10px; }
     .anat .big .tb kbd { min-width: 28px; height: 28px; font-size: 15px; border-radius: 9px; }
     .anat ol { margin: 0; padding-left: 20px; font: 400 13px/20px var(--pl-sans); color: var(--pl-ink-2); }
@@ -59,9 +60,9 @@ export function mount(host, root, css) {
   <section class="set"><h2>What a button is made of</h2><p>Press this one and hold it.</p>
     <div class="anat"><div class="big">${b('Use rounded-tag', { key: '↵' })}</div>
       <ol>
-        <li><b>The top.</b> One solid hue. The label is cut out of it in white, never a darker tint of the same colour.</li>
-        <li><b>The base.</b> The same hue, darker. It shows as a 3px lip under the top and never moves, so pressing shifts nothing around the button.</li>
-        <li><b>The press.</b> The top travels down onto the base in 70ms and springs back in 260ms with a small overshoot. Pointed at, it rises 1px first, as if ready.</li>
+        <li><b>The top.</b> One solid hue, lit from above: a bright rim along its top edge, a darker one along its bottom. The label is cut out of it in white, never a darker tint of the same colour.</li>
+        <li><b>The side.</b> The same hue, darker. It shows as a 4px lip under the top and never moves, so pressing shifts nothing around the button. Under it, a soft shadow of the button’s own colour.</li>
+        <li><b>The press.</b> A button is a soft block. Pointed at, it comes up 2px to meet the finger. Pressed, it goes down onto its side and squashes a hair wider. Let go, it springs back past where it rests and settles, as one body. How far it gives depends on its size: a small button is stiffer and quicker than a big one.</li>
         <li><b>The key.</b> If a key does the same thing, its cap sits on the top, at the end of the label. One key, never a combination spelled out.</li>
       </ol></div></section>
 
@@ -72,9 +73,9 @@ export function mount(host, root, css) {
     + cell('Destroys', b('Discard all', { cls: 'wrong' }), 'only for what can’t be put back'))}
 
   ${set('States', 'The same button in each state it can be in. The first four you can also do yourself on any button on this page.',
-    cell('Rest', b('Apply', { key: 'A' }), 'the top sits 3px up')
-    + cell('Pointed at', b('Apply', { key: 'A', attrs: 'data-show="hover"' }), 'rises to 4: ready')
-    + cell('Pressed', b('Apply', { key: 'A', attrs: 'data-show="pressed"' }), 'down to 1, in 70ms')
+    cell('Rest', b('Apply', { key: 'A' }), 'the top sits 4px up, on its shadow')
+    + cell('Pointed at', b('Apply', { key: 'A', attrs: 'data-show="hover"' }), 'rises to 6, the shadow grows')
+    + cell('Pressed', b('Apply', { key: 'A', attrs: 'data-show="pressed"' }), 'down on its side, a hair wider')
     + cell('Focused', b('Apply', { key: 'A', attrs: 'data-show="focus"' }), 'a sky ring, keyboard only')
     + cell('Working', `<button type="button" class="tb" aria-busy="true"><span class="top"><span class="lb">Apply</span>${kbd('A')}</span>${DOTS}</button>`, 'held down; keeps its width')
     + cell('Landed', b('Applied', { cls: 'done landed', icon: CHECK('currentColor') }), 'turns mint, the tick pops')
@@ -117,7 +118,7 @@ export function mount(host, root, css) {
   go.onclick = run;
   const toggle = root.getElementById('toggle');
   const pressed = document.createElement('style');
-  pressed.textContent = `.tb[aria-pressed="true"] { --lift: 1px; --hue: var(--pl-sky-soft); --base: var(--pl-sky); --on: var(--pl-sky-ink); } .tb[aria-pressed="true"] .top { box-shadow: inset 0 0 0 1.5px var(--pl-sky); }`;
+  pressed.textContent = `.tb[aria-pressed="true"] { --lift: 1px; box-shadow: none; --hue: var(--pl-sky-soft); --base: var(--pl-sky); --on: var(--pl-sky-ink); } .tb[aria-pressed="true"] .top { box-shadow: inset 0 0 0 1.5px var(--pl-sky); }`;
   root.append(pressed);
   toggle.onclick = () => { const on = toggle.getAttribute('aria-pressed') !== 'true'; toggle.setAttribute('aria-pressed', String(on)); label(toggle, on ? 'Selecting' : 'Select'); };
 }

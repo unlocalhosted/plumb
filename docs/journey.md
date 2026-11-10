@@ -312,8 +312,11 @@ race, built for the old in-place write) was rewritten for the new write path (`e
 - **Ready and not yet:** with a pale top, a drawn box and one not drawn yet looked alike. Two live rows were put
   side by side (ready pale and the rest grey and small; or ready in the strong colour). The owner picked the first:
   a box that isn't drawn yet is flat, small and grey.
-- **Left open:** the
-  buttons page still describes the old 3px key in words; the product itself still uses its old buttons.
+- **A bug found on the way:** a held block showed a strip of its dark side *above* its top (the side was painted
+  under the whole block, and the pressed, squashed top no longer covered the upper edge). Seen on the Buttons page's
+  "Pressed" sample. The side is now painted only under the lower half, so a pressed top just sinks.
+- **The Buttons page** now describes the soft block in its own words (the lit top, the side, the sized press).
+- **Left open:** the product itself still uses its old buttons.
 
 ## Open gaps
 - The contrast check knows colours, not sizes or weights, and is not run by CI yet.

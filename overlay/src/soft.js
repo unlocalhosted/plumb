@@ -16,10 +16,12 @@ export const SOFT_CSS = `
        lit       one light, from above: a bright rim along the top edge, a darker one along the bottom, and a
                  shadow of the block's own colour on the ground
        weight    it sits on a side of its own strong colour; pointed at, it comes straight up to meet the finger
+       the side  is painted only under the lower half of the block, so when the top is pressed down and squashed
+                 nothing of the side shows above it
        answers   pressed, it goes down onto its side and squashes a hair wider; let go, it springs back past where
                  it was and settles. That part is the script below (soften) */
     .s-box { --h: var(--pl-pink); --hs: var(--pl-pink-soft); --hi: var(--pl-pink-ink); --side: var(--h); --lift: 7px;
-      position: relative; display: block; padding-top: 7px; border-radius: 28px; background: var(--side); color: var(--hi); text-decoration: none; -webkit-tap-highlight-color: transparent;
+      position: relative; display: block; padding-top: 7px; border-radius: 28px; background: linear-gradient(var(--side), var(--side)) bottom / 100% 50% no-repeat; color: var(--hi); text-decoration: none; -webkit-tap-highlight-color: transparent;
       box-shadow: 0 16px 24px -14px color-mix(in oklab, var(--h) 70%, transparent), 0 3px 5px -2px color-mix(in oklab, var(--h) 40%, transparent);
       transition: box-shadow 300ms var(--pl-ease-out); }
     .s-box[data-hue="sky"] { --h: var(--pl-sky); --hs: var(--pl-sky-soft); --hi: var(--pl-sky-ink); }
@@ -56,7 +58,7 @@ export const SOFT_CSS = `
 
     /* ── a button is the same block, small. The action keeps the strong colour on top: it is the one loud thing ── */
     .s-btn { --h: var(--pl-pink); --side: color-mix(in oklab, var(--h) 70%, #000); --lift: 4px;
-      position: relative; display: inline-block; box-sizing: border-box; margin: 0; padding: 4px 0 0; border: 0; border-radius: 14px; background: var(--side); cursor: pointer; text-decoration: none; -webkit-tap-highlight-color: transparent; user-select: none;
+      position: relative; display: inline-block; box-sizing: border-box; margin: 0; padding: 4px 0 0; border: 0; border-radius: 14px; background: linear-gradient(var(--side), var(--side)) bottom / 100% 50% no-repeat; cursor: pointer; text-decoration: none; -webkit-tap-highlight-color: transparent; user-select: none;
       box-shadow: 0 9px 12px -8px color-mix(in oklab, var(--h) 75%, transparent); transition: box-shadow 240ms var(--pl-ease-out); }
     .s-btn > span { display: flex; align-items: center; justify-content: center; gap: 7px; padding: 10px 16px; border-radius: 14px; background: linear-gradient(180deg, color-mix(in oklab, var(--h) 88%, #fff), var(--h)); color: var(--pl-pink-on); white-space: nowrap;
       font: 600 15px/1 var(--pl-round); box-shadow: inset 0 1.5px 0 0 color-mix(in oklab, #fff 45%, transparent), inset 0 -2px 0 0 color-mix(in oklab, #000 12%, transparent);
