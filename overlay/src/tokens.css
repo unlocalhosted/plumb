@@ -46,68 +46,6 @@
   --pl-pink-block: var(--pl-pink);   --pl-pink-block-on: var(--pl-pink-on);
   --pl-mint-block: var(--pl-mint);   --pl-mint-block-on: var(--pl-mint-on);
   --pl-coral-block: var(--pl-coral); --pl-coral-block-on: var(--pl-coral-on);
-  /* ── roles and states: what a part asks for, named --pl-<group>-<role>-<state> (like a Figma variable path). Every
-     one points at the palette above, so the dark scheme follows by itself. A part takes one of these before a hue ── */
-  /* text */
-  --pl-text-primary: var(--pl-ink);                 /* titles, values, anything read first */
-  --pl-text-secondary: var(--pl-ink-2);             /* sentences, labels, meta, hints, units */
-  --pl-text-placeholder: var(--pl-ink-2);           /* a field's hint before you type */
-  --pl-text-inherited: var(--pl-ink-2);             /* a value set above this element, not on it (set in italics) */
-  --pl-text-disabled: var(--pl-ink-3);              /* words on something you can't press now; the one place the faint ink is text */
-  --pl-text-hard-coded: var(--pl-coral);            /* a hard-coded value, written in the coral that means wrong */
-  --pl-text-soft: var(--pl-soft-text);              /* a word in butter's tone: a minor problem, a value typed by hand */
-  /* icons and marks drawn in ink */
-  --pl-icon-primary: var(--pl-ink);                 /* an icon you read or press */
-  --pl-icon-secondary: var(--pl-ink-2);             /* an icon at rest beside words */
-  --pl-icon-hover: var(--pl-ink);                   /* an icon pointed at */
-  --pl-icon-tick: var(--pl-ink-3);                  /* ticks, carets, dividers, a lock: marks, never words */
-  --pl-icon-disabled: var(--pl-ink-3);              /* an icon on something you can't press now */
-  /* backgrounds */
-  --pl-bg-page: var(--pl-desk);                     /* what a page of cards sits on */
-  --pl-bg-surface: var(--pl-paper);                 /* a card, a menu, a list, a bar */
-  --pl-bg-surface-hover: var(--pl-paper-2);         /* a row or a field pointed at */
-  --pl-bg-surface-pressed: color-mix(in oklab, var(--pl-ink) 8%, var(--pl-paper)); /* a row held down */
-  --pl-bg-inset: var(--pl-paper-2);                 /* a field, a strip, a track: sunk into the surface */
-  --pl-bg-selected: color-mix(in oklab, var(--pl-sky) 14%, var(--pl-paper)); /* the row or option in hand */
-  --pl-bg-disabled: var(--pl-paper-2);              /* a field or a button you can't use now */
-  --pl-bg-scrim: var(--pl-scrim);                   /* the dim over your page while Blueprint is on */
-  /* borders and rings */
-  --pl-border-default: var(--pl-rule);              /* a card's edge, a divider, a field at rest */
-  --pl-border-strong: var(--pl-ink-3);              /* a field pointed at, a quiet button's edge */
-  --pl-border-focus: var(--pl-sky);                 /* the keyboard focus ring */
-  --pl-border-selected: var(--pl-sky);              /* the element in hand, a value on one of your tokens */
-  --pl-border-hard-coded: var(--pl-coral);          /* a hard-coded value's ring (dashed) */
-  --pl-border-written: var(--pl-mint);              /* a value written to your code */
-  /* actions: the blocks you press. -bg the top, -text its lettering; hover and pressed lift and squash the block, so
-     their colour moves only a little */
-  --pl-action-bg: var(--pl-pink-block);             /* the one thing this moment is for */
-  --pl-action-bg-hover: color-mix(in oklab, var(--pl-pink-block) 92%, #fff); /* pointed at */
-  --pl-action-bg-pressed: color-mix(in oklab, var(--pl-pink-block) 90%, #000); /* held down */
-  --pl-action-text: var(--pl-pink-block-on);        /* lettering on the action */
-  --pl-action-bg-disabled: var(--pl-paper-2);       /* nothing to press: pale and flat */
-  --pl-action-text-disabled: var(--pl-ink-3);       /* lettering on a disabled action */
-  --pl-done-bg: var(--pl-mint-block);               /* an action that has landed */
-  --pl-done-text: var(--pl-mint-block-on);          /* lettering on it */
-  --pl-danger-bg: var(--pl-coral-block);            /* only for what can't be put back */
-  --pl-danger-text: var(--pl-coral-block-on);       /* lettering on it */
-  --pl-quiet-bg: var(--pl-paper);                   /* the quiet choice beside the action */
-  --pl-quiet-text: var(--pl-ink);                   /* lettering on it */
-  --pl-quiet-border: var(--pl-rule);                /* its edge */
-  /* states of a value: a tinted ground, words and a ring for each, so a state reads at a glance and never by colour
-     alone (each also has a shape or a word) */
-  --pl-state-hard-coded-bg: var(--pl-off-bg);       /* a hard-coded value's ground */
-  --pl-state-hard-coded-text: var(--pl-coral-ink);  /* words on it */
-  --pl-state-on-token-bg: color-mix(in oklab, var(--pl-sky) 12%, var(--pl-paper)); /* a value on one of your tokens, not written yet */
-  --pl-state-on-token-text: var(--pl-sky-ink);      /* words on it */
-  --pl-state-written-bg: var(--pl-on-bg);           /* a value written to your code */
-  --pl-state-written-text: var(--pl-mint-ink);      /* words on it */
-  --pl-state-minor-bg: var(--pl-soft-bg);           /* a minor problem: a default, the wrong tier */
-  --pl-state-minor-text: var(--pl-soft-text);       /* words on it */
-  --pl-state-unknown-text: var(--pl-unknown);       /* worked out at runtime, can't tell yet */
-  /* marks on your page: each kind of space has its own hue and pattern */
-  --pl-mark-padding: var(--pl-mint);                /* padding: hatched */
-  --pl-mark-margin: var(--pl-butter);               /* margin: dotted */
-  --pl-mark-gap: var(--pl-lilac);                   /* gap: striped */
 
   /* Blueprint: magenta where the page has too much (space, size, weight), cyan where space is missing. Outside the six
      hues on purpose: they sit on your page, not on Plumber's cards, and must read on any colour under them */
@@ -225,6 +163,73 @@
   --pl-z: 2147483647;
 
   color-scheme: light;
+}
+
+/* Roles and states, in a rule of their own so they are worked out again wherever a part sets its own scheme: a part
+   that restates the palette (a card that stays light on a dark page) adds the class pl-scheme, and its roles follow. */
+:host, .pl-scheme {
+  /* ── roles and states: what a part asks for, named --pl-<group>-<role>-<state> (like a Figma variable path). Every
+     one points at the palette above, so the dark scheme follows by itself. A part takes one of these before a hue ── */
+  /* text */
+  --pl-text-primary: var(--pl-ink);                 /* titles, values, anything read first */
+  --pl-text-secondary: var(--pl-ink-2);             /* sentences, labels, meta, hints, units */
+  --pl-text-placeholder: var(--pl-ink-2);           /* a field's hint before you type */
+  --pl-text-inherited: var(--pl-ink-2);             /* a value set above this element, not on it (set in italics) */
+  --pl-text-disabled: var(--pl-ink-3);              /* words on something you can't press now; the one place the faint ink is text */
+  --pl-text-hard-coded: var(--pl-coral);            /* a hard-coded value, written in the coral that means wrong */
+  --pl-text-soft: var(--pl-soft-text);              /* a word in butter's tone: a minor problem, a value typed by hand */
+  /* icons and marks drawn in ink */
+  --pl-icon-primary: var(--pl-ink);                 /* an icon you read or press */
+  --pl-icon-secondary: var(--pl-ink-2);             /* an icon at rest beside words */
+  --pl-icon-hover: var(--pl-ink);                   /* an icon pointed at */
+  --pl-icon-tick: var(--pl-ink-3);                  /* ticks, carets, dividers, a lock: marks, never words */
+  --pl-icon-disabled: var(--pl-ink-3);              /* an icon on something you can't press now */
+  /* backgrounds */
+  --pl-bg-page: var(--pl-desk);                     /* what a page of cards sits on */
+  --pl-bg-surface: var(--pl-paper);                 /* a card, a menu, a list, a bar */
+  --pl-bg-surface-hover: var(--pl-paper-2);         /* a row or a field pointed at */
+  --pl-bg-surface-pressed: color-mix(in oklab, var(--pl-ink) 8%, var(--pl-paper)); /* a row held down */
+  --pl-bg-inset: var(--pl-paper-2);                 /* a field, a strip, a track: sunk into the surface */
+  --pl-bg-selected: color-mix(in oklab, var(--pl-sky) 14%, var(--pl-paper)); /* the row or option in hand */
+  --pl-bg-disabled: var(--pl-paper-2);              /* a field or a button you can't use now */
+  --pl-bg-scrim: var(--pl-scrim);                   /* the dim over your page while Blueprint is on */
+  /* borders and rings */
+  --pl-border-default: var(--pl-rule);              /* a card's edge, a divider, a field at rest */
+  --pl-border-strong: var(--pl-ink-3);              /* a field pointed at, a quiet button's edge */
+  --pl-border-focus: var(--pl-sky);                 /* the keyboard focus ring */
+  --pl-border-selected: var(--pl-sky);              /* the element in hand, a value on one of your tokens */
+  --pl-border-hard-coded: var(--pl-coral);          /* a hard-coded value's ring (dashed) */
+  --pl-border-written: var(--pl-mint);              /* a value written to your code */
+  /* actions: the blocks you press. -bg the top, -text its lettering; hover and pressed lift and squash the block, so
+     their colour moves only a little */
+  --pl-action-bg: var(--pl-pink-block);             /* the one thing this moment is for */
+  --pl-action-bg-hover: color-mix(in oklab, var(--pl-pink-block) 92%, #fff); /* pointed at */
+  --pl-action-bg-pressed: color-mix(in oklab, var(--pl-pink-block) 90%, #000); /* held down */
+  --pl-action-text: var(--pl-pink-block-on);        /* lettering on the action */
+  --pl-action-bg-disabled: var(--pl-paper-2);       /* nothing to press: pale and flat */
+  --pl-action-text-disabled: var(--pl-ink-3);       /* lettering on a disabled action */
+  --pl-done-bg: var(--pl-mint-block);               /* an action that has landed */
+  --pl-done-text: var(--pl-mint-block-on);          /* lettering on it */
+  --pl-danger-bg: var(--pl-coral-block);            /* only for what can't be put back */
+  --pl-danger-text: var(--pl-coral-block-on);       /* lettering on it */
+  --pl-quiet-bg: var(--pl-paper);                   /* the quiet choice beside the action */
+  --pl-quiet-text: var(--pl-ink);                   /* lettering on it */
+  --pl-quiet-border: var(--pl-rule);                /* its edge */
+  /* states of a value: a tinted ground, words and a ring for each, so a state reads at a glance and never by colour
+     alone (each also has a shape or a word) */
+  --pl-state-hard-coded-bg: var(--pl-off-bg);       /* a hard-coded value's ground */
+  --pl-state-hard-coded-text: var(--pl-coral-ink);  /* words on it */
+  --pl-state-on-token-bg: color-mix(in oklab, var(--pl-sky) 12%, var(--pl-paper)); /* a value on one of your tokens, not written yet */
+  --pl-state-on-token-text: var(--pl-sky-ink);      /* words on it */
+  --pl-state-written-bg: var(--pl-on-bg);           /* a value written to your code */
+  --pl-state-written-text: var(--pl-mint-ink);      /* words on it */
+  --pl-state-minor-bg: var(--pl-soft-bg);           /* a minor problem: a default, the wrong tier */
+  --pl-state-minor-text: var(--pl-soft-text);       /* words on it */
+  --pl-state-unknown-text: var(--pl-unknown);       /* worked out at runtime, can't tell yet */
+  /* marks on your page: each kind of space has its own hue and pattern */
+  --pl-mark-padding: var(--pl-mint);                /* padding: hatched */
+  --pl-mark-margin: var(--pl-butter);               /* margin: dotted */
+  --pl-mark-gap: var(--pl-lilac);                   /* gap: striped */
 }
 
 /* Night surfaces are a warm graphite, lifted from near-black (owner, 2026-11-10), so a dark bar on a light page is not

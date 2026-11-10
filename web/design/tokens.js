@@ -29,7 +29,8 @@ function declarations(body) {
 }
 /** Every --pl- token: its light value, its dark value (the same when the dark scheme doesn't change it), its note. */
 export function readTokens(css) {
-  const light = declarations(block(css, ':host {'));
+  // the palette (:host) and the roles and states, which sit in a rule of their own (:host, .pl-scheme)
+  const light = new Map([...declarations(block(css, ':host {')), ...declarations(block(css, ':host, .pl-scheme {'))]);
   const dark = declarations(block(css, ':host([data-scheme="dark"])'));
   return [...light].map(([name, { value, note }]) => ({ name, light: value, dark: dark.get(name)?.value ?? null, note }));
 }

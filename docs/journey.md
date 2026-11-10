@@ -670,6 +670,17 @@ race, built for the old in-place write) was rewritten for the new write path (`e
 - **Proof:** the contrast check now also covers card faces and buttons: 74 pairings, 74 pass in both schemes.
 - **Not done:** the product's parts don't use the new names yet; moving them is part by part. Mixed values (the state
   grounds) can't be judged by the contrast check yet.
+- **The first part moved onto the names: the token picker.** 32 raw colours became roles and states: words take
+  `--pl-text-*`, icons and ticks `--pl-icon-*`, the row and list `--pl-bg-surface` and `-hover`, a compact field
+  `--pl-bg-inset`, focus `--pl-border-focus`, the drag fill `--pl-border-selected`, a hard-coded value
+  `--pl-text-hard-coded` and `--pl-border-hard-coded`, the tick on a token `--pl-state-written-*` and once written
+  `--pl-done-*` (so at night it is the calmer green with white, like every done button). The picker now names no raw
+  colour.
+- **Found on the way:** role names are worked out where they are defined, so the product's text card (which stays
+  light on a dark computer by restating the palette) would have kept dark roles. The roles now sit in a rule of their
+  own (`:host, .pl-scheme`), and a part that sets its own scheme adds the class `pl-scheme`; the text card does.
+  Checked on crafting-ui with the computer in dark: the card's rows read #ffffff and #f6f6f4. Also caught: inherited
+  values in the text card were still in the faintest ink; they take `--pl-text-inherited` now.
 
 ## Open gaps
 - White on the pink and mint buttons is under 4.5:1 in light (3.36, 3.85); dark now passes, just. Nothing yet stops the faintest ink being used for text again.

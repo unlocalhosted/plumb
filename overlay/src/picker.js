@@ -26,8 +26,8 @@ export const PICKER_CSS = `
        squashes. A glyph instead acts out its property (glyphs.js) */
     .row .scrub { position: relative; }
     /* a glyph (the editor's hairline icons) is ink, darker when pointed at */
-    .row .scrub .g { width: 20px; height: 20px; color: var(--pl-ink-2); transition: color 140ms var(--pl-ease-out), scale 320ms var(--pl-spring-pop), rotate 320ms var(--pl-spring-pop); }
-    .row .scrub:hover .g { color: var(--pl-ink); }
+    .row .scrub .g { width: 20px; height: 20px; color: var(--pl-icon-secondary); transition: color 140ms var(--pl-ease-out), scale 320ms var(--pl-spring-pop), rotate 320ms var(--pl-spring-pop); }
+    .row .scrub:hover .g { color: var(--pl-icon-hover); }
     /* a glyph says what it does by its own motion (glyphs.js), so it doesn't also tip and grow */
     .row .scrub:hover svg.g, .row .scrub:active svg.g { scale: 1; rotate: 0deg; }
     .row .scrub svg { transition: scale 320ms var(--pl-spring-pop), rotate 320ms var(--pl-spring-pop); }
@@ -35,36 +35,36 @@ export const PICKER_CSS = `
     .row .scrub:active svg { scale: 1.04 0.92; rotate: 0deg; transition-duration: 90ms; }
     @media (prefers-reduced-motion: reduce) { .row .scrub svg { transition: none; } }
     /* ── the row: what a visual editor shows for this property, one line, beside the element ── */
-    .row { position: absolute; z-index: 4; display: flex; align-items: center; gap: 2px; height: 34px; padding: 0 4px 0 2px; border-radius: 11px; background: var(--pl-paper); box-shadow: var(--pl-shadow-card); font: 500 13px/1 var(--pl-sans); white-space: nowrap; }
+    .row { position: absolute; z-index: 4; display: flex; align-items: center; gap: 2px; height: 34px; padding: 0 4px 0 2px; border-radius: 11px; background: var(--pl-bg-surface); box-shadow: var(--pl-shadow-card); font: 500 13px/1 var(--pl-sans); white-space: nowrap; }
     .row .scrub { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 8px; cursor: ew-resize; touch-action: none; }
-    .row .scrub:hover { background: var(--pl-paper-2); }
+    .row .scrub:hover { background: var(--pl-bg-surface-hover); }
     .row .scrub svg { display: block; width: 18px; height: 18px; }
     .row .val { all: unset; display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 8px; border-radius: 8px; cursor: pointer; }
-    .row .val:hover, .row .val[aria-expanded="true"] { background: var(--pl-paper-2); }
-    .row .val:focus-visible { outline: 2px solid var(--pl-sky); }
-    .row .val b { font: 600 13px/1 var(--pl-sans); color: var(--pl-ink); }
-    .row .val span { font: 500 12px/1 var(--pl-mono); color: var(--pl-ink-2); }
-    .row .val.hard b { color: var(--pl-coral); }
-    .row .val .car { width: 8px; height: 8px; margin-left: 2px; border-right: 1.5px solid var(--pl-ink-3); border-bottom: 1.5px solid var(--pl-ink-3); rotate: 45deg; translate: 0 -2px; }
-    .row .ok { all: unset; display: grid; place-items: center; width: 28px; height: 28px; border-radius: 8px; color: var(--pl-ink-3); cursor: pointer; }
-    .row .ok:hover { background: var(--pl-paper-2); color: var(--pl-ink); }
+    .row .val:hover, .row .val[aria-expanded="true"] { background: var(--pl-bg-surface-hover); }
+    .row .val:focus-visible { outline: 2px solid var(--pl-border-focus); }
+    .row .val b { font: 600 13px/1 var(--pl-sans); color: var(--pl-text-primary); }
+    .row .val span { font: 500 12px/1 var(--pl-mono); color: var(--pl-text-secondary); }
+    .row .val.hard b { color: var(--pl-text-hard-coded); }
+    .row .val .car { width: 8px; height: 8px; margin-left: 2px; border-right: 1.5px solid var(--pl-icon-tick); border-bottom: 1.5px solid var(--pl-icon-tick); rotate: 45deg; translate: 0 -2px; }
+    .row .ok { all: unset; display: grid; place-items: center; width: 28px; height: 28px; border-radius: 8px; color: var(--pl-icon-tick); cursor: pointer; }
+    .row .ok:hover { background: var(--pl-bg-surface-hover); color: var(--pl-icon-hover); }
     /* the tick answers at once: on one of your tokens it turns green (pale, a pop each time a new token lands);
        written, it is solid green. On the hard-coded value it stays grey: nothing to write */
     .row .ok { transition: background-color 180ms var(--pl-ease-out), color 180ms var(--pl-ease-out); }
-    .row .ok[data-ready] { background: color-mix(in oklab, var(--pl-mint) 22%, transparent); color: var(--pl-mint-ink); }
+    .row .ok[data-ready] { background: var(--pl-state-written-bg); color: var(--pl-state-written-text); }
     .row .ok.pop { animation: okpop 320ms cubic-bezier(.34, 1.56, .64, 1); }
     @keyframes okpop { 0% { scale: .8; } 60% { scale: 1.12; } 100% { scale: 1; } }
     .row .ok svg { width: 16px; height: 16px; display: block; }
-    .row.written .ok { background: var(--pl-mint); color: var(--pl-mint-on); }
+    .row.written .ok { background: var(--pl-done-bg); color: var(--pl-done-text); }
 
     /* ── the list: your tokens by name, each drawn as the corner it makes ── */
-    .list { position: absolute; z-index: 5; min-width: 180px; padding: 5px; border-radius: 12px; background: var(--pl-paper); box-shadow: var(--pl-shadow-card); }
+    .list { position: absolute; z-index: 5; min-width: 180px; padding: 5px; border-radius: 12px; background: var(--pl-bg-surface); box-shadow: var(--pl-shadow-card); }
     .list[hidden] { display: none; }
     .list button { all: unset; box-sizing: border-box; display: grid; grid-template-columns: 22px 1fr auto; align-items: center; gap: 10px; width: 100%; height: 32px; padding: 0 8px; border-radius: 8px; cursor: pointer; font: 500 13px/1 var(--pl-sans); }
-    .list button:hover, .list button[aria-selected="true"] { background: var(--pl-paper-2); }
-    .list button span { font: 500 12px/1 var(--pl-mono); color: var(--pl-ink-2); }
-    .list .hard { color: var(--pl-coral); }
-    .list hr { margin: 4px 6px; border: 0; border-top: 1px solid var(--pl-rule); }
+    .list button:hover, .list button[aria-selected="true"] { background: var(--pl-bg-surface-hover); }
+    .list button span { font: 500 12px/1 var(--pl-mono); color: var(--pl-text-secondary); }
+    .list .hard { color: var(--pl-text-hard-coded); }
+    .list hr { margin: 4px 6px; border: 0; border-top: 1px solid var(--pl-border-default); }
 
 
     /* ── the value in the field: one option at a time. When it changes, the new one comes in and the old one goes
@@ -73,9 +73,9 @@ export const PICKER_CSS = `
     .row .val { position: relative; padding: 0 6px 0 8px; }
     .drum { position: relative; display: block; width: 112px; height: 28px; overflow: hidden; }
     .slot { position: absolute; inset: 0; display: flex; align-items: center; gap: 6px; will-change: transform, opacity, filter; }
-    .slot b { font: 600 13px/1 var(--pl-sans); color: var(--pl-ink); }
-    .slot span { font: 500 12px/1 var(--pl-mono); color: var(--pl-ink-2); }
-    .slot.hard b, .slot.hard span { color: var(--pl-coral); }
+    .slot b { font: 600 13px/1 var(--pl-sans); color: var(--pl-text-primary); }
+    .slot span { font: 500 12px/1 var(--pl-mono); color: var(--pl-text-secondary); }
+    .slot.hard b, .slot.hard span { color: var(--pl-text-hard-coded); }
     .row.dragging .val { cursor: ns-resize; }
     :host(.grabbing) { cursor: ns-resize; }
     /* ── the bar in the field, shown only while you drag: where you are among the options, like a slider. A soft fill grows from the left inside
@@ -87,23 +87,23 @@ export const PICKER_CSS = `
     .track { position: absolute; inset: 2px; border-radius: 7px; pointer-events: none; opacity: 0; overflow: hidden; transition: opacity 220ms var(--pl-ease-out) 380ms; }
     /* the fill never leaves its track (overflow hidden); past either end the whole field stretches instead (stretch()) */
     .row.dragging .track { opacity: 1; transition: opacity 120ms var(--pl-ease-out) 0ms; }
-    .track .fill { position: absolute; left: 0; top: 0; bottom: 0; width: calc(12px + var(--f, 0) * (100% - 12px)); border-radius: 7px; background: color-mix(in oklab, var(--pl-sky) 14%, transparent);
+    .track .fill { position: absolute; left: 0; top: 0; bottom: 0; width: calc(12px + var(--f, 0) * (100% - 12px)); border-radius: 7px; background: color-mix(in oklab, var(--pl-border-selected) 14%, transparent);
       transition: width 420ms cubic-bezier(.34, 1.56, .64, 1), background-color 200ms var(--pl-ease-out); }
-    .track .fill::after { content: ''; position: absolute; right: 3px; top: 50%; width: 2.5px; height: 12px; translate: 0 -50%; border-radius: 2px; background: var(--pl-sky); opacity: .75; transition: height 200ms var(--pl-spring-pop), opacity 200ms; }
+    .track .fill::after { content: ''; position: absolute; right: 3px; top: 50%; width: 2.5px; height: 12px; translate: 0 -50%; border-radius: 2px; background: var(--pl-border-selected); opacity: .75; transition: height 200ms var(--pl-spring-pop), opacity 200ms; }
     .track .dots { position: absolute; left: 8px; right: 6px; bottom: 2px; height: 2px; }
-    .track .dots i { position: absolute; top: 0; width: 2px; height: 2px; margin-left: -1px; border-radius: 50%; background: var(--pl-ink-3); opacity: .35; transition: opacity 200ms, scale 240ms var(--pl-spring-pop); }
-    .track .dots i.hard { background: var(--pl-coral); opacity: .8; }
+    .track .dots i { position: absolute; top: 0; width: 2px; height: 2px; margin-left: -1px; border-radius: 50%; background: var(--pl-icon-tick); opacity: .35; transition: opacity 200ms, scale 240ms var(--pl-spring-pop); }
+    .track .dots i.hard { background: var(--pl-border-hard-coded); opacity: .8; }
     .track .dots i.here { opacity: .9; scale: 1.6; }
-    .val.on-hard .fill { background: color-mix(in oklab, var(--pl-coral) 12%, transparent); }
-    .val.on-hard .fill::after { background: var(--pl-coral); }
-    .row.dragging .fill { transition: width 70ms linear, background-color 200ms; background: color-mix(in oklab, var(--pl-sky) 22%, transparent); }
-    .row.dragging .val.on-hard .fill { background: color-mix(in oklab, var(--pl-coral) 18%, transparent); }
+    .val.on-hard .fill { background: color-mix(in oklab, var(--pl-border-hard-coded) 12%, transparent); }
+    .val.on-hard .fill::after { background: var(--pl-border-hard-coded); }
+    .row.dragging .fill { transition: width 70ms linear, background-color 200ms; background: color-mix(in oklab, var(--pl-border-selected) 22%, transparent); }
+    .row.dragging .val.on-hard .fill { background: color-mix(in oklab, var(--pl-border-hard-coded) 18%, transparent); }
     .row.dragging .fill::after { height: calc(16px - 7px * var(--press, 0)); width: calc(2.5px + 2.5px * var(--press, 0)); opacity: 1; }
     .row .val:hover { background: none; }
     .drum, .car { position: relative; }
 
     /* compact: a field in an editor's grid. The icon and the value only; the card writes them all with one button */
-    .row.inline.compact, .row.compact { height: 30px; padding: 0 2px; border-radius: 9px; background: var(--pl-paper-2); }
+    .row.inline.compact, .row.compact { height: 30px; padding: 0 2px; border-radius: 9px; background: var(--pl-bg-inset); }
     .row.compact .ok { display: none; }
     .row.compact .scrub { width: 26px; height: 26px; }
     .row.compact .val { flex: 1; min-width: 0; height: 26px; padding: 0 4px 0 2px; }
@@ -112,7 +112,7 @@ export const PICKER_CSS = `
     .row.compact .slot b { font-size: 12.5px; }
     .row.compact .slot span { font-size: 11px; }
     .row.compact .car { display: none; }
-    .row.inline.compact.dragging, .row.compact.dragging { background: var(--pl-paper); box-shadow: 0 0 0 1.5px var(--pl-sky); }
+    .row.inline.compact.dragging, .row.compact.dragging { background: var(--pl-bg-surface); box-shadow: 0 0 0 1.5px var(--pl-border-selected); }
     .row.inline { position: relative; box-shadow: none; background: none; padding: 0; height: 32px; }
     .row.inline + .list { position: absolute; }
     :host(.grabbing), .grabbing { cursor: ns-resize; }

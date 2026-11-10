@@ -224,6 +224,8 @@ export const TEXT_EDITOR_CSS = `
   /* the card is light on any page, so its pickers take the light tokens whatever the computer's scheme */
   .tc { --pl-paper: #ffffff; --pl-paper-2: #f6f6f4; --pl-rule: #e9e8e4; --pl-ink: #1d1b17; --pl-ink-2: #6b665c; --pl-ink-3: #b3ad9f; --pl-sky: #3391ee; --pl-coral: #bf3a1e;
     --pl-mint: #1a9460; --pl-mint-ink: #0b3d26; --pl-mint-on: #ffffff; --pl-pink: #f24a9f; --pl-pink-on: #ffffff; color-scheme: light;
+    --pl-sky-ink: #0b3554; --pl-coral-ink: #5c160e; --pl-mint-block: var(--pl-mint); --pl-mint-block-on: var(--pl-mint-on);
+    --pl-on-bg: color-mix(in oklab, var(--pl-mint) 12%, var(--pl-paper)); --pl-off-bg: color-mix(in oklab, var(--pl-coral) 10%, var(--pl-paper));
     --pl-shadow-card: 0 0 0 1px var(--pl-rule), 0 1px 2px rgb(28 27 25 / 0.06), 0 14px 32px -14px rgb(28 27 25 / 0.28); }
   .tc { ${BUTTON_CSS} }
   .tc .pk { display: grid; gap: 10px; padding: 2px 12px 10px; }
@@ -242,7 +244,7 @@ export const TEXT_EDITOR_CSS = `
   .tc .pk .list { z-index: 6; }
   .tc .pk .list .aa { font-style: normal; width: 22px; text-align: center; line-height: 1; }
   /* not set on this element: the value it gets from above, quiet, until you change it */
-  .tc .pk .row.inherited .slot b, .tc .pk .row.inherited .slot span { color: var(--pl-ink-3); font-style: italic; }
+  .tc .pk .row.inherited .slot b, .tc .pk .row.inherited .slot span { color: var(--pl-text-inherited); font-style: italic; }
   .tc .pk .row.locked { opacity: .62; }
   .tc .pk .row.locked .val, .tc .pk .row.locked .scrub { pointer-events: none; }
   .tc.grabbing, .tc.grabbing * { cursor: ns-resize !important; }
@@ -312,7 +314,7 @@ export class TextEditor {
   // problems() → n, show(), closed(), elsewhere(el) → n, dark() → bool, why(el) → Promise<words | null> }
   constructor(root, host) {
     this.#host = host;
-    this.#el = Object.assign(document.createElement('div'), { className: 'tc', hidden: true });
+    this.#el = Object.assign(document.createElement('div'), { className: 'tc pl-scheme', hidden: true });
     this.#el.setAttribute('role', 'dialog'); // named for the element when it opens ("Edit Lettering")
     this.#caret = Object.assign(document.createElement('div'), { className: 'tc-caret', hidden: true });
     this.#ring = Object.assign(document.createElement('div'), { className: 'tc-ring', hidden: true });

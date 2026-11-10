@@ -68,7 +68,7 @@ export const COLOUR_PICK_CSS = `
   .cf.hard .sw { box-shadow: inset 0 0 0 1px rgb(0 0 0 / .14), 0 0 0 1.5px var(--pl-coral); }
   .cf b { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .cf.hard b { color: var(--pl-coral); }
-  .cf.from b, .cf span { color: var(--pl-ink-2); font-style: italic; font-weight: 500; }
+  .cf.from b, .cf span { color: var(--pl-text-inherited); font-style: italic; font-weight: 500; }
   .cf .chev { width: 6px; height: 6px; border-right: 1.5px solid var(--pl-ink-3); border-bottom: 1.5px solid var(--pl-ink-3); rotate: 45deg; translate: 0 -2px; transition: rotate 200ms var(--pl-spring-pop), translate 200ms; }
   .cf[aria-expanded="true"] .chev { rotate: 225deg; translate: 0 1px; }
   .cf + .cp { position: static; width: auto; margin-top: 6px; box-shadow: 0 0 0 1px var(--pl-rule); }
