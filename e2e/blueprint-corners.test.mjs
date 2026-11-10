@@ -56,7 +56,6 @@ const footprint = (page) =>
       sheets: document.querySelectorAll('style[data-plumb]').length,
     });
   });
-const say = (overlay) => overlay.locator('.dock .say');
 // everything the blueprint drew, measured in the page: hits (with their labels), outlines, labels, the dim's cuts
 const drawn = (page) =>
   page.evaluate(() => {
@@ -82,7 +81,8 @@ const within = (p, r, slack = 1) => p.x >= r.x - slack && p.x + p.w <= r.right +
 
 async function on(page, overlay) {
   await page.keyboard.press('Alt+B');
-  await say(overlay).filter({ hasText: /problems? in view|nothing to fix/ }).waitFor({ timeout: 30000 });
+  // the count is read once the dock holds the number of problems in view (the one bar says it; the dock keeps it for this)
+  await overlay.locator('.dock[data-in-view]').waitFor({ state: 'attached', timeout: 30000 });
   // the marks are drawn on the frame after the count
   await page.waitForFunction(() => document.querySelector('plumb-overlay').shadowRoot.querySelectorAll('.bp .hit').length > 100, null, { timeout: 10000 });
 }
@@ -152,6 +152,9 @@ test('nesting and density: a dense grid, repeated rows from one site, a nested b
   const { url } = await demo(t);
   const { page, errors, overlay } = await open(t, launched, url);
   await page.evaluate(() => { performance.clearResourceTimings(); performance.setResourceTimingBufferSize(4000); });
+  // what the reader asks the server about: the page's stamped elements go as one request, one item per (stamp, tag, classes)
+  const asked = [];
+  page.on('request', (request) => { if (request.method() === 'POST' && new URL(request.url()).pathname.endsWith('/__plumb/page')) asked.push(...(request.postDataJSON().items ?? [])); });
   await on(page, overlay);
   const d = await drawn(page);
   const dense = await rectOf(page, '#dense');
@@ -172,8 +175,8 @@ test('nesting and density: a dense grid, repeated rows from one site, a nested b
   const rows = await rectOf(page, '#rows');
   const rowHits = d.hits.filter((h) => inside(h, rows) && /rounded-\[5px\]/.test(h.label));
   assert.equal(rowHits.length, 4, `four rows, four corner breaks: ${JSON.stringify(rowHits.map((h) => [h.label.slice(0, 40), Math.round(h.cx), Math.round(h.cy)]))} rows=${JSON.stringify(rows)}`);
-  const rowReads = await page.evaluate(() => window.__plumb.overlay.readsFor(document.querySelector('#rows li').getAttribute('data-plumb-source').split('#')[0]));
-  assert.equal(rowReads, 1, 'the row site is read once for four rows');
+  const rowSite = await page.evaluate(() => document.querySelector('#rows li').getAttribute('data-plumb-source').split('#')[0]);
+  assert.equal(asked.filter((item) => item.stamp?.split('#')[0] === rowSite).length, 1, `the row site is asked for once for four rows: ${JSON.stringify(asked.filter((item) => item.stamp?.split('#')[0] === rowSite))}`);
   assert.deepEqual(errors, []);
 });
 
@@ -202,7 +205,7 @@ test('runtime values: a step is a break, an opaque width is not', { timeout: 120
   const { page, errors, overlay } = await open(t, launched, url);
   await on(page, overlay);
   const d = await drawn(page);
-  assert.ok(d.hits.some((h) => /steps by 13px/.test(h.label)), `the stagger's margin is a step break: ${d.hits.map((h) => h.label).filter((l) => /margin/.test(l))}`);
+  assert.ok(d.hits.some((h) => /marginLeft: k \* 13\. This works out to 13px/.test(h.label)), `the stagger's margin is a step break (a value worked out from its expression): ${d.hits.map((h) => h.label).filter((l) => /margin/.test(l))}`);
   assert.ok(!d.hits.some((h) => /computed at runtime/.test(h.label)), 'an opaque width is not a break');
   assert.deepEqual(errors, []);
 });

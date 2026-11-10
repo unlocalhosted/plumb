@@ -22,6 +22,7 @@
 
 import { DOCK, SETUP } from './words.js';
 import { request, post } from './api.js';
+import { pageStamped, expectStamps } from './locate.js';
 
 // Which loss the dock names first: the one a visual-editor user feels most.
 const ORDER = ['write', 'locate', 'blueprint', 'preview', 'fast', 'remember', 'read', 'system'];
@@ -127,6 +128,7 @@ export class Readiness {
   #note = null;
   #loading = false;
 
+  #reread = false;
   constructor(root, { dock, onOpen }) {
     this.#root = root;
     this.#dock = dock;
@@ -141,10 +143,17 @@ export class Readiness {
   async read() {
     if (this.#loading) return;
     this.#loading = true;
-    try { this.#report = await request('readiness', {}); }
+    // The page is the evidence for one row: whether any element carries a source stamp. The host says whether it
+    // stamps; the server puts the two together.
+    const stamps = pageStamped();
+    try { this.#report = await request('readiness', { stamps: stamps ? '1' : '0' }); }
     catch { this.#report = null; }
     finally { this.#loading = false; }
     if (this.#report && !Array.isArray(this.#report.capabilities)) this.#report = null;
+    // only a report that came says whether the host stamps; a read that failed leaves it unknown
+    if (this.#report) expectStamps(this.#report.stamping === true);
+    // Read before the page rendered its elements: look once more when it has.
+    if (!stamps && this.#report?.stamping === true && !this.#reread) { this.#reread = true; setTimeout(() => { if (pageStamped()) void this.read(); }, 1500); }
     const missing = this.#missing(), ids = new Set(missing.map((q) => q.id));
     for (const id of ids) if (!this.#known.has(id)) { this.#known.add(id); this.#ticked.add(id); }
     for (const id of this.#ticked) if (!ids.has(id)) this.#ticked.delete(id);

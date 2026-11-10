@@ -74,6 +74,8 @@ import react from '@vitejs/plugin-react'
 export default { plugins: [plumb(), react()] }
 ```
 
+Keep `react()` (or `@vitejs/plugin-react-swc`): it is what lets a fix land without reloading the page. See [Writes, hot reload and the network](#writes-hot-reload-and-the-network).
+
 Start your dev server as usual. The overlay lives only in development: production builds carry no script, no stamps and no server routes.
 
 #### Reading
@@ -104,9 +106,9 @@ When the theme has no step that would settle a rule, the option is a new token, 
 
 Every write is checked against the file on disk: the file's hash, that it still parses, that the class is still there as written. A stale file is refused with "This file changed after we checked it", never overwritten. Writes land in place, so the dev server's hot reload picks them up, and each one returns an undo handle.
 
-If your app hydrates HTML that was prerendered outside the dev server (a build script that bakes pages into `index.html`), that HTML has no stamps, and React reports a hydration mismatch in dev and renders the page again. Use `plumb({ stamp: false })` there; React Plumber then finds positions through React's owner chain instead.
+Stamping is not optional: `plumb()` goes before the plugin that compiles JSX (`react()`) in `plugins`, and the dev server stops with that line to move when it does not. If your app hydrates HTML that was prerendered outside the dev server (a build script that bakes pages into `index.html`), that HTML has no stamps: React reports a hydration mismatch in development and renders the page again, so in development serve the page from the dev server. When a page renders without stamps, the setup panel says "Source stamping isn’t running" with the fix, and clicking your own elements finds nothing rather than a guess.
 
-React Plumber writes only to a position it has proven. In development, `plumb()` stamps each JSX tag in your tracked sources with its file, line and column, in the served code only; your files are untouched and production builds carry nothing. React Plumber then confirms the position against the file on disk before it edits. When it can't prove a position, it says why instead of guessing.
+React Plumber writes only to a position it has proven. In development, `plumb()` and `withPlumb()` stamp each DOM tag in your JSX with its file, line and column, in the served code only; your files are untouched and production builds carry nothing. React Plumber then confirms the position against the file on disk before it edits. When it can't prove a position, it says why instead of guessing.
 
 ### 3. Craft in CI
 
@@ -164,11 +166,13 @@ import { defineConfig } from '@unlocalhosted/react-plumber'
 
 export default defineConfig({
   css: 'src/styles.css',
-  source: ['src/**/*.{tsx,jsx,ts,js,css}'],
+  source: ['src/**/*.{tsx,jsx,ts,js,css}'], // an override, not needed: see below
   markers: ['js-*'],
   classHelpers: ['joinStyles'],
 })
 ```
+
+Without `source`, your code is what the rule says it is: every file under the project that is neither installed (`node_modules`, a package manager's store) nor generated (git-ignored, or a build's output folder), in whatever folder it sits, plus your own packages reached through workspace links and tsconfig aliases. `plumber init` writes no `source` for that reason. Set `source` only to narrow or widen that: it is then taken as written.
 
 The default report starts with token coverage (lowest first), then commands for broken styles, setup gaps, component overrides and off-token values. Before a baseline, it shows counts and the four most common classes/values. With a ledger, it shows only new sites in detail (up to 20 finding groups), followed by the known debt count.
 
@@ -279,6 +283,110 @@ plumber install --overlay
 When the host serves a subdirectory, add `--served-root apps/web` (relative to the current directory, or absolute) to `serve --overlay`, and use `--root` for the repository containing the React Plumber config and sources.
 
 The second command prints one script tag with the running server's port and token. Paste it into development pages only; rerun after restarting React Plumber, because the token changes. Without a running overlay server, install prints a startup command and a script template. CORS permits only the configured origin, including preflight for `x-plumb-token` and JSON requests. API routes still require the process token; the public client module contains no token. Existing `plumber serve` and stdio behavior are unchanged.
+
+## Compatibility and performance
+
+What finds the line an element came from, where, and how fast, as measured. Every number below comes from the locate
+bench (`npm run bench:locate`), which clicks each sampled element through the overlay's own `locate` and checks the
+answer against the exact position the stamp records. Measured 2026-11-05 and 2026-11-06 on an Apple-silicon laptop,
+Chrome 156, Node 25.
+
+### Hosts and bundlers
+
+| Host | Stamps | Notes |
+|---|---|---|
+| Vite 8, React 19 | yes, when `plumb()` runs before `react()`; otherwise the dev server stops with the line to move | the reference: 99.9 % exact on 40 showcase screens |
+| Next.js 15 and 16, webpack | yes, through `withPlumb` | the overlay is ready once React has hydrated the page; a click before that waits, then answers |
+| Next.js 15 and 16, Turbopack | yes, through `withPlumb` | |
+| `plumber serve --overlay` (any other host) | no build step of its own | finds lines from React's debug stacks only |
+| React 17 and 18 | read from React's own `_debugSource` | |
+
+A component tag never receives a stamp; only DOM tags do, as one `data-plumb-source` attribute, so a library that
+rejects extra props (Headless UI's `Menu` rendering a Fragment) renders as it does without React Plumber. The page with
+stamps is the page without them, apart from that attribute, on Vite and on Next.
+
+### What counts as your code
+
+A file is yours when its real path is inside the repository and it is neither an installed package nor generated
+(git-ignored, or a build folder at a package's top level). That covers pnpm, yarn and npm workspaces linked through
+`node_modules`, tsconfig path aliases (Nx), `file:` and `link:` packages and submodules inside the repository, vendored
+folders, and folders named `build` or `out` inside `src`. Installed packages, the pnpm store and Yarn's cache are not.
+`source` in the config overrides it. Not yet covered by a test: Yarn Plug'n'Play end to end, git submodules end to end,
+Bazel and Buck.
+
+### Elements a library drew
+
+An icon's `<svg>` and every `<path>` in it, a dialog's inner `<div>` in a portal, `next/link`'s `<a>`: these answer
+with the line where you used the library component, and the props you can change there (`className`, a `tone` or
+`variant` prop). The answer is accepted only when it lands exactly on a JSX opening the build recorded for that file
+version; otherwise React Plumber says the element is not in your code, and from which library. It never moves to a
+nearby line.
+
+### Measured on real Next.js apps
+
+Share of sampled elements whose source was found, with stamping off (as in 0.3.0) and in 0.4.0. "Exact" is judged
+against the stamp the build wrote for that element; library-drawn elements have no stamp of their own and are answered
+with your usage line instead. Measured 2026-11-06.
+
+| App | Bundler | Found, stamping off | Found, 0.4.0 | Exact, 0.4.0 | Wrong file, 0.4.0 | Server components, off → 0.4.0 |
+|---|---|---|---|---|---|---|
+| tailwindcss.com | Turbopack | 40.2 % | 99.3 % | 842 of 842 | 0 | 0 % → 98.9 % |
+| magicui (`apps/www`) | Turbopack | 42.9 % | 97.8 % | 713 of 713 | 0 | 0 % → 99.8 % |
+| magicui (`apps/www`) | webpack | 17.2 % | 90.8 % | 560 of 560 | 0 | 0 % → 96.1 % |
+
+With stamping off, the guesses that were given pointed at the wrong file 23 % of the time on magicui (Turbopack) and
+25 % on webpack. On magicui with webpack, elements a library drew are answered with your usage line less often than on
+Turbopack (92 against 228), because webpack's creation stacks for library code map back to your files less often;
+those elements say "not in your code" rather than guess. shadcn/ui (`apps/v4`) was left out: its dev server alone used
+about 10 GB.
+
+### Timings
+
+| Host | First click on a page (median / 95th percentile) | Later clicks (median / 95th percentile) |
+|---|---|---|
+| Vite, stamped (showcase screens) | 4.6 ms median | 1.8 / 3 ms |
+| Next, Turbopack, tailwindcss.com, 0.4.0 | 8.1 / 28.7 ms | 7.7 / 16.4 ms |
+| Next, Turbopack, magicui `/docs`, 0.4.0 | 16 / 56 ms | 12.6 / 17.1 ms |
+| Next, Turbopack, magicui `/docs`, before the side server | 255 / 334 ms | 255.5 / 297.7 ms |
+
+On a large Next app every route-handler request costs Next itself about 230 ms (the app's own `/robots.txt` route took
+the same), so after the first request the overlay talks to a small server React Plumber opens beside the route, on
+127.0.0.1, for the page's own origin and with the same token. Where the browser can't reach it, the overlay keeps
+using the route.
+
+### Writes, hot reload and the network
+
+- A fix lands as a hot update. The page is not reloaded, and what you were doing on it stays: a counter you clicked,
+  words you typed, a menu you opened. Measured on Vite with `react()` and on Next.js 16 with webpack and Turbopack,
+  for a class change in a client component, in a server component, and for an Apply that adds a theme token.
+- That needs React Fast Refresh. Next.js always has it. On Vite it comes from the React plugin; a config that
+  compiles JSX with no React plugin has nothing to take the update, so each fix reloads the page once. The overlay
+  says so as a setup step ("Turn on React Fast Refresh") with the config change ready to apply, and
+  `npx plumber doctor` lists it.
+- Only a write to the page's own HTML asks for a reload.
+- Every write and every undo checks the file's content first; if your editor or a formatter changed it, the write is
+  refused with "the file changed" and nothing is overwritten. With an editor saving every 150 ms during writes, the
+  file always parsed and no edit was lost.
+- A write replaces the file whole, through a temporary file renamed into place, so a watcher never reads half of it.
+- A write carries a key; a retry after a dropped response returns the first result instead of writing twice.
+- Writes are taken one at a time; two pages writing one file take turns, and both show the result.
+- A question asked before a hot update never answers about the old code: it is asked again once the page has the
+  update, on Vite and on Next (webpack and Turbopack). A question for an element that goes away stops at once.
+- If the dev server restarts mid-request, the overlay gets a named failure, not a hang.
+
+### Known limits
+
+- On Next webpack, the first load compiles on request and Next may reload the page once before React hydrates it; a
+  click in that window waits for hydration (up to 15 s), then answers, or says "Still loading".
+  In about one first click in six, React has not yet linked that element, and the answer comes from React's stacks
+  instead of the stamp (docs/briefs/hydration-first-click.md).
+- Library-drawn elements inside server components, and lines inside MDX pages, are not answered yet.
+- CSS Modules, PostCSS-generated declarations, Tailwind v3 and CSS-in-JS are found by line (stamps work with any
+  styling) but not yet judged or fixed in full; `plumber doctor` says what is supported in your project.
+- Writes are taken one at a time across the whole project, so a long write to one file delays a write to another.
+- On Next, hot updates are seen when Next reports them built (about 80 ms before the page applies them); answers come
+  from disk and stale positions are refused, so this costs a retry, never a wrong line.
+- Undo history lives in the running dev server; after a restart, older writes can't be undone from the overlay.
 
 ## Layer 9 surfaces
 

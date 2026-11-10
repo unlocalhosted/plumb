@@ -9,7 +9,7 @@ import { createInterface } from 'node:readline';
 import type { Readable, Writable } from 'node:stream';
 import { Session } from './index.js';
 import type { ReadArgs, ReadMethod, SessionOptions } from './index.js';
-import { answersSerialized, isEndpoint, isRpcMethod, tracedWrites, verbOf } from './methods.js';
+import { answersSerialized, isEndpoint, isRpcMethod, isWriteEndpoint, tracedWrites, verbOf } from './methods.js';
 import type { CheckOptions } from '../index.js';
 import { BusyError, errorCode, errorDiagnostic, errorMessage, UsageError } from '../errors.js';
 import type { ErrorCode } from '../errors.js';
@@ -54,6 +54,27 @@ function position(params: Record<string, unknown>, name: string, optional = fals
 export async function dispatch(session: Session, method: string, raw: unknown = {}, options: Pick<HandlerOptions, 'servedRoot' | 'readiness' | 'readinessProject'> = {}): Promise<unknown> {
   return dispatchRequest(session, method, raw, options, false);
 }
+// A write may carry an idempotency key in the Idempotency-Key header: a retry after a dropped response (the same key,
+// the same body) returns the first answer, success or refusal, and never applies twice. A different body under a used
+// key is refused. The last 256 keys per session are kept; the overlay sends a fresh key for every write. The header,
+// not the body: `key` in a body is the endpoint's own (set's prop key), and means what it always meant.
+export const idempotencyHeader = 'idempotency-key';
+const answered = new WeakMap<Session, Map<string, { body: string; result: Promise<unknown> }>>();
+function idempotent(session: Session, method: string, params: Record<string, unknown>, key: string, run: () => Promise<unknown>): Promise<unknown> {
+  if (!key.trim() || key.length > 128) throw new UsageError('Idempotency-Key must be at most 128 characters.');
+  let keys = answered.get(session);
+  if (!keys) { keys = new Map(); answered.set(session, keys); }
+  const body = JSON.stringify([method, params]);
+  const seen = keys.get(key);
+  if (seen) {
+    if (seen.body !== body) throw new UsageError('That key was already used for a different write. Send a new key.');
+    return seen.result;
+  }
+  const result = run();
+  keys.set(key, { body, result });
+  if (keys.size > 256) keys.delete(keys.keys().next().value!);
+  return result;
+}
 // The writes a request's `trace` tag follows (engine traced): every change they record carries its group and meta (methods.ts).
 function tracing(session: Session, tag: unknown): Session {
   if (tag !== undefined && !object(tag)) throw new UsageError('trace must be an object: { group, meta }.');
@@ -77,9 +98,13 @@ function pinOf(edit: Record<string, unknown>): { at?: { line: number; column: nu
   return { ...(object(at) ? { at: { line: Number(at.line), column: Number(at.column) } } : {}),
     ...(object(of) ? { of: { file: text(of, 'file')!, line: position(of, 'line')!, column: position(of, 'column')!, chain: chainOf(of.chain) } } : {}) };
 }
-async function dispatchRequest(session: Session, method: string, raw: unknown, options: Pick<HandlerOptions, 'servedRoot' | 'readiness' | 'readinessProject'>, json: boolean): Promise<unknown> {
+async function dispatchRequest(session: Session, method: string, raw: unknown, options: Pick<HandlerOptions, 'servedRoot' | 'readiness' | 'readinessProject'>, json: boolean, idempotencyKey?: string): Promise<unknown> {
   // the endpoint's shape first (schema.ts): a malformed request is refused with `bad-request` before any handler runs
   const params = validateRequest(method, raw);
+  if (idempotencyKey !== undefined && isWriteEndpoint(method)) return idempotent(session, method, params, idempotencyKey, () => dispatchOnce(session, method, params, options, json));
+  return dispatchOnce(session, method, params, options, json);
+}
+async function dispatchOnce(session: Session, method: string, params: Record<string, unknown>, options: Pick<HandlerOptions, 'servedRoot' | 'readiness' | 'readinessProject'>, json: boolean): Promise<unknown> {
   // one request, one group: every write it makes is traced, under the caller's tag when it sends one
   session = tracing(session, params.trace);
   const read = <M extends ReadMethod>(method: M, args: ReadArgs<M>): Promise<unknown> =>
@@ -88,6 +113,7 @@ async function dispatchRequest(session: Session, method: string, raw: unknown, o
     root: session.root, ...(session.config === undefined ? {} : { config: session.config }),
     ...(options.readinessProject?.rootOverride ? { rootOverride: true } : {}),
     ...(options.readiness === undefined ? {} : { runtime: options.readiness }), report: () => session.report(),
+    ...(params.stamps === '0' || params.stamps === '1' ? { observed: { stamps: params.stamps === '1' } } : {}),
     sourceEvidence: async () => (await session.health()).outsideSource ?? [],
   }, method, params);
   if (method === 'report') {
@@ -119,6 +145,7 @@ async function dispatchRequest(session: Session, method: string, raw: unknown, o
     return read('classes', [text(params, 'file')!, position(params, 'line')!, position(params, 'column')!, params.classes]);
   }
   if (method === 'resolve') return read('resolveSource', [...resolveArgs(params)]);
+  if (method === 'index') return read('sourceIndex', [text(params, 'source')!, { ...(options.servedRoot === undefined ? {} : { servedRoot: options.servedRoot }) }]);
   if (method === 'text') return read('text', [text(params, 'file')!, position(params, 'line')!, position(params, 'column')!]);
   if (method === 'text-at') return read('textAt', [text(params, 'file')!, position(params, 'line')!, position(params, 'column')!, text(params, 'text')!, text(params, 'owners', true)]);
   if (method === 'edits') return read('edits', [text(params, 'file')!, position(params, 'line')!, position(params, 'column', true)]);
@@ -288,9 +315,10 @@ function createRoute(session: Session | Promise<Session>, options: HandlerOption
         if (!known) return refuse(404, 'Endpoint not found.', 'not-found');
         if (request.header('access-control-request-method') !== expected) { headers.Allow = expected; return refuse(405, `Use ${expected} for this endpoint.`, 'method-not-allowed'); }
         const requested = request.header('access-control-request-headers')?.split(',').map(header => header.trim().toLowerCase()) ?? [];
-        if (requested.some(header => !['content-type', tokenHeader].includes(header))) return refuse(403, 'Request headers are not allowed.', 'forbidden');
+        if (requested.some(header => !['content-type', tokenHeader, idempotencyHeader].includes(header))) return refuse(403, 'Request headers are not allowed.', 'forbidden');
         headers['Access-Control-Allow-Methods'] = expected;
-        headers['Access-Control-Allow-Headers'] = `Content-Type, ${tokenHeader}`;
+        headers['Access-Control-Allow-Headers'] = `Content-Type, ${tokenHeader}, Idempotency-Key`;
+        headers['Access-Control-Max-Age'] = '600'; // one preflight per endpoint, not one per question
         return { status: 204, headers, body: '' };
       }
     }
@@ -336,7 +364,7 @@ function createRoute(session: Session | Promise<Session>, options: HandlerOption
       }
       const json = answersSerialized(method);
       let result: unknown;
-      if (current) result = await dispatchRequest(current, method, params, options, json);
+      if (current) result = await dispatchRequest(current, method, params, options, json, request.header(idempotencyHeader));
       else {
         const context = { ...options.readinessProject!, ...(options.readiness ? { runtime: options.readiness } : {}) };
         result = await dispatchReadiness(context, method, validateRequest(method, params));

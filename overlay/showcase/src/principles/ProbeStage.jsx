@@ -135,7 +135,8 @@ export function ProbeStage({ n, side, setSide, children, onState }) {
         <div style={{ transform: `translate(${tx}px, ${ty}px) scale(${k})`, transformOrigin: '0 0' }}>
           {children}
           {/* what plumber recorded, over the live example while it plays */}
-          {frame ? <img src={frame.url} alt="" draggable="false" className="pointer-events-none absolute top-0 left-0 z-20 select-none" style={{ width: size.w, height: size.h }} /> : null}
+          {/* in plumber's own layer: a picture of the replay, not part of the example plumber reads */}
+          {frame ? <div className="pointer-events-none absolute inset-0 z-20"><PlumbLayer><img src={frame.url} alt="" draggable="false" style={{ position: 'absolute', top: 0, left: 0, width: size.w, height: size.h, userSelect: 'none' }} /></PlumbLayer></div> : null}
           {/* layered explicitly: the example's own menus sit at z-10; the frames go over them, plumber's marks over those */}
           {g ? (
             <div className="pointer-events-none absolute inset-0 z-30"><PlumbLayer>

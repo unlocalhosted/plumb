@@ -1,0 +1,141 @@
+<!doctype html>
+<!-- COMP #55 gradients mix in OKLCH (docs/craft/taste-checklist.md). Isobar, a weather app on a desktop, Lisbon
+     selected: saved places down the side (each with its sky), now and the next 24 hours drawn as a curve, and the
+     10-day forecast, whose blue-to-orange temperature bars are the subject. The bars mix in OKLCH and stay vivid
+     end to end. The mistake is planted by writing .range's gradient as plain linear-gradient(90deg, #2f6fe4, #f5a524)
+     (sRGB, as design tools export it), which sags to grey in the middle of every bar. Slate's tokens. Throwaway. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Isobar · Lisbon (comp)</title>
+<style>
+  :root {
+    --ink: #12233d; --ink-muted: #5a6779; --ink-subtle: #6f7c90; --line: rgb(18 35 61 / 0.08); --line-strong: rgb(18 35 61 / 0.14);
+    --accent: #5550d8; --accent-soft: #efeefd; --board: #e9edf2; --board-dot: #d3d9e2; --sunken: #f3f5f9;
+    --cold: #2f6fe4; --warm: #f5a524; --rain: #4f8fe8;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 48px; background: var(--board);
+    background-image: radial-gradient(var(--board-dot) 1px, transparent 1px); background-size: 16px 16px;
+    font: 13px/18px Inter, -apple-system, system-ui, sans-serif; color: var(--ink); -webkit-font-smoothing: antialiased; }
+  .num { font-variant-numeric: tabular-nums; }
+  svg.i { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; }
+  .window { width: 1000px; height: 640px; display: grid; grid-template-columns: 232px 1fr; border-radius: 12px; overflow: hidden; background: #fff;
+    box-shadow: 0 1px 2px rgb(18 35 61 / 0.05), 0 8px 24px rgb(18 35 61 / 0.08), 0 24px 64px rgb(18 35 61 / 0.12), 0 0 0 0.5px rgb(18 35 61 / 0.18); }
+
+  /* places, each with its sky */
+  .side { background: #f7f8fa; border-right: 0.5px solid var(--line-strong); padding: 12px 10px; display: flex; flex-direction: column; gap: 6px; }
+  .lights { display: flex; gap: 7px; padding: 4px 6px 10px; } .lights i { width: 11px; height: 11px; border-radius: 50%; background: #d9dde3; }
+  .find { height: 30px; border-radius: 8px; background: #eef1f5; display: flex; align-items: center; gap: 8px; padding: 0 10px; color: var(--ink-subtle); margin-bottom: 4px; }
+  .place { position: relative; height: 70px; border-radius: 10px; overflow: hidden; padding: 9px 11px; display: grid; grid-template-columns: 1fr auto; color: #fff; }
+  .place img, .place .sky { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .place::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, rgb(10 20 35 / 0.45), rgb(10 20 35 / 0.1)); }
+  .place > span { position: relative; z-index: 1; display: flex; flex-direction: column; }
+  .place b { font-size: 13.5px; font-weight: 600; } .place small { font-size: 11.5px; opacity: 0.85; }
+  .place .tmp { align-items: flex-end; } .place .tmp b { font-size: 24px; line-height: 28px; font-weight: 400; letter-spacing: -0.02em; }
+  .place.on { box-shadow: 0 0 0 2px #f7f8fa, 0 0 0 4px var(--accent); }
+
+  .main { display: flex; flex-direction: column; min-width: 0; }
+  .now { display: grid; grid-template-columns: auto 1fr auto; gap: 18px; align-items: center; padding: 18px 24px 12px; }
+  .now .big { font-size: 64px; line-height: 64px; font-weight: 300; letter-spacing: -0.04em; }
+  .now .what { display: flex; flex-direction: column; gap: 2px; }
+  .now .what b { font-size: 20px; line-height: 24px; font-weight: 600; letter-spacing: -0.015em; }
+  .now .what span { color: var(--ink-muted); font-size: 13px; }
+  .now .meta { display: flex; gap: 6px; }
+  .tag { height: 26px; display: inline-flex; align-items: center; gap: 6px; padding: 0 10px; border-radius: 13px; background: var(--sunken); font-size: 12px; color: var(--ink-muted); }
+  .tag b { color: var(--ink); font-weight: 600; }
+  .warn { background: #fcf1dd; color: #7a4a05; } .warn b { color: #7a4a05; }
+
+  /* the next 24 hours, drawn */
+  .hours { margin: 0 24px; padding: 12px 0 8px; border-top: 0.5px solid var(--line-strong); border-bottom: 0.5px solid var(--line-strong); }
+  .hours svg { display: block; width: 100%; height: 92px; overflow: visible; }
+  .hlab { display: grid; grid-template-columns: repeat(9, 1fr); text-align: center; font-size: 11.5px; color: var(--ink-subtle); }
+  .hlab b { color: var(--ink); font-weight: 600; }
+
+  .lower { flex: 1; display: grid; grid-template-columns: 1fr 200px; gap: 16px; padding: 14px 24px 0; min-height: 0; }
+  /* the subject: ten days of ranges */
+  .ten h2, .tiles h2 { margin: 0 0 4px; font-size: 12px; font-weight: 500; color: var(--ink-subtle); display: flex; justify-content: space-between; }
+  .day { display: grid; grid-template-columns: 54px 22px 34px 30px 1fr 30px; gap: 10px; align-items: center; height: 31px; border-bottom: 0.5px solid var(--line); font-size: 13px; }
+  .day:last-child { border-bottom: 0; }
+  .day .d { font-weight: 500; } .day .p { font-size: 11.5px; color: var(--rain); font-weight: 600; }
+  .day .lo { text-align: right; color: var(--ink-subtle); } .day .hi { font-weight: 500; }
+  .track { position: relative; height: 6px; border-radius: 3px; background: var(--sunken); }
+  .range { position: absolute; top: 0; bottom: 0; border-radius: 3px; background: linear-gradient(in oklch 90deg, var(--cold), var(--warm)); }
+  .track .dot { position: absolute; top: -2px; width: 10px; height: 10px; margin-left: -5px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 2px var(--ink), 0 1px 2px rgb(0 0 0 / 0.2); z-index: 1; }
+  .day.today { margin: 0 -8px; padding: 0 8px; border-radius: 7px; background: var(--sunken); border-bottom-color: transparent; }
+  .day.today .track { background: #e4e8ef; }
+
+  .tiles { display: flex; flex-direction: column; gap: 10px; }
+  .tile { border-radius: 10px; box-shadow: inset 0 0 0 0.5px var(--line-strong); padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; }
+  .tile small { font-size: 11.5px; font-weight: 500; color: var(--ink-subtle); }
+  .tile b { font-size: 18px; font-weight: 500; letter-spacing: -0.01em; }
+  .tile span { font-size: 12px; color: var(--ink-muted); }
+  .uv { height: 6px; border-radius: 3px; background: linear-gradient(in oklch 90deg, #3fae6a, #e9c43a, #ee7a2f, #d1384f, #8e4fd0); position: relative; }
+  .uv i { position: absolute; top: -3px; left: 38%; width: 4px; height: 12px; border-radius: 2px; background: #fff; box-shadow: 0 0 0 1.5px var(--ink); }
+</style>
+</head>
+<body>
+<div class="window">
+  <aside class="side">
+    <div class="lights"><i></i><i></i><i></i></div>
+    <div class="find"><svg class="i" viewBox="0 0 16 16"><circle cx="7" cy="7" r="4.5"/><path d="m10.5 10.5 3 3"/></svg>Find a place</div>
+    <div class="place on"><img src="../../../../overlay/showcase/src/media/low-tide.jpg" alt="" style="object-position:50% 30%"><span><b>Lisbon</b><small>My location · 17:42</small><small style="margin-top:auto">Clear, warm evening</small></span><span class="tmp"><b class="num">17°</b><small class="num">H19 L9</small></span></div>
+    <div class="place"><img src="../../../../overlay/showcase/src/media/peak.jpg" alt=""><span><b>Banff</b><small>10:42</small><small style="margin-top:auto">Snow showers</small></span><span class="tmp"><b class="num">−3°</b><small class="num">H1 L−8</small></span></div>
+    <div class="place"><img src="../../../../overlay/showcase/src/media/lake.jpg" alt=""><span><b>Bled</b><small>18:42</small><small style="margin-top:auto">Mostly cloudy</small></span><span class="tmp"><b class="num">8°</b><small class="num">H11 L3</small></span></div>
+    <div class="place"><img src="../../../../overlay/showcase/src/media/paper-cities.jpg" alt=""><span><b>Copenhagen</b><small>18:42</small><small style="margin-top:auto">Light rain</small></span><span class="tmp"><b class="num">9°</b><small class="num">H10 L6</small></span></div>
+    <div class="place"><img src="../../../../overlay/showcase/src/media/afterglow.jpg" alt=""><span><b>Tokyo</b><small>02:42</small><small style="margin-top:auto">Clear night</small></span><span class="tmp"><b class="num">14°</b><small class="num">H18 L11</small></span></div>
+  </aside>
+
+  <main class="main">
+    <section class="now">
+      <span class="big num">17°</span>
+      <span class="what"><b>Lisbon</b><span class="num">Clear · feels like 16° · H19° L9°</span></span>
+      <span class="meta"><span class="tag warn">Rain from <b class="num">Sat 14:00</b></span><span class="tag">°C</span></span>
+    </section>
+
+    <section class="hours">
+      <svg viewBox="0 0 720 92" preserveAspectRatio="none" id="curve"></svg>
+      <div class="hlab num"><span><b>Now</b></span><span>20</span><span>23</span><span>02</span><span>05</span><span>08</span><span>11</span><span>14</span><span>17</span></div>
+    </section>
+
+    <section class="lower">
+      <div class="ten">
+        <h2><span>10-day forecast</span><span class="num">9° to 22°</span></h2>
+        <div id="days"></div>
+      </div>
+      <div class="tiles">
+        <div class="tile"><small>Sunset</small><b class="num">18:12</b>
+          <svg viewBox="0 0 176 46" style="width:100%;height:46px"><path d="M4 42 Q88 -18 172 42" fill="none" stroke="rgb(18 35 61 / 0.14)" stroke-width="1.5" stroke-dasharray="3 4"/><path d="M4 42 Q60 0 150 28" fill="none" stroke="#f5a524" stroke-width="2" stroke-linecap="round" opacity="0"/><line x1="0" y1="42" x2="176" y2="42" stroke="rgb(18 35 61 / 0.14)"/><circle cx="150" cy="26.5" r="5" fill="#f5a524"/><circle cx="150" cy="26.5" r="9" fill="#f5a524" opacity=".18"/></svg>
+          <span>Sunrise tomorrow 07:24</span></div>
+        <div class="tile"><small>UV index</small><b class="num">4 <span style="font-size:13px;font-weight:500;color:var(--ink-muted)">Moderate</span></b><div class="uv"><i></i></div><span>Low after 17:00</span></div>
+      </div>
+    </section>
+  </main>
+</div>
+<script>
+// ten days, each range on one shared scale (5° to 24°)
+const D = [['Today', 'sun', 0, 9, 19], ['Thu', 'sun', 0, 11, 21], ['Fri', 'part', 10, 10, 22], ['Sat', 'rain', 70, 8, 16], ['Sun', 'rain', 60, 7, 15],
+  ['Mon', 'part', 20, 9, 17], ['Tue', 'sun', 0, 10, 19], ['Wed', 'sun', 0, 11, 20], ['Thu', 'part', 10, 12, 21], ['Fri', 'cloud', 30, 10, 18]];
+const icon = { sun: '<svg width="20" height="20" viewBox="0 0 20 20"><circle cx="10" cy="10" r="4.2" fill="#f5b83d"/><g stroke="#f5b83d" stroke-width="1.5" stroke-linecap="round"><path d="M10 1.8v2M10 16.2v2M1.8 10h2M16.2 10h2M4.2 4.2l1.4 1.4M14.4 14.4l1.4 1.4M4.2 15.8l1.4-1.4M14.4 5.6l1.4-1.4"/></g></svg>',
+  part: '<svg width="20" height="20" viewBox="0 0 20 20"><circle cx="8" cy="8" r="4" fill="#f5b83d"/><path d="M7 17h8.5a3.3 3.3 0 0 0 0-6.6 4.6 4.6 0 0 0-8.7 1.5A2.6 2.6 0 0 0 7 17z" fill="#dfe5ee" stroke="#c4cdd9" stroke-width=".7"/></svg>',
+  cloud: '<svg width="20" height="20" viewBox="0 0 20 20"><path d="M5.5 16h9.5a3.6 3.6 0 0 0 0-7.2 5 5 0 0 0-9.5 1.6A2.8 2.8 0 0 0 5.5 16z" fill="#d3dae5" stroke="#bcc6d3" stroke-width=".7"/></svg>',
+  rain: '<svg width="20" height="20" viewBox="0 0 20 20"><path d="M5.5 12.5h9.5a3.3 3.3 0 0 0 0-6.6 4.8 4.8 0 0 0-9.5 1.5A2.6 2.6 0 0 0 5.5 12.5z" fill="#c9d2df" stroke="#b3bfcf" stroke-width=".7"/><g stroke="#4f8fe8" stroke-width="1.5" stroke-linecap="round"><path d="M7 14.5l-1 2.5M10.5 14.5l-1 2.5M14 14.5l-1 2.5"/></g></svg>' };
+const lo = 5, hi = 24, pct = (t) => ((t - lo) / (hi - lo)) * 100;
+document.getElementById('days').innerHTML = D.map(([d, ic, p, l, h], i) => `<div class="day num${i === 0 ? ' today' : ''}"><span class="d">${d}</span>${icon[ic]}<span class="p">${p ? p + '%' : ''}</span><span class="lo">${l}°</span>
+  <span class="track"><span class="range" style="left:${pct(l)}%;right:${100 - pct(h)}%"></span>${i === 0 ? `<i class="dot" style="left:${pct(17)}%"></i>` : ''}</span><span class="hi">${h}°</span></div>`).join('');
+// the next 24 hours: temperature as a curve, rain chance as bars
+const T = [17, 16, 15, 14, 13, 12, 12, 11, 11, 10, 10, 10, 11, 13, 15, 17, 18, 19, 19, 19, 18, 17, 16, 15, 14];
+const R = [0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 10, 10, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+const W = 720, x = (i) => 20 + (i / 24) * (W - 40), y = (t) => 70 - ((t - 9) / 11) * 56;
+let path = `M${x(0)} ${y(T[0])}`; for (let i = 1; i < T.length; i++) { const cx = (x(i - 1) + x(i)) / 2; path += ` C${cx} ${y(T[i - 1])} ${cx} ${y(T[i])} ${x(i)} ${y(T[i])}`; }
+let s = `<defs><linearGradient id="tg" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#f5a524" stop-opacity=".22"/><stop offset="1" stop-color="#f5a524" stop-opacity="0"/></linearGradient></defs>`;
+s += `<path d="${path} L${x(24)} 86 L${x(0)} 86 Z" fill="url(#tg)"/>`;
+s += R.map((r, i) => r ? `<rect x="${x(i) - 4}" y="${86 - r * 0.6}" width="8" height="${r * 0.6}" rx="2" fill="#4f8fe8" opacity=".55"/>` : '').join('');
+s += `<path d="${path}" fill="none" stroke="#e8901a" stroke-width="2" stroke-linecap="round" vector-effect="non-scaling-stroke"/>`;
+[0, 3, 6, 9, 12, 15, 18, 21, 24].forEach((i) => { s += `<text x="${x(i)}" y="${y(T[i]) - 9}" text-anchor="middle" font-size="11.5" font-weight="${i ? 500 : 700}" fill="#12233d" font-family="Inter, system-ui" style="font-variant-numeric:tabular-nums">${T[i]}°</text>`; });
+s += `<circle cx="${x(0)}" cy="${y(T[0])}" r="4" fill="#fff" stroke="#12233d" stroke-width="2"/>`;
+document.getElementById('curve').innerHTML = s;
+</script>
+</body>
+</html>

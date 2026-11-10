@@ -35,8 +35,9 @@ import { esc } from './choices.js';
 import { groundIsDark } from './geometry.js';
 import { FIX, CLEANUP, written } from './words.js'; // every sentence the panel says
 import { Cleanup, CLEANUP_CSS } from './cleanup.js'; // "Clean up this page": the passes, one at a time
-import { groupsOf, isNote } from './blueprint-panel.js';
+import { groupsOf, isNote, placeKey } from './blueprint-panel.js';
 import { glide } from './inplace.js'; // the text styles the code is reaching for
+import { stampOf, parseStamp, sameStamp, stampNames } from './stamp.js';
 
 const TIMING = { open: 260, next: 180, click: 60, clickGap: 45, breath: 480, check: 600, fold: 2300 };
 const CLICK = { drop: 3, over: -1, ms: 420 };
@@ -98,6 +99,9 @@ export const FIX_CSS = TEXT_EDITOR_CSS + ELEMENT_CARD_CSS + `
   .fx .bar.has-notice .long { display: none; }
   /* the tools out take the room Close's word had: Esc says it */
   .fx .bar:has(.tools) .bar-close .word { display: none; }
+  /* with the tools out, the setup note steps aside too: nothing else in the bar can give, and on a system whose
+     text runs wider (Linux, Windows) the tools pushed Close past the bar's edge */
+  .fx .bar:has(.tools) .notice { display: none; }
   @media (max-width: 560px) {
     .fx .bar { padding: 0 4px 0 12px; gap: 4px; }
     /* a phone's bar keeps the count, its two actions and Close; the tools are on the dock's mark once Blueprint closes */
@@ -232,7 +236,7 @@ function specimen(kind, mark, n, label, swatch) {
 const darkGround = () => groundIsDark();
 const plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`;
 // advice with no exact edit (a craft rule's words only): a note, shown after the causes and never counted
-const noteOf = (g) => g.members.every((m) => isNote(m.mark));
+const noteOf = (g) => g.members.every((m) => isNote(m.mark, fileOf(m)));
 // what a cause is called: its class, as written in your code; a craft rule with no class to point at names a tag
 // (a tap target, an icon inside it) or a CSS property (gap): those name the element instead, so neither passes for a
 // class. (Decided by the name, not the element's classes: a fix being tried has swapped them.)
@@ -257,20 +261,22 @@ const UNDOING = 'plumb:undoing';
 const saveUndoing = (rest) => { try { if (rest?.undo?.length || rest?.group) sessionStorage.setItem(UNDOING, JSON.stringify({ ...rest, at: Date.now() })); else sessionStorage.removeItem(UNDOING); } catch {} };
 const undoing_ = () => { try { const u = JSON.parse(sessionStorage.getItem(UNDOING) ?? 'null'); return u && Date.now() - u.at < 30000 ? u : null; } catch { return null; } };
 const RESUME_WAIT = 4000; // ms a reloaded page's readings may still have the fix just written, before the panel moves on anyway
-const placesOf = (g) => new Set(g.members.map((m) => `${fileOf(m)}:${m.mark.line}:${m.mark.column}`)).size;
+// the places of a cause: one per file:line:column its members are at (placeKey), none for a member with no place
+const placeOfMember = (m) => placeKey(m.mark, fileOf(m));
+const placesOf = (g) => new Set(g.members.map(placeOfMember).filter(Boolean)).size;
 const drawn = (g) => g.members.some((m) => m.el);
 // the other elements on the page drawn by the same line of code as this one (its stamp), outside it
-const stampMates = (el) => { const at = el?.getAttribute('data-plumb-source'); return at ? [...document.querySelectorAll(`[data-plumb-source="${CSS.escape(at)}"]`)].filter((x) => x !== el && !el.contains(x)).length : 0; };
+const stampMates = (el) => { const at = stampOf(el); return at ? [...document.querySelectorAll(sameStamp(at))].filter((x) => x !== el && !el.contains(x)).length : 0; };
 // an Alt+click reads one element (scope): a fix changes its line of code, so the places outside it that the same line
 // draws change too. Counted by stamp, only where the element's stamp is the fix's own line (a caller's classes are not)
 // One unit for both counts (F8-05): what the fix's line draws, counted once by its stamp, inside the element read
 // ("here") and outside it; a cause whose classes come from a caller (no stamp of its own line) counts its own elements
-const stampsOf = (g) => { const stamps = new Set(); for (const m of g.members) { const stamp = m.el?.getAttribute('data-plumb-source'); if (stamp?.startsWith(`${fileOf(m)}:${m.mark.line}:`)) stamps.add(stamp); } return stamps; };
+const stampsOf = (g) => { const stamps = new Set(); for (const m of g.members) { const stamp = stampOf(m.el), parsed = parseStamp(stamp); if (parsed && parsed.line === m.mark.line && stampNames(parsed, fileOf(m))) stamps.add(stamp); } return stamps; };
 const drawnOf = (g, scope) => {
   const stamps = stampsOf(g), own = elsOf(g);
   if (!scope || !stamps.size) return { here: own.length, elsewhere: 0 };
   const drawn = new Set(own);
-  for (const stamp of stamps) for (const el of document.querySelectorAll(`[data-plumb-source="${CSS.escape(stamp)}"]`)) drawn.add(el);
+  for (const stamp of stamps) for (const el of document.querySelectorAll(sameStamp(stamp))) drawn.add(el);
   let here = 0, elsewhere = 0;
   for (const el of drawn) if (scope.contains(el)) here++; else elsewhere++;
   return { here, elsewhere };
@@ -477,7 +483,7 @@ export class FixPanel {
   #problemsIn(el) {
     if (!el) return 0;
     let n = 0;
-    for (const g of this.#live()) if (!noteOf(g)) n += new Set(g.members.filter((m) => m.el && el.contains(m.el)).map((m) => `${fileOf(m)}:${m.mark.line}:${m.mark.column}`)).size;
+    for (const g of this.#live()) if (!noteOf(g)) n += new Set(g.members.filter((m) => m.el && el.contains(m.el)).map(placeOfMember).filter(Boolean)).size;
     return n;
   }
   #live() { const open = this.#groups.filter((g) => !this.#taken.has(g.key)); return [...open.filter((g) => !noteOf(g)), ...open.filter(noteOf)]; }

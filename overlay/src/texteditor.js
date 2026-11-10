@@ -32,6 +32,7 @@ import { esc } from './choices.js';
 import { namesOf } from './typesystem.js';
 import { FIX } from './words.js';
 import { contextOf } from './hierarchy.js'; // the element's place among its peers: the step that fits, the ones that break the order
+import { placeOf, atPlace } from './stamp.js';
 
 const W = FIX.text, WC = FIX.card;
 const ORDER = ['style', 'font-size', 'line-height', 'letter-spacing', 'font-weight', 'text-transform', 'color'];
@@ -336,7 +337,7 @@ export class TextEditor {
     if (!this.#target) return;
     if (!this.#target.isConnected) {
       const at = this.#stamp;
-      const again = at ? document.querySelector(`[data-plumb-source^="${CSS.escape(at)}#"]`) : null;
+      const again = at ? document.querySelector(atPlace(at)) : null;
       if (!again) { this.close(); return this.#host.closed?.(); }
       this.#target = again;
     }
@@ -346,7 +347,7 @@ export class TextEditor {
 
   async #read() {
     const el = this.#target, seq = ++this.#seq;
-    this.#stamp = el.getAttribute('data-plumb-source')?.split('#')[0] ?? null;
+    this.#stamp = placeOf(el);
     try {
       const at = this.#at ?? await locate(el);
       if (seq !== this.#seq) return;

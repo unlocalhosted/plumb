@@ -13,7 +13,7 @@ import { count } from '../messages.js';
 import { currentDecisions, decisionEntry, findingGroups } from '../ledger/keys.js';
 import { author } from '../ledger/git.js';
 import { entryCount, readLedger, writeLedger } from '../ledger/store.js';
-import { defaultSource, projectSourceFiles } from '../project.js';
+import { projectSourceFiles } from '../project.js';
 import { discoverComponents } from '../ownership/components.js';
 import type { Family, Report } from '../report.js';
 import { judgedFamilies } from '../rules/families.js';
@@ -124,7 +124,9 @@ export async function initProject(root: string, options: InitOptions, print: (te
     }
     const sources = decisionSources(report);
     const components = componentList;
-    const config: PlumbConfig = { ...(report.tailwind.entry ? { css: pathFrom(root, report.tailwind.entry) } : {}), source: defaultSource,
+    // no `source`: your code is what the rule says (src/source-identity.ts), with its installed, generated and
+    // git-ignored filters; a `source` written here would replace that rule with a glob
+    const config: PlumbConfig = { ...(report.tailwind.entry ? { css: pathFrom(root, report.tailwind.entry) } : {}),
       ...(!useShadcn ? { presets: [{ shadcn: false }] } : {}),
       decisions: sources, ...(from && useShadcn ? { components: { from } } : {}), habits: defaults };
     const serialized = JSON.stringify(config, null, 2);

@@ -28,6 +28,7 @@
 import { errorIs, request, post } from './api.js';
 import { esc } from './choices.js';
 import { TIMELINE as T } from './words.js';
+import { STAMPED, stampOf, parseStamp, stampNames } from './stamp.js';
 
 export const HISTORY_ICON = '<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2.2 4.2A4.25 4.25 0 1 1 1.75 6.5" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><path d="M1.6 1.8v2.6h2.6" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 3.75V6l1.6 1" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>';
 const CLOSE_ICON = '<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M3 3l6 6M9 3l-6 6" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>';
@@ -169,18 +170,17 @@ const reasonOf = (c) => (c.state === 'undone' ? T.undoneAlready : c.by?.length ?
 
 // The elements on the page drawn by the JSX that holds a change: the last JSX start at or before the change's line and
 // column in its file. A className on the third line of a long tag still belongs to that tag; every row a list draws
-// from it shares the stamp. Two kinds of stamp (data-plumb-source, file:line:column#hash): an element's, on the DOM;
-// and a component's at its usage (<Lettering className="…">), on its fiber's props, whose elements are the top DOM
-// elements it renders (the className it is given lands on those).
+// from it shares the stamp.
+// Only DOM tags carry a stamp. A class written where a component is used (<Lettering className="…">) has no stamp
+// of its own: the nearest stamp before it in the file is a sibling or a parent, which does not carry the class. So
+// when the stamped elements don't have the change's classes, the change was written at a usage, and its elements
+// are the top DOM elements of the component that was passed those classes, near that stamp.
 const MARKS = 24;
-const STAMP = /^(.+):(\d+):(\d+)#[a-f0-9]+$/;
 const fiberOf = (el) => { for (const k in el) if (k.startsWith('__reactFiber$')) return el[k]; return null; };
 function placeOf(stamp, c) {
-  const m = typeof stamp === 'string' && STAMP.exec(stamp);
-  if (!m) return null;
-  let file = m[1]; try { file = decodeURIComponent(file); } catch {}
-  if (file !== c.file && !file.endsWith('/' + c.file) && !c.file.endsWith('/' + file)) return null;
-  const line = +m[2], column = +m[3];
+  const parsed = parseStamp(stamp);
+  if (!parsed || !stampNames(parsed, c.file)) return null;
+  const { line, column } = parsed;
   return line < c.line || (line === c.line && column <= c.column) ? { line, column } : null;
 }
 // the top DOM elements a fiber renders: its host descendants with no host between
@@ -193,26 +193,34 @@ function hostsOf(fiber) {
   }
   return out;
 }
-// Every stamp on the page, read once per playhead move: [stamp, elements] for each stamped element and each component
-// stamped at its usage. Many changes are matched against one read (the past view matches every change to the right).
+// Every stamp on the page, read once per playhead move: [stamp, elements] for each stamped element, and the React
+// roots they hang from (for changes written at a component's usage). Many changes are matched against one read (the
+// past view matches every change to the right).
 function pageIndex() {
   const out = [], roots = new Set();
-  for (const el of document.querySelectorAll('[data-plumb-source]')) {
+  for (const el of document.querySelectorAll(STAMPED)) {
     if (el.closest('plumb-overlay')) continue;
-    out.push([el.getAttribute('data-plumb-source'), [el]]);
+    out.push([stampOf(el), [el]]);
     if (roots.size < 8) { let f = fiberOf(el); while (f?.return) f = f.return; if (f) roots.add(f); }
   }
-  for (const root of roots) {
+  out.roots = roots;
+  return out;
+}
+const words = (text) => String(text ?? '').split(/\s+/).filter(Boolean);
+// the top DOM elements of every component that was passed all of these classes, inside `scope`
+function usageHosts(tokens, scope, roots) {
+  const found = new Set();
+  for (const root of roots ?? []) {
     const stack = [root];
     while (stack.length) {
       const f = stack.pop();
       if (f.sibling) stack.push(f.sibling);
       if (f.child) stack.push(f.child);
-      const stamp = typeof f.type !== 'string' && f.memoizedProps?.['data-plumb-source'];
-      if (stamp) out.push([stamp, hostsOf(f)]);
+      const passed = typeof f.type !== 'string' && typeof f.memoizedProps?.className === 'string' ? words(f.memoizedProps.className) : null;
+      if (passed && tokens.every((t) => passed.includes(t))) for (const el of hostsOf(f)) if (scope.contains(el)) found.add(el);
     }
   }
-  return out;
+  return [...found];
 }
 function elementsOf(c, index = pageIndex()) {
   if (!c?.file || !/\.[cm]?[jt]sx?$/.test(c.file)) return [];
@@ -220,7 +228,14 @@ function elementsOf(c, index = pageIndex()) {
   for (const [stamp, els] of index) { const at = els.length && placeOf(stamp, c); if (at) found.push({ ...at, els }); }
   let best = null;
   for (const f of found) if (!best || f.line > best.line || (f.line === best.line && f.column > best.column)) best = f;
-  return best ? [...new Set(found.filter((f) => f.line === best.line && f.column === best.column).flatMap((f) => f.els))].filter((el) => !el.closest('plumb-overlay')) : [];
+  if (!best) return [];
+  const stamped = [...new Set(found.filter((f) => f.line === best.line && f.column === best.column).flatMap((f) => f.els))].filter((el) => !el.closest('plumb-overlay'));
+  // the classes the page has now from this change: what it wrote while it stands, what it replaced once undone
+  const tokens = words(live(c) ? c.to : c.from);
+  if (!tokens.length || !stamped.length || stamped.some((el) => tokens.every((t) => el.classList.contains(t)))) return stamped;
+  const scope = stamped[0].parentElement ?? document.body;
+  const used = usageHosts(tokens, scope, index.roots).filter((el) => !el.closest('plumb-overlay'));
+  return used.length ? used : stamped;
 }
 
 export class History {
@@ -614,6 +629,10 @@ export class History {
     }, HOLD);
   }
 
+  // this page came back from a reload with something History heard before it and says again now
+  #resumed = false;
+  get resumed() { return this.#resumed; }
+
   #resume() {
     let open;
     try { open = JSON.parse(sessionStorage.getItem(RESUME_TT) ?? 'null'); } catch {}
@@ -627,6 +646,7 @@ export class History {
     let saved;
     try { saved = JSON.parse(sessionStorage.getItem(RESUME) ?? 'null'); } catch { return; }
     if (!saved || Date.now() - saved.at > 15000) return;
+    this.#resumed = true;
     this.#last = { handle: saved.handle ?? null, group: saved.group ?? null };
     setTimeout(() => this.#say(saved.text, true), 150);
   }

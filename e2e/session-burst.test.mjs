@@ -146,6 +146,7 @@ test('HTTP: health stays under 100ms during 300 large site/edits reads, preservi
   for (const probe of probes) assert.ok(probe.ms < 100, `health blocked ${probe.ms.toFixed(2)}ms with ${probe.outstanding} reads outstanding`);
 });
 
+// a busy answer carries its code beside its status, like every refusal (docs/invariants/api-contract.md)
 test('expired read admission returns busy on Node and Web routes, while health bypasses admission', async t => {
   const root = await mkdtemp(new URL('../fixtures/.busy-', import.meta.url).pathname);
   t.after(() => rm(root, { recursive: true, force: true }));
@@ -155,14 +156,14 @@ test('expired read admission returns busy on Node and Web routes, while health b
   t.after(() => { server.closeAllConnections(); server.close(); });
   const base = `http://127.0.0.1:${server.address().port}/__plumb/`;
   const response = await fetch(base + 'site?file=src/App.tsx&line=1');
-  assert.equal(response.status, 503); assert.deepEqual(await response.json(), { status: 'busy' });
+  assert.equal(response.status, 503); assert.deepEqual(await response.json(), { status: 'busy', code: 'busy' });
   const web = createWebHandler(session, { peerAddress: '127.0.0.1' });
   const expired = await web(new Request(base + 'resolve?source=src/App.tsx'));
-  assert.equal(expired.status, 503); assert.deepEqual(await expired.json(), { status: 'busy' });
+  assert.equal(expired.status, 503); assert.deepEqual(await expired.json(), { status: 'busy', code: 'busy' });
   for (const classes of [await fetch(base + 'classes?file=src/App.tsx&line=1&column=1&classes=gap-[13px]'),
     await web(new Request(base + 'classes?file=src/App.tsx&line=1&column=1&classes=gap-[13px]'))]) {
     assert.equal(classes.status, 503); assert.equal(classes.headers.get('Retry-After'), '1');
-    assert.deepEqual(await classes.json(), { status: 'busy' });
+    assert.deepEqual(await classes.json(), { status: 'busy', code: 'busy' });
   }
   assert.equal((await fetch(base + 'health')).status, 200);
   assert.equal((await web(new Request(base + 'health'))).status, 200);
@@ -185,7 +186,7 @@ test('positive queue budget expires during real configuration reload and recover
   const healthAt = performance.now(), health = await web(new Request(base + 'health'));
   assert.equal(health.status, 200); assert.ok(performance.now() - healthAt < 50);
   const expired = await waiting;
-  assert.equal(expired.status, 503); assert.deepEqual(await expired.json(), { status: 'busy' });
+  assert.equal(expired.status, 503); assert.deepEqual(await expired.json(), { status: 'busy', code: 'busy' });
   assert.ok(performance.now() - at < 250, 'expired read must not wait for config evaluation');
   await reload;
   assert.deepEqual(await session.site('src/App.tsx', 1), original);

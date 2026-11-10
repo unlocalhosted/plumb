@@ -42,7 +42,8 @@
  *             { unrendered: true } (the panel must know how to hold one). Where a mark is drawn is the layer's business
  * ───────────────────────────────────────────────────────── */
 
-import { inCode, isNote } from './blueprint-panel.js';
+import { inCode, isNote, placeKey } from './blueprint-panel.js';
+import { STAMP_ATTRIBUTE, stampOf, parseStamp } from './stamp.js';
 
 const WAVE = 128; // per-element readings in flight at once (each is batched by api.js into one round trip per tick)
 const PAGE = 1024; // stamped elements per page request; every chunk is sent at once
@@ -85,10 +86,10 @@ export class Reader {
     this.#scope = scope;
     this.#mo = new MutationObserver((records) => {
       const pinned = this.#host.pinnedElement;
-      const relevant = records.some((r) => !r.target.closest?.('plumb-overlay') && r.target !== pinned && (!this.#scope || this.#scope.contains(r.target)) && (r.type === 'childList' || r.attributeName === 'class' || r.attributeName === 'data-plumb-source'));
+      const relevant = records.some((r) => !r.target.closest?.('plumb-overlay') && r.target !== pinned && (!this.#scope || this.#scope.contains(r.target)) && (r.type === 'childList' || r.attributeName === 'class' || r.attributeName === STAMP_ATTRIBUTE));
       if (relevant) { this.#changed(); this.#throttled(() => this.#scan(true)); }
     });
-    this.#mo.observe(document.body, { subtree: true, childList: true, attributes: true, attributeFilter: ['class', 'open', 'hidden', 'data-plumb-source'] });
+    this.#mo.observe(document.body, { subtree: true, childList: true, attributes: true, attributeFilter: ['class', 'open', 'hidden', STAMP_ATTRIBUTE] });
     this.#startedAt = performance.now();
     this.#changed();
     this.#scan(false);
@@ -168,7 +169,7 @@ export class Reader {
     const pool = this.#scope ? (this.#scope.isConnected ? [this.#scope, ...this.#scope.querySelectorAll('*')] : []) : document.body.querySelectorAll('*');
     for (const el of pool) {
       // inside an <svg>, only authored JSX (stamped) is read: a <text> with a type class is a decision, a library's paths are drawing
-      const stamp = el.getAttribute('data-plumb-source') ?? null;
+      const stamp = stampOf(el) ?? null;
       if ((el.ownerSVGElement && !stamp) || el.closest('plumb-overlay') || el.localName === 'script' || el.localName === 'style') continue;
       const classes = el.getAttribute('class')?.trim() ?? '';
       const sig = `${stamp}|${classes}`;
@@ -208,7 +209,7 @@ export class Reader {
   #files() {
     const files = new Set();
     for (const item of this.#items.values()) {
-      const named = item.stamp && /^(.+):\d+:\d+#[a-f0-9]{12}$/.exec(item.stamp)?.[1];
+      const named = parseStamp(item.stamp)?.source;
       if (named) files.add(named);
       if (item.state === 'ready' && item.checked && item.file) files.add(item.file);
     }
@@ -279,7 +280,7 @@ export class Reader {
     } else if (state?.status === 'ready') {
       item.state = 'ready';
       item.checked = true; item.outsideSource = false;
-      item.file = state.file;
+      item.file = state.file; item.line = state.line; item.column = state.column; // where its JSX opens: a craft mark's place
       if (item.file && !this.#code.has(item.file) && !this.#noCode && !this.#scope) this.#readCode();
       item.marks = state.marks.filter((m) => m.ledger !== 'exception');
       item.dims = state.dims ?? [];
@@ -311,19 +312,20 @@ export class Reader {
   }
 
   // The places: one per class site, from the page's code and from the rendered elements, each with the elements that
-  // render it. A place from the code and the same place rendered are one place.
+  // render it. A place from the code and the same place rendered are one place. A mark with no place in the code (a
+  // craft reading of the page, placeKey null) is not one: it stays on its element as a note.
   #places(enriched) {
     const places = new Map();
     // a mark's key is its line and column within its file: the place is the file and that key, so two files' marks
     // at the same line and column are two places, each joined to its own elements
     const add = (mark, file) => {
-      const at = mark.file ?? file, id = `${at}|${mark.key}`;
+      const at = mark.file ?? file, id = `${at}:${mark.line}:${mark.column}`;
       let place = places.get(id);
       if (!place) places.set(id, (place = { key: mark.key, file: at, site: { file: at, line: mark.line, column: mark.column, text: mark.text }, mark, elements: [] }));
       return place;
     };
-    for (const file of this.#code.values()) for (const mark of file.marks) add(mark, file.file);
-    for (const item of enriched) for (const mark of item.marks) if (mark.family !== 'craft') add(mark, item.file).elements.push(item.el);
+    for (const file of this.#code.values()) for (const mark of file.marks) if (placeKey(mark, file.file)) add(mark, file.file);
+    for (const item of enriched) for (const mark of item.marks) if (placeKey(mark, item.file)) add(mark, item.file).elements.push(item.el);
     return places;
   }
 
@@ -333,7 +335,7 @@ export class Reader {
     // craft: every read element goes through the craft engine first, so the counts below and the items handed on
     // agree on what is drawn (its marks are appended to the element's own), once over the whole page
     const all = [...this.#items.values()];
-    const ready = all.filter((i) => i.state === 'ready').map(({ id, el, marks, dims, file, checked }) => ({ id, el, marks, dims, file, checked }));
+    const ready = all.filter((i) => i.state === 'ready').map(({ id, el, marks, dims, file, line, column, checked }) => ({ id, el, marks, dims, file, line, column, checked }));
     const enriched = this.#enrich ? this.#enrich(ready) : ready;
     const read = ready.length;
     const checked = all.filter((i) => i.state === 'ready' && i.checked).length;
@@ -342,19 +344,21 @@ export class Reader {
     // problems are places in the code, one each however many elements render it; what the craft rules measured on
     // the page are notes, per element, never problems
     const places = this.#places(enriched);
-    // drift: distinct (place, cause) pairs, place = file:line:column and cause = rule + class text (what the fix panel
-    // groups by), over new marks that are not in-code notes, so the dock and the panel's "N problems" agree
-    // (inCode and isNote are the fix panel's own, so its line and the dock say one number)
+    // drift: distinct (place, cause) pairs, place = file:line:column (placeKey: the same rule the places above are
+    // made by, so a problem is counted where it can be placed and never with a hole in its key) and cause = rule +
+    // class text (what the fix panel groups by), over new marks that are not in-code notes, so the dock and the
+    // panel's "N problems" agree (inCode, isNote and placeKey are the fix panel's own, so its line and the dock say
+    // one number)
     const problems = new Set();
     let unrendered = 0, notes = 0;
-    const count = (m, file) => { if (m.ledger === 'new' && !inCode(m) && !isNote(m)) problems.add(`${m.file ?? file}:${m.line}:${m.column}|${m.rule}|${m.text}`); };
+    const count = (m, file) => { const at = placeKey(m, file); if (at && m.ledger === 'new' && !inCode(m) && !isNote(m, file)) problems.add(`${at}|${m.rule}|${m.text}`); };
     for (const file of this.#code.values()) for (const m of file.marks) count(m, file.file);
-    for (const i of enriched) for (const m of i.marks) { if (isNote(m)) notes++; else count(m, i.file); }
+    for (const i of enriched) for (const m of i.marks) { if (isNote(m, i.file)) notes++; else count(m, i.file); }
     for (const place of places.values()) if (!place.elements.length) unrendered++;
     const drift = problems.size;
     const on = all.reduce((n, i) => n + i.dims.length, 0);
     // the places themselves, for whoever asks the host (the headless run, a test): one row per place
-    this.#host.placesRead?.([...places.values()].map((p) => ({ key: p.key, file: p.file, line: p.mark.line, column: p.mark.column, text: p.mark.text, rule: p.mark.rule, ledger: p.mark.ledger, elements: p.elements.length })));
+    this.#host.placesRead?.([...places.values()].map((p) => ({ key: p.key, file: p.file, line: p.mark.line, column: p.mark.column, text: p.mark.text, rule: p.mark.rule, ledger: p.mark.ledger, elements: p.elements.length })), [...problems]);
     const done = this.settled;
     const key = `${read}/${all.length}/${drift}/${on}/${notChecked}/${outsideSource}/${notes}/${places.size}/${unrendered}/${done}`;
     if (key !== this.#progress) {

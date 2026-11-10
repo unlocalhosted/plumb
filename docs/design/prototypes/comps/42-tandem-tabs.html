@@ -1,0 +1,203 @@
+<!doctype html>
+<!-- COMP, #42 Bold on hover must not shift layout (hands-on; docs/craft/taste-checklist.md, group 4). Tandem, a project
+     tracker for a small ceramics studio's launch, on the project's Overview. The lesson lives in the project's view tabs:
+     the pointer rests on Board, which turned semibold and grew, so Timeline, Files and Settings slid over. plumber's
+     marks are measured from the real tabs below (resting edges dashed, the ground slid across hatched, the tab that grew
+     outlined, one tag). Slate's tokens (overlay/showcase/src/theme.css). Throwaway. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Tandem · Spring collection (comp)</title>
+<style>
+  :root {
+    --canvas: #f5f7fa; --surface: #fff; --sunken: #f3f5f9; --ink: #12233d; --ink-muted: #5a6779; --ink-subtle: #6f7c90;
+    --line: rgb(18 35 61 / 0.09); --line-strong: rgb(18 35 61 / 0.14); --accent: #5550d8; --accent-soft: #efeefd; --accent-deep: #3631a6;
+    --positive: #0f6f58; --positive-soft: #e5f4ef; --caution: #965a03; --caution-soft: #fcf1dd;
+    --board: #e9edf2; --board-dot: #d3d9e2;
+    --window: 0 1px 2px rgb(18 35 61 / 0.05), 0 8px 24px rgb(18 35 61 / 0.08), 0 24px 64px rgb(18 35 61 / 0.12);
+    /* plumber's marks (overlay/src/tokens.css) */
+    --pl-sky: #2a7fd0; --pl-off: #bf3a1e; --pl-on: #1a9460; --pl-ink-2: #6b665c; --pl-ink-3: #b3ad9f; --pl-halo: rgb(255 255 255 / 0.9);
+    --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, monospace;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 48px; background: var(--board);
+    background-image: radial-gradient(var(--board-dot) 1px, transparent 1px); background-size: 16px 16px;
+    font: 14px/20px Inter, -apple-system, system-ui, sans-serif; color: var(--ink); -webkit-font-smoothing: antialiased; font-feature-settings: "cv11", "ss01"; }
+  .num { font-variant-numeric: tabular-nums; }
+  .stage { position: relative; }
+  .window { width: 1000px; height: 600px; display: grid; grid-template-columns: 208px 1fr; border-radius: 12px; overflow: hidden; background: var(--surface); box-shadow: var(--window), 0 0 0 0.5px rgb(18 35 61 / 0.18); }
+
+  .side { background: #f7f8fa; border-right: 0.5px solid var(--line-strong); display: flex; flex-direction: column; padding: 12px 10px; gap: 1px; }
+  .lights { display: flex; gap: 7px; padding: 4px 6px 14px; }
+  .lights i { width: 11px; height: 11px; border-radius: 50%; background: #d9dde3; box-shadow: inset 0 0 0 0.5px rgb(0 0 0 / 0.08); }
+  .ws { display: flex; align-items: center; gap: 8px; padding: 2px 8px 12px; font-weight: 600; font-size: 13.5px; letter-spacing: -0.01em; }
+  .ws b { width: 22px; height: 22px; border-radius: 6px; background: #2f3b4f; display: grid; place-items: center; color: #fff; font-size: 11px; }
+  .ws svg { margin-left: auto; width: 12px; height: 12px; stroke: var(--ink-subtle); fill: none; stroke-width: 1.6; }
+  .nav { display: flex; align-items: center; gap: 9px; height: 28px; white-space: nowrap; padding: 0 8px; border-radius: 6px; color: var(--ink-muted); font-size: 13px; }
+  .nav svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 1.5; flex: none; }
+  .nav .n { margin-left: auto; font-size: 11.5px; color: var(--ink-subtle); }
+  .nav .n.hot { min-width: 18px; height: 16px; padding: 0 5px; border-radius: 8px; background: var(--accent); color: #fff; font-weight: 600; font-size: 10.5px; display: grid; place-items: center; }
+  .nav.on { background: rgb(18 35 61 / 0.06); color: var(--ink); font-weight: 500; }
+  .label { margin: 14px 8px 4px; font-size: 11px; font-weight: 500; color: var(--ink-subtle); }
+  .prj i { width: 14px; height: 14px; border-radius: 4px; flex: none; background-size: cover; background-position: center; }
+  .ring { width: 14px; height: 14px; flex: none; }
+  .me { margin-top: auto; display: flex; align-items: center; gap: 9px; padding: 8px; }
+  .me img { width: 24px; height: 24px; border-radius: 50%; }
+  .me span { font-size: 12.5px; line-height: 16px; display: flex; flex-direction: column; }
+  .me small { color: var(--ink-subtle); font-size: 11.5px; }
+
+  .main { display: flex; flex-direction: column; min-width: 0; }
+  .crumbs { display: flex; align-items: center; gap: 8px; height: 46px; padding: 0 24px; font-size: 13px; color: var(--ink-subtle); border-bottom: 0.5px solid var(--line); }
+  .crumbs b { color: var(--ink); font-weight: 500; }
+  .crumbs .faces { margin-left: auto; display: flex; }
+  .faces img { width: 24px; height: 24px; border-radius: 50%; box-shadow: 0 0 0 2px #fff; margin-left: -6px; }
+  .faces .more { width: 24px; height: 24px; border-radius: 50%; margin-left: -6px; background: var(--sunken); box-shadow: 0 0 0 2px #fff, inset 0 0 0 1px var(--line); font-size: 10.5px; font-weight: 500; color: var(--ink-muted); display: grid; place-items: center; }
+  .btn { height: 28px; display: inline-flex; align-items: center; gap: 6px; padding: 0 10px; border-radius: 6px; font-size: 13px; font-weight: 500; box-shadow: inset 0 0 0 1px var(--line-strong); color: var(--ink); background: var(--surface); }
+
+  .head { padding: 22px 24px 0; display: flex; align-items: center; gap: 14px; }
+  .cover { width: 44px; height: 44px; border-radius: 10px; background: url(../../../../overlay/showcase/src/media/ceramic.jpg) center 40% / 160%; box-shadow: inset 0 0 0 0.5px rgb(0 0 0 / 0.1); }
+  .head h1 { margin: 0; font-size: 21px; line-height: 26px; font-weight: 600; letter-spacing: -0.02em; }
+  .head .sub { font-size: 13px; color: var(--ink-muted); display: flex; align-items: center; gap: 10px; margin-top: 2px; }
+  .chip { display: inline-flex; align-items: center; gap: 5px; height: 20px; padding: 0 7px; border-radius: 4px; font-size: 11.5px; font-weight: 500; }
+  .chip.ok { background: var(--positive-soft); color: var(--positive); }
+  .chip.ok i { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+
+  /* the subject: the project's views */
+  .tabs { display: flex; gap: 22px; padding: 0 24px; margin-top: 18px; border-bottom: 0.5px solid var(--line-strong); }
+  .tabs a { padding: 10px 0 11px; font-size: 14px; color: var(--ink-muted); text-decoration: none; border-bottom: 2px solid transparent; margin-bottom: -0.5px; white-space: nowrap; }
+  .tabs a.cur { color: var(--ink); font-weight: 600; border-color: var(--ink); }
+  .tabs a.hover { color: var(--ink); font-weight: 600; }  /* the habit: hover:font-semibold */
+  .tabs a .c { font-size: 12px; color: var(--ink-subtle); margin-left: 5px; font-weight: 400; }
+
+  .body { flex: 1; display: grid; grid-template-columns: 1fr 236px; gap: 28px; padding: 20px 24px 0; overflow: hidden; }
+  .sec { font-size: 12px; font-weight: 500; color: var(--ink-subtle); margin-bottom: 8px; display: flex; justify-content: space-between; }
+  .desc { font-size: 13.5px; line-height: 21px; color: var(--ink-muted); margin: 0 0 18px; max-width: 520px; }
+  .desc b { color: var(--ink); font-weight: 500; }
+  .chart { height: 150px; border-radius: 10px; background: var(--sunken); box-shadow: inset 0 0 0 0.5px var(--line); padding: 12px 14px 8px; position: relative; }
+  .chart .legend { display: flex; gap: 14px; font-size: 11.5px; color: var(--ink-subtle); }
+  .chart .legend i { display: inline-block; width: 10px; height: 2px; border-radius: 1px; vertical-align: middle; margin-right: 5px; }
+  .chart .big { position: absolute; right: 14px; top: 10px; text-align: right; }
+  .chart .big b { font-size: 20px; font-weight: 600; letter-spacing: -0.02em; display: block; line-height: 24px; }
+  .chart .big span { font-size: 11.5px; color: var(--ink-subtle); }
+  .ms { margin-top: 16px; }
+  .axis { position: absolute; left: 14px; right: 14px; bottom: 6px; display: flex; justify-content: space-between; font-size: 10.5px; color: var(--ink-subtle); }
+  .msr { display: grid; grid-template-columns: 16px 1fr 120px 52px; align-items: center; gap: 12px; height: 38px; border-bottom: 0.5px solid var(--line); font-size: 13px; }
+  .msr .t { font-weight: 500; }
+  .msr .d { font-size: 12px; color: var(--ink-subtle); text-align: right; }
+  .bar { height: 4px; border-radius: 2px; background: #e6e9ef; position: relative; overflow: hidden; }
+  .bar i { position: absolute; inset: 0 auto 0 0; border-radius: 2px; background: var(--accent); }
+  .props { display: grid; grid-template-columns: 72px 1fr; row-gap: 10px; font-size: 13px; align-items: center; margin-bottom: 20px; }
+  .props dt { color: var(--ink-subtle); font-size: 12.5px; }
+  .props dd { margin: 0; display: flex; align-items: center; gap: 7px; }
+  .props img { width: 20px; height: 20px; border-radius: 50%; }
+  .upd { display: grid; grid-template-columns: 24px 1fr; gap: 10px; margin-bottom: 14px; font-size: 12.5px; line-height: 18px; }
+  .upd img { width: 24px; height: 24px; border-radius: 50%; }
+  .upd b { font-weight: 500; }
+  .upd span { color: var(--ink-muted); }
+  .upd small { display: block; color: var(--ink-subtle); font-size: 11.5px; }
+
+  /* plumber's marks */
+  .marks { position: absolute; inset: 0; pointer-events: none; }
+  .mk { position: absolute; }
+  .line { width: 0; border-left: 1px dashed var(--pl-off); opacity: 0.85; }
+  .hatch { opacity: 0.6; background-image: repeating-linear-gradient(45deg, var(--pl-off) 0 1px, transparent 1px 4px); }
+  .outline { border-radius: 4px; box-shadow: inset 0 0 0 1px var(--pl-off); opacity: 0.75; }
+  .tag { display: flex; align-items: center; height: 20px; padding: 0 6px; border-radius: 6px; font: 500 11px/1 var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; color: #fff; background: var(--pl-off); box-shadow: 0 0 0 1px var(--pl-halo); transform: translateY(-50%); }
+  .cursor { position: absolute; width: 18px; height: 24px; filter: drop-shadow(0 1px 1.5px rgb(0 0 0 / 0.3)); }
+</style>
+</head>
+<body>
+<div class="stage">
+<div class="window">
+  <aside class="side">
+    <div class="lights"><i></i><i></i><i></i></div>
+    <div class="ws"><b>K</b>Kiln &amp; Co.<svg viewBox="0 0 12 12"><path d="M3.5 4.5 6 2l2.5 2.5M3.5 7.5 6 10l2.5-2.5"/></svg></div>
+    <div class="nav"><svg viewBox="0 0 16 16"><path d="M2 9.5h3.2l1 2h3.6l1-2H14M3.5 3.5h9L14 9.5V13H2V9.5z"/></svg>Inbox<span class="n hot">3</span></div>
+    <div class="nav"><svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="5.5"/><path d="m5.8 8 1.6 1.6L10.4 6.6"/></svg>My tasks<span class="n num">7</span></div>
+    <div class="label">Projects</div>
+    <div class="nav on prj"><i style="background-image:url(../../../../overlay/showcase/src/media/ceramic.jpg)"></i>Spring collection<svg class="ring" viewBox="0 0 14 14" style="margin-left:auto"><circle cx="7" cy="7" r="5" fill="none" stroke="#dfe3ea" stroke-width="2"/><circle cx="7" cy="7" r="5" fill="none" stroke="var(--accent)" stroke-width="2" stroke-dasharray="31.4" stroke-dashoffset="12" transform="rotate(-90 7 7)"/></svg></div>
+    <div class="nav prj"><i style="background:#c8a23a"></i>Wholesale lookbook<svg class="ring" viewBox="0 0 14 14" style="margin-left:auto"><circle cx="7" cy="7" r="5" fill="none" stroke="#dfe3ea" stroke-width="2"/><circle cx="7" cy="7" r="5" fill="none" stroke="#8a95a6" stroke-width="2" stroke-dasharray="31.4" stroke-dashoffset="24" transform="rotate(-90 7 7)"/></svg></div>
+    <div class="nav prj"><i style="background:#3a9d8f"></i>Studio site refresh<svg class="ring" viewBox="0 0 14 14" style="margin-left:auto"><circle cx="7" cy="7" r="5" fill="none" stroke="#dfe3ea" stroke-width="2"/><circle cx="7" cy="7" r="5" fill="none" stroke="#8a95a6" stroke-width="2" stroke-dasharray="31.4" stroke-dashoffset="5" transform="rotate(-90 7 7)"/></svg></div>
+    <div class="nav prj"><i style="background:#9a6fd0"></i>Market stall, May</div>
+    <div class="label">Views</div>
+    <div class="nav"><svg viewBox="0 0 16 16"><path d="M2.5 4h11M2.5 8h11M2.5 12h7"/></svg>Due this week<span class="n num">5</span></div>
+    <div class="me"><img src="../../../../overlay/showcase/src/media/people/person-07.jpg" alt=""><span>Mei Tanaka<small>Studio lead</small></span></div>
+  </aside>
+
+  <main class="main">
+    <div class="crumbs">Projects <span>/</span> <b>Spring collection</b>
+      <span class="faces"><img src="../../../../overlay/showcase/src/media/people/person-07.jpg" alt=""><img src="../../../../overlay/showcase/src/media/people/person-02.jpg" alt=""><img src="../../../../overlay/showcase/src/media/people/person-09.jpg" alt=""><img src="../../../../overlay/showcase/src/media/people/person-04.jpg" alt=""><span class="more">+2</span></span>
+      <span class="btn">Share</span>
+    </div>
+    <div class="head">
+      <span class="cover"></span>
+      <span><h1>Spring collection launch</h1>
+        <span class="sub"><span class="chip ok"><i></i>On track</span><span class="num">Launches Thu 12 March</span><span>·</span><span class="num">34 of 52 tasks</span></span></span>
+    </div>
+    <nav class="tabs" id="tabs">
+      <a href="#" class="cur">Overview</a><a href="#" class="hover">Board</a><a href="#">Timeline</a><a href="#">Files</a><a href="#">Settings</a>
+    </nav>
+    <div class="body">
+      <div>
+        <p class="desc">Twelve new glazes across mugs, bowls and the stacking set. <b>Photography wraps Friday</b>; the wholesale lookbook and the shop listings go live together on launch morning.</p>
+        <div class="sec"><span>Progress</span><span class="num">updated 9 min ago</span></div>
+        <div class="chart">
+          <div class="legend"><span><i style="background:var(--accent)"></i>Done</span><span><i style="background:#b9c0cc"></i>Scope</span></div>
+          <div class="big"><b class="num">65%</b><span class="num">+9 this week</span></div>
+          <svg viewBox="0 0 520 86" preserveAspectRatio="none" style="position:absolute;left:14px;right:14px;bottom:24px;width:calc(100% - 28px);height:86px">
+            <defs><linearGradient id="g" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#5550d8" stop-opacity="0.18"/><stop offset="1" stop-color="#5550d8" stop-opacity="0"/></linearGradient></defs>
+            <path d="M0 40 L80 38 L150 34 L200 30 L260 22 L330 20 L400 18 L520 18" fill="none" stroke="#b9c0cc" stroke-width="1.5" stroke-dasharray="3 3"/>
+            <path d="M0 84 L50 80 L100 74 L150 70 L200 62 L240 58 L290 50 L330 44 L370 40 L400 34 L400 86 L0 86Z" fill="url(#g)"/>
+            <path d="M0 84 L50 80 L100 74 L150 70 L200 62 L240 58 L290 50 L330 44 L370 40 L400 34" fill="none" stroke="#5550d8" stroke-width="2" stroke-linejoin="round"/>
+            <circle cx="400" cy="34" r="3.5" fill="#fff" stroke="#5550d8" stroke-width="2"/>
+            <path d="M480 4 V86" stroke="#12233d" stroke-opacity="0.25" stroke-dasharray="2 3"/>
+          </svg>
+          <div class="axis num"><span>2 Feb</span><span>9 Feb</span><span>16 Feb</span><span>23 Feb</span><span>2 Mar</span><span>12 Mar</span></div>
+        </div>
+        <div class="ms">
+          <div class="msr"><svg viewBox="0 0 16 16" width="15"><path d="M8 2 14 8 8 14 2 8z" fill="var(--positive)"/></svg><span class="t">Glaze tests signed off</span><span class="bar"><i style="width:100%;background:var(--positive)"></i></span><span class="d num">Done</span></div>
+          <div class="msr"><svg viewBox="0 0 16 16" width="15"><path d="M8 2 14 8 8 14 2 8z" fill="none" stroke="var(--accent)" stroke-width="1.6"/><path d="M8 2 14 8 8 14z" fill="var(--accent)"/></svg><span class="t">Photography and lookbook</span><span class="bar"><i style="width:70%"></i></span><span class="d num">Fri</span></div>
+          <div class="msr"><svg viewBox="0 0 16 16" width="15"><path d="M8 2 14 8 8 14 2 8z" fill="none" stroke="#9aa3b2" stroke-width="1.6"/></svg><span class="t">Shop listings and launch email</span><span class="bar"><i style="width:22%"></i></span><span class="d num">12 Mar</span></div>
+        </div>
+      </div>
+      <div>
+        <dl class="props">
+          <dt>Lead</dt><dd><img src="../../../../overlay/showcase/src/media/people/person-07.jpg" alt="">Mei Tanaka</dd>
+          <dt>Target</dt><dd class="num">12 March</dd>
+          <dt>Budget</dt><dd class="num">£3,400 of £5,000</dd>
+        </dl>
+        <div class="sec"><span>Latest</span></div>
+        <div class="upd"><img src="../../../../overlay/showcase/src/media/people/person-02.jpg" alt=""><span><b>Tomás</b> <span>uploaded 48 photos to Files</span><small>12 min ago</small></span></div>
+        <div class="upd"><img src="../../../../overlay/showcase/src/media/people/person-09.jpg" alt=""><span><b>Ama</b> <span>moved “Price the stacking set” to Done</span><small>1 h ago</small></span></div>
+        <div class="upd"><img src="../../../../overlay/showcase/src/media/people/person-04.jpg" alt=""><span><b>Graham</b> <span>commented on the kiln schedule</span><small>Yesterday</small></span></div>
+      </div>
+    </div>
+  </main>
+</div>
+<div class="marks" id="marks"></div>
+</div>
+<script>
+// plumber's reading, from the real tabs: where each rests with nothing hovered, and where it is with Board semibold
+const stage = document.querySelector('.stage'), marks = document.getElementById('marks');
+const box = (el) => { const o = stage.getBoundingClientRect(), r = el.getBoundingClientRect(); return { x: r.left - o.left, y: r.top - o.top, w: r.width, h: r.height }; };
+const mk = (cls, s, html = '') => { const e = document.createElement('span'); e.className = 'mk ' + cls; for (const [k, v] of Object.entries(s)) e.style[k] = typeof v === 'number' ? v + 'px' : v; e.innerHTML = html; marks.appendChild(e); return e; };
+document.fonts.ready.then(() => {
+  const tabs = [...document.querySelectorAll('#tabs a')], i = 1;
+  tabs[i].classList.remove('hover'); const rest = tabs.map(box);
+  tabs[i].classList.add('hover'); const now = tabs.map(box);
+  const after = tabs.map((_, j) => j).filter((j) => j > i);
+  const shift = Math.max(...after.map((j) => now[j].x - rest[j].x));
+  const t = now[i];
+  mk('outline', { left: t.x - 4, top: t.y + 6, width: t.w + 8, height: t.h - 12 });
+  for (const j of after) {
+    mk('line', { left: rest[j].x, top: rest[j].y + 6, height: rest[j].h - 12 });
+    mk('hatch', { left: rest[j].x, top: rest[j].y + 10, width: now[j].x - rest[j].x, height: rest[j].h - 20 });
+  }
+  const last = now.at(-1);
+  mk('tag', { left: last.x + last.w + 14, top: last.y + last.h / 2 }, `+${shift.toFixed(1)}px · ${after.length} slid`);
+  // the viewer's pointer, resting on Board
+  mk('cursor', { left: t.x + t.w * 0.55, top: t.y + t.h * 0.5 }, '<svg viewBox="0 0 18 24" width="18" height="24"><path d="M1.5 1.5v17.2l4.3-4.1 2.9 6.6 2.7-1.2-2.8-6.4h6z" fill="#111" stroke="#fff" stroke-width="1.3" stroke-linejoin="round"/></svg>');
+});
+</script>
+</body>
+</html>

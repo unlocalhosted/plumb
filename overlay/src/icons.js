@@ -28,6 +28,7 @@
  * ───────────────────────────────────────────────────────── */
 import { toRgb } from './craft-headless.js';
 import { SPEC, classesOf, utility } from './craft-read.js';
+import { STAMP_ATTRIBUTE, STAMPED, stampOf } from './stamp.js';
 
 // ── thresholds, with the spec section that sets each ────────
 const T = {
@@ -308,7 +309,7 @@ export function readIcons(root = document.body, { exclude = [] } = {}) {
       positioned: /absolute|fixed/.test(cs.position) || /absolute|fixed/.test(getComputedStyle(lab.box).position),
       at, props: comp ? pick(comp.props) : {}, component: comp?.name ?? null, wrappers: chain.slice(1, 4).map((c) => c.name), rect: r,
       state: !!svg.closest('[aria-current], [aria-selected=true], [aria-pressed=true], [data-state=active], [data-selected], [class*=active i], [class*=selected i]'),
-      stamp: svg.getAttribute('data-plumb-source') ?? svg.parentElement?.closest('[data-plumb-source]')?.getAttribute('data-plumb-source') ?? null,
+      stamp: stampOf(svg) ?? svg.parentElement?.closest(STAMPED)?.getAttribute(STAMP_ATTRIBUTE) ?? null,
     });
   }
   readEmoji(root, places, refuse, cut);
@@ -363,7 +364,7 @@ function readEmoji(root, places, refuse, cut) {
     places.push({
       el: host, node: n, kind: 'emoji', emoji, key: hint ? hint[2] : key, tableKey: key, via: hint ? 'label' : 'table', form, size: r1(parseFloat(cs.fontSize)), weight: parseInt(cs.fontWeight, 10) || 400,
       label, row: lab?.row ?? host.parentElement, control, nav: !!nav, accessibleName: acc ? (acc.getAttribute('aria-label') || acc.getAttribute('title')) : null,
-      status: !!host.closest(STATUS_HINT) || /^dot:/.test(key), stamp: host.getAttribute('data-plumb-source') ?? host.closest('[data-plumb-source]')?.getAttribute('data-plumb-source') ?? null,
+      status: !!host.closest(STATUS_HINT) || /^dot:/.test(key), stamp: stampOf(host) ?? host.closest(STAMPED)?.getAttribute(STAMP_ATTRIBUTE) ?? null,
       conflict: hint && hint[2] !== key ? `${emoji} next to "${label?.text}" means ${hint[2]}, not ${key}` : null,
     });
   }

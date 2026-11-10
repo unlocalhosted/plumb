@@ -101,6 +101,8 @@ const quiet = (what: string) => (error: unknown) => { if (process.env.PLUMBER_DE
 
 /** The pairs this page gives a reason to take, handed to the page that is read. A pair that fails is a rule that stays quiet. */
 async function takePairs(browser: Browser, url: string, main: Page, timeout: number): Promise<void> {
+  // asked once the page has settled: what it fetches on mount (a list loading its rows) comes after the overlay is ready
+  await settle(main);
   const needs = await ask<{ dark: boolean; scrolled: boolean; held: boolean }>(main, { op: 'needs' });
   const give = async (condition: string, data: unknown) => { if (process.env.PLUMBER_DEBUG) process.stderr.write(`craft: ${condition} pair ${JSON.stringify(data)?.slice(0, 600)}\n`); if (data) await ask(main, { op: 'pair', condition, data }); };
   if (needs.dark) await give('dark', await inside(browser, url, { viewport: desktop, colorScheme: 'dark' }, timeout, async page => {

@@ -445,7 +445,11 @@ export class Craft {
         this.#waiting = true;
         Promise.allSettled(ending.map((a) => a.finished)).then(() => { this.#waiting = false; this.#again?.(); });
       }
-      const out = verdicts(items.map((item) => ({ ...item, marks: [...item.marks, ...(item.checked === false || moving(item.el) ? [] : this.#marksFor(item.el, facts))] })), { facts, theme: this.#theme, rules: this.rules });
+      // a craft mark is placed where the element's JSX opens (the page answer's file, line and column): that is the line
+      // its fix edits, and what makes it a place in your code; an element the server could not place leaves its marks
+      // without a position, and those are notes
+      const placed = (item, marks) => (item.file && Number.isInteger(item.line) && Number.isInteger(item.column) ? marks.map((m) => ({ ...m, file: item.file, line: item.line, column: item.column })) : marks);
+      const out = verdicts(items.map((item) => ({ ...item, marks: [...item.marks, ...(item.checked === false || moving(item.el) ? [] : placed(item, this.#marksFor(item.el, facts)))] })), { facts, theme: this.#theme, rules: this.rules });
       // dedupe: a finding an ancestor already carries, with the same text, is one decision, not two
       const carried = new Map(out.map((i) => [i.el, new Set(i.marks.filter((m) => m.family === 'craft').map((m) => `${m.rule}|${m.text}`))]));
       for (const item of out) {

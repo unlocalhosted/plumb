@@ -1,0 +1,152 @@
+<!doctype html>
+<!-- COMP #23 translucent borders on elevated surfaces (docs/craft/taste-checklist.md). Lumen, a family photo library,
+     Sunday evening: albums and people down the side, a day of photos, three picked, and the Share menu open from the
+     toolbar, lying over the darkest photos of the day (the neon, the low tide). The menu is the subject: its edge is
+     10% black and sinks into the shadow over any photo. The mistake is planted by giving .menu the usual 1px
+     gray-200 border, which glows as a light frame over the dark photos. Slate's tokens. Throwaway. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lumen · Library (comp)</title>
+<style>
+  :root {
+    --ink: #12233d; --ink-muted: #5a6779; --ink-subtle: #6f7c90; --line: rgb(18 35 61 / 0.08); --line-strong: rgb(18 35 61 / 0.14);
+    --accent: #5550d8; --accent-soft: #efeefd; --accent-deep: #3631a6; --board: #e9edf2; --board-dot: #d3d9e2; --sunken: #f3f5f9;
+    --overlay: 0 2px 4px oklch(0.21 0.02 264 / 0.06), 0 8px 18px oklch(0.21 0.02 264 / 0.14), 0 20px 44px oklch(0.21 0.02 264 / 0.18);
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 48px; background: var(--board);
+    background-image: radial-gradient(var(--board-dot) 1px, transparent 1px); background-size: 16px 16px;
+    font: 13px/18px Inter, -apple-system, system-ui, sans-serif; color: var(--ink); -webkit-font-smoothing: antialiased; }
+  .num { font-variant-numeric: tabular-nums; }
+  svg.i { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; }
+  .window { width: 1000px; height: 620px; display: grid; grid-template-columns: 200px 1fr; border-radius: 12px; overflow: hidden; background: #fff;
+    box-shadow: 0 1px 2px rgb(18 35 61 / 0.05), 0 8px 24px rgb(18 35 61 / 0.08), 0 24px 64px rgb(18 35 61 / 0.12), 0 0 0 0.5px rgb(18 35 61 / 0.18); }
+
+  .side { background: #f7f8fa; border-right: 0.5px solid var(--line-strong); padding: 12px 10px; display: flex; flex-direction: column; gap: 1px; }
+  .lights { display: flex; gap: 7px; padding: 4px 6px 16px; } .lights i { width: 11px; height: 11px; border-radius: 50%; background: #d9dde3; }
+  .nav { height: 28px; display: flex; align-items: center; gap: 9px; padding: 0 8px; border-radius: 6px; color: var(--ink-muted); }
+  .nav.on { background: rgb(18 35 61 / 0.06); color: var(--ink); font-weight: 500; }
+  .nav .n { margin-left: auto; font-size: 12px; color: var(--ink-subtle); }
+  .lab { margin: 14px 8px 6px; font-size: 11px; font-weight: 500; color: var(--ink-subtle); }
+  .alb { height: 32px; display: flex; align-items: center; gap: 9px; padding: 0 8px; color: var(--ink-muted); }
+  .alb img { width: 22px; height: 22px; border-radius: 5px; object-fit: cover; box-shadow: inset 0 0 0 0.5px rgb(0 0 0 / 0.1); }
+  .alb .n { margin-left: auto; font-size: 12px; color: var(--ink-subtle); }
+  .people { display: flex; flex-wrap: nowrap; gap: 5px; padding: 2px 8px; }
+  .people img { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; }
+
+  .main { position: relative; display: flex; flex-direction: column; min-width: 0; }
+  .bar { height: 54px; flex: none; display: flex; align-items: center; gap: 10px; padding: 0 16px 0 20px; border-bottom: 0.5px solid var(--line-strong); }
+  .bar h1 { margin: 0; font-size: 15px; font-weight: 600; letter-spacing: -0.01em; }
+  .seg { display: flex; padding: 2px; border-radius: 8px; background: var(--sunken); margin-left: 10px; } .seg span { height: 24px; padding: 0 9px; display: grid; place-items: center; border-radius: 6px; color: var(--ink-muted); font-weight: 500; font-size: 12px; }
+  .seg .on { background: #fff; color: var(--ink); box-shadow: 0 1px 1px rgb(18 35 61 / 0.05), 0 1px 3px rgb(18 35 61 / 0.1); }
+  .bar .sp { flex: 1; }
+  .sel { height: 26px; display: inline-flex; align-items: center; gap: 6px; padding: 0 10px; border-radius: 13px; background: var(--accent-soft); color: var(--accent-deep); font-weight: 600; font-size: 12px; }
+  .tb { width: 32px; height: 32px; border-radius: 8px; display: grid; place-items: center; color: var(--ink-muted); }
+  .tb.on { background: rgb(18 35 61 / 0.08); color: var(--ink); }
+  .tb svg.i { width: 17px; height: 17px; }
+
+  .grid { flex: 1; overflow: hidden; padding: 12px 16px 0; }
+  .day { display: flex; align-items: baseline; gap: 8px; margin: 2px 2px 8px; }
+  .day b { font-size: 14px; font-weight: 600; } .day span { font-size: 12px; color: var(--ink-subtle); }
+  .tiles { display: grid; grid-template-columns: repeat(5, 1fr); gap: 3px; margin-bottom: 14px; }
+  .t { position: relative; aspect-ratio: 1; overflow: hidden; border-radius: 3px; }
+  .t img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .t.wide { grid-column: span 2; aspect-ratio: auto; }
+  .t.on::after { content: ''; position: absolute; inset: 0; box-shadow: inset 0 0 0 3px var(--accent); border-radius: 3px; }
+  .t .ck { position: absolute; right: 7px; bottom: 7px; width: 20px; height: 20px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 1.5px #fff; display: grid; place-items: center; z-index: 1; }
+  .t .ck::after { content: ''; width: 4px; height: 8px; border: solid #fff; border-width: 0 1.6px 1.6px 0; transform: translateY(-1px) rotate(45deg); }
+  .t .vid { position: absolute; left: 7px; bottom: 6px; font-size: 11px; font-weight: 600; color: #fff; text-shadow: 0 1px 2px rgb(0 0 0 / 0.5); }
+
+  /* the subject: the Share menu over the dark photos */
+  .menu { position: absolute; top: 50px; right: 14px; width: 252px; padding: 6px; border-radius: 12px; background: #fff;
+    border: 1px solid rgb(0 0 0 / 0.1); /* see-through: it takes on what's behind it (the mistake: #e5e7eb) */
+    box-shadow: var(--overlay); background-clip: padding-box; z-index: 5; }
+  .to { padding: 6px 6px 10px; }
+  .to small { display: block; font-size: 11px; font-weight: 500; color: var(--ink-subtle); margin-bottom: 8px; }
+  .to .who { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
+  .to .who span { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 11px; color: var(--ink-muted); }
+  .to .who img, .to .who .m { width: 38px; height: 38px; border-radius: 50%; object-fit: cover; }
+  .to .who .m { display: grid; place-items: center; background: var(--sunken); color: var(--ink-muted); }
+  .sep { height: 0.5px; background: var(--line-strong); margin: 4px 2px; }
+  .it { height: 34px; display: flex; align-items: center; gap: 10px; padding: 0 8px; border-radius: 7px; color: var(--ink); }
+  .it svg.i { color: var(--ink-muted); width: 16px; height: 16px; }
+  .it.hi { background: var(--sunken); }
+  .it kbd { margin-left: auto; font: 11.5px Inter, system-ui; color: var(--ink-subtle); }
+  .it .ch { margin-left: auto; color: var(--ink-subtle); }
+  .pointer { position: absolute; z-index: 6; width: 18px; height: 18px; }
+</style>
+</head>
+<body>
+<div class="window">
+  <aside class="side">
+    <div class="lights"><i></i><i></i><i></i></div>
+    <div class="nav on"><svg class="i" viewBox="0 0 16 16"><rect x="2" y="2" width="5" height="5" rx="1"/><rect x="9" y="2" width="5" height="5" rx="1"/><rect x="2" y="9" width="5" height="5" rx="1"/><rect x="9" y="9" width="5" height="5" rx="1"/></svg>Library<span class="n num">2,418</span></div>
+    <div class="nav"><svg class="i" viewBox="0 0 16 16"><path d="M8 13.5S2.5 10 2.5 6.2A2.9 2.9 0 0 1 8 4.6a2.9 2.9 0 0 1 5.5 1.6C13.5 10 8 13.5 8 13.5z"/></svg>Favourites<span class="n num">86</span></div>
+    <div class="nav"><svg class="i" viewBox="0 0 16 16"><circle cx="8" cy="9" r="4.5"/><path d="M8 7v2.2l1.4.9M6 2.5h4"/></svg>Memories</div>
+    <div class="nav"><svg class="i" viewBox="0 0 16 16"><path d="M3 4.5h10M6.5 4.5V3h3v1.5M4.5 4.5l.7 9h5.6l.7-9"/></svg>Recently deleted<span class="n num">12</span></div>
+    <div class="lab">Albums</div>
+    <div class="alb"><img src="../../../../overlay/showcase/src/media/peak.jpg" alt="">Banff, October<span class="n num">148</span></div>
+    <div class="alb"><img src="../../../../overlay/showcase/src/media/afterglow.jpg" alt="">Lisbon nights<span class="n num">37</span></div>
+    <div class="alb"><img src="../../../../overlay/showcase/src/media/ceramic.jpg" alt="">Studio pieces<span class="n num">64</span></div>
+    <div class="alb"><img src="../../../../overlay/showcase/src/media/paper-cities.jpg" alt="">Buildings<span class="n num">21</span></div>
+    <div class="lab">People</div>
+    <div class="people"><img src="../../../../overlay/showcase/src/media/people/person-03.jpg" alt=""><img src="../../../../overlay/showcase/src/media/people/person-08.jpg" alt=""><img src="../../../../overlay/showcase/src/media/people/person-01.jpg" alt=""><img src="../../../../overlay/showcase/src/media/people/person-04.jpg" alt=""><img src="../../../../overlay/showcase/src/media/people/person-09.jpg" alt=""></div>
+  </aside>
+
+  <main class="main">
+    <div class="bar">
+      <h1>Library</h1>
+      <span class="seg"><span>Years</span><span>Months</span><span class="on">Days</span></span>
+      <span class="sp"></span>
+      <span class="sel num">3 selected</span>
+      <span class="tb"><svg class="i" viewBox="0 0 16 16"><path d="M8 13.5S2.5 10 2.5 6.2A2.9 2.9 0 0 1 8 4.6a2.9 2.9 0 0 1 5.5 1.6C13.5 10 8 13.5 8 13.5z"/></svg></span>
+      <span class="tb"><svg class="i" viewBox="0 0 16 16"><path d="M3 4.5h10M6.5 4.5V3h3v1.5M4.5 4.5l.7 9h5.6l.7-9"/></svg></span>
+      <span class="tb on"><svg class="i" viewBox="0 0 16 16"><path d="M8 2v8M5 5l3-3 3 3M3 9v4h10V9"/></svg></span>
+    </div>
+
+    <div class="grid">
+      <div class="day"><b>Sunday, 2 November</b><span>Lisbon · 11 photos</span></div>
+      <div class="tiles">
+        <span class="t on"><img src="../../../../overlay/showcase/src/media/low-tide.jpg" alt="" style="object-position:30% 50%"><i class="ck"></i></span>
+        <span class="t"><img src="../../../../overlay/showcase/src/media/people/person-05.jpg" alt=""></span>
+        <span class="t on"><img src="../../../../overlay/showcase/src/media/paper-cities.jpg" alt=""><i class="ck"></i></span>
+        <span class="t"><img src="../../../../overlay/showcase/src/media/afterglow.jpg" alt="" style="object-position:20% 40%"></span>
+        <span class="t"><img src="../../../../overlay/showcase/src/media/low-tide.jpg" alt="" style="object-position:80% 70%; transform: scale(1.6)"></span>
+        <span class="t"><img src="../../../../overlay/showcase/src/media/ceramic.jpg" alt=""></span>
+        <span class="t"><img src="../../../../overlay/showcase/src/media/people/person-02.jpg" alt=""></span>
+        <span class="t on"><img src="../../../../overlay/showcase/src/media/people/person-07.jpg" alt=""><i class="ck"></i></span>
+        <span class="t"><img src="../../../../overlay/showcase/src/media/afterglow.jpg" alt="" style="object-position:90% 80%; transform: scale(1.8)"><span class="vid num">0:14</span></span>
+        <span class="t"><img src="../../../../overlay/showcase/src/media/people/person-09.jpg" alt=""></span>
+      </div>
+      <div class="day"><b>Saturday, 1 November</b><span>Sintra · 24 photos</span></div>
+      <div class="tiles">
+        <span class="t"><img src="../../../../overlay/showcase/src/media/valley.jpg" alt=""></span>
+        <span class="t"><img src="../../../../overlay/showcase/src/media/lake.jpg" alt=""></span>
+        <span class="t"><img src="../../../../overlay/showcase/src/media/people/person-10.jpg" alt=""></span>
+        <span class="t"><img src="../../../../overlay/showcase/src/media/peak.jpg" alt=""></span>
+        <span class="t"><img src="../../../../overlay/showcase/src/media/people/person-06.jpg" alt=""></span>
+      </div>
+    </div>
+
+    <div class="menu" role="menu">
+      <div class="to"><small>Send to</small><span class="who">
+        <span><img src="../../../../overlay/showcase/src/media/people/person-03.jpg" alt="">Ama</span>
+        <span><img src="../../../../overlay/showcase/src/media/people/person-08.jpg" alt="">Ravi</span>
+        <span><img src="../../../../overlay/showcase/src/media/people/person-01.jpg" alt="">Anika</span>
+        <span><span class="m"><svg class="i" viewBox="0 0 16 16"><circle cx="8" cy="8" r="0.6"/><circle cx="4" cy="8" r="0.6"/><circle cx="12" cy="8" r="0.6"/></svg></span>More</span>
+      </span></div>
+      <div class="sep"></div>
+      <div class="it hi"><svg class="i" viewBox="0 0 16 16"><path d="M6.5 9.5 9.5 6.5M7 4.5l1.2-1.2a2.5 2.5 0 0 1 3.5 3.5L10.5 8M9 11.5l-1.2 1.2a2.5 2.5 0 0 1-3.5-3.5L5.5 8"/></svg>Copy link<kbd>⌘L</kbd></div>
+      <div class="it"><svg class="i" viewBox="0 0 16 16"><path d="M8 2.5v8M5 7.5l3 3 3-3M3 13h10"/></svg>Download 3 photos<kbd>⌘D</kbd></div>
+      <div class="it"><svg class="i" viewBox="0 0 16 16"><rect x="2.5" y="3.5" width="11" height="9" rx="1.5"/><path d="M8 6v4M6 8h4"/></svg>Add to album<span class="ch">›</span></div>
+      <div class="it"><svg class="i" viewBox="0 0 16 16"><path d="M9 2.5h4.5V7M13.5 2.5 8 8M11.5 9.5v3a1 1 0 0 1-1 1h-7a1 1 0 0 1-1-1v-7a1 1 0 0 1 1-1h3"/></svg>Open in editor</div>
+      <div class="sep"></div>
+      <div class="it"><svg class="i" viewBox="0 0 16 16"><circle cx="6" cy="6" r="2.5"/><path d="M2 13c.6-2.3 2.2-3.5 4-3.5s3.4 1.2 4 3.5M11 5.5v4M9 7.5h4"/></svg>New shared album</div>
+    </div>
+    <svg class="pointer" style="left:612px; top:188px" viewBox="0 0 18 18"><path d="M3 2v12.5l3.4-3.2 2.3 5 2-.9-2.2-4.9H13z" fill="#12233d" stroke="#fff" stroke-width="1.2" stroke-linejoin="round"/></svg>
+  </main>
+</div>
+</body>
+</html>

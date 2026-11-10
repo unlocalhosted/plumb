@@ -1,7 +1,7 @@
 // Quarry, the craft showcase (docs/craft/showcase.md): its own project, so React Plumber judges it by its own theme.
 import { execFile } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import tailwindcss from '@tailwindcss/vite';
@@ -27,9 +27,12 @@ const repo = resolve(import.meta.dirname, '../..');
 const cacheDir = join(import.meta.dirname, '.probe-cache');
 const ORIGIN = 'http://127.0.0.1:4312';
 let queue = Promise.resolve();
-// what a recording depends on: the example's source, and plumber itself (a rebuilt probe records differently)
-const sourceHash = () => {
-  const h = createHash('sha1').update(readFileSync(join(import.meta.dirname, 'src/principles/examples.jsx')));
+// what a recording depends on: the example's source (its own screen file, principles/screens/NN-*.jsx, or the old
+// examples), and plumber itself (a rebuilt probe records differently)
+const sourceHash = (n) => {
+  const screens = join(import.meta.dirname, 'src/principles/screens');
+  const own = existsSync(screens) ? readdirSync(screens).find((f) => parseInt(f, 10) === Number(n)) : null;
+  const h = createHash('sha1').update(readFileSync(own ? join(screens, own) : join(import.meta.dirname, 'src/principles/examples.jsx')));
   try { h.update(readFileSync(join(import.meta.dirname, '../../dist/cli.js'))); } catch {}
   return h.digest('hex').slice(0, 12);
 };
@@ -46,7 +49,7 @@ function runCli(n, side, dir) {
 }
 
 async function probe(n, side) {
-  const key = `${n}-${side}-${sourceHash()}`;
+  const key = `${n}-${side}-${sourceHash(n)}`;
   const dir = join(cacheDir, key);
   const answer = join(dir, 'answer.json');
   if (!existsSync(answer)) {

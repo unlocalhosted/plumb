@@ -117,18 +117,41 @@ test('z-index war (#74): a 999 in the flow is marked; a 10 is not', { timeout: 1
   assert.deepEqual(errors, []);
 });
 
-test('Hairline (#38): a 1px divider is marked on a 2× screen, with a class that halves it, and not on a 1× screen', { timeout: 120000 }, async (t) => {
+test('Hairline (#38): 1px dividers are marked on a 2× screen and not on a 1× one; each fix draws one device pixel', { timeout: 120000 }, async (t) => {
   const launched = await browser(t); if (!launched) return;
   const { url } = await fixture(t, PAGE);
   const one = await open(t, launched, url, 1);
   assert.equal((await marksOf(one.page, 'hairline')).length, 0, 'nothing at 1×');
   const two = await open(t, launched, url, 2);
   const marks = await marksOf(two.page, 'hairline');
-  assert.equal(marks.length, 1, `marked at 2×: ${JSON.stringify(marks)}`);
-  assert.ok(await within(two.page, 'rule-bad', marks[0]));
-  // a fix you can take: the 1px rule drawn half as tall, one device pixel
-  const fix = await two.page.evaluate(() => window.__plumb.overlay.blueprintReader.items.find((i) => i.el.id === 'rule-bad')?.marks.find((m) => m.rule === 'craft/hairline')?.craft.suggest);
-  assert.deepEqual([fix?.kind, fix?.from, fix?.to], ['class', 'h-px', 'h-[0.5px]'], JSON.stringify(fix));
+  // the dashed tear line isn't marked: a shadow can't be dashed
+  assert.equal(marks.length, 2, `marked at 2×: ${JSON.stringify(marks)}`);
+  assert.ok(await within(two.page, 'rule-bad', marks[0]) || await within(two.page, 'rule-bad', marks[1]), 'the 1px rule');
+  assert.ok(await within(two.page, 'border-bad', marks[0]) || await within(two.page, 'border-bad', marks[1]), 'the border-b divider');
+  const fixOf = (id) => two.page.evaluate((id) => window.__plumb.overlay.blueprintReader.items.find((i) => i.el.id === id)?.marks.find((m) => m.rule === 'craft/hairline')?.craft.suggest, id);
+  // a 1px rule is a box: half as tall
+  const rule = await fixOf('rule-bad');
+  assert.deepEqual([rule?.kind, rule?.from, rule?.to], ['class', 'h-px', 'h-[0.5px]'], JSON.stringify(rule));
+  // a border can't be: Chrome draws every border at least one CSS pixel, so border-b-[0.5px] would still be two device
+  // pixels. The fix is a half-pixel inset shadow in the border's colour
+  const border = await fixOf('border-bad');
+  assert.equal(border?.from, 'border-b', JSON.stringify(border));
+  assert.match(border?.to ?? '', /^border-b-0 shadow-\[inset_0_-0\.5px_0_rgba?\(/, JSON.stringify(border));
+  // taken as the stage takes it, the line on screen is one device pixel
+  const at = await two.page.evaluate(async (sets) => {
+    const el = document.getElementById('border-bad');
+    for (const [k, v] of Object.entries(sets)) el.style.setProperty(k.replace(/[A-Z]/g, (c) => '-' + c.toLowerCase()), v, 'important');
+    await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+    const r = el.getBoundingClientRect(); return { x: r.left + 20, y: r.bottom };
+  }, border.sets);
+  const shot = await two.page.screenshot({ clip: { x: at.x, y: at.y - 3, width: 4, height: 6 } });
+  const dark = await two.page.evaluate(async (b64) => {
+    const img = new Image(); img.src = `data:image/png;base64,${b64}`; await img.decode();
+    const c = Object.assign(document.createElement('canvas'), { width: img.width, height: img.height }).getContext('2d');
+    c.drawImage(img, 0, 0);
+    return [...Array(img.height).keys()].filter((y) => c.getImageData(1, y, 1, 1).data[0] < 235).length;
+  }, shot.toString('base64'));
+  assert.equal(dark, 1, `device pixel rows drawn: ${dark}`);
   assert.deepEqual([...one.errors, ...two.errors], []);
 });
 

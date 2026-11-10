@@ -26,6 +26,7 @@ import { post, request } from './api.js';
 import { locate } from './locate.js';
 import { choicesHtml, bindChoices, toPx, fmtPx, esc, code, VALUED } from './choices.js';
 import { glyph } from './glyphs.js';
+import { placeOf } from './stamp.js';
 
 const LIFT = [250, 600, 1200, 2400]; // ms to wait for the dev server to reload a written element's classes
 const HOLD = 6000; // ms a "wrote" line stays on the dock
@@ -229,7 +230,7 @@ export class Fixer {
       <div class="top">${glyph((m ?? o.mark).glyph, tone || 'off')}<span class="title">${code(title)}</span>
         <span class="ledger ${esc((m ?? o.mark).ledger)}">${LEDGER[(m ?? o.mark).ledger] ?? esc((m ?? o.mark).ledger)}</span>
         <button class="close" aria-label="Close the chooser">${ICON.close}</button></div>
-      ${o.group ? `<div class="grp"><span>Fixes <b>${plural(o.group.length, 'place')}</b> · ${plural(new Set(o.group.map(g => g.el.getAttribute('data-plumb-source')?.split('#')[0] ?? g.id)).size, 'source line')}</span></div>` : ''}
+      ${o.group ? `<div class="grp"><span>Fixes <b>${plural(o.group.length, 'place')}</b> · ${plural(new Set(o.group.map(g => placeOf(g.el) ?? g.id)).size, 'source line')}</span></div>` : ''}
       <div class="read">${m ? `${this.#change(m, o.el)}<div class="edit">${this.#hint(m)}</div>${choicesHtml(m, { el: o.el, scale: this.#scale })}${m.because ? `<div class="because">${esc(m.because)}</div>` : ''}${(m.also ?? []).map((x) => `<div class="also">${x.composed ? 'with' : 'also'}: ${esc(x.what)}</div>`).join('')}`
         : `<p class="empty">${esc(o.message ?? 'Reading…')}</p>`}</div>
       <div class="foot">

@@ -1,0 +1,94 @@
+<!doctype html>
+<!-- COMP #77, the one component (owner 2026-11-05: no app around it, rich inside). Spool, a design team's hub: the
+     activity card, what happened across the team's tools, each person with the tool's mark on their face. Slate's
+     tokens (overlay/showcase/src/theme.css). Hands-on: drawn the frame the rows land on the broken side. Refresh showed a
+     generic skeleton (three thin bars, 3 × 32px), the reply held 0.9s, and four rows of 56px landed: the list grew
+     128px and View all activity dropped out from under the pointer that was reaching for it. plumber's marks: the box
+     the skeleton promised (dashed), what it grew by (hatch, tag), where the link was (outline), where the pointer is. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spool activity (comp)</title>
+<style>
+  :root {
+    --surface: #fff; --sunken: #f3f5f9; --ink: #12233d; --ink-muted: #5a6779; --ink-subtle: #6f7c90;
+    --line: rgb(18 35 61 / 0.11); --accent: #5550d8; --accent-soft: #efeefd; --accent-deep: #3631a6;
+    --positive: #0f6f58; --positive-soft: #e5f4ef; --board: #eef1f5; --board-dot: #d6dce4;
+    --shadow-card: 0 0 0 1px rgb(18 35 61 / 0.11), 0 1px 1px rgb(18 35 61 / 0.03), 0 2px 6px rgb(18 35 61 / 0.04);
+    --hl: 0.5px;
+    --pl-off: #bf3a1e; --pl-sky: #2a7fd0; --pl-halo: rgb(255 255 255 / 0.9); --pl-mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, monospace;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 48px; background: var(--board);
+    background-image: radial-gradient(var(--board-dot) 1px, transparent 1px); background-size: 16px 16px;
+    font: 14px/20px Inter, -apple-system, system-ui, sans-serif; color: var(--ink); -webkit-font-smoothing: antialiased; }
+  .num { font-variant-numeric: tabular-nums; }
+  .stage { position: relative; width: 640px; }
+  .card { width: 440px; border-radius: 10px; background: var(--surface); box-shadow: var(--shadow-card); }
+  header { display: flex; align-items: center; gap: 10px; padding: 16px 20px 10px; }
+  header .t { font-size: 17px; line-height: 24px; font-weight: 500; letter-spacing: -0.01em; }
+  .seg { display: flex; padding: 2px; border-radius: 6px; background: var(--sunken); font-size: 12px; color: var(--ink-muted); }
+  .seg span { height: 24px; padding: 0 8px; display: grid; place-items: center; border-radius: 5px; }
+  .seg .on { background: var(--surface); color: var(--ink); font-weight: 500; box-shadow: 0 1px 1px rgb(18 35 61 / 0.04), 0 1px 3px rgb(18 35 61 / 0.08); }
+  .refresh { margin-left: auto; height: 28px; padding: 0 10px 0 8px; display: inline-flex; align-items: center; gap: 6px; border-radius: 6px; font-size: 13px; font-weight: 500; color: var(--ink-muted); box-shadow: inset 0 0 0 1px var(--line); }
+  ul { list-style: none; margin: 0; padding: 4px 0; }
+  li { display: flex; align-items: center; gap: 12px; height: 56px; padding: 0 20px; }
+  .face { position: relative; width: 32px; height: 32px; flex: none; }
+  .face img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; outline: 1px solid rgb(0 0 0 / 0.08); outline-offset: -1px; }
+  .face i { position: absolute; right: -4px; bottom: -4px; width: 17px; height: 17px; border-radius: 5px; box-shadow: 0 0 0 2px var(--surface); background: var(--b); display: grid; place-items: center; }
+  .face i::before { content: ""; width: 8.5px; height: 8.5px; background: #fff; -webkit-mask: var(--m) center / contain no-repeat; mask: var(--m) center / contain no-repeat; }
+  .what { min-width: 0; flex: 1; }
+  .what .a { font-size: 13.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--ink-muted); }
+  .what .a b { font-weight: 500; color: var(--ink); }
+  .what .w { font-size: 12px; color: var(--ink-subtle); }
+  .thumb { width: 48px; height: 32px; flex: none; border-radius: 4px; object-fit: cover; outline: 1px solid rgb(0 0 0 / 0.08); outline-offset: -1px; }
+  .pr { flex: none; height: 22px; padding: 0 7px; display: inline-flex; align-items: center; gap: 5px; border-radius: 4px; background: var(--positive-soft); color: var(--positive); font-size: 12px; font-weight: 500; }
+  .new { width: 6px; height: 6px; flex: none; border-radius: 50%; background: var(--accent); }
+  footer { padding: 12px 20px 14px; box-shadow: inset 0 var(--hl) 0 var(--line); display: flex; align-items: center; }
+  footer a { font-size: 13px; font-weight: 500; color: var(--accent); text-decoration: none; }
+  footer span { margin-left: auto; font-size: 12px; color: var(--ink-subtle); }
+
+  /* plumber's marks */
+  .ghost { position: absolute; border: 1px dashed var(--pl-off); border-radius: 4px; opacity: 0.6; }
+  .hatch { position: absolute; opacity: 0.55; background-image: repeating-linear-gradient(45deg, var(--pl-off) 0 1px, transparent 1px 4px); }
+  .ol { position: absolute; border-radius: 4px; box-shadow: inset 0 0 0 1px var(--pl-off); opacity: 0.7; }
+  .ring { position: absolute; width: 10px; height: 10px; margin: -5px 0 0 -5px; border-radius: 50%; box-shadow: 0 0 0 1.5px var(--pl-sky), 0 0 0 3px var(--pl-halo); }
+  .tag { position: absolute; transform: translateY(-50%); display: flex; align-items: center; height: 20px; padding: 0 8px; border-radius: 6px; font: 500 11px/1 var(--pl-mono); color: #fff; background: var(--pl-off); box-shadow: 0 0 0 1px var(--pl-halo); white-space: nowrap; }
+</style>
+</head>
+<body>
+<div class="stage">
+  <article class="card">
+    <header>
+      <span class="t">Activity</span>
+      <span class="seg"><span class="on">Everyone</span><span>Mentions</span></span>
+      <span class="refresh"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M13.2 6.2A5.5 5.5 0 1 0 13.5 9"/><path d="M13.5 2.8v3.6H9.9"/></svg>Refresh</span>
+    </header>
+    <!-- what landed: four rows of 56px, where the skeleton promised three of 32px -->
+    <ul aria-busy="false">
+      <li><span class="face"><img src="../../../../overlay/showcase/src/media/people/person-01.jpg" alt=""><i style="--b:#f24e1e;--m:url(https://cdn.jsdelivr.net/npm/simple-icons@13.21.0/icons/figma.svg)"></i></span>
+        <span class="what"><div class="a"><b>Ines Duarte</b> commented on <b>Checkout, v3</b></div><div class="w">Figma · 2 min ago</div></span>
+        <img class="thumb" src="../../../../overlay/showcase/src/media/fig-thumb.jpg" alt=""><span class="new"></span></li>
+      <li><span class="face"><img src="../../../../overlay/showcase/src/media/people/person-06.jpg" alt=""><i style="--b:#181717;--m:url(https://cdn.jsdelivr.net/npm/simple-icons@13.21.0/icons/github.svg)"></i></span>
+        <span class="what"><div class="a"><b>Arlo Kim</b> merged <b>Date picker keyboard support</b></div><div class="w">GitHub · 18 min ago</div></span>
+        <span class="pr num">#611</span></li>
+      <li><span class="face"><img src="../../../../overlay/showcase/src/media/people/person-09.jpg" alt=""><i style="--b:#5e6ad2;--m:url(https://cdn.jsdelivr.net/npm/simple-icons@13.21.0/icons/linear.svg)"></i></span>
+        <span class="what"><div class="a"><b>Tomi Adeyemi</b> moved <b>Empty states audit</b> to Review</div><div class="w">Linear · 1 h ago</div></span></li>
+      <li><span class="face"><img src="../../../../overlay/showcase/src/media/people/person-04.jpg" alt=""><i style="--b:#000;--m:url(https://cdn.jsdelivr.net/npm/simple-icons@13.21.0/icons/notion.svg)"></i></span>
+        <span class="what"><div class="a"><b>Walt Greer</b> edited <b>Spring launch brief</b></div><div class="w">Notion · 3 h ago</div></span></li>
+    </ul>
+    <footer><a href="#activity">View all activity</a><span class="num">36 this week</span></footer>
+  </article>
+
+  <!-- plumber's read. The list starts at y 50; the skeleton promised 104px (to 154), 232px landed (to 282).
+       The link sat at y 166 under the skeleton, and the pointer was on it. -->
+  <!-- the growth is hatched in a bracket beside the card, so no mark crosses the rows' words -->
+  <span class="ghost" style="left:0;top:50px;width:440px;height:104px"></span>
+  <span class="hatch" style="left:448px;top:154px;width:12px;height:128px;border-radius:2px"></span>
+  <span class="tag" style="left:472px;top:218px">+128px · 3 → 4 rows</span>
+  <span class="ol" style="left:16px;top:163px;width:124px;height:26px"></span>
+  <span class="ring" style="left:78px;top:176px"></span>
+</div>
+</body>
+</html>

@@ -85,8 +85,12 @@ test('state reads a project check refuses: two Tailwind entries and a workspace 
   const state = run(['state', '--root', fixture('two-entries'), '--json'], cache);
   assert.equal(state.status, 0, state.stderr);
   assert.ok(JSON.parse(state.stdout).flags.includes('split'));
+  // 0.4.0 (docs/briefs/project-detection-design.md, R4): a folder named with --root is the person's choice, and a
+  // refusal may not override it back. Naming the workspace root runs the check across it; the "pick one app"
+  // refusal is for a bare run inside a workspace (e2e/cli-setup, e2e/project-layouts)
   const workspace = run(['--root', fixture('onboard-monorepo')], cache);
-  assert.equal(workspace.status, 2, 'check still asks for one app');
+  assert.ok(workspace.status === 0 || workspace.status === 1, workspace.stderr);
+  assert.doesNotMatch(workspace.stderr, /This is a workspace/);
   const listed = run(['state', '--root', fixture('onboard-monorepo'), '--json'], cache);
   assert.equal(listed.status, 0, listed.stderr);
   assert.deepEqual(JSON.parse(listed.stdout).numbers.apps.map(app => app.path), ['apps/admin', 'apps/web', 'packages/ui']);

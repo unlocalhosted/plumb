@@ -17,6 +17,7 @@
  * ───────────────────────────────────────────────────────── */
 
 import { lawsOf } from './laws.js';
+import { placeOf } from './stamp.js';
 
 const px = (v) => { const n = parseFloat(v); return Number.isFinite(n) ? Math.round(n * 100) / 100 : 0; };
 const letters = (s) => /[\p{L}\p{N}]/u.test(s ?? '');
@@ -49,8 +50,7 @@ const key = (b) => `${b.size}|${b.weight}|${b.caps ? 'caps' : ''}`;
 const inRun = (el) => getComputedStyle(el).display === 'inline' && letters(ownText(el.parentElement ?? el));
 const texts = (container) => [...container.querySelectorAll('*')].filter((el) => !el.closest('plumb-overlay') && letters(ownText(el)) && getComputedStyle(el).display !== 'none' && !inRun(el));
 // the same kind of thing: drawn by the same line of code (its stamp), else the same tag wearing the same classes
-const stampOf = (el) => el.getAttribute('data-plumb-source')?.split('#')[0] ?? null;
-const sameKind = (a, b) => { const sa = stampOf(a), sb = stampOf(b); return sa && sb ? sa === sb : a.localName === b.localName && (a.getAttribute('class') ?? '') === (b.getAttribute('class') ?? ''); };
+const sameKind = (a, b) => { const sa = placeOf(a), sb = placeOf(b); return sa && sb ? sa === sb : a.localName === b.localName && (a.getAttribute('class') ?? '') === (b.getAttribute('class') ?? ''); };
 // a shape, not a corner: a circle or a pill (rounded-full reads as a huge radius); never "fixed"
 const shaped = (el, r) => { const b = el.getBoundingClientRect(); return r >= Math.min(b.width, b.height) / 2 - 0.5; };
 // a control people press or type into: its corner is part of what it is, never flattened

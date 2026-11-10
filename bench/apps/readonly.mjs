@@ -4,7 +4,7 @@ import { syncBuiltinESMExports } from 'node:module';
 import { dirname, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 const repo = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
-const workspace = dirname(repo);
+const workspace = process.env.PLUMB_WORKSPACE ?? dirname(repo);
 // Installed dependencies and original repositories are read-only, even through named fs imports.
 // Native Vite/Cloudflare outputs live physically in the disposable copy so native loaders can read them.
 // This is an accidental-write guard, not a security boundary for third-party native code.

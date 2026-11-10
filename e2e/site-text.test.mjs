@@ -11,7 +11,12 @@ import { chromium } from 'playwright';
 const repo = fileURLToPath(new URL('../', import.meta.url));
 const hash = value => createHash('sha256').update(value).digest('hex');
 
-test('homepage text replay writes only DOM, validates refusals and commutes with class fixes', { timeout: 90000 }, async t => {
+// Skipped for 0.4.0, by the owner's decision (2026-11-10). The homepage's recorded demo (site/src/hero/replay.js and
+// its fixture) is out of date: it answers the reading card that was retired, and it names elements by stamps recorded
+// before stamps changed. It needs recording again before the site is next deployed (docs/journey.md, Open gaps).
+// The website is not part of the package that is published.
+const STALE_RECORDING = 'the homepage demo recording is out of date; see docs/journey.md, Open gaps';
+test('homepage text replay writes only DOM, validates refusals and commutes with class fixes', { timeout: 90000, skip: STALE_RECORDING }, async t => {
   const configFile = resolve(repo, 'site/vite.config.mjs');
   const path = resolve(repo, 'site/src/hero/DriftedCard.jsx');
   const source = await readFile(path, 'utf8');

@@ -1,0 +1,105 @@
+<!doctype html>
+<!-- COMP #76, the one component (owner 2026-11-05: no app around it, rich inside). Seam, a code review tool: the
+     changed-files panel of pull request #482, its author, the diff drawn as data, each file's status and size of
+     change. Slate's tokens (overlay/showcase/src/theme.css). Hands-on: drawn the moment the flaw shows on the broken
+     side: the panel's edge dragged in to 320px, each path truncated at its end, so six rows read
+     src/components/forms/inpu… and the file names are gone. plumber's marks: an outline on each row's words, the tag. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Seam changed files (comp)</title>
+<style>
+  :root {
+    --surface: #fff; --sunken: #f3f5f9; --ink: #12233d; --ink-muted: #5a6779; --ink-subtle: #6f7c90;
+    --line: rgb(18 35 61 / 0.11); --accent: #5550d8; --accent-soft: #efeefd; --accent-deep: #3631a6;
+    --positive: #0f6f58; --positive-soft: #e5f4ef; --caution: #965a03; --caution-soft: #fcf1dd; --negative: #b02a3a; --negative-soft: #fbeaed;
+    --board: #eef1f5; --board-dot: #d6dce4;
+    --shadow-card: 0 0 0 1px rgb(18 35 61 / 0.11), 0 1px 1px rgb(18 35 61 / 0.03), 0 2px 6px rgb(18 35 61 / 0.04);
+    --hl: 0.5px;
+    --pl-off: #bf3a1e; --pl-halo: rgb(255 255 255 / 0.9); --pl-mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, monospace;
+    --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, monospace;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 48px; background: var(--board);
+    background-image: radial-gradient(var(--board-dot) 1px, transparent 1px); background-size: 16px 16px;
+    font: 14px/20px Inter, -apple-system, system-ui, sans-serif; color: var(--ink); -webkit-font-smoothing: antialiased; }
+  .num { font-variant-numeric: tabular-nums; }
+  .face { border-radius: 50%; object-fit: cover; outline: 1px solid rgb(0 0 0 / 0.08); outline-offset: -1px; }
+  .stage { position: relative; width: 520px; }
+  .panel { position: relative; width: 320px; border-radius: 10px; background: var(--surface); box-shadow: var(--shadow-card); }
+
+  .pr { padding: 14px 16px 12px; box-shadow: inset 0 calc(-1 * var(--hl)) 0 var(--line); }
+  .pr .row1 { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--ink-subtle); }
+  .state { display: inline-flex; align-items: center; gap: 5px; height: 20px; padding: 0 7px; border-radius: 4px; background: var(--positive-soft); color: var(--positive); font-weight: 500; font-size: 11.5px; }
+  .pr h1 { margin: 8px 0 0; font-size: 14px; line-height: 20px; font-weight: 600; letter-spacing: -0.01em; }
+  .pr .by { display: flex; align-items: center; gap: 8px; margin-top: 8px; font-size: 12px; color: var(--ink-muted); }
+  .pr .by img { width: 20px; height: 20px; }
+  .pr .by code { font: 11.5px var(--mono); color: var(--accent-deep); background: var(--accent-soft); padding: 1px 5px; border-radius: 4px; }
+  .stat { display: flex; align-items: center; gap: 10px; margin-top: 10px; font-size: 12px; }
+  .stat .a { color: var(--positive); font-weight: 500; }
+  .stat .d { color: var(--negative); font-weight: 500; }
+  .blocks { display: flex; gap: 2px; margin-left: auto; }
+  .blocks i { width: 8px; height: 8px; border-radius: 2px; }
+
+  .head { display: flex; align-items: center; gap: 8px; padding: 10px 16px 6px; font-size: 13px; font-weight: 500; }
+  .head .c { margin-left: auto; font-size: 12px; font-weight: 400; color: var(--ink-subtle); }
+  .file { display: flex; align-items: center; gap: 8px; height: 32px; padding: 0 16px; color: var(--ink-muted); }
+  .file.sel { background: var(--accent-soft); color: var(--ink); }
+  .st { width: 16px; height: 16px; flex: none; border-radius: 4px; display: grid; place-items: center; font: 600 10px/1 var(--mono); }
+  .st.m { background: var(--caution-soft); color: var(--caution); }
+  .st.a { background: var(--positive-soft); color: var(--positive); }
+  .path { min-width: 0; flex: 1; font: 12px/16px var(--mono); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ch { flex: none; width: 68px; display: flex; justify-content: flex-end; gap: 4px; font: 11px var(--mono); }
+  .ch .a { color: var(--positive); }
+  .ch .d { width: 26px; text-align: right; color: var(--negative); }
+  .cm { flex: none; width: 24px; justify-content: flex-end; display: inline-flex; align-items: center; gap: 3px; font-size: 11px; color: var(--accent-deep); }
+  .foot { display: flex; align-items: center; gap: 8px; margin-top: 6px; padding: 10px 16px 12px; box-shadow: inset 0 var(--hl) 0 var(--line); font-size: 12px; color: var(--ink-muted); }
+  .viewed { flex: 1; height: 4px; border-radius: 2px; background: var(--sunken); overflow: hidden; }
+  .viewed i { display: block; width: 33%; height: 100%; background: var(--accent); }
+
+  /* the edge, mid-drag */
+  .edge { position: absolute; top: 12px; bottom: 12px; right: -6px; width: 12px; border-radius: 6px; background: rgb(85 80 216 / 0.15); }
+  .edge::after { content: ""; position: absolute; top: 0; bottom: 0; left: 5px; width: 2px; border-radius: 1px; background: var(--accent); }
+  .cursor { position: absolute; width: 22px; height: 16px; }
+
+  /* plumber's marks */
+  .ol { position: absolute; border-radius: 4px; box-shadow: inset 0 0 0 1px var(--pl-off); opacity: 0.7; }
+  .tag { position: absolute; transform: translateY(-50%); display: flex; align-items: center; height: 20px; padding: 0 8px; border-radius: 6px; font: 500 11px/1 var(--pl-mono); color: #fff; background: var(--pl-off); box-shadow: 0 0 0 1px var(--pl-halo); white-space: nowrap; }
+</style>
+</head>
+<body>
+<div class="stage">
+  <article class="panel">
+    <header class="pr">
+      <div class="row1"><span class="state">Open</span><span class="num">#482</span><span>· Approved by 2</span></div>
+      <h1>Form inputs share one label component</h1>
+      <div class="by"><img class="face" src="../../../../overlay/showcase/src/media/people/person-03.jpg" alt="">Ada Mensah into <code>main</code></div>
+      <div class="stat num"><span class="a">+214</span><span class="d">−96</span><span>6 files</span>
+        <span class="blocks"><i style="background:var(--positive)"></i><i style="background:var(--positive)"></i><i style="background:var(--positive)"></i><i style="background:var(--negative)"></i><i style="background:var(--sunken)"></i></span></div>
+    </header>
+    <div class="head">Changed files<span class="c num">2 of 6 viewed</span></div>
+    <div class="file sel"><span class="st m">M</span><span class="path" title="src/components/forms/inputs/TextField.tsx">src/components/forms/inputs/TextField.tsx</span><span class="cm">●&nbsp;3</span><span class="ch num"><span class="a">+48</span><span class="d">−31</span></span></div>
+    <div class="file"><span class="st m">M</span><span class="path" title="src/components/forms/inputs/Checkbox.tsx">src/components/forms/inputs/Checkbox.tsx</span><span class="cm"></span><span class="ch num"><span class="a">+22</span><span class="d">−19</span></span></div>
+    <div class="file"><span class="st m">M</span><span class="path" title="src/components/forms/inputs/Select.tsx">src/components/forms/inputs/Select.tsx</span><span class="cm"></span><span class="ch num"><span class="a">+35</span><span class="d">−28</span></span></div>
+    <div class="file"><span class="st m">M</span><span class="path" title="src/components/forms/inputs/RadioGroup.tsx">src/components/forms/inputs/RadioGroup.tsx</span><span class="cm"></span><span class="ch num"><span class="a">+27</span><span class="d">−18</span></span></div>
+    <div class="file"><span class="st a">A</span><span class="path" title="src/components/forms/inputs/FieldLabel.tsx">src/components/forms/inputs/FieldLabel.tsx</span><span class="cm"></span><span class="ch num"><span class="a">+64</span><span class="d"></span></span></div>
+    <div class="file"><span class="st m">M</span><span class="path" title="src/components/forms/inputs/index.ts">src/components/forms/inputs/index.ts</span><span class="cm"></span><span class="ch num"><span class="a">+18</span><span class="d"></span></span></div>
+    <footer class="foot"><span class="viewed"><i></i></span>Mark all viewed</footer>
+    <span class="edge" role="separator" aria-orientation="vertical" aria-label="Panel width"></span>
+  </article>
+  <svg class="cursor" style="left:310px;top:206px" viewBox="0 0 22 16"><path d="M1.5 8 6 3.5V6.5h10V3.5L20.5 8 16 12.5V9.5H6v3Z" fill="#12233d" stroke="#fff" stroke-width="1.3" stroke-linejoin="round"/></svg>
+  <div id="marks"></div>
+  <span class="tag" id="tag">6 rows read the same</span>
+</div>
+<script>
+  // plumber's marks, read from the rows as they render: an outline round each cut path's words
+  const st = document.querySelector('.stage').getBoundingClientRect(), marks = document.getElementById('marks');
+  const paths = [...document.querySelectorAll('.path')];
+  for (const p of paths) { const r = p.getBoundingClientRect(); const o = document.createElement('span'); o.className = 'ol';
+    Object.assign(o.style, { left: r.left - st.left - 3 + 'px', top: r.top - st.top - 2 + 'px', width: r.width + 6 + 'px', height: r.height + 4 + 'px' }); marks.append(o); }
+  const f = paths[0].getBoundingClientRect(); const tag = document.getElementById('tag');
+  tag.style.left = '342px'; tag.style.top = (f.top - st.top + f.height / 2) + 'px';
+</script>
+</body>
+</html>

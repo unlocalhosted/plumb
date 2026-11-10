@@ -1,0 +1,156 @@
+<!doctype html>
+<!-- COMP #39 (card pass, 2026-11-05): the one component, rich inside. Tack, a moodboard app; Ama Ceramics' board of
+     glaze tests for the spring mugs: the chosen mugs on a white sweep, the surface to aim for, the honey base's recipe
+     drawn as its parts, Saturday's firing curve, round three's test tiles, a note from the studio. Slate's tokens
+     (overlay/showcase/src/theme.css). Drawn BROKEN: every image has a 1px 10% black inner outline except the lead
+     pin's ([data-light]), so the white sweep meets the white pin with no edge and the mugs float loose. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tack glaze board (comp)</title>
+<style>
+  :root {
+    --surface: #fff; --sunken: #f3f5f9; --ink: #12233d; --ink-muted: #5a6779; --ink-subtle: #6f7c90;
+    --line: rgb(18 35 61 / 0.11); --accent: #5550d8; --accent-soft: #efeefd; --accent-deep: #3631a6;
+    --positive: #0f6f58; --positive-soft: #e5f4ef; --caution: #965a03; --caution-soft: #fcf1dd;
+    --board: #eef1f5; --board-dot: #d6dce4;
+    --card: 0 1px 2px rgb(18 35 61 / 0.05), 0 6px 16px rgb(18 35 61 / 0.07), 0 18px 44px rgb(18 35 61 / 0.09);
+    --pin: 0 0 0 1px rgb(18 35 61 / 0.08), 0 1px 1px rgb(18 35 61 / 0.03), 0 2px 6px rgb(18 35 61 / 0.05);
+    --hl: 0.5px;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 48px; background: var(--board);
+    background-image: radial-gradient(var(--board-dot) 1px, transparent 1px); background-size: 16px 16px;
+    font: 14px/20px Inter, -apple-system, system-ui, sans-serif; color: var(--ink); -webkit-font-smoothing: antialiased; }
+  .num { font-variant-numeric: tabular-nums; }
+  .card { width: 600px; border-radius: 10px; background: var(--surface); box-shadow: var(--card), 0 0 0 0.5px rgb(18 35 61 / 0.1); overflow: hidden; }
+
+  .top { display: flex; align-items: center; gap: 12px; padding: 16px 20px; box-shadow: inset 0 calc(-1 * var(--hl)) 0 var(--line); }
+  .top .t { font-size: 15px; font-weight: 500; letter-spacing: -0.01em; }
+  .top .s { font-size: 13px; color: var(--ink-muted); }
+  .people { margin-left: auto; display: flex; }
+  .people span { position: relative; }
+  .people img { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; display: block; box-shadow: 0 0 0 2px var(--surface); outline: 1px solid rgb(0 0 0 / 0.1); outline-offset: -1px; }
+  .people span + span { margin-left: -6px; }
+  .people .live::after { content: ""; position: absolute; right: -1px; bottom: -1px; width: 9px; height: 9px; border-radius: 50%; background: #1f9d6b; box-shadow: 0 0 0 2px var(--surface); }
+  .share { height: 32px; padding: 0 12px; border-radius: 6px; display: grid; place-items: center; background: var(--accent); color: #fff; font-size: 13px; font-weight: 500;
+    box-shadow: 0 1px 2px rgb(54 49 166 / 0.3), inset 0 1px 0 rgb(255 255 255 / 0.18); }
+
+  .board { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; padding: 16px; background: var(--sunken); align-items: start; }
+  .col { display: flex; flex-direction: column; gap: 12px; }
+  /* a pin: 10px corners, 6px in, so its image takes 4px (10 − 6) */
+  .pin { border-radius: 10px; background: var(--surface); padding: 6px; box-shadow: var(--pin); }
+  .pin .img { display: block; width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 4px; outline: 1px solid rgb(0 0 0 / 0.1); outline-offset: -1px; }
+  /* PLANTED (#39): the lead pin's photo has no inner outline; its white sweep is the pin's white */
+  .pin .img[data-light] { outline: none; }
+  .pin .body { padding: 8px 6px 4px; }
+  .pin .t { font-size: 13px; font-weight: 500; }
+  .pin .s { font-size: 12px; color: var(--ink-muted); }
+  .meta { display: flex; align-items: center; gap: 6px; padding: 8px 6px 4px; font-size: 12px; color: var(--ink-muted); }
+  .chip { display: inline-flex; align-items: center; gap: 4px; height: 20px; padding: 0 6px; border-radius: 4px; font-size: 11.5px; font-weight: 500; }
+  .chip.ok { background: var(--positive-soft); color: var(--positive); }
+  .meta .c { margin-left: auto; display: flex; align-items: center; gap: 4px; }
+  .meta .c img { width: 18px; height: 18px; border-radius: 50%; object-fit: cover; outline: 1px solid rgb(0 0 0 / 0.1); outline-offset: -1px; }
+
+  /* recipe: the base's parts, drawn as a bar of their shares */
+  .recipe { padding: 8px 6px 4px; }
+  .parts { display: flex; gap: 2px; height: 8px; margin: 8px 0 8px; }
+  .parts i { border-radius: 2px; }
+  .rows { display: grid; grid-template-columns: 8px 1fr auto; gap: 4px 6px; align-items: center; font-size: 12px; color: var(--ink-muted); }
+  .rows i { width: 8px; height: 8px; border-radius: 2px; }
+  .rows b { font-weight: 500; color: var(--ink); text-align: right; }
+  .rows .add { grid-column: 1 / -1; height: 0; margin: -1px 0; box-shadow: inset 0 calc(-1 * var(--hl)) 0 var(--line); }
+
+  /* the firing */
+  .curve { display: block; width: 100%; height: 96px; border-radius: 4px; background: var(--sunken); }
+  .curve .ax { font-size: 9.5px; fill: var(--ink-subtle); font-variant-numeric: tabular-nums; }
+
+  /* test tiles */
+  .tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; padding: 2px; }
+  .tile { position: relative; aspect-ratio: 1; border-radius: 4px; box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.08); }
+  .tile span { position: absolute; left: 4px; bottom: 3px; font-size: 9.5px; font-weight: 600; color: rgb(255 255 255 / 0.92); text-shadow: 0 0 3px rgb(0 0 0 / 0.35); font-variant-numeric: tabular-nums; }
+  .tile.pick { box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.08), 0 0 0 2px var(--surface), 0 0 0 3.5px var(--accent); }
+
+  .note { border-radius: 10px; padding: 12px; background: var(--caution-soft); box-shadow: 0 0 0 1px rgb(150 90 3 / 0.12), 0 2px 6px rgb(150 90 3 / 0.06); }
+  .note p { margin: 0; font-size: 13px; line-height: 19px; color: #4a3305; }
+  .note .by { display: flex; align-items: center; gap: 6px; margin-top: 10px; font-size: 12px; color: var(--caution); }
+  .note .by img { width: 20px; height: 20px; border-radius: 50%; object-fit: cover; outline: 1px solid rgb(0 0 0 / 0.1); outline-offset: -1px; }
+</style>
+</head>
+<body>
+<article class="card">
+  <header class="top">
+    <span><div class="t">Glaze tests</div><div class="s">Ama Ceramics · Spring mugs · <span class="num">14</span> pins</div></span>
+    <span class="people">
+      <span class="live"><img src="../../../../overlay/showcase/src/media/people/person-03.jpg" alt=""></span>
+      <span><img src="../../../../overlay/showcase/src/media/people/person-02.jpg" alt=""></span>
+      <span><img src="../../../../overlay/showcase/src/media/people/person-10.jpg" alt=""></span>
+    </span>
+    <span class="share">Share</span>
+  </header>
+
+  <div class="board">
+    <div class="col">
+      <!-- the lead pin: the chosen glaze, shot on a white sweep -->
+      <figure class="pin" style="margin:0">
+        <img class="img" data-light src="../../../../overlay/showcase/src/media/ceramic.jpg" alt="Two stacked mugs, cobalt over honey">
+        <div class="body"><div class="t">Cobalt over honey</div><div class="s">Two dips, cone 6</div></div>
+        <div class="meta"><span class="chip ok">Chosen</span><span class="c"><img src="../../../../overlay/showcase/src/media/people/person-03.jpg" alt=""><span class="num">4</span></span></div>
+      </figure>
+      <div class="note">
+        <p>Cobalt runs on the rim at two dips. Try one and a half on Saturday.</p>
+        <div class="by"><img src="../../../../overlay/showcase/src/media/people/person-02.jpg" alt=""><span>Kwame · 2h ago</span></div>
+      </div>
+    </div>
+
+    <div class="col">
+      <figure class="pin" style="margin:0">
+        <img class="img" src="../../../../overlay/showcase/src/media/paper-cities.jpg" alt="White curved facade">
+        <div class="body"><div class="t">Satin white</div><div class="s">The surface to aim for</div></div>
+      </figure>
+      <!-- Saturday's firing: temperature over the day, to cone 6 and a 15-minute hold, then the cool -->
+      <div class="pin">
+        <svg class="curve" viewBox="0 0 168 96" preserveAspectRatio="none">
+          <g stroke="rgb(18 35 61 / 0.08)" stroke-dasharray="2 3"><line x1="0" x2="168" y1="24.5" y2="24.5"/><line x1="0" x2="168" y1="56.5" y2="56.5"/></g>
+          <path d="M6 84 C30 80 46 62 62 46 S96 22 104 20 L114 20 C124 22 134 44 162 70" fill="none" stroke="#c4562f" stroke-width="2" stroke-linecap="round" vector-effect="non-scaling-stroke"/>
+          <circle cx="109" cy="20" r="3.5" fill="#c4562f" stroke="#fff" stroke-width="1.5"/>
+          <text class="ax" x="4" y="22">1,222°</text><text class="ax" x="140" y="92">9h</text><text class="ax" x="4" y="54">800°</text>
+        </svg>
+        <div class="body"><div class="t">Saturday’s firing</div><div class="s">Kiln 2 · cone 6, 15 min hold</div></div>
+      </div>
+    </div>
+
+    <div class="col">
+      <!-- round three: each test tile's glaze, the picked one ringed -->
+      <div class="pin">
+        <div class="tiles">
+          <span class="tile pick" style="background:linear-gradient(in oklch 165deg,#2f5fa8,#1d3f7c)"><span>T3-1</span></span>
+          <span class="tile" style="background:linear-gradient(in oklch 165deg,#d9a83a,#b8801f)"><span>T3-2</span></span>
+          <span class="tile" style="background:linear-gradient(in oklch 165deg,#e3d6bd,#cdb994)"><span>T3-3</span></span>
+          <span class="tile" style="background:linear-gradient(in oklch 165deg,#8fb3a1,#5f8b77)"><span>T3-4</span></span>
+          <span class="tile" style="background:linear-gradient(in oklch 165deg,#5a2e1d,#2c160d)"><span>T3-5</span></span>
+          <span class="tile" style="background:linear-gradient(in oklch 165deg,#b9b2a6,#8e867a)"><span>T3-6</span></span>
+        </div>
+        <div class="body"><div class="t">Test tiles, round 3</div><div class="s">Six glazes, spring clay</div></div>
+      </div>
+      <div class="pin">
+        <div class="recipe">
+          <div class="t" style="font-size:13px;font-weight:500">Honey base</div><div class="s" style="font-size:12px;color:var(--ink-muted)">Recipe, by weight</div>
+          <div class="parts"><i style="flex:30;background:#d8d2c4"></i><i style="flex:25;background:#c9a77c"></i><i style="flex:20;background:#e9e4da"></i><i style="flex:15;background:#b8b0a2"></i><i style="flex:10;background:#9c9486"></i><i style="flex:4;background:#9a4a1f"></i></div>
+          <div class="rows">
+            <i style="background:#d8d2c4"></i><span>Silica</span><b class="num">30</b>
+            <i style="background:#c9a77c"></i><span>Custer feldspar</span><b class="num">25</b>
+            <i style="background:#e9e4da"></i><span>Whiting</span><b class="num">20</b>
+            <i style="background:#b8b0a2"></i><span>EPK kaolin</span><b class="num">15</b>
+            <i style="background:#9c9486"></i><span>Talc</span><b class="num">10</b>
+            <span class="add"></span>
+            <i style="background:#9a4a1f"></i><span>Red iron oxide</span><b class="num">+4</b>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</article>
+</body>
+</html>

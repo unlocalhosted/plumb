@@ -1,0 +1,132 @@
+<!doctype html>
+<!-- COMP #18, the one component (owner 2026-11-05: no app window; richness goes inside). Dispatch, a news reader: the
+     Today front, mid-morning. A lead story on a real photo with the night's geomagnetic storm drawn as data (Kp index,
+     24 hours), bylines with faces, a second rank of stories with real photos, the morning briefing as audio with its
+     waveform. Quarry's tokens (overlay/showcase/src/theme.css).
+     BROKEN: the lead headline (h3) wraps greedily and its last word sits alone (no text-wrap: balance). -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dispatch front page (comp)</title>
+<style>
+  :root {
+    --surface: #fff; --sunken: #f3f5f9; --ink: #12233d; --ink-muted: #5a6779; --ink-subtle: #6f7c90;
+    --line: rgb(18 35 61 / 0.11); --accent: #5550d8; --accent-soft: #efeefd; --accent-deep: #3631a6;
+    --negative: #b02a3a; --board: #eef1f5; --board-dot: #d6dce4;
+    --card: 0 0 0 1px rgb(18 35 61 / 0.11), 0 1px 1px rgb(18 35 61 / 0.03), 0 2px 6px rgb(18 35 61 / 0.04);
+    --hl: 0.5px;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 48px; background: var(--board);
+    background-image: radial-gradient(var(--board-dot) 1px, transparent 1px); background-size: 16px 16px;
+    font: 14px/20px Inter, -apple-system, system-ui, sans-serif; color: var(--ink); -webkit-font-smoothing: antialiased; }
+  .num { font-variant-numeric: tabular-nums; }
+  .card { width: 560px; border-radius: 10px; background: var(--surface); box-shadow: var(--card); overflow: hidden; }
+
+  .top { display: flex; align-items: baseline; justify-content: space-between; padding: 20px 24px 14px; }
+  .top .t { font-size: 17px; line-height: 24px; font-weight: 500; letter-spacing: -0.01em; }
+  .top .s { font-size: 13px; color: var(--ink-muted); }
+
+  .lead { padding: 0 24px 20px; }
+  .photo { position: relative; display: block; width: 100%; height: 232px; border-radius: 6px; overflow: hidden; }
+  .photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .photo::after { content: ""; position: absolute; inset: 0; border-radius: inherit; box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.1); }
+  .credit { margin-top: 6px; font-size: 11px; line-height: 16px; color: var(--ink-subtle); }
+  .kicker { margin-top: 14px; display: flex; align-items: center; gap: 4px; font-size: 12px; line-height: 16px; font-weight: 500; color: var(--accent); }
+  .kicker .ago { color: var(--ink-subtle); font-weight: 400; }
+  /* THE PLANTED MISTAKE: no text-wrap: balance, so the last word wraps alone */
+  h3 { margin: 6px 0 0; font-size: 22px; line-height: 28px; font-weight: 600; letter-spacing: -0.015em; }
+  .stand { margin: 8px 0 0; font-size: 15px; line-height: 22px; color: var(--ink-muted); text-wrap: pretty; }
+  .by { display: flex; align-items: center; gap: 8px; margin-top: 14px; font-size: 13px; color: var(--ink-muted); }
+  .by img { width: 24px; height: 24px; border-radius: 50%; object-fit: cover; outline: 1px solid rgb(0 0 0 / 0.08); outline-offset: -1px; }
+  .by b { font-weight: 500; color: var(--ink); }
+  .by .save { margin-left: auto; color: var(--ink-subtle); }
+
+  /* the storm, drawn: Kp index in three-hour bars over the last day */
+  .kp { margin-top: 16px; padding: 12px 14px 10px; border-radius: 6px; background: var(--sunken); }
+  .kp .row { display: flex; align-items: baseline; justify-content: space-between; font-size: 12px; line-height: 16px; color: var(--ink-muted); }
+  .kp .row b { font-size: 13px; font-weight: 500; color: var(--ink); }
+  .bars { display: flex; align-items: flex-end; gap: 4px; height: 44px; margin-top: 10px; }
+  .bars i { flex: 1; border-radius: 2px 2px 0 0; }
+  .axis { display: flex; justify-content: space-between; margin-top: 4px; font-size: 11px; line-height: 16px; color: var(--ink-subtle); }
+
+  .more { box-shadow: inset 0 var(--hl) 0 var(--line); padding: 4px 24px 0; }
+  .item { display: grid; grid-template-columns: 1fr 72px; gap: 16px; align-items: center; padding: 14px 0; box-shadow: inset 0 calc(-1 * var(--hl)) 0 var(--line); }
+  .item:last-of-type { box-shadow: none; }
+  .item .k { font-size: 12px; line-height: 16px; font-weight: 500; color: var(--accent); }
+  .item .h { display: block; text-wrap: balance; margin-top: 3px; font-size: 15px; line-height: 20px; font-weight: 600; letter-spacing: -0.01em; }
+  .item .m { display: flex; align-items: center; gap: 6px; margin-top: 6px; font-size: 12px; line-height: 16px; color: var(--ink-muted); }
+  .mark { width: 16px; height: 16px; border-radius: 4px; display: grid; place-items: center; font-size: 9px; font-weight: 700; color: #fff; }
+  .thumb { position: relative; width: 72px; height: 72px; border-radius: 6px; overflow: hidden; }
+  .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .thumb::after { content: ""; position: absolute; inset: 0; border-radius: inherit; box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.1); }
+
+  /* the morning briefing: audio, its waveform played up to where you stopped */
+  .brief { display: flex; align-items: center; gap: 14px; margin: 0 -24px; padding: 14px 24px 18px; background: var(--sunken); box-shadow: inset 0 var(--hl) 0 var(--line); }
+  .play { width: 36px; height: 36px; border-radius: 50%; background: var(--accent); display: grid; place-items: center; flex: none; box-shadow: 0 1px 2px rgb(54 49 166 / 0.3); }
+  .brief .t { font-size: 14px; font-weight: 500; }
+  .brief .s { font-size: 12px; line-height: 16px; color: var(--ink-muted); }
+  .wave { display: flex; align-items: center; gap: 2px; height: 28px; margin-left: auto; }
+  .wave i { width: 2px; border-radius: 1px; background: #cdd3dd; }
+  .wave i.on { background: var(--accent); }
+  .brief .time { width: 40px; text-align: right; font-size: 12px; color: var(--ink-muted); }
+</style>
+</head>
+<body>
+<article class="card">
+  <header class="top"><span class="t">Today</span><span class="s">Wednesday, 5 November</span></header>
+
+  <section class="lead">
+    <span class="photo"><img src="https://images.unsplash.com/photo-1768813282031-2aec62eee8b7?w=1120&h=496&fit=crop&q=70" alt="Green aurora over a still lake at night"></span>
+    <div class="credit">Bjuröklubb, Sweden, 01:40 last night · Niklas Jonasson</div>
+    <div class="kicker">Science<span class="ago">· 2 hours ago</span></div>
+    <h3>Northern lights reach farther south than in any year recorded</h3>
+    <p class="stand">A storm on the sun lit skies as far south as Lisbon and Rome. Forecasters expect a second, weaker wave tonight.</p>
+    <div class="kp">
+      <div class="row"><span><b>Kp 8</b> · severe geomagnetic storm, peaked 02:00</span><span>Last 24 hours</span></div>
+      <div class="bars">
+        <i style="height:22%;background:#9fd8b8"></i><i style="height:25%;background:#9fd8b8"></i><i style="height:33%;background:#9fd8b8"></i><i style="height:50%;background:#e7b84a"></i>
+        <i style="height:75%;background:#e0763c"></i><i style="height:100%;background:#c9374a"></i><i style="height:88%;background:#c9374a"></i><i style="height:62%;background:#e0763c"></i>
+      </div>
+      <div class="axis num"><span>09:00</span><span>15:00</span><span>21:00</span><span>03:00</span><span>now</span></div>
+    </div>
+    <div class="by">
+      <img src="../../../../overlay/showcase/src/media/people/person-10.jpg" alt="">
+      <span><b>Ingrid Solberg</b> · Meridian · 6 min read</span>
+      <svg class="save" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 2.5h8v11l-4-3-4 3z" stroke-linejoin="round"/></svg>
+    </div>
+  </section>
+
+  <section class="more">
+    <a class="item">
+      <span>
+        <span class="k">Cities</span>
+        <span class="h">Lisbon gives three of its steepest streets to trams and bicycles</span>
+        <span class="m"><span class="mark" style="background:#0f6f58">H</span>Harbour Weekly · 4 min<img src="../../../../overlay/showcase/src/media/people/person-02.jpg" alt="" style="width:16px;height:16px;border-radius:50%;object-fit:cover;margin-left:4px">Tomás Reis</span>
+      </span>
+      <span class="thumb"><img src="https://images.unsplash.com/photo-1527936660226-7c289edf148e?w=160&h=160&fit=crop&q=70" alt=""></span>
+    </a>
+    <a class="item">
+      <span>
+        <span class="k">Climate</span>
+        <span class="h">The North Sea’s newest wind farm sends its first power ashore</span>
+        <span class="m"><span class="mark" style="background:#3631a6">M</span>Meridian · 5 min<img src="../../../../overlay/showcase/src/media/people/person-07.jpg" alt="" style="width:16px;height:16px;border-radius:50%;object-fit:cover;margin-left:4px">Hana Mori</span>
+      </span>
+      <span class="thumb"><img src="https://images.unsplash.com/photo-1654083198752-56ff209c8129?w=160&h=160&fit=crop&q=70" alt=""></span>
+    </a>
+    <div class="brief">
+      <span class="play"><svg width="12" height="12" viewBox="0 0 16 16" fill="#fff" style="transform:translateX(1px)"><path d="M4 2.8v10.4a.8.8 0 0 0 1.2.7l8.6-5.2a.8.8 0 0 0 0-1.4L5.2 2.1a.8.8 0 0 0-1.2.7"/></svg></span>
+      <span><div class="t">Morning briefing</div><div class="s">Five stories, read aloud · 12 min</div></span>
+      <span class="wave" id="wave"></span>
+      <span class="time num">4:18</span>
+    </div>
+  </section>
+</article>
+<script>
+  // a fixed waveform (no randomness, so every render is the same), played to 36%
+  const h = [8,14,10,18,24,16,12,20,26,22,14,10,16,22,28,20,12,8,14,18,24,20,16,10,12,18,22,16,12,8,10,14];
+  document.getElementById('wave').innerHTML = h.map((v, i) => `<i class="${i < 12 ? 'on' : ''}" style="height:${v}px"></i>`).join('');
+</script>
+</body>
+</html>

@@ -15,6 +15,7 @@ import { classEditsOf } from './locate.js';
 import { esc } from './choices.js';
 import { FIX } from './words.js';
 import { tidy, levelsOf } from './hierarchy.js';
+import { placeOf } from './stamp.js';
 
 const W = FIX.card.tidy;
 const WEIGHT = { 100: 'thin', 200: 'extralight', 300: 'light', 400: 'normal', 500: 'medium', 600: 'semibold', 700: 'bold', 800: 'extrabold', 900: 'black' };
@@ -35,7 +36,6 @@ const PREVIEW = { 'font-size': (v) => ({ 'font-size': `${v}px` }), 'font-weight'
 // what the page computes for a change's property now: a change to what it already is changes nothing, and isn't listed
 const NOW = { 'font-size': (cs) => parseFloat(cs.fontSize), 'font-weight': (cs) => parseInt(cs.fontWeight, 10), gap: (cs) => parseFloat(cs.rowGap === 'normal' ? cs.columnGap : cs.rowGap), radius: (cs) => parseFloat(cs.borderTopLeftRadius), 'margin-top': (cs) => parseFloat(cs.marginTop) };
 // the code that draws an element (its stamp): copies drawn by one line are one change in the code
-const stampOf = (el) => el.getAttribute('data-plumb-source')?.split('#')[0] ?? null;
 // the sides a padding class sets (ps/pe as left/right: the pages read here run left to right)
 const SIDES = { p: ['top', 'right', 'bottom', 'left'], px: ['left', 'right'], py: ['top', 'bottom'], pt: ['top'], pr: ['right'], pb: ['bottom'], pl: ['left'], ps: ['left'], pe: ['right'] };
 const sidesOf = (c) => SIDES[/^(p[xytrblse]?)-/.exec(c)?.[1]] ?? [];
@@ -91,7 +91,7 @@ export class Tidy {
     // the same words with the same classes) are listed once, previewed on every copy, and written once per line
     const one = new Map();
     for (const c of mapped) {
-      const key = stampOf(c.el) || named(c.el) ? `${named(c.el) ?? stampOf(c.el)}|${c.el.localName}|${c.prop}|${c.from}|${c.to}|${c.fromClass}|${c.toClass}` : c;
+      const key = placeOf(c.el) || named(c.el) ? `${named(c.el) ?? placeOf(c.el)}|${c.el.localName}|${c.prop}|${c.from}|${c.to}|${c.fromClass}|${c.toClass}` : c;
       if (one.has(key)) one.get(key).els.push(c.el); else one.set(key, { ...c, els: [c.el] });
     }
     this.#changes = [...one.values()];
@@ -152,7 +152,7 @@ export class Tidy {
   async writes() {
     const steps = [], left = [], seen = new Set();
     // every line of code the change's copies come from, once (a copy without a stamp is its own line)
-    const lines = (c) => { const done = new Set(); return (c.els ?? [c.el]).filter((el) => { const k = stampOf(el) ?? el; if (done.has(k)) return false; done.add(k); return true; }).map((el) => ({ ...c, el })); };
+    const lines = (c) => { const done = new Set(); return (c.els ?? [c.el]).filter((el) => { const k = placeOf(el) ?? el; if (done.has(k)) return false; done.add(k); return true; }).map((el) => ({ ...c, el })); };
     for (const c of this.#changes.flatMap(lines)) {
       let edits;
       try { edits = await classEditsOf(c.el, c.fromClass, c.toClass); } catch { left.push(W.noPlace(W.props[c.prop])); continue; }

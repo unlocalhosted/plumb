@@ -1,0 +1,142 @@
+<!doctype html>
+<!-- COMP #73 (scroll-margin-top on anchor targets). Commons, a team wiki; the onboarding page of the handbook scrolls
+     in its own pane under a sticky header that holds the section links. "First week" has just been jumped to: its
+     heading lands just below the header, flashed as the target. plumber's mistake is planted on the section headings
+     ([data-target] on First week): no scroll margin, so the jump parks the heading under the header. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Commons · Onboarding (comp)</title>
+<style>
+  :root {
+    --surface: #fff; --sunken: #f3f5f9; --ink: #12233d; --ink-muted: #5a6779; --ink-subtle: #6f7c90;
+    --line: rgb(18 35 61 / 0.09); --line-strong: rgb(18 35 61 / 0.14); --accent: #5550d8; --accent-soft: #efeefd; --accent-deep: #3631a6;
+    --positive: #0f6f58; --positive-soft: #e5f4ef; --caution: #965a03; --caution-soft: #fcf1dd;
+    --board: #e9edf2; --board-dot: #d3d9e2;
+    --window: 0 1px 2px rgb(18 35 61 / 0.05), 0 8px 24px rgb(18 35 61 / 0.08), 0 24px 64px rgb(18 35 61 / 0.12);
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 48px; background: var(--board);
+    background-image: radial-gradient(var(--board-dot) 1px, transparent 1px); background-size: 16px 16px;
+    font: 13px/18px Inter, -apple-system, system-ui, sans-serif; color: var(--ink); -webkit-font-smoothing: antialiased; font-feature-settings: "cv11", "ss01"; }
+  .num { font-variant-numeric: tabular-nums; }
+  svg.i { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 1.45; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+  img { display: block; }
+  .window { width: 984px; height: 612px; display: grid; grid-template-columns: 220px 1fr; border-radius: 12px; overflow: hidden; background: var(--surface); box-shadow: var(--window), 0 0 0 0.5px rgb(18 35 61 / 0.18); }
+  .side { background: #f7f8fa; border-right: 0.5px solid var(--line-strong); display: flex; flex-direction: column; padding: 12px 10px; gap: 1px; }
+  .lights { display: flex; gap: 7px; padding: 4px 6px 14px; } .lights i { width: 11px; height: 11px; border-radius: 50%; background: #d9dde3; }
+  .ws { display: flex; align-items: center; gap: 8px; padding: 2px 8px 12px; }
+  .ws b { width: 22px; height: 22px; border-radius: 6px; background: linear-gradient(145deg, #2f9a7e, #1e7a62); color: #fff; display: grid; place-items: center; font-size: 12px; font-weight: 600; box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.2); }
+  .ws span { font-weight: 600; font-size: 13.5px; letter-spacing: -0.01em; }
+  .search { height: 30px; margin: 0 2px 10px; display: flex; align-items: center; gap: 7px; padding: 0 9px; border-radius: 7px; background: rgb(18 35 61 / 0.05); color: var(--ink-subtle); }
+  .search kbd { margin-left: auto; font: 11px Inter, system-ui; color: var(--ink-subtle); }
+  .nav { display: flex; align-items: center; gap: 8px; height: 28px; padding: 0 8px; border-radius: 6px; color: var(--ink-muted); }
+  .nav .n { margin-left: auto; font-size: 12px; color: var(--ink-subtle); }
+  .label { margin: 14px 8px 4px; font-size: 11px; font-weight: 500; color: var(--ink-subtle); }
+  .doc { display: flex; align-items: center; gap: 7px; height: 28px; padding: 0 8px; border-radius: 6px; color: var(--ink-muted); }
+  .doc.sub { padding-left: 26px; }
+  .doc .e { width: 16px; text-align: center; font-size: 13px; }
+  .doc .car { width: 10px; color: var(--ink-subtle); font-size: 9px; }
+  .doc.on { background: rgb(18 35 61 / 0.06); color: var(--ink); font-weight: 500; }
+  .me { margin-top: auto; display: flex; align-items: center; gap: 9px; padding: 8px; }
+  .me img { width: 26px; height: 26px; border-radius: 50%; object-fit: cover; }
+  .me span { display: flex; flex-direction: column; font-size: 12.5px; line-height: 16px; } .me small { color: var(--ink-subtle); font-size: 11.5px; }
+
+  .main { display: flex; flex-direction: column; min-width: 0; }
+  .bar { display: flex; align-items: center; gap: 8px; height: 46px; padding: 0 20px; border-bottom: 0.5px solid var(--line-strong); color: var(--ink-muted); }
+  .bar b { color: var(--ink); font-weight: 500; }
+  .bar .faces { margin-left: auto; display: flex; align-items: center; }
+  .faces img { width: 24px; height: 24px; border-radius: 50%; object-fit: cover; box-shadow: 0 0 0 2px #fff; margin-left: -7px; }
+  .faces img:first-child { margin-left: 0; }
+  .bar .btn { height: 28px; display: inline-flex; align-items: center; padding: 0 11px; border-radius: 7px; color: var(--ink); font-weight: 500; box-shadow: inset 0 0 0 1px var(--line-strong); margin-left: 10px; }
+
+  /* the scrolling pane, its sticky header, and where a jump lands */
+  .pane { position: relative; flex: 1; overflow: hidden; }
+  .sticky { position: absolute; top: 0; left: 0; right: 0; z-index: 2; padding: 14px 64px 0; background: rgb(255 255 255 / 0.94); backdrop-filter: blur(10px); border-bottom: 0.5px solid var(--line-strong); }
+  .sticky .title { display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 600; letter-spacing: -0.01em; }
+  .sticky .title .leaf { width: 22px; height: 22px; border-radius: 6px; background: var(--positive-soft); display: grid; place-items: center; margin: 0; }
+  .sticky .title .leaf svg { width: 13px; height: 13px; stroke: #1e7a62; fill: none; stroke-width: 1.6; stroke-linecap: round; }
+  .sticky .title span.num { font-weight: 400; color: var(--ink-subtle); font-size: 12.5px; margin-left: 4px; }
+  .tabs { display: flex; gap: 22px; margin-top: 8px; }
+  .tabs a { height: 34px; display: inline-flex; align-items: center; color: var(--ink-muted); text-decoration: none; font-size: 13px; position: relative; }
+  .tabs a.on { color: var(--ink); font-weight: 500; }
+  .tabs a.on::after { content: ''; position: absolute; left: 0; right: 0; bottom: -0.5px; height: 2px; border-radius: 2px; background: var(--accent); }
+  .scroll { position: absolute; top: 0; left: 0; right: 0; padding: 106px 64px 0 64px; }
+  .rail { position: absolute; right: 4px; top: 96px; width: 6px; height: 74px; border-radius: 3px; background: rgb(18 35 61 / 0.22); z-index: 3; }
+
+  .prev { color: var(--ink-muted); font-size: 14px; line-height: 23px; opacity: 0.9; margin: -20px 0 0; }
+  h2 { width: max-content; padding-right: 120px; margin: 26px 0 0; font-size: 21px; line-height: 28px; font-weight: 600; letter-spacing: -0.018em; display: flex; align-items: center; gap: 10px; }
+  h2.target { position: relative; isolation: isolate; align-self: flex-start; }
+  h2.target::before { content: ''; position: absolute; inset: -5px -14px -5px -12px; border-radius: 8px; background: linear-gradient(90deg, var(--accent-soft), rgb(239 238 253 / 0)); z-index: -1; }
+  h2 .hash { color: var(--accent); font-weight: 500; font-size: 18px; }
+  .lede { margin: 8px 0 0; font-size: 14px; line-height: 23px; color: var(--ink-muted); max-width: 560px; }
+  .days { margin-top: 16px; border-radius: 10px; box-shadow: inset 0 0 0 0.5px var(--line-strong); max-width: 620px; }
+  .day { display: grid; grid-template-columns: 46px 18px 1fr auto; gap: 12px; align-items: center; height: 44px; padding: 0 14px; border-top: 0.5px solid var(--line); }
+  .day:first-child { border-top: 0; }
+  .day .d { font-size: 12px; font-weight: 600; color: var(--ink-subtle); letter-spacing: 0.02em; }
+  .day .box { width: 16px; height: 16px; border-radius: 4.5px; box-shadow: inset 0 0 0 1.5px rgb(18 35 61 / 0.25); display: grid; place-items: center; }
+  .day.done .box { background: var(--positive); box-shadow: none; }
+  .day.done .box svg { width: 10px; height: 10px; stroke: #fff; stroke-width: 2.2; fill: none; }
+  .day.done .t { color: var(--ink-subtle); text-decoration: line-through; text-decoration-color: rgb(18 35 61 / 0.3); }
+  .day .t { font-size: 13.5px; }
+  .day .who { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--ink-subtle); }
+  .day .who img { width: 20px; height: 20px; border-radius: 50%; object-fit: cover; }
+  .day.today { background: linear-gradient(90deg, rgb(85 80 216 / 0.06), transparent); }
+  .day.today .d { color: var(--accent-deep); }
+  .pill { font-size: 11px; font-weight: 500; padding: 2px 7px; border-radius: 99px; background: var(--caution-soft); color: var(--caution); }
+  .buddy { margin-top: 14px; display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 10px; background: var(--sunken); max-width: 620px; }
+  .buddy img { width: 38px; height: 38px; border-radius: 50%; object-fit: cover; }
+  .buddy span { display: flex; flex-direction: column; line-height: 18px; }
+  .buddy b { font-weight: 500; } .buddy small { font-size: 12.5px; color: var(--ink-muted); }
+  .buddy .go { margin-left: auto; font-weight: 500; color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="window">
+  <aside class="side">
+    <div class="lights"><i></i><i></i><i></i></div>
+    <div class="ws"><b>N</b><span>Northwind</span></div>
+    <div class="search"><svg class="i" viewBox="0 0 16 16"><circle cx="7" cy="7" r="4.5"/><path d="m10.5 10.5 3 3"/></svg>Search<kbd>⌘K</kbd></div>
+    <div class="nav"><svg class="i" viewBox="0 0 16 16"><path d="M2.5 7 8 2.5 13.5 7v6.5h-11z"/></svg>Home</div>
+    <div class="nav"><svg class="i" viewBox="0 0 16 16"><circle cx="8" cy="8" r="5.5"/><path d="M8 5v3l2 1.3"/></svg>Recent<span class="n num">6</span></div>
+    <div class="label">Team space</div>
+    <div class="doc"><span class="car">▾</span><span class="e"><svg class="i" viewBox="0 0 16 16" style="color:#5550d8"><path d="M4 2h5.5L12.5 5v9h-8.5z"/><path d="M6.5 8.5h4M6.5 11h3"/></svg></span>Handbook</div>
+    <div class="doc sub on"><span class="e"><svg class="i" viewBox="0 0 16 16" style="color:#2f9a7e"><path d="M4 2h5.5L12.5 5v9h-8.5z"/><path d="M6.5 8.5h4M6.5 11h3"/></svg></span>Onboarding</div>
+    <div class="doc sub"><span class="e"><svg class="i" viewBox="0 0 16 16" style="color:#d08a1e"><path d="M4 2h5.5L12.5 5v9h-8.5z"/><path d="M6.5 8.5h4M6.5 11h3"/></svg></span>Time off</div>
+    <div class="doc sub"><span class="e"><svg class="i" viewBox="0 0 16 16" style="color:#5d83d6"><path d="M4 2h5.5L12.5 5v9h-8.5z"/><path d="M6.5 8.5h4M6.5 11h3"/></svg></span>How we decide</div>
+    <div class="doc"><span class="car">▸</span><span class="e"><svg class="i" viewBox="0 0 16 16" style="color:#6f7c90"><path d="M4 2h5.5L12.5 5v9h-8.5z"/><path d="M6.5 8.5h4M6.5 11h3"/></svg></span>Engineering</div>
+    <div class="doc"><span class="car">▸</span><span class="e"><svg class="i" viewBox="0 0 16 16" style="color:#c9643b"><path d="M4 2h5.5L12.5 5v9h-8.5z"/><path d="M6.5 8.5h4M6.5 11h3"/></svg></span>Design</div>
+    <div class="doc"><span class="car">▸</span><span class="e"><svg class="i" viewBox="0 0 16 16" style="color:#d6334a"><path d="M4 2h5.5L12.5 5v9h-8.5z"/><path d="M6.5 8.5h4M6.5 11h3"/></svg></span>Launches</div>
+    <div class="me"><img src="../../../../overlay/showcase/src/media/people/person-02.jpg" alt=""><span>Dev Malhotra<small>Joined Monday</small></span></div>
+  </aside>
+
+  <main class="main">
+    <div class="bar">Handbook <span style="color:var(--ink-subtle)">/</span> <b>Onboarding</b>
+      <span class="faces"><img src="../../../../overlay/showcase/src/media/people/person-01.jpg" alt=""><img src="../../../../overlay/showcase/src/media/people/person-06.jpg" alt=""></span><span style="margin-left:8px;font-size:12px;color:var(--ink-subtle)">Edited by Ruth · 3d</span>
+      <span class="btn">Share</span>
+    </div>
+    <div class="pane">
+      <div class="sticky">
+        <div class="title"><span class="leaf"><svg viewBox="0 0 16 16"><path d="M3 13c0-6 4-9.5 10-10-.5 6-4 10-10 10z"/><path d="M3 13 9 7"/></svg></span>Onboarding<span class="num">8 min read</span></div>
+        <nav class="tabs"><a href="#before">Before you start</a><a class="on" href="#first-week">First week</a><a href="#tools">Tools</a><a href="#people">People</a></nav>
+      </div>
+      <span class="rail"></span>
+      <div class="scroll">
+        <p class="prev">…and the rest arrives on your first morning. If anything is missing, ask in #it-help, not your buddy.</p>
+        <h2 id="first-week" data-target class="target"><span class="hash">#</span>First week</h2>
+        <p class="lede">Each day has one thing to finish. Nothing here is a test: it's the shortest path to knowing where things are and who to ask.</p>
+        <div class="days">
+          <div class="day done"><span class="d">MON</span><span class="box"><svg viewBox="0 0 10 10"><path d="m2 5.2 2 2 4-4.4"/></svg></span><span class="t">Meet your buddy, get the codebase running</span><span class="who"><img src="../../../../overlay/showcase/src/media/people/person-07.jpg" alt="">Mei</span></div>
+          <div class="day done"><span class="d">TUE</span><span class="box"><svg viewBox="0 0 10 10"><path d="m2 5.2 2 2 4-4.4"/></svg></span><span class="t">Ship a small fix, start to finish</span><span class="who num">PR #4128</span></div>
+          <div class="day today"><span class="d">WED</span><span class="box"></span><span class="t">Sit in on a design crit</span><span class="pill">Today, 15:00</span></div>
+          <div class="day"><span class="d">THU</span><span class="box"></span><span class="t">Pair on a support ticket</span><span class="who"><img src="../../../../overlay/showcase/src/media/people/person-09.jpg" alt="">Amara</span></div>
+          <div class="day"><span class="d">FRI</span><span class="box"></span><span class="t">Write down three things that confused you</span><span class="who">Share in #onboarding</span></div>
+        </div>
+        <div class="buddy"><img src="../../../../overlay/showcase/src/media/people/person-07.jpg" alt=""><span><b>Your buddy: Mei Lin</b><small>Product designer · two desks down, or @mei</small></span><span class="go">Message</span></div>
+      </div>
+    </div>
+  </main>
+</div>
+</body>
+</html>

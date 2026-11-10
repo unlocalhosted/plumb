@@ -60,7 +60,11 @@ menus sit at z-10). Hold on what the gesture is about to lose before it moves, a
 
 - A convincing piece of a product (a billing page, an integrations panel, an invoice table), with real content, real
   hierarchy and real detail. Not a fixture: no coloured squares standing in for logos, no empty boxes.
-- It is wrong in **one** way, its principle's. Everything else follows good UI: type hierarchy (a chip's text is
+- It is wrong in **one** way, its principle's, and wrong **everywhere that slip would really recur**: every row, every
+  icon beside text, every number column, at least three places spread across the card. One rule, many instances, so
+  Fixed visibly changes the whole card, not one pixel in one corner (owner, 2026-11-05: a single tiny slip makes the
+  demo fall flat). Rules that are a pixel by nature (#2, #37, #38, #39) repeat the same way and lean on the stage's
+  camera moment to zoom into one instance. Everything else follows good UI: type hierarchy (a chip's text is
   smaller than the label beside it), tap targets ≥24px, padding trimmed on top, tabular figures in columns, contrast.
   Prove it: plumber scoped to the example (`window.__plumb.craft({ scope: '[data-example]' })`) finds exactly one
   rule. A second finding means the example is broken in another way; fix the example, not the second rule.
@@ -125,6 +129,11 @@ screen. Ours used to be a teaching page with a still picture in it; that system 
 - **Teaching sits off the stage**, below it, read after watching: what plumber sees, why it happens, the habit,
   plumber's fix in words (§5).
 - **Fit every width.** Lay out against the stage (container queries); check 1440, 1024 and a ~300px pane.
+- **The card and its switch are always in the window.** A card taller or wider than the room rests scaled to fit
+  (Principle.jsx, the fit); build the card at its real size, never shrink it for the stage. plumber measures pixels and
+  a scaled card reads wrong (targets look small, edges fall between pixels), so the card lifts to 1× whenever plumber
+  reads it, while the blueprint or inspector is on, and from the camera's way out until plumber has asked again.
+  Anything that reads from outside asks for the page as it is (`?side=`, never scaled); `scripts/screen.mjs` does.
 
 ## 3¾. Hands-on demos: the viewer's hand is the probe
 
@@ -266,3 +275,26 @@ Each line is something the owner had to say once; the sections above exist so th
   card of text rows, built to plumber-correctness alone. → Before code, every screen gets a design pass:
   docs/craft/taste-checklist.md (a named product, a studied reference, the screen in its world, life, visual design,
   delivery), a comp critiqued in writing and compared side by side with #16, owner sign-off. Pilots: #16, #59, #57.
+- 2026-11-04 · after the pilots were built as app windows: "lets revert i dont like these they are distracting … go back
+  to individual thing we have before but may make them more rich and dense and up their quality". Cause (confirmed):
+  the screen's unit became the whole app, so sidebars, toolbars and chrome competed with the lesson's subject. → A
+  screen is the one component the lesson lives in, no app around it. Its richness goes inside it: real data drawn as
+  data, faces and photos, more rows and density. The design pass still runs (reference, comp, critique, sign-off), on
+  the component alone.
+- 2026-11-05 · #16 at 2× was flagged for a hairline after the fix. Cause: Chrome (156) draws every border at least one
+  whole CSS pixel, so the 0.5px border plumber suggested for #38, and every `border-*-hairline` in the showcase, drew two
+  device pixels. → A fix is proved by what the screen draws, not by the value written: count the device pixels in a 2×
+  screenshot. Hairlines are a half-pixel inset shadow (showcase utilities, rule #38's border fix) or a 0.5px-tall box.
+- 2026-11-05 · Stray findings on #4, #59, #60, #64, #65. Three were rules reading a new idiom wrongly (a one-side inset
+  shadow taken for a box with corners; a white ring taken for a grey shadow; Lc 59.7 printed as "60, needs 60"), one was
+  plumber's reads overlapping (the stage's own read and the checker's scoped one: the first to finish turned the whole
+  page back on under the other), the rest were real slips in the screens. → When a screen shows a stray, ask first
+  whether the rule misreads how the screen draws it; when a scoped read names something outside its scope, suspect two
+  reads at once. Reads now run one at a time (craft-run.js).
+- 2026-11-05 · "Point errors in more than one place … not a one-pixel change in the whole card, then the demo falls."
+  Cause: "wrong in one way" was read as one place, so rich cards carried a single small slip and Fixed changed
+  nothing you could see. → One rule, planted at every natural recurrence (≥3, spread across the card); tiny rules
+  repeat too and the camera zooms into one (§3).
+- 2026-11-05 · Owner chose "Scale to fit" for cards taller or wider than the window (21 put the switch below an
+  800px window, 10 ran off a phone). Cause: the stage set a fixed-size card above the switch and left the window to
+  scroll. → The stage fits the card; plumber always reads it at 1× (§3½).

@@ -1,0 +1,122 @@
+<!doctype html>
+<!-- COMP #60, the one component (owner 2026-11-04/05: no app window, richness inside). Folio, a writing app for a small
+     travel magazine: the editor, mid-edit on a feature. Its formatting toolbar on top, the piece under it with its
+     kicker, byline faces, a comment on a phrase, a photograph with its caption, and who is here. Slate's tokens
+     (overlay/showcase/src/theme.css); the piece itself is set in a serif, the magazine's voice.
+     The moment: the pointer is sweeping along the toolbar towards Comment. With tooltips that show the instant the
+     pointer arrives (the build's broken side), each button it crosses flashes its tooltip; Strikethrough's is up now,
+     under a pointer that's already leaving. Behaviour, not style: the tooltip itself is drawn right. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Folio editor card (comp)</title>
+<style>
+  :root {
+    --surface: #fff; --sunken: #f3f5f9; --ink: #12233d; --ink-muted: #5a6779; --ink-subtle: #6f7c90; --line: rgb(18 35 61 / 0.11);
+    --accent: #5550d8; --accent-soft: #efeefd; --accent-deep: #3631a6;
+    --positive: #0f6f58; --caution: #965a03; --caution-soft: #fcf1dd;
+    --board: #eef1f5; --board-dot: #d6dce4; --hl: 0.5px;
+    --r-chip: 4px; --r-control: 6px; --r-card: 10px; --r-sheet: 14px;
+    --shadow-window: 0 1px 2px oklch(0.21 0.02 264 / 0.04), 0 8px 24px oklch(0.21 0.02 264 / 0.06), 0 24px 64px oklch(0.21 0.02 264 / 0.08), 0 0 0 1px rgb(18 35 61 / 0.06);
+    --serif: "New York", ui-serif, Georgia, serif;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 56px; background: var(--board);
+    background-image: radial-gradient(var(--board-dot) 1px, transparent 1px); background-size: 16px 16px;
+    font: 14px/20px Inter, -apple-system, system-ui, sans-serif; color: var(--ink); -webkit-font-smoothing: antialiased; }
+  .num { font-variant-numeric: tabular-nums; }
+  svg.i { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+
+  .card { position: relative; width: 600px; border-radius: var(--r-sheet); background: var(--surface); box-shadow: var(--shadow-window); }
+
+  /* the toolbar */
+  .bar > * { flex: none; white-space: nowrap; }
+  .bar { display: flex; align-items: center; gap: 2px; height: 48px; padding: 0 10px; box-shadow: inset 0 calc(-1 * var(--hl)) 0 var(--line); }
+  .style { display: flex; align-items: center; gap: 6px; height: 32px; padding: 0 8px 0 10px; margin-right: 4px; border-radius: var(--r-control); font-size: 13px; font-weight: 500; box-shadow: inset 0 0 0 1px var(--line); }
+  .style svg { width: 14px; height: 14px; color: var(--ink-subtle); }
+  .b { width: 32px; height: 32px; display: grid; place-items: center; border-radius: var(--r-control); color: var(--ink-muted); font-size: 15px; }
+  .b.hover { background: var(--sunken); color: var(--ink); }
+  .b.on { background: var(--accent-soft); color: var(--accent-deep); }
+  .vr { width: var(--hl); height: 16px; margin: 0 6px; background: var(--line); }
+  .ai { display: flex; align-items: center; gap: 6px; height: 32px; padding: 0 10px 0 8px; border-radius: var(--r-control); font-size: 13px; font-weight: 500; color: var(--accent-deep); }
+  .words { margin-left: auto; padding-right: 6px; font-size: 12px; color: var(--ink-subtle); }
+
+  /* the tooltip, as the build draws it: ink, the shortcut quieter beside the name */
+  .tip { position: absolute; z-index: 2; transform: translateX(-50%); display: flex; align-items: center; gap: 8px; height: 26px; padding: 0 8px; border-radius: var(--r-control); background: var(--ink); color: #fff; font-size: 12px; white-space: nowrap; box-shadow: 0 2px 6px rgb(18 35 61 / 0.18); }
+  .tip kbd { font: inherit; color: rgb(255 255 255 / 0.62); letter-spacing: 0.04em; }
+
+  /* the piece */
+  .doc { padding: 30px 56px 8px; }
+  .kicker { font-size: 11px; line-height: 16px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent-deep); font-feature-settings: 'case'; }
+  h1 { margin: 6px 0 0; font: 500 30px/36px var(--serif); letter-spacing: -0.01em; }
+  .by { display: flex; align-items: center; gap: 8px; margin-top: 12px; font-size: 13px; color: var(--ink-muted); }
+  .by .faces { display: flex; }
+  .by img { width: 24px; height: 24px; border-radius: 50%; object-fit: cover; box-shadow: 0 0 0 2px var(--surface); }
+  .by img + img { margin-left: -6px; }
+  .by b { font-weight: 500; color: var(--ink); }
+  p { margin: 18px 0 0; font: 17px/28px var(--serif); color: var(--ink); max-width: 456px; text-wrap: pretty; }
+  .noted { background: var(--caution-soft); box-shadow: inset 0 -2px 0 #e9b949; border-radius: 2px; }
+  .sel { background: rgb(85 80 216 / 0.16); }
+  .caret { display: inline-block; width: 2px; height: 20px; margin: 0 -1px; vertical-align: -4px; background: var(--accent); border-radius: 1px; }
+  .pin { position: absolute; right: 16px; display: flex; align-items: center; gap: 4px; height: 26px; padding: 0 8px 0 3px; border-radius: 99px; background: var(--surface); box-shadow: 0 0 0 1px var(--line), 0 1px 3px rgb(18 35 61 / 0.08); font-size: 12px; font-weight: 500; color: var(--ink-muted); }
+  .pin img { width: 20px; height: 20px; border-radius: 50%; object-fit: cover; }
+  figure { margin: 22px 0 0; }
+  figure img { display: block; width: 100%; height: 184px; object-fit: cover; border-radius: var(--r-control); outline: 1px solid rgb(0 0 0 / 0.06); outline-offset: -1px; }
+  figcaption { margin-top: 8px; font-size: 12.5px; line-height: 18px; color: var(--ink-muted); }
+
+  /* who's here, and saved */
+  .foot { display: flex; align-items: center; gap: 10px; height: 44px; margin-top: 22px; padding: 0 20px; font-size: 12px; color: var(--ink-muted); background: var(--sunken); box-shadow: inset 0 var(--hl) 0 var(--line); border-radius: 0 0 var(--r-sheet) var(--r-sheet); }
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--positive); }
+  .here { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+  .here img { width: 22px; height: 22px; border-radius: 50%; object-fit: cover; box-shadow: 0 0 0 2px var(--sunken), 0 0 0 3.5px #e0802a; }
+
+  .cursor { position: absolute; z-index: 3; width: 18px; height: 22px; filter: drop-shadow(0 1px 1.5px rgb(0 0 0 / 0.3)); }
+</style>
+</head>
+<body>
+<article class="card">
+  <div class="bar" role="toolbar">
+    <span class="style">Body text<svg class="i" viewBox="0 0 16 16"><path d="m5 6.5 3 3 3-3"/></svg></span>
+    <span class="b" style="font-weight:600">B</span>
+    <span class="b" style="font-style:italic;font-family:var(--serif)">I</span>
+    <span class="b" style="text-decoration:underline;text-underline-offset:2px">U</span>
+    <span class="b hover" style="text-decoration:line-through">S</span>
+    <span class="vr"></span>
+    <span class="b"><svg class="i" viewBox="0 0 16 16"><path d="M6.8 9.2a2.6 2.6 0 0 0 3.7 0l2-2a2.6 2.6 0 0 0-3.7-3.7l-.6.6M9.2 6.8a2.6 2.6 0 0 0-3.7 0l-2 2a2.6 2.6 0 0 0 3.7 3.7l.6-.6"/></svg></span>
+    <span class="b"><svg class="i" viewBox="0 0 16 16"><path d="M6 4.5h7.5M6 8h7.5M6 11.5h7.5"/><circle cx="3" cy="4.5" r=".6" fill="currentColor"/><circle cx="3" cy="8" r=".6" fill="currentColor"/><circle cx="3" cy="11.5" r=".6" fill="currentColor"/></svg></span>
+    <span class="b"><svg class="i" viewBox="0 0 16 16"><path d="M3 3.5v9M6.5 4.5h7M6.5 8h7M6.5 11.5h4.5"/></svg></span>
+    <span class="vr"></span>
+    <span class="b"><svg class="i" viewBox="0 0 16 16"><path d="M3 4a1.5 1.5 0 0 1 1.5-1.5h7A1.5 1.5 0 0 1 13 4v5.5A1.5 1.5 0 0 1 11.5 11H7l-3 2.5V11h.5"/></svg></span>
+    <span class="b"><svg class="i" viewBox="0 0 16 16"><rect x="2.5" y="3" width="11" height="10" rx="1.5"/><circle cx="6" cy="6.5" r="1.1"/><path d="m3 12 3.5-3.5 2.5 2.5 1.5-1.5 2.5 2.5"/></svg></span>
+    <span class="vr"></span>
+    <span class="ai"><svg class="i" viewBox="0 0 16 16"><path d="M8 2.5 9.2 6.8 13.5 8 9.2 9.2 8 13.5 6.8 9.2 2.5 8 6.8 6.8z"/></svg>Ask AI</span>
+  </div>
+
+  <!-- the tooltip under Strikethrough, up the instant the pointer arrived; the pointer is already on its way right -->
+  <span class="tip" style="left:231px;top:54px">Strikethrough<kbd>⇧⌘X</kbd></span>
+  <svg class="cursor" style="left:240px;top:20px" viewBox="0 0 18 22"><path d="M1.5 1.5v15.6l3.9-3.7 2.6 6 2.8-1.2-2.6-5.9h5.5z" fill="#111" stroke="#fff" stroke-width="1.4" stroke-linejoin="round"/></svg>
+
+  <div class="doc">
+    <div class="kicker">Coast · Spring issue</div>
+    <h1>Low tide at Saltburn</h1>
+    <div class="by">
+      <span class="faces"><img src="../../../../overlay/showcase/src/media/people/person-03.jpg" alt=""><img src="../../../../overlay/showcase/src/media/people/person-08.jpg" alt=""></span>
+      <span>Words by <b>Nia Adebayo</b> · Photographs by <b>Owen Hale</b></span>
+    </div>
+    <p>The sea goes out so far here that the pier seems to stand on nothing. By seven the sand is ribbed and silver, and the <span class="sel">dog walkers come down the cliff lift in pairs</span><span class="caret"></span>, coats zipped to the chin.</p>
+    <p>We walked the <span class="noted">mile to the scar</span> before the tide turned, and back again with wet boots and a bag of sea glass.</p>
+    <figure>
+      <img src="https://images.unsplash.com/photo-1505142468610-359e7d316be0?w=1000&h=420&fit=crop&q=75" alt="">
+      <figcaption>The tide on its way back in, from the cliff path. Photograph: Owen Hale</figcaption>
+    </figure>
+  </div>
+  <span class="pin" style="top:321px"><img src="../../../../overlay/showcase/src/media/people/person-08.jpg" alt="">2</span>
+
+  <footer class="foot">
+    <span class="dot"></span>Saved 2 min ago<span>·</span><span class="num">1,840 words, 8 min read</span>
+    <span class="here"><img src="../../../../overlay/showcase/src/media/people/person-03.jpg" alt="">Nia is editing</span>
+  </footer>
+</article>
+</body>
+</html>

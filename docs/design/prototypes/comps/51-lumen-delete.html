@@ -1,0 +1,133 @@
+<!doctype html>
+<!-- COMP #51 layered shadows (docs/craft/taste-checklist.md). Lumen, the same family photo library, inside a shared
+     album (Banff, October): its cover and the people it's shared with, the album's photos, three picked, and the
+     Delete dialog over the dimmed page, carrying the three photos it will delete. The dialog is the subject: its
+     shadow is four layers of one light, a tight dark one where it nearly touches and wider, fainter ones around it.
+     The mistake is planted by giving .dialog Tailwind's shadow-2xl (one 50px blur pushed 25px down), so it floats in
+     a haze with no contact under its edge. Slate's tokens. Throwaway. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lumen · Delete (comp)</title>
+<style>
+  :root {
+    --ink: #12233d; --ink-muted: #5a6779; --ink-subtle: #6f7c90; --line: rgb(18 35 61 / 0.08); --line-strong: rgb(18 35 61 / 0.14);
+    --accent: #5550d8; --accent-soft: #efeefd; --accent-deep: #3631a6; --board: #e9edf2; --board-dot: #d3d9e2; --sunken: #f3f5f9;
+    --overlay: 0 2px 4px oklch(0.21 0.02 264 / 0.06), 0 8px 18px oklch(0.21 0.02 264 / 0.14), 0 20px 44px oklch(0.21 0.02 264 / 0.18);
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 48px; background: var(--board);
+    background-image: radial-gradient(var(--board-dot) 1px, transparent 1px); background-size: 16px 16px;
+    font: 13px/18px Inter, -apple-system, system-ui, sans-serif; color: var(--ink); -webkit-font-smoothing: antialiased; }
+  .num { font-variant-numeric: tabular-nums; }
+  svg.i { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; }
+  .window { width: 1000px; height: 620px; display: grid; grid-template-columns: 200px 1fr; border-radius: 12px; overflow: hidden; background: #fff;
+    box-shadow: 0 1px 2px rgb(18 35 61 / 0.05), 0 8px 24px rgb(18 35 61 / 0.08), 0 24px 64px rgb(18 35 61 / 0.12), 0 0 0 0.5px rgb(18 35 61 / 0.18); }
+
+  .side { background: #f7f8fa; border-right: 0.5px solid var(--line-strong); padding: 12px 10px; display: flex; flex-direction: column; gap: 1px; }
+  .lights { display: flex; gap: 7px; padding: 4px 6px 16px; } .lights i { width: 11px; height: 11px; border-radius: 50%; background: #d9dde3; }
+  .nav { height: 28px; display: flex; align-items: center; gap: 9px; padding: 0 8px; border-radius: 6px; color: var(--ink-muted); }
+  .nav.on { background: rgb(18 35 61 / 0.06); color: var(--ink); font-weight: 500; }
+  .nav .n { margin-left: auto; font-size: 12px; color: var(--ink-subtle); }
+  .lab { margin: 14px 8px 6px; font-size: 11px; font-weight: 500; color: var(--ink-subtle); }
+  .alb { height: 32px; display: flex; align-items: center; gap: 9px; padding: 0 8px; color: var(--ink-muted); }
+  .alb img { width: 22px; height: 22px; border-radius: 5px; object-fit: cover; box-shadow: inset 0 0 0 0.5px rgb(0 0 0 / 0.1); }
+  .alb .n { margin-left: auto; font-size: 12px; color: var(--ink-subtle); }
+  .people { display: flex; flex-wrap: nowrap; gap: 5px; padding: 2px 8px; }
+  .people img { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; }
+
+  .main { position: relative; display: flex; flex-direction: column; min-width: 0; }
+  .bar { height: 54px; flex: none; display: flex; align-items: center; gap: 10px; padding: 0 16px 0 20px; border-bottom: 0.5px solid var(--line-strong); }
+  .bar h1 { margin: 0; font-size: 15px; font-weight: 600; letter-spacing: -0.01em; }
+  .seg { display: flex; padding: 2px; border-radius: 8px; background: var(--sunken); margin-left: 10px; } .seg span { height: 24px; padding: 0 9px; display: grid; place-items: center; border-radius: 6px; color: var(--ink-muted); font-weight: 500; font-size: 12px; }
+  .seg .on { background: #fff; color: var(--ink); box-shadow: 0 1px 1px rgb(18 35 61 / 0.05), 0 1px 3px rgb(18 35 61 / 0.1); }
+  .bar .sp { flex: 1; }
+  .sel { height: 26px; display: inline-flex; align-items: center; gap: 6px; padding: 0 10px; border-radius: 13px; background: var(--accent-soft); color: var(--accent-deep); font-weight: 600; font-size: 12px; }
+  .tb { width: 32px; height: 32px; border-radius: 8px; display: grid; place-items: center; color: var(--ink-muted); }
+  .tb.on { background: rgb(18 35 61 / 0.08); color: var(--ink); }
+  .tb svg.i { width: 17px; height: 17px; }
+
+  .grid { flex: 1; overflow: hidden; padding: 12px 16px 0; }
+  .day { display: flex; align-items: baseline; gap: 8px; margin: 2px 2px 8px; }
+  .day b { font-size: 14px; font-weight: 600; } .day span { font-size: 12px; color: var(--ink-subtle); }
+  .tiles { display: grid; grid-template-columns: repeat(5, 1fr); gap: 3px; margin-bottom: 14px; }
+  .t { position: relative; aspect-ratio: 1; overflow: hidden; border-radius: 3px; }
+  .t img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .t.wide { grid-column: span 2; aspect-ratio: auto; }
+  .t.on::after { content: ''; position: absolute; inset: 0; box-shadow: inset 0 0 0 3px var(--accent); border-radius: 3px; }
+  .t .ck { position: absolute; right: 7px; bottom: 7px; width: 20px; height: 20px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 1.5px #fff; display: grid; place-items: center; z-index: 1; }
+  .t .ck::after { content: ''; width: 4px; height: 8px; border: solid #fff; border-width: 0 1.6px 1.6px 0; transform: translateY(-1px) rotate(45deg); }
+  .t .vid { position: absolute; left: 7px; bottom: 6px; font-size: 11px; font-weight: 600; color: #fff; text-shadow: 0 1px 2px rgb(0 0 0 / 0.5); }
+
+  .pointer { position: absolute; z-index: 6; width: 18px; height: 18px; }
+
+
+  /* the album */
+  .cover { position: relative; height: 150px; flex: none; overflow: hidden; }
+  .mos { position: absolute; inset: 0; display: grid; grid-template-columns: 1.3fr 1fr 1fr; gap: 3px; }
+  .mos img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 45%; }
+  .cover::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgb(10 20 35 / 0) 35%, rgb(10 20 35 / 0.66)); }
+  .cover .t2 { position: absolute; left: 20px; bottom: 16px; z-index: 1; color: #fff; display: flex; flex-direction: column; gap: 2px; }
+  .cover .t2 b { font-size: 22px; line-height: 26px; font-weight: 600; letter-spacing: -0.015em; }
+  .cover .t2 span { font-size: 12.5px; color: rgb(255 255 255 / 0.82); }
+  .cover .sh { position: absolute; right: 18px; bottom: 16px; z-index: 1; display: flex; align-items: center; gap: 8px; color: #fff; font-size: 12px; }
+  .cover .sh img { width: 26px; height: 26px; border-radius: 50%; box-shadow: 0 0 0 2px rgb(255 255 255 / 0.9); margin-left: -7px; object-fit: cover; }
+  .tiles4 { display: grid; grid-template-columns: repeat(5, 1fr); gap: 3px; padding: 3px 3px 0; }
+  .scrim { position: absolute; inset: 0; background: rgb(18 35 61 / 0.38); z-index: 4; }
+  /* the subject: the dialog, lifted by four layers of one light */
+  .dialog { position: absolute; left: 50%; top: 50%; width: 340px; transform: translate(-50%, -46%); z-index: 5; background: #fff; border-radius: 14px; padding: 20px;
+    box-shadow: 0 0 0 0.5px rgb(18 35 61 / 0.12), 0 1px 2px rgb(18 35 61 / 0.16), 0 3px 6px rgb(18 35 61 / 0.12), 0 10px 20px rgb(18 35 61 / 0.12), 0 24px 48px rgb(18 35 61 / 0.14); }
+  .fan { position: relative; height: 84px; margin: 2px 0 14px; }
+  .fan img { position: absolute; top: 6px; width: 64px; height: 72px; border-radius: 8px; object-fit: cover; box-shadow: 0 0 0 2.5px #fff, 0 1px 2px rgb(18 35 61 / 0.18), 0 4px 10px rgb(18 35 61 / 0.14); }
+  .fan .badge { position: absolute; left: 150px; top: -2px; width: 24px; height: 24px; border-radius: 50%; background: #b02a3a; color: #fff; font-size: 12px; font-weight: 600; display: grid; place-items: center; box-shadow: 0 0 0 2.5px #fff; z-index: 2; }
+  .dialog h2 { margin: 0 0 4px; font-size: 16px; line-height: 22px; font-weight: 600; letter-spacing: -0.01em; }
+  .dialog p { margin: 0; font-size: 13px; line-height: 19px; color: var(--ink-muted); text-wrap: pretty; }
+  .dialog .also { display: flex; align-items: center; gap: 8px; margin: 12px 0 18px; padding: 9px 10px; border-radius: 8px; background: #fcf1dd; color: #7a4a05; font-size: 12px; line-height: 16px; }
+  .dialog .also img { width: 20px; height: 20px; border-radius: 50%; object-fit: cover; flex: none; }
+  .acts { display: flex; justify-content: flex-end; gap: 8px; }
+  .b { height: 34px; padding: 0 14px; border-radius: 8px; display: grid; place-items: center; font-weight: 500; }
+  .b.c { box-shadow: inset 0 0 0 1px var(--line-strong); }
+  .b.d { background: #b02a3a; color: #fff; box-shadow: 0 1px 2px rgb(120 20 35 / 0.3), inset 0 1px 0 rgb(255 255 255 / 0.14), 0 0 0 3px rgb(176 42 58 / 0.18); }
+</style>
+</head>
+<body>
+<div class="window">
+  <aside class="side">
+    <div class="lights"><i></i><i></i><i></i></div>
+    <div class="nav"><svg class="i" viewBox="0 0 16 16"><rect x="2" y="2" width="5" height="5" rx="1"/><rect x="9" y="2" width="5" height="5" rx="1"/><rect x="2" y="9" width="5" height="5" rx="1"/><rect x="9" y="9" width="5" height="5" rx="1"/></svg>Library<span class="n num">2,418</span></div>
+    <div class="nav"><svg class="i" viewBox="0 0 16 16"><path d="M8 13.5S2.5 10 2.5 6.2A2.9 2.9 0 0 1 8 4.6a2.9 2.9 0 0 1 5.5 1.6C13.5 10 8 13.5 8 13.5z"/></svg>Favourites<span class="n num">86</span></div>
+    <div class="nav"><svg class="i" viewBox="0 0 16 16"><circle cx="8" cy="9" r="4.5"/><path d="M8 7v2.2l1.4.9M6 2.5h4"/></svg>Memories</div>
+    <div class="nav"><svg class="i" viewBox="0 0 16 16"><path d="M3 4.5h10M6.5 4.5V3h3v1.5M4.5 4.5l.7 9h5.6l.7-9"/></svg>Recently deleted<span class="n num">12</span></div>
+    <div class="lab">Albums</div>
+    <div class="alb" style="background:rgb(18 35 61 / 0.06);border-radius:6px;color:var(--ink);font-weight:500"><img src="../../../../overlay/showcase/src/media/peak.jpg" alt="">Banff, October<span class="n num">148</span></div>
+    <div class="alb"><img src="../../../../overlay/showcase/src/media/afterglow.jpg" alt="">Lisbon nights<span class="n num">37</span></div>
+    <div class="alb"><img src="../../../../overlay/showcase/src/media/ceramic.jpg" alt="">Studio pieces<span class="n num">64</span></div>
+    <div class="alb"><img src="../../../../overlay/showcase/src/media/paper-cities.jpg" alt="">Buildings<span class="n num">21</span></div>
+    <div class="lab">People</div>
+    <div class="people"><img src="../../../../overlay/showcase/src/media/people/person-03.jpg" alt=""><img src="../../../../overlay/showcase/src/media/people/person-08.jpg" alt=""><img src="../../../../overlay/showcase/src/media/people/person-01.jpg" alt=""><img src="../../../../overlay/showcase/src/media/people/person-04.jpg" alt=""><img src="../../../../overlay/showcase/src/media/people/person-09.jpg" alt=""></div>
+  </aside>
+
+  <main class="main">
+    <div class="bar">
+      <svg class="i" viewBox="0 0 16 16" style="color:var(--ink-muted)"><path d="M10 3 5 8l5 5"/></svg><h1>Banff, October</h1>
+      <span class="sp"></span>
+      <span class="sel num">3 selected</span>
+      <span class="tb"><svg class="i" viewBox="0 0 16 16"><path d="M8 2v8M5 5l3-3 3 3M3 9v4h10V9"/></svg></span>
+      <span class="tb on"><svg class="i" viewBox="0 0 16 16"><path d="M3 4.5h10M6.5 4.5V3h3v1.5M4.5 4.5l.7 9h5.6l.7-9"/></svg></span>
+    </div>
+    <div class="cover"><span class="mos"><img src="../../../../overlay/showcase/src/media/peak.jpg" alt=""><img src="../../../../overlay/showcase/src/media/lake.jpg" alt=""><img src="../../../../overlay/showcase/src/media/valley.jpg" alt=""></span><span class="t2"><b>Banff, October</b><span class="num">148 photos · 6–13 October · Moraine Lake, Lake Louise</span></span>
+      <span class="sh"><span>Shared with</span><span style="display:flex;margin-left:7px"><img src="../../../../overlay/showcase/src/media/people/person-08.jpg" alt=""><img src="../../../../overlay/showcase/src/media/people/person-03.jpg" alt=""><img src="../../../../overlay/showcase/src/media/people/person-01.jpg" alt=""></span></span></div>
+    <div class="tiles4"><span class="t on"><img src="../../../../overlay/showcase/src/media/peak.jpg" alt=""><i class="ck"></i></span><span class="t"><img src="../../../../overlay/showcase/src/media/people/person-08.jpg" alt=""></span><span class="t on"><img src="../../../../overlay/showcase/src/media/lake.jpg" alt=""><i class="ck"></i></span><span class="t"><img src="../../../../overlay/showcase/src/media/valley.jpg" alt=""></span><span class="t"><img src="../../../../overlay/showcase/src/media/people/person-03.jpg" alt=""></span><span class="t on"><img src="../../../../overlay/showcase/src/media/valley.jpg" alt="" style="object-position:80% 90%"><i class="ck"></i></span><span class="t"><img src="../../../../overlay/showcase/src/media/lake.jpg" alt="" style="object-position:20% 80%"></span><span class="t"><img src="../../../../overlay/showcase/src/media/people/person-01.jpg" alt=""></span><span class="t"><img src="../../../../overlay/showcase/src/media/peak.jpg" alt="" style="object-position:90% 20%"></span><span class="t"><img src="../../../../overlay/showcase/src/media/low-tide.jpg" alt=""></span><span class="t"><img src="../../../../overlay/showcase/src/media/people/person-04.jpg" alt=""></span><span class="t"><img src="../../../../overlay/showcase/src/media/afterglow.jpg" alt=""></span><span class="t"><img src="../../../../overlay/showcase/src/media/ceramic.jpg" alt=""></span><span class="t"><img src="../../../../overlay/showcase/src/media/paper-cities.jpg" alt=""></span><span class="t"><img src="../../../../overlay/showcase/src/media/people/person-06.jpg" alt=""></span></div>
+    <div class="scrim"></div>
+    <div class="dialog" role="alertdialog">
+      <div class="fan"><img src="../../../../overlay/showcase/src/media/valley.jpg" alt="" style="left:58px;transform:rotate(-8deg);object-position:80% 90%"><img src="../../../../overlay/showcase/src/media/lake.jpg" alt="" style="left:138px;transform:rotate(7deg)"><img src="../../../../overlay/showcase/src/media/peak.jpg" alt="" style="left:96px;top:2px;z-index:1"><span class="badge num">3</span></div>
+      <h2>Delete 3 photos?</h2>
+      <p>They’ll stay in Recently deleted for 30 days, then go for good.</p>
+      <div class="also"><img src="../../../../overlay/showcase/src/media/people/person-08.jpg" alt="">Ravi and 2 others will lose them from this shared album too.</div>
+      <div class="acts"><span class="b c">Cancel</span><span class="b d">Delete 3 photos</span></div>
+    </div>
+  </main>
+</div>
+</body>
+</html>

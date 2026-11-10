@@ -157,8 +157,18 @@ async function greyPass() {
   return out.slice(0, 12);
 }
 
-export async function craftRun(overlay, { timeout = 60000, quiet = 600, op, grey = false, scope = null, hidden = false, ...rest } = {}) {
-  if (op) return operate({ op, scope, ...rest });
+// one read at a time: each takes the blueprint over and gives it back as it found it, so a second read started
+// mid-way (the page's own, and a checker's scoped one) would collect what the first one turned on
+let reading = Promise.resolve();
+
+export function craftRun(overlay, options = {}) {
+  if (options.op) { const { op, scope = null, ...rest } = options; return operate({ op, scope, ...rest }); }
+  const run = reading.then(() => readOnce(overlay, options));
+  reading = run.catch(() => {});
+  return run;
+}
+
+async function readOnce(overlay, { timeout = 60000, quiet = 600, grey = false, scope = null, hidden = false } = {}) {
   resetKeys();
   await prepareSources();
   const blueprint = overlay?.blueprintReader;

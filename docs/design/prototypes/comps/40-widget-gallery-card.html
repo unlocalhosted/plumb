@@ -1,0 +1,143 @@
+<!doctype html>
+<!-- COMP #40 (card pass, 2026-11-05): the one component, rich inside. A phone's widget gallery, the sheet alone: four
+     small widgets as they'd really look, each with live data (Lisbon's day as a temperature curve, Thursday's next
+     events, a photo from this day, today's activity rings). Slate's tokens (overlay/showcase/src/theme.css). The sheet,
+     search field and button are the system's own continuous corners (corner-shape: squircle). Drawn BROKEN: the four
+     tiles are rounded-[22px] with a plain round corner ([data-widget] on Weather), so at 182px the kink where each
+     straight edge turns shows beside the smooth sheet around them. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Widget gallery (comp)</title>
+<style>
+  :root {
+    --surface: #fff; --sunken: #f3f5f9; --ink: #12233d; --ink-muted: #5a6779; --ink-subtle: #6f7c90;
+    --line: rgb(18 35 61 / 0.11); --accent: #5550d8; --accent-soft: #efeefd; --negative: #b02a3a;
+    --board: #eef1f5; --board-dot: #d6dce4;
+    --sheet: 0 1px 2px rgb(18 35 61 / 0.05), 0 8px 24px rgb(18 35 61 / 0.08), 0 24px 64px rgb(18 35 61 / 0.12);
+    --hl: 0.5px;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 48px; background: var(--board);
+    background-image: radial-gradient(var(--board-dot) 1px, transparent 1px); background-size: 16px 16px;
+    font: 14px/20px Inter, -apple-system, system-ui, sans-serif; color: var(--ink); -webkit-font-smoothing: antialiased; }
+  .num { font-variant-numeric: tabular-nums; }
+  .sq { corner-shape: squircle; }
+
+  .sheet { width: 420px; border-radius: 32px; background: var(--sunken); box-shadow: var(--sheet), 0 0 0 0.5px rgb(18 35 61 / 0.1); padding: 8px 20px 20px; }
+  .grab { width: 36px; height: 5px; border-radius: 3px; background: rgb(18 35 61 / 0.16); margin: 0 auto 12px; }
+  .head { display: flex; align-items: center; justify-content: space-between; }
+  .head .t { font-size: 20px; line-height: 28px; font-weight: 600; letter-spacing: -0.015em; }
+  .x { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: rgb(18 35 61 / 0.07); color: var(--ink-muted); }
+  .search { display: flex; align-items: center; gap: 8px; height: 38px; margin-top: 12px; padding: 0 12px; border-radius: 12px; background: var(--surface); color: var(--ink-subtle); font-size: 15px; box-shadow: 0 0 0 0.5px var(--line); }
+  .seg { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; margin-top: 12px; padding: 2px; border-radius: 10px; background: rgb(18 35 61 / 0.06); }
+  .seg span { height: 28px; border-radius: 8px; display: grid; place-items: center; font-size: 13px; font-weight: 500; color: var(--ink-muted); }
+  .seg .on { background: var(--surface); color: var(--ink); box-shadow: 0 1px 1px rgb(18 35 61 / 0.04), 0 1px 3px rgb(18 35 61 / 0.08); }
+  .label { display: flex; justify-content: space-between; margin: 18px 4px 8px; font-size: 12px; font-weight: 500; color: var(--ink-subtle); }
+
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .cap { margin-top: 6px; text-align: center; font-size: 12px; color: var(--ink-muted); }
+  /* PLANTED (#40): rounded-[22px], a quarter circle: the corner bends at full strength from its first point */
+  .w { position: relative; aspect-ratio: 1; border-radius: 22px; overflow: hidden; padding: 14px; display: flex; flex-direction: column; justify-content: space-between; }
+
+  .weather { background: linear-gradient(in oklch 170deg, #4b8fe0, #2a5cb8); color: #fff; }
+  .weather .r1 { display: flex; justify-content: space-between; align-items: center; font-size: 13px; font-weight: 600; }
+  .weather .deg { font-size: 42px; line-height: 1; font-weight: 400; letter-spacing: -0.03em; }
+  .weather .s { margin-top: 4px; font-size: 12px; font-weight: 500; color: #dfeafb; }
+  .weather svg { display: block; margin-top: 6px; }
+
+  .cal { background: var(--surface); box-shadow: 0 1px 1px rgb(18 35 61 / 0.04), 0 1px 3px rgb(18 35 61 / 0.08); }
+  .cal .dow { font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--negative); }
+  .cal .n { font-size: 40px; line-height: 1; font-weight: 400; letter-spacing: -0.03em; margin-top: 2px; }
+  .ev { display: grid; grid-template-columns: 3px 1fr; gap: 7px; font-size: 12px; line-height: 15px; }
+  .ev + .ev { margin-top: 6px; }
+  .ev i { border-radius: 2px; }
+  .ev b { display: block; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ev span { color: var(--ink-muted); }
+
+  .photo { color: #fff; justify-content: flex-end; }
+  .photo img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; outline: 1px solid rgb(0 0 0 / 0.1); outline-offset: -1px; }
+  .photo::before { content: ""; position: absolute; inset: 0; background-image: linear-gradient(to bottom, rgba(0,0,0,0), rgba(0,0,0,0.04) 35%, rgba(0,0,0,0.3) 60%, rgba(0,0,0,0.72)); }
+  .photo > div { position: relative; }
+  .photo .k { font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #e8edf5; }
+  .photo .t { font-size: 15px; font-weight: 600; line-height: 19px; }
+
+  .rings { background: #10151f; color: #fff; flex-direction: row; align-items: center; gap: 12px; }
+  .rings .fig { display: flex; flex-direction: column; gap: 6px; font-size: 12px; line-height: 14px; }
+  .rings .fig b { display: block; font-size: 15px; line-height: 18px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .rings .fig small { font-size: 10.5px; font-weight: 500; color: #a8b0bf; }
+
+  .foot { display: flex; flex-direction: column; align-items: center; gap: 14px; margin-top: 18px; }
+  .dots { display: flex; gap: 6px; }
+  .dots i { width: 6px; height: 6px; border-radius: 50%; background: rgb(18 35 61 / 0.2); }
+  .dots i:first-child { background: var(--ink); }
+  .add { width: 100%; height: 48px; border-radius: 16px; display: grid; place-items: center; background: var(--accent); color: #fff; font-size: 16px; font-weight: 600;
+    box-shadow: 0 1px 2px rgb(54 49 166 / 0.3), inset 0 1px 0 rgb(255 255 255 / 0.18); }
+</style>
+</head>
+<body>
+<section class="sheet sq" aria-label="Add a widget">
+  <div class="grab"></div>
+  <div class="head"><span class="t">Add a widget</span><span class="x"><svg width="12" height="12" viewBox="0 0 12 12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M2 2l8 8M10 2l-8 8"/></svg></span></div>
+  <div class="search sq"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="7" cy="7" r="4.5"/><path d="M10.5 10.5 14 14"/></svg>Search widgets</div>
+  <div class="seg sq"><span class="on sq">Small</span><span>Medium</span><span>Large</span></div>
+  <div class="label"><span>Suggested</span><span class="num">4 of 23</span></div>
+
+  <div class="grid">
+    <div>
+      <!-- Lisbon: now, the day's curve to tonight, high and low -->
+      <div class="w weather" data-widget>
+        <div class="r1"><span>Lisbon</span><svg width="18" height="18" viewBox="0 0 18 18" fill="#ffd66b"><circle cx="9" cy="9" r="4"/><g stroke="#ffd66b" stroke-width="1.6" stroke-linecap="round"><path d="M9 1.5v1.8M9 14.7v1.8M1.5 9h1.8M14.7 9h1.8M3.7 3.7l1.3 1.3M13 13l1.3 1.3M3.7 14.3 5 13M13 5l1.3-1.3"/></g></svg></div>
+        <div>
+          <div class="deg num">21°</div>
+          <div class="s">Clear until 6pm · <span class="num">23° 14°</span></div>
+          <svg width="154" height="28" viewBox="0 0 154 28"><path d="M0 22 C20 20 34 10 52 7 S88 4 104 9 S136 22 154 24" fill="none" stroke="rgb(255 255 255 / 0.85)" stroke-width="2" stroke-linecap="round"/><circle cx="52" cy="7" r="3.5" fill="#fff"/></svg>
+        </div>
+      </div>
+      <div class="cap">Weather</div>
+    </div>
+    <div>
+      <div class="w cal">
+        <div><div class="dow">Thursday</div><div class="n num">6</div></div>
+        <div>
+          <div class="ev"><i style="background:var(--accent)"></i><span><b>Config talk run-through</b><span class="num">15:00 – 15:30</span></span></div>
+          <div class="ev"><i style="background:#1f9d6b"></i><span><b>Release review</b><span class="num">16:00 – 17:00</span></span></div>
+        </div>
+      </div>
+      <div class="cap">Calendar</div>
+    </div>
+    <div>
+      <div class="w photo">
+        <img src="../../../../overlay/showcase/src/media/valley.jpg" alt="">
+        <div><div class="k">On this day</div><div class="t">Moraine Lake, 2023</div></div>
+      </div>
+      <div class="cap">Photos</div>
+    </div>
+    <div>
+      <!-- today's activity: move, exercise, stand, each a ring with its figure -->
+      <div class="w rings">
+        <svg width="76" height="76" viewBox="0 0 76 76" style="flex:none">
+          <g fill="none" stroke-width="8" stroke-linecap="round" transform="rotate(-90 38 38)">
+            <circle cx="38" cy="38" r="33" stroke="#fa114f" stroke-opacity="0.22"/><circle cx="38" cy="38" r="33" stroke="#fa114f" stroke-dasharray="161.5 207.3"/>
+            <circle cx="38" cy="38" r="23" stroke="#92e82a" stroke-opacity="0.22"/><circle cx="38" cy="38" r="23" stroke="#92e82a" stroke-dasharray="115.6 144.5"/>
+            <circle cx="38" cy="38" r="13" stroke="#1eeaef" stroke-opacity="0.22"/><circle cx="38" cy="38" r="13" stroke="#1eeaef" stroke-dasharray="61.3 81.7"/>
+          </g>
+        </svg>
+        <div class="fig">
+          <span><b style="color:#fa114f">412<small>/530</small></b></span>
+          <span><b style="color:#92e82a">24<small>/30</small></b></span>
+          <span><b style="color:#1eeaef">9<small>/12</small></b></span>
+        </div>
+      </div>
+      <div class="cap">Activity</div>
+    </div>
+  </div>
+
+  <div class="foot">
+    <div class="dots"><i></i><i></i><i></i><i></i></div>
+    <div class="add sq">Add widget</div>
+  </div>
+</section>
+</body>
+</html>

@@ -86,7 +86,8 @@ test('F7-01, F7-02, F7-03: the avatar circle and the Run now button keep their c
   assert.match(line, /py-s3/, line);
   assert.doesNotMatch(line, /rounded-\[0px\]|\bp-s3\b/, line);
   await overlay.locator('.fx .said .undo').click();
-  await page.waitForFunction(() => /Undone/.test(document.querySelector('plumb-overlay')?.shadowRoot.querySelector('.fx .said')?.textContent ?? ''), null, { timeout: 30000 });
+  // a step's undo is History's to say (its toast); the panel says it only when the reload came before History heard
+  await page.waitForFunction(() => /Undone/.test(document.querySelector('plumb-overlay')?.shadowRoot.querySelector('.wt:not([hidden]), .fx .said')?.textContent ?? ''), null, { timeout: 30000 });
   assert.equal(await readFile(app, 'utf8'), original);
   assert.deepEqual(errors, []);
 });

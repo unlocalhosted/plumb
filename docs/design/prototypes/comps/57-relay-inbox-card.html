@@ -1,0 +1,188 @@
+<!doctype html>
+<!-- COMP #57, the one component (owner 2026-11-04/05: no app window, richness inside). Relay, a team's mail client:
+     the Inbox list mid-morning. Faces (and the company's own mark for a company sender), unread, labels, an attachment
+     with its thumbnail, a meeting invite drawn as a date, thread counts. Slate's tokens (overlay/showcase/src/theme.css).
+     The lesson lives in the preview lines: the build mutes them with opacity-60, so the @you in Mei's preview, the one
+     word coloured to catch the eye, is washed out to 60% with the rest. Drawn here as the build plants it. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Relay inbox card (comp)</title>
+<style>
+  :root {
+    --surface: #fff; --sunken: #f3f5f9; --ink: #12233d; --ink-muted: #5a6779; --ink-subtle: #6f7c90; --line: rgb(18 35 61 / 0.11);
+    --accent: #5550d8; --accent-soft: #efeefd; --accent-deep: #3631a6;
+    --positive: #0f6f58; --positive-soft: #e5f4ef; --caution: #965a03; --caution-soft: #fcf1dd; --negative: #b02a3a; --negative-soft: #fbeaed;
+    --board: #eef1f5; --board-dot: #d6dce4; --hl: 0.5px;
+    --r-chip: 4px; --r-control: 6px; --r-card: 10px; --r-sheet: 14px;
+    --shadow-window: 0 1px 2px oklch(0.21 0.02 264 / 0.04), 0 8px 24px oklch(0.21 0.02 264 / 0.06), 0 24px 64px oklch(0.21 0.02 264 / 0.08), 0 0 0 1px rgb(18 35 61 / 0.06);
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 56px; background: var(--board);
+    background-image: radial-gradient(var(--board-dot) 1px, transparent 1px); background-size: 16px 16px;
+    font: 14px/20px Inter, -apple-system, system-ui, sans-serif; color: var(--ink); -webkit-font-smoothing: antialiased; }
+  .num { font-variant-numeric: tabular-nums; }
+  svg.i { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+
+  .card { width: 456px; border-radius: var(--r-sheet); background: var(--surface); box-shadow: var(--shadow-window); overflow: hidden; }
+
+  /* header: the box, how much is new, the split */
+  .top { padding: 18px 20px 0; }
+  .title { display: flex; align-items: baseline; gap: 8px; }
+  .title b { font-size: 17px; line-height: 24px; font-weight: 500; letter-spacing: -0.01em; }
+  .title span { font-size: 13px; color: var(--ink-subtle); }
+  .title .act { margin-left: auto; align-self: center; display: flex; gap: 2px; color: var(--ink-muted); }
+  .title .act span { width: 28px; height: 28px; display: grid; place-items: center; border-radius: var(--r-control); color: var(--ink-muted); }
+  .tabs { display: flex; gap: 18px; margin-top: 10px; box-shadow: inset 0 calc(-1 * var(--hl)) 0 var(--line); }
+  .tab { display: flex; align-items: center; gap: 6px; height: 34px; font-size: 13px; font-weight: 500; color: var(--ink-muted); position: relative; }
+  .tab em { font-style: normal; font-size: 11px; font-weight: 600; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 99px; display: grid; place-items: center; background: var(--sunken); color: var(--ink-muted); }
+  .tab.on { color: var(--ink); }
+  .tab.on em { background: var(--accent-soft); color: var(--accent-deep); }
+  .tab.on::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 2px; border-radius: 1px; background: var(--accent); }
+
+  .day { padding: 12px 20px 4px; font-size: 12px; font-weight: 500; color: var(--ink-subtle); }
+
+  /* a message */
+  .row { position: relative; display: grid; grid-template-columns: 36px 1fr; gap: 12px; padding: 10px 20px 11px; }
+  .row + .row::before { content: ""; position: absolute; top: 0; left: 68px; right: 20px; height: var(--hl); background: var(--line); }
+  .row.sel { background: var(--sunken); }
+  .row.sel::before, .row.sel + .row::before { display: none; }
+  .row .unread { position: absolute; left: 8px; top: 24px; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+  .face { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; outline: 1px solid rgb(0 0 0 / 0.08); outline-offset: -1px; display: block; }
+  .mark { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; background: var(--b); }
+  .mark::before { content: ""; width: 17px; height: 17px; background: #fff; -webkit-mask: var(--m) center / contain no-repeat; mask: var(--m) center / contain no-repeat; }
+  .body { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+  .l1 { display: flex; align-items: baseline; gap: 8px; }
+  .from { font-size: 14px; font-weight: 500; white-space: nowrap; }
+  .row.read .from { font-weight: 400; }
+  .count { font-size: 12px; color: var(--ink-subtle); }
+  .at { margin-left: auto; font-size: 12px; color: var(--ink-subtle); white-space: nowrap; }
+  .row:not(.read) .at { color: var(--accent-deep); font-weight: 500; }
+  .l2 { display: flex; align-items: center; gap: 6px; font-size: 13px; min-width: 0; }
+  .l2 .s { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .row.read .l2 .s { color: var(--ink); }
+  .chip { flex: none; height: 18px; padding: 0 6px; border-radius: var(--r-chip); font-size: 11px; font-weight: 500; display: inline-flex; align-items: center; }
+  .chip.design { background: var(--accent-soft); color: var(--accent-deep); }
+  .chip.launch { background: var(--negative-soft); color: var(--negative); }
+  .chip.finance { background: var(--caution-soft); color: var(--caution); }
+  .chip.hiring { background: var(--positive-soft); color: var(--positive); }
+
+  /* the planted habit: the preview muted with opacity, the build's opacity-60 on ink. The @you inside fades with it. */
+  .pv { font-size: 13px; line-height: 19px; color: var(--ink); opacity: 0.6; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .mention { color: var(--accent); font-weight: 500; }
+
+  /* what came with it */
+  .att { display: flex; gap: 6px; margin-top: 7px; }
+  .file { white-space: nowrap; }
+  .file { display: flex; align-items: center; gap: 8px; height: 30px; padding: 0 10px 0 3px; border-radius: var(--r-control); background: var(--surface); box-shadow: inset 0 0 0 var(--hl) var(--line), 0 1px 1px rgb(18 35 61 / 0.03); font-size: 12px; }
+  .file img { width: 24px; height: 24px; border-radius: 4px; object-fit: cover; outline: 1px solid rgb(0 0 0 / 0.06); outline-offset: -1px; }
+  .file .ft { width: 24px; height: 24px; border-radius: 4px; display: grid; place-items: center; font-size: 8px; font-weight: 700; letter-spacing: 0.02em; color: #fff; background: #d0463b; }
+  .file small { font-size: 12px; color: var(--ink-subtle); }
+  .invite { display: flex; align-items: center; gap: 10px; margin-top: 7px; padding: 6px 10px 6px 6px; border-radius: var(--r-card); background: var(--surface); box-shadow: inset 0 0 0 var(--hl) var(--line), 0 1px 1px rgb(18 35 61 / 0.03); }
+  .date { width: 34px; flex: none; border-radius: var(--r-control); overflow: hidden; text-align: center; box-shadow: inset 0 0 0 var(--hl) var(--line); }
+  .date i { display: block; font-style: normal; font-size: 9px; line-height: 13px; font-weight: 600; letter-spacing: 0.06em; color: #fff; background: var(--negative); font-feature-settings: 'case'; }
+  .date b { display: block; font-size: 15px; line-height: 20px; font-weight: 600; }
+  .invite .w { font-size: 12.5px; line-height: 17px; }
+  .invite .w div:last-child { color: var(--ink-muted); }
+  .rsvp { margin-left: auto; display: flex; gap: 4px; }
+  .rsvp span { height: 26px; padding: 0 10px; border-radius: var(--r-control); font-size: 12px; font-weight: 500; display: grid; place-items: center; }
+  .rsvp .yes { background: var(--accent); color: #fff; }
+  .rsvp .no { box-shadow: inset 0 0 0 1px var(--line); color: var(--ink-muted); }
+  .stack { display: flex; margin-top: 7px; align-items: center; gap: 8px; font-size: 12px; color: var(--ink-subtle); }
+  .stack span { display: flex; }
+  .stack img { width: 20px; height: 20px; border-radius: 50%; object-fit: cover; box-shadow: 0 0 0 2px var(--surface); }
+  .stack img + img { margin-left: -5px; }
+</style>
+</head>
+<body>
+<article class="card">
+  <header class="top">
+    <div class="title">
+      <b>Inbox</b><span class="num">12 unread</span>
+      <span class="act">
+        <span><svg class="i" viewBox="0 0 16 16"><circle cx="7" cy="7" r="4.5"/><path d="m10.5 10.5 3 3"/></svg></span>
+        <span><svg class="i" viewBox="0 0 16 16"><path d="M2.5 4h11M4.5 8h7M6.5 12h3"/></svg></span>
+      </span>
+    </div>
+    <nav class="tabs">
+      <span class="tab on">Important <em class="num">8</em></span>
+      <span class="tab">Other <em class="num">24</em></span>
+      <span class="tab">Calendar <em class="num">2</em></span>
+    </nav>
+  </header>
+
+  <div class="day">Today</div>
+
+  <!-- the lesson's row: Mei asks for you by name. The @you is the accent; the opacity on the line fades it -->
+  <div class="row sel">
+    <span class="unread"></span>
+    <img class="face" src="../../../../overlay/showcase/src/media/people/person-07.jpg" alt="">
+    <div class="body">
+      <div class="l1"><span class="from">Mei Lin</span><span class="count num">3</span><span class="at num">9:12</span></div>
+      <div class="l2"><span class="chip design">Design</span><span class="s">Notes from Tuesday’s crit</span></div>
+      <div class="pv"><span class="mention">@you</span> can you take the empty states before we ship? The inbox, search with no results, and the first project.</div>
+      <div class="att">
+        <span class="file"><img src="../../../../overlay/showcase/src/media/fig-thumb.jpg" alt="">empty-states.plate<small>3 frames</small></span>
+        <span class="file"><span class="ft">PDF</span>crit-notes.pdf</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <span class="unread"></span>
+    <img class="face" src="../../../../overlay/showcase/src/media/people/person-03.jpg" alt="">
+    <div class="body">
+      <div class="l1"><span class="from">Anika Rao</span><span class="at num">8:47</span></div>
+      <div class="l2"><span class="chip launch">Launch</span><span class="s">Venue for the offsite</span></div>
+      <div class="pv">Two options left, both near the station. Can you pick one by Friday so I can book the rooms?</div>
+      <div class="stack"><span><img src="../../../../overlay/showcase/src/media/people/person-02.jpg" alt=""><img src="../../../../overlay/showcase/src/media/people/person-10.jpg" alt=""><img src="../../../../overlay/showcase/src/media/people/person-05.jpg" alt=""></span>Theo, Ruth and Amara are on it</div>
+    </div>
+  </div>
+
+  <div class="row">
+    <span class="unread"></span>
+    <span class="mark" style="--b:#181717;--m:url(https://cdn.jsdelivr.net/npm/simple-icons@13.21.0/icons/github.svg)"></span>
+    <div class="body">
+      <div class="l1"><span class="from">GitHub</span><span class="count num">6</span><span class="at num">8:03</span></div>
+      <div class="l2"><span class="s">[relay/web] Release 4.2 is out</span></div>
+      <div class="pv">12 pull requests merged by 3 contributors. Search is now instant on large inboxes.</div>
+    </div>
+  </div>
+
+  <div class="day">Yesterday</div>
+
+  <div class="row read">
+    <img class="face" src="../../../../overlay/showcase/src/media/people/person-05.jpg" alt="">
+    <div class="body">
+      <div class="l1"><span class="from">Amara Osei</span><span class="at">Yesterday</span></div>
+      <div class="l2"><span class="chip hiring">Hiring</span><span class="s">Portfolio review with the finalists</span></div>
+      <div class="pv">I’ve put the three finalists in a doc, with notes from each first call.</div>
+      <div class="invite">
+        <span class="date"><i>THU</i><b class="num">14</b></span>
+        <span class="w"><div>Portfolio review</div><div class="num">15:00–16:00 · Studio 2</div></span>
+        <span class="rsvp"><span class="no">Maybe</span><span class="yes">Going</span></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="row read">
+    <img class="face" src="../../../../overlay/showcase/src/media/people/person-04.jpg" alt="">
+    <div class="body">
+      <div class="l1"><span class="from">Jonas Weber</span><span class="count num">2</span><span class="at">Yesterday</span></div>
+      <div class="l2"><span class="chip finance">Finance</span><span class="s">Re: the April numbers</span></div>
+      <div class="pv">Thanks, that matches what finance sent this morning. I’ll close the month.</div>
+    </div>
+  </div>
+
+  <div class="row read">
+    <span class="mark" style="--b:#5e6ad2;--m:url(https://cdn.jsdelivr.net/npm/simple-icons@13.21.0/icons/linear.svg)"></span>
+    <div class="body">
+      <div class="l1"><span class="from">Linear</span><span class="at">Yesterday</span></div>
+      <div class="l2"><span class="s">Your week in Relay Web</span></div>
+      <div class="pv">You closed 14 issues and opened 3. Cycle 22 ends on Friday with 6 left.</div>
+    </div>
+  </div>
+</article>
+</body>
+</html>

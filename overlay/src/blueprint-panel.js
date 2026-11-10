@@ -30,6 +30,7 @@
  * ───────────────────────────────────────────────────────── */
 import { FIX } from './words.js';
 import { esc } from './choices.js';
+import { placeOf as stampPlace } from './stamp.js';
 
 export const PANEL_CSS = `
   .bpp { position: fixed; inset-inline-end: var(--pl-space-6); inset-block-start: var(--pl-space-6); max-height: calc(100vh - 2 * var(--pl-space-6) - var(--pl-tag-h) - 18px);
@@ -85,10 +86,13 @@ export const PANEL_CSS = `
 const whatOf = (mark) => FIX.what(mark);
 const soft = (mark) => /framework|tier|by-value|matches/.test(mark.rule);
 // What a problem is, said once for every count on screen (the dock, the fix panel's line, the reader's progress):
-// a new mark that is neither written in code the overlay can't reach (inCode) nor a note. A note is what a craft rule
-// measured on the page with no exact fix (advice); a craft finding that suggests an edit is a problem like any other.
+// a new mark that is neither written in code the overlay can't reach (inCode) nor a note, counted where it can be
+// placed. A place is a file, a line and a column in the code (placeKey); a mark with no source position has no place.
+// A note is what a craft rule measured on the page: with no exact fix (advice), or with a fix but no place in the code
+// to count it at. It stays on its element, with its fix when it has one, and is never a problem.
 export const inCode = (mark) => /opaque-inline|^config\//.test(mark.rule);
-export const isNote = (mark) => mark.family === 'craft' && (!mark.craft?.suggest || mark.craft.suggest.kind === 'advice');
+export const placeKey = (mark, file = mark.file) => { const at = mark.file ?? file; return at && Number.isInteger(mark.line) && Number.isInteger(mark.column) ? `${at}:${mark.line}:${mark.column}` : null; };
+export const isNote = (mark, file = mark.file) => mark.family === 'craft' && (!mark.craft?.suggest || mark.craft.suggest.kind === 'advice' || placeKey(mark, file) === null);
 const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
 const still = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
 // Whether some container (or the page) could scroll an element into the free area: a fixed header's avatar can't.
@@ -124,7 +128,7 @@ export function groupsOf(items) {
     let g = groups.get(key);
     if (!g) groups.set(key, (g = { key, text, what: whatOf(mark), soft: soft(mark), members: [], stamps: new Set() }));
     g.members.push({ el: item.el, mark, id: `${item.id}:${k}:${mark.key}`, item });
-    g.stamps.add(item.el?.getAttribute('data-plumb-source')?.split('#')[0] ?? item.site?.file ?? `${item.id}`);
+    g.stamps.add(stampPlace(item.el) ?? item.site?.file ?? `${item.id}`);
   });
   const list = [...groups.values()].sort((a, b) => b.members.length - a.members.length || a.text.localeCompare(b.text));
   for (const g of list) g.lines = g.stamps.size;

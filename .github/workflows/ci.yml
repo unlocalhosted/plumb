@@ -20,8 +20,11 @@ jobs:
           cache-dependency-path: |
             package-lock.json
             site/package-lock.json
+            overlay/showcase/package-lock.json
       - run: npm ci
       - run: npm ci --prefix site
+      # the showcase has dependencies of its own; the locate bench runs on it
+      - run: npm ci --prefix overlay/showcase
       - run: npx playwright install --with-deps chromium
       - run: npm run typecheck
       # The state oracle (../sm locally, a private sibling repo): debt already in .state/baseline.json passes, any new

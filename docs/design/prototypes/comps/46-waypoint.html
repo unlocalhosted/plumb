@@ -1,0 +1,179 @@
+<!doctype html>
+<!-- COMP #46 case-sensitive forms (docs/craft/taste-checklist.md). Waypoint, a trip planner, on the morning of a
+     flight: the trip down the side, the day's plan, the boarding pass as the subject. A boarding pass is set in
+     capitals, as they are, and every line of it carries the punctuation that sags between capitals: NW–754,
+     07:55–12:30, 14A (ZONE 2), OKAFOR / SANA. The mistake is planted by dropping font-feature-settings: "case" from
+     .caps. Slate's tokens. Throwaway. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Waypoint · Boarding pass (comp)</title>
+<style>
+  :root {
+    --ink: #12233d; --ink-muted: #5a6779; --ink-subtle: #6f7c90; --line: rgb(18 35 61 / 0.08); --line-strong: rgb(18 35 61 / 0.14);
+    --accent: #5550d8; --accent-soft: #efeefd; --accent-deep: #3631a6; --board: #e9edf2; --board-dot: #d3d9e2;
+    --positive: #0f6f58; --positive-soft: #e5f4ef; --caution: #965a03; --caution-soft: #fcf1dd;
+    --air: #0f2a4a; /* Northwind's own navy, the pass's band */
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 48px; background: var(--board);
+    background-image: radial-gradient(var(--board-dot) 1px, transparent 1px); background-size: 16px 16px;
+    font: 13px/18px Inter, -apple-system, system-ui, sans-serif; color: var(--ink); -webkit-font-smoothing: antialiased; }
+  .num { font-variant-numeric: tabular-nums; }
+  .caps { text-transform: uppercase; letter-spacing: 0.06em; font-feature-settings: "case"; /* the fix: punctuation rises to the capitals */ }
+  svg.i { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; }
+  .window { width: 1000px; height: 560px; display: grid; grid-template-columns: 220px 1fr; border-radius: 12px; overflow: hidden; background: #fff;
+    box-shadow: 0 1px 2px rgb(18 35 61 / 0.05), 0 8px 24px rgb(18 35 61 / 0.08), 0 24px 64px rgb(18 35 61 / 0.12), 0 0 0 0.5px rgb(18 35 61 / 0.18); }
+
+  /* trips */
+  .side { background: #f7f8fa; border-right: 0.5px solid var(--line-strong); padding: 12px 10px; display: flex; flex-direction: column; gap: 1px; }
+  .lights { display: flex; gap: 7px; padding: 4px 6px 16px; } .lights i { width: 11px; height: 11px; border-radius: 50%; background: #d9dde3; }
+  .brand { display: flex; align-items: center; gap: 8px; padding: 0 8px 14px; font-weight: 600; font-size: 14px; letter-spacing: -0.01em; }
+  .brand b { width: 22px; height: 22px; border-radius: 6px; background: linear-gradient(145deg, #6c67ea, #4a44c9); display: grid; place-items: center; color: #fff; box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.25); }
+  .brand b svg { width: 13px; height: 13px; stroke: #fff; fill: none; stroke-width: 1.6; }
+  .nav { height: 28px; display: flex; align-items: center; gap: 9px; padding: 0 8px; border-radius: 6px; color: var(--ink-muted); }
+  .nav .n { margin-left: auto; font-size: 12px; color: var(--ink-subtle); }
+  .lab { margin: 14px 8px 6px; font-size: 11px; font-weight: 500; color: var(--ink-subtle); }
+  .trip { display: grid; grid-template-columns: 34px 1fr; gap: 9px; align-items: center; padding: 7px 8px; border-radius: 8px; }
+  .trip.on { background: rgb(18 35 61 / 0.06); }
+  .trip img { width: 34px; height: 34px; border-radius: 7px; object-fit: cover; box-shadow: inset 0 0 0 0.5px rgb(0 0 0 / 0.1); }
+  .trip span { display: flex; flex-direction: column; line-height: 16px; } .trip b { font-weight: 500; } .trip small { font-size: 11.5px; color: var(--ink-subtle); }
+  .tm { margin-top: auto; display: flex; align-items: center; gap: 8px; padding: 8px; }
+  .tm .faces { display: flex; } .tm .faces img { width: 24px; height: 24px; border-radius: 50%; object-fit: cover; box-shadow: 0 0 0 2px #f7f8fa; margin-left: -6px; } .tm .faces img:first-child { margin-left: 0; }
+  .tm span { font-size: 12px; color: var(--ink-muted); line-height: 15px; }
+
+  /* the day */
+  .main { display: flex; flex-direction: column; min-width: 0; }
+  .bar { height: 54px; flex: none; display: flex; align-items: center; gap: 12px; padding: 0 22px; border-bottom: 0.5px solid var(--line-strong); }
+  .bar h1 { margin: 0; font-size: 15px; font-weight: 600; letter-spacing: -0.01em; }
+  .bar .date { color: var(--ink-subtle); }
+  .pill { height: 24px; display: inline-flex; align-items: center; gap: 6px; padding: 0 9px; border-radius: 12px; font-size: 12px; font-weight: 500; }
+  .pill i { width: 6px; height: 6px; border-radius: 50%; background: currentColor; animation: pulse 1.6s ease-in-out infinite; }
+  @keyframes pulse { 50% { opacity: 0.35; } }
+  .bar .sp { flex: 1; }
+  .btn { height: 30px; display: inline-flex; align-items: center; gap: 6px; padding: 0 12px; border-radius: 7px; font-weight: 500; box-shadow: inset 0 0 0 1px var(--line-strong); }
+  .btn.dark { background: var(--ink); color: #fff; box-shadow: 0 1px 2px rgb(18 35 61 / 0.2); }
+  .content { flex: 1; display: grid; grid-template-columns: 1fr 236px; gap: 24px; padding: 22px 22px 0; min-height: 0; background: #fafbfc; }
+
+  /* the subject: the pass */
+  .pass { align-self: start; border-radius: 14px; background: #fff; overflow: hidden;
+    box-shadow: 0 0 0 0.5px rgb(18 35 61 / 0.14), 0 1px 2px rgb(18 35 61 / 0.05), 0 6px 18px rgb(18 35 61 / 0.07); }
+  .band { display: flex; align-items: center; justify-content: space-between; padding: 13px 22px; background: var(--air); color: #fff; }
+  .band .air { display: flex; align-items: center; gap: 9px; font-weight: 600; font-size: 13.5px; letter-spacing: -0.005em; }
+  .band .air svg { width: 20px; height: 20px; }
+  .band .caps { font-size: 11px; font-weight: 600; color: rgb(255 255 255 / 0.72); }
+  .route { position: relative; display: grid; grid-template-columns: auto 1fr auto; align-items: end; gap: 16px; padding: 20px 22px 16px; }
+  .end { display: flex; flex-direction: column; gap: 2px; } .end.r { align-items: flex-end; }
+  .end small { font-size: 12px; color: var(--ink-muted); }
+  .end b { font-size: 44px; line-height: 44px; font-weight: 600; letter-spacing: -0.02em; }
+  .arc { height: 56px; align-self: center; width: 100%; margin-bottom: 4px; }
+  .plane { position: absolute; left: 50%; top: 21px; width: 20px; height: 20px; margin-left: -10px; transform: rotate(-4deg); }
+  .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px 16px; padding: 4px 22px 18px; }
+  .f { display: flex; flex-direction: column; gap: 3px; }
+  .f dt { font-size: 10.5px; font-weight: 600; color: var(--ink-subtle); }
+  .f dd { margin: 0; font-size: 14px; font-weight: 600; }
+  .f.big dd { font-size: 20px; line-height: 24px; letter-spacing: 0.02em; }
+  .f.gate dd { color: var(--accent-deep); }
+  .tear { position: relative; border-top: 1.5px dashed rgb(18 35 61 / 0.16); margin: 0 18px; }
+  .tear::before, .tear::after { content: ''; position: absolute; top: -9px; width: 18px; height: 18px; border-radius: 50%; background: #fafbfc; box-shadow: inset 0 0 0 0.5px rgb(18 35 61 / 0.2), inset 0 1px 2px rgb(18 35 61 / 0.06); }
+  .tear::before { left: -27px; } .tear::after { right: -27px; }
+  .stub { display: grid; grid-template-columns: auto 1fr auto; gap: 16px; align-items: center; padding: 16px 22px 18px; }
+  .stub img.face { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; }
+  .stub .who { display: flex; flex-direction: column; gap: 3px; } .stub .who dt { font-size: 10.5px; font-weight: 600; color: var(--ink-subtle); } .stub .who dd { margin: 0; font-size: 15px; font-weight: 600; }
+  .stub .who small { font-size: 12px; color: var(--ink-muted); }
+  .qr { width: 76px; height: 76px; padding: 5px; border-radius: 8px; box-shadow: inset 0 0 0 0.5px var(--line-strong); }
+
+  /* the morning, as a timeline */
+  .plan { display: flex; flex-direction: column; }
+  .plan h2 { margin: 0 0 10px; font-size: 12px; font-weight: 500; color: var(--ink-subtle); }
+  .step { position: relative; display: grid; grid-template-columns: 16px 1fr auto; gap: 10px; padding: 0 0 16px; }
+  .step::before { content: ''; position: absolute; left: 7.5px; top: 16px; bottom: 0; width: 1px; background: rgb(18 35 61 / 0.12); }
+  .step:last-child::before { display: none; }
+  .step i { width: 16px; height: 16px; border-radius: 50%; box-shadow: inset 0 0 0 1.5px rgb(18 35 61 / 0.2); background: #fafbfc; position: relative; z-index: 1; }
+  .step.done i { background: var(--ink-subtle); box-shadow: none; }
+  .step.done i::after { content: ''; position: absolute; left: 5px; top: 3.5px; width: 4px; height: 7px; border: solid #fff; border-width: 0 1.5px 1.5px 0; transform: rotate(45deg); }
+  .step.now i { background: var(--accent); box-shadow: 0 0 0 4px rgb(85 80 216 / 0.16); }
+  .step span { display: flex; flex-direction: column; line-height: 17px; } .step b { font-weight: 500; } .step small { font-size: 12px; color: var(--ink-muted); }
+  .step.done b { color: var(--ink-muted); font-weight: 400; }
+  .step time { font-size: 12px; color: var(--ink-subtle); } .step.now time { color: var(--accent-deep); font-weight: 600; }
+  .wx { margin-top: 4px; display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 10px; background: #fff; box-shadow: 0 0 0 0.5px var(--line-strong); }
+  .wx b { font-size: 22px; font-weight: 500; letter-spacing: -0.02em; }
+  .wx span { display: flex; flex-direction: column; font-size: 12px; line-height: 16px; color: var(--ink-muted); } .wx span em { font-style: normal; color: var(--ink); font-weight: 500; }
+</style>
+</head>
+<body>
+<div class="window">
+  <aside class="side">
+    <div class="lights"><i></i><i></i><i></i></div>
+    <div class="brand"><b><svg viewBox="0 0 16 16"><path d="M8 14s-4.5-4.2-4.5-7.5a4.5 4.5 0 0 1 9 0C12.5 9.8 8 14 8 14z"/><circle cx="8" cy="6.5" r="1.5"/></svg></b>Waypoint</div>
+    <div class="nav"><svg class="i" viewBox="0 0 16 16"><path d="M2 8h12M8 2c2 2 2.5 4 2.5 6S10 12 8 14M8 2C6 4 5.5 6 5.5 8S6 12 8 14"/><circle cx="8" cy="8" r="6"/></svg>All trips<span class="n num">7</span></div>
+    <div class="nav"><svg class="i" viewBox="0 0 16 16"><path d="M4 2h6l3 3v9H4z"/><path d="M6.5 8.5h4M6.5 11h4"/></svg>Documents</div>
+    <div class="lab">Upcoming</div>
+    <div class="trip on"><img src="../../../../overlay/showcase/src/media/paper-cities.jpg" alt=""><span><b>Copenhagen</b><small class="num">Design week · 6–9 Nov</small></span></div>
+    <div class="trip"><img src="../../../../overlay/showcase/src/media/lake.jpg" alt=""><span><b>Bled</b><small class="num">Hiking · 12–19 Dec</small></span></div>
+    <div class="trip"><img src="../../../../overlay/showcase/src/media/low-tide.jpg" alt=""><span><b>Comporta</b><small class="num">Family · 2–5 Jan</small></span></div>
+    <div class="tm"><span class="faces"><img src="../../../../overlay/showcase/src/media/people/person-09.jpg" alt=""><img src="../../../../overlay/showcase/src/media/people/person-02.jpg" alt=""></span><span>Sana and Tomás<br>on this trip</span></div>
+  </aside>
+
+  <main class="main">
+    <div class="bar">
+      <h1>Thursday</h1><span class="date">6 November · Lisbon to Copenhagen</span>
+      <span class="pill" style="background:var(--positive-soft);color:var(--positive)"><i></i>On time</span>
+      <span class="sp"></span>
+      <span class="btn"><svg class="i" viewBox="0 0 16 16"><path d="M8 2v8M5 5l3-3 3 3M3 9v4h10V9"/></svg>Share</span>
+      <span class="btn dark">Add to Wallet</span>
+    </div>
+    <div class="content">
+      <section class="pass">
+        <div class="band">
+          <span class="air"><svg viewBox="0 0 20 20"><circle cx="10" cy="10" r="9" fill="#fff" opacity=".14"/><path d="M5 12.5 15 6.5M7.5 8l2.2 1.4M10.5 12l1.3 2.2" stroke="#fff" stroke-width="1.6" stroke-linecap="round" fill="none"/></svg>Northwind Air</span>
+          <span class="caps">Boarding pass · Economy</span>
+        </div>
+        <div class="route">
+          <span class="end"><small>Lisbon</small><b class="caps" style="letter-spacing:-0.01em">LIS</b></span>
+          <svg class="arc" viewBox="0 0 300 56" preserveAspectRatio="none">
+            <path d="M6 48 C 90 -6, 210 -6, 294 48" fill="none" stroke="rgb(18 35 61 / 0.18)" stroke-width="1.5" stroke-dasharray="3 5" vector-effect="non-scaling-stroke"/>
+          </svg>
+          <svg class="plane" viewBox="0 0 20 20"><path d="M2.5 10.8 17 9.2c.9-.1.9-1.3 0-1.4L2.5 6.2l2 2.3-2 2.3z" fill="var(--accent)"/><path d="m8 7.2 2.6-4.4h1.6L11 7.6M8 10.6l2.6 4.4h1.6L11 10.4" fill="var(--accent)"/></svg></svg>
+          <span class="end r"><small>Copenhagen</small><b class="caps" style="letter-spacing:-0.01em">CPH</b></span>
+        </div>
+        <dl class="grid">
+          <span class="f"><dt class="caps">Flight</dt><dd class="caps num">NW–754</dd></span>
+          <span class="f" style="grid-column: span 2"><dt class="caps">Departs – arrives</dt><dd class="caps num">07:55–12:30</dd></span>
+          <span class="f"><dt class="caps">Duration</dt><dd class="caps num">3h 35m</dd></span>
+          <span class="f big gate"><dt class="caps">Gate</dt><dd class="caps num">B12</dd></span>
+          <span class="f big"><dt class="caps">Boards</dt><dd class="caps num">07:25</dd></span>
+          <span class="f big" style="grid-column: span 2"><dt class="caps">Seat</dt><dd class="caps num">14A (Zone 2)</dd></span>
+        </dl>
+        <div class="tear"></div>
+        <div class="stub">
+          <img class="face" src="../../../../overlay/showcase/src/media/people/person-09.jpg" alt="">
+          <dl class="who"><dt class="caps">Passenger</dt><dd class="caps">Okafor / Sana</dd><small class="num">Booking K7P-2QX · 1 cabin bag, 1 checked</small></dl>
+          <svg class="qr" id="qr" viewBox="0 0 25 25" shape-rendering="crispEdges"></svg>
+        </div>
+      </section>
+
+      <aside class="plan">
+        <h2>This morning</h2>
+        <div class="step done"><i></i><span><b>Leave for the airport</b><small>Uber · 22 min</small></span><time class="num">06:10</time></div>
+        <div class="step done"><i></i><span><b>Bag drop, Terminal 1</b><small>Desks 40–52</small></span><time class="num">06:45</time></div>
+        <div class="step now"><i></i><span><b>Boarding, gate B12</b><small class="num">in 38 minutes · 9 min walk</small></span><time class="num">07:25</time></div>
+        <div class="step"><i></i><span><b>Arrive Copenhagen</b><small>Metro M2 to the hotel</small></span><time class="num">12:30</time></div>
+        <div class="step"><i></i><span><b>Check in, Hotel Ottilia</b><small>From 15:00</small></span><time class="num">15:00</time></div>
+        <div class="wx"><svg width="34" height="28" viewBox="0 0 34 28"><circle cx="12" cy="11" r="6" fill="#f5b83d"/><path d="M11 24h15a5.5 5.5 0 0 0 0-11 7.5 7.5 0 0 0-14.3 2.4A4.3 4.3 0 0 0 11 24z" fill="#dfe5ee" stroke="#c7d0dc" stroke-width="0.75"/></svg><b class="num">8°</b><span><em>Copenhagen at noon</em>Cloudy, rain after 16:00</span></div>
+      </aside>
+    </div>
+  </main>
+</div>
+<script>
+// a QR-looking code, drawn as data (deterministic): finder squares plus a seeded pattern
+const svg = document.getElementById('qr'); let s = 754, out = '';
+const rnd = () => ((s = (s * 9301 + 49297) % 233280) / 233280);
+const finder = (x, y) => `<rect x="${x}" y="${y}" width="7" height="7" fill="#12233d"/><rect x="${x + 1}" y="${y + 1}" width="5" height="5" fill="#fff"/><rect x="${x + 2}" y="${y + 2}" width="3" height="3" fill="#12233d"/>`;
+const inF = (x, y) => (x < 8 && y < 8) || (x > 16 && y < 8) || (x < 8 && y > 16);
+for (let y = 0; y < 25; y++) for (let x = 0; x < 25; x++) if (!inF(x, y) && rnd() > 0.52) out += `<rect x="${x}" y="${y}" width="1" height="1" fill="#12233d"/>`;
+svg.innerHTML = out + finder(0, 0) + finder(18, 0) + finder(0, 18);
+</script>
+</body>
+</html>

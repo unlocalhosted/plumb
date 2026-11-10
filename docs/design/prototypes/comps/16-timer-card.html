@@ -1,0 +1,165 @@
+<!doctype html>
+<!-- COMP #16, the one component (owner 2026-11-04: no app window around it; richness goes inside). Quarry's timer card:
+     the running timer, the day drawn as data, today's entries with each client's face and colour, the total against the
+     day's goal. Slate's tokens (overlay/showcase/src/theme.css). Drawn fixed (tabular figures); the build plants
+     proportional figures on the clock and the duration column. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Quarry timer card (comp)</title>
+<style>
+  :root {
+    --surface: #fff; --sunken: #f4f6f9; --ink: #12233d; --ink-muted: #5a6779; --ink-subtle: #6f7c90;
+    --line: rgb(18 35 61 / 0.09); --line-strong: rgb(18 35 61 / 0.14); --accent: #5550d8; --accent-soft: #efeefd; --accent-deep: #3631a6;
+    --positive: #1f9d6b; --board: #e9edf2; --board-dot: #d3d9e2;
+    --card: 0 1px 2px rgb(18 35 61 / 0.05), 0 6px 16px rgb(18 35 61 / 0.07), 0 18px 44px rgb(18 35 61 / 0.09);
+    /* one colour per client, everywhere: the block on the day, the logo on the face, the duration bar (each brand's own colour) */
+    --c1: #f24e1e; --c2: #635bff; --c3: #ffe01b; --c4: #37352f; --c5: #1db954; --cx: #a3acb9;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 48px; background: var(--board);
+    background-image: radial-gradient(var(--board-dot) 1px, transparent 1px); background-size: 16px 16px;
+    font: 14px/20px Inter, -apple-system, system-ui, sans-serif; color: var(--ink); -webkit-font-smoothing: antialiased; }
+  .num { font-variant-numeric: tabular-nums; }
+
+  .card { width: 520px; border-radius: 16px; background: var(--surface); box-shadow: var(--card), 0 0 0 0.5px rgb(18 35 61 / 0.1); overflow: hidden; }
+
+  /* running */
+  .run { padding: 20px 24px 18px; }
+  .who { display: flex; align-items: center; gap: 12px; }
+  .face { position: relative; width: 36px; height: 36px; flex: none; }
+  .face img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; outline: 1px solid rgb(0 0 0 / 0.08); outline-offset: -1px; }
+  .face i { position: absolute; right: -4px; bottom: -4px; width: 18px; height: 18px; border-radius: 5px; border: 2px solid var(--surface); background: var(--b); display: grid; place-items: center; }
+  .face i::before { content: ""; width: 9px; height: 9px; background: var(--g, #fff); -webkit-mask: var(--m) center / contain no-repeat; mask: var(--m) center / contain no-repeat; }
+  .who .t { font-size: 15px; font-weight: 500; letter-spacing: -0.01em; }
+  .who .s { font-size: 13px; color: var(--ink-muted); }
+  .status { margin-left: auto; display: flex; align-items: center; gap: 6px; height: 24px; padding: 0 9px; border-radius: 99px; background: #e8f6ef; color: #17734f; font-size: 12px; font-weight: 500; }
+  .status i { width: 6px; height: 6px; border-radius: 50%; background: var(--positive); box-shadow: 0 0 0 3px rgb(31 157 107 / 0.18); }
+  .clock { display: flex; align-items: center; justify-content: space-between; margin-top: 16px; }
+  .clock .big { font-size: 52px; line-height: 1; font-weight: 500; letter-spacing: -0.03em; }
+  .clock .earn { margin-top: 8px; font-size: 13px; color: var(--ink-muted); }
+  .clock .earn b { color: var(--ink); font-weight: 500; }
+  .btns { display: flex; gap: 8px; }
+  .btn { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; }
+  .btn.pause { background: var(--accent); color: #fff; box-shadow: 0 1px 2px rgb(54 49 166 / 0.3), inset 0 1px 0 rgb(255 255 255 / 0.18); }
+  .btn.stop { background: var(--sunken); color: var(--ink-muted); }
+
+  /* the day */
+  .day { padding: 2px 24px 18px; }
+  .track { position: relative; height: 30px; border-radius: 7px; background: var(--sunken); }
+  .blk { position: absolute; top: 4px; bottom: 4px; border-radius: 4px; }
+  .blk.live { background-image: repeating-linear-gradient(-45deg, rgb(255 255 255 / 0.28) 0 4px, transparent 4px 8px); }
+  .now { position: absolute; top: -5px; bottom: -5px; width: 2px; margin-left: -1px; border-radius: 1px; background: var(--ink); }
+  .now::after { content: "15:57"; position: absolute; top: -18px; left: 50%; transform: translateX(-50%); font-size: 11px; font-weight: 600; color: var(--ink); font-variant-numeric: tabular-nums; }
+  .axis { position: relative; height: 16px; margin-top: 6px; font-size: 11px; color: var(--ink-subtle); }
+  .axis span { position: absolute; transform: translateX(-50%); font-variant-numeric: tabular-nums; }
+
+  /* entries */
+  .list { border-top: 0.5px solid var(--line-strong); padding: 6px 24px 4px; }
+  .head { display: flex; justify-content: space-between; padding: 10px 0 4px; font-size: 12px; font-weight: 500; color: var(--ink-subtle); }
+  .row { display: grid; grid-template-columns: 32px 1fr 92px 64px; align-items: center; gap: 12px; padding: 9px 0; border-bottom: 0.5px solid var(--line); }
+  .row:last-child { border-bottom: 0; }
+  .row .face { width: 32px; height: 32px; }
+  .row .face i { width: 17px; height: 17px; }
+  .row .face i::before { width: 8.5px; height: 8.5px; }
+  .row .mono { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; background: var(--sunken); color: var(--ink-muted); font-size: 11px; font-weight: 600; }
+  .row .t { font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .row .s { font-size: 12.5px; color: var(--ink-muted); white-space: nowrap; }
+  .bar { height: 6px; border-radius: 3px; background: var(--sunken); overflow: hidden; }
+  .bar b { display: block; height: 100%; border-radius: 3px; }
+  .amt { text-align: right; }
+  .amt .d { font-size: 14px; font-weight: 500; }
+  .amt .m { font-size: 12.5px; color: var(--ink-muted); }
+
+  /* total */
+  .total { display: flex; align-items: center; gap: 14px; padding: 14px 24px 18px; background: var(--sunken); border-top: 0.5px solid var(--line-strong); }
+  .ring { width: 48px; height: 48px; flex: none; }
+  .total .l { font-size: 12px; font-weight: 500; color: var(--ink-subtle); }
+  .total .v { font-size: 18px; font-weight: 600; letter-spacing: -0.01em; }
+  .total .r { margin-left: auto; text-align: right; }
+  .total .r .v { font-size: 15px; }
+  .total .r .l { font-weight: 400; }
+</style>
+</head>
+<body>
+<article class="card">
+  <!-- running: the client's face carries its colour; the clock leads -->
+  <header class="run">
+    <div class="who">
+      <span class="face"><img src="../../../../overlay/showcase/src/media/people/person-09.jpg" alt=""><i style="--b:var(--c5);--m:url(https://cdn.jsdelivr.net/npm/simple-icons@13.21.0/icons/spotify.svg)"></i></span>
+      <span><div class="t">Wrapped 2026, share cards</div><div class="s">Spotify · Brand studio</div></span>
+      <span class="status"><i></i>Tracking</span>
+    </div>
+    <div class="clock">
+      <div>
+        <div class="big num">1:42:37</div>
+        <div class="earn"><b class="num">$222.34</b> at $130 an hour · since 14:15</div>
+      </div>
+      <div class="btns">
+        <span class="btn stop"><svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><rect x="3" y="3" width="10" height="10" rx="2"/></svg></span>
+        <span class="btn pause"><svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><rect x="3.5" y="2.5" width="3" height="11" rx="1"/><rect x="9.5" y="2.5" width="3" height="11" rx="1"/></svg></span>
+      </div>
+    </div>
+  </header>
+
+  <!-- the day, 08:00 to 18:00: each block is an entry in its client's colour; the running one is striped and ends at now -->
+  <section class="day">
+    <div class="track">
+      <span class="blk" style="left:5%;width:2.5%;background:var(--cx)"></span>
+      <span class="blk" style="left:7.5%;width:21%;background:var(--c2)"></span>
+      <span class="blk" style="left:28.3%;width:12%;background:var(--c1)"></span>
+      <span class="blk" style="left:50%;width:8%;background:var(--c4)"></span>
+      <span class="blk" style="left:59.2%;width:3.3%;background:var(--c3)"></span>
+      <span class="blk live" style="left:62.5%;width:17%;background-color:var(--c5)"></span>
+      <span class="now" style="left:79.5%"></span>
+    </div>
+    <div class="axis">
+      <span style="left:0%;transform:none">08</span><span style="left:20%">10</span><span style="left:40%">12</span><span style="left:60%">14</span><span style="left:80%">16</span><span style="left:100%;transform:translateX(-100%)">18</span>
+    </div>
+  </section>
+
+  <!-- today's entries: face + colour, what and for whom, the share of the day, duration and money -->
+  <section class="list">
+    <div class="head"><span>Earlier today</span><span>5 entries</span></div>
+    <div class="row">
+      <span class="face"><img src="../../../../overlay/showcase/src/media/people/person-06.jpg" alt=""><i style="--b:var(--c2);--m:url(https://cdn.jsdelivr.net/npm/simple-icons@13.21.0/icons/stripe.svg)"></i></span>
+      <span><div class="t">Checkout wireframes</div><div class="s">Stripe</div></span>
+      <span class="bar"><b style="width:100%;background:var(--c2)"></b></span>
+      <span class="amt"><div class="d num">2:06:18</div><div class="m num">$273.69</div></span>
+    </div>
+    <div class="row">
+      <span class="face"><img src="../../../../overlay/showcase/src/media/people/person-01.jpg" alt=""><i style="--b:var(--c1);--m:url(https://cdn.jsdelivr.net/npm/simple-icons@13.21.0/icons/figma.svg)"></i></span>
+      <span><div class="t">Config keynote slides</div><div class="s">Figma</div></span>
+      <span class="bar"><b style="width:57%;background:var(--c1)"></b></span>
+      <span class="amt"><div class="d num">1:11:40</div><div class="m num">$173.21</div></span>
+    </div>
+    <div class="row">
+      <span class="face"><img src="../../../../overlay/showcase/src/media/people/person-04.jpg" alt=""><i style="--b:var(--c4);--m:url(https://cdn.jsdelivr.net/npm/simple-icons@13.21.0/icons/notion.svg)"></i></span>
+      <span><div class="t">Template gallery kickoff</div><div class="s">Notion</div></span>
+      <span class="bar"><b style="width:38%;background:var(--c4)"></b></span>
+      <span class="amt"><div class="d num">0:48:05</div><div class="m num">$96.17</div></span>
+    </div>
+    <div class="row">
+      <span class="face"><img src="../../../../overlay/showcase/src/media/people/person-08.jpg" alt=""><i style="--b:var(--c3);--m:url(https://cdn.jsdelivr.net/npm/simple-icons@13.21.0/icons/mailchimp.svg);--g:#241c15"></i></span>
+      <span><div class="t">Onboarding email review</div><div class="s">Mailchimp</div></span>
+      <span class="bar"><b style="width:16%;background:var(--c3)"></b></span>
+      <span class="amt"><div class="d num">0:19:52</div><div class="m num">$31.45</div></span>
+    </div>
+    <div class="row">
+      <span class="mono">QS</span>
+      <span><div class="t">Studio standup</div><div class="s">Internal · not billed</div></span>
+      <span class="bar"><b style="width:12%;background:var(--cx)"></b></span>
+      <span class="amt"><div class="d num">0:15:00</div><div class="m">—</div></span>
+    </div>
+  </section>
+
+  <!-- the total against the day's goal -->
+  <footer class="total">
+    <svg class="ring" viewBox="0 0 44 44"><circle cx="22" cy="22" r="18" fill="none" stroke="rgb(18 35 61 / 0.08)" stroke-width="5"/><circle cx="22" cy="22" r="18" fill="none" stroke="var(--accent)" stroke-width="5" stroke-linecap="round" stroke-dasharray="102.9 113.1" transform="rotate(-90 22 22)"/><text x="22" y="26" text-anchor="middle" font-size="11" font-weight="600" fill="var(--ink)">91%</text></svg>
+    <span><div class="l">Today so far · of 7h</div><div class="v num">6:23:32</div></span>
+    <span class="r"><div class="v num">$796.86</div><div class="l">billed today</div></span>
+  </footer>
+</article>
+</body>
+</html>

@@ -143,7 +143,7 @@ import { defineConfig } from '@unlocalhosted/react-plumber'
 
 export default defineConfig({
   css: 'apps/docs/src/styles.css',                  // the Tailwind entry; inferred, written down so it is explicit
-  source: ['apps/docs/src/**/*.{tsx,css}'],
+  source: ['apps/docs/src/**/*.{tsx,css}'],         // an override; without it, every file of yours under the root (not installed, not generated) counts
 
   decisions: {
     spacing: { from: 'theme:--spacing-mu-*', identity: 'value' },   // a literal equal to a step passes

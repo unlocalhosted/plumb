@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { createHash } from 'node:crypto';
+import { spawnSync } from 'node:child_process';
 import { chromium } from 'playwright';
 import { build, createServer } from 'vite';
 import react from '@vitejs/plugin-react';
@@ -39,6 +40,7 @@ const stampAt = fragment => {
 async function fixture(t) {
   const root = await mkdtemp(join(repo, 'fixtures/.stamp-'));
   t.after(() => rm(root, { recursive: true, force: true }));
+  spawnSync('git', ['init', '-q'], { cwd: root }); // its own repository: stamps name files from the repository root
   await cp(join(repo, 'fixtures/spacing'), root, { recursive: true, filter: path => !path.split('/').includes('.plumb-cache') });
   await rm(join(root, 'src/App.tsx'));
   await writeFile(join(root, file), source);
@@ -121,27 +123,23 @@ test('Vite stamps prove exact host JSX, preserve usage and refuse stale evidence
     });
     assert.equal(noMaps.via, 'stamp'); assert.equal(noMaps.line, expected.line);
   });
-  await t.test('library forwarded component stamp is usage; existing default and chain survive', async () => {
-    assert.equal(await page.getAttribute('#usage', 'data-plumb-source'), stampAt('<Button id="usage"'));
-    const located = await page.$eval('#usage', element => window.__plumb.locate(element));
-    const without = await page.$eval('#usage', async element => {
-      const fiber = element[Object.keys(element).find(key => key.startsWith('__reactFiber$'))];
-      const props = fiber.memoizedProps;
-      fiber.memoizedProps = { ...props, 'data-plumb-source': undefined };
-      try { return await window.__plumb.locate(element); } finally { fiber.memoizedProps = props; }
-    });
-    assert.deepEqual({ ...located, chain: without.chain }, without, 'default selection unchanged');
-    assert.deepEqual(located.chain.slice(0, without.chain.length).map(({ usage, ...link }) => link), without.chain, 'original navigation links retained');
-    assert.ok(located.chain.some(link => link.usage && link.file === file && link.line === position(source, '<Button id="usage"').line));
-    const resolved = await resolve({ ...proof, ...position(source, '<Button id="usage"') });
-    assert.equal(resolved.usage, true); assert.equal(resolved.component, 'Button');
+  await t.test('a component gets no stamp; the host it draws answers with its usage, exactly on the indexed opening', async () => {
+    // A stamp is a prop a component may reject (Headless UI's Menu renders a Fragment and throws on extra props), so
+    // only DOM tags carry one. The library's <button> keeps the spread's own value and answers with where Button is used.
+    assert.equal(await page.getAttribute('#usage', 'data-plumb-source'), 'spread');
+    const located = await page.$eval('#usage', element => window.__plumb.locate(element, { explain: true }));
+    assert.equal(located.via, 'usage', JSON.stringify(located));
+    assert.deepEqual({ file: located.file, line: located.line, column: located.column, component: located.component, props: located.props }, { file, ...position(source, '<Button id="usage"'), component: 'Button', props: ['className'] });
+    assert.equal(located.chain.length, 1, 'nothing below a library usage is yours');
   });
   await t.test('author wins only its opening; fragments remain untouched; disk unchanged', async () => {
     const transformed = observed.get(file); assert.ok(transformed);
     assert.match(transformed.code, /<aside id="authored" \{\.\.\.spread\} data-plumb-source="author">/);
     for (const opening of ['<>', '<Fragment>', '<React.Fragment>']) assert.ok(transformed.code.includes(opening), opening);
     assert.equal(await page.getAttribute('#authored', 'data-plumb-source'), 'author');
-    assert.equal((await page.$eval('#authored', element => window.__plumb.locate(element))).via, 'owner-stack');
+    // the author's value is no stamp; the element's own creation frame answers, accepted where the index has that opening
+    const authored = await page.$eval('#authored', element => window.__plumb.locate(element));
+    assert.equal(authored.via, 'frame'); assert.deepEqual({ file: authored.file, line: authored.line, column: authored.column }, { file, ...position(source, '<aside id="authored"') });
     for (const id of ['shorthand', 'fragment', 'member']) assert.match(await page.getAttribute('#' + id, 'data-plumb-source'), /#[a-f0-9]{12}$/);
     assert.equal(await readFile(join(root, file), 'utf8'), source);
     assert.deepEqual(errors, [], 'no Fragment prop warnings or browser errors');
@@ -191,17 +189,11 @@ test('Vite stamps prove exact host JSX, preserve usage and refuse stale evidence
   });
 });
 
-test('React first warns and serves no stamps; Vitest is skipped', { timeout: 30000 }, async t => {
+test('React first stops the dev server with the line to move; the internal switch and Vitest serve no stamps', { timeout: 30000 }, async t => {
   const root = await fixture(t);
-  // React first: the dev server still starts, says how to get stamps, and serves none.
-  const warnings = [];
-  const logger = { info() {}, warn: message => warnings.push(message), warnOnce: message => warnings.push(message), error() {}, clearScreen() {}, hasErrorLogged: () => false, hasWarned: false };
-  const late = await createServer({ ...settings(root), customLogger: logger, plugins: [react(), plumb({ watch: false })] });
-  try {
-    assert.match(warnings.join('\n'), /Source stamping is off: plumb\(\) runs after vite:react-babel/);
-    assert.ok(!(await late.transformRequest('/src/entry.jsx')).code.includes('data-plumb-source'));
-  } finally { await late.close(); }
-  // stamp: false keeps the overlay and serves no stamps, for apps that hydrate HTML prerendered elsewhere.
+  // React first: the JSX would be compiled before a stamp could be placed. The server does not start; the message says what to move.
+  await assert.rejects(createServer({ ...settings(root), plugins: [react(), plumb({ watch: false })] }), /React Plumber must run before vite:react-babel\. In vite\.config\.ts, move plumb\(\) before the plugin that compiles JSX \(react\(\)\) in plugins/);
+  // The internal switch (the static demo, the owner-stack regression tests) keeps the overlay and serves no stamps; it is not a public option.
   const off = await createServer({ ...settings(root), plugins: [plumb({ watch: false, stamp: false }), react()] });
   try { assert.ok(!(await off.transformRequest('/src/entry.jsx')).code.includes('data-plumb-source')); } finally { await off.close(); }
   const server = await createServer({ ...settings(root), test: {}, plugins: [react(), plumb({ watch: false })] });

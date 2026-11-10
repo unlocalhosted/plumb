@@ -1,17 +1,17 @@
 // One principle, one example (docs/craft/showcase.md, .claude/skills/craft-rule §3½), all of it plumber's: the example
 // lives on the board, plumber reads it scoped, and the switch takes plumber's own fix in place with plumber's own
 // glide (inplace.js: swapPreview and its GLIDE) during a camera moment, and puts it back the same way.
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Taken } from './taken.js';
 import { createPortal } from 'react-dom';
 import { PRINCIPLES as ALL } from './catalogue.js';
 import { MERGED, shown } from './curation.js';
 import { ProbeStage } from './ProbeStage.jsx';
-import { HANDS_ON } from './hands-on.jsx';
 
 // the principles the showcase stages; the others are reached by their number and say why they have no screen
 const PRINCIPLES = ALL.filter((p) => shown(p.n));
-import { EXAMPLES } from './examples.jsx';
+// one file per screen (screens/kit.jsx), found by its number
+const SCREENS = Object.fromEntries(Object.entries(import.meta.glob('./screens/[0-9]*.jsx', { eager: true })).map(([, m]) => [m.n, m]));
 import { Chevron } from '../icons.jsx';
 
 const SCOPE = '[data-example]';
@@ -132,6 +132,17 @@ const CAMERA = {
   out: 'transform 900ms cubic-bezier(0.7, 0, 0.3, 1)',
 };
 
+/* The fit
+ * A card taller or wider than the window rests scaled down until it and the switch fit. plumber measures pixels, so
+ * a scaled card reads wrong (its targets look small, its edges fall between pixels): the card lifts to its true size
+ * whenever plumber reads it, while the blueprint or the inspector is on, and from the camera's way out until plumber
+ * has asked again. Its place on the page never moves, so the switch stays put; lifted, the card runs under it. */
+const FIT = {
+  above: 24,   // px from the bar to the card (the column's top padding)
+  gap:   40,   // px from the card to the switch
+  below: 40,   // px under the switch
+};
+
 /* The marks */
 const MARKS = {
   fade:     200,  // ms, lines and the shade in
@@ -183,12 +194,13 @@ function marksOf(m, cam) {
 
 // Where the camera goes (as measured): the subject fills the column's width and sits between the bar and the
 // switch; the rest of the component runs off the window's edges, like a camera's frame.
-function shot(subject, cam, view, maxZoom = CAMERA.maxZoom) {
+// A card resting at the fit's scale f is shot on screen the same way: the camera's own scale is the screen's over f.
+function shot(subject, cam, view, maxZoom = CAMERA.maxZoom, f = 1) {
   const r = cam.getBoundingClientRect();
   const w = subject.right - subject.left, h = subject.bottom - subject.top;
-  const k = Math.max(1, Math.min(maxZoom, (view.width * CAMERA.fill) / w, (view.bottom - view.top) / h));
+  const K = Math.max(f, Math.min(maxZoom, (view.width * CAMERA.fill) / w, (view.bottom - view.top) / h)), k = K / f;
   const cx = (subject.left + subject.right) / 2, cy = (subject.top + subject.bottom) / 2; // camera pixels
-  return { k, x: view.left + view.width / 2 - r.left - cx * k, y: (view.top + view.bottom) / 2 - r.top - cy * k };
+  return { k, x: (view.left + view.width / 2 - r.left) / f - cx * k, y: ((view.top + view.bottom) / 2 - r.top) / f - cy * k };
 }
 
 // plumber's read, drawn with plumber's own primitives: its tokens (overlay/src/tokens.css, served by the overlay and
@@ -260,14 +272,32 @@ function Marks({ from, to, t, k, shown, pills, card }) {
   );
 }
 
+// whether plumber's blueprint or its inspector is on: both measure the page as it's drawn
+function useInspecting() {
+  const [on, setOn] = useState(false);
+  useEffect(() => {
+    let seen = null, live = true;
+    plumber().then(() => {
+      const o = document.querySelector('plumb-overlay');
+      if (!o || !live) return;
+      const read = () => setOn(o.hasAttribute('data-blueprint') || o.hasAttribute('data-armed'));
+      seen = new MutationObserver(read); seen.observe(o, { attributes: true, attributeFilter: ['data-blueprint', 'data-armed'] }); read();
+    }).catch(() => {});
+    return () => { live = false; seen?.disconnect(); };
+  }, []);
+  return on;
+}
+
 // plumber's read as one authored moment, driven by a single stage.
-function useMoment(Example, plumb, view) {
+function useMoment(Example, plumb, view, fit) {
   const cam = useRef(null);
   const [stage, setStage] = useState(STAGE.rest);
   const [lens, setLens] = useState({ k: 1, x: 0, y: 0 });
   const [marks, setMarks] = useState({ from: null, to: null });
   const [t, setT] = useState(0);
   const [live, setLive] = useState(true);
+  // from the camera's way out until plumber has asked again, the card is at its true size (the fit, above)
+  const [lifted, setLifted] = useState(false);
   const timers = useRef([]);
   const following = useRef(false);
   useEffect(() => () => timers.current.forEach(clearTimeout), []);
@@ -294,7 +324,7 @@ function useMoment(Example, plumb, view) {
     at(TIMING.cameraIn, () => {
       const from = measure();
       setMarks({ from, to: null }); setCard(cardOf());
-      if (from && cam.current && view.current && !still()) setLens(shot(from.subject, cam.current, view.current(), Example?.maxZoom));
+      if (from && cam.current && view.current && !still()) setLens(shot(from.subject, cam.current, view.current(), Example?.maxZoom, fit.current));
       setStage(STAGE.cameraIn);
     });
     at(TIMING.marksIn, () => setStage(STAGE.marks));
@@ -311,19 +341,20 @@ function useMoment(Example, plumb, view) {
       follow();
     });
     at(TIMING.marksOut, () => { following.current = false; setStage(STAGE.marksOut); });
-    at(TIMING.cameraOut, () => { setLens({ k: 1, x: 0, y: 0 }); setStage(STAGE.cameraOut); });
+    at(TIMING.cameraOut, () => { setLens({ k: 1, x: 0, y: 0 }); setLifted(true); setStage(STAGE.cameraOut); });
     at(TIMING.resume, async () => {
       setStage(STAGE.rest); setLive(true); setMarks({ from: null, to: null });
       // plumber measures pixels: ask only once the camera is truly back at 1×, never mid-ease
       for (let i = 0; i < 40 && cam.current && cam.current.getBoundingClientRect().width / cam.current.offsetWidth > 1.001; i++) await new Promise((r) => setTimeout(r, 50));
-      plumb.ask();
+      await plumb.ask();
+      setLifted(false);
     });
   };
   const give = async () => { if (stage === STAGE.rest) await plumb.undo(); };
   const style = { transform: `translate(${lens.x}px, ${lens.y}px) scale(${lens.k})`, transformOrigin: '0 0', transition: still() ? 'none' : lens.k > 1 ? CAMERA.in : CAMERA.out };
   const shown = stage >= STAGE.marks && stage < STAGE.marksOut;
   const frame = stage !== STAGE.rest ? { clipPath: `inset(-200vh -200vw -${CAMERA.below}px -200vw)` } : undefined;
-  return { cam, style, frame, stage, live, take, give, marks: <Marks from={marks.from} to={marks.to} t={t} k={lens.k} shown={shown} pills={shown} card={card} /> };
+  return { cam, style, frame, stage, live, lifted, take, give, marks: <Marks from={marks.from} to={marks.to} t={t} k={lens.k * fit.current} shown={shown} pills={shown} card={card} /> };
 }
 
 const chip = (to, from) => { const t = `${from ? `${from} → ` : '+ '}${to}`; return <code title={t} className="rounded-chip bg-sunken px-1.5 py-0.5 font-mono text-[11px] text-ink-muted">{t}</code>; };
@@ -383,10 +414,13 @@ const step = 'grid size-8 shrink-0 place-items-center rounded-full text-ink-mute
 // Taking plumber's side is the moment above; the whole page is the camera's frame (the bar and the list float over).
 export function Principle({ n }) {
   const p = ALL.find((x) => x.n === n);
-  // a hands-on example (the viewer's own hand is the probe, principles/hands-on.jsx) takes the screen where there is one
-  const handsOn = shown(n) && !!HANDS_ON[n];
-  const Example = shown(n) ? (HANDS_ON[n] ?? EXAMPLES[n]) : null;
+  // a hands-on screen (the viewer's own hand is the probe: `export const handsOn = true`) takes the screen where there is one
+  const screen = SCREENS[n];
+  const handsOn = shown(n) && !!screen?.handsOn;
+  const Example = shown(n) ? (screen?.default ?? null) : null;
   const plumb = usePlumber(Example);
+  // the route that probes a side asks for the page as it is: no playback there, and no fit
+  const probing = new URLSearchParams(location.search).has('side');
   const { state } = plumb;
   const bar = useRef(null), sw = useRef(null), main = useRef(null);
   // the camera's frame: the column's width, from under the bar to just above the switch
@@ -395,7 +429,30 @@ export function Principle({ n }) {
     // a component taller than the window pushes the switch below the fold: the window's edge is the frame then
     return { left: m.left + 16, width: m.width - 32, top: bar.current.getBoundingClientRect().bottom + CAMERA.above, bottom: Math.min(sw.current.getBoundingClientRect().top, innerHeight) - CAMERA.above };
   });
-  const moment = useMoment(Example, plumb, view);
+  // the fit: the card's scale at rest and the height it then takes; lifted to 1× whenever plumber reads it
+  const [room, setRoom] = useState({ k: 1, h: null });
+  const inspecting = useInspecting();
+  const fit = useRef(1);
+  const moment = useMoment(Example, plumb, view, fit);
+  // the page as it is (a probing route) is never scaled: something outside reads it
+  const lift = probing || moment.lifted || plumb.reading || inspecting;
+  fit.current = lift ? 1 : room.k;
+  useLayoutEffect(() => {
+    const ex = document.querySelector(SCOPE), c = moment.cam.current;
+    if (!ex || !c) return;
+    const measure = () => {
+      if (moment.stage !== STAGE.rest) return; // a fix that changes the card's size waits for the camera to rest
+      const w = Math.max(ex.offsetWidth, ex.scrollWidth), h = c.offsetHeight;
+      const roomH = innerHeight - bar.current.getBoundingClientRect().bottom - FIT.above - FIT.gap - (sw.current?.offsetHeight ?? 0) - FIT.below;
+      const k = Math.min(1, c.parentElement.offsetWidth / w, roomH / h);
+      setRoom((r) => (Math.abs(r.k - k) < 0.005 && r.h === h ? r : { k: Math.floor(k * 1000) / 1000, h }));
+    };
+    measure();
+    const seen = new ResizeObserver(measure);
+    seen.observe(ex); seen.observe(c); if (sw.current) seen.observe(sw.current);
+    addEventListener('resize', measure);
+    return () => { seen.disconnect(); removeEventListener('resize', measure); };
+  }, [moment.stage]);
   // previous and next walk the staged principles only
   const at = PRINCIPLES.findIndex((x) => x.n >= n), here = PRINCIPLES[at]?.n === n;
   const prev = (here ? PRINCIPLES[at - 1] : PRINCIPLES[at - 1])?.n ?? null, next = (here ? PRINCIPLES[at + 1] : PRINCIPLES[at])?.n ?? null;
@@ -406,8 +463,6 @@ export function Principle({ n }) {
   const probe = Example?.probe ?? null;
   const [said, setSaid] = useState('');
   const [side, setSide] = useState(() => new URLSearchParams(location.search).get('side') ?? 'broken');
-  // the route that probes a side asks for the page as it is: no playback there
-  const probing = new URLSearchParams(location.search).has('side');
   const [stage, setStage] = useState(null);
   const names = Example?.names ?? ['As built', 'plumber’s fix'];
   useEffect(() => { document.title = `${n} · ${p.title} · plumber`; }, [n, p.title]);
@@ -435,11 +490,14 @@ export function Principle({ n }) {
       </header>
       <main ref={main} className="@container flex flex-1 flex-col items-center gap-12 px-4 pb-16">
         {staged ? (
-        <div className="flex min-h-[calc(100dvh-4.5rem)] w-full max-w-3xl flex-col items-center justify-center gap-10 pt-6 pb-10">
+        <div className={'flex min-h-[calc(100dvh-4.5rem)] w-full flex-col items-center justify-center gap-10 pt-6 pb-10 ' + (Example?.wide ? 'max-w-[60rem]' : 'max-w-3xl')}>
+          {/* an example shown in its whole app (a window, Example.wide) takes the wider column */}
           {/* the camera: the example and its marks move together; nothing clips it but the page */}
           {/* the camera's frame: while the moment runs, its bottom edge sits just above the switch (the sides and top
               run off the window); at rest nothing is clipped, so the component keeps its shadow */}
           <div className="relative w-full" style={moment.frame}>
+          <div className="w-full" style={room.h && room.k < 1 ? { height: room.h * room.k } : undefined}>
+          <div className="w-full" style={{ transform: `scale(${fit.current})`, transformOrigin: '50% 0', transition: still() || !room.h ? 'none' : CAMERA.out }}>
           <div ref={moment.cam} className="relative flex w-full justify-center" style={moment.style}>
             <section data-example aria-label="Example" className={probe || handsOn ? 'w-fit' : Example?.stage ? 'flex w-full min-w-0 justify-center' : 'flex w-full max-w-2xl min-w-0 justify-center overflow-hidden rounded-sheet corner-squircle bg-surface shadow-window ' + (Example?.framed ? 'ring-1 ring-line' : 'border border-line px-4 pt-4 pb-5 sm:px-6 sm:pt-5 sm:pb-6')}>
               {handsOn ? <Example key={side} side={side} onStatus={setSaid} />
@@ -447,6 +505,8 @@ export function Principle({ n }) {
                 : <Taken.Provider value={plumb.rewrite}>{Example ? <Example broken live={moment.live && !plumb.reading} /> : <p className="text-sm text-ink-muted">This example isn’t built yet.</p>}</Taken.Provider>}
             </section>
             {moment.marks}
+          </div>
+          </div>
           </div>
           </div>
           <div ref={sw} className="relative z-10">
@@ -490,7 +550,7 @@ function List({ current }) {
             {PRINCIPLES.filter((p) => p.section === s).map((p) => (
               <li key={p.n} className="flex">
                 <a href={`/rule/${p.n}`} aria-current={p.n === current ? 'page' : undefined} ref={p.n === current ? intoView : undefined}
-                  className={'-mx-2 flex min-w-0 flex-1 items-baseline gap-2 rounded-chip px-2 py-1 text-sm hover:bg-sunken active:bg-line ' + RING + ' ' + (p.n === current ? 'bg-sunken font-medium text-ink' : EXAMPLES[p.n] || HANDS_ON[p.n] ? 'text-ink' : 'text-ink-muted')}>
+                  className={'-mx-2 flex min-w-0 flex-1 items-baseline gap-2 rounded-chip px-2 py-1 text-sm hover:bg-sunken active:bg-line ' + RING + ' ' + (p.n === current ? 'bg-sunken font-medium text-ink' : SCREENS[p.n] ? 'text-ink' : 'text-ink-muted')}>
                   <span className="w-5 shrink-0 text-right text-ink-muted tabular-nums">{p.n}</span>
                   <span className="truncate" title={p.title}>{p.title}</span>
                 </a>

@@ -18,7 +18,7 @@ import { collectStylesheets, cssImports } from '../collect/stylesheets.js';
 import { lowerStylesheets, lowerStylesheet } from '../lower/stylesheets.js';
 import { declaredClasses } from '../lower/css.js';
 import { presetInputs } from '../presets/index.js';
-import { defaultSource } from '../project.js';
+import { defaultSourceSelectors } from '../project.js';
 import type { StylesheetGraph } from '../collect/stylesheets.js';
 
 const signature = (inputs: unknown[]) => JSON.stringify(inputs, (_, value) => value instanceof Map || value instanceof Set ? [...value] : value);
@@ -183,7 +183,7 @@ export class WarmState implements AnalysisRuntime {
       const value = await this.memo(name, inputs, compute);
       const loaded = value as { value: PlumbConfig; path: string | null };
       this.config = loaded.value;
-      for (const pattern of sourceSelectors(this.root, this.config.source ?? defaultSource).filter(pattern => !pattern.startsWith('!'))) {
+      for (const pattern of sourceSelectors(this.root, this.config.source ?? await defaultSourceSelectors(this.root)).filter(pattern => !pattern.startsWith('!'))) {
         const file = resolve(this.root, pattern), path = relative(this.root, file);
         if (path === '..' || path.startsWith('..' + sep) || isAbsolute(path)) this.patterns.add(file);
       }

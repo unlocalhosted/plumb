@@ -1,0 +1,134 @@
+<!doctype html>
+<!-- COMP #15, small capitals need tracking (docs/craft/taste-checklist.md). Burrow, an issue tracker for a product
+     team: the Upload pipeline project, its progress, filters, and the issues table (priority, id, title, labels,
+     assignee, status, updated), one row selected. The column labels are 11px semibold capitals; in the showcase they
+     have no letter spacing and crowd into each other. Plant: thead th (data-label), "ASSIGNEE" first. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Burrow · Upload pipeline (comp)</title>
+<style>
+  :root {
+    --surface: #fff; --sunken: #f3f5f9; --ink: #12233d; --ink-muted: #5a6779; --ink-subtle: #6f7c90;
+    --line: rgb(18 35 61 / 0.08); --line-strong: rgb(18 35 61 / 0.14); --accent: #5550d8; --accent-soft: #efeefd; --accent-deep: #3631a6;
+    --positive: #0f6f58; --positive-soft: #e5f4ef; --caution: #965a03; --caution-soft: #fcf1dd; --negative: #b02a3a; --negative-soft: #fbeaed;
+    --board: #e9edf2; --board-dot: #d3d9e2;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 48px; background: var(--board);
+    background-image: radial-gradient(var(--board-dot) 1px, transparent 1px); background-size: 16px 16px;
+    font: 13px/18px Inter, -apple-system, system-ui, sans-serif; color: var(--ink); -webkit-font-smoothing: antialiased; font-feature-settings: "cv11", "ss01"; }
+  .num { font-variant-numeric: tabular-nums; }
+  .mono { font: 12px/16px ui-monospace, "SF Mono", Menlo, monospace; }
+  svg.i { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+
+  .window { width: 1080px; height: 566px; display: grid; grid-template-columns: 200px 1fr; border-radius: 12px; overflow: hidden; background: var(--surface);
+    box-shadow: 0 1px 2px rgb(18 35 61 / 0.05), 0 8px 24px rgb(18 35 61 / 0.08), 0 24px 64px rgb(18 35 61 / 0.12), 0 0 0 0.5px rgb(18 35 61 / 0.18); }
+  .side { background: #f7f8fa; border-right: 0.5px solid var(--line-strong); display: flex; flex-direction: column; padding: 12px 10px; gap: 1px; }
+  .lights { display: flex; gap: 7px; padding: 4px 6px 14px; } .lights i { width: 11px; height: 11px; border-radius: 50%; background: #d9dde3; }
+  .ws { display: flex; align-items: center; gap: 8px; padding: 0 6px 12px; font-weight: 600; font-size: 13.5px; }
+  .ws b { width: 22px; height: 22px; border-radius: 6px; background: #b4572e; color: #fff; display: grid; place-items: center; font-size: 11px; }
+  .nav { display: flex; align-items: center; gap: 9px; height: 28px; padding: 0 8px; border-radius: 6px; color: var(--ink-muted); }
+  .nav.on { background: rgb(18 35 61 / 0.06); color: var(--ink); font-weight: 500; }
+  .nav .n { margin-left: auto; font-size: 11.5px; color: var(--ink-subtle); font-weight: 400; }
+  .label { margin: 14px 8px 4px; font-size: 11px; font-weight: 500; color: var(--ink-subtle); }
+  .proj i { width: 14px; height: 14px; border-radius: 50%; flex: none; }
+  .me { margin-top: auto; display: flex; align-items: center; gap: 9px; padding: 8px; }
+  .me img { width: 24px; height: 24px; border-radius: 50%; object-fit: cover; }
+
+  .main { display: flex; flex-direction: column; min-width: 0; }
+  .bar { display: flex; align-items: center; gap: 10px; height: 50px; padding: 0 20px; border-bottom: 0.5px solid var(--line-strong); }
+  .bar .crumb { color: var(--ink-subtle); } .bar b { font-weight: 600; font-size: 14px; }
+  .ring { width: 18px; height: 18px; }
+  .bar .pct { color: var(--ink-muted); font-size: 12.5px; }
+  .bar .lead { display: flex; align-items: center; gap: 6px; color: var(--ink-muted); font-size: 12.5px; margin-left: 6px; }
+  .bar .lead img { width: 18px; height: 18px; border-radius: 50%; object-fit: cover; }
+  .new { margin-left: auto; height: 28px; padding: 0 11px; border-radius: 7px; background: var(--accent); color: #fff; font-weight: 500; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 1px 2px rgb(54 49 166 / 0.3); }
+  .new kbd { font: 11px system-ui; opacity: 0.7; }
+  .filters { display: flex; align-items: center; gap: 6px; height: 44px; padding: 0 20px; border-bottom: 0.5px solid var(--line-strong); }
+  .chip { height: 26px; padding: 0 9px; border-radius: 7px; display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--ink-muted); box-shadow: inset 0 0 0 1px var(--line-strong); }
+  .chip.on { background: var(--accent-soft); color: var(--accent-deep); box-shadow: inset 0 0 0 1px rgb(85 80 216 / 0.2); font-weight: 500; }
+  .chip .x { opacity: 0.6; }
+  .filters .view { margin-left: auto; display: flex; gap: 2px; padding: 2px; border-radius: 7px; background: var(--sunken); }
+  .filters .view span { padding: 2px 9px; border-radius: 5px; font-size: 12px; color: var(--ink-muted); } .filters .view .on { background: #fff; color: var(--ink); font-weight: 500; box-shadow: 0 1px 2px rgb(18 35 61 / 0.1); }
+
+  /* the table: the lesson's component */
+  table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+  thead th { position: sticky; top: 0; height: 32px; text-align: left; padding: 0; background: #f8f9fb; border-bottom: 0.5px solid var(--line-strong);
+    font-size: 11px; font-weight: 600; color: var(--ink-muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  th:first-child, td:first-child { padding-left: 20px; } th:last-child, td:last-child { padding-right: 20px; text-align: right; }
+  .group td { text-align: left !important; height: 34px; background: #fff; font-weight: 500; color: var(--ink); border-bottom: 0.5px solid var(--line); }
+  .group td span { display: inline-flex; align-items: center; gap: 8px; } .group small { color: var(--ink-subtle); font-weight: 400; }
+  tbody tr.it td { height: 40px; border-bottom: 0.5px solid var(--line); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  tr.sel td { background: var(--accent-soft); } tr.sel td:first-child { box-shadow: inset 2px 0 0 var(--accent); }
+  .pri { display: inline-flex; align-items: flex-end; gap: 1.5px; height: 12px; vertical-align: -1px; }
+  .pri i { width: 3px; border-radius: 1px; background: #c5ccd8; } .pri i:nth-child(1) { height: 5px; } .pri i:nth-child(2) { height: 8px; } .pri i:nth-child(3) { height: 12px; }
+  .pri.p3 i { background: var(--ink-muted); } .pri.p2 i:nth-child(-n+2) { background: var(--ink-muted); } .pri.p1 i:nth-child(1) { background: var(--ink-muted); }
+  .urgent { width: 14px; height: 14px; border-radius: 3px; background: var(--negative); color: #fff; display: inline-grid; place-items: center; font-size: 10px; font-weight: 700; vertical-align: -2px; }
+  .id { color: var(--ink-subtle); }
+  .title { display: flex; align-items: center; gap: 8px; min-width: 0; padding-right: 16px; }
+  .title b { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .lab { flex: none; display: inline-flex; align-items: center; gap: 5px; height: 20px; padding: 0 7px; border-radius: 99px; font-size: 11.5px; color: var(--ink-muted); box-shadow: inset 0 0 0 1px var(--line-strong); }
+  .lab i { width: 6px; height: 6px; border-radius: 50%; }
+  .who { display: inline-flex; align-items: center; gap: 7px; color: var(--ink-muted); }
+  .who img { width: 20px; height: 20px; border-radius: 50%; object-fit: cover; }
+  .st { display: inline-flex; align-items: center; gap: 7px; }
+  .st svg { width: 14px; height: 14px; }
+  .upd { color: var(--ink-subtle); }
+  .cmt { color: var(--ink-subtle); display: inline-flex; align-items: center; gap: 4px; margin-right: 12px; font-size: 12px; }
+  .cmt svg { width: 13px; height: 13px; }
+</style>
+</head>
+<body>
+<div class="window">
+  <aside class="side">
+    <div class="lights"><i></i><i></i><i></i></div>
+    <div class="ws"><b>K</b>Kiln</div>
+    <div class="nav"><svg class="i" viewBox="0 0 16 16"><path d="M2.5 4.5h11v8h-11z"/><path d="m2.5 4.5 5.5 4 5.5-4"/></svg>Inbox<span class="n num">4</span></div>
+    <div class="nav"><svg class="i" viewBox="0 0 16 16"><circle cx="8" cy="8" r="5.5"/><circle cx="8" cy="8" r="2" fill="currentColor"/></svg>My issues<span class="n num">7</span></div>
+    <div class="label">Projects</div>
+    <div class="nav on proj"><i style="background:conic-gradient(var(--accent) 64%, #dcdcf6 0)"></i>Upload pipeline</div>
+    <div class="nav proj"><i style="background:conic-gradient(#0f8a6e 30%, #d5efe3 0)"></i>Search v2</div>
+    <div class="nav proj"><i style="background:conic-gradient(#c8a23a 88%, #f4e9c8 0)"></i>Billing migration</div>
+    <div class="nav proj"><i style="background:conic-gradient(#d0543c 10%, #f6dbd4 0)"></i>Mobile offline</div>
+    <div class="label">Views</div>
+    <div class="nav"><svg class="i" viewBox="0 0 16 16"><path d="M3 4h10M3 8h10M3 12h6"/></svg>Triage<span class="n num">12</span></div>
+    <div class="nav"><svg class="i" viewBox="0 0 16 16"><path d="M8 2v4M8 10v4M2 8h4M10 8h4"/></svg>This cycle</div>
+    <div class="me"><img src="../../../../overlay/showcase/src/media/people/person-07.jpg" alt="">Mira Sato</div>
+  </aside>
+
+  <main class="main">
+    <div class="bar">
+      <span class="crumb">Projects /</span>
+      <svg class="ring" viewBox="0 0 18 18"><circle cx="9" cy="9" r="7" fill="none" stroke="#e3e3f8" stroke-width="2.5"/><circle cx="9" cy="9" r="7" fill="none" stroke="#5550d8" stroke-width="2.5" stroke-dasharray="44" stroke-dashoffset="16" transform="rotate(-90 9 9)" stroke-linecap="round"/></svg>
+      <b>Upload pipeline</b><span class="pct num">64% · ships 20 Nov</span>
+      <span class="lead"><img src="../../../../overlay/showcase/src/media/people/person-07.jpg" alt="">Mira</span>
+      <span class="new">New issue <kbd>C</kbd></span>
+    </div>
+    <div class="filters">
+      <span class="chip on">Status is not Done <span class="x">×</span></span>
+      <span class="chip"><svg class="i" viewBox="0 0 16 16" style="width:13px;height:13px"><path d="M2.5 4h11M4.5 8h7M6.5 12h3"/></svg>Filter</span>
+      <span class="chip">Group: Status</span>
+      <span class="view"><span class="on">List</span><span>Board</span><span>Timeline</span></span>
+    </div>
+    <table>
+      <colgroup><col style="width:56px"><col style="width:92px"><col><col style="width:132px"><col style="width:132px"><col style="width:104px"></colgroup>
+      <thead><tr><th data-label></th><th data-label>Issue</th><th data-label>Title</th><th data-label>Assignee</th><th data-label>Status</th><th data-label>Updated</th></tr></thead>
+      <tbody>
+        <tr class="group"><td colspan="6"><span><svg viewBox="0 0 14 14" width="14" height="14"><circle cx="7" cy="7" r="5.5" fill="none" stroke="#5550d8" stroke-width="1.5"/><path d="M7 1.5a5.5 5.5 0 0 1 0 11z" fill="#5550d8"/></svg>In review <small class="num">2</small></span></td></tr>
+        <tr class="it sel"><td><span class="urgent">!</span></td><td class="id mono">PLM-214</td><td><span class="title"><b>Upload queue retries forever on a 413</b><span class="lab"><i style="background:#d0543c"></i>Bug</span></span></td><td><span class="who"><img src="../../../../overlay/showcase/src/media/people/person-07.jpg" alt="">Mira</span></td><td><span class="st"><svg viewBox="0 0 14 14"><circle cx="7" cy="7" r="5.5" fill="none" stroke="#5550d8" stroke-width="1.5"/><path d="M7 1.5a5.5 5.5 0 0 1 0 11z" fill="#5550d8"/></svg>In review</span></td><td><span class="cmt"><svg class="i" viewBox="0 0 16 16"><path d="M2.5 3.5h11v7.5h-6l-3.5 3v-3h-1.5z"/></svg>6</span><span class="upd num">2h</span></td></tr>
+        <tr class="it"><td><span class="pri p3"><i></i><i></i><i></i></span></td><td class="id mono">PLM-221</td><td><span class="title"><b>Resume a paused upload after the laptop sleeps</b><span class="lab"><i style="background:#5550d8"></i>Feature</span></span></td><td><span class="who"><img src="../../../../overlay/showcase/src/media/people/person-02.jpg" alt="">Jonas</span></td><td><span class="st"><svg viewBox="0 0 14 14"><circle cx="7" cy="7" r="5.5" fill="none" stroke="#5550d8" stroke-width="1.5"/><path d="M7 1.5a5.5 5.5 0 0 1 0 11z" fill="#5550d8"/></svg>In review</span></td><td><span class="upd num">4h</span></td></tr>
+        <tr class="group"><td colspan="6"><span><svg viewBox="0 0 14 14" width="14" height="14"><circle cx="7" cy="7" r="5.5" fill="none" stroke="#c8a23a" stroke-width="1.5"/><path d="M7 1.5a5.5 5.5 0 0 1 5.5 5.5H7z" fill="#c8a23a"/></svg>In progress <small class="num">3</small></span></td></tr>
+        <tr class="it"><td><span class="pri p2"><i></i><i></i><i></i></span></td><td class="id mono">PLM-209</td><td><span class="title"><b>Dark mode loses focus rings in menus</b><span class="lab"><i style="background:#d0543c"></i>Bug</span><span class="lab">a11y</span></span></td><td><span class="who"><img src="../../../../overlay/showcase/src/media/people/person-08.jpg" alt="">Theo</span></td><td><span class="st"><svg viewBox="0 0 14 14"><circle cx="7" cy="7" r="5.5" fill="none" stroke="#c8a23a" stroke-width="1.5"/><path d="M7 1.5a5.5 5.5 0 0 1 5.5 5.5H7z" fill="#c8a23a"/></svg>In progress</span></td><td><span class="cmt"><svg class="i" viewBox="0 0 16 16"><path d="M2.5 3.5h11v7.5h-6l-3.5 3v-3h-1.5z"/></svg>2</span><span class="upd num">5h</span></td></tr>
+        <tr class="it"><td><span class="pri p2"><i></i><i></i><i></i></span></td><td class="id mono">PLM-217</td><td><span class="title"><b>Chunk size follows the connection, not a fixed 5 MB</b><span class="lab"><i style="background:#0f8a6e"></i>Perf</span></span></td><td><span class="who"><img src="../../../../overlay/showcase/src/media/people/person-09.jpg" alt="">Sana</span></td><td><span class="st"><svg viewBox="0 0 14 14"><circle cx="7" cy="7" r="5.5" fill="none" stroke="#c8a23a" stroke-width="1.5"/><path d="M7 1.5a5.5 5.5 0 0 1 5.5 5.5H7z" fill="#c8a23a"/></svg>In progress</span></td><td><span class="upd num">1d</span></td></tr>
+        <tr class="it"><td><span class="pri p1"><i></i><i></i><i></i></span></td><td class="id mono">PLM-224</td><td><span class="title"><b>Show the file's name in the failed-upload toast</b></span></td><td><span class="who"><img src="../../../../overlay/showcase/src/media/people/person-06.jpg" alt="">David</span></td><td><span class="st"><svg viewBox="0 0 14 14"><circle cx="7" cy="7" r="5.5" fill="none" stroke="#c8a23a" stroke-width="1.5"/><path d="M7 1.5a5.5 5.5 0 0 1 5.5 5.5H7z" fill="#c8a23a"/></svg>In progress</span></td><td><span class="upd num">1d</span></td></tr>
+        <tr class="group"><td colspan="6"><span><svg viewBox="0 0 14 14" width="14" height="14"><circle cx="7" cy="7" r="5.5" fill="none" stroke="#9aa5b5" stroke-width="1.5" stroke-dasharray="2 2"/></svg>Todo <small class="num">4</small></span></td></tr>
+        <tr class="it"><td><span class="pri p3"><i></i><i></i><i></i></span></td><td class="id mono">PLM-198</td><td><span class="title"><b>Search ignores accents in file names</b><span class="lab"><i style="background:#d0543c"></i>Bug</span></span></td><td><span class="who"><img src="../../../../overlay/showcase/src/media/people/person-03.jpg" alt="">Lea</span></td><td><span class="st"><svg viewBox="0 0 14 14"><circle cx="7" cy="7" r="5.5" fill="none" stroke="#9aa5b5" stroke-width="1.5" stroke-dasharray="2 2"/></svg>Todo</span></td><td><span class="upd num">2d</span></td></tr>
+        <tr class="it"><td><span class="pri p1"><i></i><i></i><i></i></span></td><td class="id mono">PLM-226</td><td><span class="title"><b>Drag a folder in, keep its structure</b><span class="lab"><i style="background:#5550d8"></i>Feature</span></span></td><td><span class="who" style="color:var(--ink-subtle)"><svg viewBox="0 0 20 20" width="20" height="20"><circle cx="10" cy="10" r="9" fill="none" stroke="#c5ccd8" stroke-dasharray="2.5 2"/></svg>No one</span></td><td><span class="st"><svg viewBox="0 0 14 14"><circle cx="7" cy="7" r="5.5" fill="none" stroke="#9aa5b5" stroke-width="1.5" stroke-dasharray="2 2"/></svg>Todo</span></td><td><span class="upd num">3d</span></td></tr>
+      </tbody>
+    </table>
+  </main>
+</div>
+</body>
+</html>

@@ -11,6 +11,8 @@ async function fixture(t, name = 'ds-consumer') {
   t.after(() => rm(base, { recursive: true, force: true }));
   const project = join(base, 'consumer'), pkg = join(base, 'ds-package');
   await cp(join(root, 'fixtures', name), project, { recursive: true });
+  // The consumer is its own repository: the design system beside it is another repository's code, linked in.
+  spawnSync('git', ['init', '-q'], { cwd: project });
   await cp(join(root, 'fixtures/ds-package'), pkg, { recursive: true });
   await link(pkg, join(project, 'node_modules/@fixtures/design-system'));
   await link(root, join(pkg, 'node_modules/@unlocalhosted/react-plumber'));

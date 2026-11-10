@@ -225,7 +225,9 @@ export async function loadConfig(root: string, explicitPath?: string): Promise<L
   if (data) return { path, ...await loadPresets(root, data.value) };
   let module: { default?: unknown };
   try {
-    module = await import(pathToFileURL(path).href) as { default?: unknown };
+    // a path known only at run time: a bundler that reads this file (Next with the package linked, not installed)
+    // must leave the import alone, or it warns "Module not found: Can't resolve <dynamic>" on every start
+    module = await import(/* webpackIgnore: true */ /* turbopackIgnore: true */ pathToFileURL(path).href) as { default?: unknown };
   } catch (error) {
     throw new UsageError(`Fix or create config ${path}: ${userMessage(error)}\n  → \${EDITOR:-vi} ${JSON.stringify(path)}`);
   }

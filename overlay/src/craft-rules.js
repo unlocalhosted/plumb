@@ -79,8 +79,23 @@ function cornerShows(el, s) {
 const SIDES = { tl: ['Top', 'Left'], tr: ['Top', 'Right'], bl: ['Bottom', 'Left'], br: ['Bottom', 'Right'] };
 function drawsCorner(el, s, corner) {
   const bg = rgb(s.backgroundColor);
-  if (REPLACED.has(el.localName) || (bg && bg[3] > 0) || s.backgroundImage !== 'none' || s.boxShadow !== 'none' || (s.overflow !== 'visible' && s.overflow !== '')) return true;
-  return SIDES[corner].some((side) => px(s[`border${side}Width`]) > 0);
+  if (REPLACED.has(el.localName) || (bg && bg[3] > 0) || s.backgroundImage !== 'none' || (s.overflow !== 'visible' && s.overflow !== '')) return true;
+  // a hairline drawn as an inset shadow on one side is a border on that side: it draws only that side's corners
+  const lines = lineSides(s.boxShadow);
+  if (lines === true) return true;
+  return SIDES[corner].some((side) => px(s[`border${side}Width`]) > 0 || lines.has(side));
+}
+
+// the sides a box-shadow draws as plain lines (inset, unblurred, offset on one axis), or true when any layer draws a
+// whole box (a ring, a drop shadow). Transparent layers draw nothing
+function lineSides(value) {
+  const sides = new Set(), raw = value && value !== 'none' ? value.split(/,(?![^(]*\))/) : [];
+  for (const [i, l] of shadows(value).entries()) {
+    if (alpha(rgb(raw[i].match(COLOUR)?.[0])) === 0) continue;
+    if (!l.inset || l.blur || l.spread || (l.x !== 0) === (l.y !== 0)) return true;
+    sides.add(l.y > 0 ? 'Top' : l.y < 0 ? 'Bottom' : l.x > 0 ? 'Left' : 'Right');
+  }
+  return sides;
 }
 
 // #8 / #41. Nested radius = outer radius − padding, never below 0.
@@ -278,7 +293,8 @@ export const hairline = {
     if ((devicePixelRatio || 1) < T.minDpr) return [];
     const s = facts.style(el), r = facts.rect(el);
     // a divider: a 1px rule (an <hr>, or a box one pixel tall or wide), or a box drawn by one 1px side only
-    const sides = ['Top', 'Right', 'Bottom', 'Left'].filter((k) => s[`border${k}Style`] !== 'none' && Math.abs(px(s[`border${k}Width`]) - 1) < 0.01);
+    // solid only: a dashed or dotted side (a tear line) can't be drawn thinner, a shadow has no dashes
+    const sides = ['Top', 'Right', 'Bottom', 'Left'].filter((k) => s[`border${k}Style`] === 'solid' && Math.abs(px(s[`border${k}Width`]) - 1) < 0.01);
     // exactly one CSS pixel: a rule already drawn at half of one is the fix, not the mistake
     const one = (v) => Math.abs(v - 1) < 0.05;
     const rule = (one(r.height) && r.width > 8) || (one(r.width) && r.height > 8);
@@ -291,9 +307,16 @@ export const hairline = {
       ...say(this.id, { dpr: devicePixelRatio }),
       key: this.id, text, props: oneSide ? [`border-${sides[0].toLowerCase()}-width`] : ['height'], value: '1px', n: 1,
       evidence: { dpr: devicePixelRatio, sides, rule }, confidence: 0.82,
-      // one device pixel: the side's own width class (border-b) becomes half a CSS pixel; a 1px-tall rule, half as tall
+      // one device pixel. A side can't be a thinner border: Chrome rounds a border's width down to whole CSS pixels,
+      // never under 1, so border-b-[0.5px] still draws two. The side becomes an inset shadow 1/dpr tall in the border's
+      // colour, laid over any shadow it had. A 1px-tall rule is a box, and a box can be half as tall.
       suggest: ((side) => oneSide
-        ? { kind: 'class', from: cls && new RegExp(`^border-${side[0].toLowerCase()}(?:-px|-1)?$`).test(cls) ? cls : '', to: `border-${side[0].toLowerCase()}-[0.5px]`, why: 'one device pixel', sets: { [`border${side}Width`]: '0.5px' } }
+        ? ((k, d) => {
+          const w = `${Math.round(1000 / devicePixelRatio) / 1000}px`, c = s[`border${side}Color`];
+          const [x, y] = { Top: ['0', w], Bottom: ['0', `-${w}`], Left: [w, '0'], Right: [`-${w}`, '0'] }[side];
+          const line = `inset ${x} ${y} 0 ${c}`, shadow = s.boxShadow && s.boxShadow !== 'none' ? `${line}, ${s.boxShadow}` : line;
+          return { kind: 'class', from: cls && new RegExp(`^border-${k}(?:-px|-1|-\\[0\\.5px\\])?$`).test(cls) ? cls : '', to: `border-${k}-0 ${arbitrary('shadow', shadow)}`, why: 'one device pixel', sets: { [`border${side}Width`]: '0px', boxShadow: shadow } };
+        })(side[0].toLowerCase())
         : one(r.height) ? { kind: 'class', from: cls && /^h-(px|\[1px\])$/.test(cls) ? cls : '', to: 'h-[0.5px]', why: 'one device pixel', sets: { height: '0.5px' }, moves: true }
           : { kind: 'class', from: cls && /^w-(px|\[1px\])$/.test(cls) ? cls : '', to: 'w-[0.5px]', why: 'one device pixel', sets: { width: '0.5px' }, moves: true })(sides[0]),
     }];
@@ -912,10 +935,12 @@ export const contrast = {
     const lc = Math.abs(apca(text, ground));
     if (lc >= need) return [];
     if (muted < 1 && Math.abs(apca(over([c[0], c[1], c[2], alpha(c) * fade / muted], ground), ground)) >= need) return [];
+    // rounded down: 59.7 short of 60 must not read as "60, needs 60"
+    const shown = Math.floor(lc);
     return [{
-      ...say(this.id, { lc: Math.round(lc), size: fs, need, large }),
-      key: this.id, text: colourClass(el, 'text', theme) ?? 'color', props: ['color'], value: `Lc ${Math.round(lc)}`, n: Math.round(lc),
-      evidence: { lc: Math.round(lc), need, color: hex(text), ground: hex(ground), fontSize: fs, weight: w }, confidence: 0.85,
+      ...say(this.id, { lc: shown, size: fs, need, large }),
+      key: this.id, text: colourClass(el, 'text', theme) ?? 'color', props: ['color'], value: `Lc ${shown}`, n: shown,
+      evidence: { lc: shown, need, color: hex(text), ground: hex(ground), fontSize: fs, weight: w }, confidence: 0.85,
       suggest: { kind: 'advice', text: `${(0.2126 * ground[0] + 0.7152 * ground[1] + 0.0722 * ground[2]) / 255 < 0.5 ? 'Lighten' : 'Darken'} the text, or make it bigger or bolder.` },
     }];
   },
@@ -1240,14 +1265,21 @@ export const anchorOffset = {
   },
 };
 
+// already cut in the middle: the truncating part is the path's start, and a sibling after it keeps the end whole
+// (src/components/… then Checkbox.tsx)
+function cutInMiddle(el, facts) {
+  const next = el.nextElementSibling;
+  return !!next && !!words(next).trim() && !truncated(next, facts.style(next));
+}
+
 // #76. Truncate paths and ids in the middle: their ends carry the meaning.
 export const middleTruncate = {
   id: 'craft/middle-truncate', family: 'craft', number: [76], owns: ['text-flow'], once: 'ancestor', refines: ['craft/truncate-intent'],
-  scope: ({ el, facts }) => truncated(el, facts.style(el)) && pathLike(words(el)), reads: ['style'],
+  scope: ({ el, facts }) => truncated(el, facts.style(el)) && pathLike(words(el)) && !cutInMiddle(el, facts), reads: ['style'],
   check({ el, facts }, theme) {
     const s = facts.style(el);
     const t = words(el);
-    if (!truncated(el, s) || !pathLike(t)) return [];
+    if (!truncated(el, s) || !pathLike(t) || cutInMiddle(el, facts)) return [];
     return [{
       ...say(this.id, { text: t.length > 40 ? t.slice(0, 37) + '…' : t }),
       key: this.id, text: utility(el, 'truncate') ?? 'text-overflow', props: ['text-overflow'], value: 'ellipsis', n: 0,
@@ -1357,7 +1389,8 @@ export const tintedShadow = {
     const T = theme.spec(this.id);
     const s = facts.style(el);
     if (s.boxShadow === 'none' || !el.parentElement) return [];
-    const layers = s.boxShadow.split(/,(?![^(]*\))/).filter((l) => !/inset/.test(l));
+    // a ring (spread alone, no offset or blur: Tailwind's ring-*) is an edge drawn in its own colour, not a shadow
+    const layers = s.boxShadow.split(/,(?![^(]*\))/).filter((l) => { const [d] = shadows(l); return !d.inset && (d.x || d.y || d.blur); });
     // Tailwind's shadow-sm…xl are exactly 10% black: at the line counts
     const colours = layers.map((l) => rgb(l.match(COLOUR)?.[0])).filter((c) => c && c[3] >= T.alpha);
     if (!colours.length) return [];

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { spawn, spawnSync } from 'node:child_process';
-import { cp, mkdir, mkdtemp, readFile, rename, rm, stat, writeFile } from 'node:fs/promises';
+import { appendFile, cp, mkdir, mkdtemp, readFile, rename, rm, stat, writeFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { once } from 'node:events';
 import { setTimeout as delay } from 'node:timers/promises';
@@ -38,6 +38,8 @@ for (const extension of ['ts', 'mts', 'js', 'mjs']) {
     } else assert.equal(baseline.stderr, '');
     const checked = run(root, ['check', '--json']);
     assert.equal(JSON.parse(checked.stdout).ledger.new, 0);
+    // --why speaks only for the decisions an acceptance adds or changes (baseline already accepted today's), so add one
+    await appendFile(join(root, 'src/styles.css'), '\n@theme { --spacing-step-wide: 24px; }\n');
     const accepted = run(root, ['accept-decisions', '--why', 'migration test']);
     assert.equal(accepted.status, 0);
     const entries = (await readFile(join(root, directory, 'ledger.jsonl'), 'utf8')).trim().split('\n').map(JSON.parse);

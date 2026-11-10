@@ -39,7 +39,9 @@ async function host(t, kind) {
   await writeFile(join(route, 'route.plumb.ts'), "import { createPlumbRoute } from '@unlocalhosted/react-plumber/next'; export const runtime = 'nodejs'; export const { GET, POST } = createPlumbRoute({ watch: false });");
   await writeFile(join(root, 'app/layout.jsx'), "import { PlumbOverlay } from '@unlocalhosted/react-plumber/next'; import './styles.css'; export default function Layout({ children }) { return <html><body>{children}<PlumbOverlay /></body></html>; }");
   await writeFile(join(root, 'next.config.mjs'), `import { withPlumb } from '@unlocalhosted/react-plumber/next/config'; export default withPlumb({ experimental: { agentUpgrade: false }, turbopack: { root: ${JSON.stringify(repo)} } });`);
-  const env = { ...process.env, NEXT_TELEMETRY_DISABLED: '1' }; delete env.NODE_ENV;
+  // this test measures the unstamped path (reading 216 cards through React's own records). withPlumb always stamps
+  // since 0.4.0, so the internal switch turns it off here, as e2e/locate.test.mjs does
+  const env = { ...process.env, NEXT_TELEMETRY_DISABLED: '1', PLUMB_INTERNAL_UNSTAMPED: '1' }; delete env.NODE_ENV;
   const child = spawn(process.execPath, [join(repo, 'node_modules/next/dist/bin/next'), 'dev', '--turbopack', '--hostname', '127.0.0.1', '--port', '0'], { cwd: root, env, stdio: ['ignore', 'pipe', 'pipe'] });
   const done = once(child, 'exit'); let logs = '';
   child.stdout.on('data', chunk => logs += chunk); child.stderr.on('data', chunk => logs += chunk);
@@ -61,7 +63,8 @@ async function sweep(page, requests) {
   const start = performance.now(); await page.keyboard.press('Alt+B');
   await page.waitForFunction(() => { const p = window.__plumb.overlay.progress; return p?.total > 200 && p.read === p.total; }, null, { timeout: 60000 });
   const elapsedMs = performance.now() - start;
-  await page.waitForFunction(() => document.querySelector('plumb-overlay').shadowRoot.querySelectorAll('.bp .hit').length === window.__plumb.overlay.progress.drift);
+  // problems are places (the 216 cards are one site), heat is per element: 216 cards and the header, each drawn once
+  await page.waitForFunction(() => document.querySelector('plumb-overlay').shadowRoot.querySelectorAll('.bp .hit').length === 217);
   const reading = await page.evaluate(() => ({ progress: window.__plumb.overlay.progress, labels: [...document.querySelector('plumb-overlay').shadowRoot.querySelectorAll('.bp .hit')].map(el => el.getAttribute('aria-label')).sort() }));
   return { elapsedMs, ...reading, ...counts(requests) };
 }
@@ -76,7 +79,8 @@ test('Next unstamped 216-card blueprint shares module reads, batches waves and i
     const requests = traffic(page);
     results[kind] = await sweep(page, requests);
     assert.ok(results[kind].progress.checked >= 216, JSON.stringify(results[kind]));
-    assert.equal(results[kind].progress.drift, 217);
+    assert.equal(results[kind].progress.drift, 2, 'two places: the cards\' one inline style and the header\'s');
+    assert.equal(results[kind].labels.length, 217, 'every one of the 217 elements is marked');
     if (kind === 'next') {
       assert.deepEqual(results.next.labels, results.vite.labels, 'same readings and label multiplicity as stamped source');
       // Each card also agrees with its authored site, rather than merely both hosts agreeing on a wrong count.

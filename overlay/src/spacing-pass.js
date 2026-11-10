@@ -23,6 +23,7 @@ import { BLOCK_ICONS } from './boxmodel.js';
 import { classEditsOf } from './locate.js';
 import { ease } from './show.js';
 import { proposeSpacing, readStacks, rhythmOf, unit } from './stacks.js';
+import { stampOf, placeOf } from './stamp.js';
 
 const SIDE = /^(gap|gap-y|mt|mb)$/;
 const PROP = { gap: 'row-gap', mt: 'margin-top', mb: 'margin-bottom' };
@@ -46,7 +47,7 @@ export class SpacingPass {
     for (const m of p.moves) {
       const g = m.gap, prefix = prefixOf(g.cls ?? '');
       if (!SIDE.test(prefix) || !g.el) continue;
-      const key = `${g.by === 'gap' ? g.el.getAttribute('data-plumb-source') : (g.el.getAttribute('data-plumb-source') ?? '').split('#')[0]}|${g.by}|${g.cls}`;
+      const key = `${g.by === 'gap' ? stampOf(g.el) : (placeOf(g.el) ?? '')}|${g.by}|${g.cls}`;
       if (!writes.has(key)) writes.set(key, { by: g.by, prop: PROP[g.by], cls: g.cls, next: classFor(prefix, m.to, step), to: m.to, gaps: [], els: new Set() });
       const w = writes.get(key);
       w.gaps.push(g); w.els.add(g.el);
@@ -54,7 +55,7 @@ export class SpacingPass {
     // one class, one write: a class that also makes spaces that stay (the same mt-4 elsewhere on this page) is left as is,
     // or the write would move those too
     const all = new Map();
-    for (const g of stacks.flatMap((x) => x.gaps)) if (g.by && g.cls && g.el) { const k = `${g.by === 'gap' ? g.el.getAttribute('data-plumb-source') : (g.el.getAttribute('data-plumb-source') ?? '').split('#')[0]}|${g.by}|${g.cls}`; all.set(k, (all.get(k) ?? 0) + 1); }
+    for (const g of stacks.flatMap((x) => x.gaps)) if (g.by && g.cls && g.el) { const k = `${g.by === 'gap' ? stampOf(g.el) : (placeOf(g.el) ?? '')}|${g.by}|${g.cls}`; all.set(k, (all.get(k) ?? 0) + 1); }
     for (const [k, w] of writes) if ((all.get(k) ?? 0) > w.gaps.length || new Set(w.gaps.map((g) => p.moves.find((m) => m.gap === g)?.to)).size > 1) writes.delete(k);
     // a size moves everywhere on this page or nowhere: moving some of the 7s and leaving the rest would add a size, and a
     // pass that adds values is never offered (pass-spacing.md step 8)

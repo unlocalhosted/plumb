@@ -25,6 +25,7 @@ import type { ClassTraceLimit } from '../collect/computed.js';
 import type { StructuredEdit, RefusedSite } from '../surfaces/edits.js';
 import { isComponentJSX, jsxLocation, jsxAuthoredOwner, positionKind, sourcePaths } from './source-location.js';
 import type { PositionKind } from './source-location.js';
+import { parseStamp, stampHash } from '../stamp.js';
 import { elementProps, setJsxProp, setProp, swapClasses } from './props.js';
 import { classSites, pinWrite, pinnedString } from './class-site.js';
 import type { Located, ModuleFacts, PinWrite } from './class-site.js';
@@ -49,6 +50,8 @@ import { atSite } from '../surfaces/sites.js';
 import { resolveTextAt, textTargets } from './text-at.js';
 import type { TextAtResult } from './text-at.js';
 import { containsPath, ownSourcePath, sourceBoundary, sourcePath } from '../source-boundary.js';
+import { indexJSX, indexPath } from '../hosts/source-stamping.js';
+import type { IndexRow } from '../hosts/source-stamping.js';
 import { forgetProjectFacts } from '../project-facts/index.js';
 import { encodeJSXText, encodeTextLiteral, textWriteErrors } from './text-encoding.js';
 import type { TextResult } from './text.js';
@@ -615,13 +618,13 @@ export class Session extends EventEmitter {
       }
       return [...paths];
     }
-    if (method === 'resolveSource') {
-      const expected = args[3] as { servedRoot?: string; stamp?: boolean } | undefined;
+    if (method === 'resolveSource' || method === 'sourceIndex') {
+      const expected = (method === 'sourceIndex' ? args[1] : args[3]) as { servedRoot?: string; stamp?: boolean } | undefined;
       const file = await this.resolveFile(args[0] as string, expected?.servedRoot, expected?.stamp);
       return typeof file === 'string' ? [file] : [];
     }
     if (method === 'places') {
-      const files = (args[0] as string[]).map(file => this.file(file));
+      const files = (args[0] as string[]).map(file => this.placeFile(file));
       for (const file of files) await this.readableSource(file).catch(() => {});
       return files.filter(file => this.sourceFiles.has(file));
     }
@@ -644,9 +647,9 @@ export class Session extends EventEmitter {
     if (!Array.isArray(items) || items.length > 8192) throw new UsageError('A page is a list of at most 8192 stamped elements.');
     const parse = (item: PageItem) => {
       if (!item || typeof item.stamp !== 'string' || typeof item.tag !== 'string' || item.classes !== undefined && typeof item.classes !== 'string') throw new UsageError('Each element is { stamp, tag, classes? }.');
-      const match = /^(.+):(\d+):(\d+)#([a-f0-9]{12})$/.exec(item.stamp);
-      if (!match || item.classes && item.classes.length > 65536) throw new UsageError(`Not a stamp: ${item.stamp.slice(0, 80)}`);
-      return { source: match[1]!, line: Number(match[2]), column: Number(match[3]), hash: match[4]! };
+      const stamp = parseStamp(item.stamp);
+      if (!stamp || item.classes && item.classes.length > 65536) throw new UsageError(`Not a stamp: ${item.stamp.slice(0, 80)}`);
+      return stamp;
     };
     const keyOf = (item: PageItem) => `${item.stamp}\0${item.tag}\0${item.classes ?? ''}`;
     const unique = new Map<string, PageItem>();
@@ -744,6 +747,32 @@ export class Session extends EventEmitter {
       return { file: inside, line: location.line, column: location.column,
         ...(expected.owner ? { authoredOwner: jsxAuthoredOwner(file, text, location) } : {}),
         ...(expected.component || anyOpening && isComponentJSX(location.tag) ? { component: location.tag } : {}) };
+    });
+  }
+  /** The JSX index of one tracked file, as the host built it (from the cache by hash), else from the file in one parse. */
+  sourceIndex(source: string, expected: { servedRoot?: string } = {}): Promise<SourceResolution | { file: string; hash: string; rows: IndexRow[] }> {
+    return this.serializeRead(async () => {
+      const classified = await this.resolveFile(source, expected.servedRoot);
+      // a file the page renders that the project's source leaves out is remembered, as resolveSource remembers it:
+      // readiness lists it ("elements from these files aren't checked"), whichever question found it first
+      if (typeof classified !== 'string') {
+        if ('untracked' in classified && classified.untracked && this.outsideSources.size < 64) this.outsideSources.add(sourcePath(this.root, classified.untracked));
+        return classified;
+      }
+      const file = classified, inside = relative(this.root, file).replaceAll('\\', '/');
+      if (!this.batchRead) await this.reconcile([file]);
+      if (!this.sourceFiles.has(file)) {
+        if (this.outsideSources.size < 64) this.outsideSources.add(file);
+        return { library: true, untracked: inside };
+      }
+      const text = await readFile(file, 'utf8'), hash = stampHash(text);
+      try {
+        const stored = JSON.parse(await readFile(indexPath(this.root, hash), 'utf8')) as { rows: IndexRow[] };
+        return { file: inside, hash, rows: stored.rows };
+      } catch { /* not built by a host in this project yet */ }
+      const index = indexJSX(text, file);
+      if (!index) return { refused: 'source-mismatch' };
+      return { file: inside, hash, rows: index.rows };
     });
   }
   site(file: string, line: number, column?: number): Promise<SiteResult> {
@@ -1561,6 +1590,8 @@ export class Session extends EventEmitter {
   private record(path: string, before: string, hashAfter: string, line: number, label: string, perLine = false): UndoHandle {
     const file = relative(this.root, path).replaceAll('\\', '/');
     this.progress();
+    // the host hears every write at once, so its hot update never waits on a watcher's poll
+    this.emit('written', path);
     const id = mintId('w');
     this.written.push({ id, file, line, label, at: new Date().toISOString(), path, before, hashAfter });
     this.evict();
@@ -1770,11 +1801,31 @@ export class Session extends EventEmitter {
   }
   /** The craft spec in effect (docs/briefs/craft-spec.md): the standard, the project's config over it, the token target. */
   spec(): Promise<ProjectSpec> { return this.read('spec'); }
-  /** The places in these files: the findings whose sites are in each (sites filtered to it) and its declarations. */
-  places(files: string[]): Promise<PlacesResult> {
+  /**
+   * The places in these files: the findings whose sites are in each (sites filtered to it) and its declarations. A
+   * file may be asked for by either name the page knows it by (placeFile); it is answered once, under the one name
+   * every page answer uses: its path from the project root.
+   */
+  async places(files: string[]): Promise<PlacesResult> {
     if (!Array.isArray(files) || files.length > 4096 || files.some(file => typeof file !== 'string' || !file.trim())) throw new UsageError('places takes a list of at most 4096 files.');
-    const paths = [...new Set(files.map(file => this.file(file)))];
-    return this.read('places', { files: paths, revision: this.revision });
+    const paths = [...new Set(files.map(file => this.placeFile(file)))];
+    const answer = await this.read<PlacesResult>('places', { files: paths, revision: this.revision });
+    return { ...answer, files: answer.files.map(entry => ({ ...entry, file: relative(this.root, entry.file).replaceAll('\\', '/') })) };
+  }
+  /**
+   * One file, one identity, whichever of its two names the page asks by: its path from the project root (how every
+   * page answer names it) or its stamp's path from the repository root (src/source-identity.ts). The two differ when
+   * the project sits below the repository top (an app in a monorepo, a folder under a worktree): read as two files,
+   * every place in it would be counted twice. The project path wins when both name a source file.
+   */
+  private placeFile(file: string): string {
+    const path = this.file(file);
+    if (this.sourceFiles.has(path)) return path;
+    try {
+      const stamped = sourcePaths(this.root, file, undefined, true)[0]!;
+      if (stamped !== path && this.sourceFiles.has(stamped) && containsPath(sourceBoundary(this.root), stamped)) return stamped;
+    } catch { /* not a stamp spelling: the project path stands */ }
+    return path;
   }
   why(file: string, line: number): Promise<Awaited<ReturnType<typeof import('../ledger/commands.js').inspectLedger>>> { return this.read('why', { file: this.file(file), line: this.position(line) }); }
   try(code: string, options: Pick<TryOptions, 'lang' | 'as' | 'verbose'> = {}): Promise<Report> { return this.read('try', { code, ...options }); }

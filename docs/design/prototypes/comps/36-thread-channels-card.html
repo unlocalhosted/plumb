@@ -1,0 +1,168 @@
+<!doctype html>
+<!-- COMP #36 (card pass, 2026-11-05; hands-on): the one component, rich inside. Thread, a team chat; the sidebar of
+     Longwave, a podcast studio, mid-edit: a huddle running in #ep-112-edit with its voices drawn as levels, a channel
+     shared with a sponsor (Spotify's mark), unread counts and mentions, people with their presence, your own status.
+     Slate's tokens (overlay/showcase/src/theme.css). Drawn BROKEN, at the moment the flaw shows: Show all channels was
+     just pressed, the list ([data-scroll], the app's styled 8px scrollbar, overflow-y: auto, no scrollbar-gutter) grew
+     past its height, the scrollbar appeared, and every count slid 8px left. plumber's marks are measured live: the
+     counts' resting right edges (dashed), the ground they slid across (hatched), one tag. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Thread channel list (comp)</title>
+<style>
+  :root {
+    --surface: #fff; --sunken: #f3f5f9; --ink: #12233d; --ink-muted: #5a6779; --ink-subtle: #6f7c90;
+    --line: rgb(18 35 61 / 0.11); --accent: #5550d8; --accent-soft: #efeefd; --accent-deep: #3631a6;
+    --positive: #0f6f58; --live: #1f9d6b;
+    --board: #eef1f5; --board-dot: #d6dce4;
+    --card: 0 1px 2px rgb(18 35 61 / 0.05), 0 6px 16px rgb(18 35 61 / 0.07), 0 18px 44px rgb(18 35 61 / 0.09);
+    --hl: 0.5px;
+    --pl-off: #bf3a1e; --pl-halo: rgb(255 255 255 / 0.9); --pl-mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, monospace;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 48px; background: var(--board);
+    background-image: radial-gradient(var(--board-dot) 1px, transparent 1px); background-size: 16px 16px;
+    font: 14px/20px Inter, -apple-system, system-ui, sans-serif; color: var(--ink); -webkit-font-smoothing: antialiased; }
+  .num { font-variant-numeric: tabular-nums; }
+  /* the stage: the sidebar, with room on its right for plumber's tag */
+  .stage { position: relative; width: 432px; }
+  .side { width: 288px; display: flex; flex-direction: column; border-radius: 10px; background: var(--surface); box-shadow: var(--card), 0 0 0 0.5px rgb(18 35 61 / 0.1); }
+
+  .ws { display: flex; align-items: center; gap: 10px; padding: 14px 12px 12px 14px; }
+  .ws .mk { width: 32px; height: 32px; border-radius: 8px; display: grid; place-items: center; background: #1f2b44; color: #ffd36b; flex: none; }
+  .ws .t { font-size: 15px; font-weight: 600; letter-spacing: -0.01em; display: flex; align-items: center; gap: 4px; }
+  .ws .s { font-size: 12px; color: var(--ink-muted); }
+  .ws .compose { margin-left: auto; width: 30px; height: 30px; border-radius: 6px; display: grid; place-items: center; color: var(--ink-muted); box-shadow: inset 0 0 0 1px var(--line); }
+
+  /* the huddle: who's talking, drawn as their levels */
+  .huddle { display: flex; align-items: center; gap: 10px; margin: 0 8px 6px; padding: 8px 10px; border-radius: 8px; background: #e9f6f0; }
+  .lv { display: flex; align-items: center; gap: 2px; height: 16px; }
+  .lv i { width: 2.5px; border-radius: 2px; background: var(--live); }
+  .huddle .t { font-size: 12.5px; font-weight: 500; color: #17573f; line-height: 16px; }
+  .huddle .s { font-size: 11.5px; color: #3d7a62; line-height: 14px; }
+  .huddle .faces { margin-left: auto; display: flex; }
+  .faces img { width: 20px; height: 20px; border-radius: 50%; object-fit: cover; box-shadow: 0 0 0 2px #e9f6f0; outline: 1px solid rgb(0 0 0 / 0.1); outline-offset: -1px; }
+  .faces img + img { margin-left: -5px; }
+
+  .nav { padding: 2px 8px; }
+  .item { display: flex; align-items: center; gap: 8px; height: 32px; padding: 0 10px; border-radius: 6px; font-size: 13.5px; color: var(--ink-muted); }
+  .item svg { flex: none; }
+  .sect { display: flex; align-items: center; gap: 4px; height: 28px; margin-top: 8px; padding: 0 18px; font-size: 12px; font-weight: 500; color: var(--ink-subtle); }
+
+  /* PLANTED (#36): overflow-y-auto with the app's styled 8px scrollbar, and no [scrollbar-gutter:stable] */
+  .list { list-style: none; margin: 0; padding: 0 8px; height: 272px; overflow-y: auto; }
+  .list::-webkit-scrollbar { width: 8px; }
+  .list::-webkit-scrollbar-thumb { border-radius: 99px; background: rgb(18 35 61 / 0.18); border: 2px solid var(--surface); }
+  .list.short { height: auto; }
+  .ch { display: flex; align-items: center; gap: 8px; height: 32px; flex: none; padding: 0 8px 0 10px; border-radius: 6px; font-size: 13.5px; color: var(--ink-muted); }
+  .ch .h { width: 14px; text-align: center; color: var(--ink-subtle); font-size: 14px; }
+  .ch.unread { color: var(--ink); font-weight: 600; }
+  .ch.on { background: var(--accent-soft); color: var(--accent-deep); font-weight: 600; }
+  .ch.on .h { color: var(--accent-deep); }
+  .ch .ext { width: 14px; height: 14px; border-radius: 4px; background: #1db954; display: grid; place-items: center; }
+  .ch .ext::before { content: ""; width: 9px; height: 9px; background: #fff; -webkit-mask: url(https://cdn.jsdelivr.net/npm/simple-icons@13.21.0/icons/spotify.svg) center / contain no-repeat; mask: url(https://cdn.jsdelivr.net/npm/simple-icons@13.21.0/icons/spotify.svg) center / contain no-repeat; }
+  .ch .live { width: 14px; height: 14px; display: grid; place-items: center; color: var(--live); }
+  .count { margin-left: auto; height: 20px; min-width: 20px; padding: 0 6px; border-radius: 99px; display: grid; place-items: center; font-size: 11px; font-weight: 600; font-variant-numeric: tabular-nums; background: rgb(18 35 61 / 0.07); color: var(--ink-muted); }
+  .count.at { background: var(--accent); color: #fff; }
+  .more { display: flex; align-items: center; gap: 8px; height: 32px; margin: 6px 8px 0; padding: 0 10px; border-radius: 6px; font-size: 13.5px; font-weight: 500; color: var(--accent); }
+
+  .dm { display: flex; align-items: center; gap: 8px; height: 32px; padding: 0 8px 0 8px; border-radius: 6px; font-size: 13.5px; color: var(--ink-muted); }
+  .dm .p { position: relative; width: 20px; height: 20px; flex: none; }
+  .dm .p img { width: 20px; height: 20px; border-radius: 6px; object-fit: cover; outline: 1px solid rgb(0 0 0 / 0.1); outline-offset: -1px; }
+  .dm .p i { position: absolute; right: -3px; bottom: -3px; width: 9px; height: 9px; border-radius: 50%; background: var(--live); box-shadow: 0 0 0 2px var(--surface); }
+  .dm .p i.away { background: var(--surface); box-shadow: 0 0 0 2px var(--surface), inset 0 0 0 1.5px #a3acb9; }
+  .dm.unread { color: var(--ink); font-weight: 600; }
+  .dm .note { font-weight: 400; font-size: 12px; color: var(--ink-subtle); }
+
+  .me { display: flex; align-items: center; gap: 10px; margin-top: 8px; padding: 10px 14px 12px; background: var(--sunken); border-radius: 0 0 10px 10px; box-shadow: inset 0 var(--hl) 0 var(--line); }
+  .me .p { position: relative; }
+  .me img { width: 30px; height: 30px; border-radius: 8px; object-fit: cover; display: block; outline: 1px solid rgb(0 0 0 / 0.1); outline-offset: -1px; }
+  .me .p i { position: absolute; right: -3px; bottom: -3px; width: 10px; height: 10px; border-radius: 50%; background: #d33b4e; box-shadow: 0 0 0 2px var(--sunken); }
+  .me .t { font-size: 13px; font-weight: 500; line-height: 16px; }
+  .me .s { font-size: 12px; color: var(--ink-muted); line-height: 16px; }
+
+  /* plumber's marks */
+  .marks { position: absolute; inset: 0; pointer-events: none; }
+  .m { position: absolute; }
+  .m.line { width: 0; border-left: 1px dashed var(--pl-off); opacity: 0.8; }
+  .m.hatch { opacity: 0.55; background-image: repeating-linear-gradient(45deg, var(--pl-off) 0 1px, transparent 1px 4px); }
+  .m.tag { display: flex; align-items: center; height: 20px; padding: 0 6px; border-radius: 6px; font: 500 11px/1 var(--pl-mono); font-variant-numeric: tabular-nums; white-space: nowrap; color: #fff; background: var(--pl-off); box-shadow: 0 0 0 1px var(--pl-halo); transform: translateY(-50%); }
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+  <aside class="side">
+    <header class="ws">
+      <span class="mk"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M1.5 9c1.5-4 3-4 4.5 0s3 4 4.5 0 3-4 4.5 0 1.5 2 1.5 2"/></svg></span>
+      <span><div class="t">Longwave<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color:var(--ink-subtle)"><path d="M3 4.5 6 7.5 9 4.5"/></svg></div><div class="s">Podcast studio · <span class="num">14</span> people</div></span>
+      <span class="compose"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 2.5l2.5 2.5L6 12.5H3.5V10z"/></svg></span>
+    </header>
+
+    <div class="huddle">
+      <span class="lv"><i style="height:6px"></i><i style="height:12px"></i><i style="height:16px"></i><i style="height:9px"></i><i style="height:13px"></i><i style="height:5px"></i></span>
+      <span><div class="t">Huddle in #ep-112-edit</div><div class="s num">Amara talking · 12:04</div></span>
+      <span class="faces"><img src="../../../../overlay/showcase/src/media/people/person-09.jpg" alt=""><img src="../../../../overlay/showcase/src/media/people/person-06.jpg" alt=""><img src="../../../../overlay/showcase/src/media/people/person-02.jpg" alt=""></span>
+    </div>
+
+    <div class="nav">
+      <div class="item"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"><path d="M2.5 3.5h11v7h-6l-3 2.5v-2.5h-2z"/></svg>Threads</div>
+      <div class="item"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="8" cy="8" r="2.6"/><path d="M10.6 8v1.2a1.9 1.9 0 0 0 3.8 0V8A6.4 6.4 0 1 0 11 13.6" stroke-linecap="round"/></svg>Mentions<span class="count at" style="margin-left:auto">2</span></div>
+    </div>
+
+    <div class="sect"><svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor"><path d="M2 3.5h6L5 7z"/></svg>Channels</div>
+    <ul class="list" id="list" data-scroll>
+      <li class="ch unread"><span class="h">#</span>general<span class="count">3</span></li>
+      <li class="ch on"><span class="live"><svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor"><rect x="1" y="4" width="2" height="4" rx="1"/><rect x="5" y="1.5" width="2" height="9" rx="1"/><rect x="9" y="3" width="2" height="6" rx="1"/></svg></span>ep-112-edit<span class="count at">12</span></li>
+      <li class="ch unread"><span class="h">#</span>guests<span class="count">5</span></li>
+      <li class="ch unread"><span class="ext"></span>spotify-sponsorship<span class="count at">2</span></li>
+      <li class="ch"><span class="h">#</span>show-notes<span class="count" style="visibility:hidden">0</span></li>
+      <li class="ch unread"><span class="h">#</span>clips<span class="count">8</span></li>
+      <li class="ch rest"><span class="h">#</span>design<span class="count" style="visibility:hidden">0</span></li>
+      <li class="ch rest unread"><span class="h">#</span>booking<span class="count">1</span></li>
+      <li class="ch rest"><span class="h">#</span>music-licensing<span class="count" style="visibility:hidden">0</span></li>
+      <li class="ch rest unread"><span class="h">#</span>hiring<span class="count">4</span></li>
+      <li class="ch rest"><span class="h">#</span>random<span class="count" style="visibility:hidden">0</span></li>
+      <li class="ch rest"><span class="h">#</span>ops<span class="count" style="visibility:hidden">0</span></li>
+    </ul>
+    <div class="more"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 8.5 7 5l3.5 3.5"/></svg>Show fewer</div>
+
+    <div class="sect"><svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor"><path d="M2 3.5h6L5 7z"/></svg>Direct messages</div>
+    <div class="nav">
+      <div class="dm unread"><span class="p"><img src="../../../../overlay/showcase/src/media/people/person-07.jpg" alt=""><i></i></span>Mei Lin<span class="count at" style="margin-left:auto">1</span></div>
+      <div class="dm"><span class="p"><img src="../../../../overlay/showcase/src/media/people/person-04.jpg" alt=""><i></i></span>Jonas Weber</div>
+      <div class="dm"><span class="p"><img src="../../../../overlay/showcase/src/media/people/person-10.jpg" alt=""><i class="away"></i></span>Ana Duarte<span class="note">· back Monday</span></div>
+    </div>
+
+    <footer class="me">
+      <span class="p"><img src="../../../../overlay/showcase/src/media/people/person-05.jpg" alt=""><i></i></span>
+      <span><div class="t">Priya Nair</div><div class="s">Recording until 3pm</div></span>
+    </footer>
+  </aside>
+  <div class="marks" id="marks"></div>
+</div>
+<script>
+  // what the showcase does live: read the counts' right edges with six channels showing (no overflow, no
+  // scrollbar), press Show all channels, read them again, and draw the shift
+  document.fonts.ready.then(() => {
+    const stage = document.getElementById('stage'), list = document.getElementById('list'), marks = document.getElementById('marks');
+    const rest = [...list.querySelectorAll('.rest')];
+    const at = (el) => { const s = stage.getBoundingClientRect(), r = el.getBoundingClientRect(); return { x: r.left - s.left, y: r.top - s.top, w: r.width, h: r.height }; };
+    const counts = () => [...list.querySelectorAll('.count')].slice(0, 6).filter((c) => c.style.visibility !== 'hidden');
+    rest.forEach((r) => (r.style.display = 'none')); list.classList.add('short');
+    const before = counts().map(at);
+    rest.forEach((r) => (r.style.display = '')); list.classList.remove('short');
+    const after = counts().map(at);
+    const mk = (cls, st, text = '') => { const e = document.createElement('span'); e.className = 'm ' + cls; for (const [k, v] of Object.entries(st)) e.style[k] = v + 'px'; e.textContent = text; marks.append(e); };
+    let shift = 0;
+    before.forEach((b, i) => {
+      const a = after[i], d = b.x + b.w - (a.x + a.w); shift = Math.max(shift, d);
+      mk('line', { left: b.x + b.w, top: b.y - 2, height: b.h + 4 });
+      if (d > 0.5) mk('hatch', { left: a.x + a.w, top: b.y + 3, width: d, height: b.h - 6 });
+    });
+    mk('tag', { left: before[0].x + before[0].w + 22, top: before[0].y + before[0].h / 2 }, `−${shift.toFixed(0)}px · all slid`);
+  });
+</script>
+</body>
+</html>

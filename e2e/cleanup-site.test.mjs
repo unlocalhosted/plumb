@@ -173,6 +173,9 @@ test('Apply is one step in the history, named for the pass with its law, and Und
   // the history, opened from the dock like a person would
   // in Blueprint the dock's tools are in the bar, behind ··· (docs/design/one-bar.md)
   // the clean-up's done card is in front: Esc puts it down, back to the bar
+  // (the dock says ready before the reloaded page has put the card back; a person presses Esc at the card they see.
+  // Pressed in that gap it found nothing open, the card then came back and stayed, and the bar never showed)
+  await v.until(/Undo/, 60000);
   await v.page.keyboard.press('Escape');
   await v.page.locator('plumb-overlay').locator('.fx .bar .more').waitFor({ timeout: 30000 });
   await v.page.locator('plumb-overlay').locator('.fx .bar .more').click();

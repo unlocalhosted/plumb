@@ -32,6 +32,8 @@ export function App() {
       </div>
       <div className="flex flex-col gap-s2">
         <div id="rule-bad" className="h-px w-48 bg-ink-muted" />
+        <div id="border-bad" className="w-48 border-b border-ink-muted pb-s2 text-small">A row divided by border-b</div>
+        <div id="tear-ok" className="w-48 border-b border-dashed border-ink-muted pb-s2 text-small">A tear line, dashed</div>
         <div className="h-4" />
       </div>
     </main>

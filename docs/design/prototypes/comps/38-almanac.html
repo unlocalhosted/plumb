@@ -1,0 +1,173 @@
+<!doctype html>
+<!-- COMP #38 (hairlines are one device pixel). Almanac, a calendar's day agenda: Thursday's events divided by
+     hairlines, the next one selected and open on the right. Drawn here with 0.5px dividers; plumber's mistake is
+     planted on the agenda's rows ([data-row]): border-b, 1px, two device pixels on a 2× screen. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Almanac · Thursday (comp)</title>
+<style>
+  :root {
+    --surface: #fff; --sunken: #f3f5f9; --ink: #12233d; --ink-muted: #5a6779; --ink-subtle: #6f7c90;
+    --line: rgb(18 35 61 / 0.12); --line-strong: rgb(18 35 61 / 0.14); --accent: #5550d8; --accent-soft: #efeefd; --accent-deep: #3631a6;
+    --positive: #0f6f58; --positive-soft: #e5f4ef; --caution: #b07114; --caution-soft: #fcf1dd; --negative: #b02a3a;
+    --board: #e9edf2; --board-dot: #d3d9e2;
+    --window: 0 1px 2px rgb(18 35 61 / 0.05), 0 8px 24px rgb(18 35 61 / 0.08), 0 24px 64px rgb(18 35 61 / 0.12);
+    --c-work: #5550d8; --c-hire: #2f9a7e; --c-home: #d08a1e;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 48px; background: var(--board);
+    background-image: radial-gradient(var(--board-dot) 1px, transparent 1px); background-size: 16px 16px;
+    font: 13px/18px Inter, -apple-system, system-ui, sans-serif; color: var(--ink); -webkit-font-smoothing: antialiased; font-feature-settings: "cv11", "ss01"; }
+  .num { font-variant-numeric: tabular-nums; }
+  svg.i { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 1.45; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+  img { display: block; }
+  .window { width: 984px; height: 610px; display: grid; grid-template-columns: 224px 1fr 300px; border-radius: 12px; overflow: hidden; background: var(--surface); box-shadow: var(--window), 0 0 0 0.5px rgb(18 35 61 / 0.18); }
+  .side { background: #f7f8fa; border-right: 0.5px solid var(--line-strong); display: flex; flex-direction: column; padding: 12px 14px; }
+  .lights { display: flex; gap: 7px; padding: 4px 0 16px; } .lights i { width: 11px; height: 11px; border-radius: 50%; background: #d9dde3; }
+  .month { display: flex; justify-content: space-between; align-items: center; padding: 0 2px 8px; }
+  .month b { font-weight: 600; font-size: 13.5px; } .month span { color: var(--ink-subtle); letter-spacing: 6px; }
+  .cal { display: grid; grid-template-columns: repeat(7, 1fr); row-gap: 2px; text-align: center; font-size: 11.5px; }
+  .cal .h { color: var(--ink-subtle); font-size: 10.5px; font-weight: 500; height: 20px; }
+  .cal i { font-style: normal; height: 26px; display: grid; place-items: center; position: relative; color: var(--ink); border-radius: 50%; width: 26px; margin: 0 auto; }
+  .cal i.o { color: #b3bac6; }
+  .cal i.e::after { content: ''; position: absolute; bottom: 2px; width: 3px; height: 3px; border-radius: 50%; background: var(--ink-subtle); }
+  .cal i.t { background: var(--negative); color: #fff; font-weight: 600; }
+  .cal i.t::after { background: #fff; }
+  .label { margin: 20px 2px 6px; font-size: 11px; font-weight: 500; color: var(--ink-subtle); }
+  .calrow { display: flex; align-items: center; gap: 9px; height: 28px; padding: 0 2px; }
+  .calrow b { width: 13px; height: 13px; border-radius: 4px; display: grid; place-items: center; }
+  .calrow b svg { width: 9px; height: 9px; stroke: #fff; stroke-width: 2; fill: none; }
+  .calrow b.off { background: none !important; box-shadow: inset 0 0 0 1.5px currentColor; }
+  .calrow .n { margin-left: auto; font-size: 12px; color: var(--ink-subtle); }
+  .me { margin-top: auto; display: flex; align-items: center; gap: 9px; padding: 8px 0; }
+  .me img { width: 26px; height: 26px; border-radius: 50%; object-fit: cover; }
+  .me span { display: flex; flex-direction: column; font-size: 12.5px; line-height: 16px; } .me small { color: var(--ink-subtle); font-size: 11.5px; }
+
+  .main { display: flex; flex-direction: column; min-width: 0; }
+  .bar { display: flex; align-items: center; gap: 10px; height: 54px; padding: 0 24px; border-bottom: 0.5px solid var(--line-strong); }
+  .seg { display: flex; padding: 2px; border-radius: 8px; background: var(--sunken); }
+  .seg span { height: 26px; display: grid; place-items: center; padding: 0 11px; border-radius: 6px; color: var(--ink-muted); font-size: 12.5px; }
+  .seg span.on { background: #fff; color: var(--ink); font-weight: 500; box-shadow: 0 1px 2px rgb(18 35 61 / 0.1), 0 0 0 0.5px rgb(18 35 61 / 0.1); }
+  .arrows { margin-left: auto; display: flex; gap: 2px; color: var(--ink-muted); }
+  .arrows span { width: 28px; height: 28px; display: grid; place-items: center; border-radius: 6px; }
+  .today { height: 28px; padding: 0 11px; display: grid; place-items: center; border-radius: 7px; box-shadow: inset 0 0 0 1px var(--line-strong); font-weight: 500; }
+
+  .day { padding: 20px 24px 0; display: flex; align-items: flex-end; gap: 14px; }
+  .day .big { font-size: 40px; line-height: 40px; font-weight: 500; letter-spacing: -0.04em; color: var(--negative); }
+  .day span { display: flex; flex-direction: column; line-height: 19px; padding-bottom: 2px; }
+  .day b { font-size: 16px; font-weight: 600; letter-spacing: -0.01em; }
+  .day small { color: var(--ink-muted); font-size: 12.5px; }
+  .day .wx { margin-left: auto; flex-direction: row; align-items: center; gap: 6px; color: var(--ink-muted); }
+  .day .wx svg { width: 18px; height: 18px; color: #d08a1e; }
+
+  /* the agenda: the lesson lives in its dividers */
+  .agenda { list-style: none; margin: 14px 0 0; padding: 0 12px; }
+  .row { position: relative; display: grid; grid-template-columns: 52px 3px 1fr auto; gap: 12px; align-items: center; padding: 12px 12px; border-bottom: 0.5px solid var(--line); }
+  .row:last-child { border-bottom: 0; }
+  .row .at { display: flex; flex-direction: column; font-size: 12.5px; line-height: 16px; color: var(--ink); font-weight: 500; }
+  .row .at small { color: var(--ink-subtle); font-weight: 400; font-size: 11.5px; }
+  .row .tone { align-self: stretch; border-radius: 2px; }
+  .row .w { display: flex; flex-direction: column; min-width: 0; line-height: 17px; }
+  .row .w b { font-weight: 500; font-size: 13.5px; }
+  .row .w span { font-size: 12.5px; color: var(--ink-muted); display: flex; align-items: center; gap: 5px; }
+  .row .w span svg { width: 12px; height: 12px; }
+  .row.past { opacity: 0.55; }
+  .row.sel { background: var(--accent-soft); border-radius: 8px; border-bottom-color: transparent; }
+  .row.sel .at { color: var(--accent-deep); }
+  .faces { display: flex; }
+  .faces img { width: 22px; height: 22px; border-radius: 50%; object-fit: cover; box-shadow: 0 0 0 2px #fff; margin-left: -6px; }
+  .faces img:first-child { margin-left: 0; }
+  .row.sel .faces img { box-shadow: 0 0 0 2px var(--accent-soft); }
+  .faces em { font-style: normal; margin-left: -6px; width: 22px; height: 22px; border-radius: 50%; background: var(--sunken); box-shadow: 0 0 0 2px #fff; display: grid; place-items: center; font-size: 10px; font-weight: 600; color: var(--ink-muted); }
+  .now { position: relative; height: 0; margin: 0 12px; z-index: 2; }
+  .now::before { content: ''; position: absolute; left: 50px; right: 0; top: -0.75px; height: 1.5px; background: var(--negative); }
+  
+  .now span { position: absolute; left: 4px; top: -9px; line-height: 18px; padding: 0 5px; border-radius: 5px; background: var(--negative); color: #fff !important; font-size: 11px; font-weight: 600; color: var(--negative); }
+
+  /* the selected event */
+  .detail { border-left: 0.5px solid var(--line-strong); padding: 20px 20px; display: flex; flex-direction: column; gap: 16px; background: #fcfcfd; }
+  .detail .kind { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 500; color: var(--positive); }
+  .detail .kind i { width: 8px; height: 8px; border-radius: 2.5px; background: var(--c-hire); }
+  .detail h2 { margin: 6px 0 2px; font-size: 18px; line-height: 23px; font-weight: 600; letter-spacing: -0.015em; }
+  .detail .when { color: var(--ink-muted); }
+  .join { height: 36px; display: flex; align-items: center; justify-content: center; gap: 7px; border-radius: 8px; background: var(--accent); color: #fff; font-weight: 500; box-shadow: 0 1px 2px rgb(54 49 166 / 0.3), inset 0 1px 0 rgb(255 255 255 / 0.15); }
+  .join small { opacity: 0.75; font-weight: 400; }
+  .sec { display: flex; flex-direction: column; gap: 8px; }
+  .sec h3 { margin: 0; font-size: 11px; font-weight: 500; color: var(--ink-subtle); }
+  .person { display: flex; align-items: center; gap: 9px; }
+  .person img { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; }
+  .person span { display: flex; flex-direction: column; line-height: 16px; font-size: 12.5px; }
+  .person small { color: var(--ink-subtle); font-size: 11.5px; }
+  .person .rs { margin-left: auto; font-size: 11.5px; font-weight: 500; padding: 2px 7px; border-radius: 99px; background: var(--positive-soft); color: var(--positive); }
+  .person .rs.m { background: var(--sunken); color: var(--ink-muted); }
+  .notes { font-size: 12.5px; line-height: 19px; color: var(--ink-muted); padding: 10px 12px; border-radius: 8px; background: var(--sunken); }
+  .notes b { color: var(--ink); font-weight: 500; }
+</style>
+</head>
+<body>
+<div class="window">
+  <aside class="side">
+    <div class="lights"><i></i><i></i><i></i></div>
+    <div class="month"><b>November 2025</b><span>‹ ›</span></div>
+    <div class="cal num">
+      <span class="h">M</span><span class="h">T</span><span class="h">W</span><span class="h">T</span><span class="h">F</span><span class="h">S</span><span class="h">S</span>
+      <i class="o">27</i><i class="o">28</i><i class="o">29</i><i class="o">30</i><i class="o">31</i><i>1</i><i>2</i>
+      <i class="e">3</i><i class="e">4</i><i class="e">5</i><i class="t e">6</i><i class="e">7</i><i>8</i><i>9</i>
+      <i class="e">10</i><i class="e">11</i><i>12</i><i class="e">13</i><i class="e">14</i><i>15</i><i>16</i>
+      <i class="e">17</i><i>18</i><i class="e">19</i><i class="e">20</i><i>21</i><i>22</i><i>23</i>
+      <i>24</i><i class="e">25</i><i>26</i><i class="e">27</i><i class="e">28</i><i>29</i><i>30</i>
+    </div>
+    <div class="label">Calendars</div>
+    <div class="calrow"><b style="background:var(--c-work)"><svg viewBox="0 0 10 10"><path d="m2 5.2 2 2 4-4.4"/></svg></b>Work<span class="n num">4</span></div>
+    <div class="calrow"><b style="background:var(--c-hire)"><svg viewBox="0 0 10 10"><path d="m2 5.2 2 2 4-4.4"/></svg></b>Hiring<span class="n num">1</span></div>
+    <div class="calrow"><b style="background:var(--c-home)"><svg viewBox="0 0 10 10"><path d="m2 5.2 2 2 4-4.4"/></svg></b>Personal<span class="n num">1</span></div>
+    <div class="calrow" style="color:#9aa3b2"><b class="off"></b>Holidays</div>
+    <div class="me"><img src="../../../../overlay/showcase/src/media/people/person-01.jpg" alt=""><span>Ruth Calder<small>Design lead</small></span></div>
+  </aside>
+
+  <main class="main">
+    <div class="bar">
+      <div class="seg"><span class="on">Day</span><span>Week</span><span>Month</span></div>
+      <div class="arrows"><span>‹</span><span>›</span></div><span class="today">Today</span>
+    </div>
+    <div class="day"><span class="big num">6</span><span><b>Thursday</b><small class="num">6 events · 4h 30m booked</small></span>
+      <span class="wx num"><svg class="i" viewBox="0 0 16 16"><circle cx="8" cy="8" r="3"/><path d="M8 1.5v1.5M8 13v1.5M1.5 8H3M13 8h1.5M3.4 3.4l1 1M11.6 11.6l1 1M3.4 12.6l1-1M11.6 4.4l1-1"/></svg>14° · clear</span>
+    </div>
+    <ul class="agenda">
+      <li class="row past" data-row><span class="at num">9:00<small>9:30</small></span><span class="tone" style="background:var(--c-work)"></span>
+        <span class="w"><b>Design crit</b><span>Studio 2</span></span>
+        <span class="faces"><img src="../../../../overlay/showcase/src/media/people/person-07.jpg" alt=""><img src="../../../../overlay/showcase/src/media/people/person-08.jpg" alt=""><img src="../../../../overlay/showcase/src/media/people/person-03.jpg" alt=""><em>+4</em></span></li>
+      <li class="row past"><span class="at num">11:00<small>12:00</small></span><span class="tone" style="background:var(--c-work)"></span>
+        <span class="w"><b>Roadmap with Jonas</b><span>Room 4B</span></span>
+        <span class="faces"><img src="../../../../overlay/showcase/src/media/people/person-06.jpg" alt=""></span></li>
+      <li class="row past"><span class="at num">13:30<small>14:00</small></span><span class="tone" style="background:var(--c-home)"></span>
+        <span class="w"><b>Lunch with Ana</b><span>Café Mona</span></span>
+        <span class="faces"><img src="../../../../overlay/showcase/src/media/people/person-10.jpg" alt=""></span></li>
+      <div class="now"><span class="num">14:42</span></div>
+      <li class="row sel"><span class="at num">15:00<small>15:45</small></span><span class="tone" style="background:var(--c-hire)"></span>
+        <span class="w"><b>Interview: Priya Nair</b><span><svg class="i" viewBox="0 0 16 16"><rect x="1.5" y="4" width="9" height="8" rx="1.5"/><path d="m10.5 7 4-2v6l-4-2"/></svg>Video call · in 18 min</span></span>
+        <span class="faces"><img src="../../../../overlay/showcase/src/media/people/person-09.jpg" alt=""><img src="../../../../overlay/showcase/src/media/people/person-02.jpg" alt=""></span></li>
+      <li class="row"><span class="at num">16:00<small>17:00</small></span><span class="tone" style="background:var(--c-work)"></span>
+        <span class="w"><b>Release review</b><span>Room 4B</span></span>
+        <span class="faces"><img src="../../../../overlay/showcase/src/media/people/person-08.jpg" alt=""><img src="../../../../overlay/showcase/src/media/people/person-05.jpg" alt=""><em>+9</em></span></li>
+      <li class="row"><span class="at num">18:30<small>19:30</small></span><span class="tone" style="background:var(--c-home)"></span>
+        <span class="w"><b>Climbing</b><span>The Arch, Bermondsey</span></span>
+        <span></span></li>
+    </ul>
+  </main>
+
+  <aside class="detail">
+    <div><span class="kind">Hiring</span><h2>Interview: Priya Nair</h2><span class="when num">Thursday · 15:00 – 15:45</span></div>
+    <span class="join"><svg class="i" viewBox="0 0 16 16"><rect x="1.5" y="4" width="9" height="8" rx="1.5"/><path d="m10.5 7 4-2v6l-4-2"/></svg>Join call <small class="num">in 18 min</small></span>
+    <div class="sec"><h3>Guests</h3>
+      <div class="person"><img src="../../../../overlay/showcase/src/media/people/person-09.jpg" alt=""><span>Priya Nair<small>Candidate, product design</small></span><span class="rs">Going</span></div>
+      <div class="person"><img src="../../../../overlay/showcase/src/media/people/person-02.jpg" alt=""><span>Sam Okoye<small>Engineering</small></span><span class="rs">Going</span></div>
+      <div class="person"><img src="../../../../overlay/showcase/src/media/people/person-01.jpg" alt=""><span>Ruth Calder<small>You, organiser</small></span><span class="rs m">Host</span></div>
+    </div>
+    <div class="sec"><h3>Notes</h3><div class="notes">Portfolio round. <b>Ask about the onboarding redesign</b> and how she measured it. Scorecard is in the hiring folder.</div></div>
+  </aside>
+</div>
+</body>
+</html>

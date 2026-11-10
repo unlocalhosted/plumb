@@ -1,0 +1,170 @@
+<!doctype html>
+<!-- COMP, #63 Never scale from 0 (hands-on; docs/craft/taste-checklist.md, group 4). Commonplace, a team wiki, on the
+     page planning a design team's offsite. The lesson lives in the Insert menu, opened from the + beside an empty line:
+     its entrance starts at scale 0. plumber's marks are onion skins of the menu's real outline at its first painted
+     frame, a quarter and half way in (dashed coral, labelled), and one tag with the first frame's share of its size.
+     The skins' sizes follow the showcase's curve (ease-arrive over 800ms at ¼ speed). Slate's tokens. Throwaway. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Commonplace · Offsite (comp)</title>
+<style>
+  :root {
+    --canvas: #f5f7fa; --surface: #fff; --sunken: #f3f5f9; --ink: #12233d; --ink-muted: #5a6779; --ink-subtle: #6f7c90;
+    --line: rgb(18 35 61 / 0.09); --line-strong: rgb(18 35 61 / 0.14); --accent: #5550d8; --accent-soft: #efeefd; --accent-deep: #3631a6;
+    --positive: #0f6f58; --positive-soft: #e5f4ef;
+    --board: #e9edf2; --board-dot: #d3d9e2;
+    --window: 0 1px 2px rgb(18 35 61 / 0.05), 0 8px 24px rgb(18 35 61 / 0.08), 0 24px 64px rgb(18 35 61 / 0.12);
+    --popover: 0 4px 8px rgb(18 35 61 / 0.05), 0 12px 32px rgb(18 35 61 / 0.14);
+    --pl-sky: #2a7fd0; --pl-off: #bf3a1e; --pl-on: #1a9460; --pl-ink-2: #6b665c; --pl-ink-3: #b3ad9f; --pl-halo: rgb(255 255 255 / 0.9);
+    --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, monospace;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 48px; background: var(--board);
+    background-image: radial-gradient(var(--board-dot) 1px, transparent 1px); background-size: 16px 16px;
+    font: 14px/20px Inter, -apple-system, system-ui, sans-serif; color: var(--ink); -webkit-font-smoothing: antialiased; }
+  .num { font-variant-numeric: tabular-nums; }
+  .stage { position: relative; }
+  .window { width: 1000px; height: 660px; display: grid; grid-template-columns: 224px 1fr; border-radius: 12px; overflow: hidden; background: var(--surface); box-shadow: var(--window), 0 0 0 0.5px rgb(18 35 61 / 0.18); }
+
+  .side { background: #f7f8fa; border-right: 0.5px solid var(--line-strong); display: flex; flex-direction: column; padding: 12px 10px; gap: 1px; }
+  .lights { display: flex; gap: 7px; padding: 4px 6px 14px; }
+  .lights i { width: 11px; height: 11px; border-radius: 50%; background: #d9dde3; box-shadow: inset 0 0 0 0.5px rgb(0 0 0 / 0.08); }
+  .brand { display: flex; align-items: center; gap: 8px; padding: 2px 8px 10px; font-weight: 600; font-size: 14px; letter-spacing: -0.01em; }
+  .brand b { width: 22px; height: 22px; border-radius: 6px; background: #c8643c; display: grid; place-items: center; color: #fff; font-size: 12px; box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.2); }
+  .find { display: flex; align-items: center; gap: 8px; height: 28px; padding: 0 8px; margin-bottom: 8px; border-radius: 6px; background: #fff; box-shadow: inset 0 0 0 0.5px var(--line-strong); font-size: 12.5px; color: var(--ink-subtle); }
+  .find svg, .pg svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 1.5; flex: none; }
+  .find kbd { margin-left: auto; font: 11px/1 Inter, system-ui; }
+  .label { margin: 12px 8px 4px; font-size: 11px; font-weight: 500; color: var(--ink-subtle); }
+  .pg { display: flex; align-items: center; gap: 8px; height: 28px; padding: 0 8px; border-radius: 6px; color: var(--ink-muted); font-size: 13px; white-space: nowrap; }
+  .pg.in { padding-left: 26px; }
+  .pg.on { background: rgb(18 35 61 / 0.06); color: var(--ink); font-weight: 500; }
+  .pg .chev { width: 10px; height: 10px; stroke: var(--ink-subtle); margin-right: -2px; }
+  .pg .em { width: 16px; height: 16px; border-radius: 4px; flex: none; background-size: cover; background-position: center; }
+
+  .main { display: flex; flex-direction: column; min-width: 0; position: relative; }
+  .top { display: flex; align-items: center; gap: 8px; height: 44px; padding: 0 18px; font-size: 13px; color: var(--ink-subtle); }
+  .top b { color: var(--ink); font-weight: 500; }
+  .top .ed { margin-left: auto; font-size: 12px; }
+  .faces { display: flex; padding-left: 8px; }
+  .faces img { width: 24px; height: 24px; border-radius: 50%; box-shadow: 0 0 0 2px #fff; margin-left: -6px; }
+  .btn { height: 28px; display: inline-flex; align-items: center; padding: 0 11px; border-radius: 7px; font-size: 13px; font-weight: 500; box-shadow: inset 0 0 0 1px var(--line-strong); color: var(--ink); margin-left: 6px; }
+  .cover { height: 92px; background: url(../../../../overlay/showcase/src/media/lake.jpg) center 58% / cover; position: relative; }
+  .doc { padding: 0 0 0 72px; max-width: 590px; position: relative; }
+  .doc .icon { width: 48px; height: 48px; border-radius: 12px; margin-top: 30px; background: #fff; box-shadow: 0 0 0 0.5px var(--line-strong), 0 4px 12px rgb(18 35 61 / 0.12); display: grid; place-items: center; position: relative; }
+  .doc .icon svg { width: 30px; height: 30px; }
+  .doc h1 { margin: 10px 0 8px; font-size: 26px; line-height: 34px; font-weight: 650; letter-spacing: -0.02em; }
+  .ph { position: absolute; right: -150px; top: 30px; margin: 0; width: 210px; }
+  .ph > span { display: block; height: 150px; border-radius: 10px; background: url(../../../../overlay/showcase/src/media/lake.jpg) center 60% / cover; box-shadow: inset 0 0 0 0.5px rgb(0 0 0 / 0.1); }
+  .ph figcaption { margin-top: 6px; font-size: 11.5px; color: var(--ink-subtle); }
+  .going { margin-top: 18px; font-size: 12px; color: var(--ink-subtle); }
+  .going b { display: block; font-weight: 500; margin-bottom: 7px; }
+  .going span { display: flex; padding-left: 6px; }
+  .going img { width: 26px; height: 26px; border-radius: 50%; margin-left: -6px; box-shadow: 0 0 0 2px #fff; }
+  .going small { display: block; margin-top: 6px; font-size: 11.5px; }
+  .props { display: grid; grid-template-columns: 96px 1fr; row-gap: 6px; font-size: 13px; margin-bottom: 14px; }
+  .props dt { color: var(--ink-subtle); display: flex; align-items: center; gap: 6px; }
+  .props dd { margin: 0; display: flex; align-items: center; gap: 6px; }
+  .props img { width: 18px; height: 18px; border-radius: 50%; }
+  .pill { height: 20px; padding: 0 7px; border-radius: 4px; display: inline-flex; align-items: center; font-size: 11.5px; font-weight: 500; }
+  .doc p { max-width: 440px; margin: 0 0 10px; font-size: 14.5px; line-height: 23px; color: #2a3850; }
+  .todo { display: flex; align-items: center; gap: 9px; font-size: 14px; line-height: 26px; color: #2a3850; }
+  .todo i { width: 15px; height: 15px; border-radius: 4px; box-shadow: inset 0 0 0 1.25px rgb(18 35 61 / 0.3); flex: none; }
+  .todo.done i { background: var(--accent); box-shadow: none; position: relative; }
+  .todo.done i::after { content: ''; position: absolute; left: 5px; top: 2px; width: 4px; height: 8px; border: solid #fff; border-width: 0 1.8px 1.8px 0; transform: rotate(45deg); }
+  .todo.done span { color: var(--ink-subtle); text-decoration: line-through; text-decoration-color: rgb(18 35 61 / 0.3); }
+  .empty { display: flex; align-items: center; gap: 8px; height: 30px; margin-top: 6px; margin-left: -30px; font-size: 14px; color: var(--ink-subtle); }
+  .plus { width: 22px; height: 22px; border-radius: 5px; display: grid; place-items: center; color: var(--ink); background: var(--sunken); box-shadow: inset 0 0 0 1px var(--line-strong); }
+  .plus svg { width: 13px; height: 13px; stroke: currentColor; stroke-width: 1.7; fill: none; }
+  .caret { width: 1.5px; height: 18px; background: var(--ink); margin-left: 6px; }
+
+  /* the subject: the Insert menu */
+  .menu { position: absolute; z-index: 5; width: 264px; padding: 5px; border-radius: 10px; background: #fff; box-shadow: var(--popover), 0 0 0 0.5px var(--line-strong); }
+  .menu p { margin: 0; padding: 6px 8px 5px; font-size: 11px; font-weight: 500; color: var(--ink-subtle); }
+  .mi { display: flex; align-items: center; gap: 10px; padding: 5px 7px; border-radius: 7px; }
+  .mi.on { background: var(--sunken); }
+  .mi .t { width: 34px; height: 34px; border-radius: 7px; background: #fff; box-shadow: inset 0 0 0 0.5px var(--line-strong), 0 1px 1px rgb(18 35 61 / 0.04); display: grid; place-items: center; flex: none; color: var(--ink-muted); }
+  .mi .t svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 1.5; }
+  .mi b { display: block; font-weight: 500; font-size: 13px; line-height: 17px; }
+  .mi span span { display: block; font-size: 11.5px; line-height: 15px; color: var(--ink-subtle); }
+  .mi kbd { margin-left: auto; font: 11px/1 var(--mono); color: var(--ink-subtle); }
+
+  .marks { position: absolute; inset: 0; pointer-events: none; z-index: 10; }
+  .mk { position: absolute; }
+  .ghost { border: 1px dashed var(--pl-off); border-radius: 10px; opacity: 0.8; }
+  .lab { font: 600 11px/12px system-ui, sans-serif; color: var(--pl-ink-2); white-space: nowrap; }
+  .tag { display: flex; align-items: center; height: 20px; padding: 0 6px; border-radius: 6px; font: 500 11px/1 var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; color: #fff; background: var(--pl-off); box-shadow: 0 0 0 1px var(--pl-halo); transform: translateY(-50%); }
+  .cursor { position: absolute; width: 18px; height: 24px; filter: drop-shadow(0 1px 1.5px rgb(0 0 0 / 0.3)); }
+</style>
+</head>
+<body>
+<div class="stage">
+<div class="window">
+  <aside class="side">
+    <div class="lights"><i></i><i></i><i></i></div>
+    <div class="brand"><b>C</b>Commonplace</div>
+    <div class="find"><svg viewBox="0 0 16 16"><circle cx="7" cy="7" r="4.5"/><path d="m10.5 10.5 3 3"/></svg>Search pages<kbd>⌘K</kbd></div>
+    <div class="label">Design team</div>
+    <div class="pg"><svg class="chev" viewBox="0 0 10 10"><path d="m3 2 3 3-3 3"/></svg><svg viewBox="0 0 16 16"><path d="M4 2h6l3 3v9H4z"/></svg>Handbook</div>
+    <div class="pg"><svg class="chev" viewBox="0 0 10 10" style="transform:rotate(90deg)"><path d="m3 2 3 3-3 3"/></svg><svg viewBox="0 0 16 16"><path d="M2 4.5A1.5 1.5 0 0 1 3.5 3H6l1.5 1.5h5A1.5 1.5 0 0 1 14 6v5.5a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 2 11.5z"/></svg>Team life</div>
+    <div class="pg in on"><span class="em" style="background-image:url(../../../../overlay/showcase/src/media/lake.jpg)"></span>Offsite, the lake house</div>
+    <div class="pg in"><svg viewBox="0 0 16 16"><path d="M4 2h6l3 3v9H4z"/></svg>Onboarding buddies</div>
+    <div class="pg in"><svg viewBox="0 0 16 16"><path d="M4 2h6l3 3v9H4z"/></svg>Crit rota</div>
+    <div class="pg"><svg class="chev" viewBox="0 0 10 10"><path d="m3 2 3 3-3 3"/></svg><svg viewBox="0 0 16 16"><path d="M2 4.5A1.5 1.5 0 0 1 3.5 3H6l1.5 1.5h5A1.5 1.5 0 0 1 14 6v5.5a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 2 11.5z"/></svg>Projects</div>
+    <div class="pg"><svg class="chev" viewBox="0 0 10 10"><path d="m3 2 3 3-3 3"/></svg><svg viewBox="0 0 16 16"><path d="M2 4.5A1.5 1.5 0 0 1 3.5 3H6l1.5 1.5h5A1.5 1.5 0 0 1 14 6v5.5a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 2 11.5z"/></svg>Research</div>
+    <div class="label">Private</div>
+    <div class="pg"><svg viewBox="0 0 16 16"><path d="M4 2h6l3 3v9H4z"/></svg>1:1 notes, Priya</div>
+  </aside>
+
+  <main class="main">
+    <div class="top">Team life <span>/</span> <b>Offsite, the lake house</b>
+      <span class="ed">Edited just now</span>
+      <span class="faces"><img src="../../../../overlay/showcase/src/media/people/person-05.jpg" alt=""><img src="../../../../overlay/showcase/src/media/people/person-06.jpg" alt=""></span>
+      <span class="btn">Share</span></div>
+    <div class="doc">
+      <div class="icon"><svg viewBox="0 0 30 30"><path d="M4 22 12 10l5 7 3-4 6 9z" fill="#3a9d8f"/><path d="M12 10l2.2 3.2-2.2-.7-2.1 1z" fill="#fff"/><circle cx="22" cy="8" r="2.6" fill="#e2a33a"/></svg></div>
+      <h1>Offsite, the lake house</h1>
+      <figure class="ph"><span></span><figcaption>The house from the jetty, last May</figcaption><div class="going"><b>Going</b><span><img src="../../../../overlay/showcase/src/media/people/person-05.jpg" alt=""><img src="../../../../overlay/showcase/src/media/people/person-06.jpg" alt=""><img src="../../../../overlay/showcase/src/media/people/person-01.jpg" alt=""><img src="../../../../overlay/showcase/src/media/people/person-09.jpg" alt=""><img src="../../../../overlay/showcase/src/media/people/person-02.jpg" alt=""><img src="../../../../overlay/showcase/src/media/people/person-07.jpg" alt=""><img src="../../../../overlay/showcase/src/media/people/person-04.jpg" alt=""><img src="../../../../overlay/showcase/src/media/people/person-10.jpg" alt=""><img src="../../../../overlay/showcase/src/media/people/person-03.jpg" alt=""></span><small>Sam and Leo still to answer</small></div></figure>
+      <dl class="props">
+        <dt>When</dt><dd class="num">Thu 12 – Fri 13 March<span style="color:var(--ink-subtle)">·</span><img src="../../../../overlay/showcase/src/media/people/person-05.jpg" alt="">Priya Raman</dd>
+        <dt>Status</dt><dd><span class="pill" style="background:var(--positive-soft);color:var(--positive)">Booked</span><span class="num" style="color:var(--ink-subtle);font-size:12.5px">9 of 11 going</span></dd>
+      </dl>
+      <p>Two days by the water, no laptops after six. Bring boots for the ridge walk on Friday.</p>
+      <div class="todo done"><i></i><span>Book the house and the minibus</span></div>
+      <div class="todo"><i></i><span>Agenda for the Thursday workshop</span></div>
+      <div class="empty" id="line"><span class="plus" id="plus"><svg viewBox="0 0 14 14"><path d="M7 2.5v9M2.5 7h9"/></svg></span><span class="caret"></span>Type / for blocks</div>
+    </div>
+    <div class="menu" id="menu">
+      <p>Insert</p>
+      <div class="mi on"><span class="t"><svg viewBox="0 0 18 18"><path d="M4 4v10M11 4v10M4 9h7M14 7.5l1.5-1v7.5"/></svg></span><span><b>Heading</b><span>A section title</span></span><kbd>#</kbd></div>
+      <div class="mi"><span class="t"><svg viewBox="0 0 18 18"><rect x="2.5" y="3.5" width="13" height="11" rx="1.5"/><path d="M2.5 7.5h13M2.5 11h13M7 7.5v7"/></svg></span><span><b>Table</b><span>Rows and columns</span></span></div>
+      <div class="mi"><span class="t"><svg viewBox="0 0 18 18"><path d="M3 15V9M7.5 15V4M12 15v-4M3 15h13"/></svg></span><span><b>Chart</b><span>From a table on this page</span></span></div>
+      <div class="mi"><span class="t"><svg viewBox="0 0 18 18"><path d="M6.5 5 2.5 9l4 4M11.5 5l4 4-4 4"/></svg></span><span><b>Code block</b><span>With syntax colours</span></span><kbd>```</kbd></div>
+    </div>
+  </main>
+</div>
+<div class="marks" id="marks"></div>
+</div>
+<script>
+const stage = document.querySelector('.stage'), marks = document.getElementById('marks');
+const box = (el) => { const o = stage.getBoundingClientRect(), r = el.getBoundingClientRect(); return { x: r.left - o.left, y: r.top - o.top, w: r.width, h: r.height }; };
+const mk = (cls, s, html = '') => { const e = document.createElement('span'); e.className = 'mk ' + cls; for (const [k, v] of Object.entries(s)) e.style[k] = typeof v === 'number' ? v + 'px' : v; e.innerHTML = html; marks.appendChild(e); return e; };
+// the showcase's ease-arrive, cubic-bezier(0.2, 0.8, 0.2, 1), solved for progress at a share of the time
+const bez = (t) => { const f = (a, b, s) => 3 * a * s * (1 - s) ** 2 + 3 * b * s * s * (1 - s) + s ** 3; let lo = 0, hi = 1; for (let i = 0; i < 40; i++) { const m = (lo + hi) / 2; f(0.2, 0.2, m) < t ? (lo = m) : (hi = m); } return f(0.8, 1, lo); };
+document.fonts.ready.then(() => {
+  const plus = box(document.getElementById('plus')), main = box(document.querySelector('.main')), menu = document.getElementById('menu');
+  menu.style.left = (plus.x - main.x) + 'px'; menu.style.top = (plus.y + plus.h + 6 - main.y) + 'px';
+  const full = box(menu);
+  // from 0, origin top-left: the first painted frame (16ms of 800), a quarter, half way
+  const skins = [[16 / 800, '1st'], [0.25, '¼'], [0.5, '½']].map(([t, l]) => [bez(t), l]);
+  for (const [k, l] of skins) {
+    const w = full.w * k, h = full.h * k;
+    mk('ghost', { left: full.x, top: full.y, width: Math.max(4, w), height: Math.max(4, h), borderRadius: Math.max(2, 10 * k) });
+    mk('lab', l === '1st' ? { left: full.x - 26, top: full.y + Math.max(4, h) - 10 } : { left: full.x + Math.max(4, w) + 4, top: full.y + Math.max(4, h) - 8 }, l);
+  }
+  mk('tag', { left: full.x + full.w + 14, top: full.y + 14 }, `1st frame ${Math.round(skins[0][0] * 100)}% · from 0`);
+  mk('cursor', { left: plus.x + plus.w * 0.6, top: plus.y + plus.h * 0.55 }, '<svg viewBox="0 0 18 24" width="18" height="24"><path d="M1.5 1.5v17.2l4.3-4.1 2.9 6.6 2.7-1.2-2.8-6.4h6z" fill="#111" stroke="#fff" stroke-width="1.3" stroke-linejoin="round"/></svg>');
+});
+</script>
+</body>
+</html>

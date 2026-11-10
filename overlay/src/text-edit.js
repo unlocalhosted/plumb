@@ -108,11 +108,19 @@ export class TextEditor {
     this.#resume();
   }
 
-  // After a write that reloaded the page: blueprint, if it was on, comes back with it.
+  // After a write that reloaded the page: blueprint, if it was on, comes back with it. And when the reload came before
+  // the server's answer did, History never heard what was written: the words are said here, with the Undo of the write
+  // the server made to that file since.
   #resume() {
     let saved;
     try { saved = JSON.parse(sessionStorage.getItem(RESUME) ?? 'null'); sessionStorage.removeItem(RESUME); } catch { return; }
-    if (saved && Date.now() - saved.at < 15000 && saved.blueprint) this.#host.blueprint?.();
+    if (!saved || Date.now() - saved.at > 15000) return;
+    if (saved.blueprint) this.#host.blueprint?.();
+    if (!saved.said || this.#host.heard?.()) return;
+    request('history', {}).then((h) => {
+      const made = (h?.writes ?? []).find((w) => Date.parse(w.at) >= saved.at - 250 && !w.stale && (!saved.file || w.file === saved.file));
+      if (made) this.#host.wrote?.({ undo: { id: made.id, file: made.file, label: made.label } }, saved.said);
+    }, () => {});
   }
 
   get editing() { return this.#phase === 'editing'; }
@@ -283,16 +291,20 @@ export class TextEditor {
     const flight = (this.#flight = {});
     this.#host.editing?.(false);
     this.#say('saving');
-    try { sessionStorage.setItem(RESUME, JSON.stringify({ at: Date.now(), blueprint: !!this.#host.inBlueprint?.() })); } catch {}
     const said = `${changed(norm(ed.target.from), typed)} in ${short(ed.target.file)}`;
+    const resume = { at: Date.now(), blueprint: !!this.#host.inBlueprint?.() };
+    // what to say is kept with it until the answer is in: a dev server that reloads the page first must not lose it
+    try { sessionStorage.setItem(RESUME, JSON.stringify({ ...resume, said, file: ed.target.file })); } catch {}
+    const answered = () => { try { if (sessionStorage.getItem(RESUME)) sessionStorage.setItem(RESUME, JSON.stringify(resume)); } catch {} };
     try {
       const result = await this.#write(ed.target, ed.target.from, typed);
       // destroyed while it was written: the write landed all the same, so History says it
-      if (this.#flight !== flight) { this.#host.wrote?.(result, said); return; }
+      if (this.#flight !== flight) { this.#host.wrote?.(result, said); answered(); return; }
       this.#flight = null;
       this.#send('saved');
       this.#end();
       this.#host.wrote?.(result, said);
+      answered();
       this.#host.announce?.(`Applied in ${short(ed.target.file)}`);
     } catch (error) {
       if (this.#flight !== flight) return; // destroyed while it was written: nothing to show it on

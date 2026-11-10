@@ -1,0 +1,166 @@
+<!doctype html>
+<!-- COMP, pilot #57 (docs/design/pilots/critique-current.md). Relay, a team's mail client, mid-morning: folders and
+     labels, a dense list (faces, unread, labels, attachments, a selected row), and the reading pane. The muted preview
+     lines carry the lesson: one of them holds an @mention, and in the showcase those lines are muted with opacity.
+     Throwaway: once signed off it's built into the showcase with plumber's mistake planted. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Relay · Inbox (comp)</title>
+<style>
+  :root {
+    --ink: #12233d; --ink-muted: #5a6779; --ink-subtle: #7b8698; --line: rgb(18 35 61 / 0.08); --line-strong: rgb(18 35 61 / 0.14);
+    --accent: #5550d8; --accent-soft: #efeefd; --accent-deep: #3631a6; --board: #e9edf2; --board-dot: #d3d9e2;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 48px; background: var(--board);
+    background-image: radial-gradient(var(--board-dot) 1px, transparent 1px); background-size: 16px 16px;
+    font: 13px/18px Inter, -apple-system, system-ui, sans-serif; color: var(--ink); -webkit-font-smoothing: antialiased; }
+  .num { font-variant-numeric: tabular-nums; }
+  svg.i { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; }
+  .window { width: 1100px; height: 660px; display: grid; grid-template-columns: 196px 380px 1fr; border-radius: 12px; overflow: hidden; background: #fff;
+    box-shadow: 0 1px 2px rgb(18 35 61 / 0.05), 0 8px 24px rgb(18 35 61 / 0.08), 0 24px 64px rgb(18 35 61 / 0.12), 0 0 0 0.5px rgb(18 35 61 / 0.18); }
+
+  /* folders */
+  .side { background: #f7f8fa; border-right: 0.5px solid var(--line-strong); padding: 12px 10px; display: flex; flex-direction: column; gap: 1px; }
+  .lights { display: flex; gap: 7px; padding: 4px 6px 16px; } .lights i { width: 11px; height: 11px; border-radius: 50%; background: #d9dde3; }
+  .compose { height: 32px; margin: 0 2px 12px; border-radius: 8px; background: var(--ink); color: #fff; display: flex; align-items: center; justify-content: center; gap: 6px; font-weight: 500; box-shadow: 0 1px 2px rgb(18 35 61 / 0.2); }
+  .f { height: 28px; display: flex; align-items: center; gap: 9px; padding: 0 8px; border-radius: 6px; color: var(--ink-muted); }
+  .f.on { background: rgb(18 35 61 / 0.06); color: var(--ink); font-weight: 500; }
+  .f .n { margin-left: auto; font-size: 12px; color: var(--ink-subtle); } .f.on .n { color: var(--accent-deep); font-weight: 600; }
+  .lab { margin: 14px 8px 6px; font-size: 11px; font-weight: 500; color: var(--ink-subtle); }
+  .f i.d { width: 8px; height: 8px; border-radius: 3px; }
+
+  /* the list */
+  .list { border-right: 0.5px solid var(--line-strong); display: flex; flex-direction: column; min-width: 0; }
+  .lhead { padding: 12px 14px 0; display: flex; flex-direction: column; gap: 10px; }
+  .search { height: 30px; border-radius: 8px; background: #f3f5f8; display: flex; align-items: center; gap: 8px; padding: 0 10px; color: var(--ink-subtle); }
+  .search kbd { margin-left: auto; font: 11px system-ui; color: var(--ink-subtle); }
+  .tabs { display: flex; gap: 16px; border-bottom: 0.5px solid var(--line-strong); }
+  .tabs span { padding: 6px 0 9px; color: var(--ink-subtle); font-weight: 500; } .tabs span b { font-weight: 500; margin-left: 4px; font-size: 12px; }
+  .tabs .on { color: var(--ink); box-shadow: inset 0 -2px 0 var(--ink); }
+  .rows { overflow: hidden; padding: 4px 6px; }
+  .row { position: relative; display: grid; grid-template-columns: 32px 1fr; gap: 10px; padding: 9px 10px 10px; border-radius: 8px; }
+  .row + .row::before { content: ''; position: absolute; top: 0; left: 52px; right: 10px; border-top: 0.5px solid var(--line); }
+  .row.sel { background: var(--accent-soft); } .row.sel::before, .row.sel + .row::before { display: none; }
+  .av { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; }
+  .av.mark { display: grid; place-items: center; color: #fff; font-size: 12px; font-weight: 600; }
+  .r { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+  .r .top { display: flex; align-items: baseline; gap: 6px; }
+  .r .who { font-size: 13px; color: var(--ink-muted); } .row.unread .who { color: var(--ink); font-weight: 600; }
+  .r .when { margin-left: auto; font-size: 11.5px; color: var(--ink-subtle); } .row.unread .when { color: var(--accent-deep); font-weight: 500; }
+  .r .subj { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--ink-muted); white-space: nowrap; overflow: hidden; } .row.unread .subj { color: var(--ink); font-weight: 500; }
+  .r .subj span:last-child { overflow: hidden; text-overflow: ellipsis; }
+  .chip { flex: none; height: 18px; padding: 0 6px; border-radius: 5px; font-size: 11px; font-weight: 500; display: inline-flex; align-items: center; }
+  .r .pre { font-size: 12.5px; color: var(--ink-subtle); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .r .pre .at { color: var(--accent); font-weight: 600; }
+  .dot { position: absolute; left: 3px; top: 21px; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+  .att { display: inline-flex; align-items: center; gap: 5px; margin-top: 5px; height: 22px; padding: 0 8px 0 4px; border-radius: 6px; box-shadow: inset 0 0 0 0.5px var(--line-strong); font-size: 11.5px; color: var(--ink-muted); align-self: flex-start; }
+  .att img { width: 16px; height: 16px; border-radius: 3px; object-fit: cover; }
+
+  /* reading pane */
+  .read { display: flex; flex-direction: column; min-width: 0; }
+  .rtool { height: 50px; display: flex; align-items: center; gap: 4px; padding: 0 16px; border-bottom: 0.5px solid var(--line-strong); color: var(--ink-muted); }
+  .rtool .b { width: 30px; height: 30px; border-radius: 7px; display: grid; place-items: center; }
+  .rtool .sp { flex: 1; }
+  .msg { padding: 22px 28px; display: flex; flex-direction: column; gap: 16px; overflow: hidden; }
+  .msg h1 { margin: 0; font-size: 19px; line-height: 25px; font-weight: 600; letter-spacing: -0.015em; }
+  .from { display: flex; align-items: center; gap: 10px; }
+  .from img { width: 34px; height: 34px; border-radius: 50%; object-fit: cover; }
+  .from span { display: flex; flex-direction: column; } .from b { font-weight: 600; } .from small { color: var(--ink-subtle); font-size: 12px; }
+  .from .t { margin-left: auto; color: var(--ink-subtle); font-size: 12px; }
+  .body { font-size: 13.5px; line-height: 21px; color: #2a3a52; display: flex; flex-direction: column; gap: 10px; max-width: 520px; }
+  .body .at { color: var(--accent); font-weight: 600; }
+  .files { display: flex; gap: 10px; }
+  .file { width: 170px; border-radius: 10px; overflow: hidden; box-shadow: 0 0 0 0.5px var(--line-strong), 0 1px 2px rgb(18 35 61 / 0.05); }
+  .file img { display: block; width: 100%; height: 86px; object-fit: cover; }
+  .file span { display: flex; flex-direction: column; padding: 7px 10px 8px; font-size: 12px; } .file small { color: var(--ink-subtle); font-size: 11px; }
+  .file .page { display: flex; flex-direction: column; gap: 5px; height: 86px; padding: 12px 22px; background: #f6f7f9; border-bottom: 0.5px solid var(--line); }
+  .file .page i { display: block; height: 3px; border-radius: 2px; background: #cdd3dc; }
+  .reply { margin: auto 28px 18px; height: 42px; border-radius: 10px; box-shadow: inset 0 0 0 1px var(--line-strong); display: flex; align-items: center; padding: 0 12px; gap: 10px; color: var(--ink-subtle); }
+  .reply img { width: 22px; height: 22px; border-radius: 50%; }
+  .reply kbd { margin-left: auto; font: 11px system-ui; }
+</style>
+</head>
+<body>
+<div class="window">
+  <aside class="side">
+    <div class="lights"><i></i><i></i><i></i></div>
+    <div class="compose"><svg class="i" viewBox="0 0 16 16"><path d="M3 13l2-5 6-6 3 3-6 6z"/></svg>Compose</div>
+    <div class="f on"><svg class="i" viewBox="0 0 16 16"><path d="M2 9l2-6h8l2 6v4H2z"/><path d="M2 9h3.5l1 2h3l1-2H14"/></svg>Inbox<span class="n num">12</span></div>
+    <div class="f"><svg class="i" viewBox="0 0 16 16"><path d="m8 2 1.8 3.8 4.2.5-3.1 2.9.8 4.1L8 11.3 4.3 13.3l.8-4.1L2 6.3l4.2-.5z"/></svg>Starred</div>
+    <div class="f"><svg class="i" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"/><path d="M8 4.8V8l2.2 1.4"/></svg>Later<span class="n num">3</span></div>
+    <div class="f"><svg class="i" viewBox="0 0 16 16"><path d="M14 2 7 9M14 2l-4.5 12L7 9 2 6.5z"/></svg>Sent</div>
+    <div class="f"><svg class="i" viewBox="0 0 16 16"><path d="M4 2h6l3 3v9H4z"/></svg>Drafts<span class="n num">1</span></div>
+    <div class="lab">Labels</div>
+    <div class="f"><i class="d" style="background:#e2725b"></i>Launch</div>
+    <div class="f"><i class="d" style="background:#3a9d8f"></i>Design</div>
+    <div class="f"><i class="d" style="background:#c8a23a"></i>Finance</div>
+    <div class="f"><i class="d" style="background:#9a6fd0"></i>Hiring</div>
+  </aside>
+
+  <section class="list">
+    <div class="lhead">
+      <div class="search"><svg class="i" viewBox="0 0 16 16"><circle cx="7" cy="7" r="4.5"/><path d="m10.5 10.5 3 3"/></svg>Search mail<kbd>⌘K</kbd></div>
+      <div class="tabs"><span class="on">Important<b class="num">8</b></span><span>Other<b class="num">24</b></span><span>Calendar<b class="num">2</b></span></div>
+    </div>
+    <div class="rows">
+      <div class="row unread sel"><i class="dot"></i><img class="av" src="../../../../overlay/showcase/src/media/people/person-07.jpg" alt=""><div class="r">
+        <div class="top"><span class="who">Mei Lin</span><span class="when num">9:12</span></div>
+        <div class="subj"><span class="chip" style="background:#e6f4f1;color:#23766b">Design</span><span>Notes from Tuesday’s crit</span></div>
+        <div class="pre"><span class="at">@you</span> can you take the empty states before we ship? Screens attached.</div>
+        <span class="att"><img src="fig-thumb.jpg" alt="">empty-states.fig</span></div></div>
+      <div class="row unread"><i class="dot"></i><img class="av" src="../../../../overlay/showcase/src/media/people/person-01.jpg" alt=""><div class="r">
+        <div class="top"><span class="who">Anika Rao</span><span class="when num">8:47</span></div>
+        <div class="subj"><span class="chip" style="background:#fdece8;color:#b04a35">Launch</span><span>Venue for the offsite</span></div>
+        <div class="pre">Two options left, both near the station. Can you pick one by Friday?</div></div></div>
+      <div class="row"><img class="av" src="../../../../overlay/showcase/src/media/people/person-04.jpg" alt=""><div class="r">
+        <div class="top"><span class="who">Jonas Weber</span><span class="when num">Yesterday</span></div>
+        <div class="subj"><span class="chip" style="background:#fbf3df;color:#8a6a12">Finance</span><span>Re: the April numbers</span></div>
+        <div class="pre">Thanks, that matches what finance sent over this morning.</div></div></div>
+      <div class="row"><span class="av mark" style="background:#12233d">GH</span><div class="r">
+        <div class="top"><span class="who">GitHub</span><span class="when num">Yesterday</span></div>
+        <div class="subj"><span>[relay/web] Release 4.2 is out</span></div>
+        <div class="pre">12 pull requests merged, 3 contributors. See what changed.</div></div></div>
+      <div class="row"><img class="av" src="../../../../overlay/showcase/src/media/people/person-09.jpg" alt=""><div class="r">
+        <div class="top"><span class="who">Amara Osei</span><span class="when num">Tue</span></div>
+        <div class="subj"><span class="chip" style="background:#f2ecfb;color:#6b48a8">Hiring</span><span>Portfolio review, Thursday 3pm</span></div>
+        <div class="pre">I’ve put the three finalists in a doc, with notes from the first round.</div></div></div>
+      <div class="row"><img class="av" src="../../../../overlay/showcase/src/media/people/person-08.jpg" alt=""><div class="r">
+        <div class="top"><span class="who">Theo Lambert</span><span class="when num">Tue</span></div>
+        <div class="subj"><span class="chip" style="background:#e6f4f1;color:#23766b">Design</span><span>Onboarding copy, second pass</span></div>
+        <div class="pre">Shorter everywhere; the welcome screen is down to two lines.</div></div></div>
+      <div class="row"><span class="av mark" style="background:#635bff">S</span><div class="r">
+        <div class="top"><span class="who">Stripe</span><span class="when num">Mon</span></div>
+        <div class="subj"><span>Your payout of $4,120.00 is on its way</span></div>
+        <div class="pre">Expected in your account on 7 November.</div></div></div>
+    </div>
+  </section>
+
+  <section class="read">
+    <div class="rtool">
+      <span class="b"><svg class="i" viewBox="0 0 16 16"><path d="M3 4h10l-1 9H4z"/><path d="M2 4h12M6 2h4"/></svg></span>
+      <span class="b"><svg class="i" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"/><path d="M8 4.8V8l2.2 1.4"/></svg></span>
+      <span class="b"><svg class="i" viewBox="0 0 16 16"><path d="m8 2 1.8 3.8 4.2.5-3.1 2.9.8 4.1L8 11.3 4.3 13.3l.8-4.1L2 6.3l4.2-.5z"/></svg></span>
+      <span class="sp"></span>
+      <span class="b"><svg class="i" viewBox="0 0 16 16"><path d="M6 4 2 8l4 4M2 8h8a4 4 0 0 1 4 4"/></svg></span>
+    </div>
+    <div class="msg">
+      <h1>Notes from Tuesday’s crit</h1>
+      <div class="from"><img src="../../../../overlay/showcase/src/media/people/person-07.jpg" alt=""><span><b>Mei Lin</b><small>to Design team</small></span><span class="t num">Today, 9:12</span></div>
+      <div class="body">
+        <p style="margin:0">Hi all, thanks for a sharp crit. The flows hold up; the gaps are where nothing has happened yet.</p>
+        <p style="margin:0"><span class="at">@you</span> can you take the empty states before we ship? The inbox, the search with no results, and the first project. I’ve put my rough screens in the file.</p>
+        <p style="margin:0">Theo is on the onboarding copy; I’ll pick up the error toasts.</p>
+      </div>
+      <div class="files">
+        <div class="file"><img src="fig-thumb.jpg" alt=""><span>empty-states.fig<small>Plate file · 3 frames</small></span></div>
+        <div class="file"><span class="page"><i style="width:60%;height:6px;background:#12233d"></i><i></i><i></i><i style="width:70%"></i><i></i><i style="width:45%"></i></span><span>crit-notes.pdf<small>PDF · 2 pages</small></span></div>
+      </div>
+    </div>
+    <div class="reply"><img src="../../../../overlay/showcase/src/media/people/person-05.jpg" alt="">Reply to Mei…<kbd>R</kbd></div>
+  </section>
+</div>
+</body>
+</html>

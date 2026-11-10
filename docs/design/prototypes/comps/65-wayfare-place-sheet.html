@@ -1,0 +1,156 @@
+<!doctype html>
+<!-- COMP, #65 Rubber-band at the limits (hands-on; docs/craft/taste-checklist.md, group 4). Wayfare, a city maps app,
+     on a phone: a café's place sheet, fully open over the map. The lesson lives in the sheet: the viewer grabbed it and
+     pulled 80px up past its top edge, and the sheet, clamped at its limit, didn't move. plumber's marks: the limit
+     (dashed), where they pressed (contact ring), how far the hand went past (a coral wall: hatch and outline), the hand
+     (a coral dot), one tag. The map is drawn, not a photo. Slate's tokens. Throwaway. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Wayfare · Café Mona (comp)</title>
+<style>
+  :root {
+    --surface: #fff; --sunken: #f3f5f9; --ink: #12233d; --ink-muted: #5a6779; --ink-subtle: #6f7c90;
+    --line: rgb(18 35 61 / 0.09); --line-strong: rgb(18 35 61 / 0.14); --accent: #5550d8; --accent-soft: #efeefd; --accent-deep: #3631a6;
+    --positive: #0f6f58;
+    --board: #e9edf2; --board-dot: #d3d9e2;
+    --pl-sky: #2a7fd0; --pl-off: #bf3a1e; --pl-on: #1a9460; --pl-ink-2: #6b665c; --pl-ink-3: #b3ad9f; --pl-halo: rgb(255 255 255 / 0.9);
+    --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, monospace;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 40px; background: var(--board);
+    background-image: radial-gradient(var(--board-dot) 1px, transparent 1px); background-size: 16px 16px;
+    font: 14px/20px Inter, -apple-system, system-ui, sans-serif; color: var(--ink); -webkit-font-smoothing: antialiased; }
+  .num { font-variant-numeric: tabular-nums; }
+  .stage { position: relative; width: 920px; height: 800px; }
+  .phone { position: absolute; left: 50%; top: 10px; transform: translateX(-50%); width: 376px; height: 780px; border-radius: 54px; background: #0e1522; padding: 12px; box-shadow: 0 2px 4px rgb(18 35 61 / 0.1), 0 20px 50px rgb(18 35 61 / 0.25), inset 0 0 0 1.5px #3a4252; }
+  .screen { position: relative; width: 100%; height: 100%; border-radius: 42px; overflow: hidden; background: #eef0e9; }
+  .status { position: absolute; top: 0; left: 0; right: 0; height: 50px; display: flex; align-items: center; justify-content: space-between; padding: 6px 30px 0 34px; font-weight: 600; font-size: 15px; z-index: 3; }
+  .island { position: absolute; left: 50%; top: 11px; transform: translateX(-50%); width: 112px; height: 32px; border-radius: 20px; background: #000; z-index: 4; }
+  .status svg { height: 12px; }
+  .map { position: absolute; inset: 0; }
+  .search { position: absolute; top: 56px; left: 14px; right: 14px; height: 46px; border-radius: 14px; background: #fff; box-shadow: 0 2px 10px rgb(18 35 61 / 0.14); display: flex; align-items: center; gap: 10px; padding: 0 14px; font-size: 15px; z-index: 2; }
+  .search svg { width: 17px; height: 17px; stroke: var(--ink-subtle); fill: none; stroke-width: 1.8; }
+  .search img { margin-left: auto; width: 28px; height: 28px; border-radius: 50%; }
+  .chips { position: absolute; top: 110px; left: 14px; display: flex; gap: 6px; z-index: 2; }
+  .chips span { height: 30px; padding: 0 12px; border-radius: 15px; background: #fff; box-shadow: 0 1px 4px rgb(18 35 61 / 0.12); display: flex; align-items: center; font-size: 13px; font-weight: 500; gap: 5px; }
+  .chips span.on { background: var(--ink); color: #fff; }
+
+  /* the subject: the place sheet, at its limit */
+  .sheet { position: absolute; left: 0; right: 0; top: 262px; bottom: -40px; background: #fff; border-radius: 22px 22px 0 0; box-shadow: 0 -4px 20px rgb(18 35 61 / 0.14); padding: 8px 18px 0; z-index: 2; }
+  .grab { width: 38px; height: 5px; border-radius: 3px; background: #d5dae2; margin: 0 auto 12px; }
+  .sheet h1 { margin: 0; font-size: 22px; line-height: 28px; font-weight: 650; letter-spacing: -0.02em; display: flex; align-items: center; justify-content: space-between; }
+  .x { width: 30px; height: 30px; border-radius: 50%; background: var(--sunken); display: grid; place-items: center; }
+  .x svg { width: 12px; height: 12px; stroke: var(--ink-muted); stroke-width: 2; }
+  .sub { font-size: 14px; color: var(--ink-muted); margin-top: 3px; display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  .stars { color: #d19a00; letter-spacing: 1px; font-size: 13px; }
+  .open { color: var(--positive); font-weight: 500; }
+  .acts { display: grid; grid-template-columns: 1.4fr 1fr 1fr 1fr; gap: 8px; margin-top: 14px; }
+  .acts span { height: 54px; border-radius: 12px; background: var(--sunken); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font-size: 12px; font-weight: 500; color: var(--accent-deep); }
+  .acts span.go { background: var(--accent); color: #fff; }
+  .acts svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .pics { display: grid; grid-template-columns: 120px 1fr; gap: 6px; margin-top: 14px; height: 104px; }
+  .pics span { border-radius: 10px; background-size: cover; background-position: center; }
+  .rev { border-radius: 10px; background: var(--sunken); padding: 10px 12px; font-size: 12.5px; line-height: 17px; }
+  .rev div { display: flex; align-items: center; gap: 7px; }
+  .rev img { width: 20px; height: 20px; border-radius: 50%; }
+  .rev b { font-weight: 600; }
+  .rev small { margin-left: auto; color: var(--ink-subtle); font-size: 11.5px; }
+  .rev p { margin: 6px 0 0; color: var(--ink-muted); }
+  .menu { margin-top: 16px; }
+  .menu div { display: flex; justify-content: space-between; height: 34px; align-items: center; border-bottom: 0.5px solid var(--line); font-size: 13.5px; }
+  .menu span { color: var(--ink-muted); }
+  .sec { margin-top: 16px; font-size: 13px; font-weight: 600; display: flex; justify-content: space-between; }
+  .sec small { font-weight: 400; color: var(--ink-subtle); font-size: 12.5px; }
+  .busy { display: flex; align-items: flex-end; gap: 4px; height: 58px; margin-top: 8px; border-bottom: 1px solid var(--line-strong); }
+  .busy i { flex: 1; border-radius: 3px 3px 0 0; background: #d9dcf6; }
+  .busy i.now { background: var(--accent); }
+  .hrs { display: flex; justify-content: space-between; font-size: 10.5px; color: var(--ink-subtle); margin-top: 4px; }
+
+  .marks { position: absolute; inset: 0; pointer-events: none; z-index: 10; }
+  .mk { position: absolute; }
+  .hatch { opacity: 0.55; background-image: repeating-linear-gradient(45deg, var(--pl-off) 0 1px, transparent 1px 4px); }
+  .outline { border-radius: 8px; box-shadow: inset 0 0 0 1px var(--pl-off); opacity: 0.75; }
+  .contact { width: 12px; height: 12px; border-radius: 50%; box-shadow: 0 0 0 1.5px var(--pl-sky), 0 0 0 3px var(--pl-halo); transform: translate(-50%, -50%); }
+  .hand { width: 11px; height: 11px; border-radius: 50%; background: var(--pl-off); box-shadow: 0 0 0 1.5px #fff; transform: translate(-50%, -50%); }
+  .touch { width: 44px; height: 44px; border-radius: 50%; background: rgb(18 35 61 / 0.14); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.6); transform: translate(-50%, -50%); }
+  .tag { display: flex; align-items: center; height: 20px; padding: 0 6px; border-radius: 6px; font: 500 11px/1 var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; color: #fff; background: var(--pl-off); box-shadow: 0 0 0 1px var(--pl-halo); transform: translateY(-50%); }
+</style>
+</head>
+<body>
+<div class="stage">
+<div class="phone"><div class="screen" id="screen">
+  <svg class="map" viewBox="0 0 352 756" preserveAspectRatio="xMidYMid slice">
+    <rect width="352" height="756" fill="#eef0e9"/>
+    <!-- parks and blocks -->
+    <path d="M-10 150 L120 130 L150 230 L20 270 Z" fill="#d7e8cf"/>
+    <path d="M250 40 L360 30 L360 150 L270 160 Z" fill="#d7e8cf"/>
+    <g fill="#e4e6df"><rect x="160" y="60" width="70" height="50" rx="4"/><rect x="170" y="125" width="60" height="60" rx="4"/><rect x="245" y="175" width="60" height="45" rx="4"/><rect x="40" y="290" width="80" height="40" rx="4"/><rect x="250" y="235" width="90" height="40" rx="4"/></g>
+    <!-- the river -->
+    <path d="M-20 330 C60 300 120 330 180 290 S290 210 380 230" stroke="#a9d3e6" stroke-width="34" fill="none"/>
+    <path d="M-20 330 C60 300 120 330 180 290 S290 210 380 230" stroke="#bfe0ee" stroke-width="22" fill="none"/>
+    <!-- streets -->
+    <g stroke="#fff" fill="none" stroke-linecap="round">
+      <path d="M150 -10 L160 400" stroke-width="9"/><path d="M-10 120 L360 165" stroke-width="7"/><path d="M240 -10 L235 300" stroke-width="6"/>
+      <path d="M-10 230 L170 205" stroke-width="5"/><path d="M60 -10 L90 300" stroke-width="5"/><path d="M200 300 L330 380" stroke-width="5"/>
+    </g>
+    <path d="M150 -10 L160 400" stroke="#f3d9a4" stroke-width="5" fill="none"/>
+    <!-- a bridge -->
+    <path d="M158 270 L162 320" stroke="#fff" stroke-width="10"/>
+    <text x="166" y="245" transform="rotate(86 166 245)" style="font:500 8.5px Inter,system-ui;fill:#8a7a52;letter-spacing:.04em">MILL ROAD</text>
+    <text x="250" y="262" transform="rotate(-12 250 262)" style="font:italic 500 9px Inter,system-ui;fill:#4f8eaa">River Wend</text>
+    <text x="30" y="205" style="font:500 9px Inter,system-ui;fill:#5f8a55">Ashby Gardens</text>
+    <!-- other places -->
+    <g><circle cx="112" cy="230" r="5" fill="#e2725b" stroke="#fff" stroke-width="2"/><circle cx="276" cy="120" r="5" fill="#e2725b" stroke="#fff" stroke-width="2"/><circle cx="215" cy="98" r="5" fill="#9a6fd0" stroke="#fff" stroke-width="2"/></g>
+    <!-- you -->
+    <circle cx="62" cy="168" r="16" fill="#2a7fd0" opacity="0.15"/><circle cx="62" cy="168" r="6.5" fill="#2a7fd0" stroke="#fff" stroke-width="2.5"/>
+    <!-- walking route to the café -->
+    <path d="M62 168 L84 166 L154 158 L198 166" stroke="var(--accent)" stroke-width="3.5" stroke-dasharray="1 6" stroke-linecap="round" fill="none"/>
+    <!-- Café Mona, selected -->
+    <g transform="translate(206 150)"><path d="M0 34 C-4 26 -16 20 -16 8 A16 16 0 0 1 16 8 C16 20 4 26 0 34Z" fill="var(--accent)" stroke="#fff" stroke-width="2.5"/><path d="M-6 4h10v4a5 5 0 0 1-10 0z M4 5h2a2 2 0 0 1 0 4h-2" fill="none" stroke="#fff" stroke-width="1.6"/></g>
+  </svg>
+  <div class="island"></div>
+  <div class="status"><span class="num">9:41</span><svg viewBox="0 0 64 12"><g fill="#12233d"><rect x="0" y="7" width="3" height="5" rx="1"/><rect x="5" y="5" width="3" height="7" rx="1"/><rect x="10" y="2.5" width="3" height="9.5" rx="1"/><rect x="15" y="0" width="3" height="12" rx="1"/><rect x="38" y="1" width="22" height="10" rx="3" fill="none" stroke="#12233d" stroke-opacity=".4"/><rect x="40" y="3" width="15" height="6" rx="1.5"/><rect x="61" y="4" width="1.5" height="4" rx=".7" opacity=".4"/></g></svg></div>
+  <div class="search"><svg viewBox="0 0 16 16"><circle cx="7" cy="7" r="4.8"/><path d="m10.6 10.6 3 3"/></svg>Coffee near you<img src="../../../../overlay/showcase/src/media/people/person-09.jpg" alt=""></div>
+  <div class="chips"><span class="on">Coffee</span><span>Open now</span><span>Bakeries</span><span>Parks</span></div>
+  <div class="sheet" id="sheet">
+    <div class="grab"></div>
+    <h1>Café Mona<span class="x"><svg viewBox="0 0 12 12"><path d="M2 2l8 8M10 2l-8 8"/></svg></span></h1>
+    <div class="sub"><span class="stars">★★★★★</span><span class="num">4.7 (312)</span><span>·</span><span>Coffee</span><span>·</span><span class="num">6 min walk</span></div>
+    <div class="sub"><span class="open">Open</span><span class="num">until 18:00</span><span>·</span><span>14 Mill Road</span></div>
+    <div class="acts">
+      <span class="go"><svg viewBox="0 0 18 18"><path d="M9 2 15.5 16 9 12.5 2.5 16z"/></svg>Directions</span>
+      <span><svg viewBox="0 0 18 18"><path d="M4 2.5h3l1.3 3.4-1.8 1.2a8 8 0 0 0 4.4 4.4l1.2-1.8 3.4 1.3v3A1.5 1.5 0 0 1 14 15.5 11.5 11.5 0 0 1 2.5 4 1.5 1.5 0 0 1 4 2.5z"/></svg>Call</span>
+      <span><svg viewBox="0 0 18 18"><path d="M4.5 2.5h9v13L9 12.5l-4.5 3z"/></svg>Save</span>
+      <span><svg viewBox="0 0 18 18"><path d="M9 11.5V2.5M5.5 6 9 2.5 12.5 6M4 9.5v6h10v-6"/></svg>Share</span>
+    </div>
+    <div class="pics"><span style="background-image:url(../../../../overlay/showcase/src/media/ceramic.jpg);background-position:center 45%"></span><div class="rev"><div><img src="../../../../overlay/showcase/src/media/people/person-04.jpg" alt=""><b>Graham</b><small>2 days ago</small></div><p>“Best flat white on the river. Sit by the window before nine and you’ll get the whole sun.”</p></div></div>
+    <div class="sec">Popular times<small>Usually quiet now</small></div>
+    <div class="busy"><i style="height:30%"></i><i style="height:62%"></i><i style="height:96%"></i><i style="height:84%"></i><i style="height:52%"></i><i style="height:40%"></i><i style="height:46%"></i><i class="now" style="height:28%"></i><i style="height:24%"></i><i style="height:34%"></i><i style="height:22%"></i><i style="height:10%"></i></div>
+    <div class="hrs num"><span>7</span><span>9</span><span>11</span><span>13</span><span>15</span><span>17</span></div>
+    <div class="menu"><div class="sec" style="margin:0 0 4px">From the menu</div><div>Flat white<span class="num">£3.40</span></div><div>Cardamom bun<span class="num">£2.90</span></div></div>
+  </div>
+</div></div>
+<div class="marks" id="marks"></div>
+</div>
+<script>
+const stage = document.querySelector('.stage'), marks = document.getElementById('marks');
+const box = (el) => { const o = stage.getBoundingClientRect(), r = el.getBoundingClientRect(); return { x: r.left - o.left, y: r.top - o.top, w: r.width, h: r.height }; };
+const mk = (cls, s, html = '') => { const e = document.createElement('span'); e.className = 'mk ' + cls; for (const [k, v] of Object.entries(s)) e.style[k] = typeof v === 'number' ? v + 'px' : v; e.innerHTML = html; marks.appendChild(e); return e; };
+document.fonts.ready.then(() => {
+  const sc = box(document.getElementById('screen')), sh = box(document.getElementById('sheet'));
+  const limit = sh.y, L = sc.x + 10, R = sc.x + sc.w - 10, pull = 80;
+  const contact = { x: sc.x + sc.w * 0.42, y: limit + 46 }, hand = { x: contact.x + 4, y: contact.y - pull }, reach = limit - (contact.y - hand.y - (contact.y - limit)) ;
+  // the hand went 80px past the limit; the sheet gave 0: the wall is that 80px above the limit
+  const top = limit - pull;
+  mk('', { left: sc.x - 12, top: limit, width: sc.w + 24, height: 0, borderTop: '1px dashed var(--pl-ink-3)' });
+  mk('hatch', { left: L, top, width: R - L, height: pull });
+  mk('outline', { left: L, top, width: R - L, height: pull });
+  mk('touch', { left: hand.x, top: hand.y });
+  mk('contact', { left: contact.x, top: contact.y });
+  mk('hand', { left: hand.x, top: hand.y });
+  mk('tag', { left: sc.x + sc.w + 22, top: top + pull / 2 }, `0 of ${pull}px · dead`);
+});
+</script>
+</body>
+</html>

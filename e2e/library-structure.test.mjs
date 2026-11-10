@@ -20,7 +20,9 @@ async function browser(t) {
     t.skip('Playwright Chromium missing. Install with: npx playwright install chromium'); return null;
   }
 }
-function unstamped(options) { const plugin = plumb(options); delete plugin.transform; return plugin; }
+// stamps off by choice, through the host's own switch: the host then tells the overlay so, and the owner stack is the
+// answer (a plugin with its transform cut out would still claim to stamp, and the overlay would refuse 'no-stamps')
+function unstamped(options) { return plumb({ ...options, stamp: false }); }
 
 async function app(t, source, stamped) {
   const root = await mkdtemp(join(repo, 'fixtures/.library-structure-'));

@@ -1,0 +1,139 @@
+<!doctype html>
+<!-- COMP #50 icon strokes keep their weight (docs/craft/taste-checklist.md). Shelf, a team's file drive, mid-search:
+     the folders and storage down the side, the search field focused with its 16px magnifier, filters, and an empty
+     result whose 48px magnifier is the subject, with the two near matches from Shared with me under it. One stroked
+     icon set, drawn at one stroke width at every size. The mistake is planted by removing vector-effect:
+     non-scaling-stroke from .empty .big, so its stroke triples with its size. Slate's tokens. Throwaway. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Shelf · Search (comp)</title>
+<style>
+  :root {
+    --ink: #12233d; --ink-muted: #5a6779; --ink-subtle: #6f7c90; --line: rgb(18 35 61 / 0.08); --line-strong: rgb(18 35 61 / 0.14);
+    --accent: #5550d8; --accent-soft: #efeefd; --accent-deep: #3631a6; --board: #e9edf2; --board-dot: #d3d9e2;
+    --sheet: #1f8a5b; --pdf: #d0473a; --doc: #3a6fd8; --img: #c8a23a;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 48px; background: var(--board);
+    background-image: radial-gradient(var(--board-dot) 1px, transparent 1px); background-size: 16px 16px;
+    font: 13px/18px Inter, -apple-system, system-ui, sans-serif; color: var(--ink); -webkit-font-smoothing: antialiased; }
+  .num { font-variant-numeric: tabular-nums; }
+  /* the set: a 24-unit box, one stroke width at every size */
+  svg.i { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+  svg.i * { vector-effect: non-scaling-stroke; }
+  .window { width: 980px; height: 620px; display: grid; grid-template-columns: 212px 1fr; border-radius: 12px; overflow: hidden; background: #fff;
+    box-shadow: 0 1px 2px rgb(18 35 61 / 0.05), 0 8px 24px rgb(18 35 61 / 0.08), 0 24px 64px rgb(18 35 61 / 0.12), 0 0 0 0.5px rgb(18 35 61 / 0.18); }
+
+  .side { background: #f7f8fa; border-right: 0.5px solid var(--line-strong); padding: 12px 10px; display: flex; flex-direction: column; gap: 1px; }
+  .lights { display: flex; gap: 7px; padding: 4px 6px 16px; } .lights i { width: 11px; height: 11px; border-radius: 50%; background: #d9dde3; }
+  .brand { display: flex; align-items: center; gap: 8px; padding: 0 8px 14px; font-weight: 600; font-size: 14px; letter-spacing: -0.01em; }
+  .brand b { width: 22px; height: 22px; border-radius: 6px; background: linear-gradient(145deg, #6c67ea, #4a44c9); display: grid; place-items: center; color: #fff; box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.25); }
+  .nav { height: 28px; display: flex; align-items: center; gap: 9px; padding: 0 8px; border-radius: 6px; color: var(--ink-muted); }
+  .nav.on { background: rgb(18 35 61 / 0.06); color: var(--ink); font-weight: 500; }
+  .nav .n { margin-left: auto; font-size: 12px; color: var(--ink-subtle); } .nav .n.new { color: var(--accent-deep); font-weight: 600; }
+  .lab { margin: 14px 8px 6px; font-size: 11px; font-weight: 500; color: var(--ink-subtle); }
+  .folder { height: 28px; display: flex; align-items: center; gap: 9px; padding: 0 8px; color: var(--ink-muted); }
+  .folder i { width: 10px; height: 8px; border-radius: 2px; position: relative; } .folder i::before { content: ''; position: absolute; left: 0; top: -2px; width: 5px; height: 3px; border-radius: 1.5px 1.5px 0 0; background: inherit; }
+  .store { margin-top: auto; padding: 12px 8px 4px; display: flex; flex-direction: column; gap: 7px; font-size: 12px; color: var(--ink-muted); }
+  .store .meter { display: flex; gap: 2px; height: 6px; border-radius: 3px; overflow: hidden; background: rgb(18 35 61 / 0.08); }
+  .store .meter i { display: block; height: 100%; }
+  .store b { color: var(--ink); font-weight: 500; }
+
+  .main { display: flex; flex-direction: column; min-width: 0; }
+  .bar { height: 56px; flex: none; display: flex; align-items: center; gap: 10px; padding: 0 18px; border-bottom: 0.5px solid var(--line-strong); }
+  .search { flex: 1; max-width: 420px; height: 34px; display: flex; align-items: center; gap: 8px; padding: 0 10px; border-radius: 8px; background: #fff; color: var(--ink-muted);
+    box-shadow: inset 0 0 0 1px var(--accent), 0 0 0 3px rgb(85 80 216 / 0.16); }
+  .search .q { color: var(--ink); font-size: 13.5px; }
+  .search .caret { width: 1.5px; height: 16px; background: var(--accent); margin-left: -6px; animation: blink 1.1s steps(1) infinite; }
+  @keyframes blink { 50% { opacity: 0; } }
+  .search .x { margin-left: auto; width: 18px; height: 18px; border-radius: 50%; background: rgb(18 35 61 / 0.08); display: grid; place-items: center; }
+  .search .x svg { width: 10px; height: 10px; }
+  .bar .sp { flex: 1; }
+  .faces { display: flex; } .faces img { width: 26px; height: 26px; border-radius: 50%; object-fit: cover; box-shadow: 0 0 0 2px #fff; margin-left: -7px; }
+  .btn { height: 30px; display: inline-flex; align-items: center; gap: 6px; padding: 0 12px; border-radius: 7px; font-weight: 500; background: var(--ink); color: #fff; box-shadow: 0 1px 2px rgb(18 35 61 / 0.2); }
+  .filters { display: flex; align-items: center; gap: 6px; padding: 12px 18px; border-bottom: 0.5px solid var(--line); }
+  .chip { height: 26px; display: inline-flex; align-items: center; gap: 6px; padding: 0 9px; border-radius: 7px; font-size: 12.5px; color: var(--ink-muted); box-shadow: inset 0 0 0 0.5px var(--line-strong); }
+  .chip b { color: var(--ink); font-weight: 500; }
+  .chip.on { background: var(--accent-soft); box-shadow: none; color: var(--accent-deep); } .chip.on b { color: var(--accent-deep); }
+  .chip svg.i { width: 12px; height: 12px; }
+  .filters .count { margin-left: auto; font-size: 12px; color: var(--ink-subtle); }
+
+  /* the subject: the empty result */
+  .empty { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 44px 0 26px; }
+  .disc { width: 96px; height: 96px; border-radius: 50%; display: grid; place-items: center; background: radial-gradient(circle at 50% 35%, #f6f7fb, #eef1f6); box-shadow: inset 0 0 0 0.5px var(--line); margin-bottom: 16px; color: var(--ink-subtle); }
+  .empty .big { width: 48px; height: 48px; }
+  .empty h2 { margin: 0 0 4px; font-size: 15px; line-height: 20px; font-weight: 600; letter-spacing: -0.01em; }
+  .empty p { margin: 0 0 14px; font-size: 13px; color: var(--ink-muted); max-width: 320px; text-wrap: pretty; }
+  .empty .acts { display: flex; gap: 8px; }
+  .ghost { height: 30px; display: inline-flex; align-items: center; gap: 6px; padding: 0 12px; border-radius: 7px; font-weight: 500; box-shadow: inset 0 0 0 1px var(--line-strong); }
+  .ghost.pri { color: var(--accent-deep); box-shadow: inset 0 0 0 1px rgb(85 80 216 / 0.35); background: var(--accent-soft); }
+
+  .near { margin: 0 18px; border-top: 0.5px solid var(--line-strong); padding-top: 12px; }
+  .near h3 { margin: 0 0 4px; font-size: 12px; font-weight: 500; color: var(--ink-subtle); display: flex; gap: 6px; align-items: center; }
+  .row { display: grid; grid-template-columns: 30px 1fr 150px 90px; align-items: center; gap: 12px; height: 48px; border-bottom: 0.5px solid var(--line); }
+  .ft { width: 30px; height: 34px; border-radius: 4px; position: relative; display: grid; place-items: end center; padding-bottom: 4px; font-size: 7.5px; font-weight: 700; color: #fff; letter-spacing: 0.04em; }
+  .ft::after { content: ''; position: absolute; right: 0; top: 0; width: 9px; height: 9px; background: linear-gradient(225deg, #fff 50%, rgb(0 0 0 / 0.18) 50%); border-bottom-left-radius: 2px; }
+  .thumb { width: 30px; height: 34px; border-radius: 4px; object-fit: cover; box-shadow: inset 0 0 0 0.5px rgb(0 0 0 / 0.1); }
+  .row .n { display: flex; flex-direction: column; line-height: 17px; } .row .n b { font-weight: 500; } .row .n small { font-size: 12px; color: var(--ink-subtle); }
+  .row mark { background: rgb(85 80 216 / 0.12); color: inherit; border-radius: 2px; padding: 0 1px; }
+  .row .who { display: flex; align-items: center; gap: 7px; font-size: 12.5px; color: var(--ink-muted); } .row .who img { width: 20px; height: 20px; border-radius: 50%; object-fit: cover; }
+  .row .when { font-size: 12.5px; color: var(--ink-subtle); text-align: right; }
+</style>
+</head>
+<body>
+<div class="window">
+  <aside class="side">
+    <div class="lights"><i></i><i></i><i></i></div>
+    <div class="brand"><b><svg class="i" viewBox="0 0 24 24" style="width:13px;height:13px"><path d="M4 7h16M4 12h16M4 17h10"/></svg></b>Shelf</div>
+    <div class="nav"><svg class="i" viewBox="0 0 24 24"><path d="M4 11 12 4l8 7v9H4z"/></svg>Home</div>
+    <div class="nav on"><svg class="i" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>My files</div>
+    <div class="nav"><svg class="i" viewBox="0 0 24 24"><circle cx="9" cy="9" r="3.5"/><path d="M3 19c.8-3 3.2-4.5 6-4.5s5.2 1.5 6 4.5M16 6a3 3 0 0 1 0 6M18 14.5c1.6.6 2.6 2 3 4.5"/></svg>Shared with me<span class="n new num">3</span></div>
+    <div class="nav"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>Recent</div>
+    <div class="nav"><svg class="i" viewBox="0 0 24 24"><path d="m12 3.5 2.6 5.4 5.9.8-4.3 4.1 1 5.8L12 16.8l-5.2 2.8 1-5.8-4.3-4.1 5.9-.8z"/></svg>Starred</div>
+    <div class="nav"><svg class="i" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4.5h6V7M6 7l1 13h10l1-13"/></svg>Trash</div>
+    <div class="lab">Folders</div>
+    <div class="folder"><i style="background:#c8a23a"></i>Launch 2026</div>
+    <div class="folder"><i style="background:#3a9d8f"></i>Brand</div>
+    <div class="folder"><i style="background:#e2725b"></i>Finance</div>
+    <div class="folder"><i style="background:#9a6fd0"></i>People</div>
+    <div class="store">
+      <span class="meter"><i style="width:22%;background:var(--img)"></i><i style="width:11%;background:var(--doc)"></i><i style="width:6%;background:var(--sheet)"></i><i style="width:3%;background:var(--pdf)"></i></span>
+      <span class="num"><b>41.2 GB</b> of 100 GB used</span>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="bar">
+      <label class="search"><svg class="i" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M16.5 16.5 21 21"/></svg><span class="q">offsite budget</span><i class="caret"></i>
+        <span class="x"><svg class="i" viewBox="0 0 24 24"><path d="M7 7l10 10M17 7 7 17"/></svg></span></label>
+      <span class="sp"></span>
+      <span class="faces"><img src="../../../../overlay/showcase/src/media/people/person-01.jpg" alt=""><img src="../../../../overlay/showcase/src/media/people/person-04.jpg" alt=""><img src="../../../../overlay/showcase/src/media/people/person-10.jpg" alt=""></span>
+      <span class="btn"><svg class="i" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>New</span>
+    </div>
+    <div class="filters">
+      <span class="chip on"><svg class="i" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>In <b>My files</b></span>
+      <span class="chip">Type <b>Any</b></span>
+      <span class="chip">Owner <b>Anyone</b></span>
+      <span class="chip">Modified <b>Any time</b></span>
+      <span class="count num">0 of 1,284 files</span>
+    </div>
+
+    <section class="empty">
+      <span class="disc"><svg class="i big" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M16.5 16.5 21 21"/></svg></span>
+      <h2>No files in My files match “offsite budget”</h2>
+      <p>Try fewer words, or look where your team keeps things.</p>
+      <span class="acts"><span class="ghost pri">Search Shared with me <span class="num">· 3</span></span><span class="ghost">Clear filters</span></span>
+    </section>
+
+    <section class="near">
+      <h3>Close matches in Shared with me</h3>
+      <div class="row"><span class="ft" style="background:var(--sheet)">XLS</span><span class="n"><b><mark>Offsite</mark> 2026, <mark>budget</mark> v3</b><small>Launch 2026 / Planning</small></span><span class="who"><img src="../../../../overlay/showcase/src/media/people/person-01.jpg" alt="">Anika Rao</span><span class="when">Edited 2h ago</span></div>
+      <div class="row"><span class="ft" style="background:var(--pdf)">PDF</span><span class="n"><b><mark>Offsite</mark> venues, shortlist</b><small>Launch 2026 / Planning</small></span><span class="who"><img src="../../../../overlay/showcase/src/media/people/person-04.jpg" alt="">Jonas Weber</span><span class="when">Yesterday</span></div>
+      <div class="row"><img class="thumb" src="../../../../overlay/showcase/src/media/lake.jpg" alt=""><span class="n"><b><mark>Offsite</mark> recce, Lake Bled</b><small>Launch 2026 / Photos · 14 photos</small></span><span class="who"><img src="../../../../overlay/showcase/src/media/people/person-10.jpg" alt="">Rosa Lindqvist</span><span class="when">Mon</span></div>
+    </section>
+  </main>
+</div>
+</body>
+</html>

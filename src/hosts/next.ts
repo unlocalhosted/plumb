@@ -1,5 +1,5 @@
-import { environment } from '../paths.js';
 import { state } from './next-state.js';
+import { nextHost } from './next-host.js';
 import type { SessionOptions } from '../session/index.js';
 
 export { PlumbOverlay } from './next-overlay.js';
@@ -14,7 +14,7 @@ export function createPlumbRoute(options: SessionOptions = {}): { GET(request: R
     // withPlumb supplies the installed module's real file URL. Native loading
     // keeps the entire Session graph external even when npm links the package
     // outside node_modules, where Next's package-name externals cannot match.
-    shared.handler ??= import(/* webpackIgnore: true */ /* turbopackIgnore: true */ environment('NEXT_SERVER_MODULE') ?? './next-dev.js').then(({ handler }) => handler(options, shared.token)).catch(error => {
+    shared.handler ??= import(/* webpackIgnore: true */ /* turbopackIgnore: true */ nextHost('serverModule') ?? './next-dev.js').then(({ handler }) => handler(options, shared.token)).catch(error => {
       delete shared.handler; throw error;
     });
     return (await shared.handler)(request);

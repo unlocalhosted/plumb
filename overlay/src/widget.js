@@ -22,6 +22,7 @@ const WALK = { step: 48, pause: 260 };
 const reachable = (el) => { while (el?.ownerSVGElement) el = el.ownerSVGElement; return el; }; // px of scroll per level; ms of stillness that resets the travel
 const TIMING = { hoverRead: 90, light: 120, swap: 140, reread: [250, 600, 1200, 2400], starting: 1000, maxDrawing: 160, healthStarting: 1000, healthReady: 10000, dockFold: 4000, dockCount: 3000, side: 3000 };
 
+import { pageHydrated } from './hydration.js';
 import { DOCK, TAG } from './words.js'; // the dock's and the hover tag's words
 import { locate, componentOf } from './locate.js';
 import { errorIs, request, post, forgetResolved } from './api.js';
@@ -37,12 +38,13 @@ import { History, HISTORY_CSS, HISTORY_ICON } from './history.js';
 import { Craft } from './craft.js';
 import { setSource } from './craft-headless.js';
 import { choicesHtml, bindChoices, whyLine, toPx, fmtPx, esc, code, VALUED, CHOICES_CSS } from './choices.js';
+import { placeOf, atPlace } from './stamp.js';
 
 const tokensCss = await (await fetch(new URL('./tokens.css', import.meta.url))).text();
 // the element an Alt+click read, kept across a reload: where it is written (its stamp without the file's hash, which a
 // write changes) and which of the elements written there it was
-const stampedAt = (at) => document.querySelectorAll(`[data-plumb-source^="${CSS.escape(at)}#"]`);
-const scopeKey = (el) => { const at = el?.getAttribute('data-plumb-source')?.split('#')[0]; return at ? { at, nth: [...stampedAt(at)].indexOf(el) } : null; };
+const stampedAt = (at) => document.querySelectorAll(atPlace(at));
+const scopeKey = (el) => { const at = placeOf(el); return at ? { at, nth: [...stampedAt(at)].indexOf(el) } : null; };
 const scopeOf = (key) => key?.at ? stampedAt(key.at)[key.nth] ?? null : null;
 const RESUME = 'plumb:resume';
 
@@ -63,6 +65,7 @@ function unplaced(found) {
     if (!detail.file) try { file = decodeURIComponent(new URL(file, location.href).pathname).replace(/^\/@fs/, ''); } catch {}
     return { short: TAG.outside, message: `Written in \`${file}\`, outside this project's source. Add it to \`source\` to check it.` };
   }
+  if (found?.reason === 'not-hydrated') return { short: TAG.notHydrated, message: 'The page is still loading. Try again in a moment.' };
   if (found?.reason === 'no-fiber') return { short: TAG.notReact, message: 'Not drawn by React, so it isn’t in your code.' };
   if (found?.reason === 'runtime-only-frames' || found?.reason === 'owner-unproven')
     return { short: TAG.library, message: 'A library drew this, and the line of your code that used it can’t be proven. Point at the component around it.' };
@@ -322,6 +325,10 @@ const ICON = {
   close: '<svg viewBox="0 0 10 10" aria-hidden="true"><path d="M1.5 1.5l7 7M8.5 1.5l-7 7" stroke="currentColor" stroke-width="1.2" fill="none"/></svg>',
 };
 
+// a layer the page opened over itself and is showing: a menu, a dialog, a listbox (not the overlay's own)
+const pageLayerOpen = () => [...document.querySelectorAll('[role="menu"], [role="dialog"], [role="alertdialog"], [role="listbox"]')]
+  .some((e) => !e.closest('plumb-overlay') && e.getClientRects().length && getComputedStyle(e).visibility !== 'hidden');
+
 class PlumbOverlay extends HTMLElement {
   #blueprint; #bp = { state: 'off', progress: null }; #marksCache = new WeakMap(); #traces = new Map();
   #root; #cache = new WeakMap(); #armed = false; #sticky = false; #health = 'starting'; #healthTimer = 0; #foldTimer = 0; #startedAt = performance.now(); #readyAt = 0; #hover = null; #hoverTimer = 0; #pinned = null; #frame = 0; #focusBack = null; #decisions = null; #decisionsLoading = null; #scales = new Map(); #ready = null;
@@ -359,7 +366,7 @@ class PlumbOverlay extends HTMLElement {
     // Every write, undoable: a toast after each one, and the recent ones from the dock.
     this.#history = new History(this.#root, { button: this.#$('.dock .history'), host: { announce: text => this.#announce(text), changed: () => this.#dock() } });
     // Words on the page, edited like a CMS: double-click, type, Enter (docs/briefs/text-editing.md).
-    this.#text = new TextEditor(this.#root, { editing: (on, rect) => { if (on) this.#help.hint('words'); this.#blueprint?.editing(on, rect); }, wrote: (result, text) => this.#history.wrote(result, text), announce: text => this.#announce(text), changed: () => this.#dock(),
+    this.#text = new TextEditor(this.#root, { editing: (on, rect) => { if (on) this.#help.hint('words'); this.#blueprint?.editing(on, rect); }, wrote: (result, text) => this.#history.wrote(result, text), heard: () => this.#history.resumed, announce: text => this.#announce(text), changed: () => this.#dock(),
       inBlueprint: () => !!this.#blueprint?.active, blueprint: () => setTimeout(() => this.#blueprint?.enter({ instant: true }), 120) });
     this.#ready = new Readiness(this.#root, { dock: this.#$('.dock'), onOpen: () => this.changed?.() });
     requestAnimationFrame(() => requestAnimationFrame(() => this.#$('.dock').removeAttribute('data-enter')));
@@ -412,7 +419,9 @@ class PlumbOverlay extends HTMLElement {
       if (writes.length) { saved.undo = writes; saved.pending = false; try { sessionStorage.setItem(RESUME, JSON.stringify(saved)); } catch {} }
     }
     // back in Blueprint, the panel says it; left before the write landed, History does, with its Undo
-    if (saved.fix && saved.blueprint) this.#blueprint?.resumed?.(saved.fix, saved.undo ?? [], saved.place ?? null, saved.group ?? null);
+    // One voice after a reload. A sentence that is History's to say (a step's undo) is said by the panel only when
+    // the reload cut the server's answer off before History heard it; when History has it, the panel stays quiet
+    if (saved.fix && saved.blueprint && !(saved.history && this.#history?.resumed)) this.#blueprint?.resumed?.(saved.fix, saved.undo ?? [], saved.place ?? null, saved.group ?? null);
     else if (saved.fix && (saved.undo?.length || saved.group)) this.#history?.wrote({ undo: saved.undo ?? [], trace: { group: saved.group ?? null } }, saved.fix);
     // the old reading card is retired: a write never comes back as a card pinned to its element
   }
@@ -499,7 +508,7 @@ class PlumbOverlay extends HTMLElement {
   readsFor(stamp) { return this.#readCounts.get(stamp) ?? 0; }
   readMarks(element, fresh = false, { computed = true } = {}) {
     if (!fresh && this.#marksCache.has(element)) return this.#marksCache.get(element);
-    const stamp = element.getAttribute?.('data-plumb-source')?.split('#')[0];
+    const stamp = placeOf(element);
     if (stamp) this.#readCounts.set(stamp, this.#readCounts.get(stamp) + 1 || 1);
     const promise = (async () => {
       const found = await locate(element, { explain: true, batch: true });
@@ -514,15 +523,18 @@ class PlumbOverlay extends HTMLElement {
     return promise;
   }
   // The page's code (blueprint-reader.js, docs/briefs/count-from-code.md): every finding at the places in the files
-  // the page renders (POST places), each file's marks built the way an element's are. null where there is no
-  // server for it (the docs replay): the reader counts from the rendered elements alone there.
+  // the page renders (POST places), each file's marks built the way an element's are. A file may be asked for by its
+  // stamp's name (from the repository root) or by the name the page answers gave (from the project root); the server
+  // answers each file once, by the project name, and that name is kept: it is the one every element's `file` carries,
+  // so a place from the code and the same place rendered are one place. null where there is no server for it (the
+  // docs replay): the reader counts from the rendered elements alone there.
   async readCode(files) {
     if (!files.length) return [];
     let answer;
     try { answer = await post('places', { files }); }
     catch (error) { if (error?.status === 404 || error?.status === 405) return null; throw error?.status === 503 ? Object.assign(error, { starting: true }) : error; }
     return (answer?.files ?? []).map((entry) => {
-      const file = files.find((f) => entry.file === f || entry.file.endsWith('/' + f)) ?? entry.file;
+      const file = entry.file;
       const location = { file, line: 1, column: 1, tag: null, via: 'code', chain: [], index: 0 };
       const r = reading(location, { findings: entry.findings ?? [], declarations: entry.declarations ?? [] }, undefined);
       return { file, hash: entry.hash, marks: r.marks.filter((m) => m.ledger !== 'exception') };
@@ -585,9 +597,11 @@ class PlumbOverlay extends HTMLElement {
   get blueprintReader() { return this.#blueprint; } // the headless craft run (craft-run.js)
   get progress() { return this.#bp.progress; }
   // the places Blueprint counted last (blueprint-reader.js): one row per class site in the page's code, with how many elements render it
-  #places = [];
-  placesRead(places) { this.#places = places; }
+  #places = []; #problems = [];
+  placesRead(places, problems = []) { this.#places = places; this.#problems = problems; }
   get places() { return this.#places; }
+  // the problems it counted: one key per (place, cause), the number the dock and the fix panel's line say
+  get problems() { return this.#problems; }
   get pinnedElement() { return this.#pinned?.element ?? null; }
   occluders() {
     return [...['.w:not([hidden]) .card', '.dock'].map(sel => this.#root.querySelector(sel)).filter(Boolean).map(el => el.getBoundingClientRect()), ...[this.#blueprint?.panelRect?.()].filter(Boolean), ...(this.#help?.occluders() ?? []), ...(this.#history?.occluders() ?? []), ...[this.#ready?.rect()].filter(Boolean)];
@@ -609,7 +623,7 @@ class PlumbOverlay extends HTMLElement {
   tool(name) { this.#$(`.dock .${name}`)?.click(); }
   setupLeft() { return this.#ready?.left ?? 0; }
   openSetup() { this.#ready?.toggle(true); }
-  remember(text, undo, place = null, group = null) { try { sessionStorage.setItem(RESUME, JSON.stringify({ at: Date.now(), blueprint: !!this.#blueprint?.active, fix: text, undo: undo ?? [], group, pending: undo === undefined, place, scope: scopeKey(this.#blueprint?.scope), card: !!this.#blueprint?.carding })); } catch {} }
+  remember(text, undo, place = null, group = null, extra = {}) { try { sessionStorage.setItem(RESUME, JSON.stringify({ ...extra, at: Date.now(), blueprint: !!this.#blueprint?.active, fix: text, undo: undo ?? [], group, pending: undo === undefined, place, scope: scopeKey(this.#blueprint?.scope), card: !!this.#blueprint?.carding })); } catch {} }
   forgetResume() { try { sessionStorage.removeItem(RESUME); } catch {} }
   #resumeOutside() { try { const saved = JSON.parse(sessionStorage.getItem(RESUME) ?? 'null'); if (saved?.blueprint) sessionStorage.setItem(RESUME, JSON.stringify({ ...saved, blueprint: false, card: false, scope: null })); } catch {} }
 
@@ -650,6 +664,9 @@ class PlumbOverlay extends HTMLElement {
     try { const h = await request('health', {}); next = h?.status === 'ready' ? 'ready' : h?.status === 'failed' ? 'failed' : 'starting'; this.#reason = h?.diagnostic ?? h?.error ?? ''; }
     catch (error) { next = error?.failed ? 'failed' : error?.starting ? 'starting' : 'lost'; this.#reason = error?.message ?? ''; }
     if (!this.isConnected) return;
+    // the engine is ready before the page is: until React has hydrated it there is nothing to read (bounded: a page
+    // without React, or one that takes longer than half a minute, is shown ready as it is)
+    if (next === 'ready' && !pageHydrated() && performance.now() - this.#startedAt < 30000) next = 'starting';
     if (next !== this.#health) this.#blueprint?.healthChanged(next);
     if (next === 'ready' && this.#health !== 'ready') this.#ready?.read();
     this.#health = next; this.#dock();
@@ -848,6 +865,8 @@ class PlumbOverlay extends HTMLElement {
     // L: the punch list, when nothing on the page is being typed into
     // L (the old list) is retired: the fix bar is the one panel
     else if (event.key === 'Escape' && this.#pinned) { event.preventDefault(); event.stopPropagation(); this.close(); }
+    // a menu, dialog or list the page opened over itself is on top of blueprint: its Esc is the page's to hear
+    else if (event.key === 'Escape' && this.#blueprint?.active && pageLayerOpen()) return;
     else if (event.key === 'Escape' && this.#blueprint?.active && this.#blueprint.deselect()) { event.preventDefault(); event.stopPropagation(); }
     else if (event.key === 'Escape' && this.#blueprint?.active) { event.preventDefault(); event.stopPropagation(); this.#toggleBlueprint(); }
   };

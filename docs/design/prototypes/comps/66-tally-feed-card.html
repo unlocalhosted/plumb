@@ -1,0 +1,172 @@
+<!doctype html>
+<!-- COMP #66, the one component (owner 2026-11-05: no app around it, rich inside). Tally's bank feed card for one
+     account: the balance drawn over 30 days, the feed's latest transactions with each merchant's own mark, the sync.
+     Slate's tokens (overlay/showcase/src/theme.css). Hands-on: drawn the frame after a fast Sync now on the broken side
+     (spinner shown on the press, gone with the reply 122ms later), with plumber's lanes under the card. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tally feed card (comp)</title>
+<style>
+  :root {
+    --surface: #fff; --sunken: #f3f5f9; --ink: #12233d; --ink-muted: #5a6779; --ink-subtle: #6f7c90;
+    --line: rgb(18 35 61 / 0.11); --accent: #5550d8; --accent-soft: #efeefd; --accent-deep: #3631a6;
+    --positive: #0f6f58; --positive-soft: #e5f4ef; --caution: #965a03; --caution-soft: #fcf1dd;
+    --board: #eef1f5; --board-dot: #d6dce4;
+    --shadow-card: 0 0 0 1px rgb(18 35 61 / 0.11), 0 1px 1px rgb(18 35 61 / 0.03), 0 2px 6px rgb(18 35 61 / 0.04);
+    --hl: 0.5px;
+    /* plumber's marks (overlay/src/tokens.css) */
+    --pl-off: #bf3a1e; --pl-on: #1a9460; --pl-sky: #2a7fd0; --pl-ink-2: #6b665c; --pl-ink-3: #b3ad9f; --pl-halo: rgb(255 255 255 / 0.9);
+    --pl-mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, monospace;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 48px; background: var(--board);
+    background-image: radial-gradient(var(--board-dot) 1px, transparent 1px); background-size: 16px 16px;
+    font: 14px/20px Inter, -apple-system, system-ui, sans-serif; color: var(--ink); -webkit-font-smoothing: antialiased; }
+  .num { font-variant-numeric: tabular-nums; }
+  .hl-b { box-shadow: inset 0 calc(-1 * var(--hl)) 0 var(--line); }
+  .hl-t { box-shadow: inset 0 var(--hl) 0 var(--line); }
+  .mark { -webkit-mask: var(--m) center / contain no-repeat; mask: var(--m) center / contain no-repeat; background: var(--g, #fff); }
+
+  .stage { position: relative; width: 520px; }
+  .card { border-radius: 10px; background: var(--surface); box-shadow: var(--shadow-card); overflow: hidden; }
+
+  /* the account */
+  .acct { padding: 18px 20px 0; }
+  .who { display: flex; align-items: center; gap: 12px; }
+  .bank { width: 36px; height: 36px; flex: none; border-radius: 8px; display: grid; place-items: center; background: var(--b); }
+  .bank i { width: 18px; height: 18px; }
+  .who .t { font-size: 15px; font-weight: 500; letter-spacing: -0.01em; }
+  .who .s { font-size: 13px; color: var(--ink-muted); }
+  .who .s b { font-weight: 500; color: var(--positive); }
+  .sync { margin-left: auto; display: inline-flex; align-items: center; justify-content: center; gap: 6px; width: 120px; height: 32px; border-radius: 6px;
+    font-size: 13px; font-weight: 500; color: var(--ink-muted); box-shadow: inset 0 0 0 1px var(--line); }
+  .bal { display: flex; align-items: flex-end; justify-content: space-between; margin-top: 16px; }
+  .bal .big { font-size: 32px; line-height: 36px; font-weight: 500; letter-spacing: -0.02em; }
+  .bal .big small { font-size: 20px; color: var(--ink-muted); font-weight: 500; }
+  .bal .d { margin-top: 4px; font-size: 13px; color: var(--ink-muted); }
+  .bal .d b { color: var(--positive); font-weight: 500; }
+  .range { display: flex; padding: 2px; border-radius: 6px; background: var(--sunken); font-size: 12px; color: var(--ink-muted); }
+  .range span { height: 24px; padding: 0 9px; display: grid; place-items: center; border-radius: 5px; }
+  .range .on { background: var(--surface); color: var(--ink); font-weight: 500; box-shadow: 0 1px 1px rgb(18 35 61 / 0.04), 0 1px 3px rgb(18 35 61 / 0.08); }
+  .chart { display: block; width: 100%; height: 96px; margin-top: 10px; }
+  .axis { display: flex; justify-content: space-between; padding: 4px 0 14px; font-size: 11px; color: var(--ink-subtle); }
+
+  /* the feed */
+  .feed { padding: 4px 20px 2px; }
+  .head { display: flex; justify-content: space-between; padding: 10px 0 4px; font-size: 12px; font-weight: 500; color: var(--ink-subtle); }
+  .head .new { color: var(--accent-deep); }
+  .tx { display: grid; grid-template-columns: 32px 1fr auto 92px; align-items: center; gap: 12px; padding: 9px 0; }
+  .tx:last-child { box-shadow: none; }
+  .logo { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; background: var(--b); }
+  .logo i { width: 15px; height: 15px; }
+  .tx .t { font-size: 14px; font-weight: 500; }
+  .tx .s { font-size: 12.5px; color: var(--ink-muted); }
+  .cat { display: inline-flex; align-items: center; gap: 6px; height: 22px; padding: 0 8px; border-radius: 4px; background: var(--sunken); font-size: 12px; color: var(--ink-muted); }
+  .cat i { width: 6px; height: 6px; border-radius: 50%; background: var(--c); }
+  .cat.pick { background: var(--caution-soft); color: var(--caution); }
+  .amt { text-align: right; font-size: 14px; font-weight: 500; }
+  .amt.in { color: var(--positive); }
+  .fresh .t::after { content: ""; display: inline-block; width: 6px; height: 6px; margin-left: 6px; border-radius: 50%; background: var(--accent); vertical-align: 2px; }
+
+  .foot { display: flex; align-items: center; gap: 8px; padding: 12px 20px; background: var(--sunken); font-size: 12.5px; color: var(--ink-muted); }
+  .foot .r { margin-left: auto; color: var(--accent-deep); font-weight: 500; }
+
+  /* the demo's own control, under the card */
+  .reply { display: flex; align-items: center; gap: 8px; margin-top: 12px; font-size: 12px; color: var(--ink-subtle); }
+  .seg { display: flex; padding: 2px; border-radius: 6px; background: var(--sunken); box-shadow: inset 0 0 0 1px var(--line); }
+  .seg span { padding: 2px 8px; border-radius: 5px; }
+  .seg .on { background: var(--surface); color: var(--ink); box-shadow: 0 1px 1px rgb(18 35 61 / 0.04), 0 1px 3px rgb(18 35 61 / 0.08); }
+
+  /* plumber's read: the lanes and the tag */
+  .marks { position: relative; height: 92px; margin-top: 18px; }
+  .lane { position: absolute; left: 0; width: 100%; height: 14px; }
+  .lane .l { position: absolute; right: 100%; margin-right: 8px; font: 500 10.5px/14px Inter, system-ui; color: var(--pl-ink-2); }
+  .lane .dash { position: absolute; left: 0; right: 0; top: 6px; border-top: 1px dashed var(--pl-ink-3); }
+  .lane .bar { position: absolute; top: 4px; height: 5px; border-radius: 3px; }
+  .due { position: absolute; top: -4px; height: 40px; border-left: 1px dashed var(--pl-sky); opacity: 0.7; }
+  .due-l { position: absolute; top: -8px; font: 500 10px/12px var(--pl-mono); color: var(--pl-sky); }
+  .ruler { position: absolute; left: 0; right: 0; top: 46px; height: 1px; background: var(--pl-ink-3); }
+  .ruler i { position: absolute; top: -3px; width: 1px; height: 7px; background: var(--pl-ink-3); }
+  .ruler b { position: absolute; top: 10px; font: 500 10px var(--pl-mono); color: var(--pl-ink-2); transform: translateX(-50%); }
+  .tag { position: absolute; display: flex; align-items: center; height: 20px; padding: 0 8px; border-radius: 6px; font: 500 11px/1 var(--pl-mono); color: #fff; background: var(--pl-off); box-shadow: 0 0 0 1px var(--pl-halo); white-space: nowrap; font-variant-numeric: tabular-nums; }
+</style>
+</head>
+<body>
+<div class="stage">
+  <article class="card">
+    <header class="acct">
+      <div class="who">
+        <span class="bank" style="--b:#14233c"><i class="mark" style="--m:url(https://cdn.jsdelivr.net/npm/simple-icons@13.21.0/icons/monzo.svg)"></i></span>
+        <span><div class="t">Business current</div><div class="s">Monzo •••• 4821 · <b>Synced just now</b></div></span>
+        <!-- the press just ended: the spinner showed on it and left with the 122ms reply -->
+        <span class="sync"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M13.2 6.2A5.5 5.5 0 1 0 13.5 9"/><path d="M13.5 2.8v3.6H9.9"/></svg>Sync now</span>
+      </div>
+      <div class="bal">
+        <div>
+          <div class="big num">£24,318<small>.40</small></div>
+          <div class="d"><b class="num">+£4,210.55</b> since 7 October</div>
+        </div>
+        <div class="range"><span>7d</span><span class="on">30d</span><span>90d</span></div>
+      </div>
+      <!-- the balance, 30 days: payday steps up, rent and payroll step down; today's dot -->
+      <svg class="chart" viewBox="0 0 480 96" preserveAspectRatio="none">
+        <defs><linearGradient id="fill" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#5550d8" stop-opacity="0.16"/><stop offset="1" stop-color="#5550d8" stop-opacity="0"/></linearGradient></defs>
+        <g stroke="rgb(18 35 61 / 0.07)" stroke-width="1"><line x1="0" x2="480" y1="24.5" y2="24.5"/><line x1="0" x2="480" y1="56.5" y2="56.5"/><line x1="0" x2="480" y1="88.5" y2="88.5"/></g>
+        <path d="M0 70 L32 68 L48 66 L64 67 L80 44 L96 45 L112 47 L128 46 L144 62 L160 60 L176 58 L192 59 L208 57 L224 40 L240 41 L256 43 L272 42 L288 52 L304 50 L320 51 L336 49 L352 34 L368 35 L384 33 L400 36 L416 34 L432 22 L448 24 L464 23 L476 17 L476 96 L0 96 Z" fill="url(#fill)"/>
+        <path d="M0 70 L32 68 L48 66 L64 67 L80 44 L96 45 L112 47 L128 46 L144 62 L160 60 L176 58 L192 59 L208 57 L224 40 L240 41 L256 43 L272 42 L288 52 L304 50 L320 51 L336 49 L352 34 L368 35 L384 33 L400 36 L416 34 L432 22 L448 24 L464 23 L476 17" fill="none" stroke="#5550d8" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>
+      </svg>
+      <div class="axis num"><span>7 Oct</span><span>14 Oct</span><span>21 Oct</span><span>28 Oct</span><span>Today</span></div>
+    </header>
+
+    <section class="feed hl-t">
+      <div class="head"><span>From the feed</span><span class="new">2 new</span></div>
+      <div class="tx hl-b fresh">
+        <span class="logo" style="--b:#635bff"><i class="mark" style="--m:url(https://cdn.jsdelivr.net/npm/simple-icons@13.21.0/icons/stripe.svg)"></i></span>
+        <span><div class="t">Stripe payout</div><div class="s">Today · 3 invoices</div></span>
+        <span class="cat" style="--c:var(--positive)"><i></i>Sales</span>
+        <span class="amt in num">+£1,840.00</span>
+      </div>
+      <div class="tx hl-b fresh">
+        <span class="logo" style="--b:#181717"><i class="mark" style="--m:url(https://cdn.jsdelivr.net/npm/simple-icons@13.21.0/icons/github.svg)"></i></span>
+        <span><div class="t">GitHub</div><div class="s">Today · Team plan, 6 seats</div></span>
+        <span class="cat pick">Choose category</span>
+        <span class="amt num">−£25.20</span>
+      </div>
+      <div class="tx hl-b">
+        <span class="logo" style="--b:#f24e1e"><i class="mark" style="--m:url(https://cdn.jsdelivr.net/npm/simple-icons@13.21.0/icons/figma.svg)"></i></span>
+        <span><div class="t">Figma</div><div class="s">Yesterday · Professional</div></span>
+        <span class="cat" style="--c:var(--accent)"><i></i>Software</span>
+        <span class="amt num">−£54.00</span>
+      </div>
+      <div class="tx hl-b">
+        <span class="logo" style="--b:#4a154b"><i class="mark" style="--m:url(https://cdn.jsdelivr.net/npm/simple-icons@13.21.0/icons/slack.svg)"></i></span>
+        <span><div class="t">Slack</div><div class="s">Mon 3 Nov · Pro, monthly</div></span>
+        <span class="cat" style="--c:var(--accent)"><i></i>Software</span>
+        <span class="amt num">−£38.40</span>
+      </div>
+      <div class="tx">
+        <span class="logo" style="--b:#ff5a5f"><i class="mark" style="--m:url(https://cdn.jsdelivr.net/npm/simple-icons@13.21.0/icons/airbnb.svg)"></i></span>
+        <span><div class="t">Airbnb</div><div class="s">Sat 1 Nov · Offsite, Lisbon</div></span>
+        <span class="cat" style="--c:#965a03"><i></i>Travel</span>
+        <span class="amt num">−£612.75</span>
+      </div>
+    </section>
+    <footer class="foot hl-t">Okapi Studio · 14 to review this month<span class="r">Review all</span></footer>
+  </article>
+
+  <div class="reply">Reply <span class="seg"><span class="on">as it comes</span><span>held 1.4s</span></span></div>
+
+  <!-- plumber's read: the reply and the spinner on one time scale (0 to 1.6s across the card); the rule's 200ms line -->
+  <div class="marks">
+    <div class="lane" style="top:0"><span class="l">reply</span><span class="dash"></span><span class="bar" style="left:0;width:40px;background:var(--pl-sky)"></span></div>
+    <div class="lane" style="top:18px"><span class="l">spinner</span><span class="dash"></span><span class="bar" style="left:0;width:40px;background:var(--pl-off)"></span></div>
+    <span class="due" style="left:65px"></span><span class="due-l" style="left:69px">200</span>
+    <div class="ruler"><i style="left:0"></i><i style="left:162.5px"></i><i style="left:325px"></i><i style="left:487.5px"></i><b style="left:0;transform:none">0</b><b style="left:325px">1s</b></div>
+  </div>
+  <!-- the finding, above the button, clear of the account's words -->
+  <span class="tag" style="right:0;top:-18px">flashed 122ms</span>
+</div>
+</body>
+</html>

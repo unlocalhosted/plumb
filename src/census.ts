@@ -14,8 +14,8 @@
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { atomicWrite } from './atomic-write.js';
-import { sourceHash } from './collect/cache.js';
 import { cacheDirectory, ignoreCache } from './paths.js';
+import { STAMP_ATTRIBUTE, parseStamp, stampHash, stampedFile } from './stamp.js';
 import type { CensusEntry } from './session/engine.js';
 
 export interface CensusRoute { route: string; elements: number }
@@ -33,10 +33,10 @@ export const censusPath = (root: string) => resolve(cacheDirectory(root), 'censu
 
 // In the page: every stamped element that holds words of its own, its type as drawn, and whether it sits in a list.
 // The twin of Blueprint's #system census (overlay/src/blueprint.js): keep the two reading the same things.
-function readPage() {
-  const census = [...document.body.querySelectorAll('[data-plumb-source]')].filter((el) => !el.closest('plumb-overlay') && [...el.childNodes].some((n) => n.nodeType === 3 && /[\p{L}\p{N}]/u.test(n.nodeValue ?? ''))).map((el) => {
+function readPage(attribute: string) {
+  const census = [...document.body.querySelectorAll(`[${attribute}]`)].filter((el) => !el.closest('plumb-overlay') && [...el.childNodes].some((n) => n.nodeType === 3 && /[\p{L}\p{N}]/u.test(n.nodeValue ?? ''))).map((el) => {
     const cs = getComputedStyle(el);
-    return { stamp: el.getAttribute('data-plumb-source')!, tag: el.localName, list: !!el.closest('li, ul, ol, dl'), computed: { size: parseFloat(cs.fontSize), lineHeight: cs.lineHeight === 'normal' ? null : parseFloat(cs.lineHeight), letterSpacing: cs.letterSpacing === 'normal' ? 0 : parseFloat(cs.letterSpacing), weight: parseInt(cs.fontWeight, 10), transform: cs.textTransform } };
+    return { stamp: el.getAttribute(attribute)!, tag: el.localName, list: !!el.closest('li, ul, ol, dl'), computed: { size: parseFloat(cs.fontSize), lineHeight: cs.lineHeight === 'normal' ? null : parseFloat(cs.lineHeight), letterSpacing: cs.letterSpacing === 'normal' ? 0 : parseFloat(cs.letterSpacing), weight: parseInt(cs.fontWeight, 10), transform: cs.textTransform } };
   });
   const links = [...document.querySelectorAll('a[href]')].map((a) => (a as HTMLAnchorElement).href);
   return { census, links };
@@ -69,7 +69,7 @@ export async function takeCensus(options: CensusOptions): Promise<ProjectCensus>
         try { await page.goto(new URL(route, base).href, { waitUntil: 'load', timeout }); } catch { routes.push({ route, elements: 0 }); continue; }
         await page.waitForLoadState('networkidle', { timeout: 5000 }).catch(() => {});
         await settle(page);
-        const { census, links } = await page.evaluate(readPage);
+        const { census, links } = await page.evaluate(readPage, STAMP_ATTRIBUTE);
         routes.push({ route, elements: census.length });
         entries.push(...census.map(entry => ({ ...entry, route })));
         gaps.push(...(await page.evaluate(readGaps) as CensusGap[]).map(gap => ({ ...gap, route })));
@@ -97,14 +97,14 @@ export async function projectCensus(root: string): Promise<{ census: ProjectCens
   try { census = JSON.parse(await readFile(censusPath(root), 'utf8')) as ProjectCensus; } catch { return null; }
   if (census?.schemaVersion !== 1 || !Array.isArray(census.entries)) return null;
   const hashes = new Map<string, string | null>();
-  const current = async (file: string) => {
-    if (!hashes.has(file)) hashes.set(file, await readFile(resolve(root, file), 'utf8').then(text => sourceHash(text).slice(0, 12), () => null));
-    return hashes.get(file);
+  // the hash a stamped file has now, by the stamp's own name for it; null when it cannot be read
+  const current = async (source: string) => {
+    if (!hashes.has(source)) hashes.set(source, await Promise.resolve().then(() => readFile(stampedFile(root, source), 'utf8')).then(stampHash, () => null));
+    return hashes.get(source);
   };
-  const fresh = async (stamp: string) => {
-    const m = /^(.+):\d+:\d+#([a-f0-9]+)$/.exec(stamp);
-    let file = m?.[1] ?? ''; try { file = decodeURIComponent(file); } catch { /* as written */ }
-    return !!m && await current(file) === m[2];
+  const fresh = async (text: string) => {
+    const stamp = parseStamp(text);
+    return !!stamp && await current(stamp.source) === stamp.hash;
   };
   const entries: CensusEntry[] = [], gaps: CensusGap[] = [];
   let stale = 0;

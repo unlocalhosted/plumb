@@ -12,7 +12,7 @@ const cli = join(repo, 'dist/cli.js');
 function run(root, args = [], options = {}) {
   const env = { ...process.env, CI: '1', COLUMNS: '100', ...options.env };
   const result = spawnSync(process.execPath, [...(options.replay ? ['--import', join(repo, 'e2e/fixtures/report-before/replay.mjs')] : []), cli, ...(args.length ? [] : ['check']), '--root', root, ...args],
-    { cwd: repo, encoding: 'utf8', timeout: 15000, env });
+    { cwd: repo, encoding: 'utf8', timeout: 15000, maxBuffer: 16 * 1024 * 1024, env });
   assert.ifError(result.error);
   assert.ok([0, 1].includes(result.status), result.stderr);
   assert.equal(result.stderr, '');

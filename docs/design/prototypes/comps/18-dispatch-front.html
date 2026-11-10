@@ -1,0 +1,114 @@
+<!doctype html>
+<!-- COMP #18, no widows in headings (docs/craft/taste-checklist.md). Dispatch, a news reader on the desktop, the
+     morning's front page: the sources you follow, the lead story with its photo, the stories beside it, and the
+     briefing you're half-way through. The headlines wrap as the browser fills them (greedy), so a story's last word
+     often lands alone on its own line. Plant: the headlines (data-head), already greedy here; the first list story's
+     ("Spring tides…") ends on "coast." alone at this width: last line 43px of 188 (measured when rendered). -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dispatch · Today (comp)</title>
+<style>
+  :root {
+    --surface: #fff; --sunken: #f3f5f9; --ink: #12233d; --ink-muted: #5a6779; --ink-subtle: #6f7c90;
+    --line: rgb(18 35 61 / 0.09); --line-strong: rgb(18 35 61 / 0.14); --accent: #5550d8; --accent-soft: #efeefd; --accent-deep: #3631a6;
+    --board: #e9edf2; --board-dot: #d3d9e2;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 48px; background: var(--board);
+    background-image: radial-gradient(var(--board-dot) 1px, transparent 1px); background-size: 16px 16px;
+    font: 14px/20px Inter, -apple-system, system-ui, sans-serif; color: var(--ink); -webkit-font-smoothing: antialiased; font-feature-settings: "cv11", "ss01"; }
+  .num { font-variant-numeric: tabular-nums; }
+  svg.i { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+
+  .window { width: 1080px; height: 604px; display: grid; grid-template-columns: 200px 1fr; border-radius: 12px; overflow: hidden; background: var(--surface);
+    box-shadow: 0 1px 2px rgb(18 35 61 / 0.05), 0 8px 24px rgb(18 35 61 / 0.08), 0 24px 64px rgb(18 35 61 / 0.12), 0 0 0 0.5px rgb(18 35 61 / 0.18); }
+  .side { background: #f7f8fa; border-right: 0.5px solid var(--line-strong); display: flex; flex-direction: column; padding: 12px 10px; gap: 1px; }
+  .lights { display: flex; gap: 7px; padding: 4px 6px 14px; } .lights i { width: 11px; height: 11px; border-radius: 50%; background: #d9dde3; }
+  .brand { display: flex; align-items: center; gap: 8px; padding: 2px 8px 12px; font-weight: 600; letter-spacing: -0.01em; }
+  .brand b { width: 22px; height: 22px; border-radius: 6px; background: var(--ink); color: #fff; display: grid; place-items: center; font: 700 13px/1 Georgia, serif; }
+  .nav { display: flex; align-items: center; gap: 9px; height: 30px; padding: 0 8px; border-radius: 6px; color: var(--ink-muted); font-size: 13px; }
+  .nav.on { background: rgb(18 35 61 / 0.06); color: var(--ink); font-weight: 500; }
+  .nav .n { margin-left: auto; font-size: 11.5px; color: var(--ink-subtle); font-weight: 400; }
+  .label { margin: 14px 8px 4px; font-size: 11px; font-weight: 500; color: var(--ink-subtle); }
+  .src { display: flex; align-items: center; gap: 9px; height: 30px; padding: 0 8px; font-size: 13px; color: var(--ink-muted); }
+  .src b { width: 20px; height: 20px; border-radius: 5px; display: grid; place-items: center; color: #fff; font: 700 11px/1 Georgia, serif; flex: none; }
+  .src .n { margin-left: auto; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+
+  .main { display: flex; flex-direction: column; min-width: 0; overflow: hidden; }
+  .bar { display: flex; align-items: baseline; gap: 12px; padding: 18px 28px 14px; border-bottom: 0.5px solid var(--line-strong); }
+  .bar h1 { margin: 0; font-size: 22px; font-weight: 600; letter-spacing: -0.02em; }
+  .bar .d { color: var(--ink-subtle); font-size: 13px; }
+  .bar .wx { margin-left: auto; display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--ink-muted); }
+  .front { display: grid; grid-template-columns: 1fr 304px; gap: 28px; padding: 20px 28px; }
+
+  .kicker { font-size: 12px; font-weight: 500; color: var(--accent); display: flex; align-items: center; gap: 8px; }
+  .kicker span { color: var(--ink-subtle); font-weight: 400; }
+  .meta { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--ink-muted); }
+  .meta b { width: 16px; height: 16px; border-radius: 4px; display: grid; place-items: center; color: #fff; font: 700 9.5px/1 Georgia, serif; }
+
+  .lead { display: flex; flex-direction: column; gap: 10px; }
+  .lead .ph { position: relative; height: 262px; border-radius: 10px; overflow: hidden; }
+  .lead .ph img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .lead .ph::after { content: ''; position: absolute; inset: 0; border-radius: inherit; box-shadow: inset 0 0 0 1px rgb(18 35 61 / 0.08); }
+  .lead .ph small { position: absolute; right: 10px; bottom: 8px; font-size: 10.5px; color: rgb(255 255 255 / 0.85); }
+  .lead h2 { margin: 4px 0 0; font-size: 28px; line-height: 33px; font-weight: 600; letter-spacing: -0.022em; }
+  .lead p { margin: 0; font-size: 14.5px; line-height: 22px; color: var(--ink-muted); text-wrap: pretty; }
+
+  /* the stories beside the lead: the headlines the lesson lives in */
+  .list { display: flex; flex-direction: column; }
+  .story { display: grid; grid-template-columns: 1fr 76px; gap: 14px; padding: 14px 0; border-bottom: 0.5px solid var(--line); }
+  .story:first-child { padding-top: 0; }
+  .story .w { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+  .story h3 { margin: 0; font-size: 17px; line-height: 22px; font-weight: 600; letter-spacing: -0.012em; }
+  .story img { width: 76px; height: 76px; border-radius: 8px; object-fit: cover; box-shadow: 0 0 0 1px rgb(18 35 61 / 0.06); }
+  .story.read h3 { color: var(--ink-muted); }
+  .brief { margin-top: 14px; display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 12px; background: var(--ink); color: #fff; }
+  .brief .pp { width: 34px; height: 34px; border-radius: 50%; background: #fff; display: grid; place-items: center; flex: none; }
+  .brief .w { display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 0; }
+  .brief b { font-size: 13px; font-weight: 500; } .brief small { font-size: 11.5px; color: rgb(255 255 255 / 0.65); }
+  .brief .tr { height: 3px; border-radius: 2px; background: rgb(255 255 255 / 0.2); } .brief .tr i { display: block; width: 46%; height: 100%; border-radius: 2px; background: #fff; }
+</style>
+</head>
+<body>
+<div class="window">
+  <aside class="side">
+    <div class="lights"><i></i><i></i><i></i></div>
+    <div class="brand"><b>D</b>Dispatch</div>
+    <div class="nav on"><svg class="i" viewBox="0 0 16 16"><rect x="2" y="2.5" width="12" height="11" rx="1.5"/><path d="M5 6h6M5 8.5h6M5 11h3.5"/></svg>Today</div>
+    <div class="nav"><svg class="i" viewBox="0 0 16 16"><path d="M4 2.5h8v11L8 10.5 4 13.5z"/></svg>Saved<span class="n num">14</span></div>
+    <div class="nav"><svg class="i" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"/><path d="m6.5 5.5 4 2.5-4 2.5z" fill="currentColor"/></svg>Audio briefings</div>
+    <div class="label">Following</div>
+    <div class="src"><b style="background:#12233d">L</b>The Ledger<span class="n"></span></div>
+    <div class="src"><b style="background:#b4572e">M</b>Metro Weekly<span class="n"></span></div>
+    <div class="src"><b style="background:#0f6f58">F</b>Field Notes</div>
+    <div class="src"><b style="background:#5550d8">C</b>Coastline</div>
+    <div class="src"><b style="background:#965a03">K</b>Kiln &amp; Craft</div>
+    <div class="label">Topics</div>
+    <div class="nav">Science</div><div class="nav">Cities</div><div class="nav">Design</div>
+  </aside>
+
+  <main class="main">
+    <div class="bar"><h1>Today</h1><span class="d">Wednesday, 4 November</span><span class="wx"><svg class="i" viewBox="0 0 16 16"><circle cx="6" cy="6" r="2.5"/><path d="M6 1.5v1M1.5 6h1M2.8 2.8l.7.7M9.2 2.8l-.7.7M5 13.5h7a2.5 2.5 0 0 0 0-5 3.5 3.5 0 0 0-6.6 1A2 2 0 0 0 5 13.5z"/></svg>11° · Lisbon</span></div>
+    <div class="front">
+      <article class="lead">
+        <div class="ph"><img src="../../../../overlay/showcase/src/media/lake.jpg" alt=""><small>Photo: Field Notes</small></div>
+        <span class="kicker">Science<span>· Lead story</span></span>
+        <h2 data-head>Alpine lakes are turning a brighter blue as the glaciers above them retreat</h2>
+        <p>Less meltwater means less silt. The lakes look like postcards; the scientists measuring them are worried.</p>
+        <span class="meta"><b style="background:#0f6f58">F</b>Field Notes · 9 min read · 2.4k reading</span>
+      </article>
+      <div>
+        <div class="list">
+          <article class="story"><span class="w"><span class="kicker">Coast</span><h3 data-head>Spring tides uncover a Roman road off the Kent coast</h3><span class="meta"><b style="background:#5550d8">C</b>Coastline · 6 min</span></span><img src="../../../../overlay/showcase/src/media/low-tide.jpg" alt=""></article>
+          <article class="story"><span class="w"><span class="kicker">Cities</span><h3 data-head>Lisbon hands three of its busiest streets to bicycles and trams</h3><span class="meta"><b style="background:#b4572e">M</b>Metro Weekly · 4 min</span></span><img src="../../../../overlay/showcase/src/media/paper-cities.jpg" alt=""></article>
+          <article class="story read"><span class="w"><span class="kicker">Design</span><h3 data-head>The last neon benders in Osaka are taking apprentices</h3><span class="meta"><b style="background:#12233d">L</b>The Ledger · 7 min · read</span></span><img src="../../../../overlay/showcase/src/media/afterglow.jpg" alt=""></article>
+        </div>
+        <div class="brief"><span class="pp"><svg viewBox="0 0 14 14" width="12" height="12" fill="#12233d"><rect x="3" y="2" width="3" height="10" rx="1"/><rect x="8" y="2" width="3" height="10" rx="1"/></svg></span><span class="w"><b>Morning briefing</b><span class="tr"><i></i></span><small class="num">Story 3 of 7 · 4:12 left</small></span></div>
+      </div>
+    </div>
+  </main>
+</div>
+</body>
+</html>
