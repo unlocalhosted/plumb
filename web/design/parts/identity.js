@@ -76,11 +76,12 @@ export function mount(host, root, css) {
     /* ── the squash ──
        A soft block is pressed from above against the ground, so it is anchored at its bottom edge and keeps its
        volume: what it loses in height it gains in width.
-       down     90ms. It sinks onto its side, 4% shorter and 2.4% wider; its shadow tightens to nothing. The plate on
-                it is squashed too, a beat behind, and the toy a beat behind that.
+       down     90ms. It sinks onto its side, 4% shorter and 2.4% wider; its shadow tightens to nothing. The plate and
+                the toy on it are squashed in the same moment.
        let go   620ms, in four beats: it shoots up past where it rests, stretched tall and thin, and hangs there a
-                moment; comes down a little wide; one last small stretch; rest. The toy leaves late and lands late (it
-                is loose): it jumps, tips, lands flat and wide, and rights itself.
+                moment; comes down a little wide; one last small stretch; rest. The toy is loose, so on the same
+                beats it goes further: it jumps, tips, lands flat and wide, and rights itself.
+       Those numbers are the card's. A smaller block is stiffer and quicker (see the script).
        The beats are written by hand (see the script: they are what made it feel right), and every one starts from
        wherever the block is at that moment, so pressing again in the middle of a rebound never jumps. */
     .s-box.down { box-shadow: 0 5px 8px -7px color-mix(in oklab, var(--h) 70%, transparent); }
@@ -166,19 +167,27 @@ export function mount(host, root, css) {
   // in the middle of a press, carries on from the pose on screen.
   const LAUNCH = 'cubic-bezier(.2, .9, .3, 1)', SWING = 'cubic-bezier(.4, 0, .6, 1)', FALL = 'cubic-bezier(.5, 0, .7, 1)', OUT = 'cubic-bezier(0.16, 1, 0.3, 1)';
   const REST = 'translateY(calc(-1 * var(--lift)))';
-  const MOVES = {
-    box: {
-      top:   { down: ['translateY(-1px) scale(1.024, 0.96)', 90, 0],
-               up: [[0.30, `translateY(calc(-1 * var(--lift) - 5px)) scale(0.982, 1.035)`, SWING], [0.56, `translateY(calc(-1 * var(--lift) + 1.5px)) scale(1.01, 0.988)`, SWING], [0.78, `translateY(calc(-1 * var(--lift) - 1px)) scale(0.996, 1.006)`, SWING], [1, `${REST} scale(1, 1)`]], ms: 620, wait: 0 },
-      plate: { down: ['scale(1.035, 0.94)', 110, 20],
-               up: [[0.34, 'translateY(-3px) scale(0.975, 1.05)', SWING], [0.62, 'translateY(0.5px) scale(1.012, 0.985)', SWING], [1, 'translateY(0) scale(1, 1)']], ms: 620, wait: 30 },
-      toy:   { down: ['scale(1.04, 0.92)', 110, 30],
-               up: [[0.36, 'translateY(-7px) scale(0.96, 1.1) rotate(-6deg)', FALL], [0.64, 'translateY(1px) scale(1.06, 0.94) rotate(2deg)', SWING], [0.84, 'translateY(-1px) scale(0.99, 1.02) rotate(0deg)', 'linear'], [1, 'translateY(0) scale(var(--big)) rotate(0deg)']], ms: 640, wait: 60 },
-    },
-    btn: {
-      top:   { down: ['translateY(0) scale(1.045, 0.89)', 80, 0],
-               up: [[0.32, `translateY(calc(-1 * var(--lift) - 4px)) scale(0.97, 1.09)`, SWING], [0.60, `translateY(calc(-1 * var(--lift) + 1px)) scale(1.015, 0.97)`, SWING], [0.82, `translateY(calc(-1 * var(--lift) - 0.5px)) scale(0.995, 1.012)`, 'linear'], [1, `${REST} scale(1, 1)`]], ms: 520, wait: 0 },
-    },
+  // One body. A block has one motion: how far it is stretched past rest (1 = fully stretched tall, negative = wide).
+  // Every part reads that same number at the same moment, so the top, the plate and the toy leave together, peak
+  // together and land together. The toy is loose, so it goes further on the same beat; it is never later.
+  //            when   top/plate  toy
+  const BEATS = [[0.30, 1, 1, SWING], [0.56, -0.3, -0.55, SWING], [0.78, 0.2, 0.2, SWING], [1, 0, 0]];
+  // And it is sized. A small thing is stiffer than a big one: it travels fewer pixels, and it is back sooner. The
+  // card (about 190 tall) is the reference; a 35px button gets about half the overshoot and four fifths the time.
+  const feel = (top) => {
+    const r = Math.min(1.5, Math.max(0.1, top.offsetHeight / 190));
+    return { give: 0.04 * r ** -0.15, over: 5 * r ** 0.45, ms: 620 * r ** 0.12, down: 90 * r ** 0.12 };
+  };
+  const n = (v) => +v.toFixed(4);
+  const POSE = {
+    top:   (s, f) => (s === 0 ? `${REST} scale(1, 1)` : `translateY(calc(-1 * var(--lift) - ${n(f.over * s)}px)) scale(${n(1 - 0.45 * f.give * s)}, ${n(1 + 0.875 * f.give * s)})`),
+    plate: (s) => `translateY(${n(-3 * s)}px) scale(${n(1 - 0.025 * s)}, ${n(1 + 0.05 * s)})`,
+    toy:   (t) => (t === 0 ? 'translateY(0) scale(var(--big)) rotate(0deg)' : t > 0 ? `translateY(${n(-7 * t)}px) scale(${n(1 - 0.04 * t)}, ${n(1 + 0.1 * t)}) rotate(${n(-6 * t)}deg)` : `translateY(${n(-1.8 * t)}px) scale(${n(1 - 0.11 * t)}, ${n(1 + 0.11 * t)}) rotate(${n(-3.6 * t)}deg)`),
+  };
+  const DOWN = {
+    top:   (f) => `translateY(${n(-f.over / 5)}px) scale(${n(1 + 0.6 * f.give)}, ${n(1 - f.give)})`,
+    plate: () => 'scale(1.035, 0.94)',
+    toy:   () => 'scale(1.04, 0.92)',
   };
   const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
   // where a part is right now, held in its own style, with anything it was doing stopped
@@ -188,23 +197,21 @@ export function mount(host, root, css) {
     part.style.transform = here === 'none' ? '' : here;
     return here === 'none' ? 'translateY(0)' : here;
   };
-  const partsOf = (el) => (el.classList.contains('s-btn') ? [['top', el.querySelector('span'), MOVES.btn.top]] : [['top', el.querySelector('.in'), MOVES.box.top], ['plate', el.querySelector('.plate'), MOVES.box.plate], ['toy', el.querySelector('.toy'), MOVES.box.toy]]);
+  const partsOf = (el) => (el.classList.contains('s-btn') ? [['top', el.querySelector('span')]] : [['top', el.querySelector('.in')], ['plate', el.querySelector('.plate')], ['toy', el.querySelector('.toy')]]);
   const press = (el, on) => {
     if (el.classList.contains('down') === on) return;
     el.classList.toggle('down', on);
     if (still) return;
-    for (const [, part, move] of partsOf(el)) {
+    const parts = partsOf(el), f = feel(parts[0][1]);
+    for (const [kind, part] of parts) {
       const from = freeze(part);
-      if (on) {
-        const [pose, ms, wait] = move.down;
-        const a = part.animate([{ transform: from }, { transform: pose }], { duration: ms, delay: wait, easing: OUT, fill: 'both' });
-        a.id = 'soft'; a.playbackRate = rate; if (held) a.pause();
-      } else {
-        const a = part.animate([{ offset: 0, transform: from, easing: LAUNCH }, ...move.up.map(([offset, transform, easing]) => ({ offset, transform, ...(easing ? { easing } : {}) }))], { duration: move.ms, delay: move.wait, fill: 'both' });
-        a.id = 'soft'; a.playbackRate = rate; if (held) a.pause();
-        // at rest again: the stylesheet has it back (so pointing at it lifts it as before)
-        a.finished.then(() => { if (!el.classList.contains('down')) { part.style.transform = ''; a.cancel(); } }, () => {});
-      }
+      const frames = on
+        ? [{ transform: from, easing: OUT }, { transform: DOWN[kind](f) }]
+        : [{ offset: 0, transform: from, easing: LAUNCH }, ...BEATS.map(([offset, s, t, easing]) => ({ offset, transform: POSE[kind](kind === 'toy' ? t : s, f), ...(easing ? { easing } : {}) }))];
+      const a = part.animate(frames, { duration: on ? f.down : f.ms, fill: 'both' });
+      a.id = 'soft'; a.playbackRate = rate; if (held) a.pause();
+      // at rest again: the stylesheet has it back (so pointing at it lifts it as before)
+      if (!on) a.finished.then(() => { if (!el.classList.contains('down')) { part.style.transform = ''; a.cancel(); } }, () => {});
       part.style.transform = '';
     }
     onMotion();

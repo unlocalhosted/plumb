@@ -278,6 +278,27 @@ race, built for the old in-place write) was rewritten for the new write path (`e
   4.5, and the thin butter line on white at 3.03 against 3.
 - **Media hooks:** the dark colour page before (white on pale green) and after; the table of pairs.
 
+### 7. "the whole system should feel whole as one": the soft block's press
+
+- **The itch:** the owner, pressing a soft block (the raised, pale-topped card and button on the design site's
+  identity page): "it releases in stages, first the effect is felt on card then the wrapper of this svg and then
+  finally in svg... the whole system should feel whole as one, not layers getting animated in sequence." And: "the
+  current bounce looks good on big card but it looks a bit much on small button, the physics there doesn't feel the
+  same."
+- **How we found it:** the owner pressing it by hand, with the page's timeline slowing the motion down.
+- **The system behind it:** each layer (the top, the white plate, the toy on it) had its own hand-written motion,
+  started 30 and 60ms after the one under it and peaking at a different moment. Delay was standing in for
+  looseness. And the button had its own, separately typed, numbers (11% squash, 9% stretch, a 4px overshoot on a
+  4px lift), so nothing tied a small block's bounce to a big one's.
+- **What we chose:** one motion per block, a single number for "how stretched am I", on the same hand-written beats
+  the owner liked. Every layer reads it at the same moment; the toy is loose by going *further* on the beat, never
+  later. The amounts come from the block's height: a smaller block travels fewer pixels and is back sooner. Dead
+  end on the way: a simulated spring matched the timing but not the feel of the quick launch, so the beats stayed.
+- **The fix and the proof:** read off the running page. Card: top and plate peak in the same frame (152ms), the toy
+  one frame later; the card's amounts are what they were (held 1.024 × 0.96, peak 3.5% tall, toy jumps 7px). The
+  35px button: squash 5.2% (was 11%), stretch 4.5% (was 9%), overshoot 2.3px (was 4px), 506ms (was 520).
+- **Media hooks:** the identity page's timeline at ¼×, card and button side by side, before and after.
+
 ## Open gaps
 - The contrast check knows colours, not sizes or weights, and is not run by CI yet.
 - `web/docs/pages` is a copy of `site/src/docs/pages`; two copies until the old Vite site is removed.
