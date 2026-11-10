@@ -45,13 +45,15 @@ h2.shelf small { font: 600 14px/1 var(--pl-round); color: var(--pl-ink-2); }
 /* ── the shelf: each part is a box you can pick up. Drawn parts are solid in their hue, on a base; a part that isn't
    drawn yet is pale and flat, because pale is for what is not there ── */
 .boxes { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 18px 16px; }
-.boxes .s-box .in { min-height: 196px; padding: 18px 18px 16px; }
-.boxes .s-box .plate { width: 68px; height: 68px; margin-bottom: auto; border-radius: 20px; }
-.boxes .s-box .in b { margin-top: 16px; }
-.boxes .s-box.soon .in { min-height: 0; padding: 14px; }
+/* every box is three rows (its toy, its name, what it says) and takes them from the shelf's own grid, so along a row
+   the names sit on one line, the words start on one line, and every box, ready or not, ends at the same height */
+.boxes .s-box { display: grid; grid-row: span 3; grid-template-rows: subgrid; row-gap: 0; }
+.boxes .s-box .in { display: grid; grid-row: span 3; grid-template-rows: subgrid; row-gap: 0; align-content: start; padding: 18px 18px 16px; }
+.boxes .s-box .plate { width: 68px; height: 68px; margin-bottom: 16px; border-radius: 20px; align-self: start; }
+.boxes .s-box .in b { align-self: end; }
+.boxes .s-box .in em { align-self: start; }
+.boxes .s-box.soon .in { padding: 14px; }
 .boxes .s-box.soon .plate { width: 40px; height: 40px; margin-bottom: 10px; border-radius: 13px; }
-.boxes .s-box.soon .in b { margin-top: 0; }
-.boxes { align-items: start; }
 
 @media (max-width: 640px) { h1 { font-size: 38px; line-height: 42px; } .lede { font-size: 17px; line-height: 27px; } .bar { padding: 0 16px; gap: 10px; } .wrap { padding: 28px 16px 96px; } .bar nav .s-btn > span { padding: 10px 10px; } }
 @media (prefers-reduced-motion: reduce) { .toy { transition: none !important; } }
