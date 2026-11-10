@@ -85,10 +85,7 @@ export const PICKER_CSS = `
     .row .val { overflow: visible; }
     /* only while dragging: it fades in as the drag starts, and out once the fill has sprung onto the option */
     .track { position: absolute; inset: 2px; border-radius: 7px; pointer-events: none; opacity: 0; overflow: hidden; transition: opacity 220ms var(--pl-ease-out) 380ms; }
-    /* pulled past either end, the fill presses on the track's edge and the track gives: it stretches a little the way
-       you pull, anchored at the other side, and springs back when you let go. The words don't stretch; nothing
-       crosses the edge */
-    .track { transform-origin: var(--from, left) center; }
+    /* the fill never leaves its track (overflow hidden); past either end the whole field stretches instead (stretch()) */
     .row.dragging .track { opacity: 1; transition: opacity 120ms var(--pl-ease-out) 0ms; }
     .track .fill { position: absolute; left: 0; top: 0; bottom: 0; width: calc(12px + var(--f, 0) * (100% - 12px)); border-radius: 7px; background: color-mix(in oklab, var(--pl-sky) 14%, transparent);
       transition: width 420ms cubic-bezier(.34, 1.56, .64, 1), background-color 200ms var(--pl-ease-out); }
@@ -164,19 +161,27 @@ export function picker(stage, { name, toy, options: S, mark, apply, place, handl
   const lean = (over) => { const el = drum.querySelector('.slot:not(.gone)'); if (el) el.style.transform = over ? `translateY(${(-Math.sign(over) * Math.min(5, Math.abs(over) * 7)).toFixed(1)}px)` : ''; };
   // past either end the field stretches toward the pull, with resistance: the further you pull, the less it gives,
   // never more than 6%. Let go and it springs back
-  const track = val.querySelector('.track');
+  // ── the field gives: pulled past either end, the whole field stretches the way you pull (anchored at the other
+  // side), a little thinner as it gets longer, like something soft; the words inside are held at their own shape;
+  // the more you pull, the less it gives (up to 9%). Let go and it springs back with a wobble ──
   const stretch = (over) => {
-    if (!over) { track.style.transform = ''; val.style.setProperty('--press', '0'); return; }
-    // it gives up to the field's own edge and no further (the track sits 2px inside it), with resistance
-    const give = 1 - 1 / (1 + Math.abs(over) * 0.9), most = (track.offsetWidth + 2) / track.offsetWidth - 1;
-    track.style.setProperty('--from', over > 0 ? 'left' : 'right');
-    track.style.transform = `scaleX(${(1 + most * give).toFixed(4)})`;
+    if (!over) { row.style.transform = ''; drum.style.transform = ''; val.style.setProperty('--press', '0'); return; }
+    const give = 1 - 1 / (1 + Math.abs(over) * 0.8), sx = 1 + 0.09 * give, sy = 1 - 0.035 * give;
+    row.style.transformOrigin = over > 0 ? 'left center' : 'right center';
+    row.style.transform = `scale(${sx.toFixed(4)}, ${sy.toFixed(4)})`;
+    drum.style.transformOrigin = over > 0 ? 'left center' : 'right center';
+    drum.style.transform = `scale(${(1 / sx).toFixed(4)}, ${(1 / sy).toFixed(4)})`;
     val.style.setProperty('--press', give.toFixed(3));
   };
   const release = () => {
-    const from = track.style.transform; if (!from) return;
-    track.style.transform = ''; val.style.setProperty('--press', '0');
-    if (!still()) track.animate([{ transform: from }, { transform: 'scaleX(1)' }], { duration: 420, easing: 'cubic-bezier(.34, 1.56, .64, 1)' });
+    const from = row.style.transform; if (!from) return;
+    const back = drum.style.transform;
+    row.style.transform = ''; drum.style.transform = ''; val.style.setProperty('--press', '0');
+    if (still()) return;
+    const wobble = { duration: 560, easing: 'linear' };
+    const k = (t) => from.replace(/scale\(([\d.]+), ([\d.]+)\)/, (m, x, y) => `scale(${1 + (x - 1) * t}, ${1 + (y - 1) * t})`);
+    row.animate([{ transform: k(1) }, { transform: k(-0.35), offset: 0.38 }, { transform: k(0.12), offset: 0.66 }, { transform: k(-0.03), offset: 0.86 }, { transform: 'scale(1, 1)' }], { ...wobble, easing: 'cubic-bezier(.3, .7, .4, 1)' });
+    if (back) drum.animate([{ transform: back }, { transform: 'scale(1, 1)' }], { duration: 200, easing: 'cubic-bezier(.2, .8, .2, 1)' });
   };
   // the bar while dragging: f is where you are, 0 at the smallest option and 1 at the largest
   const fill = (f) => val.style.setProperty('--f', f.toFixed(4));

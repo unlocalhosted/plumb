@@ -521,6 +521,10 @@ race, built for the old in-place write) was rewritten for the new write path (`e
   the fill is clipped to its track; pulled past an end, the track gives with resistance up to the field's own edge
   and no further, and the grip at the fill's end squashes (shorter, wider) as it presses; it springs back on release.
   Measured: pulled far past the end, the track's edge stops at the field's edge (205.1 against 205.5).
+- **"the container doesn't feel pushed at the end, stretched as I asked; it feels rigid and solid":** the give was
+  capped at the field's edge, about 1%, so nothing visibly moved. Now the whole field stretches the way you pull, up
+  to 9% longer and a little thinner, anchored at the far side, with the words held at their own shape; on release it
+  springs back with a small wobble. Measured: 133px stretched to 143px.
 - **"the option feels like infinite rendering or some distortion when I move past one option to another"** (the text
   style field): three causes. Letter spacing is locked, so a style that needs another letter spacing (display) never
   "matched", and the check that finds the style for the current values reset the field to No style mid-drag; the
