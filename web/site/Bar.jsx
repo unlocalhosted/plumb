@@ -4,6 +4,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { soften } from '../../overlay/src/soft.js';
 
 const PLACES = [['/', 'Home'], ['/docs', 'Docs'], ['/demo', 'Demo'], ['/design', 'Design']];
 
@@ -33,14 +34,15 @@ const BOB = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.500v6" f
 export function Bar() {
   const path = usePathname();
   const [scheme, flip] = useScheme();
+  useEffect(() => { soften(document); }, []); // every soft block on the site answers a press
   const here = (href) => (href === '/' ? path === '/' : path.startsWith(href));
   return (
     <header className="bar">
       <Link className="name" href="/"><i className="toy" style={{ width: 26, height: 26 }} dangerouslySetInnerHTML={{ __html: BOB }} />React Plumber</Link>
       <nav aria-label="Site">
-        {PLACES.map(([href, text]) => <Link key={href} href={href} className={`key ${here(href) ? 'on' : 'bare'}`} aria-current={here(href) ? 'page' : undefined}><span>{text}</span></Link>)}
+        {PLACES.map(([href, text]) => <Link key={href} href={href} className={`s-btn ${here(href) ? '' : 'bare'}`} aria-current={here(href) ? 'page' : undefined}><span>{text}</span></Link>)}
       </nav>
-      <span className="end"><button type="button" className="key" onClick={flip} aria-label={scheme === 'dark' ? 'Switch to light' : 'Switch to dark'}><span>{scheme === 'dark' ? 'Light' : 'Dark'}</span></button></span>
+      <span className="end"><button type="button" className="s-btn q" onClick={flip} aria-label={scheme === 'dark' ? 'Switch to light' : 'Switch to dark'}><span>{scheme === 'dark' ? 'Light' : 'Dark'}</span></button></span>
     </header>
   );
 }

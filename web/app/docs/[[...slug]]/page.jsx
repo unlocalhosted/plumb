@@ -33,8 +33,8 @@ export default async function Docs({ params }) {
         <h1>{page.title}</h1>
         <Body />
         <footer className="turn">
-          {before ? <Link className="key" href={`/docs/${before.slug}`}><span>← {before.title}</span></Link> : <span />}
-          {after && <Link className="key on" href={`/docs/${after.slug}`}><span>{after.title} →</span></Link>}
+          {before ? <Link className="s-btn q" href={`/docs/${before.slug}`}><span>← {before.title}</span></Link> : <span />}
+          {after && <Link className="s-btn" href={`/docs/${after.slug}`}><span>{after.title} →</span></Link>}
         </footer>
       </article>
     </main>

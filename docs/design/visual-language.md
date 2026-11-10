@@ -161,7 +161,7 @@ Pictures are learnt, so the words are always one hover away.
 |---|---|
 | Icons | everything above |
 | Pills, tags, chips | the hue table; a chip's icon is the property's toy |
-| Buttons | pink is the action; a key cap sits on the button; pressed scales to 97% |
+| Buttons | pink is the action; a key cap sits on the button; a soft block (`overlay/src/soft.js`): it squashes onto its side and springs back as one body, by an amount sized to it |
 | The fix bar | the property's toy, the class, "on a", the element's toy; words on hover |
 | Marks on the page | the three patterns in their hues; coral only for "off your scale" |
 | Step controls | each step drawn as what it makes; the current value as a notch between steps |

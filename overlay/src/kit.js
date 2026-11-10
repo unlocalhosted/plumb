@@ -6,17 +6,23 @@
 /** The toy button's styles (see kit-buttons.html for every state). */
 export const BUTTON_CSS = `
     /* ── the toy button (proposed; would replace .pl-act) ─────────────────────────────────────────────────────
-       Two parts: the base (the button's own darker shade) and the top (the solid hue, the label on it). At rest the
-       top sits 3px above the base. Pointed at, it rises to 4. Pressed, it goes down to 1, fast; let go, it springs
-       back. The base never moves, so nothing around the button shifts. */
-    .tb { --hue: var(--pl-pink); --base: color-mix(in oklab, var(--pl-pink) 72%, #000); --on: var(--pl-pink-on); --lift: 3px; --h: 36px;
-      all: unset; position: relative; display: inline-block; box-sizing: border-box; height: calc(var(--h) + 3px); padding-top: 3px; border-radius: 12px; cursor: pointer;
-      background: var(--base); font: 700 13.5px/1 var(--pl-round); letter-spacing: 0.005em; color: var(--on); -webkit-tap-highlight-color: transparent; user-select: none; }
-    .tb .top { display: flex; align-items: center; justify-content: center; gap: 7px; height: var(--h); padding: 0 14px; box-sizing: border-box; border-radius: 12px; background: var(--hue);
-      translate: 0 calc(-1 * var(--lift)); transition: translate 260ms var(--pl-spring-pop), background-color 200ms var(--pl-ease-out); white-space: nowrap; }
-    .tb:hover, .tb[data-show="hover"] { --lift: 4px; }
-    .tb:active, .tb[data-show="pressed"] { --lift: 1px; }
-    .tb:active .top, .tb[data-show="pressed"] .top { transition-duration: 70ms; transition-timing-function: var(--pl-ease-out); }
+       A soft block, small (overlay/src/soft.js). Two parts: the side (the button's own darker shade) and the top
+       (the solid hue, the label on it). At rest the top sits 4px above the side. Pointed at, it rises to 6. Pressed,
+       it goes down onto its side and squashes a hair wider; let go, it springs back as one body. The side never
+       moves, so nothing around the button shifts. */
+    .tb { --hue: var(--pl-pink); --base: color-mix(in oklab, var(--pl-pink) 70%, #000); --on: var(--pl-pink-on); --lift: 4px; --h: 36px;
+      all: unset; position: relative; display: inline-block; box-sizing: border-box; height: calc(var(--h) + 4px); padding-top: 4px; border-radius: 13px; cursor: pointer;
+      background: var(--base); font: 700 13.5px/1 var(--pl-round); letter-spacing: 0.005em; color: var(--on); -webkit-tap-highlight-color: transparent; user-select: none;
+      box-shadow: 0 9px 12px -8px color-mix(in oklab, var(--hue) 75%, transparent); transition: box-shadow 240ms var(--pl-ease-out); }
+    /* the top is lit from above: a bright rim on its top edge, a darker one on its bottom. It is anchored at its
+       bottom edge, because it is pressed down against its side (the press itself: overlay/src/soft.js) */
+    .tb .top { display: flex; align-items: center; justify-content: center; gap: 7px; height: var(--h); padding: 0 14px; box-sizing: border-box; border-radius: 13px;
+      background: linear-gradient(180deg, color-mix(in oklab, var(--hue) 88%, #fff), var(--hue));
+      box-shadow: inset 0 1.5px 0 0 color-mix(in oklab, #fff 45%, transparent), inset 0 -2px 0 0 color-mix(in oklab, #000 12%, transparent);
+      transform: translateY(calc(-1 * var(--lift))); transform-origin: 50% 100%; transition: transform 300ms var(--pl-spring-pop), background-color 200ms var(--pl-ease-out); white-space: nowrap; will-change: transform; }
+    .tb:hover, .tb[data-show="hover"] { --lift: 6px; box-shadow: 0 14px 16px -10px color-mix(in oklab, var(--hue) 75%, transparent); }
+    .tb.down, .tb[data-show="pressed"] { box-shadow: 0 3px 5px -4px color-mix(in oklab, var(--hue) 75%, transparent); }
+    .tb[data-show="pressed"] { --lift: 0px; }
     .tb:focus-visible, .tb[data-show="focus"] { outline: 2.5px solid var(--pl-sky); outline-offset: 3px; }
     /* a key on a button is a small key cap: the same top-and-base, pressed in by default so it reads as part of the top */
     .tb kbd { display: inline-grid; place-items: center; min-width: 19px; height: 19px; padding: 0 5px; margin: 0 -4px 0 1px; box-sizing: border-box; border-radius: 6px;
@@ -24,18 +30,18 @@ export const BUTTON_CSS = `
     .tb .ic { display: block; width: 16px; height: 16px; margin-left: -3px; flex: none; }
     .tb .ic svg { display: block; width: 100%; height: 100%; }
     /* kinds: what the button is, by hue (the language's table): pink acts, mint is done, coral is wrong, paper is quiet */
-    .tb.quiet { --hue: var(--pl-paper); --base: var(--pl-rule); --on: var(--pl-ink); }
-    .tb.quiet .top { box-shadow: inset 0 0 0 1.5px var(--pl-rule); }
+    .tb.quiet { --hue: var(--pl-paper); --base: var(--pl-rule); --on: var(--pl-ink); box-shadow: 0 9px 12px -9px rgb(0 0 0 / .28); }
+    .tb.quiet .top { background: linear-gradient(180deg, var(--pl-paper), var(--pl-paper-2)); box-shadow: inset 0 0 0 1.5px var(--pl-rule); }
     .tb.quiet kbd { background: var(--pl-paper-2); color: var(--pl-ink-2); box-shadow: 0 1.5px 0 0 var(--pl-rule); }
-    .tb.done { --on: var(--pl-mint-on); --hue: var(--pl-mint); --base: color-mix(in oklab, var(--pl-mint) 72%, #000); }
-    .tb.wrong { --on: var(--pl-coral-on); --hue: var(--pl-coral); --base: color-mix(in oklab, var(--pl-coral) 72%, #000); }
+    .tb.done { --on: var(--pl-mint-on); --hue: var(--pl-mint); --base: color-mix(in oklab, var(--pl-mint) 70%, #000); }
+    .tb.wrong { --on: var(--pl-coral-on); --hue: var(--pl-coral); --base: color-mix(in oklab, var(--pl-coral) 70%, #000); }
     /* not there: pale, flat on its base, nothing to press (the language: pale is for what is not there) */
-    .tb:disabled, .tb[data-show="disabled"] { --hue: var(--pl-paper-2); --base: transparent; --on: var(--pl-ink-3); --lift: 0px; cursor: not-allowed; }
-    .tb:disabled .top { box-shadow: inset 0 0 0 1.5px var(--pl-rule); }
+    .tb:disabled, .tb[data-show="disabled"] { --hue: var(--pl-paper-2); --base: transparent; --on: var(--pl-ink-3); --lift: 0px; cursor: not-allowed; box-shadow: none; }
+    .tb:disabled .top, .tb[data-show="disabled"] .top { background: var(--pl-paper-2); box-shadow: inset 0 0 0 1.5px var(--pl-rule); }
     /* working: held down, three dots take turns; the button keeps its width */
-    .tb[aria-busy="true"] { --lift: 1px; cursor: progress; }
+    .tb[aria-busy="true"] { --lift: 1px; cursor: progress; box-shadow: 0 3px 5px -4px color-mix(in oklab, var(--hue) 75%, transparent); }
     .tb[aria-busy="true"] .lb, .tb[aria-busy="true"] kbd, .tb[aria-busy="true"] .ic { visibility: hidden; }
-    .tb-dots { position: absolute; inset: 3px 0 0; display: none; align-items: center; justify-content: center; gap: 4px; translate: 0 -1px; }
+    .tb-dots { position: absolute; inset: 4px 0 0; display: none; align-items: center; justify-content: center; gap: 4px; translate: 0 -1px; }
     .tb[aria-busy="true"] .tb-dots { display: flex; }
     .tb-dots i { width: 6px; height: 6px; border-radius: 50%; background: var(--on); animation: tb-turn 900ms var(--pl-ease-out) infinite; }
     .tb-dots i:nth-child(2) { animation-delay: 150ms; } .tb-dots i:nth-child(3) { animation-delay: 300ms; }

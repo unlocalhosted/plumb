@@ -2,6 +2,7 @@ import './globals.css';
 import { Bricolage_Grotesque, Fredoka, Instrument_Sans, Nunito } from 'next/font/google';
 import { Bar } from '../site/Bar.jsx';
 import { rootTokens } from '../site/tokens.js';
+import { SOFT_CSS } from '../../overlay/src/soft.js';
 import { TOY_DEFS } from '../../overlay/src/toys.js';
 
 // The site's two faces. The overlay itself never fetches a font (it runs inside other people's apps), so its tokens name
@@ -19,7 +20,7 @@ export default async function Layout({ children }) {
   const tokens = await rootTokens();
   return (
     <html lang="en" data-scheme="light" className={`${round.variable} ${body.variable} ${trialA.variable} ${trialB.variable}`} suppressHydrationWarning>
-      <head><style dangerouslySetInnerHTML={{ __html: tokens }} /></head>
+      <head><style dangerouslySetInnerHTML={{ __html: tokens + SOFT_CSS }} /></head>
       <body>
         {/* the patterns two toys use (padding's hatch, the checker of see-through), once for the page */}
         <div dangerouslySetInnerHTML={{ __html: TOY_DEFS }} />

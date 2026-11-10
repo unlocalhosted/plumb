@@ -3,7 +3,7 @@
 
    What the language asks of a page, and where it is answered below:
    - one body, one hue; solid, not outlined     the shelf's boxes, the current place in the bar
-   - a base under a top, and a press            everything you can press (.key)
+   - a top on a side, lit, and a press          everything you can press (soft blocks)
    - pale only for what is not there            a part that isn't drawn yet
    - the toy face for what a toy has printed on it: titles, names, buttons
    - picked up when pointed at                  toys tip and grow */
@@ -17,26 +17,16 @@ a { color: inherit; }
 .toy { display: block; flex: none; }
 .toy svg { display: block; width: 100%; height: 100%; overflow: visible; }
 
-/* ── something you press: a top on a base (the button's own build, overlay/src/kit.js) ── */
-.key { --hue: var(--pl-paper); --base: var(--pl-rule); --on: var(--pl-ink); --lift: 3px;
-  position: relative; display: inline-block; padding: 3px 0 0; border: 0; border-radius: 13px; background: var(--base); color: var(--on); cursor: pointer; text-decoration: none;
-  font: 600 15px/1 var(--pl-round); -webkit-tap-highlight-color: transparent; }
-.key > span { display: flex; align-items: center; gap: 7px; height: 36px; padding: 0 14px; border-radius: 13px; background: var(--hue); box-shadow: inset 0 0 0 1.5px var(--base);
-  translate: 0 calc(-1 * var(--lift)); transition: translate 260ms var(--pl-spring-pop), background-color 200ms var(--pl-ease-out); white-space: nowrap; }
-.key:hover { --lift: 4px; }
-.key:active { --lift: 1px; }
-.key:active > span { transition-duration: 70ms; transition-timing-function: var(--pl-ease-out); }
-.key:focus-visible { outline: 2.5px solid var(--pl-sky); outline-offset: 3px; }
-.key.on { --hue: var(--pl-pink); --base: color-mix(in oklab, var(--pl-pink) 72%, #000); --on: var(--pl-pink-on); }
-.key.bare { --hue: transparent; --base: transparent; --lift: 0px; color: var(--pl-ink-2); }
-.key.bare:hover { --hue: var(--pl-paper-2); color: var(--pl-ink); }
+/* ── something you press is a soft block (overlay/src/soft.js, put on the page by app/layout.jsx): .s-btn for a
+   button or a place in the bar, .s-box for a box you can go to. Only their place on this site is set here ── */
+.s-btn { font: inherit; }
 
 /* ── the bar ── */
 .bar { position: sticky; top: 0; z-index: 10; display: flex; align-items: center; gap: 18px; height: 64px; padding: 0 28px; background: color-mix(in oklab, var(--pl-desk) 88%, transparent); backdrop-filter: blur(12px); }
 .bar .name { display: inline-flex; align-items: center; gap: 10px; font: 600 21px/1 var(--pl-round); letter-spacing: -0.005em; text-decoration: none; }
 .bar .name .toy { transition: rotate 420ms var(--pl-spring-pop), scale 420ms var(--pl-spring-pop); transform-origin: 50% 10%; }
 .bar .name:hover .toy { rotate: 14deg; }
-.bar nav { display: flex; align-items: center; gap: 2px; margin-left: 10px; }
+.bar nav { display: flex; align-items: center; gap: 4px; margin-left: 10px; }
 .bar .end { margin-left: auto; }
 
 /* ── a page ── */
@@ -55,34 +45,15 @@ h2.shelf small { font: 600 14px/1 var(--pl-round); color: var(--pl-ink-2); }
 /* ── the shelf: each part is a box you can pick up. Drawn parts are solid in their hue, on a base; a part that isn't
    drawn yet is pale and flat, because pale is for what is not there ── */
 .boxes { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 18px 16px; }
-.box { --h: var(--pl-pink); --hi: var(--pl-pink-ink); --hs: var(--pl-pink-soft); --on: var(--pl-pink-on); --lift: 5px;
-  position: relative; display: block; padding-top: 5px; border-radius: 26px; background: color-mix(in oklab, var(--h) 72%, #000); color: var(--on); text-decoration: none; -webkit-tap-highlight-color: transparent; }
-.box > span { display: flex; flex-direction: column; gap: 6px; min-height: 196px; padding: 18px 18px 16px; border-radius: 26px; background: var(--h);
-  translate: 0 calc(-1 * var(--lift)); transition: translate 300ms var(--pl-spring-pop); }
-a.box:hover { --lift: 8px; }
-a.box:active { --lift: 1px; }
-a.box:active > span { transition-duration: 80ms; transition-timing-function: var(--pl-ease-out); }
-a.box:focus-visible { outline: 3px solid var(--pl-sky); outline-offset: 4px; }
-.box .plate { display: grid; place-items: center; width: 68px; height: 68px; margin-bottom: auto; border-radius: 20px; background: var(--pl-cut); }
-.box .plate .toy { transition: rotate 420ms var(--pl-spring-pop), scale 420ms var(--pl-spring-pop); transform-origin: 50% 85%; }
-a.box:hover .plate .toy { rotate: -10deg; scale: 1.16; }
-.box b { margin-top: 16px; font: 600 24px/27px var(--pl-round); letter-spacing: -0.005em; }
-.box em { font: 600 14.5px/20px var(--pl-sans); font-style: normal; opacity: .92; }
-.box[data-hue="mint"] { --h: var(--pl-mint); --hi: var(--pl-mint-ink); --hs: var(--pl-mint-soft); --on: var(--pl-mint-on); }
-.box[data-hue="butter"] { --h: var(--pl-butter); --hi: var(--pl-butter-ink); --hs: var(--pl-butter-soft); --on: var(--pl-butter-on); }
-.box[data-hue="lilac"] { --h: var(--pl-lilac); --hi: var(--pl-lilac-ink); --hs: var(--pl-lilac-soft); --on: var(--pl-lilac-on); }
-.box[data-hue="sky"] { --h: var(--pl-sky); --hi: var(--pl-sky-ink); --hs: var(--pl-sky-soft); --on: var(--pl-sky-on); }
-.box.later { --lift: 0px; padding-top: 0; background: none; color: var(--hi); }
-.box.later > span { background: var(--hs); min-height: 150px; }
-.box.later .plate { width: 52px; height: 52px; border-radius: 16px; background: color-mix(in oklab, #fff 60%, transparent); }
-.box.later .plate .toy { opacity: .55; }
-.box.later b { font-size: 19px; line-height: 23px; }
-.box.later em { font-size: 13px; line-height: 18px; opacity: .8; }
-.box .when { position: absolute; top: 20px; right: 16px; padding: 4px 9px; border-radius: 10px; font: 700 11.5px/1.2 var(--pl-round); background: color-mix(in oklab, #fff 26%, transparent); translate: 0 calc(-1 * var(--lift)); transition: translate 300ms var(--pl-spring-pop); }
-.box.later .when { background: color-mix(in oklab, #fff 55%, transparent); top: 16px; }
+.boxes .s-box .in { min-height: 196px; padding: 18px 18px 16px; }
+.boxes .s-box .plate { width: 68px; height: 68px; margin-bottom: auto; border-radius: 20px; }
+.boxes .s-box .in b { margin-top: 16px; }
+.boxes .s-box.soon .in { min-height: 150px; }
+.boxes .s-box.soon .plate { width: 52px; height: 52px; border-radius: 16px; }
+.s-box .when { position: absolute; top: 16px; right: 16px; padding: 4px 9px; border-radius: 10px; font: 700 11.5px/1.2 var(--pl-round); font-style: normal; background: color-mix(in oklab, var(--pl-paper) 55%, transparent); }
 
-@media (max-width: 640px) { h1 { font-size: 38px; line-height: 42px; } .lede { font-size: 17px; line-height: 27px; } .bar { padding: 0 16px; gap: 10px; } .wrap { padding: 28px 16px 96px; } .bar nav .key > span { padding: 0 10px; } }
-@media (prefers-reduced-motion: reduce) { .key > span, .box > span, .box .when, .toy { transition: none !important; } }
+@media (max-width: 640px) { h1 { font-size: 38px; line-height: 42px; } .lede { font-size: 17px; line-height: 27px; } .bar { padding: 0 16px; gap: 10px; } .wrap { padding: 28px 16px 96px; } .bar nav .s-btn > span { padding: 10px 10px; } }
+@media (prefers-reduced-motion: reduce) { .toy { transition: none !important; } }
 
 /* ── the docs: a rail of places, and a page of prose ── */
 .docs { display: grid; grid-template-columns: 236px minmax(0, 720px); gap: 56px; max-width: 1080px; margin: 0 auto; padding: 40px 28px 120px; align-items: start; }
@@ -101,7 +72,7 @@ a.box:hover .plate .toy { rotate: -10deg; scale: 1.16; }
 .prose h2 a:hover::after, .prose h3 a:hover::after { content: ' #'; color: var(--pl-pink); }
 .prose p { margin: 14px 0; }
 .prose a { font-weight: 700; text-decoration: underline; text-decoration-color: var(--pl-pink); text-decoration-thickness: 2px; text-underline-offset: 3px; }
-.prose a.key { text-decoration: none; }
+.prose a.s-btn { text-decoration: none; }
 .prose ul, .prose ol { margin: 14px 0; padding-left: 24px; display: flex; flex-direction: column; gap: 6px; }
 .prose li::marker { color: var(--pl-pink); font-weight: 700; }
 .prose strong { font-weight: 800; }

@@ -299,6 +299,19 @@ race, built for the old in-place write) was rewritten for the new write path (`e
   35px button: squash 5.2% (was 11%), stretch 4.5% (was 9%), overshoot 2.3px (was 4px), 506ms (was 520).
 - **Media hooks:** the identity page's timeline at ¼×, card and button side by side, before and after.
 
+### 8. Soft blocks, everywhere you can press
+
+- **The itch:** soft blocks (the pale, lit, raised card and button the owner chose over the flat two-tone key)
+  lived on one page. The owner, after pressing the one-body version: "Yes, roll it out."
+- **The system behind it:** the site had three separate raised things, each with its own styles and its own press:
+  the site's key, the site's box, and the kit's toy button. Three copies would have drifted again.
+- **What we chose:** one piece (`overlay/src/soft.js`: the look and the press) that works on a plain page and
+  inside a shadow root. The site's boxes, bar, docs links, and the kit's toy button all take it.
+- **The fix and the proof:** looked at running: the design shelf, the bar, the docs page and the buttons page, light
+  and dark. A box on the shelf held down reads 1.024 x 0.96 and returns to rest; a place in the bar gives 5%.
+- **Left open:** a drawn box and a not-yet-drawn box are now both pale (they differ by side and shadow only); the
+  buttons page still describes the old 3px key in words; the product itself still uses its old buttons.
+
 ## Open gaps
 - The contrast check knows colours, not sizes or weights, and is not run by CI yet.
 - `web/docs/pages` is a copy of `site/src/docs/pages`; two copies until the old Vite site is removed.

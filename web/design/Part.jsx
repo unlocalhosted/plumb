@@ -3,6 +3,7 @@
 // overlay's own tokens and source: what you see here is the product's code, not a copy of it.
 import { useEffect, useRef } from 'react';
 import { useScheme } from '../site/Bar.jsx';
+import { soften } from '../../overlay/src/soft.js';
 
 const PAGE_CSS = `
   :host { --pl-round: var(--font-round), ui-rounded, "SF Pro Rounded", "Arial Rounded MT Bold", system-ui, sans-serif;
@@ -46,6 +47,7 @@ export function Part({ id, css }) {
       const page = document.createElement('style');
       page.textContent = PAGE_CSS;
       root.append(page);
+      soften(root); // soft blocks and toy buttons on the page answer a press
     });
     host.addEventListener('kit:flip', flip);
     return () => { gone = true; host.removeEventListener('kit:flip', flip); };
