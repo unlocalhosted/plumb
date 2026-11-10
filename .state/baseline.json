@@ -7,15 +7,7 @@
     "sm/listener-pair|overlay/src/gravity.js|Gravity.start|visibilitychange:run|1",
     "sm/listener-pair|overlay/src/history.js|History.constructor|resize:follow|1",
     "sm/listener-pair|overlay/src/history.js|History.constructor|scroll:follow|1",
-    "sm/pointer-pair|overlay/src/scrub.js|module||1",
-    "sm/timer-handle|overlay/src/fixpanel.js|FixPanel.#burst|requestAnimationFrame|1",
-    "sm/timer-handle|overlay/src/fixpanel.js|FixPanel.#burst|requestAnimationFrame|2",
-    "sm/timer-handle|overlay/src/fixpanel.js|FixPanel.celebrate|setTimeout|1",
-    "sm/timer-handle|overlay/src/fixpanel.js|FixPanel.hold|requestAnimationFrame|1",
-    "sm/timer-handle|overlay/src/fixpanel.js|FixPanel.hold|setTimeout|1",
-    "sm/timer-handle|overlay/src/fixpanel.js|FixPanel.render|setTimeout|1",
-    "sm/timer-handle|overlay/src/fixpanel.js|FixPanel.render|setTimeout|2",
-    "sm/timer-handle|overlay/src/fixpanel.js|FixPanel.resumed|setTimeout|1"
+    "sm/pointer-pair|overlay/src/scrub.js|module||1"
   ],
   "schema": 1
 }

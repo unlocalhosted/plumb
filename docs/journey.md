@@ -185,11 +185,17 @@ race, built for the old in-place write) was rewritten for the new write path (`e
 - **The proof:** `sm check` baseline 20 → 18 (both words-editor findings gone, none new). `e2e/text-edit.test.mjs`:
   7 of 8 pass; the 8th (History in the dock) times out on `main` too.
 - **Media hooks:** a clip of the tag vanishing mid-edit before, and staying after.
+- **Then the clean-up and the fix panel:** the clean-up's two let-go frames and the fix panel's eight timers and
+  frames are on scopes. The reveal of a cause in hand is holding's own (put the cause down and it doesn't run); a
+  height put back and the ✓'s burst are the panel's own. Baseline 18 → 8. `cleanup` and `cleanup-colour` tests 7 of
+  7; `fixpanel` tests 8 pass and the same 4 fail before and after.
 
 ## Open gaps
 - `e2e/text-edit.test.mjs` "every write is in the dock's history" times out on `main` on the laptop; not looked at.
-- The scope is used by one owner. 18 oracle findings are left: fix panel 8, clean-up 2, and 8 in owners with no
-  declared machine. Nothing bans a bare `setTimeout` or `addEventListener` in a new owner yet.
+- 8 oracle findings are left, all in owners with no declared machine (history, element card, scrub, gravity plot,
+  the headless recorder). Nothing bans a bare `setTimeout` or `addEventListener` in a new owner yet.
+- 4 tests of `e2e/fixpanel.test.mjs` fail on `main` on the laptop, the same four with and without the scope; not
+  looked at.
 - 6 tests of `e2e/blueprint.test.mjs` fail on `main` on the laptop (three time-outs, three assertions); not looked at.
 - `e2e/hosts.test.mjs` "install --overlay detects hosts" expects the folder to be named `plumb`, so it fails in every
   worktree.

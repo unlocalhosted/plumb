@@ -36,6 +36,7 @@ import { groundIsDark } from './geometry.js';
 import { FIX, CLEANUP, written } from './words.js'; // every sentence the panel says
 import { Cleanup, CLEANUP_CSS } from './cleanup.js'; // "Clean up this page": the passes, one at a time
 import { groupsOf, isNote } from './blueprint-panel.js';
+import { Scope } from './scope.js';
 import { glide } from './inplace.js'; // the text styles the code is reaching for
 
 const TIMING = { open: 260, next: 180, click: 60, clickGap: 45, breath: 480, check: 600, fold: 2300 };
@@ -317,9 +318,13 @@ export class FixPanel {
   get #undoing() { return this.#phase === 'undoing'; }
   // the one writer of #phase: the table says what the event does in the phase in hand (nothing, on purpose, when it is
   // in `ignores`; nothing, and a warning, when the table has no answer)
+  // What a phase started ends when the phase is left (scope.js): `#scope` is the phase's. `#life` is the panel's own,
+  // for what must finish whatever the phase does next (a height put back after it moved, the ✓'s burst).
+  #scope = new Scope();
+  #life = new Scope();
   #send(event) {
     const next = FIX_PANEL.states[this.#phase]?.on?.[event];
-    if (next) this.#phase = next;
+    if (next) { this.#phase = next; this.#scope.end(); this.#scope = new Scope(); }
     else if (!FIX_PANEL.states[this.#phase]?.ignores?.includes(event)) console.warn(`plumb: fix panel can't ${event} while ${this.#phase}`);
     return !!next;
   }
@@ -524,8 +529,10 @@ export class FixPanel {
     // reached by keys: it is brought into view wherever it is
     if (el && reveal !== 'none') {
       const covered = reveal === 'uncover';
-      requestAnimationFrame(() => requestAnimationFrame(() => this.#reveal(el, covered)));
-      setTimeout(() => { if (this.#held === g) this.#reveal(el, covered); }, TIMING.open + 40);
+      // holding's own: put down (or another cause taken up) before they run, and they don't
+      const scope = this.#scope;
+      scope.frame(() => scope.frame(() => { if (this.#held === g) this.#reveal(el, covered); }));
+      scope.timeout(() => { if (this.#held === g) this.#reveal(el, covered); }, TIMING.open + 40);
     }
   }
   #reveal(el, coveredOnly = false) {
@@ -935,9 +942,9 @@ export class FixPanel {
     this.#el.innerHTML = html;
     if (field) { const f = this.#el.querySelector(`input[name="${field.name}"]`); if (f) { f.value = field.value; f.focus(); f.setSelectionRange(...field.at); } }
     const to = this.#el.scrollHeight;
-    if (!still && from && from !== to) { this.#el.style.height = `${from}px`; void this.#el.offsetHeight; this.#el.style.height = `${to}px`; setTimeout(() => (this.#el.style.height = ''), TIMING.open + 20); }
+    if (!still && from && from !== to) { this.#el.style.height = `${from}px`; void this.#el.offsetHeight; this.#el.style.height = `${to}px`; this.#life.timeout(() => (this.#el.style.height = ''), TIMING.open + 20); }
     // the bar changed size: what is placed clear of it is placed again (now, and once its height has moved)
-    if (from !== to && this.#card.open) { this.#card.place(); if (!still) setTimeout(() => this.#card.place(), TIMING.open + 40); }
+    if (from !== to && this.#card.open) { this.#card.place(); if (!still) this.#life.timeout(() => this.#card.place(), TIMING.open + 40); }
   }
   #html = '';
 
@@ -948,7 +955,7 @@ export class FixPanel {
   // a line said for a moment at rest: why the element pointed at has nothing in hand
   notice(text) { this.#notice = text; this.#html = ''; this.render(); clearTimeout(this.#noticeTimer); this.#noticeTimer = setTimeout(() => { this.#notice = null; this.#html = ''; this.render(); }, 4000); }
   // after a reload: what the write before it applied, said as if it had just landed
-  resumed(text, undo = [], place = null, group = null) { this.#last = { text, undo, group, key: place?.key ?? null }; if (place?.key) this.#taken.set(place.key, { key: place.key, members: [] }); this.#resumeAt = Number.isInteger(place?.at) ? { at: place.at, key: place.key ?? null, since: performance.now() } : null; if (this.#resumeAt) setTimeout(() => { if (this.#resumeAt && this.#progress) this.progress(this.#progress); }, RESUME_WAIT + 50); this.#html = ''; this.render(); this.#host.announce?.(text); }
+  resumed(text, undo = [], place = null, group = null) { this.#last = { text, undo, group, key: place?.key ?? null }; if (place?.key) this.#taken.set(place.key, { key: place.key, members: [] }); this.#resumeAt = Number.isInteger(place?.at) ? { at: place.at, key: place.key ?? null, since: performance.now() } : null; if (this.#resumeAt) this.#life.timeout(() => { if (this.#resumeAt && this.#progress) this.progress(this.#progress); }, RESUME_WAIT + 50); this.#html = ''; this.render(); this.#host.announce?.(text); }
   celebrate() {
     clearTimeout(this.#foldTimer);
     this.#done = true; this.#html = ''; this.render();
@@ -961,7 +968,7 @@ export class FixPanel {
     const body = document.body;
     body.animate([{ scale: '1' }, { scale: String(BREATH.scale), offset: 0.45, easing: 'cubic-bezier(.3, 0, .2, 1)' }, { scale: '1' }],
       { duration: BREATH.ms, delay: TIMING.click + els.length * TIMING.clickGap + TIMING.breath - CLICK.ms / 2, easing: 'ease-in-out' });
-    setTimeout(() => this.#burst(), TIMING.check + 180);
+    this.#life.timeout(() => this.#burst(), TIMING.check + 180);
     this.#fixed = [];
     fold();
   }
@@ -989,8 +996,9 @@ export class FixPanel {
       const dt = Math.min(0.033, (now - last) / 1000), t = now - t0; last = now;
       ctx.clearRect(0, 0, innerWidth, innerHeight);
       for (const p of parts) { p.vy += BURST.gravity * dt; p.vx *= 0.992; p.x += p.vx * dt; p.y += p.vy * dt; p.r += p.vr * dt; paint(p, Math.max(0, Math.min(1, (BURST.life - t) / (BURST.life / 3)))); }
-      if (t < BURST.life) requestAnimationFrame(tick); else cv.remove();
+      if (t < BURST.life) return true;
+      cv.remove(); return false;
     };
-    requestAnimationFrame(tick);
+    this.#life.frames(tick);
   }
 }
