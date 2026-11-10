@@ -31,6 +31,7 @@ const LOAD = {
   'fix-bar': () => import('./parts/fix-bar.js'),
   pickers: () => import('./parts/pickers.js'),
   'text-ideas': () => import('./parts/text-ideas.js'),
+  'colour-ideas': () => import('./parts/colour-ideas.js'),
 };
 
 export function Part({ id, css }) {

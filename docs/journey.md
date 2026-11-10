@@ -565,6 +565,20 @@ race, built for the old in-place write) was rewritten for the new write path (`e
 - **Not done yet:** typing a number; dragging the words themselves; colour and case are still the old
   controls (now done, below); the old card's tests still expect the old fields.
 
+### 18. Back to the system: the colour picker, three ideas first
+- **The itch:** colour was the one property still picked from a plain list of names, and it can't follow the other
+  pickers as they are: a theme has many colours (crafting-ui has 25), with no size to order them by. They come in
+  roles (text, surface, line, accent, status) with states (hover, soft), and each one has a light and a dark value.
+  The real cost of a hard-coded colour is that it stays the same in dark mode while a token adapts.
+- **What we made:** a design page with three live prototypes on the same piece of someone's app (an invite card whose
+  button is a hard-coded `#2f6fed`), each app with its own light/dark switch: **A**, the same picker as every other
+  property, tokens in role order with each swatch split light/dark; **B**, nearest first: your colour, then the
+  three tokens closest to it in words ("close", "near", "far", measured as OKLab distance), every colour one click
+  away; **C**, role then shade: pick what it is for (guessed: a button's fill is Accent), then that role's shades.
+- **Proof:** in B, picking `accent` and switching the app to dark turns the button the theme's lighter dark accent
+  with a green ring; in C, still hard-coded, it stays the same strong blue on the dark card.
+- **Waiting on:** the owner's pick.
+
 ## Open gaps
 - The contrast check knows colours, not sizes or weights, and is not run by CI yet.
 - `web/docs/pages` is a copy of `site/src/docs/pages`; two copies until the old Vite site is removed.
