@@ -158,7 +158,7 @@ export function proposeTypeRoles(members: TypeMember[], options: { exclude?: str
     merged.push({ from: small.pick.name, into: into.pick.name, why: `${small.ms.length} ${small.ms.length === 1 ? 'place' : 'places'}; joins the nearest kept style` });
   }
   // reading text keeps its leading: one shared value (the owner's `prose` decision, else the mode of what the code sets, to 0.05)
-  const isProse = (m: TypeMember, pick: ReturnType<typeof roleFor>) => !pick.caps && pick.step.size <= PROSE_MAX_PX && m.current.lineHeight !== null && m.current.lineHeight >= PROSE_MIN_LH;
+  const isProse = (m: TypeMember, pick: ReturnType<typeof roleFor>) => !pick.caps && !['pre', 'code', 'kbd', 'samp'].includes(m.tag) && pick.step.size <= PROSE_MAX_PX && m.current.lineHeight !== null && m.current.lineHeight >= PROSE_MIN_LH;
   const proseMembers = new Set<TypeMember>();
   for (const { pick, ms } of byStyle.values()) for (const m of ms) if (isProse(m, pick)) proseMembers.add(m);
   const proseDecision = overrides['prose']?.lineHeight;

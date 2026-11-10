@@ -23,10 +23,22 @@
 - **The fix and the proof:** live on crafting-ui (`POST /__plumb/system`): 137 places marked prose at 1.5 (the most common value in the code); low-confidence places 98 → 34, the rest now being display headings whose size moves more than 2px. Example swap: `text-[1.1875rem] leading-[1.6]` → `text-title-2-regular leading-prose`.
 - **Owner's call:** prose reads at 1.6, not the code's 1.5; written in crafting-ui's plumber config (`prose: { lineHeight: 1.6 }`), replacing its old Material-named decisions. Low-confidence places 34 → 32.
 
+## First real write of the type ladder (2026-11-10)
+- **The itch:** the new text styles had only been proposed, never written into an app.
+- **How we found it:** applied plumber's write to a side copy of crafting-ui (a git worktree on port 5181, so the main checkout's uncommitted work stayed untouched), then read computed styles on /motion/standards and compared screenshots.
+- **What broke first:** applied straight from source (no measured page), uppercase labels lost their letter-spacing (0.88px → 0.2px). The cause: reading only the classes on an element misses uppercase and tracking inherited from a parent, so a caps label looked like plain caption text, and its new class overrode the inherited spacing.
+- **What we chose:** write only from a measured census (`plumber census --url …`, then the project-scope proposal), which reads computed values and so sees inheritance. That is how the product's own clean-up flow already works. Also: code blocks (`pre`, `code`, `kbd`) never count as prose.
+- **The fix and the proof:** census of 60 routes → 22 styles, sizes 34 → 12, 163 caps places, 101 prose places at 1.6. Write: 28 tokens, one CSS block, 279 swaps in 34 files. Computed on /motion/standards: caps labels 11px / 0.88px uppercase; prose 20px/32px, 16px/25.6px, 14px/22.4px; headings 18px/24px semibold.
+- **Media hooks:** before/after screenshots of / and /motion/standards on the side copy.
+
 ## Open gaps
 - Token spec layers 2–6 not built; four owner decisions open (§6).
 - e2e/type-roles.test.mjs still expects the old Material names; rewrite when the owner calls for tests.
 - The clean-up text panel with the new names was not looked at in the browser.
+- Writing from source without a census gets inherited caps wrong; the no-census proposal should refuse to write, or read ancestors.
+- 3 files refused the write: a swap's replacement over the 500-character limit (MotionIndexPage, TemplatesPage, PrinciplePage).
+- 46 low-confidence places, mostly page titles between ladder sizes; the owner decides the title sizes.
+- The tailwind-merge trap is untested: crafting-ui does not use it.
 
 ## Shipped · 2026-W46
 - (nothing shipped yet; the token spec is a plan)
