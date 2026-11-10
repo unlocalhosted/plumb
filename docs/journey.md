@@ -138,6 +138,22 @@ race, built for the old in-place write) was rewritten for the new write path (`e
 - **The fix and the proof:** the test passes, the events read start … end, start … end, and the 16 apply-all tests
   pass. The declared table (`engine-transaction`) loses its `applying → applying` row.
 
+### 4. A crashed Session stayed dead until the dev server was killed
+- **The itch:** the dev server keeps one Session for its whole life. If the Session's background thread crashed once,
+  every request after it failed, and the overlay said "Couldn't start" until the dev server was restarted.
+- **How we found it:** the first audit (engine row 3), then `e2e/session-crash.test.mjs`: end the thread, ask again.
+  Before: `Error: Session worker exited with code 1.` on every later call, and health never left `failed`.
+- **The system behind it:** the Session kept a `worker` field that was always there, alive or not, next to a `failure`
+  field that nothing ever cleared. "Dead with no way back" was a state nobody had written down.
+- **What we chose:** the thread's life is one value with four shapes: starting, ready, lost, closed. There is a worker
+  to post to only in the first two, so posting to a dead thread no longer type-checks. `lost` has a way out: the next
+  call starts a new thread, and so does the next health question, because the overlay stops sending anything else
+  once it hears "failed". A thread that never got ready is retried at most once a second.
+- **The fix and the proof:** four tests pass: a read after the crash answers, health alone brings it back, a call in
+  flight is rejected and events still arrive after the restart, and a closed Session stays closed.
+- **Not done:** the state oracle doesn't read this shape yet (it knows string phases), so this machine is checked by
+  the type checker only.
+
 ## Open gaps
 - The full test suite hasn't run on `explicit-machines`; this blocks the merge.
 - 22 overlay and 17 engine state machines are still implicit. The biggest is Esc and key routing, which is still a
@@ -168,3 +184,5 @@ On branch `state-by-design`, not merged yet:
   one of them is slow or has died. [Chapter 2](#chapter-2--state-that-cant-go-wrong-by-design-2026-11-10)
 - Two Applies sent at the same moment no longer reload the page in the middle of a write; the second waits for the
   first. [Chapter 2](#chapter-2--state-that-cant-go-wrong-by-design-2026-11-10)
+- If React Plumber's background thread crashes, the next request starts it again; you no longer have to restart
+  your dev server. [Chapter 2](#chapter-2--state-that-cant-go-wrong-by-design-2026-11-10)
