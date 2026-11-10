@@ -432,7 +432,13 @@ race, built for the old in-place write) was rewritten for the new write path (`e
 - **Owner's bug report, a screenshot:** three rows' lists open at once, stacked over each other; and "the icons are
   not correct, everything looks blue". Fixed: one list open at a time on a stage (opening one closes the others; a
   press elsewhere or Esc closes it); three new toys drawn for the properties themselves (line height lilac, letter
-  spacing butter, font weight mint), the header's duplicate icon removed. Rule added to the visual language.
+  spacing butter, font weight mint), the header's duplicate icon removed.
+- **Then, twice more:** "if i put them in a guardrail everything would be different aligned" (each icon was built
+  differently: some a tile, some loose bars), and "are these aligned with our color philosophy?" They weren't:
+  butter and mint mean margin and padding. Now all four are type, so all four are sky, built one way (the same
+  tile, one live area, the same strokes) and told apart only by their marks; a space is drawn as the thing plus a
+  large arrow beside it (the first arrows, squeezed into a 4 unit gap, read as blobs). Checked at 150, 24 and 16 on
+  a keyline grid. The visual language now says an editor card keeps the hue table.
 - **Open:** the product's own text card (`overlay/src/texteditor.js`) is not yet rebuilt from the picker; style,
   case and colour rows are not drawn yet (colour needs its own picker).
 
