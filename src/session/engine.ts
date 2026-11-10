@@ -753,10 +753,18 @@ export class Session extends EventEmitter {
   sourceIndex(source: string, expected: { servedRoot?: string } = {}): Promise<SourceResolution | { file: string; hash: string; rows: IndexRow[] }> {
     return this.serializeRead(async () => {
       const classified = await this.resolveFile(source, expected.servedRoot);
-      if (typeof classified !== 'string') return classified;
+      // a file the page renders that the project's source leaves out is remembered, as resolveSource remembers it:
+      // readiness lists it ("elements from these files aren't checked"), whichever question found it first
+      if (typeof classified !== 'string') {
+        if ('untracked' in classified && classified.untracked && this.outsideSources.size < 64) this.outsideSources.add(sourcePath(this.root, classified.untracked));
+        return classified;
+      }
       const file = classified, inside = relative(this.root, file).replaceAll('\\', '/');
       if (!this.batchRead) await this.reconcile([file]);
-      if (!this.sourceFiles.has(file)) return { library: true, untracked: inside };
+      if (!this.sourceFiles.has(file)) {
+        if (this.outsideSources.size < 64) this.outsideSources.add(file);
+        return { library: true, untracked: inside };
+      }
       const text = await readFile(file, 'utf8'), hash = stampHash(text);
       try {
         const stored = JSON.parse(await readFile(indexPath(this.root, hash), 'utf8')) as { rows: IndexRow[] };

@@ -216,10 +216,12 @@ async function indexOf(source, options) {
   const key = source;
   let pending = indexes.get(key);
   if (!pending) {
-    pending = request('index', { source }, { explain: true, batch: options.batch, ...(options.signal ? { signal: options.signal } : {}) }).then(answer => answer?.rows ? answer : null, error => { if (error?.starting || error?.failed) throw error; return null; });
+    pending = request('index', { source }, { explain: true, batch: options.batch, ...(options.signal ? { signal: options.signal } : {}) }).then(answer => answer?.rows ? answer : answer?.untracked ? { untracked: answer.untracked } : null, error => { if (error?.starting || error?.failed) throw error; return null; });
     indexes.set(key, pending);
     // a file changes under a running page: the next question reads the index again
-    pending.then(() => setTimeout(() => { if (indexes.get(key) === pending) indexes.delete(key); }, 2000), () => indexes.delete(key));
+    // "outside your source" is not kept even for a moment: adding the file to `source` (setup's own fix) must show at
+    // the next click
+    pending.then((answer) => { if (answer?.untracked) { if (indexes.get(key) === pending) indexes.delete(key); } else setTimeout(() => { if (indexes.get(key) === pending) indexes.delete(key); }, 2000); }, () => indexes.delete(key));
   }
   return pending;
 }
@@ -233,7 +235,7 @@ async function usageOf(element, fiber, options) {
   const refuse = (reason, detail) => options.explain ? { location: null, reason, detail } : null;
   const indexFor = async frame => {
     const index = await indexOf(frame.fileName, options);
-    if (!index) return null;
+    if (!index || index.untracked) return index;
     if (frame.hash && !frame.hash.startsWith(index.hash)) return { stale: { source: frame.fileName, mapHash: frame.hash, currentHash: index.hash } };
     return index;
   };
@@ -242,6 +244,11 @@ async function usageOf(element, fiber, options) {
   if (own && !own.failure) {
     const index = await indexFor(own);
     if (index?.stale) return refuse('source-mismatch', index.stale);
+    // Written in a file of yours that the project's `source` leaves out: that is the answer, with the file, so the
+    // person can add it. Never the line where the component around it was used: that is a library's answer, and
+    // this is not a library (docs/briefs/stamping-everywhere.md: the exact line, a library's usage, or not yours
+    // with the reason)
+    if (index?.untracked) return refuse('resolve-refusal', { source: own.fileName, file: index.untracked, response: 'Source is not a tracked project source.' });
     if (index) {
       if (!pageStamped()) return refuse('no-stamps', { file: index.file, line: own.lineNumber, column: own.columnNumber + 1 });
       // Your own DOM tag whose stamp the author overrode, or a creator call: the frame is accepted where the index has it.
@@ -260,7 +267,7 @@ async function usageOf(element, fiber, options) {
     const frame = await creationFrame(up);
     if (!frame || frame.failure) continue;
     const index = await indexFor(frame);
-    if (!index) continue;
+    if (!index || index.untracked) continue;
     if (index.stale) return refuse('source-mismatch', index.stale);
     const at = { file: index.file, line: frame.lineNumber, column: frame.columnNumber + 1 };
     const row = index.rows.find(row => row.kind === 'component' && atRow(frame, row));
