@@ -72,6 +72,9 @@ async function open(context, url) {
   const page = context.pages()[0] ?? await context.newPage();
   const errors = [];
   page.on('pageerror', (error) => errors.push(error.message));
+  // The profile's preference is what a person sets, and headless Chromium does not read it: the root stayed 16px
+  // and the test failed on its own premise. The same setting is made through the browser's own protocol.
+  await (await context.newCDPSession(page)).send('Page.setFontSizes', { fontSizes: { standard: 18 } });
   await page.goto(url);
   await page.waitForFunction(() => window.__plumb?.overlay);
   await page.evaluate(() => window.__plumb.ready());
