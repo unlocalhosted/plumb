@@ -820,6 +820,12 @@ race, built for the old in-place write) was rewritten for the new write path (`e
   past, and a dot and playhead tracing the curve in step with the toy, there and back. The time, 420ms, has no token
   and the row says so. Checked in light and dark.
 - **Media hooks:** a clip of pointing at the toy while the dot runs the curve.
+- **The other five, after "Nice, you can write":** Arrives (a chip pops in from 92%), Lands (three toys pop in 40ms
+  apart; the graph draws all three curves, offset by the stagger token), Numbers roll (the real digit wheels from the
+  scale marks, 128 to 1,406), A card opens (up 6px and fading in on the ease-out curve, sampled from its
+  cubic-bezier), Selection travels (one fill slides between Body, Title and Label on the spring). Each piece uses the
+  product's own rule, and each row says when its time is written as a number: Picked up, Arrives, Lands and Numbers
+  roll have no time token; A card opens and Selection travels do. Checked in light and dark.
 
 ## Open gaps
 - The overlay writes about 180 corners as numbers (radius tokens about 45 times), many off its own scale; 6px is
