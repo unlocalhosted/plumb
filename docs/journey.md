@@ -386,7 +386,9 @@ race, built for the old in-place write) was rewritten for the new write path (`e
 - **"there is no slider kind of bar, it should add more personality":** a thin track along the field's bottom edge
   (never across the words), a dot per option with the hard-coded one in coral, a fill and a knob. While dragging the
   knob follows the pointer, swells and the track thickens; past either end it stretches; on release it springs
-  onto the option.
+  onto the option. Tried two ways: a soft fill inside the field with a grip at its end, and a thin track with a knob
+  under the value. The owner chose the fill inside the field ("the previous one was better... filling the space
+  inside").
 
 ## Open gaps
 - The contrast check knows colours, not sizes or weights, and is not run by CI yet.

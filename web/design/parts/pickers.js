@@ -47,7 +47,7 @@ export function mount(host, root, css) {
     .handle.dragging { transition: none; }
 
     /* ── the row: what a visual editor shows for this property, one line, beside the element ── */
-    .row { position: absolute; z-index: 4; display: flex; align-items: center; gap: 2px; height: 44px; padding: 0 4px 0 2px; border-radius: 11px; background: var(--pl-paper); box-shadow: var(--pl-shadow-card); font: 500 13px/1 var(--pl-sans); white-space: nowrap; }
+    .row { position: absolute; z-index: 4; display: flex; align-items: center; gap: 2px; height: 34px; padding: 0 4px 0 2px; border-radius: 11px; background: var(--pl-paper); box-shadow: var(--pl-shadow-card); font: 500 13px/1 var(--pl-sans); white-space: nowrap; }
     .row .scrub { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 8px; cursor: ew-resize; touch-action: none; }
     .row .scrub:hover { background: var(--pl-paper-2); }
     .row .scrub svg { display: block; width: 18px; height: 18px; }
@@ -87,27 +87,26 @@ export function mount(host, root, css) {
     .slot.hard b, .slot.hard span { color: var(--pl-coral); }
     .row.dragging .val { cursor: ns-resize; }
     :host(.grabbing) { cursor: ns-resize; }
-    /* ── the bar in the field: where you are among the options, like a slider, along the field's bottom edge so it
-       never crosses the words. A thin track with a dot for each option (coral for your hard-coded one), a fill from
-       the left and a knob at its end. While you drag the knob follows the pointer, swells, and the track thickens;
-       past either end it stretches a little; let go and it springs onto the option ── */
-    .row .val { overflow: visible; height: 40px; padding-bottom: 8px; box-sizing: border-box; }
+    /* ── the bar in the field: where you are among the options, like a slider. A soft fill grows from the left inside
+       the field with a grip at its end, and a dot for each option along the bottom (coral for your hard-coded one).
+       It follows the pointer while you drag, gives a little past either end, and springs onto the option when you
+       let go ── */
+    .row .val { overflow: visible; }
+    .track { position: absolute; inset: 2px; border-radius: 7px; pointer-events: none; }
+    .track .fill { position: absolute; left: 0; top: 0; bottom: 0; width: calc(12px + var(--f, 0) * (100% - 12px)); border-radius: 7px; background: color-mix(in oklab, var(--pl-sky) 14%, transparent);
+      transition: width 420ms cubic-bezier(.34, 1.56, .64, 1), background-color 200ms var(--pl-ease-out); }
+    .track .fill::after { content: ''; position: absolute; right: 3px; top: 50%; width: 2.5px; height: 12px; translate: 0 -50%; border-radius: 2px; background: var(--pl-sky); opacity: .75; transition: height 200ms var(--pl-spring-pop), opacity 200ms; }
+    .track .dots { position: absolute; left: 8px; right: 6px; bottom: 2px; height: 2px; }
+    .track .dots i { position: absolute; top: 0; width: 2px; height: 2px; margin-left: -1px; border-radius: 50%; background: var(--pl-ink-3); opacity: .35; transition: opacity 200ms, scale 240ms var(--pl-spring-pop); }
+    .track .dots i.hard { background: var(--pl-coral); opacity: .8; }
+    .track .dots i.here { opacity: .9; scale: 1.6; }
+    .val.on-hard .fill { background: color-mix(in oklab, var(--pl-coral) 12%, transparent); }
+    .val.on-hard .fill::after { background: var(--pl-coral); }
+    .row.dragging .fill { transition: width 70ms linear, background-color 200ms; background: color-mix(in oklab, var(--pl-sky) 22%, transparent); }
+    .row.dragging .val.on-hard .fill { background: color-mix(in oklab, var(--pl-coral) 18%, transparent); }
+    .row.dragging .fill::after { height: 16px; opacity: 1; }
     .row .val:hover { background: none; }
     .drum, .car { position: relative; }
-    .track { position: absolute; left: 10px; right: 10px; bottom: 5px; height: 3px; border-radius: 2px; background: color-mix(in oklab, var(--pl-ink) 8%, transparent); pointer-events: none;
-      transition: height 200ms var(--pl-spring-pop), bottom 200ms var(--pl-spring-pop); }
-    .track .fill { position: absolute; left: 0; top: 0; bottom: 0; width: calc(var(--f, 0) * 100%); border-radius: 2px; background: var(--pl-sky);
-      transition: width 460ms cubic-bezier(.34, 1.56, .64, 1), background-color 200ms var(--pl-ease-out); }
-    .track .fill::after { content: ''; position: absolute; right: -5px; top: 50%; width: 10px; height: 10px; translate: 0 -50%; border-radius: 50%; background: var(--pl-paper);
-      box-shadow: 0 0 0 2px var(--pl-sky), 0 1px 3px rgb(0 0 0 / .2); transition: scale 220ms var(--pl-spring-pop), box-shadow 200ms; }
-    .track .dots { position: absolute; inset: 0; }
-    .track .dots i { position: absolute; top: 50%; width: 3px; height: 3px; margin: -1.5px 0 0 -1.5px; border-radius: 50%; background: var(--pl-paper); opacity: .9; }
-    .track .dots i.hard { width: 5px; height: 5px; margin: -2.5px 0 0 -2.5px; background: var(--pl-coral); }
-    .val.on-hard .fill { background: var(--pl-coral); }
-    .val.on-hard .fill::after { box-shadow: 0 0 0 2px var(--pl-coral), 0 1px 3px rgb(0 0 0 / .2); }
-    .row.dragging .track { height: 5px; bottom: 4px; }
-    .row.dragging .fill { transition: width 60ms linear, background-color 200ms; }
-    .row.dragging .fill::after { scale: 1.3; }
     .hint { position: absolute; left: 0; right: 0; bottom: 14px; text-align: center; font: 500 12.5px/1 var(--pl-sans); color: var(--pl-ink-3); }
     .hint kbd { font: 600 11px/1 var(--pl-mono); padding: 2px 5px; border-radius: 5px; background: var(--pl-paper); box-shadow: 0 1px 0 var(--pl-rule); }
     @media (prefers-reduced-motion: reduce) { .handle { transition: none; } }
@@ -145,8 +144,8 @@ export function mount(host, root, css) {
     const s = stage.getBoundingClientRect(), b = badge.getBoundingClientRect(), card = badge.closest('.app').getBoundingClientRect();
     const inset = shown(S[at].v) * (1 - Math.SQRT1_2);
     handle.style.left = `${b.left - s.left + inset}px`; handle.style.top = `${b.top - s.top + inset}px`;
-    row.style.left = `${card.right - s.left + 14}px`; row.style.top = `${b.top - s.top + b.height / 2 - 22}px`;
-    list.style.left = row.style.left; list.style.top = `${b.top - s.top + b.height / 2 + 27}px`;
+    row.style.left = `${card.right - s.left + 14}px`; row.style.top = `${b.top - s.top + b.height / 2 - 17}px`;
+    list.style.left = row.style.left; list.style.top = `${b.top - s.top + b.height / 2 + 22}px`;
   };
   // the field: the option in hand. A change rolls it, in the direction of travel
   const EASE = 'cubic-bezier(0.22, 1, 0.36, 1)';
