@@ -32,6 +32,9 @@ const turning = [[12, 4], [17.66, 6.34], [20, 12], [17.66, 17.66], [12, 20], [6.
 export const PROPS = [
   ['padding', 'the cushion inside: hatched', svg(`<g clip-path="url(#pad-clip)"><rect x="2" y="2" width="20" height="20" fill="url(#hatch-mint)"/></g><rect x="3" y="3" width="18" height="18" rx="5" fill="none" stroke="${h('mint')}" stroke-width="2"/>${box(8, 8, 8, 8, 2.4, h('mint'))}`)],
   ['margin', 'the room outside: dotted', svg(halo + box(6.6, 6.6, 10.8, 10.8, 3.2, h('butter')))],
+  ['line-height', 'the space from one line of text to the next', svg(box(3, 3, 18, 4.2, 2.1, h('lilac')) + box(3, 16.8, 13, 4.2, 2.1, h('lilac')) + line('M12 9.300v5.400', ink('lilac'), 1.8) + line('M10.300 10.800 12 9.100l1.700 1.700M10.300 13.200 12 14.900l1.700-1.700', ink('lilac'), 1.8))],
+  ['letter-spacing', 'the space between letters', svg(box(2.5, 4, 5.6, 16, 2.4, h('butter')) + box(15.9, 4, 5.6, 16, 2.4, h('butter')) + line('M10.200 12h3.600', ink('butter'), 1.8) + line('M11.300 10.400 9.700 12l1.600 1.600M12.700 10.400 14.300 12l-1.600 1.600', ink('butter'), 1.8))],
+  ['font-weight', 'how heavy the letters are', svg(tile('mint', `<path d="M8.600 6.800h4.200a2.600 2.600 0 0 1 0 5.200H8.600zM8.600 12h4.900a2.600 2.600 0 0 1 0 5.200H8.600z" fill="none" stroke="${on('mint')}" stroke-width="2.4" stroke-linejoin="round"/>`)), 1],
   ['gap', 'the space between: striped', svg(box(2, 4, 7.2, 16, 2.6, h('lilac')) + box(14.8, 4, 7.2, 16, 2.6, h('lilac')) + [6.4, 9.55, 12.7, 15.85].map((y) => box(10.3, y, 3.4, 1.75, 0.875, h('lilac'))).join(''))],
   ['corner', 'the arc, and the arc inside it', svg(`<path d="M3.500 20.500V12a8.500 8.500 0 0 1 8.500-8.500h8.500v17z" fill="${h('pink')}"/>${line('M8.500 20.500V13a4.500 4.500 0 0 1 4.500-4.500h7.500', W, 1.9)}`)],
   ['border', 'only the edge', svg(`<rect x="4.300" y="4.300" width="15.400" height="15.400" rx="4.800" fill="none" stroke="${h('sky')}" stroke-width="4.600"/>`)],

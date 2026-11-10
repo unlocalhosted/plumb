@@ -199,7 +199,7 @@ export function mount(host, root, css) {
     <p>The element’s editor is the same pickers stacked in one card. A hero heading with two hard-coded values, its font size (34px) and line height (1.2), shown in coral among the values that are already on your tokens. Every row works like the pickers above. Drag the heading to resize it; double-click it to edit the words.</p>
     <div class="stage" tabindex="0">
       <div class="hero held"><span class="h"><h1>Keep your app on your theme.</h1></span><p>See every hard-coded value, and move it onto your tokens in one place.</p></div>
-      <div class="tcard" role="group" aria-label="Text"><header>${toyOf('type')}Text<small>h1</small></header><div class="rows"></div></div>
+      <div class="tcard" role="group" aria-label="Text"><header>Text<small>h1</small></header><div class="rows"></div></div>
       <span class="edittag" hidden><kbd>↵</kbd> keep · <kbd>Esc</kbd> put back</span>
     </div>
   </section>`;
@@ -340,11 +340,11 @@ export function mount(host, root, css) {
     const size = add({ name: 'Font size', toy: 'type', options: HERO_SIZE, format: (o) => `${o.v}px`,
       mark: (t) => `<i class="aa" style="font-size:${Math.round(10 + (t.v - 20) * 0.3)}px">Aa</i>`,
       apply: (o) => h1.style.setProperty('--fs', `${o.v}px`), handles: [{ el: h1, perPx: (dx, dy) => -dy / 14, skip: () => h1.isContentEditable }] });
-    add({ name: 'Line height', toy: 'height', options: LEADING, format: (o) => String(o.v),
+    add({ name: 'Line height', toy: 'line-height', options: LEADING, format: (o) => String(o.v),
       mark: (t) => `<i class="lh" style="--g:${Math.round((t.v - 1) * 10)}px"></i>`, apply: (o) => h1.style.setProperty('--lh', String(o.v)) });
-    add({ name: 'Letter spacing', toy: 'width', options: TRACKING, start: 1, format: (o) => `${o.v}em`,
+    add({ name: 'Letter spacing', toy: 'letter-spacing', options: TRACKING, start: 1, format: (o) => `${o.v}em`,
       mark: (t) => `<i class="ls" style="letter-spacing:${t.v * 2}em">AV</i>`, apply: (o) => h1.style.setProperty('--ls', `${o.v}em`) });
-    add({ name: 'Weight', toy: 'weight', options: WEIGHT, start: 2, format: (o) => String(o.v),
+    add({ name: 'Weight', toy: 'font-weight', options: WEIGHT, start: 2, format: (o) => String(o.v),
       mark: (t) => `<i class="wt" style="font-weight:${t.v}">Aa</i>`, apply: (o) => h1.style.setProperty('--fw', String(o.v)) });
     words(stage, h1, stage.querySelector('#textcard .edittag'), () => {});
     new ResizeObserver(placeCard).observe(stage); placeCard(); state();

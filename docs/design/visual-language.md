@@ -59,6 +59,10 @@ The hues are the overlay's own (`overlay/src/tokens.css`). Each has three values
 - White (`#fff`) is the cut-out colour on a solid. On paper, a cut-out is the paper's own colour.
 - Ink text (`--pl-ink`) may be used for plain words inside a piece (the lines of a list), never for a body.
 - No greys in a piece. If something needs to be quiet, it is the hue's soft, and rule 7 says when that is allowed.
+- **In an editor card, each property row has its own hue,** so a stack of rows can be scanned (owner: "everything
+  looks blue"). Text: font size sky, line height lilac, letter spacing butter, weight mint. Each icon draws the
+  property itself (two lines and the space between them; two letters and the space between them; a heavy B), never
+  a stand-in borrowed from another property (width and height arrows were used at first, and read wrong).
 - A piece takes its hue from what it is, by the table above, so the same thing is the same colour everywhere: padding
   is mint in an icon, in the box model, in a chip and in the burst.
 

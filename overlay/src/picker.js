@@ -103,7 +103,7 @@ export function picker(stage, { name, toy, options: S, mark, apply, place, handl
   const last = S.length - 1, HARD = S.findIndex((o) => o.hard), FIRST = start ?? HARD;
   into.insertAdjacentHTML('beforeend', `
     <div class="row" role="group" aria-label="${name}">
-      <span class="scrub" title="Drag to change">${toyOf(toy)}</span>
+      <span class="scrub" title="${name}: drag to change">${toy.startsWith('<') ? toy : toyOf(toy)}</span>
       <button type="button" class="val" aria-haspopup="listbox" aria-expanded="false"><span class="track" aria-hidden="true"><i class="fill"></i><span class="dots"></span></span><span class="drum"></span><i class="car"></i></button>
       <button type="button" class="ok" aria-label="Write it">${TICK}</button>
     </div>
@@ -148,6 +148,16 @@ export function picker(stage, { name, toy, options: S, mark, apply, place, handl
   };
   // a new option in hand: the element takes it, and it rolls into the field
   const land = (n) => { if (n === at) return; const from = at; at = n; draw(); roll(from, n); };
+  // the list: only one is open at a time on a stage; opening this one closes any other, and a press anywhere else or
+  // Esc closes it
+  const close = () => { list.hidden = true; val.setAttribute('aria-expanded', 'false'); };
+  const toggle = () => {
+    const open = list.hidden;
+    for (const other of stage.querySelectorAll('.list:not([hidden])')) other.dispatchEvent(new Event('picker:close'));
+    if (open) { list.hidden = false; val.setAttribute('aria-expanded', 'true'); }
+  };
+  list.addEventListener('picker:close', close);
+  stage.addEventListener('pointerdown', (e) => { if (!list.hidden && !list.contains(e.target) && !val.contains(e.target)) close(); }, true);
   const go = (n) => { if (written) return; land(Math.max(0, Math.min(last, n))); };
   const write = () => { if (written || S[at].hard || (HARD < 0 && at === FIRST)) return; written = true; row.classList.add('written'); list.hidden = true; draw(); };
   const putBack = () => { written = false; row.classList.remove('written'); list.hidden = true; draw(); go(FIRST); };
@@ -172,7 +182,7 @@ export function picker(stage, { name, toy, options: S, mark, apply, place, handl
       el.removeEventListener('pointermove', move); el.removeEventListener('pointerup', up); el.removeEventListener('pointercancel', up);
       grab.classList.remove('grabbing'); row.classList.remove('dragging');
       fill(at / last); done?.();
-      if (!moved) { if (el === val) { list.hidden = !list.hidden; val.setAttribute('aria-expanded', String(!list.hidden)); } return; }
+      if (!moved) { if (el === val) toggle(); return; }
       const cur = drum.querySelector('.slot:not(.gone)');
       if (cur && cur.style.transform) { cur.animate([{ transform: cur.style.transform }, { transform: 'translateY(0)' }], { duration: still() ? 0 : 320, easing: 'cubic-bezier(.34, 1.56, .64, 1)' }); cur.style.transform = ''; }
       requestAnimationFrame(layout);
@@ -184,7 +194,7 @@ export function picker(stage, { name, toy, options: S, mark, apply, place, handl
   scrub.addEventListener('pointerdown', (e) => { e.preventDefault(); drag(scrub, e, (dx, dy) => (dx - dy) / STEP); });
   for (const h of handles) h.el.addEventListener('pointerdown', (e) => { if (h.skip?.()) return; e.preventDefault(); h.el.classList.add('dragging'); drag(h.el, e, h.perPx, () => h.el.classList.remove('dragging')); });
   // a keyboard press on the value still opens the list
-  val.addEventListener('click', (e) => { if (e.detail === 0 && !written) { list.hidden = !list.hidden; val.setAttribute('aria-expanded', String(!list.hidden)); } });
+  val.addEventListener('click', (e) => { if (e.detail === 0 && !written) toggle(); });
   list.addEventListener('click', (e) => { const o = e.target.closest('[data-at]'); if (!o) return; go(Number(o.dataset.at)); list.hidden = true; val.setAttribute('aria-expanded', 'false'); });
   ok.addEventListener('click', () => (written ? putBack() : write()));
   (keys === 'row' ? row : keys).addEventListener('keydown', (e) => {
@@ -192,7 +202,7 @@ export function picker(stage, { name, toy, options: S, mark, apply, place, handl
     if (e.key === 'ArrowRight' || e.key === 'ArrowUp') { e.preventDefault(); go(at + 1); }
     else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') { e.preventDefault(); go(at - 1); }
     else if (e.key === 'Enter') { e.preventDefault(); write(); }
-    else if (e.key === 'Escape') { e.preventDefault(); putBack(); }
+    else if (e.key === 'Escape') { e.preventDefault(); if (!list.hidden) close(); else putBack(); }
   });
   new ResizeObserver(layout).observe(stage);
   drum.append(slotOf(S[at])); draw();

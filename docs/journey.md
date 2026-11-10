@@ -429,6 +429,10 @@ race, built for the old in-place write) was rewritten for the new write path (`e
 - **A bug on the way:** with four rows in one card, one arrow key moved all four; each row now hears its own keys.
 - **Proof:** on the running page, dragging the line-height value moved it to tight and the heading's line height
   followed; ↑ on the weight row moved only the weight, to bold.
+- **Owner's bug report, a screenshot:** three rows' lists open at once, stacked over each other; and "the icons are
+  not correct, everything looks blue". Fixed: one list open at a time on a stage (opening one closes the others; a
+  press elsewhere or Esc closes it); three new toys drawn for the properties themselves (line height lilac, letter
+  spacing butter, font weight mint), the header's duplicate icon removed. Rule added to the visual language.
 - **Open:** the product's own text card (`overlay/src/texteditor.js`) is not yet rebuilt from the picker; style,
   case and colour rows are not drawn yet (colour needs its own picker).
 
