@@ -99,6 +99,9 @@ export const FIX_CSS = TEXT_EDITOR_CSS + ELEMENT_CARD_CSS + `
   .fx .bar.has-notice .long { display: none; }
   /* the tools out take the room Close's word had: Esc says it */
   .fx .bar:has(.tools) .bar-close .word { display: none; }
+  /* with the tools out, the setup note steps aside too: nothing else in the bar can give, and on a system whose
+     text runs wider (Linux, Windows) the tools pushed Close past the bar's edge */
+  .fx .bar:has(.tools) .notice { display: none; }
   @media (max-width: 560px) {
     .fx .bar { padding: 0 4px 0 12px; gap: 4px; }
     /* a phone's bar keeps the count, its two actions and Close; the tools are on the dock's mark once Blueprint closes */
