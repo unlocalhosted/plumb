@@ -387,15 +387,19 @@ test('a click on a level in the header opens that level’s card', { timeout: 12
 
 // the style follows the values: a size moved off the words' text style reads No style; moved back, the style again,
 // with nothing left to write
-test('the style follows the values: a size moved off the text style reads No style, and back again the style', { timeout: 120000 }, async (t) => {
+test('the style follows the values: a size moved off the text style leaves it, and back again the style', { timeout: 120000 }, async (t) => {
   const o = await open(t, '#qa-onstyle'); if (!o) return;
   const { page, card, errors } = o;
   const style = row(card, 'Text style');
   const before = await shows(style);
   assert.match(before, /Body/, `the words are on the Body medium style: ${before}`);
+  const now = () => page.evaluate(() => (document.querySelector('plumb-overlay').shadowRoot.querySelector('.tc .pk .row[aria-label="Text style"] .slot:not(.gone)')?.innerText ?? '').replace(/\s+/g, ' ').trim());
   await row(card, 'Font size').locator('.val').focus();
+  // a size up: the words no longer make Body medium (No style, or the style that size makes)
   await page.keyboard.press('ArrowUp');
-  await page.waitForFunction(() => /No style/.test(document.querySelector('plumb-overlay').shadowRoot.querySelector('.tc .pk .row[aria-label="Text style"] .slot:not(.gone)')?.textContent ?? ''), null, { timeout: 5000 });
+  await page.waitForFunction((was) => (document.querySelector('plumb-overlay').shadowRoot.querySelector('.tc .pk .row[aria-label="Text style"] .slot:not(.gone)')?.innerText ?? '').replace(/\s+/g, ' ').trim() !== was, before, { timeout: 5000 });
+  assert.doesNotMatch(await now(), /Body/, `off the style: ${await now()}`);
+  // back down: Body medium again, nothing left to write
   await page.keyboard.press('ArrowDown');
   await page.waitForFunction((was) => (document.querySelector('plumb-overlay').shadowRoot.querySelector('.tc .pk .row[aria-label="Text style"] .slot:not(.gone)')?.innerText ?? '').replace(/\s+/g, ' ').trim() === was, before, { timeout: 5000 });
   assert.match(await text(card.locator('[data-do="write"]')), /^Write\s*↵?$/, 'back where it started, nothing to write');

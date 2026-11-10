@@ -314,6 +314,8 @@ export class TextEditor {
     this.#caret = Object.assign(document.createElement('div'), { className: 'tc-caret pl-light', hidden: true });
     this.#ring = Object.assign(document.createElement('div'), { className: 'tc-ring', hidden: true });
     root.append(this.#ring, this.#el, this.#caret);
+    // the card grows (a list or the colour picker opens in it): placed again, so it never runs off the screen
+    new ResizeObserver(() => this.#follow()).observe(this.#el);
     this.#el.addEventListener('pointerdown', (e) => { const f = e.target.closest('.fld[data-key]'); if (f && e.button === 0) this.#press(e, f.dataset.key); });
     this.#el.addEventListener('focusin', (e) => {
       const f = e.target.closest?.('.fld[data-key], .fld[data-menu], .seg'); if (!f || this.#drag) return;

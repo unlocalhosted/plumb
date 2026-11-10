@@ -132,8 +132,10 @@ test('Two changes, one Write: case and colour both land on the line', { timeout:
   // each change is written after the one before it has been read back
   const line = async () => (await written(root)).match(/<span id="tiny" className="([^"]*)"/)?.[1] ?? '';
   for (let i = 0; i < 100 && !(/\buppercase\b/.test(await line()) && new RegExp(`\\btext-${token}\\b`).test(await line())); i++) await new Promise((r) => setTimeout(r, 200));
-  assert.match(await line(), /\buppercase\b/, 'the case is on the line');
-  assert.match(await line(), new RegExp(`\\btext-${token}\\b`), `the colour ${token} is on the line`);
+  // what the card says, if the second change didn't land (its error line, its button)
+  const why = `card: ${(await overlay.locator('.tc .down').allInnerTexts()).join(' | ') || 'no error shown'}; button: ${(await writeButton(overlay).innerText()).trim()}; said: ${(await overlay.locator('.fx .said').allInnerTexts()).join(' | ')}`;
+  assert.match(await line(), /\buppercase\b/, `the case is on the line (${why})`);
+  assert.match(await line(), new RegExp(`\\btext-${token}\\b`), `the colour ${token} is on the line (${why})`);
   assert.deepEqual(errors, []);
 });
 
