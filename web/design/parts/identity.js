@@ -5,7 +5,7 @@ import { LANGUAGE_CSS } from '../../../overlay/src/language.js';
 import { SOFT_CSS, soften } from '../../../overlay/src/soft.js';
 import { TOY_DEFS, toyOf } from '../../../overlay/src/toys.js';
 
-const PARTS = [['pink', 'fill', 'Colour', 'Six hues with one meaning each.'], ['sky', 'type', 'Type', 'Two faces, twelve styles.'], ['butter', 'icon', 'Icons', '76 toys and their rules.'], ['mint', 'padding', 'Space', 'The ladder and the corners.'], ['lilac', 'corner', 'Fix bar', 'The cause in hand, one line.']];
+const PARTS = [['pink', 'fill', 'Colour', 'Six hues with one meaning each.'], ['sky', 'type', 'Type', 'Two faces, twelve styles.'], ['butter', 'icon', 'Icons', '76 toys and their rules.'], ['mint', 'padding', 'Spacing', 'Spacing and radius tokens.'], ['lilac', 'corner', 'Fix bar', 'What is hard-coded, in one line.']];
 
 export function mount(host, root, css) {
   const inside = (toy, name, says) => `<span class="in"><span class="plate"><i class="toy">${toyOf(toy)}</i></span><b>${name}</b><em>${says}</em></span>`;
