@@ -15,7 +15,7 @@ export default function Home() {
       <p className="lede">React Plumber shows where a page drifts from your scale and fixes it in your code. This is the new home of the site. <b>Design is here</b>; the rest moves in next.</p>
       <div className="boxes">
         {PLACES.map((p) => {
-          const inside = <span className="in"><span className="plate"><Toy name={p.toy} size={p.ready ? 42 : 30} /></span><b>{p.name}</b><em>{p.says}</em></span>;
+          const inside = <span className="in"><span className="plate"><Toy name={p.toy} size={p.ready ? 42 : 24} /></span><b>{p.name}</b><em>{p.says}</em></span>;
           return p.ready
             ? <Link key={p.name} className="s-box" data-hue={p.hue} href={p.href}>{inside}</Link>
             : <div key={p.name} className="s-box soon" data-hue={p.hue}>{inside}<i className="when">moving in</i></div>;

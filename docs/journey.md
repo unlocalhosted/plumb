@@ -309,7 +309,10 @@ race, built for the old in-place write) was rewritten for the new write path (`e
   inside a shadow root. The site's boxes, bar, docs links, and the kit's toy button all take it.
 - **The fix and the proof:** looked at running: the design shelf, the bar, the docs page and the buttons page, light
   and dark. A box on the shelf held down reads 1.024 x 0.96 and returns to rest; a place in the bar gives 5%.
-- **Left open:** a drawn box and a not-yet-drawn box are now both pale (they differ by side and shadow only); the
+- **Ready and not yet:** with a pale top, a drawn box and one not drawn yet looked alike. Two live rows were put
+  side by side (ready pale and the rest grey and small; or ready in the strong colour). The owner picked the first:
+  a box that isn't drawn yet is flat, small and grey.
+- **Left open:** the
   buttons page still describes the old 3px key in words; the product itself still uses its old buttons.
 
 ## Open gaps

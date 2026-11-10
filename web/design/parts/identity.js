@@ -11,11 +11,6 @@ export function mount(host, root, css) {
   const inside = (toy, name, says) => `<span class="in"><span class="plate"><i class="toy">${toyOf(toy)}</i></span><b>${name}</b><em>${says}</em></span>`;
   const soft = ([hue, toy, name, says]) => `<a class="s-box" data-hue="${hue}" href="#" onclick="return false">${inside(toy, name, says)}</a>`;
 
-  const TRIAL = [...PARTS.slice(0, 3).map((x) => [...x, true]), ...PARTS.slice(3).map((x) => [...x, false])];
-  const trial = ([hue, toy, name, says, ready]) => (ready
-    ? `<a class="s-box" data-hue="${hue}" style="--on: var(--pl-${hue}-on)" href="#" onclick="return false">${inside(toy, name, says)}</a>`
-    : `<div class="s-box soon" data-hue="${hue}">${inside(toy, name, says)}<i class="when">to draw</i></div>`);
-
   root.innerHTML = `<style>${css}${LANGUAGE_CSS}${SOFT_CSS}
     :host { display: block; font-family: var(--pl-sans); color: var(--pl-ink); }
     a { text-decoration: none; -webkit-tap-highlight-color: transparent; }
@@ -48,20 +43,6 @@ export function mount(host, root, css) {
     /* soft blocks: overlay/src/soft.js. Here they are only given a width */
     .s-box { width: 250px; max-width: 100%; }
 
-    /* ── ready, and not yet: two ways to tell them apart (a trial) ── */
-    .opt { margin-top: 18px; } .opt > small { display: block; margin: 0 0 -6px 4px; font: 600 14px/1 var(--pl-round); color: var(--pl-ink-2); }
-    .opt .shelf { align-items: start; }
-    .opt .s-box.soon .in { min-height: 0; }
-    .opt .when { position: absolute; top: 14px; right: 14px; padding: 4px 9px; border-radius: 10px; font: 700 11.5px/1.2 var(--pl-round); font-style: normal; background: color-mix(in oklab, var(--pl-paper) 55%, transparent); }
-    /* A: ready stays pale and raised; not yet loses its colour too, and shrinks */
-    .opt-a .s-box.soon .in { background: var(--pl-paper-2); color: var(--pl-ink-3); padding: 14px; }
-    .opt-a .s-box.soon .plate { width: 40px; height: 40px; border-radius: 13px; margin-bottom: 10px; background: color-mix(in oklab, var(--pl-ink) 6%, transparent); }
-    .opt-a .s-box.soon .toy { width: 24px; height: 24px; filter: grayscale(1); opacity: .5; }
-    .opt-a .s-box.soon .in b { font-size: 17px; line-height: 21px; }
-    .opt-a .s-box.soon .when { background: color-mix(in oklab, var(--pl-ink) 7%, transparent); color: var(--pl-ink-3); }
-    /* B: ready takes the strong colour on top; not yet stays pale */
-    .opt-b .s-box:not(.soon) { --side: color-mix(in oklab, var(--h) 70%, #000); color: var(--on); }
-    .opt-b .s-box:not(.soon) .in { background: linear-gradient(180deg, color-mix(in oklab, var(--h) 88%, #fff), var(--h)); box-shadow: inset 0 2px 0 0 color-mix(in oklab, #fff 45%, transparent), inset 0 -2.5px 0 0 color-mix(in oklab, #000 12%, transparent); }
     /* ── the timeline: slow every motion on this page down, hold it, and drag through it ── */
     .tl { position: sticky; bottom: 16px; z-index: 5; display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; margin: 18px 0 0; padding: 12px 14px; border-radius: 20px; background: var(--pl-ink); color: var(--pl-paper); box-shadow: 0 14px 30px -16px rgb(0 0 0 / .5); }
     .tl b { font: 600 14px/1 var(--pl-round); }
@@ -112,10 +93,6 @@ export function mount(host, root, css) {
   <p>All five hues. The pale top is calm enough to sit five in a row; the strong colour is on the side, the toy and the shadow.</p>
   <div class="shelf">${PARTS.map(soft).join('')}</div>
 
-  <h2>Ready, and not yet</h2>
-  <p>On a shelf, some boxes can be opened and some aren't drawn yet. Two ways to tell them apart. Point at and press both rows.</p>
-  <div class="opt opt-a"><small>A · ready stays pale; not yet goes grey and small</small><div class="shelf">${TRIAL.map(trial).join('')}</div></div>
-  <div class="opt opt-b"><small>B · ready takes the strong colour; not yet stays pale</small><div class="shelf">${TRIAL.map(trial).join('')}</div></div>
 
   <h2>And the face</h2>
   <p>The rounded face is the other borrowed part. Three candidates for the same headline.</p>

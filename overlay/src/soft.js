@@ -44,13 +44,15 @@ export const SOFT_CSS = `
     .s-box:hover, .s-box.hov { --lift: 10px; box-shadow: 0 22px 28px -16px color-mix(in oklab, var(--h) 70%, transparent), 0 4px 6px -2px color-mix(in oklab, var(--h) 36%, transparent); }
     .s-box.down { box-shadow: 0 5px 8px -7px color-mix(in oklab, var(--h) 70%, transparent); }
     .s-box:focus-visible { outline: 3px solid var(--pl-sky); outline-offset: 5px; }
-    /* not there yet: pale and flat, nothing to press (pale is for what is not there) */
+    /* not there yet: flat, small, and without its colour. Nothing to press (pale is for what is not there; a ready
+       box is pale too, so one that isn't ready gives up its hue as well) */
     .s-box.soon, .s-box.soon:hover { --lift: 0px; padding-top: 0; background: none; box-shadow: none; }
-    .s-box.soon .in { background: var(--hs); box-shadow: none; }
-    .s-box.soon .plate { width: 52px; height: 52px; border-radius: 16px; background: color-mix(in oklab, var(--pl-paper) 60%, transparent); box-shadow: none; }
-    .s-box.soon .toy, .s-box.soon:hover .toy { --big: 1; opacity: .55; }
-    .s-box.soon .in b { font-size: 19px; line-height: 23px; }
-    .s-box.soon .in em { font-size: 13px; line-height: 18px; }
+    .s-box.soon .in { padding: 14px; background: var(--pl-paper-2); box-shadow: none; color: var(--pl-ink-2); }
+    .s-box.soon .plate { width: 40px; height: 40px; margin-bottom: 10px; border-radius: 13px; background: color-mix(in oklab, var(--pl-ink) 7%, transparent); box-shadow: none; }
+    .s-box.soon .toy, .s-box.soon:hover .toy { --big: 1; width: 24px; height: 24px; filter: grayscale(1); opacity: .6; }
+    .s-box.soon .in b { font-size: 17px; line-height: 21px; }
+    .s-box.soon .in em { font-size: 13px; line-height: 18px; opacity: .8; }
+    .s-box .when { position: absolute; top: 14px; right: 14px; padding: 4px 9px; border-radius: 10px; font: 700 11.5px/1.2 var(--pl-round); font-style: normal; background: color-mix(in oklab, var(--pl-ink) 7%, transparent); color: var(--pl-ink-2); }
 
     /* ── a button is the same block, small. The action keeps the strong colour on top: it is the one loud thing ── */
     .s-btn { --h: var(--pl-pink); --side: color-mix(in oklab, var(--h) 70%, #000); --lift: 4px;

@@ -5,7 +5,7 @@ import { Toy } from '../../site/Toy.jsx';
 export const metadata = { title: 'Design' };
 
 function Box({ part }) {
-  const inside = <span className="in"><span className="plate"><Toy name={part.toy} size={part.ready ? 42 : 30} /></span><b>{part.name}</b><em>{part.says}</em></span>;
+  const inside = <span className="in"><span className="plate"><Toy name={part.toy} size={part.ready ? 42 : 24} /></span><b>{part.name}</b><em>{part.says}</em></span>;
   return part.ready
     ? <Link className="s-box" data-hue={part.hue} href={`/design/${part.id}`}>{inside}</Link>
     : <div className="s-box soon" data-hue={part.hue}>{inside}<i className="when">to draw</i></div>;
