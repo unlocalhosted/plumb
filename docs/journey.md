@@ -108,9 +108,13 @@ the fix panel's "NaN copies" against the right number.
 
 - Engine architecture: eight proposed steps in `docs/briefs/engine-architecture-review.md`, none built, waiting on
   the owner's order.
-- Still failing and not diagnosed: `decisions-spacing` (spacing policies); and a history cluster that looks like one
-  cause: "Apply is one step in the history" (`cleanup-site`), "timeline 3 + 4" (`qa-fixes-2-overlay`), and the first
-  test of `timeline`.
+- Still failing and not diagnosed: `decisions-spacing` (spacing policies).
+- **Nothing says when a write's reload is over.** The dock says `ready` on a reloaded page before what was open
+  (Blueprint, a card, the History strip) is back. The "history cluster" was three faces of this: the panel saying
+  Undone twice (fixed, 2026-11-10), a test pressing Esc in the gap (fixed in the test), and `timeline`'s first test,
+  still flaky. "Execution context was destroyed" in other browser tests is the same thing. The fix is one signal
+  the page gives when it has settled after a write, used by the test harness and open to agents: it is where the
+  test system's harness layer and the overlay's mode machine meet. Not built.
 - `e2e/site-text` cannot start anywhere: `site/` has its own dependencies and no step installs them.
 - About 420 engine errors still carry no code.
 - Test system, layers 2–5 (shared harness with one browser per file, run-what-changed, time budgets that fail, one
