@@ -77,8 +77,14 @@
 - **What we built:** a `rename` write (`POST /__plumb/rename { map: { old: new } }`): every source file and the theme, the `--color-<old>` declarations and every utility class that uses them (variants, sides and opacity kept; a name matched whole, so `line` never touches `line-strong`), as one transaction that holds hot reloads, with one undo per file. Refused whole, before anything is written, when a new name is already a token (it would merge two colours). The text rule is pure (src/rules/colour-rename.ts).
 - **The fix and the proof:** on a fresh copy of crafting-ui, plumber's rename wrote 101 files, 1,703 renames (the 1,684 class uses plus the theme's 19 names), none refused, 101 undo handles. Every element's computed colours on 5 pages (6,121 elements): 0 differ. Renaming `scrim` onto `text-primary` was refused with nothing written.
 
+## A rename button in the colour step (2026-11-11)
+- **The itch:** plumber could rename colour tokens by job, but only through a server call; nothing a person could press.
+- **What we built:** a section under the clean-up's colour step, shown only when plumber has a rename plan: "18 of your colour names don't say what they're for", an example (`fg` becomes `text-primary`), then the full list with a swatch per name and what it was, the names that keep theirs, "Rename everywhere" / "Not now", a working state, a done line ("Every colour looks the same") with Undo, and an error with Try again. No second dark button: Apply stays the step's one main action. One undo group takes the whole rename back.
+- **What broke on the way:** the colour step imports the new colour-system module, which plumber's dev host did not serve, so the whole overlay failed to load (on the test copy and on the main crafting-ui server, which loads plumber from this checkout). Fixed by serving it and the ramp module; both servers restarted and serve them (HTTP 200).
+- **Not yet seen:** the section was not looked at in the browser; the owner was using the pane.
+
 ## Open gaps
-- The rename is a server write with no button yet: nothing in the overlay offers "rename to job names" with `renameMap`'s plan.
+- The colour step's rename section has not been looked at running; try it on the test copy (port 5182): Alt+B, C, skip to Colour.
 - The second ink is named `ink2-*`; crafting-ui calls it `draw`, a meaningful word. Naming decision for the owner.
 - Code samples shown as text on crafting-ui pages may have been renamed too; not checked.
 - A yellow or amber brand sits next to the warning status hue; plumber does not yet warn when the brand and a status colour are too close.
