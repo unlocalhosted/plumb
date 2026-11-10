@@ -62,22 +62,27 @@ export function mount(host, root, css) {
        bottom edge, because it is pressed down against its side */
     .s-box .in { position: relative; padding: 18px; border-radius: 28px; background: linear-gradient(180deg, color-mix(in oklab, var(--hs) 82%, #fff), var(--hs));
       box-shadow: inset 0 2px 0 0 color-mix(in oklab, #fff 75%, transparent), inset 0 -2.5px 0 0 color-mix(in oklab, var(--h) 22%, transparent);
-      transform: translateY(calc(-1 * var(--lift))); transform-origin: 50% 100%; will-change: transform; }
+      transform: translateY(calc(-1 * var(--lift))); transform-origin: 50% 100%; transition: transform 320ms var(--pl-spring-pop); will-change: transform; }
     :host([data-scheme="dark"]) .s-box .in { background: linear-gradient(180deg, color-mix(in oklab, var(--hs) 88%, #fff), var(--hs)); box-shadow: inset 0 2px 0 0 color-mix(in oklab, #fff 22%, transparent), inset 0 -2.5px 0 0 color-mix(in oklab, #000 22%, transparent); }
     .s-box .plate { display: grid; place-items: center; width: 64px; height: 64px; margin-bottom: 14px; border-radius: 19px; background: var(--pl-paper); transform-origin: 50% 100%;
       box-shadow: 0 5px 8px -5px color-mix(in oklab, var(--h) 75%, transparent), inset 0 -2px 0 0 color-mix(in oklab, var(--h) 14%, transparent);
       will-change: transform; }
-    .s-box .toy { transform-origin: 50% 90%; will-change: transform; }
+    .s-box .toy { --big: 1; transform: scale(var(--big)); transform-origin: 50% 90%; transition: transform 320ms var(--pl-spring-pop); will-change: transform; }
     .s-box em { opacity: .86; }
     /* pointed at: it comes up to meet the finger, straight up, and its shadow grows. It does not lean or follow the
        pointer: a thing that tilts under the pointer reads as a card to look at, not a key to press */
-    .s-box:hover, .s-box.hov { box-shadow: 0 22px 28px -16px color-mix(in oklab, var(--h) 70%, transparent), 0 4px 6px -2px color-mix(in oklab, var(--h) 36%, transparent); }
+    .s-box:hover .toy, .s-box.hov .toy { --big: 1.07; }
+    .s-box:hover, .s-box.hov { --lift: 10px; box-shadow: 0 22px 28px -16px color-mix(in oklab, var(--h) 70%, transparent), 0 4px 6px -2px color-mix(in oklab, var(--h) 36%, transparent); }
     /* ── the squash ──
        A soft block is pressed from above against the ground, so it is anchored at its bottom edge and keeps its
-       volume: what it loses in height it gains in width. Its top, the plate on it and the toy on the plate are each on
-       a spring (see the script): the top follows the finger, the plate follows the top, the toy follows the plate,
-       each a little looser than the last. Springs, not keyframes, so a press in the middle of a rebound carries on
-       from where the block is and how fast it is moving: it can be pressed again and again and never jumps. */
+       volume: what it loses in height it gains in width.
+       down     90ms. It sinks onto its side, 4% shorter and 2.4% wider; its shadow tightens to nothing. The plate on
+                it is squashed too, a beat behind, and the toy a beat behind that.
+       let go   620ms, in four beats: it shoots up past where it rests, stretched tall and thin, and hangs there a
+                moment; comes down a little wide; one last small stretch; rest. The toy leaves late and lands late (it
+                is loose): it jumps, tips, lands flat and wide, and rights itself.
+       The beats are written by hand (see the script: they are what made it feel right), and every one starts from
+       wherever the block is at that moment, so pressing again in the middle of a rebound never jumps. */
     .s-box.down { box-shadow: 0 5px 8px -7px color-mix(in oklab, var(--h) 70%, transparent); }
     .s-box:focus-visible { outline: 3px solid var(--pl-sky); outline-offset: 5px; }
     /* a button is the same block, small. The action keeps the strong colour on top: it is the one loud thing */
@@ -85,8 +90,8 @@ export function mount(host, root, css) {
       box-shadow: 0 9px 12px -8px color-mix(in oklab, var(--h) 75%, transparent); transition: box-shadow 240ms var(--pl-ease-out); }
     .s-btn span { display: block; padding: 10px 16px; border-radius: 14px; background: linear-gradient(180deg, color-mix(in oklab, var(--h) 88%, #fff), var(--h)); color: var(--pl-pink-on);
       font: 600 15px/1 var(--pl-round); box-shadow: inset 0 1.5px 0 0 color-mix(in oklab, #fff 45%, transparent), inset 0 -2px 0 0 color-mix(in oklab, #000 12%, transparent);
-      transform: translateY(calc(-1 * var(--lift))); }
-    .s-btn:hover, .s-btn.hov { box-shadow: 0 14px 16px -10px color-mix(in oklab, var(--h) 75%, transparent); }
+      transform: translateY(calc(-1 * var(--lift))); transition: transform 300ms var(--pl-spring-pop); }
+    .s-btn:hover, .s-btn.hov { --lift: 6px; box-shadow: 0 14px 16px -10px color-mix(in oklab, var(--h) 75%, transparent); }
     .s-btn span { transform-origin: 50% 100%; will-change: transform; }
     .s-btn.down { box-shadow: 0 3px 5px -4px color-mix(in oklab, var(--h) 75%, transparent); }
     .s-btn.q { --h: var(--pl-ink-3); --side: var(--pl-rule); box-shadow: 0 9px 12px -9px rgb(0 0 0 / .28); }
@@ -151,73 +156,63 @@ export function mount(host, root, css) {
     <div class="face f3"><b>Keep your app on your design system.</b><p>Each mark is a place in your code that types a size by hand.</p><small>Instrument Sans alone · plain and exact, lets the toys be the only play</small></div>
   </div>`;
 
-  let rate = 1, held = false; // the timeline's speed and Hold (below); the springs read them every frame
+  let rate = 1, held = false; // the timeline's speed and Hold (below)
+  let onMotion = () => {};     // the timeline's: a motion just started
 
-  // ── answers: springs ──
-  // Each soft thing has four springs. `press` runs 0 (up) to 1 (down on its side) and goes past 0 on the way back,
-  // which is the stretch. `plate` chases press and `toy` chases plate, each looser, so what sits on the block arrives
-  // late. `lift` is how far the top sits above its side: more while pointed at. A spring keeps where it is and how
-  // fast it is going when its target changes, so any motion can be interrupted by any other.
-  // The jelly is the point (owner: the stretch and the toy's jump are what feel good): letting go is a loose spring
-  // that swings well past rest and back a few times; the plate and the toy are looser still, so the toy jumps.
-  const SPRINGS = { down: { k: 1200, c: 64 }, up: { k: 380, c: 11 }, plate: { k: 300, c: 14 }, toy: { k: 210, c: 9 }, lift: { k: 320, c: 30 } };
-  // squashed (press above 0): `wide` and `short` per unit. Stretched (press below 0, the rebound): `thin` and `tall` per
-  // unit, and `over` px above its resting height. A soft thing stretches further than it squashes.
-  const SHAPE = { box: { rest: 7, hover: 10, wide: 0.024, short: 0.04, thin: 0.045, tall: 0.088, over: 12 }, btn: { rest: 4, hover: 6, wide: 0.045, short: 0.11, thin: 0.075, tall: 0.2, over: 10 } };
+  // ── answers ──
+  // The press and the rebound are the hand-written beats that felt right, played with the Web Animations API. What
+  // makes them interruptible: before a part starts a new motion, whatever it is doing is frozen where it is
+  // (commitStyles) and the new motion starts from exactly there. So a press in the middle of a rebound, or a release
+  // in the middle of a press, carries on from the pose on screen.
+  const LAUNCH = 'cubic-bezier(.2, .9, .3, 1)', SWING = 'cubic-bezier(.4, 0, .6, 1)', FALL = 'cubic-bezier(.5, 0, .7, 1)', OUT = 'cubic-bezier(0.16, 1, 0.3, 1)';
+  const REST = 'translateY(calc(-1 * var(--lift)))';
+  const MOVES = {
+    box: {
+      top:   { down: ['translateY(-1px) scale(1.024, 0.96)', 90, 0],
+               up: [[0.30, `translateY(calc(-1 * var(--lift) - 5px)) scale(0.982, 1.035)`, SWING], [0.56, `translateY(calc(-1 * var(--lift) + 1.5px)) scale(1.01, 0.988)`, SWING], [0.78, `translateY(calc(-1 * var(--lift) - 1px)) scale(0.996, 1.006)`, SWING], [1, `${REST} scale(1, 1)`]], ms: 620, wait: 0 },
+      plate: { down: ['scale(1.035, 0.94)', 110, 20],
+               up: [[0.34, 'translateY(-3px) scale(0.975, 1.05)', SWING], [0.62, 'translateY(0.5px) scale(1.012, 0.985)', SWING], [1, 'translateY(0) scale(1, 1)']], ms: 620, wait: 30 },
+      toy:   { down: ['scale(1.04, 0.92)', 110, 30],
+               up: [[0.36, 'translateY(-7px) scale(0.96, 1.1) rotate(-6deg)', FALL], [0.64, 'translateY(1px) scale(1.06, 0.94) rotate(2deg)', SWING], [0.84, 'translateY(-1px) scale(0.99, 1.02) rotate(0deg)', 'linear'], [1, 'translateY(0) scale(var(--big)) rotate(0deg)']], ms: 640, wait: 60 },
+    },
+    btn: {
+      top:   { down: ['translateY(0) scale(1.045, 0.89)', 80, 0],
+               up: [[0.32, `translateY(calc(-1 * var(--lift) - 4px)) scale(0.97, 1.09)`, SWING], [0.60, `translateY(calc(-1 * var(--lift) + 1px)) scale(1.015, 0.97)`, SWING], [0.82, `translateY(calc(-1 * var(--lift) - 0.5px)) scale(0.995, 1.012)`, 'linear'], [1, `${REST} scale(1, 1)`]], ms: 520, wait: 0 },
+    },
+  };
   const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const things = [...root.querySelectorAll('.s-box, .s-btn')].map((el) => {
-    const kind = el.classList.contains('s-btn') ? 'btn' : 'box', shape = SHAPE[kind];
-    return { el, shape, top: el.querySelector(kind === 'btn' ? 'span' : '.in'), plate: el.querySelector('.plate'), toy: el.querySelector('.toy'),
-      press: { x: 0, v: 0 }, platePress: { x: 0, v: 0 }, toyPress: { x: 0, v: 0 }, lift: { x: shape.rest, v: 0 }, pressed: false, hover: false };
-  });
-  const byEl = new Map(things.map((t) => [t.el, t]));
-  const pull = (o, target, { k, c }, dt) => { o.v += (-k * (o.x - target) - c * o.v) * dt; o.x += o.v * dt; };
-  const draw = (t) => {
-    const { shape } = t, p = t.press.x, down = Math.max(0, p), up = Math.min(0, p);
-    const y = -t.lift.x + (t.lift.x - (t.plate ? 1 : 0)) * down + shape.over * up;
-    t.top.style.transform = `translateY(${y.toFixed(2)}px) scale(${(1 + shape.wide * down + shape.thin * up).toFixed(4)}, ${(1 - shape.short * down - shape.tall * up).toFixed(4)})`;
-    if (t.plate) {
-      const q = t.platePress.x, qd = Math.max(0, q), qu = Math.min(0, q);
-      t.plate.style.transform = `translateY(${(qu * 8).toFixed(2)}px) scale(${(1 + 0.035 * qd + 0.06 * qu).toFixed(4)}, ${(1 - 0.06 * qd - 0.12 * qu).toFixed(4)})`;
-    }
-    if (t.toy) {
-      // the toy is loose on its plate: it is flattened with it, then thrown up, tipping as it goes, and lands
-      const q = t.toyPress.x, qd = Math.max(0, q), qu = Math.min(0, q), big = 1 + 0.07 * ((t.lift.x - shape.rest) / (shape.hover - shape.rest));
-      t.toy.style.transform = `translateY(${(qu * 7.5).toFixed(2)}px) rotate(${(qu * 6.5).toFixed(2)}deg) scale(${(big + 0.04 * qd + 0.07 * qu).toFixed(4)}, ${(big - 0.08 * qd - 0.18 * qu).toFixed(4)})`;
-    }
+  // where a part is right now, held in its own style, with anything it was doing stopped
+  const freeze = (part) => {
+    const here = getComputedStyle(part).transform;
+    for (const a of part.getAnimations()) { if (a.id === 'soft') a.cancel(); }
+    part.style.transform = here === 'none' ? '' : here;
+    return here === 'none' ? 'translateY(0)' : here;
   };
-  const live = new Set();
-  let last = 0, loop = 0;
-  const frame = (now) => {
-    // the timeline's speed and Hold apply to springs too
-    const dt = held ? 0 : Math.min(0.034, (now - last) / 1000) * rate; last = now;
-    for (const t of live) {
-      for (let n = 0; n < 4 && dt; n++) {
-        const h = dt / 4;
-        pull(t.press, t.pressed ? 1 : 0, t.pressed ? SPRINGS.down : SPRINGS.up, h);
-        pull(t.platePress, t.press.x, SPRINGS.plate, h);
-        pull(t.toyPress, t.platePress.x, SPRINGS.toy, h);
-        pull(t.lift, t.hover ? t.shape.hover : t.shape.rest, SPRINGS.lift, h);
+  const partsOf = (el) => (el.classList.contains('s-btn') ? [['top', el.querySelector('span'), MOVES.btn.top]] : [['top', el.querySelector('.in'), MOVES.box.top], ['plate', el.querySelector('.plate'), MOVES.box.plate], ['toy', el.querySelector('.toy'), MOVES.box.toy]]);
+  const press = (el, on) => {
+    if (el.classList.contains('down') === on) return;
+    el.classList.toggle('down', on);
+    if (still) return;
+    for (const [, part, move] of partsOf(el)) {
+      const from = freeze(part);
+      if (on) {
+        const [pose, ms, wait] = move.down;
+        const a = part.animate([{ transform: from }, { transform: pose }], { duration: ms, delay: wait, easing: OUT, fill: 'both' });
+        a.id = 'soft'; a.playbackRate = rate; if (held) a.pause();
+      } else {
+        const a = part.animate([{ offset: 0, transform: from, easing: LAUNCH }, ...move.up.map(([offset, transform, easing]) => ({ offset, transform, ...(easing ? { easing } : {}) }))], { duration: move.ms, delay: move.wait, fill: 'both' });
+        a.id = 'soft'; a.playbackRate = rate; if (held) a.pause();
+        // at rest again: the stylesheet has it back (so pointing at it lifts it as before)
+        a.finished.then(() => { if (!el.classList.contains('down')) { part.style.transform = ''; a.cancel(); } }, () => {});
       }
-      draw(t);
-      const quiet = (o, target) => Math.abs(o.v) < 0.004 && Math.abs(o.x - target) < 0.0008;
-      if (!held && quiet(t.press, t.pressed ? 1 : 0) && quiet(t.platePress, t.press.x) && quiet(t.toyPress, t.platePress.x) && Math.abs(t.lift.v) < 0.02 && Math.abs(t.lift.x - (t.hover ? t.shape.hover : t.shape.rest)) < 0.01) live.delete(t);
+      part.style.transform = '';
     }
-    loop = live.size ? requestAnimationFrame(frame) : 0;
-    springsMoving();
+    onMotion();
   };
-  const wake = (t) => {
-    if (still) { t.press.x = t.platePress.x = t.toyPress.x = t.pressed ? 1 : 0; t.lift.x = t.hover ? t.shape.hover : t.shape.rest; draw(t); return; }
-    live.add(t);
-    if (!loop) { last = performance.now(); loop = requestAnimationFrame(frame); }
-  };
-  const press = (el, on) => { const t = byEl.get(el); if (!t || t.pressed === on) return; t.pressed = on; el.classList.toggle('down', on); wake(t); };
-  const point = (el, on) => { const t = byEl.get(el); if (!t || t.hover === on) return; t.hover = on; wake(t); };
-  for (const { el } of things) {
-    el.addEventListener('pointerenter', () => point(el, true));
-    el.addEventListener('pointerleave', () => { point(el, false); press(el, false); });
+  const point = (el, on) => el.classList.toggle('hov', on);
+  for (const el of root.querySelectorAll('.s-box, .s-btn')) {
     el.addEventListener('pointerdown', () => press(el, true));
-    for (const type of ['pointerup', 'pointercancel', 'blur']) el.addEventListener(type, () => press(el, false));
+    for (const type of ['pointerup', 'pointercancel', 'pointerleave', 'blur']) el.addEventListener(type, () => press(el, false));
     el.addEventListener('keydown', (e) => { if ((e.key === 'Enter' || e.key === ' ') && !e.repeat) press(el, true); });
     el.addEventListener('keyup', (e) => { if (e.key === 'Enter' || e.key === ' ') press(el, false); });
   }
@@ -228,18 +223,16 @@ export function mount(host, root, css) {
   // do to the first soft block and button what a pointer would, so a motion can be started while held and then dragged.
   const tl = root.querySelector('.tl'), slider = tl.querySelector('input'), out = tl.querySelector('output');
   const targets = [root.querySelector('.pair .s-box'), root.querySelector('.pair .s-btn')];
-  let springsMoving = () => {};
   const moving = () => root.getAnimations().filter((a) => a.playState !== 'finished' && a.playState !== 'idle');
   const lengthOf = (a) => Number(a.effect?.getComputedTiming().endTime) || 0;
   const say = () => {
     const all = moving();
     slider.disabled = !held || !all.length;
-    if (!all.length) { out.textContent = live.size ? `${live.size} on springs (no fixed length: slow them, or Hold)` : 'nothing moving'; return; }
+    if (!all.length) { out.textContent = 'nothing moving'; return; }
     const longest = Math.max(...all.map(lengthOf)), at = Math.max(...all.map((a) => Number(a.currentTime) || 0));
     out.textContent = `${all.length} moving · ${Math.round(at)} of ${Math.round(longest)}ms`;
     if (root.activeElement !== slider) slider.value = String(Math.round((at / Math.max(1, longest)) * 1000));
   };
-  springsMoving = () => { if (!moving().length) say(); };
   const take = () => { for (const a of moving()) { a.playbackRate = rate; if (held) a.pause(); } say(); };
   for (const type of ['transitionrun', 'animationstart']) root.addEventListener(type, () => queueMicrotask(take), true);
   for (const type of ['transitionend', 'transitioncancel', 'animationend']) root.addEventListener(type, () => queueMicrotask(say), true);
@@ -247,14 +240,15 @@ export function mount(host, root, css) {
   const tick = () => { say(); ticking = moving().length && !held ? requestAnimationFrame(tick) : 0; };
   root.addEventListener('transitionrun', () => { if (!ticking) ticking = requestAnimationFrame(tick); }, true);
   root.addEventListener('animationstart', () => { if (!ticking) ticking = requestAnimationFrame(tick); }, true);
+  onMotion = () => { say(); if (!ticking) ticking = requestAnimationFrame(tick); };
   tl.addEventListener('click', (e) => {
     const b = e.target.closest('button'); if (!b) return;
     if (b.dataset.rate) { rate = Number(b.dataset.rate); for (const x of tl.querySelectorAll('[data-rate]')) x.setAttribute('aria-pressed', String(x === b)); take(); return; }
     const act = b.dataset.do;
     if (act === 'freeze') { held = !held; b.setAttribute('aria-pressed', String(held)); for (const a of moving()) { if (held) a.pause(); else a.play(); } say(); if (!held && !ticking) ticking = requestAnimationFrame(tick); return; }
     for (const el of targets) {
-      if (act === 'in') { el.classList.add('hov'); point(el, true); }
-      if (act === 'out') { el.classList.remove('hov'); point(el, false); }
+      if (act === 'in') point(el, true);
+      if (act === 'out') point(el, false);
       if (act === 'down') press(el, true);
       if (act === 'up') press(el, false);
     }
