@@ -16,44 +16,49 @@
 <body>
 <header>
   <h1>Fix bar</h1>
-  <p>A comp, not the product. The cause in hand is one line at the bottom; the choice is made on the element, with the same control the element editors use. Three states.</p>
+  <p>A comp, not the product. The cause in hand is one line at the bottom; the choice is made on the element. The first one is live: click a step or press ↑ ↓, then Enter.</p>
   <button id="scheme" type="button">Dark</button>
 </header>
 <div id="board"></div>
 <script type="module">
+  // Every piece here is the overlay's own: tokens, pills, tags and actions (language.js), the property icons
+  // (boxmodel.js), the step controls (editor-primitives.js), the value chip that rolls (show.js), the place marks
+  // (scale-marks.js). Nothing is drawn for this page alone except how they are put together.
   import tokens from '../src/tokens.css?raw';
   import { LANGUAGE_CSS } from '../src/language.js';
   import { BLOCK_ICONS } from '../src/boxmodel.js';
   import { PRIMITIVES_CSS, stepper, radius, bind, place } from '../src/editor-primitives.js';
-  import { GLYPH_CSS, glyph } from '../src/glyphs.js';
+  import { SHOW_CSS, chipsHtml, roll } from '../src/show.js';
+  import { SCALE_CSS, places } from '../src/scale-marks.js';
 
   const host = document.getElementById('board');
   const root = host.attachShadow({ mode: 'open' });
   host.dataset.scheme = 'light'; // the comp opens light, whatever the system is; the button flips it
+  const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const radii = [['tag', 6], ['control', 8], ['card', 12]].map(([token, n]) => ({ token, n, label: `${n}`, value: `${n}px` }));
   const spacing = ['s1', 's2', 's3', 's4', 's6'].map((t, i) => ({ token: t, n: [4, 8, 12, 16, 24][i], label: `${[4, 8, 12, 16, 24][i]}`, value: `${[4, 8, 12, 16, 24][i]}px` }));
   const kbd = (k) => `<kbd>${k}</kbd>`;
+  const chip = (icon, n) => chipsHtml([{ label: 'what it becomes', icon: BLOCK_ICONS[icon], from: n }]);
 
-  // The bar: what is wrong (its family's glyph, the class, what it is and what it becomes), where you are, what you can do.
-  const bar = ({ icon, cls, from, to, toHue = 'mint', places, at, act, extra = '' }) => `
+  // The bar: the property's icon and the class; what it is (coral) and what it becomes (the chip, its value rolling, and
+  // the step's name); its places as marks, coral until they are written; where you are; what you can do.
+  const bar = ({ icon, cls, from, to, name, nameHue = 'lilac', marks, at, act, extra = '' }) => `
     <div class="fb pl-card" role="toolbar" aria-label="The cause in hand">
       <span class="what"><i class="ic" aria-hidden="true">${BLOCK_ICONS[icon]}</i><code>${cls}</code></span>
-      <span class="move"><span class="pl-pill" data-hue="coral">${from}</span><span class="to" aria-hidden="true">→</span><span class="pl-pill" data-hue="${toHue}">${to}</span></span>
-      ${places ? `<span class="where">${places}</span>` : ''}
+      <span class="move"><span class="pl-pill" data-hue="coral">${from}</span><span class="to" aria-hidden="true">→</span>${chip(icon, to)}<span class="pl-tag name" data-hue="${nameHue}">${name}</span></span>
+      ${marks ? `<span class="marks" title="${marks} places">${places(marks, 'off', 'rest')}</span>` : ''}
       ${extra}
       <span class="nav"><button type="button" aria-label="The cause before">‹</button><span>${at} of 60</span><button type="button" aria-label="The next cause">›</button></span>
-      <span class="acts"><button type="button" class="pl-act">${act} ${kbd('↵')}</button><button type="button" class="pl-act quiet">Keep ${kbd('K')}</button><button type="button" class="pl-act quiet">Skip ${kbd('→')}</button></span>
+      <span class="acts"><button type="button" class="pl-act go">${act} ${kbd('↵')}</button><button type="button" class="pl-act quiet">Keep ${kbd('K')}</button><button type="button" class="pl-act quiet">Skip ${kbd('→')}</button></span>
     </div>`;
-  // A piece of a page under the dimmed blueprint, with the element in hand lit and its control attached under it.
-  const scene = (title, note, page, barHtml) => `<section class="scene"><h2>${title}</h2><p class="note">${note}</p><div class="stage">${page}${barHtml}</div></section>`;
+  const scene = (id, title, note, body) => `<section class="scene" id="${id}"><h2>${title}</h2><p class="note">${note}</p><div class="stage">${body}</div></section>`;
   const rowsOf = (lit) => ['Undo loses the last change after a reload', 'Spacing drag jumps when the row re-renders', 'History strip covers the toast'].map((t, i) =>
     `<div class="row"><span class="id">PLM-2${14 - i * 5}</span><span class="t">${t}</span><span class="chip${lit ? ' lit' : ''}">${['Bug', 'Bug', 'Feature'][i]}</span></div>`).join('');
 
-  const s1 = { steps: radii, current: null, picked: 'tag', drift: { n: 5, label: '5' } };
   const s2 = { steps: spacing, current: null, drift: { n: 64, label: '64' } };
   const s3 = { steps: spacing, current: null, picked: 's2', drift: { n: 7, label: '7' } };
 
-  root.innerHTML = `<style>${tokens}${LANGUAGE_CSS}${PRIMITIVES_CSS}${GLYPH_CSS}
+  root.innerHTML = `<style>${tokens}${LANGUAGE_CSS}${PRIMITIVES_CSS}${SHOW_CSS}${SCALE_CSS}
     :host { display: block; font-family: var(--pl-sans); color: var(--pl-ink); }
     /* a trial for the dark scheme, in this comp only: the surfaces lifted from near-black (#1c1c1e) to a warm graphite,
        with a lighter edge and a softer shadow, so a dark bar on a light page is not a black slab */
@@ -62,58 +67,136 @@
     .scene { margin: 0 0 28px; }
     .scene h2 { margin: 0 0 2px; font: 600 14px/20px var(--pl-sans); }
     .scene .note { margin: 0 0 10px; font: 400 13px/19px var(--pl-sans); color: var(--pl-ink-2); max-width: 760px; }
-    .stage { position: relative; height: 330px; border-radius: 14px; overflow: hidden; background: #f3f4f6; box-shadow: inset 0 0 0 1px var(--pl-rule); }
+    .stage { position: relative; height: 330px; border-radius: 14px; overflow: hidden; background: #f3f4f6; box-shadow: inset 0 0 0 1px var(--pl-rule); outline: none; }
+    .stage:focus-visible { box-shadow: inset 0 0 0 2px var(--pl-sky); }
     /* the page, as blueprint leaves it: quiet, with only the places of the cause lit */
     .page { position: absolute; inset: 22px 22px auto; border-radius: 12px; background: #fff; box-shadow: 0 1px 2px rgb(0 0 0 / .08); font: 14px/20px system-ui, sans-serif; color: #15181b; }
-    .page .row { display: flex; align-items: center; gap: 12px; padding: 9px 16px; border-bottom: 1px solid #e6e8ec; opacity: .45; }
+    .page .row { display: flex; align-items: center; gap: 12px; padding: 9px 16px; border-bottom: 1px solid #e6e8ec; }
     .page .row:last-child { border-bottom: 0; }
-    .page .id { width: 62px; font-size: 12px; color: #5b6370; }
-    .page .t { flex: 1; }
-    .page .chip { padding: 2px 7px; border-radius: 5px; font-size: 11px; font-weight: 500; background: #fee4e2; color: #b42318; }
-    .page .row:has(.lit) { opacity: 1; }
-    .page .row:has(.lit) .id, .page .row:has(.lit) .t { opacity: .45; }
-    .chip.lit { outline: 1.5px solid var(--pl-pink); outline-offset: 2px; }
-    .chip.lit.first { border-radius: 6px; outline-width: 2px; }
-    /* the control, on the element: no card around it, only the steps on a paper strip with a pointer to its element */
-    .on { position: absolute; display: flex; align-items: center; gap: 8px; padding: 6px 8px 6px 10px; border-radius: 12px; background: var(--pl-paper); box-shadow: var(--pl-shadow-card); }
+    .page .id { width: 62px; font-size: 12px; color: #5b6370; opacity: .45; }
+    .page .t { flex: 1; opacity: .45; }
+    .page .chip { padding: 3px 9px; border-radius: 5px; font-size: 12px; font-weight: 500; background: #fee4e2; color: #b42318; opacity: .45;
+      transition: border-radius 520ms var(--pl-spring), outline-color 240ms var(--pl-ease-out); }
+    .page .chip.lit { opacity: 1; outline: 1.5px solid var(--pl-coral); outline-offset: 2px; }
+    .page .chip.lit.on-scale { outline-color: var(--pl-sky); }
+    .page .chip.lit.written { outline-color: var(--pl-mint); }
+    /* the control, on the element: the steps on a strip of paper that pops out of its element */
+    .on { position: absolute; display: flex; align-items: center; gap: 8px; padding: 6px 8px 6px 10px; border-radius: 12px; background: var(--pl-paper); box-shadow: var(--pl-shadow-card);
+      transform-origin: calc(100% - 30px) 0; transition: opacity 160ms var(--pl-ease-out), scale 200ms var(--pl-ease-out); }
+    .on.pl-pop { transform-origin: calc(100% - 30px) 0; }
+    .on[data-gone] { opacity: 0; scale: .9; pointer-events: none; }
     .on::before { content: ''; position: absolute; top: -5px; right: 26px; width: 10px; height: 10px; rotate: 45deg; background: var(--pl-paper); box-shadow: -1px -1px 0 0 var(--pl-rule); }
+    .on.left::before { right: auto; left: 26px; }
     .on .ic { display: grid; place-items: center; width: 18px; height: 18px; color: var(--pl-ink-2); }
     .on .ic svg { width: 16px; height: 16px; }
     .on .keys { font: 500 11px/1 var(--pl-mono); color: var(--pl-ink-3); padding-left: 2px; }
     .on .name { display: inline-flex; align-items: center; height: 26px; padding: 0 8px; border-radius: 8px; font: 500 12px/1 var(--pl-mono); color: var(--pl-ink-2); box-shadow: inset 0 0 0 1px var(--pl-rule); }
     .on .name b { font-weight: 600; color: var(--pl-ink); border-bottom: 1.5px solid var(--pl-sky); padding-bottom: 1px; margin-left: 1px; }
     /* the bar */
-    .fb { position: absolute; left: 50%; bottom: 16px; translate: -50% 0; display: flex; align-items: center; gap: 11px; height: 50px; padding: 0 8px 0 14px; border-radius: 25px; white-space: nowrap; }
+    .fb { position: absolute; left: 50%; bottom: 16px; translate: -50% 0; display: flex; align-items: center; gap: 11px; height: 50px; padding: 0 8px 0 13px; border-radius: 25px; white-space: nowrap; }
     .fb .what { display: inline-flex; align-items: center; gap: 8px; }
     /* the property's own icon, the one the box model and the chips use (boxmodel.js BLOCK_ICONS) */
-    .fb .what .ic { display: grid; place-items: center; width: 24px; height: 24px; border-radius: 7px; background: var(--pl-pink-soft); color: var(--pl-pink-ink); }
+    .fb .what .ic { display: grid; place-items: center; width: 24px; height: 24px; border-radius: 7px; background: var(--pl-pink-soft); color: var(--pl-pink-ink); transition: background-color 240ms var(--pl-ease-out), color 240ms var(--pl-ease-out); }
     .fb .what .ic svg { width: 16px; height: 16px; display: block; }
+    .fb[data-written] .what .ic { background: var(--pl-mint-soft); color: var(--pl-mint-ink); }
     .fb code { font: 600 13px/1 var(--pl-mono); color: var(--pl-ink); }
     .fb .move { display: inline-flex; align-items: center; gap: 5px; }
+    .fb .move .sh-chips { flex-wrap: nowrap; }
+    .fb .move .sh-chip { color: var(--pl-ink); }
     .fb .to { color: var(--pl-ink-3); font-size: 12px; }
-    .fb .where { font: 500 12px/1 var(--pl-sans); color: var(--pl-ink-2); }
-    .fb .nav { display: inline-flex; align-items: center; gap: 2px; margin-left: 4px; font: 500 12px/1 var(--pl-mono); color: var(--pl-ink-2); }
+    .fb .name { height: 20px; padding: 0 7px; font-size: 11px; }
+    .fb .name.swap { animation: pl-pop 260ms var(--pl-spring-pop) both; }
+    .fb .marks { display: inline-flex; align-items: center; }
+    /* the places, two rows of marks: a glance says how many, and how many are written */
+    .fb .marks .sc-places { display: grid; grid-template-columns: repeat(8, 5px); gap: 3px; }
+    .fb .marks .sc-places:has(> :only-child) { grid-template-columns: 5px; }
+    .fb .nav { display: inline-flex; align-items: center; gap: 2px; font: 500 12px/1 var(--pl-mono); color: var(--pl-ink-2); }
     .fb .nav button { all: unset; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 6px; cursor: pointer; color: var(--pl-ink-2); }
     .fb .nav button:hover { background: var(--pl-paper-2); }
     .fb .acts { display: inline-flex; gap: 6px; }
-    .fb .pl-tag svg { width: 13px; height: 13px; }
+    .fb[data-written] .go { background: var(--pl-mint-soft); color: var(--pl-mint-ink); }
     .fb .inbar { display: inline-flex; align-items: center; }
+    .again { position: absolute; left: 50%; translate: -50% 0; bottom: 78px; font: 500 12px/1 var(--pl-sans); color: var(--pl-ink-2); background: none; border: 0; cursor: pointer; text-decoration: underline; }
+    .again[hidden] { display: none; }
+    @keyframes click { 28% { translate: 0 2px; } 62% { translate: 0 -1px; } }
+    .page .chip.click { animation: click 320ms var(--pl-ease-out); }
+    @media (prefers-reduced-motion: reduce) { .page .chip { transition: none; } .page .chip.click { animation: none; } .fb .name.swap { animation: none; } }
   </style>
-  ${scene('1 · A step your scale has', 'The chip’s corner is 5px, between two of your steps. The steps appear at the chip itself; ↑ ↓ or a click moves between them and the page shows it. Enter writes it at all 16 places.',
-    `<div class="page">${rowsOf(true)}</div>
-     <div class="on" style="top: 74px; right: 30px;"><span class="ic" title="Corner">${BLOCK_ICONS.r}</span>${radius('Corner', s1)}<span class="keys">↑ ↓</span></div>`,
-    bar({ icon: 'r', cls: 'rounded-[5px]', from: '5px', to: 'tag · 6px', places: '16 places', at: 3, act: 'Use rounded-tag' }))}
-  ${scene('2 · A value your scale doesn’t have', '64px is past your largest step, so the fix is a new step. It is named where the steps are: the name is the only thing you type. Enter adds it to your theme.',
+  ${scene('one', '1 · A step your scale has (live)', 'The chip’s corner is 5px, between two of your steps. The steps pop out of the chip itself. Moving between them rounds every place on the page and rolls the value in the bar; the outline goes blue once it sits on a step. Enter writes it: the places click in one after another and their marks turn green.', '')}
+  ${scene('two', '2 · A value your scale doesn’t have', '64px is past your largest step, so the fix is a new step. It is named where the steps are: the name is the only thing you type. Enter adds it to your theme.',
     `<div class="page">${rowsOf(false)}</div>
-     <div class="on" style="top: 150px; left: 40px;"><span class="ic" title="Spacing">${BLOCK_ICONS.p}</span>${stepper('Spacing', s2)}<span class="name">--spacing-<b>gutter</b></span></div>`,
-    bar({ icon: 'm', cls: 'bottom-[64px]', from: '64px', to: 'new · gutter', toHue: 'sky', places: '1 place', at: 32, act: 'Add to theme' }))}
-  ${scene('3 · A place that isn’t on the page right now', 'The place is in a part the page shows only sometimes (a toast). There is no element to put the steps on, so they sit in the bar, with one tag saying why.',
-    `<div class="page">${rowsOf(false)}</div>`,
-    bar({ icon: 'p', cls: 'px-[7px]', from: '7px', to: 's2 · 8px', places: '', at: 41, act: 'Use px-s2',
+     <div class="on left" style="top: 150px; left: 40px;"><span class="ic" title="Spacing">${BLOCK_ICONS.m}</span>${stepper('Spacing', s2)}<span class="name">--spacing-<b>gutter</b></span></div>`
+    + bar({ icon: 'm', cls: 'bottom-[64px]', from: '64', to: 64, name: 'new · gutter', nameHue: 'sky', marks: 1, at: 32, act: 'Add to theme' }))}
+  ${scene('three', '3 · A place that isn’t on the page right now', 'The place is in a part the page shows only sometimes (a toast). There is no element to put the steps on, so they sit in the bar, with one tag saying why.',
+    `<div class="page">${rowsOf(false)}</div>`
+    + bar({ icon: 'p', cls: 'px-[7px]', from: '7', to: 8, name: 's2', at: 41, act: 'Use px-s2',
       extra: `<span class="pl-tag" data-hue="butter" title="In a part this page shows only sometimes. Fixing it still changes your code.">Not showing now</span><span class="inbar">${stepper('Spacing', s3)}</span>` }))}`;
 
-  bind(root, {});
-  for (const group of root.querySelectorAll('.ep[role="radiogroup"]')) place(group);
+  // ── the live one ──
+  const stage = root.querySelector('#one .stage');
+  stage.tabIndex = 0;
+  let s, written;
+  const draw = () => {
+    stage.querySelector('.on .ctl').innerHTML = radius('Corner', s);
+    bind(stage.querySelector('.on'), { pick: (_, i) => pick(i), peek: (_, i) => show(radii[i].n), unpeek: () => show(now().n) });
+    for (const group of stage.querySelectorAll('.on .ep[role="radiogroup"]')) place(group);
+  };
+  const now = () => radii.find((r) => r.token === s.picked);
+  // the page and the bar say the same value: every place takes the corner, the chip rolls to it
+  const show = (n) => {
+    for (const el of stage.querySelectorAll('.chip.lit')) { el.style.borderRadius = `${n}px`; el.classList.toggle('on-scale', radii.some((r) => r.n === n)); }
+    roll(stage.querySelector('.fb .sh-chip'), n);
+  };
+  const pick = (i) => {
+    if (written) return;
+    const to = radii[Math.max(0, Math.min(radii.length - 1, i))];
+    if (to.token === s.picked) return;
+    s.picked = to.token;
+    draw(); show(to.n);
+    const name = stage.querySelector('.fb .name'); name.textContent = to.token; name.classList.remove('swap'); void name.offsetWidth; name.classList.add('swap');
+    stage.querySelector('.fb .go').firstChild.textContent = `Use rounded-${to.token} `;
+  };
+  const write = () => {
+    if (written) return;
+    written = true;
+    const beat = still ? 0 : 1;
+    stage.querySelector('.on').setAttribute('data-gone', '');
+    // the places on the page click in, top to bottom; their marks in the bar turn from coral squares to mint discs
+    [...stage.querySelectorAll('.chip.lit')].forEach((el, i) => setTimeout(() => { el.classList.add('click', 'written'); }, beat * (80 + i * 110)));
+    [...stage.querySelectorAll('.fb .sc-place')].forEach((m, k) => setTimeout(() => { m.dataset.tone = 'on'; m.dataset.show = 'arrive'; }, beat * (80 + k * 38)));
+    setTimeout(() => {
+      const fb = stage.querySelector('.fb'); fb.setAttribute('data-written', '');
+      fb.querySelector('.sh-chip').removeAttribute('data-on'); fb.querySelector('.sh-chip').setAttribute('data-done', '');
+      fb.querySelector('.go').innerHTML = `Written at 16 places`;
+      stage.querySelector('.again').hidden = false;
+    }, beat * (80 + 16 * 38 + 120));
+  };
+  const reset = () => {
+    written = false;
+    s = { steps: radii, current: null, picked: 'tag', drift: { n: 5, label: '5' } };
+    stage.innerHTML = `<div class="page">${rowsOf(true)}</div>
+      <div class="on pl-pop" style="top: 78px; right: 30px;"><span class="ic" title="Corner">${BLOCK_ICONS.r}</span><span class="ctl"></span><span class="keys">↑ ↓</span></div>`
+      + bar({ icon: 'r', cls: 'rounded-[5px]', from: '5', to: 5, name: 'tag', marks: 16, at: 3, act: 'Use rounded-tag' })
+      + `<button type="button" class="again" hidden>Play it again</button>`;
+    stage.querySelector('.fb .sh-chip').setAttribute('data-on', '');
+    for (const el of stage.querySelectorAll('.chip.lit')) el.style.borderRadius = '5px';
+    draw();
+    stage.querySelector('.again').onclick = reset;
+    stage.querySelector('.fb .go').onclick = write;
+    // the fix it opens on is tried at once, as the product does: the page moves to the nearest step
+    requestAnimationFrame(() => show(now().n));
+  };
+  stage.addEventListener('keydown', (e) => {
+    const at = radii.findIndex((r) => r.token === s.picked);
+    if (e.key === 'ArrowUp' || e.key === 'ArrowRight') { e.preventDefault(); pick(at + 1); }
+    else if (e.key === 'ArrowDown' || e.key === 'ArrowLeft') { e.preventDefault(); pick(at - 1); }
+    else if (e.key === 'Enter') { e.preventDefault(); write(); }
+  });
+  reset();
+
+  bind(root.querySelector('#two'), {}); bind(root.querySelector('#three'), {});
+  for (const group of root.querySelectorAll('#two .ep[role="radiogroup"], #three .ep[role="radiogroup"]')) place(group);
+  for (const c of root.querySelectorAll('#two .sh-chip, #three .sh-chip')) c.setAttribute('data-on', '');
   document.getElementById('scheme').onclick = (e) => { const dark = document.body.classList.toggle('dark'); host.dataset.scheme = dark ? 'dark' : 'light'; e.target.textContent = dark ? 'Light' : 'Dark'; };
 </script>
 </body>
