@@ -83,7 +83,11 @@ export const PICKER_CSS = `
        let go ── */
     .row .val { overflow: visible; }
     /* only while dragging: it fades in as the drag starts, and out once the fill has sprung onto the option */
-    .track { position: absolute; inset: 2px; border-radius: 7px; pointer-events: none; opacity: 0; transition: opacity 220ms var(--pl-ease-out) 380ms; }
+    .track { position: absolute; inset: 2px; border-radius: 7px; pointer-events: none; opacity: 0; overflow: hidden; transition: opacity 220ms var(--pl-ease-out) 380ms; }
+    /* pulled past either end, the fill presses on the track's edge and the track gives: it stretches a little the way
+       you pull, anchored at the other side, and springs back when you let go. The words don't stretch; nothing
+       crosses the edge */
+    .track { transform-origin: var(--from, left) center; }
     .row.dragging .track { opacity: 1; transition: opacity 120ms var(--pl-ease-out) 0ms; }
     .track .fill { position: absolute; left: 0; top: 0; bottom: 0; width: calc(12px + var(--f, 0) * (100% - 12px)); border-radius: 7px; background: color-mix(in oklab, var(--pl-sky) 14%, transparent);
       transition: width 420ms cubic-bezier(.34, 1.56, .64, 1), background-color 200ms var(--pl-ease-out); }
@@ -96,7 +100,7 @@ export const PICKER_CSS = `
     .val.on-hard .fill::after { background: var(--pl-coral); }
     .row.dragging .fill { transition: width 70ms linear, background-color 200ms; background: color-mix(in oklab, var(--pl-sky) 22%, transparent); }
     .row.dragging .val.on-hard .fill { background: color-mix(in oklab, var(--pl-coral) 18%, transparent); }
-    .row.dragging .fill::after { height: 16px; opacity: 1; }
+    .row.dragging .fill::after { height: calc(16px - 7px * var(--press, 0)); width: calc(2.5px + 2.5px * var(--press, 0)); opacity: 1; }
     .row .val:hover { background: none; }
     .drum, .car { position: relative; }
 
@@ -122,7 +126,7 @@ const TICK = '<svg viewBox="0 0 16 16"><path d="M3.5 8.5l3 3 6-7" fill="none" st
 // ── one picker: the row beside the element (the property's icon, the value that rolls, the tick), its list, drag
 // mode and the keys. A property brings: its options, its icon, the mark each option gets in the list, what an
 // option does to the element, where the row sits, and the element's own handles ──
-export function picker(stage, { name, toy, options: S, mark, apply, place, handles = [], into = stage, keys = stage, grab = stage, start, format = px, compact = false, changed }) {
+export function picker(stage, { name, toy, options: S, mark, apply, place, handles = [], into = stage, keys = stage, grab = stage, start, format = (o) => px(o.v), compact = false, changed }) {
   const last = S.length - 1, HARD = S.findIndex((o) => o.hard), FIRST = start ?? HARD;
   into.insertAdjacentHTML('beforeend', `
     <div class="row" role="group" aria-label="${name}">
@@ -154,6 +158,22 @@ export function picker(stage, { name, toy, options: S, mark, apply, place, handl
   };
   // past either end: the one in the field leans a little the way you are pulling, and comes back when you let go
   const lean = (over) => { const el = drum.querySelector('.slot:not(.gone)'); if (el) el.style.transform = over ? `translateY(${(-Math.sign(over) * Math.min(5, Math.abs(over) * 7)).toFixed(1)}px)` : ''; };
+  // past either end the field stretches toward the pull, with resistance: the further you pull, the less it gives,
+  // never more than 6%. Let go and it springs back
+  const track = val.querySelector('.track');
+  const stretch = (over) => {
+    if (!over) { track.style.transform = ''; val.style.setProperty('--press', '0'); return; }
+    // it gives up to the field's own edge and no further (the track sits 2px inside it), with resistance
+    const give = 1 - 1 / (1 + Math.abs(over) * 0.9), most = (track.offsetWidth + 2) / track.offsetWidth - 1;
+    track.style.setProperty('--from', over > 0 ? 'left' : 'right');
+    track.style.transform = `scaleX(${(1 + most * give).toFixed(4)})`;
+    val.style.setProperty('--press', give.toFixed(3));
+  };
+  const release = () => {
+    const from = track.style.transform; if (!from) return;
+    track.style.transform = ''; val.style.setProperty('--press', '0');
+    if (!still()) track.animate([{ transform: from }, { transform: 'scaleX(1)' }], { duration: 420, easing: 'cubic-bezier(.34, 1.56, .64, 1)' });
+  };
   // the bar while dragging: f is where you are, 0 at the smallest option and 1 at the largest
   const fill = (f) => val.style.setProperty('--f', f.toFixed(4));
   val.querySelector('.dots').innerHTML = S.map((o, i) => `<i class="${o.hard ? 'hard' : ''}" style="left:${(i / last) * 100}%"></i>`).join('');
@@ -201,12 +221,13 @@ export function picker(stage, { name, toy, options: S, mark, apply, place, handl
       const over = raw < -0.5 ? raw + 0.5 : raw > last + 0.5 ? raw - last - 0.5 : 0;
       land(Math.max(0, Math.min(last, Math.round(raw))));
       lean(over);
-      fill((Math.max(-0.6, Math.min(last + 0.6, raw < 0 ? raw * 0.3 : raw > last ? last + (raw - last) * 0.3 : raw))) / last);
+      fill(Math.max(0, Math.min(last, raw)) / last);
+      stretch(raw < 0 ? raw : raw > last ? raw - last : 0);
     };
     const up = () => {
       el.removeEventListener('pointermove', move); el.removeEventListener('pointerup', up); el.removeEventListener('pointercancel', up);
       grab.classList.remove('grabbing'); row.classList.remove('dragging'); scrub.classList.remove('on');
-      fill(at / last); done?.();
+      fill(at / last); done?.(); release();
       if (!moved) { if (el === val) toggle(); return; }
       const cur = drum.querySelector('.slot:not(.gone)');
       if (cur && cur.style.transform) { cur.animate([{ transform: cur.style.transform }, { transform: 'translateY(0)' }], { duration: still() ? 0 : 320, easing: 'cubic-bezier(.34, 1.56, .64, 1)' }); cur.style.transform = ''; }

@@ -517,6 +517,12 @@ race, built for the old in-place write) was rewritten for the new write path (`e
   value; a field now counts as changed by where it started.
 - **Proof:** on the running page: Write starts empty; Tablet shows 24px inherited with its note; centre, italic and
   balance applied to the heading and made "Write 3 changes".
+- **"during the drag the blue state goes out of its boundary... make it stretch against the boundary, not cross it":**
+  the fill is clipped to its track; pulled past an end, the track gives with resistance up to the field's own edge
+  and no further, and the grip at the fill's end squashes (shorter, wider) as it presses; it springs back on release.
+  Measured: pulled far past the end, the track's edge stops at the field's edge (205.1 against 205.5).
+- **A bug found while checking:** every standalone picker's value read "[object Object]px" since the picker learned
+  other units; the default format now reads the option's value.
 
 ## Open gaps
 - The contrast check knows colours, not sizes or weights, and is not run by CI yet.
