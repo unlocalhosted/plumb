@@ -34,12 +34,14 @@ cd plumb
 if [ -f test.pid ] && kill -0 "$(cat test.pid)" 2>/dev/null; then echo "A run is already going here (pid $(cat test.pid)). Stop it first."; exit 3; fi
 before=$(sha1sum package-lock.json 2>/dev/null || true)
 git fetch -q ../../plumb.bundle "+refs/heads/$branch:refs/remotes/bundle/$branch"
+# this checkout is only ever a copy of a commit: whatever an install left changed in it is dropped
+git reset -q --hard
 git checkout -q --detach "$sha"
 [ -d node_modules ] && [ "$before" = "$(sha1sum package-lock.json)" ] || npm ci > ci.log 2>&1
 npm run build > build.log 2>&1
 # the two folders with dependencies of their own, as CI installs them; without them their tests cannot start
 [ ! -f site/package.json ] || [ -d site/node_modules ] || npm ci --prefix site > site-ci.log 2>&1 || true
-[ ! -f overlay/showcase/package.json ] || [ -d overlay/showcase/node_modules ] || npm install --prefix overlay/showcase > showcase-ci.log 2>&1 || true
+[ ! -f overlay/showcase/package.json ] || [ -d overlay/showcase/node_modules ] || npm ci --prefix overlay/showcase > showcase-ci.log 2>&1 || true
 rm -rf test.log test.exit mem.log
 nohup sh -c 'while [ ! -f test.exit ]; do echo "$(date +%s) used_mb=$(free -m | awk "/Mem:/{print \$3}") chrome=$(pgrep -c -f chrom) load=$(cut -d" " -f1 /proc/loadavg)" >> mem.log; sleep 20; done' > /dev/null 2>&1 &
 nohup sh -c 'node scripts/test.mjs "$@" > test.log 2>&1; echo $? > test.exit' sh "$@" > /dev/null 2>&1 &
