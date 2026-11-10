@@ -44,8 +44,8 @@ export function plumb({ demo, ...options }: PlumbViteOptions = {}): Plugin {
   const stamping = sourceStamping(options, Boolean(demo));
   // One apply-all is one transaction against Vite's hot updates: every file it writes is held (handleHotUpdate /
   // hotUpdate return nothing for it), the page is told the whole result first (`plumb:applied` over the HMR socket,
-  // so a reload cannot lose the confirmation), then one release follows: a full reload when any held file would have
-  // caused one, else one update per held module. Ordinary saves from an editor are never held. If the transaction
+  // so a reload cannot lose the confirmation), then one release follows: one update per held module, which the app's
+  // Fast Refresh takes without a reload; a full reload only when the page's own HTML was written. Ordinary saves from an editor are never held. If the transaction
   // dies, whatever is held goes out after five seconds of silence (the engine reports progress at every item and
   // every write, so a long apply is never released, and reloaded, mid-write). Next.js has no such hook (webpack, Fast Refresh): there
   // apply-all writes back to back, and the page reloads as it would for any save.
@@ -57,13 +57,27 @@ export function plumb({ demo, ...options }: PlumbViteOptions = {}): Plugin {
   // and goes out as any save would. Content, not a time window, is what tells the two apart.
   const ours = new Map<string, { hash: Promise<string>; sent: boolean }>();
   const hashOf = (file: string) => readFile(file, 'utf8').then(sourceHash, () => '');
+  // Whether a module's update stops at something that accepts it, as Vite decides it: the module accepts itself
+  // (a component under Fast Refresh, a stylesheet), or every path up its importers reaches one that accepts it.
+  // A path that runs out of importers is the page's entry: only a reload shows the change.
+  const accepted = (module: ModuleNode, seen = new Set<ModuleNode>()): boolean => {
+    if (seen.has(module)) return true;
+    seen.add(module);
+    if (module.isSelfAccepting) return true;
+    if (!module.importers.size) return false;
+    for (const importer of module.importers) if (!importer.acceptedHmrDeps.has(module) && !accepted(importer, seen)) return false;
+    return true;
+  };
   const releaseHeld = () => {
     const current = held; held = undefined;
     if (!current) return;
     clearTimeout(current.timer); clearTimeout(current.ending?.timer);
     if (!hotServer || !current.files.size) return;
     for (const file of current.files) ours.set(file, { hash: hashOf(file), sent: true });
-    if (current.full || !current.modules.size) hotServer.ws.send({ type: 'full-reload', path: '*' });
+    // One reload at most. A module that nothing accepts (an app without Fast Refresh, an entry file) would make Vite
+    // reload the page for it; several such modules released one by one reloaded it several times over. When any
+    // held module is like that, the one reload is sent here and no module is released on its own.
+    if (current.full || [...current.modules.values()].some(module => !accepted(module))) hotServer.ws.send({ type: 'full-reload', path: '*' });
     else for (const module of current.modules.values()) {
       // hotUpdate (Vite 6+) holds an environment's module: it reloads through that environment (server.reloadModule
       // takes only the old mixed module and throws on it). Anything that still fails reloads the page instead
@@ -110,8 +124,12 @@ export function plumb({ demo, ...options }: PlumbViteOptions = {}): Plugin {
     }
     held.files.add(file); alive();
     for (const module of modules) held.modules.set(module.id ?? module.url, module);
-    // a stylesheet that sets the theme, or a file no module reads, would reload the whole page
-    if (!modules.length || file.endsWith('.css') && /@theme\b|@import\s+["']tailwindcss/.test(await Promise.resolve(read()).catch(() => ''))) held.full = true;
+    // What forces a reload: a page's own HTML, nothing else. A file no module reads has nothing on the page to
+    // update (a component this page does not draw, the project's config) and must not cost the page its state:
+    // React Plumber's own change log (.plumber/cache/changes.jsonl) is such a file, is written by every traced
+    // apply, and used to reload the page every time. A stylesheet that sets the theme is a module like any other
+    // (Vite and Tailwind update it in place, new utilities included).
+    if (!modules.length && file.endsWith('.html')) held.full = true;
     if (held.ending && [...held.ending.expected].every(seen => held!.files.has(seen))) releaseHeld();
     return [];
   };
