@@ -29,6 +29,7 @@ import { SpacingPass } from './spacing-pass.js';
 import { ColourPass } from './colour-pass.js';
 import { IconPass } from './icon-pass.js';
 import { CLEANUP as W } from './words.js';
+import { Scope } from './scope.js';
 
 const LAWS = [{ id: 'similarity', name: 'Law of similarity' }, { id: 'cognitive-load', name: 'Cognitive load' }];
 // the passes written as class swaps (spacing-pass.js, colour-pass.js): one shape, so the panel runs them one way
@@ -156,6 +157,9 @@ export class Cleanup {
   // One run at a time (docs/state-machines/cleanup-spec.md): every move the person makes (start, a pass read, Esc out of
   // the preview, Apply, Undo, stop) is a new run; an answer that comes back for an older run changes nothing on screen
   #run = 0;
+  // the clean-up's own, whatever state it is in: a frame asked for here still runs after the state moved on (letting
+  // go of a preview the page no longer needs must happen), and is the clean-up's to cancel if it is ever removed
+  #life = new Scope();
   #send(event) {
     const next = CLEANUP.states[this.#state]?.on?.[event];
     if (next) this.#state = next;
@@ -428,7 +432,7 @@ export class Cleanup {
       if (run === this.#run) this.#saved = { group, refused: r.refused?.length ?? 0 };
       landed(r.undo);
       // the page now draws the styles from its own classes: the preview's inline values (the same) are let go
-      requestAnimationFrame(() => this.#preview.clear((el, f) => f()));
+      this.#life.frame(() => this.#preview.clear((el, f) => f()));
       this.#host.announce?.(`${W.pass.text}: ${said}`);
     } catch (error) { if (run === this.#run) { keep(null); this.#preview.clear(glide); this.#send('failed'); this.#err = error?.message ?? W.couldNot; } }
     finally { removeEventListener('plumb:applied', heard); }
@@ -465,7 +469,7 @@ export class Cleanup {
       refused.push(...(r?.refused ?? [])); // what the write itself left as it is (a partly landed step)
       landed(r.undo);
       // the page now draws the change from its own classes: the preview's inline values (the same) are let go
-      requestAnimationFrame(() => sw.clear());
+      this.#life.frame(() => sw.clear());
       this.#host.announce?.(`${W.pass[k]}: ${said}`);
     } catch (error) { if (run === this.#run) { keep(null); sw.clear(); this.#send('failed'); this.#err = error?.message ?? S.couldNot; } }
     this.#host.render();
