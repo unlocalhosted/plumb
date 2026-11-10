@@ -383,6 +383,10 @@ race, built for the old in-place write) was rewritten for the new write path (`e
   options over the page. What the owner wanted: one value in the field; going up, the new one comes in from below
   and the old one leaves over the top, the reverse going down. Now: nothing opens, the field rolls one value at a
   time (in 260ms, out 200ms, a 16px travel and a little blur), and past either end the value leans and springs back.
+- **"there is no slider kind of bar, it should add more personality":** a thin track along the field's bottom edge
+  (never across the words), a dot per option with the hard-coded one in coral, a fill and a knob. While dragging the
+  knob follows the pointer, swells and the track thickens; past either end it stretches; on release it springs
+  onto the option.
 
 ## Open gaps
 - The contrast check knows colours, not sizes or weights, and is not run by CI yet.

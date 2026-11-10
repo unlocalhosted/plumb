@@ -47,7 +47,7 @@ export function mount(host, root, css) {
     .handle.dragging { transition: none; }
 
     /* ── the row: what a visual editor shows for this property, one line, beside the element ── */
-    .row { position: absolute; z-index: 4; display: flex; align-items: center; gap: 2px; height: 34px; padding: 0 4px 0 2px; border-radius: 11px; background: var(--pl-paper); box-shadow: var(--pl-shadow-card); font: 500 13px/1 var(--pl-sans); white-space: nowrap; }
+    .row { position: absolute; z-index: 4; display: flex; align-items: center; gap: 2px; height: 44px; padding: 0 4px 0 2px; border-radius: 11px; background: var(--pl-paper); box-shadow: var(--pl-shadow-card); font: 500 13px/1 var(--pl-sans); white-space: nowrap; }
     .row .scrub { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 8px; cursor: ew-resize; touch-action: none; }
     .row .scrub:hover { background: var(--pl-paper-2); }
     .row .scrub svg { display: block; width: 18px; height: 18px; }
@@ -87,6 +87,27 @@ export function mount(host, root, css) {
     .slot.hard b, .slot.hard span { color: var(--pl-coral); }
     .row.dragging .val { cursor: ns-resize; }
     :host(.grabbing) { cursor: ns-resize; }
+    /* ── the bar in the field: where you are among the options, like a slider, along the field's bottom edge so it
+       never crosses the words. A thin track with a dot for each option (coral for your hard-coded one), a fill from
+       the left and a knob at its end. While you drag the knob follows the pointer, swells, and the track thickens;
+       past either end it stretches a little; let go and it springs onto the option ── */
+    .row .val { overflow: visible; height: 40px; padding-bottom: 8px; box-sizing: border-box; }
+    .row .val:hover { background: none; }
+    .drum, .car { position: relative; }
+    .track { position: absolute; left: 10px; right: 10px; bottom: 5px; height: 3px; border-radius: 2px; background: color-mix(in oklab, var(--pl-ink) 8%, transparent); pointer-events: none;
+      transition: height 200ms var(--pl-spring-pop), bottom 200ms var(--pl-spring-pop); }
+    .track .fill { position: absolute; left: 0; top: 0; bottom: 0; width: calc(var(--f, 0) * 100%); border-radius: 2px; background: var(--pl-sky);
+      transition: width 460ms cubic-bezier(.34, 1.56, .64, 1), background-color 200ms var(--pl-ease-out); }
+    .track .fill::after { content: ''; position: absolute; right: -5px; top: 50%; width: 10px; height: 10px; translate: 0 -50%; border-radius: 50%; background: var(--pl-paper);
+      box-shadow: 0 0 0 2px var(--pl-sky), 0 1px 3px rgb(0 0 0 / .2); transition: scale 220ms var(--pl-spring-pop), box-shadow 200ms; }
+    .track .dots { position: absolute; inset: 0; }
+    .track .dots i { position: absolute; top: 50%; width: 3px; height: 3px; margin: -1.5px 0 0 -1.5px; border-radius: 50%; background: var(--pl-paper); opacity: .9; }
+    .track .dots i.hard { width: 5px; height: 5px; margin: -2.5px 0 0 -2.5px; background: var(--pl-coral); }
+    .val.on-hard .fill { background: var(--pl-coral); }
+    .val.on-hard .fill::after { box-shadow: 0 0 0 2px var(--pl-coral), 0 1px 3px rgb(0 0 0 / .2); }
+    .row.dragging .track { height: 5px; bottom: 4px; }
+    .row.dragging .fill { transition: width 60ms linear, background-color 200ms; }
+    .row.dragging .fill::after { scale: 1.3; }
     .hint { position: absolute; left: 0; right: 0; bottom: 14px; text-align: center; font: 500 12.5px/1 var(--pl-sans); color: var(--pl-ink-3); }
     .hint kbd { font: 600 11px/1 var(--pl-mono); padding: 2px 5px; border-radius: 5px; background: var(--pl-paper); box-shadow: 0 1px 0 var(--pl-rule); }
     @media (prefers-reduced-motion: reduce) { .handle { transition: none; } }
@@ -104,7 +125,7 @@ export function mount(host, root, css) {
       <i class="handle" role="presentation"></i>
       <div class="row" role="group" aria-label="Border radius">
         <span class="scrub" title="Drag to change">${toyOf('corner')}</span>
-        <button type="button" class="val" aria-haspopup="listbox" aria-expanded="false"><span class="drum"></span><i class="car"></i></button>
+        <button type="button" class="val" aria-haspopup="listbox" aria-expanded="false"><span class="track" aria-hidden="true"><i class="fill"></i><span class="dots"></span></span><span class="drum"></span><i class="car"></i></button>
         <button type="button" class="ok" aria-label="Write it"><svg viewBox="0 0 16 16"><path d="M3.5 8.5l3 3 6-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
       </div>
       <div class="list" role="listbox" aria-label="Your radius tokens" hidden></div>
@@ -124,8 +145,8 @@ export function mount(host, root, css) {
     const s = stage.getBoundingClientRect(), b = badge.getBoundingClientRect(), card = badge.closest('.app').getBoundingClientRect();
     const inset = shown(S[at].v) * (1 - Math.SQRT1_2);
     handle.style.left = `${b.left - s.left + inset}px`; handle.style.top = `${b.top - s.top + inset}px`;
-    row.style.left = `${card.right - s.left + 14}px`; row.style.top = `${b.top - s.top + b.height / 2 - 17}px`;
-    list.style.left = row.style.left; list.style.top = `${b.top - s.top + b.height / 2 + 22}px`;
+    row.style.left = `${card.right - s.left + 14}px`; row.style.top = `${b.top - s.top + b.height / 2 - 22}px`;
+    list.style.left = row.style.left; list.style.top = `${b.top - s.top + b.height / 2 + 27}px`;
   };
   // the field: the option in hand. A change rolls it, in the direction of travel
   const EASE = 'cubic-bezier(0.22, 1, 0.36, 1)';
@@ -142,12 +163,19 @@ export function mount(host, root, css) {
   };
   // past either end: the one in the field leans a little the way you are pulling, and comes back when you let go
   const lean = (over) => { const el = drum.querySelector('.slot:not(.gone)'); if (el) el.style.transform = over ? `translateY(${(-Math.sign(over) * Math.min(5, Math.abs(over) * 7)).toFixed(1)}px)` : ''; };
+  // the bar: f is where you are, 0 at the smallest option and 1 at the largest
+  const fill = (f) => val.style.setProperty('--f', f.toFixed(4));
+  val.querySelector('.dots').innerHTML = S.map((o, i) => `<i class="${o.hard ? 'hard' : ''}" style="left:${(i / last) * 100}%"></i>`).join('');
+  const dots = [...val.querySelectorAll('.dots i')];
   const draw = () => {
     const o = S[at], token = !o.hard;
     badge.style.setProperty('--r', `${o.v}px`);
     badge.classList.toggle('on-token', token); handle.classList.toggle('on-token', token);
     if (token && !written) ok.setAttribute('data-ready', ''); else ok.removeAttribute('data-ready');
     list.innerHTML = S.map((t, i) => `<button type="button" role="option" class="${t.hard ? 'hard' : ''}" data-at="${i}" aria-selected="${at === i}"><i class="c" style="border-top-left-radius:${Math.min(t.v, 16)}px"></i>${t.name}<span>${t.hard ? 'hard-coded' : px(t.v)}</span></button>`).join('');
+    val.classList.toggle('on-hard', !!o.hard);
+    dots.forEach((d, i) => d.classList.toggle('here', i === at));
+    if (!row.classList.contains('dragging')) fill(at / last);
     val.setAttribute('aria-label', `Border radius: ${o.hard ? '5px, hard-coded' : `${o.name}, ${px(o.v)}`}`);
     requestAnimationFrame(place);
   };
@@ -174,10 +202,12 @@ export function mount(host, root, css) {
       const over = raw < -0.5 ? raw + 0.5 : raw > last + 0.5 ? raw - last - 0.5 : 0;
       land(Math.max(0, Math.min(last, Math.round(raw))));
       lean(over);
+      fill((Math.max(-0.6, Math.min(last + 0.6, raw < 0 ? raw * 0.3 : raw > last ? last + (raw - last) * 0.3 : raw))) / last);
     };
     const up = () => {
       el.removeEventListener('pointermove', move); el.removeEventListener('pointerup', up); el.removeEventListener('pointercancel', up);
       host.classList.remove('grabbing'); row.classList.remove('dragging');
+      fill(at / last);
       if (!moved) { if (el === val) { list.hidden = !list.hidden; val.setAttribute('aria-expanded', String(!list.hidden)); } return; }
       const cur = drum.querySelector('.slot:not(.gone)');
       if (cur && cur.style.transform) { cur.animate([{ transform: cur.style.transform }, { transform: 'translateY(0)' }], { duration: still ? 0 : 320, easing: 'cubic-bezier(.34, 1.56, .64, 1)' }); cur.style.transform = ''; }
