@@ -12,15 +12,29 @@ import { LANGUAGE_CSS } from '../../../overlay/src/language.js';
 import { TOY_DEFS, toyOf } from '../../../overlay/src/toys.js';
 import { PICKER_CSS, picker as pick } from '../../../overlay/src/picker.js';
 import { GLYPH_CSS, glyph } from '../../../overlay/src/glyphs.js';
+import { BUTTON_CSS, button } from '../../../overlay/src/kit.js';
 
 // the options in order of size; the hard-coded value sits among them where it falls, so you can drag back to it
 const RADIUS = [{ name: 'none', v: 0 }, { name: '5px', v: 5, hard: true }, { name: 'tag', v: 6 }, { name: 'control', v: 8 }, { name: 'card', v: 12 }, { name: 'full', v: 999 }];
 const PADDING = [{ name: 'xs', v: 4 }, { name: 'sm', v: 8 }, { name: 'md', v: 12 }, { name: '14px', v: 14, hard: true }, { name: 'lg', v: 16 }, { name: 'xl', v: 24 }];
 const FONT = [{ name: 'sm', v: 14 }, { name: 'base', v: 16 }, { name: 'lg', v: 18 }, { name: '19px', v: 19, hard: true }, { name: 'xl', v: 20 }, { name: '2xl', v: 24 }, { name: '3xl', v: 30 }];
 // the text card's four values for a hero heading: two hard-coded, two already on tokens
-const HERO_SIZE = [{ name: 'xl', v: 20 }, { name: '2xl', v: 24 }, { name: '3xl', v: 30 }, { name: '34px', v: 34, hard: true }, { name: '4xl', v: 36 }, { name: '5xl', v: 48 }];
+const HERO_SIZE = [{ name: 'base', v: 16 }, { name: 'lg', v: 18 }, { name: 'xl', v: 20 }, { name: '2xl', v: 24 }, { name: '3xl', v: 30 }, { name: '34px', v: 34, hard: true }, { name: '4xl', v: 36 }, { name: '5xl', v: 48 }];
 const LEADING = [{ name: 'none', v: 1 }, { name: '1.2', v: 1.2, hard: true }, { name: 'tight', v: 1.25 }, { name: 'snug', v: 1.375 }, { name: 'normal', v: 1.5 }];
 const TRACKING = [{ name: 'tighter', v: -0.05 }, { name: 'tight', v: -0.025 }, { name: 'normal', v: 0 }, { name: 'wide', v: 0.025 }];
+// the project's text styles: each one a size, a line height, a weight and a letter spacing together. The heading is on
+// none of them (it is hard-coded), so 'No style' sits among them where its size falls
+const STYLES = [
+  { name: 'body', v: 16, lh: 1.5, fw: 400, ls: 0 },
+  { name: 'title', v: 24, lh: 1.375, fw: 600, ls: 0 },
+  { name: 'heading', v: 30, lh: 1.25, fw: 600, ls: -0.025 },
+  { name: 'No style', v: 34, hard: true },
+  { name: 'heading-lg', v: 36, lh: 1.25, fw: 700, ls: -0.025 },
+  { name: 'display', v: 48, lh: 1, fw: 700, ls: -0.05 },
+];
+// the text colours, darkest first; the heading's own colour is a hard-coded near-white
+const INK = [{ name: 'muted', v: '#94969c' }, { name: 'secondary', v: '#cecfd2' }, { name: '#f0f0f1', v: '#f0f0f1', hard: true }, { name: 'primary', v: '#f5f5f6' }, { name: 'white', v: '#ffffff' }];
+const CASES = [['none', '—', 'As written'], ['uppercase', 'AG', 'Uppercase'], ['lowercase', 'ag', 'Lowercase'], ['capitalize', 'Ag', 'Capitalised']];
 const WEIGHT = [{ name: 'normal', v: 400 }, { name: 'medium', v: 500 }, { name: 'semibold', v: 600 }, { name: 'bold', v: 700 }];
 const GAP = [{ name: 'xs', v: 4 }, { name: 'sm', v: 8 }, { name: 'md', v: 12 }, { name: '13px', v: 13, hard: true }, { name: 'lg', v: 16 }, { name: 'xl', v: 24 }];
 
@@ -28,7 +42,7 @@ export function mount(host, root, css) {
   const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const px = (v) => `${v}px`;
 
-  root.innerHTML = `<style>${css}${LANGUAGE_CSS}${PICKER_CSS}${GLYPH_CSS}
+  root.innerHTML = `<style>${css}${LANGUAGE_CSS}${PICKER_CSS}${GLYPH_CSS}${BUTTON_CSS}
     :host { display: block; font-family: var(--pl-sans); color: var(--pl-ink); }
     .scene { margin: 0 0 40px; }
     .scene h2 { margin: 0 0 4px; }
@@ -123,22 +137,50 @@ export function mount(host, root, css) {
     .list .aa { width: 22px; text-align: center; font-family: system-ui, sans-serif; font-weight: 600; line-height: 1; color: var(--pl-ink-2); }
     .list .hard .aa { color: var(--pl-coral); }
 
-    /* ── the text card: the element's editor, made of the same pickers stacked in one card ── */
+    /* ── the text card: laid out like a visual editor's panel, not a list. The text style at the top, as a sample of
+       itself; the type values in a two-column grid; case as four buttons; colour as a swatch; one button that writes
+       every change. Each field is the same picker as above, made compact ── */
     .hero { width: 380px; padding: 28px 24px; border-radius: 16px; background: #0c111d; color: #f5f5f6; box-shadow: 0 12px 32px -14px rgb(16 24 40 / .45); font: 15px/22px system-ui, -apple-system, sans-serif; }
-    .hero h1 { display: inline; margin: 0; font-family: system-ui, -apple-system, sans-serif; font-size: var(--fs); line-height: var(--lh); letter-spacing: var(--ls); font-weight: var(--fw); cursor: ns-resize; touch-action: none; transition: font-size 220ms var(--pl-spring-pop), letter-spacing 220ms var(--pl-ease-out); }
+    .hero h1 { display: inline; margin: 0; font-family: system-ui, -apple-system, sans-serif; font-size: var(--fs); line-height: var(--lh); letter-spacing: var(--ls); font-weight: var(--fw); color: var(--ink, #f0f0f1); text-transform: var(--tt, none); cursor: ns-resize; touch-action: none;
+      transition: font-size 220ms var(--pl-spring-pop), letter-spacing 220ms var(--pl-ease-out), color 200ms var(--pl-ease-out); }
     .hero h1.dragging { transition: none; }
     .hero h1[contenteditable] { cursor: text; outline: 1.5px solid var(--pl-sky); outline-offset: 3px; border-radius: 3px; caret-color: var(--pl-sky); }
     .hero .h { display: block; }
     .hero p { margin: 14px 0 0; color: #94969c; }
     .hero.held .h { outline: 1.5px dashed var(--pl-coral); outline-offset: 6px; border-radius: 4px; }
-    .tcard { position: absolute; z-index: 4; width: 252px; padding: 8px 8px 6px; border-radius: 14px; background: var(--pl-paper); box-shadow: var(--pl-shadow-card); }
-    .tcard header { display: flex; align-items: center; gap: 8px; padding: 2px 4px 8px; font: var(--pl-round-w, 600) 14px/1 var(--pl-round); color: var(--pl-ink); }
-    .tcard header svg { width: 18px; height: 18px; display: block; }
+    .hero.clean .h { outline: 1.5px solid var(--pl-sky); outline-offset: 6px; border-radius: 4px; }
+    .hero.done .h { outline: 1.5px solid var(--pl-mint); outline-offset: 6px; border-radius: 4px; }
+    .tcard { position: absolute; z-index: 4; width: 272px; padding: 12px 12px 12px; border-radius: 16px; background: var(--pl-paper); box-shadow: var(--pl-shadow-card); display: grid; gap: 12px; }
+    .tcard header { display: flex; align-items: baseline; gap: 8px; padding: 0 2px; font: var(--pl-round-w, 600) 15px/1 var(--pl-round); color: var(--pl-ink); }
     .tcard header small { margin-left: auto; font: 500 11.5px/1 var(--pl-mono); color: var(--pl-ink-3); }
-    .tcard .rows { position: relative; display: grid; gap: 2px; }
-    .tcard .row.inline { height: 32px; }
-    .tcard .row .drum { width: 120px; }
+    .tcard section { position: relative; display: grid; gap: 6px; }
+    .tcard section > b { padding: 0 2px; font: 600 11.5px/1 var(--pl-sans); color: var(--pl-ink-3); }
+    .tcard .grid { position: relative; display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+    .tcard .one { position: relative; display: grid; }
+    .tcard .row.compact .slot.hard span { display: none; }
+    /* the style: one tall field that shows the style as a sample of itself */
+    .tcard .style .row.compact { height: 44px; }
+    .tcard .style .scrub { display: none; }
+    .tcard .style .row.compact .val { padding-left: 4px; }
+    #textcard .stage { min-height: 520px; }
+    .tcard .style .row.compact .val, .tcard .style .row.compact .drum { height: 40px; }
+    .tcard .style .slot b { font: var(--pl-round-w, 600) 15px/1 var(--pl-round); }
+    .tcard .style .slot.hard b { font-family: var(--pl-sans); font-size: 13px; }
+    .tcard .style .slot::before { content: 'Ag'; display: grid; place-items: center; flex: none; width: 34px; height: 30px; border-radius: 7px; background: var(--pl-paper); color: var(--pl-ink); font: var(--sw, 600) var(--ss, 15px)/1 system-ui, sans-serif; }
+    .tcard .style .slot.hard::before { color: var(--pl-coral); }
+    /* case: four buttons, each drawn as what it does */
+    .seg { display: grid; grid-template-columns: repeat(4, 1fr); gap: 2px; padding: 2px; border-radius: 9px; background: var(--pl-paper-2); }
+    .seg button { all: unset; display: grid; place-items: center; height: 26px; border-radius: 7px; cursor: pointer; font: 600 12.5px/1 system-ui, sans-serif; color: var(--pl-ink-2); transition: background-color 140ms var(--pl-ease-out), color 140ms; }
+    .seg button:hover { color: var(--pl-ink); }
+    .seg button[aria-pressed="true"] { background: var(--pl-paper); color: var(--pl-ink); box-shadow: 0 1px 2px rgb(0 0 0 / .1); }
+    .seg button:focus-visible { outline: 2px solid var(--pl-sky); }
+    /* colour: the swatch is the field's own icon */
+    .sw { display: block; width: 16px; height: 16px; border-radius: 5px; box-shadow: inset 0 0 0 1px rgb(0 0 0 / .14); }
+    .tcard .foot { display: flex; justify-content: flex-end; gap: 6px; padding-top: 2px; }
     .tcard .list { z-index: 6; }
+    .list .sty { width: 30px; text-align: center; font-family: system-ui, sans-serif; line-height: 1; color: var(--pl-ink); }
+    .list .hard .sty { color: var(--pl-coral); }
+    .list .chip { width: 14px; height: 14px; border-radius: 4px; box-shadow: inset 0 0 0 1px rgb(0 0 0 / .14); }
     .list .lh { width: 16px; height: 14px; display: grid; align-content: center; gap: var(--g); }
     .list .lh::before, .list .lh::after { content: ''; height: 2px; border-radius: 1px; background: var(--pl-ink-2); }
     .list .hard .lh::before, .list .hard .lh::after { background: var(--pl-coral); }
@@ -197,10 +239,17 @@ export function mount(host, root, css) {
   </section>
   <section class="scene" id="textcard">
     <h2>Put together: the text card</h2>
-    <p>The element’s editor is the same pickers stacked in one card. A hero heading with two hard-coded values, its font size (34px) and line height (1.2), shown in coral among the values that are already on your tokens. Every row works like the pickers above. Drag the heading to resize it; double-click it to edit the words.</p>
+    <p>The element’s editor, laid out like a visual editor’s panel. The heading is on no text style: its size (34px), line height (1.2) and colour are hard-coded, in coral. Pick a style and the four type values move together; change one value and the style follows. Case is four buttons, colour a swatch. One button writes every change. Drag the heading to resize it; double-click it to edit the words.</p>
     <div class="stage" tabindex="0">
       <div class="hero held"><span class="h"><h1>Keep your app on your theme.</h1></span><p>See every hard-coded value, and move it onto your tokens in one place.</p></div>
-      <div class="tcard" role="group" aria-label="Text"><header>Text<small>h1</small></header><div class="rows"></div></div>
+      <div class="tcard" role="group" aria-label="Text">
+        <header>Text<small>h1</small></header>
+        <section class="style"><b>Style</b><div class="one"></div></section>
+        <section><b>Type</b><div class="grid"></div></section>
+        <section><b>Case</b><div class="seg" role="group" aria-label="Case">${CASES.map(([v, l, t]) => `<button type="button" data-case="${v}" aria-label="${t}" aria-pressed="${v === 'none'}">${l}</button>`).join('')}</div></section>
+        <section class="colour"><b>Colour</b><div class="one"></div></section>
+        <div class="foot">${button('Write', { cls: 'sm', key: '↵', attrs: 'data-do="write" disabled' })}</div>
+      </div>
       <span class="edittag" hidden><kbd>↵</kbd> keep · <kbd>Esc</kbd> put back</span>
     </div>
   </section>`;
@@ -327,27 +376,74 @@ export function mount(host, root, css) {
   }
 
 
-  // ── the text card: four pickers in one card beside the heading. Each row is the same piece as above; only the
-  // card is new. A row's keys are its own (focus a row, then ↑ ↓) ──
+  // ── the text card: a visual editor's panel for the heading, built from compact pickers. The style moves the four type
+  // values together; a change to one of them finds the style it now matches (or "No style"); case and colour; one
+  // button writes everything that changed ──
   {
-    const stage = root.querySelector('#textcard .stage'), hero = stage.querySelector('.hero'), h1 = hero.querySelector('h1'), card = stage.querySelector('.tcard'), rows = card.querySelector('.rows');
-    const placeCard = () => { const r = rel(stage, hero); card.style.left = `${r.right + 16}px`; card.style.top = `${r.top}px`; };
-    const state = () => hero.classList.toggle('held', [...rows.querySelectorAll('.val.on-hard')].length > 0);
-    const add = (spec) => {
-      const p = picker(stage, { into: rows, keys: 'row', ...spec, apply: (o, st) => { spec.apply(o, st); requestAnimationFrame(state); } });
-      const row = [...rows.querySelectorAll(':scope > .row')].pop();
-      return { p, row };
-    };
-    const size = add({ name: 'Font size', toy: glyph('font-size'), options: HERO_SIZE, format: (o) => `${o.v}px`,
-      mark: (t) => `<i class="aa" style="font-size:${Math.round(10 + (t.v - 20) * 0.3)}px">Aa</i>`,
+    const stage = root.querySelector('#textcard .stage'), hero = stage.querySelector('.hero'), h1 = hero.querySelector('h1'), card = stage.querySelector('.tcard');
+    const styleBox = card.querySelector('.style .one'), grid = card.querySelector('.grid'), colourBox = card.querySelector('.colour .one');
+    const go = card.querySelector('[data-do="write"]');
+    const placeCard = () => { const r = rel(stage, hero); card.style.left = `${r.right + 16}px`; card.style.top = `${Math.max(16, r.top + r.height / 2 - card.offsetHeight / 2)}px`; };
+    let caseNow = 'none', caseWritten = 'none', syncing = false, done = false;
+    const all = [];
+    const field = (into, spec) => { const p = picker(stage, { into, keys: 'row', compact: true, changed: () => refresh(), ...spec }); all.push(p); return p; };
+
+    // the four type values
+    const size = field(grid, { name: 'Font size', toy: glyph('font-size'), options: HERO_SIZE, format: (o) => `${o.v}px`,
+      mark: (t) => `<i class="aa" style="font-size:${Math.round(10 + (t.v - 16) * 0.3)}px">Aa</i>`,
       apply: (o) => h1.style.setProperty('--fs', `${o.v}px`), handles: [{ el: h1, perPx: (dx, dy) => -dy / 14, skip: () => h1.isContentEditable }] });
-    add({ name: 'Line height', toy: glyph('line-height'), options: LEADING, format: (o) => String(o.v),
-      mark: (t) => `<i class="lh" style="--g:${Math.round((t.v - 1) * 10)}px"></i>`, apply: (o) => h1.style.setProperty('--lh', String(o.v)) });
-    add({ name: 'Letter spacing', toy: glyph('letter-spacing'), options: TRACKING, start: 1, format: (o) => `${o.v}em`,
-      mark: (t) => `<i class="ls" style="letter-spacing:${t.v * 2}em">AV</i>`, apply: (o) => h1.style.setProperty('--ls', `${o.v}em`) });
-    add({ name: 'Weight', toy: glyph('font-weight'), options: WEIGHT, start: 2, format: (o) => String(o.v),
+    const weight = field(grid, { name: 'Weight', toy: glyph('font-weight'), options: WEIGHT, start: 2, format: (o) => String(o.v),
       mark: (t) => `<i class="wt" style="font-weight:${t.v}">Aa</i>`, apply: (o) => h1.style.setProperty('--fw', String(o.v)) });
+    const leading = field(grid, { name: 'Line height', toy: glyph('line-height'), options: LEADING, format: (o) => String(o.v),
+      mark: (t) => `<i class="lh" style="--g:${Math.round((t.v - 1) * 10)}px"></i>`, apply: (o) => h1.style.setProperty('--lh', String(o.v)) });
+    const tracking = field(grid, { name: 'Letter spacing', toy: glyph('letter-spacing'), options: TRACKING, start: 1, format: (o) => `${o.v}em`,
+      mark: (t) => `<i class="ls" style="letter-spacing:${t.v * 2}em">AV</i>`, apply: (o) => h1.style.setProperty('--ls', `${o.v}em`) });
+    const parts = [[size, HERO_SIZE, 'v'], [leading, LEADING, 'lh'], [weight, WEIGHT, 'fw'], [tracking, TRACKING, 'ls']];
+
+    // the style: picking one sets the four; it is drawn as a sample of itself ('Ag' at its size and weight)
+    const style = field(styleBox, { name: 'Text style', toy: glyph('type'), options: STYLES,
+      format: (o) => (o.hard ? 'hard-coded' : `${o.v} / ${o.lh}`),
+      mark: (t) => `<i class="sty" style="font-size:${t.hard ? 13 : Math.round(11 + (t.v - 16) * 0.25)}px;font-weight:${t.fw || 600}">Ag</i>`,
+      apply: (o) => {
+        styleBox.style.setProperty('--ss', `${o.hard ? 14 : Math.round(12 + (o.v - 16) * 0.15)}px`); styleBox.style.setProperty('--sw', String(o.fw || 600));
+        if (syncing || o.hard) return;
+        syncing = true;
+        for (const [p, opts, key] of parts) p.set(opts.findIndex((t) => !t.hard && t.v === o[key]));
+        syncing = false;
+      } });
+    // a change to one value: the style it now matches, or No style
+    const match = () => {
+      const now = Object.fromEntries(parts.map(([p, opts, key]) => [key, opts[p.at()].hard ? null : opts[p.at()].v]));
+      const i = STYLES.findIndex((t) => !t.hard && ['v', 'lh', 'fw', 'ls'].every((k) => t[k] === now[k]));
+      syncing = true; style.set(i >= 0 ? i : STYLES.findIndex((t) => t.hard)); syncing = false;
+    };
+
+    // colour
+    const colour = field(colourBox, { name: 'Colour', toy: '<i class="sw" style="background:var(--ink, #f0f0f1)"></i>', options: INK, format: (o) => o.v,
+      mark: (t) => `<i class="chip" style="background:${t.v}"></i>`,
+      apply: (o) => { h1.style.setProperty('--ink', o.v); colourBox.style.setProperty('--ink', o.v); } });
+
+    // case
+    const seg = card.querySelector('.seg');
+    seg.addEventListener('click', (e) => { const b = e.target.closest('[data-case]'); if (!b || done) return; caseNow = b.dataset.case; for (const x of seg.children) x.setAttribute('aria-pressed', String(x === b)); h1.style.setProperty('--tt', caseNow); refresh(); });
+
+    // the one button: how many changes there are to write, and writing them
+    const pending = () => all.filter((p) => p !== style && p.ready()).length + (caseNow !== caseWritten ? 1 : 0);
+    const lb = () => go.querySelector('.lb');
+    function refresh() {
+      if (!syncing && all.includes(style)) match();
+      const n = pending(), hard = all.some((p) => p !== style && p.row.querySelector('.val.on-hard'));
+      if (!done) { go.disabled = n === 0; lb().textContent = n ? `Write ${n} change${n > 1 ? 's' : ''}` : 'Write'; }
+      // the heading's ring: coral while anything is still hard-coded, blue when it is all on tokens, green once written
+      hero.classList.toggle('held', hard); hero.classList.toggle('clean', !hard && !done); hero.classList.toggle('done', !hard && done);
+    }
+    go.addEventListener('click', () => {
+      if (done) { done = false; go.classList.remove('done'); for (const p of all) p.putBack(); caseNow = caseWritten = 'none'; for (const x of seg.children) x.setAttribute('aria-pressed', String(x.dataset.case === 'none')); h1.style.setProperty('--tt', 'none'); refresh(); return; }
+      for (const p of all) if (p !== style) p.write();
+      caseWritten = caseNow; done = true; go.classList.add('done'); lb().textContent = 'Written · undo'; refresh();
+    });
+    card.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.target.closest('.row') && !go.disabled) { e.preventDefault(); go.click(); } });
     words(stage, h1, stage.querySelector('#textcard .edittag'), () => {});
-    new ResizeObserver(placeCard).observe(stage); placeCard(); state();
+    new ResizeObserver(placeCard).observe(stage); placeCard(); refresh();
   }
 }

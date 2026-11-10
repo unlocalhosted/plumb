@@ -100,6 +100,17 @@ export const PICKER_CSS = `
     .row .val:hover { background: none; }
     .drum, .car { position: relative; }
 
+    /* compact: a field in an editor's grid. The icon and the value only; the card writes them all with one button */
+    .row.inline.compact, .row.compact { height: 30px; padding: 0 2px; border-radius: 9px; background: var(--pl-paper-2); }
+    .row.compact .ok { display: none; }
+    .row.compact .scrub { width: 26px; height: 26px; }
+    .row.compact .val { flex: 1; min-width: 0; height: 26px; padding: 0 4px 0 2px; }
+    .row.compact .drum { width: auto; flex: 1; min-width: 0; height: 26px; }
+    .row.compact .slot { gap: 4px; }
+    .row.compact .slot b { font-size: 12.5px; }
+    .row.compact .slot span { font-size: 11px; }
+    .row.compact .car { display: none; }
+    .row.inline.compact.dragging, .row.compact.dragging { background: var(--pl-paper); box-shadow: 0 0 0 1.5px var(--pl-sky); }
     .row.inline { position: relative; box-shadow: none; background: none; padding: 0; height: 32px; }
     .row.inline + .list { position: absolute; }
     :host(.grabbing), .grabbing { cursor: ns-resize; }
@@ -111,7 +122,7 @@ const TICK = '<svg viewBox="0 0 16 16"><path d="M3.5 8.5l3 3 6-7" fill="none" st
 // ── one picker: the row beside the element (the property's icon, the value that rolls, the tick), its list, drag
 // mode and the keys. A property brings: its options, its icon, the mark each option gets in the list, what an
 // option does to the element, where the row sits, and the element's own handles ──
-export function picker(stage, { name, toy, options: S, mark, apply, place, handles = [], into = stage, keys = stage, grab = stage, start, format = px }) {
+export function picker(stage, { name, toy, options: S, mark, apply, place, handles = [], into = stage, keys = stage, grab = stage, start, format = px, compact = false, changed }) {
   const last = S.length - 1, HARD = S.findIndex((o) => o.hard), FIRST = start ?? HARD;
   into.insertAdjacentHTML('beforeend', `
     <div class="row" role="group" aria-label="${name}">
@@ -123,8 +134,11 @@ export function picker(stage, { name, toy, options: S, mark, apply, place, handl
   const row = [...into.querySelectorAll(':scope > .row')].pop(), val = row.querySelector('.val'), ok = row.querySelector('.ok'), list = [...into.querySelectorAll(':scope > .list')].pop();
   const drum = row.querySelector('.drum'), scrub = row.querySelector('.scrub');
   let at = FIRST, written = false;
+  // something to write: a token in hand where the value was hard-coded, or a different token where it wasn't
+  const isReady = () => !S[at].hard && !written && (HARD >= 0 || at !== FIRST);
   const layout = () => (place ? place(row, list, S[at]) : (list.style.left = `${row.offsetLeft}px`, list.style.top = `${row.offsetTop + row.offsetHeight + 4}px`));
   if (into !== stage || !place) row.classList.add('inline');
+  if (compact) row.classList.add('compact');
 
   // the field: the option in hand. A change rolls it, in the direction of travel
   const slotOf = (o) => { const el = document.createElement('span'); el.className = `slot${o.hard ? ' hard' : ''}`; el.innerHTML = `<b>${o.name}</b><span>${o.hard ? 'hard-coded' : format(o)}</span>`; return el; };
@@ -147,8 +161,7 @@ export function picker(stage, { name, toy, options: S, mark, apply, place, handl
   const draw = () => {
     const o = S[at], token = !o.hard;
     apply(o, { token, written });
-    // something to write: a token in hand where the value was hard-coded, or a different token where it wasn't
-    const ready = token && !written && (HARD >= 0 || at !== FIRST);
+    const ready = isReady();
     if (ready) ok.setAttribute('data-ready', ''); else ok.removeAttribute('data-ready');
     if (ready && !still()) { ok.classList.remove('pop'); void ok.offsetWidth; ok.classList.add('pop'); }
     list.innerHTML = S.map((t, i) => `<button type="button" role="option" class="${t.hard ? 'hard' : ''}" data-at="${i}" aria-selected="${at === i}">${mark(t)}${t.name}<span>${t.hard ? 'hard-coded' : format(t)}</span></button>`).join('');
@@ -159,7 +172,7 @@ export function picker(stage, { name, toy, options: S, mark, apply, place, handl
     requestAnimationFrame(layout);
   };
   // a new option in hand: the element takes it, and it rolls into the field
-  const land = (n) => { if (n === at) return; const from = at; at = n; draw(); roll(from, n); };
+  const land = (n) => { if (n === at) return; const from = at; at = n; draw(); roll(from, n); changed?.(); };
   // the list: only one is open at a time on a stage; opening this one closes any other, and a press anywhere else or
   // Esc closes it
   const close = () => { list.hidden = true; val.setAttribute('aria-expanded', 'false'); };
@@ -172,7 +185,7 @@ export function picker(stage, { name, toy, options: S, mark, apply, place, handl
   stage.addEventListener('pointerdown', (e) => { if (!list.hidden && !list.contains(e.target) && !val.contains(e.target)) close(); }, true);
   const go = (n) => { if (written) return; land(Math.max(0, Math.min(last, n))); };
   const write = () => { if (written || S[at].hard || (HARD < 0 && at === FIRST)) return; written = true; row.classList.add('written'); list.hidden = true; draw(); };
-  const putBack = () => { written = false; row.classList.remove('written'); list.hidden = true; draw(); go(FIRST); };
+  const putBack = () => { written = false; row.classList.remove('written'); list.hidden = true; draw(); go(FIRST); changed?.(); };
 
   // ── drag mode: press and move, anywhere on the screen. Up (or right) is bigger; each option rolls into the
   // field as you pass it. Past either end the one in the field leans a little and comes back when you let go ──
@@ -218,5 +231,7 @@ export function picker(stage, { name, toy, options: S, mark, apply, place, handl
   });
   new ResizeObserver(layout).observe(stage);
   drum.append(slotOf(S[at])); draw();
-  return { layout };
+  // for a card of pickers: set one from outside (a text style moves four at once), ask whether it has something to
+  // write, and write or put back all of them from one button
+  return { layout, row, set: (i) => go(i), at: () => at, ready: isReady, write: () => { write(); changed?.(); }, putBack, find: (pred) => S.findIndex(pred) };
 }

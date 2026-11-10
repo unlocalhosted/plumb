@@ -461,6 +461,24 @@ race, built for the old in-place write) was rewritten for the new write path (`e
 - **Open:** the product's own text card (`overlay/src/texteditor.js`) is not yet rebuilt from the picker; style,
   case and colour rows are not drawn yet (colour needs its own picker).
 
+### 14. "uninspiring, just a list of controls": the text card as a visual editor's panel
+
+- **The itch:** "we need a better layout, I don't like this uninspiring list of controls, it doesn't have a visual
+  editor feeling; also add all 3 missing" (style, case, colour, which the product's own text card has).
+- **What we chose:** the card is laid out like a design tool's panel, in sections. Style at the top, a tall field
+  drawn as a sample of itself ("Ag" at the style's size and weight, then its name and size / line height). Type as a
+  two-column grid of compact fields (font size, weight; line height, letter spacing). Case as four buttons drawn as
+  what they do (—, AG, ag, Ag). Colour as a field whose icon is the swatch. One button at the bottom writes every
+  change ("Write 3 changes"), then offers undo. The fields are the same picker, in a compact form.
+- **The system:** a style is the real token for text. Picking one moves the four type values together; changing one
+  value finds the style it now matches, or shows "No style". The heading's ring is coral while anything is
+  hard-coded, blue when everything is on tokens, green once written.
+- **Proof:** on the running page, picking heading-lg moved size, weight and line height (Write 3 changes); nudging
+  line height turned the style back to No style; uppercase counted as a change (Write 4 changes); writing applied
+  them.
+- **Open:** the product's own text card (`overlay/src/texteditor.js`) is not swapped yet; typing a number and the
+  "not set" and "locked" states from the old card are not in the picker yet.
+
 ## Open gaps
 - The contrast check knows colours, not sizes or weights, and is not run by CI yet.
 - `web/docs/pages` is a copy of `site/src/docs/pages`; two copies until the old Vite site is removed.
