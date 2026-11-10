@@ -354,6 +354,19 @@ race, built for the old in-place write) was rewritten for the new write path (`e
 - **Open:** the clean-up's page changes in the prototype are stand-ins, not the real show; the product's bar is
   unchanged.
 
+### 11. "we have not given much thought": the picker on the element
+
+- **The itch:** the owner, on the control that pops out of the element (three corner glyphs, a dashed "5", Use 6px,
+  Keep 5px): "need to improve this bar as well... we have not given much thought."
+- **The system behind it:** it was the engine's step control with buttons bolted on. The options were unlabelled
+  grey glyphs (their token names hidden in a hover title), the hard-coded value was a cryptic dashed notch, picking
+  and pressing Use did the same thing twice, the big pink button outshone the choice, and it sat over the next row.
+- **What we're trying:** it answers one question, "which of your tokens should this be?" Every option is a token
+  with its name and value, drawn as the element at that radius; the hard-coded value is the first option, in coral,
+  so keeping it is just picking it; picking previews on the page; one button writes it, its label saying what will
+  be written. Two prototypes: swatches, and a ruler of tokens.
+- **Proof:** the design site's fix bar page, both live (click, arrow keys, Enter).
+
 ## Open gaps
 - The contrast check knows colours, not sizes or weights, and is not run by CI yet.
 - `web/docs/pages` is a copy of `site/src/docs/pages`; two copies until the old Vite site is removed.
