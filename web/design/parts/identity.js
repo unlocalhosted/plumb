@@ -89,6 +89,10 @@ export function mount(host, root, css) {
   <p>All five hues. The pale top is calm enough to sit five in a row; the strong colour is on the side, the toy and the shadow.</p>
   <div class="shelf">${PARTS.map(soft).join('')}</div>
 
+  <h2 id="light-faces">In light: how much colour on the face?</h2>
+  <p>In light, a card’s face has been the hue’s pale tint (about 15% colour), the same tint chips use behind a word. Next to the night cards it reads washed out. Three strengths for the face, from today’s at the top. Each is the same hue a little darker with more colour in it, never mixed toward grey; every hue rises by the same amount. The side, the toy and the lettering stay as they are.</p>
+  ${[['Today: the pale tint', null], ['More colour', { pink: '#ffbdd7', sky: '#b5d7ff', butter: '#ffd98a', mint: '#99f0bf', lilac: '#d1cfff' }], ['Most colour', { pink: '#fea8cb', sky: '#9dcbff', butter: '#fcc956', mint: '#6fe9aa', lilac: '#c3bffe' }]].map(([t, face]) => `<h3 class="lf">${t}</h3><div class="shelf">${PARTS.slice(0, 4).map(([hue, toy, name, says]) => `<a class="s-box" data-hue="${hue}" href="#" onclick="return false"${face ? ` style="--hs: ${face[hue] ?? face.pink}"` : ''}>${inside(toy, name, says)}</a>`).join('')}</div>`).join('')}
+
 
   <h2>And the face</h2>
   <p>The rounded face was the other borrowed part. The site is now set in a face with its own hand: a little crooked, cut heavy, so the titles have character and the toys stay the only round things.</p>
