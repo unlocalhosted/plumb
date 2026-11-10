@@ -647,6 +647,9 @@ race, built for the old in-place write) was rewritten for the new write path (`e
   #1d77c8, lilac #775ceb, butter #976b0f, white at 4.6 to 4.8:1), and night blocks use it with white. Buttons, the
   Design page's cards, docs callouts, token chips and the bar's current tab all follow it. The comparison was removed
   from the Buttons page.
+- **"add a bit of noise onto the cards":** the coloured soft cards now have a fine grain on their face (an SVG
+  fractal noise, grey, blended as overlay at 32%), under the words and only on cards with their colour; cards not drawn
+  yet stay plain. One rule in the soft block, so every card gets it in both schemes.
 
 ## Open gaps
 - White on the pink and mint buttons is under 4.5:1 in light (3.36, 3.85); dark now passes, just. Nothing yet stops the faintest ink being used for text again.

@@ -35,6 +35,12 @@ export const SOFT_CSS = `
       box-shadow: inset 0 2px 0 0 color-mix(in oklab, #fff 75%, transparent), inset 0 -2.5px 0 0 color-mix(in oklab, var(--h) 22%, transparent);
       transform: translateY(calc(-1 * var(--lift))); transform-origin: 50% 100%; transition: transform 320ms var(--pl-spring-pop); will-change: transform; }
     ${dark('.s-box .in', 'background: linear-gradient(180deg, color-mix(in oklab, var(--hs) 88%, #fff), var(--hs)); box-shadow: inset 0 2px 0 0 color-mix(in oklab, #fff 22%, transparent), inset 0 -2.5px 0 0 color-mix(in oklab, #000 22%, transparent);')}
+    /* grain: a fine noise on the face, so the colour reads as a material, not a flat fill. Under the words (the face's
+       transform makes it its own layer, so z-index -1 sits on the face's colour, below its contents), and only on a
+       block with its colour: one that isn't there yet stays plain */
+    .s-box:not(.soon) .in::before { content: ''; position: absolute; inset: 0; z-index: -1; border-radius: inherit; pointer-events: none;
+      background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E") 0 0 / 180px 180px;
+      mix-blend-mode: overlay; opacity: .32; }
     .s-box .in b { font: var(--pl-round-w, 600) 24px/27px var(--pl-round); }
     .s-box .in em { margin-top: 5px; font: 600 14.5px/20px var(--pl-sans); font-style: normal; opacity: .86; }
     .s-box .plate { display: grid; place-items: center; width: 64px; height: 64px; margin-bottom: 14px; border-radius: 19px; background: var(--pl-paper); transform-origin: 50% 100%;
