@@ -63,6 +63,27 @@ The owner confirmed that tracking everything that is yours by default is intende
 | 7, 9, 10, 11 | Still not diagnosed. |
 | 8 `blueprint-late-mount` | Not touched: passes locally, fails on vm-agent only. |
 
+## Third full run (eae5d23, vm-agent, 4 cores beside another project's jobs, 34.8 min)
+
+1,034 passed, 13 failed in 12 files. `main`'s CI: 981 passed, 49 failed.
+
+| Failed here | On `main`'s list | State |
+|---|---|---|
+| 7 tests | yes | Not the release's |
+| `blueprint-late-mount` | no | Fixed in e56027f, after this run started |
+| `locate-bench` | no | Fixed in 3baf118, after this run started (the bench's work folder was git-ignored, so 0.4.0 treated it as generated and judged nothing) |
+| `session-burst` (2 tests) | no | Latency gates; fail on `main` on this machine too when it is busy |
+| `craft-structure`: tooltip delay | no | Passes locally; measures a delay, and the machine was under load. Not confirmed |
+| `timeline`: first test | no | Known flaky: acts while the page reloads |
+
+Since the first run these now pass on vm-agent: `decisions-spacing`, `serve` (3 modes), `stylesheets-inline`,
+`onboarding-state`, `shared-source` (Vite and Next), `served-root`, `timeline-real`, `hosts` (both), `next-install`,
+`bare-page`, `site-text`, `site-replay`, `element-card`, `element-layout`, `tidy-qa`.
+
+Rows 7, 9, 10, 11 of the table above: 7 was a product bug (History's outline at a component usage, a75e179); 10 was
+an out-of-date test (986011b); 11 was a product bug (a bundler warning on linked installs, eae5d23); 9 (`bare-page`)
+passed in this run and was not reproduced.
+
 ## What publishing needs
 
 1. A decision on rows 1 to 6: intended, or bug. Intended ones get their tests updated; bugs get fixed.
