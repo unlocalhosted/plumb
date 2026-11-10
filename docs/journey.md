@@ -206,7 +206,42 @@ race, built for the old in-place write) was rewritten for the new write path (`e
 - **Not done:** none of these fixes has a test of its own yet. The old pinned card in `widget.js` is still there: its
   only safety net is the Blueprint tests, which are red on `main`, so it waits for them.
 
+## Chapter 3 · One look, written down before it is built (2026-11-10)
+
+### 1. "this looks really ugly": the fix card
+- **The itch:** the card that offers a fix. The owner: "why these cards and not using our updated design system? we
+  have cool icons for all these things this looks really ugly", then "the ux sucks, the styling sucks, the buttons
+  sucks".
+- **The system behind it:** the fix card was its own island. It drew its own pictures and buttons and used none of the
+  shared icons or controls, because it was built to make the flow work and never went through a design pass.
+- **What we chose:** not to patch the card. The owner picked a slim bar: the cause in hand is one line at the bottom,
+  and the choice is made on the element itself. Drawn first as a comp (`overlay/demo/fix-bar.html`), the first state
+  live.
+
+### 2. "you gave me this boring gray": the icons
+- **The itch:** asked for icons for properties and common elements, I drew 31 neutral line icons to match the existing
+  grey set. The owner: "none of them are good at all... i wanted whimsy joyful delightful you gave me this boring gray".
+- **How we found the right direction:** the owner pointed at the pieces that fly out when a fix lands: solid, in colour,
+  padding hatched, margin dotted, a gap striped.
+- **Dead end worth keeping:** I then misread three screenshots (a smiley avatar, a toast with a face, a speech-bubble
+  tooltip) as the ones they liked. They were the ones that missed: stock faces and stand-ins read as cheap. The rule
+  that came out of it: no stock faces, the wit comes from the thing itself.
+- **The fix:** a toy set of 76 (27 properties, 49 elements and patterns) in one shared file, `overlay/demo/toys.js`,
+  and the language written down in `docs/design/visual-language.md`.
+- **Media hooks:** the grey sheet beside the toy sheet; the avatar before (a smiley) and after (a person with an
+  online dot).
+
+### 3. "i want an overhaul of the design system before i jump into some work"
+- **The itch:** with a new look agreed, anything built next in the old look would drift.
+- **What we chose:** a kit (`overlay/demo/kit.html`): one page per part, each showing every state, signed off one at a
+  time. Buttons first (a toy key: a solid top on a darker base). Parts are shared modules, so a page can't redraw
+  its own: the moment the buttons page showed a bare class name where an icon belonged was the proof that was needed.
+- **Borrowed:** the owner shared BoardUI's colour and typography pages as the way to write a spec
+  (`docs/references.md`). Colour and type are now written that way, with every table read from the token file.
+- **Not done:** nothing of the new look is in the product. Nine parts are listed and not drawn.
+
 ## Open gaps
+- The new look (toys, the fix bar, the toy button) exists only as kit pages; the product still ships the old one.
 - `e2e/text-edit.test.mjs` "every write is in the dock's history" times out on `main` on the laptop; not looked at.
 - 2 oracle findings are left, both in the headless recorder. Nothing bans a bare `setTimeout` or `addEventListener`
   in a new owner yet.
