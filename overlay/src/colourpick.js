@@ -30,9 +30,9 @@ export const COLOUR_PICK_CSS = `
   /* the tick on the one picked: pale green as soon as it is a token, solid once written; grey on your own colour */
   .cp .ok { display: grid; place-items: center; width: 22px; height: 22px; border-radius: 7px; color: transparent; transition: background-color 180ms var(--pl-ease-out), color 180ms var(--pl-ease-out); }
   .cp .ok svg { width: 14px; height: 14px; }
-  .cp .opt.at:not(.hard) .ok { background: color-mix(in oklab, var(--pl-mint) 22%, transparent); color: var(--pl-mint-ink); }
+  .cp .opt.at:not(.mine) .ok { background: color-mix(in oklab, var(--pl-mint) 22%, transparent); color: var(--pl-mint-ink); }
   .cp.written .opt.at .ok { background: var(--pl-mint); color: var(--pl-mint-on); }
-  .cp .opt.at:not(.hard) .ok.pop { animation: cp-pop 320ms cubic-bezier(.34, 1.56, .64, 1); }
+  .cp .opt.at:not(.mine) .ok.pop { animation: cp-pop 320ms cubic-bezier(.34, 1.56, .64, 1); }
   @keyframes cp-pop { 0% { scale: .8; } 60% { scale: 1.12; } 100% { scale: 1; } }
   .cp hr { margin: 4px 6px; border: 0; border-top: 1px solid var(--pl-rule); }
   .cp .all { all: unset; box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; height: 30px; padding: 0 10px 0 8px; border-radius: 8px; cursor: pointer; font: 500 12.5px/1 var(--pl-sans); color: var(--pl-ink-2); }
@@ -62,29 +62,52 @@ export const COLOUR_PICK_CSS = `
   @media (prefers-reduced-motion: reduce) { .cp .opt.at .ok.pop { animation: none; } .cp .all i { transition: none; } }
 `;
 
-const ROLES = [['text', 'Text'], ['surface', 'Surface'], ['line', 'Line'], ['accent', 'Accent'], ['status', 'Status']];
+const ROLES = [['text', 'Text'], ['surface', 'Surface'], ['line', 'Line'], ['accent', 'Accent'], ['status', 'Status'], ['other', 'Other']];
+// a token's role from its name, for a theme that doesn't say (fg, muted → text; bg, surface → surface; …)
+export const roleOf = (name) => /^(fg|text|ink|muted|faint|subtle|heading|body)/.test(name) ? 'text'
+  : /^(bg|background|surface|sunken|paper|card|panel|scrim|overlay)/.test(name) ? 'surface'
+  : /^(line|border|rule|divider|outline|ring)/.test(name) ? 'line'
+  : /^(accent|primary|brand|draw|on-|link|focus)/.test(name) ? 'accent'
+  : /^(success|warning|danger|error|info|critical|positive|negative)/.test(name) ? 'status' : 'other';
 const TICK = '<svg viewBox="0 0 16 16"><path d="M3.5 8.5l3 3 6-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
+// any CSS colour (hex, rgb, oklch, a named one) as its sRGB channels, read back from one pixel painted over white (a
+// see-through colour is compared as it looks on a page, not as its solid self)
+let ink = null;
+const rgbOf = (css) => {
+  const hex = /^#([\da-f]{6})$/i.exec(String(css).trim());
+  if (hex) { const n = parseInt(hex[1], 16); return [n >> 16, (n >> 8) & 255, n & 255]; }
+  ink ??= Object.assign(document.createElement('canvas'), { width: 1, height: 1 }).getContext('2d', { willReadFrequently: true });
+  // a colour written as a reference (var(--x), color-mix) is first worked out by the page itself
+  let v = String(css);
+  if (/var\(|color-mix|currentcolor/i.test(v)) { const probe = document.createElement('i'); probe.style.color = v; document.documentElement.append(probe); v = getComputedStyle(probe).color; probe.remove(); }
+  ink.fillStyle = '#fff'; ink.fillRect(0, 0, 1, 1); ink.fillStyle = '#000'; ink.fillStyle = v; ink.fillRect(0, 0, 1, 1);
+  return [...ink.getImageData(0, 0, 1, 1).data.slice(0, 3)];
+};
 // how far two colours look apart: OKLab distance ×100. Under 2 reads as the same colour, under 6 as close
-const lab = (hex) => {
-  const n = parseInt(hex.slice(1), 16), [r, g, b] = [n >> 16, (n >> 8) & 255, n & 255].map((v) => { v /= 255; return v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; });
+const lab = (css) => {
+  const [r, g, b] = rgbOf(css).map((v) => { v /= 255; return v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; });
   const l = Math.cbrt(0.4122 * r + 0.5363 * g + 0.0514 * b), m = Math.cbrt(0.2119 * r + 0.6807 * g + 0.1074 * b), s = Math.cbrt(0.0883 * r + 0.2817 * g + 0.6300 * b);
   return [0.2105 * l + 0.7936 * m - 0.0041 * s, 1.978 * l - 2.4286 * m + 0.4506 * s, 0.0259 * l + 0.7828 * m - 0.8087 * s];
 };
 export const colourDistance = (a, b) => { const x = lab(a), y = lab(b); return Math.hypot(x[0] - y[0], x[1] - y[1], x[2] - y[2]) * 100; };
 const closeness = (d) => (d < 2 ? 'looks the same' : d < 6 ? 'close' : d < 15 ? 'near' : 'far');
-export const swatch = (t, size) => (t.hard ? `<i class="split hard" style="--l:${t.l}${size ? `;width:${size}px;height:${size}px` : ''}"></i>` : `<i class="split" style="--l:${t.l};--d:${t.d}${size ? `;width:${size}px;height:${size}px` : ''}"></i>`);
+export const swatch = (t, size) => (t.hard && t.coral !== false ? `<i class="split hard" style="--l:${t.l}${size ? `;width:${size}px;height:${size}px` : ''}"></i>` : `<i class="split" style="--l:${t.l};--d:${t.d}${size ? `;width:${size}px;height:${size}px` : ''}"></i>`);
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
-export function colourPick(stage, { tokens, hard, role: guess, apply, place, into = stage }) {
-  const HARD = { ...hard, d: hard.d ?? hard.l, hard: true };
-  const near = [...tokens].sort((a, b) => colourDistance(HARD.l, a.l) - colourDistance(HARD.l, b.l)).slice(0, 3);
+// hard.now: the element's colour is not hard-coded but already a token, or one it gets from above: said in that word
+// ('now', 'inherited'), not in coral. writes: false inside a card that writes everything with one button (a click
+// picks, nothing more). onEscape: what Esc does once every colour is folded away (default: put it back)
+export function colourPick(stage, { tokens, hard, role: guess, apply, place, into = stage, writes = true, onEscape }) {
+  const HARD = { ...hard, d: hard.d ?? hard.l, hard: true, coral: !hard.now };
+  // the nearest three, never the element's own token again
+  const near = [...tokens].filter((t) => t.name !== HARD.name).sort((a, b) => colourDistance(HARD.l, a.l) - colourDistance(HARD.l, b.l)).slice(0, 3);
   const roles = ROLES.filter(([k]) => tokens.some((t) => t.role === k));
   let role = roles.some(([k]) => k === guess) ? guess : near[0]?.role ?? roles[0]?.[0];
   let at = HARD, written = false;
-  const opt = (t, words) => `<button type="button" class="opt${t.hard ? ' hard' : ''}" role="option" data-n="${esc(t.hard ? '' : t.name)}">${swatch(t, 18)}<b>${esc(t.name)}</b><span>${words}</span><i class="ok" aria-hidden="true">${TICK}</i></button>`;
+  const opt = (t, words) => `<button type="button" class="opt${t.hard ? ' mine' : ''}${t.hard && t.coral ? ' hard' : ''}" role="option" data-n="${esc(t.hard ? '' : t.name)}">${swatch(t, 18)}<b>${esc(t.name)}</b><span>${words}</span><i class="ok" aria-hidden="true">${TICK}</i></button>`;
   into.insertAdjacentHTML('beforeend', `<div class="cp" role="listbox" aria-label="Colour">
-    <div class="cap">Your colour</div>${opt(HARD, 'hard-coded')}
+    <div class="cap">Your colour</div>${opt(HARD, HARD.now ?? 'hard-coded')}
     <div class="cap">Nearest of your tokens</div>${near.map((t) => opt(t, closeness(colourDistance(HARD.l, t.l)))).join('')}
     <hr><button type="button" class="all" aria-expanded="false"><span>All ${tokens.length} colours</span><i aria-hidden="true"></i></button>
     <div class="every" hidden><div class="roles" role="group" aria-label="What the colour is for">${roles.map(([k, t]) => `<button type="button" data-role="${k}">${t}</button>`).join('')}</div><div class="shades" role="group"></div></div></div>`);
@@ -108,7 +131,7 @@ export function colourPick(stage, { tokens, hard, role: guess, apply, place, int
   };
   const show = (t) => apply(t, { token: !t.hard, written: written && t === at });
   const pick = (t) => { if (written) return; const was = at; at = t; show(t); mark(t !== was && !t.hard); };
-  const write = () => { if (at.hard || written) return; written = true; show(at); mark(); };
+  const write = () => { if (!writes || at.hard || written) return; written = true; show(at); mark(); };
   const putBack = () => { written = false; at = HARD; show(HARD); mark(); };
 
   // pointing at a colour shows it on the element; leaving the picker shows the one in hand again
@@ -130,9 +153,9 @@ export function colourPick(stage, { tokens, hard, role: guess, apply, place, int
       e.preventDefault(); const d = e.key === 'ArrowDown' || e.key === 'ArrowRight' ? 1 : -1;
       const n = items[Math.max(0, Math.min(items.length - 1, (i < 0 ? 0 : i + d)))]; n.focus(); pick(byName(n.dataset.n));
     } else if (e.key === 'Enter' && e.target.closest('[data-n]')) { e.preventDefault(); write(); }
-    else if (e.key === 'Escape') { e.preventDefault(); if (!every.hidden) { every.hidden = true; all.setAttribute('aria-expanded', 'false'); layout(); } else putBack(); }
+    else if (e.key === 'Escape') { e.preventDefault(); if (!every.hidden) { every.hidden = true; all.setAttribute('aria-expanded', 'false'); layout(); } else if (onEscape) onEscape(); else putBack(); }
   });
   new ResizeObserver(layout).observe(stage);
   mark(); show(HARD); layout();
-  return { box, layout, at: () => at, written: () => written, write, putBack, ready: () => !at.hard && !written };
+  return { box, layout, set: (n) => pick(byName(n)), at: () => at, written: () => written, write, putBack, ready: () => !at.hard && !written };
 }

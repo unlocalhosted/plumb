@@ -36,6 +36,7 @@ import { Claims, LEVEL } from './claims.js';
 import { PICKER_CSS, picker } from './picker.js'; // the panel's fields: the same token picker the design site shows
 import { glyph } from './glyphs.js';
 import { BUTTON_CSS, button } from './kit.js';
+import { COLOUR_PICK_CSS, colourPick, roleOf } from './colourpick.js';
 
 // the panel's names for the values: the CSS names, said plainly (owner: "use correct terminology")
 const NAMES = { style: 'Text style', 'font-size': 'Font size', 'line-height': 'Line height', 'letter-spacing': 'Letter spacing', 'font-weight': 'Weight', color: 'Colour' };
@@ -246,6 +247,19 @@ export const TEXT_EDITOR_CSS = `
   .tc .pk .row.locked .val, .tc .pk .row.locked .scrub { pointer-events: none; }
   .tc.grabbing, .tc.grabbing * { cursor: ns-resize !important; }
   .tc .pk .seg { margin: 0; }
+  .tc .pk { ${COLOUR_PICK_CSS} }
+  /* colour: the field at rest, and the picker it opens inside the card (in place, the full width) */
+  .tc .pk .cf { all: unset; box-sizing: border-box; display: grid; grid-template-columns: 18px 1fr auto 10px; align-items: center; gap: 8px; height: 30px; padding: 0 10px 0 6px; border-radius: 9px; background: var(--pl-paper-2); cursor: pointer; font: 500 12.5px/1 var(--pl-sans, system-ui); }
+  .tc .pk .cf:focus-visible { outline: 2px solid var(--pl-sky); }
+  .tc .pk .cf .sw { width: 18px; height: 18px; border-radius: 6px; background: var(--sw, transparent); box-shadow: inset 0 0 0 1px rgb(0 0 0 / .14); transition: background-color 160ms; }
+  .tc .pk .cf.hard:not(.picked) .sw { box-shadow: inset 0 0 0 1px rgb(0 0 0 / .14), 0 0 0 1.5px var(--pl-coral); }
+  .tc .pk .cf b { font-weight: 600; color: var(--pl-ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .tc .pk .cf.hard:not(.picked) b { color: var(--pl-coral); }
+  .tc .pk .cf.inherited:not(.picked) b, .tc .pk .cf span { color: var(--pl-ink-3); font-style: italic; font-weight: 500; }
+  .tc .pk .cf .chev { width: 6px; height: 6px; border-right: 1.5px solid var(--pl-ink-3); border-bottom: 1.5px solid var(--pl-ink-3); rotate: 45deg; translate: 0 -2px; transition: rotate 200ms; }
+  .tc .pk .cf[aria-expanded="true"] .chev { rotate: 225deg; translate: 0 1px; }
+  .tc .pk .cp { position: static; width: auto; margin-top: 6px; box-shadow: 0 0 0 1px var(--pl-rule); }
+  .tc .pk .cp[hidden] { display: none; }
   /* the card scrolls, so a list opens in place under its field (the full width) and pushes the rest down, never cut
      off by the card's edge; a long list scrolls inside itself */
   .tc .pk .list, .tc .pk .row.inline.compact + .list { position: static; grid-column: 1 / -1; max-height: 232px; overflow: auto; overscroll-behavior: contain; box-shadow: 0 0 0 1px var(--pl-rule), 0 6px 16px -8px rgb(28 27 25 / .25); }
@@ -711,7 +725,8 @@ export class TextEditor {
     this.#unpeek();
     this.#rowError = null;
     const name = this.name;
-    const text = key === 'style' ? W.styled(step.label, name) : W.changed(r.label, said(key, step.value ?? step.label, this.#target), name);
+    // a colour is said by its token's name (draw), not its value
+    const text = key === 'style' ? W.styled(step.label, name) : W.changed(r.label, key === 'color' ? step.token : said(key, step.value ?? step.label, this.#target), name);
     try {
       // a value written in one branch (a ternary's case) is changed in that string: its position goes with the write
       const result = await this.#host.write({ file: this.#props.file, line: this.#props.line, column: this.#props.column, hash: this.#props.hash, ...(r.p?.at ? { at: r.p.at } : {}) }, key, step.token, text);
@@ -740,6 +755,7 @@ export class TextEditor {
   }
   #mounting = false;
   #restoring = false;
+  #colour = null;   // the colour picker in the card, when it has one
   #build(box) {
     const rows = this.#rows(), el = this.#target, none = document.createElement('i');
     const optionsOf = (r) => {
@@ -791,24 +807,30 @@ export class TextEditor {
       const opts = optionsOf(r); for (const o of opts) if (!o.hard) o.name = fmt[k](o);
       mk(grid, r, { options: opts, start: startOf(r, opts), toy: glyph(k), format: (o) => (o.step ? o.step.token : o.inherit ? 'inherited' : ''), mark: mark[k] });
     }
-    // colour: your colour tokens in the theme's order, the swatch the field's icon; a hard-coded colour among them in
-    // coral, and a colour the words get from above shown as itself until you pick one
+    // colour: a compact field at rest (the colour as a swatch, its name); a click opens the colour picker inside the
+    // card (colourpick.js): your colour, the three tokens nearest it, every colour by what it is for. A pick is held
+    // like any value and written by the card's one Write
     const color = rows.find((r) => r.key === 'color'), cbox = box.querySelector('.colour .one');
     if (color?.steps.length && cbox) {
       const shows = this.#read0?.values.color, value = [color.p.value, color.p.default, shows].find((v) => isColor(v));
-      const opts = color.steps.map((s, i) => ({ name: s.token, v: i + 1, css: s.value, step: s }));
-      let start;
-      if (color.p.source === 'class' && !color.p.token && isColor(color.p.value)) opts.unshift({ name: plainColor(color.p.value), v: 0, css: color.p.value, hard: true });
-      else {
-        start = opts.findIndex((o) => o.step.token === color.current);
-        if (start < 0 && value) start = opts.findIndex((o) => sameColor(o.css, value));
-        if (start < 0) { opts.unshift({ name: plainColor(value ?? shows ?? ''), v: 0, css: value ?? shows, inherit: true }); start = 0; }
-      }
-      const sw = (o) => `<i class="sw" style="background:${esc(o.css ?? 'transparent')}"></i>`;
-      const p = mk(cbox, color, { options: opts, start, toy: '<i class="sw"></i>', format: (o) => (o.hard ? '' : o.inherit ? 'inherited' : ''), mark: sw });
-      const paint = () => p.row.style.setProperty('--sw', opts[p.at()]?.css ?? 'transparent');
-      paint(); p.row.addEventListener('pointerup', () => requestAnimationFrame(paint)); p.row.addEventListener('keyup', paint);
-      this.#pk.get('color').paint = paint;
+      const tokens = color.steps.filter((s) => isColor(s.value)).map((s) => ({ name: s.token, role: roleOf(s.token), l: s.value, d: s.value }));
+      const hardC = color.p.source === 'class' && !color.p.token && isColor(color.p.value);
+      const own = !hardC && (tokens.find((t) => t.name === color.current) ?? (value ? tokens.find((t) => sameColor(t.l, value)) : null));
+      const mine = hardC ? { name: plainColor(color.p.value), l: color.p.value }
+        : own ? { name: own.name, l: own.l, now: own.name === color.current ? 'now' : 'inherited' }
+        : { name: plainColor(value ?? shows ?? ''), l: value ?? shows ?? 'transparent', now: 'inherited' };
+      cbox.innerHTML = `<button type="button" class="cf${hardC ? ' hard' : ''}${mine.now === 'inherited' ? ' inherited' : ''}" aria-expanded="false"${color.disabled ? ' disabled' : ''}><i class="sw"></i><b></b><span></span><i class="chev" aria-hidden="true"></i></button>`;
+      const field = cbox.querySelector('.cf');
+      const paint = (t) => { field.style.setProperty('--sw', t.l); field.querySelector('b').textContent = t.name; field.querySelector('span').textContent = t.hard ? (t.now ?? 'hard-coded') : ''; field.classList.toggle('picked', !t.hard); };
+      const cp = colourPick(box, { into: cbox, tokens, hard: mine, role: roleOf(/\bbg-|background/.test(color.p.class ?? '') ? 'surface' : 'fg'), writes: false,
+        apply: (t, { token }) => { paint(t); if (this.#mounting && !this.#restoring) return; if (!token || t.name === color.current) this.#held.delete('color'); else this.#held.set('color', t.name); this.#showHeld(); this.#refresh(); },
+        onEscape: () => { cp.box.hidden = true; field.setAttribute('aria-expanded', 'false'); field.focus(); } });
+      cp.box.hidden = true;
+      field.addEventListener('click', () => { cp.box.hidden = !cp.box.hidden; field.setAttribute('aria-expanded', String(!cp.box.hidden)); if (!cp.box.hidden) (cp.box.querySelector('.opt.at') ?? cp.box.querySelector('.opt'))?.focus(); });
+      this.#colour = cp;
+      paint(mine);
+      // a colour held before this draw is picked again (the card is drawn again after every write)
+      if (this.#held.has('color')) { this.#restoring = true; try { cp.set(this.#held.get('color')); } finally { this.#restoring = false; } }
     }
     // what was picked before this draw is picked again
     // (the style first, so a value picked after it lands over it)
@@ -840,7 +862,6 @@ export class TextEditor {
       }
       this.#syncing = false;
     }
-    if (key === 'color') this.#pk.get('color')?.paint?.();
     // a value changed by hand: the style field follows, to the style these values make, or No style
     if (key !== 'style' && !this.#syncing && !this.#mounting) this.#match();
     this.#showHeld();
@@ -1106,6 +1127,11 @@ export class TextEditor {
     if (this.#drag) { if (k === 'Escape') this.#drag.cancel(); return true; }
     // a picker in hand: ← → ↑ ↓ step it, Enter writes what is held, Esc closes its list, then puts every value back
     const a = this.#el.getRootNode().activeElement, inRow = a && this.#el.contains(a) ? a.closest('.pk .row') : null;
+    // inside the colour picker its own keys move through the colours and Esc folds it; Enter writes what is held
+    if (a && this.#el.contains(a) && a.closest('.pk .cp')) {
+      if (k === 'Enter') { this.#writeAll(); return true; }
+      return ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Escape'].includes(k);
+    }
     const f = inRow ? [...this.#pk.values()].find((x) => x.p.row === inRow) : null;
     if (f && !f.r.disabled) {
       const d = { ArrowRight: 1, ArrowUp: 1, ArrowLeft: -1, ArrowDown: -1 }[k];

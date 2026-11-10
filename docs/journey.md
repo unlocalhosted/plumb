@@ -583,6 +583,16 @@ race, built for the old in-place write) was rewritten for the new write path (`e
   pick (blue ring, pale green tick), click again or Enter to write (green), Esc to put back. Proof: picking
   `accent-hover` from the Accent tab and writing it showed the solid tick in both places and a green ring; in dark,
   the button took the token's dark value. Added to the interaction principles as 18c.
+- **"Yes, use it there": the product's text card uses it.** The card's colour is now a small field (swatch, name,
+  "inherited" when it comes from above); a click opens the colour picker inside the card. A pick is held and written
+  by the card's one Write like every other value. To work on a real theme, the picker now reads any CSS colour
+  (`oklch`, a `var()` reference, a see-through one, measured as it looks on the page), guesses each token's role from
+  its name (fg → Text, bg → Surface, draw → Accent; others under Other), and never lists the element's own token as
+  "nearest". Found while trying it: the element's own token showed a pale green tick as if there were something to
+  write (now none), and the toast named the colour by value ("#103dff") instead of its token ("draw"). Proof: on
+  crafting-ui, "React Plumber" → All 25 colours → Accent → draw → Write: the code got `text-draw` and the toast said
+  "Changed colour to draw on Plumber". In this theme "scrim" really is the same colour as "fg", so "looks the same" was
+  true.
 
 ## Open gaps
 - The contrast check knows colours, not sizes or weights, and is not run by CI yet.
