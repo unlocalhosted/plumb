@@ -1,3 +1,4 @@
+import { Claims, LEVEL } from './claims.js';
 /* ─────────────────────────────────────────────────────────
  * TEXT STYLES · React Plumber overlay (docs/design/system-proposal.md)
  *
@@ -30,8 +31,8 @@ const inView = (el) => { const r = el.getBoundingClientRect(); return r.width > 
 // The page as it would be: every place of every style takes its style's values, as inline styles the overlay owns;
 // put back exactly as they were. What is in view glides there (inplace.js); the rest changes at once.
 export class StylePreview {
-  #had = new Map(); // el → [[prop, value, priority]]
-  get on() { return this.#had.size > 0; }
+  #claims = new Claims(LEVEL.cleanup); // the page's own values are kept by claims.js, not here
+  get on() { return this.#claims.size > 0; }
   show(proposal, glide) {
     for (const role of proposal.roles) this.setRole(role, glide);
   }
@@ -43,18 +44,17 @@ export class StylePreview {
       const lh = m.variant === 'compact' ? role.variants?.compact?.lineHeight : b.lineHeight;
       const sets = { 'font-size': b.sizeText ?? `${b.size}px`, 'letter-spacing': `${b.letterSpacing ?? 0}em`, 'font-weight': String(b.weight ?? 400), 'text-transform': b.transform ?? 'none', ...(Number(lh) > 0 ? { 'line-height': String(lh) } : {}) };
       for (const el of document.querySelectorAll(`[data-plumb-source="${CSS.escape(m.stamp)}"]`)) {
-        if (this.#had.has(el)) continue;
-        this.#had.set(el, Object.keys(sets).map((p) => [p, el.style.getPropertyValue(p), el.style.getPropertyPriority(p)]));
-        const set = () => { for (const [p, v] of Object.entries(sets)) el.style.setProperty(p, v, 'important'); };
+        if (this.#claims.has(el)) continue;
+        const set = () => { for (const [p, v] of Object.entries(sets)) this.#claims.set(el, p, v); };
         if (move && inView(el)) move(el, set); else set();
       }
     }
   }
   clear(glide) {
-    for (const [el, had] of this.#had) {
-      const put = () => { for (const [p, v, pr] of had) { if (v) el.style.setProperty(p, v, pr); else el.style.removeProperty(p); } if (!el.getAttribute('style')?.trim()) el.removeAttribute('style'); };
+    for (const el of this.#claims.elements()) {
+      const put = () => this.#claims.clear(el);
       if (el.isConnected && inView(el)) glide(el, put); else put();
     }
-    this.#had.clear();
+    this.#claims.clear();
   }
 }

@@ -22,6 +22,7 @@ import { request } from './api.js';
 import { BLOCK_ICONS } from './boxmodel.js';
 import { classEditsOf } from './locate.js';
 import { ease } from './show.js';
+import { Claims, LEVEL } from './claims.js';
 import { proposeSpacing, readStacks, rhythmOf, unit } from './stacks.js';
 
 const SIDE = /^(gap|gap-y|mt|mb)$/;
@@ -33,7 +34,7 @@ const mostOf = (vs) => vs.sort((a, b) => vs.filter((v) => v === b).length - vs.f
 
 export class SpacingPass {
   beat = 'all'; // measured all at once, then snapped together (show.js playAll), as the reference does
-  #writes = []; #held = new Map(); // el → { prop: [value, priority] } as the page had it
+  #writes = []; #claims = new Claims(LEVEL.cleanup); // the page's own values are kept by claims.js, not here
   page = null; // { moves, writes, places, before, after, scale, levels }
 
   async read() {
@@ -95,19 +96,10 @@ export class SpacingPass {
   // every role set at once (Space released, a reload's resume)
   show() { for (const s of this.steps()) s.morph(false); }
   #set(el, prop, value, animate) {
-    if (!this.#held.has(el)) this.#held.set(el, {});
-    const was = this.#held.get(el);
-    if (!(prop in was)) was[prop] = [el.style.getPropertyValue(prop), el.style.getPropertyPriority(prop)];
-    const set = () => el.style.setProperty(prop, value, 'important');
+    const set = () => this.#claims.set(el, prop, value);
     if (animate) ease(el, set, { props: [prop] }); else set();
   }
-  clear() {
-    for (const [el, was] of this.#held) {
-      for (const [prop, [v, pr]] of Object.entries(was)) { if (v) el.style.setProperty(prop, v, pr); else el.style.removeProperty(prop); }
-      if (!el.getAttribute('style')?.trim()) el.removeAttribute('style');
-    }
-    this.#held.clear();
-  }
+  clear() { this.#claims.clear(); }
 
   // the swaps for apply-all, one guarded write per file; a class that can't be reached is left as is with its reason
   async edits() {
