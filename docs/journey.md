@@ -454,6 +454,10 @@ race, built for the old in-place write) was rewritten for the new write path (`e
 - **"animate them semantically as well":** each glyph acts out its property when its row is pointed at or dragged
   (the small A grows, line-height rules part, letter-spacing rules move out, the thin A turns heavy). Checked by
   rendering each at rest and moving, side by side. Added to the principles.
+- **"drop the hovered label, they make sense now with animation doing the explaining; make the animation a bit more
+  polished":** the name label is gone (the name stays for screen readers). The motion goes in on a soft spring with
+  a small overshoot, the second part a beat behind the first, and comes back in 240ms with no bounce; the moves are
+  a little bigger (the rules travel 2.2 units), the big A gives way as the small one grows, the heavy A firms up.
 - **Open:** the product's own text card (`overlay/src/texteditor.js`) is not yet rebuilt from the picker; style,
   case and colour rows are not drawn yet (colour needs its own picker).
 

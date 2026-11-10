@@ -64,16 +64,23 @@ export const GLYPH_CSS = `
   .g text { fill: currentColor; stroke: none; font-family: var(--pl-round, system-ui); font-weight: 600; }
   /* motion that says what the property does. It plays while the glyph's holder is pointed at or held (.live:hover,
      .live.on): font size, the small A grows and the big one makes room; line height, the two rules move apart;
-     letter spacing, the two rules move out to the sides; weight, the thin A turns heavy */
-  .g .a1, .g .a2, .g .r1, .g .r2 { transform-box: fill-box; transition: transform 380ms var(--pl-spring-pop, cubic-bezier(.34,1.56,.64,1)), font-weight 380ms var(--pl-ease-out, ease-out); }
+     letter spacing, the two rules move out to the sides; weight, the thin A turns heavy.
+     Going in it moves on a soft spring with a small overshoot (the rules a beat apart, so they read as two things
+     answering one hand); coming back it settles quickly and quietly, with no bounce */
+  .g .a1, .g .a2, .g .r1, .g .r2 { transform-box: fill-box; transition: transform 240ms cubic-bezier(.25, 1, .5, 1), font-weight 240ms cubic-bezier(.25, 1, .5, 1); }
+  .live:hover .g .a1, .live.on .g .a1, .live:hover .g .a2, .live.on .g .a2, .live:hover .g .r1, .live.on .g .r1, .live:hover .g .r2, .live.on .g .r2 {
+    transition: transform 520ms cubic-bezier(.3, 1.45, .55, 1), font-weight 420ms cubic-bezier(.3, 1.25, .55, 1); }
+  .live:hover .g .r2, .live.on .g .r2, .live:hover .g .a2, .live.on .g .a2 { transition-delay: 40ms; }
   .g.font-size .a1 { transform-origin: 0% 100%; }
-  .live:hover .g.font-size .a1, .live.on .g.font-size .a1 { transform: scale(1.4); }
-  .live:hover .g.font-size .a2, .live.on .g.font-size .a2 { transform: translateX(1.2px); }
-  .live:hover .g.line-height .r1, .live.on .g.line-height .r1 { transform: translateY(-1.6px); }
-  .live:hover .g.line-height .r2, .live.on .g.line-height .r2 { transform: translateY(1.6px); }
-  .live:hover .g.letter-spacing .r1, .live.on .g.letter-spacing .r1 { transform: translateX(-1.6px); }
-  .live:hover .g.letter-spacing .r2, .live.on .g.letter-spacing .r2 { transform: translateX(1.6px); }
-  .live:hover .g.font-weight .a1, .live.on .g.font-weight .a1 { font-weight: 800; }
+  .g.font-size .a2 { transform-origin: 100% 100%; }
+  .live:hover .g.font-size .a1, .live.on .g.font-size .a1 { transform: scale(1.38); }
+  .live:hover .g.font-size .a2, .live.on .g.font-size .a2 { transform: translateX(1px) scale(.94); }
+  .live:hover .g.line-height .r1, .live.on .g.line-height .r1 { transform: translateY(-2.2px); }
+  .live:hover .g.line-height .r2, .live.on .g.line-height .r2 { transform: translateY(2.2px); }
+  .live:hover .g.letter-spacing .r1, .live.on .g.letter-spacing .r1 { transform: translateX(-2.2px); }
+  .live:hover .g.letter-spacing .r2, .live.on .g.letter-spacing .r2 { transform: translateX(2.2px); }
+  .g.font-weight .a1 { transform-origin: 50% 100%; }
+  .live:hover .g.font-weight .a1, .live.on .g.font-weight .a1 { font-weight: 800; transform: scale(1.04); }
   @media (prefers-reduced-motion: reduce) { .g .a1, .g .a2, .g .r1, .g .r2 { transition: none; } }
 `;
 
