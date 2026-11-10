@@ -36,16 +36,17 @@ meaning, content colours are never touched, the APCA guard on every text move (c
 
 ### 2.1 The ladder
 
-Plumber's default ladder. Sizes and line-heights are BoardUI's; the tracking for steps BoardUI leaves unstated is
+Plumber's default ladder. Sizes are BoardUI's, and its line-heights from Title 1 down; the display steps (32px and up) are
+set tight, about 1.1, because page titles are set that way (owner, 2026-11-10); the tracking for steps BoardUI leaves unstated is
 ours (marked *ours*), from the usual optical rule that large text tightens and small text opens.
 
 | Step | Name in code | Size / line-height | Tracking | Job |
 | --- | --- | --- | --- | --- |
-| Large title | `large-title` | 64 / 80 | -0.025em *ours* | hero numbers, marketing |
-| Display 1 | `display-1` | 56 / 72 | -0.025em *ours* | full-page hero |
-| Display 2 | `display-2` | 48 / 64 | -0.02em *ours* | section hero |
-| Display 3 | `display-3` | 40 / 54 | -0.02em *ours* | page hero, big stats |
-| Display 4 | `display-4` | 32 / 44 | -0.015em *ours* | page title, the largest in an app shell |
+| Large title | `large-title` | 64 / 70 | -0.025em *ours* | hero numbers, marketing |
+| Display 1 | `display-1` | 56 / 62 | -0.025em *ours* | full-page hero |
+| Display 2 | `display-2` | 48 / 53 | -0.02em *ours* | section hero |
+| Display 3 | `display-3` | 40 / 44 | -0.02em *ours* | page hero, big stats |
+| Display 4 | `display-4` | 32 / 36 | -0.015em *ours* | page title, the largest in an app shell |
 | Title 1 | `title-1` | 24 / 34 | -0.01em *ours* | headline figures on cards |
 | Title 2 | `title-2` | 20 / 26 | -0.005em *ours* | section headings |
 | Title 3 | `title-3` | 18 / 24 | 0 | sub-section headings |
@@ -69,7 +70,8 @@ Weights: `regular` 400, `medium` 500, `semibold` 600, `bold` 700.
 4. **Uppercase labels** (crafting-ui's biggest unnamed style) are a caption step plus a transform, written as their
    own class `text-caption-1-medium-caps` only when the code repeats it; tracking for caps is 0.08em *ours*.
 5. **Fluid sizes**: the ladder is fixed px. A fluid hero (`clamp(...)`) maps to the display step it reaches at the
-   widest breakpoint, and plumber keeps the clamp only if the project already uses one (listed, not invented).
+   widest breakpoint, and plumber keeps the clamp only if the project already uses one (listed, not invented). When a
+   style's places use several clamps, it keeps the one whose largest value is nearest the step's size.
 6. **Font family is a separate token** (`--font-sans`, `--font-mono`); a step never fixes the family. Mono numbers
    are `body-2` or `caption-1` with `--font-mono`.
 

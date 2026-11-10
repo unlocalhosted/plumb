@@ -36,12 +36,18 @@
 - **The system behind it:** all of a file's class swaps are written as one change, and its history label joins every new class name; a limit meant for text a person types fired on that label, not on any code change.
 - **The fix and the proof:** the label lists each distinct value once and is cut to fit (`… (N in all)`). Re-applied on the side copy: 78 swaps in the 3 files, 0 refused; nothing left pending for the project.
 
+## Page titles: tight and up to 48px (2026-11-10)
+- **The itch:** 46 places would change a lot under the ladder, mostly page titles.
+- **How we found it:** listing every title-sized place with its current values: the titles were flagged for line-height more than size. crafting-ui sets them tight (about 1.04); BoardUI's display leading (about 1.33–1.375) would open a 46px title by about 13px per line. Page titles also used two fluid sizes, topping out at 44px (11 pages) and 48px (8 pages).
+- **What the owner chose:** a tight ladder (display steps 32px and up at about 1.1: 64/70, 56/62, 48/53, 40/44, 32/36) over a heading modifier or BoardUI's numbers; and fluid titles up to 48px. The second became a rule, not a setting: a fluid style keeps the clamp whose top is nearest its ladder size (48px is exactly Display 2).
+- **The fix and the proof:** re-written on the side copy: 22 styles, sizes 34 → 12, low-confidence places 46 → 20, 74 writes with none refused. /motion/standards at 1280 wide: the h1 is `text-display-2-medium`, 46.08px on 50.9px lines.
+
 ## Open gaps
 - Token spec layers 2–6 not built; four owner decisions open (§6).
 - e2e/type-roles.test.mjs still expects the old Material names; rewrite when the owner calls for tests.
 - The clean-up text panel with the new names was not looked at in the browser.
 - Writing from source without a census gets inherited caps wrong; the no-census proposal should refuse to write, or read ancestors.
-- 46 low-confidence places, mostly page titles between ladder sizes; the owner decides the title sizes.
+- 20 low-confidence places left: one-off sizes (28–33px, 22px) that move more than 2px onto the ladder.
 - The tailwind-merge trap is untested: crafting-ui does not use it.
 
 ## Shipped · 2026-W46

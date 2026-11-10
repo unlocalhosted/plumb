@@ -69,15 +69,16 @@ export function px(value: string | undefined, size = 16): number | null {
 
 /**
  * Plumber's type ladder (docs/design/token-spec.md §2.1): thirteen named steps, each a size and line-height in px and
- * a tracking in em, smallest last. Sizes and leading follow BoardUI's scale; tracking on the steps BoardUI leaves
+ * a tracking in em, largest first. Sizes follow BoardUI's scale, and its leading from Title 1 down; the display steps
+ * (32px and up) are set tight, about 1.1, as page titles are (owner, 2026-11-10). Tracking on the steps BoardUI leaves
  * unstated is ours (large text tightens, small text opens).
  */
 export const LADDER = [
-  { step: 'large-title', label: 'Large title', size: 64, lineHeight: 80, tracking: -0.025 },
-  { step: 'display-1', label: 'Display 1', size: 56, lineHeight: 72, tracking: -0.025 },
-  { step: 'display-2', label: 'Display 2', size: 48, lineHeight: 64, tracking: -0.02 },
-  { step: 'display-3', label: 'Display 3', size: 40, lineHeight: 54, tracking: -0.02 },
-  { step: 'display-4', label: 'Display 4', size: 32, lineHeight: 44, tracking: -0.015 },
+  { step: 'large-title', label: 'Large title', size: 64, lineHeight: 70, tracking: -0.025 },
+  { step: 'display-1', label: 'Display 1', size: 56, lineHeight: 62, tracking: -0.025 },
+  { step: 'display-2', label: 'Display 2', size: 48, lineHeight: 53, tracking: -0.02 },
+  { step: 'display-3', label: 'Display 3', size: 40, lineHeight: 44, tracking: -0.02 },
+  { step: 'display-4', label: 'Display 4', size: 32, lineHeight: 36, tracking: -0.015 },
   { step: 'title-1', label: 'Title 1', size: 24, lineHeight: 34, tracking: -0.01 },
   { step: 'title-2', label: 'Title 2', size: 20, lineHeight: 26, tracking: -0.005 },
   { step: 'title-3', label: 'Title 3', size: 18, lineHeight: 24, tracking: 0 },
@@ -176,7 +177,10 @@ export function proposeTypeRoles(members: TypeMember[], options: { exclude?: str
     const override = { ...overrides[step.step], ...overrides[name] };
     const clampCounts = new Map<string, number>();
     for (const m of ms) if (m.current.sizeText) clampCounts.set(m.current.sizeText, (clampCounts.get(m.current.sizeText) ?? 0) + 1);
-    const clamps = [...clampCounts].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).map(([text, places]) => ({ text, places }));
+    // the fluid size whose largest value is nearest the step's size, then the most places (owner, 2026-11-10: page titles
+    // at clamp(…, 3rem) are Display 2, not the commoner clamp(…, 2.75rem) that sits between steps)
+    const off = (text: string) => Math.abs((clampMax(text) ?? step.size) - step.size);
+    const clamps = [...clampCounts].sort((a, b) => off(a[0]) - off(b[0]) || b[1] - a[1] || a[0].localeCompare(b[0])).map(([text, places]) => ({ text, places }));
     // a fluid size is kept only where the code already writes one, and only when most of the style's places are fluid
     const fluidText = clamps.length && clamps.reduce((n, c) => n + c.places, 0) * 2 >= ms.length ? clamps[0]!.text : '';
     const size = override.size ?? step.size;
