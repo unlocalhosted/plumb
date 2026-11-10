@@ -72,8 +72,13 @@
 - **The fix and the proof:** on the side copy (`../crafting-ui-type`), 18 tokens renamed (`fg` → `text-primary`, `surface` → `background-primary-default`, `line` → `border-default`, `draw` → `ink2-default` …), 3 kept (`scrim`: not a UI role; `draw-line`: `border-default` is `line`; `draw-tint`: `ink2-soft` is `draw-soft`). 1,684 class uses in 101 files. Every element's computed text, background, border, fill and stroke colour on 5 pages (6,121 elements) recorded before and after: 0 differ. No old class names left on the page.
 - **Dead ends:** the rename was applied by a script outside plumber; plumber has no project-wide rename write yet.
 
+## Plumber renames colour tokens itself (2026-11-11)
+- **The itch:** the colour rename had been applied by a script outside plumber.
+- **What we built:** a `rename` write (`POST /__plumb/rename { map: { old: new } }`): every source file and the theme, the `--color-<old>` declarations and every utility class that uses them (variants, sides and opacity kept; a name matched whole, so `line` never touches `line-strong`), as one transaction that holds hot reloads, with one undo per file. Refused whole, before anything is written, when a new name is already a token (it would merge two colours). The text rule is pure (src/rules/colour-rename.ts).
+- **The fix and the proof:** on a fresh copy of crafting-ui, plumber's rename wrote 101 files, 1,703 renames (the 1,684 class uses plus the theme's 19 names), none refused, 101 undo handles. Every element's computed colours on 5 pages (6,121 elements): 0 differ. Renaming `scrim` onto `text-primary` was refused with nothing written.
+
 ## Open gaps
-- Colour rename is planned by plumber (`renameMap`) but applied by a script: plumber needs its own project-wide rename write (theme lines + every class use, one undo).
+- The rename is a server write with no button yet: nothing in the overlay offers "rename to job names" with `renameMap`'s plan.
 - The second ink is named `ink2-*`; crafting-ui calls it `draw`, a meaningful word. Naming decision for the owner.
 - Code samples shown as text on crafting-ui pages may have been renamed too; not checked.
 - A yellow or amber brand sits next to the warning status hue; plumber does not yet warn when the brand and a status colour are too close.

@@ -39,6 +39,7 @@ import { readText, textSites } from './text.js';
 import { addTokens, topBlocks } from '../onboarding/write.js';
 import { loadConfig } from '../config.js';
 import { isTypeProp, proposeTypeRoles, px } from '../rules/type-roles.js';
+import { renameInText, validRenameMap } from '../rules/colour-rename.js';
 import type { RoleOverride, TypeBundle, TypeClass, TypeMember, TypeProposal } from '../rules/type-roles.js';
 import { classEdit } from '../messages.js';
 import { useFor } from '../rules/provenance.js';
@@ -110,6 +111,8 @@ export interface Cause { rule: string; text: string; choice: string }
 export type CauseSwap = { cause: Cause; file?: string };
 /** What follows a new token once it is in the theme: its class at every place of a cause, or per-element swaps (a craft suggestion has no source rule). Neither is written when the token is refused. */
 export type TokenThen = CauseSwap | { swaps: SwapsOptions[] };
+export interface RenameOptions { /** old name → new name, without `--color-` */ map: Record<string, string> }
+export interface RenameResult { revision: number; files: { file: string; ok: boolean; uses: number; error?: string }[]; uses: number; byName: Record<string, number>; undo: UndoHandle[]; labels: string[] }
 export interface ApplyAllOptions { tokens?: (Omit<TokenOptions, 'then'> & { then?: TokenThen })[]; /** stylesheet blocks appended to the theme after the tokens (a type role's @utility) */ css?: CssOptions[]; swaps?: (SwapsOptions | CauseSwap)[]; accepts?: AcceptOptions[] }
 export interface ApplyAllResult {
   results: {
@@ -1099,6 +1102,62 @@ export class Session extends EventEmitter {
       const undo = this.record(path, before, hashAfter, 1, `${block.match(/@utility\s+([\w-]+)/g)?.length ?? 1} type role classes`);
       return { revision: this.revision, file: path, hash: hashAfter, applied: ['css'], written: true, undo };
     });
+  }
+  /**
+   * Rename colour tokens across the project (docs/design/token-spec.md §3.3, rules/colour-rename.ts): the theme's
+   * `--color-<old>` and every utility class that uses it, in every source file and the theme, as one transaction with
+   * one undo per file. Refused whole when a new name is already a token of the theme (it would merge two colours).
+   */
+  async rename(options: RenameOptions): Promise<RenameResult> {
+    const map = (options ?? {} as RenameOptions).map;
+    const invalid = validRenameMap(map);
+    if (invalid) throw new UsageError(invalid);
+    const spec = await this.request<ProjectSpec>('spec');
+    const theme = spec.tokens.file ? this.file(spec.tokens.file) : undefined;
+    const paths = [...new Set([...this.sourceFiles, ...(theme ? [theme] : [])])].filter(p => /\.(?:[cm]?[jt]sx?|css)$/.test(p)).sort();
+    // a new name that is already a token would merge two colours: refuse before writing anything
+    if (theme) {
+      const text = await readFile(theme, 'utf8').catch(() => '');
+      const clash = Object.values(map).find(to => new RegExp(`--color-${to.replace(/-/g, '\\-')}\\s*:`).test(text) && !(to in map));
+      if (clash) throw new UsageError(`--color-${clash} is already in ${spec.tokens.file}; renaming onto it would merge two colours.`);
+    }
+    const result: RenameResult = { revision: this.revision, files: [], uses: 0, byName: {}, undo: [], labels: [] };
+    this.emit('transaction', { phase: 'start' });
+    this.transaction = true;
+    try {
+      for (const path of paths) {
+        this.progress();
+        const before = await readFile(path, 'utf8').catch(() => null);
+        if (before === null) continue;
+        const { text: after, count } = renameInText(before, map);
+        if (!count.uses) continue;
+        const file = relative(this.root, path).replaceAll('\\', '/');
+        try {
+          const written = await this.serialize(async () => {
+            const identity = await this.editableFile(path);
+            const handle = await open(path, constants.O_RDWR | constants.O_NOFOLLOW);
+            try {
+              const info = await handle.stat();
+              if (!info.isFile() || info.nlink !== 1) throw new UsageError('Apply requires a regular source file without hard links.');
+              if (info.dev !== identity.dev || info.ino !== identity.ino) throw new UsageError(staleFile);
+              await this.sameFile(path, identity);
+              if (await readFile(path, 'utf8') !== before) throw new UsageError(staleFile);
+              await handle.writeFile(after, 'utf8'); await handle.truncate(Buffer.byteLength(after));
+              await this.sameFile(path, identity);
+            } finally { await handle.close(); }
+            await this.reconcile([path]);
+            const hashAfter = sourceHash(after);
+            return this.record(path, before, hashAfter, 1, `${count.uses} colour ${count.uses === 1 ? 'name' : 'names'} renamed`);
+          });
+          result.undo.push(written); result.labels.push(written.label);
+          result.files.push({ file, ok: true, uses: count.uses });
+          result.uses += count.uses;
+          for (const [name, n] of Object.entries(count.byName)) result.byName[name] = (result.byName[name] ?? 0) + n;
+        } catch (error) { result.files.push({ file, ok: false, uses: 0, error: error instanceof UsageError ? error.message : errorMessage(error) }); }
+      }
+    } finally { this.transaction = false; this.emit('transaction', { phase: 'end', results: { tokens: [], css: [], swaps: [], accepts: [] }, undo: result.undo, labels: result.labels }); }
+    result.revision = this.revision;
+    return result;
   }
   /**
    * The type system this code is reaching for (docs/research/type-roles.md): its roles, members, cost and the write

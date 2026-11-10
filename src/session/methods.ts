@@ -55,6 +55,7 @@ export const methods = [
   { http: 'token', engine: 'token', post: true, traced: true, patient: true },
   { http: 'accept', engine: 'accept', post: true, patient: true },
   { http: 'apply-all', engine: 'applyAll', post: true, traced: true, patient: true },
+  { http: 'rename', engine: 'rename', post: true, traced: true, patient: true },
   { http: 'recipes', engine: 'recipes' },
   { http: 'recipes/preview', engine: 'recipesPreview', post: true },
   { http: 'recipes/apply', engine: 'recipesApply', post: true, traced: true, patient: true },

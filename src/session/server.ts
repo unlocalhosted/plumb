@@ -176,6 +176,11 @@ async function dispatchRequest(session: Session, method: string, raw: unknown, o
     if (!Array.isArray(items)) throw new UsageError('A page is { items: [{ stamp, tag, classes? }] }.');
     return session.page(items.map((item: Record<string, unknown>) => ({ stamp: text(item, 'stamp')!, tag: text(item, 'tag')!, ...(item?.classes === undefined ? {} : { classes: text(item, 'classes', true) ?? '' }) })));
   }
+  if (method === 'rename') {
+    const map = (params as { map?: unknown }).map;
+    if (!object(map)) throw new UsageError('A rename is { map: { old: new } }.');
+    return session.rename({ map: Object.fromEntries(Object.entries(map).map(([k, v]) => [k, String(v)])) });
+  }
   if (method === 'apply-all') {
     const cause = (item: Record<string, unknown>) => { const c = item.cause as Record<string, unknown>; return { cause: { rule: text(c, 'rule')!, text: text(c, 'text')!, choice: text(c, 'choice')! }, ...(item.file === undefined ? {} : { file: text(item, 'file')! }) }; };
     const body = params as { tokens?: unknown; css?: unknown; swaps?: unknown; accepts?: unknown };
