@@ -48,6 +48,21 @@ Rows 1 to 5 look like one family: 0.4.0 changed what "your code" means (inside t
 generated) and made that the default when no `source` is configured. The tests that fail are the ones that check the
 edges of the old meaning.
 
+## After the owner's answer (same day)
+
+The owner confirmed that tracking everything that is yours by default is intended, and said to update the tests.
+
+| # | Outcome |
+|---|---|
+| 1 `decisions-spacing` | Test updated: a stylesheet of yours at the root is part of your theme; without it, a package's tokens alone leave "no tokens of your own". Passes. |
+| 2 `serve` | Test updated: a dotted folder is a tool's until the app imports it. Passes. |
+| 3 `stylesheets-inline` | Test updated: it names `src/` as the source, because it is about a package that is not your source. Passes. |
+| 4 `onboarding-state` | Test updated to the design's rule R4: a folder named with `--root` runs. Passes by name. |
+| 5 `shared-source` | **Not a stale test: a bug, fixed in the product (573f72e).** A file of yours that `source` leaves out was answered with the usage around it. It says "outside this project's source" again, with the file, and setup offers to add it. The Vite test passes unchanged; the Next one runs on vm-agent. |
+| 6 `served-root` | Test updated: its Next host is unstamped on purpose, through the internal switch. Passes. |
+| 7, 9, 10, 11 | Still not diagnosed. |
+| 8 `blueprint-late-mount` | Not touched: passes locally, fails on vm-agent only. |
+
 ## What publishing needs
 
 1. A decision on rows 1 to 6: intended, or bug. Intended ones get their tests updated; bugs get fixed.
