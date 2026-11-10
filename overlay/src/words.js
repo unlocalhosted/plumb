@@ -740,6 +740,7 @@ export const SETUP = {
       'fast.config': { title: 'Make checks faster', loses: 'Without a config file, every check starts from scratch.' },
       'remember.baseline': { title: 'Start from today’s problems', loses: 'Every problem counts as new, so CI fails on all of them. Record today’s once you’ve looked them over, and only new ones fail.' },
       'write.watcher': { title: 'Check that saving updates the page', loses: 'Save any file once. If the page doesn’t update, applied changes won’t show until you reload.' },
+      'write.refresh': { title: 'Turn on React Fast Refresh', loses: 'Without it, every fix reloads the whole page and what you were doing on it is lost. With it, a fix lands in place.' },
       'locate.react-dev': { title: 'Use the development build', loses: 'In a production build, clicking an element may not find its component.' },
       'locate.stamps': { title: 'Source stamping isn’t running', loses: 'Plumber can’t see where your elements are written, so clicking one finds nothing. It won’t guess.' },
     }[q.id] ?? { title: q.title, loses: q.loses };

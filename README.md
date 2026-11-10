@@ -74,6 +74,8 @@ import react from '@vitejs/plugin-react'
 export default { plugins: [plumb(), react()] }
 ```
 
+Keep `react()` (or `@vitejs/plugin-react-swc`): it is what lets a fix land without reloading the page. See [Writes, hot reload and the network](#writes-hot-reload-and-the-network).
+
 Start your dev server as usual. The overlay lives only in development: production builds carry no script, no stamps and no server routes.
 
 #### Reading
@@ -354,6 +356,14 @@ using the route.
 
 ### Writes, hot reload and the network
 
+- A fix lands as a hot update. The page is not reloaded, and what you were doing on it stays: a counter you clicked,
+  words you typed, a menu you opened. Measured on Vite with `react()` and on Next.js 16 with webpack and Turbopack,
+  for a class change in a client component, in a server component, and for an Apply that adds a theme token.
+- That needs React Fast Refresh. Next.js always has it. On Vite it comes from the React plugin; a config that
+  compiles JSX with no React plugin has nothing to take the update, so each fix reloads the page once. The overlay
+  says so as a setup step ("Turn on React Fast Refresh") with the config change ready to apply, and
+  `npx plumber doctor` lists it.
+- Only a write to the page's own HTML asks for a reload.
 - Every write and every undo checks the file's content first; if your editor or a formatter changed it, the write is
   refused with "the file changed" and nothing is overwritten. With an editor saving every 150 ms during writes, the
   file always parsed and no edit was lost.

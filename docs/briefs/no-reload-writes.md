@@ -1,7 +1,7 @@
 # Writes without a reload
 
 Status: the Vite host is fixed (d379af4). Next is measured and needs no fix (webpack and Turbopack, below). The
-demo, the fixtures and the readiness row are specified here and not built.
+85 test fixtures are still without Fast Refresh.
 
 ## The itch
 
@@ -72,7 +72,7 @@ machinery that exists today, not the path everything is built on.
 |---|---|---|
 | 1. Never force | No host sends a reload for a file no module reads or for a stylesheet. Only a page's own HTML does. | Vite: done. Next: the host forces nothing (measured). |
 | 2. One reload when it is unavoidable | When a held module has nothing to accept it, one reload, never one per module. | Vite: done. |
-| 3. Say so | A readiness row: "Fast Refresh is off, so each fix reloads the page", with the fix (`@vitejs/plugin-react`). The overlay already has readiness rows and fixes. | Not built. |
+| 3. Say so | A setup step that says each fix reloads the page, with the config change ready. | It already existed (`write.refresh` in `src/readiness/index.ts`, shown in the dock, the Blueprint bar, the setup panel and `plumber doctor`); I had missed it. Now in plain words ("Turn on React Fast Refresh"), in the README's setup and writes sections, and in the changelog. |
 | 4. Live where users live | The demo and the test fixtures run Fast Refresh, as an app from Vite's React template does. A few fixtures stay without it, on purpose, to keep the reload path proven. | Demo: done (an Apply on it: 0 reloads, page kept, class landed). The 85 fixtures: not built; do it inside the shared test harness (test-system layer 2), not by hand. |
 | 5. Measure Next | The same measurement on Next with webpack and with Turbopack, client and server components: reloads, kept state. | Done: no reload in any of eight writes. |
 | 6. Settled, the easy way | With no reload, "the write has landed" is a hot-update event on a page that never went away. The "settled after a write" signal becomes: the host's update applied (Vite `vite:afterUpdate`, Next's `built`/`sync` messages the overlay already hears) and the overlay has re-read. | Not built. |
