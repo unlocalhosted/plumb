@@ -53,7 +53,7 @@ export function mount(host, root, css) {
     .s-box { --h: var(--pl-pink); --hs: var(--pl-pink-soft); --hi: var(--pl-pink-ink); --side: var(--h); --lift: 7px; --rx: 0deg; --ry: 0deg; --gx: 50%; --gy: 0%;
       position: relative; display: block; width: 250px; max-width: 100%; padding-top: 7px; border-radius: 28px; background: var(--side); color: var(--hi);
       box-shadow: 0 16px 24px -14px color-mix(in oklab, var(--h) 70%, transparent), 0 3px 5px -2px color-mix(in oklab, var(--h) 40%, transparent);
-      transform: rotateX(var(--rx)) rotateY(var(--ry)); transform-style: preserve-3d; transition: transform 500ms var(--pl-spring-pop), box-shadow 300ms var(--pl-ease-out);
+      transform: rotateX(var(--rx)) rotateY(var(--ry)); transform-style: preserve-3d; transition: transform 520ms var(--pl-ease-out), box-shadow 300ms var(--pl-ease-out);
       /* a block is always on its own layers: lifted into 3D only while pointed at, its words were redrawn (a visible
          flicker) each time it went flat again */
       will-change: transform; backface-visibility: hidden; }
@@ -68,20 +68,22 @@ export function mount(host, root, css) {
       transform: translateY(calc(-1 * var(--lift))); transform-origin: 50% 100%; transform-style: preserve-3d; transition: transform 320ms var(--pl-spring-pop); }
     :host([data-scheme="dark"]) .s-box .in { background: linear-gradient(180deg, color-mix(in oklab, var(--hs) 88%, #fff), var(--hs)); box-shadow: inset 0 2px 0 0 color-mix(in oklab, #fff 22%, transparent), inset 0 -2.5px 0 0 color-mix(in oklab, #000 22%, transparent); }
     /* the light: a soft glint that follows the pointer across the top */
-    .s-box .in::after { content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; opacity: 0; transition: opacity 240ms var(--pl-ease-out);
+    .s-box .in::after { content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; opacity: 0; transition: opacity 240ms var(--pl-ease-out); transform: translateZ(0.5px);
       background: radial-gradient(180px circle at var(--gx) var(--gy), color-mix(in oklab, #fff 70%, transparent), transparent 70%); }
     .s-box:hover .in::after { opacity: .55; }
     .s-box .plate { display: grid; place-items: center; width: 64px; height: 64px; margin-bottom: 14px; border-radius: 19px; background: var(--pl-paper); transform-origin: 50% 100%;
       box-shadow: 0 6px 10px -6px color-mix(in oklab, var(--h) 75%, transparent), inset 0 -2px 0 0 color-mix(in oklab, var(--h) 14%, transparent);
-      transform: translateZ(0.01px); transition: transform 420ms var(--pl-spring-pop); }
-    .s-box .toy { transform: translateZ(0.01px); transition: transform 420ms var(--pl-spring-pop); }
-    .s-box b, .s-box em { transform: translateZ(0.01px); transition: transform 420ms var(--pl-spring-pop); }
+      transform: translateZ(2px); transition: transform 420ms var(--pl-spring-pop); }
+    .s-box .toy { transform: translateZ(2px); transition: transform 420ms var(--pl-spring-pop); }
+    .s-box b, .s-box em { transform: translateZ(1.5px); transition: transform 420ms var(--pl-spring-pop); }
     .s-box em { opacity: .86; }
-    .s-box:hover { --lift: 11px; box-shadow: 0 26px 30px -18px color-mix(in oklab, var(--h) 70%, transparent), 0 4px 6px -2px color-mix(in oklab, var(--h) 36%, transparent); }
+    .s-box:hover { transition-duration: 160ms, 300ms; --lift: 11px; box-shadow: 0 26px 30px -18px color-mix(in oklab, var(--h) 70%, transparent), 0 4px 6px -2px color-mix(in oklab, var(--h) 36%, transparent); }
     .s-box:hover .plate { transform: translateZ(26px); }
     .s-box:hover .toy { transform: translateZ(18px) scale(1.08); }
     .s-box:hover b { transform: translateZ(14px); }
     .s-box:hover em { transform: translateZ(8px); }
+    /* leaving: everything comes down together, eased, with no overshoot */
+    .s-box:not(:hover) .in, .s-box:not(:hover) .plate, .s-box:not(:hover) .toy, .s-box:not(:hover) b, .s-box:not(:hover) em { transition-timing-function: var(--pl-ease-out); transition-duration: 420ms; }
     /* ── the squash ──
        A soft block is pressed from above against the ground, so it is anchored at its bottom edge and keeps its
        volume: what it loses in height it gains in width.
