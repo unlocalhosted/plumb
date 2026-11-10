@@ -33,6 +33,12 @@ import { namesOf } from './typesystem.js';
 import { FIX } from './words.js';
 import { contextOf } from './hierarchy.js'; // the element's place among its peers: the step that fits, the ones that break the order
 import { Claims, LEVEL } from './claims.js';
+import { PICKER_CSS, picker } from './picker.js'; // the panel's fields: the same token picker the design site shows
+import { glyph } from './glyphs.js';
+import { BUTTON_CSS, button } from './kit.js';
+
+// the panel's names for the values: the CSS names, said plainly (owner: "use correct terminology")
+const NAMES = { style: 'Text style', 'font-size': 'Font size', 'line-height': 'Line height', 'letter-spacing': 'Letter spacing', 'font-weight': 'Weight' };
 
 const W = FIX.text, WC = FIX.card;
 const ORDER = ['style', 'font-size', 'line-height', 'letter-spacing', 'font-weight', 'text-transform', 'color'];
@@ -211,6 +217,35 @@ export const TEXT_EDITOR_CSS = `
   .tc-ring { position: fixed; z-index: 3; border-radius: 8px; box-shadow: 0 0 0 1.5px #2f6bff; pointer-events: none; transition: box-shadow 120ms ease-out; }
   .tc-ring[data-peek] { box-shadow: 0 0 0 1.5px #2f6bff, 0 0 0 5px rgb(47 107 255 / .14); }
   :host([data-dragging]), :host([data-dragging]) * { cursor: ew-resize !important; }
+  /* ── the panel: the style and the type values as token pickers (picker.js), laid out like a visual editor's panel.
+     The picker's rules are nested under the card so they never reach the overlay's other rows and lists ── */
+  .tc .pk { ${PICKER_CSS} }
+  /* the card is light on any page, so its pickers take the light tokens whatever the computer's scheme */
+  .tc { --pl-paper: #ffffff; --pl-paper-2: #f6f6f4; --pl-rule: #e9e8e4; --pl-ink: #1d1b17; --pl-ink-2: #6b665c; --pl-ink-3: #b3ad9f; --pl-sky: #3391ee; --pl-coral: #bf3a1e;
+    --pl-mint: #1a9460; --pl-mint-ink: #0b3d26; --pl-mint-on: #ffffff; --pl-pink: #f24a9f; --pl-pink-on: #ffffff; color-scheme: light;
+    --pl-shadow-card: 0 0 0 1px var(--pl-rule), 0 1px 2px rgb(28 27 25 / 0.06), 0 14px 32px -14px rgb(28 27 25 / 0.28); }
+  .tc { ${BUTTON_CSS} }
+  .tc .pk { display: grid; gap: 10px; padding: 2px 12px 10px; }
+  .tc .pk section { position: relative; display: grid; gap: 6px; }
+  .tc .pk section > b { padding: 0 2px; font: 600 11.5px/1 var(--pl-sans, system-ui); color: var(--ink-3); }
+  .tc .pk .grid { position: relative; display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .tc .pk .one { position: relative; display: grid; }
+  .tc .pk .row.compact .slot.hard span { display: none; }
+  .tc .pk .style .row.compact { height: 44px; }
+  .tc .pk .style .scrub { display: none; }
+  .tc .pk .style .row.compact .val { padding-left: 4px; }
+  .tc .pk .style .row.compact .val, .tc .pk .style .row.compact .drum { height: 40px; }
+  .tc .pk .style .slot b { font: var(--pl-round-w, 600) 15px/1 var(--pl-round, system-ui); }
+  .tc .pk .style .slot.hard b { font-family: var(--pl-sans, system-ui); font-size: 13px; }
+  .tc .pk .style .slot .smp { display: grid; place-items: center; flex: none; width: 34px; height: 30px; border-radius: 7px; background: var(--pl-paper); color: var(--pl-ink); line-height: 1; font-style: normal; }
+  .tc .pk .list { z-index: 6; }
+  .tc .pk .list .aa { font-style: normal; width: 22px; text-align: center; line-height: 1; }
+  /* not set on this element: the value it gets from above, quiet, until you change it */
+  .tc .pk .row.inherited .slot b, .tc .pk .row.inherited .slot span { color: var(--pl-ink-3); font-style: italic; }
+  .tc .pk .row.locked { opacity: .62; }
+  .tc .pk .row.locked .val, .tc .pk .row.locked .scrub { pointer-events: none; }
+  .tc.grabbing, .tc.grabbing * { cursor: ns-resize !important; }
+  .tc .wr { display: flex; justify-content: flex-end; padding: 2px 12px 12px; }
   @media (prefers-reduced-motion: reduce) { .tc, .tc .rail[data-new], .tc .menu { animation: none; } }
 `;
 
@@ -259,6 +294,11 @@ export class TextEditor {
   #site = null;        // where its classes are written (locate.js classSiteOf): read and written there; refused: locked
   #read0 = null;       // what the page showed when the words were read: { size (px), values: computed per prop }
   #focus = false;      // the card takes focus once it is read (Tab reaches every field)
+  #pk = new Map();     // key → its picker in the panel (rebuilt with every draw)
+  #held = new Map();   // key → the token picked and not yet written (kept through redraws and re-reads)
+  #pend = new Claims(LEVEL.card); // what the held values show on the element until they are written
+  #syncing = false;    // a style is setting the type values: they move with it, not as changes of their own
+  #queue = null;       // the held values being written, one after another (each write re-reads the file)
 
   // root: the overlay's shadow root; host: { write(at, key, token, said) → Promise<result>, said(text, undo),
   // problems() → n, show(), closed(), elsewhere(el) → n, dark() → bool, why(el) → Promise<words | null> }
@@ -281,6 +321,8 @@ export class TextEditor {
     });
     this.#el.addEventListener('click', (e) => {
       if (e.target.closest('.show')) return this.#host.show?.();
+      if (e.target.closest('[data-do="write"]')) return this.#writeAll();
+      if (e.target.closest('.pk')) return;
       const up = e.target.closest('.up[data-up]');
       if (up) return this.#climb(+up.dataset.up);
       const f = e.target.closest('.fld[data-key]');
@@ -314,6 +356,7 @@ export class TextEditor {
   async edit(el) {
     this.#unpeek();
     this.#drag?.cancel();
+    this.#pend.clear(); this.#held.clear(); this.#queue = null;
     this.#target = el; this.#at = null; this.#props = null; this.#error = null; this.#rowError = null; this.#row = 0; this.#editing = null; this.#menu = null; this.#railFor = null; this.#ctx = null; this.#site = null; this.#read0 = null; this.#focus = true;
     this.#state = 'loading';
     this.#el.hidden = false; this.#caret.hidden = false; this.#ring.hidden = false;
@@ -328,6 +371,7 @@ export class TextEditor {
     this.#seq++; // a read still out lands on a closed card: it is no one's now
     this.#drag?.cancel();
     this.#editing = null; this.#menu = null;
+    this.#pend.clear(); this.#held.clear(); this.#queue = null;
     this.#unpeek(); this.#target = null; this.#state = 'off'; this.#props = null;
     this.#el.hidden = true; this.#caret.hidden = true; this.#ring.hidden = true; this.#el.innerHTML = '';
     removeEventListener('scroll', this.#follow, { capture: true });
@@ -343,6 +387,8 @@ export class TextEditor {
       this.#target = again;
     }
     await this.#read();
+    // a Write of several values: each one re-reads the file, then the next is written
+    if (this.#queue) this.#next();
   }
   #stamp = null;
 
@@ -543,18 +589,10 @@ export class TextEditor {
       this.#row = Math.max(0, Math.min(keys.length - 1, this.#row));
       const inHand = keys[this.#row];
       const family = esc(getComputedStyle(el).fontFamily);
-      const style = by.get('style');
-      if (style?.steps.length) {
-        const cur = style.steps.find((s) => s.token === style.current);
-        const closest = !cur ? style.note.replace(/^Closest: /, '') : '';
-        // a style worn whose size the words don't have (a size set over it, or a rule elsewhere): said, never hidden
-        const here = this.#read0?.size, stylePx = cur ? pxOf(cur.size, el) : NaN, differs = cur && Number.isFinite(stylePx) && Number.isFinite(here) && Math.abs(stylePx - here) > 0.5;
-        const sub = differs ? `<span class="sub">${esc(W.styleHere(`${pxRound(here)}px`))}</span>` : !cur && closest ? `<span class="sub">${esc(W.closestShort(closest))}</span>` : '';
-        body += `<div class="fields"><button type="button" class="fld wide pick" data-menu="style" aria-haspopup="listbox" aria-expanded="${this.#menu === 'style'}"${inHand === 'style' ? ' data-at' : ''}${differs ? ` data-off title="${esc(W.styleDiffers(cur.label, `${Math.round(stylePx)}px`, `${pxRound(here)}px`))}"` : ''}${style.disabled ? ' aria-disabled="true"' : ''}><span class="ic">Ag</span><span class="val" style="font-family:inherit">${esc(cur ? cur.label : W.noStyle)}</span>${sub}<span class="chev">▾</span></button></div>`;
-        if (this.#menu === 'style') body += `<div class="menu" role="listbox" aria-label="${esc(style.label)}">${style.steps.map((s, k) => { const px = pxOf(s.size, el); return this.#ch(style, k, `<span class="ag" style="font-family:${family};font-size:${Math.min(20, px + 2)}px;font-weight:${s.weight ?? 400}">${s.transform === 'uppercase' ? 'AG' : 'Ag'}</span><span>${esc(s.label)}</span><span class="nb">${Math.round(px)} / ${s.lineHeight ?? '–'}</span>`, s.label); }).join('')}</div>`;
-      }
-      const values = VALUES.map((k) => by.get(k)).filter(Boolean);
-      if (values.length) body += `<div class="fields">${values.map((r) => this.#valueField(r, inHand === r.key)).join('')}</div>`;
+      void inHand; void family;
+      // the style and the type values: token pickers, mounted once the card is drawn (#mount)
+      const style = by.get('style'), values = VALUES.map((k) => by.get(k)).filter(Boolean);
+      if (style?.steps.length || values.length) body += `<div class="pk">${style?.steps.length ? `<section class="style"><b>Style</b><div class="one"></div></section>` : ''}${values.length ? `<section><b>Type</b><div class="grid"></div></section>` : ''}</div>`;
       const open = this.#editing && by.get(this.#editing.key);
       if (open) body += this.#rail(open); else this.#railFor = null;
       const kase = by.get('text-transform');
@@ -571,6 +609,8 @@ export class TextEditor {
         body += `<div class="fields"><button type="button" class="fld wide pick" data-menu="color" aria-haspopup="listbox" aria-expanded="${this.#menu === 'color'}"${inHand === 'color' ? ' data-at' : ''}${color.disabled ? ' aria-disabled="true"' : ''}><span class="chip" style="background:${esc(swatch)}"></span><span class="val"${cur ? '' : ' style="color:var(--ink-3)"'}>${esc(cur?.token ?? said('color', value ?? shows ?? '', el))}</span><span class="chev">▾</span></button></div>`;
         if (this.#menu === 'color') body += `<div class="menu" role="listbox" aria-label="${esc(color.label)}"><div class="tc-swatches">${color.steps.map((s, k) => this.#ch(color, k, '', s.token, ` style="background:${esc(s.value)}" title="${esc(s.token)}"`)).join('')}</div></div>`;
       }
+      // one button writes every value picked in the panel
+      if (style?.steps.length || values.length) body += `<div class="wr">${button('Write', { cls: 'sm', key: '↵', attrs: 'data-do="write" disabled' })}</div>`;
     }
     // a write that was refused says why, under the values (the value stays as it was, to try again)
     if (this.#rowError && !this.#editing) body += `<div class="down" role="alert">${esc(this.#rowError.text)}</div>`;
@@ -587,12 +627,13 @@ export class TextEditor {
     this.#el.innerHTML = `<div class="hd">${this.#upsHtml()}<span class="n">${esc(name)}${name !== el.localName ? ` <span>· ${esc(el.localName)}</span>` : ''}</span><span class="at">${esc(at)}</span></div>`
       + (reach && !this.#locked ? `<div class="reach">${esc(W.reach(reach))}</div>` : '') + lock + body
       + (problems ? `<div class="more"><span>${esc(W.problems(problems))}</span><button type="button" class="show">${W.show} <kbd>.</kbd></button></div>` : '');
+    this.#mount();
     this.#mark();
     this.#place();
     // focus in the card (once it is read), on the field in hand; kept there through every redraw
     if (focused && this.#state !== 'loading') {
       this.#focus = false;
-      const f = this.#el.querySelector('.fld[data-at], .seg[data-at]') ?? this.#el.querySelector('.fld[tabindex="0"], button.fld, .seg .ch, .up');
+      const f = this.#el.querySelector('.fld[data-at], .seg[data-at]') ?? this.#el.querySelector('.pk .row:not(.locked) .val') ?? this.#el.querySelector('.fld[tabindex="0"], button.fld, .seg .ch, .up');
       (f?.matches('.seg') ? f.querySelector('.ch[aria-checked="true"]') ?? f.querySelector('.ch') : f)?.focus({ preventScroll: true });
     }
   }
@@ -677,10 +718,135 @@ export class TextEditor {
       const result = await this.#host.write({ file: this.#props.file, line: this.#props.line, column: this.#props.column, hash: this.#props.hash, ...(r.p?.at ? { at: r.p.at } : {}) }, key, step.token, text);
       // the write's invalidate reads the element again (changed); the panel says it, with Undo
       this.#host.said?.(text, result?.undo ? [result.undo] : []);
+      return true;
     } catch (error) {
       this.#rowError = { key, text: error?.message ?? String(error) };
+      this.#queue = null;
       this.#draw();
+      return false;
     }
+  }
+
+  // ── the panel: the style and the type values as token pickers ──
+  // Each picker previews on the element as you move it (held, at the card's level); nothing is written until Write.
+  // The card is drawn again on every read, so what is held lives here and the pickers are set back to it.
+  #mount() {
+    this.#pk.clear();
+    const box = this.#el.querySelector('.pk');
+    if (!box || this.#state !== 'ready') return;
+    const rows = this.#rows(), el = this.#target, none = document.createElement('i');
+    const optionsOf = (r) => {
+      const opts = r.steps.map((s) => ({ name: s.token, v: s.n, step: s }));
+      if (r.drift && !r.drift.fluid) { const at = opts.findIndex((o) => o.v > r.drift.n); opts.splice(at < 0 ? opts.length : at, 0, { name: r.drift.label, v: r.drift.n, hard: true }); }
+      // not set here and on none of the tokens (a style's own value): shown as it is, among them, until you pick one
+      const now = this.#nowOf(r);
+      if (!r.drift && !r.current && Number.isFinite(now) && !opts.some((o) => Math.abs(o.v - now) < 1e-6)) { const at = opts.findIndex((o) => o.v > now); opts.splice(at < 0 ? opts.length : at, 0, { v: now, inherit: true }); }
+      return opts;
+    };
+    const startOf = (r, opts) => {
+      if (opts.some((o) => o.hard)) return undefined;
+      const i = opts.findIndex((o) => (r.current ? o.step?.token === r.current : o.inherit));
+      if (i >= 0) return i;
+      const now = this.#nowOf(r); let best = 0;
+      if (Number.isFinite(now)) opts.forEach((o, k) => { if (Math.abs(o.v - now) < Math.abs(opts[best].v - now)) best = k; });
+      return best;
+    };
+    const mk = (into, r, spec) => {
+      const opts = spec.options ?? optionsOf(r), start = spec.start === undefined && !spec.options ? startOf(r, opts) : spec.start;
+      const first = opts[start ?? opts.findIndex((o) => o.hard)];
+      const p = picker(box, { into, keys: none, grab: this.#el, compact: true, name: NAMES[r.key], options: opts, start,
+        apply: (o) => this.#hold(r.key, o, first), changed: () => this.#refresh(), ...spec });
+      if (r.disabled) { p.row.classList.add('locked'); p.row.title = r.note.replace(/<[^>]+>/g, '').replace(/&#39;|&rsquo;/g, '’').replace(/&amp;/g, '&'); }
+      // not set on this element: what it gets from above, quiet, until you change it
+      if (!r.disabled && r.p.source === 'none' && !r.current && !r.drift) p.row.classList.add('inherited');
+      this.#pk.set(r.key, { p, opts, r, first });
+      return p;
+    };
+    const style = rows.find((r) => r.key === 'style');
+    if (style?.steps.length) {
+      const opts = style.steps.map((s) => ({ name: s.label, v: pxOf(s.size, el), lh: s.lineHeight, fw: s.weight, step: s })).sort((a, b) => a.v - b.v);
+      const at = opts.findIndex((o) => o.step.token === style.current);
+      if (at < 0) opts.unshift({ name: W.noStyle, v: 0, hard: true });
+      mk(box.querySelector('.style .one'), style, {
+        options: opts, start: at < 0 ? undefined : at, toy: glyph('type'),
+        format: (o) => (o.hard ? '' : `${Math.round(o.v)} / ${o.lh ?? '–'}`),
+        mark: (o) => `<i class="aa" style="font-size:${o.hard ? 13 : Math.min(18, Math.round(10 + o.v * 0.3))}px;font-weight:${o.fw ?? 500}">Ag</i>`,
+        lead: (o) => `<i class="smp" style="font-size:${o.hard ? 14 : Math.min(19, Math.round(11 + o.v * 0.25))}px;font-weight:${o.fw ?? 500}">Ag</i>`,
+      });
+    }
+    const grid = box.querySelector('.grid');
+    const fmt = { 'font-size': (o) => `${pxRound(o.v)}px`, 'line-height': (o) => String(round(o.v)), 'letter-spacing': (o) => `${round(o.v)}em`, 'font-weight': (o) => String(o.v) };
+    const mark = { 'font-size': (o) => `<i class="aa" style="font-size:${Math.min(18, Math.max(9, Math.round(o.v * 0.6)))}px">Aa</i>`, 'line-height': () => '<i class="aa">≡</i>', 'letter-spacing': (o) => `<i class="aa" style="letter-spacing:${Math.max(-0.1, o.v * 2)}em">AV</i>`, 'font-weight': (o) => `<i class="aa" style="font-weight:${o.v}">Aa</i>` };
+    // in the half-width fields the value comes first and the token's name after it (names can be long)
+    if (grid) for (const k of VALUES) {
+      const r = rows.find((x) => x.key === k); if (!r) continue;
+      const opts = optionsOf(r); for (const o of opts) if (!o.hard) o.name = fmt[k](o);
+      mk(grid, r, { options: opts, start: startOf(r, opts), toy: glyph(k), format: (o) => (o.step ? o.step.token : o.inherit ? 'inherited' : ''), mark: mark[k] });
+    }
+    // what was picked before this draw is picked again
+    // (the style first, so a value picked after it lands over it)
+    for (const [key, token] of [...this.#held].sort(([a], [b]) => (a === 'style' ? -1 : b === 'style' ? 1 : 0))) {
+      const f = this.#pk.get(key); if (!f) continue;
+      const i = f.opts.findIndex((o) => o.step?.token === token);
+      if (i >= 0 && i !== f.p.at()) f.p.set(i);
+    }
+    this.#refresh();
+  }
+  // a picker moved: what it holds now (nothing, when it is back where it started or on the hard-coded value)
+  #hold(key, o, first) {
+    if (this.#syncing && key !== 'style') { this.#held.delete(key); }
+    else if (o === first || o.hard || !o.step) this.#held.delete(key);
+    else this.#held.set(key, o.step.token);
+    this.#pk.get(key)?.p.row.classList.toggle('inherited', !this.#held.has(key) && this.#pk.get(key).r.p.source === 'none' && !this.#pk.get(key).r.current && !this.#pk.get(key).r.drift);
+    // a style moves the type values with it: they show its values, and are written as the style, not one by one
+    if (key === 'style' && !this.#syncing && o.step) {
+      const s = o.step, want = { 'font-size': pxOf(s.size, this.#target), 'line-height': s.lineHeight != null ? +s.lineHeight : NaN, 'font-weight': s.weight != null ? +s.weight : NaN, 'letter-spacing': s.letterSpacing != null ? +s.letterSpacing : 0 };
+      this.#syncing = true;
+      for (const [k, n] of Object.entries(want)) {
+        const f = this.#pk.get(k); if (!f || f.r.disabled || !Number.isFinite(n)) continue;
+        const i = f.opts.findIndex((x) => !x.hard && Math.abs(x.v - n) < 1e-6);
+        if (i >= 0) f.p.set(i);
+      }
+      this.#syncing = false;
+    }
+    this.#showHeld();
+  }
+  // the held values, shown on the element (the style first, a value picked after it over it)
+  #showHeld() {
+    const el = this.#target; if (!el) return;
+    this.#pend.clear(el);
+    const keys = [...this.#held.keys()].sort((a, b) => (a === 'style' ? -1 : b === 'style' ? 1 : 0));
+    for (const key of keys) {
+      const f = this.#pk.get(key), step = f?.opts.find((o) => o.step?.token === this.#held.get(key))?.step;
+      if (!step) continue;
+      for (const [prop, v] of Object.entries(this.#valuesOf(key, step))) if (v !== '' && v !== null && v !== undefined) this.#pend.set(el, prop, v);
+    }
+    this.#follow();
+  }
+  // the one button: how many values there are to write
+  #refresh() {
+    const b = this.#el.querySelector('[data-do="write"]'); if (!b) return;
+    const n = this.#held.size, busy = !!this.#queue;
+    b.disabled = !n || busy;
+    b.toggleAttribute('aria-busy', busy);
+    b.querySelector('.lb').textContent = n ? `Write ${n} change${n > 1 ? 's' : ''}` : 'Write';
+  }
+  // Write: the held values one after another, the style first; each write re-reads the file before the next
+  #writeAll() {
+    if (!this.#held.size || this.#queue) return;
+    this.#queue = [...this.#held.keys()].sort((a, b) => (a === 'style' ? -1 : b === 'style' ? 1 : 0));
+    this.#refresh();
+    this.#next();
+  }
+  async #next() {
+    const key = this.#queue?.shift();
+    if (!key) { this.#queue = null; this.#refresh(); return; }
+    const token = this.#held.get(key), r = this.#rows().find((x) => x.key === key), i = r?.steps.findIndex((s) => s.token === token) ?? -1;
+    this.#held.delete(key);
+    if (i < 0 || (token === r.current && !r.byHand)) return this.#next();
+    if (!this.#queue.length) this.#queue = null; // the last one: its re-read ends the Write
+    const ok = await this.#write(key, i);
+    if (!ok) { this.#held.set(key, token); this.#queue = null; this.#refresh(); }
   }
 
   // the choice previewed is ringed and the field in hand marked, without drawing the card again
@@ -883,6 +1049,20 @@ export class TextEditor {
   key(k) {
     if (!this.#target) return false;
     if (this.#drag) { if (k === 'Escape') this.#drag.cancel(); return true; }
+    // a picker in hand: ← → ↑ ↓ step it, Enter writes what is held, Esc closes its list, then puts every value back
+    const a = this.#el.getRootNode().activeElement, inRow = a && this.#el.contains(a) ? a.closest('.pk .row') : null;
+    const f = inRow ? [...this.#pk.values()].find((x) => x.p.row === inRow) : null;
+    if (f && !f.r.disabled) {
+      const d = { ArrowRight: 1, ArrowUp: 1, ArrowLeft: -1, ArrowDown: -1 }[k];
+      if (d) { f.p.set(f.p.at() + d); return true; }
+      if (k === 'Enter') { const open = this.#el.querySelector('.pk .list:not([hidden])'); if (open) { open.hidden = true; return true; } this.#writeAll(); return true; }
+      if (k === 'Escape') {
+        const open = this.#el.querySelector('.pk .list:not([hidden])');
+        if (open) { open.dispatchEvent(new Event('picker:close')); return true; }
+        if (this.#held.size) { for (const x of this.#pk.values()) x.p.putBack(); this.#held.clear(); this.#showHeld(); this.#refresh(); return true; }
+      }
+    }
+    if (k === 'Enter' && this.#held.size && !this.#queue) { this.#writeAll(); return true; }
     const rows = this.#state === 'ready' ? this.#rows() : [];
     const keys = this.#fields(rows), r = rows.find((x) => x.key === keys[this.#row]);
     const ed = this.#editing;

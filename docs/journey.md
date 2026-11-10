@@ -535,6 +535,24 @@ race, built for the old in-place write) was rewritten for the new write path (`e
 - **A bug found while checking:** every standalone picker's value read "[object Object]px" since the picker learned
   other units; the default format now reads the option's value.
 
+### 17. "next": the product's own text card becomes the panel
+- **The itch:** the panel lived only on the design site. The card you get with Alt+click on words in a real app was
+  still the old one: value fields with a scale that opened under them.
+- **What changed:** the real card now shows the text style and the four type values (font size, line height, letter
+  spacing, weight) as the same token pickers, under Style and Type, with one Write button that counts the changes.
+  Dragging a value previews it on the words at once; nothing is saved until Write. Each value is then written through
+  the product's own save path, one after another, each with its Undo.
+- **Found while trying it on crafting-ui:** a value the element inherits from its text style showed the nearest token
+  (line height 1.25) instead of what the heading really has (1.1); an inherited value now shows as itself, marked
+  "inherited", among the tokens. Long token names (headline-small) were cut off, so the value now comes first and the
+  name after it. The fields came out dark on the light card when the computer was in dark mode; the card now sets its
+  own light tokens.
+- **Proof:** on a copy of crafting-ui, the "React Plumber" heading dragged from 24px to 33px, Write 1 change, and the
+  code got `text-3xl` with "Changed size to 33px on Plumber · Undo".
+- **Not done yet:** several values in one Write (built, not tried end to end); the style doesn't switch to "No style"
+  when a value moves off it; typing a number; dragging the words themselves; colour and case are still the old
+  controls; the old card's tests still expect the old fields.
+
 ## Open gaps
 - The contrast check knows colours, not sizes or weights, and is not run by CI yet.
 - `web/docs/pages` is a copy of `site/src/docs/pages`; two copies until the old Vite site is removed.
