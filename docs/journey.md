@@ -681,6 +681,11 @@ race, built for the old in-place write) was rewritten for the new write path (`e
   own (`:host, .pl-scheme`), and a part that sets its own scheme adds the class `pl-scheme`; the text card does.
   Checked on crafting-ui with the computer in dark: the card's rows read #ffffff and #f6f6f4. Also caught: inherited
   values in the text card were still in the faintest ink; they take `--pl-text-inherited` now.
+- **The second part: the colour picker.** 29 raw colours became roles and states, the same way as the token picker:
+  the list and its tabs on `--pl-bg-surface`, `-hover` and `--pl-bg-inset`; the shade in hand on `--pl-bg-selected`;
+  focus on `--pl-border-focus`; a hard-coded colour in `--pl-text-hard-coded` with a `--pl-border-hard-coded` ring;
+  the tick on `--pl-state-written-*`, then `--pl-done-*`. It now names no raw colour. Checked in light and dark on the
+  design site; the contrast check still passes 74 of 74.
 
 ## Open gaps
 - White on the pink and mint buttons is under 4.5:1 in light (3.36, 3.85); dark now passes, just. Nothing yet stops the faintest ink being used for text again.

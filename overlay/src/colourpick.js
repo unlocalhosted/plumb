@@ -19,59 +19,59 @@
 // the picked one, or Enter, writes it (green). ↑ ↓ move through the colours shown, Esc puts it back.
 
 export const COLOUR_PICK_CSS = `
-  .cp { position: absolute; z-index: 4; display: grid; gap: 1px; width: 240px; padding: 5px; box-sizing: border-box; border-radius: 12px; background: var(--pl-paper); box-shadow: var(--pl-shadow-card); font: 500 13px/1 var(--pl-sans); color: var(--pl-ink); }
-  .cp .cap { padding: 7px 8px 5px; font: 600 11px/1 var(--pl-sans); color: var(--pl-ink-2); }
+  .cp { position: absolute; z-index: 4; display: grid; gap: 1px; width: 240px; padding: 5px; box-sizing: border-box; border-radius: 12px; background: var(--pl-bg-surface); box-shadow: var(--pl-shadow-card); font: 500 13px/1 var(--pl-sans); color: var(--pl-text-primary); }
+  .cp .cap { padding: 7px 8px 5px; font: 600 11px/1 var(--pl-sans); color: var(--pl-text-secondary); }
   .cp .opt { all: unset; box-sizing: border-box; display: grid; grid-template-columns: 18px 1fr auto 22px; align-items: center; gap: 10px; height: 34px; padding: 0 4px 0 8px; border-radius: 8px; cursor: pointer; transition: background-color 120ms var(--pl-ease-out); }
-  .cp .opt:hover, .cp .opt.at { background: var(--pl-paper-2); }
-  .cp .opt:focus-visible { outline: 2px solid var(--pl-sky); outline-offset: -2px; }
+  .cp .opt:hover, .cp .opt.at { background: var(--pl-bg-surface-hover); }
+  .cp .opt:focus-visible { outline: 2px solid var(--pl-border-focus); outline-offset: -2px; }
   .cp .opt b { font: 600 13px/1 var(--pl-sans); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .cp .opt span { font: 500 11.5px/1 var(--pl-sans); color: var(--pl-ink-2); }
-  .cp .opt.hard b { color: var(--pl-coral); }
+  .cp .opt span { font: 500 11.5px/1 var(--pl-sans); color: var(--pl-text-secondary); }
+  .cp .opt.hard b { color: var(--pl-text-hard-coded); }
   /* the tick on the one picked: pale green as soon as it is a token, solid once written; grey on your own colour */
   .cp .ok { display: grid; place-items: center; width: 22px; height: 22px; border-radius: 7px; color: transparent; transition: background-color 180ms var(--pl-ease-out), color 180ms var(--pl-ease-out); }
   .cp .ok svg { width: 14px; height: 14px; }
-  .cp .opt.at:not(.mine) .ok { background: color-mix(in oklab, var(--pl-mint) 22%, transparent); color: var(--pl-mint-ink); }
-  .cp.written .opt.at .ok { background: var(--pl-mint); color: var(--pl-mint-on); }
+  .cp .opt.at:not(.mine) .ok { background: var(--pl-state-written-bg); color: var(--pl-state-written-text); }
+  .cp.written .opt.at .ok { background: var(--pl-done-bg); color: var(--pl-done-text); }
   .cp .opt.at:not(.mine) .ok.pop { animation: cp-pop 320ms cubic-bezier(.34, 1.56, .64, 1); }
   @keyframes cp-pop { 0% { scale: .8; } 60% { scale: 1.12; } 100% { scale: 1; } }
-  .cp hr { margin: 4px 6px; border: 0; border-top: 1px solid var(--pl-rule); }
-  .cp .all { all: unset; box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; height: 30px; padding: 0 10px 0 8px; border-radius: 8px; cursor: pointer; font: 500 12.5px/1 var(--pl-sans); color: var(--pl-ink-2); }
-  .cp .all:hover { background: var(--pl-paper-2); color: var(--pl-ink); }
-  .cp .all:focus-visible { outline: 2px solid var(--pl-sky); outline-offset: -2px; }
+  .cp hr { margin: 4px 6px; border: 0; border-top: 1px solid var(--pl-border-default); }
+  .cp .all { all: unset; box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; height: 30px; padding: 0 10px 0 8px; border-radius: 8px; cursor: pointer; font: 500 12.5px/1 var(--pl-sans); color: var(--pl-text-secondary); }
+  .cp .all:hover { background: var(--pl-bg-surface-hover); color: var(--pl-text-primary); }
+  .cp .all:focus-visible { outline: 2px solid var(--pl-border-focus); outline-offset: -2px; }
   .cp .all i { width: 7px; height: 7px; border-right: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor; rotate: 45deg; translate: 0 -2px; transition: rotate 200ms var(--pl-spring-pop), translate 200ms; }
   .cp .all[aria-expanded="true"] i { rotate: 225deg; translate: 0 2px; }
   /* every colour, by what it is for: the roles as tabs, that role's colours as swatches with their names */
   .cp .every { display: grid; gap: 8px; padding: 4px 3px 4px; }
   .cp .every[hidden] { display: none; }
-  .cp .roles { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 2px; padding: 2px; border-radius: 9px; background: var(--pl-paper-2); }
-  .cp .roles button { all: unset; display: grid; place-items: center; height: 24px; border-radius: 7px; cursor: pointer; font: 600 11px/1 var(--pl-sans); color: var(--pl-ink-2); }
-  .cp .roles button[aria-pressed="true"] { background: var(--pl-paper); color: var(--pl-ink); box-shadow: 0 1px 2px rgb(0 0 0 / .1); }
-  .cp .roles button:focus-visible { outline: 2px solid var(--pl-sky); }
+  .cp .roles { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 2px; padding: 2px; border-radius: 9px; background: var(--pl-bg-inset); }
+  .cp .roles button { all: unset; display: grid; place-items: center; height: 24px; border-radius: 7px; cursor: pointer; font: 600 11px/1 var(--pl-sans); color: var(--pl-text-secondary); }
+  .cp .roles button[aria-pressed="true"] { background: var(--pl-bg-surface); color: var(--pl-text-primary); box-shadow: 0 1px 2px rgb(0 0 0 / .1); }
+  .cp .roles button:focus-visible { outline: 2px solid var(--pl-border-focus); }
   .cp .shades { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
   .cp .shade { all: unset; display: grid; gap: 5px; justify-items: center; padding: 6px 2px 5px; border-radius: 9px; cursor: pointer; transition: background-color 120ms var(--pl-ease-out); }
-  .cp .shade:hover { background: var(--pl-paper-2); }
-  .cp .shade.at { background: color-mix(in oklab, var(--pl-sky) 12%, transparent); }
-  .cp.written .shade.at { background: color-mix(in oklab, var(--pl-mint) 16%, transparent); }
-  .cp .shade:focus-visible { outline: 2px solid var(--pl-sky); }
+  .cp .shade:hover { background: var(--pl-bg-surface-hover); }
+  .cp .shade.at { background: var(--pl-bg-selected); }
+  .cp.written .shade.at { background: var(--pl-state-written-bg); }
+  .cp .shade:focus-visible { outline: 2px solid var(--pl-border-focus); }
   .cp .shade .split { width: 30px; height: 30px; border-radius: 8px; }
-  .cp .shade span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 600 10.5px/1.1 var(--pl-sans); color: var(--pl-ink-2); }
-  .cp .shade.at span { color: var(--pl-ink); }
+  .cp .shade span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 600 10.5px/1.1 var(--pl-sans); color: var(--pl-text-secondary); }
+  .cp .shade.at span { color: var(--pl-text-primary); }
   /* a swatch: the light value top-left, the dark value bottom-right; your hard-coded colour is one colour, ringed coral */
   .split { display: inline-block; flex: none; width: 16px; height: 16px; border-radius: 5px; background: linear-gradient(135deg, var(--l) 50%, var(--d) 50%); box-shadow: inset 0 0 0 1px rgb(0 0 0 / .14); }
-  .split.hard { background: var(--l); box-shadow: inset 0 0 0 1px rgb(0 0 0 / .14), 0 0 0 1.5px var(--pl-coral); }
+  .split.hard { background: var(--l); box-shadow: inset 0 0 0 1px rgb(0 0 0 / .14), 0 0 0 1.5px var(--pl-border-hard-coded); }
   /* folded (inside an editor card): a small field at rest, the colour as a swatch and its name; a click opens the
      picker in place under it, the full width */
-  .cf { all: unset; box-sizing: border-box; display: grid; grid-template-columns: 18px 1fr auto 10px; align-items: center; gap: 8px; width: 100%; height: 30px; padding: 0 10px 0 6px; border-radius: 9px; background: var(--pl-paper-2); cursor: pointer; font: 500 12.5px/1 var(--pl-sans, system-ui); color: var(--pl-ink); }
-  .cf:focus-visible { outline: 2px solid var(--pl-sky); }
+  .cf { all: unset; box-sizing: border-box; display: grid; grid-template-columns: 18px 1fr auto 10px; align-items: center; gap: 8px; width: 100%; height: 30px; padding: 0 10px 0 6px; border-radius: 9px; background: var(--pl-bg-inset); cursor: pointer; font: 500 12.5px/1 var(--pl-sans, system-ui); color: var(--pl-text-primary); }
+  .cf:focus-visible { outline: 2px solid var(--pl-border-focus); }
   .cf:disabled { opacity: .62; cursor: default; }
   .cf .sw { width: 18px; height: 18px; border-radius: 6px; background: var(--sw, transparent); box-shadow: inset 0 0 0 1px rgb(0 0 0 / .14); transition: background-color 160ms; }
-  .cf.hard .sw { box-shadow: inset 0 0 0 1px rgb(0 0 0 / .14), 0 0 0 1.5px var(--pl-coral); }
+  .cf.hard .sw { box-shadow: inset 0 0 0 1px rgb(0 0 0 / .14), 0 0 0 1.5px var(--pl-border-hard-coded); }
   .cf b { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .cf.hard b { color: var(--pl-coral); }
+  .cf.hard b { color: var(--pl-text-hard-coded); }
   .cf.from b, .cf span { color: var(--pl-text-inherited); font-style: italic; font-weight: 500; }
-  .cf .chev { width: 6px; height: 6px; border-right: 1.5px solid var(--pl-ink-3); border-bottom: 1.5px solid var(--pl-ink-3); rotate: 45deg; translate: 0 -2px; transition: rotate 200ms var(--pl-spring-pop), translate 200ms; }
+  .cf .chev { width: 6px; height: 6px; border-right: 1.5px solid var(--pl-icon-tick); border-bottom: 1.5px solid var(--pl-icon-tick); rotate: 45deg; translate: 0 -2px; transition: rotate 200ms var(--pl-spring-pop), translate 200ms; }
   .cf[aria-expanded="true"] .chev { rotate: 225deg; translate: 0 1px; }
-  .cf + .cp { position: static; width: auto; margin-top: 6px; box-shadow: 0 0 0 1px var(--pl-rule); }
+  .cf + .cp { position: static; width: auto; margin-top: 6px; box-shadow: 0 0 0 1px var(--pl-border-default); }
   .cp[hidden] { display: none; }
   @media (prefers-reduced-motion: reduce) { .cf .chev, .cf .sw { transition: none; } .cp .opt.at .ok.pop { animation: none; } .cp .all i { transition: none; } }
 `;
