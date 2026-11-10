@@ -62,72 +62,33 @@ export function mount(host, root, css) {
        bottom edge, because it is pressed down against its side */
     .s-box .in { position: relative; padding: 18px; border-radius: 28px; background: linear-gradient(180deg, color-mix(in oklab, var(--hs) 82%, #fff), var(--hs));
       box-shadow: inset 0 2px 0 0 color-mix(in oklab, #fff 75%, transparent), inset 0 -2.5px 0 0 color-mix(in oklab, var(--h) 22%, transparent);
-      transform: translateY(calc(-1 * var(--lift))); transform-origin: 50% 100%; transition: transform 320ms var(--pl-spring-pop); }
+      transform: translateY(calc(-1 * var(--lift))); transform-origin: 50% 100%; will-change: transform; }
     :host([data-scheme="dark"]) .s-box .in { background: linear-gradient(180deg, color-mix(in oklab, var(--hs) 88%, #fff), var(--hs)); box-shadow: inset 0 2px 0 0 color-mix(in oklab, #fff 22%, transparent), inset 0 -2.5px 0 0 color-mix(in oklab, #000 22%, transparent); }
     .s-box .plate { display: grid; place-items: center; width: 64px; height: 64px; margin-bottom: 14px; border-radius: 19px; background: var(--pl-paper); transform-origin: 50% 100%;
       box-shadow: 0 5px 8px -5px color-mix(in oklab, var(--h) 75%, transparent), inset 0 -2px 0 0 color-mix(in oklab, var(--h) 14%, transparent);
-      transition: transform 320ms var(--pl-spring-pop); }
-    .s-box .toy { transform-origin: 50% 90%; transition: transform 320ms var(--pl-spring-pop); }
+      will-change: transform; }
+    .s-box .toy { transform-origin: 50% 90%; will-change: transform; }
     .s-box em { opacity: .86; }
     /* pointed at: it comes up to meet the finger, straight up, and its shadow grows. It does not lean or follow the
        pointer: a thing that tilts under the pointer reads as a card to look at, not a key to press */
-    .s-box:hover, .s-box.hov { --lift: 10px; box-shadow: 0 22px 28px -16px color-mix(in oklab, var(--h) 70%, transparent), 0 4px 6px -2px color-mix(in oklab, var(--h) 36%, transparent); }
-    .s-box:hover .toy, .s-box.hov .toy { transform: scale(1.07); }
+    .s-box:hover, .s-box.hov { box-shadow: 0 22px 28px -16px color-mix(in oklab, var(--h) 70%, transparent), 0 4px 6px -2px color-mix(in oklab, var(--h) 36%, transparent); }
     /* ── the squash ──
        A soft block is pressed from above against the ground, so it is anchored at its bottom edge and keeps its
-       volume: what it loses in height it gains in width.
-       down     90ms. It sinks onto its side, 4% shorter and 2.4% wider. Its shadow tightens to nothing: it is on the
-                ground. The plate on it is squashed too, a beat behind.
-       let go   620ms, in four beats, as a soft thing does: it shoots up past where it rests, stretched tall and thin;
-                comes down a little wide; one last small stretch; rest. The toy on the plate leaves late and lands late
-                (it is loose), with a small hop of its own.
-       The button does the same, more of it: it is smaller, so it gives more under a finger. */
-    .s-box.down { --lift: 1px; box-shadow: 0 5px 8px -7px color-mix(in oklab, var(--h) 70%, transparent); }
-    .s-box.down .in { transform: translateY(-1px) scale(1.024, 0.96); transition: transform 90ms var(--pl-ease-out); }
-    .s-box.down .plate { transform: scale(1.035, 0.94); transition: transform 110ms 20ms var(--pl-ease-out); }
-    .s-box.down .toy { transform: scale(1.04, 0.92); transition: transform 110ms 30ms var(--pl-ease-out); }
-    .s-box.rel .in { animation: s-rebound 620ms linear both; }
-    .s-box.rel .plate { animation: s-plate 620ms 30ms linear both; }
-    .s-box.rel .toy { animation: s-hop 640ms 60ms linear both; }
-    @keyframes s-rebound {
-      0%   { transform: translateY(-1px) scale(1.024, 0.96); animation-timing-function: cubic-bezier(.2, .9, .3, 1); }
-      30%  { transform: translateY(calc(-1 * var(--lift) - 5px)) scale(0.982, 1.035); animation-timing-function: cubic-bezier(.4, 0, .6, 1); }
-      56%  { transform: translateY(calc(-1 * var(--lift) + 1.5px)) scale(1.01, 0.988); animation-timing-function: cubic-bezier(.4, 0, .6, 1); }
-      78%  { transform: translateY(calc(-1 * var(--lift) - 1px)) scale(0.996, 1.006); animation-timing-function: cubic-bezier(.4, 0, .6, 1); }
-      100% { transform: translateY(calc(-1 * var(--lift))) scale(1, 1); }
-    }
-    @keyframes s-plate {
-      0%   { transform: scale(1.035, 0.94); animation-timing-function: cubic-bezier(.2, .9, .3, 1); }
-      34%  { transform: translateY(-3px) scale(0.975, 1.05); animation-timing-function: cubic-bezier(.4, 0, .6, 1); }
-      62%  { transform: translateY(.5px) scale(1.012, 0.985); animation-timing-function: cubic-bezier(.4, 0, .6, 1); }
-      100% { transform: scale(1, 1); }
-    }
-    @keyframes s-hop {
-      0%   { transform: scale(1.04, 0.92); animation-timing-function: cubic-bezier(.2, .9, .3, 1); }
-      36%  { transform: translateY(-7px) scale(0.96, 1.1) rotate(-6deg); animation-timing-function: cubic-bezier(.5, 0, .7, 1); }
-      64%  { transform: translateY(1px) scale(1.06, 0.94) rotate(2deg); animation-timing-function: cubic-bezier(.4, 0, .6, 1); }
-      84%  { transform: translateY(-1px) scale(0.99, 1.02) rotate(0deg); }
-      100% { transform: scale(1.07) rotate(0deg); }
-    }
+       volume: what it loses in height it gains in width. Its top, the plate on it and the toy on the plate are each on
+       a spring (see the script): the top follows the finger, the plate follows the top, the toy follows the plate,
+       each a little looser than the last. Springs, not keyframes, so a press in the middle of a rebound carries on
+       from where the block is and how fast it is moving: it can be pressed again and again and never jumps. */
+    .s-box.down { box-shadow: 0 5px 8px -7px color-mix(in oklab, var(--h) 70%, transparent); }
     .s-box:focus-visible { outline: 3px solid var(--pl-sky); outline-offset: 5px; }
     /* a button is the same block, small. The action keeps the strong colour on top: it is the one loud thing */
     .s-btn { --h: var(--pl-pink); --side: color-mix(in oklab, var(--h) 70%, #000); --lift: 4px; position: relative; padding-top: 4px; border-radius: 14px; background: var(--side);
       box-shadow: 0 9px 12px -8px color-mix(in oklab, var(--h) 75%, transparent); transition: box-shadow 240ms var(--pl-ease-out); }
     .s-btn span { display: block; padding: 10px 16px; border-radius: 14px; background: linear-gradient(180deg, color-mix(in oklab, var(--h) 88%, #fff), var(--h)); color: var(--pl-pink-on);
       font: 600 15px/1 var(--pl-round); box-shadow: inset 0 1.5px 0 0 color-mix(in oklab, #fff 45%, transparent), inset 0 -2px 0 0 color-mix(in oklab, #000 12%, transparent);
-      transform: translateY(calc(-1 * var(--lift))); transition: transform 300ms var(--pl-spring-pop); }
-    .s-btn:hover, .s-btn.hov { --lift: 6px; box-shadow: 0 14px 16px -10px color-mix(in oklab, var(--h) 75%, transparent); }
+      transform: translateY(calc(-1 * var(--lift))); }
+    .s-btn:hover, .s-btn.hov { box-shadow: 0 14px 16px -10px color-mix(in oklab, var(--h) 75%, transparent); }
     .s-btn span { transform-origin: 50% 100%; will-change: transform; }
-    .s-btn.down { --lift: 0px; box-shadow: 0 3px 5px -4px color-mix(in oklab, var(--h) 75%, transparent); }
-    .s-btn.down span { transform: translateY(0) scale(1.045, 0.89); transition: transform 80ms var(--pl-ease-out); }
-    .s-btn.rel span { animation: s-btn 520ms linear both; }
-    @keyframes s-btn {
-      0%   { transform: translateY(0) scale(1.045, 0.89); animation-timing-function: cubic-bezier(.2, .9, .3, 1); }
-      32%  { transform: translateY(calc(-1 * var(--lift) - 4px)) scale(0.97, 1.09); animation-timing-function: cubic-bezier(.4, 0, .6, 1); }
-      60%  { transform: translateY(calc(-1 * var(--lift) + 1px)) scale(1.015, 0.97); animation-timing-function: cubic-bezier(.4, 0, .6, 1); }
-      82%  { transform: translateY(calc(-1 * var(--lift) - .5px)) scale(0.995, 1.012); }
-      100% { transform: translateY(calc(-1 * var(--lift))) scale(1, 1); }
-    }
+    .s-btn.down { box-shadow: 0 3px 5px -4px color-mix(in oklab, var(--h) 75%, transparent); }
     .s-btn.q { --h: var(--pl-ink-3); --side: var(--pl-rule); box-shadow: 0 9px 12px -9px rgb(0 0 0 / .28); }
     .s-btn.q span { background: linear-gradient(180deg, var(--pl-paper), var(--pl-paper-2)); color: var(--pl-ink); box-shadow: inset 0 1.5px 0 0 color-mix(in oklab, #fff 90%, transparent), inset 0 0 0 1.5px var(--pl-rule); }
 
@@ -190,15 +151,63 @@ export function mount(host, root, css) {
     <div class="face f3"><b>Keep your app on your design system.</b><p>Each mark is a place in your code that types a size by hand.</p><small>Instrument Sans alone · plain and exact, lets the toys be the only play</small></div>
   </div>`;
 
-  // answers: down while it is held (a pointer or a key), then let go, which plays the rebound once
-  for (const el of root.querySelectorAll('.s-box, .s-btn')) {
-    const down = () => { el.classList.remove('rel'); el.classList.add('down'); };
-    const up = () => { if (!el.classList.contains('down')) return; el.classList.remove('down'); el.classList.add('rel'); };
-    el.addEventListener('pointerdown', down);
-    for (const type of ['pointerup', 'pointercancel', 'pointerleave', 'blur']) el.addEventListener(type, up);
-    el.addEventListener('keydown', (e) => { if ((e.key === 'Enter' || e.key === ' ') && !e.repeat) down(); });
-    el.addEventListener('keyup', (e) => { if (e.key === 'Enter' || e.key === ' ') up(); });
-    el.addEventListener('animationend', (e) => { if (e.animationName === 's-rebound' || e.animationName === 's-btn') el.classList.remove('rel'); });
+  let rate = 1, held = false; // the timeline's speed and Hold (below); the springs read them every frame
+
+  // ── answers: springs ──
+  // Each soft thing has four springs. `press` runs 0 (up) to 1 (down on its side) and goes past 0 on the way back,
+  // which is the stretch. `plate` chases press and `toy` chases plate, each looser, so what sits on the block arrives
+  // late. `lift` is how far the top sits above its side: more while pointed at. A spring keeps where it is and how
+  // fast it is going when its target changes, so any motion can be interrupted by any other.
+  const SPRINGS = { down: { k: 1200, c: 64 }, up: { k: 400, c: 21 }, plate: { k: 300, c: 19 }, toy: { k: 210, c: 13 }, lift: { k: 320, c: 30 } };
+  const SHAPE = { box: { rest: 7, hover: 10, wide: 0.024, short: 0.04 }, btn: { rest: 4, hover: 6, wide: 0.045, short: 0.11 } };
+  const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const things = [...root.querySelectorAll('.s-box, .s-btn')].map((el) => {
+    const kind = el.classList.contains('s-btn') ? 'btn' : 'box', shape = SHAPE[kind];
+    return { el, shape, top: el.querySelector(kind === 'btn' ? 'span' : '.in'), plate: el.querySelector('.plate'), toy: el.querySelector('.toy'),
+      press: { x: 0, v: 0 }, platePress: { x: 0, v: 0 }, toyPress: { x: 0, v: 0 }, lift: { x: shape.rest, v: 0 }, pressed: false, hover: false };
+  });
+  const byEl = new Map(things.map((t) => [t.el, t]));
+  const pull = (o, target, { k, c }, dt) => { o.v += (-k * (o.x - target) - c * o.v) * dt; o.x += o.v * dt; };
+  const draw = (t) => {
+    const { shape } = t, p = t.press.x, y = -t.lift.x + (t.lift.x - (t.plate ? 1 : 0)) * p;
+    t.top.style.transform = `translateY(${y.toFixed(2)}px) scale(${(1 + shape.wide * p).toFixed(4)}, ${(1 - shape.short * p).toFixed(4)})`;
+    if (t.plate) { const q = t.platePress.x; t.plate.style.transform = `translateY(${(Math.min(0, q) * 6).toFixed(2)}px) scale(${(1 + 0.035 * q).toFixed(4)}, ${(1 - 0.06 * q).toFixed(4)})`; }
+    if (t.toy) { const q = t.toyPress.x, up = (t.lift.x - shape.rest) / (shape.hover - shape.rest); t.toy.style.transform = `translateY(${(Math.min(0, q) * 16).toFixed(2)}px) rotate(${(Math.min(0, q) * 14).toFixed(2)}deg) scale(${(1 + 0.07 * up + 0.04 * q).toFixed(4)}, ${(1 + 0.07 * up - 0.08 * q).toFixed(4)})`; }
+  };
+  const live = new Set();
+  let last = 0, loop = 0;
+  const frame = (now) => {
+    // the timeline's speed and Hold apply to springs too
+    const dt = held ? 0 : Math.min(0.034, (now - last) / 1000) * rate; last = now;
+    for (const t of live) {
+      for (let n = 0; n < 4 && dt; n++) {
+        const h = dt / 4;
+        pull(t.press, t.pressed ? 1 : 0, t.pressed ? SPRINGS.down : SPRINGS.up, h);
+        pull(t.platePress, t.press.x, SPRINGS.plate, h);
+        pull(t.toyPress, t.platePress.x, SPRINGS.toy, h);
+        pull(t.lift, t.hover ? t.shape.hover : t.shape.rest, SPRINGS.lift, h);
+      }
+      draw(t);
+      const quiet = (o, target) => Math.abs(o.v) < 0.004 && Math.abs(o.x - target) < 0.0008;
+      if (!held && quiet(t.press, t.pressed ? 1 : 0) && quiet(t.platePress, t.press.x) && quiet(t.toyPress, t.platePress.x) && Math.abs(t.lift.v) < 0.02 && Math.abs(t.lift.x - (t.hover ? t.shape.hover : t.shape.rest)) < 0.01) live.delete(t);
+    }
+    loop = live.size ? requestAnimationFrame(frame) : 0;
+    springsMoving();
+  };
+  const wake = (t) => {
+    if (still) { t.press.x = t.platePress.x = t.toyPress.x = t.pressed ? 1 : 0; t.lift.x = t.hover ? t.shape.hover : t.shape.rest; draw(t); return; }
+    live.add(t);
+    if (!loop) { last = performance.now(); loop = requestAnimationFrame(frame); }
+  };
+  const press = (el, on) => { const t = byEl.get(el); if (!t || t.pressed === on) return; t.pressed = on; el.classList.toggle('down', on); wake(t); };
+  const point = (el, on) => { const t = byEl.get(el); if (!t || t.hover === on) return; t.hover = on; wake(t); };
+  for (const { el } of things) {
+    el.addEventListener('pointerenter', () => point(el, true));
+    el.addEventListener('pointerleave', () => { point(el, false); press(el, false); });
+    el.addEventListener('pointerdown', () => press(el, true));
+    for (const type of ['pointerup', 'pointercancel', 'blur']) el.addEventListener(type, () => press(el, false));
+    el.addEventListener('keydown', (e) => { if ((e.key === 'Enter' || e.key === ' ') && !e.repeat) press(el, true); });
+    el.addEventListener('keyup', (e) => { if (e.key === 'Enter' || e.key === ' ') press(el, false); });
   }
 
   // ── the timeline ──
@@ -207,17 +216,18 @@ export function mount(host, root, css) {
   // do to the first soft block and button what a pointer would, so a motion can be started while held and then dragged.
   const tl = root.querySelector('.tl'), slider = tl.querySelector('input'), out = tl.querySelector('output');
   const targets = [root.querySelector('.pair .s-box'), root.querySelector('.pair .s-btn')];
-  let rate = 1, held = false;
+  let springsMoving = () => {};
   const moving = () => root.getAnimations().filter((a) => a.playState !== 'finished' && a.playState !== 'idle');
   const lengthOf = (a) => Number(a.effect?.getComputedTiming().endTime) || 0;
   const say = () => {
     const all = moving();
     slider.disabled = !held || !all.length;
-    if (!all.length) { out.textContent = 'nothing moving'; return; }
+    if (!all.length) { out.textContent = live.size ? `${live.size} on springs (no fixed length: slow them, or Hold)` : 'nothing moving'; return; }
     const longest = Math.max(...all.map(lengthOf)), at = Math.max(...all.map((a) => Number(a.currentTime) || 0));
     out.textContent = `${all.length} moving · ${Math.round(at)} of ${Math.round(longest)}ms`;
     if (root.activeElement !== slider) slider.value = String(Math.round((at / Math.max(1, longest)) * 1000));
   };
+  springsMoving = () => { if (!moving().length) say(); };
   const take = () => { for (const a of moving()) { a.playbackRate = rate; if (held) a.pause(); } say(); };
   for (const type of ['transitionrun', 'animationstart']) root.addEventListener(type, () => queueMicrotask(take), true);
   for (const type of ['transitionend', 'transitioncancel', 'animationend']) root.addEventListener(type, () => queueMicrotask(say), true);
@@ -231,10 +241,10 @@ export function mount(host, root, css) {
     const act = b.dataset.do;
     if (act === 'freeze') { held = !held; b.setAttribute('aria-pressed', String(held)); for (const a of moving()) { if (held) a.pause(); else a.play(); } say(); if (!held && !ticking) ticking = requestAnimationFrame(tick); return; }
     for (const el of targets) {
-      if (act === 'in') el.classList.add('hov');
-      if (act === 'out') el.classList.remove('hov');
-      if (act === 'down') { el.classList.remove('rel'); el.classList.add('down'); }
-      if (act === 'up' && el.classList.contains('down')) { el.classList.remove('down'); el.classList.add('rel'); }
+      if (act === 'in') { el.classList.add('hov'); point(el, true); }
+      if (act === 'out') { el.classList.remove('hov'); point(el, false); }
+      if (act === 'down') press(el, true);
+      if (act === 'up') press(el, false);
     }
   });
   slider.addEventListener('input', () => { for (const a of moving()) { a.pause(); a.currentTime = (slider.value / 1000) * lengthOf(a); } say(); });
