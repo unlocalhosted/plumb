@@ -366,6 +366,14 @@ race, built for the old in-place write) was rewritten for the new write path (`e
   so keeping it is just picking it; picking previews on the page; one button writes it, its label saying what will
   be written. Two prototypes: swatches, and a ruler of tokens.
 - **Proof:** the design site's fix bar page, both live (click, arrow keys, Enter).
+- **The owner's verdict:** neither. "the scale approach just felt unnatural, it should feel more like a visual
+  editor, control panel sort of thing, which should be semantic to the type of property we are changing", and "too
+  much UI". And: show it on its own page, one real piece of UI per property, not on one property only. The bar was
+  locked in at the same time.
+- **The new direction:** each property gets the control a visual editor gives it, made small, snapping to your
+  tokens. Border radius first, on a pricing card's "Popular" badge: a handle on the badge's corner, a one-line row
+  beside the card (the radius icon you can drag to scrub, the value as a token name you can open as a list, a tick
+  to write it). On the design site's new Token pickers page.
 
 ## Open gaps
 - The contrast check knows colours, not sizes or weights, and is not run by CI yet.
