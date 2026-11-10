@@ -6,12 +6,14 @@
 // a swatch. It snaps to your tokens and says the token's name; your hard-coded value is where it starts. Little UI: one
 // row beside the element, and a handle on the element itself where the property has a natural one.
 //
-// One property at a time, on a real piece of UI. Border radius is first.
+// One property at a time, on a real piece of UI. Border radius, then gap. The row, the list, the rolling value, drag
+// mode and the tick are one piece (picker() below); each property brings its element, its handle and its list mark.
 import { LANGUAGE_CSS } from '../../../overlay/src/language.js';
 import { TOY_DEFS, toyOf } from '../../../overlay/src/toys.js';
 
 // the options in order of size; the hard-coded value sits among them where it falls, so you can drag back to it
 const RADIUS = [{ name: 'none', v: 0 }, { name: '5px', v: 5, hard: true }, { name: 'tag', v: 6 }, { name: 'control', v: 8 }, { name: 'card', v: 12 }, { name: 'full', v: 999 }];
+const GAP = [{ name: 'xs', v: 4 }, { name: 'sm', v: 8 }, { name: 'md', v: 12 }, { name: '13px', v: 13, hard: true }, { name: 'lg', v: 16 }, { name: 'xl', v: 24 }];
 
 export function mount(host, root, css) {
   const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -114,6 +116,26 @@ export function mount(host, root, css) {
     .row.dragging .fill::after { height: 16px; opacity: 1; }
     .row .val:hover { background: none; }
     .drum, .car { position: relative; }
+
+    /* ── the real UI for gap: a dialog's footer, as someone's app draws it ── */
+    .dlg { position: relative; width: 340px; padding: 20px 20px 18px; border-radius: 14px; background: #fff; box-shadow: 0 1px 2px rgb(16 24 40 / .06), 0 12px 32px -14px rgb(16 24 40 / .25); font: 14px/20px system-ui, -apple-system, sans-serif; color: #101828; }
+    .dlg h3 { margin: 0 0 6px; font: 600 16px/22px system-ui, -apple-system, sans-serif; }
+    .dlg p { margin: 0 0 20px; color: #475467; }
+    .dlg .foot { display: flex; justify-content: flex-end; gap: var(--g); }
+    .dlg .foot button { padding: 8px 14px; border-radius: 8px; font: 600 14px/20px system-ui, sans-serif; border: 1px solid #d0d5dd; background: #fff; color: #344054; }
+    .dlg .foot button.go { border-color: #7f56d9; background: #7f56d9; color: #fff; }
+    /* the gap itself is the handle: drawn in the gap's own pattern (lilac stripes), you drag it wider or narrower */
+    .gapband { position: absolute; z-index: 3; border-radius: 3px; cursor: ew-resize; touch-action: none;
+      background: repeating-linear-gradient(90deg, color-mix(in oklab, var(--pl-lilac) 70%, transparent) 0 2px, transparent 2px 4px);
+      outline: 1.5px dashed var(--pl-coral); outline-offset: 3px;
+      transition: left 220ms var(--pl-spring-pop), width 220ms var(--pl-spring-pop), scale 160ms var(--pl-ease-out); }
+    .gapband.on-token { outline: 1.5px solid var(--pl-sky); }
+    .gapband.written { outline: 1.5px solid var(--pl-mint); }
+    .gapband:hover, .gapband.dragging { scale: 1 1.08; }
+    .gapband.dragging { transition: none; }
+    .list .g { display: flex; gap: var(--lg); align-items: center; justify-content: center; width: 20px; }
+    .list .g::before, .list .g::after { content: ''; width: 4px; height: 12px; border-radius: 1.5px; background: var(--pl-ink-2); }
+    .list .hard .g::before, .list .hard .g::after { background: var(--pl-coral); }
     .hint { position: absolute; left: 0; right: 0; bottom: 14px; text-align: center; font: 500 12.5px/1 var(--pl-sans); color: var(--pl-ink-3); }
     .hint kbd { font: 600 11px/1 var(--pl-mono); padding: 2px 5px; border-radius: 5px; background: var(--pl-paper); box-shadow: 0 1px 0 var(--pl-rule); }
     @media (prefers-reduced-motion: reduce) { .handle { transition: none; } }
@@ -129,115 +151,161 @@ export function mount(host, root, css) {
         <button type="button" class="cta" tabindex="-1">Upgrade</button>
       </div>
       <i class="handle" role="presentation"></i>
-      <div class="row" role="group" aria-label="Border radius">
-        <span class="scrub" title="Drag to change">${toyOf('corner')}</span>
-        <button type="button" class="val" aria-haspopup="listbox" aria-expanded="false"><span class="track" aria-hidden="true"><i class="fill"></i><span class="dots"></span></span><span class="drum"></span><i class="car"></i></button>
-        <button type="button" class="ok" aria-label="Write it"><svg viewBox="0 0 16 16"><path d="M3.5 8.5l3 3 6-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-      </div>
-      <div class="list" role="listbox" aria-label="Your radius tokens" hidden></div>
       <p class="hint">drag the value up or down · <kbd>↑</kbd> <kbd>↓</kbd> step · <kbd>↵</kbd> write · <kbd>Esc</kbd> put back</p>
+    </div>
+  </section>
+  <section class="scene" id="gap">
+    <h2>Gap</h2>
+    <p>The dialog’s buttons sit 13px apart, hard-coded. The gap itself is drawn in its pattern: drag it wider or narrower, drag the value up or down, or click the value for the list. The buttons move as you go.</p>
+    <div class="stage" tabindex="0">
+      <div class="dlg">
+        <h3>Publish changes?</h3>
+        <p>Your edits to the pricing page will be live for everyone.</p>
+        <div class="foot"><button type="button" tabindex="-1">Cancel</button><button type="button" class="go" tabindex="-1">Publish</button></div>
+      </div>
+      <i class="gapband" role="presentation"></i>
+      <p class="hint">drag the gap or the value · <kbd>↑</kbd> <kbd>↓</kbd> step · <kbd>↵</kbd> write · <kbd>Esc</kbd> put back</p>
     </div>
   </section>`;
 
-  // ── border radius ──
-  const sc = root.querySelector('#radius'), stage = sc.querySelector('.stage');
-  const badge = stage.querySelector('.badge'), handle = stage.querySelector('.handle'), row = stage.querySelector('.row'), val = row.querySelector('.val'), ok = row.querySelector('.ok'), list = stage.querySelector('.list');
-  const drum = row.querySelector('.drum'), scrub = row.querySelector('.scrub');
-  const S = RADIUS, H = 28, last = S.length - 1, HARD = S.findIndex((o) => o.hard);
-  // where it is: an index into S
-  let at = HARD, written = false;
-  const shown = (v) => Math.min(v, badge.offsetHeight / 2);
-  const place = () => {
-    const s = stage.getBoundingClientRect(), b = badge.getBoundingClientRect(), card = badge.closest('.app').getBoundingClientRect();
-    const inset = shown(S[at].v) * (1 - Math.SQRT1_2);
-    handle.style.left = `${b.left - s.left + inset}px`; handle.style.top = `${b.top - s.top + inset}px`;
-    row.style.left = `${card.right - s.left + 14}px`; row.style.top = `${b.top - s.top + b.height / 2 - 17}px`;
-    list.style.left = row.style.left; list.style.top = `${b.top - s.top + b.height / 2 + 22}px`;
-  };
-  // the field: the option in hand. A change rolls it, in the direction of travel
   const EASE = 'cubic-bezier(0.22, 1, 0.36, 1)';
-  const slotOf = (o) => { const el = document.createElement('span'); el.className = `slot${o.hard ? ' hard' : ''}`; el.innerHTML = `<b>${o.name}</b><span>${o.hard ? 'hard-coded' : px(o.v)}</span>`; return el; };
-  const roll = (from, to) => {
-    const dir = Math.sign(to - from) || 1, next = slotOf(S[to]);
-    for (const old of drum.querySelectorAll('.slot:not(.gone)')) {
-      old.classList.add('gone');
-      if (still) { old.remove(); continue; }
-      old.animate([{ transform: old.style.transform || 'translateY(0)', opacity: 1, filter: 'blur(0)' }, { transform: `translateY(${-dir * 16}px)`, opacity: 0, filter: 'blur(3px)' }], { duration: 200, easing: EASE, fill: 'forwards' }).finished.then(() => old.remove(), () => old.remove());
-    }
-    drum.append(next);
-    if (!still) next.animate([{ transform: `translateY(${dir * 16}px)`, opacity: 0, filter: 'blur(3px)' }, { transform: 'translateY(0)', opacity: 1, filter: 'blur(0)' }], { duration: 260, easing: EASE });
-  };
-  // past either end: the one in the field leans a little the way you are pulling, and comes back when you let go
-  const lean = (over) => { const el = drum.querySelector('.slot:not(.gone)'); if (el) el.style.transform = over ? `translateY(${(-Math.sign(over) * Math.min(5, Math.abs(over) * 7)).toFixed(1)}px)` : ''; };
-  // the bar: f is where you are, 0 at the smallest option and 1 at the largest
-  const fill = (f) => val.style.setProperty('--f', f.toFixed(4));
-  val.querySelector('.dots').innerHTML = S.map((o, i) => `<i class="${o.hard ? 'hard' : ''}" style="left:${(i / last) * 100}%"></i>`).join('');
-  const dots = [...val.querySelectorAll('.dots i')];
-  const draw = () => {
-    const o = S[at], token = !o.hard;
-    badge.style.setProperty('--r', `${o.v}px`);
-    badge.classList.toggle('on-token', token); handle.classList.toggle('on-token', token);
-    if (token && !written) ok.setAttribute('data-ready', ''); else ok.removeAttribute('data-ready');
-    if (token && !still) { ok.classList.remove('pop'); void ok.offsetWidth; ok.classList.add('pop'); }
-    list.innerHTML = S.map((t, i) => `<button type="button" role="option" class="${t.hard ? 'hard' : ''}" data-at="${i}" aria-selected="${at === i}"><i class="c" style="border-top-left-radius:${Math.min(t.v, 16)}px"></i>${t.name}<span>${t.hard ? 'hard-coded' : px(t.v)}</span></button>`).join('');
-    val.classList.toggle('on-hard', !!o.hard);
-    dots.forEach((d, i) => d.classList.toggle('here', i === at));
-    if (!row.classList.contains('dragging')) fill(at / last);
-    val.setAttribute('aria-label', `Border radius: ${o.hard ? '5px, hard-coded' : `${o.name}, ${px(o.v)}`}`);
-    requestAnimationFrame(place);
-  };
-  // a new option in hand: the badge takes it, and it rolls into the field
-  const land = (n) => {
-    if (n === at) return;
-    const from = at; at = n; draw(); roll(from, n);
-  };
-  const go = (n) => { if (written) return; land(Math.max(0, Math.min(last, n))); };
-  const write = () => { if (written || S[at].hard) return; written = true; badge.classList.add('written'); row.classList.add('written'); list.hidden = true; draw(); };
-  const putBack = () => { written = false; badge.classList.remove('written'); row.classList.remove('written'); list.hidden = true; go(HARD); };
+  const TICK = '<svg viewBox="0 0 16 16"><path d="M3.5 8.5l3 3 6-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
-  // ── drag mode: press and move, anywhere on the screen. Up (or right) is bigger; each option rolls into the field
-  // as you pass it. Past either end the one in the field leans a little and comes back when you let go ──
-  const drag = (el, e, perPx) => {
-    if (written) return;
-    try { el.setPointerCapture(e.pointerId); } catch {}
-    const x0 = e.clientX, y0 = e.clientY, from = at;
-    let moved = false;
-    const move = (m) => {
-      if (!moved && Math.abs(m.clientX - x0) + Math.abs(m.clientY - y0) < 4) return;
-      if (!moved) { moved = true; list.hidden = true; val.setAttribute('aria-expanded', 'false'); row.classList.add('dragging'); host.classList.add('grabbing'); }
-      const raw = from + perPx(m.clientX - x0, m.clientY - y0);
-      const over = raw < -0.5 ? raw + 0.5 : raw > last + 0.5 ? raw - last - 0.5 : 0;
-      land(Math.max(0, Math.min(last, Math.round(raw))));
-      lean(over);
-      fill((Math.max(-0.6, Math.min(last + 0.6, raw < 0 ? raw * 0.3 : raw > last ? last + (raw - last) * 0.3 : raw))) / last);
+  // ── one picker: the row beside the element (the property's icon, the value that rolls, the tick), its list, drag
+  // mode and the keys. A property brings: its options, its icon, the mark each option gets in the list, what an
+  // option does to the element, where the row sits, and the element's own handles ──
+  function picker(stage, { name, toy, options: S, mark, apply, place, handles = [] }) {
+    const last = S.length - 1, HARD = S.findIndex((o) => o.hard);
+    stage.insertAdjacentHTML('beforeend', `
+      <div class="row" role="group" aria-label="${name}">
+        <span class="scrub" title="Drag to change">${toyOf(toy)}</span>
+        <button type="button" class="val" aria-haspopup="listbox" aria-expanded="false"><span class="track" aria-hidden="true"><i class="fill"></i><span class="dots"></span></span><span class="drum"></span><i class="car"></i></button>
+        <button type="button" class="ok" aria-label="Write it">${TICK}</button>
+      </div>
+      <div class="list" role="listbox" aria-label="Your ${name.toLowerCase()} tokens" hidden></div>`);
+    const row = stage.querySelector('.row'), val = row.querySelector('.val'), ok = row.querySelector('.ok'), list = stage.querySelector('.list');
+    const drum = row.querySelector('.drum'), scrub = row.querySelector('.scrub');
+    let at = HARD, written = false;
+    const layout = () => place(row, list, S[at]);
+
+    // the field: the option in hand. A change rolls it, in the direction of travel
+    const slotOf = (o) => { const el = document.createElement('span'); el.className = `slot${o.hard ? ' hard' : ''}`; el.innerHTML = `<b>${o.name}</b><span>${o.hard ? 'hard-coded' : px(o.v)}</span>`; return el; };
+    const roll = (from, to) => {
+      const dir = Math.sign(to - from) || 1, next = slotOf(S[to]);
+      for (const old of drum.querySelectorAll('.slot:not(.gone)')) {
+        old.classList.add('gone');
+        if (still) { old.remove(); continue; }
+        old.animate([{ transform: old.style.transform || 'translateY(0)', opacity: 1, filter: 'blur(0)' }, { transform: `translateY(${-dir * 16}px)`, opacity: 0, filter: 'blur(3px)' }], { duration: 200, easing: EASE, fill: 'forwards' }).finished.then(() => old.remove(), () => old.remove());
+      }
+      drum.append(next);
+      if (!still) next.animate([{ transform: `translateY(${dir * 16}px)`, opacity: 0, filter: 'blur(3px)' }, { transform: 'translateY(0)', opacity: 1, filter: 'blur(0)' }], { duration: 260, easing: EASE });
     };
-    const up = () => {
-      el.removeEventListener('pointermove', move); el.removeEventListener('pointerup', up); el.removeEventListener('pointercancel', up);
-      host.classList.remove('grabbing'); row.classList.remove('dragging');
-      fill(at / last);
-      if (!moved) { if (el === val) { list.hidden = !list.hidden; val.setAttribute('aria-expanded', String(!list.hidden)); } return; }
-      const cur = drum.querySelector('.slot:not(.gone)');
-      if (cur && cur.style.transform) { cur.animate([{ transform: cur.style.transform }, { transform: 'translateY(0)' }], { duration: still ? 0 : 320, easing: 'cubic-bezier(.34, 1.56, .64, 1)' }); cur.style.transform = ''; }
+    // past either end: the one in the field leans a little the way you are pulling, and comes back when you let go
+    const lean = (over) => { const el = drum.querySelector('.slot:not(.gone)'); if (el) el.style.transform = over ? `translateY(${(-Math.sign(over) * Math.min(5, Math.abs(over) * 7)).toFixed(1)}px)` : ''; };
+    // the bar while dragging: f is where you are, 0 at the smallest option and 1 at the largest
+    const fill = (f) => val.style.setProperty('--f', f.toFixed(4));
+    val.querySelector('.dots').innerHTML = S.map((o, i) => `<i class="${o.hard ? 'hard' : ''}" style="left:${(i / last) * 100}%"></i>`).join('');
+    const dots = [...val.querySelectorAll('.dots i')];
+    const draw = () => {
+      const o = S[at], token = !o.hard;
+      apply(o, { token, written });
+      if (token && !written) ok.setAttribute('data-ready', ''); else ok.removeAttribute('data-ready');
+      if (token && !still) { ok.classList.remove('pop'); void ok.offsetWidth; ok.classList.add('pop'); }
+      list.innerHTML = S.map((t, i) => `<button type="button" role="option" class="${t.hard ? 'hard' : ''}" data-at="${i}" aria-selected="${at === i}">${mark(t)}${t.name}<span>${t.hard ? 'hard-coded' : px(t.v)}</span></button>`).join('');
+      val.classList.toggle('on-hard', !!o.hard);
+      dots.forEach((d, i) => d.classList.toggle('here', i === at));
+      if (!row.classList.contains('dragging')) fill(at / last);
+      val.setAttribute('aria-label', `${name}: ${o.hard ? `${o.name}, hard-coded` : `${o.name}, ${px(o.v)}`}`);
+      requestAnimationFrame(layout);
     };
-    el.addEventListener('pointermove', move); el.addEventListener('pointerup', up); el.addEventListener('pointercancel', up);
-  };
-  const STEP = 26;
-  val.addEventListener('pointerdown', (e) => { if (e.button === 0) { e.preventDefault(); drag(val, e, (dx, dy) => (dx - dy) / STEP); } });
-  scrub.addEventListener('pointerdown', (e) => { e.preventDefault(); drag(scrub, e, (dx, dy) => (dx - dy) / STEP); });
-  // the dot on the corner: pulling it in along the diagonal rounds the corner more
-  handle.addEventListener('pointerdown', (e) => { e.preventDefault(); handle.classList.add('dragging'); drag(handle, e, (dx, dy) => (dx + dy) / 2 / 14); });
-  handle.addEventListener('pointerup', () => { handle.classList.remove('dragging'); requestAnimationFrame(place); });
-  // a keyboard press on the value still opens the list
-  val.addEventListener('click', (e) => { if (e.detail === 0 && !written) { list.hidden = !list.hidden; val.setAttribute('aria-expanded', String(!list.hidden)); } });
-  list.addEventListener('click', (e) => { const o = e.target.closest('[data-at]'); if (!o) return; go(Number(o.dataset.at)); list.hidden = true; val.setAttribute('aria-expanded', 'false'); });
-  ok.addEventListener('click', () => (written ? putBack() : write()));
-  stage.addEventListener('keydown', (e) => {
-    if (e.key === 'ArrowRight' || e.key === 'ArrowUp') { e.preventDefault(); go(at + 1); }
-    else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') { e.preventDefault(); go(at - 1); }
-    else if (e.key === 'Enter') { e.preventDefault(); write(); }
-    else if (e.key === 'Escape') { e.preventDefault(); putBack(); }
-  });
-  new ResizeObserver(place).observe(stage);
-  if (still) handle.style.transition = 'none';
-  drum.append(slotOf(S[at])); draw();
+    // a new option in hand: the element takes it, and it rolls into the field
+    const land = (n) => { if (n === at) return; const from = at; at = n; draw(); roll(from, n); };
+    const go = (n) => { if (written) return; land(Math.max(0, Math.min(last, n))); };
+    const write = () => { if (written || S[at].hard) return; written = true; row.classList.add('written'); list.hidden = true; draw(); };
+    const putBack = () => { written = false; row.classList.remove('written'); list.hidden = true; draw(); go(HARD); };
+
+    // ── drag mode: press and move, anywhere on the screen. Up (or right) is bigger; each option rolls into the
+    // field as you pass it. Past either end the one in the field leans a little and comes back when you let go ──
+    const drag = (el, e, perPx, done) => {
+      if (written) return;
+      try { el.setPointerCapture(e.pointerId); } catch {}
+      const x0 = e.clientX, y0 = e.clientY, from = at;
+      let moved = false;
+      const move = (m) => {
+        if (!moved && Math.abs(m.clientX - x0) + Math.abs(m.clientY - y0) < 4) return;
+        if (!moved) { moved = true; list.hidden = true; val.setAttribute('aria-expanded', 'false'); row.classList.add('dragging'); host.classList.add('grabbing'); }
+        const raw = from + perPx(m.clientX - x0, m.clientY - y0);
+        const over = raw < -0.5 ? raw + 0.5 : raw > last + 0.5 ? raw - last - 0.5 : 0;
+        land(Math.max(0, Math.min(last, Math.round(raw))));
+        lean(over);
+        fill((Math.max(-0.6, Math.min(last + 0.6, raw < 0 ? raw * 0.3 : raw > last ? last + (raw - last) * 0.3 : raw))) / last);
+      };
+      const up = () => {
+        el.removeEventListener('pointermove', move); el.removeEventListener('pointerup', up); el.removeEventListener('pointercancel', up);
+        host.classList.remove('grabbing'); row.classList.remove('dragging');
+        fill(at / last); done?.();
+        if (!moved) { if (el === val) { list.hidden = !list.hidden; val.setAttribute('aria-expanded', String(!list.hidden)); } return; }
+        const cur = drum.querySelector('.slot:not(.gone)');
+        if (cur && cur.style.transform) { cur.animate([{ transform: cur.style.transform }, { transform: 'translateY(0)' }], { duration: still ? 0 : 320, easing: 'cubic-bezier(.34, 1.56, .64, 1)' }); cur.style.transform = ''; }
+        requestAnimationFrame(layout);
+      };
+      el.addEventListener('pointermove', move); el.addEventListener('pointerup', up); el.addEventListener('pointercancel', up);
+    };
+    const STEP = 26;
+    val.addEventListener('pointerdown', (e) => { if (e.button === 0) { e.preventDefault(); drag(val, e, (dx, dy) => (dx - dy) / STEP); } });
+    scrub.addEventListener('pointerdown', (e) => { e.preventDefault(); drag(scrub, e, (dx, dy) => (dx - dy) / STEP); });
+    for (const h of handles) h.el.addEventListener('pointerdown', (e) => { e.preventDefault(); h.el.classList.add('dragging'); drag(h.el, e, h.perPx, () => h.el.classList.remove('dragging')); });
+    // a keyboard press on the value still opens the list
+    val.addEventListener('click', (e) => { if (e.detail === 0 && !written) { list.hidden = !list.hidden; val.setAttribute('aria-expanded', String(!list.hidden)); } });
+    list.addEventListener('click', (e) => { const o = e.target.closest('[data-at]'); if (!o) return; go(Number(o.dataset.at)); list.hidden = true; val.setAttribute('aria-expanded', 'false'); });
+    ok.addEventListener('click', () => (written ? putBack() : write()));
+    stage.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight' || e.key === 'ArrowUp') { e.preventDefault(); go(at + 1); }
+      else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') { e.preventDefault(); go(at - 1); }
+      else if (e.key === 'Enter') { e.preventDefault(); write(); }
+      else if (e.key === 'Escape') { e.preventDefault(); putBack(); }
+    });
+    new ResizeObserver(layout).observe(stage);
+    drum.append(slotOf(S[at])); draw();
+  }
+  const rel = (stage, el) => { const s = stage.getBoundingClientRect(), b = el.getBoundingClientRect(); return { left: b.left - s.left, top: b.top - s.top, right: b.right - s.left, bottom: b.bottom - s.top, width: b.width, height: b.height }; };
+
+  // ── border radius: the badge, with a dot on its corner ──
+  {
+    const stage = root.querySelector('#radius .stage'), badge = stage.querySelector('.badge'), handle = stage.querySelector('.handle'), card = stage.querySelector('.app');
+    picker(stage, {
+      name: 'Border radius', toy: 'corner', options: RADIUS,
+      mark: (t) => `<i class="c" style="border-top-left-radius:${Math.min(t.v, 16)}px"></i>`,
+      apply: (o, { token, written }) => { badge.style.setProperty('--r', `${o.v}px`); badge.classList.toggle('on-token', token); badge.classList.toggle('written', written); handle.classList.toggle('on-token', token); },
+      place: (row, list, o) => {
+        const b = rel(stage, badge), c = rel(stage, card), inset = Math.min(o.v, badge.offsetHeight / 2) * (1 - Math.SQRT1_2);
+        handle.style.left = `${b.left + inset}px`; handle.style.top = `${b.top + inset}px`;
+        row.style.left = `${c.right + 14}px`; row.style.top = `${b.top + b.height / 2 - 17}px`;
+        list.style.left = row.style.left; list.style.top = `${b.top + b.height / 2 + 22}px`;
+      },
+      // the dot on the corner: pulling it in along the diagonal rounds the corner more
+      handles: [{ el: handle, perPx: (dx, dy) => (dx + dy) / 2 / 14 }],
+    });
+    if (still) handle.style.transition = 'none';
+  }
+
+  // ── gap: the dialog's footer, with the gap itself as the handle ──
+  {
+    const stage = root.querySelector('#gap .stage'), foot = stage.querySelector('.foot'), band = stage.querySelector('.gapband'), dlg = stage.querySelector('.dlg');
+    const [a, b] = foot.querySelectorAll('button');
+    picker(stage, {
+      name: 'Gap', toy: 'gap', options: GAP,
+      mark: (t) => `<i class="g" style="--lg:${Math.min(t.v, 12)}px"></i>`,
+      apply: (o, { token, written }) => { foot.style.setProperty('--g', `${o.v}px`); band.classList.toggle('on-token', token); band.classList.toggle('written', written); },
+      place: (row, list) => {
+        const ra = rel(stage, a), rb = rel(stage, b), d = rel(stage, dlg);
+        band.style.left = `${ra.right}px`; band.style.width = `${Math.max(2, rb.left - ra.right)}px`; band.style.top = `${ra.top}px`; band.style.height = `${ra.height}px`;
+        row.style.left = `${d.right + 14}px`; row.style.top = `${ra.top + ra.height / 2 - 17}px`;
+        list.style.left = row.style.left; list.style.top = `${ra.top + ra.height / 2 + 22}px`;
+      },
+      // the gap: dragging right makes it wider
+      handles: [{ el: band, perPx: (dx) => dx / 16 }],
+    });
+    if (still) band.style.transition = 'none';
+  }
 }

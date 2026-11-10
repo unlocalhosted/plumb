@@ -390,6 +390,20 @@ race, built for the old in-place write) was rewritten for the new write path (`e
   under the value. The owner chose the fill inside the field ("the previous one was better... filling the space
   inside").
 
+### 12. Spacing: the gap is the handle
+
+- **What:** the second property on the Token pickers page, run through the new principles checklist. A dialog's
+  footer whose Cancel and Publish buttons sit 13px apart, hard-coded. The gap itself is drawn in its pattern (lilac
+  stripes), with a coral dashed outline while hard-coded, blue on a token, green once written; drag it wider or
+  narrower and the buttons move. The same row as border radius beside it: the gap icon, the value that rolls, drag
+  mode, the tick that turns green on a token, the list (each option drawn as two bars that far apart).
+- **The system:** the picker is now one piece. Each property brings its options, its icon, its list mark, what an
+  option does to the element, where the row sits, and its element's own handle; the row, list, drag mode, rolling
+  value and tick are shared, so every property behaves the same.
+- **Proof:** on the running page, dragging the gap 15px to the right moved it from 13px to xl (24px) and the buttons
+  followed; border radius still works through the same piece.
+- **Open:** padding and margin; drag sensitivity untested by hand.
+
 ## Open gaps
 - The contrast check knows colours, not sizes or weights, and is not run by CI yet.
 - `web/docs/pages` is a copy of `site/src/docs/pages`; two copies until the old Vite site is removed.
