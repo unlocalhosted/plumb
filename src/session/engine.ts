@@ -508,6 +508,23 @@ export class Session extends EventEmitter {
     }
     this.timer = setInterval(() => { void this.refresh().catch(error => this.emit('diagnostic', error)); }, this.options.pollInterval ?? 250);
   }
+  /** Files written inside a many-file write (a rename, its undo), reconciled once when it ends instead of one by one. */
+  private deferred: Set<string> | null = null;
+  private async settleWritten(path: string): Promise<void> { if (this.deferred) this.deferred.add(path); else await this.reconcile([path]); }
+  /** One many-file write: the host holds hot updates until it ends (one page update, never a half-written page), and the
+   * written files are reconciled together at the end. */
+  private async manyFiles<T>(run: () => Promise<T>, end: (result: T | undefined) => object): Promise<T> {
+    const outer = this.transaction;
+    if (!outer) { this.emit('transaction', { phase: 'start' }); this.transaction = true; }
+    this.deferred = new Set();
+    let result: T | undefined;
+    try { result = await run(); return result; }
+    finally {
+      const written = [...this.deferred]; this.deferred = null;
+      if (written.length) await this.serialize(() => this.reconcile(written)).catch(() => {});
+      if (!outer) { this.transaction = false; this.emit('transaction', { phase: 'end', ...end(result) }); }
+    }
+  }
   private async reconcile(query?: string[], full = false): Promise<string[]> {
     this.reconciliations++;
     const changed = new Set<string>();
@@ -866,7 +883,7 @@ export class Session extends EventEmitter {
         await handle.writeFile(next, 'utf8'); await handle.truncate(Buffer.byteLength(next));
         await this.sameFile(path, identity);
       } finally { await handle.close(); }
-      await this.reconcile([path]);
+      await this.settleWritten(path);
       this.recipeProject = undefined;
       const hashAfter = sourceHash(next);
       if (sourceHash(await readFile(path, 'utf8')) !== hashAfter) throw new UsageError(staleFile);
@@ -1122,9 +1139,8 @@ export class Session extends EventEmitter {
       if (clash) throw new UsageError(`--color-${clash} is already in ${spec.tokens.file}; renaming onto it would merge two colours.`);
     }
     const result: RenameResult = { revision: this.revision, files: [], uses: 0, byName: {}, undo: [], labels: [] };
-    this.emit('transaction', { phase: 'start' });
-    this.transaction = true;
-    try {
+    const none = { tokens: [], css: [], swaps: [], accepts: [] };
+    await this.manyFiles(async () => {
       for (const path of paths) {
         this.progress();
         const before = await readFile(path, 'utf8').catch(() => null);
@@ -1145,7 +1161,7 @@ export class Session extends EventEmitter {
               await handle.writeFile(after, 'utf8'); await handle.truncate(Buffer.byteLength(after));
               await this.sameFile(path, identity);
             } finally { await handle.close(); }
-            await this.reconcile([path]);
+            await this.settleWritten(path);
             const hashAfter = sourceHash(after);
             return this.record(path, before, hashAfter, 1, `${count.uses} colour ${count.uses === 1 ? 'name' : 'names'} renamed`);
           });
@@ -1155,7 +1171,7 @@ export class Session extends EventEmitter {
           for (const [name, n] of Object.entries(count.byName)) result.byName[name] = (result.byName[name] ?? 0) + n;
         } catch (error) { result.files.push({ file, ok: false, uses: 0, error: error instanceof UsageError ? error.message : errorMessage(error) }); }
       }
-    } finally { this.transaction = false; this.emit('transaction', { phase: 'end', results: { tokens: [], css: [], swaps: [], accepts: [] }, undo: result.undo, labels: result.labels }); }
+    }, () => ({ results: none, undo: result.undo, labels: result.labels }));
     result.revision = this.revision;
     return result;
   }
@@ -1828,7 +1844,8 @@ export class Session extends EventEmitter {
     const previous = this.tag;
     this.tag = { group: previous?.group ?? this.log.group(), ...(previous?.meta === undefined ? {} : { meta: previous.meta }) };
     this.undoing = targets;
-    try {
+    const none = { tokens: [], css: [], swaps: [], accepts: [] };
+    try { await this.manyFiles(async () => {
       for (const [file, list] of files) {
         const path = this.file(file), text = await readFile(path, 'utf8');
         const placed = list.map(r => ({ r, at: locate(text, r) })).sort((x, y) => (y.at ?? 0) - (x.at ?? 0));
@@ -1841,7 +1858,7 @@ export class Session extends EventEmitter {
         const result = await this.rewrite(path, sourceHash(text), next, `undo ${list.map(r => r.label).join(', ')}`.slice(0, 120), blocksRemoved);
         done.push(result.undo); hashes[file] = result.hash;
       }
-    } catch (error) {
+    }, () => ({ results: none, undo: done, labels: done.map(h => h.label) })); } catch (error) {
       this.undoing = undefined;
       for (const handle of done.toReversed()) await this.undo(handle.id).catch(() => {});
       throw error;

@@ -94,8 +94,14 @@
 - **The proof:** last run: 18 names listed (scrim, draw-line, draw-tint kept), Rename → reload → panel back with Undo; Undo → files back (no diff) → section offers the same 18 again. The home headline renders with `text-text-primary` (its blank moment after each reload is its own entrance animation).
 - **Media hooks:** docs/media/colour-rename-list-2026-11-11.jpg, docs/media/colour-rename-done-2026-11-11.jpg.
 
+## Undo of a rename: one update, not 101 (2026-11-11)
+- **The itch:** undoing the colour rename took about 30 seconds (timed by eye in the panel), and the page showed black borders while files went back one at a time.
+- **The system behind it:** undo wrote each file on its own, re-analysed the project after every file, and did not hold the page's live updates, so the page repainted 101 times against a half-restored theme. The rename itself also re-analysed after every file.
+- **The fix:** a many-file write (the rename, any undo) now holds live updates until the last file is written (one page update) and re-analyses the written files once at the end.
+- **The proof:** on a fresh crafting-ui copy, through the server: rename 6.2 s; undo 6.8 s and 12.8 s on two runs (709 recorded changes in 101 files), files back with no diff, page renders normally. The old 30 s is an eyeballed panel time, not the same measurement.
+
 ## Open gaps
-- Undo of a 101-file rename takes about 30 seconds, and the page shows wrong (black) borders while files go back one at a time.
+- Undo of a 101-file rename still takes 7–13 s; where the rest goes (parsing each file, recording 709 changes) is not measured.
 - The clean-up's pass names are not clickable, and the text step's error screen (no census) has no skip.
 - The second ink is named `ink2-*`; crafting-ui calls it `draw`, a meaningful word. Naming decision for the owner.
 - Code samples shown as text on crafting-ui pages may have been renamed too; not checked.
