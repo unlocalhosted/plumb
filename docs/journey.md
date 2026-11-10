@@ -379,6 +379,10 @@ race, built for the old in-place write) was rewritten for the new write path (`e
   opens, the options roll past in the field, neighbours fade above and below, a small bump on each new option, a
   blur at speed, a little give past either end, and it settles on the nearest option when let go. The corner dot
   and the icon drag the same reel.
+- **Rejected:** "this is tasteless... no huge rectangle should show up". Opening the reel put a tall panel of
+  options over the page. What the owner wanted: one value in the field; going up, the new one comes in from below
+  and the old one leaves over the top, the reverse going down. Now: nothing opens, the field rolls one value at a
+  time (in 260ms, out 200ms, a 16px travel and a little blur), and past either end the value leans and springs back.
 
 ## Open gaps
 - The contrast check knows colours, not sizes or weights, and is not run by CI yet.
