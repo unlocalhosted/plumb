@@ -25,6 +25,8 @@
 <script type="module">
   import tokens from '../src/tokens.css?raw';
   import { LANGUAGE_CSS } from '../src/language.js';
+  import { TOY_DEFS, toyOf } from './toys.js';
+  import { BUTTON_CSS, button as b } from './kit-parts.js';
 
   const host = document.getElementById('board');
   const root = host.attachShadow({ mode: 'open' });
@@ -38,7 +40,6 @@
   const CLOSE = (c) => svg(`<path d="M6.500 6.500l11 11M17.500 6.500l-11 11" fill="none" stroke="${c}" stroke-width="2.800" stroke-linecap="round"/>`);
   const DOTS = `<span class="tb-dots" aria-hidden="true"><i></i><i></i><i></i></span>`;
   const kbd = (k) => `<kbd>${k}</kbd>`;
-  const b = (label, { cls = '', attrs = '', icon = '', key = '' } = {}) => `<button type="button" class="tb ${cls}" ${attrs}><span class="top">${icon ? `<i class="ic">${icon}</i>` : ''}${label ? `<span class="lb">${label}</span>` : ''}${key ? kbd(key) : ''}</span></button>`;
   const cell = (name, html, note = '') => `<div class="cell"><div class="stage">${html}</div><b>${name}</b>${note ? `<small>${note}</small>` : ''}</div>`;
   const set = (title, why, body) => `<section class="set"><h2>${title}</h2>${why ? `<p>${why}</p>` : ''}<div class="cells">${body}</div></section>`;
 
@@ -46,55 +47,7 @@
     :host { display: block; font-family: var(--pl-sans); color: var(--pl-ink); }
     :host([data-scheme="dark"]) { --pl-paper: #2a2930; --pl-paper-2: #35343c; --pl-rule: #45444d; --pl-ink: #f4f3ef; }
 
-    /* ── the toy button (proposed; would replace .pl-act) ─────────────────────────────────────────────────────
-       Two parts: the base (the button's own darker shade) and the top (the solid hue, the label on it). At rest the
-       top sits 3px above the base. Pointed at, it rises to 4. Pressed, it goes down to 1, fast; let go, it springs
-       back. The base never moves, so nothing around the button shifts. */
-    .tb { --hue: var(--pl-pink); --base: color-mix(in oklab, var(--pl-pink) 68%, var(--pl-pink-ink)); --on: #fff; --lift: 3px; --h: 36px;
-      all: unset; position: relative; display: inline-block; box-sizing: border-box; height: calc(var(--h) + 3px); padding-top: 3px; border-radius: 12px; cursor: pointer;
-      background: var(--base); font: 600 13px/1 var(--pl-sans); color: var(--on); -webkit-tap-highlight-color: transparent; user-select: none; }
-    .tb .top { display: flex; align-items: center; justify-content: center; gap: 7px; height: var(--h); padding: 0 14px; box-sizing: border-box; border-radius: 12px; background: var(--hue);
-      translate: 0 calc(-1 * var(--lift)); transition: translate 260ms var(--pl-spring-pop), background-color 200ms var(--pl-ease-out); white-space: nowrap; }
-    .tb:hover, .tb[data-show="hover"] { --lift: 4px; }
-    .tb:active, .tb[data-show="pressed"] { --lift: 1px; }
-    .tb:active .top, .tb[data-show="pressed"] .top { transition-duration: 70ms; transition-timing-function: var(--pl-ease-out); }
-    .tb:focus-visible, .tb[data-show="focus"] { outline: 2.5px solid var(--pl-sky); outline-offset: 3px; }
-    /* a key on a button is a small key cap: the same top-and-base, pressed in by default so it reads as part of the top */
-    .tb kbd { display: inline-grid; place-items: center; min-width: 19px; height: 19px; padding: 0 5px; margin: 0 -4px 0 1px; box-sizing: border-box; border-radius: 6px;
-      font: 600 11px/1 var(--pl-mono); background: color-mix(in oklab, var(--on) 22%, transparent); color: var(--on); box-shadow: 0 1.5px 0 0 color-mix(in oklab, var(--base) 70%, transparent); }
-    .tb .ic { display: block; width: 16px; height: 16px; margin-left: -3px; flex: none; }
-    .tb .ic svg { display: block; width: 100%; height: 100%; }
-    /* kinds: what the button is, by hue (the language's table): pink acts, mint is done, coral is wrong, paper is quiet */
-    .tb.quiet { --hue: var(--pl-paper); --base: var(--pl-rule); --on: var(--pl-ink); }
-    .tb.quiet .top { box-shadow: inset 0 0 0 1.5px var(--pl-rule); }
-    .tb.quiet kbd { background: var(--pl-paper-2); color: var(--pl-ink-2); box-shadow: 0 1.5px 0 0 var(--pl-rule); }
-    .tb.done { --hue: var(--pl-mint); --base: color-mix(in oklab, var(--pl-mint) 68%, var(--pl-mint-ink)); }
-    .tb.wrong { --hue: var(--pl-coral); --base: color-mix(in oklab, var(--pl-coral) 68%, var(--pl-coral-ink)); }
-    /* not there: pale, flat on its base, nothing to press (the language: pale is for what is not there) */
-    .tb:disabled, .tb[data-show="disabled"] { --hue: var(--pl-paper-2); --base: transparent; --on: var(--pl-ink-3); --lift: 0px; cursor: not-allowed; }
-    .tb:disabled .top { box-shadow: inset 0 0 0 1.5px var(--pl-rule); }
-    /* working: held down, three dots take turns; the button keeps its width */
-    .tb[aria-busy="true"] { --lift: 1px; cursor: progress; }
-    .tb[aria-busy="true"] .lb, .tb[aria-busy="true"] kbd, .tb[aria-busy="true"] .ic { visibility: hidden; }
-    .tb-dots { position: absolute; inset: 3px 0 0; display: none; align-items: center; justify-content: center; gap: 4px; translate: 0 -1px; }
-    .tb[aria-busy="true"] .tb-dots { display: flex; }
-    .tb-dots i { width: 6px; height: 6px; border-radius: 50%; background: var(--on); animation: tb-turn 900ms var(--pl-ease-out) infinite; }
-    .tb-dots i:nth-child(2) { animation-delay: 150ms; } .tb-dots i:nth-child(3) { animation-delay: 300ms; }
-    @keyframes tb-turn { 0%, 60%, 100% { translate: 0 0; opacity: .55; } 30% { translate: 0 -4px; opacity: 1; } }
-    /* it worked: the top turns mint and its tick pops */
-    .tb.landed .ic { animation: pl-pop 320ms var(--pl-spring-pop) both; }
-    /* sizes */
-    .tb.sm { --h: 28px; font-size: 12px; border-radius: 10px; } .tb.sm .top { padding: 0 10px; border-radius: 10px; gap: 5px; }
-    .tb.lg { --h: 44px; font-size: 15px; border-radius: 14px; } .tb.lg .top { padding: 0 18px; border-radius: 14px; }
-    /* a picture alone: a square, with its name one hover away */
-    .tb.only .top { padding: 0; width: var(--h); }
-    .tb.only .ic { margin: 0; width: 18px; height: 18px; }
-    .tb[data-tip]::after { content: attr(data-tip); position: absolute; left: 50%; bottom: calc(100% + 9px); translate: -50% 4px; padding: 4px 8px; border-radius: 8px; background: var(--pl-ink); color: var(--pl-paper);
-      font: 600 11px/1.2 var(--pl-sans); white-space: nowrap; opacity: 0; scale: .92; pointer-events: none; transition: opacity 140ms var(--pl-ease-out), scale 220ms var(--pl-spring-pop), translate 220ms var(--pl-spring-pop); }
-    .tb[data-tip]:hover::after, .tb[data-tip]:focus-visible::after { opacity: 1; scale: 1; translate: -50% 0; }
-    @media (pointer: coarse) { .tb kbd { display: none; } .tb { --h: 44px; } }
-    @media (prefers-reduced-motion: reduce) { .tb .top { transition: none; } .tb-dots i { animation: none; } .tb.landed .ic { animation: none; } }
-
+    ${BUTTON_CSS}
     /* ── the page ── */
     .set { margin: 0 0 14px; padding: 16px 16px 18px; border-radius: 18px; background: var(--pl-paper); box-shadow: 0 0 0 1px var(--pl-rule); }
     .set h2 { margin: 0; font: 600 15px/20px var(--pl-sans); }
@@ -113,10 +66,20 @@
     .anat ol { margin: 0; padding-left: 20px; font: 400 13px/20px var(--pl-sans); color: var(--pl-ink-2); }
     .anat ol b { color: var(--pl-ink); font-weight: 600; }
     .bar { display: inline-flex; align-items: center; gap: 8px; padding: 7px 8px 5px 14px; border-radius: 22px; background: var(--pl-paper); box-shadow: var(--pl-shadow-card); }
-    .bar code { font: 600 13px/1 var(--pl-mono); margin-right: 6px; }
+    .bar { white-space: nowrap; }
+    .bar code { font: 600 13px/1 var(--pl-mono); white-space: nowrap; }
+    .bar .in { font: 500 12px/1 var(--pl-sans); color: var(--pl-ink-2); }
+    .bar .toy { position: relative; display: block; width: 26px; height: 26px; flex: none; transition: scale 300ms var(--pl-spring-pop), rotate 300ms var(--pl-spring-pop); }
+    .bar .toy:last-of-type { margin-right: 8px; }
+    .bar .toy:hover { scale: 1.16; rotate: -6deg; }
+    .bar .toy svg { display: block; width: 100%; height: 100%; overflow: visible; }
+    .bar .toy::after { content: attr(data-tip); position: absolute; left: 50%; bottom: calc(100% + 8px); translate: -50% 4px; padding: 4px 8px; border-radius: 8px; background: var(--pl-ink); color: var(--pl-paper);
+      font: 600 11px/1.2 var(--pl-sans); text-transform: capitalize; white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity 140ms var(--pl-ease-out), translate 220ms var(--pl-spring-pop); }
+    .bar .toy:hover::after { opacity: 1; translate: -50% 0; }
+    .cell.full { grid-column: 1 / -1; }
     .old { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
     @media (max-width: 640px) { .anat { grid-template-columns: 1fr; } .cell.wide { grid-column: auto; } }
-  </style>
+  </style>${TOY_DEFS}
 
   <section class="set"><h2>What a button is made of</h2><p>Press this one and hold it.</p>
     <div class="anat"><div class="big">${b('Use rounded-tag', { key: '↵' })}</div>
@@ -158,7 +121,7 @@
     + cell('Alone', b('', { cls: 'only quiet', icon: UNDO('var(--pl-lilac)'), attrs: 'data-tip="Undo" aria-label="Undo"' }) + b('', { cls: 'only quiet', icon: CLOSE('var(--pl-ink-2)'), attrs: 'data-tip="Close" aria-label="Close"' }) + b('', { cls: 'only', icon: SPARK('#fff'), attrs: 'data-tip="Clean up" aria-label="Clean up"' }), 'point at one'))}
 
   ${set('Together', 'In the fix bar: one action, then the quiet ones. Never two pink buttons side by side.',
-    `<div class="cell wide"><div class="stage"><span class="bar"><code>rounded-[5px]</code>${b('Use rounded-tag', { cls: 'sm', key: '↵' })}${b('Keep', { cls: 'sm quiet', key: 'K' })}${b('Skip', { cls: 'sm quiet', key: '→' })}</span></div><b>The fix bar’s three</b></div>`)}
+    `<div class="cell full"><div class="stage"><span class="bar"><i class="toy" data-tip="corner">${toyOf('corner')}</i><code>rounded-[5px]</code><span class="in">on a</span><i class="toy" data-tip="tag">${toyOf('tag')}</i>${b('Use rounded-tag', { cls: 'sm', key: '↵' })}${b('Keep', { cls: 'sm quiet', key: 'K' })}${b('Skip', { cls: 'sm quiet', key: '→' })}</span></div><b>The fix bar’s three</b><small>the cause opens with its toys; then one action and the quiet ones</small></div>`)}
 
   <section class="set"><h2>What the overlay has today</h2><p>The current button, for comparison: a pale pink pill with dark pink words. In the new language pale means “not there”, so today’s main action reads as switched off.</p>
     <div class="old"><button type="button" class="pl-act">Use rounded-tag <kbd>↵</kbd></button><button type="button" class="pl-act quiet">Keep <kbd>K</kbd></button><button type="button" class="pl-act" disabled>Apply</button></div></section>`;
