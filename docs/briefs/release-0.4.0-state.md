@@ -97,6 +97,16 @@ passed in this run and was not reproduced.
 
 `blueprint-late-mount`, `locate-bench` and `craft-structure` pass in this run.
 
+## GitHub's check on the pull request (Node 22, 416f81c)
+
+1,036 passed, 11 failed. 7 are on `main`'s list. The other 4:
+
+| Test | What it was |
+|---|---|
+| `session-burst` (2 tests) | **Not latency, as written above: a real mismatch, and `main` has it too.** `main` gave the busy answer a code and left the test expecting the old shape. `main`'s own CI never showed it, because the old runner stopped at the first failing pass and never reached this file. The test now expects the code. |
+| `locate-bench` | The showcase's dependencies were not installed in CI. The workflow installs them now. |
+| `timeline`: first test | Known flaky. |
+
 ## What publishing needs
 
 1. A decision on rows 1 to 6: intended, or bug. Intended ones get their tests updated; bugs get fixed.
