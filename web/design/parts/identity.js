@@ -183,7 +183,7 @@ export function mount(host, root, css) {
     if (t.toy) {
       // the toy is loose on its plate: it is flattened with it, then thrown up, tipping as it goes, and lands
       const q = t.toyPress.x, qd = Math.max(0, q), qu = Math.min(0, q), big = 1 + 0.07 * ((t.lift.x - shape.rest) / (shape.hover - shape.rest));
-      t.toy.style.transform = `translateY(${(qu * 13).toFixed(2)}px) rotate(${(qu * 11).toFixed(2)}deg) scale(${(big + 0.04 * qd + 0.07 * qu).toFixed(4)}, ${(big - 0.08 * qd - 0.18 * qu).toFixed(4)})`;
+      t.toy.style.transform = `translateY(${(qu * 7.5).toFixed(2)}px) rotate(${(qu * 6.5).toFixed(2)}deg) scale(${(big + 0.04 * qd + 0.07 * qu).toFixed(4)}, ${(big - 0.08 * qd - 0.18 * qu).toFixed(4)})`;
     }
   };
   const live = new Set();
