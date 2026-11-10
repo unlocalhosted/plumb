@@ -704,7 +704,8 @@ race, built for the old in-place write) was rewritten for the new write path (`e
   element card would have needed the same copy. The token file now offers one class, `pl-light`: anything carrying it
   gets the light palette and its roles, on any page and any computer scheme. Both cards and their arrows use it; the
   hand-made copy is deleted. Checked on crafting-ui with the computer in dark: both cards' pieces resolve to the light
-  colours (white card, #f6f6f4 rows, #6b665c meta, navy and green state words, white arrow). Contrast 74 of 74.
+  colours (white card, #f6f6f4 rows, #6b665c meta, navy and green state words, white arrow). The contrast check read
+  the palette by its rule's old opening line and briefly judged only 37 of 74 pairs; it now reads the new rules, 74 of 74.
 
 ## Open gaps
 - White on the pink and mint buttons is under 4.5:1 in light (3.36, 3.85); dark now passes, just. Nothing yet stops the faintest ink being used for text again.

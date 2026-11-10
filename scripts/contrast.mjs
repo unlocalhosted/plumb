@@ -15,7 +15,7 @@ const block = (open) => {
   return css.slice(start, i);
 };
 const read = (body) => new Map([...body.matchAll(/--pl-([a-z0-9-]+):\s*([^;]+);/g)].map((m) => [m[1], m[2].trim()]));
-const light = read(block(':host {'));
+const light = new Map([...read(block(':host, .pl-light {')), ...read(block(':host, .pl-scheme, .pl-light {'))]); // the palette, then the roles and states (their own rule)
 const dark = new Map([...light, ...read(block(':host([data-scheme="dark"])'))]);
 
 const hex = (v) => { const m = v.match(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i); if (!m) return null; const h = m[1].length === 3 ? [...m[1]].map((c) => c + c).join('') : m[1]; return [0, 2, 4].map((i) => parseInt(h.slice(i, i + 2), 16) / 255); };
