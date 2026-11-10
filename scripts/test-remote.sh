@@ -9,7 +9,8 @@
 # brings the log and the per-file logs back to .test-logs-remote/. Uncommitted changes are not sent.
 set -eu
 host=${PLUMB_TEST_HOST:-vm-agent}
-dir=projects/plumb-ci
+# the checkout's folder is named plumb: a test reads the project's folder name in a message
+dir=projects/ci/plumb
 ssh_="ssh -o RemoteCommand=none -o RequestTTY=no -o BatchMode=yes $host"
 root=$(git rev-parse --show-toplevel)
 branch=$(git rev-parse --abbrev-ref HEAD)
@@ -26,15 +27,19 @@ $ssh_ "cat > projects/plumb-run.sh" <<'REMOTE'
 #!/bin/sh
 set -eu
 branch=$1; sha=$2; shift 2
-cd ~/projects
-[ -d plumb-ci/.git ] || git clone -q plumb.bundle plumb-ci
-cd plumb-ci
+mkdir -p ~/projects/ci
+cd ~/projects/ci
+[ -d plumb/.git ] || git clone -q ../plumb.bundle plumb 2>/dev/null || { git init -q plumb; }
+cd plumb
 if [ -f test.pid ] && kill -0 "$(cat test.pid)" 2>/dev/null; then echo "A run is already going here (pid $(cat test.pid)). Stop it first."; exit 3; fi
 before=$(sha1sum package-lock.json 2>/dev/null || true)
-git fetch -q ../plumb.bundle "+refs/heads/$branch:refs/remotes/bundle/$branch"
+git fetch -q ../../plumb.bundle "+refs/heads/$branch:refs/remotes/bundle/$branch"
 git checkout -q --detach "$sha"
 [ -d node_modules ] && [ "$before" = "$(sha1sum package-lock.json)" ] || npm ci > ci.log 2>&1
 npm run build > build.log 2>&1
+# the two folders with dependencies of their own, as CI installs them; without them their tests cannot start
+[ ! -f site/package.json ] || [ -d site/node_modules ] || npm ci --prefix site > site-ci.log 2>&1 || true
+[ ! -f overlay/showcase/package.json ] || [ -d overlay/showcase/node_modules ] || npm install --prefix overlay/showcase > showcase-ci.log 2>&1 || true
 rm -rf test.log test.exit mem.log
 nohup sh -c 'while [ ! -f test.exit ]; do echo "$(date +%s) used_mb=$(free -m | awk "/Mem:/{print \$3}") chrome=$(pgrep -c -f chrom) load=$(cut -d" " -f1 /proc/loadavg)" >> mem.log; sleep 20; done' > /dev/null 2>&1 &
 nohup sh -c 'node scripts/test.mjs "$@" > test.log 2>&1; echo $? > test.exit' sh "$@" > /dev/null 2>&1 &
