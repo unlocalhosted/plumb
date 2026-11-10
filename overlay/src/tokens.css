@@ -98,14 +98,14 @@
   --pl-tracking-label: 0.02em;
   --pl-tracking-caps: 0.05em;                            /* labels set in capitals */
   /* space: one 4-based ladder (6px stays only until each component moves to the ladder) */
-  --pl-space-1: 2px;
-  --pl-space-2: 4px;
-  --pl-space-3: 6px;
-  --pl-space-4: 8px;
-  --pl-space-5: 12px;
-  --pl-space-6: 16px;
-  --pl-space-7: 20px;
-  --pl-space-8: 24px;
+  --pl-space-1: 2px;           /* a hairline apart: a tick from its label, the gap inside a segmented control */
+  --pl-space-2: 4px;           /* an icon and its word; the inside of a chip */
+  --pl-space-3: 6px;           /* off the 4-based ladder, kept only until each part moves to 4 or 8 */
+  --pl-space-4: 8px;           /* controls side by side; a field's inside */
+  --pl-space-5: 12px;          /* rows in a card; a small card's inset */
+  --pl-space-6: 16px;          /* a card's inset, and the gap between its sections */
+  --pl-space-7: 20px;          /* a card's inset when it holds a large figure */
+  --pl-space-8: 24px;          /* the inset of a card on a page */
   /* a page (anything bigger than a card): four steps above the ladder, each a clear jump */
   --pl-page-space-1: 32px;      /* gutters; the gap under the lede */
   --pl-page-space-2: 48px;      /* above the first thing on a page */
@@ -128,11 +128,11 @@
   --pl-card-gap: 12px;          /* gap between a card and its element */
 
   /* corners: the instrument is square, the card is a held object */
-  --pl-radius-mark: 2px;
-  --pl-radius-tag: 6px;
-  --pl-radius-pill: 7px;
-  --pl-radius-row: 8px;
-  --pl-radius-card: 12px;
+  --pl-radius-mark: 2px;        /* a mark drawn on your page: a bar's end, a tick */
+  --pl-radius-tag: 6px;         /* a tag on your page, a key, a small button */
+  --pl-radius-pill: 7px;        /* a value pill */
+  --pl-radius-row: 8px;         /* a row or a field inside a card */
+  --pl-radius-card: 12px;       /* a card, a menu, a bar */
 
   /* depth: the card is the only lifted thing */
   --pl-shadow-card: 0 0 0 1px var(--pl-rule), 0 1px 2px rgb(28 27 25 / 0.06), 0 14px 32px -14px rgb(28 27 25 / 0.28);

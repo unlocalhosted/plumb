@@ -11,7 +11,8 @@ export const GROUPS = [
       lede: 'A rounded face for what a toy has printed on it, a plain one for reading. Twelve styles, each a single token, read from the token file itself.' },
     { id: 'icons', hue: 'butter', toy: 'icon', name: 'Icons', says: '76 toys: 27 properties, 49 elements and patterns, and the rules they are drawn to.', ready: true,
       lede: 'Solid, in colour, each one drawn for what the thing does. Point at one.' },
-    { id: 'space', hue: 'mint', toy: 'padding', name: 'Spacing and radius', says: 'The spacing, border radius and shadow tokens.' },
+    { id: 'space', hue: 'mint', toy: 'padding', name: 'Spacing and radius', says: 'Two ladders of space, a corner per object, two shadows. Drawn as real space.', ready: true,
+      lede: 'Space on a card is a ladder of 4; on a page, four big steps. A corner belongs to an object, not a size. Only two things are lifted. Every step is drawn as real space, marked the way Plumber marks yours.' },
     { id: 'motion', hue: 'mint', toy: 'motion', name: 'Motion', says: 'Picked up, arrives, lands, rolls. The springs and the times.' },
   ]],
   ['Parts', [

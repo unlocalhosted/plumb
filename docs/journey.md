@@ -780,7 +780,24 @@ race, built for the old in-place write) was rewritten for the new write path (`e
   earlier run there used a pattern match over SSH (which the rules warn against); it did nothing harmful, and the
   leftover processes were then stopped by their process IDs, checked by folder.
 
+### 23. Back to the system: the Spacing and radius page
+- **Why now:** the full test suite runs on vm-agent for an hour and needs nothing; the owner chose to go back to the
+  design system meanwhile. "Spacing and radius" was still "to draw" on the Design site.
+- **What it shows:** two ladders of space (on a card, a ladder of 4 from 2 to 24, with the old 6 in coral as off the
+  ladder; on a page, 32 to 96), each drawn as real space in the language's own patterns: padding hatched mint, a gap
+  striped lilac. The fix bar's card, measured, with its 16px inset, 16px between sections and 8px between buttons
+  marked the way Plumber marks your app (measured from the elements, so it stays right). Each corner on the object it
+  belongs to (a mark 2, a tag 6, a pill 7, a row 8, a card 12), the two shadows on the page they sit on, and every
+  token with what it is for. The spacing and radius tokens got their notes in the token file, so the table reads them.
+- **What counting found, said on the page:** the overlay names its corner tokens about 45 times but writes about 180
+  corners as numbers, many off its own scale (9px 22 times, 5px 14, 10px 10, and 4, 3, 1px): the drift Plumber finds
+  in other apps, in its own code. 6px is the most-used gap (35 times as a number). `--pl-card-pad` and `--pl-card-gap`
+  are used nowhere. The soft blocks' corners (28px cards, 13 to 14px buttons) aren't tokens. A tag (6) and a pill (7)
+  are a pixel apart. Checked in light and dark.
+
 ## Open gaps
+- The overlay writes about 180 corners as numbers (radius tokens about 45 times), many off its own scale; 6px is
+  its most-used gap; --pl-card-pad and --pl-card-gap are unused; the soft blocks' corners aren't tokens.
 - The text panel can't take a typed number, doesn't flag a style the words don't measure, and has no "fits here"
   hint yet; their tests are skipped with that reason.
 - White on the pink and mint buttons is under 4.5:1 in light (3.36, 3.85); dark now passes, just. Nothing yet stops the faintest ink being used for text again.

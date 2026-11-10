@@ -32,6 +32,7 @@ const LOAD = {
   pickers: () => import('./parts/pickers.js'),
   'text-ideas': () => import('./parts/text-ideas.js'),
   'colour-ideas': () => import('./parts/colour-ideas.js'),
+  space: () => import('./parts/space.js'),
 };
 
 export function Part({ id, css }) {
