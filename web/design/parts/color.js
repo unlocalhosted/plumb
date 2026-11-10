@@ -1,26 +1,12 @@
-<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Colour · The kit · React Plumber</title>
-<style>
-  body { margin: 0; padding: 32px 16px 80px; background: #f6f1e6; font: 14px/1.5 system-ui, sans-serif; color: #1c1b19; transition: background-color 200ms; }
-  body.dark { background: #17161a; color: #eeede9; }
-  #board { max-width: 960px; margin: 0 auto; }
-</style>
-</head>
-<body>
-<div id="board"></div>
-<script type="module">
-  import css from '../src/tokens.css?raw';
-  import { LANGUAGE_CSS } from '../src/language.js';
-  import { readTokens, probe, say } from './kit-tokens.js';
-  import { TOY_DEFS, toyOf } from './toys.js';
-  import { BUTTON_CSS, button } from './kit-parts.js';
+// The design site's page for color: what it draws inside its host. The site (web/design/Part.jsx) gives it the host,
+// the overlay's token file as text, and the scheme; it draws with the overlay's own source.
+import { LANGUAGE_CSS } from '../../../overlay/src/language.js';
+import { readTokens, probe, say } from '../tokens.js';
+import { TOY_DEFS, toyOf } from '../../../overlay/src/toys.js';
+import { BUTTON_CSS, button } from '../../../overlay/src/kit.js';
 
-  const host = document.getElementById('board');
-  const root = host.attachShadow({ mode: 'open' });
-  host.dataset.scheme = 'light';
+export function mount(host, root, css) {
+
   const tokens = readTokens(css), by = new Map(tokens.map((t) => [t.name, t]));
   const inLight = probe(css, 'light'), inDark = probe(css, 'dark');
 
@@ -112,7 +98,7 @@
     @media (max-width: 720px) { .steps { grid-template-columns: 1fr; } .steps div { border-left: 0; border-top: 1px solid var(--pl-rule); } .tr { grid-template-columns: 1fr 1fr; } .tr.th span:nth-child(2), .tr .for { display: none; } }
     @media (prefers-reduced-motion: reduce) { .hue .toy { transition: none; } }
   </style>${TOY_DEFS}
-  <a class="back" href="/kit.html">← The kit</a>
+  <a class="back" href="/design">← The kit</a>
   <div class="head"><h1>Colour</h1>${button('Dark', { cls: 'sm quiet', attrs: 'id="scheme"' })}</div>
   <p class="lede">Six hues with one meaning each, a handful of warm neutrals, and the roles that parts ask for. Every table on this page is read from the token file itself, so it can’t disagree with the product.</p>
 
@@ -146,12 +132,10 @@
     <li><b>Two names for one colour.</b> <code>--pl-accent</code> and <code>--pl-instrument</code> are the same sky; one of them should go.</li>
   </ul>`;
 
-  const flip = () => { const dark = document.body.classList.toggle('dark'); host.dataset.scheme = dark ? 'dark' : 'light'; root.querySelector('#scheme .lb').textContent = dark ? 'Light' : 'Dark'; };
+  const flip = () => host.dispatchEvent(new CustomEvent('kit:flip', { bubbles: true }));
   root.getElementById('scheme').onclick = flip; root.getElementById('flip').onclick = flip;
   // a token name copies itself
   const copy = (el) => { navigator.clipboard?.writeText(el.textContent).catch(() => {}); el.setAttribute('data-copied', ''); setTimeout(() => el.removeAttribute('data-copied'), 900); };
   root.addEventListener('click', (e) => { const t = e.target.closest('.tok'); if (t) copy(t); });
   root.addEventListener('keydown', (e) => { const t = e.target.closest?.('.tok'); if (t && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); copy(t); } });
-</script>
-</body>
-</html>
+}

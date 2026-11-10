@@ -5,10 +5,10 @@
 :host {
   /* ground and words: warm-biased neutrals, so the overlay separates from the page under it and nothing competes
      with the one accent. Every surface and every word comes from these. */
-  --pl-paper: #fdfcf8;          /* card background: off-white */
-  --pl-desk: #ecebe7;           /* what a page of cards sits on, a step darker than a card */
-  --pl-paper-2: #f4f1ea;        /* inset strip, hover, pressed */
-  --pl-rule: #e6e1d6;           /* row outlines, dividers, card edge */
+  --pl-paper: #ffffff;          /* card background: white (owner, 2026-11-10: no cream) */
+  --pl-desk: #ffffff;           /* what a page of cards sits on: white too; cards are told apart by their edge */
+  --pl-paper-2: #f6f6f4;        /* inset strip, hover, pressed: a near-neutral, not cream */
+  --pl-rule: #e9e8e4;           /* row outlines, dividers, card edge */
   --pl-ink: #1d1b17;            /* titles and values */
   --pl-ink-2: #6b665c;          /* secondary text, meta, labels */
   --pl-ink-3: #b3ad9f;          /* ticks and dividers only, never text */
@@ -32,7 +32,6 @@
 
   /* the one accent: actions (Apply, Write, checks) and the instrument (reticle, plumb line, bob) */
   --pl-instrument: var(--pl-sky);    /* selection, measurements, focus; drawn with a halo so it shows on any page */
-  --pl-accent: var(--pl-instrument);
   --pl-on-accent: #ffffff;           /* text on a filled accent */
   --pl-action: var(--pl-pink);       /* what you can do: Write, Fix all */
   --pl-action-soft: var(--pl-pink-soft);
@@ -58,7 +57,7 @@
   --pl-card-body: 400 13px/19px var(--pl-sans);         /* body: reasons and guidance */
   --pl-card-meta: 400 12px/17px var(--pl-sans);         /* meta: counts, notes, file names */
   --pl-card-code: 500 12px/17px var(--pl-mono);         /* code: classes, values, file:line, a change */
-  --pl-text-label: 600 11px/14px var(--pl-sans);        /* label: tags, buttons, column and section labels */
+  --pl-card-label: 600 11px/14px var(--pl-sans);        /* label: tags, buttons, column and section labels */
   /* a page (the project page, anything bigger than a card): five steps, calm editorial. All sans; numbers set tabular;
      mono only for real code. Each step a clear jump from the next, so the eye always knows what to read first */
   --pl-page-display: 600 40px/46px var(--pl-sans);      /* a page's headline */
@@ -72,11 +71,6 @@
   --pl-tracking-title: -0.01em;
   --pl-tracking-label: 0.02em;
   --pl-tracking-caps: 0.05em;                            /* labels set in capitals */
-  /* older role names, each now one of the five */
-  --pl-text-title: 600 13px/18px var(--pl-sans);
-  --pl-text-row: 400 13px/18px var(--pl-sans);
-  --pl-text-reading: var(--pl-card-code);
-
   /* space: one 4-based ladder (6px stays only until each component moves to the ladder) */
   --pl-space-1: 2px;
   --pl-space-2: 4px;
@@ -145,15 +139,17 @@
   color-scheme: light;
 }
 
-/* Night (owner, 2026-11-03, after comparing five strengths in the gallery): lines, rings and marks are the brief's
+/* Night surfaces are a warm graphite, lifted from near-black (owner, 2026-11-10), so a dark bar on a light page is not
+   a black slab.
+   Night (owner, 2026-11-03, after comparing five strengths in the gallery): lines, rings and marks are the brief's
    pastels; a pill is a deep, saturated version of its hue lettered in white (4.5:1 or more), never dark lettering on a
    bright block. Butter can only carry white as an ochre. */
 @media (prefers-color-scheme: dark) {
   :host(:not([data-scheme="light"])) {
-    --pl-paper: #1c1c1e;
-    --pl-desk: #0f0f11;
-    --pl-paper-2: #26262a;
-    --pl-rule: #323236;
+    --pl-paper: #2e2d2b;
+    --pl-desk: #1f1e1d;
+    --pl-paper-2: #3a3936;
+    --pl-rule: #4a4844;
     --pl-ink: #f4f3ef;
     --pl-ink-2: #a8a6a0;
     --pl-ink-3: #5f5d58;
@@ -169,7 +165,7 @@
     --pl-sys: #2bb8ff;
     --pl-halo: rgb(10 10 12 / 0.85);
     --pl-unknown: #8f8d86;
-    --pl-shadow-card: 0 0 0 1px var(--pl-rule), 0 1px 1px rgb(0 0 0 / 0.3), 0 14px 32px -14px rgb(0 0 0 / 0.8);
+    --pl-shadow-card: 0 0 0 1px var(--pl-rule), 0 1px 1px rgb(0 0 0 / 0.18), 0 14px 32px -14px rgb(0 0 0 / 0.45);
     --pl-shadow-tag: 0 0 0 1px var(--pl-rule), 0 2px 8px -2px rgb(0 0 0 / 0.6);
     color-scheme: dark;
   }
@@ -177,10 +173,10 @@
 
 /* An explicit scheme wins over the OS, both ways. */
 :host([data-scheme="dark"]) {
-    --pl-paper: #1c1c1e;
-    --pl-desk: #0f0f11;
-    --pl-paper-2: #26262a;
-    --pl-rule: #323236;
+    --pl-paper: #2e2d2b;
+    --pl-desk: #1f1e1d;
+    --pl-paper-2: #3a3936;
+    --pl-rule: #4a4844;
     --pl-ink: #f4f3ef;
     --pl-ink-2: #a8a6a0;
     --pl-ink-3: #5f5d58;
@@ -196,7 +192,7 @@
     --pl-sys: #2bb8ff;
     --pl-halo: rgb(10 10 12 / 0.85);
     --pl-unknown: #8f8d86;
-    --pl-shadow-card: 0 0 0 1px var(--pl-rule), 0 1px 1px rgb(0 0 0 / 0.3), 0 14px 32px -14px rgb(0 0 0 / 0.8);
+    --pl-shadow-card: 0 0 0 1px var(--pl-rule), 0 1px 1px rgb(0 0 0 / 0.18), 0 14px 32px -14px rgb(0 0 0 / 0.45);
     --pl-shadow-tag: 0 0 0 1px var(--pl-rule), 0 2px 8px -2px rgb(0 0 0 / 0.6);
     color-scheme: dark;
 }

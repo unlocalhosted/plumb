@@ -1,40 +1,17 @@
-<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Icons · React Plumber</title>
-<style>
-  body { margin: 0; padding: 32px 16px 64px; background: #f6f1e6; font: 14px/1.5 system-ui, sans-serif; color: #1c1b19; }
-  body.dark { background: #17161a; color: #eeede9; }
-  header { max-width: 1040px; margin: 0 auto 20px; display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap; }
-  header h1 { font-size: 18px; margin: 0; }
-  header p { margin: 0; opacity: .7; font-size: 13px; max-width: 760px; }
-  header button { margin-left: auto; font: inherit; font-size: 12px; padding: 4px 10px; border-radius: 6px; border: 1px solid currentColor; background: none; color: inherit; cursor: pointer; }
-  #board { max-width: 1040px; margin: 0 auto; }
-</style>
-</head>
-<body>
-<header>
-  <h1>Icons</h1>
-  <p>A review sheet for the toy set. Solid, in colour, each one drawn for what the thing does. Point at one. Proposals live on this page only until they are approved.</p>
-  <button id="scheme" type="button">Dark</button>
-</header>
-<div id="board"></div>
-<script type="module">
-  import tokens from '../src/tokens.css?raw';
-  import { LANGUAGE_CSS } from '../src/language.js';
-  import { BLOCK_ICONS } from '../src/boxmodel.js';
+// The design site's page for icons: what it draws inside its host. The site (web/design/Part.jsx) gives it the host,
+// the overlay's token file as text, and the scheme; it draws with the overlay's own source.
+import { LANGUAGE_CSS } from '../../../overlay/src/language.js';
+import { BLOCK_ICONS } from '../../../overlay/src/boxmodel.js';
+import { TOY_DEFS, PROPS, PARTS } from '../../../overlay/src/toys.js';
 
-  const host = document.getElementById('board');
-  const root = host.attachShadow({ mode: 'open' });
-  host.dataset.scheme = 'light';
+export function mount(host, root, css) {
 
-  import { TOY_DEFS, PROPS, PARTS } from './toys.js';
+
   const toy = (i) => `<figure class="toy" tabindex="0"${i.fresh ? ' data-new' : ''}><span class="row"><i class="big">${i.icon}</i><i class="mid">${i.icon}</i><i class="sm">${i.icon}</i></span><figcaption>${i.name}${i.note ? `<small>${i.note}</small>` : ''}</figcaption></figure>`;
   const OLD = [['p', 'padding'], ['m', 'margin'], ['g', 'gap'], ['b', 'border'], ['r', 'corner'], ['line', 'type'], ['c', 'size']];
   const byName = (list, name) => list.find((i) => i.name === name);
 
-  root.innerHTML = `<style>${tokens}${LANGUAGE_CSS}
+  root.innerHTML = `<style>${css}${LANGUAGE_CSS}
     :host { display: block; font-family: var(--pl-sans); color: var(--pl-ink); }
     :host([data-scheme="dark"]) { --pl-paper: #2a2930; --pl-paper-2: #35343c; --pl-rule: #45444d; --pl-ink: #f4f3ef; }
     .band { margin: 28px 0 12px; font: 600 12px/1 var(--pl-sans); letter-spacing: .06em; text-transform: uppercase; color: var(--pl-ink-2); }
@@ -114,8 +91,4 @@
   ].map(([p, cls, on, why, where]) => `<span class="fb pl-card" tabindex="0" data-tip="${why} ${where}"><i data-tip="${p}">${byName(PROPS, p).icon}</i><code>${cls}</code><span class="in">on a</span><i data-tip="${on}">${byName(PARTS, on).icon}</i></span>`).join('')}</div></section>
   <div class="band">What the overlay has today</div>
   <section class="set"><h2>The grey line set</h2><p>The box icons the overlay uses now, for comparison. The toy set would take their place.</p><div class="was">${OLD.map(([k, name]) => `<span><i>${BLOCK_ICONS[k]}</i>${name}</span>`).join('')}</div></section>`;
-
-  document.getElementById('scheme').onclick = (e) => { const dark = document.body.classList.toggle('dark'); host.dataset.scheme = dark ? 'dark' : 'light'; e.target.textContent = dark ? 'Light' : 'Dark'; };
-</script>
-</body>
-</html>
+}

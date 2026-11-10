@@ -52,9 +52,9 @@ export const HISTORY_CSS = `
   .wt .what { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .wt .what code { font: var(--pl-card-code); }
   .wt[data-kind="error"] .what { color: var(--pl-off); white-space: normal; }
-  .wt button, .tt button { all: unset; cursor: pointer; padding: 6px var(--pl-space-4); border-radius: var(--pl-radius-row); font: var(--pl-text-label); color: var(--pl-ink); white-space: nowrap; }
-  .wt button { padding: 3px var(--pl-space-4); color: var(--pl-accent); }
-  :is(.wt, .tt) button:focus-visible { outline: 2px solid var(--pl-accent); outline-offset: 1px; }
+  .wt button, .tt button { all: unset; cursor: pointer; padding: 6px var(--pl-space-4); border-radius: var(--pl-radius-row); font: var(--pl-card-label); color: var(--pl-ink); white-space: nowrap; }
+  .wt button { padding: 3px var(--pl-space-4); color: var(--pl-instrument); }
+  :is(.wt, .tt) button:focus-visible { outline: 2px solid var(--pl-instrument); outline-offset: 1px; }
   :is(.wt, .tt) button:disabled { color: var(--pl-ink-3); cursor: default; }
   @media (hover: hover) and (pointer: fine) { :is(.wt, .tt) button:not(:disabled):hover { background: var(--pl-paper-2); } }
 
@@ -74,10 +74,10 @@ export const HISTORY_CSS = `
   .tt .tt-track { position: relative; flex: 0 1 auto; min-width: 0; overflow-x: auto; overflow-y: visible; scrollbar-width: none; outline: none; padding-top: 6px; touch-action: pan-x; cursor: default; }
   .tt .tt-track::-webkit-scrollbar { display: none; }
   /* focus is shown where the keys act: a ring around the playhead's knob */
-  .tt .tt-track:focus-visible .tt-head::before { box-shadow: 0 0 0 2px var(--pl-paper), 0 0 0 4px var(--pl-accent); }
+  .tt .tt-track:focus-visible .tt-head::before { box-shadow: 0 0 0 2px var(--pl-paper), 0 0 0 4px var(--pl-instrument); }
   .tt .tt-steps { position: relative; display: flex; align-items: flex-end; gap: var(--pl-space-6); padding: 0 var(--pl-space-2); width: max-content; }
   .tt .tt-seg { display: flex; flex-direction: column; gap: var(--pl-space-3); }
-  .tt .tt-seg .tt-name { font: var(--pl-text-label); color: var(--pl-ink-2); white-space: nowrap; max-width: 160px; overflow: hidden; text-overflow: ellipsis; }
+  .tt .tt-seg .tt-name { font: var(--pl-card-label); color: var(--pl-ink-2); white-space: nowrap; max-width: 160px; overflow: hidden; text-overflow: ellipsis; }
   .tt .tt-ticks { display: flex; align-items: flex-end; gap: 6px; height: 20px; padding: 0 2px 3px; border-bottom: 1px solid var(--pl-rule); }
   .tt .tt-tick { flex: none; width: 2px; height: 14px; border-radius: 1px; background: var(--pl-ink); transform-origin: bottom;
     transition: height var(--pl-dur-feedback) var(--pl-ease-out), background-color var(--pl-dur-feedback), box-shadow var(--pl-dur-feedback); }
@@ -87,18 +87,18 @@ export const HISTORY_CSS = `
   .tt .tt-tick[data-undo]::before { content: ""; position: absolute; top: -3px; left: -2px; width: 3px; height: 2px; border-top: 1px solid currentColor; border-left: 1px solid currentColor; color: var(--pl-ink); }
   .tt .tt-tick[data-ahead] { width: 4px; background: transparent; box-shadow: inset 0 0 0 1px var(--pl-instrument); }
   .tt .tt-tick[aria-current="true"] { height: 18px; }
-  .tt .tt-tick[aria-current="true"]:not([data-state="undone"]):not([data-state="changed"]) { background: var(--pl-accent); }
-  .tt .tt-tick[aria-current="true"][data-state="undone"] { box-shadow: inset 0 0 0 1px var(--pl-accent); }
-  .tt .tt-tick[aria-current="true"][data-state="changed"] { box-shadow: 0 0 0 1px var(--pl-accent); }
+  .tt .tt-tick[aria-current="true"]:not([data-state="undone"]):not([data-state="changed"]) { background: var(--pl-instrument); }
+  .tt .tt-tick[aria-current="true"][data-state="undone"] { box-shadow: inset 0 0 0 1px var(--pl-instrument); }
+  .tt .tt-tick[aria-current="true"][data-state="changed"] { box-shadow: 0 0 0 1px var(--pl-instrument); }
   .tt .tt-tick.ghost { background: var(--pl-paper-2); animation: tt-ghost 1.2s ease-in-out infinite alternate; }
   .tt .tt-tick.busy { animation: tt-ghost 600ms ease-in-out infinite alternate; }
   .tt .tt-tick.shake { animation: tt-shake 160ms ease-in-out 2; }
   .tt .tt-tick.enter { animation: tt-enter 280ms var(--pl-spring-pop) both; }
   @media (hover: hover) and (pointer: fine) { .tt .tt-tick:not(.ghost):hover { height: 16px; } }
-  .tt .tt-head { position: absolute; left: 0; bottom: -4px; width: 1px; height: 26px; background: var(--pl-accent); box-shadow: 0 0 0 1px var(--pl-halo); pointer-events: none;
+  .tt .tt-head { position: absolute; left: 0; bottom: -4px; width: 1px; height: 26px; background: var(--pl-instrument); box-shadow: 0 0 0 1px var(--pl-halo); pointer-events: none;
     transition: translate var(--pl-dur-travel) var(--pl-ease-out); }
-  .tt .tt-head::before { content: ""; position: absolute; top: -4px; left: -4px; width: 9px; height: 9px; border-radius: 50%; background: var(--pl-accent); box-shadow: 0 0 0 2px var(--pl-paper); }
-  .tt .tt-now { flex: none; margin-inline-end: auto; padding-bottom: 3px; font: var(--pl-text-label); color: var(--pl-ink-3); }
+  .tt .tt-head::before { content: ""; position: absolute; top: -4px; left: -4px; width: 9px; height: 9px; border-radius: 50%; background: var(--pl-instrument); box-shadow: 0 0 0 2px var(--pl-paper); }
+  .tt .tt-now { flex: none; margin-inline-end: auto; padding-bottom: 3px; font: var(--pl-card-label); color: var(--pl-ink-3); }
   .tt .tt-pill { position: absolute; bottom: calc(100% + var(--pl-space-4)); left: 0; max-width: calc(100vw - 2 * var(--pl-space-6)); box-sizing: border-box;
     padding: 4px var(--pl-space-4); border-radius: var(--pl-radius-tag); background: var(--pl-paper); box-shadow: var(--pl-shadow-tag);
     font: var(--pl-card-code); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: none;

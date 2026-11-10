@@ -45,11 +45,11 @@ export const MARKS_CSS = `
   .bp .k-off { color: var(--pl-off); stroke: var(--pl-off); }
   .bp .k-soft { color: var(--pl-soft); stroke: var(--pl-soft); }
   .bp .k-debt { color: var(--pl-ink-3); stroke: var(--pl-ink-3); }
-  .bp .k-current { color: var(--pl-accent); stroke: var(--pl-accent); }
+  .bp .k-current { color: var(--pl-instrument); stroke: var(--pl-instrument); }
   .bp .k-picked { color: var(--pl-on); stroke: var(--pl-on); }
   .bp .outlines rect { stroke-width: 1.5px; }
   .bp .outlines rect.inner { stroke-width: 1px; }
-  .bp .light rect { fill: none; stroke: var(--pl-accent); stroke-width: 2px; }
+  .bp .light rect { fill: none; stroke: var(--pl-instrument); stroke-width: 2px; }
   .bp svg.under { pointer-events: none; }
   .bp .labels { position: absolute; inset: 0; }
   .bp svg[role="group"] { pointer-events: none; }
@@ -65,7 +65,7 @@ export const MARKS_CSS = `
     opacity: 0; transition: opacity var(--pl-dur-feedback) ease-out; }
   .bp .bp-hint[data-on] { opacity: 1; }
   .bp .bp-hint .near { color: var(--pl-ink-2); display: block; }
-  .bp .bp-hint .act { color: var(--pl-accent); display: block; font: var(--pl-text-label); margin-top: var(--pl-space-1); }
+  .bp .bp-hint .act { color: var(--pl-instrument); display: block; font: var(--pl-card-label); margin-top: var(--pl-space-1); }
   /* registration: heat where the page is off, no boxes at rest */
   .bp .heat .warm rect { fill: var(--pl-heat); }
   .bp .heat .dots rect { fill: url(#pl-dot); }
@@ -82,7 +82,7 @@ export const MARKS_CSS = `
   .bp .hit { pointer-events: auto; cursor: pointer; fill: transparent; outline: none; }
   /* Alt held: the pointer reaches the page through the drawings (an Alt+click or Alt+scroll is aimed at the element) */
   :host([data-armed]) .bp, :host([data-armed]) .bp * { pointer-events: none !important; }
-  .bp .hit:focus-visible { stroke: var(--pl-accent); stroke-width: 2px; }
+  .bp .hit:focus-visible { stroke: var(--pl-instrument); stroke-width: 2px; }
   .bp .hit[data-under], .bp svg[data-through] .hit { pointer-events: none; }
   /* Space held: the page is used, so a glow lets the click through to its element like the glass does */
   :host([data-bp-pass]) .bp .hit { pointer-events: none; cursor: inherit; }

@@ -32,7 +32,7 @@ import { esc } from './choices.js';
 
 export const PRIMITIVES_CSS = `
   .ep-row { display: grid; grid-template-columns: 76px 1fr; align-items: center; column-gap: var(--pl-space-4); row-gap: var(--pl-space-1); padding: var(--pl-space-2) 0; }
-  .ep-row > .label { font: var(--pl-text-label); letter-spacing: var(--pl-tracking-label); color: var(--pl-ink-2); }
+  .ep-row > .label { font: var(--pl-card-label); letter-spacing: var(--pl-tracking-label); color: var(--pl-ink-2); }
   .ep-row > .note { grid-column: 2; font: var(--pl-card-meta); color: var(--pl-ink-2); }
   .ep-row > .note.err { color: var(--pl-off); }
   .ep-row > .note code { font: var(--pl-card-code); color: var(--pl-ink); }
@@ -42,13 +42,13 @@ export const PRIMITIVES_CSS = `
     border-radius: var(--pl-radius-tag); font: 500 11px/1 var(--pl-mono); color: var(--pl-ink-2); cursor: pointer;
     transition: background var(--pl-dur-feedback) ease-out, color var(--pl-dur-feedback) ease-out, scale var(--pl-dur-feedback) ease-out, box-shadow var(--pl-dur-feedback) ease-out; }
   @media (hover: hover) and (pointer: fine) { .ep .opt:hover { background: var(--pl-paper-2); color: var(--pl-ink); } }
-  .ep .opt:focus-visible { box-shadow: 0 0 0 2px var(--pl-accent); }
+  .ep .opt:focus-visible { box-shadow: 0 0 0 2px var(--pl-instrument); }
   .ep .opt:active { scale: 0.96; }
   .ep .opt[aria-checked="true"] { color: var(--pl-on-accent); }
-  .ep .opt[data-picked] { box-shadow: inset 0 0 0 1.5px var(--pl-accent); color: var(--pl-ink); }
-  .ep .opt[data-picked]::after { content: ''; position: absolute; bottom: -5px; left: 50%; width: 4px; height: 4px; margin-left: -2px; border-radius: 50%; background: var(--pl-accent); }
+  .ep .opt[data-picked] { box-shadow: inset 0 0 0 1.5px var(--pl-instrument); color: var(--pl-ink); }
+  .ep .opt[data-picked]::after { content: ''; position: absolute; bottom: -5px; left: 50%; width: 4px; height: 4px; margin-left: -2px; border-radius: 50%; background: var(--pl-instrument); }
   /* the current fill: one element that slides to whichever step is current */
-  .ep .fill { position: absolute; z-index: 0; top: 0; height: 26px; border-radius: var(--pl-radius-tag); background: var(--pl-accent);
+  .ep .fill { position: absolute; z-index: 0; top: 0; height: 26px; border-radius: var(--pl-radius-tag); background: var(--pl-instrument);
     transition: translate var(--pl-dur-travel) var(--pl-spring), width var(--pl-dur-travel) var(--pl-spring); }
   .ep .fill[hidden] { display: none; }
   /* drift: the off-scale value, a dashed notch between the steps it falls between */
@@ -91,7 +91,7 @@ export const PRIMITIVES_CSS = `
   /* swatches */
   .ep.sw .opt { width: 26px; min-width: 26px; padding: 0; }
   .ep.sw .chip { width: 18px; height: 18px; border-radius: 5px; box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--pl-ink) 22%, transparent); }
-  .ep.sw .opt[aria-checked="true"] .chip { box-shadow: 0 0 0 2px var(--pl-paper), 0 0 0 3.5px var(--pl-accent); }
+  .ep.sw .opt[aria-checked="true"] .chip { box-shadow: 0 0 0 2px var(--pl-paper), 0 0 0 3.5px var(--pl-instrument); }
   .ep.sw .fill { display: none; }
   .ep.sw .notch { width: 26px; padding: 0; }
   .ep.sw .notch .chip { width: 14px; height: 14px; border-radius: 4px; }
@@ -103,7 +103,7 @@ export const PRIMITIVES_CSS = `
 
   /* segments: glyph and word */
   .ep.seg { background: var(--pl-paper-2); border-radius: calc(var(--pl-radius-tag) + 2px); padding: 2px; width: max-content; }
-  .ep.seg .opt { gap: var(--pl-space-2); grid-auto-flow: column; font: var(--pl-text-label); }
+  .ep.seg .opt { gap: var(--pl-space-2); grid-auto-flow: column; font: var(--pl-card-label); }
   .ep.seg .fill { top: 2px; background: var(--pl-paper); box-shadow: var(--pl-shadow-tag); }
   .ep.seg .opt[aria-checked="true"] { color: var(--pl-ink); }
   .ep.seg svg { width: 12px; height: 12px; }
@@ -112,7 +112,7 @@ export const PRIMITIVES_CSS = `
   .ep.al { display: grid; grid-template-columns: repeat(3, 22px); gap: 2px; padding: 2px; width: max-content; background: var(--pl-paper-2); border-radius: var(--pl-radius-row); }
   .ep.al .opt { width: 22px; min-width: 22px; height: 22px; padding: 0; }
   .ep.al .opt::before { content: ''; width: 4px; height: 4px; border-radius: 50%; background: var(--pl-ink-3); }
-  .ep.al .opt[aria-checked="true"] { background: var(--pl-accent); }
+  .ep.al .opt[aria-checked="true"] { background: var(--pl-instrument); }
   .ep.al .opt[aria-checked="true"]::before { width: 10px; height: 4px; border-radius: 2px; background: var(--pl-on-accent); }
   .ep.al .fill { display: none; }
 
@@ -123,7 +123,7 @@ export const PRIMITIVES_CSS = `
   @media (hover: hover) and (pointer: fine) { .ep.sh .opt:hover { background: #e2dfd8; } }
   .ep.sh .fill { display: none; }
   .ep.sh .tile { width: 22px; height: 15px; border-radius: 3px; background: #fff; }
-  .ep.sh .opt[aria-checked="true"] { background: #fff0; box-shadow: 0 0 0 1.5px var(--pl-accent); }
+  .ep.sh .opt[aria-checked="true"] { background: #fff0; box-shadow: 0 0 0 1.5px var(--pl-instrument); }
 
   @media (prefers-reduced-motion: reduce) { .ep .opt, .ep .fill { transition: none; } }
 `;

@@ -1,36 +1,11 @@
-<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Buttons · The kit · React Plumber</title>
-<style>
-  body { margin: 0; padding: 32px 16px 64px; background: #f6f1e6; font: 14px/1.5 system-ui, sans-serif; color: #1c1b19; }
-  body.dark { background: #17161a; color: #eeede9; }
-  header { max-width: 1040px; margin: 0 auto 20px; display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap; }
-  header a { font-size: 13px; color: inherit; opacity: .6; }
-  header h1 { font-size: 18px; margin: 0; }
-  header p { margin: 0; opacity: .7; font-size: 13px; max-width: 700px; }
-  header button { margin-left: auto; font: inherit; font-size: 12px; padding: 4px 10px; border-radius: 6px; border: 1px solid currentColor; background: none; color: inherit; cursor: pointer; }
-  #board { max-width: 1040px; margin: 0 auto; }
-</style>
-</head>
-<body>
-<header>
-  <a href="/kit.html">← The kit</a>
-  <h1>Buttons</h1>
-  <p>What you press. A button is a toy key: a solid top on a darker base, and pressing it pushes the top down onto the base. Everything on this page is live: point, press, tab.</p>
-  <button id="scheme" type="button">Dark</button>
-</header>
-<div id="board"></div>
-<script type="module">
-  import tokens from '../src/tokens.css?raw';
-  import { LANGUAGE_CSS } from '../src/language.js';
-  import { TOY_DEFS, toyOf } from './toys.js';
-  import { BUTTON_CSS, button as b } from './kit-parts.js';
+// The design site's page for buttons: what it draws inside its host. The site (web/design/Part.jsx) gives it the host,
+// the overlay's token file as text, and the scheme; it draws with the overlay's own source.
+import { LANGUAGE_CSS } from '../../../overlay/src/language.js';
+import { TOY_DEFS, toyOf } from '../../../overlay/src/toys.js';
+import { BUTTON_CSS, button as b } from '../../../overlay/src/kit.js';
 
-  const host = document.getElementById('board');
-  const root = host.attachShadow({ mode: 'open' });
-  host.dataset.scheme = 'light';
+export function mount(host, root, css) {
+
 
   // toys used on buttons (from the icon sheet): on a solid button they are cut out in white; on a quiet one, in colour
   const svg = (body) => `<svg viewBox="0 0 24 24" aria-hidden="true">${body}</svg>`;
@@ -43,7 +18,7 @@
   const cell = (name, html, note = '') => `<div class="cell"><div class="stage">${html}</div><b>${name}</b>${note ? `<small>${note}</small>` : ''}</div>`;
   const set = (title, why, body) => `<section class="set"><h2>${title}</h2>${why ? `<p>${why}</p>` : ''}<div class="cells">${body}</div></section>`;
 
-  root.innerHTML = `<style>${tokens}${LANGUAGE_CSS}
+  root.innerHTML = `<style>${css}${LANGUAGE_CSS}
     :host { display: block; font-family: var(--pl-sans); color: var(--pl-ink); }
     :host([data-scheme="dark"]) { --pl-paper: #2a2930; --pl-paper-2: #35343c; --pl-rule: #45444d; --pl-ink: #f4f3ef; }
 
@@ -141,12 +116,8 @@
   }
   go.onclick = run;
   const toggle = root.getElementById('toggle');
-  const css = document.createElement('style');
-  css.textContent = `.tb[aria-pressed="true"] { --lift: 1px; --hue: var(--pl-sky-soft); --base: var(--pl-sky); --on: var(--pl-sky-ink); } .tb[aria-pressed="true"] .top { box-shadow: inset 0 0 0 1.5px var(--pl-sky); }`;
-  root.append(css);
+  const pressed = document.createElement('style');
+  pressed.textContent = `.tb[aria-pressed="true"] { --lift: 1px; --hue: var(--pl-sky-soft); --base: var(--pl-sky); --on: var(--pl-sky-ink); } .tb[aria-pressed="true"] .top { box-shadow: inset 0 0 0 1.5px var(--pl-sky); }`;
+  root.append(pressed);
   toggle.onclick = () => { const on = toggle.getAttribute('aria-pressed') !== 'true'; toggle.setAttribute('aria-pressed', String(on)); label(toggle, on ? 'Selecting' : 'Select'); };
-
-  document.getElementById('scheme').onclick = (e) => { const dark = document.body.classList.toggle('dark'); host.dataset.scheme = dark ? 'dark' : 'light'; e.target.textContent = dark ? 'Light' : 'Dark'; };
-</script>
-</body>
-</html>
+}

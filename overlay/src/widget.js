@@ -76,10 +76,10 @@ const pathTo = element => {
   return ['html', ...parts].join(' > ');
 };
 const css = `
-  :host { all: initial; position: fixed; inset: 0; pointer-events: none; z-index: var(--pl-z); font: var(--pl-text-row); color: var(--pl-ink); }
+  :host { all: initial; position: fixed; inset: 0; pointer-events: none; z-index: var(--pl-z); font: var(--pl-card-body); color: var(--pl-ink); }
   * { box-sizing: border-box; }
   [hidden] { display: none !important; }
-  code { font: var(--pl-text-reading); }
+  code { font: var(--pl-card-code); }
 
   /* the dock: what Plumb is doing, and Select, bottom right; text cross-fades, size snaps, nothing animates width */
   /* the dock never sits on the page's own controls: when something to press is under its corner it, and everything
@@ -102,13 +102,13 @@ const css = `
   .dock { position: fixed; inset-inline-end: var(--pl-space-6); inset-block-end: var(--pl-space-6); pointer-events: auto;
           display: flex; align-items: center; gap: var(--pl-space-3); height: var(--pl-tag-h); padding-inline: var(--pl-space-4) var(--pl-space-1);
           background: var(--pl-paper); color: var(--pl-ink-2); border-radius: var(--pl-radius-card); box-shadow: var(--pl-shadow-tag);
-          font: var(--pl-text-label); letter-spacing: var(--pl-tracking-label); white-space: nowrap;
+          font: var(--pl-card-label); letter-spacing: var(--pl-tracking-label); white-space: nowrap;
           transition: opacity var(--pl-dur-card) var(--pl-ease-out), transform var(--pl-dur-card) var(--pl-ease-out); }
   .dock[data-enter] { opacity: 0; transform: translateY(4px); }
   .dock .bob { display: grid; place-items: center; width: 12px; height: 14px; color: var(--pl-ink-2); transition: color var(--pl-dur-feedback) var(--pl-ease-out); }
   .dock .bob svg { width: 12px; height: 14px; }
   .dock .say { transition: opacity var(--pl-dur-feedback) var(--pl-ease-out); }
-  .dock .say .count { font: var(--pl-text-reading); font-variant-numeric: tabular-nums; color: var(--pl-ink-3); }
+  .dock .say .count { font: var(--pl-card-code); font-variant-numeric: tabular-nums; color: var(--pl-ink-3); }
   .dock[data-fold] .say { display: none; }
   @media (hover: hover) and (pointer: fine) { .dock[data-fold]:hover .say { display: inline; } }
   .dock[data-fold]:focus-within .say { display: inline; }
@@ -118,7 +118,7 @@ const css = `
   @media (hover: hover) and (pointer: fine) { .dock :is(.pick, .bp-toggle, .list, .help, .history):not(:disabled):hover { color: var(--pl-ink); background: var(--pl-paper-2); } }
   .dock :is(.pick, .bp-toggle, .list, .help, .history)[aria-pressed="true"] { color: var(--pl-instrument); background: var(--pl-paper-2); }
   .dock :is(.pick, .bp-toggle, .list, .help, .history):disabled { color: var(--pl-ink-3); cursor: default; }
-  .dock .act { all: unset; display: inline-flex; align-items: center; height: 18px; padding: 0 7px; border-radius: var(--pl-radius-tag); font: var(--pl-text-label); letter-spacing: var(--pl-tracking-label); color: var(--pl-ink-2); cursor: pointer;
+  .dock .act { all: unset; display: inline-flex; align-items: center; height: 18px; padding: 0 7px; border-radius: var(--pl-radius-tag); font: var(--pl-card-label); letter-spacing: var(--pl-tracking-label); color: var(--pl-ink-2); cursor: pointer;
                transition: background var(--pl-dur-feedback), color var(--pl-dur-feedback); }
   .dock .act.write { color: var(--pl-on-action); background: var(--pl-action-soft); }
   @media (hover: hover) and (pointer: fine) { .dock .act.undo:not(:disabled):hover { color: var(--pl-ink); background: var(--pl-paper-2); } .dock .act.write:not(:disabled):hover { background: color-mix(in oklab, var(--pl-action-soft) 85%, var(--pl-action)); } }
@@ -140,16 +140,16 @@ const css = `
 
   /* the hover tag: what the pointer is on, before anything is pinned */
   .tag { position: fixed; left: 0; top: 0; height: var(--pl-tag-h); display: flex; align-items: center; gap: 6px; padding-inline: 8px; white-space: nowrap;
-         background: var(--pl-paper); border-radius: var(--pl-radius-tag); box-shadow: var(--pl-shadow-tag); font: var(--pl-text-label);
+         background: var(--pl-paper); border-radius: var(--pl-radius-tag); box-shadow: var(--pl-shadow-tag); font: var(--pl-card-label);
          transition: transform var(--pl-dur-travel) var(--pl-spring), opacity var(--pl-dur-feedback) var(--pl-ease-out); }
   .tag .el, .top .el { font-weight: 600; color: var(--pl-ink); }
   .tag .who, .top .who { color: var(--pl-ink-2); font-weight: 500; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
   .tag .n, .top .n, .top .el, .top .zoom, .top .close { flex: none; }
-  .tag .n, .top .n { font: var(--pl-text-reading); font-variant-numeric: tabular-nums; color: var(--pl-off); }
+  .tag .n, .top .n { font: var(--pl-card-code); font-variant-numeric: tabular-nums; color: var(--pl-off); }
   .n.ok { color: var(--pl-on); } .n.quiet { color: var(--pl-ink-2); }
   .tag .path { display: inline-flex; align-items: center; gap: 4px; color: var(--pl-ink-2); font-weight: 500; }
   .tag .path .here { color: var(--pl-ink); font-weight: 600; }
-  .tag .path .cmp { color: var(--pl-accent); }
+  .tag .path .cmp { color: var(--pl-instrument); }
   .tag .path .sep, .tag .path .more { color: var(--pl-ink-3); }
 
   /* the lit place on the real element: hatching over exactly the region the active mark is about */
@@ -174,7 +174,7 @@ const css = `
   .card :focus-visible { outline: 2px solid var(--pl-instrument); outline-offset: 2px; }
 
   /* head: one line, as before: the element, its count, where it's written, the drawing scale, close */
-  .top { display: flex; align-items: center; gap: 6px; height: 32px; padding-inline: 12px 6px; border-bottom: 1px solid var(--pl-rule); font: var(--pl-text-label); white-space: nowrap; }
+  .top { display: flex; align-items: center; gap: 6px; height: 32px; padding-inline: 12px 6px; border-bottom: 1px solid var(--pl-rule); font: var(--pl-card-label); white-space: nowrap; }
   .top .el { font-weight: 600; color: var(--pl-ink); }
   .top .file { all: unset; flex: 0 1 auto; min-width: 0; font: var(--pl-card-meta); color: var(--pl-ink-2); margin-inline-start: auto; padding-inline-start: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: copy; }
   @media (hover: hover) and (pointer: fine) { .top .file:hover { color: var(--pl-ink); } }
@@ -182,7 +182,7 @@ const css = `
   .top .n.won { animation: pl-won 600ms var(--pl-ease-out); }
   @keyframes pl-won { 0% { transform: scale(.9); } 40% { transform: scale(1.1); } 100% { transform: scale(1); } }
   .top .zoom { display: flex; gap: 1px; margin-inline-start: 6px; }
-  .top button.z { all: unset; font: var(--pl-text-reading); font-variant-numeric: tabular-nums; color: var(--pl-ink-2); padding: 0 4px; height: 18px; line-height: 18px; border-radius: 3px; cursor: pointer; }
+  .top button.z { all: unset; font: var(--pl-card-code); font-variant-numeric: tabular-nums; color: var(--pl-ink-2); padding: 0 4px; height: 18px; line-height: 18px; border-radius: 3px; cursor: pointer; }
   .top button.z[aria-pressed="true"] { color: var(--pl-instrument); background: var(--pl-paper-2); }
   .top button.z:disabled { color: var(--pl-ink-3); cursor: default; }
   .close { all: unset; display: grid; place-items: center; width: 24px; height: 24px; border-radius: 5px; color: var(--pl-ink-2); cursor: pointer; }
@@ -205,13 +205,13 @@ const css = `
   .txt .tk { flex: none; display: grid; place-items: center; width: 16px; height: 16px; border-radius: var(--pl-radius-tag);
              background: var(--pl-paper-2); color: var(--pl-ink-2); font: 600 10.5px/1 Georgia, serif; }
   .txt .run { all: unset; display: inline-flex; align-items: center; gap: 5px; min-width: 0; max-width: 100%; padding: 1px 6px; border-radius: var(--pl-radius-tag);
-              font: var(--pl-text-reading); color: var(--pl-ink); box-shadow: inset 0 0 0 1px var(--pl-rule); cursor: text; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+              font: var(--pl-card-code); color: var(--pl-ink); box-shadow: inset 0 0 0 1px var(--pl-rule); cursor: text; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
               transition: box-shadow var(--pl-dur-feedback) var(--pl-ease-out); }
   .txt .run:focus-visible { outline: 2px solid var(--pl-instrument); outline-offset: 2px; }
   @media (hover: hover) and (pointer: fine) { .txt .run:hover { box-shadow: inset 0 0 0 1px var(--pl-instrument); } }
   .txt .run .was { color: var(--pl-ink-2); text-decoration-thickness: 1px; }
   .txt .run .arrow { color: var(--pl-ink-2); }
-  .txt .tr { font: var(--pl-text-label); color: var(--pl-ink-2); min-width: 0; }
+  .txt .tr { font: var(--pl-card-label); color: var(--pl-ink-2); min-width: 0; }
   .txt .tr.hint { margin-inline-start: auto; }
   /* the editor laid over the words on the page: the page shows through, re-flowing as you type */
   .tedit { all: unset; position: fixed; box-sizing: border-box; pointer-events: auto; padding: 0 2px; color: transparent; caret-color: var(--pl-instrument);
@@ -257,7 +257,7 @@ const css = `
   .read .t > .g.soft { color: var(--pl-soft-text); } .read .t > .g.ok { color: var(--pl-on); } .read .t > .g.quiet { color: var(--pl-ink-2); }
   .read .t code { font: var(--pl-card-code); font-size: 12.5px; }
   .read .t .title { flex: 1; min-width: 0; }
-  .ledger { flex: none; margin-top: 1px; padding: 2px 6px; border-radius: 4px; font: var(--pl-text-label); letter-spacing: .04em; text-transform: uppercase; }
+  .ledger { flex: none; margin-top: 1px; padding: 2px 6px; border-radius: 4px; font: var(--pl-card-label); letter-spacing: .04em; text-transform: uppercase; }
   .ledger.new { color: var(--pl-off); background: color-mix(in oklab, var(--pl-off) 10%, transparent); }
   .ledger.debt { color: var(--pl-ink-2); background: var(--pl-paper-2); }
   .ledger.exception { color: var(--pl-on); background: color-mix(in oklab, var(--pl-on) 10%, transparent); }
@@ -275,7 +275,7 @@ const css = `
 
   /* the ask: what to do with the choices */
   .read .edit:empty { display: none; }
-  .read .edit { display: flex; align-items: baseline; gap: 8px; font: var(--pl-text-label); letter-spacing: .02em; color: var(--pl-ink-2); }
+  .read .edit { display: flex; align-items: baseline; gap: 8px; font: var(--pl-card-label); letter-spacing: .02em; color: var(--pl-ink-2); }
   .read .edit .hint { flex: 1; text-transform: none; }
   .read .edit code { font: var(--pl-card-meta); color: var(--pl-ink); overflow-wrap: anywhere; }
 

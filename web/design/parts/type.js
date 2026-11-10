@@ -1,25 +1,11 @@
-<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Type · The kit · React Plumber</title>
-<style>
-  body { margin: 0; padding: 32px 16px 80px; background: #f6f1e6; font: 14px/1.5 system-ui, sans-serif; color: #1c1b19; transition: background-color 200ms; }
-  body.dark { background: #17161a; color: #eeede9; }
-  #board { max-width: 960px; margin: 0 auto; }
-</style>
-</head>
-<body>
-<div id="board"></div>
-<script type="module">
-  import css from '../src/tokens.css?raw';
-  import { LANGUAGE_CSS } from '../src/language.js';
-  import { readTokens, probe } from './kit-tokens.js';
-  import { BUTTON_CSS, button } from './kit-parts.js';
+// The design site's page for type: what it draws inside its host. The site (web/design/Part.jsx) gives it the host,
+// the overlay's token file as text, and the scheme; it draws with the overlay's own source.
+import { LANGUAGE_CSS } from '../../../overlay/src/language.js';
+import { readTokens, probe } from '../tokens.js';
+import { BUTTON_CSS, button } from '../../../overlay/src/kit.js';
 
-  const host = document.getElementById('board');
-  const root = host.attachShadow({ mode: 'open' });
-  host.dataset.scheme = 'light';
+export function mount(host, root, css) {
+
   const tokens = readTokens(css), by = new Map(tokens.map((t) => [t.name, t]));
   const value = probe(css, 'light');
 
@@ -102,7 +88,7 @@
     .open b { color: var(--pl-ink); font-weight: 600; }
     @media (max-width: 720px) { .style { grid-template-columns: 1fr; gap: 10px; } .tr { grid-template-columns: 1fr 1fr; } .tr .for { display: none; } }
   </style>
-  <a class="back" href="/kit.html">← The kit</a>
+  <a class="back" href="/design">← The kit</a>
   <div class="head"><h1>Type</h1>${button('Dark', { cls: 'sm quiet', attrs: 'id="scheme"' })}</div>
   <p class="lede">Twelve styles in two families: five for anything the size of a card, seven for a page. System faces only, so the overlay never fetches a font. Every style here is read from the token file itself.</p>
 
@@ -133,11 +119,9 @@
     <li><b>The toy language hasn’t reached type yet.</b> The icons and buttons are rounder and bolder than these styles. Whether headings get heavier, or a rounder face, is not decided.</li>
   </ul>`;
 
-  const flip = () => { const dark = document.body.classList.toggle('dark'); host.dataset.scheme = dark ? 'dark' : 'light'; root.querySelector('#scheme .lb').textContent = dark ? 'Light' : 'Dark'; };
+  const flip = () => host.dispatchEvent(new CustomEvent('kit:flip', { bubbles: true }));
   root.getElementById('scheme').onclick = flip;
   const copy = (el) => { navigator.clipboard?.writeText(el.textContent).catch(() => {}); el.setAttribute('data-copied', ''); setTimeout(() => el.removeAttribute('data-copied'), 900); };
   root.addEventListener('click', (e) => { const t = e.target.closest('.tok'); if (t) copy(t); });
   root.addEventListener('keydown', (e) => { const t = e.target.closest?.('.tok'); if (t && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); copy(t); } });
-</script>
-</body>
-</html>
+}

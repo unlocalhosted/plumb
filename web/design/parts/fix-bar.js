@@ -1,41 +1,18 @@
-<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Fix bar · React Plumber</title>
-<style>
-  body { margin: 0; padding: 32px 16px 64px; background: #ecebe7; font: 14px/1.5 system-ui, sans-serif; color: #1c1b19; }
-  body.dark { background: #0f0f11; color: #eeede9; }
-  header { max-width: 1040px; margin: 0 auto 20px; display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap; }
-  header h1 { font-size: 18px; margin: 0; }
-  header p { margin: 0; opacity: .7; font-size: 13px; max-width: 720px; }
-  header button { margin-left: auto; font: inherit; font-size: 12px; padding: 4px 10px; border-radius: 6px; border: 1px solid currentColor; background: none; color: inherit; cursor: pointer; }
-  #board { max-width: 1040px; margin: 0 auto; }
-</style>
-</head>
-<body>
-<header>
-  <h1>Fix bar</h1>
-  <p>A comp, not the product. The cause in hand is one line at the bottom; the choice is made on the element. The first one is live: click a step or press ↑ ↓, then Enter.</p>
-  <button id="scheme" type="button">Dark</button>
-</header>
-<div id="board"></div>
-<script type="module">
+// The design site's page for fix-bar: what it draws inside its host. The site (web/design/Part.jsx) gives it the host,
+// the overlay's token file as text, and the scheme; it draws with the overlay's own source.
+import { LANGUAGE_CSS } from '../../../overlay/src/language.js';
+import { BLOCK_ICONS } from '../../../overlay/src/boxmodel.js';
+import { PRIMITIVES_CSS, stepper, radius, bind, place } from '../../../overlay/src/editor-primitives.js';
+import { SHOW_CSS, chipsHtml, roll } from '../../../overlay/src/show.js';
+import { SCALE_CSS, places } from '../../../overlay/src/scale-marks.js';
+import { TOY_DEFS, toyOf } from '../../../overlay/src/toys.js';
+import { BUTTON_CSS, button } from '../../../overlay/src/kit.js';
+
+export function mount(host, root, css) {
+
   // Every piece here is the overlay's own: tokens, pills, tags and actions (language.js), the property icons
   // (boxmodel.js), the step controls (editor-primitives.js), the value chip that rolls (show.js), the place marks
   // (scale-marks.js). Nothing is drawn for this page alone except how they are put together.
-  import tokens from '../src/tokens.css?raw';
-  import { LANGUAGE_CSS } from '../src/language.js';
-  import { BLOCK_ICONS } from '../src/boxmodel.js';
-  import { PRIMITIVES_CSS, stepper, radius, bind, place } from '../src/editor-primitives.js';
-  import { SHOW_CSS, chipsHtml, roll } from '../src/show.js';
-  import { SCALE_CSS, places } from '../src/scale-marks.js';
-  import { TOY_DEFS, toyOf } from './toys.js';
-  import { BUTTON_CSS, button } from './kit-parts.js';
-
-  const host = document.getElementById('board');
-  const root = host.attachShadow({ mode: 'open' });
-  host.dataset.scheme = 'light'; // the comp opens light, whatever the system is; the button flips it
   const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const radii = [['tag', 6], ['control', 8], ['card', 12]].map(([token, n]) => ({ token, n, label: `${n}`, value: `${n}px` }));
   const spacing = ['s1', 's2', 's3', 's4', 's6'].map((t, i) => ({ token: t, n: [4, 8, 12, 16, 24][i], label: `${[4, 8, 12, 16, 24][i]}`, value: `${[4, 8, 12, 16, 24][i]}px` }));
@@ -60,7 +37,7 @@
   const s2 = { steps: spacing, current: null, drift: { n: 64, label: '64' } };
   const s3 = { steps: spacing, current: null, picked: 's2', drift: { n: 7, label: '7' } };
 
-  root.innerHTML = `<style>${tokens}${LANGUAGE_CSS}${PRIMITIVES_CSS}${SHOW_CSS}${SCALE_CSS}${BUTTON_CSS}
+  root.innerHTML = `<style>${css}${LANGUAGE_CSS}${PRIMITIVES_CSS}${SHOW_CSS}${SCALE_CSS}${BUTTON_CSS}
     :host { display: block; font-family: var(--pl-sans); color: var(--pl-ink); }
     /* a trial for the dark scheme, in this comp only: the surfaces lifted from near-black (#1c1c1e) to a warm graphite,
        with a lighter edge and a softer shadow, so a dark bar on a light page is not a black slab */
@@ -207,7 +184,4 @@
   bind(root.querySelector('#two'), {}); bind(root.querySelector('#three'), {});
   for (const group of root.querySelectorAll('#two .ep[role="radiogroup"], #three .ep[role="radiogroup"]')) place(group);
   for (const c of root.querySelectorAll('#two .sh-chip, #three .sh-chip')) c.setAttribute('data-on', '');
-  document.getElementById('scheme').onclick = (e) => { const dark = document.body.classList.toggle('dark'); host.dataset.scheme = dark ? 'dark' : 'light'; e.target.textContent = dark ? 'Light' : 'Dark'; };
-</script>
-</body>
-</html>
+}

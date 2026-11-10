@@ -128,7 +128,7 @@ export const CHOICES_CSS = `
   .opt { all: unset; position: absolute; top: 0; height: 58px; width: 56px; margin-inline-start: -28px; display: flex; flex-direction: column; align-items: center; cursor: pointer; border-radius: 6px; }
   .opt .tk { width: 1px; height: 14px; margin-top: 15px; background: var(--pl-ink-2); transition: height var(--pl-dur-feedback), background var(--pl-dur-feedback), width var(--pl-dur-feedback); }
   .opt b { margin-top: 4px; font: var(--pl-card-code); font-size: 11.5px; line-height: 14px; font-weight: 600; color: var(--pl-ink); white-space: nowrap; }
-  .opt .v { font: var(--pl-text-label); color: var(--pl-ink-2); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .opt .v { font: var(--pl-card-label); color: var(--pl-ink-2); font-variant-numeric: tabular-nums; white-space: nowrap; }
   @media (hover: hover) and (pointer: fine) { .opt:hover .tk { height: 18px; margin-top: 11px; background: var(--pl-instrument); } .opt:hover b { color: var(--pl-instrument); } }
   .opt[aria-pressed="true"] .tk { width: 3px; height: 22px; margin-top: 11px; border-radius: 1px; background: var(--pl-instrument); }
   .opt[aria-pressed="true"] b { color: var(--pl-instrument); }
@@ -136,7 +136,7 @@ export const CHOICES_CSS = `
   .opt:focus-visible { outline: 2px solid var(--pl-instrument); outline-offset: -2px; }
   .opt .sr, .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
   .scale .you { position: absolute; top: 0; display: flex; flex-direction: column; align-items: center; transform: translateX(-50%); pointer-events: none; }
-  .scale .you em { font: var(--pl-text-label); font-style: normal; color: var(--pl-off); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .scale .you em { font: var(--pl-card-label); font-style: normal; color: var(--pl-off); font-variant-numeric: tabular-nums; white-space: nowrap; }
   .scale .you i { width: 0; height: 0; margin-top: 1px; border-inline: 4px solid transparent; border-top: 6px solid var(--pl-off); }
   .scale .you.soft em { color: var(--pl-soft-text); } .scale .you.soft i { border-top-color: var(--pl-soft); }
   .scale .gap { position: absolute; top: 21px; height: 3px; background: color-mix(in oklab, var(--pl-off) 35%, transparent); border-radius: 2px; }
@@ -181,7 +181,7 @@ export const CHOICES_CSS = `
   .swatches .opt[aria-pressed="true"] { box-shadow: inset 0 0 0 1.5px var(--pl-instrument); }
   .swatches .opt[aria-pressed="true"]::before { display: none; }
   .swatches .opt b { margin: 0; }
-  .swatches .you { display: inline-flex; align-items: center; gap: 6px; padding: 3px 8px 3px 3px; border-radius: 6px; box-shadow: inset 0 0 0 1px var(--pl-off); font: var(--pl-text-label); color: var(--pl-off); }
+  .swatches .you { display: inline-flex; align-items: center; gap: 6px; padding: 3px 8px 3px 3px; border-radius: 6px; box-shadow: inset 0 0 0 1px var(--pl-off); font: var(--pl-card-label); color: var(--pl-off); }
   .sw { width: 18px; height: 18px; border-radius: 4px; box-shadow: inset 0 0 0 1px rgb(0 0 0 / .1); }
   .sw.plate { width: 22px; height: 14px; border-radius: 3px; box-shadow: none; }
   .note { padding: 8px 10px; border-radius: 6px; background: var(--pl-paper-2); font: var(--pl-card-body); color: var(--pl-ink); }

@@ -48,7 +48,7 @@ export const CHANGES_CSS = `
   .cg .chg .prop { min-width: 92px; }
   .cg .el .why { margin-top: var(--pl-space-2); font: var(--pl-card-meta); color: var(--pl-coral); }
   .cg .foot { display: flex; align-items: center; gap: var(--pl-space-3); padding: var(--pl-space-4) var(--pl-space-5); border-top: 1px solid var(--pl-rule); }
-  .cg .foot button { all: unset; cursor: pointer; padding: 5px 10px; border-radius: 7px; font: var(--pl-text-label); }
+  .cg .foot button { all: unset; cursor: pointer; padding: 5px 10px; border-radius: 7px; font: var(--pl-card-label); }
   .cg .foot .all { color: var(--pl-ink-2); }
   @media (hover: hover) and (pointer: fine) { .cg .foot .all:hover { background: var(--pl-paper-2); color: var(--pl-ink); } }
   .cg .foot .ok { margin-inline-start: auto; background: var(--pl-action-soft); color: var(--pl-on-action); }

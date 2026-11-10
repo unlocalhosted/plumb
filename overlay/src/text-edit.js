@@ -36,17 +36,17 @@ function changed(from, to) {
   return !was ? `Added “${cut(now)}”` : !now ? `Removed “${cut(was)}”` : `Changed “${cut(was)}” to “${cut(now)}”`;
 }
 export const TEXT_EDIT_CSS = `
-  .tx-ring { position: fixed; pointer-events: none; border-radius: 3px; box-shadow: 0 0 0 1.5px var(--pl-accent), 0 0 0 3.5px var(--pl-halo); }
+  .tx-ring { position: fixed; pointer-events: none; border-radius: 3px; box-shadow: 0 0 0 1.5px var(--pl-instrument), 0 0 0 3.5px var(--pl-halo); }
   .tx-tag { position: fixed; pointer-events: none; display: flex; align-items: center; gap: var(--pl-space-3); height: var(--pl-tag-h); padding: 0 var(--pl-space-4);
     border-radius: var(--pl-radius-tag); background: var(--pl-paper); box-shadow: var(--pl-shadow-tag); font: var(--pl-card-meta); color: var(--pl-ink-2); white-space: nowrap; }
   .tx-tag code { font: var(--pl-card-code); color: var(--pl-ink); }
   .tx-tag kbd { font: 500 10px/13px var(--pl-mono); color: var(--pl-ink-2); }
-  .tx-tag[data-kind="saving"] { color: var(--pl-accent); }
+  .tx-tag[data-kind="saving"] { color: var(--pl-instrument); }
   .tx-tag[data-kind="refused"] { color: var(--pl-ink); max-width: min(420px, calc(100vw - 32px)); height: auto; min-height: var(--pl-tag-h); padding-block: var(--pl-space-3); white-space: normal; }
   .tx-tag[data-kind="error"] { color: var(--pl-off); }
   .tx-area { position: fixed; margin: 0; padding: 0; border: 0; outline: none; resize: none; overflow: hidden; background: transparent;
-    color: transparent; caret-color: var(--pl-accent); pointer-events: auto; }
-  .tx-area::selection { background: color-mix(in oklab, var(--pl-accent) 28%, transparent); color: transparent; }
+    color: transparent; caret-color: var(--pl-instrument); pointer-events: auto; }
+  .tx-area::selection { background: color-mix(in oklab, var(--pl-instrument) 28%, transparent); color: transparent; }
 `;
 
 const norm = (v) => v.replace(/\s+/g, ' ').trim();
