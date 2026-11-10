@@ -118,11 +118,11 @@ export const PRIMITIVES_CSS = `
 
   /* shadows: raised tiles */
   /* a shadow is seen on a page, so the tiles sit on a light ground of their own in either scheme */
-  .ep.sh { gap: var(--pl-space-2); padding: 3px; width: max-content; background: #eceae5; border-radius: var(--pl-radius-row); }
+  .ep.sh { gap: var(--pl-space-2); padding: 3px; width: max-content; background: var(--pl-bg-inset); border-radius: var(--pl-radius-row); }
   .ep.sh .opt { width: 38px; min-width: 38px; height: 30px; padding: 0; }
-  @media (hover: hover) and (pointer: fine) { .ep.sh .opt:hover { background: #e2dfd8; } }
+  @media (hover: hover) and (pointer: fine) { .ep.sh .opt:hover { background: var(--pl-bg-surface-pressed); } }
   .ep.sh .fill { display: none; }
-  .ep.sh .tile { width: 22px; height: 15px; border-radius: 3px; background: #fff; }
+  .ep.sh .tile { width: 22px; height: 15px; border-radius: 3px; background: var(--pl-bg-surface); }
   .ep.sh .opt[aria-checked="true"] { background: #fff0; box-shadow: 0 0 0 1.5px var(--pl-instrument); }
 
   @media (prefers-reduced-motion: reduce) { .ep .opt, .ep .fill { transition: none; } }

@@ -43,7 +43,7 @@ export const SOFT_CSS = `
       mix-blend-mode: overlay; opacity: .32; }
     .s-box .in b { font: var(--pl-round-w, 600) 24px/27px var(--pl-round); }
     .s-box .in em { margin-top: 5px; font: 600 14.5px/20px var(--pl-sans); font-style: normal; opacity: .86; }
-    .s-box .plate { display: grid; place-items: center; width: 64px; height: 64px; margin-bottom: 14px; border-radius: 19px; background: var(--pl-paper); transform-origin: 50% 100%;
+    .s-box .plate { display: grid; place-items: center; width: 64px; height: 64px; margin-bottom: 14px; border-radius: 19px; background: var(--pl-bg-surface); transform-origin: 50% 100%;
       box-shadow: 0 5px 8px -5px color-mix(in oklab, var(--h) 75%, transparent), inset 0 -2px 0 0 color-mix(in oklab, var(--h) 14%, transparent);
       will-change: transform; }
     .s-box .toy { --big: 1; transform: scale(var(--big)); transform-origin: 50% 90%; transition: transform 320ms var(--pl-spring-pop); will-change: transform; }
@@ -56,12 +56,12 @@ export const SOFT_CSS = `
     /* not there yet: flat, small, and without its colour. Nothing to press (pale is for what is not there; a ready
        box is pale too, so one that isn't ready gives up its hue as well) */
     .s-box.soon, .s-box.soon:hover { --lift: 0px; padding-top: 0; background: none; box-shadow: none; }
-    .s-box.soon .in { padding: 14px; background: var(--pl-paper-2); box-shadow: none; color: var(--pl-ink-2); }
-    .s-box.soon .plate { width: 40px; height: 40px; margin-bottom: 10px; border-radius: 13px; background: color-mix(in oklab, var(--pl-ink) 7%, transparent); box-shadow: none; }
+    .s-box.soon .in { padding: 14px; background: var(--pl-bg-inset); box-shadow: none; color: var(--pl-text-secondary); }
+    .s-box.soon .plate { width: 40px; height: 40px; margin-bottom: 10px; border-radius: 13px; background: color-mix(in oklab, var(--pl-text-primary) 7%, transparent); box-shadow: none; }
     .s-box.soon .toy, .s-box.soon:hover .toy { --big: 1; width: 24px; height: 24px; filter: grayscale(1); opacity: .6; }
     .s-box.soon .in b { font-size: 17px; line-height: 21px; }
     .s-box.soon .in em { font-size: 13px; line-height: 18px; opacity: .8; }
-    .s-box .when { position: absolute; top: 14px; right: 14px; padding: 4px 9px; border-radius: 10px; font: var(--pl-round-w2, 700) 11.5px/1.2 var(--pl-round); font-style: normal; background: color-mix(in oklab, var(--pl-ink) 7%, transparent); color: var(--pl-ink-2); }
+    .s-box .when { position: absolute; top: 14px; right: 14px; padding: 4px 9px; border-radius: 10px; font: var(--pl-round-w2, 700) 11.5px/1.2 var(--pl-round); font-style: normal; background: color-mix(in oklab, var(--pl-text-primary) 7%, transparent); color: var(--pl-text-secondary); }
 
     /* ── a button is the same block, small. The action keeps the strong colour on top: it is the one loud thing ── */
     .s-btn { --h: var(--pl-pink-block); --side: color-mix(in oklab, var(--h) 70%, #000); --lift: 4px;
@@ -74,13 +74,13 @@ export const SOFT_CSS = `
     .s-btn.down { box-shadow: 0 3px 5px -4px color-mix(in oklab, var(--h) 75%, transparent); }
     .s-btn:focus-visible { outline: 2.5px solid var(--pl-sky); outline-offset: 3px; }
     /* quiet: paper on a rule */
-    .s-btn.q { --h: var(--pl-ink-3); --side: var(--pl-rule); box-shadow: 0 9px 12px -9px rgb(0 0 0 / .28); }
-    .s-btn.q > span { background: linear-gradient(180deg, var(--pl-paper), var(--pl-paper-2)); color: var(--pl-ink); box-shadow: inset 0 1.5px 0 0 color-mix(in oklab, #fff 90%, transparent), inset 0 0 0 1.5px var(--pl-rule); }
-    ${dark('.s-btn.q > span', 'box-shadow: inset 0 1.5px 0 0 color-mix(in oklab, #fff 14%, transparent), inset 0 0 0 1.5px var(--pl-rule);')}
+    .s-btn.q { --h: var(--pl-icon-tick); --side: var(--pl-border-default); box-shadow: 0 9px 12px -9px rgb(0 0 0 / .28); }
+    .s-btn.q > span { background: linear-gradient(180deg, var(--pl-bg-surface), var(--pl-bg-inset)); color: var(--pl-text-primary); box-shadow: inset 0 1.5px 0 0 color-mix(in oklab, #fff 90%, transparent), inset 0 0 0 1.5px var(--pl-border-default); }
+    ${dark('.s-btn.q > span', 'box-shadow: inset 0 1.5px 0 0 color-mix(in oklab, #fff 14%, transparent), inset 0 0 0 1.5px var(--pl-border-default);')}
     /* bare: a word you can press (a place in a bar that isn't the current one). Flat until pointed at; it still gives */
     .s-btn.bare, .s-btn.bare:hover, .s-btn.bare.down { --lift: 0px; padding: 0 0 4px; background: none; box-shadow: none; }
-    .s-btn.bare > span { background: none; box-shadow: none; color: var(--pl-ink-2); transition: transform 300ms var(--pl-spring-pop), background-color 200ms var(--pl-ease-out); }
-    .s-btn.bare:hover > span { background: var(--pl-paper-2); color: var(--pl-ink); }
+    .s-btn.bare > span { background: none; box-shadow: none; color: var(--pl-text-secondary); transition: transform 300ms var(--pl-spring-pop), background-color 200ms var(--pl-ease-out); }
+    .s-btn.bare:hover > span { background: var(--pl-bg-surface-hover); color: var(--pl-text-primary); }
     @media (prefers-reduced-motion: reduce) { .s-box, .s-box .in, .s-box .plate, .s-box .toy, .s-btn > span { transition: none !important; animation: none !important; } }
 `;
 

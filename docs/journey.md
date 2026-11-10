@@ -742,6 +742,23 @@ race, built for the old in-place write) was rewritten for the new write path (`e
   used for their meaning). Hex values written straight in remain in about a dozen files (most in the clean-up
   animation, the layout card and the element card's drawings and code panel); those are a separate pass, each one a
   judgement between a role and a drawing colour.
+- **"I don't understand why are you doing this"** (mid-way through the hex sweep). Fair: I had been reporting each
+  part moved without saying what it buys. The why, as told to the owner: the colour spec only changes anything if the
+  product uses it; with every part asking for a role, dark mode can't break part by part again, one change to a role
+  changes the look everywhere, and the Colour page tells the truth. Owner: "fix and finish".
+- **A bug I caused, found during the sweep:** moving the element card deleted its private colour names, but the layout
+  controls inside it (gap, direction, alignment) still used them, so their strips and grey labels had lost their
+  colour. Fixed by moving them to roles; checked: #f6f6f4 strip, #6b665c labels, navy token text, blue switch.
+- **The hex sweep, finished:** the clean-up panel (31), the layout controls and spacing bands, the Blueprint hint
+  pill, the shadow-picker strip and the soft blocks' quiet button and empty cards now use roles. The two dark tooltips
+  (the spacing bubble, the hint pill) carry `pl-dark` instead of hand-picked light-on-dark colours. The spacing bands
+  take the mark roles, so margin is butter, the system's margin colour, where it had been a stray orange. Checked on
+  crafting-ui: the clean-up panel open in light reads right (faint upcoming passes, lilac "why", heat-pink change,
+  dark Apply button); the bubble and layout controls sampled with their own classes; the design page's soft blocks
+  unchanged in both schemes. Contrast 74 of 74.
+- **Left on purpose:** the canvas probes that measure colours, a fade mask, the lighting mixed into soft blocks and
+  buttons, the confetti, the drawings and the code panel in the element card, the Blueprint dot pattern's halo, and
+  one white measurement pill whose hue is set at runtime.
 
 ## Open gaps
 - White on the pink and mint buttons is under 4.5:1 in light (3.36, 3.85); dark now passes, just. Nothing yet stops the faintest ink being used for text again.
