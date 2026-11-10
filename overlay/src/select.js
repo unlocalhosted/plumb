@@ -32,14 +32,14 @@ export const SELECT_CSS = `
   /* the fix, drawn on the element: the ghost of the element as it will be, the scale with the target ringed, the
      reason at the band's end (docs/briefs/insight-not-noise.md §2.1) */
   .sel .ghost { position: fixed; box-sizing: border-box; border: 1.5px dashed var(--pl-sky); border-radius: 8px; animation: pl-pop 260ms var(--pl-spring-pop) 40ms both; }
-  .sel .stair { position: fixed; pointer-events: auto; padding: 2px 4px; border-radius: 9px; background: var(--pl-paper); box-shadow: 0 1px 3px rgb(0 0 0 / .18); animation: pl-pop 260ms var(--pl-spring-pop) 80ms both; }
+  .sel .stair { position: fixed; pointer-events: auto; padding: 2px 4px; border-radius: 9px; background: var(--pl-bg-surface); box-shadow: 0 1px 3px rgb(0 0 0 / .18); animation: pl-pop 260ms var(--pl-spring-pop) 80ms both; }
   .sel .reason { position: fixed; width: 20px; height: 20px; padding: 2px; box-sizing: border-box; border-radius: 6px; color: var(--pl-coral-ink); background: var(--pl-coral-soft); }
   .sel .reason svg { display: block; width: 100%; height: 100%; }
   .sel .reason[data-big] { width: 40px; height: 40px; padding: 6px; }
-  .sel .why { position: fixed; max-width: 320px; padding: 5px 10px; border-radius: 10px; font: 500 12px/1.35 var(--pl-sans); background: var(--pl-paper); color: var(--pl-ink); box-shadow: 0 1px 3px rgb(0 0 0 / .2); animation: pl-pop 200ms var(--pl-spring-pop) both; }
-  .sel .why .more { color: var(--pl-ink-2); }
+  .sel .why { position: fixed; max-width: 320px; padding: 5px 10px; border-radius: 10px; font: 500 12px/1.35 var(--pl-sans); background: var(--pl-bg-surface); color: var(--pl-text-primary); box-shadow: 0 1px 3px rgb(0 0 0 / .2); animation: pl-pop 200ms var(--pl-spring-pop) both; }
+  .sel .why .more { color: var(--pl-text-secondary); }
   /* no verified fix: the scale with a hollow bar where the step would be, or the target struck by a higher rule */
-  .sel .stair .gap { display: inline-block; width: 18px; height: 14px; margin: 0 4px; border-radius: 3px; box-shadow: inset 0 0 0 1.5px color-mix(in oklab, var(--pl-ink) 35%, transparent); vertical-align: middle; }
+  .sel .stair .gap { display: inline-block; width: 18px; height: 14px; margin: 0 4px; border-radius: 3px; box-shadow: inset 0 0 0 1.5px color-mix(in oklab, var(--pl-icon-primary) 35%, transparent); vertical-align: middle; }
   .sel .stair .struck { position: relative; display: inline-block; width: 18px; height: 14px; margin: 0 4px; border-radius: 3px; box-shadow: inset 0 0 0 1.5px var(--pl-sky); vertical-align: middle; }
   .sel .stair .struck::after { content: ''; position: absolute; left: -2px; right: -2px; top: 6px; height: 2px; border-radius: 2px; background: var(--pl-coral); rotate: -20deg; }
   /* accepted, not written: marching ants, the claimed bands mint */
@@ -50,7 +50,7 @@ export const SELECT_CSS = `
   .sel { position: fixed; inset: 0; pointer-events: none; }
   .sel[hidden] { display: none; }
   .sel .ring { position: fixed; box-sizing: border-box; border-radius: 6px; border: 1.5px solid var(--pl-sky); animation: pl-pop 260ms var(--pl-spring-pop) both; }
-  .sel .ring[data-state="disabled"] { border: 1.5px dashed color-mix(in oklab, var(--pl-ink) 40%, transparent); }
+  .sel .ring[data-state="disabled"] { border: 1.5px dashed color-mix(in oklab, var(--pl-icon-primary) 40%, transparent); }
   .sel .ring[data-state="loading"] { border-color: color-mix(in oklab, var(--pl-sky) 45%, transparent); animation: pl-pop 260ms var(--pl-spring-pop) both, sel-shimmer 1.2s ease-in-out infinite alternate; }
   @keyframes sel-shimmer { to { border-color: var(--pl-sky); } }
   .sel .bm { animation: pl-pop 260ms var(--pl-spring-pop) 40ms both; }

@@ -29,33 +29,33 @@ export const CHANGES_CSS = `
   .cg[data-side="start"] { inset-inline-end: auto; inset-inline-start: var(--pl-space-6); }
   .cg .top { display: flex; align-items: baseline; gap: var(--pl-space-3); padding: var(--pl-space-5) var(--pl-space-5) var(--pl-space-3); }
   .cg .top b { font: var(--pl-card-title); }
-  .cg .top span { font: var(--pl-card-meta); color: var(--pl-ink-2); }
+  .cg .top span { font: var(--pl-card-meta); color: var(--pl-text-secondary); }
   .cg .rows { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 0 var(--pl-space-3) var(--pl-space-3); }
   .cg .el { position: relative; padding: var(--pl-space-3) var(--pl-space-4); border-radius: var(--pl-radius-row); cursor: pointer; }
   .cg .el + .el { margin-top: 2px; }
-  @media (hover: hover) and (pointer: fine) { .cg .el:hover { background: var(--pl-paper-2); } }
-  .cg .el[aria-current="true"] { background: var(--pl-paper-2); box-shadow: inset 2px 0 0 var(--pl-sky); }
+  @media (hover: hover) and (pointer: fine) { .cg .el:hover { background: var(--pl-bg-surface-hover); } }
+  .cg .el[aria-current="true"] { background: var(--pl-bg-inset); box-shadow: inset 2px 0 0 var(--pl-sky); }
   .cg .el:focus-visible { outline: 2px solid var(--pl-sky); outline-offset: -2px; }
   .cg .el .name { display: flex; align-items: center; gap: var(--pl-space-3); }
-  .cg .el .x { all: unset; margin-inline-start: auto; width: 20px; height: 20px; display: grid; place-items: center; border-radius: 6px; color: var(--pl-ink-2); cursor: pointer; }
+  .cg .el .x { all: unset; margin-inline-start: auto; width: 20px; height: 20px; display: grid; place-items: center; border-radius: 6px; color: var(--pl-text-secondary); cursor: pointer; }
   @media (hover: hover) and (pointer: fine) { .cg .el .x:hover { background: var(--pl-coral-soft); color: var(--pl-coral-ink); } }
   .cg .el .x:focus-visible { outline: 2px solid var(--pl-sky); }
-  .cg .chg { display: flex; align-items: center; gap: var(--pl-space-3); margin-top: var(--pl-space-2); font: var(--pl-card-meta); color: var(--pl-ink-2); }
+  .cg .chg { display: flex; align-items: center; gap: var(--pl-space-3); margin-top: var(--pl-space-2); font: var(--pl-card-meta); color: var(--pl-text-secondary); }
   .cg .chg i { width: 13px; height: 13px; color: var(--pl-sky); flex: none; }
   .cg .chg i svg { display: block; width: 100%; height: 100%; }
-  .cg .chg .from { font: var(--pl-card-code); color: var(--pl-ink-2); text-decoration: line-through; text-decoration-color: color-mix(in oklab, var(--pl-ink-2) 60%, transparent); }
-  .cg .chg .to { font: var(--pl-card-code); color: var(--pl-ink); }
+  .cg .chg .from { font: var(--pl-card-code); color: var(--pl-text-secondary); text-decoration: line-through; text-decoration-color: color-mix(in oklab, var(--pl-icon-secondary) 60%, transparent); }
+  .cg .chg .to { font: var(--pl-card-code); color: var(--pl-text-primary); }
   .cg .chg .prop { min-width: 92px; }
   .cg .el .why { margin-top: var(--pl-space-2); font: var(--pl-card-meta); color: var(--pl-coral); }
-  .cg .foot { display: flex; align-items: center; gap: var(--pl-space-3); padding: var(--pl-space-4) var(--pl-space-5); border-top: 1px solid var(--pl-rule); }
+  .cg .foot { display: flex; align-items: center; gap: var(--pl-space-3); padding: var(--pl-space-4) var(--pl-space-5); border-top: 1px solid var(--pl-border-default); }
   .cg .foot button { all: unset; cursor: pointer; padding: 5px 10px; border-radius: 7px; font: var(--pl-card-label); }
-  .cg .foot .all { color: var(--pl-ink-2); }
-  @media (hover: hover) and (pointer: fine) { .cg .foot .all:hover { background: var(--pl-paper-2); color: var(--pl-ink); } }
+  .cg .foot .all { color: var(--pl-text-secondary); }
+  @media (hover: hover) and (pointer: fine) { .cg .foot .all:hover { background: var(--pl-bg-surface-hover); color: var(--pl-text-primary); } }
   .cg .foot .ok { margin-inline-start: auto; background: var(--pl-action-soft); color: var(--pl-on-action); }
   .cg .foot button:focus-visible { outline: 2px solid var(--pl-sky); outline-offset: 1px; }
   .cg .foot button:disabled { opacity: 0.5; cursor: default; }
   .cg[aria-busy="true"] .rows { opacity: 0.6; }
-  .cg .keys { font: var(--pl-card-meta); color: var(--pl-ink-3); }
+  .cg .keys { font: var(--pl-card-meta); color: var(--pl-text-secondary); }
   @media (prefers-reduced-motion: reduce) { .cg { animation: none; } }
 `;
 

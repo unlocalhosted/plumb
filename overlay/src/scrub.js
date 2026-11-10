@@ -29,7 +29,7 @@ const NOTCH = { omega: 34, zeta: 0.5, settle: 240 };
 export const SCRUB_CSS = `
   .scrub-at { position: fixed; z-index: 3; pointer-events: none; display: flex; align-items: center; gap: 6px; translate: -9px -9px; }
   .scrub-at .grip { width: 18px; height: 18px; display: grid; place-items: center; border-radius: 50%; background: var(--pl-sky); color: var(--pl-sky-ink);
-    box-shadow: 0 0 0 2px var(--pl-paper), 0 4px 10px -4px rgb(0 0 0 / 0.5); }
+    box-shadow: 0 0 0 2px var(--pl-bg-surface), 0 4px 10px -4px rgb(0 0 0 / 0.5); }
   .scrub-at .grip svg { width: 12px; height: 12px; }
   .scrub-at .grip[data-tick] { animation: scrub-tick 180ms cubic-bezier(.3, 1.6, .5, 1); }
   @keyframes scrub-tick { 40% { scale: 1.22; } }

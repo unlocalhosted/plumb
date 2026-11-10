@@ -28,36 +28,36 @@ const FILES_SHOWN = 8;
 export const CAUSE_LIST_CSS = `
   .cl-head { padding: var(--pl-page-inset) var(--pl-page-inset) var(--pl-space-4); }
   .cl-head h2 { margin: 0; font: var(--pl-page-title); letter-spacing: var(--pl-tracking-title); }
-  .cl-head p { margin: 2px 0 0; font: var(--pl-page-small); color: var(--pl-ink-2); }
+  .cl-head p { margin: 2px 0 0; font: var(--pl-page-small); color: var(--pl-text-secondary); }
   .cl ol { margin: 0; padding: 0; list-style: none; }
-  .cl-cause { display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: var(--pl-space-6); padding: var(--pl-space-7) var(--pl-page-inset); box-shadow: inset 0 var(--pl-line) 0 var(--pl-rule); }
+  .cl-cause { display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: var(--pl-space-6); padding: var(--pl-space-7) var(--pl-page-inset); box-shadow: inset 0 var(--pl-line) 0 var(--pl-border-default); }
   .cl-cause:first-child { box-shadow: none; }
-  .cl-swatch { position: relative; width: 40px; height: 40px; border-radius: var(--pl-radius-row); overflow: hidden; box-shadow: inset 0 0 0 var(--pl-line) var(--pl-rule); }
-  .cl-swatch i { position: absolute; inset: 0; box-shadow: inset 0 0 0 var(--pl-line) color-mix(in oklab, var(--pl-ink) 12%, transparent); border-radius: inherit; }
+  .cl-swatch { position: relative; width: 40px; height: 40px; border-radius: var(--pl-radius-row); overflow: hidden; box-shadow: inset 0 0 0 var(--pl-line) var(--pl-border-default); }
+  .cl-swatch i { position: absolute; inset: 0; box-shadow: inset 0 0 0 var(--pl-line) color-mix(in oklab, var(--pl-icon-primary) 12%, transparent); border-radius: inherit; }
   /* a colour with alpha sits on a checker of ink, so white at 30% still shows on a white card */
-  .cl-swatch.see { background: conic-gradient(color-mix(in oklab, var(--pl-ink) 22%, transparent) 25%, transparent 0 50%, color-mix(in oklab, var(--pl-ink) 22%, transparent) 0 75%, transparent 0) 0 0 / 10px 10px; }
+  .cl-swatch.see { background: conic-gradient(color-mix(in oklab, var(--pl-text-primary) 22%, transparent) 25%, transparent 0 50%, color-mix(in oklab, var(--pl-text-primary) 22%, transparent) 0 75%, transparent 0) 0 0 / 10px 10px; }
   .cl-value { align-self: start; justify-self: start; }
-  .cl-said { margin: 0; max-width: 62ch; font: var(--pl-page-body); color: var(--pl-ink); text-wrap: pretty; font-variant-numeric: tabular-nums; }
+  .cl-said { margin: 0; max-width: 62ch; font: var(--pl-page-body); color: var(--pl-text-primary); text-wrap: pretty; font-variant-numeric: tabular-nums; }
   .cl-ways { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: var(--pl-space-5); }
-  .cl-ways .to { margin: 0 2px; font: var(--pl-page-small); color: var(--pl-ink-2); }
+  .cl-ways .to { margin: 0 2px; font: var(--pl-page-small); color: var(--pl-text-secondary); }
   .cl-ways .pl-pill b { font-weight: 500; opacity: .72; }
   .cl-show { margin-top: var(--pl-space-5); }
-  .cl-places { margin: var(--pl-space-5) 0 0; padding: 0; list-style: none; border-radius: var(--pl-radius-row); background: var(--pl-paper-2); }
+  .cl-places { margin: var(--pl-space-5) 0 0; padding: 0; list-style: none; border-radius: var(--pl-radius-row); background: var(--pl-bg-inset); }
   .cl-places:not([hidden]) { animation: cl-in var(--pl-dur-build) var(--pl-ease-out) both; }
   @keyframes cl-in { from { opacity: 0; translate: 0 -4px; } }
-  .cl-file { padding: var(--pl-space-4) var(--pl-space-5); box-shadow: inset 0 var(--pl-line) 0 var(--pl-rule); }
+  .cl-file { padding: var(--pl-space-4) var(--pl-space-5); box-shadow: inset 0 var(--pl-line) 0 var(--pl-border-default); }
   .cl-file:first-child { box-shadow: none; }
-  .cl-file > div { display: flex; justify-content: space-between; gap: var(--pl-space-5); font: var(--pl-card-code); color: var(--pl-ink); }
+  .cl-file > div { display: flex; justify-content: space-between; gap: var(--pl-space-5); font: var(--pl-card-code); color: var(--pl-text-primary); }
   .cl-file > div span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; direction: rtl; text-align: left; }
-  .cl-file > div b { flex: none; font-weight: 500; color: var(--pl-ink-2); font-variant-numeric: tabular-nums; }
+  .cl-file > div b { flex: none; font-weight: 500; color: var(--pl-text-secondary); font-variant-numeric: tabular-nums; }
   .cl-file ul { margin: 2px 0 0; padding: 0; list-style: none; }
-  .cl-file li { display: grid; grid-template-columns: 48px minmax(0, 1fr); gap: var(--pl-space-4); font: var(--pl-card-code); color: var(--pl-ink-2); }
-  .cl-file li code { font: inherit; color: var(--pl-ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .cl-file li.dead code { color: var(--pl-ink-2); text-decoration: line-through; text-decoration-color: var(--pl-coral); text-decoration-thickness: 1.5px; }
+  .cl-file li { display: grid; grid-template-columns: 48px minmax(0, 1fr); gap: var(--pl-space-4); font: var(--pl-card-code); color: var(--pl-text-secondary); }
+  .cl-file li code { font: inherit; color: var(--pl-text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .cl-file li.dead code { color: var(--pl-text-secondary); text-decoration: line-through; text-decoration-color: var(--pl-coral); text-decoration-thickness: 1.5px; }
   .cl-file .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   .cl-file li .ln { font-variant-numeric: tabular-nums; text-align: right; }
-  .cl-more { padding: var(--pl-space-4) var(--pl-space-5); box-shadow: inset 0 var(--pl-line) 0 var(--pl-rule); }
-  .cl-foot { padding: var(--pl-space-6) var(--pl-page-inset) var(--pl-page-inset); box-shadow: inset 0 var(--pl-line) 0 var(--pl-rule); font: var(--pl-page-small); color: var(--pl-ink-2); }
+  .cl-more { padding: var(--pl-space-4) var(--pl-space-5); box-shadow: inset 0 var(--pl-line) 0 var(--pl-border-default); }
+  .cl-foot { padding: var(--pl-space-6) var(--pl-page-inset) var(--pl-page-inset); box-shadow: inset 0 var(--pl-line) 0 var(--pl-border-default); font: var(--pl-page-small); color: var(--pl-text-secondary); }
   .cl-none { display: flex; align-items: center; gap: var(--pl-space-4); padding: var(--pl-space-4) var(--pl-page-inset) var(--pl-page-inset); font: var(--pl-page-body); }
   .cl-none .sc-place { scale: 1.6; }
   @media (max-width: 720px) {

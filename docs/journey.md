@@ -730,6 +730,18 @@ race, built for the old in-place write) was rewritten for the new write path (`e
   surfaces, hovers and pressed items the surface, hover and inset backgrounds, rules the default border, the pressed
   button the inverse block. The verdict colours and the instrument blue were already roles. Checked on crafting-ui in
   both schemes: light (#1d1b17 words, #6b665c dock icons, white tags) and dark (#f4f3ef words, graphite tags).
+- **The rest, as one batch.** With the mapping settled over seven parts, the remaining parts moved together by the
+  same rules, keyed on the property and on what the element is: ink and ink-2 become primary and secondary text
+  (icon colours for marks: separators, arrows, ticks, chevrons, dots, strokes); the faint ink becomes secondary text,
+  disabled text, or the tick colour for marks; paper the surface, desk the page, pale paper the hover or the inset;
+  rules the default border; a dark fill lettered in paper the inverse block. 233 uses across 20 files (readiness,
+  editor pieces, choices, history, the cause list, the Blueprint panel, the specimen, gravity, the project page,
+  marks, help, text editing, selection, changes, scale marks, the buttons and more). Checked on crafting-ui with a
+  fix open in light and dark, and contrast 74 of 74.
+- **What is left on purpose:** 6 strokes inside the toy icons (drawings), 16 in the design site's soft blocks (hues
+  used for their meaning). Hex values written straight in remain in about a dozen files (most in the clean-up
+  animation, the layout card and the element card's drawings and code panel); those are a separate pass, each one a
+  judgement between a role and a drawing colour.
 
 ## Open gaps
 - White on the pink and mint buttons is under 4.5:1 in light (3.36, 3.85); dark now passes, just. Nothing yet stops the faintest ink being used for text again.

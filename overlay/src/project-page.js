@@ -16,19 +16,19 @@ const nf = new Intl.NumberFormat('en');
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
 
 const PAGE_CSS = `
-  :host { display: block; min-height: 100vh; background: var(--pl-desk); }
-  .top { position: sticky; top: 0; z-index: 3; display: flex; align-items: center; gap: 12px; padding: 12px var(--pl-page-space-1); background: color-mix(in oklab, var(--pl-paper) 88%, transparent); backdrop-filter: blur(12px); box-shadow: 0 1px 0 var(--pl-rule); }
-  .top b { font: 600 14px var(--pl-sans); color: var(--pl-ink); white-space: nowrap; }
+  :host { display: block; min-height: 100vh; background: var(--pl-bg-page); }
+  .top { position: sticky; top: 0; z-index: 3; display: flex; align-items: center; gap: 12px; padding: 12px var(--pl-page-space-1); background: color-mix(in oklab, var(--pl-bg-surface) 88%, transparent); backdrop-filter: blur(12px); box-shadow: 0 1px 0 var(--pl-border-default); }
+  .top b { font: 600 14px var(--pl-sans); color: var(--pl-text-primary); white-space: nowrap; }
   .top .pl-rainbow { width: 22px; height: 12px; border-radius: 3px; }
-  .top .read { font: var(--pl-card-meta); color: var(--pl-ink-2); }
+  .top .read { font: var(--pl-card-meta); color: var(--pl-text-secondary); }
   .top .pl-act { margin-left: auto; }
-  main { max-width: var(--pl-page-max); margin: 0 auto; padding: var(--pl-page-space-2) var(--pl-page-space-1) var(--pl-page-space-4); color: var(--pl-ink); }
-  .eyebrow { font: var(--pl-page-meta); color: var(--pl-ink-2); }
+  main { max-width: var(--pl-page-max); margin: 0 auto; padding: var(--pl-page-space-2) var(--pl-page-space-1) var(--pl-page-space-4); color: var(--pl-text-primary); }
+  .eyebrow { font: var(--pl-page-meta); color: var(--pl-text-secondary); }
   h1 { margin: 10px 0 14px; max-width: 26ch; font: var(--pl-page-display); letter-spacing: var(--pl-tracking-display); text-wrap: balance; }
   h1 .n { font-variant-numeric: tabular-nums; }
   h1 .off { color: var(--pl-coral); } h1 .on { color: var(--pl-mint); }
   #specimen:not(:empty), #causes { display: block; margin-top: var(--pl-page-space-1); }
-  .lede { max-width: 60ch; margin: 0 0 var(--pl-page-space-1); font: var(--pl-page-body); color: var(--pl-ink-2); text-wrap: pretty; }
+  .lede { max-width: 60ch; margin: 0 0 var(--pl-page-space-1); font: var(--pl-page-body); color: var(--pl-text-secondary); text-wrap: pretty; }
   @media (max-width: 720px) { main { padding: var(--pl-page-space-1) var(--pl-space-6) var(--pl-page-space-3); } .top { padding: 10px 16px; } .top .read { display: none; } h1 { font: var(--pl-page-display-narrow); } }
 `;
 

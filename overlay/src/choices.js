@@ -124,11 +124,11 @@ export const CHOICES_CSS = `
   /* the ruler: the steps that fit as ticks, yours as a mark between them. A tick is the control: point at it to see it
      on the page, click to pick it. Distance on the ruler is distance in value. */
   .scale { position: relative; height: 58px; margin: 2px 6px 0; }
-  .scale .rail { position: absolute; inset-inline: 0; top: 22px; height: 1px; background: var(--pl-ink-3); }
+  .scale .rail { position: absolute; inset-inline: 0; top: 22px; height: 1px; background: var(--pl-icon-tick); }
   .opt { all: unset; position: absolute; top: 0; height: 58px; width: 56px; margin-inline-start: -28px; display: flex; flex-direction: column; align-items: center; cursor: pointer; border-radius: 6px; }
-  .opt .tk { width: 1px; height: 14px; margin-top: 15px; background: var(--pl-ink-2); transition: height var(--pl-dur-feedback), background var(--pl-dur-feedback), width var(--pl-dur-feedback); }
-  .opt b { margin-top: 4px; font: var(--pl-card-code); font-size: 11.5px; line-height: 14px; font-weight: 600; color: var(--pl-ink); white-space: nowrap; }
-  .opt .v { font: var(--pl-card-label); color: var(--pl-ink-2); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .opt .tk { width: 1px; height: 14px; margin-top: 15px; background: var(--pl-icon-secondary); transition: height var(--pl-dur-feedback), background var(--pl-dur-feedback), width var(--pl-dur-feedback); }
+  .opt b { margin-top: 4px; font: var(--pl-card-code); font-size: 11.5px; line-height: 14px; font-weight: 600; color: var(--pl-text-primary); white-space: nowrap; }
+  .opt .v { font: var(--pl-card-label); color: var(--pl-text-secondary); font-variant-numeric: tabular-nums; white-space: nowrap; }
   @media (hover: hover) and (pointer: fine) { .opt:hover .tk { height: 18px; margin-top: 11px; background: var(--pl-instrument); } .opt:hover b { color: var(--pl-instrument); } }
   .opt[aria-pressed="true"] .tk { width: 3px; height: 22px; margin-top: 11px; border-radius: 1px; background: var(--pl-instrument); }
   .opt[aria-pressed="true"] b { color: var(--pl-instrument); }
@@ -140,50 +140,50 @@ export const CHOICES_CSS = `
   .scale .you i { width: 0; height: 0; margin-top: 1px; border-inline: 4px solid transparent; border-top: 6px solid var(--pl-off); }
   .scale .you.soft em { color: var(--pl-soft-text); } .scale .you.soft i { border-top-color: var(--pl-soft); }
   .scale .gap { position: absolute; top: 21px; height: 3px; background: color-mix(in oklab, var(--pl-off) 35%, transparent); border-radius: 2px; }
-  .scale .opt kbd { font: 500 9px/11px var(--pl-sans); color: var(--pl-ink-3); opacity: 0; transition: opacity var(--pl-dur-feedback); }
+  .scale .opt kbd { font: 500 9px/11px var(--pl-sans); color: var(--pl-text-secondary); opacity: 0; transition: opacity var(--pl-dur-feedback); }
   @media (hover: hover) and (pointer: fine) { .scale:hover .opt kbd { opacity: 1; } }
   /* the ladder: the theme's scale in order, the fitting steps live, yours notched between */
-  .ladder { position: relative; display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); margin-top: 12px; border-radius: 7px; box-shadow: inset 0 0 0 1px var(--pl-rule); }
+  .ladder { position: relative; display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); margin-top: 12px; border-radius: 7px; box-shadow: inset 0 0 0 1px var(--pl-border-default); }
   .rung { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 2px; min-width: 0; height: 52px; padding-bottom: 5px; }
-  .rung + .rung { box-shadow: -1px 0 0 var(--pl-rule); }
+  .rung + .rung { box-shadow: -1px 0 0 var(--pl-border-default); }
   .rung.off { opacity: .38; }
   .ladder .opt { all: unset; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 2px; min-width: 0; height: 52px; padding-bottom: 5px;
                  cursor: pointer; transition: background var(--pl-dur-feedback) var(--pl-ease-out); }
-  .ladder .rung + .opt, .ladder .opt + .rung { box-shadow: -1px 0 0 var(--pl-rule); }
+  .ladder .rung + .opt, .ladder .opt + .rung { box-shadow: -1px 0 0 var(--pl-border-default); }
   .ladder .opt::after { content: ""; position: absolute; inset-inline: 6px; bottom: 0; height: 2px; border-radius: 1px; background: var(--pl-instrument); opacity: .35; }
-  @media (hover: hover) and (pointer: fine) { .ladder .opt:hover { background: var(--pl-paper-2); } .ladder .opt:hover::after { opacity: .7; } }
-  .ladder .opt[aria-pressed="true"] { background: color-mix(in oklab, var(--pl-instrument) 12%, var(--pl-paper)); }
+  @media (hover: hover) and (pointer: fine) { .ladder .opt:hover { background: var(--pl-bg-surface-hover); } .ladder .opt:hover::after { opacity: .7; } }
+  .ladder .opt[aria-pressed="true"] { background: color-mix(in oklab, var(--pl-instrument) 12%, var(--pl-bg-surface)); }
   .ladder .opt[aria-pressed="true"]::after { opacity: 1; height: 3px; }
   .ladder .opt:focus-visible { outline: 2px solid var(--pl-instrument); outline-offset: -2px; border-radius: 6px; }
-  .rung small { font: 600 10.5px/13px var(--pl-mono); color: var(--pl-ink); white-space: nowrap; }
-  .rung small.px { font: 400 10px/12px var(--pl-mono); color: var(--pl-ink-2); }
+  .rung small { font: 600 10.5px/13px var(--pl-mono); color: var(--pl-text-primary); white-space: nowrap; }
+  .rung small.px { font: 400 10px/12px var(--pl-mono); color: var(--pl-text-secondary); }
   .ladder .opt[aria-pressed="true"] small { color: var(--pl-instrument); }
-  .ladder kbd { position: absolute; top: 3px; right: 4px; font: 500 9.5px/11px var(--pl-mono); color: var(--pl-ink-2); opacity: .6; }
-  .lg-corner { width: 15px; height: 12px; margin-bottom: 3px; box-sizing: border-box; border-top: 1.5px solid var(--pl-ink-2); border-right: 1.5px solid var(--pl-ink-2); }
-  .lg-gap { display: flex; margin-bottom: 3px; } .lg-gap i { width: 3px; height: 13px; border-radius: 1px; background: var(--pl-ink-2); }
-  .lg-ag { font-family: var(--pl-sans); font-weight: 500; line-height: 1; color: var(--pl-ink); margin-bottom: 2px; }
-  .ladder .opt .lg-corner { border-color: var(--pl-ink); } .ladder .opt .lg-gap i { background: var(--pl-ink); }
+  .ladder kbd { position: absolute; top: 3px; right: 4px; font: 500 9.5px/11px var(--pl-mono); color: var(--pl-text-secondary); opacity: .6; }
+  .lg-corner { width: 15px; height: 12px; margin-bottom: 3px; box-sizing: border-box; border-top: 1.5px solid var(--pl-icon-secondary); border-right: 1.5px solid var(--pl-icon-secondary); }
+  .lg-gap { display: flex; margin-bottom: 3px; } .lg-gap i { width: 3px; height: 13px; border-radius: 1px; background: var(--pl-icon-secondary); }
+  .lg-ag { font-family: var(--pl-sans); font-weight: 500; line-height: 1; color: var(--pl-text-primary); margin-bottom: 2px; }
+  .ladder .opt .lg-corner { border-color: var(--pl-icon-primary); } .ladder .opt .lg-gap i { background: var(--pl-text-primary); }
   .ladder .opt[aria-pressed="true"] .lg-corner { border-color: var(--pl-instrument); } .ladder .opt[aria-pressed="true"] .lg-gap i { background: var(--pl-instrument); } .ladder .opt[aria-pressed="true"] .lg-ag { color: var(--pl-instrument); }
   .lnotch { position: absolute; z-index: 1; top: -7px; bottom: -3px; width: 0; border-left: 2px dashed var(--pl-off); translate: -1px 0; pointer-events: none; }
   .lnotch em { position: absolute; top: -8px; left: 0; translate: -50% 0; padding: 0 3px; border-radius: 3px; font: 600 10px/13px var(--pl-mono); font-style: normal; color: #fff; background: var(--pl-off); white-space: nowrap; }
   .lnotch.soft { border-color: var(--pl-soft); } .lnotch.soft em { background: var(--pl-soft); }
-  .why-line { font: 400 12px/17px var(--pl-sans); color: var(--pl-ink-2); }
+  .why-line { font: 400 12px/17px var(--pl-sans); color: var(--pl-text-secondary); }
   .why-line:empty { display: none; }
   /* under the ladder the line always holds its place: a reason appearing on hover must never resize the card (the
      card would move, the step would slip from under the pointer, and the reading would shake) */
   .ladder + .why-line { min-height: 17px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .ladder + .why-line:empty { display: block; }
-  .ladder + .why-line:empty::before { content: "Point at a step to see why it is on your scale"; color: var(--pl-ink-2); opacity: .75; }
-  .why-line b { font: var(--pl-card-meta); font-weight: 600; color: var(--pl-ink); }
+  .ladder + .why-line:empty::before { content: "Point at a step to see why it is on your scale"; color: var(--pl-icon-secondary); opacity: .75; }
+  .why-line b { font: var(--pl-card-meta); font-weight: 600; color: var(--pl-text-primary); }
   /* colours and shadows have no line to sit on: a strip of swatches, yours among them */
   .swatches { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
-  .swatches .opt { position: relative; top: auto; height: auto; width: auto; margin: 0; flex-direction: row; gap: 6px; padding: 3px 8px 3px 3px; box-shadow: inset 0 0 0 1px var(--pl-rule); }
+  .swatches .opt { position: relative; top: auto; height: auto; width: auto; margin: 0; flex-direction: row; gap: 6px; padding: 3px 8px 3px 3px; box-shadow: inset 0 0 0 1px var(--pl-border-default); }
   .swatches .opt[aria-pressed="true"] { box-shadow: inset 0 0 0 1.5px var(--pl-instrument); }
   .swatches .opt[aria-pressed="true"]::before { display: none; }
   .swatches .opt b { margin: 0; }
   .swatches .you { display: inline-flex; align-items: center; gap: 6px; padding: 3px 8px 3px 3px; border-radius: 6px; box-shadow: inset 0 0 0 1px var(--pl-off); font: var(--pl-card-label); color: var(--pl-off); }
   .sw { width: 18px; height: 18px; border-radius: 4px; box-shadow: inset 0 0 0 1px rgb(0 0 0 / .1); }
   .sw.plate { width: 22px; height: 14px; border-radius: 3px; box-shadow: none; }
-  .note { padding: 8px 10px; border-radius: 6px; background: var(--pl-paper-2); font: var(--pl-card-body); color: var(--pl-ink); }
+  .note { padding: 8px 10px; border-radius: 6px; background: var(--pl-bg-inset); font: var(--pl-card-body); color: var(--pl-text-primary); }
   .note code { font: var(--pl-card-meta); overflow-wrap: anywhere; }
 `;

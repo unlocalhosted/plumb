@@ -38,7 +38,7 @@ export const BOXMODEL_CSS = `
   .bm .m.off { background: color-mix(in oklab, var(--c) 22%, transparent); }
   .bm .p.off { background: color-mix(in oklab, var(--c) 38%, transparent); }
   .bm .g.off { background: color-mix(in oklab, var(--c) 42%, transparent); }
-  .bm .ic { width: ${ICON}px; height: ${ICON}px; color: color-mix(in oklab, var(--c, var(--pl-sky)) 85%, var(--pl-ink)); translate: -50% -50%; }
+  .bm .ic { width: ${ICON}px; height: ${ICON}px; color: color-mix(in oklab, var(--c, var(--pl-sky)) 85%, var(--pl-icon-primary)); translate: -50% -50%; }
   .bm .ic svg, .bm .bm-at svg { display: block; width: 100%; height: 100%; }
   .bm .ic.off { --c: var(--pl-coral); color: var(--pl-coral); }
   .bm .bm-at svg { width: 11px; height: 11px; }

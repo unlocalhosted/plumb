@@ -44,7 +44,7 @@ export const MARKS_CSS = `
   .bp .ink circle { fill: currentColor; stroke: none; }
   .bp .k-off { color: var(--pl-off); stroke: var(--pl-off); }
   .bp .k-soft { color: var(--pl-soft); stroke: var(--pl-soft); }
-  .bp .k-debt { color: var(--pl-ink-3); stroke: var(--pl-ink-3); }
+  .bp .k-debt { color: var(--pl-text-secondary); stroke: var(--pl-icon-tick); }
   .bp .k-current { color: var(--pl-instrument); stroke: var(--pl-instrument); }
   .bp .k-picked { color: var(--pl-on); stroke: var(--pl-on); }
   .bp .outlines rect { stroke-width: 1.5px; }
@@ -61,10 +61,10 @@ export const MARKS_CSS = `
   .bp .lbl .more { opacity: 0.8; }
   .bp .lbl[data-under] { pointer-events: none; }
   .bp .bp-hint { position: fixed; max-width: 280px; padding: var(--pl-space-4) var(--pl-space-5); box-sizing: border-box; pointer-events: none; z-index: 1;
-    font: var(--pl-card-meta); color: var(--pl-ink); background: var(--pl-paper); border-radius: var(--pl-radius-card); box-shadow: var(--pl-shadow-card);
+    font: var(--pl-card-meta); color: var(--pl-text-primary); background: var(--pl-bg-surface); border-radius: var(--pl-radius-card); box-shadow: var(--pl-shadow-card);
     opacity: 0; transition: opacity var(--pl-dur-feedback) ease-out; }
   .bp .bp-hint[data-on] { opacity: 1; }
-  .bp .bp-hint .near { color: var(--pl-ink-2); display: block; }
+  .bp .bp-hint .near { color: var(--pl-text-secondary); display: block; }
   .bp .bp-hint .act { color: var(--pl-instrument); display: block; font: var(--pl-card-label); margin-top: var(--pl-space-1); }
   /* registration: heat where the page is off, no boxes at rest */
   .bp .heat .warm rect { fill: var(--pl-heat); }

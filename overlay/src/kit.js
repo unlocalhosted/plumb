@@ -31,14 +31,14 @@ export const BUTTON_CSS = `
     .tb .ic { display: block; width: 16px; height: 16px; margin-left: -3px; flex: none; }
     .tb .ic svg { display: block; width: 100%; height: 100%; }
     /* kinds: what the button is, by hue (the language's table): pink acts, mint is done, coral is wrong, paper is quiet */
-    .tb.quiet { --hue: var(--pl-paper); --base: var(--pl-rule); --on: var(--pl-ink); box-shadow: 0 9px 12px -9px rgb(0 0 0 / .28); }
-    .tb.quiet .top { background: linear-gradient(180deg, var(--pl-paper), var(--pl-paper-2)); box-shadow: inset 0 0 0 1.5px var(--pl-rule); }
-    .tb.quiet kbd { background: var(--pl-paper-2); color: var(--pl-ink-2); box-shadow: 0 1.5px 0 0 var(--pl-rule); }
+    .tb.quiet { --hue: var(--pl-bg-surface); --base: var(--pl-border-default); --on: var(--pl-icon-primary); box-shadow: 0 9px 12px -9px rgb(0 0 0 / .28); }
+    .tb.quiet .top { background: linear-gradient(180deg, var(--pl-bg-surface), var(--pl-bg-inset)); box-shadow: inset 0 0 0 1.5px var(--pl-border-default); }
+    .tb.quiet kbd { background: var(--pl-bg-inset); color: var(--pl-text-secondary); box-shadow: 0 1.5px 0 0 var(--pl-border-default); }
     .tb.done { --on: var(--pl-mint-block-on); --hue: var(--pl-mint-block); --base: color-mix(in oklab, var(--pl-mint-block) 70%, #000); }
     .tb.wrong { --on: var(--pl-coral-block-on); --hue: var(--pl-coral-block); --base: color-mix(in oklab, var(--pl-coral-block) 70%, #000); }
     /* not there: pale, flat on its base, nothing to press (the language: pale is for what is not there) */
-    .tb:disabled, .tb[data-show="disabled"] { --hue: var(--pl-paper-2); --base: transparent; --on: var(--pl-ink-3); --lift: 0px; cursor: not-allowed; box-shadow: none; }
-    .tb:disabled .top, .tb[data-show="disabled"] .top { background: var(--pl-paper-2); box-shadow: inset 0 0 0 1.5px var(--pl-rule); }
+    .tb:disabled, .tb[data-show="disabled"] { --hue: var(--pl-bg-inset); --base: transparent; --on: var(--pl-icon-tick); --lift: 0px; cursor: not-allowed; box-shadow: none; }
+    .tb:disabled .top, .tb[data-show="disabled"] .top { background: var(--pl-bg-inset); box-shadow: inset 0 0 0 1.5px var(--pl-border-default); }
     /* working: held down, three dots take turns; the button keeps its width */
     .tb[aria-busy="true"] { --lift: 1px; cursor: progress; box-shadow: 0 3px 5px -4px color-mix(in oklab, var(--hue) 75%, transparent); }
     .tb[aria-busy="true"] .lb, .tb[aria-busy="true"] kbd, .tb[aria-busy="true"] .ic { visibility: hidden; }
@@ -55,7 +55,7 @@ export const BUTTON_CSS = `
     /* a picture alone: a square, with its name one hover away */
     .tb.only .top { padding: 0; width: var(--h); }
     .tb.only .ic { margin: 0; width: 18px; height: 18px; }
-    .tb[data-tip]::after { content: attr(data-tip); position: absolute; left: 50%; bottom: calc(100% + 9px); translate: -50% 4px; padding: 4px 8px; border-radius: 8px; background: var(--pl-ink); color: var(--pl-paper);
+    .tb[data-tip]::after { content: attr(data-tip); position: absolute; left: 50%; bottom: calc(100% + 9px); translate: -50% 4px; padding: 4px 8px; border-radius: 8px; background: var(--pl-text-primary); color: var(--pl-bg-surface);
       font: 600 11px/1.2 var(--pl-sans); white-space: nowrap; opacity: 0; scale: .92; pointer-events: none; transition: opacity 140ms var(--pl-ease-out), scale 220ms var(--pl-spring-pop), translate 220ms var(--pl-spring-pop); }
     .tb[data-tip]:hover::after, .tb[data-tip]:focus-visible::after { opacity: 1; scale: 1; translate: -50% 0; }
     @media (pointer: coarse) { .tb kbd { display: none; } .tb { --h: 44px; } }

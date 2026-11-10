@@ -235,7 +235,7 @@ export const TEXT_EDITOR_CSS = `
   .tc .pk .style .row.compact .val, .tc .pk .style .row.compact .drum { height: 40px; }
   .tc .pk .style .slot b { font: var(--pl-round-w, 600) 15px/1 var(--pl-round, system-ui); }
   .tc .pk .style .slot.hard b { font-family: var(--pl-sans, system-ui); font-size: 13px; }
-  .tc .pk .style .slot .smp { display: grid; place-items: center; flex: none; width: 34px; height: 30px; border-radius: 7px; background: var(--pl-paper); color: var(--pl-ink); line-height: 1; font-style: normal; }
+  .tc .pk .style .slot .smp { display: grid; place-items: center; flex: none; width: 34px; height: 30px; border-radius: 7px; background: var(--pl-bg-surface); color: var(--pl-text-primary); line-height: 1; font-style: normal; }
   .tc .pk .list { z-index: 6; }
   .tc .pk .list .aa { font-style: normal; width: 22px; text-align: center; line-height: 1; }
   /* not set on this element: the value it gets from above, quiet, until you change it */
@@ -247,7 +247,7 @@ export const TEXT_EDITOR_CSS = `
   .tc .pk { ${COLOUR_PICK_CSS} }
   /* the card scrolls, so a list opens in place under its field (the full width) and pushes the rest down, never cut
      off by the card's edge; a long list scrolls inside itself */
-  .tc .pk .list, .tc .pk .row.inline.compact + .list { position: static; grid-column: 1 / -1; max-height: 232px; overflow: auto; overscroll-behavior: contain; box-shadow: 0 0 0 1px var(--pl-rule), 0 6px 16px -8px rgb(28 27 25 / .25); }
+  .tc .pk .list, .tc .pk .row.inline.compact + .list { position: static; grid-column: 1 / -1; max-height: 232px; overflow: auto; overscroll-behavior: contain; box-shadow: 0 0 0 1px var(--pl-border-default), 0 6px 16px -8px rgb(28 27 25 / .25); }
   .tc .pk .sw { display: block; width: 16px; height: 16px; border-radius: 5px; background: var(--sw, transparent); box-shadow: inset 0 0 0 1px rgb(0 0 0 / .14); font-style: normal; }
   .tc .pk .list .sw { width: 14px; height: 14px; }
   .tc .wr { display: flex; justify-content: flex-end; padding: 2px 12px 12px; }

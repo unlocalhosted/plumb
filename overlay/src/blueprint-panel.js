@@ -22,41 +22,41 @@ export const PANEL_CSS = `
   .bpp .head { all: unset; flex: none; display: flex; align-items: center; gap: var(--pl-space-4); box-sizing: border-box; padding: var(--pl-space-4) var(--pl-space-5); cursor: pointer; border-radius: var(--pl-radius-card); }
   .bpp .head:focus-visible { outline: 2px solid var(--pl-instrument); outline-offset: -2px; }
   .bpp .head .title { font: var(--pl-card-title); }
-  .bpp .head .meta { font: var(--pl-card-meta); color: var(--pl-ink-2); font-variant-numeric: tabular-nums; white-space: nowrap; }
-  .bpp .head .chev { margin-inline-start: auto; width: 10px; height: 10px; color: var(--pl-ink-2); transition: rotate var(--pl-dur-feedback) var(--pl-ease-out); }
+  .bpp .head .meta { font: var(--pl-card-meta); color: var(--pl-text-secondary); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .bpp .head .chev { margin-inline-start: auto; width: 10px; height: 10px; color: var(--pl-icon-secondary); transition: rotate var(--pl-dur-feedback) var(--pl-ease-out); }
   /* folded: one line, as wide as its words */
   .bpp:not([data-open]) { width: auto; }
   .bpp:not([data-open]) :is(.rows, .foot, .head .title, .head .more) { display: none; }
-  .bpp[data-open] .head { flex-wrap: wrap; row-gap: var(--pl-space-1); border-bottom: 1px solid var(--pl-rule); border-radius: var(--pl-radius-card) var(--pl-radius-card) 0 0; }
+  .bpp[data-open] .head { flex-wrap: wrap; row-gap: var(--pl-space-1); border-bottom: 1px solid var(--pl-border-default); border-radius: var(--pl-radius-card) var(--pl-radius-card) 0 0; }
   .bpp[data-open] .head .title { flex: 1 0 auto; }
   .bpp[data-open] .head .meta { order: 3; flex-basis: 100%; }
   .bpp[data-open] .head .chev { rotate: 180deg; }
-  @media (hover: hover) and (pointer: fine) { .bpp:not([data-open]) .head:hover { background: var(--pl-paper-2); } }
+  @media (hover: hover) and (pointer: fine) { .bpp:not([data-open]) .head:hover { background: var(--pl-bg-surface-hover); } }
   .bpp .head .meta .off { color: var(--pl-off); font-weight: 600; }
   .bpp .rows { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: var(--pl-space-2); margin: 0; list-style: none; }
   .bpp .row { all: unset; display: grid; grid-template-columns: 8px 1fr auto; column-gap: var(--pl-space-4); row-gap: 1px; align-items: baseline;
     width: 100%; box-sizing: border-box; padding: var(--pl-space-3) var(--pl-space-4); border-radius: var(--pl-radius-row); cursor: pointer; }
   .bpp .row .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--pl-off); align-self: center; }
   .bpp .row .dot.soft { background: var(--pl-soft); } .bpp .row .dot.picked { background: var(--pl-on); }
-  .bpp .row code { font: var(--pl-card-code); color: var(--pl-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+  .bpp .row code { font: var(--pl-card-code); color: var(--pl-text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
   .bpp .row code .to { color: var(--pl-on); }
-  .bpp .row .n { font: var(--pl-card-code); color: var(--pl-ink-2); font-variant-numeric: tabular-nums; }
-  .bpp .row .what { grid-column: 2 / -1; font: var(--pl-card-meta); color: var(--pl-ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  @media (hover: hover) and (pointer: fine) { .bpp .row:hover { background: var(--pl-paper-2); } }
+  .bpp .row .n { font: var(--pl-card-code); color: var(--pl-text-secondary); font-variant-numeric: tabular-nums; }
+  .bpp .row .what { grid-column: 2 / -1; font: var(--pl-card-meta); color: var(--pl-text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  @media (hover: hover) and (pointer: fine) { .bpp .row:hover { background: var(--pl-bg-surface-hover); } }
   .bpp .row:focus-visible { outline: 2px solid var(--pl-instrument); outline-offset: -2px; }
-  .bpp .row:active { background: var(--pl-paper-2); }
-  .bpp .row[aria-current="true"] { background: var(--pl-paper-2); box-shadow: inset 2px 0 0 var(--pl-instrument); }
+  .bpp .row:active { background: var(--pl-bg-inset); }
+  .bpp .row[aria-current="true"] { background: var(--pl-bg-inset); box-shadow: inset 2px 0 0 var(--pl-instrument); }
   .bpp .row .acts { grid-column: 2 / -1; display: none; gap: var(--pl-space-3); margin-top: var(--pl-space-3); }
   .bpp .row[aria-current="true"] .acts { display: flex; }
   .bpp .row .acts span { font: var(--pl-card-label); letter-spacing: var(--pl-tracking-label); padding: 3px var(--pl-space-4); border-radius: var(--pl-radius-tag); }
   .bpp .row .acts .fix { background: var(--pl-action-soft); color: var(--pl-on-action); }
-  .bpp .row .acts .next { color: var(--pl-ink-2); box-shadow: inset 0 0 0 1px var(--pl-rule); }
-  .bpp .empty { padding: var(--pl-space-6) var(--pl-space-5); font: var(--pl-card-body); color: var(--pl-ink-2); }
-  .bpp .empty b { display: block; font: var(--pl-card-title); color: var(--pl-ink); margin-bottom: var(--pl-space-1); }
-  .bpp .foot { flex: none; display: flex; align-items: center; gap: var(--pl-space-5); padding: var(--pl-space-4) var(--pl-space-5); border-top: 1px solid var(--pl-rule); font: var(--pl-card-meta); color: var(--pl-ink-2); }
+  .bpp .row .acts .next { color: var(--pl-text-secondary); box-shadow: inset 0 0 0 1px var(--pl-border-default); }
+  .bpp .empty { padding: var(--pl-space-6) var(--pl-space-5); font: var(--pl-card-body); color: var(--pl-text-secondary); }
+  .bpp .empty b { display: block; font: var(--pl-card-title); color: var(--pl-text-primary); margin-bottom: var(--pl-space-1); }
+  .bpp .foot { flex: none; display: flex; align-items: center; gap: var(--pl-space-5); padding: var(--pl-space-4) var(--pl-space-5); border-top: 1px solid var(--pl-border-default); font: var(--pl-card-meta); color: var(--pl-text-secondary); }
   .bpp .foot .code { margin-inline-end: auto; }
   .bpp .foot .code[hidden] + .keys { margin-inline-start: auto; }
-  .bpp .foot kbd { font: 500 10px/13px var(--pl-mono); color: var(--pl-ink-2); }
+  .bpp .foot kbd { font: 500 10px/13px var(--pl-mono); color: var(--pl-text-secondary); }
 `;
 
 // What is wrong with a class, in words: the kind of finding in its family.
