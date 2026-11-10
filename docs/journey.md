@@ -593,6 +593,12 @@ race, built for the old in-place write) was rewritten for the new write path (`e
   crafting-ui, "React Plumber" → All 25 colours → Accent → draw → Write: the code got `text-draw` and the toast said
   "Changed colour to draw on Plumber". In this theme "scrim" really is the same colour as "fg", so "looks the same" was
   true.
+- **"you didn't update this":** the design site's own text card still had the old colour row. The folded field (a
+  small colour field that opens the picker in place) was the product card's own code, so the two drifted the moment
+  they were made. It is now part of the shared colour picker, and both cards use it. A colour seen on a dark ground is
+  now compared with each token's dark value: on the dark hero, `#f0f0f1` first suggested "surface" and "bg" (their
+  light values are near-white); it now suggests `fg`, "looks the same". Fixed while checking: after a pick the field
+  read as inherited (grey italics), and its swatch showed the light value on a dark ground.
 
 ## Open gaps
 - The contrast check knows colours, not sizes or weights, and is not run by CI yet.

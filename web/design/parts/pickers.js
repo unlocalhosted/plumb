@@ -43,8 +43,6 @@ const STYLES = [
   { name: 'heading-lg', v: 36, lh: 1.25, fw: 700, ls: -0.025 },
   { name: 'display', v: 48, lh: 1, fw: 700, ls: -0.05 },
 ];
-// the text colours, darkest first; the heading's own colour is a hard-coded near-white
-const INK = [{ name: 'muted', v: '#94969c' }, { name: 'secondary', v: '#cecfd2' }, { name: '#f0f0f1', v: '#f0f0f1', hard: true }, { name: 'primary', v: '#f5f5f6' }, { name: 'white', v: '#ffffff' }];
 // font families: the project's three, and the heading's own hard-coded face
 const FAMILY = [{ name: 'sans', v: 'system-ui, -apple-system, sans-serif' }, { name: 'Helvetica Neue', v: '"Helvetica Neue", Arial, sans-serif', hard: true }, { name: 'display', v: 'var(--font-round), system-ui, sans-serif' }, { name: 'serif', v: 'Georgia, "Times New Roman", serif' }, { name: 'mono', v: 'ui-monospace, Menlo, monospace' }];
 const SCREENS = [['phone', 'Phone', 300], ['tablet', 'Tablet', 340], ['desktop', 'Desktop', 380]];
@@ -238,7 +236,7 @@ export function mount(host, root, css) {
     .tcard .note { margin: 0; padding: 0 2px; font: 500 11.5px/1.4 var(--pl-sans); color: var(--pl-ink-3); }
     .tcard .note:empty { display: none; }
     .tcard .fam .slot b { font-family: var(--ff); }
-    #textcard .stage { min-height: 760px; }
+    #textcard .stage { min-height: 1000px; }
     .hero { width: var(--hw, 380px); transition: width 320ms var(--pl-spring-pop); }
     .hero h1 { font-family: var(--ff, "Helvetica Neue", Arial, sans-serif) !important; text-align: var(--ta, left); font-style: var(--fst, normal); text-decoration: var(--td, none); text-decoration-thickness: 2px; }
     .hero .h { text-align: var(--ta, left); }
@@ -532,10 +530,20 @@ export function mount(host, root, css) {
       syncing = true; style.set(i >= 0 ? i : STYLES.findIndex((t) => t.hard)); syncing = false;
     };
 
-    // colour
-    const colour = field(colourBox, { name: 'Colour', toy: '<i class="sw" style="background:var(--ink, #f0f0f1)"></i>', options: INK, format: (o) => o.v,
-      mark: (t) => `<i class="chip" style="background:${t.v}"></i>`,
-      apply: (o) => { h1.style.setProperty('--ink', o.v); colourBox.style.setProperty('--ink', o.v); } });
+    // colour: the same colour picker as the product's card, folded: a small field that opens it in place. The heading's
+    // colour is a hard-coded near-white; the theme's text colours are its tokens, each with its light and dark value
+    const TEXT_INK = [
+      { name: 'fg', role: 'text', l: '#101828', d: '#f5f5f6' }, { name: 'muted', role: 'text', l: '#475467', d: '#94969c' }, { name: 'faint', role: 'text', l: '#98a2b3', d: '#61646c' },
+      { name: 'on-accent', role: 'accent', l: '#ffffff', d: '#ffffff' }, { name: 'accent', role: 'accent', l: '#2563eb', d: '#5b8def' },
+      { name: 'bg', role: 'surface', l: '#ffffff', d: '#0c111d' }, { name: 'surface', role: 'surface', l: '#f9fafb', d: '#161b26' },
+    ];
+    // the hero is dark, so the heading shows each colour's dark value
+    let inkLive = false; // the card's count is read only once everything in it exists
+    const cp = colourPick(stage, { into: colourBox, folded: true, writes: false, tokens: TEXT_INK, hard: { name: '#f0f0f1', l: '#f0f0f1' }, role: 'text', scheme: 'dark',
+      apply: (t) => { h1.style.setProperty('--ink', t.d ?? t.l); if (inkLive) refresh(); } });
+    // in the card's list of fields: counted by Write, written and put back with the rest, coral while hard-coded
+    all.push({ ready: () => cp.ready(), write: () => cp.seal(), putBack: () => cp.putBack(), set: () => {}, at: () => 0, row: Object.assign(cp.field, { hidden: false }), hard: () => cp.at().hard });
+    queueMicrotask(() => { inkLive = true; });
 
     // case, alignment, decoration and wrap: buttons. Each remembers what was written, so a change counts once
     const toggles = { case: { now: 'none', was: 'none' }, align: { now: 'left', was: 'left' }, deco: { now: '', was: '' }, wrap: { now: 'wrap', was: 'wrap' } };
@@ -563,7 +571,7 @@ export function mount(host, root, css) {
     const lb = () => go.querySelector('.lb');
     function refresh(fromStyle = false) {
       if (!syncing && !fromStyle && all.includes(style)) match();
-      const n = pending(), hard = all.some((p) => p !== style && !p.row.hidden && p.row.querySelector('.val.on-hard'));
+      const n = pending(), hard = all.some((p) => p !== style && !p.row.hidden && (p.hard ? p.hard() : p.row.querySelector('.val.on-hard')));
       sizes.tablet.row.classList.toggle('inherited', !tabletOwn);
       note.textContent = screen === 'tablet' && !tabletOwn ? 'Tablet uses the phone size until you change it.' : 'Letter spacing is set by the Heading component’s props (Heading.tsx).';
       if (!done) { go.disabled = n === 0; lb().textContent = n ? `Write ${n} change${n > 1 ? 's' : ''}` : 'Write'; }

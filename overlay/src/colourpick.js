@@ -59,7 +59,21 @@ export const COLOUR_PICK_CSS = `
   /* a swatch: the light value top-left, the dark value bottom-right; your hard-coded colour is one colour, ringed coral */
   .split { display: inline-block; flex: none; width: 16px; height: 16px; border-radius: 5px; background: linear-gradient(135deg, var(--l) 50%, var(--d) 50%); box-shadow: inset 0 0 0 1px rgb(0 0 0 / .14); }
   .split.hard { background: var(--l); box-shadow: inset 0 0 0 1px rgb(0 0 0 / .14), 0 0 0 1.5px var(--pl-coral); }
-  @media (prefers-reduced-motion: reduce) { .cp .opt.at .ok.pop { animation: none; } .cp .all i { transition: none; } }
+  /* folded (inside an editor card): a small field at rest, the colour as a swatch and its name; a click opens the
+     picker in place under it, the full width */
+  .cf { all: unset; box-sizing: border-box; display: grid; grid-template-columns: 18px 1fr auto 10px; align-items: center; gap: 8px; width: 100%; height: 30px; padding: 0 10px 0 6px; border-radius: 9px; background: var(--pl-paper-2); cursor: pointer; font: 500 12.5px/1 var(--pl-sans, system-ui); color: var(--pl-ink); }
+  .cf:focus-visible { outline: 2px solid var(--pl-sky); }
+  .cf:disabled { opacity: .62; cursor: default; }
+  .cf .sw { width: 18px; height: 18px; border-radius: 6px; background: var(--sw, transparent); box-shadow: inset 0 0 0 1px rgb(0 0 0 / .14); transition: background-color 160ms; }
+  .cf.hard .sw { box-shadow: inset 0 0 0 1px rgb(0 0 0 / .14), 0 0 0 1.5px var(--pl-coral); }
+  .cf b { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .cf.hard b { color: var(--pl-coral); }
+  .cf.from b, .cf span { color: var(--pl-ink-3); font-style: italic; font-weight: 500; }
+  .cf .chev { width: 6px; height: 6px; border-right: 1.5px solid var(--pl-ink-3); border-bottom: 1.5px solid var(--pl-ink-3); rotate: 45deg; translate: 0 -2px; transition: rotate 200ms var(--pl-spring-pop), translate 200ms; }
+  .cf[aria-expanded="true"] .chev { rotate: 225deg; translate: 0 1px; }
+  .cf + .cp { position: static; width: auto; margin-top: 6px; box-shadow: 0 0 0 1px var(--pl-rule); }
+  .cp[hidden] { display: none; }
+  @media (prefers-reduced-motion: reduce) { .cf .chev, .cf .sw { transition: none; } .cp .opt.at .ok.pop { animation: none; } .cp .all i { transition: none; } }
 `;
 
 const ROLES = [['text', 'Text'], ['surface', 'Surface'], ['line', 'Line'], ['accent', 'Accent'], ['status', 'Status'], ['other', 'Other']];
@@ -98,19 +112,23 @@ const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&l
 // hard.now: the element's colour is not hard-coded but already a token, or one it gets from above: said in that word
 // ('now', 'inherited'), not in coral. writes: false inside a card that writes everything with one button (a click
 // picks, nothing more). onEscape: what Esc does once every colour is folded away (default: put it back)
-export function colourPick(stage, { tokens, hard, role: guess, apply, place, into = stage, writes = true, onEscape }) {
+// folded: inside an editor card, a small field at rest that opens the picker in place (Esc folds it again)
+// scheme: 'dark' when the element is seen on a dark ground: its colour is compared with each token's dark value
+export function colourPick(stage, { tokens, hard, role: guess, apply, place, into = stage, writes = true, onEscape, folded = false, scheme = 'light' }) {
   const HARD = { ...hard, d: hard.d ?? hard.l, hard: true, coral: !hard.now };
   // the nearest three, never the element's own token again
-  const near = [...tokens].filter((t) => t.name !== HARD.name).sort((a, b) => colourDistance(HARD.l, a.l) - colourDistance(HARD.l, b.l)).slice(0, 3);
+  const of = (t) => (scheme === 'dark' ? t.d ?? t.l : t.l), far = (t) => colourDistance(HARD.l, of(t));
+  const near = [...tokens].filter((t) => t.name !== HARD.name).sort((a, b) => far(a) - far(b)).slice(0, 3);
   const roles = ROLES.filter(([k]) => tokens.some((t) => t.role === k));
   let role = roles.some(([k]) => k === guess) ? guess : near[0]?.role ?? roles[0]?.[0];
   let at = HARD, written = false;
   const opt = (t, words) => `<button type="button" class="opt${t.hard ? ' mine' : ''}${t.hard && t.coral ? ' hard' : ''}" role="option" data-n="${esc(t.hard ? '' : t.name)}">${swatch(t, 18)}<b>${esc(t.name)}</b><span>${words}</span><i class="ok" aria-hidden="true">${TICK}</i></button>`;
   into.insertAdjacentHTML('beforeend', `<div class="cp" role="listbox" aria-label="Colour">
     <div class="cap">Your colour</div>${opt(HARD, HARD.now ?? 'hard-coded')}
-    <div class="cap">Nearest of your tokens</div>${near.map((t) => opt(t, closeness(colourDistance(HARD.l, t.l)))).join('')}
+    <div class="cap">Nearest of your tokens</div>${near.map((t) => opt(t, closeness(far(t)))).join('')}
     <hr><button type="button" class="all" aria-expanded="false"><span>All ${tokens.length} colours</span><i aria-hidden="true"></i></button>
     <div class="every" hidden><div class="roles" role="group" aria-label="What the colour is for">${roles.map(([k, t]) => `<button type="button" data-role="${k}">${t}</button>`).join('')}</div><div class="shades" role="group"></div></div></div>`);
+  if (folded) into.querySelector(':scope > .cp:last-of-type')?.insertAdjacentHTML('beforebegin', `<button type="button" class="cf" aria-expanded="false"><i class="sw"></i><b></b><span></span><i class="chev" aria-hidden="true"></i></button>`);
   const box = [...into.querySelectorAll(':scope > .cp')].pop(), every = box.querySelector('.every'), shades = box.querySelector('.shades'), all = box.querySelector('.all');
   const byName = (n) => (n ? tokens.find((t) => t.name === n) : HARD);
   const layout = () => place?.(box);
@@ -129,7 +147,17 @@ export function colourPick(stage, { tokens, hard, role: guess, apply, place, int
     shades.innerHTML = tokens.filter((t) => t.role === role).map((t) => `<button type="button" class="shade" role="option" data-n="${esc(t.name)}" title="${esc(t.name)}">${swatch(t)}<span>${esc(t.name.startsWith(`${role}-`) ? t.name.slice(role.length + 1) : t.name)}</span></button>`).join('');
     mark(); layout();
   };
-  const show = (t) => apply(t, { token: !t.hard, written: written && t === at });
+  // the folded field says the colour in hand: coral while hard-coded, quiet when it comes from above
+  const field = folded ? box.previousElementSibling : null;
+  const paint = (t) => {
+    if (!field) return;
+    field.style.setProperty('--sw', of(t)); field.querySelector('b').textContent = t.name;
+    field.querySelector('span').textContent = t.hard ? (t.now ?? 'hard-coded') : '';
+    field.classList.toggle('hard', !!(t.hard && t.coral)); field.classList.toggle('from', !!t.hard && t.now === 'inherited');
+  };
+  const fold = (open) => { if (!field) return; box.hidden = !open; field.setAttribute('aria-expanded', String(open)); if (open) (box.querySelector('.opt.at') ?? box.querySelector('.opt'))?.focus(); else field.focus(); layout(); };
+  if (field) { box.hidden = true; field.addEventListener('click', () => fold(box.hidden)); }
+  const show = (t) => { paint(t); apply(t, { token: !t.hard, written: written && t === at }); };
   const pick = (t) => { if (written) return; const was = at; at = t; show(t); mark(t !== was && !t.hard); };
   const write = () => { if (!writes || at.hard || written) return; written = true; show(at); mark(); };
   const putBack = () => { written = false; at = HARD; show(HARD); mark(); };
@@ -137,6 +165,7 @@ export function colourPick(stage, { tokens, hard, role: guess, apply, place, int
   // pointing at a colour shows it on the element; leaving the picker shows the one in hand again
   box.addEventListener('pointerover', (e) => { const b = e.target.closest('[data-n]'); if (b && !written) apply(byName(b.dataset.n), { token: !!b.dataset.n, written: false }); });
   box.addEventListener('pointerleave', () => show(at));
+  box.addEventListener('pointerover', (e) => { const b = e.target.closest('[data-n]'); if (b && !written) paint(byName(b.dataset.n)); });
   box.addEventListener('click', (e) => {
     if (e.target.closest('.all')) { every.hidden = !every.hidden; all.setAttribute('aria-expanded', String(!every.hidden)); if (!every.hidden) drawRole(); else layout(); return; }
     const r = e.target.closest('[data-role]'); if (r) { role = r.dataset.role; drawRole(); return; }
@@ -153,9 +182,11 @@ export function colourPick(stage, { tokens, hard, role: guess, apply, place, int
       e.preventDefault(); const d = e.key === 'ArrowDown' || e.key === 'ArrowRight' ? 1 : -1;
       const n = items[Math.max(0, Math.min(items.length - 1, (i < 0 ? 0 : i + d)))]; n.focus(); pick(byName(n.dataset.n));
     } else if (e.key === 'Enter' && e.target.closest('[data-n]')) { e.preventDefault(); write(); }
-    else if (e.key === 'Escape') { e.preventDefault(); if (!every.hidden) { every.hidden = true; all.setAttribute('aria-expanded', 'false'); layout(); } else if (onEscape) onEscape(); else putBack(); }
+    else if (e.key === 'Escape') { e.preventDefault(); if (!every.hidden) { every.hidden = true; all.setAttribute('aria-expanded', 'false'); layout(); } else if (onEscape) onEscape(); else if (field) fold(false); else putBack(); }
   });
   new ResizeObserver(layout).observe(stage);
   mark(); show(HARD); layout();
-  return { box, layout, set: (n) => pick(byName(n)), at: () => at, written: () => written, write, putBack, ready: () => !at.hard && !written };
+  // seal: a card's one Write wrote it (a folded picker doesn't write on its own)
+  const seal = () => { if (at.hard) return; written = true; show(at); mark(); };
+  return { box, field, layout, seal, set: (n) => pick(byName(n)), at: () => at, written: () => written, write, putBack, ready: () => !at.hard && !written };
 }

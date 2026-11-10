@@ -248,18 +248,6 @@ export const TEXT_EDITOR_CSS = `
   .tc.grabbing, .tc.grabbing * { cursor: ns-resize !important; }
   .tc .pk .seg { margin: 0; }
   .tc .pk { ${COLOUR_PICK_CSS} }
-  /* colour: the field at rest, and the picker it opens inside the card (in place, the full width) */
-  .tc .pk .cf { all: unset; box-sizing: border-box; display: grid; grid-template-columns: 18px 1fr auto 10px; align-items: center; gap: 8px; height: 30px; padding: 0 10px 0 6px; border-radius: 9px; background: var(--pl-paper-2); cursor: pointer; font: 500 12.5px/1 var(--pl-sans, system-ui); }
-  .tc .pk .cf:focus-visible { outline: 2px solid var(--pl-sky); }
-  .tc .pk .cf .sw { width: 18px; height: 18px; border-radius: 6px; background: var(--sw, transparent); box-shadow: inset 0 0 0 1px rgb(0 0 0 / .14); transition: background-color 160ms; }
-  .tc .pk .cf.hard:not(.picked) .sw { box-shadow: inset 0 0 0 1px rgb(0 0 0 / .14), 0 0 0 1.5px var(--pl-coral); }
-  .tc .pk .cf b { font-weight: 600; color: var(--pl-ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .tc .pk .cf.hard:not(.picked) b { color: var(--pl-coral); }
-  .tc .pk .cf.inherited:not(.picked) b, .tc .pk .cf span { color: var(--pl-ink-3); font-style: italic; font-weight: 500; }
-  .tc .pk .cf .chev { width: 6px; height: 6px; border-right: 1.5px solid var(--pl-ink-3); border-bottom: 1.5px solid var(--pl-ink-3); rotate: 45deg; translate: 0 -2px; transition: rotate 200ms; }
-  .tc .pk .cf[aria-expanded="true"] .chev { rotate: 225deg; translate: 0 1px; }
-  .tc .pk .cp { position: static; width: auto; margin-top: 6px; box-shadow: 0 0 0 1px var(--pl-rule); }
-  .tc .pk .cp[hidden] { display: none; }
   /* the card scrolls, so a list opens in place under its field (the full width) and pushes the rest down, never cut
      off by the card's edge; a long list scrolls inside itself */
   .tc .pk .list, .tc .pk .row.inline.compact + .list { position: static; grid-column: 1 / -1; max-height: 232px; overflow: auto; overscroll-behavior: contain; box-shadow: 0 0 0 1px var(--pl-rule), 0 6px 16px -8px rgb(28 27 25 / .25); }
@@ -819,16 +807,10 @@ export class TextEditor {
       const mine = hardC ? { name: plainColor(color.p.value), l: color.p.value }
         : own ? { name: own.name, l: own.l, now: own.name === color.current ? 'now' : 'inherited' }
         : { name: plainColor(value ?? shows ?? ''), l: value ?? shows ?? 'transparent', now: 'inherited' };
-      cbox.innerHTML = `<button type="button" class="cf${hardC ? ' hard' : ''}${mine.now === 'inherited' ? ' inherited' : ''}" aria-expanded="false"${color.disabled ? ' disabled' : ''}><i class="sw"></i><b></b><span></span><i class="chev" aria-hidden="true"></i></button>`;
-      const field = cbox.querySelector('.cf');
-      const paint = (t) => { field.style.setProperty('--sw', t.l); field.querySelector('b').textContent = t.name; field.querySelector('span').textContent = t.hard ? (t.now ?? 'hard-coded') : ''; field.classList.toggle('picked', !t.hard); };
-      const cp = colourPick(box, { into: cbox, tokens, hard: mine, role: roleOf(/\bbg-|background/.test(color.p.class ?? '') ? 'surface' : 'fg'), writes: false,
-        apply: (t, { token }) => { paint(t); if (this.#mounting && !this.#restoring) return; if (!token || t.name === color.current) this.#held.delete('color'); else this.#held.set('color', t.name); this.#showHeld(); this.#refresh(); },
-        onEscape: () => { cp.box.hidden = true; field.setAttribute('aria-expanded', 'false'); field.focus(); } });
-      cp.box.hidden = true;
-      field.addEventListener('click', () => { cp.box.hidden = !cp.box.hidden; field.setAttribute('aria-expanded', String(!cp.box.hidden)); if (!cp.box.hidden) (cp.box.querySelector('.opt.at') ?? cp.box.querySelector('.opt'))?.focus(); });
+      const cp = colourPick(box, { into: cbox, folded: true, tokens, hard: mine, role: roleOf(/\bbg-|background/.test(color.p.class ?? '') ? 'surface' : 'fg'), writes: false,
+        apply: (t, { token }) => { if (this.#mounting && !this.#restoring) return; if (!token || t.name === color.current) this.#held.delete('color'); else this.#held.set('color', t.name); this.#showHeld(); this.#refresh(); } });
+      if (color.disabled) cp.field.disabled = true;
       this.#colour = cp;
-      paint(mine);
       // a colour held before this draw is picked again (the card is drawn again after every write)
       if (this.#held.has('color')) { this.#restoring = true; try { cp.set(this.#held.get('color')); } finally { this.#restoring = false; } }
     }
