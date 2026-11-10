@@ -92,14 +92,14 @@ test('the timeline shows each change as a tick in its step, and undoes one chang
 
   // empty before anything is written
   await overlay(page).locator('.dock').hover(); await overlay(page).locator('.dock .history').click();
-  await page.waitForFunction(() => document.querySelector('plumb-overlay').shadowRoot.querySelector('.tt .tt-say'));
+  await page.waitForFunction(() => document.querySelector('plumb-overlay')?.shadowRoot?.querySelector('.tt .tt-say'));
   assert.equal((await strip(page)).say, 'Nothing changed yet. What you write shows up here.');
   await page.keyboard.press('Escape');
-  await page.waitForFunction(() => document.querySelector('plumb-overlay').shadowRoot.querySelector('.tt').hidden);
+  await page.waitForFunction(() => document.querySelector('plumb-overlay')?.shadowRoot?.querySelector('.tt')?.hidden);
 
   await app.swaps([[4, 'gap-2', 'gap-3'], [5, 'p-[13px]', 'p-3'], [6, 'mt-[10px]', 'mt-2.5']], { group: 'spacing-1', meta: { step: 'Spacing', laws: [{ id: 'proximity', name: 'Law of proximity' }] } });
   await overlay(page).locator('.dock').hover(); await overlay(page).locator('.dock .history').click();
-  await page.waitForFunction(() => document.querySelector('plumb-overlay').shadowRoot.querySelectorAll('.tt .tt-tick[data-i]').length === 3);
+  await page.waitForFunction(() => document.querySelector('plumb-overlay')?.shadowRoot?.querySelectorAll('.tt .tt-tick[data-i]').length === 3);
   let s = await strip(page);
   assert.deepEqual(s.steps, [{ name: 'Spacing', ticks: ['live', 'live', 'live'] }]);
   assert.equal(s.pointed, '2', 'opens at Now: the newest change');
@@ -118,7 +118,7 @@ test('the timeline shows each change as a tick in its step, and undoes one chang
   assert.ok((await strip(page)).headOnTick, 'the playhead is over the pointed tick');
   assert.ok(await around(page, (await strip(page)).marks, ['#b']), 'the outline travels to the middle change\'s element');
   await page.keyboard.press('Backspace');
-  await page.waitForFunction(() => document.querySelector('plumb-overlay').shadowRoot.querySelectorAll('.tt .tt-tick[data-i]').length === 4);
+  await page.waitForFunction(() => document.querySelector('plumb-overlay')?.shadowRoot?.querySelectorAll('.tt .tt-tick[data-i]').length === 4);
   assert.equal(await app.read(), APP.replace('gap-2', 'gap-3').replace('mt-[10px]', 'mt-2.5'));
   s = await strip(page);
   assert.deepEqual(s.steps, [{ name: 'Spacing', ticks: ['live', 'undone', 'live'] }, { name: 'Undo', ticks: ['live+undo'] }]);
@@ -128,13 +128,13 @@ test('the timeline shows each change as a tick in its step, and undoes one chang
   // Home, then ⇧⌫: the rest of the step goes, the file is as it started
   await page.keyboard.press('Home');
   await page.keyboard.press('Shift+Backspace');
-  await page.waitForFunction(() => document.querySelector('plumb-overlay').shadowRoot.querySelectorAll('.tt .tt-tick[data-i]').length === 6);
+  await page.waitForFunction(() => document.querySelector('plumb-overlay')?.shadowRoot?.querySelectorAll('.tt .tt-tick[data-i]').length === 6);
   assert.equal(await app.read(), APP);
   assert.deepEqual((await strip(page)).steps[0], { name: 'Spacing', ticks: ['undone', 'undone', 'undone'] });
 
   // Esc closes and hands focus back to the history button; the outline goes with it
   await page.keyboard.press('Escape');
-  await page.waitForFunction(() => document.querySelector('plumb-overlay').shadowRoot.querySelector('.tt').hidden);
+  await page.waitForFunction(() => document.querySelector('plumb-overlay')?.shadowRoot?.querySelector('.tt')?.hidden);
   assert.equal(await page.evaluate(() => document.querySelector('plumb-overlay').shadowRoot.querySelectorAll('.tt-marks:not([hidden]) .tt-mark').length), 0);
   assert.ok(await page.evaluate(() => document.querySelector('plumb-overlay').shadowRoot.activeElement?.classList.contains('history')));
 });
@@ -147,7 +147,7 @@ test('a change edited by hand is hatched, its Undo change is off, and ⌫ says w
   const typed = (await app.read()).replace('p-3', 'p-8');
   await writeFile(join(app.root, 'src/App.jsx'), typed);
   await overlay(page).locator('.dock').hover(); await overlay(page).locator('.dock .history').click();
-  await page.waitForFunction(() => document.querySelector('plumb-overlay').shadowRoot.querySelectorAll('.tt .tt-tick[data-i]').length === 1);
+  await page.waitForFunction(() => document.querySelector('plumb-overlay')?.shadowRoot?.querySelectorAll('.tt .tt-tick[data-i]').length === 1);
   let s = await strip(page);
   assert.deepEqual(s.steps, [{ name: 'Edited outside', ticks: ['changed'] }], 'a step nothing can undo collapses into one tick');
   assert.equal(s.change, true, 'Undo change is off');
@@ -178,7 +178,7 @@ test('a list row outlines every row it draws, far down the page comes into view,
   const row = LIST.split('\n')[5];
   await app.swaps([[6, 'py-[7px]', 'py-2', row.indexOf('<li') + 1]], { meta: { step: 'Rows' } });
   await overlay(page).locator('.dock').hover(); await overlay(page).locator('.dock .history').click();
-  await page.waitForFunction(() => document.querySelector('plumb-overlay').shadowRoot.querySelectorAll('.tt .tt-tick[data-i]').length === 2);
+  await page.waitForFunction(() => document.querySelector('plumb-overlay')?.shadowRoot?.querySelectorAll('.tt .tt-tick[data-i]').length === 2);
   await page.waitForTimeout(900); // the page scrolls to the rows
   let s = await strip(page);
   assert.equal(s.marks.length, 3, 'one outline per row');
@@ -203,7 +203,7 @@ test('the playhead in the past shows the page as it was there, writes nothing, p
   assert.deepEqual([now.a.pad, now.b.pad, now.c.mt], ['24px', '12px', '16px']);
 
   await overlay(page).locator('.dock').hover(); await overlay(page).locator('.dock .history').click();
-  await page.waitForFunction(() => document.querySelector('plumb-overlay').shadowRoot.querySelectorAll('.tt .tt-tick[data-i]').length === 3);
+  await page.waitForFunction(() => document.querySelector('plumb-overlay')?.shadowRoot?.querySelectorAll('.tt .tt-tick[data-i]').length === 3);
   await page.keyboard.press('ArrowLeft');
   // the past fills in once the class compile lands (the strip never waits for it)
   await page.waitForFunction(() => getComputedStyle(document.getElementById('c')).marginTop === '10px', null, { timeout: 10000 });
@@ -226,7 +226,7 @@ test('the playhead in the past shows the page as it was there, writes nothing, p
   // Go back to here from the first change: the two after it go in one write
   await page.keyboard.press('Home');
   await page.keyboard.press('Enter');
-  await page.waitForFunction(() => document.querySelector('plumb-overlay').shadowRoot.querySelectorAll('.tt .tt-tick[data-i]').length === 5);
+  await page.waitForFunction(() => document.querySelector('plumb-overlay')?.shadowRoot?.querySelectorAll('.tt .tt-tick[data-i]').length === 5);
   assert.equal(await app.read(), APP.replace('p-4 gap-2', 'p-6 gap-2'));
   s = await strip(page);
   assert.deepEqual(s.steps, [{ name: 'Spacing', ticks: ['live', 'undone', 'undone'] }, { name: 'Undo', ticks: ['live+undo', 'live+undo'] }]);
@@ -254,19 +254,19 @@ test('the write toast\'s Undo takes back the whole step the timeline shows, and 
   assert.equal(await app.read(), APP.replace('gap-2', 'gap-3').replace('p-[13px]', 'p-3'));
   const toast = overlay(page).locator('.wt .undo');
   await toast.click();
-  await page.waitForFunction(() => /Undid 2 changes/.test(document.querySelector('plumb-overlay').shadowRoot.querySelector('.wt')?.textContent ?? ''));
+  await page.waitForFunction(() => /Undid 2 changes/.test(document.querySelector('plumb-overlay')?.shadowRoot?.querySelector('.wt')?.textContent ?? ''));
   assert.equal(await app.read(), APP, 'both changes of the step went');
   await overlay(page).locator('.dock').hover(); await overlay(page).locator('.dock .history').click();
-  await page.waitForFunction(() => document.querySelector('plumb-overlay').shadowRoot.querySelectorAll('.tt .tt-tick[data-i]').length === 4);
+  await page.waitForFunction(() => document.querySelector('plumb-overlay')?.shadowRoot?.querySelectorAll('.tt .tt-tick[data-i]').length === 4);
   assert.deepEqual((await strip(page)).steps.map((x) => x.ticks), [['undone', 'undone'], ['live+undo', 'live+undo']], 'the timeline shows the same step undone');
 
   // a button in the dock's corner sends the dock to the other one: the strip goes with it
   await page.keyboard.press('Escape');
-  await page.waitForFunction(() => document.querySelector('plumb-overlay').shadowRoot.querySelector('.tt').hidden);
+  await page.waitForFunction(() => document.querySelector('plumb-overlay')?.shadowRoot?.querySelector('.tt')?.hidden);
   await page.evaluate(() => { const b = document.createElement('button'); b.textContent = 'Send feedback'; b.style.cssText = 'position:fixed;right:16px;bottom:16px;width:200px;height:36px;z-index:5'; document.body.append(b); dispatchEvent(new Event('resize')); });
   await page.waitForFunction(() => document.querySelector('plumb-overlay').getAttribute('data-side') === 'start', null, { timeout: 5000 });
   await overlay(page).locator('.dock').hover(); await overlay(page).locator('.dock .history').click();
-  await page.waitForFunction(() => document.querySelector('plumb-overlay').shadowRoot.querySelectorAll('.tt .tt-tick[data-i]').length === 4);
+  await page.waitForFunction(() => document.querySelector('plumb-overlay')?.shadowRoot?.querySelectorAll('.tt .tt-tick[data-i]').length === 4);
   await page.waitForTimeout(400);
   const left = await page.evaluate(() => document.querySelector('plumb-overlay').shadowRoot.querySelector('.tt').getBoundingClientRect().left);
   assert.ok(Math.abs(left - 16) <= 1, `the strip sits in the start corner, at ${left}px`);
