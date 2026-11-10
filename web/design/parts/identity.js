@@ -57,9 +57,9 @@ export function mount(host, root, css) {
     .face b { display: block; font-size: 34px; line-height: 37px; letter-spacing: -0.02em; color: var(--pl-ink); text-wrap: balance; }
     .face p { margin: 12px 0 0; font-size: 15.5px; line-height: 24px; color: var(--pl-ink-2); }
     .face small { display: block; margin-top: 14px; font: 600 12px/1.3 var(--pl-mono); color: var(--pl-ink-3); }
-    .f1 b { font-family: var(--font-round); font-weight: 600; } .f1 p { font-family: var(--font-body); font-weight: 500; }
-    .f2 b { font-family: var(--font-trial-a); font-weight: 750; font-variation-settings: 'opsz' 60; } .f2 p { font-family: var(--font-trial-b); font-weight: 450; }
-    .f3 b { font-family: var(--font-trial-b); font-weight: 650; letter-spacing: -0.03em; } .f3 p { font-family: var(--font-trial-b); font-weight: 450; }
+    .f1 b { font-family: var(--font-old-round); font-weight: 600; } .f1 p { font-family: var(--font-old-body); font-weight: 500; }
+    .f2 b { font-family: var(--font-round); font-weight: 750; font-variation-settings: 'opsz' 60; } .f2 p { font-family: var(--font-body); font-weight: 450; }
+    .f3 b { font-family: var(--font-body); font-weight: 650; letter-spacing: -0.03em; } .f3 p { font-family: var(--font-body); font-weight: 450; }
     @media (max-width: 820px) { .why { grid-template-columns: repeat(2, minmax(0, 1fr)); } .pair, .faces { grid-template-columns: 1fr; } }
   </style>${TOY_DEFS}
   <h2>Where the delight comes from</h2>
@@ -97,8 +97,8 @@ export function mount(host, root, css) {
   <h2>And the face</h2>
   <p>The rounded face is the other borrowed part. Three candidates for the same headline.</p>
   <div class="faces">
-    <div class="face f1"><b>Keep your app on your design system.</b><p>Each mark is a place in your code that types a size by hand.</p><small>Fredoka + Nunito · today · friendly, and everywhere</small></div>
-    <div class="face f2"><b>Keep your app on your design system.</b><p>Each mark is a place in your code that types a size by hand.</p><small>Bricolage Grotesque + Instrument Sans · odd, hand-cut, a little crooked</small></div>
+    <div class="face f1"><b>Keep your app on your design system.</b><p>Each mark is a place in your code that types a size by hand.</p><small>Fredoka + Nunito · before · friendly, and everywhere</small></div>
+    <div class="face f2"><b>Keep your app on your design system.</b><p>Each mark is a place in your code that types a size by hand.</p><small>Bricolage Grotesque + Instrument Sans · on the site now · odd, hand-cut, a little crooked</small></div>
     <div class="face f3"><b>Keep your app on your design system.</b><p>Each mark is a place in your code that types a size by hand.</p><small>Instrument Sans alone · plain and exact, lets the toys be the only play</small></div>
   </div>`;
 
