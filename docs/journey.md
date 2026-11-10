@@ -417,6 +417,21 @@ race, built for the old in-place write) was rewritten for the new write path (`e
 - **Open:** margin; one value per side (padding-x vs padding-y) is not handled; the type lines are placed from an
   estimate of the face's cap height, not measured; drag sensitivity untested by hand.
 
+### 13. "Yes, merge them": the editor is pickers in a card
+
+- **The itch:** the token pickers and the product's text card (Alt+click on words: style, size, leading, tracking,
+  weight, case, colour) were two designs of the same control, already drifting apart.
+- **What we chose:** the picker is the building block; an editor is a card of pickers. The picker moved into the
+  product's code (`overlay/src/picker.js`, with its styles), and the design site's Token pickers page now uses that
+  file. A new scene, "Put together: the text card": a hero heading with two hard-coded values (font size 34px, line
+  height 1.2) and two on tokens (letter spacing, weight), edited from a card of four picker rows beside it. Hard-coded
+  rows read in coral among the others; a row already on a token keeps its tick quiet until it changes.
+- **A bug on the way:** with four rows in one card, one arrow key moved all four; each row now hears its own keys.
+- **Proof:** on the running page, dragging the line-height value moved it to tight and the heading's line height
+  followed; ↑ on the weight row moved only the weight, to bold.
+- **Open:** the product's own text card (`overlay/src/texteditor.js`) is not yet rebuilt from the picker; style,
+  case and colour rows are not drawn yet (colour needs its own picker).
+
 ## Open gaps
 - The contrast check knows colours, not sizes or weights, and is not run by CI yet.
 - `web/docs/pages` is a copy of `site/src/docs/pages`; two copies until the old Vite site is removed.
