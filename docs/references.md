@@ -26,3 +26,15 @@ Everything shared or found as a reference for React Plumber: what it is, why, wh
   different colors and solid like for marging padding spacing the ones which appears when we apply the fixes".
 - **What it changed here:** it became the source of the visual language (`docs/design/visual-language.md`) and of the
   toy icon set (`overlay/demo/toys.js`).
+
+## 2026-11-10 · Bricolage Grotesque and Instrument Sans · found by us
+
+- **What:** two open typefaces from Google Fonts: [Bricolage Grotesque](https://fonts.google.com/specimen/Bricolage+Grotesque)
+  and [Instrument Sans](https://fonts.google.com/specimen/Instrument+Sans).
+- **Why:** the owner, on the raised key with rounded lettering: "isn't these like overused to hell and like look like
+  just every other playful product. we don't have any unique identity here similar to what we have in terms of our
+  icons." Three candidates were put side by side on the design site's identity page.
+- **What it changed here:** tried across the whole site, then made heavier, then kept ("Keep Bricolage"). Fredoka and
+  Nunito are gone from the site.
+- **Where it was used:** `web/app/layout.jsx`; journey, Chapter 3, entry 9.
+

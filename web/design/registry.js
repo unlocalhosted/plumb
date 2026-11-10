@@ -3,8 +3,8 @@
 // listed so the whole system is in view and nothing is drawn without its turn. 
 export const GROUPS = [
   ['Foundations', [
-    { id: 'identity', hue: 'lilac', toy: 'ratio', name: 'Identity', says: 'Three ways the site could look like nobody else. A question, not an answer yet.', ready: true,
-      lede: 'The raised key and the rounded face are borrowed: a hundred playful products look like this. The icons are ours. Here are three ways to make everything else ours too, side by side. Point at each and press.' },
+    { id: 'identity', hue: 'lilac', toy: 'ratio', name: 'Identity', says: 'What makes a raised thing a delight, taken apart: soft blocks, and the face.', ready: true,
+      lede: 'The raised key and the rounded face are borrowed: a hundred playful products look like this. The icons are ours. Here is what replaced them: soft blocks, rebuilt from where the delight comes from, and a face with its own hand. Point at each and press.' },
     { id: 'color', hue: 'pink', toy: 'fill', name: 'Colour', says: 'Six hues with one meaning each, the neutrals, the roles. Tables read from the token file.', ready: true,
       lede: 'Six hues with one meaning each, a few neutrals, and the roles that parts ask for. Every table here is read from the token file itself, so it can’t disagree with the product.' },
     { id: 'type', hue: 'sky', toy: 'type', name: 'Type', says: 'Two faces and twelve styles, each one token. Every size drawn to scale.', ready: true,

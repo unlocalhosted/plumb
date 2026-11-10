@@ -95,10 +95,13 @@ Colour pairings are not left to the eye. They are a list, and the list is checke
 
 Two faces, each with one job.
 
-- **The toy face** (`--pl-round`): rounded and heavy. For what a toy would have printed on it: a title, a name, a
-  button, a number. Never for a paragraph. The site ships Fredoka for it; the overlay, which may not fetch a font
-  inside someone else's app, names the system's rounded face and falls back to its plain one.
-- **The reading face** (`--pl-sans`): for sentences. The site ships Nunito, so even the reading text has soft ends.
+- **The toy face** (`--pl-round`): for what a toy would have printed on it: a title, a name, a button, a number.
+  Never for a paragraph. The site ships Bricolage Grotesque for it, set heavy (`--pl-round-w`, 750 on the site): a
+  face with its own hand, a little crooked. It is deliberately not a rounded face. Rounded and raised together is
+  what every playful product looks like; here the toys and the soft blocks are the round things, and the lettering
+  has character instead. The overlay, which may not fetch a font inside someone else's app, names the system's
+  faces and keeps the default weight.
+- **The reading face** (`--pl-sans`): for sentences. The site ships Instrument Sans: plain and exact.
 - **Mono** is only for real code.
 - Titles are big and few. A page has one headline (54), sections are 28, a name on a box is 24. A size that is only
   a point or two from its neighbour is not a step; remove one.

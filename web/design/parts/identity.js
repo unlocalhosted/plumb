@@ -52,15 +52,11 @@ export function mount(host, root, css) {
     .tl button[aria-pressed="true"] { background: var(--pl-paper); color: var(--pl-ink); }
     .tl input[type="range"] { flex: 1; min-width: 180px; accent-color: var(--pl-pink); }
     .tl output { font: 500 12px/1 var(--pl-mono); min-width: 190px; opacity: .85; }
-    .faces { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin-top: 16px; }
-    .face { padding: 22px 22px 18px; border-radius: 22px; background: var(--pl-paper-2); }
-    .face b { display: block; font-size: 34px; line-height: 37px; letter-spacing: -0.02em; color: var(--pl-ink); text-wrap: balance; }
-    .face p { margin: 12px 0 0; font-size: 15.5px; line-height: 24px; color: var(--pl-ink-2); }
+    .face { margin-top: 16px; padding: 26px 26px 22px; border-radius: 22px; background: var(--pl-paper-2); }
+    .face b { display: block; font: var(--pl-round-w, 600) 44px/46px var(--pl-round); letter-spacing: -0.02em; color: var(--pl-ink); text-wrap: balance; max-width: 560px; }
+    .face p { margin: 12px 0 0; font: 450 17px/27px var(--pl-sans); color: var(--pl-ink-2); max-width: 560px; }
     .face small { display: block; margin-top: 14px; font: 600 12px/1.3 var(--pl-mono); color: var(--pl-ink-3); }
-    .f1 b { font-family: var(--font-old-round); font-weight: 600; } .f1 p { font-family: var(--font-old-body); font-weight: 500; }
-    .f2 b { font-family: var(--font-round); font-weight: 750; font-variation-settings: 'opsz' 60; } .f2 p { font-family: var(--font-body); font-weight: 450; }
-    .f3 b { font-family: var(--font-body); font-weight: 650; letter-spacing: -0.03em; } .f3 p { font-family: var(--font-body); font-weight: 450; }
-    @media (max-width: 820px) { .why { grid-template-columns: repeat(2, minmax(0, 1fr)); } .pair, .faces { grid-template-columns: 1fr; } }
+    @media (max-width: 820px) { .why { grid-template-columns: repeat(2, minmax(0, 1fr)); } .pair { grid-template-columns: 1fr; } }
   </style>${TOY_DEFS}
   <h2>Where the delight comes from</h2>
   <p>Taking the raised key apart. It is not the two tones. It is four things the hand and eye read at once.</p>
@@ -95,12 +91,8 @@ export function mount(host, root, css) {
 
 
   <h2>And the face</h2>
-  <p>The rounded face is the other borrowed part. Three candidates for the same headline.</p>
-  <div class="faces">
-    <div class="face f1"><b>Keep your app on your design system.</b><p>Each mark is a place in your code that types a size by hand.</p><small>Fredoka + Nunito · before · friendly, and everywhere</small></div>
-    <div class="face f2"><b>Keep your app on your design system.</b><p>Each mark is a place in your code that types a size by hand.</p><small>Bricolage Grotesque + Instrument Sans · on the site now · odd, hand-cut, a little crooked</small></div>
-    <div class="face f3"><b>Keep your app on your design system.</b><p>Each mark is a place in your code that types a size by hand.</p><small>Instrument Sans alone · plain and exact, lets the toys be the only play</small></div>
-  </div>`;
+  <p>The rounded face was the other borrowed part. The site is now set in a face with its own hand: a little crooked, cut heavy, so the titles have character and the toys stay the only round things.</p>
+  <div class="face"><b>Keep your app on your design system.</b><p>Each mark is a place in your code that types a size by hand.</p><small>Bricolage Grotesque, heavy, for what a toy has printed on it · Instrument Sans for sentences</small></div>`;
 
   let rate = 1, held = false; // the timeline's speed and Hold (below)
   let onMotion = () => {};     // the timeline's: a motion just started

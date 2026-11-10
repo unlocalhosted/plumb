@@ -318,6 +318,21 @@ race, built for the old in-place write) was rewritten for the new write path (`e
 - **The Buttons page** now describes the soft block in its own words (the lit top, the side, the sized press).
 - **Left open:** the product itself still uses its old buttons.
 
+### 9. "look like just every other playful product": the face
+
+- **The itch:** the owner, on raised buttons with rounded lettering: "isn't these like overused to hell... we don't
+  have any unique identity here similar to what we have in terms of our icons."
+- **How we found it:** three candidates for one headline on the identity page (Fredoka with Nunito; Bricolage
+  Grotesque with Instrument Sans; Instrument Sans alone). A headline in a card couldn't settle it, so the second
+  pair was put on the whole site.
+- **What we tried:** at the weight that suited Fredoka, Bricolage looked thin and ordinary on real pages; its
+  character only shows heavy. The title face got one weight setting, raised to 750 on the site.
+- **What we chose and why:** Bricolage Grotesque, heavy, for titles, names and buttons; Instrument Sans for
+  sentences. The toys and the soft blocks are the round things; the lettering has its own hand instead of being
+  round too. See [references](references.md).
+- **Proof:** the owner, after looking at the site in it: "Keep Bricolage."
+- **Media hooks:** the design shelf before (Fredoka) and after, same crop.
+
 ## Open gaps
 - The contrast check knows colours, not sizes or weights, and is not run by CI yet.
 - `web/docs/pages` is a copy of `site/src/docs/pages`; two copies until the old Vite site is removed.
