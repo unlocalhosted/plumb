@@ -175,6 +175,21 @@
     .fb svg { display: block; width: 100%; height: 100%; }
     .fb code { font: 600 13px/1 var(--pl-mono); color: var(--pl-ink); }
     .fb .in { font: 500 12px/1 var(--pl-sans); color: var(--pl-ink-2); }
+    /* Pointing says it in words: an icon gives its name above it, the bar gives the sentence and the place under it.
+       The words are for learning the pictures; once learnt, nobody has to point. Shown on focus too. */
+    .fb { position: relative; outline: none; cursor: default; }
+    .fb:focus-visible { box-shadow: var(--pl-shadow-card), 0 0 0 2px var(--pl-sky); }
+    .fb i { position: relative; transition: scale 300ms var(--pl-spring-pop), rotate 300ms var(--pl-spring-pop); }
+    .fb i:hover { scale: 1.16; rotate: -6deg; }
+    .fb i[data-tip]::after, .fb[data-tip]::after { position: absolute; left: 50%; z-index: 3; pointer-events: none; white-space: nowrap; opacity: 0; scale: .92;
+      transition: opacity 140ms var(--pl-ease-out), scale 220ms var(--pl-spring-pop), translate 220ms var(--pl-spring-pop); }
+    .fb i[data-tip]::after { content: attr(data-tip); bottom: calc(100% + 9px); translate: -50% 4px; padding: 4px 8px; border-radius: 8px; background: var(--pl-ink); color: var(--pl-paper);
+      font: 600 11px/1.2 var(--pl-sans); text-transform: capitalize; rotate: 6deg; transform-origin: 50% 100%; }
+    .fb i[data-tip]:hover::after { opacity: 1; scale: 1; translate: -50% 0; }
+    .fb[data-tip]::after { content: attr(data-tip); top: calc(100% + 8px); translate: -50% -4px; padding: 7px 11px; border-radius: 11px; background: var(--pl-paper); color: var(--pl-ink);
+      box-shadow: var(--pl-shadow-card); font: 500 12px/1.3 var(--pl-sans); transform-origin: 50% 0; }
+    .fb[data-tip]:hover::after, .fb[data-tip]:focus-visible::after { opacity: 1; scale: 1; translate: -50% 0; }
+    .bars { padding-bottom: 34px; }
     @media (prefers-reduced-motion: reduce) { .toy, .toy i { transition: none; } }
   </style>${defs}
   <div class="band">The toy set · proposed</div>
@@ -190,9 +205,16 @@
     </ol></section>
   <section class="set"><h2>Properties<span>${PROPS.length}</span></h2><p>What a fix can change. Size and shape in mint, sky and butter; type on a sky tile; the three kinds of space in their patterns.</p><div class="grid">${PROPS.map(toy).join('')}</div></section>
   <section class="set"><h2>Elements and patterns<span>${PARTS.length}</span></h2><p>What a page is made of, for saying what the thing in hand is with a picture.</p><div class="grid">${PARTS.map(toy).join('')}</div></section>
-  <section class="set"><h2>In the fix bar</h2><p>How a cause would open: the property’s toy, the class, and the kind of thing it is on.</p><div class="bars">${[
-    ['corner', 'rounded-[5px]', 'tag'], ['padding', 'px-[7px]', 'button'], ['gap', 'gap-[13px]', 'row'], ['margin', 'mt-[10px]', 'card'], ['type', 'text-[13px]', 'menu'], ['shadow', 'shadow-[0_1px_2px]', 'dialog'], ['line height', 'leading-[18px]', 'text'], ['position', 'bottom-[64px]', 'toast'],
-  ].map(([p, cls, on]) => `<span class="fb pl-card"><i>${byName(PROPS, p).icon}</i><code>${cls}</code><span class="in">on a</span><i>${byName(PARTS, on).icon}</i></span>`).join('')}</div></section>
+  <section class="set"><h2>In the fix bar</h2><p>How a cause would open: the property’s toy, the class, and the kind of thing it is on. Point at a bar for the sentence and the place; point at a picture for its name.</p><div class="bars">${[
+    ['corner', 'rounded-[5px]', 'tag', 'This tag’s corner is 5px. Your scale has 6 and 8.', 'Tag.jsx:12 · 16 places'],
+    ['padding', 'px-[7px]', 'button', 'This button’s side padding is 7px. Your scale has 4 and 8.', 'Button.jsx:8 · 5 places'],
+    ['gap', 'gap-[13px]', 'row', 'The gap between this row’s parts is 13px. Your scale has 12 and 16.', 'Row.jsx:21 · 6 places'],
+    ['margin', 'mt-[10px]', 'card', 'The space above this card is 10px. Your scale has 8 and 12.', 'Card.jsx:4 · 2 places'],
+    ['type', 'text-[13px]', 'menu', 'The text in this menu is 13px. Your scale has 12 and 14.', 'Menu.jsx:30 · 14 places'],
+    ['shadow', 'shadow-[0_1px_2px]', 'dialog', 'This dialog’s shadow isn’t one of your theme’s shadows.', 'Dialog.jsx:17 · 1 place'],
+    ['line height', 'leading-[18px]', 'text', 'These lines sit 18px apart. Your scale has 16 and 20.', 'Notes.jsx:9 · 3 places'],
+    ['position', 'bottom-[64px]', 'toast', 'This toast sits 64px from the bottom. Your scale stops at 24.', 'Toast.jsx:6 · 1 place'],
+  ].map(([p, cls, on, why, where]) => `<span class="fb pl-card" tabindex="0" data-tip="${why} ${where}"><i data-tip="${p}">${byName(PROPS, p).icon}</i><code>${cls}</code><span class="in">on a</span><i data-tip="${on}">${byName(PARTS, on).icon}</i></span>`).join('')}</div></section>
   <div class="band">What the overlay has today</div>
   <section class="set"><h2>The grey line set</h2><p>The box icons the overlay uses now, for comparison. The toy set would take their place.</p><div class="was">${OLD.map(([k, name]) => `<span><i>${BLOCK_ICONS[k]}</i>${name}</span>`).join('')}</div></section>`;
 
