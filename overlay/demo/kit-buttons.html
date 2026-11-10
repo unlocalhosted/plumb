@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Buttons · The kit · React Plumber</title>
+<style>
+  body { margin: 0; padding: 32px 16px 64px; background: #f6f1e6; font: 14px/1.5 system-ui, sans-serif; color: #1c1b19; }
+  body.dark { background: #17161a; color: #eeede9; }
+  header { max-width: 1040px; margin: 0 auto 20px; display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap; }
+  header a { font-size: 13px; color: inherit; opacity: .6; }
+  header h1 { font-size: 18px; margin: 0; }
+  header p { margin: 0; opacity: .7; font-size: 13px; max-width: 700px; }
+  header button { margin-left: auto; font: inherit; font-size: 12px; padding: 4px 10px; border-radius: 6px; border: 1px solid currentColor; background: none; color: inherit; cursor: pointer; }
+  #board { max-width: 1040px; margin: 0 auto; }
+</style>
+</head>
+<body>
+<header>
+  <a href="/kit.html">← The kit</a>
+  <h1>Buttons</h1>
+  <p>What you press. A button is a toy key: a solid top on a darker base, and pressing it pushes the top down onto the base. Everything on this page is live: point, press, tab.</p>
+  <button id="scheme" type="button">Dark</button>
+</header>
+<div id="board"></div>
+<script type="module">
+  import tokens from '../src/tokens.css?raw';
+  import { LANGUAGE_CSS } from '../src/language.js';
+
+  const host = document.getElementById('board');
+  const root = host.attachShadow({ mode: 'open' });
+  host.dataset.scheme = 'light';
+
+  // toys used on buttons (from the icon sheet): on a solid button they are cut out in white; on a quiet one, in colour
+  const svg = (body) => `<svg viewBox="0 0 24 24" aria-hidden="true">${body}</svg>`;
+  const CHECK = (c) => svg(`<path d="M5.500 12.600l4.200 4.200 8.800-10" fill="none" stroke="${c}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>`);
+  const UNDO = (c) => svg(`<path d="M9.500 6 5 10.500 9.500 15" fill="none" stroke="${c}" stroke-width="2.600" stroke-linecap="round" stroke-linejoin="round"/><path d="M5.500 10.500h8a5.500 5.500 0 0 1 0 11H11" fill="none" stroke="${c}" stroke-width="2.600" stroke-linecap="round"/>`);
+  const SPARK = (c) => svg(`<path d="M12 1.800 14.500 9.500 22.200 12l-7.700 2.500L12 22.200l-2.500-7.700L1.800 12l7.700-2.500z" fill="${c}"/>`);
+  const CLOSE = (c) => svg(`<path d="M6.500 6.500l11 11M17.500 6.500l-11 11" fill="none" stroke="${c}" stroke-width="2.800" stroke-linecap="round"/>`);
+  const DOTS = `<span class="tb-dots" aria-hidden="true"><i></i><i></i><i></i></span>`;
+  const kbd = (k) => `<kbd>${k}</kbd>`;
+  const b = (label, { cls = '', attrs = '', icon = '', key = '' } = {}) => `<button type="button" class="tb ${cls}" ${attrs}><span class="top">${icon ? `<i class="ic">${icon}</i>` : ''}${label ? `<span class="lb">${label}</span>` : ''}${key ? kbd(key) : ''}</span></button>`;
+  const cell = (name, html, note = '') => `<div class="cell"><div class="stage">${html}</div><b>${name}</b>${note ? `<small>${note}</small>` : ''}</div>`;
+  const set = (title, why, body) => `<section class="set"><h2>${title}</h2>${why ? `<p>${why}</p>` : ''}<div class="cells">${body}</div></section>`;
+
+  root.innerHTML = `<style>${tokens}${LANGUAGE_CSS}
+    :host { display: block; font-family: var(--pl-sans); color: var(--pl-ink); }
+    :host([data-scheme="dark"]) { --pl-paper: #2a2930; --pl-paper-2: #35343c; --pl-rule: #45444d; --pl-ink: #f4f3ef; }
+
+    /* ── the toy button (proposed; would replace .pl-act) ─────────────────────────────────────────────────────
+       Two parts: the base (the button's own darker shade) and the top (the solid hue, the label on it). At rest the
+       top sits 3px above the base. Pointed at, it rises to 4. Pressed, it goes down to 1, fast; let go, it springs
+       back. The base never moves, so nothing around the button shifts. */
+    .tb { --hue: var(--pl-pink); --base: color-mix(in oklab, var(--pl-pink) 68%, var(--pl-pink-ink)); --on: #fff; --lift: 3px; --h: 36px;
+      all: unset; position: relative; display: inline-block; box-sizing: border-box; height: calc(var(--h) + 3px); padding-top: 3px; border-radius: 12px; cursor: pointer;
+      background: var(--base); font: 600 13px/1 var(--pl-sans); color: var(--on); -webkit-tap-highlight-color: transparent; user-select: none; }
+    .tb .top { display: flex; align-items: center; justify-content: center; gap: 7px; height: var(--h); padding: 0 14px; box-sizing: border-box; border-radius: 12px; background: var(--hue);
+      translate: 0 calc(-1 * var(--lift)); transition: translate 260ms var(--pl-spring-pop), background-color 200ms var(--pl-ease-out); white-space: nowrap; }
+    .tb:hover, .tb[data-show="hover"] { --lift: 4px; }
+    .tb:active, .tb[data-show="pressed"] { --lift: 1px; }
+    .tb:active .top, .tb[data-show="pressed"] .top { transition-duration: 70ms; transition-timing-function: var(--pl-ease-out); }
+    .tb:focus-visible, .tb[data-show="focus"] { outline: 2.5px solid var(--pl-sky); outline-offset: 3px; }
+    /* a key on a button is a small key cap: the same top-and-base, pressed in by default so it reads as part of the top */
+    .tb kbd { display: inline-grid; place-items: center; min-width: 19px; height: 19px; padding: 0 5px; margin: 0 -4px 0 1px; box-sizing: border-box; border-radius: 6px;
+      font: 600 11px/1 var(--pl-mono); background: color-mix(in oklab, var(--on) 22%, transparent); color: var(--on); box-shadow: 0 1.5px 0 0 color-mix(in oklab, var(--base) 70%, transparent); }
+    .tb .ic { display: block; width: 16px; height: 16px; margin-left: -3px; flex: none; }
+    .tb .ic svg { display: block; width: 100%; height: 100%; }
+    /* kinds: what the button is, by hue (the language's table): pink acts, mint is done, coral is wrong, paper is quiet */
+    .tb.quiet { --hue: var(--pl-paper); --base: var(--pl-rule); --on: var(--pl-ink); }
+    .tb.quiet .top { box-shadow: inset 0 0 0 1.5px var(--pl-rule); }
+    .tb.quiet kbd { background: var(--pl-paper-2); color: var(--pl-ink-2); box-shadow: 0 1.5px 0 0 var(--pl-rule); }
+    .tb.done { --hue: var(--pl-mint); --base: color-mix(in oklab, var(--pl-mint) 68%, var(--pl-mint-ink)); }
+    .tb.wrong { --hue: var(--pl-coral); --base: color-mix(in oklab, var(--pl-coral) 68%, var(--pl-coral-ink)); }
+    /* not there: pale, flat on its base, nothing to press (the language: pale is for what is not there) */
+    .tb:disabled, .tb[data-show="disabled"] { --hue: var(--pl-paper-2); --base: transparent; --on: var(--pl-ink-3); --lift: 0px; cursor: not-allowed; }
+    .tb:disabled .top { box-shadow: inset 0 0 0 1.5px var(--pl-rule); }
+    /* working: held down, three dots take turns; the button keeps its width */
+    .tb[aria-busy="true"] { --lift: 1px; cursor: progress; }
+    .tb[aria-busy="true"] .lb, .tb[aria-busy="true"] kbd, .tb[aria-busy="true"] .ic { visibility: hidden; }
+    .tb-dots { position: absolute; inset: 3px 0 0; display: none; align-items: center; justify-content: center; gap: 4px; translate: 0 -1px; }
+    .tb[aria-busy="true"] .tb-dots { display: flex; }
+    .tb-dots i { width: 6px; height: 6px; border-radius: 50%; background: var(--on); animation: tb-turn 900ms var(--pl-ease-out) infinite; }
+    .tb-dots i:nth-child(2) { animation-delay: 150ms; } .tb-dots i:nth-child(3) { animation-delay: 300ms; }
+    @keyframes tb-turn { 0%, 60%, 100% { translate: 0 0; opacity: .55; } 30% { translate: 0 -4px; opacity: 1; } }
+    /* it worked: the top turns mint and its tick pops */
+    .tb.landed .ic { animation: pl-pop 320ms var(--pl-spring-pop) both; }
+    /* sizes */
+    .tb.sm { --h: 28px; font-size: 12px; border-radius: 10px; } .tb.sm .top { padding: 0 10px; border-radius: 10px; gap: 5px; }
+    .tb.lg { --h: 44px; font-size: 15px; border-radius: 14px; } .tb.lg .top { padding: 0 18px; border-radius: 14px; }
+    /* a picture alone: a square, with its name one hover away */
+    .tb.only .top { padding: 0; width: var(--h); }
+    .tb.only .ic { margin: 0; width: 18px; height: 18px; }
+    .tb[data-tip]::after { content: attr(data-tip); position: absolute; left: 50%; bottom: calc(100% + 9px); translate: -50% 4px; padding: 4px 8px; border-radius: 8px; background: var(--pl-ink); color: var(--pl-paper);
+      font: 600 11px/1.2 var(--pl-sans); white-space: nowrap; opacity: 0; scale: .92; pointer-events: none; transition: opacity 140ms var(--pl-ease-out), scale 220ms var(--pl-spring-pop), translate 220ms var(--pl-spring-pop); }
+    .tb[data-tip]:hover::after, .tb[data-tip]:focus-visible::after { opacity: 1; scale: 1; translate: -50% 0; }
+    @media (pointer: coarse) { .tb kbd { display: none; } .tb { --h: 44px; } }
+    @media (prefers-reduced-motion: reduce) { .tb .top { transition: none; } .tb-dots i { animation: none; } .tb.landed .ic { animation: none; } }
+
+    /* ── the page ── */
+    .set { margin: 0 0 14px; padding: 16px 16px 18px; border-radius: 18px; background: var(--pl-paper); box-shadow: 0 0 0 1px var(--pl-rule); }
+    .set h2 { margin: 0; font: 600 15px/20px var(--pl-sans); }
+    .set p { margin: 3px 0 0; font: 400 13px/19px var(--pl-sans); color: var(--pl-ink-2); max-width: 760px; }
+    .cells { display: grid; grid-template-columns: repeat(auto-fill, minmax(176px, 1fr)); gap: 10px; margin-top: 14px; }
+    .cell { padding: 12px; border-radius: 14px; background: var(--pl-paper-2); display: flex; flex-direction: column; gap: 3px; }
+    .cell .stage { display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap; min-height: 64px; padding: 6px 0 10px; }
+    .cell b { font: 600 13px/16px var(--pl-sans); }
+    .cell small { font: 400 11px/14px var(--pl-sans); color: var(--pl-ink-3); }
+    .cell.wide { grid-column: span 2; }
+    .anat { display: grid; grid-template-columns: auto 1fr; gap: 22px; align-items: center; margin-top: 14px; }
+    .anat .big { padding: 26px 34px; border-radius: 14px; background: var(--pl-paper-2); }
+    .anat .big .tb { --h: 56px; font-size: 19px; border-radius: 18px; padding-top: 5px; height: calc(var(--h) + 5px); --lift: 5px; }
+    .anat .big .tb .top { border-radius: 18px; padding: 0 24px; gap: 10px; }
+    .anat .big .tb kbd { min-width: 28px; height: 28px; font-size: 15px; border-radius: 9px; }
+    .anat ol { margin: 0; padding-left: 20px; font: 400 13px/20px var(--pl-sans); color: var(--pl-ink-2); }
+    .anat ol b { color: var(--pl-ink); font-weight: 600; }
+    .bar { display: inline-flex; align-items: center; gap: 8px; padding: 7px 8px 5px 14px; border-radius: 22px; background: var(--pl-paper); box-shadow: var(--pl-shadow-card); }
+    .bar code { font: 600 13px/1 var(--pl-mono); margin-right: 6px; }
+    .old { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+    @media (max-width: 640px) { .anat { grid-template-columns: 1fr; } .cell.wide { grid-column: auto; } }
+  </style>
+
+  <section class="set"><h2>What a button is made of</h2><p>Press this one and hold it.</p>
+    <div class="anat"><div class="big">${b('Use rounded-tag', { key: '↵' })}</div>
+      <ol>
+        <li><b>The top.</b> One solid hue. The label is cut out of it in white, never a darker tint of the same colour.</li>
+        <li><b>The base.</b> The same hue, darker. It shows as a 3px lip under the top and never moves, so pressing shifts nothing around the button.</li>
+        <li><b>The press.</b> The top travels down onto the base in 70ms and springs back in 260ms with a small overshoot. Pointed at, it rises 1px first, as if ready.</li>
+        <li><b>The key.</b> If a key does the same thing, its cap sits on the top, at the end of the label. One key, never a combination spelled out.</li>
+      </ol></div></section>
+
+  ${set('Kinds', 'Hue says what pressing does. Pink acts. Paper is the quiet choice beside it. Mint has landed. Coral destroys.',
+    cell('Action', b('Add to theme', { key: '↵' }), 'the one thing this moment is for')
+    + cell('Quiet', b('Keep', { cls: 'quiet', key: 'K' }), 'a real choice, not the main one')
+    + cell('Done', b('Written', { cls: 'done', icon: CHECK('#fff') }), 'what an action turns into')
+    + cell('Destroys', b('Discard all', { cls: 'wrong' }), 'only for what can’t be put back'))}
+
+  ${set('States', 'The same button in each state it can be in. The first four you can also do yourself on any button on this page.',
+    cell('Rest', b('Apply', { key: 'A' }), 'the top sits 3px up')
+    + cell('Pointed at', b('Apply', { key: 'A', attrs: 'data-show="hover"' }), 'rises to 4: ready')
+    + cell('Pressed', b('Apply', { key: 'A', attrs: 'data-show="pressed"' }), 'down to 1, in 70ms')
+    + cell('Focused', b('Apply', { key: 'A', attrs: 'data-show="focus"' }), 'a sky ring, keyboard only')
+    + cell('Working', `<button type="button" class="tb" aria-busy="true"><span class="top"><span class="lb">Apply</span>${kbd('A')}</span>${DOTS}</button>`, 'held down; keeps its width')
+    + cell('Landed', b('Applied', { cls: 'done landed', icon: CHECK('#fff') }), 'turns mint, the tick pops')
+    + cell('Not there', b('Apply', { key: 'A', attrs: 'disabled' }), 'pale and flat: nothing to press')
+    + cell('Refused', b('Try again', { cls: 'quiet', icon: UNDO('var(--pl-coral)') }), 'quiet, with what to do next'))}
+
+  ${set('Try it', 'Press Apply. It works for a second and a half, lands, then offers Undo.',
+    `<div class="cell wide"><div class="stage" id="try">${b('Apply 3 changes', { key: 'A', attrs: 'id="go"' })}</div><b>A write, start to finish</b><small>rest → working → landed → undo</small></div>`
+    + cell('Toggle', b('Select', { cls: 'quiet', attrs: 'id="toggle" aria-pressed="false"' }), 'pressed stays down'))}
+
+  ${set('Sizes', 'Three heights. Small is for inside a bar. Large is the smallest a finger should be asked to hit; on a touch screen every button is large.',
+    cell('Small · 28', b('Skip', { cls: 'sm quiet', key: '→' }) + b('Use', { cls: 'sm' }))
+    + cell('Regular · 36', b('Skip', { cls: 'quiet', key: '→' }) + b('Use'))
+    + cell('Large · 44', b('Use rounded-tag', { cls: 'lg', key: '↵' })))}
+
+  ${set('With a picture', 'On a solid top a picture is cut out in white. On a quiet top it keeps its colour. A picture alone is a square, and says its name when pointed at.',
+    cell('Cut out', b('Clean up', { icon: SPARK('#fff') }))
+    + cell('In colour', b('Undo', { cls: 'quiet', icon: UNDO('var(--pl-lilac)') }))
+    + cell('Alone', b('', { cls: 'only quiet', icon: UNDO('var(--pl-lilac)'), attrs: 'data-tip="Undo" aria-label="Undo"' }) + b('', { cls: 'only quiet', icon: CLOSE('var(--pl-ink-2)'), attrs: 'data-tip="Close" aria-label="Close"' }) + b('', { cls: 'only', icon: SPARK('#fff'), attrs: 'data-tip="Clean up" aria-label="Clean up"' }), 'point at one'))}
+
+  ${set('Together', 'In the fix bar: one action, then the quiet ones. Never two pink buttons side by side.',
+    `<div class="cell wide"><div class="stage"><span class="bar"><code>rounded-[5px]</code>${b('Use rounded-tag', { cls: 'sm', key: '↵' })}${b('Keep', { cls: 'sm quiet', key: 'K' })}${b('Skip', { cls: 'sm quiet', key: '→' })}</span></div><b>The fix bar’s three</b></div>`)}
+
+  <section class="set"><h2>What the overlay has today</h2><p>The current button, for comparison: a pale pink pill with dark pink words. In the new language pale means “not there”, so today’s main action reads as switched off.</p>
+    <div class="old"><button type="button" class="pl-act">Use rounded-tag <kbd>↵</kbd></button><button type="button" class="pl-act quiet">Keep <kbd>K</kbd></button><button type="button" class="pl-act" disabled>Apply</button></div></section>`;
+
+  // the write, start to finish
+  const go = root.getElementById('go'), stage = root.getElementById('try');
+  const label = (el, text) => { el.querySelector('.lb').textContent = text; };
+  const rest = () => { stage.innerHTML = b('Apply 3 changes', { key: 'A', attrs: 'id="go"' }); root.getElementById('go').onclick = run; };
+  function run(e) {
+    const el = e.currentTarget;
+    if (el.getAttribute('aria-busy')) return;
+    el.setAttribute('aria-busy', 'true'); el.insertAdjacentHTML('beforeend', DOTS);
+    setTimeout(() => {
+      stage.innerHTML = b('Applied', { cls: 'done landed', icon: CHECK('#fff') }) + b('Undo', { cls: 'quiet', icon: UNDO('var(--pl-lilac)'), attrs: 'id="undo"' });
+      root.getElementById('undo').onclick = rest;
+    }, 1500);
+  }
+  go.onclick = run;
+  const toggle = root.getElementById('toggle');
+  const css = document.createElement('style');
+  css.textContent = `.tb[aria-pressed="true"] { --lift: 1px; --hue: var(--pl-sky-soft); --base: var(--pl-sky); --on: var(--pl-sky-ink); } .tb[aria-pressed="true"] .top { box-shadow: inset 0 0 0 1.5px var(--pl-sky); }`;
+  root.append(css);
+  toggle.onclick = () => { const on = toggle.getAttribute('aria-pressed') !== 'true'; toggle.setAttribute('aria-pressed', String(on)); label(toggle, on ? 'Selecting' : 'Select'); };
+
+  document.getElementById('scheme').onclick = (e) => { const dark = document.body.classList.toggle('dark'); host.dataset.scheme = dark ? 'dark' : 'light'; e.target.textContent = dark ? 'Light' : 'Dark'; };
+</script>
+</body>
+</html>

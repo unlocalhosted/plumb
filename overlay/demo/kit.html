@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The kit · React Plumber</title>
+<style>
+  body { margin: 0; padding: 32px 16px 64px; background: #f6f1e6; font: 14px/1.5 system-ui, sans-serif; color: #1c1b19; }
+  main { max-width: 1040px; margin: 0 auto; }
+  h1 { font-size: 22px; margin: 0 0 4px; letter-spacing: -0.01em; }
+  .lede { margin: 0 0 22px; font-size: 14px; opacity: .72; max-width: 720px; }
+  h2 { margin: 26px 0 10px; font: 600 12px/1 system-ui, sans-serif; letter-spacing: .06em; text-transform: uppercase; opacity: .6; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(236px, 1fr)); gap: 10px; }
+  a.page, div.page { display: flex; flex-direction: column; gap: 5px; padding: 14px 15px 13px; border-radius: 16px; background: #fdfcf8; box-shadow: 0 0 0 1px #e6e1d6; text-decoration: none; color: inherit;
+    transition: translate 300ms linear(0, 0.25 7%, 0.68 17%, 0.96 28%, 1.04 40%, 1.03 52%, 1.005 68%, 1), box-shadow 200ms ease-out; }
+  a.page:hover, a.page:focus-visible { translate: 0 -2px; box-shadow: 0 0 0 1px #e6e1d6, 0 10px 22px -12px rgb(28 27 25 / .35); outline: none; }
+  .page b { font-size: 15px; font-weight: 600; }
+  .page span { font-size: 13px; line-height: 18px; opacity: .72; }
+  .page i { align-self: flex-start; margin-top: 4px; padding: 2px 7px; border-radius: 7px; font: 600 11px/1.3 system-ui, sans-serif; font-style: normal; }
+  .page i.done { background: #c9f2dd; color: #0b3d26; }
+  .page i.old { background: #ffeab0; color: #4a3400; }
+  .page i.todo { background: #e3dcff; color: #2b1a6b; }
+  div.page { box-shadow: inset 0 0 0 1px #e6e1d6; background: none; }
+  @media (prefers-reduced-motion: reduce) { a.page { transition: none; } }
+</style>
+</head>
+<body>
+<main>
+  <h1>The kit</h1>
+  <p class="lede">Every part of React Plumber’s design system, one page each, drawn to one visual language (docs/design/visual-language.md). A part is done when its page shows every state and you have signed it off. Nothing here is in the product until then.</p>
+
+  <h2>The language</h2>
+  <div class="grid">
+    <a class="page" href="/icons.html"><b>Icons</b><span>76 toys: 27 properties, 49 elements and patterns. The rules they are drawn to.</span><i class="done">drawn · in review</i></a>
+  </div>
+
+  <h2>Parts, in the new language</h2>
+  <div class="grid">
+    <a class="page" href="/kit-buttons.html"><b>Buttons</b><span>What you press. Every state, every size, with keys and with toys.</span><i class="done">drawn · in review</i></a>
+    <a class="page" href="/fix-bar.html"><b>Fix bar</b><span>The cause in hand as one line; the choice made on the element. Three states, the first one live.</span><i class="done">drawn · in review</i></a>
+    <div class="page"><b>Pills, tags and chips</b><span>A value, a name, a property with its value rolling.</span><i class="todo">next</i></div>
+    <div class="page"><b>Inputs</b><span>Naming a token, searching, typing a reason. Caret, focus, error, disabled.</span><i class="todo">to draw</i></div>
+    <div class="page"><b>Step controls</b><span>Spacing stairs, corners, swatches, shadows, segments. Each step drawn as what it makes.</span><i class="todo">to draw</i></div>
+    <div class="page"><b>Words on hover</b><span>The name label, the sentence note, the key hint. One way to say things in words.</span><i class="todo">to draw</i></div>
+    <div class="page"><b>Messages</b><span>The toast after a write, Undo, the history strip, a refusal.</span><i class="todo">to draw</i></div>
+    <div class="page"><b>Surfaces</b><span>Paper, cards, bars, the dock. Light and the lifted dark.</span><i class="todo">to draw</i></div>
+    <div class="page"><b>Marks on the page</b><span>What Blueprint draws on your app: the three patterns, heat, a place in hand.</span><i class="todo">to draw</i></div>
+    <div class="page"><b>States</b><span>Empty, loading, error, nothing to fix. A toy and one sentence.</span><i class="todo">to draw</i></div>
+    <div class="page"><b>Motion</b><span>Picked up, arrives, lands, rolls. The springs and the times.</span><i class="todo">to draw</i></div>
+  </div>
+
+  <h2>Older sheets, in the old look</h2>
+  <div class="grid">
+    <a class="page" href="/primitives.html"><b>Editor primitives</b><span>The step controls as they are today.</span><i class="old">to be redrawn</i></a>
+    <a class="page" href="/page-primitives.html"><b>Page primitives</b><span>Scale marks, counts, places.</span><i class="old">to be redrawn</i></a>
+    <a class="page" href="/system.html"><b>Design system (old)</b><span>The earlier overview.</span><i class="old">to be redrawn</i></a>
+    <a class="page" href="/fix-flow.html"><b>Fix flow</b><span>The card the fix bar replaces.</span><i class="old">retired by the fix bar</i></a>
+    <a class="page" href="/mark-states.html"><b>Marks at rest</b><span>Blueprint’s marks today.</span><i class="old">to be redrawn</i></a>
+  </div>
+
+  <h2>Try it on a page that moves</h2>
+  <div class="grid">
+    <a class="page" href="/?work"><b>The workbench</b><span>An issue tracker with live counts, lists that change and layers the page opens. Alt+B.</span><i class="done">built</i></a>
+  </div>
+</main>
+</body>
+</html>
