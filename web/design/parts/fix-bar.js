@@ -38,22 +38,33 @@ export function mount(host, root, css) {
   const s3 = { steps: spacing, current: null, picked: 's2', drift: { n: 7, label: '7' } };
 
 
-  // ── proposed (a trial): the bar says what is wrong, and only that. The choice is made on the element ──
-  // One rule for all three: the bar has one coloured thing, the wrong value. What you can do about it (the steps,
-  // Use, Keep) is on the element, where the change will happen. The bar's right end is only where you are in the list.
-  const trialOn = (i) => `<div class="on" style="top: 78px; right: 30px;"><span class="ctl">${radius('Corner', { steps: radii, current: null, picked: 'tag', drift: { n: 5, label: '5' } })}</span>${button('Use tag', { cls: 'sm', key: '↵' })}${button('Keep 5', { cls: 'sm quiet', key: 'K' })}</div>`;
-  const queue = `<span class="sep"></span><span class="nav"><button type="button" aria-label="The one before">‹</button><span>3 of 60</span><button type="button" aria-label="The next one">›</button></span>`;
-  const ruler = () => { const x = (n) => 8 + (n / 14) * 116; return `<span class="ruler" role="img" aria-label="5 sits before your steps 6, 8 and 12"><i class="line"></i>${[6, 8, 12].map((n) => `<i class="tick" style="left:${x(n)}px"></i><small style="left:${x(n)}px">${n}</small>`).join('')}<i class="off" style="left:${x(5)}px"></i><b style="left:${x(5)}px">5</b></span>`; };
-  const trialBars = {
-    a: `<div class="ib pl-card" role="status"><i class="ic">${toyOf('corner')}</i><span class="say">This corner is <span class="pl-pill" data-hue="coral">5px</span></span><span class="more">Your steps are 6, 8 and 12</span><span class="more">16 places</span>${queue}</div>`,
-    b: `<div class="ib pl-card" role="status"><i class="ic">${toyOf('corner')}</i><span class="say">Corner</span>${ruler()}<span class="more">16 places</span>${queue}</div>`,
-    c: `<div class="ib two pl-card" role="status"><i class="ic big">${toyOf('corner')}</i><span class="lines"><span class="say">This corner isn’t one of your steps</span><span class="more"><span class="pl-pill" data-hue="coral">5px</span> on 16 tags. Your steps are 6, 8 and 12.</span></span>${queue}</div>`,
-  };
-  const trial = (k, title, note) => scene(`p${k}`, title, note, `<div class="page">${rowsOf(true)}</div>${trialOn(k)}${trialBars[k]}`);
-  const trials = `<h2 class="part">Proposed: the bar says what is wrong</h2><p class="lead">Three ways to say it. In all three the bar has one job and one coloured thing, the wrong value. The steps, Use and Keep have moved onto the element, where the change happens. The right end only says where you are in the list.</p>`
-    + trial('a', 'A · One sentence', 'Read left to right like a sentence: what it is, what is wrong with it, then (quieter) why and how many.')
-    + trial('b', 'B · A picture of why', 'The value drawn on your own scale: your steps are the ticks, the wrong value is the red mark that misses them. Nothing to read.')
-    + trial('c', 'C · A headline and a detail', 'Two lines. The top line is the problem in plain words; the line under it has the numbers. Taller, but the eye has one place to start.')
+  // ── proposed: the bar says what is wrong, and the page is where you change it ──
+  // The bar is one object with two jobs, never both at once:
+  //   one place    a headline (what was done by hand, in your words) and a detail (what it is, what your theme has).
+  //                The choice is made on the element, where the change happens. The right end: where you are, and
+  //                the way into the other job.
+  //   clean up     the whole page is the thing being changed, so the bar is the only place to say what is going on:
+  //                the pass in hand as the headline, what it changes as the detail, the four passes along the right.
+  //                Each pass is shown on the page first and written only when you press Apply.
+  // Words: what you'd say to a person. No "steps", no "scale", no class names; "your theme" is the thing they own.
+  const elementOn = `<div class="on" style="top: 78px; right: 30px;"><span class="ctl">${radius('Corner', { steps: radii, current: null, picked: 'tag', drift: { n: 5, label: '5' } })}</span>${button('Use 6px', { cls: 'sm', key: '↵' })}${button('Keep 5px', { cls: 'sm quiet', key: 'K' })}</div>`;
+  const PASSES = [
+    { toy: 'type', name: 'Text', doing: 'Text sizes', says: '9 sizes become 5 of your theme’s', n: 14 },
+    { toy: 'gap', name: 'Spacing', doing: 'Spacing', says: 'Gaps and padding move to your theme’s spacing', n: 24 },
+    { toy: 'fill', name: 'Colour', doing: 'Colour', says: '7 near-greys become your theme’s 3', n: 12 },
+    { toy: 'icon', name: 'Icons', doing: 'Icon sizes', says: 'Icons line up with the text beside them', n: 10 },
+  ];
+  const strip = (at, done) => `<span class="passes" role="list" aria-label="The clean-up, in four passes">${PASSES.map((p, i) =>
+    `<i role="listitem" class="ps ${i < done ? 'done' : i === at ? 'now' : 'soon'}" data-tip="${p.name}${i < done ? ': done' : ''}" aria-label="${p.name}${i < done ? ', done' : i === at ? ', now' : ''}">${toyOf(p.toy)}</i>`).join('')}</span>`;
+  const one = `<i class="ic big">${toyOf('corner')}</i><span class="lines"><span class="say">16 tags have a corner typed by hand</span><span class="more">They’re <span class="pl-pill" data-hue="coral">5px</span>. Your theme’s corners are 6, 8 and 12px.</span></span>
+    <span class="sep"></span><span class="nav"><button type="button" aria-label="The one before">‹</button><span>3 of 60</span><button type="button" aria-label="The next one">›</button></span>
+    ${button('Clean up all', { cls: 'sm quiet', attrs: 'data-do="all"', icon: toyOf('icon') })}`;
+  const cleaning = (at) => { const p = PASSES[at]; return `<i class="ic big pop">${toyOf(p.toy)}</i><span class="lines"><span class="say">${p.doing}, on ${p.n} places</span><span class="more">${p.says}. This is a preview.</span></span>
+    <span class="sep"></span>${strip(at, at)}${button('Apply', { cls: 'sm', key: '↵', attrs: 'data-do="apply"' })}${button('Stop', { cls: 'sm quiet', key: 'Esc', attrs: 'data-do="stop"' })}`; };
+  const cleaned = `<i class="ic big pop">${toyOf('checkbox')}</i><span class="lines"><span class="say">Cleaned up 60 places</span><span class="more">Text 14 · Spacing 24 · Colour 12 · Icons 10. All in your code now.</span></span>
+    <span class="sep"></span>${strip(-1, 4)}${button('Undo all', { cls: 'sm quiet', attrs: 'data-do="undo"' })}`;
+  const trials = `<h2 class="part">Proposed: the bar says what is wrong</h2><p class="lead">The bar has one job at a time. With one place in hand it says what was done by hand, in plain words, and the choice is made on the element. Press <b>Clean up all</b> and the same bar carries the whole-page clean-up: one pass at a time, shown on the page, written when you press Apply.</p>`
+    + scene('pc', 'The bar, both jobs (live)', 'Press Clean up all, then Apply four times (or Enter). Stop goes back to the one place you were on.', `<div class="page">${rowsOf(true)}</div>${elementOn}<div class="ib two pl-card" role="status" aria-live="polite">${one}</div>`)
     + `<h2 class="part">Today</h2><p class="lead">The bar as it is now, for comparison.</p>`;
 
   root.innerHTML = `<style>${css}${LANGUAGE_CSS}${PRIMITIVES_CSS}${SHOW_CSS}${SCALE_CSS}${BUTTON_CSS}
@@ -140,7 +151,22 @@ export function mount(host, root, css) {
     .ruler small { position: absolute; top: 26px; translate: -50% 0; font: 500 9.5px/1 var(--pl-mono); color: var(--pl-ink-3); }
     .ruler .off { position: absolute; top: 13px; width: 10px; height: 10px; margin-left: -5px; border-radius: 3px; rotate: 45deg; background: var(--pl-coral); }
     .ruler b { position: absolute; top: 0; translate: -50% 0; font: 700 10.5px/1 var(--pl-mono); color: var(--pl-coral); }
-    #pa .on, #pb .on, #pc .on { gap: 6px; padding-right: 8px; }
+    #pc .on { gap: 6px; padding-right: 8px; }
+    .ib .passes { display: inline-flex; align-items: center; gap: 6px; padding: 0 4px; }
+    .ib .ps { position: relative; display: block; width: 24px; height: 24px; transition: opacity 240ms var(--pl-ease-out), scale 320ms var(--pl-spring-pop), filter 240ms var(--pl-ease-out); }
+    .ib .ps svg { display: block; width: 100%; height: 100%; overflow: visible; }
+    .ib .ps.soon { opacity: .35; filter: grayscale(1); scale: .86; }
+    .ib .ps.now { scale: 1.12; }
+    .ib .ps.now::before { content: ''; position: absolute; inset: -5px; border-radius: 10px; box-shadow: 0 0 0 2px var(--pl-sky); }
+    .ib .ps.done::after { content: ''; position: absolute; right: -4px; bottom: -4px; width: 11px; height: 11px; border-radius: 50%; background: var(--pl-mint) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M3 6.2l2 2 4-4.4' fill='none' stroke='white' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / 100% no-repeat; box-shadow: 0 0 0 2px var(--pl-paper); }
+    .ib .more .pl-pill { margin: 0; }
+    .ib .ic.pop { animation: pl-pop 320ms var(--pl-spring-pop) both; }
+    .ib .tb { flex: none; }
+    #pc .on { transition: opacity 200ms var(--pl-ease-out), scale 220ms var(--pl-ease-out); }
+    #pc[data-mode="clean"] .on { opacity: 0; scale: .92; pointer-events: none; }
+    #pc .page .chip { transition: border-radius 520ms var(--pl-spring), outline-color 240ms var(--pl-ease-out), padding 520ms var(--pl-spring), font-size 520ms var(--pl-spring), opacity 300ms; }
+    #pc[data-mode="clean"] .page .t, #pc[data-mode="clean"] .page .id { opacity: 1; transition: opacity 300ms; }
+
     .again { position: absolute; left: 50%; translate: -50% 0; bottom: 78px; font: 500 12px/1 var(--pl-sans); color: var(--pl-ink-2); background: none; border: 0; cursor: pointer; text-decoration: underline; }
     .again[hidden] { display: none; }
     @keyframes click { 28% { translate: 0 2px; } 62% { translate: 0 -1px; } }
@@ -221,7 +247,37 @@ export function mount(host, root, css) {
   });
   reset();
 
-  for (const id of ['two', 'three', 'pa', 'pb', 'pc']) bind(root.querySelector('#' + id), {});
-  for (const group of root.querySelectorAll(':is(#two, #three, #pa, #pb, #pc) .ep[role="radiogroup"]')) place(group);
+  for (const id of ['two', 'three', 'pc']) bind(root.querySelector('#' + id), {});
+  for (const group of root.querySelectorAll(':is(#two, #three, #pc) .ep[role="radiogroup"]')) place(group);
+
+  // ── the proposed bar, live: one place, then the clean-up, pass by pass ──
+  const pc = root.querySelector('#pc'), ib = pc.querySelector('.ib');
+  // what each pass does to the page, shown before it is written (a stand-in for the real show)
+  const LOOKS = [
+    (p) => { for (const t of p.querySelectorAll('.t')) t.style.fontSize = '14.5px'; },
+    (p) => { for (const r of p.querySelectorAll('.row')) r.style.padding = '12px 16px'; },
+    (p) => { for (const c of p.querySelectorAll('.chip')) { c.style.background = '#fde7f1'; c.style.color = '#b0306f'; } },
+    (p) => { for (const c of p.querySelectorAll('.chip')) { c.style.borderRadius = '6px'; c.style.padding = '3px 10px'; } },
+  ];
+  let at = -1;
+  const page = () => pc.querySelector('.page');
+  const render = () => {
+    pc.dataset.mode = at < 0 ? 'one' : 'clean';
+    ib.innerHTML = at < 0 ? one : at < PASSES.length ? cleaning(at) : cleaned;
+    if (at >= 0 && at < PASSES.length) LOOKS[at](page());
+  };
+  const resetPage = () => { page().outerHTML = `<div class="page">${rowsOf(true)}</div>`; };
+  ib.addEventListener('click', (e) => {
+    const act = e.target.closest('[data-do]')?.dataset.do;
+    if (act === 'all') { at = 0; render(); }
+    else if (act === 'apply') { at += 1; render(); }
+    else if (act === 'stop' || act === 'undo') { at = -1; resetPage(); render(); }
+  });
+  pc.querySelector('.stage').addEventListener('keydown', (e) => {
+    if (at < 0 || at >= PASSES.length) return;
+    if (e.key === 'Enter') { e.preventDefault(); at += 1; render(); }
+    if (e.key === 'Escape') { e.preventDefault(); at = -1; resetPage(); render(); }
+  });
+  pc.querySelector('.stage').tabIndex = 0;
   for (const c of root.querySelectorAll('#two .sh-chip, #three .sh-chip')) c.setAttribute('data-on', '');
 }

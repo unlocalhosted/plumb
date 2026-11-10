@@ -333,6 +333,26 @@ race, built for the old in-place write) was rewritten for the new write path (`e
 - **Proof:** the owner, after looking at the site in it: "Keep Bricolage."
 - **Media hooks:** the design shelf before (Fredoka) and after, same crop.
 
+### 10. "random things thrown together": the fix bar
+
+- **The itch:** the owner, on the bar that shows one fix: "it just feeds random things thrown together... no
+  cohesion, no system on how we are presenting the information... no good way to understand where to focus." Then:
+  "I want to see what exactly the issue is." And on the first wording: "This corner is not one of your steps...
+  does not make any sense."
+- **The system behind it:** the bar was built one widget per fact the engine knows (class, property, element kind,
+  old value, new value, step name, places, position, three buttons), all equally loud in six colours, and it
+  repeated the choice that is also made on the element. Its words were the engine's words ("steps", "scale").
+- **What we tried:** three bars that only say what is wrong (one sentence; a picture of the scale; a headline and a
+  detail). The owner picked the headline and detail.
+- **What we chose:** the bar has one job at a time. With one place in hand: a headline saying what was done by hand,
+  in the owner's words ("16 tags have a corner typed by hand"), and a detail with the value and what the theme has;
+  the choice is made on the element. "Clean up all" turns the same bar into the whole-page clean-up: the pass in
+  hand as the headline, the four passes as toys along the right, Apply per pass, then one line of what changed and
+  Undo all.
+- **Proof:** the design site's fix bar page, live; walked through all four passes and back.
+- **Open:** the clean-up's page changes in the prototype are stand-ins, not the real show; the product's bar is
+  unchanged.
+
 ## Open gaps
 - The contrast check knows colours, not sizes or weights, and is not run by CI yet.
 - `web/docs/pages` is a copy of `site/src/docs/pages`; two copies until the old Vite site is removed.
