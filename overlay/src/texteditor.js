@@ -110,119 +110,119 @@ function roll(el, text, dir) {
 
 export const TEXT_EDITOR_CSS = `
   .tc { position: fixed; z-index: 4; width: ${WIDTH}px; max-height: calc(100vh - ${EDGE * 2}px); overflow: auto; overscroll-behavior: contain; box-sizing: border-box; pointer-events: auto;
-    background: rgb(255 255 255 / .9); -webkit-backdrop-filter: blur(22px) saturate(1.6); backdrop-filter: blur(22px) saturate(1.6); border-radius: 16px; color: #1c1b19;
-    font: 13px/1.35 var(--pl-sans, system-ui), sans-serif; --sky: #2f6bff; --coral: #e2533a; --ink-3: #8b8a85; --wash: rgb(0 0 0 / .04);
+    background: color-mix(in oklab, var(--pl-bg-surface) 90%, transparent); -webkit-backdrop-filter: blur(22px) saturate(1.6); backdrop-filter: blur(22px) saturate(1.6); border-radius: 16px; color: var(--pl-text-primary);
+    font: 13px/1.35 var(--pl-sans, system-ui), sans-serif;
     box-shadow: 0 0 0 .5px rgb(0 0 0 / .1), 0 1px 1px rgb(0 0 0 / .04), 0 10px 24px -10px rgb(0 0 0 / .18), 0 32px 64px -28px rgb(0 0 0 / .22), inset 0 1px 0 rgb(255 255 255 / .9);
     animation: tc-pop 280ms cubic-bezier(.2, .9, .25, 1.15) both; }
   .tc[hidden] { display: none; }
   .tc[data-side="left"] { transform-origin: right center; } .tc[data-side="right"] { transform-origin: left center; } .tc[data-side="below"] { transform-origin: top left; } .tc[data-side="above"] { transform-origin: bottom left; }
   @keyframes tc-pop { from { opacity: 0; scale: .96; } }
   .tc button { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; padding: 0; }
-  .tc kbd { font: 500 10px/1 ui-monospace, monospace; padding: 2px 4px; border-radius: 4px; background: #fff; box-shadow: 0 0 0 .5px rgb(0 0 0 / .1); color: #55544f; }
+  .tc kbd { font: 500 10px/1 ui-monospace, monospace; padding: 2px 4px; border-radius: 4px; background: var(--pl-bg-surface); box-shadow: 0 0 0 .5px rgb(0 0 0 / .1); color: var(--pl-text-secondary); }
   .tc .hd { display: flex; align-items: baseline; gap: 8px; padding: 12px 14px 8px; }
   .tc .hd .n { font: 600 13px/1.2 ui-monospace, monospace; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .tc .hd .n span { color: var(--ink-3); font-weight: 500; }
-  .tc .hd .at { margin-left: auto; font: 500 11px/1 ui-monospace, monospace; color: var(--ink-3); white-space: nowrap; }
+  .tc .hd .n span { color: var(--pl-text-secondary); font-weight: 500; }
+  .tc .hd .at { margin-left: auto; font: 500 11px/1 ui-monospace, monospace; color: var(--pl-text-secondary); white-space: nowrap; }
   .tc .hd { flex-wrap: wrap; }
   /* the levels above the words: a click (or ⌥↑, to their own box first) moves the card up */
-  .tc .ups { flex-basis: 100%; display: flex; align-items: center; gap: 1px; min-width: 0; margin: -6px 0 -2px -5px; font: 500 11px/1 ui-monospace, monospace; color: var(--ink-3); white-space: nowrap; overflow: hidden; }
-  .tc .ups .up { padding: 3px 5px; border-radius: 5px; color: var(--ink-3); max-width: 96px; overflow: hidden; text-overflow: ellipsis; transition: background 120ms, color 120ms; }
-  @media (hover: hover) and (pointer: fine) { .tc .ups .up:hover { background: var(--wash); color: #55544f; } }
-  .tc .ups .up:focus-visible { outline: 1.5px solid var(--sky); outline-offset: -1px; }
+  .tc .ups { flex-basis: 100%; display: flex; align-items: center; gap: 1px; min-width: 0; margin: -6px 0 -2px -5px; font: 500 11px/1 ui-monospace, monospace; color: var(--pl-text-secondary); white-space: nowrap; overflow: hidden; }
+  .tc .ups .up { padding: 3px 5px; border-radius: 5px; color: var(--pl-text-secondary); max-width: 96px; overflow: hidden; text-overflow: ellipsis; transition: background 120ms, color 120ms; }
+  @media (hover: hover) and (pointer: fine) { .tc .ups .up:hover { background: var(--pl-bg-surface-hover); color: var(--pl-text-primary); } }
+  .tc .ups .up:focus-visible { outline: 1.5px solid var(--pl-border-focus); outline-offset: -1px; }
   .tc .ups i { font-style: normal; opacity: .6; } .tc .ups kbd { margin-left: auto; }
   /* what can't be changed here, said at rest */
-  .tc .lock { display: flex; gap: 7px; align-items: flex-start; margin: 0 12px 8px; padding: 8px 10px; border-radius: 9px; background: var(--wash); color: #55544f; font-size: 12px; }
-  .tc .lock svg { flex: none; width: 14px; height: 14px; margin-top: 1px; color: var(--ink-3); }
-  .tc .reach { padding: 0 14px 8px; color: #55544f; font-size: 12px; }
-  .tc .down { padding: 4px 14px 14px; color: #c2304f; }
+  .tc .lock { display: flex; gap: 7px; align-items: flex-start; margin: 0 12px 8px; padding: 8px 10px; border-radius: 9px; background: var(--pl-bg-inset); color: var(--pl-text-secondary); font-size: 12px; }
+  .tc .lock svg { flex: none; width: 14px; height: 14px; margin-top: 1px; color: var(--pl-icon-secondary); }
+  .tc .reach { padding: 0 14px 8px; color: var(--pl-text-secondary); font-size: 12px; }
+  .tc .down { padding: 4px 14px 14px; color: var(--pl-text-hard-coded); }
   .tc .fields { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 0 12px 8px; }
   /* a value field: at rest its value; hover lifts; focused or open it is ringed; a drag's handle is the whole field */
-  .tc .fld { position: relative; display: flex; align-items: center; gap: 6px; min-width: 0; height: 32px; padding: 0 9px 0 4px; border-radius: 9px; background: var(--wash); outline: none; user-select: none;
+  .tc .fld { position: relative; display: flex; align-items: center; gap: 6px; min-width: 0; height: 32px; padding: 0 9px 0 4px; border-radius: 9px; background: var(--pl-bg-inset); outline: none; user-select: none;
     transition: background 120ms ease-out, box-shadow 120ms ease-out, scale 140ms cubic-bezier(.25, .46, .45, .94); }
   .tc .fld[data-key] { cursor: ew-resize; }
   @media (hover: hover) and (pointer: fine) { .tc .fld:hover { background: rgb(0 0 0 / .065); } }
   .tc .fld:active { scale: .985; }
-  .tc .fld:focus-visible, .tc .fld[data-at], .tc .fld[data-editing], .tc .seg[data-at] { background: #fff; box-shadow: 0 0 0 1.5px var(--sky), 0 1px 2px rgb(0 0 0 / .06); }
-  .tc .fld .ic { display: grid; place-items: center; width: 24px; height: 24px; border-radius: 6px; color: var(--ink-3); flex: none; font: 600 12px/1 var(--pl-sans, system-ui); }
+  .tc .fld:focus-visible, .tc .fld[data-at], .tc .fld[data-editing], .tc .seg[data-at] { background: var(--pl-bg-surface); box-shadow: 0 0 0 1.5px var(--pl-border-focus), 0 1px 2px rgb(0 0 0 / .06); }
+  .tc .fld .ic { display: grid; place-items: center; width: 24px; height: 24px; border-radius: 6px; color: var(--pl-icon-secondary); flex: none; font: 600 12px/1 var(--pl-sans, system-ui); }
   .tc .fld .ic svg { width: 14px; height: 14px; }
   .tc .fld .val { display: inline-block; font: 500 13px/1 ui-monospace, monospace; font-variant-numeric: tabular-nums; flex: none; white-space: nowrap; }
   .tc .fld.pick .val { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
-  .tc .fld .u { font: 500 11px/1 ui-monospace, monospace; color: var(--ink-3); min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tc .fld .u { font: 500 11px/1 ui-monospace, monospace; color: var(--pl-text-secondary); min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .tc .fld[data-key="font-weight"] .u { font: 500 11px/1 var(--pl-sans, system-ui), sans-serif; margin-left: -2px; }
   /* digits typed that aren't a step: the step Enter uses, beside them */
-  .tc .fld .to { font: 500 12px/1 ui-monospace, monospace; color: var(--sky); white-space: nowrap; }
-  .tc .fld .was { font: 500 11px/1 ui-monospace, monospace; color: var(--ink-3); text-decoration: line-through; margin-left: auto; }
-  .tc .fld[data-off] .val { color: #d2462c; }
-  .tc .fld[data-off]::after { content: ''; position: absolute; right: 8px; top: 50%; width: 6px; height: 6px; margin-top: -3px; border-radius: 50%; background: var(--coral); }
-  .tc .fld.pick[data-off]::after { display: none; } .tc .fld.pick[data-off] .sub { color: #d2462c; }
-  .tc .fld[data-fluid] .val { color: #1c1b19; }
+  .tc .fld .to { font: 500 12px/1 ui-monospace, monospace; color: var(--pl-state-on-token-text); white-space: nowrap; }
+  .tc .fld .was { font: 500 11px/1 ui-monospace, monospace; color: var(--pl-text-secondary); text-decoration: line-through; margin-left: auto; }
+  .tc .fld[data-off] .val { color: var(--pl-text-hard-coded); }
+  .tc .fld[data-off]::after { content: ''; position: absolute; right: 8px; top: 50%; width: 6px; height: 6px; margin-top: -3px; border-radius: 50%; background: var(--pl-border-hard-coded); }
+  .tc .fld.pick[data-off]::after { display: none; } .tc .fld.pick[data-off] .sub { color: var(--pl-text-hard-coded); }
+  .tc .fld[data-fluid] .val { color: var(--pl-text-primary); }
   .tc .fld[data-off][data-editing]::after, .tc .fld[data-changed]::after { display: none; }
-  .tc .fld[data-changed] .val { color: var(--sky); }
-  .tc .fld[data-unset]:not([data-changed]) .val { color: var(--ink-3); }
+  .tc .fld[data-changed] .val { color: var(--pl-state-on-token-text); }
+  .tc .fld[data-unset]:not([data-changed]) .val { color: var(--pl-text-inherited); }
   .tc .fld[aria-disabled="true"] { cursor: default; opacity: .6; }
   .tc .fld.wide { grid-column: 1 / -1; }
   .tc .fld.pick { cursor: pointer; padding-right: 8px; text-align: left; }
-  .tc .fld.pick .chev { margin-left: auto; color: var(--ink-3); font-size: 10px; }
-  .tc .fld .sub { color: var(--ink-3); font: 500 11.5px/1 var(--pl-sans, system-ui); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tc .fld.pick .chev { margin-left: auto; color: var(--pl-icon-tick); font-size: 10px; }
+  .tc .fld .sub { color: var(--pl-text-secondary); font: 500 11.5px/1 var(--pl-sans, system-ui); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .tc .fld .chip { width: 16px; height: 16px; border-radius: 5px; box-shadow: inset 0 0 0 1px rgb(0 0 0 / .12); flex: none; margin-left: 4px; }
   /* the scale, on demand: out of the fields while a value changes */
-  .tc .rail { margin: 0 12px 8px; padding: 9px 10px 8px; border-radius: 10px; background: var(--wash); }
+  .tc .rail { margin: 0 12px 8px; padding: 9px 10px 8px; border-radius: 10px; background: var(--pl-bg-inset); }
   .tc .rail[data-new] { animation: tc-rail 240ms ${EXPO} both; }
   @keyframes tc-rail { from { clip-path: inset(0 0 100% 0 round 10px); translate: 0 -4px; opacity: .4; } to { clip-path: inset(0 0 0 0 round 10px); } }
   .tc .ticks { position: relative; height: 30px; margin: 14px 8px 0; }
   .tc .ticks::before { content: ''; position: absolute; left: 0; right: 0; top: 8px; height: 2px; border-radius: 1px; background: rgb(0 0 0 / .07); }
-  .tc .tk { position: absolute; top: 3px; translate: -50% 0; display: grid; justify-items: center; gap: 5px; font: 500 10px/1 ui-monospace, monospace; color: var(--ink-3); cursor: pointer; padding: 0 2px; border-radius: 5px; transition: color 120ms; }
+  .tc .tk { position: absolute; top: 3px; translate: -50% 0; display: grid; justify-items: center; gap: 5px; font: 500 10px/1 ui-monospace, monospace; color: var(--pl-text-secondary); cursor: pointer; padding: 0 2px; border-radius: 5px; transition: color 120ms; }
   .tc .tk i { width: 2px; height: 9px; border-radius: 1px; background: currentColor; opacity: .5; transform-origin: 50% 100%; will-change: transform; }
   .tc .tk b { display: block; font: inherit; }
   /* the hierarchy, on the scale: the step that fits the element's place marked, the steps that break the order quiet */
-  .tc .tk[data-fit]::before { content: ''; position: absolute; top: -9px; left: 50%; width: 5px; height: 5px; margin-left: -2.5px; border-radius: 50%; background: #1a9e62; box-shadow: 0 0 0 2px rgb(26 158 98 / .18); }
-  .tc .tk[data-fit] b { color: #137a4b; }
+  .tc .tk[data-fit]::before { content: ''; position: absolute; top: -9px; left: 50%; width: 5px; height: 5px; margin-left: -2.5px; border-radius: 50%; background: var(--pl-border-written); box-shadow: 0 0 0 2px color-mix(in oklab, var(--pl-border-written) 18%, transparent); }
+  .tc .tk[data-fit] b { color: var(--pl-state-written-text); }
   .tc .tk[data-breaks]:not([data-at]) { opacity: .38; }
   .tc .tk[data-breaks]:not([data-at]) b { text-decoration: line-through; text-decoration-color: rgb(0 0 0 / .35); }
-  .tc .fit { margin-top: 8px; display: flex; gap: 6px; align-items: baseline; font-size: 11.5px; color: #137a4b; }
-  .tc .fit::before { content: ''; flex: none; width: 5px; height: 5px; border-radius: 50%; background: #1a9e62; translate: 0 -1px; }
-  .tc .tk[data-at] { color: var(--sky); } .tc .tk[data-at] i { height: 11px; width: 3px; opacity: 1; }
-  .tc .tk[data-off] { color: #d2462c; cursor: default; } .tc .tk[data-off] i { opacity: 1; height: 11px; width: 3px; background: repeating-linear-gradient(0deg, var(--coral) 0 2px, transparent 2px 3px); }
-  @media (hover: hover) and (pointer: fine) { .tc .tk:not([data-off]):hover { color: #1c1b19; } }
+  .tc .fit { margin-top: 8px; display: flex; gap: 6px; align-items: baseline; font-size: 11.5px; color: var(--pl-state-written-text); }
+  .tc .fit::before { content: ''; flex: none; width: 5px; height: 5px; border-radius: 50%; background: var(--pl-border-written); translate: 0 -1px; }
+  .tc .tk[data-at] { color: var(--pl-state-on-token-text); } .tc .tk[data-at] i { height: 11px; width: 3px; opacity: 1; }
+  .tc .tk[data-off] { color: var(--pl-text-hard-coded); cursor: default; } .tc .tk[data-off] i { opacity: 1; height: 11px; width: 3px; background: repeating-linear-gradient(0deg, var(--pl-border-hard-coded) 0 2px, transparent 2px 3px); }
+  @media (hover: hover) and (pointer: fine) { .tc .tk:not([data-off]):hover { color: var(--pl-text-primary); } }
   .tc .rail[data-dragging] .tk { cursor: ew-resize; }
   .tc .thumb { position: absolute; left: 0; top: 2px; width: 0; height: 14px; pointer-events: none; will-change: transform; }
-  .tc .knob { position: absolute; left: -7px; top: 0; width: 14px; height: 14px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 .5px rgb(0 0 0 / .15), 0 2px 6px rgb(0 0 0 / .2), inset 0 0 0 3.5px var(--sky); }
-  .tc .bub { position: absolute; bottom: calc(100% + 7px); left: 0; translate: -50% 0; padding: 3px 7px; border-radius: 7px; background: #1c1b19; color: #fff; font: 600 10.5px/1 ui-monospace, monospace; font-variant-numeric: tabular-nums; white-space: nowrap; transform-origin: 50% 100%; overflow: hidden; }
+  .tc .knob { position: absolute; left: -7px; top: 0; width: 14px; height: 14px; border-radius: 50%; background: var(--pl-bg-surface); box-shadow: 0 0 0 .5px rgb(0 0 0 / .15), 0 2px 6px rgb(0 0 0 / .2), inset 0 0 0 3.5px var(--pl-border-focus); }
+  .tc .bub { position: absolute; bottom: calc(100% + 7px); left: 0; translate: -50% 0; padding: 3px 7px; border-radius: 7px; background: var(--pl-text-primary); color: var(--pl-bg-surface); font: 600 10.5px/1 ui-monospace, monospace; font-variant-numeric: tabular-nums; white-space: nowrap; transform-origin: 50% 100%; overflow: hidden; }
   .tc .bub span { display: inline-block; }
-  .tc .hint { margin-top: 7px; font-size: 11px; color: var(--ink-3); display: flex; flex-wrap: wrap; gap: 4px 10px; }
-  .tc .hint .off { color: #d2462c; } .tc .hint .err { color: #c2304f; }
+  .tc .hint { margin-top: 7px; font-size: 11px; color: var(--pl-text-secondary); display: flex; flex-wrap: wrap; gap: 4px 10px; }
+  .tc .hint .off { color: var(--pl-text-hard-coded); } .tc .hint .err { color: var(--pl-text-hard-coded); }
   /* case, and the lists a field opens (styles, colours) */
-  .tc .seg { display: flex; margin: 0 12px 8px; padding: 2px; border-radius: 9px; background: var(--wash); }
-  .tc .seg .ch { flex: 1; height: 26px; border-radius: 7px; font: 600 12px/1 var(--pl-sans, system-ui); color: #55544f; transition: background 120ms ease-out, box-shadow 120ms ease-out, color 120ms; }
-  .tc .seg .ch[aria-checked="true"] { background: #fff; color: #1c1b19; box-shadow: 0 1px 2px rgb(0 0 0 / .1), 0 0 0 .5px rgb(0 0 0 / .06); }
-  .tc .seg .ch[data-peek] { box-shadow: inset 0 0 0 1.5px var(--sky); }
-  .tc .menu { margin: -2px 12px 8px; padding: 4px; border-radius: 12px; background: #fff; box-shadow: 0 0 0 .5px rgb(0 0 0 / .1), 0 12px 28px -8px rgb(0 0 0 / .25); animation: tc-rail 200ms ${EXPO} both; }
+  .tc .seg { display: flex; margin: 0 12px 8px; padding: 2px; border-radius: 9px; background: var(--pl-bg-inset); }
+  .tc .seg .ch { flex: 1; height: 26px; border-radius: 7px; font: 600 12px/1 var(--pl-sans, system-ui); color: var(--pl-text-secondary); transition: background 120ms ease-out, box-shadow 120ms ease-out, color 120ms; }
+  .tc .seg .ch[aria-checked="true"] { background: var(--pl-bg-surface); color: var(--pl-text-primary); box-shadow: 0 1px 2px rgb(0 0 0 / .1), 0 0 0 .5px rgb(0 0 0 / .06); }
+  .tc .seg .ch[data-peek] { box-shadow: inset 0 0 0 1.5px var(--pl-border-focus); }
+  .tc .menu { margin: -2px 12px 8px; padding: 4px; border-radius: 12px; background: var(--pl-bg-surface); box-shadow: 0 0 0 .5px rgb(0 0 0 / .1), 0 12px 28px -8px rgb(0 0 0 / .25); animation: tc-rail 200ms ${EXPO} both; }
   .tc .menu .ch { position: relative; width: 100%; display: flex; align-items: baseline; gap: 10px; padding: 7px 9px; border-radius: 8px; text-align: left; transition: background 120ms ease-out, box-shadow 120ms; }
   @media (hover: hover) and (pointer: fine) { .tc .menu .ch:hover, .tc .seg .ch:hover { background: rgb(0 0 0 / .04); } }
-  .tc .menu .ch[aria-checked="true"] { background: rgb(47 107 255 / .1); color: var(--sky); }
-  .tc .menu .ch[data-peek] { box-shadow: inset 0 0 0 1.5px var(--sky); }
+  .tc .menu .ch[aria-checked="true"] { background: var(--pl-bg-selected); color: var(--pl-state-on-token-text); }
+  .tc .menu .ch[data-peek] { box-shadow: inset 0 0 0 1.5px var(--pl-border-focus); }
   .tc .menu .ag { width: 30px; line-height: 1; }
-  .tc .menu .nb { margin-left: auto; font: 500 10.5px/1 ui-monospace, monospace; color: var(--ink-3); }
+  .tc .menu .nb { margin-left: auto; font: 500 10.5px/1 ui-monospace, monospace; color: var(--pl-text-secondary); }
   .tc .menu .tc-swatches { display: grid; grid-template-columns: repeat(auto-fill, minmax(24px, 1fr)); gap: 4px; padding: 4px; }
   .tc .menu .tc-swatches .ch { display: block; width: auto; min-width: 24px; height: auto; min-height: 24px; aspect-ratio: 1; padding: 0; border-radius: 6px; box-shadow: inset 0 0 0 1px rgb(0 0 0 / .1); }
-  .tc .menu .tc-swatches .ch[aria-checked="true"] { box-shadow: 0 0 0 2px #fff, 0 0 0 3.5px var(--sky); }
-  .tc .menu .tc-swatches .ch[data-peek] { box-shadow: 0 0 0 2px #fff, 0 0 0 3.5px rgb(47 107 255 / .5); }
-  .tc .more { display: flex; align-items: center; gap: 8px; padding: 8px 8px 8px 14px; border-top: .5px solid rgb(0 0 0 / .08); color: #55544f; font-size: 12.5px; }
+  .tc .menu .tc-swatches .ch[aria-checked="true"] { box-shadow: 0 0 0 2px var(--pl-bg-surface), 0 0 0 3.5px var(--pl-border-focus); }
+  .tc .menu .tc-swatches .ch[data-peek] { box-shadow: 0 0 0 2px var(--pl-bg-surface), 0 0 0 3.5px color-mix(in oklab, var(--pl-border-focus) 50%, transparent); }
+  .tc .more { display: flex; align-items: center; gap: 8px; padding: 8px 8px 8px 14px; border-top: .5px solid rgb(0 0 0 / .08); color: var(--pl-text-secondary); font-size: 12.5px; }
   .tc .more .show { margin-left: auto; height: 26px; padding: 0 9px; border-radius: 8px; display: inline-flex; align-items: center; gap: 5px; }
-  .tc .more .show:hover { background: var(--wash); }
-  .tc .ph { height: 32px; border-radius: 9px; background: var(--wash); }
+  .tc .more .show:hover { background: var(--pl-bg-surface-hover); }
+  .tc .ph { height: 32px; border-radius: 9px; background: var(--pl-bg-inset); }
   /* the caret, on the element's middle; the element ringed, glowing while a preview is on it */
-  .tc-caret { position: fixed; z-index: 5; width: 12px; height: 12px; rotate: 45deg; background: rgb(255 255 255 / .96); border-radius: 2px; pointer-events: none; }
+  .tc-caret { position: fixed; z-index: 5; width: 12px; height: 12px; rotate: 45deg; background: var(--pl-bg-surface); border-radius: 2px; pointer-events: none; }
   .tc-caret[hidden], .tc-ring[hidden] { display: none; }
   .tc-caret[data-side="right"] { box-shadow: -.5px .5px 0 rgb(0 0 0 / .1); } .tc-caret[data-side="left"] { box-shadow: .5px -.5px 0 rgb(0 0 0 / .1); } .tc-caret[data-side="below"] { box-shadow: -.5px -.5px 0 rgb(0 0 0 / .1); }
-  .tc-ring { position: fixed; z-index: 3; border-radius: 8px; box-shadow: 0 0 0 1.5px #2f6bff; pointer-events: none; transition: box-shadow 120ms ease-out; }
-  .tc-ring[data-peek] { box-shadow: 0 0 0 1.5px #2f6bff, 0 0 0 5px rgb(47 107 255 / .14); }
+  .tc-ring { position: fixed; z-index: 3; border-radius: 8px; box-shadow: 0 0 0 1.5px var(--pl-border-focus); pointer-events: none; transition: box-shadow 120ms ease-out; }
+  .tc-ring[data-peek] { box-shadow: 0 0 0 1.5px var(--pl-border-focus), 0 0 0 5px color-mix(in oklab, var(--pl-border-focus) 14%, transparent); }
   :host([data-dragging]), :host([data-dragging]) * { cursor: ew-resize !important; }
   /* ── the panel: the style and the type values as token pickers (picker.js), laid out like a visual editor's panel.
      The picker's rules are nested under the card so they never reach the overlay's other rows and lists ── */
   .tc .pk { ${PICKER_CSS} }
   /* the card is light on any page, so its pickers take the light tokens whatever the computer's scheme */
-  .tc { --pl-paper: #ffffff; --pl-paper-2: #f6f6f4; --pl-rule: #e9e8e4; --pl-ink: #1d1b17; --pl-ink-2: #6b665c; --pl-ink-3: #b3ad9f; --pl-sky: #3391ee; --pl-coral: #bf3a1e;
+  .tc, .tc-caret { --pl-paper: #ffffff; --pl-paper-2: #f6f6f4; --pl-rule: #e9e8e4; --pl-ink: #1d1b17; --pl-ink-2: #6b665c; --pl-ink-3: #b3ad9f; --pl-sky: #3391ee; --pl-coral: #bf3a1e;
     --pl-mint: #1a9460; --pl-mint-ink: #0b3d26; --pl-mint-on: #ffffff; --pl-pink: #f24a9f; --pl-pink-on: #ffffff; color-scheme: light;
     --pl-sky-ink: #0b3554; --pl-coral-ink: #5c160e; --pl-mint-block: var(--pl-mint); --pl-mint-block-on: var(--pl-mint-on);
     --pl-on-bg: color-mix(in oklab, var(--pl-mint) 12%, var(--pl-paper)); --pl-off-bg: color-mix(in oklab, var(--pl-coral) 10%, var(--pl-paper));
@@ -230,7 +230,7 @@ export const TEXT_EDITOR_CSS = `
   .tc { ${BUTTON_CSS} }
   .tc .pk { display: grid; gap: 10px; padding: 2px 12px 10px; }
   .tc .pk section { position: relative; display: grid; gap: 6px; }
-  .tc .pk section > b { padding: 0 2px; font: 600 11.5px/1 var(--pl-sans, system-ui); color: var(--ink-3); }
+  .tc .pk section > b { padding: 0 2px; font: 600 11.5px/1 var(--pl-sans, system-ui); color: var(--pl-text-secondary); }
   .tc .pk .grid { position: relative; display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
   .tc .pk .one { position: relative; display: grid; }
   .tc .pk .row.compact .slot.hard span { display: none; }
@@ -316,7 +316,7 @@ export class TextEditor {
     this.#host = host;
     this.#el = Object.assign(document.createElement('div'), { className: 'tc pl-scheme', hidden: true });
     this.#el.setAttribute('role', 'dialog'); // named for the element when it opens ("Edit Lettering")
-    this.#caret = Object.assign(document.createElement('div'), { className: 'tc-caret', hidden: true });
+    this.#caret = Object.assign(document.createElement('div'), { className: 'tc-caret pl-scheme', hidden: true });
     this.#ring = Object.assign(document.createElement('div'), { className: 'tc-ring', hidden: true });
     root.append(this.#ring, this.#el, this.#caret);
     this.#el.addEventListener('pointerdown', (e) => { const f = e.target.closest('.fld[data-key]'); if (f && e.button === 0) this.#press(e, f.dataset.key); });

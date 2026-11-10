@@ -686,6 +686,14 @@ race, built for the old in-place write) was rewritten for the new write path (`e
   focus on `--pl-border-focus`; a hard-coded colour in `--pl-text-hard-coded` with a `--pl-border-hard-coded` ring;
   the tick on `--pl-state-written-*`, then `--pl-done-*`. It now names no raw colour. Checked in light and dark on the
   design site; the contrast check still passes 74 of 74.
+- **The third part: the text card's own styles.** It had four colour names of its own (`--sky`, `--coral`,
+  `--ink-3`, `--wash`) and about thirty hex and rgb values written straight in. All now map to roles and states: text
+  primary and secondary (the faint ink stays only on real icons), inset and hover backgrounds for the grey wash,
+  the focus border for rings, the hard-coded colour for the reds, the written state for the green "fits here" marks.
+  Blue words (a changed value, the step in hand) take the "on a token" text, because sky-blue words fail on white.
+  The arrow beside the card now takes the card's light colours too, so it can't turn dark next to a light card.
+  Checked on crafting-ui with the computer in dark: the card, its labels and its arrow come out light, and the ring on
+  the page takes the night sky. Contrast still 74 of 74.
 
 ## Open gaps
 - White on the pink and mint buttons is under 4.5:1 in light (3.36, 3.85); dark now passes, just. Nothing yet stops the faintest ink being used for text again.
