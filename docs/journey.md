@@ -142,7 +142,7 @@ field is empty). The table of five writes, before and after. The Next table: eig
 
 ## Open gaps
 
-- Writes without a reload: the demo and the fixtures still run with no Fast Refresh, and no readiness row says
+- Writes without a reload: the demo is on Fast Refresh now; the 85 test fixtures are not, and no readiness row says
   "Fast Refresh is off". Next 15, the pages router and layout writes are not measured. See
   `docs/briefs/no-reload-writes.md`.
 - Engine architecture: eight proposed steps in `docs/briefs/engine-architecture-review.md`, none built, waiting on
