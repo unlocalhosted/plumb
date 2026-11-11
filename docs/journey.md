@@ -163,6 +163,11 @@
 - **The fix and the proof:** seen in the pane: at rest the card looks right and plumber finds the slip on 6 rows ("set to cut off, but its box can't shrink, so it never will"); dragged narrower, roles are pushed off the card one by one; after the fix the names are cut off, every role stays on, and plumber asked again finds nothing.
 - **Media hooks:** /rule/79: drag the edge in on each side of the switch.
 
+## Tests for the token spec (2026-11-12)
+- **What they cover, each through the real server, overlay and Chromium:** text roles from the code, one per size, a 13px code block landing on the theme's own 14px step; a 17px title and lead as one role with `font-semibold` beside the title; paragraphs on `leading-prose` at the owner's 1.6 while lists keep the role's 1.4; no colour in any style; caps labels keep 0.96px; the excluded specimen untouched; undo restores every file (e2e/type-roles.test.mjs, rewritten). Colour (e2e/colour-names.test.mjs, new): the rename waits behind "Rename my colours…", lists `ground was bg` and `surface-active was surface-pressed`, keeps `draw`, writes every file through a reload with colours painting as before, and Undo puts every file back; a BoardUI-named theme is read by role (a hand-written white folds onto `background-primary-default`, "primary" is not the accent); one brand colour paints as chosen, yellow keeps its colour with dark words, red takes white, `.dark` re-points the surface.
+- **Laptop run:** 4 of 4 pass. Two first failures were the tests' own (a colour step heading the wait did not know; Chrome reporting OKLCH), one was the product behaving as designed (the theme's own step wins within 1px), now asserted.
+- **Not done:** proving each test fails on the code before this work.
+
 ## Open gaps
 - Defensive CSS tips still without a rule: flex rows that should wrap, scrollbars shown when nothing scrolls, text over an image with no colour behind it, hover styles on touch screens, repeated backgrounds, fixed heights on text, sticky items in a grid, and the source-only ones (variable fallbacks, vendor selectors, vertical media queries).
 - Not built from the signed-off spec: a hint when the brand sits in the warning or danger hue band; reading surface levels and states from usage.
