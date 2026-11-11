@@ -399,6 +399,8 @@ function Lesson({ state, lesson, away }) {
         : !f ? <p className="text-ink-muted">plumber has no finding on this example.</p> : (
           <>
             <p className="font-medium text-pretty">{fixed ? (state.after?.length ? `Asked again: ${state.after[0].title}` : 'Asked again, plumber finds nothing.') : f.title}</p>
+            {/* why the rule is worth having at all, before how it happens */}
+            {lesson?.matters ? <p className="text-pretty">{lesson.matters}</p> : null}
             <p className="text-ink-muted text-pretty">{lesson?.why ?? f.because} {lesson?.habit}</p>
             <p className="flex flex-wrap items-baseline gap-x-2 gap-y-1 text-ink-muted text-pretty">
               <span>plumber’s fix: {f.suggest?.why ?? f.action}.</span>

@@ -2,26 +2,19 @@
 // five days in Lisbon and Sintra. Every row's thumbnail is one fixed 96 by 72 box, which looked right while the test
 // photos were all landscape. Then people save their own: phone photos, tall ones, a square one. With nothing said about
 // fit, each picture is pulled to fill the box, so towers go squat and a round well turns oval, on every row.
-// The list is live: a friend saves another place every few seconds, with a photo of whatever shape they took. That is
-// what the fix guards against: stretched, every arrival breaks again; cropped (object-fit: cover), every arrival holds.
-import { useEffect, useRef, useState } from 'react';
 import pena from '../../media/s51-pena.jpg';
 import towers from '../../media/s51-castle.jpg';
 import well from '../../media/s51-well.jpg';
 import coast from '../../media/s51-coast.jpg';
 import tiles from '../../media/s51-tiles.jpg';
 import tram from '../../media/s40-lisbon-tram.jpg';
-import dusk from '../../media/s51-pena-dusk.jpg';
-import garden from '../../media/s51-fountain.jpg';
-import ferry from '../../media/s45-ferry.jpg';
 import ines from '../../media/people/person-04.jpg';
 import tom from '../../media/people/person-07.jpg';
 import ada from '../../media/people/person-01.jpg';
 
 export const n = 78;
 
-// place, kind and where, the photo, its day and hour, how long it takes, who saved it. Six show; the rest are saved
-// one at a time while the list lives, and come round again
+// place, kind and where, the photo, its day and hour, how long it takes, who saved it
 const PLACES = [
   ['Palácio da Pena', 'Palace · Sintra hills', pena, 2, '09:30', '2 h', ines],
   ['Queen’s Terrace', 'Viewpoint · Pena park', towers, 2, '11:45', '30 min', ines],
@@ -29,54 +22,27 @@ const PLACES = [
   ['Praia da Ursa', 'Beach · Cabo da Roca', coast, 3, '10:00', 'Half day', ada],
   ['Museu do Azulejo', 'Museum · Xabregas', tiles, 4, '11:00', '1 h 30', tom],
   ['Tram 28', 'Ride · Graça to Estrela', tram, 4, '16:30', '50 min', ada],
-  ['Cacilhas ferry', 'Crossing · Cais do Sodré', ferry, 5, '18:10', '10 min', tom],
-  ['Fonte dos Passarinhos', 'Garden · Pena park', garden, 2, '12:30', '20 min', ada],
-  ['Cruz Alta at dusk', 'Viewpoint · Sintra hills', dusk, 3, '19:40', '45 min', ines],
 ];
-const SHOWN = 6, EVERY = 3200; // ms between saves
 
 const Avatar = ({ src, className = 'size-5' }) => <img src={src} alt="" className={'block rounded-full object-cover outline-1 -outline-offset-1 outline-black/10 ' + className} />;
 // a place's photo: one box for every row, whatever shape the picture came in
 const Thumb = ({ src, alt }) => <img src={src} alt={alt} data-thumb="" className="block h-[72px] w-24 shrink-0 rounded-chip outline-1 -outline-offset-1 outline-black/10" />;
 
-// The list as it lives: every few seconds the next place is saved to the top and the oldest leaves. The rows themselves
-// stay (keyed by where they sit), so a fix plumber has put on a row's photo is still there for the next photo.
-function useSaves(live) {
-  const [saved, setSaved] = useState(0);
-  useEffect(() => { for (const p of PLACES) new Image().src = p[2]; }, []);
-  useEffect(() => {
-    if (!live) return undefined;
-    const id = setInterval(() => setSaved((n) => n + 1), EVERY);
-    return () => clearInterval(id);
-  }, [live]);
-  const at = (i) => PLACES[(((i - saved) % PLACES.length) + PLACES.length) % PLACES.length];
-  return { saved, rows: Array.from({ length: SHOWN }, (_, i) => at(i)) };
-}
-
-export default function DetourSaved({ live = true }) {
-  const { saved, rows } = useSaves(live);
-  const list = useRef(null);
-  // a save arrives: the new row drops in at the top and the rest step down a row
-  useEffect(() => {
-    if (!saved || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    const items = [...(list.current?.children ?? [])], h = items[0]?.offsetHeight ?? 0;
-    items.forEach((li, i) => li.animate(i ? [{ transform: `translateY(${-h}px)` }, { transform: 'none' }] : [{ opacity: 0, transform: 'translateY(-12px)' }, { opacity: 1, transform: 'none' }],
-      { duration: i ? 420 : 520, easing: 'cubic-bezier(.2, .8, .2, 1)' }));
-  }, [saved]);
+export default function DetourSaved() {
   return (
     <article className="w-full max-w-[30rem] overflow-hidden rounded-card bg-surface shadow-card">
       <header className="flex items-center gap-3 border-b-hairline border-line px-5 py-4">
         <span className="flex min-w-0 flex-col">
           <span className="text-[15px] leading-5 font-medium tracking-[-0.01em]">Lisbon and Sintra</span>
-          <span className="truncate text-[13px] text-ink-muted"><span className="tabular-nums">12–16</span> May · <span className="tabular-nums">{9 + saved}</span> places saved</span>
+          <span className="truncate text-[13px] text-ink-muted"><span className="tabular-nums">12–16</span> May · <span className="tabular-nums">6</span> places saved</span>
         </span>
         <span className="ml-auto flex">
           {[ines, tom, ada].map((src, i) => <span key={i} className={'rounded-full ring-2 ring-surface ' + (i ? '-ml-1.5' : '')}><Avatar src={src} className="size-7" /></span>)}
         </span>
       </header>
-      <ul ref={list} className="m-0 flex list-none flex-col overflow-hidden p-0">
-        {rows.map(([name, where, src, day, at, takes, who], i) => (
-          <li key={i} className={'flex items-center gap-3.5 bg-surface px-5 py-3 ' + (i ? 'border-t-hairline border-line' : '')}>
+      <ul className="m-0 flex list-none flex-col p-0">
+        {PLACES.map(([name, where, src, day, at, takes, who], i) => (
+          <li key={name} className={'flex items-center gap-3.5 px-5 py-3 ' + (i ? 'border-t-hairline border-line' : '')}>
             <Thumb src={src} alt={name} />
             <span className="flex min-w-0 flex-1 flex-col gap-0.5">
               <span className="truncate text-sm font-medium" title={name}>{name}</span>
@@ -96,8 +62,9 @@ export default function DetourSaved({ live = true }) {
 DetourSaved.stage = true;
 DetourSaved.names = ['Stretch to fill', 'Crop to cover'];
 DetourSaved.lesson = {
-  why: 'An image with a width and a height is pulled to fill both, whatever shape the picture is. It looks right while every test photo is landscape. Then someone saves a tall phone photo, and the towers go squat.',
-  habit: 'Any image you give a fixed box also gets object-fit: cover. You never choose the shape of a picture someone else uploads.',
+  matters: 'You choose the box. Your users choose the picture. The day someone saves a tall phone photo, a tower goes squat or a face goes wide, and the page looks broken though nothing in your code changed. Testing never shows it, because your test photos already fit.',
+  why: 'An image given a width and a height is pulled to fill both, whatever shape the picture is.',
+  habit: 'Any image you give a fixed box also gets object-fit: cover. One class, and no upload can bend it.',
 };
 // What the eye sees, on every photo at once: the lines are the picture's own shape inside its box, and the dotted
 // strips beside them are stretch, the part of the box the picture was pulled out to fill. The pill is how much, in
