@@ -29,6 +29,20 @@ const sitesOf = (f) => [...document.querySelectorAll(`${SCOPE} [data-plumb-sourc
 // plumber's sets as style declarations: camelCase to kebab, a bare number in pixels (as its rules hand them over)
 const kebab = (o = {}) => Object.fromEntries(Object.entries(o).map(([k, v]) => [k.replace(/[A-Z]/g, (c) => '-' + c.toLowerCase()), typeof v === 'number' ? `${v}px` : v]));
 
+// A fix the browser can only snap (object-fit) glides anyway: while the picture is still pulled to its box, the box is
+// scaled out to the picture's own shape and clipped back to where it sits, which draws exactly what the crop will.
+// Forward it runs before the fix lands; back, after it's given back. Each place starts a beat after the one before.
+const CROP = { ms: 520, lag: 70, ease: 'cubic-bezier(.2, .8, .2, 1)' };
+function glideFit(el, forward, i) {
+  if (el.localName !== 'img' || !el.naturalWidth || !el.clientHeight || still()) return null;
+  const by = (el.naturalWidth / el.naturalHeight) / (el.clientWidth / el.clientHeight), sx = Math.max(1, by), sy = Math.max(1, 1 / by);
+  if (sx * sy < 1.005) return null;
+  const r = parseFloat(getComputedStyle(el).borderTopLeftRadius) || 0, cut = (k) => `${((1 - 1 / k) / 2) * 100}%`;
+  const pulled = { transform: 'scale(1, 1)', clipPath: `inset(0% 0% round ${r}px / ${r}px)` };
+  const cropped = { transform: `scale(${sx}, ${sy})`, clipPath: `inset(${cut(sy)} ${cut(sx)} round ${r / sx}px / ${r / sy}px)` };
+  return el.animate(forward ? [pulled, cropped] : [cropped, pulled], { duration: CROP.ms, delay: i * CROP.lag, easing: CROP.ease, fill: 'both' });
+}
+
 // The example's life: plumber reads it, the blueprint opens on it, and the switch takes plumber's fix or gives it back.
 // A live example that re-renders its classes takes plumber's fix as a source edit (taken.js), with plumber's own class
 // edit (inplace.js applied()); the others take it in place with swapPreview.
@@ -68,18 +82,24 @@ function usePlumber(Example) {
       setState((s) => ({ ...s, phase: 'fixing' }));
       return GLIDE.ms;
     }
+    let glide = GLIDE.ms, fits = 0;
     for (const f of state.found) {
       if (f.suggest?.kind !== 'class') continue;
       for (const el of sitesOf(f)) {
         // the class lands on the element; what it stands for lands where it reaches (its target), or on the element
         const memo = {}, styles = kebab(f.suggest.sets), on = f.suggest.target ? [...el.querySelectorAll(f.suggest.target)] : [];
-        swapPreview(el, { from: f.suggest.from, to: f.suggest.to }, true, memo, on.length ? {} : styles);
-        taken.current.push({ el, memo });
-        for (const child of on) { const m = {}; swapPreview(child, { from: '', to: '' }, true, m, styles); taken.current.push({ el: child, memo: m }); }
+        const land = () => {
+          swapPreview(el, { from: f.suggest.from, to: f.suggest.to }, true, memo, on.length ? {} : styles);
+          for (const child of on) { const m = {}; swapPreview(child, { from: '', to: '' }, true, m, styles); taken.current.push({ el: child, memo: m }); }
+        };
+        // a fit can't glide in CSS: the picture glides to its crop first, and the fix lands as it arrives
+        const fit = !on.length && styles['object-fit'] ? glideFit(el, true, fits) : null;
+        taken.current.push({ el, memo, fit: !!fit });
+        if (fit) { glide = Math.max(glide, CROP.ms + fits++ * CROP.lag); fit.finished.then(() => { land(); fit.cancel(); }).catch(() => {}); } else land();
       }
     }
     setState((s) => ({ ...s, phase: 'fixing' }));
-    return GLIDE.ms;
+    return glide;
   };
   // asked again once the fix is in and the camera is back at rest
   const again = async () => {
@@ -88,7 +108,13 @@ function usePlumber(Example) {
   };
   const undo = async () => {
     const { swapPreview } = await inplace();
-    for (const { el, memo } of taken.current) swapPreview(el, null, false, memo);
+    let fits = 0;
+    for (const { el, memo, fit } of taken.current) {
+      swapPreview(el, null, false, memo);
+      // given back the same way: from its crop, the picture is pulled out to its box again
+      const back = fit ? glideFit(el, false, fits++) : null;
+      back?.finished.then(() => back.cancel()).catch(() => {});
+    }
     taken.current = [];
     setEdits([]);
     setState((s) => ({ ...s, phase: 'broken', after: null }));
@@ -324,7 +350,8 @@ function useMoment(Example, plumb, view, fit) {
     at(TIMING.cameraIn, () => {
       const from = measure();
       setMarks({ from, to: null }); setCard(cardOf());
-      if (from && cam.current && view.current && !still()) setLens(shot(from.subject, cam.current, view.current(), Example?.maxZoom, fit.current));
+      // a slip on every row is read on the whole card: the camera stays where it is (Example.camera = false)
+      if (from && cam.current && view.current && !still() && Example?.camera !== false) setLens(shot(from.subject, cam.current, view.current(), Example?.maxZoom, fit.current));
       setStage(STAGE.cameraIn);
     });
     at(TIMING.marksIn, () => setStage(STAGE.marks));

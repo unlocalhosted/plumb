@@ -124,6 +124,14 @@
 - **The proof:** crafting-ui's plan is now 2 renames, `bg` → `ground` and `surface-pressed` → `surface-active`; its `draw` family keeps its names. A BoardUI-named project maps onto ours (`text-primary` → `fg`, `background-primary-default` → `surface`). The sample screen renders from the 26 roles in light and dark. The crafting-ui side copy holding the old writes is discarded.
 - **Media hooks:** docs/media/colour-rename-our-names-2026-11-12.jpg.
 
+## The stretched-picture demo, rebuilt on the whole card (2026-11-12)
+- **The itch:** the owner on the first screen for principle 78: "the demo technique is really bad, we dont show any guardrails, we dont show transition across all elements we focus on one and that too is so bad".
+- **How we found it:** the owner watched the screen; asked what "guardrails" and "transition" meant, they chose both guide lines and the fix holding under new content, and every photo gliding.
+- **The system behind it:** the demo stage took one "lead" element from an example: one hole in the shade, one number, the camera on it. A slip on six rows was drawn on one, and a fix the browser cannot animate (how a picture fits its box) snapped on all six.
+- **What we chose:** change the stage, not just this screen. The stage can now keep its camera on the whole card, and glides a crop itself (it scales the still-stretched picture out to its own shape, clipped to its box, then lands the fix). Zooming one then all was the option not taken.
+- **The fix and the proof:** every photo carries its own guide (the picture's true shape as lines, the stretch as dotted strips, the percent in a pill); a friend saves a new place every 3.2 s with a photo of another shape, so the stretched side keeps breaking and the cropped side holds. Seen in the pane: marks on all rows with 13 to 100 percent, arrivals stepping the list down, all six cropped after the fix. Not seen: one clean run of the moment after the camera change, and the glide in motion (judged only from stills).
+- **Media hooks:** /rule/78, a screen recording of the switch on both sides with two arrivals each.
+
 ## Open gaps
 - Defensive CSS tips still without a rule: flex items that cannot shrink or wrap, scrollbars shown when nothing scrolls, text over an image with no colour behind it, hover styles on touch screens, repeated backgrounds, fixed heights on text, sticky items in a grid, and the source-only ones (variable fallbacks, vendor selectors, vertical media queries).
 - Not built from the signed-off spec: a hint when the brand sits in the warning or danger hue band; reading surface levels and states from usage.

@@ -126,6 +126,23 @@ screen. Ours used to be a teaching page with a still picture in it; that system 
   blueprint tag as the value pill (mono, white on the hue), heat dots where it's off, the blueprint shade over the rest,
   `--pl-spring-pop` for marks appearing. Owner: "follow the same primitives we have created for plumber, not just
   these orange and blue lines".
+- **The read covers every place the slip is, not one.** When a slip recurs across the card (§3), the example's
+  `measure` hands over marks for every instance (keyed lines, rules, bands and a pill each), the shade is cut around
+  all of them, and the camera stays on the whole card (`Example.camera = false`). The fix then lands on every
+  instance together, a beat apart down the card. Zooming into one "lead" instance is only for a slip too small to see
+  at 1× (a pixel, a hairline), and even then the others are marked when the camera is back out.
+- **The marks draw what is true, so the eye can check the picture against them.** Not a box round the subject with a
+  number: the guide is the real thing the lesson turns on (a stretched photo's own shape inside its box, with the
+  stretch dotted), and it moves to where the fix puts it.
+- **Every instance glides, even when CSS snaps.** A fix on a property the browser can't transition (`object-fit`,
+  `display`, a keyword) still has to be seen arriving: the stage animates the same pixels the fix will draw and lands
+  the fix as the glide ends (Principle.jsx `glideFit`). A fix that snaps on six rows reads as a page reload. Add the
+  glide to the stage, never to the example.
+- **A defensive rule is shown defending.** A rule about content you don't control (a photo of another shape, a longer
+  name, one more item) is about change, so its screen is live: new content of other shapes keeps arriving at rest.
+  On the mistake's side every arrival breaks again; on plumber's side every arrival holds. The rows stay the same
+  elements (keyed by place in the list) so plumber's fix is still on them for the next arrival; real arrivals only
+  (a friend saves a place), never content swapped for the sake of it.
 - **Teaching sits off the stage**, below it, read after watching: what plumber sees, why it happens, the habit,
   plumber's fix in words (§5).
 - **Fit every width.** Lay out against the stage (container queries); check 1440, 1024 and a ~300px pane.
@@ -298,3 +315,9 @@ Each line is something the owner had to say once; the sections above exist so th
 - 2026-11-05 · Owner chose "Scale to fit" for cards taller or wider than the window (21 put the switch below an
   800px window, 10 ran off a phone). Cause: the stage set a fixed-size card above the switch and left the window to
   scroll. → The stage fits the card; plumber always reads it at 1× (§3½).
+- 2026-11-12 · #78 (stretched pictures): "the demo technique is really bad, we dont show any guardrails, we dont show
+  transition across all elements we focus on one and that too is so bad". Cause: the stage's contract was one lead
+  element (one cut, one pill, the camera on it), so five of six photos were unmarked and snapped; the mark was a box
+  with a percent, not the picture's true shape; and a rule about content you don't control was shown on a still list.
+  Owner chose: guides on every photo and new shapes arriving, and every photo glides. → §3½: the read covers every
+  place; marks draw what is true; every instance glides; a defensive rule is shown defending.
