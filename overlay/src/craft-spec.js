@@ -88,7 +88,7 @@ export const STANDARD = {
     'content-size': { slack: 0.2 },
     'media-size': { min: 12, near: 12 },
     'flex-min': { over: 1, depth: 24 }, // px a row may run past its box, and how many elements in the cause is looked for
-    'image-fit': { min: 16, off: 0.03 }, // smallest box read, and how far its shape may be from the picture's
+    'image-fit': { min: 16, off: 0.03, latentMin: 24, photo: 64 }, // smallest box read, and how far its shape may be from the picture's
   },
   depth: {
     'layered-shadow': { blur: 16 },

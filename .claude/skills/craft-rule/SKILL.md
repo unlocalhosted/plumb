@@ -355,4 +355,7 @@ Each line is something the owner had to say once; the sections above exist so th
   miss in a normal design review". Cause: the rule fired only on a row already overflowing, so the screen had to be
   broken at rest for plumber to find anything. → §1: the mistake's side is the one that passed review; the rule finds
   the cause before the damage. #79 now rests with every name fitting and breaks when the card is dragged narrower.
+- 2026-11-12 · (own review) #78's finding "before it stretches" was first written at confidence 0.72 and never showed:
+  the engine drops anything under 0.8 (craft.js FLOOR). → A finding about a cause, not visible damage, must earn 0.8
+  by narrowing what it reads (photo-sized pictures only, not icons), never by raising the number alone.
 

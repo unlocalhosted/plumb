@@ -168,6 +168,13 @@
 - **Laptop run:** 4 of 4 pass. Two first failures were the tests' own (a colour step heading the wait did not know; Chrome reporting OKLCH), one was the product behaving as designed (the theme's own step wins within 1px), now asserted.
 - **Not done:** proving each test fails on the code before this work.
 
+## Rule 78 finds it before it stretches (2026-11-12)
+- **The itch:** the same as rule 79's: the screen rested with the palace already squat, which nobody ships. The owner: "Yes, fix 78 too".
+- **The system behind it:** the rule fired only once a picture was visibly stretched, so the screen had to be broken at rest.
+- **What we tried, what we chose:** the early finding was first given a confidence under the engine's noise floor (0.8) and was dropped, rightly, as written: a box set on both sides is also true of icons and logos. It now reads only photo-sized pictures (64px or more on the short side, not an svg) whose height and width both come from classes, and clears the floor at 0.82.
+- **The fix and the proof:** the card rests at 300px, where the cover's box is exactly the photo's 3:2. Seen in the pane: at rest it looks right and plumber finds the slip on the cover and the three faces ("fits its box today"); dragged to 442px the palace is drawn 49% wider than it is; after the fix it is cropped and plumber asked again finds nothing. Not checked: how often the early finding fires on real apps.
+- **Media hooks:** /rule/78: drag the edge out on each side of the switch.
+
 ## Open gaps
 - Defensive CSS tips still without a rule: flex rows that should wrap, scrollbars shown when nothing scrolls, text over an image with no colour behind it, hover styles on touch screens, repeated backgrounds, fixed heights on text, sticky items in a grid, and the source-only ones (variable fallbacks, vendor selectors, vertical media queries).
 - Not built from the signed-off spec: a hint when the brand sits in the warning or danger hue band; reading surface levels and states from usage.

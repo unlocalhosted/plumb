@@ -48,9 +48,9 @@ export const CRAFT = {
     reason: 'A flex item is never narrower than its longest line. A longer name or a narrower screen pushes the rest of the row out.',
   }),
   'image-fit': ({ by, wide }) => ({
-    label: 'Picture is stretched',
-    line: `This picture is drawn ${by}% ${wide ? 'wider' : 'taller'} than it is.`,
-    reason: 'Its box is a different shape, and the picture is pulled to fill it.',
+    label: by ? 'Picture is stretched' : 'Picture can be stretched',
+    line: by ? `This picture is drawn ${by}% ${wide ? 'wider' : 'taller'} than it is.` : 'This picture fits its box today. One of another shape, or a wider screen, will stretch it.',
+    reason: 'Its box is set on both sides, and a picture is pulled to fill whatever box it is given.',
   }),
   'elevation-ladder': ({ blur, level }) => ({
     label: 'Shadow a step too close',

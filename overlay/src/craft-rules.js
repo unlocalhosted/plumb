@@ -1034,8 +1034,10 @@ export const mediaSize = {
   },
 };
 
-// A picture is never stretched: a box whose shape differs from the picture's own crops it (object-fit: cover) instead.
-// (defensivecss.dev "Image distortion": a fixed-size avatar or card cover, then a user uploads another shape.)
+// #78. A picture is never stretched: a box whose shape differs from the picture's own crops it (object-fit: cover).
+// It is found before it stretches: a picture whose box is set on both sides, with nothing said about fit, is the slip
+// whether or not today's photo at today's width happens to be the box's shape. (defensivecss.dev "Image distortion":
+// a fixed-size avatar or card cover, then a user uploads another shape, or the card lands on a wider screen.)
 export const imageFit = {
   id: 'craft/image-fit', family: 'craft', number: [78], owns: ['fit'], once: 'ancestor', reads: ['style', 'rect'],
   check({ el, facts }, theme) {
@@ -1047,12 +1049,21 @@ export const imageFit = {
     const w = el.clientWidth - px(s.paddingLeft) - px(s.paddingRight), h = el.clientHeight - px(s.paddingTop) - px(s.paddingBottom);
     if (w < T.min || h < T.min) return [];
     const stretch = (w / h) / (el.naturalWidth / el.naturalHeight); // > 1: drawn wider than it is
-    if (Math.abs(stretch - 1) <= T.off) return [];
-    const wide = stretch > 1, by = Math.round((wide ? stretch - 1 : 1 / stretch - 1) * 100);
+    const shows = Math.abs(stretch - 1) > T.off;
+    if (!shows) {
+      // not stretched today. It can be when the box's shape is set without the picture: a height (or a ratio) and a
+      // width both given by classes. A box with one side left to the picture keeps its shape and says nothing; so
+      // does a drawing (an svg has no photo to swap in) and anything too small to be a photo (an icon, a logo mark)
+      const AUTO = { not: /^(?:auto|fit|min|max)$/ };
+      const tall = utility(el, 'h', AUTO) ?? utility(el, 'size', AUTO) ?? utility(el, 'aspect', AUTO);
+      const across = utility(el, 'w', AUTO) ?? utility(el, 'size', AUTO) ?? utility(el, 'flex') ?? utility(el, 'grow') ?? utility(el, 'basis');
+      if (!tall || !across || w < T.latentMin || h < T.latentMin || Math.min(el.naturalWidth, el.naturalHeight) < T.photo || /\.svg(?:[?#]|$)/i.test(el.currentSrc || el.src)) return [];
+    }
+    const wide = stretch > 1, by = shows ? Math.round((wide ? stretch - 1 : 1 / stretch - 1) * 100) : 0;
     return [{
       ...say(this.id, { by, wide }),
       key: this.id, text: utility(el, 'object') ?? 'object-fit', props: ['object-fit'], value: 'fill', n: by,
-      evidence: { box: [Math.round(w), Math.round(h)], natural: [el.naturalWidth, el.naturalHeight], by, wide }, confidence: 0.9,
+      evidence: { box: [Math.round(w), Math.round(h)], natural: [el.naturalWidth, el.naturalHeight], by, wide }, confidence: shows ? 0.9 : 0.82,
       suggest: { kind: 'class', from: utility(el, 'object') ?? '', to: 'object-cover', why: 'crops the picture to the box instead of stretching it', sets: { objectFit: 'cover' } },
     }];
   },
