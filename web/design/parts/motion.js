@@ -5,6 +5,7 @@ import { LANGUAGE_CSS } from '../../../overlay/src/language.js';
 import { TOY_DEFS, toyOf } from '../../../overlay/src/toys.js';
 import { readTokens, probe } from '../tokens.js';
 import { spring, DETENT, SETTLE } from '../../../overlay/src/motion.js';
+import { SOFT_CSS, soften, feel, BEATS, LAUNCH } from '../../../overlay/src/soft.js';
 import { SCALE_CSS, count, rollCount } from '../../../overlay/src/scale-marks.js';
 
 // a CSS linear() easing as points [t, v], t and v from 0 to 1 (stops without a place are spread between their
@@ -67,6 +68,9 @@ export function mount(host, root, css) {
     { id: 'pulled', name: 'Pulled into a step', says: 'Let go of something you drag and it springs onto the nearest step. It never stops between steps. Drag the knob.',
       physics: DETENT, ghost: SETTLE, piece: 'detent',
       what: 'A real spring, run a frame at a time, so a new pull starts from wherever it is. A mark coming home uses a softer one, drawn faint.' },
+    { id: 'pressed', name: 'Pressed', says: 'A soft block goes down under the finger, and on letting go springs past its rest and back as one body. A smaller thing is stiffer: it rises less and settles sooner. Press either one.',
+      piece: 'press', custom: true,
+      what: 'The top squashes onto its side; let go, it rises past its rest, dips under it, and settles. How far and how long is worked out from its height: a card about 190px tall is the reference.' },
   ];
   for (const m of MOMENTS) if (m.physics) { m.sim = springPoints(m.physics); m.ms = m.sim.ms; }
 
@@ -106,6 +110,8 @@ export function mount(host, root, css) {
     lands: () => `<div class="stage lands">${['padding', 'gap', 'corner'].map((n) => `<i>${toyOf(n)}</i>`).join('')}</div>`,
     roll: () => `<div class="stage roll"><span class="sc-count-demo">${count(128, 'on the scale')}</span></div>`,
     card: () => `<div class="stage card"><div class="mini"><b>Padding</b><span>16px, on the scale</span></div></div>`,
+    press: () => `<div class="stage press"><a class="s-box" data-hue="mint" href="#" onclick="return false"><span class="in"><span class="plate"><i class="toy">${toyOf('padding')}</i></span><b>Padding</b><em>16px, on the scale</em></span></a>
+      <button class="s-btn" type="button"><span>Write</span></button></div>`,
     detent: () => `<div class="stage detent"><span class="track">${[0, 1, 2, 3, 4].map((i) => `<i class="tick" style="left:${i * 25}%"></i>`).join('')}<span class="knob" tabindex="0" role="slider" aria-label="Drag to a step" aria-valuemin="0" aria-valuemax="4" aria-valuenow="1"></span></span></div>`,
     travel: () => `<div class="stage travel"><span class="seg"><i class="fill"></i><span>Body</span><span>Title</span><span>Label</span></span></div>`,
   };
@@ -115,17 +121,17 @@ export function mount(host, root, css) {
     <div class="side">${piece(m)}<button class="play" type="button">Play</button></div>
     <div class="body">
       <header><h3>${m.name}</h3><p>${m.says}</p></header>
-      ${graph(m)}
+      ${m.custom ? `<svg class="curve press" viewBox="0 0 ${W} ${H}" aria-hidden="true"></svg>` : graph(m)}
       <dl>
-        ${m.physics ? `<div><dt>Spring</dt><dd><b>k ${m.physics.k}, c ${m.physics.c}</b><span class="hc quiet">in code, not a token</span></dd></div>
+        ${m.custom ? `<div><dt>Spring</dt><dd><b>from its height</b><span class="hc quiet">in code, not a token</span></dd></div><div><dt>Time</dt><dd class="press-ms"></dd></div>` : m.physics ? `<div><dt>Spring</dt><dd><b>k ${m.physics.k}, c ${m.physics.c}</b><span class="hc quiet">in code, not a token</span></dd></div>
         <div><dt>Time</dt><dd>rests in about <b>${m.ms}ms</b></dd></div>` : `<div><dt>Curve</dt><dd><code class="tok" tabindex="0">--pl-${m.curve}</code></dd></div>
         <div><dt>Time</dt><dd>${m.msToken ? `<code class="tok" tabindex="0">--pl-${m.msToken}</code> ` : ''}<b>${m.ms}ms</b>${m.msToken ? '' : '<span class="hc">written as a number</span>'}</dd></div>`}
-        ${m.stagger ? `<div><dt>Apart</dt><dd><code class="tok" tabindex="0">--pl-${m.stagger}</code> <b>${px(m.stagger)}ms</b></dd></div>` : ''}
+        ${m.custom ? '' : ''}${m.stagger ? `<div><dt>Apart</dt><dd><code class="tok" tabindex="0">--pl-${m.stagger}</code> <b>${px(m.stagger)}ms</b></dd></div>` : ''}
         <div class="wide"><dt>What moves</dt><dd>${m.what}</dd></div>
       </dl>
     </div></section>`;
 
-  root.innerHTML = `<style>${css}${LANGUAGE_CSS}${SCALE_CSS}
+  root.innerHTML = `<style>${css}${LANGUAGE_CSS}${SCALE_CSS}${SOFT_CSS}
     :host { display: block; font-family: var(--pl-sans); color: var(--pl-text-primary); }
     h2 { margin: 44px 0 6px; font: 600 20px/28px var(--pl-sans); letter-spacing: -0.01em; }
     h2 + p, .prose p { margin: 0 0 10px; font: 400 14px/22px var(--pl-sans); color: var(--pl-text-secondary); max-width: 680px; }
@@ -203,6 +209,13 @@ export function mount(host, root, css) {
     .track .knob:focus-visible { box-shadow: var(--pl-shadow-tag), inset 0 0 0 2px var(--pl-border-focus), 0 0 0 4px var(--pl-bg-selected); }
     .track .knob[data-held] { cursor: grabbing; }
     .hc.quiet { color: var(--pl-text-secondary); }
+    .stage.press { display: flex; flex-direction: column; align-items: center; gap: 18px; width: 100%; }
+    .stage.press .s-box { width: 168px; }
+    .stage.press .toy { display: block; width: 40px; height: 40px; } .stage.press .toy svg { display: block; width: 100%; height: 100%; overflow: visible; }
+    .curve .line.btn { stroke: var(--pl-pink-block); }
+    .curve .dot.btn { stroke: var(--pl-pink-block); }
+    .press-ms .pm { display: block; } .press-ms .pm b { margin: 0; }
+    .curve .tag { font: 600 11px/1 var(--pl-sans); paint-order: stroke; stroke: var(--pl-bg-surface); stroke-width: 4px; }
     .tr { display: grid; grid-template-columns: minmax(150px, 1fr) minmax(0, 2fr) minmax(0, 1.4fr); gap: 14px; align-items: center; padding: 10px 16px; border-top: 1px solid var(--pl-border-default); }
     .tr.th { border-top: 0; padding: 9px 16px; background: var(--pl-bg-inset); font: 600 11px/1 var(--pl-sans); letter-spacing: .05em; text-transform: uppercase; color: var(--pl-text-secondary); }
     .tr .for { font: 400 13px/18px var(--pl-sans); color: var(--pl-text-secondary); }
@@ -228,11 +241,12 @@ export function mount(host, root, css) {
     <li><b>The overlay writes its times as numbers.</b> Counted on 2026-11-11: the time tokens are used 71 times, but 161 times in its transitions and animations are written as numbers, across 20 files: 120ms (34 times), 200ms (24), 160ms (15), 260ms (12), 140ms (11), 320ms (9). Four of the moments above have no time token at all.</li>
     <li><b>Nine curves of its own.</b> The curve tokens are used 127 times, but 9 different hand-written cubic-bezier curves sit beside them (14 uses, most of them bouncy ones like <code>cubic-bezier(.34, 1.56, .64, 1)</code>), and 34 of the browser's own (<code>ease-out</code> 21, <code>linear</code> 7, <code>ease-in-out</code> 5).</li>
     <li><b>A third spring, private to the text card.</b> The drag springs are shared from one place (k 600 pulled into a step, k 300 coming home), but the text card's slider defines its own: k 1400 while held and k 520 on letting go. None of the springs are tokens; CSS can't run them.</li>
-    <li><b>The soft blocks' squash isn't here yet.</b> A button's press is worked out from its height, in code; it needs its own moment.</li>
+    <li><b>The press has no tokens.</b> A soft block's bounce is worked out from its height in code (its beats and curves live in the soft blocks), so a token can't change it; that is on purpose, since one number can't scale with size.</li>
   </ul>`;
 
   // playing a moment: the piece moves, and the dot follows the curve for the same time (the toy goes there and back)
   for (const m of MOMENTS) {
+    if (m.custom) continue;
     const el = root.querySelector(`.moment[data-id="${m.id}"]`), stage = el.querySelector('.stage'), dot = el.querySelector('.dot'), head = el.querySelector('.head');
     const pts = ptsOf(m), peak = Math.max(...pts.map(([, v]) => v)), hi = Math.max(1.08, peak + 0.04);
     const total = m.stagger ? m.ms + 2 * px(m.stagger) : m.ms, sc = m.ms / total;
@@ -293,6 +307,47 @@ export function mount(host, root, css) {
       stage.addEventListener('pointerenter', run);
       el.querySelector('.play').addEventListener('click', run);
     }
+  }
+
+  // pressed: the two blocks' release, drawn from the soft blocks' own beats and feel, measured from each one's height;
+  // a dot per block runs its curve when it is let go
+  {
+    const el = root.querySelector('.moment[data-id="pressed"]'), stage = el.querySelector('.stage'), svg = el.querySelector('svg.press');
+    const api = soften(stage);
+    const ease = (spec) => { const pts = bezierPoints(spec); return (p) => at(pts, p); };
+    const things = [['card', stage.querySelector('.s-box'), 'card'], ['button', stage.querySelector('.s-btn'), 'btn']].map(([name, block, cls]) => {
+      const top = block.querySelector(':scope > .in, :scope > span'), f = feel(top), lift = parseFloat(getComputedStyle(block).getPropertyValue('--lift')) || 0;
+      const keys = [[0, f.over / 5, LAUNCH], ...BEATS.map(([o, s, , e]) => [o, lift + f.over * s, e])];
+      const pts = [];
+      for (let i = 1; i < keys.length; i++) { const [t0, v0, e] = keys[i - 1], [t1, v1] = keys[i], fn = ease(e);
+        for (let k = 0; k <= 16; k++) { const p = k / 16; pts.push([(t0 + p * (t1 - t0)) * f.ms, v0 + fn(p) * (v1 - v0)]); } }
+      return { name, block, cls, f, lift, top: top.offsetHeight, pts };
+    });
+    const tmax = Math.max(...things.map((t) => t.f.ms)), vmax = Math.max(...things.flatMap((t) => t.pts.map(([, v]) => v))) + 1;
+    const x = (ms) => L + (ms / tmax) * (W - L - R), y = (v) => T + (1 - v / vmax) * (H - T - B);
+    const draw = () => {
+      svg.innerHTML = `<line class="axis" x1="${L}" y1="${y(0)}" x2="${W - R}" y2="${y(0)}"/><line class="axis" x1="${L}" y1="${T - 6}" x2="${L}" y2="${y(0)}"/>
+        <text class="gl" x="${L - 8}" y="${y(0) + 4}" text-anchor="end">seat</text>
+        <text class="gl" x="${L}" y="${H - 12}">let go</text><text class="gl" x="${W - R}" y="${H - 12}" text-anchor="end">${Math.round(tmax)}ms</text>
+        ${things.map((t) => { const pk = t.pts.reduce((a, b) => (b[1] > a[1] ? b : a));
+          return `<line class="guide" x1="${L}" y1="${y(t.lift)}" x2="${W - R}" y2="${y(t.lift)}"/>
+            <text class="gl" x="${L - 8}" y="${y(t.lift) + 4}" text-anchor="end" fill="${t.cls === 'btn' ? 'var(--pl-pink-block)' : 'var(--pl-border-focus)'}">${t.lift}px</text>
+            <path class="line ${t.cls}" d="${t.pts.map(([ms, v], i) => `${i ? 'L' : 'M'} ${x(ms).toFixed(1)} ${y(v).toFixed(1)}`).join(' ')}"/>
+            <text class="tag" x="${x(pk[0]) + 6}" y="${y(pk[1]) - 4}" fill="${t.cls === 'btn' ? 'var(--pl-pink-block)' : 'var(--pl-border-focus)'}">${t.name} +${t.f.over.toFixed(1)}px</text>
+            <circle class="dot ${t.cls}" cx="${x(0)}" cy="${y(t.pts[0][1])}" r="5"/>`; }).join('')}`;
+      el.querySelector('.press-ms').innerHTML = things.map((t) => `<span class="pm">${t.name}, ${t.top}px tall: <b>${Math.round(t.f.ms)}ms</b>, rests ${t.lift}px up</span>`).join('');
+    };
+    draw();
+    const trace = (t, i) => {
+      const dot = svg.querySelectorAll('.dot')[i]; if (!dot || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      const t0 = performance.now();
+      const tick = (now) => { const ms = Math.min(t.f.ms, now - t0), v = at(t.pts.map(([a, b]) => [a / t.f.ms, b]), ms / t.f.ms);
+        dot.setAttribute('cx', x(ms)); dot.setAttribute('cy', y(v)); if (ms < t.f.ms) requestAnimationFrame(tick); };
+      requestAnimationFrame(tick);
+    };
+    // a block let go (by hand, by key, or by Play) runs its dot
+    things.forEach((t, i) => { let was = false; new MutationObserver(() => { const now = t.block.classList.contains('down'); if (was && !now) trace(t, i); was = now; }).observe(t.block, { attributeFilter: ['class'] }); });
+    el.querySelector('.play').addEventListener('click', () => { for (const t of things) api.press(t.block, true); setTimeout(() => { for (const t of things) api.press(t.block, false); }, 160); });
   }
 
   const copy = (el) => { navigator.clipboard?.writeText(el.textContent).catch(() => {}); el.setAttribute('data-copied', ''); setTimeout(() => el.removeAttribute('data-copied'), 900); };

@@ -834,6 +834,12 @@ race, built for the old in-place write) was rewritten for the new write path (`e
   overlay/src: 161 times written as numbers across 20 files against 71 token uses; 9 hand-written cubic-bezier
   curves (14 uses) and 34 browser keywords against 127 curve-token uses; a third spring private to the text card
   (k 1400 held, k 520 let go); and the soft blocks' squash, not drawn yet. Checked in light and dark.
+- **"Fix the still missing part": Pressed.** An eighth moment: a real soft card and a real soft button, pressed by
+  hand, by key or by Play. Their release is drawn from the soft blocks' own beats and size formula (now exported
+  from the soft block code rather than copied), measured from each one's height: the 166px card rises 4.7px past
+  its 7px rest and takes 610ms; the 35px button rises 2.3px past its 4px rest and takes 506ms. So the page shows
+  the rule "physics scales with size" as two curves. A dot per block runs its curve when it is let go. Checked in
+  light and dark.
 
 ## Open gaps
 - The overlay writes about 180 corners as numbers (radius tokens about 45 times), many off its own scale; 6px is

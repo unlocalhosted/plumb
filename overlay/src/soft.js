@@ -91,13 +91,13 @@ export const SOFT_CSS = `
 // The beats are written by hand (they are what made it feel right) and played with the Web Animations API. Before a
 // part starts a new motion, whatever it is doing is frozen where it is and the new motion starts from exactly there,
 // so a press in the middle of a rebound, or a release in the middle of a press, carries on from the pose on screen.
-const LAUNCH = 'cubic-bezier(.2, .9, .3, 1)', SWING = 'cubic-bezier(.4, 0, .6, 1)', OUT = 'cubic-bezier(0.16, 1, 0.3, 1)';
+export const LAUNCH = 'cubic-bezier(.2, .9, .3, 1)', SWING = 'cubic-bezier(.4, 0, .6, 1)', OUT = 'cubic-bezier(0.16, 1, 0.3, 1)';
 const REST = 'translateY(calc(-1 * var(--lift)))';
 //             when   top/plate  toy
-const BEATS = [[0.30, 1, 1, SWING], [0.56, -0.3, -0.55, SWING], [0.78, 0.2, 0.2, SWING], [1, 0, 0]];
+export const BEATS = [[0.30, 1, 1, SWING], [0.56, -0.3, -0.55, SWING], [0.78, 0.2, 0.2, SWING], [1, 0, 0]];
 // A small thing is stiffer than a big one: it travels fewer pixels, and it is back sooner. The card (about 190 tall)
 // is the reference; a 35px button gets about half the overshoot and four fifths the time.
-const feel = (top) => {
+export const feel = (top) => {
   const r = Math.min(1.5, Math.max(0.1, top.offsetHeight / 190));
   return { give: 0.04 * r ** -0.15, over: 5 * r ** 0.45, ms: 620 * r ** 0.12, down: 90 * r ** 0.12 };
 };
