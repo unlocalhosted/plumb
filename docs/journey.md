@@ -132,6 +132,13 @@
 - **The fix and the proof:** every photo carries its own guide (the picture's true shape as lines, the stretch as dotted strips, the percent in a pill); a friend saves a new place every 3.2 s with a photo of another shape, so the stretched side keeps breaking and the cropped side holds. Seen in the pane: marks on all rows with 13 to 100 percent, arrivals stepping the list down, all six cropped after the fix. Not seen: one clean run of the moment after the camera change, and the glide in motion (judged only from stills).
 - **Media hooks:** /rule/78, a screen recording of the switch on both sides with two arrivals each.
 
+## Rule 78's demo: still again, and it says why it matters (2026-11-12)
+- **The itch:** the owner: "remove this moving animation … everything moving from second place but the first piece getting place, really confusing", and "i dont see the significance here why do we need this rule".
+- **How we found it:** the owner watched the live list; they had also taken plumber's fix with the overlay, which wrote the fix into the demo's own file and left the broken side with nothing to find.
+- **The system behind it:** the screen tried to show the rule defending by making new places arrive, and its lesson gave the mechanism but not the cost.
+- **What we chose:** the list is still; the six photos already differ in shape. The lesson now opens with what goes wrong for a product and why testing misses it. The demo file was put back.
+- **The fix and the proof:** seen in the pane: six still rows, plumber's finding on six places, the new paragraph above the mechanism.
+
 ## Open gaps
 - Defensive CSS tips still without a rule: flex items that cannot shrink or wrap, scrollbars shown when nothing scrolls, text over an image with no colour behind it, hover styles on touch screens, repeated backgrounds, fixed heights on text, sticky items in a grid, and the source-only ones (variable fallbacks, vendor selectors, vertical media queries).
 - Not built from the signed-off spec: a hint when the brand sits in the warning or danger hue band; reading surface levels and states from usage.

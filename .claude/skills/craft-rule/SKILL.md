@@ -138,11 +138,11 @@ screen. Ours used to be a teaching page with a still picture in it; that system 
   `display`, a keyword) still has to be seen arriving: the stage animates the same pixels the fix will draw and lands
   the fix as the glide ends (Principle.jsx `glideFit`). A fix that snaps on six rows reads as a page reload. Add the
   glide to the stage, never to the example.
-- **A defensive rule is shown defending.** A rule about content you don't control (a photo of another shape, a longer
-  name, one more item) is about change, so its screen is live: new content of other shapes keeps arriving at rest.
-  On the mistake's side every arrival breaks again; on plumber's side every arrival holds. The rows stay the same
-  elements (keyed by place in the list) so plumber's fix is still on them for the next arrival; real arrivals only
-  (a friend saves a place), never content swapped for the sake of it.
+- **A defensive rule stays a still screen.** A rule about content you don't control (a photo of another shape, a
+  longer name) is shown by content that already varies across the card: tall, wide and square photos in one list.
+  Don't make the list live to show content arriving: #78's rows stepping down while a new one appeared in place
+  read as noise and hid the lesson (owner: "really confusing"). What the rule guards against is said in the
+  lesson's `matters` (§5).
 - **Teaching sits off the stage**, below it, read after watching: what plumber sees, why it happens, the habit,
   plumber's fix in words (§5).
 - **Fit every width.** Lay out against the stage (container queries); check 1440, 1024 and a ~300px pane.
@@ -208,9 +208,10 @@ interrupt-marks.html (#64) and rubber-band.html (#65) follow it, and docs/craft/
 
 ## 5. Teach, don't just diff
 
-The card is a lesson: **what plumber sees** (its finding, with the number), **why it happens** (the mechanism, one or
+The card is a lesson: **what plumber sees** (its finding, with the number), **why it matters** (`matters`: what goes wrong
+for the product and why nobody catches it, so the reader knows why the rule exists before how it works), **why it happens** (the mechanism, one or
 two sentences), **the habit** to carry to the next screen, then **plumber's fix** in words with the class small under
-it. Write `Example.lesson = { why, habit }` for every example; a card that only shows the final CSS teaches nothing.
+it. Write `Example.lesson = { matters, why, habit }` for every example; a card that only shows the final CSS teaches nothing.
 
 ## 6. Review the screenshots yourself before showing anyone
 
@@ -321,3 +322,10 @@ Each line is something the owner had to say once; the sections above exist so th
   with a percent, not the picture's true shape; and a rule about content you don't control was shown on a still list.
   Owner chose: guides on every photo and new shapes arriving, and every photo glides. → §3½: the read covers every
   place; marks draw what is true; every instance glides; a defensive rule is shown defending.
+- 2026-11-12 · #78 again: "remove this moving animation … everything moving from second place but the first piece
+  getting place, really confusing"; "i dont see the significance here why do we need this rule, please add relevant
+  text". Cause: life was added to show the rule defending, and the lesson explained the mechanism without saying what
+  it costs a product. → §3½ a defensive rule stays a still screen; §5 the lesson opens with `matters`.
+- 2026-11-12 · The owner took plumber's fix on #78 with the overlay, which wrote `object-cover` into the screen's
+  file, so the mistake's side was already fixed and the demo had nothing to find. → When a screen shows no finding
+  on its broken side, check `git diff` on its file first and put it back.
