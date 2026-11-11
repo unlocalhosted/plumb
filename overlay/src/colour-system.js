@@ -34,53 +34,50 @@ export function colourSystem({ accent, neutralHue, neutralChroma = 0 } = {}) {
   for (const s of STOPS) primitives[`accent-${s}`] = ramp.stops[s].css;
   for (const [name, colour] of Object.entries(STATUS)) { const r = rampOf(colour); for (const s of STOPS) primitives[`${name}-${s}`] = r.stops[s].css; }
 
+  // our roles (token-spec §3.2), with the fixed state suffixes and surface levels (§3.3)
   const statusTokens = (scheme) => Object.fromEntries(Object.keys(STATUS).flatMap((n) => scheme === 'light'
-    ? [[`state-${n}-base`, v(`${n}-500`)], [`state-${n}-text`, v(`${n}-700`)], [`state-${n}-background`, v(`${n}-50`)]]
-    : [[`state-${n}-base`, v(`${n}-400`)], [`state-${n}-text`, v(`${n}-300`)], [`state-${n}-background`, a(`${n}-950`, 0.6)]]));
-
+    ? [[n, v(`${n}-600`)], [`${n}-soft`, v(`${n}-50`)]]
+    : [[n, v(`${n}-400`)], [`${n}-soft`, a(`${n}-950`, 0.6)]]));
   const light = {
-    'text-primary': v('neutral-950'), 'text-secondary': v('neutral-600'), 'text-tertiary': v('neutral-500'), 'text-placeholder': v('neutral-400'), 'text-disabled': v('neutral-300'), 'text-on-accent': ramp.onAccent.css, 'text-error-primary': v('danger-600'),
-    'foreground-icon-primary': v('neutral-900'), 'foreground-icon-secondary': v('neutral-500'), 'foreground-icon-tertiary': v('neutral-400'),
-    'background-full': v('neutral-50'), 'background-primary-default': v('neutral-0'), 'background-primary-hover': v('neutral-100'), 'background-primary-active': v('neutral-200'),
-    'background-secondary-default': v('neutral-100'), 'background-secondary-hover': v('neutral-200'), 'background-tertiary-default': v('neutral-200'),
-    'border-default': v('neutral-200'), 'border-strong': v('neutral-300'), 'border-focus-ring': v('accent-500'),
-    'accent-default': v('accent-500'), 'accent-hover': v('accent-600'), 'accent-active': v('accent-700'), 'accent-soft': v('accent-50'),
+    ground: v('neutral-50'), surface: v('neutral-0'), 'surface-hover': v('neutral-100'), 'surface-active': v('neutral-200'), 'surface-2': v('neutral-50'), sunken: v('neutral-100'),
+    fg: v('neutral-950'), muted: v('neutral-600'), faint: v('neutral-500'), 'fg-disabled': v('neutral-300'), 'on-accent': ramp.onAccent.css,
+    line: v('neutral-200'), 'line-strong': v('neutral-300'),
+    accent: v('accent-500'), 'accent-hover': v('accent-600'), 'accent-active': v('accent-700'), 'accent-soft': v('accent-50'), 'accent-disabled': v('neutral-300'),
     ...statusTokens('light'),
   };
   const dark = {
-    'text-primary': v('neutral-50'), 'text-secondary': v('neutral-400'), 'text-tertiary': v('neutral-500'), 'text-placeholder': v('neutral-600'), 'text-disabled': v('neutral-700'), 'text-on-accent': ramp.onAccent.css, 'text-error-primary': v('danger-400'),
-    'foreground-icon-primary': v('neutral-100'), 'foreground-icon-secondary': v('neutral-400'), 'foreground-icon-tertiary': v('neutral-500'),
-    'background-full': v('neutral-950'), 'background-primary-default': v('neutral-925'), 'background-primary-hover': v('neutral-800'), 'background-primary-active': v('neutral-700'),
-    'background-secondary-default': a('neutral-800', 0.6), 'background-secondary-hover': v('neutral-800'), 'background-tertiary-default': v('neutral-800'),
-    'border-default': a('neutral-700', 0.7), 'border-strong': v('neutral-600'), 'border-focus-ring': v('accent-500'),
-    'accent-default': v('accent-500'), 'accent-hover': v('accent-400'), 'accent-active': v('accent-600'), 'accent-soft': a('accent-950', 0.6),
+    ground: v('neutral-950'), surface: v('neutral-925'), 'surface-hover': v('neutral-800'), 'surface-active': v('neutral-700'), 'surface-2': v('neutral-900'), sunken: a('neutral-800', 0.6),
+    fg: v('neutral-50'), muted: v('neutral-400'), faint: v('neutral-500'), 'fg-disabled': v('neutral-700'), 'on-accent': ramp.onAccent.css,
+    line: a('neutral-700', 0.7), 'line-strong': v('neutral-600'),
+    accent: v('accent-500'), 'accent-hover': v('accent-400'), 'accent-active': v('accent-600'), 'accent-soft': a('accent-950', 0.6), 'accent-disabled': v('neutral-700'),
     ...statusTokens('dark'),
   };
   const block = (sel, o) => `${sel} {\n${Object.entries(o).map(([k, val]) => `  --color-${k}: ${val};`).join('\n')}\n}`;
   const css = [
     '/* React Plumber colour system (docs/design/token-spec.md §3). Primitives: raw ramps, read only by the semantic tokens below. */',
     block(':root', primitives),
-    '/* Semantic tokens: what components use. Light here, dark in .dark; components never carry dark: classes. */',
+    '/* Roles: what components use. Light here, dark in .dark; components never carry dark: classes. */',
     block(':root', light),
     block('.dark', dark),
   ].join('\n');
   return { primitives, light, dark, css, accent: ramp };
 }
 
-// ── renaming a project's colour tokens onto the job-named paths (token-spec §3.3) ──
+// ── renaming a project's colour tokens onto plumber's role names (token-spec §3, §5: only when asked) ──
 
-// each role's new name; hover and pressed follow the surface they sit on
+// each role's name; hover and active (the press state) follow the surface they sit on. A second ink keeps the
+// project's own name (crafting-ui's `draw`), so it has none here.
 const NEW_NAME = {
-  ground: 'background-full', surface: 'background-primary-default', sunken: 'background-secondary-default', hover: 'background-primary-hover', pressed: 'background-primary-active',
-  fg: 'text-primary', muted: 'text-secondary', faint: 'text-tertiary', 'on-accent': 'text-on-accent',
-  line: 'border-default', 'line-strong': 'border-strong',
-  accent: 'accent-default', 'accent-hover': 'accent-hover', 'accent-soft': 'accent-soft',
-  ink2: 'ink2-default', 'ink2-hover': 'ink2-hover', 'ink2-soft': 'ink2-soft',
-  success: 'state-success-base', warning: 'state-warning-base', danger: 'state-danger-base', info: 'state-info-base',
+  ground: 'ground', surface: 'surface', sunken: 'sunken', hover: 'surface-hover', pressed: 'surface-active',
+  fg: 'fg', muted: 'muted', faint: 'faint', 'on-accent': 'on-accent',
+  line: 'line', 'line-strong': 'line-strong',
+  accent: 'accent', 'accent-hover': 'accent-hover', 'accent-active': 'accent-active', 'accent-soft': 'accent-soft',
+  success: 'success', warning: 'warning', danger: 'danger', info: 'info',
 };
+const OWN_NAME = new Set(['ink2', 'ink2-hover', 'ink2-soft']);
 
 /**
- * Which of a project's colour tokens becomes which job-named token. Each token's role (`kind`, colours.js) gives its
+ * Which of a project's colour tokens takes which of plumber's role names. Each token's role (`kind`, colours.js) gives its
  * new name; a token whose role has no name here, or whose new name another token already takes (the one named most
  * plainly for the role wins: `line` over `draw-line`), keeps its own name and says why. Same tokens in, same map out.
  * @param {{ short: string, kind: string }[]} tokens  the theme's colour tokens, `short` without `--color-`
@@ -92,8 +89,8 @@ export function renameMap(tokens) {
   const plain = (t) => (NEW_NAME[t.kind] === t.short ? -1 : t.short === t.kind ? 0 : 1) * 100 + t.short.length;
   for (const t of [...tokens].sort((a, b) => plain(a) - plain(b) || a.short.localeCompare(b.short))) {
     const next = NEW_NAME[t.kind];
-    if (!next) { kept.push({ short: t.short, why: `not a UI role (${t.kind})` }); continue; }
-    if (taken.has(next)) { kept.push({ short: t.short, why: `${next} is ${taken.get(next)}` }); continue; }
+    if (!next) { kept.push({ short: t.short, why: OWN_NAME.has(t.kind) ? 'a second ink keeps its own name' : `not a UI role (${t.kind})` }); continue; }
+    if (taken.has(next)) { kept.push({ short: t.short, why: `${taken.get(next)} already has that job` }); continue; }
     taken.set(next, t.short);
     if (next !== t.short) map[t.short] = next; // already named for its job: it keeps the name, and no other token takes it
   }

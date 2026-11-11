@@ -1,6 +1,6 @@
 # Plumber's token spec: colour and type
 
-Status: **draft for the owner's sign-off** (rewritten 2026-11-12). The code does not match it yet; §6 lists the rework.
+Status: **signed off by the owner** (2026-11-12). The rework in §6 is built: type roles from the code with weight on its own, colour roles and states in our names, rename only on request. Not built: the brand-near-warning hint (§3.4), surface levels and states read from usage (§3.3).
 
 This is plumber's own spec, improved with the parts of BoardUI's system that are objectively better
 ([typography](https://www.boardui.com/components/typography), [colour](https://www.boardui.com/components/color),

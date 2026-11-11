@@ -96,6 +96,7 @@ export const CLEANUP_CSS = `
   @media (prefers-reduced-motion: reduce) { .cu .bar .live { animation: none; } }
   .cu .roles { padding: 12px 14px 0; }
   .cu .names { margin: 12px 0 0; padding: 12px 16px 0; border-top: 1px solid #ecebe6; display: grid; gap: 4px; }
+  .cu .names.quiet { border-top: 0; margin-top: 4px; padding-top: 0; } .cu .names.quiet .nacts { margin: 0 0 0 -12px; }
   .cu .names .nhead { font-weight: 600; font-size: 13px; line-height: 1.35; text-wrap: balance; }
   .cu .names .nacts { display: flex; gap: 4px; margin: 8px 0 0; }
   .cu button.cu-btn.soft { background: #f4f3ef; } .cu button.cu-btn.soft:hover { background: #ecebe6; }
@@ -325,13 +326,14 @@ export class Cleanup {
     const N = W.colour.names, rn = this.#namesPlan(), plan = rn.plan;
     if (!plan && !rn.done) return '';
     if (rn.done) return `<div class="names"><div class="sub">${esc(N.done(rn.done.names, rn.done.files))}</div><div class="nacts"><button type="button" class="cu-btn soft" data-cu="names-undo"${rn.busy ? ' disabled' : ''}>${esc(N.undo)}</button></div></div>`;
-    const ORDER = ['text', 'background', 'border', 'accent', 'ink2', 'state'], rank = (n) => { const i = ORDER.indexOf(n.split('-')[0]); return i < 0 ? ORDER.length : i; };
+    const ORDER = ['fg', 'muted', 'faint', 'on-accent', 'ground', 'surface', 'sunken', 'line', 'accent', 'success', 'warning', 'danger', 'info'], rank = (n) => { const i = ORDER.indexOf(n.replace(/-(hover|active|soft|strong|disabled|\d)$/, '')); return i < 0 ? ORDER.length : i; };
     const pairs = Object.entries(plan.map).sort((a, b) => rank(a[1]) - rank(b[1]) || a[1].localeCompare(b[1])), [from, to] = pairs.find(([k]) => k === 'fg' || k === 'foreground') ?? pairs[0];
-    if (!rn.open) return `<div class="names"><div class="nhead">${esc(N.head(pairs.length))}</div><div class="sub">${esc(N.sub(from, to))}</div><div class="nacts"><button type="button" class="cu-btn soft" data-cu="names-open">${esc(N.open)}</button></div></div>`;
+    // only when asked (token-spec §5): one quiet entry, the plan behind it
+    if (!rn.open) return `<div class="names quiet"><div class="nacts"><button type="button" class="cu-btn quiet" data-cu="names-open">${esc(N.open)}</button></div></div>`;
     const rows = pairs.map(([old, next]) => `<li><span class="sw" aria-hidden="true" style="background:${esc(plan.css.get(old) ?? 'transparent')}"></span><span class="nm">${esc(next)}<small>${esc(N.was(old))}</small></span></li>`).join('');
     const keptNames = plan.kept.map((k) => k.short);
     const kept = keptNames.length ? `<div class="sub">${esc(N.kept(keptNames.length > 1 ? `${keptNames.slice(0, -1).join(', ')} and ${keptNames.at(-1)}` : keptNames[0]))}</div>` : '';
-    return `<div class="names"><div class="nhead">${esc(N.head(pairs.length))}</div><ol class="ladder nlist" aria-label="${esc(N.list)}">${rows}</ol>${kept}<div class="sub">${esc(N.everywhere)}</div>`
+    return `<div class="names"><div class="nhead">${esc(N.head(pairs.length))}</div><div class="sub">${esc(N.sub(from, to))}</div><ol class="ladder nlist" aria-label="${esc(N.list)}">${rows}</ol>${kept}<div class="sub">${esc(N.everywhere)}</div>`
       + (rn.err ? `<div class="error">${esc(rn.err)}</div>` : '')
       + `<div class="nacts"><button type="button" class="cu-btn soft" data-cu="names-go"${rn.busy ? ' disabled' : ''}>${esc(rn.busy ? N.renaming : rn.err ? N.retry : N.rename)}</button><button type="button" class="cu-btn quiet" data-cu="names-close"${rn.busy ? ' disabled' : ''}>${esc(N.notNow)}</button></div></div>`;
   }

@@ -139,9 +139,9 @@ export function kindOf(short, role) {
   const n = short.toLowerCase(), has = (re) => re.test(n);
   if (role === 'status') return has(/info/) ? 'info' : has(/success|positive/) ? 'success' : has(/warning|caution/) ? 'warning' : 'danger';
   if (role === 'line') return has(/(^|-)(strong|heavy|bold)(-|$)/) ? 'line-strong' : 'line';
-  if (role === 'accent') return has(/(^|-)hover(-|$)/) ? 'accent-hover' : has(/(^|-)(soft|tint)(-|$)/) ? 'accent-soft' : 'accent';
+  if (role === 'accent') return has(/(^|-)disabled(-|$)/) ? 'other' : has(/(^|-)hover(-|$)/) ? 'accent-hover' : has(/(^|-)(active|pressed)(-|$)/) ? 'accent-active' : has(/(^|-)(soft|tint)(-|$)/) ? 'accent-soft' : 'accent';
   if (role === 'text') return has(/(^|-)on(-|$)/) ? 'on-accent' : has(/(^|-)(muted|subtle|secondary)(-|$)/) ? 'muted' : has(/(^|-)(faint|tertiary|placeholder|disabled)(-|$)/) ? 'faint' : 'fg';
-  if (role === 'surface') return has(/(^|-)hover(-|$)/) ? 'hover' : has(/(^|-)pressed(-|$)/) ? 'pressed' : has(/(^|-)(sunken|well|inset)(-|$)/) ? 'sunken' : has(/(^|-)(bg|background|canvas|paper|page|ground)(-|$)/) ? 'ground' : 'surface';
+  if (role === 'surface') return has(/(^|-)disabled(-|$)/) ? 'other' : has(/(^|-)hover(-|$)/) ? 'hover' : has(/(^|-)(active|pressed)(-|$)/) ? 'pressed' : has(/(^|-)(sunken|well|inset)(-|$)/) ? 'sunken' : has(/(^|-)(bg|background|canvas|paper|page|ground)(-|$)/) ? 'ground' : 'surface';
   return 'other';
 }
 

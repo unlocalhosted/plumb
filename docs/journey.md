@@ -119,12 +119,16 @@
 - **The fix and the proof:** a new rule (principle 78) marks an image drawn in a box of another shape with nothing said about fit, and offers `object-cover`. Its demo screen (a trip planner's six saved places, real photos, tall and square ones in a 96 by 72 box): plumber scoped to it finds this rule only; after plumber's fix all six are cropped and it finds nothing. Not yet done: the camera moment was not watched, no test written.
 - **Media hooks:** the demo screen at /rule/78, switch "Stretch to fill / Crop to cover" (before/after clip).
 
+## Colour back on our names, rename only when asked (2026-11-12)
+- **What changed:** the colour generator writes our roles (`ground`, `surface`, `surface-hover`, `surface-active`, `surface-2`, `sunken`, `fg`, `muted`, `faint`, `fg-disabled`, `on-accent`, `line`, `line-strong`, `accent`, `accent-hover`, `accent-active`, `accent-soft`, `accent-disabled`, and each status with its `-soft`): 26 roles over the same ramps. The reader takes `-active` as the press state (old `pressed` still read) and `-disabled` as not a fold target. The rename plan targets our role names, a second ink keeps the project's own name, and the colour step shows only a quiet "Rename my colours…" entry.
+- **The proof:** crafting-ui's plan is now 2 renames, `bg` → `ground` and `surface-pressed` → `surface-active`; its `draw` family keeps its names. A BoardUI-named project maps onto ours (`text-primary` → `fg`, `background-primary-default` → `surface`). The sample screen renders from the 26 roles in light and dark. The crafting-ui side copy holding the old writes is discarded.
+- **Media hooks:** docs/media/colour-rename-our-names-2026-11-12.jpg.
+
 ## Open gaps
 - Defensive CSS tips still without a rule: flex items that cannot shrink or wrap, scrollbars shown when nothing scrolls, text over an image with no colour behind it, hover styles on touch screens, repeated backgrounds, fixed heights on text, sticky items in a grid, and the source-only ones (variable fallbacks, vendor selectors, vertical media queries).
-- Token spec rewrite awaits the owner's sign-off; then the rework in its §6, one layer at a time.
+- Not built from the signed-off spec: a hint when the brand sits in the warning or danger hue band; reading surface levels and states from usage.
 - Undo of a 101-file rename still takes 7–13 s; where the rest goes (parsing each file, recording 709 changes) is not measured.
 - The clean-up's pass names are not clickable, and the text step's error screen (no census) has no skip.
-- The second ink is named `ink2-*`; crafting-ui calls it `draw`, a meaningful word. Naming decision for the owner.
 - Code samples shown as text on crafting-ui pages may have been renamed too; not checked.
 - A yellow or amber brand sits next to the warning status hue; plumber does not yet warn when the brand and a status colour are too close.
 - crafting-ui's draw blue is a wide-gamut (P3) colour; the ramp keeps it in sRGB, so its 500 loses a little chroma (0.289 → 0.278).

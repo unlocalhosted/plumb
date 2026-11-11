@@ -11,34 +11,34 @@
   header h1 { font-size: 16px; margin: 0; }
   header label { display: inline-flex; gap: 8px; align-items: center; }
   .pair { display: grid; grid-template-columns: 1fr 1fr; }
-  /* the sample screen: only semantic tokens below this line */
-  .screen { background: var(--color-background-full); color: var(--color-text-primary); padding: 24px; display: grid; grid-template-columns: 150px 1fr; gap: 20px; min-height: 520px; }
+  /* the sample screen: only roles below this line */
+  .screen { background: var(--color-ground); color: var(--color-fg); padding: 24px; display: grid; grid-template-columns: 150px 1fr; gap: 20px; min-height: 520px; }
   nav { display: grid; gap: 2px; align-content: start; }
-  nav a { padding: 6px 10px; border-radius: 6px; color: var(--color-text-secondary); text-decoration: none; }
-  nav a:hover { background: var(--color-background-primary-hover); }
-  nav a.on { background: var(--color-accent-soft); color: var(--color-text-primary); font-weight: 500; }
-  .card { background: var(--color-background-primary-default); border: 1px solid var(--color-border-default); border-radius: 10px; padding: 18px; display: grid; gap: 12px; align-content: start; }
+  nav a { padding: 6px 10px; border-radius: 6px; color: var(--color-muted); text-decoration: none; }
+  nav a:hover { background: var(--color-surface-hover); }
+  nav a.on { background: var(--color-accent-soft); color: var(--color-fg); font-weight: 500; }
+  .card { background: var(--color-surface); border: 1px solid var(--color-line); border-radius: 10px; padding: 18px; display: grid; gap: 12px; align-content: start; }
   .card h2 { margin: 0; font-size: 18px; line-height: 24px; font-weight: 600; }
-  .muted { color: var(--color-text-secondary); margin: 0; }
-  .meta { color: var(--color-text-tertiary); font-size: 12px; }
+  .muted { color: var(--color-muted); margin: 0; }
+  .meta { color: var(--color-faint); font-size: 12px; }
   .field { display: grid; gap: 4px; }
-  .field span { font-size: 13px; color: var(--color-text-secondary); }
-  input { font: inherit; padding: 8px 10px; border-radius: 6px; border: 1px solid var(--color-border-strong); background: var(--color-background-primary-default); color: var(--color-text-primary); }
-  input::placeholder { color: var(--color-text-placeholder); }
-  input:focus { outline: 2px solid var(--color-border-focus-ring); outline-offset: 1px; }
+  .field span { font-size: 13px; color: var(--color-muted); }
+  input { font: inherit; padding: 8px 10px; border-radius: 6px; border: 1px solid var(--color-line-strong); background: var(--color-surface); color: var(--color-fg); }
+  input::placeholder { color: var(--color-faint); }
+  input:focus { outline: 2px solid var(--color-accent); outline-offset: 1px; }
   .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
   .btn { font: inherit; font-weight: 500; padding: 8px 14px; border-radius: 6px; border: 1px solid transparent; cursor: pointer; }
-  .primary { background: var(--color-accent-default); color: var(--color-text-on-accent); }
+  .primary { background: var(--color-accent); color: var(--color-on-accent); }
   .primary:hover { background: var(--color-accent-hover); }
-  .secondary { background: var(--color-background-secondary-default); color: var(--color-text-primary); border-color: var(--color-border-default); }
-  .secondary:hover { background: var(--color-background-secondary-hover); }
-  .ghost { background: transparent; color: var(--color-text-secondary); }
-  .ghost:hover { background: var(--color-background-primary-hover); }
-  .well { background: var(--color-background-secondary-default); border-radius: 8px; padding: 12px; }
+  .secondary { background: var(--color-sunken); color: var(--color-fg); border-color: var(--color-line); }
+  .secondary:hover { background: var(--color-surface-active); }
+  .ghost { background: transparent; color: var(--color-muted); }
+  .ghost:hover { background: var(--color-surface-hover); }
+  .well { background: var(--color-sunken); border-radius: 8px; padding: 12px; }
   .badge { font-size: 12px; font-weight: 500; padding: 2px 8px; border-radius: 99px; }
   .alert { border-radius: 8px; padding: 10px 12px; font-size: 13px; display: flex; gap: 8px; }
   .dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 5px; flex: none; }
-  hr { border: 0; border-top: 1px solid var(--color-border-default); margin: 4px 0; width: 100%; }
+  hr { border: 0; border-top: 1px solid var(--color-line); margin: 4px 0; width: 100%; }
 </style>
 </head>
 <body>
@@ -59,9 +59,9 @@
         <label class="field"><span>Email address</span><input placeholder="name@company.com"></label>
         <div class="row"><button class="btn primary">Send invite</button><button class="btn secondary">Copy link</button><button class="btn ghost">Cancel</button></div>
         <hr>
-        <div class="row"><span class="badge" style="background:var(--color-state-success-background);color:var(--color-state-success-text)">Active</span><span class="badge" style="background:var(--color-state-warning-background);color:var(--color-state-warning-text)">Pending</span><span class="badge" style="background:var(--color-state-danger-background);color:var(--color-state-danger-text)">Removed</span><span class="badge" style="background:var(--color-state-info-background);color:var(--color-state-info-text)">Owner</span><span class="meta">Updated 2 min ago</span></div>
+        <div class="row"><span class="badge" style="background:var(--color-success-soft);color:var(--color-success)">Active</span><span class="badge" style="background:var(--color-warning-soft);color:var(--color-warning)">Pending</span><span class="badge" style="background:var(--color-danger-soft);color:var(--color-danger)">Removed</span><span class="badge" style="background:var(--color-info-soft);color:var(--color-info)">Owner</span><span class="meta">Updated 2 min ago</span></div>
       </div>
-      <div class="well"><div class="alert" style="background:var(--color-state-danger-background);color:var(--color-state-danger-text)"><span class="dot" style="background:var(--color-state-danger-base)"></span>Two invites bounced. Check the addresses and send again.</div></div>
+      <div class="well"><div class="alert" style="background:var(--color-danger-soft);color:var(--color-danger)"><span class="dot" style="background:var(--color-danger)"></span>Two invites bounced. Check the addresses and send again.</div></div>
     </main>
   </div>
 </template>
@@ -73,7 +73,7 @@
     const sys = colourSystem({ accent: document.getElementById('accent').value, neutralChroma: Number(document.getElementById('tint').value) });
     document.getElementById('system').textContent = sys.css;
     const r = sys.accent;
-    document.getElementById('note').textContent = `${Object.keys(sys.primitives).length} primitives · ${Object.keys(sys.light).length} semantic tokens · ${r.onAccent.text} text on the brand (Lc ${r.lc})${r.adjusted ? `, brand moved ${r.adjusted.from} → ${r.adjusted.to}` : ''}`;
+    document.getElementById('note').textContent = `${Object.keys(sys.primitives).length} primitives · ${Object.keys(sys.light).length} roles · ${r.onAccent.text} text on the brand (Lc ${r.lc})${r.adjusted ? `, brand moved ${r.adjusted.from} → ${r.adjusted.to}` : ''}`;
   };
   document.getElementById('accent').addEventListener('input', draw);
   document.getElementById('tint').addEventListener('input', draw);
