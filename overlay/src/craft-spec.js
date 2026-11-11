@@ -87,6 +87,7 @@ export const STANDARD = {
     'image-outline': { minSize: 20, sameGround: 0.12 },
     'content-size': { slack: 0.2 },
     'media-size': { min: 12, near: 12 },
+    'flex-min': { over: 1, depth: 24 }, // px a row may run past its box, and how many elements in the cause is looked for
     'image-fit': { min: 16, off: 0.03 }, // smallest box read, and how far its shape may be from the picture's
   },
   depth: {

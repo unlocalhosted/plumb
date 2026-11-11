@@ -43,6 +43,19 @@ function glideFit(el, forward, i) {
   return el.animate(forward ? [pulled, cropped] : [cropped, pulled], { duration: CROP.ms, delay: i * CROP.lag, easing: CROP.ease, fill: 'both' });
 }
 
+// A fix that moves layout and can't glide in CSS (min-width: auto to 0) is eased the same way: where each part of the
+// row was is kept, the fix lands, and each part slides from where it was to where it is.
+function glideMove(el, land, i) {
+  const parts = [...(el.parentElement?.children ?? [])], k = el.getBoundingClientRect().width / el.offsetWidth || 1;
+  const was = parts.map((p) => p.getBoundingClientRect());
+  land();
+  if (still()) return;
+  parts.forEach((p, n) => {
+    const now = p.getBoundingClientRect(), dx = (was[n].left - now.left) / k, dy = (was[n].top - now.top) / k;
+    if (Math.abs(dx) > 0.5 || Math.abs(dy) > 0.5) p.animate([{ transform: `translate(${dx}px, ${dy}px)` }, { transform: 'none' }], { duration: CROP.ms, delay: i * CROP.lag, easing: CROP.ease, fill: 'backwards' });
+  });
+}
+
 // The example's life: plumber reads it, the blueprint opens on it, and the switch takes plumber's fix or gives it back.
 // A live example that re-renders its classes takes plumber's fix as a source edit (taken.js), with plumber's own class
 // edit (inplace.js applied()); the others take it in place with swapPreview.
@@ -95,7 +108,9 @@ function usePlumber(Example) {
         // a fit can't glide in CSS: the picture glides to its crop first, and the fix lands as it arrives
         const fit = !on.length && styles['object-fit'] ? glideFit(el, true, fits) : null;
         taken.current.push({ el, memo, fit: !!fit });
-        if (fit) { glide = Math.max(glide, CROP.ms + fits++ * CROP.lag); fit.finished.then(() => { land(); fit.cancel(); }).catch(() => {}); } else land();
+        if (fit) { glide = Math.max(glide, CROP.ms + fits++ * CROP.lag); fit.finished.then(() => { land(); fit.cancel(); }).catch(() => {}); }
+        else if (f.suggest.moves) { glideMove(el, land, fits); glide = Math.max(glide, CROP.ms + fits++ * CROP.lag); taken.current[taken.current.length - 1].moves = true; }
+        else land();
       }
     }
     setState((s) => ({ ...s, phase: 'fixing' }));
@@ -109,7 +124,8 @@ function usePlumber(Example) {
   const undo = async () => {
     const { swapPreview } = await inplace();
     let fits = 0;
-    for (const { el, memo, fit } of taken.current) {
+    for (const { el, memo, fit, moves } of taken.current) {
+      if (moves) { glideMove(el, () => swapPreview(el, null, false, memo), fits++); continue; }
       swapPreview(el, null, false, memo);
       // given back the same way: from its crop, the picture is pulled out to its box again
       const back = fit ? glideFit(el, false, fits++) : null;

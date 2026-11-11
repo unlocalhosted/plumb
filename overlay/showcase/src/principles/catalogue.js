@@ -624,5 +624,13 @@ export const PRINCIPLES = [
   "detail": "An image with a fixed width and height takes object-fit: cover, so a photo of another shape is cropped, not pulled.",
   "why": "You never choose the shape of a picture someone else uploads.",
   "how": "live"
+ },
+ {
+  "n": 79,
+  "section": "Layout and platform",
+  "title": "Let text in a row shrink",
+  "detail": "A flex item that holds text takes min-width: 0 (min-w-0), so a long name is cut off with an ellipsis instead of pushing the rest of the row out.",
+  "why": "You never choose how long a name is.",
+  "how": "live"
  }
 ];

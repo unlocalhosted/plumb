@@ -5,7 +5,7 @@
 // still the palace at any width. The three stops under it are the same slip, smaller; one is a round well, an oval here.
 // The viewer's hand is the screen: drag the card's edge and it is as wide as a phone, or a column on a desktop.
 // Pulled to fill, the palace changes shape with every pixel. Cropped (object-fit: cover), it keeps its shape.
-import { useRef, useState } from 'react';
+import { Edge, useWidth } from './kit.jsx';
 import well from '../../media/s51-well.jpg';
 import pena from '../../media/s51-pena.jpg';
 import towers from '../../media/s51-castle.jpg';
@@ -22,37 +22,8 @@ const WIDTH = { min: 200, start: 480, max: 560, step: 24 }; // the card, in px: 
 
 const Avatar = ({ src, className = 'size-5' }) => <img src={src} alt="" className={'block rounded-full object-cover outline-1 -outline-offset-1 outline-black/10 ' + className} />;
 
-// The card's width in the viewer's hand. The edge follows the pointer (the card is centred, so it grows both ways),
-// and the drag ends however the hand ends it.
-function useWidth() {
-  const [w, setW] = useState(WIDTH.start);
-  const drag = useRef(null);
-  const clamp = (x) => Math.max(WIDTH.min, Math.min(WIDTH.max, x));
-  const end = () => { drag.current = null; };
-  const grip = {
-    onPointerDown: (e) => {
-      const card = e.currentTarget.parentElement, k = card.getBoundingClientRect().width / card.offsetWidth || 1;
-      drag.current = { x: e.clientX, w: card.offsetWidth, k };
-      e.currentTarget.setPointerCapture(e.pointerId);
-      e.preventDefault();
-    },
-    onPointerMove: (e) => {
-      const d = drag.current;
-      if (!d) return;
-      if (e.pointerType === 'mouse' && e.buttons === 0) return end();
-      setW(clamp(d.w + (2 * (e.clientX - d.x)) / d.k));
-    },
-    onPointerUp: end, onPointerCancel: end, onLostPointerCapture: end,
-    onKeyDown: (e) => {
-      const by = { ArrowLeft: -WIDTH.step, ArrowRight: WIDTH.step }[e.key];
-      if (by) { e.preventDefault(); setW((x) => clamp(x + by)); }
-    },
-  };
-  return { w, grip };
-}
-
 export default function DetourDay() {
-  const { w, grip } = useWidth();
+  const { w, grip } = useWidth(WIDTH);
   return (
     <article className="relative max-w-full rounded-card bg-surface p-1.5 shadow-card" style={{ width: w }}>
       {/* the cover: a set height, the card's width, and nothing about how the photo fits */}
@@ -73,10 +44,7 @@ export default function DetourDay() {
         </div>
       </div>
       {/* the edge to drag: the card is as wide as the screen it lands on */}
-      <button type="button" {...grip} role="slider" aria-label="Card width" aria-orientation="horizontal" aria-valuemin={WIDTH.min} aria-valuemax={WIDTH.max} aria-valuenow={Math.round(w)}
-        className="group absolute top-1/2 -right-7 flex h-16 w-6 -translate-y-1/2 cursor-ew-resize touch-none items-center justify-center rounded-control outline-accent focus-visible:outline-2">
-        <span className="h-9 w-1.5 rounded-full bg-ink-subtle/50 transition-colors group-hover:bg-ink-muted group-active:bg-accent" />
-      </button>
+      <Edge grip={grip} />
     </article>
   );
 }

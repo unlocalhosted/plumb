@@ -32,6 +32,7 @@
  *  disabled-contrast   #26     disabled is not just lower opacity
  *  hit-target          #27     a control is at least 24px to hit
  *  media-size          #34     one avatar and icon size per list
+ *  flex-min            #79     a flex item that holds text may shrink, so a long name is cut off, not pushed out
  *  image-fit           #78     a picture in a box of another shape is cropped, never stretched
  *  truncate-intent     #35     cut-off text shows its full value on hover
  *  scrollbar-gutter    #36     a large scroll area keeps room for its scrollbar
@@ -1053,6 +1054,36 @@ export const imageFit = {
       key: this.id, text: utility(el, 'object') ?? 'object-fit', props: ['object-fit'], value: 'fill', n: by,
       evidence: { box: [Math.round(w), Math.round(h)], natural: [el.naturalWidth, el.naturalHeight], by, wide }, confidence: 0.9,
       suggest: { kind: 'class', from: utility(el, 'object') ?? '', to: 'object-cover', why: 'crops the picture to the box instead of stretching it', sets: { objectFit: 'cover' } },
+    }];
+  },
+};
+
+// #79. A flex item that holds text may shrink: without min-width: 0 it is never narrower than its longest line, so a
+// long name pushes the rest of the row out of its box and `truncate` inside it does nothing.
+// (defensivecss.dev "Minimum content size in CSS flexbox".)
+export const flexMin = {
+  id: 'craft/flex-min', family: 'craft', number: [79], owns: ['size'], once: 'ancestor', reads: ['style', 'rect'],
+  check({ el, facts }, theme) {
+    const T = theme.spec(this.id);
+    const row = el.parentElement;
+    if (!row) return [];
+    const rs = facts.style(row);
+    if (!/flex/.test(rs.display) || /column/.test(rs.flexDirection) || rs.flexWrap !== 'nowrap') return [];
+    const s = facts.style(el);
+    // an item that may not shrink, or that clips, is not held open by its content
+    if (s.minWidth !== 'auto' || s.overflowX !== 'visible' || s.flexShrink === '0' || s.position === 'absolute' || s.position === 'fixed') return [];
+    const over = row.scrollWidth - row.clientWidth;
+    if (over <= T.over) return [];
+    // the item that grew to fit its own text, not a box further out that the text merely spills from
+    if (el.scrollWidth > el.clientWidth + T.over) return [];
+    // the cause is here: a line in this item that may not wrap (a few levels in is enough to find it)
+    const held = [el, ...el.querySelectorAll('*')].slice(0, T.depth).some((n) => { const ns = facts.style(n); return ns.whiteSpace === 'nowrap' || ns.textOverflow === 'ellipsis'; });
+    if (!held) return [];
+    return [{
+      ...say(this.id, { over }),
+      key: this.id, text: utility(el, 'min-w') ?? 'min-width', props: ['min-width'], value: 'auto', n: over,
+      evidence: { over, row: row.clientWidth }, confidence: 0.88,
+      suggest: { kind: 'class', from: utility(el, 'min-w') ?? '', to: 'min-w-0', why: 'lets this part shrink, so its text is cut off instead of pushing the row out', sets: { minWidth: 0 }, moves: true },
     }];
   },
 };
@@ -2095,7 +2126,7 @@ export const interruptible = {
 };
 
 export const RULES = [concentricRadius, innerOuterSpacing, textOpacity, halfPixel, hairline, imageOutline, layeredShadow, scaleFromZero, zIndexWar, contentAlign,
-  buttonPadding, iconSide, measure, leading, tracking, tabularNums, headingWidow, oneLight, borderOnShadow, contrast, disabledContrast, hitTarget, mediaSize, imageFit,
+  buttonPadding, iconSide, measure, leading, tracking, tabularNums, headingWidow, oneLight, borderOnShadow, contrast, disabledContrast, hitTarget, mediaSize, imageFit, flexMin,
   truncateIntent, scrollbarGutter, boldHover, hangingQuote, capsCase, gradientSpace, inputZoom, anchorOffset, middleTruncate,
   textWrapRole, continuousCorners, opticalSizing, tintedShadow, easedScrim, pureBlackWhite, contentSize,
   baselineAlign, iconCap, trimLeading, headingLead, pairSpacing, cardOpticalPadding,

@@ -42,6 +42,11 @@ export const CRAFT = {
     line: 'This image’s edge is the same tone as the page around it.',
     reason: 'A faint inner outline gives it an edge.',
   }),
+  'flex-min': ({ over }) => ({
+    label: 'Row pushed out of its box',
+    line: `This row runs ${px(over)} past its box.`,
+    reason: 'A long line in it cannot shrink, so it pushes everything after it out.',
+  }),
   'image-fit': ({ by, wide }) => ({
     label: 'Picture is stretched',
     line: `This picture is drawn ${by}% ${wide ? 'wider' : 'taller'} than it is.`,

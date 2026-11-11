@@ -147,8 +147,16 @@
 - **The fix and the proof:** one trip-day card with a cover and three stops, and an edge to drag from 200 to 560px. Seen in the pane: at 480px the palace is drawn 77% wider than it is and plumber finds this rule only, on four pictures; after the fix it keeps its shape, and dragging narrower keeps it cropped. Not seen in motion: the glide.
 - **Media hooks:** /rule/78: a recording of dragging the edge on each side of the switch.
 
+## Second defensive tip: a long name pushes the row out (2026-11-12)
+- **The itch:** the owner, after rule 78: "noice move to next". Next of the defensivecss.dev tips ([reference](references.md)): minimum content size in flexbox, the "truncate does nothing" slip.
+- **How we found it:** picked as the most common of the remaining tips in shipped apps, with a one-class fix.
+- **The system behind it:** a flex item is never narrower than its longest unbroken line unless told it may be, so a column holding a name set to cut off never shrinks, and whatever follows it leaves the card.
+- **What we tried, what we chose:** the first check named the whole card (the outermost box the text spilled from), so plumber's fix landed nowhere; it now names only the part that grew to fit its own text. The stage also learned to ease a fix that moves layout (each part of the row slides from where it was).
+- **The fix and the proof:** a new rule (principle 79) and its screen: a members list with three long names, on a card whose edge you drag. Seen in the pane at 400px: plumber finds this rule only, on 3 rows (roles pushed up to 129px off the card); after `min-w-0` the names are cut off, every role is on the card, and plumber asked again finds nothing. Not seen: the slide in motion, the drag on this screen, no test written.
+- **Media hooks:** /rule/79, a recording of the switch and of dragging the edge on each side.
+
 ## Open gaps
-- Defensive CSS tips still without a rule: flex items that cannot shrink or wrap, scrollbars shown when nothing scrolls, text over an image with no colour behind it, hover styles on touch screens, repeated backgrounds, fixed heights on text, sticky items in a grid, and the source-only ones (variable fallbacks, vendor selectors, vertical media queries).
+- Defensive CSS tips still without a rule: flex rows that should wrap, scrollbars shown when nothing scrolls, text over an image with no colour behind it, hover styles on touch screens, repeated backgrounds, fixed heights on text, sticky items in a grid, and the source-only ones (variable fallbacks, vendor selectors, vertical media queries).
 - Not built from the signed-off spec: a hint when the brand sits in the warning or danger hue band; reading surface levels and states from usage.
 - Undo of a 101-file rename still takes 7–13 s; where the rest goes (parsing each file, recording 709 changes) is not measured.
 - The clean-up's pass names are not clickable, and the text step's error screen (no census) has no skip.

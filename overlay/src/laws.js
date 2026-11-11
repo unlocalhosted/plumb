@@ -55,6 +55,7 @@ const RULE_LAWS = {
   'craft/hit-target': ['fitts'],
   'craft/media-size': ['similarity'],
   'craft/image-fit': [],
+  'craft/flex-min': [],
   'craft/truncate-intent': [],
   'craft/scrollbar-gutter': [],
   'craft/bold-hover': [],

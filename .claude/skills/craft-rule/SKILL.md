@@ -338,3 +338,9 @@ Each line is something the owner had to say once; the sections above exist so th
   doesn't read, and nothing let the viewer change the box. Taken from the reference: a big subject with a known
   shape, and the box in the viewer's hand. Ours: a trip-day card with a draggable edge, plumber's switch and marks.
   → §3½ a defensive rule puts the uncontrolled thing in the viewer's hand.
+- 2026-11-12 · (own review) #79's first check fired on the whole card, not the column that holds the name: every box
+  the text spills out of is also a flex item with overflowing content, and the outermost one won. plumber's fix then
+  landed on nothing, and the switch showed "fixed" over a broken card. → A rule about overflow names the innermost
+  box that causes it (the one that grew to fit its own content), never one the content merely spills from. After the
+  switch, read the finding's file and line: it must be the element the fix belongs on.
+
