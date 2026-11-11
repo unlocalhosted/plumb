@@ -1,7 +1,7 @@
 import { Labels } from './Labels';
 import { Specimen } from './specimen/Specimen';
-// Four roles reached for by hand: a caps label at 12px, a 24px heading, 16px prose (1.6) and 16px list bodies (1.4),
-// and 11px caps labels one step down. Nothing is named yet.
+// Roles reached for by hand: a caps label at 12px, a 24px heading, 17px card titles (semibold) and leads (regular),
+// 16px prose (1.6) and 16px list bodies (1.4), a 13px code block, and 11px caps labels. Nothing is named yet.
 export function App() {
   return <main className="p-8">
     <header>
@@ -24,6 +24,7 @@ export function App() {
           <span id={`row-body-${n}`} className="text-[1rem] leading-[1.4]">A short description of row {n}.</span>
         </li>)}
       </ul>
+      <pre id="code" className="text-[13px] leading-[1.6] font-mono">npm run dev</pre>
       <Labels />
     </section>
     <Specimen />
