@@ -100,7 +100,14 @@
 - **The fix:** a many-file write (the rename, any undo) now holds live updates until the last file is written (one page update) and re-analyses the written files once at the end.
 - **The proof:** on a fresh crafting-ui copy, through the server: rename 6.2 s; undo 6.8 s and 12.8 s on two runs (709 recorded changes in 101 files), files back with no diff, page renders normally. The old 30 s is an eyeballed panel time, not the same measurement.
 
+## The spec was meant to be improved, not replaced (2026-11-12)
+- **The itch:** the owner, on seeing plumber propose BoardUI's names and sizes: "I don't say move to 1:1 mapping, I wanted to improve our spec as I felt Board's was objectively better."
+- **The system behind it:** I took the reference as a template and built from it directly, without first splitting what in it is better from what our own direction already decided. So the fixed 13-size ladder replaced roles derived from each project's code, BoardUI's names replaced ours, and renaming every project's tokens became a default suggestion.
+- **What we chose:** asked the owner four questions first. Type roles stay derived from the code, in BoardUI's shape (weight as its own axis, colour out of text styles); our names stay, plus fixed state suffixes (`-hover`, `-active`, `-disabled`) and surface levels; renaming only when asked; spec first, then rework. docs/design/token-spec.md is rewritten that way, each borrowed idea marked with why it is better, and a table of what is not taken.
+- **What stays from the last two days:** the accent ramp, readable brand text, the reader for path-style names, the rename write and its fast undo, the reload-safe panel. The fixed ladder, BoardUI names and the default rename suggestion are to be reworked after sign-off.
+
 ## Open gaps
+- Token spec rewrite awaits the owner's sign-off; then the rework in its §6, one layer at a time.
 - Undo of a 101-file rename still takes 7–13 s; where the rest goes (parsing each file, recording 709 changes) is not measured.
 - The clean-up's pass names are not clickable, and the text step's error screen (no census) has no skip.
 - The second ink is named `ink2-*`; crafting-ui calls it `draw`, a meaningful word. Naming decision for the owner.
