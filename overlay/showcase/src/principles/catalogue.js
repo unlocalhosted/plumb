@@ -616,5 +616,13 @@ export const PRINCIPLES = [
   "detail": "",
   "why": "Nothing jumps when content lands.",
   "how": "probe"
+ },
+ {
+  "n": 78,
+  "section": "Layout and platform",
+  "title": "Crop a picture to its box, never stretch it",
+  "detail": "An image with a fixed width and height takes object-fit: cover, so a photo of another shape is cropped, not pulled.",
+  "why": "You never choose the shape of a picture someone else uploads.",
+  "how": "live"
  }
 ];

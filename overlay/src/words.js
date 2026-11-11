@@ -42,6 +42,11 @@ export const CRAFT = {
     line: 'This image’s edge is the same tone as the page around it.',
     reason: 'A faint inner outline gives it an edge.',
   }),
+  'image-fit': ({ by, wide }) => ({
+    label: 'Picture is stretched',
+    line: `This picture is drawn ${by}% ${wide ? 'wider' : 'taller'} than it is.`,
+    reason: 'Its box is a different shape, and the picture is pulled to fill it.',
+  }),
   'elevation-ladder': ({ blur, level }) => ({
     label: 'Shadow a step too close',
     line: `This shadow blurs ${px(blur)}; the page’s ${px(level)} level is too close to tell apart.`,
@@ -877,9 +882,9 @@ export const CLEANUP = {
     couldNot: 'Couldn’t read this page’s colours.',
     // renaming the project's colour tokens by their job (docs/design/token-spec.md §3.3): names only, never a colour
     names: {
-      head: (n) => `${n} of your colour names don’t say what they’re for`,
+      head: (n) => `${n} of your colour names can take Plumber’s role names`,
       sub: (from, to) => `For example, ${from} becomes ${to}. Every colour stays the same; only the names change.`,
-      open: 'See the new names',
+      open: 'Rename my colours…',
       list: 'New colour names',
       was: (old) => `was ${old}`,
       kept: (names) => `${names} keep${names.includes(',') || names.includes(' and ') ? '' : 's'} ${names.includes(',') || names.includes(' and ') ? 'their names' : 'its name'}.`,

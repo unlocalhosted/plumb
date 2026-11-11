@@ -32,6 +32,7 @@
  *  disabled-contrast   #26     disabled is not just lower opacity
  *  hit-target          #27     a control is at least 24px to hit
  *  media-size          #34     one avatar and icon size per list
+ *  image-fit           #78     a picture in a box of another shape is cropped, never stretched
  *  truncate-intent     #35     cut-off text shows its full value on hover
  *  scrollbar-gutter    #36     a large scroll area keeps room for its scrollbar
  *  bold-hover          #42     bold on hover does not move the row
@@ -1028,6 +1029,30 @@ export const mediaSize = {
       key: this.id, text: cls ?? 'size', props: ['width'], value: `${mine}px`, n: mine,
       evidence: { mine, mode, of: sizes.length }, confidence: 0.86,
       suggest: cls ? { ...recommend({ family: 'spacing', prefix: cls.replace(/^!|!$/g, '').split('-')[0], job: 'media', want: { min: mode - 0.5, max: mode + 0.5, target: mode }, from: cls, token: false, theme, advice: () => `Make it ${mode}px, like the rest.` }), why: `${mode}px, like the rest` } : { kind: 'advice', text: `Make it ${mode}px, like the rest.` },
+    }];
+  },
+};
+
+// A picture is never stretched: a box whose shape differs from the picture's own crops it (object-fit: cover) instead.
+// (defensivecss.dev "Image distortion": a fixed-size avatar or card cover, then a user uploads another shape.)
+export const imageFit = {
+  id: 'craft/image-fit', family: 'craft', number: [78], owns: ['fit'], once: 'ancestor', reads: ['style', 'rect'],
+  check({ el, facts }, theme) {
+    const T = theme.spec(this.id);
+    if (el.localName !== 'img' || !el.complete || !el.naturalWidth || !el.naturalHeight) return [];
+    const s = facts.style(el);
+    if (s.objectFit !== 'fill') return [];
+    // the box the picture is drawn in, in layout pixels (a page drawn scaled keeps its shape)
+    const w = el.clientWidth - px(s.paddingLeft) - px(s.paddingRight), h = el.clientHeight - px(s.paddingTop) - px(s.paddingBottom);
+    if (w < T.min || h < T.min) return [];
+    const stretch = (w / h) / (el.naturalWidth / el.naturalHeight); // > 1: drawn wider than it is
+    if (Math.abs(stretch - 1) <= T.off) return [];
+    const wide = stretch > 1, by = Math.round((wide ? stretch - 1 : 1 / stretch - 1) * 100);
+    return [{
+      ...say(this.id, { by, wide }),
+      key: this.id, text: utility(el, 'object') ?? 'object-fit', props: ['object-fit'], value: 'fill', n: by,
+      evidence: { box: [Math.round(w), Math.round(h)], natural: [el.naturalWidth, el.naturalHeight], by, wide }, confidence: 0.9,
+      suggest: { kind: 'class', from: utility(el, 'object') ?? '', to: 'object-cover', why: 'crops the picture to the box instead of stretching it', sets: { objectFit: 'cover' } },
     }];
   },
 };
@@ -2070,7 +2095,7 @@ export const interruptible = {
 };
 
 export const RULES = [concentricRadius, innerOuterSpacing, textOpacity, halfPixel, hairline, imageOutline, layeredShadow, scaleFromZero, zIndexWar, contentAlign,
-  buttonPadding, iconSide, measure, leading, tracking, tabularNums, headingWidow, oneLight, borderOnShadow, contrast, disabledContrast, hitTarget, mediaSize,
+  buttonPadding, iconSide, measure, leading, tracking, tabularNums, headingWidow, oneLight, borderOnShadow, contrast, disabledContrast, hitTarget, mediaSize, imageFit,
   truncateIntent, scrollbarGutter, boldHover, hangingQuote, capsCase, gradientSpace, inputZoom, anchorOffset, middleTruncate,
   textWrapRole, continuousCorners, opticalSizing, tintedShadow, easedScrim, pureBlackWhite, contentSize,
   baselineAlign, iconCap, trimLeading, headingLead, pairSpacing, cardOpticalPadding,

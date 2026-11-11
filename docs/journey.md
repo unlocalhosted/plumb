@@ -111,7 +111,16 @@
 - **One change from the signed-off spec:** the spec said `type-<role>-<weight>`, which collides with our size words (`type-title-medium-medium`). The role class reads `var(--tw-font-weight, …)` instead, so `font-semibold` beside it wins in any order; spec §2.2 says so.
 - **The proof:** crafting-ui side copy (census of 60 routes): 8 roles, sizes 34 → 8, 511 places, 29 low-confidence (the ladder had 20), 94 prose places at 1.6; 279 swaps written, 0 refused. On /motion/standards: `type-title-medium font-semibold` 18px weight 600; `type-body-large leading-prose` 16px on 25.6px; `type-label-small` 11px uppercase 1.1px tracking.
 
+## Defensive CSS tips become suggestions: stretched pictures first (2026-11-12)
+- **The itch:** the owner: "lets improve our engine to bring these tips as suggestions", pointing at defensivecss.dev's 25 tips ([reference](references.md)).
+- **How we found it:** set the 25 tips beside plumber's rules. About five were already read (scrollbar room, iPhone input zoom, image inner outline, cut-off text, scroll chaining as a source habit). The rest were not.
+- **The system behind it:** plumber's rules came from craft insight lists; defensive CSS is about content you don't control (a longer name, a taller photo), which those lists rarely cover.
+- **What we chose:** one tip at a time, starting with the one a page can prove by itself: a picture in a box of another shape, pulled to fill it. Tried first on a real app by injecting a test picture; that page's own layout hid it, so the proof moved to the rule demo.
+- **The fix and the proof:** a new rule (principle 78) marks an image drawn in a box of another shape with nothing said about fit, and offers `object-cover`. Its demo screen (a trip planner's six saved places, real photos, tall and square ones in a 96 by 72 box): plumber scoped to it finds this rule only; after plumber's fix all six are cropped and it finds nothing. Not yet done: the camera moment was not watched, no test written.
+- **Media hooks:** the demo screen at /rule/78, switch "Stretch to fill / Crop to cover" (before/after clip).
+
 ## Open gaps
+- Defensive CSS tips still without a rule: flex items that cannot shrink or wrap, scrollbars shown when nothing scrolls, text over an image with no colour behind it, hover styles on touch screens, repeated backgrounds, fixed heights on text, sticky items in a grid, and the source-only ones (variable fallbacks, vendor selectors, vertical media queries).
 - Token spec rewrite awaits the owner's sign-off; then the rework in its §6, one layer at a time.
 - Undo of a 101-file rename still takes 7–13 s; where the rest goes (parsing each file, recording 709 changes) is not measured.
 - The clean-up's pass names are not clickable, and the text step's error screen (no census) has no skip.
