@@ -106,6 +106,11 @@
 - **What we chose:** asked the owner four questions first. Type roles stay derived from the code, in BoardUI's shape (weight as its own axis, colour out of text styles); our names stay, plus fixed state suffixes (`-hover`, `-active`, `-disabled`) and surface levels; renaming only when asked; spec first, then rework. docs/design/token-spec.md is rewritten that way, each borrowed idea marked with why it is better, and a table of what is not taken.
 - **What stays from the last two days:** the accent ramp, readable brand text, the reader for path-style names, the rename write and its fast undo, the reload-safe panel. The fixed ladder, BoardUI names and the default rename suggestion are to be reworked after sign-off.
 
+## Text roles from the code again, weight on its own (2026-11-12)
+- **What changed:** the fixed 13-size ladder is gone; roles are worked out from each project's code again (docs/research/type-roles.md), with our Material-style names. From BoardUI's shape: a role is decided by size alone (a 17px title is one role at any weight), and a place at another weight takes Tailwind's weight class beside its role (`type-title-medium font-semibold`). Reading text keeps `leading-prose`; code is never prose; a tie between fluid sizes goes to the larger.
+- **One change from the signed-off spec:** the spec said `type-<role>-<weight>`, which collides with our size words (`type-title-medium-medium`). The role class reads `var(--tw-font-weight, …)` instead, so `font-semibold` beside it wins in any order; spec §2.2 says so.
+- **The proof:** crafting-ui side copy (census of 60 routes): 8 roles, sizes 34 → 8, 511 places, 29 low-confidence (the ladder had 20), 94 prose places at 1.6; 279 swaps written, 0 refused. On /motion/standards: `type-title-medium font-semibold` 18px weight 600; `type-body-large leading-prose` 16px on 25.6px; `type-label-small` 11px uppercase 1.1px tracking.
+
 ## Open gaps
 - Token spec rewrite awaits the owner's sign-off; then the rework in its §6, one layer at a time.
 - Undo of a 101-file rename still takes 7–13 s; where the rest goes (parsing each file, recording 709 changes) is not measured.

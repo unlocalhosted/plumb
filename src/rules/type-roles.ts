@@ -1,6 +1,8 @@
 /**
- * Type roles (docs/research/type-roles.md, layer 2): the small set of text styles a codebase is reaching for, landed
- * on plumber's type ladder × weight (docs/design/token-spec.md §2) from the code's own values, with the write that makes them the system.
+ * Type roles (docs/research/type-roles.md, layer 2; docs/design/token-spec.md §2): the small set of text styles a
+ * codebase is reaching for, named on Material 3's scheme from the code's own values, with the write that makes them the
+ * system. A role is a size, line-height and tracking; weight is a separate choice (`type-title-medium font-semibold`), and
+ * reading text keeps its leading with `leading-prose`.
  *
  * Pure over its input: the members (one per text element, with the type classes written at it, the values they
  * lower to, and, when a page has been measured, the computed values and whether it sits in a list) and the paths
@@ -25,30 +27,22 @@ export interface TypeMember {
   /** why the place cannot be swapped (an inline style, a computed className, a formula) */
   fixed?: string;
 }
-/** a text style: a ladder step crossed with a weight, `body-medium`, `caption-1-medium-caps` (docs/design/token-spec.md §2) */
-export type RoleName = string;
-export interface RoleMember { site: TypeMember['site']; stamp?: string; tag: string; classes: string[]; current: TypeBundle; delta: { size: number | null; lineHeight: number | null; letterSpacing: number; weight: number }; variant?: 'compact' | 'prose'; confidence: 'ok' | 'low'; elements: number; fixed?: string }
-/** the owner's decisions, keyed by a ladder step (`body`) or a style (`body-medium`); `compact` is read by config and ignored */
+export type RoleName = 'display-large' | 'headline-small' | 'title-large' | 'title-medium' | 'body-large' | 'body-small' | 'label-medium' | 'label-small';
+export interface RoleMember { site: TypeMember['site']; stamp?: string; tag: string; classes: string[]; current: TypeBundle; delta: { size: number | null; lineHeight: number | null; letterSpacing: number; weight: number }; /** the weight this place takes, when not its role's usual one */ weight?: WeightName; /** reading text: its role plus leading-prose */ variant?: 'prose'; confidence: 'ok' | 'low'; elements: number; fixed?: string }
 export interface RoleOverride { size?: number; lineHeight?: number; letterSpacing?: number; weight?: number; compact?: { lineHeight: number } }
-export interface TypeRole {
-  name: RoleName; step: StepName; weightName: WeightName; caps: boolean;
-  bundle: TypeBundle; members: RoleMember[]; places: number; elements: number; files: number; contexts: { tag: string; places: number }[];
-  /** where the size came from: plumber's ladder, the owner's decision, or a fluid size the code already writes */
-  sizeFrom: 'ladder' | 'decision' | 'fluid';
-  /** the fluid sizes among the members, most places first */ clamps?: { text: string; places: number }[];
-}
+export interface TypeRole { name: RoleName; bundle: TypeBundle; /** the role's usual weight, and the other weights its places use (one class each) */ weightName: WeightName; weights: { name: WeightName; places: number }[]; members: RoleMember[]; places: number; elements: number; files: number; contexts: { tag: string; places: number }[]; /** where the size came from: the owner's decision, the theme's step within 1px of the mode, the members' mode, or the cluster's centre (the ladder) */ sizeFrom: 'decision' | 'theme' | 'mode' | 'centre'; /** the fluid sizes among the members, most places first */ clamps?: { text: string; places: number }[] }
 export interface TypeProposal {
   rule: 'system/type-roles'; kind: 'system'; family: 'type';
   roles: TypeRole[];
   outside: { site: TypeMember['site']; why: string }[];
   low: { site: TypeMember['site']; role: RoleName; why: string }[];
   exceptions: { site: TypeMember['site']; role: RoleName; why: string }[];
-  cost: { places: number; elements: number; moves: Record<'size' | 'lineHeight' | 'letterSpacing' | 'weight', Record<string, number>>; classesRemoved: number; sizesBefore: number; sizesAfter: number; weightsBefore: number; weightsAfter: number };
-  /** the styles up the ladder, each with the ratio of its size to the next smaller size (null for a fluid size) */
-  ladder: { role: RoleName; step: StepName; size: number | null; sizeText?: string; ratio: number | null }[];
-  /** reading text: places whose code sets a roomy line-height keep one shared leading, written as `leading-prose` beside the style (token-spec §2.2 rule 7) */
+  cost: { places: number; elements: number; moves: Record<'size' | 'lineHeight' | 'letterSpacing' | 'weight', Record<string, number>>; classesRemoved: number; sizesBefore: number; sizesAfter: number };
+  /** the sizes up the ladder, each with the ratio to the one below (null for a fluid size) */
+  ladder: { role: RoleName; size: number | null; sizeText?: string; ratio: number | null }[];
+  /** reading text: places whose code sets a roomy line-height keep one shared leading (token-spec §2.4) */
   prose: { lineHeight: number; places: number; from: 'decision' | 'mode' } | null;
-  /** styles with too few places, folded into the nearest kept style */
+  /** roles folded into another because two clusters sat at one size and the centre could not separate them */
   merged: { from: RoleName; into: RoleName; why: string }[];
   write: { tokens: { name: string; value: string; why: string }[]; css: string; swaps: { file: string; edits: { line: number; column: number; from: string; to: string }[] }[] };
 }
@@ -67,59 +61,36 @@ export function px(value: string | undefined, size = 16): number | null {
   return m[2] === 'rem' ? n * 16 : m[2] === 'em' ? n * size : m[2] === '%' ? n / 100 * size : n;
 }
 
-/**
- * Plumber's type ladder (docs/design/token-spec.md §2.1): thirteen named steps, each a size and line-height in px and
- * a tracking in em, largest first. Sizes follow BoardUI's scale, and its leading from Title 1 down; the display steps
- * (32px and up) are set tight, about 1.1, as page titles are (owner, 2026-11-10). Tracking on the steps BoardUI leaves
- * unstated is ours (large text tightens, small text opens).
- */
-export const LADDER = [
-  { step: 'large-title', label: 'Large title', size: 64, lineHeight: 70, tracking: -0.025 },
-  { step: 'display-1', label: 'Display 1', size: 56, lineHeight: 62, tracking: -0.025 },
-  { step: 'display-2', label: 'Display 2', size: 48, lineHeight: 53, tracking: -0.02 },
-  { step: 'display-3', label: 'Display 3', size: 40, lineHeight: 44, tracking: -0.02 },
-  { step: 'display-4', label: 'Display 4', size: 32, lineHeight: 36, tracking: -0.015 },
-  { step: 'title-1', label: 'Title 1', size: 24, lineHeight: 34, tracking: -0.01 },
-  { step: 'title-2', label: 'Title 2', size: 20, lineHeight: 26, tracking: -0.005 },
-  { step: 'title-3', label: 'Title 3', size: 18, lineHeight: 24, tracking: 0 },
-  { step: 'headline', label: 'Headline', size: 16, lineHeight: 22, tracking: 0 },
-  { step: 'body', label: 'Body', size: 14, lineHeight: 20, tracking: 0 },
-  { step: 'body-2', label: 'Body 2', size: 13, lineHeight: 18, tracking: 0 },
-  { step: 'caption-1', label: 'Caption 1', size: 12, lineHeight: 16, tracking: 0.0125 },
-  { step: 'caption-2', label: 'Caption 2', size: 11, lineHeight: 15, tracking: 0.018 },
-] as const;
-export type StepName = typeof LADDER[number]['step'];
+export const roleOrder: RoleName[] = ['display-large', 'headline-small', 'title-large', 'title-medium', 'body-large', 'body-small', 'label-medium', 'label-small'];
+/** up the ladder: every size must be strictly greater than the one below */
+export const ladderOrder: RoleName[] = ['label-small', 'label-medium', 'body-small', 'body-large', 'title-medium', 'title-large', 'headline-small', 'display-large'];
+export const roleClass = (name: RoleName) => `type-${name}`;
+/** weight is its own axis (token-spec §2.2, from BoardUI): four named weights, a place's snapped to the nearest */
 export const WEIGHTS = { regular: 400, medium: 500, semibold: 600, bold: 700 } as const;
 export type WeightName = keyof typeof WEIGHTS;
-/** tracking for an uppercase label, whatever its step (token-spec §2.2 rule 4) */
-export const CAPS_TRACKING = 0.08;
-const POSTER = 80;
-/** a style needs this many places to stand on its own; fewer join a neighbour */
-export const MIN_PLACES = 3;
-/** reading text: a place whose code sets at least this line-height, at a step no larger than PROSE_MAX_PX, not caps */
-export const PROSE_MIN_LH = 1.45, PROSE_MAX_PX = 20;
-export const PROSE_CLASS = 'leading-prose', PROSE_TOKEN = '--leading-prose';
-
-/** the step a size reaches for: the nearest; a tie goes to the larger (more readable) step */
-export function stepFor(size: number): typeof LADDER[number] {
-  let best: typeof LADDER[number] = LADDER[0];
-  for (const s of LADDER) if (Math.abs(s.size - size) < Math.abs(best.size - size) - 1e-9) best = s;
-  return best;
-}
+/** a place at another weight than its role's takes Tailwind's own weight class beside the role (`type-title-medium font-semibold`);
+ * the role reads `var(--tw-font-weight, …)`, so the weight class wins in any order */
+export const weightClass = (w: WeightName) => `font-${w === 'regular' ? 'normal' : w}`;
 export function weightFor(weight: number): WeightName {
   return (Object.entries(WEIGHTS) as [WeightName, number][]).reduce((a, b) => Math.abs(b[1] - weight) < Math.abs(a[1] - weight) ? b : a)[0];
 }
-/** the largest size a fluid clamp reaches, in px */
-const clampMax = (text: string) => { const m = /clamp\([^,]*,[^,]*,\s*([\d.]+)(rem|px)/.exec(text); return m ? Number(m[1]) * (m[2] === 'rem' ? 16 : 1) : null; };
-export const styleName = (step: StepName, weight: WeightName, caps: boolean) => `${step}-${weight}${caps ? '-caps' : ''}`;
-export const roleClass = (name: RoleName) => `text-${name}`;
-export const roleToken = (step: StepName) => `--text-${step}`;
+/** reading text: a place whose code sets at least this line-height, at a size no larger than this, not caps, not code */
+export const PROSE_MIN_LH = 1.45, PROSE_MAX_PX = 20;
+export const PROSE_CLASS = 'leading-prose', PROSE_TOKEN = '--leading-prose';
+const isProse = (m: TypeMember) => m.current.transform !== 'uppercase' && !['pre', 'code', 'kbd', 'samp'].includes(m.tag) && (m.current.size ?? 99) <= PROSE_MAX_PX && m.current.lineHeight !== null && m.current.lineHeight >= PROSE_MIN_LH;
+export const roleToken = (name: RoleName) => `--text-${name}`;
 
-/** Which style a member reaches for: its size snapped onto the ladder (a fluid size at the size it reaches), its weight onto the four weights, caps when the code uppercases small text. */
-export function roleFor(b: TypeBundle): { step: typeof LADDER[number]; weight: WeightName; caps: boolean; name: RoleName } {
-  const size = b.sizeText ? clampMax(b.sizeText) ?? b.size ?? 16 : b.size ?? 16;
-  const step = stepFor(size), weight = weightFor(b.weight), caps = b.transform === 'uppercase' && size <= 13.5;
-  return { step, weight, caps, name: styleName(step.step, weight, caps) };
+/** Which role a member reaches for, from its own values: caps and tracked → a label by size; else by size alone. */
+export function roleFor(b: TypeBundle): RoleName {
+  const size = b.size ?? 0, fluid = !!b.sizeText;
+  if (b.transform === 'uppercase' && size <= 13.5) return size < 11.5 ? 'label-small' : 'label-medium';
+  if (fluid || size >= 36) return 'display-large';
+  if (size >= 22) return 'headline-small';
+  // weight is its own axis (token-spec §2.2): a 17px title is one role at any weight
+  if (size >= 18.5) return 'title-large';
+  if (size >= 17) return 'title-medium';
+  if (size >= 14.5) return 'body-large';
+  return 'body-small';
 }
 
 const mode = <T>(values: T[], fallback: T): T => {
@@ -128,124 +99,133 @@ const mode = <T>(values: T[], fallback: T): T => {
   return [...counts].sort((a, b) => b[1] - a[1] || String(a[0]).localeCompare(String(b[0])))[0]?.[0] ?? fallback;
 };
 const round = (n: number, places = 3) => Math.round(n * 10 ** places) / 10 ** places;
-const stepIndex = (step: string) => LADDER.findIndex(s => s.step === step);
-const weightOrder = (w: WeightName) => WEIGHTS[w];
 
 export function proposeTypeRoles(members: TypeMember[], options: { exclude?: string[]; roles?: Record<string, RoleOverride>; themeSteps?: number[] } = {}): TypeProposal {
-  const exclude = options.exclude ?? [], overrides = options.roles ?? {};
+  const exclude = options.exclude ?? [], overrides = options.roles ?? {}, themeSteps = [...new Set(options.themeSteps ?? [])].sort((a, b) => a - b);
   const outsideOf = (m: TypeMember): string | undefined => {
     const file = m.site.file;
     for (const pattern of exclude) if (file === pattern || file.startsWith(pattern.replace(/\/?$/, '/')) || matchesGlob(file, pattern)) return `excluded by config: ${pattern}`;
     if (['text', 'tspan'].includes(m.tag)) return 'drawing text (SVG)';
-    if (m.current.size !== null && m.current.size > POSTER) return 'poster size';
+    if (m.current.size !== null && m.current.size >= 60) return 'poster size';
     if (m.classes.some(c => /var\(--z/.test(c.value))) return 'runtime-scaled drawing text (var(--z))';
     return undefined;
   };
   const sorted = [...members].sort((a, b) => a.site.file.localeCompare(b.site.file) || a.site.line - b.site.line || a.site.column - b.site.column);
   const outside: TypeProposal['outside'] = [], inside: TypeMember[] = [];
   for (const m of sorted) { const why = outsideOf(m); if (why) outside.push({ site: m.site, why }); else inside.push(m); }
-  // styles: each member's step × weight; the bundle is the ladder's, not the members'
-  const byStyle = new Map<RoleName, { pick: ReturnType<typeof roleFor>; ms: TypeMember[] }>();
-  for (const m of inside) { const pick = roleFor(m.current); const at = byStyle.get(pick.name) ?? { pick, ms: [] }; at.ms.push(m); byStyle.set(pick.name, at); }
-  // a project uses a subset (token-spec §2.2 rule 3): a style with fewer than MIN_PLACES places joins the nearest kept
-  // style of the same caps, a weight step costing 1 and a ladder step 2; smallest first, so folds never chain upward
+  // roles: the members each reaches for; bundles: the most common of the members' own values
+  const byRole = new Map<RoleName, TypeMember[]>();
+  for (const m of inside) { const r = roleFor(m.current); byRole.set(r, [...byRole.get(r) ?? [], m]); }
+  // the size of each role: the owner's decision, else the theme's step within 1px of the mode, else the mode; then up
+  // the ladder every size must grow: a role at its neighbour's size takes its cluster's centre, or folds into it
+  const sizes = new Map<RoleName, { size: number | null; from: TypeRole['sizeFrom'] }>();
   const merged: TypeProposal['merged'] = [];
-  const kept = () => [...byStyle.values()].filter(v => v.ms.length >= MIN_PLACES);
-  for (const small of [...byStyle.values()].filter(v => v.ms.length < MIN_PLACES).sort((a, b) => a.ms.length - b.ms.length || a.pick.name.localeCompare(b.pick.name))) {
-    const cost = (v: typeof small) => Math.abs(stepIndex(v.pick.step.step) - stepIndex(small.pick.step.step)) * 2 + Math.abs(weightOrder(v.pick.weight) - weightOrder(small.pick.weight)) / 100;
-    const into = kept().filter(v => v.pick.caps === small.pick.caps).sort((a, b) => cost(a) - cost(b) || b.ms.length - a.ms.length)[0];
-    if (!into) continue;
-    into.ms.push(...small.ms); byStyle.delete(small.pick.name);
-    merged.push({ from: small.pick.name, into: into.pick.name, why: `${small.ms.length} ${small.ms.length === 1 ? 'place' : 'places'}; joins the nearest kept style` });
+  // the bundle of a role is its own cluster's; members folded in from another cluster move to it, they do not shape it
+  const clusters = new Map<RoleName, TypeMember[]>([...byRole].map(([name, ms]) => [name, [...ms]]));
+  const centre = (ms: TypeMember[]) => { const s = ms.map(m => m.current.size).filter((n): n is number => n !== null).sort((a, b) => a - b); return s.length ? s[Math.floor(s.length / 2)]! : null; };
+  const modeOf = (ms: TypeMember[]) => mode(ms.map(m => m.current.size).filter((s): s is number => s !== null), null as number | null);
+  const modes = new Set([...byRole.values()].map(modeOf));
+  for (const name of ladderOrder) {
+    const ms = byRole.get(name); if (!ms?.length) continue;
+    const fluid = ms.some(m => m.current.sizeText);
+    const override = overrides[name]?.size;
+    const modeSize = modeOf(ms);
+    // the theme's step within 1px of the mode, unless another role's cluster already sits on that step
+    const step = modeSize === null ? undefined : themeSteps.find(s => Math.abs(s - modeSize) <= 1 && s !== modeSize && !modes.has(s));
+    let size: number | null = fluid ? null : override ?? step ?? modeSize, from: TypeRole['sizeFrom'] = override !== undefined ? 'decision' : step !== undefined ? 'theme' : 'mode';
+    const below = [...sizes.values()].filter(s => s.size !== null).map(s => s.size!).at(-1);
+    if (!fluid && size !== null && below !== undefined && size <= below) {
+      const mid = centre(ms);
+      if (mid !== null && mid > below) { size = mid; from = 'centre'; }
+      else {
+        // one size, two clusters: the smaller cluster folds into the role below it, and says so
+        const intoName = [...sizes.keys()].at(-1)!;
+        merged.push({ from: name, into: intoName, why: `both at ${size}px and the cluster's centre (${mid}px) is no higher; folded into ${intoName}` });
+        byRole.set(intoName, [...byRole.get(intoName)!, ...ms]); byRole.delete(name);
+        continue;
+      }
+    }
+    sizes.set(name, { size, from });
   }
-  // reading text keeps its leading: one shared value (the owner's `prose` decision, else the mode of what the code sets, to 0.05)
-  const isProse = (m: TypeMember, pick: ReturnType<typeof roleFor>) => !pick.caps && !['pre', 'code', 'kbd', 'samp'].includes(m.tag) && pick.step.size <= PROSE_MAX_PX && m.current.lineHeight !== null && m.current.lineHeight >= PROSE_MIN_LH;
-  const proseMembers = new Set<TypeMember>();
-  for (const { pick, ms } of byStyle.values()) for (const m of ms) if (isProse(m, pick)) proseMembers.add(m);
-  const proseDecision = overrides['prose']?.lineHeight;
-  const proseLh = proseDecision ?? (proseMembers.size ? mode([...proseMembers].map(m => Math.round(m.current.lineHeight! * 20) / 20), 1.6) : null);
-  const order = [...byStyle.values()].sort((a, b) => stepIndex(a.pick.step.step) - stepIndex(b.pick.step.step) || weightOrder(a.pick.weight) - weightOrder(b.pick.weight) || Number(a.pick.caps) - Number(b.pick.caps));
-
   const roles: TypeRole[] = [], low: TypeProposal['low'] = [], exceptions: TypeProposal['exceptions'] = [];
   const tokens: TypeProposal['write']['tokens'] = [], utilities: string[] = [], swapsByFile = new Map<string, TypeProposal['write']['swaps'][number]['edits']>();
-  const stepsWritten = new Set<string>();
   const moves = { size: {} as Record<string, number>, lineHeight: {} as Record<string, number>, letterSpacing: {} as Record<string, number>, weight: {} as Record<string, number> };
   const bucket = (table: Record<string, number>, v: number | null, steps: number[]) => { if (v === null) return; const a = Math.abs(v); const key = steps.find(s => a <= s + 1e-9)?.toString() ?? `>${steps.at(-1)}`; table[key] = (table[key] ?? 0) + 1; };
   let classesRemoved = 0, places = 0, elements = 0;
-  for (const { pick, ms } of order) {
-    const { step, weight, caps, name } = pick;
-    const override = { ...overrides[step.step], ...overrides[name] };
+  // reading text keeps its leading (token-spec §2.4): one shared value, the owner's `prose` decision or the code's mode
+  const proseMembers = new Set(inside.filter(isProse));
+  const proseDecision = overrides['prose']?.lineHeight;
+  const proseLh = proseDecision ?? (proseMembers.size ? mode([...proseMembers].map(m => Math.round(m.current.lineHeight! * 20) / 20), 1.6) : null);
+  let proseUsed = 0;
+  const clampMax = (text: string) => { const m = /clamp\([^,]*,[^,]*,\s*([\d.]+)(rem|px)/.exec(text); return m ? Number(m[1]) * (m[2] === 'rem' ? 16 : 1) : 0; };
+  for (const name of roleOrder) {
+    const ms = byRole.get(name); if (!ms?.length) continue;
+    const label = name.startsWith('label-'), override = overrides[name] ?? {}, own = clusters.get(name) ?? ms;
     const clampCounts = new Map<string, number>();
-    for (const m of ms) if (m.current.sizeText) clampCounts.set(m.current.sizeText, (clampCounts.get(m.current.sizeText) ?? 0) + 1);
-    // the fluid size whose largest value is nearest the step's size, then the most places (owner, 2026-11-10: page titles
-    // at clamp(…, 3rem) are Display 2, not the commoner clamp(…, 2.75rem) that sits between steps)
-    const off = (text: string) => Math.abs((clampMax(text) ?? step.size) - step.size);
-    const clamps = [...clampCounts].sort((a, b) => off(a[0]) - off(b[0]) || b[1] - a[1] || a[0].localeCompare(b[0])).map(([text, places]) => ({ text, places }));
-    // a fluid size is kept only where the code already writes one, and only when most of the style's places are fluid
-    const fluidText = clamps.length && clamps.reduce((n, c) => n + c.places, 0) * 2 >= ms.length ? clamps[0]!.text : '';
-    const size = override.size ?? step.size;
-    const lineHeight = override.lineHeight ?? round(step.lineHeight / step.size, 4);
-    const letterSpacing = override.letterSpacing ?? (caps ? CAPS_TRACKING : step.tracking);
-    const bundle: TypeBundle = { size: fluidText ? null : size, ...(fluidText ? { sizeText: fluidText } : {}), lineHeight, letterSpacing, weight: override.weight ?? WEIGHTS[weight], transform: caps ? 'uppercase' : 'none' };
+    for (const m of own) if (m.current.sizeText) clampCounts.set(m.current.sizeText, (clampCounts.get(m.current.sizeText) ?? 0) + 1);
+    // the fluid size most places use, a tie going to the larger
+    const clamps = [...clampCounts].sort((a, b) => b[1] - a[1] || clampMax(b[0]) - clampMax(a[0]) || a[0].localeCompare(b[0])).map(([text, places]) => ({ text, places }));
+    const fluidText = clamps[0]?.text ?? '';
+    const sized = sizes.get(name) ?? { size: null, from: 'mode' as const };
+    // leading comes from what the code sets at the member, its UI places first; reading text takes leading-prose
+    const lh = (set: TypeMember[]) => mode(set.map(m => m.current.lineHeight).filter((s): s is number => s !== null), null as number | null);
+    const ui = own.filter(m => !proseMembers.has(m));
+    const lineHeight = override.lineHeight ?? lh(ui.length ? ui : own);
+    // weight is its own axis: the role's usual weight is the one most places use; the others are classes of their own
+    const usual: WeightName = override.weight !== undefined ? weightFor(override.weight) : mode(own.map(m => weightFor(m.current.weight)), 'regular' as WeightName);
+    const bundle: TypeBundle = { size: fluidText ? null : sized.size, ...(fluidText ? { sizeText: fluidText } : {}), lineHeight, letterSpacing: override.letterSpacing ?? round(mode(own.map(m => round(m.current.letterSpacing)), 0)), weight: WEIGHTS[usual], transform: label ? 'uppercase' : 'none' };
     const roleMembers: RoleMember[] = [];
     const contexts = new Map<string, number>();
     const fileSet = new Set<string>();
+    const others = new Map<WeightName, number>();
     for (const m of ms) {
+      const weight = weightFor(m.current.weight), other = weight !== usual ? weight : undefined;
+      const prose = proseLh !== null && proseMembers.has(m) && proseLh !== bundle.lineHeight;
+      const roleLh = prose ? proseLh : bundle.lineHeight;
       const refSize = bundle.size ?? m.current.size ?? 16;
-      const prose = proseLh !== null && proseMembers.has(m), lh = prose ? proseLh : bundle.lineHeight;
       const delta = {
         size: bundle.size !== null && m.current.size !== null ? round(bundle.size - m.current.size, 2) : null,
-        lineHeight: lh !== null && m.current.lineHeight !== null ? round((lh - m.current.lineHeight) * refSize, 1) : m.current.lineHeight === null ? 0 : null,
+        lineHeight: roleLh !== null && m.current.lineHeight !== null ? round((roleLh - m.current.lineHeight) * refSize, 1) : m.current.lineHeight === null ? 0 : null,
         letterSpacing: round((bundle.letterSpacing - m.current.letterSpacing) * refSize, 2),
-        weight: bundle.weight - m.current.weight,
+        weight: WEIGHTS[weight] - m.current.weight,
       };
       const confidence: RoleMember['confidence'] = (delta.size !== null && Math.abs(delta.size) > 2) || Math.abs(delta.weight) >= 200 || (delta.lineHeight !== null && Math.abs(delta.lineHeight) > 3) ? 'low' : 'ok';
       const classes = m.classes.map(c => c.text);
-      roleMembers.push({ site: m.site, ...(m.stamp ? { stamp: m.stamp } : {}), tag: m.tag, classes, current: m.current, delta, ...(prose ? { variant: 'prose' as const } : {}), confidence, elements: m.elements, ...(m.fixed ? { fixed: m.fixed } : {}) });
+      roleMembers.push({ site: m.site, ...(m.stamp ? { stamp: m.stamp } : {}), tag: m.tag, classes, current: m.current, delta, ...(other ? { weight: other } : {}), ...(prose ? { variant: 'prose' as const } : {}), confidence, elements: m.elements, ...(m.fixed ? { fixed: m.fixed } : {}) });
       contexts.set(m.tag, (contexts.get(m.tag) ?? 0) + 1); fileSet.add(m.site.file);
       places++; elements += m.elements;
       bucket(moves.size, delta.size, [0, 1, 2]); bucket(moves.lineHeight, delta.lineHeight, [0, 1, 2]); bucket(moves.letterSpacing, delta.letterSpacing, [0, 0.5, 1]); bucket(moves.weight, delta.weight, [0, 100]);
       if (confidence === 'low') low.push({ site: m.site, role: name, why: `moves ${delta.size ?? 0}px in size, ${delta.lineHeight ?? 0}px in line-height, ${delta.weight} in weight` });
       if (m.fixed) { exceptions.push({ site: m.site, role: name, why: m.fixed }); continue; }
       if (!classes.length) continue;
+      if (other) others.set(other, (others.get(other) ?? 0) + 1);
+      if (prose) proseUsed++;
       classesRemoved += classes.length;
       const edits = swapsByFile.get(m.site.file) ?? []; swapsByFile.set(m.site.file, edits);
-      edits.push({ line: m.site.line, column: m.site.column, from: classes.join(' '), to: prose ? `${roleClass(name)} ${PROSE_CLASS}` : roleClass(name) });
+      edits.push({ line: m.site.line, column: m.site.column, from: classes.join(' '), to: `${roleClass(name)}${other ? ` ${weightClass(other)}` : ''}${prose ? ` ${PROSE_CLASS}` : ''}` });
     }
-    roles.push({ name, step: step.step, weightName: weight, caps, bundle, members: roleMembers, places: ms.length, elements: ms.reduce((n, m) => n + m.elements, 0), files: fileSet.size, contexts: [...contexts].sort((a, b) => b[1] - a[1]).map(([tag, n]) => ({ tag, places: n })), sizeFrom: fluidText ? 'fluid' : override.size !== undefined ? 'decision' : 'ladder', ...(clamps.length ? { clamps } : {}) });
-    // the write: the step's size, leading and tracking once (shared by its weights), then one class per style that sets the whole bundle
-    const token = roleToken(step.step), why = `type step ${step.step}`;
-    const sizeValue = bundle.sizeText ?? `${round(size / 16, 4)}rem`;
-    if (!stepsWritten.has(step.step) || fluidText) {
-      stepsWritten.add(step.step);
-      if (!tokens.some(t => t.name === token)) tokens.push({ name: token, value: sizeValue, why });
-      tokens.push({ name: `${token}--line-height`, value: String(lineHeight), why });
-      tokens.push({ name: `${token}--letter-spacing`, value: `${step.tracking}em`, why });
-    }
-    const body = [
-      fluidText ? `font-size: ${fluidText};` : `font-size: var(${token});`,
-      `line-height: var(--tw-leading, var(${token}--line-height));`,
-      caps ? `letter-spacing: ${CAPS_TRACKING}em;` : `letter-spacing: var(${token}--letter-spacing);`,
-      `font-weight: ${bundle.weight};`,
-      caps ? 'text-transform: uppercase;' : '',
-    ].filter(Boolean);
-    utilities.push(`@utility ${roleClass(name)} {\n  ${body.join('\n  ')}\n}`);
+    const weights = [...others].sort((a, b) => WEIGHTS[a[0]] - WEIGHTS[b[0]]).map(([w, n]) => ({ name: w, places: n }));
+    roles.push({ name, bundle, weightName: usual, weights, members: roleMembers, places: ms.length, elements: ms.reduce((n, m) => n + m.elements, 0), files: fileSet.size, contexts: [...contexts].sort((a, b) => b[1] - a[1]).map(([tag, n]) => ({ tag, places: n })), sizeFrom: fluidText ? 'mode' : sized.from, ...(clamps.length ? { clamps } : {}) });
+    // the write: the theme pairs in the project's own shape, one class for the role at its usual weight, one per other weight
+    const token = roleToken(name), sizeValue = bundle.sizeText ?? (bundle.size !== null ? `${round(bundle.size / 16, 4)}rem` : null);
+    const why = `type role ${name}: ${ms.length} places`;
+    if (sizeValue) tokens.push({ name: token, value: sizeValue, why });
+    if (bundle.lineHeight !== null) tokens.push({ name: `${token}--line-height`, value: String(bundle.lineHeight), why });
+    tokens.push({ name: `${token}--letter-spacing`, value: `${bundle.letterSpacing}em`, why });
+    const body = (weight: number) => [sizeValue ? `font-size: var(${token});` : '', bundle.lineHeight !== null ? `line-height: var(--tw-leading, var(${token}--line-height));` : '', `letter-spacing: var(${token}--letter-spacing);`, `font-weight: var(--tw-font-weight, ${weight});`, label ? 'text-transform: uppercase;' : ''].filter(Boolean);
+    utilities.push(`@utility ${roleClass(name)} {\n  ${body(bundle.weight).join('\n  ')}\n}`);
   }
-  if (proseLh !== null) tokens.push({ name: PROSE_TOKEN, value: String(proseLh), why: `reading text: ${proseMembers.size} places keep this leading` });
-  // dedupe tokens by name, first wins
-  const seen = new Set<string>();
-  const uniqueTokens = tokens.filter(t => (seen.has(t.name) ? false : (seen.add(t.name), true)));
+  if (proseLh !== null && proseUsed) tokens.push({ name: PROSE_TOKEN, value: String(proseLh), why: `reading text: ${proseUsed} places keep this leading` });
   const sizesBefore = new Set(inside.map(m => m.current.sizeText ?? m.current.size)).size;
   const sizesAfter = new Set(roles.map(r => r.bundle.sizeText ?? r.bundle.size)).size;
-  const weightsBefore = new Set(inside.map(m => m.current.weight)).size;
-  const weightsAfter = new Set(roles.map(r => r.bundle.weight)).size;
-  // up the ladder: smallest first, each with the ratio to the next smaller size
   const ladder: TypeProposal['ladder'] = [];
-  for (const role of [...roles].reverse()) {
-    const belowSize = [...ladder].reverse().find(s => s.size !== null && s.size !== role.bundle.size)?.size ?? null;
-    ladder.push({ role: role.name, step: role.step, size: role.bundle.size, ...(role.bundle.sizeText ? { sizeText: role.bundle.sizeText } : {}), ratio: role.bundle.size !== null && belowSize !== null ? round(role.bundle.size / belowSize, 3) : null });
+  for (const name of ladderOrder) {
+    const role = roles.find(r => r.name === name); if (!role) continue;
+    const belowSize = [...ladder].reverse().find(step => step.size !== null)?.size ?? null;
+    ladder.push({ role: name, size: role.bundle.size, ...(role.bundle.sizeText ? { sizeText: role.bundle.sizeText } : {}), ratio: role.bundle.size !== null && belowSize !== null ? round(role.bundle.size / belowSize, 3) : null });
   }
   return { rule: 'system/type-roles', kind: 'system', family: 'type', roles, outside, low, exceptions,
-    cost: { places, elements, moves, classesRemoved, sizesBefore, sizesAfter, weightsBefore, weightsAfter }, ladder, prose: proseLh !== null ? { lineHeight: proseLh, places: proseMembers.size, from: proseDecision !== undefined ? 'decision' : 'mode' } : null, merged,
-    write: { tokens: uniqueTokens, css: utilities.length ? `/* React Plumber text styles: one class per ladder step × weight, each sets the whole bundle (docs/design/token-spec.md) */\n${utilities.join('\n')}\n` : '', swaps: [...swapsByFile].map(([file, edits]) => ({ file, edits })) } };
+    cost: { places, elements, moves, classesRemoved, sizesBefore, sizesAfter }, ladder, merged,
+    prose: proseLh !== null && proseUsed ? { lineHeight: proseLh, places: proseUsed, from: proseDecision !== undefined ? 'decision' : 'mode' } : null,
+    write: { tokens, css: utilities.length ? `/* React Plumber type roles: one class per role sets the whole bundle; another weight is the font-* class beside it; colour stays out (docs/design/token-spec.md §2) */\n${utilities.join('\n')}\n` : '', swaps: [...swapsByFile].map(([file, edits]) => ({ file, edits })) } };
 }

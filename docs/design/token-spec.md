@@ -50,10 +50,13 @@ else the theme's step within 1px, else the most common), and up the scale every 
 ### 2.2 Weight is separate **(from BoardUI)**
 
 - A role is a size, a line-height and a tracking. It has a usual weight: the one most of its places use.
-- A place that uses another weight takes the role plus that weight, never a new role: `type-title-medium` (its usual
-  weight) or `type-title-medium-semibold`.
-- Weights are named `regular` 400, `medium` 500, `semibold` 600, `bold` 700; a place's weight snaps to the nearest.
-- A weight class is written only when places use it (no 5 × 4 grid of unused classes).
+- A place that uses another weight takes the role plus Tailwind's own weight class, never a new role:
+  `type-title-medium` (its usual weight) or `type-title-medium font-semibold`. The role class sets
+  `font-weight: var(--tw-font-weight, <usual>)`, so the weight class wins in any class order.
+  (Changed while building, 2026-11-12: the signed-off `type-<role>-<weight>` class collides with our size words, as in
+  `type-title-medium-medium`; Tailwind's weight classes carry the same idea with no new classes.)
+- Weights are `regular` 400 (`font-normal`), `medium` 500, `semibold` 600, `bold` 700; a place's weight snaps to the
+  nearest.
 
 ### 2.3 Colour is never in a text style **(from BoardUI)**
 
@@ -72,7 +75,7 @@ colour does not take that colour into its bundle.
 
 ### 2.5 Class names
 
-`type-<role>` and `type-<role>-<weight>`. The `type-` prefix (ours) also avoids BoardUI's own documented trap: with a
+`type-<role>`, with `font-<weight>` beside it for another weight. The `type-` prefix (ours) also avoids BoardUI's own documented trap: with a
 `text-` prefix, Tailwind's class merging can drop a type class merged with a text colour.
 
 ## 3. Colour
@@ -131,8 +134,7 @@ checked with APCA for text and WCAG 3:1 for control borders (colour-system.md §
 
 ## 4. What plumber writes
 
-- **Type:** the role tokens (`--text-<role>`, `--line-height`, `--letter-spacing`), one `type-<role>` class per role and
-  one `type-<role>-<weight>` per weight in use, `--leading-prose` when reading text exists, then the class swaps.
+- **Type:** the role tokens (`--text-<role>`, `--line-height`, `--letter-spacing`), one `type-<role>` class per role, `--leading-prose` when reading text exists, then the class swaps.
 - **Colour, for a project with no system or on request:** ramps, roles pointing at them (light), a dark block only if
   the project has or wants dark mode.
 - **Colour, for a project with a system:** nothing new by default; it folds stray colours onto the project's own roles
@@ -149,7 +151,7 @@ BoardUI's paths.
 
 | Built | Becomes |
 | --- | --- |
-| Fixed 13-size ladder, BoardUI step names | Derived roles again (type-roles.md), plus the weight axis and `type-<role>-<weight>` classes |
+| Fixed 13-size ladder, BoardUI step names | Derived roles again (type-roles.md), plus the weight axis (`font-<weight>` beside the role) |
 | `leading-prose`, title and clamp rules | Kept; rules restated on derived roles (§2.4) |
 | Colour generator writing `text-primary`, `background-*` paths | Writes our roles plus the state suffixes and levels (§3.2–3.3) |
 | Rename plan targeting BoardUI paths | Targets our roles; for a project using `pressed` it proposes `active` |
