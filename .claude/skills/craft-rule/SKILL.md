@@ -138,11 +138,14 @@ screen. Ours used to be a teaching page with a still picture in it; that system 
   `display`, a keyword) still has to be seen arriving: the stage animates the same pixels the fix will draw and lands
   the fix as the glide ends (Principle.jsx `glideFit`). A fix that snaps on six rows reads as a page reload. Add the
   glide to the stage, never to the example.
-- **A defensive rule stays a still screen.** A rule about content you don't control (a photo of another shape, a
-  longer name) is shown by content that already varies across the card: tall, wide and square photos in one list.
-  Don't make the list live to show content arriving: #78's rows stepping down while a new one appeared in place
-  read as noise and hid the lesson (owner: "really confusing"). What the rule guards against is said in the
-  lesson's `matters` (§5).
+- **A defensive rule puts the uncontrolled thing in the viewer's hand.** A rule about what you don't control (the
+  screen's width, a photo's shape, a longer name) is shown on one card the viewer changes themselves: #78's card has
+  an edge to drag, so the cover's box changes shape under a real hand, and the photo is pulled out of shape on one
+  side of the switch and holds on the other. The subject is big and one whose shape the eye knows (a building, a
+  circle, a face), with the fixed side still showing it at every size (pick the photo for the crop too). Small
+  thumbnails of landscapes don't show a stretch. The same slip recurs smaller on the card (§3). Never make content
+  arrive by itself to show this: #78's rows stepping down read as noise (owner: "really confusing"). One hint line
+  under the switch says what to try (`Example.hint`); the drag follows §3¾'s rules for ending a gesture.
 - **Teaching sits off the stage**, below it, read after watching: what plumber sees, why it happens, the habit,
   plumber's fix in words (§5).
 - **Fit every width.** Lay out against the stage (container queries); check 1440, 1024 and a ~300px pane.
@@ -329,3 +332,9 @@ Each line is something the owner had to say once; the sections above exist so th
 - 2026-11-12 · The owner took plumber's fix on #78 with the overlay, which wrote `object-cover` into the screen's
   file, so the mistake's side was already fixed and the demo had nothing to find. → When a screen shows no finding
   on its broken side, check `git diff` on its file first and put it back.
+- 2026-11-12 · #78, third round, with the reference's own demo (defensivecss.dev: one photo in a box you resize, a
+  "Toggle Defensive" checkbox): "we dont see the issue clearly in this component … you will also see the value if you
+  stretch the card itself". Cause: six 96 by 72 thumbnails of landscapes; a stretch on a small picture of a hill
+  doesn't read, and nothing let the viewer change the box. Taken from the reference: a big subject with a known
+  shape, and the box in the viewer's hand. Ours: a trip-day card with a draggable edge, plumber's switch and marks.
+  → §3½ a defensive rule puts the uncontrolled thing in the viewer's hand.

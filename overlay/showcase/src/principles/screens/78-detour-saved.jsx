@@ -1,77 +1,99 @@
-// #78 a picture is cropped to its box, never stretched. Detour, a trip planner: the places three friends are saving for
-// five days in Lisbon and Sintra. Every row's thumbnail is one fixed 96 by 72 box, which looked right while the test
-// photos were all landscape. Then people save their own: phone photos, tall ones, a square one. With nothing said about
-// fit, each picture is pulled to fill the box, so towers go squat and a round well turns oval, on every row.
+// #78 a picture is cropped to its box, never stretched. Detour, a trip planner: the card for one day of a trip, Sintra.
+// Its cover is the classic `h-44 w-full`: a set height, and as wide as the card. Nothing says how the photo fits, so it
+// is pulled to that box, and the box is a different shape on every screen the card lands on. The cover is the Pena
+// Palace in the middle of a wide photo: pulled wide its towers go squat, pulled narrow they go thin, and cropped it is
+// still the palace at any width. The three stops under it are the same slip, smaller; one is a round well, an oval here.
+// The viewer's hand is the screen: drag the card's edge and it is as wide as a phone, or a column on a desktop.
+// Pulled to fill, the palace changes shape with every pixel. Cropped (object-fit: cover), it keeps its shape.
+import { useRef, useState } from 'react';
+import well from '../../media/s51-well.jpg';
 import pena from '../../media/s51-pena.jpg';
 import towers from '../../media/s51-castle.jpg';
-import well from '../../media/s51-well.jpg';
-import coast from '../../media/s51-coast.jpg';
-import tiles from '../../media/s51-tiles.jpg';
-import tram from '../../media/s40-lisbon-tram.jpg';
+import garden from '../../media/s51-fountain.jpg';
 import ines from '../../media/people/person-04.jpg';
 import tom from '../../media/people/person-07.jpg';
 import ada from '../../media/people/person-01.jpg';
 
 export const n = 78;
 
-// place, kind and where, the photo, its day and hour, how long it takes, who saved it
-const PLACES = [
-  ['Palácio da Pena', 'Palace · Sintra hills', pena, 2, '09:30', '2 h', ines],
-  ['Queen’s Terrace', 'Viewpoint · Pena park', towers, 2, '11:45', '30 min', ines],
-  ['Initiation Well', 'Garden · Quinta da Regaleira', well, 2, '14:00', '1 h 30', tom],
-  ['Praia da Ursa', 'Beach · Cabo da Roca', coast, 3, '10:00', 'Half day', ada],
-  ['Museu do Azulejo', 'Museum · Xabregas', tiles, 4, '11:00', '1 h 30', tom],
-  ['Tram 28', 'Ride · Graça to Estrela', tram, 4, '16:30', '50 min', ada],
-];
+// the day's other stops: the photo, what it is, when
+const STOPS = [[towers, 'Queen’s Terrace', '11:45'], [well, 'Initiation Well', '14:00'], [garden, 'Fonte dos Passarinhos', '12:30']];
+const WIDTH = { min: 200, start: 480, max: 560, step: 24 }; // the card, in px: a small phone to a desktop column
 
 const Avatar = ({ src, className = 'size-5' }) => <img src={src} alt="" className={'block rounded-full object-cover outline-1 -outline-offset-1 outline-black/10 ' + className} />;
-// a place's photo: one box for every row, whatever shape the picture came in
-const Thumb = ({ src, alt }) => <img src={src} alt={alt} data-thumb="" className="block h-[72px] w-24 shrink-0 rounded-chip outline-1 -outline-offset-1 outline-black/10" />;
 
-export default function DetourSaved() {
+// The card's width in the viewer's hand. The edge follows the pointer (the card is centred, so it grows both ways),
+// and the drag ends however the hand ends it.
+function useWidth() {
+  const [w, setW] = useState(WIDTH.start);
+  const drag = useRef(null);
+  const clamp = (x) => Math.max(WIDTH.min, Math.min(WIDTH.max, x));
+  const end = () => { drag.current = null; };
+  const grip = {
+    onPointerDown: (e) => {
+      const card = e.currentTarget.parentElement, k = card.getBoundingClientRect().width / card.offsetWidth || 1;
+      drag.current = { x: e.clientX, w: card.offsetWidth, k };
+      e.currentTarget.setPointerCapture(e.pointerId);
+      e.preventDefault();
+    },
+    onPointerMove: (e) => {
+      const d = drag.current;
+      if (!d) return;
+      if (e.pointerType === 'mouse' && e.buttons === 0) return end();
+      setW(clamp(d.w + (2 * (e.clientX - d.x)) / d.k));
+    },
+    onPointerUp: end, onPointerCancel: end, onLostPointerCapture: end,
+    onKeyDown: (e) => {
+      const by = { ArrowLeft: -WIDTH.step, ArrowRight: WIDTH.step }[e.key];
+      if (by) { e.preventDefault(); setW((x) => clamp(x + by)); }
+    },
+  };
+  return { w, grip };
+}
+
+export default function DetourDay() {
+  const { w, grip } = useWidth();
   return (
-    <article className="w-full max-w-[30rem] overflow-hidden rounded-card bg-surface shadow-card">
-      <header className="flex items-center gap-3 border-b-hairline border-line px-5 py-4">
-        <span className="flex min-w-0 flex-col">
-          <span className="text-[15px] leading-5 font-medium tracking-[-0.01em]">Lisbon and Sintra</span>
-          <span className="truncate text-[13px] text-ink-muted"><span className="tabular-nums">12–16</span> May · <span className="tabular-nums">6</span> places saved</span>
-        </span>
-        <span className="ml-auto flex">
-          {[ines, tom, ada].map((src, i) => <span key={i} className={'rounded-full ring-2 ring-surface ' + (i ? '-ml-1.5' : '')}><Avatar src={src} className="size-7" /></span>)}
-        </span>
-      </header>
-      <ul className="m-0 flex list-none flex-col p-0">
-        {PLACES.map(([name, where, src, day, at, takes, who], i) => (
-          <li key={name} className={'flex items-center gap-3.5 px-5 py-3 ' + (i ? 'border-t-hairline border-line' : '')}>
-            <Thumb src={src} alt={name} />
-            <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-              <span className="truncate text-sm font-medium" title={name}>{name}</span>
-              <span className="truncate text-[13px] text-ink-muted" title={where}>{where}</span>
-              <span className="mt-1 flex items-center gap-1.5 text-xs text-ink-muted"><Avatar src={who} className="size-[18px]" />{takes}</span>
-            </span>
-            <span className="flex shrink-0 flex-col items-end gap-1">
-              <span className="inline-flex h-5 items-center rounded-chip bg-sunken px-1.5 text-[11.5px] font-medium text-ink-muted">Day {day}</span>
-              <span className="text-xs text-ink-muted tabular-nums">{at}</span>
-            </span>
-          </li>
-        ))}
-      </ul>
+    <article className="relative max-w-full rounded-card bg-surface p-1.5 shadow-card" style={{ width: w }}>
+      {/* the cover: a set height, the card's width, and nothing about how the photo fits */}
+      <img src={pena} alt="The Pena Palace on its hill" data-thumb="" className="block h-44 w-full rounded-chip outline-1 -outline-offset-1 outline-black/10" />
+      <div className="mt-1.5 flex gap-1.5">
+        {STOPS.map(([src, name]) => <img key={name} src={src} alt={name} data-thumb="" className="block h-16 min-w-0 flex-1 rounded-chip outline-1 -outline-offset-1 outline-black/10" />)}
+      </div>
+      <div className="flex flex-col gap-2 px-2.5 pt-3 pb-2.5">
+        <div className="flex items-baseline gap-2">
+          <span className="min-w-0 truncate text-[15px] leading-5 font-medium tracking-[-0.01em]" title="Sintra, the hills">Sintra, the hills</span>
+          <span className="ml-auto inline-flex h-5 shrink-0 items-center rounded-chip bg-sunken px-1.5 text-[11.5px] font-medium text-ink-muted">Day 2</span>
+        </div>
+        <p className="truncate text-[13px] text-ink-muted" title="Palácio da Pena, 09:30 · 4 stops · 6.2 km on foot">Palácio da Pena, <span className="tabular-nums">09:30</span> · <span className="tabular-nums">4</span> stops · <span className="tabular-nums">6.2</span> km on foot</p>
+        <div className="flex items-center gap-2 text-xs text-ink-muted">
+          <span className="flex">{[ines, tom, ada].map((src, i) => <span key={i} className={'rounded-full ring-2 ring-surface ' + (i ? '-ml-1.5' : '')}><Avatar src={src} /></span>)}</span>
+          <span className="truncate">Ines, Tom and Ada</span>
+          <span className="ml-auto shrink-0 tabular-nums">{Math.round(w)}px wide</span>
+        </div>
+      </div>
+      {/* the edge to drag: the card is as wide as the screen it lands on */}
+      <button type="button" {...grip} role="slider" aria-label="Card width" aria-orientation="horizontal" aria-valuemin={WIDTH.min} aria-valuemax={WIDTH.max} aria-valuenow={Math.round(w)}
+        className="group absolute top-1/2 -right-7 flex h-16 w-6 -translate-y-1/2 cursor-ew-resize touch-none items-center justify-center rounded-control outline-accent focus-visible:outline-2">
+        <span className="h-9 w-1.5 rounded-full bg-ink-subtle/50 transition-colors group-hover:bg-ink-muted group-active:bg-accent" />
+      </button>
     </article>
   );
 }
-DetourSaved.stage = true;
-DetourSaved.names = ['Stretch to fill', 'Crop to cover'];
-DetourSaved.lesson = {
-  matters: 'You choose the box. Your users choose the picture. The day someone saves a tall phone photo, a tower goes squat or a face goes wide, and the page looks broken though nothing in your code changed. Testing never shows it, because your test photos already fit.',
+DetourDay.stage = true;
+DetourDay.names = ['Stretch to fill', 'Crop to cover'];
+DetourDay.hint = 'Drag the card’s edge: it is as wide as the screen it lands on.';
+DetourDay.lesson = {
+  matters: 'You set the cover’s height. The screen sets its width, and whoever took the photo sets its shape. So the box and the picture almost never match, and with nothing said about fit the picture is pulled until they do: a palace goes squat, a round well becomes an oval, a face goes wide. It looks right at the one width you built it at, with the one photo you tested.',
   why: 'An image given a width and a height is pulled to fill both, whatever shape the picture is.',
-  habit: 'Any image you give a fixed box also gets object-fit: cover. One class, and no upload can bend it.',
+  habit: 'Any image you give a box also gets object-fit: cover. One class, and no screen or upload can bend it.',
 };
 // What the eye sees, on every photo at once: the lines are the picture's own shape inside its box, and the dotted
 // strips beside them are stretch, the part of the box the picture was pulled out to fill. The pill is how much, in
 // percent. Cropped, the lines sit on the box's edges and there is no strip left. The camera stays on the whole card:
-// the slip is on every row, and so is the fix.
-DetourSaved.camera = false;
-DetourSaved.measure = (root) => {
+// the slip is on every picture, and so is the fix.
+DetourDay.camera = false;
+DetourDay.measure = (root) => {
   const imgs = [...(root?.querySelectorAll('[data-thumb]') ?? [])].filter((i) => i.naturalWidth && i.offsetHeight);
   const card = root?.firstElementChild?.getBoundingClientRect();
   if (!imgs.length || !card) return null;

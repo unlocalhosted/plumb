@@ -139,6 +139,14 @@
 - **What we chose:** the list is still; the six photos already differ in shape. The lesson now opens with what goes wrong for a product and why testing misses it. The demo file was put back.
 - **The fix and the proof:** seen in the pane: six still rows, plumber's finding on six places, the new paragraph above the mechanism.
 
+## Rule 78's demo: a card you resize (2026-11-12)
+- **The itch:** the owner, with two screenshots of the tip's own demo ([reference](references.md)): "we dont see the issue clearly in this component … you will also see the value if you stretch the card itself".
+- **How we found it:** side by side, the reference's one big photo of round pastries going thin was obvious; our six small thumbnails of hills were not.
+- **The system behind it:** the screen showed the slip at a size and on subjects where a stretch doesn't read, and nothing let the viewer change the box, which is what the rule guards against.
+- **What we tried, what we chose:** first lead photo was a round well (the clearest stretch), but cropped to a wide box it showed only wall, so the fixed side looked worse; the lead is now the Pena Palace, centred in a wide photo, which survives the crop at any width. The well stays as a small stop.
+- **The fix and the proof:** one trip-day card with a cover and three stops, and an edge to drag from 200 to 560px. Seen in the pane: at 480px the palace is drawn 77% wider than it is and plumber finds this rule only, on four pictures; after the fix it keeps its shape, and dragging narrower keeps it cropped. Not seen in motion: the glide.
+- **Media hooks:** /rule/78: a recording of dragging the edge on each side of the switch.
+
 ## Open gaps
 - Defensive CSS tips still without a rule: flex items that cannot shrink or wrap, scrollbars shown when nothing scrolls, text over an image with no colour behind it, hover styles on touch screens, repeated backgrounds, fixed heights on text, sticky items in a grid, and the source-only ones (variable fallbacks, vendor selectors, vertical media queries).
 - Not built from the signed-off spec: a hint when the brand sits in the warning or danger hue band; reading surface levels and states from usage.

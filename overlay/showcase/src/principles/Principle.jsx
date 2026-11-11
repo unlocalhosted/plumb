@@ -538,8 +538,10 @@ export function Principle({ n }) {
           </div>
           </div>
           </div>
-          <div ref={sw} className="relative z-10">
+          <div ref={sw} className="relative z-10 flex flex-col items-center">
             {live ? <Switch names={names} fixed={fixed} ready={ready} onBack={() => fixed && moment.give()} onFix={() => !fixed && moment.take()} /> : null}
+            {/* a card the viewer can change says what to try, in one line */}
+            {live && Example?.hint ? <p className="mt-3 max-w-md text-center text-[13px] text-ink-muted text-pretty">{Example.hint}</p> : null}
             {handsOn ? <Switch names={names} fixed={side === 'fixed'} ready onBack={() => setSide('broken')} onFix={() => setSide('fixed')} /> : null}
             {handsOn ? <p className="mt-3 h-10 max-w-md text-center text-[13px] text-ink-muted text-pretty">{said}</p> : null}
             {probe && !probing ? <Switch names={names} fixed={side === 'fixed'} ready={!stage?.busy} onBack={() => stage?.pick('broken')} onFix={() => stage?.pick('fixed')} /> : null}
