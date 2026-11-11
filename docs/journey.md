@@ -175,7 +175,13 @@
 - **The fix and the proof:** the card rests at 300px, where the cover's box is exactly the photo's 3:2. Seen in the pane: at rest it looks right and plumber finds the slip on the cover and the three faces ("fits its box today"); dragged to 442px the palace is drawn 49% wider than it is; after the fix it is cropped and plumber asked again finds nothing. Not checked: how often the early finding fires on real apps.
 - **Media hooks:** /rule/78: drag the edge out on each side of the switch.
 
+## The full suite on vm-agent (2026-11-12)
+- **First full run** (side-by-side runner, 183 runs, 17.4 min on 7 cores): 926 tests passed, 54 failed in 29 files.
+- **Two were mine, both fixed:** the text-styles test (e2e/props-text) broke because I had edited the shared text-roles fixture it relies on (its config and a code block); the fixture is back as it was and the text-roles test now makes those changes in its own copy. The text-roles test lost a server call to the reload a theme write causes; it now calls the server from the test, not through the page. Both pass.
+- **The other 27 files, run on the code before this work and on today's** (same machine, same runner): 26 fail the same way on both, so they were failing before this work. The text editor's test failed once only on today's code; run three times on each, it failed 2 of 3 on the earlier code and 0 of 3 on today's: an existing flake on that machine. Nothing in the suite fails because of this work.
+
 ## Open gaps
+- 27 test files already failing before the token work (52 tests on vm-agent), the text editor's test flaky there; not this work's, not fixed.
 - Defensive CSS tips still without a rule: flex rows that should wrap, scrollbars shown when nothing scrolls, text over an image with no colour behind it, hover styles on touch screens, repeated backgrounds, fixed heights on text, sticky items in a grid, and the source-only ones (variable fallbacks, vendor selectors, vertical media queries).
 - Not built from the signed-off spec: a hint when the brand sits in the warning or danger hue band; reading surface levels and states from usage.
 - Undo of a 101-file rename still takes 7–13 s; where the rest goes (parsing each file, recording 709 changes) is not measured.
