@@ -43,9 +43,9 @@ export const CRAFT = {
     reason: 'A faint inner outline gives it an edge.',
   }),
   'flex-min': ({ over }) => ({
-    label: 'Row pushed out of its box',
-    line: `This row runs ${px(over)} past its box.`,
-    reason: 'A long line in it cannot shrink, so it pushes everything after it out.',
+    label: over ? 'Row pushed out of its box' : 'Text can never be cut off',
+    line: over ? `This row runs ${px(over)} past its box.` : 'This text is set to cut off, but its box can’t shrink, so it never will.',
+    reason: 'A flex item is never narrower than its longest line. A longer name or a narrower screen pushes the rest of the row out.',
   }),
   'image-fit': ({ by, wide }) => ({
     label: 'Picture is stretched',

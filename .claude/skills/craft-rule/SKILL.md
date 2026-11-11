@@ -30,6 +30,13 @@ the person who shipped it think it was fine?* If you can't name the natural caus
 - Trim leading (#5): a banner or button built with `text-sm/6 py-2` (Tailwind UI's own default), whose line height
   makes the padding look larger. Not an oversized chip.
 
+**The mistake's side is the one that passed review.** At rest the screen looks right: it is what a careful team
+ships, and a design review would wave it through. If the broken side looks broken at a glance (a button hanging off
+its card), nobody ships it and the screen teaches nothing. For a slip that only bites later (a longer name, a narrower
+screen), the card rests at the width and content it was built with, the viewer's hand brings the change that breaks it
+(§3½), and plumber's rule finds it at rest, before it breaks: the rule reads the cause (text set to cut off inside a
+box that can't shrink), not the damage. A rule that fires only once the damage shows is a rule nobody needs.
+
 ## 2. Never bend the example to fit the rule
 
 If the natural case doesn't trigger the rule (it falls in a grey band, misses a condition, needs a size nobody uses),
@@ -343,4 +350,9 @@ Each line is something the owner had to say once; the sections above exist so th
   landed on nothing, and the switch showed "fixed" over a broken card. → A rule about overflow names the innermost
   box that causes it (the one that grew to fit its own content), never one the content merely spills from. After the
   switch, read the finding's file and line: it must be the element the fix belongs on.
+- 2026-11-12 · #79's first screen rested with three role menus already pushed off the card: "this example isn't apt
+  as the default state is clearly broken and no one will ship ui like this broken, we show examples which will be a
+  miss in a normal design review". Cause: the rule fired only on a row already overflowing, so the screen had to be
+  broken at rest for plumber to find anything. → §1: the mistake's side is the one that passed review; the rule finds
+  the cause before the damage. #79 now rests with every name fitting and breaks when the card is dragged narrower.
 

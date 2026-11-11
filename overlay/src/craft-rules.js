@@ -1058,31 +1058,35 @@ export const imageFit = {
   },
 };
 
-// #79. A flex item that holds text may shrink: without min-width: 0 it is never narrower than its longest line, so a
-// long name pushes the rest of the row out of its box and `truncate` inside it does nothing.
-// (defensivecss.dev "Minimum content size in CSS flexbox".)
+// #79. A flex item that holds text may shrink: without min-width: 0 it is never narrower than its longest line, so
+// `truncate` inside it can never cut anything, and a longer name or a narrower screen pushes the rest of the row out.
+// It is found before it breaks: text set to cut off, inside a box that can't shrink, is the slip whether or not this
+// name at this width happens to fit. (defensivecss.dev "Minimum content size in CSS flexbox".)
 export const flexMin = {
   id: 'craft/flex-min', family: 'craft', number: [79], owns: ['size'], once: 'ancestor', reads: ['style', 'rect'],
   check({ el, facts }, theme) {
     const T = theme.spec(this.id);
     const row = el.parentElement;
     if (!row) return [];
-    const rs = facts.style(row);
-    if (!/flex/.test(rs.display) || /column/.test(rs.flexDirection) || rs.flexWrap !== 'nowrap') return [];
+    const inRow = (box) => { const bs = facts.style(box); return /flex/.test(bs.display) && !/column/.test(bs.flexDirection); };
+    if (!inRow(row) || facts.style(row).flexWrap !== 'nowrap') return [];
     const s = facts.style(el);
     // an item that may not shrink, or that clips, is not held open by its content
     if (s.minWidth !== 'auto' || s.overflowX !== 'visible' || s.flexShrink === '0' || s.position === 'absolute' || s.position === 'fixed') return [];
-    const over = row.scrollWidth - row.clientWidth;
-    if (over <= T.over) return [];
-    // the item that grew to fit its own text, not a box further out that the text merely spills from
-    if (el.scrollWidth > el.clientWidth + T.over) return [];
-    // the cause is here: a line in this item that may not wrap (a few levels in is enough to find it)
-    const held = [el, ...el.querySelectorAll('*')].slice(0, T.depth).some((n) => { const ns = facts.style(n); return ns.whiteSpace === 'nowrap' || ns.textOverflow === 'ellipsis'; });
+    const over = Math.max(0, row.scrollWidth - row.clientWidth);
+    // the item of a row that a line sits in: the nearest one, never a box further out that the line merely spills from
+    const itemOf = (t) => { for (let n = t; n && n.parentElement; n = n.parentElement) if (inRow(n.parentElement)) return n; return null; };
+    // the cause: a line in this item that is meant to be cut off (and never can be), or one that may not wrap and is
+    // pushing the row out now
+    const held = [...el.querySelectorAll('*')].slice(0, T.depth).some((t) => {
+      const ts = facts.style(t);
+      return (ts.textOverflow === 'ellipsis' || (over > T.over && ts.whiteSpace === 'nowrap')) && itemOf(t) === el;
+    });
     if (!held) return [];
     return [{
-      ...say(this.id, { over }),
+      ...say(this.id, { over: over > T.over ? over : 0 }),
       key: this.id, text: utility(el, 'min-w') ?? 'min-width', props: ['min-width'], value: 'auto', n: over,
-      evidence: { over, row: row.clientWidth }, confidence: 0.88,
+      evidence: { over, row: row.clientWidth }, confidence: over > T.over ? 0.9 : 0.84,
       suggest: { kind: 'class', from: utility(el, 'min-w') ?? '', to: 'min-w-0', why: 'lets this part shrink, so its text is cut off instead of pushing the row out', sets: { minWidth: 0 }, moves: true },
     }];
   },

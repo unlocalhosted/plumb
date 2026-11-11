@@ -37,7 +37,7 @@ export function useWidth(range) {
 // the edge to drag, just outside the card's right side
 export function Edge({ grip }) {
   return (
-    <button type="button" {...grip} className="group absolute top-1/2 -right-7 flex h-16 w-6 -translate-y-1/2 cursor-ew-resize touch-none items-center justify-center rounded-control outline-accent focus-visible:outline-2">
+    <button type="button" {...grip} className="group absolute top-1/2 -right-7 z-10 flex h-16 w-6 -translate-y-1/2 cursor-ew-resize touch-none items-center justify-center rounded-control outline-accent focus-visible:outline-2">
       <span className="h-9 w-1.5 rounded-full bg-ink-subtle/50 transition-colors group-hover:bg-ink-muted group-active:bg-accent" />
     </button>
   );

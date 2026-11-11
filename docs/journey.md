@@ -155,6 +155,14 @@
 - **The fix and the proof:** a new rule (principle 79) and its screen: a members list with three long names, on a card whose edge you drag. Seen in the pane at 400px: plumber finds this rule only, on 3 rows (roles pushed up to 129px off the card); after `min-w-0` the names are cut off, every role is on the card, and plumber asked again finds nothing. Not seen: the slide in motion, the drag on this screen, no test written.
 - **Media hooks:** /rule/79, a recording of the switch and of dragging the edge on each side.
 
+## Rule 79 finds it before it breaks (2026-11-12)
+- **The itch:** the owner on 79's first screen: "the default state is clearly broken and no one will ship ui like this broken, we show examples which will be a miss in a normal design review".
+- **How we found it:** the screen rested with three role menus hanging off the card.
+- **The system behind it:** the rule fired only on a row that was already overflowing, so the screen had to be broken at rest for plumber to say anything, and plumber would only have told people what they could already see.
+- **What we chose:** the rule now reads the cause, not the damage: text set to cut off, inside a box that can't shrink, is the slip whether or not today's names fit. The screen rests with six ordinary names that all fit.
+- **The fix and the proof:** seen in the pane: at rest the card looks right and plumber finds the slip on 6 rows ("set to cut off, but its box can't shrink, so it never will"); dragged narrower, roles are pushed off the card one by one; after the fix the names are cut off, every role stays on, and plumber asked again finds nothing.
+- **Media hooks:** /rule/79: drag the edge in on each side of the switch.
+
 ## Open gaps
 - Defensive CSS tips still without a rule: flex rows that should wrap, scrollbars shown when nothing scrolls, text over an image with no colour behind it, hover styles on touch screens, repeated backgrounds, fixed heights on text, sticky items in a grid, and the source-only ones (variable fallbacks, vendor selectors, vertical media queries).
 - Not built from the signed-off spec: a hint when the brand sits in the warning or danger hue band; reading surface levels and states from usage.
