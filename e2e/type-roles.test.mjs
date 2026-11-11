@@ -1,7 +1,7 @@
 // The type system a codebase is reaching for (docs/research/type-roles.md): the proposal from POST system, its
 // write through apply-all, undo, exclusions and the stale-hash guard. Real Vite, real Chromium.
 import assert from 'node:assert/strict';
-import { cp, mkdtemp, readFile, rm } from 'node:fs/promises';
+import { cp, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
@@ -19,6 +19,10 @@ async function site(t) {
   const root = await mkdtemp(join(repo, 'fixtures/.type-roles-'));
   t.after(() => rm(root, { recursive: true, force: true }));
   await cp(join(repo, 'fixtures/type-roles'), root, { recursive: true });
+  // this test's own decisions and page (the fixture is shared): the owner's prose leading, and a code block, which is never reading text
+  await writeFile(join(root, 'plumber.config.ts'), "export default { css: 'src/styles.css', source: ['src/**/*.{tsx,css}'], system: { exclude: ['src/specimen'], type: { roles: { prose: { lineHeight: 1.6 } } } } };\n");
+  const app = join(root, 'src/App.tsx');
+  await writeFile(app, (await readFile(app, 'utf8')).replace('      <Labels />', '      <pre id="code" className="text-[13px] leading-[1.6] font-mono">npm run dev</pre>\n      <Labels />'));
   const server = await createServer({ root, cacheDir: join(root, '.vite-cache'), configFile: false, plugins: [tailwindcss(), plumb({ watch: false })],
     optimizeDeps: { noDiscovery: true, include: ['react', 'react/jsx-runtime', 'react/jsx-dev-runtime', 'react-dom', 'react-dom/client'] },
     oxc: { jsx: { runtime: 'automatic', development: true } }, logLevel: 'silent', server: { host: '127.0.0.1', port: 0 } });
@@ -33,12 +37,15 @@ async function site(t) {
     const cs = getComputedStyle(el), size = parseFloat(cs.fontSize);
     return { stamp: el.getAttribute('data-plumb-source'), tag: el.localName, list: !!el.closest('li, ul, ol, dl'), computed: { size, lineHeight: cs.lineHeight === 'normal' ? null : parseFloat(cs.lineHeight), letterSpacing: cs.letterSpacing === 'normal' ? 0 : parseFloat(cs.letterSpacing), weight: parseInt(cs.fontWeight, 10), transform: cs.textTransform } };
   }));
-  // a session still warming up answers 503 starting: asked again, as the overlay does
+  // a session still warming up answers 503 starting: asked again, as the overlay does. Sent from the test, as the page's
+  // own origin would, so a reload a theme write causes never cuts a request off
+  const origin = `http://127.0.0.1:${server.httpServer.address().port}`;
   const post = async (method, body) => {
     for (let i = 0; ; i++) {
-      const r = await page.evaluate(async ([method, body]) => { const r = await fetch(`/__plumb/${method}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }); return { status: r.status, body: await r.json() }; }, [method, body]);
-      if (r.status !== 503 || i > 60) return r;
-      await page.waitForTimeout(1000);
+      const r = await fetch(`${origin}/__plumb/${method}`, { method: 'POST', headers: { 'Content-Type': 'application/json', Origin: origin, 'Sec-Fetch-Site': 'same-origin' }, body: JSON.stringify(body) });
+      const out = { status: r.status, body: await r.json() };
+      if (out.status !== 503 || i > 60) return out;
+      await new Promise((res) => setTimeout(res, 1000));
     }
   };
   // a theme write reloads the page: a read that lands mid-reload is asked again once the page is back
@@ -59,6 +66,7 @@ test('roles come from the code, one per size; weight and reading leading ride be
   const s = await site(t); if (!s) return;
   const ids = ['eyebrow', 'small-b', 'lead', 'prose-a', 'inherit', 'row-body-1', 'card-title-a', 'card-lead-a', 'h2', 'code', 'specimen-label'];
   const before = Object.fromEntries(await Promise.all(ids.map(async (id) => [id, await s.styleOf(id)])));
+  const original = Object.fromEntries(await Promise.all(['src/styles.css', 'src/App.tsx', 'src/Labels.tsx'].map(async (f) => [f, await s.read(f)])));
   const first = await s.post('system', { census: await s.census() });
   assert.equal(first.status, 200, JSON.stringify(first.body).slice(0, 400));
   const { proposal } = first.body;
@@ -101,6 +109,6 @@ test('roles come from the code, one per size; weight and reading leading ride be
   // undo every handle: every file back as it was
   for (const handle of [...applied.body.undo].reverse()) { await s.settle(); const undone = await s.post('undo', { id: handle.id }); assert.equal(undone.status, 200, JSON.stringify(undone.body)); }
   await s.settle();
-  for (const file of ['src/styles.css', 'src/App.tsx', 'src/Labels.tsx']) assert.equal(await s.read(file), await readFile(join(repo, 'fixtures/type-roles', file), 'utf8'), file);
+  for (const file of ['src/styles.css', 'src/App.tsx', 'src/Labels.tsx']) assert.equal(await s.read(file), original[file], file);
   assert.deepEqual(s.errors, []);
 });
