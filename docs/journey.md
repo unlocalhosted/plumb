@@ -195,9 +195,18 @@
 - **The proof:** on the shadcn page, `accent` reads as the hover surface (filled only on hover, focus and open). On crafting-ui every colour reads as before: its names already matched its use.
 - **Media hooks:** the shadcn page's "Cancel" and "More" buttons and the role menu hovered, beside plumber's reading of `accent` before (brand) and after (hover surface).
 
+## Third defensive tip: words that need their picture (2026-11-12)
+- **The itch:** the owner picked "Text over an image" as the next defensivecss.dev tip ([reference](references.md)), after asking that every demo rest in a state that "will be a miss in a normal design review".
+- **How we found it:** the tip itself: white words over a photo are only readable while the photo is there.
+- **The system behind it:** the photo is the one part of a tile that comes over the network; the words' colour was chosen against it, and nothing is behind them when it is late or its link dies.
+- **What we tried, what we chose and why:** plumber's contrast rule says nothing about words on a picture (it can't know the pixels). The new rule 80 reads the picture as if it were missing and judges the words over it against what is left, counting scrims and chips painted in between. The finding lands on the picture, where one background colour holds every line.
+- **The fix and the proof:** on the new screen (a stargazing app's "Tonight" card, three night photos with white names) plumber finds rule 80 only, in 3 places, while every photo is there. A switch makes the photos fail to load: the tiles go blank. After plumber's fix (`bg-neutral-800` on each picture) the names stay, and asked again plumber finds nothing. Seen in the browser as stills; no tests yet.
+- **A dead end that helped:** the new screen made rule 79 (text in a row may shrink) fire on the card itself. A box with its own width is never held wider than that width, so 79 now stays quiet there until the row really runs over.
+- **Media hooks:** `/rule/80`: photos on, photos off, then the fix with photos still off.
+
 ## Open gaps
 - 27 test files already failing before the token work (52 tests on vm-agent), the text editor's test flaky there; not this work's, not fixed.
-- Defensive CSS tips still without a rule: flex rows that should wrap, scrollbars shown when nothing scrolls, text over an image with no colour behind it, hover styles on touch screens, repeated backgrounds, fixed heights on text, sticky items in a grid, and the source-only ones (variable fallbacks, vendor selectors, vertical media queries).
+- Defensive CSS tips still without a rule: flex rows that should wrap, scrollbars shown when nothing scrolls, hover styles on touch screens, repeated backgrounds, fixed heights on text, sticky items in a grid, and the source-only ones (variable fallbacks, vendor selectors, vertical media queries).
 - Not built from the signed-off spec: surface levels (a card on a panel) read from nesting; no project at hand has two nested surface colours to prove it on.
 - shadcn's `-foreground` colours are misread by name (`primary-foreground` as the brand, `popover-foreground` as a surface, `secondary` as muted text); usage (text vs fill) could fix the family, not done.
 - Undo of a 101-file rename still takes 7–13 s; where the rest goes (parsing each file, recording 709 changes) is not measured.
@@ -210,5 +219,6 @@
 - The tailwind-merge trap is untested: crafting-ui does not use it.
 
 ## Shipped · 2026-W46
+- plumber flags words over a picture that can only be read while the picture shows, before it ever fails to load, and offers the one class that holds them (rule 80, with a demo you can switch the photos off in). [entry](#third-defensive-tip-words-that-need-their-picture-2026-11-12)
 - Plumber reads a hover or press colour from where the code uses it, so shadcn's grey `accent` is no longer taken for the brand ([entry](#hover-colours-read-from-the-code-not-the-name-2026-11-12)).
 - A brand colour too close to the error red or warning amber now gets a plain warning and what to do about it ([entry](#a-brand-too-close-to-error-2026-11-12)).

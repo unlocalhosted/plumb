@@ -33,6 +33,7 @@
  *  hit-target          #27     a control is at least 24px to hit
  *  media-size          #34     one avatar and icon size per list
  *  flex-min            #79     a flex item that holds text may shrink, so a long name is cut off, not pushed out
+ *  image-ground        #80     words over a picture have a colour behind them for when it doesn't arrive
  *  image-fit           #78     a picture in a box of another shape is cropped, never stretched
  *  truncate-intent     #35     cut-off text shows its full value on hover
  *  scrollbar-gutter    #36     a large scroll area keeps room for its scrollbar
@@ -1094,11 +1095,80 @@ export const flexMin = {
       return (ts.textOverflow === 'ellipsis' || (over > T.over && ts.whiteSpace === 'nowrap')) && itemOf(t) === el;
     });
     if (!held) return [];
+    // an item given its own width is never held wider than that width: its floor is the smaller of the two. Until the
+    // row runs over, there is nothing waiting to break
+    if (over <= T.over && (utility(el, 'w', { not: /^(?:auto|fit|min|max|full)$/ }) || utility(el, 'size') || utility(el, 'basis', { not: /^auto$/ }))) return [];
     return [{
       ...say(this.id, { over: over > T.over ? over : 0 }),
       key: this.id, text: utility(el, 'min-w') ?? 'min-width', props: ['min-width'], value: 'auto', n: over,
       evidence: { over, row: row.clientWidth }, confidence: over > T.over ? 0.9 : 0.84,
       suggest: { kind: 'class', from: utility(el, 'min-w') ?? '', to: 'min-w-0', why: 'lets this part shrink, so its text is cut off instead of pushing the row out', sets: { minWidth: 0 }, moves: true },
+    }];
+  },
+};
+
+// #80. Words over a picture have a colour behind them. A picture can arrive late or not at all (a slow connection, a
+// dead link, a blocked host), and then the words sit on whatever is under it: white words on a white card. It is found
+// before it breaks: the picture is read as if it were missing, and the words over it are judged against what is left.
+// The finding lands on the picture, where one background colour holds every line. (defensivecss.dev "Text over image".)
+export const imageGround = {
+  id: 'craft/image-ground', family: 'craft', number: [80], owns: ['background'], once: 'ancestor', reads: ['style', 'rect', 'text', 'ground'],
+  check({ el, facts }, theme) {
+    const T = theme.spec(this.id);
+    const s = facts.style(el), img = el.localName === 'img';
+    if (!img && !/url\(/.test(s.backgroundImage)) return [];
+    if (s.display === 'none' || s.visibility === 'hidden' || alpha(rgb(s.backgroundColor)) > 0.5) return [];
+    const box = el.getBoundingClientRect();
+    if (box.width < T.min || box.height < T.min) return [];
+    // the box the picture and its words share: for an <img>, the wrappers around it that are about its own size
+    let host = el;
+    if (img) {
+      host = el.parentElement;
+      for (let i = 1; i < T.up && host?.parentElement; i++) {
+        const q = host.parentElement.getBoundingClientRect();
+        if (q.width * q.height > box.width * box.height * T.wrap) break;
+        host = host.parentElement;
+      }
+    }
+    if (!host) return [];
+    const inside = [...host.querySelectorAll('*')].slice(0, T.depth).filter((n) => n !== el);
+    // how much of a box lies over the picture
+    const covers = (n, on = box) => {
+      const q = n.getBoundingClientRect();
+      if (q.width <= 0 || q.height <= 0) return 0;
+      const w = Math.min(q.right, on.right) - Math.max(q.left, on.left), h = Math.min(q.bottom, on.bottom) - Math.max(q.top, on.top);
+      return w > 0 && h > 0 ? (w * h) / (q.width * q.height) : 0;
+    };
+    // what an element paints behind words: its colour, or the strongest stop of a scrim
+    const paint = (n) => {
+      const ns = facts.style(n), c = rgb(ns.backgroundColor);
+      if (alpha(c) > 0.02) return c;
+      if (!/gradient\(/.test(ns.backgroundImage)) return null;
+      return stops(ns.backgroundImage).sort((a, b) => alpha(b) - alpha(a))[0] ?? null;
+    };
+    const base = facts.ground(host);
+    const self = !img && /gradient\(/.test(s.backgroundImage) ? stops(s.backgroundImage).sort((a, b) => alpha(b) - alpha(a))[0] : null;
+    const lost = inside.filter((t) => {
+      if (!facts.text(t) || covers(t) < T.cover) return false;
+      const ts = facts.style(t), c = rgb(ts.color);
+      if (!c || ts.visibility === 'hidden' || (parseFloat(ts.opacity) || 0) < 0.05) return false;
+      // without the picture: the ground under the box, then everything painted between it and the words
+      let ground = self ? over(self, base) : base;
+      for (const n of [...inside, t]) {
+        if (n !== t && !n.contains(t) && (t.contains(n) || facts.text(n) || covers(t, n.getBoundingClientRect()) < T.cover)) continue;
+        const p = paint(n);
+        if (p) ground = over(p, ground);
+      }
+      return Math.abs(apca(over(c, ground), ground)) < T.lc;
+    });
+    if (!lost.length) return [];
+    const light = (() => { const c = rgb(facts.style(lost[0]).color); return (0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]) / 255 > 0.5; })();
+    const broken = img && el.complete && !el.naturalWidth;
+    return [{
+      ...say(this.id, { n: lost.length, broken }),
+      key: this.id, text: utility(el, 'bg') ?? 'background-color', props: ['background-color'], value: 'none', n: lost.length,
+      evidence: { lines: lost.length, ground: hex(base), broken }, confidence: broken ? 0.9 : 0.85,
+      suggest: { kind: 'class', from: '', to: light ? 'bg-neutral-800' : 'bg-neutral-200', why: 'puts a colour behind the words for when the picture doesn’t arrive', sets: { backgroundColor: light ? 'rgb(38, 38, 38)' : 'rgb(229, 229, 229)' } },
     }];
   },
 };
@@ -2141,7 +2211,7 @@ export const interruptible = {
 };
 
 export const RULES = [concentricRadius, innerOuterSpacing, textOpacity, halfPixel, hairline, imageOutline, layeredShadow, scaleFromZero, zIndexWar, contentAlign,
-  buttonPadding, iconSide, measure, leading, tracking, tabularNums, headingWidow, oneLight, borderOnShadow, contrast, disabledContrast, hitTarget, mediaSize, imageFit, flexMin,
+  buttonPadding, iconSide, measure, leading, tracking, tabularNums, headingWidow, oneLight, borderOnShadow, contrast, disabledContrast, hitTarget, mediaSize, imageFit, flexMin, imageGround,
   truncateIntent, scrollbarGutter, boldHover, hangingQuote, capsCase, gradientSpace, inputZoom, anchorOffset, middleTruncate,
   textWrapRole, continuousCorners, opticalSizing, tintedShadow, easedScrim, pureBlackWhite, contentSize,
   baselineAlign, iconCap, trimLeading, headingLead, pairSpacing, cardOpticalPadding,

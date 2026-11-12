@@ -358,4 +358,9 @@ Each line is something the owner had to say once; the sections above exist so th
 - 2026-11-12 · (own review) #78's finding "before it stretches" was first written at confidence 0.72 and never showed:
   the engine drops anything under 0.8 (craft.js FLOOR). → A finding about a cause, not visible damage, must earn 0.8
   by narrowing what it reads (photo-sized pictures only, not icons), never by raising the number alone.
-
+- 2026-11-12 · (own review, building #80) The uncontrolled thing isn't always a width: for words over a picture it is
+  the network, so the hand is a switch that makes the photos really fail to load (kit `usePhotos` + `<Signal>`), not
+  a drag. → §3½: pick the hand from what the rule doesn't control (screen → edge to drag, network → a switch).
+- 2026-11-12 · (own review, building #80) The new screen made #79 fire on its card: truncated names inside a card with
+  its own width, in the stage's row. A second finding on a well-built screen is the rule's noise, not the screen's:
+  #79 now stays quiet about an item that has its own width until the row really runs over.

@@ -47,6 +47,11 @@ export const CRAFT = {
     line: over ? `This row runs ${px(over)} past its box.` : 'This text is set to cut off, but its box can’t shrink, so it never will.',
     reason: 'A flex item is never narrower than its longest line. A longer name or a narrower screen pushes the rest of the row out.',
   }),
+  'image-ground': ({ n, broken }) => ({
+    label: broken ? 'Words lost without the picture' : 'Words rely on the picture',
+    line: n > 1 ? `${n} lines over this picture can only be read while it shows.` : 'The words over this picture can only be read while it shows.',
+    reason: 'A picture can load late, or not at all. Then the words sit on the colour under it.',
+  }),
   'image-fit': ({ by, wide }) => ({
     label: by ? 'Picture is stretched' : 'Picture can be stretched',
     line: by ? `This picture is drawn ${by}% ${wide ? 'wider' : 'taller'} than it is.` : 'This picture fits its box today. One of another shape, or a wider screen, will stretch it.',

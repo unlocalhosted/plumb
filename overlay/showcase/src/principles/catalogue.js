@@ -632,5 +632,13 @@ export const PRINCIPLES = [
   "detail": "A flex item that holds text takes min-width: 0 (min-w-0), so a long name is cut off with an ellipsis instead of pushing the rest of the row out.",
   "why": "You never choose how long a name is.",
   "how": "live"
+ },
+ {
+  "n": 80,
+  "section": "Layout and platform",
+  "title": "Give words over a picture a colour behind them",
+  "detail": "A picture with words on it also takes a background colour, so the words can still be read while it loads or when it never arrives.",
+  "why": "You never choose whether a picture arrives.",
+  "how": "live"
  }
 ];

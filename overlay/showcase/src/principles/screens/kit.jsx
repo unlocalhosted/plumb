@@ -43,6 +43,28 @@ export function Edge({ grip }) {
   );
 }
 
+// Pictures whose arrival is in the viewer's hand, for a rule about what a developer doesn't control (the network).
+// `src(url)` gives the picture's address while they arrive and one that isn't there once they don't, so the browser
+// really fails to load it. Put <Signal> last inside the card, which must be `relative`.
+export function usePhotos() {
+  const [on, setOn] = useState(true);
+  const src = (url) => (on ? url : '/__showcase/gone/' + url.split('/').pop());
+  const signal = { onClick: () => setOn((v) => !v), role: 'switch', 'aria-checked': on, 'aria-label': 'Photos arrive' };
+  return { on, src, signal };
+}
+// the switch, just above the card's right corner
+export function Signal({ signal }) {
+  const on = signal['aria-checked'];
+  return (
+    <button type="button" {...signal} className="group absolute -top-9 right-0 z-10 flex h-7 cursor-pointer items-center gap-2 rounded-control px-1.5 text-xs font-medium text-ink-muted outline-accent hover:text-ink focus-visible:outline-2">
+      <span>{on ? 'Photos arrive' : 'Photos don’t arrive'}</span>
+      <span className={'flex h-4 w-7 items-center rounded-full p-0.5 transition-colors ' + (on ? 'bg-accent' : 'bg-ink-subtle/50')}>
+        <span className={'size-3 rounded-full bg-surface transition-transform ' + (on ? 'translate-x-3' : '')} />
+      </span>
+    </button>
+  );
+}
+
 // a person's face, with their company's logo on its corner in the brand's colour: brand = { color, logo, glyph? }
 export function Face({ src, brand, size = 'size-8' }) {
   return (
