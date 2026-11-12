@@ -739,7 +739,7 @@
 ## A new overlay file no longer needs a server restart (2026-11-12)
 - **The itch:** three times today a new overlay file (the shadows pass, the role file, the timings pass) was refused by crafting-ui's running dev server, which took the whole overlay down or needed a restart.
 - **The system behind it:** the server kept a fixed list of the overlay's files, read when it started.
-- **The fix:** the list stays, and any file directly in the overlay's source folder that exists when it is asked for is served too. Only a plain name in that folder is accepted, so no path can leave it. Proof: a file made after the server started was served; a path escape and a missing file were refused; the file-serving test passes.
+- **The fix:** the list stays (the build checks every overlay import against it, as an audit of what is served; three new files were missed from it and the full run's build caught them), and any file directly in the overlay's source folder that exists when it is asked for is served too. Only a plain name in that folder is accepted, so no path can leave it. Proof: a file made after the server started was served; a path escape and a missing file were refused; the file-serving test passes.
 
 ## The disabled look: the ninth clean-up pass (2026-11-12)
 - **The itch:** a disabled control is faded by a different amount per prompt. On algorecall disabled controls fade to seven opacities (30, 35, 40, 50, 60, 70, 80) across about 138 places; crafting-ui's home page fades its two by 30% where its other disabled look is 40%.
