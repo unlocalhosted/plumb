@@ -59,6 +59,8 @@ async function blueprint(page, overlay) {
   await overlay.locator('.fx[data-settled]').waitFor({ timeout: 20000 }); if (await overlay.locator('.fx .review').count()) { await overlay.page().keyboard.press('Escape'); await overlay.locator('.fx .review').waitFor({ state: 'detached', timeout: 5000 }); } /* the text styles are offered first: put down, the fixes come next */ // the fix panel: every element read
 }
 
+// the card's top padding is a step under its sides: with the first line's own space above its letters the two look
+// equal, so the card itself is quiet (craft/card-optical-padding, added after this page was written, fired on p-s4)
 const PAGE = `
 const Icon = () => <svg width="16" height="16" aria-hidden="true"><circle cx="8" cy="8" r="6" /></svg>;
 const members = [['Ada Lovelace', 'Owner'], ['Grace Hopper', 'Admin'], ['Alan Turing', 'Member']];
@@ -69,7 +71,7 @@ export function App() {
         <h1 id="title" className="text-body font-semibold">Team settings</h1>
         <button id="invite" className="flex items-center gap-s2 rounded-control bg-accent px-s3 py-s3 text-body text-surface"><Icon />Invite</button>
       </header>
-      <section className="flex flex-col gap-s3 rounded-card bg-surface p-s4">
+      <section className="flex flex-col gap-s3 rounded-card bg-surface px-s4 pb-s4 pt-s3">
         <span id="status" className="text-[11px] uppercase text-ink-muted">Status</span>
         <p id="quiet" className="text-body">Three people can see this workspace.</p>
         <ul className="flex flex-col gap-s2">
