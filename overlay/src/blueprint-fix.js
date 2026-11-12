@@ -23,7 +23,7 @@
  *  leave      leaving blueprint lifts every preview and drops the queue: nothing is left on the page
  * ───────────────────────────────────────────────────────── */
 import { post, request } from './api.js';
-import { locate, classEditsOf } from './locate.js';
+import { locate } from './locate.js';
 import { choicesHtml, bindChoices, toPx, fmtPx, esc, code, VALUED } from './choices.js';
 import { glyph } from './glyphs.js';
 
@@ -535,11 +535,7 @@ export class Fixer {
       let at = p.file && p.at ? { file: p.file, ...p.at } : null;
       if (!at) { try { const l = await locate(p.el); if (l?.file) at = { file: l.file, line: l.line, column: l.column }; } catch {} }
       p.site = at;
-      // one write per place the class is written, not per element's own line: links drawn by one Link component share
-      // that component's line and are written at their own usages; rows of one list share a usage and are written once
-      let where = null;
-      try { where = (await classEditsOf(p.el, p.choice.edit.from, p.choice.edit.to)).map((e) => `${e.file}:${e.edit.line}:${e.edit.column}:${e.edit.at?.line ?? ''}:${e.edit.at?.column ?? ''}`).join(','); } catch {}
-      const key = where ? `${where}|${p.choice.edit.from}|${p.choice.edit.to}` : Symbol();
+      const key = at ? `${at.file}:${at.line}:${at.column}|${p.choice.edit.from}|${p.choice.edit.to}` : Symbol();
       (sites.get(key) ?? sites.set(key, []).get(key)).push(p);
     }
     for (const [p, ...twins] of sites.values()) {
@@ -548,16 +544,15 @@ export class Fixer {
         const at = p.site;
         if (!at?.file) throw new Error('React Plumber can’t tie this element to a line in your source.');
         file = at.file;
-        // where the classes are written, asked now (locate.js classEditsOf, as every card asks): the element's own
-        // string, or the usage that passes them in when the element is drawn by a wrapper (a Link, a Button). Written at
-        // the element's own line alone, a fix on anything drawn through a component was refused
-        const perFile = new Map();
-        for (const e of await classEditsOf(p.el, p.choice.edit.from, p.choice.edit.to)) (perFile.get(e.file) ?? perFile.set(e.file, { hash: e.hash, edits: [] }).get(e.file)).edits.push(e.edit);
-        for (const [to, w] of perFile) {
-          file = to;
-          const result = await post('swaps', { file: to, hash: w.hash, edits: w.edits });
-          this.#host.wrote?.(result, `Wrote ${p.choice.edit.to} to ${to.split('/').pop()}`);
+        // the hash read when the chooser opened; read now only when the pick was made before that reading came back
+        let { hash } = p, line = at.line, column = at.column;
+        if (!hash) {
+          const props = await request('props', { file: at.file, line: at.line, column: at.column });
+          if (!props?.hash) throw new Error('React Plumber couldn’t read this element.');
+          ({ hash } = props); line = props.line ?? line; column = props.column ?? column;
         }
+        const result = await post('swap', { file: at.file, hash, line, column, from: p.choice.edit.from, to: p.choice.edit.to });
+        this.#host.wrote?.(result, `Wrote ${p.choice.edit.to} to ${file.split('/').pop()}`);
         for (const q of [p, ...twins]) q.state = 'written';
         wrote.push({ file, n: 1 });
         // the element already wears the new classes; the dev server's reload keeps them, so the preview lets go of

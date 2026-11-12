@@ -36,7 +36,7 @@ import { FixPanel, FIX_CSS } from './fixpanel.js'; // the one place you act: a c
 import { FIX } from './words.js';
 import { hasText } from './texteditor.js';
 import { post, request } from './api.js';
-import { locate, classEditsOf } from './locate.js';
+import { locate, classEditsOf, classSiteOf } from './locate.js';
 
 const FADE_IN = 160, FADE_OUT = 120; // ms, the same as --pl-dur-dim and --pl-dur-undim
 
@@ -290,6 +290,10 @@ export class Blueprint {
   };
   // Where an element is written: its line and its file's hash now.
   async #siteOf(el) {
+    // where the element's classes are written (locate.js classSiteOf): its own line, or the usage that passes them in
+    // when it is drawn by a wrapper (a Link, a Button). Its own line alone is the wrapper's, where a write is refused
+    const written = await classSiteOf(el).catch(() => null);
+    if (written?.file && written.hash && Number.isFinite(written.line)) return { file: written.file, line: written.line, column: written.column, hash: written.hash };
     const at = await locate(el);
     if (!at?.file) return null;
     const props = await request('props', { file: at.file, line: at.line, column: at.column });

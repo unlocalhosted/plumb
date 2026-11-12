@@ -319,9 +319,20 @@
 - **Still not clicked:** the other on-page path changed earlier (picking fixes in the chooser and writing them together), and a third place that still writes at the element's own line (a follow-up class written after a token change).
 - **Noticed:** the card's line reads "Changed border-line-strong to border-r-0 …" although border-line-strong is still there; and plumber's read reports this finding at the Link component's line, not where the link is used.
 
+## The two remaining write paths: one did not exist, the other is fixed at its root (2026-11-12)
+- **The itch:** two write paths were still unclicked after the fix card was proven. The owner: "Yes, both".
+- **A correction first:** the path changed two entries ago ("picking several fixes and writing them together") is not on the page at all. Clicking a mark in the blueprint opens the same fix card; the module that held that path is imported by nothing. The edit made there did nothing and has been taken back.
+- **How we found it:** by clicking a mark by hand and getting the fix card, then searching for what loads the old module: nothing does.
+- **The system behind it:** every on-page write that is not the fix card gets its place from one small function, which answered with the element's own line. That is the wrapper component's line for a link or a button, where a write is refused. Two things use it: a fix taken on the element itself, and the follow-up class written after a new theme token.
+- **The fix:** that function now answers with the place the element's classes are written (the usage, for a wrapped element), and falls back to the element's own line when that can't be found.
+- **The proof, by hand:** the fix card was run again on crafting-ui after this change: same result, two classes on the line where the header links are used, the Link component's file untouched, and plumber's Undo put the file back byte for byte.
+- **Not proven:** the two users of that function were not driven by hand. No page offered a fix that adds a theme token, and taking a fix on the element itself was not tried.
+- **Noticed:** an unused module of about 750 lines (the old chooser and punch list) is still in the overlay's source.
+
 ## Open gaps
 - **Text roles: how the signals combine is undecided** (docs/research/text-role-signals.md §5): what wins when the tag and the look disagree (a 12px capital heading), and whether unsure places go to a model's eye. Only crafting-ui is measured; no LLM-written app.
-- A fix from the fix card on a wrapped element is proven by hand. Two neighbours are not: writing several picked fixes together, and the follow-up class written after a token change (which still writes at the element's own line).
+- A fix from the fix card on a wrapped element is proven by hand. Two neighbours share the same repaired place-finder but were not driven by hand: a fix taken on the element itself, and the follow-up class written after a new theme token.
+- The old chooser and punch list module (about 750 lines) is loaded by nothing and could be removed.
 - plumber's read reports a finding on a wrapped element at the component's line, not where it is used; the fix card says "Changed X to Y" when Y was added beside X.
 - Undo shows on the page about 0.6 s later than a write does; a write on crafting-ui takes about 450 ms against about 60 ms on a small project. Neither cause is measured.
 - Several writes in quick succession sometimes reload the showcase page.
