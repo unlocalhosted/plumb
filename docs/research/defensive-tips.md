@@ -29,7 +29,7 @@ pages were *not* re-read today. Each is to be read and linked when its check is 
 | Grouping vendor selectors | Does not hold | a stylesheet lint, nothing to see |
 | Image maximum width | Does not hold | Tailwind's reset already does it |
 
-Eleven tips hold and become nine checks (all built by 2026-11-13, one in its first form only); four do not hold; one waits on a decision.
+Eleven tips hold and become nine checks (all built by 2026-11-13); four do not hold; one waits on a decision.
 
 ## The ones that hold
 
@@ -56,7 +56,7 @@ Eleven tips hold and become nine checks (all built by 2026-11-13, one in its fir
 - **How "holds text that may wrap" is read:** a line of words inside already runs to a second line. Measured, with
   no threshold; a box whose text is one line (a bar, a chip, a control) is left alone.
 
-### Space that is left over, not declared (built 2026-11-12, first form only)
+### Space that is left over, not declared (built 2026-11-12; second form 2026-11-13)
 - **What the expert sees:** a title and a button kept apart only by the empty space between them; a row of items
   spread by `justify-between`.
 - **Principle:** the distance between neighbours is a decision. Left to whatever space remains, it closes to nothing
@@ -72,7 +72,11 @@ Eleven tips hold and become nine checks (all built by 2026-11-13, one in its fir
 - **The gap, as built:** at least the gap used inside its own parts (outer at least inner, plumber's inner-outer
   principle); else the gap of the layout around it; else half the row's text size (an invented fallback, tuned once on
   crafting-ui: a full em pushed a narrow row's count off its card). On the theme's spacing scale, else Tailwind's 4px steps.
-- **Second form not built:** three or more like items spread by `justify-between`.
+- **Second form, as built:** a list drawn from data (three or more parts drawn by one line of code, read the way the
+  wrap check reads it), set to wrap, spread by `justify-between`, `-around` or `-evenly`, with or without a gap. Each
+  line is then spaced by how many items it holds, and a gap doesn't stop that. It is broken now when a later line holds
+  fewer than the first (two or more, for `between`). The fix is `justify-start`, plus the first form's gap when there is
+  none. It comes from the same check, so a row gets one finding, not two.
 
 ### A row of like things that cannot wrap (built 2026-11-12)
 - **What the expert sees:** tags, chips or options in one row that will run off a narrow screen.

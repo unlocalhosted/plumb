@@ -1318,13 +1318,62 @@ export const scrollOnDemand = {
 // The gap is a single decision from the project: the gap of the nearest layout around it that declares one, else the
 // row's own side padding, else the theme's step nearest the row's text size (an invented fallback, to be tuned).
 // (defensivecss.dev "Component spacing", "Using space-between".)
+// The line of code that draws an element (file:line:column). A part that is the root of a component (a Link) carries the
+// component's own line, the same for every Link anywhere: its place is the line that uses the component, read from
+// React's tree. Parts with one such line are drawn by one map over data: a list.
+const drawnAt = (k) => {
+  const key = Object.keys(k).find((x) => x.startsWith('__reactFiber$'));
+  for (let f = key ? k[key]?.return : null, n = 0; f && n < 12; f = f.return, n++) {
+    if (typeof f.type === 'string') break; // another element in between: this part is not a component's root
+    const used = f.memoizedProps?.['data-plumb-source'];
+    if (typeof used === 'string') return used.replace(/#.*$/, '');
+  }
+  return (k.getAttribute('data-plumb-source') ?? '').replace(/#.*$/, '');
+};
+
 export const declaredGap = {
   id: 'craft/declared-gap', family: 'craft', number: [], owns: ['gap'], once: 'ancestor', reads: ['style', 'rect', 'text'],
   check({ el, facts }, theme) {
     const s = facts.style(el);
-    if (!/flex/.test(s.display) || /column/.test(s.flexDirection) || px(s.columnGap) > 0) return [];
+    if (!/flex/.test(s.display) || /column/.test(s.flexDirection)) return [];
     const kids = [...el.children].filter((k) => { const ks = facts.style(k); return ks.display !== 'none' && !/^(?:absolute|fixed)$/.test(ks.position) && k.getClientRects().length; });
     if (kids.length < 2) return [];
+    // the gap this row should declare: never less than the distance inside its own parts (outer at least inner: a group
+    // sits further from its neighbour than its own items sit from each other); else the gap of the layout around it;
+    // else half its text size (invented, tuned on crafting-ui: a full em pushed a 106px row's count off it). On the
+    // theme's spacing scale, else Tailwind's 4px steps
+    const gapFor = () => {
+      let want = 0, from = '';
+      for (const k of kids) for (const n of [k, ...k.querySelectorAll('*')].slice(0, 30)) { const ns = facts.style(n); if (/flex|grid/.test(ns.display) && !/column/.test(ns.flexDirection) && px(ns.columnGap) > want) { want = px(ns.columnGap); from = 'inside'; } }
+      for (let n = el.parentElement, d = 0; n && d < 6 && !want; n = n.parentElement, d++) { const ns = facts.style(n); if (/flex|grid/.test(ns.display) && px(ns.columnGap) > 0) { want = px(ns.columnGap); from = 'around'; } }
+      if (!want) { want = (px(s.fontSize) || 16) / 2; from = 'text'; }
+      const step = theme.nearest('spacing', want, Math.max(2, want * 0.25));
+      const four = Math.max(0.5, Math.round((want / 4) * 2) / 2);
+      return { cls: step ? `gap-${step.short}` : `gap-${four}`, px: step?.px ?? four * 4, from };
+    };
+    // Second form (defensivecss.dev "Using space-between"): a list drawn from data, set to wrap, spread by the left-over
+    // space. Each line's spacing then depends on how many items it holds: a last line with fewer is flung to the edges,
+    // out of line with the columns above, and a gap does not stop it. Read: wrapping, spread, three or more parts drawn
+    // by one line of code. Broken now when it already runs to a second line that holds fewer than the first.
+    const spreadAll = /^(?:space-between|space-around|space-evenly)$/.test(s.justifyContent);
+    if (spreadAll && s.flexWrap !== 'nowrap' && kids.length >= 3 && !el.closest('[aria-hidden="true"]')) {
+      const stamp = drawnAt(kids[0]);
+      if (stamp && kids.every((k) => drawnAt(k) === stamp)) {
+        const lines = [];
+        for (const k of kids) { const top = Math.round(k.getBoundingClientRect().top); const line = lines.find((l) => Math.abs(l.top - top) <= 2); if (line) line.n++; else lines.push({ top, n: 1 }); }
+        lines.sort((a, b) => a.top - b.top);
+        const ragged = lines.length > 1 && lines.at(-1).n < lines[0].n && lines.at(-1).n >= (s.justifyContent === 'space-between' ? 2 : 1);
+        const gap = px(s.columnGap) > 0 ? null : gapFor();
+        const to = gap ? `justify-start ${gap.cls}` : 'justify-start';
+        return [{
+          ...say(this.id, { list: true, ragged, n: kids.length, last: lines.at(-1).n, first: lines[0].n }),
+          key: this.id, text: utility(el, 'justify') ?? 'justify-content', props: ['justify-content'], value: s.justifyContent, n: kids.length,
+          evidence: { parts: kids.length, lines: lines.map((l) => l.n), stamp, gap: gap?.px ?? px(s.columnGap) }, confidence: ragged ? 0.9 : 0.84,
+          suggest: { kind: 'class', from: utility(el, 'justify') ?? '', to, why: 'keeps the same distance between items on every line, however many each holds', sets: { justifyContent: 'flex-start', ...(gap ? { columnGap: gap.px } : {}) }, moves: true },
+        }];
+      }
+    }
+    if (px(s.columnGap) > 0) return [];
     const spread = /^(?:space-between|space-around|space-evenly)$/.test(s.justifyContent);
     const pushed = kids.some((k, n) => { const ks = facts.style(k); return (n > 0 && ks.marginLeft === 'auto') || (n < kids.length - 1 && ks.marginRight === 'auto'); });
     if (!spread && !pushed) return [];
@@ -1355,20 +1404,13 @@ export const declaredGap = {
     // the gap: never less than the distance inside its own parts (outer at least inner: a group sits further from its
     // neighbour than its own items sit from each other); else the gap of the layout around it; else its text size.
     // On the theme's spacing scale, else Tailwind's 4px steps
-    let want = 0, from = '';
-    for (const k of kids) for (const n of [k, ...k.querySelectorAll('*')].slice(0, 30)) { const ns = facts.style(n); if (/flex|grid/.test(ns.display) && !/column/.test(ns.flexDirection) && px(ns.columnGap) > want) { want = px(ns.columnGap); from = 'inside'; } }
-    for (let n = el.parentElement, d = 0; n && d < 6 && !want; n = n.parentElement, d++) { const ns = facts.style(n); if (/flex|grid/.test(ns.display) && px(ns.columnGap) > 0) { want = px(ns.columnGap); from = 'around'; } }
-    // half the row's text size: an invented fallback, tuned on crafting-ui (a full em pushed a 106px row's count off it)
-    if (!want) { want = (px(s.fontSize) || 16) / 2; from = 'text'; }
-    const step = theme.nearest('spacing', want, Math.max(2, want * 0.25));
-    const four = Math.max(0.5, Math.round((want / 4) * 2) / 2);
-    const to = step ? `gap-${step.short}` : `gap-${four}`;
+    const gap = gapFor();
     const touching = closest <= 1;
     return [{
       ...say(this.id, { closest, touching }),
       key: this.id, text: utility(el, 'justify') ?? 'gap', props: ['column-gap'], value: '0px', n: closest,
-      evidence: { closest, want: step?.px ?? four * 4, from }, confidence: touching ? 0.9 : 0.84,
-      suggest: { kind: 'class', from: '', to, why: 'keeps a set distance between the parts, whatever is left over', sets: { columnGap: step?.px ?? four * 4 } },
+      evidence: { closest, want: gap.px, from: gap.from }, confidence: touching ? 0.9 : 0.84,
+      suggest: { kind: 'class', from: '', to: gap.cls, why: 'keeps a set distance between the parts, whatever is left over', sets: { columnGap: gap.px } },
     }];
   },
 };
@@ -1394,15 +1436,7 @@ export const listWrap = {
     // drawn by one line of code: the same source stamp (file:line:column), so a map over data. A part that is the root of
     // a component (a Link) carries the component's own line, the same for every Link anywhere: its place is the line
     // that uses the component, read from React's tree
-    const where = (k) => {
-      const key = Object.keys(k).find((x) => x.startsWith('__reactFiber$'));
-      for (let f = key ? k[key]?.return : null, n = 0; f && n < 12; f = f.return, n++) {
-        if (typeof f.type === 'string') break; // another element in between: this part is not a component's root
-        const used = f.memoizedProps?.['data-plumb-source'];
-        if (typeof used === 'string') return used.replace(/#.*$/, '');
-      }
-      return (k.getAttribute('data-plumb-source') ?? '').replace(/#.*$/, '');
-    };
+    const where = drawnAt;
     const stamp = where(kids[0]);
     if (!stamp || !kids.every((k) => where(k) === stamp)) return [];
     // separate things have space between them; parts set edge to edge (a segmented control, joined tabs) are one control

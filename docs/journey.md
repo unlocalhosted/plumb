@@ -597,6 +597,13 @@
 - **Now:** one finding on crafting-ui, the three figures on the templates page, drawn from a three-item list written in the code. At phone width it fits (358 of 358 px). It is a fixed set the check cannot yet tell from a list; noted, not fixed. No before and after from a real app.
 - **Seen on the way:** the motion vocabulary page (7,274 elements) closed the browser tab during plumber's read.
 
+## The left-over-space check's second form: a list flung to the edges (2026-11-13)
+- **The itch:** the last unbuilt piece of the tips; the owner: "Yes, build it".
+- **The slip:** a list from data that wraps, spread with `justify-between`. Each line is spaced by how many items it holds, so a last line with fewer is flung to the edges, out of line with the columns above. A gap is no help, so the first form, which looks for rows with no gap, never saw it.
+- **How it is read:** wrapping, spread by left-over space, three or more parts drawn by one line of code (the wrap check's way of telling a list). Broken now when a later line holds fewer than the first. Built into the same check, so a row gets one finding.
+- **The proof:** crafting-ui's main pages: no new finding (its spread rows all hold a title and its controls); the first form's two known findings unchanged. Seven tags put on a page by hand, 460 px wide: lines of 5 and 2, "Icons" pushed to the far right. Found, offered `justify-start gap-2`; with it on, every line has the same 8 px and plumber finds nothing.
+- **Not yet:** never fired on a real app.
+
 ## The last three checks from the tips: a stretched picture, a tiling photo, a fixed column (2026-11-13)
 - **The itch:** the owner, on whether all the tips were in: "all integrated ?", then "Yes, build them".
 - **The principles,** one each: a picture keeps its own shape, its row's height is not its height (a flex row stretches its items by default); a photo is one picture, repeated it reads as a fault (backgrounds repeat by default); a layout with a fixed column needs a one-column form where that column no longer fits.
@@ -807,6 +814,7 @@
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
 
 ## Shipped · 2026-W46
+- plumber catches a wrapping list spread by `justify-between`, whose short last line is flung to the edges, and offers `justify-start` with a gap; every check from the defensive-CSS tips is now built ([entry](#the-left-over-space-checks-second-form-a-list-flung-to-the-edges-2026-11-13)).
 - plumber now catches the last three defensive-CSS slips: a picture pulled tall by its row, a background photo that repeats, and a fixed column with no phone layout, each with the one class that fixes it ([entry](#the-last-three-checks-from-the-tips-a-stretched-picture-a-tiling-photo-a-fixed-column-2026-11-13)).
 - The colour and icon clean-up passes are tested case by case through the panel and Apply, 14 tests ([entry](#the-colour-and-icon-passes-tested-the-way-a-person-meets-them-2026-11-12)).
 - The test suite no longer checks plumber's inner functions, only what a person or a caller can see; the behaviour left without a test is listed in the backlog ([entry](#tests-that-tested-the-code-not-the-behaviour-2026-11-12)).

@@ -195,8 +195,10 @@ and icon passes' cases, and the palette after a write, were tested again through
 
 - Seen catching slips only on pages we wrote; no real app with the mistakes has been read.
 - One check's fix can raise another check's finding on the same element (a background makes a box count as a card).
-- Of the 25 defensivecss.dev tips, 19 have a check (one of them in its first form only). The rest are sorted in docs/research/defensive-tips.md:
-  - Still to build: the second form of the left-over-space check (three or more like items spread by justify-between).
+- Of the 25 defensivecss.dev tips, 20 have a check; every check on the list is built. The rest are sorted in docs/research/defensive-tips.md:
+  - The left-over-space check's second form (a wrapping list spread by justify-between, 2026-11-13) has never fired on
+    a real app: crafting-ui's spread rows all hold a title and its controls, not a list. Proven on a list of tags put on
+    a page by hand.
   - Open question: a button's least width (needs a number with a ground).
   - Will not be checks (4): auto-fit vs auto-fill, CSS variable fallback, grouping vendor selectors, image maximum width.
   - The CSS behaviour each check rests on is to be re-read and linked when the check is built; only the tip pages were read.

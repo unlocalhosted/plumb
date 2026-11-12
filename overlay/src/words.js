@@ -59,7 +59,11 @@ export const CRAFT = {
     line: empty ? 'This shows a scrollbar, but there is nothing to scroll.' : 'This always shows a scrollbar, even when what it holds is short.',
     reason: 'A scrollbar says there is more. Set to scroll, it is drawn whether or not there is.',
   }),
-  'declared-gap': ({ closest, touching }) => ({
+  'declared-gap': ({ closest, touching, list, ragged, n, last, first }) => list ? ({
+    label: ragged ? 'Last line flung to the edges' : 'Spacing set by how many fit',
+    line: ragged ? `This list's last line holds ${last} of ${first}, so they are spread to the edges, out of line with the items above.` : `These ${n} items are spread by the space left over. When they wrap, a last line with fewer is flung to the edges.`,
+    reason: 'Spread by left-over space, each line is spaced by how many items it holds. A list is spaced by a decision, the same on every line.',
+  }) : ({
     label: touching ? 'Parts of this row touch' : 'Only left-over space between',
     line: touching ? 'These parts touch: nothing but left-over space keeps them apart, and there is none left.' : `These parts are ${px(closest)} apart only because that much space is left over. A longer title closes it.`,
     reason: 'The distance between neighbours is a decision. Left to whatever space remains, it closes to nothing.',
