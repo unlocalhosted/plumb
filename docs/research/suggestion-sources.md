@@ -4,6 +4,11 @@
 (`overlay/src/craft-recommend.js`, design in `docs/briefs/craft-spec.md` §4), set against how teams that run design
 systems decide the same thing in their own tools and docs. Research only; no code was changed.
 
+**Corrected the same day.** This pass compared plumber with lint tools. The owner: "I'm not creating a linter";
+plumber judges a single decision from many signals and applies it (`docs/PRINCIPLES.md`). So a source here is useful
+for *which signals make a decision right*, not for *whether plumber may decide*. Decision 2's verdict is withdrawn on
+that ground; the others are re-read below where it matters.
+
 Every quote below was read on the linked page on 2026-11-12. Where a page did not say something, this says so.
 
 **Verdicts:** *backed* (a source says the same) · *partly* (the idea is backed, a detail is not) · *against* (sources
@@ -14,10 +19,10 @@ say otherwise) · *no source* (nothing read; today it is a guess).
 | # | What plumber does today | Verdict |
 |---|---|---|
 | 1 | The project's own tokens are the allowed answers | backed |
-| 2 | Picks one answer for the person even when several steps fit | **against** |
+| 2 | Picks one answer for the person even when several steps fit | ~~against~~ withdrawn: choosing is the product |
 | 3 | Uses the plain numeric class when it equals the value | backed |
 | 4 | Offers the nearest step when the value is not on the scale | partly |
-| 5 | Picks a colour token by how close its value is | **against** |
+| 5 | Picks a colour token by how close its value is | **against**: the role is the missing signal |
 | 6 | Proposes a new token, named by its job, when nothing fits | partly |
 | 7 | Falls back to advice when no edit is safe | backed |
 | 8 | Not looked at yet: which finding wins, the confidence floor, the unsure band, trying a fix first | — |
@@ -37,7 +42,13 @@ say otherwise) · *no source* (nothing read; today it is a guess).
 - **Detail with no source:** plumber refuses a framework's default step (Tailwind's `tracking-wide`) as an answer for
   type. Nothing read speaks to this.
 
-## 2. Picking one answer when several fit — against
+## 2. Picking one answer when several fit — withdrawn
+
+**Withdrawn.** The sources below describe tools that cannot judge, so they act only on an exact match. Plumber is
+built to judge. What does carry over: the pick is only as good as its signals. Today the craft side picks by "nearest
+to the standard's number" alone; the role of the element and where it sits are not read. That is the gap, not the
+picking.
+
 
 - **What plumber does:** when more than one theme step lies in the wanted range, it takes the one nearest the target
   and shows only that. The others are kept in the data and never shown.
@@ -54,9 +65,8 @@ say otherwise) · *no source* (nothing read; today it is a guess).
 - **Plumber already holds this principle elsewhere:** `docs/VISION.md`, on writing: "write when exactly one edit fits;
   otherwise show the choices." The drift side follows it (it shows the fitting steps on a ladder). The craft side
   does not.
-- **What it implies:** one step in range → offer it. Several in range → show them as choices, in scale order, with
-  none pre-chosen by "nearest to our number". The number plumber uses to break the tie (the standard's target) is
-  itself unsourced.
+- **What it implies (corrected):** keep choosing; choose from more than nearness. The number used to break a tie
+  (the standard's target) is still unsourced.
 
 ## 3. The plain numeric class when it equals the value — backed
 
@@ -99,8 +109,8 @@ say otherwise) · *no source* (nothing read; today it is a guess).
     ([README](https://github.com/carbon-design-system/stylelint-plugin-carbon-tokens/blob/main/README.md))
   - Linode: global tokens "shouldn't be used directly in application code"; semantic ones are "the correct choice for
     theme-aware color". (same guide as above)
-- **What it implies:** filter by the job first (the property being set, and the token's role), and only then compare
-  values; a match by value alone is shown as a guess to check, never as the answer. The distance of 32, and plain RGB
+- **What it implies:** read the job first (the property being set, and the token's role), then compare values. This
+  is the owner's own model for a single decision: role, where it sits, nearest token. The distance of 32, and plain RGB
   as the measure, have no source.
 - **Not checked:** the drift side on the server already filters tokens by where they may be used; how far that
   matches this principle was not read.

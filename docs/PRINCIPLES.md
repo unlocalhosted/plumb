@@ -1,81 +1,85 @@
-# Principles: where a suggestion comes from
+# Principles: what React Plumber is, and where a suggestion comes from
 
-Owner's direction, 2026-11-12. Read this before writing or changing anything that decides what React Plumber says or
-suggests: a rule, a threshold, a ranking, a tie-break, a default, a fix.
+Owner's direction, 2026-11-12. Read this before writing or changing anything that decides what React Plumber says,
+suggests or applies: a rule, a threshold, a ranking, a default, a fix.
 
-> "Don't create these rules out of your ass. There has to be some sort of industry practice and some sort of data by
-> real engineers working on design systems and how frontend processes work. This has to be the driving force."
->
+## What plumber is
+
+> "I'm just trying to create a tool which has the heuristic of a human expert baked into it. I'm not creating a
+> linter. This would be suggestive, this would be opinionated."
+
+- **The setting.** A design system is defined. LLMs write the UI, and each time they drift a little from it. Plumber
+  keeps it in check: "every time it drifts apart it will tighten the things up, and tidy up."
+- **The aim.** "A lot of people are writing vibe slop code." If plumber makes that output more tasteful, more
+  aesthetic and more consistent, by some real degree, it has done its job.
+- **Not a linter.** Old tools "were dumb and they don't know how to handle the case where things do not line up
+  exactly". They stop and ask. Plumber judges. "This probabilistic nature is a feature, not a bug."
+- **Free in its means.** "I might need to invent novel algorithms, I might need to invent probabilistic nature, I
+  might exploit LLMs, as much as I can."
+
+So never measure plumber by what a linter may or may not do. Measure it by what an experienced person would do.
+
+## Two ways plumber looks
+
+### 1. Single decisions, taken with confidence
+
+Font size, corner radius, a colour, a gap. "These are very atomic things. This is one decision only. Every time, one
+decision."
+
+- **The move is compression onto the system.** If the spec has 9 text styles and the LLM produced 20, the 20 fold
+  into the 9.
+- **The decision is made from many signals at once:** the role of the thing, where it sits, the nearest token value,
+  and whatever else tells you what it is. "This one decision can be taken confidently if I take a lot of signals into
+  account."
+- **Plumber then applies it.** It does not hand back a list because two steps were close. More and better signals
+  are how it earns the right to decide.
+
+### 2. Craft rules: an expert's eye
+
+"If I show my design to a design engineer who is very experienced, he will just look at it and give me 10–15
+suggestions: the icons are not aligned, the content is not aligned." Craft rules are that look, baked in. Each one is
+a specialised way of seeing, not a single value snapped to a scale.
+
+**Laws of UX** sit beside them: they are universal, so each one that can be recognised on a page is worth baking in
+too.
+
+## Where a suggestion comes from
+
 > "We don't just say 'do this because so many instances'. There has to be a principle behind the suggestion, some way
 > of perceiving things, some concept which leads to a suggestion."
+>
+> "There has to be some sort of industry practice and some sort of data by real engineers working on design systems
+> and how frontend processes work. This has to be the driving force."
 
-## The rule
+Every suggestion walks this chain:
 
-**Every suggestion follows from a principle, and every principle has a source.** A suggestion with no principle behind
-it is not made. A number, an order or a tie-break with no source is not written into the product.
+1. **A way of seeing.** What the expert notices here.
+2. **The principle.** The concept that makes it matter, in a sentence.
+3. **The ground it stands on.** "It can be pragmatic: based on code evidence, based on some talk, based on
+   documentation, based on industry practice."
+4. **The signals.** What plumber reads to recognise it and to decide.
+5. **The suggestion.** What the principle asks for here, in the project's own system.
+6. **The proof.** Seen working on a real app.
 
-## The chain every suggestion walks
+What never stands in for a principle:
 
-1. **A way of seeing.** What a skilled person notices here that others miss. ("The eye lines up letters, not boxes.")
-2. **The principle.** The concept that makes it matter, said in a sentence, with a name where it has one.
-3. **The source.** Where the principle and its numbers come from (see below). Written next to the principle.
-4. **The measure.** How the tool reads it on the page or in the code.
-5. **The suggestion.** What the principle asks for here, said in the project's own system.
-6. **The proof.** The suggestion tried before it is offered.
+- **A count on its own.** "Forty places do this" is a signal at most.
+- **A number picked while coding** because it looked sensible.
+- **Another tool's caution.** A rule that exists because a tool cannot judge is not a rule for plumber.
 
-If a step is missing, the work stops at that step. It does not skip ahead to code.
-
-## What counts as a source
-
-The owner's words: "it can be pragmatic". Any of these, named so someone can check it:
-
-- **Code evidence.** What real codebases and real design systems do, read and counted.
-- **A talk.** An engineer or designer who does this work, explaining how and why.
-- **Documentation.** A design system's or a platform's own written guidance, or a spec.
-- **Industry practice.** How teams that run design systems and frontend at scale do it, including what their own
-  tooling checks and suggests.
-
-## What never counts
-
-- **A count on its own.** "Forty places do this" is not a reason. A count can be *evidence for* a principle (it shows
-  what the project decided), never the principle.
-- **My own judgement, filled in while coding.** If a design line is vague, the gap is closed by finding a source or
-  by asking the owner, not by picking a number that seems sensible.
-- **A plausible-sounding default.** "Two or more", "more than half", "nearest wins" are decisions. Each needs a
-  source like any other.
+*(Claude's reading, to be corrected: the principle must be real and grounded; the mechanism that carries it out may
+be invented. An invented mechanism's numbers are tuned on real apps and say so.)*
 
 ## How to work
 
-- **Source before code.** The principle and its source go in the spec or brief first. Research goes in
-  `docs/research/`; references found or shared go in `docs/references.md`.
-- **Every number names its source** where it is defined, in a few words.
-- **No source found:** say so. It is then a guess: marked as one, kept out of the default behaviour, and raised with
-  the owner. It is never dressed as a rule.
-- **Reviewing a change:** for each new threshold, order or default, ask "what principle is this, and where does it come
-  from?" No answer means it does not go in.
-
-## The three things React Plumber does
-
-The same chain runs under each. (The one-line readings below are Claude's, to be corrected by the owner.)
-
-- **Design drift and fix.** Finds where the code leaves the project's design system, builds a system when there is
-  none, and keeps the two in sync. *Reading:* the project's own decisions are the allowed answers.
-- **Craft rules.** The tacit knowledge of design engineering, as checks. *Reading:* each rule is something a senior
-  would teach, with the reason they would give (`docs/craft/rules.md`).
-- **Visual editor.** Change the running React app by hand and have the source follow. *Reading:* an immediate
-  connection to what you are making, and the source is the truth (`docs/VISION.md`).
-
-## Known debt (2026-11-12)
-
-- The design for how a suggestion is chosen (`docs/briefs/craft-spec.md` §4: theme step, numeric scale, new token,
-  advice, and how each is ranked) cites no source.
-- The standard's numbers (`overlay/src/craft-spec.js`) cite no source where they are defined. Some have one in
-  `docs/craft/rules.md` or `docs/craft/verification.md`; which ones is not checked.
-- Each craft rule is tied to a law of UX (`overlay/src/laws.js`). That says why the rule exists, not where its
-  numbers or its suggestion come from.
+- Start from the expert: what would they see, and why would they say it? Write that first.
+- Use practice and evidence to find **which signals make a decision right**, not to decide whether plumber may decide.
+- When a decision is weak, the answer is more signals, not a hedge.
+- Research goes in `docs/research/`; references in `docs/references.md`.
 
 ## Where this came from
 
-On 2026-11-12 Claude added two behaviours to the suggestion engine in one sitting: use the value "the page already
-uses" once two places share it, and name a class once more than half of them write it. Every number and tie-break in
-them was made up on the spot. Both were taken out the same day.
+On 2026-11-12 Claude made two mistakes in a row. First it added suggestion logic built on made-up counts ("two places
+or more", "more than half"), with no principle behind it. Then, asked for principles and sources, it judged plumber
+against linters and concluded plumber should stop choosing when several answers fit, which is the opposite of what
+plumber is for. Both came from not holding the picture above.

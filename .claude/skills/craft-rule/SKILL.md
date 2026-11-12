@@ -9,13 +9,16 @@ A craft rule exists to catch a mistake people really make. Its showcase example 
 screen, `/rule/N`) exists to show that mistake, plumber finding it, and plumber's own fix. Both fail the same way: by
 being built to fit each other instead of the real world. These rules come from that failing, more than once.
 
-## Before anything: a principle with a source (docs/PRINCIPLES.md)
+## Before anything: what a craft rule is (docs/PRINCIPLES.md)
 
-A rule, a threshold, a ranking, a tie-break or a suggestion is written only when it follows from a principle (a way of
-seeing, a concept) and that principle has a source someone can check: code evidence, a talk, documentation, or
-industry practice. A count of instances is evidence at most, never the reason. If a number has no source, stop: find
-one (`docs/research/`, `docs/references.md`) or ask the owner. Never fill a vague design line with a number that seems
-sensible while coding. Each number says where it comes from, where it is defined.
+A craft rule is an experienced design engineer's eye, baked in: the 10–15 things they would say after one look at a
+design ("the icons are not aligned, the content is not aligned"). It is a specialised way of seeing, not a value
+snapped to a scale. Plumber is not a linter: it is suggestive and opinionated, and it judges.
+
+So a rule starts from a way of seeing and the principle behind it, grounded in something real (code evidence, a talk,
+documentation, industry practice). A count of instances is a signal at most, never the reason. A number picked while
+coding because it looked sensible is not a rule. And another tool's caution (a linter that only acts on an exact
+match) is not a rule for plumber.
 
 ## 0. Only insights get a screen
 
@@ -386,3 +389,4 @@ Each line is something the owner had to say once; the sections above exist so th
   (defensive CSS tips) were removed; the three checks stay in the engine without a number. The §3½ notes about a
   defensive rule's screen no longer have a screen to apply to.
 - 2026-11-12 · "dont create these rules out of your ass … there has to be a principle behind the suggestion": a suggestion built on made-up counts (two places, more than half). → Before anything, docs/PRINCIPLES.md.
+- 2026-11-12 · "I'm not creating a linter, this would be suggestive, this would be opinionated": plumber judged against lint tools and told to stop choosing. → Before anything, docs/PRINCIPLES.md.

@@ -278,11 +278,18 @@
 - **What else showed up:** giving a box a background colour made two other checks speak about it as a card (its text alignment and padding), and a picture given a dark background was then asked for an outline. The page reloaded after a write to this page. And a read taken while the browser window has no size (a hidden pane) silently gives wrong answers: every picture measures 0 wide, the picture checks say nothing and the contrast check marks words that sit on a photo.
 - **Media hooks:** none kept; the temporary page is gone.
 
+## Plumber is an expert's judgement, not a linter (2026-11-12)
+- **The itch:** the research above told the owner plumber should stop choosing when several answers fit, because lint tools do. The owner: "No, I think the idea with plumber is a bit different." And: "I'm not creating a linter, this would be suggestive, this would be opinionated."
+- **How we found it:** the owner laid the picture out. A design system is defined; LLMs write the UI and drift from it; plumber "will tighten the things up, and tidy up". Old tools "were dumb"; "this probabilistic nature is a feature, not a bug".
+- **The system behind it:** two ways of looking. Single decisions (a font size, a radius, a colour) are "one decision only", taken confidently from many signals (the role, where it sits, the nearest token) and applied: 20 text styles from an LLM fold into the spec's 9. Craft rules are an experienced design engineer's eye: the 10–15 things they would say after one look. Laws of UX are universal and worth baking in too. Any means are fair: new algorithms, probability, LLMs.
+- **What we chose and why:** the principles page is rewritten around this picture. The research keeps its quotes, but "picks one answer when several fit" is withdrawn as a fault; what the sources are for is finding which signals make a decision right. The colour finding stands, because its fix is the owner's own model: role first, then value.
+- **The fix and the proof:** docs/PRINCIPLES.md, the top of the craft-rule skill, and the corrected docs/research/suggestion-sources.md. No engine code changed.
+
 ## Open gaps
 - plumber offers a class fix on an element whose classes are built in code, then refuses to write it. It should say so before offering.
 - A read taken in a window with no size gives wrong findings without saying so. algorecall's home was read in a tab whose size was not checked, so that page's clean result is unconfirmed.
 - A fix by one of the defensive checks can raise a finding from another check on the same element (a background colour makes a box count as a card).
-- **Two suggestion decisions go against practice** (docs/research/suggestion-sources.md): one step chosen when several fit, and a colour token chosen by value alone. Two more have no source: when a value becomes a new token, and rounding up or down by the rule's limit.
+- **Craft suggestions decide from too few signals** (docs/research/suggestion-sources.md): a step is chosen by nearness to the standard's number, a colour by nearness of value; the role of the element and where it sits are not read, as the clean-up's single decisions read them. When a value becomes a new token still has no ground under it.
 - **Other answers are computed but never shown.** A suggestion carries its runners-up, yet they are almost always just the same advice in words; there is nothing worth listing until the recommender offers real ones (the other theme steps in range, the class the page's other places already use).
 - **No sources behind the suggestion engine.** How a suggestion is chosen and ranked, and the standard's numbers, cite no source where they are defined (docs/PRINCIPLES.md, known debt). Each needs its principle and source found, or to be marked a guess.
 - crafting-ui hardcodes `tracking-[0.1em]` on 35 small-capital labels; what plumber should say about a value repeated like that waits for a principle.
