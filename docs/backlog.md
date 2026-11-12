@@ -49,7 +49,8 @@ reserved.)
 
 **The order** (decided 2026-11-12):
 
-- **Now:** a class fix offered and then refused.
+- **Now:** nothing of this session's. (A class fix offered and then refused is in the fix card, which another
+  session has been changing today; left to it.)
 - **Next:** padding read by job · a test for a theme whose radii or shadows are named by size · the Next
   performance test · the tests that fail only under the full run's load.
 - **Decided 2026-11-12:** shadows went ahead of padding-by-job. After padding is snapped to the scale, sibling cards on
