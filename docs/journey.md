@@ -262,7 +262,15 @@
 - **What is honest about the numbers:** the laptop was under load (load average 4) and single runs swing by a second, so the first read coming out faster than the second is noise. The direction is clear, the exact figures are not.
 - **What is left:** a late answer about where a clickable element was written still judges the page again once; the read ends with a fixed 0.6 s wait; algorecall was not re-timed.
 
+## The suggestion engine, checked against practice (2026-11-12)
+- **The itch:** after the owner's "there has to be a principle behind the suggestion", nothing in how plumber chooses a suggestion could name where it came from.
+- **How we found it:** listed the seven decisions the craft suggestion engine makes and read how design-system teams' own tools and docs decide each one (ESLint, Atlassian, Carbon, Primer, Mozilla, Linode, Tailwind's lint plugin; [references](references.md)).
+- **What it showed:** three decisions are backed (the project's tokens are the answers; the plain numeric class when equal; advice when no edit is safe). Two are partly backed (nearest step, new token). Two go against practice: plumber picks one step for the person when several fit, where every tool read picks only when exactly one fits; and it picks a colour token by how close its value is, where Atlassian says "Don't use a token just because the colors appear to match" and Carbon keeps colour fixes off by default "because colors can be ambiguous".
+- **The system behind it:** the craft side was designed around "the first candidate that exists wins". The drift side and the vision already say "write when exactly one edit fits; otherwise show the choices"; the craft side never took that on.
+- **The fix and the proof:** none yet; this is the written result, docs/research/suggestion-sources.md, with each quote and its page. Four pages could not be opened and are listed there.
+
 ## Open gaps
+- **Two suggestion decisions go against practice** (docs/research/suggestion-sources.md): one step chosen when several fit, and a colour token chosen by value alone. Two more have no source: when a value becomes a new token, and rounding up or down by the rule's limit.
 - **Other answers are computed but never shown.** A suggestion carries its runners-up, yet they are almost always just the same advice in words; there is nothing worth listing until the recommender offers real ones (the other theme steps in range, the class the page's other places already use).
 - **No sources behind the suggestion engine.** How a suggestion is chosen and ranked, and the standard's numbers, cite no source where they are defined (docs/PRINCIPLES.md, known debt). Each needs its principle and source found, or to be marked a guess.
 - crafting-ui hardcodes `tracking-[0.1em]` on 35 small-capital labels; what plumber should say about a value repeated like that waits for a principle.
