@@ -597,6 +597,16 @@
 - **Now:** one finding on crafting-ui, the three figures on the templates page, drawn from a three-item list written in the code. At phone width it fits (358 of 358 px). It is a fixed set the check cannot yet tell from a list; noted, not fixed. No before and after from a real app.
 - **Seen on the way:** the motion vocabulary page (7,274 elements) closed the browser tab during plumber's read.
 
+## The new text styles written into crafting-ui: three problems (2026-11-12)
+- **The itch:** the reworked spec had only been proven on test pages; crafting-ui is the real check.
+- **How:** a copy of crafting-ui on its own branch (`plumber-text-roles`, at ../crafting-ui-roles, from its last commit; the main crafting-ui folder holds someone's uncommitted work and was not touched). Plumber read all 120 pages, proposed 15 text styles for 35 sizes, and wrote them across the site: 39 files, 297 class swaps; one letter-spacing value and one swap refused.
+- **What went wrong, seen on the craft page** (docs/media/crafting-ui-roles-craft-before.jpg, -after.jpg):
+  1. Page headings shrink: "Craft" (an h1 at 33px) became the 22px headline style. 37 places move 2px or more; the largest are 28–33px headings landing on 22px, and 9px text going to 12px.
+  2. A class that is not about type was dropped: `first-letter:uppercase` on the rule titles, so "A play button that looks centred" now reads "a play button…".
+  3. `leading-prose` landed on headings (the group names, h2), not only on reading text.
+- **Not fixed here:** the text-style code was being changed by another session at the same time (four commits this afternoon); fixing it underneath them would collide. The trial stays on its branch, committed, not merged.
+- **Media hooks:** the craft page before and after, side by side.
+
 ## Open gaps
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
 

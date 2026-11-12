@@ -79,6 +79,12 @@ reserved.)
 - With no scale named in the theme, only hand-written sizes (`p-[18px]`) are judged; a framework step that is rare in
   the app (`px-3.5`) is taken as fine.
 
+### Clean-up: text (found writing crafting-ui, 2026-11-12; trial on crafting-ui branch plumber-text-roles)
+
+- Page headings at 28–33px land on the 22px headline style (crafting-ui's "Craft" h1); 37 places move 2px or more.
+- A swap drops classes that are not about type: `first-letter:uppercase` went, so rule titles lost their capital.
+- `leading-prose` is put on headings (h2 group names), not only on reading text.
+
 ### Clean-up: colour
 
 - Surface levels (a card on a panel) are not read from nesting; no project at hand has two nested surface colours.
