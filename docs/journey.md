@@ -1039,16 +1039,6 @@ field is empty). The table of five writes, before and after. The Next table: eig
 - **Next 16:** locating an element right after an edit failed about 2 runs in 5 ("source changed"). Instrumented, the cause was a module that sits in two of Next's chunks: the page's own chunk is rebuilt with the edit, the base chunk keeps the original, and the mapper took the first chunk that had the module. Now the copy that holds the source of the component function that created the element is used; an element kept from before the edit still finds the old copy and is still refused. Also, hot-update chunks are kept by an observer: the page's resource list stops at 250 entries and plumber's own requests fill it. Two earlier tries were reverted (re-reading on a mismatch could give a wrong line; holding lookups for an update changed nothing). Proof: the Next 16 webpack and Turbopack tests pass on vm-agent, with the Vite, React 18 and hydration locate tests.
 - **The design system:** the state-by-design branch (the toy language, its picker, kit, toys, claims and scope, and every overlay part on its role and state names) is merged into main. Its parts read stamps through main's stamp module; the text-style preview keeps its claims with main's leading and weights. Two tests copied the whole demo folder and so took in the design branch's new Workbench screen; each now keeps only the page it measures. Full suite on vm-agent: 1014 passed; the 7 failures were each fixed or passed on their own.
 
-### 25. Parts: Pills, tags and chips
-- **Why now:** the Foundations pages are all drawn; this is the first of the Parts still "to draw".
-- **What counting found:** four small rounded things in the overlay. Its own words (the visual language file) give
-  three a job each: a pill is a value (a measurement, a count, a token), a tag is a name (an element, a component), a
-  chip is a property and its value, which rolls. Key caps (used about 300 times) belong with "Words on hover".
-- **What we chose:** the shape the owner liked on Corners: each piece drawn two and a half times its size, its space
-  marked the way Plumber marks an app (padding hatched mint, the gap striped lilac, the corner's arc in blue), the
-  numbers measured from the real piece, not typed. Pointed at, the chip plays: its icon takes the hue and its value
-  rolls. Checked in light and dark.
-
 ## Open gaps
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
 
@@ -1826,6 +1816,16 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   its 7px rest and takes 610ms; the 35px button rises 2.3px past its 4px rest and takes 506ms. So the page shows
   the rule "physics scales with size" as two curves. A dot per block runs its curve when it is let go. Checked in
   light and dark.
+
+### 25. Parts: Pills, tags and chips
+- **Why now:** the Foundations pages are all drawn; this is the first of the Parts still "to draw".
+- **What counting found:** four small rounded things in the overlay. Its own words (the visual language file) give
+  three a job each: a pill is a value (a measurement, a count, a token), a tag is a name (an element, a component), a
+  chip is a property and its value, which rolls. Key caps (used about 300 times) belong with "Words on hover".
+- **What we chose:** the shape the owner liked on Corners: each piece drawn two and a half times its size, its space
+  marked the way Plumber marks an app (padding hatched mint, the gap striped lilac, the corner's arc in blue), the
+  numbers measured from the real piece, not typed. Pointed at, the chip plays: its icon takes the hue and its value
+  rolls. Checked in light and dark.
 
 ## Open gaps
 - The overlay writes about 180 corners as numbers (radius tokens about 45 times), many off its own scale; 6px is
