@@ -18,6 +18,7 @@
  * Reduced motion: no tour; pressing a pin cuts to its moment with no travel.
  * ───────────────────────────────────────────────────────── */
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { toyOf } from '../../../overlay/src/toys.js'; // each mistake wears its property's toy
 
 const W = 1040, H = 470; // the screen is drawn at this size and scaled to fit
 const T = { pinsIn: 500, pinGap: 90, tour: 1700, guides: 900, fix: 1900, out: 3000, done: 3600, next: 3700, hold: 3200 };
@@ -26,11 +27,11 @@ const half = v => (Math.round(v * 2) / 2).toFixed(1); // read off a scaled scree
 
 // what each mistake is called, in the overlay's words where it has them (overlay/src/words.js)
 const ISSUES = [
-  { id: '18', name: 'One word alone', rule: 'No widows in headings', said: 'A widow', done: 'No widow', num: v => Math.round(v), unit: v => (Math.round(v) === 1 ? ' word on the last line' : ' words on the last line') },
-  { id: 'space', name: 'gap-[13px] hardcodes 13px', rule: 'Spacing on your theme', done: 'gap-4, a step of your theme', num: v => Math.round(v), unit: () => 'px gap' },
-  { id: '2', name: 'Icon looks off-centre', rule: 'Optical centre beats geometric centre', done: 'Optically centred', num: v => half(v), unit: () => 'px off centre' },
-  { id: '16', name: 'Figures don’t line up', rule: 'Tabular figures', done: 'Tabular figures', pre: 'colons ', num: v => half(v), unit: () => 'px apart' },
-  { id: '21', name: 'Grey shadow on colour', rule: 'Shadows are tinted, not grey', done: 'Tinted with the card’s colour', pre: 'chroma ', num: v => v.toFixed(2), unit: () => '' },
+  { id: '18', toy: 'wrap', name: 'One word alone', rule: 'No widows in headings', said: 'A widow', done: 'No widow', num: v => Math.round(v), unit: v => (Math.round(v) === 1 ? ' word on the last line' : ' words on the last line') },
+  { id: 'space', toy: 'gap', name: 'gap-[13px] hardcodes 13px', rule: 'Spacing on your theme', done: 'gap-4, a step of your theme', num: v => Math.round(v), unit: () => 'px gap' },
+  { id: '2', toy: 'alignment', name: 'Icon looks off-centre', rule: 'Optical centre beats geometric centre', done: 'Optically centred', num: v => half(v), unit: () => 'px off centre' },
+  { id: '16', toy: 'type', name: 'Figures don’t line up', rule: 'Tabular figures', done: 'Tabular figures', pre: 'colons ', num: v => half(v), unit: () => 'px apart' },
+  { id: '21', toy: 'shadow', name: 'Grey shadow on colour', rule: 'Shadows are tinted, not grey', done: 'Tinted with the card’s colour', pre: 'chroma ', num: v => v.toFixed(2), unit: () => '' },
 ];
 
 export function Review() {
@@ -177,7 +178,7 @@ function Pin({ issue, n, g, fit, fixed, onPress, i }) {
       <button type="button" className={`rv-pin${kind}`} data-fixed={fixed}
         style={{ left, top, '--i': i }} onClick={onPress} aria-label={`${n}. ${issue.name}. ${issue.rule}. Show the fix.`}>
         <b>{fixed ? <svg viewBox="0 0 16 16"><path d="M3.5 8.5 6.5 11.5 12.5 4.5" /></svg> : n}</b>
-        <span key={fixed ? 'd' : 'n'}>{fixed ? issue.done : issue.name}</span>
+        <span key={fixed ? 'd' : 'n'}><i className="rv-toy" aria-hidden="true" dangerouslySetInnerHTML={{ __html: toyOf(issue.toy) }} />{fixed ? issue.done : issue.name}</span>
       </button>
     </>
   );
@@ -218,6 +219,7 @@ function Moment({ issue, step, geo, cam, fit }) {
       ))}
       {step >= 2 && (
         <span ref={pill} className="rv-pill" data-fixed={step >= 3} style={{ left: px, top: py }}>
+          <i className="rv-toy" aria-hidden="true" dangerouslySetInnerHTML={{ __html: toyOf(issue.toy) }} />
           {a.swatch && <i className="rv-swatch" style={{ background: g.swatch }} />}
           <span>{issue.pre}<b ref={num}>{issue.num(step >= 3 ? z.value : a.value)}</b>{issue.unit(step >= 3 ? z.value : a.value)}</span>
           <span className="rv-pill-sep">·</span>
