@@ -43,8 +43,9 @@ test('packed release rebuilds stale dist and installs the shipped CLI', { timeou
   const files = command(root, 'tar', ['-tzf', tarball]).trim().split('\n').map(path => path.replace(/^package\//, ''));
   assert.ok(files.includes('dist/cli.js'));
   for (const path of files.filter(path => path.startsWith('dist/'))) {
-    assert.match(path, /(?:\.d\.ts|\.js)$/);
-    const source = path.replace(/^dist\//, 'src/').replace(/(?:\.d\.ts|\.js)$/, '.ts');
+    // built code, or a data file shipped as it is (the recipe packs are JSON): either way it has its source
+    assert.match(path, /(?:\.d\.ts|\.js|\.json)$/);
+    const source = path.endsWith('.json') ? path.replace(/^dist\//, 'src/') : path.replace(/^dist\//, 'src/').replace(/(?:\.d\.ts|\.js)$/, '.ts');
     await assert.doesNotReject(readFile(join(candidate, source)), `${path} must have source ${source}`);
   }
   await writeFile(join(consumer, 'package.json'), '{"name":"packed-consumer","private":true,"type":"module"}\n');

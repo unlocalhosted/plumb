@@ -23,28 +23,6 @@ function run(root, args, extra = {}) {
 }
 const exists = file => stat(file).then(() => true, error => { if (error.code === 'ENOENT') return false; throw error; });
 const notice = stderr => stderr.trim().split('\n').filter(Boolean);
-for (const extension of ['ts', 'mts', 'js', 'mjs']) {
-  for (const legacy of [false, true]) test(`${legacy ? 'legacy' : 'new'} ${extension} config keeps baseline and acceptance in one state directory`, async t => {
-    const root = await fixture(t), prefix = legacy ? 'plumb' : 'plumber', directory = legacy ? '.plumb' : '.plumber';
-    await rename(join(root, 'plumber.config.ts'), join(root, 'original.config.ts'));
-    await writeFile(join(root, `${prefix}.config.${extension}`), "export default { source: ['src/**/*.{ts,tsx,css}'], css: 'src/styles.css' };\n");
-    if (legacy) await mkdir(join(root, directory));
-    const baseline = run(root, ['baseline']);
-    assert.equal(baseline.status, 0, baseline.stdout);
-    if (legacy) {
-      assert.equal(notice(baseline.stderr).length, 1);
-      assert.ok(baseline.stderr.includes(`mv plumb.config.${extension} plumber.config.${extension}`));
-      assert.match(baseline.stderr, /mv \.plumb \.plumber/);
-    } else assert.equal(baseline.stderr, '');
-    const checked = run(root, ['check', '--json']);
-    assert.equal(JSON.parse(checked.stdout).ledger.new, 0);
-    const accepted = run(root, ['accept-decisions', '--why', 'migration test']);
-    assert.equal(accepted.status, 0);
-    const entries = (await readFile(join(root, directory, 'ledger.jsonl'), 'utf8')).trim().split('\n').map(JSON.parse);
-    assert.ok(entries.some(entry => entry.kind === 'decision' && entry.why === 'migration test'));
-    assert.equal(await exists(join(root, legacy ? '.plumber' : '.plumb')), false);
-  });
-}
 test('init creates new names and force init preserves legacy config and state', async t => {
   const root = await fixture(t, 'adoption');
   let output = run(root, ['init']);

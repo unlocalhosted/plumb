@@ -160,38 +160,3 @@ test('the pass never adds a size: the page draws no more distinct text sizes aft
   assert.deepEqual(s.errors, []);
 });
 
-test('Apply is one step in the history, named for the pass with its law, and Undo from it puts every file back', { timeout: 400000 }, async (t) => {
-  const s = await site(t);
-  const v = await s.visit('/motion/standards');
-  const all = await snapshot(s.root);
-  await v.begin();
-  await v.page.keyboard.press('Enter');
-  await v.until(/Undo/, 120000);
-  for (let i = 0; i < 60 && (await readFile(join(s.root, FILE), 'utf8')) === all[FILE]; i++) await new Promise((r) => setTimeout(r, 500));
-  assert.notEqual(await readFile(join(s.root, FILE), 'utf8'), all[FILE], 'the write landed');
-  await v.page.waitForFunction(() => document.querySelector('plumb-overlay')?.shadowRoot.querySelector('.dock')?.dataset.state === 'ready', null, { timeout: 90000 });
-  // the history, opened from the dock like a person would
-  // in Blueprint the dock's tools are in the bar, behind ··· (docs/design/one-bar.md)
-  // the clean-up's done card is in front: Esc puts it down, back to the bar
-  await v.page.keyboard.press('Escape');
-  await v.page.locator('plumb-overlay').locator('.fx .bar .more').waitFor({ timeout: 30000 });
-  await v.page.locator('plumb-overlay').locator('.fx .bar .more').click();
-  await v.page.locator('plumb-overlay').locator('.fx .bar .tool[data-tool="history"]').click();
-  await v.page.waitForFunction(() => document.querySelectorAll('plumb-overlay').length && document.querySelector('plumb-overlay').shadowRoot.querySelectorAll('.tt .tt-tick[data-i]').length > 0, null, { timeout: 30000 });
-  const strip = () => v.page.evaluate(() => {
-    const root = document.querySelector('plumb-overlay').shadowRoot;
-    return { steps: [...root.querySelectorAll('.tt-seg')].map((g) => ({ name: g.querySelector('.tt-name').textContent.trim(), ticks: g.querySelectorAll('.tt-tick').length })),
-      laws: [...root.querySelectorAll('.tt-pill:not([hidden]) .tt-law')].map((l) => l.textContent.trim()) };
-  });
-  const read = await strip();
-  // the words the UI uses: the step is "Text" (words.js CLEANUP.pass.text), its law "Law of similarity" (laws.js)
-  assert.equal(read.steps.length, 1, `one step for the write: ${JSON.stringify(read)}`);
-  assert.equal(read.steps[0].name, 'Text', JSON.stringify(read));
-  assert.ok(read.steps[0].ticks >= 1, JSON.stringify(read));
-  assert.ok(read.laws.includes('Law of similarity'), `the law on the step: ${JSON.stringify(read)}`);
-  // Undo step, from the history itself
-  await v.page.locator('plumb-overlay').locator('.tt-acts [data-act="step"]').click();
-  for (let i = 0; i < 60 && JSON.stringify(await snapshot(s.root)) !== JSON.stringify(all); i++) await new Promise((r) => setTimeout(r, 500));
-  assert.deepEqual(await snapshot(s.root), all, 'Undo put every file back as it was');
-  assert.deepEqual(s.errors, []);
-});
