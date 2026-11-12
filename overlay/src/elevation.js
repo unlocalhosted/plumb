@@ -20,13 +20,10 @@
  * Nothing here writes. No number of its own.
  * ───────────────────────────────────────────────────────── */
 import { utility } from './craft-read.js';
-import { roleOf } from './roles.js';
+import { roleOf, roleOfToken } from './roles.js';
 
-const ROLE_WORDS = [
-  ['overlay', /(^|-)(overlay|float|floating|popover|menu|dropdown|modal|dialog|sheet|toast)(-|$)/],
-  ['card', /(^|-)(rest|raised|card|surface|panel)(-|$)/],
-];
-const roleOfName = (short) => ROLE_WORDS.find(([, re]) => re.test(short))?.[0] ?? null;
+// a theme's shadows name two jobs: over the page, or a card on it (roles.js)
+const roleOfName = (short) => { const r = roleOfToken(short); return r === 'overlay' || r === 'card' ? r : null; };
 
 let STEPS = [];
 export async function loadShadows(fresh = false) {

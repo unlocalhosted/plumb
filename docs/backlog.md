@@ -131,18 +131,18 @@ reserved.)
 
 ### What an element is (the shared role layer)
 
-- Done: the role file (overlay/src/roles.js); every pass, both text readers and the craft rules read from it.
-- Next: the theme's tokens matched to roles in one place (each pass still reads token names for jobs itself).
+- Done: the role file (overlay/src/roles.js) decides what an element is and what a theme's token is for; every
+  pass, both text readers, the craft rules and the craft suggestion engine read from it.
 - Headings, figures and labels (the text jobs) are still decided by the text reader, from the role file's "is this a
   control's words".
-- Later: the theme's tokens mapped to the same roles in one place; unsure roles handed to a model.
+- Later: unsure roles handed to a model.
 
 ### Craft suggestions
 
 - A step suggestion prefers the theme step named for the job only by the words in its name (caps, label, display,
   body, button…). A theme that names its steps another way gets the step nearest the standard's number, as before.
-- The job a craft rule works with is the rule's own (small capitals, big text, a button); it is not yet the element's
-  role as the clean-up reads it (a tag, a control, a card).
+- The craft rules about buttons and targets take the element's role from the role file; rules about type still
+  name their own job (small capitals, big text).
 - The same page gives different craft findings on a Mac and on Linux (two of them depend on the fonts' measurements).
 - The suggestion engine's ranking and the standard's numbers name no source where they are defined
   (docs/PRINCIPLES.md, known debt).

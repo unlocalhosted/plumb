@@ -18,6 +18,7 @@
  *
  * Every candidate says why it was chosen, in plain words. Nothing here reads the DOM.
  * ───────────────────────────────────────────────────────── */
+import { tokenSays } from './roles.js';
 
 const round = (n, step) => Math.round(n / step) * step;
 const fmtPx = (n) => `${Math.round(n * 10) / 10}px`;
@@ -44,8 +45,10 @@ function valueOf(step, family, of) {
 // The words a token's name may use for a job (the job is the rule's own word: caps, display, body, button, icon…).
 // A step named for the job is the project's own decision for it, and outranks a step that is merely nearer in value.
 const JOB_WORDS = { caps: ['caps', 'label', 'eyebrow', 'overline'], display: ['display', 'heading', 'headline', 'title', 'hero'], body: ['body', 'prose', 'reading', 'text'],
-  button: ['button', 'btn', 'control'], control: ['control', 'button', 'btn', 'input', 'field'], icon: ['icon'], card: ['card', 'surface', 'panel'] };
-const namedFor = (short, job) => !!job && (JOB_WORDS[job] ?? [job]).some((w) => new RegExp(`(^|-)${w}(-|$)`).test(short));
+  icon: ['icon'] };
+// a type job's words are the type scale's own; a role (a button, a card) is named as every pass names it (roles.js)
+const ROLE_JOB = { button: 'control', control: 'control', card: 'card', tag: 'tag', overlay: 'overlay' };
+const namedFor = (short, job) => !!job && (ROLE_JOB[job] ? tokenSays(short, ROLE_JOB[job]) : (JOB_WORDS[job] ?? [job]).some((w) => new RegExp(`(^|-)${w}(-|$)`).test(short)));
 const within = (v, want) => (want.min === undefined || v >= want.min - 1e-9) && (want.max === undefined || v <= want.max + 1e-9);
 const range = (want, fmt) => want.min !== undefined && want.max !== undefined ? `${fmt(want.min)}–${fmt(want.max)}` : want.min !== undefined ? `at least ${fmt(want.min)}` : want.max !== undefined ? `at most ${fmt(want.max)}` : fmt(want.target);
 

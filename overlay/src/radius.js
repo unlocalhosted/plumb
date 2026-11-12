@@ -25,16 +25,11 @@
  * Nothing here writes. No number of its own: half the side is what a pill is, and 0.5px is the overlay's "same value".
  * ───────────────────────────────────────────────────────── */
 import { utility } from './craft-read.js';
-import { ownWords, paints, roleOf as whatIs } from './roles.js';
+import { ownWords, paints, roleOf as whatIs, roleOfToken } from './roles.js';
 
 const SIDE_RADIUS = /^(?:[trblse]|tl|tr|bl|br|ss|se|es|ee)(?:-|$)/;
-// what a token's name says it is for (colours.js reads a colour's role the same way: by name first)
-const ROLE_WORDS = [
-  ['tag', /(^|-)(tag|chip|badge|pill|label|lozenge)(-|$)/],
-  ['control', /(^|-)(control|button|btn|input|field)(-|$)/],
-  ['card', /(^|-)(card|surface|panel|box|container|sheet|modal|dialog|popover)(-|$)/],
-];
-const roleOfName = (short) => ROLE_WORDS.find(([, re]) => re.test(short))?.[0] ?? null;
+// a theme's radius names three jobs; a token named for an overlay is a containment box like a card (roles.js)
+const roleOfName = (short) => { const r = roleOfToken(short); return r === 'overlay' ? 'card' : r; };
 
 let STEPS = [];
 export async function loadRadii(fresh = false) {

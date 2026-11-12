@@ -713,6 +713,12 @@
 - **What this buys:** the next primitive asks the file instead of writing a reader, and a wrong role is fixed in one place.
 - **Not done:** the theme's tokens are still matched to jobs by each pass, not by the role file.
 
+## What a token is for, read in one place (2026-11-12)
+- **What changed:** corners, shadows and the craft suggestion engine each had their own list of words that say what a theme's token is for ("card", "button", "popover"...). The lists disagreed: a token named `box` was a card to corners and nothing to shadows; `tooltip` was not an overlay anywhere. One vocabulary now lives in the role file, beside the reading of what an element is, so "this element is a card" and "this token is for cards" are decided in the same place.
+- **Ground:** Atlassian's tokens are named for jobs (radius for supporting, interactive and containment elements; elevation "raised" and "overlay"), so the vocabulary is jobs, not sizes. A size name (sm, md, lg) still says no job.
+- **Before and after:** of the 14 radius and shadow tokens in crafting-ui and the messy test app, none changes job, so no suggestion changes on them. A theme with tokens named `box`, `container` or `tooltip` now gets the same reading from every pass.
+- **With this the role layer is done:** what an element is, and what a token is for, each decided once. A new primitive is now a small table of role to token.
+
 ## Open gaps
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
 

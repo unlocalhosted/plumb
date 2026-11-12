@@ -126,3 +126,25 @@ export function roleOf(el, s = getComputedStyle(el)) {
   if (worded.length) return is('card', null, 'a painted box that holds other things');
   return is(null, null, NONE.why);
 }
+
+// ── what a theme's token is for, by its name ───────────────
+
+// A design system names its tokens for jobs (Atlassian: radius for "supporting elements", "interactive elements",
+// "containment elements"; elevation "raised" for cards and "overlay" for UI over UI). One vocabulary for every family,
+// so a theme's --radius-card and --shadow-card mean the same thing to every pass. First match wins, in this order:
+// an overlay is a kind of container, so its words are asked first.
+export const TOKEN_WORDS = {
+  overlay: ['overlay', 'float', 'floating', 'popover', 'menu', 'dropdown', 'modal', 'dialog', 'sheet', 'toast', 'tooltip'],
+  control: ['control', 'button', 'btn', 'input', 'field'],
+  tag: ['tag', 'chip', 'badge', 'pill', 'label', 'lozenge'],
+  card: ['card', 'surface', 'panel', 'box', 'container', 'rest', 'raised'],
+};
+const said = (short, words) => words.some((w) => new RegExp(`(^|-)${w}(-|$)`).test(short));
+/** The role a token's name (without its family prefix: "card" of --radius-card) says it is for, or null for a size
+ *  name (sm, md, lg) that says no job. */
+export function roleOfToken(short) {
+  for (const [role, words] of Object.entries(TOKEN_WORDS)) if (said(short, words)) return role;
+  return null;
+}
+/** Does the name say this role? (a token can say two: --shadow-card-floating) */
+export const tokenSays = (short, role) => said(short, TOKEN_WORDS[role] ?? [role]);
