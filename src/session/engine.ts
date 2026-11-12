@@ -100,7 +100,7 @@ export interface PageEntry {
 }
 export interface PageResult { revision: number; items: PageEntry[] }
 /** One measured text element of a page: its stamp and tag, whether it sits in a list, and its computed type values. */
-export interface CensusEntry { stamp: string; tag: string; list?: boolean; /** its own words are a sentence (more than one word, ending in . ! or ?) */ sentence?: boolean; /** elements rendered from this stamp, when the census is already one per stamp */ elements?: number; computed?: { size?: number | null; lineHeight?: number | null; letterSpacing?: number | null; weight?: number | null; transform?: string | null } }
+export interface CensusEntry { stamp: string; tag: string; list?: boolean; /** its own words are a figure (digits, signs, a mark, at most a two-letter unit) */ number?: boolean; /** its own words are a sentence (more than one word, ending in . ! or ?) */ sentence?: boolean; /** elements rendered from this stamp, when the census is already one per stamp */ elements?: number; computed?: { size?: number | null; lineHeight?: number | null; letterSpacing?: number | null; weight?: number | null; transform?: string | null } }
 export interface SystemOptions { files?: string[]; census?: CensusEntry[]; /** "project": the ladder from every route's text (src/census.ts), the page's own census read over it */ scope?: 'page' | 'project'; /** the page's route, whose kept entries its own census replaces */ route?: string; exclude?: string[]; /** the owner's decisions per role, as config.system.type.roles, for a dry run */ roles?: Record<string, { size?: number; lineHeight?: number; letterSpacing?: number; weight?: number; compact?: { lineHeight: number } }> }
 export type SystemWrite = { tokens: (TypeProposal['write']['tokens'][number] & { file: string; hash: string })[]; css: { file: string; hash: string; css: string }[]; swaps: (TypeProposal['write']['swaps'][number] & { hash: string })[] };
 export interface SystemResult { revision: number; proposal: Omit<TypeProposal, 'write'> & { write: SystemWrite } }
@@ -1224,7 +1224,7 @@ export class Session extends EventEmitter {
         weight: computed?.weight ?? (parseInt(weight?.resolved ?? '400', 10) || 400),
         transform: (computed?.transform ?? transform?.resolved) === 'uppercase' ? 'uppercase' : 'none',
       };
-      return { site: { file: where.file, line: where.line, column: where.column }, ...(entry ? { stamp: entry.stamp } : {}), tag, classes: [...classes.values()], current, list: !!entry?.list, ...(typeof entry?.sentence === 'boolean' ? { sentence: entry.sentence } : {}), elements: 1, ...(fixed ? { fixed } : {}) };
+      return { site: { file: where.file, line: where.line, column: where.column }, ...(entry ? { stamp: entry.stamp } : {}), tag, classes: [...classes.values()], current, list: !!entry?.list, ...(typeof entry?.sentence === 'boolean' ? { sentence: entry.sentence } : {}), ...(entry?.number ? { number: true } : {}), elements: 1, ...(fixed ? { fixed } : {}) };
     };
     if (census?.length) {
       // the measured page: one member per stamp, with the elements that rendered it

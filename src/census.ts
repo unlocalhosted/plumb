@@ -36,7 +36,7 @@ export const censusPath = (root: string) => resolve(cacheDirectory(root), 'censu
 function readPage() {
   const census = [...document.body.querySelectorAll('[data-plumb-source]')].filter((el) => !el.closest('plumb-overlay') && [...el.childNodes].some((n) => n.nodeType === 3 && /[\p{L}\p{N}]/u.test(n.nodeValue ?? ''))).map((el) => {
     const cs = getComputedStyle(el);
-    return { stamp: el.getAttribute('data-plumb-source')!, tag: el.localName, list: !!el.closest('li, ul, ol, dl'), sentence: /\S\s+\S.*[.!?…]["'”’)]*\s*$/s.test([...el.childNodes].filter((n) => n.nodeType === 3).map((n) => n.nodeValue).join(' ').trim()), computed: { size: parseFloat(cs.fontSize), lineHeight: cs.lineHeight === 'normal' ? null : parseFloat(cs.lineHeight), letterSpacing: cs.letterSpacing === 'normal' ? 0 : parseFloat(cs.letterSpacing), weight: parseInt(cs.fontWeight, 10), transform: cs.textTransform } };
+    return { stamp: el.getAttribute('data-plumb-source')!, tag: el.localName, list: !!el.closest('li, ul, ol, dl'), number: /^[\s$€£¥₹+\-−–.,:%()\d]*\d[\s$€£¥₹+\-−–.,:%()\d]*[a-z]{0,2}$/i.test([...el.childNodes].filter((n) => n.nodeType === 3).map((n) => n.nodeValue).join(' ').trim()), sentence: /\S\s+\S.*[.!?…]["'”’)]*\s*$/s.test([...el.childNodes].filter((n) => n.nodeType === 3).map((n) => n.nodeValue).join(' ').trim()), computed: { size: parseFloat(cs.fontSize), lineHeight: cs.lineHeight === 'normal' ? null : parseFloat(cs.lineHeight), letterSpacing: cs.letterSpacing === 'normal' ? 0 : parseFloat(cs.letterSpacing), weight: parseInt(cs.fontWeight, 10), transform: cs.textTransform } };
   });
   const links = [...document.querySelectorAll('a[href]')].map((a) => (a as HTMLAnchorElement).href);
   return { census, links };

@@ -4,6 +4,7 @@
 //   spacing  four 14px gaps and a 20px one were left alone: the scale was read off the code, not the theme's own steps
 //   colour   a row's title was folded onto the grey of the description under it (crafting-ui /interfaces, 105 rows)
 //   icons    a 16px icon among four 18px in one nav was not seen; and a size passed as a prop could not be written
+//   text     a dashboard's big numbers were folded into a heading style and shrank
 //   corners  no pass: a card at the control's 8px is on a token by value and on the wrong one by job
 // Real Vite, React, Tailwind, the real CLI and Chromium; the panel is driven by its keys; every write is read back from
 // the source file.
@@ -87,6 +88,12 @@ test('a messy page is put back on its own design system: spacing on the theme\'s
 
   await s.page.keyboard.press('Alt+B'); await s.until(/Clean up/);
   await s.page.keyboard.press('c'); await s.until(/Apply to this page|already|Next/);
+
+  // text: the four stat figures ("142", 30px) are a style of their own; they were folded into the 24px headline with a
+  // section title, and would have shrunk by 6px
+  const text = await s.panel();
+  assert.match(text, /Figure 30px/, text);
+  assert.doesNotMatch(text, /30px → 24px/, text);
 
   // spacing: the 14px gaps go to the theme's 16px step, written with the theme's own name
   await s.pass(/off your scale|different spaces between things/);

@@ -488,6 +488,13 @@
 - **Undo of the corners write:** applied the 11 corner changes from the panel, pressed Undo, and the source file was back as it was.
 - **Text styles in the running panel (messy page):** the panel reads "Your site uses 14 text sizes. These 8 styles cover them", with the new names showing as "Lead" and "Title small". Two things it showed that the data run had not: the four stat figures (30px) are folded into the 24px headline style, and 37 places of 12px text go up to 14px. Both are in the backlog.
 
+## A big number is a figure, not a heading (2026-11-12)
+- **The itch:** in the running panel, the messy dashboard's four stat figures ("142", 30px) were folded into the 24px headline style with a section title: they would have shrunk by 6px. The owner: "Yes, its own job."
+- **The system behind it:** a `<p>` holding a number is not a sentence, so it went by size alone, into whatever heading style had that size.
+- **What we chose and why:** a place whose own words are a number (digits with their signs, a currency or percent mark, at most a two-letter unit) and that is drawn at heading size, 22px and up, is a figure with its own style, `display-figure`, shown as "Figure". Material groups numerals with display text ("short, important text or numerals"; read second-hand). A small number, a count in a row or a table cell, goes by size like other text. A heading tag still wins.
+- **The fix and the proof:** the messy-page test now checks the panel shows "Figure 30px" and no "30px → 24px"; it passes, and so does the text-role test. On crafting-ui's measured text three places become figures.
+- **What it does not do:** one figure style for all figures, so differently sized numbers fold together (crafting-ui's 31px "9:41" would go to 22px, where it went to 24px before). Logged in the backlog.
+
 ## Open gaps
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
 

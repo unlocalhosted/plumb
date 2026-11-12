@@ -55,7 +55,8 @@ then picks the step inside that kind, on the same size bands as before. A place 
 two styles, each with its own usual weight, where they used to be one style and a weight class. Each kind has its own
 ladder: a large paragraph (`body-lead`, `body-lead-small`) and a small heading (`title-small`) may sit at crossing sizes.
 A heading of 60px or more is the page's hero (`display-hero`); anything else that large is still left out as a
-drawing. `body-large` keeps its meaning (the 16px body).
+drawing. `body-large` keeps its meaning (the 16px body). A number drawn at heading size (22px and up) is a figure
+(`display-figure`), kept apart from the headings beside it; a small number goes by size like other text.
 
 ### 2.2 Weight is separate **(from BoardUI)**
 

@@ -72,8 +72,8 @@ Last gone through: 2026-11-12.
 
 ### Clean-up: text
 
-- A big number is treated as a heading: on bench/messy the four stat figures ("142", 30px) are folded into the 24px
-  headline style with a section title, so they would shrink by 6px. Material keeps numerals with display text.
+- Figures have one step: numbers drawn at different sizes fold into one figure style (on crafting-ui a 31px "9:41"
+  would go to 22px). A figure of 60px or more that is not a heading is still left out as a drawing (the messy page's "78%").
 - Small text is pulled up: on bench/messy 37 places at 12px go to a 14px "Body small". Seen in the panel; not judged yet.
 - Text inside buttons is not its own job: label styles force capitals, so a plain button label goes by size.
 - A hero title written to grow with the screen stays in the ordinary display style (its drawn size is not read).
