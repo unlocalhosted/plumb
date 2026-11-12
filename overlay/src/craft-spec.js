@@ -88,6 +88,7 @@ export const STANDARD = {
     'content-size': { slack: 0.2 },
     'media-size': { min: 12, near: 12 },
     'flex-min': { over: 1, depth: 24 }, // px a row may run past its box, and how many elements in the cause is looked for
+    'sticky-room': {}, // nothing to tune: it reads whether the row stretched it
     'image-ground': { min: 48, up: 3, wrap: 1.25, depth: 60, cover: 0.5, lc: 45 }, // smallest picture read, how far out its box is looked for, and the contrast words need without it
     'image-fit': { min: 16, off: 0.03, latentMin: 24, photo: 64 }, // smallest box read, and how far its shape may be from the picture's
   },

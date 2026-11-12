@@ -501,6 +501,14 @@
 - **What replaces it:** Claude decides such calls the way a principal design engineer would, from a principle, does the work, and writes the decision with its reason where the owner can overturn it (docs/backlog.md, "Decided by Claude"). Only destructive, outward-facing or paid actions, and taste the owner has reserved, are asked first.
 - **Decided at once:** the eleven remaining questions (the table in the backlog) and the order of work.
 
+## The 16 uncovered defensive tips, sorted by principle; the first check built (2026-11-12)
+- **The itch:** the owner asked "all tips encoded?" (9 of 25 were), then: "Yes, go through them", under the day's rule that nothing becomes a check without a principle and a ground.
+- **How we found it:** each of the 16 tip pages read at the source, then walked through the chain in docs/PRINCIPLES.md. Written up in [docs/research/defensive-tips.md](research/defensive-tips.md).
+- **The sorting:** 11 tips hold and become 9 checks; 4 do not hold (a design choice, a caution against token practice, a stylesheet lint, something Tailwind's reset already does); 1 waits on a decision (a button's least width is a number with no ground yet).
+- **The first check: a sticky thing that can never stick.** A sticky side column in a grid or a flex row is stretched to its row's full height, so it has no room to move and scrolls away. Plumber reads it from what is measured (sticky, in such a row, nothing setting its alignment or height, its box taller than its own content) with no threshold of its own, and offers `self-start`.
+- **The proof so far:** on a page we wrote: 2 stretched columns found on the right lines, 3 correctly built ones left alone, nothing else marked; after the fix was written both columns were their own height (48 and 20 px in a 384 px row) and plumber found nothing.
+- **Not proven on a real app:** crafting-ui has two sticky side columns with no alignment and one built right, but the overlay does not load on its running dev server (started before another session added a module; it answers 404 for it). The before and after from a real app is still owed.
+
 ## Open gaps
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
 

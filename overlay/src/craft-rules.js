@@ -34,6 +34,7 @@
  *  media-size          #34     one avatar and icon size per list
  *  flex-min            —       a flex item that holds text may shrink, so a long name is cut off, not pushed out
  *  image-ground        —       words over a picture have a colour behind them for when it doesn't arrive
+ *  sticky-room         —       a sticky side column is not stretched to its row, so it has room to stick
  *  image-fit           —       a picture in a box of another shape is cropped, never stretched
  *  truncate-intent     #35     cut-off text shows its full value on hover
  *  scrollbar-gutter    #36     a large scroll area keeps room for its scrollbar
@@ -1185,6 +1186,41 @@ export const imageGround = {
   },
 };
 
+// Defensive, not a craft rule (no number, no showcase screen; docs/research/defensive-tips.md). A sticky thing that
+// can never stick: a sticky element moves only inside its parent's box, and a grid or flex item is stretched to its
+// row's full height unless told otherwise, so it has no room to move and scrolls away with the page. Read from what
+// is measured, with no threshold of its own: sticky, in a grid or a flex row, nothing setting its alignment or its
+// height, and its box taller than its own content (the row made it so). (defensivecss.dev "Position sticky with CSS Grid".)
+export const stickyRoom = {
+  id: 'craft/sticky-room', family: 'craft', number: [], owns: ['align'], once: 'ancestor', reads: ['style', 'rect'],
+  check({ el, facts }) {
+    const s = facts.style(el);
+    if (s.position !== 'sticky') return [];
+    const row = el.parentElement;
+    if (!row) return [];
+    const rs = facts.style(row), grid = /grid/.test(rs.display), flexRow = /flex/.test(rs.display) && !/column/.test(rs.flexDirection);
+    if (!grid && !flexRow) return [];
+    // its own alignment, or the row's when it has none: anything but the default lets it keep its own height
+    const align = /^(?:auto|normal)$/.test(s.alignSelf) ? rs.alignItems : s.alignSelf;
+    if (!/^(?:normal|stretch)$/.test(align)) return [];
+    if (utility(el, 'h', { not: /^(?:auto|fit|min|max)$/ }) || utility(el, 'size')) return [];
+    const box = el.getBoundingClientRect();
+    if (box.height <= 0 || !el.childNodes.length) return [];
+    const range = document.createRange();
+    range.selectNodeContents(el);
+    const inner = range.getBoundingClientRect(), k = box.height / (el.offsetHeight || box.height);
+    const own = inner.height + (px(s.paddingTop) + px(s.paddingBottom) + px(s.borderTopWidth) + px(s.borderBottomWidth)) * k;
+    const spare = Math.round((box.height - own) / k);
+    if (spare <= 1) return []; // as tall as its content: nothing stretched it (one pixel for rounding)
+    return [{
+      ...say(this.id, { spare }),
+      key: this.id, text: utility(el, 'self') ?? 'align-self', props: ['align-self'], value: 'stretch', n: spare,
+      evidence: { spare, box: Math.round(box.height / k), content: Math.round(own / k) }, confidence: 0.9,
+      suggest: { kind: 'class', from: utility(el, 'self') ?? '', to: 'self-start', why: 'lets it keep its own height, so it has room to stick as the page scrolls', sets: { alignSelf: 'start' }, moves: true },
+    }];
+  },
+};
+
 const truncated = (el, s) => s.textOverflow === 'ellipsis' && s.overflowX !== 'visible' && el.scrollWidth > el.clientWidth + 1;
 const pathLike = (t) => /^\S+$/.test(t) && ((t.match(/[/\\]/g) ?? []).length >= 2 || /^[0-9a-f]{16,}$/i.test(t) || /^[\w-]+(?:\.[\w-]+){2,}$/.test(t));
 
@@ -2223,7 +2259,7 @@ export const interruptible = {
 };
 
 export const RULES = [concentricRadius, innerOuterSpacing, textOpacity, halfPixel, hairline, imageOutline, layeredShadow, scaleFromZero, zIndexWar, contentAlign,
-  buttonPadding, iconSide, measure, leading, tracking, tabularNums, headingWidow, oneLight, borderOnShadow, contrast, disabledContrast, hitTarget, mediaSize, imageFit, flexMin, imageGround,
+  buttonPadding, iconSide, measure, leading, tracking, tabularNums, headingWidow, oneLight, borderOnShadow, contrast, disabledContrast, hitTarget, mediaSize, imageFit, flexMin, imageGround, stickyRoom,
   truncateIntent, scrollbarGutter, boldHover, hangingQuote, capsCase, gradientSpace, inputZoom, anchorOffset, middleTruncate,
   textWrapRole, continuousCorners, opticalSizing, tintedShadow, easedScrim, pureBlackWhite, contentSize,
   baselineAlign, iconCap, trimLeading, headingLead, pairSpacing, cardOpticalPadding,

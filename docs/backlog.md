@@ -36,6 +36,10 @@ engineer would do." These calls were open questions until then. Each is decided 
 
 ## Open questions
 
+- **Button minimum width.** A two-letter label makes a button too small (defensivecss.dev). The least width is a
+  number and needs a ground: the project's own buttons, or a published one (Material's earlier buttons used 64). Say
+  which, or leave it to the 24px hit-target check.
+
 None. (A call is brought here only when it is destructive, outward-facing, costs money, or is taste the owner has
 reserved.)
 
@@ -111,20 +115,20 @@ reserved.)
 
 - Seen catching slips only on pages we wrote; no real app with the mistakes has been read.
 - One check's fix can raise another check's finding on the same element (a background makes a box count as a card).
-- Of the 25 defensivecss.dev tips, 9 have a check and 16 have none (mapped by name and description on 2026-11-12, not
-  by running each tip's own example):
-  - Added for them (3): image distortion, minimum content size in flexbox, text over image.
-  - Already checked before (5): scrollbar gutter, input zoom on iOS, accidental hover on mobile, scroll chaining,
-    image inner border.
-  - Partly (1): long content. Plumber checks that cut-off text shows its full value and where a path is cut, not
-    that long text is given a way to be cut.
-  - None (16): flexbox wrapping, component spacing, auto-fit vs auto-fill, background repeat, CSS grid fixed values,
-    CSS variable fallback, fixed sizes, minimum content size in grid, grouping vendor selectors, image maximum
-    width, position sticky with grid, scrollbars on demand, using space-between, vertical media queries, default
-    flexbox stretching, button minimum width.
-- Each remaining tip needs its principle and source written down before it becomes a check (docs/PRINCIPLES.md).
+- Of the 25 defensivecss.dev tips, 10 have a check. The other 15 are sorted in docs/research/defensive-tips.md:
+  - Still to build, each from its written principle (8 checks for 10 tips): a fixed height on a box that holds text;
+    space that is left over, not declared; a row of like things that cannot wrap; a fixed column with no narrow form;
+    text in a grid cell may shrink; a scrollbar that shows when nothing scrolls; a background photo that tiles; a
+    picture stretched by its row.
+  - Will not be checks (4): auto-fit vs auto-fill, CSS variable fallback, grouping vendor selectors, image maximum width.
+  - The CSS behaviour each check rests on is to be re-read and linked when the check is built; only the tip pages were read.
+- The sticky check has been seen working only on a page we wrote. crafting-ui has two sticky side columns that look
+  like real cases; they could not be read because the overlay does not load there (see Writes and speed).
 
 ### Writes and speed
+
+- The overlay does not load on crafting-ui's running dev server: it was started before another module was added to
+  the overlay, and it refuses a file it does not know. Restarting that server fixes it.
 
 - One edited file still marks 1,225 files as changed (about 100 ms per write).
 - Several writes in quick succession sometimes reload the showcase page.

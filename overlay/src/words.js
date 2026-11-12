@@ -47,6 +47,11 @@ export const CRAFT = {
     line: over ? `This row runs ${px(over)} past its box.` : 'This text is set to cut off, but its box can’t shrink, so it never will.',
     reason: 'A flex item is never narrower than its longest line. A longer name or a narrower screen pushes the rest of the row out.',
   }),
+  'sticky-room': ({ spare }) => ({
+    label: 'Set to stick, but can’t',
+    line: `This is set to stay in view as the page scrolls, but it is stretched ${px(spare)} past its own content, to the full height of its row, so it has nowhere to move.`,
+    reason: 'A sticky element moves only inside its parent’s box. Stretched to the same height, it scrolls away with the page.',
+  }),
   'image-ground': ({ n, broken }) => ({
     label: broken ? 'Words lost without the picture' : 'Words rely on the picture',
     line: n > 1 ? `${n} lines over this picture can only be read while it shows.` : 'The words over this picture can only be read while it shows.',
