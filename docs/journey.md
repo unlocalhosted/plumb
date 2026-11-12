@@ -1942,6 +1942,16 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   menu cards are wide; the rest single; wide and single swap sides row by row so it doesn't read as stripes. Each
   card's stage now grows with its tile, and every measure reads live sizes, so the tour still plays (the big tile's
   camera moment checked). Below desktop it falls back to two columns with the big tile across both, then one.
+- **"Clicking Broken to Fixed is very horrible UX ... I don't see what is happening ... does the click not
+  register?"** The system behind it: the switch wasn't a control, it was a cue for each card's scripted tour.
+  Pressing Fixed reset the card to broken and ran the whole moment (about a second of camera, then guides), so the
+  fix landed about 2.4 seconds after the click; pressing Broken cleared the marks, and some of these mistakes are a
+  pixel wide, so nothing seemed to change. Now the switch is direct: the scene changes at once, the guides and the
+  measured pill are up the moment you press (the number counting to its new value, coral for broken, mint for
+  fixed), no camera; a press stops that card's tour and the card holds your choice; Replay hands it back and the
+  tour starts at once. Checked with real clicks: within 250ms of Fixed the album card read "Concentric · r 12" in
+  mint; Broken read "Same radius · r 20" in coral and held for 4s; Replay started the camera 600ms later. Written
+  into the interaction principles as 26b.
 
 ## Open gaps
 - The overlay writes about 180 corners as numbers (radius tokens about 45 times), many off its own scale; 6px is

@@ -43,6 +43,14 @@
   transition: translate 420ms linear(0, 0.22 8%, 0.62 20%, 0.94 34%, 1.06 46%, 1.03 60%, 1 76%, 1); }
 .ins-switch[data-fixed='true'] .ins-thumb { translate: 100% 0; }
 .ins-switch button:focus-visible { outline: 2px solid var(--pl-border-focus); outline-offset: 1px; }
+/* once you've pressed, the card is yours; Replay hands it back to the tour */
+.ins-replay { position: absolute; z-index: 3; right: 10px; top: 10px; display: inline-flex; align-items: center; gap: 5px; height: 26px; padding: 0 10px 0 8px; border: 0; border-radius: 99px;
+  background: var(--pl-bg-surface); box-shadow: var(--pl-shadow-tag); color: var(--ink-1); font: var(--pl-round-w, 700) 11.5px/1 var(--pl-round); cursor: pointer;
+  animation: ins-pop-in 300ms var(--pl-spring-pop) both; }
+.ins-replay svg { width: 13px; height: 13px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; transition: rotate 420ms var(--pl-spring-pop); }
+@media (hover: hover) and (pointer: fine) { .ins-replay:hover svg { rotate: -200deg; } }
+.ins-replay:focus-visible { outline: 2px solid var(--pl-border-focus); outline-offset: 2px; }
+@keyframes ins-pop-in { from { opacity: 0; scale: 0.85; } }
 .ins-foot { display: flex; gap: 12px; align-items: flex-start; padding: 14px 6px 6px; }
 .ins-n { display: grid; place-items: center; flex: none; width: 30px; height: 30px; border-radius: 10px; translate: 0 -2px; color: #fff; font: var(--pl-round-w, 700) 12px/1 var(--pl-round);
   background: linear-gradient(180deg, color-mix(in oklab, var(--hue) 82%, #fff), var(--hue));

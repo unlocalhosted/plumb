@@ -69,7 +69,7 @@ function Card({ card, live, reduced, offset }) {
   const [cam, setCam] = useState(null);        // the camera's transform, or null at rest
   const [marks, setMarks] = useState(null);    // the guides and the pill, in the stage's pixels
   const [held, setHeld] = useState(false), [paused, setPaused] = useState(false);
-  const timers = useRef([]), shown = useRef(null);
+  const timers = useRef([]), shown = useRef(null), again = useRef(false);
   const clear = () => { timers.current.forEach(clearTimeout); timers.current = []; };
   const at = (ms, fn) => timers.current.push(setTimeout(fn, ms));
 
@@ -100,7 +100,7 @@ function Card({ card, live, reduced, offset }) {
       at(first + T.back, () => { setFixed(false); setStep(STEP.rest); });
       at(first + T.loop, () => loop(0));
     };
-    loop(offset);
+    loop(again.current ? 0 : offset); again.current = false;
     return clear;
   }, [live, held, paused, reduced]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -123,12 +123,15 @@ function Card({ card, live, reduced, offset }) {
     return () => cancelAnimationFrame(raf);
   }, [step, fixed, cam]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // the switch is a direct control, not a cue for the tour: a press stops this card's tour, and the scene changes at
+  // once (the fix glides in, or the mistake glides back), with its guides and measured pill up the moment you press,
+  // the number counting to the new value; no camera. The card holds what you chose until Replay hands it back.
   const choose = wantFixed => {
-    clear(); setHeld(true);
-    if (reduced) { setFixed(wantFixed); return; }
-    if (wantFixed) { setFixed(false); setCam(null); setStep(STEP.rest); moment(0); }
-    else { setStep(STEP.rest); setCam(null); setFixed(false); } // back to the mistake: no camera
+    clear(); setHeld(true); setCam(null);
+    setFixed(wantFixed);
+    if (!reduced) setStep(wantFixed ? STEP.fix : STEP.marks);
   };
+  const replay = () => { again.current = true; setStep(STEP.rest); setMarks(null); shown.current = null; setHeld(false); };
 
   const { Scene } = card;
   const showMarks = marks && step >= STEP.marks && step <= STEP.out;
@@ -140,6 +143,7 @@ function Card({ card, live, reduced, offset }) {
         </div>
         {showMarks && <Marks marks={marks} fixed={fixed} out={step === STEP.out} card={card} />}
         <span className="ins-state" data-fixed={fixed} aria-hidden="true"><i className="ins-toy" dangerouslySetInnerHTML={{ __html: toyOf(card.toy) }} /><span key={fixed ? 'f' : 'b'} className="ins-swap">{card.states[fixed ? 1 : 0]}</span></span>
+        {held && !reduced && <button type="button" className="ins-replay" onClick={replay} aria-label="Play the tour again"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8a4.5 4.5 0 1 0 1.3-3.2M3.5 2.8v2.4h2.4" /></svg>Replay</button>}
         <div className="ins-switch" role="group" aria-label="Show it" data-fixed={fixed}>
           <span className="ins-thumb" aria-hidden="true" />
           {['Broken', 'Fixed'].map((label, k) => (

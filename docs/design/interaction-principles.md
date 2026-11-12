@@ -101,6 +101,11 @@ pickers.
 26. **Answer at once, before the click.** As soon as something valid is in hand, say so: the tick turns pale green
     the moment the value is a token, with a pop for each new one; solid green once written; grey while there is
     nothing to write. ("give the feedback without click.")
+26b. **A demo's control is direct; a tour is only what plays when nobody is touching.** Pressing a switch, a tab or a
+    toggle changes the thing at once (within about 300ms), with whatever explains it (guides, the measured value)
+    up the moment it's pressed; it never cues a scripted sequence that lands later. A press stops that demo's tour
+    for good and the demo holds what was chosen; a Replay hands it back. ("clicking on broken to fixed ... I don't
+    see what is happening ... does the click not register?")
 27. **Every state is distinguishable at a glance:** hard-coded (coral), on a token (blue outline, pale green tick),
     written (green outline, solid green tick).
 28. **Preview, then write.** Changes show on the page as previews; only an explicit Apply, tick or Enter writes to
