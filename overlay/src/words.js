@@ -75,6 +75,21 @@ export const CRAFT = {
     line: over ? `This list of ${n} runs ${px(over)} past its row and has nowhere to go.` : `This row holds a list (${n} today) that can only grow sideways. A longer list or a narrower screen runs it off the edge.`,
     reason: 'A flex row does not wrap unless it is told to, and a list has whatever length its data has.',
   }),
+  'image-stretch': ({ tall }) => ({
+    label: tall ? 'Picture pulled tall by its row' : 'Picture can be pulled tall',
+    line: tall ? `This picture is drawn ${px(tall)} taller than its shape, to match the height of its row.` : 'This picture takes the height of its row. When the words beside it wrap to more lines, it is pulled tall.',
+    reason: 'A flex row stretches its items to its own height, and a picture given only a width is stretched with them.',
+  }),
+  'background-tile': ({ now, wide }) => ({
+    label: now ? 'Background photo repeats' : 'Background photo can repeat',
+    line: now ? `This photo is drawn again ${wide ? 'beside' : 'below'} itself, because the box is bigger than the photo.` : 'This photo fits its box today. On a wider screen or a taller section it is drawn again beside itself.',
+    reason: 'A background repeats unless it is told not to. A pattern is meant to; a photo is one picture.',
+  }),
+  'fixed-column': ({ fixed, at }) => ({
+    label: 'Fixed column on every screen',
+    line: `These columns keep ${px(fixed)} fixed at every width, so on a phone the rest is squeezed or runs off the side.`,
+    reason: `A fixed column needs a one-column form where it no longer fits. Keep the columns from ${px(at)} up.`,
+  }),
   'sticky-room': ({ spare }) => ({
     label: 'Set to stick, but can’t',
     line: `This is set to stay in view as the page scrolls, but it is stretched ${px(spare)} past its own content, to the full height of its row, so it has nowhere to move.`,
