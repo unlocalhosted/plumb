@@ -6,7 +6,8 @@
 //   a second blue with no colour of yours near it is kept
 //   content is left alone: inline-styled swatches and a drawing inside an svg
 //   a page already on its tokens offers nothing
-//   the site's palette is served over HTTP, every route, with the class at each place
+//   the site's palette is served over HTTP, every route, with the class at each place; a page written since the census
+//     leaves it until the census reads it again
 // crafting-ui's theme and classes (src/index.css `@theme inline`, stage-shell.tsx, stickers.tsx). Real Vite, React,
 // Tailwind, the real CLI (`plumber census`) and Chromium.
 import assert from 'node:assert/strict';
@@ -147,6 +148,29 @@ async function colourPass(name) {
   return { page, errors, said, apply, file: () => readFile(join(s.root, `src/${name}.jsx`), 'utf8') };
 }
 
+// the site palette as the overlay asks for it, over HTTP
+async function palette() {
+  const page = await s.browser.newPage();
+  await page.goto(new URL('clean', s.url).href);
+  await page.waitForFunction(() => document.querySelector('plumb-overlay')?.shadowRoot.querySelector('.dock')?.dataset.state === 'ready', null, { timeout: 90000 });
+  const got = await page.evaluate(async () => {
+    const token = document.querySelector('script[data-plumb-token]')?.dataset.plumbToken;
+    const r = await fetch('/__plumb/palette', { headers: token ? { 'x-plumb-token': token } : {} });
+    return { status: r.status, body: await r.json() };
+  });
+  await page.close();
+  assert.equal(got.status, 200, JSON.stringify(got.body));
+  return got.body;
+}
+
+test('the site palette is served over HTTP from the census: every route, each place with its class', { timeout: 120000 }, async () => {
+  const p = await palette();
+  assert.equal(p.routes, s.routes.length, 'every route the census read');
+  assert.ok(p.colours.every((c) => ['text', 'bg', 'border'].includes(c.prop) && typeof c.route === 'string'));
+  assert.ok(p.colours.some((c) => c.route === '/blue' && c.cls === 'text-[#2F64F0]'), 'the second blue is in the site palette with its class');
+  assert.equal(p.colours.some((c) => c.route === '/content' && c.cls === 'text-[#55555C]'), false, 'the drawing is content, not the site\'s');
+});
+
 test('role wins over distance: the page ground becomes bg, not sunken; grey words become muted; the purple button and the gradient card are kept', { timeout: 300000 }, async () => {
   const p = await colourPass('worked');
   assert.match(p.said, /f5f5f5 → bg\b/i, p.said);
@@ -196,19 +220,9 @@ test('a page already on its tokens says so, and Enter writes nothing', { timeout
   assert.deepEqual(p.errors, []);
 });
 
-test('the site palette is served over HTTP from the census: every route, each place with its class', { timeout: 120000 }, async () => {
-  const page = await s.browser.newPage();
-  await page.goto(new URL('clean', s.url).href);
-  await page.waitForFunction(() => document.querySelector('plumb-overlay')?.shadowRoot.querySelector('.dock')?.dataset.state === 'ready', null, { timeout: 90000 });
-  const palette = await page.evaluate(async () => {
-    const token = document.querySelector('script[data-plumb-token]')?.dataset.plumbToken;
-    const r = await fetch('/__plumb/palette', { headers: token ? { 'x-plumb-token': token } : {} });
-    return { status: r.status, body: await r.json() };
-  });
-  assert.equal(palette.status, 200, JSON.stringify(palette.body));
-  const p = palette.body;
-  assert.equal(p.routes, s.routes.length, 'every route the census read');
-  assert.ok(p.colours.every((c) => ['text', 'bg', 'border'].includes(c.prop) && typeof c.route === 'string'));
-  assert.ok(p.colours.some((c) => c.route === '/blue' && c.cls === 'text-[#2F64F0]'), 'the second blue is in the site palette with its class');
-  assert.equal(p.colours.some((c) => c.route === '/content' && c.cls === 'text-[#55555C]'), false, 'the drawing is content, not the site\'s');
+test('once a page\'s file is written, its readings leave the site palette until the census reads it again', { timeout: 120000 }, async () => {
+  // the blue page was written above (its fourth grey moved)
+  const p = await palette();
+  assert.equal(p.colours.some((c) => c.route === '/blue'), false, 'the written page is left out, not reported as it was');
+  assert.ok(p.colours.some((c) => c.route === '/clean'), 'an unwritten page is still in it');
 });
