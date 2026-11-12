@@ -1198,7 +1198,9 @@ export class Session extends EventEmitter {
     const overrides: Record<string, RoleOverride> = { ...(config?.value.system?.type?.roles ?? {}), ...(roles && typeof roles === 'object' ? roles : {}) };
     const members = new Map<string, TypeMember>();
     const member = (where: { file: string; line: number; column: number }, tag: string, declarations: Report['declarations'], entry?: CensusEntry): TypeMember | undefined => {
-      const type = declarations.filter(d => isTypeProp(d.prop));
+      // a class behind a variant (`first-letter:uppercase`, `md:text-lg`, `hover:font-medium`) is not the element's own type
+      // at rest: it is neither read into the place nor swapped out (crafting-ui's rule titles lost their capital letter)
+      const type = declarations.filter(d => isTypeProp(d.prop) && !(['class', 'arbitrary'].includes(d.origin) && (d.site.text ?? '').replace(/\[[^\]]*\]/g, '').includes(':')));
       const classes = new Map<string, TypeClass>();
       let fixed: string | undefined;
       for (const d of type) {

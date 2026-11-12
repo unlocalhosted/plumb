@@ -33,7 +33,7 @@ export interface TypeMember {
   /** why the place cannot be swapped (an inline style, a computed className, a formula) */
   fixed?: string;
 }
-export type RoleName = 'display-hero' | 'display-large' | 'display-figure' | 'headline-small' | 'title-large' | 'title-medium' | 'title-small' | 'body-lead' | 'body-lead-small' | 'body-large' | 'body-small' | 'body-caption' | 'label-control' | 'label-control-small' | 'label-medium' | 'label-small';
+export type RoleName = 'display-hero' | 'display-large' | 'display-figure' | 'headline-large' | 'headline-medium' | 'headline-small' | 'title-large' | 'title-medium' | 'title-small' | 'body-lead' | 'body-lead-small' | 'body-large' | 'body-small' | 'body-caption' | 'label-control' | 'label-control-small' | 'label-medium' | 'label-small';
 export interface RoleMember { site: TypeMember['site']; stamp?: string; tag: string; classes: string[]; current: TypeBundle; delta: { size: number | null; lineHeight: number | null; letterSpacing: number; weight: number }; /** the weight this place takes, when not its role's usual one */ weight?: WeightName; /** reading text: its role plus leading-prose */ variant?: 'prose'; confidence: 'ok' | 'low'; elements: number; fixed?: string }
 export interface RoleOverride { size?: number; lineHeight?: number; letterSpacing?: number; weight?: number; compact?: { lineHeight: number } }
 export interface TypeRole { name: RoleName; bundle: TypeBundle; /** the role's usual weight, and the other weights its places use (one class each) */ weightName: WeightName; weights: { name: WeightName; places: number }[]; members: RoleMember[]; places: number; elements: number; files: number; contexts: { tag: string; places: number }[]; /** where the size came from: the owner's decision, the theme's step within 1px of the mode, the members' mode, or the cluster's centre (the ladder) */ sizeFrom: 'decision' | 'theme' | 'mode' | 'centre'; /** the fluid sizes among the members, most places first */ clamps?: { text: string; places: number }[] }
@@ -67,10 +67,10 @@ export function px(value: string | undefined, size = 16): number | null {
   return m[2] === 'rem' ? n * 16 : m[2] === 'em' ? n * size : m[2] === '%' ? n / 100 * size : n;
 }
 
-export const roleOrder: RoleName[] = ['display-hero', 'display-large', 'display-figure', 'headline-small', 'title-large', 'title-medium', 'title-small', 'body-lead', 'body-lead-small', 'body-large', 'body-small', 'body-caption', 'label-control', 'label-control-small', 'label-medium', 'label-small'];
+export const roleOrder: RoleName[] = ['display-hero', 'display-large', 'display-figure', 'headline-large', 'headline-medium', 'headline-small', 'title-large', 'title-medium', 'title-small', 'body-lead', 'body-lead-small', 'body-large', 'body-small', 'body-caption', 'label-control', 'label-control-small', 'label-medium', 'label-small'];
 /** up a ladder every size must be strictly greater than the one below. One ladder per job (docs/research/text-role-signals.md):
  * a large paragraph and a small heading are different jobs, so their sizes may cross */
-export const ladders: RoleName[][] = [['display-figure'], ['label-control-small', 'label-control'], ['label-small', 'label-medium'], ['body-caption', 'body-small', 'body-large', 'body-lead-small', 'body-lead'], ['title-small', 'title-medium', 'title-large', 'headline-small', 'display-large', 'display-hero']];
+export const ladders: RoleName[][] = [['display-figure'], ['label-control-small', 'label-control'], ['label-small', 'label-medium'], ['body-caption', 'body-small', 'body-large', 'body-lead-small', 'body-lead'], ['title-small', 'title-medium', 'title-large', 'headline-small', 'headline-medium', 'headline-large', 'display-large', 'display-hero']];
 export const ladderOrder: RoleName[] = ladders.flat();
 /** What a place is for, where it says so itself (docs/PRINCIPLES.md: a text style names a job; the size belongs to the job).
  * A heading: HTML's h1–h6, "six levels of section headings". Reading text: a paragraph, a definition, a quotation, or
@@ -102,11 +102,16 @@ export const weightClass = (w: WeightName) => `font-${w === 'regular' ? 'normal'
 export function weightFor(weight: number): WeightName {
   return (Object.entries(WEIGHTS) as [WeightName, number][]).reduce((a, b) => Math.abs(b[1] - weight) < Math.abs(a[1] - weight) ? b : a)[0];
 }
-/** reading text: a place whose code sets at least this line-height, at a size no larger than this, not caps, not code */
+/** reading text: a place whose code sets at least this line-height, at a size no larger than this, not caps, not code,
+ * and not a heading, a control's words or a figure (crafting-ui's h2 group names took leading-prose by their 1.55 leading) */
 export const PROSE_MIN_LH = 1.45, PROSE_MAX_PX = 20;
 export const PROSE_CLASS = 'leading-prose', PROSE_TOKEN = '--leading-prose';
-const isProse = (m: TypeMember) => m.current.transform !== 'uppercase' && !['pre', 'code', 'kbd', 'samp'].includes(m.tag) && (m.current.size ?? 99) <= PROSE_MAX_PX && m.current.lineHeight !== null && m.current.lineHeight >= PROSE_MIN_LH;
+const isProse = (m: TypeMember) => !['heading', 'control', 'figure'].includes(jobOf(m) ?? '') && m.current.transform !== 'uppercase' && !['pre', 'code', 'kbd', 'samp'].includes(m.tag) && (m.current.size ?? 99) <= PROSE_MAX_PX && m.current.lineHeight !== null && m.current.lineHeight >= PROSE_MIN_LH;
 export const roleToken = (name: RoleName) => `--text-${name}`;
+
+/** the three headline steps (Material 3's 32 / 28 / 24): a 33px page title and a 22px section title are two steps, never one
+ * (crafting-ui, 2026-11-12: the "Craft" h1 shrank from 33px to 22px when 22–36px was one role) */
+const headline = (size: number): RoleName | null => size >= 30 ? 'headline-large' : size >= 26 ? 'headline-medium' : size >= 22 ? 'headline-small' : null;
 
 /** Which role a member reaches for: small capitals → a label by size; then its job picks the kind (a heading is never
  * a body style, reading text never a title) and its size the step within it; with no job, by size alone. */
@@ -124,10 +129,10 @@ export function roleFor(b: TypeBundle, job: Job | null = null): RoleName {
   if (job === 'heading') {
     if (!fluid && size >= HERO_MIN_PX) return 'display-hero';
     if (fluid || size >= 36) return 'display-large';
-    return size >= 22 ? 'headline-small' : size >= 18.5 ? 'title-large' : size >= 17 ? 'title-medium' : 'title-small';
+    return headline(size) ?? (size >= 18.5 ? 'title-large' : size >= 17 ? 'title-medium' : 'title-small');
   }
   if (fluid || size >= 36) return 'display-large';
-  if (size >= 22) return 'headline-small';
+  const h = headline(size); if (h) return h;
   // weight is its own axis (token-spec §2.2): a 17px title is one role at any weight
   if (size >= 18.5) return 'title-large';
   if (size >= 17) return 'title-medium';

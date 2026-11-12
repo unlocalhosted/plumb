@@ -614,6 +614,14 @@
 - **After:** 2,007 elements at load, no long task seen, and plumber's whole read of the page finished (3.7 s, 985 elements read) where it had closed the tab. Scrolled to the end, the examples mounted as they came near.
 - **Not right yet:** the timings were taken with the browser pane hidden, which can skew them; the element counts are firm. The box is one height while examples run from 369 to 884 px, so the page grows by about 130 px as they mount, out of sight. On a fast fling an example can show its empty box for a moment.
 
+## The three text-write problems fixed (2026-11-12)
+- **The fix, one per problem:**
+  1. Headings get three headline steps (Material 3's 32 / 28 / 24 split at 30 and 26px), not one 22–36px role: "Craft" goes 33 → 30px, not 22px. 2px-or-more moves across the site: 37 → 33, the 6–11px heading shrinks gone.
+  2. A class behind a variant (`first-letter:uppercase`, `md:text-lg`, `hover:font-medium`) is not the element's own type at rest: it is neither read nor swapped. The rule titles keep their capital.
+  3. Reading-text leading never goes on a heading, a control's words or a figure.
+- **The proof:** the crafting-ui branch rewritten from its last commit (39 files, 307 swaps, one refused): the craft page looks as it did (docs/media/crafting-ui-roles-craft-fixed.jpg beside -before.jpg). The two text-style test files pass, 3 of 3.
+- **Left:** heading-size figures still share one 22px style; the large-headline tie goes to the smaller size; no new test reproduces these three yet.
+
 ## Open gaps
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
 

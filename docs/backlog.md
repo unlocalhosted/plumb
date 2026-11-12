@@ -79,11 +79,12 @@ reserved.)
 - With no scale named in the theme, only hand-written sizes (`p-[18px]`) are judged; a framework step that is rare in
   the app (`px-3.5`) is taken as fine.
 
-### Clean-up: text (found writing crafting-ui, 2026-11-12; trial on crafting-ui branch plumber-text-roles)
+### Clean-up: text (trial on crafting-ui branch plumber-text-roles)
 
-- Page headings at 28–33px land on the 22px headline style (crafting-ui's "Craft" h1); 37 places move 2px or more.
-- A swap drops classes that are not about type: `first-letter:uppercase` went, so rule titles lost their capital.
-- `leading-prose` is put on headings (h2 group names), not only on reading text.
+- Numbers drawn at heading size (5 places) share one 22px figure style, so a 33px figure shrinks 11px.
+- Two page titles (33px and 30px) tie for the large headline; the tie goes to 30px, so "Craft" shrinks 3px. A tie
+  could go to the theme's own step, or the larger.
+- No test yet reproduces the three fixed problems (variant classes, prose on headings, one headline step).
 
 ### Clean-up: colour
 
