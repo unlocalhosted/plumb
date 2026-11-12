@@ -435,8 +435,16 @@
 - **The proof:** rerun on vm-agent: colour-read, cleanup-spacing-proofs, cleanup-spacing, cleanup-colour, cleanup-messy, type-roles, units, cli, locate, project-layouts, hosts, report, report-nits, text-editor pass. The selection test passes on the laptop (6 of 6), not yet rerun on vm-agent.
 - **Not fixed (17 files):** blueprint-corners (8 tests), blueprint (3), fixpanel (4), rename (8), readiness-panel (2), text-edit (2), and one each in blueprint-determinism, cleanup-site, craft, craft-token, one-bar, site-replay, timeline, verify-writes, verify-frozen, packaging, blueprint-next-performance. Most wait for a piece of the panel that has since been redesigned. readiness-panel and text-edit have another session's uncommitted changes in this checkout. The timeline test (qa-fixes-2) passed once and failed once on the same commit: a flake, not from today's work.
 
+## Old and repeated tests removed (2026-11-12)
+- **The itch:** seventeen test files still failed after the first round of fixes. The owner: "no remove redundant and old ones."
+- **How we sorted them:** reran the failing files on vm-agent with their logs kept and read what each test was waiting for.
+- **Removed (27 tests, 849 lines):** blueprint-corners (8 tests, every one waiting for the dock's old line "problems in view / nothing to fix"); site-replay and verify-writes (waiting for the popover card, retired); three blueprint tests and four fix-panel tests (the dock's Blueprint button, the old "N problems · N fixes" line); one clean-up site test (a button in the bar that is gone); and the eight config-extension variants of one rename check, since accepting decisions is covered by the ledger, adoption, surfaces and messages tests.
+- **Kept and fixed:** the packaging test now accepts the JSON packs the package ships.
+- **The proof:** the whole suite on vm-agent: 944 tests passed, 11 failed in 9 files (16.2 min on 7 cores). Before today's rounds: 55 failed in 29 files.
+- **Still failing, all about live behaviour (9 files):** the same page giving different problems at different sizes (blueprint-determinism); a new finding on the demo the noise check does not expect (craft); the one bar not fitting with its tools out (one-bar); a new token test that loses the page to a reload (craft-token); a Next performance wait (blueprint-next-performance); the timeline undo check, which is flaky; a frozen-server test that fails only when run beside other tests; and readiness-panel and text-edit (4 tests), which another session is changing in this checkout.
+
 ## Open gaps
-- **17 test files still fail on vm-agent** (list in the entry above); the timeline test is flaky; at 80 columns the report breaks a rule's name across two lines.
+- **9 test files still fail on vm-agent, 11 tests** (listed in "Old and repeated tests removed"): live behaviour, flakes, or another session's in-flight files. At 80 columns the report breaks a rule's name across two lines.
 - A theme with fewer named spacing steps than plumber's detector needs (about five) is not taken as the scale; the scale is still read off the code there.
 - The icons step's count adds sizes and strokes together, so fixing one icon's size can read "10 → 10".
 - Themes that name radii by size (sm, md, lg) get no answer from the corners pass; undo of its write is untried.
