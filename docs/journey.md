@@ -509,6 +509,12 @@
 - **The proof so far:** on a page we wrote: 2 stretched columns found on the right lines, 3 correctly built ones left alone, nothing else marked; after the fix was written both columns were their own height (48 and 20 px in a 384 px row) and plumber found nothing.
 - **Not proven on a real app:** crafting-ui has two sticky side columns with no alignment and one built right, but the overlay does not load on its running dev server (started before another session added a module; it answers 404 for it). The before and after from a real app is still owed.
 
+## Caption text keeps its size (2026-11-12)
+- **The itch:** in the running panel the messy page's 37 places of 12px text were pulled up to a 14px "Body small".
+- **The system behind it:** everything under 14.5px that was not a capital label was one style, so its most common size won.
+- **Decided by Claude, as a design engineer would:** 12px and under is caption text (a timestamp, a hint), a job of its own; 13 and 14px are small body. The cut sits halfway between 12 and 13, like the other cuts in the ladder. Named `body-caption`, shown as "Caption".
+- **The proof:** on crafting-ui's measured text: small body 13px (40 places), caption 12px (48 places), low-confidence places 35 → 34. The text-role and messy-page tests pass.
+
 ## Open gaps
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
 

@@ -8,10 +8,10 @@
 
 // a style's name in plain words, from its role (display/headline/title/body/label × large/medium/small): the largest
 // of its group present is the group's own name, the next ones "small"
-const GROUP = { hero: 'Hero', figure: 'Figure', display: 'Display', headline: 'Headline', title: 'Title', lead: 'Lead', body: 'Body', label: 'Label' };
+const GROUP = { hero: 'Hero', figure: 'Figure', display: 'Display', headline: 'Headline', title: 'Title', lead: 'Lead', body: 'Body', caption: 'Caption', label: 'Label' };
 // the page's hero and the larger reading text (body-lead, body-lead-small) are named apart, so "Body" stays the body text
 // and "Display" the page title whether or not a project has the larger ones
-const groupOf = (name) => (name === 'display-hero' ? 'hero' : name === 'display-figure' ? 'figure' : /^body-lead/.test(name) ? 'lead' : name.split('-')[0]);
+const groupOf = (name) => (name === 'display-hero' ? 'hero' : name === 'display-figure' ? 'figure' : name === 'body-caption' ? 'caption' : /^body-lead/.test(name) ? 'lead' : name.split('-')[0]);
 export function namesOf(roles) {
   const names = new Map(), byGroup = new Map();
   for (const r of roles) { const g = groupOf(r.name); if (!byGroup.has(g)) byGroup.set(g, []); byGroup.get(g).push(r); }
