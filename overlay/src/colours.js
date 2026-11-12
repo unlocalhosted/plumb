@@ -166,12 +166,15 @@ let known = null;     // the last palette read, for readColours when none is giv
 
 const probeBox = () => { const b = document.createElement('div'); b.style.cssText = 'position:absolute;visibility:hidden;pointer-events:none;contain:strict;'; return b; };
 
-// the names of `--color-*` variables and of colour utilities (`.bg-surface`) written in the page's stylesheets
+// the names of `--color-*` variables and of colour utilities (`.bg-surface`) written in the page's stylesheets, and the
+// states each token is used in (token-spec §3.3: a state is read from where the colour is set, never from its name alone)
 function scanSheets() {
-  const vars = new Set(), classes = new Map();
-  const walk = (rules) => {
+  const vars = new Set(), classes = new Map(), states = new Map();
+  const saw = (short, state) => { if (!states.has(short)) states.set(short, new Set()); states.get(short).add(state); };
+  const walk = (rules, outer = '') => {
     for (const rule of rules) {
-      if (rule.cssRules) { try { walk(rule.cssRules); } catch { /* cross-origin */ } }
+      const sel = rule.selectorText ? `${outer} ${rule.selectorText}` : outer;
+      if (rule.cssRules) { try { walk(rule.cssRules, sel); } catch { /* cross-origin */ } }
       const st = rule.style; if (!st) continue;
       for (let i = 0; i < st.length; i++) if (st[i].startsWith('--color-')) vars.add(st[i]);
       const m = /^\.((?:bg|text|border)-[a-z][a-z0-9-]*)$/.exec(rule.selectorText ?? '');
@@ -179,15 +182,52 @@ function scanSheets() {
         const [prefix] = m[1].split('-');
         if (prefix === 'text' ? st.getPropertyValue('color') : prefix === 'bg' ? st.getPropertyValue('background-color') : st.getPropertyValue('border-color')) classes.set(m[1], prefix);
       }
+      if (!sel) continue;
+      // a Tailwind utility names its variants and its token in the class (`.hover\:bg-accent`, even under `@theme inline`)
+      const tw = /^\s*\.((?:\\.|[\w-])+)/.exec(sel);
+      if (tw) {
+        const parts = tw[1].replace(/\\(.)/g, '$1').split(':'), util = /^(bg|text|border)-([a-z][a-z0-9-]*?)(?:\/[\d.]+)?$/.exec(parts.pop());
+        if (util && parts.length < 4) { saw(util[2], `${util[1]}:${stateOf(parts.join(' '))}`); continue; }
+      }
+      // plain CSS: the selector's state, the variables its declarations paint with
+      for (let i = 0; i < st.length; i++) {
+        const prop = st[i] === 'color' ? 'text' : /^background/.test(st[i]) ? 'bg' : /^border/.test(st[i]) ? 'border' : null;
+        if (!prop) continue;
+        for (const v of st.getPropertyValue(st[i]).matchAll(/var\(--color-([a-z][a-z0-9-]*)/g)) saw(v[1], `${prop}:${stateOf(sel)}`);
+      }
     }
   };
   for (const sheet of document.styleSheets) { try { walk(sheet.cssRules); } catch { /* cross-origin */ } }
-  return { vars, classes };
+  return { vars, classes, states };
+}
+
+// the state a selector (or a Tailwind variant chain) paints in: hover (pointer, keyboard focus or an open menu: the same
+// highlight), active (pressed), disabled, else rest. Dark mode and breakpoints are not states.
+function stateOf(sel) {
+  if (/disabled/.test(sel)) return 'disabled';
+  if (/(^|[\s:&])active(?![-\w])|:active/.test(sel)) return 'active';
+  if (/hover|focus|highlighted|state=open|aria-expanded/.test(sel)) return 'hover';
+  return 'rest';
+}
+
+// §3.3: a surface or accent token the code fills with only in one state takes that state, whatever its name (shadcn's
+// `accent` is only ever `hover:bg-accent`: a hover surface, not the brand). A token also filled at rest, never seen as a
+// fill, or used for text (`hover:text-accent-foreground` is words), keeps its name. `usage` is each `prop:state` seen.
+function byUsage(t, seen) {
+  if (!seen?.size) return;
+  t.usage = [...seen].sort();
+  const fills = new Set([...seen].filter((u) => u.startsWith('bg:')).map((u) => u.slice(3)));
+  if (fills.size !== 1 || fills.has('rest') || [...seen].some((u) => u.startsWith('text:')) || !['surface', 'accent'].includes(t.role)) return;
+  const [state] = fills;
+  if (state === 'disabled') return;
+  const hued = chroma(t.oklab) > 0.06;
+  const kind = state === 'hover' ? (hued ? 'accent-hover' : 'hover') : (hued ? 'accent-active' : 'pressed');
+  if (kind !== t.kind) { t.byName = t.kind; t.role = hued ? 'accent' : 'surface'; t.kind = kind; }
 }
 
 /** The theme's colour tokens, as the page paints them. */
 export function paletteOf() {
-  const { vars, classes } = scanSheets();
+  const { vars, classes, states } = scanSheets();
   const found = new Map(); // short → { name, expression }
   for (const d of decisions ?? []) if (d.family === 'color' && /^--color-/.test(d.name) && d.origin !== 'framework') found.set(d.name.slice(8), { name: d.name, expr: d.resolved || d.value });
   for (const v of vars) { const s = v.slice(8); if (!found.has(s)) found.set(s, { name: v, expr: `var(${v})` }); }
@@ -209,7 +249,9 @@ export function paletteOf() {
     if (t.expr?.startsWith('var(') && !getComputedStyle(document.documentElement).getPropertyValue(t.name).trim() && !decisions?.some((d) => d.name === t.name)) continue;
     const lab = oklab(over(rgb, [255, 255, 255]));
     const role = roleOf(short, lab, rgb[3]);
-    tokens.push({ name: t.name, short, role, kind: kindOf(short, role), css, rgb, oklab: lab, utility: { text: `text-${short}`, bg: `bg-${short}`, border: `border-${short}` } });
+    const token = { name: t.name, short, role, kind: kindOf(short, role), css, rgb, oklab: lab, utility: { text: `text-${short}`, bg: `bg-${short}`, border: `border-${short}` } };
+    byUsage(token, states.get(short));
+    tokens.push(token);
   }
   box.remove();
   assignInks(tokens);

@@ -187,10 +187,19 @@
 - **The proof:** red, rose and orange get the error hint, amber the warning one, blue, green, violet and grey none (checked in the browser on the demo page, switching the brand).
 - **Media hooks:** the demo page with a red brand: the hint above, the red "Send invite" next to the red "Removed" badge; then switch to blue and the hint goes.
 
+## Hover colours read from the code, not the name (2026-11-12)
+- **The itch:** the spec says a state is read from where a colour is used, but plumber read it only from the name. A shadcn project names its grey hover background `accent`, so plumber took it for the brand colour, and a rename would have called it `accent`.
+- **How we found it:** a small page with the real shadcn theme (fixtures/shadcn-system) and shadcn's own button and menu classes; plumber's reading of each colour, before and after.
+- **The system behind it:** roles came from token names and values only; the code's own evidence (which state each colour is painted in) was never read.
+- **The fix:** plumber reads, from the page's stylesheets, which colours are used as fills, text or borders, at rest or on hover, press or disabled. A background used in only one state takes that state. A colour also used at rest, used as text, or never seen keeps what its name says. A first try also flipped `accent-foreground` (text shown on hover); only fills count now.
+- **The proof:** on the shadcn page, `accent` reads as the hover surface (filled only on hover, focus and open). On crafting-ui every colour reads as before: its names already matched its use.
+- **Media hooks:** the shadcn page's "Cancel" and "More" buttons and the role menu hovered, beside plumber's reading of `accent` before (brand) and after (hover surface).
+
 ## Open gaps
 - 27 test files already failing before the token work (52 tests on vm-agent), the text editor's test flaky there; not this work's, not fixed.
 - Defensive CSS tips still without a rule: flex rows that should wrap, scrollbars shown when nothing scrolls, text over an image with no colour behind it, hover styles on touch screens, repeated backgrounds, fixed heights on text, sticky items in a grid, and the source-only ones (variable fallbacks, vendor selectors, vertical media queries).
-- Not built from the signed-off spec: reading surface levels and states (hover, press) from how the code uses colours.
+- Not built from the signed-off spec: surface levels (a card on a panel) read from nesting; no project at hand has two nested surface colours to prove it on.
+- shadcn's `-foreground` colours are misread by name (`primary-foreground` as the brand, `popover-foreground` as a surface, `secondary` as muted text); usage (text vs fill) could fix the family, not done.
 - Undo of a 101-file rename still takes 7–13 s; where the rest goes (parsing each file, recording 709 changes) is not measured.
 - The clean-up's pass names are not clickable, and the text step's error screen (no census) has no skip.
 - Code samples shown as text on crafting-ui pages may have been renamed too; not checked.
@@ -201,4 +210,5 @@
 - The tailwind-merge trap is untested: crafting-ui does not use it.
 
 ## Shipped · 2026-W46
+- Plumber reads a hover or press colour from where the code uses it, so shadcn's grey `accent` is no longer taken for the brand ([entry](#hover-colours-read-from-the-code-not-the-name-2026-11-12)).
 - A brand colour too close to the error red or warning amber now gets a plain warning and what to do about it ([entry](#a-brand-too-close-to-error-2026-11-12)).

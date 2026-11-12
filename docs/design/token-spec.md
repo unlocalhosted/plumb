@@ -1,6 +1,6 @@
 # Plumber's token spec: colour and type
 
-Status: **signed off by the owner** (2026-11-12). The rework in §6 is built: type roles from the code with weight on its own, colour roles and states in our names, rename only on request. Not built: surface levels and states read from usage (§3.3).
+Status: **signed off by the owner** (2026-11-12). The rework in §6 is built: type roles from the code with weight on its own, colour roles and states in our names, rename only on request. Not built: surface levels read from nesting (§3.3).
 
 This is plumber's own spec, improved with the parts of BoardUI's system that are objectively better
 ([typography](https://www.boardui.com/components/typography), [colour](https://www.boardui.com/components/color),
@@ -108,8 +108,12 @@ when it writes a new system or the person asks.
   `active`, the CSS word.) So `surface-hover`, `surface-active`, `accent-hover`, `accent-active`, `accent-disabled`.
   Plumber never invents another state word.
 - **Surface levels**: a surface on a surface is `surface-2`, then `surface-3`. Three levels at most; a fourth is listed.
-- A state is read from where the colour is set: `:hover` / `hover:`, `:active`, `[disabled]` / `disabled:`. No
-  evidence, no state.
+- A state is read from where the colour is set: `:hover` / `hover:` (and keyboard focus or an open menu, the same
+  highlight), `:active`, `[disabled]` / `disabled:`. A background colour the code fills with in only one state takes
+  that state whatever its name: shadcn's `accent` is only ever `hover:bg-accent`, so it is a hover surface, not the
+  brand. A colour also used at rest, used for text, or never seen keeps what its name says. (Built: `byUsage` in
+  overlay/src/colours.js, read from the page's stylesheets; a Tailwind class names its variant and token even under
+  `@theme inline`.)
 
 ### 3.4 The brand **(from BoardUI)**
 
