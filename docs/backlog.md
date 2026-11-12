@@ -33,6 +33,9 @@ engineer would do." These calls were open questions until then. Each is decided 
 | The failing tests | Fix the two real bugs, update the noise check after a look, leave the flakes | A test is kept for what it protects |
 | A fairer messy page | Use a real generated app when one is at hand | bench/messy was written knowing the rules |
 | Two texts that touch, in one parent | A collision only when placed by hand (absolute) | The layout keeps flowed pieces apart on purpose (the parts of one number); nothing keeps placed ones apart |
+| Which widths to read a page at | 1280, 1024, 768, 390 | Desktop, small laptop, tablet upright, phone: the sizes people use; the project's own breakpoints later |
+| Which checks run in every state | Words meeting words only, for now | A full read per state takes minutes; this is the check that changes most with width and hover |
+| What gets the pointer | Things with a React pointer handler or a Tailwind `group`, six per width | They say they answer the pointer; a hover presses nothing |
 | The four "proposed to drop" lines | Dropped | Not observed problems |
 
 ## Open questions
@@ -166,9 +169,15 @@ reserved.)
   (`self-start`), the markdown list item (`min-w-0`), and the vocabulary page mounting each live example only near the
   screen. The vocabulary page's placeholder is one height (52rem) while examples run 369 to 884 px.
 
-- Plumber judges only the state the page is in when read. Anything shown on hover, focus or open (the hero's guide
-  labels) and anything that breaks only at some window widths is not seen unless the page is in that state. Next:
-  read each page at a few widths, and with hover-revealed things shown.
+- Other states (four window widths, the pointer over things) are read by the command line only, and only for
+  words meeting words. Not yet: the same in the overlay in the browser; other checks that change with width
+  (overflow, clipped text, tap targets); focus and open states; a test of its own; widths taken from the project's
+  own breakpoints rather than four fixed ones.
+- Which state an overlap is first seen in can differ between runs when the page animates on load (the hero's labels
+  were once seen "with the pointer over it", once without).
+- Two phone-width findings on crafting-ui are not checked by eye yet: the motion page's timeline label over
+  "Cards · 4 f apart", and the swipe demo's text over "9:41". Both sit in animated demos, so they may be a moment
+  mid-animation rather than a resting overlap. If so, words that are moving should be skipped.
 - Words meeting words is advice only: it names the two texts, it does not offer a class to fix them.
 
 ### Writes and speed

@@ -1,7 +1,7 @@
 // Words that run into other words (overlay/src/craft-rules.js, craft/text-collision). On crafting-ui's hero, in a narrow
 // window with the pointer over the headline, two guide labels sat 9px apart ("cap height" over "x-height") and a readout
 // ended exactly where the hint beside it began ("… GEIST MEDIUMGRAB A LETTER …"). Plumber had no check for it. The same
-// two cases here, and the four that look alike and are not collisions. Real CLI, real server, real Chromium.
+// two cases here, and the five that look alike and are not collisions. Real CLI, real server, real Chromium.
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { built, fixture, lineOf, plumber } from './helpers/craft-headless.mjs';
@@ -28,13 +28,14 @@ const PAGE = `export function App() {
         <span id="over" className="text-body">Kiln firing started</span>
       </div>
       <span id="ghost" className="absolute left-[40px] top-[40px] text-[11px] uppercase opacity-0">Baseline</span>
+      <a id="tab" href="#x" className="absolute left-[420px] top-[160px] flex text-[11px] uppercase"><span>Vol. I</span><span id="reader" className="sr-only">Interfaces</span></a>
       <h1 id="tight" className="absolute left-[40px] top-[240px] w-[320px] text-[40px] leading-[0.9] font-semibold">A heading that wraps onto three lines</h1>
     </main>
   );
 }
 `;
 
-test('two labels whose letters meet and a readout that runs into the hint beside it are found; pieces of one number, stacked cards, a transparent label and a tight heading are not', { timeout: 300000 }, async (t) => {
+test('two labels whose letters meet and a readout that runs into the hint beside it are found; pieces of one number, stacked cards, a transparent label, words kept for a screen reader and a tight heading are not', { timeout: 300000 }, async (t) => {
   if (!await built()) return t.skip('Run npm run build first.');
   const { root, url } = await fixture(t, PAGE);
   const report = JSON.parse((await plumber(['--url', url, '--json', '--root', root, '--no-pairs', '--no-probe'])).stdout);

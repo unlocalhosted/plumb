@@ -679,6 +679,15 @@
 - **Media hooks:** the owner's screenshot beside the same hero with plumber's two findings drawn on it.
 - References: [the owner's screenshot](references.md).
 
+## Plumber reads the page at four widths and under the pointer (2026-11-12)
+- **The itch:** after the words-meet-words check, plumber still could not find the owner's overlap by itself: it only saw the page at one width, at rest.
+- **The system behind it:** the command-line read opened each page once, 1280px wide, and never moved the pointer over anything that was not a button.
+- **What we chose and why:** after the main read, the page is opened at four widths (1280, 1024, 768, 390: desktop, small laptop, tablet upright, phone), side by side. At each width the pointer is put over up to six things that listen for it (a React pointer handler, or a Tailwind `group`), and the words-meet-words check is run in every state. A hover presses nothing, so it is safe everywhere. Only this one check is run in these states for now: it is the one that changes most with width and hover, and a full read per state would take minutes. A finding says when it is true: "Seen in a window 768px wide, with the pointer over it."
+- **Dead end:** the first run reported three overlaps in crafting-ui's header on a phone. They were words kept for screen readers, cut to a 1px box. Words that are clipped out of sight are now skipped.
+- **The fix and the proof:** `plumber craft` on crafting-ui's home page, with nobody touching it. Before: 19 findings, none about the hero. After: 21, the two new ones being the owner's two overlaps (MatHero.tsx:202 and Play.tsx:92), each marked with the width it was seen at.
+- **Not done:** no test of its own yet; other width-sensitive checks (overflow, clipped text, tap targets) are not run in these states; the run takes about 90 seconds on this page, most of it the older gesture probes.
+- References: [the owner's screenshot](references.md).
+
 ## Open gaps
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
 
@@ -686,6 +695,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - Plumber's text styles write into crafting-ui without shrinking headings or large numbers, keep classes that only apply to part of the text, and keep paragraph leading off headings ([entry](#big-text-no-longer-shrinks-to-fit-small-text-the-dark-page-checked-2026-11-12)).
 - crafting-ui's vocabulary page loads about four times lighter (9,474 → 2,007 elements): each live example mounts only as it comes near the screen. [entry](#crafting-uis-vocabulary-page-live-examples-mount-only-near-the-screen-2026-11-12)
 - plumber finds a side column that is set to stick but can't, and fixes it with one class: on crafting-ui's skill pages the column now stays beside the text where it used to scroll away. [entry](#the-sticky-check-on-a-real-app-crafting-uis-skill-pages-2026-11-12)
+- `plumber craft` reads each page at four window widths and with the pointer over things, so an overlap that only shows on a tablet or on hover is found without anyone setting the page up ([entry](#plumber-reads-the-page-at-four-widths-and-under-the-pointer-2026-11-12)).
 - plumber says when words run into other words: two labels whose letters meet, or a readout that ends where the next text begins ([entry](#words-that-run-into-other-words-2026-11-12)).
 - In a rename plan, the raised background gets the surface name and recessed fills get sunken, judged against the page colour ([entry](#which-colour-gets-the-surface-name-2026-11-12)).
 - Plumber tells text colours from fill colours by how the code uses them, so shadcn's `-foreground` colours read as the words they are ([entry](#text-and-fill-colours-read-from-the-code-2026-11-12)).

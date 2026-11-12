@@ -29,7 +29,8 @@ import { locate } from './locate.js';
 import { PAIRS, pairIn, pairsReset, resetKeys, snapshot, hasDarkStyles, scrollers, skeletons, heightsAt, fromKey, pathKey, candidates, probesIn, sourcesIn, wantedSources } from './craft-headless.js';
 import { request } from './api.js';
 import { Facts, Theme, spec } from './craft.js';
-import { RULES } from './craft-rules.js';
+import { RULES, textCollision } from './craft-rules.js';
+import { lawsOf } from './laws.js';
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -38,6 +39,31 @@ async function operate(options) {
   const { op } = options;
   const rec = window.__plumbRec;
   if (op === 'candidates') { resetKeys(); return candidates(options.scope); }
+  // Other states of the page (src/craft-run.ts takeStates): the things that answer the pointer coming over them, and
+  // the words that meet other words in the state the page is in now. A read of its own, with no blueprint: it is asked
+  // many times (each window width, each thing hovered), and only this one rule changes with those.
+  if (op === 'hovers') {
+    resetKeys();
+    const LISTENS = ['onMouseEnter', 'onPointerEnter', 'onMouseOver', 'onPointerOver', 'onMouseMove', 'onPointerMove'];
+    const propsOf = (el) => { const k = Object.keys(el).find((name) => name.startsWith('__reactProps$')); return k ? el[k] : null; };
+    return [...document.body.querySelectorAll('*')].filter((el) => {
+      if (el.closest('plumb-overlay, [inert], [hidden], svg') || !el.getClientRects().length) return false;
+      const props = propsOf(el);
+      return (props && LISTENS.some((name) => typeof props[name] === 'function')) || /(^|\s)group(\/\S+)?(\s|$)/.test(el.getAttribute('class') ?? '');
+    }).slice(0, options.budget ?? 6).map(pathKey);
+  }
+  if (op === 'collisions') {
+    const facts = new Facts();
+    facts.items = [...document.body.querySelectorAll('[data-plumb-source]')].filter((el) => !el.closest('plumb-overlay'));
+    const found = [];
+    for (const el of facts.items) { try { for (const f of textCollision.check({ el, facts }) ?? []) found.push({ el, f }); } catch { /* a rule's error is its own */ } }
+    const sites = await Promise.all(found.map(({ el }) => locate(el, { explain: true, batch: true }).catch(() => null)));
+    return JSON.parse(JSON.stringify(found.map(({ el, f }, i) => ({
+      rule: textCollision.id, title: f.title, because: f.because, action: f.suggest?.text ?? '', laws: lawsOf(textCollision.id), text: f.text, value: f.value ?? null,
+      confidence: f.confidence ?? null, evidence: f.evidence ?? {}, suggest: f.suggest ?? null, soft: false,
+      file: sites[i]?.file ?? null, line: sites[i]?.line ?? null, column: sites[i]?.column ?? null, component: sites[i]?.component ?? null, tag: el.localName, count: 1,
+    }))));
+  }
   if (op === 'frame') {
     const el = fromKey(options.key);
     if (!el) return null;

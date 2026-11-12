@@ -2107,7 +2107,9 @@ function textLines(facts) {
   all = [];
   const ctx = (textLines.ctx ??= document.createElement('canvas').getContext('2d'));
   const seen = new Map();
-  const shown = (el) => { if (!el || el === document.body) return true; let v = seen.get(el); if (v === undefined) { const st = facts.style(el); v = st.display !== 'none' && st.visibility !== 'hidden' && parseFloat(st.opacity) >= 0.05 && shown(el.parentElement); seen.set(el, v); } return v; };
+  // words kept for a screen reader and cut out of sight (sr-only: a 1px box that clips what is in it) are not drawn
+  const clipped = (el, st) => st.overflow !== 'visible' && (() => { const r = facts.rect(el); return r.width <= 2 || r.height <= 2; })();
+  const shown = (el) => { if (!el || el === document.body) return true; let v = seen.get(el); if (v === undefined) { const st = facts.style(el); v = st.display !== 'none' && st.visibility !== 'hidden' && parseFloat(st.opacity) >= 0.05 && !clipped(el, st) && shown(el.parentElement); seen.set(el, v); } return v; };
   const blockOf = (el) => { for (let n = el; n; n = n.parentElement) { const d = facts.style(n).display; if (!/^inline/.test(d) && d !== 'contents') return n; } return document.body; };
   // the painted thing the words are drawn on: the nearest box with a fill of its own
   const surfaces = new Map();
