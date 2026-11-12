@@ -64,7 +64,11 @@ reserved.)
   performance test · the tests that fail only under the full run's load.
 - **Decided 2026-11-12:** shadows went ahead of padding-by-job. After padding is snapped to the scale, sibling cards on
   the messy page already agree, so reading padding by job has little to show yet; shadows were a missing primitive.
-- **Later:** borders, motion, opacity and states · surface levels · shadcn's foreground colours · growing hero
+- **Done since:** the shared role layer · borders (the colour pass already decides them) · timings · the disabled look.
+- **Decided 2026-11-12, layer order:** not built yet. A z-index move changes what covers what, so a pass may only
+  rename a value that already equals its job's layer. crafting-ui names its layers by number (no job); algorecall
+  names them by job but is not running here. Build it when an app with job-named layers is at hand.
+- **Later:** hover and pressed states · surface levels · shadcn's foreground colours · growing hero
   titles · the speed items · the remaining defensive tips · the 80-column report · the flaky tests.
 
 ### Clean-up: text
