@@ -767,7 +767,7 @@
 - **What went:** three whole files (the colour pass and icon pass readers, and the size-named theme test), which called the passes' inner functions and checked their rule codes; ten tests that drove the source-map store, the ledger and the session's file listing directly or counted their private calls.
 - **What was trimmed, not deleted:** eight tests that check behaviour (a report equal to the CLI's, a page that locates and writes) kept it and lost their internal counters: the census staleness half, the clean-up page's colour check, the source-map fetch counts, the injected script's exact text, the session's file-listing counts.
 - **The cost, said plainly:** some behaviour now has no test (listed in the backlog under "Behaviour with no test"), mostly the colour and icon passes' individual cases. They should be tested again through the clean-up's Preview and Apply.
-- **Proof:** every edited file parses; the suite was not run (no tests while iterating). 1,435 lines removed from the test folder.
+- **Proof:** every edited file parses; the suite was not run (no tests while iterating). 1,333 lines removed from the test folder.
 
 ## Open gaps
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
