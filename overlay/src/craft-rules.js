@@ -57,7 +57,7 @@
 import { rgb, utility, classesOf, elevation, COLOUR } from './craft-read.js';
 import { TIER } from './craft-facets.js';
 import { say } from './words.js';
-import { controlKind, roleOf } from './roles.js';
+import { controlAround, controlKind, roleOf } from './roles.js';
 import { RUN_RULES } from './craft-headless.js';
 import { recommend, recommendColour } from './craft-recommend.js';
 
@@ -976,7 +976,7 @@ export const disabledContrast = {
   scope: ({ el }) => disabled(el), reads: ['style', 'ground'],
   check({ el, facts }, theme) {
     const T = theme.spec(this.id);
-    if (!el.matches(':disabled, [aria-disabled="true"]') || !el.matches('button, [role="button"], input, a')) return [];
+    if (!el.matches(':disabled, [aria-disabled="true"]') || !(controlKind(el, facts.style(el)) || el.matches('a'))) return [];
     const s = facts.style(el), o = parseFloat(s.opacity);
     if (!(o < 1)) return [];
     const parentGround = el.parentElement ? facts.ground(el.parentElement) : [255, 255, 255, 1];
@@ -1262,7 +1262,7 @@ export const fixedHeight = {
     if (s.overflowY !== 'visible' || s.display === 'none' || s.position === 'fixed' || /inline$/.test(s.display)) return [];
     if (px(s.minHeight) >= el.offsetHeight - 1 && px(s.minHeight) > 0) return []; // already a least height
     // text that wraps: a line of words in here already runs to a second line, so a longer one runs to a third
-    const wraps = [el, ...el.querySelectorAll('*')].slice(0, T.depth).some((t) => facts.text(t) && facts.style(t).whiteSpace !== 'nowrap' && !t.closest('button, input, select, textarea') && lineCount(t) >= 2);
+    const wraps = [el, ...el.querySelectorAll('*')].slice(0, T.depth).some((t) => facts.text(t) && facts.style(t).whiteSpace !== 'nowrap' && !controlAround(t) && lineCount(t) >= 2);
     if (!wraps) return [];
     const over = Math.max(0, el.scrollHeight - el.clientHeight);
     const shows = over > 1;

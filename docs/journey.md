@@ -719,6 +719,13 @@
 - **Before and after:** of the 14 radius and shadow tokens in crafting-ui and the messy test app, none changes job, so no suggestion changes on them. A theme with tokens named `box`, `container` or `tooltip` now gets the same reading from every pass.
 - **With this the role layer is done:** what an element is, and what a token is for, each decided once. A new primitive is now a small table of role to token.
 
+## The colour pass reads what an element is from the role file too (2026-11-12)
+- **The itch:** while looking for the next primitive (borders), it turned out the colour pass already decides a border's colour by job: a control's edge gets the strong line colour, because WCAG 1.4.11 asks 3:1 for a control's boundary. But it had its own list of controls, an eighth reader the first count missed. In it every link was a control, and only a `<button>` or a field had a control's edge.
+- **What changed:** the colour pass asks the role file whether something is in a control, in a field, and whether its own edge is a control's. Two craft rules (disabled contrast, and text that wraps in a fixed height) do too.
+- **Before and after on crafting-ui:** the header's tabs and "Open the first entry →" now have control edges (their borders are held to the strong line colour, which they already use); decorative lines inside a linked card are no longer read as a control's colour; the parts of a switch are. Colour suggestions on the four pages: unchanged, because crafting-ui's colours are already on its tokens. Craft findings: unchanged.
+- **Kept narrow on purpose:** what the gesture probes press (real buttons only, for safety) and the press-feedback rule (a button answers the press; a tab bar is not asked to).
+- **Not done:** the role file has one kind, "button", for buttons, tabs and menu items. Press feedback and the button rules would read better with a tab told apart.
+
 ## Open gaps
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
 

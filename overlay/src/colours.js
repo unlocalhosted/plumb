@@ -30,6 +30,7 @@
 import { oklab, toRgb } from './craft-headless.js';
 import { apca, colourClass } from './craft-rules.js';
 import { SPEC, utility } from './craft-read.js';
+import { controlAround, controlKind } from './roles.js';
 
 const DE_OK = 0.03;      // keep: indistinguishable in UI (pass-colour.md step 4), our visibility threshold (§1.1)
 const GREY_CLUSTER = 0.04; // two text colours this close are one grey level (craft.js census 'textColors')
@@ -336,12 +337,13 @@ function fullGround(el, memo) {
 }
 
 // §4.3 usage evidence for one element: a control or link (the accent's places), a status hint (a message, a badge, an alert)
-const CONTROL = 'button, a[href], [role=button], [role=link], [role=tab], [role=menuitem], input, select, textarea, summary';
-const FIELD = 'input, select, textarea';
 const STATUS_HINT = '[role=alert], [role=status], [class*=error i], [class*=danger i], [class*=success i], [class*=warning i], [class*=alert i], [class*=toast i], [class*=badge i], [class*=banner i], [class*=notice i], [class*=invalid i]';
 function ctxOf(el) {
   const own = [...el.childNodes].filter((n) => n.nodeType === 3).map((n) => n.nodeValue).join(' ');
-  return { tag: el.localName, control: !!el.closest(CONTROL), field: !!el.closest(FIELD), link: !!el.closest('a[href]'), heading: !!el.closest('h1,h2,h3,h4,h5,h6'),
+  // what it is, as every pass reads it (roles.js): in a control, in a field, in a link, and whether its own edge is a
+  // control's (WCAG 1.4.11: a control's boundary needs 3:1)
+  const around = controlAround(el);
+  return { tag: el.localName, control: !!around, field: around === 'field', edge: !!controlKind(el), link: !!el.closest('a[href], [role=link]'), heading: !!el.closest('h1,h2,h3,h4,h5,h6'),
     statusHint: !!el.closest(STATUS_HINT) || /\b(error|failed|invalid|saved|success|warning|danger)\b/i.test(own.slice(0, 120)) };
 }
 // §4.3 painted area of a background, and whether it sits straight on the page (nothing painted between it and the body)
@@ -502,7 +504,7 @@ export function readRoles(places) {
       else { const down = lab[0] < oklab(e.under)[0] - 0.004; r.role = down ? 'sunken' : 'surface'; r.kinds = [r.role]; } // §4.3 a step darker is inset, else raised
     } else {
       if (hued) { r.role = ctx.control ? 'accent' : 'decoration'; r.kinds = ['accent', 'ink2', 'accent-soft', 'ink2-soft', 'line']; }
-      else { r.role = ctx.field || ctx.tag === 'button' ? 'line-strong' : 'line'; r.kinds = r.role === 'line-strong' ? ['line-strong', 'line'] : ['line']; } // §4.3 control borders are line-strong
+      else { r.role = ctx.edge ? 'line-strong' : 'line'; r.kinds = r.role === 'line-strong' ? ['line-strong', 'line'] : ['line']; } // §4.3 control borders are line-strong
     }
     out.set(e, r);
   }

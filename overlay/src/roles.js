@@ -93,6 +93,17 @@ function barOf(el) {
   return v;
 }
 
+/** The kind of control this element is, or sits inside (a label's words, an icon in a button). A plain link is not a
+ *  control and ends the search: what is inside it is the link's. */
+export function controlAround(el) {
+  for (let n = el; n && n !== document.body; n = n.parentElement) {
+    const k = controlKind(n);
+    if (k) return k;
+    if (n.matches('a[href]')) return null;
+  }
+  return null;
+}
+
 /** The words of this element are a control's label: it sits in a button, a form label, or a link drawn as a button. */
 export function inControl(el) {
   for (let n = el; n && n !== document.body; n = n.parentElement) {
