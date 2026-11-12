@@ -51,7 +51,14 @@ test('a theme without a tracking step is offered one: --tracking-caps 0.06em, na
   await page.goto(url);
   await page.waitForFunction(() => window.__plumb?.overlay);
   await page.evaluate(() => window.__plumb.ready());
-  const post = (body) => page.evaluate(async (b) => { const { post } = await import('/__plumb/src/api.js'); return post('token', b).then((r) => r, (e) => ({ error: e.message })); }, body);
+  // sent from the test, as the page's own origin would: the theme write reloads the page, and a request made through the
+  // page was cut off by that reload on a slower machine ("execution context was destroyed")
+  const origin = new URL(url).origin;
+  const post = async (body) => {
+    const r = await fetch(`${origin}/__plumb/token`, { method: 'POST', headers: { 'Content-Type': 'application/json', Origin: origin, 'Sec-Fetch-Site': 'same-origin' }, body: JSON.stringify(body) });
+    const out = await r.json().catch(() => ({}));
+    return r.ok ? out : { error: out.error ?? `refused (${r.status})` };
+  };
   const then = { file: 'src/App.jsx', hash: caps.hash ?? null, line: caps.line, column: caps.column, from: '', to: 'tracking-caps' };
   // the class swap needs the source file's hash: read it the way the overlay does
   then.hash = await page.evaluate(async () => { const { request } = await import('/__plumb/src/api.js'); return (await request('resolve', { source: 'src/App.jsx', snapshot: '1' })).hash; });
