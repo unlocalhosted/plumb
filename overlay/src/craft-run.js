@@ -29,7 +29,9 @@ import { locate } from './locate.js';
 import { PAIRS, pairIn, pairsReset, resetKeys, snapshot, hasDarkStyles, scrollers, skeletons, heightsAt, fromKey, pathKey, candidates, probesIn, sourcesIn, wantedSources } from './craft-headless.js';
 import { request } from './api.js';
 import { Facts, Theme, spec } from './craft.js';
-import { RULES } from './craft-rules.js';
+import { RULES, textCollision } from './craft-rules.js';
+import { lawsOf } from './laws.js';
+import { STAMPED } from './stamp.js';
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -38,6 +40,31 @@ async function operate(options) {
   const { op } = options;
   const rec = window.__plumbRec;
   if (op === 'candidates') { resetKeys(); return candidates(options.scope); }
+  // Other states of the page (src/craft-run.ts takeStates): the things that answer the pointer coming over them, and
+  // the words that meet other words in the state the page is in now. A read of its own, with no blueprint: it is asked
+  // many times (each window width, each thing hovered), and only this one rule changes with those.
+  if (op === 'hovers') {
+    resetKeys();
+    const LISTENS = ['onMouseEnter', 'onPointerEnter', 'onMouseOver', 'onPointerOver', 'onMouseMove', 'onPointerMove'];
+    const propsOf = (el) => { const k = Object.keys(el).find((name) => name.startsWith('__reactProps$')); return k ? el[k] : null; };
+    return [...document.body.querySelectorAll('*')].filter((el) => {
+      if (el.closest('plumb-overlay, [inert], [hidden], svg') || !el.getClientRects().length) return false;
+      const props = propsOf(el);
+      return (props && LISTENS.some((name) => typeof props[name] === 'function')) || /(^|\s)group(\/\S+)?(\s|$)/.test(el.getAttribute('class') ?? '');
+    }).slice(0, options.budget ?? 6).map(pathKey);
+  }
+  if (op === 'collisions') {
+    const facts = new Facts();
+    facts.items = [...document.body.querySelectorAll(STAMPED)].filter((el) => !el.closest('plumb-overlay'));
+    const found = [];
+    for (const el of facts.items) { try { for (const f of textCollision.check({ el, facts }) ?? []) found.push({ el, f }); } catch { /* a rule's error is its own */ } }
+    const sites = await Promise.all(found.map(({ el }) => locate(el, { explain: true, batch: true }).catch(() => null)));
+    return JSON.parse(JSON.stringify(found.map(({ el, f }, i) => ({
+      rule: textCollision.id, title: f.title, because: f.because, action: f.suggest?.text ?? '', laws: lawsOf(textCollision.id), text: f.text, value: f.value ?? null,
+      confidence: f.confidence ?? null, evidence: f.evidence ?? {}, suggest: f.suggest ?? null, soft: false,
+      file: sites[i]?.file ?? null, line: sites[i]?.line ?? null, column: sites[i]?.column ?? null, component: sites[i]?.component ?? null, tag: el.localName, count: 1,
+    }))));
+  }
   if (op === 'frame') {
     const el = fromKey(options.key);
     if (!el) return null;
@@ -170,7 +197,11 @@ export function craftRun(overlay, options = {}) {
 
 async function readOnce(overlay, { timeout = 60000, quiet = 600, grey = false, scope = null, hidden = false } = {}) {
   resetKeys();
-  await prepareSources();
+  // a window with no size (a tab that was never shown, a hidden pane) lays nothing out: every measure is zero, and a
+  // read of it would report a clean page, or nonsense, without a word
+  if (!(innerWidth > 0 && innerHeight > 0)) throw new Error('This window has no size, so nothing on the page can be measured. Bring it to the front, then read again.');
+  // what the page is judged against is asked for before the read, not during it (each late arrival judges everything again)
+  await Promise.all([prepareSources(), overlay?.themeReady?.()]);
   const blueprint = overlay?.blueprintReader;
   if (!blueprint) throw new Error('The Plumb overlay is not mounted on this page.');
   const within = scope ? document.querySelector(scope) : null;
@@ -194,11 +225,13 @@ async function readOnce(overlay, { timeout = 60000, quiet = 600, grey = false, s
       await sleep(100);
     }
     const found = new Map();
-    for (const item of blueprint.items) {
-      // its own craft marks, and those the theme's mark outranked on the same facet (verdict.js craftUnder)
-      const marks = [...item.marks.filter((m) => m.family === 'craft'), ...item.marks.flatMap((m) => m.craftUnder ?? [])];
-      if (!marks.length) continue;
-      const at = await locate(item.el, { explain: true, batch: true }).catch(() => null);
+    // its own craft marks, and those the theme's mark outranked on the same facet (verdict.js craftUnder)
+    const marked = blueprint.items.map((item) => ({ item, marks: [...item.marks.filter((m) => m.family === 'craft'), ...item.marks.flatMap((m) => m.craftUnder ?? [])] })).filter((x) => x.marks.length);
+    // where each was written, asked together: questions asked in one turn go to the server as one round trip (api.js).
+    // Asked one after another they were a round trip each, and most of a read's time (5 s of 8 on a 1,400-element page)
+    const sites = await Promise.all(marked.map(({ item }) => locate(item.el, { explain: true, batch: true }).catch(() => null)));
+    for (const [i, { item, marks }] of marked.entries()) {
+      const at = sites[i];
       for (const m of marks) {
         // a finding about something that isn't on the page at rest (a palette) names where its code lives itself
         const own = m.craft?.evidence?.at;

@@ -36,7 +36,7 @@ import { FixPanel, FIX_CSS } from './fixpanel.js'; // the one place you act: a c
 import { FIX } from './words.js';
 import { hasText } from './texteditor.js';
 import { errorIs, post, request } from './api.js';
-import { locate } from './locate.js';
+import { locate, classEditsOf, classSiteOf } from './locate.js';
 
 const FADE_IN = 160, FADE_OUT = 120; // ms, the same as --pl-dur-dim and --pl-dur-undim
 
@@ -107,6 +107,7 @@ export class Blueprint {
       tokens: () => spec.value?.tokens ?? null,
       fromCode: (mark, places) => this.#fromCode(mark, places),
       applyStyles: (write, said, meta) => this.#applyStyles(write, said, meta),
+      renameColours: (map, said, meta) => this.#renameColours(map, said, meta),
       scope: () => this.#scope,
       set: (at, key, token, said) => this.#setProp(at, key, token, said),
       recipe: (at, body, said, meta) => this.#applyRecipe(at, body, said, meta),
@@ -292,6 +293,10 @@ export class Blueprint {
   };
   // Where an element is written: its line and its file's hash now.
   async #siteOf(el) {
+    // where the element's classes are written (locate.js classSiteOf): its own line, or the usage that passes them in
+    // when it is drawn by a wrapper (a Link, a Button). Its own line alone is the wrapper's, where a write is refused
+    const written = await classSiteOf(el).catch(() => null);
+    if (written?.file && written.hash && Number.isFinite(written.line)) return { file: written.file, line: written.line, column: written.column, hash: written.hash };
     const at = await locate(el);
     if (!at?.file) return null;
     const props = await request('props', { file: at.file, line: at.line, column: at.column });
@@ -323,8 +328,26 @@ export class Blueprint {
     const heard = (e) => this.#host.remember?.(said, e.detail?.undo ?? [], null, trace.group);
     addEventListener('plumb:applied', heard, { once: true });
     try {
-      const answer = await post('apply-all', { tokens: write.tokens ?? [], css: write.css ?? [], swaps: write.swaps ?? [], trace });
-      const results = answer?.results ?? {}, undo = answer?.undo ?? [];
+      // props first (a number passed to a component, changed where it is written: POST prop), one at a time; a file they
+      // change has a new hash, which the swaps that follow in the same file are sent with
+      const hashes = new Map(), propUndo = [], propLeft = [];
+      for (const p of write.props ?? []) {
+        try {
+          const r = await post('prop', { file: p.file, hash: hashes.get(p.file) ?? p.hash, line: p.line, column: p.column, name: p.name, value: p.value, trace });
+          if (r?.undo) propUndo.push(r.undo);
+          if (r?.hash) hashes.set(p.file, r.hash);
+          this.invalidate({ file: p.file });
+        } catch (error) { propLeft.push({ file: p.file, reason: error?.message ?? FIX.couldNot }); }
+      }
+      const swapsNow = (write.swaps ?? []).map((x) => (hashes.has(x.file) ? { ...x, hash: hashes.get(x.file) } : x));
+      const rest = (write.tokens ?? []).length || (write.css ?? []).length || swapsNow.length;
+      if (!rest) {
+        if (!propUndo.length) { this.#host.forgetResume?.(); return { ok: false, undo: [], group: trace.group, why: propLeft[0]?.reason ?? FIX.couldNot }; }
+        this.#host.remember?.(said, propUndo, null, trace.group);
+        return { ok: true, undo: propUndo, group: trace.group, refused: propLeft };
+      }
+      const answer = await post('apply-all', { tokens: write.tokens ?? [], css: write.css ?? [], swaps: swapsNow, trace });
+      const results = answer?.results ?? {}, undo = [...propUndo, ...(answer?.undo ?? [])];
       const failed = [...(results.tokens ?? []), ...(results.css ?? []), ...(results.swaps ?? [])].filter((x) => !x.ok || x.refused?.length);
       for (const f of new Set([...(write.tokens ?? []), ...(write.css ?? []), ...(write.swaps ?? [])].map((x) => x.file))) this.invalidate({ file: f });
       // a write that partly lands is a step all the same: what it changed is kept, with its Undo, and what it left as it is
@@ -332,12 +355,26 @@ export class Blueprint {
       // one swap of seventeen refused, classes split across a template string)
       const wrote = [...(results.tokens ?? []), ...(results.css ?? []), ...(results.swaps ?? [])].some((x) => x.ok && (!Array.isArray(x.applied) || x.applied.length));
       const why = failed.length ? (errorIs(failed[0], 'stale-file') ? FIX.changedSince : failed[0].error ?? failed[0].refused?.[0]?.reason ?? FIX.couldNot) : null;
-      if (failed.length && !wrote) { this.#host.forgetResume?.(); return { ok: false, undo, group: trace.group, why }; }
+      if (failed.length && !wrote && !propUndo.length) { this.#host.forgetResume?.(); return { ok: false, undo, group: trace.group, why }; }
       this.#host.remember?.(said, undo, null, trace.group);
       const left = failed.flatMap((f) => (f.refused?.length ? f.refused.map((r) => ({ file: f.file, ...r })) : [{ file: f.file, reason: f.error ?? why }]));
-      return { ok: true, undo, group: trace.group, refused: left };
+      return { ok: true, undo, group: trace.group, refused: [...propLeft, ...left] };
     } catch (error) { this.#host.forgetResume?.(); return { ok: false, why: errorIs(error, 'stale-file') ? FIX.changedSince : error?.message ?? FIX.couldNot }; }
     finally { removeEventListener('plumb:applied', heard); }
+  }
+  // The colour tokens renamed by job across the project (POST rename): like the text styles, a theme write that may
+  // reload the page, so the overlay is told to come back with its Undo before the write goes out
+  async #renameColours(map, said, meta) {
+    const trace = traceOf(meta);
+    this.#host.remember?.(said, undefined, null, trace.group);
+    try {
+      const answer = await post('rename', { map, trace });
+      const files = (answer?.files ?? []).filter((f) => f.ok);
+      for (const f of files) this.invalidate({ file: f.file });
+      if (!files.length) { this.#host.forgetResume?.(); return { ok: false, why: answer?.files?.find((f) => f.error)?.error ?? FIX.couldNot }; }
+      this.#host.remember?.(said, answer.undo ?? [], null, trace.group);
+      return { ok: true, undo: answer.undo ?? [], group: trace.group, files: files.length };
+    } catch (error) { this.#host.forgetResume?.(); return { ok: false, why: error?.message ?? FIX.couldNot }; }
   }
   // A cause no element renders right now: its theme choices, each with its exact edit at every place, read from the
   // code (GET edits per place). The plan is the one a drawn element gets (swapPlanOf); writes[i] is choice i's edits.
@@ -449,11 +486,22 @@ export class Blueprint {
       // every change on the element as one class edit against its classes as written
       const edit = elementEdit(b.classes, b.writes ?? [], b.props);
       if (!edit) { out.push({ el: b.el, ok: false, why: 'This change can’t be written as classes here.' }); continue; }
-      const site = b.site ?? await this.#siteOf(b.el).catch(() => null);
-      if (!site) { out.push({ el: b.el, ok: false, why: 'Can’t reach this in your code.' }); continue; }
-      const f = files.get(site.file) ?? files.set(site.file, { hash: site.hash, edits: [], els: [] }).get(site.file);
-      f.edits.push({ line: site.line, column: site.column, from: edit.from, to: edit.to });
-      f.els.push(b.el);
+      // where the classes are written (locate.js classEditsOf, as every card asks): the element's own string, or the
+      // usage that passes them in when the element is drawn by a wrapper (a Link, a Button). Written at the element's
+      // own line alone, a fix on anything drawn through a component was refused
+      let edits;
+      if (b.site) edits = [{ file: b.site.file, hash: b.site.hash, edit: { line: b.site.line, column: b.site.column, from: edit.from, to: edit.to } }];
+      else {
+        try { edits = await classEditsOf(b.el, edit.from, edit.to); }
+        catch (error) { out.push({ el: b.el, ok: false, why: error?.message ?? 'Can’t reach this in your code.' }); continue; }
+      }
+      for (const e of edits) {
+        const f = files.get(e.file) ?? files.set(e.file, { hash: e.hash, edits: [], els: [], seen: new Set() }).get(e.file);
+        // rows drawn by one line share a place: the edit is sent once
+        const key = JSON.stringify([e.edit.line, e.edit.column, e.edit.at ?? null, e.edit.from, e.edit.to]);
+        if (!f.seen.has(key)) { f.seen.add(key); f.edits.push(e.edit); }
+        if (!f.els.includes(b.el)) f.els.push(b.el);
+      }
     }
     for (const [file, f] of files) {
       try {

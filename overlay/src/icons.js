@@ -27,6 +27,7 @@
  * which also need the target mark to exist in an installed package.
  * ───────────────────────────────────────────────────────── */
 import { toRgb } from './craft-headless.js';
+import { ACTS } from './roles.js';
 import { SPEC, classesOf, utility } from './craft-read.js';
 import { STAMP_ATTRIBUTE, STAMPED, stampOf } from './stamp.js';
 
@@ -54,7 +55,8 @@ const LAW = {
   I1: 'similarity', I2: 'similarity', I3: 'similarity', I4: 'aesthetic-usability', I5: 'similarity', I6: 'similarity',
   I7: 'similarity', I8: 'similarity, Jakob, aesthetic-usability', I9: 'Fitts', unlabelled: 'recognition over recall',
 };
-const CONTROL = 'button, [role=button], [role=tab], [role=menuitem], a[href], summary, input[type=button], input[type=submit]';
+// where an icon is part of the interface: in a control or a link (roles.js)
+const CONTROL = ACTS;
 const SHAPES = 'path, circle, rect, line, polyline, polygon, ellipse';
 const STATUS_HINT = '[role=status], [role=alert], [class*=badge i], [class*=status i], [class*=chip i], [class*=tag i], [class*=pill i], [class*=category i], [class*=label i]';
 const CONTENT_UP = 'canvas, picture, video, plumb-overlay, .recharts-wrapper, .highcharts-container, [class*=chart i], [data-plumb-content]';
@@ -483,8 +485,31 @@ export function proposeIcons(places, family = familyOf(places), { scope = 'keep'
   const refuse = (p, rule, why) => refused.push({ el: p.el, kind: p.kind, rule, law: LAW[rule], why });
 
   // I2 stray size (§4): a peer list of ≥ 3, the mode ≥ 50%; at keep the target is the app's own size, the class its peers wear
-  const bySize = new Map();
-  for (const p of svgs) { const k = `${p.origin}|${textBand(p)}`; if (!bySize.has(k)) bySize.set(k, []); bySize.get(k).push(p); }
+  // Peers are first the icons that sit in the same slot of repeated rows (the icon of each item of a nav, of each row
+  // of a list): where an icon sits says what it is (docs/PRINCIPLES.md; craft #34, one icon size per list). An icon with
+  // no such rows is compared with the page's icons beside text of its size, as before.
+  const slots = new Map(); // container → path → icons, per level up from the icon
+  const levels = new Map(); // icon → [[container, path]] nearest first
+  for (const p of svgs) {
+    // the slot is the icon's place in its row: each step down by tag and position (a row's first span is not its fourth).
+    // The row itself is any child of the container, so its own position is left out
+    const nth = (n) => `${n.localName}:${[...n.parentElement.children].indexOf(n)}`;
+    const mine = []; let below = nth(p.el);
+    for (let a = p.el.parentElement, d = 0; a?.parentElement && d < 6; a = a.parentElement, d++) {
+      const path = `${a.localName}>${below}`;
+      below = `${nth(a)}>${below}`;
+      const c = a.parentElement; let m = slots.get(c); if (!m) slots.set(c, (m = new Map()));
+      if (!m.has(path)) m.set(path, []); m.get(path).push(p); mine.push([c, path]);
+    }
+    levels.set(p, mine);
+  }
+  const bySize = new Map(), slotted = new Set();
+  for (const p of svgs) {
+    const at = levels.get(p).find(([c, path]) => slots.get(c).get(path).length >= T.sizePeers);
+    if (!at) continue;
+    const group = slots.get(at[0]).get(at[1]); bySize.set(group, group); for (const x of group) slotted.add(x);
+  }
+  for (const p of svgs) { if (slotted.has(p)) continue; const k = `${p.origin}|${textBand(p)}`; if (!bySize.has(k)) bySize.set(k, []); bySize.get(k).push(p); }
   for (const [, group] of bySize) {
     if (group.length < T.sizePeers) continue;
     const m = mode(group.map((p) => Math.round(p.size)));
@@ -493,6 +518,7 @@ export function proposeIcons(places, family = familyOf(places), { scope = 'keep'
     const cls = mode(peers.map((p) => p.at.size).filter(Boolean))?.value ?? sizeCls(m.value);
     for (const p of group) {
       if (Math.abs(p.size - m.value) < 0.5 || Math.abs(p.size - m.value) > T.sizeNear) continue;
+      if (moved.get(p)?.size !== undefined) continue; // already answered among its nearer peers
       if (p.positioned) { refuse(p, 'I2', 'positioned art: the layout depends on its size'); continue; }
       const from = { size: p.size, cls: p.at.size }, to = { size: m.value, cls };
       if (p.at.size) { move(p, 'I2', from, to, { cls: cls, from: p.at.size }); note(p, { size: m.value }); }

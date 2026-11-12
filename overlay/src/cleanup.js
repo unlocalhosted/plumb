@@ -1,7 +1,7 @@
 /* ─────────────────────────────────────────────────────────
  * CLEAN UP THIS PAGE · React Plumber overlay (docs/briefs/page-cleanup.md, mock: docs/briefs/page-cleanup/mock.html)
  *
- * The page worked through in passes (text, spacing, colour, icons), each read, previewed, then applied as one step
+ * The page worked through in passes (text, spacing, colour, icons, corners, controls, shadows, timings, disabled states), each read, previewed, then applied as one step
  * that History can undo whole. It lives in the fix panel: the panel's body is handed to it while a clean-up runs.
  *
  *  stepper   the four passes along the top, each with this page's count; the one in hand, the ones done (✓), the
@@ -21,15 +21,20 @@
  * held Space compares while previewing (its own listener, only then: Blueprint's keys never carry keyup)
  * ───────────────────────────────────────────────────────── */
 import { answered, errorIs, post, request } from './api.js';
+import { inControl } from './roles.js';
 import { esc } from './choices.js';
 import { glide } from './inplace.js';
 import { namesOf, rolesInOrder, StylePreview } from './typesystem.js';
 import { SHOW_CSS, chipsHtml, Marks, play, playAll, ease } from './show.js';
 import { SpacingPass } from './spacing-pass.js';
 import { ColourPass } from './colour-pass.js';
+import { RadiusPass } from './radius-pass.js';
+import { ControlSizePass } from './control-size-pass.js';
 import { IconPass } from './icon-pass.js';
 import { CLEANUP as W } from './words.js';
 import { STAMPED, stampOf, sameStamp } from './stamp.js';
+import { declaredColours, loadPalette, paletteOf } from './colours.js';
+import { renameMap } from './colour-system.js';
 
 const LAWS = [{ id: 'similarity', name: 'Law of similarity' }, { id: 'cognitive-load', name: 'Cognitive load' }];
 // the passes written as class swaps (spacing-pass.js, colour-pass.js): one shape, so the panel runs them one way
@@ -37,8 +42,13 @@ const SWAP_LAWS = {
   spacing: [{ id: 'proximity', name: 'Law of proximity' }, { id: 'common-region', name: 'Law of common region' }],
   colour: [{ id: 'similarity', name: 'Law of similarity' }, { id: 'von-restorff', name: 'Von Restorff effect' }],
   icons: [{ id: 'similarity', name: 'Law of similarity' }, { id: 'aesthetic-usability', name: 'Aesthetic-usability effect' }],
+  radius: [{ id: 'similarity', name: 'Law of similarity' }],
+  sizes: [{ id: 'similarity', name: 'Law of similarity' }],
+  shadows: [{ id: 'similarity', name: 'Law of similarity' }, { id: 'common-region', name: 'Law of common region' }],
+  speeds: [{ id: 'similarity', name: 'Law of similarity' }],
+  states: [{ id: 'similarity', name: 'Law of similarity' }, { id: 'jakob', name: 'Jakob’s law' }],
 };
-const PASSES = ['text', 'spacing', 'colour', 'icons'];
+const PASSES = ['text', 'spacing', 'colour', 'icons', 'radius', 'sizes', 'shadows', 'speeds', 'states'];
 // where a clean-up is, kept in the tab: a write (or its undo) can reload the page, and the clean-up comes back to it
 const KEPT = 'plumb:cleanup', FRESH = 60000;
 const keep = (v) => { try { v ? sessionStorage.setItem(KEPT, JSON.stringify({ ...v, at: Date.now(), path: location.pathname })) : sessionStorage.removeItem(KEPT); } catch {} };
@@ -94,6 +104,17 @@ export const CLEANUP_CSS = `
   @keyframes cu-live { 0% { box-shadow: 0 0 0 0 rgb(42 127 208 / .4); } 70% { box-shadow: 0 0 0 6px transparent; } 100% { box-shadow: 0 0 0 0 transparent; } }
   @media (prefers-reduced-motion: reduce) { .cu .bar .live { animation: none; } }
   .cu .roles { padding: 12px 14px 0; }
+  .cu .names { margin: 12px 0 0; padding: 12px 16px 0; border-top: 1px solid #ecebe6; display: grid; gap: 4px; }
+  .cu .names.quiet { border-top: 0; margin-top: 4px; padding-top: 0; } .cu .names.quiet .nacts { margin: 0 0 0 -12px; }
+  .cu .names .nhead { font-weight: 600; font-size: 13px; line-height: 1.35; text-wrap: balance; }
+  .cu .names .nacts { display: flex; gap: 4px; margin: 8px 0 0; }
+  .cu button.cu-btn.soft { background: #f4f3ef; } .cu button.cu-btn.soft:hover { background: #ecebe6; }
+  .cu .names .nlist { margin: 4px 0; max-height: min(30vh, 240px); }
+  .cu .names .nlist { gap: 2px; outline: none; }
+  .cu .names .nlist li { grid-template-columns: 20px 1fr; min-height: 38px; padding: 4px 8px 4px 4px; }
+  .cu .names .sw { width: 14px; height: 14px; border-radius: 4px; justify-self: center; box-shadow: inset 0 0 0 1px rgb(0 0 0 / .12); }
+  .cu .names .nm { font: 550 12px/1.3 var(--pl-mono, ui-monospace, monospace); } .cu .names .nm small { font-family: var(--pl-sans, system-ui); }
+  .cu .names .error { padding: 0; }
   .cu .ladder .sp-ic { display: inline-grid; place-items: center; width: 16px; height: 16px; color: #6b665c; } .cu .ladder .sp-ic svg { width: 16px; height: 16px; display: block; }
 ${SHOW_CSS}
 `;
@@ -102,7 +123,7 @@ ${SHOW_CSS}
 function pageCensus() {
   return [...document.body.querySelectorAll(STAMPED)].filter((el) => !el.closest('plumb-overlay') && [...el.childNodes].some((n) => n.nodeType === 3 && /[\p{L}\p{N}]/u.test(n.nodeValue))).map((el) => {
     const cs = getComputedStyle(el);
-    return { stamp: stampOf(el), tag: el.localName, list: !!el.closest('li, ul, ol, dl'), computed: { size: parseFloat(cs.fontSize), lineHeight: cs.lineHeight === 'normal' ? null : parseFloat(cs.lineHeight), letterSpacing: cs.letterSpacing === 'normal' ? 0 : parseFloat(cs.letterSpacing), weight: parseInt(cs.fontWeight, 10), transform: cs.textTransform } };
+    return { stamp: stampOf(el), tag: el.localName, list: !!el.closest('li, ul, ol, dl'), control: inControl(el), number: /^[\s$€£¥₹+\-−–.,:%()\d]*\d[\s$€£¥₹+\-−–.,:%()\d]*[a-z]{0,2}$/i.test([...el.childNodes].filter((n) => n.nodeType === 3).map((n) => n.nodeValue).join(' ').trim()), sentence: /\S\s+\S.*[.!?…]["'”’)]*\s*$/s.test([...el.childNodes].filter((n) => n.nodeType === 3).map((n) => n.nodeValue).join(' ').trim()), computed: { size: parseFloat(cs.fontSize), lineHeight: cs.lineHeight === 'normal' ? null : parseFloat(cs.lineHeight), letterSpacing: cs.letterSpacing === 'normal' ? 0 : parseFloat(cs.letterSpacing), weight: parseInt(cs.fontWeight, 10), transform: cs.textTransform } };
   });
 }
 const sizeOf = (b) => (Number.isFinite(b?.size) ? b.size : null);
@@ -153,7 +174,15 @@ export const CLEANUP = {
 export class Cleanup {
   #show = null; #marks = null; // the show playing: its stop, and the marks it draws on the page
   #host; #el = null; #pass = 0; #done = new Map(); #state = CLEANUP.initial; #p = null; #page = null; #err = null; #preview = new StylePreview(); #held = false; #saved = null;
-  #swaps = { spacing: new SpacingPass(), colour: new ColourPass(), icons: new IconPass() };
+  #swaps = { spacing: new SpacingPass(), colour: new ColourPass(), icons: new IconPass(), radius: new RadiusPass(), sizes: new ControlSizePass() };
+  // The shadows pass is loaded on its own: a dev server that started before a pass's file existed does not hand it out
+  // (the server lists the overlay's files when it starts), and one missing file must not take the whole overlay with it.
+  // Until it arrives, or if it never does, the step shows as not there yet and is skipped
+  #late = Promise.all([import('./elevation-pass.js').then((m) => { this.#swaps.shadows = new m.ElevationPass(); }, () => {}),
+    import('./speeds-pass.js').then((m) => { this.#swaps.speeds = new m.SpeedsPass(); }, () => {}),
+    import('./states-pass.js').then((m) => { this.#swaps.states = new m.StatesPass(); }, () => {})]);
+  // renaming the colour tokens by job: null until the colour step reads a plan; then { plan, open, busy, done, err }
+  #rn = null;
   // One run at a time (docs/state-machines/cleanup-spec.md): every move the person makes (start, a pass read, Esc out of
   // the preview, Apply, Undo, stop) is a new run; an answer that comes back for an older run changes nothing on screen
   #run = 0;
@@ -172,16 +201,29 @@ export class Cleanup {
   get previewing() { return this.#state === 'preview'; }
 
   async start() {
-    this.#pass = 0; this.#done.clear(); this.#saved = null;
+    this.#pass = 0; this.#done.clear(); this.#saved = null; this.#rn = null;
     await this.#read();
   }
   stop() { this.#run++; this.#settle(); keep(null); this.#listen(false); this.#held = false; this.#preview.clear((el, f) => f()); for (const sw of Object.values(this.#swaps)) sw.clear(); this.#send('stop'); this.#p = null; this.#host.render(); }
 
   // back after a reload its own write or undo caused: the step written (with its Undo), or the page read again
-  resume() {
-    const v = kept();
+  async resume() {
+    let v = kept();
     if (!v || this.running) return;
     const pass = v.pass ?? 0;
+    // the colour names were being renamed when the page went: the trace says whether it landed
+    if (v.state === 'renaming' && v.group) {
+      let live = [];
+      for (let i = 0; i < 6 && !live.length; i++) {
+        if (i) await new Promise((r) => setTimeout(r, 1000));
+        live = ((await request('trace', { group: v.group }).catch(() => null))?.changes ?? []).filter((c) => c.state === 'live');
+      }
+      const files = new Set(live.map((c) => c.file)).size;
+      v = live.length ? { state: 'read', pass, names: { ...v.names, files }, done: v.done } : { state: 'read', pass, done: v.done, said: W.colour.names.failed };
+      keep(v);
+      if (live.length) { this.#host.wrote?.({ undo: live.map(({ id, file, label }) => ({ change: id, file, label })), trace: { group: v.names.group } }, W.colour.names.done(v.names.names, files)); this.#host.announce?.(W.colour.names.done(v.names.names, files)); }
+    }
+    if (v.names) this.#rn = { plan: null, open: false, busy: false, err: null, done: v.names };
     if (v.state === 'writing' && v.group) return this.#resumeWriting(v, pass);
     this.#run++;
     if (v.state === 'done') { this.#send('resumeDone'); this.#resumeDone(v, pass); }
@@ -316,6 +358,12 @@ export class Cleanup {
   }
 
   #swapHtml(acts, close) {
+    const html = this.#swapBody(acts, close);
+    if (PASSES[this.#pass] !== 'colour' || this.#state === 'writing' || this.#state === 'reading') return html;
+    const names = this.#namesHtml(), at = html.lastIndexOf('<div class="acts"');
+    return names && at > 0 ? html.slice(0, at) + names + html.slice(at) : html + names;
+  }
+  #swapBody(acts, close) {
     const S = this.#words, s = this.#state, p = this.#sw.page, more = this.#hasNext();
     if (s === 'done') {
       const did = this.#done.get(PASSES[this.#pass]) === 'done';
@@ -333,6 +381,61 @@ export class Cleanup {
       + acts(`<button type="button" class="cu-btn primary" data-cu="apply">${esc(W.apply)}<kbd>↵</kbd></button><button type="button" class="cu-btn" data-cu="preview">${esc(W.preview)}<kbd>P</kbd></button><span class="grow"></span><button type="button" class="cu-btn quiet" data-cu="skip">${esc(W.skip(W.pass[PASSES[this.#pass]].toLowerCase()))}<kbd>→</kbd></button>`);
   }
 
+  // the colour tokens renamed by their job: one plan for the project, read once from the theme's own tokens
+  #namesPlan() {
+    if (this.#rn) return this.#rn;
+    let plan = null;
+    try { const declared = declaredColours(), tokens = paletteOf().filter((t) => !declared || declared.has(t.short)); const r = renameMap(tokens.map((t) => ({ short: t.short, kind: t.kind, usage: t.usage }))); const css = new Map(tokens.map((t) => [t.short, t.css])); if (Object.keys(r.map).length) plan = { ...r, css }; } catch { plan = null; }
+    this.#rn = { plan, open: false, busy: false, done: null, err: null };
+    return this.#rn;
+  }
+  #namesHtml() {
+    const N = W.colour.names, rn = this.#namesPlan(), plan = rn.plan;
+    if (!plan && !rn.done) return '';
+    if (rn.done) return `<div class="names"><div class="sub">${esc(N.done(rn.done.names, rn.done.files))}</div><div class="nacts"><button type="button" class="cu-btn soft" data-cu="names-undo"${rn.busy ? ' disabled' : ''}>${esc(N.undo)}</button></div></div>`;
+    const ORDER = ['fg', 'muted', 'faint', 'on-accent', 'ground', 'surface', 'sunken', 'line', 'accent', 'success', 'warning', 'danger', 'info'], rank = (n) => { const i = ORDER.indexOf(n.replace(/-(hover|active|soft|strong|disabled|\d)$/, '')); return i < 0 ? ORDER.length : i; };
+    const pairs = Object.entries(plan.map).sort((a, b) => rank(a[1]) - rank(b[1]) || a[1].localeCompare(b[1])), [from, to] = pairs.find(([k]) => k === 'fg' || k === 'foreground') ?? pairs[0];
+    // only when asked (token-spec §5): one quiet entry, the plan behind it
+    if (!rn.open) return `<div class="names quiet"><div class="nacts"><button type="button" class="cu-btn quiet" data-cu="names-open">${esc(N.open)}</button></div></div>`;
+    const rows = pairs.map(([old, next]) => `<li><span class="sw" aria-hidden="true" style="background:${esc(plan.css.get(old) ?? 'transparent')}"></span><span class="nm">${esc(next)}<small>${esc(N.was(old))}</small></span></li>`).join('');
+    const keptNames = plan.kept.map((k) => k.short);
+    const kept = keptNames.length ? `<div class="sub">${esc(N.kept(keptNames.length > 1 ? `${keptNames.slice(0, -1).join(', ')} and ${keptNames.at(-1)}` : keptNames[0]))}</div>` : '';
+    return `<div class="names"><div class="nhead">${esc(N.head(pairs.length))}</div><div class="sub">${esc(N.sub(from, to))}</div><ol class="ladder nlist" aria-label="${esc(N.list)}">${rows}</ol>${kept}<div class="sub">${esc(N.everywhere)}</div>`
+      + (rn.err ? `<div class="error">${esc(rn.err)}</div>` : '')
+      + `<div class="nacts"><button type="button" class="cu-btn soft" data-cu="names-go"${rn.busy ? ' disabled' : ''}>${esc(rn.busy ? N.renaming : rn.err ? N.retry : N.rename)}</button><button type="button" class="cu-btn quiet" data-cu="names-close"${rn.busy ? ' disabled' : ''}>${esc(N.notNow)}</button></div></div>`;
+  }
+  async #rename() {
+    const rn = this.#rn; if (!rn?.plan || rn.busy) return;
+    rn.busy = true; rn.err = null; this.#host.render();
+    const N = W.colour.names, i = this.#pass, group = `cleanup-names-${Date.now().toString(36)}`, names = Object.keys(rn.plan.map).length;
+    // the write may reload the page: kept first, so the panel comes back on this step with its Undo (resume)
+    keep({ state: 'renaming', pass: i, group, names: { names, files: 0, group, to: Object.values(rn.plan.map) }, done: Object.fromEntries(this.#done) });
+    const r = await answered(this.#host.rename(rn.plan.map, N.done(names, 0), { step: W.pass.colour, laws: ['similarity'], group }), group);
+    if (r?.ok || r?.landed) {
+      rn.done = { names, files: r.files ?? 0, group, to: Object.values(rn.plan.map) }; rn.open = false;
+      keep({ state: 'read', pass: i, names: rn.done, done: Object.fromEntries(this.#done) });
+      this.#host.wrote?.({ undo: r.undo ?? [], trace: { group } }, N.done(names, rn.done.files));
+      this.#host.announce?.(N.done(names, rn.done.files));
+    } else { keep(null); rn.err = r?.why || N.failed; }
+    rn.busy = false; this.#host.render();
+  }
+  // the server reads the theme again after an undo: ask until the names the undo took away are gone (about 5 seconds at most)
+  async #settledTheme(gone) {
+    for (let i = 0; i < 10; i++) {
+      await loadPalette(true).catch(() => {});
+      const declared = declaredColours();
+      if (!declared || !gone.some((n) => declared.has(n))) return;
+      await new Promise((r) => setTimeout(r, 500));
+    }
+  }
+  async #renameUndo() {
+    const rn = this.#rn; if (!rn?.done || rn.busy) return;
+    rn.busy = true; this.#host.render();
+    try { await this.#host.undo(rn.done.group); this.#host.announce?.(W.colour.names.undone); this.#rn = null; keep({ state: 'read', pass: this.#pass, done: Object.fromEntries(this.#done) }); await this.#settledTheme(rn.done.to ?? Object.values(rn.plan?.map ?? {})); this.#rn = null; await this.#readPass(this.#pass); return; }
+    catch (error) { rn.busy = false; rn.err = error?.message || W.colour.names.failed; }
+    this.#host.render();
+  }
+
   // a click inside the panel's body; true when it was ours
   click(target) {
     const act = target.closest?.('[data-cu]')?.dataset.cu;
@@ -342,6 +445,10 @@ export class Cleanup {
     else if (act === 'cancel') this.#togglePreview(false);
     else if (act === 'skip' || act === 'next') this.#next();
     else if (act === 'undo') this.#undo();
+    else if (act === 'names-open') { this.#rn.open = true; this.#host.render(); }
+    else if (act === 'names-close') { this.#rn.open = false; this.#rn.err = null; this.#host.render(); }
+    else if (act === 'names-go') this.#rename();
+    else if (act === 'names-undo') this.#renameUndo();
     else if (act === 'retry') { if (this.#sw) this.#readPass(this.#pass); else this.#read(); }
     else if (act === 'copy') { const t = this.#el?.querySelector?.('.cmd code')?.textContent ?? ''; navigator.clipboard?.writeText(t).catch(() => {}); this.#host.announce?.(W.copied); }
     else if (act === 'close') this.#host.close();
@@ -364,7 +471,7 @@ export class Cleanup {
         role, chip: { label: `${names.get(role.name)}: ${shown(from)} to ${shown(to)}`, icon: `<span class="ag" style="font-size:${Math.max(9, Math.min(15, 6 + (to ?? 14) / 4))}px;font-weight:${role.bundle.weight ?? 400};text-transform:${role.bundle.transform === 'uppercase' ? 'uppercase' : 'none'}">${role.bundle.transform === 'uppercase' ? 'AG' : 'Ag'}</span>`, from },
         to,
         bands: () => els().map((el) => ({ rect: () => el.getBoundingClientRect(), kind: 'line' })),
-        morph: (animate) => this.#preview.setRole(role, animate ? (el, set) => ease(el, set, { blur: true }) : null),
+        morph: (animate) => this.#preview.setRole(role, animate ? (el, set) => ease(el, set, { blur: true }) : null, this.#p?.prose?.lineHeight),
       };
     });
   }
@@ -446,10 +553,10 @@ export class Cleanup {
     this.#send('write'); this.#host.render();
     const group = `cleanup-${k}-${Date.now().toString(36)}`;
     try {
-      const { swaps, refused, places: wrote } = await sw.edits();
-      if (!swaps.length) throw new Error(refused[0]?.why ?? S.couldNot);
+      const { swaps, refused, places: wrote, props = [] } = await sw.edits();
+      if (!swaps.length && !props.length) throw new Error(refused[0]?.why ?? S.couldNot);
       // the places written when the pass counts them (a refused edit is not a place that now follows)
-      const files = swaps.length, places = wrote ?? sw.page.places, said = S.saved(places, files);
+      const files = new Set([...swaps, ...props].map((x) => x.file)).size, places = wrote ?? sw.page.places, said = S.saved(places, files);
       const page = this.#page && (({ census: _c, roles: _r, ...rest }) => rest)(this.#page);
       const landed = (undo = []) => {
         if (run === this.#run) {
@@ -460,7 +567,7 @@ export class Cleanup {
         this.#host.wrote?.({ undo, trace: { group } }, said);
       };
       keep({ state: 'writing', pass: i, group, said, saved: { group, places, files, pass: i, refused: refused.length }, page, swap: sw.page, done: Object.fromEntries(this.#done) });
-      const r = await answered(this.#host.write({ tokens: [], css: [], swaps }, said, { step: W.pass[k], laws: SWAP_LAWS[k], group }), group);
+      const r = await answered(this.#host.write({ tokens: [], css: [], swaps, props }, said, { step: W.pass[k], laws: SWAP_LAWS[k], group }), group);
       if (r?.lost && !r.landed) throw new Error(W.lost);
       if (!r?.lost && !r?.ok) throw new Error(r?.why ?? S.couldNot);
       refused.push(...(r?.refused ?? [])); // what the write itself left as it is (a partly landed step)

@@ -43,6 +43,53 @@ export const CRAFT = {
     line: 'This image’s edge is the same tone as the page around it.',
     reason: 'A faint inner outline gives it an edge.',
   }),
+  'flex-min': ({ over, scrolls, grid }) => ({
+    label: over ? (grid ? 'Pushed out of its column' : 'Row pushed out of its box') : scrolls ? 'Can never scroll' : 'Text can never be cut off',
+    line: over ? (grid ? `This runs ${px(over)} past its column.` : `This row runs ${px(over)} past its box.`)
+      : scrolls ? 'A part in here is set to scroll sideways, but its box can’t shrink, so it never will.' : 'This text is set to cut off, but its box can’t shrink, so it never will.',
+    reason: scrolls ? 'A flex item or a grid cell is never narrower than what it holds, unless it is told it may be. So the part that should scroll grows instead, and pushes out.'
+      : 'A flex item is never narrower than its longest line. A longer name or a narrower screen pushes the rest of the row out.',
+  }),
+  'fixed-height': ({ over }) => ({
+    label: over ? 'Text runs out of its box' : 'Text can outgrow its box',
+    line: over ? `The text here runs ${px(over)} past this box’s set height.` : 'This box has a set height and holds text that wraps. A longer sentence or a narrower screen will run past it.',
+    reason: 'A box that holds text sets its least height, not its exact height: text grows downward.',
+  }),
+  'scroll-on-demand': ({ empty }) => ({
+    label: empty ? 'Scrollbar with nothing to scroll' : 'Scrollbar always shown',
+    line: empty ? 'This shows a scrollbar, but there is nothing to scroll.' : 'This always shows a scrollbar, even when what it holds is short.',
+    reason: 'A scrollbar says there is more. Set to scroll, it is drawn whether or not there is.',
+  }),
+  'declared-gap': ({ closest, touching }) => ({
+    label: touching ? 'Parts of this row touch' : 'Only left-over space between',
+    line: touching ? 'These parts touch: nothing but left-over space keeps them apart, and there is none left.' : `These parts are ${px(closest)} apart only because that much space is left over. A longer title closes it.`,
+    reason: 'The distance between neighbours is a decision. Left to whatever space remains, it closes to nothing.',
+  }),
+  'text-collision': ({ how, other }) => ({
+    label: 'Words run into other words',
+    line: how === 'run' ? `This runs straight into “${other}”, with no space between them.` : how === 'tight' ? `This sits so close to “${other}” that their letters meet.` : `This is drawn on top of “${other}”.`,
+    reason: 'Two texts that touch read as one, or not at all.',
+  }),
+  'list-wrap': ({ over, n }) => ({
+    label: over ? 'List runs off its row' : 'List can run off its row',
+    line: over ? `This list of ${n} runs ${px(over)} past its row and has nowhere to go.` : `This row holds a list (${n} today) that can only grow sideways. A longer list or a narrower screen runs it off the edge.`,
+    reason: 'A flex row does not wrap unless it is told to, and a list has whatever length its data has.',
+  }),
+  'sticky-room': ({ spare }) => ({
+    label: 'Set to stick, but can’t',
+    line: `This is set to stay in view as the page scrolls, but it is stretched ${px(spare)} past its own content, to the full height of its row, so it has nowhere to move.`,
+    reason: 'A sticky element moves only inside its parent’s box. Stretched to the same height, it scrolls away with the page.',
+  }),
+  'image-ground': ({ n, broken }) => ({
+    label: broken ? 'Words lost without the picture' : 'Words rely on the picture',
+    line: n > 1 ? `${n} lines over this picture can only be read while it shows.` : 'The words over this picture can only be read while it shows.',
+    reason: 'A picture can load late, or not at all. Then the words sit on the colour under it.',
+  }),
+  'image-fit': ({ by, wide }) => ({
+    label: by ? 'Picture is stretched' : 'Picture can be stretched',
+    line: by ? `This picture is drawn ${by}% ${wide ? 'wider' : 'taller'} than it is.` : 'This picture fits its box today. One of another shape, or a wider screen, will stretch it.',
+    reason: 'Its box is set on both sides, and a picture is pulled to fill whatever box it is given.',
+  }),
   'elevation-ladder': ({ blur, level }) => ({
     label: 'Shadow a step too close',
     line: `This shadow blurs ${px(blur)}; the page’s ${px(level)} level is too close to tell apart.`,
@@ -544,6 +591,8 @@ export const FIX = {
     spacing: 'Spacing',
     spacingHint: 'point at an edge on the element',
     spacingKeys: [['Scroll', 'or drag a band, a step at a time'], ['⇧', 'the pair'], ['⌘', 'all sides']],
+    // a side whose value the element's own style sets: a class never wins over a style, so it takes no step
+    spacingInStyle: 'Set in the element’s own style, which a class can’t override. Change it in your code.',
     sides: { top: 'top', right: 'right', bottom: 'bottom', left: 'left' },
     what: (kind, sides) => kind === 'gap' ? 'gap' : `${kind === 'pad' ? 'padding' : 'margin'} ${sides.length === 4 ? 'all sides' : sides.length === 2 ? `${sides[0]} and ${sides[1]}` : sides[0]}`,
     mates: (n) => `${n + 1} like it, one line of code`,
@@ -788,7 +837,7 @@ export const CLEANUP = {
   // the bar's action: the short label, and the word that follows it where there is room
   bar: 'Clean up', barLong: 'page',
   passes: 'Passes',
-  pass: { text: 'Text', spacing: 'Spacing', colour: 'Colour', icons: 'Icons' },
+  pass: { text: 'Text', spacing: 'Spacing', colour: 'Colour', icons: 'Icons', radius: 'Corners', sizes: 'Controls', shadows: 'Shadows', speeds: 'Timing', states: 'Disabled' },
   reading: 'Reading the text on this page…',
   head: (before, n) => `Your site uses ${before} text sizes. These ${n} styles cover them.`,
   why: 'Worked out from every page Plumber has read, so every page ends up with the same styles.',
@@ -833,7 +882,8 @@ export const CLEANUP = {
     head: (before, after, n) => (after < before ? `This page has ${before} different spaces between things. After this, ${after}.`
       : `${n} ${n === 1 ? 'space' : 'spaces'} on this page ${n === 1 ? 'is' : 'are'} off your scale.`),
     // what the app's own scale is, said plainly: the pass stays on it
-    scale: (s) => (s?.kind === 'linear' ? `Your spacing is a ${s.unit}px grid, so every new space is on it.`
+    scale: (s) => (s?.kind === 'theme' ? 'Your theme names its spacing steps, so every new space is one of them.'
+      : s?.kind === 'linear' ? `Your spacing is a ${s.unit}px grid, so every new space is on it.`
       : s?.kind === 'geometric' ? `Your spacing grows by ×${s.ratio} a step, so every new space is one of those steps.`
       : s?.kind === 'hybrid' ? `Your spacing is a ${s.unit}px grid that grows by ×${s.ratio} for bigger spaces, so every new space is on it.`
       : `Plumber can’t tell your spacing’s scale yet, so it keeps to your ${s?.unit ?? 4}px spacing unit.`),
@@ -877,6 +927,24 @@ export const CLEANUP = {
     next: 'Next: the icons.',
     notYet: 'Icons come to Plumber next.',
     couldNot: 'Couldn’t read this page’s colours.',
+    // renaming the project's colour tokens by their job (docs/design/token-spec.md §3.3): names only, never a colour
+    names: {
+      head: (n) => `${n} of your colour names can take Plumber’s role names`,
+      sub: (from, to) => `For example, ${from} becomes ${to}. Every colour stays the same; only the names change.`,
+      open: 'Rename my colours…',
+      list: 'New colour names',
+      was: (old) => `was ${old}`,
+      kept: (names) => `${names} keep${names.includes(',') || names.includes(' and ') ? '' : 's'} ${names.includes(',') || names.includes(' and ') ? 'their names' : 'its name'}.`,
+      everywhere: 'This changes the names in every file that uses them. You can undo it.',
+      rename: 'Rename everywhere',
+      renaming: 'Renaming…',
+      notNow: 'Not now',
+      done: (n, files) => `Renamed ${n} colour ${n === 1 ? 'name' : 'names'} in ${files} ${files === 1 ? 'file' : 'files'}. Every colour looks the same.`,
+      undo: 'Undo',
+      undone: 'Colour names put back.',
+      failed: 'Couldn’t rename the colours.',
+      retry: 'Try again',
+    },
   },
   icons: {
     reading: 'Reading the icons on this page…',
@@ -896,8 +964,121 @@ export const CLEANUP = {
     undone: 'Icon changes undone.',
     doneHead: 'Icons are cleaned up on this page.',
     doneSkipped: 'You skipped icons on this page.',
-    next: '',
+    next: 'Next: the corners.',
     notYet: 'That’s every pass for this page.',
     couldNot: 'Couldn’t read this page’s icons.',
+  },
+  // corners by job (overlay/src/radius.js): a thing takes the corner your theme names for what it is
+  radius: {
+    reading: 'Reading the corners on this page…',
+    head: (before, after, n) => (after < before ? `This page uses ${before} corner sizes. After this, ${after}.`
+      : `${n} ${n === 1 ? 'corner is' : 'corners are'} rounded for another job.`),
+    // a theme named by size (sm, md, lg) says nothing about jobs: said, so an empty pass is not a mystery
+    sub: (p) => (p?.sized && !p.places ? 'Your corner sizes are named by size (sm, md, lg), not by job, so Plumber can’t tell which one a card or a button should take.'
+      : 'Each thing is read by what it is (a tag, a control, a card) and takes your corner for that job.'),
+    law: 'Why: things that do the same job should look the same (law of similarity).',
+    list: 'Corners that change',
+    row: (n) => `${n} ${n === 1 ? 'place' : 'places'}`,
+    sizesPage: 'corner sizes on this page',
+    changes: (n) => (n === 1 ? 'corner changes' : 'corners change'),
+    nothing: 'The corners on this page already follow your theme.',
+    nothingWhy: 'Nothing here needs to move.',
+    saved: (places, files) => `${places} ${places === 1 ? 'corner' : 'corners'} in ${files} ${files === 1 ? 'file' : 'files'} now use${places === 1 ? 's' : ''} your corner sizes`,
+    refused: (n) => `${n} left as ${n === 1 ? 'it is' : 'they are'}: Plumber couldn’t find where ${n === 1 ? 'its class is' : 'their classes are'} written.`,
+    undone: 'Corner changes undone.',
+    doneHead: 'Corners are cleaned up on this page.',
+    doneSkipped: 'You skipped corners on this page.',
+    next: 'Next: the controls.',
+    notYet: 'That’s every pass for this page.',
+    couldNot: 'Couldn’t read this page’s corners.',
+  },
+  // control heights (overlay/src/control-size.js): a button's or a field's height sits on your spacing steps
+  sizes: {
+    reading: 'Reading the buttons and fields on this page…',
+    head: (before, after, n) => (after < before ? `This page’s buttons and fields come in ${before} heights. After this, ${after}.`
+      : `${n} ${n === 1 ? 'control is' : 'controls are'} off your spacing steps.`),
+    sub: () => 'A control’s height is one of your sizes. Each goes onto your spacing steps; a border that was added on top is taken back in.',
+    law: 'Why: things that do the same job should look the same (law of similarity).',
+    list: 'Controls that change',
+    row: (n) => `${n} ${n === 1 ? 'place' : 'places'}`,
+    sizesPage: 'control heights on this page',
+    changes: (n) => (n === 1 ? 'control changes' : 'controls change'),
+    nothing: 'The buttons and fields on this page already sit on your spacing steps.',
+    nothingWhy: 'Nothing here needs to move.',
+    saved: (places, files) => `${places} ${places === 1 ? 'control' : 'controls'} in ${files} ${files === 1 ? 'file' : 'files'} now sit${places === 1 ? 's' : ''} on your spacing steps`,
+    refused: (n) => `${n} left as ${n === 1 ? 'it is' : 'they are'}: Plumber couldn’t find where ${n === 1 ? 'its class is' : 'their classes are'} written.`,
+    undone: 'Control changes undone.',
+    doneHead: 'Controls are cleaned up on this page.',
+    doneSkipped: 'You skipped controls on this page.',
+    next: 'Next: the shadows.',
+    notYet: 'That’s every pass for this page.',
+    couldNot: 'Couldn’t read this page’s controls.',
+  },
+  // shadows by job (overlay/src/elevation.js): a thing casts the shadow your theme names for what it is
+  shadows: {
+    reading: 'Reading the shadows on this page…',
+    head: (before, after, n) => (after < before ? `This page uses ${before} different shadows. After this, ${after}.`
+      : `${n} ${n === 1 ? 'shadow is' : 'shadows are'} not the one your theme names for the job.`),
+    sub: () => 'A shadow says how far a thing sits above the page. A card takes your shadow for cards; a menu or a dialog, your shadow for things that float.',
+    law: 'Why: things that do the same job should look the same (law of similarity).',
+    list: 'Shadows that change',
+    row: (n) => `${n} ${n === 1 ? 'place' : 'places'}`,
+    sizesPage: 'shadows on this page',
+    changes: (n) => (n === 1 ? 'shadow changes' : 'shadows change'),
+    nothing: 'The shadows on this page already follow your theme.',
+    nothingWhy: 'Nothing here needs to move.',
+    saved: (places, files) => `${places} ${places === 1 ? 'shadow' : 'shadows'} in ${files} ${files === 1 ? 'file' : 'files'} now use${places === 1 ? 's' : ''} your theme’s shadows`,
+    refused: (n) => `${n} left as ${n === 1 ? 'it is' : 'they are'}: Plumber couldn’t find where ${n === 1 ? 'its class is' : 'their classes are'} written.`,
+    undone: 'Shadow changes undone.',
+    doneHead: 'Shadows are cleaned up on this page.',
+    doneSkipped: 'You skipped shadows on this page.',
+    next: 'Next: the timings.',
+    notYet: 'That’s every pass for this page.',
+    couldNot: 'Couldn’t read this page’s shadows.',
+  },
+  // timings by the theme's speeds (overlay/src/speeds.js): a duration written by hand that is already one of them
+  speeds: {
+    reading: 'Reading the timings on this page…',
+    head: (before, after, n) => `${n} ${n === 1 ? 'timing is' : 'timings are'} written by hand where your theme names the speed.`,
+    sub: (p) => 'Two timings less than a fifth apart look the same to anyone watching. Each one written by hand takes the speed your theme names for it; one further from every speed is its own and stays.'
+      // the theme disagreeing with itself: a speed's class and a variable of the same name at two values (only its owner can settle it)
+      + (p?.twins?.length ? ` Your theme names ${p.twins.map((t) => `“${t.name}” twice: ${t.ms}ms as a class and ${t.variable.ms}ms as ${t.variable.name}`).join('; and ')}. This uses the class.` : ''),
+    law: 'Why: things that move the same way should move at the same speed (law of similarity).',
+    list: 'Timings that change',
+    row: (n) => `${n} ${n === 1 ? 'place' : 'places'}`,
+    sizesPage: 'timings off your theme on this page',
+    changes: (n) => (n === 1 ? 'timing changes' : 'timings change'),
+    nothing: 'The timings on this page already use your theme’s speeds.',
+    nothingWhy: 'Nothing here needs to move.',
+    saved: (places, files) => `${places} ${places === 1 ? 'timing' : 'timings'} in ${files} ${files === 1 ? 'file' : 'files'} now use${places === 1 ? 's' : ''} your theme’s speeds`,
+    refused: (n) => `${n} left as ${n === 1 ? 'it is' : 'they are'}: Plumber couldn’t find where ${n === 1 ? 'its class is' : 'their classes are'} written.`,
+    undone: 'Timing changes undone.',
+    doneHead: 'Timings are cleaned up on this page.',
+    doneSkipped: 'You skipped timings on this page.',
+    next: 'Next: the disabled look.',
+    notYet: 'That’s every pass for this page.',
+    couldNot: 'Couldn’t read this page’s timings.',
+  },
+  // one disabled look (overlay/src/states.js): every control fades to the same opacity when it can't be used
+  states: {
+    reading: 'Reading how disabled controls look on this page…',
+    head: (before, after, n) => (after < before ? `Disabled controls here fade to ${before} different amounts. After this, ${after}.`
+      : `${n} disabled ${n === 1 ? 'look is' : 'looks are'} not your one disabled opacity.`),
+    sub: (p) => `A control that can’t be used looks the same everywhere, so people learn it once. ${p?.target?.from === 'theme' ? `This uses your theme’s disabled opacity, ${p.target.pct}%.` : `Your theme names no disabled opacity, so this uses Material’s 38%, on your framework’s nearest step (${p?.target?.pct ?? 40}%).`}`,
+    law: 'Why: the same state should look the same everywhere (law of similarity), as people expect from other apps (Jakob’s law).',
+    list: 'Disabled looks that change',
+    row: (n) => `${n} ${n === 1 ? 'place' : 'places'}`,
+    sizesPage: 'disabled opacities on this page',
+    changes: (n) => (n === 1 ? 'disabled look changes' : 'disabled looks change'),
+    nothing: 'Disabled controls on this page already look the same.',
+    nothingWhy: 'Nothing here needs to move.',
+    saved: (places, files) => `${places} disabled ${places === 1 ? 'look' : 'looks'} in ${files} ${files === 1 ? 'file' : 'files'} now use${places === 1 ? 's' : ''} one opacity`,
+    refused: (n) => `${n} left as ${n === 1 ? 'it is' : 'they are'}: Plumber couldn’t find where ${n === 1 ? 'its class is' : 'their classes are'} written.`,
+    undone: 'Disabled changes undone.',
+    doneHead: 'Disabled controls are cleaned up on this page.',
+    doneSkipped: 'You skipped the disabled look on this page.',
+    next: '',
+    notYet: 'That’s every pass for this page.',
+    couldNot: 'Couldn’t read how disabled controls look on this page.',
   },
 };

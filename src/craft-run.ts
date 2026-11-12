@@ -112,6 +112,49 @@ async function takePairs(browser: Browser, url: string, main: Page, timeout: num
   if (needs.held) await give('held', await takeHeld(browser, url, timeout).catch(quiet('held')));
 }
 
+// The widths a page is read at besides the desktop one: a small laptop, a tablet held upright, a phone. A layout
+// that holds at one width and breaks at another is the commonest thing a rest-state read at one width cannot see.
+const WIDTHS = [desktop.width, 1024, 768, 390];
+const HOVERS = 6; // things tried under the pointer, per width
+
+/** Words that meet other words in the states the main read does not see: other window widths, and with the pointer
+ *  over each thing that listens for it. A hover presses nothing; each width is a page of its own. */
+async function takeStates(browser: Browser, url: string, timeout: number): Promise<CraftRecord[]> {
+  // side by side: each width is a page of its own, and most of its time is waiting for the pointer's effects
+  const each = await Promise.all(WIDTHS.map(async width => {
+    const out: CraftRecord[] = [];
+    // a dev server that reloads the page once (it found a new dependency) takes the overlay away mid-read: once more
+    const read = () => inside(browser, url, { viewport: { width, height: desktop.height }, reducedMotion: 'no-preference' }, timeout, async page => {
+      const kept = out.length;
+      try {
+      await open(page, url, timeout, true);
+      await settle(page);
+      const note = (list: CraftRecord[], hover: boolean) => { for (const record of list) out.push({ ...record, evidence: { ...record.evidence, width, hover } }); };
+      note(await ask<CraftRecord[]>(page, { op: 'collisions' }), false);
+      for (const key of await ask<string[]>(page, { op: 'hovers', budget: HOVERS })) {
+        const at = await ask<{ cx: number; cy: number } | null>(page, { op: 'frame', key });
+        if (!at) continue;
+        await page.mouse.move(at.cx, at.cy, { steps: 3 });
+        await sleep(450); // what the pointer brought in has arrived
+        note(await ask<CraftRecord[]>(page, { op: 'collisions' }), true);
+        await page.mouse.move(0, 0);
+        await sleep(150);
+      }
+      } catch (error) { out.length = kept; throw error; }
+    });
+    await read().catch(read).catch(quiet(`states at ${width}px`));
+    return out;
+  }));
+  return each.flat();
+}
+
+// when a finding from another state is true: said in the title, since at rest the page will not show it
+const when = (record: CraftRecord): string => {
+  const width = record.evidence.width as number, hover = record.evidence.hover === true;
+  const parts = [...(width !== desktop.width ? [`in a window ${width}px wide`] : []), ...(hover ? ['with the pointer over it'] : [])];
+  return parts.length ? ` Seen ${parts.join(', ')}.` : '';
+};
+
 // A dev server bound to one address family answers on `localhost` but not on `127.0.0.1` (Vite on ::1), or the
 // reverse: the first loopback name that answers is the one the run opens. Any other host is used as given.
 export async function reachable(base: string): Promise<string> {
@@ -160,6 +203,16 @@ export async function craftRun(options: CraftRunOptions): Promise<CraftPage[]> {
           // a model is never asked when CI is set: the answers kept in the project are all there is
           result.findings.push(...await judge(page, result.grey, { root: options.root, asking: asking && !process.env.CI }));
           delete result.grey;
+        }
+        if (options.probe !== false && !options.scope) {
+          // one finding per place: the main read's, else the first state that shows it (widest first, at rest first)
+          const place = (record: CraftRecord) => `${record.rule}|${record.file}:${record.line}:${record.column}`;
+          const seen = new Set(result.findings.map(place));
+          for (const record of await takeStates(browser, url, options.timeout).catch(quiet('states')) ?? []) {
+            if (seen.has(place(record))) continue;
+            seen.add(place(record));
+            result.findings.push({ ...record, title: record.title + when(record) });
+          }
         }
         pages.push({ ...result, route, url });
       } finally { await page.close(); }

@@ -129,6 +129,14 @@ checked; #69's habit checks something else; #49's test can't fail. Where each li
 
 ---
 
+## What is not on this list
+
+This list is tacit knowledge: what a senior design engineer tells a junior after years of doing it, the things that
+are obvious once shown and missing from the tutorials. Common hygiene that hundreds of tutorials already teach
+(defensive CSS: crop a picture with `object-fit: cover`, give a flex item `min-width: 0`, put a colour behind words on
+a picture) is not a craft rule. plumber still checks it and offers the fix, but it gets no number here and no screen
+in the showcase.
+
 ## How these join React Plumber
 Each ✓ rule becomes a **craft rule** read on the rendered page (the reader already measures every element in view),
 drawn in the visual language (docs/briefs/visual-language.md): pattern and colour at rest, one value when pointed at,

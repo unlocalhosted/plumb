@@ -22,7 +22,7 @@
  *  never    section breaks, refusals, and drawings scaled away from their classes (a demo inside a zoomed frame)
  * ───────────────────────────────────────────────────────── */
 import { utility } from './craft-read.js';
-import { scaleOf } from './scale.js';
+import { detectScale, scaleOf } from './scale.js';
 import { STAMPED, stampOf, placeOf } from './stamp.js';
 
 const TOL = 1;   // distances within 1px are one level
@@ -146,11 +146,41 @@ function grouped(gaps) {
   return runs.slice(1).every((n, i) => n >= 2 || runs[i] >= 2);
 }
 
-export function proposeSpacing(stacks, rhythm, { scope = 'keep', density = 0, site = null } = {}) {
-  if (scope === 'refine') return refine(stacks, rhythm, density, site);
+// The spacing steps the project's own theme names (--spacing-s3: 12px), from the server's decisions: the design system
+// as it was decided (docs/VISION.md: "The design system leads. Values snap to the project's decisions"). When a theme
+// names its steps they are the scale; only without them is a scale read off what the code happens to use.
+let STEPS = [];
+export async function loadSteps(fresh = false) {
+  if (STEPS.length && !fresh) return STEPS;
+  try {
+    const { request } = await import('./api.js'), d = await request('decisions', {});
+    const root = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+    if (Array.isArray(d)) STEPS = d.filter((x) => x.family === 'spacing' && /^--spacing-[a-z0-9-]+$/i.test(x.name) && x.origin !== 'framework')
+      .map((x) => { const m = /^(-?[\d.]+)(px|rem)$/.exec(String(x.resolved ?? x.value).trim()); return m ? { name: x.name, short: x.name.slice(10), px: Number(m[1]) * (m[2] === 'rem' ? root : 1) } : null; })
+      .filter((x) => x && x.px > 0).sort((a, b) => a.px - b.px);
+  } catch { /* no server: the scale is read off the code, as before */ }
+  return STEPS;
+}
+export const themeSteps = () => STEPS;
+// Whether the named steps are a spacing scale at all: Tailwind keeps named sizes in the same family (--spacing-sidebar:
+// 280px, --spacing-header: 64px), and two layout sizes are not a scale to snap a gap to. The steps are the scale only
+// when they themselves follow a grid or a ratio, by the same detector that reads a scale off the code (scale.js)
+const isScale = (steps) => steps.length > 1 && detectScale(steps.map((x) => ({ v: x.px }))).kind !== 'none';
+// its positions are the theme's own, nothing between them
+function themeScale(steps) {
+  const positions = [...new Set(steps.map((x) => Math.round(x.px)))].sort((a, b) => a - b);
+  const near = (v) => positions.reduce((a, b) => (Math.abs(Math.log(b / v)) < Math.abs(Math.log(a / v)) ? b : a), positions[0]);
+  return { kind: 'theme', score: 1, unit: unit(), ratio: null, positions, halves: [], near, atLeast: (v) => positions.find((x) => x >= v - 0.5) ?? positions.at(-1) };
+}
+
+/** The scale a space is put on: the theme's own steps when they are one, else the scale these distances follow. */
+export function spacingScale(distances, steps = STEPS) { return isScale(steps) ? themeScale(steps) : scaleFrom(distances); }
+
+export function proposeSpacing(stacks, rhythm, { scope = 'keep', density = 0, site = null, steps = STEPS } = {}) {
+  if (scope === 'refine') return refine(stacks, rhythm, density, site, steps);
   const moves = [], kept = [], refused = [], groupedStacks = [];
   // the app's scale, from the site's gaps (this page's without a census): a space off it goes to the nearest value on it
-  const scale = scaleFrom(site?.length ? site.map((x) => x.d) : stacks.flatMap((s) => s.gaps.filter((g) => g.d > 0.5 && !g.section).map((g) => g.d)));
+  const scale = isScale(steps) ? themeScale(steps) : scaleFrom(site?.length ? site.map((x) => x.d) : stacks.flatMap((s) => s.gaps.filter((g) => g.d > 0.5 && !g.section).map((g) => g.d)));
   const on = (d) => Math.abs(d - Math.round(d)) <= NEAR && (scale.positions.includes(Math.round(d)) || scale.halves.includes(Math.round(d)));
   const nearest = (d) => scale.near(d);
   for (const s of stacks) {
@@ -199,7 +229,7 @@ function scaleFrom(distances) {
 // Refine (see the header): the page's own relations, fewer and in order. density −1 airy … +1 compact scales them
 // `site`: every row-level gap the census read on every route ({ d, em }), so a shared component gets one answer on
 // every page; without it, this page's own gaps stand in
-function refine(stacks, rhythm, density = 0, site = null) {
+function refine(stacks, rhythm, density = 0, site = null, steps = STEPS) {
   const moves = [], kept = [], refused = [], factor = DENSITY ** -density;
   const rows = [];
   for (const s of stacks) for (const g of s.gaps) {
@@ -212,7 +242,7 @@ function refine(stacks, rhythm, density = 0, site = null) {
   // RATIO merge into the larger crowd
   const levels = [], basis = site?.length ? site.filter((x) => x.em && x.d > 0.5).map((x) => ({ d: x.d, r: x.d / x.em })) : rows.map((x) => ({ d: x.g.d, r: x.r }));
   // the scale the app's gaps follow: every target lands on one of its positions
-  const scale = scaleFrom(basis.map((x) => x.d)), snap = (v, from) => scale.near(v, from);
+  const scale = isScale(steps) ? themeScale(steps) : scaleFrom(basis.map((x) => x.d)), snap = (v, from) => scale.near(v, from);
   for (const row of [...basis].sort((a, b) => a.r - b.r)) {
     const last = levels[levels.length - 1];
     if (last && row.r <= last.from * 1.15) last.rows.push(row); else levels.push({ from: row.r, rows: [row] });

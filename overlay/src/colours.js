@@ -31,6 +31,7 @@ import { oklab, toRgb } from './craft-headless.js';
 import { apca, colourClass } from './craft-rules.js';
 import { SPEC, utility } from './craft-read.js';
 import { STAMP_ATTRIBUTE, STAMPED, stampOf } from './stamp.js';
+import { controlAround, controlKind } from './roles.js';
 
 const DE_OK = 0.03;      // keep: indistinguishable in UI (pass-colour.md step 4), our visibility threshold (§1.1)
 const GREY_CLUSTER = 0.04; // two text colours this close are one grey level (craft.js census 'textColors')
@@ -75,8 +76,51 @@ const near = (a, b) => a && b && Math.abs(a[0] - b[0]) <= 1.5 && Math.abs(a[1] -
 // default-palette names are Tailwind's, not the project's (craft-rules.js PALETTE)
 const DEFAULT = /^(?:black|white|transparent|current|inherit|(?:slate|gray|zinc|neutral|stone|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose)-\d{2,3})$/;
 
-// the role of a token: by name first (fg, muted, surface, line, accent, success …), by value second (L, chroma and alpha)
+// a token named as a path, category first (docs/design/token-spec.md §3): `text-secondary`, `background-primary-hover`,
+// `border-focus-ring`, `accent-600`, `state-success-text`. The category decides the family, so `primary` in
+// `text-primary` is the first grey, not the accent. Null when the name is not a path; the word match below reads it.
+const STATUS = { success: 'success', positive: 'success', warning: 'warning', caution: 'warning', error: 'danger', danger: 'danger', destructive: 'danger', negative: 'danger', info: 'info' };
+const statusIn = (parts) => { for (const w of parts) if (STATUS[w]) return STATUS[w]; return null; };
+const GREY = (parts) => parts.some((w) => /^(secondary)$/.test(w)) ? 'muted' : parts.some((w) => /^(tertiary|quaternary|placeholder|disabled)$/.test(w)) ? 'faint' : 'fg';
+export function pathOf(short) {
+  const [cat, ...rest] = short.toLowerCase().split('-');
+  if (cat === 'text' || cat === 'foreground') {
+    const st = statusIn(rest); if (st) return { role: 'status', kind: st };
+    if (rest.some((w) => w === 'white' || w === 'on')) return { role: 'text', kind: 'on-accent' };
+    return { role: 'text', kind: GREY(rest) };
+  }
+  if (cat === 'background') {
+    const st = statusIn(rest); if (st) return { role: 'status', kind: st };
+    if (!rest.length || rest[0] === 'full') return { role: 'surface', kind: 'ground' }; // `background` alone is the page (shadcn)
+    const state = rest.at(-1);
+    if (state === 'hover') return { role: 'surface', kind: 'hover' };
+    if (state === 'active' || state === 'pressed') return { role: 'surface', kind: 'pressed' };
+    if (state === 'disabled') return { role: 'other', kind: 'other' };
+    return { role: 'surface', kind: /^(secondary|tertiary|quaternary)$/.test(rest[0] ?? '') ? 'sunken' : 'surface' };
+  }
+  if (cat === 'border' || cat === 'separator') {
+    if (rest.some((w) => w === 'focus' || w === 'ring')) return { role: 'other', kind: 'other' };
+    const st = statusIn(rest); if (st) return { role: 'status', kind: st };
+    return { role: 'line', kind: rest.some((w) => /^(strong|heavy|bold)$/.test(w)) ? 'line-strong' : 'line' };
+  }
+  if (cat === 'accent' && /^\d{2,3}$/.test(rest[0] ?? '')) {
+    // the ramp: 500 rests, 600 is its hover, 50/100 its tint; the other stops are not roles of their own
+    const stop = Number(rest[0]);
+    return stop === 500 ? { role: 'accent', kind: 'accent' } : stop === 600 ? { role: 'accent', kind: 'accent-hover' } : stop <= 100 ? { role: 'accent', kind: 'accent-soft' } : { role: 'other', kind: 'other' };
+  }
+  if (cat === 'ink2') {
+    // plumber's own name for a second ink (token-spec §3.3): its default, hover and soft, like the accent's
+    const state = rest.at(-1);
+    return { role: 'accent', kind: state === 'hover' ? 'ink2-hover' : state === 'soft' || state === 'tint' ? 'ink2-soft' : 'ink2' };
+  }
+  if (cat === 'state') { const st = statusIn(rest); return st ? { role: 'status', kind: st } : { role: 'other', kind: 'other' }; }
+  if (cat === 'status' || cat === 'chart') return { role: 'other', kind: 'other' }; // categories and data: content, not UI roles
+  return null;
+}
+
+// the role of a token: a path name first, then by name (fg, muted, surface, line, accent, success …), then by value
 export function roleOf(short, lab, alpha) {
+  const path = pathOf(short); if (path) return path.role;
   const n = short.toLowerCase();
   if (/(^|-)(success|warning|danger|error|destructive|negative|positive|caution)(-|$)/.test(n)) return 'status';
   if (/(^|-)info(-|$)/.test(n)) return 'status';
@@ -93,22 +137,23 @@ export function roleOf(short, lab, alpha) {
 
 // the spec role of a token (§2.2): by name first (§4.1), value second (§4.2). `role` above is the coarse family
 export function kindOf(short, role) {
+  const path = pathOf(short); if (path && path.role === role) return path.kind;
   const n = short.toLowerCase(), has = (re) => re.test(n);
   if (role === 'status') return has(/info/) ? 'info' : has(/success|positive/) ? 'success' : has(/warning|caution/) ? 'warning' : 'danger';
   if (role === 'line') return has(/(^|-)(strong|heavy|bold)(-|$)/) ? 'line-strong' : 'line';
-  if (role === 'accent') return has(/(^|-)hover(-|$)/) ? 'accent-hover' : has(/(^|-)(soft|tint)(-|$)/) ? 'accent-soft' : 'accent';
+  if (role === 'accent') return has(/(^|-)disabled(-|$)/) ? 'other' : has(/(^|-)hover(-|$)/) ? 'accent-hover' : has(/(^|-)(active|pressed)(-|$)/) ? 'accent-active' : has(/(^|-)(soft|tint)(-|$)/) ? 'accent-soft' : 'accent';
   if (role === 'text') return has(/(^|-)on(-|$)/) ? 'on-accent' : has(/(^|-)(muted|subtle|secondary)(-|$)/) ? 'muted' : has(/(^|-)(faint|tertiary|placeholder|disabled)(-|$)/) ? 'faint' : 'fg';
-  if (role === 'surface') return has(/(^|-)hover(-|$)/) ? 'hover' : has(/(^|-)pressed(-|$)/) ? 'pressed' : has(/(^|-)(sunken|well|inset)(-|$)/) ? 'sunken' : has(/(^|-)(bg|background|canvas|paper|page|ground)(-|$)/) ? 'ground' : 'surface';
+  if (role === 'surface') return has(/(^|-)disabled(-|$)/) ? 'other' : has(/(^|-)hover(-|$)/) ? 'hover' : has(/(^|-)(active|pressed)(-|$)/) ? 'pressed' : has(/(^|-)(sunken|well|inset)(-|$)/) ? 'sunken' : has(/(^|-)(bg|background|canvas|paper|page|ground)(-|$)/) ? 'ground' : 'surface';
   return 'other';
 }
 
 // §2.3 / §9.2: one accent; a second hued family the theme names (draw beside accent) is a second ink, a role of its own
-const baseOf = (short) => short.toLowerCase().replace(/-(hover|pressed|soft|tint|subtle|strong)$/, '');
+const baseOf = (short) => short.toLowerCase().replace(/-(default|hover|pressed|active|soft|tint|subtle|strong)$/, '');
 function assignInks(tokens) {
   const bases = [];
   for (const t of tokens) if (t.role === 'accent' && !bases.includes(baseOf(t.short))) bases.push(baseOf(t.short));
   const opaque = (b) => tokens.some((t) => baseOf(t.short) === b && t.role === 'accent' && t.rgb[3] >= 1 && chroma(t.oklab) > 0.06);
-  const primary = bases.find((b) => /^(accent|primary|brand)$/.test(b) && opaque(b)) ?? bases.find(opaque);
+  const primary = bases.find((b) => /^(accent|primary|brand)$/.test(b) && opaque(b)) ?? bases.find((b) => !/^ink2/.test(b) && opaque(b)) ?? bases.find(opaque);
   for (const t of tokens) {
     if (t.role !== 'accent' || baseOf(t.short) === primary || !bases.some(opaque)) continue;
     if (opaque(baseOf(t.short))) { t.kind = t.kind.replace('accent', 'ink2'); t.ink = 'ink2'; }
@@ -116,16 +161,22 @@ function assignInks(tokens) {
 }
 
 let decisions = null; // the server's decisions, once loadPalette has them
+/** The colour tokens the project's theme declares (short names), from the server; null before loadPalette has them. Leftover
+ * utility classes in a dev stylesheet (a name the build saw before an undo) are not tokens. */
+export const declaredColours = () => decisions ? new Set(decisions.filter((d) => d.family === 'color' && /^--color-/.test(d.name) && d.origin !== 'framework').map((d) => d.name.slice(8))) : null;
 let known = null;     // the last palette read, for readColours when none is given
 
 const probeBox = () => { const b = document.createElement('div'); b.style.cssText = 'position:absolute;visibility:hidden;pointer-events:none;contain:strict;'; return b; };
 
-// the names of `--color-*` variables and of colour utilities (`.bg-surface`) written in the page's stylesheets
+// the names of `--color-*` variables and of colour utilities (`.bg-surface`) written in the page's stylesheets, and the
+// states each token is used in (token-spec §3.3: a state is read from where the colour is set, never from its name alone)
 function scanSheets() {
-  const vars = new Set(), classes = new Map();
-  const walk = (rules) => {
+  const vars = new Set(), classes = new Map(), states = new Map();
+  const saw = (short, state) => { if (!states.has(short)) states.set(short, new Set()); states.get(short).add(state); };
+  const walk = (rules, outer = '') => {
     for (const rule of rules) {
-      if (rule.cssRules) { try { walk(rule.cssRules); } catch { /* cross-origin */ } }
+      const sel = rule.selectorText ? `${outer} ${rule.selectorText}` : outer;
+      if (rule.cssRules) { try { walk(rule.cssRules, sel); } catch { /* cross-origin */ } }
       const st = rule.style; if (!st) continue;
       for (let i = 0; i < st.length; i++) if (st[i].startsWith('--color-')) vars.add(st[i]);
       const m = /^\.((?:bg|text|border)-[a-z][a-z0-9-]*)$/.exec(rule.selectorText ?? '');
@@ -133,15 +184,88 @@ function scanSheets() {
         const [prefix] = m[1].split('-');
         if (prefix === 'text' ? st.getPropertyValue('color') : prefix === 'bg' ? st.getPropertyValue('background-color') : st.getPropertyValue('border-color')) classes.set(m[1], prefix);
       }
+      if (!sel) continue;
+      // a Tailwind utility names its variants and its token in the class (`.hover\:bg-accent`, even under `@theme inline`)
+      const tw = /^\s*\.((?:\\.|[\w-])+)/.exec(sel);
+      if (tw) {
+        const parts = tw[1].replace(/\\(.)/g, '$1').split(':'), util = /^(bg|text|border)-([a-z][a-z0-9-]*?)(?:\/[\d.]+)?$/.exec(parts.pop());
+        if (util && parts.length < 4) { saw(util[2], `${util[1]}:${stateOf(parts.join(' '))}`); continue; }
+      }
+      // plain CSS: the selector's state, the variables its declarations paint with
+      for (let i = 0; i < st.length; i++) {
+        const prop = st[i] === 'color' ? 'text' : /^background/.test(st[i]) ? 'bg' : /^border/.test(st[i]) ? 'border' : null;
+        if (!prop) continue;
+        for (const v of st.getPropertyValue(st[i]).matchAll(/var\(--color-([a-z][a-z0-9-]*)/g)) saw(v[1], `${prop}:${stateOf(sel)}`);
+      }
     }
   };
   for (const sheet of document.styleSheets) { try { walk(sheet.cssRules); } catch { /* cross-origin */ } }
-  return { vars, classes };
+  return { vars, classes, states };
+}
+
+// the state a selector (or a Tailwind variant chain) paints in: hover (pointer, keyboard focus or an open menu: the same
+// highlight), active (pressed), disabled, else rest. Dark mode and breakpoints are not states.
+function stateOf(sel) {
+  if (/disabled/.test(sel)) return 'disabled';
+  if (/(^|[\s:&])active(?![-\w])|:active/.test(sel)) return 'active';
+  if (/hover|focus|highlighted|state=open|aria-expanded/.test(sel)) return 'hover';
+  return 'rest';
+}
+
+// a fill darker than the page is set into it (a well, a field, a tab track: sunken); one as light as the page or lighter
+// sits on it (surface). Decided on the theme's values as written (the light ones, even with the page in dark mode: the
+// decisions resolve to them), so a dark theme where every fill is lighter than the page keeps its light answer. Only a
+// fill whose name says neither is moved.
+function byDepth(tokens) {
+  const ground = tokens.find((t) => t.kind === 'ground' && t.rgb[3] >= 1);
+  if (!ground) return;
+  for (const t of tokens) {
+    if (t.kind !== 'surface' || t.rgb[3] < 1 || !(t.usage ?? []).some((u) => u.startsWith('bg:'))) continue;
+    if (/(^|-)(surface|card|panel|popover|raised|elevated|overlay)(-|$)/.test(t.short)) continue;
+    if (t.oklab[0] < ground.oklab[0] - 0.01) { t.byName ??= t.kind; t.kind = 'sunken'; }
+  }
+}
+
+// a surface token the code uses only for words is text, a text token it only fills with is a surface (shadcn's
+// `primary-foreground` is the words on the brand, `secondary` a button's fill). Words named after an accent token
+// (`primary-foreground` beside `primary`) are the words on it; other words are the main text. Status words are left alone.
+function byFamily(tokens) {
+  const of = (t) => new Set((t.usage ?? []).map((u) => u.split(':')[0]));
+  for (const t of tokens) {
+    const props = of(t);
+    if (props.size !== 1 || t.role === 'status' || t.role === 'other') continue;
+    const was = t.kind;
+    const base = tokens.find((b) => b !== t && t.short === `${b.short}-foreground`);
+    // an accent used only for words is still the accent (a link, a second ink); only one named for a fill is moved
+    if (props.has('text') && (t.role === 'surface' || base)) {
+      // words on a fill: on-accent on the brand, else the main text unless the fill's own name is a quieter level
+      const quiet = base && /(^|-)(muted|subtle|faint|placeholder)(-|$)/.exec(base.short);
+      t.role = 'text';
+      t.kind = base?.role === 'accent' && !of(base).has('text') ? 'on-accent' : quiet ? (quiet[2] === 'faint' || quiet[2] === 'placeholder' ? 'faint' : 'muted') : 'fg';
+    } else if (props.has('bg') && t.role === 'text') {
+      t.role = 'surface'; t.kind = kindOf(t.short, 'surface');
+    }
+    if (t.kind !== was) t.byName ??= was;
+  }
+}
+
+// §3.3: a surface or accent token the code fills with only in one state takes that state, whatever its name (shadcn's
+// `accent` is only ever `hover:bg-accent`: a hover surface, not the brand). A token also filled at rest, never seen as a
+// fill, or used for text (`hover:text-accent-foreground` is words), keeps its name. `usage` is each `prop:state` seen.
+function byUsage(t, seen) {
+  if (!seen?.size) return;
+  const fills = new Set([...seen].filter((u) => u.startsWith('bg:')).map((u) => u.slice(3)));
+  if (fills.size !== 1 || fills.has('rest') || [...seen].some((u) => u.startsWith('text:')) || !['surface', 'accent'].includes(t.role)) return;
+  const [state] = fills;
+  if (state === 'disabled') return;
+  const hued = chroma(t.oklab) > 0.06;
+  const kind = state === 'hover' ? (hued ? 'accent-hover' : 'hover') : (hued ? 'accent-active' : 'pressed');
+  if (kind !== t.kind) { t.byName = t.kind; t.role = hued ? 'accent' : 'surface'; t.kind = kind; }
 }
 
 /** The theme's colour tokens, as the page paints them. */
 export function paletteOf() {
-  const { vars, classes } = scanSheets();
+  const { vars, classes, states } = scanSheets();
   const found = new Map(); // short → { name, expression }
   for (const d of decisions ?? []) if (d.family === 'color' && /^--color-/.test(d.name) && d.origin !== 'framework') found.set(d.name.slice(8), { name: d.name, expr: d.resolved || d.value });
   for (const v of vars) { const s = v.slice(8); if (!found.has(s)) found.set(s, { name: v, expr: `var(${v})` }); }
@@ -163,16 +287,21 @@ export function paletteOf() {
     if (t.expr?.startsWith('var(') && !getComputedStyle(document.documentElement).getPropertyValue(t.name).trim() && !decisions?.some((d) => d.name === t.name)) continue;
     const lab = oklab(over(rgb, [255, 255, 255]));
     const role = roleOf(short, lab, rgb[3]);
-    tokens.push({ name: t.name, short, role, kind: kindOf(short, role), css, rgb, oklab: lab, utility: { text: `text-${short}`, bg: `bg-${short}`, border: `border-${short}` } });
+    const token = { name: t.name, short, role, kind: kindOf(short, role), css, rgb, oklab: lab, utility: { text: `text-${short}`, bg: `bg-${short}`, border: `border-${short}` } };
+    token.usage = states.get(short) ? [...states.get(short)].sort() : undefined;
+    tokens.push(token);
   }
   box.remove();
+  for (const t of tokens) byUsage(t, states.get(t.short)); // states first: words on a hover surface are not words on the brand
+  byFamily(tokens);
+  byDepth(tokens);
   assignInks(tokens);
   return (known = tokens);
 }
 
 /** The palette with the server's decisions in: awaits them once. A page with a theme written as `@theme inline` needs them. */
-export async function loadPalette() {
-  if (!decisions) {
+export async function loadPalette(fresh = false) {
+  if (!decisions || fresh) {
     try { const { request } = await import('./api.js'); const d = await request('decisions', {}); if (Array.isArray(d)) decisions = d; } catch { /* the page's own variables are what is left */ }
   }
   return paletteOf();
@@ -209,12 +338,13 @@ function fullGround(el, memo) {
 }
 
 // §4.3 usage evidence for one element: a control or link (the accent's places), a status hint (a message, a badge, an alert)
-const CONTROL = 'button, a[href], [role=button], [role=link], [role=tab], [role=menuitem], input, select, textarea, summary';
-const FIELD = 'input, select, textarea';
 const STATUS_HINT = '[role=alert], [role=status], [class*=error i], [class*=danger i], [class*=success i], [class*=warning i], [class*=alert i], [class*=toast i], [class*=badge i], [class*=banner i], [class*=notice i], [class*=invalid i]';
 function ctxOf(el) {
   const own = [...el.childNodes].filter((n) => n.nodeType === 3).map((n) => n.nodeValue).join(' ');
-  return { tag: el.localName, control: !!el.closest(CONTROL), field: !!el.closest(FIELD), link: !!el.closest('a[href]'), heading: !!el.closest('h1,h2,h3,h4,h5,h6'),
+  // what it is, as every pass reads it (roles.js): in a control, in a field, in a link, and whether its own edge is a
+  // control's (WCAG 1.4.11: a control's boundary needs 3:1)
+  const around = controlAround(el);
+  return { tag: el.localName, control: !!around, field: around === 'field', edge: !!controlKind(el), link: !!el.closest('a[href], [role=link]'), heading: !!el.closest('h1,h2,h3,h4,h5,h6'),
     statusHint: !!el.closest(STATUS_HINT) || /\b(error|failed|invalid|saved|success|warning|danger)\b/i.test(own.slice(0, 120)) };
 }
 // §4.3 painted area of a background, and whether it sits straight on the page (nothing painted between it and the body)
@@ -375,7 +505,7 @@ export function readRoles(places) {
       else { const down = lab[0] < oklab(e.under)[0] - 0.004; r.role = down ? 'sunken' : 'surface'; r.kinds = [r.role]; } // §4.3 a step darker is inset, else raised
     } else {
       if (hued) { r.role = ctx.control ? 'accent' : 'decoration'; r.kinds = ['accent', 'ink2', 'accent-soft', 'ink2-soft', 'line']; }
-      else { r.role = ctx.field || ctx.tag === 'button' ? 'line-strong' : 'line'; r.kinds = r.role === 'line-strong' ? ['line-strong', 'line'] : ['line']; } // §4.3 control borders are line-strong
+      else { r.role = ctx.edge ? 'line-strong' : 'line'; r.kinds = r.role === 'line-strong' ? ['line-strong', 'line'] : ['line']; } // §4.3 control borders are line-strong
     }
     out.set(e, r);
   }
@@ -443,6 +573,37 @@ export function proposeColours(places, palette = known ?? paletteOf(), { scope =
       if (!best || score < best.score) best = { t, de, score };
     }
     return best;
+  };
+
+  // Order among words that sit together (docs/PRINCIPLES.md; the spacing pass's own rule, "snapping it would flatten the
+  // page's hierarchy", said for colour): a row's title is drawn stronger than its description so the eye takes it first.
+  // Folding a grey onto a level must not erase that. `mates` are the other grey words in the smallest part of the page
+  // that holds this one and at least one other; `settled` is where a mate will sit once it is folded too.
+  const LEVELS = ['fg', 'muted', 'faint'];
+  const inside = new Map(); // element → the grey text entries drawn inside it
+  for (const pl of places) { const e = pl.colours.text; if (!e?.level || !e.oklab) continue; for (let a = pl.el.parentElement, d = 0; a && d < 40; a = a.parentElement, d++) { const l = inside.get(a); if (l) l.push(e); else inside.set(a, [e]); } }
+  const matesOf = (pl, e) => { for (let a = pl.el.parentElement; a; a = a.parentElement) { const l = inside.get(a); if (l && l.length >= 2) return l.filter((x) => x !== e); } return []; };
+  const strength = (lab, under) => Math.abs(lab[0] - oklab(under)[0]); // how far the words stand off their ground
+  const levelsFor = (e) => tokens.filter((t) => LEVELS.includes(t.kind) && (chroma(oklab(e.rgb)) < 0.03) === (chroma(oklab(t.rgb)) < 0.03))
+    .map((t) => ({ t, de: dE(e.oklab, oklab(asToken(t, e.under))) })).sort((x, y) => x.de - y.de);
+  const settled = (x, reach) => { if (x.cls && named.get(x.cls)) return x.oklab; const l = x.cls ? levelsFor(x)[0] : null; return l && l.de <= reach ? oklab(asToken(l.t, x.under)) : x.oklab; };
+  const keepsOrder = (pl, e, t, reach) => {
+    const now = strength(e.oklab, e.under), then = strength(oklab(asToken(t, e.under)), e.under);
+    // only words doing another job: a title and its description differ in size or weight, and the colour between them is
+    // part of that order. Two texts drawn the same size and weight do the same job; a grey apart from its twin is the
+    // drift this pass exists to fold, not a hierarchy to keep
+    const other = (x) => Math.round(x.size ?? 0) !== Math.round(e.size ?? 0) || Math.abs((x.weight ?? 400) - (e.weight ?? 400)) >= 100;
+    return matesOf(pl, e).filter(other).every((x) => { const was = now - strength(x.oklab, x.under), will = then - strength(settled(x, reach), x.under);
+      return Math.abs(was) <= DE_OK || (Math.sign(will) === Math.sign(was) && Math.abs(will) > DE_OK); });
+  };
+  // the level a spare grey folds to: the nearest in reach that keeps its order with the words beside it; null (and said) when none does
+  const levelFor = (pl, e, reach) => {
+    const fits = levelsFor(e).filter((l) => l.de <= reach);
+    if (!fits.length) return undefined;
+    const ok = fits.find((l) => keepsOrder(pl, e, l.t, reach));
+    if (ok) return ok;
+    refused.push({ el: pl.el, prop: 'text', why: `as ${fits[0].t.short} it would read the same as the words beside it, which it stands apart from now`, css: e.css, rule: 'extra-grey', law: LAW['extra-grey'] });
+    return null;
   };
 
   // the contrast guard: null when the move is fine, else why it is refused (§5 Guard)
@@ -526,8 +687,9 @@ export function proposeColours(places, palette = known ?? paletteOf(), { scope =
       }
       // §5 extra grey level: the nearest of the three text levels, and the APCA guard keeps it in its band
       if (prop === 'text' && use.role === 'text' && textGreys && e.level && e.cls && chroma(e.oklab) < 0.03) {
-        const level = nearest(e, ['fg', 'muted', 'faint'], { anyAlpha: true });
-        if (level && level.de <= R.grey) { consider(pl, prop, e, level.t, level.de, 'extra-grey'); continue; }
+        const level = levelFor(pl, e, R.grey);
+        if (level) { consider(pl, prop, e, level.t, level.de, 'extra-grey'); continue; }
+        if (level === null) continue;
       }
       else if (prop === 'text' && use.role === 'text' && greyActive && e.level && e.cls) {
         // within a grey level's width (the census merges text colours this close) of one of your text tokens: the same grey

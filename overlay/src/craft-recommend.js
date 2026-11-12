@@ -5,9 +5,10 @@
  * element wants, in its own unit, as a range with a target; this module turns that and the project's theme into ranked
  * candidates and hands back the best, with the rest on it as `alternatives`:
  *
- *  a  a token of the theme       the project's own step (never a framework default) whose value lies in the range,
- *                                nearest the target; failing that the nearest step in the rule's direction (the verdict
- *                                proves it, or withdraws it)
+ *  a  a token of the theme       the project's own step (never a framework default) whose value lies in the range:
+ *                                the one named for this job first (--tracking-caps for small capitals: the role, then
+ *                                the value, as the clean-up decides), else the one nearest the target; failing that
+ *                                the nearest step in the rule's direction (the verdict proves it, or withdraws it)
  *  b  the app's own value        spacing on Tailwind's numeric scale when the theme names no steps (`px-5`); for other
  *                                families a value the page already uses in range feeds the new token's value
  *  c  a new token                { kind: 'token', family, name, value, file, hash, then: { from, to }, text, sets }:
@@ -17,6 +18,7 @@
  *
  * Every candidate says why it was chosen, in plain words. Nothing here reads the DOM.
  * ───────────────────────────────────────────────────────── */
+import { tokenSays } from './roles.js';
 
 const round = (n, step) => Math.round(n / step) * step;
 const fmtPx = (n) => `${Math.round(n * 10) / 10}px`;
@@ -40,6 +42,13 @@ function valueOf(step, family, of) {
   if (family === 'weight') return step.n;
   return step.px;
 }
+// The words a token's name may use for a job (the job is the rule's own word: caps, display, body, button, icon…).
+// A step named for the job is the project's own decision for it, and outranks a step that is merely nearer in value.
+const JOB_WORDS = { caps: ['caps', 'label', 'eyebrow', 'overline'], display: ['display', 'heading', 'headline', 'title', 'hero'], body: ['body', 'prose', 'reading', 'text'],
+  icon: ['icon'] };
+// a type job's words are the type scale's own; a role (a button, a card) is named as every pass names it (roles.js)
+const ROLE_JOB = { button: 'control', control: 'control', card: 'card', tag: 'tag', overlay: 'overlay' };
+const namedFor = (short, job) => !!job && (ROLE_JOB[job] ? tokenSays(short, ROLE_JOB[job]) : (JOB_WORDS[job] ?? [job]).some((w) => new RegExp(`(^|-)${w}(-|$)`).test(short)));
 const within = (v, want) => (want.min === undefined || v >= want.min - 1e-9) && (want.max === undefined || v <= want.max + 1e-9);
 const range = (want, fmt) => want.min !== undefined && want.max !== undefined ? `${fmt(want.min)}–${fmt(want.max)}` : want.min !== undefined ? `at least ${fmt(want.min)}` : want.max !== undefined ? `at most ${fmt(want.max)}` : fmt(want.target);
 
@@ -82,11 +91,12 @@ export function recommend({ family, prefix, job, want, from = '', sets, round: d
   const target = want.target;
   const reason = label ? `, in the ${range(want, F.fmt)} ${label}` : '';
   // a. a step in range, nearest the target (the direction breaks a tie); else the nearest step the rule's way
-  const inRange = fitting.filter(({ v }) => within(v, want)).sort((a, b) => Math.abs(a.v - target) - Math.abs(b.v - target) || (dir === 'up' ? a.v - b.v : b.v - a.v));
+  const inRange = fitting.filter(({ v }) => within(v, want)).sort((a, b) => namedFor(b.s.short, job) - namedFor(a.s.short, job) || Math.abs(a.v - target) - Math.abs(b.v - target) || (dir === 'up' ? a.v - b.v : b.v - a.v));
   if (inRange.length) {
     const { s, v } = inRange[0];
     const same = Math.abs(v - target) <= (F.unit === 'px' ? exact : F.grain / 2);
-    candidates.push({ kind: 'class', from, to: `${prefix}-${s.short}`, why: `${F.fmt(v)} (${s.short})${same ? '' : reason}`, sets: setsOf(v), rank: 'theme' });
+    const forJob = namedFor(s.short, job) && inRange.some((x) => !namedFor(x.s.short, job));
+    candidates.push({ kind: 'class', from, to: `${prefix}-${s.short}`, why: `${F.fmt(v)} (${s.short})${forJob ? ', your step for this' : same ? '' : reason}`, sets: setsOf(v), rank: 'theme' });
   } else if (fitting.length && F.unit === 'px') {
     const pick = dir === 'down' ? fitting.filter(({ v }) => v <= target + 0.01).sort((a, b) => b.v - a.v)[0]
       : dir === 'up' ? fitting.filter(({ v }) => v >= target - 0.01).sort((a, b) => a.v - b.v)[0]
@@ -111,9 +121,11 @@ export function recommend({ family, prefix, job, want, from = '', sets, round: d
   return { ...best, ...(rest.length ? { alternatives: rest.map(({ rank: _r, ...c }) => c) } : {}) };
 }
 
-/** A colour's one safe answer: the theme token nearest the rgb within a distance, else advice (a new colour is a design decision). */
+/** A colour's one safe answer: the theme token for this job (text, surface or line, from the utility that sets it)
+ * nearest the rgb within a distance, else advice (a new colour is a design decision). */
+const JOB = { text: 'text', bg: 'surface', border: 'line' };
 export function recommendColour({ rgb, prefix, from = '', within: distance, theme, why, advice }) {
-  const near = theme.nearestColor(rgb, distance);
+  const near = theme.nearestColor(rgb, distance, JOB[prefix] ?? null);
   if (near) return { kind: 'class', from, to: `${prefix}-${near.short}`, why: why ?? `${near.short}, the colour it shows as`, rank: 'theme' };
   return { kind: 'advice', text: advice, rank: 'advice' };
 }

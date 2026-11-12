@@ -1395,6 +1395,14 @@ class PlumbOverlay extends HTMLElement {
 
   #compare(m) { return choicesHtml(m, { el: this.#pinned.element, scale: f => this.#scaleOf(f) }); }
 
+  // The theme's decisions, asked for now and waited on (never longer than `ms`). A read that starts before they
+  // arrive judges the whole page, then judges it all again when they do; a read that waits judges it once.
+  themeReady(ms = 2000) {
+    if (this.#decisions) return Promise.resolve();
+    this.#scaleOf('radius');
+    return Promise.race([this.#decisionsLoading ?? Promise.resolve(), new Promise((r) => setTimeout(r, ms))]).catch(() => {});
+  }
+
   // Your theme's whole scale for this family, read once from Plumb's decisions and measured on the page (so a token
   // written as calc(var(--radius) + 4px) is known in px). Fetched lazily; the card redraws when it arrives.
   #scaleOf(family) {

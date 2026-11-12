@@ -286,7 +286,7 @@ async function main(): Promise<void> {
     if (args.values.json) process.stdout.write(`${JSON.stringify({ schemaVersion: 1, tool, root: options.root, routes: census.routes, left: census.left, elements: census.entries.length, ladder, cost: proposal.cost }, null, 2)}\n`);
     else process.stdout.write([`React Plumber census: ${census.routes.length} ${census.routes.length === 1 ? 'route' : 'routes'}, ${census.entries.length} text elements`,
       ...census.routes.map(r => `  ${r.route}  ${r.elements}`), ...(census.left ? [`  … ${census.left} more ${census.left === 1 ? 'route' : 'routes'} found and not read (--max ${max})`] : []), '', `The project's text styles (${proposal.cost.sizesBefore} sizes now, ${proposal.cost.sizesAfter} after):`,
-      ...ladder.map(l => `  ${l.role.padEnd(16)} ${String(l.size).padStart(6)}  ${l.places} ${l.places === 1 ? 'place' : 'places'}`)].join('\n') + '\n');
+      ...ladder.map(l => `  ${l.role.padEnd(24)} ${String(l.size).padStart(6)}  ${l.places} ${l.places === 1 ? 'place' : 'places'}`)].join('\n') + '\n');
     return;
   }
   if (command === 'install' && args.values.overlay) {

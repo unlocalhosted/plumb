@@ -59,6 +59,8 @@ async function blueprint(page, overlay) {
   await overlay.locator('.fx[data-settled]').waitFor({ timeout: 20000 }); if (await overlay.locator('.fx .review').count()) { await overlay.page().keyboard.press('Escape'); await overlay.locator('.fx .review').waitFor({ state: 'detached', timeout: 5000 }); } /* the text styles are offered first: put down, the fixes come next */ // the fix panel: every element read
 }
 
+// the card's top padding is a step under its sides: with the first line's own space above its letters the two look
+// equal, so the card itself is quiet (craft/card-optical-padding, added after this page was written, fired on p-s4)
 const PAGE = `
 const Icon = () => <svg width="16" height="16" aria-hidden="true"><circle cx="8" cy="8" r="6" /></svg>;
 const members = [['Ada Lovelace', 'Owner'], ['Grace Hopper', 'Admin'], ['Alan Turing', 'Member']];
@@ -242,9 +244,9 @@ test('No step the theme has: the cause is a new token; the panel says what takin
   const [x, y] = await center(page, 'status', 0.3, 0.5);
   await click(page, x, y);
   await inHand(overlay).waitFor({ timeout: 10000 });
-  // (a Tailwind default's cause has a note too, "Add it to your theme and it’s yours": keep walking to the token's)
-  const note = async () => ((await panel(overlay).locator('.note').count()) ? panel(overlay).locator('.note').innerText() : '');
-  for (let i = 0; i < 12 && !/Your theme has no step for this/.test(await note()); i++) { await page.keyboard.press('ArrowRight'); await page.waitForTimeout(300); }
+  // (another cause on this element has a note of its own now, "Add it to your theme": walk to the one about a missing step)
+  const noStep = async () => (await panel(overlay).locator('.note').count()) && /no step for this/.test(await panel(overlay).locator('.note').innerText());
+  for (let i = 0; i < 12 && !(await noStep()); i++) { await page.keyboard.press('ArrowRight'); await page.waitForTimeout(300); }
   // in plain words, then the step it adds and where
   assert.match(await panel(overlay).locator('.note').innerText(), /Your theme has no step for this\. This adds it, then uses it here\./);
   assert.match(await panel(overlay).locator('.hint').innerText(), /--tracking-caps: 0\.06em/);

@@ -58,7 +58,9 @@ async function browser(t) {
   await writeFile(join(profile, 'Default/Preferences'), JSON.stringify({ webkit: { webprefs: { default_font_size: 18 } } }));
   try {
     const context = await chromium.launchPersistentContext(profile, { headless: true, executablePath: (process.env.PLUMBER_CHROMIUM ?? process.env.PLUMB_CHROMIUM) || undefined,
-      reducedMotion: 'reduce', viewport: { width: 1200, height: 900 }, deviceScaleFactor: 1 });
+      reducedMotion: 'reduce', viewport: { width: 1200, height: 900 }, deviceScaleFactor: 1,
+      // Playwright's headless shell does not read the profile's font size; the same setting goes to the renderer too
+      args: ['--blink-settings=defaultFontSize=18'] });
     t.after(() => context.close());
     return context;
   } catch (error) {

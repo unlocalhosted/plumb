@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Accent ramp</title>
+<style>
+  body { font: 13px/1.4 system-ui, sans-serif; margin: 24px; background: #fff; color: #111; }
+  h1 { font-size: 16px; margin: 0 0 4px; }
+  p { margin: 0 0 16px; color: #555; }
+  .row { display: grid; grid-template-columns: 200px repeat(11, 1fr); gap: 4px; margin-bottom: 8px; }
+  .name { font-weight: 600; }
+  .name small { display: block; font-weight: 400; color: #666; }
+  .sw { height: 56px; border-radius: 6px; display: flex; flex-direction: column; justify-content: space-between; padding: 6px; font-size: 11px; }
+  .sw b { color: #fff; font-size: 15px; }
+  label { display: inline-flex; gap: 8px; align-items: center; margin-bottom: 16px; }
+</style>
+</head>
+<body>
+<h1>One colour in, eleven stops out</h1>
+<p>The chosen colour is 500. Its text must reach APCA Lc 60: white when it reads, else the ramp's own darkest step. A mid-tone neither reads on moves the shorter way, lighter or darker.</p>
+<label>Try a colour <input type="color" id="pick" value="#7c3aed"></label>
+<div id="rows"></div>
+<script type="module">
+  import { rampOf, STOPS } from '../src/ramp.js';
+  const fixed = [['crafting-ui accent', { l: 0.57, c: 0.2, h: 28 }], ['crafting-ui draw', { l: 0.506, c: 0.289, h: 264.8 }], ['teal #14b8a6', '#14b8a6'], ['yellow #facc15', '#facc15'], ['lime #84cc16', '#84cc16'], ['orange #f97316', '#f97316'], ['green #22c55e', '#22c55e']];
+  const row = (name, c) => {
+    const r = rampOf(c);
+    const note = r.adjusted ? `moved to read: Lc ${r.adjusted.lcBefore} → ${r.lc}` : `${r.onAccent.text} text, Lc ${r.lc}; colour kept`;
+    return `<div class="row"><div class="name">${name}<small>${note}</small></div>` + STOPS.map((s) => `<div class="sw" style="background:${r.stops[s].css}" title="${r.stops[s].css}"><span style="color:${s === 500 ? r.onAccent.css : s > 500 ? '#fff' : '#111'}">${s}</span>${s === 500 ? `<b style="color:${r.onAccent.css}">Aa</b>` : ''}</div>`).join('') + '</div>';
+  };
+  const draw = () => { const v = document.getElementById('pick').value; document.getElementById('rows').innerHTML = row(`your colour ${v}`, v) + fixed.map(([n, c]) => row(n, c)).join(''); };
+  document.getElementById('pick').addEventListener('input', draw);
+  draw();
+</script>
+</body>
+</html>

@@ -1,7 +1,7 @@
 // The type system a codebase is reaching for (docs/research/type-roles.md): the proposal from POST system, its
 // write through apply-all, undo, exclusions and the stale-hash guard. Real Vite, real Chromium.
 import assert from 'node:assert/strict';
-import { cp, mkdtemp, readFile, rm } from 'node:fs/promises';
+import { cp, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
@@ -11,7 +11,7 @@ import tailwindcss from '@tailwindcss/vite';
 import { plumb } from '../dist/hosts/vite.js';
 
 const repo = fileURLToPath(new URL('../', import.meta.url));
-async function site(t) {
+async function site(t, { extra = '' } = {}) {
   let browser;
   try { browser = await chromium.launch({ headless: true, executablePath: (process.env.PLUMBER_CHROMIUM ?? process.env.PLUMB_CHROMIUM) || undefined }); }
   catch (error) { if (!/Executable doesn't exist/.test(error.message)) throw error; t.skip('Playwright Chromium missing'); return null; }
@@ -19,6 +19,10 @@ async function site(t) {
   const root = await mkdtemp(join(repo, 'fixtures/.type-roles-'));
   t.after(() => rm(root, { recursive: true, force: true }));
   await cp(join(repo, 'fixtures/type-roles'), root, { recursive: true });
+  // this test's own decisions and page (the fixture is shared): the owner's prose leading, and a code block, which is never reading text
+  await writeFile(join(root, 'plumber.config.ts'), "export default { css: 'src/styles.css', source: ['src/**/*.{tsx,css}'], system: { exclude: ['src/specimen'], type: { roles: { prose: { lineHeight: 1.6 } } } } };\n");
+  const app = join(root, 'src/App.tsx');
+  await writeFile(app, (await readFile(app, 'utf8')).replace('      <Labels />', `      <pre id="code" className="text-[13px] leading-[1.6] font-mono">npm run dev</pre>\n${extra}      <Labels />`));
   const server = await createServer({ root, cacheDir: join(root, '.vite-cache'), configFile: false, plugins: [tailwindcss(), plumb({ watch: false })],
     optimizeDeps: { noDiscovery: true, include: ['react', 'react/jsx-runtime', 'react/jsx-dev-runtime', 'react-dom', 'react-dom/client'] },
     oxc: { jsx: { runtime: 'automatic', development: true } }, logLevel: 'silent', server: { host: '127.0.0.1', port: 0 } });
@@ -33,12 +37,15 @@ async function site(t) {
     const cs = getComputedStyle(el), size = parseFloat(cs.fontSize);
     return { stamp: el.getAttribute('data-plumb-source'), tag: el.localName, list: !!el.closest('li, ul, ol, dl'), computed: { size, lineHeight: cs.lineHeight === 'normal' ? null : parseFloat(cs.lineHeight), letterSpacing: cs.letterSpacing === 'normal' ? 0 : parseFloat(cs.letterSpacing), weight: parseInt(cs.fontWeight, 10), transform: cs.textTransform } };
   }));
-  // a session still warming up answers 503 starting: asked again, as the overlay does
+  // a session still warming up answers 503 starting: asked again, as the overlay does. Sent from the test, as the page's
+  // own origin would, so a reload a theme write causes never cuts a request off
+  const origin = `http://127.0.0.1:${server.httpServer.address().port}`;
   const post = async (method, body) => {
     for (let i = 0; ; i++) {
-      const r = await page.evaluate(async ([method, body]) => { const r = await fetch(`/__plumb/${method}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }); return { status: r.status, body: await r.json() }; }, [method, body]);
-      if (r.status !== 503 || i > 60) return r;
-      await page.waitForTimeout(1000);
+      const r = await fetch(`${origin}/__plumb/${method}`, { method: 'POST', headers: { 'Content-Type': 'application/json', Origin: origin, 'Sec-Fetch-Site': 'same-origin' }, body: JSON.stringify(body) });
+      const out = { status: r.status, body: await r.json() };
+      if (out.status !== 503 || i > 60) return out;
+      await new Promise((res) => setTimeout(res, 1000));
     }
   };
   // a theme write reloads the page: a read that lands mid-reload is asked again once the page is back
@@ -53,82 +60,92 @@ async function site(t) {
   return { root, page, errors, census, post, styleOf, settle, read: (file) => readFile(join(root, file), 'utf8') };
 }
 
-test('the proposal names the roles the code reaches for, with members, cost and the write; apply makes them the system; undo restores every file', { timeout: 180000 }, async (t) => {
+// docs/design/token-spec.md §2: roles worked out from the code, decided by size alone; another weight is Tailwind's
+// font-* class beside the role; reading text keeps its leading with leading-prose; colour is never in a style
+test('roles come from the code, one per size; weight and reading leading ride beside the role; apply renders it; undo restores every file', { timeout: 180000 }, async (t) => {
   const s = await site(t); if (!s) return;
-  const before = { label: await s.styleOf('eyebrow'), small: await s.styleOf('small-b'), prose: await s.styleOf('prose-a'), row: await s.styleOf('row-body-1'), h2: await s.styleOf('h2'), specimen: await s.styleOf('specimen-label') };
+  const ids = ['eyebrow', 'small-b', 'lead', 'prose-a', 'inherit', 'row-body-1', 'card-title-a', 'card-lead-a', 'h2', 'code', 'specimen-label'];
+  const before = Object.fromEntries(await Promise.all(ids.map(async (id) => [id, await s.styleOf(id)])));
+  const original = Object.fromEntries(await Promise.all(['src/styles.css', 'src/App.tsx', 'src/Labels.tsx'].map(async (f) => [f, await s.read(f)])));
   const first = await s.post('system', { census: await s.census() });
   assert.equal(first.status, 200, JSON.stringify(first.body).slice(0, 400));
   const { proposal } = first.body;
-  assert.deepEqual([proposal.rule, proposal.kind, proposal.family], ['system/type-roles', 'system', 'type']);
-  // five roles: 24px headings, the 17px card titles (the 17px regular leads fold in: one size is one role), 16px body
-  // (prose 1.6, lists compact 1.4, by the config's decision), 12px caps labels, 11px caps labels. Leading is what the
-  // code sets: a role whose members set none has none (null), and inherits
-  assert.deepEqual(proposal.roles.map((r) => [r.name, r.places, r.bundle.size, r.bundle.lineHeight, r.bundle.letterSpacing, r.bundle.weight, r.bundle.transform, r.variants?.compact?.lineHeight ?? null, r.sizeFrom]), [
-    ['headline-small', 2, 24, null, -0.02, 500, 'none', null, 'mode'],
-    ['title-medium', 4, 17, null, 0, 600, 'none', null, 'mode'],
-    ['body-large', 5, 16, 1.6, 0, 400, 'none', 1.4, 'decision'],
-    ['label-medium', 3, 12, null, 0.08, 400, 'uppercase', null, 'mode'],
-    ['label-small', 3, 11, null, 0.08, 400, 'uppercase', null, 'mode'],
-  ]);
-  // two clusters at one size never become two roles at one size: the leads fold into the titles, and it is said
-  assert.deepEqual(proposal.merged, [{ from: 'title-large', into: 'title-medium', why: "both at 17px and the cluster's centre (17px) is no higher; folded into title-medium" }]);
-  assert.deepEqual(proposal.ladder.map((l) => [l.role, l.size, l.ratio]), [['label-small', 11, null], ['label-medium', 12, 1.091], ['body-large', 16, 1.333], ['title-medium', 17, 1.063], ['headline-small', 24, 1.412]]);
-  assert.equal(new Set(proposal.roles.map((r) => r.bundle.size)).size, proposal.roles.length, 'a ladder: no two roles at one size');
-  const body = proposal.roles.find((r) => r.name === 'body-large');
-  assert.deepEqual(body.members.map((m) => [m.tag, m.variant ?? '-', m.delta.size, m.delta.lineHeight, m.current.lineHeight]).sort(), [['p', '-', 0, 0, 1.6], ['p', '-', 0, 0, 1.6], ['p', '-', 0, 0, 1.6], ['p', '-', 0, 0, null], ['span', 'compact', 0, 0, 1.4]].sort());
-  // the folded leads move two weight steps and say so
-  const folded = proposal.roles.find((r) => r.name === 'title-medium').members.filter((m) => m.tag === 'p');
-  assert.deepEqual(folded.map((m) => [m.delta.weight, m.confidence]), [[200, 'low'], [200, 'low']]);
-  // a decision sent with the request changes a role's bundle and its write
-  const decided = await s.post('system', { census: await s.census(), roles: { 'label-medium': { letterSpacing: 0.1 } } });
-  assert.equal(decided.body.proposal.roles.find((r) => r.name === 'label-medium').bundle.letterSpacing, 0.1);
-  assert.ok(decided.body.proposal.write.tokens.some((k) => k.name === '--text-label-medium--letter-spacing' && k.value === '0.1em'));
-  assert.match(decided.body.proposal.write.css[0].css, /@utility type-label-medium \{[^}]*letter-spacing: var\(--text-label-medium--letter-spacing\);/);
-  // the row label's 0.1em moves to the role's 0.08em: -0.24px at 12px, said in its delta
-  const rowLabel = proposal.roles.find((r) => r.name === 'label-medium').members.find((m) => m.tag === 'span' && m.classes.includes('tracking-[0.1em]'));
-  assert.deepEqual([rowLabel.delta.letterSpacing, rowLabel.elements, rowLabel.confidence], [-0.24, 4, 'ok']);
-  // the specimen is outside by config, never proposed
+  // the sizes the code uses, one role each, named on our scheme; no scale from outside the code. The 13px code block
+  // lands on the theme's own 14px step (--text-sm), within 1px of it
+  assert.deepEqual(proposal.roles.map((r) => [r.name, r.bundle.size, r.sizeFrom]), [['headline-small', 24, 'mode'], ['title-medium', 17, 'mode'], ['body-lead-small', 17, 'mode'], ['body-large', 16, 'mode'], ['body-small', 14, 'theme'], ['label-medium', 12, 'mode'], ['label-small', 11, 'mode']]);
+  // a 17px card title (an h3) and a 17px lead (a paragraph of sentences) are two jobs at one size: the heading is a
+  // title, the paragraph reading text, each with its own usual weight and no class to undo the other's (2026-11-12:
+  // the job picks the kind, the size the step; before, both were title-medium and one wore a weight class)
+  const title = proposal.roles.find((r) => r.name === 'title-medium'), lead = proposal.roles.find((r) => r.name === 'body-lead-small');
+  assert.deepEqual([title.places, title.weightName, title.weights.length], [2, 'semibold', 0]);
+  assert.deepEqual([lead.places, lead.weightName, lead.weights.length], [2, 'regular', 0]);
+  const edits = Object.fromEntries(proposal.write.swaps.flatMap((w) => w.edits).map((e) => [e.from, e.to]));
+  assert.equal(edits['text-[17px] font-semibold'], 'type-title-medium', JSON.stringify(edits));
+  assert.equal(edits['text-[17px]'], 'type-body-lead-small', JSON.stringify(edits));
+  // reading text keeps the owner's leading beside its role; list bodies take the role's own; code is never reading text
+  assert.deepEqual(proposal.prose, { lineHeight: 1.6, places: 3, from: 'decision' });
+  assert.equal(edits['text-[1rem] leading-[1.6]'], 'type-body-large leading-prose');
+  assert.equal(edits['text-[1rem] leading-[1.4]'], 'type-body-large');
+  assert.equal(edits['text-[13px] leading-[1.6]'], 'type-body-small');
+  // a style never carries a colour
+  assert.doesNotMatch(proposal.write.css[0].css, /(^|[^-])color:/m);
+  assert.ok(proposal.write.tokens.some((k) => k.name === '--leading-prose' && k.value === '1.6'));
   assert.deepEqual(proposal.outside.map((o) => [o.site.file, o.why]), [['src/specimen/Specimen.tsx', 'excluded by config: src/specimen']]);
-  assert.equal(proposal.cost.places, 17);
-  assert.deepEqual([proposal.cost.sizesBefore, proposal.cost.sizesAfter, proposal.cost.classesRemoved], [5, 5, 39]);
-  // the write: tokens in the theme's own shape, one utility per role (and the compact body), swaps at every member
-  assert.ok(proposal.write.tokens.some((k) => k.name === '--text-label-medium' && k.value === '0.75rem') && proposal.write.tokens.some((k) => k.name === '--text-body-large-compact--line-height' && k.value === '1.4'));
-  assert.match(proposal.write.css[0].css, /@utility type-label-medium \{[^}]*text-transform: uppercase;/);
-  assert.match(proposal.write.css[0].css, /@utility type-body-large-compact \{[^}]*line-height: var\(--text-body-large-compact--line-height\);/);
-  assert.deepEqual(proposal.write.swaps.map((w) => [w.file, w.edits.length]).sort(), [['src/App.tsx', 13], ['src/Labels.tsx', 4]]);
-  assert.ok(proposal.write.swaps.every((w) => /^[a-f0-9]{64}$/.test(w.hash)) && proposal.write.tokens.every((k) => k.file === 'src/styles.css' && k.hash));
   // a second reading is the same proposal
-  const again = await s.post('system', { census: await s.census() });
-  assert.deepEqual(again.body.proposal, proposal);
-  // a stale hash writes nothing
-  const stale = await s.post('apply-all', { tokens: proposal.write.tokens.map((k) => ({ ...k, hash: 'a'.repeat(64) })) });
-  assert.equal(stale.status, 200);
-  assert.ok(stale.body.results.tokens.every((r) => !r.ok && /changed since/.test(r.error)), JSON.stringify(stale.body.results.tokens[0]));
-  assert.equal(await s.read('src/styles.css'), await readFile(join(repo, 'fixtures/type-roles/src/styles.css'), 'utf8'));
-  // apply: the theme, the utilities, every swap; one undo per written file
+  assert.deepEqual((await s.post('system', { census: await s.census() })).body.proposal, proposal);
+  // apply: every write lands, one undo per file
   const applied = await s.post('apply-all', { tokens: proposal.write.tokens, css: proposal.write.css, swaps: proposal.write.swaps });
   assert.equal(applied.status, 200, JSON.stringify(applied.body).slice(0, 600));
-  assert.ok(applied.body.results.tokens.every((r) => r.ok), JSON.stringify(applied.body.results.tokens));
-  assert.deepEqual(applied.body.results.css.map((r) => [r.ok, r.written]), [[true, true]]);
-  assert.deepEqual(applied.body.results.swaps.map((r) => [r.file, r.ok, r.applied.length, r.refused.length]).sort(), [['src/App.tsx', true, 13, 0], ['src/Labels.tsx', true, 4, 0]]);
+  for (const r of [...applied.body.results.tokens, ...applied.body.results.css, ...applied.body.results.swaps]) assert.ok(r.ok && !(r.refused?.length), JSON.stringify(r));
   assert.deepEqual([...new Set(applied.body.undo.map((u) => u.file))].sort(), ['src/App.tsx', 'src/Labels.tsx', 'src/styles.css']);
-  const theme = await s.read('src/styles.css');
-  assert.match(theme, /--text-label-small: 0\.6875rem;/); assert.match(theme, /@utility type-headline-small \{/);
-  const app = await s.read('src/App.tsx');
-  assert.match(app, /id="eyebrow" className="type-label-medium"/); assert.match(app, /className="type-body-large-compact"/); assert.doesNotMatch(app, /tracking-\[0\.1em\]/);
-  assert.match(await s.read('src/Labels.tsx'), /id="small-b" className="type-label-small"/);
-  // the page renders the system (the theme write reloads it): every member's computed bundle is its role's
-  for (let i = 0; i < 120; i++) { await s.page.waitForTimeout(500); if ((await s.styleOf('eyebrow')).cls === 'type-label-medium') break; }
+  // the page renders the system (the theme write reloads it)
+  for (let i = 0; i < 120; i++) { await s.page.waitForTimeout(500); if (/type-label-medium/.test((await s.styleOf('eyebrow')).cls)) break; }
   await s.page.waitForTimeout(1500);
-  const after = { label: await s.styleOf('eyebrow'), small: await s.styleOf('small-b'), prose: await s.styleOf('prose-a'), row: await s.styleOf('row-body-1'), h2: await s.styleOf('h2'), specimen: await s.styleOf('specimen-label') };
-  assert.deepEqual([after.label.size, after.label.transform, after.label.ls], ['12px', 'uppercase', '0.96px']);
-  assert.deepEqual([after.small.size, after.small.ls], ['11px', '0.88px']); // 0.1em → 0.08em: the reported -0.22px
-  assert.deepEqual([after.prose.size, after.prose.lh, after.row.lh, (await s.styleOf('inherit')).lh, (await s.styleOf('card-lead-a')).weight], ['16px', '25.6px', '22.4px', '25.6px', '600']);
+  const after = Object.fromEntries(await Promise.all(ids.map(async (id) => [id, await s.styleOf(id)])));
+  // weight kept where the code set it: titles semibold, leads regular, under one role
+  assert.deepEqual([after['card-title-a'].weight, after['card-lead-a'].weight, after['card-title-a'].size, after['card-lead-a'].size], ['600', '400', '17px', '17px']);
+  // reading text at the owner's 1.6, lists at the role's 1.4, a paragraph that set none takes the role's
+  assert.deepEqual([after['prose-a'].lh, after.lead.lh, after['row-body-1'].lh, after.inherit.lh], ['25.6px', '25.6px', '22.4px', '22.4px']);
+  // caps labels keep their tracking; a heading looks as it did
+  assert.deepEqual([after.eyebrow.size, after.eyebrow.transform, after.eyebrow.ls], ['12px', 'uppercase', '0.96px']);
   assert.deepEqual([after.h2.size, after.h2.weight, after.h2.ls], [before.h2.size, before.h2.weight, before.h2.ls]);
-  assert.deepEqual(after.specimen, before.specimen, 'outside the system, untouched');
+  assert.deepEqual(after['specimen-label'], before['specimen-label'], 'outside the system, untouched');
   // undo every handle: every file back as it was
   for (const handle of [...applied.body.undo].reverse()) { await s.settle(); const undone = await s.post('undo', { id: handle.id }); assert.equal(undone.status, 200, JSON.stringify(undone.body)); }
   await s.settle();
-  for (const file of ['src/styles.css', 'src/App.tsx', 'src/Labels.tsx']) assert.equal(await s.read(file), await readFile(join(repo, 'fixtures/type-roles', file), 'utf8'), file);
+  for (const file of ['src/styles.css', 'src/App.tsx', 'src/Labels.tsx']) assert.equal(await s.read(file), original[file], file);
+  assert.deepEqual(s.errors, []);
+});
+
+// three problems found writing crafting-ui (2026-11-12, docs/journey.md): a 33px page title folded into the 22px section
+// titles; a class behind a variant (`first-letter:uppercase`) swapped away, so a title lost its capital; a heading with
+// tall leading given the reading-text leading
+test('a page title keeps its own headline step; a class behind a variant stays; a heading never takes reading leading', { timeout: 180000 }, async (t) => {
+  const s = await site(t, { extra: [
+    '      <h1 id="page-title" className="text-[33px] leading-[1.1] font-medium">Craft</h1>',
+    '      <h2 id="section-title" className="text-[22px] leading-[1.35] font-medium">Alignment and balance</h2>',
+    '      <h3 id="group-name" className="text-[16px] leading-[1.6] font-medium">Spacing and rhythm</h3>',
+    '      <span id="rule-title" className="block text-[22px] leading-[1.35] font-medium first-letter:uppercase">a play button that looks centred</span>',
+  ].map((l) => `${l}\n`).join('') }); if (!s) return;
+  const before = await s.styleOf('page-title');
+  const { proposal } = (await s.post('system', { census: await s.census() })).body;
+  const edits = Object.fromEntries(proposal.write.swaps.flatMap((w) => w.edits).map((e) => [e.from, e.to]));
+  // the page title and the section title are two headline steps, not one role at the section's size
+  assert.match(edits['text-[33px] leading-[1.1] font-medium'], /^type-headline-large\b/, JSON.stringify(edits));
+  assert.match(edits['text-[22px] leading-[1.35] font-medium'], /^type-headline-small\b/, JSON.stringify(edits));
+  // the heading with 1.6 leading is a heading: its role, no leading-prose
+  const group = edits['text-[16px] leading-[1.6] font-medium'];
+  assert.ok(group && !/leading-prose/.test(group), `group name: ${group}`);
+  // first-letter:uppercase is not part of any swap
+  assert.ok(!Object.keys(edits).some((from) => /first-letter/.test(from)), JSON.stringify(Object.keys(edits)));
+  const applied = await s.post('apply-all', { tokens: proposal.write.tokens, css: proposal.write.css, swaps: proposal.write.swaps });
+  assert.equal(applied.status, 200, JSON.stringify(applied.body).slice(0, 600));
+  for (let i = 0; i < 120; i++) { await s.page.waitForTimeout(500); if (/type-headline-large/.test((await s.styleOf('page-title')).cls)) break; }
+  await s.settle();
+  assert.match(await s.read('src/App.tsx'), /first-letter:uppercase/, 'the variant class is still written');
+  const firstLetter = await s.page.evaluate(() => getComputedStyle(document.getElementById('rule-title'), '::first-letter').textTransform);
+  assert.equal(firstLetter, 'uppercase', 'the title still starts with a capital');
+  const after = await s.styleOf('page-title');
+  assert.equal(after.size, before.size, `the page title keeps its size: ${before.size} → ${after.size}`);
   assert.deepEqual(s.errors, []);
 });

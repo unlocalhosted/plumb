@@ -228,9 +228,10 @@ async function localReport(file: string): Promise<Report> {
   return view;
 }
 const sourceFiles = () => [...new Set([...state.collection.slices.keys(), ...raw.stylesheets.filter(sheet => sheet.reached.some(reach => reach.kind === 'source')).map(sheet => sheet.file)])];
-function queryInputs(files: Iterable<string> = []) {
+/** `known`: the same files' dependencies when the request just worked them out (a refresh), so they are not worked out twice. */
+function queryInputs(files: Iterable<string> = [], known?: [string, string[]][]) {
   return { inputPatterns: [...state.inputPatterns], inputs: [...new Set([...state.configurationFiles, ...state.compilerFiles, ...raw.stylesheets.map(s => s.file), ...raw.declarations.filter(d => d.prop.startsWith('--')).map(d => d.site.file), ...raw.decisions.map(d => d.source.file), ...raw.decisionInventory?.map(d => d.source.file) ?? []])],
-    queryDependencies: [...files].map(file => [file, state.queryDependencies(file)]) };
+    queryDependencies: known ?? [...files].map(file => [file, state.queryDependencies(file)]) };
 }
 async function dispatch(method: string, params: Record<string, unknown>): Promise<unknown> {
   if (method === 'queryDependencies') return [...new Set((params.files as string[]).flatMap(file => state.queryDependencies(file)))];
@@ -356,9 +357,12 @@ parentPort!.on('message', ({ id, method, params }) => {
       const start = performance.now();
       const result = await dispatch(method, params);
       profileDuration(`read:${method}`, performance.now() - start);
-      const analysis = metadataDirty ? queryInputs(metadataFull ? undefined : queryChanges) : undefined;
+      // A refresh answers with every changed query's dependencies itself (`dependencyQueries`, over the same files and
+      // the same state): they are reused here, and travel once, in the result. The session reads them from there.
+      const answered = method === 'refresh' && !metadataFull ? (result as { dependencyQueries?: [string, string[]][] }).dependencyQueries : undefined;
+      const analysis = metadataDirty ? queryInputs(metadataFull ? undefined : queryChanges, answered) : undefined;
       parentPort!.postMessage({ id, result, health: await dispatch('health', {}), judged: state.judgement.judgedFiles,
-        ...(analysis ? { analysis: { ...analysis, dependencies: metadataFull ? dependencies() :
+        ...(analysis ? { analysis: { ...analysis, ...(answered ? { queryDependencies: [] } : {}), dependencies: metadataFull ? dependencies() :
           [...new Set([...analysis.inputs, ...analysis.queryDependencies.flatMap(([, paths]) => paths as string[])])] } } : {}) });
       metadataDirty = false; metadataFull = false; queryChanges.clear();
     }

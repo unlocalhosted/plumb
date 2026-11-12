@@ -86,14 +86,15 @@ test('Alt+click on words opens their values; an off-scale size opens its scale, 
   await page.keyboard.press('Enter');
   await overlay.locator('.fx .said').filter({ hasText: /Changed size to 12px on / }).waitFor({ timeout: 20000 });
   assert.match(await written(root), /id="tiny" className="text-small text-ink-muted"/, 'text-[9px] became text-small on its line');
-  await page.waitForFunction(() => { const f = document.querySelector('plumb-overlay').shadowRoot.querySelector('.tc .fld[data-key="font-size"]'); return f && !f.hasAttribute('data-off') && /^12/.test(f.innerText); }, null, { timeout: 20000 });
+  // (a write reloads the page: the overlay is gone for a moment, and a wait that reads it then must not throw)
+  await page.waitForFunction(() => { const f = document.querySelector('plumb-overlay')?.shadowRoot?.querySelector('.tc .fld[data-key="font-size"]'); return f && !f.hasAttribute('data-off') && /^12/.test(f.innerText); }, null, { timeout: 20000 });
   await page.waitForFunction(() => getComputedStyle(document.getElementById('tiny')).fontSize === '12px', null, { timeout: 20000 });
 
   // Undo restores the file exactly, and the card reads the element again
   await overlay.locator('.fx .said .undo').click();
-  await page.waitForFunction(() => /Undone/.test(document.querySelector('plumb-overlay').shadowRoot.querySelector('.wt:not([hidden]), .fx .said')?.textContent ?? ''), null, { timeout: 20000 });
+  await page.waitForFunction(() => /Undone/.test(document.querySelector('plumb-overlay')?.shadowRoot?.querySelector('.wt:not([hidden]), .fx .said')?.textContent ?? ''), null, { timeout: 20000 });
   assert.equal(await written(root), original);
-  await page.waitForFunction(() => document.querySelector('plumb-overlay').shadowRoot.querySelector('.tc .fld[data-key="font-size"]')?.hasAttribute('data-off'), null, { timeout: 20000 });
+  await page.waitForFunction(() => document.querySelector('plumb-overlay')?.shadowRoot?.querySelector('.tc .fld[data-key="font-size"]')?.hasAttribute('data-off'), null, { timeout: 20000 });
 
   // Esc closes the card; the next Esc leaves
   await page.keyboard.press('Escape');

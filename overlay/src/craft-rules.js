@@ -32,6 +32,14 @@
  *  disabled-contrast   #26     disabled is not just lower opacity
  *  hit-target          #27     a control is at least 24px to hit
  *  media-size          #34     one avatar and icon size per list
+ *  flex-min            —       a flex item that holds text may shrink, so a long name is cut off, not pushed out
+ *  image-ground        —       words over a picture have a colour behind them for when it doesn't arrive
+ *  list-wrap           —       a row drawn from a list wraps when it is full
+ *  declared-gap        —       parts of a row are kept apart by a declared gap, not by left-over space
+ *  scroll-on-demand    —       a scrollbar shows only when there is more to scroll
+ *  fixed-height        —       a box that holds text sets its least height, not its exact height
+ *  sticky-room         —       a sticky side column is not stretched to its row, so it has room to stick
+ *  image-fit           —       a picture in a box of another shape is cropped, never stretched
  *  truncate-intent     #35     cut-off text shows its full value on hover
  *  scrollbar-gutter    #36     a large scroll area keeps room for its scrollbar
  *  bold-hover          #42     bold on hover does not move the row
@@ -49,8 +57,10 @@
 import { rgb, utility, classesOf, elevation, COLOUR } from './craft-read.js';
 import { TIER } from './craft-facets.js';
 import { say } from './words.js';
+import { controlAround, controlKind, roleOf } from './roles.js';
 import { RUN_RULES } from './craft-headless.js';
 import { recommend, recommendColour } from './craft-recommend.js';
+import { STAMP_ATTRIBUTE, placeOf } from './stamp.js';
 
 // a class candidate where no class sets the property (the value comes from a stylesheet) is said, not written
 const asAdvice = (rec, said) => (rec.kind === 'class' ? { kind: 'advice', text: said(rec) } : rec);
@@ -215,7 +225,7 @@ export const textOpacity = {
     const ground = facts.ground(el);
     const mixed = [0, 1, 2].map((i) => Math.round(color[i] * o + ground[i] * (1 - o)));
     const cls = utility(el, 'opacity');
-    const near = theme.nearestColor(mixed, T.within);
+    const near = theme.nearestColor(mixed, T.within, 'text');
     const text = cls ?? 'opacity';
     // the colour it replaces goes too: two text colours on one element are decided by Tailwind's order, not the edit
     const own = colourClass(el, 'text', theme);
@@ -522,7 +532,10 @@ export const contentAlign = {
 // ── wave three ──────────────────────────────────────────────
 
 const GREY = 0.7; // the grey band: measured, but too close to the line to stand behind alone (the headless judge decides)
-const CONTROL = 'button, [role="button"], a[href], input[type="button"], input[type="submit"], input[type="reset"], summary';
+// something you press, as the shared reading has it (roles.js): a link counts only when it is drawn as a button
+const pressed = (el, facts) => { const k = controlKind(el, facts.style(el)); return k === 'button' || k === 'item'; };
+// a button proper: what you press to make something happen, not to choose where you are (press feedback, its idiom)
+const button = (el, facts) => controlKind(el, facts.style(el)) === 'button';
 const disabled = (el) => el.matches(':disabled, [aria-disabled="true"]') || !!el.closest('[disabled], [aria-disabled="true"]');
 // the words a person reads in an element: its text, never what an svg, a style or a script carries (an animated icon
 // brings its own styles)
@@ -563,6 +576,20 @@ function animated(facts) {
   if (!v) animatedMemo.set(facts, (v = new Set(document.getAnimations().filter((a) => a.playState === 'running' || a.playState === 'paused').map((a) => a.effect?.target).filter(Boolean))));
   return v;
 }
+// The pictures drawn inside an element, with their boxes, found once per pass: every line of text asks this of each
+// box above it, and the outer ones are the same for the whole page (asked afresh each time, it was half of all the
+// time the checks took).
+const picturesMemo = new WeakMap();
+function picturesIn(facts, box) {
+  let m = picturesMemo.get(facts);
+  if (!m) picturesMemo.set(facts, (m = new Map()));
+  let v = m.get(box);
+  if (!v) m.set(box, (v = [...box.querySelectorAll('img, video, picture, canvas')].flatMap((el) => {
+    const q = el.getBoundingClientRect(), ms = getComputedStyle(el);
+    return q.width < 8 || q.height < 8 || ms.visibility === 'hidden' || ms.display === 'none' ? [] : [{ el, q }];
+  })));
+  return v;
+}
 // The rows of a table, counted once per pass.
 const rowsMemo = new WeakMap();
 function rowsOf(facts, table) {
@@ -597,7 +624,7 @@ export const buttonPadding = {
   id: 'craft/button-padding', family: 'craft', round: { '*': 'up' }, number: [9], owns: ['padding-x'], once: 'ancestor', reads: ['style', 'rect', 'text'],
   check({ el, facts }, theme) {
     const T = theme.spec(this.id);
-    if (!el.matches(CONTROL) || el.matches('a[href]') && !utility(el, 'px') && !utility(el, 'p')) return [];
+    if (!pressed(el, facts)) return [];
     if (!/[\p{L}\p{N}]/u.test(words(el))) return [];
     const b = facts.box(el), r = facts.rect(el), s = facts.style(el);
     if (r.height > T.maxHeight || b.pt < 2 || Math.abs(b.pt - b.pb) > 0.5 || Math.abs(b.pl - b.pr) > 0.5) return [];
@@ -624,7 +651,7 @@ export const iconSide = {
   id: 'craft/icon-side', family: 'craft', round: { '*': 'down' }, number: [10], owns: ['padding-x'], once: 'ancestor', after: ['craft/button-padding'], reads: ['style', 'kids', 'text'],
   check({ el, facts }, theme) {
     const T = theme.spec(this.id);
-    if (!el.matches(CONTROL)) return [];
+    if (!pressed(el, facts)) return [];
     const kids = facts.kids(el);
     const icon = (k) => k && (k.localName === 'svg' || k.localName === 'img' || k.matches('[data-icon], [aria-hidden="true"]') && !/\S/.test(k.textContent ?? '') || k.querySelector?.('svg') && !/\S/.test(k.textContent ?? ''));
     const text = /[\p{L}\p{N}]/u.test(words(el));
@@ -902,16 +929,14 @@ export const contrast = {
     // words on a picture: a background image on the way up, or a photo laid under them (an <img> the words sit over, as
     // on a card with a scrim). What the eye reads them against isn't a colour plumber knows, so it says nothing. A picture
     // counts when it is drawn, visible, and covers most of the words' box
-    const box = el.getBoundingClientRect(), under = (m) => {
-      const q = m.getBoundingClientRect(), ms = getComputedStyle(m);
-      if (q.width < 8 || q.height < 8 || ms.visibility === 'hidden' || ms.display === 'none') return false;
+    const box = el.getBoundingClientRect(), under = ({ q }) => {
       const w = Math.min(q.right, box.right) - Math.max(q.left, box.left), h = Math.min(q.bottom, box.bottom) - Math.max(q.top, box.top);
       return w > 0 && h > 0 && w * h >= box.width * box.height * 0.5;
     };
     for (let n = el; n && n !== document.documentElement; n = n.parentElement) {
       const ns = facts.style(n);
       if (ns.backgroundImage !== 'none') return [];
-      if (n !== el && [...n.querySelectorAll('img, video, picture, canvas')].some((m) => !el.contains(m) && under(m))) return [];
+      if (n !== el && picturesIn(facts, n).some((m) => !el.contains(m.el) && under(m))) return [];
       if (alpha(rgb(ns.backgroundColor)) > 0.5) break;
     }
     const ground = facts.ground(el), c = rgb(s.color);
@@ -954,7 +979,7 @@ export const disabledContrast = {
   scope: ({ el }) => disabled(el), reads: ['style', 'ground'],
   check({ el, facts }, theme) {
     const T = theme.spec(this.id);
-    if (!el.matches(':disabled, [aria-disabled="true"]') || !el.matches('button, [role="button"], input, a')) return [];
+    if (!el.matches(':disabled, [aria-disabled="true"]') || !(controlKind(el, facts.style(el)) || el.matches('a'))) return [];
     const s = facts.style(el), o = parseFloat(s.opacity);
     if (!(o < 1)) return [];
     const parentGround = el.parentElement ? facts.ground(el.parentElement) : [255, 255, 255, 1];
@@ -978,9 +1003,12 @@ export const disabledContrast = {
 export const hitTarget = {
   id: 'craft/hit-target', family: 'craft', number: [27], owns: ['size', 'padding-y'], once: 'ancestor', reads: ['rect', 'style', 'text'],
   check({ el, facts }, theme) {
-    if (!el.matches('button, [role="button"], a[href], input:not([type="hidden"]), select, summary, [role="checkbox"], [role="switch"], [role="tab"]') || disabled(el)) return [];
-    // a link inside a sentence is as tall as the line, and that is right
-    if (el.matches('a[href]') && el.parentElement && facts.text(el.parentElement) && facts.style(el).display === 'inline') return [];
+    // a control, or a link standing alone; a link in a sentence is as tall as its line, and that is right (WCAG 2.5.8,
+    // the inline exception: roles.js)
+    // asked only of links and controls: roleOf looks inside a box, which is too dear for every element
+    if (!el.matches('a[href]') && !controlKind(el, facts.style(el))) return [];
+    const job = roleOf(el, facts.style(el));
+    if (!(job.role === 'control' && job.kind !== 'group' || job.role === 'link' && job.kind === 'nav') || disabled(el)) return [];
     if (el.matches('input[type="checkbox"], input[type="radio"]') && el.closest('label')) return []; // its label is the target
     const T = theme.spec(this.id);
     const r = facts.rect(el), { min, long } = T;
@@ -1028,6 +1056,367 @@ export const mediaSize = {
       key: this.id, text: cls ?? 'size', props: ['width'], value: `${mine}px`, n: mine,
       evidence: { mine, mode, of: sizes.length }, confidence: 0.86,
       suggest: cls ? { ...recommend({ family: 'spacing', prefix: cls.replace(/^!|!$/g, '').split('-')[0], job: 'media', want: { min: mode - 0.5, max: mode + 0.5, target: mode }, from: cls, token: false, theme, advice: () => `Make it ${mode}px, like the rest.` }), why: `${mode}px, like the rest` } : { kind: 'advice', text: `Make it ${mode}px, like the rest.` },
+    }];
+  },
+};
+
+// Defensive, not a craft rule (no number, no showcase screen). A picture is never stretched: a box whose shape differs from the picture's own crops it (object-fit: cover).
+// It is found before it stretches: a picture whose box is set on both sides, with nothing said about fit, is the slip
+// whether or not today's photo at today's width happens to be the box's shape. (defensivecss.dev "Image distortion":
+// a fixed-size avatar or card cover, then a user uploads another shape, or the card lands on a wider screen.)
+export const imageFit = {
+  id: 'craft/image-fit', family: 'craft', number: [], owns: ['fit'], once: 'ancestor', reads: ['style', 'rect'],
+  check({ el, facts }, theme) {
+    const T = theme.spec(this.id);
+    if (el.localName !== 'img' || !el.complete || !el.naturalWidth || !el.naturalHeight) return [];
+    const s = facts.style(el);
+    if (s.objectFit !== 'fill') return [];
+    // the box the picture is drawn in, in layout pixels (a page drawn scaled keeps its shape)
+    const w = el.clientWidth - px(s.paddingLeft) - px(s.paddingRight), h = el.clientHeight - px(s.paddingTop) - px(s.paddingBottom);
+    if (w < T.min || h < T.min) return [];
+    const stretch = (w / h) / (el.naturalWidth / el.naturalHeight); // > 1: drawn wider than it is
+    const shows = Math.abs(stretch - 1) > T.off;
+    if (!shows) {
+      // not stretched today. It can be when the box's shape is set without the picture: a height (or a ratio) and a
+      // width both given by classes. A box with one side left to the picture keeps its shape and says nothing; so
+      // does a drawing (an svg has no photo to swap in) and anything too small to be a photo (an icon, a logo mark)
+      const AUTO = { not: /^(?:auto|fit|min|max)$/ };
+      const tall = utility(el, 'h', AUTO) ?? utility(el, 'size', AUTO) ?? utility(el, 'aspect', AUTO);
+      const across = utility(el, 'w', AUTO) ?? utility(el, 'size', AUTO) ?? utility(el, 'flex') ?? utility(el, 'grow') ?? utility(el, 'basis');
+      if (!tall || !across || w < T.latentMin || h < T.latentMin || Math.min(el.naturalWidth, el.naturalHeight) < T.photo || /\.svg(?:[?#]|$)/i.test(el.currentSrc || el.src)) return [];
+    }
+    const wide = stretch > 1, by = shows ? Math.round((wide ? stretch - 1 : 1 / stretch - 1) * 100) : 0;
+    return [{
+      ...say(this.id, { by, wide }),
+      key: this.id, text: utility(el, 'object') ?? 'object-fit', props: ['object-fit'], value: 'fill', n: by,
+      evidence: { box: [Math.round(w), Math.round(h)], natural: [el.naturalWidth, el.naturalHeight], by, wide }, confidence: shows ? 0.9 : 0.82,
+      suggest: { kind: 'class', from: utility(el, 'object') ?? '', to: 'object-cover', why: 'crops the picture to the box instead of stretching it', sets: { objectFit: 'cover' } },
+    }];
+  },
+};
+
+// Defensive, not a craft rule (no number, no showcase screen). A flex item that holds text may shrink: without min-width: 0 it is never narrower than its longest line, so
+// `truncate` inside it can never cut anything, and a longer name or a narrower screen pushes the rest of the row out.
+// It is found before it breaks: text set to cut off, inside a box that can't shrink, is the slip whether or not this
+// name at this width happens to fit. (defensivecss.dev "Minimum content size in CSS flexbox".)
+export const flexMin = {
+  id: 'craft/flex-min', family: 'craft', number: [], owns: ['size'], once: 'ancestor', reads: ['style', 'rect'],
+  check({ el, facts }, theme) {
+    const T = theme.spec(this.id);
+    const row = el.parentElement;
+    if (!row) return [];
+    const flexRow = (box) => { const bs = facts.style(box); return /flex/.test(bs.display) && !/column/.test(bs.flexDirection); };
+    const isGrid = (box) => /grid/.test(facts.style(box).display);
+    // a grid cell has the same floor as a flex item: never narrower than its content unless told it may be
+    // (defensivecss.dev "Minimum Content Size In CSS grid")
+    const grid = isGrid(row);
+    if (!grid && (!flexRow(row) || facts.style(row).flexWrap !== 'nowrap')) return [];
+    const s = facts.style(el);
+    // an item that may not shrink, or that clips, is not held open by its content
+    if (s.minWidth !== 'auto' || s.overflowX !== 'visible' || (!grid && s.flexShrink === '0') || s.position === 'absolute' || s.position === 'fixed') return [];
+    // how far it runs past: a flex row's own overflow; in a grid, the cell's box past the grid's content box
+    let over;
+    if (grid) {
+      const rb = row.getBoundingClientRect(), eb = el.getBoundingClientRect(), k = rb.width / (row.offsetWidth || rb.width) || 1, rs = facts.style(row);
+      over = Math.max(0, Math.round((eb.right - rb.right) / k + px(rs.paddingRight) + px(rs.borderRightWidth)));
+    } else over = Math.max(0, row.scrollWidth - row.clientWidth);
+    // the item a thing sits in: the nearest one, never a box further out that it merely spills from
+    const itemOf = (t) => { for (let n = t; n && n.parentElement; n = n.parentElement) if (flexRow(n.parentElement) || isGrid(n.parentElement)) return n; return null; };
+    // the cause: something in this item that is meant to give way (a line set to cut off, a part set to scroll
+    // sideways) and never can, or a line that may not wrap and is pushing out now
+    let scrolls = false;
+    const held = [...el.querySelectorAll('*')].slice(0, T.depth).some((t) => {
+      const ts = facts.style(t), cut = ts.textOverflow === 'ellipsis', scroller = /^(?:auto|scroll)$/.test(ts.overflowX);
+      if (!(cut || scroller || (over > T.over && ts.whiteSpace === 'nowrap')) || itemOf(t) !== el) return false;
+      scrolls = scroller && !cut;
+      return true;
+    });
+    if (!held) return [];
+    // an item given its own width is never held wider than that width: its floor is the smaller of the two. Until the
+    // row runs over, there is nothing waiting to break
+    if (over <= T.over && (utility(el, 'w', { not: /^(?:auto|fit|min|max|full)$/ }) || utility(el, 'size') || utility(el, 'basis', { not: /^auto$/ }))) return [];
+    // a grid column written to go down to nothing (minmax(0, …), which is what Tailwind's grid-cols-2 means) already
+    // lets its cell shrink; only a column sized by its content is waiting to break
+    if (grid && over <= T.over && classesOf(row).split(/\s+/).some((c) => /(?:^|:)grid-cols-(?:\d+$|.*minmax\(0)/.test(c))) return [];
+    return [{
+      ...say(this.id, { over: over > T.over ? over : 0, scrolls, grid }),
+      key: this.id, text: utility(el, 'min-w') ?? 'min-width', props: ['min-width'], value: 'auto', n: over,
+      evidence: { over, row: row.clientWidth, grid, scrolls }, confidence: over > T.over ? 0.9 : 0.84,
+      suggest: { kind: 'class', from: utility(el, 'min-w') ?? '', to: 'min-w-0', why: scrolls ? 'lets this part shrink, so what is inside scrolls instead of pushing out' : 'lets this part shrink, so its text is cut off instead of pushing the row out', sets: { minWidth: 0 }, moves: true },
+    }];
+  },
+};
+
+// Defensive, not a craft rule (no number, no showcase screen). Words over a picture have a colour behind them. A picture can arrive late or not at all (a slow connection, a
+// dead link, a blocked host), and then the words sit on whatever is under it: white words on a white card. It is found
+// before it breaks: the picture is read as if it were missing, and the words over it are judged against what is left.
+// The finding lands on the picture, where one background colour holds every line. (defensivecss.dev "Text over image".)
+export const imageGround = {
+  id: 'craft/image-ground', family: 'craft', number: [], owns: ['background'], once: 'ancestor', reads: ['style', 'rect', 'text', 'ground'],
+  check({ el, facts }, theme) {
+    const T = theme.spec(this.id);
+    const s = facts.style(el), img = el.localName === 'img';
+    if (!img && !/url\(/.test(s.backgroundImage)) return [];
+    if (s.display === 'none' || s.visibility === 'hidden' || alpha(rgb(s.backgroundColor)) > 0.5) return [];
+    const box = el.getBoundingClientRect();
+    if (box.width < T.min || box.height < T.min) return [];
+    // the box the picture and its words share: for an <img>, the wrappers around it that are about its own size
+    let host = el;
+    if (img) {
+      host = el.parentElement;
+      for (let i = 1; i < T.up && host?.parentElement; i++) {
+        const q = host.parentElement.getBoundingClientRect();
+        if (q.width * q.height > box.width * box.height * T.wrap) break;
+        host = host.parentElement;
+      }
+    }
+    if (!host) return [];
+    const inside = [...host.querySelectorAll('*')].slice(0, T.depth).filter((n) => n !== el);
+    // how much of a box lies over the picture
+    const covers = (n, on = box) => {
+      const q = n.getBoundingClientRect();
+      if (q.width <= 0 || q.height <= 0) return 0;
+      const w = Math.min(q.right, on.right) - Math.max(q.left, on.left), h = Math.min(q.bottom, on.bottom) - Math.max(q.top, on.top);
+      return w > 0 && h > 0 ? (w * h) / (q.width * q.height) : 0;
+    };
+    // what an element paints behind words: its colour, or the strongest stop of a scrim
+    const paint = (n) => {
+      const ns = facts.style(n), c = rgb(ns.backgroundColor);
+      if (alpha(c) > 0.02) return c;
+      if (!/gradient\(/.test(ns.backgroundImage)) return null;
+      return stops(ns.backgroundImage).sort((a, b) => alpha(b) - alpha(a))[0] ?? null;
+    };
+    const base = facts.ground(host);
+    const self = !img && /gradient\(/.test(s.backgroundImage) ? stops(s.backgroundImage).sort((a, b) => alpha(b) - alpha(a))[0] : null;
+    const lost = inside.filter((t) => {
+      if (!facts.text(t) || covers(t) < T.cover) return false;
+      const ts = facts.style(t), c = rgb(ts.color);
+      if (!c || ts.visibility === 'hidden' || (parseFloat(ts.opacity) || 0) < 0.05) return false;
+      // without the picture: the ground under the box, then everything painted between it and the words
+      let ground = self ? over(self, base) : base;
+      for (const n of [...inside, t]) {
+        if (n !== t && !n.contains(t) && (t.contains(n) || facts.text(n) || covers(t, n.getBoundingClientRect()) < T.cover)) continue;
+        const p = paint(n);
+        if (p) ground = over(p, ground);
+      }
+      return Math.abs(apca(over(c, ground), ground)) < T.lc;
+    });
+    if (!lost.length) return [];
+    const light = (() => { const c = rgb(facts.style(lost[0]).color); return (0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]) / 255 > 0.5; })();
+    const broken = img && el.complete && !el.naturalWidth;
+    return [{
+      ...say(this.id, { n: lost.length, broken }),
+      key: this.id, text: utility(el, 'bg') ?? 'background-color', props: ['background-color'], value: 'none', n: lost.length,
+      evidence: { lines: lost.length, ground: hex(base), broken }, confidence: broken ? 0.9 : 0.85,
+      suggest: { kind: 'class', from: '', to: light ? 'bg-neutral-800' : 'bg-neutral-200', why: 'puts a colour behind the words for when the picture doesn’t arrive', sets: { backgroundColor: light ? 'rgb(38, 38, 38)' : 'rgb(229, 229, 229)' } },
+    }];
+  },
+};
+
+// Defensive, not a craft rule (no number, no showcase screen; docs/research/defensive-tips.md). A sticky thing that
+// can never stick: a sticky element moves only inside its parent's box, and a grid or flex item is stretched to its
+// row's full height unless told otherwise, so it has no room to move and scrolls away with the page. Read from what
+// is measured, with no threshold of its own: sticky, in a grid or a flex row, nothing setting its alignment or its
+// height, and its box taller than its own content (the row made it so). (defensivecss.dev "Position sticky with CSS Grid".)
+export const stickyRoom = {
+  id: 'craft/sticky-room', family: 'craft', number: [], owns: ['align'], once: 'ancestor', reads: ['style', 'rect'],
+  check({ el, facts }) {
+    const s = facts.style(el);
+    if (s.position !== 'sticky') return [];
+    const row = el.parentElement;
+    if (!row) return [];
+    const rs = facts.style(row), grid = /grid/.test(rs.display), flexRow = /flex/.test(rs.display) && !/column/.test(rs.flexDirection);
+    if (!grid && !flexRow) return [];
+    // its own alignment, or the row's when it has none: anything but the default lets it keep its own height
+    const align = /^(?:auto|normal)$/.test(s.alignSelf) ? rs.alignItems : s.alignSelf;
+    if (!/^(?:normal|stretch)$/.test(align)) return [];
+    if (utility(el, 'h', { not: /^(?:auto|fit|min|max)$/ }) || utility(el, 'size')) return [];
+    const box = el.getBoundingClientRect();
+    if (box.height <= 0 || !el.childNodes.length) return [];
+    const range = document.createRange();
+    range.selectNodeContents(el);
+    const inner = range.getBoundingClientRect(), k = box.height / (el.offsetHeight || box.height);
+    const own = inner.height + (px(s.paddingTop) + px(s.paddingBottom) + px(s.borderTopWidth) + px(s.borderBottomWidth)) * k;
+    const spare = Math.round((box.height - own) / k);
+    if (spare <= 1) return []; // as tall as its content: nothing stretched it (one pixel for rounding)
+    return [{
+      ...say(this.id, { spare }),
+      key: this.id, text: utility(el, 'self') ?? 'align-self', props: ['align-self'], value: 'stretch', n: spare,
+      evidence: { spare, box: Math.round(box.height / k), content: Math.round(own / k) }, confidence: 0.9,
+      suggest: { kind: 'class', from: utility(el, 'self') ?? '', to: 'self-start', why: 'lets it keep its own height, so it has room to stick as the page scrolls', sets: { alignSelf: 'start' }, moves: true },
+    }];
+  },
+};
+
+// Defensive, not a craft rule (no number, no showcase screen; docs/research/defensive-tips.md). A box that holds text
+// sets its least height, never its exact height: text grows downward with a longer sentence or a narrower screen, and
+// a set height leaves it running out of the box. Read from what is measured: a height class on a box whose text
+// already wraps (so it will wrap further), nothing said about overflow, and not a control, a picture or a scroll area.
+// The fix keeps the height as the least. (defensivecss.dev "Fixed sizes"; MDN min-height.)
+export const fixedHeight = {
+  id: 'craft/fixed-height', family: 'craft', number: [], owns: ['size'], once: 'ancestor', reads: ['style', 'rect', 'text'],
+  check({ el, facts }, theme) {
+    const T = theme.spec(this.id);
+    // the height as written: a step, a length or the screen's; never the parent's (h-full), a share of it, or the content's
+    const cls = utility(el, 'h', { not: /^(?:auto|fit|min|max|full|px|\d+\/\d+)$/ });
+    if (!cls || /^(?:img|svg|canvas|video|picture|iframe|textarea|input|select|button|pre|table)$/.test(el.localName)) return [];
+    if (el.matches('a, summary, label, [role="button"], [role="tab"], [role="menuitem"], [role="option"], [contenteditable="true"]')) return [];
+    const s = facts.style(el);
+    if (s.overflowY !== 'visible' || s.display === 'none' || s.position === 'fixed' || /inline$/.test(s.display)) return [];
+    if (px(s.minHeight) >= el.offsetHeight - 1 && px(s.minHeight) > 0) return []; // already a least height
+    // text that wraps: a line of words in here already runs to a second line, so a longer one runs to a third
+    const wraps = [el, ...el.querySelectorAll('*')].slice(0, T.depth).some((t) => facts.text(t) && facts.style(t).whiteSpace !== 'nowrap' && !controlAround(t) && lineCount(t) >= 2);
+    if (!wraps) return [];
+    const over = Math.max(0, el.scrollHeight - el.clientHeight);
+    const shows = over > 1;
+    return [{
+      ...say(this.id, { over: shows ? over : 0 }),
+      key: this.id, text: cls, props: ['height'], value: s.height, n: over,
+      evidence: { over, height: el.offsetHeight }, confidence: shows ? 0.9 : 0.84,
+      suggest: { kind: 'class', from: cls, to: `min-${cls}`, why: 'keeps this height as the least, and lets the box grow with its text', sets: { height: 'auto', minHeight: `${el.offsetHeight}px` }, moves: true },
+    }];
+  },
+};
+
+// Defensive, not a craft rule (no number, no showcase screen; docs/research/defensive-tips.md). A scrollbar says
+// "there is more". `overflow: scroll` draws one whether or not anything overflows (MDN overflow); on Windows, and on a
+// Mac set to always show scrollbars, the reader sees an empty track beside short content. `auto` draws it only when
+// there is more. The page itself is left alone: `overflow-y: scroll` on it is an old way to stop the layout moving when
+// a scrollbar arrives. (defensivecss.dev "Scrollbars on demand".)
+export const scrollOnDemand = {
+  id: 'craft/scroll-on-demand', family: 'craft', number: [], owns: ['scroll'], once: 'ancestor', reads: ['style', 'rect'],
+  check({ el, facts }) {
+    if (el === document.body || el === document.documentElement) return [];
+    const s = facts.style(el);
+    const axes = [['y', s.overflowY, el.scrollHeight - el.clientHeight], ['x', s.overflowX, el.scrollWidth - el.clientWidth]].filter(([, v]) => v === 'scroll');
+    if (!axes.length || s.display === 'none' || el.clientWidth <= 0 || el.clientHeight <= 0) return [];
+    // the class that says it: overflow-y-scroll, overflow-x-scroll or overflow-scroll
+    const cls = ['overflow-y', 'overflow-x', 'overflow'].map((p) => utility(el, p)).find((c) => c && /(?:^|-)scroll$/.test(c));
+    const empty = axes.some(([, , more]) => more <= 1); // an axis with nothing to scroll today shows an empty track now
+    const to = cls ? cls.replace(/scroll$/, 'auto') : 'overflow-auto';
+    return [{
+      ...say(this.id, { empty }),
+      key: this.id, text: cls ?? 'overflow', props: axes.map(([a]) => `overflow-${a}`), value: 'scroll', n: axes.length,
+      evidence: { axes: axes.map(([a, , more]) => [a, Math.max(0, more)]) }, confidence: empty ? 0.9 : 0.82,
+      suggest: { kind: 'class', from: cls ?? '', to, why: 'shows the scrollbar only when there is more to scroll', sets: Object.fromEntries(axes.map(([a]) => [a === 'y' ? 'overflowY' : 'overflowX', 'auto'])) },
+    }];
+  },
+};
+
+// Defensive, not a craft rule (no number, no showcase screen; docs/research/defensive-tips.md). The distance between
+// neighbours is a decision. A row whose parts are kept apart only by left-over space (justify-between, or a part
+// pushed over with ml-auto) and no gap has none: with a longer title, a translated label or a narrower screen they run
+// into each other. Read from what is measured: a flex row, no column gap, its parts spread by the left-over space,
+// none of them holding a margin of its own toward its neighbour, and at least one holding words (the part that grows).
+// The gap is a single decision from the project: the gap of the nearest layout around it that declares one, else the
+// row's own side padding, else the theme's step nearest the row's text size (an invented fallback, to be tuned).
+// (defensivecss.dev "Component spacing", "Using space-between".)
+export const declaredGap = {
+  id: 'craft/declared-gap', family: 'craft', number: [], owns: ['gap'], once: 'ancestor', reads: ['style', 'rect', 'text'],
+  check({ el, facts }, theme) {
+    const s = facts.style(el);
+    if (!/flex/.test(s.display) || /column/.test(s.flexDirection) || px(s.columnGap) > 0) return [];
+    const kids = [...el.children].filter((k) => { const ks = facts.style(k); return ks.display !== 'none' && !/^(?:absolute|fixed)$/.test(ks.position) && k.getClientRects().length; });
+    if (kids.length < 2) return [];
+    const spread = /^(?:space-between|space-around|space-evenly)$/.test(s.justifyContent);
+    const pushed = kids.some((k, n) => { const ks = facts.style(k); return (n > 0 && ks.marginLeft === 'auto') || (n < kids.length - 1 && ks.marginRight === 'auto'); });
+    if (!spread && !pushed) return [];
+    // a margin of their own between neighbours is a declared distance
+    if (kids.some((k, n) => { const ks = facts.style(k); return (n > 0 && ks.marginLeft !== 'auto' && px(ks.marginLeft) > 0) || (n < kids.length - 1 && ks.marginRight !== 'auto' && px(ks.marginRight) > 0); })) return [];
+    const words = (k) => facts.text(k) || [...k.querySelectorAll('*')].slice(0, 30).some((t) => facts.text(t));
+    if (!kids.some(words)) return [];
+    // a drawing of a screen (a phone's status bar in a mock-up, hidden from readers) is a picture, not content that varies
+    if (el.closest('[aria-hidden="true"]')) return [];
+    // how close the neighbours' drawn content is now: what is inside each, not its box (a part that grows to fill the
+    // row reaches its neighbour with its box, not with its words)
+    const range = document.createRange(), k1 = el.getBoundingClientRect().width / (el.offsetWidth || 1) || 1;
+    // what each part draws: its words (each run of text, measured where it is laid out) and its leaf boxes (an icon, a
+    // dot, a control); a wrapper's own box can be wider than anything in it
+    const inkOf = (k) => {
+      let l = Infinity, r = -Infinity;
+      const add = (q) => { if (q.width > 0 && q.height > 0) { l = Math.min(l, q.left); r = Math.max(r, q.right); } };
+      const walker = document.createTreeWalker(k, NodeFilter.SHOW_TEXT | NodeFilter.SHOW_ELEMENT);
+      for (let n = walker.currentNode, i = 0; n && i < 80; n = walker.nextNode(), i++) {
+        if (n.nodeType === 3) { if (n.nodeValue.trim()) { range.selectNodeContents(n); add(range.getBoundingClientRect()); } }
+        else if (!n.firstElementChild && !n.textContent.trim() || /^(?:svg|img|input|button|select|canvas|video)$/.test(n.localName)) add(n.getBoundingClientRect());
+      }
+      return l < r ? { left: l, right: r, width: r - l } : k.getBoundingClientRect();
+    };
+    const drawn = kids.map(inkOf).sort((a, b) => a.left - b.left);
+    if (drawn.some((r) => r.width <= 0) || el.clientWidth <= 0) return []; // not laid out (a closed sheet, a hidden tab)
+    const closest = Math.max(0, Math.round(Math.min(...drawn.slice(1).map((r, n) => (r.left - drawn[n].right) / k1))));
+    // the gap: never less than the distance inside its own parts (outer at least inner: a group sits further from its
+    // neighbour than its own items sit from each other); else the gap of the layout around it; else its text size.
+    // On the theme's spacing scale, else Tailwind's 4px steps
+    let want = 0, from = '';
+    for (const k of kids) for (const n of [k, ...k.querySelectorAll('*')].slice(0, 30)) { const ns = facts.style(n); if (/flex|grid/.test(ns.display) && !/column/.test(ns.flexDirection) && px(ns.columnGap) > want) { want = px(ns.columnGap); from = 'inside'; } }
+    for (let n = el.parentElement, d = 0; n && d < 6 && !want; n = n.parentElement, d++) { const ns = facts.style(n); if (/flex|grid/.test(ns.display) && px(ns.columnGap) > 0) { want = px(ns.columnGap); from = 'around'; } }
+    // half the row's text size: an invented fallback, tuned on crafting-ui (a full em pushed a 106px row's count off it)
+    if (!want) { want = (px(s.fontSize) || 16) / 2; from = 'text'; }
+    const step = theme.nearest('spacing', want, Math.max(2, want * 0.25));
+    const four = Math.max(0.5, Math.round((want / 4) * 2) / 2);
+    const to = step ? `gap-${step.short}` : `gap-${four}`;
+    const touching = closest <= 1;
+    return [{
+      ...say(this.id, { closest, touching }),
+      key: this.id, text: utility(el, 'justify') ?? 'gap', props: ['column-gap'], value: '0px', n: closest,
+      evidence: { closest, want: step?.px ?? four * 4, from }, confidence: touching ? 0.9 : 0.84,
+      suggest: { kind: 'class', from: '', to, why: 'keeps a set distance between the parts, whatever is left over', sets: { columnGap: step?.px ?? four * 4 } },
+    }];
+  },
+};
+
+// Defensive, not a craft rule (no number, no showcase screen; docs/research/defensive-tips.md). A list of unknown length
+// needs somewhere to go when its row is full: a flex row does not wrap unless told to, so tags, chips or options run
+// off a narrow screen. A list is told from a fixed set by where it is written: parts drawn by one line of code (a map
+// over data) are a list of whatever length the data has; a toolbar or tabs written out by hand are a fixed set. Read
+// from what is measured: a flex row that does not wrap and does not scroll, three or more parts drawn by one line, and
+// words in them. Its across gap goes down too. (defensivecss.dev "Flexbox wrapping".)
+export const listWrap = {
+  id: 'craft/list-wrap', family: 'craft', number: [], owns: ['wrap'], once: 'ancestor', reads: ['style', 'rect', 'text'],
+  check({ el, facts }, theme) {
+    const T = theme.spec(this.id);
+    const s = facts.style(el);
+    if (!/flex/.test(s.display) || /column/.test(s.flexDirection) || s.flexWrap !== 'nowrap') return [];
+    if (s.overflowX !== 'visible' || el.closest('[aria-hidden="true"]')) return []; // a row set to scroll is a choice
+    // `flex-nowrap` written out, overriding a wrap, is the author's decision for this row
+    if (/(?:^|\s)!?flex-nowrap!?(?:\s|$)/.test(classesOf(el))) return [];
+    if (el.matches('[role="tablist"], [role="toolbar"], [role="menubar"], [role="radiogroup"]')) return [];
+    const kids = [...el.children].filter((k) => k.getClientRects().length && !/^(?:absolute|fixed)$/.test(facts.style(k).position));
+    if (kids.length < (T.least ?? 3)) return [];
+    // drawn by one line of code: the same source stamp (file:line:column), so a map over data. A part that is the root of
+    // a component (a Link) carries the component's own line, the same for every Link anywhere: its place is the line
+    // that uses the component, read from React's tree
+    const where = (k) => {
+      const key = Object.keys(k).find((x) => x.startsWith('__reactFiber$'));
+      for (let f = key ? k[key]?.return : null, n = 0; f && n < 12; f = f.return, n++) {
+        if (typeof f.type === 'string') break; // another element in between: this part is not a component's root
+        const used = f.memoizedProps?.[STAMP_ATTRIBUTE];
+        if (typeof used === 'string') return used.replace(/#.*$/, '');
+      }
+      return (placeOf(k) ?? '');
+    };
+    const stamp = where(kids[0]);
+    if (!stamp || !kids.every((k) => where(k) === stamp)) return [];
+    // separate things have space between them; parts set edge to edge (a segmented control, joined tabs) are one control
+    // and do not wrap
+    if (!(px(s.columnGap) > 0) && !kids.slice(1).some((k) => px(facts.style(k).marginLeft) > 0)) return [];
+    // something in them that can be longer: words
+    if (!kids.some((k) => facts.text(k) || [...k.querySelectorAll('*')].slice(0, 20).some((t) => facts.text(t)))) return [];
+    // a part set to shrink and cut its words off already gives way
+    if (kids.every((k) => facts.style(k).minWidth !== 'auto' || [k, ...k.querySelectorAll('*')].slice(0, 10).some((t) => facts.style(t).textOverflow === 'ellipsis'))) return [];
+    const over = Math.max(0, el.scrollWidth - el.clientWidth);
+    const across = px(s.columnGap), down = px(s.rowGap);
+    let to = 'flex-wrap';
+    if (across > 0 && !(down > 0)) {
+      const step = theme.nearest('spacing', across, Math.max(1, across * 0.25));
+      to += ` gap-y-${step ? step.short : Math.max(0.5, Math.round((across / 4) * 2) / 2)}`;
+    }
+    return [{
+      ...say(this.id, { over, n: kids.length }),
+      key: this.id, text: utility(el, 'flex-nowrap') ?? 'flex-wrap', props: ['flex-wrap'], value: 'nowrap', n: kids.length,
+      evidence: { over, parts: kids.length, stamp }, confidence: over > 1 ? 0.9 : 0.84,
+      suggest: { kind: 'class', from: utility(el, 'flex-nowrap') ?? '', to, why: 'lets the list run on to the next line when the row is full', sets: { flexWrap: 'wrap', ...(to.includes('gap-y') ? { rowGap: across } : {}) }, moves: true },
     }];
   },
 };
@@ -1695,7 +2084,7 @@ export const cardOpticalPadding = {
     const letters = b.pt + (facts.rect(first).top - facts.rect(el).top - b.bt - b.pt) + m.halfLeading + (m.ascent - m.capHeight), left = b.pl;
     // the first thing the eye meets at the top: the first letters, or a drawn box beside them that starts higher (a
     // footer's button, a field), measured from the same edge
-    const drawn = (k) => k.matches(CONTROL + ', input, select, textarea, img, svg') || (rgb(facts.style(k).backgroundColor)?.[3] ?? 0) > 0 || facts.box(k).bt > 0;
+    const drawn = (k) => controlKind(k, facts.style(k)) || k.matches('img, svg') || (rgb(facts.style(k).backgroundColor)?.[3] ?? 0) > 0 || facts.box(k).bt > 0;
     const boxes = kids.filter(drawn).map((k) => facts.rect(k).top - facts.rect(el).top - b.bt);
     const top = Math.min(letters, ...boxes);
     if (top - left < T.min || top - left < left * T.share) return [];
@@ -1705,6 +2094,79 @@ export const cardOpticalPadding = {
       evidence: { seenTop: Math.round(top), left }, confidence: 0.82,
       suggest: { kind: 'advice', text: `Take about ${fmt(Math.round(top - left))} off the top padding, or trim the first line's box.` },
     }];
+  },
+};
+
+
+// Words that run into other words (a plain check, no number). Two different texts drawn on top of each other, or on one
+// line closer than a word space, or stacked tighter than the smaller one's own size (lines set closer than solid:
+// ascenders meet descenders), read as one text or not at all. It usually shows only in one state at one width: a label
+// that appears on hover, a readout that grows, a headline that shrinks in a narrow window. Judged on what is drawn now
+// (anything transparent is left: texts that take turns in one place are stacked on purpose), from the letters, not the
+// boxes: a line's box is taller than its letters, and tight headings overlap their own boxes without touching.
+// Two texts are only judged against each other when they sit on the same painted surface (a card stacked on another
+// hides the words under it: a pile of toasts is not a collision), and two pieces that share a parent are one text the
+// author set side by side ("0:00" and ".00", a unit beside its value): those are the row's business, not this check's.
+// (Found on crafting-ui's hero, 2026-11-12: a readout touching the hint beside it, two guide labels 9px apart.)
+const LINES = new WeakMap();
+function textLines(facts) {
+  let all = LINES.get(facts);
+  if (all) return all;
+  all = [];
+  const ctx = (textLines.ctx ??= document.createElement('canvas').getContext('2d'));
+  const seen = new Map();
+  // words kept for a screen reader and cut out of sight (sr-only: a 1px box that clips what is in it) are not drawn
+  const clipped = (el, st) => st.overflow !== 'visible' && (() => { const r = facts.rect(el); return r.width <= 2 || r.height <= 2; })();
+  const shown = (el) => { if (!el || el === document.body) return true; let v = seen.get(el); if (v === undefined) { const st = facts.style(el); v = st.display !== 'none' && st.visibility !== 'hidden' && parseFloat(st.opacity) >= 0.05 && !clipped(el, st) && shown(el.parentElement); seen.set(el, v); } return v; };
+  const blockOf = (el) => { for (let n = el; n; n = n.parentElement) { const d = facts.style(n).display; if (!/^inline/.test(d) && d !== 'contents') return n; } return document.body; };
+  // the painted thing the words are drawn on: the nearest box with a fill of its own
+  const surfaces = new Map();
+  const surfaceOf = (el) => { if (!el || el === document.body) return document.body; let v = surfaces.get(el); if (!v) { const st = facts.style(el), bg = rgb(st.backgroundColor); v = (bg && bg[3] > 0.5) || st.backgroundImage !== 'none' ? el : surfaceOf(el.parentElement); surfaces.set(el, v); } return v; };
+  for (const el of facts.items ?? []) {
+    if (!el.isConnected || !facts.text(el) || el.closest('svg') || !shown(el)) continue;
+    const st = facts.style(el), ink = rgb(st.color);
+    if (ink && ink[3] < 0.05) continue;
+    const m = facts.metrics(el);
+    if (!m) continue;
+    ctx.font = st.font || `${st.fontStyle} ${st.fontWeight} ${st.fontSize} ${st.fontFamily}`;
+    const space = ctx.measureText(' ').width, size = px(st.fontSize), block = blockOf(el), surface = surfaceOf(el);
+    // laid out by the flow, two pieces in one parent sit where the layout put them (the parts of one number); placed by
+    // hand (absolute, fixed), nothing keeps them apart
+    const placed = /^(absolute|fixed)$/.test(st.position);
+    for (const n of el.childNodes) {
+      if (n.nodeType !== 3 || !/\S/.test(n.nodeValue)) continue;
+      const range = document.createRange(); range.selectNodeContents(n);
+      for (const q of range.getClientRects()) {
+        if (q.width <= 2 || q.height <= 2) continue;
+        const base = q.top + (q.height - (m.ascent + m.descent)) / 2 + m.ascent;
+        all.push({ el, block, surface, placed, left: q.left, right: q.right, capTop: base - m.capHeight, base, space, size, words: n.nodeValue.trim().replace(/\s+/g, ' ') });
+      }
+    }
+  }
+  LINES.set(facts, all);
+  return all;
+}
+export const textCollision = {
+  id: 'craft/text-collision', family: 'craft', number: [], owns: [], once: 'element', reads: ['rect', 'style', 'text', 'metrics', 'census'],
+  check({ el, facts }) {
+    if (!facts.items || !facts.text(el)) return [];
+    const all = textLines(facts), mine = all.filter((l) => l.el === el);
+    for (const a of mine) for (const b of all) {
+      if (b.el === el || b.block === a.block || b.surface !== a.surface || (b.el.parentElement === el.parentElement && !a.placed && !b.placed) || el.contains(b.el) || b.el.contains(el)) continue;
+      // said once, at the text that comes later in the page
+      if (!(b.el.compareDocumentPosition(el) & Node.DOCUMENT_POSITION_FOLLOWING)) continue;
+      const across = Math.min(a.right, b.right) - Math.max(a.left, b.left), ink = Math.min(a.base, b.base) - Math.max(a.capTop, b.capTop);
+      const how = across > 1 && ink > 1 ? 'over' : ink > 1 && across <= 1 && across > -Math.min(a.space, b.space) ? 'run' : across > 1 && Math.abs(a.base - b.base) < Math.min(a.size, b.size) ? 'tight' : null;
+      if (!how) continue;
+      const other = b.words.length > 28 ? `${b.words.slice(0, 27)}…` : b.words;
+      return [{
+        ...say(this.id, { how, other }),
+        key: this.id, text: 'text', props: [], value: how, n: Math.round(how === 'run' ? Math.max(0, -across) : across),
+        evidence: { how, with: other, across: Math.round(across * 10) / 10, baselines: Math.round(Math.abs(a.base - b.base) * 10) / 10 }, confidence: 0.86,
+        suggest: { kind: 'advice', text: how === 'run' ? 'Put a gap between them, or let one wrap or hide when the room runs out.' : 'Move one of them, or show only one where they meet.' },
+      }];
+    }
+    return [];
   },
 };
 
@@ -1836,7 +2298,7 @@ export const opticalCentre = {
   judge: true,
   check({ el, facts }, theme) {
     const T = theme.spec(this.id);
-    if (!el.matches(CONTROL)) return [];
+    if (!pressed(el, facts)) return [];
     const svg = iconOnly(el, facts);
     if (!svg) return [];
     const r = facts.rect(svg), c = facts.rect(el);
@@ -2000,7 +2462,7 @@ const STEPS = [75, 100, 150, 200, 300, 500, 700, 1000];
 const pressIdiom = (facts) => {
   const counts = new Map();
   for (const el of facts.items) {
-    if (!el.isConnected || !el.matches(CONTROL)) continue;
+    if (!el.isConnected || !button(el, facts)) continue;
     for (const c of classesOf(el).split(/\s+/)) if (c.startsWith('active:')) counts.set(c, (counts.get(c) ?? 0) + 1);
   }
   const top = [...counts].sort((a, b) => b[1] - a[1])[0];
@@ -2019,7 +2481,7 @@ export const pressFeedback = {
   id: 'craft/press-feedback', family: 'craft', number: [31], owns: ['motion'], once: 'ancestor', reads: ['style', 'census'],
   check({ el, facts }, theme) {
     const T = theme.spec(this.id);
-    if (!el.matches('button, [role="button"]') || el.matches(':disabled, [aria-disabled="true"], [type="submit"]')) return [];
+    if (!button(el, facts) || el.matches(':disabled, [aria-disabled="true"], [type="submit"]')) return [];
     if (/(^|\s)active:/.test(classesOf(el)) || el.hasAttribute('aria-pressed')) return [];
     facts.press ??= pressIdiom(facts) ?? false;
     if (!facts.press || facts.press.n < T.idiom) return []; // an app that never presses is a page finding, headless
@@ -2070,9 +2532,9 @@ export const interruptible = {
 };
 
 export const RULES = [concentricRadius, innerOuterSpacing, textOpacity, halfPixel, hairline, imageOutline, layeredShadow, scaleFromZero, zIndexWar, contentAlign,
-  buttonPadding, iconSide, measure, leading, tracking, tabularNums, headingWidow, oneLight, borderOnShadow, contrast, disabledContrast, hitTarget, mediaSize,
+  buttonPadding, iconSide, measure, leading, tracking, tabularNums, headingWidow, oneLight, borderOnShadow, contrast, disabledContrast, hitTarget, mediaSize, imageFit, flexMin, imageGround, stickyRoom, fixedHeight, scrollOnDemand, declaredGap, listWrap,
   truncateIntent, scrollbarGutter, boldHover, hangingQuote, capsCase, gradientSpace, inputZoom, anchorOffset, middleTruncate,
   textWrapRole, continuousCorners, opticalSizing, tintedShadow, easedScrim, pureBlackWhite, contentSize,
-  baselineAlign, iconCap, trimLeading, headingLead, pairSpacing, cardOpticalPadding,
+  baselineAlign, iconCap, trimLeading, headingLead, pairSpacing, cardOpticalPadding, textCollision,
   weightLevels, greyLevels, rhythm, elevationLadder,
   opticalCentre, overshoot, strokeWeight, scrollCue, pressFeedback, exitFaster, interruptible, ...RUN_RULES];

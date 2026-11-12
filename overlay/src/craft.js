@@ -26,6 +26,7 @@ import { TIER } from './craft-facets.js';
 import { HEADLESS } from './craft-headless.js';
 import { request } from './api.js';
 import { lawsOf } from './laws.js';
+import { paletteOf } from './colours.js';
 
 const FLOOR = 0.8; // findings under this confidence are never shown
 
@@ -357,10 +358,28 @@ export class Theme {
     for (const s of this.scale(family)) if (Number.isFinite(s.px) && s.px <= value + 0.01 && (!best || s.px > best.px)) best = s;
     return best;
   }
-  // the colour token nearest to an rgb, within a distance (0–441 in sRGB); null when none is that close
-  nearestColor(target, within = 32) {
+  // What each colour token is for (text, surface, line, accent, status), read as the clean-up reads it (colours.js:
+  // by name first, value second). Measured with the theme's probe, before any element is read; kept until the
+  // decisions change. A token whose job can't be told is 'other'.
+  #roles = null; #rolesSeen = null;
+  roles() {
+    const d = this.#decisions();
+    if (this.#roles && this.#rolesSeen === d) return this.#roles;
+    let map = new Map();
+    try { map = new Map(paletteOf().map((t) => [t.short, t.role])); } catch { /* no palette: every token is 'other', and value alone decides, as before */ }
+    this.#rolesSeen = d;
+    return (this.#roles = map);
+  }
+  // the colour token nearest to an rgb, within a distance (0–441 in sRGB); null when none is that close. `job`
+  // (text | surface | line) keeps to the tokens for that job when the theme's names say which those are: a colour
+  // token is chosen for what it is for, then for its value (Atlassian: "Don't use a token just because the colors
+  // appear to match"; docs/research/suggestion-sources.md §5)
+  nearestColor(target, within = 32, job = null) {
+    const roles = job ? this.roles() : null;
+    const told = roles && [...roles.values()].some((r) => r === job);
     let best = null, bd = Infinity;
     for (const c of this.colors()) {
+      if (told && roles.get(c.short) !== job) continue;
       const d = Math.hypot(c.rgb[0] - target[0], c.rgb[1] - target[1], c.rgb[2] - target[2]);
       if (d <= within && d < bd) (bd = d), (best = { ...c, distance: d });
     }
@@ -431,6 +450,7 @@ export class Craft {
     if (!SPEC.loaded) loadSpec();
     try {
       this.#theme.colors();
+      this.#theme.roles();
       const facts = new Facts();
       facts.items = items.filter((i) => i.checked !== false).map((i) => i.el);
       // the rules, then the hierarchy: one verdict per element: a kept mark per facet, its fix tried before it is offered (verdict.js)

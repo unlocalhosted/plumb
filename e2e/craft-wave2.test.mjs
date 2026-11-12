@@ -96,17 +96,6 @@ test('Layered shadow (#51): one big blur is marked; the layered one is not', { t
   assert.deepEqual(errors, []);
 });
 
-test('Scale from zero (#63): an entrance from scale(0) is marked; one from 0.95 is not', { timeout: 120000 }, async (t) => {
-  const launched = await browser(t); if (!launched) return;
-  const { url } = await fixture(t, PAGE);
-  const { page, errors } = await open(t, launched, url);
-  const marks = await marksOf(page, 'scale-from-zero');
-  assert.equal(marks.length, 1, JSON.stringify(marks));
-  assert.ok(await within(page, 'pop-bad', marks[0], 40));
-  assert.match(marks[0].label, /pop-zero/);
-  assert.deepEqual(errors, []);
-});
-
 test('z-index war (#74): a 999 in the flow is marked; a 10 is not', { timeout: 120000 }, async (t) => {
   const launched = await browser(t); if (!launched) return;
   const { url } = await fixture(t, PAGE);

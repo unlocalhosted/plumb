@@ -74,6 +74,9 @@ export const FIX_CSS = TEXT_EDITOR_CSS + ELEMENT_CARD_CSS + `
   .fx .grow { flex: 1; }
   /* the bar at rest (docs/design/one-bar.md): one line, one count, each key on its action; it sits where the dock was */
   .fx[data-rest] { width: min(720px, calc(100vw - 32px)); bottom: var(--pl-space-6, 24px); overflow: visible; }
+  /* at rest the panel is the bar alone, and is never narrower than the bar's one line: with its tools out on a wider
+     system font (Linux) the last control fell off the edge. The window's width is still the limit */
+  .fx[data-rest] { min-width: max-content; }
   .fx .bar { gap: 8px; height: 48px; padding: 0 7px 0 16px; }
   .fx .bar .pl-act { flex: none; }
   .fx .status { position: relative; display: inline-flex; align-items: center; gap: 8px; flex: none; padding: 6px 8px; margin-left: -8px; border-radius: 8px; outline: none; }
@@ -271,7 +274,10 @@ const stampMates = (el) => { const at = stampOf(el); return at ? [...document.qu
 // draws change too. Counted by stamp, only where the element's stamp is the fix's own line (a caller's classes are not)
 // One unit for both counts (F8-05): what the fix's line draws, counted once by its stamp, inside the element read
 // ("here") and outside it; a cause whose classes come from a caller (no stamp of its own line) counts its own elements
-const stampsOf = (g) => { const stamps = new Set(); for (const m of g.members) { const stamp = stampOf(m.el), parsed = parseStamp(stamp); if (parsed && parsed.line === m.mark.line && stampNames(parsed, fileOf(m))) stamps.add(stamp); } return stamps; };
+// A craft finding carries no line of its own: its class is the element's own when the element's class attribute
+// holds it, so it is counted by the element's stamp too
+const ownClass = (m) => m.mark.line == null && !!m.mark.text && (m.el?.getAttribute('class') ?? '').split(/\s+/).includes(m.mark.text);
+const stampsOf = (g) => { const stamps = new Set(); for (const m of g.members) { const stamp = stampOf(m.el), parsed = parseStamp(stamp); if ((parsed && parsed.line === m.mark.line && stampNames(parsed, fileOf(m))) || (parsed && ownClass(m))) stamps.add(stamp); } return stamps; };
 const drawnOf = (g, scope) => {
   const stamps = stampsOf(g), own = elsOf(g);
   if (!scope || !stamps.size) return { here: own.length, elsewhere: 0 };
@@ -396,6 +402,7 @@ export class FixPanel {
       wrote: (r, text) => { const last = { text, undo: r?.undo ?? [], group: r?.trace?.group ?? null, key: null }; if (this.#on) this.#last = last; else if (last.undo.length || last.group) this.#host.handOff?.({ undo: last.undo, trace: { group: last.group } }, text); },
       // the one write of text styles (blueprint.js): remembered across the reload it may cause, its files read again
       write: (w, said, meta) => this.#host.applyStyles(w, said, meta),
+      rename: (map, said, meta) => this.#host.renameColours(map, said, meta),
       undo: (group) => this.#host.undoGroup(group),
       close: () => this.#cleanup.stop(),
       url: () => location.origin + '/',

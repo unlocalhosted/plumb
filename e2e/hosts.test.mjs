@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { spawn, spawnSync } from 'node:child_process';
 import { once } from 'node:events';
 import { cp, mkdtemp, readFile, readdir, rename, rm, writeFile } from 'node:fs/promises';
-import { join, relative } from 'node:path';
+import { basename, join, relative } from 'node:path';
 import { test } from 'node:test';
 import { setTimeout as delay } from 'node:timers/promises';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -262,7 +262,8 @@ test('install --overlay detects hosts from package.json and prints wiring withou
   const missing = spawnSync(process.execPath, [cli, 'install', '--overlay', '--root', root], { encoding: 'utf8', timeout: 10000 });
   // Without a package.json the walk lands on the nearest project above (this repo); nothing is written either way.
   assert.ifError(missing.error); assert.equal(missing.status, 0, missing.stderr);
-  assert.match(missing.stderr, /^Using the project at \.\.\/\.\. \(plumb, package\.json\)\./);
+  // (the project is named by its folder, whatever this checkout is called: plumb here, plumb-ci on the test machine)
+  assert.ok(missing.stderr.startsWith(`Using the project at ../.. (${basename(fileURLToPath(new URL('../', import.meta.url)))}, package.json).`), missing.stderr);
   assert.deepEqual(await snapshot(root), before);
 });
 

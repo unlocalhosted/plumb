@@ -1,0 +1,49 @@
+@import "tailwindcss";
+
+/* Tally's design system: what the team decided. The page in App.jsx was generated over several prompts and only
+   half follows it. */
+@theme {
+  --spacing-s1: 4px;
+  --spacing-s2: 8px;
+  --spacing-s3: 12px;
+  --spacing-s4: 16px;
+  --spacing-s6: 24px;
+  --spacing-s8: 32px;
+
+  --radius-tag: 6px;
+  --radius-control: 8px;
+  --radius-card: 12px;
+
+  --color-ground: #f6f6f4;
+  --color-surface: #ffffff;
+  --color-sunken: #eeeeeb;
+  --color-fg: #17181a;
+  --color-muted: #5f6368;
+  --color-faint: #8b9096;
+  --color-line: #e2e2de;
+  --color-line-strong: #c9c9c4;
+  --color-accent: #3b5bdb;
+  --color-accent-hover: #314cc0;
+  --color-accent-soft: #e7ebfb;
+  --color-on-accent: #ffffff;
+  --color-success: #2b8a3e;
+  --color-warning: #b7791f;
+  --color-danger: #c92a2a;
+
+  --tracking-wide: 0.05em;
+  --tracking-caps: 0.08em;
+
+  --text-caption: 12px;
+  --text-body: 14px;
+  --text-title: 17px;
+  --text-heading: 24px;
+  --text-display: 44px;
+
+  --shadow-rest: 0 1px 2px rgb(0 0 0 / 0.06), 0 0 0 1px rgb(0 0 0 / 0.04);
+}
+/* the two speeds the team named */
+@utility duration-fast { transition-duration: 150ms; }
+@utility duration-base { transition-duration: 250ms; }
+
+
+body { background: var(--color-ground); color: var(--color-fg); font-family: ui-sans-serif, system-ui, sans-serif; }

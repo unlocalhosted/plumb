@@ -59,6 +59,7 @@ export const STANDARD = {
     'text-wrap-role': { width: 300, uneven: 0.5, orphan: 0.15 },
     'baseline-align': { off: 1 },
     'truncate-intent': {}, 'middle-truncate': {}, 'bold-hover': {},
+    'text-collision': {}, // nothing to tune: a word space and the letters' own size are the measures
     'scrollbar-gutter': { width: 280, height: 200 },
     'anchor-offset': {},
     'scroll-cue': {},
@@ -87,6 +88,14 @@ export const STANDARD = {
     'image-outline': { minSize: 20, sameGround: 0.12 },
     'content-size': { slack: 0.2 },
     'media-size': { min: 12, near: 12 },
+    'flex-min': { over: 1, depth: 24 }, // px a row may run past its box, and how many elements in the cause is looked for
+    'fixed-height': { depth: 40 }, // how many elements inside are looked at for text that wraps
+    'scroll-on-demand': {}, // nothing to tune: it reads whether the scrollbar is always drawn
+    'declared-gap': {}, // nothing to tune here: the gap comes from the project around the row
+    'list-wrap': { least: 3 }, // parts drawn by one line before a row reads as a list
+    'sticky-room': {}, // nothing to tune: it reads whether the row stretched it
+    'image-ground': { min: 48, up: 3, wrap: 1.25, depth: 60, cover: 0.5, lc: 45 }, // smallest picture read, how far out its box is looked for, and the contrast words need without it
+    'image-fit': { min: 16, off: 0.03, latentMin: 24, photo: 64 }, // smallest box read, and how far its shape may be from the picture's
   },
   depth: {
     'layered-shadow': { blur: 16 },

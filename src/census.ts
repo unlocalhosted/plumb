@@ -36,11 +36,14 @@ export const censusPath = (root: string) => resolve(cacheDirectory(root), 'censu
 function readPage(attribute: string) {
   const census = [...document.body.querySelectorAll(`[${attribute}]`)].filter((el) => !el.closest('plumb-overlay') && [...el.childNodes].some((n) => n.nodeType === 3 && /[\p{L}\p{N}]/u.test(n.nodeValue ?? ''))).map((el) => {
     const cs = getComputedStyle(el);
-    return { stamp: el.getAttribute(attribute)!, tag: el.localName, list: !!el.closest('li, ul, ol, dl'), computed: { size: parseFloat(cs.fontSize), lineHeight: cs.lineHeight === 'normal' ? null : parseFloat(cs.lineHeight), letterSpacing: cs.letterSpacing === 'normal' ? 0 : parseFloat(cs.letterSpacing), weight: parseInt(cs.fontWeight, 10), transform: cs.textTransform } };
+    return { stamp: el.getAttribute(attribute)!, tag: el.localName, list: !!el.closest('li, ul, ol, dl'), control: !!el.closest('button, [role=button], [role=tab], [role=menuitem], summary, label'), number: /^[\s$€£¥₹+\-−–.,:%()\d]*\d[\s$€£¥₹+\-−–.,:%()\d]*[a-z]{0,2}$/i.test([...el.childNodes].filter((n) => n.nodeType === 3).map((n) => n.nodeValue).join(' ').trim()), sentence: /\S\s+\S.*[.!?…]["'”’)]*\s*$/s.test([...el.childNodes].filter((n) => n.nodeType === 3).map((n) => n.nodeValue).join(' ').trim()), computed: { size: parseFloat(cs.fontSize), lineHeight: cs.lineHeight === 'normal' ? null : parseFloat(cs.lineHeight), letterSpacing: cs.letterSpacing === 'normal' ? 0 : parseFloat(cs.letterSpacing), weight: parseInt(cs.fontWeight, 10), transform: cs.textTransform } };
   });
   const links = [...document.querySelectorAll('a[href]')].map((a) => (a as HTMLAnchorElement).href);
   return { census, links };
 }
+// In the page: which texts are a control's label, as the overlay's shared reading has it (roles.js inControl). Null
+// when the overlay is older than that file: the census keeps its own reading then
+const readControlled = `(async () => { try { const m = await import('/__plumb/src/roles.js'); return [...document.body.querySelectorAll('[${STAMP_ATTRIBUTE}]')].filter((el) => m.inControl(el)).map((el) => el.getAttribute('${STAMP_ATTRIBUTE}')); } catch { return null; } })()`;
 // In the page: the spacing pass's own reader, loaded from the dev server (one reader for the page and the census)
 const readGaps = `(async () => { try { const m = await import('/__plumb/src/stacks.js'); return m.readStacks().flatMap((s) => s.gaps.filter((g) => g.d > 0.5 && !g.section).map((g) => ({ stamp: s.stamp, d: g.d, em: g.em }))); } catch { return []; } })()`;
 // In the page: the icon pass's own reader (overlay/src/icons.js), the same one the panel uses
@@ -70,6 +73,8 @@ export async function takeCensus(options: CensusOptions): Promise<ProjectCensus>
         await page.waitForLoadState('networkidle', { timeout: 5000 }).catch(() => {});
         await settle(page);
         const { census, links } = await page.evaluate(readPage, STAMP_ATTRIBUTE);
+        const controlled = await page.evaluate(readControlled) as string[] | null;
+        if (controlled) { const inside = new Set(controlled); for (const entry of census) entry.control = inside.has(entry.stamp); }
         routes.push({ route, elements: census.length });
         entries.push(...census.map(entry => ({ ...entry, route })));
         gaps.push(...(await page.evaluate(readGaps) as CensusGap[]).map(gap => ({ ...gap, route })));

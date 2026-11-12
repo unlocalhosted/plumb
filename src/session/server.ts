@@ -15,7 +15,7 @@ import { BusyError, errorCode, errorDiagnostic, errorMessage, UsageError } from 
 import type { ErrorCode } from '../errors.js';
 import { validateRequest } from './schema.js';
 import { isIP } from 'node:net';
-import { overlayClient, overlayModules } from '../hosts/client.js';
+import { isOverlayModule, overlayClient } from '../hosts/client.js';
 
 import { atomicWrite } from '../atomic-write.js';
 import { pageShell } from '../project-page/shell.js';
@@ -205,6 +205,11 @@ async function dispatchOnce(session: Session, method: string, params: Record<str
     if (!Array.isArray(items)) throw new UsageError('A page is { items: [{ stamp, tag, classes? }] }.');
     return session.page(items.map((item: Record<string, unknown>) => ({ stamp: text(item, 'stamp')!, tag: text(item, 'tag')!, ...(item?.classes === undefined ? {} : { classes: text(item, 'classes', true) ?? '' }) })));
   }
+  if (method === 'rename') {
+    const map = (params as { map?: unknown }).map;
+    if (!object(map)) throw new UsageError('A rename is { map: { old: new } }.');
+    return session.rename({ map: Object.fromEntries(Object.entries(map).map(([k, v]) => [k, String(v)])) });
+  }
   if (method === 'apply-all') {
     const cause = (item: Record<string, unknown>) => { const c = item.cause as Record<string, unknown>; return { cause: { rule: text(c, 'rule')!, text: text(c, 'text')!, choice: text(c, 'choice')! }, ...(item.file === undefined ? {} : { file: text(item, 'file')! }) }; };
     const body = params as { tokens?: unknown; css?: unknown; swaps?: unknown; accepts?: unknown };
@@ -301,7 +306,7 @@ function createRoute(session: Session | Promise<Session>, options: HandlerOption
     // GET system is the project page's data; the POST of that name is the engine's proposal (methods.ts)
     const named = url.pathname.slice(prefix.length);
     const method = named === 'system' && request.method === 'GET' ? 'system-page' : named;
-    const client = options.client === true && overlayModules.includes(method);
+    const client = options.client === true && isOverlayModule(method);
     if (client) headers['Cross-Origin-Embedder-Policy'] = 'require-corp';
     const expected = verbOf(method);
     const known = client || isEndpoint(method);

@@ -228,7 +228,11 @@ test('the playhead in the past shows the page as it was there, writes nothing, p
   await page.keyboard.press('Enter');
   await page.waitForFunction(() => document.querySelector('plumb-overlay')?.shadowRoot?.querySelectorAll('.tt .tt-tick[data-i]').length === 5);
   assert.equal(await app.read(), APP.replace('p-4 gap-2', 'p-6 gap-2'));
-  s = await strip(page);
+  // the write may reload the page while the strip is read (it comes back the same): read it again on the new page
+  for (let i = 0; ; i++) {
+    try { s = await strip(page); if (s) break; } catch (error) { if (i > 20 || !/context was destroyed|navigation/i.test(error.message)) throw error; }
+    await page.waitForTimeout(250);
+  }
   assert.deepEqual(s.steps, [{ name: 'Spacing', ticks: ['live', 'undone', 'undone'] }, { name: 'Undo', ticks: ['live+undo', 'live+undo'] }]);
   assert.ok(!s.past, 'back at Now after it');
   // the dev server reloads the page for the write: the timeline comes back with it, at Now

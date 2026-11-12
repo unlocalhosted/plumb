@@ -9,13 +9,18 @@ import { sameStamp } from './stamp.js';
 
 // a style's name in plain words, from its role (display/headline/title/body/label × large/medium/small): the largest
 // of its group present is the group's own name, the next ones "small"
-const GROUP = { display: 'Display', headline: 'Headline', title: 'Title', body: 'Body', label: 'Label' };
+const GROUP = { hero: 'Hero', figure: 'Figure', display: 'Display', headline: 'Headline', title: 'Title', lead: 'Lead', body: 'Body', caption: 'Caption', control: 'Button', label: 'Label' };
+// the page's hero and the larger reading text (body-lead, body-lead-small) are named apart, so "Body" stays the body text
+// and "Display" the page title whether or not a project has the larger ones
+const groupOf = (name) => (name === 'display-hero' ? 'hero' : name === 'display-figure' ? 'figure' : name === 'body-caption' ? 'caption' : /^label-control/.test(name) ? 'control' : /^body-lead/.test(name) ? 'lead' : name.split('-')[0]);
 export function namesOf(roles) {
   const names = new Map(), byGroup = new Map();
-  for (const r of roles) { const g = r.name.split('-')[0]; if (!byGroup.has(g)) byGroup.set(g, []); byGroup.get(g).push(r); }
+  for (const r of roles) { const g = groupOf(r.name); if (!byGroup.has(g)) byGroup.set(g, []); byGroup.get(g).push(r); }
   for (const [g, list] of byGroup) list.sort((a, b) => px(b.bundle) - px(a.bundle)).forEach((r, i) => names.set(r.name, `${GROUP[g] ?? g}${i ? ' small' : ''}${i > 1 ? 'er' : ''}`));
   return names;
 }
+// weight is its own axis (docs/design/token-spec.md §2.2): a place may take its role at another weight
+const WEIGHTS = { regular: 400, medium: 500, semibold: 600, bold: 700 };
 // the size in px: a number, or a fluid clamp(min, preferred, max) read at its largest
 function px(bundle) {
   if (Number.isFinite(bundle?.size)) return bundle.size;
@@ -33,16 +38,18 @@ const inView = (el) => { const r = el.getBoundingClientRect(); return r.width > 
 export class StylePreview {
   #had = new Map(); // el → [[prop, value, priority]]
   get on() { return this.#had.size > 0; }
+  #prose = null; // reading text's shared leading (proposal.prose)
   show(proposal, glide) {
+    this.#prose = proposal.prose?.lineHeight ?? null;
     for (const role of proposal.roles) this.setRole(role, glide);
   }
   // one style's places take it (the show sets the roles one at a time); `move(el, set)` animates it, or null for at once
-  setRole(role, move) {
+  setRole(role, move, prose = this.#prose) {
     const b = role.bundle;
     for (const m of role.members ?? []) {
       if (!m.stamp) continue;
-      const lh = m.variant === 'compact' ? role.variants?.compact?.lineHeight : b.lineHeight;
-      const sets = { 'font-size': b.sizeText ?? `${b.size}px`, 'letter-spacing': `${b.letterSpacing ?? 0}em`, 'font-weight': String(b.weight ?? 400), 'text-transform': b.transform ?? 'none', ...(Number(lh) > 0 ? { 'line-height': String(lh) } : {}) };
+      const lh = m.variant === 'compact' ? role.variants?.compact?.lineHeight : m.variant === 'prose' ? prose ?? b.lineHeight : b.lineHeight;
+      const sets = { 'font-size': b.sizeText ?? `${b.size}px`, 'letter-spacing': `${b.letterSpacing ?? 0}em`, 'font-weight': String(m.weight ? WEIGHTS[m.weight] : b.weight ?? 400), 'text-transform': b.transform ?? 'none', ...(Number(lh) > 0 ? { 'line-height': String(lh) } : {}) };
       for (const el of document.querySelectorAll(sameStamp(m.stamp))) {
         if (this.#had.has(el)) continue;
         this.#had.set(el, Object.keys(sets).map((p) => [p, el.style.getPropertyValue(p), el.style.getPropertyPriority(p)]));

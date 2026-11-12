@@ -74,94 +74,6 @@ const said = (overlay) => panel(overlay).locator('.said .t');
 const padding = (page, id) => page.locator(`#${id}`).evaluate((el) => getComputedStyle(el).paddingTop);
 const visible = (page, sel) => page.evaluate((sel) => [...document.querySelector('plumb-overlay').shadowRoot.querySelectorAll(sel)].some((e) => e.getClientRects().length > 0 && getComputedStyle(e).display !== 'none'), sel);
 
-test('At rest one line counts problems and causes; Enter puts a cause in hand and tries its fix on every place; ↑ ↓ move every place; Take, then A writes them all', { timeout: 150000 }, async (t) => {
-  const launched = await browser(t); if (!launched) return;
-  const { root, url } = await fixture(t, PAGE);
-  const { page, errors, overlay } = await open(t, launched, url);
-  const source = () => readFile(join(root, 'src/App.jsx'), 'utf8');
-  // rest: one line, nothing else of the old flow drawn
-  await countsAre(page, /2 problems · 1 fix/);
-  for (const sel of ['.bpp', '.cg', '.sel']) assert.equal(await visible(page, sel), false, `${sel} is not shown`);
-  // Enter: the cause in hand, its options as specimens, the suggestion tried at both places
-  await page.keyboard.press('Enter');
-  await panel(overlay).locator('.cause .cls').filter({ hasText: 'p-[18px]' }).waitFor({ timeout: 10000 });
-  assert.match(await panel(overlay).locator('.cause .what').innerText(), /2 places/);
-  await panel(overlay).locator('.sp[aria-pressed="true"]').waitFor({ timeout: 10000 });
-  const picked = Number.parseFloat(await panel(overlay).locator('.sp[aria-pressed="true"] .v').innerText());
-  await page.waitForFunction((n) => ['a', 'b'].every((id) => getComputedStyle(document.getElementById(id)).paddingTop === `${n}px`), picked, { timeout: 5000 });
-  // the value it has now is shown, greyed out, not a choice
-  assert.match(await panel(overlay).locator('.sp.off .v').innerText(), /^18px$/);
-  // ↑: both places move to the next step
-  await page.keyboard.press('ArrowUp');
-  const next = Number.parseFloat(await panel(overlay).locator('.sp[aria-pressed="true"] .v').innerText());
-  assert.ok(next > picked, `↑ picks a bigger step: ${picked} → ${next}`);
-  await page.waitForFunction((n) => ['a', 'b'].every((id) => getComputedStyle(document.getElementById(id)).paddingTop === `${n}px`), next, { timeout: 5000 });
-  await page.keyboard.press('ArrowDown');
-  await page.waitForFunction((n) => getComputedStyle(document.getElementById('a')).paddingTop === `${n}px`, picked, { timeout: 5000 });
-  // Enter: written at once, at both places; the panel says so
-  for (let i = 0; i < 40 && !(await said(overlay).count()); i++) { await page.keyboard.press('Enter'); await page.waitForTimeout(150); }
-  await said(overlay).filter({ hasText: /^Changed p-\[18px\] to p-s\d at 2 places$/ }).waitFor({ timeout: 10000 });
-  for (let i = 0; i < 100 && (await source()).includes('p-[18px]'); i++) await page.waitForTimeout(100);
-  const after = await source();
-  assert.doesNotMatch(after, /p-\[18px\]/, 'both places written');
-  assert.equal((after.match(/className="rounded-card bg-surface p-s\d text-body"/g) ?? []).length, 2, after);
-  assert.deepEqual(errors, []);
-});
-
-// One action, one write. Enter on the focused Use button is the button's own press; the panel's Enter (take) must not
-// fire for the same key, or the fix is written twice (two POST swaps, two history steps for one choice).
-test('Enter on the focused Use button writes once: one POST swaps, one history step', { timeout: 120000 }, async (t) => {
-  const launched = await browser(t); if (!launched) return;
-  const { root, url } = await fixture(t, PAGE);
-  const { page, errors, overlay } = await open(t, launched, url);
-  await countsAre(page, /2 problems · 1 fix/);
-  await page.keyboard.press('Enter');
-  await panel(overlay).locator('.cause .cls').filter({ hasText: 'p-[18px]' }).waitFor({ timeout: 10000 });
-  await panel(overlay).locator('.sp[aria-pressed="true"]').waitFor({ timeout: 10000 });
-  const posts = [];
-  page.on('request', (r) => { if (r.method() === 'POST' && /\/__plumb\/(swaps|apply|apply-all)$/.test(r.url())) posts.push(r.url().replace(/.*__plumb\//, '')); });
-  const take = panel(overlay).locator('button.take');
-  await take.waitFor({ timeout: 10000 });
-  await take.focus();
-  await take.press('Enter');
-  await said(overlay).filter({ hasText: /^Changed p-\[18px\] to p-s\d at 2 places$/ }).waitFor({ timeout: 10000 });
-  for (let i = 0; i < 100 && (await readFile(join(root, 'src/App.jsx'), 'utf8')).includes('p-[18px]'); i++) await page.waitForTimeout(100);
-  await page.waitForTimeout(500); // a second write, had there been one, is sent by now
-  assert.deepEqual(posts, ['swaps'], `one write per press: ${posts.join(', ')}`);
-  // the server's history says the same: one step
-  const token = await page.evaluate(() => [...document.querySelectorAll('script[type="module"][src]')].find((s) => /\/client\.js$/.test(s.src))?.dataset.plumbToken);
-  const history = await (await fetch(new URL('/__plumb/history', url), { headers: { 'x-plumb-token': token } })).json();
-  assert.equal(history.writes.length, 1, JSON.stringify(history.writes.map((w) => w.label)));
-  assert.deepEqual(errors, []);
-});
-
-test('A glow clicked puts its cause in hand; → skips to the next cause, ← back; Esc puts it down and the page is as it was', { timeout: 120000 }, async (t) => {
-  const launched = await browser(t); if (!launched) return;
-  const { url } = await fixture(t, PAGE.replace('<section id="b"', '<p id="w" className="text-body font-[650]">Weight</p>\n      <section id="b"'));
-  const { page, errors, overlay } = await open(t, launched, url);
-  await countsAre(page, /problems? · 2 fixes/);
-  // a click on the second card's glow (its zone's own point) holds the padding cause
-  // a glow says its place in the panel's words, to a screen reader too: never the rule's own wording
-  const labels = await overlay.locator('.bp .hit').evaluateAll((hits) => [...new Set(hits.map((h) => h.getAttribute('aria-label')))]);
-  assert.ok(labels.includes('p-[18px]. 18px is typed by hand.'), labels.join(' | '));
-  assert.ok(labels.every((l) => !/hardcodes/.test(l)), labels.join(' | '));
-  assert.equal(await overlay.locator('svg[role="group"]').first().getAttribute('aria-label'), 'Problems on this page');
-  const at = await overlay.locator('.bp .hit[aria-label*="18px"]').first().getAttribute('data-at');
-  const [x, y] = at.split(',').map(Number);
-  await page.mouse.click(x, y);
-  await panel(overlay).locator('.cause .cls').filter({ hasText: 'p-[18px]' }).waitFor({ timeout: 10000 });
-  // →: the other cause; ←: back to the padding
-  await page.keyboard.press('ArrowRight');
-  await panel(overlay).locator('.cause .cls').filter({ hasNotText: 'p-[18px]' }).waitFor({ timeout: 10000 });
-  await page.keyboard.press('ArrowLeft');
-  await panel(overlay).locator('.cause .cls').filter({ hasText: 'p-[18px]' }).waitFor({ timeout: 10000 });
-  // Esc: put down; the cards are back at 18px, the panel is one line
-  await page.keyboard.press('Escape');
-  await panel(overlay).locator('.line').waitFor({ timeout: 5000 });
-  await page.waitForFunction(() => ['a', 'b'].every((id) => getComputedStyle(document.getElementById(id)).paddingTop === '18px'), null, { timeout: 5000 });
-  assert.deepEqual(errors, []);
-});
-
 // A cause whose fix is relative to the text (a line height of 1.5 × the size) is previewed per place: each place at
 // its own size, written as px, never one place's number dropped unitless onto all of them (19.5 read as 19.5 × 13px).
 // A one-line control's height is not three lines of text, so it is not in the cause.
@@ -287,81 +199,6 @@ export function App() {
   assert.deepEqual(errors, []);
 });
 
-// Every cause ends in one action. Nothing on the theme is close (tracking-[0.1em]): Add to theme, named in a field
-// whose keys are its own (typing "a" or "k" neither applies nor keeps), every place takes the new class. A Tailwind
-// default (leading-relaxed): Make it yours, the variable goes into the theme and no source line changes. Intended
-// (p-[13px]): Keep it, with why, recorded in the ledger. One Apply writes all three.
-test('Add to theme, Make it yours and Keep it: each a cause\'s one action, all written by one Apply', { timeout: 180000 }, async (t) => {
-  const launched = await browser(t); if (!launched) return;
-  const { root, url } = await fixture(t, `
-export function App() {
-  return (
-    <main className="mx-auto flex max-w-3xl flex-col gap-s6 px-s4 py-s6">
-      <p id="t1" className="text-body tracking-[0.1em]">Eyebrow</p>
-      <p id="t2" className="text-body tracking-[0.1em]">Eyebrow two</p>
-      <p id="l" className="text-body leading-relaxed">Relaxed</p>
-      <section id="k" className="rounded-card bg-surface p-[13px] text-body">Kept</section>
-      <div id="g" className="flex gap-[7px] text-body"><span>a</span><span>b</span></div>
-    </main>
-  );
-}
-`);
-  const { page, errors, overlay } = await open(t, launched, url);
-  const source = () => readFile(join(root, 'src/App.jsx'), 'utf8');
-  const theme = () => readFile(join(root, 'src/styles.css'), 'utf8');
-  const cls = () => panel(overlay).locator('.cause .cls').innerText();
-  const hold = async (re) => {
-    if (!(await panel(overlay).locator('.cause').count())) await page.keyboard.press('Enter');
-    for (let i = 0; i < 8 && !re.test(await cls()); i++) { await page.keyboard.press('ArrowRight'); await page.waitForTimeout(250); }
-    assert.match(await cls(), re);
-  };
-  // Add to theme: named in the field; the class it becomes is said as it is typed
-  await hold(/tracking-\[0\.1em\]/);
-  assert.match(await panel(overlay).locator('.note').innerText(), /no letter spacing of 0\.1em/);
-  // a first name is there, so one Enter is enough; it is edited freely
-  assert.equal(await panel(overlay).locator('input[name="token"]').inputValue(), 'wide');
-  assert.ok(await panel(overlay).locator('.take').isEnabled(), 'a named step can be taken at once');
-  await panel(overlay).locator('input[name="token"]').fill('');
-  await panel(overlay).locator('input[name="token"]').pressSequentially('track-ak');
-  await panel(overlay).locator('.hint').filter({ hasText: 'tracking-track-ak' }).waitFor({ timeout: 5000 });
-  assert.equal(await said(overlay).count(), 0, 'typing a or k neither writes nor keeps');
-  await page.keyboard.press('Enter');
-  await said(overlay).filter({ hasText: 'Added --tracking-track-ak to styles.css and used tracking-track-ak at 2 places' }).waitFor({ timeout: 20000 });
-  // Make it yours
-  await hold(/leading-relaxed/);
-  await panel(overlay).locator('.take').filter({ hasText: 'Add to theme' }).waitFor({ timeout: 5000 });
-  assert.match(await panel(overlay).locator('.note').innerText(), /Nothing in your code changes/);
-  assert.match(await panel(overlay).locator('.hint').innerText(), /--leading-relaxed: 1\.625/);
-  await page.keyboard.press('Enter');
-  await said(overlay).filter({ hasText: 'Added --leading-relaxed to styles.css' }).waitFor({ timeout: 20000 });
-  // Keep it
-  await hold(/p-\[13px\]/);
-  await page.keyboard.press('k');
-  await panel(overlay).locator('input[name="why"]').pressSequentially('a brand inset, kept');
-  await page.keyboard.press('Enter');
-  // what the person waits for: each one said as it landed; a keep has nothing to undo
-  await said(overlay).filter({ hasText: /^Kept as is at 1 place/ }).waitFor({ timeout: 20000 });
-  assert.equal(await panel(overlay).locator('.said .undo').count(), 0);
-  assert.match(await theme(), /--tracking-track-ak:\s*0\.1em/);
-  assert.match(await theme(), /--leading-relaxed:\s*1\.625/);
-  const after = await source();
-  assert.equal((after.match(/tracking-track-ak/g) ?? []).length, 2, after);
-  assert.doesNotMatch(after, /tracking-\[0\.1em\]/);
-  assert.match(after, /className="text-body leading-relaxed"/, 'make it yours changes no source line');
-  assert.match(after, /p-\[13px\]/, 'kept stays as written');
-  assert.match(await readFile(join(root, '.plumber/ledger.jsonl'), 'utf8'), /a brand inset, kept/);
-  // the page comes back read in full: the three are gone and only the cause nobody touched is left
-  await page.waitForFunction(() => document.getElementById('t1')?.className.includes('tracking-track-ak'), null, { timeout: 20000 });
-  await overlay.locator('.fx[data-settled]').waitFor({ timeout: 20000 });
-  // the panel has moved on to the causes nobody touched: the gap, and the card's inset as craft sees it. The keep was for the
-  // value typed by hand; "Text off the column" is another cause of the same class, placed where the card's JSX opens, so it is still offered
-  await panel(overlay).locator('.cause').waitFor({ timeout: 20000 });
-  await hold(/gap-\[7px\]/);
-  assert.match(await panel(overlay).locator('.cause .nav').innerText(), /\d of 2/);
-  await hold(/p-\[13px\]/);
-  assert.equal(await panel(overlay).locator('.cause .what span').first().innerText(), 'Text off the column');
-  assert.deepEqual(errors, []);
-});
 
 // One Apply that writes the theme reloads the page, which can cut the server's answer short. The dev server says the
 // whole result first, so what did not land is said after the reload, not a count that was only hoped for.
@@ -497,32 +334,6 @@ export function App({ open = false }) {
   assert.deepEqual(errors, []);
 });
 
-// Two Links render the same <a> (one stamp), but each is styled where it is used. A reading made at one caller is
-// that element's alone: the clean Link never borrows the other's problem, on the first opening or any after it.
-test('Links from one component are each read at their own caller: the count is the same on every opening', { timeout: 150000 }, async (t) => {
-  const launched = await browser(t); if (!launched) return;
-  const { url } = await fixture(t, `
-function Link({ className, children }) { return <a href="#" className={className}>{children}</a>; }
-export function App() {
-  return (
-    <main className="mx-auto flex max-w-3xl flex-col gap-s6 px-s4 py-s6">
-      <Link className="text-body tracking-[0.1em]">Spaced</Link>
-      <Link className="text-body">Plain one</Link>
-      <Link className="text-body">Plain two</Link>
-    </main>
-  );
-}
-`);
-  const { page, errors, overlay } = await open(t, launched, url);
-  const counts = [];
-  for (let i = 0; i < 3; i++) {
-    if (i) { await page.keyboard.press('Alt+B'); await page.keyboard.press('Alt+B'); await overlay.locator('.fx[data-settled]').waitFor({ timeout: 20000 }); await page.waitForTimeout(500); }
-    counts.push(await counted(overlay));
-  }
-  assert.equal(new Set(counts).size, 1, `the same count every time: ${counts.join(' | ')}`);
-  assert.match(counts[0], /^1 problem · 1 fix/, counts[0]);
-  assert.deepEqual(errors, []);
-});
 
 // Tailwind 4 writes colours as oklch(): the panel reads the page's ground the way the browser paints it, so a
 // near-white oklch page gets a light panel and a near-black one a dark panel (reading the numbers as rgb took

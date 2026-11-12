@@ -9,6 +9,17 @@ A craft rule exists to catch a mistake people really make. Its showcase example 
 screen, `/rule/N`) exists to show that mistake, plumber finding it, and plumber's own fix. Both fail the same way: by
 being built to fit each other instead of the real world. These rules come from that failing, more than once.
 
+## Before anything: what a craft rule is (docs/PRINCIPLES.md)
+
+A craft rule is an experienced design engineer's eye, baked in: the 10–15 things they would say after one look at a
+design ("the icons are not aligned, the content is not aligned"). It is a specialised way of seeing, not a value
+snapped to a scale. Plumber is not a linter: it is suggestive and opinionated, and it judges.
+
+So a rule starts from a way of seeing and the principle behind it, grounded in something real (code evidence, a talk,
+documentation, industry practice). A count of instances is a signal at most, never the reason. A number picked while
+coding because it looked sensible is not a rule. And another tool's caution (a linter that only acts on an exact
+match) is not a rule for plumber.
+
 ## 0. Only insights get a screen
 
 A principle earns a showcase screen only if it is the kind of craft knowledge people share online as an insight:
@@ -17,6 +28,15 @@ concentric corners, overshoot). Hygiene that any reviewer would catch, or a mist
 screen; plumber keeps checking it. Owner, 2026-11-04, on #9 and #10: "they aren't even real mistakes"; "it's trivial,
 easy to spot, people won't do it"; "the rules should be something obvious but which people miss". Never invent a
 mistake to give a rule a screen.
+
+**The craft list is a senior's tacit knowledge, not the tutorials.** A craft rule (a number in docs/craft/rules.md, a
+screen in the showcase) is something a specialised design engineer tells a junior after years of doing it: a hidden
+gem. A tip that hundreds of tutorials already teach (defensive CSS: `object-fit: cover`, `min-width: 0` on a flex item,
+a colour behind words on a picture) is not one, however useful. It may still be a check in plumber's engine, with
+`number: []`, no row in the list and no screen. Ask before numbering anything: *would a senior be surprised a junior
+didn't know this, or surprised a junior did?* Only the second is a craft rule. Owner, 2026-11-12, on #78–#80: "these
+are not just obvious examples regurgitated online in 100s of tutorials but like real hidden gems"; "maybe this rule
+doesn't belong here". A screen that needs a staged product and a staged failure to make its point is the sign.
 
 ## 1. Start from the mistake people make, not from the rule
 
@@ -29,6 +49,13 @@ the person who shipped it think it was fine?* If you can't name the natural caus
   by its padding. Not "one nav row padded and the others not" (no sidebar ships that).
 - Trim leading (#5): a banner or button built with `text-sm/6 py-2` (Tailwind UI's own default), whose line height
   makes the padding look larger. Not an oversized chip.
+
+**The mistake's side is the one that passed review.** At rest the screen looks right: it is what a careful team
+ships, and a design review would wave it through. If the broken side looks broken at a glance (a button hanging off
+its card), nobody ships it and the screen teaches nothing. For a slip that only bites later (a longer name, a narrower
+screen), the card rests at the width and content it was built with, the viewer's hand brings the change that breaks it
+(§3½), and plumber's rule finds it at rest, before it breaks: the rule reads the cause (text set to cut off inside a
+box that can't shrink), not the damage. A rule that fires only once the damage shows is a rule nobody needs.
 
 ## 2. Never bend the example to fit the rule
 
@@ -126,6 +153,26 @@ screen. Ours used to be a teaching page with a still picture in it; that system 
   blueprint tag as the value pill (mono, white on the hue), heat dots where it's off, the blueprint shade over the rest,
   `--pl-spring-pop` for marks appearing. Owner: "follow the same primitives we have created for plumber, not just
   these orange and blue lines".
+- **The read covers every place the slip is, not one.** When a slip recurs across the card (§3), the example's
+  `measure` hands over marks for every instance (keyed lines, rules, bands and a pill each), the shade is cut around
+  all of them, and the camera stays on the whole card (`Example.camera = false`). The fix then lands on every
+  instance together, a beat apart down the card. Zooming into one "lead" instance is only for a slip too small to see
+  at 1× (a pixel, a hairline), and even then the others are marked when the camera is back out.
+- **The marks draw what is true, so the eye can check the picture against them.** Not a box round the subject with a
+  number: the guide is the real thing the lesson turns on (a stretched photo's own shape inside its box, with the
+  stretch dotted), and it moves to where the fix puts it.
+- **Every instance glides, even when CSS snaps.** A fix on a property the browser can't transition (`object-fit`,
+  `display`, a keyword) still has to be seen arriving: the stage animates the same pixels the fix will draw and lands
+  the fix as the glide ends (Principle.jsx `glideFit`). A fix that snaps on six rows reads as a page reload. Add the
+  glide to the stage, never to the example.
+- **A defensive rule puts the uncontrolled thing in the viewer's hand.** A rule about what you don't control (the
+  screen's width, a photo's shape, a longer name) is shown on one card the viewer changes themselves: #78's card has
+  an edge to drag, so the cover's box changes shape under a real hand, and the photo is pulled out of shape on one
+  side of the switch and holds on the other. The subject is big and one whose shape the eye knows (a building, a
+  circle, a face), with the fixed side still showing it at every size (pick the photo for the crop too). Small
+  thumbnails of landscapes don't show a stretch. The same slip recurs smaller on the card (§3). Never make content
+  arrive by itself to show this: #78's rows stepping down read as noise (owner: "really confusing"). One hint line
+  under the switch says what to try (`Example.hint`); the drag follows §3¾'s rules for ending a gesture.
 - **Teaching sits off the stage**, below it, read after watching: what plumber sees, why it happens, the habit,
   plumber's fix in words (§5).
 - **Fit every width.** Lay out against the stage (container queries); check 1440, 1024 and a ~300px pane.
@@ -191,9 +238,10 @@ interrupt-marks.html (#64) and rubber-band.html (#65) follow it, and docs/craft/
 
 ## 5. Teach, don't just diff
 
-The card is a lesson: **what plumber sees** (its finding, with the number), **why it happens** (the mechanism, one or
+The card is a lesson: **what plumber sees** (its finding, with the number), **why it matters** (`matters`: what goes wrong
+for the product and why nobody catches it, so the reader knows why the rule exists before how it works), **why it happens** (the mechanism, one or
 two sentences), **the habit** to carry to the next screen, then **plumber's fix** in words with the class small under
-it. Write `Example.lesson = { why, habit }` for every example; a card that only shows the final CSS teaches nothing.
+it. Write `Example.lesson = { matters, why, habit }` for every example; a card that only shows the final CSS teaches nothing.
 
 ## 6. Review the screenshots yourself before showing anyone
 
@@ -298,3 +346,47 @@ Each line is something the owner had to say once; the sections above exist so th
 - 2026-11-05 · Owner chose "Scale to fit" for cards taller or wider than the window (21 put the switch below an
   800px window, 10 ran off a phone). Cause: the stage set a fixed-size card above the switch and left the window to
   scroll. → The stage fits the card; plumber always reads it at 1× (§3½).
+- 2026-11-12 · #78 (stretched pictures): "the demo technique is really bad, we dont show any guardrails, we dont show
+  transition across all elements we focus on one and that too is so bad". Cause: the stage's contract was one lead
+  element (one cut, one pill, the camera on it), so five of six photos were unmarked and snapped; the mark was a box
+  with a percent, not the picture's true shape; and a rule about content you don't control was shown on a still list.
+  Owner chose: guides on every photo and new shapes arriving, and every photo glides. → §3½: the read covers every
+  place; marks draw what is true; every instance glides; a defensive rule is shown defending.
+- 2026-11-12 · #78 again: "remove this moving animation … everything moving from second place but the first piece
+  getting place, really confusing"; "i dont see the significance here why do we need this rule, please add relevant
+  text". Cause: life was added to show the rule defending, and the lesson explained the mechanism without saying what
+  it costs a product. → §3½ a defensive rule stays a still screen; §5 the lesson opens with `matters`.
+- 2026-11-12 · The owner took plumber's fix on #78 with the overlay, which wrote `object-cover` into the screen's
+  file, so the mistake's side was already fixed and the demo had nothing to find. → When a screen shows no finding
+  on its broken side, check `git diff` on its file first and put it back.
+- 2026-11-12 · #78, third round, with the reference's own demo (defensivecss.dev: one photo in a box you resize, a
+  "Toggle Defensive" checkbox): "we dont see the issue clearly in this component … you will also see the value if you
+  stretch the card itself". Cause: six 96 by 72 thumbnails of landscapes; a stretch on a small picture of a hill
+  doesn't read, and nothing let the viewer change the box. Taken from the reference: a big subject with a known
+  shape, and the box in the viewer's hand. Ours: a trip-day card with a draggable edge, plumber's switch and marks.
+  → §3½ a defensive rule puts the uncontrolled thing in the viewer's hand.
+- 2026-11-12 · (own review) #79's first check fired on the whole card, not the column that holds the name: every box
+  the text spills out of is also a flex item with overflowing content, and the outermost one won. plumber's fix then
+  landed on nothing, and the switch showed "fixed" over a broken card. → A rule about overflow names the innermost
+  box that causes it (the one that grew to fit its own content), never one the content merely spills from. After the
+  switch, read the finding's file and line: it must be the element the fix belongs on.
+- 2026-11-12 · #79's first screen rested with three role menus already pushed off the card: "this example isn't apt
+  as the default state is clearly broken and no one will ship ui like this broken, we show examples which will be a
+  miss in a normal design review". Cause: the rule fired only on a row already overflowing, so the screen had to be
+  broken at rest for plumber to find anything. → §1: the mistake's side is the one that passed review; the rule finds
+  the cause before the damage. #79 now rests with every name fitting and breaks when the card is dragged narrower.
+- 2026-11-12 · (own review) #78's finding "before it stretches" was first written at confidence 0.72 and never showed:
+  the engine drops anything under 0.8 (craft.js FLOOR). → A finding about a cause, not visible damage, must earn 0.8
+  by narrowing what it reads (photo-sized pictures only, not icons), never by raising the number alone.
+- 2026-11-12 · (own review, building #80) The uncontrolled thing isn't always a width: for words over a picture it is
+  the network, so the hand is a switch that makes the photos really fail to load (kit `usePhotos` + `<Signal>`), not
+  a drag. → §3½: pick the hand from what the rule doesn't control (screen → edge to drag, network → a switch).
+- 2026-11-12 · (own review, building #80) The new screen made #79 fire on its card: truncated names inside a card with
+  its own width, in the stage's row. A second finding on a well-built screen is the rule's noise, not the screen's:
+  #79 now stays quiet about an item that has its own width until the row really runs over.
+- 2026-11-12 · "these examples look very contextual ... these looks ass"; "maybe this rule doesn't belong here"; the
+  craft list is "tacit knowledge, years of experience ... real hidden gems", not tutorial tips. → §0. Screens 78–80
+  (defensive CSS tips) were removed; the three checks stay in the engine without a number. The §3½ notes about a
+  defensive rule's screen no longer have a screen to apply to.
+- 2026-11-12 · "dont create these rules out of your ass … there has to be a principle behind the suggestion": a suggestion built on made-up counts (two places, more than half). → Before anything, docs/PRINCIPLES.md.
+- 2026-11-12 · "I'm not creating a linter, this would be suggestive, this would be opinionated": plumber judged against lint tools and told to stop choosing. → Before anything, docs/PRINCIPLES.md.

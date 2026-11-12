@@ -43,6 +43,7 @@ import { loadConfig } from '../config.js';
 import { readSource, stale, staleFile, withEol, withRollback, writeSource } from '../write/source-file.js';
 import type { SourceText, Written } from '../write/source-file.js';
 import { isTypeProp, proposeTypeRoles, px } from '../rules/type-roles.js';
+import { renameInText, validRenameMap } from '../rules/colour-rename.js';
 import type { RoleOverride, TypeBundle, TypeClass, TypeMember, TypeProposal } from '../rules/type-roles.js';
 import { classEdit } from '../messages.js';
 import { useFor } from '../rules/provenance.js';
@@ -105,7 +106,7 @@ export interface PageEntry {
 }
 export interface PageResult { revision: number; items: PageEntry[] }
 /** One measured text element of a page: its stamp and tag, whether it sits in a list, and its computed type values. */
-export interface CensusEntry { stamp: string; tag: string; list?: boolean; /** elements rendered from this stamp, when the census is already one per stamp */ elements?: number; computed?: { size?: number | null; lineHeight?: number | null; letterSpacing?: number | null; weight?: number | null; transform?: string | null } }
+export interface CensusEntry { stamp: string; tag: string; list?: boolean; /** its own words are a figure (digits, signs, a mark, at most a two-letter unit) */ number?: boolean; /** it is, or sits inside, something you press, or a form label */ control?: boolean; /** its own words are a sentence (more than one word, ending in . ! or ?) */ sentence?: boolean; /** elements rendered from this stamp, when the census is already one per stamp */ elements?: number; computed?: { size?: number | null; lineHeight?: number | null; letterSpacing?: number | null; weight?: number | null; transform?: string | null } }
 export interface SystemOptions { files?: string[]; census?: CensusEntry[]; /** "project": the ladder from every route's text (src/census.ts), the page's own census read over it */ scope?: 'page' | 'project'; /** the page's route, whose kept entries its own census replaces */ route?: string; exclude?: string[]; /** the owner's decisions per role, as config.system.type.roles, for a dry run */ roles?: Record<string, { size?: number; lineHeight?: number; letterSpacing?: number; weight?: number; compact?: { lineHeight: number } }> }
 export type SystemWrite = { tokens: (TypeProposal['write']['tokens'][number] & { file: string; hash: string })[]; css: { file: string; hash: string; css: string }[]; swaps: (TypeProposal['write']['swaps'][number] & { hash: string })[] };
 export interface SystemResult { revision: number; proposal: Omit<TypeProposal, 'write'> & { write: SystemWrite } }
@@ -116,6 +117,8 @@ export interface Cause { rule: string; text: string; choice: string }
 export type CauseSwap = { cause: Cause; file?: string };
 /** What follows a new token once it is in the theme: its class at every place of a cause, or per-element swaps (a craft suggestion has no source rule). Neither is written when the token is refused. */
 export type TokenThen = CauseSwap | { swaps: SwapsOptions[] };
+export interface RenameOptions { /** old name → new name, without `--color-` */ map: Record<string, string> }
+export interface RenameResult { revision: number; files: { file: string; ok: boolean; uses: number; error?: string }[]; uses: number; byName: Record<string, number>; undo: UndoHandle[]; labels: string[] }
 export interface ApplyAllOptions { tokens?: (Omit<TokenOptions, 'then'> & { then?: TokenThen })[]; /** stylesheet blocks appended to the theme after the tokens (a type role's @utility) */ css?: CssOptions[]; swaps?: (SwapsOptions | CauseSwap)[]; accepts?: AcceptOptions[] }
 export interface ApplyAllResult {
   results: {
@@ -543,6 +546,23 @@ export class Session extends EventEmitter {
       } catch { /* Polling below works on platforms without recursive fs.watch. */ }
     }
     this.timer = setInterval(() => { void this.refresh().catch(error => this.emit('diagnostic', error)); }, this.options.pollInterval ?? 250);
+  }
+  /** Files written inside a many-file write (a rename, its undo), reconciled once when it ends instead of one by one. */
+  private deferred: Set<string> | null = null;
+  private async settleWritten(path: string): Promise<void> { if (this.deferred) this.deferred.add(path); else await this.reconcile([path]); }
+  /** One many-file write: the host holds hot updates until it ends (one page update, never a half-written page), and the
+   * written files are reconciled together at the end. */
+  private async manyFiles<T>(run: () => Promise<T>, end: (result: T | undefined) => object): Promise<T> {
+    const outer = this.transaction;
+    if (!outer) { this.emit('transaction', { phase: 'start' }); this.transaction = true; }
+    this.deferred = new Set();
+    let result: T | undefined;
+    try { result = await run(); return result; }
+    finally {
+      const written = [...this.deferred]; this.deferred = null;
+      if (written.length) await this.serialize(() => this.reconcile(written)).catch(() => {});
+      if (!outer) { this.transaction = false; this.emit('transaction', { phase: 'end', ...end(result) }); }
+    }
   }
   private async reconcile(query?: string[], full = false): Promise<string[]> {
     this.reconciliations++;
@@ -1170,6 +1190,52 @@ export class Session extends EventEmitter {
     });
   }
   /**
+   * Rename colour tokens across the project (docs/design/token-spec.md §3.3, rules/colour-rename.ts): the theme's
+   * `--color-<old>` and every utility class that uses it, in every source file and the theme, as one transaction with
+   * one undo per file. Refused whole when a new name is already a token of the theme (it would merge two colours).
+   */
+  async rename(options: RenameOptions): Promise<RenameResult> {
+    const map = (options ?? {} as RenameOptions).map;
+    const invalid = validRenameMap(map);
+    if (invalid) throw new UsageError(invalid);
+    const spec = await this.request<ProjectSpec>('spec');
+    const theme = spec.tokens.file ? this.file(spec.tokens.file) : undefined;
+    const paths = [...new Set([...this.sourceFiles, ...(theme ? [theme] : [])])].filter(p => /\.(?:[cm]?[jt]sx?|css)$/.test(p)).sort();
+    // a new name that is already a token would merge two colours: refuse before writing anything
+    if (theme) {
+      const text = await readFile(theme, 'utf8').catch(() => '');
+      const clash = Object.values(map).find(to => new RegExp(`--color-${to.replace(/-/g, '\\-')}\\s*:`).test(text) && !(to in map));
+      if (clash) throw new UsageError(`--color-${clash} is already in ${spec.tokens.file}; renaming onto it would merge two colours.`);
+    }
+    const result: RenameResult = { revision: this.revision, files: [], uses: 0, byName: {}, undo: [], labels: [] };
+    const none = { tokens: [], css: [], swaps: [], accepts: [] };
+    await this.manyFiles(async () => {
+      for (const path of paths) {
+        this.progress();
+        const before = await readFile(path, 'utf8').catch(() => null);
+        if (before === null) continue;
+        const { text: after, count } = renameInText(before, map);
+        if (!count.uses) continue;
+        const file = relative(this.root, path).replaceAll('\\', '/');
+        try {
+          const written = await this.serialize(async () => {
+            // the same guards as every write (readForWrite, commit): the file as read, one regular file, the text unchanged
+            const current = await this.readForWrite(path);
+            if (current.text !== before) throw stale();
+            const committed = await this.commit(path, current, after);
+            return this.record(path, before, committed.hash, 1, `${count.uses} colour ${count.uses === 1 ? 'name' : 'names'} renamed`);
+          });
+          result.undo.push(written); result.labels.push(written.label);
+          result.files.push({ file, ok: true, uses: count.uses });
+          result.uses += count.uses;
+          for (const [name, n] of Object.entries(count.byName)) result.byName[name] = (result.byName[name] ?? 0) + n;
+        } catch (error) { result.files.push({ file, ok: false, uses: 0, error: error instanceof UsageError ? error.message : errorMessage(error) }); }
+      }
+    }, () => ({ results: none, undo: result.undo, labels: result.labels }));
+    result.revision = this.revision;
+    return result;
+  }
+  /**
    * The type system this code is reaching for (docs/research/type-roles.md): its roles, members, cost and the write
    * that makes it the system, from the report's places and, when a page was measured, the census that confirms them.
    */
@@ -1192,7 +1258,9 @@ export class Session extends EventEmitter {
     const overrides: Record<string, RoleOverride> = { ...(config?.value.system?.type?.roles ?? {}), ...(roles && typeof roles === 'object' ? roles : {}) };
     const members = new Map<string, TypeMember>();
     const member = (where: { file: string; line: number; column: number }, tag: string, declarations: Report['declarations'], entry?: CensusEntry): TypeMember | undefined => {
-      const type = declarations.filter(d => isTypeProp(d.prop));
+      // a class behind a variant (`first-letter:uppercase`, `md:text-lg`, `hover:font-medium`) is not the element's own type
+      // at rest: it is neither read into the place nor swapped out (crafting-ui's rule titles lost their capital letter)
+      const type = declarations.filter(d => isTypeProp(d.prop) && !(['class', 'arbitrary'].includes(d.origin) && (d.site.text ?? '').replace(/\[[^\]]*\]/g, '').includes(':')));
       const classes = new Map<string, TypeClass>();
       let fixed: string | undefined;
       for (const d of type) {
@@ -1218,7 +1286,7 @@ export class Session extends EventEmitter {
         weight: computed?.weight ?? (parseInt(weight?.resolved ?? '400', 10) || 400),
         transform: (computed?.transform ?? transform?.resolved) === 'uppercase' ? 'uppercase' : 'none',
       };
-      return { site: { file: where.file, line: where.line, column: where.column }, ...(entry ? { stamp: entry.stamp } : {}), tag, classes: [...classes.values()], current, list: !!entry?.list, elements: 1, ...(fixed ? { fixed } : {}) };
+      return { site: { file: where.file, line: where.line, column: where.column }, ...(entry ? { stamp: entry.stamp } : {}), tag, classes: [...classes.values()], current, list: !!entry?.list, ...(typeof entry?.sentence === 'boolean' ? { sentence: entry.sentence } : {}), ...(entry?.number ? { number: true } : {}), ...(entry?.control ? { control: true } : {}), elements: 1, ...(fixed ? { fixed } : {}) };
     };
     if (census?.length) {
       // the measured page: one member per stamp, with the elements that rendered it
@@ -1491,7 +1559,9 @@ export class Session extends EventEmitter {
     const written: SwapsOptions['edits'] = [];
     const nothing = () => new UsageError(`${refused.length === 1 ? 'The change could not be written' : 'None of these changes could be written'}: ${[...new Set(refused.toSorted(order).map(r => r.reason))].join(' ')}`);
     if (!starts.length) throw nothing();
-    const result = await this.writeText(path, hash, `swaps:${unique.length}`, unique.map(e => e.from || '∅').join(', '), unique.map(e => e.to).join(', '), (_file, source) => {
+    // the history label: each distinct value once, cut to fit the text guard (a big file's swaps are one write)
+    const summary = (xs: string[]) => { const all = [...new Set(xs)].join(', '); return all.length <= 500 ? all : `${all.slice(0, 470).replace(/,[^,]*$/, '')} … (${xs.length} in all)`; };
+    const result = await this.writeText(path, hash, `swaps:${unique.length}`, summary(unique.map(e => e.from || '∅')), summary(unique.map(e => e.to)), (_file, source) => {
       if (sourceHash(source) !== hash) throw stale();
       const changes: (ReturnType<typeof swapClasses> & { edit: SwapsOptions['edits'][number] })[] = [];
       for (const s of starts) {
@@ -1772,7 +1842,9 @@ export class Session extends EventEmitter {
     const done: UndoHandle[] = [], hashes: Record<string, string> = {};
     const outer = this.attribution.getStore()?.tag;
     const tag = { group: outer?.group ?? this.log.group(), ...(outer?.meta === undefined ? {} : { meta: outer.meta }) };
-    try { await this.attribution.run({ tag, undoing: targets }, async () => {
+    const none = { tokens: [], css: [], swaps: [], accepts: [] };
+    // live updates held while the files are written, the analysis run once at the end (manyFiles)
+    try { await this.manyFiles(() => this.attribution.run({ tag, undoing: targets }, async () => {
       for (const [file, list] of files) {
         const path = this.file(file), text = await readFile(path, 'utf8');
         const placed = list.map(r => ({ r, at: locate(text, r) })).sort((x, y) => (y.at ?? 0) - (x.at ?? 0));
@@ -1785,7 +1857,7 @@ export class Session extends EventEmitter {
         const result = await this.rewrite(path, sourceHash(text), next, `undo ${list.map(r => r.label).join(', ')}`.slice(0, 120), blocksRemoved);
         done.push(result.undo); hashes[file] = result.hash;
       }
-    }); } catch (error) {
+    }), () => ({ results: none, undo: done, labels: done.map(h => h.label) })); } catch (error) {
       // putting back the files already written is not part of the undo: same step, no `undoing`; what could not go back
       // is named in the error (putBack), never swallowed
       await this.attribution.run({ tag }, () => this.putBack(done, error));
@@ -1884,7 +1956,8 @@ export class Session extends EventEmitter {
    * rename no reader sees half done, the result re-read and verified; then the engine's inventory moves on. */
   private async commit(file: string, read: Pick<SourceText, 'hash' | 'identity'>, next: string): Promise<Written> {
     const written = await writeSource(this.root, this.editable(file), { expectHash: read.hash, expectIdentity: read.identity, next, boundary: sourceBoundary(this.root) });
-    await this.reconcile([written.path]);
+    // inside a write of many files, the analysis waits for the last one (manyFiles)
+    await this.settleWritten(written.path);
     return written;
   }
   /** The files a multi-file write already wrote go back as they were, through undo (their history entries and trace go

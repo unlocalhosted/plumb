@@ -121,6 +121,7 @@ export class Session extends EventEmitter {
   swaps(...args: Parameters<Engine['swaps']>) { return this.call('swaps', args); }
   accept(...args: Parameters<Engine['accept']>) { return this.call('accept', args); }
   applyAll(...args: Parameters<Engine['applyAll']>) { return this.call('applyAll', args); }
+  rename(...args: Parameters<Engine['rename']>) { return this.call('rename', args); }
   page(...args: Parameters<Engine['page']>) { return this.call('page', args); }
   places(...args: Parameters<Engine['places']>) { return this.call('places', args); }
   system(...args: Parameters<Engine['system']>) { return this.call('system', args); }
