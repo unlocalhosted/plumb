@@ -1,6 +1,6 @@
 # Plumber's token spec: colour and type
 
-Status: **signed off by the owner** (2026-11-12). The rework in §6 is built: type roles from the code with weight on its own, colour roles and states in our names, rename only on request. Not built: the brand-near-warning hint (§3.4), surface levels and states read from usage (§3.3).
+Status: **signed off by the owner** (2026-11-12). The rework in §6 is built: type roles from the code with weight on its own, colour roles and states in our names, rename only on request. Not built: surface levels and states read from usage (§3.3).
 
 This is plumber's own spec, improved with the parts of BoardUI's system that are objectively better
 ([typography](https://www.boardui.com/components/typography), [colour](https://www.boardui.com/components/color),
@@ -117,8 +117,9 @@ when it writes a new system or the person asks.
 - Its words (`on-accent`) must reach APCA Lc 60. White when it reads; else the ramp's darkest step; else a near-black of
   the same hue. Only a mid-tone neither reads on moves its lightness, the shorter way, and plumber says how much (ours,
   owner 2026-11-10: keep the brand, change the text).
-- Status hues are fixed, so meaning never follows the brand. Plumber warns when the brand sits within the warning or
-  danger hue band (not built).
+- Status hues are fixed, so meaning never follows the brand. Plumber warns when the brand sits within 25° of hue of the
+  warning or danger colour (greys excepted) and says what to do: move the hue, or give that status an icon and words
+  (built: `brandHint` in overlay/src/colour-system.js, shown on overlay/demo/colour-system.html).
 
 ### 3.5 Dark mode **(from BoardUI)**
 

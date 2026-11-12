@@ -180,21 +180,25 @@
 - **Two were mine, both fixed:** the text-styles test (e2e/props-text) broke because I had edited the shared text-roles fixture it relies on (its config and a code block); the fixture is back as it was and the text-roles test now makes those changes in its own copy. The text-roles test lost a server call to the reload a theme write causes; it now calls the server from the test, not through the page. Both pass.
 - **The other 27 files, run on the code before this work and on today's** (same machine, same runner): 26 fail the same way on both, so they were failing before this work. The text editor's test failed once only on today's code; run three times on each, it failed 2 of 3 on the earlier code and 0 of 3 on today's: an existing flake on that machine. Nothing in the suite fails because of this work.
 
+## A brand too close to "error" (2026-11-12)
+- **The itch:** one brand colour builds the whole system, but a red brand made "Send invite" the same red as a "Removed" badge and the error alert; a main button read as a delete. The signed-off spec (§3.4) asked for a warning; it was the last unbuilt part of it besides reading states from usage.
+- **The system behind it:** status colours are fixed so meaning never follows the brand, but nothing checked that the brand itself stays clear of them.
+- **The fix:** when the brand's hue sits within 25° of the error red or the warning amber (greys excepted), plumber says so in plain words and what to do: move the hue, or keep it and always give that status an icon and words. Built in the colour system (`brandHint`, overlay/src/colour-system.js) and shown on the colour-system demo page.
+- **The proof:** red, rose and orange get the error hint, amber the warning one, blue, green, violet and grey none (checked in the browser on the demo page, switching the brand).
+- **Media hooks:** the demo page with a red brand: the hint above, the red "Send invite" next to the red "Removed" badge; then switch to blue and the hint goes.
+
 ## Open gaps
 - 27 test files already failing before the token work (52 tests on vm-agent), the text editor's test flaky there; not this work's, not fixed.
 - Defensive CSS tips still without a rule: flex rows that should wrap, scrollbars shown when nothing scrolls, text over an image with no colour behind it, hover styles on touch screens, repeated backgrounds, fixed heights on text, sticky items in a grid, and the source-only ones (variable fallbacks, vendor selectors, vertical media queries).
-- Not built from the signed-off spec: a hint when the brand sits in the warning or danger hue band; reading surface levels and states from usage.
+- Not built from the signed-off spec: reading surface levels and states (hover, press) from how the code uses colours.
 - Undo of a 101-file rename still takes 7–13 s; where the rest goes (parsing each file, recording 709 changes) is not measured.
 - The clean-up's pass names are not clickable, and the text step's error screen (no census) has no skip.
 - Code samples shown as text on crafting-ui pages may have been renamed too; not checked.
-- A yellow or amber brand sits next to the warning status hue; plumber does not yet warn when the brand and a status colour are too close.
 - crafting-ui's draw blue is a wide-gamut (P3) colour; the ramp keeps it in sRGB, so its 500 loses a little chroma (0.289 → 0.278).
-- Token spec layers 2–6 not built; four owner decisions open (§6).
-- e2e/type-roles.test.mjs still expects the old Material names; rewrite when the owner calls for tests.
 - The clean-up text panel with the new names was not looked at in the browser.
 - Writing from source without a census gets inherited caps wrong; the no-census proposal should refuse to write, or read ancestors.
 - 20 low-confidence places left: one-off sizes (28–33px, 22px) that move more than 2px onto the ladder.
 - The tailwind-merge trap is untested: crafting-ui does not use it.
 
 ## Shipped · 2026-W46
-- (nothing shipped yet; the token spec is a plan)
+- A brand colour too close to the error red or warning amber now gets a plain warning and what to do about it ([entry](#a-brand-too-close-to-error-2026-11-12)).

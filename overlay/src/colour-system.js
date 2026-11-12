@@ -60,7 +60,23 @@ export function colourSystem({ accent, neutralHue, neutralChroma = 0 } = {}) {
     block(':root', light),
     block('.dark', dark),
   ].join('\n');
-  return { primitives, light, dark, css, accent: ramp };
+  return { primitives, light, dark, css, accent: ramp, hint: brandHint(ramp.stops[500]) };
+}
+
+// how close in hue a brand may sit to a status colour before a main button reads as that status (token-spec §3.4)
+export const HUE_BAND = 25;
+const MIN_CHROMA = 0.08; // greys and near-greys have no hue to confuse
+
+/** A warning when the brand sits in the warning or danger hue band, else null. */
+export function brandHint({ c, h }) {
+  if (c < MIN_CHROMA) return null;
+  for (const status of ['danger', 'warning']) {
+    const d = Math.abs(((h - STATUS[status].h + 540) % 360) - 180);
+    if (d <= HUE_BAND) return { status, apart: Math.round(d), words: status === 'danger'
+      ? 'Your brand is close to the error red, so a main button can look like a delete or an error. Pick a hue further from red, or keep it and always give errors an icon and words.'
+      : 'Your brand is close to the warning amber, so a main button can look like a warning. Pick a hue further from amber, or keep it and always give warnings an icon and words.' };
+  }
+  return null;
 }
 
 // ── renaming a project's colour tokens onto plumber's role names (token-spec §3, §5: only when asked) ──
