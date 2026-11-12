@@ -398,8 +398,17 @@
 - **Not done:** the engine's own test suite was not run, and the running dev servers still use the old build until the server is next built.
 - **Still open:** the larger cause is unchanged: one edit marks 1,225 files as changed.
 
+## Corners become the clean-up's fifth pass (2026-11-12)
+- **The itch:** radius by job was a decision nobody could see or apply.
+- **What we built:** a fifth pass, "Corners", in the clean-up panel, in the same shape as the colour and icon passes: one row per job (tags, controls, cards) with a corner drawn at the size it has now, a preview that eases each corner to the theme's step, and a write of the class where it is.
+- **The fix and the proof (bench/messy, in the running panel):** the panel reads "This page uses 7 corner sizes. After this, 4." with three rows: Tags 4px → 6px (5 places), Controls 6px → 8px (3), Cards 16px → 12px (3). Preview showed the three steps as chips (6, 8, 12). Apply wrote 7 lines in one file (`rounded-md` and `rounded-[10px]` → `rounded-control`, `rounded-2xl`, `rounded-lg` and `rounded-[14px]` → `rounded-card`, `rounded` → `rounded-tag`) and said "11 corners in 1 file now use your corner sizes". The file was put back afterwards.
+- **Found on the way, text:** the messy page puts everything in a `<p>`, so a stat's "142" at 30px was read as reading text ("body lead"). A paragraph tag whose measured words are not a sentence now says nothing, and size stands in as before. crafting-ui's text comparison after this: 12 styles, weight classes beside a style 61 → 35, low confidence 35 → 35.
+- **Found on the way, panel:** the icons pass shows 0 on the messy page although one icon should change: its size is set by a prop, and the pass only writes classes.
+- **Not done:** undo of the corners write was not tried; a theme named by size shows an explanation instead of rows, but that screen was not looked at; no tests. The server code was rebuilt in place (dist) so the page could load the new files.
+
 ## Open gaps
-- **Radius by job is not in the clean-up panel** and writes nothing yet; themes that name radii by size get no role-based answer.
+- **The icons pass cannot write a size set by a prop** (`<Home size={16} />`): the decision is made and then dropped from the panel.
+- Themes that name radii by size (sm, md, lg) get no answer from the corners pass; undo of its write is untried.
 - **Padding and row gaps are outside the spacing pass:** it reads only the space between stacked things. bench/messy has p-[18px], px-3.5, gap-[10px] in rows that it never sees.
 - **One messy page, written by Claude.** bench/messy is LLM-written but not blind to plumber's rules; pages from other models and real generated apps would be a fairer test.
 - crafting-ui's 105 list titles at `text-fg/75` are now left alone; whether a title should be lifted to the full text colour instead is the owner's call (it is further than a fold may reach today).

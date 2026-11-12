@@ -1224,7 +1224,7 @@ export class Session extends EventEmitter {
         weight: computed?.weight ?? (parseInt(weight?.resolved ?? '400', 10) || 400),
         transform: (computed?.transform ?? transform?.resolved) === 'uppercase' ? 'uppercase' : 'none',
       };
-      return { site: { file: where.file, line: where.line, column: where.column }, ...(entry ? { stamp: entry.stamp } : {}), tag, classes: [...classes.values()], current, list: !!entry?.list, ...(entry?.sentence ? { sentence: true } : {}), elements: 1, ...(fixed ? { fixed } : {}) };
+      return { site: { file: where.file, line: where.line, column: where.column }, ...(entry ? { stamp: entry.stamp } : {}), tag, classes: [...classes.values()], current, list: !!entry?.list, ...(typeof entry?.sentence === 'boolean' ? { sentence: entry.sentence } : {}), elements: 1, ...(fixed ? { fixed } : {}) };
     };
     if (census?.length) {
       // the measured page: one member per stamp, with the elements that rendered it

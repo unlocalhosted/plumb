@@ -801,7 +801,7 @@ export const CLEANUP = {
   // the bar's action: the short label, and the word that follows it where there is room
   bar: 'Clean up', barLong: 'page',
   passes: 'Passes',
-  pass: { text: 'Text', spacing: 'Spacing', colour: 'Colour', icons: 'Icons' },
+  pass: { text: 'Text', spacing: 'Spacing', colour: 'Colour', icons: 'Icons', radius: 'Corners' },
   reading: 'Reading the text on this page…',
   head: (before, n) => `Your site uses ${before} text sizes. These ${n} styles cover them.`,
   why: 'Worked out from every page Plumber has read, so every page ends up with the same styles.',
@@ -927,8 +927,32 @@ export const CLEANUP = {
     undone: 'Icon changes undone.',
     doneHead: 'Icons are cleaned up on this page.',
     doneSkipped: 'You skipped icons on this page.',
-    next: '',
+    next: 'Next: the corners.',
     notYet: 'That’s every pass for this page.',
     couldNot: 'Couldn’t read this page’s icons.',
+  },
+  // corners by job (overlay/src/radius.js): a thing takes the corner your theme names for what it is
+  radius: {
+    reading: 'Reading the corners on this page…',
+    head: (before, after, n) => (after < before ? `This page uses ${before} corner sizes. After this, ${after}.`
+      : `${n} ${n === 1 ? 'corner is' : 'corners are'} rounded for another job.`),
+    // a theme named by size (sm, md, lg) says nothing about jobs: said, so an empty pass is not a mystery
+    sub: (p) => (p?.sized && !p.places ? 'Your corner sizes are named by size (sm, md, lg), not by job, so Plumber can’t tell which one a card or a button should take.'
+      : 'Each thing is read by what it is (a tag, a control, a card) and takes your corner for that job.'),
+    law: 'Why: things that do the same job should look the same (law of similarity).',
+    list: 'Corners that change',
+    row: (n) => `${n} ${n === 1 ? 'place' : 'places'}`,
+    sizesPage: 'corner sizes on this page',
+    changes: (n) => (n === 1 ? 'corner changes' : 'corners change'),
+    nothing: 'The corners on this page already follow your theme.',
+    nothingWhy: 'Nothing here needs to move.',
+    saved: (places, files) => `${places} ${places === 1 ? 'corner' : 'corners'} in ${files} ${files === 1 ? 'file' : 'files'} now use${places === 1 ? 's' : ''} your corner sizes`,
+    refused: (n) => `${n} left as ${n === 1 ? 'it is' : 'they are'}: Plumber couldn’t find where ${n === 1 ? 'its class is' : 'their classes are'} written.`,
+    undone: 'Corner changes undone.',
+    doneHead: 'Corners are cleaned up on this page.',
+    doneSkipped: 'You skipped corners on this page.',
+    next: '',
+    notYet: 'That’s every pass for this page.',
+    couldNot: 'Couldn’t read this page’s corners.',
   },
 };

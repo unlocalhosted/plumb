@@ -22,7 +22,7 @@ export interface TypeMember {
   current: TypeBundle;
   /** the element sits in a list (li/ul/ol/dl) or a list-like repeat */
   list: boolean;
-  /** its own words are a sentence (more than one word, ending in . ! or ?), when a page has been measured */
+  /** its own words are a sentence (more than one word, ending in . ! or ?); undefined when no page has been measured */
   sentence?: boolean;
   /** elements rendered from this place on the measured page */
   elements: number;
@@ -77,7 +77,9 @@ export const HERO_MIN_PX = 60;
 const OTHER_JOB = new Set(['button', 'label', 'summary', 'th', 'dt', 'figcaption', 'legend', 'caption', 'kbd', 'code', 'pre', 'samp']);
 export function jobOf(m: Pick<TypeMember, 'tag' | 'sentence'>): Job | null {
   if (/^h[1-6]$/.test(m.tag)) return 'heading';
-  if (['p', 'dd', 'blockquote'].includes(m.tag)) return 'reading';
+  // a paragraph is reading text, unless a measured page shows its words are not a sentence: generated code puts any
+  // text in a <p> (a stat's "142", a row's project name), and then the tag says nothing
+  if (['p', 'dd', 'blockquote'].includes(m.tag)) return m.sentence === false ? null : 'reading';
   if (OTHER_JOB.has(m.tag)) return null;
   return m.sentence ? 'reading' : null;
 }
