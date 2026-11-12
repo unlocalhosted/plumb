@@ -1826,6 +1826,13 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   marked the way Plumber marks an app (padding hatched mint, the gap striped lilac, the corner's arc in blue), the
   numbers measured from the real piece, not typed. Pointed at, the chip plays: its icon takes the hue and its value
   rolls. Checked in light and dark.
+- **In use, colours, and what is open.** A card from someone's app, pointed at, carries the tag naming it, a sky pill
+  measuring it (measured, not typed: 272px), a coral pill on its off-scale 13px gap, and three chips; pointing at a
+  chip lights its places on the card in the chip's hue, the way the clean-up show does (the marks use the show's own
+  classes). Then the six hues a pill can take, from the hue table. Then the count, made with a script that reads each
+  rule across lines: the shared pill is used 8 times and the shared tag 4, while 8 other pill or tag shapes are
+  written out in 7 files; six heights (14 to 24px) where one per kind is the system; corners of 4, 5 and 7px written
+  as numbers. Checked in light and dark.
 
 ## Open gaps
 - The overlay writes about 180 corners as numbers (radius tokens about 45 times), many off its own scale; 6px is

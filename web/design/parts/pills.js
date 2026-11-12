@@ -72,6 +72,8 @@ export function mount(host, root, css) {
     .side-chips { display: grid; gap: 14px; padding: 24px; }
     .side-chips .sh-chip { cursor: default; }
     .legend { margin: 0; font: 400 13px/26px var(--pl-sans); color: var(--pl-text-secondary); }
+    .open { margin-top: 14px; padding: 14px 18px 14px 34px; border-radius: 16px; background: var(--pl-bg-surface); box-shadow: 0 0 0 1px var(--pl-border-default); font: 400 13px/21px var(--pl-sans); color: var(--pl-text-secondary); }
+    .open li + li { margin-top: 6px; } .open b { color: var(--pl-text-primary); font-weight: 600; }
     .hues { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
     .hue { display: flex; align-items: center; gap: 12px; padding: 14px 18px; border-top: 1px solid var(--pl-border-default); border-left: 1px solid var(--pl-border-default); font: 400 13px/18px var(--pl-sans); color: var(--pl-text-secondary); }
     .hue:nth-child(-n+3) { border-top: 0; } .hue:nth-child(3n+1) { border-left: 0; }
@@ -105,7 +107,14 @@ export function mount(host, root, css) {
 
   <h2>Colours</h2>
   <p>A pill takes the hue of what it is about, from the hue table. Coral only ever means "this is wrong".</p>
-  <div class="panel hues">${HUE_ROWS.map(([hue, v, means]) => `<div class="hue"><span class="pl-pill" data-hue="${hue}">${v}</span><span><b>${hue[0].toUpperCase() + hue.slice(1)}</b> ${means}</span></div>`).join('')}</div>`;
+  <div class="panel hues">${HUE_ROWS.map(([hue, v, means]) => `<div class="hue"><span class="pl-pill" data-hue="${hue}">${v}</span><span><b>${hue[0].toUpperCase() + hue.slice(1)}</b> ${means}</span></div>`).join('')}</div>
+
+  <h2>What is still open</h2>
+  <ul class="open">
+    <li><b>Most pills in the overlay are home-made.</b> Counted on 2026-11-13: the shared pill is used 8 times and the shared tag 4 times, but 8 other pill or tag shapes are written out in 7 files (the Blueprint hint, the history strip's pill, the readiness chip, the text tag, the widget's tag, and the chips in the editor controls and the text card) instead of using them.</li>
+    <li><b>Six heights where three would do.</b> Small rounded things come at 14, 16, 18, 20, 22 and 24px: one per kind is the system (pill 20, tag 22, chip 24); the 14, 16 and 18 are copies made smaller by hand.</li>
+    <li><b>Corners off the tokens.</b> Four of the copies write their corner as a number (4, 5, 5 and 7px) rather than the pill or tag token, and one restyles the shared tag to 5px.</li>
+  </ul>`;
 
   // the guides: padding on both sides (hatched), the gap between picture and words (striped), the height, one corner
   const px = (v) => parseFloat(v) || 0;
