@@ -555,6 +555,14 @@
 - **On real apps: nothing changed.** crafting-ui's seven pages hold 619 height classes and none is this mistake; plumber said nothing, which is right. algorecall's home has none either, at desktop or phone width. So there is no before and after from a real app for this check.
 - **What got in the way:** plumber's full read does not finish on algorecall while the browser pane is hidden (it timed out at 45 s), so only its home page was checked, by running the one check directly.
 
+## The fourth check from the tips: a scrollbar with nothing to scroll (2026-11-12)
+- **The itch:** next on the sorted list; the owner: "Yes, next check".
+- **The principle and its ground:** a scrollbar says "there is more". MDN's overflow page: `scroll` draws scrollbars "whether overflowing or not"; `auto` only "when overflowing". On Windows, or a Mac set to always show them, an empty track sits beside short content.
+- **How plumber reads it:** `overflow: scroll` on either axis of anything but the page itself; it says "nothing to scroll" when that is so today, and offers the same class ending in `auto`.
+- **The proof, on a page we wrote:** both boxes with an empty scrollbar were found on their lines (one axis, and both axes); the two correct ones were left alone; after plumber wrote `overflow-y-auto`, that box was found no more.
+- **On real apps: nothing changed.** No app here writes `overflow-scroll`, so there is nothing for it to find. The browser pane hides scrollbars (macOS), so the empty track itself was not seen.
+- **Noticed:** on a box that always scrolls and already overflows, the existing "nothing shows it scrolls" finding outranks this one on the same element, so only one is said.
+
 ## Open gaps
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
 

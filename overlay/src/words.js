@@ -54,6 +54,11 @@ export const CRAFT = {
     line: over ? `The text here runs ${px(over)} past this box’s set height.` : 'This box has a set height and holds text that wraps. A longer sentence or a narrower screen will run past it.',
     reason: 'A box that holds text sets its least height, not its exact height: text grows downward.',
   }),
+  'scroll-on-demand': ({ empty }) => ({
+    label: empty ? 'Scrollbar with nothing to scroll' : 'Scrollbar always shown',
+    line: empty ? 'This shows a scrollbar, but there is nothing to scroll.' : 'This always shows a scrollbar, even when what it holds is short.',
+    reason: 'A scrollbar says there is more. Set to scroll, it is drawn whether or not there is.',
+  }),
   'sticky-room': ({ spare }) => ({
     label: 'Set to stick, but can’t',
     line: `This is set to stay in view as the page scrolls, but it is stretched ${px(spare)} past its own content, to the full height of its row, so it has nowhere to move.`,

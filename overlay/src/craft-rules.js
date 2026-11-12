@@ -34,6 +34,7 @@
  *  media-size          #34     one avatar and icon size per list
  *  flex-min            —       a flex item that holds text may shrink, so a long name is cut off, not pushed out
  *  image-ground        —       words over a picture have a colour behind them for when it doesn't arrive
+ *  scroll-on-demand    —       a scrollbar shows only when there is more to scroll
  *  fixed-height        —       a box that holds text sets its least height, not its exact height
  *  sticky-room         —       a sticky side column is not stretched to its row, so it has room to stick
  *  image-fit           —       a picture in a box of another shape is cropped, never stretched
@@ -1267,6 +1268,31 @@ export const fixedHeight = {
   },
 };
 
+// Defensive, not a craft rule (no number, no showcase screen; docs/research/defensive-tips.md). A scrollbar says
+// "there is more". `overflow: scroll` draws one whether or not anything overflows (MDN overflow); on Windows, and on a
+// Mac set to always show scrollbars, the reader sees an empty track beside short content. `auto` draws it only when
+// there is more. The page itself is left alone: `overflow-y: scroll` on it is an old way to stop the layout moving when
+// a scrollbar arrives. (defensivecss.dev "Scrollbars on demand".)
+export const scrollOnDemand = {
+  id: 'craft/scroll-on-demand', family: 'craft', number: [], owns: ['scroll'], once: 'ancestor', reads: ['style', 'rect'],
+  check({ el, facts }) {
+    if (el === document.body || el === document.documentElement) return [];
+    const s = facts.style(el);
+    const axes = [['y', s.overflowY, el.scrollHeight - el.clientHeight], ['x', s.overflowX, el.scrollWidth - el.clientWidth]].filter(([, v]) => v === 'scroll');
+    if (!axes.length || s.display === 'none' || el.clientWidth <= 0 || el.clientHeight <= 0) return [];
+    // the class that says it: overflow-y-scroll, overflow-x-scroll or overflow-scroll
+    const cls = ['overflow-y', 'overflow-x', 'overflow'].map((p) => utility(el, p)).find((c) => c && /(?:^|-)scroll$/.test(c));
+    const empty = axes.some(([, , more]) => more <= 1); // an axis with nothing to scroll today shows an empty track now
+    const to = cls ? cls.replace(/scroll$/, 'auto') : 'overflow-auto';
+    return [{
+      ...say(this.id, { empty }),
+      key: this.id, text: cls ?? 'overflow', props: axes.map(([a]) => `overflow-${a}`), value: 'scroll', n: axes.length,
+      evidence: { axes: axes.map(([a, , more]) => [a, Math.max(0, more)]) }, confidence: empty ? 0.9 : 0.82,
+      suggest: { kind: 'class', from: cls ?? '', to, why: 'shows the scrollbar only when there is more to scroll', sets: Object.fromEntries(axes.map(([a]) => [a === 'y' ? 'overflowY' : 'overflowX', 'auto'])) },
+    }];
+  },
+};
+
 const truncated = (el, s) => s.textOverflow === 'ellipsis' && s.overflowX !== 'visible' && el.scrollWidth > el.clientWidth + 1;
 const pathLike = (t) => /^\S+$/.test(t) && ((t.match(/[/\\]/g) ?? []).length >= 2 || /^[0-9a-f]{16,}$/i.test(t) || /^[\w-]+(?:\.[\w-]+){2,}$/.test(t));
 
@@ -2305,7 +2331,7 @@ export const interruptible = {
 };
 
 export const RULES = [concentricRadius, innerOuterSpacing, textOpacity, halfPixel, hairline, imageOutline, layeredShadow, scaleFromZero, zIndexWar, contentAlign,
-  buttonPadding, iconSide, measure, leading, tracking, tabularNums, headingWidow, oneLight, borderOnShadow, contrast, disabledContrast, hitTarget, mediaSize, imageFit, flexMin, imageGround, stickyRoom, fixedHeight,
+  buttonPadding, iconSide, measure, leading, tracking, tabularNums, headingWidow, oneLight, borderOnShadow, contrast, disabledContrast, hitTarget, mediaSize, imageFit, flexMin, imageGround, stickyRoom, fixedHeight, scrollOnDemand,
   truncateIntent, scrollbarGutter, boldHover, hangingQuote, capsCase, gradientSpace, inputZoom, anchorOffset, middleTruncate,
   textWrapRole, continuousCorners, opticalSizing, tintedShadow, easedScrim, pureBlackWhite, contentSize,
   baselineAlign, iconCap, trimLeading, headingLead, pairSpacing, cardOpticalPadding,

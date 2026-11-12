@@ -90,13 +90,17 @@ Eleven tips hold and become nine checks; four do not hold; one waits on a decisi
 - A column written to go down to nothing (`minmax(0, …)`, which is what Tailwind's `grid-cols-2` means) already lets
   its cell shrink, so plumber says nothing there until the cell really runs past its column.
 
-### A scrollbar that shows when nothing scrolls
+### A scrollbar that shows when nothing scrolls (built 2026-11-12)
 - **What the expert sees:** an empty scrollbar track beside short content (on Windows, or macOS set to always show).
 - **Principle:** a scrollbar says "there is more". Shown when there is not, it misleads.
 - **Ground:** the tip.
 - **Signals:** `overflow: scroll` on an axis.
 - **Suggestion:** `overflow-y-scroll` becomes `overflow-y-auto`. Where the scrollbar's arrival would move the layout,
   plumber's existing scrollbar-gutter check already asks for the room.
+- **Ground re-read when built:** MDN's overflow page: with `scroll` the box is "always a scroll container displaying
+  scroll bars", "whether overflowing or not"; with `auto`, only "when overflowing".
+- **Left alone:** the page itself (`html`, `body`), where `overflow-y: scroll` is an old way to stop the layout moving
+  when a scrollbar arrives.
 
 ### A background photo that tiles
 - **What the expert sees:** a hero photo repeated at the edge of a wide monitor.
