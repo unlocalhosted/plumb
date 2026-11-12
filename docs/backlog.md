@@ -81,13 +81,11 @@ reserved.)
 ### Behaviour with no test since 2026-11-12
 
 Tests that only checked plumber's internal functions were removed. These behaviours now have no test of their own, and
-should get one through the page (the clean-up's Preview and Apply) or the CLI when tests are next written:
+should get one through the page (the clean-up's Preview and Apply) or the CLI when tests are next written. The colour
+and icon passes' cases, and the palette after a write, were tested again through the page the same day:
 
-- The colour pass's individual cases (a near-copy white folding onto the surface token, refusals with their reasons).
-- The icon pass's individual cases (the icon family, emoji with no mark, an icon off its row's cap height).
 - A theme whose corners and shadows are named by size gets no moves and is told why.
 - One brand colour building the whole colour system, light and dark.
-- A changed file's census reading being left out until it is read again.
 - Reads staying cheap: no full re-listing of the project on each read (only speed under load is still tested).
 
 ### Clean-up: text
@@ -131,6 +129,9 @@ should get one through the page (the clean-up's Preview and Apply) or the CLI wh
 - A stroke passed as a prop goes through the same path as a size, untried. A size passed through more layers of
   components is untried.
 - The step's count adds sizes and strokes together, so fixing one icon's size can read "10 → 10".
+- An icon component that joins its classes with `+` (`'block ' + className`) is refused as "built in code", even
+  when the usage passes a plain string; the same component written with a template literal is followed to the usage
+  and written. Found 2026-11-12 writing the icon tests.
 
 ### Clean-up: corners
 

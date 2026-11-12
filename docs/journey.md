@@ -781,10 +781,19 @@
 - **The system behind it:** that count was worked out only for a fix that carries its own source line. A craft finding (here a row held apart by `justify-between` alone) carries none, so its count was always zero; once a craft finding came first in the row, the sentence was gone.
 - **The fix and the proof:** a finding with no line of its own counts by the element's own line when the class it names is written on the element. element-only passes; the fix panel's and Blueprint's tests pass.
 
+## The colour and icon passes tested the way a person meets them (2026-11-12)
+- **The itch:** removing the tests that called the passes' inner functions left their individual cases untested; the owner said "yes, write them".
+- **How:** each case is a page in a small app. The test opens Blueprint, runs the clean-up to the colour or icon pass, reads what the panel says, presses Apply, and checks the file and the page after the write. A page that tests "left alone" carries one ordinary drift too, so Apply always writes something real.
+- **Colour, 7 tests:** the page ground becomes bg (not the sunken surface it matches exactly), grey words become muted, a purple button and a gradient card are kept; a second blue with nothing of yours near it is kept; inline-styled swatches and the words in a drawing are left alone; a page on its tokens says so and writes nothing; the site palette over HTTP, before a write and after one (it never reports the colour a page had before).
+- **Icons, 8 tests:** an inline svg at stroke 2 takes the family's 1.5 as a class; a row riding the top of its line is aligned; an icon-only control under 24px gets padding to 24px; emoji are never swapped or removed; a logo and an illustration are left alone; with Lucide as the family, another library's icons and emoji stay and no import is written; a page on its system writes nothing; the site's icons over HTTP.
+- **Found on the way:** an icon component that joins its classes with `+` is refused as "built in code", while the same component with a template literal is written (in the backlog). The first run's other failures were the tests' own: measuring before the page redrew, and reading the site before or after a write without meaning to.
+- **Proof:** 14 of 14 pass on vm-agent (one run of both files, after fixes).
+
 ## Open gaps
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
 
 ## Shipped · 2026-W46
+- The colour and icon clean-up passes are tested case by case through the panel and Apply, 14 tests ([entry](#the-colour-and-icon-passes-tested-the-way-a-person-meets-them-2026-11-12)).
 - The test suite no longer checks plumber's inner functions, only what a person or a caller can see; the behaviour left without a test is listed in the backlog ([entry](#tests-that-tested-the-code-not-the-behaviour-2026-11-12)).
 - Five tests that guarded nothing a person sees are gone from the browser and CLI suite; a known Blueprint gap they pinned is now in the backlog ([entry](#fewer-tests-that-test-nothing-a-person-sees-2026-11-12)).
 - Plumber's text styles write into crafting-ui without shrinking headings or large numbers, keep classes that only apply to part of the text, and keep paragraph leading off headings ([entry](#big-text-no-longer-shrinks-to-fit-small-text-the-dark-page-checked-2026-11-12)).
