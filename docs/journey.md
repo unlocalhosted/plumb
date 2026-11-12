@@ -285,7 +285,19 @@
 - **What we chose and why:** the principles page is rewritten around this picture. The research keeps its quotes, but "picks one answer when several fit" is withdrawn as a fault; what the sources are for is finding which signals make a decision right. The colour finding stands, because its fix is the owner's own model: role first, then value.
 - **The fix and the proof:** docs/PRINCIPLES.md, the top of the craft-rule skill, and the corrected docs/research/suggestion-sources.md. No engine code changed.
 
+## A round on writes: do they land in the right place, and how long do they take (2026-11-12)
+- **The itch:** the owner: "write correctness i meant, write performance".
+- **How we found it:** two runs through plumber's own write to the dev server, read back from the file each time. Speed: one class added to a list row on crafting-ui and undone, 4 times. Correctness: a temporary page with 15 ways a class list is written, one class added to each (one replaced), then the file compared with a copy taken before. The page was deleted after.
+- **Speed, on crafting-ui:** finding the line 10 to 80 ms, reading the element 60 to 90 ms, the write itself about 450 ms (725 ms the first time), and the change is on the page about 350 ms after the write is sent, without a reload. Undo answers in about 300 ms but the page only shows it after about 900 ms. On the small showcase project the same write takes 50 to 66 ms.
+- **Correctness, 15 forms:** 10 were written on exactly their own element and nothing else in the file changed: a plain string, a braced string, a template with and without an expression, a cn() call, two elements on one line (each got its own), a row in a list (written once, all rows changed), a class list across several lines, and a replace in the middle of a list.
+- **Refused, 5 forms, nothing wrong written:** a ternary of two strings, a variable, a joined string, and a class passed through a wrapper component (both when the wrapper takes className and when it spreads props). Each refusal says why in plain words.
+- **The gap that matters:** the wrapper case. On crafting-ui every link is drawn by one small Link component, so a link's classes, written where the link is used, cannot be written at all: plumber finds the component's own line and stops there. Whether the overlay's own fix flow gets further than this direct call was not checked.
+- **Also seen:** 1 of 11 writes on the showcase page reloaded the whole page (after several writes in quick succession). Both crafting-ui files are as they were (git shows no change).
+
 ## Open gaps
+- A class passed through a wrapper component (a Link, a Button) can't be written: plumber stops at the component's own line. On crafting-ui that is every link.
+- Undo shows on the page about 0.6 s later than a write does; a write on crafting-ui takes about 450 ms against about 60 ms on a small project. Neither cause is measured.
+- Several writes in quick succession sometimes reload the showcase page.
 - **Single decisions read uneven signals** (read 2026-11-12, code only): colour decides from the role of the place (control, link, field, status, text or surface or line) and then the nearest token, with a contrast guard; text decides a place's role from its size and capitals alone, though its tag and whether it sits in a list are collected; spacing knows the app's scale and whether siblings are alike, not what the space is between; radius has no pass. No shared reading of "what is this thing" feeds them all.
 - plumber offers a class fix on an element whose classes are built in code, then refuses to write it. It should say so before offering.
 - A read taken in a window with no size gives wrong findings without saying so. algorecall's home was read in a tab whose size was not checked, so that page's clean result is unconfirmed.
