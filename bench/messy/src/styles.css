@@ -41,5 +41,9 @@
 
   --shadow-rest: 0 1px 2px rgb(0 0 0 / 0.06), 0 0 0 1px rgb(0 0 0 / 0.04);
 }
+/* the two speeds the team named */
+@utility duration-fast { transition-duration: 150ms; }
+@utility duration-base { transition-duration: 250ms; }
+
 
 body { background: var(--color-ground); color: var(--color-fg); font-family: ui-sans-serif, system-ui, sans-serif; }

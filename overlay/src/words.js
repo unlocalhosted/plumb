@@ -833,7 +833,7 @@ export const CLEANUP = {
   // the bar's action: the short label, and the word that follows it where there is room
   bar: 'Clean up', barLong: 'page',
   passes: 'Passes',
-  pass: { text: 'Text', spacing: 'Spacing', colour: 'Colour', icons: 'Icons', radius: 'Corners', sizes: 'Controls', shadows: 'Shadows' },
+  pass: { text: 'Text', spacing: 'Spacing', colour: 'Colour', icons: 'Icons', radius: 'Corners', sizes: 'Controls', shadows: 'Shadows', speeds: 'Timing' },
   reading: 'Reading the text on this page…',
   head: (before, n) => `Your site uses ${before} text sizes. These ${n} styles cover them.`,
   why: 'Worked out from every page Plumber has read, so every page ends up with the same styles.',
@@ -1028,8 +1028,31 @@ export const CLEANUP = {
     undone: 'Shadow changes undone.',
     doneHead: 'Shadows are cleaned up on this page.',
     doneSkipped: 'You skipped shadows on this page.',
-    next: '',
+    next: 'Next: the timings.',
     notYet: 'That’s every pass for this page.',
     couldNot: 'Couldn’t read this page’s shadows.',
+  },
+  // timings by the theme's speeds (overlay/src/speeds.js): a duration written by hand that is already one of them
+  speeds: {
+    reading: 'Reading the timings on this page…',
+    head: (before, after, n) => `${n} ${n === 1 ? 'timing is' : 'timings are'} written by hand where your theme names the speed.`,
+    sub: (p) => 'Two timings less than a fifth apart look the same to anyone watching. Each one written by hand takes the speed your theme names for it; one further from every speed is its own and stays.'
+      // the theme disagreeing with itself: a speed's class and a variable of the same name at two values (only its owner can settle it)
+      + (p?.twins?.length ? ` Your theme names ${p.twins.map((t) => `“${t.name}” twice: ${t.ms}ms as a class and ${t.variable.ms}ms as ${t.variable.name}`).join('; and ')}. This uses the class.` : ''),
+    law: 'Why: things that move the same way should move at the same speed (law of similarity).',
+    list: 'Timings that change',
+    row: (n) => `${n} ${n === 1 ? 'place' : 'places'}`,
+    sizesPage: 'timings off your theme on this page',
+    changes: (n) => (n === 1 ? 'timing changes' : 'timings change'),
+    nothing: 'The timings on this page already use your theme’s speeds.',
+    nothingWhy: 'Nothing here needs to move.',
+    saved: (places, files) => `${places} ${places === 1 ? 'timing' : 'timings'} in ${files} ${files === 1 ? 'file' : 'files'} now use${places === 1 ? 's' : ''} your theme’s speeds`,
+    refused: (n) => `${n} left as ${n === 1 ? 'it is' : 'they are'}: Plumber couldn’t find where ${n === 1 ? 'its class is' : 'their classes are'} written.`,
+    undone: 'Timing changes undone.',
+    doneHead: 'Timings are cleaned up on this page.',
+    doneSkipped: 'You skipped timings on this page.',
+    next: '',
+    notYet: 'That’s every pass for this page.',
+    couldNot: 'Couldn’t read this page’s timings.',
   },
 };

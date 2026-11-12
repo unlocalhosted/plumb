@@ -726,6 +726,16 @@
 - **Kept narrow on purpose:** what the gesture probes press (real buttons only, for safety) and the press-feedback rule (a button answers the press; a tab bar is not asked to).
 - **Then:** a tab, a menu item, an option, and a link in a tab bar are now their own kind, "item" (WAI-ARIA's tab and menu patterns: one of a set you choose between). They keep a control's height, padding, edge and label style; the press-feedback rule asks for buttons only, so a tab bar is never told to squash on press.
 
+## Timings: the eighth clean-up pass (2026-11-12)
+- **The itch:** LLM-written UI picks a duration per element. crafting-ui names five speeds (instant 80ms, fast 140, base 220, slow 360, slower 560), and still writes `duration-150`, `duration-200`, `duration-[420ms]`, `duration-[640ms]` by hand in about forty places. Nothing in plumber decided a duration.
+- **The ground:** a design system names its durations as tokens (Material 3's short, medium and long steps), and people cannot tell two durations apart when they differ by less than about a fifth (Weber fraction for time intervals, 5–20%: Grondin 2001; Getty 1975). So a hand-written duration within a fifth of a named speed is that speed, and folding it changes nothing anyone sees. Further away, it is a speed of its own and stays. Spec: docs/briefs/pass-motion.md.
+- **What we chose:** the theme's speeds are its named duration utilities; the nearest within a fifth wins; a tie goes to the faster for a control (from the role file), the slower for something over the page. No named speeds, nothing proposed.
+- **Found on the way:** crafting-ui's theme names "fast" twice, 140ms as a class and 250ms as `--dur-fast`, and "slow" as 360 and 400. The pass says so in the panel; only the theme's owner can settle it.
+- **Dead end:** a theme speed used nowhere is not on the page (Tailwind only emits utilities that are used), so a theme whose speeds are all unused shows none. On crafting-ui they are used; reading unused ones from the stylesheet source is in the backlog.
+- **Mistake on the way:** the new reader was first written over the overlay's own `motion.js` (its springs and stagger). It was restored from git before anything used it; the reader is `speeds.js`.
+- **Before and after on crafting-ui:** interfaces page: 30 timings (150ms → fast ×15, 200ms → base, 420ms → slow ×5, 640ms → slower ×9); standards page: 9 (150ms → fast ×8, 420ms → slow). Home and motion pages: none written by hand. Not applied to crafting-ui's source.
+- **Proof:** the messy-page test now ends with timings: 160ms becomes `duration-fast`, 300ms `duration-base`, and 700ms is left, written to the file.
+
 ## Open gaps
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
 
@@ -733,6 +743,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - Plumber's text styles write into crafting-ui without shrinking headings or large numbers, keep classes that only apply to part of the text, and keep paragraph leading off headings ([entry](#big-text-no-longer-shrinks-to-fit-small-text-the-dark-page-checked-2026-11-12)).
 - crafting-ui's vocabulary page loads about four times lighter (9,474 → 2,007 elements): each live example mounts only as it comes near the screen. [entry](#crafting-uis-vocabulary-page-live-examples-mount-only-near-the-screen-2026-11-12)
 - plumber finds a side column that is set to stick but can't, and fixes it with one class: on crafting-ui's skill pages the column now stays beside the text where it used to scroll away. [entry](#the-sticky-check-on-a-real-app-crafting-uis-skill-pages-2026-11-12)
+- The clean-up has an eighth pass, timings: a duration written by hand that is already one of the theme's speeds takes its name, and a theme that names one speed twice is told ([entry](#timings-the-eighth-clean-up-pass-2026-11-12)).
 - Every plumber pass now agrees on what an element is: a link drawn as a button gets a button's label style, height and padding; a linked card stays a card ([entry](#every-reader-asks-the-one-role-file-2026-11-12)).
 - `plumber craft` reads each page at four window widths and with the pointer over things, so an overlap that only shows on a tablet or on hover is found without anyone setting the page up ([entry](#plumber-reads-the-page-at-four-widths-and-under-the-pointer-2026-11-12)).
 - plumber says when words run into other words: two labels whose letters meet, or a readout that ends where the next text begins ([entry](#words-that-run-into-other-words-2026-11-12)).

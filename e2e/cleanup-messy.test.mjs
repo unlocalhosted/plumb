@@ -9,6 +9,8 @@
 //   controls a border added to one button of a pair made it 42px, and nothing read a control's height
 //   craft    a theme step nearer the standard's number beat the step the theme names for the job
 //   shadows  cards cast a framework shadow while the theme names one for a resting card; nothing read it by job
+//   timings  hand-written durations (160ms, 300ms) sit within a fifth of the theme's named speeds (fast, base); a 700ms
+//            one is a speed of its own
 //   corners  no pass: a card at the control's 8px is on a token by value and on the wrong one by job
 // Real Vite, React, Tailwind, the real CLI and Chromium; the panel is driven by its keys; every write is read back from
 // the source file.
@@ -76,7 +78,7 @@ async function stage(t) {
   return { root, page, errors, panel, until, source, written, pass };
 }
 
-test('a messy page is put back on its own design system: spacing on the theme\'s steps, a title kept apart from its description, the nav\'s odd icon by its prop, corners by job', { timeout: 600000 }, async (t) => {
+test('a messy page is put back on its own design system: timings on its named speeds, spacing on the theme\'s steps, a title kept apart from its description, the nav\'s odd icon by its prop, corners by job', { timeout: 600000 }, async (t) => {
   const s = await stage(t);
 
   // colour, read before anything is written: the row's title is left, with the reason, and its description stays muted
@@ -171,5 +173,16 @@ test('a messy page is put back on its own design system: spacing on the theme\'s
   assert.match(undone, /\bh-10\b/, 'the controls step stays written');
   assert.match(undone, /rounded-card bg-gradient-to-r/, 'the corners step stays written');
   assert.match(undone, /<Chart size=\{18\}/, 'the icon step stays written');
+
+  // timings: the theme names two speeds (fast 150ms, base 250ms). The nav's 160ms and the bell's 300ms are those speeds
+  // written by hand (within a fifth: no one can tell them apart); the menu button's 700ms is a speed of its own and stays
+  const timings = await s.pass(/written by hand where your theme names the speed/);
+  assert.match(timings, /160ms → fast/, timings);
+  assert.match(timings, /300ms → base/, timings);
+  assert.doesNotMatch(timings, /700ms/, timings);
+  await s.page.keyboard.press('Enter');
+  const timed = await s.written(/text-gray-500 transition-colors duration-base"/);
+  assert.match(timed, /text-sm transition-colors duration-fast \$\{active/, 'the nav link takes the fast speed');
+  assert.match(timed, /hover:text-gray-600 transition-colors duration-700"/, 'a speed of its own is left');
   assert.deepEqual(s.errors, []);
 });

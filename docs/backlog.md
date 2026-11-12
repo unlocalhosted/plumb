@@ -38,6 +38,7 @@ engineer would do." These calls were open questions until then. Each is decided 
 | What gets the pointer | Things with a React pointer handler or a Tailwind `group`, six per width | They say they answer the pointer; a hover presses nothing |
 | A row of links with one painted | All of them are controls (a tab bar) | WAI-ARIA tabs: one is active, the rest are the same kind |
 | A painted link holding lines of words | A card you can open, not a button | A button is one label on one line |
+| When two durations are the same speed | Within a fifth of each other | People cannot tell them apart closer than that (Weber fraction for time, 5–20%) |
 | The most impactful next piece | One shared reading of what each element is, used by every pass and craft rule | Seven places decide "is this a control" today; on four crafting-ui pages they disagree on 137 of 174 elements, 134 of them links |
 | The four "proposed to drop" lines | Dropped | Not observed problems |
 
@@ -125,9 +126,16 @@ reserved.)
 - Themes that name shadows by size (sm, md, lg) get no answer, as with corners.
 - Nothing that floats (a menu, a dialog) was on the page it was proven on; that half is untried.
 
+### Clean-up: timings
+
+- A theme speed used nowhere on the page is not seen (Tailwind emits only used utilities). Next: read the named
+  duration utilities from the stylesheet source on the server.
+- Easing, delays, staggers and keyframe animations are not decided; easing has craft rules only.
+- A theme that names a speed twice (a class and a variable at two values) is said, not settled.
+
 ### Primitives with no clean-up pass
 
-- Motion, opacity and states, layer order, breakpoints and container widths.
+- Opacity and states, layer order, breakpoints and container widths.
 
 ### What an element is (the shared role layer)
 
