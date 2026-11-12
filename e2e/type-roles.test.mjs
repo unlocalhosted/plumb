@@ -72,16 +72,16 @@ test('roles come from the code, one per size; weight and reading leading ride be
   const { proposal } = first.body;
   // the sizes the code uses, one role each, named on our scheme; no scale from outside the code. The 13px code block
   // lands on the theme's own 14px step (--text-sm), within 1px of it
-  assert.deepEqual(proposal.roles.map((r) => [r.name, r.bundle.size, r.sizeFrom]), [['headline-small', 24, 'mode'], ['title-medium', 17, 'mode'], ['body-xlarge', 17, 'mode'], ['body-large', 16, 'mode'], ['body-small', 14, 'theme'], ['label-medium', 12, 'mode'], ['label-small', 11, 'mode']]);
+  assert.deepEqual(proposal.roles.map((r) => [r.name, r.bundle.size, r.sizeFrom]), [['headline-small', 24, 'mode'], ['title-medium', 17, 'mode'], ['body-lead-small', 17, 'mode'], ['body-large', 16, 'mode'], ['body-small', 14, 'theme'], ['label-medium', 12, 'mode'], ['label-small', 11, 'mode']]);
   // a 17px card title (an h3) and a 17px lead (a paragraph of sentences) are two jobs at one size: the heading is a
   // title, the paragraph reading text, each with its own usual weight and no class to undo the other's (2026-11-12:
   // the job picks the kind, the size the step; before, both were title-medium and one wore a weight class)
-  const title = proposal.roles.find((r) => r.name === 'title-medium'), lead = proposal.roles.find((r) => r.name === 'body-xlarge');
+  const title = proposal.roles.find((r) => r.name === 'title-medium'), lead = proposal.roles.find((r) => r.name === 'body-lead-small');
   assert.deepEqual([title.places, title.weightName, title.weights.length], [2, 'semibold', 0]);
   assert.deepEqual([lead.places, lead.weightName, lead.weights.length], [2, 'regular', 0]);
   const edits = Object.fromEntries(proposal.write.swaps.flatMap((w) => w.edits).map((e) => [e.from, e.to]));
   assert.equal(edits['text-[17px] font-semibold'], 'type-title-medium', JSON.stringify(edits));
-  assert.equal(edits['text-[17px]'], 'type-body-xlarge', JSON.stringify(edits));
+  assert.equal(edits['text-[17px]'], 'type-body-lead-small', JSON.stringify(edits));
   // reading text keeps the owner's leading beside its role; list bodies take the role's own; code is never reading text
   assert.deepEqual(proposal.prose, { lineHeight: 1.6, places: 3, from: 'decision' });
   assert.equal(edits['text-[1rem] leading-[1.6]'], 'type-body-large leading-prose');

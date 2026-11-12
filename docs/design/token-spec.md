@@ -53,7 +53,7 @@ names a job. Where a place says what it is, that decides the kind: an `h1`–`h6
 then picks the step inside that kind, on the same size bands as before. A place that says nothing (a `span`), and a
 `<p>` whose measured words are not a sentence, go by size alone. So a 17px card title and a 17px lead paragraph are
 two styles, each with its own usual weight, where they used to be one style and a weight class. Each kind has its own
-ladder: a large paragraph (`body-lead`, `body-xlarge`) and a small heading (`title-small`) may sit at crossing sizes.
+ladder: a large paragraph (`body-lead`, `body-lead-small`) and a small heading (`title-small`) may sit at crossing sizes.
 A heading of 60px or more is the page's hero (`display-hero`); anything else that large is still left out as a
 drawing. `body-large` keeps its meaning (the 16px body).
 

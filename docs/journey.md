@@ -456,6 +456,12 @@
 - **The question:** one line in docs/PRINCIPLES.md was Claude's reading, not the owner's words: the principle behind a suggestion must be real and grounded, while the mechanism that carries it out may be invented, with its numbers tuned on real apps.
 - **The owner's answer:** yes. The line stands as the owner's.
 
+## Decided: text styles are named for their job (2026-11-12)
+- **The question:** the four new text styles had names Claude made up; two say a job ("hero", "lead") where the older ones say a size ("large", "medium").
+- **The owner's answer:** "I think we should follow the most semantically relevant naming convention."
+- **What changed:** the job names stay (`display-hero`, `body-lead`), and the one new name that only said a size, `body-xlarge`, is now `body-lead-small`: lead text, one step down. The panel shows "Hero", "Lead" and "Lead small". Existing styles keep their names, because project configs and code already use them.
+- **The proof:** the text-role test passes with the new name.
+
 ## Open gaps
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
 

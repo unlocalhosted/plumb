@@ -29,7 +29,7 @@ export interface TypeMember {
   /** why the place cannot be swapped (an inline style, a computed className, a formula) */
   fixed?: string;
 }
-export type RoleName = 'display-hero' | 'display-large' | 'headline-small' | 'title-large' | 'title-medium' | 'title-small' | 'body-lead' | 'body-xlarge' | 'body-large' | 'body-small' | 'label-medium' | 'label-small';
+export type RoleName = 'display-hero' | 'display-large' | 'headline-small' | 'title-large' | 'title-medium' | 'title-small' | 'body-lead' | 'body-lead-small' | 'body-large' | 'body-small' | 'label-medium' | 'label-small';
 export interface RoleMember { site: TypeMember['site']; stamp?: string; tag: string; classes: string[]; current: TypeBundle; delta: { size: number | null; lineHeight: number | null; letterSpacing: number; weight: number }; /** the weight this place takes, when not its role's usual one */ weight?: WeightName; /** reading text: its role plus leading-prose */ variant?: 'prose'; confidence: 'ok' | 'low'; elements: number; fixed?: string }
 export interface RoleOverride { size?: number; lineHeight?: number; letterSpacing?: number; weight?: number; compact?: { lineHeight: number } }
 export interface TypeRole { name: RoleName; bundle: TypeBundle; /** the role's usual weight, and the other weights its places use (one class each) */ weightName: WeightName; weights: { name: WeightName; places: number }[]; members: RoleMember[]; places: number; elements: number; files: number; contexts: { tag: string; places: number }[]; /** where the size came from: the owner's decision, the theme's step within 1px of the mode, the members' mode, or the cluster's centre (the ladder) */ sizeFrom: 'decision' | 'theme' | 'mode' | 'centre'; /** the fluid sizes among the members, most places first */ clamps?: { text: string; places: number }[] }
@@ -63,10 +63,10 @@ export function px(value: string | undefined, size = 16): number | null {
   return m[2] === 'rem' ? n * 16 : m[2] === 'em' ? n * size : m[2] === '%' ? n / 100 * size : n;
 }
 
-export const roleOrder: RoleName[] = ['display-hero', 'display-large', 'headline-small', 'title-large', 'title-medium', 'title-small', 'body-lead', 'body-xlarge', 'body-large', 'body-small', 'label-medium', 'label-small'];
+export const roleOrder: RoleName[] = ['display-hero', 'display-large', 'headline-small', 'title-large', 'title-medium', 'title-small', 'body-lead', 'body-lead-small', 'body-large', 'body-small', 'label-medium', 'label-small'];
 /** up a ladder every size must be strictly greater than the one below. One ladder per job (docs/research/text-role-signals.md):
  * a large paragraph and a small heading are different jobs, so their sizes may cross */
-export const ladders: RoleName[][] = [['label-small', 'label-medium'], ['body-small', 'body-large', 'body-xlarge', 'body-lead'], ['title-small', 'title-medium', 'title-large', 'headline-small', 'display-large', 'display-hero']];
+export const ladders: RoleName[][] = [['label-small', 'label-medium'], ['body-small', 'body-large', 'body-lead-small', 'body-lead'], ['title-small', 'title-medium', 'title-large', 'headline-small', 'display-large', 'display-hero']];
 export const ladderOrder: RoleName[] = ladders.flat();
 /** What a place is for, where it says so itself (docs/PRINCIPLES.md: a text style names a job; the size belongs to the job).
  * A heading: HTML's h1–h6, "six levels of section headings". Reading text: a paragraph, a definition, a quotation, or
@@ -105,7 +105,8 @@ export function roleFor(b: TypeBundle, job: Job | null = null): RoleName {
   const size = b.size ?? 0, fluid = !!b.sizeText;
   if (b.transform === 'uppercase' && size <= 13.5) return size < 11.5 ? 'label-small' : 'label-medium';
   // body-large keeps its meaning (the 16px body: configs and the element card name it); larger reading text steps above it
-  if (job === 'reading') return size >= 18.5 ? 'body-lead' : size >= 17 ? 'body-xlarge' : size >= 14.5 ? 'body-large' : 'body-small';
+  // as lead text at two sizes: the names say the job (owner, 2026-11-12: "the most semantically relevant naming")
+  if (job === 'reading') return size >= 18.5 ? 'body-lead' : size >= 17 ? 'body-lead-small' : size >= 14.5 ? 'body-large' : 'body-small';
   if (job === 'heading') {
     if (!fluid && size >= HERO_MIN_PX) return 'display-hero';
     if (fluid || size >= 36) return 'display-large';

@@ -34,11 +34,6 @@ Last gone through: 2026-11-12.
 8. **Controls in one row at different heights, none on the spacing unit:** plumber says the row is uneven and
    proposes nothing. Should it pick one anyway?
 
-### Names
-
-10. **The new text style names:** `display-hero`, `title-small`, `body-lead`, `body-xlarge`, shown in the panel as
-    "Hero", "Lead", "Title smaller". Keep, or rename?
-
 ### Scope and order
 
 11. **Which missing primitive next?** Proposed order: padding and gaps in rows, shadows, borders, motion, opacity
