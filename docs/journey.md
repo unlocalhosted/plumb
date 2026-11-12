@@ -286,6 +286,7 @@
 - **The fix and the proof:** docs/PRINCIPLES.md, the top of the craft-rule skill, and the corrected docs/research/suggestion-sources.md. No engine code changed.
 
 ## Open gaps
+- **Single decisions read uneven signals** (read 2026-11-12, code only): colour decides from the role of the place (control, link, field, status, text or surface or line) and then the nearest token, with a contrast guard; text decides a place's role from its size and capitals alone, though its tag and whether it sits in a list are collected; spacing knows the app's scale and whether siblings are alike, not what the space is between; radius has no pass. No shared reading of "what is this thing" feeds them all.
 - plumber offers a class fix on an element whose classes are built in code, then refuses to write it. It should say so before offering.
 - A read taken in a window with no size gives wrong findings without saying so. algorecall's home was read in a tab whose size was not checked, so that page's clean result is unconfirmed.
 - A fix by one of the defensive checks can raise a finding from another check on the same element (a background colour makes a box count as a card).
