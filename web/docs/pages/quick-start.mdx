@@ -1,0 +1,63 @@
+Plumber finds where a React and Tailwind v4 (or plain CSS) project drifts from its design system, and lets you fix a drift by pointing at it in the browser. These steps take a couple of minutes on an existing repo. Node 22.18 or newer is required.
+
+## 1. Find the drift
+
+```sh
+npm install -D @unlocalhosted/react-plumber
+npx plumber
+```
+
+`npx plumber` reads your project and reports every value that's off your design system. With no config it changes nothing and exits 0, so it's safe to run anywhere.
+
+## 2. Record where you are
+
+```sh
+npx plumber init
+npx plumber check
+```
+
+`init` infers where your tokens live, turns on four habits, and records a **baseline** of today's findings. From then on, `check` is green: only drift that's new fails.
+
+<Callout kind="careful">
+`init` writes `plumber.config.ts` and `.plumber/ledger.jsonl` to your repo. It refuses to overwrite an existing config unless you pass `--force`, which shows the diff first.
+</Callout>
+
+`plumber doctor` checks Node, Tailwind, the CSS entry, config, ledger and cache, with a fix on each line.
+
+## 3. Fix it from the page
+
+```sh
+npx plumber install --overlay           # print the wiring for Vite or Next.js
+npx plumber install --overlay --write   # make the change, and show the diff
+```
+
+For Vite, the overlay is one plugin, listed **before** `react()`:
+
+```ts
+import { plumb } from '@unlocalhosted/react-plumber/vite'
+import react from '@vitejs/plugin-react'
+
+export default { plugins: [plumb(), react()] }
+```
+
+Start your dev server as usual, then:
+
+| Gesture | What happens |
+| --- | --- |
+| Hold **Alt** and hover | The element under the pointer is outlined, with its component and how many values are off the scale. |
+| **Click** while holding Alt | Pins a reading: the exact JSX that made the element, and each off-scale value with the tokens that fit. |
+| **Alt+↑ / Alt+↓** | Steps between the element's JSX and the components above it. |
+| Pick a token | Previews it on the live page. **Before** shows the source version, **Undo** lifts every preview. |
+| **Write** | Writes exactly the previewed edit to the source file. The dev server reloads and the reading updates. |
+
+<Callout kind="why" title="Plumber only writes where it can prove the position.">
+Plumber writes only to a position it has proven. In development, `plumb()` stamps each JSX tag in your tracked sources with its file, line and column, in the served code only; your files are untouched and production builds carry nothing. Plumber confirms the position against the file on disk before it edits. When it can't prove a position, it says why instead of guessing.
+</Callout>
+
+## 4. Keep it true in CI
+
+```sh
+npx plumber install --ci
+```
+
+This adds the GitHub Action. Pull requests are judged against the baseline, so a repo full of old drift can turn the check on today.

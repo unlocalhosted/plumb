@@ -15,7 +15,7 @@
 import { esc } from './choices.js';
 import { errorIs } from './api.js';
 import { BLOCK_ICONS } from './boxmodel.js';
-import { glide } from './inplace.js';
+import { glide, TAKEN } from './inplace.js';
 
 // a property as a person says it: padding-right → right padding
 const said = (prop) => { const [k, side] = prop.split('-'); return side && !/gap/.test(prop) ? `${side} ${k}` : prop.replace('-', ' '); };
@@ -29,33 +29,33 @@ export const CHANGES_CSS = `
   .cg[data-side="start"] { inset-inline-end: auto; inset-inline-start: var(--pl-space-6); }
   .cg .top { display: flex; align-items: baseline; gap: var(--pl-space-3); padding: var(--pl-space-5) var(--pl-space-5) var(--pl-space-3); }
   .cg .top b { font: var(--pl-card-title); }
-  .cg .top span { font: var(--pl-card-meta); color: var(--pl-ink-2); }
+  .cg .top span { font: var(--pl-card-meta); color: var(--pl-text-secondary); }
   .cg .rows { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 0 var(--pl-space-3) var(--pl-space-3); }
   .cg .el { position: relative; padding: var(--pl-space-3) var(--pl-space-4); border-radius: var(--pl-radius-row); cursor: pointer; }
   .cg .el + .el { margin-top: 2px; }
-  @media (hover: hover) and (pointer: fine) { .cg .el:hover { background: var(--pl-paper-2); } }
-  .cg .el[aria-current="true"] { background: var(--pl-paper-2); box-shadow: inset 2px 0 0 var(--pl-sky); }
+  @media (hover: hover) and (pointer: fine) { .cg .el:hover { background: var(--pl-bg-surface-hover); } }
+  .cg .el[aria-current="true"] { background: var(--pl-bg-inset); box-shadow: inset 2px 0 0 var(--pl-sky); }
   .cg .el:focus-visible { outline: 2px solid var(--pl-sky); outline-offset: -2px; }
   .cg .el .name { display: flex; align-items: center; gap: var(--pl-space-3); }
-  .cg .el .x { all: unset; margin-inline-start: auto; width: 20px; height: 20px; display: grid; place-items: center; border-radius: 6px; color: var(--pl-ink-2); cursor: pointer; }
+  .cg .el .x { all: unset; margin-inline-start: auto; width: 20px; height: 20px; display: grid; place-items: center; border-radius: 6px; color: var(--pl-text-secondary); cursor: pointer; }
   @media (hover: hover) and (pointer: fine) { .cg .el .x:hover { background: var(--pl-coral-soft); color: var(--pl-coral-ink); } }
   .cg .el .x:focus-visible { outline: 2px solid var(--pl-sky); }
-  .cg .chg { display: flex; align-items: center; gap: var(--pl-space-3); margin-top: var(--pl-space-2); font: var(--pl-card-meta); color: var(--pl-ink-2); }
+  .cg .chg { display: flex; align-items: center; gap: var(--pl-space-3); margin-top: var(--pl-space-2); font: var(--pl-card-meta); color: var(--pl-text-secondary); }
   .cg .chg i { width: 13px; height: 13px; color: var(--pl-sky); flex: none; }
   .cg .chg i svg { display: block; width: 100%; height: 100%; }
-  .cg .chg .from { font: var(--pl-card-code); color: var(--pl-ink-2); text-decoration: line-through; text-decoration-color: color-mix(in oklab, var(--pl-ink-2) 60%, transparent); }
-  .cg .chg .to { font: var(--pl-card-code); color: var(--pl-ink); }
+  .cg .chg .from { font: var(--pl-card-code); color: var(--pl-text-secondary); text-decoration: line-through; text-decoration-color: color-mix(in oklab, var(--pl-icon-secondary) 60%, transparent); }
+  .cg .chg .to { font: var(--pl-card-code); color: var(--pl-text-primary); }
   .cg .chg .prop { min-width: 92px; }
   .cg .el .why { margin-top: var(--pl-space-2); font: var(--pl-card-meta); color: var(--pl-coral); }
-  .cg .foot { display: flex; align-items: center; gap: var(--pl-space-3); padding: var(--pl-space-4) var(--pl-space-5); border-top: 1px solid var(--pl-rule); }
-  .cg .foot button { all: unset; cursor: pointer; padding: 5px 10px; border-radius: 7px; font: var(--pl-text-label); }
-  .cg .foot .all { color: var(--pl-ink-2); }
-  @media (hover: hover) and (pointer: fine) { .cg .foot .all:hover { background: var(--pl-paper-2); color: var(--pl-ink); } }
+  .cg .foot { display: flex; align-items: center; gap: var(--pl-space-3); padding: var(--pl-space-4) var(--pl-space-5); border-top: 1px solid var(--pl-border-default); }
+  .cg .foot button { all: unset; cursor: pointer; padding: 5px 10px; border-radius: 7px; font: var(--pl-card-label); }
+  .cg .foot .all { color: var(--pl-text-secondary); }
+  @media (hover: hover) and (pointer: fine) { .cg .foot .all:hover { background: var(--pl-bg-surface-hover); color: var(--pl-text-primary); } }
   .cg .foot .ok { margin-inline-start: auto; background: var(--pl-action-soft); color: var(--pl-on-action); }
   .cg .foot button:focus-visible { outline: 2px solid var(--pl-sky); outline-offset: 1px; }
   .cg .foot button:disabled { opacity: 0.5; cursor: default; }
   .cg[aria-busy="true"] .rows { opacity: 0.6; }
-  .cg .keys { font: var(--pl-card-meta); color: var(--pl-ink-3); }
+  .cg .keys { font: var(--pl-card-meta); color: var(--pl-text-secondary); }
   @media (prefers-reduced-motion: reduce) { .cg { animation: none; } }
 `;
 
@@ -63,7 +63,7 @@ const KIND = (prop) => (/^margin/.test(prop) ? 'm' : /^padding/.test(prop) ? 'p'
 const X = '<svg viewBox="0 0 12 12" width="11" height="11"><path d="M3 3l6 6M9 3 3 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>';
 
 export class Changes {
-  #el; #items = new Map(); // element → { name, props: Map<prop, { from, to, original: [value, priority] }>, why }
+  #el; #items = new Map(); // element → { name, props: Map<prop, { from, to }>, why }
   #at = null; #busy = false; #sending = new Map(); // el → { props: Map<prop, to>, swaps: Map<key, change> }: what Apply sent and is writing now
   #unused = null; #onAccept; #onSelect; #onShow; #onDiscard; #onPut; #rows = [];
 
@@ -120,11 +120,12 @@ export class Changes {
     this.render();
   }
   // A property of an element took a new step (from a drag). Back at where it started, the change is dropped.
-  set(el, name, prop, from, to, original) {
+  set(el, name, prop, from, to) {
     const item = this.#item(el, name);
     const had = item.props.get(prop);
-    if (had && had.from.token === to.token) item.props.delete(prop);
-    else item.props.set(prop, { from: had?.from ?? from, to, original: had?.original ?? original });
+    // the page shows the taken step as this list's claim (claims.js); back where it started, the claim goes
+    if (had && had.from.token === to.token) { item.props.delete(prop); TAKEN.unset(el, prop); }
+    else { item.props.set(prop, { from: had?.from ?? from, to }); TAKEN.set(el, prop, `${to.n}px`); }
     if (!item.props.size && !item.swaps.size) this.#items.delete(el);
     else this.#onPut?.(el);
     this.#at = this.#items.has(el) ? el : this.#at;
@@ -153,7 +154,7 @@ export class Changes {
     const item = this.#items.get(el);
     if (!item || this.#sending.has(el)) return false;
     // back as it was, gliding (a change put back moves the page the way taking it did)
-    glide(el, () => { for (const [prop, c] of item.props) { const [v, p] = c.original ?? ['', '']; if (v) el.style.setProperty(prop, v, p); else el.style.removeProperty(prop); } });
+    glide(el, () => { for (const prop of item.props.keys()) TAKEN.unset(el, prop); });
     for (const c of item.swaps.values()) c.undo?.();
     this.#onDiscard?.(el);
     if (!el.getAttribute('style')?.trim()) el.removeAttribute('style');
@@ -181,7 +182,7 @@ export class Changes {
         const sent = this.#sending.get(r.el);
         for (const [prop, c] of [...item.props]) {
           if (sent && sent.props.get(prop) !== c.to) continue;
-          const [v, p] = c.original ?? ['', '']; if (v) r.el.style.setProperty(prop, v, p); else r.el.style.removeProperty(prop);
+          TAKEN.unset(r.el, prop);
           item.props.delete(prop);
         }
         for (const [key, c] of [...item.swaps]) { if (sent && sent.swaps.get(key) !== c) continue; c.release?.(); item.swaps.delete(key); }

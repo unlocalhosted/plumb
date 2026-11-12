@@ -21,6 +21,7 @@
 import { errorIs, request, post } from './api.js';
 import { locate } from './locate.js';
 import { esc } from './choices.js';
+import { Scope } from './scope.js';
 
 const RESUME = 'plumb:text-resume';
 
@@ -35,17 +36,17 @@ function changed(from, to) {
   return !was ? `Added “${cut(now)}”` : !now ? `Removed “${cut(was)}”` : `Changed “${cut(was)}” to “${cut(now)}”`;
 }
 export const TEXT_EDIT_CSS = `
-  .tx-ring { position: fixed; pointer-events: none; border-radius: 3px; box-shadow: 0 0 0 1.5px var(--pl-accent), 0 0 0 3.5px var(--pl-halo); }
+  .tx-ring { position: fixed; pointer-events: none; border-radius: 3px; box-shadow: 0 0 0 1.5px var(--pl-instrument), 0 0 0 3.5px var(--pl-halo); }
   .tx-tag { position: fixed; pointer-events: none; display: flex; align-items: center; gap: var(--pl-space-3); height: var(--pl-tag-h); padding: 0 var(--pl-space-4);
-    border-radius: var(--pl-radius-tag); background: var(--pl-paper); box-shadow: var(--pl-shadow-tag); font: var(--pl-card-meta); color: var(--pl-ink-2); white-space: nowrap; }
-  .tx-tag code { font: var(--pl-card-code); color: var(--pl-ink); }
-  .tx-tag kbd { font: 500 10px/13px var(--pl-mono); color: var(--pl-ink-2); }
-  .tx-tag[data-kind="saving"] { color: var(--pl-accent); }
-  .tx-tag[data-kind="refused"] { color: var(--pl-ink); max-width: min(420px, calc(100vw - 32px)); height: auto; min-height: var(--pl-tag-h); padding-block: var(--pl-space-3); white-space: normal; }
+    border-radius: var(--pl-radius-tag); background: var(--pl-bg-surface); box-shadow: var(--pl-shadow-tag); font: var(--pl-card-meta); color: var(--pl-text-secondary); white-space: nowrap; }
+  .tx-tag code { font: var(--pl-card-code); color: var(--pl-text-primary); }
+  .tx-tag kbd { font: 500 10px/13px var(--pl-mono); color: var(--pl-text-secondary); }
+  .tx-tag[data-kind="saving"] { color: var(--pl-instrument); }
+  .tx-tag[data-kind="refused"] { color: var(--pl-text-primary); max-width: min(420px, calc(100vw - 32px)); height: auto; min-height: var(--pl-tag-h); padding-block: var(--pl-space-3); white-space: normal; }
   .tx-tag[data-kind="error"] { color: var(--pl-off); }
   .tx-area { position: fixed; margin: 0; padding: 0; border: 0; outline: none; resize: none; overflow: hidden; background: transparent;
-    color: transparent; caret-color: var(--pl-accent); pointer-events: auto; }
-  .tx-area::selection { background: color-mix(in oklab, var(--pl-accent) 28%, transparent); color: transparent; }
+    color: transparent; caret-color: var(--pl-instrument); pointer-events: auto; }
+  .tx-area::selection { background: color-mix(in oklab, var(--pl-instrument) 28%, transparent); color: transparent; }
 `;
 
 const norm = (v) => v.replace(/\s+/g, ' ').trim();
@@ -87,12 +88,16 @@ export const TEXT_EDIT = {
 };
 
 export class TextEditor {
-  #root; #host; #ring; #tag; #edit = null; #hideTimer = 0; #endTimer = 0;
+  #root; #host; #ring; #tag; #edit = null;
   #phase = TEXT_EDIT.initial;
   #flight = null; // the lookup or the write out: {} per run; destroy() lets it go
+  // What the phase started (its listeners, its timer) ends when the phase is left (scope.js). An edit on screen has its
+  // own scope, across editing, saving and error; the note beside words that can't be edited has one too.
+  #scope = new Scope();
+  #notice = null;
   #send(event) {
     const next = TEXT_EDIT.states[this.#phase]?.on?.[event];
-    if (next) this.#phase = next;
+    if (next) { this.#phase = next; this.#scope.end(); this.#scope = new Scope(); }
     return !!next;
   }
 
@@ -141,8 +146,9 @@ export class TextEditor {
   async start(node, offset = null) {
     // one edit at a time: a second double-click while the first is read is the first's. A failed save's message gives
     // way to the next try
-    if (this.#phase === 'error') { clearTimeout(this.#endTimer); this.#send('dismiss'); this.#end(); }
+    if (this.#phase === 'error') { this.#send('dismiss'); this.#end(); }
     if (!this.#send('start')) return false;
+    this.#notice?.end(); // a note about other words must not hide this edit's tag when its time is up
     const flight = (this.#flight = {});
     const el = node.parentElement, words = norm(node.data);
     const target = await this.#resolve(el, words).catch((error) => ({ editable: false, reason: error?.message ?? "React Plumber couldn't read this text." }));
@@ -178,15 +184,15 @@ export class TextEditor {
     const el = node.parentElement;
     const leaf = [...el.childNodes].every((n) => n === node || (n.nodeType === Node.TEXT_NODE && !n.data.trim()));
     const lead = node.data.match(/^\s*/)[0], trail = node.data.match(/\s*$/)[0];
-    const ed = { node, el, target, leaf, lead, trail, before: node.data, area: null, done: false, prior: el.getAttribute('contenteditable'), kids: [...el.childNodes] };
+    const ed = { node, el, target, leaf, lead, trail, before: node.data, area: null, done: false, prior: el.getAttribute('contenteditable'), kids: [...el.childNodes], scope: new Scope() };
     this.#edit = ed;
     this.#send('edit');
     this.#host.editing?.(true, () => this.#rect());
     if (leaf) {
       el.setAttribute('contenteditable', 'plaintext-only');
-      el.addEventListener('keydown', this.#key);
-      el.addEventListener('blur', this.#blur);
-      el.addEventListener('input', this.#input);
+      this.#scope.listen(el, 'keydown', this.#key);
+      this.#scope.listen(el, 'blur', this.#blur);
+      this.#scope.listen(el, 'input', this.#input);
       el.focus({ preventScroll: true });
       // the word that was double-clicked stays selected, the way the page's own double-click selects it
       const sel = getSelection(), range = document.createRange();
@@ -207,14 +213,15 @@ export class TextEditor {
       for (const k of ['font', 'letterSpacing', 'textTransform', 'wordSpacing', 'lineHeight', 'textAlign']) area.style[k] = cs[k];
       this.#root.append(area);
       ed.area = area;
-      area.addEventListener('keydown', this.#key);
-      area.addEventListener('blur', this.#blur);
-      area.addEventListener('input', () => { node.data = lead + area.value + trail; });
+      this.#scope.listen(area, 'keydown', this.#key);
+      this.#scope.listen(area, 'blur', this.#blur);
+      this.#scope.listen(area, 'input', () => { node.data = lead + area.value + trail; });
       area.focus({ preventScroll: true });
       area.select();
     }
     this.#say('edit');
     this.#follow();
+    ed.scope.frames(this.#follow);
   }
 
   // The words' box on the page.
@@ -227,7 +234,7 @@ export class TextEditor {
     return range.getBoundingClientRect();
   }
 
-  // Ring, tag and textarea follow the words while the page scrolls or re-flows.
+  // Ring, tag and textarea follow the words while the page scrolls or re-flows: every frame of the edit's scope.
   #follow = () => {
     const ed = this.#edit;
     if (!ed) return;
@@ -239,7 +246,6 @@ export class TextEditor {
       Object.assign(this.#tag.style, { left: `${Math.max(8, Math.min(innerWidth - this.#tag.offsetWidth - 8, r.left))}px`, top: `${tagTop}px` });
       if (ed.area) Object.assign(ed.area.style, { left: `${r.left}px`, top: `${r.top}px`, width: `${Math.max(24, r.width + 2)}px`, height: `${r.height}px` });
     }
-    requestAnimationFrame(this.#follow);
   };
 
   #say(kind, text) {
@@ -274,7 +280,6 @@ export class TextEditor {
     const typed = norm(ed.leaf ? ed.el.textContent : ed.area.value);
     // put the element back the way it was, then show the words that stand
     if (ed.leaf) {
-      ed.el.removeEventListener('keydown', this.#key); ed.el.removeEventListener('blur', this.#blur); ed.el.removeEventListener('input', this.#input);
       if (ed.prior === null) ed.el.removeAttribute('contenteditable'); else ed.el.setAttribute('contenteditable', ed.prior);
       // the browser may have split or replaced the text node while editing: the element's own nodes go back, every one
       // of them (React owns the whitespace beside the words too: a node it no longer finds breaks its next update), and
@@ -314,8 +319,8 @@ export class TextEditor {
       const stale = errorIs(error, 'stale-file');
       this.#send('failed');
       this.#say('error', stale ? 'This file changed after we checked it. Double-click to try again.' : (error?.message ?? 'Couldn’t apply the edit.'));
-      clearTimeout(this.#endTimer);
-      this.#endTimer = setTimeout(() => { if (this.#phase === 'error' && this.#edit === ed) { this.#send('expired'); this.#end(); } }, 2400);
+      // the error phase's own timer: gone with the phase when the message is dismissed first
+      this.#scope.timeout(() => { this.#send('expired'); this.#end(); }, 2400);
     }
   }
 
@@ -327,6 +332,7 @@ export class TextEditor {
 
   // the edit is over (the phase has moved to idle): nothing on screen, the host told
   #end() {
+    this.#edit?.scope.end();
     this.#edit = null;
     this.#ring.hidden = true;
     this.#tag.hidden = true;
@@ -344,16 +350,18 @@ export class TextEditor {
     this.#tag.innerHTML = `<span>${esc(target.reason ?? 'This text can’t be edited here.')}${where}</span>`;
     this.#tag.hidden = false;
     Object.assign(this.#tag.style, { left: `${Math.max(8, Math.min(innerWidth - 428, r.left))}px`, top: `${r.bottom + 8 + 60 > innerHeight ? r.top - 60 : r.bottom + 8}px` });
-    clearTimeout(this.#hideTimer);
-    const hide = () => { this.#tag.hidden = true; removeEventListener('pointerdown', hide, true); };
-    setTimeout(() => addEventListener('pointerdown', hide, true), 0);
-    this.#hideTimer = setTimeout(hide, 4000);
+    this.#notice?.end();
+    const notice = (this.#notice = new Scope());
+    const hide = () => { this.#tag.hidden = true; notice.end(); };
+    // after this click has gone by: the next press anywhere puts the note away, or its time does
+    notice.timeout(() => notice.listen(window, 'pointerdown', hide, true), 0);
+    notice.timeout(hide, 4000);
   }
 
   destroy() {
     if (this.#phase === 'editing') this.#finish(false);
     this.#send('unmount');
     this.#flight = null; // a lookup or a write still out lands on no one
-    clearTimeout(this.#hideTimer); clearTimeout(this.#endTimer);
+    this.#scope.end(); this.#edit?.scope.end(); this.#notice?.end();
   }
 }

@@ -62,11 +62,15 @@ const around = async (page, marks, selectors) => {
   const boxes = await page.evaluate((sels) => sels.flatMap((sel) => [...document.querySelectorAll(sel)].map((el) => { const r = el.getBoundingClientRect(); return [r.left, r.top, r.width, r.height]; })), selectors);
   return marks.length === boxes.length && boxes.every(([x, y, w, h], i) => { const [mx, my, mw, mh] = marks[i]; return Math.abs(mx - (x - 4)) <= 1.5 && Math.abs(my - (y - 4)) <= 1.5 && Math.abs(mw - (w + 8)) <= 1.5 && Math.abs(mh - (h + 8)) <= 1.5; });
 };
+// (a write reloads the demo app, which has no hot update in these tests: while it does, there is no overlay, and the
+// waits below keep waiting instead of failing)
 // what the strip shows: steps with their ticks, the pointed one, the pill, the slider's words, the actions
-// a write can reload the page while the strip is read (it comes back the same): read it again on the new page
-const strip = async (page) => { for (let i = 0; ; i++) { try { return await stripOnce(page); } catch (error) { if (i > 20 || !/context was destroyed|navigation/i.test(error.message)) throw error; await page.waitForTimeout(250); } } };
-const stripOnce = (page) => page.evaluate(() => {
-  const root = document.querySelector('plumb-overlay').shadowRoot, tt = root.querySelector('.tt');
+// (a read that lands mid-reload is read again once the page is back)
+const strip = async (page) => { for (let i = 0; ; i++) { try { return await readStrip(page); } catch (e) { if (i > 20 || !/context was destroyed|navigation/i.test(e.message)) throw e; await page.waitForLoadState('load').catch(() => {}); await page.waitForTimeout(250); } } };
+// the strip once it is showing (a write's reload hides it for a moment)
+const shown = async (page) => { for (let i = 0; i < 80; i++) { const s = await strip(page); if (s) return s; await page.waitForTimeout(250); } return null; };
+const readStrip = (page) => page.evaluate(() => {
+  const root = document.querySelector('plumb-overlay')?.shadowRoot, tt = root?.querySelector('.tt');
   if (!tt || tt.hidden) return null;
   const track = tt.querySelector('.tt-track');
   return {
@@ -230,11 +234,7 @@ test('the playhead in the past shows the page as it was there, writes nothing, p
   await page.keyboard.press('Enter');
   await page.waitForFunction(() => document.querySelector('plumb-overlay')?.shadowRoot?.querySelectorAll('.tt .tt-tick[data-i]').length === 5);
   assert.equal(await app.read(), APP.replace('p-4 gap-2', 'p-6 gap-2'));
-  // the write may reload the page while the strip is read (it comes back the same): read it again on the new page
-  for (let i = 0; ; i++) {
-    try { s = await strip(page); if (s) break; } catch (error) { if (i > 20 || !/context was destroyed|navigation/i.test(error.message)) throw error; }
-    await page.waitForTimeout(250);
-  }
+  s = await shown(page);
   assert.deepEqual(s.steps, [{ name: 'Spacing', ticks: ['live', 'undone', 'undone'] }, { name: 'Undo', ticks: ['live+undo', 'live+undo'] }]);
   assert.ok(!s.past, 'back at Now after it');
   // the dev server reloads the page for the write: the timeline comes back with it, at Now

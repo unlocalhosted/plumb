@@ -24,6 +24,7 @@
 import { esc } from './choices.js';
 import { step as stepMark, place, drawPlace, count as countMark, rollCount } from './scale-marks.js';
 import { SETTLE, DETENT, spring, ms, stagger } from './motion.js';
+import { Scope } from './scope.js';
 
 const nf = new Intl.NumberFormat('en');
 const plural = (n, one, many) => `${nf.format(n)} ${n === 1 ? one : many}`;
@@ -33,8 +34,8 @@ export const GRAVITY_CSS = `
   .gv { position: relative; overflow: hidden; }
   .gv-head { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px 24px; padding: var(--pl-page-inset) var(--pl-page-inset) 0; }
   .gv-head h2 { margin: 0; font: var(--pl-page-title); letter-spacing: var(--pl-tracking-title); }
-  .gv-head p { margin: 2px 0 0; font: var(--pl-page-small); color: var(--pl-ink-2); }
-  .gv-key { display: flex; flex-wrap: wrap; gap: 6px 16px; margin-left: auto; font: var(--pl-page-meta); color: var(--pl-ink-2); }
+  .gv-head p { margin: 2px 0 0; font: var(--pl-page-small); color: var(--pl-text-secondary); }
+  .gv-key { display: flex; flex-wrap: wrap; gap: 6px 16px; margin-left: auto; font: var(--pl-page-meta); color: var(--pl-text-secondary); }
   .gv-key span { display: inline-flex; align-items: center; gap: 7px; }
   .gv-key .sc-place { scale: 1.34; }
   .gv-plot { position: relative; height: 320px; }
@@ -44,15 +45,15 @@ export const GRAVITY_CSS = `
   .gv-steps .sc-step { position: absolute; translate: -50% calc(-26px - var(--r)); opacity: 0; transition: opacity var(--pl-dur-build) var(--pl-ease-out); }
   .gv-steps .sc-step.in { opacity: 1; }
   .gv-steps .sc-step[data-crowded]:not([data-state="pointed"]) .pl-tag { opacity: 0; }
-  .gv-read { position: absolute; z-index: 2; max-width: 300px; padding: 10px 12px; border-radius: var(--pl-radius-row); pointer-events: none; background: var(--pl-paper-2);
-    box-shadow: 0 0 0 1px var(--pl-rule), 0 12px 32px -16px rgb(0 0 0 / .45); font: var(--pl-page-meta); color: var(--pl-ink-2); }
-  .gv-read b { display: block; margin-bottom: 2px; font: 600 14px/20px var(--pl-sans); color: var(--pl-ink); }
-  .gv-read code { display: block; margin-bottom: 4px; font: 500 12px/18px var(--pl-mono); color: var(--pl-ink-2); }
-  .gv-read .to { color: var(--pl-ink); }
+  .gv-read { position: absolute; z-index: 2; max-width: 300px; padding: 10px 12px; border-radius: var(--pl-radius-row); pointer-events: none; background: var(--pl-bg-inset);
+    box-shadow: 0 0 0 1px var(--pl-border-default), 0 12px 32px -16px rgb(0 0 0 / .45); font: var(--pl-page-meta); color: var(--pl-text-secondary); }
+  .gv-read b { display: block; margin-bottom: 2px; font: 600 14px/20px var(--pl-sans); color: var(--pl-text-primary); }
+  .gv-read code { display: block; margin-bottom: 4px; font: 500 12px/18px var(--pl-mono); color: var(--pl-text-secondary); }
+  .gv-read .to { color: var(--pl-text-primary); }
   .gv[data-empty] .gv-plot { height: 160px; }
   .gv-empty { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; font: var(--pl-page-title); }
-  .gv-empty small { display: block; font: var(--pl-page-small); color: var(--pl-ink-2); }
-  .gv-foot { display: flex; align-items: center; gap: 16px; padding: var(--pl-space-6) var(--pl-page-inset) var(--pl-page-inset); border-top: 1px solid var(--pl-rule); }
+  .gv-empty small { display: block; font: var(--pl-page-small); color: var(--pl-text-secondary); }
+  .gv-foot { display: flex; align-items: center; gap: 16px; padding: var(--pl-space-6) var(--pl-page-inset) var(--pl-page-inset); border-top: 1px solid var(--pl-border-default); }
   .gv-foot .pl-act { margin-left: auto; height: 40px; padding: 0 18px; font-size: 14px; }
   .gv .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   @media (max-width: 720px) { .gv-key { margin-left: 0; } .gv-head { padding: var(--pl-space-6) var(--pl-space-6) 0; } .gv-foot { padding: var(--pl-space-6); } }
@@ -260,12 +261,18 @@ export class Gravity {
     };
     button.addEventListener('click', () => snap(!every));
 
-    new ResizeObserver(() => { size(); run(); }).observe(canvas);
-    new IntersectionObserver(([e]) => { visible = e.isIntersecting; run(); }).observe(canvas);
-    document.addEventListener('visibilitychange', run);
+    // everything the plot listens to is its scope's: destroy() ends it all
+    const scope = (this.scope = new Scope());
+    const sizes = new ResizeObserver(() => { size(); run(); }), seen = new IntersectionObserver(([e]) => { visible = e.isIntersecting; run(); });
+    sizes.observe(canvas); seen.observe(canvas);
+    scope.listen(document, 'visibilitychange', run);
     // the hues follow the scheme: read them again when it changes
-    new MutationObserver(() => { read(); run(); }).observe(this.el.getRootNode().host ?? document.documentElement, { attributes: true, attributeFilter: ['data-scheme', 'class'] });
-    matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { read(); run(); });
+    const scheme = new MutationObserver(() => { read(); run(); });
+    scheme.observe(this.el.getRootNode().host ?? document.documentElement, { attributes: true, attributeFilter: ['data-scheme', 'class'] });
+    scope.listen(matchMedia('(prefers-color-scheme: dark)'), 'change', () => { read(); run(); });
+    scope.onEnd(() => { sizes.disconnect(); seen.disconnect(); scheme.disconnect(); cancelAnimationFrame(raf); raf = -1; });
     size(); run();
   }
+  /** The plot is leaving the page: its observers, listeners and frame loop end. */
+  destroy() { this.scope?.end(); }
 }

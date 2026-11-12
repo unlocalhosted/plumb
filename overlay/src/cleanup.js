@@ -35,6 +35,7 @@ import { CLEANUP as W } from './words.js';
 import { STAMPED, stampOf, sameStamp } from './stamp.js';
 import { declaredColours, loadPalette, paletteOf } from './colours.js';
 import { renameMap } from './colour-system.js';
+import { Scope } from './scope.js';
 
 const LAWS = [{ id: 'similarity', name: 'Law of similarity' }, { id: 'cognitive-load', name: 'Cognitive load' }];
 // the passes written as class swaps (spacing-pass.js, colour-pass.js): one shape, so the panel runs them one way
@@ -57,65 +58,65 @@ const kept = () => { try { const v = JSON.parse(sessionStorage.getItem(KEPT) ?? 
 export const CLEANUP_CSS = `
   .cu { display: grid; }
   .cu .steps { display: flex; gap: 2px; padding: 10px 10px 0; }
-  .cu .pass { flex: 1; display: flex; align-items: center; gap: 6px; padding: 6px 8px; border-radius: 8px; font: 600 11px/14px var(--pl-sans, system-ui); color: #b3ad9f; min-width: 0; }
+  .cu .pass { flex: 1; display: flex; align-items: center; gap: 6px; padding: 6px 8px; border-radius: 8px; font: 600 11px/14px var(--pl-sans, system-ui); color: var(--pl-text-disabled); min-width: 0; }
   .cu .pass i { flex: none; width: 14px; height: 14px; border-radius: 50%; box-shadow: inset 0 0 0 1.5px currentColor; display: grid; place-items: center; font: 700 9px/1 var(--pl-sans, system-ui); font-style: normal; }
   .cu .pass span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .cu .pass .n { margin-left: auto; font-weight: 500; }
-  .cu .pass.now { color: #1c1b19; background: #f4f3ef; }
-  .cu .pass.now i { box-shadow: inset 0 0 0 1.5px #1c1b19; background: radial-gradient(circle, #1c1b19 0 3px, transparent 3.5px); }
-  .cu .pass.done { color: var(--pl-mint); } .cu .pass.done i { background: var(--pl-mint); box-shadow: none; color: #fff; }
+  .cu .pass.now { color: var(--pl-text-primary); background: var(--pl-bg-inset); }
+  .cu .pass.now i { box-shadow: inset 0 0 0 1.5px var(--pl-icon-primary); background: radial-gradient(circle, var(--pl-icon-primary) 0 3px, transparent 3.5px); }
+  .cu .pass.done { color: var(--pl-state-written-text); } .cu .pass.done i { background: var(--pl-done-bg); box-shadow: none; color: var(--pl-done-text); }
   .cu .pass.skipped span { text-decoration: line-through; }
-  .cu .saved { display: flex; align-items: center; gap: 8px; padding: 8px 10px 0 16px; color: #6b665c; font-size: 12px; }
+  .cu .saved { display: flex; align-items: center; gap: 8px; padding: 8px 10px 0 16px; color: var(--pl-text-secondary); font-size: 12px; }
   .cu .saved b { color: var(--pl-mint); font-weight: 600; }
   .cu .saved button { margin-left: auto; }
   .cu .body { padding: 12px 16px 4px; display: grid; gap: 4px; }
   .cu .head { font-weight: 600; font-size: 14px; line-height: 1.35; text-wrap: balance; }
-  .cu .sub { color: #6b665c; font-size: 12px; }
-  .cu .law { color: #7a5cf0; font-size: 12px; }
+  .cu .sub { color: var(--pl-text-secondary); font-size: 12px; }
+  .cu .law { color: var(--pl-lilac); font-size: 12px; }
   .cu .ladder { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 1px; max-height: min(40vh, 330px); overflow-y: auto; overscroll-behavior: contain; }
   .cu .ladder li { display: grid; grid-template-columns: 44px 1fr auto; align-items: center; gap: 10px; min-height: 34px; padding: 2px 8px 2px 4px; border-radius: 9px; }
   .cu .ladder li.moves { background: rgb(255 31 143 / .05); }
-  .cu .ladder .ag { text-align: center; line-height: 1; color: #1c1b19; }
-  .cu .ladder .nm { font-weight: 550; } .cu .ladder .nm small { display: block; color: #6b665c; font-weight: 400; font-size: 12px; }
-  .cu .ladder .here { font-size: 12px; color: #6b665c; text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
-  .cu .ladder .here b { color: #ff1f8f; font-weight: 600; }
+  .cu .ladder .ag { text-align: center; line-height: 1; color: var(--pl-text-primary); }
+  .cu .ladder .nm { font-weight: 550; } .cu .ladder .nm small { display: block; color: var(--pl-text-secondary); font-weight: 400; font-size: 12px; }
+  .cu .ladder .here { font-size: 12px; color: var(--pl-text-secondary); text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .cu .ladder .here b { color: var(--pl-heat); font-weight: 600; }
   .cu .measure { display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 10px 0 2px; font-variant-numeric: tabular-nums; }
-  .cu .measure b { font-size: 18px; font-weight: 600; } .cu .measure .to { color: #b3ad9f; margin: 0 4px; }
-  .cu .measure small { display: block; color: #6b665c; font-size: 11px; }
-  .cu .cmd { display: flex; align-items: center; gap: 8px; margin-top: 8px; padding: 8px 10px; border-radius: 9px; background: #f4f3ef; font: 500 12px/1.4 var(--pl-mono, ui-monospace, monospace); }
+  .cu .measure b { font-size: 18px; font-weight: 600; } .cu .measure .to { color: var(--pl-icon-tick); margin: 0 4px; }
+  .cu .measure small { display: block; color: var(--pl-text-secondary); font-size: 11px; }
+  .cu .cmd { display: flex; align-items: center; gap: 8px; margin-top: 8px; padding: 8px 10px; border-radius: 9px; background: var(--pl-bg-inset); font: 500 12px/1.4 var(--pl-mono, ui-monospace, monospace); }
   .cu .cmd code { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .cu .acts { display: flex; align-items: center; gap: 4px; padding: 10px; border-top: 1px solid #ecebe6; margin-top: 12px; }
+  .cu .acts { display: flex; align-items: center; gap: 4px; padding: 10px; border-top: 1px solid var(--pl-border-default); margin-top: 12px; }
   .cu .acts .grow { flex: 1; }
-  .cu button.cu-btn { all: unset; cursor: pointer; font: 600 13px/18px var(--pl-sans, system-ui); padding: 7px 12px; border-radius: 9px; color: #1c1b19; white-space: nowrap; }
-  .cu button.cu-btn:hover { background: #f4f3ef; }
-  .cu button.cu-btn:focus-visible { outline: 2px solid #2a7fd0; outline-offset: 1px; }
-  .cu button.cu-btn:disabled { color: #b3ad9f; cursor: default; background: none; }
-  .cu button.cu-btn kbd { font: 500 10px/1 var(--pl-mono, ui-monospace, monospace); color: #b3ad9f; margin-left: 6px; }
-  .cu button.cu-btn.primary { background: #1c1b19; color: #fff; } .cu button.cu-btn.primary kbd { color: #9d9a92; }
-  .cu button.cu-btn.quiet { font-weight: 500; color: #6b665c; }
+  .cu button.cu-btn { all: unset; cursor: pointer; font: 600 13px/18px var(--pl-sans, system-ui); padding: 7px 12px; border-radius: 9px; color: var(--pl-text-primary); white-space: nowrap; }
+  .cu button.cu-btn:hover { background: var(--pl-bg-surface-hover); }
+  .cu button.cu-btn:focus-visible { outline: 2px solid var(--pl-border-focus); outline-offset: 1px; }
+  .cu button.cu-btn:disabled { color: var(--pl-text-disabled); cursor: default; background: none; }
+  .cu button.cu-btn kbd { font: 500 10px/1 var(--pl-mono, ui-monospace, monospace); color: var(--pl-text-secondary); margin-left: 6px; }
+  .cu button.cu-btn.primary { background: var(--pl-text-primary); color: var(--pl-bg-surface); } .cu button.cu-btn.primary kbd { color: color-mix(in oklab, var(--pl-bg-surface) 60%, transparent); }
+  .cu button.cu-btn.quiet { font-weight: 500; color: var(--pl-text-secondary); }
   .cu .bar { display: flex; align-items: center; gap: 10px; padding: 10px 10px 10px 16px; }
-  .cu .bar .live { flex: none; width: 8px; height: 8px; border-radius: 50%; background: #2a7fd0; animation: cu-live 1.6s ease-out infinite; }
+  .cu .bar .live { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--pl-instrument); animation: cu-live 1.6s ease-out infinite; }
   .cu .bar .msg { font-weight: 600; white-space: nowrap; }
-  .cu .bar .hint { flex: none; color: #6b665c; font-size: 12px; white-space: nowrap; }
-  .cu .bar .hint kbd { font: 500 11px/1 var(--pl-mono, ui-monospace, monospace); padding: 2px 5px; border-radius: 5px; background: #f4f3ef; color: #1c1b19; }
+  .cu .bar .hint { flex: none; color: var(--pl-text-secondary); font-size: 12px; white-space: nowrap; }
+  .cu .bar .hint kbd { font: 500 11px/1 var(--pl-mono, ui-monospace, monospace); padding: 2px 5px; border-radius: 5px; background: var(--pl-bg-inset); color: var(--pl-text-primary); }
   .cu .bar .grow { flex: 1; }
   @media (max-width: 560px) { .cu .bar .hint { display: none; } .cu .pass .n { display: none; } }
   .cu .error { color: var(--pl-coral); font-size: 12px; padding: 0 16px; }
   @keyframes cu-live { 0% { box-shadow: 0 0 0 0 rgb(42 127 208 / .4); } 70% { box-shadow: 0 0 0 6px transparent; } 100% { box-shadow: 0 0 0 0 transparent; } }
   @media (prefers-reduced-motion: reduce) { .cu .bar .live { animation: none; } }
   .cu .roles { padding: 12px 14px 0; }
-  .cu .names { margin: 12px 0 0; padding: 12px 16px 0; border-top: 1px solid #ecebe6; display: grid; gap: 4px; }
+  .cu .names { margin: 12px 0 0; padding: 12px 16px 0; border-top: 1px solid var(--pl-bg-surface-hover); display: grid; gap: 4px; }
   .cu .names.quiet { border-top: 0; margin-top: 4px; padding-top: 0; } .cu .names.quiet .nacts { margin: 0 0 0 -12px; }
   .cu .names .nhead { font-weight: 600; font-size: 13px; line-height: 1.35; text-wrap: balance; }
   .cu .names .nacts { display: flex; gap: 4px; margin: 8px 0 0; }
-  .cu button.cu-btn.soft { background: #f4f3ef; } .cu button.cu-btn.soft:hover { background: #ecebe6; }
+  .cu button.cu-btn.soft { background: var(--pl-bg-inset); } .cu button.cu-btn.soft:hover { background: var(--pl-bg-surface-hover); }
   .cu .names .nlist { margin: 4px 0; max-height: min(30vh, 240px); }
   .cu .names .nlist { gap: 2px; outline: none; }
   .cu .names .nlist li { grid-template-columns: 20px 1fr; min-height: 38px; padding: 4px 8px 4px 4px; }
-  .cu .names .sw { width: 14px; height: 14px; border-radius: 4px; justify-self: center; box-shadow: inset 0 0 0 1px rgb(0 0 0 / .12); }
+  .cu .names .sw { width: 14px; height: 14px; border-radius: 4px; justify-self: center; box-shadow: inset 0 0 0 1px var(--pl-border-default); }
   .cu .names .nm { font: 550 12px/1.3 var(--pl-mono, ui-monospace, monospace); } .cu .names .nm small { font-family: var(--pl-sans, system-ui); }
   .cu .names .error { padding: 0; }
-  .cu .ladder .sp-ic { display: inline-grid; place-items: center; width: 16px; height: 16px; color: #6b665c; } .cu .ladder .sp-ic svg { width: 16px; height: 16px; display: block; }
+  .cu .ladder .sp-ic { display: inline-grid; place-items: center; width: 16px; height: 16px; color: var(--pl-text-secondary); } .cu .ladder .sp-ic svg { width: 16px; height: 16px; display: block; }
 ${SHOW_CSS}
 `;
 
@@ -186,6 +187,9 @@ export class Cleanup {
   // One run at a time (docs/state-machines/cleanup-spec.md): every move the person makes (start, a pass read, Esc out of
   // the preview, Apply, Undo, stop) is a new run; an answer that comes back for an older run changes nothing on screen
   #run = 0;
+  // the clean-up's own, whatever state it is in: a frame asked for here still runs after the state moved on (letting
+  // go of a preview the page no longer needs must happen), and is the clean-up's to cancel if it is ever removed
+  #life = new Scope();
   #send(event) {
     const next = CLEANUP.states[this.#state]?.on?.[event];
     if (next) this.#state = next;
@@ -536,7 +540,7 @@ export class Cleanup {
       if (run === this.#run) this.#saved = { group, refused: r.refused?.length ?? 0 };
       landed(r.undo);
       // the page now draws the styles from its own classes: the preview's inline values (the same) are let go
-      requestAnimationFrame(() => this.#preview.clear((el, f) => f()));
+      this.#life.frame(() => this.#preview.clear((el, f) => f()));
       this.#host.announce?.(`${W.pass.text}: ${said}`);
     } catch (error) { if (run === this.#run) { keep(null); this.#preview.clear(glide); this.#send('failed'); this.#err = error?.message ?? W.couldNot; } }
     finally { removeEventListener('plumb:applied', heard); }
@@ -573,7 +577,7 @@ export class Cleanup {
       refused.push(...(r?.refused ?? [])); // what the write itself left as it is (a partly landed step)
       landed(r.undo);
       // the page now draws the change from its own classes: the preview's inline values (the same) are let go
-      requestAnimationFrame(() => sw.clear());
+      this.#life.frame(() => sw.clear());
       this.#host.announce?.(`${W.pass[k]}: ${said}`);
     } catch (error) { if (run === this.#run) { keep(null); sw.clear(); this.#send('failed'); this.#err = error?.message ?? S.couldNot; } }
     this.#host.render();

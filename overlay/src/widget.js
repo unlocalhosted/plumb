@@ -79,10 +79,10 @@ const pathTo = element => {
   return ['html', ...parts].join(' > ');
 };
 const css = `
-  :host { all: initial; position: fixed; inset: 0; pointer-events: none; z-index: var(--pl-z); font: var(--pl-text-row); color: var(--pl-ink); }
+  :host { all: initial; position: fixed; inset: 0; pointer-events: none; z-index: var(--pl-z); font: var(--pl-card-body); color: var(--pl-text-primary); }
   * { box-sizing: border-box; }
   [hidden] { display: none !important; }
-  code { font: var(--pl-text-reading); }
+  code { font: var(--pl-card-code); }
 
   /* the dock: what Plumb is doing, and Select, bottom right; text cross-fades, size snaps, nothing animates width */
   /* the dock never sits on the page's own controls: when something to press is under its corner it, and everything
@@ -104,27 +104,27 @@ const css = `
   :host([data-side="start"]) .pl .card { transform-origin: 0 100%; }
   .dock { position: fixed; inset-inline-end: var(--pl-space-6); inset-block-end: var(--pl-space-6); pointer-events: auto;
           display: flex; align-items: center; gap: var(--pl-space-3); height: var(--pl-tag-h); padding-inline: var(--pl-space-4) var(--pl-space-1);
-          background: var(--pl-paper); color: var(--pl-ink-2); border-radius: var(--pl-radius-card); box-shadow: var(--pl-shadow-tag);
-          font: var(--pl-text-label); letter-spacing: var(--pl-tracking-label); white-space: nowrap;
+          background: var(--pl-bg-surface); color: var(--pl-text-secondary); border-radius: var(--pl-radius-card); box-shadow: var(--pl-shadow-tag);
+          font: var(--pl-card-label); letter-spacing: var(--pl-tracking-label); white-space: nowrap;
           transition: opacity var(--pl-dur-card) var(--pl-ease-out), transform var(--pl-dur-card) var(--pl-ease-out); }
   .dock[data-enter] { opacity: 0; transform: translateY(4px); }
-  .dock .bob { display: grid; place-items: center; width: 12px; height: 14px; color: var(--pl-ink-2); transition: color var(--pl-dur-feedback) var(--pl-ease-out); }
+  .dock .bob { display: grid; place-items: center; width: 12px; height: 14px; color: var(--pl-icon-secondary); transition: color var(--pl-dur-feedback) var(--pl-ease-out); }
   .dock .bob svg { width: 12px; height: 14px; }
   .dock .say { transition: opacity var(--pl-dur-feedback) var(--pl-ease-out); }
-  .dock .say .count { font: var(--pl-text-reading); font-variant-numeric: tabular-nums; color: var(--pl-ink-3); }
+  .dock .say .count { font: var(--pl-card-code); font-variant-numeric: tabular-nums; color: var(--pl-text-secondary); }
   .dock[data-fold] .say { display: none; }
   @media (hover: hover) and (pointer: fine) { .dock[data-fold]:hover .say { display: inline; } }
   .dock[data-fold]:focus-within .say { display: inline; }
-  .dock :is(.pick, .bp-toggle, .list, .help, .history) { all: unset; display: grid; place-items: center; width: 18px; height: 18px; border-radius: var(--pl-radius-tag); color: var(--pl-ink-2); cursor: pointer; }
+  .dock :is(.pick, .bp-toggle, .list, .help, .history) { all: unset; display: grid; place-items: center; width: 18px; height: 18px; border-radius: var(--pl-radius-tag); color: var(--pl-icon-secondary); cursor: pointer; }
   .dock :is(.pick, .bp-toggle, .list, .help, .history) svg { width: 12px; height: 12px; }
   .dock :is(.pick, .bp-toggle, .list, .help, .history):focus-visible { outline: 1px solid var(--pl-instrument); outline-offset: 1px; }
-  @media (hover: hover) and (pointer: fine) { .dock :is(.pick, .bp-toggle, .list, .help, .history):not(:disabled):hover { color: var(--pl-ink); background: var(--pl-paper-2); } }
-  .dock :is(.pick, .bp-toggle, .list, .help, .history)[aria-pressed="true"] { color: var(--pl-instrument); background: var(--pl-paper-2); }
-  .dock :is(.pick, .bp-toggle, .list, .help, .history):disabled { color: var(--pl-ink-3); cursor: default; }
-  .dock .act { all: unset; display: inline-flex; align-items: center; height: 18px; padding: 0 7px; border-radius: var(--pl-radius-tag); font: var(--pl-text-label); letter-spacing: var(--pl-tracking-label); color: var(--pl-ink-2); cursor: pointer;
+  @media (hover: hover) and (pointer: fine) { .dock :is(.pick, .bp-toggle, .list, .help, .history):not(:disabled):hover { color: var(--pl-icon-hover); background: var(--pl-bg-surface-hover); } }
+  .dock :is(.pick, .bp-toggle, .list, .help, .history)[aria-pressed="true"] { color: var(--pl-instrument); background: var(--pl-bg-inset); }
+  .dock :is(.pick, .bp-toggle, .list, .help, .history):disabled { color: var(--pl-icon-disabled); cursor: default; }
+  .dock .act { all: unset; display: inline-flex; align-items: center; height: 18px; padding: 0 7px; border-radius: var(--pl-radius-tag); font: var(--pl-card-label); letter-spacing: var(--pl-tracking-label); color: var(--pl-text-secondary); cursor: pointer;
                transition: background var(--pl-dur-feedback), color var(--pl-dur-feedback); }
   .dock .act.write { color: var(--pl-on-action); background: var(--pl-action-soft); }
-  @media (hover: hover) and (pointer: fine) { .dock .act.undo:not(:disabled):hover { color: var(--pl-ink); background: var(--pl-paper-2); } .dock .act.write:not(:disabled):hover { background: color-mix(in oklab, var(--pl-action-soft) 85%, var(--pl-action)); } }
+  @media (hover: hover) and (pointer: fine) { .dock .act.undo:not(:disabled):hover { color: var(--pl-text-primary); background: var(--pl-bg-surface-hover); } .dock .act.write:not(:disabled):hover { background: color-mix(in oklab, var(--pl-action-soft) 85%, var(--pl-action)); } }
   .dock .act:focus-visible { outline: 1px solid var(--pl-instrument); outline-offset: 1px; }
   .dock .act:disabled { opacity: .55; cursor: default; }
   .dock .act[aria-busy="true"]::before { content: ""; width: 9px; height: 9px; margin-inline-end: 5px; border-radius: 50%; border: 1.5px solid currentColor; border-right-color: transparent; animation: pl-spin .7s linear infinite; }
@@ -143,17 +143,17 @@ const css = `
 
   /* the hover tag: what the pointer is on, before anything is pinned */
   .tag { position: fixed; left: 0; top: 0; height: var(--pl-tag-h); display: flex; align-items: center; gap: 6px; padding-inline: 8px; white-space: nowrap;
-         background: var(--pl-paper); border-radius: var(--pl-radius-tag); box-shadow: var(--pl-shadow-tag); font: var(--pl-text-label);
+         background: var(--pl-bg-surface); border-radius: var(--pl-radius-tag); box-shadow: var(--pl-shadow-tag); font: var(--pl-card-label);
          transition: transform var(--pl-dur-travel) var(--pl-spring), opacity var(--pl-dur-feedback) var(--pl-ease-out); }
-  .tag .el, .top .el { font-weight: 600; color: var(--pl-ink); }
-  .tag .who, .top .who { color: var(--pl-ink-2); font-weight: 500; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  .tag .el, .top .el { font-weight: 600; color: var(--pl-text-primary); }
+  .tag .who, .top .who { color: var(--pl-text-secondary); font-weight: 500; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
   .tag .n, .top .n, .top .el, .top .zoom, .top .close { flex: none; }
-  .tag .n, .top .n { font: var(--pl-text-reading); font-variant-numeric: tabular-nums; color: var(--pl-off); }
-  .n.ok { color: var(--pl-on); } .n.quiet { color: var(--pl-ink-2); }
-  .tag .path { display: inline-flex; align-items: center; gap: 4px; color: var(--pl-ink-2); font-weight: 500; }
-  .tag .path .here { color: var(--pl-ink); font-weight: 600; }
-  .tag .path .cmp { color: var(--pl-accent); }
-  .tag .path .sep, .tag .path .more { color: var(--pl-ink-3); }
+  .tag .n, .top .n { font: var(--pl-card-code); font-variant-numeric: tabular-nums; color: var(--pl-off); }
+  .n.ok { color: var(--pl-on); } .n.quiet { color: var(--pl-text-secondary); }
+  .tag .path { display: inline-flex; align-items: center; gap: 4px; color: var(--pl-text-secondary); font-weight: 500; }
+  .tag .path .here { color: var(--pl-text-primary); font-weight: 600; }
+  .tag .path .cmp { color: var(--pl-instrument); }
+  .tag .path .sep, .tag .path .more { color: var(--pl-icon-tick); }
 
   /* the lit place on the real element: hatching over exactly the region the active mark is about */
   .lit { position: fixed; left: 0; top: 0; border-radius: 2px; opacity: 0; transition: opacity var(--pl-dur-feedback) var(--pl-ease-out);
@@ -177,27 +177,27 @@ const css = `
   .card :focus-visible { outline: 2px solid var(--pl-instrument); outline-offset: 2px; }
 
   /* head: one line, as before: the element, its count, where it's written, the drawing scale, close */
-  .top { display: flex; align-items: center; gap: 6px; height: 32px; padding-inline: 12px 6px; border-bottom: 1px solid var(--pl-rule); font: var(--pl-text-label); white-space: nowrap; }
-  .top .el { font-weight: 600; color: var(--pl-ink); }
-  .top .file { all: unset; flex: 0 1 auto; min-width: 0; font: var(--pl-card-meta); color: var(--pl-ink-2); margin-inline-start: auto; padding-inline-start: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: copy; }
-  @media (hover: hover) and (pointer: fine) { .top .file:hover { color: var(--pl-ink); } }
+  .top { display: flex; align-items: center; gap: 6px; height: 32px; padding-inline: 12px 6px; border-bottom: 1px solid var(--pl-border-default); font: var(--pl-card-label); white-space: nowrap; }
+  .top .el { font-weight: 600; color: var(--pl-text-primary); }
+  .top .file { all: unset; flex: 0 1 auto; min-width: 0; font: var(--pl-card-meta); color: var(--pl-text-secondary); margin-inline-start: auto; padding-inline-start: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: copy; }
+  @media (hover: hover) and (pointer: fine) { .top .file:hover { color: var(--pl-text-primary); } }
   .top .n.live { color: var(--pl-instrument); }
   .top .n.won { animation: pl-won 600ms var(--pl-ease-out); }
   @keyframes pl-won { 0% { transform: scale(.9); } 40% { transform: scale(1.1); } 100% { transform: scale(1); } }
   .top .zoom { display: flex; gap: 1px; margin-inline-start: 6px; }
-  .top button.z { all: unset; font: var(--pl-text-reading); font-variant-numeric: tabular-nums; color: var(--pl-ink-2); padding: 0 4px; height: 18px; line-height: 18px; border-radius: 3px; cursor: pointer; }
-  .top button.z[aria-pressed="true"] { color: var(--pl-instrument); background: var(--pl-paper-2); }
-  .top button.z:disabled { color: var(--pl-ink-3); cursor: default; }
-  .close { all: unset; display: grid; place-items: center; width: 24px; height: 24px; border-radius: 5px; color: var(--pl-ink-2); cursor: pointer; }
+  .top button.z { all: unset; font: var(--pl-card-code); font-variant-numeric: tabular-nums; color: var(--pl-text-secondary); padding: 0 4px; height: 18px; line-height: 18px; border-radius: 3px; cursor: pointer; }
+  .top button.z[aria-pressed="true"] { color: var(--pl-instrument); background: var(--pl-bg-inset); }
+  .top button.z:disabled { color: var(--pl-text-disabled); cursor: default; }
+  .close { all: unset; display: grid; place-items: center; width: 24px; height: 24px; border-radius: 5px; color: var(--pl-icon-secondary); cursor: pointer; }
   .close svg { width: 10px; height: 10px; }
-  @media (hover: hover) and (pointer: fine) { .close:hover { background: var(--pl-paper-2); color: var(--pl-ink); } }
+  @media (hover: hover) and (pointer: fine) { .close:hover { background: var(--pl-bg-surface-hover); color: var(--pl-icon-hover); } }
 
   /* the chain: where this element comes from, outermost usage first; the read link is marked */
   .chain { display: flex; align-items: center; gap: 2px; padding: 6px 12px 0; overflow-x: auto; scrollbar-width: none; overscroll-behavior: contain; }
-  .chain .link { all: unset; flex: none; font: var(--pl-card-meta); color: var(--pl-ink-2); padding: 0 6px; height: 22px; line-height: 22px; border-radius: 4px; cursor: pointer; white-space: nowrap; }
-  .chain .link[aria-current="true"] { color: var(--pl-ink); background: var(--pl-paper-2); }
-  @media (hover: hover) and (pointer: fine) { .chain .link:not([aria-current="true"]):hover { color: var(--pl-ink); } }
-  .chain .sep { color: var(--pl-ink-3); font: var(--pl-card-meta); }
+  .chain .link { all: unset; flex: none; font: var(--pl-card-meta); color: var(--pl-text-secondary); padding: 0 6px; height: 22px; line-height: 22px; border-radius: 4px; cursor: pointer; white-space: nowrap; }
+  .chain .link[aria-current="true"] { color: var(--pl-text-primary); background: var(--pl-bg-inset); }
+  @media (hover: hover) and (pointer: fine) { .chain .link:not([aria-current="true"]):hover { color: var(--pl-text-primary); } }
+  .chain .sep { color: var(--pl-icon-tick); font: var(--pl-card-meta); }
 
   /* the skeleton: the element at its real proportions, marks set into its outline */
   .diagram { position: relative; margin: 10px 12px 0; transition: opacity var(--pl-dur-feedback) var(--pl-ease-out); }
@@ -206,109 +206,109 @@ const css = `
   .txt { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin: 10px 12px 0; min-width: 0; }
   .txt[hidden] { display: none; }
   .txt .tk { flex: none; display: grid; place-items: center; width: 16px; height: 16px; border-radius: var(--pl-radius-tag);
-             background: var(--pl-paper-2); color: var(--pl-ink-2); font: 600 10.5px/1 Georgia, serif; }
+             background: var(--pl-bg-inset); color: var(--pl-icon-secondary); font: 600 10.5px/1 Georgia, serif; }
   .txt .run { all: unset; display: inline-flex; align-items: center; gap: 5px; min-width: 0; max-width: 100%; padding: 1px 6px; border-radius: var(--pl-radius-tag);
-              font: var(--pl-text-reading); color: var(--pl-ink); box-shadow: inset 0 0 0 1px var(--pl-rule); cursor: text; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+              font: var(--pl-card-code); color: var(--pl-text-primary); box-shadow: inset 0 0 0 1px var(--pl-border-default); cursor: text; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
               transition: box-shadow var(--pl-dur-feedback) var(--pl-ease-out); }
   .txt .run:focus-visible { outline: 2px solid var(--pl-instrument); outline-offset: 2px; }
   @media (hover: hover) and (pointer: fine) { .txt .run:hover { box-shadow: inset 0 0 0 1px var(--pl-instrument); } }
-  .txt .run .was { color: var(--pl-ink-2); text-decoration-thickness: 1px; }
-  .txt .run .arrow { color: var(--pl-ink-2); }
-  .txt .tr { font: var(--pl-text-label); color: var(--pl-ink-2); min-width: 0; }
+  .txt .run .was { color: var(--pl-text-secondary); text-decoration-thickness: 1px; }
+  .txt .run .arrow { color: var(--pl-text-secondary); }
+  .txt .tr { font: var(--pl-card-label); color: var(--pl-text-secondary); min-width: 0; }
   .txt .tr.hint { margin-inline-start: auto; }
   /* the editor laid over the words on the page: the page shows through, re-flowing as you type */
   .tedit { all: unset; position: fixed; box-sizing: border-box; pointer-events: auto; padding: 0 2px; color: transparent; caret-color: var(--pl-instrument);
            border-radius: 2px; outline: 1.5px dashed var(--pl-instrument); outline-offset: 2px; background: color-mix(in oklab, var(--pl-instrument) 6%, transparent); }
   .tedit::selection { background: color-mix(in oklab, var(--pl-instrument) 30%, transparent); color: transparent; }
   .diagram.swapping { opacity: 0; }
-  .d-child { position: absolute; box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--pl-ink-3) 60%, transparent); }
+  .d-child { position: absolute; box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--pl-icon-tick) 60%, transparent); }
   .d-child.text { box-shadow: none; }
-  .d-child.filled { box-shadow: none; background: color-mix(in oklab, var(--fill) 30%, var(--pl-paper)); }
+  .d-child.filled { box-shadow: none; background: color-mix(in oklab, var(--fill) 30%, var(--pl-bg-surface)); }
   .d-child, .d-part { font-style: normal; }
-  .d-part { position: absolute; box-shadow: inset 0 0 0 1px var(--pl-ink-3); }
-  .d-part.filled { box-shadow: none; background: color-mix(in oklab, var(--fill) 45%, var(--pl-paper)); }
-  .d-child b { position: absolute; display: block; white-space: nowrap; overflow: hidden; font-family: var(--pl-sans); color: var(--pl-ink-2); pointer-events: none; }
+  .d-part { position: absolute; box-shadow: inset 0 0 0 1px var(--pl-icon-tick); }
+  .d-part.filled { box-shadow: none; background: color-mix(in oklab, var(--fill) 45%, var(--pl-bg-surface)); }
+  .d-child b { position: absolute; display: block; white-space: nowrap; overflow: hidden; font-family: var(--pl-sans); color: var(--pl-text-secondary); pointer-events: none; }
   .dim { position: absolute; z-index: 1; translate: -50% -50%; padding: 0 3px; border-radius: 3px; font: 600 10px/14px var(--pl-mono); font-variant-numeric: tabular-nums;
-         color: var(--pl-paper); background: var(--pl-off); opacity: 0; scale: .9; pointer-events: none; transition: opacity var(--pl-dur-feedback) var(--pl-ease-out), scale var(--pl-dur-feedback) var(--pl-ease-out); }
+         color: var(--pl-bg-surface); background: var(--pl-off); opacity: 0; scale: .9; pointer-events: none; transition: opacity var(--pl-dur-feedback) var(--pl-ease-out), scale var(--pl-dur-feedback) var(--pl-ease-out); }
   .dim.left { translate: 0 -50%; } .dim.right { translate: -100% -50%; }
-  .dim.soft { background: var(--pl-soft); } .dim.ok { background: var(--pl-on); } .dim.quiet { background: var(--pl-ink-2); }
+  .dim.soft { background: var(--pl-soft); } .dim.ok { background: var(--pl-on); } .dim.quiet { background: var(--pl-text-secondary); }
   .dim[data-active] { opacity: 1; scale: 1; }
   .outline { position: absolute; left: 0; top: 0; overflow: visible; pointer-events: none; }
-  .outline path { fill: none; stroke: var(--pl-ink-2); stroke-opacity: .55; stroke-width: 1px; vector-effect: non-scaling-stroke; }
-  .outline .surface { fill: color-mix(in oklab, var(--fill) 30%, var(--pl-paper)); }
+  .outline path { fill: none; stroke: var(--pl-icon-secondary); stroke-opacity: .55; stroke-width: 1px; vector-effect: non-scaling-stroke; }
+  .outline .surface { fill: color-mix(in oklab, var(--fill) 30%, var(--pl-bg-surface)); }
   .outline .surface.bare { fill: none; }
   /* every finding is hatched where it lives; the one being read is hatched strongly */
   .outline .reg { fill: url(#pl-h-off); opacity: .35; transition: opacity var(--pl-dur-feedback) var(--pl-ease-out); }
   .outline .reg.soft { fill: url(#pl-h-soft); } .outline .reg.ok { fill: url(#pl-h-ok); } .outline .reg.quiet { fill: url(#pl-h-quiet); }
   .outline .reg[data-active] { opacity: 1; }
-  .pin { position: absolute; width: 16px; height: 16px; margin: -8px 0 0 -8px; border: 0; padding: 0; cursor: pointer; background: transparent; color: var(--pl-ink-2);
+  .pin { position: absolute; width: 16px; height: 16px; margin: -8px 0 0 -8px; border: 0; padding: 0; cursor: pointer; background: transparent; color: var(--pl-icon-secondary);
          display: grid; place-items: center; border-radius: 3px; transition: color var(--pl-dur-feedback) var(--pl-ease-out); }
   .pin .g { width: 13px; height: 13px; transform: var(--orient, none); }
-  .pin.on-arc { background: var(--pl-paper); border-radius: 50%; }
-  .pin.quiet { color: var(--pl-ink-3); }
+  .pin.on-arc { background: var(--pl-bg-surface); border-radius: 50%; }
+  .pin.quiet { color: var(--pl-icon-tick); }
   .pin[aria-current="true"] { color: var(--pl-off); }
   .pin.soft[aria-current="true"] { color: var(--pl-soft-text); }
   .pin.ok, .pin.ok[aria-current="true"] { color: var(--pl-on); }
   .pin:focus-visible { outline: 1px solid var(--pl-instrument); outline-offset: 1px; }
-  @media (hover: hover) and (pointer: fine) { .pin:not([aria-current="true"]):hover { color: var(--pl-ink); } }
+  @media (hover: hover) and (pointer: fine) { .pin:not([aria-current="true"]):hover { color: var(--pl-icon-hover); } }
 
   /* read: the change first, then the choice, then the reason */
   .read { display: grid; gap: 8px; padding: 10px 12px 12px; align-content: start; transition: opacity var(--pl-dur-feedback) var(--pl-ease-out); }
   .read.swapping { opacity: 0; }
   .read .t { display: flex; align-items: flex-start; gap: 8px; font: 600 13px/18px var(--pl-sans); text-wrap: pretty; }
   .read .t > .g { flex: none; width: 14px; height: 14px; margin-top: 2px; color: var(--pl-off); }
-  .read .t > .g.soft { color: var(--pl-soft-text); } .read .t > .g.ok { color: var(--pl-on); } .read .t > .g.quiet { color: var(--pl-ink-2); }
+  .read .t > .g.soft { color: var(--pl-soft-text); } .read .t > .g.ok { color: var(--pl-on); } .read .t > .g.quiet { color: var(--pl-text-secondary); }
   .read .t code { font: var(--pl-card-code); font-size: 12.5px; }
   .read .t .title { flex: 1; min-width: 0; }
-  .ledger { flex: none; margin-top: 1px; padding: 2px 6px; border-radius: 4px; font: var(--pl-text-label); letter-spacing: .04em; text-transform: uppercase; }
+  .ledger { flex: none; margin-top: 1px; padding: 2px 6px; border-radius: 4px; font: var(--pl-card-label); letter-spacing: .04em; text-transform: uppercase; }
   .ledger.new { color: var(--pl-off); background: color-mix(in oklab, var(--pl-off) 10%, transparent); }
-  .ledger.debt { color: var(--pl-ink-2); background: var(--pl-paper-2); }
+  .ledger.debt { color: var(--pl-text-secondary); background: var(--pl-bg-inset); }
   .ledger.exception { color: var(--pl-on); background: color-mix(in oklab, var(--pl-on) 10%, transparent); }
 
   /* the change: what is written → what it becomes */
   .change { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; font: var(--pl-card-code); font-size: 12px; }
   .change .from { padding: 1px 6px; border-radius: 4px; color: var(--pl-off); background: color-mix(in oklab, var(--pl-off) 9%, transparent); text-decoration: line-through; text-decoration-thickness: 1px; overflow-wrap: anywhere; }
   .change .from.soft { color: var(--pl-soft-text); background: color-mix(in oklab, var(--pl-soft) 11%, transparent); }
-  .change .arrow { color: var(--pl-ink-3); }
+  .change .arrow { color: var(--pl-icon-tick); }
   .change .to { padding: 1px 6px; border-radius: 4px; color: var(--pl-on); background: color-mix(in oklab, var(--pl-on) 11%, transparent); animation: pl-in var(--pl-dur-move, 200ms) var(--pl-ease-out); }
-  .change .to.waiting { color: var(--pl-ink-2); background: none; outline: 1px dashed var(--pl-ink-3); outline-offset: -1px; animation: pl-nudge 900ms var(--pl-ease-out) 700ms 1 both; }
-  .change .delta { margin-inline-start: auto; font: var(--pl-card-meta); color: var(--pl-ink-2); font-variant-numeric: tabular-nums; }
+  .change .to.waiting { color: var(--pl-text-secondary); background: none; outline: 1px dashed var(--pl-icon-tick); outline-offset: -1px; animation: pl-nudge 900ms var(--pl-ease-out) 700ms 1 both; }
+  .change .delta { margin-inline-start: auto; font: var(--pl-card-meta); color: var(--pl-text-secondary); font-variant-numeric: tabular-nums; }
   @keyframes pl-in { from { opacity: 0; transform: translateX(-4px); } }
-  @keyframes pl-nudge { 0%, 100% { outline-color: var(--pl-ink-3); } 45% { outline-color: var(--pl-instrument); color: var(--pl-instrument); } }
+  @keyframes pl-nudge { 0%, 100% { outline-color: var(--pl-icon-tick); } 45% { outline-color: var(--pl-instrument); color: var(--pl-instrument); } }
 
   /* the ask: what to do with the choices */
   .read .edit:empty { display: none; }
-  .read .edit { display: flex; align-items: baseline; gap: 8px; font: var(--pl-text-label); letter-spacing: .02em; color: var(--pl-ink-2); }
+  .read .edit { display: flex; align-items: baseline; gap: 8px; font: var(--pl-card-label); letter-spacing: .02em; color: var(--pl-text-secondary); }
   .read .edit .hint { flex: 1; text-transform: none; }
-  .read .edit code { font: var(--pl-card-meta); color: var(--pl-ink); overflow-wrap: anywhere; }
+  .read .edit code { font: var(--pl-card-meta); color: var(--pl-text-primary); overflow-wrap: anywhere; }
 
-  .read .because { font: 400 12px/17px var(--pl-sans); color: var(--pl-ink-2); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-  .read .empty { margin: 0; font: var(--pl-card-body); color: var(--pl-ink-2); }
+  .read .because { font: 400 12px/17px var(--pl-sans); color: var(--pl-text-secondary); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .read .empty { margin: 0; font: var(--pl-card-body); color: var(--pl-text-secondary); }
   .read.short { padding-block: 14px; }
 
   .notes { margin: 0 12px 10px; display: grid; gap: 4px; }
-  .notes p { margin: 0; font: var(--pl-card-body); font-size: 12px; color: var(--pl-ink-2); display: flex; gap: 8px; align-items: baseline; min-width: 0; }
+  .notes p { margin: 0; font: var(--pl-card-body); font-size: 12px; color: var(--pl-text-secondary); display: flex; gap: 8px; align-items: baseline; min-width: 0; }
   .notes p > * { min-width: 0; }
-  .notes p::before { content: ""; flex: none; width: 4px; height: 4px; border-radius: 50%; background: var(--pl-ink-3); transform: translateY(-2px); }
+  .notes p::before { content: ""; flex: none; width: 4px; height: 4px; border-radius: 50%; background: var(--pl-icon-tick); transform: translateY(-2px); }
   .notes code { font: var(--pl-card-meta); overflow-wrap: anywhere; }
 
   /* status: what happened, and what's left; then the foot, with one primary action */
-  .synced { display: flex; align-items: center; gap: 8px; padding: 8px 12px 0; border-top: 1px solid var(--pl-rule); }
-  .synced .state { font: var(--pl-card-body); font-size: 12px; color: var(--pl-ink-2); display: flex; align-items: center; gap: 8px; min-width: 0; }
+  .synced { display: flex; align-items: center; gap: 8px; padding: 8px 12px 0; border-top: 1px solid var(--pl-border-default); }
+  .synced .state { font: var(--pl-card-body); font-size: 12px; color: var(--pl-text-secondary); display: flex; align-items: center; gap: 8px; min-width: 0; }
   .synced .state::before { content: ""; flex: none; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
   .synced .state.live { color: var(--pl-instrument); } .synced .state.ok { color: var(--pl-on); } .synced .state.warn { color: var(--pl-soft-text); } .synced .state.err { color: var(--pl-off); }
   .foot { display: flex; align-items: center; gap: 4px; padding: 6px 6px 6px 8px; }
-  .synced[hidden] + .foot { border-top: 1px solid var(--pl-rule); }
-  .btn { display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 10px; border: 0; border-radius: 6px; background: transparent; color: var(--pl-ink-2);
+  .synced[hidden] + .foot { border-top: 1px solid var(--pl-border-default); }
+  .btn { display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 10px; border: 0; border-radius: 6px; background: transparent; color: var(--pl-text-secondary);
          font: 500 12.5px/1 var(--pl-sans); cursor: pointer; white-space: nowrap; transition: background var(--pl-dur-feedback), color var(--pl-dur-feedback), box-shadow var(--pl-dur-feedback); }
-  @media (hover: hover) and (pointer: fine) { .btn.plain:not(:disabled):hover { background: var(--pl-paper-2); color: var(--pl-ink); } }
-  .btn[aria-pressed="true"] { background: var(--pl-ink); color: var(--pl-paper); }
+  @media (hover: hover) and (pointer: fine) { .btn.plain:not(:disabled):hover { background: var(--pl-bg-surface-hover); color: var(--pl-text-primary); } }
+  .btn[aria-pressed="true"] { background: var(--pl-text-primary); color: var(--pl-bg-surface); }
   .btn:disabled { opacity: .4; cursor: default; }
   .btn.copy { margin-inline-start: auto; }
   .btn.primary { color: var(--pl-on-action); background: var(--pl-action-soft); box-shadow: 0 1px 0 rgb(0 0 0 / .08); }
   @media (hover: hover) and (pointer: fine) { .btn.primary:not(:disabled):hover { background: color-mix(in oklab, var(--pl-action-soft) 85%, var(--pl-action)); } }
   .btn.primary:active:not(:disabled) { transform: translateY(1px); }
-  .btn.primary:disabled { opacity: 1; color: var(--pl-ink-2); background: transparent; box-shadow: inset 0 0 0 1px var(--pl-ink-3); cursor: default; }
+  .btn.primary:disabled { opacity: 1; color: var(--pl-text-secondary); background: transparent; box-shadow: inset 0 0 0 1px var(--pl-border-strong); cursor: default; }
   .btn.primary.done { color: var(--pl-on); background: color-mix(in oklab, var(--pl-on) 12%, transparent); box-shadow: none; }
   .btn[aria-busy="true"]::before { content: ""; width: 11px; height: 11px; border-radius: 50%; border: 1.5px solid currentColor; border-right-color: transparent; animation: pl-spin .7s linear infinite; }
   @keyframes pl-spin { to { transform: rotate(1turn); } }

@@ -1,0 +1,94 @@
+// The design site's page for icons: what it draws inside its host. The site (web/design/Part.jsx) gives it the host,
+// the overlay's token file as text, and the scheme; it draws with the overlay's own source.
+import { LANGUAGE_CSS } from '../../../overlay/src/language.js';
+import { BLOCK_ICONS } from '../../../overlay/src/boxmodel.js';
+import { TOY_DEFS, PROPS, PARTS } from '../../../overlay/src/toys.js';
+
+export function mount(host, root, css) {
+
+
+  const toy = (i) => `<figure class="toy" tabindex="0"${i.fresh ? ' data-new' : ''}><span class="row"><i class="big">${i.icon}</i><i class="mid">${i.icon}</i><i class="sm">${i.icon}</i></span><figcaption>${i.name}${i.note ? `<small>${i.note}</small>` : ''}</figcaption></figure>`;
+  const OLD = [['p', 'padding'], ['m', 'margin'], ['g', 'gap'], ['b', 'border'], ['r', 'corner'], ['line', 'type'], ['c', 'size']];
+  const byName = (list, name) => list.find((i) => i.name === name);
+
+  root.innerHTML = `<style>${css}${LANGUAGE_CSS}
+    :host { display: block; font-family: var(--pl-sans); color: var(--pl-ink); }
+    :host([data-scheme="dark"]) { --pl-paper: #2a2930; --pl-paper-2: #35343c; --pl-rule: #45444d; --pl-ink: #f4f3ef; }
+    .band { margin: 28px 0 12px; font: 600 12px/1 var(--pl-sans); letter-spacing: .06em; text-transform: uppercase; color: var(--pl-ink-2); }
+    .band:first-of-type { margin-top: 0; }
+    .set { margin: 0 0 14px; padding: 16px 16px 18px; border-radius: 18px; background: var(--pl-paper); box-shadow: 0 0 0 1px var(--pl-rule); }
+    .set h2 { margin: 0; font: 600 15px/20px var(--pl-sans); }
+    .set h2 span { margin-left: 8px; font: 500 12px/1 var(--pl-mono); color: var(--pl-ink-2); }
+    .set p { margin: 3px 0 0; font: 400 13px/19px var(--pl-sans); color: var(--pl-ink-2); max-width: 760px; }
+    ol.rules { margin: 10px 0 0; padding: 0 0 0 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: 4px 28px; font: 400 13px/19px var(--pl-sans); color: var(--pl-ink-2); }
+    ol.rules b { color: var(--pl-ink); font-weight: 600; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; margin-top: 14px; }
+    .toy { position: relative; margin: 0; padding: 14px 12px 11px; border-radius: 14px; background: var(--pl-paper-2); display: flex; flex-direction: column; gap: 10px; outline: none; cursor: default;
+      transition: background-color 200ms var(--pl-ease-out), translate 300ms var(--pl-spring-pop); }
+    .toy[data-new]::after { content: 'new'; position: absolute; top: 9px; right: 9px; padding: 2px 6px; border-radius: 6px; font: 600 10px/1.2 var(--pl-sans); background: var(--pl-sky-soft); color: var(--pl-sky-ink); }
+    .toy .row { display: flex; align-items: flex-end; gap: 12px; height: 46px; }
+    .toy i { display: block; flex: none; transform-origin: 50% 80%; transition: rotate 420ms var(--pl-spring-pop), scale 420ms var(--pl-spring-pop); }
+    .toy svg { display: block; width: 100%; height: 100%; overflow: visible; }
+    .toy .big { width: 44px; height: 44px; }
+    .toy .mid { width: 24px; height: 24px; }
+    .toy .sm { width: 16px; height: 16px; }
+    /* pointed at, the toy is picked up: it tips and grows, the small ones lean the other way */
+    .toy:hover, .toy:focus-visible { translate: 0 -2px; background: color-mix(in oklab, var(--pl-butter-soft) 55%, var(--pl-paper-2)); }
+    .toy:hover .big, .toy:focus-visible .big { rotate: -9deg; scale: 1.14; }
+    .toy:hover .mid, .toy:focus-visible .mid { rotate: 7deg; scale: 1.08; }
+    .toy:hover .sm, .toy:focus-visible .sm { rotate: -5deg; }
+    .toy figcaption { font: 600 13px/16px var(--pl-sans); color: var(--pl-ink); }
+    .toy figcaption small { display: block; font: 400 11px/14px var(--pl-sans); color: var(--pl-ink-2); }
+    .was { display: flex; flex-wrap: wrap; gap: 14px 22px; margin-top: 12px; align-items: center; }
+    .was span { display: inline-flex; align-items: center; gap: 7px; font: 500 12px/1 var(--pl-sans); color: var(--pl-ink-2); }
+    .was i { display: block; width: 16px; height: 16px; color: var(--pl-ink-2); }
+    .was svg { display: block; width: 100%; height: 100%; }
+    .bars { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+    .fb { display: inline-flex; align-items: center; gap: 9px; height: 46px; padding: 0 14px 0 9px; border-radius: 23px; white-space: nowrap; }
+    .fb i { display: block; width: 28px; height: 28px; }
+    .fb svg { display: block; width: 100%; height: 100%; }
+    .fb code { font: 600 13px/1 var(--pl-mono); color: var(--pl-ink); }
+    .fb .in { font: 500 12px/1 var(--pl-sans); color: var(--pl-ink-2); }
+    /* Pointing says it in words: an icon gives its name above it, the bar gives the sentence and the place under it.
+       The words are for learning the pictures; once learnt, nobody has to point. Shown on focus too. */
+    .fb { position: relative; outline: none; cursor: default; }
+    .fb:focus-visible { box-shadow: var(--pl-shadow-card), 0 0 0 2px var(--pl-sky); }
+    .fb i { position: relative; transition: scale 300ms var(--pl-spring-pop), rotate 300ms var(--pl-spring-pop); }
+    .fb i:hover { scale: 1.16; rotate: -6deg; }
+    .fb i[data-tip]::after, .fb[data-tip]::after { position: absolute; left: 50%; z-index: 3; pointer-events: none; white-space: nowrap; opacity: 0; scale: .92;
+      transition: opacity 140ms var(--pl-ease-out), scale 220ms var(--pl-spring-pop), translate 220ms var(--pl-spring-pop); }
+    .fb i[data-tip]::after { content: attr(data-tip); bottom: calc(100% + 9px); translate: -50% 4px; padding: 4px 8px; border-radius: 8px; background: var(--pl-ink); color: var(--pl-paper);
+      font: 600 11px/1.2 var(--pl-sans); text-transform: capitalize; rotate: 6deg; transform-origin: 50% 100%; }
+    .fb i[data-tip]:hover::after { opacity: 1; scale: 1; translate: -50% 0; }
+    .fb[data-tip]::after { content: attr(data-tip); top: calc(100% + 8px); translate: -50% -4px; padding: 7px 11px; border-radius: 11px; background: var(--pl-paper); color: var(--pl-ink);
+      box-shadow: var(--pl-shadow-card); font: 500 12px/1.3 var(--pl-sans); transform-origin: 50% 0; }
+    .fb[data-tip]:hover::after, .fb[data-tip]:focus-visible::after { opacity: 1; scale: 1; translate: -50% 0; }
+    .bars { padding-bottom: 34px; }
+    @media (prefers-reduced-motion: reduce) { .toy, .toy i { transition: none; } }
+  </style>${TOY_DEFS}
+  <div class="band">The toy set · proposed</div>
+  <section class="set"><h2>What makes one of these</h2><p>What every one of them has to pass.</p>
+    <ol class="rules">
+      <li><b>One body, one hue.</b> A solid shape you could cut out of card. A second hue only when it is a second thing (the sun in the image, the knob on the slider).</li>
+      <li><b>Details are cut out or drawn on.</b> White for a hole in the body, the hue’s own dark for a mark on it. Never a pale fill with an outline.</li>
+      <li><b>It says what the thing does.</b> A switch is on. A tag has a hole for its string. A field has a caret waiting.</li>
+      <li><b>It still reads at 16.</b> Nothing finer than 1.5 on the 24 grid, four parts at most.</li>
+      <li><b>A pattern only ever means space.</b> Hatched is padding, dotted is margin, striped is a gap. Nothing else gets a pattern.</li>
+      <li><b>No stock faces.</b> The joke, when there is one, comes from the thing itself: the key is pressed, the tag has its hole, the toast is already timing out.</li>
+      <li><b>Pale is for what is not there.</b> The unfilled part of a progress bar, the tabs behind, a cast shadow.</li>
+    </ol></section>
+  <section class="set"><h2>Properties<span>${PROPS.length}</span></h2><p>What a fix can change. Size and shape in mint, sky and butter; type on a sky tile; the three kinds of space in their patterns.</p><div class="grid">${PROPS.map(toy).join('')}</div></section>
+  <section class="set"><h2>Elements and patterns<span>${PARTS.length}</span></h2><p>What a page is made of, for saying what the thing in hand is with a picture.</p><div class="grid">${PARTS.map(toy).join('')}</div></section>
+  <section class="set"><h2>In the fix bar</h2><p>How a cause would open: the property’s toy, the class, and the kind of thing it is on. Point at a bar for the sentence and the place; point at a picture for its name.</p><div class="bars">${[
+    ['corner', 'rounded-[5px]', 'tag', 'This tag’s corner is 5px. Your scale has 6 and 8.', 'Tag.jsx:12 · 16 places'],
+    ['padding', 'px-[7px]', 'button', 'This button’s side padding is 7px. Your scale has 4 and 8.', 'Button.jsx:8 · 5 places'],
+    ['gap', 'gap-[13px]', 'row', 'The gap between this row’s parts is 13px. Your scale has 12 and 16.', 'Row.jsx:21 · 6 places'],
+    ['margin', 'mt-[10px]', 'card', 'The space above this card is 10px. Your scale has 8 and 12.', 'Card.jsx:4 · 2 places'],
+    ['type', 'text-[13px]', 'menu', 'The text in this menu is 13px. Your scale has 12 and 14.', 'Menu.jsx:30 · 14 places'],
+    ['shadow', 'shadow-[0_1px_2px]', 'dialog', 'This dialog’s shadow isn’t one of your theme’s shadows.', 'Dialog.jsx:17 · 1 place'],
+    ['line height', 'leading-[18px]', 'text', 'These lines sit 18px apart. Your scale has 16 and 20.', 'Notes.jsx:9 · 3 places'],
+    ['position', 'bottom-[64px]', 'toast', 'This toast sits 64px from the bottom. Your scale stops at 24.', 'Toast.jsx:6 · 1 place'],
+  ].map(([p, cls, on, why, where]) => `<span class="fb pl-card" tabindex="0" data-tip="${why} ${where}"><i data-tip="${p}">${byName(PROPS, p).icon}</i><code>${cls}</code><span class="in">on a</span><i data-tip="${on}">${byName(PARTS, on).icon}</i></span>`).join('')}</div></section>
+  <div class="band">What the overlay has today</div>
+  <section class="set"><h2>The grey line set</h2><p>The box icons the overlay uses now, for comparison. The toy set would take their place.</p><div class="was">${OLD.map(([k, name]) => `<span><i>${BLOCK_ICONS[k]}</i>${name}</span>`).join('')}</div></section>`;
+}

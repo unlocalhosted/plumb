@@ -31,7 +31,12 @@ const unreachable = error => Object.assign(new Error('React Plumber’s server i
 // one per element behind a six-connection limit. A single reading (the Alt card) goes on its own, as it always
 // has. A server that refuses batches answers once, and every question goes on its own from then on.
 const BATCH = 128;
-let batched = true, queued = [], flushing = 0;
+let queued = [], flushing = 0;
+// A host that refused a batch is asked one question at a time, for a while: then batches are tried again (a dev server
+// that restarted mid-wave answers them again; one that never did refuses once more and costs one round trip).
+let directUntil = 0;
+const RETRY_BATCH_MS = 30000;
+const batching = () => Date.now() >= directUntil;
 const flights = new Map();
 function enqueue(method, params, options) {
   const key = JSON.stringify([method, Object.entries(params).sort(([a], [b]) => a.localeCompare(b)), !!options.explain]);
@@ -55,7 +60,7 @@ async function flush() {
     if (response.status === 503) { const body = await response.json().catch(() => ({})); for (const q of wave) q.reject(starting(body)); continue; }
     // a host that does not answer batches (an older server, the docs' replay) refuses the whole wave: every
     // question goes on its own from here, this wave included. A batch never speaks for one question's refusal
-    if (!response.ok) { batched = false; for (const q of wave) q.resolve(direct(q.method, q.params, q.options)); continue; }
+    if (!response.ok) { directUntil = Date.now() + RETRY_BATCH_MS; for (const q of wave) q.resolve(direct(q.method, q.params, q.options)); continue; }
     const results = await response.json().catch(() => null);
     wave.forEach((q, i) => {
       const r = results?.[i];
@@ -88,14 +93,14 @@ function ask(method, params, options) {
     const key = JSON.stringify([params, !!options.explain]);
     let answer = resolved.get(key);
     if (!answer) {
-      answer = batched && options.batch ? enqueue(method, params, options) : direct(method, params, options);
+      answer = batching() && options.batch ? enqueue(method, params, options) : direct(method, params, options);
       resolved.set(key, answer);
       const done = () => { if (resolved.get(key) === answer) resolved.delete(key); };
       answer.then(done, done);
     }
     return answer;
   }
-  if (batched && options.batch && method === 'site') return enqueue(method, params, options);
+  if (batching() && options.batch && method === 'site') return enqueue(method, params, options);
   return direct(method, params, options);
 }
 

@@ -174,6 +174,31 @@ test('words beside other elements are edited over their own line; a prop is edit
   assert.deepEqual(errors, []);
 });
 
+test('a note about words that can\'t be edited does not hide the tag of an edit started right after it', { timeout: 120000 }, async (t) => {
+  const launched = await browser(t);
+  if (!launched) return;
+  const { url } = await demo(t);
+  const { page, errors, overlay } = await open(t, launched, url);
+
+  // a grid cell's number is an expression: a note says why it can't be edited, for four seconds
+  await page.locator('#dense').scrollIntoViewIfNeeded();
+  await dblclickWords(page, '#dense span:first-child');
+  await overlay.locator('.tx-tag[data-kind="refused"]').waitFor({ timeout: 10000 });
+  const noted = Date.now();
+  // within those four seconds, other words are edited: the tag is the edit's now
+  await page.locator('#prose').scrollIntoViewIfNeeded();
+  await dblclickWords(page, '#prose');
+  await overlay.locator('.tx-area').waitFor({ timeout: 10000 });
+  const tag = overlay.locator('.tx-tag[data-kind="edit"]');
+  await tag.waitFor({ timeout: 3000 });
+  assert.ok(Date.now() - noted < 3500, 'the edit began while the note still had time left');
+  // the note's time runs out: the edit's tag stays
+  await page.waitForTimeout(4400 - (Date.now() - noted));
+  assert.equal(await tag.isVisible(), true, 'the edit still says where it writes and how to leave');
+  await page.keyboard.press('Escape');
+  assert.deepEqual(errors, []);
+});
+
 test('in blueprint, a double-click edits words through the glass, and the keys reach them', { timeout: 120000 }, async (t) => {
   const launched = await browser(t);
   if (!launched) return;

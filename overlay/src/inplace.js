@@ -11,6 +11,7 @@
  * ───────────────────────────────────────────────────────── */
 
 import { pxOf } from './value.js';
+import { Claims, LEVEL } from './claims.js';
 
 // The style keys a fix sets, as CSS properties, and the Tailwind prefix that writes each one.
 const PROPS = {
@@ -68,7 +69,7 @@ export function planOf(problem, el, steps, tokenOf) {
     const [prop, prefix] = PROPS[k];
     const now = px(cs.getPropertyValue(prop));
     const step = (v) => ({ token: tokenOf(v), n: v });
-    return { key: k, prop, prefix, from: step(now), to: step(n), original: [el.style.getPropertyValue(prop), el.style.getPropertyPriority(prop)] };
+    return { key: k, prop, prefix, from: step(now), to: step(n) };
   });
   if (!props.length || props.some((p) => !p.to.token)) return null;
   const main = props.reduce((a, b) => (Math.abs(b.to.n - b.from.n) > Math.abs(a.to.n - a.from.n) ? b : a));
@@ -110,6 +111,9 @@ export function classesFor(plan) {
 // reduced motion. (Figma calls it Smart Animate; in code, a layout transition.)
 export const GLIDE = { ms: 360, ease: 'cubic-bezier(.2, .8, .2, 1)',
   props: ['padding', 'margin', 'gap', 'row-gap', 'column-gap', 'width', 'height', 'min-width', 'min-height', 'max-width', 'border-radius', 'border-width', 'font-size', 'font-weight', 'line-height', 'letter-spacing', 'translate', 'opacity', 'color', 'background-color', 'border-color', 'box-shadow'] };
+// What the page shows while a fix is tried or waits for Apply is claimed, never written here (claims.js): the fix being
+// tried on the selection sits above the changes already taken, so letting a trial go shows the taken change again.
+export const TRIAL = new Claims(LEVEL.trial), TAKEN = new Claims(LEVEL.fix);
 const gliding = new WeakMap(); // el → { timer, transition: [value, priority] as it was before the glide }
 export function glide(el, change) {
   if (!el?.style || matchMedia('(prefers-reduced-motion: reduce)').matches) return change();
@@ -133,10 +137,8 @@ export function glide(el, change) {
 export function preview(el, plan, on) { glide(el, () => previewNow(el, plan, on)); }
 function previewNow(el, plan, on) {
   for (const p of plan.props) {
-    if (on) el.style.setProperty(p.prop, `${p.to.n}px`, 'important');
-    else { const [v, pr] = p.original; if (v) el.style.setProperty(p.prop, v, pr); else el.style.removeProperty(p.prop); }
+    if (on) TRIAL.set(el, p.prop, `${p.to.n}px`); else TRIAL.unset(el, p.prop);
   }
-  if (!on && !el.getAttribute('style')?.trim()) el.removeAttribute('style');
 }
 
 // ── writing ────────────────────────────────────────────────
@@ -230,24 +232,27 @@ function swapNow(el, write, on, memo, styles) {
     const removed = word(write?.from).filter((c) => el.classList.contains(c)), added = word(write?.to).filter((c) => !el.classList.contains(c));
     for (const c of removed) el.classList.remove(c);
     for (const c of added) el.classList.add(c);
-    const had = Object.keys(styles).map((p) => [p, el.style.getPropertyValue(p), el.style.getPropertyPriority(p)]);
-    for (const [p, v] of Object.entries(styles)) el.style.setProperty(p, v, 'important');
-    memo.done = { removed, added, had, attr: had.length ? el.getAttribute('style') === null : false };
+    for (const [p, v] of Object.entries(styles)) TRIAL.set(el, p, v);
+    memo.done = { removed, added, styles, at: TRIAL };
   } else if (memo.done) {
     for (const c of memo.done.added) el.classList.remove(c);
     for (const c of memo.done.removed) el.classList.add(c);
-    for (const [p, v, pr] of memo.done.had) { if (v) el.style.setProperty(p, v, pr); else el.style.removeProperty(p); }
-    if (memo.done.had.length && !el.getAttribute('style')?.trim()) el.removeAttribute('style');
+    for (const p of Object.keys(memo.done.styles)) memo.done.at.unset(el, p);
     memo.done = null;
   }
+}
+// The option tried becomes a change waiting for Apply: its styles are the taken change's now, under any later trial.
+export function swapTake(el, memo) {
+  if (!memo.done || memo.done.at === TAKEN) return;
+  for (const [p, v] of Object.entries(memo.done.styles)) { TAKEN.set(el, p, v); TRIAL.unset(el, p); }
+  memo.done.at = TAKEN;
 }
 
 // After the source carries an option: the inline styles its preview set are let go; the classes stay (React renders
 // them from the source now).
 export function swapRelease(el, memo) {
   if (!memo.done) return;
-  for (const [p, v, pr] of memo.done.had) { if (v) el.style.setProperty(p, v, pr); else el.style.removeProperty(p); }
-  if (memo.done.had.length && !el.getAttribute('style')?.trim()) el.removeAttribute('style');
+  for (const p of Object.keys(memo.done.styles)) memo.done.at.unset(el, p);
   memo.done = null;
 }
 

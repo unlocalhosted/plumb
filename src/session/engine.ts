@@ -998,13 +998,20 @@ export class Session extends EventEmitter {
     if (![tokens, css, swaps, accepts].every(Array.isArray) || tokens.length + css.length + swaps.length + accepts.length === 0) throw new UsageError('Apply needs at least one token, swap or accept.');
     if (tokens.length + css.length + swaps.length + accepts.length > 400) throw new UsageError('Apply takes at most four hundred items.');
     const result: ApplyAllResult = { results: { tokens: [], css: [], swaps: [], accepts: [] }, undo: [], labels: [] };
-    // the host holds hot updates while the transaction is open (hosts/vite.ts), and tells the page once it is done
-    this.emit('transaction', { phase: 'start' });
-    this.transaction = true;
-    try { return await this.applyEach({ tokens, css, swaps, accepts }, result); }
-    finally { this.transaction = false; this.emit('transaction', { phase: 'end', ...result }); }
+    // One transaction at a time: an apply-all that arrives while another writes waits for it to end. The host holds
+    // hot updates from `start` to `end` (hosts/vite.ts) and tells the page once it is done; two open at once would
+    // end each other's hold. Their items would take the write lock one by one anyway, so nothing is slower for it.
+    const run = this.applying.then(async () => {
+      this.emit('transaction', { phase: 'start' });
+      this.transaction = true;
+      try { return await this.applyEach({ tokens, css, swaps, accepts }, result); }
+      finally { this.transaction = false; this.emit('transaction', { phase: 'end', ...result }); }
+    });
+    this.applying = run.catch(() => { /* its caller has the error; the next apply-all still runs */ });
+    return run;
   }
   private transaction = false;
+  private applying: Promise<unknown> = Promise.resolve();
   /** The transaction is alive: the host's dead-transaction timer measures silence, so a long apply is never released mid-write. */
   private progress(): void { if (this.transaction) this.emit('transaction', { phase: 'progress' }); }
   private async applyEach({ tokens, css, swaps, accepts }: Required<ApplyAllOptions>, result: ApplyAllResult): Promise<ApplyAllResult> {

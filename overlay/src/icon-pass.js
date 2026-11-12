@@ -21,6 +21,7 @@ import { request } from './api.js';
 import { classEditsOf, locate } from './locate.js';
 import { ease } from './show.js';
 import { familyOf, proposeIcons, readIcons } from './icons.js';
+import { Claims, LEVEL } from './claims.js';
 
 // the rules this pass writes, in the order they play: what changes first is what the eye reads first (the icon's size),
 // then its weight, then where it sits
@@ -41,7 +42,7 @@ const strokeOf = (cls) => Number(/\[stroke-width:([\d.]+)\]/.exec(cls ?? '')?.[1
 const translateOf = (cls) => { const m = /(-?)translate-y-\[([\d.]+)px\]/.exec(cls ?? ''); return m ? (m[1] ? -1 : 1) * Number(m[2]) : 0; };
 
 export class IconPass {
-  #writes = []; #held = new Map(); #timers = [];
+  #writes = []; #claims = new Claims(LEVEL.cleanup); #timers = [];
   page = null; // { writes, places, before, after, listed, refused, emoji }
 
   async read() {
@@ -94,20 +95,13 @@ export class IconPass {
     else if (w.rule === 'I9') this.#set(w.on, 'min-width', `${w.to.target}px`, animate);
   }
   #set(el, prop, value, animate) {
-    if (!this.#held.has(el)) this.#held.set(el, {});
-    const was = this.#held.get(el);
-    if (!(prop in was)) was[prop] = [el.style.getPropertyValue(prop), el.style.getPropertyPriority(prop)];
-    const set = () => el.style.setProperty(prop, value, 'important');
+    const set = () => this.#claims.set(el, prop, value);
     if (animate) ease(el, set, { props: [prop] }); else set();
   }
   clear() {
     for (const t of this.#timers) clearTimeout(t);
     this.#timers = [];
-    for (const [el, was] of this.#held) {
-      for (const [prop, [v, pr]] of Object.entries(was)) { if (v) el.style.setProperty(prop, v, pr); else el.style.removeProperty(prop); }
-      if (!el.getAttribute('style')?.trim()) el.removeAttribute('style');
-    }
-    this.#held.clear();
+    this.#claims.clear();
   }
 
   // the edits for apply-all, one guarded write per file; a class that can't be reached is left as is with its reason

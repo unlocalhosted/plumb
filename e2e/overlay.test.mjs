@@ -99,7 +99,7 @@ test('pin() on words opens their values, and . puts the element\'s cause in hand
 
   // words: the chip's own values open beside it (texteditor.js); '.' puts the first problem in it in hand in the fix
   // panel, one of the chip's own causes; the retired reading card never opens
-  await overlay.locator('.tc .fld[data-key="font-size"]').waitFor({ timeout: 20000 });
+  await overlay.locator('.tc .pk .row[aria-label="Font size"]').waitFor({ timeout: 20000 });
   await overlay.locator('.tc .more').waitFor({ timeout: 20000 });
   await page.keyboard.press('.');
   const held = overlay.locator('.fx .cause .cls');

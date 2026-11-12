@@ -36,30 +36,30 @@ export const SPECIMEN_CSS = `
   .sp { padding: 0 0 var(--pl-space-4); }
   .sp-head { padding: var(--pl-page-inset) var(--pl-page-inset) var(--pl-space-6); }
   .sp-head h2 { margin: 0; font: var(--pl-page-title); letter-spacing: var(--pl-tracking-title); }
-  .sp-head p { margin: 2px 0 0; max-width: 60ch; font: var(--pl-page-small); color: var(--pl-ink-2); }
+  .sp-head p { margin: 2px 0 0; max-width: 60ch; font: var(--pl-page-small); color: var(--pl-text-secondary); }
   .sp ol { margin: 0; padding: 0; list-style: none; }
   .sp-row { display: grid; grid-template-columns: 176px minmax(0, 1fr) 168px; align-items: center; gap: var(--pl-space-8);
     padding: var(--pl-space-4) var(--pl-page-inset); outline: none; transition: background-color 160ms var(--pl-ease-out), box-shadow 160ms var(--pl-ease-out); }
-  .sp-row.step { padding-block: var(--pl-space-6); box-shadow: inset 0 var(--pl-line) 0 var(--pl-rule); }
+  .sp-row.step { padding-block: var(--pl-space-6); box-shadow: inset 0 var(--pl-line) 0 var(--pl-border-default); }
   .sp-meta { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; min-width: 0; }
   .sp-meta .name { font: 600 13px/20px var(--pl-sans); color: var(--pl-lilac); }
-  .sp-meta .px { font: var(--pl-card-code); color: var(--pl-ink-2); font-variant-numeric: tabular-nums; }
-  .sp-meta .copies { display: inline-flex; align-items: center; gap: 6px; flex-basis: 100%; font: var(--pl-page-meta); color: var(--pl-ink-2); }
-  .sp-sample { position: relative; min-width: 0; overflow: hidden; white-space: nowrap; color: var(--pl-ink); font-family: var(--pl-sans); font-weight: 400; line-height: 1.2;
+  .sp-meta .px { font: var(--pl-card-code); color: var(--pl-text-secondary); font-variant-numeric: tabular-nums; }
+  .sp-meta .copies { display: inline-flex; align-items: center; gap: 6px; flex-basis: 100%; font: var(--pl-page-meta); color: var(--pl-text-secondary); }
+  .sp-sample { position: relative; min-width: 0; overflow: hidden; white-space: nowrap; color: var(--pl-text-primary); font-family: var(--pl-sans); font-weight: 400; line-height: 1.2;
     mask-image: linear-gradient(90deg, #000 calc(100% - 32px), transparent); }
   .sp-sample span { display: inline-block; transform-origin: 0 75%; transition: scale var(--pl-dur-travel) var(--pl-spring); }
-  .sp-use { display: flex; align-items: center; justify-content: flex-end; gap: 8px; font: var(--pl-page-small); color: var(--pl-ink); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .sp-use { display: flex; align-items: center; justify-content: flex-end; gap: 8px; font: var(--pl-page-small); color: var(--pl-text-primary); font-variant-numeric: tabular-nums; white-space: nowrap; }
   .sp-use .bar { width: 96px; height: var(--pl-chart-bar); }
   .sp-use .bar i { display: block; height: 100%; background: var(--pl-mint); border-radius: 0 var(--pl-radius-mark) var(--pl-radius-mark) 0; }
-  .sp-row.unused .bar { box-sizing: border-box; border: var(--pl-line) dashed var(--pl-ink-3); border-radius: var(--pl-radius-mark); }
-  .sp-row.unused .sp-sample, .sp-row.unused .name { color: var(--pl-ink-3); }
-  .sp-row.unused .sp-use { color: var(--pl-ink-2); }
+  .sp-row.unused .bar { box-sizing: border-box; border: var(--pl-line) dashed var(--pl-icon-tick); border-radius: var(--pl-radius-mark); }
+  .sp-row.unused .sp-sample, .sp-row.unused .name { color: var(--pl-text-secondary); }
+  .sp-row.unused .sp-use { color: var(--pl-text-secondary); }
   .sp-use .sc-place { scale: 1.34; }
-  .sp-row.stray .to { font: var(--pl-card-code); color: var(--pl-ink); opacity: 0; translate: -4px 0; transition: opacity 160ms var(--pl-ease-out), translate 160ms var(--pl-ease-out); }
-  .sp-row.stray .how { flex-basis: 100%; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: var(--pl-card-code); color: var(--pl-ink-2); }
+  .sp-row.stray .to { font: var(--pl-card-code); color: var(--pl-text-primary); opacity: 0; translate: -4px 0; transition: opacity 160ms var(--pl-ease-out), translate 160ms var(--pl-ease-out); }
+  .sp-row.stray .how { flex-basis: 100%; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: var(--pl-card-code); color: var(--pl-text-secondary); }
   .sp-row.few { padding-block: 2px var(--pl-space-5); }
-  .sp-row.few .sp-sample { grid-column: 2 / -1; white-space: normal; mask-image: none; font: var(--pl-page-small); color: var(--pl-ink-2); }
-  .sp-row.few code { font: var(--pl-card-code); color: var(--pl-ink); }
+  .sp-row.few .sp-sample { grid-column: 2 / -1; white-space: normal; mask-image: none; font: var(--pl-page-small); color: var(--pl-text-secondary); }
+  .sp-row.few code { font: var(--pl-card-code); color: var(--pl-text-primary); }
 
   /* pointed: the stray snaps to its step's size and says how it's written; the step it becomes lights in sky */
   .sp-row.stray:is(:hover, :focus-visible), .sp-row.lit { background: color-mix(in oklab, var(--pl-sky) 7%, transparent); box-shadow: inset 2px 0 0 var(--pl-sky); }

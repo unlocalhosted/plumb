@@ -36,13 +36,13 @@ const plural = (n, one, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
 
 export const READY_CSS = `
   .dock .ready { all: unset; display: inline-flex; align-items: center; gap: 6px; height: 18px; max-width: 200px; padding: 0 8px 0 6px; border-radius: var(--pl-radius-tag);
-    font: var(--pl-text-label); letter-spacing: var(--pl-tracking-label); color: var(--pl-ink); background: var(--pl-soft-bg); cursor: pointer; white-space: nowrap; }
+    font: var(--pl-card-label); letter-spacing: var(--pl-tracking-label); color: var(--pl-text-primary); background: var(--pl-soft-bg); cursor: pointer; white-space: nowrap; }
   .dock .ready[data-level="off"] { background: var(--pl-off-bg); }
   .dock .ready .dot { flex: none; width: 6px; height: 6px; border-radius: 50%; background: var(--pl-soft); }
   .dock .ready[data-level="off"] .dot { background: var(--pl-off); }
   .dock .ready .text { overflow: hidden; text-overflow: ellipsis; }
-  .dock .ready:focus-visible { outline: 2px solid var(--pl-accent); outline-offset: 1px; }
-  .dock .ready[aria-expanded="true"] { box-shadow: inset 0 0 0 1px var(--pl-rule); }
+  .dock .ready:focus-visible { outline: 2px solid var(--pl-instrument); outline-offset: 1px; }
+  .dock .ready[aria-expanded="true"] { box-shadow: inset 0 0 0 1px var(--pl-border-default); }
   .dock[data-fold] .ready { padding: 0 6px; }
   .dock[data-fold] .ready .text { display: none; }
   @media (hover: hover) and (pointer: fine) { .dock[data-fold]:hover .ready .text { display: inline; } .dock[data-fold]:hover .ready { padding: 0 8px 0 6px; } }
@@ -53,50 +53,50 @@ export const READY_CSS = `
   .rd[data-enter] .card { opacity: 0; transform: translateY(6px) scale(.985); }
   .rd .top { display: flex; align-items: center; gap: var(--pl-space-4); padding: var(--pl-space-6) var(--pl-space-6) var(--pl-space-2); border: 0; background: none; }
   .rd .top .title { flex: 1; font: var(--pl-card-title); }
-  .rd .top .close { all: unset; display: grid; place-items: center; width: 24px; height: 24px; margin: -4px -6px -4px 0; border-radius: var(--pl-radius-tag); color: var(--pl-ink-2); cursor: pointer; }
-  .rd .top .close:focus-visible { outline: 2px solid var(--pl-accent); }
-  @media (hover: hover) and (pointer: fine) { .rd .top .close:hover { background: var(--pl-paper-2); color: var(--pl-ink); } }
-  .rd .lead { margin: 0; padding: 0 var(--pl-space-6) var(--pl-space-5); font: var(--pl-card-body); color: var(--pl-ink-2); text-wrap: pretty; }
+  .rd .top .close { all: unset; display: grid; place-items: center; width: 24px; height: 24px; margin: -4px -6px -4px 0; border-radius: var(--pl-radius-tag); color: var(--pl-text-secondary); cursor: pointer; }
+  .rd .top .close:focus-visible { outline: 2px solid var(--pl-instrument); }
+  @media (hover: hover) and (pointer: fine) { .rd .top .close:hover { background: var(--pl-bg-surface-hover); color: var(--pl-text-primary); } }
+  .rd .lead { margin: 0; padding: 0 var(--pl-space-6) var(--pl-space-5); font: var(--pl-card-body); color: var(--pl-text-secondary); text-wrap: pretty; }
   .rd .body { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 0 var(--pl-space-6) var(--pl-space-6); display: flex; flex-direction: column; gap: var(--pl-space-4); }
-  .rd .req { display: grid; grid-template-columns: 16px minmax(0, 1fr); column-gap: var(--pl-space-4); row-gap: var(--pl-space-2); padding: var(--pl-space-5); border-radius: var(--pl-radius-row); box-shadow: inset 0 0 0 1px var(--pl-rule); }
+  .rd .req { display: grid; grid-template-columns: 16px minmax(0, 1fr); column-gap: var(--pl-space-4); row-gap: var(--pl-space-2); padding: var(--pl-space-5); border-radius: var(--pl-radius-row); box-shadow: inset 0 0 0 1px var(--pl-border-default); }
   .rd .req > :not(.box) { grid-column: 2; }
-  .rd .req .box { grid-row: 1; grid-column: 1; width: 14px; height: 14px; margin: 3px 0 0; accent-color: var(--pl-accent); cursor: pointer; }
-  .rd .req .box:focus-visible { outline: 2px solid var(--pl-accent); outline-offset: 2px; }
-  .rd .req[data-status="unknown"] { grid-template-columns: minmax(0, 1fr); box-shadow: none; background: var(--pl-paper-2); }
+  .rd .req .box { grid-row: 1; grid-column: 1; width: 14px; height: 14px; margin: 3px 0 0; accent-color: var(--pl-instrument); cursor: pointer; }
+  .rd .req .box:focus-visible { outline: 2px solid var(--pl-instrument); outline-offset: 2px; }
+  .rd .req[data-status="unknown"] { grid-template-columns: minmax(0, 1fr); box-shadow: none; background: var(--pl-bg-inset); }
   .rd .req[data-status="unknown"] > * { grid-column: 1; }
-  .rd .req[data-done] { box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--pl-on) 40%, var(--pl-rule)); }
-  .rd .req .what { font: 600 13px/19px var(--pl-sans); color: var(--pl-ink); text-wrap: pretty; }
-  .rd .chip { justify-self: start; display: inline-flex; align-items: center; gap: 4px; padding: 2px 6px; border-radius: var(--pl-radius-tag); font: var(--pl-text-label); letter-spacing: var(--pl-tracking-caps); text-transform: uppercase; }
+  .rd .req[data-done] { box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--pl-on) 40%, var(--pl-border-default)); }
+  .rd .req .what { font: 600 13px/19px var(--pl-sans); color: var(--pl-text-primary); text-wrap: pretty; }
+  .rd .chip { justify-self: start; display: inline-flex; align-items: center; gap: 4px; padding: 2px 6px; border-radius: var(--pl-radius-tag); font: var(--pl-card-label); letter-spacing: var(--pl-tracking-caps); text-transform: uppercase; }
   .rd .chip[data-tone="off"] { color: var(--pl-off); background: var(--pl-off-bg); }
   .rd .chip[data-tone="soft"] { color: var(--pl-soft-text); background: var(--pl-soft-bg); }
-  .rd .chip[data-tone="unknown"] { color: var(--pl-unknown); background: var(--pl-paper); }
+  .rd .chip[data-tone="unknown"] { color: var(--pl-unknown); background: var(--pl-bg-surface); }
   .rd .chip[data-tone="on"] { color: var(--pl-on); background: var(--pl-on-bg); }
-  .rd .req .loses { font: var(--pl-card-body); color: var(--pl-ink-2); text-wrap: pretty; }
-  .rd .req .also { font: var(--pl-card-meta); color: var(--pl-ink-2); }
-  .rd .req .where { font: var(--pl-card-meta); color: var(--pl-ink-2); overflow-wrap: anywhere; }
-  .rd .req .where code { font: var(--pl-card-code); color: var(--pl-ink); }
+  .rd .req .loses { font: var(--pl-card-body); color: var(--pl-text-secondary); text-wrap: pretty; }
+  .rd .req .also { font: var(--pl-card-meta); color: var(--pl-text-secondary); }
+  .rd .req .where { font: var(--pl-card-meta); color: var(--pl-text-secondary); overflow-wrap: anywhere; }
+  .rd .req .where code { font: var(--pl-card-code); color: var(--pl-text-primary); }
   .rd .fix { display: flex; flex-direction: column; gap: var(--pl-space-4); margin-top: var(--pl-space-2); }
   .rd .fix .row { display: flex; align-items: center; gap: var(--pl-space-4); flex-wrap: wrap; }
-  .rd .fix .msg { font: var(--pl-card-meta); color: var(--pl-ink-2); text-wrap: pretty; }
+  .rd .fix .msg { font: var(--pl-card-meta); color: var(--pl-text-secondary); text-wrap: pretty; }
   .rd .fix .msg[data-tone="off"] { color: var(--pl-off); }
   .rd .fix .msg[data-tone="on"] { color: var(--pl-on); }
-  .rd .link { all: unset; font: var(--pl-text-label); letter-spacing: var(--pl-tracking-label); color: var(--pl-accent); cursor: pointer; }
-  .rd .link:focus-visible { outline: 2px solid var(--pl-accent); outline-offset: 2px; border-radius: 2px; }
+  .rd .link { all: unset; font: var(--pl-card-label); letter-spacing: var(--pl-tracking-label); color: var(--pl-instrument); cursor: pointer; }
+  .rd .link:focus-visible { outline: 2px solid var(--pl-instrument); outline-offset: 2px; border-radius: 2px; }
   @media (hover: hover) and (pointer: fine) { .rd .link:hover { text-decoration: underline; text-underline-offset: 2px; } }
-  .rd pre { margin: 0; max-height: 180px; overflow: auto; padding: var(--pl-space-4); border-radius: var(--pl-radius-tag); background: var(--pl-paper-2); font: 400 11.5px/17px var(--pl-mono); color: var(--pl-ink-2); white-space: pre; }
+  .rd pre { margin: 0; max-height: 180px; overflow: auto; padding: var(--pl-space-4); border-radius: var(--pl-radius-tag); background: var(--pl-bg-inset); font: 400 11.5px/17px var(--pl-mono); color: var(--pl-text-secondary); white-space: pre; }
   .rd pre .add { color: var(--pl-on); }
   .rd pre .del { color: var(--pl-off); }
-  .rd .cmd { display: flex; align-items: center; gap: var(--pl-space-2); padding: 2px 2px 2px var(--pl-space-4); border-radius: var(--pl-radius-tag); background: var(--pl-paper-2); }
-  .rd .cmd code { flex: 1; min-width: 0; font: var(--pl-card-code); color: var(--pl-ink); overflow-x: auto; white-space: nowrap; scrollbar-width: none; }
-  .rd .btn { all: unset; display: inline-flex; align-items: center; justify-content: center; height: 26px; padding: 0 var(--pl-space-5); border-radius: var(--pl-radius-tag); font: var(--pl-text-label); letter-spacing: var(--pl-tracking-label); color: var(--pl-ink); background: var(--pl-paper); box-shadow: inset 0 0 0 1px var(--pl-rule); cursor: pointer; white-space: nowrap; }
+  .rd .cmd { display: flex; align-items: center; gap: var(--pl-space-2); padding: 2px 2px 2px var(--pl-space-4); border-radius: var(--pl-radius-tag); background: var(--pl-bg-inset); }
+  .rd .cmd code { flex: 1; min-width: 0; font: var(--pl-card-code); color: var(--pl-text-primary); overflow-x: auto; white-space: nowrap; scrollbar-width: none; }
+  .rd .btn { all: unset; display: inline-flex; align-items: center; justify-content: center; height: 26px; padding: 0 var(--pl-space-5); border-radius: var(--pl-radius-tag); font: var(--pl-card-label); letter-spacing: var(--pl-tracking-label); color: var(--pl-text-primary); background: var(--pl-bg-surface); box-shadow: inset 0 0 0 1px var(--pl-border-default); cursor: pointer; white-space: nowrap; }
   .rd .btn.small { height: 22px; padding: 0 var(--pl-space-4); }
   .rd .btn.primary { color: var(--pl-on-action); background: var(--pl-action-soft); box-shadow: none; }
-  .rd .btn:focus-visible { outline: 2px solid var(--pl-accent); outline-offset: 2px; }
+  .rd .btn:focus-visible { outline: 2px solid var(--pl-instrument); outline-offset: 2px; }
   .rd .btn:disabled { opacity: .5; cursor: default; }
   .rd .btn[aria-busy="true"]::before { content: ""; width: 9px; height: 9px; margin-inline-end: 6px; border-radius: 50%; border: 1.5px solid currentColor; border-right-color: transparent; animation: pl-spin .7s linear infinite; }
-  @media (hover: hover) and (pointer: fine) { .rd .btn:not(:disabled):not(.primary):hover { background: var(--pl-paper-2); } .rd .btn.primary:not(:disabled):hover { background: color-mix(in oklab, var(--pl-action-soft) 85%, var(--pl-action)); } }
-  .rd .foot { display: flex; align-items: center; gap: var(--pl-space-4); padding: var(--pl-space-5) var(--pl-space-6); border-top: 1px solid var(--pl-rule); background: var(--pl-paper-2); }
-  .rd .foot .count { margin-inline-end: auto; font: var(--pl-card-meta); color: var(--pl-ink-2); }
+  @media (hover: hover) and (pointer: fine) { .rd .btn:not(:disabled):not(.primary):hover { background: var(--pl-bg-surface-hover); } .rd .btn.primary:not(:disabled):hover { background: color-mix(in oklab, var(--pl-action-soft) 85%, var(--pl-action)); } }
+  .rd .foot { display: flex; align-items: center; gap: var(--pl-space-4); padding: var(--pl-space-5) var(--pl-space-6); border-top: 1px solid var(--pl-border-default); background: var(--pl-bg-inset); }
+  .rd .foot .count { margin-inline-end: auto; font: var(--pl-card-meta); color: var(--pl-text-secondary); }
   .rd .foot .count[data-tone="on"] { color: var(--pl-on); }
   .rd-callout { position: fixed; inset-inline-end: var(--pl-space-6); inset-block-end: calc(var(--pl-space-6) + var(--pl-tag-h) + var(--pl-space-4)); max-width: min(380px, calc(100vw - 2 * var(--pl-space-6)));
     display: flex; align-items: center; gap: var(--pl-space-4); padding: var(--pl-space-4) var(--pl-space-4) var(--pl-space-4) var(--pl-space-5); pointer-events: auto;
@@ -104,12 +104,12 @@ export const READY_CSS = `
   .rd-callout[data-in] { opacity: 1; transform: none; }
   /* a write's toast (history.js) sits where the callout sits: the callout steps up above it while it shows */
   .wt[data-on] ~ .rd-callout, .rd-callout:has(~ .wt[data-on]), .tip[data-on] ~ .rd-callout, .rd-callout:has(~ .tip[data-on]) { inset-block-end: calc(var(--pl-space-6) + var(--pl-tag-h) + var(--pl-space-4) + 72px); }
-  .rd-callout .text { flex: 1; min-width: 0; font: var(--pl-card-meta); color: var(--pl-ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .rd-callout .text b { font-weight: 600; color: var(--pl-ink); }
-  .rd-callout .btn { all: unset; display: inline-flex; align-items: center; height: 24px; padding: 0 var(--pl-space-4); border-radius: var(--pl-radius-tag); font: var(--pl-text-label); letter-spacing: var(--pl-tracking-label); color: var(--pl-on-accent); background: var(--pl-accent); cursor: pointer; white-space: nowrap; }
-  .rd-callout .btn:focus-visible, .rd-callout .x:focus-visible { outline: 2px solid var(--pl-accent); outline-offset: 2px; }
-  .rd-callout .x { all: unset; display: grid; place-items: center; width: 22px; height: 22px; border-radius: var(--pl-radius-tag); color: var(--pl-ink-2); cursor: pointer; }
-  @media (hover: hover) and (pointer: fine) { .rd-callout .x:hover { background: var(--pl-paper-2); color: var(--pl-ink); } }
+  .rd-callout .text { flex: 1; min-width: 0; font: var(--pl-card-meta); color: var(--pl-text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .rd-callout .text b { font-weight: 600; color: var(--pl-text-primary); }
+  .rd-callout .btn { all: unset; display: inline-flex; align-items: center; height: 24px; padding: 0 var(--pl-space-4); border-radius: var(--pl-radius-tag); font: var(--pl-card-label); letter-spacing: var(--pl-tracking-label); color: var(--pl-on-accent); background: var(--pl-instrument); cursor: pointer; white-space: nowrap; }
+  .rd-callout .btn:focus-visible, .rd-callout .x:focus-visible { outline: 2px solid var(--pl-instrument); outline-offset: 2px; }
+  .rd-callout .x { all: unset; display: grid; place-items: center; width: 22px; height: 22px; border-radius: var(--pl-radius-tag); color: var(--pl-text-secondary); cursor: pointer; }
+  @media (hover: hover) and (pointer: fine) { .rd-callout .x:hover { background: var(--pl-bg-surface-hover); color: var(--pl-text-primary); } }
   @media (prefers-reduced-motion: reduce) { .rd .card, .rd-callout { transition: none; } .rd .btn[aria-busy="true"]::before { animation: none; } }
 `;
 
