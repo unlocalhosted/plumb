@@ -31,7 +31,7 @@ const ISSUES = [
   { id: 'space', toy: 'gap', name: 'gap-[13px] hardcodes 13px', rule: 'Spacing on your theme', done: 'gap-4, a step of your theme', num: v => Math.round(v), unit: () => 'px gap' },
   { id: '2', toy: 'alignment', name: 'Icon looks off-centre', rule: 'Optical centre beats geometric centre', done: 'Optically centred', num: v => half(v), unit: () => 'px off centre' },
   { id: '16', toy: 'type', name: 'Figures don’t line up', rule: 'Tabular figures', done: 'Tabular figures', pre: 'colons ', num: v => half(v), unit: () => 'px apart' },
-  { id: '39', toy: 'image', name: 'Pale photo, no edge', rule: 'Images get an inner outline', done: 'Inner outline', num: v => v.toFixed(1), unit: () => 'px edge' },
+  { id: '21', toy: 'shadow', name: 'Grey shadow on colour', rule: 'Shadows are tinted, not grey', done: 'Tinted with the card’s colour', pre: 'chroma ', num: v => v.toFixed(2), unit: () => '' },
 ];
 
 export function Review() {
@@ -162,7 +162,7 @@ function Pin({ issue, n, g, fit, fixed, onPress, i }) {
   const b = g.box, f = v => v * fit;
   // where each pin sits, so no label covers the page's text: the gap's on the grid's bottom-left corner, the play
   // icon's centred under the button, the shadow's under the card opening left, the rest on the top-right
-  const at = { space: ['', f(b.x) - 10, f(b.y + b.h) - 8], 2: [' rv-pin-under', f(b.x + b.w / 2), f(b.y + b.h) + 6], 39: [' rv-pin-left', f(b.x + b.w) - 8, f(b.y + b.h) + 4] };
+  const at = { space: ['', f(b.x) - 10, f(b.y + b.h) - 8], 2: [' rv-pin-under', f(b.x + b.w / 2), f(b.y + b.h) + 6], 21: [' rv-pin-left', f(b.x + b.w) - 8, f(b.y + b.h) + 4] };
   const [kind, left, top] = at[issue.id] ?? ['', f(b.x + b.w) - 8, f(b.y) - 10];
   return (
     <>
@@ -240,16 +240,19 @@ const Screen = ({ ref, fixed, titleW }) => {
         <h3 className="rv-title" data-issue="18" data-fixed={fx('18')} style={{ width: titleW }}>Good morning, Maya. Here’s what moved in your workspace this week</h3>
         <div className="rv-grid" data-issue="space" data-fixed={fx('space')}>
           <section className="rv-video">
+            <span className="rv-float f1">{toy('fill')}</span><span className="rv-float f2">{toy('corner')}</span><span className="rv-float f3">{toy('type')}</span><span className="rv-float f4">{toy('padding')}</span>
             <span className="rv-play" data-issue="2" data-fixed={fx('2')}><svg viewBox="0 0 24 24"><path d="M7 4.5v15L19 12z" /></svg></span>
             <small>Welcome tour · 1:24</small>
           </section>
           <section className="rv-figs" data-issue="16" data-fixed={fx('16')}>
             <small>{toy('motion')}Time this week</small>
-            {[['Design', '12:06:18', 'pink'], ['Reviews', '4:48:05', 'sky'], ['Meetings', '7:11:40', 'mint']].map(([l, v, h]) => <div key={l}><span>{l}</span><b>{v}</b></div>)}
+            {[['Design', '12:06:18', 'pink'], ['Reviews', '4:48:05', 'sky'], ['Meetings', '7:11:40', 'mint']].map(([l, v, h]) => <div key={l}><span><i className="rv-dot" style={{ '--d': `var(--pl-${h})` }} />{l}</span><b>{v}</b></div>)}
           </section>
           <section className="rv-promo">
-            <div className="rv-photo" data-issue="39" data-fixed={fx('39')} />
-            <b>Moodboard</b><span>12 new photos from the studio</span>
+            <div className="rv-promo-card" data-issue="21" data-fixed={fx('21')}>
+              <span className="rv-avs">{[['A', 'sky'], ['J', 'mint'], ['K', 'butter']].map(([c, h]) => <i key={c} className="rv-av" style={{ '--a': `var(--pl-${h})` }}>{c}</i>)}</span>
+              <b>Invite your team</b><span>Three seats left on your plan</span>
+            </div>
           </section>
         </div>
       </main>
@@ -294,9 +297,9 @@ function read(root) {
   });
   out['16'] = { box: box(figs.getBoundingClientRect()), value: Math.max(...xs.map(c => c.x)) - Math.min(...xs.map(c => c.x)), guides: xs.map(c => ({ kind: 'line', x: c.x, y: c.y, w: 0, h: c.h })) };
 
-  // #39: the photo's inner outline (a pale photo on a white card has no edge without one)
-  const photo = q('39'), pb = box(photo.getBoundingClientRect());
-  out['39'] = { box: pb, value: parseFloat(getComputedStyle(photo, '::after').opacity), guides: [{ kind: 'box', x: pb.x - 4, y: pb.y - 4, w: pb.w + 8, h: pb.h + 8 }] };
+  // #21: the shadow's chroma, and its colour for the swatch
+  const card = q('21'), sh = getComputedStyle(card).boxShadow;
+  out['21'] = { box: box(card.getBoundingClientRect()), value: chromaOf(sh), swatch: sh.match(/(oklch|rgba?)\([^)]*\)/)?.[0], guides: [] };
   return out;
 }
 

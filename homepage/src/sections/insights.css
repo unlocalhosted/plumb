@@ -10,7 +10,7 @@
 .ins-x-families { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin: var(--s-6) 0 0; padding: 0; list-style: none; }
 .ins-x-families li { display: inline-flex; gap: 6px; align-items: center; height: 28px; padding: 0 11px; border-radius: 99px; background: var(--pl-bg-surface); box-shadow: var(--pl-shadow-tag);
   font: var(--pl-round-w, 700) 12.5px/1 var(--pl-round); color: var(--ink-1); }
-.ins-x-families li span { font: 600 11px/1 var(--pl-mono); color: var(--ink-3); }
+.ins-x-families li span { font: 600 11px/1 var(--pl-mono); color: var(--pl-pink); }
 /* a bento: the play button the big tile, three wide ones, the rest single; wide and single swap sides row by row */
 .ins-x-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-auto-rows: auto; gap: 16px; margin-top: var(--s-6);
   grid-template-areas: 'play play album' 'play play timer' 'news shadow shadow' 'forecast forecast photo' 'tabs menu menu'; }
@@ -19,8 +19,9 @@
    fix bar's language; it stays in view while the grid scrolls under it ── */
 .ins-review { position: sticky; top: 76px; z-index: 5; display: flex; align-items: center; gap: 10px; max-width: 46rem; min-height: 54px; margin: var(--s-7) auto 0; padding: 8px 14px 8px 8px;
   border-radius: 18px; background: color-mix(in oklab, var(--pl-bg-surface) 90%, transparent); backdrop-filter: blur(14px) saturate(1.4); box-shadow: var(--pl-shadow-card);
-  --hue: var(--pl-text-primary); font: 400 14px/1.35 var(--font); color: var(--ink-2); }
-.ins-review-n { display: grid; place-items: center; flex: none; width: 36px; height: 36px; border-radius: 12px; translate: 0 -2px; color: var(--pl-bg-surface); font: var(--pl-round-w, 700) 14px/1 var(--pl-round);
+  --hue: var(--pl-sky); font: 400 14px/1.35 var(--font); color: var(--ink-2); }
+.ins-review[data-hue='pink'] { --hue: var(--pl-pink); } .ins-review[data-hue='mint'] { --hue: var(--pl-mint); } .ins-review[data-hue='lilac'] { --hue: var(--pl-lilac); } .ins-review[data-hue='butter'] { --hue: var(--pl-butter); }
+.ins-review-n { display: grid; place-items: center; flex: none; width: 36px; height: 36px; border-radius: 12px; translate: 0 -2px; color: #fff; font: var(--pl-round-w, 700) 14px/1 var(--pl-round);
   background: linear-gradient(180deg, color-mix(in oklab, var(--hue) 82%, #fff), var(--hue)); transition: background 300ms var(--ease);
   box-shadow: inset 0 1.5px 0 rgb(255 255 255 / .4), 0 2px 0 color-mix(in oklab, var(--hue) 70%, #000), 0 6px 10px -4px color-mix(in oklab, var(--hue) 70%, transparent); }
 .ins-review > .ins-toy { width: 22px; height: 22px; }
@@ -41,16 +42,20 @@
 
 /* ── the spotlight: the card on turn lifts; the others sit still and a little quiet (pointing at one brings it up) ── */
 .ins-x-grid[data-live='true'] .ins-card { transition: translate 400ms var(--pl-spring-pop), opacity 400ms var(--ease), filter 400ms var(--ease), box-shadow 400ms var(--ease); }
-.ins-x-grid[data-live='true'] .ins-card:not([data-turn]) { opacity: .55; }
+.ins-x-grid[data-live='true'] .ins-card:not([data-turn]) { opacity: .62; filter: saturate(.7); }
 .ins-x-grid[data-live='true'] .ins-card:not([data-turn]):hover { opacity: 1; filter: none; }
-.ins-x-grid[data-live='true'] .ins-card[data-turn] { translate: 0 -5px; box-shadow: var(--pl-shadow-card), 0 0 0 1.5px var(--pl-text-primary), 0 28px 44px -24px rgb(0 0 0 / .35); }
+.ins-x-grid[data-live='true'] .ins-card[data-turn] { translate: 0 -5px; box-shadow: var(--pl-shadow-card), 0 0 0 2px color-mix(in oklab, var(--hue) 70%, transparent), 0 26px 44px -22px color-mix(in oklab, var(--hue) 70%, transparent); }
 
 /* ── the card: paper, its stage on a coloured face, in our design language ── */
-.ins-card { --hue: var(--pl-text-primary); --face: var(--pl-bg-inset); display: flex; flex-direction: column; padding: 10px; border-radius: 24px; background: var(--pl-bg-surface); box-shadow: var(--pl-shadow-card);
+.ins-card { --hue: var(--pl-sky); --face: var(--pl-sky-face); display: flex; flex-direction: column; padding: 10px; border-radius: 24px; background: var(--pl-bg-surface); box-shadow: var(--pl-shadow-card);
   transition: translate 300ms var(--pl-spring-pop), box-shadow 200ms var(--ease); }
+.ins-card[data-hue='pink'] { --hue: var(--pl-pink); --face: var(--pl-pink-face); }
+.ins-card[data-hue='mint'] { --hue: var(--pl-mint); --face: var(--pl-mint-face); }
+.ins-card[data-hue='lilac'] { --hue: var(--pl-lilac); --face: var(--pl-lilac-face); }
+.ins-card[data-hue='butter'] { --hue: var(--pl-butter); --face: var(--pl-butter-face); }
 @media (hover: hover) and (pointer: fine) { .ins-card:hover { translate: 0 -3px; } }
 .ins-stage { position: relative; flex: 1; min-height: 252px; overflow: hidden; border-radius: 16px;
-  background: radial-gradient(120% 90% at 25% 0%, var(--pl-bg-surface), var(--pl-bg-inset) 70%); box-shadow: inset 0 0 0 1px var(--pl-border-default); }
+  background: radial-gradient(120% 90% at 25% 0%, color-mix(in oklab, #fff 28%, var(--face)), var(--face) 55%, color-mix(in oklab, var(--hue) 18%, var(--face))); }
 /* the state: a tag in the toy face with the principle's toy, coral while broken, mint once fixed */
 .ins-state { position: absolute; z-index: 3; left: 10px; top: 10px; display: inline-flex; gap: 5px; align-items: center; height: 26px; padding: 0 9px 0 6px; overflow: hidden;
   border-radius: var(--pl-radius-tag); font: var(--pl-round-w, 700) 12px/1 var(--pl-round); color: var(--pl-coral-ink); background: color-mix(in oklab, var(--pl-coral) 18%, var(--pl-bg-surface));
@@ -78,7 +83,7 @@
 .ins-replay:focus-visible { outline: 2px solid var(--pl-border-focus); outline-offset: 2px; }
 @keyframes ins-pop-in { from { opacity: 0; scale: 0.85; } }
 .ins-foot { display: flex; gap: 12px; align-items: flex-start; padding: 14px 6px 6px; }
-.ins-n { display: grid; place-items: center; flex: none; width: 30px; height: 30px; border-radius: 10px; translate: 0 -2px; color: var(--pl-bg-surface); font: var(--pl-round-w, 700) 12px/1 var(--pl-round);
+.ins-n { display: grid; place-items: center; flex: none; width: 30px; height: 30px; border-radius: 10px; translate: 0 -2px; color: #fff; font: var(--pl-round-w, 700) 12px/1 var(--pl-round);
   background: linear-gradient(180deg, color-mix(in oklab, var(--hue) 82%, #fff), var(--hue));
   box-shadow: inset 0 1.5px 0 rgb(255 255 255 / .4), 0 2px 0 color-mix(in oklab, var(--hue) 70%, #000), 0 6px 10px -4px color-mix(in oklab, var(--hue) 70%, transparent); }
 .ins-text { display: grid; gap: 3px; min-width: 0; }
@@ -116,23 +121,22 @@
 
 /* #2 play button: a video tile in our hues, a soft white button */
 .sc-video { position: relative; display: grid; place-items: center; width: 240px; height: 140px; border-radius: 18px; overflow: hidden;
-  background: radial-gradient(90% 80% at 30% 15%, color-mix(in oklab, var(--pl-ink) 3%, var(--pl-bg-surface)), color-mix(in oklab, var(--pl-ink) 16%, var(--pl-bg-surface)) 78%);
-  box-shadow: 0 0 0 1px var(--pl-border-default), 0 14px 26px -16px rgb(0 0 0 / .35); }
-.sc-video small { position: absolute; left: 10px; bottom: 10px; padding: 4px 8px; border-radius: 99px; background: var(--pl-bg-surface); font: 600 11px/1 var(--font); color: var(--pl-text-primary); box-shadow: 0 0 0 1px var(--pl-border-default); }
-.sc-play-btn { display: grid; place-items: center; width: 58px; height: 58px; border-radius: 50%; background: var(--pl-bg-surface); box-shadow: 0 0 0 1px var(--pl-border-default), 0 10px 20px -8px rgb(0 0 0 / .35); }
-.sc-play-btn svg { width: 26px; height: 26px; fill: var(--pl-text-primary); translate: -1.08px 0; transition: translate 420ms var(--ins-ease); } /* the triangle's box (7–19 of 24) on the circle's centre */
+  background: linear-gradient(150deg, var(--pl-lilac), var(--pl-sky)); box-shadow: inset 0 1.5px 0 rgb(255 255 255 / .35), 0 4px 0 color-mix(in oklab, var(--pl-lilac) 65%, #000), 0 16px 26px -12px color-mix(in oklab, var(--pl-lilac) 70%, transparent); }
+.sc-video small { position: absolute; left: 10px; bottom: 10px; padding: 4px 8px; border-radius: 99px; background: rgb(255 255 255 / .9); font: var(--pl-round-w, 700) 11px/1 var(--pl-round); color: #2b1a6b; }
+.sc-play-btn { display: grid; place-items: center; width: 58px; height: 58px; border-radius: 50%; background: linear-gradient(180deg, #fff, #f1efff); box-shadow: 0 4px 0 rgb(43 26 107 / .25), 0 12px 20px -8px rgb(43 26 107 / .55); }
+.sc-play-btn svg { width: 26px; height: 26px; fill: #2b1a6b; translate: -1.08px 0; transition: translate 420ms var(--ins-ease); } /* the triangle's box (7–19 of 24) on the circle's centre */
 .sc-play[data-fixed='true'] .sc-play-btn svg { translate: 1.08px 0; } /* its weight (x 11 of 24) on the circle's centre */
 
 /* the big tile: the video drawn larger, to fill it */
-.ins-card[data-size='big'] .sc-video { width: 440px; height: 260px; border-radius: 22px; }
+.ins-card[data-size='big'] .sc-video { width: 440px; height: 260px; border-radius: 26px; }
 .ins-card[data-size='big'] .sc-play-btn { width: 96px; height: 96px; }
 .ins-card[data-size='big'] .sc-play-btn svg { width: 42px; height: 42px; translate: -1.75px 0; }
 .ins-card[data-size='big'] .sc-play[data-fixed='true'] .sc-play-btn svg { translate: 1.75px 0; }
 .ins-card[data-size='big'] .sc-video small { left: 16px; bottom: 16px; padding: 6px 11px; font-size: 13px; }
 
 /* #8 nested radius: an album tile, paper, its cover in our warm hues */
-.sc-tile { width: 128px; padding: 8px; border-radius: 20px; background: var(--pl-bg-surface); box-shadow: 0 0 0 1px var(--pl-border-default), 0 14px 26px -16px rgb(0 0 0 / .3); }
-.sc-cover { aspect-ratio: 1; border-radius: 20px; background: radial-gradient(70% 60% at 30% 25%, #f4f2ee, transparent 70%), linear-gradient(150deg, #8d8a84, #2b2a27); transition: border-radius 420ms var(--ins-ease); }
+.sc-tile { width: 128px; padding: 8px; border-radius: 20px; background: var(--pl-bg-surface); box-shadow: inset 0 1.5px 0 rgb(255 255 255 / .6), 0 4px 0 color-mix(in oklab, var(--hue) 40%, var(--pl-bg-surface)), 0 16px 26px -14px color-mix(in oklab, var(--hue) 70%, transparent); }
+.sc-cover { aspect-ratio: 1; border-radius: 20px; background: radial-gradient(80% 70% at 30% 25%, var(--pl-butter), transparent 70%), linear-gradient(140deg, var(--pl-pink), var(--pl-lilac)); transition: border-radius 420ms var(--ins-ease); }
 .sc-album[data-fixed='true'] .sc-cover { border-radius: 12px; } /* 20 − 8 */
 .sc-tile b { display: block; margin: 9px 2px 3px; font: var(--pl-round-w, 700) 13.5px/1 var(--pl-round); }
 .sc-tile small { display: block; margin: 0 2px 2px; font-size: 11px; color: var(--ink-2); }
@@ -141,18 +145,18 @@
 .sc-timer { align-content: center; gap: 0; }
 .sc-timer > * { width: 236px; }
 .sc-clock { display: grid; justify-items: center; gap: 5px; padding: 14px 14px 10px; border-radius: 16px 16px 0 0; background: var(--pl-bg-surface); }
-.sc-clock small { display: inline-flex; padding: 3px 8px; border-radius: 99px; background: var(--pl-bg-inset); color: var(--ink-2); font: 600 11px/1 var(--font); }
+.sc-clock small { display: inline-flex; padding: 3px 8px; border-radius: 99px; background: var(--pl-mint-soft); color: var(--pl-mint-ink); font: var(--pl-round-w, 700) 11px/1 var(--pl-round); }
 .sc-clock b { font: 650 30px/1 var(--font); letter-spacing: -0.02em; font-variant-numeric: proportional-nums; }
 .sc-timer ul { margin: 0; padding: 0 14px 10px; list-style: none; border-radius: 0 0 16px 16px; background: var(--pl-bg-surface);
-  box-shadow: 0 0 0 1px var(--pl-border-default), 0 14px 26px -16px rgb(0 0 0 / .3); }
+  box-shadow: 0 4px 0 color-mix(in oklab, var(--hue) 40%, var(--pl-bg-surface)), 0 16px 26px -14px color-mix(in oklab, var(--hue) 70%, transparent); }
 .sc-timer li { display: flex; justify-content: space-between; padding: 6px 2px; border-top: 1px dashed var(--line); font-size: 12px; color: var(--ink-2); }
 .sc-timer li b { font-weight: 600; color: var(--ink-1); font-variant-numeric: proportional-nums; }
 .sc-timer[data-fixed='true'] b { font-variant-numeric: tabular-nums; }
 
 /* #18 widows: a news card, the headline in the toy face */
 .sc-news { align-content: center; justify-items: start; width: 256px; margin: 0 auto; gap: 8px; }
-.sc-news small { display: inline-flex; padding: 3px 8px; border-radius: 99px; background: var(--pl-bg-surface); font: 600 11px/1 var(--font); color: var(--ink-2); box-shadow: 0 0 0 1px var(--pl-border-default); }
-.sc-news h4 { width: 256px; margin: 0; font: var(--pl-round-w, 700) 22px/1.15 var(--pl-round); letter-spacing: -0.015em; text-wrap: wrap; color: var(--ink-1); }
+.sc-news small { display: inline-flex; padding: 3px 8px; border-radius: 99px; background: var(--pl-bg-surface); font: var(--pl-round-w, 700) 11px/1 var(--pl-round); color: var(--pl-lilac-ink); box-shadow: var(--pl-shadow-tag); }
+.sc-news h4 { width: 256px; margin: 0; font: var(--pl-round-w, 700) 22px/1.15 var(--pl-round); letter-spacing: -0.015em; text-wrap: wrap; color: var(--pl-lilac-ink); }
 .sc-news[data-fixed='true'] h4 { text-wrap: balance; }
 
 /* #21 tinted shadow: a recipe card on a pink page; its shadow grey, then the page's own pink (written in rgb, which
@@ -160,17 +164,14 @@
 .sc-recipe { display: grid; gap: 4px; width: 210px; padding: 14px 16px; border-radius: 16px; background: var(--pl-bg-surface); color: var(--ink-1);
   box-shadow: 0 2px 4px rgb(0 0 0 / 0.25), 0 18px 32px -10px rgb(0 0 0 / 0.5); transition: box-shadow 450ms var(--ins-ease); }
 .sc-shadow[data-fixed='true'] .sc-recipe { box-shadow: 0 2px 4px rgb(214 64 140 / 0.35), 0 18px 32px -10px rgb(200 40 120 / 0.65); }
-.sc-recipe small { font: 600 11px/1 var(--font); color: var(--ink-2); }
-/* the principle is about a shadow on colour, so the one coloured thing here is the plate the card sits on */
-.sc-shadow::before { content: ''; position: absolute; left: 50%; top: 50%; width: 290px; height: 170px; translate: -50% -48%; border-radius: 22px; background: #f2b8cf; }
-.sc-recipe { position: relative; }
+.sc-recipe small { font: var(--pl-round-w, 700) 11px/1 var(--pl-round); color: var(--pl-pink); }
 .sc-recipe b { font: var(--pl-round-w, 700) 18px/1.2 var(--pl-round); }
 .sc-recipe span { font-size: 12px; color: var(--ink-2); }
 
 /* #55 gradients: a forecast on paper; the bars keep the principle's blue and amber */
 .sc-forecast { align-content: center; gap: 12px; }
 .sc-forecast::before { content: ''; position: absolute; inset: 50% auto auto 50%; width: 290px; height: 150px; translate: -50% -50%; border-radius: 18px; background: var(--pl-bg-surface);
-  box-shadow: 0 0 0 1px var(--pl-border-default), 0 14px 26px -16px rgb(0 0 0 / .3); }
+  box-shadow: 0 4px 0 color-mix(in oklab, var(--hue) 40%, var(--pl-bg-surface)), 0 16px 26px -14px color-mix(in oklab, var(--hue) 70%, transparent); }
 .sc-day { position: relative; display: grid; grid-template-columns: 34px 220px; align-items: center; font: var(--pl-round-w, 700) 12px/1 var(--pl-round); color: var(--ink-2); }
 .sc-day i { position: relative; height: 10px; border-radius: 5px; background: var(--pl-bg-inset); box-shadow: var(--pl-shadow-well); }
 .sc-day b { position: absolute; top: 0; bottom: 0; border-radius: 5px; background: linear-gradient(in srgb 90deg, #2f6fe4, #f5a524); }
@@ -190,20 +191,21 @@
 /* #42 bold on hover: a paper segmented control, the pointed tab on a lilac face */
 .sc-tabs { align-content: center; justify-items: center; gap: 0; }
 .sc-tabs nav { display: flex; gap: 2px; padding: 4px; border-radius: 12px; background: var(--pl-bg-surface);
-  box-shadow: 0 0 0 1px var(--pl-border-default), 0 14px 26px -16px rgb(0 0 0 / .3); }
+  box-shadow: 0 4px 0 color-mix(in oklab, var(--hue) 40%, var(--pl-bg-surface)), 0 16px 26px -14px color-mix(in oklab, var(--hue) 70%, transparent); }
 .sc-tabs nav span { display: inline-grid; padding: 7px 10px; border-radius: 8px; font: 400 13px/1 var(--font); color: var(--ink-2); }
-.sc-tabs nav span[data-hover='true'] { font-weight: 600; color: var(--ink-1); background: var(--pl-bg-inset); }
+.sc-tabs nav span[data-hover='true'] { font-weight: 600; color: var(--pl-lilac-ink); background: var(--pl-lilac-face); }
 .sc-tabs[data-fixed='true'] nav span::after { content: attr(data-label); height: 0; overflow: hidden; visibility: hidden; font-weight: 600; }
 .sc-tabs-body { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; width: 300px; height: 70px; margin-top: 14px; }
 .sc-tabs-body { background: linear-gradient(90deg, var(--pl-bg-surface) 0 31%, transparent 31% 34.5%, var(--pl-bg-surface) 34.5% 65.5%, transparent 65.5% 69%, var(--pl-bg-surface) 69%); border-radius: 12px; opacity: .75; }
 
 /* #63 menu: a pink soft Share button, a paper menu */
 .sc-menu { align-content: start; justify-items: center; }
-.sc-share { padding: 8px 16px; border-radius: 12px; color: var(--pl-bg-surface); font: 600 13px/1 var(--font); background: var(--pl-text-primary); box-shadow: 0 6px 14px -6px rgb(0 0 0 / .45); }
+.sc-share { padding: 8px 16px; border-radius: 12px; color: #fff; font: var(--pl-round-w, 700) 13px/1 var(--pl-round); translate: 0 -2px;
+  background: linear-gradient(180deg, color-mix(in oklab, var(--pl-pink) 85%, #fff), var(--pl-pink)); box-shadow: inset 0 1.5px 0 rgb(255 255 255 / .4), 0 3px 0 color-mix(in oklab, var(--pl-pink) 70%, #000); }
 .sc-pop { display: grid; gap: 2px; width: 156px; margin-top: 10px; padding: 5px; border-radius: 14px; background: var(--pl-bg-surface); box-shadow: var(--pl-shadow-card);
   opacity: 0; scale: 0; transform-origin: center; transition: scale 260ms var(--ease), opacity 160ms ease; }
 .sc-pop span { padding: 8px 9px; border-radius: 8px; font-size: 12.5px; color: var(--ink-2); }
-.sc-pop span:first-child { background: var(--pl-bg-inset); color: var(--ink-1); font-weight: 600; }
+.sc-pop span:first-child { background: var(--pl-mint-face); color: var(--pl-mint-ink); font-weight: 600; }
 .sc-menu[data-open='true'] .sc-pop { opacity: 1; scale: 1; }
 .sc-menu[data-fixed='true'] .sc-pop { scale: 0.96; transform-origin: top center; }
 .sc-menu[data-fixed='true'][data-open='true'] .sc-pop { scale: 1; }

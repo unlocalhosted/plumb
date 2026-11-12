@@ -1983,6 +1983,11 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   burst), the payoff (what is better now, e.g. "Now it looks centred: it's centred by its weight, not its box"); after
   the ninth, the round's payoff ("9 fixed, in your JSX. You wrote none of it.", with a burst). The four beats were
   logged playing in order; the round's summary wasn't watched end to end.
+- **My misreading, undone.** The owner had said the solid colour fills were the problem and the detailed card was the
+  good one; I read it as "take the colour out" and made everything grey, removing the delight ("you remove all the
+  delight part, joy part ... now everything's grey"). The colourful demos are restored; the four-beat story stays.
+  What was actually asked: detail and delight, not flat colour fills; and the showcase should show the pain with our
+  guardrail language (padding, margin, gaps, movement) around the example.
 
 ## Open gaps
 - The overlay writes about 180 corners as numbers (radius tokens about 45 times), many off its own scale; 6px is
