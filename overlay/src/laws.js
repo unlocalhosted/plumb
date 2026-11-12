@@ -58,6 +58,7 @@ const RULE_LAWS = {
   'craft/flex-min': [],
   'craft/image-ground': [],
   'craft/sticky-room': [],
+  'craft/fixed-height': [],
   'craft/truncate-intent': [],
   'craft/scrollbar-gutter': [],
   'craft/bold-hover': [],

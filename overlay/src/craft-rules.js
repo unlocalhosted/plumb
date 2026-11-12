@@ -34,6 +34,7 @@
  *  media-size          #34     one avatar and icon size per list
  *  flex-min            —       a flex item that holds text may shrink, so a long name is cut off, not pushed out
  *  image-ground        —       words over a picture have a colour behind them for when it doesn't arrive
+ *  fixed-height        —       a box that holds text sets its least height, not its exact height
  *  sticky-room         —       a sticky side column is not stretched to its row, so it has room to stick
  *  image-fit           —       a picture in a box of another shape is cropped, never stretched
  *  truncate-intent     #35     cut-off text shows its full value on hover
@@ -1236,6 +1237,36 @@ export const stickyRoom = {
   },
 };
 
+// Defensive, not a craft rule (no number, no showcase screen; docs/research/defensive-tips.md). A box that holds text
+// sets its least height, never its exact height: text grows downward with a longer sentence or a narrower screen, and
+// a set height leaves it running out of the box. Read from what is measured: a height class on a box whose text
+// already wraps (so it will wrap further), nothing said about overflow, and not a control, a picture or a scroll area.
+// The fix keeps the height as the least. (defensivecss.dev "Fixed sizes"; MDN min-height.)
+export const fixedHeight = {
+  id: 'craft/fixed-height', family: 'craft', number: [], owns: ['size'], once: 'ancestor', reads: ['style', 'rect', 'text'],
+  check({ el, facts }, theme) {
+    const T = theme.spec(this.id);
+    // the height as written: a step, a length or the screen's; never the parent's (h-full), a share of it, or the content's
+    const cls = utility(el, 'h', { not: /^(?:auto|fit|min|max|full|px|\d+\/\d+)$/ });
+    if (!cls || /^(?:img|svg|canvas|video|picture|iframe|textarea|input|select|button|pre|table)$/.test(el.localName)) return [];
+    if (el.matches('a, summary, label, [role="button"], [role="tab"], [role="menuitem"], [role="option"], [contenteditable="true"]')) return [];
+    const s = facts.style(el);
+    if (s.overflowY !== 'visible' || s.display === 'none' || s.position === 'fixed' || /inline$/.test(s.display)) return [];
+    if (px(s.minHeight) >= el.offsetHeight - 1 && px(s.minHeight) > 0) return []; // already a least height
+    // text that wraps: a line of words in here already runs to a second line, so a longer one runs to a third
+    const wraps = [el, ...el.querySelectorAll('*')].slice(0, T.depth).some((t) => facts.text(t) && facts.style(t).whiteSpace !== 'nowrap' && !t.closest('button, input, select, textarea') && lineCount(t) >= 2);
+    if (!wraps) return [];
+    const over = Math.max(0, el.scrollHeight - el.clientHeight);
+    const shows = over > 1;
+    return [{
+      ...say(this.id, { over: shows ? over : 0 }),
+      key: this.id, text: cls, props: ['height'], value: s.height, n: over,
+      evidence: { over, height: el.offsetHeight }, confidence: shows ? 0.9 : 0.84,
+      suggest: { kind: 'class', from: cls, to: `min-${cls}`, why: 'keeps this height as the least, and lets the box grow with its text', sets: { height: 'auto', minHeight: `${el.offsetHeight}px` }, moves: true },
+    }];
+  },
+};
+
 const truncated = (el, s) => s.textOverflow === 'ellipsis' && s.overflowX !== 'visible' && el.scrollWidth > el.clientWidth + 1;
 const pathLike = (t) => /^\S+$/.test(t) && ((t.match(/[/\\]/g) ?? []).length >= 2 || /^[0-9a-f]{16,}$/i.test(t) || /^[\w-]+(?:\.[\w-]+){2,}$/.test(t));
 
@@ -2274,7 +2305,7 @@ export const interruptible = {
 };
 
 export const RULES = [concentricRadius, innerOuterSpacing, textOpacity, halfPixel, hairline, imageOutline, layeredShadow, scaleFromZero, zIndexWar, contentAlign,
-  buttonPadding, iconSide, measure, leading, tracking, tabularNums, headingWidow, oneLight, borderOnShadow, contrast, disabledContrast, hitTarget, mediaSize, imageFit, flexMin, imageGround, stickyRoom,
+  buttonPadding, iconSide, measure, leading, tracking, tabularNums, headingWidow, oneLight, borderOnShadow, contrast, disabledContrast, hitTarget, mediaSize, imageFit, flexMin, imageGround, stickyRoom, fixedHeight,
   truncateIntent, scrollbarGutter, boldHover, hangingQuote, capsCase, gradientSpace, inputZoom, anchorOffset, middleTruncate,
   textWrapRole, continuousCorners, opticalSizing, tintedShadow, easedScrim, pureBlackWhite, contentSize,
   baselineAlign, iconCap, trimLeading, headingLead, pairSpacing, cardOpticalPadding,

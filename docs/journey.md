@@ -547,6 +547,14 @@
 - **What got in the way:** the overlay stopped loading on crafting-ui three times in twenty minutes. Each time another session had added a file to the overlay; a dev server only hands out the files it knew when it started, so it needs a restart for each new one.
 - **Media hooks:** the skill page scrolled to "How": before, the code line running under the side column; after, the code block inside its column with a scrollbar.
 
+## The third check from the tips: a set height on a box that holds text (2026-11-12)
+- **The itch:** next on the sorted list; the owner: "Yes, next check".
+- **The principle and its ground:** a box that holds text sets its least height, not its exact height, because text grows downward. Re-read at the source when built: the tip's page and MDN's min-height page. The vertical-media-queries tip's case (a full-screen-height box holding content) is the same thing and is covered by it.
+- **How plumber reads it:** a height class on a box where a line of words already runs to a second line, nothing said about overflow, and not a control, a picture or a scroll area. No threshold: "wraps" is measured. It offers the same height as the least: `h-40` becomes `min-h-40`.
+- **The proof, on a page we wrote:** a box whose text spills ("The text here runs 20px past this box’s set height.") and one that only fits today were both found; five correct ones (a least height, a button, a scroll area, a one-line bar, a clipped box) were left alone. After plumber wrote the swap, the box grew from 80 to 112 px and held its text.
+- **On real apps: nothing changed.** crafting-ui's seven pages hold 619 height classes and none is this mistake; plumber said nothing, which is right. algorecall's home has none either, at desktop or phone width. So there is no before and after from a real app for this check.
+- **What got in the way:** plumber's full read does not finish on algorecall while the browser pane is hidden (it timed out at 45 s), so only its home page was checked, by running the one check directly.
+
 ## Open gaps
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
 

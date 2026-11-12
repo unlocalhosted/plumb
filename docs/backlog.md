@@ -115,12 +115,16 @@ reserved.)
 
 - Seen catching slips only on pages we wrote; no real app with the mistakes has been read.
 - One check's fix can raise another check's finding on the same element (a background makes a box count as a card).
-- Of the 25 defensivecss.dev tips, 11 have a check. The other 15 are sorted in docs/research/defensive-tips.md:
-  - Still to build, each from its written principle (7 checks for 9 tips): a fixed height on a box that holds text;
-    space that is left over, not declared; a row of like things that cannot wrap; a fixed column with no narrow form;
+- Of the 25 defensivecss.dev tips, 13 have a check. The other 15 are sorted in docs/research/defensive-tips.md:
+  - Still to build, each from its written principle (6 checks for 7 tips): space that is left over, not declared; a row of like things that cannot wrap; a fixed column with no narrow form;
     a scrollbar that shows when nothing scrolls; a background photo that tiles; a picture stretched by its row.
   - Will not be checks (4): auto-fit vs auto-fill, CSS variable fallback, grouping vendor selectors, image maximum width.
   - The CSS behaviour each check rests on is to be re-read and linked when the check is built; only the tip pages were read.
+- The fixed-height check has never fired on a real app: crafting-ui (7 pages, 619 height classes) and algorecall's
+  home at two widths have no such box. Its only proof is a page we wrote. algorecall's other pages could not be read:
+  the full read stalls there while the browser pane is hidden.
+- The grid form of the shrink check flags one more place on crafting-ui's pattern pages (a collapsible section
+  holding a part that scrolls sideways) that looks right today; not judged yet.
 - crafting-ui holds two fixes plumber wrote at the owner's word, not committed there: the skill pages' side column
   (`self-start`) and the markdown list item (`min-w-0`).
 

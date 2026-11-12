@@ -43,7 +43,7 @@ Eleven tips hold and become nine checks; four do not hold; one waits on a decisi
 - **Suggestion:** `self-start`. One class, exact.
 - **Mechanism numbers:** none. "Taller than its content" is measured, with one pixel for rounding.
 
-### A fixed height on a box that holds text
+### A fixed height on a box that holds text (built 2026-11-12)
 - **What the expert sees:** a hero or card with a set height, and text that will spill out of it once it is longer or
   the screen is narrower.
 - **Principle:** a box that holds text sets its least height, never its exact height, in the direction text grows.
@@ -51,6 +51,10 @@ Eleven tips hold and become nine checks; four do not hold; one waits on a decisi
 - **Signals:** a height class on an element that holds text that may wrap, with nothing said about overflow; not a
   control, a picture, or a scroll area. `h-screen` holding content is the same case.
 - **Suggestion:** `h-X` becomes `min-h-X`. One class swapped.
+- **Ground re-read when built:** the tip's own page ("we need to use min-height instead of height. That way, if the
+  content gets larger, the layout won’t break") and MDN's min-height page.
+- **How "holds text that may wrap" is read:** a line of words inside already runs to a second line. Measured, with
+  no threshold; a box whose text is one line (a bar, a chip, a control) is left alone.
 
 ### Space that is left over, not declared
 - **What the expert sees:** a title and a button kept apart only by the empty space between them; a row of items

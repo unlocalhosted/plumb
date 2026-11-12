@@ -49,6 +49,11 @@ export const CRAFT = {
     reason: scrolls ? 'A flex item or a grid cell is never narrower than what it holds, unless it is told it may be. So the part that should scroll grows instead, and pushes out.'
       : 'A flex item is never narrower than its longest line. A longer name or a narrower screen pushes the rest of the row out.',
   }),
+  'fixed-height': ({ over }) => ({
+    label: over ? 'Text runs out of its box' : 'Text can outgrow its box',
+    line: over ? `The text here runs ${px(over)} past this box’s set height.` : 'This box has a set height and holds text that wraps. A longer sentence or a narrower screen will run past it.',
+    reason: 'A box that holds text sets its least height, not its exact height: text grows downward.',
+  }),
   'sticky-room': ({ spare }) => ({
     label: 'Set to stick, but can’t',
     line: `This is set to stay in view as the page scrolls, but it is stretched ${px(spare)} past its own content, to the full height of its row, so it has nowhere to move.`,
