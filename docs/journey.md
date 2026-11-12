@@ -269,12 +269,24 @@
 - **The system behind it:** the craft side was designed around "the first candidate that exists wins". The drift side and the vision already say "write when exactly one edit fits; otherwise show the choices"; the craft side never took that on.
 - **The fix and the proof:** none yet; this is the written result, docs/research/suggestion-sources.md, with each quote and its page. Four pages could not be opened and are listed there.
 
+## A correctness round for the three defensive checks: found on the right line, written to the right line (2026-11-12)
+- **The itch:** the owner: "do a round of right correctness and right ... reaching the source file without any issue."
+- **How we found it:** a temporary page with each slip written several ways and a correct twin beside each (12 marked elements: 7 slips, 5 twins). plumber read it; each fix was then written through plumber's own write to the dev server, and the file was read afterwards. The page was deleted after the run.
+- **The proof, finding:** all 7 slips were found at the exact line and column of the element in the file, including a picture inside a small component used twice (found once, at the component's own line, counted as 2). None of the 5 correct twins was marked by the three checks.
+- **The proof, writing:** 6 of 7 fixes landed on the right element's class list and nowhere else, and each finding was gone when plumber asked again. The component's fix was written once and fixed both uses.
+- **What did not write:** a picture whose classes are built in code (a string joined with a condition) was refused with "className is built at runtime (an expression); set the class by hand." Nothing wrong was written, but plumber offers a fix it then can't take.
+- **What else showed up:** giving a box a background colour made two other checks speak about it as a card (its text alignment and padding), and a picture given a dark background was then asked for an outline. The page reloaded after a write to this page. And a read taken while the browser window has no size (a hidden pane) silently gives wrong answers: every picture measures 0 wide, the picture checks say nothing and the contrast check marks words that sit on a photo.
+- **Media hooks:** none kept; the temporary page is gone.
+
 ## Open gaps
+- plumber offers a class fix on an element whose classes are built in code, then refuses to write it. It should say so before offering.
+- A read taken in a window with no size gives wrong findings without saying so. algorecall's home was read in a tab whose size was not checked, so that page's clean result is unconfirmed.
+- A fix by one of the defensive checks can raise a finding from another check on the same element (a background colour makes a box count as a card).
 - **Two suggestion decisions go against practice** (docs/research/suggestion-sources.md): one step chosen when several fit, and a colour token chosen by value alone. Two more have no source: when a value becomes a new token, and rounding up or down by the rule's limit.
 - **Other answers are computed but never shown.** A suggestion carries its runners-up, yet they are almost always just the same advice in words; there is nothing worth listing until the recommender offers real ones (the other theme steps in range, the class the page's other places already use).
 - **No sources behind the suggestion engine.** How a suggestion is chosen and ranked, and the standard's numbers, cite no source where they are defined (docs/PRINCIPLES.md, known debt). Each needs its principle and source found, or to be marked a guess.
 - crafting-ui hardcodes `tracking-[0.1em]` on 35 small-capital labels; what plumber should say about a value repeated like that waits for a principle.
-- The three defensive checks have only been seen catching a slip on our own demo screens (now removed); no real app with the mistakes has been read.
+- The three defensive checks have been seen catching slips only on pages we wrote ourselves; no real app with the mistakes has been read.
 - plumber's full read is now about 2 s on a 1,400-element page, measured on a busy laptop with single runs. Left: one late re-judging on a first read, a fixed 0.6 s wait at the end. Not re-timed on algorecall.
 - 27 test files already failing before the token work (52 tests on vm-agent), the text editor's test flaky there; not this work's, not fixed.
 - Defensive CSS tips still without a check in plumber (checks only, never craft rules or screens): flex rows that should wrap, scrollbars shown when nothing scrolls, hover styles on touch screens, repeated backgrounds, fixed heights on text, sticky items in a grid, and the source-only ones (variable fallbacks, vendor selectors, vertical media queries).
