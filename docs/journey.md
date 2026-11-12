@@ -390,6 +390,14 @@
 - **The fix and the proof (messy page, engine output in the browser):** 11 changes: two buttons 6 → 8 and one 10 → 8; five priority chips 4 → 6; the hero 16 → 12, the activity card 14 → 12, and the team card 8 → 12 (the one a value match could never catch). Distinct radii on the page: 7 → 4. crafting-ui: nothing proposed (its radii are named xs to xl).
 - **Not done:** it is a reading and a decision only: not a step in the clean-up panel, nothing is written to source. The file is added to the list the server hands the page, but that needs a build; here it was loaded straight from disk, and its own fetch of the theme was not exercised (the theme was handed in). No tests.
 
+## The small trim: a write's bookkeeping, done once (2026-11-12)
+- **The itch:** after every write the server worked out the dependency lists of 1,225 files twice and sent both copies across. The owner chose the safe option: "Small safe trim".
+- **The system behind it:** a refresh answers with those lists, and the envelope every answer travels in worked out and carried the same lists again. The server stored both into the same table, one after the other.
+- **The fix:** on a refresh the envelope reuses the lists the answer already holds and carries none of its own. What the engine decides to re-check is untouched.
+- **The proof:** old and new servers run side by side on a private copy of crafting-ui, six writes and undos each. Median write 228 ms → 149 ms, the refresh step 127 ms → 66 ms, undo 181 ms → 129 ms. Both ended with the same table (1,225 entries, same checksum), the same 1,330 tracked files, the same file hashes and the same "nothing left" answer.
+- **Not done:** the engine's own test suite was not run, and the running dev servers still use the old build until the server is next built.
+- **Still open:** the larger cause is unchanged: one edit marks 1,225 files as changed.
+
 ## Open gaps
 - **Radius by job is not in the clean-up panel** and writes nothing yet; themes that name radii by size get no role-based answer.
 - **Padding and row gaps are outside the spacing pass:** it reads only the space between stacked things. bench/messy has p-[18px], px-3.5, gap-[10px] in rows that it never sees.
@@ -399,7 +407,7 @@
 - **Text roles: how the signals combine is undecided** (docs/research/text-role-signals.md §5): what wins when the tag and the look disagree (a 12px capital heading), and whether unsure places go to a model's eye. Only crafting-ui is measured; no LLM-written app.
 - A fix from the fix card on a wrapped element is proven by hand. Two neighbours share the same repaired place-finder but were not driven by hand: a fix taken on the element itself, and the follow-up class written after a new theme token.
 - plumber's read reports a finding on a wrapped element at the component's line, not where it is used; the fix card says "Changed X to Y" when Y was added beside X.
-- After every write the server spends about 180 ms on bookkeeping: one edited file marks 1,225 files as changed and their dependency lists are worked out twice and sent across. Two fixes are open: stop doing it twice (small, safe), or mark only what the edit can affect (larger, touches the engine's cache rules, needs the engine's tests).
+- One edited file still marks 1,225 files as changed (about 100 ms of bookkeeping per write after the trim). Marking only what the edit can affect touches the engine's cache rules and needs the engine's tests. The trim itself has not been through the engine's test suite.
 - Several writes in quick succession sometimes reload the showcase page.
 - **Single decisions read uneven signals** (read 2026-11-12, code only): colour decides from the role of the place (control, link, field, status, text or surface or line) and then the nearest token, with a contrast guard; text decides a place's role from its size and capitals alone, though its tag and whether it sits in a list are collected; spacing knows the app's scale and whether siblings are alike, not what the space is between; radius has no pass. No shared reading of "what is this thing" feeds them all.
 - plumber offers a class fix on an element whose classes are built in code, then refuses to write it. It should say so before offering.
@@ -425,6 +433,7 @@
 - The tailwind-merge trap is untested: crafting-ui does not use it.
 
 ## Shipped · 2026-W46
+- The server answers a write about a third sooner (228 ms → 149 ms on a copy of crafting-ui): it no longer works out and sends the same dependency lists twice. [entry](#the-small-trim-a-writes-bookkeeping-done-once-2026-11-12)
 - A fix taken on the page now works on links, buttons and anything else drawn through a component: it is written where that element is used. [entry](#a-fix-on-a-link-now-reaches-the-line-where-the-link-is-used-2026-11-12)
 - plumber's full read of a page is about four times faster (7.9 s → about 2 s on a 1,400-element page): it asks where every finding lives in one go instead of 363 separate questions, waits for the theme before judging, and looks for a page's pictures once. [entry](#plumbers-read-8-seconds-5-of-them-asking-one-question-at-a-time-2026-11-12)
 - plumber flags words over a picture that can only be read while the picture shows, before it ever fails to load, and offers the one class that holds them (a plain check, not a craft rule). [entry](#third-defensive-tip-words-that-need-their-picture-2026-11-12)
