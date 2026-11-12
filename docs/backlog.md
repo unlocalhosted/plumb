@@ -247,11 +247,6 @@ and icon passes' cases, and the palette after a write, were tested again through
 
 ### Tests
 
-- Locating on Next 16 (webpack) fails about 2 runs in 5 after an edit: the element now showing the edit is mapped
-  through a chunk whose map still has the old file ("source changed"). Next serves its chunks at a stable URL and
-  plumber caches maps by URL; the code that dropped them on a new render was removed in October for speed. Tried and
-  reverted: re-reading once on a mismatch (it could remap an element kept from before the edit to a wrong line), and
-  dropping maps when a webpack hot update loads (no change, 2 of 5 still failed). Not fixed.
 
 The whole suite on vm-agent (2026-11-12): 939 passed, 16 failed in 14 files. Since then the determinism, noise,
 one-bar and new-token tests are fixed and pass there on their own; the steady list is what is below.
