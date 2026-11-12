@@ -453,42 +453,7 @@
 - **Not done:** a reading and a decision only: not a pass in the clean-up panel, writes nothing. At a narrow width button labels wrap and the heights are the wrapped ones; a wrapped control should be left out. A theme that names its own control sizes is not read yet. No tests.
 
 ## Open gaps
-- **Control sizes are not in the clean-up panel** and write nothing; wrapped labels are read as tall controls; a theme's own control-size names are not read. Other primitives with no pass: padding and row gaps, shadows, borders, motion, opacity and states.
-- **9 test files still fail on vm-agent, 11 tests** (listed in "Old and repeated tests removed"): live behaviour, flakes, or another session's in-flight files. At 80 columns the report breaks a rule's name across two lines.
-- A theme with fewer named spacing steps than plumber's detector needs (about five) is not taken as the scale; the scale is still read off the code there.
-- The icons step's count adds sizes and strokes together, so fixing one icon's size can read "10 → 10".
-- Themes that name radii by size (sm, md, lg) get no answer from the corners pass; undo of its write is untried.
-- **Padding and row gaps are outside the spacing pass:** it reads only the space between stacked things. bench/messy has p-[18px], px-3.5, gap-[10px] in rows that it never sees.
-- **One messy page, written by Claude.** bench/messy is LLM-written but not blind to plumber's rules; pages from other models and real generated apps would be a fairer test.
-- crafting-ui's 105 list titles at `text-fg/75` are now left alone; whether a title should be lifted to the full text colour instead is the owner's call (it is further than a fold may reach today).
-- **Text styles after the job split:** unseen in the clean-up panel; its plain names and the text-role test still assume the old style names; non-capital labels inside buttons have no label style (labels force capitals); a fluid hero title stays in the display style because its measured size is not read.
-- **Text roles: how the signals combine is undecided** (docs/research/text-role-signals.md §5): what wins when the tag and the look disagree (a 12px capital heading), and whether unsure places go to a model's eye. Only crafting-ui is measured; no LLM-written app.
-- A fix from the fix card on a wrapped element is proven by hand. Two neighbours share the same repaired place-finder but were not driven by hand: a fix taken on the element itself, and the follow-up class written after a new theme token.
-- plumber's read reports a finding on a wrapped element at the component's line, not where it is used; the fix card says "Changed X to Y" when Y was added beside X.
-- One edited file still marks 1,225 files as changed (about 100 ms of bookkeeping per write after the trim). Marking only what the edit can affect touches the engine's cache rules and needs the engine's tests. The trim itself has not been through the engine's test suite.
-- Several writes in quick succession sometimes reload the showcase page.
-- **Single decisions read uneven signals** (read 2026-11-12, code only): colour decides from the role of the place (control, link, field, status, text or surface or line) and then the nearest token, with a contrast guard; text decides a place's role from its size and capitals alone, though its tag and whether it sits in a list are collected; spacing knows the app's scale and whether siblings are alike, not what the space is between; radius has no pass. No shared reading of "what is this thing" feeds them all.
-- plumber offers a class fix on an element whose classes are built in code, then refuses to write it. It should say so before offering.
-- A read taken in a window with no size gives wrong findings without saying so. algorecall's home was read in a tab whose size was not checked, so that page's clean result is unconfirmed.
-- A fix by one of the defensive checks can raise a finding from another check on the same element (a background colour makes a box count as a card).
-- **Craft suggestions decide from too few signals** (docs/research/suggestion-sources.md): a step is chosen by nearness to the standard's number, a colour by nearness of value; the role of the element and where it sits are not read, as the clean-up's single decisions read them. When a value becomes a new token still has no ground under it.
-- **Other answers are computed but never shown.** A suggestion carries its runners-up, yet they are almost always just the same advice in words; there is nothing worth listing until the recommender offers real ones (the other theme steps in range, the class the page's other places already use).
-- **No sources behind the suggestion engine.** How a suggestion is chosen and ranked, and the standard's numbers, cite no source where they are defined (docs/PRINCIPLES.md, known debt). Each needs its principle and source found, or to be marked a guess.
-- crafting-ui hardcodes `tracking-[0.1em]` on 35 small-capital labels; what plumber should say about a value repeated like that waits for a principle.
-- The three defensive checks have been seen catching slips only on pages we wrote ourselves; no real app with the mistakes has been read.
-- plumber's full read is now about 2 s on a 1,400-element page, measured on a busy laptop with single runs. Left: one late re-judging on a first read, a fixed 0.6 s wait at the end. Not re-timed on algorecall.
-- 27 test files already failing before the token work (52 tests on vm-agent), the text editor's test flaky there; not this work's, not fixed.
-- Defensive CSS tips still without a check in plumber (checks only, never craft rules or screens): flex rows that should wrap, scrollbars shown when nothing scrolls, hover styles on touch screens, repeated backgrounds, fixed heights on text, sticky items in a grid, and the source-only ones (variable fallbacks, vendor selectors, vertical media queries).
-- Not built from the signed-off spec: surface levels (a card on a panel) read from nesting; no project at hand has two nested surface colours to prove it on.
-- shadcn's `-foreground` colours are misread by name (`primary-foreground` as the brand, `popover-foreground` as a surface, `secondary` as muted text); usage (text vs fill) could fix the family, not done.
-- Undo of a 101-file rename still takes 7–13 s; where the rest goes (parsing each file, recording 709 changes) is not measured.
-- The clean-up's pass names are not clickable, and the text step's error screen (no census) has no skip.
-- Code samples shown as text on crafting-ui pages may have been renamed too; not checked.
-- crafting-ui's draw blue is a wide-gamut (P3) colour; the ramp keeps it in sRGB, so its 500 loses a little chroma (0.289 → 0.278).
-- The clean-up text panel with the new names was not looked at in the browser.
-- Writing from source without a census gets inherited caps wrong; the no-census proposal should refuse to write, or read ancestors.
-- 20 low-confidence places left: one-off sizes (28–33px, 22px) that move more than 2px onto the ladder.
-- The tailwind-merge trap is untested: crafting-ui does not use it.
+Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
 
 ## Shipped · 2026-W46
 - The server answers a write about a third sooner (228 ms → 149 ms on a copy of crafting-ui): it no longer works out and sends the same dependency lists twice. [entry](#the-small-trim-a-writes-bookkeeping-done-once-2026-11-12)
