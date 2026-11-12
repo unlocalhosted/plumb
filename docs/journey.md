@@ -345,12 +345,20 @@
 - **The fix and the proof:** the file is deleted, its name is off the server's list of files it will hand to a page, and the one comment that pointed to it is corrected. The server's code type-checks, and on crafting-ui the overlay loads and reads the page as before (7 findings on the same page).
 - **Left as it is:** older briefs and reviews in docs still name the file; they are a record of their time. The server's built copy was not rebuilt, so it still lists the name until the next build; nothing asks for it.
 
+## The slow undo was the stopwatch, not plumber (2026-11-12)
+- **The itch:** the write round reported that an undo shows on the page about 0.6 s later than a write. The owner picked it: "Slow undo".
+- **A correction:** that figure was wrong. The round timed "is it on the page yet" with a timer that only ticks when the browser paints, and the browser pane was not always painting; the timer was slow, not the undo.
+- **How we found it:** reading the server showed a write and an undo put the file on disk the same way, so there was nothing to make one slower. Timed again on crafting-ui by watching the page for the change itself, with 0, 1 and 3 seconds between the write and the undo.
+- **The numbers:** a write is on the page 256 to 338 ms after it is sent; an undo 145 to 312 ms. Undo is as fast as a write or faster.
+- **What is real:** the server answers a write about 490 ms after it is sent, some 200 ms after the change is already on the page. The page shows the fix before plumber's card can say it was written. Where that 200 ms goes is not measured.
+- **A slip on the way:** the stalled timer left the test class in a crafting-ui file for about a minute. It was taken out with plumber's own undo, found through its history; the file is as it was (git shows no change).
+
 ## Open gaps
 - **Text styles after the job split:** unseen in the clean-up panel; its plain names and the text-role test still assume the old style names; non-capital labels inside buttons have no label style (labels force capitals); a fluid hero title stays in the display style because its measured size is not read.
 - **Text roles: how the signals combine is undecided** (docs/research/text-role-signals.md §5): what wins when the tag and the look disagree (a 12px capital heading), and whether unsure places go to a model's eye. Only crafting-ui is measured; no LLM-written app.
 - A fix from the fix card on a wrapped element is proven by hand. Two neighbours share the same repaired place-finder but were not driven by hand: a fix taken on the element itself, and the follow-up class written after a new theme token.
 - plumber's read reports a finding on a wrapped element at the component's line, not where it is used; the fix card says "Changed X to Y" when Y was added beside X.
-- Undo shows on the page about 0.6 s later than a write does; a write on crafting-ui takes about 450 ms against about 60 ms on a small project. Neither cause is measured.
+- The server answers a write on crafting-ui about 490 ms after it is sent (about 60 ms on a small project), some 200 ms after the change is on the page. The cause is not measured.
 - Several writes in quick succession sometimes reload the showcase page.
 - **Single decisions read uneven signals** (read 2026-11-12, code only): colour decides from the role of the place (control, link, field, status, text or surface or line) and then the nearest token, with a contrast guard; text decides a place's role from its size and capitals alone, though its tag and whether it sits in a list are collected; spacing knows the app's scale and whether siblings are alike, not what the space is between; radius has no pass. No shared reading of "what is this thing" feeds them all.
 - plumber offers a class fix on an element whose classes are built in code, then refuses to write it. It should say so before offering.
