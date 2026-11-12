@@ -1869,6 +1869,21 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   it now ends with an ellipsis; a long name wrapped the prefix onto two lines, so the field stays on one line. The
   Inputs page shows the well in each state, the three ideas came off it, and this entry keeps them.
 
+### 27. Parts: Words on hover
+- **What counting found:** three kinds of words appear when you point. The name tag (what is this, and is it right?)
+  follows the pointer; the hint (what it becomes) is a dark pill from the wrong value to the right one; the key says
+  what to press. Also found: key hints are styled 16 times across 10 files in five sizes (9 to 11px), 9 as caps and
+  7 as bare letters; and 44 words are left to the browser's own title tooltip across 13 files (slow, grey, never on
+  touch).
+- **What we chose:** a card from someone's app where the real name tag and the real hint follow the pointer with the
+  overlay's own words: point at the price and the tag says "p in PricingCard, 1 problem" and the hint
+  "text-[28px] → text-display"; point at the hatched padding and it's "p-[18px] → p-4 ×2". Then the shared key cap
+  on buttons, one key one meaning, and the count as what is open.
+- **One source again:** the name tag's styles lived inside the widget, which the site can't load; they moved into a
+  small shared module the widget puts back in place (stylesheet text compared before and after: identical, 125,251
+  characters). This time the module went on the overlay's served list in the same change, the build's check passed,
+  and the real overlay on the demo app was checked to still style its tag. Light and dark checked.
+
 ## Open gaps
 - The overlay writes about 180 corners as numbers (radius tokens about 45 times), many off its own scale; 6px is
   its most-used gap; --pl-card-pad and --pl-card-gap are unused; the soft blocks' corners aren't tokens.
