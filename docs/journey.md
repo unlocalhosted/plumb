@@ -1884,6 +1884,26 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   characters). This time the module went on the overlay's served list in the same change, the build's check passed,
   and the real overlay on the demo app was checked to still style its tag. Light and dark checked.
 
+### 28. The homepage joins the site, on our design system
+- **The itch:** "also hook in the home page here and bring it to our design system and theme as well." The homepage
+  was its own Vite app with its own foundations (Inter, a Linear bar, signed off on 2026-11-04), and the site's
+  front page was a list of links the bar already holds.
+- **What we chose and why:** one homepage, not a copy. The site's front page renders the homepage's own sections,
+  imported from homepage/src, so the session working on the hero keeps working in one place. The foundations keep
+  every name the sections use (about 40: fonts, inks, grounds, accent, signals, code colours, corners, space, the
+  ease) and each now points at our tokens: the toy face for display, titles and headings, Instrument Sans for words,
+  the roles for grounds, inks and borders, pink for the action, coral, mint and sky for off, on and measured, the
+  card and page ladders for space, the corner tokens. So every section moved at once, from one file. The site's bar
+  is the navigation, so the homepage's own nav isn't drawn there.
+- **What it took:** the five Tailwind utilities the sections use outside their own stylesheets are drawn by the
+  site (it has no Tailwind); the site's ".title" became ".page-title", since the homepage uses ".title" heavily and
+  stylesheets are global; the homepage's media is linked into the site.
+- **The proof:** every section renders on the front page with no console errors, in light and dark; the Design
+  pages are unchanged after visiting the homepage first.
+- **Open:** the bigger corners (16, 24) and 128px of space have no tokens; the homepage's own app doesn't load the
+  site's two faces, so it falls back to the system's rounded face; and each section still needs a look on our
+  tokens (the 2026-11-04 complaint was that tokens like these read cheap on a homepage).
+
 ## Open gaps
 - The overlay writes about 180 corners as numbers (radius tokens about 45 times), many off its own scale; 6px is
   its most-used gap; --pl-card-pad and --pl-card-gap are unused; the soft blocks' corners aren't tokens.

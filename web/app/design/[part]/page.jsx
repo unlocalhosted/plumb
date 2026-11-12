@@ -16,7 +16,7 @@ export default async function Page({ params }) {
   return (
     <main className="wrap">
       <Link className="crumb" href="/design">← Design</Link>
-      <div className="title"><Toy name={part.toy} size={56} /><h1>{part.name}</h1></div>
+      <div className="page-title"><Toy name={part.toy} size={56} /><h1>{part.name}</h1></div>
       <p className="lede">{part.lede ?? part.says}</p>
       <Part id={part.id} css={css} />
     </main>
