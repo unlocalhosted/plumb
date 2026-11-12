@@ -228,9 +228,17 @@
 - **The fix and the proof:** on crafting-ui's home page (49 small-capital labels: 41 at 0.1em, 8 at 0.08em), one label with its spacing removed was told "Add --tracking-caps: 0.06em" before; now "0.1em, which this page already uses on 41 labels". Read from `window.__plumb.craft()` on the running app; no test written yet.
 - **Media hooks:** before/after of the suggestion line on a crafting-ui label.
 
+## The page's own class turned out to be a hardcoded value (2026-11-12)
+- **The itch:** after suggestions learned the page's usual value, plumber still proposed a new token on crafting-ui although 41 labels already carry 0.1em. The owner chose to make the first answer "the class the page's other places use".
+- **How we found it:** reading the 49 small-capital labels on crafting-ui's home page in the browser: 35 write the spacing as `tracking-[0.1em]`, the rest inherit it from a parent that does.
+- **The system behind it:** the shared class is a hardcoded value copied 35 times, the very thing plumber flags elsewhere. Offering it as the answer would spread the copy; a named class in range would already have won as a theme step. So "use the page's class" has no sound case of its own.
+- **What we chose and why:** the new token stays the first answer, and its reason now says how the page writes the value today: "0.1em, which this page already uses on 41 labels (35 write it as tracking-[0.1em])". The person sees that one token answers this label and the 35 copies.
+- **The fix and the proof:** read from `window.__plumb.craft()` on crafting-ui with one label's spacing zeroed in the browser; the line above is its output. Not looked at in the panel; no test.
+- **Not understood:** taking the class off a label (instead of zeroing its spacing) gave no finding on one try; cause not looked into.
+
 ## Open gaps
 - **Other answers are computed but never shown.** A suggestion carries its runners-up, yet they are almost always just the same advice in words; there is nothing worth listing until the recommender offers real ones (the other theme steps in range, the class the page's other places already use).
-- **A page habit is offered as a new token even when a class already carries it.** crafting-ui's 41 labels get 0.1em from an existing class; plumber proposes a new token instead of that class.
+- **The new token is written to one place only.** On crafting-ui it could also replace `tracking-[0.1em]` on the 35 labels that hardcode the same value; the write takes one swap today.
 - The three defensive checks have only been seen catching a slip on our own demo screens (now removed); no real app with the mistakes has been read.
 - plumber's full read takes about 8 s on a 1,400-element page, and about 6.8 s of that is outside the checks themselves; where it goes is not measured.
 - 27 test files already failing before the token work (52 tests on vm-agent), the text editor's test flaky there; not this work's, not fixed.

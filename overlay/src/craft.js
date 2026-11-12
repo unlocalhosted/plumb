@@ -166,14 +166,14 @@ export class Facts {
     return c;
   }
   // What this page already does for a job (docs/briefs/craft-spec.md §4 b): `pick(el)` → the value an element uses for
-  // it, or null when the element is not doing that job. One walk over the elements the reader handed on, kept by name
+  // it (or { v, cls }: the value and the class that writes it there), or null when the element is not doing that job. One walk over the elements the reader handed on, kept by name
   // for the pass. → the values, one per element; the recommender counts them (craft-recommend.js `used`)
   #used = new Map();
   used(name, pick) {
     let v = this.#used.get(name);
     if (v) return v;
     v = [];
-    for (const el of this.items) { if (!el.isConnected) continue; let x = null; try { x = pick(el); } catch {} if (Number.isFinite(x)) v.push(x); }
+    for (const el of this.items) { if (!el.isConnected) continue; let x = null; try { x = pick(el); } catch {} if (Number.isFinite(x)) v.push({ v: x, cls: null }); else if (Number.isFinite(x?.v)) v.push(x); }
     this.#used.set(name, v);
     return v;
   }

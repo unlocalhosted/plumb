@@ -730,7 +730,7 @@ export const leading = {
       if (!facts.text(x)) return null;
       const xs = facts.style(x), xf = px(xs.fontSize), xl = px(xs.lineHeight);
       if (!xf || !xl || xl / xf < want.min || xl / xf > want.max) return null;
-      return (big ? (scaledSize(x) ?? xf) >= T.large : xf <= T.small && lineCount(x) >= 2) ? xl / xf : null;
+      return (big ? (scaledSize(x) ?? xf) >= T.large : xf <= T.small && lineCount(x) >= 2) ? { v: xl / xf, cls: utility(x, 'leading') } : null;
     });
     return [{
       ...say(this.id, { big, size: fs, ratio: ratio.toFixed(2) }),
@@ -760,7 +760,7 @@ export const tracking = {
       if (!facts.text(x)) return null;
       const xs = facts.style(x), xf = px(xs.fontSize);
       if (!xf || xs.letterSpacing === 'normal') return null;
-      return (caps ? xs.textTransform === 'uppercase' && xf <= T.caps : xf >= T.large) ? px(xs.letterSpacing) / xf : null;
+      return (caps ? xs.textTransform === 'uppercase' && xf <= T.caps : xf >= T.large) ? { v: px(xs.letterSpacing) / xf, cls: utility(x, 'tracking') } : null;
     });
     return [{
       ...say(this.id, { caps, size: fs }),
