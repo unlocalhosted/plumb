@@ -22,13 +22,14 @@ import { request } from './api.js';
 import { BLOCK_ICONS } from './boxmodel.js';
 import { classEditsOf } from './locate.js';
 import { ease } from './show.js';
-import { proposeSpacing, readStacks, rhythmOf, unit } from './stacks.js';
+import { loadSteps, proposeSpacing, readStacks, rhythmOf, themeSteps, unit } from './stacks.js';
 
 const SIDE = /^(gap|gap-y|mt|mb)$/;
 const PROP = { gap: 'row-gap', mt: 'margin-top', mb: 'margin-bottom' };
 const prefixOf = (cls) => cls.replace(/-(\[[^\]]+\]|[\d.]+)$/, '');
 // the class for a size: a step of the spacing unit (half steps too, as Tailwind has them), else the size itself
-const classFor = (prefix, v, step) => { const n = v / step; return `${prefix}-${Number.isInteger(n * 2) ? n : `[${v}px]`}`; };
+// (the theme's own name for it first: gap-s4, when the theme names a step of that size)
+const classFor = (prefix, v, step) => { const own = themeSteps().find((x) => Math.abs(x.px - v) < 0.5); if (own) return `${prefix}-${own.short}`; const n = v / step; return `${prefix}-${Number.isInteger(n * 2) ? n : `[${v}px]`}`; };
 const mostOf = (vs) => vs.sort((a, b) => vs.filter((v) => v === b).length - vs.filter((v) => v === a).length)[0];
 
 export class SpacingPass {
@@ -38,10 +39,11 @@ export class SpacingPass {
 
   async read() {
     const site = await request('rhythm', {});
-    const stacks = readStacks(), rhythm = rhythmOf(site.distances ?? []);
+    await loadSteps();
+    const stacks = readStacks(), rhythm = rhythmOf(site?.distances ?? []);
     // keep: only what is off the app's scale, or the odd one out among its siblings (refine evens out the whole page:
     // an opt-in, never the clean-up's default)
-    const p = proposeSpacing(stacks, rhythm, { scope: 'keep', site: site.gaps });
+    const p = proposeSpacing(stacks, rhythm, { scope: 'keep', site: site?.gaps ?? null });
     const step = unit(), writes = new Map();
     for (const m of p.moves) {
       const g = m.gap, prefix = prefixOf(g.cls ?? '');
@@ -70,7 +72,7 @@ export class SpacingPass {
     // distinct spaces among this page's rows, before and after (the same rows: section breaks and refusals stay)
     const rows = stacks.flatMap((s) => s.gaps).filter((g) => g.d > 0.5 && !g.section), moved = new Map(this.#writes.flatMap((w) => w.gaps.map((g) => [g, w.to])));
     const distinct = (vs) => new Set(vs.map((v) => Math.round(v))).size;
-    this.page = { writes: this.#writes.length, places: moved.size, before: distinct(rows.map((g) => g.d)), after: distinct(rows.map((g) => moved.get(g) ?? g.d)), scale: p.scale, routes: site.routes };
+    this.page = { writes: this.#writes.length, places: moved.size, before: distinct(rows.map((g) => g.d)), after: distinct(rows.map((g) => moved.get(g) ?? g.d)), scale: p.scale, routes: site?.routes ?? null };
     return this.page;
   }
 
