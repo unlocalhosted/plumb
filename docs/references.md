@@ -30,3 +30,9 @@
 - What it changed: nothing in code. It grounds the principle "a text style names a job; the size belongs to the job".
 - Used in: docs/research/text-role-signals.md; journey entry "Text is folded by size alone".
 
+## 2026-11-12 · Atlassian's radius tokens, named for jobs (found by us)
+- What: [Atlassian Design System, Radius](https://atlassian.design/foundations/radius): each radius token is tied to a kind of element: "Supporting elements: labels, lozenges, timestamps, tags", "Interactive elements: buttons, inputs, text areas, selects, navigation items", "Containment elements: cards, in-page containers, floating UI".
+- Why: to ground a radius decided by what the element is, after the owner's "there has to be a principle behind the suggestion".
+- What it changed: plumber's new radius reading sorts elements into tag, control and card and gives each the theme's step for that job.
+- Used in: overlay/src/radius.js; journey entry "Radius by job".
+

@@ -381,8 +381,17 @@
 - **Not done:** radius still has no clean-up pass. On the messy page a card wears the control's radius (8px): right by value, wrong by role. Not seen in the clean-up panel; no tests.
 - **Media hooks:** bench/messy before/after of the activity card's gaps and the nav icons.
 
+## Radius by job (2026-11-12)
+- **The itch:** radius had no clean-up pass at all, and the only radius suggestion plumber makes is the nearest token by value. On the messy page a card wears 8px: exactly the control's token, so nothing was said.
+- **How we found it:** the messy dashboard (bench/messy), whose theme names three radii for jobs: tag 6, control 8, card 12.
+- **The system behind it:** a radius was only ever a number to match. Nothing read what the rounded thing is.
+- **What we chose and why:** a corner's radius says what kind of thing it is. Atlassian's radius tokens are assigned the same way, to "supporting", "interactive" and "containment" elements ([reference](references.md)). So plumber reads what the element is (a control: something you press or type in, or the box round controls only; a tag: a phrase-level element holding only its own words; a card: a painted box holding things with words) and gives it the step the theme names for that job. A theme whose radii are named by size (sm, md, lg) names no jobs, so nothing is proposed there. Left alone: pills and circles, a child in a rounded parent's corner (the concentric rule's), anything that does not say what it is (an icon tile).
+- **Tried and dropped:** telling a tag by "drawn inline": a chip inside a flex row is no longer inline. It is told by being a phrase-level element instead.
+- **The fix and the proof (messy page, engine output in the browser):** 11 changes: two buttons 6 → 8 and one 10 → 8; five priority chips 4 → 6; the hero 16 → 12, the activity card 14 → 12, and the team card 8 → 12 (the one a value match could never catch). Distinct radii on the page: 7 → 4. crafting-ui: nothing proposed (its radii are named xs to xl).
+- **Not done:** it is a reading and a decision only: not a step in the clean-up panel, nothing is written to source. The file is added to the list the server hands the page, but that needs a build; here it was loaded straight from disk, and its own fetch of the theme was not exercised (the theme was handed in). No tests.
+
 ## Open gaps
-- **Radius has no clean-up pass, and nothing reads a radius by role.** The theme names roles (tag, control, card); on bench/messy a card at 8px matches the control token by value and is the wrong step by role.
+- **Radius by job is not in the clean-up panel** and writes nothing yet; themes that name radii by size get no role-based answer.
 - **Padding and row gaps are outside the spacing pass:** it reads only the space between stacked things. bench/messy has p-[18px], px-3.5, gap-[10px] in rows that it never sees.
 - **One messy page, written by Claude.** bench/messy is LLM-written but not blind to plumber's rules; pages from other models and real generated apps would be a fairer test.
 - crafting-ui's 105 list titles at `text-fg/75` are now left alone; whether a title should be lifted to the full text colour instead is the owner's call (it is further than a fold may reach today).
