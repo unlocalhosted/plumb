@@ -128,7 +128,8 @@ test('the same page gives the same problems, fixes and notes under every viewpor
   const runs = {};
   const { page, errors } = await fresh(s.browser, s.url, { width: 1200, height: 800 });
   runs.first = await opening(page);
-  assert.ok(runs.first.problems > 10 && runs.first.places >= runs.first.problems, JSON.stringify(runs.first));
+  // (a place can carry two problems, a value off the scale and a craft finding, so places need not outnumber problems)
+  assert.ok(runs.first.problems > 10 && runs.first.places > 10, JSON.stringify(runs.first).slice(0, 400));
   assert.equal(runs.first.read, runs.first.total);
   // the lazy section has not mounted at the top; its places are counted all the same
   assert.equal(runs.first.lazyMounted, false);

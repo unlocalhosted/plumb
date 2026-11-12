@@ -585,6 +585,10 @@
 - **A test mistake:** the shadcn page first carried the demo's other screens, whose code really does use `bg-accent` at rest, so plumber rightly kept `accent` as the brand. The shadcn test now serves only its own screen.
 - **Run:** 4 of 4 pass on the laptop. Dark mode: the palette is read with the theme's light values even when the page is dark, so sunken or raised is decided in light (the rule wanted).
 
+## Two "real bug" tests, looked at (2026-11-12)
+- **"The same page gives the same problems at every window size":** not a bug. The test failed on its first sanity check, which assumed one problem per place; a place can now carry two (a value off the scale and a craft finding: 151 problems on 150 places). With that check loosened, the comparison itself passes: the page gives the same problems at every size.
+- **"The bar fits with its tools out":** passes on the Mac and fails on vm-agent, where the close button falls off the bar at 1440 wide. The bar's fit depends on how wide the system font is. Not fixed; in the backlog.
+
 ## Open gaps
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
 

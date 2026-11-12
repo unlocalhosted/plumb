@@ -163,8 +163,8 @@ reserved.)
 
 The whole suite on vm-agent (2026-11-12): 944 passed, 11 failed in 9 files.
 
-- The same page gives different problems at different window sizes (blueprint-determinism).
-- The one bar does not fit with its tools out at 1440 wide (one-bar).
+- The one bar does not fit with its tools out at 1440 wide on vm-agent (Linux fonts); it fits on the Mac. The bar's
+  fit depends on the system font's width (one-bar).
 - A finding on the demo that the noise check does not expect, "baseline-align" (craft).
 - A new-token test loses the page to a reload (craft-token).
 - A Next performance wait times out (blueprint-next-performance).
