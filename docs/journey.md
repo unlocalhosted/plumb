@@ -254,12 +254,20 @@
 - **What we chose and why:** every suggestion walks one chain: a way of seeing, the principle, its source, the measure, the suggestion, the proof. A source can be pragmatic (the owner: "based on code evidence, based on some talk, based on documentation, based on industry practice"). A count is evidence at most. This reaches the standard's numbers too, not only the suggestion logic.
 - **The fix and the proof:** both changes taken out (the three engine files are as they were this morning). The philosophy is written in docs/PRINCIPLES.md and at the top of the craft-rule skill. Nothing in the engine has been traced to sources yet.
 
+## Plumber's read, second pass: judged three times, and a search repeated for every line (2026-11-12)
+- **The itch:** after the first speed-up the read was still about 2.7 s, and the owner said "Speed up more".
+- **How we found it:** counting, in the browser, how often each check ran and what threw its kept answers away. Every element was judged at least twice on a page's first read, and the text-contrast check alone was half of all check time.
+- **The system behind it:** two things. The theme's settings arrive from the dev server after the read has begun, and each arrival throws away every judgement so the whole page is judged again. And the contrast check, for each line of text, searched every box above it for pictures, so the page's outer boxes were searched hundreds of times for the same answer.
+- **The fix and the proof:** a read now asks for the theme's settings before it starts (waiting 2 s at most), and the pictures inside a box are found once per read. Contrast went from 548 ms to 137 ms in one read while the other checks ran about twice as slow as before on a busy laptop. First read of the 1,400-element crafting-ui page: 1.8 s (5.1 s just before these two changes, 7.9 s this morning); a second read 2.4 s. The same 33 findings each time, all with file and line.
+- **What is honest about the numbers:** the laptop was under load (load average 4) and single runs swing by a second, so the first read coming out faster than the second is noise. The direction is clear, the exact figures are not.
+- **What is left:** a late answer about where a clickable element was written still judges the page again once; the read ends with a fixed 0.6 s wait; algorecall was not re-timed.
+
 ## Open gaps
 - **Other answers are computed but never shown.** A suggestion carries its runners-up, yet they are almost always just the same advice in words; there is nothing worth listing until the recommender offers real ones (the other theme steps in range, the class the page's other places already use).
 - **No sources behind the suggestion engine.** How a suggestion is chosen and ranked, and the standard's numbers, cite no source where they are defined (docs/PRINCIPLES.md, known debt). Each needs its principle and source found, or to be marked a guess.
 - crafting-ui hardcodes `tracking-[0.1em]` on 35 small-capital labels; what plumber should say about a value repeated like that waits for a principle.
 - The three defensive checks have only been seen catching a slip on our own demo screens (now removed); no real app with the mistakes has been read.
-- plumber's full read is now about 2.7 s on a 1,400-element page: 1.7 s reading, a fixed 0.6 s wait, and the text-contrast check alone 0.5 s. Not re-timed on algorecall.
+- plumber's full read is now about 2 s on a 1,400-element page, measured on a busy laptop with single runs. Left: one late re-judging on a first read, a fixed 0.6 s wait at the end. Not re-timed on algorecall.
 - 27 test files already failing before the token work (52 tests on vm-agent), the text editor's test flaky there; not this work's, not fixed.
 - Defensive CSS tips still without a check in plumber (checks only, never craft rules or screens): flex rows that should wrap, scrollbars shown when nothing scrolls, hover styles on touch screens, repeated backgrounds, fixed heights on text, sticky items in a grid, and the source-only ones (variable fallbacks, vendor selectors, vertical media queries).
 - Not built from the signed-off spec: surface levels (a card on a panel) read from nesting; no project at hand has two nested surface colours to prove it on.
@@ -274,7 +282,7 @@
 - The tailwind-merge trap is untested: crafting-ui does not use it.
 
 ## Shipped · 2026-W46
-- plumber's full read of a page is about three times faster (7.9 s → 2.7 s on a 1,400-element page): it now asks where every finding lives in one go instead of 363 separate questions. [entry](#plumbers-read-8-seconds-5-of-them-asking-one-question-at-a-time-2026-11-12)
+- plumber's full read of a page is about four times faster (7.9 s → about 2 s on a 1,400-element page): it asks where every finding lives in one go instead of 363 separate questions, waits for the theme before judging, and looks for a page's pictures once. [entry](#plumbers-read-8-seconds-5-of-them-asking-one-question-at-a-time-2026-11-12)
 - plumber flags words over a picture that can only be read while the picture shows, before it ever fails to load, and offers the one class that holds them (a plain check, not a craft rule). [entry](#third-defensive-tip-words-that-need-their-picture-2026-11-12)
 - Plumber reads a hover or press colour from where the code uses it, so shadcn's grey `accent` is no longer taken for the brand ([entry](#hover-colours-read-from-the-code-not-the-name-2026-11-12)).
 - A brand colour too close to the error red or warning amber now gets a plain warning and what to do about it ([entry](#a-brand-too-close-to-error-2026-11-12)).

@@ -566,6 +566,20 @@ function animated(facts) {
   if (!v) animatedMemo.set(facts, (v = new Set(document.getAnimations().filter((a) => a.playState === 'running' || a.playState === 'paused').map((a) => a.effect?.target).filter(Boolean))));
   return v;
 }
+// The pictures drawn inside an element, with their boxes, found once per pass: every line of text asks this of each
+// box above it, and the outer ones are the same for the whole page (asked afresh each time, it was half of all the
+// time the checks took).
+const picturesMemo = new WeakMap();
+function picturesIn(facts, box) {
+  let m = picturesMemo.get(facts);
+  if (!m) picturesMemo.set(facts, (m = new Map()));
+  let v = m.get(box);
+  if (!v) m.set(box, (v = [...box.querySelectorAll('img, video, picture, canvas')].flatMap((el) => {
+    const q = el.getBoundingClientRect(), ms = getComputedStyle(el);
+    return q.width < 8 || q.height < 8 || ms.visibility === 'hidden' || ms.display === 'none' ? [] : [{ el, q }];
+  })));
+  return v;
+}
 // The rows of a table, counted once per pass.
 const rowsMemo = new WeakMap();
 function rowsOf(facts, table) {
@@ -905,16 +919,14 @@ export const contrast = {
     // words on a picture: a background image on the way up, or a photo laid under them (an <img> the words sit over, as
     // on a card with a scrim). What the eye reads them against isn't a colour plumber knows, so it says nothing. A picture
     // counts when it is drawn, visible, and covers most of the words' box
-    const box = el.getBoundingClientRect(), under = (m) => {
-      const q = m.getBoundingClientRect(), ms = getComputedStyle(m);
-      if (q.width < 8 || q.height < 8 || ms.visibility === 'hidden' || ms.display === 'none') return false;
+    const box = el.getBoundingClientRect(), under = ({ q }) => {
       const w = Math.min(q.right, box.right) - Math.max(q.left, box.left), h = Math.min(q.bottom, box.bottom) - Math.max(q.top, box.top);
       return w > 0 && h > 0 && w * h >= box.width * box.height * 0.5;
     };
     for (let n = el; n && n !== document.documentElement; n = n.parentElement) {
       const ns = facts.style(n);
       if (ns.backgroundImage !== 'none') return [];
-      if (n !== el && [...n.querySelectorAll('img, video, picture, canvas')].some((m) => !el.contains(m) && under(m))) return [];
+      if (n !== el && picturesIn(facts, n).some((m) => !el.contains(m.el) && under(m))) return [];
       if (alpha(rgb(ns.backgroundColor)) > 0.5) break;
     }
     const ground = facts.ground(el), c = rgb(s.color);

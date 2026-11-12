@@ -170,7 +170,8 @@ export function craftRun(overlay, options = {}) {
 
 async function readOnce(overlay, { timeout = 60000, quiet = 600, grey = false, scope = null, hidden = false } = {}) {
   resetKeys();
-  await prepareSources();
+  // what the page is judged against is asked for before the read, not during it (each late arrival judges everything again)
+  await Promise.all([prepareSources(), overlay?.themeReady?.()]);
   const blueprint = overlay?.blueprintReader;
   if (!blueprint) throw new Error('The Plumb overlay is not mounted on this page.');
   const within = scope ? document.querySelector(scope) : null;
