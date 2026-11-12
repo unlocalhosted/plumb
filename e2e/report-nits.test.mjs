@@ -108,8 +108,10 @@ test('habit detail rows keep reason columns populated in pipes and 80/100-column
     assert.match(output, /^\s+!\s+color: red {2,}also applies/m);
     assert.match(output, /^\s+!\s+outline: none {2,}removes the focus/m);
     assert.match(output, /^\s+!\s+transition: all 1s ease-in {2,}transitions/m);
-    const text = output.replace(/\s+/g, ' ');
-    for (const reason of ['also applies on touch screens [habits/hover-gate]', 'removes the focus outline on .removed [habits/focus-outline]', 'transitions every property [habits/transition-named]']) assert.ok(text.includes(reason), reason);
+    // a reason folds under itself in its own column (f83a5e5), with the place at the end of its first line: read the
+    // reason without the place
+    const text = output.replace(/\x1b\[[0-9;]*m/g, '').replace(/ {2,}(?:[\w./-]+:\d+|\d+ sites? in \d+ files?)[ \t\r]*$/gm, '').replace(/\s+/g, '');
+    for (const reason of ['also applies on touch screens [habits/hover-gate]', 'removes the focus outline on .removed [habits/focus-outline]', 'transitions every property [habits/transition-named]']) assert.ok(text.includes(reason.replace(/\s+/g, '')), `${reason}\n${output}`); // (at 80 columns a rule's name folds too: every character is there, in order)
     assert.ok(output.split('\n').every(line => [...line].length <= columns));
   }
 });
