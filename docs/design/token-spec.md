@@ -47,6 +47,16 @@ often it repeats) and clustered into the roles the code is reaching for. Roles a
 needs (crafting-ui: 8). A role's size, line-height and tracking come from its members' own values (the owner's decision,
 else the theme's step within 1px, else the most common), and up the scale every role must be larger than the one below.
 
+**The job picks the kind, the size the step (built 2026-11-12, docs/research/text-role-signals.md).** A text style
+names a job. Where a place says what it is, that decides the kind: an `h1`–`h6` is a heading (`title`, `headline`,
+`display`), a paragraph, a definition, a quotation or words that are a sentence are reading text (`body`). The size
+then picks the step inside that kind, on the same size bands as before. A place that says nothing (a `span`), and a
+`<p>` whose measured words are not a sentence, go by size alone. So a 17px card title and a 17px lead paragraph are
+two styles, each with its own usual weight, where they used to be one style and a weight class. Each kind has its own
+ladder: a large paragraph (`body-lead`, `body-xlarge`) and a small heading (`title-small`) may sit at crossing sizes.
+A heading of 60px or more is the page's hero (`display-hero`); anything else that large is still left out as a
+drawing. `body-large` keeps its meaning (the 16px body).
+
 ### 2.2 Weight is separate **(from BoardUI)**
 
 - A role is a size, a line-height and a tracking. It has a usual weight: the one most of its places use.

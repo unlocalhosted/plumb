@@ -22,7 +22,7 @@
  *  never    section breaks, refusals, and drawings scaled away from their classes (a demo inside a zoomed frame)
  * ───────────────────────────────────────────────────────── */
 import { utility } from './craft-read.js';
-import { scaleOf } from './scale.js';
+import { detectScale, scaleOf } from './scale.js';
 
 const TOL = 1;   // distances within 1px are one level
 const NEAR = 0.5; // a distance within half a pixel of a step is on it
@@ -161,7 +161,11 @@ export async function loadSteps(fresh = false) {
   return STEPS;
 }
 export const themeSteps = () => STEPS;
-// a scale needs more than one step; its positions are the theme's own, nothing between them
+// Whether the named steps are a spacing scale at all: Tailwind keeps named sizes in the same family (--spacing-sidebar:
+// 280px, --spacing-header: 64px), and two layout sizes are not a scale to snap a gap to. The steps are the scale only
+// when they themselves follow a grid or a ratio, by the same detector that reads a scale off the code (scale.js)
+const isScale = (steps) => steps.length > 1 && detectScale(steps.map((x) => ({ v: x.px }))).kind !== 'none';
+// its positions are the theme's own, nothing between them
 function themeScale(steps) {
   const positions = [...new Set(steps.map((x) => Math.round(x.px)))].sort((a, b) => a - b);
   const near = (v) => positions.reduce((a, b) => (Math.abs(Math.log(b / v)) < Math.abs(Math.log(a / v)) ? b : a), positions[0]);
@@ -172,7 +176,7 @@ export function proposeSpacing(stacks, rhythm, { scope = 'keep', density = 0, si
   if (scope === 'refine') return refine(stacks, rhythm, density, site, steps);
   const moves = [], kept = [], refused = [], groupedStacks = [];
   // the app's scale, from the site's gaps (this page's without a census): a space off it goes to the nearest value on it
-  const scale = steps.length > 1 ? themeScale(steps) : scaleFrom(site?.length ? site.map((x) => x.d) : stacks.flatMap((s) => s.gaps.filter((g) => g.d > 0.5 && !g.section).map((g) => g.d)));
+  const scale = isScale(steps) ? themeScale(steps) : scaleFrom(site?.length ? site.map((x) => x.d) : stacks.flatMap((s) => s.gaps.filter((g) => g.d > 0.5 && !g.section).map((g) => g.d)));
   const on = (d) => Math.abs(d - Math.round(d)) <= NEAR && (scale.positions.includes(Math.round(d)) || scale.halves.includes(Math.round(d)));
   const nearest = (d) => scale.near(d);
   for (const s of stacks) {
@@ -234,7 +238,7 @@ function refine(stacks, rhythm, density = 0, site = null, steps = STEPS) {
   // RATIO merge into the larger crowd
   const levels = [], basis = site?.length ? site.filter((x) => x.em && x.d > 0.5).map((x) => ({ d: x.d, r: x.d / x.em })) : rows.map((x) => ({ d: x.g.d, r: x.r }));
   // the scale the app's gaps follow: every target lands on one of its positions
-  const scale = steps.length > 1 ? themeScale(steps) : scaleFrom(basis.map((x) => x.d)), snap = (v, from) => scale.near(v, from);
+  const scale = isScale(steps) ? themeScale(steps) : scaleFrom(basis.map((x) => x.d)), snap = (v, from) => scale.near(v, from);
   for (const row of [...basis].sort((a, b) => a.r - b.r)) {
     const last = levels[levels.length - 1];
     if (last && row.r <= last.from * 1.15) last.rows.push(row); else levels.push({ from: row.r, rows: [row] });

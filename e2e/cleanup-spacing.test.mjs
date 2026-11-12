@@ -31,6 +31,10 @@ async function drifted(t, { scheme = 'light' } = {}) {
   await cp(join(repo, 'overlay/demo/src'), join(root, 'src'), { recursive: true });
   await cp(join(repo, 'overlay/demo/index.html'), join(root, 'index.html'));
   await cp(join(repo, 'fixtures/crafting-ui-standards/src'), join(root, 'src'), { recursive: true });
+  // crafting-ui's theme names no spacing steps (its spacing is Tailwind's 4px unit); the demo's stylesheet this page is
+  // drawn on names five, which would make them the scale (stacks.js themeScale; e2e/cleanup-messy.test.mjs proves that)
+  const css = await readFile(join(root, 'src/styles.css'), 'utf8');
+  await writeFile(join(root, 'src/styles.css'), css.replace(/^\s*(?:\/\*[^\n]*\*\/\s*\n\s*)?--spacing-s\d+:[^\n]*\n/gm, ''));
   await writeFile(join(root, 'src/App.jsx'), `import { MotionStandardsPage } from './pages/MotionStandardsPage.tsx';\nexport function App() { return <MotionStandardsPage />; }\n`);
   const page0 = await readFile(join(root, FILE), 'utf8');
   assert.ok(page0.includes(`"mt-2 ${SUMMARY}`) && page0.includes(`"mt-4 ${RULE}`), 'the fixture still has the two margins this test drifts');

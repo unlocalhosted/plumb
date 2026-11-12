@@ -414,7 +414,17 @@
 - **Noticed:** the panel's count read "10 → 10 icon sizes and strokes": one size fewer, one stroke more, because a line icon drawn larger has a thicker stroke on screen. True, but it reads as if nothing changed.
 - **Not done:** a stroke passed as a prop goes through the same path and was not tried; an icon set whose size prop is spread through more layers was not tried; no tests.
 
+## Tests for the day's changes, and what they caught (2026-11-12)
+- **The itch:** the owner, once the behaviour had settled: "Yes, write tests."
+- **What was written:** one new test on the messy page (`e2e/cleanup-messy.test.mjs`): real Vite, the real CLI and a real browser drive the clean-up panel by its keys and read every write back from the source file. It checks the four decisions plumber got wrong before today: the 14px gaps go to the theme's step and are written by its name; a row's title is left apart from its description, with the reason; the nav's 16px icon is seen among its peers and its prop is changed at the usage, while the header bell is left; corners go to the theme's step by job, a card at the control's size included, and Undo takes only the corners back. The text-role test now says a 17px card title and a 17px lead paragraph are two styles.
+- **What the existing tests caught, twice:**
+  - The 16px body style had been renamed "body medium". That name ("body large") is used in project configs and in the element card. The name is back; larger reading text steps above it as "body xlarge" (17px) and "body lead" (18.5px and up).
+  - The spacing test moved every 20px space to 24px. Its page is a crafting-ui page drawn on the demo's theme, which names five spacing steps; crafting-ui names none. Two changes came from it: the theme's named steps are the scale only when they themselves form a grid or a ratio by plumber's own detector (two named layout sizes, a sidebar and a header, are not a scale), and the test's page now runs on a theme with no named steps, like the app it copies. The panel also says "Your theme names its spacing steps" when that is the scale.
+- **The proof:** run one file at a time on the laptop: the new test passes (24 s), the text-role test passes, both spacing tests pass; the element-card text test, the clean-up test, the icon test and the colour test showed no failures.
+- **Not done:** the new test was not run against yesterday's code to see it fail there; the full suite was not run (it runs on vm-agent, and was not asked for).
+
 ## Open gaps
+- A theme with fewer named spacing steps than plumber's detector needs (about five) is not taken as the scale; the scale is still read off the code there.
 - The icons step's count adds sizes and strokes together, so fixing one icon's size can read "10 → 10".
 - Themes that name radii by size (sm, md, lg) get no answer from the corners pass; undo of its write is untried.
 - **Padding and row gaps are outside the spacing pass:** it reads only the space between stacked things. bench/messy has p-[18px], px-3.5, gap-[10px] in rows that it never sees.
