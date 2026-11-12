@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { spawn, spawnSync } from 'node:child_process';
 import { once } from 'node:events';
 import { cp, mkdtemp, readFile, readdir, rename, rm, writeFile } from 'node:fs/promises';
-import { join, relative } from 'node:path';
+import { basename, join, relative } from 'node:path';
 import { test } from 'node:test';
 import { setTimeout as delay } from 'node:timers/promises';
 import { fileURLToPath, pathToFileURL } from 'node:url';
