@@ -57,9 +57,7 @@ const BAR_ICON = {
 export const FIX_CSS = TEXT_EDITOR_CSS + ELEMENT_CARD_CSS + `
   /* the old pieces this panel replaces stay out of sight */
   .bpp, .cg, .sel { display: none !important; }
-  /* 520 wide, and never narrower than what it holds: with its tools out on a wider system font (Linux) the bar's last
-     control fell off its edge; the window's width is still the limit */
-  .fx { position: fixed; left: 50%; bottom: 72px; translate: -50% 0; width: 520px; min-width: min-content; max-width: calc(100vw - 32px); box-sizing: border-box; pointer-events: auto; z-index: 2;
+  .fx { position: fixed; left: 50%; bottom: 72px; translate: -50% 0; width: 520px; max-width: calc(100vw - 32px); box-sizing: border-box; pointer-events: auto; z-index: 2;
     background: rgb(255 255 255 / .82); -webkit-backdrop-filter: blur(22px) saturate(1.6); backdrop-filter: blur(22px) saturate(1.6);
     border-radius: 18px; color: #1c1b19; font: 13px/1.35 var(--pl-sans, system-ui), sans-serif; overflow: hidden;
     box-shadow: 0 0 0 .5px rgb(0 0 0 / .09), 0 1px 1px rgb(0 0 0 / .04), 0 8px 20px -8px rgb(0 0 0 / .14), 0 28px 56px -24px rgb(0 0 0 / .18), inset 0 1px 0 rgb(255 255 255 / .9);
@@ -74,6 +72,9 @@ export const FIX_CSS = TEXT_EDITOR_CSS + ELEMENT_CARD_CSS + `
   .fx .grow { flex: 1; }
   /* the bar at rest (docs/design/one-bar.md): one line, one count, each key on its action; it sits where the dock was */
   .fx[data-rest] { width: min(720px, calc(100vw - 32px)); bottom: var(--pl-space-6, 24px); overflow: visible; }
+  /* at rest the panel is the bar alone, and is never narrower than the bar's one line: with its tools out on a wider
+     system font (Linux) the last control fell off the edge. The window's width is still the limit */
+  .fx[data-rest] { min-width: max-content; }
   .fx .bar { gap: 8px; height: 48px; padding: 0 7px 0 16px; }
   .fx .bar .pl-act { flex: none; }
   .fx .status { position: relative; display: inline-flex; align-items: center; gap: 8px; flex: none; padding: 6px 8px; margin-left: -8px; border-radius: 8px; outline: none; }
