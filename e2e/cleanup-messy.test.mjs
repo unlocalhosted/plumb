@@ -9,8 +9,8 @@
 //   controls a border added to one button of a pair made it 42px, and nothing read a control's height
 //   craft    a theme step nearer the standard's number beat the step the theme names for the job
 //   shadows  cards cast a framework shadow while the theme names one for a resting card; nothing read it by job
-//   timings  hand-written durations (160ms, 300ms) sit within a fifth of the theme's named speeds (fast, base); a 700ms
-//            one is a speed of its own
+//   timings  hand-written durations (160ms, 300ms) sit within a fifth of the theme's named speeds (fast, base), which
+//            nothing on the page uses yet (so they are only in the stylesheet's source); a 700ms one is a speed of its own
 //   corners  no pass: a card at the control's 8px is on a token by value and on the wrong one by job
 // Real Vite, React, Tailwind, the real CLI and Chromium; the panel is driven by its keys; every write is read back from
 // the source file.

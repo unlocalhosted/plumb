@@ -13,7 +13,7 @@
  *  measure  distinct durations among the places read, before → after
  * ───────────────────────────────────────────────────────── */
 import { classEditsOf } from './locate.js';
-import { proposeMotion, readMotion, themeSpeeds } from './speeds.js';
+import { loadSpeeds, proposeMotion, readMotion } from './speeds.js';
 
 const keyOf = (el, cls) => `${(el.getAttribute('data-plumb-source') ?? '').split('#')[0]}|${cls}`;
 const mostOf = (vs) => vs.sort((a, b) => vs.filter((v) => v === b).length - vs.filter((v) => v === a).length)[0];
@@ -25,7 +25,7 @@ export class SpeedsPass {
   page = null; // { writes, places, before, after, twins }
 
   async read() {
-    const speeds = themeSpeeds(), places = readMotion(), p = proposeMotion(places, speeds);
+    const speeds = await loadSpeeds(), places = readMotion(), p = proposeMotion(places, speeds);
     const writes = new Map();
     for (const m of p.moves) {
       const k = keyOf(m.el, m.from.cls);

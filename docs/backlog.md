@@ -128,8 +128,8 @@ reserved.)
 
 ### Clean-up: timings
 
-- A theme speed used nowhere on the page is not seen (Tailwind emits only used utilities). Next: read the named
-  duration utilities from the stylesheet source on the server.
+- A theme speed used nowhere is read from the stylesheet source on Vite (it serves files raw). On Next and other
+  hosts only the speeds the page uses are seen.
 - Easing, delays, staggers and keyframe animations are not decided; easing has craft rules only.
 - A theme that names a speed twice (a class and a variable at two values) is said, not settled.
 

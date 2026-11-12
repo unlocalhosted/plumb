@@ -52,7 +52,7 @@ function Sidebar() {
       <div className="mt-auto rounded-xl bg-gray-50 p-3.5 border border-gray-200">
         <p className="text-[13px] font-medium text-gray-900">Upgrade to Pro</p>
         <p className="text-xs text-gray-500 mt-1 leading-relaxed">Unlimited projects, guests and reports for your whole team.</p>
-        <button className="mt-3 w-full rounded-md bg-gray-900 text-white text-xs font-medium py-1.5 transition-colors duration-fast">See plans</button>
+        <button className="mt-3 w-full rounded-md bg-gray-900 text-white text-xs font-medium py-1.5">See plans</button>
       </div>
     </aside>
   );
@@ -69,7 +69,7 @@ function TopBar() {
       </div>
       <div className="flex items-center gap-3">
         <button className="p-2 rounded-full hover:bg-gray-100 text-gray-500 transition-colors duration-300"><Bell size={20} /></button>
-        <button className="transition-colors duration-base flex items-center gap-1.5 bg-accent text-white text-sm font-medium px-3.5 py-2 rounded-[10px]"><Plus size={16} stroke={2.5} />New project</button>
+        <button className="flex items-center gap-1.5 bg-accent text-white text-sm font-medium px-3.5 py-2 rounded-[10px]"><Plus size={16} stroke={2.5} />New project</button>
         <img alt="" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32'%3E%3Crect width='32' height='32' fill='%23d9c7f0'/%3E%3C/svg%3E" className="w-8 h-8 rounded-full" />
       </div>
     </header>
