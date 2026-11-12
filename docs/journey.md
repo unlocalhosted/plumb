@@ -628,6 +628,14 @@
 - **Sorted:** six of the fourteen files pass when run by themselves on the same machine (21 tests, 0 failed): five fail only under the full run's load, and the sixth was the determinism test, fixed after the run started. The other eight are the ones already known: a finding the noise check does not expect, a new-token test that loses the page, the bar on Linux fonts, a Next performance wait, the flaky timeline check, a frozen-server test that fails beside others, and the two files another session is changing.
 - **So:** nothing in the suite fails because of the padding, control-size or button-label work.
 
+## A craft colour suggestion keeps to the job (2026-11-12)
+- **The itch:** craft suggested the colour token nearest in value, whatever it was for. The clean-up already picks by job first.
+- **How we found it:** on the messy page, a title faded to 25% draws as #c5c5c6. The nearest token by value is `line-strong`, a border colour, 6 away; the nearest text colour is far off.
+- **The system behind it:** the craft side asked the theme for "the nearest colour" with no idea what each token is for. The source read earlier says the opposite: "Don't use a token just because the colors appear to match" (Atlassian).
+- **What changed:** the theme now knows each colour token's job (text, surface, line, accent, status), read the way the clean-up reads it. A craft colour suggestion keeps to the tokens for the job the utility sets (`text-` → text colours) and only then compares values. When the theme's names say no jobs, value decides as before.
+- **The proof:** same element, same run: before, `line-strong` (a border colour, for text); after, no text colour is close enough, so plumber gives advice with the colour it draws as. The four craft tests that cover faded text and grey levels pass.
+- **Also:** the noise check accepted a new finding on the demo. It turned out the demo gives one extra finding on Linux (two text sizes centred, baselines 1.8px apart) and a different one on a Mac (rows held apart only by leftover space). Both are real on that page and depend on the machine's fonts; the check now allows either. That the same page reads differently by machine is in the backlog.
+
 ## Open gaps
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
 

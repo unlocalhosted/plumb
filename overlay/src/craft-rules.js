@@ -223,7 +223,7 @@ export const textOpacity = {
     const ground = facts.ground(el);
     const mixed = [0, 1, 2].map((i) => Math.round(color[i] * o + ground[i] * (1 - o)));
     const cls = utility(el, 'opacity');
-    const near = theme.nearestColor(mixed, T.within);
+    const near = theme.nearestColor(mixed, T.within, 'text');
     const text = cls ?? 'opacity';
     // the colour it replaces goes too: two text colours on one element are decided by Tailwind's order, not the edit
     const own = colourClass(el, 'text', theme);

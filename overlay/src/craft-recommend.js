@@ -111,9 +111,11 @@ export function recommend({ family, prefix, job, want, from = '', sets, round: d
   return { ...best, ...(rest.length ? { alternatives: rest.map(({ rank: _r, ...c }) => c) } : {}) };
 }
 
-/** A colour's one safe answer: the theme token nearest the rgb within a distance, else advice (a new colour is a design decision). */
+/** A colour's one safe answer: the theme token for this job (text, surface or line, from the utility that sets it)
+ * nearest the rgb within a distance, else advice (a new colour is a design decision). */
+const JOB = { text: 'text', bg: 'surface', border: 'line' };
 export function recommendColour({ rgb, prefix, from = '', within: distance, theme, why, advice }) {
-  const near = theme.nearestColor(rgb, distance);
+  const near = theme.nearestColor(rgb, distance, JOB[prefix] ?? null);
   if (near) return { kind: 'class', from, to: `${prefix}-${near.short}`, why: why ?? `${near.short}, the colour it shows as`, rank: 'theme' };
   return { kind: 'advice', text: advice, rank: 'advice' };
 }

@@ -210,6 +210,9 @@ test('Noise: a well-built page yields no craft finding; the demo with every corn
   // the demo breaks three rules for real: its cut-off label has no title (#35), its icon button pads the icon side like
   // the text side (#10), its 12px field zooms iOS (#70). Anything else would be noise.
   const known = { GOOD: [], demo: ['icon-side', 'input-zoom', 'truncate-intent'] };
+  // two more are real on the demo, and each shows only where the machine's fonts make it so: a row that centres two
+  // text sizes, their baselines 1.8px apart (#6, on Linux), and rows held apart only by leftover space (on a Mac)
+  const fontBound = ['baseline-align', 'declared-gap'];
   for (const [app, query] of [[GOOD, ''], [null, '?corners']]) {
     const { url } = await fixture(t, app);
     const { page, errors, overlay } = await open(t, launched, url + query);
@@ -220,7 +223,7 @@ test('Noise: a well-built page yields no craft finding; the demo with every corn
     const overlayBars = await page.evaluate(() => { const d = Object.assign(document.createElement('div'), { style: 'overflow:scroll;width:50px;height:50px;position:absolute' }); document.body.append(d); const w = d.offsetWidth - d.clientWidth; d.remove(); return w === 0; });
     const want = [...known[app ? 'GOOD' : 'demo'], ...(!app && overlayBars ? ['scroll-cue'] : [])].sort();
     const marks = await craftMarks(page);
-    assert.deepEqual([...new Set(marks.map((m) => m.rule))].sort(), want, `craft marks on ${app ? 'the well-built page' : 'the demo'}: ${JSON.stringify(marks.map((m) => m.label))}`);
+    assert.deepEqual([...new Set(marks.map((m) => m.rule))].filter((r) => app || !fontBound.includes(r)).sort(), want, `craft marks on ${app ? 'the well-built page' : 'the demo'}: ${JSON.stringify(marks.map((m) => m.label))}`);
     // the fix panel agrees: nothing to fix on the well-built page; on the demo at least one cause for each rule
     const line = (await overlay.locator('.fx .line').innerText()).replace(/\s+/g, ' ');
     if (app) assert.match(line, /Nothing to fix|^0 problems/, `the well-built page has nothing to fix: ${line}`);

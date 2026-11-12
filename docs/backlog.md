@@ -50,8 +50,7 @@ reserved.)
 **The order** (decided 2026-11-12):
 
 - **Now:** a class fix offered and then refused · a read in a window with no size.
-- **Next:** craft
-  suggestions read the role · the two failing tests that are real bugs · a test for a theme named by size.
+- **Next:** craft's step suggestions read the role · the two failing tests that are real bugs · a test for a theme named by size.
 - **Later:** shadows, borders, motion, opacity and states · surface levels · shadcn's foreground colours · growing hero
   titles · the speed items · the remaining defensive tips · the 80-column report · the flaky tests.
 
@@ -114,8 +113,9 @@ reserved.)
 
 ### Craft suggestions
 
-- A suggested step is chosen by nearness to the standard's number, and a colour by nearness of value. The role of
-  the element and where it sits are not read (docs/research/suggestion-sources.md).
+- A suggested step (spacing, radius, tracking, leading) is chosen by nearness to the standard's number; the role of
+  the element is not read, as the clean-up reads it. Colour is done: it keeps to the tokens for the job.
+- The same page gives different craft findings on a Mac and on Linux (two of them depend on the fonts' measurements).
 - The suggestion engine's ranking and the standard's numbers name no source where they are defined
   (docs/PRINCIPLES.md, known debt).
 - A class fix is offered on an element whose classes are built in code, then refused at write. It should say so
@@ -179,7 +179,6 @@ Six of those files pass when run by themselves, so the steady list is the eight 
 
 - The one bar does not fit with its tools out at 1440 wide on vm-agent (Linux fonts); it fits on the Mac. The bar's
   fit depends on the system font's width (one-bar).
-- A finding on the demo that the noise check does not expect, "baseline-align" (craft).
 - A new-token test loses the page to a reload (craft-token).
 - A Next performance wait times out (blueprint-next-performance).
 - The timeline undo check is flaky: it passed and failed on the same commit (qa-fixes-2-overlay).
