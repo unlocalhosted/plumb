@@ -710,7 +710,7 @@ function scaledSize(el) {
   return null;
 }
 export const leading = {
-  id: 'craft/leading', family: 'craft', number: [14], owns: ['line-height'], once: 'ancestor', reads: ['style', 'rect', 'text', 'census'],
+  id: 'craft/leading', family: 'craft', number: [14], owns: ['line-height'], once: 'ancestor', reads: ['style', 'rect', 'text'],
   check({ el, facts }, theme) {
     const T = theme.spec(this.id);
     if (!facts.text(el)) return [];
@@ -725,18 +725,11 @@ export const leading = {
     if (!big && !cramped) return [];
     const cls = utility(el, 'leading');
     const want = big ? T.want.display : T.want.body;
-    // what the page's other text of this kind is set at: big text for big text, paragraphs of small text for a cramped one
-    const used = facts.used?.(`leading:${big ? 'display' : 'body'}`, (x) => {
-      if (!facts.text(x)) return null;
-      const xs = facts.style(x), xf = px(xs.fontSize), xl = px(xs.lineHeight);
-      if (!xf || !xl || xl / xf < want.min || xl / xf > want.max) return null;
-      return (big ? (scaledSize(x) ?? xf) >= T.large : xf <= T.small && lineCount(x) >= 2) ? { v: xl / xf, cls: utility(x, 'leading') } : null;
-    });
     return [{
       ...say(this.id, { big, size: fs, ratio: ratio.toFixed(2) }),
       key: `${this.id}@${big ? 'loose' : 'tight'}`, text: cls ?? 'line-height', props: ['line-height'], value: ratio.toFixed(2), n: ratio,
       evidence: { fontSize: fs, lineHeight: lh, ratio, lines }, confidence: 0.83,
-      suggest: recommend({ family: 'leading', prefix: 'leading', job: big ? 'display' : 'body', want: { ...want, of: fs }, from: cls ?? '', sets: (v) => ({ lineHeight: v * fs }), theme, used, usedOn: big ? 'headings' : 'paragraphs',
+      suggest: recommend({ family: 'leading', prefix: 'leading', job: big ? 'display' : 'body', want: { ...want, of: fs }, from: cls ?? '', sets: (v) => ({ lineHeight: v * fs }), theme,
         label: big ? 'big text wants' : 'body text wants', advice: (v) => `Use a line height of ${v} here.` }),
     }];
   },
@@ -744,7 +737,7 @@ export const leading = {
 
 // #15. Tighten large type; space out small capitals.
 export const tracking = {
-  id: 'craft/tracking', family: 'craft', number: [15], owns: ['letter-spacing'], once: 'ancestor', reads: ['style', 'text', 'census'],
+  id: 'craft/tracking', family: 'craft', number: [15], owns: ['letter-spacing'], once: 'ancestor', reads: ['style', 'text'],
   check({ el, facts }, theme) {
     const T = theme.spec(this.id);
     if (!facts.text(el)) return [];
@@ -755,18 +748,11 @@ export const tracking = {
     if (!caps && !large) return [];
     const cls = utility(el, 'tracking');
     const want = caps ? T.want.caps : T.want.display;
-    // what the page's other small capitals (or its other big text) are spaced at
-    const used = facts.used?.(`tracking:${caps ? 'caps' : 'display'}`, (x) => {
-      if (!facts.text(x)) return null;
-      const xs = facts.style(x), xf = px(xs.fontSize);
-      if (!xf || xs.letterSpacing === 'normal') return null;
-      return (caps ? xs.textTransform === 'uppercase' && xf <= T.caps : xf >= T.large) ? { v: px(xs.letterSpacing) / xf, cls: utility(x, 'tracking') } : null;
-    });
     return [{
       ...say(this.id, { caps, size: fs }),
       key: `${this.id}@${caps ? 'caps' : 'large'}`, text: cls ?? 'letter-spacing', props: ['letter-spacing'], value: s.letterSpacing, n: ls,
       evidence: { fontSize: fs, letterSpacing: ls, uppercase: s.textTransform === 'uppercase' }, confidence: 0.84,
-      suggest: recommend({ family: 'tracking', prefix: 'tracking', job: caps ? 'caps' : 'display', want: { ...want, of: fs }, from: cls ?? '', sets: (v) => ({ letterSpacing: v * fs }), theme, used, usedOn: caps ? 'labels' : 'headings',
+      suggest: recommend({ family: 'tracking', prefix: 'tracking', job: caps ? 'caps' : 'display', want: { ...want, of: fs }, from: cls ?? '', sets: (v) => ({ letterSpacing: v * fs }), theme,
         label: caps ? 'small capitals need' : 'big text wants', advice: (v) => `Use ${v}em of letter spacing here.` }),
     }];
   },

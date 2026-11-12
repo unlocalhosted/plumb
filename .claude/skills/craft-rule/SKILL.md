@@ -9,6 +9,14 @@ A craft rule exists to catch a mistake people really make. Its showcase example 
 screen, `/rule/N`) exists to show that mistake, plumber finding it, and plumber's own fix. Both fail the same way: by
 being built to fit each other instead of the real world. These rules come from that failing, more than once.
 
+## Before anything: a principle with a source (docs/PRINCIPLES.md)
+
+A rule, a threshold, a ranking, a tie-break or a suggestion is written only when it follows from a principle (a way of
+seeing, a concept) and that principle has a source someone can check: code evidence, a talk, documentation, or
+industry practice. A count of instances is evidence at most, never the reason. If a number has no source, stop: find
+one (`docs/research/`, `docs/references.md`) or ask the owner. Never fill a vague design line with a number that seems
+sensible while coding. Each number says where it comes from, where it is defined.
+
 ## 0. Only insights get a screen
 
 A principle earns a showcase screen only if it is the kind of craft knowledge people share online as an insight:
@@ -377,3 +385,4 @@ Each line is something the owner had to say once; the sections above exist so th
   craft list is "tacit knowledge, years of experience ... real hidden gems", not tutorial tips. → §0. Screens 78–80
   (defensive CSS tips) were removed; the three checks stay in the engine without a number. The §3½ notes about a
   defensive rule's screen no longer have a screen to apply to.
+- 2026-11-12 · "dont create these rules out of your ass … there has to be a principle behind the suggestion": a suggestion built on made-up counts (two places, more than half). → Before anything, docs/PRINCIPLES.md.

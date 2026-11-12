@@ -114,7 +114,7 @@ export class Facts {
     const real = base.style(el);
     const over = new Proxy(real, { get: (t, k) => (k in sets ? (typeof sets[k] === 'number' ? `${sets[k]}px` : sets[k]) : Reflect.get(t, k, t)) });
     // every read delegates to this pass's memo (its private fields stay its own); only the element's style is new
-    const virtual = { rect: (x) => base.rect(x), kids: (x) => base.kids(x), text: (x) => base.text(x), ground: (x) => base.ground(x), metrics: (x) => base.metrics(x), census: (n) => base.census(n), used: (n, p) => base.used(n, p), ink: (x) => base.ink(x), stroke: (x) => base.stroke(x), other: (c) => base.other(c), probe: (x, g) => base.probe(x, g), source: (x) => base.source(x), style: (x) => (x === el ? over : base.style(x)) };
+    const virtual = { rect: (x) => base.rect(x), kids: (x) => base.kids(x), text: (x) => base.text(x), ground: (x) => base.ground(x), metrics: (x) => base.metrics(x), census: (n) => base.census(n), ink: (x) => base.ink(x), stroke: (x) => base.stroke(x), other: (c) => base.other(c), probe: (x, g) => base.probe(x, g), source: (x) => base.source(x), style: (x) => (x === el ? over : base.style(x)) };
     virtual.box = Facts.prototype.box.bind(virtual);
     virtual.with = Facts.prototype.with.bind(virtual);
     if (classes !== undefined) VIRTUAL.set(el, classes);
@@ -164,18 +164,6 @@ export class Facts {
     c = { sample, clusters, share: (value) => (clusters.find((k) => k.value === value)?.count ?? 0) / Math.max(1, sample) };
     this.#census.set(name, c);
     return c;
-  }
-  // What this page already does for a job (docs/briefs/craft-spec.md §4 b): `pick(el)` → the value an element uses for
-  // it (or { v, cls }: the value and the class that writes it there), or null when the element is not doing that job. One walk over the elements the reader handed on, kept by name
-  // for the pass. → the values, one per element; the recommender counts them (craft-recommend.js `used`)
-  #used = new Map();
-  used(name, pick) {
-    let v = this.#used.get(name);
-    if (v) return v;
-    v = [];
-    for (const el of this.items) { if (!el.isConnected) continue; let x = null; try { x = pick(el); } catch {} if (Number.isFinite(x)) v.push({ v: x, cls: null }); else if (Number.isFinite(x?.v)) v.push(x); }
-    this.#used.set(name, v);
-    return v;
   }
   // An element's font metrics (docs/briefs/craft-hard-rules.md, metrics): cap height, x-height, the font's ascent and
   // descent, half-leading, and its first line's baseline. Measured on a canvas, memoised per font for the pass; null

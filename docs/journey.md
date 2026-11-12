@@ -221,6 +221,7 @@
 - **Measured after (same day):** each check was timed inside one read of the 1,400-element crafting-ui page. The read took 7.9 s. All 75-odd checks together took 1.1 s of it, and the three defensive checks 28 ms (2 ms, 5 ms and 21 ms). They are not the cost. Half of the checks' time is the text-contrast check alone (0.5 s), and about 6.8 s is spent outside the checks, where is not yet known.
 
 ## Suggestions use what the page already does (2026-11-12)
+- **Taken out the same day:** its numbers and tie-breaks were invented, with no principle or source behind them ([entry](#a-suggestion-needs-a-principle-and-a-source-2026-11-12)).
 - **The itch:** the owner asked how plumber decides what to suggest. Reading the code showed a signed-off part of the design that was never built: a suggested value should be one the app already uses for the same job.
 - **How we found it:** comparing the design (docs/briefs/craft-spec.md §4, candidate b) with the recommender's code: it never looked at the page, so every new token and every piece of advice carried the standard's number (0.06em for small capitals) whatever the app did.
 - **The system behind it:** the recommender was handed the theme but not the page; a rule had no way to say "here is what the other labels on this page use".
@@ -229,6 +230,7 @@
 - **Media hooks:** before/after of the suggestion line on a crafting-ui label.
 
 ## The page's own class turned out to be a hardcoded value (2026-11-12)
+- **Taken out the same day:** its numbers and tie-breaks were invented, with no principle or source behind them ([entry](#a-suggestion-needs-a-principle-and-a-source-2026-11-12)).
 - **The itch:** after suggestions learned the page's usual value, plumber still proposed a new token on crafting-ui although 41 labels already carry 0.1em. The owner chose to make the first answer "the class the page's other places use".
 - **How we found it:** reading the 49 small-capital labels on crafting-ui's home page in the browser: 35 write the spacing as `tracking-[0.1em]`, the rest inherit it from a parent that does.
 - **The system behind it:** the shared class is a hardcoded value copied 35 times, the very thing plumber flags elsewhere. Offering it as the answer would spread the copy; a named class in range would already have won as a theme step. So "use the page's class" has no sound case of its own.
@@ -245,9 +247,17 @@
 - **Noticed:** two pages report 2 fewer findings than this morning with the old code too, so something else changed in between (the app or another session's work), not this fix.
 - **Media hooks:** a before/after bar: 7.9 s vs 2.7 s, with the 5 s of single questions drawn as 363 ticks.
 
+## A suggestion needs a principle and a source (2026-11-12)
+- **The itch:** the owner, on the two changes above: "dont create these rules out of your ass, there has to be some sort of industry practice and some sort of data by real engineers working on design system and how frontend processes works, this has to be the driving force." And: "we dont just say hey do this because so many instance, there has to be a principle behind the suggestion, some way of percieving things, some concept which leads to a suggestion."
+- **How we found it:** the changes said "use 0.1em because 41 labels do", with "two places or more", "more than half" and "nearest wins" typed in while coding.
+- **The system behind it:** the design for how plumber suggests names no source for any ranking or number, so a vague line could only be filled with a guess. The craft rules are tied to laws of UX, which explains why a rule exists but not where its numbers or its suggestion come from.
+- **What we chose and why:** every suggestion walks one chain: a way of seeing, the principle, its source, the measure, the suggestion, the proof. A source can be pragmatic (the owner: "based on code evidence, based on some talk, based on documentation, based on industry practice"). A count is evidence at most. This reaches the standard's numbers too, not only the suggestion logic.
+- **The fix and the proof:** both changes taken out (the three engine files are as they were this morning). The philosophy is written in docs/PRINCIPLES.md and at the top of the craft-rule skill. Nothing in the engine has been traced to sources yet.
+
 ## Open gaps
 - **Other answers are computed but never shown.** A suggestion carries its runners-up, yet they are almost always just the same advice in words; there is nothing worth listing until the recommender offers real ones (the other theme steps in range, the class the page's other places already use).
-- **The new token is written to one place only.** On crafting-ui it could also replace `tracking-[0.1em]` on the 35 labels that hardcode the same value; the write takes one swap today.
+- **No sources behind the suggestion engine.** How a suggestion is chosen and ranked, and the standard's numbers, cite no source where they are defined (docs/PRINCIPLES.md, known debt). Each needs its principle and source found, or to be marked a guess.
+- crafting-ui hardcodes `tracking-[0.1em]` on 35 small-capital labels; what plumber should say about a value repeated like that waits for a principle.
 - The three defensive checks have only been seen catching a slip on our own demo screens (now removed); no real app with the mistakes has been read.
 - plumber's full read is now about 2.7 s on a 1,400-element page: 1.7 s reading, a fixed 0.6 s wait, and the text-contrast check alone 0.5 s. Not re-timed on algorecall.
 - 27 test files already failing before the token work (52 tests on vm-agent), the text editor's test flaky there; not this work's, not fixed.

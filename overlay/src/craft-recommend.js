@@ -9,9 +9,7 @@
  *                                nearest the target; failing that the nearest step in the rule's direction (the verdict
  *                                proves it, or withdraws it)
  *  b  the app's own value        spacing on Tailwind's numeric scale when the theme names no steps (`px-5`); for other
- *                                families the value in range this page already uses most for the same job (`used`, from
- *                                Facts.used, on two places or more) becomes the new token's value and the advice's; the
- *                                reason names the class most of those places write it with
+ *                                families a value the page already uses in range feeds the new token's value
  *  c  a new token                { kind: 'token', family, name, value, file, hash, then: { from, to }, text, sets }:
  *                                valued from the range's target (or b), named in the theme's convention, put where the
  *                                server said tokens go; only when the policy allows it and the rule asked for it
@@ -70,11 +68,9 @@ function nameFor(theme, F, job, value) {
  *   token    false when a new token is not an answer for this rule (default true)
  *   advice   (target) → the sentence to say when nothing is safe
  *   exact    px of slack for a step to count as the value itself (spacing and radius; default 0.5)
- *   used     the values this page already uses for the same job, in the family's unit (Facts.used); `usedOn` names
- *            the places in a word ('labels', 'headings')
  * → suggest, with `alternatives` (the other candidates, in rank order) and `why`
  */
-export function recommend({ family, prefix, job, want, from = '', sets, round: dir = 'nearest', theme, label = '', token = true, advice, exact = 0.5, used, usedOn = 'places' }) {
+export function recommend({ family, prefix, job, want, from = '', sets, round: dir = 'nearest', theme, label = '', token = true, advice, exact = 0.5 }) {
   const F = FAMILIES[family];
   if (!F) throw new Error(`recommend: unknown family ${family}`);
   const of = want.of;
@@ -102,34 +98,15 @@ export function recommend({ family, prefix, job, want, from = '', sets, round: d
     const n = target / theme.unit();
     if (Number.isFinite(n) && Math.abs(n - Math.round(n * 4) / 4) < 0.01) candidates.push({ kind: 'class', from, to: `${prefix}-${Math.round(n * 4) / 4}`, why: `${F.fmt(target)}, ${Math.round(n * 4) / 4} of your spacing unit`, sets: setsOf(target), rank: 'numeric' });
   }
-  // the page's own answer: the value in range it already uses most for this job (two places or more; a tie goes to
-  // the one nearest the target). It is what a new token and the advice say, in place of the standard's target
-  const tally = new Map();
-  for (const u of used ?? []) {
-    const v = typeof u === 'number' ? u : u?.v, cls = typeof u === 'number' ? null : u?.cls ?? null;
-    if (!Number.isFinite(v)) continue;
-    const r = round(v, F.grain);
-    if (!within(r, want)) continue;
-    const t = tally.get(trim(r)) ?? { n: 0, by: new Map() };
-    t.n++; if (cls) t.by.set(cls, (t.by.get(cls) ?? 0) + 1);
-    tally.set(trim(r), t);
-  }
-  const habit = [...tally].map(([k, t]) => ({ v: Number(k), n: t.n, by: t.by })).filter((h) => h.n >= 2).sort((a, b) => b.n - a.n || Math.abs(a.v - target) - Math.abs(b.v - target))[0] ?? null;
-  const aim = habit ? habit.v : target;
-  // how those places write it, when most of them write it the same way: a hardcoded class there is the same value
-  // waiting for the same token, so the suggestion names it
-  const wrote = habit ? [...habit.by].sort((a, b) => b[1] - a[1])[0] : null;
-  const written = wrote && wrote[1] * 2 > habit.n ? { cls: wrote[0], count: wrote[1] } : null;
-  const said = habit ? `, which this page already uses on ${habit.n} ${usedOn}${written ? ` (${written.count} write it as ${written.cls})` : ''}` : reason;
   // c. a new token, where the policy allows one and the rule asked
   const policy = theme.tokens?.() ?? {};
   if (token && policy.create !== false && policy.file && !candidates.some((c) => c.rank === 'theme')) {
-    const value = round(aim, F.grain), css = F.css(value), { name, short } = nameFor(theme, F, job, css);
+    const value = round(target, F.grain), css = F.css(value), { name, short } = nameFor(theme, F, job, css);
     candidates.push({ kind: 'token', family: F.token, name, value: css, file: policy.file, hash: policy.hash ?? null, shape: policy.shape ?? null,
-      then: { from, to: `${prefix}-${short}` }, why: `${css}${said}`, ...(habit ? { habit: { value, count: habit.n, ...(written ? { written } : {}) } } : {}), text: `Add ${name}: ${css} to your theme, then use ${prefix}-${short} here.`, sets: setsOf(value), rank: 'token' });
+      then: { from, to: `${prefix}-${short}` }, why: `${css}${reason}`, text: `Add ${name}: ${css} to your theme, then use ${prefix}-${short} here.`, sets: setsOf(value), rank: 'token' });
   }
   // d. advice
-  candidates.push({ kind: 'advice', text: habit ? `Use ${F.css(aim)}${said}.` : advice ? advice(target) : `Use ${F.fmt(target)}${reason}.`, rank: 'advice' });
+  candidates.push({ kind: 'advice', text: advice ? advice(target) : `Use ${F.fmt(target)}${reason}.`, rank: 'advice' });
   const [best, ...rest] = candidates;
   return { ...best, ...(rest.length ? { alternatives: rest.map(({ rank: _r, ...c }) => c) } : {}) };
 }
