@@ -57,7 +57,9 @@ const BAR_ICON = {
 export const FIX_CSS = TEXT_EDITOR_CSS + ELEMENT_CARD_CSS + `
   /* the old pieces this panel replaces stay out of sight */
   .bpp, .cg, .sel { display: none !important; }
-  .fx { position: fixed; left: 50%; bottom: 72px; translate: -50% 0; width: 520px; max-width: calc(100vw - 32px); box-sizing: border-box; pointer-events: auto; z-index: 2;
+  /* 520 wide, and never narrower than what it holds: with its tools out on a wider system font (Linux) the bar's last
+     control fell off its edge; the window's width is still the limit */
+  .fx { position: fixed; left: 50%; bottom: 72px; translate: -50% 0; width: 520px; min-width: min-content; max-width: calc(100vw - 32px); box-sizing: border-box; pointer-events: auto; z-index: 2;
     background: rgb(255 255 255 / .82); -webkit-backdrop-filter: blur(22px) saturate(1.6); backdrop-filter: blur(22px) saturate(1.6);
     border-radius: 18px; color: #1c1b19; font: 13px/1.35 var(--pl-sans, system-ui), sans-serif; overflow: hidden;
     box-shadow: 0 0 0 .5px rgb(0 0 0 / .09), 0 1px 1px rgb(0 0 0 / .04), 0 8px 20px -8px rgb(0 0 0 / .14), 0 28px 56px -24px rgb(0 0 0 / .18), inset 0 1px 0 rgb(255 255 255 / .9);
