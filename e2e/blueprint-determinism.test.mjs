@@ -176,22 +176,6 @@ test('the same page gives the same problems, fixes and notes under every viewpor
   t.diagnostic(JSON.stringify(Object.fromEntries(Object.entries(runs).map(([k, v]) => [k, { problems: v.problems, notes: v.notes, total: v.total }]))));
 });
 
-test('the known gap: a section in its own file is not counted until it mounts, and counted once it has', { timeout: 120000 }, async (t) => {
-  const s = await site(t, { ownFile: true }); if (!s) return;
-  const { page, errors } = await fresh(s.browser, s.url, { width: 1200, height: 800 });
-  const before = await opening(page);
-  assert.ok(!before.list.some((f) => f.includes('mr-[23px]')), 'not rendered, not in a rendered file: not counted yet');
-  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
-  await page.waitForSelector('#elsewhere-p');
-  const after = await opening(page);
-  assert.ok(after.list.some((f) => f.includes('mr-[23px]')), JSON.stringify(after.list.slice(-5)));
-  assert.equal(after.places, before.places + 1);
-  assert.equal(after.problems, before.problems + 1);
-  // the same-file section (Lazy/Below) was counted both times
-  assert.deepEqual(before.list.filter((f) => /mb-\[21px\]|rounded-\[9px\]/.test(f)), after.list.filter((f) => /mb-\[21px\]|rounded-\[9px\]/.test(f)));
-  assert.deepEqual(errors, []);
-});
-
 test('a place on an inline style joins the element that renders it; two files with a place at one line and column are two places', { timeout: 120000 }, async (t) => {
   const s = await site(t); if (!s) return;
   const { page, errors } = await fresh(s.browser, s.url, { width: 1200, height: 800 });

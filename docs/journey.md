@@ -749,10 +749,23 @@
 - **Proof:** the messy-page test: three buttons at 40, 50 and 60 become one, written to the file; the one already at 40 is left.
 - **Shared on the way:** the stylesheet-source reader the timings pass needed is now its own file, used by both.
 
+## Fewer tests that test nothing a person sees (2026-11-12)
+- **The itch:** the owner asked to delete "meaningless, redundant and non-impactful tests" from the browser and CLI suite.
+- **How we found them:** every one of the 826 test titles in 181 files was read, then each one that looked like an overlap or a check on the code itself was read in full.
+- **What we found:** most of the suite is regression tests for real failures found in QA, so the cut is small. Five went:
+  - an overlay check that an entrance from scale 0 is marked: the CLI test of the same rule also checks the fix it offers;
+  - a check that greps the source for where files are looked up: it tests how the code is written, not what it does;
+  - a test that held a known Blueprint gap in place (a section in its own file is counted only once it mounts): fixing the gap would have failed it. The gap is now in the backlog;
+  - a test that calls the hierarchy module's internal functions and checks their rule codes: the same behaviour is tested through the text card's marks and the Tidy button;
+  - a test of the bench's frozen dev-server tool, which is test tooling, not plumber.
+- **Kept, on purpose:** overlapping-looking overlay tests (one owner on screen, the text card) each reproduce a different QA finding.
+- **Proof:** the three edited files parse; the suite was not run (no tests while iterating).
+
 ## Open gaps
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
 
 ## Shipped · 2026-W46
+- Five tests that guarded nothing a person sees are gone from the browser and CLI suite; a known Blueprint gap they pinned is now in the backlog ([entry](#fewer-tests-that-test-nothing-a-person-sees-2026-11-12)).
 - Plumber's text styles write into crafting-ui without shrinking headings or large numbers, keep classes that only apply to part of the text, and keep paragraph leading off headings ([entry](#big-text-no-longer-shrinks-to-fit-small-text-the-dark-page-checked-2026-11-12)).
 - crafting-ui's vocabulary page loads about four times lighter (9,474 → 2,007 elements): each live example mounts only as it comes near the screen. [entry](#crafting-uis-vocabulary-page-live-examples-mount-only-near-the-screen-2026-11-12)
 - plumber finds a side column that is set to stick but can't, and fixes it with one class: on crafting-ui's skill pages the column now stays beside the text where it used to scroll away. [entry](#the-sticky-check-on-a-real-app-crafting-uis-skill-pages-2026-11-12)

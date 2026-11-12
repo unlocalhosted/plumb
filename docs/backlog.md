@@ -73,6 +73,11 @@ reserved.)
 - **Later:** hover and pressed states · surface levels · shadcn's foreground colours · growing hero
   titles · the speed items · the remaining defensive tips · the 80-column report · the flaky tests.
 
+### Blueprint
+
+- A section that lives in its own file is not counted until it mounts: its problems join the count only once it is
+  scrolled into view. (A test used to pin this as expected; it was removed on 2026-11-12 so fixing it fails nothing.)
+
 ### Clean-up: text
 
 - Figures have one step: numbers drawn at different sizes fold into one figure style (on crafting-ui a 31px "9:41"
