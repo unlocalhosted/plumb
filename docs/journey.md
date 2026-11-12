@@ -495,6 +495,12 @@
 - **The fix and the proof:** the messy-page test now checks the panel shows "Figure 30px" and no "30px → 24px"; it passes, and so does the text-role test. On crafting-ui's measured text three places become figures.
 - **What it does not do:** one figure style for all figures, so differently sized numbers fold together (crafting-ui's 31px "9:41" would go to 22px, where it went to 24px before). Logged in the backlog.
 
+## Decide, don't ask (2026-11-12)
+- **The itch:** the owner: "bruh dont ask me for everything take an educated opinion and intuition on what would a principle design engineer would do."
+- **The system behind it:** every turn ended with a question, and the backlog held thirteen "open questions" that were ordinary design-engineering calls.
+- **What replaces it:** Claude decides such calls the way a principal design engineer would, from a principle, does the work, and writes the decision with its reason where the owner can overturn it (docs/backlog.md, "Decided by Claude"). Only destructive, outward-facing or paid actions, and taste the owner has reserved, are asked first.
+- **Decided at once:** the eleven remaining questions (the table in the backlog) and the order of work.
+
 ## Open gaps
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
 

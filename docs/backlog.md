@@ -6,69 +6,50 @@ the same turn something is found, finished or decided. The story of how each was
 
 - **Doesn't do yet:** said the way a person would meet it. When it is done, the line is deleted (the journey keeps
   the record).
-- **Open questions:** a choice only the owner can make, with what each answer would mean. When answered, the line
-  moves to the journey as a decision.
+- **Decided by Claude:** design and engineering calls made on the owner's behalf, each with its reason, so the owner
+  can overturn one.
+- **Open questions:** only what is destructive, outward-facing, costs money, or is taste the owner has reserved.
 
 Last gone through: 2026-11-12.
 
 ---
 
+## Decided by Claude
+
+The owner, 2026-11-12: "don't ask me for everything, take an educated opinion and intuition on what a principal design
+engineer would do." These calls were open questions until then. Each is decided with its reason, and can be overturned.
+
+| Call | Decision | Why |
+|---|---|---|
+| A row's title in a softened colour | Leave it | It is a deliberate fourth level; lifting it is a redesign, not a tidy-up |
+| A small heading in capitals ("Part 01") | A label | What the eye reads is an eyebrow; the tag is for structure, the style for the look |
+| Unsure text places to a model's eye | Not yet | More signals first; a model is the last resort, not the first |
+| A value hardcoded in many places for one job | It is a missing token: propose one and use it everywhere it is written | A token is a decision named once; the same decision made by hand 35 times is the drift. The job comes first, the count is only how it is found. Not built |
+| Named spacing steps are the scale | Keep | The design system leads |
+| A theme with only a few named spacing steps | Not a scale | Two or three names are sizes of things, not a rhythm |
+| Corners in a theme named by size | Propose nothing | A size name says no job; naming by job belongs with creating a design system |
+| Controls in one row, none on the unit | Say it, don't pick | No ground to choose one |
+| Next primitive | Padding and gaps in rows | The largest hole in what the eye sees |
+| The failing tests | Fix the two real bugs, update the noise check after a look, leave the flakes | A test is kept for what it protects |
+| A fairer messy page | Use a real generated app when one is at hand | bench/messy was written knowing the rules |
+| The four "proposed to drop" lines | Dropped | Not observed problems |
+
 ## Open questions
 
-### How plumber decides
-
-1. **A row's title in a softened colour: leave it, or lift it to the full text colour?** crafting-ui has 105 list
-   titles at 75% of the text colour. Plumber now leaves them alone (it used to fold them onto the grey of their own
-   description). Lifting them is a bigger jump than a fold may make today.
-   *Claude would say: Leave it. Not decided.*
-2. **A small heading in capitals ("Part 01", 12px): heading or label?** The tag says heading, the look says label.
-   Today the look wins. Six of them on crafting-ui.
-   *Claude would say: Label; the look wins, as today. Not decided.*
-3. **Should unsure text places go to a model's eye?** Plumber already asks a vision model about unsure craft findings
-   in the command-line run. Text roles have no such step.
-   *Claude would say: Park until text reads more signals. Not decided.*
-4. **When does a repeated value become a new token?** crafting-ui writes `tracking-[0.1em]` on 35 labels. Plumber
-   has no principle for what to say about that. Counting the places alone was rejected (docs/PRINCIPLES.md).
-   *Claude would say: Park; it needs a principle first. Not decided.*
-5. **A theme that names its spacing steps while the pages use the plain numeric scale.** With five or more named
-   steps, they are the scale, so a 20px space in a theme of 4/8/12/16/24 moves to 24. Right, or too eager?
-   *Claude would say: Keep; the theme leads. Not decided.*
-6. **A theme with only a few named spacing steps** (fewer than about five) is not taken as the scale. Should it be?
-   *Claude would say: Keep as is; a few names are not a scale. Not decided.*
-7. **Corners in a theme named by size** (sm, md, lg): the corners pass proposes nothing, because the names say no
-   job. Should plumber offer to name them by job, or map sizes to jobs itself?
-   *Claude would say: Later, as part of creating a design system. Not decided.*
-8. **Controls in one row at different heights, none on the spacing unit:** plumber says the row is uneven and
-   proposes nothing. Should it pick one anyway?
-   *Claude would say: Say it, don't pick. Not decided.*
-
-### Scope and order
-
-11. **Which missing primitive next?** Proposed order: padding and gaps in rows, shadows, borders, motion, opacity
-    and states. The order is a judgement, not measured.
-   *Claude would say: Padding and gaps in rows. Not decided.*
-12. **The nine test files still failing:** fix, or remove like the others? (List under Tests below.)
-   *Claude would say: Fix the two real bugs (window sizes, the bar), update the noise check after a look, leave the flakes. Not decided.*
-13. **A fairer messy page.** The only one (bench/messy) was written by Claude, who knows plumber's rules. Bring in
-    pages from other models, or a real generated app?
-   *Claude would say: Yes: a real generated app. Not decided.*
+None. (A call is brought here only when it is destructive, outward-facing, costs money, or is taste the owner has
+reserved.)
 
 ---
 
 ## Doesn't do yet
 
-**The order proposed on 2026-11-12** (the owner has seen it; not yet confirmed):
+**The order** (decided 2026-11-12):
 
-- **Now** (small, and each affects whether today's work can be trusted): a class fix offered and then refused · a read
-  in a window with no size. (Done 2026-11-12: text styles seen in the panel, wrapped controls left out, Undo of the
-  corners write.)
-- **Next** (more primitives, decided by job): padding and gaps in rows · control sizes as a pass · text inside buttons
-  and "what it sits inside" · craft suggestions read the role · the two failing tests that are real bugs · tests for
-  control sizes and a theme named by size.
+- **Now:** a class fix offered and then refused · a read in a window with no size.
+- **Next:** padding and gaps in rows · control sizes as a pass · text inside buttons and "what it sits inside" · craft
+  suggestions read the role · the two failing tests that are real bugs · tests for control sizes and a theme named by size.
 - **Later:** shadows, borders, motion, opacity and states · surface levels · shadcn's foreground colours · growing hero
   titles · the speed items · the remaining defensive tips · the 80-column report · the flaky tests.
-- **Proposed to drop:** "other answers never shown" · the wide-gamut blue · the tailwind-merge case and renamed code
-  samples · "20 one-off sizes marked low confidence".
 
 ### Clean-up: text
 
@@ -79,7 +60,6 @@ Last gone through: 2026-11-12.
 - A hero title written to grow with the screen stays in the ordinary display style (its drawn size is not read).
 - The job is read only from the tag and "is it a sentence". What it sits inside, and its size against its
   neighbours, are not read. Only crafting-ui has been measured.
-- 20 one-off sizes (28–33px, 22px) would move more than 2px and are marked low confidence.
 - Writing from source without a site reading gets inherited capitals wrong; it should refuse to write, or read the
   parents.
 - The text step's "no site reading yet" screen has no skip; the pass names along the top are not clickable.
@@ -94,7 +74,6 @@ Last gone through: 2026-11-12.
 - Surface levels (a card on a panel) are not read from nesting; no project at hand has two nested surface colours.
 - A fill is called sunken when it is darker than the page. With shadcn's page switched to dark, the plan came out the
   same as in light; not checked whether the dark values were read, or the light ones kept.
-- crafting-ui's wide-gamut blue loses a little chroma in the ramp (0.289 → 0.278).
 
 ### Clean-up: icons
 
@@ -104,7 +83,7 @@ Last gone through: 2026-11-12.
 
 ### Clean-up: corners
 
-- Themes that name radii by size get no answer (see question 7).
+- Themes that name radii by size get no answer (decided: nothing is proposed).
 
 ### Clean-up: control sizes
 
@@ -123,7 +102,6 @@ Last gone through: 2026-11-12.
   the element and where it sits are not read (docs/research/suggestion-sources.md).
 - The suggestion engine's ranking and the standard's numbers name no source where they are defined
   (docs/PRINCIPLES.md, known debt).
-- A suggestion's other answers are computed and never shown; today they are only the same advice in words.
 - A class fix is offered on an element whose classes are built in code, then refused at write. It should say so
   first.
 - A finding on a wrapped element is reported at the component's line, not where it is used; the fix card says
@@ -155,8 +133,6 @@ Last gone through: 2026-11-12.
 - A full read is about 2 s on a 1,400-element page (busy laptop, single runs); a fixed 0.6 s wait remains at the end.
 - Two neighbours of the repaired fix-card write were not driven by hand: a fix taken on the element itself, and the
   class written after a new theme token.
-- The tailwind-merge case is untested (crafting-ui does not use it). Code samples shown as text on crafting-ui may
-  have been renamed with the tokens; not checked.
 
 ### The command line
 
