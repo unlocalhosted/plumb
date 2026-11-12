@@ -521,10 +521,21 @@
 - **The fix and the proof (messy page at 1440 wide, engine output in the browser):** 145 padding and gap classes read; 33 change: 20px → 24px on 23 places (cards and table cells), 10px → 12px on 7, 14px and 18px → 16px on 3. Distinct sizes among them: 12 → 8. Left as their own: the 2px chip padding and two 6px sizes.
 - **Not done:** not in the panel's Spacing step, so nothing is shown or written. No tests.
 
+## The sticky check on a real app: crafting-ui's skill pages (2026-11-12)
+- **The itch:** the sticky check had only been seen on a page we wrote; the before and after from a real app was owed. The owner allowed the restart of crafting-ui's dev server that it needed.
+- **How we found it:** plumber's read of crafting-ui after the restart, then the fix taken by hand through the fix card.
+- **Before:** on every skill page the side column (what it was learned on, what changed, the group's other skills) is set to stick. It was 1,603 px tall, the full height of its row, around 454 px of content. Scrolled 900 px down, its top was 740 px above the window: gone. Plumber said: "This is set to stay in view as the page scrolls, but it is stretched 1149px past its own content, to the full height of its row, so it has nowhere to move." and offered `self-start`.
+- **After the fix, taken with one click:** the class was written on the line where the column is, the column was 454 px tall in the same 1,603 px row, and scrolled 900 px down it sat 32 px from the top of the window, beside the text. Plumber asked again found nothing for it.
+- **Left as found:** the fix was undone with plumber's Undo; the file is byte for byte what it was. It is a real bug the owner can take with one click.
+- **A guess that was wrong:** the pattern pages' sticky column was expected to be a second case. It is not: its parent is an ordinary block much taller than it, so it has room, and plumber rightly said nothing.
+- **What the fix revealed:** with the column back in view, a long line of code in the main text runs under it. That is the next check on the list (text in a grid cell may shrink), with a real case waiting.
+- **Media hooks:** the same page scrolled 900 px, before (column gone) and after (column beside the text); the fix card reading "Set to stick, but can't".
+
 ## Open gaps
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
 
 ## Shipped · 2026-W46
+- plumber finds a side column that is set to stick but can't, and fixes it with one class: on crafting-ui's skill pages the column now stays beside the text where it used to scroll away. [entry](#the-sticky-check-on-a-real-app-crafting-uis-skill-pages-2026-11-12)
 - In a rename plan, the raised background gets the surface name and recessed fills get sunken, judged against the page colour ([entry](#which-colour-gets-the-surface-name-2026-11-12)).
 - Plumber tells text colours from fill colours by how the code uses them, so shadcn's `-foreground` colours read as the words they are ([entry](#text-and-fill-colours-read-from-the-code-2026-11-12)).
 - The server answers a write about a third sooner (228 ms → 149 ms on a copy of crafting-ui): it no longer works out and sends the same dependency lists twice. [entry](#the-small-trim-a-writes-bookkeeping-done-once-2026-11-12)

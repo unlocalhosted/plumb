@@ -123,13 +123,13 @@ reserved.)
     picture stretched by its row.
   - Will not be checks (4): auto-fit vs auto-fill, CSS variable fallback, grouping vendor selectors, image maximum width.
   - The CSS behaviour each check rests on is to be re-read and linked when the check is built; only the tip pages were read.
-- The sticky check has been seen working only on a page we wrote. crafting-ui has two sticky side columns that look
-  like real cases; they could not be read because the overlay does not load there (see Writes and speed).
+- crafting-ui's skill pages: the side column is set to stick and can't (found by the sticky check, shown fixed, then
+  put back). One click in the fix card takes it. With it in view, a long code line in the main text runs under it.
 
 ### Writes and speed
 
-- The overlay does not load on crafting-ui's running dev server: it was started before another module was added to
-  the overlay, and it refuses a file it does not know. Restarting that server fixes it.
+- A dev server started before a module is added to the overlay refuses that file, and the whole overlay fails to
+  load without saying why (seen on crafting-ui; a restart fixed it).
 
 - One edited file still marks 1,225 files as changed (about 100 ms per write).
 - Several writes in quick succession sometimes reload the showcase page.
