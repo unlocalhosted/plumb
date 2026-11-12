@@ -34,6 +34,7 @@
  *  media-size          #34     one avatar and icon size per list
  *  flex-min            —       a flex item that holds text may shrink, so a long name is cut off, not pushed out
  *  image-ground        —       words over a picture have a colour behind them for when it doesn't arrive
+ *  declared-gap        —       parts of a row are kept apart by a declared gap, not by left-over space
  *  scroll-on-demand    —       a scrollbar shows only when there is more to scroll
  *  fixed-height        —       a box that holds text sets its least height, not its exact height
  *  sticky-room         —       a sticky side column is not stretched to its row, so it has room to stick
@@ -1293,6 +1294,69 @@ export const scrollOnDemand = {
   },
 };
 
+// Defensive, not a craft rule (no number, no showcase screen; docs/research/defensive-tips.md). The distance between
+// neighbours is a decision. A row whose parts are kept apart only by left-over space (justify-between, or a part
+// pushed over with ml-auto) and no gap has none: with a longer title, a translated label or a narrower screen they run
+// into each other. Read from what is measured: a flex row, no column gap, its parts spread by the left-over space,
+// none of them holding a margin of its own toward its neighbour, and at least one holding words (the part that grows).
+// The gap is a single decision from the project: the gap of the nearest layout around it that declares one, else the
+// row's own side padding, else the theme's step nearest the row's text size (an invented fallback, to be tuned).
+// (defensivecss.dev "Component spacing", "Using space-between".)
+export const declaredGap = {
+  id: 'craft/declared-gap', family: 'craft', number: [], owns: ['gap'], once: 'ancestor', reads: ['style', 'rect', 'text'],
+  check({ el, facts }, theme) {
+    const s = facts.style(el);
+    if (!/flex/.test(s.display) || /column/.test(s.flexDirection) || px(s.columnGap) > 0) return [];
+    const kids = [...el.children].filter((k) => { const ks = facts.style(k); return ks.display !== 'none' && !/^(?:absolute|fixed)$/.test(ks.position) && k.getClientRects().length; });
+    if (kids.length < 2) return [];
+    const spread = /^(?:space-between|space-around|space-evenly)$/.test(s.justifyContent);
+    const pushed = kids.some((k, n) => { const ks = facts.style(k); return (n > 0 && ks.marginLeft === 'auto') || (n < kids.length - 1 && ks.marginRight === 'auto'); });
+    if (!spread && !pushed) return [];
+    // a margin of their own between neighbours is a declared distance
+    if (kids.some((k, n) => { const ks = facts.style(k); return (n > 0 && ks.marginLeft !== 'auto' && px(ks.marginLeft) > 0) || (n < kids.length - 1 && ks.marginRight !== 'auto' && px(ks.marginRight) > 0); })) return [];
+    const words = (k) => facts.text(k) || [...k.querySelectorAll('*')].slice(0, 30).some((t) => facts.text(t));
+    if (!kids.some(words)) return [];
+    // a drawing of a screen (a phone's status bar in a mock-up, hidden from readers) is a picture, not content that varies
+    if (el.closest('[aria-hidden="true"]')) return [];
+    // how close the neighbours' drawn content is now: what is inside each, not its box (a part that grows to fill the
+    // row reaches its neighbour with its box, not with its words)
+    const range = document.createRange(), k1 = el.getBoundingClientRect().width / (el.offsetWidth || 1) || 1;
+    // what each part draws: its words (each run of text, measured where it is laid out) and its leaf boxes (an icon, a
+    // dot, a control); a wrapper's own box can be wider than anything in it
+    const inkOf = (k) => {
+      let l = Infinity, r = -Infinity;
+      const add = (q) => { if (q.width > 0 && q.height > 0) { l = Math.min(l, q.left); r = Math.max(r, q.right); } };
+      const walker = document.createTreeWalker(k, NodeFilter.SHOW_TEXT | NodeFilter.SHOW_ELEMENT);
+      for (let n = walker.currentNode, i = 0; n && i < 80; n = walker.nextNode(), i++) {
+        if (n.nodeType === 3) { if (n.nodeValue.trim()) { range.selectNodeContents(n); add(range.getBoundingClientRect()); } }
+        else if (!n.firstElementChild && !n.textContent.trim() || /^(?:svg|img|input|button|select|canvas|video)$/.test(n.localName)) add(n.getBoundingClientRect());
+      }
+      return l < r ? { left: l, right: r, width: r - l } : k.getBoundingClientRect();
+    };
+    const drawn = kids.map(inkOf).sort((a, b) => a.left - b.left);
+    if (drawn.some((r) => r.width <= 0) || el.clientWidth <= 0) return []; // not laid out (a closed sheet, a hidden tab)
+    const closest = Math.max(0, Math.round(Math.min(...drawn.slice(1).map((r, n) => (r.left - drawn[n].right) / k1))));
+    // the gap: never less than the distance inside its own parts (outer at least inner: a group sits further from its
+    // neighbour than its own items sit from each other); else the gap of the layout around it; else its text size.
+    // On the theme's spacing scale, else Tailwind's 4px steps
+    let want = 0, from = '';
+    for (const k of kids) for (const n of [k, ...k.querySelectorAll('*')].slice(0, 30)) { const ns = facts.style(n); if (/flex|grid/.test(ns.display) && !/column/.test(ns.flexDirection) && px(ns.columnGap) > want) { want = px(ns.columnGap); from = 'inside'; } }
+    for (let n = el.parentElement, d = 0; n && d < 6 && !want; n = n.parentElement, d++) { const ns = facts.style(n); if (/flex|grid/.test(ns.display) && px(ns.columnGap) > 0) { want = px(ns.columnGap); from = 'around'; } }
+    // half the row's text size: an invented fallback, tuned on crafting-ui (a full em pushed a 106px row's count off it)
+    if (!want) { want = (px(s.fontSize) || 16) / 2; from = 'text'; }
+    const step = theme.nearest('spacing', want, Math.max(2, want * 0.25));
+    const four = Math.max(0.5, Math.round((want / 4) * 2) / 2);
+    const to = step ? `gap-${step.short}` : `gap-${four}`;
+    const touching = closest <= 1;
+    return [{
+      ...say(this.id, { closest, touching }),
+      key: this.id, text: utility(el, 'justify') ?? 'gap', props: ['column-gap'], value: '0px', n: closest,
+      evidence: { closest, want: step?.px ?? four * 4, from }, confidence: touching ? 0.9 : 0.84,
+      suggest: { kind: 'class', from: '', to, why: 'keeps a set distance between the parts, whatever is left over', sets: { columnGap: step?.px ?? four * 4 } },
+    }];
+  },
+};
+
 const truncated = (el, s) => s.textOverflow === 'ellipsis' && s.overflowX !== 'visible' && el.scrollWidth > el.clientWidth + 1;
 const pathLike = (t) => /^\S+$/.test(t) && ((t.match(/[/\\]/g) ?? []).length >= 2 || /^[0-9a-f]{16,}$/i.test(t) || /^[\w-]+(?:\.[\w-]+){2,}$/.test(t));
 
@@ -2331,7 +2395,7 @@ export const interruptible = {
 };
 
 export const RULES = [concentricRadius, innerOuterSpacing, textOpacity, halfPixel, hairline, imageOutline, layeredShadow, scaleFromZero, zIndexWar, contentAlign,
-  buttonPadding, iconSide, measure, leading, tracking, tabularNums, headingWidow, oneLight, borderOnShadow, contrast, disabledContrast, hitTarget, mediaSize, imageFit, flexMin, imageGround, stickyRoom, fixedHeight, scrollOnDemand,
+  buttonPadding, iconSide, measure, leading, tracking, tabularNums, headingWidow, oneLight, borderOnShadow, contrast, disabledContrast, hitTarget, mediaSize, imageFit, flexMin, imageGround, stickyRoom, fixedHeight, scrollOnDemand, declaredGap,
   truncateIntent, scrollbarGutter, boldHover, hangingQuote, capsCase, gradientSpace, inputZoom, anchorOffset, middleTruncate,
   textWrapRole, continuousCorners, opticalSizing, tintedShadow, easedScrim, pureBlackWhite, contentSize,
   baselineAlign, iconCap, trimLeading, headingLead, pairSpacing, cardOpticalPadding,

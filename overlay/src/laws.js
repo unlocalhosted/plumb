@@ -60,6 +60,7 @@ const RULE_LAWS = {
   'craft/sticky-room': [],
   'craft/fixed-height': [],
   'craft/scroll-on-demand': [],
+  'craft/declared-gap': [],
   'craft/truncate-intent': [],
   'craft/scrollbar-gutter': [],
   'craft/bold-hover': [],

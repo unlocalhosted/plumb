@@ -59,6 +59,11 @@ export const CRAFT = {
     line: empty ? 'This shows a scrollbar, but there is nothing to scroll.' : 'This always shows a scrollbar, even when what it holds is short.',
     reason: 'A scrollbar says there is more. Set to scroll, it is drawn whether or not there is.',
   }),
+  'declared-gap': ({ closest, touching }) => ({
+    label: touching ? 'Parts of this row touch' : 'Only left-over space between',
+    line: touching ? 'These parts touch: nothing but left-over space keeps them apart, and there is none left.' : `These parts are ${px(closest)} apart only because that much space is left over. A longer title closes it.`,
+    reason: 'The distance between neighbours is a decision. Left to whatever space remains, it closes to nothing.',
+  }),
   'sticky-room': ({ spare }) => ({
     label: 'Set to stick, but can’t',
     line: `This is set to stay in view as the page scrolls, but it is stretched ${px(spare)} past its own content, to the full height of its row, so it has nowhere to move.`,

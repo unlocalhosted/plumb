@@ -121,12 +121,16 @@ reserved.)
 
 - Seen catching slips only on pages we wrote; no real app with the mistakes has been read.
 - One check's fix can raise another check's finding on the same element (a background makes a box count as a card).
-- Of the 25 defensivecss.dev tips, 14 have a check. The other 15 are sorted in docs/research/defensive-tips.md:
-  - Still to build, each from its written principle (5 checks for 6 tips): space that is left over, not declared;
-    a row of like things that cannot wrap; a fixed column with no narrow form; a background photo that tiles; a
+- Of the 25 defensivecss.dev tips, 15 have a check (one of them in its first form only). The other 15 are sorted in docs/research/defensive-tips.md:
+  - Still to build, each from its written principle (4 checks for 4 tips, plus the second form of the left-over-space
+    check: three or more like items spread by justify-between): a row of like things that cannot wrap; a fixed column with no narrow form; a background photo that tiles; a
     picture stretched by its row.
   - Will not be checks (4): auto-fit vs auto-fill, CSS variable fallback, grouping vendor selectors, image maximum width.
   - The CSS behaviour each check rests on is to be re-read and linked when the check is built; only the tip pages were read.
+- The left-over-space check fires on 5 places on crafting-ui (pattern pages' figure switch and hand-test header, the
+  sheet demo's header, the swipe demo's header, the home page's slider end labels). In the sheet demo at phone width the
+  title and the count touch; plumber's gap separated them by 16 px but pushed the count off the card, because that
+  mock-up is 106 px wide there. The gap is right; the narrow mock-up is a second problem plumber does not name.
 - The scrollbar check has never fired on a real app either: no app here writes `overflow-scroll` (searched crafting-ui,
   algorecall, glyphschool, the site, the relay example). When a box always scrolls and already overflows, the existing
   scroll-cue finding outranks it on that element.

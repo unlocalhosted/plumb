@@ -570,6 +570,15 @@
 - **The proof:** on crafting-ui's measured text, 20 places become button labels (15px ×7, 13px ×13), where 13 of them had been put in the capitals label style. The text-role and messy-page tests pass; the messy-page test checks the panel lists a Button style.
 - **What it costs:** low-confidence places 34 → 37: a button label's line height comes from the most common one among buttons.
 
+## The fifth check from the tips: parts of a row kept apart only by left-over space (2026-11-12)
+- **The itch:** next on the sorted list; the owner: "Yes, next check".
+- **The principle:** the distance between neighbours is a decision. A title and its actions kept apart only by `justify-between` and no gap close to nothing with a longer title, a translation or a narrower screen. Ground: the two tips (component spacing, using space-between).
+- **First version, read on crafting-ui:** 8 findings on 4 pages. Three were wrong in ways that changed the check: a phone status bar drawn inside a mock-up (decorative, hidden from readers: now skipped); gaps measured between wrappers instead of what they draw (a label that grows to fill its row read as "touching": now measured between words and icons); and suggested gaps like `gap-[67px]` taken from padding (padding is an inset, not a distance between neighbours: dropped).
+- **The gap, now:** at least the gap inside its own parts (a group sits further from its neighbour than its items sit from each other), else the layout around it, else half the row's text size (invented, tuned once here), on the theme's scale. On crafting-ui that gives `gap-3` beside its own `gap-3` groups, `gap-5` inside a 20 px layout.
+- **What it finds on crafting-ui now:** 5 places, all the tip's own pattern (a header and what sits at its end). At desktop width they are 123 to 185 px apart, which is left-over space and nothing else.
+- **Before and after, and what it did not fix:** in the bottom-sheet demo at phone width, "Nearby workshops" and "6 open" touch. Plumber said "These parts touch: nothing but left-over space keeps them apart, and there is none left." and offered `gap-4`. Written, they were 16 px apart and plumber found nothing; but the count was pushed past the card's edge, because that mock-up is 106 px wide at phone width. The gap is right and the layout is still not: plumber does not name the second problem. The fix was put back; the file is as it was.
+- **Not built:** the second form (three or more like items spread by `justify-between`).
+
 ## Open gaps
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
 

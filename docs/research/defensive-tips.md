@@ -56,7 +56,7 @@ Eleven tips hold and become nine checks; four do not hold; one waits on a decisi
 - **How "holds text that may wrap" is read:** a line of words inside already runs to a second line. Measured, with
   no threshold; a box whose text is one line (a bar, a chip, a control) is left alone.
 
-### Space that is left over, not declared
+### Space that is left over, not declared (built 2026-11-12, first form only)
 - **What the expert sees:** a title and a button kept apart only by the empty space between them; a row of items
   spread by `justify-between`.
 - **Principle:** the distance between neighbours is a decision. Left to whatever space remains, it closes to nothing
@@ -66,6 +66,13 @@ Eleven tips hold and become nine checks; four do not hold; one waits on a decisi
   the second form, three or more like items spread by `justify-between`.
 - **Suggestion:** a gap from the project's own scale (the step its sibling rows use). This is a single decision, taken
   from the project's system.
+- **As built:** a flex row with no column gap whose parts are spread by `justify-between` (or pushed with an auto
+  margin), none of them holding a margin of its own, at least one holding words, and not inside a drawing hidden from
+  readers. The distance is measured between what each part draws (its words and leaf boxes), not its wrapper's box.
+- **The gap, as built:** at least the gap used inside its own parts (outer at least inner, plumber's inner-outer
+  principle); else the gap of the layout around it; else half the row's text size (an invented fallback, tuned once on
+  crafting-ui: a full em pushed a narrow row's count off its card). On the theme's spacing scale, else Tailwind's 4px steps.
+- **Second form not built:** three or more like items spread by `justify-between`.
 
 ### A row of like things that cannot wrap
 - **What the expert sees:** tags, chips or options in one row that will run off a narrow screen.
