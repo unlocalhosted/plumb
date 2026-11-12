@@ -50,7 +50,7 @@ reserved.)
 **The order** (decided 2026-11-12):
 
 - **Now:** a class fix offered and then refused · a read in a window with no size.
-- **Next:** text inside buttons and "what it sits inside" · craft
+- **Next:** craft
   suggestions read the role · the two failing tests that are real bugs · a test for a theme named by size.
 - **Later:** shadows, borders, motion, opacity and states · surface levels · shadcn's foreground colours · growing hero
   titles · the speed items · the remaining defensive tips · the 80-column report · the flaky tests.
@@ -59,7 +59,9 @@ reserved.)
 
 - Figures have one step: numbers drawn at different sizes fold into one figure style (on crafting-ui a 31px "9:41"
   would go to 22px). A figure of 60px or more that is not a heading is still left out as a drawing (the messy page's "78%").
-- Text inside buttons is not its own job: label styles force capitals, so a plain button label goes by size.
+- A control's label takes its line height from the most common one among buttons, often 1; a button with a roomier
+  line would be tightened (three more low-confidence places on crafting-ui).
+- Links in a nav are not read as control labels; only buttons, tabs, menu items, summaries and form labels are.
 - A hero title written to grow with the screen stays in the ordinary display style (its drawn size is not read).
 - The job is read only from the tag and "is it a sentence". What it sits inside, and its size against its
   neighbours, are not read. Only crafting-ui has been measured.

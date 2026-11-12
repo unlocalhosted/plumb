@@ -22,6 +22,8 @@ export interface TypeMember {
   current: TypeBundle;
   /** the element sits in a list (li/ul/ol/dl) or a list-like repeat */
   list: boolean;
+  /** it is, or sits inside, something you press: a button, a tab, a menu item, a summary, or a form label */
+  control?: boolean;
   /** its own words are a figure: digits with their signs, separators, a currency or percent mark and at most a two-letter unit ("142", "78%", "3.2d") */
   number?: boolean;
   /** its own words are a sentence (more than one word, ending in . ! or ?); undefined when no page has been measured */
@@ -31,7 +33,7 @@ export interface TypeMember {
   /** why the place cannot be swapped (an inline style, a computed className, a formula) */
   fixed?: string;
 }
-export type RoleName = 'display-hero' | 'display-large' | 'display-figure' | 'headline-small' | 'title-large' | 'title-medium' | 'title-small' | 'body-lead' | 'body-lead-small' | 'body-large' | 'body-small' | 'body-caption' | 'label-medium' | 'label-small';
+export type RoleName = 'display-hero' | 'display-large' | 'display-figure' | 'headline-small' | 'title-large' | 'title-medium' | 'title-small' | 'body-lead' | 'body-lead-small' | 'body-large' | 'body-small' | 'body-caption' | 'label-control' | 'label-control-small' | 'label-medium' | 'label-small';
 export interface RoleMember { site: TypeMember['site']; stamp?: string; tag: string; classes: string[]; current: TypeBundle; delta: { size: number | null; lineHeight: number | null; letterSpacing: number; weight: number }; /** the weight this place takes, when not its role's usual one */ weight?: WeightName; /** reading text: its role plus leading-prose */ variant?: 'prose'; confidence: 'ok' | 'low'; elements: number; fixed?: string }
 export interface RoleOverride { size?: number; lineHeight?: number; letterSpacing?: number; weight?: number; compact?: { lineHeight: number } }
 export interface TypeRole { name: RoleName; bundle: TypeBundle; /** the role's usual weight, and the other weights its places use (one class each) */ weightName: WeightName; weights: { name: WeightName; places: number }[]; members: RoleMember[]; places: number; elements: number; files: number; contexts: { tag: string; places: number }[]; /** where the size came from: the owner's decision, the theme's step within 1px of the mode, the members' mode, or the cluster's centre (the ladder) */ sizeFrom: 'decision' | 'theme' | 'mode' | 'centre'; /** the fluid sizes among the members, most places first */ clamps?: { text: string; places: number }[] }
@@ -65,22 +67,24 @@ export function px(value: string | undefined, size = 16): number | null {
   return m[2] === 'rem' ? n * 16 : m[2] === 'em' ? n * size : m[2] === '%' ? n / 100 * size : n;
 }
 
-export const roleOrder: RoleName[] = ['display-hero', 'display-large', 'display-figure', 'headline-small', 'title-large', 'title-medium', 'title-small', 'body-lead', 'body-lead-small', 'body-large', 'body-small', 'body-caption', 'label-medium', 'label-small'];
+export const roleOrder: RoleName[] = ['display-hero', 'display-large', 'display-figure', 'headline-small', 'title-large', 'title-medium', 'title-small', 'body-lead', 'body-lead-small', 'body-large', 'body-small', 'body-caption', 'label-control', 'label-control-small', 'label-medium', 'label-small'];
 /** up a ladder every size must be strictly greater than the one below. One ladder per job (docs/research/text-role-signals.md):
  * a large paragraph and a small heading are different jobs, so their sizes may cross */
-export const ladders: RoleName[][] = [['display-figure'], ['label-small', 'label-medium'], ['body-caption', 'body-small', 'body-large', 'body-lead-small', 'body-lead'], ['title-small', 'title-medium', 'title-large', 'headline-small', 'display-large', 'display-hero']];
+export const ladders: RoleName[][] = [['display-figure'], ['label-control-small', 'label-control'], ['label-small', 'label-medium'], ['body-caption', 'body-small', 'body-large', 'body-lead-small', 'body-lead'], ['title-small', 'title-medium', 'title-large', 'headline-small', 'display-large', 'display-hero']];
 export const ladderOrder: RoleName[] = ladders.flat();
 /** What a place is for, where it says so itself (docs/PRINCIPLES.md: a text style names a job; the size belongs to the job).
  * A heading: HTML's h1–h6, "six levels of section headings". Reading text: a paragraph, a definition, a quotation, or
  * words that are a sentence. A figure: a number drawn large (a dashboard's "142"): Material keeps numerals with display
  * text ("short, important text or numerals"), and a figure folded into a heading style shrinks to the section titles
- * beside it. Null when the place says nothing (a span, a div): its size stands in, as before. */
-export type Job = 'heading' | 'reading' | 'figure';
+ * beside it. A control's label: the words on something you press; Material's label styles are for "text inside
+ * components" and its buttons use one. Null when the place says nothing (a span, a div): its size stands in, as before. */
+export type Job = 'heading' | 'reading' | 'figure' | 'control';
 export const HERO_MIN_PX = 60;
 // tags that say the text is something else (a control, a caption, code): its words being a sentence does not make it reading text
 const OTHER_JOB = new Set(['button', 'label', 'summary', 'th', 'dt', 'figcaption', 'legend', 'caption', 'kbd', 'code', 'pre', 'samp']);
-export function jobOf(m: Pick<TypeMember, 'tag' | 'sentence' | 'number'>): Job | null {
+export function jobOf(m: Pick<TypeMember, 'tag' | 'sentence' | 'number' | 'control'>): Job | null {
   if (/^h[1-6]$/.test(m.tag)) return 'heading';
+  if (m.control) return 'control';
   if (m.number && !OTHER_JOB.has(m.tag)) return 'figure';
   // a paragraph is reading text, unless a measured page shows its words are not a sentence: generated code puts any
   // text in a <p> (a stat's "142", a row's project name), and then the tag says nothing
@@ -109,6 +113,9 @@ export const roleToken = (name: RoleName) => `--text-${name}`;
 export function roleFor(b: TypeBundle, job: Job | null = null): RoleName {
   const size = b.size ?? 0, fluid = !!b.sizeText;
   if (b.transform === 'uppercase' && size <= 13.5) return size < 11.5 ? 'label-small' : 'label-medium';
+  // the words on a control are its label, in plain case (small capitals were taken as a label above); a control drawn
+  // at title size or larger (a hero's button) goes by size, like any large text
+  if (job === 'control') { if (!fluid && size < 17) return size >= 13.5 ? 'label-control' : 'label-control-small'; job = null; }
   // a number at heading size is a figure; a small one (a count in a row, a cell) is ordinary text and goes by size
   if (job === 'figure') { if (fluid || size >= 22) return 'display-figure'; job = null; }
   // body-large keeps its meaning (the 16px body: configs and the element card name it); larger reading text steps above it
@@ -198,7 +205,8 @@ export function proposeTypeRoles(members: TypeMember[], options: { exclude?: str
   const clampMax = (text: string) => { const m = /clamp\([^,]*,[^,]*,\s*([\d.]+)(rem|px)/.exec(text); return m ? Number(m[1]) * (m[2] === 'rem' ? 16 : 1) : 0; };
   for (const name of roleOrder) {
     const ms = byRole.get(name); if (!ms?.length) continue;
-    const label = name.startsWith('label-'), override = overrides[name] ?? {}, own = clusters.get(name) ?? ms;
+    // the capital label styles; a control's label keeps the case it is written in
+    const label = name === 'label-medium' || name === 'label-small', override = overrides[name] ?? {}, own = clusters.get(name) ?? ms;
     const clampCounts = new Map<string, number>();
     for (const m of own) if (m.current.sizeText) clampCounts.set(m.current.sizeText, (clampCounts.get(m.current.sizeText) ?? 0) + 1);
     // the fluid size most places use, a tie going to the larger

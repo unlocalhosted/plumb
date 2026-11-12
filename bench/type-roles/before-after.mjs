@@ -6,7 +6,7 @@ const rows = JSON.parse(readFileSync(new URL('./measurements.roles.json', import
   .filter((r) => r.role || r.outside === 'poster size'); // the system's places, and what was left out for being large
 const sentence = (t) => /\S\s+\S.*[.!?…]["'”’)]*\s*$/s.test((t ?? '').trim());
 const members = rows.map((r) => { const [, file, line, column] = /^(.*):(\d+):(\d+)$/.exec(r.stamp);
-  return { site: { file, line: +line, column: +column }, stamp: r.stamp, tag: r.tag, classes: [], current: { size: r.size, lineHeight: r.lh, letterSpacing: r.ls, weight: r.weight, transform: r.transform === 'uppercase' ? 'uppercase' : 'none' }, list: r.landmark === 'li', sentence: sentence(r.texts?.[0]), number: /^[\s$€£¥₹+\-−–.,:%()\d]*\d[\s$€£¥₹+\-−–.,:%()\d]*[a-z]{0,2}$/i.test((r.texts?.[0] ?? '').trim()), elements: r.elements, text: r.texts?.[0] ?? '' }; });
+  return { site: { file, line: +line, column: +column }, stamp: r.stamp, tag: r.tag, classes: [], current: { size: r.size, lineHeight: r.lh, letterSpacing: r.ls, weight: r.weight, transform: r.transform === 'uppercase' ? 'uppercase' : 'none' }, list: r.landmark === 'li', sentence: sentence(r.texts?.[0]), control: r.tag === 'button' || r.tag === 'summary' || r.tag === 'label' || r.landmark === 'button' || r.landmark === 'label', number: /^[\s$€£¥₹+\-−–.,:%()\d]*\d[\s$€£¥₹+\-−–.,:%()\d]*[a-z]{0,2}$/i.test((r.texts?.[0] ?? '').trim()), elements: r.elements, text: r.texts?.[0] ?? '' }; });
 const textOf = new Map(members.map((m) => [m.stamp, m.text]));
 const run = async (path) => (await import(pathToFileURL(path))).proposeTypeRoles(members);
 const [before, after] = [await run(process.argv[2]), await run(process.argv[3])];

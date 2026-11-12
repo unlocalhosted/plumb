@@ -564,6 +564,12 @@
 - **On real apps: nothing changed.** No app here writes `overflow-scroll`, so there is nothing for it to find. The browser pane hides scrollbars (macOS), so the empty track itself was not seen.
 - **Noticed:** on a box that always scrolls and already overflows, the existing "nothing shows it scrolls" finding outranks this one on the same element, so only one is said.
 
+## The words on a button are a label (2026-11-12)
+- **The itch:** a button's text went by size alone, into a body or title style, because plumber's label styles force capitals.
+- **Decided by Claude:** the words on something you press are its label: Material's label styles are for "text inside components", and its buttons use one. Two plain-case styles, `label-control` (13.5px and up) and `label-control-small`, shown as "Button" and "Button small". A control drawn at title size or larger (a hero's call to action) goes by size like any large text. The page reader now says whether a place is, or sits inside, a button, a tab, a menu item, a summary or a form label.
+- **The proof:** on crafting-ui's measured text, 20 places become button labels (15px ×7, 13px ×13), where 13 of them had been put in the capitals label style. The text-role and messy-page tests pass; the messy-page test checks the panel lists a Button style.
+- **What it costs:** low-confidence places 34 → 37: a button label's line height comes from the most common one among buttons.
+
 ## Open gaps
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
 

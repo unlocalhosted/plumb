@@ -96,6 +96,8 @@ test('a messy page is put back on its own design system: spacing on the theme\'s
   const text = await s.panel();
   assert.match(text, /Figure 30px/, text);
   assert.doesNotMatch(text, /30px → 24px/, text);
+  // and the words on its buttons are a style of their own, in plain case (labels force capitals)
+  assert.match(text, /Button \d+px/, text);
 
   // spacing: the 14px gaps go to the theme's 16px step, written with the theme's own name
   // and the spacing a stack cannot show: padding and the gap between things in a row, on the same steps
