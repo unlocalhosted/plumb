@@ -50,8 +50,8 @@ reserved.)
 **The order** (decided 2026-11-12):
 
 - **Now:** a class fix offered and then refused · a read in a window with no size.
-- **Next:** the bar on Linux fonts · padding read by job · a test for a theme whose radii are named by size · the
-  craft-token and Next performance tests.
+- **Next:** padding read by job · a test for a theme whose radii are named by size · the Next performance test ·
+  the tests that fail only under the full run's load.
 - **Later:** shadows, borders, motion, opacity and states · surface levels · shadcn's foreground colours · growing hero
   titles · the speed items · the remaining defensive tips · the 80-column report · the flaky tests.
 
@@ -174,15 +174,12 @@ reserved.)
 
 ### Tests
 
-The whole suite on vm-agent (2026-11-12, after padding, controls and button labels): 939 passed, 16 failed in 14 files.
-Six of those files pass when run by themselves, so the steady list is the eight below.
+The whole suite on vm-agent (2026-11-12): 939 passed, 16 failed in 14 files. Since then the determinism, noise,
+one-bar and new-token tests are fixed and pass there on their own; the steady list is what is below.
 
 - Five files fail only inside the full run, under load, and pass alone: apply-all-hot, colour-names, colour-read,
   served-root (timed out at 6 minutes), session-burst. The side-by-side run is too heavy for them, or they race.
 
-- The one bar does not fit with its tools out at 1440 wide on vm-agent (Linux fonts); it fits on the Mac. The bar's
-  fit depends on the system font's width (one-bar).
-- A new-token test loses the page to a reload (craft-token).
 - A Next performance wait times out (blueprint-next-performance).
 - The timeline undo check is flaky: it passed and failed on the same commit (qa-fixes-2-overlay).
 - A frozen-server test fails only when run beside other tests (verify-frozen).

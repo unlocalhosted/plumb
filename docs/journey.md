@@ -642,6 +642,11 @@
 - **The proof:** the messy page now has those two steps and a capitals label with no spacing; its test checks craft offers `tracking-caps` with that reason, and passes. With only `wide` in the theme, `tracking-wide` is still offered. The craft, selection, new-token and spec tests pass.
 - **What it does not do:** it goes by the words in the token's name; a theme that names steps another way is decided by value, as before.
 
+## The bar on Linux, and a test that lost its page (2026-11-12)
+- **The bar:** with its tools out at 1440 wide the close button fell off the bar on vm-agent, and not on the Mac: Linux's system font is wider. The resting panel is now never narrower than the bar's one line of content (the window is still the limit). A first try, letting the whole panel grow to its narrowest content, did nothing: a line of buttons that never wrap is wider than its narrowest form. The bar test passes on vm-agent and on the Mac.
+- **The new-token test** sent its write through the page; the theme write reloads the page, and on a slower machine the reload cut the request off. It now sends the write from the test itself, as the text-roles test does. Passes on both machines.
+- **Also passing on vm-agent now:** the noise check and the messy-page test (its first run on Linux).
+
 ## Open gaps
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
 
