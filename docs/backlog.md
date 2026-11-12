@@ -80,8 +80,9 @@ reserved.)
 ### Clean-up: colour
 
 - Surface levels (a card on a panel) are not read from nesting; no project at hand has two nested surface colours.
-- A fill is called sunken when it is darker than the page. With shadcn's page switched to dark, the plan came out the
-  same as in light; not checked whether the dark values were read, or the light ones kept.
+- The palette is read with the theme's light values even when the page is in dark mode (the server's resolved values
+  win). Right for naming; on a page shown in dark, the colour pass may compare dark places with light tokens. Not
+  checked.
 
 ### Clean-up: icons
 

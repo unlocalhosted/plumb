@@ -211,7 +211,9 @@ function stateOf(sel) {
 }
 
 // a fill darker than the page is set into it (a well, a field, a tab track: sunken); one as light as the page or lighter
-// sits on it (surface). True in light and dark themes alike. Only a fill whose name says neither is moved.
+// sits on it (surface). Decided on the theme's values as written (the light ones, even with the page in dark mode: the
+// decisions resolve to them), so a dark theme where every fill is lighter than the page keeps its light answer. Only a
+// fill whose name says neither is moved.
 function byDepth(tokens) {
   const ground = tokens.find((t) => t.kind === 'ground' && t.rgb[3] >= 1);
   if (!ground) return;
