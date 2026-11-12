@@ -33,8 +33,6 @@ Last gone through: 2026-11-12.
    job. Should plumber offer to name them by job, or map sizes to jobs itself?
 8. **Controls in one row at different heights, none on the spacing unit:** plumber says the row is uneven and
    proposes nothing. Should it pick one anyway?
-9. **One line in docs/PRINCIPLES.md is Claude's, not the owner's:** "the principle must be real and grounded; the
-   mechanism that carries it out may be invented, with its numbers tuned on real apps." Confirm or correct.
 
 ### Names
 

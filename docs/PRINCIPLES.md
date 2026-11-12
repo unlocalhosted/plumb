@@ -67,8 +67,8 @@ What never stands in for a principle:
 - **A number picked while coding** because it looked sensible.
 - **Another tool's caution.** A rule that exists because a tool cannot judge is not a rule for plumber.
 
-*(Claude's reading, to be corrected: the principle must be real and grounded; the mechanism that carries it out may
-be invented. An invented mechanism's numbers are tuned on real apps and say so.)*
+The principle must be real and grounded; the mechanism that carries it out may be invented. An invented mechanism's
+numbers are tuned on real apps and say so. (Confirmed by the owner, 2026-11-12.)
 
 ## How to work
 

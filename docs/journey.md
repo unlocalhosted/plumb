@@ -452,6 +452,10 @@
 - **The fix and the proof (messy page, engine output in the browser at 1440 wide):** 5 changes: "View sprint board" 42 → 40 (its neighbour follows), the three tab buttons 27.5 → 28, "Manage team" 34 → 32. Heights: 5 → 4 (28, 32, 36, 40).
 - **Not done:** a reading and a decision only: not a pass in the clean-up panel, writes nothing. At a narrow width button labels wrap and the heights are the wrapped ones; a wrapped control should be left out. A theme that names its own control sizes is not read yet. No tests.
 
+## Decided: the principle is grounded, the mechanism may be invented (2026-11-12)
+- **The question:** one line in docs/PRINCIPLES.md was Claude's reading, not the owner's words: the principle behind a suggestion must be real and grounded, while the mechanism that carries it out may be invented, with its numbers tuned on real apps.
+- **The owner's answer:** yes. The line stands as the owner's.
+
 ## Open gaps
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
 
