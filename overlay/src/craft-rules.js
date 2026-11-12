@@ -34,6 +34,7 @@
  *  media-size          #34     one avatar and icon size per list
  *  flex-min            —       a flex item that holds text may shrink, so a long name is cut off, not pushed out
  *  image-ground        —       words over a picture have a colour behind them for when it doesn't arrive
+ *  list-wrap           —       a row drawn from a list wraps when it is full
  *  declared-gap        —       parts of a row are kept apart by a declared gap, not by left-over space
  *  scroll-on-demand    —       a scrollbar shows only when there is more to scroll
  *  fixed-height        —       a box that holds text sets its least height, not its exact height
@@ -1357,6 +1358,61 @@ export const declaredGap = {
   },
 };
 
+// Defensive, not a craft rule (no number, no showcase screen; docs/research/defensive-tips.md). A list of unknown length
+// needs somewhere to go when its row is full: a flex row does not wrap unless told to, so tags, chips or options run
+// off a narrow screen. A list is told from a fixed set by where it is written: parts drawn by one line of code (a map
+// over data) are a list of whatever length the data has; a toolbar or tabs written out by hand are a fixed set. Read
+// from what is measured: a flex row that does not wrap and does not scroll, three or more parts drawn by one line, and
+// words in them. Its across gap goes down too. (defensivecss.dev "Flexbox wrapping".)
+export const listWrap = {
+  id: 'craft/list-wrap', family: 'craft', number: [], owns: ['wrap'], once: 'ancestor', reads: ['style', 'rect', 'text'],
+  check({ el, facts }, theme) {
+    const T = theme.spec(this.id);
+    const s = facts.style(el);
+    if (!/flex/.test(s.display) || /column/.test(s.flexDirection) || s.flexWrap !== 'nowrap') return [];
+    if (s.overflowX !== 'visible' || el.closest('[aria-hidden="true"]')) return []; // a row set to scroll is a choice
+    // `flex-nowrap` written out, overriding a wrap, is the author's decision for this row
+    if (/(?:^|\s)!?flex-nowrap!?(?:\s|$)/.test(classesOf(el))) return [];
+    if (el.matches('[role="tablist"], [role="toolbar"], [role="menubar"], [role="radiogroup"]')) return [];
+    const kids = [...el.children].filter((k) => k.getClientRects().length && !/^(?:absolute|fixed)$/.test(facts.style(k).position));
+    if (kids.length < (T.least ?? 3)) return [];
+    // drawn by one line of code: the same source stamp (file:line:column), so a map over data. A part that is the root of
+    // a component (a Link) carries the component's own line, the same for every Link anywhere: its place is the line
+    // that uses the component, read from React's tree
+    const where = (k) => {
+      const key = Object.keys(k).find((x) => x.startsWith('__reactFiber$'));
+      for (let f = key ? k[key]?.return : null, n = 0; f && n < 12; f = f.return, n++) {
+        if (typeof f.type === 'string') break; // another element in between: this part is not a component's root
+        const used = f.memoizedProps?.['data-plumb-source'];
+        if (typeof used === 'string') return used.replace(/#.*$/, '');
+      }
+      return (k.getAttribute('data-plumb-source') ?? '').replace(/#.*$/, '');
+    };
+    const stamp = where(kids[0]);
+    if (!stamp || !kids.every((k) => where(k) === stamp)) return [];
+    // separate things have space between them; parts set edge to edge (a segmented control, joined tabs) are one control
+    // and do not wrap
+    if (!(px(s.columnGap) > 0) && !kids.slice(1).some((k) => px(facts.style(k).marginLeft) > 0)) return [];
+    // something in them that can be longer: words
+    if (!kids.some((k) => facts.text(k) || [...k.querySelectorAll('*')].slice(0, 20).some((t) => facts.text(t)))) return [];
+    // a part set to shrink and cut its words off already gives way
+    if (kids.every((k) => facts.style(k).minWidth !== 'auto' || [k, ...k.querySelectorAll('*')].slice(0, 10).some((t) => facts.style(t).textOverflow === 'ellipsis'))) return [];
+    const over = Math.max(0, el.scrollWidth - el.clientWidth);
+    const across = px(s.columnGap), down = px(s.rowGap);
+    let to = 'flex-wrap';
+    if (across > 0 && !(down > 0)) {
+      const step = theme.nearest('spacing', across, Math.max(1, across * 0.25));
+      to += ` gap-y-${step ? step.short : Math.max(0.5, Math.round((across / 4) * 2) / 2)}`;
+    }
+    return [{
+      ...say(this.id, { over, n: kids.length }),
+      key: this.id, text: utility(el, 'flex-nowrap') ?? 'flex-wrap', props: ['flex-wrap'], value: 'nowrap', n: kids.length,
+      evidence: { over, parts: kids.length, stamp }, confidence: over > 1 ? 0.9 : 0.84,
+      suggest: { kind: 'class', from: utility(el, 'flex-nowrap') ?? '', to, why: 'lets the list run on to the next line when the row is full', sets: { flexWrap: 'wrap', ...(to.includes('gap-y') ? { rowGap: across } : {}) }, moves: true },
+    }];
+  },
+};
+
 const truncated = (el, s) => s.textOverflow === 'ellipsis' && s.overflowX !== 'visible' && el.scrollWidth > el.clientWidth + 1;
 const pathLike = (t) => /^\S+$/.test(t) && ((t.match(/[/\\]/g) ?? []).length >= 2 || /^[0-9a-f]{16,}$/i.test(t) || /^[\w-]+(?:\.[\w-]+){2,}$/.test(t));
 
@@ -2395,7 +2451,7 @@ export const interruptible = {
 };
 
 export const RULES = [concentricRadius, innerOuterSpacing, textOpacity, halfPixel, hairline, imageOutline, layeredShadow, scaleFromZero, zIndexWar, contentAlign,
-  buttonPadding, iconSide, measure, leading, tracking, tabularNums, headingWidow, oneLight, borderOnShadow, contrast, disabledContrast, hitTarget, mediaSize, imageFit, flexMin, imageGround, stickyRoom, fixedHeight, scrollOnDemand, declaredGap,
+  buttonPadding, iconSide, measure, leading, tracking, tabularNums, headingWidow, oneLight, borderOnShadow, contrast, disabledContrast, hitTarget, mediaSize, imageFit, flexMin, imageGround, stickyRoom, fixedHeight, scrollOnDemand, declaredGap, listWrap,
   truncateIntent, scrollbarGutter, boldHover, hangingQuote, capsCase, gradientSpace, inputZoom, anchorOffset, middleTruncate,
   textWrapRole, continuousCorners, opticalSizing, tintedShadow, easedScrim, pureBlackWhite, contentSize,
   baselineAlign, iconCap, trimLeading, headingLead, pairSpacing, cardOpticalPadding,

@@ -61,6 +61,7 @@ const RULE_LAWS = {
   'craft/fixed-height': [],
   'craft/scroll-on-demand': [],
   'craft/declared-gap': [],
+  'craft/list-wrap': [],
   'craft/truncate-intent': [],
   'craft/scrollbar-gutter': [],
   'craft/bold-hover': [],

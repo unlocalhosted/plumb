@@ -64,6 +64,11 @@ export const CRAFT = {
     line: touching ? 'These parts touch: nothing but left-over space keeps them apart, and there is none left.' : `These parts are ${px(closest)} apart only because that much space is left over. A longer title closes it.`,
     reason: 'The distance between neighbours is a decision. Left to whatever space remains, it closes to nothing.',
   }),
+  'list-wrap': ({ over, n }) => ({
+    label: over ? 'List runs off its row' : 'List can run off its row',
+    line: over ? `This list of ${n} runs ${px(over)} past its row and has nowhere to go.` : `This row holds a list (${n} today) that can only grow sideways. A longer list or a narrower screen runs it off the edge.`,
+    reason: 'A flex row does not wrap unless it is told to, and a list has whatever length its data has.',
+  }),
   'sticky-room': ({ spare }) => ({
     label: 'Set to stick, but can’t',
     line: `This is set to stay in view as the page scrolls, but it is stretched ${px(spare)} past its own content, to the full height of its row, so it has nowhere to move.`,

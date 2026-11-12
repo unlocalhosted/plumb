@@ -589,6 +589,14 @@
 - **"The same page gives the same problems at every window size":** not a bug. The test failed on its first sanity check, which assumed one problem per place; a place can now carry two (a value off the scale and a craft finding: 151 problems on 150 places). With that check loosened, the comparison itself passes: the page gives the same problems at every size.
 - **"The bar fits with its tools out":** passes on the Mac and fails on vm-agent, where the close button falls off the bar at 1440 wide. The bar's fit depends on how wide the system font is. Not fixed; in the backlog.
 
+## The sixth check from the tips: a list in a row that cannot wrap (2026-11-12)
+- **The itch:** next on the sorted list; the owner: "Next check".
+- **The principle:** a list of unknown length needs somewhere to go when its row is full; a flex row does not wrap unless told. Ground: the tip ("those child items won’t wrap into a new line by default").
+- **The judgement:** telling a list from a fixed set (tabs, a toolbar). A list is what one line of code draws many times; plumber reads that from each part's source stamp.
+- **First version, read on crafting-ui: 16 findings, all wrong.** Three reasons, each now fixed: a spec value was missing on the running server, so rows of one part passed (now defaults to three); every Link carries the Link component's own line, so any links looked like one list (now read by the line that uses the component, from React's tree); and the header's joined, bordered navigation is one control, not a list (parts set edge to edge are now left alone). The page's section links, written with `flex-nowrap` and hidden on narrow screens, were the author's decision (now respected).
+- **Now:** one finding on crafting-ui, the three figures on the templates page, drawn from a three-item list written in the code. At phone width it fits (358 of 358 px). It is a fixed set the check cannot yet tell from a list; noted, not fixed. No before and after from a real app.
+- **Seen on the way:** the motion vocabulary page (7,274 elements) closed the browser tab during plumber's read.
+
 ## Open gaps
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
 

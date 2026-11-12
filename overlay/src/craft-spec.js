@@ -91,6 +91,7 @@ export const STANDARD = {
     'fixed-height': { depth: 40 }, // how many elements inside are looked at for text that wraps
     'scroll-on-demand': {}, // nothing to tune: it reads whether the scrollbar is always drawn
     'declared-gap': {}, // nothing to tune here: the gap comes from the project around the row
+    'list-wrap': { least: 3 }, // parts drawn by one line before a row reads as a list
     'sticky-room': {}, // nothing to tune: it reads whether the row stretched it
     'image-ground': { min: 48, up: 3, wrap: 1.25, depth: 60, cover: 0.5, lc: 45 }, // smallest picture read, how far out its box is looked for, and the contrast words need without it
     'image-fit': { min: 16, off: 0.03, latentMin: 24, photo: 64 }, // smallest box read, and how far its shape may be from the picture's

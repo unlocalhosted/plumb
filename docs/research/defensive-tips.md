@@ -74,14 +74,18 @@ Eleven tips hold and become nine checks; four do not hold; one waits on a decisi
   crafting-ui: a full em pushed a narrow row's count off its card). On the theme's spacing scale, else Tailwind's 4px steps.
 - **Second form not built:** three or more like items spread by `justify-between`.
 
-### A row of like things that cannot wrap
+### A row of like things that cannot wrap (built 2026-11-12)
 - **What the expert sees:** tags, chips or options in one row that will run off a narrow screen.
 - **Principle:** a list of unknown length needs somewhere to go when the row is full.
 - **Ground:** the tip. A flex row does not wrap by default.
 - **Signals:** a non-wrapping row of several like children (same element, same classes), not set to scroll, not a
   fixed set (a toolbar, tabs).
 - **Suggestion:** `flex-wrap`, with the row's gap applied down as well as across.
-- **Open in the mechanism:** telling a list from a fixed set is a judgement; to be tuned on real apps.
+- **How a list is told from a fixed set, as built:** its parts are drawn by one line of code (a map over data), read
+  from each part's source stamp; a part that is a component's root (a Link) is placed by the line that uses the
+  component, read from React's tree. Parts set edge to edge (no gap: a segmented control, joined tabs) are one control
+  and left alone, and so is a row whose author wrote `flex-nowrap` on it.
+- **Still open:** a map over a short literal list (three stats written in the code) reads as a list; it is a fixed set.
 
 ### A fixed column with no narrow form
 - **What the expert sees:** a sidebar layout that keeps both columns on a phone and scrolls sideways.
