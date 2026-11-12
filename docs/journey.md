@@ -703,6 +703,16 @@
 - **Also:** crafting-ui's dev server was restarted so it serves the new file (a server started before a file exists refuses it).
 - **Not done:** padding, control height, icons, the text reader and the craft rules still keep their own lists. Nothing a user sees has changed yet.
 
+## Every reader asks the one role file (2026-11-12)
+- **The itch:** the count that started this: seven places decided "is this a control", and on four crafting-ui pages they disagreed on 137 of 174 elements, almost all links.
+- **What changed:** control height, padding, icons, both text readers (the overlay's and the server's page survey) and the craft rules for button padding, icon sides, target size, optical centring and press feedback now ask the role file. None keeps a list of its own.
+- **Two calls made on the way, with their ground:**
+  - A row of links where one is painted (a tab bar showing the page you are on) is a control, every tab in it, not only the painted one. WAI-ARIA's tab pattern: one tab is active, the rest are the same kind of thing.
+  - A painted link that holds lines of words (a title, a description, "Live →") is a card you can open, not a button. The first version called those buttons and would have turned card titles into button labels; the check is now "one line of words, no heading, paragraph or picture inside".
+- **Before and after on crafting-ui (home, motion, interfaces, standards):** craft findings unchanged (16, 36, 33, 48; two corner findings came and went with demos that mount as they scroll in). Control heights: the same three moves before and after. Text: 80 texts now count as a control's words; 70 of them already had a label style through being small capitals, and 10 links drawn as buttons ("Open the first entry →") move from a body style to the button-label style. The target-size rule now skips a link in a sentence by the shared WCAG reading, not its own.
+- **What this buys:** the next primitive asks the file instead of writing a reader, and a wrong role is fixed in one place.
+- **Not done:** the theme's tokens are still matched to jobs by each pass, not by the role file.
+
 ## Open gaps
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
 
@@ -710,6 +720,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - Plumber's text styles write into crafting-ui without shrinking headings or large numbers, keep classes that only apply to part of the text, and keep paragraph leading off headings ([entry](#big-text-no-longer-shrinks-to-fit-small-text-the-dark-page-checked-2026-11-12)).
 - crafting-ui's vocabulary page loads about four times lighter (9,474 → 2,007 elements): each live example mounts only as it comes near the screen. [entry](#crafting-uis-vocabulary-page-live-examples-mount-only-near-the-screen-2026-11-12)
 - plumber finds a side column that is set to stick but can't, and fixes it with one class: on crafting-ui's skill pages the column now stays beside the text where it used to scroll away. [entry](#the-sticky-check-on-a-real-app-crafting-uis-skill-pages-2026-11-12)
+- Every plumber pass now agrees on what an element is: a link drawn as a button gets a button's label style, height and padding; a linked card stays a card ([entry](#every-reader-asks-the-one-role-file-2026-11-12)).
 - `plumber craft` reads each page at four window widths and with the pointer over things, so an overlap that only shows on a tablet or on hover is found without anyone setting the page up ([entry](#plumber-reads-the-page-at-four-widths-and-under-the-pointer-2026-11-12)).
 - plumber says when words run into other words: two labels whose letters meet, or a readout that ends where the next text begins ([entry](#words-that-run-into-other-words-2026-11-12)).
 - In a rename plan, the raised background gets the surface name and recessed fills get sunken, judged against the page colour ([entry](#which-colour-gets-the-surface-name-2026-11-12)).

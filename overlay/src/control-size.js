@@ -26,8 +26,8 @@
  * Nothing here writes. No number of its own: half a pixel is the overlay's "same value", the unit is the project's.
  * ───────────────────────────────────────────────────────── */
 import { utility } from './craft-read.js';
+import { controlKind } from './roles.js';
 
-const CONTROL = 'button, select, textarea, input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=hidden]):not([type=file]), [role=button]';
 const px = (v) => parseFloat(v) || 0;
 const alpha = (c) => { const m = /rgba?\(([^)]+)\)/.exec(c); if (!m) return c && c !== 'transparent' ? 1 : 0; const p = m[1].split(/[\s,/]+/).filter(Boolean); return p.length > 3 ? parseFloat(p[3]) : 1; };
 const boxed = (s) => alpha(s.backgroundColor) > 0 || s.backgroundImage !== 'none' || px(s.borderTopWidth) > 0 || s.boxShadow !== 'none';
@@ -36,10 +36,12 @@ const boxed = (s) => alpha(s.backgroundColor) > 0 || s.backgroundImage !== 'none
 export function readControls(root = document.body) {
   const out = [];
   for (const el of root.querySelectorAll('[data-plumb-source]')) {
-    if (!el.matches(CONTROL) || el.closest('plumb-overlay') || el.closest('svg')) continue;
+    if (el.closest('plumb-overlay') || el.closest('svg') || el.matches('input[type=file]')) continue;
     const r = el.getBoundingClientRect();
     if (!r.width || !r.height) continue;
-    const s = getComputedStyle(el);
+    const s = getComputedStyle(el), kind = controlKind(el, s);
+    // a toggle's size is its mark's, not a box of words (roles.js)
+    if (kind !== 'button' && kind !== 'field') continue;
     if (el.matches('input, select, textarea') && !boxed(s)) continue; // the box round it is the control
     if (!boxed(s) && !(px(s.paddingTop) + px(s.paddingBottom) > 0)) continue; // a bare icon or word you can press has no box to size
     // a label that has wrapped onto a second line makes the control as tall as its words: that is the window being

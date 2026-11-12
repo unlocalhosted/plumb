@@ -57,6 +57,7 @@
 import { rgb, utility, classesOf, elevation, COLOUR } from './craft-read.js';
 import { TIER } from './craft-facets.js';
 import { say } from './words.js';
+import { controlKind, roleOf } from './roles.js';
 import { RUN_RULES } from './craft-headless.js';
 import { recommend, recommendColour } from './craft-recommend.js';
 
@@ -530,7 +531,8 @@ export const contentAlign = {
 // ── wave three ──────────────────────────────────────────────
 
 const GREY = 0.7; // the grey band: measured, but too close to the line to stand behind alone (the headless judge decides)
-const CONTROL = 'button, [role="button"], a[href], input[type="button"], input[type="submit"], input[type="reset"], summary';
+// something you press, as the shared reading has it (roles.js): a link counts only when it is drawn as a button
+const pressed = (el, facts) => controlKind(el, facts.style(el)) === 'button';
 const disabled = (el) => el.matches(':disabled, [aria-disabled="true"]') || !!el.closest('[disabled], [aria-disabled="true"]');
 // the words a person reads in an element: its text, never what an svg, a style or a script carries (an animated icon
 // brings its own styles)
@@ -619,7 +621,7 @@ export const buttonPadding = {
   id: 'craft/button-padding', family: 'craft', round: { '*': 'up' }, number: [9], owns: ['padding-x'], once: 'ancestor', reads: ['style', 'rect', 'text'],
   check({ el, facts }, theme) {
     const T = theme.spec(this.id);
-    if (!el.matches(CONTROL) || el.matches('a[href]') && !utility(el, 'px') && !utility(el, 'p')) return [];
+    if (!pressed(el, facts)) return [];
     if (!/[\p{L}\p{N}]/u.test(words(el))) return [];
     const b = facts.box(el), r = facts.rect(el), s = facts.style(el);
     if (r.height > T.maxHeight || b.pt < 2 || Math.abs(b.pt - b.pb) > 0.5 || Math.abs(b.pl - b.pr) > 0.5) return [];
@@ -646,7 +648,7 @@ export const iconSide = {
   id: 'craft/icon-side', family: 'craft', round: { '*': 'down' }, number: [10], owns: ['padding-x'], once: 'ancestor', after: ['craft/button-padding'], reads: ['style', 'kids', 'text'],
   check({ el, facts }, theme) {
     const T = theme.spec(this.id);
-    if (!el.matches(CONTROL)) return [];
+    if (!pressed(el, facts)) return [];
     const kids = facts.kids(el);
     const icon = (k) => k && (k.localName === 'svg' || k.localName === 'img' || k.matches('[data-icon], [aria-hidden="true"]') && !/\S/.test(k.textContent ?? '') || k.querySelector?.('svg') && !/\S/.test(k.textContent ?? ''));
     const text = /[\p{L}\p{N}]/u.test(words(el));
@@ -998,9 +1000,12 @@ export const disabledContrast = {
 export const hitTarget = {
   id: 'craft/hit-target', family: 'craft', number: [27], owns: ['size', 'padding-y'], once: 'ancestor', reads: ['rect', 'style', 'text'],
   check({ el, facts }, theme) {
-    if (!el.matches('button, [role="button"], a[href], input:not([type="hidden"]), select, summary, [role="checkbox"], [role="switch"], [role="tab"]') || disabled(el)) return [];
-    // a link inside a sentence is as tall as the line, and that is right
-    if (el.matches('a[href]') && el.parentElement && facts.text(el.parentElement) && facts.style(el).display === 'inline') return [];
+    // a control, or a link standing alone; a link in a sentence is as tall as its line, and that is right (WCAG 2.5.8,
+    // the inline exception: roles.js)
+    // asked only of links and controls: roleOf looks inside a box, which is too dear for every element
+    if (!el.matches('a[href]') && !controlKind(el, facts.style(el))) return [];
+    const job = roleOf(el, facts.style(el));
+    if (!(job.role === 'control' && job.kind !== 'group' || job.role === 'link' && job.kind === 'nav') || disabled(el)) return [];
     if (el.matches('input[type="checkbox"], input[type="radio"]') && el.closest('label')) return []; // its label is the target
     const T = theme.spec(this.id);
     const r = facts.rect(el), { min, long } = T;
@@ -2076,7 +2081,7 @@ export const cardOpticalPadding = {
     const letters = b.pt + (facts.rect(first).top - facts.rect(el).top - b.bt - b.pt) + m.halfLeading + (m.ascent - m.capHeight), left = b.pl;
     // the first thing the eye meets at the top: the first letters, or a drawn box beside them that starts higher (a
     // footer's button, a field), measured from the same edge
-    const drawn = (k) => k.matches(CONTROL + ', input, select, textarea, img, svg') || (rgb(facts.style(k).backgroundColor)?.[3] ?? 0) > 0 || facts.box(k).bt > 0;
+    const drawn = (k) => controlKind(k, facts.style(k)) || k.matches('img, svg') || (rgb(facts.style(k).backgroundColor)?.[3] ?? 0) > 0 || facts.box(k).bt > 0;
     const boxes = kids.filter(drawn).map((k) => facts.rect(k).top - facts.rect(el).top - b.bt);
     const top = Math.min(letters, ...boxes);
     if (top - left < T.min || top - left < left * T.share) return [];
@@ -2290,7 +2295,7 @@ export const opticalCentre = {
   judge: true,
   check({ el, facts }, theme) {
     const T = theme.spec(this.id);
-    if (!el.matches(CONTROL)) return [];
+    if (!pressed(el, facts)) return [];
     const svg = iconOnly(el, facts);
     if (!svg) return [];
     const r = facts.rect(svg), c = facts.rect(el);
@@ -2454,7 +2459,7 @@ const STEPS = [75, 100, 150, 200, 300, 500, 700, 1000];
 const pressIdiom = (facts) => {
   const counts = new Map();
   for (const el of facts.items) {
-    if (!el.isConnected || !el.matches(CONTROL)) continue;
+    if (!el.isConnected || !pressed(el, facts)) continue;
     for (const c of classesOf(el).split(/\s+/)) if (c.startsWith('active:')) counts.set(c, (counts.get(c) ?? 0) + 1);
   }
   const top = [...counts].sort((a, b) => b[1] - a[1])[0];

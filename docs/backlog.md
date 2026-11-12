@@ -36,6 +36,8 @@ engineer would do." These calls were open questions until then. Each is decided 
 | Which widths to read a page at | 1280, 1024, 768, 390 | Desktop, small laptop, tablet upright, phone: the sizes people use; the project's own breakpoints later |
 | Which checks run in every state | Words meeting words only, for now | A full read per state takes minutes; this is the check that changes most with width and hover |
 | What gets the pointer | Things with a React pointer handler or a Tailwind `group`, six per width | They say they answer the pointer; a hover presses nothing |
+| A row of links with one painted | All of them are controls (a tab bar) | WAI-ARIA tabs: one is active, the rest are the same kind |
+| A painted link holding lines of words | A card you can open, not a button | A button is one label on one line |
 | The most impactful next piece | One shared reading of what each element is, used by every pass and craft rule | Seven places decide "is this a control" today; on four crafting-ui pages they disagree on 137 of 174 elements, 134 of them links |
 | The four "proposed to drop" lines | Dropped | Not observed problems |
 
@@ -129,11 +131,10 @@ reserved.)
 
 ### What an element is (the shared role layer)
 
-- Done: the role file (overlay/src/roles.js); corners and shadows read from it.
-- Next, one at a time, each behind its tests: padding, control height, icons, the text reader, then the craft rules
-  (target size and button padding each carry their own "is this link in a sentence" check today).
-- Not decided by the file yet: a navigation tab that only paints when active or hovered reads as a link standing
-  alone; headings, figures and labels (the text jobs) are still the text reader's.
+- Done: the role file (overlay/src/roles.js); every pass, both text readers and the craft rules read from it.
+- Next: the theme's tokens matched to roles in one place (each pass still reads token names for jobs itself).
+- Headings, figures and labels (the text jobs) are still decided by the text reader, from the role file's "is this a
+  control's words".
 - Later: the theme's tokens mapped to the same roles in one place; unsure roles handed to a model.
 
 ### Craft suggestions

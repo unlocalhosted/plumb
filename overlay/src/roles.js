@@ -22,6 +22,7 @@
  *                         takes the sentence's type (WCAG 2.2, 2.5.8 Target Size: "Inline: the target is in a
  *                         sentence or its size is otherwise constrained by the line-height of non-target text")
  *                nav      standing alone: a navigation item, a row in a list of links, a card's title
+ *              (a painted link that holds lines of words is a card you can open: role card)
  *    tag       a small supporting label: a phrase-level element, painted, holding only its own words
  *    card      a painted box that holds other things with words in them
  *    null      it does not say (a tile holding an icon, a bare shape, a layout box): left alone
@@ -34,6 +35,8 @@ const BUTTON = 'button, summary, [role=button], [role=tab], [role=menuitem], inp
 const TOGGLE = 'input[type=checkbox], input[type=radio], input[type=range], [role=checkbox], [role=radio], [role=switch], [role=slider]';
 const FIELD = 'input:not([type=hidden]):not([type=file]), select, textarea';
 export const CONTROL = `${BUTTON}, ${TOGGLE}, ${FIELD}`;
+/** Anything you act on: a control, or a link of any kind (an icon's edge: icons.js). */
+export const ACTS = `${CONTROL}, a[href]`;
 // what counts as a control's own content when asking "is this box only controls?"
 const INSIDE_CONTROL = `${CONTROL}, a[href], label, kbd`;
 // HTML's phrasing elements that carry a label's words (a flex row does not change what they are)
@@ -47,6 +50,58 @@ export const paints = (s) => alpha(s.backgroundColor) > 0 || s.backgroundImage !
 export const ownWords = (el) => [...el.childNodes].some((n) => n.nodeType === 3 && /[\p{L}\p{N}]/u.test(n.nodeValue ?? ''));
 
 let over = false;
+/** What kind of control it is, without looking inside it: cheap enough to ask of every element. Null when it is not one
+ *  by itself (a box round controls is decided by roleOf, which looks inside). */
+export function controlKind(el, s = getComputedStyle(el)) {
+  if (el.matches(TOGGLE)) return 'toggle';
+  if (el.matches(BUTTON)) return 'button';
+  if (el.matches(FIELD)) return 'field';
+  // a link drawn as a button, or one of a bar of them; a link that holds lines of words is a card you can open, not a button
+  if (el.matches('a[href]') && (paints(s) || barOf(el)) && oneLine(el)) return 'button';
+  return null;
+}
+
+// a button's words are one label on one line (a wrapped label is still one: its words are one run). A heading, a
+// paragraph or a picture inside, or words in pieces on more than one line, make it a card
+function oneLine(el) {
+  if (el.querySelector('h1, h2, h3, h4, h5, h6, p, img, picture, video, ul, ol')) return false;
+  // the middles of each piece's first line: on one line when they are within half a line of each other
+  const mids = [], walk = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+  for (let n = walk.nextNode(); n; n = walk.nextNode()) {
+    if (!/\S/.test(n.nodeValue)) continue;
+    const range = document.createRange(); range.selectNodeContents(n);
+    const q = range.getClientRects()[0];
+    if (q && q.width > 1) mids.push([q.top + q.height / 2, q.height]);
+  }
+  if (mids.length < 2) return true;
+  const lo = Math.min(...mids.map((m) => m[0])), hi = Math.max(...mids.map((m) => m[0]));
+  return hi - lo < Math.min(...mids.map((m) => m[1])) / 2;
+}
+
+// a bar of links where one is painted: a tab bar or a segmented switch, which paints only the one you are on. The
+// others are the same control at rest, not words (WAI-ARIA APG, Tabs: one tab is active, the rest are the same kind)
+const BARS = new WeakMap();
+function barOf(el) {
+  const p = el.parentElement;
+  if (!p) return false;
+  let v = BARS.get(p);
+  if (v === undefined) {
+    const links = [...p.children].filter((c) => c.matches('a[href]'));
+    v = links.length > 1 && links.some((c) => paints(getComputedStyle(c)) && oneLine(c));
+    BARS.set(p, v);
+  }
+  return v;
+}
+
+/** The words of this element are a control's label: it sits in a button, a form label, or a link drawn as a button. */
+export function inControl(el) {
+  for (let n = el; n && n !== document.body; n = n.parentElement) {
+    if (n.matches(`${BUTTON}, label`)) return true;
+    if (n.matches('a[href]')) return controlKind(n) === 'button';
+  }
+  return false;
+}
+
 const is = (role, kind, why) => ({ role, kind, why, over: over || role === 'overlay' });
 const NONE = is(null, null, 'it does not say what it is');
 
@@ -55,11 +110,9 @@ export function roleOf(el, s = getComputedStyle(el)) {
   over = s.position === 'fixed';
   if (el.localName === 'kbd') return is(null, null, 'a key: no job a theme names');
   if (el.matches(OVERLAY)) return is('overlay', null, 'it is a menu, a dialog or a popover');
-  if (el.matches(TOGGLE)) return is('control', 'toggle', 'a mark you switch');
-  if (el.matches(BUTTON)) return is('control', 'button', 'something you press');
-  if (el.matches(FIELD)) return is('control', 'field', 'something you type in or choose from');
-  if (el.matches('a[href]')) {
-    if (paints(s)) return is('control', 'button', 'a link drawn as a button');
+  const kind = controlKind(el, s);
+  if (kind) return is('control', kind, kind === 'toggle' ? 'a mark you switch' : kind === 'field' ? 'something you type in or choose from' : el.matches('a[href]') ? 'a link drawn as a button' : 'something you press');
+  if (el.matches('a[href]') && !paints(s)) {
     // in a sentence: the parent has words of its own beside the link
     if (el.parentElement && ownWords(el.parentElement)) return is('link', 'inline', 'a link in a sentence');
     return is('link', 'nav', 'a link standing alone');

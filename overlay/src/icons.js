@@ -27,6 +27,7 @@
  * which also need the target mark to exist in an installed package.
  * ───────────────────────────────────────────────────────── */
 import { toRgb } from './craft-headless.js';
+import { ACTS } from './roles.js';
 import { SPEC, classesOf, utility } from './craft-read.js';
 
 // ── thresholds, with the spec section that sets each ────────
@@ -53,7 +54,8 @@ const LAW = {
   I1: 'similarity', I2: 'similarity', I3: 'similarity', I4: 'aesthetic-usability', I5: 'similarity', I6: 'similarity',
   I7: 'similarity', I8: 'similarity, Jakob, aesthetic-usability', I9: 'Fitts', unlabelled: 'recognition over recall',
 };
-const CONTROL = 'button, [role=button], [role=tab], [role=menuitem], a[href], summary, input[type=button], input[type=submit]';
+// where an icon is part of the interface: in a control or a link (roles.js)
+const CONTROL = ACTS;
 const SHAPES = 'path, circle, rect, line, polyline, polygon, ellipse';
 const STATUS_HINT = '[role=status], [role=alert], [class*=badge i], [class*=status i], [class*=chip i], [class*=tag i], [class*=pill i], [class*=category i], [class*=label i]';
 const CONTENT_UP = 'canvas, picture, video, plumb-overlay, .recharts-wrapper, .highcharts-container, [class*=chart i], [data-plumb-content]';

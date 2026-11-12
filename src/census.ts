@@ -41,6 +41,9 @@ function readPage() {
   const links = [...document.querySelectorAll('a[href]')].map((a) => (a as HTMLAnchorElement).href);
   return { census, links };
 }
+// In the page: which texts are a control's label, as the overlay's shared reading has it (roles.js inControl). Null
+// when the overlay is older than that file: the census keeps its own reading then
+const readControlled = `(async () => { try { const m = await import('/__plumb/src/roles.js'); return [...document.body.querySelectorAll('[data-plumb-source]')].filter((el) => m.inControl(el)).map((el) => el.getAttribute('data-plumb-source')); } catch { return null; } })()`;
 // In the page: the spacing pass's own reader, loaded from the dev server (one reader for the page and the census)
 const readGaps = `(async () => { try { const m = await import('/__plumb/src/stacks.js'); return m.readStacks().flatMap((s) => s.gaps.filter((g) => g.d > 0.5 && !g.section).map((g) => ({ stamp: s.stamp, d: g.d, em: g.em }))); } catch { return []; } })()`;
 // In the page: the icon pass's own reader (overlay/src/icons.js), the same one the panel uses
@@ -68,6 +71,8 @@ export async function takeCensus(options: CensusOptions): Promise<ProjectCensus>
         await page.waitForLoadState('networkidle', { timeout: 5000 }).catch(() => {});
         await settle(page);
         const { census, links } = await page.evaluate(readPage);
+        const controlled = await page.evaluate(readControlled) as string[] | null;
+        if (controlled) { const inside = new Set(controlled); for (const entry of census) entry.control = inside.has(entry.stamp); }
         routes.push({ route, elements: census.length });
         entries.push(...census.map(entry => ({ ...entry, route })));
         gaps.push(...(await page.evaluate(readGaps) as CensusGap[]).map(gap => ({ ...gap, route })));

@@ -21,9 +21,9 @@
  * Nothing here writes. No number of its own.
  * ───────────────────────────────────────────────────────── */
 import { classesOf } from './craft-read.js';
+import { controlKind } from './roles.js';
 
 const SIDES = { p: ['Top', 'Right', 'Bottom', 'Left'], px: ['Left', 'Right'], py: ['Top', 'Bottom'], pt: ['Top'], pr: ['Right'], pb: ['Bottom'], pl: ['Left'] };
-const CONTROL = 'button, select, textarea, input, [role=button], [role=tab], [role=menuitem]';
 const NEAR_SHARE = 0.25; // stacks.js: a step further than a quarter of the distance away is another level
 const px = (v) => parseFloat(v) || 0;
 
@@ -43,7 +43,7 @@ export function readInsets(root = document.body) {
       if (m && (!m[2].startsWith('[') || /^\[\d+(?:\.\d+)?(?:px|rem)\]$/.test(m[2]))) found.push({ cls: c, prefix: m[1] });
     }
     if (!found.length) continue;
-    const s = getComputedStyle(el), control = el.matches(CONTROL);
+    const s = getComputedStyle(el), control = !!controlKind(el, s);
     const has = new Set(found.map((f) => f.prefix));
     for (const f of found) {
       if (/^p[trbl]$/.test(f.prefix)) continue;
