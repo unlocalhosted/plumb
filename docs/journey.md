@@ -353,7 +353,18 @@
 - **What is real:** the server answers a write about 490 ms after it is sent, some 200 ms after the change is already on the page. The page shows the fix before plumber's card can say it was written. Where that 200 ms goes is not measured.
 - **A slip on the way:** the stalled timer left the test class in a crafting-ui file for about a minute. It was taken out with plumber's own undo, found through its history; the file is as it was (git shows no change).
 
+## A grey fold must not flatten a row (2026-11-12)
+- **The itch:** the owner asked for the other primitives to be gone through after text: "if you find still any gaps, and scope for improvement".
+- **How we found it:** ran the colour, spacing and icon decisions on crafting-ui's running pages in the browser (`proposeColours`, `proposeSpacing`, `proposeIcons` on /interfaces, /, /motion, /standards) and read what each wanted to change.
+- **What it showed:** on /interfaces, plumber wanted 105 changes, all the same one: each row's title (19px, medium, `text-fg/75`) folded to `text-muted`, the exact grey of the description under it. Title and description would read the same.
+- **The system behind it:** a spare grey went to the nearest of the three text levels. The only guard was legibility (contrast). Nothing looked at the words beside it. The spacing pass already refuses a move that "would flatten the page's hierarchy"; colour had no such rule.
+- **What we chose and why:** words that sit together keep their order. A grey folds to the nearest level in reach that still leaves it visibly apart from the words it stands apart from now; if none does, it is left and plumber says why. "Visibly" is the pass's existing visibility threshold; "together" is the smallest part of the page holding that text and at least one other. No new number.
+- **The fix and the proof:** /interfaces: 105 changes → 0, with 105 places listed as left, each saying "as muted it would read the same as the words beside it, which it stands apart from now". Home and /standards: 0 changes before and after. Read in the browser from the running app; not seen in the clean-up panel; no test.
+- **Not improved, and why:** spacing made 2 changes across four pages and icons none, so there was nothing to judge on this app. Radius has no clean-up pass at all.
+
 ## Open gaps
+- **No messy page to judge spacing, icons and radius on.** crafting-ui is too tidy: across four pages spacing proposes 2 changes and icons none. An LLM-written page with real drift is needed before their decisions can be improved or shown before and after. Radius has no clean-up pass.
+- crafting-ui's 105 list titles at `text-fg/75` are now left alone; whether a title should be lifted to the full text colour instead is the owner's call (it is further than a fold may reach today).
 - **Text styles after the job split:** unseen in the clean-up panel; its plain names and the text-role test still assume the old style names; non-capital labels inside buttons have no label style (labels force capitals); a fluid hero title stays in the display style because its measured size is not read.
 - **Text roles: how the signals combine is undecided** (docs/research/text-role-signals.md §5): what wins when the tag and the look disagree (a 12px capital heading), and whether unsure places go to a model's eye. Only crafting-ui is measured; no LLM-written app.
 - A fix from the fix card on a wrapped element is proven by hand. Two neighbours share the same repaired place-finder but were not driven by hand: a fix taken on the element itself, and the follow-up class written after a new theme token.

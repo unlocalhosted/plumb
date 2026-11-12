@@ -533,6 +533,33 @@ export function proposeColours(places, palette = known ?? paletteOf(), { scope =
     return best;
   };
 
+  // Order among words that sit together (docs/PRINCIPLES.md; the spacing pass's own rule, "snapping it would flatten the
+  // page's hierarchy", said for colour): a row's title is drawn stronger than its description so the eye takes it first.
+  // Folding a grey onto a level must not erase that. `mates` are the other grey words in the smallest part of the page
+  // that holds this one and at least one other; `settled` is where a mate will sit once it is folded too.
+  const LEVELS = ['fg', 'muted', 'faint'];
+  const inside = new Map(); // element → the grey text entries drawn inside it
+  for (const pl of places) { const e = pl.colours.text; if (!e?.level || !e.oklab) continue; for (let a = pl.el.parentElement, d = 0; a && d < 40; a = a.parentElement, d++) { const l = inside.get(a); if (l) l.push(e); else inside.set(a, [e]); } }
+  const matesOf = (pl, e) => { for (let a = pl.el.parentElement; a; a = a.parentElement) { const l = inside.get(a); if (l && l.length >= 2) return l.filter((x) => x !== e); } return []; };
+  const strength = (lab, under) => Math.abs(lab[0] - oklab(under)[0]); // how far the words stand off their ground
+  const levelsFor = (e) => tokens.filter((t) => LEVELS.includes(t.kind) && (chroma(oklab(e.rgb)) < 0.03) === (chroma(oklab(t.rgb)) < 0.03))
+    .map((t) => ({ t, de: dE(e.oklab, oklab(asToken(t, e.under))) })).sort((x, y) => x.de - y.de);
+  const settled = (x, reach) => { if (x.cls && named.get(x.cls)) return x.oklab; const l = x.cls ? levelsFor(x)[0] : null; return l && l.de <= reach ? oklab(asToken(l.t, x.under)) : x.oklab; };
+  const keepsOrder = (pl, e, t, reach) => {
+    const now = strength(e.oklab, e.under), then = strength(oklab(asToken(t, e.under)), e.under);
+    return matesOf(pl, e).every((x) => { const was = now - strength(x.oklab, x.under), will = then - strength(settled(x, reach), x.under);
+      return Math.abs(was) <= DE_OK || (Math.sign(will) === Math.sign(was) && Math.abs(will) > DE_OK); });
+  };
+  // the level a spare grey folds to: the nearest in reach that keeps its order with the words beside it; null (and said) when none does
+  const levelFor = (pl, e, reach) => {
+    const fits = levelsFor(e).filter((l) => l.de <= reach);
+    if (!fits.length) return undefined;
+    const ok = fits.find((l) => keepsOrder(pl, e, l.t, reach));
+    if (ok) return ok;
+    refused.push({ el: pl.el, prop: 'text', why: `as ${fits[0].t.short} it would read the same as the words beside it, which it stands apart from now`, css: e.css, rule: 'extra-grey', law: LAW['extra-grey'] });
+    return null;
+  };
+
   // the contrast guard: null when the move is fine, else why it is refused (§5 Guard)
   const guard = (pl, e, prop, t, rule) => {
     const to = asToken(t, e.under);
@@ -614,8 +641,9 @@ export function proposeColours(places, palette = known ?? paletteOf(), { scope =
       }
       // §5 extra grey level: the nearest of the three text levels, and the APCA guard keeps it in its band
       if (prop === 'text' && use.role === 'text' && textGreys && e.level && e.cls && chroma(e.oklab) < 0.03) {
-        const level = nearest(e, ['fg', 'muted', 'faint'], { anyAlpha: true });
-        if (level && level.de <= R.grey) { consider(pl, prop, e, level.t, level.de, 'extra-grey'); continue; }
+        const level = levelFor(pl, e, R.grey);
+        if (level) { consider(pl, prop, e, level.t, level.de, 'extra-grey'); continue; }
+        if (level === null) continue;
       }
       else if (prop === 'text' && use.role === 'text' && greyActive && e.level && e.cls) {
         // within a grey level's width (the census merges text colours this close) of one of your text tokens: the same grey
