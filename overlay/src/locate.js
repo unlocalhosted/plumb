@@ -85,7 +85,10 @@ async function readCreationFrame(fiber) {
   for (const line of stack.split('\n').slice(1)) {
     const m = /\(?((?:https?|file|webpack(?:-internal)?):\/\/[^\s]+):(\d+):(\d+)\)?\s*$/.exec(line);
     if (!m || runtime(m[1])) continue;
-    const mapped = await mappedFrame(m[1], Number(m[2]), Number(m[3]) + 1, { explain: true }).catch(() => null);
+    // the code that ran: the source of the component function that created the element (forwardRef and memo unwrapped)
+    const owner = fiber._debugOwner?.type, made = typeof owner === 'function' ? owner : owner?.render ?? owner?.type;
+    const ran = typeof made === 'function' ? Function.prototype.toString.call(made) : undefined;
+    const mapped = await mappedFrame(m[1], Number(m[2]), Number(m[3]) + 1, { explain: true, ...(ran && ran.length > 20 ? { ran } : {}) }).catch(() => null);
     const at = mapped?.location;
     if (!at) return { rawSource: m[1], failure: { reason: mapped?.reason ?? 'map', detail: mapped?.detail ?? { step: 'unmapped-creation-frame', source: m[1] } } };
     // Turbopack flattens dependency paths in generated chunk names. Classify
