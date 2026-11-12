@@ -42,3 +42,9 @@
 - What it changed: plumber reads controls' heights and decides them against the project's spacing unit.
 - Used in: overlay/src/control-size.js; journey entry "Control sizes".
 
+## 2026-11-12 · Atlassian's elevation levels, named for what sits on them (found by us)
+- What: [Atlassian Design System, Elevation](https://atlassian.design/foundations/elevation): raised is for cards; overlay "is reserved for a UI that sits over another UI": modals, dialogs, dropdown menus, floating toolbars; each level has its own shadow token.
+- Why: to ground a shadow decided by what casts it, the next primitive after corners and control sizes.
+- What it changed: plumber reads a shadow's caster as a card or something that floats, and gives it the theme's shadow for that.
+- Used in: overlay/src/elevation.js; journey entry "Shadows by job".
+

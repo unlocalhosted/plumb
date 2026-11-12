@@ -647,6 +647,13 @@
 - **The new-token test** sent its write through the page; the theme write reloads the page, and on a slower machine the reload cut the request off. It now sends the write from the test itself, as the text-roles test does. Passes on both machines.
 - **Also passing on vm-agent now:** the noise check and the messy-page test (its first run on Linux).
 
+## Shadows by job (2026-11-12)
+- **The itch:** shadows were flagged as drift one value at a time and never tidied; nothing asked what casts the shadow.
+- **Decided by Claude:** a shadow says how far a thing sits above the page, so it is decided by what casts it. Atlassian's elevation is named this way: raised for cards, overlay for "a UI that sits over another UI" ([reference](references.md)). A card takes the shadow the theme names for cards (rest, raised, card); a menu, a dialog or anything fixed takes the one for things that float. A control's shadow is its own state and is left. A card with no shadow is not given one: adding depth is a design change, not a tidy-up. Shadows went ahead of padding-by-job because, once padding is on the scale, sibling cards on the messy page already agree.
+- **The fix and the proof (messy page, in the running panel, through the test):** a seventh step, "Shadows", lists "Cards sm → rest": the four stat cards cast the framework's `shadow-sm` while the theme names `shadow-rest` for a resting surface. Apply writes `shadow-rest`; the pressed tab keeps its own `shadow-sm`; Undo takes back only the shadows. The messy-page test passes with it, and the clean-up and icon tests pass.
+- **Not done:** nothing that floats was on the page, so that half is untried; themes that name shadows by size get no answer.
+- **Seen once:** the colour clean-up test failed in two seconds on one run and passed on the next: a flake at start-up.
+
 ## Open gaps
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
 

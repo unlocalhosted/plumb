@@ -1,7 +1,7 @@
 /* ─────────────────────────────────────────────────────────
  * CLEAN UP THIS PAGE · React Plumber overlay (docs/briefs/page-cleanup.md, mock: docs/briefs/page-cleanup/mock.html)
  *
- * The page worked through in passes (text, spacing, colour, icons, corners, controls), each read, previewed, then applied as one step
+ * The page worked through in passes (text, spacing, colour, icons, corners, controls, shadows), each read, previewed, then applied as one step
  * that History can undo whole. It lives in the fix panel: the panel's body is handed to it while a clean-up runs.
  *
  *  stepper   the four passes along the top, each with this page's count; the one in hand, the ones done (✓), the
@@ -29,6 +29,7 @@ import { SpacingPass } from './spacing-pass.js';
 import { ColourPass } from './colour-pass.js';
 import { RadiusPass } from './radius-pass.js';
 import { ControlSizePass } from './control-size-pass.js';
+import { ElevationPass } from './elevation-pass.js';
 import { IconPass } from './icon-pass.js';
 import { CLEANUP as W } from './words.js';
 import { declaredColours, loadPalette, paletteOf } from './colours.js';
@@ -42,8 +43,9 @@ const SWAP_LAWS = {
   icons: [{ id: 'similarity', name: 'Law of similarity' }, { id: 'aesthetic-usability', name: 'Aesthetic-usability effect' }],
   radius: [{ id: 'similarity', name: 'Law of similarity' }],
   sizes: [{ id: 'similarity', name: 'Law of similarity' }],
+  shadows: [{ id: 'similarity', name: 'Law of similarity' }, { id: 'common-region', name: 'Law of common region' }],
 };
-const PASSES = ['text', 'spacing', 'colour', 'icons', 'radius', 'sizes'];
+const PASSES = ['text', 'spacing', 'colour', 'icons', 'radius', 'sizes', 'shadows'];
 // where a clean-up is, kept in the tab: a write (or its undo) can reload the page, and the clean-up comes back to it
 const KEPT = 'plumb:cleanup', FRESH = 60000;
 const keep = (v) => { try { v ? sessionStorage.setItem(KEPT, JSON.stringify({ ...v, at: Date.now(), path: location.pathname })) : sessionStorage.removeItem(KEPT); } catch {} };
@@ -141,7 +143,7 @@ function nums(b) {
 export class Cleanup {
   #show = null; #marks = null; // the show playing: its stop, and the marks it draws on the page
   #host; #el = null; #pass = 0; #done = new Map(); #state = 'idle'; #p = null; #page = null; #err = null; #preview = new StylePreview(); #held = false; #saved = null;
-  #swaps = { spacing: new SpacingPass(), colour: new ColourPass(), icons: new IconPass(), radius: new RadiusPass(), sizes: new ControlSizePass() };
+  #swaps = { spacing: new SpacingPass(), colour: new ColourPass(), icons: new IconPass(), radius: new RadiusPass(), sizes: new ControlSizePass(), shadows: new ElevationPass() };
   // renaming the colour tokens by job: null until the colour step reads a plan; then { plan, open, busy, done, err }
   #rn = null;
   get #sw() { return this.#swaps[PASSES[this.#pass]]; } // the pass in hand, when it is a class-swap pass

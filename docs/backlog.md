@@ -50,9 +50,11 @@ reserved.)
 **The order** (decided 2026-11-12):
 
 - **Now:** a class fix offered and then refused · a read in a window with no size.
-- **Next:** padding read by job · a test for a theme whose radii are named by size · the Next performance test ·
-  the tests that fail only under the full run's load.
-- **Later:** shadows, borders, motion, opacity and states · surface levels · shadcn's foreground colours · growing hero
+- **Next:** padding read by job · a test for a theme whose radii or shadows are named by size · the Next
+  performance test · the tests that fail only under the full run's load.
+- **Decided 2026-11-12:** shadows went ahead of padding-by-job. After padding is snapped to the scale, sibling cards on
+  the messy page already agree, so reading padding by job has little to show yet; shadows were a missing primitive.
+- **Later:** borders, motion, opacity and states · surface levels · shadcn's foreground colours · growing hero
   titles · the speed items · the remaining defensive tips · the 80-column report · the flaky tests.
 
 ### Clean-up: text
@@ -108,9 +110,16 @@ reserved.)
 - The "one row, one height" rule found nothing on the messy page, so it is unproven.
 - A control whose classes are built in code cannot take a height class; it is listed as left.
 
+### Clean-up: shadows
+
+- A card that casts no shadow is never given one, and a bordered card beside shadowed ones is not flagged: mixing
+  the two is left alone.
+- Themes that name shadows by size (sm, md, lg) get no answer, as with corners.
+- Nothing that floats (a menu, a dialog) was on the page it was proven on; that half is untried.
+
 ### Primitives with no clean-up pass
 
-- Shadows, borders and lines, motion, opacity and states, layer order, breakpoints and container widths.
+- Borders and lines, motion, opacity and states, layer order, breakpoints and container widths.
 
 ### Craft suggestions
 

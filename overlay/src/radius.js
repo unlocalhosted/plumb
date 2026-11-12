@@ -57,8 +57,8 @@ const alpha = (c) => { const m = /rgba?\(([^)]+)\)/.exec(c); if (!m) return c &&
 const paints = (s) => alpha(s.backgroundColor) > 0 || s.backgroundImage !== 'none' || px(s.borderTopWidth) > 0 || s.boxShadow !== 'none';
 const ownWords = (el) => [...el.childNodes].some((n) => n.nodeType === 3 && /[\p{L}\p{N}]/u.test(n.nodeValue ?? ''));
 
-// what the element is, from what it is made of
-function roleOf(el, s) {
+// what the element is, from what it is made of (elevation.js reads a card the same way)
+export function roleOf(el, s) {
   if (el.localName === 'kbd') return null; // a key, not a tag: the theme names no step for it
   if (el.matches(CONTROL) || (el.matches('a[href]') && paints(s))) return 'control';
   const worded = [...el.querySelectorAll('*')].filter((n) => !n.closest('svg') && ownWords(n));

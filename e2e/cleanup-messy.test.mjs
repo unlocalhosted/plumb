@@ -8,6 +8,7 @@
 //   text     a dashboard's big numbers were folded into a heading style and shrank
 //   controls a border added to one button of a pair made it 42px, and nothing read a control's height
 //   craft    a theme step nearer the standard's number beat the step the theme names for the job
+//   shadows  cards cast a framework shadow while the theme names one for a resting card; nothing read it by job
 //   corners  no pass: a card at the control's 8px is on a token by value and on the wrong one by job
 // Real Vite, React, Tailwind, the real CLI and Chromium; the panel is driven by its keys; every write is read back from
 // the source file.
@@ -155,12 +156,19 @@ test('a messy page is put back on its own design system: spacing on the theme\'s
   assert.match(heights, /border border-gray-300[^"\n]*\bh-s8\b/, 'the bordered 34px button takes the 32px step, by the theme\'s name');
   assert.doesNotMatch(heights, /bg-white text-indigo-700[^"\n]*\bh-10\b/, 'the button only stretched to its neighbour gets no class of its own');
 
-  // Undo takes the controls back, and only the controls
+  // shadows: the stat cards cast the framework's shadow-sm; the theme names a shadow for a resting card. The pressed
+  // tab's shadow-sm is a control's own state and is left
+  const shadows = await s.pass(/different shadows|not the one your theme names/);
+  assert.match(shadows, /Cards sm → rest/, shadows);
+  await s.page.keyboard.press('Enter');
+  const lifted = await s.written(/rounded-xl border border-gray-200 p-s6 shadow-rest"/);
+  assert.match(lifted, /bg-white shadow-sm font-medium/, 'a pressed tab keeps its own shadow');
+
+  // Undo takes the shadows back, and only the shadows
   await s.until(/Undo/);
   await s.page.locator('plumb-overlay').locator('[data-cu="undo"]').click();
-  for (let i = 0; i < 120 && /\bh-10\b/.test(await s.source()); i++) await new Promise((r) => setTimeout(r, 500));
-  const undone = await s.source();
-  assert.doesNotMatch(undone, /\bh-10\b|\bh-s8\b/, 'no height class is left');
+  const undone = await s.written(/rounded-xl border border-gray-200 p-s6 shadow-sm"/);
+  assert.match(undone, /\bh-10\b/, 'the controls step stays written');
   assert.match(undone, /rounded-card bg-gradient-to-r/, 'the corners step stays written');
   assert.match(undone, /<Chart size=\{18\}/, 'the icon step stays written');
   assert.deepEqual(s.errors, []);
