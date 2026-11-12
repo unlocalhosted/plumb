@@ -423,7 +423,20 @@
 - **The proof:** run one file at a time on the laptop: the new test passes (24 s), the text-role test passes, both spacing tests pass; the element-card text test, the clean-up test, the icon test and the colour test showed no failures.
 - **Not done:** the new test was not run against yesterday's code to see it fail there; the full suite was not run (it runs on vm-agent, and was not asked for).
 
+## The full suite on vm-agent again, and the first round of fixes (2026-11-12)
+- **The itch:** the owner, after the day's tests: "Yes, run it", then "fix the breaking", then "fix all".
+- **How we found it:** the whole suite on vm-agent, side by side on 6 cores while another session's run used the rest (184 runs, 19.9 min): 926 tests passed, 55 failed in 29 files. This morning's run had 54 failed in 29 files.
+- **What today's work had broken (4 files), and the cause of each:**
+  - Colour: a spare grey beside its twin was left alone. The new "keep the order" rule compared it with every text beside it; two texts of one size and weight do the same job, so their difference is drift to fold. The order is now kept only against text of another size or weight (a title and its description).
+  - Text style names: with more body styles, two were both called "Body smaller". The page's hero and the larger reading text are now named apart ("Hero", "Lead"), so "Body" and "Display" keep their meaning.
+  - Two more test pages were a crafting-ui page drawn on the demo's theme with its named spacing steps; they now run on a theme like crafting-ui's.
+  - A missing import in my own fix to a test.
+- **Older failures fixed on the way (8 files):** the report schema did not name two fields the report prints; three checks were stale against wording or code that had changed; one check depended on the checkout's folder name; the 18px base font never reached the headless browser; the report test's child output was over Node's 1 MB default; a habit's reason folds in its column; the text editor's waits threw while the overlay reloaded; the selection test's card tripped a craft check added after it was written, and its walk stopped at another cause's note.
+- **The proof:** rerun on vm-agent: colour-read, cleanup-spacing-proofs, cleanup-spacing, cleanup-colour, cleanup-messy, type-roles, units, cli, locate, project-layouts, hosts, report, report-nits, text-editor pass. The selection test passes on the laptop (6 of 6), not yet rerun on vm-agent.
+- **Not fixed (17 files):** blueprint-corners (8 tests), blueprint (3), fixpanel (4), rename (8), readiness-panel (2), text-edit (2), and one each in blueprint-determinism, cleanup-site, craft, craft-token, one-bar, site-replay, timeline, verify-writes, verify-frozen, packaging, blueprint-next-performance. Most wait for a piece of the panel that has since been redesigned. readiness-panel and text-edit have another session's uncommitted changes in this checkout. The timeline test (qa-fixes-2) passed once and failed once on the same commit: a flake, not from today's work.
+
 ## Open gaps
+- **17 test files still fail on vm-agent** (list in the entry above); the timeline test is flaky; at 80 columns the report breaks a rule's name across two lines.
 - A theme with fewer named spacing steps than plumber's detector needs (about five) is not taken as the scale; the scale is still read off the code there.
 - The icons step's count adds sizes and strokes together, so fixing one icon's size can read "10 → 10".
 - Themes that name radii by size (sm, md, lg) get no answer from the corners pass; undo of its write is untried.
