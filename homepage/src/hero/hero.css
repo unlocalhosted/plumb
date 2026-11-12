@@ -120,51 +120,43 @@
 .rv-scr { position: absolute; inset: 0; display: grid; grid-template-columns: 12.5rem 1fr; background: var(--pl-bg-page); color: var(--ink-1); font-family: var(--font); }
 .rv-side { display: grid; align-content: start; gap: 3px; padding: 18px 12px; background: var(--pl-bg-inset); position: relative; }
 .rv-brand { display: flex; align-items: center; gap: 9px; padding: 4px 10px 18px; font: var(--pl-round-w, 700) 17px/1 var(--pl-round); letter-spacing: -0.01em; }
-.rv-brand-mark { display: grid; place-items: center; width: 26px; height: 26px; padding: 4px; border-radius: 8px; background: var(--pl-bg-surface); box-shadow: var(--pl-shadow-tag); }
+.rv-brand-mark { display: grid; place-items: center; width: 26px; height: 26px; padding: 5px; border-radius: 8px; background: var(--pl-text-primary); }
+.rv-brand-mark svg { filter: grayscale(1) brightness(3); }
 .rv-brand-mark svg, .rv-ty svg { display: block; width: 100%; height: 100%; overflow: visible; }
 .rv-side > span:not(.rv-brand):not(.rv-side-foot) { display: flex; align-items: center; gap: 9px; padding: 8px 10px; border-radius: 10px; font: 600 13.5px/1 var(--font); color: var(--ink-2); }
-.rv-ty { display: block; flex: none; width: 17px; height: 17px; }
-.rv-side > .on { background: var(--pl-lilac-face); color: var(--pl-lilac-ink) !important; box-shadow: 0 2px 0 color-mix(in oklab, var(--pl-lilac) 45%, transparent); }
+.rv-ty { display: block; flex: none; width: 16px; height: 16px; filter: grayscale(1); opacity: .7; }
+.rv-side > .on { background: var(--pl-bg-surface); color: var(--ink-1) !important; box-shadow: 0 0 0 1px var(--pl-border-default), 0 1px 2px rgb(0 0 0 / .06); }
+.rv-side > .on .rv-ty { opacity: 1; }
 .rv-side-foot { position: absolute; left: 12px; right: 12px; bottom: 16px; display: flex; align-items: center; gap: 9px; padding: 8px 10px; font: 600 13px/1 var(--font); color: var(--ink-2); }
-.rv-av { display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: var(--a); color: #fff; font: var(--pl-round-w, 700) 11px/1 var(--pl-round); font-style: normal; box-shadow: 0 0 0 2px var(--pl-bg-surface); }
+.rv-av { display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: var(--pl-text-primary); color: var(--pl-bg-surface); font: var(--pl-round-w, 700) 11px/1 var(--pl-round); font-style: normal; }
 .rv-main { padding: 30px 34px; min-width: 0; }
 .rv-title { margin: 0 0 24px; font: var(--pl-round-w, 700) 29px/1.15 var(--pl-round); letter-spacing: -0.02em; }
 .rv-title[data-fixed] { text-wrap: pretty; animation: rv-swap 400ms var(--ease); }
 .rv-grid { display: grid; grid-template-columns: 1.5fr 1fr 1fr; gap: 13px; transition: gap 500ms var(--ease); }
 .rv-grid[data-fixed] { gap: 16px; }
-/* each card is a soft block: a face on a side of its own colour, lit from above */
-.rv-grid > section { position: relative; min-height: 220px; border-radius: 18px;
-  background: var(--face, var(--pl-bg-surface));
-  box-shadow: inset 0 1.5px 0 rgb(255 255 255 / .55), 0 5px 0 color-mix(in oklab, var(--hue, var(--pl-ink-3)) 55%, var(--face, var(--pl-bg-surface))), 0 18px 26px -14px color-mix(in oklab, var(--hue, var(--pl-ink-3)) 55%, transparent); }
-.rv-video { display: grid; place-items: center; overflow: hidden; --hue: var(--pl-sky); --face: var(--pl-sky-face);
-  background: radial-gradient(110% 80% at 25% 0%, color-mix(in oklab, #fff 25%, var(--pl-sky-face)), var(--pl-sky-face) 55%, color-mix(in oklab, var(--pl-sky) 22%, var(--pl-sky-face))); }
-.rv-video small { position: absolute; left: 14px; bottom: 12px; padding: 5px 9px; border-radius: 999px; background: var(--pl-bg-surface); font: var(--pl-round-w, 700) 12px/1 var(--pl-round); color: var(--pl-text-primary); box-shadow: var(--pl-shadow-tag); }
-.rv-float { position: absolute; width: 34px; height: 34px; padding: 6px; border-radius: 11px; background: rgb(255 255 255 / .9); box-shadow: 0 2px 0 color-mix(in oklab, var(--pl-sky) 40%, transparent), 0 10px 18px -8px color-mix(in oklab, var(--pl-sky) 70%, transparent); }
-.rv-float .rv-ty { width: 100%; height: 100%; }
-.rv-float.f1 { left: 9%; top: 14%; rotate: -10deg; } .rv-float.f2 { right: 11%; top: 11%; rotate: 8deg; } .rv-float.f3 { right: 8%; bottom: 18%; rotate: -6deg; } .rv-float.f4 { left: 22%; bottom: 26%; rotate: 12deg; width: 28px; height: 28px; padding: 5px; }
-.rv-play { position: relative; display: grid; place-items: center; width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(180deg, #fff, #f2f6ff); box-shadow: 0 4px 0 color-mix(in oklab, var(--pl-sky) 55%, #fff), 0 14px 22px -8px color-mix(in oklab, var(--pl-sky) 80%, transparent); }
-.rv-play svg { width: 24px; height: 24px; fill: color-mix(in oklab, var(--pl-sky) 55%, #0b1a33); translate: -1px 0; transition: translate 500ms var(--ease); }
+/* black and white: paper cards with a fine edge and soft depth; colour is left to Plumber's marks */
+.rv-grid > section { position: relative; min-height: 220px; border-radius: 16px; background: var(--pl-bg-surface);
+  box-shadow: 0 0 0 1px var(--pl-border-default), 0 1px 2px rgb(0 0 0 / .05), 0 14px 28px -18px rgb(0 0 0 / .3); }
+.rv-video { display: grid; place-items: center; overflow: hidden;
+  background: radial-gradient(90% 80% at 30% 15%, color-mix(in oklab, var(--pl-ink) 3%, var(--pl-bg-surface)), color-mix(in oklab, var(--pl-ink) 14%, var(--pl-bg-surface)) 75%) !important; }
+.rv-video::after { content: ''; position: absolute; inset: 0; border-radius: inherit; background: repeating-linear-gradient(0deg, rgb(0 0 0 / .018) 0 1px, transparent 1px 3px); pointer-events: none; }
+.rv-video small { position: absolute; left: 14px; bottom: 12px; padding: 5px 9px; border-radius: 999px; background: var(--pl-bg-surface); font: 600 12px/1 var(--font); color: var(--pl-text-primary); box-shadow: 0 0 0 1px var(--pl-border-default); }
+.rv-play { position: relative; z-index: 1; display: grid; place-items: center; width: 60px; height: 60px; border-radius: 50%; background: var(--pl-bg-surface); box-shadow: 0 0 0 1px var(--pl-border-default), 0 10px 20px -8px rgb(0 0 0 / .35); }
+.rv-play svg { width: 24px; height: 24px; fill: var(--pl-text-primary); translate: -1px 0; transition: translate 500ms var(--ease); }
 .rv-play[data-fixed] svg { translate: 1px 0; }
-.rv-figs { display: grid; align-content: start; gap: 10px; padding: 16px; --hue: var(--pl-ink-3); }
+.rv-figs { display: grid; align-content: start; gap: 10px; padding: 16px; }
 .rv-figs small { display: flex; align-items: center; gap: 7px; font: var(--pl-round-w, 700) 13px/1 var(--pl-round); color: var(--ink-1); }
-.rv-figs small .rv-ty { width: 18px; height: 18px; }
-.rv-figs div { display: flex; justify-content: space-between; align-items: center; padding-top: 11px; border-top: 1px dashed var(--line); font-size: 13px; color: var(--ink-2); }
-.rv-figs div span { display: inline-flex; align-items: center; gap: 8px; }
-.rv-dot { width: 9px; height: 9px; border-radius: 3px; background: var(--d); box-shadow: 0 1.5px 0 color-mix(in oklab, var(--d) 60%, #000); }
+.rv-figs small .rv-ty { width: 16px; height: 16px; }
+.rv-figs div { display: flex; justify-content: space-between; align-items: center; padding-top: 11px; border-top: 1px solid var(--line); font-size: 13px; color: var(--ink-2); }
 .rv-figs b { font-weight: 650; color: var(--ink-1); font-variant-numeric: proportional-nums; }
 .rv-figs[data-fixed] b { font-variant-numeric: tabular-nums; animation: rv-swap 400ms var(--ease); }
-/* the invite is one card, pink, straight on the page: its shadow is the mistake (grey), then tinted with its own pink */
-.rv-grid > .rv-promo { display: grid; background: none; box-shadow: none; }
-.rv-promo-card { display: grid; align-content: end; gap: 5px; height: 100%; box-sizing: border-box; padding: 16px; border-radius: 18px; color: var(--pl-pink-ink);
-  background: radial-gradient(110% 80% at 25% 0%, color-mix(in oklab, #fff 25%, var(--pl-pink-face)), var(--pl-pink-face) 60%);
-  box-shadow: 0 2px 4px rgb(0 0 0 / 0.18), 0 18px 30px -10px rgb(0 0 0 / 0.42); transition: box-shadow 500ms var(--ease); }
-/* written in rgb, which the build leaves alone and the tour reads for its chroma: the card's own pink, not grey */
-.rv-promo-card[data-fixed] { box-shadow: 0 2px 4px rgb(214 64 140 / 0.35), 0 18px 30px -10px rgb(200 40 120 / 0.6); }
-.rv-avs { display: flex; margin-bottom: 4px; } .rv-avs .rv-av + .rv-av { margin-left: -6px; }
-.rv-promo-card b { font: var(--pl-round-w, 700) 15px/1.2 var(--pl-round); }
-.rv-promo-card > span:not(.rv-avs) { font-size: 12.5px; color: color-mix(in oklab, currentColor 72%, transparent); }
-.rv-promo-card .rv-avs { margin-bottom: auto; }
-.rv-promo-card b { font-size: 17px; }
+/* a moodboard: a pale photo on a white card, and its edge */
+.rv-promo { display: grid; align-content: start; gap: 4px; padding: 10px 10px 14px; }
+.rv-photo { position: relative; height: 120px; margin-bottom: 8px; border-radius: 10px; background: radial-gradient(120% 90% at 30% 20%, #fdfcf9, #f1eee8 55%, #e6e1d8); }
+.rv-photo::after { content: ''; position: absolute; inset: 0; border-radius: inherit; box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.1); opacity: 0; transition: opacity 450ms var(--ease); }
+.rv-photo[data-fixed]::after { opacity: 1; }
+.rv-promo b { padding: 0 4px; font: var(--pl-round-w, 700) 15px/1.2 var(--pl-round); }
+.rv-promo > span { padding: 0 4px; font-size: 12.5px; color: var(--ink-2); }
 
 @media (max-width: 40rem) {
   .hero { padding-left: var(--s-4); padding-right: var(--s-4); }

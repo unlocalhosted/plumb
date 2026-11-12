@@ -32,6 +32,7 @@ import { burst } from '../../../overlay/src/burst.js'; // a fix landing, in piec
 const FAMILIES = [['Interaction feel', 16], ['Typography', 15], ['Colour and light', 15], ['Layout and platform', 13], ['Alignment and balance', 6], ['Spacing and rhythm', 6], ['Rendering and pixels', 6]];
 const T = { cameraIn: 600, marks: 1600, fix: 3000, marksOut: 4500, cameraOut: 4800, alive: 5700, back: 7600, loop: 9000 };
 const STEP = { rest: 0, camera: 1, marks: 2, fix: 3, out: 4, home: 5 };
+const FEEL = 2000; // the broken scene alone, before anything is marked: a moment to feel that something's off
 
 export function Insights() {
   const reduced = typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -47,12 +48,22 @@ export function Insights() {
   // one card is reviewed at a time, in turn, and the bar above the grid says what Plumber is doing to it: checking,
   // what it found and why, the fix. The rest sit still. A card you've pressed is skipped: it holds what you chose.
   const [turn, setTurn] = useState(0), [phase, setPhase] = useState(0), [done, setDone] = useState(() => new Set());
-  const next = () => { setPhase(0); setTurn(t => { const n = (t + 1) % CARDS.length; if (n === 0) setDone(new Set()); return n; }); };
+  // after the last card, the round's payoff: everything fixed, none of it written by you; then again
+  const bar = useRef(null), [summary, setSummary] = useState(false);
+  const next = () => {
+    if (turn === CARDS.length - 1 && !summary) {
+      setSummary(true);
+      setTimeout(() => { const r = bar.current?.querySelector('.ins-review-n')?.getBoundingClientRect(); if (r) burst(document.body, r.left + r.width / 2, r.top + r.height / 2, { pieces: 34 }); }, 250);
+      setTimeout(() => { setSummary(false); setDone(new Set()); setPhase(0); setTurn(0); }, 4200);
+      return;
+    }
+    setPhase(0); setTurn(t => (t + 1) % CARDS.length);
+  };
   const beat = (i, step) => {
     if (i !== turn) return;
-    const p = step >= STEP.fix ? 2 : step >= STEP.marks ? 1 : 0;
+    const p = step >= STEP.out ? 3 : step >= STEP.fix ? 2 : step >= STEP.marks ? 1 : 0;
     setPhase(p);
-    if (p === 2) setDone(d => (d.has(i) ? d : new Set(d).add(i)));
+    if (p >= 2) setDone(d => (d.has(i) ? d : new Set(d).add(i)));
   };
   const c = CARDS[turn];
 
@@ -67,13 +78,15 @@ export function Insights() {
         </ul>
       </header>
       {!reduced && (
-        <div className="ins-review" data-phase={phase} data-hue={c.hue} aria-live="polite">
-          <span className="ins-review-n tabular">{c.n}</span>
-          <i className="ins-toy" aria-hidden="true" dangerouslySetInnerHTML={{ __html: toyOf(c.toy) }} />
-          <span key={`${turn}-${phase}`} className="ins-review-say">
-            {phase === 0 && <><span className="ins-review-dim">Reviewing</span> <b>{c.title}</b></>}
-            {phase === 1 && <><span className="ins-review-tag off">{c.states[0]}</span> {c.why}</>}
-            {phase === 2 && <><span className="ins-review-tag on">{c.states[1]}<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.5 6.5 11.5 12.5 4.5" /></svg></span> Plumber wrote the fix.</>}
+        <div ref={bar} className="ins-review" data-phase={summary ? 4 : phase} aria-live="polite">
+          <span className="ins-review-n tabular">{summary ? <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.5 6.5 11.5 12.5 4.5" /></svg> : c.n}</span>
+          {!summary && <i className="ins-toy" aria-hidden="true" dangerouslySetInnerHTML={{ __html: toyOf(c.toy) }} />}
+          <span key={summary ? 'sum' : `${turn}-${phase}`} className="ins-review-say">
+            {summary && <><b>{CARDS.length} fixed, in your JSX.</b> <span className="ins-review-dim">You wrote none of it.</span></>}
+            {!summary && phase === 0 && <><b>{c.feel}</b></>}
+            {!summary && phase === 1 && <><span className="ins-review-tag off">{c.states[0]}</span> {c.why}</>}
+            {!summary && phase === 2 && <><span className="ins-review-tag on">{c.states[1]}<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.5 6.5 11.5 12.5 4.5" /></svg></span> Plumber wrote the fix.</>}
+            {!summary && phase === 3 && <span className="ins-review-after">{c.after}</span>}
           </span>
           <span className="ins-review-dots" aria-label={`${done.size} of ${CARDS.length} fixed`}>{CARDS.map((x, i) => <i key={x.n} data-done={done.has(i)} data-on={i === turn} />)}</span>
         </div>
@@ -116,8 +129,8 @@ function Card({ card, live, reduced, turn, onBeat, onDone }) {
     if (held) { at(0, onDone); return clear; }
     if (paused) return;
     setFixed(false); setStep(STEP.rest); setCam(null); setMarks(null); shown.current = null;
-    moment(T.cameraIn);
-    at(T.alive + 900, onDone);
+    moment(FEEL);
+    at(FEEL + (T.alive - T.cameraIn) + 700, onDone);
     return clear;
   }, [turn, held, paused, reduced]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { if (turn) onBeat?.(step); }, [step, turn]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -385,13 +398,13 @@ Menu.measure = (root) => {
 };
 
 const CARDS = [
-  { n: 2, area: 'play', size: 'big', toy: 'alignment', hue: 'sky', title: 'Optical centre beats geometric centre', why: 'The eye centres by weight, not by the box.', states: ['Box centred', 'Weight centred'], Scene: Play, measure: Play.measure, fmt: v => (v < 0.1 ? '0px' : `${v.toFixed(1)}px`), done: v => v < 0.1 },
-  { n: 8, area: 'album', size: '', toy: 'corner', hue: 'pink', title: 'Nested radius = outer − padding', why: 'Equal radii pinch the corner; concentric ones don’t.', states: ['Same radius', 'Concentric'], Scene: Album, measure: Album.measure, fmt: v => `r ${Math.round(v)}`, done: v => Math.round(v) === 12 },
-  { n: 16, area: 'timer', size: '', toy: 'type', hue: 'mint', title: 'Tabular figures for numbers that change', why: 'Proportional digits jitter as they tick and never stack.', states: ['Proportional', 'Tabular'], Scene: Timer, measure: Timer.measure, pill: 'below', fmt: v => (v < 0.1 ? '0px' : `${v.toFixed(1)}px`), done: v => v < 0.1 },
-  { n: 18, area: 'news', size: '', toy: 'wrap', hue: 'lilac', title: 'No widows in headings', why: 'One word alone on the last line looks broken.', states: ['Widow', 'Balanced'], Scene: Headline, measure: Headline.measure, fmt: v => `${Math.round(v)} word${Math.round(v) === 1 ? '' : 's'}`, done: v => Math.round(v) >= 2 },
-  { n: 21, hatch: true, area: 'shadow', size: 'wide', toy: 'shadow', hue: 'pink', title: 'Shadows are tinted, not grey', why: 'A grey shadow on a coloured ground looks dirty.', states: ['Grey shadow', 'Tinted'], Scene: Shadow, measure: Shadow.measure, fmt: v => `C ${v.toFixed(2)}`, done: v => v > 0.06 },
-  { n: 55, area: 'forecast', size: 'wide', toy: 'fill', hue: 'sky', title: 'Gradients mix in OKLCH', why: 'sRGB goes grey between two saturated colours.', states: ['sRGB', 'OKLCH'], Scene: Forecast, measure: Forecast.measure, fmt: v => `C ${v.toFixed(2)}`, done: v => v > MID_OKLCH - 0.005 },
-  { n: 39, area: 'photo', size: '', toy: 'border', hue: 'butter', title: 'Images get an inner outline', why: 'A pale photo bleeds into a pale card without one.', states: ['No outline', 'Inner outline'], Scene: Photo, measure: Photo.measure, fmt: v => `${v.toFixed(1)}px edge`, done: v => v > 0.95 },
-  { n: 42, area: 'tabs', size: '', toy: 'weight', hue: 'lilac', title: 'Bold on hover must not shift layout', why: 'Weight changes width, and the whole row jumps.', states: ['Bold shifts', 'Width kept'], Scene: Tabs, measure: Tabs.measure, moving: true, fmt: v => (v < 0.1 ? '0px' : `${v.toFixed(1)}px`), done: v => v < 0.1 },
-  { n: 63, area: 'menu', size: 'wide', toy: 'motion', hue: 'mint', title: 'Never scale from 0', why: 'From 0 it appears from nowhere; from the trigger it grows out of it.', states: ['From 0', 'From the trigger'], Scene: Menu, measure: Menu.measure, moving: true, fmt: v => `scale ${v === 0 ? '0' : v.toFixed(2)}`, done: v => v > 0.9 },
+  { n: 2, feel: 'Look at the play button. Does the arrow sit in the middle?', after: 'Now it looks centred: it’s centred by its weight, not its box.', area: 'play', size: 'big', toy: 'alignment', hue: 'sky', title: 'Optical centre beats geometric centre', why: 'The eye centres by weight, not by the box.', states: ['Box centred', 'Weight centred'], Scene: Play, measure: Play.measure, fmt: v => (v < 0.1 ? '0px' : `${v.toFixed(1)}px`), done: v => v < 0.1 },
+  { n: 8, feel: 'Look at the cover’s corner against the tile around it.', after: 'Now the corners run parallel, so the tile reads as one piece.', area: 'album', size: '', toy: 'corner', hue: 'pink', title: 'Nested radius = outer − padding', why: 'Equal radii pinch the corner; concentric ones don’t.', states: ['Same radius', 'Concentric'], Scene: Album, measure: Album.measure, fmt: v => `r ${Math.round(v)}`, done: v => Math.round(v) === 12 },
+  { n: 16, feel: 'Watch the colons in the list. Do they line up?', after: 'Now every digit is the same width, so the times stack and stop jittering.', area: 'timer', size: '', toy: 'type', hue: 'mint', title: 'Tabular figures for numbers that change', why: 'Proportional digits jitter as they tick and never stack.', states: ['Proportional', 'Tabular'], Scene: Timer, measure: Timer.measure, pill: 'below', fmt: v => (v < 0.1 ? '0px' : `${v.toFixed(1)}px`), done: v => v < 0.1 },
+  { n: 18, feel: 'Read the headline. Does the last line look finished?', after: 'Now the lines are balanced; no word hangs on its own.', area: 'news', size: '', toy: 'wrap', hue: 'lilac', title: 'No widows in headings', why: 'One word alone on the last line looks broken.', states: ['Widow', 'Balanced'], Scene: Headline, measure: Headline.measure, fmt: v => `${Math.round(v)} word${Math.round(v) === 1 ? '' : 's'}`, done: v => Math.round(v) >= 2 },
+  { n: 21, feel: 'Look under the card. Does that shadow belong on pink?', after: 'Now the shadow takes the plate’s colour, so it looks lit, not dirty.', hatch: true, area: 'shadow', size: 'wide', toy: 'shadow', hue: 'pink', title: 'Shadows are tinted, not grey', why: 'A grey shadow on a coloured ground looks dirty.', states: ['Grey shadow', 'Tinted'], Scene: Shadow, measure: Shadow.measure, fmt: v => `C ${v.toFixed(2)}`, done: v => v > 0.06 },
+  { n: 55, feel: 'Look at the middle of each bar.', after: 'Now the colour stays bright all the way across.', area: 'forecast', size: 'wide', toy: 'fill', hue: 'sky', title: 'Gradients mix in OKLCH', why: 'sRGB goes grey between two saturated colours.', states: ['sRGB', 'OKLCH'], Scene: Forecast, measure: Forecast.measure, fmt: v => `C ${v.toFixed(2)}`, done: v => v > MID_OKLCH - 0.005 },
+  { n: 39, feel: 'Where does the photo end and the card begin?', after: 'Now the photo has an edge, so it doesn’t bleed into the card.', area: 'photo', size: '', toy: 'border', hue: 'butter', title: 'Images get an inner outline', why: 'A pale photo bleeds into a pale card without one.', states: ['No outline', 'Inner outline'], Scene: Photo, measure: Photo.measure, fmt: v => `${v.toFixed(1)}px edge`, done: v => v > 0.95 },
+  { n: 42, feel: 'Watch the tabs after Board when it’s pointed at.', after: 'Now nothing moves when Board goes bold.', area: 'tabs', size: '', toy: 'weight', hue: 'lilac', title: 'Bold on hover must not shift layout', why: 'Weight changes width, and the whole row jumps.', states: ['Bold shifts', 'Width kept'], Scene: Tabs, measure: Tabs.measure, moving: true, fmt: v => (v < 0.1 ? '0px' : `${v.toFixed(1)}px`), done: v => v < 0.1 },
+  { n: 63, feel: 'Watch where the menu comes from.', after: 'Now it grows out of the button, so you can see where it came from.', area: 'menu', size: 'wide', toy: 'motion', hue: 'mint', title: 'Never scale from 0', why: 'From 0 it appears from nowhere; from the trigger it grows out of it.', states: ['From 0', 'From the trigger'], Scene: Menu, measure: Menu.measure, moving: true, fmt: v => `scale ${v === 0 ? '0' : v.toFixed(2)}`, done: v => v > 0.9 },
 ];

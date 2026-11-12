@@ -1970,6 +1970,19 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   margins, ticks), on a turn and on your own press. The burst moved from the fix bar into a shared module the fix
   bar calls as before, served to the overlay (the build's check passed). A card you've pressed is skipped. Seen
   playing in light and dark. Written into the interaction principles as 26c.
+- **"Let the user feel the problem first, then showcase the solution with delight, then the payoff" and "these solid
+  colour cards are not good ... the homepage should make the user impressed by our taste and judgement."** The system
+  behind the second: colour had become decoration (pastel faces everywhere), competing with the one place it should
+  speak, Plumber's marks. Now the demos are black and white, paper and ink, crafted through type, edges and depth;
+  colour carries meaning only (coral wrong, mint fixed) plus the two principles that are about colour (the forecast's
+  gradient; a coloured plate under the recipe, since that principle is a shadow on colour). The hero's fifth mistake
+  changed with it: a grey shadow on a coloured card needs a coloured card, so it became a pale moodboard photo with no
+  edge, fixed by an inner outline (measured from the live photo). The first: each card's turn is now four beats in the
+  review bar: feel it (the broken scene alone for two seconds, the bar asking you to look at the right place, e.g.
+  "Look at the play button. Does the arrow sit in the middle?"), name it (coral, and why), the fix (mint, with the
+  burst), the payoff (what is better now, e.g. "Now it looks centred: it's centred by its weight, not its box"); after
+  the ninth, the round's payoff ("9 fixed, in your JSX. You wrote none of it.", with a burst). The four beats were
+  logged playing in order; the round's summary wasn't watched end to end.
 
 ## Open gaps
 - The overlay writes about 180 corners as numbers (radius tokens about 45 times), many off its own scale; 6px is
