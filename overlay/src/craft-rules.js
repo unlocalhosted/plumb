@@ -532,7 +532,9 @@ export const contentAlign = {
 
 const GREY = 0.7; // the grey band: measured, but too close to the line to stand behind alone (the headless judge decides)
 // something you press, as the shared reading has it (roles.js): a link counts only when it is drawn as a button
-const pressed = (el, facts) => controlKind(el, facts.style(el)) === 'button';
+const pressed = (el, facts) => { const k = controlKind(el, facts.style(el)); return k === 'button' || k === 'item'; };
+// a button proper: what you press to make something happen, not to choose where you are (press feedback, its idiom)
+const button = (el, facts) => controlKind(el, facts.style(el)) === 'button';
 const disabled = (el) => el.matches(':disabled, [aria-disabled="true"]') || !!el.closest('[disabled], [aria-disabled="true"]');
 // the words a person reads in an element: its text, never what an svg, a style or a script carries (an animated icon
 // brings its own styles)
@@ -2459,7 +2461,7 @@ const STEPS = [75, 100, 150, 200, 300, 500, 700, 1000];
 const pressIdiom = (facts) => {
   const counts = new Map();
   for (const el of facts.items) {
-    if (!el.isConnected || !pressed(el, facts)) continue;
+    if (!el.isConnected || !button(el, facts)) continue;
     for (const c of classesOf(el).split(/\s+/)) if (c.startsWith('active:')) counts.set(c, (counts.get(c) ?? 0) + 1);
   }
   const top = [...counts].sort((a, b) => b[1] - a[1])[0];
@@ -2478,7 +2480,7 @@ export const pressFeedback = {
   id: 'craft/press-feedback', family: 'craft', number: [31], owns: ['motion'], once: 'ancestor', reads: ['style', 'census'],
   check({ el, facts }, theme) {
     const T = theme.spec(this.id);
-    if (!el.matches('button, [role="button"]') || el.matches(':disabled, [aria-disabled="true"], [type="submit"]')) return [];
+    if (!button(el, facts) || el.matches(':disabled, [aria-disabled="true"], [type="submit"]')) return [];
     if (/(^|\s)active:/.test(classesOf(el)) || el.hasAttribute('aria-pressed')) return [];
     facts.press ??= pressIdiom(facts) ?? false;
     if (!facts.press || facts.press.n < T.idiom) return []; // an app that never presses is a page finding, headless

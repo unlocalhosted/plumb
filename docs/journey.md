@@ -724,7 +724,7 @@
 - **What changed:** the colour pass asks the role file whether something is in a control, in a field, and whether its own edge is a control's. Two craft rules (disabled contrast, and text that wraps in a fixed height) do too.
 - **Before and after on crafting-ui:** the header's tabs and "Open the first entry →" now have control edges (their borders are held to the strong line colour, which they already use); decorative lines inside a linked card are no longer read as a control's colour; the parts of a switch are. Colour suggestions on the four pages: unchanged, because crafting-ui's colours are already on its tokens. Craft findings: unchanged.
 - **Kept narrow on purpose:** what the gesture probes press (real buttons only, for safety) and the press-feedback rule (a button answers the press; a tab bar is not asked to).
-- **Not done:** the role file has one kind, "button", for buttons, tabs and menu items. Press feedback and the button rules would read better with a tab told apart.
+- **Then:** a tab, a menu item, an option, and a link in a tab bar are now their own kind, "item" (WAI-ARIA's tab and menu patterns: one of a set you choose between). They keep a control's height, padding, edge and label style; the press-feedback rule asks for buttons only, so a tab bar is never told to squash on press.
 
 ## Open gaps
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.

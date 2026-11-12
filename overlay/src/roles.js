@@ -13,7 +13,9 @@
  *    overlay   it sits over the page: a menu, a dialog, a listbox, a tooltip, a popover, or anything fixed in place
  *              (Atlassian elevation: overlay "is reserved for a UI that sits over another UI")
  *    control   something you press or type in. kind says which:
- *                button   a button, a tab, a menu item, a summary, a link drawn as a button (it paints a box)
+ *                button   a button, a summary, a link drawn as a button (it paints a box)
+ *                item     one of a set you choose between: a tab, a menu item, an option, a link in a bar of links where
+ *                         the current one is painted (a tab bar)
  *                field    a text field, a select, a text area
  *                toggle   a checkbox, a radio, a switch, a range: its size is the mark's, not a box of words
  *                group    the painted box round controls and nothing else (a search field's wrapper, a segmented switch)
@@ -31,10 +33,12 @@
  * ───────────────────────────────────────────────────────── */
 
 const OVERLAY = '[role=menu], [role=dialog], [role=alertdialog], [role=listbox], [role=tooltip], [popover], dialog';
-const BUTTON = 'button, summary, [role=button], [role=tab], [role=menuitem], input[type=button], input[type=submit], input[type=reset]';
+const BUTTON = 'button, summary, [role=button], input[type=button], input[type=submit], input[type=reset]';
+// one of a set you choose between, where one is the current: a tab, a menu item, a segment (WAI-ARIA APG: Tabs, Menu)
+const ITEM = '[role=tab], [role=menuitem], [role=menuitemradio], [role=menuitemcheckbox], [role=option]';
 const TOGGLE = 'input[type=checkbox], input[type=radio], input[type=range], [role=checkbox], [role=radio], [role=switch], [role=slider]';
 const FIELD = 'input:not([type=hidden]):not([type=file]), select, textarea';
-export const CONTROL = `${BUTTON}, ${TOGGLE}, ${FIELD}`;
+export const CONTROL = `${BUTTON}, ${ITEM}, ${TOGGLE}, ${FIELD}`;
 /** Anything you act on: a control, or a link of any kind (an icon's edge: icons.js). */
 export const ACTS = `${CONTROL}, a[href]`;
 // what counts as a control's own content when asking "is this box only controls?"
@@ -54,10 +58,11 @@ let over = false;
  *  by itself (a box round controls is decided by roleOf, which looks inside). */
 export function controlKind(el, s = getComputedStyle(el)) {
   if (el.matches(TOGGLE)) return 'toggle';
+  if (el.matches(ITEM)) return 'item';
   if (el.matches(BUTTON)) return 'button';
   if (el.matches(FIELD)) return 'field';
   // a link drawn as a button, or one of a bar of them; a link that holds lines of words is a card you can open, not a button
-  if (el.matches('a[href]') && (paints(s) || barOf(el)) && oneLine(el)) return 'button';
+  if (el.matches('a[href]') && oneLine(el)) { if (barOf(el)) return 'item'; if (paints(s)) return 'button'; }
   return null;
 }
 
@@ -107,8 +112,8 @@ export function controlAround(el) {
 /** The words of this element are a control's label: it sits in a button, a form label, or a link drawn as a button. */
 export function inControl(el) {
   for (let n = el; n && n !== document.body; n = n.parentElement) {
-    if (n.matches(`${BUTTON}, label`)) return true;
-    if (n.matches('a[href]')) return controlKind(n) === 'button';
+    if (n.matches(`${BUTTON}, ${ITEM}, label`)) return true;
+    if (n.matches('a[href]')) return !!controlKind(n);
   }
   return false;
 }
@@ -122,7 +127,7 @@ export function roleOf(el, s = getComputedStyle(el)) {
   if (el.localName === 'kbd') return is(null, null, 'a key: no job a theme names');
   if (el.matches(OVERLAY)) return is('overlay', null, 'it is a menu, a dialog or a popover');
   const kind = controlKind(el, s);
-  if (kind) return is('control', kind, kind === 'toggle' ? 'a mark you switch' : kind === 'field' ? 'something you type in or choose from' : el.matches('a[href]') ? 'a link drawn as a button' : 'something you press');
+  if (kind) return is('control', kind, kind === 'toggle' ? 'a mark you switch' : kind === 'field' ? 'something you type in or choose from' : kind === 'item' ? 'one of a set you choose between' : el.matches('a[href]') ? 'a link drawn as a button' : 'something you press');
   if (el.matches('a[href]') && !paints(s)) {
     // in a sentence: the parent has words of its own beside the link
     if (el.parentElement && ownWords(el.parentElement)) return is('link', 'inline', 'a link in a sentence');

@@ -133,8 +133,6 @@ reserved.)
 
 - Done: the role file (overlay/src/roles.js) decides what an element is and what a theme's token is for; every
   pass, both text readers, the craft rules and the craft suggestion engine read from it.
-- A tab and a menu item are the same kind as a button in the role file; the press-feedback rule keeps its own narrow
-  list (real buttons) until a tab is told apart.
 - Borders: no pass of their own is needed; the colour pass decides a border's colour by job. A border's width is
   judged only by the hairline craft rule.
 - Headings, figures and labels (the text jobs) are still decided by the text reader, from the role file's "is this a

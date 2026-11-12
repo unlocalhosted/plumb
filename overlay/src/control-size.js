@@ -41,7 +41,7 @@ export function readControls(root = document.body) {
     if (!r.width || !r.height) continue;
     const s = getComputedStyle(el), kind = controlKind(el, s);
     // a toggle's size is its mark's, not a box of words (roles.js)
-    if (kind !== 'button' && kind !== 'field') continue;
+    if (kind !== 'button' && kind !== 'item' && kind !== 'field') continue;
     if (el.matches('input, select, textarea') && !boxed(s)) continue; // the box round it is the control
     if (!boxed(s) && !(px(s.paddingTop) + px(s.paddingBottom) > 0)) continue; // a bare icon or word you can press has no box to size
     // a label that has wrapped onto a second line makes the control as tall as its words: that is the window being
