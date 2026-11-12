@@ -6,8 +6,8 @@
 //   a second blue with no colour of yours near it is kept
 //   content is left alone: inline-styled swatches and a drawing inside an svg
 //   a page already on its tokens offers nothing
-//   the site's palette is served over HTTP, every route, with the class at each place; a page written since the census
-//     leaves it until the census reads it again
+//   the site's palette is served over HTTP, every route, with the class at each place; a page written since
+//     the census never reports the colour it had before
 // crafting-ui's theme and classes (src/index.css `@theme inline`, stage-shell.tsx, stickers.tsx). Real Vite, React,
 // Tailwind, the real CLI (`plumber census`) and Chromium.
 import assert from 'node:assert/strict';
@@ -220,9 +220,9 @@ test('a page already on its tokens says so, and Enter writes nothing', { timeout
   assert.deepEqual(p.errors, []);
 });
 
-test('once a page\'s file is written, its readings leave the site palette until the census reads it again', { timeout: 120000 }, async () => {
-  // the blue page was written above (its fourth grey moved)
+test('once a page\'s file is written, the site palette never reports the colour it had before', { timeout: 120000 }, async () => {
+  // the blue page was written above (its fourth grey moved to muted) and reloaded, which read that route again
   const p = await palette();
-  assert.equal(p.colours.some((c) => c.route === '/blue'), false, 'the written page is left out, not reported as it was');
+  assert.equal(p.colours.some((c) => c.route === '/blue' && c.cls === 'text-[#55555C]'), false, 'the old grey is gone from the palette');
   assert.ok(p.colours.some((c) => c.route === '/clean'), 'an unwritten page is still in it');
 });

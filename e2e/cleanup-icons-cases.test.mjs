@@ -10,7 +10,7 @@
 //   with Lucide as the family, an icon from another library and emoji stay; no import is written
 //   a page already on its system offers nothing
 //   the site's icons are served over HTTP, every route
-// The renderer has the shape of crafting-ui's `Icon` (20 grid, stroke 1.5, square caps, size-5). Real Vite, React,
+// The renderer has the shape of crafting-ui's `Icon` (its classes joined in a template literal, as there) (20 grid, stroke 1.5, square caps, size-5). Real Vite, React,
 // Tailwind, the real CLI (`plumber census`) and Chromium.
 import assert from 'node:assert/strict';
 import { execFile } from 'node:child_process';
@@ -33,7 +33,7 @@ body { margin: 0; font-family: Arial, Helvetica, sans-serif; color: #111; backgr
 const ICONS = `export const PATHS = { box: 'M4 4h12v12H4z', bell: 'M5 14V9a5 5 0 0 1 10 0v5l1 1H4z', check: 'M4 10l4 4 8-8', arrow: 'M4 10h12M11 5l5 5-5 5' }
 export function Icon({ name, className = 'size-5' }) {
   return (
-    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="square" strokeLinejoin="miter" aria-hidden="true" className={'block shrink-0 overflow-visible ' + className}>
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="square" strokeLinejoin="miter" aria-hidden="true" className={\`block shrink-0 overflow-visible \${className}\`}>
       <path d={PATHS[name] ?? PATHS.box} />
     </svg>
   )
@@ -41,7 +41,7 @@ export function Icon({ name, className = 'size-5' }) {
 // the shape lucide-react 1.7.0 draws (viewBox 24, stroke 2, round caps and joins, class "lucide lucide-<name>")
 export function Lucide({ name, className = 'size-5' }) {
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={'lucide lucide-' + name + ' ' + className}>
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={\`lucide lucide-\${name} \${className}\`}>
       <path d="M4 4h16v16H4z" />
     </svg>
   )
@@ -204,12 +204,33 @@ async function iconPass(name) {
 }
 const line = (file, id) => file.split('\n').find((l) => l.includes(`id="${id}"`)) ?? '';
 
+test('the site\'s icons are served over HTTP from the census: every route, with the installed sets', { timeout: 120000 }, async () => {
+  const page = await s.browser.newPage();
+  await page.goto(new URL('clean', s.url).href);
+  await page.waitForFunction(() => document.querySelector('plumb-overlay')?.shadowRoot.querySelector('.dock')?.dataset.state === 'ready', null, { timeout: 90000 });
+  const got = await page.evaluate(async () => {
+    const token = document.querySelector('script[data-plumb-token]')?.dataset.plumbToken;
+    const r = await fetch('/__plumb/icons', { headers: token ? { 'x-plumb-token': token } : {} });
+    return { status: r.status, body: await r.json() };
+  });
+  assert.equal(got.status, 200, JSON.stringify(got.body));
+  const r = got.body;
+  assert.equal(r.routes, s.routes.length, 'every route the census read');
+  assert.ok(r.icons.some((x) => x.route === '/emoji' && x.kind === 'emoji' && x.emoji === '🏠'), 'an emoji in a nav is one of the site\'s icons');
+  assert.equal(r.icons.some((x) => x.route === '/art' && x.size > 48), false, 'the illustration is not the site\'s');
+  const lucide = r.installed.find((x) => x.pkg === 'lucide-react');
+  assert.deepEqual({ version: lucide.version, installed: lucide.installed }, { version: '1.7.0', installed: true });
+  const hero = r.installed.find((x) => x.pkg === '@heroicons/react');
+  assert.equal(hero.installed, false, 'in package.json but not installed');
+});
+
 test('an inline svg drawn at stroke 2 among the family\'s 1.5 takes the family\'s stroke, written as a class on the svg', { timeout: 300000 }, async () => {
   const p = await iconPass('stroke');
   assert.match(p.said, /1 icon is off your icon system/, p.said);
   await p.apply();
   const file = await p.file();
   assert.match(line(file, 'k10'), /<svg [^>]*className="[^"]*\[stroke-width:1\.5\]/, line(file, 'k10'));
+  await p.page.waitForFunction(() => getComputedStyle(document.querySelector('#k10 svg')).strokeWidth === '1.5px', null, { timeout: 60000 }).catch(() => {});
   assert.equal(await p.page.evaluate(() => getComputedStyle(document.querySelector('#k10 svg')).strokeWidth), '1.5px', 'the page draws it at 1.5');
   assert.deepEqual(p.errors, []);
 });
@@ -220,7 +241,8 @@ test('an icon+label row riding the top of its line is aligned to its label', { t
   await p.apply();
   const file = await p.file();
   assert.match(line(file, 'a5'), /className="flex items-center gap-2 text-sm leading-6"/, line(file, 'a5'));
-  // on the page: the icon's middle sits on the middle of the label's line
+  // on the page, once it draws the written class: the icon's middle sits on the middle of the label's line
+  await p.page.waitForFunction(() => document.getElementById('a5')?.classList.contains('items-center'), null, { timeout: 60000 });
   const off = await p.page.evaluate(() => { const a = document.getElementById('a5'), i = a.querySelector('svg').getBoundingClientRect(), r = a.getBoundingClientRect(); return Math.abs((i.top + i.bottom) / 2 - (r.top + r.bottom) / 2); });
   assert.ok(off <= 1, `the icon is ${off}px off the row's middle`);
   assert.deepEqual(p.errors, []);
@@ -232,6 +254,7 @@ test('an icon-only control under 24px gets the padding that brings it to 24px', 
   await p.apply();
   const file = await p.file();
   assert.match(line(file, 'tiny'), /className="mt-4 p-1"/, line(file, 'tiny'));
+  await p.page.waitForFunction(() => document.getElementById('tiny')?.classList.contains('p-1'), null, { timeout: 60000 });
   const box = await p.page.evaluate(() => { const r = document.getElementById('tiny').getBoundingClientRect(); return [Math.round(r.width), Math.round(r.height)]; });
   assert.deepEqual(box, [24, 24]);
   assert.deepEqual(p.errors, []);
@@ -279,24 +302,4 @@ test('a page already on its icon system says so, and Enter writes nothing', { ti
   await p.page.waitForTimeout(2000);
   assert.equal(await p.file(), before, 'nothing was written');
   assert.deepEqual(p.errors, []);
-});
-
-test('the site\'s icons are served over HTTP from the census: every route, with the installed sets', { timeout: 120000 }, async () => {
-  const page = await s.browser.newPage();
-  await page.goto(new URL('clean', s.url).href);
-  await page.waitForFunction(() => document.querySelector('plumb-overlay')?.shadowRoot.querySelector('.dock')?.dataset.state === 'ready', null, { timeout: 90000 });
-  const got = await page.evaluate(async () => {
-    const token = document.querySelector('script[data-plumb-token]')?.dataset.plumbToken;
-    const r = await fetch('/__plumb/icons', { headers: token ? { 'x-plumb-token': token } : {} });
-    return { status: r.status, body: await r.json() };
-  });
-  assert.equal(got.status, 200, JSON.stringify(got.body));
-  const r = got.body;
-  assert.equal(r.routes, s.routes.length, 'every route the census read');
-  assert.ok(r.icons.some((x) => x.route === '/emoji' && x.kind === 'emoji' && x.emoji === '🏠'), 'an emoji in a nav is one of the site\'s icons');
-  assert.equal(r.icons.some((x) => x.route === '/art' && x.size > 48), false, 'the illustration is not the site\'s');
-  const lucide = r.installed.find((x) => x.pkg === 'lucide-react');
-  assert.deepEqual({ version: lucide.version, installed: lucide.installed }, { version: '1.7.0', installed: true });
-  const hero = r.installed.find((x) => x.pkg === '@heroicons/react');
-  assert.equal(hero.installed, false, 'in package.json but not installed');
 });
