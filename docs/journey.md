@@ -1903,6 +1903,16 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - **Open:** the bigger corners (16, 24) and 128px of space have no tokens; the homepage's own app doesn't load the
   site's two faces, so it falls back to the system's rounded face; and each section still needs a look on our
   tokens (the 2026-11-04 complaint was that tokens like these read cheap on a homepage).
+- **The hero, first section on our tokens.** What held up: the headline in the toy face with its fading second line.
+  What read cheap, and why: the controls were the old flat language (a hairline install box, a flat pink rectangle
+  for Copy, a flat grey "Read the docs"), sitting right under the bar's soft Home button, so they looked like another
+  product. Now they are our pieces: Copy and "Read the docs" are soft blocks (pink, and quiet), going down under the
+  finger and springing back, Copy turning mint when copied; the install line is a well, like the fix bar's field.
+  The well's inset shadow became a token (--pl-shadow-well, light and dark) used by both, not copied. The headline
+  copy edits waiting in the main checkout were left alone. Light and dark checked; Copy pressed and seen to go mint.
+- **Found on the way:** the script that copies our tokens into the homepage's own app had been failing since the
+  token file's light rule was renamed (to also scope a light part), so that app was drawing with stale tokens. The
+  script now accepts the new rule; the regenerated copy changed by 336 lines.
 
 ## Open gaps
 - The overlay writes about 180 corners as numbers (radius tokens about 45 times), many off its own scale; 6px is
