@@ -696,6 +696,13 @@
 - **What we chose:** build the shared layer, and start with the question the count points at: what a link is. Then move the readers onto it one at a time.
 - **Media hooks:** a page with every element tinted by how many readers call it a control.
 
+## The shared role file exists; corners and shadows read from it (2026-11-12)
+- **What changed:** one file now says what an element is: an overlay, a control (button, field, toggle, or the painted box round controls), a link (in a sentence, or standing alone), a tag, a card, or nothing. It also says whether the thing sits over the page. Corners and shadows no longer keep their own lists; they ask it.
+- **Why links first:** the count showed links were where the readers disagreed. The line between a link in a sentence and one standing alone is WCAG 2.2's own (2.5.8 Target Size, the inline exception).
+- **Proof:** the clean-up test on the messy page (corners, shadows and the rest) passes unchanged, so the two passes suggest what they did before. On four crafting-ui pages the file reads 114 links standing alone, none in a sentence, 53 buttons, 227 cards, 2 tags.
+- **Also:** crafting-ui's dev server was restarted so it serves the new file (a server started before a file exists refuses it).
+- **Not done:** padding, control height, icons, the text reader and the craft rules still keep their own lists. Nothing a user sees has changed yet.
+
 ## Open gaps
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
 

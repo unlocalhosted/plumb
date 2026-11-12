@@ -20,10 +20,8 @@
  * Nothing here writes. No number of its own.
  * ───────────────────────────────────────────────────────── */
 import { utility } from './craft-read.js';
-import { roleOf } from './radius.js';
+import { roleOf } from './roles.js';
 
-const OVERLAY = '[role=menu], [role=dialog], [role=alertdialog], [role=listbox], [role=tooltip], [popover], dialog';
-const CONTROL = 'button, input, select, textarea, summary, [role=button], [role=tab], [role=menuitem]';
 const ROLE_WORDS = [
   ['overlay', /(^|-)(overlay|float|floating|popover|menu|dropdown|modal|dialog|sheet|toast)(-|$)/],
   ['card', /(^|-)(rest|raised|card|surface|panel)(-|$)/],
@@ -51,7 +49,7 @@ export function readShadows(root = document.body) {
     if (!s.boxShadow || s.boxShadow === 'none') continue;
     // the class that sets the shadow itself, not its colour or an inset ring (shadow-black/10, shadow-inner)
     const cls = utility(el, 'shadow', { not: /^(?:inner$|none$|\[inset|[a-z]+-\d|black|white|current|transparent)/ });
-    const role = el.matches(OVERLAY) || s.position === 'fixed' ? 'overlay' : el.matches(CONTROL) ? null : roleOf(el, s) === 'card' ? 'card' : null;
+    const r = roleOf(el, s), role = r.over ? 'overlay' : r.role === 'card' ? 'card' : null;
     places.push({ el, cls, css: s.boxShadow, role });
   }
   return places;

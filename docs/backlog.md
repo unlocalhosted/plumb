@@ -129,10 +129,11 @@ reserved.)
 
 ### What an element is (the shared role layer)
 
-- Now: one file that reads each element's role once (control, link in a sentence, navigation item, tag, card,
-  overlay, heading, figure, label), with how sure it is and why. First question: what a link is.
-- Next: move the readers onto it one at a time (corners, shadows, padding, control height, icons, text, then the
-  craft rules), each behind its existing tests.
+- Done: the role file (overlay/src/roles.js); corners and shadows read from it.
+- Next, one at a time, each behind its tests: padding, control height, icons, the text reader, then the craft rules
+  (target size and button padding each carry their own "is this link in a sentence" check today).
+- Not decided by the file yet: a navigation tab that only paints when active or hovered reads as a link standing
+  alone; headings, figures and labels (the text jobs) are still the text reader's.
 - Later: the theme's tokens mapped to the same roles in one place; unsure roles handed to a model.
 
 ### Craft suggestions

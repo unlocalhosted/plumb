@@ -25,9 +25,8 @@
  * Nothing here writes. No number of its own: half the side is what a pill is, and 0.5px is the overlay's "same value".
  * ───────────────────────────────────────────────────────── */
 import { utility } from './craft-read.js';
+import { ownWords, paints, roleOf as whatIs } from './roles.js';
 
-const CONTROL = 'button, input, select, textarea, summary, [role=button], [role=tab], [role=menuitem]';
-const INSIDE_CONTROL = `${CONTROL}, a[href], label, kbd`;
 const SIDE_RADIUS = /^(?:[trblse]|tl|tr|bl|br|ss|se|es|ee)(?:-|$)/;
 // what a token's name says it is for (colours.js reads a colour's role the same way: by name first)
 const ROLE_WORDS = [
@@ -35,7 +34,6 @@ const ROLE_WORDS = [
   ['control', /(^|-)(control|button|btn|input|field)(-|$)/],
   ['card', /(^|-)(card|surface|panel|box|container|sheet|modal|dialog|popover)(-|$)/],
 ];
-const PHRASE = new Set(['span', 'small', 'strong', 'b', 'em', 'i', 'mark', 'time', 'abbr', 'sup', 'sub']);
 const roleOfName = (short) => ROLE_WORDS.find(([, re]) => re.test(short))?.[0] ?? null;
 
 let STEPS = [];
@@ -53,22 +51,12 @@ export async function loadRadii(fresh = false) {
 export const themeRadii = () => STEPS;
 
 const px = (v) => parseFloat(v) || 0;
-const alpha = (c) => { const m = /rgba?\(([^)]+)\)/.exec(c); if (!m) return c && c !== 'transparent' ? 1 : 0; const p = m[1].split(/[\s,/]+/).filter(Boolean); return p.length > 3 ? parseFloat(p[3]) : 1; };
-const paints = (s) => alpha(s.backgroundColor) > 0 || s.backgroundImage !== 'none' || px(s.borderTopWidth) > 0 || s.boxShadow !== 'none';
-const ownWords = (el) => [...el.childNodes].some((n) => n.nodeType === 3 && /[\p{L}\p{N}]/u.test(n.nodeValue ?? ''));
-
-// what the element is, from what it is made of (elevation.js reads a card the same way)
+// what the element is for its corner: the shared reading (roles.js), in the three jobs a theme names a radius for.
+// Something that sits over the page and holds words (a dialog, a popover) is a containment box like a card; a link
+// that is only words has no corner to decide
 export function roleOf(el, s) {
-  if (el.localName === 'kbd') return null; // a key, not a tag: the theme names no step for it
-  if (el.matches(CONTROL) || (el.matches('a[href]') && paints(s))) return 'control';
-  const worded = [...el.querySelectorAll('*')].filter((n) => !n.closest('svg') && ownWords(n));
-  const controls = el.querySelector(`${CONTROL}, a[href]`);
-  // the box round controls and nothing else: every word in it belongs to a control
-  if (controls && worded.every((n) => n.closest(INSIDE_CONTROL) && el.contains(n.closest(INSIDE_CONTROL))) && !ownWords(el)) return 'control';
-  // a tag is a phrase-level element (HTML's own split, which a flex row does not change) holding only its own words
-  if (PHRASE.has(el.localName)) return ownWords(el) && !worded.length ? 'tag' : null;
-  if (worded.length) return 'card';
-  return null;
+  const r = whatIs(el, s);
+  return r.role === 'control' || r.role === 'tag' || r.role === 'card' ? r.role : r.role === 'overlay' && [...el.querySelectorAll('*')].some((n) => !n.closest('svg') && ownWords(n)) ? 'card' : null;
 }
 
 /** Every stamped element that shows one even corner radius, with the class that sets it and what the element is. */
