@@ -23,7 +23,7 @@ export function Hero() {
         <p className="lead">Hold Alt on your running app. Plumber finds what a senior design engineer would, names the pattern, <b>and writes the fix into your JSX.</b></p>
         <div className="hero-cta">
           <CopyCommand command={INSTALL} />
-          <a className="btn btn-ghost hero-docs" href="https://github.com/unlocalhosted/plumb#readme">Read the docs</a>
+          <a className="s-btn q hero-docs" href="https://github.com/unlocalhosted/plumb#readme"><span>Read the docs</span></a>
         </div>
       </header>
       <Review />

@@ -18,10 +18,8 @@ export const FIX_NOTE_CSS = `
 // a bad name turns the slot coral with one small shake when it turns bad (and again when Enter is pressed on it).
 export const FIX_FIELD_CSS = `
   .fx .field { position: relative; display: flex; align-items: center; gap: 0; margin: 8px 18px 2px; height: 40px; padding: 0 38px 0 12px; border-radius: var(--pl-radius-card);
-    background: var(--pl-bg-inset); box-shadow: inset 0 2px 3px -1px rgb(0 0 0 / .16), inset 0 0 0 1px rgb(0 0 0 / .05), 0 1px 0 rgb(255 255 255 / .7);
+    background: var(--pl-bg-inset); box-shadow: var(--pl-shadow-well);
     font: 500 12.5px/1 ui-monospace, monospace; color: var(--pl-text-secondary); white-space: nowrap; cursor: text; }
-  .fx[data-scheme="dark"] .field, :host([data-scheme="dark"]) .fx:not([data-scheme="light"]) .field {
-    box-shadow: inset 0 2px 4px -1px rgb(0 0 0 / .5), inset 0 0 0 1px rgb(255 255 255 / .04), 0 1px 0 rgb(255 255 255 / .06); }
   .fx .field .val { flex: 0 1 auto; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
   .fx .field .slot { flex: none; }
   .fx .field input { all: unset; min-width: 1ch; color: var(--pl-text-primary); font: inherit; }

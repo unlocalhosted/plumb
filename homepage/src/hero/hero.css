@@ -26,17 +26,17 @@
 /* ── head ── */
 .hero-head { flex: none; width: 100%; max-width: 46rem; margin: var(--s-9) auto 0; text-align: center; }
 .hero-head .lead { margin: var(--s-5) auto 0; }
-.hero-cta { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: var(--s-6); }
-.hero-docs { height: 40px; text-decoration: none; }
-.install { display: inline-flex; flex: 0 1 auto; align-items: center; gap: 12px; min-width: 0; max-width: 100%; height: 40px; padding: 0 4px 0 14px; border-radius: var(--r-sm); background: var(--g1);
-  box-shadow: inset 0 0 0 1px var(--line-2); font: 400 13px/1 var(--mono); color: var(--ink-2); }
+.hero-cta { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; align-items: center; margin-top: var(--s-6); }
+.hero-docs { text-decoration: none; }
+/* the command: a well pressed into the page, its one action a soft block beside the words */
+.install { display: inline-flex; flex: 0 1 auto; align-items: center; gap: 14px; min-width: 0; max-width: 100%; height: 50px; padding: 0 7px 0 16px; border-radius: var(--r-md);
+  background: var(--pl-bg-inset); box-shadow: var(--pl-shadow-well); font: 500 13px/1 var(--mono); color: var(--ink-2); }
 .install code { min-width: 0; overflow-x: auto; white-space: nowrap; scrollbar-width: none; }
-.install-copy { flex: none; height: 32px; padding: 0 12px; border: 0; border-radius: 6px; cursor: pointer; background: var(--accent); color: #fff; font: var(--t-label);
-  transition: background-color 150ms var(--ease), scale 150ms var(--ease); }
-@media (hover: hover) and (pointer: fine) { .install-copy:hover { background: color-mix(in oklab, var(--accent) 88%, white); } }
-.install-copy:active { scale: 0.97; }
-.install-copy:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-.install-copy[data-state='copied'] { background: var(--on); }
+.install-copy { flex: none; }
+.install-copy > span { min-width: 76px; padding: 8px 14px; font-size: 14px; }
+.install-copy[data-state='copied'] { --h: var(--pl-mint-block); }
+.install-copy[data-state='copied'] > span { color: var(--pl-mint-block-on); }
+.install-copy:focus-visible, .hero-docs:focus-visible { outline: 2px solid var(--pl-border-focus); outline-offset: 3px; border-radius: 14px; }
 
 /* ── the review ── */
 .review { position: relative; display: grid; place-items: start center; margin: var(--s-8) 0 0; }
@@ -146,7 +146,7 @@
   .rv-pin > b { width: 18px; height: 18px; font-size: 10px; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .install-copy, .rv-cam, .rv-pins, .rv-box, .rv-pin, .rv-pin > b, .rv-guide, .rv-pill, .rv-scr *, .rv-moment { transition: none !important; animation: none !important; }
+  .rv-cam, .rv-pins, .rv-box, .rv-pin, .rv-pin > b, .rv-guide, .rv-pill, .rv-scr *, .rv-moment { transition: none !important; animation: none !important; }
 }
 
 /* dev-only picker: chrome, not a contestant */

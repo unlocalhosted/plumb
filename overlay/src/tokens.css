@@ -137,6 +137,7 @@
   /* depth: the card is the only lifted thing */
   --pl-shadow-card: 0 0 0 1px var(--pl-rule), 0 1px 2px rgb(28 27 25 / 0.06), 0 14px 32px -14px rgb(28 27 25 / 0.28);
   --pl-shadow-tag: 0 0 0 1px var(--pl-rule), 0 2px 6px -2px rgb(28 27 25 / 0.24);
+  --pl-shadow-well: inset 0 2px 3px -1px rgb(0 0 0 / .16), inset 0 0 0 1px rgb(0 0 0 / .05), 0 1px 0 rgb(255 255 255 / .7); /* pressed in: a field, a line to copy */
 
   /* motion: one authored moment, the reticle travelling and the plumb line dropping */
   --pl-ease-out: cubic-bezier(0.16, 1, 0.3, 1);      /* exponential ease-out */
@@ -268,6 +269,7 @@
     --pl-unknown: #8f8d86;
     --pl-shadow-card: 0 0 0 1px var(--pl-rule), 0 1px 1px rgb(0 0 0 / 0.18), 0 14px 32px -14px rgb(0 0 0 / 0.45);
     --pl-shadow-tag: 0 0 0 1px var(--pl-rule), 0 2px 8px -2px rgb(0 0 0 / 0.6);
+    --pl-shadow-well: inset 0 2px 4px -1px rgb(0 0 0 / .5), inset 0 0 0 1px rgb(255 255 255 / .04), 0 1px 0 rgb(255 255 255 / .06);
     color-scheme: dark;
   }
 }
@@ -301,6 +303,7 @@
     --pl-unknown: #8f8d86;
     --pl-shadow-card: 0 0 0 1px var(--pl-rule), 0 1px 1px rgb(0 0 0 / 0.18), 0 14px 32px -14px rgb(0 0 0 / 0.45);
     --pl-shadow-tag: 0 0 0 1px var(--pl-rule), 0 2px 8px -2px rgb(0 0 0 / 0.6);
+    --pl-shadow-well: inset 0 2px 4px -1px rgb(0 0 0 / .5), inset 0 0 0 1px rgb(255 255 255 / .04), 0 1px 0 rgb(255 255 255 / .06);
     color-scheme: dark;
 }
 
