@@ -66,7 +66,8 @@ Last gone through: 2026-11-12.
 ### Clean-up: colour
 
 - Surface levels (a card on a panel) are not read from nesting; no project at hand has two nested surface colours.
-- shadcn's `-foreground` colours are misread by name (`primary-foreground` as the brand, `secondary` as muted text).
+- In a shadcn rename plan, `input` takes the `surface` name over `popover` only because its name is shorter; the
+  colour used most as a raised fill should win.
 - crafting-ui's wide-gamut blue loses a little chroma in the ramp (0.289 → 0.278).
 
 ### Clean-up: icons

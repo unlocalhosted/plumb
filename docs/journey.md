@@ -462,10 +462,18 @@
 - **What changed:** the job names stay (`display-hero`, `body-lead`), and the one new name that only said a size, `body-xlarge`, is now `body-lead-small`: lead text, one step down. The panel shows "Hero", "Lead" and "Lead small". Existing styles keep their names, because project configs and code already use them.
 - **The proof:** the text-role test passes with the new name.
 
+## Text and fill colours read from the code (2026-11-12)
+- **The itch:** shadcn's colour names misled plumber: `primary-foreground` (the words on the main button) was read as the brand, `popover-foreground` as a surface, `secondary` (a button's fill) as muted text.
+- **How we found it:** the same shadcn test page as the hover work, reading every colour.
+- **The fix:** a colour the code uses only for words is text, and one it only fills with is a surface, whatever its name says. Words named after a fill (`X-foreground`) are the words on it: on the brand they are `on-accent`, otherwise the main text, unless the fill's own name is a quieter level (`muted-foreground` stays muted). States are read first, so the words on shadcn's hover `accent` are not mistaken for words on the brand.
+- **The proof:** all 14 shadcn colours on the page now read right, and the rename plan maps `primary → accent`, `accent → surface-hover`, `primary-foreground → on-accent`, `background → ground`, `destructive → danger`. crafting-ui: no colour reads differently.
+- **Media hooks:** a before/after table of the 14 shadcn colours and what plumber called each.
+
 ## Open gaps
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
 
 ## Shipped · 2026-W46
+- Plumber tells text colours from fill colours by how the code uses them, so shadcn's `-foreground` colours read as the words they are ([entry](#text-and-fill-colours-read-from-the-code-2026-11-12)).
 - The server answers a write about a third sooner (228 ms → 149 ms on a copy of crafting-ui): it no longer works out and sends the same dependency lists twice. [entry](#the-small-trim-a-writes-bookkeeping-done-once-2026-11-12)
 - A fix taken on the page now works on links, buttons and anything else drawn through a component: it is written where that element is used. [entry](#a-fix-on-a-link-now-reaches-the-line-where-the-link-is-used-2026-11-12)
 - plumber's full read of a page is about four times faster (7.9 s → about 2 s on a 1,400-element page): it asks where every finding lives in one go instead of 363 separate questions, waits for the theme before judging, and looks for a page's pictures once. [entry](#plumbers-read-8-seconds-5-of-them-asking-one-question-at-a-time-2026-11-12)
