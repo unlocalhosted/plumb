@@ -224,7 +224,7 @@ function byDepth(tokens) {
   }
 }
 
-// a token the code uses only for words is text, one it only fills with is a surface, whatever its name says (shadcn's
+// a surface token the code uses only for words is text, a text token it only fills with is a surface (shadcn's
 // `primary-foreground` is the words on the brand, `secondary` a button's fill). Words named after an accent token
 // (`primary-foreground` beside `primary`) are the words on it; other words are the main text. Status words are left alone.
 function byFamily(tokens) {
@@ -234,7 +234,8 @@ function byFamily(tokens) {
     if (props.size !== 1 || t.role === 'status' || t.role === 'other') continue;
     const was = t.kind;
     const base = tokens.find((b) => b !== t && t.short === `${b.short}-foreground`);
-    if (props.has('text') && (t.role !== 'text' || base)) {
+    // an accent used only for words is still the accent (a link, a second ink); only one named for a fill is moved
+    if (props.has('text') && (t.role === 'surface' || base)) {
       // words on a fill: on-accent on the brand, else the main text unless the fill's own name is a quieter level
       const quiet = base && /(^|-)(muted|subtle|faint|placeholder)(-|$)/.exec(base.short);
       t.role = 'text';

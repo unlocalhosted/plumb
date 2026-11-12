@@ -579,6 +579,12 @@
 - **Before and after, and what it did not fix:** in the bottom-sheet demo at phone width, "Nearby workshops" and "6 open" touch. Plumber said "These parts touch: nothing but left-over space keeps them apart, and there is none left." and offered `gap-4`. Written, they were 16 px apart and plumber found nothing; but the count was pushed past the card's edge, because that mock-up is 106 px wide at phone width. The gap is right and the layout is still not: plumber does not name the second problem. The fix was put back; the file is as it was.
 - **Not built:** the second form (three or more like items spread by `justify-between`).
 
+## Tests for reading colours from the code (2026-11-12)
+- **What they cover** (e2e/colour-names.test.mjs, real Vite, Tailwind, overlay and browser): a page built from shadcn's own theme and component classes, through the clean-up panel's rename plan: `accent` (only filled on hover, focus, an open menu) is the hover surface; `primary` the accent; `primary-foreground` the words on it; `popover` the surface; `muted` sunken (darker than the page); `input` and the other `-foreground` colours never take a name meant for another job. The brand test now also checks the hint: red is told it sits by the error colour, yellow by the warning, blue nothing.
+- **A bug the first run caught:** an accent used only for words (crafting-ui-style `draw`, a link colour) was turned into plain text, so the second ink lost its role and `draw-soft` would have been renamed `accent-soft`. Only a colour named as a surface, or named `X-foreground`, now moves to text. The existing rename test caught it.
+- **A test mistake:** the shadcn page first carried the demo's other screens, whose code really does use `bg-accent` at rest, so plumber rightly kept `accent` as the brand. The shadcn test now serves only its own screen.
+- **Run:** 4 of 4 pass on the laptop. Dark mode: the palette is read with the theme's light values even when the page is dark, so sunken or raised is decided in light (the rule wanted).
+
 ## Open gaps
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
 

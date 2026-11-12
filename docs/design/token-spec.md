@@ -148,6 +148,15 @@ Plumber reads a project's tokens whatever they are called: flat words (`fg`, `mu
 or category paths like BoardUI's (`text-secondary`, `background-primary-hover`). Role wins over distance; contrast is
 checked with APCA for text and WCAG 3:1 for control borders (colour-system.md §9).
 
+Where the code disagrees with a name, the code wins (built 2026-11-12, overlay/src/colours.js):
+- A colour named as a surface but used only for words is text; one named as text but only filled with is a surface.
+  `X-foreground` is the words on `X`: on the brand they are `on-accent`, otherwise the main text, unless `X` is
+  itself a quieter level (`muted-foreground` stays muted). An accent used only for words stays the accent (a link).
+- A fill with no surface word in its name that is darker than the page is `sunken`; as light or lighter, `surface`.
+  Decided on the theme's light values.
+- When two colours compete for one role name, the one already named for it wins, then the plainest name, then the one
+  the code uses only for that job, then the shortest.
+
 ## 4. What plumber writes
 
 - **Type:** the role tokens (`--text-<role>`, `--line-height`, `--letter-spacing`), one `type-<role>` class per role, `--leading-prose` when reading text exists, then the class swaps.

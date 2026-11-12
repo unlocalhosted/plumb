@@ -65,7 +65,34 @@ const PATHS_PAGE = `export function Dashboard() {
   )
 }`;
 
-async function site(t, theme, dashboard) {
+// shadcn's own theme and its components' own classes (fixtures/shadcn-system), without the libraries
+const SHADCN = await readFile(join(repo, 'fixtures/shadcn-system/src/index.css'), 'utf8');
+const SHADCN_PAGE = `// shadcn's own variant classes (fixtures/shadcn-system/src/components/ui), without the libraries
+const btn = 'inline-flex items-center justify-center rounded-md text-sm font-medium h-9 px-4';
+export function Dashboard() {
+  return (
+    <main className="p-10 grid gap-6 max-w-xl">
+      <h1 className="text-2xl font-semibold">Team settings</h1>
+      <p className="text-muted-foreground text-sm">Invite people and choose what they can see.</p>
+      <div className="flex gap-2">
+        <button className={\`\${btn} bg-primary text-primary-foreground shadow-xs hover:bg-primary/90\`}>Save</button>
+        <button className={\`\${btn} border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50\`}>Cancel</button>
+        <button className={\`\${btn} bg-secondary text-secondary-foreground shadow-xs hover:bg-secondary/80\`}>Export</button>
+        <button className={\`\${btn} hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50\`}>More</button>
+        <button className={\`\${btn} bg-destructive text-white shadow-xs hover:bg-destructive/90\`}>Remove</button>
+      </div>
+      <div className="rounded-md border bg-popover text-popover-foreground p-1 w-56 shadow-md">
+        {['Owner', 'Editor', 'Viewer'].map((r) => <div key={r} tabIndex={0} className="focus:bg-accent focus:text-accent-foreground hover:bg-accent relative flex w-full cursor-default items-center rounded-sm py-1.5 px-2 text-sm outline-none">{r}</div>)}
+      </div>
+      <div className="bg-muted text-muted-foreground inline-flex h-9 w-fit items-center rounded-lg p-[3px] text-sm">
+        <span className="bg-background text-foreground rounded-md px-3 py-1 shadow-sm">Members</span><span className="px-3 py-1">Invites</span>
+      </div>
+      <button data-state="open" className="rounded-xs opacity-70 data-[state=open]:bg-accent data-[state=open]:text-muted-foreground w-8 h-8">×</button>
+    </main>
+  );
+}`;
+
+async function site(t, theme, dashboard, { alone = false } = {}) {
   const root = await mkdtemp(join(repo, 'fixtures/.colour-names-'));
   t.after(() => rm(root, { recursive: true, force: true }));
   await cp(join(repo, 'overlay/demo/src'), join(root, 'src'), { recursive: true });
@@ -73,6 +100,11 @@ async function site(t, theme, dashboard) {
   await writeFile(join(root, 'src/styles.css'), theme);
   await writeFile(join(root, 'src/Dashboard.jsx'), dashboard);
   await writeFile(join(root, 'src/App.jsx'), `import { Dashboard } from './Dashboard.jsx';\nexport function App() { return <Dashboard />; }\n`);
+  // alone: the page's code is only this screen (the demo's other screens use colours in ways of their own)
+  if (alone) {
+    for (const f of ['Craft.jsx', 'Team.jsx', 'Rules.jsx', 'rules']) await rm(join(root, 'src', f), { recursive: true, force: true });
+    await writeFile(join(root, 'src/entry.jsx'), `import { createRoot } from 'react-dom/client';\nimport './styles.css';\nimport { App } from './App.jsx';\ncreateRoot(document.getElementById('root')).render(<App />);\n`);
+  }
   const server = await createServer({ root, cacheDir: join(root, '.vite-cache'), configFile: false, plugins: [plumb({ watch: false }), tailwindcss()],
     oxc: { jsx: { runtime: 'automatic', development: true } }, logLevel: 'silent', server: { host: '127.0.0.1', port: 0 } });
   t.after(() => server.close()); await server.listen();
@@ -145,6 +177,24 @@ test('a theme named by job paths is read by role: a white written by hand folds 
   assert.deepEqual(s.errors, []);
 });
 
+test('a shadcn theme is read by what each colour does in the code, not its name: the rename plan gives each its job', { timeout: 300000 }, async (t) => {
+  const s = await site(t, SHADCN, SHADCN_PAGE, { alone: true });
+  await s.begin();
+  await s.click('names-open');
+  const plan = await s.panel();
+  // `accent` is only ever filled on hover, focus or an open menu: a hover surface, not the brand
+  assert.match(plan, /surface-hover was accent/, plan);
+  assert.match(plan, /accent was primary/, plan);
+  // words named after the brand are the words on it; the other -foreground colours are words, never fills or brand
+  assert.match(plan, /on-accent was primary-foreground/, plan);
+  assert.match(plan, /muted was muted-foreground/, plan);
+  // the raised fill takes surface; a fill darker than the page is set into it
+  assert.match(plan, /surface was popover/, plan);
+  assert.match(plan, /sunken was muted(?!-)/, plan);
+  assert.doesNotMatch(plan, /was input|was accent-foreground|was popover-foreground/, plan);
+  assert.deepEqual(s.errors, []);
+});
+
 test('one brand colour builds the whole system: it lands on 500 as chosen, a light brand gets dark words, and dark mode re-points every role', { timeout: 300000 }, async (t) => {
   const s = await site(t, FLAT, FLAT_PAGE);
   const read = (brand) => s.page.evaluate(async (brand) => {
@@ -158,11 +208,13 @@ test('one brand colour builds the whole system: it lands on 500 as chosen, a lig
     const light = paint(false), dark = paint(true);
     style.remove(); box.remove();
     const chosen = Object.assign(document.createElement('i'), { style: `color:${brand}` }); document.body.append(chosen); const c = rgb(getComputedStyle(chosen).color); chosen.remove();
-    return { light, dark, chosen: c, words: sys.accent.onAccent.text, adjusted: sys.accent.adjusted, roles: Object.keys(sys.light) };
+    return { light, dark, chosen: c, words: sys.accent.onAccent.text, adjusted: sys.accent.adjusted, roles: Object.keys(sys.light), hint: sys.hint?.status ?? null };
   }, brand);
   const toRgb = (s) => s.match(/[\d.]+/g).slice(0, 3).map((n) => Math.round(Number(n)));
   const near = (a, b) => toRgb(a).every((v, i) => Math.abs(v - toRgb(b)[i]) <= 2);
-  const yellow = await read('#facc15'), red = await read('#e5484d');
+  const yellow = await read('#facc15'), red = await read('#e5484d'), blue = await read('#2563eb');
+  // a brand in the error or warning hue is told so; one clear of both is not
+  assert.deepEqual([red.hint, yellow.hint, blue.hint], ['danger', 'warning', null]);
   // our role names, with the fixed state words
   for (const role of ['ground', 'surface', 'surface-hover', 'surface-active', 'surface-2', 'fg', 'muted', 'faint', 'on-accent', 'line', 'line-strong', 'accent', 'accent-hover', 'accent-active', 'accent-soft']) assert.ok(red.roles.includes(role), role);
   // the brand paints as chosen; a light one keeps its colour and takes dark words, a strong one white
