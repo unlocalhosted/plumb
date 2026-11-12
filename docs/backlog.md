@@ -33,6 +33,7 @@ Last gone through: 2026-11-12.
    job. Should plumber offer to name them by job, or map sizes to jobs itself?
 8. **Controls in one row at different heights, none on the spacing unit:** plumber says the row is uneven and
    proposes nothing. Should it pick one anyway?
+   *Claude would say: Say it, don't pick. Not decided.*
 
 ### Scope and order
 
@@ -41,10 +42,23 @@ Last gone through: 2026-11-12.
 12. **The nine test files still failing:** fix, or remove like the others? (List under Tests below.)
 13. **A fairer messy page.** The only one (bench/messy) was written by Claude, who knows plumber's rules. Bring in
     pages from other models, or a real generated app?
+   *Claude would say: Yes: a real generated app. Not decided.*
 
 ---
 
 ## Doesn't do yet
+
+**The order proposed on 2026-11-12** (the owner has seen it; not yet confirmed):
+
+- **Now** (small, and each affects whether today's work can be trusted): text styles seen in the running panel · wrapped
+  controls left out · Undo of the corners write · a class fix offered and then refused · a read in a window with no size.
+- **Next** (more primitives, decided by job): padding and gaps in rows · control sizes as a pass · text inside buttons
+  and "what it sits inside" · craft suggestions read the role · the two failing tests that are real bugs · tests for
+  control sizes and a theme named by size.
+- **Later:** shadows, borders, motion, opacity and states · surface levels · shadcn's foreground colours · growing hero
+  titles · the speed items · the remaining defensive tips · the 80-column report · the flaky tests.
+- **Proposed to drop:** "other answers never shown" · the wide-gamut blue · the tailwind-merge case and renamed code
+  samples · "20 one-off sizes marked low confidence".
 
 ### Clean-up: text
 

@@ -461,6 +461,7 @@
 - **The owner's answer:** "I think we should follow the most semantically relevant naming convention."
 - **What changed:** the job names stay (`display-hero`, `body-lead`), and the one new name that only said a size, `body-xlarge`, is now `body-lead-small`: lead text, one step down. The panel shows "Hero", "Lead" and "Lead small". Existing styles keep their names, because project configs and code already use them.
 - **The proof:** the text-role test passes with the new name.
+- **Also decided:** the older styles keep their size names (`title-medium`, `body-large` and the rest). Asked whether to rename them by job too, the owner: "No, leave them."
 
 ## Text and fill colours read from the code (2026-11-12)
 - **The itch:** shadcn's colour names misled plumber: `primary-foreground` (the words on the main button) was read as the brand, `popover-foreground` as a surface, `secondary` (a button's fill) as muted text.
