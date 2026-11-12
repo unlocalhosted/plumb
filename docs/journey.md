@@ -622,6 +622,11 @@
 - **The proof:** the crafting-ui branch rewritten from its last commit (39 files, 307 swaps, one refused): the craft page looks as it did (docs/media/crafting-ui-roles-craft-fixed.jpg beside -before.jpg). The two text-style test files pass, 3 of 3.
 - **Left:** heading-size figures still share one 22px style; the large-headline tie goes to the smaller size; no new test reproduces these three yet.
 
+## The whole suite after padding, controls and button labels (2026-11-12)
+- **The run:** 181 runs, 16.8 min on vm-agent: 939 tests passed, 16 failed in 14 files.
+- **Sorted:** six of the fourteen files pass when run by themselves on the same machine (21 tests, 0 failed): five fail only under the full run's load, and the sixth was the determinism test, fixed after the run started. The other eight are the ones already known: a finding the noise check does not expect, a new-token test that loses the page, the bar on Linux fonts, a Next performance wait, the flaky timeline check, a frozen-server test that fails beside others, and the two files another session is changing.
+- **So:** nothing in the suite fails because of the padding, control-size or button-label work.
+
 ## Open gaps
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
 

@@ -172,7 +172,11 @@ reserved.)
 
 ### Tests
 
-The whole suite on vm-agent (2026-11-12): 944 passed, 11 failed in 9 files.
+The whole suite on vm-agent (2026-11-12, after padding, controls and button labels): 939 passed, 16 failed in 14 files.
+Six of those files pass when run by themselves, so the steady list is the eight below.
+
+- Five files fail only inside the full run, under load, and pass alone: apply-all-hot, colour-names, colour-read,
+  served-root (timed out at 6 minutes), session-burst. The side-by-side run is too heavy for them, or they race.
 
 - The one bar does not fit with its tools out at 1440 wide on vm-agent (Linux fonts); it fits on the Mac. The bar's
   fit depends on the system font's width (one-bar).
