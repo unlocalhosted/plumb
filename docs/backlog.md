@@ -36,6 +36,7 @@ engineer would do." These calls were open questions until then. Each is decided 
 | Which widths to read a page at | 1280, 1024, 768, 390 | Desktop, small laptop, tablet upright, phone: the sizes people use; the project's own breakpoints later |
 | Which checks run in every state | Words meeting words only, for now | A full read per state takes minutes; this is the check that changes most with width and hover |
 | What gets the pointer | Things with a React pointer handler or a Tailwind `group`, six per width | They say they answer the pointer; a hover presses nothing |
+| The most impactful next piece | One shared reading of what each element is, used by every pass and craft rule | Seven places decide "is this a control" today; on four crafting-ui pages they disagree on 137 of 174 elements, 134 of them links |
 | The four "proposed to drop" lines | Dropped | Not observed problems |
 
 ## Open questions
@@ -125,6 +126,14 @@ reserved.)
 ### Primitives with no clean-up pass
 
 - Borders and lines, motion, opacity and states, layer order, breakpoints and container widths.
+
+### What an element is (the shared role layer)
+
+- Now: one file that reads each element's role once (control, link in a sentence, navigation item, tag, card,
+  overlay, heading, figure, label), with how sure it is and why. First question: what a link is.
+- Next: move the readers onto it one at a time (corners, shadows, padding, control height, icons, text, then the
+  craft rules), each behind its existing tests.
+- Later: the theme's tokens mapped to the same roles in one place; unsure roles handed to a model.
 
 ### Craft suggestions
 

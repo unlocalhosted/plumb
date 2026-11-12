@@ -688,6 +688,14 @@
 - **Not done:** no test of its own yet; other width-sensitive checks (overflow, clipped text, tap targets) are not run in these states; the run takes about 90 seconds on this page, most of it the older gesture probes.
 - References: [the owner's screenshot](references.md).
 
+## One reading of what an element is: the count that says it is worth it (2026-11-12)
+- **The itch:** asked for the single most impactful improvement, the answer was one shared reading of "what is this element" for every decision. The owner: "lets do it". It rested on a guess: that plumber's separate readers disagree on real pages.
+- **How we found it:** every place that decides "is this a control" was listed (seven: corners and shadows, padding, control height, icons, the text reader, and two lists inside the craft rules), then each was asked about every element on four crafting-ui pages (home, motion, interfaces, standards; 2,993 elements).
+- **The number:** 174 elements are called a control by at least one reader. On 137 of them the readers disagree. 134 of those 137 are links. Only 20 of the 134 links are drawn as buttons. For the words inside something pressable, the text reader and the craft rules disagree on 357 of 554.
+- **The system behind it:** each pass was written on its own and answered "is a link a control?" its own way. Nobody decides whether a link is a button, a navigation item or a word in a sentence, so a link gets a button's corner from one pass and is ignored by the next.
+- **What we chose:** build the shared layer, and start with the question the count points at: what a link is. Then move the readers onto it one at a time.
+- **Media hooks:** a page with every element tinted by how many readers call it a control.
+
 ## Open gaps
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
 
