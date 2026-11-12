@@ -4,25 +4,24 @@
  * shown here, each borrowed from the showcase's example (overlay/showcase/src/principles/examples.jsx) and redrawn in
  * the homepage's foundations: a small real scene, wrong in exactly the principle's way.
  *
- * Every card plays the showcase's moment (docs/craft/stage-brief.md), scaled to a card: the camera eases in on what
- * Plumber measures, guides draw on the measured edges with one pill carrying the measured number, the fix glides in
- * while the pill counts to its right value and a check lands, then the guides lift and the camera eases out. The
- * number is read from the scene every frame, so it moves because the scene moves. Motion tricks borrowed from
- * transitions.dev: its ease (0.22, 1, 0.36, 1), blurred text swaps, the copy-to-check swap, stroke-drawn lines, a
- * blurred pop-in, an overshooting switch thumb.
+ * Every card plays the showcase's moment in place, never moving the scene (the owner, 2026-11-13: a scripted camera
+ * "shifts the layout and it's confused what is happening"): guides draw on the measured edges in the overlay's own
+ * language (a haloed line, space hatched) with one pill carrying the measured number; the fix glides in while the
+ * pill counts to its right value and a check lands; then the guides lift. The number is read from the scene every
+ * frame, so it moves because the scene moves. Motion tricks borrowed from transitions.dev: its ease
+ * (0.22, 1, 0.36, 1), blurred text swaps, stroke-drawn lines, a blurred pop-in, an overshooting switch thumb.
  *
  * STORYBOARD (each card on its own clock, staggered; the loop holds while pointed at)
  *      0ms   the scene as written, alive
- *    600ms   camera eases in on the subject (1000ms, slow start, slow finish)
  *   1600ms   guides draw in (300ms), the pill pops in 40ms after
  *   1900ms   hold on what's wrong
- *   3000ms   the fix glides in; the pill counts to the right value, coral to green, then its check
+ *   3000ms   the fix glides in; the pill counts to the right value, coral to mint, then its check
  *   4500ms   guides and pill lift (300ms, blurred)
- *   4800ms   camera eases out (900ms)
  *   5700ms   alive again, fixed
- *   7600ms   back to the mistake: no camera, the fix glides back
+ *   7600ms   back to the mistake: the fix glides back
  *   9000ms   again
- * The switch: Fixed plays the moment from the camera; Broken glides back with no camera; either holds the card.
+ * The switch is direct (interaction principle 26b): the scene and its measure change at once, the card holds what was
+ * chosen, and Replay hands it back to the tour.
  * Reduced motion: no camera, no guides; every card shows Fixed, and the switch still works.
  * ───────────────────────────────────────────────────────── */
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
@@ -73,21 +72,14 @@ function Card({ card, live, reduced, offset }) {
   const clear = () => { timers.current.forEach(clearTimeout); timers.current = []; };
   const at = (ms, fn) => timers.current.push(setTimeout(fn, ms));
 
-  // the camera: the subject fills most of the stage's width, centred, never closer than 1.9×
-  const aim = () => {
-    const s = stage.current.getBoundingClientRect(), f = card.measure(scene.current, false).focus.getBoundingClientRect();
-    const fx = f.left - s.left + f.width / 2, fy = f.top - s.top + f.height / 2;
-    const k = Math.max(1, Math.min(1.9, (s.width * 0.6) / f.width, (s.height * 0.5) / f.height));
-    return { k, x: s.width / 2 - k * fx, y: s.height / 2 + 6 - k * fy };
-  };
 
-  // the moment, from the camera: in, guides, fix, guides out, camera out
+
+  // the moment, in place: guides, the fix, guides out
   const moment = (base = 0) => {
-    at(base, () => { setStep(STEP.camera); setCam(aim()); });
+    at(base, () => setStep(STEP.camera)); // no camera: the scene stays where it is; the guides and the pill explain it in place
     at(base + T.marks - T.cameraIn, () => setStep(STEP.marks));
     at(base + T.fix - T.cameraIn, () => { setFixed(true); setStep(STEP.fix); });
     at(base + T.marksOut - T.cameraIn, () => setStep(STEP.out));
-    at(base + T.cameraOut - T.cameraIn, () => setCam(null));
     at(base + T.alive - T.cameraIn, () => setStep(STEP.home));
   };
 
@@ -168,8 +160,9 @@ function Marks({ marks, fixed, out, card }) {
   return (
     <div className="ins-marks" data-out={out} data-on={done} aria-hidden="true">
       <svg width={s.width} height={s.height}>
+        {card.hatch && <defs><pattern id={`ins-hatch-${card.n}`} width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="5" style={{ stroke: 'var(--mk)', strokeWidth: 1.5, opacity: 0.6 }} /></pattern></defs>}
         {lines.map(([x1, y1, x2, y2], i) => { const [a, b] = rel(x1, y1), [c, d] = rel(x2, y2); return <line key={`l${i}`} className="ins-guide" x1={a} y1={b} x2={c} y2={d} pathLength="1" style={{ animationDelay: `${i * 40}ms` }} />; })}
-        {rects.map(([x, y, w, h], i) => { const [a, b] = rel(x, y); return <rect key={`r${i}`} className="ins-guide" x={a} y={b} width={w} height={h} rx={3} pathLength="1" />; })}
+        {rects.map(([x, y, w, h], i) => { const [a, b] = rel(x, y); return <rect key={`r${i}`} className={`ins-guide${card.hatch ? ' ins-hatch' : ''}`} x={a} y={b} width={w} height={h} rx={3} pathLength="1" style={card.hatch ? { '--hatch': `url(#ins-hatch-${card.n})` } : undefined} />; })}
         {arcs.map(([x, y, r], i) => { const [a, b] = rel(x, y); return <path key={`a${i}`} className="ins-guide" d={`M${a} ${b + r} A ${r} ${r} 0 0 1 ${a + r} ${b}`} pathLength="1" />; })}
         {dots.map(([x, y], i) => { const [a, b] = rel(x, y); return <g key={`d${i}`} className="ins-cross"><line x1={a - 7} y1={b} x2={a + 7} y2={b} /><line x1={a} y1={b - 7} x2={a} y2={b + 7} /></g>; })}
       </svg>
@@ -359,7 +352,7 @@ const CARDS = [
   { n: 8, area: 'album', size: '', toy: 'corner', hue: 'pink', title: 'Nested radius = outer − padding', why: 'Equal radii pinch the corner; concentric ones don’t.', states: ['Same radius', 'Concentric'], Scene: Album, measure: Album.measure, fmt: v => `r ${Math.round(v)}`, done: v => Math.round(v) === 12 },
   { n: 16, area: 'timer', size: '', toy: 'type', hue: 'mint', title: 'Tabular figures for numbers that change', why: 'Proportional digits jitter as they tick and never stack.', states: ['Proportional', 'Tabular'], Scene: Timer, measure: Timer.measure, pill: 'below', fmt: v => (v < 0.1 ? '0px' : `${v.toFixed(1)}px`), done: v => v < 0.1 },
   { n: 18, area: 'news', size: '', toy: 'wrap', hue: 'lilac', title: 'No widows in headings', why: 'One word alone on the last line looks broken.', states: ['Widow', 'Balanced'], Scene: Headline, measure: Headline.measure, fmt: v => `${Math.round(v)} word${Math.round(v) === 1 ? '' : 's'}`, done: v => Math.round(v) >= 2 },
-  { n: 21, area: 'shadow', size: 'wide', toy: 'shadow', hue: 'pink', title: 'Shadows are tinted, not grey', why: 'A grey shadow on a coloured ground looks dirty.', states: ['Grey shadow', 'Tinted'], Scene: Shadow, measure: Shadow.measure, fmt: v => `C ${v.toFixed(2)}`, done: v => v > 0.06 },
+  { n: 21, hatch: true, area: 'shadow', size: 'wide', toy: 'shadow', hue: 'pink', title: 'Shadows are tinted, not grey', why: 'A grey shadow on a coloured ground looks dirty.', states: ['Grey shadow', 'Tinted'], Scene: Shadow, measure: Shadow.measure, fmt: v => `C ${v.toFixed(2)}`, done: v => v > 0.06 },
   { n: 55, area: 'forecast', size: 'wide', toy: 'fill', hue: 'sky', title: 'Gradients mix in OKLCH', why: 'sRGB goes grey between two saturated colours.', states: ['sRGB', 'OKLCH'], Scene: Forecast, measure: Forecast.measure, fmt: v => `C ${v.toFixed(2)}`, done: v => v > MID_OKLCH - 0.005 },
   { n: 39, area: 'photo', size: '', toy: 'border', hue: 'butter', title: 'Images get an inner outline', why: 'A pale photo bleeds into a pale card without one.', states: ['No outline', 'Inner outline'], Scene: Photo, measure: Photo.measure, fmt: v => `${v.toFixed(1)}px edge`, done: v => v > 0.95 },
   { n: 42, area: 'tabs', size: '', toy: 'weight', hue: 'lilac', title: 'Bold on hover must not shift layout', why: 'Weight changes width, and the whole row jumps.', states: ['Bold shifts', 'Width kept'], Scene: Tabs, measure: Tabs.measure, moving: true, fmt: v => (v < 0.1 ? '0px' : `${v.toFixed(1)}px`), done: v => v < 0.1 },

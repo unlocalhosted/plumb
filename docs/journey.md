@@ -1952,6 +1952,13 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   tour starts at once. Checked with real clicks: within 250ms of Fixed the album card read "Concentric · r 12" in
   mint; Broken read "Same radius · r 20" in coral and held for 4s; Replay started the camera 600ms later. Written
   into the interaction principles as 26b.
+- **"The scripted camera movement is very horrible ... it shifts the layout and it's confused what is happening."**
+  The owner's direction: explain with our visual language (guides, padding, gaps, movement) without changing the
+  layout. Both the example cards and the hero's demo dropped the camera: the scene never moves; each mistake is
+  explained where it is, by guides on the measured edges (a 2px line with a halo in the surface colour, so it reads
+  on any stage in either scheme), space hatched (the grey shadow's region), and the measured pill counting coral to
+  mint. Checked: the cards' camera transform stays "none" through a moment, the hero's stays at scale 1, the widow
+  boxed in place with its pill. The card's storyboard comment rewritten to match.
 
 ## Open gaps
 - The overlay writes about 180 corners as numbers (radius tokens about 45 times), many off its own scale; 6px is

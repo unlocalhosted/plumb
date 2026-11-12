@@ -117,16 +117,8 @@ export function Review() {
   }, [moment]);
   const pause = () => { if (touring) { setTouring(false); stop(); setShown(true); } else { setTouring(true); setLoop(n => n + 1); } };
 
-  // the camera: in on the mistake's box, kept inside the screen
-  const cam = (() => {
-    if (!geo || !moment || moment.step === 4) return { k: 1, x: 0, y: 0 };
-    const b = geo.messy[moment.id].box;
-    // the mistake sits a little below the middle, leaving the pill room above it
-    const k = Math.max(1.1, Math.min(3, (0.6 * W) / b.w, (0.62 * H) / b.h));
-    const x = Math.min(0, Math.max(W - k * W, W / 2 - k * (b.x + b.w / 2)));
-    const y = Math.min(0, Math.max(H - k * H, H * 0.56 - k * (b.y + b.h / 2)));
-    return { k, x, y };
-  })();
+  // no camera: the screen never moves; each mistake is explained where it is, by its guides and its pill
+  const cam = { k: 1, x: 0, y: 0 };
   const found = ISSUES.length - fixed.size;
 
   return (
