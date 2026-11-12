@@ -242,7 +242,9 @@ test('No step the theme has: the cause is a new token; the panel says what takin
   const [x, y] = await center(page, 'status', 0.3, 0.5);
   await click(page, x, y);
   await inHand(overlay).waitFor({ timeout: 10000 });
-  for (let i = 0; i < 12 && !(await panel(overlay).locator('.note').count()); i++) { await page.keyboard.press('ArrowRight'); await page.waitForTimeout(300); }
+  // (another cause on this element has a note of its own now, "Add it to your theme": walk to the one about a missing step)
+  const noStep = async () => (await panel(overlay).locator('.note').count()) && /no step for this/.test(await panel(overlay).locator('.note').innerText());
+  for (let i = 0; i < 12 && !(await noStep()); i++) { await page.keyboard.press('ArrowRight'); await page.waitForTimeout(300); }
   // in plain words, then the step it adds and where
   assert.match(await panel(overlay).locator('.note').innerText(), /Your theme has no step for this\. This adds it, then uses it here\./);
   assert.match(await panel(overlay).locator('.hint').innerText(), /--tracking-caps: 0\.06em/);
