@@ -60,11 +60,10 @@ reserved.)
 
 - **Now:** nothing of this session's. (A class fix offered and then refused is in the fix card, which another
   session has been changing today; left to it.)
-- **Next:** padding read by job · a test for a theme whose radii or shadows are named by size · the Next
-  performance test · the tests that fail only under the full run's load.
+- **Next:** padding read by job · the Next performance test · the tests that fail only under the full run's load.
 - **Decided 2026-11-12:** shadows went ahead of padding-by-job. After padding is snapped to the scale, sibling cards on
   the messy page already agree, so reading padding by job has little to show yet; shadows were a missing primitive.
-- **Done since:** the shared role layer · borders (the colour pass already decides them) · timings · the disabled look.
+- **Done since:** a test for themes whose corners and shadows are named by size · the shared role layer · borders (the colour pass already decides them) · timings · the disabled look.
 - **Decided 2026-11-12, layer order:** not built yet. A z-index move changes what covers what, so a pass may only
   rename a value that already equals its job's layer. crafting-ui names its layers by number (no job); algorecall
   names them by job but is not running here. Build it when an app with job-named layers is at hand.
