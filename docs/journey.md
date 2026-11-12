@@ -776,6 +776,11 @@
 - **Not ours:** element-only (with a list row picked, the fix in hand is "only left-over space between", where the test expects one that says the same code draws three more) fails at the commit this session started from too, so it predates today's work, and it sits in the fix panel another session is changing. Locating on Next 16 fails some runs with a source-hash mismatch and passes on a clean copy of the same commit; a bisect found no commit that broke it. Both are in the backlog.
 - **Still known:** the two files of another session's uncommitted work (the bundle sends only commits), the Next performance test, the known flaky overlay test, and the frozen-server test that fails only side by side.
 
+## A craft fix says where else its code draws (2026-11-12)
+- **The itch:** the element-only test had been failing since before this session: pick one list row with Alt+click, and the fix in hand no longer said "The same code draws 3 more outside it on this page".
+- **The system behind it:** that count was worked out only for a fix that carries its own source line. A craft finding (here a row held apart by `justify-between` alone) carries none, so its count was always zero; once a craft finding came first in the row, the sentence was gone.
+- **The fix and the proof:** a finding with no line of its own counts by the element's own line when the class it names is written on the element. element-only passes; the fix panel's and Blueprint's tests pass.
+
 ## Open gaps
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
 

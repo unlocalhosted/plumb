@@ -267,7 +267,10 @@ const stampMates = (el) => { const at = el?.getAttribute('data-plumb-source'); r
 // draws change too. Counted by stamp, only where the element's stamp is the fix's own line (a caller's classes are not)
 // One unit for both counts (F8-05): what the fix's line draws, counted once by its stamp, inside the element read
 // ("here") and outside it; a cause whose classes come from a caller (no stamp of its own line) counts its own elements
-const stampsOf = (g) => { const stamps = new Set(); for (const m of g.members) { const stamp = m.el?.getAttribute('data-plumb-source'); if (stamp?.startsWith(`${fileOf(m)}:${m.mark.line}:`)) stamps.add(stamp); } return stamps; };
+// A craft finding carries no line of its own: its class is the element's own when the element's class attribute
+// holds it, so it is counted by the element's stamp too
+const ownClass = (m) => m.mark.line == null && !!m.mark.text && (m.el?.getAttribute('class') ?? '').split(/\s+/).includes(m.mark.text);
+const stampsOf = (g) => { const stamps = new Set(); for (const m of g.members) { const stamp = m.el?.getAttribute('data-plumb-source'); if (stamp?.startsWith(`${fileOf(m)}:${m.mark.line}:`) || (stamp && ownClass(m))) stamps.add(stamp); } return stamps; };
 const drawnOf = (g, scope) => {
   const stamps = stampsOf(g), own = elsOf(g);
   if (!scope || !stamps.size) return { here: own.length, elsewhere: 0 };

@@ -246,8 +246,6 @@ should get one through the page (the clean-up's Preview and Apply) or the CLI wh
 
 ### Tests
 
-- element-only fails before today's work too: with a list row picked, the fix in hand is the row's "only left-over
-  space between", not the one that says the same code draws three more. The fix panel is another session's.
 - Locating on Next 16 (webpack) fails some runs with a source-hash mismatch (vm-agent twice, the laptop's checkout
   once) and passes on a clean copy of the same commit and at the session's start: a race between the file and its
   map, not a commit. Not fixed.
