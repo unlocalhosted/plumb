@@ -29,7 +29,7 @@ pages were *not* re-read today. Each is to be read and linked when its check is 
 | Grouping vendor selectors | Does not hold | a stylesheet lint, nothing to see |
 | Image maximum width | Does not hold | Tailwind's reset already does it |
 
-Eleven tips hold and become nine checks; four do not hold; one waits on a decision.
+Eleven tips hold and become nine checks (all built by 2026-11-13, one in its first form only); four do not hold; one waits on a decision.
 
 ## The ones that hold
 
@@ -87,12 +87,16 @@ Eleven tips hold and become nine checks; four do not hold; one waits on a decisi
   and left alone, and so is a row whose author wrote `flex-nowrap` on it.
 - **Still open:** a map over a short literal list (three stats written in the code) reads as a list; it is a fixed set.
 
-### A fixed column with no narrow form
+### A fixed column with no narrow form (built 2026-11-13)
 - **What the expert sees:** a sidebar layout that keeps both columns on a phone and scrolls sideways.
 - **Principle:** a layout with a fixed track needs a one-column form for the width where the track no longer fits.
 - **Ground:** the tip. Responsive practice.
 - **Signals:** an unprefixed grid class with a fixed-width track and no breakpoint variant beside it.
 - **Suggestion:** move the columns behind the project's breakpoint (`md:grid-cols-[…]`).
+- **As built:** an unprefixed `grid-cols-[…]` whose fixed widths (lengths, and the least of each `minmax`) add up to at
+  least half a 360 px phone (an invented line, to be tuned); quiet when any breakpoint or container form of the columns,
+  or a breakpoint `block`/`flex`/`hidden`, is written beside it, and for `auto-fill`/`auto-fit`. The fix goes behind the
+  smallest Tailwind breakpoint where the fixed widths take at most half the screen.
 
 ### Text in a grid cell may shrink (built 2026-11-12)
 - Same principle and suggestion as the existing flex check (`min-w-0`); a grid item has the same floor. An extension,
@@ -113,19 +117,25 @@ Eleven tips hold and become nine checks; four do not hold; one waits on a decisi
 - **Left alone:** the page itself (`html`, `body`), where `overflow-y: scroll` is an old way to stop the layout moving
   when a scrollbar arrives.
 
-### A background photo that tiles
+### A background photo that tiles (built 2026-11-13)
 - **What the expert sees:** a hero photo repeated at the edge of a wide monitor.
 - **Principle:** a photo is one picture; repeated, it reads as a fault.
 - **Ground:** the tip. Backgrounds repeat by default.
 - **Signals:** a background image that is a photo (not a small pattern), set to repeat, not sized to cover.
 - **Suggestion:** `bg-no-repeat` (and `bg-cover` where the box can outgrow the photo).
+- **As built:** a raster background whose shorter side is at least 64 px (image-fit's photo size), drawn at least that
+  size, repeating, not `cover`; tiling now (the box is bigger than one drawn copy) or able to. `contain` gets
+  `bg-no-repeat` alone; anything else gets `bg-no-repeat bg-cover`.
 
-### A picture stretched by its row
+### A picture stretched by its row (built 2026-11-13)
 - **What the expert sees:** an avatar pulled tall when the text beside it wraps to more lines.
 - **Principle:** a picture keeps its own shape; its row's height is not its height.
 - **Ground:** the tip. Flex items stretch by default.
 - **Signals:** a picture with a width and no height in a stretching row.
 - **Suggestion:** `self-start` on the picture.
+- **As built:** an `img` or `video` in a stretching flex row with no height, size, ratio or max height of its own;
+  drawn more than 1 px taller than its shape now, or beside words that can wrap. The older stretched-picture check
+  (`object-cover`) now steps aside when the row is what pulled it tall: the cause is the row, not the fit.
 
 ## The ones that do not hold
 

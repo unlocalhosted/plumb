@@ -42,6 +42,7 @@ const TABLE = {
   stacking: [['z-index', 'isolation'], ['z', 'isolate']],
   motion: [['transition', 'transition-property', 'transition-duration', 'transition-timing-function', 'animation', 'animation-duration'], ['transition', 'duration', 'ease', 'delay', 'animate']],
   wrap: [['flex-wrap'], ['flex-wrap', 'flex-nowrap']],
+  columns: [['grid-template-columns'], ['grid-cols']],
   align: [['align-items', 'justify-content', 'justify-items', 'align-self', 'place-items'], ['items', 'justify', 'self', 'place']],
   interaction: [['touch-action', '-webkit-tap-highlight-color', 'user-select'], ['touch', 'select']],
   'text-box': [['text-box-trim', 'text-box-edge'], []],

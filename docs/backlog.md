@@ -195,10 +195,9 @@ and icon passes' cases, and the palette after a write, were tested again through
 
 - Seen catching slips only on pages we wrote; no real app with the mistakes has been read.
 - One check's fix can raise another check's finding on the same element (a background makes a box count as a card).
-- Of the 25 defensivecss.dev tips, 16 have a check (one of them in its first form only). The other 15 are sorted in docs/research/defensive-tips.md:
-  - Still to build, each from its written principle (3 checks for 3 tips, plus the second form of the left-over-space
-    check: three or more like items spread by justify-between): a fixed column with no narrow form; a background photo that tiles; a
-    picture stretched by its row.
+- Of the 25 defensivecss.dev tips, 19 have a check (one of them in its first form only). The rest are sorted in docs/research/defensive-tips.md:
+  - Still to build: the second form of the left-over-space check (three or more like items spread by justify-between).
+  - Open question: a button's least width (needs a number with a ground).
   - Will not be checks (4): auto-fit vs auto-fill, CSS variable fallback, grouping vendor selectors, image maximum width.
   - The CSS behaviour each check rests on is to be re-read and linked when the check is built; only the tip pages were read.
 - The list-wrap check finds one place on crafting-ui: the three figures on the templates page (styles, skills,
@@ -208,6 +207,15 @@ and icon passes' cases, and the palette after a write, were tested again through
   sheet demo's header, the swipe demo's header, the home page's slider end labels). In the sheet demo at phone width the
   title and the count touch; plumber's gap separated them by 16 px but pushed the count off the card, because that
   mock-up is 106 px wide there. The gap is right; the narrow mock-up is a second problem plumber does not name.
+- The stretched-picture, tiling-photo and fixed-column checks (2026-11-13) have never fired on a real app: crafting-ui's
+  11 main pages are quiet (it writes every fixed column behind a breakpoint, and has no background photos). Their only
+  proof is three cases put on a live page by hand, read through plumber's full read, fixed, and read again clean.
+- The fixed-column check's line, fixed widths taking half of a 360 px phone, is invented and not yet tuned on a real app.
+  Its fix goes behind the smallest Tailwind breakpoint where they take at most half the screen, not the project's own
+  breakpoints.
+- The read keeps an element's result until its own or its parent's classes, or its own words, change. A check that
+  depends on a neighbour (a picture stretched because the words beside it grew; a sticky column) is not judged again
+  when only the neighbour changes. Seen while testing the stretched picture.
 - The scrollbar check has never fired on a real app either: no app here writes `overflow-scroll` (searched crafting-ui,
   algorecall, glyphschool, the site, the relay example). When a box always scrolls and already overflows, the existing
   scroll-cue finding outranks it on that element.

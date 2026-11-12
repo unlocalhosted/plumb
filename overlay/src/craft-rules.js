@@ -40,6 +40,9 @@
  *  fixed-height        —       a box that holds text sets its least height, not its exact height
  *  sticky-room         —       a sticky side column is not stretched to its row, so it has room to stick
  *  image-fit           —       a picture in a box of another shape is cropped, never stretched
+ *  image-stretch       —       a picture in a row keeps its own height, not the row's
+ *  background-tile     —       a background photo is drawn once, not tiled
+ *  fixed-column        —       a grid with a fixed column has a one-column form for narrow screens
  *  truncate-intent     #35     cut-off text shows its full value on hover
  *  scrollbar-gutter    #36     a large scroll area keeps room for its scrollbar
  *  bold-hover          #42     bold on hover does not move the row
@@ -1084,6 +1087,11 @@ export const imageFit = {
       const across = utility(el, 'w', AUTO) ?? utility(el, 'size', AUTO) ?? utility(el, 'flex') ?? utility(el, 'grow') ?? utility(el, 'basis');
       if (!tall || !across || w < T.latentMin || h < T.latentMin || Math.min(el.naturalWidth, el.naturalHeight) < T.photo || /\.svg(?:[?#]|$)/i.test(el.currentSrc || el.src)) return [];
     }
+    // pulled tall by its row (no height of its own, in a stretching flex row): the cause is the row, and image-stretch says so
+    if (shows && stretch < 1 && !utility(el, 'h', { not: /^(?:auto|fit|min|max)$/ }) && !utility(el, 'size') && !utility(el, 'aspect') && el.parentElement) {
+      const rs = facts.style(el.parentElement), al = /^(?:auto|normal)$/.test(s.alignSelf) ? rs.alignItems : s.alignSelf;
+      if (/flex/.test(rs.display) && !/column/.test(rs.flexDirection) && /^(?:normal|stretch)$/.test(al)) return [];
+    }
     const wide = stretch > 1, by = shows ? Math.round((wide ? stretch - 1 : 1 / stretch - 1) * 100) : 0;
     return [{
       ...say(this.id, { by, wide }),
@@ -1416,6 +1424,153 @@ export const listWrap = {
       key: this.id, text: utility(el, 'flex-nowrap') ?? 'flex-wrap', props: ['flex-wrap'], value: 'nowrap', n: kids.length,
       evidence: { over, parts: kids.length, stamp }, confidence: over > 1 ? 0.9 : 0.84,
       suggest: { kind: 'class', from: utility(el, 'flex-nowrap') ?? '', to, why: 'lets the list run on to the next line when the row is full', sets: { flexWrap: 'wrap', ...(to.includes('gap-y') ? { rowGap: across } : {}) }, moves: true },
+    }];
+  },
+};
+
+// Defensive, not a craft rule (no number, no showcase screen; docs/research/defensive-tips.md). A picture keeps its own
+// shape; its row's height is not its height. A flex row stretches its items to its full height unless told otherwise,
+// and a picture given only a width is an item like any other: when the words beside it wrap to more lines, it is
+// pulled tall. Read from what is measured: a picture in a stretching flex row, with no height or ratio of its own, and
+// either drawn taller than its shape now, or beside words that can wrap. (defensivecss.dev "Default flexbox stretching".)
+export const imageStretch = {
+  id: 'craft/image-stretch', family: 'craft', number: [], owns: ['align'], once: 'ancestor', reads: ['style', 'rect', 'text'],
+  check({ el, facts }, theme) {
+    const T = theme.spec(this.id);
+    if (!/^(?:img|video)$/.test(el.localName)) return [];
+    const row = el.parentElement;
+    if (!row) return [];
+    const s = facts.style(el), rs = facts.style(row);
+    if (!/flex/.test(rs.display) || /column/.test(rs.flexDirection) || /^(?:absolute|fixed)$/.test(s.position)) return [];
+    const align = /^(?:auto|normal)$/.test(s.alignSelf) ? rs.alignItems : s.alignSelf;
+    if (!/^(?:normal|stretch)$/.test(align)) return [];
+    // its own height or shape, written: the row can't stretch it
+    const AUTO = { not: /^(?:auto|fit|min|max)$/ };
+    if (utility(el, 'h', AUTO) || utility(el, 'size', AUTO) || utility(el, 'aspect', AUTO) || utility(el, 'max-h')) return [];
+    const w = el.clientWidth, h = el.clientHeight;
+    const nw = el.naturalWidth ?? el.videoWidth, nh = el.naturalHeight ?? el.videoHeight;
+    if (w < (T.min ?? 16) || !nw || !nh) return [];
+    // how much taller than its own shape the row draws it now
+    const tall = Math.round(h - (w * nh) / nw);
+    const words = [...row.children].some((k) => k !== el && (facts.text(k) || [...k.querySelectorAll('*')].slice(0, 30).some((t) => facts.text(t))));
+    if (tall <= 1 && !words) return [];
+    return [{
+      ...say(this.id, { tall: tall > 1 ? tall : 0 }),
+      key: this.id, text: utility(el, 'self') ?? 'align-self', props: ['align-self'], value: 'stretch', n: Math.max(0, tall),
+      evidence: { tall, box: [w, h], natural: [nw, nh] }, confidence: tall > 1 ? 0.9 : 0.84,
+      suggest: { kind: 'class', from: utility(el, 'self') ?? '', to: 'self-start', why: 'keeps the picture its own height, whatever the words beside it do', sets: { alignSelf: 'flex-start' }, moves: true },
+    }];
+  },
+};
+
+// The size a background picture is drawn at, from its natural size and background-size (auto, contain, a length or a share)
+const tileOf = (s, box, nw, nh) => {
+  const [a = 'auto', b = 'auto'] = s.backgroundSize.split(',')[0].trim().split(/\s+/);
+  if (a === 'contain') { const k = Math.min(box.w / nw, box.h / nh); return [nw * k, nh * k]; }
+  const len = (v, whole) => (v === 'auto' ? null : v.endsWith('%') ? (parseFloat(v) / 100) * whole : px(v));
+  let w = len(a, box.w), h = len(b, box.h);
+  if (w == null && h == null) return [nw, nh];
+  if (w == null) w = (h * nw) / nh;
+  if (h == null) h = (w * nh) / nw;
+  return [w, h];
+};
+const PICTURES = new Map(); // url → { w, h } once loaded; a picture not yet known is read on the next pass
+const pictureSize = (url) => {
+  if (PICTURES.has(url)) return PICTURES.get(url);
+  const img = new Image();
+  PICTURES.set(url, null);
+  img.onload = () => PICTURES.set(url, { w: img.naturalWidth, h: img.naturalHeight });
+  img.src = url;
+  if (img.complete && img.naturalWidth) PICTURES.set(url, { w: img.naturalWidth, h: img.naturalHeight });
+  return PICTURES.get(url);
+};
+
+// Defensive, not a craft rule (no number, no showcase screen; docs/research/defensive-tips.md). A photo is one picture;
+// repeated, it reads as a fault. A background repeats unless told otherwise, so a hero photo sized to its own pixels
+// (or to fit, `contain`) tiles as soon as the box outgrows it: on a wide monitor, or a taller section. A small pattern
+// is meant to repeat and is left alone. Read from what is measured: a background picture that is a photo (raster, and
+// at least the photo size image-fit uses), set to repeat, not sized to cover; tiling now, or able to once the box grows.
+// (defensivecss.dev "Background repeat".)
+export const backgroundTile = {
+  id: 'craft/background-tile', family: 'craft', number: [], owns: ['background'], once: 'ancestor', reads: ['style', 'rect'],
+  check({ el, facts }, theme) {
+    const T = theme.spec(this.id);
+    const s = facts.style(el);
+    const url = /url\(["']?([^"')]+)["']?\)/.exec(s.backgroundImage)?.[1];
+    if (!url || /^data:image\/svg|\.svg(?:[?#]|$)/i.test(url)) return [];
+    // which way it repeats: `repeat`, `repeat-x`, `repeat-y`, or two words (across, down); space and round are deliberate
+    const rep = s.backgroundRepeat.split(',')[0].trim(), two = rep.split(/\s+/);
+    const acrossRep = rep === 'repeat' || rep === 'repeat-x' || (two.length === 2 && two[0] === 'repeat');
+    const downRep = rep === 'repeat' || rep === 'repeat-y' || (two.length === 2 && two[1] === 'repeat');
+    if (!acrossRep && !downRep) return [];
+    if (/^cover/.test(s.backgroundSize)) return [];
+    const box = { w: el.clientWidth, h: el.clientHeight };
+    if (box.w < (T.min ?? 48) || box.h < (T.min ?? 48)) return [];
+    const pic = pictureSize(url);
+    if (!pic || Math.min(pic.w, pic.h) < (T.photo ?? 64)) return [];
+    const [tw, th] = tileOf(s, box, pic.w, pic.h);
+    if (!(tw > 0 && th > 0)) return [];
+    // a photo drawn at a fraction of its pixels, small enough to tile many times over, is a texture on purpose
+    if (Math.min(tw, th) < (T.photo ?? 64)) return [];
+    const x = acrossRep && box.w > tw + 1, y = downRep && box.h > th + 1;
+    const now = x || y;
+    const repCls = utility(el, 'bg-repeat') ?? '';
+    const sized = /^contain/.test(s.backgroundSize);
+    const to = sized ? 'bg-no-repeat' : 'bg-no-repeat bg-cover';
+    return [{
+      ...say(this.id, { now, wide: x }),
+      key: this.id, text: repCls || 'background-repeat', props: ['background-repeat'], value: rep, n: now ? 1 : 0,
+      evidence: { tile: [Math.round(tw), Math.round(th)], box: [box.w, box.h], natural: [pic.w, pic.h] }, confidence: now ? 0.9 : 0.84,
+      suggest: { kind: 'class', from: repCls, to, why: sized ? 'draws the photo once, at the size that fits' : 'draws the photo once, cropped to fill the box at any size', sets: sized ? { backgroundRepeat: 'no-repeat' } : { backgroundRepeat: 'no-repeat', backgroundSize: 'cover' } },
+    }];
+  },
+};
+
+// The widths a grid's columns may never go below, as written: each fixed track (240px, 15rem) and the least of each
+// minmax(). null when the columns adapt by themselves (auto-fill, auto-fit) or can't be read.
+const fixedTracks = (cols) => {
+  if (/auto-(?:fill|fit)/.test(cols)) return null;
+  const rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+  const len = (v) => { const m = /^(-?[\d.]+)(px|rem)$/.exec(v); return m ? parseFloat(m[1]) * (m[2] === 'rem' ? rem : 1) : 0; };
+  const tracks = [];
+  const split = (str) => { const out = []; let d = 0, cur = ''; for (const ch of str) { if (ch === '(') d++; if (ch === ')') d--; if (ch === '_' && !d) { out.push(cur); cur = ''; } else cur += ch; } if (cur) out.push(cur); return out; };
+  for (const t of split(cols)) {
+    const rep = /^repeat\((\d+),(.+)\)$/.exec(t);
+    if (rep) { for (let i = 0; i < +rep[1]; i++) tracks.push(...split(rep[2]).map((x) => x)); continue; }
+    tracks.push(t);
+  }
+  return tracks.map((t) => { const mm = /^minmax\(([^,]+),/.exec(t); return len(mm ? mm[1] : t); });
+};
+
+// Defensive, not a craft rule (no number, no showcase screen; docs/research/defensive-tips.md). A layout with a fixed
+// column needs a one-column form for the width where that column no longer fits: written for every width, a 280px
+// sidebar keeps its 280px on a phone and squeezes the content beside it, or pushes the page sideways. Read from the
+// classes: a grid's columns written without a breakpoint (`grid-cols-[280px_1fr]`), whose fixed widths take at least
+// half a narrow phone (360px; an invented line, tuned on real apps), with no breakpoint form of the columns beside it.
+// The fix moves the columns behind the smallest breakpoint where the fixed widths take at most half the screen.
+// (defensivecss.dev "CSS grid fixed values".)
+export const fixedColumn = {
+  id: 'craft/fixed-column', family: 'craft', number: [], owns: ['columns'], once: 'ancestor', reads: ['style'],
+  check({ el, facts }, theme) {
+    const T = theme.spec(this.id);
+    if (!/grid/.test(facts.style(el).display)) return [];
+    const classes = classesOf(el).split(/\s+/);
+    const cls = classes.find((c) => /^grid-cols-\[/.test(c));
+    if (!cls) return [];
+    // a form for another width is already written: md:grid-cols-…, max-md:…, @lg:… (a container's width)
+    if (classes.some((c) => /^[^[]*:grid-cols-/.test(c) || /^[^[]*:(?:block|flex|hidden)$/.test(c))) return [];
+    const tracks = fixedTracks(cls.slice('grid-cols-['.length, -1));
+    if (!tracks || tracks.length < 2) return [];
+    const fixed = tracks.reduce((a, b) => a + b, 0);
+    const narrow = T.narrow ?? 360;
+    if (fixed < narrow * (T.share ?? 0.5)) return [];
+    // the smallest breakpoint where the fixed widths take at most half the screen (Tailwind's own widths)
+    const bp = [['sm', 640], ['md', 768], ['lg', 1024], ['xl', 1280]].find(([, w]) => fixed <= w * 0.5) ?? ['2xl', 1536];
+    return [{
+      ...say(this.id, { fixed: Math.round(fixed), at: bp[1] }),
+      key: this.id, text: cls, props: ['grid-template-columns'], value: cls, n: Math.round(fixed),
+      evidence: { fixed: Math.round(fixed), tracks }, confidence: 0.86,
+      suggest: { kind: 'class', from: cls, to: `${bp[0]}:${cls}`, why: `keeps these columns from ${bp[1]}px up, and one column below`, sets: {}, moves: true },
     }];
   },
 };
@@ -2531,7 +2686,7 @@ export const interruptible = {
 };
 
 export const RULES = [concentricRadius, innerOuterSpacing, textOpacity, halfPixel, hairline, imageOutline, layeredShadow, scaleFromZero, zIndexWar, contentAlign,
-  buttonPadding, iconSide, measure, leading, tracking, tabularNums, headingWidow, oneLight, borderOnShadow, contrast, disabledContrast, hitTarget, mediaSize, imageFit, flexMin, imageGround, stickyRoom, fixedHeight, scrollOnDemand, declaredGap, listWrap,
+  buttonPadding, iconSide, measure, leading, tracking, tabularNums, headingWidow, oneLight, borderOnShadow, contrast, disabledContrast, hitTarget, mediaSize, imageFit, flexMin, imageGround, stickyRoom, fixedHeight, scrollOnDemand, declaredGap, listWrap, imageStretch, backgroundTile, fixedColumn,
   truncateIntent, scrollbarGutter, boldHover, hangingQuote, capsCase, gradientSpace, inputZoom, anchorOffset, middleTruncate,
   textWrapRole, continuousCorners, opticalSizing, tintedShadow, easedScrim, pureBlackWhite, contentSize,
   baselineAlign, iconCap, trimLeading, headingLead, pairSpacing, cardOpticalPadding, textCollision,

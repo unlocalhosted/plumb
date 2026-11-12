@@ -597,6 +597,16 @@
 - **Now:** one finding on crafting-ui, the three figures on the templates page, drawn from a three-item list written in the code. At phone width it fits (358 of 358 px). It is a fixed set the check cannot yet tell from a list; noted, not fixed. No before and after from a real app.
 - **Seen on the way:** the motion vocabulary page (7,274 elements) closed the browser tab during plumber's read.
 
+## The last three checks from the tips: a stretched picture, a tiling photo, a fixed column (2026-11-13)
+- **The itch:** the owner, on whether all the tips were in: "all integrated ?", then "Yes, build them".
+- **The principles,** one each: a picture keeps its own shape, its row's height is not its height (a flex row stretches its items by default); a photo is one picture, repeated it reads as a fault (backgrounds repeat by default); a layout with a fixed column needs a one-column form where that column no longer fits.
+- **How each is read:** a picture in a stretching row with no height of its own, drawn taller than its shape or beside words that can wrap, gets `self-start`. A background photo (not a small pattern) that repeats and isn't sized to cover gets `bg-no-repeat bg-cover`. A grid's fixed columns written for every width, taking at least half a 360 px phone (an invented line), get moved behind the smallest breakpoint where they take at most half the screen (`sm:grid-cols-[280px_1fr]`).
+- **One overlap settled:** the older check for a stretched picture would have said "crop it" (`object-cover`) for an avatar pulled tall by its row. It now steps aside when the row is the cause.
+- **The proof:** crafting-ui's 11 main pages: no finding from any of the three (every fixed column there is already behind a breakpoint; no background photos). Three cases put on a live page by hand: an avatar beside six lines of words (drawn 105 px tall instead of 85), a hero photo that repeats across, a 280 px sidebar grid. Plumber's full read found exactly the three; with its three fixes on, it found nothing and the avatar was 85 px again.
+- **Found on the way:** the read keeps an element's result until its own classes or words change, so a picture is not judged again when only the words beside it grow (backlog). And a test case only gets judged once the server can place it in source: a picture carrying a `div`'s source line was skipped.
+- **Not yet:** none of the three has fired on a real app. The fixed-column line is invented and untuned.
+- **Media hooks:** the before and after screenshots of the three cases (taken, not saved).
+
 ## The new text styles written into crafting-ui: three problems (2026-11-12)
 - **The itch:** the reworked spec had only been proven on test pages; crafting-ui is the real check.
 - **How:** a copy of crafting-ui on its own branch (`plumber-text-roles`, at ../crafting-ui-roles, from its last commit; the main crafting-ui folder holds someone's uncommitted work and was not touched). Plumber read all 120 pages, proposed 15 text styles for 35 sizes, and wrote them across the site: 39 files, 297 class swaps; one letter-spacing value and one swap refused.
@@ -797,6 +807,7 @@
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
 
 ## Shipped · 2026-W46
+- plumber now catches the last three defensive-CSS slips: a picture pulled tall by its row, a background photo that repeats, and a fixed column with no phone layout, each with the one class that fixes it ([entry](#the-last-three-checks-from-the-tips-a-stretched-picture-a-tiling-photo-a-fixed-column-2026-11-13)).
 - The colour and icon clean-up passes are tested case by case through the panel and Apply, 14 tests ([entry](#the-colour-and-icon-passes-tested-the-way-a-person-meets-them-2026-11-12)).
 - The test suite no longer checks plumber's inner functions, only what a person or a caller can see; the behaviour left without a test is listed in the backlog ([entry](#tests-that-tested-the-code-not-the-behaviour-2026-11-12)).
 - Five tests that guarded nothing a person sees are gone from the browser and CLI suite; a known Blueprint gap they pinned is now in the backlog ([entry](#fewer-tests-that-test-nothing-a-person-sees-2026-11-12)).

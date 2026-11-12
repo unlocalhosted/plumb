@@ -50,7 +50,7 @@ export const GLYPHS = {
 // which drawing a rule's evidence takes
 const KIND = { 'button-padding': 'ratio', 'icon-side': 'ratio', 'inner-outer-spacing': 'ratio', 'content-align': 'ratio', 'concentric-radius': 'arcs',
   contrast: 'contrast', 'disabled-contrast': 'contrast', 'text-opacity': 'contrast', 'hit-target': 'size', 'input-zoom': 'size', measure: 'measure', 'heading-widow': 'measure',
-  'hanging-quote': 'measure', leading: 'measure', tracking: 'letters', 'caps-case': 'letters', 'tabular-nums': 'same', 'media-size': 'same', 'image-fit': 'size', 'image-ground': 'contrast', 'sticky-room': 'size', 'fixed-height': 'size', 'scroll-on-demand': 'size', 'declared-gap': 'measure', 'list-wrap': 'measure', 'flex-min': 'measure', 'half-pixel': 'pixel', hairline: 'pixel',
+  'hanging-quote': 'measure', leading: 'measure', tracking: 'letters', 'caps-case': 'letters', 'tabular-nums': 'same', 'media-size': 'same', 'image-fit': 'size', 'image-ground': 'contrast', 'sticky-room': 'size', 'fixed-height': 'size', 'scroll-on-demand': 'size', 'declared-gap': 'measure', 'list-wrap': 'measure', 'image-stretch': 'size', 'background-tile': 'size', 'fixed-column': 'measure', 'flex-min': 'measure', 'half-pixel': 'pixel', hairline: 'pixel',
   'one-light': 'light', 'layered-shadow': 'light', 'border-on-shadow': 'light', 'image-outline': 'light', 'gradient-space': 'light', 'bold-hover': 'time', 'scale-from-zero': 'time',
   'truncate-intent': 'measure', 'middle-truncate': 'measure', 'scrollbar-gutter': 'time', 'anchor-offset': 'measure', 'z-index-war': 'same' };
 export const glyphOf = (problem) => GLYPHS[problem?.family === 'craft' ? KIND[String(problem.rule).replace(/^craft\//, '')] ?? 'scale' : 'scale'];
