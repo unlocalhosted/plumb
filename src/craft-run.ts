@@ -5,6 +5,7 @@ import type { Browser, Page } from './craft-page.js';
 import { hasAnswers, judge } from './craft-judge.js';
 import type { Grey } from './craft-judge.js';
 import { takeProbes } from './craft-probe.js';
+import { docsUrl } from '../overlay/src/rule-docs.js';
 import { makeFinding } from './messages.js';
 import { tool } from './report.js';
 import type { Declaration, Finding, Report, Site } from './report.js';
@@ -233,8 +234,9 @@ export function craftFindings(pages: CraftPage[], root: string): Finding[] {
     if (hit) continue; // a list's rows share one site
     const declaration: Declaration = { prop: record.rule, value: record.text, refs: [], when: [], site, owner: { kind: 'element', name: record.component ?? record.tag }, origin: 'class' };
     // an advisory finding (a judgement of taste) is a note: shown, never failing the run
-    found.set(key, makeFinding({ key, rule: record.rule, family: 'craft', severity: (record as { soft?: boolean }).soft ? 'info' : 'error', sites: [site], declaration, decisions: [],
-      title: record.title, because: record.because, ...(record.action ? { action: record.action } : {}) }));
+    const docs = docsUrl(record.rule);
+    found.set(key, { ...makeFinding({ key, rule: record.rule, family: 'craft', severity: (record as { soft?: boolean }).soft ? 'info' : 'error', sites: [site], declaration, decisions: [],
+      title: record.title, because: record.because, ...(record.action ? { action: record.action } : {}) }), ...(docs ? { docs } : {}) });
   }
   return [...found.values()].sort((a, b) => a.sites[0]!.file.localeCompare(b.sites[0]!.file) || a.sites[0]!.line - b.sites[0]!.line || a.rule.localeCompare(b.rule));
 }
@@ -252,7 +254,7 @@ export function formatCraft(pages: CraftPage[], findings: Finding[], root: strin
   const laws = new Map(pages.flatMap(page => page.findings.map(record => [record.rule, record.laws ?? []] as const)));
   for (const finding of findings) {
     const site = finding.sites[0]!, named = (laws.get(finding.rule) ?? []).map(law => law.name);
-    lines.push('', `${relative(root, site.file)}:${site.line}:${site.column}  ${finding.rule}`, `  ${finding.title}`, `  ${finding.because}`, ...(named.length ? [`  Law: ${named.join(', ')}`] : []), ...(finding.action ? [`  → ${finding.action}`] : []));
+    lines.push('', `${relative(root, site.file)}:${site.line}:${site.column}  ${finding.rule}`, `  ${finding.title}`, `  ${finding.because}`, ...(named.length ? [`  Law: ${named.join(', ')}`] : []), ...(finding.docs ? [`  Read more: ${finding.docs}`] : []), ...(finding.action ? [`  → ${finding.action}`] : []));
   }
   return lines.join('\n') + '\n';
 }

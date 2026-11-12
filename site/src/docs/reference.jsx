@@ -185,9 +185,26 @@ export function ConfigReference({ data: config }) {
 // ── Rules ────────────────────────────────────────────────
 const SEVERITY = { error: 'bg-destructive text-primary-foreground', warn: 'bg-code-flag text-code', info: 'bg-muted text-foreground' };
 
+// A craft rule's words are its principles' (the showcase catalogue), its laws' (overlay/src/laws.js): the generator copies them, nothing here is typed
+const craftEntry = (c, principles) => {
+  const ps = c.number.map((n) => principles[n]).filter(Boolean);
+  return {
+    id: c.id,
+    severity: [],
+    families: [],
+    pattern: false,
+    accept: false,
+    craft: true,
+    title: ps.map((x) => x.title).join(' · ') || null,
+    because: ps.map((x) => x.why).filter(Boolean).join(' ') || null,
+    laws: c.laws,
+    detail: ps.map((x) => x.detail).filter(Boolean),
+  };
+};
+
 export function RulesReference({ data: rules }) {
-  const all = rules.rules;
-  const f = useFilter(all, (r) => `${r.id} ${r.title ?? ''} ${r.because ?? ''} ${r.families.join(' ')}`);
+  const all = useMemo(() => [...rules.rules, ...(rules.craft ?? []).map((c) => craftEntry(c, rules.principles ?? {}))], [rules]);
+  const f = useFilter(all, (r) => `${r.id} ${r.title ?? ''} ${r.because ?? ''} ${r.families.join(' ')} ${(r.laws ?? []).map((l) => l.name).join(' ')} ${(r.detail ?? []).join(' ')}`);
   const groups = useMemo(() => {
     const m = new Map();
     for (const r of f.shown) {
@@ -215,6 +232,7 @@ export function RulesReference({ data: rules }) {
                       {s}
                     </span>
                   ))}
+                  {r.craft && r.title && <span className="text-sm text-muted-foreground">{r.title}</span>}
                   {r.pattern && <span className="text-xs text-muted-foreground">one per {r.id.includes('habits') ? 'custom habit' : 'match'}</span>}
                 </h3>
                 {r.families.length > 0 && r.families.length < FAMILIES.length && (
@@ -228,7 +246,7 @@ export function RulesReference({ data: rules }) {
                 )}
                 <dl className="mt-3 grid grid-cols-[6rem_1fr] gap-x-4 gap-y-1 text-sm">
                   {[
-                    ['Says', r.title],
+                    ['Says', r.craft ? null : r.title],
                     ['Because', r.because],
                     ['Fix', r.fix],
                   ]
@@ -241,8 +259,30 @@ export function RulesReference({ data: rules }) {
                         </dd>
                       </div>
                     ))}
-                  <dt className="text-muted-foreground">Accept</dt>
-                  <dd>{r.accept ? <Code>{`plumber accept --rule ${r.id} --site <file:line> --why "…"`}</Code> : 'Not as an exception: fix the cause.'}</dd>
+                  {r.laws?.length > 0 && (
+                    <>
+                      <dt className="text-muted-foreground">Laws</dt>
+                      <dd>
+                        {r.laws.map((l) => (
+                          <div key={l.name}>
+                            {l.name}: {l.says}
+                          </div>
+                        ))}
+                      </dd>
+                    </>
+                  )}
+                  {r.detail?.length > 0 && (
+                    <>
+                      <dt className="text-muted-foreground">Detail</dt>
+                      <dd>
+                        {r.detail.map((d) => (
+                          <div key={d}>{d}</div>
+                        ))}
+                      </dd>
+                    </>
+                  )}
+                  {!r.craft && <dt className="text-muted-foreground">Accept</dt>}
+                  {!r.craft && <dd>{r.accept ? <Code>{`plumber accept --rule ${r.id} --site <file:line> --why "…"`}</Code> : 'Not as an exception: fix the cause.'}</dd>}
                 </dl>
               </article>
             ))}

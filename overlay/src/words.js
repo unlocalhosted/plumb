@@ -713,6 +713,9 @@ export const FIX = {
   keepPlaces: (n) => `Keep ${count(n, 'place', 'places')}`,
   cancel: 'Cancel',
   skip: 'Skip',
+  // the "i" beside a craft finding: its rule's page in the docs (rule-docs.js), in a new tab
+  why: 'Why this matters',
+  whyLabel: (what) => `Why “${what}” matters (opens in a new tab)`,
 };
 
 // ── the dock ──────────────────────────────────────────────
