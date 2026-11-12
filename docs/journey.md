@@ -1856,7 +1856,18 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   with a lilac slot that grows on a spring, a mint tick for a good name and a shake for a bad one; B, typing straight
   into a big raised name tag with the gap's toy on it; C, a quiet field with the love on the result: the code line
   written letter by letter and the three places lighting mint. All live, by the panel's own rule for a name; light
-  and dark checked. Waiting for the owner's pick.
+  and dark checked.
+- **"A, the well."** My mistake first: the commit that moved the field into its own module didn't add it to the list
+  of files the overlay serves to the browser, so in a real app the overlay would have failed to load (the same break
+  the colour module once caused). The build's audit caught it; the module is now served, checked on the demo app.
+- **What the well is now, in the real fix bar:** pressed into the bar, lit on its lower lip; the name's blank a lilac
+  slot that grows on a spring with each letter; a mint tick that pops in when the name is good (and when a reason has
+  three characters); a coral slot with one small shake the moment a name turns bad, and again when Enter is pressed
+  on it. One helper in the shared module sets this from all three places the bar used to set it by hand.
+- **What the real app showed that the design page couldn't:** the overlay already has a global "tick" (a mark on the
+  page) that pinned the new tick to the left edge, so it was renamed; a long value (a shadow) ran out of the well, so
+  it now ends with an ellipsis; a long name wrapped the prefix onto two lines, so the field stays on one line. The
+  Inputs page shows the well in each state, the three ideas came off it, and this entry keeps them.
 
 ## Open gaps
 - The overlay writes about 180 corners as numbers (radius tokens about 45 times), many off its own scale; 6px is

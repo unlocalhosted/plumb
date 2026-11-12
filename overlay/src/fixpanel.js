@@ -29,7 +29,7 @@
  * Keys (while blueprint is on): Enter starts or fixes (written at once) · ↑ ↓ try · K keep it · → Tab skip · ← back · Esc put it down
  * ───────────────────────────────────────────────────────── */
 import { TextEditor, TEXT_EDITOR_CSS } from './texteditor.js';
-import { SPRING, FIX_BUTTONS_CSS, FIX_NOTE_CSS, FIX_FIELD_CSS } from './field.js'; // the fill-in parts, shared with the design site
+import { SPRING, FIX_BUTTONS_CSS, FIX_NOTE_CSS, FIX_FIELD_CSS, fieldSays, shake, fit, fitFor } from './field.js'; // the fill-in parts, shared with the design site
 import { errorIs } from './api.js';
 import { ElementCard, ELEMENT_CARD_CSS } from './elementcard.js';
 import { esc } from './choices.js';
@@ -421,8 +421,8 @@ export class FixPanel {
     });
     // the fields own their keys: Enter does the field's action, Esc closes or leaves it; the page's keys never see them
     this.#el.addEventListener('input', (e) => {
-      if (e.target.name === 'token') { this.#names.set(this.#held?.key, e.target.value.trim()); e.target.size = Math.max(4, e.target.value.length + 1); this.#sayNew(); }
-      if (e.target.name === 'why') { this.#why = e.target.value; this.#el.querySelector('.keep-yes')?.toggleAttribute('disabled', this.#why.trim().length < 3); }
+      if (e.target.name === 'token') { this.#names.set(this.#held?.key, e.target.value.trim()); fit(e.target); this.#sayNew(); }
+      if (e.target.name === 'why') { this.#why = e.target.value; const ok = this.#why.trim().length >= 3; this.#el.querySelector('.keep-yes')?.toggleAttribute('disabled', !ok); fieldSays(e.target.closest('.field'), { ok }); }
     });
     this.#el.addEventListener('keydown', (e) => {
       if (!e.target.matches?.('input')) return;
@@ -643,7 +643,7 @@ export class FixPanel {
       if (a?.kind === 'adopt') this.#tokens.set(g.key, { suggest: { kind: 'token', file: a.file, hash: a.hash, name: a.name, value: a.value }, els: [] });
       else if (a?.kind === 'new') {
         // no name yet: the field is where the answer goes
-        if (!a.ok) { const f = this.#el.querySelector('input[name="token"]'); f?.focus(); f?.closest('.field')?.toggleAttribute('data-invalid', !!a.name); return; }
+        if (!a.ok) { const f = this.#el.querySelector('input[name="token"]'), fld = f?.closest('.field'); f?.focus(); fieldSays(fld, { bad: !!a.name }); if (a.name) shake(fld); return; }
         this.#tokens.set(g.key, { suggest: { kind: 'token', file: a.file, hash: a.hash, name: a.token, value: a.value, then: { from: g.text, to: a.cls } }, els: elsOf(g), marks: g.members.map((m) => m.mark) });
       } else return;
     }
@@ -692,7 +692,7 @@ export class FixPanel {
     const g = this.#cause(), a = g && this.#action(g, this.#viewOf(g));
     const hint = this.#el.querySelector('.hint'), take = this.#el.querySelector('.take');
     if (!a || a.kind !== 'new' || !hint) return;
-    this.#el.querySelector('.field')?.toggleAttribute('data-invalid', !!a.name && !a.ok);
+    fieldSays(this.#el.querySelector('.field'), { ok: a.ok, bad: !!a.name && !a.ok });
     hint.classList.toggle('err', !!a.name && !a.ok);
     hint.innerHTML = this.#newHint(g, a);
     take?.toggleAttribute('disabled', !a.ok);
@@ -913,7 +913,7 @@ export class FixPanel {
         canTake = true;
       } else if (a?.kind === 'new') {
         middle = `<div class="note">${esc(FIX.newStep(FIX.what(mark).replace(/ not in your theme$/, ''), a.value))}</div>`
-          + `<label class="field"${a.name && !a.ok ? ' data-invalid' : ''}>${esc(a.namespace)}-<input name="token" value="${esc(a.name)}" size="${Math.max(4, a.name.length + 1)}" placeholder="${esc(FIX.newStepExample)}" autocomplete="off" spellcheck="false" aria-label="Name of the new ${esc(FIX.what(mark).replace(/ not in your theme$/, '').toLowerCase())}">: ${esc(a.value)}</label>`
+          + `<label class="field"${a.name && !a.ok ? ' data-invalid' : a.ok ? ' data-ok' : ''}>${esc(a.namespace)}-<span class="slot"><input name="token" value="${esc(a.name)}" style="${fitFor(a.name || FIX.newStepExample)}" placeholder="${esc(FIX.newStepExample)}" autocomplete="off" spellcheck="false" aria-label="Name of the new ${esc(FIX.what(mark).replace(/ not in your theme$/, '').toLowerCase())}"></span><span class="val" title="${esc(a.value)}">: ${esc(a.value)}</span><i class="ok-tick" aria-hidden="true"></i></label>`
           + `<div class="hint${a.name && !a.ok ? ' err' : ''}">${this.#newHint(g, a)}</div>`;
         canTake = a.ok;
       } else {
@@ -924,7 +924,7 @@ export class FixPanel {
       }
       const label = v?.ready ? FIX.use(v.options[v.at]?.cls ?? v.options[v.at]?.label ?? '') : v?.suggest?.kind === 'token' || a ? FIX.addToTheme : null;
       const acts = this.#keeping
-        ? `<label class="field why">${esc(FIX.keepWhy)} <input name="why" value="${esc(this.#why)}" placeholder="${esc(FIX.keepExample)}" maxlength="120" autocomplete="off"></label>`
+        ? `<label class="field why"${this.#why.trim().length >= 3 ? ' data-ok' : ''}>${esc(FIX.keepWhy)} <input name="why" value="${esc(this.#why)}" placeholder="${esc(FIX.keepExample)}" maxlength="120" autocomplete="off"><i class="ok-tick" aria-hidden="true"></i></label>`
           + `<div class="acts"><button class="primary keep-yes" ${this.#why.trim().length < 3 ? 'disabled' : ''}>${esc(FIX.keepPlaces(placesOf(g)))} <kbd>↵</kbd></button><button class="ghost keep-no">${FIX.cancel} <kbd>esc</kbd></button><span class="grow"></span></div>`
         : `<div class="acts">${label ? `<button class="primary take" ${canTake ? '' : 'disabled'}>${esc(label)} <kbd>↵</kbd></button>` : ''}<button class="ghost keep">${FIX.keep} <kbd>K</kbd></button><button class="ghost skip">${FIX.skip} <kbd>→</kbd></button><span class="grow"></span></div>`;
       const unseen = g.members.some((m) => shown(m.el)) ? '' : `<div class="say">${esc(drawn(g) ? FIX.unseen(placesOf(g)) : FIX.offPage(placesOf(g)))}</div>`;
