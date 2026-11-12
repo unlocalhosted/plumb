@@ -48,3 +48,9 @@
 - What it changed: plumber reads a shadow's caster as a card or something that floats, and gives it the theme's shadow for that.
 - Used in: overlay/src/elevation.js; journey entry "Shadows by job".
 
+## 2026-11-12 · Screenshot: labels printed over each other on crafting-ui's hero (shared by the owner)
+- What: a screenshot of crafting-ui's home page in a narrow window with the pointer on the headline: the guide labels "cap height" and "x-height" overlap, and the readout "… Geist medium" runs straight into the hint "Grab a letter and pull…". Shared in chat; no file kept.
+- Why: the owner's words: "can you see this overlap , how come plumber couldn't detect it ?"
+- What it changed: plumber had no check for words meeting words. It has one now. It also showed that plumber only judges the state and width the page is in when read.
+- Used in: overlay/src/craft-rules.js (craft/text-collision); e2e/craft-collision.test.mjs; journey entry "Words that run into other words".
+

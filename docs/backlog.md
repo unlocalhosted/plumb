@@ -32,6 +32,7 @@ engineer would do." These calls were open questions until then. Each is decided 
 | Next primitive | Padding and gaps in rows | The largest hole in what the eye sees |
 | The failing tests | Fix the two real bugs, update the noise check after a look, leave the flakes | A test is kept for what it protects |
 | A fairer messy page | Use a real generated app when one is at hand | bench/messy was written knowing the rules |
+| Two texts that touch, in one parent | A collision only when placed by hand (absolute) | The layout keeps flowed pieces apart on purpose (the parts of one number); nothing keeps placed ones apart |
 | The four "proposed to drop" lines | Dropped | Not observed problems |
 
 ## Open questions
@@ -164,6 +165,11 @@ reserved.)
 - crafting-ui holds three changes made at the owner's word, not committed there: the skill pages' side column
   (`self-start`), the markdown list item (`min-w-0`), and the vocabulary page mounting each live example only near the
   screen. The vocabulary page's placeholder is one height (52rem) while examples run 369 to 884 px.
+
+- Plumber judges only the state the page is in when read. Anything shown on hover, focus or open (the hero's guide
+  labels) and anything that breaks only at some window widths is not seen unless the page is in that state. Next:
+  read each page at a few widths, and with hover-revealed things shown.
+- Words meeting words is advice only: it names the two texts, it does not offer a class to fix them.
 
 ### Writes and speed
 

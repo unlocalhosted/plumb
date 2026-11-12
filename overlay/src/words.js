@@ -64,6 +64,11 @@ export const CRAFT = {
     line: touching ? 'These parts touch: nothing but left-over space keeps them apart, and there is none left.' : `These parts are ${px(closest)} apart only because that much space is left over. A longer title closes it.`,
     reason: 'The distance between neighbours is a decision. Left to whatever space remains, it closes to nothing.',
   }),
+  'text-collision': ({ how, other }) => ({
+    label: 'Words run into other words',
+    line: how === 'run' ? `This runs straight into “${other}”, with no space between them.` : how === 'tight' ? `This sits so close to “${other}” that their letters meet.` : `This is drawn on top of “${other}”.`,
+    reason: 'Two texts that touch read as one, or not at all.',
+  }),
   'list-wrap': ({ over, n }) => ({
     label: over ? 'List runs off its row' : 'List can run off its row',
     line: over ? `This list of ${n} runs ${px(over)} past its row and has nowhere to go.` : `This row holds a list (${n} today) that can only grow sideways. A longer list or a narrower screen runs it off the edge.`,

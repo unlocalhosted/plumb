@@ -2089,6 +2089,77 @@ export const cardOpticalPadding = {
   },
 };
 
+
+// Words that run into other words (a plain check, no number). Two different texts drawn on top of each other, or on one
+// line closer than a word space, or stacked tighter than the smaller one's own size (lines set closer than solid:
+// ascenders meet descenders), read as one text or not at all. It usually shows only in one state at one width: a label
+// that appears on hover, a readout that grows, a headline that shrinks in a narrow window. Judged on what is drawn now
+// (anything transparent is left: texts that take turns in one place are stacked on purpose), from the letters, not the
+// boxes: a line's box is taller than its letters, and tight headings overlap their own boxes without touching.
+// Two texts are only judged against each other when they sit on the same painted surface (a card stacked on another
+// hides the words under it: a pile of toasts is not a collision), and two pieces that share a parent are one text the
+// author set side by side ("0:00" and ".00", a unit beside its value): those are the row's business, not this check's.
+// (Found on crafting-ui's hero, 2026-11-12: a readout touching the hint beside it, two guide labels 9px apart.)
+const LINES = new WeakMap();
+function textLines(facts) {
+  let all = LINES.get(facts);
+  if (all) return all;
+  all = [];
+  const ctx = (textLines.ctx ??= document.createElement('canvas').getContext('2d'));
+  const seen = new Map();
+  const shown = (el) => { if (!el || el === document.body) return true; let v = seen.get(el); if (v === undefined) { const st = facts.style(el); v = st.display !== 'none' && st.visibility !== 'hidden' && parseFloat(st.opacity) >= 0.05 && shown(el.parentElement); seen.set(el, v); } return v; };
+  const blockOf = (el) => { for (let n = el; n; n = n.parentElement) { const d = facts.style(n).display; if (!/^inline/.test(d) && d !== 'contents') return n; } return document.body; };
+  // the painted thing the words are drawn on: the nearest box with a fill of its own
+  const surfaces = new Map();
+  const surfaceOf = (el) => { if (!el || el === document.body) return document.body; let v = surfaces.get(el); if (!v) { const st = facts.style(el), bg = rgb(st.backgroundColor); v = (bg && bg[3] > 0.5) || st.backgroundImage !== 'none' ? el : surfaceOf(el.parentElement); surfaces.set(el, v); } return v; };
+  for (const el of facts.items ?? []) {
+    if (!el.isConnected || !facts.text(el) || el.closest('svg') || !shown(el)) continue;
+    const st = facts.style(el), ink = rgb(st.color);
+    if (ink && ink[3] < 0.05) continue;
+    const m = facts.metrics(el);
+    if (!m) continue;
+    ctx.font = st.font || `${st.fontStyle} ${st.fontWeight} ${st.fontSize} ${st.fontFamily}`;
+    const space = ctx.measureText(' ').width, size = px(st.fontSize), block = blockOf(el), surface = surfaceOf(el);
+    // laid out by the flow, two pieces in one parent sit where the layout put them (the parts of one number); placed by
+    // hand (absolute, fixed), nothing keeps them apart
+    const placed = /^(absolute|fixed)$/.test(st.position);
+    for (const n of el.childNodes) {
+      if (n.nodeType !== 3 || !/\S/.test(n.nodeValue)) continue;
+      const range = document.createRange(); range.selectNodeContents(n);
+      for (const q of range.getClientRects()) {
+        if (q.width <= 2 || q.height <= 2) continue;
+        const base = q.top + (q.height - (m.ascent + m.descent)) / 2 + m.ascent;
+        all.push({ el, block, surface, placed, left: q.left, right: q.right, capTop: base - m.capHeight, base, space, size, words: n.nodeValue.trim().replace(/\s+/g, ' ') });
+      }
+    }
+  }
+  LINES.set(facts, all);
+  return all;
+}
+export const textCollision = {
+  id: 'craft/text-collision', family: 'craft', number: [], owns: [], once: 'element', reads: ['rect', 'style', 'text', 'metrics', 'census'],
+  check({ el, facts }) {
+    if (!facts.items || !facts.text(el)) return [];
+    const all = textLines(facts), mine = all.filter((l) => l.el === el);
+    for (const a of mine) for (const b of all) {
+      if (b.el === el || b.block === a.block || b.surface !== a.surface || (b.el.parentElement === el.parentElement && !a.placed && !b.placed) || el.contains(b.el) || b.el.contains(el)) continue;
+      // said once, at the text that comes later in the page
+      if (!(b.el.compareDocumentPosition(el) & Node.DOCUMENT_POSITION_FOLLOWING)) continue;
+      const across = Math.min(a.right, b.right) - Math.max(a.left, b.left), ink = Math.min(a.base, b.base) - Math.max(a.capTop, b.capTop);
+      const how = across > 1 && ink > 1 ? 'over' : ink > 1 && across <= 1 && across > -Math.min(a.space, b.space) ? 'run' : across > 1 && Math.abs(a.base - b.base) < Math.min(a.size, b.size) ? 'tight' : null;
+      if (!how) continue;
+      const other = b.words.length > 28 ? `${b.words.slice(0, 27)}…` : b.words;
+      return [{
+        ...say(this.id, { how, other }),
+        key: this.id, text: 'text', props: [], value: how, n: Math.round(how === 'run' ? Math.max(0, -across) : across),
+        evidence: { how, with: other, across: Math.round(across * 10) / 10, baselines: Math.round(Math.abs(a.base - b.base) * 10) / 10 }, confidence: 0.86,
+        suggest: { kind: 'advice', text: how === 'run' ? 'Put a gap between them, or let one wrap or hide when the room runs out.' : 'Move one of them, or show only one where they meet.' },
+      }];
+    }
+    return [];
+  },
+};
+
 // ── hard rules, layer 2: the page's own habits (facts.census) ─────────
 
 const WEIGHTS = { 100: 'thin', 200: 'extralight', 300: 'light', 400: 'normal', 500: 'medium', 600: 'semibold', 700: 'bold', 800: 'extrabold', 900: 'black' };
@@ -2454,6 +2525,6 @@ export const RULES = [concentricRadius, innerOuterSpacing, textOpacity, halfPixe
   buttonPadding, iconSide, measure, leading, tracking, tabularNums, headingWidow, oneLight, borderOnShadow, contrast, disabledContrast, hitTarget, mediaSize, imageFit, flexMin, imageGround, stickyRoom, fixedHeight, scrollOnDemand, declaredGap, listWrap,
   truncateIntent, scrollbarGutter, boldHover, hangingQuote, capsCase, gradientSpace, inputZoom, anchorOffset, middleTruncate,
   textWrapRole, continuousCorners, opticalSizing, tintedShadow, easedScrim, pureBlackWhite, contentSize,
-  baselineAlign, iconCap, trimLeading, headingLead, pairSpacing, cardOpticalPadding,
+  baselineAlign, iconCap, trimLeading, headingLead, pairSpacing, cardOpticalPadding, textCollision,
   weightLevels, greyLevels, rhythm, elevationLadder,
   opticalCentre, overshoot, strokeWeight, scrollCue, pressFeedback, exitFaster, interruptible, ...RUN_RULES];

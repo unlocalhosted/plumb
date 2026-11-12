@@ -63,6 +63,7 @@ const RULE_LAWS = {
   'craft/declared-gap': [],
   'craft/list-wrap': [],
   'craft/truncate-intent': [],
+  'craft/text-collision': ['proximity'],
   'craft/scrollbar-gutter': [],
   'craft/bold-hover': [],
   'craft/hanging-quote': [],

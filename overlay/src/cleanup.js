@@ -29,7 +29,6 @@ import { SpacingPass } from './spacing-pass.js';
 import { ColourPass } from './colour-pass.js';
 import { RadiusPass } from './radius-pass.js';
 import { ControlSizePass } from './control-size-pass.js';
-import { ElevationPass } from './elevation-pass.js';
 import { IconPass } from './icon-pass.js';
 import { CLEANUP as W } from './words.js';
 import { declaredColours, loadPalette, paletteOf } from './colours.js';
@@ -143,7 +142,11 @@ function nums(b) {
 export class Cleanup {
   #show = null; #marks = null; // the show playing: its stop, and the marks it draws on the page
   #host; #el = null; #pass = 0; #done = new Map(); #state = 'idle'; #p = null; #page = null; #err = null; #preview = new StylePreview(); #held = false; #saved = null;
-  #swaps = { spacing: new SpacingPass(), colour: new ColourPass(), icons: new IconPass(), radius: new RadiusPass(), sizes: new ControlSizePass(), shadows: new ElevationPass() };
+  #swaps = { spacing: new SpacingPass(), colour: new ColourPass(), icons: new IconPass(), radius: new RadiusPass(), sizes: new ControlSizePass() };
+  // The shadows pass is loaded on its own: a dev server that started before a pass's file existed does not hand it out
+  // (the server lists the overlay's files when it starts), and one missing file must not take the whole overlay with it.
+  // Until it arrives, or if it never does, the step shows as not there yet and is skipped
+  #late = import('./elevation-pass.js').then((m) => { this.#swaps.shadows = new m.ElevationPass(); }, () => {});
   // renaming the colour tokens by job: null until the colour step reads a plan; then { plan, open, busy, done, err }
   #rn = null;
   get #sw() { return this.#swaps[PASSES[this.#pass]]; } // the pass in hand, when it is a class-swap pass

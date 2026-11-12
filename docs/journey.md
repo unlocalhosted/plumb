@@ -668,6 +668,17 @@
 - **Not checked:** shadows (crafting-ui's running server does not hand out that file yet); a real app with drift in it.
 - **Also fixed, from the backlog's "now" list:** a read in a window with no size (a tab never shown) measured everything as zero and reported it without a word. It now refuses: "This window has no size, so nothing on the page can be measured."
 
+## Words that run into other words (2026-11-12)
+- **The itch:** the owner sent a screenshot of crafting-ui's hero with two labels printed over each other and asked: "can you see this overlap , how come plumber couldn't detect it ?"
+- **How we found it:** reproduced it: the window about 800px wide, the pointer on the headline. "cap height" and "x-height" sat 9px apart; the readout ended 0.7px before the hint beside it, so the two read as one sentence.
+- **The system behind it:** three reasons. Plumber had no check at all for text meeting text; every check looked at one element or at a parent and its children. The labels are invisible until the headline is hovered, and plumber reads the page as it rests. And it only happens in a narrow band of window widths.
+- **What we tried, what we chose and why:** a check that compares the drawn letters (cap top to baseline) of every pair of visible texts. The first version shouted at the parts of one number ("0:00" and ".00") and at stacked toasts. So: texts on different painted surfaces are layers, not a collision; two pieces the layout placed in one parent are one thing; two pieces placed by hand (absolute) can collide. The ground is the law of proximity: things that touch are read as one.
+- **The fix and the proof:** before, nothing was reported. After, with the page in that state: "This sits so close to “cap height” that their letters meet." and "This runs straight into “· Geist medium”, with no space between them." Quiet at rest on the home, motion and interfaces pages. A test holds both cases and four look-alikes that must stay quiet (e2e/craft-collision.test.mjs).
+- **Also fixed:** the shadows pass, added earlier today, stopped the whole overlay loading on a dev server started before it existed. It now loads late and the overlay works without it.
+- **Not done:** plumber still only sees the state and width the page is in when it is read (see backlog).
+- **Media hooks:** the owner's screenshot beside the same hero with plumber's two findings drawn on it.
+- References: [the owner's screenshot](references.md).
+
 ## Open gaps
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
 
@@ -675,6 +686,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - Plumber's text styles write into crafting-ui without shrinking headings or large numbers, keep classes that only apply to part of the text, and keep paragraph leading off headings ([entry](#big-text-no-longer-shrinks-to-fit-small-text-the-dark-page-checked-2026-11-12)).
 - crafting-ui's vocabulary page loads about four times lighter (9,474 → 2,007 elements): each live example mounts only as it comes near the screen. [entry](#crafting-uis-vocabulary-page-live-examples-mount-only-near-the-screen-2026-11-12)
 - plumber finds a side column that is set to stick but can't, and fixes it with one class: on crafting-ui's skill pages the column now stays beside the text where it used to scroll away. [entry](#the-sticky-check-on-a-real-app-crafting-uis-skill-pages-2026-11-12)
+- plumber says when words run into other words: two labels whose letters meet, or a readout that ends where the next text begins ([entry](#words-that-run-into-other-words-2026-11-12)).
 - In a rename plan, the raised background gets the surface name and recessed fills get sunken, judged against the page colour ([entry](#which-colour-gets-the-surface-name-2026-11-12)).
 - Plumber tells text colours from fill colours by how the code uses them, so shadcn's `-foreground` colours read as the words they are ([entry](#text-and-fill-colours-read-from-the-code-2026-11-12)).
 - The server answers a write about a third sooner (228 ms → 149 ms on a copy of crafting-ui): it no longer works out and sends the same dependency lists twice. [entry](#the-small-trim-a-writes-bookkeeping-done-once-2026-11-12)

@@ -59,6 +59,7 @@ export const STANDARD = {
     'text-wrap-role': { width: 300, uneven: 0.5, orphan: 0.15 },
     'baseline-align': { off: 1 },
     'truncate-intent': {}, 'middle-truncate': {}, 'bold-hover': {},
+    'text-collision': {}, // nothing to tune: a word space and the letters' own size are the measures
     'scrollbar-gutter': { width: 280, height: 200 },
     'anchor-offset': {},
     'scroll-cue': {},
