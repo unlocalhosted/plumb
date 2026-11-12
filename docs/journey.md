@@ -406,8 +406,16 @@
 - **Found on the way, panel:** the icons pass shows 0 on the messy page although one icon should change: its size is set by a prop, and the pass only writes classes.
 - **Not done:** undo of the corners write was not tried; a theme named by size shows an explanation instead of rows, but that screen was not looked at; no tests. The server code was rebuilt in place (dist) so the page could load the new files.
 
+## The icons pass writes a size passed as a prop (2026-11-12)
+- **The itch:** on the messy page the panel showed 0 icon changes, though one nav icon was 16px among four at 18px. The decision was made and then dropped: the size is a prop (`<Chart size={16} />`) and the pass only wrote classes.
+- **The system behind it:** the clean-up's writes were class swaps only. The server could already set a literal prop on a JSX element, but nothing told it which element: the icon's svg is drawn two components down from where the number is written.
+- **What we chose and why:** the number is changed where a person would change it, at the usage. React says which components wrap this icon alone and were handed the prop; the outermost of them is the one whose usage holds the number, and the icon's own chain of usages gives its line. A prop that is computed, or only spread in, is refused by the server with its reason. Prop writes go first and swaps in the same file follow with the file's new hash, all under one undo.
+- **The fix and the proof (bench/messy, in the running panel):** the Icons step now reads "1 icon is off your icon system. Size 16px → 18px". Apply wrote one line, `<Chart size={16} stroke={1.5} />` → `<Chart size={18} stroke={1.5} />`, and all five nav icons drew at 18. Undo in the panel put the 16 back and the file was clean.
+- **Noticed:** the panel's count read "10 → 10 icon sizes and strokes": one size fewer, one stroke more, because a line icon drawn larger has a thicker stroke on screen. True, but it reads as if nothing changed.
+- **Not done:** a stroke passed as a prop goes through the same path and was not tried; an icon set whose size prop is spread through more layers was not tried; no tests.
+
 ## Open gaps
-- **The icons pass cannot write a size set by a prop** (`<Home size={16} />`): the decision is made and then dropped from the panel.
+- The icons step's count adds sizes and strokes together, so fixing one icon's size can read "10 → 10".
 - Themes that name radii by size (sm, md, lg) get no answer from the corners pass; undo of its write is untried.
 - **Padding and row gaps are outside the spacing pass:** it reads only the space between stacked things. bench/messy has p-[18px], px-3.5, gap-[10px] in rows that it never sees.
 - **One messy page, written by Claude.** bench/messy is LLM-written but not blind to plumber's rules; pages from other models and real generated apps would be a fairer test.

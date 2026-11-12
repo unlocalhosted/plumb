@@ -478,10 +478,10 @@ export class Cleanup {
     this.#state = 'writing'; this.#host.render();
     const group = `cleanup-${k}-${Date.now().toString(36)}`;
     try {
-      const { swaps, refused, places: wrote } = await sw.edits();
-      if (!swaps.length) throw new Error(refused[0]?.why ?? S.couldNot);
+      const { swaps, refused, places: wrote, props = [] } = await sw.edits();
+      if (!swaps.length && !props.length) throw new Error(refused[0]?.why ?? S.couldNot);
       // the places written when the pass counts them (a refused edit is not a place that now follows)
-      const files = swaps.length, places = wrote ?? sw.page.places, said = S.saved(places, files);
+      const files = new Set([...swaps, ...props].map((x) => x.file)).size, places = wrote ?? sw.page.places, said = S.saved(places, files);
       const page = this.#page && (({ census: _c, roles: _r, ...rest }) => rest)(this.#page);
       const landed = (undo = []) => {
         this.#saved = { group, places, files, pass: i, refused: refused.length };
@@ -490,7 +490,7 @@ export class Cleanup {
         this.#host.wrote?.({ undo, trace: { group } }, said);
       };
       keep({ state: 'writing', pass: i, group, said, saved: { group, places, files, pass: i, refused: refused.length }, page, swap: sw.page, done: Object.fromEntries(this.#done) });
-      const r = await answered(this.#host.write({ tokens: [], css: [], swaps }, said, { step: W.pass[k], laws: SWAP_LAWS[k], group }), group);
+      const r = await answered(this.#host.write({ tokens: [], css: [], swaps, props }, said, { step: W.pass[k], laws: SWAP_LAWS[k], group }), group);
       if (r?.lost && !r.landed) throw new Error(W.lost);
       if (!r?.lost && !r?.ok) throw new Error(r?.why ?? S.couldNot);
       refused.push(...(r?.refused ?? [])); // what the write itself left as it is (a partly landed step)

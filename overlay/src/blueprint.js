@@ -325,8 +325,26 @@ export class Blueprint {
     const heard = (e) => this.#host.remember?.(said, e.detail?.undo ?? [], null, trace.group);
     addEventListener('plumb:applied', heard, { once: true });
     try {
-      const answer = await post('apply-all', { tokens: write.tokens ?? [], css: write.css ?? [], swaps: write.swaps ?? [], trace });
-      const results = answer?.results ?? {}, undo = answer?.undo ?? [];
+      // props first (a number passed to a component, changed where it is written: POST prop), one at a time; a file they
+      // change has a new hash, which the swaps that follow in the same file are sent with
+      const hashes = new Map(), propUndo = [], propLeft = [];
+      for (const p of write.props ?? []) {
+        try {
+          const r = await post('prop', { file: p.file, hash: hashes.get(p.file) ?? p.hash, line: p.line, column: p.column, name: p.name, value: p.value, trace });
+          if (r?.undo) propUndo.push(r.undo);
+          if (r?.hash) hashes.set(p.file, r.hash);
+          this.invalidate({ file: p.file });
+        } catch (error) { propLeft.push({ file: p.file, reason: error?.message ?? FIX.couldNot }); }
+      }
+      const swapsNow = (write.swaps ?? []).map((x) => (hashes.has(x.file) ? { ...x, hash: hashes.get(x.file) } : x));
+      const rest = (write.tokens ?? []).length || (write.css ?? []).length || swapsNow.length;
+      if (!rest) {
+        if (!propUndo.length) { this.#host.forgetResume?.(); return { ok: false, undo: [], group: trace.group, why: propLeft[0]?.reason ?? FIX.couldNot }; }
+        this.#host.remember?.(said, propUndo, null, trace.group);
+        return { ok: true, undo: propUndo, group: trace.group, refused: propLeft };
+      }
+      const answer = await post('apply-all', { tokens: write.tokens ?? [], css: write.css ?? [], swaps: swapsNow, trace });
+      const results = answer?.results ?? {}, undo = [...propUndo, ...(answer?.undo ?? [])];
       const failed = [...(results.tokens ?? []), ...(results.css ?? []), ...(results.swaps ?? [])].filter((x) => !x.ok || x.refused?.length);
       for (const f of new Set([...(write.tokens ?? []), ...(write.css ?? []), ...(write.swaps ?? [])].map((x) => x.file))) this.invalidate({ file: f });
       // a write that partly lands is a step all the same: what it changed is kept, with its Undo, and what it left as it is
@@ -334,10 +352,10 @@ export class Blueprint {
       // one swap of seventeen refused, classes split across a template string)
       const wrote = [...(results.tokens ?? []), ...(results.css ?? []), ...(results.swaps ?? [])].some((x) => x.ok && (!Array.isArray(x.applied) || x.applied.length));
       const why = failed.length ? (/changed since/i.test(failed[0].error ?? '') ? FIX.changedSince : failed[0].error ?? failed[0].refused?.[0]?.reason ?? FIX.couldNot) : null;
-      if (failed.length && !wrote) { this.#host.forgetResume?.(); return { ok: false, undo, group: trace.group, why }; }
+      if (failed.length && !wrote && !propUndo.length) { this.#host.forgetResume?.(); return { ok: false, undo, group: trace.group, why }; }
       this.#host.remember?.(said, undo, null, trace.group);
       const left = failed.flatMap((f) => (f.refused?.length ? f.refused.map((r) => ({ file: f.file, ...r })) : [{ file: f.file, reason: f.error ?? why }]));
-      return { ok: true, undo, group: trace.group, refused: left };
+      return { ok: true, undo, group: trace.group, refused: [...propLeft, ...left] };
     } catch (error) { this.#host.forgetResume?.(); return { ok: false, why: /changed since/i.test(error?.message ?? '') ? FIX.changedSince : error?.message ?? FIX.couldNot }; }
     finally { removeEventListener('plumb:applied', heard); }
   }
