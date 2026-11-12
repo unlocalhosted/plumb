@@ -1988,6 +1988,13 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   delight part, joy part ... now everything's grey"). The colourful demos are restored; the four-beat story stays.
   What was actually asked: detail and delight, not flat colour fills; and the showcase should show the pain with our
   guardrail language (padding, margin, gaps, movement) around the example.
+- **One card the confirmed way: the album (nested radius).** The reading confirmed with the owner first: colour and
+  joy kept, as rich detail rather than flat colour fills; the pain shown with our guardrail language. The pink stage
+  became a paper canvas with a fine dot grid; the tile a horizontal player with layered cover art (a sun, a sky,
+  three waves), the track, a heart, a progress bar and times. When Plumber names the mistake, the tile's 8px padding
+  is hatched the way the overlay marks padding (a band cut between the tile's outline and the cover's) and both
+  corners are drawn; on the fix the inner corner tightens to 12, the pill turning mint. Shown to the owner before
+  carrying it to the other eight.
 
 ## Open gaps
 - The overlay writes about 180 corners as numbers (radius tokens about 45 times), many off its own scale; 6px is

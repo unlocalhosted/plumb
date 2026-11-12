@@ -202,14 +202,19 @@ function Card({ card, live, reduced, turn, onBeat, onDone }) {
 }
 
 /* The guides and the pill, drawn over the scene in the stage's own pixels (so they stay crisp through the camera). */
+// a rounded rectangle as a path, for cutting one box out of another
+const rr = (x, y, w, h, r) => { r = Math.max(0, Math.min(r, w / 2, h / 2)); return `M${x + r} ${y}H${x + w - r}A${r} ${r} 0 0 1 ${x + w} ${y + r}V${y + h - r}A${r} ${r} 0 0 1 ${x + w - r} ${y + h}H${x + r}A${r} ${r} 0 0 1 ${x} ${y + h - r}V${y + r}A${r} ${r} 0 0 1 ${x + r} ${y}Z`; };
 function Marks({ marks, fixed, out, card }) {
-  const { s, lines = [], arcs = [], rects = [], dots = [], value, box } = marks;
+  const { s, lines = [], arcs = [], rects = [], dots = [], frames = [], value, box } = marks;
   const done = fixed && card.done(value);
   const rel = (x, y) => [x - s.left, y - s.top];
   const [px, py] = rel(box.left + box.width / 2, card.pill === 'below' ? box.bottom : box.top);
   return (
     <div className="ins-marks" data-out={out} data-on={done} aria-hidden="true">
       <svg width={s.width} height={s.height}>
+        {frames.length > 0 && <defs><pattern id={`ins-pad-${card.n}`} width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="5" height="5" style={{ fill: 'color-mix(in oklab, var(--pl-mark-padding) 14%, transparent)' }} /><line x1="0" y1="0" x2="0" y2="5" style={{ stroke: 'var(--pl-mark-padding)', strokeWidth: 1.5, opacity: 0.75 }} /></pattern></defs>}
+        {/* padding, the way the overlay marks it: the band between a box's edge and what it holds, hatched */}
+        {frames.map(([ox, oy, ow, oh, or, ix, iy, iw, ih, ir], i) => { const [a, b] = rel(ox, oy), [c, d] = rel(ix, iy); return <path key={`f${i}`} className="ins-pad" fillRule="evenodd" d={rr(a, b, ow, oh, or) + rr(c, d, iw, ih, ir)} style={{ fill: `url(#ins-pad-${card.n})` }} />; })}
         {card.hatch && <defs><pattern id={`ins-hatch-${card.n}`} width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="5" style={{ stroke: 'var(--mk)', strokeWidth: 1.5, opacity: 0.6 }} /></pattern></defs>}
         {lines.map(([x1, y1, x2, y2], i) => { const [a, b] = rel(x1, y1), [c, d] = rel(x2, y2); return <line key={`l${i}`} className="ins-guide" x1={a} y1={b} x2={c} y2={d} pathLength="1" style={{ animationDelay: `${i * 40}ms` }} />; })}
         {rects.map(([x, y, w, h], i) => { const [a, b] = rel(x, y); return <rect key={`r${i}`} className={`ins-guide${card.hatch ? ' ins-hatch' : ''}`} x={a} y={b} width={w} height={h} rx={3} pathLength="1" style={card.hatch ? { '--hatch': `url(#ins-hatch-${card.n})` } : undefined} />; })}
@@ -264,18 +269,27 @@ Play.measure = (root) => {
   return { focus: btn, value: Math.abs(cx - wx) / k, lines: [[cx, b.top - 10, cx, b.bottom + 10], [wx, v.top - 4, wx, v.bottom + 4]] };
 };
 
-// #8 an album tile: the cover's corner as round as the tile's pinches
+// #8 a music player's album tile: the cover's corner as round as the tile's pinches; drawn with real detail (cover art,
+// the track, a progress bar), on a paper canvas, not a flat colour
 function Album({ fixed }) {
   return (
     <div className="sc sc-album" data-fixed={fixed}>
-      <div className="sc-tile"><div className="sc-cover" /><b>Low Tide</b><small>Mara Ellis · 9 songs</small></div>
+      <div className="sc-tile">
+        <div className="sc-cover"><i className="sc-sun" /><i className="sc-wave w1" /><i className="sc-wave w2" /><i className="sc-wave w3" /></div>
+        <div className="sc-meta">
+          <div className="sc-track"><span><b>Low Tide</b><small>Mara Ellis · Shoreline</small></span><svg className="sc-heart" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z" /></svg></div>
+          <div className="sc-prog"><i /></div>
+          <div className="sc-times"><span>1:24</span><span>3:42</span></div>
+        </div>
+      </div>
     </div>
   );
 }
 Album.measure = (root) => {
   const tile = root.querySelector('.sc-tile'), cover = root.querySelector('.sc-cover'), t = R(tile), c = R(cover), k = t.width / tile.offsetWidth;
-  const r = parseFloat(getComputedStyle(cover).borderTopLeftRadius), outer = parseFloat(getComputedStyle(tile).borderTopLeftRadius);
-  return { focus: tile, value: r, arcs: [[t.left, t.top, outer * k], [c.left, c.top, r * k]] };
+  const r = parseFloat(getComputedStyle(cover).borderTopLeftRadius), outer = parseFloat(getComputedStyle(tile).borderTopLeftRadius), pad = parseFloat(getComputedStyle(tile).paddingLeft) * k;
+  return { focus: tile, value: r, arcs: [[t.left, t.top, outer * k], [c.left, c.top, r * k]],
+    frames: [[c.left - pad, c.top - pad, c.width + 2 * pad, c.height + 2 * pad, outer * k, c.left, c.top, c.width, c.height, r * k]] };
 };
 
 // #16 a time tracker: the day's entries, in proportional or tabular figures; their colons don't line up
