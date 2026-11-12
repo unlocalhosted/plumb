@@ -60,10 +60,13 @@ reserved.)
 
 - **Now:** nothing of this session's. (A class fix offered and then refused is in the fix card, which another
   session has been changing today; left to it.)
-- **Next:** padding read by job · the Next performance test · the tests that fail only under the full run's load.
+- **Next:** the Next performance test · the tests that fail only under the full run's load.
 - **Decided 2026-11-12:** shadows went ahead of padding-by-job. After padding is snapped to the scale, sibling cards on
   the messy page already agree, so reading padding by job has little to show yet; shadows were a missing primitive.
 - **Done since:** a test for themes whose corners and shadows are named by size · the shared role layer · borders (the colour pass already decides them) · timings · the disabled look.
+- **Decided 2026-11-12, padding by job:** not built. With no padding named for a job in the theme (a card's inset),
+  the only way to pick a card's padding is to count what most cards use, and a count is not a reason
+  (docs/PRINCIPLES.md). Padding stays snapped to the scale. Build it for a theme that names insets by job.
 - **Decided 2026-11-12, layer order:** not built yet. A z-index move changes what covers what, so a pass may only
   rename a value that already equals its job's layer. crafting-ui names its layers by number (no job); algorecall
   names them by job but is not running here. Build it when an app with job-named layers is at hand.
