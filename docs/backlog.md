@@ -84,7 +84,6 @@ reserved.)
 - Numbers drawn at heading size (5 places) share one 22px figure style, so a 33px figure shrinks 11px.
 - Two page titles (33px and 30px) tie for the large headline; the tie goes to 30px, so "Craft" shrinks 3px. A tie
   could go to the theme's own step, or the larger.
-- No test yet reproduces the three fixed problems (variant classes, prose on headings, one headline step).
 
 ### Clean-up: colour
 

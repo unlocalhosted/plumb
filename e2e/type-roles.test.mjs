@@ -11,7 +11,7 @@ import tailwindcss from '@tailwindcss/vite';
 import { plumb } from '../dist/hosts/vite.js';
 
 const repo = fileURLToPath(new URL('../', import.meta.url));
-async function site(t) {
+async function site(t, { extra = '' } = {}) {
   let browser;
   try { browser = await chromium.launch({ headless: true, executablePath: (process.env.PLUMBER_CHROMIUM ?? process.env.PLUMB_CHROMIUM) || undefined }); }
   catch (error) { if (!/Executable doesn't exist/.test(error.message)) throw error; t.skip('Playwright Chromium missing'); return null; }
@@ -22,7 +22,7 @@ async function site(t) {
   // this test's own decisions and page (the fixture is shared): the owner's prose leading, and a code block, which is never reading text
   await writeFile(join(root, 'plumber.config.ts'), "export default { css: 'src/styles.css', source: ['src/**/*.{tsx,css}'], system: { exclude: ['src/specimen'], type: { roles: { prose: { lineHeight: 1.6 } } } } };\n");
   const app = join(root, 'src/App.tsx');
-  await writeFile(app, (await readFile(app, 'utf8')).replace('      <Labels />', '      <pre id="code" className="text-[13px] leading-[1.6] font-mono">npm run dev</pre>\n      <Labels />'));
+  await writeFile(app, (await readFile(app, 'utf8')).replace('      <Labels />', `      <pre id="code" className="text-[13px] leading-[1.6] font-mono">npm run dev</pre>\n${extra}      <Labels />`));
   const server = await createServer({ root, cacheDir: join(root, '.vite-cache'), configFile: false, plugins: [tailwindcss(), plumb({ watch: false })],
     optimizeDeps: { noDiscovery: true, include: ['react', 'react/jsx-runtime', 'react/jsx-dev-runtime', 'react-dom', 'react-dom/client'] },
     oxc: { jsx: { runtime: 'automatic', development: true } }, logLevel: 'silent', server: { host: '127.0.0.1', port: 0 } });
@@ -114,5 +114,38 @@ test('roles come from the code, one per size; weight and reading leading ride be
   for (const handle of [...applied.body.undo].reverse()) { await s.settle(); const undone = await s.post('undo', { id: handle.id }); assert.equal(undone.status, 200, JSON.stringify(undone.body)); }
   await s.settle();
   for (const file of ['src/styles.css', 'src/App.tsx', 'src/Labels.tsx']) assert.equal(await s.read(file), original[file], file);
+  assert.deepEqual(s.errors, []);
+});
+
+// three problems found writing crafting-ui (2026-11-12, docs/journey.md): a 33px page title folded into the 22px section
+// titles; a class behind a variant (`first-letter:uppercase`) swapped away, so a title lost its capital; a heading with
+// tall leading given the reading-text leading
+test('a page title keeps its own headline step; a class behind a variant stays; a heading never takes reading leading', { timeout: 180000 }, async (t) => {
+  const s = await site(t, { extra: [
+    '      <h1 id="page-title" className="text-[33px] leading-[1.1] font-medium">Craft</h1>',
+    '      <h2 id="section-title" className="text-[22px] leading-[1.35] font-medium">Alignment and balance</h2>',
+    '      <h3 id="group-name" className="text-[16px] leading-[1.6] font-medium">Spacing and rhythm</h3>',
+    '      <span id="rule-title" className="block text-[22px] leading-[1.35] font-medium first-letter:uppercase">a play button that looks centred</span>',
+  ].map((l) => `${l}\n`).join('') }); if (!s) return;
+  const before = await s.styleOf('page-title');
+  const { proposal } = (await s.post('system', { census: await s.census() })).body;
+  const edits = Object.fromEntries(proposal.write.swaps.flatMap((w) => w.edits).map((e) => [e.from, e.to]));
+  // the page title and the section title are two headline steps, not one role at the section's size
+  assert.match(edits['text-[33px] leading-[1.1] font-medium'], /^type-headline-large\b/, JSON.stringify(edits));
+  assert.match(edits['text-[22px] leading-[1.35] font-medium'], /^type-headline-small\b/, JSON.stringify(edits));
+  // the heading with 1.6 leading is a heading: its role, no leading-prose
+  const group = edits['text-[16px] leading-[1.6] font-medium'];
+  assert.ok(group && !/leading-prose/.test(group), `group name: ${group}`);
+  // first-letter:uppercase is not part of any swap
+  assert.ok(!Object.keys(edits).some((from) => /first-letter/.test(from)), JSON.stringify(Object.keys(edits)));
+  const applied = await s.post('apply-all', { tokens: proposal.write.tokens, css: proposal.write.css, swaps: proposal.write.swaps });
+  assert.equal(applied.status, 200, JSON.stringify(applied.body).slice(0, 600));
+  for (let i = 0; i < 120; i++) { await s.page.waitForTimeout(500); if (/type-headline-large/.test((await s.styleOf('page-title')).cls)) break; }
+  await s.settle();
+  assert.match(await s.read('src/App.tsx'), /first-letter:uppercase/, 'the variant class is still written');
+  const firstLetter = await s.page.evaluate(() => getComputedStyle(document.getElementById('rule-title'), '::first-letter').textTransform);
+  assert.equal(firstLetter, 'uppercase', 'the title still starts with a capital');
+  const after = await s.styleOf('page-title');
+  assert.equal(after.size, before.size, `the page title keeps its size: ${before.size} → ${after.size}`);
   assert.deepEqual(s.errors, []);
 });

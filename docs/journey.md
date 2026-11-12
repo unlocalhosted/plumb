@@ -620,7 +620,8 @@
   2. A class behind a variant (`first-letter:uppercase`, `md:text-lg`, `hover:font-medium`) is not the element's own type at rest: it is neither read nor swapped. The rule titles keep their capital.
   3. Reading-text leading never goes on a heading, a control's words or a figure.
 - **The proof:** the crafting-ui branch rewritten from its last commit (39 files, 307 swaps, one refused): the craft page looks as it did (docs/media/crafting-ui-roles-craft-fixed.jpg beside -before.jpg). The two text-style test files pass, 3 of 3.
-- **Left:** heading-size figures still share one 22px style; the large-headline tie goes to the smaller size; no new test reproduces these three yet.
+- **Left:** heading-size figures still share one 22px style; the large-headline tie goes to the smaller size.
+- **The test** (e2e/type-roles.test.mjs, "a page title keeps its own headline step…"): a 33px h1, a 22px h2, a 16px h3 with 1.6 leading and a title with `first-letter:uppercase`, through the real server and browser. It passes now, and fails on the code before the fix (run in a separate copy): there the 33px title went to the 22px headline style and the variant class was in the swap.
 
 ## The whole suite after padding, controls and button labels (2026-11-12)
 - **The run:** 181 runs, 16.8 min on vm-agent: 939 tests passed, 16 failed in 14 files.
