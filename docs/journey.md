@@ -218,6 +218,7 @@
 - **The proof:** 0 findings from the three checks on all 8 pages (plumber found 111 other things on them). The pages do hold what the checks look at: 11 lines set to cut off, all inside a box that may shrink; 5 pictures, all cropped to cover; 8 background pictures with no words lost over them.
 - **What it doesn't show:** neither app makes these mistakes, so this proves the checks stay quiet on good code, not that they catch real slips outside our own demos. algorecall's inner pages never loaded (stuck on "Loading the page…", its backend was not running), so the largest page was not read.
 - **Noticed on the way:** plumber's whole read took 12 s on algorecall's home (715 elements) and 8 s on a 1,400-element crafting-ui page. Whether the three checks add to that is not measured.
+- **Measured after (same day):** each check was timed inside one read of the 1,400-element crafting-ui page. The read took 7.9 s. All 75-odd checks together took 1.1 s of it, and the three defensive checks 28 ms (2 ms, 5 ms and 21 ms). They are not the cost. Half of the checks' time is the text-contrast check alone (0.5 s), and about 6.8 s is spent outside the checks, where is not yet known.
 
 ## Suggestions use what the page already does (2026-11-12)
 - **The itch:** the owner asked how plumber decides what to suggest. Reading the code showed a signed-off part of the design that was never built: a suggested value should be one the app already uses for the same job.
@@ -230,7 +231,8 @@
 ## Open gaps
 - **Other answers are computed but never shown.** A suggestion carries its runners-up, yet they are almost always just the same advice in words; there is nothing worth listing until the recommender offers real ones (the other theme steps in range, the class the page's other places already use).
 - **A page habit is offered as a new token even when a class already carries it.** crafting-ui's 41 labels get 0.1em from an existing class; plumber proposes a new token instead of that class.
-- The three defensive checks have only been seen catching a slip on our own demo screens (now removed); no real app with the mistakes has been read. How much time they add to plumber's read is not measured.
+- The three defensive checks have only been seen catching a slip on our own demo screens (now removed); no real app with the mistakes has been read.
+- plumber's full read takes about 8 s on a 1,400-element page, and about 6.8 s of that is outside the checks themselves; where it goes is not measured.
 - 27 test files already failing before the token work (52 tests on vm-agent), the text editor's test flaky there; not this work's, not fixed.
 - Defensive CSS tips still without a check in plumber (checks only, never craft rules or screens): flex rows that should wrap, scrollbars shown when nothing scrolls, hover styles on touch screens, repeated backgrounds, fixed heights on text, sticky items in a grid, and the source-only ones (variable fallbacks, vendor selectors, vertical media queries).
 - Not built from the signed-off spec: surface levels (a card on a panel) read from nesting; no project at hand has two nested surface colours to prove it on.
