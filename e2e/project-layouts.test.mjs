@@ -120,7 +120,7 @@ test('two-host-configs: vite wins by registry order, next.config.js is kept as a
   }));
   await installTailwind(project.root);
   const doctor = await run(project, ['doctor', '--verbose'], 1);
-  assert.match(doctor.stdout, /ok vite config found; runtime not observed \[locate\.host\]/);
+  assert.match(doctor.stdout, /ok vite config found; the running app is checked in the browser \[locate\.host\]/);
   assert.match(doctor.stdout, /vite\.config\.ts:1[^\n]*also next\.config\.js, ignored/);
   assert.doesNotMatch(doctor.stdout, /Host could not be established/);
 });

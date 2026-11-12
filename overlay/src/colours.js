@@ -547,7 +547,11 @@ export function proposeColours(places, palette = known ?? paletteOf(), { scope =
   const settled = (x, reach) => { if (x.cls && named.get(x.cls)) return x.oklab; const l = x.cls ? levelsFor(x)[0] : null; return l && l.de <= reach ? oklab(asToken(l.t, x.under)) : x.oklab; };
   const keepsOrder = (pl, e, t, reach) => {
     const now = strength(e.oklab, e.under), then = strength(oklab(asToken(t, e.under)), e.under);
-    return matesOf(pl, e).every((x) => { const was = now - strength(x.oklab, x.under), will = then - strength(settled(x, reach), x.under);
+    // only words doing another job: a title and its description differ in size or weight, and the colour between them is
+    // part of that order. Two texts drawn the same size and weight do the same job; a grey apart from its twin is the
+    // drift this pass exists to fold, not a hierarchy to keep
+    const other = (x) => Math.round(x.size ?? 0) !== Math.round(e.size ?? 0) || Math.abs((x.weight ?? 400) - (e.weight ?? 400)) >= 100;
+    return matesOf(pl, e).filter(other).every((x) => { const was = now - strength(x.oklab, x.under), will = then - strength(settled(x, reach), x.under);
       return Math.abs(was) <= DE_OK || (Math.sign(will) === Math.sign(was) && Math.abs(will) > DE_OK); });
   };
   // the level a spare grey folds to: the nearest in reach that keeps its order with the words beside it; null (and said) when none does

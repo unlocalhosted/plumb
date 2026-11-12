@@ -354,7 +354,8 @@ test('resolve validates tracked source identity and site queries select only exa
   assert.ok(hook, html);
   assert.match(hook[1], /import \{ createHotContext \} from '\/@vite\/client'/);
   assert.match(hook[1], /import \{ invalidateSourceMaps \} from '\/__plumb\/src\/sourcemap\.js'/);
-  assert.match(hook[1], /createHotContext\([^)]*\)\.on\('vite:afterUpdate', invalidateSourceMaps\)/);
+  // (the hot context is kept in a name now: it also hears the overlay's own "applied" event)
+  assert.match(hook[1], /const hot = createHotContext\([^)]*\);\s*hot\.on\('vite:afterUpdate', invalidateSourceMaps\)/);
   assert.doesNotMatch(html, /html-proxy|vite-ignore/);
   assert.equal((await fetch(new URL('../__plumb/src/sourcemap.js', url))).status, 200);
   const resolve = (source, params = {}, init) => fetch(url + 'resolve?' + new URLSearchParams({ source, ...params }), init);

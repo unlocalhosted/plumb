@@ -52,7 +52,7 @@
     "numericSpacing": {
       "type": "object", "additionalProperties": false,
       "required": ["unit", "replaced"],
-      "properties": { "unit": { "$ref": "#/$defs/decision" }, "replaced": { "type": "boolean" } }
+      "properties": { "unit": { "$ref": "#/$defs/decision" }, "replaced": { "type": "boolean" }, "reset": { "type": "boolean" }, "own": { "type": "boolean" } }
     },
     "decisionInventory": { "type": "array", "items": { "$ref": "#/$defs/decision" } },
     "deadDecisions": {
