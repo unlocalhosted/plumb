@@ -18,6 +18,15 @@ screen; plumber keeps checking it. Owner, 2026-11-04, on #9 and #10: "they aren'
 easy to spot, people won't do it"; "the rules should be something obvious but which people miss". Never invent a
 mistake to give a rule a screen.
 
+**The craft list is a senior's tacit knowledge, not the tutorials.** A craft rule (a number in docs/craft/rules.md, a
+screen in the showcase) is something a specialised design engineer tells a junior after years of doing it: a hidden
+gem. A tip that hundreds of tutorials already teach (defensive CSS: `object-fit: cover`, `min-width: 0` on a flex item,
+a colour behind words on a picture) is not one, however useful. It may still be a check in plumber's engine, with
+`number: []`, no row in the list and no screen. Ask before numbering anything: *would a senior be surprised a junior
+didn't know this, or surprised a junior did?* Only the second is a craft rule. Owner, 2026-11-12, on #78–#80: "these
+are not just obvious examples regurgitated online in 100s of tutorials but like real hidden gems"; "maybe this rule
+doesn't belong here". A screen that needs a staged product and a staged failure to make its point is the sign.
+
 ## 1. Start from the mistake people make, not from the rule
 
 Before writing a check or an example, write one sentence: *how does this go wrong in a shipped product, and why did
@@ -364,3 +373,7 @@ Each line is something the owner had to say once; the sections above exist so th
 - 2026-11-12 · (own review, building #80) The new screen made #79 fire on its card: truncated names inside a card with
   its own width, in the stage's row. A second finding on a well-built screen is the rule's noise, not the screen's:
   #79 now stays quiet about an item that has its own width until the row really runs over.
+- 2026-11-12 · "these examples look very contextual ... these looks ass"; "maybe this rule doesn't belong here"; the
+  craft list is "tacit knowledge, years of experience ... real hidden gems", not tutorial tips. → §0. Screens 78–80
+  (defensive CSS tips) were removed; the three checks stay in the engine without a number. The §3½ notes about a
+  defensive rule's screen no longer have a screen to apply to.

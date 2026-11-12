@@ -204,9 +204,17 @@
 - **A dead end that helped:** the new screen made rule 79 (text in a row may shrink) fire on the card itself. A box with its own width is never held wider than that width, so 79 now stays quiet there until the row really runs over.
 - **Media hooks:** `/rule/80`: photos on, photos off, then the fix with photos still off.
 
+## The defensive tips leave the craft list (2026-11-12)
+- **The itch:** the owner, on the three new screens: "these examples look like very contextual ... these looks ass", then "maybe this rule doesn't belong here", then the reason: the craft list is what "a specialised craftsmen design engineer [tells] his junior ... tacit knowledge years of experience, these are not just obvious examples regurgitated online in 100s of tutorials but like real hidden gems".
+- **How we found it:** the screens themselves. Each needed an invented product and a staged failure (drag the card, switch the photos off) to show anything, and rule 80 looked identical before and after its fix.
+- **The system behind it:** every defensive CSS tip was given a craft number and a screen, as if "plumber can check it" meant "it belongs on the list". The list has a higher bar than the engine: hidden gems only.
+- **What we chose and why:** the three checks (a stretched picture, text in a row that can't shrink, words that need their picture) stay in plumber as plain suggestions, with no number. Their screens and list rows are gone. The remaining tips will be engine checks only.
+- **The fix and the proof:** the showcase list ends at 77 again; the engine still carries the three checks (read in the browser). The bar is written into the craft-rule skill and into the rules list itself.
+- **Media hooks:** none; this is a subtraction.
+
 ## Open gaps
 - 27 test files already failing before the token work (52 tests on vm-agent), the text editor's test flaky there; not this work's, not fixed.
-- Defensive CSS tips still without a rule: flex rows that should wrap, scrollbars shown when nothing scrolls, hover styles on touch screens, repeated backgrounds, fixed heights on text, sticky items in a grid, and the source-only ones (variable fallbacks, vendor selectors, vertical media queries).
+- Defensive CSS tips still without a check in plumber (checks only, never craft rules or screens): flex rows that should wrap, scrollbars shown when nothing scrolls, hover styles on touch screens, repeated backgrounds, fixed heights on text, sticky items in a grid, and the source-only ones (variable fallbacks, vendor selectors, vertical media queries).
 - Not built from the signed-off spec: surface levels (a card on a panel) read from nesting; no project at hand has two nested surface colours to prove it on.
 - shadcn's `-foreground` colours are misread by name (`primary-foreground` as the brand, `popover-foreground` as a surface, `secondary` as muted text); usage (text vs fill) could fix the family, not done.
 - Undo of a 101-file rename still takes 7–13 s; where the rest goes (parsing each file, recording 709 changes) is not measured.
@@ -219,6 +227,6 @@
 - The tailwind-merge trap is untested: crafting-ui does not use it.
 
 ## Shipped · 2026-W46
-- plumber flags words over a picture that can only be read while the picture shows, before it ever fails to load, and offers the one class that holds them (rule 80, with a demo you can switch the photos off in). [entry](#third-defensive-tip-words-that-need-their-picture-2026-11-12)
+- plumber flags words over a picture that can only be read while the picture shows, before it ever fails to load, and offers the one class that holds them (a plain check, not a craft rule). [entry](#third-defensive-tip-words-that-need-their-picture-2026-11-12)
 - Plumber reads a hover or press colour from where the code uses it, so shadcn's grey `accent` is no longer taken for the brand ([entry](#hover-colours-read-from-the-code-not-the-name-2026-11-12)).
 - A brand colour too close to the error red or warning amber now gets a plain warning and what to do about it ([entry](#a-brand-too-close-to-error-2026-11-12)).

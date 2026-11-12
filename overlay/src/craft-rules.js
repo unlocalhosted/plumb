@@ -32,9 +32,9 @@
  *  disabled-contrast   #26     disabled is not just lower opacity
  *  hit-target          #27     a control is at least 24px to hit
  *  media-size          #34     one avatar and icon size per list
- *  flex-min            #79     a flex item that holds text may shrink, so a long name is cut off, not pushed out
- *  image-ground        #80     words over a picture have a colour behind them for when it doesn't arrive
- *  image-fit           #78     a picture in a box of another shape is cropped, never stretched
+ *  flex-min            —       a flex item that holds text may shrink, so a long name is cut off, not pushed out
+ *  image-ground        —       words over a picture have a colour behind them for when it doesn't arrive
+ *  image-fit           —       a picture in a box of another shape is cropped, never stretched
  *  truncate-intent     #35     cut-off text shows its full value on hover
  *  scrollbar-gutter    #36     a large scroll area keeps room for its scrollbar
  *  bold-hover          #42     bold on hover does not move the row
@@ -1035,12 +1035,12 @@ export const mediaSize = {
   },
 };
 
-// #78. A picture is never stretched: a box whose shape differs from the picture's own crops it (object-fit: cover).
+// Defensive, not a craft rule (no number, no showcase screen). A picture is never stretched: a box whose shape differs from the picture's own crops it (object-fit: cover).
 // It is found before it stretches: a picture whose box is set on both sides, with nothing said about fit, is the slip
 // whether or not today's photo at today's width happens to be the box's shape. (defensivecss.dev "Image distortion":
 // a fixed-size avatar or card cover, then a user uploads another shape, or the card lands on a wider screen.)
 export const imageFit = {
-  id: 'craft/image-fit', family: 'craft', number: [78], owns: ['fit'], once: 'ancestor', reads: ['style', 'rect'],
+  id: 'craft/image-fit', family: 'craft', number: [], owns: ['fit'], once: 'ancestor', reads: ['style', 'rect'],
   check({ el, facts }, theme) {
     const T = theme.spec(this.id);
     if (el.localName !== 'img' || !el.complete || !el.naturalWidth || !el.naturalHeight) return [];
@@ -1070,12 +1070,12 @@ export const imageFit = {
   },
 };
 
-// #79. A flex item that holds text may shrink: without min-width: 0 it is never narrower than its longest line, so
+// Defensive, not a craft rule (no number, no showcase screen). A flex item that holds text may shrink: without min-width: 0 it is never narrower than its longest line, so
 // `truncate` inside it can never cut anything, and a longer name or a narrower screen pushes the rest of the row out.
 // It is found before it breaks: text set to cut off, inside a box that can't shrink, is the slip whether or not this
 // name at this width happens to fit. (defensivecss.dev "Minimum content size in CSS flexbox".)
 export const flexMin = {
-  id: 'craft/flex-min', family: 'craft', number: [79], owns: ['size'], once: 'ancestor', reads: ['style', 'rect'],
+  id: 'craft/flex-min', family: 'craft', number: [], owns: ['size'], once: 'ancestor', reads: ['style', 'rect'],
   check({ el, facts }, theme) {
     const T = theme.spec(this.id);
     const row = el.parentElement;
@@ -1107,12 +1107,12 @@ export const flexMin = {
   },
 };
 
-// #80. Words over a picture have a colour behind them. A picture can arrive late or not at all (a slow connection, a
+// Defensive, not a craft rule (no number, no showcase screen). Words over a picture have a colour behind them. A picture can arrive late or not at all (a slow connection, a
 // dead link, a blocked host), and then the words sit on whatever is under it: white words on a white card. It is found
 // before it breaks: the picture is read as if it were missing, and the words over it are judged against what is left.
 // The finding lands on the picture, where one background colour holds every line. (defensivecss.dev "Text over image".)
 export const imageGround = {
-  id: 'craft/image-ground', family: 'craft', number: [80], owns: ['background'], once: 'ancestor', reads: ['style', 'rect', 'text', 'ground'],
+  id: 'craft/image-ground', family: 'craft', number: [], owns: ['background'], once: 'ancestor', reads: ['style', 'rect', 'text', 'ground'],
   check({ el, facts }, theme) {
     const T = theme.spec(this.id);
     const s = facts.style(el), img = el.localName === 'img';
