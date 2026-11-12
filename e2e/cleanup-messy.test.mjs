@@ -82,17 +82,6 @@ async function stage(t) {
 test('a messy page is put back on its own design system: timings on its named speeds, spacing on the theme\'s steps, a title kept apart from its description, the nav\'s odd icon by its prop, corners by job', { timeout: 600000 }, async (t) => {
   const s = await stage(t);
 
-  // colour, read before anything is written: the row's title is left, with the reason, and its description stays muted
-  const colour = await s.page.evaluate(async () => {
-    const C = await import('/__plumb/src/colours.js');
-    const palette = await C.loadPalette(), p = C.proposeColours(C.readColours(document.body, { palette }), palette, { scope: 'keep' });
-    const titles = [...document.querySelectorAll('[data-row="title"]')];
-    return { moved: p.moves.filter((m) => titles.includes(m.el)).map((m) => m.to.cls), why: [...new Set(p.refused.filter((r) => titles.includes(r.el)).map((r) => r.why))] };
-  });
-  assert.deepEqual(colour.moved, [], 'no title is folded onto another grey');
-  assert.equal(colour.why.length, 1, JSON.stringify(colour));
-  assert.match(colour.why[0], /as muted it would read the same as the words beside it/, colour.why[0]);
-
   // a craft suggestion: small capitals with no letter spacing. The theme has two steps in range, `wide` (0.05em, nearest
   // the standard's number) and `caps` (0.08em, named for the job): the one named for the job is the project's answer
   const craft = await s.page.evaluate(async () => (await window.__plumb.craft({ timeout: 60000, hidden: true, scope: 'aside' })).findings.filter((f) => f.rule === 'craft/tracking').map((f) => f.suggest));

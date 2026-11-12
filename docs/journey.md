@@ -761,10 +761,19 @@
 - **Kept, on purpose:** overlapping-looking overlay tests (one owner on screen, the text card) each reproduce a different QA finding.
 - **Proof:** the three edited files parse; the suite was not run (no tests while iterating).
 
+## Tests that tested the code, not the behaviour (2026-11-12)
+- **The itch:** the owner asked to remove the tests that "just test the implementation".
+- **How we found them:** every test file's imports were listed. Going in through the CLI, the HTTP routes, the Vite plugin or the package's own exports is behaviour; importing an inner module, spying on a private method or reading the source text is not. Each hit was read in place.
+- **What went:** three whole files (the colour pass and icon pass readers, and the size-named theme test), which called the passes' inner functions and checked their rule codes; ten tests that drove the source-map store, the ledger and the session's file listing directly or counted their private calls.
+- **What was trimmed, not deleted:** eight tests that check behaviour (a report equal to the CLI's, a page that locates and writes) kept it and lost their internal counters: the census staleness half, the clean-up page's colour check, the source-map fetch counts, the injected script's exact text, the session's file-listing counts.
+- **The cost, said plainly:** some behaviour now has no test (listed in the backlog under "Behaviour with no test"), mostly the colour and icon passes' individual cases. They should be tested again through the clean-up's Preview and Apply.
+- **Proof:** every edited file parses; the suite was not run (no tests while iterating). 1,435 lines removed from the test folder.
+
 ## Open gaps
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
 
 ## Shipped · 2026-W46
+- The test suite no longer checks plumber's inner functions, only what a person or a caller can see; the behaviour left without a test is listed in the backlog ([entry](#tests-that-tested-the-code-not-the-behaviour-2026-11-12)).
 - Five tests that guarded nothing a person sees are gone from the browser and CLI suite; a known Blueprint gap they pinned is now in the backlog ([entry](#fewer-tests-that-test-nothing-a-person-sees-2026-11-12)).
 - Plumber's text styles write into crafting-ui without shrinking headings or large numbers, keep classes that only apply to part of the text, and keep paragraph leading off headings ([entry](#big-text-no-longer-shrinks-to-fit-small-text-the-dark-page-checked-2026-11-12)).
 - crafting-ui's vocabulary page loads about four times lighter (9,474 → 2,007 elements): each live example mounts only as it comes near the screen. [entry](#crafting-uis-vocabulary-page-live-examples-mount-only-near-the-screen-2026-11-12)

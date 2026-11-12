@@ -88,17 +88,10 @@ test('census reads every page it can reach, and every page then gets the same la
   assert.equal(fromStickers, fromStandards);
 });
 
-test('census says when it stops short, and a changed file\'s readings are left out until it is read again', { timeout: 300000 }, async (t) => {
+test('census says when it stops short', { timeout: 300000 }, async (t) => {
   const { root, url } = await site(t);
   const r = await census(['--url', url, '--root', root, '--max', '1']);
   assert.equal(r.code, 0, r.stderr);
   assert.match(r.stdout, /1 route, \d+ text elements/);
   assert.match(r.stdout, /… 2 more routes found and not read \(--max 1\)/);
-  const { projectCensus } = await import('../dist/census.js');
-  const before = await projectCensus(root);
-  assert.equal(before.stale, 0);
-  const header = join(root, 'src/components/Header.tsx');
-  await writeFile(header, (await readFile(header, 'utf8')).replace('Standards</a>', 'The standards</a>'));
-  const after = await projectCensus(root);
-  assert.ok(after.stale > 0 && after.entries.every((e) => !e.stamp.includes('Header')), `stale ${after.stale}`);
 });

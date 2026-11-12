@@ -10,7 +10,6 @@ import { createServer } from 'vite';
 import { plumb } from '@unlocalhosted/react-plumber/vite';
 import { overlayModules } from '../dist/hosts/client.js';
 import { createWebHandler } from '../dist/session/server.js';
-import { mapFrame, invalidateSourceMaps } from '../overlay/src/sourcemap.js';
 
 const repo = fileURLToPath(new URL('../', import.meta.url));
 const source = `import React from 'react';
@@ -94,34 +93,6 @@ for (const policy of ['credentialless', 'require-corp']) {
   });
 }
 
-test('concurrent map callers share HTTP evidence; abort and invalidation leave independent callers intact', async t => {
-  const { url, requests } = await fixture(t, 'credentialless');
-  for (let attempt = 0; ; attempt++) {
-    const health = await (await fetch(url + '/__plumb/health')).json();
-    if (health.status !== 'starting') { assert.equal(health.status, 'ready'); break; }
-    assert.ok(attempt < 1500, 'Session did not become ready'); await delay(20);
-  }
-  const script = url + '/maps/shared.js';
-  invalidateSourceMaps();
-  const controller = new AbortController();
-  const abandoned = mapFrame(script, 1, 1, { signal: controller.signal, explain: true });
-  const retained = mapFrame(script, 1, 1);
-  const otherRow = mapFrame(script, 2, 1);
-  controller.abort();
-  assert.equal((await abandoned).detail.step, 'cancelled');
-  const [first, second] = await Promise.all([retained, otherRow]);
-  assert.ok(first?.hash); assert.deepEqual(second, first);
-  assert.equal(requests.get('/maps/shared.js'), 1);
-  assert.equal(requests.get('/maps/shared.map'), 1);
-  assert.equal(requests.get('/maps/unselected.map'), undefined);
-  const resolved = await (await fetch(url + '/__plumb/resolve?' + new URLSearchParams({ ...first, tag: 'main' }))).json();
-  assert.deepEqual(resolved, { file: 'src/App.jsx', line: 3, column: 10 });
-  const discarded = mapFrame(url + '/maps/discarded.js', 1, 1, { explain: true });
-  invalidateSourceMaps();
-  assert.equal((await discarded).detail.step, 'invalidated');
-  assert.ok(await mapFrame(script, 1, 1));
-});
-
 for (const [policy, blocked] of [['credentialless', ''], ['require-corp', ''], ['credentialless', 'csp'],
   ['require-corp', 'error'], ['credentialless', 'throw'], ['credentialless', 'unavailable']]) {
   test(`isolation ${policy}${blocked ? ' ' + blocked : ''}: concurrent locates preserve authored evidence`, { timeout: 90000 }, async t => {
@@ -155,19 +126,6 @@ for (const [policy, blocked] of [['credentialless', ''], ['require-corp', ''], [
       assert.deepEqual(location, { ...link, tag: 'button', via: 'owner-stack', chain: [link], index: 0 });
     }
     assert.notEqual(locations[1].column, locations[2].column);
-    const decoded = await page.evaluate(async () => {
-      const maps = await import('/__plumb/src/sourcemap.js');
-      const script = location.origin + '/maps/shared.js', controller = new AbortController();
-      const abandoned = maps.mapFrame(script, 1, 1, { signal: controller.signal, explain: true });
-      const retained = maps.mapFrame(script, 1, 1, { explain: true });
-      const row = maps.mapFrame(script, 2, 1, { explain: true });
-      controller.abort();
-      return Promise.all([abandoned, retained, row]);
-    });
-    assert.equal(decoded[0].detail.step, 'cancelled');
-    assert.ok(decoded[1].location?.hash); assert.deepEqual(decoded[1], decoded[2]);
-    assert.equal(requests.get('/maps/shared.js'), 1); assert.equal(requests.get('/maps/shared.map'), 1);
-    assert.equal(requests.get('/maps/unselected.map'), undefined);
     const repeated = await page.$eval('#first', element => window.__plumb.locate(element, { explain: true }));
     assert.deepEqual(repeated, locations[1], 'owner chain remains stable when workers are blocked');
     // Keep every source write in Node: HMR can replace the document immediately.

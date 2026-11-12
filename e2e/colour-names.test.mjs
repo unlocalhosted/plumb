@@ -195,35 +195,3 @@ test('a shadcn theme is read by what each colour does in the code, not its name:
   assert.deepEqual(s.errors, []);
 });
 
-test('one brand colour builds the whole system: it lands on 500 as chosen, a light brand gets dark words, and dark mode re-points every role', { timeout: 300000 }, async (t) => {
-  const s = await site(t, FLAT, FLAT_PAGE);
-  const read = (brand) => s.page.evaluate(async (brand) => {
-    const { colourSystem } = await import('/__plumb/src/colour-system.js');
-    const sys = colourSystem({ accent: brand });
-    const style = Object.assign(document.createElement('style'), { textContent: sys.css }); document.head.append(style);
-    const box = document.createElement('div'); document.body.append(box);
-    const ctx = Object.assign(document.createElement('canvas'), { width: 1, height: 1 }).getContext('2d', { willReadFrequently: true });
-    const rgb = (css) => { ctx.clearRect(0, 0, 1, 1); ctx.fillStyle = '#000'; ctx.fillStyle = css; ctx.fillRect(0, 0, 1, 1); const [r, g, b] = ctx.getImageData(0, 0, 1, 1).data; return `rgb(${r}, ${g}, ${b})`; };
-    const paint = (dark) => { box.className = dark ? 'dark' : ''; box.innerHTML = '<button style="background:var(--color-accent);color:var(--color-on-accent)">Go</button><div style="background:var(--color-surface)">x</div>'; const [b, d] = box.children; const cb = getComputedStyle(b), cd = getComputedStyle(d); return { accent: rgb(cb.backgroundColor), words: rgb(cb.color), surface: rgb(cd.backgroundColor) }; };
-    const light = paint(false), dark = paint(true);
-    style.remove(); box.remove();
-    const chosen = Object.assign(document.createElement('i'), { style: `color:${brand}` }); document.body.append(chosen); const c = rgb(getComputedStyle(chosen).color); chosen.remove();
-    return { light, dark, chosen: c, words: sys.accent.onAccent.text, adjusted: sys.accent.adjusted, roles: Object.keys(sys.light), hint: sys.hint?.status ?? null };
-  }, brand);
-  const toRgb = (s) => s.match(/[\d.]+/g).slice(0, 3).map((n) => Math.round(Number(n)));
-  const near = (a, b) => toRgb(a).every((v, i) => Math.abs(v - toRgb(b)[i]) <= 2);
-  const yellow = await read('#facc15'), red = await read('#e5484d'), blue = await read('#2563eb');
-  // a brand in the error or warning hue is told so; one clear of both is not
-  assert.deepEqual([red.hint, yellow.hint, blue.hint], ['danger', 'warning', null]);
-  // our role names, with the fixed state words
-  for (const role of ['ground', 'surface', 'surface-hover', 'surface-active', 'surface-2', 'fg', 'muted', 'faint', 'on-accent', 'line', 'line-strong', 'accent', 'accent-hover', 'accent-active', 'accent-soft']) assert.ok(red.roles.includes(role), role);
-  // the brand paints as chosen; a light one keeps its colour and takes dark words, a strong one white
-  assert.ok(near(yellow.light.accent, yellow.chosen), `${yellow.light.accent} vs ${yellow.chosen}`);
-  assert.deepEqual([yellow.words, yellow.adjusted], ['dark', null]);
-  assert.ok(toRgb(yellow.light.words).every((v) => v < 90), `dark words on yellow: ${yellow.light.words}`);
-  assert.ok(near(red.light.accent, red.chosen) && red.words === 'white' && near(red.light.words, 'rgb(255, 255, 255)'), JSON.stringify(red));
-  // dark mode is one block: the same roles paint differently under .dark
-  assert.notEqual(red.dark.surface, red.light.surface);
-  assert.ok(toRgb(red.dark.surface).every((v) => v < 60), `a dark surface: ${red.dark.surface}`);
-  assert.deepEqual(s.errors, []);
-});

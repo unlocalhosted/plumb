@@ -314,30 +314,6 @@ test('finding 5: CSS edits preserve authored importance and declaration spelling
   assert.equal(await readFile(file, 'utf8'), original.replace('10px', 'var(--spacing-s2)'));
 });
 
-for (const extension of ['jsx', 'js', 'ts', 'css']) test(`finding 7: ${extension} apply refreshes paths without inventory or worker restart`, async t => {
-  const root = await project(t), file = join(root, `src/Other.${extension}`);
-  const source = extension === 'css' ? '.local { gap: 10px; }' : extension === 'jsx' ? 'export const Other = () => <div className="py-[10px]" />;' : 'export const Other = cn("py-[10px]");';
-  await writeFile(file, source);
-  const session = await transport(t, root, 'Engine'), result = await session.edits(file, 1), worker = session.worker;
-  let inventories = 0; const inventory = session.inventory.bind(session);
-  session.inventory = async () => { inventories++; return inventory(); };
-  await session.apply(selection(result));
-  assert.equal(inventories, 0); assert.equal(session.worker, worker);
-  assert.equal((await session.edits(file, 1)).hash, hash(await readFile(file, 'utf8')));
-  assert.deepEqual((await session.site(file, 1)).findings, cold(root).findings.filter(f => f.sites.some(site => site.file === file && site.line === 1)));
-});
-
-test('finding 8: warm edits stat retained files without inventory or cloning retained maps', async t => {
-  const root = await project(t), session = await transport(t, root, 'Engine');
-  let inventories = 0, enumerations = 0;
-  session.inventory = async () => { inventories++; throw new Error('unexpected inventory'); };
-  for (const map of [session.hashes, session.stamps]) {
-    map[Symbol.iterator] = () => { enumerations++; throw new Error('unexpected map copy'); };
-  }
-  const result = await session.edits('src/App.tsx', 1);
-  assert.ok(result.edits.length); assert.equal(inventories, 0); assert.equal(enumerations, 0);
-});
-
 test('finding 9: Web adapter shares route validation and dispatch with Node middleware', async t => {
   const { createWebHandler } = await import('../dist/index.js');
   assert.equal(typeof createWebHandler, 'function');
@@ -381,39 +357,3 @@ test('selected sibling source in repository accepts native paths; directories st
   assert.notEqual(await readFile(file, 'utf8'), before);
 });
 
-test('overlay review 5: warm apply visits changed slices/consumers and updates local views without full materialization', async t => {
-  const root = await project(t);
-  await Promise.all(Array.from({ length: 160 }, (_, i) => writeFile(join(root, `src/Unrelated${i}.tsx`), `export const Unrelated${i} = () => <div className="gap-[19px]" />;`)));
-  const file = join(root, 'src/A.tsx'), consumer = join(root, 'src/B.tsx');
-  await writeFile(file, 'export const sizes = { a: "gap-[10px]" }; export const A = () => <div className={sizes.a} />;');
-  await writeFile(consumer, 'import { sizes } from "./A"; export const B = () => <div className={sizes.a} />;');
-  const css = join(root, 'src/local.css'); await writeFile(css, '.local { gap: 10px; padding: 13px; }\n');
-  const styled = join(root, 'src/Styled.tsx');
-  await writeFile(styled, 'export const Styled = () => <><style>{`.local { gap: 10px; }`}</style><div className="local gap-[19px]" /></>;');
-  const session = await transport(t, root, 'Engine');
-  const initial = (await session.health()).work;
-  let refresh;
-  const request = session.request.bind(session);
-  session.request = async (method, params) => { const result = await request(method, params); if (method === 'refresh') refresh = result; return result; };
-  const edit = await session.edits(file, 1); assert.ok(edit.edits.length);
-  await session.apply(selection(edit));
-  assert.deepEqual(new Set(refresh.visited), new Set([file, consumer]));
-  assert.equal(refresh.queryDependencies.length, 2); assert.equal(refresh.dependencies, undefined);
-  assert.ok((await session.edits(consumer, 1)).edits.every(edit => edit.from !== 'gap-[10px]'));
-  const styleEdit = await session.edits(css, 1); assert.ok(styleEdit.edits.length);
-  const remaining = await session.apply(selection(styleEdit)); assert.ok(remaining.remaining.length);
-  assert.deepEqual(refresh.visited, []); assert.equal(refresh.queryDependencies.length, 1);
-  const embedded = await session.edits(styled, 1);
-  const embeddedChoice = embedded.edits.find(edit => edit.from === '10px'); assert.ok(embeddedChoice);
-  await session.apply(selection(embedded, [embeddedChoice]));
-  assert.deepEqual(refresh.visited, [styled]);
-  assert.equal(refresh.queryDependencies.length, 1);
-  const after = (await session.health()).work;
-  assert.equal(after.fullReports, initial.fullReports); assert.equal(after.fullIndexes, initial.fullIndexes);
-  assert.ok(after.localAnalyses > initial.localAnalyses);
-  assert.equal((await session.edits(css, 1)).hash, hash(await readFile(css, 'utf8')));
-  assert.deepEqual((await session.site(css, 1)).findings, cold(root).findings.filter(f => f.sites.some(s => s.file === css && s.line === 1)));
-  const full = await session.report();
-  assert.deepEqual(full.findings, cold(root).findings);
-  assert.ok((await session.health()).work.fullReports > after.fullReports, 'explicit report materializes whole-project aggregates');
-});

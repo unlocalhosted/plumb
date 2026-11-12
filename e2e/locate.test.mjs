@@ -1,4 +1,3 @@
-import { Session as EngineSession } from '../dist/session/engine.js';
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { once } from 'node:events';
@@ -179,7 +178,6 @@ async function current(page, bundler) {
   return page.$eval('#nested', element => window.__plumb.locate(element, { explain: true }));
 }
 async function hmrAssertions(page, root, vite, bundler) {
-  const before = await page.evaluate(async () => (await import('/__plumb/src/sourcemap.js')).sourceMapVersion());
   const snapshot = () => page.evaluate(async () => {
     const token = document.querySelector('script[data-plumb-token]')?.dataset.plumbToken;
     return (await fetch('/__plumb/resolve?source=src/App.jsx&snapshot=1', { headers: token ? { 'x-plumb-token': token } : {} })).json();
@@ -208,8 +206,6 @@ async function hmrAssertions(page, root, vite, bundler) {
   }
   await page.waitForFunction(() => document.querySelector('#nested')?.textContent === 'Updated', null, { polling: vite ? 1 : 'raf' });
   if (vite) {
-    const after = await page.evaluate(async () => (await import('/__plumb/src/sourcemap.js')).sourceMapVersion());
-    assert.ok(after > before, 'Vite host HMR boundary invalidates map caches');
   }
   // First Next module-version query may invalidate old stable-URL evidence;
   // retry uses the fresh module snapshot, not the obsolete coordinate.
@@ -348,14 +344,6 @@ test('resolve validates tracked source identity and site queries select only exa
   const url = `http://127.0.0.1:${server.httpServer.address().port}/__plumb/`;
   await ready(new URL(url).origin);
   const html = await (await fetch(new URL('../', url))).text();
-  // the overlay's HMR hook is an inline module Vite leaves alone (vite-ignore, stripped on the way out): it takes its
-  // hot context from Vite's client and imports the source-map invalidation from the plugin's own route
-  const hook = /<script type="module"\s*>([^<]*invalidateSourceMaps[^<]*)<\/script>/.exec(html);
-  assert.ok(hook, html);
-  assert.match(hook[1], /import \{ createHotContext \} from '\/@vite\/client'/);
-  assert.match(hook[1], /import \{ invalidateSourceMaps \} from '\/__plumb\/src\/sourcemap\.js'/);
-  // (the hot context is kept in a name now: it also hears the overlay's own "applied" event)
-  assert.match(hook[1], /const hot = createHotContext\([^)]*\);\s*hot\.on\('vite:afterUpdate', invalidateSourceMaps\)/);
   assert.doesNotMatch(html, /html-proxy|vite-ignore/);
   assert.equal((await fetch(new URL('../__plumb/src/sourcemap.js', url))).status, 200);
   const resolve = (source, params = {}, init) => fetch(url + 'resolve?' + new URLSearchParams({ source, ...params }), init);
@@ -409,191 +397,6 @@ test('resolve validates tracked source identity and site queries select only exa
   assert.equal((await resolve('src/App.jsx')).status, 200);
   await rm(join(root, 'src/App.jsx'));
   assert.deepEqual(await (await resolve('src/App.jsx')).json(), { library: true, untracked: 'src/App.jsx' }, 'deleted source is no longer tracked');
-});
-
-test('script maps resolve through real HTTP: inline data, relative URLs, sourceRoot, nested index sections and unmapped spans', async t => {
-  const { mapFrame } = await import('../overlay/src/sourcemap.js');
-  const root = await project(t), requests = new Map();
-  const basic = { version: 3, sources: ['App.jsx'], sourceRoot: 'webpack://_N_E/./src/', names: [], sourcesContent: [source], mappings: 'AAGU' };
-  const assets = new Map([
-    ['inline.js', '//# sourceMappingURL=data:application/json;base64,' + Buffer.from(JSON.stringify(basic)).toString('base64')],
-    ['percent.js', '//# sourceMappingURL=data:application/json,' + encodeURIComponent(JSON.stringify({ ...basic, sourceRoot: '/src/' }))],
-    ['relative.js', '//# sourceMappingURL=relative.js.map'],
-    ['relative.js.map', JSON.stringify({ ...basic, sourceRoot: '', sources: ['../src/App.jsx'] })],
-    ['index.js', '//# sourceMappingURL=index.js.map'],
-    ['index.js.map', JSON.stringify({ version: 3, sections: [{ offset: { line: 2, column: 7 }, map: { version: 3, sections: [{ offset: { line: 0, column: 0 }, url: 'section.map' }] } }, { offset: { line: 100000, column: 0 }, url: 'unrelated.map' }] })],
-    ['unrelated.map', JSON.stringify({ ...basic, mappings: 'AAGU,' + 'CAAA,'.repeat(300000).slice(0, -1) })],
-    ['section.map', JSON.stringify({ ...basic, mappings: 'AAGU;AAAA' })],
-    ['unmapped.js', '//# sourceMappingURL=unmapped.map'],
-    ['unmapped.map', JSON.stringify({ ...basic, mappings: 'AAGU,K' })],
-    ['lazy-row.js', '//# sourceMappingURL=lazy-row.map'],
-    ['lazy-row.map', JSON.stringify({ ...basic, mappings: 'AAGU;!' })],
-    ['broken.js', '//# sourceMappingURL=broken.map'],
-    ['broken.map', JSON.stringify({ ...basic, mappings: '!' })],
-    ['missing.js', 'export const plain = true;'],
-  ]);
-  const maps = { name: 'fixture-script-maps', configureServer(server) {
-    server.middlewares.use((request, response, next) => {
-      const name = new URL(request.url, 'http://fixture').pathname.slice('/maps/'.length);
-      if (!request.url.startsWith('/maps/') || !assets.has(name)) return next();
-      requests.set(name, (requests.get(name) ?? 0) + 1);
-      response.setHeader('Content-Type', name.endsWith('.js') ? 'text/javascript' : 'application/json'); response.end(assets.get(name));
-    });
-  } };
-  const server = await createServer({ root, cacheDir: join(root, '.vite-cache'), configFile: false, plugins: [maps, unstamped({ watch: false })], logLevel: 'silent', server: { host: '127.0.0.1', port: 0 } });
-  t.after(() => server.close()); await server.listen();
-  const url = `http://127.0.0.1:${server.httpServer.address().port}`;
-  await ready(url);
-  for (const [name, line, column] of [['inline.js', 1, 1], ['percent.js', 1, 1], ['relative.js', 1, 1], ['index.js', 3, 8], ['index.js', 4, 1]]) {
-    const mapped = await mapFrame(url + '/maps/' + name, line, column); assert.ok(mapped, name);
-    const response = await fetch(url + '/__plumb/resolve?' + new URLSearchParams(mapped));
-    assert.equal(response.status, 200, name);
-    const location = await response.json(); assert.deepEqual(location, { file: 'src/App.jsx', ...position('<span') });
-    const site = await (await fetch(url + '/__plumb/site?' + new URLSearchParams(location))).json();
-    assert.deepEqual(site.declarations.map(d => d.site.text), ['gap-[13px]']);
-    assert.ok(site.findings.length);
-    assert.deepEqual(await mapFrame(url + '/maps/' + name, line, column), mapped);
-    assert.equal(requests.get(name), 1, 'script URL cache: ' + name);
-  }
-  assert.ok(await mapFrame(url + '/maps/lazy-row.js', 1, 1), 'unrequested rows remain undecoded');
-  assert.equal(await mapFrame(url + '/maps/lazy-row.js', 2, 1), null, 'malformed requested row refuses');
-  for (const [name, line, column] of [['unmapped.js', 1, 6], ['broken.js', 1, 1], ['missing.js', 1, 1], ['index.js', 3, 7]]) assert.equal(await mapFrame(url + '/maps/' + name, line, column), null, name);
-  assert.equal(requests.get('relative.js.map'), 1); assert.equal(requests.get('section.map'), 1);
-  assert.equal(requests.get('unrelated.map'), undefined, 'unselected index-map section never fetched/decoded');
-});
-
-test('review 2: stable module/map URLs invalidate together and reject mismatched source snapshots', async t => {
-  const { mapFrame, invalidateSourceMaps } = await import('../overlay/src/sourcemap.js');
-  const root = await project(t), requests = new Map();
-  const old = 'export const A = () => <div className="py-[10px]" />;\nexport const B = () => <div className="gap-[13px]" />;';
-  const next = old.replace('py-[10px]', 'py-[12px]');
-  await writeFile(join(root, 'src/Version.jsx'), old);
-  let content = old, mappings = 'AAAuB', available = false;
-  const plugin = { name: 'versioned-maps', configureServer(server) {
-    server.middlewares.use((req, res, proceed) => {
-      if (!['/version.js', '/version.map'].includes(req.url)) return proceed();
-      requests.set(req.url, (requests.get(req.url) ?? 0) + 1);
-      if (!available) { res.statusCode = 404; return res.end(); }
-      res.setHeader('Content-Type', req.url.endsWith('.js') ? 'text/javascript' : 'application/json');
-      res.end(req.url.endsWith('.js') ? '//# sourceMappingURL=version.map' : JSON.stringify({ version: 3, sources: ['/src/Version.jsx'], sourcesContent: [content], names: [], mappings }));
-    });
-  } };
-  const server = await createServer({ root, cacheDir: join(root, '.vite-cache'), configFile: false, plugins: [plugin, unstamped({ watch: false })], logLevel: 'silent', server: { host: '127.0.0.1', port: 0 } });
-  t.after(() => server.close()); await server.listen();
-  const url = `http://127.0.0.1:${server.httpServer.address().port}`;
-  await ready(url);
-  assert.equal(await mapFrame(url + '/version.js', 1, 1), null);
-  available = true;
-  const initial = await mapFrame(url + '/version.js', 1, 1);
-  assert.ok(initial?.hash, 'cached failures recover without an HMR event');
-  const resolve = value => fetch(url + '/__plumb/resolve?' + new URLSearchParams({ ...value, tag: 'div' }));
-  const first = await resolve(initial); assert.equal(first.status, 200, JSON.stringify({ initial, body: await first.json() }));
-  await writeFile(join(root, 'src/Version.jsx'), next);
-  content = next; mappings = 'AACuB';
-  assert.equal((await resolve(initial)).status, 400, 'old div position is valid JSX but obsolete source is refused');
-  invalidateSourceMaps();
-  const updated = await mapFrame(url + '/version.js', 1, 1);
-  assert.equal(updated.line, 2); assert.notEqual(updated.hash, initial.hash);
-  assert.equal((await resolve(updated)).status, 200);
-  assert.equal(requests.get('/version.map'), 2, 'external maps invalidated with script/decoded caches');
-});
-
-test('Next stable chunks refresh eval indexes and maps through HTTP and compare current disk hashes', async t => {
-  const { SourceMapStore } = await import('../overlay/src/sourcemap.js');
-  const { createHash } = await import('node:crypto');
-  const root = await project(t), requests = [];
-  const updated = source.replace('Nested</span>', 'Updated</span>');
-  const moduleURL = 'webpack-internal:///(app-pages-browser)/./src/App.jsx';
-  const chunk = '/_next/static/chunks/app/page.js', external = '/_next/static/chunks/app/page.map';
-  let changed = false;
-  const map = text => ({ version: 3, sources: ['webpack://_N_E/./src/App.jsx'], sourcesContent: [text], names: [], mappings: 'AAGS' });
-  const plugin = { name: 'next-stable-chunks', configureServer(server) {
-    server.middlewares.use((req, res, next) => {
-      const url = new URL(req.url, 'http://fixture');
-      if (!url.pathname.startsWith('/_next/static/')) return next();
-      requests.push({ path: url.pathname, version: url.searchParams.get('__plumb_version'), cache: req.headers['cache-control'] });
-      const content = changed && url.searchParams.has('__plumb_version') ? updated : source;
-      res.setHeader('Cache-Control', 'public, max-age=3600');
-      res.setHeader('Content-Type', url.pathname.endsWith('.js') ? 'text/javascript' : 'application/json');
-      if (url.pathname === chunk) {
-        const body = '//# sourceMappingURL=page.map\n//# sourceURL=' + moduleURL;
-        return res.end('eval(__webpack_require__.ts(' + JSON.stringify(body) + '))');
-      }
-      if (url.pathname === external) return res.end(JSON.stringify(map(content)));
-      if (url.pathname.endsWith('/direct.js')) return res.end('//# sourceMappingURL=data:application/json;base64,' + Buffer.from(JSON.stringify(map(content))).toString('base64'));
-      if (url.pathname.endsWith('/no-query.js')) {
-        if (url.search) { res.statusCode = 400; return res.end('Queries unsupported'); }
-        return res.end('//# sourceMappingURL=data:application/json;base64,' + Buffer.from(JSON.stringify(map(changed ? updated : source))).toString('base64'));
-      }
-      if (url.pathname.endsWith('/no-map.js')) return res.end('export const plain = true;');
-      res.statusCode = 404; res.end('Missing script');
-    });
-  } };
-  const server = await createServer({ root, cacheDir: join(root, '.vite-cache'), configFile: false, plugins: [plugin, unstamped({ watch: false })], logLevel: 'silent', server: { host: '127.0.0.1', port: 0 } });
-  t.after(() => server.close()); await server.listen();
-  const url = `http://127.0.0.1:${server.httpServer.address().port}`, store = new SourceMapStore();
-  await ready(url);
-  const locate = () => store.mapFrame(moduleURL, 1, 1, [url + chunk]);
-  const resolve = mapped => fetch(url + '/__plumb/resolve?' + new URLSearchParams({ ...mapped, tag: 'span' }));
-  const initial = await locate(); assert.ok(initial?.hash);
-  assert.deepEqual(await (await resolve(initial)).json(), { file: 'src/App.jsx', ...position('<span') });
-  changed = true; await writeFile(join(root, 'src/App.jsx'), updated);
-  assert.equal((await resolve(initial)).status, 400, 'pre-edit sourcesContent never resolves after save');
-  const snapshot = await (await fetch(url + '/__plumb/resolve?' + new URLSearchParams({ source: moduleURL, snapshot: '1' }))).json();
-  assert.equal(snapshot.hash, createHash('sha256').update(await readFile(join(root, 'src/App.jsx'))).digest('hex'));
-  assert.notEqual(snapshot.hash, initial.hash);
-  store.invalidate();
-  const fresh = await locate(); assert.equal(fresh?.hash, snapshot.hash);
-  assert.deepEqual(await (await resolve(fresh)).json(), { file: 'src/App.jsx', ...position('<span') });
-  assert.deepEqual(await locate(), fresh, 'warm fresh lookup stays cached');
-  for (const path of [chunk, external]) {
-    const loads = requests.filter(request => request.path === path);
-    assert.equal(loads.length, 2, path); assert.ok(loads[1].version, path + ': version-busted');
-    assert.equal(loads[1].cache, 'no-cache', path + ': no-store reaches HTTP');
-  }
-  assert.equal((await store.mapFrame(url + '/_next/static/direct.js', 1, 1))?.hash, snapshot.hash, 'Turbopack-style direct chunk refreshes too');
-  assert.equal((await store.mapFrame(url + '/_next/static/no-query.js', 1, 1))?.hash, snapshot.hash, 'query-refusing host retries with no-store');
-  const explain = name => store.mapFrame(url + '/_next/static/' + name, 1, 1, [], () => false, { explain: true });
-  const missing = await explain('missing.js');
-  assert.equal(missing.location, null); assert.equal(missing.reason, 'script-fetch'); assert.equal(missing.detail.status, 404);
-  const noMap = await explain('no-map.js'); assert.equal(noMap.reason, 'map'); assert.equal(noMap.detail.step, 'missing-source-mapping-url');
-});
-
-test('review 5: target requests stat bounded dependencies without watchers; report/decisions retain full reconciliation', async t => {
-  const root = await project(t);
-  await Promise.all(Array.from({ length: 240 }, (_, i) => writeFile(join(root, `src/Unrelated${i}.jsx`), `export const A${i} = () => <div className="gap-[17px]" />;`)));
-  await writeFile(join(root, 'src/Producer.jsx'), 'export const size = "gap-[13px]";');
-  await writeFile(join(root, 'src/Consumer.jsx'), 'import { size } from "./Producer"; export const C = () => <div className={size} />;');
-  const session = await EngineSession.create({ root, watch: false }); t.after(() => session.close());
-  const { default: fs } = await import('node:fs/promises');
-  const { syncBuiltinESMExports } = await import('node:module');
-  const original = fs.lstat, originalRead = fs.readFile; let stats = [], reads = [];
-  fs.lstat = (path, ...args) => { stats.push(String(path)); return original(path, ...args); };
-  fs.readFile = (path, ...args) => { reads.push(String(path)); return originalRead(path, ...args); };
-  syncBuiltinESMExports();
-  t.after(() => { fs.lstat = original; fs.readFile = originalRead; syncBuiltinESMExports(); });
-  const bounded = async (run, limit = 20) => {
-    stats = []; reads = []; const result = await run();
-    assert.ok(stats.length < limit, `target stat count ${stats.length}`);
-    assert.ok(!stats.some(path => /Unrelated\d/.test(path)), 'unrelated files never statted by target read');
-    return result;
-  };
-  await bounded(() => session.resolveSource('src/App.jsx', 4, 10));
-  await bounded(() => session.resolveSource('src/App.jsx', 4, 10));
-  assert.ok(!reads.includes(join(root, 'src/App.jsx')), 'unchanged resolve reuses snapshot/AST');
-  await bounded(() => session.site('src/App.jsx', 4, 10));
-  const edits = await bounded(() => session.edits('src/App.jsx', 4, 10)); assert.ok(edits.edits.length);
-  await bounded(() => session.apply({ file: 'src/App.jsx', hash: edits.hash, edits: [{ id: edits.edits[0].id }] }), 64); // Includes repeated target reconciliation and anti-alias checks.
-  await writeFile(join(root, 'src/Producer.jsx'), 'export const size = "gap-[19px]";');
-  const consumer = await bounded(() => session.site('src/Consumer.jsx', 1));
-  assert.ok(consumer.declarations.some(d => d.site.text === 'gap-[19px]'), 'producer edits visible without callbacks');
-  await writeFile(join(root, 'src/New.jsx'), 'export const New = () => <div className="gap-[37px]" />;');
-  assert.deepEqual(await session.resolveSource('src/New.jsx', 1, 26), { file: 'src/New.jsx', line: 1, column: 26 });
-  await rm(join(root, 'src/New.jsx'));
-  assert.deepEqual(await session.resolveSource('src/New.jsx'), { library: true, untracked: 'src/New.jsx' });
-  stats = []; await session.decisions(); assert.ok(stats.some(path => path.endsWith('Unrelated239.jsx')));
-  await writeFile(join(root, 'src/Unrelated239.jsx'), 'export const Other = () => <div className="gap-[71px]" />;');
-  const report = await session.report(); assert.ok(report.declarations.some(d => d.site.text === 'gap-[71px]'));
 });
 
 test('review 5: watch-disabled target judgement refreshes theme, config imports, preset and empty DTCG inputs', async t => {
