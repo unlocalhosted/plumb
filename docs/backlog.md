@@ -246,6 +246,11 @@ should get one through the page (the clean-up's Preview and Apply) or the CLI wh
 
 ### Tests
 
+- element-only fails before today's work too: with a list row picked, the fix in hand is the row's "only left-over
+  space between", not the one that says the same code draws three more. The fix panel is another session's.
+- Locating on Next 16 (webpack) failed on vm-agent with a source-hash mismatch in the full run; not run alone yet.
+- bare-page fails on vm-agent only (it passes on the laptop): the box's terminal is not what the test expects.
+
 The whole suite on vm-agent (2026-11-12): 939 passed, 16 failed in 14 files. Since then the determinism, noise,
 one-bar and new-token tests are fixed and pass there on their own; the steady list is what is below.
 

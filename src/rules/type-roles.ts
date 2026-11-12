@@ -278,6 +278,19 @@ export function proposeTypeRoles(members: TypeMember[], options: { exclude?: str
     const body = (weight: number) => [sizeValue ? `font-size: var(${token});` : '', bundle.lineHeight !== null ? `line-height: var(--tw-leading, var(${token}--line-height));` : '', `letter-spacing: var(${token}--letter-spacing);`, `font-weight: var(--tw-font-weight, ${weight});`, label ? 'text-transform: uppercase;' : ''].filter(Boolean);
     utilities.push(`@utility ${roleClass(name)} {\n  ${body(bundle.weight).join('\n  ')}\n}`);
   }
+  // two styles that look the same are one style, whatever their jobs (a button's 11px words and a caption's 11px
+  // words): the later in role order folds into the earlier, its places take that class, and it says so
+  const look = (r: TypeRole) => JSON.stringify([r.bundle.size, r.bundle.sizeText ?? null, r.bundle.lineHeight, r.bundle.letterSpacing, r.bundle.weight, r.bundle.transform]);
+  for (let i = roles.length - 1; i > 0; i--) {
+    const from = roles[i]!, into = roles.slice(0, i).find(r => look(r) === look(from));
+    if (!into) continue;
+    into.members.push(...from.members); into.places += from.places; into.elements += from.elements;
+    for (const edits of swapsByFile.values()) for (const e of edits) if (e.to === roleClass(from.name) || e.to.startsWith(`${roleClass(from.name)} `)) e.to = roleClass(into.name) + e.to.slice(roleClass(from.name).length);
+    for (let t = tokens.length - 1; t >= 0; t--) if (tokens[t]!.name === roleToken(from.name) || tokens[t]!.name.startsWith(`${roleToken(from.name)}--`)) tokens.splice(t, 1);
+    const u = utilities.findIndex(x => x.startsWith(`@utility ${roleClass(from.name)} `)); if (u >= 0) utilities.splice(u, 1);
+    merged.push({ from: from.name, into: into.name, why: `the same look as ${into.name}; one look is one style` });
+    roles.splice(i, 1);
+  }
   if (proseLh !== null && proseUsed) tokens.push({ name: PROSE_TOKEN, value: String(proseLh), why: `reading text: ${proseUsed} places keep this leading` });
   const sizesBefore = new Set(inside.map(m => m.current.sizeText ?? m.current.size)).size;
   const sizesAfter = new Set(roles.map(r => r.bundle.sizeText ?? r.bundle.size)).size;

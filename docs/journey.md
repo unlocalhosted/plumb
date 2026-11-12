@@ -769,6 +769,13 @@
 - **The cost, said plainly:** some behaviour now has no test (listed in the backlog under "Behaviour with no test"), mostly the colour and icon passes' individual cases. They should be tested again through the clean-up's Preview and Apply.
 - **Proof:** every edited file parses; the suite was not run (no tests while iterating). 1,333 lines removed from the test folder.
 
+## The full run after the role work (2026-11-12)
+- **What we did:** ran the whole suite on vm-agent after the role layer and three new passes, then reran each new failure on its own and on the laptop, sorting machine from product.
+- **Caught by the full run:** two real things. The build refused three new overlay files that were missing from its audited list. And the text styles split one 11px look into two styles, "Caption" and "Button small": links drawn as buttons now count as control labels, so 11px button words got a style of their own that looked exactly like the caption's. Fix: two styles with the same look are one style; the later folds into the earlier and says so. The site-ladder test passes again.
+- **The machine, not the code:** the stamp and terminal-progress tests pass alone; bare-page and timeline pass on the laptop.
+- **Not ours:** element-only (with a list row picked, the fix in hand is "only left-over space between", where the test expects one that says the same code draws three more) fails at the commit this session started from too, so it predates today's work, and it sits in the fix panel another session is changing. Locating on Next 16 failed on vm-agent with a source-hash mismatch; locating is untouched today. Both are in the backlog.
+- **Still known:** the two files of another session's uncommitted work (the bundle sends only commits), the Next performance test, the known flaky overlay test, and the frozen-server test that fails only side by side.
+
 ## Open gaps
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
 
