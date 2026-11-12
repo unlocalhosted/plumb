@@ -170,6 +170,9 @@ export function craftRun(overlay, options = {}) {
 
 async function readOnce(overlay, { timeout = 60000, quiet = 600, grey = false, scope = null, hidden = false } = {}) {
   resetKeys();
+  // a window with no size (a tab that was never shown, a hidden pane) lays nothing out: every measure is zero, and a
+  // read of it would report a clean page, or nonsense, without a word
+  if (!(innerWidth > 0 && innerHeight > 0)) throw new Error('This window has no size, so nothing on the page can be measured. Bring it to the front, then read again.');
   // what the page is judged against is asked for before the read, not during it (each late arrival judges everything again)
   await Promise.all([prepareSources(), overlay?.themeReady?.()]);
   const blueprint = overlay?.blueprintReader;

@@ -661,6 +661,13 @@
 - **The proof:** no place on crafting-ui shrinks more than 2px now (31 moves of 2px or more, all ±2–5px); "Craft" keeps 33px. The cost: a 28px struck-out price grows to 33px, still well under the sale price beside it (docs/media/crafting-ui-roles-price-after.jpg), and a 30px lesson title to 33px. The text-style test files pass, 4 of 4.
 - **The dark page:** with shadcn's page in dark mode, the colour pass proposes nothing for a hand-written dark colour, so it cannot write a wrong one; it does not tidy dark colours either (the palette holds light values). A near-white panel in light folds onto `muted` because plumber reads a small box in the page as inset; the two are within the pass's invisible-difference threshold.
 
+## The new passes on a real app: quiet where they should be (2026-11-12)
+- **The itch:** padding, control sizes, corners and shadows had only been proven on a page Claude wrote. A pass that is right on a messy page can still cry wolf on a good one.
+- **How we checked:** ran the padding, control-size and corner readers on four of crafting-ui's running pages at 1440 wide (/interfaces, /motion, /primitives, /stickers).
+- **What it showed:** 1,253 padding and row-gap classes read, 13 controls, no theme roles for corners: nothing proposed anywhere. One thing was wrong: on /primitives, a row showing three button sizes side by side (32, 36, 40px) was called uneven. Several heights that are each on the unit are a set of sizes shown on purpose; plumber now leaves such a row without a word.
+- **Not checked:** shadows (crafting-ui's running server does not hand out that file yet); a real app with drift in it.
+- **Also fixed, from the backlog's "now" list:** a read in a window with no size (a tab never shown) measured everything as zero and reported it without a word. It now refuses: "This window has no size, so nothing on the page can be measured."
+
 ## Open gaps
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
 

@@ -49,7 +49,7 @@ reserved.)
 
 **The order** (decided 2026-11-12):
 
-- **Now:** a class fix offered and then refused · a read in a window with no size.
+- **Now:** a class fix offered and then refused.
 - **Next:** padding read by job · a test for a theme whose radii or shadows are named by size · the Next
   performance test · the tests that fail only under the full run's load.
 - **Decided 2026-11-12:** shadows went ahead of padding-by-job. After padding is snapped to the scale, sibling cards on
@@ -106,7 +106,8 @@ reserved.)
 ### Clean-up: control sizes
 
 - A theme's own control-size names are not read.
-- The "one row, one height" rule found nothing on the messy page, so it is unproven.
+- The "one row, one height" rule has never fired on a real page (crafting-ui's one uneven row is a set of sizes
+  shown on purpose), so it is unproven.
 - A control whose classes are built in code cannot take a height class; it is listed as left.
 
 ### Clean-up: shadows
@@ -171,7 +172,6 @@ reserved.)
 - One edited file still marks 1,225 files as changed (about 100 ms per write).
 - Several writes in quick succession sometimes reload the showcase page.
 - Undo of a 101-file rename takes 7–13 s; where the time goes is not measured.
-- A read taken in a window with no size gives wrong findings without saying so.
 - A full read is about 2 s on a 1,400-element page (busy laptop, single runs); a fixed 0.6 s wait remains at the end.
 - Two neighbours of the repaired fix-card write were not driven by hand: a fix taken on the element itself, and the
   class written after a new theme token.

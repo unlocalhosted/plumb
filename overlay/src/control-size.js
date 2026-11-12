@@ -15,7 +15,8 @@
  *  propose  proposeControlSizes(controls, { unit }) → { moves, said, kept }: in a row whose controls differ in height,
  *           the height that sits on the project's spacing unit is the row's (a height off the unit is the accident: a
  *           border on top of padding, a stray line height); the others go to it. When no single height in the row is
- *           on the unit, plumber says the row is uneven and proposes nothing: it has no ground to pick one
+ *           on the unit, plumber says the row is uneven and proposes nothing: it has no ground to pick one. Several
+ *           heights that are each on the unit are a set of sizes shown on purpose, and are left without a word
  *           A control whose own height is off the unit goes onto it ('control/off-unit'): to its height without its
  *           border when that sits on the unit (the border was added on top of a box already sized: the pair's other
  *           button has none), else to the nearest step of the unit; a tie between two steps is said, not moved. A
@@ -93,7 +94,9 @@ export function proposeControlSizes(controls, { unit = 4, steps = [] } = {}) {
     const heights = [...new Set(row.map((c) => c.h))];
     if (heights.length < 2) { kept.push(...row); continue; }
     const fits = heights.filter(onUnit);
-    if (fits.length !== 1) { said.push({ row: row.map((c) => c.el), heights, why: fits.length ? 'more than one of their heights sits on your spacing unit' : 'none of their heights sits on your spacing unit' }); continue; }
+    // several heights, each on the unit, side by side: a set of sizes shown on purpose (small, medium, large), not a slip
+    if (fits.length > 1) { kept.push(...row); continue; }
+    if (!fits.length) { said.push({ row: row.map((c) => c.el), heights, why: 'none of their heights sits on your spacing unit' }); continue; }
     const to = fits[0];
     for (const c of row) {
       if (c.h === to) continue;
