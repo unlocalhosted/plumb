@@ -1928,6 +1928,15 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   specificity than each card's own, so every card came out white; the site's build rewrites oklch colours as lab,
   which the tour's chroma reader doesn't understand, so the fixed shadow is written in rgb; in dark our sky ink turns
   white, so the "Welcome tour" label and the play triangle vanished (now on the surface/text roles, and a deep blue).
+- **The nine example cards, the same way.** Their frame and Plumber's marks: paper cards, each stage on one of our
+  coloured faces, the state as a toy-face tag with the principle's toy (coral broken, mint fixed), the Broken/Fixed
+  switch as our segmented control (a paper thumb in a well), the number as a lit key, the measured pill a lit coral
+  key that turns mint. The scenes: paper and soft blocks in our hues (a lilac-to-sky video with a soft play button,
+  an album tile with a pink and lilac cover, a time tracker on paper, a news card in the toy face, a recipe on a pink
+  page instead of saffron, a forecast on paper, a pale pin on butter, a paper segmented control with a lilac tab, a
+  pink soft Share button over a paper menu). Kept on purpose: the forecast's blue and amber and the pale glaze, since
+  those principles are about those colours. The recipe's fixed shadow is written in rgb for the measure to read.
+  Every card plays in light and dark.
 
 ## Open gaps
 - The overlay writes about 180 corners as numbers (radius tokens about 45 times), many off its own scale; 6px is

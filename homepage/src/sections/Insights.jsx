@@ -27,6 +27,7 @@
  * ───────────────────────────────────────────────────────── */
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import './insights.css';
+import { toyOf } from '../../../overlay/src/toys.js'; // each principle wears its property's toy
 
 const FAMILIES = [['Interaction feel', 16], ['Typography', 15], ['Colour and light', 15], ['Layout and platform', 13], ['Alignment and balance', 6], ['Spacing and rhythm', 6], ['Rendering and pixels', 6]];
 const T = { cameraIn: 600, marks: 1600, fix: 3000, marksOut: 4500, cameraOut: 4800, alive: 5700, back: 7600, loop: 9000 };
@@ -132,13 +133,13 @@ function Card({ card, live, reduced, offset }) {
   const { Scene } = card;
   const showMarks = marks && step >= STEP.marks && step <= STEP.out;
   return (
-    <article className="ins-card" onPointerEnter={() => setPaused(true)} onPointerLeave={() => setPaused(false)} aria-label={`${card.n}. ${card.title}`}>
+    <article className="ins-card" data-hue={card.hue} onPointerEnter={() => setPaused(true)} onPointerLeave={() => setPaused(false)} aria-label={`${card.n}. ${card.title}`}>
       <div ref={stage} className="ins-stage">
         <div ref={scene} className="ins-cam" style={cam ? { transform: `translate(${cam.x}px, ${cam.y}px) scale(${cam.k})` } : undefined} data-moving={!!cam}>
           <Scene fixed={fixed} live={live && !reduced && (card.moving || step === STEP.rest || step === STEP.home)} />
         </div>
         {showMarks && <Marks marks={marks} fixed={fixed} out={step === STEP.out} card={card} />}
-        <span className="ins-state" data-fixed={fixed} aria-hidden="true"><i /><span key={fixed ? 'f' : 'b'} className="ins-swap">{card.states[fixed ? 1 : 0]}</span></span>
+        <span className="ins-state" data-fixed={fixed} aria-hidden="true"><i className="ins-toy" dangerouslySetInnerHTML={{ __html: toyOf(card.toy) }} /><span key={fixed ? 'f' : 'b'} className="ins-swap">{card.states[fixed ? 1 : 0]}</span></span>
         <div className="ins-switch" role="group" aria-label="Show it" data-fixed={fixed}>
           <span className="ins-thumb" aria-hidden="true" />
           {['Broken', 'Fixed'].map((label, k) => (
@@ -350,13 +351,13 @@ Menu.measure = (root) => {
 };
 
 const CARDS = [
-  { n: 2, title: 'Optical centre beats geometric centre', why: 'The eye centres by weight, not by the box.', states: ['Box centred', 'Weight centred'], Scene: Play, measure: Play.measure, fmt: v => (v < 0.1 ? '0px' : `${v.toFixed(1)}px`), done: v => v < 0.1 },
-  { n: 8, title: 'Nested radius = outer − padding', why: 'Equal radii pinch the corner; concentric ones don’t.', states: ['Same radius', 'Concentric'], Scene: Album, measure: Album.measure, fmt: v => `r ${Math.round(v)}`, done: v => Math.round(v) === 12 },
-  { n: 16, title: 'Tabular figures for numbers that change', why: 'Proportional digits jitter as they tick and never stack.', states: ['Proportional', 'Tabular'], Scene: Timer, measure: Timer.measure, pill: 'below', fmt: v => (v < 0.1 ? '0px' : `${v.toFixed(1)}px`), done: v => v < 0.1 },
-  { n: 18, title: 'No widows in headings', why: 'One word alone on the last line looks broken.', states: ['Widow', 'Balanced'], Scene: Headline, measure: Headline.measure, fmt: v => `${Math.round(v)} word${Math.round(v) === 1 ? '' : 's'}`, done: v => Math.round(v) >= 2 },
-  { n: 21, title: 'Shadows are tinted, not grey', why: 'A grey shadow on a coloured ground looks dirty.', states: ['Grey shadow', 'Tinted'], Scene: Shadow, measure: Shadow.measure, fmt: v => `C ${v.toFixed(2)}`, done: v => v > 0.06 },
-  { n: 55, title: 'Gradients mix in OKLCH', why: 'sRGB goes grey between two saturated colours.', states: ['sRGB', 'OKLCH'], Scene: Forecast, measure: Forecast.measure, fmt: v => `C ${v.toFixed(2)}`, done: v => v > MID_OKLCH - 0.005 },
-  { n: 39, title: 'Images get an inner outline', why: 'A pale photo bleeds into a pale card without one.', states: ['No outline', 'Inner outline'], Scene: Photo, measure: Photo.measure, fmt: v => `${v.toFixed(1)}px edge`, done: v => v > 0.95 },
-  { n: 42, title: 'Bold on hover must not shift layout', why: 'Weight changes width, and the whole row jumps.', states: ['Bold shifts', 'Width kept'], Scene: Tabs, measure: Tabs.measure, moving: true, fmt: v => (v < 0.1 ? '0px' : `${v.toFixed(1)}px`), done: v => v < 0.1 },
-  { n: 63, title: 'Never scale from 0', why: 'From 0 it appears from nowhere; from the trigger it grows out of it.', states: ['From 0', 'From the trigger'], Scene: Menu, measure: Menu.measure, moving: true, fmt: v => `scale ${v === 0 ? '0' : v.toFixed(2)}`, done: v => v > 0.9 },
+  { n: 2, toy: 'alignment', hue: 'sky', title: 'Optical centre beats geometric centre', why: 'The eye centres by weight, not by the box.', states: ['Box centred', 'Weight centred'], Scene: Play, measure: Play.measure, fmt: v => (v < 0.1 ? '0px' : `${v.toFixed(1)}px`), done: v => v < 0.1 },
+  { n: 8, toy: 'corner', hue: 'pink', title: 'Nested radius = outer − padding', why: 'Equal radii pinch the corner; concentric ones don’t.', states: ['Same radius', 'Concentric'], Scene: Album, measure: Album.measure, fmt: v => `r ${Math.round(v)}`, done: v => Math.round(v) === 12 },
+  { n: 16, toy: 'type', hue: 'mint', title: 'Tabular figures for numbers that change', why: 'Proportional digits jitter as they tick and never stack.', states: ['Proportional', 'Tabular'], Scene: Timer, measure: Timer.measure, pill: 'below', fmt: v => (v < 0.1 ? '0px' : `${v.toFixed(1)}px`), done: v => v < 0.1 },
+  { n: 18, toy: 'wrap', hue: 'lilac', title: 'No widows in headings', why: 'One word alone on the last line looks broken.', states: ['Widow', 'Balanced'], Scene: Headline, measure: Headline.measure, fmt: v => `${Math.round(v)} word${Math.round(v) === 1 ? '' : 's'}`, done: v => Math.round(v) >= 2 },
+  { n: 21, toy: 'shadow', hue: 'pink', title: 'Shadows are tinted, not grey', why: 'A grey shadow on a coloured ground looks dirty.', states: ['Grey shadow', 'Tinted'], Scene: Shadow, measure: Shadow.measure, fmt: v => `C ${v.toFixed(2)}`, done: v => v > 0.06 },
+  { n: 55, toy: 'fill', hue: 'sky', title: 'Gradients mix in OKLCH', why: 'sRGB goes grey between two saturated colours.', states: ['sRGB', 'OKLCH'], Scene: Forecast, measure: Forecast.measure, fmt: v => `C ${v.toFixed(2)}`, done: v => v > MID_OKLCH - 0.005 },
+  { n: 39, toy: 'border', hue: 'butter', title: 'Images get an inner outline', why: 'A pale photo bleeds into a pale card without one.', states: ['No outline', 'Inner outline'], Scene: Photo, measure: Photo.measure, fmt: v => `${v.toFixed(1)}px edge`, done: v => v > 0.95 },
+  { n: 42, toy: 'weight', hue: 'lilac', title: 'Bold on hover must not shift layout', why: 'Weight changes width, and the whole row jumps.', states: ['Bold shifts', 'Width kept'], Scene: Tabs, measure: Tabs.measure, moving: true, fmt: v => (v < 0.1 ? '0px' : `${v.toFixed(1)}px`), done: v => v < 0.1 },
+  { n: 63, toy: 'motion', hue: 'mint', title: 'Never scale from 0', why: 'From 0 it appears from nowhere; from the trigger it grows out of it.', states: ['From 0', 'From the trigger'], Scene: Menu, measure: Menu.measure, moving: true, fmt: v => `scale ${v === 0 ? '0' : v.toFixed(2)}`, done: v => v > 0.9 },
 ];
