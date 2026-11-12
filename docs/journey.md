@@ -1937,6 +1937,11 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   pink soft Share button over a paper menu). Kept on purpose: the forecast's blue and amber and the pale glaze, since
   those principles are about those colours. The recipe's fixed shadow is written in rgb for the measure to read.
   Every card plays in light and dark.
+- **"Arrange the rules showcase in bento grid."** The nine example cards are a bento on three columns: the optical
+  centre (the play button) is the big two-by-two tile with its video drawn larger to fill it; the shadow, gradient and
+  menu cards are wide; the rest single; wide and single swap sides row by row so it doesn't read as stripes. Each
+  card's stage now grows with its tile, and every measure reads live sizes, so the tour still plays (the big tile's
+  camera moment checked). Below desktop it falls back to two columns with the big tile across both, then one.
 
 ## Open gaps
 - The overlay writes about 180 corners as numbers (radius tokens about 45 times), many off its own scale; 6px is

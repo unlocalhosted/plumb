@@ -11,17 +11,19 @@
 .ins-x-families li { display: inline-flex; gap: 6px; align-items: center; height: 28px; padding: 0 11px; border-radius: 99px; background: var(--pl-bg-surface); box-shadow: var(--pl-shadow-tag);
   font: var(--pl-round-w, 700) 12.5px/1 var(--pl-round); color: var(--ink-1); }
 .ins-x-families li span { font: 600 11px/1 var(--pl-mono); color: var(--pl-pink); }
-.ins-x-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin-top: var(--s-8); }
+/* a bento: the play button the big tile, three wide ones, the rest single; wide and single swap sides row by row */
+.ins-x-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-auto-rows: auto; gap: 16px; margin-top: var(--s-8);
+  grid-template-areas: 'play play album' 'play play timer' 'news shadow shadow' 'forecast forecast photo' 'tabs menu menu'; }
 
 /* ── the card: paper, its stage on a coloured face, in our design language ── */
-.ins-card { --hue: var(--pl-sky); --face: var(--pl-sky-face); padding: 10px; border-radius: 24px; background: var(--pl-bg-surface); box-shadow: var(--pl-shadow-card);
+.ins-card { --hue: var(--pl-sky); --face: var(--pl-sky-face); display: flex; flex-direction: column; padding: 10px; border-radius: 24px; background: var(--pl-bg-surface); box-shadow: var(--pl-shadow-card);
   transition: translate 300ms var(--pl-spring-pop), box-shadow 200ms var(--ease); }
 .ins-card[data-hue='pink'] { --hue: var(--pl-pink); --face: var(--pl-pink-face); }
 .ins-card[data-hue='mint'] { --hue: var(--pl-mint); --face: var(--pl-mint-face); }
 .ins-card[data-hue='lilac'] { --hue: var(--pl-lilac); --face: var(--pl-lilac-face); }
 .ins-card[data-hue='butter'] { --hue: var(--pl-butter); --face: var(--pl-butter-face); }
 @media (hover: hover) and (pointer: fine) { .ins-card:hover { translate: 0 -3px; } }
-.ins-stage { position: relative; height: 252px; overflow: hidden; border-radius: 16px;
+.ins-stage { position: relative; flex: 1; min-height: 252px; overflow: hidden; border-radius: 16px;
   background: radial-gradient(120% 90% at 25% 0%, color-mix(in oklab, #fff 28%, var(--face)), var(--face) 55%, color-mix(in oklab, var(--hue) 18%, var(--face))); }
 /* the state: a tag in the toy face with the principle's toy, coral while broken, mint once fixed */
 .ins-state { position: absolute; z-index: 3; left: 10px; top: 10px; display: inline-flex; gap: 5px; align-items: center; height: 26px; padding: 0 9px 0 6px; overflow: hidden;
@@ -82,6 +84,13 @@
 .sc-play-btn { display: grid; place-items: center; width: 58px; height: 58px; border-radius: 50%; background: linear-gradient(180deg, #fff, #f1efff); box-shadow: 0 4px 0 rgb(43 26 107 / .25), 0 12px 20px -8px rgb(43 26 107 / .55); }
 .sc-play-btn svg { width: 26px; height: 26px; fill: #2b1a6b; translate: -1.08px 0; transition: translate 420ms var(--ins-ease); } /* the triangle's box (7–19 of 24) on the circle's centre */
 .sc-play[data-fixed='true'] .sc-play-btn svg { translate: 1.08px 0; } /* its weight (x 11 of 24) on the circle's centre */
+
+/* the big tile: the video drawn larger, to fill it */
+.ins-card[data-size='big'] .sc-video { width: 440px; height: 260px; border-radius: 26px; }
+.ins-card[data-size='big'] .sc-play-btn { width: 96px; height: 96px; }
+.ins-card[data-size='big'] .sc-play-btn svg { width: 42px; height: 42px; translate: -1.75px 0; }
+.ins-card[data-size='big'] .sc-play[data-fixed='true'] .sc-play-btn svg { translate: 1.75px 0; }
+.ins-card[data-size='big'] .sc-video small { left: 16px; bottom: 16px; padding: 6px 11px; font-size: 13px; }
 
 /* #8 nested radius: an album tile, paper, its cover in our warm hues */
 .sc-tile { width: 128px; padding: 8px; border-radius: 20px; background: var(--pl-bg-surface); box-shadow: inset 0 1.5px 0 rgb(255 255 255 / .6), 0 4px 0 color-mix(in oklab, var(--hue) 40%, var(--pl-bg-surface)), 0 16px 26px -14px color-mix(in oklab, var(--hue) 70%, transparent); }
@@ -159,8 +168,8 @@
 .sc-menu[data-fixed='true'] .sc-pop { scale: 0.96; transform-origin: top center; }
 .sc-menu[data-fixed='true'][data-open='true'] .sc-pop { scale: 1; }
 
-@media (max-width: 64rem) { .ins-x-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (max-width: 40rem) { .ins-x { padding-left: var(--s-4); padding-right: var(--s-4); } .ins-x-grid { grid-template-columns: 1fr; } }
+@media (max-width: 64rem) { .ins-x-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-areas: none; } .ins-card { grid-area: auto !important; } .ins-card[data-size='big'] { grid-column: span 2; } }
+@media (max-width: 40rem) { .ins-x { padding-left: var(--s-4); padding-right: var(--s-4); } .ins-x-grid { grid-template-columns: 1fr; } .ins-card[data-size='big'] { grid-column: auto; } .ins-card[data-size='big'] .sc-video { width: 260px; height: 156px; } }
 @media (prefers-reduced-motion: reduce) {
   .ins-state, .sc-play-btn svg, .sc-cover, .sc-recipe, .sc-glaze::after, .sc-pop, .ins-card, .ins-thumb, .ins-cam, .sc-day b em, .ins-check { transition: none; }
   .ins-pill, .ins-digit { animation: none; }
