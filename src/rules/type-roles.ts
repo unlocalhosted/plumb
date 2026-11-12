@@ -33,7 +33,7 @@ export interface TypeMember {
   /** why the place cannot be swapped (an inline style, a computed className, a formula) */
   fixed?: string;
 }
-export type RoleName = 'display-hero' | 'display-large' | 'display-figure' | 'headline-large' | 'headline-medium' | 'headline-small' | 'title-large' | 'title-medium' | 'title-small' | 'body-lead' | 'body-lead-small' | 'body-large' | 'body-small' | 'body-caption' | 'label-control' | 'label-control-small' | 'label-medium' | 'label-small';
+export type RoleName = 'display-hero' | 'display-large' | 'display-figure' | 'display-figure-small' | 'headline-large' | 'headline-medium' | 'headline-small' | 'title-large' | 'title-medium' | 'title-small' | 'body-lead' | 'body-lead-small' | 'body-large' | 'body-small' | 'body-caption' | 'label-control' | 'label-control-small' | 'label-medium' | 'label-small';
 export interface RoleMember { site: TypeMember['site']; stamp?: string; tag: string; classes: string[]; current: TypeBundle; delta: { size: number | null; lineHeight: number | null; letterSpacing: number; weight: number }; /** the weight this place takes, when not its role's usual one */ weight?: WeightName; /** reading text: its role plus leading-prose */ variant?: 'prose'; confidence: 'ok' | 'low'; elements: number; fixed?: string }
 export interface RoleOverride { size?: number; lineHeight?: number; letterSpacing?: number; weight?: number; compact?: { lineHeight: number } }
 export interface TypeRole { name: RoleName; bundle: TypeBundle; /** the role's usual weight, and the other weights its places use (one class each) */ weightName: WeightName; weights: { name: WeightName; places: number }[]; members: RoleMember[]; places: number; elements: number; files: number; contexts: { tag: string; places: number }[]; /** where the size came from: the owner's decision, the theme's step within 1px of the mode, the members' mode, or the cluster's centre (the ladder) */ sizeFrom: 'decision' | 'theme' | 'mode' | 'centre'; /** the fluid sizes among the members, most places first */ clamps?: { text: string; places: number }[] }
@@ -67,10 +67,10 @@ export function px(value: string | undefined, size = 16): number | null {
   return m[2] === 'rem' ? n * 16 : m[2] === 'em' ? n * size : m[2] === '%' ? n / 100 * size : n;
 }
 
-export const roleOrder: RoleName[] = ['display-hero', 'display-large', 'display-figure', 'headline-large', 'headline-medium', 'headline-small', 'title-large', 'title-medium', 'title-small', 'body-lead', 'body-lead-small', 'body-large', 'body-small', 'body-caption', 'label-control', 'label-control-small', 'label-medium', 'label-small'];
+export const roleOrder: RoleName[] = ['display-hero', 'display-large', 'display-figure', 'display-figure-small', 'headline-large', 'headline-medium', 'headline-small', 'title-large', 'title-medium', 'title-small', 'body-lead', 'body-lead-small', 'body-large', 'body-small', 'body-caption', 'label-control', 'label-control-small', 'label-medium', 'label-small'];
 /** up a ladder every size must be strictly greater than the one below. One ladder per job (docs/research/text-role-signals.md):
  * a large paragraph and a small heading are different jobs, so their sizes may cross */
-export const ladders: RoleName[][] = [['display-figure'], ['label-control-small', 'label-control'], ['label-small', 'label-medium'], ['body-caption', 'body-small', 'body-large', 'body-lead-small', 'body-lead'], ['title-small', 'title-medium', 'title-large', 'headline-small', 'headline-medium', 'headline-large', 'display-large', 'display-hero']];
+export const ladders: RoleName[][] = [['display-figure-small', 'display-figure'], ['label-control-small', 'label-control'], ['label-small', 'label-medium'], ['body-caption', 'body-small', 'body-large', 'body-lead-small', 'body-lead'], ['title-small', 'title-medium', 'title-large', 'headline-small', 'headline-medium', 'headline-large', 'display-large', 'display-hero']];
 export const ladderOrder: RoleName[] = ladders.flat();
 /** What a place is for, where it says so itself (docs/PRINCIPLES.md: a text style names a job; the size belongs to the job).
  * A heading: HTML's h1–h6, "six levels of section headings". Reading text: a paragraph, a definition, a quotation, or
@@ -122,7 +122,8 @@ export function roleFor(b: TypeBundle, job: Job | null = null): RoleName {
   // at title size or larger (a hero's button) goes by size, like any large text
   if (job === 'control') { if (!fluid && size < 17) return size >= 13.5 ? 'label-control' : 'label-control-small'; job = null; }
   // a number at heading size is a figure; a small one (a count in a row, a cell) is ordinary text and goes by size
-  if (job === 'figure') { if (fluid || size >= 22) return 'display-figure'; job = null; }
+  // two steps, like the headlines: a 33px figure is not folded into the 22px ones (crafting-ui, 2026-11-12)
+  if (job === 'figure') { if (fluid || size >= 26) return 'display-figure'; if (size >= 22) return 'display-figure-small'; job = null; }
   // body-large keeps its meaning (the 16px body: configs and the element card name it); larger reading text steps above it
   // as lead text at two sizes: the names say the job (owner, 2026-11-12: "the most semantically relevant naming")
   if (job === 'reading') return size >= 18.5 ? 'body-lead' : size >= 17 ? 'body-lead-small' : size >= 14.5 ? 'body-large' : size >= 12.5 ? 'body-small' : 'body-caption';
@@ -173,7 +174,18 @@ export function proposeTypeRoles(members: TypeMember[], options: { exclude?: str
   // the bundle of a role is its own cluster's; members folded in from another cluster move to it, they do not shape it
   const clusters = new Map<RoleName, TypeMember[]>([...byRole].map(([name, ms]) => [name, [...ms]]));
   const centre = (ms: TypeMember[]) => { const s = ms.map(m => m.current.size).filter((n): n is number => n !== null).sort((a, b) => a - b); return s.length ? s[Math.floor(s.length / 2)]! : null; };
-  const modeOf = (ms: TypeMember[]) => mode(ms.map(m => m.current.size).filter((s): s is number => s !== null), null as number | null);
+  // the size most places use; when none is used by more places than every other, the middle one (the upper of two), so a
+  // role's large places do not shrink to its smallest (crafting-ui's 33px and 30px page titles went to 30px)
+  const modeOf = (ms: TypeMember[]) => {
+    const counts = new Map<number, number>();
+    for (const m of ms) if (m.current.size !== null) counts.set(m.current.size, (counts.get(m.current.size) ?? 0) + 1);
+    const ranked = [...counts].sort((a, b) => b[1] - a[1]);
+    if (!ranked.length) return null;
+    if (ranked.length === 1 || ranked[0]![1] !== ranked[1]![1]) return ranked[0]![0];
+    // a tie: the members' size on one of the theme's own steps nearest the middle, else the middle itself
+    const mid = centre(ms)!, onTheme = [...counts.keys()].filter(v => themeSteps.some(t => Math.abs(t - v) < 0.5));
+    return onTheme.length ? onTheme.reduce((a, b) => Math.abs(b - mid) < Math.abs(a - mid) || (Math.abs(b - mid) === Math.abs(a - mid) && b > a) ? b : a) : mid;
+  };
   const modes = new Set([...byRole.values()].map(modeOf));
   for (const ladder of ladders) { const placed: RoleName[] = []; for (const name of ladder) {
     const ms = byRole.get(name); if (!ms?.length) continue;

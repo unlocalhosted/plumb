@@ -654,10 +654,18 @@
 - **Not done:** nothing that floats was on the page, so that half is untried; themes that name shadows by size get no answer.
 - **Seen once:** the colour clean-up test failed in two seconds on one run and passed on the next: a flake at start-up.
 
+## Big text no longer shrinks to fit small text; the dark page checked (2026-11-12)
+- **The itch:** after the first fixes, the crafting-ui trial still shrank 6 places: five large numbers shared one 22px style (a 33px number lost 11px), and the "Craft" page title went 33 → 30px because its style's two places (30 and 33px) tied.
+- **The system behind it:** a style's size was the size most of its places use, and a tie went to the smaller one, so a style with no shared size fell to its smallest place.
+- **The fix:** large numbers get two steps, like headings (26px and up, 22–26px). When a style's places share no size, it takes the theme's own size nearest their middle, else the middle (the upper of two).
+- **The proof:** no place on crafting-ui shrinks more than 2px now (31 moves of 2px or more, all ±2–5px); "Craft" keeps 33px. The cost: a 28px struck-out price grows to 33px, still well under the sale price beside it (docs/media/crafting-ui-roles-price-after.jpg), and a 30px lesson title to 33px. The text-style test files pass, 4 of 4.
+- **The dark page:** with shadcn's page in dark mode, the colour pass proposes nothing for a hand-written dark colour, so it cannot write a wrong one; it does not tidy dark colours either (the palette holds light values). A near-white panel in light folds onto `muted` because plumber reads a small box in the page as inset; the two are within the pass's invisible-difference threshold.
+
 ## Open gaps
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
 
 ## Shipped · 2026-W46
+- Plumber's text styles write into crafting-ui without shrinking headings or large numbers, keep classes that only apply to part of the text, and keep paragraph leading off headings ([entry](#big-text-no-longer-shrinks-to-fit-small-text-the-dark-page-checked-2026-11-12)).
 - crafting-ui's vocabulary page loads about four times lighter (9,474 → 2,007 elements): each live example mounts only as it comes near the screen. [entry](#crafting-uis-vocabulary-page-live-examples-mount-only-near-the-screen-2026-11-12)
 - plumber finds a side column that is set to stick but can't, and fixes it with one class: on crafting-ui's skill pages the column now stays beside the text where it used to scroll away. [entry](#the-sticky-check-on-a-real-app-crafting-uis-skill-pages-2026-11-12)
 - In a rename plan, the raised background gets the surface name and recessed fills get sunken, judged against the page colour ([entry](#which-colour-gets-the-surface-name-2026-11-12)).

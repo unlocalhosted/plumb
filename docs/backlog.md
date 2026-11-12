@@ -83,16 +83,15 @@ reserved.)
 
 ### Clean-up: text (trial on crafting-ui branch plumber-text-roles)
 
-- Numbers drawn at heading size (5 places) share one 22px figure style, so a 33px figure shrinks 11px.
-- Two page titles (33px and 30px) tie for the large headline; the tie goes to 30px, so "Craft" shrinks 3px. A tie
-  could go to the theme's own step, or the larger.
+- When a style's places share no size, the tie goes to the theme's own step nearest the middle: on crafting-ui a 28px
+  struck-out price grows to 33px (still under the $99 beside it) and a 30px lesson title grows to 33px.
+- The trial is not on crafting-ui's master: the owner decides.
 
 ### Clean-up: colour
 
 - Surface levels (a card on a panel) are not read from nesting; no project at hand has two nested surface colours.
-- The palette is read with the theme's light values even when the page is in dark mode (the server's resolved values
-  win). Right for naming; on a page shown in dark, the colour pass may compare dark places with light tokens. Not
-  checked.
+- On a page shown in dark mode the colour pass proposes nothing (the palette holds the light values): safe, but it
+  does not tidy dark colours. Tidying a dark page would need the palette read in dark.
 
 ### Clean-up: icons
 
