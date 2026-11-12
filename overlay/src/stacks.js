@@ -172,6 +172,9 @@ function themeScale(steps) {
   return { kind: 'theme', score: 1, unit: unit(), ratio: null, positions, halves: [], near, atLeast: (v) => positions.find((x) => x >= v - 0.5) ?? positions.at(-1) };
 }
 
+/** The scale a space is put on: the theme's own steps when they are one, else the scale these distances follow. */
+export function spacingScale(distances, steps = STEPS) { return isScale(steps) ? themeScale(steps) : scaleFrom(distances); }
+
 export function proposeSpacing(stacks, rhythm, { scope = 'keep', density = 0, site = null, steps = STEPS } = {}) {
   if (scope === 'refine') return refine(stacks, rhythm, density, site, steps);
   const moves = [], kept = [], refused = [], groupedStacks = [];

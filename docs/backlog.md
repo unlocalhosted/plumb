@@ -50,7 +50,7 @@ reserved.)
 **The order** (decided 2026-11-12):
 
 - **Now:** a class fix offered and then refused · a read in a window with no size.
-- **Next:** padding and gaps in rows · control sizes as a pass · text inside buttons and "what it sits inside" · craft
+- **Next:** padding and gaps in rows into the Spacing step · control sizes as a pass · text inside buttons and "what it sits inside" · craft
   suggestions read the role · the two failing tests that are real bugs · tests for control sizes and a theme named by size.
 - **Later:** shadows, borders, motion, opacity and states · surface levels · shadcn's foreground colours · growing hero
   titles · the speed items · the remaining defensive tips · the 80-column report · the flaky tests.
@@ -69,8 +69,11 @@ reserved.)
 
 ### Clean-up: spacing
 
-- Only the space between stacked things is read. Padding and gaps inside rows are never seen (bench/messy has
-  `p-[18px]`, `px-3.5`, `gap-[10px]`).
+- Padding and gaps in rows are read and decided (overlay/src/insets.js) but are not in the panel's Spacing step, so
+  nothing is shown or written yet.
+- A size halfway between two steps goes to the wider one (20px → 24px in a theme of 16 and 24): the rule is "nearest by
+  ratio". Not judged on a real app.
+- Padding is not read by job (a card's padding, a control's sides): every padding is snapped to the scale alone.
 
 ### Clean-up: colour
 
@@ -96,8 +99,7 @@ reserved.)
 
 ### Primitives with no clean-up pass
 
-- Padding and gaps in rows (spacing the pass cannot see), shadows, borders and lines, motion, opacity and states,
-  layer order, breakpoints and container widths.
+- Shadows, borders and lines, motion, opacity and states, layer order, breakpoints and container widths.
 
 ### Craft suggestions
 

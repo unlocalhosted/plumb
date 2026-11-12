@@ -515,6 +515,12 @@
 - **Decided by Claude, as a design engineer would:** 12px and under is caption text (a timestamp, a hint), a job of its own; 13 and 14px are small body. The cut sits halfway between 12 and 13, like the other cuts in the ladder. Named `body-caption`, shown as "Caption".
 - **The proof:** on crafting-ui's measured text: small body 13px (40 places), caption 12px (48 places), low-confidence places 35 → 34. The text-role and messy-page tests pass.
 
+## Padding and gaps in rows are read (2026-11-12)
+- **The itch:** the spacing pass only saw the space between stacked things. On the messy page a card with 18px padding, cells at 20px and icon gaps at 10px were never looked at.
+- **Decided by Claude:** they are spacing like any other, so they sit on the same scale: the theme's steps when it names a scale. A size off the scale goes to the nearest step when one is within a quarter of it, the stack pass's own rule; further than that it is a size of its own and stays. A control's top and bottom padding is left alone, because its height is the control's size.
+- **The fix and the proof (messy page at 1440 wide, engine output in the browser):** 145 padding and gap classes read; 33 change: 20px → 24px on 23 places (cards and table cells), 10px → 12px on 7, 14px and 18px → 16px on 3. Distinct sizes among them: 12 → 8. Left as their own: the 2px chip padding and two 6px sizes.
+- **Not done:** not in the panel's Spacing step, so nothing is shown or written. No tests.
+
 ## Open gaps
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
 
