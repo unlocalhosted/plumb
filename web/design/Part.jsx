@@ -35,6 +35,7 @@ const LOAD = {
   space: () => import('./parts/space.js'),
   motion: () => import('./parts/motion.js'),
   pills: () => import('./parts/pills.js'),
+  inputs: () => import('./parts/inputs.js'),
 };
 
 export function Part({ id, css }) {

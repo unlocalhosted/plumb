@@ -1834,6 +1834,22 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   written out in 7 files; six heights (14 to 24px) where one per kind is the system; corners of 4, 5 and 7px written
   as numbers. Checked in light and dark.
 
+### 26. Parts: Inputs, and a second ring found on the way
+- **What counting found:** Plumber asks you to type only twice, both in the fix bar: a name for a new token, and a
+  reason for keeping a value. The plan's "searching" doesn't exist: there is no search field, and the page says so.
+- **What we chose:** both fields live with the fix bar's own styles, words and rules (a name is lowercase letters,
+  numbers and dashes; the Keep button waits for three characters), then the name field frozen in each of its four
+  states (at rest, typing, a good name, not a name), then what is open.
+- **One source for the field:** the fix bar's styles lived inside the fix panel, which also loads the connection to
+  the dev server, and the design site can't bundle that. The field, its hint, its note and its two buttons moved into
+  a small shared module that the fix bar puts back in exactly the same places in its stylesheet: the stylesheet text
+  was compared before and after and is identical, 14,804 characters.
+- **A bug the page showed:** typing into either field drew two rings, the field's dark one and a blue outline around
+  the name inside it (a text field counts as keyboard-focused even when clicked). Confirmed in the browser, then
+  fixed in the shared field: the input no longer draws its own outline. One ring now, in the fix bar too.
+- **Still open, on the page:** the field's corner (10px) and the bar's button (11px) are off the corner tokens, and
+  the field's type (12.5px mono, 13px) isn't a type token. Checked in light and dark.
+
 ## Open gaps
 - The overlay writes about 180 corners as numbers (radius tokens about 45 times), many off its own scale; 6px is
   its most-used gap; --pl-card-pad and --pl-card-gap are unused; the soft blocks' corners aren't tokens.

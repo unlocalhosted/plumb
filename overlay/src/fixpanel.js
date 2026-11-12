@@ -29,6 +29,7 @@
  * Keys (while blueprint is on): Enter starts or fixes (written at once) · ↑ ↓ try · K keep it · → Tab skip · ← back · Esc put it down
  * ───────────────────────────────────────────────────────── */
 import { TextEditor, TEXT_EDITOR_CSS } from './texteditor.js';
+import { SPRING, FIX_BUTTONS_CSS, FIX_NOTE_CSS, FIX_FIELD_CSS } from './field.js'; // the fill-in parts, shared with the design site
 import { errorIs } from './api.js';
 import { ElementCard, ELEMENT_CARD_CSS } from './elementcard.js';
 import { esc } from './choices.js';
@@ -46,7 +47,7 @@ const TIMING = { open: 260, next: 180, click: 60, clickGap: 45, breath: 480, che
 const CLICK = { drop: 3, over: -1, ms: 420 };
 const BREATH = { scale: 1.006, ms: 620 };
 const BURST = { pieces: 40, speed: [380, 760], spread: 1.1, gravity: 1100, spin: 9, life: 1600, size: [7, 11] };
-const SPRING = 'cubic-bezier(.3, 1.35, .5, 1)', EASE = 'cubic-bezier(.2, .8, .2, 1)';
+const EASE = 'cubic-bezier(.2, .8, .2, 1)';
 const SCALE = 0.62; // px of drawing per px of page, for padding specimens
 
 // the bar's tools (the dock's, pressed through the widget), shown only after ··· (docs/design/one-bar.md: tools stay out of
@@ -116,11 +117,7 @@ export const FIX_CSS = TEXT_EDITOR_CSS + ELEMENT_CARD_CSS + `
     .fx .bar .bar-close .x { display: block; }
   }
   @media (prefers-reduced-motion: reduce) { .fx .readout { transition: none; } .fx .bar .tools { animation: none; } }
-  .fx .primary { height: 32px; padding: 0 12px 0 14px; border-radius: 11px; background: var(--pl-text-primary); color: var(--pl-bg-surface); font-weight: 550; display: inline-flex; align-items: center; gap: 6px;
-    box-shadow: inset 0 1px 0 rgb(255 255 255 / .12), 0 1px 2px rgb(0 0 0 / .2); transition: transform 160ms ${SPRING}, opacity 160ms; }
-  .fx .primary:active { transform: scale(.97); } .fx .primary kbd { color: color-mix(in oklab, var(--pl-bg-surface) 55%, transparent); } .fx .primary[disabled] { opacity: .28; cursor: default; }
-  .fx .ghost { height: 32px; padding: 0 10px; border-radius: 10px; color: var(--pl-text-secondary); display: inline-flex; align-items: center; gap: 5px; }
-  .fx .ghost:hover { background: var(--pl-bg-surface-hover); }
+  ${FIX_BUTTONS_CSS}
   /* the last fix written: what it changed and where, with Undo, above whatever the panel holds next */
   .fx .said { display: flex; align-items: center; gap: 8px; padding: 6px 8px 6px 14px; border-bottom: .5px solid var(--pl-border-default); color: var(--pl-text-primary); animation: fx-rise 220ms ${EASE} both; }
   .fx .said .tick { width: 14px; height: 14px; flex: none; }
@@ -134,10 +131,7 @@ export const FIX_CSS = TEXT_EDITOR_CSS + ELEMENT_CARD_CSS + `
   .fx .cause .nav { grid-row: span 2; grid-column: 3; display: flex; align-items: center; gap: 2px; color: var(--pl-text-secondary); font: 500 11.5px/1 ui-monospace, monospace; font-variant-numeric: tabular-nums; }
   .fx .cause .nav button { width: 26px; height: 26px; border-radius: 8px; display: grid; place-items: center; color: var(--pl-text-secondary); }
   .fx .cause .nav button:hover { background: var(--pl-bg-surface-hover); }
-  .fx .note { margin: 2px 18px 0; padding: 8px 10px; border-radius: 10px; background: var(--pl-bg-inset); color: var(--pl-text-secondary); font-size: 12px; line-height: 1.45; }
-  .fx .note code { font: 600 11.5px/1 ui-monospace, monospace; color: var(--pl-text-primary); }
-  .fx .say { padding: 8px 18px 14px; color: var(--pl-text-secondary); max-width: 52ch; }
-  .fx .say.err { color: var(--pl-text-hard-coded); }
+  ${FIX_NOTE_CSS}
   /* the "i" after a craft finding's name: the glyph sits on the text, its 24px target overhangs the line, never moves it */
   .fx .cause .info { display: inline-grid; place-items: center; width: 24px; height: 24px; margin: -6px -3px -6px 1px; vertical-align: middle; border-radius: 50%;
     color: var(--pl-text-secondary); text-decoration: none; transition: color 120ms, background-color 120ms, transform 160ms ${SPRING}; }
@@ -163,18 +157,7 @@ export const FIX_CSS = TEXT_EDITOR_CSS + ELEMENT_CARD_CSS + `
   .fx .sp.off .v { text-decoration: line-through; text-decoration-thickness: 1px; }
   .fx .sp .swatch { width: 26px; height: 26px; border-radius: 50%; box-shadow: inset 0 0 0 1px rgb(0 0 0 / .1); margin: 7px 0; }
   .fx button:focus-visible, .fx input:focus-visible { outline: 2px solid var(--pl-border-focus); outline-offset: 2px; }
-  .fx .field { display: flex; align-items: center; gap: 0; margin: 8px 18px 2px; height: 34px; padding: 0 10px; border-radius: 10px; background: var(--pl-bg-surface);
-    box-shadow: inset 0 0 0 1px var(--pl-border-default); font: 500 12.5px/1 ui-monospace, monospace; color: var(--pl-text-secondary); transition: box-shadow 140ms; }
-  .fx .field:focus-within { box-shadow: inset 0 0 0 1.5px var(--pl-text-primary); }
-  .fx .field[data-invalid] { box-shadow: inset 0 0 0 1.5px var(--pl-text-hard-coded); }
-  .fx .field input { all: unset; min-width: 4ch; color: var(--pl-text-primary); font: inherit; }
-  .fx .field.why input { flex: 1; }
-  .fx .field input::placeholder { color: var(--pl-text-placeholder); }
-  .fx .field.why { gap: 6px; font: 13px/1.35 var(--pl-sans, system-ui), sans-serif; } .fx .field.why input { font: inherit; }
-  .fx .hint { margin: 4px 18px 0; color: var(--pl-text-secondary); font-size: 12px; min-height: 16px; }
-  .fx .hint code { font: 600 11.5px/1 ui-monospace, monospace; color: var(--pl-text-primary); }
-  .fx .hint.err { color: var(--pl-text-hard-coded); }
-  .fx .acts { display: flex; align-items: center; gap: 6px; padding: 8px 8px 8px 12px; margin-top: 4px; border-top: .5px solid var(--pl-border-default); }
+  ${FIX_FIELD_CSS}
   .fx .body { animation: fx-slide ${TIMING.next}ms ${EASE} both; }
   @keyframes fx-slide { from { opacity: 0; translate: 10px 0; } }
   .fx .writing { display: flex; align-items: center; gap: 10px; height: 46px; padding: 0 16px; color: var(--pl-text-secondary); }
