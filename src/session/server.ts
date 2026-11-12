@@ -13,7 +13,7 @@ import { answersSerialized, isEndpoint, isRpcMethod, tracedWrites, verbOf } from
 import type { CheckOptions } from '../index.js';
 import { BusyError, errorDiagnostic, errorMessage, UsageError } from '../errors.js';
 import { isIP } from 'node:net';
-import { overlayClient, overlayModules } from '../hosts/client.js';
+import { isOverlayModule, overlayClient } from '../hosts/client.js';
 
 import { atomicWrite } from '../atomic-write.js';
 import { pageShell } from '../project-page/shell.js';
@@ -277,7 +277,7 @@ function createRoute(session: Session | Promise<Session>, options: HandlerOption
     // GET system is the project page's data; the POST of that name is the engine's proposal (methods.ts)
     const named = url.pathname.slice(prefix.length);
     const method = named === 'system' && request.method === 'GET' ? 'system-page' : named;
-    const client = options.client === true && overlayModules.includes(method);
+    const client = options.client === true && isOverlayModule(method);
     if (client) headers['Cross-Origin-Embedder-Policy'] = 'require-corp';
     const expected = verbOf(method);
     const known = client || isEndpoint(method);

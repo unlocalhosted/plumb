@@ -203,8 +203,6 @@ reserved.)
 
 ### Writes and speed
 
-- A dev server started before a module is added to the overlay refuses that file, and the whole overlay fails to
-  load without saying why (seen on crafting-ui; a restart fixed it).
 
 - One edited file still marks 1,225 files as changed (about 100 ms per write).
 - Several writes in quick succession sometimes reload the showcase page.

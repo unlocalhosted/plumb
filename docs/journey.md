@@ -736,6 +736,11 @@
 - **Before and after on crafting-ui:** interfaces page: 30 timings (150ms → fast ×15, 200ms → base, 420ms → slow ×5, 640ms → slower ×9); standards page: 9 (150ms → fast ×8, 420ms → slow). Home and motion pages: none written by hand. Not applied to crafting-ui's source.
 - **Proof:** the messy-page test now ends with timings: 160ms becomes `duration-fast`, 300ms `duration-base`, and 700ms is left, written to the file.
 
+## A new overlay file no longer needs a server restart (2026-11-12)
+- **The itch:** three times today a new overlay file (the shadows pass, the role file, the timings pass) was refused by crafting-ui's running dev server, which took the whole overlay down or needed a restart.
+- **The system behind it:** the server kept a fixed list of the overlay's files, read when it started.
+- **The fix:** the list stays, and any file directly in the overlay's source folder that exists when it is asked for is served too. Only a plain name in that folder is accepted, so no path can leave it. Proof: a file made after the server started was served; a path escape and a missing file were refused; the file-serving test passes.
+
 ## Open gaps
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
 
