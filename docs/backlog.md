@@ -121,9 +121,8 @@ reserved.)
     a scrollbar that shows when nothing scrolls; a background photo that tiles; a picture stretched by its row.
   - Will not be checks (4): auto-fit vs auto-fill, CSS variable fallback, grouping vendor selectors, image maximum width.
   - The CSS behaviour each check rests on is to be re-read and linked when the check is built; only the tip pages were read.
-- crafting-ui's skill pages: in a numbered list, an item holding a code block is 122 px wider than its column, so the
-  code never scrolls and runs under the side column. Found by plumber, shown fixed with `min-w-0`, then put back; the
-  fix is one click away. (The side column's own sticky fix is kept in crafting-ui, uncommitted there.)
+- crafting-ui holds two fixes plumber wrote at the owner's word, not committed there: the skill pages' side column
+  (`self-start`) and the markdown list item (`min-w-0`).
 
 ### Writes and speed
 

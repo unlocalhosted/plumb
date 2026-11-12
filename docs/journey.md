@@ -543,7 +543,7 @@
 - **The fix in plumber:** the existing "text in a row may shrink" check now reads grid cells too, and counts a part set to scroll sideways as something meant to give way. It stays quiet where the column is written to go down to nothing, which is what Tailwind's numbered columns mean.
 - **Before, on crafting-ui:** plumber said "This runs 122px past its column." on the list item's line in the markdown component and offered `min-w-0`.
 - **After:** the item was 680 px, inside its column; the code block was 676 px wide with 796 px of code, so it scrolls; nothing ran under the side column; plumber found nothing.
-- **Left as found:** this fix was put back with plumber's undo (the file is byte for byte as it was); only the sticky fix the owner asked for is kept, uncommitted in crafting-ui.
+- **Kept:** first put back with plumber's undo, then written again when the owner said "Yes, keep it too". Both fixes are in crafting-ui, uncommitted there.
 - **What got in the way:** the overlay stopped loading on crafting-ui three times in twenty minutes. Each time another session had added a file to the overlay; a dev server only hands out the files it knew when it started, so it needs a restart for each new one.
 - **Media hooks:** the skill page scrolled to "How": before, the code line running under the side column; after, the code block inside its column with a scrollbar.
 
