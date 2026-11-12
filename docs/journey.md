@@ -362,6 +362,14 @@
 - **The fix and the proof:** /interfaces: 105 changes → 0, with 105 places listed as left, each saying "as muted it would read the same as the words beside it, which it stands apart from now". Home and /standards: 0 changes before and after. Read in the browser from the running app; not seen in the clean-up panel; no test.
 - **Not improved, and why:** spacing made 2 changes across four pages and icons none, so there was nothing to judge on this app. Radius has no clean-up pass at all.
 
+## Where a write's answer spends its time (2026-11-12)
+- **The itch:** the server answers a write about 200 ms after the change is already on the page, so the fix card says "written" late. The owner: "Write's late answer".
+- **How we found it:** a private copy of crafting-ui and a private build of the server with timers in it, so nothing running was touched. One class written to one file and undone, four times.
+- **The numbers (warm, on the copy):** a write takes about 225 ms and an undo about 190 ms. After the file is on disk the server does two things before it answers: it tells its analysis worker the file changed (about 115 ms) and asks what problems are left on that line (about 65 ms).
+- **The system behind it:** the 115 ms is almost all bookkeeping, not analysis. Re-reading the changed file takes 7 ms. But one edited file marks 1,225 of the project's files as "ask again", and for each of them the worker works out what it depends on (24 ms), does much of that a second time for the same answer (11 ms), and ships the lot back to the server (about 40 ms to send, the rest to receive). The "what is left" question pays a smaller version of the same toll.
+- **What we chose:** nothing is changed yet. The saving is real but small for the person (the page already shows the fix at about 300 ms), and the bigger fix changes how the engine decides what one edit invalidates, which is what keeps its answers right.
+- **Why the live server is slower than the copy:** about 490 ms against 225 ms. Not measured; the live one also watches files and serves other sessions.
+
 ## Open gaps
 - **No messy page to judge spacing, icons and radius on.** crafting-ui is too tidy: across four pages spacing proposes 2 changes and icons none. An LLM-written page with real drift is needed before their decisions can be improved or shown before and after. Radius has no clean-up pass.
 - crafting-ui's 105 list titles at `text-fg/75` are now left alone; whether a title should be lifted to the full text colour instead is the owner's call (it is further than a fold may reach today).
@@ -369,7 +377,7 @@
 - **Text roles: how the signals combine is undecided** (docs/research/text-role-signals.md §5): what wins when the tag and the look disagree (a 12px capital heading), and whether unsure places go to a model's eye. Only crafting-ui is measured; no LLM-written app.
 - A fix from the fix card on a wrapped element is proven by hand. Two neighbours share the same repaired place-finder but were not driven by hand: a fix taken on the element itself, and the follow-up class written after a new theme token.
 - plumber's read reports a finding on a wrapped element at the component's line, not where it is used; the fix card says "Changed X to Y" when Y was added beside X.
-- The server answers a write on crafting-ui about 490 ms after it is sent (about 60 ms on a small project), some 200 ms after the change is on the page. The cause is not measured.
+- After every write the server spends about 180 ms on bookkeeping: one edited file marks 1,225 files as changed and their dependency lists are worked out twice and sent across. Two fixes are open: stop doing it twice (small, safe), or mark only what the edit can affect (larger, touches the engine's cache rules, needs the engine's tests).
 - Several writes in quick succession sometimes reload the showcase page.
 - **Single decisions read uneven signals** (read 2026-11-12, code only): colour decides from the role of the place (control, link, field, status, text or surface or line) and then the nearest token, with a contrast guard; text decides a place's role from its size and capitals alone, though its tag and whether it sits in a list are collected; spacing knows the app's scale and whether siblings are alike, not what the space is between; radius has no pass. No shared reading of "what is this thing" feeds them all.
 - plumber offers a class fix on an element whose classes are built in code, then refuses to write it. It should say so before offering.
