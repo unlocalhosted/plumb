@@ -20,17 +20,24 @@ Last gone through: 2026-11-12.
 1. **A row's title in a softened colour: leave it, or lift it to the full text colour?** crafting-ui has 105 list
    titles at 75% of the text colour. Plumber now leaves them alone (it used to fold them onto the grey of their own
    description). Lifting them is a bigger jump than a fold may make today.
+   *Claude would say: Leave it. Not decided.*
 2. **A small heading in capitals ("Part 01", 12px): heading or label?** The tag says heading, the look says label.
    Today the look wins. Six of them on crafting-ui.
+   *Claude would say: Label; the look wins, as today. Not decided.*
 3. **Should unsure text places go to a model's eye?** Plumber already asks a vision model about unsure craft findings
    in the command-line run. Text roles have no such step.
+   *Claude would say: Park until text reads more signals. Not decided.*
 4. **When does a repeated value become a new token?** crafting-ui writes `tracking-[0.1em]` on 35 labels. Plumber
    has no principle for what to say about that. Counting the places alone was rejected (docs/PRINCIPLES.md).
+   *Claude would say: Park; it needs a principle first. Not decided.*
 5. **A theme that names its spacing steps while the pages use the plain numeric scale.** With five or more named
    steps, they are the scale, so a 20px space in a theme of 4/8/12/16/24 moves to 24. Right, or too eager?
+   *Claude would say: Keep; the theme leads. Not decided.*
 6. **A theme with only a few named spacing steps** (fewer than about five) is not taken as the scale. Should it be?
+   *Claude would say: Keep as is; a few names are not a scale. Not decided.*
 7. **Corners in a theme named by size** (sm, md, lg): the corners pass proposes nothing, because the names say no
    job. Should plumber offer to name them by job, or map sizes to jobs itself?
+   *Claude would say: Later, as part of creating a design system. Not decided.*
 8. **Controls in one row at different heights, none on the spacing unit:** plumber says the row is uneven and
    proposes nothing. Should it pick one anyway?
    *Claude would say: Say it, don't pick. Not decided.*
@@ -39,7 +46,9 @@ Last gone through: 2026-11-12.
 
 11. **Which missing primitive next?** Proposed order: padding and gaps in rows, shadows, borders, motion, opacity
     and states. The order is a judgement, not measured.
+   *Claude would say: Padding and gaps in rows. Not decided.*
 12. **The nine test files still failing:** fix, or remove like the others? (List under Tests below.)
+   *Claude would say: Fix the two real bugs (window sizes, the bar), update the noise check after a look, leave the flakes. Not decided.*
 13. **A fairer messy page.** The only one (bench/messy) was written by Claude, who knows plumber's rules. Bring in
     pages from other models, or a real generated app?
    *Claude would say: Yes: a real generated app. Not decided.*
@@ -80,8 +89,8 @@ Last gone through: 2026-11-12.
 ### Clean-up: colour
 
 - Surface levels (a card on a panel) are not read from nesting; no project at hand has two nested surface colours.
-- In a shadcn rename plan, `input` takes the `surface` name over `popover` only because its name is shorter; the
-  colour used most as a raised fill should win.
+- A fill is called sunken when it is darker than the page. With shadcn's page switched to dark, the plan came out the
+  same as in light; not checked whether the dark values were read, or the light ones kept.
 - crafting-ui's wide-gamut blue loses a little chroma in the ramp (0.289 → 0.278).
 
 ### Clean-up: icons

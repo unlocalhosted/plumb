@@ -320,7 +320,7 @@ export class Cleanup {
   #namesPlan() {
     if (this.#rn) return this.#rn;
     let plan = null;
-    try { const declared = declaredColours(), tokens = paletteOf().filter((t) => !declared || declared.has(t.short)); const r = renameMap(tokens.map((t) => ({ short: t.short, kind: t.kind }))); const css = new Map(tokens.map((t) => [t.short, t.css])); if (Object.keys(r.map).length) plan = { ...r, css }; } catch { plan = null; }
+    try { const declared = declaredColours(), tokens = paletteOf().filter((t) => !declared || declared.has(t.short)); const r = renameMap(tokens.map((t) => ({ short: t.short, kind: t.kind, usage: t.usage }))); const css = new Map(tokens.map((t) => [t.short, t.css])); if (Object.keys(r.map).length) plan = { ...r, css }; } catch { plan = null; }
     this.#rn = { plan, open: false, busy: false, done: null, err: null };
     return this.#rn;
   }

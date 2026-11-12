@@ -91,18 +91,23 @@ const NEW_NAME = {
   success: 'success', warning: 'warning', danger: 'danger', info: 'info',
 };
 const OWN_NAME = new Set(['ink2', 'ink2-hover', 'ink2-soft']);
+// what a role's colour is painted as: words, a fill or a line (accents and statuses may be any)
+const JOB = { fg: 'text', muted: 'text', faint: 'text', 'on-accent': 'text', line: 'border', 'line-strong': 'border',
+  ground: 'bg', surface: 'bg', sunken: 'bg', hover: 'bg', pressed: 'bg', 'accent-soft': 'bg' };
+const mixed = (t) => !!JOB[t.kind] && (t.usage ?? []).some((u) => u.split(':')[0] !== JOB[t.kind]);
 
 /**
  * Which of a project's colour tokens takes which of plumber's role names. Each token's role (`kind`, colours.js) gives its
  * new name; a token whose role has no name here, or whose new name another token already takes (the one named most
  * plainly for the role wins: `line` over `draw-line`), keeps its own name and says why. Same tokens in, same map out.
- * @param {{ short: string, kind: string }[]} tokens  the theme's colour tokens, `short` without `--color-`
+ * @param {{ short: string, kind: string, usage?: string[] }[]} tokens  the theme's colour tokens, `short` without `--color-`; `usage` each `prop:state` the code paints it as (colours.js)
  * @returns {{ map: Record<string, string>, kept: { short: string, why: string }[] }}
  */
 export function renameMap(tokens) {
   const map = {}, kept = [], taken = new Map();
-  // first a token already named for its job, then the plainest (its name is the role word itself), then the shortest
-  const plain = (t) => (NEW_NAME[t.kind] === t.short ? -1 : t.short === t.kind ? 0 : 1) * 100 + t.short.length;
+  // first a token already named for its job, then the plainest (its name is the role word itself), then one the code
+  // uses only for that job (shadcn's `popover` is only a fill; `input` is a fill and a field's border), then the shortest
+  const plain = (t) => (NEW_NAME[t.kind] === t.short ? -1 : t.short === t.kind ? 0 : 1) * 100 + (mixed(t) ? 50 : 0) + t.short.length;
   for (const t of [...tokens].sort((a, b) => plain(a) - plain(b) || a.short.localeCompare(b.short))) {
     const next = NEW_NAME[t.kind];
     if (!next) { kept.push({ short: t.short, why: OWN_NAME.has(t.kind) ? 'a second ink keeps its own name' : `not a UI role (${t.kind})` }); continue; }

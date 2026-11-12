@@ -210,6 +210,18 @@ function stateOf(sel) {
   return 'rest';
 }
 
+// a fill darker than the page is set into it (a well, a field, a tab track: sunken); one as light as the page or lighter
+// sits on it (surface). True in light and dark themes alike. Only a fill whose name says neither is moved.
+function byDepth(tokens) {
+  const ground = tokens.find((t) => t.kind === 'ground' && t.rgb[3] >= 1);
+  if (!ground) return;
+  for (const t of tokens) {
+    if (t.kind !== 'surface' || t.rgb[3] < 1 || !(t.usage ?? []).some((u) => u.startsWith('bg:'))) continue;
+    if (/(^|-)(surface|card|panel|popover|raised|elevated|overlay)(-|$)/.test(t.short)) continue;
+    if (t.oklab[0] < ground.oklab[0] - 0.01) { t.byName ??= t.kind; t.kind = 'sunken'; }
+  }
+}
+
 // a token the code uses only for words is text, one it only fills with is a surface, whatever its name says (shadcn's
 // `primary-foreground` is the words on the brand, `secondary` a button's fill). Words named after an accent token
 // (`primary-foreground` beside `primary`) are the words on it; other words are the main text. Status words are left alone.
@@ -277,6 +289,7 @@ export function paletteOf() {
   box.remove();
   for (const t of tokens) byUsage(t, states.get(t.short)); // states first: words on a hover surface are not words on the brand
   byFamily(tokens);
+  byDepth(tokens);
   assignInks(tokens);
   return (known = tokens);
 }

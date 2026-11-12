@@ -477,10 +477,17 @@
 - **The proof:** every test that failed with the changes also failed without them (13 on both sides). One more, the stamping test, failed only without them, which on one run is a flake, not a fix. Nothing fails because of the write trim, the read speed-ups or the write-path fixes.
 - **Not covered:** the three new checks themselves were not put back in that comparison; the "well-built page yields no finding" test does fail, on five other checks, and none of the three new ones is in its output.
 
+## Which colour gets the surface name (2026-11-12)
+- **The itch:** in a shadcn rename plan the `surface` name went to `input` (a field's colour) instead of `popover` (the real raised background), only because `input` is a shorter word.
+- **The system behind it:** four shadcn fills (`popover`, `muted`, `secondary`, `input`) all read as "surface", and the tie was broken by name length. Plumber never compared a fill with the page, and never asked whether a colour does only that job.
+- **The fix:** a fill darker than the page is set into it (sunken: a well, a field, a tab track); one as light as the page or lighter sits on it (surface). A fill whose name already says surface, card, panel or popover is not moved. When two colours still compete for a name, the one the code uses only for that job wins (`input` is also a border).
+- **The proof:** the shadcn plan now gives `popover → surface`, `muted → sunken`, `accent → surface-hover`, `primary → accent`, `primary-foreground → on-accent`; `secondary` and `input` keep their names (sunken is taken). crafting-ui: no colour reads differently.
+
 ## Open gaps
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
 
 ## Shipped · 2026-W46
+- In a rename plan, the raised background gets the surface name and recessed fills get sunken, judged against the page colour ([entry](#which-colour-gets-the-surface-name-2026-11-12)).
 - Plumber tells text colours from fill colours by how the code uses them, so shadcn's `-foreground` colours read as the words they are ([entry](#text-and-fill-colours-read-from-the-code-2026-11-12)).
 - The server answers a write about a third sooner (228 ms → 149 ms on a copy of crafting-ui): it no longer works out and sends the same dependency lists twice. [entry](#the-small-trim-a-writes-bookkeeping-done-once-2026-11-12)
 - A fix taken on the page now works on links, buttons and anything else drawn through a component: it is written where that element is used. [entry](#a-fix-on-a-link-now-reaches-the-line-where-the-link-is-used-2026-11-12)
