@@ -33,7 +33,7 @@ Eleven tips hold and become nine checks; four do not hold; one waits on a decisi
 
 ## The ones that hold
 
-### A sticky thing that can never stick
+### A sticky thing that can never stick (built 2026-11-12)
 - **What the expert sees:** a side column marked to stay in view that scrolls away with the page.
 - **Principle:** a sticky element moves only inside its parent's box. Stretched to the full height of its row, it has
   no room to move, so the instruction does nothing.
@@ -79,9 +79,12 @@ Eleven tips hold and become nine checks; four do not hold; one waits on a decisi
 - **Signals:** an unprefixed grid class with a fixed-width track and no breakpoint variant beside it.
 - **Suggestion:** move the columns behind the project's breakpoint (`md:grid-cols-[…]`).
 
-### Text in a grid cell may shrink
+### Text in a grid cell may shrink (built 2026-11-12)
 - Same principle and suggestion as the existing flex check (`min-w-0`); a grid item has the same floor. An extension,
   not a new check.
+- What holds a cell open is anything inside meant to give way: a line set to cut off, or a part set to scroll sideways.
+- A column written to go down to nothing (`minmax(0, …)`, which is what Tailwind's `grid-cols-2` means) already lets
+  its cell shrink, so plumber says nothing there until the cell really runs past its column.
 
 ### A scrollbar that shows when nothing scrolls
 - **What the expert sees:** an empty scrollbar track beside short content (on Windows, or macOS set to always show).

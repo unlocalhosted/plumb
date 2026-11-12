@@ -42,10 +42,12 @@ export const CRAFT = {
     line: 'This image’s edge is the same tone as the page around it.',
     reason: 'A faint inner outline gives it an edge.',
   }),
-  'flex-min': ({ over }) => ({
-    label: over ? 'Row pushed out of its box' : 'Text can never be cut off',
-    line: over ? `This row runs ${px(over)} past its box.` : 'This text is set to cut off, but its box can’t shrink, so it never will.',
-    reason: 'A flex item is never narrower than its longest line. A longer name or a narrower screen pushes the rest of the row out.',
+  'flex-min': ({ over, scrolls, grid }) => ({
+    label: over ? (grid ? 'Pushed out of its column' : 'Row pushed out of its box') : scrolls ? 'Can never scroll' : 'Text can never be cut off',
+    line: over ? (grid ? `This runs ${px(over)} past its column.` : `This row runs ${px(over)} past its box.`)
+      : scrolls ? 'A part in here is set to scroll sideways, but its box can’t shrink, so it never will.' : 'This text is set to cut off, but its box can’t shrink, so it never will.',
+    reason: scrolls ? 'A flex item or a grid cell is never narrower than what it holds, unless it is told it may be. So the part that should scroll grows instead, and pushes out.'
+      : 'A flex item is never narrower than its longest line. A longer name or a narrower screen pushes the rest of the row out.',
   }),
   'sticky-room': ({ spare }) => ({
     label: 'Set to stick, but can’t',
@@ -806,7 +808,7 @@ export const CLEANUP = {
   // the bar's action: the short label, and the word that follows it where there is room
   bar: 'Clean up', barLong: 'page',
   passes: 'Passes',
-  pass: { text: 'Text', spacing: 'Spacing', colour: 'Colour', icons: 'Icons', radius: 'Corners' },
+  pass: { text: 'Text', spacing: 'Spacing', colour: 'Colour', icons: 'Icons', radius: 'Corners', sizes: 'Controls' },
   reading: 'Reading the text on this page…',
   head: (before, n) => `Your site uses ${before} text sizes. These ${n} styles cover them.`,
   why: 'Worked out from every page Plumber has read, so every page ends up with the same styles.',
@@ -957,8 +959,30 @@ export const CLEANUP = {
     undone: 'Corner changes undone.',
     doneHead: 'Corners are cleaned up on this page.',
     doneSkipped: 'You skipped corners on this page.',
-    next: '',
+    next: 'Next: the controls.',
     notYet: 'That’s every pass for this page.',
     couldNot: 'Couldn’t read this page’s corners.',
+  },
+  // control heights (overlay/src/control-size.js): a button's or a field's height sits on your spacing steps
+  sizes: {
+    reading: 'Reading the buttons and fields on this page…',
+    head: (before, after, n) => (after < before ? `This page’s buttons and fields come in ${before} heights. After this, ${after}.`
+      : `${n} ${n === 1 ? 'control is' : 'controls are'} off your spacing steps.`),
+    sub: () => 'A control’s height is one of your sizes. Each goes onto your spacing steps; a border that was added on top is taken back in.',
+    law: 'Why: things that do the same job should look the same (law of similarity).',
+    list: 'Controls that change',
+    row: (n) => `${n} ${n === 1 ? 'place' : 'places'}`,
+    sizesPage: 'control heights on this page',
+    changes: (n) => (n === 1 ? 'control changes' : 'controls change'),
+    nothing: 'The buttons and fields on this page already sit on your spacing steps.',
+    nothingWhy: 'Nothing here needs to move.',
+    saved: (places, files) => `${places} ${places === 1 ? 'control' : 'controls'} in ${files} ${files === 1 ? 'file' : 'files'} now sit${places === 1 ? 's' : ''} on your spacing steps`,
+    refused: (n) => `${n} left as ${n === 1 ? 'it is' : 'they are'}: Plumber couldn’t find where ${n === 1 ? 'its class is' : 'their classes are'} written.`,
+    undone: 'Control changes undone.',
+    doneHead: 'Controls are cleaned up on this page.',
+    doneSkipped: 'You skipped controls on this page.',
+    next: '',
+    notYet: 'That’s every pass for this page.',
+    couldNot: 'Couldn’t read this page’s controls.',
   },
 };

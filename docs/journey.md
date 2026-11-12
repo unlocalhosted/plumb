@@ -531,6 +531,22 @@
 - **What the fix revealed:** with the column back in view, a long line of code in the main text runs under it. That is the next check on the list (text in a grid cell may shrink), with a real case waiting.
 - **Media hooks:** the same page scrolled 900 px, before (column gone) and after (column beside the text); the fix card reading "Set to stick, but can't".
 
+## Padding, row gaps and control sizes reach the panel (2026-11-12)
+- **The itch:** both were decisions nobody could see or apply.
+- **What changed:** the Spacing step now lists padding and gaps in rows as their own rows beside the stacks' ("Padding 20px → 24px, 22 places", "Gap in a row 10px → 12px"), previews them and writes them. A sixth step, "Controls", lists control heights ("Height 42px → 40px"), previews them and writes a height class on the control.
+- **The proof (messy page, in the running panel, through the test):** Spacing reads "This page has 12 different spaces between things. After this, 8." Apply writes `p-[18px]` → `p-s4`, `gap-[10px]` → `gap-s3`, `px-5` → `px-s6`, and leaves a button's `py-2.5` and a chip's `py-0.5`. Controls: Apply adds `h-10` to the bordered button of the hero's pair and `h-s8` to the bordered 34px one; the button that was only stretched gets nothing; Undo takes the height classes back and leaves the earlier steps written. The messy-page test passes with all of it.
+
+## The second check from the tips: a grid cell held open by what should scroll (2026-11-12)
+- **The itch:** the owner kept the sticky fix in crafting-ui ("Yes, keep the fix"). With the side column in view, a line of code in the main text ran under it.
+- **How we found it:** measuring the page: the numbered list is a grid 704 px wide, and the item holding the code block was 802 px. The code block is set to scroll sideways, but it was 798 px wide and scrolling nothing.
+- **The system behind it:** a grid cell, like a flex item, is never narrower than what it holds unless told it may be. The scrolling block inside holds the cell open, so the block grows instead of scrolling.
+- **The fix in plumber:** the existing "text in a row may shrink" check now reads grid cells too, and counts a part set to scroll sideways as something meant to give way. It stays quiet where the column is written to go down to nothing, which is what Tailwind's numbered columns mean.
+- **Before, on crafting-ui:** plumber said "This runs 122px past its column." on the list item's line in the markdown component and offered `min-w-0`.
+- **After:** the item was 680 px, inside its column; the code block was 676 px wide with 796 px of code, so it scrolls; nothing ran under the side column; plumber found nothing.
+- **Left as found:** this fix was put back with plumber's undo (the file is byte for byte as it was); only the sticky fix the owner asked for is kept, uncommitted in crafting-ui.
+- **What got in the way:** the overlay stopped loading on crafting-ui three times in twenty minutes. Each time another session had added a file to the overlay; a dev server only hands out the files it knew when it started, so it needs a restart for each new one.
+- **Media hooks:** the skill page scrolled to "How": before, the code line running under the side column; after, the code block inside its column with a scrollbar.
+
 ## Open gaps
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
 

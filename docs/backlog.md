@@ -50,8 +50,8 @@ reserved.)
 **The order** (decided 2026-11-12):
 
 - **Now:** a class fix offered and then refused · a read in a window with no size.
-- **Next:** padding and gaps in rows into the Spacing step · control sizes as a pass · text inside buttons and "what it sits inside" · craft
-  suggestions read the role · the two failing tests that are real bugs · tests for control sizes and a theme named by size.
+- **Next:** text inside buttons and "what it sits inside" · craft
+  suggestions read the role · the two failing tests that are real bugs · a test for a theme named by size.
 - **Later:** shadows, borders, motion, opacity and states · surface levels · shadcn's foreground colours · growing hero
   titles · the speed items · the remaining defensive tips · the 80-column report · the flaky tests.
 
@@ -69,11 +69,10 @@ reserved.)
 
 ### Clean-up: spacing
 
-- Padding and gaps in rows are read and decided (overlay/src/insets.js) but are not in the panel's Spacing step, so
-  nothing is shown or written yet.
 - A size halfway between two steps goes to the wider one (20px → 24px in a theme of 16 and 24): the rule is "nearest by
   ratio". Not judged on a real app.
 - Padding is not read by job (a card's padding, a control's sides): every padding is snapped to the scale alone.
+- Padding and row gaps under a variant (`md:px-6`, `hover:`) are not read.
 
 ### Clean-up: colour
 
@@ -93,9 +92,9 @@ reserved.)
 
 ### Clean-up: control sizes
 
-- A reading and a decision only: not a pass in the panel, writes nothing.
 - A theme's own control-size names are not read.
 - The "one row, one height" rule found nothing on the messy page, so it is unproven.
+- A control whose classes are built in code cannot take a height class; it is listed as left.
 
 ### Primitives with no clean-up pass
 
@@ -116,15 +115,15 @@ reserved.)
 
 - Seen catching slips only on pages we wrote; no real app with the mistakes has been read.
 - One check's fix can raise another check's finding on the same element (a background makes a box count as a card).
-- Of the 25 defensivecss.dev tips, 10 have a check. The other 15 are sorted in docs/research/defensive-tips.md:
-  - Still to build, each from its written principle (8 checks for 10 tips): a fixed height on a box that holds text;
+- Of the 25 defensivecss.dev tips, 11 have a check. The other 15 are sorted in docs/research/defensive-tips.md:
+  - Still to build, each from its written principle (7 checks for 9 tips): a fixed height on a box that holds text;
     space that is left over, not declared; a row of like things that cannot wrap; a fixed column with no narrow form;
-    text in a grid cell may shrink; a scrollbar that shows when nothing scrolls; a background photo that tiles; a
-    picture stretched by its row.
+    a scrollbar that shows when nothing scrolls; a background photo that tiles; a picture stretched by its row.
   - Will not be checks (4): auto-fit vs auto-fill, CSS variable fallback, grouping vendor selectors, image maximum width.
   - The CSS behaviour each check rests on is to be re-read and linked when the check is built; only the tip pages were read.
-- crafting-ui's skill pages: the side column is set to stick and can't (found by the sticky check, shown fixed, then
-  put back). One click in the fix card takes it. With it in view, a long code line in the main text runs under it.
+- crafting-ui's skill pages: in a numbered list, an item holding a code block is 122 px wider than its column, so the
+  code never scrolls and runs under the side column. Found by plumber, shown fixed with `min-w-0`, then put back; the
+  fix is one click away. (The side column's own sticky fix is kept in crafting-ui, uncommitted there.)
 
 ### Writes and speed
 
@@ -156,4 +155,4 @@ The whole suite on vm-agent (2026-11-12): 944 passed, 11 failed in 9 files.
 - A frozen-server test fails only when run beside other tests (verify-frozen).
 - readiness-panel and text-edit (4 tests): another session has uncommitted changes to these files.
 - The new messy-page test was never run against the old code to see it fail there.
-- Today's new behaviour without a test: control sizes; the corners pass's Undo; a theme named by size.
+- New behaviour without a test: a theme whose radii are named by size.

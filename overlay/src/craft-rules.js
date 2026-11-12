@@ -1093,29 +1093,44 @@ export const flexMin = {
     const T = theme.spec(this.id);
     const row = el.parentElement;
     if (!row) return [];
-    const inRow = (box) => { const bs = facts.style(box); return /flex/.test(bs.display) && !/column/.test(bs.flexDirection); };
-    if (!inRow(row) || facts.style(row).flexWrap !== 'nowrap') return [];
+    const flexRow = (box) => { const bs = facts.style(box); return /flex/.test(bs.display) && !/column/.test(bs.flexDirection); };
+    const isGrid = (box) => /grid/.test(facts.style(box).display);
+    // a grid cell has the same floor as a flex item: never narrower than its content unless told it may be
+    // (defensivecss.dev "Minimum Content Size In CSS grid")
+    const grid = isGrid(row);
+    if (!grid && (!flexRow(row) || facts.style(row).flexWrap !== 'nowrap')) return [];
     const s = facts.style(el);
     // an item that may not shrink, or that clips, is not held open by its content
-    if (s.minWidth !== 'auto' || s.overflowX !== 'visible' || s.flexShrink === '0' || s.position === 'absolute' || s.position === 'fixed') return [];
-    const over = Math.max(0, row.scrollWidth - row.clientWidth);
-    // the item of a row that a line sits in: the nearest one, never a box further out that the line merely spills from
-    const itemOf = (t) => { for (let n = t; n && n.parentElement; n = n.parentElement) if (inRow(n.parentElement)) return n; return null; };
-    // the cause: a line in this item that is meant to be cut off (and never can be), or one that may not wrap and is
-    // pushing the row out now
+    if (s.minWidth !== 'auto' || s.overflowX !== 'visible' || (!grid && s.flexShrink === '0') || s.position === 'absolute' || s.position === 'fixed') return [];
+    // how far it runs past: a flex row's own overflow; in a grid, the cell's box past the grid's content box
+    let over;
+    if (grid) {
+      const rb = row.getBoundingClientRect(), eb = el.getBoundingClientRect(), k = rb.width / (row.offsetWidth || rb.width) || 1, rs = facts.style(row);
+      over = Math.max(0, Math.round((eb.right - rb.right) / k + px(rs.paddingRight) + px(rs.borderRightWidth)));
+    } else over = Math.max(0, row.scrollWidth - row.clientWidth);
+    // the item a thing sits in: the nearest one, never a box further out that it merely spills from
+    const itemOf = (t) => { for (let n = t; n && n.parentElement; n = n.parentElement) if (flexRow(n.parentElement) || isGrid(n.parentElement)) return n; return null; };
+    // the cause: something in this item that is meant to give way (a line set to cut off, a part set to scroll
+    // sideways) and never can, or a line that may not wrap and is pushing out now
+    let scrolls = false;
     const held = [...el.querySelectorAll('*')].slice(0, T.depth).some((t) => {
-      const ts = facts.style(t);
-      return (ts.textOverflow === 'ellipsis' || (over > T.over && ts.whiteSpace === 'nowrap')) && itemOf(t) === el;
+      const ts = facts.style(t), cut = ts.textOverflow === 'ellipsis', scroller = /^(?:auto|scroll)$/.test(ts.overflowX);
+      if (!(cut || scroller || (over > T.over && ts.whiteSpace === 'nowrap')) || itemOf(t) !== el) return false;
+      scrolls = scroller && !cut;
+      return true;
     });
     if (!held) return [];
     // an item given its own width is never held wider than that width: its floor is the smaller of the two. Until the
     // row runs over, there is nothing waiting to break
     if (over <= T.over && (utility(el, 'w', { not: /^(?:auto|fit|min|max|full)$/ }) || utility(el, 'size') || utility(el, 'basis', { not: /^auto$/ }))) return [];
+    // a grid column written to go down to nothing (minmax(0, …), which is what Tailwind's grid-cols-2 means) already
+    // lets its cell shrink; only a column sized by its content is waiting to break
+    if (grid && over <= T.over && classesOf(row).split(/\s+/).some((c) => /(?:^|:)grid-cols-(?:\d+$|.*minmax\(0)/.test(c))) return [];
     return [{
-      ...say(this.id, { over: over > T.over ? over : 0 }),
+      ...say(this.id, { over: over > T.over ? over : 0, scrolls, grid }),
       key: this.id, text: utility(el, 'min-w') ?? 'min-width', props: ['min-width'], value: 'auto', n: over,
-      evidence: { over, row: row.clientWidth }, confidence: over > T.over ? 0.9 : 0.84,
-      suggest: { kind: 'class', from: utility(el, 'min-w') ?? '', to: 'min-w-0', why: 'lets this part shrink, so its text is cut off instead of pushing the row out', sets: { minWidth: 0 }, moves: true },
+      evidence: { over, row: row.clientWidth, grid, scrolls }, confidence: over > T.over ? 0.9 : 0.84,
+      suggest: { kind: 'class', from: utility(el, 'min-w') ?? '', to: 'min-w-0', why: scrolls ? 'lets this part shrink, so what is inside scrolls instead of pushing out' : 'lets this part shrink, so its text is cut off instead of pushing the row out', sets: { minWidth: 0 }, moves: true },
     }];
   },
 };
