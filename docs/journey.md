@@ -1913,6 +1913,21 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - **Found on the way:** the script that copies our tokens into the homepage's own app had been failing since the
   token file's light rule was renamed (to also scope a light part), so that app was drawing with stale tokens. The
   script now accepts the new rule; the regenerated copy changed by 336 lines.
+- **"The examples look like wireframes", then, pointing at the hero's demo: "the saffron card, the black card, the
+  style of the demo app just look bland ... it looks dull and costing us, because it's on our homepage."** The
+  system behind it: Plumber's layer was an annotation vocabulary (hairline boxes, plain labels) and the demo app was
+  a neutral grey mock, so the homepage's proof looked like a wireframe. First, Plumber's marks became ours: lit
+  number keys, tags in the toy face with each property's toy (wrap, gap, alignment, type, shadow), coral while wrong
+  and mint once fixed, dashed coral boxes, soft count pills. Then the app itself: a paper sidebar with toys and a
+  lilac current place, the heading in the toy face, and the cards as soft blocks on our faces: a sky video with
+  floating toys and a soft play button, a paper figures card with a hue per row, and the invite as one pink card
+  (the owner asked "why a card inside a card": the inner card only existed to give a shadow a coloured ground; one
+  pink card shows the same mistake, its own shadow grey, then tinted with its pink). The five mistakes are kept and
+  still measured from the live app; all five were seen to play to fixed.
+- **Bugs met on the way:** the toy for colour is named "fill"; my shared card rule set default colours with higher
+  specificity than each card's own, so every card came out white; the site's build rewrites oklch colours as lab,
+  which the tour's chroma reader doesn't understand, so the fixed shadow is written in rgb; in dark our sky ink turns
+  white, so the "Welcome tour" label and the play triangle vanished (now on the surface/text roles, and a deep blue).
 
 ## Open gaps
 - The overlay writes about 180 corners as numbers (radius tokens about 45 times), many off its own scale; 6px is

@@ -233,17 +233,35 @@ function Moment({ issue, step, geo, cam, fit }) {
 
 /* The team's home page. Each mistake sits on the element that carries it (data-issue); data-fixed puts Plumber's fix
  * on it. */
+const NAV = [['Home', 'navigation'], ['Projects', 'grid'], ['Members', 'avatar'], ['Settings', 'switch']];
+const toy = (name, cls = 'rv-ty') => <i className={cls} aria-hidden="true" dangerouslySetInnerHTML={{ __html: toyOf(name) }} />;
 const Screen = ({ ref, fixed, titleW }) => {
   const fx = id => (fixed.has(id) ? '' : undefined);
   return (
     <div ref={ref} className="rv-scr">
-      <aside className="rv-side"><span className="rv-brand"><i />Northwind</span>{['Home', 'Projects', 'Members', 'Settings'].map(n => <span key={n} className={n === 'Home' ? 'on' : undefined}>{n}</span>)}</aside>
+      <aside className="rv-side">
+        <span className="rv-brand">{toy('chart', 'rv-brand-mark')}Northwind</span>
+        {NAV.map(([n, t]) => <span key={n} className={n === 'Home' ? 'on' : undefined}>{toy(t)}{n}</span>)}
+        <span className="rv-side-foot"><i className="rv-av" style={{ '--a': 'var(--pl-pink)' }}>M</i>Maya Ortiz</span>
+      </aside>
       <main className="rv-main">
         <h3 className="rv-title" data-issue="18" data-fixed={fx('18')} style={{ width: titleW }}>Good morning, Maya. Here’s what moved in your workspace this week</h3>
         <div className="rv-grid" data-issue="space" data-fixed={fx('space')}>
-          <section className="rv-video"><span className="rv-play" data-issue="2" data-fixed={fx('2')}><svg viewBox="0 0 24 24"><path d="M7 4.5v15L19 12z" /></svg></span><small>Welcome tour · 1:24</small></section>
-          <section className="rv-figs" data-issue="16" data-fixed={fx('16')}><small>Time this week</small>{[['Design', '12:06:18'], ['Reviews', '4:48:05'], ['Meetings', '7:11:40']].map(([l, v]) => <div key={l}><span>{l}</span><b>{v}</b></div>)}</section>
-          <section className="rv-promo"><div className="rv-promo-card" data-issue="21" data-fixed={fx('21')}><small>New</small><b>Invite your team</b><span>Three seats left on your plan</span></div></section>
+          <section className="rv-video">
+            <span className="rv-float f1">{toy('fill')}</span><span className="rv-float f2">{toy('corner')}</span><span className="rv-float f3">{toy('type')}</span><span className="rv-float f4">{toy('padding')}</span>
+            <span className="rv-play" data-issue="2" data-fixed={fx('2')}><svg viewBox="0 0 24 24"><path d="M7 4.5v15L19 12z" /></svg></span>
+            <small>Welcome tour · 1:24</small>
+          </section>
+          <section className="rv-figs" data-issue="16" data-fixed={fx('16')}>
+            <small>{toy('motion')}Time this week</small>
+            {[['Design', '12:06:18', 'pink'], ['Reviews', '4:48:05', 'sky'], ['Meetings', '7:11:40', 'mint']].map(([l, v, h]) => <div key={l}><span><i className="rv-dot" style={{ '--d': `var(--pl-${h})` }} />{l}</span><b>{v}</b></div>)}
+          </section>
+          <section className="rv-promo">
+            <div className="rv-promo-card" data-issue="21" data-fixed={fx('21')}>
+              <span className="rv-avs">{[['A', 'sky'], ['J', 'mint'], ['K', 'butter']].map(([c, h]) => <i key={c} className="rv-av" style={{ '--a': `var(--pl-${h})` }}>{c}</i>)}</span>
+              <b>Invite your team</b><span>Three seats left on your plan</span>
+            </div>
+          </section>
         </div>
       </main>
     </div>

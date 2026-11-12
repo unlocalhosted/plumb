@@ -53,9 +53,9 @@
 .rv-pins[data-shown='false'], .rv-frame[data-moment='true'] .rv-pins { opacity: 0; }
 .rv-pins[data-shown='false'] > *, .rv-frame[data-moment='true'] .rv-pins > * { pointer-events: none !important; }
 .rv-pins[data-shown='true'] > * { animation: rv-pop 360ms cubic-bezier(0.22, 1, 0.36, 1) backwards; animation-delay: calc(var(--i) * 90ms); }
-.rv-box { position: absolute; box-sizing: border-box; border-radius: 7px; border: 1.5px dashed var(--c); background: color-mix(in oklab, var(--c) 7%, transparent); --c: var(--pl-coral);
-  transition: border-color 400ms var(--ease), background-color 400ms var(--ease); }
-.rv-box[data-fixed='true'] { --c: var(--pl-mint); border-style: solid; background: color-mix(in oklab, var(--c) 5%, transparent); }
+.rv-box { position: absolute; box-sizing: border-box; border-radius: 7px; border: 1.5px dashed var(--c); --c: var(--pl-coral);
+  transition: border-color 400ms var(--ease); }
+.rv-box[data-fixed='true'] { --c: var(--pl-mint); border-style: solid; }
 .rv-pin { position: absolute; display: flex; gap: 8px; align-items: flex-start; padding: 0; border: 0; background: none; color: inherit; text-align: left; cursor: pointer; pointer-events: auto;
   transition: scale 150ms var(--ease); --c: var(--pl-coral); --ci: var(--pl-coral-ink); }
 .rv-pin[data-fixed='true'] { --c: var(--pl-mint); --ci: var(--pl-mint-ink); }
@@ -115,36 +115,56 @@
 .rv-pause:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 .rv-pause:disabled { display: none; }
 
-/* ── the team's home page, drawn at 1040 × 470 ── */
-.rv-scr { position: absolute; inset: 0; display: grid; grid-template-columns: 12rem 1fr; background: var(--g0); color: var(--ink-1); font-family: var(--font); }
-.rv-side { display: grid; align-content: start; gap: 2px; padding: 16px 10px; border-right: 1px solid var(--line); background: var(--g1); }
-.rv-brand { display: flex; align-items: center; gap: 8px; padding: 4px 10px 14px; font: 590 14px/1 var(--font); }
-.rv-brand i { width: 16px; height: 16px; border-radius: 4px; background: oklch(0.7 0.12 160); }
-.rv-side > span:not(.rv-brand) { padding: 7px 10px; border-radius: var(--r-xs); font-size: 13px; color: var(--ink-2); }
-.rv-side > .on { background: var(--g2); color: var(--ink-1) !important; }
-.rv-main { padding: 32px 36px; min-width: 0; }
-.rv-title { margin: 0 0 24px; font: 590 28px/1.2 var(--font); letter-spacing: -0.02em; }
+/* ── the team's home page, drawn at 1040 × 470, in our design language: paper and soft blocks on coloured faces, the
+   toy face for names, toys for places. Five mistakes are kept on purpose (data-issue), each fixed by data-fixed ── */
+.rv-scr { position: absolute; inset: 0; display: grid; grid-template-columns: 12.5rem 1fr; background: var(--pl-bg-page); color: var(--ink-1); font-family: var(--font); }
+.rv-side { display: grid; align-content: start; gap: 3px; padding: 18px 12px; background: var(--pl-bg-inset); position: relative; }
+.rv-brand { display: flex; align-items: center; gap: 9px; padding: 4px 10px 18px; font: var(--pl-round-w, 700) 17px/1 var(--pl-round); letter-spacing: -0.01em; }
+.rv-brand-mark { display: grid; place-items: center; width: 26px; height: 26px; padding: 4px; border-radius: 8px; background: var(--pl-bg-surface); box-shadow: var(--pl-shadow-tag); }
+.rv-brand-mark svg, .rv-ty svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.rv-side > span:not(.rv-brand):not(.rv-side-foot) { display: flex; align-items: center; gap: 9px; padding: 8px 10px; border-radius: 10px; font: 600 13.5px/1 var(--font); color: var(--ink-2); }
+.rv-ty { display: block; flex: none; width: 17px; height: 17px; }
+.rv-side > .on { background: var(--pl-lilac-face); color: var(--pl-lilac-ink) !important; box-shadow: 0 2px 0 color-mix(in oklab, var(--pl-lilac) 45%, transparent); }
+.rv-side-foot { position: absolute; left: 12px; right: 12px; bottom: 16px; display: flex; align-items: center; gap: 9px; padding: 8px 10px; font: 600 13px/1 var(--font); color: var(--ink-2); }
+.rv-av { display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: var(--a); color: #fff; font: var(--pl-round-w, 700) 11px/1 var(--pl-round); font-style: normal; box-shadow: 0 0 0 2px var(--pl-bg-surface); }
+.rv-main { padding: 30px 34px; min-width: 0; }
+.rv-title { margin: 0 0 24px; font: var(--pl-round-w, 700) 29px/1.15 var(--pl-round); letter-spacing: -0.02em; }
 .rv-title[data-fixed] { text-wrap: pretty; animation: rv-swap 400ms var(--ease); }
 .rv-grid { display: grid; grid-template-columns: 1.5fr 1fr 1fr; gap: 13px; transition: gap 500ms var(--ease); }
 .rv-grid[data-fixed] { gap: 16px; }
-.rv-grid > section { min-height: 220px; border-radius: 14px; }
-.rv-video { position: relative; display: grid; place-items: center; background: linear-gradient(160deg, oklch(0.42 0.06 250), oklch(0.28 0.04 270)); }
-.rv-video small { position: absolute; left: 12px; bottom: 10px; font-size: 12px; color: rgb(255 255 255 / 0.8); }
-.rv-play { display: grid; place-items: center; width: 54px; height: 54px; border-radius: 50%; background: rgb(255 255 255 / 0.95); }
-.rv-play svg { width: 24px; height: 24px; fill: oklch(0.25 0.03 260); translate: -1px 0; transition: translate 500ms var(--ease); }
+/* each card is a soft block: a face on a side of its own colour, lit from above */
+.rv-grid > section { position: relative; min-height: 220px; border-radius: 18px;
+  background: var(--face, var(--pl-bg-surface));
+  box-shadow: inset 0 1.5px 0 rgb(255 255 255 / .55), 0 5px 0 color-mix(in oklab, var(--hue, var(--pl-ink-3)) 55%, var(--face, var(--pl-bg-surface))), 0 18px 26px -14px color-mix(in oklab, var(--hue, var(--pl-ink-3)) 55%, transparent); }
+.rv-video { display: grid; place-items: center; overflow: hidden; --hue: var(--pl-sky); --face: var(--pl-sky-face);
+  background: radial-gradient(110% 80% at 25% 0%, color-mix(in oklab, #fff 25%, var(--pl-sky-face)), var(--pl-sky-face) 55%, color-mix(in oklab, var(--pl-sky) 22%, var(--pl-sky-face))); }
+.rv-video small { position: absolute; left: 14px; bottom: 12px; padding: 5px 9px; border-radius: 999px; background: var(--pl-bg-surface); font: var(--pl-round-w, 700) 12px/1 var(--pl-round); color: var(--pl-text-primary); box-shadow: var(--pl-shadow-tag); }
+.rv-float { position: absolute; width: 34px; height: 34px; padding: 6px; border-radius: 11px; background: rgb(255 255 255 / .9); box-shadow: 0 2px 0 color-mix(in oklab, var(--pl-sky) 40%, transparent), 0 10px 18px -8px color-mix(in oklab, var(--pl-sky) 70%, transparent); }
+.rv-float .rv-ty { width: 100%; height: 100%; }
+.rv-float.f1 { left: 9%; top: 14%; rotate: -10deg; } .rv-float.f2 { right: 11%; top: 11%; rotate: 8deg; } .rv-float.f3 { right: 8%; bottom: 18%; rotate: -6deg; } .rv-float.f4 { left: 22%; bottom: 26%; rotate: 12deg; width: 28px; height: 28px; padding: 5px; }
+.rv-play { position: relative; display: grid; place-items: center; width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(180deg, #fff, #f2f6ff); box-shadow: 0 4px 0 color-mix(in oklab, var(--pl-sky) 55%, #fff), 0 14px 22px -8px color-mix(in oklab, var(--pl-sky) 80%, transparent); }
+.rv-play svg { width: 24px; height: 24px; fill: color-mix(in oklab, var(--pl-sky) 55%, #0b1a33); translate: -1px 0; transition: translate 500ms var(--ease); }
 .rv-play[data-fixed] svg { translate: 1px 0; }
-.rv-figs { display: grid; align-content: start; gap: 10px; padding: 16px; background: var(--g1); box-shadow: inset 0 0 0 1px var(--line); }
-.rv-figs small { font-size: 12px; color: var(--ink-3); }
-.rv-figs div { display: flex; justify-content: space-between; padding-top: 10px; border-top: 1px solid var(--line); font-size: 13px; color: var(--ink-2); }
-.rv-figs b { font-weight: 500; color: var(--ink-1); font-variant-numeric: proportional-nums; }
+.rv-figs { display: grid; align-content: start; gap: 10px; padding: 16px; --hue: var(--pl-ink-3); }
+.rv-figs small { display: flex; align-items: center; gap: 7px; font: var(--pl-round-w, 700) 13px/1 var(--pl-round); color: var(--ink-1); }
+.rv-figs small .rv-ty { width: 18px; height: 18px; }
+.rv-figs div { display: flex; justify-content: space-between; align-items: center; padding-top: 11px; border-top: 1px dashed var(--line); font-size: 13px; color: var(--ink-2); }
+.rv-figs div span { display: inline-flex; align-items: center; gap: 8px; }
+.rv-dot { width: 9px; height: 9px; border-radius: 3px; background: var(--d); box-shadow: 0 1.5px 0 color-mix(in oklab, var(--d) 60%, #000); }
+.rv-figs b { font-weight: 650; color: var(--ink-1); font-variant-numeric: proportional-nums; }
 .rv-figs[data-fixed] b { font-variant-numeric: tabular-nums; animation: rv-swap 400ms var(--ease); }
-.rv-promo { display: grid; place-items: center; background: oklch(0.86 0.09 80); }
-.rv-promo-card { display: grid; gap: 4px; width: 78%; padding: 14px; border-radius: 12px; background: oklch(0.97 0.02 85); color: oklch(0.28 0.04 60);
-  box-shadow: 0 2px 4px rgb(0 0 0 / 0.25), 0 18px 30px -10px rgb(0 0 0 / 0.5); transition: box-shadow 600ms var(--ease); }
-.rv-promo-card[data-fixed] { box-shadow: 0 2px 4px oklch(0.55 0.13 65 / 0.4), 0 18px 30px -10px oklch(0.52 0.15 58 / 0.7); }
-.rv-promo-card small { font-size: 11px; color: oklch(0.5 0.06 60); }
-.rv-promo-card b { font: 590 15px/1.2 var(--font); }
-.rv-promo-card span { font-size: 12px; color: oklch(0.5 0.05 60); }
+/* the invite is one card, pink, straight on the page: its shadow is the mistake (grey), then tinted with its own pink */
+.rv-grid > .rv-promo { display: grid; background: none; box-shadow: none; }
+.rv-promo-card { display: grid; align-content: end; gap: 5px; height: 100%; box-sizing: border-box; padding: 16px; border-radius: 18px; color: var(--pl-pink-ink);
+  background: radial-gradient(110% 80% at 25% 0%, color-mix(in oklab, #fff 25%, var(--pl-pink-face)), var(--pl-pink-face) 60%);
+  box-shadow: 0 2px 4px rgb(0 0 0 / 0.18), 0 18px 30px -10px rgb(0 0 0 / 0.42); transition: box-shadow 500ms var(--ease); }
+/* written in rgb, which the build leaves alone and the tour reads for its chroma: the card's own pink, not grey */
+.rv-promo-card[data-fixed] { box-shadow: 0 2px 4px rgb(214 64 140 / 0.35), 0 18px 30px -10px rgb(200 40 120 / 0.6); }
+.rv-avs { display: flex; margin-bottom: 4px; } .rv-avs .rv-av + .rv-av { margin-left: -6px; }
+.rv-promo-card b { font: var(--pl-round-w, 700) 15px/1.2 var(--pl-round); }
+.rv-promo-card > span:not(.rv-avs) { font-size: 12.5px; color: color-mix(in oklab, currentColor 72%, transparent); }
+.rv-promo-card .rv-avs { margin-bottom: auto; }
+.rv-promo-card b { font-size: 17px; }
 
 @media (max-width: 40rem) {
   .hero { padding-left: var(--s-4); padding-right: var(--s-4); }
