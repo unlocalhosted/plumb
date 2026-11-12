@@ -470,6 +470,13 @@
 - **The proof:** all 14 shadcn colours on the page now read right, and the rename plan maps `primary → accent`, `accent → surface-hover`, `primary-foreground → on-accent`, `background → ground`, `destructive → danger`. crafting-ui: no colour reads differently.
 - **Media hooks:** a before/after table of the 14 shadcn colours and what plumber called each.
 
+## The full suite after the write trim: nothing fails because of this session's changes (2026-11-12)
+- **The itch:** the trim to the server's bookkeeping is engine code; the owner: "Yes, run it".
+- **How we found it:** the whole suite on vm-agent at the commit with the trim: 954 passed, 58 failed in 29 files, in 59 minutes. It ran with this branch's one-file-at-a-time runner by mistake; the side-by-side runner would have taken about 17. The runner stops at the first group that fails, so the burst test and the server test in two modes did not run.
+- **Sorting:** 23 of the 29 files were already failing in the morning's run. The other six (spacing clean-up twice, colour read, text styles, text roles, source stamping) plus two suspects were then run on that commit and on the same commit with this session's four changed engine and overlay files put back as they were.
+- **The proof:** every test that failed with the changes also failed without them (13 on both sides). One more, the stamping test, failed only without them, which on one run is a flake, not a fix. Nothing fails because of the write trim, the read speed-ups or the write-path fixes.
+- **Not covered:** the three new checks themselves were not put back in that comparison; the "well-built page yields no finding" test does fail, on five other checks, and none of the three new ones is in its output.
+
 ## Open gaps
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
 

@@ -123,8 +123,18 @@ Last gone through: 2026-11-12.
 
 - Seen catching slips only on pages we wrote; no real app with the mistakes has been read.
 - One check's fix can raise another check's finding on the same element (a background makes a box count as a card).
-- Tips with no check yet: flex rows that should wrap, scrollbars shown when nothing scrolls, hover styles on touch
-  screens, repeated backgrounds, fixed heights on text, sticky items in a grid, and the source-only ones.
+- Of the 25 defensivecss.dev tips, 9 have a check and 16 have none (mapped by name and description on 2026-11-12, not
+  by running each tip's own example):
+  - Added for them (3): image distortion, minimum content size in flexbox, text over image.
+  - Already checked before (5): scrollbar gutter, input zoom on iOS, accidental hover on mobile, scroll chaining,
+    image inner border.
+  - Partly (1): long content. Plumber checks that cut-off text shows its full value and where a path is cut, not
+    that long text is given a way to be cut.
+  - None (16): flexbox wrapping, component spacing, auto-fit vs auto-fill, background repeat, CSS grid fixed values,
+    CSS variable fallback, fixed sizes, minimum content size in grid, grouping vendor selectors, image maximum
+    width, position sticky with grid, scrollbars on demand, using space-between, vertical media queries, default
+    flexbox stretching, button minimum width.
+- Each remaining tip needs its principle and source written down before it becomes a check (docs/PRINCIPLES.md).
 
 ### Writes and speed
 
