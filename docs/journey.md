@@ -236,11 +236,20 @@
 - **The fix and the proof:** read from `window.__plumb.craft()` on crafting-ui with one label's spacing zeroed in the browser; the line above is its output. Not looked at in the panel; no test.
 - **Not understood:** taking the class off a label (instead of zeroing its spacing) gave no finding on one try; cause not looked into.
 
+## Plumber's read: 8 seconds, 5 of them asking one question at a time (2026-11-12)
+- **The itch:** plumber's full read of a page took about 8 s on a 1,400-element crafting-ui page and 12 s on algorecall's home. The owner, once the new checks were cleared: "Yes, find it".
+- **How we found it:** timed in the browser. The checks were 1.1 s. A timeline of the read showed the page fully read and settled by 2.4 s, then 5 s with nothing running on the page. Counting requests in that gap gave 363 round trips to the dev server, one question each, about 13 ms apart.
+- **The system behind it:** after the read, plumber asks where each finding was written. Questions asked in the same moment travel as one request; these were asked in a loop that waited for each answer before asking the next, so every one travelled alone.
+- **The fix and the proof:** the questions are now asked together. Same page: 7.9 s → 2.7 s (3.1 s on a second run), requests 431 → 91, every finding still has its file and line. Old and new run back to back on the assets page gave the identical list of findings.
+- **What is left:** about 1.7 s reading the page, then a fixed 0.6 s wait to be sure nothing more arrives. The text-contrast check is half of all check time (0.5 s). algorecall was not re-timed.
+- **Noticed:** two pages report 2 fewer findings than this morning with the old code too, so something else changed in between (the app or another session's work), not this fix.
+- **Media hooks:** a before/after bar: 7.9 s vs 2.7 s, with the 5 s of single questions drawn as 363 ticks.
+
 ## Open gaps
 - **Other answers are computed but never shown.** A suggestion carries its runners-up, yet they are almost always just the same advice in words; there is nothing worth listing until the recommender offers real ones (the other theme steps in range, the class the page's other places already use).
 - **The new token is written to one place only.** On crafting-ui it could also replace `tracking-[0.1em]` on the 35 labels that hardcode the same value; the write takes one swap today.
 - The three defensive checks have only been seen catching a slip on our own demo screens (now removed); no real app with the mistakes has been read.
-- plumber's full read takes about 8 s on a 1,400-element page, and about 6.8 s of that is outside the checks themselves; where it goes is not measured.
+- plumber's full read is now about 2.7 s on a 1,400-element page: 1.7 s reading, a fixed 0.6 s wait, and the text-contrast check alone 0.5 s. Not re-timed on algorecall.
 - 27 test files already failing before the token work (52 tests on vm-agent), the text editor's test flaky there; not this work's, not fixed.
 - Defensive CSS tips still without a check in plumber (checks only, never craft rules or screens): flex rows that should wrap, scrollbars shown when nothing scrolls, hover styles on touch screens, repeated backgrounds, fixed heights on text, sticky items in a grid, and the source-only ones (variable fallbacks, vendor selectors, vertical media queries).
 - Not built from the signed-off spec: surface levels (a card on a panel) read from nesting; no project at hand has two nested surface colours to prove it on.
@@ -255,6 +264,7 @@
 - The tailwind-merge trap is untested: crafting-ui does not use it.
 
 ## Shipped · 2026-W46
+- plumber's full read of a page is about three times faster (7.9 s → 2.7 s on a 1,400-element page): it now asks where every finding lives in one go instead of 363 separate questions. [entry](#plumbers-read-8-seconds-5-of-them-asking-one-question-at-a-time-2026-11-12)
 - plumber flags words over a picture that can only be read while the picture shows, before it ever fails to load, and offers the one class that holds them (a plain check, not a craft rule). [entry](#third-defensive-tip-words-that-need-their-picture-2026-11-12)
 - Plumber reads a hover or press colour from where the code uses it, so shadcn's grey `accent` is no longer taken for the brand ([entry](#hover-colours-read-from-the-code-not-the-name-2026-11-12)).
 - A brand colour too close to the error red or warning amber now gets a plain warning and what to do about it ([entry](#a-brand-too-close-to-error-2026-11-12)).

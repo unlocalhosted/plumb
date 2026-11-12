@@ -194,11 +194,13 @@ async function readOnce(overlay, { timeout = 60000, quiet = 600, grey = false, s
       await sleep(100);
     }
     const found = new Map();
-    for (const item of blueprint.items) {
-      // its own craft marks, and those the theme's mark outranked on the same facet (verdict.js craftUnder)
-      const marks = [...item.marks.filter((m) => m.family === 'craft'), ...item.marks.flatMap((m) => m.craftUnder ?? [])];
-      if (!marks.length) continue;
-      const at = await locate(item.el, { explain: true, batch: true }).catch(() => null);
+    // its own craft marks, and those the theme's mark outranked on the same facet (verdict.js craftUnder)
+    const marked = blueprint.items.map((item) => ({ item, marks: [...item.marks.filter((m) => m.family === 'craft'), ...item.marks.flatMap((m) => m.craftUnder ?? [])] })).filter((x) => x.marks.length);
+    // where each was written, asked together: questions asked in one turn go to the server as one round trip (api.js).
+    // Asked one after another they were a round trip each, and most of a read's time (5 s of 8 on a 1,400-element page)
+    const sites = await Promise.all(marked.map(({ item }) => locate(item.el, { explain: true, batch: true }).catch(() => null)));
+    for (const [i, { item, marks }] of marked.entries()) {
+      const at = sites[i];
       for (const m of marks) {
         // a finding about something that isn't on the page at rest (a palette) names where its code lives itself
         const own = m.craft?.evidence?.at;
