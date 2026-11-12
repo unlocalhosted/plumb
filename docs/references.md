@@ -36,3 +36,9 @@
 - What it changed: plumber's new radius reading sorts elements into tag, control and card and gives each the theme's step for that job.
 - Used in: overlay/src/radius.js; journey entry "Radius by job".
 
+## 2026-11-12 · Control sizes as tokens, and one height per row (found by us)
+- What: [Primer, size primitives](https://primer.style/product/primitives/size): one fixed height per control size (`--control-xsmall-size` 24px, small 28px, medium 32px, large 40px, xlarge 48px), read first-hand. Second-hand, from a search summary (the pages were not read; Nathan Curtis's "Size in Design Systems" returned an error): several systems' form-sizing guidance says controls in one row share a height.
+- Why: the owner picked control sizes as the next primitive after text, spacing, colour, icons and corners.
+- What it changed: plumber reads controls' heights and decides them against the project's spacing unit.
+- Used in: overlay/src/control-size.js; journey entry "Control sizes".
+

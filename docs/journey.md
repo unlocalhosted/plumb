@@ -443,7 +443,17 @@
 - **The proof:** the whole suite on vm-agent: 944 tests passed, 11 failed in 9 files (16.2 min on 7 cores). Before today's rounds: 55 failed in 29 files.
 - **Still failing, all about live behaviour (9 files):** the same page giving different problems at different sizes (blueprint-determinism); a new finding on the demo the noise check does not expect (craft); the one bar not fitting with its tools out (one-bar); a new token test that loses the page to a reload (craft-token); a Next performance wait (blueprint-next-performance); the timeline undo check, which is flaky; a frozen-server test that fails only when run beside other tests; and readiness-panel and text-edit (4 tests), which another session is changing in this checkout.
 
+## Control sizes (2026-11-12)
+- **The itch:** the owner asked which primitives are missing beside the five the clean-up covers, and picked control sizes first. Plumber collected sizes and never judged them.
+- **How we found it:** the messy dashboard at 1440 wide: nine boxed controls at five heights (27.5, 28, 34, 36, 42px).
+- **The system behind it:** a button's height fell out of its padding, its line height and its border, so each small slip made a new height: a border added to one button of a pair (40 → 42, and its neighbour stretched with it), a border on a 32px button (34), a 19.5px line (27.5).
+- **What we chose and why:** a control's height is a decision of the system: Primer names one fixed height per control size, all on a 4px unit ([reference](references.md)). So a control's height sits on the project's spacing unit. One off the unit goes to its height without its border when that is on the unit (the border was added on top), else to the nearer step; a tie is said, not moved; a control only stretched to an off-unit neighbour needs no change. In a row whose controls differ, the one height on the unit is the row's; with none or several, plumber says the row is uneven and proposes nothing. No number of its own.
+- **Tried and dropped:** judging only rows. At desktop width the pair of hero buttons are the same 42px, because a flex row stretches them; the slip is the height itself, not a mismatch.
+- **The fix and the proof (messy page, engine output in the browser at 1440 wide):** 5 changes: "View sprint board" 42 → 40 (its neighbour follows), the three tab buttons 27.5 → 28, "Manage team" 34 → 32. Heights: 5 → 4 (28, 32, 36, 40).
+- **Not done:** a reading and a decision only: not a pass in the clean-up panel, writes nothing. At a narrow width button labels wrap and the heights are the wrapped ones; a wrapped control should be left out. A theme that names its own control sizes is not read yet. No tests.
+
 ## Open gaps
+- **Control sizes are not in the clean-up panel** and write nothing; wrapped labels are read as tall controls; a theme's own control-size names are not read. Other primitives with no pass: padding and row gaps, shadows, borders, motion, opacity and states.
 - **9 test files still fail on vm-agent, 11 tests** (listed in "Old and repeated tests removed"): live behaviour, flakes, or another session's in-flight files. At 80 columns the report breaks a rule's name across two lines.
 - A theme with fewer named spacing steps than plumber's detector needs (about five) is not taken as the scale; the scale is still read off the code there.
 - The icons step's count adds sizes and strokes together, so fixing one icon's size can read "10 → 10".
