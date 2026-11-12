@@ -73,6 +73,9 @@ reserved.)
   ratio". Not judged on a real app.
 - Padding is not read by job (a card's padding, a control's sides): every padding is snapped to the scale alone.
 - Padding and row gaps under a variant (`md:px-6`, `hover:`) are not read.
+- A padding on one side alone (`pt-[5px]`) is treated as an adjustment and never judged, even when it is plain drift.
+- With no scale named in the theme, only hand-written sizes (`p-[18px]`) are judged; a framework step that is rare in
+  the app (`px-3.5`) is taken as fine.
 
 ### Clean-up: colour
 

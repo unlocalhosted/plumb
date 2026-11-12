@@ -1,10 +1,12 @@
 // "Clean up this page" on a page written the way an LLM writes one (bench/messy: a dashboard in a project whose theme
 // names its spacing steps, its colours and its corners by job, which the page only half follows). Each check is a
 // decision plumber got wrong on this page, or on crafting-ui, before 2026-11-12:
-//   spacing  four 14px gaps and a 20px one were left alone: the scale was read off the code, not the theme's own steps
+//   spacing  four 14px gaps and a 20px one were left alone: the scale was read off the code, not the theme's own steps;
+//            and padding and gaps in rows were never read at all
 //   colour   a row's title was folded onto the grey of the description under it (crafting-ui /interfaces, 105 rows)
 //   icons    a 16px icon among four 18px in one nav was not seen; and a size passed as a prop could not be written
 //   text     a dashboard's big numbers were folded into a heading style and shrank
+//   controls a border added to one button of a pair made it 42px, and nothing read a control's height
 //   corners  no pass: a card at the control's 8px is on a token by value and on the wrong one by job
 // Real Vite, React, Tailwind, the real CLI and Chromium; the panel is driven by its keys; every write is read back from
 // the source file.
@@ -96,13 +98,21 @@ test('a messy page is put back on its own design system: spacing on the theme\'s
   assert.doesNotMatch(text, /30px → 24px/, text);
 
   // spacing: the 14px gaps go to the theme's 16px step, written with the theme's own name
-  await s.pass(/off your scale|different spaces between things/);
+  // and the spacing a stack cannot show: padding and the gap between things in a row, on the same steps
+  const spacing = await s.pass(/off your scale|different spaces between things/);
+  assert.match(spacing, /This page has 12 different spaces between things\. After this, 8\./, spacing);
+  assert.match(spacing, /Padding 20px → 24px/, spacing);
+  assert.match(spacing, /Gap in a row 10px → 12px/, spacing);
   await s.page.keyboard.press('Enter');
   const spaced = await s.written(/gap-s4\]?"|gap-s4 |gap-s4"/);
   assert.match(spaced, /className="flex flex-col gap-s4">\s*\{ACTIVITY\.map/, 'the activity list\'s 14px gap is the theme\'s s4');
   assert.match(spaced, /font-semibold text-\[#111827\] mb-s4"/, 'the heading\'s 14px margin is the theme\'s s4');
   assert.doesNotMatch(spaced, /gap-\[14px\]|mb-\[14px\]/, 'no hand-written 14px is left');
   assert.match(spaced, /mt-0\.5/, 'a 2px label gap is a level of its own and stays');
+  assert.match(spaced, /rounded-\[14px\] border border-\[#e5e7eb\] p-s4"/, 'a card\'s 18px padding is the theme\'s s4');
+  assert.match(spaced, /<div key=\{a\.target \+ a\.when\} className="flex gap-s3">/, 'a 10px gap in a row is the theme\'s s3');
+  assert.match(spaced, /font-semibold px-s6 py-2\.5 rounded-lg/, 'a button\'s sides go onto the scale; its top and bottom padding is its height, and stays');
+  assert.match(spaced, /px-2 py-0\.5 rounded /, 'a chip\'s 2px padding is a size of its own and stays');
 
   // icons: the nav's 16px icon is seen among its four 18px peers, and the number is changed where it is written
   const icons = await s.pass(/off your icon system/);
@@ -121,15 +131,27 @@ test('a messy page is put back on its own design system: spacing on the theme\'s
   await s.page.keyboard.press('Enter');
   const rounded = await s.written(/rounded-card bg-gradient-to-r/);
   assert.match(rounded, /<section className="bg-white rounded-card border border-gray-200">/, 'a card at the control\'s 8px takes the card step');
-  assert.match(rounded, /text-sm font-medium px-3\.5 py-2 rounded-control"/, 'a button at 10px takes the control step');
+  assert.match(rounded, /text-sm font-medium px-s4 py-2 rounded-control"/, 'a button at 10px takes the control step');
   assert.match(rounded, /px-2 py-0\.5 rounded-tag \$\{cls\}/, 'a chip takes the tag step');
   assert.match(rounded, /w-\[30px\] h-\[30px\] rounded-\[8px\]/, 'an icon tile does not say what it is and is left');
   assert.match(rounded, /border border-gray-300 rounded px-1">⌘K/, 'a key is not a tag and is left');
 
-  // Undo takes the corners back, and only the corners
+  // controls: a height off the spacing steps goes onto them; a border added on top of a 40px button is taken back in
+  const controls = await s.pass(/come in \d+ heights|off your spacing steps/);
+  assert.match(controls, /Height 42px → 40px/, controls);
+  assert.match(controls, /Height 34px → 32px/, controls);
+  await s.page.keyboard.press('Enter');
+  const heights = await s.written(/border-white\/40[^"\n]*\bh-10\b/);
+  assert.match(heights, /border border-gray-300[^"\n]*\bh-s8\b/, 'the bordered 34px button takes the 32px step, by the theme\'s name');
+  assert.doesNotMatch(heights, /bg-white text-indigo-700[^"\n]*\bh-10\b/, 'the button only stretched to its neighbour gets no class of its own');
+
+  // Undo takes the controls back, and only the controls
   await s.until(/Undo/);
   await s.page.locator('plumb-overlay').locator('[data-cu="undo"]').click();
-  const undone = await s.written(/rounded-2xl bg-gradient-to-r/);
+  for (let i = 0; i < 120 && /\bh-10\b/.test(await s.source()); i++) await new Promise((r) => setTimeout(r, 500));
+  const undone = await s.source();
+  assert.doesNotMatch(undone, /\bh-10\b|\bh-s8\b/, 'no height class is left');
+  assert.match(undone, /rounded-card bg-gradient-to-r/, 'the corners step stays written');
   assert.match(undone, /<Chart size=\{18\}/, 'the icon step stays written');
   assert.deepEqual(s.errors, []);
 });

@@ -6,6 +6,8 @@
  * class swaps where the class that makes the space is.
  *
  *  read     the site's gaps (GET rhythm), this page's stacks, keep's moves (off the scale, or uneven among siblings);
+ *           and the spacing a stack cannot show: padding and the gap between things in a row (insets.js), put on the
+ *           same scale. A control's top and bottom padding is left to its size
  *           a class that also makes spaces that stay is left as is; only a move whose class sets one side
  *           (gap, gap-y, mt, mb) is kept: my-2 or m-2 would move the other side too
  *  writes   one per class (a component's mt-4 drawn twelve times is one write, as refine decided): its element, its
@@ -22,7 +24,8 @@ import { request } from './api.js';
 import { BLOCK_ICONS } from './boxmodel.js';
 import { classEditsOf } from './locate.js';
 import { ease } from './show.js';
-import { loadSteps, proposeSpacing, readStacks, rhythmOf, themeSteps, unit } from './stacks.js';
+import { loadSteps, proposeSpacing, readStacks, rhythmOf, spacingScale, themeSteps, unit } from './stacks.js';
+import { proposeInsets, readInsets } from './insets.js';
 
 const SIDE = /^(gap|gap-y|mt|mb)$/;
 const PROP = { gap: 'row-gap', mt: 'margin-top', mb: 'margin-bottom' };
@@ -69,18 +72,47 @@ export class SpacingPass {
       for (const [k, w] of writes) if (w.gaps.some((g) => (movedOf.get(Math.round(g.d)) ?? 0) < (rowsOf.get(Math.round(g.d)) ?? 0))) { writes.delete(k); changed = true; }
     }
     this.#writes = [...writes.values()];
+    // padding and gaps in rows, on the same scale: one write per class at one place in the source
+    const insets = readInsets(), scale = spacingScale(site?.gaps?.length ? site.gaps.map((x) => x.d) : stacks.flatMap((x) => x.gaps.filter((g) => g.d > 0.5 && !g.section).map((g) => g.d)));
+    const inner = new Map();
+    for (const m of proposeInsets(insets, scale, { unit: step, steps: themeSteps() }).moves) {
+      const k = `${(m.el.getAttribute('data-plumb-source') ?? '').split('#')[0]}|${m.from.cls}`;
+      if (!inner.has(k)) inner.set(k, { inset: m.prefix.startsWith('gap') ? 'row' : 'pad', props: m.props, cls: m.from.cls, next: m.to.cls, from: m.from.px, to: m.to.px, gaps: [], els: new Set() });
+      const w = inner.get(k);
+      if (w.next !== m.to.cls) w.split = true;
+      w.els.add(m.el);
+    }
+    const insetWrites = [...inner.values()].filter((w) => !w.split);
+    this.#writes.push(...insetWrites);
+    const insetAfter = new Map(insetWrites.flatMap((w) => [...w.els].map((el) => [`${el.getAttribute('data-plumb-source')}|${w.cls}`, w.to])));
     // distinct spaces among this page's rows, before and after (the same rows: section breaks and refusals stay)
     const rows = stacks.flatMap((s) => s.gaps).filter((g) => g.d > 0.5 && !g.section), moved = new Map(this.#writes.flatMap((w) => w.gaps.map((g) => [g, w.to])));
     const distinct = (vs) => new Set(vs.map((v) => Math.round(v))).size;
-    this.page = { writes: this.#writes.length, places: moved.size, before: distinct(rows.map((g) => g.d)), after: distinct(rows.map((g) => moved.get(g) ?? g.d)), scale: p.scale, routes: site?.routes ?? null };
+    const open = insets.filter((i) => !i.vertical);
+    this.page = { writes: this.#writes.length, places: moved.size + insetWrites.reduce((n, w) => n + w.els.size, 0), before: distinct([...rows.map((g) => g.d), ...open.map((i) => i.px)]),
+      after: distinct([...rows.map((g) => moved.get(g) ?? g.d), ...open.map((i) => insetAfter.get(`${i.el.getAttribute('data-plumb-source')}|${i.cls}`) ?? i.px)]), scale: p.scale, routes: site?.routes ?? null };
     return this.page;
   }
 
   // the show's roles: one per new size, smallest first
   steps() {
     const by = new Map();
-    for (const w of this.#writes) { if (!by.has(w.to)) by.set(w.to, []); by.get(w.to).push(w); }
-    return [...by].sort((a, b) => a[0] - b[0]).map(([to, ws]) => {
+    for (const w of this.#writes.filter((x) => !x.inset)) { if (!by.has(w.to)) by.set(w.to, []); by.get(w.to).push(w); }
+    // padding and gaps in rows: one role per kind and new size, after the stacks' own; the chip is the padding or gap
+    // icon, the marks hatch the boxes themselves
+    const inner = new Map();
+    for (const w of this.#writes.filter((x) => x.inset)) { const k = `${w.inset}|${w.to}`; if (!inner.has(k)) inner.set(k, []); inner.get(k).push(w); }
+    const insetSteps = [...inner.values()].sort((a, b) => (a[0].inset === b[0].inset ? a[0].to - b[0].to : a[0].inset === 'pad' ? -1 : 1)).map((ws) => {
+      const { inset, to } = ws[0], from = mostOf(ws.flatMap((w) => [...w.els].map(() => Math.round(w.from)))), word = inset === 'pad' ? 'Padding' : 'Gap in a row';
+      const els = [...new Set(ws.flatMap((w) => [...w.els]))];
+      return {
+        chip: { label: `${word}: ${from}px to ${to}px`, name: `${word} ${from}px → ${to}px`, icon: BLOCK_ICONS[inset === 'pad' ? 'p' : 'g'], from },
+        to,
+        bands: () => els.map((el) => ({ kind: 'pad', rect: () => el.getBoundingClientRect() })),
+        morph: (animate) => { for (const w of ws) for (const el of w.els) for (const prop of w.props) this.#set(el, prop, `${to}px`, animate); },
+      };
+    });
+    return [...[...by].sort((a, b) => a[0] - b[0]).map(([to, ws]) => {
       const gaps = ws.flatMap((w) => w.gaps), from = mostOf(gaps.map((g) => Math.round(g.d)));
       const icon = BLOCK_ICONS[mostOf(gaps.map((g) => (g.by === 'gap' ? 'g' : 'm')))];
       return {
@@ -92,7 +124,7 @@ export class SpacingPass {
         } })),
         morph: (animate) => { for (const w of ws) for (const el of w.els) this.#set(el, w.prop, `${to}px`, animate); },
       };
-    });
+    }), ...insetSteps];
   }
   // every role set at once (Space released, a reload's resume)
   show() { for (const s of this.steps()) s.morph(false); }
