@@ -1849,6 +1849,14 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   fixed in the shared field: the input no longer draws its own outline. One ring now, in the fix bar too.
 - **Still open, on the page:** the field's corner (10px) and the bar's button (11px) are off the corner tokens, and
   the field's type (12.5px mono, 13px) isn't a type token. Checked in light and dark.
+- **"Input could receive some love, too dry."** The system behind it: the field is the one thing you touch in Plumber
+  that was built as a plain web form (a grey hairline box, mono text, a dark ring), outside the visual language where
+  things are coloured by what they mean, answer the hand, and show their result. Following the principles (find the
+  system; prototype options that differ in kind, live), three ideas went on the page: A, a well pressed into the bar
+  with a lilac slot that grows on a spring, a mint tick for a good name and a shake for a bad one; B, typing straight
+  into a big raised name tag with the gap's toy on it; C, a quiet field with the love on the result: the code line
+  written letter by letter and the three places lighting mint. All live, by the panel's own rule for a name; light
+  and dark checked. Waiting for the owner's pick.
 
 ## Open gaps
 - The overlay writes about 180 corners as numbers (radius tokens about 45 times), many off its own scale; 6px is

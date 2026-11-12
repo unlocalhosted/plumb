@@ -5,6 +5,7 @@
 import { LANGUAGE_CSS } from '../../../overlay/src/language.js';
 import { FIX_BUTTONS_CSS, FIX_NOTE_CSS, FIX_FIELD_CSS } from '../../../overlay/src/field.js';
 import { FIX } from '../../../overlay/src/words.js';
+import { TOY_DEFS, toyOf } from '../../../overlay/src/toys.js';
 
 export function mount(host, root, css) {
   const PLACES = 3, VALUE = '13px', NS = '--spacing';
@@ -22,7 +23,7 @@ export function mount(host, root, css) {
     ['Not a name', 'A coral ring and the rule, in words. The button waits.', 'Gutter 2', 'bad'],
   ];
 
-  root.innerHTML = `<style>${css}${LANGUAGE_CSS}${FIX_BUTTONS_CSS}${FIX_NOTE_CSS}${FIX_FIELD_CSS}
+  root.innerHTML = `${TOY_DEFS}<style>${css}${LANGUAGE_CSS}${FIX_BUTTONS_CSS}${FIX_NOTE_CSS}${FIX_FIELD_CSS}
     :host { display: block; font-family: var(--pl-sans); color: var(--pl-text-primary); }
     h2 { margin: 44px 0 6px; font: 600 20px/28px var(--pl-sans); letter-spacing: -0.01em; }
     h2 + p, .prose p { margin: 0 0 10px; font: 400 14px/22px var(--pl-sans); color: var(--pl-text-secondary); max-width: 680px; }
@@ -54,6 +55,61 @@ export function mount(host, root, css) {
     .fx .field.is-focus { box-shadow: inset 0 0 0 1.5px var(--pl-text-primary); }
     .fx .field.is-focus input { caret-color: var(--pl-text-primary); }
     .state .cap { border-top: 1px solid var(--pl-border-default); }
+    /* ── three ideas ── */
+    .ideas .idea { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); align-items: center; border-top: 1px solid var(--pl-border-default); }
+    .ideas .idea:first-child { border-top: 0; }
+    .ideas .card { width: 100%; max-width: 440px; box-sizing: border-box; padding: 16px 18px 18px; border-radius: 18px; background: var(--pl-bg-surface); display: grid; gap: 12px;
+      box-shadow: 0 0 0 .5px rgb(0 0 0 / .09), 0 8px 20px -8px rgb(0 0 0 / .14), 0 28px 56px -24px rgb(0 0 0 / .18); font: 13px/1.35 var(--pl-sans); }
+    .ideas .lead { color: var(--pl-text-secondary); font-size: 12.5px; }
+    .ideas input { all: unset; font: inherit; color: inherit; min-width: 1ch; }
+    .ideas .say { min-height: 17px; font-size: 12px; color: var(--pl-text-secondary); } .ideas .say.err { color: var(--pl-text-hard-coded); }
+    .ideas .say code { font: 600 11.5px/1 var(--pl-mono); color: var(--pl-text-primary); }
+
+    /* A: a well, pressed into the bar, its blank a lilac slot */
+    .well { position: relative; display: flex; align-items: center; height: 42px; padding: 0 12px; border-radius: 12px; font: 500 13px/1 var(--pl-mono); color: var(--pl-text-secondary);
+      background: var(--pl-bg-inset); box-shadow: inset 0 2px 3px -1px rgb(0 0 0 / .16), inset 0 0 0 1px rgb(0 0 0 / .05), 0 1px 0 rgb(255 255 255 / .7); cursor: text; }
+    :host([data-scheme="dark"]) .well { box-shadow: inset 0 2px 4px -1px rgb(0 0 0 / .5), inset 0 0 0 1px rgb(255 255 255 / .04), 0 1px 0 rgb(255 255 255 / .06); }
+    .well .slot { display: inline-flex; margin: 0 2px; padding: 4px 7px; border-radius: var(--pl-radius-tag); background: var(--pl-lilac-soft); color: var(--pl-lilac-ink);
+      transition: background-color 160ms var(--pl-ease-out), color 160ms var(--pl-ease-out); }
+    .well .slot input { width: var(--w, 6ch); transition: width 260ms var(--pl-spring-pop); caret-color: var(--pl-lilac); font-weight: 600; }
+    .well:focus-within .slot { box-shadow: 0 0 0 2px color-mix(in oklab, var(--pl-lilac) 45%, transparent); }
+    .well[data-bad] .slot { background: var(--pl-coral-soft); color: var(--pl-coral-ink); animation: shake 260ms var(--pl-ease-out); }
+    @keyframes shake { 25% { translate: -3px 0; } 60% { translate: 2px 0; } }
+    .well .tick { position: absolute; right: 10px; width: 20px; height: 20px; border-radius: 50%; background: var(--pl-mint); scale: 0; opacity: 0;
+      transition: scale 320ms var(--pl-spring-pop), opacity 120ms; }
+    .well .tick::after { content: ''; position: absolute; left: 7px; top: 4px; width: 4px; height: 8px; border: solid #fff; border-width: 0 2px 2px 0; rotate: 45deg; }
+    .well[data-ok] .tick { scale: 1; opacity: 1; }
+
+    /* B: you type the tag */
+    .maker { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .big-tag { display: inline-flex; align-items: center; gap: 8px; height: 38px; padding: 0 14px 0 9px; border-radius: 10px; background: var(--pl-lilac-soft); color: var(--pl-lilac-ink);
+      font: 700 17px/1 var(--pl-round, var(--pl-sans)); box-shadow: var(--pl-shadow-tag); translate: 0 -2px; cursor: text;
+      transition: translate 300ms var(--pl-spring-pop), box-shadow 200ms var(--pl-ease-out), background-color 160ms, color 160ms; }
+    .big-tag .toy { display: block; width: 24px; height: 24px; transition: rotate 300ms var(--pl-spring-pop), scale 300ms var(--pl-spring-pop); }
+    .big-tag .toy svg { display: block; width: 100%; height: 100%; }
+    .big-tag input { width: var(--w, 6ch); transition: width 260ms var(--pl-spring-pop); caret-color: var(--pl-lilac); }
+    .big-tag:focus-within { box-shadow: var(--pl-shadow-tag), 0 0 0 2px color-mix(in oklab, var(--pl-lilac) 45%, transparent); }
+    .big-tag:focus-within .toy { rotate: -8deg; scale: 1.1; }
+    .maker[data-bad] .big-tag { translate: 0 0; box-shadow: none; background: var(--pl-coral-soft); color: var(--pl-coral-ink); }
+    .maker .arrow { color: var(--pl-text-secondary); }
+
+    /* C: the result, as you type */
+    .plain { display: flex; align-items: baseline; gap: 0; padding: 4px 0 6px; border-bottom: 1.5px solid var(--pl-border-default); font: 500 15px/1 var(--pl-mono); color: var(--pl-text-secondary); cursor: text; }
+    .plain input { color: var(--pl-text-primary); width: var(--w, 6ch); caret-color: var(--pl-text-primary); }
+    .plain:focus-within { border-bottom-color: var(--pl-text-primary); }
+    .plain[data-bad] { border-bottom-color: var(--pl-text-hard-coded); }
+    .code { margin: 0; padding: 10px 12px; border-radius: 10px; background: var(--pl-bg-inset); font: 500 12px/1.6 var(--pl-mono); color: var(--pl-text-secondary); white-space: pre-wrap; overflow-wrap: anywhere; }
+    .code .ln { display: block; font-size: 11px; color: var(--pl-text-secondary); opacity: .7; }
+    .code s { color: var(--pl-text-hard-coded); text-decoration-thickness: 1.5px; }
+    .code .nw { font-weight: 600; color: var(--pl-mint-ink); background: var(--pl-mint-soft); border-radius: 4px; padding: 0 3px; }
+    .code[data-bad] .nw { color: var(--pl-coral-ink); background: var(--pl-coral-soft); }
+    .code .nm i { font-style: normal; display: inline-block; animation: pl-pop 220ms var(--pl-spring-pop) both; }
+    .dots { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--pl-text-secondary); }
+    .dots i { width: 9px; height: 9px; border-radius: 50%; background: var(--pl-border-default); transition: background-color 200ms var(--pl-ease-out), scale 300ms var(--pl-spring-pop); }
+    .dots[data-ok] i { background: var(--pl-mint); scale: 1.15; }
+    .dots[data-ok] i:nth-child(2) { transition-delay: 40ms; } .dots[data-ok] i:nth-child(3) { transition-delay: 80ms; }
+    @media (prefers-reduced-motion: reduce) { .ideas * { transition: none !important; animation: none !important; } }
+    @media (max-width: 720px) { .ideas .idea { grid-template-columns: 1fr; } }
     .open { margin-top: 14px; padding: 14px 18px 14px 34px; border-radius: 16px; background: var(--pl-bg-surface); box-shadow: 0 0 0 1px var(--pl-border-default); font: 400 13px/21px var(--pl-sans); color: var(--pl-text-secondary); }
     .open li + li { margin-top: 6px; } .open b { color: var(--pl-text-primary); font-weight: 600; }
     @media (max-width: 1000px) { .states { grid-template-columns: 1fr 1fr; } .state:nth-child(3) { border-left: 0; } .state:nth-child(n+3) { border-top: 1px solid var(--pl-border-default); } }
@@ -85,6 +141,27 @@ export function mount(host, root, css) {
   <p>The name field, in each state it has. A field is never disabled; the button under it is.</p>
   <div class="panel states">${STATES.map(([h, p, name, st]) => `<div class="state"><div class="fx">${nameField(name, st)}</div><div class="cap"><h3>${h}</h3><p>${p}</p></div></div>`).join('')}</div>
 
+  <h2>Three ideas: a field with some love</h2>
+  <p>The field above was built as a plain web form, the one thing you touch in Plumber that isn't in the visual language. Three ways in, each a different kind of answer. All three are live; type a name, try a bad one.</p>
+  <div class="panel ideas">
+    <div class="idea" data-k="a"><div class="stage"><div class="card">
+        <div class="lead">${FIX.newStep('gap', VALUE)}</div>
+        <label class="well">${NS}-<span class="slot"><input value="gutter" spellcheck="false" autocomplete="off" aria-label="Name of the new gap"></span>: ${VALUE}<i class="tick" aria-hidden="true"></i></label>
+        <div class="say"></div></div></div>
+      <div class="cap"><h3>A. A well</h3><p>The soft block's opposite: a place pressed into the bar, lit on its lower lip. The blank is a lilac slot (names are lilac) that grows on a spring as you type; a good name gets a mint tick that pops in, a bad one turns the slot coral and gives a small shake.</p></div></div>
+    <div class="idea" data-k="b"><div class="stage"><div class="card">
+        <div class="lead">${FIX.newStep('gap', VALUE)}</div>
+        <div class="maker"><span class="big-tag"><i class="toy">${toyOf('gap')}</i><input value="gutter" spellcheck="false" autocomplete="off" aria-label="Name of the new gap"></span><span class="arrow">is</span><span class="pl-pill" data-hue="sky">${VALUE}</span></div>
+        <div class="say"></div></div></div>
+      <div class="cap"><h3>B. You type the tag</h3><p>No box: you type straight into the thing you're making, a name tag with the gap's toy on it, a size bigger than usual. It stands raised a little, like a tag on your page; a bad name and it goes flat and coral until it's a name again.</p></div></div>
+    <div class="idea" data-k="c"><div class="stage"><div class="card">
+        <div class="lead">${FIX.newStep('gap', VALUE)}</div>
+        <label class="plain">${NS}-<input value="gutter" spellcheck="false" autocomplete="off" aria-label="Name of the new gap"></label>
+        <pre class="code"><span class="ln">Pricing.jsx</span>&lt;div className="flex <s>gap-[13px]</s> <b class="nw">gap-<span class="nm">gutter</span></b>"&gt;</pre>
+        <div class="dots" aria-hidden="true"><i></i><i></i><i></i><span></span></div></div></div>
+      <div class="cap"><h3>C. The result, as you type</h3><p>The field stays quiet; the love goes to what it does. Under it, the line of your code with the hard-coded class struck out and the new one written letter by letter as you type, and the three places it reaches lighting up mint once the name is good.</p></div></div>
+  </div>
+
   <h2>What is still open</h2>
   <ul class="open">
     <li><b>No search.</b> The plan listed "searching"; there is no search field. The colour picker is found by key and by pointing, nearest first. If a long list ever needs one, it should be this same field.</li>
@@ -102,5 +179,25 @@ export function mount(host, root, css) {
   });
   const why = root.querySelector('[data-f="why"]');
   why.addEventListener('input', (e) => { why.querySelector('.keep-yes').disabled = e.target.value.trim().length < 3; });
+
+  // the three ideas, by the panel's own rule for a name
+  for (const idea of root.querySelectorAll('.idea')) {
+    const k = idea.dataset.k, input = idea.querySelector('input'), say = idea.querySelector('.say');
+    const update = (typed) => {
+      const name = input.value, ok = okName(name), bad = !!name && !ok;
+      input.style.setProperty('--w', `${Math.max(2, name.length + 0.5)}ch`);
+      if (say) { say.innerHTML = bad ? FIX.newStepBad : ok ? `${FIX.becomes(PLACES)} <code>gap-${name}</code>` : FIX.newStepHint(PLACES); say.classList.toggle('err', bad); }
+      if (k === 'a') { const w = idea.querySelector('.well'); w.toggleAttribute('data-ok', ok); if (bad && typed) { w.removeAttribute('data-bad'); void w.offsetWidth; } w.toggleAttribute('data-bad', bad); }
+      if (k === 'b') idea.querySelector('.maker').toggleAttribute('data-bad', bad);
+      if (k === 'c') {
+        idea.querySelector('.plain').toggleAttribute('data-bad', bad); idea.querySelector('.code').toggleAttribute('data-bad', bad); idea.querySelector('.dots').toggleAttribute('data-ok', ok);
+        const nm = idea.querySelector('.nm'), prev = nm.textContent;
+        nm.innerHTML = [...(name || '…')].map((ch, i) => (typed && i >= prev.length - 0 && name.startsWith(prev) && i === name.length - 1 ? `<i>${ch}</i>` : ch)).join('');
+        idea.querySelector('.dots span').textContent = ok ? `${PLACES} places` : '';
+      }
+    };
+    input.addEventListener('input', () => update(true));
+    update(false);
+  }
   void host;
 }
