@@ -483,6 +483,11 @@
 - **The fix:** a fill darker than the page is set into it (sunken: a well, a field, a tab track); one as light as the page or lighter sits on it (surface). A fill whose name already says surface, card, panel or popover is not moved. When two colours still compete for a name, the one the code uses only for that job wins (`input` is also a border).
 - **The proof:** the shadcn plan now gives `popover → surface`, `muted → sunken`, `accent → surface-hover`, `primary → accent`, `primary-foreground → on-accent`; `secondary` and `input` keep their names (sunken is taken). crafting-ui: no colour reads differently.
 
+## Three small checks from the backlog's "now" list (2026-11-12)
+- **Wrapped controls:** a button whose words wrap onto a second line is no longer read as a tall control. At a narrow window the messy page's control sizes now propose only the three tab buttons; at 1440 wide the same five changes as before.
+- **Undo of the corners write:** applied the 11 corner changes from the panel, pressed Undo, and the source file was back as it was.
+- **Text styles in the running panel (messy page):** the panel reads "Your site uses 14 text sizes. These 8 styles cover them", with the new names showing as "Lead" and "Title small". Two things it showed that the data run had not: the four stat figures (30px) are folded into the 24px headline style, and 37 places of 12px text go up to 14px. Both are in the backlog.
+
 ## Open gaps
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
 

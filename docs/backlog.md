@@ -59,8 +59,9 @@ Last gone through: 2026-11-12.
 
 **The order proposed on 2026-11-12** (the owner has seen it; not yet confirmed):
 
-- **Now** (small, and each affects whether today's work can be trusted): text styles seen in the running panel · wrapped
-  controls left out · Undo of the corners write · a class fix offered and then refused · a read in a window with no size.
+- **Now** (small, and each affects whether today's work can be trusted): a class fix offered and then refused · a read
+  in a window with no size. (Done 2026-11-12: text styles seen in the panel, wrapped controls left out, Undo of the
+  corners write.)
 - **Next** (more primitives, decided by job): padding and gaps in rows · control sizes as a pass · text inside buttons
   and "what it sits inside" · craft suggestions read the role · the two failing tests that are real bugs · tests for
   control sizes and a theme named by size.
@@ -71,7 +72,9 @@ Last gone through: 2026-11-12.
 
 ### Clean-up: text
 
-- Not looked at in the running clean-up panel since the job split; the before and after is from measured data.
+- A big number is treated as a heading: on bench/messy the four stat figures ("142", 30px) are folded into the 24px
+  headline style with a section title, so they would shrink by 6px. Material keeps numerals with display text.
+- Small text is pulled up: on bench/messy 37 places at 12px go to a 14px "Body small". Seen in the panel; not judged yet.
 - Text inside buttons is not its own job: label styles force capitals, so a plain button label goes by size.
 - A hero title written to grow with the screen stays in the ordinary display style (its drawn size is not read).
 - The job is read only from the tag and "is it a sentence". What it sits inside, and its size against its
@@ -102,12 +105,10 @@ Last gone through: 2026-11-12.
 ### Clean-up: corners
 
 - Themes that name radii by size get no answer (see question 7).
-- Undo of the corners write was not tried.
 
 ### Clean-up: control sizes
 
 - A reading and a decision only: not a pass in the panel, writes nothing.
-- A wrapped button label is read as a tall control; wrapped controls should be left out.
 - A theme's own control-size names are not read.
 - The "one row, one height" rule found nothing on the messy page, so it is unproven.
 

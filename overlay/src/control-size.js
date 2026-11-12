@@ -9,7 +9,8 @@
  *
  *  read     readControls() → [{ el, h, cls, tag }]: every stamped control drawn on the page (a button, a field, a
  *           select, something with the button role), its drawn height, the class that sets a height on it if one does.
- *           A field with no box of its own (transparent, no border) is not read: the box round it is the control
+ *           A field with no box of its own (transparent, no border) is not read: the box round it is the control;
+ *           nor is a button whose words have wrapped onto a second line (its height is the window's doing)
  *  rows     controls with the same parent whose middles sit on one line
  *  propose  proposeControlSizes(controls, { unit }) → { moves, said, kept }: in a row whose controls differ in height,
  *           the height that sits on the project's spacing unit is the row's (a height off the unit is the accident: a
@@ -40,6 +41,11 @@ export function readControls(root = document.body) {
     const s = getComputedStyle(el);
     if (el.matches('input, select, textarea') && !boxed(s)) continue; // the box round it is the control
     if (!boxed(s) && !(px(s.paddingTop) + px(s.paddingBottom) > 0)) continue; // a bare icon or word you can press has no box to size
+    // a label that has wrapped onto a second line makes the control as tall as its words: that is the window being
+    // narrow, not the control's size (more than one line box inside it)
+    const tops = new Set(), walk = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+    for (let n = walk.nextNode(); n; n = walk.nextNode()) { if (!/\S/.test(n.nodeValue)) continue; const range = document.createRange(); range.selectNodeContents(n); for (const q of range.getClientRects()) if (q.width > 1) tops.add(Math.round(q.top)); }
+    if (tops.size > 1) continue;
     out.push({ el, tag: el.localName, h: Math.round(r.height * 2) / 2, top: r.top, border: px(s.borderTopWidth) + px(s.borderBottomWidth), cls: utility(el, 'h') ?? utility(el, 'size') });
   }
   return out;
