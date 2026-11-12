@@ -789,6 +789,10 @@
 - **Found on the way:** an icon component that joins its classes with `+` is refused as "built in code", while the same component with a template literal is written (in the backlog). The first run's other failures were the tests' own: measuring before the page redrew, and reading the site before or after a write without meaning to.
 - **Proof:** 14 of 14 pass on vm-agent (one run of both files, after fixes).
 
+## Two failures that were code: Ctrl+C too early, and a test reading through a reload (2026-11-12)
+- **bare-page:** `plumber` with nothing after it printed "Press Ctrl+C here when you're done" and only then started listening for Ctrl+C. A Ctrl+C in that gap killed the process outright: the page's server was not closed and it said nothing. The faster Linux box hit the gap; the laptop rarely did. Now it listens first, then says so.
+- **timeline:** the test read the history strip right after an undo write that, as its own comment says, reloads the page; on a slower machine the reload came first. The test now reads the strip again on the new page (it comes back the same).
+
 ## Open gaps
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
 

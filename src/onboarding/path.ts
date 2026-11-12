@@ -156,11 +156,14 @@ export async function runBare(context: PathContext): Promise<void> {
   const url = `http://localhost:${daemon.info.port}`;
   const opened = await openBrowser(url);
   process.stdout.write(opened ? `Opened your project in the browser: ${url}\n` : `Open your project in the browser: ${url}\n`);
-  process.stdout.write("Press Ctrl+C here when you're done.\n");
-  await new Promise<void>(done => {
+  // listening before saying so: a Ctrl+C the moment the line appears would otherwise kill the process, leaving the
+  // page's server open and saying nothing
+  const stopped = new Promise<void>(done => {
     const stop = () => { process.off('SIGINT', stop); process.off('SIGTERM', stop); done(); };
     process.on('SIGINT', stop); process.on('SIGTERM', stop);
   });
+  process.stdout.write("Press Ctrl+C here when you're done.\n");
+  await stopped;
   const written = (await daemon.session.history()).writes.length;
   await daemon.close();
   process.stdout.write(written ? '\n' : '\nNo changes made.\n');
