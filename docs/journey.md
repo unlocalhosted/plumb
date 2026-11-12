@@ -1959,6 +1959,17 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   on any stage in either scheme), space hatched (the grey shadow's region), and the measured pill counting coral to
   mint. Checked: the cards' camera transform stays "none" through a moment, the hero's stays at scale 1, the widow
   boxed in place with its pill. The card's storyboard comment rewritten to match.
+- **"We need more delight while showcasing the fix ... it feels like noise ... random things are happening which I am
+  not aware of ... doesn't set the context well."** The system behind it: nine cards ran nine loops at once, so a
+  tiny change was always happening somewhere and nothing said what. Now Plumber reviews the grid one card at a time:
+  the card on turn lifts with a ring in its hue, the rest sit still and quiet (their own animated scenes stop too),
+  and a review bar above the grid, in the fix bar's language and staying in view while the grid scrolls, narrates the
+  turn in three beats (Reviewing the principle; the broken state in coral and why; the fixed state in mint, "Plumber
+  wrote the fix"), its lit number key matching the card's, nine dots filling mint through the round. When a fix lands
+  its check bursts with the fix bar's own burst (pieces of the visual language: hatched squares, stripes, dotted
+  margins, ticks), on a turn and on your own press. The burst moved from the fix bar into a shared module the fix
+  bar calls as before, served to the overlay (the build's check passed). A card you've pressed is skipped. Seen
+  playing in light and dark. Written into the interaction principles as 26c.
 
 ## Open gaps
 - The overlay writes about 180 corners as numbers (radius tokens about 45 times), many off its own scale; 6px is

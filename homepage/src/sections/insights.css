@@ -12,8 +12,36 @@
   font: var(--pl-round-w, 700) 12.5px/1 var(--pl-round); color: var(--ink-1); }
 .ins-x-families li span { font: 600 11px/1 var(--pl-mono); color: var(--pl-pink); }
 /* a bento: the play button the big tile, three wide ones, the rest single; wide and single swap sides row by row */
-.ins-x-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-auto-rows: auto; gap: 16px; margin-top: var(--s-8);
+.ins-x-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-auto-rows: auto; gap: 16px; margin-top: var(--s-6);
   grid-template-areas: 'play play album' 'play play timer' 'news shadow shadow' 'forecast forecast photo' 'tabs menu menu'; }
+
+/* ── the review bar: what Plumber is doing to the card on turn, in three beats (checking, found and why, fixed), in the
+   fix bar's language; it stays in view while the grid scrolls under it ── */
+.ins-review { position: sticky; top: 76px; z-index: 5; display: flex; align-items: center; gap: 10px; max-width: 46rem; min-height: 54px; margin: var(--s-7) auto 0; padding: 8px 14px 8px 8px;
+  border-radius: 18px; background: color-mix(in oklab, var(--pl-bg-surface) 90%, transparent); backdrop-filter: blur(14px) saturate(1.4); box-shadow: var(--pl-shadow-card);
+  --hue: var(--pl-sky); font: 400 14px/1.35 var(--font); color: var(--ink-2); }
+.ins-review[data-hue='pink'] { --hue: var(--pl-pink); } .ins-review[data-hue='mint'] { --hue: var(--pl-mint); } .ins-review[data-hue='lilac'] { --hue: var(--pl-lilac); } .ins-review[data-hue='butter'] { --hue: var(--pl-butter); }
+.ins-review-n { display: grid; place-items: center; flex: none; width: 36px; height: 36px; border-radius: 12px; translate: 0 -2px; color: #fff; font: var(--pl-round-w, 700) 14px/1 var(--pl-round);
+  background: linear-gradient(180deg, color-mix(in oklab, var(--hue) 82%, #fff), var(--hue)); transition: background 300ms var(--ease);
+  box-shadow: inset 0 1.5px 0 rgb(255 255 255 / .4), 0 2px 0 color-mix(in oklab, var(--hue) 70%, #000), 0 6px 10px -4px color-mix(in oklab, var(--hue) 70%, transparent); }
+.ins-review > .ins-toy { width: 22px; height: 22px; }
+.ins-review-say { flex: 1; min-width: 0; animation: ins-swap-in 320ms var(--ins-ease) both; }
+.ins-review-say b { font: var(--pl-round-w, 700) 15px/1.3 var(--pl-round); color: var(--ink-1); }
+.ins-review-dim { color: var(--ink-2); }
+.ins-review-tag { display: inline-flex; align-items: center; gap: 4px; height: 24px; margin-right: 6px; padding: 0 9px; border-radius: var(--pl-radius-pill); vertical-align: 1px;
+  font: var(--pl-round-w, 700) 12.5px/1 var(--pl-round); }
+.ins-review-tag.off { background: var(--pl-coral-soft); color: var(--pl-coral-ink); } .ins-review-tag.on { background: var(--pl-mint-soft); color: var(--pl-mint-ink); }
+.ins-review-tag svg { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+.ins-review-dots { display: flex; flex: none; gap: 4px; }
+.ins-review-dots i { width: 7px; height: 7px; border-radius: 50%; background: var(--pl-border-default); transition: background-color 300ms var(--ease), scale 300ms var(--pl-spring-pop); }
+.ins-review-dots i[data-done='true'] { background: var(--pl-mint); }
+.ins-review-dots i[data-on='true'] { scale: 1.45; background: var(--hue); }
+
+/* ── the spotlight: the card on turn lifts; the others sit still and a little quiet (pointing at one brings it up) ── */
+.ins-x-grid[data-live='true'] .ins-card { transition: translate 400ms var(--pl-spring-pop), opacity 400ms var(--ease), filter 400ms var(--ease), box-shadow 400ms var(--ease); }
+.ins-x-grid[data-live='true'] .ins-card:not([data-turn]) { opacity: .62; filter: saturate(.7); }
+.ins-x-grid[data-live='true'] .ins-card:not([data-turn]):hover { opacity: 1; filter: none; }
+.ins-x-grid[data-live='true'] .ins-card[data-turn] { translate: 0 -5px; box-shadow: var(--pl-shadow-card), 0 0 0 2px color-mix(in oklab, var(--hue) 70%, transparent), 0 26px 44px -22px color-mix(in oklab, var(--hue) 70%, transparent); }
 
 /* ── the card: paper, its stage on a coloured face, in our design language ── */
 .ins-card { --hue: var(--pl-sky); --face: var(--pl-sky-face); display: flex; flex-direction: column; padding: 10px; border-radius: 24px; background: var(--pl-bg-surface); box-shadow: var(--pl-shadow-card);
@@ -183,6 +211,6 @@
 @media (max-width: 40rem) { .ins-x { padding-left: var(--s-4); padding-right: var(--s-4); } .ins-x-grid { grid-template-columns: 1fr; } .ins-card[data-size='big'] { grid-column: auto; } .ins-card[data-size='big'] .sc-video { width: 260px; height: 156px; } }
 @media (prefers-reduced-motion: reduce) {
   .ins-state, .sc-play-btn svg, .sc-cover, .sc-recipe, .sc-glaze::after, .sc-pop, .ins-card, .ins-thumb, .ins-cam, .sc-day b em, .ins-check { transition: none; }
-  .ins-pill, .ins-digit { animation: none; }
+  .ins-pill, .ins-digit, .ins-review-say { animation: none; }
   .ins-swap { animation: none; }
 }

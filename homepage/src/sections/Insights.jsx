@@ -27,6 +27,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import './insights.css';
 import { toyOf } from '../../../overlay/src/toys.js'; // each principle wears its property's toy
+import { burst } from '../../../overlay/src/burst.js'; // a fix landing, in pieces of the visual language
 
 const FAMILIES = [['Interaction feel', 16], ['Typography', 15], ['Colour and light', 15], ['Layout and platform', 13], ['Alignment and balance', 6], ['Spacing and rhythm', 6], ['Rendering and pixels', 6]];
 const T = { cameraIn: 600, marks: 1600, fix: 3000, marksOut: 4500, cameraOut: 4800, alive: 5700, back: 7600, loop: 9000 };
@@ -43,6 +44,18 @@ export function Insights() {
     return () => io.disconnect();
   }, [reduced]);
 
+  // one card is reviewed at a time, in turn, and the bar above the grid says what Plumber is doing to it: checking,
+  // what it found and why, the fix. The rest sit still. A card you've pressed is skipped: it holds what you chose.
+  const [turn, setTurn] = useState(0), [phase, setPhase] = useState(0), [done, setDone] = useState(() => new Set());
+  const next = () => { setPhase(0); setTurn(t => { const n = (t + 1) % CARDS.length; if (n === 0) setDone(new Set()); return n; }); };
+  const beat = (i, step) => {
+    if (i !== turn) return;
+    const p = step >= STEP.fix ? 2 : step >= STEP.marks ? 1 : 0;
+    setPhase(p);
+    if (p === 2) setDone(d => (d.has(i) ? d : new Set(d).add(i)));
+  };
+  const c = CARDS[turn];
+
   return (
     <section className="ins-x" aria-labelledby="insights-title">
       <header className="ins-x-head">
@@ -53,15 +66,27 @@ export function Insights() {
           {FAMILIES.map(([name, n]) => <li key={name}>{name} <span className="tabular">{n}</span></li>)}
         </ul>
       </header>
-      <div ref={grid} className="ins-x-grid">
-        {CARDS.map((c, i) => <Card key={c.n} card={c} live={live} reduced={reduced} offset={i * 700} />)}
+      {!reduced && (
+        <div className="ins-review" data-phase={phase} data-hue={c.hue} aria-live="polite">
+          <span className="ins-review-n tabular">{c.n}</span>
+          <i className="ins-toy" aria-hidden="true" dangerouslySetInnerHTML={{ __html: toyOf(c.toy) }} />
+          <span key={`${turn}-${phase}`} className="ins-review-say">
+            {phase === 0 && <><span className="ins-review-dim">Reviewing</span> <b>{c.title}</b></>}
+            {phase === 1 && <><span className="ins-review-tag off">{c.states[0]}</span> {c.why}</>}
+            {phase === 2 && <><span className="ins-review-tag on">{c.states[1]}<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.5 6.5 11.5 12.5 4.5" /></svg></span> Plumber wrote the fix.</>}
+          </span>
+          <span className="ins-review-dots" aria-label={`${done.size} of ${CARDS.length} fixed`}>{CARDS.map((x, i) => <i key={x.n} data-done={done.has(i)} data-on={i === turn} />)}</span>
+        </div>
+      )}
+      <div ref={grid} className="ins-x-grid" data-live={live && !reduced}>
+        {CARDS.map((x, i) => <Card key={x.n} card={x} live={live} reduced={reduced} turn={live && turn === i} onBeat={step => beat(i, step)} onDone={next} />)}
       </div>
     </section>
   );
 }
 
 /* One insight and its moment. */
-function Card({ card, live, reduced, offset }) {
+function Card({ card, live, reduced, turn, onBeat, onDone }) {
   const stage = useRef(null), scene = useRef(null);
   const [fixed, setFixed] = useState(reduced);
   const [step, setStep] = useState(STEP.rest);
@@ -83,18 +108,30 @@ function Card({ card, live, reduced, offset }) {
     at(base + T.alive - T.cameraIn, () => setStep(STEP.home));
   };
 
+  // its turn: back to the mistake, the moment in place, a beat holding the fix, then the next card's turn. A card you
+  // pressed hands its turn straight on; pointing at the card on turn holds it, and leaving starts its turn again.
   useEffect(() => {
     clear();
-    if (reduced || !live || held || paused) return;
-    const loop = (first) => {
-      setFixed(false); setStep(STEP.rest); setCam(null);
-      moment(first + T.cameraIn);
-      at(first + T.back, () => { setFixed(false); setStep(STEP.rest); });
-      at(first + T.loop, () => loop(0));
-    };
-    loop(again.current ? 0 : offset); again.current = false;
+    if (reduced || !turn) return;
+    if (held) { at(0, onDone); return clear; }
+    if (paused) return;
+    setFixed(false); setStep(STEP.rest); setCam(null); setMarks(null); shown.current = null;
+    moment(T.cameraIn);
+    at(T.alive + 900, onDone);
     return clear;
-  }, [live, held, paused, reduced]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [turn, held, paused, reduced]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (turn) onBeat?.(step); }, [step, turn]); // eslint-disable-line react-hooks/exhaustive-deps
+  // the fix lands: its check bursts into pieces of the visual language
+  useEffect(() => {
+    if (step !== STEP.fix || !fixed || reduced) return;
+    const id = setTimeout(() => {
+      const el = stage.current?.querySelector('.ins-check[data-on="true"]');
+      if (!el) return;
+      const r = el.getBoundingClientRect();
+      burst(document.body, r.left + r.width / 2, r.top + r.height / 2, { pieces: 26 });
+    }, 900);
+    return () => clearTimeout(id);
+  }, [step, fixed]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // while the guides are up, they're read from the scene every frame something moves (the fix gliding, the number
   // settling, a scene that is motion itself); once still, they stop being read, so idle cards cost nothing
@@ -128,10 +165,10 @@ function Card({ card, live, reduced, offset }) {
   const { Scene } = card;
   const showMarks = marks && step >= STEP.marks && step <= STEP.out;
   return (
-    <article className="ins-card" data-hue={card.hue} data-size={card.size || undefined} style={{ gridArea: card.area }} onPointerEnter={() => setPaused(true)} onPointerLeave={() => setPaused(false)} aria-label={`${card.n}. ${card.title}`}>
+    <article className="ins-card" data-hue={card.hue} data-size={card.size || undefined} data-turn={turn || held || undefined} style={{ gridArea: card.area }} onPointerEnter={() => setPaused(true)} onPointerLeave={() => setPaused(false)} aria-label={`${card.n}. ${card.title}`}>
       <div ref={stage} className="ins-stage">
         <div ref={scene} className="ins-cam" style={cam ? { transform: `translate(${cam.x}px, ${cam.y}px) scale(${cam.k})` } : undefined} data-moving={!!cam}>
-          <Scene fixed={fixed} live={live && !reduced && (card.moving || step === STEP.rest || step === STEP.home)} />
+          <Scene fixed={fixed} live={live && !reduced && (turn || held) && (card.moving || step === STEP.rest || step === STEP.home)} />
         </div>
         {showMarks && <Marks marks={marks} fixed={fixed} out={step === STEP.out} card={card} />}
         <span className="ins-state" data-fixed={fixed} aria-hidden="true"><i className="ins-toy" dangerouslySetInnerHTML={{ __html: toyOf(card.toy) }} /><span key={fixed ? 'f' : 'b'} className="ins-swap">{card.states[fixed ? 1 : 0]}</span></span>

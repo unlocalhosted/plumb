@@ -29,6 +29,7 @@
  * Keys (while blueprint is on): Enter starts or fixes (written at once) · ↑ ↓ try · K keep it · → Tab skip · ← back · Esc put it down
  * ───────────────────────────────────────────────────────── */
 import { TextEditor, TEXT_EDITOR_CSS } from './texteditor.js';
+import { burst } from './burst.js'; // a fix landing, in pieces of the visual language
 import { SPRING, FIX_BUTTONS_CSS, FIX_NOTE_CSS, FIX_FIELD_CSS, fieldSays, shake, fit, fitFor } from './field.js'; // the fill-in parts, shared with the design site
 import { errorIs } from './api.js';
 import { ElementCard, ELEMENT_CARD_CSS } from './elementcard.js';
@@ -46,7 +47,6 @@ import { Claims, LEVEL } from './claims.js';
 const TIMING = { open: 260, next: 180, click: 60, clickGap: 45, breath: 480, check: 600, fold: 2300 };
 const CLICK = { drop: 3, over: -1, ms: 420 };
 const BREATH = { scale: 1.006, ms: 620 };
-const BURST = { pieces: 40, speed: [380, 760], spread: 1.1, gravity: 1100, spin: 9, life: 1600, size: [7, 11] };
 const EASE = 'cubic-bezier(.2, .8, .2, 1)';
 const SCALE = 0.62; // px of drawing per px of page, for padding specimens
 
@@ -977,30 +977,6 @@ export class FixPanel {
   #burst() {
     const at = this.#el.querySelector('.check')?.getBoundingClientRect();
     if (!at) return;
-    const ox = at.left + at.width / 2, oy = at.top + at.height / 2, dpr = devicePixelRatio || 1;
-    const cv = Object.assign(document.createElement('canvas'), { className: 'fx-burst', width: innerWidth * dpr, height: innerHeight * dpr });
-    this.#el.getRootNode().append(cv);
-    const ctx = cv.getContext('2d'); ctx.scale(dpr, dpr);
-    const HUES = { pad: '#1a9e62', gap: '#7a5cf0', mar: '#e2800a', ink: '#1c1b19' }, rand = (a, b) => a + Math.random() * (b - a);
-    const kinds = ['pad', 'pad', 'gap', 'gap', 'mar', 'mar', 'ink'];
-    const parts = Array.from({ length: BURST.pieces }, (_, i) => { const a = -Math.PI / 2 + rand(-BURST.spread, BURST.spread), v = rand(...BURST.speed); return { kind: kinds[i % kinds.length], x: ox, y: oy, vx: Math.cos(a) * v, vy: Math.sin(a) * v, r: rand(0, Math.PI * 2), vr: rand(-BURST.spin, BURST.spin), size: rand(...BURST.size), wobble: rand(0, 6) }; });
-    const paint = (p, alpha) => {
-      const s = p.size, c = HUES[p.kind];
-      ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.r); ctx.globalAlpha = alpha; ctx.scale(1, Math.abs(Math.cos(p.r * 0.6 + p.wobble)) * 0.6 + 0.4);
-      if (p.kind === 'pad') { ctx.fillStyle = '#fff'; ctx.fillRect(-s / 2, -s / 2, s, s); ctx.strokeStyle = c; ctx.lineWidth = 1.2; ctx.strokeRect(-s / 2, -s / 2, s, s); ctx.beginPath(); for (let k = -s; k < s; k += 2.6) { ctx.moveTo(k - s / 2, s / 2); ctx.lineTo(k + s / 2, -s / 2); } ctx.save(); ctx.rect(-s / 2, -s / 2, s, s); ctx.clip(); ctx.lineWidth = 1; ctx.stroke(); ctx.restore(); }
-      else if (p.kind === 'gap') { const w = s * 1.5, h = s * 0.62; ctx.fillStyle = c; for (let k = 0; k < 3; k++) ctx.fillRect(-w / 2, -h / 2 + k * (h / 2.5), w, h / 5); }
-      else if (p.kind === 'mar') { ctx.fillStyle = c; ctx.beginPath(); ctx.arc(0, 0, s / 2, 0, Math.PI * 2); ctx.globalAlpha = alpha * 0.25; ctx.fill(); ctx.globalAlpha = alpha; for (const [dx, dy] of [[-1, -1], [1, -1], [-1, 1], [1, 1], [0, 0]]) { ctx.beginPath(); ctx.arc(dx * s * 0.2, dy * s * 0.2, 1, 0, Math.PI * 2); ctx.fill(); } }
-      else { ctx.strokeStyle = c; ctx.lineWidth = 2; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.beginPath(); ctx.moveTo(-s * 0.4, 0); ctx.lineTo(-s * 0.1, s * 0.3); ctx.lineTo(s * 0.45, -s * 0.35); ctx.stroke(); }
-      ctx.restore();
-    };
-    let last = performance.now(); const t0 = last;
-    const tick = (now) => {
-      const dt = Math.min(0.033, (now - last) / 1000), t = now - t0; last = now;
-      ctx.clearRect(0, 0, innerWidth, innerHeight);
-      for (const p of parts) { p.vy += BURST.gravity * dt; p.vx *= 0.992; p.x += p.vx * dt; p.y += p.vy * dt; p.r += p.vr * dt; paint(p, Math.max(0, Math.min(1, (BURST.life - t) / (BURST.life / 3)))); }
-      if (t < BURST.life) return true;
-      cv.remove(); return false;
-    };
-    this.#life.frames(tick);
+    burst(this.#el.getRootNode(), at.left + at.width / 2, at.top + at.height / 2, { frames: (f) => this.#life.frames(f) });
   }
 }

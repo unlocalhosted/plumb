@@ -106,6 +106,10 @@ pickers.
     up the moment it's pressed; it never cues a scripted sequence that lands later. A press stops that demo's tour
     for good and the demo holds what was chosen; a Replay hands it back. ("clicking on broken to fixed ... I don't
     see what is happening ... does the click not register?")
+26c. **One thing moves at a time, and it is said.** Where several demos share a screen, one plays at a time and the
+    rest sit still; a line in the product's own words says what is happening to it (checking, what was found and
+    why, the fix), and its number points at it. A fix that lands is rewarded (the burst), not just swapped. ("it will
+    all feel like random things are happening which I am not aware of"; "doesn't set the context well")
 27. **Every state is distinguishable at a glance:** hard-coded (coral), on a token (blue outline, pale green tick),
     written (green outline, solid green tick).
 28. **Preview, then write.** Changes show on the page as previews; only an explicit Apply, tick or Enter writes to
