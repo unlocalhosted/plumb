@@ -15,7 +15,7 @@
  *             horizontal scroller, the page). N walks to the next place the same way and Shift+N back,
  *             with the row saying which place of how many (3 of 20)
  *  fix        Enter (or Fix all) opens the chooser for the whole group at its first place in view: one pick is made
- *             at every place, and Write sends each source line's edit once, one apply per file (blueprint-fix.js)
+ *             at every place, and Write sends each source line's edit once, one apply per file
  *  picked     a row whose places are all picked says what they become; written rows leave with their marks
  *  pointed    pointing at a row outlines its places, the way selecting does, until the pointer leaves
  *  fold       at rest the panel is one line in the top-right corner (71 off · 6 causes), so the page stays in view.

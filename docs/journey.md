@@ -339,11 +339,16 @@
 - **Not done:** not looked at in the running clean-up panel; the panel's plain names for the new styles are untouched; the text-role test still names the old styles and was not run; labels inside controls are still not a job of their own (label styles force capitals).
 - **Media hooks:** the before/after table of styles; the 17px row.
 
+## The old chooser module is gone (2026-11-12)
+- **The itch:** an unused module of 758 lines (the old chooser card and punch list) was still in the overlay's source, and it had already cost one fix made in the wrong place. The owner: "Yes, remove it".
+- **How we found it:** searching for anything that loads it: nothing in the overlay, the server, the tests or the demos. Earlier notes in the repo had already marked it retired.
+- **The fix and the proof:** the file is deleted, its name is off the server's list of files it will hand to a page, and the one comment that pointed to it is corrected. The server's code type-checks, and on crafting-ui the overlay loads and reads the page as before (7 findings on the same page).
+- **Left as it is:** older briefs and reviews in docs still name the file; they are a record of their time. The server's built copy was not rebuilt, so it still lists the name until the next build; nothing asks for it.
+
 ## Open gaps
 - **Text styles after the job split:** unseen in the clean-up panel; its plain names and the text-role test still assume the old style names; non-capital labels inside buttons have no label style (labels force capitals); a fluid hero title stays in the display style because its measured size is not read.
 - **Text roles: how the signals combine is undecided** (docs/research/text-role-signals.md §5): what wins when the tag and the look disagree (a 12px capital heading), and whether unsure places go to a model's eye. Only crafting-ui is measured; no LLM-written app.
 - A fix from the fix card on a wrapped element is proven by hand. Two neighbours share the same repaired place-finder but were not driven by hand: a fix taken on the element itself, and the follow-up class written after a new theme token.
-- The old chooser and punch list module (about 750 lines) is loaded by nothing and could be removed.
 - plumber's read reports a finding on a wrapped element at the component's line, not where it is used; the fix card says "Changed X to Y" when Y was added beside X.
 - Undo shows on the page about 0.6 s later than a write does; a write on crafting-ui takes about 450 ms against about 60 ms on a small project. Neither cause is measured.
 - Several writes in quick succession sometimes reload the showcase page.
