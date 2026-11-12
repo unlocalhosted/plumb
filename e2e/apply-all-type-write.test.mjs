@@ -4,7 +4,7 @@
 // undo-group refused the step ("The change would leave the stylesheet unreadable"), because taking the @utility block
 // back drops top-level blocks. Real session server, real files; nothing is mocked.
 import assert from 'node:assert/strict';
-import { cp, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { cp, mkdtemp, readFile, rm, writeFile, readdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
@@ -17,6 +17,9 @@ async function project(t) {
   const root = await mkdtemp(join(repo, 'fixtures/.type-write-'));
   t.after(() => rm(root, { recursive: true, force: true }));
   await cp(join(repo, 'overlay/demo/src'), join(root, 'src'), { recursive: true });
+  // the demo's scaffold only (its entry and theme): its screens are not the standards page, and a screen added to the
+  // demo later would put its own text in the proposal
+  for (const f of await readdir(join(root, 'src'))) if (!['entry.jsx', 'styles.css'].includes(f)) await rm(join(root, 'src', f), { recursive: true, force: true });
   await cp(join(repo, 'overlay/demo/index.html'), join(root, 'index.html'));
   await cp(join(repo, 'fixtures/crafting-ui-standards/src'), join(root, 'src'), { recursive: true });
   await writeFile(join(root, 'src/App.jsx'), `import { MotionStandardsPage } from './pages/MotionStandardsPage.tsx';\nexport function App() { return <MotionStandardsPage />; }\n`);
@@ -136,6 +139,9 @@ test('a long, live apply-all on the Vite host is not released and reloaded befor
   const root = await mkdtemp(join(repo, 'fixtures/.type-write-hot-'));
   t.after(() => rm(root, { recursive: true, force: true }));
   await cp(join(repo, 'overlay/demo/src'), join(root, 'src'), { recursive: true });
+  // the demo's scaffold only (its entry and theme): its screens are not the standards page, and a screen added to the
+  // demo later would put its own text in the proposal
+  for (const f of await readdir(join(root, 'src'))) if (!['entry.jsx', 'styles.css'].includes(f)) await rm(join(root, 'src', f), { recursive: true, force: true });
   await cp(join(repo, 'overlay/demo/index.html'), join(root, 'index.html'));
   await cp(join(repo, 'fixtures/crafting-ui-standards/src'), join(root, 'src'), { recursive: true });
   await writeFile(join(root, 'src/App.jsx'), `import { MotionStandardsPage } from './pages/MotionStandardsPage.tsx';\nexport function App() { return <MotionStandardsPage />; }\n`);
