@@ -42,6 +42,7 @@ function Sidebar() {
         <span className="font-semibold text-[15px]">Tally</span>
       </div>
       <nav className="flex flex-col gap-1">
+        <span id="nav-label" className="px-3 pb-1 text-[11px] font-medium uppercase text-gray-400">Workspace</span>
         <NavItem icon={<Home size={18} />} label="Overview" active />
         <NavItem icon={<Folder size={18} />} label="Projects" count={12} />
         <NavItem icon={<Users size={18} />} label="Team" />

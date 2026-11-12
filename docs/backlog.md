@@ -50,7 +50,8 @@ reserved.)
 **The order** (decided 2026-11-12):
 
 - **Now:** a class fix offered and then refused · a read in a window with no size.
-- **Next:** craft's step suggestions read the role · the two failing tests that are real bugs · a test for a theme named by size.
+- **Next:** the bar on Linux fonts · padding read by job · a test for a theme whose radii are named by size · the
+  craft-token and Next performance tests.
 - **Later:** shadows, borders, motion, opacity and states · surface levels · shadcn's foreground colours · growing hero
   titles · the speed items · the remaining defensive tips · the 80-column report · the flaky tests.
 
@@ -113,8 +114,10 @@ reserved.)
 
 ### Craft suggestions
 
-- A suggested step (spacing, radius, tracking, leading) is chosen by nearness to the standard's number; the role of
-  the element is not read, as the clean-up reads it. Colour is done: it keeps to the tokens for the job.
+- A step suggestion prefers the theme step named for the job only by the words in its name (caps, label, display,
+  body, button…). A theme that names its steps another way gets the step nearest the standard's number, as before.
+- The job a craft rule works with is the rule's own (small capitals, big text, a button); it is not yet the element's
+  role as the clean-up reads it (a tag, a control, a card).
 - The same page gives different craft findings on a Mac and on Linux (two of them depend on the fonts' measurements).
 - The suggestion engine's ranking and the standard's numbers name no source where they are defined
   (docs/PRINCIPLES.md, known debt).

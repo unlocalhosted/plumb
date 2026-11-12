@@ -30,6 +30,9 @@
   --color-warning: #b7791f;
   --color-danger: #c92a2a;
 
+  --tracking-wide: 0.05em;
+  --tracking-caps: 0.08em;
+
   --text-caption: 12px;
   --text-body: 14px;
   --text-title: 17px;

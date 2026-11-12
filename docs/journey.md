@@ -636,6 +636,12 @@
 - **The proof:** same element, same run: before, `line-strong` (a border colour, for text); after, no text colour is close enough, so plumber gives advice with the colour it draws as. The four craft tests that cover faded text and grey levels pass.
 - **Also:** the noise check accepted a new finding on the demo. It turned out the demo gives one extra finding on Linux (two text sizes centred, baselines 1.8px apart) and a different one on a Mac (rows held apart only by leftover space). Both are real on that page and depend on the machine's fonts; the check now allows either. That the same page reads differently by machine is in the backlog.
 
+## A step suggestion takes the step named for the job (2026-11-12)
+- **The itch:** when two of the theme's steps fit, craft took the one nearest the standard's number. Small capitals with no letter spacing, in a theme with `--tracking-wide: 0.05em` and `--tracking-caps: 0.08em`, were offered `tracking-wide`, because 0.05 is nearer the standard's 0.06.
+- **Decided by Claude:** a step the project named for the job is its own decision for that job, and outranks a step that is merely nearer in value: the role, then the value, as the clean-up decides. The reason says "your step for this".
+- **The proof:** the messy page now has those two steps and a capitals label with no spacing; its test checks craft offers `tracking-caps` with that reason, and passes. With only `wide` in the theme, `tracking-wide` is still offered. The craft, selection, new-token and spec tests pass.
+- **What it does not do:** it goes by the words in the token's name; a theme that names steps another way is decided by value, as before.
+
 ## Open gaps
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
 

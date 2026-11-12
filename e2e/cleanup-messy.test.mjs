@@ -7,6 +7,7 @@
 //   icons    a 16px icon among four 18px in one nav was not seen; and a size passed as a prop could not be written
 //   text     a dashboard's big numbers were folded into a heading style and shrank
 //   controls a border added to one button of a pair made it 42px, and nothing read a control's height
+//   craft    a theme step nearer the standard's number beat the step the theme names for the job
 //   corners  no pass: a card at the control's 8px is on a token by value and on the wrong one by job
 // Real Vite, React, Tailwind, the real CLI and Chromium; the panel is driven by its keys; every write is read back from
 // the source file.
@@ -87,6 +88,13 @@ test('a messy page is put back on its own design system: spacing on the theme\'s
   assert.deepEqual(colour.moved, [], 'no title is folded onto another grey');
   assert.equal(colour.why.length, 1, JSON.stringify(colour));
   assert.match(colour.why[0], /as muted it would read the same as the words beside it/, colour.why[0]);
+
+  // a craft suggestion: small capitals with no letter spacing. The theme has two steps in range, `wide` (0.05em, nearest
+  // the standard's number) and `caps` (0.08em, named for the job): the one named for the job is the project's answer
+  const craft = await s.page.evaluate(async () => (await window.__plumb.craft({ timeout: 60000, hidden: true, scope: 'aside' })).findings.filter((f) => f.rule === 'craft/tracking').map((f) => f.suggest));
+  assert.equal(craft.length, 1, JSON.stringify(craft));
+  assert.equal(craft[0].to, 'tracking-caps', JSON.stringify(craft[0]));
+  assert.match(craft[0].why, /your step for this/, craft[0].why);
 
   await s.page.keyboard.press('Alt+B'); await s.until(/Clean up/);
   await s.page.keyboard.press('c'); await s.until(/Apply to this page|already|Next/);
