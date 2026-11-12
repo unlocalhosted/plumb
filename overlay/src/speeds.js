@@ -17,6 +17,7 @@
  * ───────────────────────────────────────────────────────── */
 import { classesOf } from './craft-read.js';
 import { controlKind, roleOf } from './roles.js';
+import { sourceTexts } from './theme-source.js';
 
 const SAME = 0.2; // two durations within a fifth read as one speed (Grondin 2001: Weber fraction 5–20%)
 const msOf = (v) => { const m = /^\s*([\d.]+)(ms|s)\s*$/.exec(v ?? ''); return m ? Number(m[1]) * (m[2] === 's' ? 1000 : 1) : null; };
@@ -29,28 +30,11 @@ function* rules(list) {
   }
 }
 
-// The theme's speeds as written in its source, used or not: Tailwind puts only the utilities a page uses into its CSS,
-// so a speed nothing uses yet is in the source alone. Vite hands any file out as text (?raw); the entry stylesheets are
-// the ones it injected (data-vite-dev-id), and their relative @imports are followed. Elsewhere: the page's CSS only
+// The theme's speeds as written in its source, used or not (theme-source.js): a speed nothing uses yet is there alone
 let SOURCE = new Map();
 export async function loadSpeeds() {
-  const found = new Map(), seen = new Set();
-  const read = async (path, depth) => {
-    if (seen.has(path) || depth > 3) return;
-    seen.add(path);
-    let text;
-    try {
-      const r = await fetch(`/@fs${path}?raw`);
-      if (!r.ok) return;
-      text = JSON.parse(/export default (".*")/s.exec(await r.text())?.[1] ?? '""');
-    } catch { return; }
-    for (const m of text.matchAll(/@utility\s+duration-([a-z][a-z-]*)\s*\{[^}]*?transition-duration\s*:\s*([\d.]+(?:ms|s))/g)) if (!found.has(m[1])) found.set(m[1], msOf(m[2]));
-    for (const m of text.matchAll(/@import\s+["'](\.{1,2}\/[^"']+\.css)["']/g)) await read(new URL(m[1], `file://${path}`).pathname, depth + 1);
-  };
-  for (const s of document.querySelectorAll('style[data-vite-dev-id]')) {
-    const id = s.getAttribute('data-vite-dev-id');
-    if (id?.startsWith('/') && /\.css$/.test(id) && !id.includes('/node_modules/')) await read(id, 0);
-  }
+  const found = new Map();
+  for (const { text } of await sourceTexts()) for (const m of text.matchAll(/@utility\s+duration-([a-z][a-z-]*)\s*\{[^}]*?transition-duration\s*:\s*([\d.]+(?:ms|s))/g)) if (!found.has(m[1])) found.set(m[1], msOf(m[2]));
   SOURCE = found;
   return themeSpeeds();
 }

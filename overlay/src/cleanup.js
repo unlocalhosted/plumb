@@ -1,7 +1,7 @@
 /* ─────────────────────────────────────────────────────────
  * CLEAN UP THIS PAGE · React Plumber overlay (docs/briefs/page-cleanup.md, mock: docs/briefs/page-cleanup/mock.html)
  *
- * The page worked through in passes (text, spacing, colour, icons, corners, controls, shadows, timings), each read, previewed, then applied as one step
+ * The page worked through in passes (text, spacing, colour, icons, corners, controls, shadows, timings, disabled states), each read, previewed, then applied as one step
  * that History can undo whole. It lives in the fix panel: the panel's body is handed to it while a clean-up runs.
  *
  *  stepper   the four passes along the top, each with this page's count; the one in hand, the ones done (✓), the
@@ -45,8 +45,9 @@ const SWAP_LAWS = {
   sizes: [{ id: 'similarity', name: 'Law of similarity' }],
   shadows: [{ id: 'similarity', name: 'Law of similarity' }, { id: 'common-region', name: 'Law of common region' }],
   speeds: [{ id: 'similarity', name: 'Law of similarity' }],
+  states: [{ id: 'similarity', name: 'Law of similarity' }, { id: 'jakob', name: 'Jakob’s law' }],
 };
-const PASSES = ['text', 'spacing', 'colour', 'icons', 'radius', 'sizes', 'shadows', 'speeds'];
+const PASSES = ['text', 'spacing', 'colour', 'icons', 'radius', 'sizes', 'shadows', 'speeds', 'states'];
 // where a clean-up is, kept in the tab: a write (or its undo) can reload the page, and the clean-up comes back to it
 const KEPT = 'plumb:cleanup', FRESH = 60000;
 const keep = (v) => { try { v ? sessionStorage.setItem(KEPT, JSON.stringify({ ...v, at: Date.now(), path: location.pathname })) : sessionStorage.removeItem(KEPT); } catch {} };
@@ -149,7 +150,8 @@ export class Cleanup {
   // (the server lists the overlay's files when it starts), and one missing file must not take the whole overlay with it.
   // Until it arrives, or if it never does, the step shows as not there yet and is skipped
   #late = Promise.all([import('./elevation-pass.js').then((m) => { this.#swaps.shadows = new m.ElevationPass(); }, () => {}),
-    import('./speeds-pass.js').then((m) => { this.#swaps.speeds = new m.SpeedsPass(); }, () => {})]);
+    import('./speeds-pass.js').then((m) => { this.#swaps.speeds = new m.SpeedsPass(); }, () => {}),
+    import('./states-pass.js').then((m) => { this.#swaps.states = new m.StatesPass(); }, () => {})]);
   // renaming the colour tokens by job: null until the colour step reads a plan; then { plan, open, busy, done, err }
   #rn = null;
   get #sw() { return this.#swaps[PASSES[this.#pass]]; } // the pass in hand, when it is a class-swap pass

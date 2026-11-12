@@ -741,6 +741,14 @@
 - **The system behind it:** the server kept a fixed list of the overlay's files, read when it started.
 - **The fix:** the list stays, and any file directly in the overlay's source folder that exists when it is asked for is served too. Only a plain name in that folder is accepted, so no path can leave it. Proof: a file made after the server started was served; a path escape and a missing file were refused; the file-serving test passes.
 
+## The disabled look: the ninth clean-up pass (2026-11-12)
+- **The itch:** a disabled control is faded by a different amount per prompt. On algorecall disabled controls fade to seven opacities (30, 35, 40, 50, 60, 70, 80) across about 138 places; crafting-ui's home page fades its two by 30% where its other disabled look is 40%.
+- **The ground:** unavailable is one state, so it is one decision; Material 3 gives disabled content one opacity, 38%. The theme's own disabled opacity leads when it names one; otherwise Material's, on the nearest step every Tailwind version has (`opacity-40`). Spec: docs/briefs/pass-states.md.
+- **What it does:** every opacity set for a disabled state (`disabled:`, `aria-disabled:`, `data-[disabled]:`, group and peer forms) goes to the one value, its variant kept. Contrast stays with the existing disabled-contrast check, which already advises muted colours when faded words can't be read.
+- **Before and after on crafting-ui:** home page, 2 places in the wall of examples, `disabled:opacity-30` to `disabled:opacity-40`; the other three pages have none. Not applied to its source.
+- **Proof:** the messy-page test: three buttons at 40, 50 and 60 become one, written to the file; the one already at 40 is left.
+- **Shared on the way:** the stylesheet-source reader the timings pass needed is now its own file, used by both.
+
 ## Open gaps
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
 
@@ -748,6 +756,8 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - Plumber's text styles write into crafting-ui without shrinking headings or large numbers, keep classes that only apply to part of the text, and keep paragraph leading off headings ([entry](#big-text-no-longer-shrinks-to-fit-small-text-the-dark-page-checked-2026-11-12)).
 - crafting-ui's vocabulary page loads about four times lighter (9,474 → 2,007 elements): each live example mounts only as it comes near the screen. [entry](#crafting-uis-vocabulary-page-live-examples-mount-only-near-the-screen-2026-11-12)
 - plumber finds a side column that is set to stick but can't, and fixes it with one class: on crafting-ui's skill pages the column now stays beside the text where it used to scroll away. [entry](#the-sticky-check-on-a-real-app-crafting-uis-skill-pages-2026-11-12)
+- The clean-up has a ninth pass, the disabled look: every disabled control fades by one amount, the theme's or Material's ([entry](#the-disabled-look-the-ninth-clean-up-pass-2026-11-12)).
+- A new plumber overlay file no longer needs the app's dev server restarted ([entry](#a-new-overlay-file-no-longer-needs-a-server-restart-2026-11-12)).
 - The clean-up has an eighth pass, timings: a duration written by hand that is already one of the theme's speeds takes its name, and a theme that names one speed twice is told ([entry](#timings-the-eighth-clean-up-pass-2026-11-12)).
 - Every plumber pass now agrees on what an element is: a link drawn as a button gets a button's label style, height and padding; a linked card stays a card ([entry](#every-reader-asks-the-one-role-file-2026-11-12)).
 - `plumber craft` reads each page at four window widths and with the pointer over things, so an overlap that only shows on a tablet or on hover is found without anyone setting the page up ([entry](#plumber-reads-the-page-at-four-widths-and-under-the-pointer-2026-11-12)).

@@ -11,6 +11,7 @@
 //   shadows  cards cast a framework shadow while the theme names one for a resting card; nothing read it by job
 //   timings  hand-written durations (160ms, 300ms) sit within a fifth of the theme's named speeds (fast, base), which
 //            nothing on the page uses yet (so they are only in the stylesheet's source); a 700ms one is a speed of its own
+//   disabled three buttons fade to 40, 50 and 60% when disabled; the theme names no disabled opacity
 //   corners  no pass: a card at the control's 8px is on a token by value and on the wrong one by job
 // Real Vite, React, Tailwind, the real CLI and Chromium; the panel is driven by its keys; every write is read back from
 // the source file.
@@ -184,5 +185,14 @@ test('a messy page is put back on its own design system: timings on its named sp
   const timed = await s.written(/text-gray-500 transition-colors duration-base"/);
   assert.match(timed, /text-sm transition-colors duration-fast \$\{active/, 'the nav link takes the fast speed');
   assert.match(timed, /hover:text-gray-600 transition-colors duration-700"/, 'a speed of its own is left');
+
+  // the disabled look: three buttons fade by three amounts when disabled; the theme names none, so Material's 38% on
+  // the framework's nearest step (40) is the one. The one already at 40 is left
+  const states = await s.pass(/Disabled controls here fade to 3 different amounts\. After this, 1\./);
+  assert.match(states, /Material’s 38%/, states);
+  await s.page.keyboard.press('Enter');
+  const faded = await s.written(/py-1\.5 disabled:opacity-40"/);
+  assert.match(faded, /"disabled:opacity-40 flex items-center gap-1\.5 bg-accent/, 'the 50% one takes the one disabled look');
+  assert.match(faded, /"disabled:opacity-40 bg-white text-indigo-700/, 'the one already there is left as it was');
   assert.deepEqual(s.errors, []);
 });

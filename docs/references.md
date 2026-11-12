@@ -60,3 +60,9 @@
 - What it changed: the timings pass folds a hand-written duration into the named speed within a fifth, and leaves anything further.
 - Used in: overlay/src/speeds.js; docs/briefs/pass-motion.md; journey entry "Timings: the eighth clean-up pass".
 
+## 2026-11-12 · Material 3 interaction states: disabled at 38% (found by us)
+- What: [Material Design 3, interaction states](https://m3.material.io/foundations/interaction/states): disabled content at 38% opacity; hover and pressed as state layers over the content colour.
+- Why: to ground one disabled look for an app whose theme names none.
+- What it changed: the disabled-look pass puts every disabled opacity on the theme's value or on 40% (Material's 38% on the nearest framework step).
+- Used in: overlay/src/states.js; docs/briefs/pass-states.md; journey entry "The disabled look: the ninth clean-up pass".
+

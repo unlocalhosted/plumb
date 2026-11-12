@@ -39,6 +39,7 @@ engineer would do." These calls were open questions until then. Each is decided 
 | A row of links with one painted | All of them are controls (a tab bar) | WAI-ARIA tabs: one is active, the rest are the same kind |
 | A painted link holding lines of words | A card you can open, not a button | A button is one label on one line |
 | When two durations are the same speed | Within a fifth of each other | People cannot tell them apart closer than that (Weber fraction for time, 5–20%) |
+| One disabled opacity when the theme names none | Material's 38%, as `opacity-40` | A published system's value, on the step every Tailwind version has |
 | The most impactful next piece | One shared reading of what each element is, used by every pass and craft rule | Seven places decide "is this a control" today; on four crafting-ui pages they disagree on 137 of 174 elements, 134 of them links |
 | The four "proposed to drop" lines | Dropped | Not observed problems |
 
@@ -133,9 +134,14 @@ reserved.)
 - Easing, delays, staggers and keyframe animations are not decided; easing has craft rules only.
 - A theme that names a speed twice (a class and a variable at two values) is said, not settled.
 
+### Clean-up: the disabled look
+
+- Hover and pressed looks are not decided (Material's state layers); only the disabled opacity.
+- A disabled look drawn with muted colours instead of opacity is not read.
+
 ### Primitives with no clean-up pass
 
-- Opacity and states, layer order, breakpoints and container widths.
+- Hover and pressed states, layer order, breakpoints and container widths.
 
 ### What an element is (the shared role layer)
 
