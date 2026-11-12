@@ -24,3 +24,9 @@
 - What it changed: nothing in code yet. It showed two of plumber's suggestion decisions go against practice (choosing one answer when several fit; choosing a colour by its value) and two have no source.
 - Used in: docs/research/suggestion-sources.md; journey entry "The suggestion engine, checked against practice".
 
+## 2026-11-12 · What a text style's role is, by the people who define them (found by us)
+- What: [material-web's typography doc](https://github.com/material-components/material-web/blob/main/docs/theming/typography.md) (styles "are organized into roles that describe their purpose"), [MDN's HTML elements reference](https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements) (what each tag says the text is), and Material's per-role wording read only second-hand (m3.material.io and Apple's typography page would not load).
+- Why: to ground what plumber should read when it decides which text style a place is, after the owner's "there has to be a principle behind the suggestion".
+- What it changed: nothing in code. It grounds the principle "a text style names a job; the size belongs to the job".
+- Used in: docs/research/text-role-signals.md; journey entry "Text is folded by size alone".
+

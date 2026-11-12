@@ -302,7 +302,16 @@
 - **The proof:** on crafting-ui, a class added to a link drawn by the shared Link component landed in the page that uses it, inside the fixed part of its class template; all 4 links of that list wore it; undo put the file back exactly (git shows no change). This used the same two calls the changed flow makes.
 - **Not proven:** the flow was not driven by hand on the page (enter the blueprint, pick a fix, write). The overlay loads with the change and shows no errors, which is all that was seen of it running.
 
+## Text is folded by size alone (2026-11-12)
+- **The itch:** the owner's model for a single decision is "the role, where the text is, the nearest token". For text, plumber reads only the size and whether it is capitals.
+- **How we found it:** ran today's rule over the 550 text places measured on crafting-ui on 2026-10-31, which carry each place's tag, what it sits inside, the shape of its words and its line count (`node bench/type-roles/signals.mjs bench/type-roles/measurements.roles.json`).
+- **What it showed:** size alone calls 37 of 106 paragraphs a heading kind, 8 of 66 headings a label or body, and 29 of 80 controls and captions something other than a label. At 17px a card's name, a section heading and an eight-line paragraph all get one role. 295 of the 550 places are a plain span, so the tag alone cannot carry it either.
+- **The system behind it:** the signed-off design says text is read "with its context (tag, landmark, content shape, how often it repeats)". The earlier research said its roles were clustered on context, but its script assigned by size and only printed the context beside it. The engine was built from the script.
+- **What we chose and why:** nothing built. The written piece (docs/research/text-role-signals.md) states the principle, "a text style names a job; the size belongs to the job", grounded in how Material and HTML define text, and lists the signals an experienced person reads. It sets no numbers.
+- **Media hooks:** the 17px row: four places, four jobs, one role today.
+
 ## Open gaps
+- **Text roles: how the signals combine is undecided** (docs/research/text-role-signals.md §5): what wins when the tag and the look disagree (a 12px capital heading), and whether unsure places go to a model's eye. Only crafting-ui is measured; no LLM-written app.
 - Taking a fix on the page for an element drawn by a wrapper component now writes at its usage, but that flow has not been clicked through by hand since the change.
 - Undo shows on the page about 0.6 s later than a write does; a write on crafting-ui takes about 450 ms against about 60 ms on a small project. Neither cause is measured.
 - Several writes in quick succession sometimes reload the showcase page.
