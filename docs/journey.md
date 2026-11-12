@@ -310,9 +310,19 @@
 - **What we chose and why:** nothing built. The written piece (docs/research/text-role-signals.md) states the principle, "a text style names a job; the size belongs to the job", grounded in how Material and HTML define text, and lists the signals an experienced person reads. It sets no numbers.
 - **Media hooks:** the 17px row: four places, four jobs, one role today.
 
+## Clicked through by hand: the fix card was the path that mattered, and it was still broken (2026-11-12)
+- **The itch:** the wrapper fix had only been proven one level below the flow people use. The owner: "Yes, click it through".
+- **How we found it:** on crafting-ui, by hand: Blueprint on, Fix, and "Use" on the first problem, a too-heavy divider on the three header links, which are drawn through the shared Link component. The card answered "The change could not be written: This element spreads props, which may carry className; change the class by hand." The file was untouched.
+- **The system behind it:** there are two on-page write paths, and the earlier fix changed the other one. The fix card's write found each element's own line and wrote there, so for anything drawn through a component it reached the component and was refused.
+- **The fix:** the fix card's write now asks where the classes are written, the same way the cards do, and sends one edit per place (rows drawn by one line share it).
+- **The proof, by hand:** the same three clicks again. The card said "Changed … at 1 place", and the two classes were in the header file on the line where the links are used, inside the fixed part of their class template; the Link component's file was untouched. plumber's own Undo then said "Undone. Your code is back as it was." and the file was byte-for-byte what it was before (same checksum).
+- **Still not clicked:** the other on-page path changed earlier (picking fixes in the chooser and writing them together), and a third place that still writes at the element's own line (a follow-up class written after a token change).
+- **Noticed:** the card's line reads "Changed border-line-strong to border-r-0 …" although border-line-strong is still there; and plumber's read reports this finding at the Link component's line, not where the link is used.
+
 ## Open gaps
 - **Text roles: how the signals combine is undecided** (docs/research/text-role-signals.md §5): what wins when the tag and the look disagree (a 12px capital heading), and whether unsure places go to a model's eye. Only crafting-ui is measured; no LLM-written app.
-- Taking a fix on the page for an element drawn by a wrapper component now writes at its usage, but that flow has not been clicked through by hand since the change.
+- A fix from the fix card on a wrapped element is proven by hand. Two neighbours are not: writing several picked fixes together, and the follow-up class written after a token change (which still writes at the element's own line).
+- plumber's read reports a finding on a wrapped element at the component's line, not where it is used; the fix card says "Changed X to Y" when Y was added beside X.
 - Undo shows on the page about 0.6 s later than a write does; a write on crafting-ui takes about 450 ms against about 60 ms on a small project. Neither cause is measured.
 - Several writes in quick succession sometimes reload the showcase page.
 - **Single decisions read uneven signals** (read 2026-11-12, code only): colour decides from the role of the place (control, link, field, status, text or surface or line) and then the nearest token, with a contrast guard; text decides a place's role from its size and capitals alone, though its tag and whether it sits in a list are collected; spacing knows the app's scale and whether siblings are alike, not what the space is between; radius has no pass. No shared reading of "what is this thing" feeds them all.

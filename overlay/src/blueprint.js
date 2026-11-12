@@ -36,7 +36,7 @@ import { FixPanel, FIX_CSS } from './fixpanel.js'; // the one place you act: a c
 import { FIX } from './words.js';
 import { hasText } from './texteditor.js';
 import { post, request } from './api.js';
-import { locate } from './locate.js';
+import { locate, classEditsOf } from './locate.js';
 
 const FADE_IN = 160, FADE_OUT = 120; // ms, the same as --pl-dur-dim and --pl-dur-undim
 
@@ -461,11 +461,22 @@ export class Blueprint {
       // every change on the element as one class edit against its classes as written
       const edit = elementEdit(b.classes, b.writes ?? [], b.props);
       if (!edit) { out.push({ el: b.el, ok: false, why: 'This change can’t be written as classes here.' }); continue; }
-      const site = b.site ?? await this.#siteOf(b.el).catch(() => null);
-      if (!site) { out.push({ el: b.el, ok: false, why: 'Can’t reach this in your code.' }); continue; }
-      const f = files.get(site.file) ?? files.set(site.file, { hash: site.hash, edits: [], els: [] }).get(site.file);
-      f.edits.push({ line: site.line, column: site.column, from: edit.from, to: edit.to });
-      f.els.push(b.el);
+      // where the classes are written (locate.js classEditsOf, as every card asks): the element's own string, or the
+      // usage that passes them in when the element is drawn by a wrapper (a Link, a Button). Written at the element's
+      // own line alone, a fix on anything drawn through a component was refused
+      let edits;
+      if (b.site) edits = [{ file: b.site.file, hash: b.site.hash, edit: { line: b.site.line, column: b.site.column, from: edit.from, to: edit.to } }];
+      else {
+        try { edits = await classEditsOf(b.el, edit.from, edit.to); }
+        catch (error) { out.push({ el: b.el, ok: false, why: error?.message ?? 'Can’t reach this in your code.' }); continue; }
+      }
+      for (const e of edits) {
+        const f = files.get(e.file) ?? files.set(e.file, { hash: e.hash, edits: [], els: [], seen: new Set() }).get(e.file);
+        // rows drawn by one line share a place: the edit is sent once
+        const key = JSON.stringify([e.edit.line, e.edit.column, e.edit.at ?? null, e.edit.from, e.edit.to]);
+        if (!f.seen.has(key)) { f.seen.add(key); f.edits.push(e.edit); }
+        if (!f.els.includes(b.el)) f.els.push(b.el);
+      }
     }
     for (const [file, f] of files) {
       try {
