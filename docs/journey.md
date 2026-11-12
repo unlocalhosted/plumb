@@ -294,8 +294,16 @@
 - **The gap that matters:** the wrapper case. On crafting-ui every link is drawn by one small Link component, so a link's classes, written where the link is used, cannot be written at all: plumber finds the component's own line and stops there. Whether the overlay's own fix flow gets further than this direct call was not checked.
 - **Also seen:** 1 of 11 writes on the showcase page reloaded the whole page (after several writes in quick succession). Both crafting-ui files are as they were (git shows no change).
 
+## A fix on a link now reaches the line where the link is used (2026-11-12)
+- **The itch:** the write round found that a class passed through a wrapper component could not be written; on crafting-ui that is every link. The owner chose it first: "Wrapper components".
+- **A correction first:** the round's report said plumber cannot do this at all. It can. The element card, Tidy and the text editor already follow a class to the usage that passes it in. The round called the write directly, without telling the server which usages sit above the element, and that call is refused by design.
+- **The system behind it:** one flow did not use that shared path: taking a fix on the page itself. It wrote at the element's own line, so any fix on something drawn by a component (a Link, a Button) was refused. It also treated every element drawn by one component as the same place, so several links with the same fix would have been written once and all marked done.
+- **The fix:** that flow now asks where the classes are written the same way every card does, and groups fixes by that place: each link's own usage is written, and rows of one list still share one write.
+- **The proof:** on crafting-ui, a class added to a link drawn by the shared Link component landed in the page that uses it, inside the fixed part of its class template; all 4 links of that list wore it; undo put the file back exactly (git shows no change). This used the same two calls the changed flow makes.
+- **Not proven:** the flow was not driven by hand on the page (enter the blueprint, pick a fix, write). The overlay loads with the change and shows no errors, which is all that was seen of it running.
+
 ## Open gaps
-- A class passed through a wrapper component (a Link, a Button) can't be written: plumber stops at the component's own line. On crafting-ui that is every link.
+- Taking a fix on the page for an element drawn by a wrapper component now writes at its usage, but that flow has not been clicked through by hand since the change.
 - Undo shows on the page about 0.6 s later than a write does; a write on crafting-ui takes about 450 ms against about 60 ms on a small project. Neither cause is measured.
 - Several writes in quick succession sometimes reload the showcase page.
 - **Single decisions read uneven signals** (read 2026-11-12, code only): colour decides from the role of the place (control, link, field, status, text or surface or line) and then the nearest token, with a contrast guard; text decides a place's role from its size and capitals alone, though its tag and whether it sits in a list are collected; spacing knows the app's scale and whether siblings are alike, not what the space is between; radius has no pass. No shared reading of "what is this thing" feeds them all.
@@ -322,6 +330,7 @@
 - The tailwind-merge trap is untested: crafting-ui does not use it.
 
 ## Shipped · 2026-W46
+- A fix taken on the page now works on links, buttons and anything else drawn through a component: it is written where that element is used. [entry](#a-fix-on-a-link-now-reaches-the-line-where-the-link-is-used-2026-11-12)
 - plumber's full read of a page is about four times faster (7.9 s → about 2 s on a 1,400-element page): it asks where every finding lives in one go instead of 363 separate questions, waits for the theme before judging, and looks for a page's pictures once. [entry](#plumbers-read-8-seconds-5-of-them-asking-one-question-at-a-time-2026-11-12)
 - plumber flags words over a picture that can only be read while the picture shows, before it ever fails to load, and offers the one class that holds them (a plain check, not a craft rule). [entry](#third-defensive-tip-words-that-need-their-picture-2026-11-12)
 - Plumber reads a hover or press colour from where the code uses it, so shadcn's grey `accent` is no longer taken for the brand ([entry](#hover-colours-read-from-the-code-not-the-name-2026-11-12)).
