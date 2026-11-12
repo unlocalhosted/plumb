@@ -607,10 +607,18 @@
 - **Not fixed here:** the text-style code was being changed by another session at the same time (four commits this afternoon); fixing it underneath them would collide. The trial stays on its branch, committed, not merged.
 - **Media hooks:** the craft page before and after, side by side.
 
+## crafting-ui's vocabulary page: live examples mount only near the screen (2026-11-12)
+- **The itch:** the owner: "also make the vocabulary page performant pls". Plumber's read had closed the browser tab on it.
+- **How we found it:** measured in the browser: 9,474 elements, one 589 ms task before anything showed, first paint at 1.45 s. 34 of its 36 term cards carry a live example, and those examples were 7,467 of the 9,474 elements, all mounted at once.
+- **The fix (in crafting-ui, not committed there):** each card's live example mounts when it comes within 1,000 px of the screen. Until then a quiet box of a typical example's height holds its place in the card's grid rows. The larger view a card opens is unchanged.
+- **After:** 2,007 elements at load, no long task seen, and plumber's whole read of the page finished (3.7 s, 985 elements read) where it had closed the tab. Scrolled to the end, the examples mounted as they came near.
+- **Not right yet:** the timings were taken with the browser pane hidden, which can skew them; the element counts are firm. The box is one height while examples run from 369 to 884 px, so the page grows by about 130 px as they mount, out of sight. On a fast fling an example can show its empty box for a moment.
+
 ## Open gaps
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
 
 ## Shipped · 2026-W46
+- crafting-ui's vocabulary page loads about four times lighter (9,474 → 2,007 elements): each live example mounts only as it comes near the screen. [entry](#crafting-uis-vocabulary-page-live-examples-mount-only-near-the-screen-2026-11-12)
 - plumber finds a side column that is set to stick but can't, and fixes it with one class: on crafting-ui's skill pages the column now stays beside the text where it used to scroll away. [entry](#the-sticky-check-on-a-real-app-crafting-uis-skill-pages-2026-11-12)
 - In a rename plan, the raised background gets the surface name and recessed fills get sunken, judged against the page colour ([entry](#which-colour-gets-the-surface-name-2026-11-12)).
 - Plumber tells text colours from fill colours by how the code uses them, so shadcn's `-foreground` colours read as the words they are ([entry](#text-and-fill-colours-read-from-the-code-2026-11-12)).

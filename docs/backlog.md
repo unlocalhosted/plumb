@@ -148,8 +148,9 @@ reserved.)
   the full read stalls there while the browser pane is hidden.
 - The grid form of the shrink check flags one more place on crafting-ui's pattern pages (a collapsible section
   holding a part that scrolls sideways) that looks right today; not judged yet.
-- crafting-ui holds two fixes plumber wrote at the owner's word, not committed there: the skill pages' side column
-  (`self-start`) and the markdown list item (`min-w-0`).
+- crafting-ui holds three changes made at the owner's word, not committed there: the skill pages' side column
+  (`self-start`), the markdown list item (`min-w-0`), and the vocabulary page mounting each live example only near the
+  screen. The vocabulary page's placeholder is one height (52rem) while examples run 369 to 884 px.
 
 ### Writes and speed
 
