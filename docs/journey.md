@@ -219,7 +219,17 @@
 - **What it doesn't show:** neither app makes these mistakes, so this proves the checks stay quiet on good code, not that they catch real slips outside our own demos. algorecall's inner pages never loaded (stuck on "Loading the page…", its backend was not running), so the largest page was not read.
 - **Noticed on the way:** plumber's whole read took 12 s on algorecall's home (715 elements) and 8 s on a 1,400-element crafting-ui page. Whether the three checks add to that is not measured.
 
+## Suggestions use what the page already does (2026-11-12)
+- **The itch:** the owner asked how plumber decides what to suggest. Reading the code showed a signed-off part of the design that was never built: a suggested value should be one the app already uses for the same job.
+- **How we found it:** comparing the design (docs/briefs/craft-spec.md §4, candidate b) with the recommender's code: it never looked at the page, so every new token and every piece of advice carried the standard's number (0.06em for small capitals) whatever the app did.
+- **The system behind it:** the recommender was handed the theme but not the page; a rule had no way to say "here is what the other labels on this page use".
+- **What we chose and why:** a rule now hands over the values the page's other elements use for the same job (other small capitals, other big headings, other paragraphs). The value in range used most, on two places or more, replaces the standard's target in a new token and in advice; the reason says how many places use it. A theme step in range still wins over it: the theme is the project's decision. Only letter spacing and line height so far, the two rules that may propose a new token from a range.
+- **The fix and the proof:** on crafting-ui's home page (49 small-capital labels: 41 at 0.1em, 8 at 0.08em), one label with its spacing removed was told "Add --tracking-caps: 0.06em" before; now "0.1em, which this page already uses on 41 labels". Read from `window.__plumb.craft()` on the running app; no test written yet.
+- **Media hooks:** before/after of the suggestion line on a crafting-ui label.
+
 ## Open gaps
+- **Other answers are computed but never shown.** A suggestion carries its runners-up, yet they are almost always just the same advice in words; there is nothing worth listing until the recommender offers real ones (the other theme steps in range, the class the page's other places already use).
+- **A page habit is offered as a new token even when a class already carries it.** crafting-ui's 41 labels get 0.1em from an existing class; plumber proposes a new token instead of that class.
 - The three defensive checks have only been seen catching a slip on our own demo screens (now removed); no real app with the mistakes has been read. How much time they add to plumber's read is not measured.
 - 27 test files already failing before the token work (52 tests on vm-agent), the text editor's test flaky there; not this work's, not fixed.
 - Defensive CSS tips still without a check in plumber (checks only, never craft rules or screens): flex rows that should wrap, scrollbars shown when nothing scrolls, hover styles on touch screens, repeated backgrounds, fixed heights on text, sticky items in a grid, and the source-only ones (variable fallbacks, vendor selectors, vertical media queries).
