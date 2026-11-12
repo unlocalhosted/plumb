@@ -63,7 +63,9 @@ const around = async (page, marks, selectors) => {
   return marks.length === boxes.length && boxes.every(([x, y, w, h], i) => { const [mx, my, mw, mh] = marks[i]; return Math.abs(mx - (x - 4)) <= 1.5 && Math.abs(my - (y - 4)) <= 1.5 && Math.abs(mw - (w + 8)) <= 1.5 && Math.abs(mh - (h + 8)) <= 1.5; });
 };
 // what the strip shows: steps with their ticks, the pointed one, the pill, the slider's words, the actions
-const strip = (page) => page.evaluate(() => {
+// a write can reload the page while the strip is read (it comes back the same): read it again on the new page
+const strip = async (page) => { for (let i = 0; ; i++) { try { return await stripOnce(page); } catch (error) { if (i > 20 || !/context was destroyed|navigation/i.test(error.message)) throw error; await page.waitForTimeout(250); } } };
+const stripOnce = (page) => page.evaluate(() => {
   const root = document.querySelector('plumb-overlay').shadowRoot, tt = root.querySelector('.tt');
   if (!tt || tt.hidden) return null;
   const track = tt.querySelector('.tt-track');

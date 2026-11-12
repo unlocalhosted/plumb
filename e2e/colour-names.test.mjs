@@ -15,8 +15,10 @@ import { plumb } from '@unlocalhosted/react-plumber/vite';
 
 const repo = fileURLToPath(new URL('../', import.meta.url));
 const run = promisify(execFile);
-const snapshot = async (root) => Object.fromEntries(await Promise.all((await readdir(join(root, 'src'), { recursive: true, withFileTypes: true }))
-  .filter((d) => d.isFile()).map(async (d) => { const f = join(d.parentPath, d.name); return [f.slice(root.length + 1), await readFile(f, 'utf8')]; })));
+// the project's files; a write's temporary file (it is renamed over the file a moment later) is not one of them
+const snapshot = async (root) => Object.fromEntries((await Promise.all((await readdir(join(root, 'src'), { recursive: true, withFileTypes: true }))
+  .filter((d) => d.isFile() && !d.name.endsWith('.plumb-tmp')).map(async (d) => { const f = join(d.parentPath, d.name); return [f.slice(root.length + 1), await readFile(f, 'utf8').catch((e) => (e.code === 'ENOENT' ? null : Promise.reject(e)))]; })))
+  .filter(([, text]) => text !== null));
 
 // crafting-ui's theme shape: short role names, `bg` for the page, `surface-pressed` for the press state, a second ink
 const FLAT = `@import "tailwindcss";
