@@ -34,6 +34,7 @@ const LOAD = {
   'colour-ideas': () => import('./parts/colour-ideas.js'),
   space: () => import('./parts/space.js'),
   motion: () => import('./parts/motion.js'),
+  pills: () => import('./parts/pills.js'),
 };
 
 export function Part({ id, css }) {
