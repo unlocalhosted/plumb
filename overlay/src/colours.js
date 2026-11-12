@@ -210,12 +210,33 @@ function stateOf(sel) {
   return 'rest';
 }
 
+// a token the code uses only for words is text, one it only fills with is a surface, whatever its name says (shadcn's
+// `primary-foreground` is the words on the brand, `secondary` a button's fill). Words named after an accent token
+// (`primary-foreground` beside `primary`) are the words on it; other words are the main text. Status words are left alone.
+function byFamily(tokens) {
+  const of = (t) => new Set((t.usage ?? []).map((u) => u.split(':')[0]));
+  for (const t of tokens) {
+    const props = of(t);
+    if (props.size !== 1 || t.role === 'status' || t.role === 'other') continue;
+    const was = t.kind;
+    const base = tokens.find((b) => b !== t && t.short === `${b.short}-foreground`);
+    if (props.has('text') && (t.role !== 'text' || base)) {
+      // words on a fill: on-accent on the brand, else the main text unless the fill's own name is a quieter level
+      const quiet = base && /(^|-)(muted|subtle|faint|placeholder)(-|$)/.exec(base.short);
+      t.role = 'text';
+      t.kind = base?.role === 'accent' && !of(base).has('text') ? 'on-accent' : quiet ? (quiet[2] === 'faint' || quiet[2] === 'placeholder' ? 'faint' : 'muted') : 'fg';
+    } else if (props.has('bg') && t.role === 'text') {
+      t.role = 'surface'; t.kind = kindOf(t.short, 'surface');
+    }
+    if (t.kind !== was) t.byName ??= was;
+  }
+}
+
 // §3.3: a surface or accent token the code fills with only in one state takes that state, whatever its name (shadcn's
 // `accent` is only ever `hover:bg-accent`: a hover surface, not the brand). A token also filled at rest, never seen as a
 // fill, or used for text (`hover:text-accent-foreground` is words), keeps its name. `usage` is each `prop:state` seen.
 function byUsage(t, seen) {
   if (!seen?.size) return;
-  t.usage = [...seen].sort();
   const fills = new Set([...seen].filter((u) => u.startsWith('bg:')).map((u) => u.slice(3)));
   if (fills.size !== 1 || fills.has('rest') || [...seen].some((u) => u.startsWith('text:')) || !['surface', 'accent'].includes(t.role)) return;
   const [state] = fills;
@@ -250,10 +271,12 @@ export function paletteOf() {
     const lab = oklab(over(rgb, [255, 255, 255]));
     const role = roleOf(short, lab, rgb[3]);
     const token = { name: t.name, short, role, kind: kindOf(short, role), css, rgb, oklab: lab, utility: { text: `text-${short}`, bg: `bg-${short}`, border: `border-${short}` } };
-    byUsage(token, states.get(short));
+    token.usage = states.get(short) ? [...states.get(short)].sort() : undefined;
     tokens.push(token);
   }
   box.remove();
+  for (const t of tokens) byUsage(t, states.get(t.short)); // states first: words on a hover surface are not words on the brand
+  byFamily(tokens);
   assignInks(tokens);
   return (known = tokens);
 }
