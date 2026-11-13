@@ -117,10 +117,9 @@ screen. Ours used to be a teaching page with a still picture in it; that system 
 - **The switch names the technique, never "Broken / Fixed"**: "Proportional / Tabular", "Line box / Trimmed",
   "Same radius / Concentric". It sits under the component, small, a segmented control. Default is the mistake; the
   other side is plumber's own fix (`suggest`, taken with `inplace.js` `swapPreview`), and back gives it back exactly.
-- **plumber's read is a camera moment.** On switching: the camera eases in to the subject, plumber's measurements
-  are drawn from the geometry itself (glyph columns, edges, curves) with the measured number in red pills; the fix
-  glides in and the pills turn to blue checks; the camera eases back out and the stage is clean. Nothing is drawn at
-  rest. Detection is still `window.__plumb.craft({ scope: '[data-example]', hidden: true })`; nothing on the screen
+- **plumber's read is a lesson in four acts (§3⅝), not one camera moment.** The fault happens before anything is
+  drawn; it is measured, with its cause in words; the fix's working is drawn; the same measure pays off on every
+  instance. Nothing is *drawn* at rest, but the fault is *shown* at rest. Detection is still `window.__plumb.craft({ scope: '[data-example]', hidden: true })`; nothing on the screen
   states a finding plumber didn't make.
 - **A benchmark is a source of qualities, never a template.** Take from it what it does and why (the flaw shown
   live, a camera moment, the figures as the hero, room to breathe), then design our own component from our own
@@ -181,6 +180,63 @@ screen. Ours used to be a teaching page with a still picture in it; that system 
   a scaled card reads wrong (targets look small, edges fall between pixels), so the card lifts to 1× whenever plumber
   reads it, while the blueprint or inspector is on, and from the camera's way out until plumber has asked again.
   Anything that reads from outside asks for the page as it is (`?side=`, never scaled); `scripts/screen.mjs` does.
+
+## 3⅝. The moment is a lesson in four acts, and the problem gets the most time
+
+Every screen's moment, still or live, is told in four acts. Each act has a job: what the viewer knows by its end.
+A screen is judged by whether those four things come across from the film alone, not by whether plumber's read passed.
+
+| Act | Its job: by the end the viewer knows… | How |
+|---|---|---|
+| 1 · It happens | that something is off, before anyone says so | The broken side at rest size, **nothing drawn**. A live rule plays its gesture over each instance (a drawn pointer, part of the film); a still rule leads the eye over each instance in turn. 3–4.5 s. |
+| 2 · Measure it | how much, where, and why | Camera in. Guides, then numbers, then **the cause in one plain sentence**, in that order. A live rule repeats its gesture 2–3 times and the marks come and go with it, so the number is tied to the motion. ≥ 5 s with the marks on. |
+| 3 · How the fix works | why the fix holds, not only that it does | The technique's switch is pressed. Guides change colour, and **the fix's working is drawn for a moment** (the reserved bold copy, the trimmed line box, the margin a quote hangs in), with its own pill counting to its value; then it folds away. 2–3.5 s. |
+| 4 · Payoff | that it is fixed everywhere | **The same gesture, the same ruler, the same places**, instance by instance (~0.7 s each), each pill now reading the fixed value (+0px, ✓). Then camera out and rest. 3–4 s. |
+
+- **The problem gets more time than the fix.** In both of the owner's references the problem had the larger share:
+  the ledger video 5.9 s against 1.8 s (3.3×), the bold-hover tabs 10.8 s against 6.7 s (1.6×). A payoff is a
+  difference, and a difference needs a "before" the viewer remembers. Ours was 1.4 s of marks against 1.7 s of fix,
+  with no act 1 at all: that is what "rushed" was.
+- **The fix is never a glide alone.** A morph from broken to fixed shows *that*, not *why*. Act 3 needs a drawing of
+  what the fix adds; a screen without one has not finished its design.
+- **The viewer's own click doesn't start the lesson.** Pressing a switch means "show me fixed", so a moment that starts
+  there squeezes the problem. The film runs acts 1–4 itself; afterwards the switch is the viewer's, and flipping it
+  by hand replays acts 3–4 without the camera.
+
+### The marks say four different things
+
+A mark says one thing. The reference's marks are a grammar, and the same grammar is used in both colours so broken and
+fixed compare like for like:
+
+- **The ruler is the element itself.** Every instance gets its own dashed outline, not only the one being measured, so
+  the viewer sees the set the fault moves through.
+- **The subject's pill says before → after** ("110px → 112px"), above the thing that changed.
+- **The consequence is marked where it lands.** A pill at each place the effect reaches ("+2px" at every neighbour that
+  moved) with a hairline along the edge that moved. One pill per instance, not one total.
+- **The cause is a sentence, after the numbers.** One short pill under the subject ("Bold is 2px wider"). It names
+  the mechanism in the viewer's words, never the rule's name.
+- **In the fix,** the same outlines, pills and places, in mint, reading the fixed value ("124px → 124px", "+0px"); the
+  fix's working gets its own pill ("reserves 112px").
+- Marks never sit on the example's words: pills go above and below, hairlines along edges. Coral and mint, plumber's
+  own primitives (§3½).
+
+### What each screen supplies
+
+The stage plays the acts; a screen hands over what only it knows. `Example.measure` alone (one set of marks, before and
+after) cannot tell this story, which is why every screen came out as the same short inspection.
+
+- `Example.instances`: the places the fault lives, in order (each tab, each row, each photo).
+- `Example.gesture`: what act 1 and act 4 do at each instance (hover, press, resize, or "look" for a still rule).
+- `Example.measure(instance)`: the subject pill (before → after), the consequence pills and their hairlines.
+- `Example.cause`: the one sentence.
+- `Example.mechanism`: the drawing of what the fix adds, and its pill.
+
+### Reading a reference
+
+Measure it frame by frame (`ffmpeg -vf fps=10`), and count when each colour of mark is on screen (pixels of the pill
+colours per frame) so act lengths come from the film, not from memory. Then write, per act, **its job for the
+viewer**, not only its length. The first stage copied the ledger video's durations and lost its first act, because
+"figures ticking for 3 s" was read as a detail and not as the act that shows the fault.
 
 ## 3¾. Hands-on demos: the viewer's hand is the probe
 
@@ -245,8 +301,12 @@ it. Write `Example.lesson = { matters, why, habit }` for every example; a card t
 
 ## 6. Review the screenshots yourself before showing anyone
 
-Numbers passing (one finding, nothing after the fix, tests green) is not a review. Look at every screen, Broken and
-Fixed, at a wide window and in a narrow pane, and check:
+Numbers passing (one finding, nothing after the fix, tests green) is not a review. First, **watch the moment once
+as a stranger would** (a recording, not stills) and write three sentences from the film alone: what went wrong, why,
+and why the fix holds. If any of the three needs the lesson below the stage, the moment is not finished (§3⅝). Then
+measure the acts from the recording and put them beside the reference's: the problem's share must be the larger.
+
+Then look at every screen, Broken and Fixed, at a wide window and in a narrow pane, and check:
 
 - nothing clipped, overflowing, or wrapping where it shouldn't (a price unit under its price, a banner cut at the top);
 - annotations sit on the subject and never on the example's words: guides are quiet dashed hairlines on the thing;
@@ -394,3 +454,12 @@ Each line is something the owner had to say once; the sections above exist so th
   defensive rule's screen no longer have a screen to apply to.
 - 2026-11-12 · "dont create these rules out of your ass … there has to be a principle behind the suggestion": a suggestion built on made-up counts (two places, more than half). → Before anything, docs/PRINCIPLES.md.
 - 2026-11-12 · "I'm not creating a linter, this would be suggestive, this would be opinionated": plumber judged against lint tools and told to stop choosing. → Before anything, docs/PRINCIPLES.md.
+- 2026-11-13 · "our showcase is being rushed … we don't show the problem very well, we rush the fix and don't have good
+  payoff", with a second reference (maybepratikk's bold-on-hover tabs); then "compare the time we spend b/w showing
+  problem vs showing fix … also the guardrails, how they make the demo descriptive"; then "first analyse and fix the
+  root cause in the skill and the system". Measured: ours gave the problem 1.4 s of marks and the fix 1.7 s, with no
+  act where the fault simply happens; the references give the problem 1.6× and 3.3× the fix. The causes were in the
+  system: the moment started from the viewer's click; the bar was plumber's correctness, not the viewer's
+  understanding; one fixed timeline with a single before/after slot per screen; and a reference read as durations,
+  not acts. → §3⅝ (four acts, the problem's share, the marks' grammar, what a screen supplies, reading a reference), §6
+  (watch as a stranger, three sentences, act lengths beside the reference's).
