@@ -1250,6 +1250,14 @@ field is empty). The table of five writes, before and after. The Next table: eig
 - **The fix and the proof:** a small one, honestly: 5 s of CPU, no visible change in the wait. The proof of where the real gain is: `plumber check` 43 s the first time, 6.8 s the second. Component, imitation and server test files pass (40 of 40, 1 skipped). A correction: I had said the module cache never hits; it does, my rebuilds kept changing its key.
 - **Media hooks:** two bars: a server start, 41 s; the same project's check on a second run, 7 s.
 
+## A design for the warm start: answer from what the server knew, then check it (2026-11-13)
+- **The itch:** every dev server restart costs 41 s on algorecall before plumber answers, even on an untouched project. The owner: "Yes, design it".
+- **How we found it:** reading how the one-off check keeps its result and how the server's worker holds its own. They are different reports (the check's has the ledger applied, the server's does not), the check's is one 230 MB object, and the server needs working state the report does not contain.
+- **The system behind it:** the server treats every start as the first. It has nowhere to put what it learned.
+- **What we chose and why:** the server keeps its own small table of readings and a receipt of every input; uses it on start only if the receipt passes the same validation the check already trusts; answers reads from it while a second worker runs the real analysis; makes writes wait; drops it whole if a file changes first; and compares the two when the real analysis lands, so a wrong warm start corrects itself and leaves evidence. A check-only layer runs for days before any answer comes from it.
+- **The fix and the proof:** none; a design waiting for sign-off: [server-warm-start.md](briefs/server-warm-start.md). Target under 8 s to first answer; the server's own number is not measured.
+- **Media hooks:** when built, a restart on algorecall: the overlay drawing at 7 s against 41 s.
+
 ## Open gaps
 - The site's top bar doesn't fit a phone (390px): it widens the page to about 500px. Needs a compact bar.
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
