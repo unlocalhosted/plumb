@@ -597,6 +597,14 @@
 - **Now:** one finding on crafting-ui, the three figures on the templates page, drawn from a three-item list written in the code. At phone width it fits (358 of 358 px). It is a fixed set the check cannot yet tell from a list; noted, not fixed. No before and after from a real app.
 - **Seen on the way:** the motion vocabulary page (7,274 elements) closed the browser tab during plumber's read.
 
+## #42 told in four acts: the first screen on the new stage (2026-11-13)
+- **The itch:** the owner, on the rewritten skill: "Yes, build it".
+- **What was built:** a film player for the stage (overlay/showcase/src/principles/Film.jsx) that a screen opts into with `Example.film`, and #42 (tabs that turn semibold on hover) as its first screen. Act 1: a drawn pointer runs over every tab and the row jitters, nothing drawn. Act 2: the camera frames the tabs (1.8×), every tab gets its own dashed outline, the hover repeats three times on Timeline with its width before → after over it and "+2.9px" at each tab that slid; on the third, "Semibold is 2.9px wider". Act 3: the pointer presses the switch (now "Shifts / Stable"), the outlines turn mint, a faint semibold copy of every label shows the width weight would add, with "darker, not bolder: same width", and folds away. Act 4: the same hover on every tab, "+0px" at every edge. Then the camera out, and the example and switch are the viewer's, with Replay.
+- **The proof:** recorded in headless Chromium and measured the way the reference was (pill colours counted per frame, in the tabs' band): marks off for the first 6.4 s (act 1 and the camera), coral 6.4–12.0 s, switch and turn 12.0–14.2 s, the mechanism 14.2–16.4 s, the payoff 17.2–20.7 s. Problem 12.0 s against fix 8.7 s (1.4×); the reference 10.8 s against 6.7 s (1.6×). No console errors. Clip: docs/media/showcase-42-four-acts.mp4.
+- **Fixed on the way:** the camera first framed the whole tab bar, as wide as the card, and shrank the card; it now frames the tabs. The subject's widths were rounded to whole pixels beside a 2.9px shift ("54px → 57px"), false arithmetic; now one decimal.
+- **Not yet:** the other screens keep the old moment until each gets instances, a cause and a mechanism; with reduced motion the film is skipped, not shown as four still frames; not watched in the browser pane by a person yet.
+- **Media hooks:** docs/media/showcase-42-four-acts.mp4 beside the reference.
+
 ## The showcase rushed the problem: the cause was the system, not the timings (2026-11-13)
 - **The itch:** the owner: "our showcase is being rushed … we don't show the problem very well, we rush the fix and don't have good payoff", with a new reference (maybepratikk's bold-on-hover tabs, 22.8 s), then "compare the time we spend b/w showing problem vs showing fix … also the guardrails", then "first analyse and fix the root cause in the skill and the system".
 - **How we found it:** the reference read frame by frame, and its red and blue marks counted in every frame. Problem against fix: the tabs 10.8 s to 6.7 s (1.6×), the first reference 5.9 s to 1.8 s (3.3×), ours 1.4 s of marks to 1.7 s (0.8×), and ours never shows the fault happening before marking it.
@@ -1233,6 +1241,14 @@ field is empty). The table of five writes, before and after. The Next table: eig
 - **What we chose and why:** keep the safety net, pace it by what it costs: a twentieth of the thread with a native watcher, a quarter when polling is all there is. Also on the way: a file's hash is kept while the file is unchanged, since each cache hashed the same thousands of files again.
 - **The fix and the proof:** warm headless reads on algorecall 14.8–17.3 s → 10.4–12.8 s with the same script; 5.7–8.7 s through the overlay once the app has settled. `plumber check` 51.8 s → 42.2 s with an identical report. Two corrections: the 0.8 s and 2.5 s freezes I had put on plumber are algorecall mounting itself; and the cold start (41–44 s before the server answers) is not fixed, it is the analysis. Machine busy during the runs. Server tests pass in both watcher modes (one OS-probe timeout on the busy machine, gone on a rerun).
 - **Media hooks:** the server thread's CPU, idle, before and after.
+
+## The cold start: 41 s every time, while the one-off check takes 7 (2026-11-13)
+- **The itch:** after a dev server restart plumber says "still reading your project" for 41–44 s on algorecall. The owner: "Yes, cold start".
+- **How we found it:** a CPU profile of each server thread drawn as a call tree, then the one-off `plumber check` run twice in a row on the same project.
+- **The system behind it:** two things. The server builds its component graph one file at a time, 3,588 calls, each setting up its own resolvers and re-listing the component folder. And the server never reads the result the one-off check keeps on disk: that is switched off inside a session, so every start redoes everything.
+- **What we tried, what we chose:** shared one set of resolvers, resolutions and folder listings across a build: component discovery 9.2 s → 3.7 s of CPU. It did not move the wait (43.6 s → 41.3 s, inside the noise of a busy machine), because the rest is spread flat: no single cause is left. The fix that would matter, starting from the kept result when nothing changed, is a design change and is not made.
+- **The fix and the proof:** a small one, honestly: 5 s of CPU, no visible change in the wait. The proof of where the real gain is: `plumber check` 43 s the first time, 6.8 s the second. Component, imitation and server test files pass (40 of 40, 1 skipped). A correction: I had said the module cache never hits; it does, my rebuilds kept changing its key.
+- **Media hooks:** two bars: a server start, 41 s; the same project's check on a second run, 7 s.
 
 ## Open gaps
 - The site's top bar doesn't fit a phone (390px): it widens the page to about 500px. Needs a compact bar.
@@ -2322,6 +2338,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   Nothing finds a new one when it is written.
 
 ## Shipped · 2026-W46
+- The showcase's #42 now explains itself in four acts: you see the tabs jitter, see it measured with its cause, see why the fix holds, then see every tab hold still ([entry](#42-told-in-four-acts-the-first-screen-on-the-new-stage-2026-11-13)).
 - plumber's server no longer keeps a core busy on a big project: its safety-net file check is paced by its own cost, and a 16,000-element page now reads in 6–9 s ([entry](#the-server-was-checking-22808-files-four-times-a-second-2026-11-13)).
 - The page no longer freezes while plumber reads it: the longest block on a big page went from 1.8 s to 0.3 s, and the pointer stays live ([entry](#the-page-froze-while-plumber-read-it-the-judging-now-comes-in-slices-2026-11-13)).
 - With plumber open, the app under it scrolls and answers the pointer nearly as it does alone (crafting-ui: 7 → 46 frames a second scrolling, 15 → 59 moving the pointer) ([entry](#with-plumber-open-the-app-crawled-it-was-asking-what-covers-this-four-thousand-times-a-frame-2026-11-13)).
