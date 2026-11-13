@@ -74,8 +74,18 @@ What the published package holds (modern-web-guidance 1.0.0, read file by file o
   webmcp 3, pwa 2, privacy 1, wasm 1.
 - **The index** (`gen/guides.json`) has id, description, category, features used and size. It does **not** carry the
   triage (how detectable, how big a change) or the false-hit rubric as data; the platform design assumed it might.
-- **The scanner** (`legacy-scan.mjs`, 5 MB bundled, with ts-morph) covers 33 guides, with 36 keep/drop rubrics.
-  Running it was blocked in this session as downloaded code; it needs the owner's permission.
+- **The scanner** (`legacy-scan.mjs`, 5 MB bundled, with ts-morph) covers 33 guides with 35 rules, each with a
+  keep/drop rubric for a reader to throw out false hits. Run with the owner's permission on 2026-11-13:
+
+  | App | Time | Findings |
+  |---|---|---|
+  | crafting-ui (`src`) | 2.2 s | 0 |
+  | glyphschool | 1.6 s | 0 |
+  | glyphwrite | 2.1 s | 2: Enter submits without checking for an input method mid-word (ime-safe-enter-submit) |
+  | algorecall | 25.8 s | 35: ime-safe-enter-submit 25, dark-mode-toggle 6, sign-up password autofill 2, sign-in password autofill 1, a textarea resized by script 1 |
+
+  Each finding comes with the guide to retrieve and the rubric, but needs reading before it is believed. None of
+  these were checked against the page yet.
 - **The accessibility guide** is 107 dos and don'ts, most tied to a WCAG criterion: 1.3.1 (17), 4.1.2 (13), 1.1.1
   (8), 2.4.3 (6), 2.4.2 (5), 3.3.2 (3), the rest one to three each. These are the accessibility pack's backlog.
 
