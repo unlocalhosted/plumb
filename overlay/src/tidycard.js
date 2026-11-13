@@ -12,6 +12,7 @@
  * in (a component's usage: that prop's string, edited). A change with no such place is listed as left alone, and why.
  * ───────────────────────────────────────────────────────── */
 import { classEditsOf } from './locate.js';
+import { activeVariants, prefixesInForce, bareOf } from './variants.js';
 import { esc } from './choices.js';
 import { FIX } from './words.js';
 import { tidy, levelsOf } from './hierarchy.js';
@@ -82,11 +83,14 @@ export class Tidy {
       // already what it would become (a class that computes the value the change names): nothing to change
       .filter((c) => { const now = NOW[c.prop]?.(getComputedStyle(c.el)); return !(Number.isFinite(now) && near(now, +c.to)); })
       .map((c) => {
-        const classes = [...c.el.classList].filter((x) => !x.includes(':'));
-        const from = classes.filter((x) => FAMILY[c.prop](x, sc.sizes));
+        // made where it shows (variants.js): the family's classes in the most particular variant in force (md: at a
+        // medium window, dark: while dark), the prefix carried over; every other class kept as written
+        const all = [...c.el.classList], fam = (x) => FAMILY[c.prop](x, sc.sizes);
+        const prefix = [...prefixesInForce(all, activeVariants(c.el))].reverse().find((p) => bareOf(all, p).some(fam)) ?? '';
+        const from = bareOf(all, prefix).filter(fam), pre = (str) => str.split(/\s+/).filter(Boolean).map((x) => prefix + x).join(' ');
         const to = this.#classFor(c.prop, +c.to, sc);
-        if (c.prop === 'padding' && c.sides) return { ...c, ...this.#padding(c, from, sc), step: to };
-        return { ...c, fromClass: from.join(' '), toClass: to, step: to };
+        if (c.prop === 'padding' && c.sides) { const r = this.#padding(c, from, sc); return { ...c, fromClass: pre(r.fromClass), toClass: pre(r.toClass), step: to }; }
+        return { ...c, fromClass: pre(from.join(' ')), toClass: prefix + to, step: to };
       }).filter((c) => c.fromClass !== c.toClass && stepped(c.step));
     // the same change to the same thing is one row: the copies a list draws (one line of code, or two lines that draw
     // the same words with the same classes) are listed once, previewed on every copy, and written once per line

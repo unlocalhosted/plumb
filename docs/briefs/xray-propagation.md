@@ -40,10 +40,15 @@ state (`hover:`, `focus:`), a theme (`dark:`), or a branch of a condition (`cn(a
   window → `md:p-6` changes; `p-4` and `hover:p-8` stay. Seen at a narrow window → `p-4` changes; `md:p-6` stays.
   Sides set in different places are changed where each is set (`p-4 md:px-6`: top in `p-4`, left in `md:px-6`).
   The card says which breakpoint it is changing ("md and up").
-- **dark:, hover:, focus:** the same rule: in dark mode, `dark:px-6` is the one in force; a state is only in force while
-  it is held (Plumber holds hover with its state toggle). Not built yet.
+- **dark:, hover:, focus:** the same rule (built 2026-11-13, `overlay/src/variants.js`): in dark mode `dark:px-6` is the
+  one in force; a state is in force only while held (the writers take a `held` list; Plumber has no hover-holding yet,
+  so today hover: and focus: are always left alone). Mixed prefixes (`md:dark:p-6`) count when every part is in force;
+  the most particular wins, in Tailwind's order (states, then dark, then breakpoints, the wider last).
 - **A branch of a condition:** the branch active now is changed, and the card says so ("only when active"). Not built.
-- **Other families** (gap, radius, size, text size) go through the same rule. Not built: today only padding and margin.
+- **Every writer goes through the one rule** (built 2026-11-13): the box edit (padding and margin, from the fix bar and
+  the card), the layout card's gap and spacing, Tidy, and the reader that finds "the class that sets this property"
+  for the clean-up passes (corners, spacing, control sizes) and the craft rules, which now also judge the class showing
+  rather than the base. Not yet checked: the text editor's text-size write.
 
 ## 4. How the value is written
 
@@ -88,6 +93,6 @@ Sync says "2 of 3 synced". (Built in the prototype, with a pretend server.)
 
 - Built in the prototype (design site, X-ray page): scope, fill / fit / fixed, re-render-proof changes, per-change Sync
   results with Undo and Retry, library components written at the call site.
-- Built in the engine: padding and margin edit the breakpoint in force (`overlay/src/inplace.js`, `boxEditOf`).
-- Not built: dark: / hover: in force, conditional branches, the other families, non-pixel values as written, "just
+- Built in the engine: one rule for the class in force (`overlay/src/variants.js`), used by every class writer.
+- Not built: holding hover/focus, conditional branches, the text editor's write, non-pixel values as written, "just
   this one" refusing a shared line, the X-ray inside Plumber itself.

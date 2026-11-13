@@ -10,6 +10,7 @@
  *  GLYPHS                                 the reason drawn small: a ratio of two lengths, for spacing rules
  * ───────────────────────────────────────────────────────── */
 
+import { activeVariants, prefixesInForce, bareOf } from './variants.js'; // the class in force is the one a change edits
 import { pxOf } from './value.js';
 import { Claims, LEVEL } from './claims.js';
 
@@ -167,15 +168,6 @@ function classesOfSides(letter, s) {
   if (t && t === b) out.push(`${letter}y-${t}`); else { if (t) out.push(`${letter}t-${t}`); if (b) out.push(`${letter}b-${b}`); }
   return out;
 }
-// The breakpoints in force at the window's width now, narrowest first: '' (the base) and each sm: md: … that applies.
-// Tailwind's default widths; a theme's own (--breakpoint-*) are read when the page has them.
-export function activeBreakpoints() {
-  if (typeof matchMedia === 'undefined') return [''];
-  const root = typeof document !== 'undefined' ? getComputedStyle(document.documentElement) : null;
-  const widths = { 'sm:': 640, 'md:': 768, 'lg:': 1024, 'xl:': 1280, '2xl:': 1536 };
-  for (const p of Object.keys(widths)) { const v = parseFloat(root?.getPropertyValue(`--breakpoint-${p.slice(0, -1)}`) ?? ''); if (v) widths[p] = v * (/rem/.test(root.getPropertyValue(`--breakpoint-${p.slice(0, -1)}`)) ? 16 : 1); }
-  return ['', ...Object.entries(widths).filter(([, w]) => matchMedia(`(min-width: ${w}px)`).matches).map(([p]) => p)];
-}
 /**
  * The class edit that writes per-property changes ([{ prop, to: { token } }]) on an element whose box family is set by
  * classes: { from, to } for `swap`, or null when a property isn't a box side or a side isn't set by a class.
@@ -183,14 +175,14 @@ export function activeBreakpoints() {
  * A change is made where it shows (owner, 2026-11-13: "our apply should never cause loss of behaviour, it should be
  * smart and should only change the behavior on which we are operating upon"): each side is changed in the class that
  * sets it at the width the page is seen at now, the widest breakpoint in force that sets that side (md:px-6 at a
- * medium window), else the base. Every other class is left exactly as written: other breakpoints, hover:, focus:,
- * dark:, and the base when a breakpoint is the one changed. `variants`: the breakpoints in force, narrowest first.
+ * medium window, dark:px-5 while the page is dark), else the base. Every other class is left exactly as written: other
+ * breakpoints, hover:, focus:, dark:, and the base when a variant is the one changed (variants.js: the rule for every
+ * write). `active`: the variant names in force (activeVariants).
  */
-export function boxEdit(el, props, variants = activeBreakpoints()) { return boxEditOf((el.getAttribute('class') ?? '').split(/\s+/).filter(Boolean), props, variants); }
-export function boxEditOf(classes, props, variants = ['']) {
+export function boxEdit(el, props, active = activeVariants(el)) { return boxEditOf((el.getAttribute('class') ?? '').split(/\s+/).filter(Boolean), props, active); }
+export function boxEditOf(classes, props, active = new Set()) {
   let from = [], to = [];
-  // one variant's own classes, its prefix taken off; the base's are those with no variant at all
-  const of = (v) => classes.filter((c) => (v ? c.startsWith(v) && !c.slice(v.length).includes(':') : !c.includes(':'))).map((c) => c.slice(v.length));
+  const variants = prefixesInForce(classes, active), of = (v) => bareOf(classes, v);
   for (const [family, letter] of Object.entries(FAMILY)) {
     const mine = props.filter((p) => p.prop.startsWith(`${family}-`));
     if (!mine.length) continue;
@@ -295,11 +287,11 @@ export function applied(list, { from, to }) {
  * spacing changes as the fewest padding and margin classes. `classes`: the element's classes with every preview put
  * back. Null when a change can't be written as classes.
  */
-export function elementEdit(classes, writes, props, variants = activeBreakpoints()) {
+export function elementEdit(classes, writes, props, active = activeVariants(null)) {
   let list = [...classes];
   for (const w of writes) { if (!w) return null; list = applied(list, w); }
   if (props.length) {
-    const box = boxEditOf(list, props, variants);
+    const box = boxEditOf(list, props, active);
     if (!box) return null;
     list = applied(list, box);
   }

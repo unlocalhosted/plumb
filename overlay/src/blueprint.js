@@ -30,6 +30,7 @@ import { PANEL_CSS } from './blueprint-panel.js';
 import { Craft, spec } from './craft.js'; // craft: the mentor's rules, read on the page and joined to the reader's items
 import { Selection, SELECT_CSS } from './select.js'; // the element is the target: a click anywhere on it selects it
 import { Changes, CHANGES_CSS } from './changes.js'; // what was changed on the page, per element, until it is applied
+import { activeVariants } from './variants.js';
 import { elementEdit, planOf, swapPlanOf } from './inplace.js';
 import { FixPanel, FIX_CSS } from './fixpanel.js'; // the one place you act: a cause in hand, its options, Take, Apply
 import { FIX } from './words.js';
@@ -469,7 +470,7 @@ export class Blueprint {
     const out = [], files = new Map(); // file → { hash, edits: [{ line, column, from, to }], els: [] }
     for (const b of batch) {
       // every change on the element as one class edit against its classes as written
-      const edit = elementEdit(b.classes, b.writes ?? [], b.props);
+      const edit = elementEdit(b.classes, b.writes ?? [], b.props, activeVariants(b.el)); // edited where it shows, the rest kept
       if (!edit) { out.push({ el: b.el, ok: false, why: 'This change can’t be written as classes here.' }); continue; }
       // where the classes are written (locate.js classEditsOf, as every card asks): the element's own string, or the
       // usage that passes them in when the element is drawn by a wrapper (a Link, a Button). Written at the element's

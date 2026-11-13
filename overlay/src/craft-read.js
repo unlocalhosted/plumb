@@ -6,6 +6,7 @@
  * ───────────────────────────────────────────────────────── */
 
 import { resolveSpec, specFor } from './craft-spec.js';
+import { activeVariants, prefixesInForce, splitVariant } from './variants.js';
 
 // The spec in effect on this page (docs/briefs/craft-spec.md): the standard until the project's own arrives from the
 // server (craft.js asks for it), then that. `rule(id)` is the resolved entry for one rule: { enabled, tier, …values }.
@@ -66,19 +67,22 @@ export function elevation(value) {
 export const VIRTUAL = new WeakMap();
 export const classesOf = (el) => VIRTUAL.get(el) ?? el.getAttribute('class') ?? '';
 
-// The utility in a class list that sets a property, by its Tailwind prefix: 'rounded-card' for /^rounded(-|$)/,
-// with variants stripped (hover:rounded-lg is not the rest state). Side and corner forms are excluded by `not`.
+// The utility in a class list that sets a property, by its Tailwind prefix: 'rounded-card' for /^rounded(-|$)/.
+// The one showing now (variants.js): the most particular variant in force that writes one (md:rounded-xl at a medium
+// window, dark: while dark), else the base; a variant not in force (hover:rounded-lg, not held) is never it. A write
+// changes the class this returns, so every other class stays as written. Side and corner forms are excluded by `not`.
 export function utility(el, prefix, { not } = {}) {
-  for (const c of classesOf(el).split(/\s+/)) {
-    if (!c) continue;
-    let depth = 0, colon = -1;
-    for (let i = 0; i < c.length; i++) { if (c[i] === '[') depth++; else if (c[i] === ']') depth--; else if (c[i] === ':' && !depth) colon = i; }
-    if (colon >= 0) continue;
-    const base = c.replace(/^!/, '').replace(/!$/, '').replace(/^-/, '');
-    if (base !== prefix && !base.startsWith(prefix + '-')) continue;
-    const suffix = base === prefix ? '' : base.slice(prefix.length + 1);
-    if (not && not.test(suffix)) continue;
-    return c;
+  const list = classesOf(el).split(/\s+/).filter(Boolean);
+  for (const p of [...prefixesInForce(list, activeVariants(el))].reverse()) {
+    for (const c of list) {
+      const v = splitVariant(c);
+      if (v.prefix !== p) continue;
+      const base = v.base.replace(/^!/, '').replace(/!$/, '').replace(/^-/, '');
+      if (base !== prefix && !base.startsWith(prefix + '-')) continue;
+      const suffix = base === prefix ? '' : base.slice(prefix.length + 1);
+      if (not && not.test(suffix)) continue;
+      return c;
+    }
   }
   return null;
 }

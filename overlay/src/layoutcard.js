@@ -19,6 +19,8 @@
  * Writes are class changes on an element ({ el, from, to }): the card writes each where the element's classes are
  * written (locate.js classSiteOf: its own line, or the usage that passes them in), and refuses one written nowhere.
  * ───────────────────────────────────────────────────────── */
+import { activeVariants, swapInForce } from './variants.js';
+import { boxEditOf } from './inplace.js';
 import { esc } from './choices.js';
 import { FIX } from './words.js';
 import { clearOf } from './geometry.js';
@@ -335,7 +337,8 @@ export class Spacing {
     if (!keep || !a.moved || Math.abs(a.value - a.from) < 0.5 && a.sides.length === 1) { this.#inline.clear(); this.#draw(); return; }
     const b = a.band, scale = this.#host.scale?.() ?? [], step = scale.find((s) => Math.abs(s.px - a.value) < 0.5);
     if (!step) { this.#inline.clear(); this.#draw(); return; }
-    const swap = edit(b, a.sides, step.token, classesOf(b.el));
+    // all its classes, variants too: the change is made in the one showing now (variants.js), the rest kept
+    const swap = edit(b, a.sides, step.token, [...b.el.classList], activeVariants(b.el));
     this.#draw();
     if (!swap) { this.#inline.clear(); return; }
     const mates = this.#host.mates?.(b.el) ?? matesOf(b.el), what = W.what(b.kind, a.sides.map((s) => W.sides[s]));
@@ -409,17 +412,13 @@ export class Spacing {
 }
 const same = (a, b) => (!a && !b) || (!!a && !!b && a.el === b.el && a.kind === b.kind && a.side === b.side && a.axis === b.axis);
 
-// the class swap for a spacing change: the classes it replaces (only those the element has) and the one it adds
-function edit(b, sides, token, classes) {
-  const pre = b.kind === 'pad' ? 'p' : 'm';
-  let gone, add;
-  if (b.kind === 'gap') { gone = (c) => /^gap(-[xy])?-/.test(c); add = `gap-${token}`; }
-  else if (sides.length === 4) { gone = (c) => new RegExp(`^${pre}[xytrblse]?-`).test(c); add = `${pre}-${token}`; }
-  else if (sides.length === 2) { const y = sides.includes('top'); gone = (c) => new RegExp(y ? `^${pre}[ytb]-` : `^${pre}[xlrse]-`).test(c); add = `${pre}${y ? 'y' : 'x'}-${token}`; }
-  else { const d = sides[0][0]; gone = (c) => c.startsWith(`${pre}${d}-`); add = `${pre}${d}-${token}`; }
-  const from = classes.filter(gone);
-  if (from.length === 1 && from[0] === add) return null;
-  return { from: from.join(' '), to: add };
+// the class swap for a spacing change, made where it shows: padding and margin side by side through the box edit (each
+// side in the class that sets it now, md:px-6 at a medium window), a gap in the gap class in force; every other class,
+// other breakpoints, dark:, hover:, kept as written
+function edit(b, sides, token, classes, active) {
+  if (b.kind === 'gap') return swapInForce(classes, (c) => /^gap(-[xy])?-/.test(c), `gap-${token}`, active);
+  const family = b.kind === 'pad' ? 'padding' : 'margin';
+  return boxEditOf(classes, sides.map((side) => ({ prop: `${family}-${side}`, to: { token } })), active);
 }
 
 // ── layout ───────────────────────────────────────────────
