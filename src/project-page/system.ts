@@ -1,3 +1,4 @@
+import { fontParts } from '../rules/families.js';
 import { readingOf } from '../decisions/stems.js';
 import type { FamilyReading } from '../decisions/stems.js';
 import { basename, relative } from 'node:path';
@@ -133,11 +134,15 @@ export function systemOf(report: Report): SystemData {
   const decls = report.declarations as Decl[];
   const decisions = report.decisions.filter((d: Dec) => d.origin === 'project');
 
-  function scale(prefix: string, props: Set<string>, least = 0): { steps: Step[]; strays: Stray[] } {
+  // a scale is the tokens Plumber read as this family, whatever they are named: a length (`--radius-md: 12px`,
+  // `--pl-space-4`), or, for text sizes, the size inside a whole text style (`--pl-page-title: 600 20px/28px …`)
+  function scale(family: Report['decisions'][number]['family'], props: Set<string>, least = 0): { steps: Step[]; strays: Stray[] } {
     const steps = new Map<string, Step>();
     for (const d of decisions) {
-      if (!d.name.startsWith(prefix) || d.name.slice(prefix.length).includes('--')) continue;
-      const value = px(d.resolved || d.value);
+      if (d.family !== family || d.name.includes('--', 2)) continue;
+      const raw = String(d.resolved || d.value).trim(), part = family === 'type' ? fontParts(raw)?.size ?? raw : raw;
+      if (!/^-?[\d.]+(?:px|rem)$/.test(part)) continue;
+      const value = px(part);
       if (value !== null) steps.set(d.name, { name: d.name.slice(2), px: value, uses: 0 });
     }
     const strays = new Map<number, { places: number; written: Map<string, number>; scaled: number }>();
@@ -241,8 +246,8 @@ export function systemOf(report: Report): SystemData {
   return {
     project: projectName(report.root),
     files: typeof files === 'number' ? files : Object.values(files).reduce((sum, n) => sum + n, 0),
-    size: scale('--text-', new Set(['font-size']), 6),
-    radius: scale('--radius-', new Set(['border-radius'])),
+    size: scale('type', new Set(['font-size', 'font']), 6),
+    radius: scale('radius', new Set(['border-radius'])),
     weight: weights(),
     colour: colours(),
     dead: dead(),

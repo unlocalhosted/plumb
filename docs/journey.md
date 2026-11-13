@@ -2465,8 +2465,13 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   running on the site: 231 tokens in 8 kinds. Found on the way: the page's long-running session skipped the token
   files a script reads (it showed 51 tokens); it doesn't now. Media hook: the Spacing and Motion blocks side by side
   with the config line that says the same.
-- **Still open on the page:** its top still says "Your theme has no text sizes yet" for the site, because that part
-  only knows `--text-*` sizes, while the new section below lists 35 type tokens; some motion tokens show `0ms`, the
+- **Then the page's headline (same day).** Its type and corner scales were built from names (`--text-*`,
+  `--radius-*`), so on the site it said "Your theme has no text sizes yet" above a list of 35 type tokens. They are now
+  built from the tokens Plumber read as type and corners, a whole style counting by its size: the site's headline
+  reads "Your theme has 18 text sizes". It still says none are used, because the ~30 places that use them
+  (`font: var(--t-label)` and others) are in the homepage app's stylesheets, outside the site's folder: their tokens
+  are read but their declarations aren't counted as the site's code.
+- **Still open on the page:** some motion tokens show `0ms`, the
   value from the token file's reduced-motion block; nothing on the page can move a line yet (the config does).
 - **Still open:** a `font:` line that is off the scale shows the face's fix first ("use var(--font)"), not the
   size's; the reason for each reading isn't written anywhere
