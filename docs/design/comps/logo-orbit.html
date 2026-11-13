@@ -50,6 +50,10 @@
   /* the mark: steps back a little to sit at the heart, and comes forward again */
   .mark { transform-box: view-box; transform-origin: 60px 60px; transition: transform 900ms var(--open) 500ms; }
   .on .mark { transform: scale(.58); transition: transform 1000ms var(--open) 280ms; }
+  /* the P's points and handle dots keep their size while the P steps back: they grow by exactly what the mark shrinks
+     (1 / .58), on the mark's own timing, so they stay the same size as the handles riding the orbits */
+  .cp { transform-box: fill-box; transform-origin: center; transition: transform 900ms var(--open) 500ms; }
+  .on .cp { transform: scale(1.724); transition: transform 1000ms var(--open) 280ms; }
 </style>
 </head>
 <body>
@@ -98,8 +102,8 @@ document.getElementById('mark').insertAdjacentHTML('beforeend', `
   <path d="${STEM}" fill="url(#hatch)" opacity=".22"/><path d="${BOWL}" fill="url(#hatch)" opacity=".22"/>
   <path d="${STEM}" fill="none" stroke="#5a0d3c" stroke-width=".32"/><path d="${BOWL}" fill="none" stroke="#2b1a6b" stroke-width=".32"/>
   <g stroke="#2f86dc" stroke-width=".24">${HANDLES.map(([a, b]) => `<path d="M${a[0]} ${a[1]}L${b[0].toFixed(2)} ${b[1].toFixed(2)}"/>`).join('')}</g>
-  ${HANDLES.map(([, b]) => `<circle cx="${b[0].toFixed(2)}" cy="${b[1].toFixed(2)}" r=".72" fill="#2f86dc" stroke="#fff" stroke-width=".38"/>`).join('')}
-  ${POINTS.map(([x, y]) => `<rect x="${x - 1.25}" y="${y - 1.25}" width="2.5" height="2.5" rx=".6" fill="#fff" stroke="#2f86dc" stroke-width=".42" filter="url(#lift)"/>`).join('')}`);
+  ${HANDLES.map(([, b]) => `<circle class="cp" cx="${b[0].toFixed(2)}" cy="${b[1].toFixed(2)}" r=".72" fill="#2f86dc" stroke="#fff" stroke-width=".38"/>`).join('')}
+  ${POINTS.map(([x, y]) => `<rect class="cp" x="${x - 1.25}" y="${y - 1.25}" width="2.5" height="2.5" rx=".6" fill="#fff" stroke="#2f86dc" stroke-width=".42" filter="url(#lift)"/>`).join('')}`);
 const s = document.getElementById('s');
 const play = () => { s.classList.add('on'); setTimeout(() => s.classList.remove('on'), 4200); };
 document.getElementById('stage').addEventListener('click', play);
