@@ -22,34 +22,38 @@ import { drawn } from '../report.js';
 type Declaration = Report['declarations'][number];
 type Finding = Report['findings'][number];
 type Site = Declaration['site'];
-const VERSION = 2, MAGIC = 'plumber-readings';
+const VERSION = 3, MAGIC = 'plumber-readings';
 /** Numbers per place: which declaration (or -1), line, column, text, anchor, anything else a place carries. */
 const PLACE = 6;
 const TEXTS = ['title', 'because', 'why', 'fix', 'action', 'accept'] as const;
 const WHOLE = ['decisions', 'choices', 'component'] as const;
-interface PackedFinding {
+type Numbers = number[] | Int32Array;
+interface PackedFinding<N extends Numbers = number[]> {
   /** everything small and its own: key, rule, family, severity, … (a json number) */
   rest: number;
-  texts: number[];
-  whole: number[];
+  texts: N;
+  whole: N;
   /** its places in this file, PLACE numbers each (the declaration slot unused) */
-  sites: number[];
+  sites: N;
   /** the declarations it is about: an index into this file's declarations, or -1 and the next entry of `inline` */
-  occurrences?: number[];
+  occurrences?: N;
   declaration?: number;
   /** declarations that are not among this file's own: path, then a place */
-  inline: number[];
+  inline: N;
 }
-interface PackedFile { path: number; declarations: number[]; findings: PackedFinding[] }
+interface PackedFile<N extends Numbers = number[]> { path: number; declarations: N; findings: PackedFinding<N>[] }
 export interface KeptTable {
   version: typeof VERSION;
   paths: string[];
   strings: string[];
   jsons: string[];
-  files: PackedFile[];
+  files: PackedFile<Int32Array>[];
   decisions: Report['decisions'];
 }
-export interface KeptStats { files: number; declarations: number; bodies: number; findings: number; bytes: number; hash: string }
+/** `hash` is of what the table says, the same for the same readings whatever bytes they were written as (the
+ * serialiser writes an array one of two ways depending on how the engine happened to hold it in memory, so two
+ * tables that say the same thing can differ as files). `bytesHash` is of the file, to tell a damaged one. */
+export interface KeptStats { files: number; declarations: number; bodies: number; findings: number; bytes: number; hash: string; bytesHash: string }
 export interface KeptReading { file: string; declarations: Declaration[]; findings: Finding[] }
 
 class Interner {
@@ -70,7 +74,8 @@ export class ReadingPacker {
   /** per file: a declaration's numbers → where it is in the file's own list */
   private own = new Map<PackedFile, Map<string, number>>();
   private at = 0; private phase: 'declarations' | 'findings' | 'sections' | 'done' = 'declarations';
-  private sections: Buffer[] = []; private chunk = 0;
+  private sections: Buffer[] = []; private chunk = 0; private said = createHash('sha256');
+  private say(numbers: Numbers | number[]): void { const view = Int32Array.from(numbers); this.said.update(new Uint8Array(view.buffer, view.byteOffset, view.byteLength)); }
   private counts = { declarations: 0, findings: 0 };
   constructor(readonly report: Report) {}
   private row(file: string): PackedFile {
@@ -140,11 +145,24 @@ export class ReadingPacker {
     }
     if (this.phase === 'sections') {
       // the tables first, then the files a few hundred at a time: no one piece is long to write out
-      if (this.chunk === 0) { this.sections.push(serialize({ magic: MAGIC, version: VERSION, paths: this.paths.values, decisions: report.decisions })); this.chunk = 1; if (performance.now() > until) return false; }
-      if (this.chunk === 1) { this.sections.push(serialize(this.strings.values)); this.chunk = 2; if (performance.now() > until) return false; }
-      if (this.chunk === 2) { this.sections.push(serialize(this.jsons.values)); this.chunk = 3; if (performance.now() > until) return false; }
+      if (this.chunk === 0) { this.sections.push(serialize({ magic: MAGIC, version: VERSION, paths: this.paths.values, decisions: report.decisions })); this.said.update(JSON.stringify([this.paths.values, report.decisions])); this.chunk = 1; if (performance.now() > until) return false; }
+      if (this.chunk === 1) { this.sections.push(serialize(this.strings.values)); this.said.update(JSON.stringify(this.strings.values)); this.chunk = 2; if (performance.now() > until) return false; }
+      if (this.chunk === 2) { this.sections.push(serialize(this.jsons.values)); this.said.update(JSON.stringify(this.jsons.values)); this.chunk = 3; if (performance.now() > until) return false; }
       while (this.at < this.files.length) {
-        this.sections.push(serialize(this.files.slice(this.at, this.at + 128)));
+        // numbers go out as typed arrays: smaller, and the same bytes every time
+        const stored: PackedFile<Int32Array>[] = [];
+        for (const file of this.files.slice(this.at, this.at + 128)) {
+          this.say([file.path, file.declarations.length, file.findings.length]); this.say(file.declarations);
+          const findings: PackedFinding<Int32Array>[] = [];
+          for (const finding of file.findings) {
+            this.say([finding.rest, finding.declaration ?? -2, finding.occurrences ? finding.occurrences.length : -1, finding.sites.length, finding.inline.length]);
+            this.say(finding.texts); this.say(finding.whole); this.say(finding.sites); if (finding.occurrences) this.say(finding.occurrences); this.say(finding.inline);
+            findings.push({ rest: finding.rest, texts: Int32Array.from(finding.texts), whole: Int32Array.from(finding.whole), sites: Int32Array.from(finding.sites),
+              ...(finding.occurrences ? { occurrences: Int32Array.from(finding.occurrences) } : {}), ...(finding.declaration === undefined ? {} : { declaration: finding.declaration }), inline: Int32Array.from(finding.inline) });
+          }
+          stored.push({ path: file.path, declarations: Int32Array.from(file.declarations), findings });
+        }
+        this.sections.push(serialize(stored));
         this.at += 128;
         if (performance.now() > until) return false;
       }
@@ -160,7 +178,7 @@ export class ReadingPacker {
     this.sections.forEach((section, index) => head.writeUInt32LE(section.length, 4 + 4 * index));
     const data = Buffer.concat([head, ...this.sections]);
     const bodies = new Set<number>(); for (const file of this.files) for (let i = 0; i < file.declarations.length; i += PLACE) bodies.add(file.declarations[i]!);
-    return { data, stats: { files: this.files.length, declarations: this.counts.declarations, bodies: bodies.size, findings: this.counts.findings, bytes: data.length, hash: createHash('sha256').update(data).digest('hex') } };
+    return { data, stats: { files: this.files.length, declarations: this.counts.declarations, bodies: bodies.size, findings: this.counts.findings, bytes: data.length, hash: this.said.digest('hex'), bytesHash: createHash('sha256').update(data).digest('hex') } };
   }
 }
 
@@ -178,7 +196,7 @@ export function loadReadings(data: Uint8Array): KeptTable {
   for (let index = 0; index < count; index++) { const length = bytes.readUInt32LE(4 + 4 * index); sections.push(deserialize(bytes.subarray(offset, offset + length))); offset += length; }
   const head = sections[0] as { magic?: string; version?: number; paths: string[]; decisions: Report['decisions'] };
   if (head?.magic !== MAGIC || head.version !== VERSION) throw new Error('Not a reading table this build understands.');
-  return { version: VERSION, paths: head.paths, decisions: head.decisions, strings: sections[1] as string[], jsons: sections[2] as string[], files: (sections.slice(3) as PackedFile[][]).flat() };
+  return { version: VERSION, paths: head.paths, decisions: head.decisions, strings: sections[1] as string[], jsons: sections[2] as string[], files: (sections.slice(3) as PackedFile<Int32Array>[][]).flat() };
 }
 
 /** One file's reading out of the table; undefined for a file with nothing in it. */
@@ -186,11 +204,11 @@ export function readingOf(table: KeptTable, file: string): KeptReading | undefin
   const path = table.paths.indexOf(file), row = path < 0 ? undefined : table.files.find(item => item.path === path);
   if (!row) return undefined;
   const text = (id: number) => (id < 0 ? undefined : table.strings[id]), json = (id: number) => (id < 0 ? undefined : JSON.parse(table.jsons[id]!));
-  const site = (numbers: number[], at: number, of: string): Site => {
+  const site = (numbers: Int32Array, at: number, of: string): Site => {
     const anchor = text(numbers[at + 4]!), extra = json(numbers[at + 5]!);
     return { file: of, line: numbers[at + 1]!, column: numbers[at + 2]!, text: text(numbers[at + 3]!)!, ...(anchor === undefined ? {} : { anchor }), ...extra };
   };
-  const declaration = (numbers: number[], at: number, of: string) => ({ ...json(numbers[at]!), site: site(numbers, at, of) }) as Declaration;
+  const declaration = (numbers: Int32Array, at: number, of: string) => ({ ...json(numbers[at]!), site: site(numbers, at, of) }) as Declaration;
   const declarations: Declaration[] = [];
   for (let at = 0; at < row.declarations.length; at += PLACE) declarations.push(declaration(row.declarations, at, file));
   const findings = row.findings.map((packed) => {
@@ -206,7 +224,7 @@ export function readingOf(table: KeptTable, file: string): KeptReading | undefin
     WHOLE.forEach((key, index) => { const value = json(packed.whole[index]!); if (value !== undefined) finding[key] = value; });
     const sites: Site[] = []; for (let at = 0; at < packed.sites.length; at += PLACE) sites.push(site(packed.sites, at, file));
     finding.sites = sites;
-    if (packed.occurrences) finding.occurrences = packed.occurrences.map(about);
+    if (packed.occurrences) finding.occurrences = Array.from(packed.occurrences, about);
     if (packed.declaration !== undefined) finding.declaration = about(packed.declaration);
     return finding as unknown as Finding;
   });

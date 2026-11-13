@@ -1937,7 +1937,7 @@ export class Session extends EventEmitter {
   private keepTimer?: NodeJS.Timeout;
   private keeping = false;
   private keptDirectory(): string {
-    return join(cacheDirectory(this.root), 'kept', createHash('sha256').update(JSON.stringify(['kept-v2', buildId(), process.versions.v8, this.root])).digest('hex').slice(0, 32));
+    return join(cacheDirectory(this.root), 'kept', createHash('sha256').update(JSON.stringify(['kept-v3', buildId(), process.versions.v8, this.root])).digest('hex').slice(0, 32));
   }
   /** What a directory holds, as one hash of its files' and folders' names: a listing, not a timestamp, so a checkout
    * that puts the same files back reads as unchanged. */
@@ -1962,13 +1962,14 @@ export class Session extends EventEmitter {
     if (this.options.keep === false || environment('KEEP') === '0') return;
     const start = performance.now(), directory = this.keptDirectory();
     const done = async (warm: NonNullable<Session['warm']>) => { this.warm = { ...warm, checkMs: Math.round(performance.now() - start) }; this.emit('kept', this.warm); if (warm.receipt !== 'valid') await this.warmLine(); };
-    let receipt: { version?: number; table?: string; files?: [string, string][]; directories?: [string, string][] };
+    let receipt: { version?: number; table?: string; bytes?: string; files?: [string, string][]; directories?: [string, string][] };
     try { receipt = JSON.parse(await readFile(join(directory, 'receipt.json'), 'utf8')); } catch { return done({ receipt: 'none', checkMs: 0 }); }
-    if (receipt.version !== 2 || !Array.isArray(receipt.files) || !Array.isArray(receipt.directories)) return done({ receipt: 'none', checkMs: 0 });
+    if (receipt.version !== 3 || typeof receipt.table !== 'string' || !Array.isArray(receipt.files) || !Array.isArray(receipt.directories)) return done({ receipt: 'none', checkMs: 0 });
     // the table the receipt speaks for must be the one on disk
-    let table: string | undefined;
-    try { table = createHash('sha256').update(await readFile(join(directory, 'readings.v8'))).digest('hex'); } catch { /* no table */ }
-    if (!table || table !== receipt.table) return done({ receipt: 'damaged', checkMs: 0 });
+    let bytes: string | undefined;
+    try { bytes = createHash('sha256').update(await readFile(join(directory, 'readings.v8'))).digest('hex'); } catch { /* no table */ }
+    if (!bytes || bytes !== receipt.bytes) return done({ receipt: 'damaged', checkMs: 0 });
+    const table = receipt.table;
     const sample: string[] = []; let files = 0, directories = 0;
     const note = (what: string) => { if (sample.length < 8) sample.push(what); };
     // every file the receipt names has the hash it had (a file the server has not come across yet this time is read
@@ -2020,7 +2021,7 @@ export class Session extends EventEmitter {
       // something changed while it was being written: it describes a project that is gone, and the change has
       // already asked for another
       if (revision !== this.revision || this.closed) return;
-      await atomicWrite(join(directory, 'receipt.json'), JSON.stringify({ version: 2, build: buildId(), v8: process.versions.v8, root: this.root, table: stats.hash, files, directories }));
+      await atomicWrite(join(directory, 'receipt.json'), JSON.stringify({ version: 3, build: buildId(), v8: process.versions.v8, root: this.root, table: stats.hash, bytes: stats.bytesHash, files, directories }));
       // one table per project: a table kept by another build of plumber can never be read by this one
       for (const other of await readdir(dirname(directory)).catch(() => [] as string[])) if (other !== 'warm.jsonl' && join(dirname(directory), other) !== directory) await rm(join(dirname(directory), other), { recursive: true, force: true }).catch(() => {});
       this.kept = { ...stats, at: Date.now(), directory };
