@@ -194,6 +194,15 @@ and icon passes' cases, and the palette after a write, were tested again through
 - A finding on a wrapped element is reported at the component's line, not where it is used; the fix card says
   "Changed X to Y" when Y was added beside X.
 
+### Speed as rules grow
+
+Design written 2026-11-13, nothing built or measured: docs/briefs/engine-scaling.md.
+
+- Every rule is called on every element; a new rule costs the whole page even where it could never apply.
+- Any write or late fact re-judges the whole page.
+- The command line loads a route once per width, view, hover and gesture, whether or not a rule will read it.
+- No per-rule timing exists, so nobody sees a slow rule when it is added.
+
 ### What the browser does now (platform guidance)
 
 Design written 2026-11-13, not signed off, nothing built: docs/briefs/platform-guidance-lld.md.

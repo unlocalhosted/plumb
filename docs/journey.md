@@ -818,6 +818,14 @@
 - **The fix and the proof:** none yet. A design only: [platform-guidance-lld.md](briefs/platform-guidance-lld.md), eight layers, the first being the browser-support gate on suggestions plumber already makes. Their published npm package has not been read; three choices in the design depend on it and say so.
 - **Media hooks:** when built, a hand-built modal on a real app before and after, with the recorded open, Escape and outside-click side by side.
 
+## Staying fast as the rule set grows: a design (2026-11-13)
+- **The itch:** the owner, right after the platform design: "as we will keep expanding more rules and more option in our plumber, think about how these things will stay performant".
+- **How we found it:** read the engine's loop. Every enabled rule is called on every element (69 rule objects today), the whole cache is thrown away on any write, and the command line loads each route once per width, view, hover and gesture.
+- **The system behind it:** cost is two products, elements × rules on the page and routes × states on the command line. Each new rule or option multiplies instead of adding.
+- **What we chose and why:** one principle, a rule pays only where it could speak. Rules declare what kinds of element they are about and the engine hands each element only those; facts carry a price class; a page state is rendered only when a rule that is on asks for it and the page has something of its kind; a slow rule is refused by a budget. Timing each rule comes first, because none of this is measured yet.
+- **The fix and the proof:** none yet. Design: [engine-scaling.md](briefs/engine-scaling.md).
+- **Media hooks:** when built, the per-rule table before and after on algorecall's 16,000-element page.
+
 ## Open gaps
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
 
