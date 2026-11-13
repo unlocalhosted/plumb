@@ -261,7 +261,8 @@ const HTML_EXPECTED = [['page-lang', 'root-el'], ['viewport-meta', 'root-el'], [
   ['iframe-hidden', 'fr'], ['inline-handler', 'inl'], ['eager-below-fold', 'far']];
 
 // The same parts, built as the guides say, and the cases that once gave false hits: a keyboard hint inside a label,
-// selectable icons named like actions, a roving tab stop, a card whose link is stretched, a constant given to a button.
+// selectable icons named like actions, a roving tab stop, and four from algorecall: a form sent by script with no
+// method, a switch named by a <label for>, a drawing whose numbers are not its name (and a page still loading, below).
 const RIGHT = `export function App() {
   return (
     <div className="mx-auto flex max-w-5xl flex-col gap-s4 p-s4">
@@ -284,6 +285,14 @@ const RIGHT = `export function App() {
           <button type="button">Cancel</button>
           <button type="submit">Sign in</button>
         </form>
+        <form aria-label="Script sign in" onSubmit={(e) => e.preventDefault()}>
+          <label htmlFor="pw2">Passphrase</label>
+          <input id="pw2" name="passphrase" type="password" autoComplete="current-password" />
+          <button type="submit">Continue</button>
+        </form>
+        <label htmlFor="snd">Sound</label>
+        <button type="button" role="switch" aria-checked="true" id="snd" />
+        <button type="button" aria-label="Two pointers: the shape this algorithm leaves">1 3 4 6 8</button>
         <ul><li>one</li><li>two</li><li>three</li></ul>
         <img alt="A grey box" src="/wide.svg" width="400" height="300" />
         <figure><img alt="A chart" src="${PX}" width="40" height="40" /><figcaption>Sales by month</figcaption></figure>
@@ -356,6 +365,15 @@ test('HTML pack: 32 rules name their problem at its line, the page-wide ones onc
 test('the same parts built right, with the cases that once gave false hits: no pack says anything', { timeout: 240000 }, async (t) => {
   if (!await built()) return t.skip('Run npm run build first.');
   assert.deepEqual(ofPacks(await said(t, RIGHT, { files: { 'public/wide.svg': WIDE_SVG } })), []);
+});
+
+const LOADING = `export function App() {
+  return (<div role="status" aria-busy="true"><h2>Loading</h2><p>Fetching your problems</p></div>);
+}
+`;
+test('a page that is still loading is not told it has no main and no h1', { timeout: 240000 }, async (t) => {
+  if (!await built()) return t.skip('Run npm run build first.');
+  assert.deepEqual(ofPacks(await said(t, LOADING)), []);
 });
 
 test('security pack: each of its 7 rules names the unsafe line in source and leaves its safe twin alone', { timeout: 240000 }, async (t) => {

@@ -1054,10 +1054,19 @@
 - **Not proven:** forms' two deliberate doubts (not shown as findings); the spinner check, which can never speak because the engine does not judge anything that holds a looping animation, the spinner's parents included; the hero-image and oversized-image checks, which need a real large picture.
 - **Media hooks:** the test run's six green lines.
 
+## The checks meet a real app: algorecall (2026-11-14)
+- **The itch:** every batch had been run on apps with almost no forms, dialogs or menus. The owner: "Algorecall first", before anything goes to main.
+- **How we found it:** a copy of algorecall on the test server (the laptop had 159 MB free), its dev server started there, the four page batches run in a browser over 14 pages: front page, sign in, sign up, reset password, settings, the skill tree and the rest. The pages only drew once the copy had the app's own public settings; with placeholders the app waits for its backend for ever.
+- **The system behind it:** each false hit was a check trusting markup where a real app does the job another way. A form sent by script has no method, so the browser's default says GET though nothing is ever sent that way. A library's switch is a button named by a label, which the name computation only allowed for fields. A drawing that shows numbers is not a label someone would say. A page still loading has no main heading yet.
+- **The fix and the proof:** about 60 findings on the first run; four kinds were false and are fixed: the password form "sent with GET" (sign in, sign up), the unnamed switch (settings), the number drawing (front page), and "no main, no h1" said of a loading screen (two pages). Each is now a case on the tests' built-right page, plus one test for the loading screen: seven tests, all pass. Second run on algorecall: none of the four. What stays is true: 25 skill cards that are divs playing button, 15 icons read out beside their words, one heading level skipped, one button with a tabindex it does not need on every page. The forms batch found nothing wrong with algorecall's sign-in forms beyond two doubts (required fields whose labels do not say so).
+- **Not known:** pages behind sign-in were judged signed out. The copy and its settings file are removed from the server.
+- **Media hooks:** the first and second runs side by side.
+
 ## Open gaps
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
 
 ## Shipped · 2026-W46
+- The checks from Chrome's guides were run on a real app with real forms (algorecall, 14 pages). Four kinds of false alarm were found and fixed, and each is now a test ([entry](#the-checks-meet-a-real-app-algorecall-2026-11-14)).
 - The 135 checks from Chrome's guides have tests: six, each a real page through the real command, proving 128 checks at the line of their problem and one page built right where none may speak ([entry](#the-checks-from-chromes-guides-get-their-tests-2026-11-14)).
 - plumber now checks the markup itself: 34 checks from Chrome's HTML guide, such as an image with no size that makes the page jump, a box with a hand cursor that a keyboard cannot press, a list typed with bullet characters, and a tooltip that only a mouse can see ([entry](#thirty-four-html-checks-in-one-patch-2026-11-14)). On the homepage branch, not on main.
 - plumber now checks common parts: 37 checks from Chrome's component guides, such as a dialog with no name, tabs that are each a Tab stop, a breadcrumb trail that is not a list, and a button that says it is closed while its panel is open ([entry](#thirty-seven-component-checks-in-one-patch-2026-11-14)). On the homepage branch, not on main.

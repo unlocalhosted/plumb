@@ -65,6 +65,9 @@ export function accessibleName(el) {
     const placeholder = trimmed(el.getAttribute('placeholder'));
     if (placeholder) return { name: placeholder, from: 'placeholder' };
   } else {
+    // a <label for> names any labelable element: a library's switch is a <button id> with one
+    const labels = trimmed([...(el.labels ?? [])].map(contentName).join(' '));
+    if (labels) return { name: labels, from: 'label' };
     const content = contentName(el);
     if (content) return { name: content, from: 'content' };
   }
@@ -183,7 +186,8 @@ export const labelInName = rule('label-in-name', 'name', function (el, facts) {
   if (!el.hasAttribute('aria-label') || !el.matches(CONTROL) || !shown(el, facts)) return;
   const norm = (t) => trimmed(t).toLowerCase().replace(/[^\p{L}\p{N} ]/gu, '').replace(/\s+/g, ' ').trim();
   const visible = norm(el.innerText ?? ''), label = norm(el.getAttribute('aria-label'));
-  if (!visible || !label || /^.$/u.test(visible) || label.includes(visible)) return;
+  // what is shown has to hold a word someone would say: a drawing's numbers, or one mark, is not a label
+  if (!visible || !label || !/\p{L}{3}/u.test(visible) || label.includes(visible)) return;
   // said only when the label shares no word with what is shown ("Dismiss" named "Close dialog"). A row of several
   // pieces whose label says them in another order or at more length still answers to the words on screen.
   const words = new Set(label.split(' '));

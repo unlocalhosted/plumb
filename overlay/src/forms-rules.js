@@ -81,7 +81,7 @@ export const formUnnamed = rule('form-unnamed', 'name', function (el, facts) {
 });
 // §1: "DON'T use GET for sensitive data (it exposes data in history/logs)"
 export const getSensitive = rule('get-sensitive', 'method', function (el, facts) {
-  if (el.localName !== 'form' || el.method !== 'get' || !el.querySelector('input[type="password"], input[autocomplete^="cc-"]') || !drawn(el, facts)) return;
+  if (el.localName !== 'form' || el.method !== 'get' || !el.hasAttribute('method') && !el.hasAttribute('action') || !el.querySelector('input[type="password"], input[autocomplete^="cc-"]') || !drawn(el, facts)) return;
   return found(this, el, {}, { value: 'method="get"', advice: 'Add method="post".' });
 });
 // §1: "DON'T disable textarea resizing without alternate layout provisions"

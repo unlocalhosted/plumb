@@ -23,6 +23,9 @@ const viewport = () => document.querySelector('meta[name="viewport"]')?.getAttri
 const fold = () => window.innerHeight;
 const pageTop = (r) => r.top + window.scrollY;
 
+// a page that is still loading (a busy shell, a handful of elements) has no content to judge as a page yet
+const loaded = () => !document.querySelector('[aria-busy="true"]') && document.body.querySelectorAll('*').length >= 40;
+
 // ── §1 the page ─────────────────────────────────────────────
 // "DO set the lang attribute on the <html> element"
 export const pageLang = rule('page-lang', 'lang', function (el, facts) {
@@ -51,9 +54,7 @@ export const quirksMode = rule('quirks-mode', 'doctype', function (el, facts) {
 });
 // "DO use semantic landmarks (<header>, <nav>, <main>, <aside>, <footer>)"
 export const landmarkMain = rule('landmark-main', 'landmark', function (el, facts) {
-  if (!isPage(el) || document.querySelector('main, [role="main"]')) return;
-  // a page that is one small widget (a sandbox, a frame's content) has nothing to jump past
-  if (document.body.querySelectorAll('*').length < 40) return;
+  if (!isPage(el) || document.querySelector('main, [role="main"]') || !loaded()) return;
   return found(this, el, {}, { value: 'no <main>', confidence: 0.85, advice: 'Wrap the page’s content, apart from its header and footer, in <main>.' });
 });
 // "DON'T use more than one banner, main, or contentinfo landmark per page" (main is the accessibility pack's)
@@ -68,7 +69,7 @@ export const bannerMany = rule('banner-many', 'landmark', function (el, facts) {
 });
 // "DO use a single <h1> per page/view representing the main topic"
 export const h1Missing = rule('h1-missing', 'heading', function (el, facts) {
-  if (!isPage(el) || document.querySelector('h1, [role="heading"][aria-level="1"]')) return;
+  if (!isPage(el) || document.querySelector('h1, [role="heading"][aria-level="1"]') || !loaded()) return;
   if (!document.querySelector('h2, h3, h4')) return; // a page with no headings at all is an app surface, judged elsewhere
   return found(this, el, {}, { value: 'no <h1>', confidence: 0.85, advice: 'Make the page’s title an <h1>.' });
 });
