@@ -20,7 +20,7 @@ export function mount(host, root, css) {
   const block = `<a class="s-box" data-hue="butter" href="#" onclick="return false"><span class="in"><span class="plate"><i class="toy">${toyOf('card')}</i></span><b>Surfaces</b><em>Three heights, and no others.</em></span></a>`;
 
   // the same desk, by day and by night: every height at once
-  const desk = (scheme, name) => `<div class="desk pl-${scheme}"><small>${name}</small>
+  const desk = (scheme, name) => `<div class="desk pl-${scheme}" data-scheme="${scheme}"><small>${name}</small>
       <div class="lay"><div class="left">${block}<div class="strip">${pills}</div></div><div class="right">${nameTag}${card}</div></div></div>`;
 
   // the tokens, from the file: name, value now, and the file's own note on what it is for
@@ -51,6 +51,10 @@ export function mount(host, root, css) {
     .crd .acts { display: flex; gap: 8px; }
     .strip { display: flex; flex-wrap: wrap; gap: 8px; padding: 14px 16px; border-radius: 16px; background: var(--pl-bg-inset); }
     .s-box { width: 210px; max-width: 100%; }
+    /* a soft block reads its night rules from data-scheme (soft.js), so each desk carries it; and the day desk keeps
+       its day block when the site itself is dark */
+    :host([data-scheme="dark"]) .pl-light .s-box { --side: var(--h); }
+    :host([data-scheme="dark"]) .pl-light .s-box .in { background: linear-gradient(180deg, color-mix(in oklab, var(--hs) 82%, #fff), var(--hs)); box-shadow: inset 0 2px 0 0 color-mix(in oklab, #fff 75%, transparent), inset 0 -2.5px 0 0 color-mix(in oklab, var(--h) 22%, transparent); }
     .s-box .toy { display: block; width: 40px; height: 40px; } .s-box .toy svg { display: block; width: 100%; height: 100%; overflow: visible; }
     .pl-tag svg { width: 14px; height: 14px; }
 
