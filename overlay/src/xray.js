@@ -172,14 +172,18 @@ export function xray(el, { tokenOf, origin = { left: 0, top: 0 }, room, source, 
   let said = '';
   if (zone) {
     const zj = judge(zone.family, zone.n), zx = zone.x - origin.left, zy = zone.y - origin.top;
-    draw += `<rect class="xr-zone" x="${r1(zx)}" y="${r1(zy)}" width="${r1(zone.w)}" height="${r1(zone.h)}" rx="${zone.family === 'radius' ? 4 : 2}" fill="color-mix(in oklab, ${zj.c} 22%, transparent)" stroke="${zj.c}" stroke-width="2"/>`;
+    if (zj.zero) zj.c = 'var(--pl-sky)';
+    draw += `<rect class="xr-zone" x="${r1(zx)}" y="${r1(zy)}" width="${r1(zone.w)}" height="${r1(zone.h)}" rx="${zone.family === 'radius' ? 4 : 2}" fill="color-mix(in oklab, ${zj.c} 22%, transparent)" stroke="${zj.c}" stroke-width="2"${zj.zero ? ' stroke-dasharray="4 3"' : ''}/>`;
     said = `<span class="xr-say" style="left:${r1(zx + zone.w / 2)}px;top:${r1(zy + zone.h + 8)}px"><b>${esc(zone.said)}</b> ${zj.n}${zj.t ? ` <i class="on">${esc(zj.t)}</i>` : zj.off ? ' <i class="off">off scale</i>' : ''} <kbd>⇧</kbd></span>`;
   }
   // parts in hand while a picker has them: drawn strong, no pill (the picker says it)
   for (const lz of lit) { const lj = judge(lz.family, lz.n); draw += `<rect class="xr-zone" x="${r1(lz.x - origin.left)}" y="${r1(lz.y - origin.top)}" width="${r1(lz.w)}" height="${r1(lz.h)}" rx="2" fill="color-mix(in oklab, ${lj.c} 22%, transparent)" stroke="${lj.c}" stroke-width="2"/>`; }
   const wSz = sizing(el, cs, 'w'), hSz = sizing(el, cs, 'h');
-  const pills = `<span class="ruler-pill" style="left:${r1(r.left + r.width / 2)}px;top:${r1(above)}px">${esc(wSz)}</span>`
-    + `<span class="ruler-pill" style="left:${r1(beside)}px;top:${r1(r.top + r.height / 2)}px">${esc(hSz)}</span>` + said;
+  // the rulers' numbers carry their verdict too: deep coral off your sizes, deep mint on one (with its name)
+  const sz = (n) => { const v = judge('size', n); return v.off ? 'background:var(--pl-coral-ink)' : v.on ? 'background:var(--pl-mint-ink)' : ''; };
+  const named = (txt, n) => { const v = judge('size', n); return v.on ? `${txt} · ${v.t}` : txt; };
+  const pills = `<span class="ruler-pill" style="left:${r1(r.left + r.width / 2)}px;top:${r1(above)}px;${sz(r.width)}">${esc(named(wSz, r.width))}</span>`
+    + `<span class="ruler-pill" style="left:${r1(beside)}px;top:${r1(r.top + r.height / 2)}px;${sz(r.height)}">${esc(named(hSz, r.height))}</span>` + said;
 
   // ── the card ──
   const tok = (v) => (v.zero ? '' : v.on ? `<span class="xr-tok on">${esc(v.t)}</span>` : v.off ? '<span class="xr-tok off">off scale</span>' : '');
@@ -230,8 +234,16 @@ export function zonesOf(el) {
   const rad = px(cs.borderTopLeftRadius);
   if (rad > 1) { const k = Math.max(10, Math.min(rad, r.width / 2, r.height / 2)); [[r.left, r.top], [r.right - k, r.top], [r.right - k, r.bottom - k], [r.left, r.bottom - k]].forEach(([x, y]) => add({ prop: 'border-radius', family: 'radius', toy: 'corner', said: 'Corner', n: rad, x, y, w: k, h: k })); }
   const pad = [[ix, iy, iw, p[0]], [ix + iw - p[1], iy + p[0], p[1], ih - p[0] - p[2]], [ix, iy + ih - p[2], iw, p[2]], [ix, iy + p[0], p[3], ih - p[0] - p[2]]];
-  pad.forEach(([x, y, w, h], i) => add({ prop: `padding-${SIDES[i]}`, side: SIDES[i], family: 'spacing', toy: 'padding', said: `Padding ${SIDES[i]}`, n: p[i], x, y, w, h }));
+  pad.forEach(([x, y, w, h], i) => add({ prop: `padding-${SIDES[i]}`, side: SIDES[i], box: 'padding', family: 'spacing', toy: 'padding', said: `Padding ${SIDES[i]}`, n: p[i], x, y, w, h }));
   for (const g of gaps(el, cs)) add({ prop: g.col ? 'row-gap' : 'column-gap', family: 'spacing', toy: 'gap', said: 'Gap', n: g.n, x: g.x, y: g.y, w: g.w, h: g.h, col: g.col });
+  // margin, outside each side: always a band to take hold of, even at 0 (then a thin one, 10px)
+  const m = SIDES.map((s) => px(cs.getPropertyValue(`margin-${s}`))), M = m.map((n) => Math.max(n, 10));
+  [[r.left, r.top - M[0], r.width, M[0]], [r.right, r.top, M[1], r.height], [r.left, r.bottom, r.width, M[2]], [r.left - M[3], r.top, M[3], r.height]]
+    .forEach(([x, y, w, h], i) => add({ prop: `margin-${SIDES[i]}`, side: SIDES[i], box: 'margin', family: 'spacing', toy: 'margin', said: `Margin ${SIDES[i]}`, n: m[i], x, y, w, h, outside: true }));
+  // width and height: their rulers, just clear of the margin (where the X-ray draws them)
+  const above = r.top - m[0] - 12, beside = r.right + m[1] + 12;
+  add({ prop: 'width', family: 'size', toy: 'width', said: 'Width', n: r.width, x: r.left, y: above - 9, w: r.width, h: 18, outside: true });
+  add({ prop: 'height', family: 'size', toy: 'height', said: 'Height', n: r.height, x: beside - 9, y: r.top, w: 18, h: r.height, outside: true });
   const words = [...el.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim());
   if (words) add({ prop: 'font-size', family: 'type', toy: 'type', said: 'Text size', n: px(cs.fontSize), x: ix + p[3], y: iy + p[0], w: iw - p[1] - p[3], h: ih - p[0] - p[2] });
   return out;

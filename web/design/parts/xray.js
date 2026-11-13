@@ -11,6 +11,8 @@ import { burst } from '../../../overlay/src/burst.js';
 const SCALE = {
   spacing: [[2, '0.5'], [4, '1'], [6, '1.5'], [8, '2'], [10, '2.5'], [12, '3'], [14, '3.5'], [16, '4'], [20, '5'], [24, '6'], [28, '7'], [32, '8'], [40, '10'], [48, '12']],
   radius: [[2, 'xs'], [4, 'sm'], [6, 'md'], [8, 'lg'], [12, 'xl'], [16, '2xl'], [24, '3xl'], [9999, 'full']],
+  // widths and heights: the spacing scale to 96, then Tailwind's larger steps and its container widths
+  size: [[32, '8'], [36, '9'], [40, '10'], [48, '12'], [64, '16'], [80, '20'], [96, '24'], [128, '32'], [160, '40'], [192, '48'], [224, '56'], [256, '64'], [288, '72'], [320, '80'], [384, '96'], [448, 'md'], [512, 'lg'], [576, 'xl'], [672, '2xl']],
   type: [[12, 'xs'], [14, 'sm'], [16, 'base'], [18, 'lg'], [20, 'xl'], [24, '2xl']],
 };
 const tokenOf = (family, n) => SCALE[family]?.find(([v]) => Math.abs(v - n) <= 0.5 || (v === 9999 && n > 500))?.[1] ?? null;
@@ -130,7 +132,12 @@ export function mount(host, root, css) {
   const track = (e) => {
     mouse = { x: e.clientX, y: e.clientY };
     if (busy()) return;
-    const el = pinned ?? e.target.closest?.('[data-x]');
+    // on the shown element's outside parts (its margin, its rulers) it stays the one shown
+    const outside = shown && !pinned ? zonesOf(shown).filter((q) => q.outside) : [];
+    // …unless the pointer is on another element (a neighbour inside that band): then it's that one
+    const under = e.target.closest?.('[data-x]');
+    const onOut = shown && !pinned && (!under || under.contains(shown)) ? zoneAt(outside, e.clientX, e.clientY) : null;
+    const el = pinned ?? (onOut ? shown : e.target.closest?.('[data-x]'));
     const z = el ? zoneAt(zonesOf(el), e.clientX, e.clientY) : null;
     if (el !== shown || z?.prop !== zone?.prop || z?.side !== zone?.side) { zone = z; draw(el, z); }
   };
@@ -159,17 +166,18 @@ export function mount(host, root, css) {
     const S = optionsFor(z.family, z.n), here = S.findIndex((o) => Math.abs(o.v - z.n) <= 0.5 || (o.v === 9999 && z.n > 500));
     // padding moves one side, its pair, or all four; every other part is one property
     const MODES = z.side ? [[z.side], [z.side, PAIR[z.side]], ALL] : [null];
+    const BOX = z.box ?? 'padding';
     const SAID = z.side ? [z.side, `${z.side} + ${PAIR[z.side]}`, 'all sides'] : [z.said.toLowerCase()];
     let mode = 0;
-    const props = () => (MODES[mode] ? MODES[mode].map((k) => `padding-${k}`) : [z.prop]);
-    const before = Object.fromEntries((z.side ? ALL.map((k) => `padding-${k}`) : [z.prop]).map((q) => [q, el.style.getPropertyValue(q)]));
-    const lit = () => zonesOf(el).filter((q) => props().includes(q.prop) && (q.prop.startsWith('padding') ? true : q.side === z.side));
+    const props = () => (MODES[mode] ? MODES[mode].map((k) => `${BOX}-${k}`) : [z.prop]);
+    const before = Object.fromEntries((z.side ? ALL.map((k) => `${BOX}-${k}`) : [z.prop]).map((q) => [q, el.style.getPropertyValue(q)]));
+    const lit = () => zonesOf(el).filter((q) => props().includes(q.prop));
     const s = box(), grab = document.createElement('i');
     grab.className = 'xr-grab';
-    grab.dataset.axis = z.side ? (z.side === 'top' || z.side === 'bottom' ? 'y' : 'x') : z.family === 'radius' ? 'd' : z.col ? 'y' : z.family === 'type' ? 'y' : 'x';
+    grab.dataset.axis = z.side ? (z.side === 'top' || z.side === 'bottom' ? 'y' : 'x') : z.prop === 'width' ? 'x' : z.prop === 'height' ? 'y' : z.family === 'radius' ? 'd' : z.col ? 'y' : z.family === 'type' ? 'y' : 'x';
     grab.style.cssText = `left:${z.x - s.left}px;top:${z.y - s.top}px;width:${z.w}px;height:${z.h}px`;
     stage.append(grab);
-    const perPx = z.side ? (dx, dy) => PER[z.side](dx, dy) / 12 : z.family === 'type' ? (dx, dy) => -dy / 16 : z.col ? (dx, dy) => dy / 12 : (dx, dy) => (dx + dy) / 14;
+    const perPx = z.side ? (dx, dy) => (BOX === 'margin' ? -1 : 1) * PER[z.side](dx, dy) / 12 : z.prop === 'width' ? (dx) => dx / 16 : z.prop === 'height' ? (dx, dy) => dy / 16 : z.family === 'type' ? (dx, dy) => -dy / 16 : z.col ? (dx, dy) => dy / 12 : (dx, dy) => (dx + dy) / 14;
     let cur = S[here < 0 ? 0 : here];
     const paint = () => {
       for (const q of props()) el.style.setProperty(q, cur.v === 9999 ? '9999px' : `${cur.v}px`);
