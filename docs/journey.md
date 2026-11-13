@@ -2486,6 +2486,20 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   `--pl-page-space-*` both hold 32, 48, 64, 96; 2 and 6 are off the 4px base; three names for one kind.
 - **The owner's frame for the page, same day:** it has four jobs, "what it found, how to make sense of it, how to fix
   it, help user arrive at a good system". Today they are mixed in one section.
+- **Then the four steps (same day; owner chose "four steps").** The section is now its own part of the page,
+  `overlay/src/system-review.js`, in its own shadow root (the page's other parts use the same short class names):
+  1 What Plumber found, one line per kind with counts only; 2 How they fit together, the pictures only (lengths as a
+  ladder at real size, type sizes as "Aa" set at their size, colours as swatch strips), a shared step ringed and an
+  off-base step yellow; 3 Decide, decisions drawn from those numbers only (which scale is the one, round off-base
+  steps or keep them, what the kind is called with Tailwind's name offered and why, whether a name-only guess is
+  right), each an answer with the system's buttons, turning mint when made; 4 Your system, redrawn live from the
+  choices: one scale per kind, its name, the steps that came from a dropped scale marked yellow, how many old names
+  now point at it, and "Copy the CSS". Deterministic; choices live in the tab. On the site: 9 decisions; choosing keep
+  `--pl-space-*`, round, `--spacing-*` gives one 10-step spacing scale with 10 old names pointing at it.
+- **Open on the four steps:** nothing is written to your files from the page yet; colour has no roles map (29 role
+  scales show as swatch strips); steps that came from a dropped scale are named by their size (`--spacing-32`)
+  beside inherited names (`--spacing-8` is 24px), a mixed numbering a naming choice should settle; the page's older
+  parts (type headline, landing chart, specimen, causes) still sit above the four steps.
 - **Still open on the page:** some motion tokens show `0ms`, the
   value from the token file's reduced-motion block; nothing on the page can move a line yet (the config does).
 - **Still open:** a `font:` line that is off the scale shows the face's fix first ("use var(--font)"), not the
@@ -2550,6 +2564,8 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   one line per scale into the config with the reason beside it, so a wrong reading is seen and fixed in one place (entry 34).
 - The project page shows how Plumber read your design system: each kind of token, its scales with their values, and why
   each was read that way, so a wrong reading is seen at a glance (entry 34).
+- The project page walks you to a design system in four steps: what was found, how it fits together (scales drawn at
+  real size), a few decisions, and your system redrawn live from your answers, with its CSS to copy (entry 34).
 - React Plumber has a mark: a pink stem and a violet bowl, the gap between them the P, with plumber's guardrail at hero size. It is in the site's bar, the overlay's dock and the films, from one source ([entry](#react-plumber-gets-a-mark-2026-11-13)).
 - Craft № 42 is a 16:9 React Plumber marketing film: the fault felt, measured in plumber's marks, the code that caused it and the code that fixes it, the payoff, and plumber's ✓ bursting where the fix was written, signed and watermarked ([entry](#42-as-a-react-plumber-marketing-film-2026-11-13)).
 - The showcase's #42 explains itself as a short film drawn in plumber's own marks: you feel the tabs jitter, see plumber measure it and name the weight, see the fix keep the width, and watch every tab hold ([entry](#42-redrawn-in-plumbers-own-language-after-copying-the-reference-2026-11-13)).

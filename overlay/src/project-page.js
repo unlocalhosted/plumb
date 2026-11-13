@@ -11,7 +11,8 @@ import { SCALE_CSS } from './scale-marks.js';
 import { GRAVITY_CSS, Gravity } from './gravity.js';
 import { SPECIMEN_CSS, Specimen } from './specimen.js';
 import { CAUSE_LIST_CSS, CauseList } from './cause-list.js';
-import { TOY_DEFS, toyOf } from './toys.js';
+import { TOY_DEFS } from './toys.js';
+import { mountReview } from './system-review.js';
 
 const nf = new Intl.NumberFormat('en');
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
@@ -32,124 +33,6 @@ const PAGE_CSS = `
   .lede { max-width: 60ch; margin: 0 0 var(--pl-page-space-1); font: var(--pl-page-body); color: var(--pl-text-secondary); text-wrap: pretty; }
   @media (max-width: 720px) { main { padding: var(--pl-page-space-1) var(--pl-space-6) var(--pl-page-space-3); } .top { padding: 10px 16px; } .top .read { display: none; } h1 { font: var(--pl-page-display-narrow); } }
 `;
-
-/* How Plumber read your system, as a review: per kind, one verdict line is the loud thing; under it one quiet row per
-   scale (its stem, its steps as plain numbers or swatches, how it was read). A reading from the name alone is the only
-   thing marked, because it is the only one worth a second look. Files are said once; lone tokens fold away */
-const READING_CSS = `
-  #reading { display: block; margin-top: var(--pl-page-space-3); }
-  #reading h2 { margin: 0; font: var(--pl-page-title); letter-spacing: var(--pl-tracking-title); }
-  #reading .verdict { max-width: 60ch; margin: var(--pl-space-4) 0 var(--pl-page-space-1); font: var(--pl-page-body); color: var(--pl-text-secondary); }
-  #reading .verdict b { color: var(--pl-text-primary); font-weight: 600; }
-  .kinds { display: grid; gap: var(--pl-space-5); }
-  .kind { padding: var(--pl-space-6) var(--pl-space-8) var(--pl-space-7); border-radius: var(--pl-radius-card); background: var(--pl-bg-inset); }
-  .kind > header { display: grid; grid-template-columns: var(--pl-space-8) minmax(0, 1fr); align-items: center; gap: var(--pl-space-5); }
-  .kind .toy { width: var(--pl-space-8); height: var(--pl-space-8); }
-  .kind .toy svg { display: block; width: 100%; height: 100%; overflow: visible; }
-  .kind header b { font: var(--pl-card-title); font-family: var(--pl-round); font-size: 17px; }
-  .kind header span { margin-left: var(--pl-space-4); font: var(--pl-card-body); color: var(--pl-text-secondary); }
-  .rows { display: grid; margin: var(--pl-space-5) 0 0 calc(var(--pl-space-8) + var(--pl-space-5)); }
-  .row { display: grid; grid-template-columns: minmax(0, 11rem) minmax(0, 1fr) auto; align-items: baseline; gap: var(--pl-space-6); padding: var(--pl-space-3) 0; }
-  .row code { font: var(--pl-card-code); color: var(--pl-text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .row .steps { display: flex; flex-wrap: wrap; align-items: center; gap: var(--pl-space-1) var(--pl-space-4); font: var(--pl-card-code); color: var(--pl-text-secondary); font-variant-numeric: tabular-nums; }
-  .row .steps .unit { color: var(--pl-text-placeholder); }
-  .row .sw { width: var(--pl-space-6); height: var(--pl-space-6); border-radius: 50%; box-shadow: inset 0 0 0 var(--pl-line) color-mix(in oklab, var(--pl-text-primary) 14%, transparent); }
-  .row .how { font: var(--pl-card-meta); color: var(--pl-text-secondary); white-space: nowrap; }
-  .row .how.look { color: var(--pl-soft-text); font-weight: 600; }
-  .file { margin: var(--pl-space-5) 0 0 calc(var(--pl-space-8) + var(--pl-space-5)); font: var(--pl-card-meta); color: var(--pl-text-secondary); }
-  .kind details { margin: var(--pl-space-4) 0 0 calc(var(--pl-space-8) + var(--pl-space-5)); }
-  .kind summary { cursor: pointer; font: var(--pl-card-meta); color: var(--pl-text-secondary); }
-  .kind details .rows { margin-left: 0; }
-  @media (max-width: 720px) { .kind { padding: var(--pl-space-6); } .rows, .file, .kind details { margin-left: 0; } .row { grid-template-columns: 1fr auto; } .row .steps { grid-column: 1 / -1; } }
-`;
-// each kind by the toy and the word the rest of Plumber uses for it
-const KINDS = { spacing: ['padding', 'Spacing'], color: ['fill', 'Colour'], radius: ['corner', 'Corners'], type: ['type', 'Type'], motion: ['motion', 'Motion'],
-  elevation: ['shadow', 'Shadows'], z: ['layer', 'Layers'], size: ['size', 'Sizes'], opacity: ['opacity', 'Opacity'] };
-const STYLE = /^(?:(?:normal|italic|bold|\d{3})\s+)*([\d.]+)(px|rem|em|%)(?:\s*\/\s*[\d.]+(?:px|rem|em|%)?)?\s+\S/;
-// a scale's steps as plain numbers with their unit said once: 2 4 6 8 px; a text style by its size; a face by its first name
-function steps(family, tokens) {
-  if (family === 'elevation') return `<span>${tokens.length} ${tokens.length === 1 ? 'shadow' : 'shadows'}</span>`;
-  if (family === 'color') return tokens.slice(0, 14).map((t) => `<i class="sw" style="background: ${esc(t.value)}" title="${esc(t.value)}"></i>`).join('') + (tokens.length > 14 ? `<span>+${tokens.length - 14}</span>` : '');
-  const parts = tokens.map((t) => { const v = String(t.value).trim(), style = STYLE.exec(v), n = /^(-?[\d.]+)(px|rem|em|ms|s|%)?$/.exec(v);
-    return style ? [style[1], style[2]] : n ? [n[1], n[2] ?? ''] : [v.split(',')[0].replace(/["']/g, '').slice(0, 16), null]; });
-  const unit = parts.every((p) => p[1] !== null && p[1] === parts[0][1]) ? parts[0][1] : null;
-  const shown = parts.map((p) => (unit === null && p[1] ? `${p[0]}${p[1]}` : p[0]));
-  const list = [...new Set(unit === null ? shown : shown.sort((a, b) => Number(a) - Number(b)))];
-  return list.slice(0, 12).map((v) => `<span>${esc(v)}</span>`).join('') + (list.length > 12 ? `<span>+${list.length - 12}</span>` : '') + (unit ? `<span class="unit">${esc(unit)}</span>` : '');
-}
-// how a line was read, in a word or two; the name alone is a guess worth a look
-function how(reasons) {
-  const by = [reasons.some((r) => r.startsWith('its value')) && 'value', reasons.some((r) => r.startsWith('used in')) && 'use', reasons.some((r) => r.startsWith('its name')) && 'name'].filter(Boolean);
-  if (by.length === 1 && by[0] === 'name') return `<span class="how look" title="${esc(reasons.join(' · '))}">by its name only</span>`;
-  return `<span class="how" title="${esc(reasons.join(' · '))}"></span>`;
-}
-/* The ladder: a length scale drawn as real space, so a decision can be seen. One row per distinct value across the
-   kind's scales, one column per scale; a step is drawn at its size (a spacing bar as wide as its pixels, a corner as
-   round as its radius). Two scales holding one value share a row, so an overlap is visible; a value off the base the
-   steps share is flagged on its row. Above it, at most three sentences say what to decide, from these numbers only */
-const LADDER_CSS = `
-  .ladder { margin: var(--pl-space-6) 0 var(--pl-space-2) calc(var(--pl-space-8) + var(--pl-space-5)); }
-  .ladder .say { display: grid; gap: var(--pl-space-2); margin: 0 0 var(--pl-space-6); padding: 0; list-style: none; max-width: 64ch; font: var(--pl-page-small); color: var(--pl-text-primary); }
-  .ladder .say li::before { content: '→ '; color: var(--pl-text-secondary); }
-  .ladder .say code { font: var(--pl-card-code); }
-  .ladder .grid { display: grid; grid-template-columns: var(--pl-page-space-2) repeat(var(--cols), minmax(var(--pl-page-space-4), 1fr)); column-gap: var(--pl-space-6); align-items: center; overflow-x: auto; }
-  .ladder .grid > * { min-height: var(--pl-space-8); }
-  .ladder .col { display: flex; align-items: end; font: var(--pl-card-code); color: var(--pl-text-secondary); padding-bottom: var(--pl-space-3); }
-  .ladder .v { display: flex; align-items: center; gap: var(--pl-space-2); font: var(--pl-card-code); color: var(--pl-text-primary); font-variant-numeric: tabular-nums; }
-  .ladder .v.off { color: var(--pl-soft-text); font-weight: 600; }
-  .ladder .cell { display: flex; align-items: center; }
-  .ladder .bar { height: var(--pl-space-3); border-radius: var(--pl-radius-mark); background: var(--pl-mint); }
-  .ladder .shared .bar { box-shadow: 0 0 0 var(--pl-space-1) color-mix(in oklab, var(--pl-mint) 30%, transparent); }
-  .ladder .arc { width: var(--pl-space-8); height: var(--pl-space-8); border-top: var(--pl-space-1) solid var(--pl-pink); border-left: var(--pl-space-1) solid var(--pl-pink); box-sizing: border-box; }
-  .ladder .row-rule { grid-column: 1 / -1; min-height: 0; height: var(--pl-line); background: color-mix(in oklab, var(--pl-text-primary) 5%, transparent); }
-`;
-function ladder(k) {
-  if (k.family !== 'spacing' && k.family !== 'radius') return '';
-  const pxOf = (v) => { const m = /^(-?[\d.]+)(px|rem)$/.exec(String(v).trim()); return m ? Number(m[1]) * (m[2] === 'rem' ? 16 : 1) : null; };
-  const lanes = k.groups.filter((g) => g.pattern).map((g) => ({ name: g.pattern, values: [...new Set(g.tokens.map((t) => pxOf(t.value)).filter((n) => n !== null && n > 0))] })).filter((l) => l.values.length > 1);
-  if (!lanes.length) return '';
-  const rows = [...new Set(lanes.flatMap((l) => l.values))].sort((a, b) => a - b);
-  // the base most steps share: 4 when at least three in four are multiples of 4, else 2
-  const base = rows.filter((v) => v % 4 === 0).length >= rows.length * 0.75 ? 4 : 2, off = rows.filter((v) => v % base !== 0);
-  const say = [];
-  for (let i = 0; i < lanes.length; i++) for (let j = i + 1; j < lanes.length; j++) {
-    const both = lanes[i].values.filter((v) => lanes[j].values.includes(v)).sort((a, b) => a - b);
-    if (both.length >= 2) say.push(`<code>${esc(lanes[i].name)}</code> and <code>${esc(lanes[j].name)}</code> both hold ${both.join(', ')}. Two names for one step: keep one scale and point the other at it.`);
-  }
-  if (off.length) say.push(`${off.join(' and ')} ${off.length === 1 ? 'is' : 'are'} off the ${base}px base the other steps share. Is ${off.length === 1 ? 'it' : 'each'} meant, or a rounding of ${off.map((v) => Math.round(v / base) * base).join(' and ')}?`);
-  const stems = new Set(lanes.map((l) => l.name.replace(/\*$/, '')));
-  if (stems.size > 1) say.push(`${stems.size} names for one kind (${[...stems].map((s) => `<code>${esc(s)}</code>`).join(', ')}). One name reads as one system; Tailwind calls this <code>--${k.family === 'radius' ? 'radius' : 'spacing'}-*</code>.`);
-  const cell = (lane, v) => {
-    if (!lane.values.includes(v)) return '<span class="cell"></span>';
-    const shared = lanes.filter((l) => l.values.includes(v)).length > 1;
-    const mark = k.family === 'radius' ? `<i class="arc" style="border-top-left-radius: ${v}px"></i>` : `<i class="bar" style="width: ${Math.min(v, 160)}px"></i>`;
-    return `<span class="cell${shared ? ' shared' : ''}" title="${esc(lane.name)}: ${v}px">${mark}</span>`;
-  };
-  return `<div class="ladder">${say.length ? `<ul class="say">${say.map((t) => `<li>${t}</li>`).join('')}</ul>` : ''}
-    <div class="grid" style="--cols: ${lanes.length}"><span></span>${lanes.map((l) => `<span class="col">${esc(l.name)}</span>`).join('')}
-      ${rows.map((v) => `<span class="row-rule"></span><span class="v${off.includes(v) ? ' off' : ''}">${v}</span>${lanes.map((l) => cell(l, v)).join('')}`).join('')}</div></div>`;
-}
-
-function reading(kinds) {
-  if (!kinds?.length) return '';
-  const all = kinds.flatMap((k) => k.groups), tokens = all.reduce((m, g) => m + g.tokens.length, 0);
-  const scales = all.filter((g) => g.pattern).length, looks = all.filter((g) => g.pattern && how(g.reasons).includes('look')).length;
-  const row = (k, g) => `<div class="row"><code>${esc(g.pattern)}</code><div class="steps">${steps(k.family, g.tokens)}</div>${how(g.reasons)}</div>`;
-  return `<h2>How Plumber read your system</h2>
-    <p class="verdict"><b>${nf.format(tokens)} tokens in ${kinds.length} kinds, ${scales} scales.</b> ${looks ? `${looks} ${looks === 1 ? 'was' : 'were'} read from the name alone; check ${looks === 1 ? 'it' : 'those'}.` : 'Each was read from more than its name.'} A scale in the wrong kind moves in <code>plumber.config</code>.</p>
-    <div class="kinds">${kinds.map((k) => {
-      const [toy, name] = KINDS[k.family] ?? ['size', k.family], n = k.groups.reduce((m, g) => m + g.tokens.length, 0);
-      const groups = k.groups.filter((g) => g.pattern), lone = k.groups.filter((g) => !g.pattern), loneCount = lone.reduce((m, g) => m + g.tokens.length, 0);
-      const files = [...new Set(k.groups.map((g) => g.file))];
-      const byFile = files.map((file) => [file, groups.filter((g) => g.file === file)]).filter(([, gs]) => gs.length);
-      return `<section class="kind"><header><i class="toy">${toyOf(toy)}</i><div><b>${name}</b><span>${groups.length ? `${groups.length} ${groups.length === 1 ? 'scale' : 'scales'}` : 'no scale'}${loneCount ? `, ${loneCount} on their own` : ''} · ${nf.format(n)} ${n === 1 ? 'token' : 'tokens'}</span></div></header>${ladder(k)}
-        ${(() => { let shown = 0; const head = [], rest = []; for (const [file, gs] of byFile) for (const g of gs) (shown++ < 6 ? head : rest).push([file, g]);
-          const block = (list) => [...new Set(list.map(([f]) => f))].map((file) => `${byFile.length > 1 && !ladder(k) ? `<div class="file">${esc(file)}</div>` : ''}<div class="rows">${list.filter(([f]) => f === file).map(([, g]) => row(k, g)).join('')}</div>`).join('');
-          return block(head) + (rest.length ? `<details><summary>${rest.length} more ${rest.length === 1 ? 'scale' : 'scales'}</summary>${block(rest)}</details>` : ''); })()}
-        ${loneCount ? `<details><summary>${loneCount} on their own</summary><div class="rows">${lone.map((g) => row(k, { ...g, pattern: g.tokens.length === 1 ? g.tokens[0].name : g.file.split('/').pop() })).join('')}</div></details>` : ''}
-      </section>`;
-    }).join('')}</div>`;
-}
 
 /** What the type scale says, in one heading and one paragraph. */
 function typeScale(size) {
@@ -179,12 +62,13 @@ function typeScale(size) {
 export function mountProjectPage(host, data, tokens) {
   const doc = host.ownerDocument, root = host.attachShadow({ mode: 'open' });
   const type = typeScale(data.size);
-  root.innerHTML = `<style>${tokens}${LANGUAGE_CSS}${SCALE_CSS}${GRAVITY_CSS}${SPECIMEN_CSS}${CAUSE_LIST_CSS}${PAGE_CSS}${READING_CSS}${LADDER_CSS}</style>${TOY_DEFS}
+  root.innerHTML = `<style>${tokens}${LANGUAGE_CSS}${SCALE_CSS}${GRAVITY_CSS}${SPECIMEN_CSS}${CAUSE_LIST_CSS}${PAGE_CSS}</style>${TOY_DEFS}
   <header class="top"><span class="pl-rainbow"></span><b>React Plumber</b><span class="pl-tag">${esc(data.project)}</span><span class="read">${nf.format(data.files)} files read</span><button type="button" class="pl-act quiet" id="scheme">Day</button></header>
-  <main>${type.html}<div id="gravity"></div><div id="specimen"></div><div id="causes"></div><div id="reading">${reading(data.reading)}</div></main>`;
+  <main>${type.html}<div id="gravity"></div><div id="specimen"></div><div id="causes"></div><div id="reading"></div></main>`;
   const gravity = new Gravity(root.getElementById('gravity'), { steps: type.steps, strays: type.strays });
   const specimen = new Specimen(root.getElementById('specimen'), { steps: type.steps, strays: type.strays });
   const causes = new CauseList(root.getElementById('causes'), { causes: data.causes, open: data.open });
+  mountReview(root.getElementById('reading'), data.reading);
 
   // the body around the root shows on overscroll and at the edges, so it takes the desk colour the root resolves
   doc.body.style.margin = '0';
