@@ -14,6 +14,8 @@ try {
   const snapshot = async () => ({ health: await session.health(), stats: session.stats });
   session.on('change', value => { void snapshot().then(state => port.postMessage({ event: 'change', value, ...state })); });
   session.on('transaction', value => port.postMessage({ event: 'transaction', value }));
+  // the reading table was kept: the host's health says so without waiting for the next question
+  session.on('kept', value => { void snapshot().then(state => port.postMessage({ event: 'kept', value, ...state })); });
   session.on('diagnostic', error => { void snapshot().then(state => port.postMessage({ event: 'diagnostic', value: error, ...state })); });
   async function execute(call: Call) {
     if (Date.now() >= call.deadline) { port.postMessage({ id: call.id, busy: true }); return; }
