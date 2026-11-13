@@ -298,9 +298,6 @@ Design written 2026-11-13, not signed off, nothing built: docs/briefs/platform-g
 
 ### Tests
 
-- After an undo that reloads the page, closing the timeline with Esc does not always hand focus back to the history
-  button (timeline test, fails side by side on vm-agent, passes alone). Possibly the button is not focusable on the
-  reloaded page at that moment. Not looked into further; found while preparing 0.5.0.
 
 
 The whole suite on vm-agent (2026-11-12): 939 passed, 16 failed in 14 files. Since then the determinism, noise,

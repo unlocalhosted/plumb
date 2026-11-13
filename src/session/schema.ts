@@ -65,9 +65,10 @@ const cause = object({ rule: str, text: str, choice: str });
 const causeSwap = object({ cause, file: optional(str) });
 const acceptBody = object({ rule: str, why: str, sites: list(object({ file: str, line: int, column: int, text }), 1, 200) });
 const tokenThen = optional(either('cause', causeSwap, object({ swaps: optional(list(swapsBody)) })));
-const batchCall: Check<{ method: 'site' | 'resolve'; params: Record<string, unknown> }> = (v, at) => {
-  const call = object({ method: oneOf('site', 'resolve'), params: any })(v, at);
-  return { ...call, params: (call.method === 'site' ? siteQuery : resolveQuery)(call.params, `${at}.params`) };
+// every method the server answers in a batch (session/server.ts), each checked by its own endpoint's shape
+const batchCall: Check<{ method: 'site' | 'resolve' | 'structure'; params: Record<string, unknown> }> = (v, at) => {
+  const call = object({ method: oneOf('site', 'resolve', 'structure'), params: any })(v, at);
+  return { ...call, params: (call.method === 'site' ? siteQuery : call.method === 'resolve' ? resolveQuery : object(position))(call.params, `${at}.params`) };
 };
 
 /** The shape of each endpoint's request, by its name under /__plumb/. An endpoint not listed takes any object. */

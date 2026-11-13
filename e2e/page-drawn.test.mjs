@@ -8,7 +8,7 @@ import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { test } from 'node:test';
 import { cp, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import { join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { serve } from '../dist/session/server.js';
 
@@ -39,7 +39,8 @@ async function project(t) {
   const at = async (needle, tag) => {
     const text = await readFile(join(root, 'src/App.tsx'), 'utf8'), lines = text.split('\n');
     const line = lines.findIndex(l => l.includes(needle)) + 1, column = lines[line - 1].indexOf(`<${tag}`) + 1;
-    return { stamp: `src/App.tsx:${line}:${column}#${hash12(text)}`, line, column };
+    // stamps name files from the repository root (the fixture sits inside this repository)
+    return { stamp: `${relative(repo, join(root, 'src/App.tsx'))}:${line}:${column}#${hash12(text)}`, line, column };
   };
   return { root, call, at };
 }
