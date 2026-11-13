@@ -2397,6 +2397,23 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   set has no undo picture; the arrow used is borrowed from the button and should be drawn into the set.
 - **Media hooks:** a clip of Take a fix → Undo, and of the hatched tick saying no.
 
+### 33. Surfaces get their page: three heights, by day and by night (2026-11-14)
+
+- **The itch:** the design site listed "Surfaces" with no page; nothing showed what things sit on, how high, or how
+  the same pieces look at night.
+- **How we found it:** the next page without a page, after Messages.
+- **The system behind it:** carried over from Messages (entry 32): a page built from grey panels and hand-drawn
+  shapes is dry, so this one holds only the product's own pieces (a soft block, pills and tags, the name tag, a card
+  with the fix bar's field and the kit's buttons).
+- **What we chose:** one desk shown twice, with the overlay's own light and dark switches for a part of a page, so
+  day and night sit side by side whatever the site's scheme; then the three heights (pressed in, flat, lifted), each
+  holding a real piece; then the surface tokens read from the token file with the file's own notes.
+- **The fix and the proof:** `web/design/parts/surfaces.js`, seen running in light mode at desktop width. No tests.
+  Dead end on the way: a class name the site already styles put the "white ground" rows on grey; renamed.
+- **Open, written on the page:** bars and the dock are not shown (the dock is still grey line pictures); a card's
+  edge is a hairline ring, which the language says a thing should not need; the scrim has no picture.
+- **Media hooks:** the day and night desks side by side.
+
 ## Open gaps
 - **The mark was never tried among real neighbours** (a row of browser tabs, an npm page, a README header), only on empty tiles. Nobody outside has been asked whether the round leg reads as an R or leans towards a B.
 - Resizing: a size between your steps always lands on the nearest one; there is no way yet to keep an exact size as
@@ -2443,6 +2460,8 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - A Messages page in the design site: you can see and press the toast that follows a write (with Undo) and the history
   strip, with every state, without making a real write. It matters because these were only visible inside a real app
   (entry 32).
+- A Surfaces page in the design site: the three heights a thing can have, each holding real pieces, and the same
+  desk by day and by night side by side (entry 33).
 - React Plumber has a mark: a pink stem and a violet bowl, the gap between them the P, with plumber's guardrail at hero size. It is in the site's bar, the overlay's dock and the films, from one source ([entry](#react-plumber-gets-a-mark-2026-11-13)).
 - Craft № 42 is a 16:9 React Plumber marketing film: the fault felt, measured in plumber's marks, the code that caused it and the code that fixes it, the payoff, and plumber's ✓ bursting where the fix was written, signed and watermarked ([entry](#42-as-a-react-plumber-marketing-film-2026-11-13)).
 - The showcase's #42 explains itself as a short film drawn in plumber's own marks: you feel the tabs jitter, see plumber measure it and name the weight, see the fix keep the width, and watch every tab hold ([entry](#42-redrawn-in-plumbers-own-language-after-copying-the-reference-2026-11-13)).

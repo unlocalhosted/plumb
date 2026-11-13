@@ -40,6 +40,7 @@ const LOAD = {
   hover: () => import('./parts/hover.js'),
   xray: () => import('./parts/xray.js'),
   messages: () => import('./parts/messages.js'),
+  surfaces: () => import('./parts/surfaces.js'),
 };
 
 export function Part({ id, css }) {
