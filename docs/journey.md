@@ -851,10 +851,19 @@
 - **The fix and the proof:** 811 MB → 52 MB on algorecall; same 27–28 craft findings; 9,758 drift marks still drawn with their choices, and asking for one mark's edits returns it. The clock: 24 s on the like-for-like run against 30–52 s before, but that is one run; the first run after a restart was still 50 s. No test run, no fix applied by hand.
 - **Media hooks:** two bars, 811 and 52.
 
+## 889 questions asked one at a time, and a redraw for each trickle (2026-11-13)
+- **The itch:** with the bytes cut, algorecall's read was still 24–50 s. The owner: "Yes, batch them".
+- **How we found it:** the request timeline: 889 separate "what is this element in the source" requests, each waiting about 18 s, and a report and redraw of the whole page about every second while they came back.
+- **The system behind it:** one at a time at every level. The overlay sent one request per element; the server indexed the element's file again for each one, and for anything inside a tooltip read and indexed every file in the project; the engine was told after each trickle and the page redrawn.
+- **What we chose and why:** the same rule three times, "where there is one there are many": the questions ride the batch the other readings already use; the server keeps a file's index while its text is the same; the engine is told once when nothing is still being asked.
+- **The fix and the proof:** algorecall's read on a warm server: 30–52 s this morning → 14.8–17.3 s (four runs). Engine 1.8 s, full redraws 18 → 3, main thread blocked 26 s → 4.7–7.4 s, the same 27 craft findings. crafting-ui 2.4 s → 1.7–1.9 s, same 26. Not fixed: the first read after a server restart is still about 50 s. No test run.
+- **Media hooks:** the request timeline before (a wall of 889 bars) and after (26).
+
 ## Open gaps
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
 
 ## Shipped · 2026-W46
+- plumber reads a 16,000-element page in about 15 s where it took 30–52 s: it asks the server about every element in a few round trips instead of 889, and redraws the page 3 times instead of 18 ([entry](#889-questions-asked-one-at-a-time-and-a-redraw-for-each-trickle-2026-11-13)).
 - plumber's server sends a sixteenth of what it did to draw a big page (811 MB → 52 MB on a 16,000-element page): a finding's edits travel only when a fix is applied ([entry](#811-mb-for-one-page-becomes-52-mb-2026-11-13)).
 - plumber judges a big page about once per read instead of four to six times: on a 16,000-element page its engine takes 2.1–3.1 s where it took 3.7–5.8 s, with the same findings ([entry](#the-page-was-judged-six-times-a-read-now-about-once-2026-11-13)).
 - plumber catches a wrapping list spread by `justify-between`, whose short last line is flung to the edges, and offers `justify-start` with a gap; every check from the defensive-CSS tips is now built ([entry](#the-left-over-space-checks-second-form-a-list-flung-to-the-edges-2026-11-13)).

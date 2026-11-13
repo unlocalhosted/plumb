@@ -2,7 +2,7 @@ const base = new URL('../', import.meta.url).href;
 const script = [...document.querySelectorAll('script[type="module"][src]')].find(script => script.src === base + 'client.js');
 const token = script?.dataset.plumbToken;
 
-// Resolve and site questions asked with { batch: true } in the same turn of the event loop go to the server as one
+// Resolve, site and structure questions asked with { batch: true } in the same turn of the event loop go to the server as one
 // batch: the blueprint's reader asks about a view's worth of elements as one round trip and one read cohort, not
 // one per element behind a six-connection limit. A single reading (the Alt card) goes on its own, as it always
 // has. A server that refuses batches answers once, and every question goes on its own from then on.
@@ -61,7 +61,7 @@ export async function request(method, params, options = {}) {
     }
     return answer;
   }
-  if (batched && options.batch && method === 'site') return enqueue(method, params, options);
+  if (batched && options.batch && (method === 'site' || method === 'structure')) return enqueue(method, params, options);
   return direct(method, params, options);
 }
 

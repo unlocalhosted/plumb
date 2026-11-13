@@ -150,7 +150,7 @@ async function prepareSources() {
   await Promise.all(wantedSources().map(async (el) => {
     const at = await locate(el, { explain: true, batch: true }).catch(() => null);
     if (!at?.file) return;
-    const s = await request('structure', { file: at.file, line: at.line, column: at.column }).catch(() => null);
+    const s = await request('structure', { file: at.file, line: at.line, column: at.column }, { batch: true }).catch(() => null);
     if (s) found.push({ k: pathKey(el), s });
   }));
   sourcesIn(found);

@@ -560,7 +560,14 @@ class PlumbOverlay extends HTMLElement {
   // land, the elements whose rules asked about them are judged again (not the page).
   // One structure read per source position per file revision (#structures, dropped with the other caches on a hot
   // update): a list's rows and every re-render of an element share it; each element still gets the answer applied.
-  #sourced = new WeakSet(); #structures = new Map(); #resourced = 0; #landed = new Set();
+  #sourced = new WeakSet(); #structures = new Map(); #resourced = 0; #landed = new Set(); #asking = 0;
+  // told once for everything that landed, when nothing is still being asked: a page's questions go out together and
+  // come back in a few answers, and each telling reports and redraws the page
+  #tellSourced() {
+    clearTimeout(this.#resourced);
+    if (this.#asking || !this.#landed.size) return;
+    this.#resourced = setTimeout(() => { if (this.#asking) return; const els = [...this.#landed]; this.#landed.clear(); this.#blueprint?.sourced(els); }, 120);
+  }
   #learnSource(element, found) {
     if (this.#sourced.has(element) || !Number.isFinite(found.line)) return;
     const candidate = element.matches?.('[role="button"], [data-state], [aria-haspopup]')
@@ -570,7 +577,8 @@ class PlumbOverlay extends HTMLElement {
     const key = `${found.file}:${found.line}:${found.column}`;
     let structure = this.#structures.get(key);
     if (!structure) {
-      structure = request('structure', { file: found.file, line: found.line, column: found.column }).catch(() => null);
+      this.#asking++;
+      structure = request('structure', { file: found.file, line: found.line, column: found.column }, { batch: true }).catch(() => null).finally(() => { this.#asking--; this.#tellSourced(); });
       this.#structures.set(key, structure);
       structure.then((s) => { if (!s || s.error) this.#structures.delete(key); });
     }
@@ -578,8 +586,7 @@ class PlumbOverlay extends HTMLElement {
       if (!s || s.error) return;
       setSource(element, s);
       this.#landed.add(element);
-      clearTimeout(this.#resourced);
-      this.#resourced = setTimeout(() => { const els = [...this.#landed]; this.#landed.clear(); this.#blueprint?.sourced(els); }, 120);
+      this.#tellSourced();
     });
   }
   get health() { return this.#health; }

@@ -67,7 +67,7 @@ export interface SessionOptions extends CheckOptions { watch?: boolean; pollInte
   readQueueMs?: number
 }
 export interface SiteResult { file: string; line: number; column?: number; declarations: Report['declarations']; findings: Report['findings'] }
-export type ManyCall = { method: 'resolveSource'; args: Parameters<Session['resolveSource']> } | { method: 'site'; args: Parameters<Session['site']> } | { method: 'classes'; args: Parameters<Session['classes']> };
+export type ManyCall = { method: 'resolveSource'; args: Parameters<Session['resolveSource']> } | { method: 'site'; args: Parameters<Session['site']> } | { method: 'classes'; args: Parameters<Session['classes']> } | { method: 'structure'; args: Parameters<Session['structure']> };
 export type ManyResult = { value: unknown } | { error: string; usage: boolean };
 export interface EditsResult { revision: number; file: string; hash: string; edits: StructuredEdit[]; refused: RefusedSite[] }
 export interface ClassesResult {
@@ -611,7 +611,7 @@ export class Session extends EventEmitter {
       for (const file of files) await this.readableSource(file).catch(() => {});
       return files.filter(file => this.sourceFiles.has(file));
     }
-    if (['site', 'edits', 'text', 'textAt', 'why', 'classes'].includes(method)) {
+    if (['site', 'edits', 'text', 'textAt', 'why', 'classes', 'structure'].includes(method)) {
       const file = this.file(args[0] as string); this.position(args[1] as number);
       await this.readableSource(file);
       if (method === 'classes') this.validateClasses(args[3]);
@@ -1340,13 +1340,25 @@ export class Session extends EventEmitter {
     return pinnedString({ element, chain, modules: this.modules() }, { path, line: facts.location.line, column: facts.location.column }, offsetOf(facts.text, edit.at), write);
   }
   /** What the source says the element at a position is: its component, library and role, literal props and handlers. */
+  // What the source says of a file, kept while its text is the same: a page asks about hundreds of elements in a
+  // handful of files, and each question used to index its file again (and, for a tooltip, every file in the project).
+  private structureIndexes = new Map<string, { text: string; entries: ReturnType<typeof indexSource> }>();
+  private indexed(path: string, text: string): ReturnType<typeof indexSource> {
+    const hit = this.structureIndexes.get(path);
+    if (hit && hit.text === text) return hit.entries;
+    const entries = indexSource(path, text);
+    this.structureIndexes.set(path, { text, entries });
+    if (this.structureIndexes.size > 2048) this.structureIndexes.delete(this.structureIndexes.keys().next().value!);
+    return entries;
+  }
+  private tooltipProviders: { revision: number; found: { path: string; text: string; entry: ReturnType<typeof indexSource>[number] }[] } | undefined;
   async structure(file: string, line: number, column: number): Promise<StructureResult | null> {
     const path = this.file(file); this.position(line); this.position(column);
     await this.readableSource(path);
     const text = await readFile(path, 'utf8');
     const location = jsxLocation(path, text, line, column, undefined, 'any');
     if (!location) return null;
-    const entries = indexSource(path, text);
+    const entries = this.indexed(path, text);
     const at = entries.findIndex(entry => entry.start === location.start);
     const entry = entries[at];
     if (!entry) return null;
@@ -1356,12 +1368,16 @@ export class Session extends EventEmitter {
     if (entry.role === 'tooltip' || ancestorWith(entries, at, 'tooltip')) {
       let provider = ancestorWith(entries, at, 'tooltip-provider'), where = path, whereText = text;
       if (!provider) {
-        // a provider in a layout file: the project's one, when it has exactly one
-        const found: { path: string; text: string; entry: StructureEntry }[] = [];
-        for (const other of this.sourceFiles) {
-          if (!/\.[cm]?[jt]sx$/.test(other) || found.length > 1) continue;
-          const t = other === path ? text : await readFile(other, 'utf8').catch(() => '');
-          for (const e of indexSource(other, t)) if (e.role === 'tooltip-provider') found.push({ path: other, text: t, entry: e });
+        // a provider in a layout file: the project's one, when it has exactly one (looked for once per revision)
+        let found = this.tooltipProviders?.revision === this.revision ? this.tooltipProviders.found : undefined;
+        if (!found) {
+          found = [];
+          for (const other of this.sourceFiles) {
+            if (!/\.[cm]?[jt]sx$/.test(other) || found.length > 1) continue;
+            const t = other === path ? text : await readFile(other, 'utf8').catch(() => '');
+            for (const e of this.indexed(other, t)) if (e.role === 'tooltip-provider') found.push({ path: other, text: t, entry: e });
+          }
+          this.tooltipProviders = { revision: this.revision, found };
         }
         if (found.length === 1) { provider = found[0]!.entry; where = found[0]!.path; whereText = found[0]!.text; }
       }

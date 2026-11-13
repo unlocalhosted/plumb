@@ -112,6 +112,37 @@ about twice (66 answers instead of 16); the 24 s run is the like-for-like one, b
 it: 889 single requests and the redraws (long tasks 14 s), which is rule 2, next. And 46 MB is still 5 KB an
 element; what fills it has not been looked at.
 
+### After the questions were batched (2026-11-13, rules 2 and 5)
+
+- "What is this element in the source" goes to the server with the other batched questions (up to 128 a round
+  trip) instead of one request each.
+- The server indexes a file once while its text is the same, and looks for the project's tooltip provider once per
+  revision. Before, every question indexed its file again, and a tooltip's question read and indexed every file in
+  the project.
+- The engine is told once, when nothing is still being asked, instead of after every trickle.
+
+| algorecall, problems list, warm server | before today | after hot/cold | after batching |
+|---|---|---|---|
+| Whole read, clock | 30–52 s | 24 s (one run) | 14.8, 15.6, 16.6, 17.3 s |
+| Source questions | 889 requests, each queued about 18 s | same | inside 26 batched round trips |
+| Hand-overs of the page to the engine | 9–26 | — | 8 |
+| Engine time | 3.7–7.5 s (2.1–3.1 s on the best runs after the first fix) | — | 1.8 s |
+| Redrawing the marks | 10.4 s (18 full redraws) | — | 1.7–1.8 s (3 full redraws) |
+| Main thread blocked (long tasks) | 26 s | 14 s | 4.7–7.4 s |
+| Craft findings | 27–28 | 27–28 | 27 |
+
+crafting-ui's vocabulary page: 1.7 and 1.9 s (2.4 s before), 26 findings as before.
+
+Not run: any test. Not checked by hand in the overlay.
+
+Still true:
+
+- **The first read after a dev server restart takes about 50 s.** In that run the page's own files were still being
+  served and every answer was asked for four times over (70 "read these elements" answers instead of 16). The app
+  reloading under the read is the guess; not looked into.
+- Of the 15 s left: about 2 s is plumber waiting before it starts, 0.6–0.7 s finding where findings live, and the
+  rest is the server answering 46 MB and the page parsing it.
+
 Raw tables were printed to the session's scratch folder and are not kept; run the timer again rather than trust
 these to the millisecond.
 
@@ -272,7 +303,7 @@ Each is seen before the next. Nothing here needs the platform work; the platform
 | 3 | Dispatch (`on`, kind mask, index, refusal) | Calls per rule fall to about its hits; the 0.8 s falls by a measured amount |
 | 4 | Where the rest of algorecall's read goes | **Done** (see Measured): 811 MB of answers, 889 single requests, 20 redraws |
 | 4a | Hot and cold apart in the server's answers (rule 3), then tables (rule 4) | **Hot/cold done:** 811 MB → 52 MB. Tables next, for the 46 MB left |
-| 4c | One request for the batch, one report when it lands (rule 2) | Hand-overs per read 9–26 → a few; redraws 20 → a few; the 24 s with it |
+| 4c | One request for the batch, one report when it lands (rule 2) | **Done:** hand-overs 9–26 → 8, full redraws 18 → 3, read 24 s → 15–17 s |
 | 4b | Slices, nearest first | First marks appear in the same time on the big page as on a small one |
 | 5 | Command line: demand, record once, skip unchanged | Page loads per route before and after; a second run after a one-file change |
 | 6 | Families as modules | Bytes loaded into the page with one family off |

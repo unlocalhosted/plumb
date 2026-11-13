@@ -108,7 +108,8 @@ async function dispatchRequest(session: Session, method: string, raw: unknown, o
       if (!object(call) || !object(call.params)) throw new UsageError('Each call needs a method and params.');
       if (call.method === 'site') return { method: 'site' as const, args: [...siteArgs(call.params)] as [string, number, number | undefined] };
       if (call.method === 'resolve') return { method: 'resolveSource' as const, args: [...resolveArgs(call.params)] as [string, number | undefined, number | undefined, Record<string, unknown>] };
-      throw new UsageError('A batched call must be resolve or site.');
+      if (call.method === 'structure') return { method: 'structure' as const, args: [text(call.params, 'file')!, position(call.params, 'line')!, position(call.params, 'column')!] as [string, number, number] };
+      throw new UsageError('A batched call must be resolve, site or structure.');
     });
     return read('many', [calls as Parameters<Session['many']>[0]]);
   }
