@@ -2523,8 +2523,19 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   the probe: keep `--space-*`, round, by size, `--spacing-*` wrote `--spacing-1/2/3/4/6/8` for 4 to 32px with both old
   scales pointing at it; check still 100%. Fixed on the way: step 4 would have written a whole type style as its size
   alone (`--t-body: 16px`), breaking every `font: var(--t-body)`; a step now keeps its own value unless rounded.
-- **Open on the four steps:**  colour has no roles map (29 role
-  scales show as swatch strips); steps that came from a dropped scale are named by their size (`--spacing-32`)
+- **Then the colour roles map (same day; owner: "Yes, colour roles").** Step 2 draws colour as two layers: the palette
+  (tokens that hold a colour, one row per hue, faded when no role points at it) and roles by job (text, surfaces,
+  borders, icons, actions, states), each role with its swatch and the palette colour it points at, a mix shown as
+  both colours. A token holding a raw colour is a role only when its name starts with a job (`--text-…`, `--bg-…`,
+  `--border-…`); a hue's shades (`--pl-coral-ink`, `--pl-mint-on`) are palette. Step 3 asks one thing about colour,
+  only when it applies: roles holding a raw colour the palette already has ("point them at the palette"), written as
+  `var(--palette)`. On the site: 47 palette colours, 97 roles, none holding a raw copy, so no question. On the probe:
+  `--text-primary: #1d1b17` and `--border-focus: #f24a9f` became `var(--ink)` and `var(--pink)`; colour 100%.
+  Found on the way: a Tailwind prefix read `--text-primary: #1d1b17` as type (in Tailwind `--text-*` is a font size);
+  a value that is plainly a colour now wins over a non-colour prefix, and the reading says so. crafting-ui:
+  `--shadow-ink` (a shadow's colour) moves from shadows to colour; its project's records show it as 1 vanished and
+  3 not yet accepted. First tries drew a catch-all `--pl` row and counted light and dark definitions twice; fixed.
+- **Open on the four steps:**   steps that came from a dropped scale are named by their size (`--spacing-32`)
   beside inherited names (`--spacing-8` is 24px), a mixed numbering a naming choice should settle.
 - **Still open on the page:** some motion tokens show `0ms`, the
   value from the token file's reduced-motion block; nothing on the page can move a line yet (the config does).

@@ -45,7 +45,8 @@ const EASING = /^(?:cubic-bezier|linear|steps)\(.*\)$|^(?:ease|ease-in|ease-out|
 const SHADOW = /(?:^|\s)inset(?:\s|$)|-?[\d.]+px\s+-?[\d.]+px\s+-?[\d.]+px.*(?:#|rgb|hsl|oklch|oklab|color-mix|transparent)/i;
 const FONT = /^(?:(?:normal|italic|bold|[1-9]00)\s+)+[\d.]+(?:px|rem|em)(?:\/[\d.]+(?:px|rem|em)?)?\s+\S|^(?:[\w-]+|"[^"]+"|'[^']+')(?:\s*,\s*(?:[\w-]+|"[^"]+"|'[^']+'))+$/;
 
-function byValue(value: string | undefined): Family | undefined {
+/** What a value is on its own, when it says so plainly: a colour, a time or easing, a shadow, a font. */
+export function byValue(value: string | undefined): Family | undefined {
   if (!value) return;
   const v = value.trim();
   if (COLOUR.test(v)) return 'color';

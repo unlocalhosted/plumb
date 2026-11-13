@@ -83,6 +83,27 @@ export const REVIEW_CSS = BUTTON_CSS + `
   .legend i { display: inline-block; width: var(--pl-space-5); height: var(--pl-space-5); margin-right: var(--pl-space-2); vertical-align: -2px; border-radius: var(--pl-radius-mark); }
   .more { font: var(--pl-card-meta); color: var(--pl-text-secondary); }
 
+  /* the colour map: the palette on the left, roles by job on the right, each role pointing at what it uses */
+  .cmap { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); gap: var(--pl-space-8); }
+  .cmap h4 { margin: 0; font: var(--pl-card-title); }
+  .cmap .more { margin: var(--pl-space-1) 0 var(--pl-space-5); }
+  .hue { display: grid; grid-template-columns: minmax(0, 7rem) 1fr; align-items: center; gap: var(--pl-space-5); padding: var(--pl-space-2) 0; }
+  .hue code, .role code { font: var(--pl-card-code); color: var(--pl-text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .sw.unused { opacity: .28; }
+  .roles details { margin-bottom: var(--pl-space-4); }
+  .roles summary { cursor: pointer; font: var(--pl-card-label); text-transform: uppercase; letter-spacing: var(--pl-tracking-caps); color: var(--pl-text-secondary); padding: var(--pl-space-2) 0; }
+  .roles summary span { margin-left: var(--pl-space-2); font-weight: 400; }
+  .role { display: grid; grid-template-columns: var(--pl-space-7) minmax(0, 11rem) var(--pl-space-6) minmax(0, 1fr); align-items: center; gap: var(--pl-space-4); padding: var(--pl-space-2) 0; }
+  .role code { color: var(--pl-text-primary); }
+  .role .arrow { color: var(--pl-text-placeholder); font: var(--pl-card-meta); }
+  .role .tgt { display: flex; flex-wrap: wrap; align-items: center; gap: var(--pl-space-2) var(--pl-space-4); min-width: 0; }
+  .role .tgt .to { display: inline-flex; align-items: center; gap: var(--pl-space-2); min-width: 0; }
+  .role .tgt .to .sw { width: var(--pl-space-5); height: var(--pl-space-5); }
+  .role .tgt code { color: var(--pl-text-secondary); }
+  .role .plus { color: var(--pl-text-placeholder); }
+  .role.hard .raw { font: var(--pl-card-code); color: var(--pl-soft-text); font-weight: 600; }
+  @media (max-width: 900px) { .cmap { grid-template-columns: 1fr; } }
+
   /* 3 decide */
   .tally { margin: 0 0 var(--pl-space-6); font: var(--pl-card-body); color: var(--pl-text-secondary); }
   .tally b { color: var(--pl-text-primary); }
@@ -118,9 +139,47 @@ const baseOf = (values) => (values.filter((v) => v % 4 === 0).length >= values.l
 // a guess worth a question: the name only mentions the kind (`--pl-space-*`); a Tailwind name (`--radius-*`) is not a guess
 const nameOnly = (reasons) => reasons.length > 0 && reasons.every((r) => r.startsWith('its name says'));
 
+/* Colour as two layers: the palette (tokens that hold a colour: --pink: #f24a9f) and roles (tokens that name a job and
+   point at the palette: --text-primary: var(--ink)). A token is a role when its name says a job; a role that holds a raw
+   colour instead of pointing at the palette is the one thing worth fixing, and a palette colour no token points at is
+   worth knowing. Mixes (color-mix of palette colours) are roles built from the palette */
+const JOBS = [['text', /(?:^|-)(?:text|fg|foreground|label|heading|body|muted)(?:-|$)/], ['surface', /(?:^|-)(?:bg|background|surface|paper|desk|page|canvas|card|inset|scrim|overlay|g\d)(?:-|$)/],
+  ['border', /(?:^|-)(?:border|rule|line|outline|divider|ring|stroke)(?:-|$)/], ['icon', /(?:^|-)(?:icon|glyph)(?:-|$)/],
+  ['action', /(?:^|-)(?:action|primary|accent|cta|button|link|focus)(?:-|$)/], ['state', /(?:^|-)(?:state|danger|error|warn|warning|success|done|info|hard-coded|minor|written)(?:-|$)/]];
+const JOB_NAMES = { text: 'Text', surface: 'Surfaces', border: 'Borders', icon: 'Icons', action: 'Actions', state: 'States', other: 'Other roles' };
+const refsOf = (raw) => [...String(raw).matchAll(/var\(\s*(--[\w-]+)/g)].map((m) => m[1]);
+const norm = (v) => String(v).trim().toLowerCase().replace(/\s+/g, ' ');
+function colourModel(kind) {
+  // a name counts once (a light and a dark block define the same token twice)
+  const all = [...new Map(kind.groups.flatMap((g) => g.tokens.map((t) => [t.name, { ...t, file: g.file }]))).values()];
+  const bare = (name) => name.replace(/^--/, '').replace(/^[a-z]{1,3}-(?=[a-z])/, '');
+  const jobOf = (name) => (JOBS.find(([, re]) => re.test(bare(name))) ?? [null])[0];
+  // a token holding a colour is a role only when its name starts with a job (--text-…, --bg-…, --border-…); a hue's
+  // shades (--coral-ink, --mint-on) are palette, whatever words follow the hue
+  const startsWithJob = (name) => /^(?:text|bg|background|surface|border|icon|action|state|fg|foreground|outline|divider|focus)(?:-|$)/.test(bare(name));
+  const palette = [], roles = [];
+  for (const t of all) {
+    const refs = refsOf(t.raw ?? t.value);
+    if (!refs.length && !startsWithJob(t.name)) palette.push(t);
+    else roles.push({ ...t, refs, job: jobOf(t.name) ?? 'other', raw: !refs.length });
+  }
+  const pointed = new Set(roles.flatMap((r) => r.refs));
+  const unused = palette.filter((p) => !pointed.has(p.name));
+  // a role holding a raw colour, and the palette colour it equals exactly (the only safe move)
+  const hard = roles.filter((r) => r.raw).map((r) => ({ ...r, match: palette.find((p) => norm(p.value) === norm(r.value)) }));
+  return { palette, roles, unused, hard };
+}
+
 /** The decisions a kind asks for, from its numbers only. */
 function decisionsOf(kind) {
   const [, label] = KINDS[kind.family] ?? ['', kind.family], lanes = lanesOf(kind), out = [];
+  if (kind.family === 'color') {
+    const { hard } = colourModel(kind), fixable = hard.filter((h) => h.match);
+    if (fixable.length) out.push({ id: 'roles:color', family: 'color', q: `${fixable.length} colour ${fixable.length === 1 ? 'role holds' : 'roles hold'} a raw colour your palette already has.`,
+      why: `${fixable.slice(0, 3).map((h) => `${h.name} is ${h.value}, the same as ${h.match.name}`).join('; ')}${fixable.length > 3 ? '; …' : ''}. A role that points at the palette changes when the palette does; a raw copy doesn't, and drifts.`,
+      options: [['point', 'Point them at the palette'], ['leave', 'Leave them']] });
+    return out;
+  }
   const sized = lanes.filter((l) => l.values.length > 1);
   if (LENGTHS.has(kind.family) && sized.length > 1) {
     const shared = [];
@@ -156,8 +215,15 @@ function decisionsOf(kind) {
   return out;
 }
 
+function colourSystem(kind, choices) {
+  if (choices['roles:color'] !== 'point') return null;
+  const aliases = colourModel(kind).hard.filter((h) => h.match).map((h) => ({ from: h.name, file: h.file, to: h.match.name }));
+  return aliases.length ? { kind, scales: [], aliases, renames: [], numbering: '', note: `${aliases.length} ${aliases.length === 1 ? 'role now points' : 'roles now point'} at your palette, e.g. ${aliases[0].from} → var(${aliases[0].to}).` } : null;
+}
+
 /** A kind's system after the choices: its one scale, its name, and what the other scales point at. */
 function systemOf(kind, choices) {
+  if (kind.family === 'color') return colourSystem(kind, choices);
   const lanes = lanesOf(kind).filter((l) => choices[`guess:${l.name}`] !== 'no');
   if (!lanes.length) return null;
   const keepChoice = choices[`keep:${kind.family}`], biggest = [...lanes].sort((a, b) => b.tokens.length - a.tokens.length)[0];
@@ -252,6 +318,26 @@ export function mountReview(host, kinds, { handTyped = 0, project = '', post } =
       return `<div class="panel">${kindHd(k)}<div class="ladder" style="--cols: ${sized.length}"><span></span>${sized.map((l) => `<span class="col">${esc(l.name)}</span>`).join('')}
         ${rows.map((v) => `<span class="rule"></span><span class="v${checksBase && v % base ? ' off' : ''}">${v}</span>${sized.map((l) => l.values.includes(v) ? `<span class="cell${sized.filter((o) => o.values.includes(v)).length > 1 ? ' shared' : ''}" title="${esc(l.name)}: ${v}px">${mark(v)}</span>` : '<span class="cell"></span>').join('')}`).join('')}</div></div>`;
     }
+    if (k.family === 'color') {
+      const { palette, roles, unused, hard } = colourModel(k), byName = new Map([...palette, ...roles].map((t) => [t.name, t]));
+      const sw = (t, cls = '') => `<i class="sw ${cls}" style="background: ${esc(t.value)}" title="${esc(t.name)}: ${esc(t.value)}"></i>`;
+      const jobs = Object.keys(JOB_NAMES).map((job) => [job, roles.filter((r) => r.job === job)]).filter(([, rs]) => rs.length);
+      // each colour in one row: its hue, the name without a tone at its end (--pl-coral-ink → --pl-coral), never shorter
+      // than the prefix and one word
+      const hueOf = (name) => { const parts = name.split('-'), keep = name.startsWith('--pl-') ? 4 : 3; let n = parts.length; while (n > keep && /^(?:\d+|soft|ink|on|face|line|block|bg|text|accent)$/.test(parts[n - 1])) n--; return parts.slice(0, n).join('-'); };
+      const hues = [...new Set(palette.map((p) => hueOf(p.name)))];
+      const target = (r) => r.raw ? `<span class="raw">raw ${esc(r.value.length > 22 ? `${r.value.slice(0, 21)}…` : r.value)}</span>`
+        : r.refs.map((n) => byName.has(n) ? `<span class="to">${sw(byName.get(n))}<code>${esc(n)}</code></span>` : `<code>${esc(n)}</code>`).join('<span class="plus">+</span>');
+      return `<div class="panel">${kindHd(k, `<span>${palette.length} in the palette · ${roles.length} roles</span>`)}
+        <div class="cmap">
+          <div class="pal"><h4>Palette</h4><p class="more">Colours themselves. Faded: no role points at it.</p>
+            ${hues.slice(0, 14).map((h) => `<div class="hue"><code>${esc(h)}</code><div class="sws">${palette.filter((p) => hueOf(p.name) === h).map((p) => sw(p, unused.includes(p) ? 'unused' : '')).join('')}</div></div>`).join('')}
+            ${hues.length > 14 ? `<p class="more">and ${hues.length - 14} more</p>` : ''}</div>
+          <div class="roles"><h4>Roles</h4><p class="more">Jobs, each pointing at the palette.${hard.length ? ` Yellow: holds a raw colour instead.` : ''}</p>
+            ${jobs.map(([job, rs]) => `<details${job !== 'other' ? ' open' : ''}><summary>${JOB_NAMES[job]} <span>${rs.length}</span></summary>
+              ${rs.slice(0, 12).map((r) => `<div class="role${r.raw ? ' hard' : ''}">${sw(r)}<code>${esc(r.name)}</code><span class="arrow">→</span><span class="tgt">${target(r)}</span></div>`).join('')}${rs.length > 12 ? `<p class="more">and ${rs.length - 12} more</p>` : ''}</details>`).join('')}</div>
+        </div></div>`;
+    }
     if (k.family === 'color') return `<div class="panel">${kindHd(k)}<div class="strips">${lanes.slice(0, 10).map((l) => `<div class="strip"><code>${esc(l.name)}</code><div class="sws">${l.tokens.slice(0, 16).map((t) => `<i class="sw" style="background: ${esc(t.value)}" title="${esc(t.name)}: ${esc(t.value)}"></i>`).join('')}</div></div>`).join('')}</div>${lanes.length > 10 ? `<p class="more">and ${lanes.length - 10} more colour scales</p>` : ''}</div>`;
     return `<div class="panel">${kindHd(k)}<div class="strips">${lanes.map((l) => `<div class="strip"><code>${esc(l.name)}</code><span class="steps-text">${l.tokens.length} ${l.tokens.length === 1 ? 'step' : 'steps'}</span></div>`).join('')}</div></div>`;
   };
@@ -276,8 +362,9 @@ export function mountReview(host, kinds, { handTyped = 0, project = '', post } =
     const done = decisions.filter((d) => choices[d.id] !== undefined).length;
     el.querySelector('[data-tally]').innerHTML = decisions.length ? `<b>${done} of ${decisions.length}</b> decided.${done < decisions.length ? ' Until you choose, your system keeps the biggest scale and its name.' : ''}` : '';
     const systems = kinds.map((k) => systemOf(k, choices)).filter(Boolean);
-    el.querySelector('[data-result]').innerHTML = systems.filter((s) => LENGTHS.has(s.kind.family) || s.aliases.length || s.renames.length).map((sys) => {
+    el.querySelector('[data-result]').innerHTML = systems.filter((s) => LENGTHS.has(s.kind.family) || s.aliases.length || s.renames.length || s.note).map((sys) => {
       const k = sys.kind, one = sys.scales.length === 1 ? sys.scales[0] : null;
+      if (sys.note) return `<div class="panel">${kindHd(k)}<p class="aliases">${esc(sys.note)}</p></div>`;
       return `<div class="panel">${kindHd(k, `<span>${sys.scales.map((s) => `<code>${esc(s.stem)}*</code>`).join(', ')} · ${sys.scales.reduce((m, s) => m + s.steps.length, 0)} steps</span>`)}
         ${one ? `<div class="scale">${one.steps.slice(0, 16).map((st) => `<code class="${st.added ? 'new' : ''}" title="${st.added ? `came from ${esc(st.from)}; check its name` : ''}">${esc(st.name)}</code><span class="steps-text">${esc(st.value)}</span><span>${LENGTHS.has(k.family) && st.px ? (k.family === 'radius' ? `<i class="arc" style="border-top-left-radius: ${st.px}px"></i>` : k.family === 'type' ? `<span class="aa" style="font-size: ${Math.min(st.px, 40)}px">Aa</span>` : `<i class="bar" style="width: ${Math.min(st.px, 160)}px"></i>`) : ''}</span>`).join('')}</div>`
           : `<p class="more">${sys.scales.length} scales kept as they are.</p>`}

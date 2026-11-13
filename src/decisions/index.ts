@@ -15,7 +15,7 @@ import { resolveValue } from './resolve.js';
 import { themeSourceGraph } from './theme-sources.js';
 import { motionDefinitions } from './motion.js';
 import { readSpacing } from './spacing.js';
-import { inferFamily, variableUses } from './infer.js';
+import { byValue, inferFamily, variableUses } from './infer.js';
 import type { NumericSpacing, SpacingBase } from './spacing.js';
 import type { Variable } from './resolve.js';
 
@@ -93,7 +93,7 @@ export async function readDecisions(root: string, config: PlumbConfig, graph: St
   // on what it is (infer.ts). Not for a theme's backing value: the theme key that reads it is the token
   const uses = variableUses(graph);
   const backing = new Set(theme.flatMap(item => references(item.value)));
-  const inferred = new Map<string, ReturnType<typeof inferFamily>>();
+  const inferred = new Map<string, ReturnType<typeof inferFamily>>(), colourOverName = new Map<string, Family>();
   for (const item of raw) if (item.root && !item.theme && item.origin === 'project' && !familyFor(item.name) && !backing.has(item.name) && !inferred.has(item.name)) {
     inferred.set(item.name, inferFamily(item.name, resolveValue(item.value, variables, new Set([item.name])) ?? item.value, uses));
   }
@@ -101,11 +101,15 @@ export async function readDecisions(root: string, config: PlumbConfig, graph: St
     for (const family of Object.keys(config.decisions ?? {}) as Family[]) if (selected(item.name, family, item.source.file, false, inferred.get(item.name)?.family)) {
       add(defineDecisions([{ family, name: item.name, value: item.value, why: item.why, source: item.source, ...(item.tier ? { tier: item.tier } : {}) }])[0]!, item.tier !== undefined);
     }
-    const family = familyFor(item.name) ?? inferred.get(item.name)?.family;
+    // a Tailwind prefix that says one kind over a value that is plainly a colour (`--text-primary: #1d1b17` in plain CSS):
+    // the value wins, and the reading says so
+    const named = familyFor(item.name), plain = named && named !== 'color' && byValue(resolveValue(item.value, variables, new Set([item.name])) ?? item.value) === 'color';
+    if (plain) colourOverName.set(item.name, named!);
+    const family = plain ? 'color' : named ?? inferred.get(item.name)?.family;
     if (family && !config.decisions?.[family]) add(defineDecisions([{ family, name: item.name, value: item.value, why: item.why, source: item.source, ...(item.tier ? { tier: item.tier } : {}) }])[0]!, item.tier !== undefined);
   }
   // how each token was read: a guess says what decided it; a Tailwind name says its prefix
-  const readingOf = (name: string, family: Family) => inferred.get(name)?.family === family ? inferred.get(name)!.why : familyFor(name) === family ? `its name begins ${/^--[a-z]+(?:-(?:inset|drop|mono|line))?-/.exec(name)?.[0] ?? name}` : undefined;
+  const readingOf = (name: string, family: Family) => colourOverName.has(name) && family === 'color' ? `its value is a colour, though its name begins ${/^--[a-z]+-/.exec(name)?.[0] ?? name}` : inferred.get(name)?.family === family ? inferred.get(name)!.why : familyFor(name) === family ? `its name begins ${/^--[a-z]+(?:-(?:inset|drop|mono|line))?-/.exec(name)?.[0] ?? name}` : undefined;
   for (const [family, source] of Object.entries(config.decisions ?? {})) {
     if (typeof source.from === 'function') {
       const records = await source.from();
