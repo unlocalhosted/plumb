@@ -1051,6 +1051,8 @@ field is empty). The table of five writes, before and after. The Next table: eig
 
 **X-ray: double-click syncs (2026-11-13).** The owner: "i should be able to double click and sync the changes as well". While a part's picker is open, a double-click anywhere (the part, the row, the page) syncs it like the full pull does, with the same pill, the same "Synced" words and the same burst. The legend reads "→ or double-click: sync". *Proof:* in the browser, the card's left padding was moved from 22 to 24, then a double-click on the card synced "left 6" and closed the picker.
 
+**X-ray: the card no longer flickers between parts (2026-11-13).** *The itch:* "this card flickers and animation runs everytime i am hovering over different layout properties". *The cause:* each time the pointer reached another part of the same element, the whole card was written again, so its rows replayed their arrival, and the drawing on the element faded in again. *The fix:* only a new element arrives with motion. On the same element, the drawing is redrawn still, and the card is rewritten only when its content changed, also without replaying. Only the small pill naming the part pops, because that is what changed. *Proof:* in the browser, moving across four parts of the card kept the same row in the card, and the drawing's animation was "none".
+
 ## Open gaps
 - The site's top bar doesn't fit a phone (390px): it widens the page to about 500px. Needs a compact bar.
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.

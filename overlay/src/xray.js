@@ -82,6 +82,8 @@ export const XRAY_CSS = `
   .xr-chip { display: inline-grid; place-items: center; width: 30px; height: 20px; border-radius: 6px; font-size: 12px; line-height: 1; box-shadow: inset 0 0 0 1px rgb(0 0 0 / .12); }
   .xr-sw { display: inline-block; width: 16px; height: 16px; border-radius: 5px; box-shadow: inset 0 0 0 1px rgb(0 0 0 / .14); vertical-align: -3px; }
   .xr-aa { font-family: var(--pl-sans); font-weight: 700; }
+  /* the same element, another part pointed at: nothing arrives again; only what changed is redrawn, still */
+  .xr[data-still] .xr-draw, .xr[data-still] .ruler-pill, .xr-card[data-still] .xr-row { animation: none; }
   @media (prefers-reduced-motion: reduce) { .xr .xr-draw, .xr .ruler-pill, .xr-row { animation: none; } .xr-card { transition: none; } }
 `;
 

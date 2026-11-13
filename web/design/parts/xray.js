@@ -112,15 +112,19 @@ export function mount(host, root, css) {
   </div>`;
 
   const stage = root.querySelector('.stage'), layer = stage.querySelector('.xr'), card = stage.querySelector('.xr-card');
-  let shown = null, pinned = null, zone = null, picking = null, noting = null, cardAt = { x: 0, y: 0 }, mouse = { x: 0, y: 0 };
+  let lastCard = '', shown = null, pinned = null, zone = null, picking = null, noting = null, cardAt = { x: 0, y: 0 }, mouse = { x: 0, y: 0 };
   const box = () => stage.getBoundingClientRect();
   const nameOf = (el) => NAMES[el.dataset.x] ?? [el.localName, null];
   const draw = (el, z = zone, lit = []) => {
     if (!el) { layer.innerHTML = ''; card.hidden = true; shown = null; zone = null; return; }
     const s = box(), [name, source] = nameOf(el);
     const x = xray(el, { tokenOf, origin: { left: s.left, top: s.top }, room: { left: 12, top: 12, right: s.width - 12, bottom: s.height - 40 }, name, source, zone: picking ? null : z, lit });
+    // a new element arrives with its motion; the same one only updates what changed, without replaying anything
+    const same = el === shown;
+    layer.toggleAttribute('data-still', same);
     layer.innerHTML = x.page;
-    if (el !== shown || !picking) card.innerHTML = x.card;
+    card.toggleAttribute('data-still', same);
+    if (!same || x.card !== lastCard) { card.innerHTML = x.card; lastCard = x.card; }
     const first = card.hidden;
     if (first) card.setAttribute('data-fresh', '');
     card.style.transform = `translate(${x.at.x}px, ${x.at.y}px)`; cardAt = x.at;
