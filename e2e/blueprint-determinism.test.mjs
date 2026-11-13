@@ -193,7 +193,13 @@ test('one structure read per source position, however often the elements rendere
   const s = await site(t, { remount: true }); if (!s) return;
   const { page, errors } = await fresh(s.browser, s.url, { width: 1200, height: 800 });
   const structure = new Map();
-  page.on('request', (r) => { const u = new URL(r.url()); if (u.pathname === '/__plumb/structure') { const k = `${u.searchParams.get('file')}:${u.searchParams.get('line')}:${u.searchParams.get('column')}`; structure.set(k, (structure.get(k) ?? 0) + 1); } });
+  // a structure question goes alone or inside a batch with others (api.js): both are counted, by position
+  const read = (p) => { const k = `${p.file}:${p.line}:${p.column}`; structure.set(k, (structure.get(k) ?? 0) + 1); };
+  page.on('request', (r) => {
+    const u = new URL(r.url());
+    if (u.pathname === '/__plumb/structure') read(Object.fromEntries(u.searchParams));
+    else if (u.pathname === '/__plumb/batch') for (const c of JSON.parse(r.postData() || '{}').calls ?? []) if (c.method === 'structure') read(c.params);
+  });
   await page.keyboard.press('Alt+B');
   await page.waitForFunction(() => window.__plumb?.overlay?.progress?.done === true, null, { timeout: 60000 });
 
