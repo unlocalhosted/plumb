@@ -29,7 +29,7 @@ import { placeOf, atPlace } from './stamp.js';
 const SIDES = ['top', 'right', 'bottom', 'left'];
 const px = (v) => parseFloat(v) || 0;
 const r1 = (n) => Math.round(n * 10) / 10;
-const CARD_W = 272;
+const CARD_W = 292;
 
 export const XRAY_CSS = `
   .xr { position: absolute; inset: 0; pointer-events: none; }
@@ -298,4 +298,21 @@ export function peersOf(el, keyOf = placeOf, all = (k) => document.querySelector
   const k = keyOf(el);
   const found = k ? [...all(k)] : [];
   return found.includes(el) ? found : [el];
+}
+
+/* Where the card goes: beside its element, never on it. `box` is the element with its margin and rulers (in the
+ * card's coordinates), `size` the card's own measured size, `room` where it must stay. Right of the element, else
+ * left, else below, else above: the first side where the whole card fits. Along that side it slides to stay in the
+ * room, but it never crosses onto the element. If no side fits, the side with the most room, clear of the element. */
+export function placeCard(box, size, room, gap = 16) {
+  const { w, h } = size, clampY = (y) => Math.max(room.top, Math.min(y, room.bottom - h)), clampX = (x) => Math.max(room.left, Math.min(x, room.right - w));
+  const sides = [
+    { fit: room.right - (box.right + gap), need: w, at: () => ({ x: box.right + gap, y: clampY(box.top) }) },
+    { fit: box.left - gap - room.left, need: w, at: () => ({ x: box.left - gap - w, y: clampY(box.top) }) },
+    { fit: room.bottom - (box.bottom + gap), need: h, at: () => ({ x: clampX(box.left), y: box.bottom + gap }) },
+    { fit: box.top - gap - room.top, need: h, at: () => ({ x: clampX(box.left), y: box.top - gap - h }) },
+  ];
+  const side = sides.find((s) => s.fit >= s.need) ?? sides.reduce((a, b) => (b.fit / b.need > a.fit / a.need ? b : a));
+  const at = side.at();
+  return { x: Math.round(at.x), y: Math.round(at.y) };
 }

@@ -3,7 +3,7 @@
 // theme scale so each value is judged: mint on the scale, coral off it.
 import { LANGUAGE_CSS } from '../../../overlay/src/language.js';
 import { TOY_DEFS } from '../../../overlay/src/toys.js';
-import { XRAY_CSS, xray, zonesOf, zoneAt, peersOf } from '../../../overlay/src/xray.js';
+import { XRAY_CSS, xray, zonesOf, zoneAt, peersOf, placeCard } from '../../../overlay/src/xray.js';
 import { PICKER_CSS, picker } from '../../../overlay/src/picker.js';
 import { burst } from '../../../overlay/src/burst.js';
 
@@ -188,7 +188,11 @@ export function mount(host, root, css) {
     }
     const first = card.hidden;
     if (first) card.setAttribute('data-fresh', '');
-    card.style.transform = `translate(${x.at.x}px, ${x.at.y}px)`; cardAt = x.at;
+    // beside the element, never on it: its box with its margin and its rulers, against the card's measured size
+    const R = el.getBoundingClientRect(), cs = getComputedStyle(el), mg = (q) => parseFloat(cs.getPropertyValue(`margin-${q}`)) || 0;
+    const around = { left: R.left - s.left - mg('left') - 6, top: R.top - s.top - mg('top') - 24, right: R.right - s.left + mg('right') + 28, bottom: R.bottom - s.top + mg('bottom') + 6 };
+    const at = placeCard(around, { w: card.offsetWidth || 272, h: card.offsetHeight || 420 }, { left: 12, top: 12, right: s.width - 12, bottom: s.height - 12 });
+    card.style.transform = `translate(${at.x}px, ${at.y}px)`; cardAt = at;
     card.hidden = !!noting;
     if (first) requestAnimationFrame(() => card.removeAttribute('data-fresh'));
     shown = el;
