@@ -2055,6 +2055,17 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   size checked; tablet and phone fall back to two and one columns.
 - **Found, not fixed:** on a 390px phone the site's top bar (logo, four nav buttons, Dark) doesn't fit and lays the
   page out about 500px wide. That's the site's bar, not this section.
+### 29. The examples as a carousel, after Apple's highlights
+- **The itch:** "I still don't like them, can we make them like a carousel like this?" (a screenshot of Apple's iPhone
+  Duo "Get the highlights") and "I don't like bento grid style".
+- **What we chose:** that carousel's shape. One example at a time, large: its title and why as a two-line headline
+  above, the scene large in the middle (scaled to the slide, up to 2.2×), its Broken/Fixed switch at the bottom; the
+  next slide peeks in from the right. Under the track, a pill of dots (the current one stretches and fills as its
+  review plays) and a round play/pause. It advances on its own when a review finishes (about 9.1s each, measured:
+  slide 2, 3, 4, 5 at 0, 6, 15.1, 24.2s); a dot or the peeking slide jumps to it; a press on an example pauses the
+  carousel there (so what you chose stays), and play hands it back, replaying that example from the start, then moving
+  on. The bento grid and its spotlight are gone.
+- **Checked:** at 1440×900 and 1280×720 the slide and its controls fit the screen; light and dark; no errors.
 
 ## Open gaps
 - The overlay writes about 180 corners as numbers (radius tokens about 45 times), many off its own scale; 6px is

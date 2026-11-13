@@ -34,7 +34,8 @@ const FAMILIES = [['Interaction feel', 16], ['Typography', 15], ['Colour and lig
 // for 1.8s, the fix takes 1.6s on the scene, it holds a second, then the marks take 0.8s to leave
 const T = { cameraIn: 600, marks: 1600, fix: 3400, marksOut: 6000, cameraOut: 6000, alive: 7000, back: 9000, loop: 10500 };
 const STEP = { rest: 0, camera: 1, marks: 2, fix: 3, out: 4, home: 5 };
-const FEEL = 2000; // the broken scene alone, before anything is marked: a moment to feel that something's off
+const FEEL = 2000;
+const TURN_MS = FEEL + (7000 - 600) + 700; // one example's whole review, for its dot to fill over // the broken scene alone, before anything is marked: a moment to feel that something's off
 
 export function Insights() {
   const reduced = typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -47,27 +48,15 @@ export function Insights() {
     return () => io.disconnect();
   }, [reduced]);
 
-  // one card is reviewed at a time, in turn, and the bar above the grid says what Plumber is doing to it: checking,
-  // what it found and why, the fix. The rest sit still. A card you've pressed is skipped: it holds what you chose.
-  const [turn, setTurn] = useState(0), [phase, setPhase] = useState(0), [done, setDone] = useState(() => new Set());
-  // after the last card, the round's payoff: everything fixed, none of it written by you; then again
-  const bar = useRef(null), [summary, setSummary] = useState(false);
-  const next = () => {
-    if (turn === CARDS.length - 1 && !summary) {
-      setSummary(true);
-      setTimeout(() => { const r = bar.current?.querySelector('.ins-review-n')?.getBoundingClientRect(); if (r) burst(document.body, r.left + r.width / 2, r.top + r.height / 2, { pieces: 34 }); }, 250);
-      setTimeout(() => { setSummary(false); setDone(new Set()); setPhase(0); setTurn(0); }, 4200);
-      return;
-    }
-    setPhase(0); setTurn(t => (t + 1) % CARDS.length);
-  };
-  const beat = (i, step) => {
-    if (i !== turn) return;
-    const p = step >= STEP.out ? 3 : step >= STEP.fix ? 2 : step >= STEP.marks ? 1 : 0;
-    setPhase(p);
-    if (p >= 2) setDone(d => (d.has(i) ? d : new Set(d).add(i)));
-  };
-  const c = CARDS[turn];
+  // a carousel, after Apple's highlights: one example at a time, large, the next peeking in; it plays its fix, then
+  // the track moves on. Dots say where you are (the current one fills as its review plays); play/pause holds it. A
+  // press on an example pauses the carousel there, so what you chose stays; play hands it back.
+  const [turn, setTurn] = useState(0), [playing, setPlaying] = useState(true);
+  const track = useRef(null);
+  const next = () => setTurn(t => (t + 1) % CARDS.length);
+  const place = () => { const t = track.current, el = t?.children[turn]; if (el) t.style.transform = `translateX(${-el.offsetLeft}px)`; };
+  useLayoutEffect(place, [turn]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { addEventListener('resize', place); return () => removeEventListener('resize', place); }, [turn]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <section className="ins-x" aria-labelledby="insights-title">
@@ -79,15 +68,32 @@ export function Insights() {
           {FAMILIES.map(([name, n]) => <li key={name}>{name} <span className="tabular">{n}</span></li>)}
         </ul>
       </header>
-      <div ref={grid} className="ins-x-grid" data-live={live && !reduced}>
-        {CARDS.map((x, i) => <Card key={x.n} card={x} live={live} reduced={reduced} turn={live && turn === i} onBeat={step => beat(i, step)} onDone={next} />)}
+      <div ref={grid} className="ins-x-viewport" data-live={live && !reduced}>
+        <div ref={track} className="ins-x-track">
+          {CARDS.map((x, i) => (
+            <Card key={x.n} card={x} live={live} reduced={reduced} active={i === turn} playing={playing} turn={live && playing && turn === i}
+              onDone={next} onHold={() => setPlaying(false)} onPick={() => setTurn(i)} onReplay={() => setPlaying(true)} />
+          ))}
+        </div>
+      </div>
+      <div className="ins-x-controls">
+        <div className="ins-x-dots" role="tablist" aria-label="Examples">
+          {CARDS.map((x, i) => (
+            <button key={x.n} type="button" role="tab" aria-selected={i === turn} aria-label={x.title} data-on={i === turn} onClick={() => setTurn(i)}>
+              {i === turn && <i key={`${turn}-${playing}`} className="ins-x-fill" data-playing={live && playing} style={{ '--turn': `${TURN_MS}ms` }} />}
+            </button>
+          ))}
+        </div>
+        <button type="button" className="ins-x-play" onClick={() => setPlaying(p => !p)} aria-label={playing ? 'Pause' : 'Play'}>
+          <svg viewBox="0 0 16 16" aria-hidden="true">{playing ? <path d="M5.5 3.5v9M10.5 3.5v9" /> : <path d="M5 3.5v9l7.5-4.5z" />}</svg>
+        </button>
       </div>
     </section>
   );
 }
 
 /* One insight and its moment. */
-function Card({ card, live, reduced, turn, onBeat, onDone }) {
+function Card({ card, live, reduced, active, playing, turn, onDone, onHold, onPick, onReplay }) {
   const stage = useRef(null), scene = useRef(null);
   const [fixed, setFixed] = useState(reduced);
   const [step, setStep] = useState(STEP.rest);
@@ -99,7 +105,6 @@ function Card({ card, live, reduced, turn, onBeat, onDone }) {
   // little margin, up to 130%; the big tile fills its own
   const [fit, setFit] = useState(1);
   useLayoutEffect(() => {
-    if (card.size === 'big') return;
     const el = stage.current;
     // layout boxes (offsets), which ignore the scene's current scale and a menu's closed scale of 0
     const measure = () => {
@@ -107,7 +112,7 @@ function Card({ card, live, reduced, turn, onBeat, onDone }) {
       let l = Infinity, t = Infinity, r = -Infinity, b = -Infinity;
       for (const c of sc.children) { if (!c.offsetWidth) continue; l = Math.min(l, c.offsetLeft); t = Math.min(t, c.offsetTop); r = Math.max(r, c.offsetLeft + c.offsetWidth); b = Math.max(b, c.offsetTop + c.offsetHeight); }
       const w = r - l, h = b - t;
-      if (w > 0 && h > 0) setFit(Math.min(1.3, (el.clientWidth - 40) / w, (el.clientHeight - 28) / h)); // a margin wide enough for a tab going bold
+      if (w > 0 && h > 0) setFit(Math.min(2.2, (el.clientWidth - 80) / w, (el.clientHeight - 56) / h)); // a margin wide enough for a tab going bold
     };
     const ro = new ResizeObserver(measure); ro.observe(el);
     const sc = el.querySelector('.sc'); if (sc) for (const c of sc.children) ro.observe(c);
@@ -133,14 +138,13 @@ function Card({ card, live, reduced, turn, onBeat, onDone }) {
   useEffect(() => {
     clear();
     if (reduced || !turn) return;
-    if (held) { at(0, onDone); return clear; }
+    if (held) return;
     if (paused) return;
     setFixed(false); setStep(STEP.rest); setCam(null); setMarks(null); shown.current = null;
     moment(FEEL);
     at(FEEL + (T.alive - T.cameraIn) + 700, onDone);
     return clear;
   }, [turn, held, paused, reduced]); // eslint-disable-line react-hooks/exhaustive-deps
-  useEffect(() => { if (turn) onBeat?.(step); }, [step, turn]); // eslint-disable-line react-hooks/exhaustive-deps
   // the fix lands: its check bursts into pieces of the visual language
   useEffect(() => {
     if (step !== STEP.fix || !fixed || reduced) return;
@@ -176,7 +180,7 @@ function Card({ card, live, reduced, turn, onBeat, onDone }) {
   // once (the fix glides in, or the mistake glides back), with its guides and measured pill up the moment you press,
   // the number counting to the new value; no camera. The card holds what you chose until Replay hands it back.
   const choose = wantFixed => {
-    clear(); setHeld(true); setCam(null);
+    clear(); setHeld(true); setCam(null); onHold?.();
     setFixed(wantFixed);
     if (reduced) return;
     // the marks are up only while the change is happening; then the card is a normal card again
@@ -186,12 +190,14 @@ function Card({ card, live, reduced, turn, onBeat, onDone }) {
     lift.current = [setTimeout(() => setStep(STEP.out), 3200), setTimeout(() => setStep(STEP.home), 4300)];
   };
   useEffect(() => () => lift.current.forEach(clearTimeout), []);
-  const replay = () => { lift.current.forEach(clearTimeout); again.current = true; setStep(STEP.rest); setMarks(null); shown.current = null; setHeld(false); };
+  // play hands a held example back to the tour, from the start of its review
+  useEffect(() => { if (playing && held) { lift.current.forEach(clearTimeout); setStep(STEP.rest); setMarks(null); shown.current = null; setHeld(false); } }, [playing]); // eslint-disable-line react-hooks/exhaustive-deps
+  const replay = () => { onReplay?.(); lift.current.forEach(clearTimeout); again.current = true; setStep(STEP.rest); setMarks(null); shown.current = null; setHeld(false); };
 
   const { Scene } = card;
   const showMarks = marks && step >= STEP.marks && step <= STEP.out;
   return (
-    <article className="ins-card" data-hue={card.hue} data-size={card.size || undefined} data-turn={turn || held || undefined} style={{ gridArea: card.area }} onPointerEnter={() => setPaused(true)} onPointerLeave={() => setPaused(false)} aria-label={`${card.n}. ${card.title}`}>
+    <article className="ins-card" data-hue={card.hue} data-active={active || undefined} onClick={active ? undefined : onPick} data-turn={turn || held || undefined} onPointerEnter={() => setPaused(true)} onPointerLeave={() => setPaused(false)} aria-label={`${card.n}. ${card.title}`}>
       <div ref={stage} className="ins-stage" data-inspect={showMarks || undefined} style={{ '--fit': fit }}>
         <div ref={scene} className="ins-cam" style={cam ? { transform: `translate(${cam.x}px, ${cam.y}px) scale(${cam.k})` } : undefined} data-moving={!!cam}>
           <Scene fixed={fixed} live={live && !reduced && (turn || held) && (card.moving || step === STEP.rest || step === STEP.home)} />

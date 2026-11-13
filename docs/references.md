@@ -156,3 +156,8 @@ All free under the Unsplash License, hotlinked from images.unsplash.com as Unspl
 - **A white vase on a white table:** https://unsplash.com/photos/aFvxASlms2A, the pale photo in the inner-outline card.
 - **Why:** the owner: "use image from Unsplash ... to really sell the illusion of the card".
 
+
+## 2026-11-13 · Apple's iPhone Duo page, "Get the highlights" carousel (shared by the owner, a screenshot)
+- **What:** https://www.apple.com/in/iphone-duo/, the highlights carousel: one large card at a time, a two-line headline above a big visual, the next card peeking from the right, a pill of dots under it (the current one a progress bar) and a play/pause button; it advances on its own.
+- **Why shared:** "I still don't like them, can we make them like a carousel like this?" (about the homepage's nine examples in a bento grid).
+- **What it changed:** the examples became that carousel (journey, "the examples as a carousel"); homepage/src/sections/Insights.jsx and insights.css.
