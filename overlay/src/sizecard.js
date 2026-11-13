@@ -55,7 +55,7 @@ export const SIZE_CSS = `
   .sz-grip[data-g="w"] { margin-left: -5px; } .sz-grip[data-g="e"] { margin-left: -1px; }
   .sz-grip[data-g="n"], .sz-grip[data-g="s"] { width: 22px; height: 6px; margin: -3px 0 0 -11px; }
   .sz-grip[data-g="n"] { margin-top: -5px; } .sz-grip[data-g="s"] { margin-top: -1px; }
-  .sz-grip[data-g$="e"]:not([data-g="e"]), .sz-grip[data-g$="w"]:not([data-g="w"]) { width: 10px; height: 10px; margin: -5px 0 0 -5px; border-radius: 3.5px; }
+  .sz-grip[data-g$="e"]:not([data-g="e"]), .sz-grip[data-g$="w"]:not([data-g="w"]) { width: 10px; height: 10px; border-radius: 3.5px; } /* no margin here: this outranks the per-corner margins below */
   /* corners sit just outside their corner (a click a few px inside the element is the element's) */
   .sz-grip[data-g="nw"] { margin: -9px 0 0 -9px; } .sz-grip[data-g="ne"] { margin: -9px 0 0 -1px; }
   .sz-grip[data-g="sw"] { margin: -1px 0 0 -9px; } .sz-grip[data-g="se"] { margin: -1px 0 0 -1px; }
