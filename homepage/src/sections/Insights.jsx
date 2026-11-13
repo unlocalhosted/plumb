@@ -54,9 +54,32 @@ export function Insights() {
   const [turn, setTurn] = useState(0), [playing, setPlaying] = useState(true);
   const track = useRef(null);
   const next = () => setTurn(t => (t + 1) % CARDS.length);
-  const place = () => { const t = track.current, el = t?.children[turn]; if (el) t.style.transform = `translateX(${-el.offsetLeft}px)`; };
-  useLayoutEffect(place, [turn]); // eslint-disable-line react-hooks/exhaustive-deps
-  useEffect(() => { addEventListener('resize', place); return () => removeEventListener('resize', place); }, [turn]); // eslint-disable-line react-hooks/exhaustive-deps
+  // the viewport is a real sideways scroller with snap stops, so two fingers on a trackpad, a swipe and shift+wheel
+  // move it the way the hand goes; a new turn scrolls it there, and where a hand leaves it becomes the turn
+  const viewport = grid, steering = useRef(false);
+  const place = (smooth = true) => {
+    const v = viewport.current, el = track.current?.children[turn];
+    if (!v || !el) return;
+    steering.current = true;
+    v.scrollTo({ left: el.offsetLeft - track.current.offsetLeft, behavior: smooth && !reduced ? 'smooth' : 'auto' });
+  };
+  useLayoutEffect(() => place(), [turn]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { const r = () => place(false); addEventListener('resize', r); return () => removeEventListener('resize', r); }, [turn]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    const v = viewport.current; let idle;
+    const settle = () => {
+      if (steering.current) { steering.current = false; return; }
+      const kids = [...track.current.children], at = v.scrollLeft + track.current.offsetLeft;
+      const i = kids.reduce((b, k, j) => Math.abs(k.offsetLeft - at) < Math.abs(kids[b].offsetLeft - at) ? j : b, 0);
+      setTurn(i);
+    };
+    const onScroll = () => { clearTimeout(idle); idle = setTimeout(settle, 140); };
+    // a hand on it: whatever the tour was doing, the hand wins (the tour's own scroll is marked by steering)
+    const onHand = () => { steering.current = false; };
+    v.addEventListener('scroll', onScroll, { passive: true });
+    v.addEventListener('wheel', onHand, { passive: true }); v.addEventListener('touchstart', onHand, { passive: true });
+    return () => { clearTimeout(idle); v.removeEventListener('scroll', onScroll); v.removeEventListener('wheel', onHand); v.removeEventListener('touchstart', onHand); };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <section className="ins-x" aria-labelledby="insights-title">
@@ -84,8 +107,8 @@ export function Insights() {
             </button>
           ))}
         </div>
-        <button type="button" className="ins-x-play" onClick={() => setPlaying(p => !p)} aria-label={playing ? 'Pause' : 'Play'}>
-          <svg viewBox="0 0 16 16" aria-hidden="true">{playing ? <path d="M5.5 3.5v9M10.5 3.5v9" /> : <path d="M5 3.5v9l7.5-4.5z" />}</svg>
+        <button type="button" className="ins-x-play s-btn q" onClick={() => setPlaying(p => !p)} aria-label={playing ? 'Pause' : 'Play'}>
+          <span><svg viewBox="0 0 16 16" aria-hidden="true">{playing ? <path d="M5.5 3.5v9M10.5 3.5v9" /> : <path d="M5 3.5v9l7.5-4.5z" />}</svg></span>
         </button>
       </div>
     </section>

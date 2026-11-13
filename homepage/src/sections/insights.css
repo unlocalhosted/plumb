@@ -44,23 +44,31 @@
 
 /* ── the carousel, after Apple's highlights: one example at a time, large, the next peeking in; the track glides on
    when a review finishes; dots and play/pause under it ── */
-.ins-x-viewport { margin-top: var(--s-7); overflow: hidden; border-radius: 28px; }
-.ins-x-track { display: flex; gap: 20px; transition: transform 900ms var(--ins-ease); will-change: transform; }
-.ins-x-track .ins-card { flex: 0 0 min(1120px, 84%); height: clamp(520px, 74svh, 780px); position: relative; }
+/* a real sideways scroller: two fingers, a swipe or shift+wheel move it as the hand goes, and it snaps to a slide */
+.ins-x-viewport { margin-top: var(--s-7); overflow-x: auto; overflow-y: hidden; border-radius: 28px; scroll-snap-type: x mandatory; overscroll-behavior-x: contain; scrollbar-width: none; }
+.ins-x-viewport::-webkit-scrollbar { display: none; }
+.ins-x-track { display: flex; gap: 20px; }
+/* the last slide can still come to the start, as every other does */
+.ins-x-track::after { content: ''; flex: 0 0 calc(100% - min(1120px, 84%) - 20px); }
+.ins-x-track .ins-card { flex: 0 0 min(1120px, 84%); height: clamp(520px, 74svh, 780px); position: relative; scroll-snap-align: start; scroll-snap-stop: always; }
 .ins-x-track .ins-card:not([data-active]) { cursor: pointer; }
-.ins-x-controls { display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: var(--s-5); }
-.ins-x-dots { display: flex; align-items: center; gap: 10px; height: 48px; padding: 0 20px; border-radius: 99px; background: color-mix(in oklab, var(--pl-ink) 8%, var(--pl-bg-surface)); }
-.ins-x-dots button { position: relative; width: 8px; height: 8px; padding: 0; border: 0; border-radius: 99px; overflow: hidden; cursor: pointer;
-  background: color-mix(in oklab, var(--pl-ink) 32%, transparent); transition: width 500ms var(--ins-ease), background-color 300ms var(--ins-ease); }
-.ins-x-dots button[data-on='true'] { width: 48px; background: color-mix(in oklab, var(--pl-ink) 22%, transparent); }
-.ins-x-fill { position: absolute; inset: 0 auto 0 0; width: 0; border-radius: inherit; background: var(--pl-text-primary); animation: ins-x-fill var(--turn) linear forwards; animation-play-state: paused; }
+/* the controls in our language: the dots sit in a well pressed into the page, where you are is a pink key that fills
+   as its example plays; play is the site's soft key */
+.ins-x-controls { display: flex; align-items: center; justify-content: center; gap: 14px; margin-top: var(--s-5); }
+.ins-x-dots { display: flex; align-items: center; gap: 4px; height: 44px; padding: 0 10px; border-radius: 99px; background: var(--pl-bg-inset); box-shadow: var(--pl-shadow-well); }
+.ins-x-dots button { position: relative; display: grid; place-items: center; width: 22px; height: 30px; padding: 0; border: 0; background: none; cursor: pointer; transition: width 600ms var(--pl-spring, var(--ins-ease)); }
+.ins-x-dots button::before { content: ''; width: 8px; height: 8px; border-radius: 99px; background: color-mix(in oklab, var(--pl-text-primary) 26%, transparent); transition: width 600ms var(--pl-spring, var(--ins-ease)), height 300ms var(--ins-ease), background-color 300ms var(--ins-ease), box-shadow 300ms var(--ins-ease); }
+.ins-x-dots button:hover::before { background: color-mix(in oklab, var(--pl-text-primary) 48%, transparent); }
+.ins-x-dots button[data-on='true'] { width: 62px; }
+.ins-x-dots button[data-on='true']::before { width: 52px; height: 14px; background: var(--pl-pink-soft); box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--pl-pink) 30%, transparent); }
+.ins-x-fill { position: absolute; left: 5px; top: 8px; height: 14px; width: 0; border-radius: 99px; pointer-events: none;
+  background: linear-gradient(180deg, color-mix(in oklab, var(--pl-pink) 82%, #fff), var(--pl-pink)); box-shadow: 0 2px 5px -2px color-mix(in oklab, var(--pl-pink) 70%, transparent), inset 0 1px 0 color-mix(in oklab, #fff 45%, transparent);
+  animation: ins-x-fill var(--turn) linear forwards; animation-play-state: paused; }
 .ins-x-fill[data-playing='true'] { animation-play-state: running; }
-@keyframes ins-x-fill { to { width: 100%; } }
-.ins-x-dots button:focus-visible, .ins-x-play:focus-visible { outline: 2px solid var(--pl-border-focus); outline-offset: 3px; }
-.ins-x-play { display: grid; place-items: center; width: 48px; height: 48px; border: 0; border-radius: 50%; cursor: pointer; color: var(--pl-text-primary);
-  background: color-mix(in oklab, var(--pl-ink) 8%, var(--pl-bg-surface)); transition: background-color 200ms var(--ins-ease); }
-.ins-x-play:hover { background: color-mix(in oklab, var(--pl-ink) 14%, var(--pl-bg-surface)); }
-.ins-x-play svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+@keyframes ins-x-fill { from { width: 14px; } to { width: 52px; } }
+.ins-x-dots button:focus-visible { outline: 2px solid var(--pl-border-focus); outline-offset: 1px; border-radius: 99px; }
+.ins-x-play > span { width: 44px; height: 44px; padding: 0; border-radius: 99px; }
+.ins-x-play svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
 .ins-x-play svg path[d^='M5 '] { fill: currentColor; }
 /* a slide: its two-line headline above, the example large in the middle, its switch at the bottom */
 .ins-x-track .ins-foot { order: -1; flex-direction: column; align-items: center; gap: 0; padding: 44px 32px 0; text-align: center; }
@@ -281,7 +289,7 @@
 .sc-menu[data-fixed='true'][data-open='true'] .sc-pop { scale: 1; }
 
 @media (prefers-reduced-motion: reduce) {
-  .ins-x-track { transition: none; } .ins-x-fill { animation: none; width: 100%; }
+  .ins-x-fill { animation: none; width: 52px; }
   .ins-state, .sc-play-btn svg, .sc-cover, .sc-recipe, .sc-glaze::after, .sc-pop, .ins-card, .ins-thumb, .ins-cam, .sc-day b em, .ins-check { transition: none; }
   .ins-pill, .ins-digit, .ins-review-say { animation: none; }
   .ins-swap { animation: none; }
