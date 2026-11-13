@@ -128,7 +128,7 @@ export const REVIEW_CSS = BUTTON_CSS + `
 `;
 
 // the scales of a kind (a stem's tokens in one file), with each token's size where it has one
-function lanesOf(kind) {
+export function lanesOf(kind) {
   return kind.groups.filter((g) => g.pattern).map((g) => {
     const stem = g.pattern.replace(/\*$/, '');
     const tokens = g.tokens.map((t) => ({ ...t, px: pxOf(kind.family, t.value), suffix: t.name.slice(stem.length) }));
@@ -149,7 +149,7 @@ const JOBS = [['text', /(?:^|-)(?:text|fg|foreground|label|heading|body|muted)(?
 const JOB_NAMES = { text: 'Text', surface: 'Surfaces', border: 'Borders', icon: 'Icons', action: 'Actions', state: 'States', other: 'Other roles' };
 const refsOf = (raw) => [...String(raw).matchAll(/var\(\s*(--[\w-]+)/g)].map((m) => m[1]);
 const norm = (v) => String(v).trim().toLowerCase().replace(/\s+/g, ' ');
-function colourModel(kind) {
+export function colourModel(kind) {
   // a name counts once (a light and a dark block define the same token twice)
   const all = [...new Map(kind.groups.flatMap((g) => g.tokens.map((t) => [t.name, { ...t, file: g.file }]))).values()];
   const bare = (name) => name.replace(/^--/, '').replace(/^[a-z]{1,3}-(?=[a-z])/, '');
@@ -171,7 +171,7 @@ function colourModel(kind) {
 }
 
 /** The decisions a kind asks for, from its numbers only. */
-function decisionsOf(kind) {
+export function decisionsOf(kind) {
   const [, label] = KINDS[kind.family] ?? ['', kind.family], lanes = lanesOf(kind), out = [];
   if (kind.family === 'color') {
     const { hard } = colourModel(kind), fixable = hard.filter((h) => h.match);
@@ -222,7 +222,7 @@ function colourSystem(kind, choices) {
 }
 
 /** A kind's system after the choices: its one scale, its name, and what the other scales point at. */
-function systemOf(kind, choices) {
+export function systemOf(kind, choices) {
   if (kind.family === 'color') return colourSystem(kind, choices);
   const lanes = lanesOf(kind).filter((l) => choices[`guess:${l.name}`] !== 'no');
   if (!lanes.length) return null;
@@ -260,7 +260,7 @@ function systemOf(kind, choices) {
 /** The system as edits to the files that define its tokens. Nothing is renamed or deleted: a token given a new name keeps
  *  its old one, pointing at the new; a dropped scale's tokens point at the kept scale; a rounded step gets its new value;
  *  a step only a dropped scale had is added after the kept scale's last step. */
-function editsOf(systems) {
+export function editsOf(systems) {
   const files = new Map(), of = (file) => { if (!files.has(file)) files.set(file, { file, set: [], add: [] }); return files.get(file); };
   for (const sys of systems) {
     for (const s of sys.scales) {

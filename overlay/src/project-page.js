@@ -9,7 +9,7 @@
 import { LANGUAGE_CSS } from './language.js';
 import { CAUSE_LIST_CSS, CauseList } from './cause-list.js';
 import { TOY_DEFS } from './toys.js';
-import { mountReview } from './system-review.js';
+import { mountLesson } from './lesson.js';
 
 const nf = new Intl.NumberFormat('en');
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
@@ -38,9 +38,8 @@ export function mountProjectPage(host, data, tokens, io = {}) {
   const doc = host.ownerDocument, root = host.attachShadow({ mode: 'open' });
   root.innerHTML = `<style>${tokens}${LANGUAGE_CSS}${CAUSE_LIST_CSS}${PAGE_CSS}</style>${TOY_DEFS}
   <header class="top"><span class="pl-rainbow"></span><b>React Plumber</b><span class="pl-tag">${esc(data.project)}</span><span class="read">${nf.format(data.files)} files read</span><button type="button" class="pl-act quiet" id="scheme">Day</button></header>
-  <main><div id="reading"><div id="causes" slot="causes"></div></div></main>`;
-  const causes = new CauseList(root.getElementById('causes'), { causes: data.causes, open: data.open });
-  mountReview(root.getElementById('reading'), data.reading, { handTyped: data.open, project: data.project, post: io.post });
+  <main><div id="lesson"></div></main>`;
+  mountLesson(root.getElementById('lesson'), data, { post: io.post });
 
   // the body around the root shows on overscroll and at the edges, so it takes the desk colour the root resolves
   doc.body.style.margin = '0';
@@ -54,5 +53,5 @@ export function mountProjectPage(host, data, tokens, io = {}) {
   setScheme(asked ? asked === 'dark' : doc.defaultView.matchMedia('(prefers-color-scheme: dark)').matches);
   doc.defaultView.addEventListener('message', (e) => { if (e.origin === doc.defaultView.location.origin && e.data?.scheme) setScheme(e.data.scheme === 'dark'); });
   button.addEventListener('click', () => setScheme(host.dataset.scheme !== 'dark'));
-  return { root, causes };
+  return { root };
 }

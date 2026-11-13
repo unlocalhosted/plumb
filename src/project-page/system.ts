@@ -28,6 +28,8 @@ export interface SystemData {
   files: number;
   size: { steps: Step[]; strays: Stray[] };
   radius: { steps: Step[]; strays: Stray[] };
+  /** the spacing steps and the gaps and paddings typed by hand, for the lesson's spacing screen */
+  spacing: { steps: Step[]; strays: Stray[] };
   weight: { used: { weight: number; places: number; written: Written[] }[] };
   colour: { steps: ColourStep[]; strays: ColourStray[] };
   dead: { class: string; places: number; meant: string[] }[];
@@ -248,6 +250,7 @@ export function systemOf(report: Report): SystemData {
     files: typeof files === 'number' ? files : Object.values(files).reduce((sum, n) => sum + n, 0),
     size: scale('type', new Set(['font-size', 'font']), 6),
     radius: scale('radius', new Set(['border-radius'])),
+    spacing: scale('spacing', new Set(['padding', 'padding-top', 'padding-right', 'padding-bottom', 'padding-left', 'padding-inline', 'padding-block', 'margin', 'margin-top', 'margin-right', 'margin-bottom', 'margin-left', 'margin-inline', 'margin-block', 'gap', 'row-gap', 'column-gap']), 1),
     weight: weights(),
     colour: colours(),
     dead: dead(),

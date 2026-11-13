@@ -2535,6 +2535,21 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   a value that is plainly a colour now wins over a non-colour prefix, and the reading says so. crafting-ui:
   `--shadow-ink` (a shadow's colour) moves from shadows to colour; its project's records show it as 1 vanished and
   3 not yet accepted. First tries drew a catch-all `--pl` row and counted light and dark definitions twice; fixed.
+- **Then "wait, I'm not happy with the page" (owner, same day).** Asked what, the owner picked a wall to scroll, not
+  our look, and doesn't teach, and named the reader: "it just throws you a bunch of numbers with nothing to make sense
+  of; someone who doesn't know a thing about design systems and has been vibe-coding will make zero sense of it", then
+  "imagine this is the onboarding to Plumber: use this moment to teach them about the config they will develop, which
+  becomes the baseline for the rest of the interaction". The system behind every miss on this page: it was built from
+  Plumber's data model (kinds, scales, steps, readings) and then explained, for a reader who already knew the words.
+  Replaced by a lesson (spec: docs/design/onboarding.md, "The lesson"): one idea per screen on your own app, each
+  screen what it is, yours drawn, why it matters, one choice shown as what you get with a sensible one picked, and the
+  rule it becomes; the answers fill in "Your rules" beside the lesson, which become plumber.config. Mine to own: two
+  rounds earlier I had removed Gravity, the owner's chosen hero from 2026-11-03, without checking the spec; it is
+  back as the spacing screen's drawing, its steps named by size (16px once, not three token names). Built: Welcome,
+  Spacing in full, Your rules; Colours, Text and Corners show as next. Seen running on the site, dark, desktop.
+- **Open on the lesson:** Colours, Text and Corners screens; "Set it up" (write the rules, the tokens and today's
+  state) on the last screen; the causes list ("What I'd stop first") is off the page until it has a place in the
+  lesson; the e2e bare-page test still expects the old page's modules.
 - **Open on the four steps:**   steps that came from a dropped scale are named by their size (`--spacing-32`)
   beside inherited names (`--spacing-8` is 24px), a mixed numbering a naming choice should settle.
 - **Still open on the page:** some motion tokens show `0ms`, the
