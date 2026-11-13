@@ -2018,6 +2018,11 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   on); the cards not on turn are no longer faded and desaturated, so the spotlight is the lift and the ring alone.
   The big tile also became the player itself (its video fills the stage; the owner: "this card feels like wasted
   space"). Light and dark.
+- **"I don't like the card design, a container inside another container inside another card."** Each example was
+  three boxes: the card, an inset stage panel inside it, the scene's own card inside that. The stage is now the top of
+  the card itself, edge to edge under its corners, a hairline above the words; so it's the card and the scene, and the
+  photo stages (the pink table) fill the card's top. The dot grid is subtler too (a quarter of the card's pastel, 1px
+  dots; "too contrasty").
 
 ## Open gaps
 - The overlay writes about 180 corners as numbers (radius tokens about 45 times), many off its own scale; 6px is

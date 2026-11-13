@@ -49,15 +49,17 @@
 .ins-x-grid[data-live='true'] .ins-card[data-turn] { translate: 0 -5px; box-shadow: var(--pl-shadow-card), 0 0 0 2px color-mix(in oklab, var(--hue) 70%, transparent), 0 26px 44px -22px color-mix(in oklab, var(--hue) 70%, transparent); }
 
 /* ── the card: paper, its stage on a coloured face, in our design language ── */
-.ins-card { --hue: var(--pl-sky); --face: var(--pl-sky-face); display: flex; flex-direction: column; padding: 10px; border-radius: 24px; background: var(--pl-bg-surface); box-shadow: var(--pl-shadow-card);
+.ins-card { --hue: var(--pl-sky); --face: var(--pl-sky-face); display: flex; flex-direction: column; padding: 0; overflow: hidden; border-radius: 22px; background: var(--pl-bg-surface); box-shadow: var(--pl-shadow-card);
   transition: translate 300ms var(--pl-spring-pop), box-shadow 200ms var(--ease); }
 .ins-card[data-hue='pink'] { --hue: var(--pl-pink); --face: var(--pl-pink-face); }
 .ins-card[data-hue='mint'] { --hue: var(--pl-mint); --face: var(--pl-mint-face); }
 .ins-card[data-hue='lilac'] { --hue: var(--pl-lilac); --face: var(--pl-lilac-face); }
 .ins-card[data-hue='butter'] { --hue: var(--pl-butter); --face: var(--pl-butter-face); }
 @media (hover: hover) and (pointer: fine) { .ins-card:hover { translate: 0 -3px; } }
-.ins-stage { position: relative; flex: 1; min-height: 252px; overflow: hidden; border-radius: 16px;
-  background: radial-gradient(120% 90% at 30% 0%, var(--pl-bg-surface), var(--pl-bg-inset)); box-shadow: inset 0 0 0 1px var(--pl-border-default); }
+/* one container: the stage is the top of the card itself, edge to edge under its corners, divided from the words by a
+   hairline; no panel inside the card */
+.ins-stage { position: relative; flex: 1; min-height: 262px; overflow: hidden; border-radius: 0;
+  background: radial-gradient(120% 90% at 30% 0%, var(--pl-bg-surface), color-mix(in oklab, var(--pl-bg-inset) 70%, var(--pl-bg-surface))); box-shadow: inset 0 -1px 0 var(--pl-border-default); }
 /* the state: a tag in the toy face with the principle's toy, coral while broken, mint once fixed */
 .ins-state { position: absolute; z-index: 3; left: 10px; top: 10px; display: inline-flex; gap: 5px; align-items: center; height: 26px; padding: 0 9px 0 6px; overflow: hidden;
   border-radius: var(--pl-radius-tag); font: var(--pl-round-w, 700) 12px/1 var(--pl-round); color: var(--pl-coral-ink); background: color-mix(in oklab, var(--pl-coral) 18%, var(--pl-bg-surface));
@@ -84,7 +86,7 @@
 @media (hover: hover) and (pointer: fine) { .ins-replay:hover svg { rotate: -200deg; } }
 .ins-replay:focus-visible { outline: 2px solid var(--pl-border-focus); outline-offset: 2px; }
 @keyframes ins-pop-in { from { opacity: 0; scale: 0.85; } }
-.ins-foot { display: flex; gap: 12px; align-items: flex-start; padding: 14px 6px 6px; }
+.ins-foot { display: flex; gap: 12px; align-items: flex-start; padding: 14px 16px 16px; }
 .ins-n { display: grid; place-items: center; flex: none; width: 30px; height: 30px; border-radius: 10px; translate: 0 -2px; color: #fff; font: var(--pl-round-w, 700) 12px/1 var(--pl-round);
   background: linear-gradient(180deg, color-mix(in oklab, var(--hue) 82%, #fff), var(--hue));
   box-shadow: inset 0 1.5px 0 rgb(255 255 255 / .4), 0 2px 0 color-mix(in oklab, var(--hue) 70%, #000), 0 6px 10px -4px color-mix(in oklab, var(--hue) 70%, transparent); }
@@ -155,7 +157,6 @@
 
 /* #8 nested radius: a player tile on a paper canvas (a fine dot grid, the way a design canvas looks), its cover art
    drawn in layers; the stage keeps no flat colour */
-.ins-card:has(.sc-album) .ins-stage { background: radial-gradient(120% 90% at 30% 0%, var(--pl-bg-surface), var(--pl-bg-inset)); box-shadow: inset 0 0 0 1px var(--pl-border-default); }
 .sc-tile { display: grid; grid-template-columns: 96px 1fr; gap: 12px; align-items: center; width: 268px; padding: 8px 14px 8px 8px; border-radius: 20px; background: var(--pl-bg-surface);
   box-shadow: 0 0 0 1px var(--pl-border-default), 0 2px 4px rgb(0 0 0 / .05), 0 18px 32px -16px rgb(0 0 0 / .35); }
 .sc-cover { position: relative; aspect-ratio: 1; overflow: hidden; border-radius: 20px; transition: border-radius var(--t-fix) var(--t-fix-ease);
