@@ -4,26 +4,40 @@
 // floating in a corner; nothing is written anywhere.
 import { LANGUAGE_CSS } from '../../../overlay/src/language.js';
 import { HISTORY_CSS, HISTORY_ICON } from '../../../overlay/src/history-style.js';
+import { TOY_DEFS, toyOf } from '../../../overlay/src/toys.js';
+import { BUTTON_CSS, button as b } from '../../../overlay/src/kit.js';
 import { FIX, TIMELINE as T } from '../../../overlay/src/words.js';
 
 const X = '<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M3 3l6 6M9 3l-6 6" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>';
 const HOLD = 6000; // how long a toast stays (history.js)
+const svg = (body) => `<svg viewBox="0 0 24 24" aria-hidden="true">${body}</svg>`;
+const TICK = svg('<path d="M5.5 12.6l4.2 4.2 8.800-10" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>');
+const BACK = svg('<path d="M9.5 5 5 9.500 9.500 14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><path d="M5.5 9.500h8a5 5 0 0 1 0 10H11" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>');
+const BANG = svg('<path d="M12 5.500v7.500" fill="none" stroke="currentColor" stroke-width="3.600" stroke-linecap="round"/><circle cx="12" cy="18.200" r="2.100" fill="currentColor"/>');
+const UNDO = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 6 5 10.500 9.500 15" fill="none" stroke="currentColor" stroke-width="2.600" stroke-linecap="round" stroke-linejoin="round"/><path d="M5.5 10.500h8a5.500 5.500 0 0 1 0 11H11" fill="none" stroke="currentColor" stroke-width="2.600" stroke-linecap="round"/></svg>';
+const c = (name) => `<code>${name}</code>`;
 
 export function mount(host, root, css) {
+  // today's toast (history.js): a white card, the sentence, a sky word
   const toast = (text, { undo = false, kind = '' } = {}) => `<div class="wt pl-card" data-on${kind ? ` data-kind="${kind}"` : ''}><span class="what">${text}</span>${undo ? `<button type="button" class="undo" tabindex="-1">${FIX.undo}</button>` : ''}</div>`;
 
-  // what a write can say, each with the product's own words
+  // the toast as a toy. Its hue says what happened: mint, it is on your tokens now; butter, your own value stays or
+  // is back; coral, it went wrong; paper, still working. Its disc carries the one mark; the bar under it is its time
+  const DISC = { done: TICK, yours: BACK, wrong: BANG, busy: `<span class="turn">${toyOf('loading')}</span>` };
+  const toy = (kind, text, { undo = false, bar = true, still = false } = {}) => `<div class="mt${still ? ' still' : ''}" data-kind="${kind}"><i class="disc">${DISC[kind]}</i><span class="say">${text}</span>${undo ? b(FIX.undo, { cls: 'sm quiet', icon: UNDO, attrs: `data-undo${still ? ' tabindex="-1"' : ''}` }) : ''}${bar && kind !== 'busy' ? '<span class="bar"><i></i></span>' : ''}</div>`;
+
+  // what a write can say, each with the product's own words: [plain, with names set as code, the toy's kind]
   const SAYS = {
-    changed: [FIX.changed('gap-[13px]', 'gap-3', 3), true],
-    added: [FIX.added('--spacing-gutter', 'src/theme.css'), true],
-    kept: [FIX.kept(3), true],
-    failed: [FIX.changedSince, false, 'error'],
+    changed: [FIX.changed('gap-[13px]', 'gap-3', 3), FIX.changed(c('gap-[13px]'), c('gap-3'), 3), 'done'],
+    added: [FIX.added('--spacing-gutter', 'src/theme.css'), FIX.added(c('--spacing-gutter'), 'src/theme.css'), 'done'],
+    kept: [FIX.kept(3), FIX.kept(3), 'yours'],
+    failed: [FIX.changedSince, FIX.changedSince, 'wrong'],
   };
   const KINDS = [
-    ['While it writes', 'One line, no button. It is there for as long as the write takes, usually too short to read.', toast(FIX.writing)],
-    ['Written', 'What changed and at how many places, in your code’s own names. Undo is the only button.', toast(SAYS.changed[0], { undo: true })],
-    ['Taken back', 'The same toast answers the Undo: one sentence, then it leaves.', toast(FIX.undone)],
-    ['Couldn’t', 'Coral words, on as many lines as they need: what happened and what to do. Nothing was written.', toast(FIX.changedSince, { kind: 'error' })],
+    ['Working', 'Paper, the dots turning. No bar and no button: there is nothing to wait out or take back yet.', toy('busy', FIX.writing, { still: true })],
+    ['On your tokens', 'Mint, as everything on your scale is. The tick pops; the names are your code’s, set as code.', toy('done', SAYS.changed[1], { undo: true, still: true })],
+    ['Your own value', 'Butter, as a value typed by hand is: kept as it is, or back after an Undo.', toy('yours', FIX.undone, { still: true })],
+    ['It went wrong', 'Coral, the only place coral appears. As many lines as it needs: what happened, what to do.', toy('wrong', FIX.changedSince, { still: true })],
   ];
 
   // a history, oldest first: steps of changes, each change in one of the states a tick can have
@@ -53,12 +67,12 @@ export function mount(host, root, css) {
     ['Can’t read it', 'One line: what failed, and what to do.', `<span class="tt-glyph">${HISTORY_ICON}</span><span class="tt-say">${T.error}</span>`],
   ];
 
-  root.innerHTML = `<style>${css}${LANGUAGE_CSS}${HISTORY_CSS}
+  root.innerHTML = `<style>${css}${LANGUAGE_CSS}${HISTORY_CSS}${BUTTON_CSS}
     :host { display: block; font-family: var(--pl-sans); color: var(--pl-text-primary); }
     h2 { margin: 44px 0 6px; font: 600 20px/28px var(--pl-sans); letter-spacing: -0.01em; }
     h2 + p, .prose p { margin: 0 0 10px; font: 400 14px/22px var(--pl-sans); color: var(--pl-text-secondary); max-width: 680px; }
     .prose b { color: var(--pl-text-primary); font-weight: 600; }
-    .panel { margin-top: 14px; border-radius: 18px; background: var(--pl-bg-surface); box-shadow: 0 0 0 1px var(--pl-border-default); overflow: hidden; }
+    .panel { margin-top: 16px; overflow: hidden; }
     .cap { padding: 16px 18px 18px; display: grid; gap: 4px; align-content: start; }
     .cap h3 { margin: 0; font: 600 16px/22px var(--pl-sans); }
     .cap p { margin: 0; font: 400 13px/19px var(--pl-sans); color: var(--pl-text-secondary); }
@@ -68,59 +82,109 @@ export function mount(host, root, css) {
     .tt { width: 100%; max-width: 760px; }
     .stage { position: relative; display: grid; place-items: center; padding: 36px 24px; background: var(--pl-bg-inset); }
 
-    /* the live toast: a corner of someone's page, the toast where it lands */
-    .try { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); }
-    .corner { min-height: 190px; place-items: end; padding: 24px; }
-    .corner .wt:not([data-on]) { pointer-events: none; }
-    .hold { position: absolute; left: 0; bottom: 0; height: 2px; width: 100%; background: var(--pl-instrument); transform-origin: left; scale: 0 1; opacity: .5; }
-    .hold.run { animation: hold ${HOLD}ms linear both; }
-    @keyframes hold { from { scale: 1 1; } to { scale: 0 1; } }
-    .ask { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
-    .ask button { all: unset; cursor: pointer; padding: 7px 12px; border-radius: 10px; font: 600 13px/18px var(--pl-sans); color: var(--pl-text-primary); background: var(--pl-bg-inset); }
-    .ask button:focus-visible { outline: 2px solid var(--pl-border-focus); outline-offset: 2px; }
-    @media (hover: hover) { .ask button:hover { background: var(--pl-bg-surface-hover); } }
+    /* ── the toast as a toy (proposed; would replace .wt) ─────────────────────────────────────────────────────
+       one body in the hue of what happened, lit from above, on a shadow of its own colour. It is not a button, so it
+       has no side to press down onto. A white disc carries the one mark; the bar under it is the time it has left */
+    .mt { --h: var(--pl-mint); --f: var(--pl-mint-face); --i: var(--pl-mint-ink);
+      position: relative; display: inline-flex; align-items: center; gap: 10px; max-width: min(460px, 100%); box-sizing: border-box; min-height: 44px; padding: 7px 8px 7px 9px; border-radius: 22px;
+      background: linear-gradient(180deg, color-mix(in oklab, var(--f) 78%, #fff), var(--f)); color: var(--i); font: 600 13.5px/18px var(--pl-sans); text-align: left;
+      box-shadow: inset 0 1.5px 0 0 color-mix(in oklab, #fff 65%, transparent), inset 0 -2px 0 0 color-mix(in oklab, var(--h) 26%, transparent),
+        0 16px 22px -14px color-mix(in oklab, var(--h) 75%, transparent), 0 3px 5px -2px color-mix(in oklab, var(--h) 38%, transparent); }
+    .mt[data-kind="yours"] { --h: var(--pl-butter); --f: var(--pl-butter-face); --i: var(--pl-butter-ink); }
+    .mt[data-kind="wrong"] { --h: var(--pl-coral); --f: var(--pl-coral-face); --i: var(--pl-coral-ink); }
+    .mt[data-kind="busy"] { --h: var(--pl-ink-2); --f: var(--pl-paper); --i: var(--pl-ink); box-shadow: inset 0 0 0 1.5px var(--pl-border-default), 0 14px 20px -14px rgb(0 0 0 / .3); }
+    .mt .disc { flex: none; display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: var(--pl-cut); color: var(--h);
+      box-shadow: 0 1.5px 0 0 color-mix(in oklab, var(--h) 40%, transparent); }
+    .mt[data-kind="yours"] .disc { color: var(--pl-butter-line); }
+    .mt[data-kind="busy"] .disc { background: none; box-shadow: none; }
+    .mt .disc svg { display: block; width: 16px; height: 16px; }
+    .mt .turn { display: block; animation: mt-turn 900ms steps(8) infinite; } .mt .turn svg { width: 22px; height: 22px; }
+    .mt .say { min-width: 0; padding-right: 6px; }
+    .mt .say code { font: 600 12px/1 var(--pl-mono); padding: 2px 5px; border-radius: 6px; background: color-mix(in oklab, var(--pl-cut) 62%, transparent); white-space: nowrap; }
+    .mt .tb { flex: none; }
+    .mt .bar { position: absolute; left: 24px; right: 24px; top: calc(100% + 7px); height: 4px; border-radius: 2px; background: color-mix(in oklab, var(--h) 22%, transparent); overflow: hidden; }
+    .mt .bar i { display: block; height: 100%; border-radius: 2px; background: var(--h); transform-origin: left; animation: mt-time ${HOLD}ms linear both; }
+    .mt:hover .bar i, .mt:focus-within .bar i { animation-play-state: paused; }
+    .mt.still .bar i { animation: none; scale: .6 1; }
+    /* it arrives from the dock, a little small, and settles; the mark pops a beat later; it leaves by dropping */
+    .mt.in { animation: mt-in 420ms var(--pl-spring-pop) both; }
+    .mt.in .disc svg { animation: mt-mark 380ms 120ms var(--pl-spring-pop) both; }
+    .mt.out { animation: mt-out 180ms var(--pl-ease-out) both; pointer-events: none; }
+    @keyframes mt-in { from { opacity: 0; translate: 0 14px; scale: .9; } }
+    @keyframes mt-out { to { opacity: 0; translate: 0 8px; scale: .96; } }
+    @keyframes mt-mark { from { scale: .2; rotate: -30deg; opacity: 0; } }
+    @keyframes mt-time { from { scale: 1 1; } to { scale: 0 1; } }
+    @keyframes mt-turn { to { rotate: 1turn; } }
+    @media (prefers-reduced-motion: reduce) { .mt.in, .mt.in .disc svg, .mt.out, .mt .turn { animation: none; } }
 
+    /* today and the toy, side by side, in the corner of a page */
+    .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }
+    .show { position: relative; display: grid; place-items: end; min-height: 230px; padding: 28px 24px 34px; border-radius: 24px; background: var(--pl-bg-inset); }
+    .show > small { position: absolute; left: 22px; top: 18px; font: var(--pl-round-w, 700) 13px/1 var(--pl-round); color: var(--pl-text-secondary); }
+    .show .wt:not([data-on]) { pointer-events: none; }
+    .ask { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 18px; }
+    .ask span { font: 500 13px/18px var(--pl-sans); color: var(--pl-text-secondary); margin-left: 6px; }
+
+    /* what it is made of: one, large, with its parts named */
+    .anat { display: grid; grid-template-columns: auto 1fr; gap: 28px; align-items: center; margin-top: 16px; }
+    .anat .big { display: grid; place-items: center; padding: 44px 40px 52px; border-radius: 24px; background: var(--pl-bg-inset); }
+    .anat .big .mt { zoom: 1.35; }
+    .anat ol { margin: 0; padding-left: 20px; font: 400 14px/22px var(--pl-sans); color: var(--pl-text-secondary); }
+    .anat ol li + li { margin-top: 6px; } .anat ol b { color: var(--pl-text-primary); font-weight: 600; }
+
+    .cells { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-top: 16px; }
+    .cell { display: flex; flex-direction: column; gap: 4px; padding: 14px 18px 18px; border-radius: 24px; background: var(--pl-bg-inset); }
+    .cell .stage { background: none; min-height: 96px; padding: 14px 0 22px; }
+    .cell b { font: 600 15px/20px var(--pl-sans); }
+    .cell small { font: 400 13px/19px var(--pl-sans); color: var(--pl-text-secondary); }
+
+    /* the strip is still today's: a grid of what it does, without boxes drawn round things */
+    .panel { box-shadow: none; background: var(--pl-bg-inset); border-radius: 24px; }
+    .panel .stage { background: none; }
     .row { display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); }
-    .row > div { display: grid; grid-template-rows: auto 1fr; border-left: 1px solid var(--pl-border-default); min-width: 0; }
-    .row > div:first-child { border-left: 0; }
-    .row .stage { padding: 28px 14px; min-height: 96px; box-sizing: border-box; }
-    .row .wt { max-width: 100%; }
-    .row .cap { border-top: 1px solid var(--pl-border-default); }
-    .row .wt { min-width: 0; }
-    .row.two > div:nth-child(n+3) { border-top: 1px solid var(--pl-border-default); } .row.two > div:nth-child(odd) { border-left: 0; }
-
+    .row > div { display: grid; grid-template-rows: auto 1fr; min-width: 0; }
+    .row .stage { padding: 28px 14px 8px; min-height: 80px; box-sizing: border-box; }
     /* the strip, with room above it for the pill */
     .hist { padding: 64px 24px 28px; }
     .tt.leg { width: auto; display: block; padding: 0; scale: 2; }
     .tt.leg .tt-ticks { border-bottom-color: transparent; }
     .quiet .tt { width: auto; max-width: 100%; align-items: center; }
     .quiet .tt .tt-say { white-space: normal; }
-    .open { margin-top: 14px; padding: 14px 18px 14px 34px; border-radius: 16px; background: var(--pl-bg-surface); box-shadow: 0 0 0 1px var(--pl-border-default); font: 400 13px/21px var(--pl-sans); color: var(--pl-text-secondary); }
+    .open { margin-top: 14px; padding: 16px 20px 16px 38px; border-radius: 24px; background: var(--pl-bg-inset); font: 400 13px/21px var(--pl-sans); color: var(--pl-text-secondary); }
     .open li + li { margin-top: 6px; } .open b { color: var(--pl-text-primary); font-weight: 600; }
-    @media (max-width: 1000px) { .row { grid-template-columns: 1fr 1fr; } .row > div:nth-child(odd) { border-left: 0; } .row > div:nth-child(n+3) { border-top: 1px solid var(--pl-border-default); } }
-    @media (max-width: 720px) { .try, .row { grid-template-columns: 1fr; } .row > div { border-left: 0; border-top: 1px solid var(--pl-border-default); } .row > div:first-child { border-top: 0; } }
-    @media (prefers-reduced-motion: reduce) { .hold { display: none; } }
-  </style>
+    @media (max-width: 1000px) { .row { grid-template-columns: 1fr 1fr; } }
+    @media (max-width: 760px) { .pair, .cells, .row, .anat { grid-template-columns: 1fr; } }
+  </style>${TOY_DEFS}
   <h2>How the system works</h2>
   <div class="prose">
     <p>Plumber speaks up only after it has <b>written to your code</b>. A fix is written the moment you take it, so the message is not a question: it says what was written and where, and offers one way out, <b>Undo</b>.</p>
-    <p>There are two pieces. The <b>toast</b> sits by the dock for six seconds after a write. The <b>history strip</b> is the dock grown wide: every change you made, as a tick, each one able to be taken back on its own. A refusal is said in the same place as the thing refused, in words that say what to do instead.</p>
+    <p>Its colour is the answer before you read it. <b>Mint</b>: it is on your tokens now. <b>Butter</b>: your own value stays, or is back. <b>Coral</b>: it went wrong. Paper: still working.</p>
   </div>
 
-  <h2>The toast</h2>
-  <p>Live, with the product’s own styles and words. Take a fix, then press Undo before it leaves.</p>
-  <div class="panel try">
-    <div class="stage corner"><div class="wt pl-card" role="status"><span class="what"></span></div><i class="hold" aria-hidden="true"></i></div>
-    <div class="cap"><h3>After a write</h3><p>It rises a few pixels by the dock, stays six seconds, and leaves. One sentence, cut with an ellipsis if it is long; the names in it are your code’s. Pointing at it does not hold it: the same Undo is in the history.</p>
-      <div class="ask"><button data-say="changed">Take a fix</button><button data-say="added">Add a token</button><button data-say="kept">Keep a value</button><button data-say="failed">A write that fails</button></div></div>
+  <h2>Today, and as a toy</h2>
+  <p>The same message, twice. Left: what the product shows now, a white card with a blue word. Right: rebuilt as a solid thing in the colour of what happened, with its time running out under it. Take a fix, then press Undo. Point at the right one and its time waits.</p>
+  <div class="pair">
+    <div class="show"><small>Today</small><div class="wt pl-card" role="status"><span class="what"></span></div></div>
+    <div class="show"><small>As a toy</small><div class="slot" role="status"></div></div>
   </div>
+  <div class="ask">${b('Take a fix', { attrs: 'data-say="changed"' })}${b('Add a token', { cls: 'quiet', attrs: 'data-say="added"' })}${b('Keep a value', { cls: 'quiet', attrs: 'data-say="kept"' })}${b('A write that fails', { cls: 'quiet', attrs: 'data-say="failed"' })}</div>
+
+  <h2>What a toast is made of</h2>
+  <div class="anat"><div class="big">${toy('done', SAYS.changed[1], { undo: true, still: true })}</div>
+    <ol>
+      <li><b>The body.</b> One solid shape in one hue, lit from above, on a shadow of its own colour. It has no side under it, because it is not something you press.</li>
+      <li><b>The disc.</b> A white hole with one mark in the body’s hue: a tick, a return arrow, an exclamation mark. It pops a beat after the toast lands.</li>
+      <li><b>The words.</b> One sentence in the hue’s ink. Names from your code are set as code, on a paler chip, so you can find them with your eye.</li>
+      <li><b>Undo.</b> The system’s quiet button, small: it goes down under the finger like every other button.</li>
+      <li><b>The time.</b> A bar under the body runs out over six seconds, so the toast never leaves by surprise. Pointing at the toast holds it.</li>
+    </ol></div>
 
   <h2>What it can say</h2>
-  <p>Four things, in one shape. Only a finished write has a button.</p>
-  <div class="panel row two" style="--n: 2">${KINDS.map(([h, p, t]) => `<div><div class="stage">${t}</div><div class="cap"><h3>${h}</h3><p>${p}</p></div></div>`).join('')}</div>
+  <p>Four things, told apart by colour before words.</p>
+  <div class="cells">${KINDS.map(([h, p, t]) => `<div class="cell"><div class="stage">${t}</div><b>${h}</b><small>${p}</small></div>`).join('')}</div>
 
-  <h2>The history strip</h2>
-  <p>Time runs left to right, Now at the right end. One tick per change, one group per step, the step’s name the only word at rest. Point at a tick, or use the arrow keys; then undo it.</p>
+  <h2>The history strip, as it is today</h2>
+  <p>Not rebuilt yet; it is the next piece. Time runs left to right, Now at the right end. One tick per change, one group per step, the step’s name the only word at rest. Point at a tick, or use the arrow keys; then undo it.</p>
   <div class="panel"><div class="stage hist"><div class="tt pl-card" data-live>${strip}</div></div>
     <div class="cap"><h3>One change at a time</h3><p>The playhead points at one change and a pill above it says what it was and what it became. Undo change takes back that one; Undo step takes back everything written with it. Try the hatched tick: it was edited again later, so it says no, and says why.</p></div></div>
 
@@ -133,14 +197,15 @@ export function mount(host, root, css) {
 
   <h2>What is still open</h2>
   <ul class="open">
-    <li><b>The toast’s Undo is plain text.</b> It is a sky word on the card, not one of the system’s buttons, and it does not go down under the finger.</li>
-    <li><b>Nothing shows the six seconds.</b> The toast leaves without warning. The thin line under the corner above is this page’s, not the product’s.</li>
-    <li><b>Refusals are words only.</b> The tick shakes and the pill says why; there is no toy for “no”.</li>
+    <li><b>The toy toast is on this page only.</b> The product still shows today’s. Moving it in is a change to the overlay, after you have judged it here.</li>
+    <li><b>The strip is not rebuilt.</b> Thin ink ticks, a grey line picture, plain-text buttons: the same gap the toast had.</li>
+    <li><b>Butter for “your own value” is my reading of the hue table</b>, used for Kept and for Undone. If Undone should be quiet paper, it is one line.</li>
   </ul>`;
 
-  // the live toast: says it, holds six seconds, leaves; Undo answers in the same toast
-  const wt = root.querySelector('.corner .wt'), what = wt.querySelector('.what'), hold = root.querySelector('.hold');
-  let timer = 0;
+  // the two live toasts answer the same buttons. Today's: says it, holds six seconds, leaves. The toy: arrives, its
+  // bar runs out (and waits while it is pointed at), then it drops
+  const wt = root.querySelector('.show .wt'), what = wt.querySelector('.what'), slot = root.querySelector('.slot');
+  let timer = 0, later = 0;
   const say = (text, { undo = false, kind = '' } = {}) => {
     clearTimeout(timer);
     wt.dataset.kind = kind;
@@ -148,22 +213,26 @@ export function mount(host, root, css) {
     wt.querySelector('.undo')?.remove();
     if (undo) wt.insertAdjacentHTML('beforeend', `<button type="button" class="undo">${FIX.undo}</button>`);
     wt.toggleAttribute('data-on', true);
-    hold.classList.remove('run'); void hold.offsetWidth; hold.classList.add('run');
-    timer = setTimeout(() => { wt.removeAttribute('data-on'); hold.classList.remove('run'); }, HOLD);
+    timer = setTimeout(() => wt.removeAttribute('data-on'), HOLD);
   };
+  const show = (kind, text, opts) => {
+    slot.innerHTML = toy(kind, text, opts);
+    const el = slot.firstElementChild;
+    el.classList.add('in');
+    el.querySelector('.bar i')?.addEventListener('animationend', () => { el.classList.remove('in'); el.classList.add('out'); el.addEventListener('animationend', () => el.remove(), { once: true }); });
+  };
+  const after = (fn) => { clearTimeout(later); later = setTimeout(fn, 450); };
   root.querySelector('.ask').addEventListener('click', (e) => {
     const k = e.target.closest('[data-say]')?.dataset.say;
     if (!k) return;
-    const [text, undo, kind] = SAYS[k];
-    if (kind) { say(text, { kind }); return; }
-    say(FIX.writing); hold.classList.remove('run');
-    timer = setTimeout(() => say(text, { undo }), 450);
+    const [plain, rich, kind] = SAYS[k];
+    if (kind === 'wrong') { say(plain, { kind: 'error' }); show(kind, rich); return; }
+    say(FIX.writing); show('busy', FIX.writing);
+    after(() => { say(plain, { undo: true }); show(kind, rich, { undo: true }); });
   });
-  wt.addEventListener('click', (e) => {
-    if (!e.target.closest('.undo')) return;
-    say(FIX.undoing); hold.classList.remove('run');
-    timer = setTimeout(() => say(FIX.undone), 450);
-  });
+  const undone = () => { say(FIX.undoing); show('busy', FIX.undoing); after(() => { say(FIX.undone); show('yours', FIX.undone); }); };
+  wt.addEventListener('click', (e) => { if (e.target.closest('.undo')) undone(); });
+  slot.addEventListener('click', (e) => { if (e.target.closest('[data-undo]')) undone(); });
 
   // the strip: the playhead points at one change; the pill says it; an undo hollows the tick, or is refused
   const tt = root.querySelector('.tt[data-live]'), track = tt.querySelector('.tt-track'), head = tt.querySelector('.tt-head'), pill = tt.querySelector('.tt-pill');

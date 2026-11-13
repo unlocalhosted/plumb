@@ -2362,6 +2362,15 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   hatched tick all answer. No tests were run. Dark mode and phone width were not looked at.
 - **Open, written on the page itself:** the toast's Undo is plain text, not a system button; nothing shows the six
   seconds running out; a refusal is words only.
+- **Then "bit dry and doesn't have our visual identity" (owner, same day).** The system behind it: the page showed
+  the toast and the strip exactly as the product draws them, and both were built before the toy language (a white
+  card, a sky word for Undo, thin ink ticks, a grey line picture). A faithful page of dry pieces is a dry page. What
+  we chose: rebuild the piece in the language and show it beside today's, as the Identity page does, one piece at a
+  time; the toast first. The toy toast is one solid body in the hue of what happened (mint: on your tokens; butter:
+  your own value stays or is back; coral: it went wrong; paper: working), a white disc with one mark that pops, names
+  set as code, the system's quiet Undo button, and a bar under it that runs out over the six seconds and waits while
+  it is pointed at (the language's own line: "a toast is already timing out"). Seen running in light and dark; no
+  tests. It lives on the page only; the product still shows today's. The strip is next.
 - **Media hooks:** a clip of Take a fix → Undo, and of the hatched tick saying no.
 
 ## Open gaps
