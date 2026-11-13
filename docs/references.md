@@ -171,3 +171,10 @@ All free under the Unsplash License, hotlinked from images.unsplash.com as Unspl
 - **2026-11-13 · maybepratikk, bold-on-hover tabs video** (~/Downloads/twitter_media_harvest/maybepratikk-2121151672756138484-01.mp4) · *shared by the owner*.
   Why: "our showcase is being rushed … we don't show the problem very well, we rush the fix and don't have good payoff … understand the demo delivery from there how to showcase a rule fix and please bring it."
   What it changed: the stage's storyboard v2 in docs/craft/stage-brief.md: the fault seen live first, measured with the gesture repeated and the cause in words, the fix's working drawn, then the same gesture on every instance reading zero.
+
+- **2026-11-13 · A type-design construction view ("Aero")** (docs/design/refs/construction-view-aero.png) · *shared by the owner*.
+  Why: "one polish add this kind of effect to p". The glyphs drawn as a type designer sees them: a hairline outline,
+  every on-curve point a small black square, the curve handles as lines ending in dots, a fine vertical hatch for the
+  fill, and the metric lines (cap height, baseline, side bearings) running edge to edge.
+  What it changed: React Plumber's P gets a construction view (docs/design/comps/logo-construct.html), the mark drawn
+  the way plumber sees a page: by its points, edges and guides.
