@@ -266,7 +266,11 @@ const R = (el) => el.getBoundingClientRect();
 function Play({ fixed }) {
   return (
     <div className="sc sc-play" data-fixed={fixed}>
-      <div className="sc-video"><span className="sc-play-btn"><svg viewBox="0 0 24 24"><path d="M7 4.5v15L19 12z" /></svg></span><small>Walkthrough · 1:24</small></div>
+      <div className="sc-video">
+        <span className="sc-vid-title">Walkthrough</span>
+        <span className="sc-play-btn"><svg viewBox="0 0 24 24"><path d="M7 4.5v15L19 12z" /></svg></span>
+        <span className="sc-vid-bar"><small>1:24</small><i><b /></i><small>4:10</small></span>
+      </div>
     </div>
   );
 }
@@ -307,8 +311,8 @@ function Timer({ fixed, live }) {
   const clock = s => `${Math.floor(s / 3600)}:${String(Math.floor(s / 60) % 60).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
   return (
     <div className="sc sc-timer" data-fixed={fixed}>
-      <div className="sc-clock"><small>Moodboard review</small><b>{clock(t)}</b></div>
-      <ul><li><span>Wireframes</span><b>{clock(7578)}</b></li><li><span>Kickoff call</span><b>{clock(2885)}</b></li></ul>
+      <div className="sc-clock"><small><i className="sc-rec" />Moodboard review</small><b>{clock(t)}</b></div>
+      <ul><li><span><i className="sc-proj" style={{ '--c': 'var(--pl-lilac)' }} />Wireframes</span><b>{clock(7578)}</b></li><li><span><i className="sc-proj" style={{ '--c': 'var(--pl-sky)' }} />Kickoff call</span><b>{clock(2885)}</b></li></ul>
     </div>
   );
 }
@@ -323,8 +327,12 @@ Timer.measure = (root) => {
 function Headline({ fixed }) {
   return (
     <div className="sc sc-news" data-fixed={fixed}>
-      <small>Business · 4 min read</small>
-      <h4>Northwind closes its seed round to build calmer team tools</h4>
+      <div className="sc-news-card">
+        <div className="sc-news-photo" role="img" aria-label="A white building with blue glass" />
+        <small>Business</small>
+        <h4>Northwind closes its seed round to build calmer team tools</h4>
+        <span className="sc-byline"><i>M</i>Mara Ellis · 4 min read</span>
+      </div>
     </div>
   );
 }
@@ -341,7 +349,7 @@ Headline.measure = (root) => {
 function Shadow({ fixed }) {
   return (
     <div className="sc sc-shadow" data-fixed={fixed}>
-      <div className="sc-recipe"><small>Dinner · 35 min</small><b>Saffron risotto</b><span>Carnaroli rice · saffron · stock</span></div>
+      <div className="sc-recipe"><small>Dessert · 35 min</small><b>Raspberry pavlova</b><span>Meringue · cream · raspberries</span><span className="sc-rmeta"><i>4 servings</i><i>Easy</i></span></div>
     </div>
   );
 }
@@ -355,7 +363,8 @@ function Forecast({ fixed }) {
   const days = [['Mon', 10, 70], ['Tue', 22, 88], ['Wed', 4, 62], ['Thu', 16, 80]];
   return (
     <div className="sc sc-forecast" data-fixed={fixed}>
-      {days.map(([d, a, b]) => <div key={d} className="sc-day"><span>{d}</span><i><b style={{ left: `${a}%`, right: `${100 - b}%` }}><em /></b></i></div>)}
+      <span className="sc-fc-head"><b>Lisbon</b><small>This week</small></span>
+      {days.map(([d, a, b]) => <div key={d} className="sc-day"><span>{d}</span><small>{Math.round(8 + a / 5)}°</small><i><b style={{ left: `${a}%`, right: `${100 - b}%` }}><em /></b></i><small>{Math.round(8 + b / 5)}°</small></div>)}
     </div>
   );
 }
@@ -369,7 +378,7 @@ Forecast.measure = (root) => {
 function Photo({ fixed }) {
   return (
     <div className="sc sc-photo" data-fixed={fixed}>
-      <div className="sc-pin"><div className="sc-glaze" /><b>Celadon test 4</b><small>cone 6 · reduction</small></div>
+      <div className="sc-pin"><div className="sc-glaze" role="img" aria-label="A pale white vase on a white table" /><b>Celadon test 4</b><small>cone 6 · reduction</small><span className="sc-pin-tags"><i>glaze</i><i>white</i></span></div>
     </div>
   );
 }
@@ -386,7 +395,7 @@ function Tabs({ fixed, live }) {
   return (
     <div className="sc sc-tabs" data-fixed={fixed}>
       <nav>{tabs.map((t, i) => <span key={t} data-label={t} data-hover={i === hover}>{t}</span>)}</nav>
-      <div className="sc-tabs-body" />
+      <div className="sc-tabs-body">{[['Homepage hero', 'lilac', 'M'], ['Pricing copy', 'mint', 'J'], ['Logo pass', 'pink', 'K']].map(([t, c, a]) => <span key={t} className="sc-task" style={{ '--c': `var(--pl-${c})` }}><i />{t}<b>{a}</b></span>)}</div>
     </div>
   );
 }
@@ -407,15 +416,15 @@ function Menu({ fixed, live }) {
   useEffect(() => { if (!live) return; const id = setInterval(() => setOpen(o => !o), 1100); return () => clearInterval(id); }, [live]);
   return (
     <div className="sc sc-menu" data-fixed={fixed} data-open={open}>
-      <span className="sc-share">Share</span>
-      <div className="sc-pop"><span>Copy link</span><span>Invite people</span><span>Export PDF</span></div>
+      <span className="sc-doc"><b>Q4 plan</b><span className="sc-faces"><i style={{ '--c': 'var(--pl-sky)' }}>A</i><i style={{ '--c': 'var(--pl-mint)' }}>J</i></span><span className="sc-share">Share</span></span>
+      <div className="sc-pop">{[['link', 'Copy link'], ['avatar', 'Invite people'], ['upload', 'Export PDF']].map(([t, l]) => <span key={l}><i dangerouslySetInnerHTML={{ __html: toyOf(t) }} />{l}</span>)}</div>
     </div>
   );
 }
 Menu.measure = (root) => {
   const pop = root.querySelector('.sc-pop'), share = root.querySelector('.sc-share'), p = R(pop), s = R(share), kept = root.querySelector('.sc-menu').dataset.fixed === 'true';
   // where it grows from: its own centre, or the top edge under the trigger
-  const ox = p.left + p.width / 2, oy = kept ? p.top : p.top + p.height / 2;
+  const ox = kept ? p.right - 22 : p.left + p.width / 2, oy = kept ? p.top : p.top + p.height / 2;
   return { focus: root.querySelector('.sc-menu'), value: kept ? 0.96 : 0, dots: [[ox, oy]], lines: [[s.left + s.width / 2, s.bottom, ox, oy]] };
 };
 

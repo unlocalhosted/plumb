@@ -59,7 +59,7 @@
 .ins-card[data-hue='butter'] { --hue: var(--pl-butter); --face: var(--pl-butter-face); }
 @media (hover: hover) and (pointer: fine) { .ins-card:hover { translate: 0 -3px; } }
 .ins-stage { position: relative; flex: 1; min-height: 252px; overflow: hidden; border-radius: 16px;
-  background: radial-gradient(120% 90% at 25% 0%, color-mix(in oklab, #fff 28%, var(--face)), var(--face) 55%, color-mix(in oklab, var(--hue) 18%, var(--face))); }
+  background: radial-gradient(120% 90% at 30% 0%, var(--pl-bg-surface), var(--pl-bg-inset)); box-shadow: inset 0 0 0 1px var(--pl-border-default); }
 /* the state: a tag in the toy face with the principle's toy, coral while broken, mint once fixed */
 .ins-state { position: absolute; z-index: 3; left: 10px; top: 10px; display: inline-flex; gap: 5px; align-items: center; height: 26px; padding: 0 9px 0 6px; overflow: hidden;
   border-radius: var(--pl-radius-tag); font: var(--pl-round-w, 700) 12px/1 var(--pl-round); color: var(--pl-coral-ink); background: color-mix(in oklab, var(--pl-coral) 18%, var(--pl-bg-surface));
@@ -131,12 +131,18 @@
 .ins-cam[data-moving='true'] { transition-duration: 1000ms; }
 .sc { position: absolute; inset: 0; display: grid; place-items: center; padding: 42px 0 46px; font-family: var(--font); color: var(--ink-1); }
 
-/* #2 play button: a video tile in our hues, a soft white button */
-.sc-video { position: relative; display: grid; place-items: center; width: 240px; height: 140px; border-radius: 18px; overflow: hidden;
-  background: linear-gradient(150deg, var(--pl-lilac), var(--pl-sky)); box-shadow: inset 0 1.5px 0 rgb(255 255 255 / .35), 0 4px 0 color-mix(in oklab, var(--pl-lilac) 65%, #000), 0 16px 26px -12px color-mix(in oklab, var(--pl-lilac) 70%, transparent); }
-.sc-video small { position: absolute; left: 10px; bottom: 10px; padding: 4px 8px; border-radius: 99px; background: rgb(255 255 255 / .9); font: var(--pl-round-w, 700) 11px/1 var(--pl-round); color: #2b1a6b; }
-.sc-play-btn { display: grid; place-items: center; width: 58px; height: 58px; border-radius: 50%; background: linear-gradient(180deg, #fff, #f1efff); box-shadow: 0 4px 0 rgb(43 26 107 / .25), 0 12px 20px -8px rgb(43 26 107 / .55); }
-.sc-play-btn svg { width: 26px; height: 26px; fill: #2b1a6b; translate: -1.08px 0; transition: translate var(--t-fix) var(--t-fix-ease); } /* the triangle's box (7–19 of 24) on the circle's centre */
+/* #2 play button: a real video still (a lake among green mountains, by an Unsplash photographer; see references), the
+   player's chrome over it, a soft white button */
+.sc-video { position: relative; display: grid; place-items: center; width: 240px; height: 140px; border-radius: 16px; overflow: hidden; isolation: isolate;
+  background: #34503f url('https://images.unsplash.com/photo-1603979649806-5299879db16b?w=900&q=80&auto=format&fit=crop') center / cover;
+  box-shadow: 0 0 0 1px rgb(0 0 0 / .08), 0 18px 32px -16px rgb(0 0 0 / .45); }
+.sc-video::before { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(180deg, rgb(0 0 0 / .25), transparent 35%, transparent 60%, rgb(0 0 0 / .55)); }
+.sc-vid-title { position: absolute; left: 12px; top: 10px; font: 600 12px/1 var(--font); color: #fff; text-shadow: 0 1px 2px rgb(0 0 0 / .4); }
+.sc-vid-bar { position: absolute; left: 12px; right: 12px; bottom: 10px; display: flex; align-items: center; gap: 8px; color: #fff; }
+.sc-vid-bar small { font: 600 10px/1 var(--pl-mono); opacity: .9; }
+.sc-vid-bar i { flex: 1; height: 3px; border-radius: 2px; background: rgb(255 255 255 / .35); } .sc-vid-bar i b { display: block; width: 34%; height: 100%; border-radius: inherit; background: #fff; }
+.sc-play-btn { display: grid; place-items: center; width: 58px; height: 58px; border-radius: 50%; background: rgb(255 255 255 / .94); backdrop-filter: blur(8px); box-shadow: 0 10px 24px -8px rgb(0 0 0 / .5); }
+.sc-play-btn svg { width: 26px; height: 26px; fill: #1d1b17; translate: -1.08px 0; transition: translate var(--t-fix) var(--t-fix-ease); } /* the triangle's box (7–19 of 24) on the circle's centre */
 .sc-play[data-fixed='true'] .sc-play-btn svg { translate: 1.08px 0; } /* its weight (x 11 of 24) on the circle's centre */
 
 /* the big tile: the video drawn larger, to fill it */
@@ -144,7 +150,6 @@
 .ins-card[data-size='big'] .sc-play-btn { width: 96px; height: 96px; }
 .ins-card[data-size='big'] .sc-play-btn svg { width: 42px; height: 42px; translate: -1.75px 0; }
 .ins-card[data-size='big'] .sc-play[data-fixed='true'] .sc-play-btn svg { translate: 1.75px 0; }
-.ins-card[data-size='big'] .sc-video small { left: 16px; bottom: 16px; padding: 6px 11px; font-size: 13px; }
 
 /* #8 nested radius: a player tile on a paper canvas (a fine dot grid, the way a design canvas looks), its cover art
    drawn in layers; the stage keeps no flat colour */
@@ -164,73 +169,92 @@
 .sc-times { display: flex; justify-content: space-between; margin: 5px 2px 0; font: 500 10px/1 var(--pl-mono); color: var(--ink-2); }
 .ins-pad { animation: ins-fade var(--t-reveal-in) var(--ins-ease) both; } @keyframes ins-fade { from { opacity: 0; } }
 
-/* #16 figures: a time tracker on paper */
+/* #16 figures: a time tracker, recording, a colour per project */
 .sc-timer { align-content: center; gap: 0; }
 .sc-timer > * { width: 236px; }
-.sc-clock { display: grid; justify-items: center; gap: 5px; padding: 14px 14px 10px; border-radius: 16px 16px 0 0; background: var(--pl-bg-surface); }
-.sc-clock small { display: inline-flex; padding: 3px 8px; border-radius: 99px; background: var(--pl-mint-soft); color: var(--pl-mint-ink); font: var(--pl-round-w, 700) 11px/1 var(--pl-round); }
+.sc-clock { display: grid; justify-items: center; gap: 6px; padding: 14px 14px 10px; border-radius: 16px 16px 0 0; background: var(--pl-bg-surface); box-shadow: 0 0 0 1px var(--pl-border-default); }
+.sc-clock small { display: inline-flex; align-items: center; gap: 6px; padding: 3px 9px 3px 7px; border-radius: 99px; background: var(--pl-bg-inset); color: var(--ink-2); font: 600 11px/1 var(--font); }
+.sc-rec { width: 7px; height: 7px; border-radius: 50%; background: var(--pl-coral); box-shadow: 0 0 0 3px color-mix(in oklab, var(--pl-coral) 22%, transparent); animation: sc-rec 1.6s ease-in-out infinite; }
+@keyframes sc-rec { 50% { opacity: .35; } }
 .sc-clock b { font: 650 30px/1 var(--font); letter-spacing: -0.02em; font-variant-numeric: proportional-nums; }
 .sc-timer ul { margin: 0; padding: 0 14px 10px; list-style: none; border-radius: 0 0 16px 16px; background: var(--pl-bg-surface);
-  box-shadow: 0 4px 0 color-mix(in oklab, var(--hue) 40%, var(--pl-bg-surface)), 0 16px 26px -14px color-mix(in oklab, var(--hue) 70%, transparent); }
-.sc-timer li { display: flex; justify-content: space-between; padding: 6px 2px; border-top: 1px dashed var(--line); font-size: 12px; color: var(--ink-2); }
+  box-shadow: 0 0 0 1px var(--pl-border-default), 0 18px 30px -16px rgb(0 0 0 / .3); clip-path: inset(0 -40px -40px -40px); }
+.sc-timer li { display: flex; justify-content: space-between; align-items: center; padding: 7px 2px; border-top: 1px solid var(--line); font-size: 12px; color: var(--ink-2); }
+.sc-timer li span { display: inline-flex; align-items: center; gap: 7px; }
+.sc-proj { width: 8px; height: 8px; border-radius: 3px; background: var(--c); }
 .sc-timer li b { font-weight: 600; color: var(--ink-1); font-variant-numeric: proportional-nums; }
 .sc-timer[data-fixed='true'] b { font-variant-numeric: tabular-nums; }
 
-/* #18 widows: a news card, the headline in the toy face */
-.sc-news { align-content: center; justify-items: start; width: 256px; margin: 0 auto; gap: 8px; }
-.sc-news small { display: inline-flex; padding: 3px 8px; border-radius: 99px; background: var(--pl-bg-surface); font: var(--pl-round-w, 700) 11px/1 var(--pl-round); color: var(--pl-lilac-ink); box-shadow: var(--pl-shadow-tag); }
-.sc-news h4 { width: 256px; margin: 0; font: var(--pl-round-w, 700) 22px/1.15 var(--pl-round); letter-spacing: -0.015em; text-wrap: wrap; color: var(--pl-lilac-ink); }
+/* #18 widows: a news card with its photo (a white building with blue glass, Unsplash), the headline in the toy face */
+.sc-news { align-content: center; justify-items: center; }
+.sc-news-card { display: grid; gap: 6px; width: 280px; padding: 8px 12px 10px; translate: 0 -8px; border-radius: 16px; background: var(--pl-bg-surface); box-shadow: 0 0 0 1px var(--pl-border-default), 0 18px 30px -16px rgb(0 0 0 / .3); }
+.sc-news-photo { height: 44px; border-radius: 10px; background: #9fb7d8 url('https://images.unsplash.com/photo-1523274158540-2aa98c15ec26?w=600&q=80&auto=format&fit=crop') center 40% / cover; }
+.sc-news small { justify-self: start; font: 600 10.5px/1 var(--font); letter-spacing: .04em; text-transform: uppercase; color: var(--pl-sky); }
+.sc-news h4 { width: 256px; margin: 0; font: var(--pl-round-w, 700) 19px/1.15 var(--pl-round); letter-spacing: -0.015em; text-wrap: wrap; color: var(--ink-1); }
 .sc-news[data-fixed='true'] h4 { text-wrap: balance; }
+.sc-byline { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--ink-2); }
+.sc-byline i { display: grid; place-items: center; width: 18px; height: 18px; border-radius: 50%; background: var(--pl-pink); color: #fff; font: 700 9px/1 var(--pl-round); font-style: normal; }
 
-/* #21 tinted shadow: a recipe card on a pink page; its shadow grey, then the page's own pink (written in rgb, which
-   the build leaves alone and the measure reads) */
-.sc-recipe { display: grid; gap: 4px; width: 210px; padding: 14px 16px; border-radius: 16px; background: var(--pl-bg-surface); color: var(--ink-1);
+/* #21 tinted shadow: a recipe card on a real coloured table (a pink cake and macarons, Unsplash); its shadow grey,
+   then the table's own pink (written in rgb, which the build leaves alone and the measure reads) */
+.ins-card:has(.sc-shadow) .ins-stage { background: #e9b8c4 url('https://images.unsplash.com/photo-1714566927165-1fd42fdd870c?w=900&q=80&auto=format&fit=crop') center / cover; }
+.sc-recipe { position: relative; display: grid; gap: 4px; width: 214px; padding: 14px 16px; border-radius: 16px; background: var(--pl-bg-surface); color: var(--ink-1);
   box-shadow: 0 2px 4px rgb(0 0 0 / 0.25), 0 18px 32px -10px rgb(0 0 0 / 0.5); transition: box-shadow var(--t-fix) var(--t-fix-ease); }
 .sc-shadow[data-fixed='true'] .sc-recipe { box-shadow: 0 2px 4px rgb(214 64 140 / 0.35), 0 18px 32px -10px rgb(200 40 120 / 0.65); }
-.sc-recipe small { font: var(--pl-round-w, 700) 11px/1 var(--pl-round); color: var(--pl-pink); }
+.sc-recipe small { font: 600 11px/1 var(--font); color: var(--pl-pink); }
 .sc-recipe b { font: var(--pl-round-w, 700) 18px/1.2 var(--pl-round); }
 .sc-recipe span { font-size: 12px; color: var(--ink-2); }
+.sc-rmeta { display: flex; gap: 6px; margin-top: 4px; } .sc-rmeta i { padding: 3px 8px; border-radius: 99px; background: var(--pl-bg-inset); font: 600 10.5px/1 var(--font); font-style: normal; color: var(--ink-2); }
 
-/* #55 gradients: a forecast on paper; the bars keep the principle's blue and amber */
-.sc-forecast { align-content: center; gap: 12px; }
-.sc-forecast::before { content: ''; position: absolute; inset: 50% auto auto 50%; width: 290px; height: 150px; translate: -50% -50%; border-radius: 18px; background: var(--pl-bg-surface);
-  box-shadow: 0 4px 0 color-mix(in oklab, var(--hue) 40%, var(--pl-bg-surface)), 0 16px 26px -14px color-mix(in oklab, var(--hue) 70%, transparent); }
-.sc-day { position: relative; display: grid; grid-template-columns: 34px 220px; align-items: center; font: var(--pl-round-w, 700) 12px/1 var(--pl-round); color: var(--ink-2); }
-.sc-day i { position: relative; height: 10px; border-radius: 5px; background: var(--pl-bg-inset); box-shadow: var(--pl-shadow-well); }
-.sc-day b { position: absolute; top: 0; bottom: 0; border-radius: 5px; background: linear-gradient(in srgb 90deg, #2f6fe4, #f5a524); }
+/* #55 gradients: a weather card; the bars keep the principle's blue and amber */
+.sc-forecast { align-content: center; gap: 10px; }
+.sc-forecast::before { content: ''; position: absolute; inset: 50% auto auto 50%; width: 300px; height: 176px; translate: -50% -50%; border-radius: 18px; background: var(--pl-bg-surface);
+  box-shadow: 0 0 0 1px var(--pl-border-default), 0 18px 30px -16px rgb(0 0 0 / .3); }
+.sc-fc-head { position: relative; display: flex; align-items: baseline; justify-content: space-between; width: 264px; }
+.sc-fc-head b { font: var(--pl-round-w, 700) 15px/1 var(--pl-round); } .sc-fc-head small { font-size: 11px; color: var(--ink-2); }
+.sc-day { position: relative; display: grid; grid-template-columns: 34px 26px 176px 28px; align-items: center; font: 600 12px/1 var(--font); color: var(--ink-2); }
+.sc-day small { font: 600 11px/1 var(--pl-mono); color: var(--ink-2); } .sc-day small:last-child { text-align: right; color: var(--ink-1); }
+.sc-day i { position: relative; height: 8px; border-radius: 4px; background: var(--pl-bg-inset); }
+.sc-day b { position: absolute; top: 0; bottom: 0; border-radius: 4px; background: linear-gradient(in srgb 90deg, #2f6fe4, #f5a524); }
 .sc-day b em { position: absolute; inset: 0; border-radius: inherit; background: linear-gradient(in oklch 90deg, #2f6fe4, #f5a524); opacity: 0; filter: blur(2px);
   transition: opacity var(--t-fix) var(--t-fix-ease), filter var(--t-fix) var(--t-fix-ease); }
 .sc-forecast[data-fixed='true'] .sc-day b em { opacity: 1; filter: blur(0); }
 
-/* #39 image outline: a pale glaze photo on a pale pin; the principle needs the pale */
-.sc-pin { width: 140px; padding: 8px 8px 10px; border-radius: 16px; background: #fbfaf7; color: #2a2723;
-  box-shadow: inset 0 1.5px 0 #fff, 0 4px 0 color-mix(in oklab, var(--hue) 45%, #fbfaf7), 0 16px 26px -14px color-mix(in oklab, var(--hue) 70%, transparent); }
-.sc-glaze { position: relative; aspect-ratio: 4 / 3; border-radius: 8px; background: radial-gradient(120% 90% at 30% 20%, #fdfcf9, #ede9e0 60%, #e3ddd0); }
+/* #39 image outline: a pale glaze photo (a white vase on a white table, Unsplash) on a pale pin; the principle needs the pale */
+.sc-pin { width: 172px; padding: 8px 8px 10px; border-radius: 16px; background: #fbfaf7; color: #2a2723;
+  box-shadow: 0 0 0 1px rgb(0 0 0 / .04), 0 18px 30px -16px rgb(60 50 40 / .4); }
+.sc-glaze { position: relative; aspect-ratio: 4 / 3; border-radius: 8px; background: #f1eee8 url('https://images.unsplash.com/photo-1687191883721-257d8cad5b54?w=500&q=80&auto=format&fit=crop') center / cover; }
 .sc-glaze::after { content: ''; position: absolute; inset: 0; border-radius: inherit; box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.1); opacity: 0; transition: opacity var(--t-fix) var(--t-fix-ease); }
 .sc-photo[data-fixed='true'] .sc-glaze::after { opacity: 1; }
 .sc-pin b { display: block; margin-top: 8px; font: var(--pl-round-w, 700) 12.5px/1 var(--pl-round); }
 .sc-pin small { font-size: 10.5px; color: #8a847a; }
+.sc-pin-tags { display: flex; gap: 4px; margin-top: 6px; } .sc-pin-tags i { padding: 2px 6px; border-radius: 99px; background: #efece6; font: 600 9.5px/1.3 var(--font); font-style: normal; color: #6f6a60; }
 
-/* #42 bold on hover: a paper segmented control, the pointed tab on a lilac face */
+/* #42 bold on hover: a project's tabs over its board */
 .sc-tabs { align-content: center; justify-items: center; gap: 0; }
-.sc-tabs nav { display: flex; gap: 2px; padding: 4px; border-radius: 12px; background: var(--pl-bg-surface);
-  box-shadow: 0 4px 0 color-mix(in oklab, var(--hue) 40%, var(--pl-bg-surface)), 0 16px 26px -14px color-mix(in oklab, var(--hue) 70%, transparent); }
+.sc-tabs nav { display: flex; gap: 2px; padding: 4px; border-radius: 12px; background: var(--pl-bg-surface); box-shadow: 0 0 0 1px var(--pl-border-default), 0 10px 22px -14px rgb(0 0 0 / .3); }
 .sc-tabs nav span { display: inline-grid; padding: 7px 10px; border-radius: 8px; font: 400 13px/1 var(--font); color: var(--ink-2); }
-.sc-tabs nav span[data-hover='true'] { font-weight: 600; color: var(--pl-lilac-ink); background: var(--pl-lilac-face); }
+.sc-tabs nav span[data-hover='true'] { font-weight: 600; color: var(--ink-1); background: var(--pl-bg-inset); }
 .sc-tabs[data-fixed='true'] nav span::after { content: attr(data-label); height: 0; overflow: hidden; visibility: hidden; font-weight: 600; }
-.sc-tabs-body { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; width: 300px; height: 70px; margin-top: 14px; }
-.sc-tabs-body { background: linear-gradient(90deg, var(--pl-bg-surface) 0 31%, transparent 31% 34.5%, var(--pl-bg-surface) 34.5% 65.5%, transparent 65.5% 69%, var(--pl-bg-surface) 69%); border-radius: 12px; opacity: .75; }
+.sc-tabs-body { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; width: 300px; margin-top: 14px; }
+.sc-task { display: grid; gap: 8px; padding: 9px; border-radius: 12px; background: var(--pl-bg-surface); box-shadow: 0 0 0 1px var(--pl-border-default); font: 600 10.5px/1.25 var(--font); color: var(--ink-1); }
+.sc-task i { width: 22px; height: 4px; border-radius: 2px; background: var(--c); }
+.sc-task b { justify-self: end; display: grid; place-items: center; width: 18px; height: 18px; border-radius: 50%; background: var(--c); color: #fff; font: 700 9px/1 var(--pl-round); }
 
-/* #63 menu: a pink soft Share button, a paper menu */
-.sc-menu { align-content: start; justify-items: center; }
-.sc-share { padding: 8px 16px; border-radius: 12px; color: #fff; font: var(--pl-round-w, 700) 13px/1 var(--pl-round); translate: 0 -2px;
+/* #63 menu: a document's header, its Share button, a menu with pictures */
+.sc-menu { align-content: start; justify-items: center; padding-top: 36px; }
+.sc-doc { display: flex; align-items: center; gap: 10px; width: 280px; padding: 8px 8px 8px 12px; border-radius: 14px; background: var(--pl-bg-surface); box-shadow: 0 0 0 1px var(--pl-border-default); }
+.sc-doc > b { flex: 1; font: var(--pl-round-w, 700) 14px/1 var(--pl-round); }
+.sc-faces { display: flex; } .sc-faces i { display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--c); color: #fff; font: 700 9.5px/1 var(--pl-round); font-style: normal; box-shadow: 0 0 0 2px var(--pl-bg-surface); } .sc-faces i + i { margin-left: -6px; }
+.sc-share { padding: 8px 14px; border-radius: 10px; color: #fff; font: var(--pl-round-w, 700) 12.5px/1 var(--pl-round); translate: 0 -2px;
   background: linear-gradient(180deg, color-mix(in oklab, var(--pl-pink) 85%, #fff), var(--pl-pink)); box-shadow: inset 0 1.5px 0 rgb(255 255 255 / .4), 0 3px 0 color-mix(in oklab, var(--pl-pink) 70%, #000); }
-.sc-pop { display: grid; gap: 2px; width: 156px; margin-top: 10px; padding: 5px; border-radius: 14px; background: var(--pl-bg-surface); box-shadow: var(--pl-shadow-card);
-  opacity: 0; scale: 0; transform-origin: center; transition: scale 260ms var(--ease), opacity 160ms ease; }
-.sc-pop span { padding: 8px 9px; border-radius: 8px; font-size: 12.5px; color: var(--ink-2); }
-.sc-pop span:first-child { background: var(--pl-mint-face); color: var(--pl-mint-ink); font-weight: 600; }
+.sc-pop { display: grid; gap: 1px; justify-self: end; width: 168px; margin: 6px calc(50% - 140px) 0 0; padding: 4px; border-radius: 14px; background: var(--pl-bg-surface); box-shadow: var(--pl-shadow-card);
+  opacity: 0; scale: 0; transform-origin: center; transition: scale 600ms var(--ease), opacity 400ms ease; }
+.sc-pop span { display: flex; align-items: center; gap: 8px; padding: 5px 8px; border-radius: 8px; font-size: 12.5px; color: var(--ink-1); }
+.sc-pop span i { display: block; width: 16px; height: 16px; } .sc-pop span i svg { display: block; width: 100%; height: 100%; }
+.sc-pop span:first-child { background: var(--pl-bg-inset); font-weight: 600; }
 .sc-menu[data-open='true'] .sc-pop { opacity: 1; scale: 1; }
-.sc-menu[data-fixed='true'] .sc-pop { scale: 0.96; transform-origin: top center; }
+.sc-menu[data-fixed='true'] .sc-pop { scale: 0.96; transform-origin: top right; }
 .sc-menu[data-fixed='true'][data-open='true'] .sc-pop { scale: 1; }
 
 @media (max-width: 64rem) { .ins-x-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-areas: none; } .ins-card { grid-area: auto !important; } .ins-card[data-size='big'] { grid-column: span 2; } }

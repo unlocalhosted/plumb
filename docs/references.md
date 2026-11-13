@@ -148,3 +148,11 @@ Everything shared or found as a reference for React Plumber: what it is, why, wh
 - **Why:** the owner: "use image from Unsplash to have like a good abstract art ... to really sell the illusion of the card".
 - **Where used:** the album example's cover ("Low Tide"), homepage/src/sections/insights.css.
 
+## 2026-11-13 · Four more Unsplash photos for the homepage examples (found by us, at the owner's ask)
+All free under the Unsplash License, hotlinked from images.unsplash.com as Unsplash asks; used in homepage/src/sections/insights.css.
+- **A lake among green mountains:** https://unsplash.com/photos/z_f2JrBRbOg, the optical-centre card's video still.
+- **A white building with blue glass:** https://images.unsplash.com/photo-1523274158540-2aa98c15ec26, the widow card's news photo.
+- **A table with a pink cake and macarons:** https://unsplash.com/photos/7wqE3mKvkm0, the coloured surface under the tinted-shadow card.
+- **A white vase on a white table:** https://unsplash.com/photos/aFvxASlms2A, the pale photo in the inner-outline card.
+- **Why:** the owner: "use image from Unsplash ... to really sell the illusion of the card".
+

@@ -2005,6 +2005,14 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   pill counts with it; the fixed state holds before the marks leave; the tour's beats are spaced to match. Measured
   on the album card: the corner went 20 → 12 over about 1.4s, the pill 20 → 12 over about 1.8s, the marks faded
   out over about a second.
+- **The other eight, the same way.** Every stage is paper (the dot-grid canvas only during a fix); every scene has real
+  detail: a video still of a mountain lake with player chrome, a time tracker recording with a colour per project, a
+  news card with its photo and byline, a recipe on a real pink table (the coloured surface the shadow principle needs,
+  a photo rather than a flat fill), a weather card with lows and highs around the bars, a moodboard pin with a real
+  pale vase photo and tags, a project board under the tabs, a document header whose Share opens a menu of toys (its
+  fix now grows from Share's top-right corner). Each card's measure was checked by pressing Broken then Fixed on all
+  nine: 1.8px → 0px, r 20 → r 12, 3.3px → 0px, 1 word → 3 words, C 0.00 → 0.20, C 0.01 → 0.17, 0.0 → 1.0px edge,
+  1.0px → 0px, scale 0 → 0.96, each landing its check. The round's payoff line was seen. Light and dark.
 
 ## Open gaps
 - The overlay writes about 180 corners as numbers (radius tokens about 45 times), many off its own scale; 6px is
