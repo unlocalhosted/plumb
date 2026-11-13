@@ -1,8 +1,47 @@
 # Staying fast as rules and options grow
 
-Status: design, 2026-11-13. Nothing built, **nothing measured for this document**. Every cost below is read from the
-code (`overlay/src/craft.js`, `src/craft-run.ts`), not timed. Layer 1 is the timing.
+Status: design, 2026-11-13. Layer 1 (the timing) is done: see **Measured** below. It changed the build order.
+Nothing else is built. Costs in section 1 were first read from the code; where the timing disagrees, it wins.
 Companion to [platform-guidance-lld.md](platform-guidance-lld.md), which adds a whole rule family.
+
+## Measured (2026-11-13)
+
+One headless Chromium on the laptop, window 1280×800, the full-page read the command line does
+(`window.__plumb.craft`). The timer is in the engine and off unless the page sets `globalThis.__plumbPerf = {}`;
+`Craft.profile(elements)` sweeps one rule at a time over every element, so each rule has one timer around it.
+82 rules were on. Algorecall was run three times, crafting-ui once; totals moved between runs (3.7 to 5.8 s).
+
+| | algorecall, problems list | crafting-ui, motion vocabulary |
+|---|---|---|
+| Elements judged | 15,907 | 2,405 |
+| Rule calls for one full judgement | 1,304,374 | 197,210 |
+| One full judgement, rules only | 0.77–0.83 s | 0.17–0.18 s |
+| Shared reads (rect, style) for the page | 0.02 s | 0.003 s |
+| **Times the whole page was handed to the engine in one read** | **6** | **6** |
+| Of those, judged from nothing (cache thrown away) | 4 | 2 |
+| Engine time in the real read | 3.7–5.8 s | 0.82 s |
+| … of which page-wide rules (8 of them, never cached) | 1.37 s | 0.32 s |
+| … of which picking one verdict per element | 0.26–0.48 s | 0.04 s |
+| Whole read, wall clock | 30–51 s | 2.4 s |
+
+What it says:
+
+1. **The page is judged about six times per read, not once.** On algorecall the engine spends 3.7–5.8 s to do
+   0.8 s of judging. This is the largest multiplier and the document had it third. Cause, as far as read: the
+   reader reports the whole page again each time something lands (an icon's pixels, the spec, an animation ending),
+   and each of those also wipes the cache. Not yet confirmed which trigger fires which pass.
+2. **No rule is heavy.** The slowest (corners inside corners) is 8% on algorecall; 18 rules make half the time; the
+   median rule costs about 8 ms across 15,907 elements. The cost is the count of calls: 1.3 million calls to find
+   findings on roughly a hundred elements. That is what dispatch removes, so dispatch is still right, but it is
+   worth at most the 0.8 s, after the six-times is fixed.
+3. **Page-wide rules cost more than their number.** 8 rules of 82, about a quarter of engine time on algorecall and
+   two fifths on crafting-ui, because they run on every pass.
+4. **The engine is not where a long read goes.** Algorecall's read took 30–51 s on the clock and the engine 4–6 s of
+   it. Drawing the marks took another 2.3–3.8 s. The rest was not looked at: waiting between waves and for source
+   lookups is the guess.
+
+Raw tables were printed to the session's scratch folder and are not kept; run the timer again rather than trust
+these to the millisecond.
 
 ## 1. The problem, stated as growth
 
@@ -128,19 +167,20 @@ Each is seen before the next. Nothing here needs the platform work; the platform
 
 | # | Layer | What can be seen |
 |---|---|---|
-| 1 | Per-rule timing on the two reference pages | A table: for each rule, calls, hits, time. Says whether dispatch is the win this document predicts, and which five rules matter |
-| 2 | Dispatch (`on`, kind mask, index, refusal) | The same table: calls per rule fall to about its hits; the full read of the 16,000-element page gets faster by a measured amount |
-| 3 | Throw away less (writes and late facts) | Applying one fix on the big page re-judges tens of elements, not thousands |
-| 4 | Slices, nearest first | First marks appear in the same time on the big page as on a small one |
+| 1 | Per-rule timing on the two reference pages | **Done.** The table above |
+| 2 | Judge the page once: throw away less (3.4), page-wide rules kept against the census (3.4) | Passes per read fall from 6 towards 1; algorecall's engine time from 4–6 s towards 0.8 s |
+| 3 | Dispatch (`on`, kind mask, index, refusal) | Calls per rule fall to about its hits; the 0.8 s falls by a measured amount |
+| 4 | Where the other 25–45 s of algorecall's read goes | A second table: waiting, source lookups, drawing. Not the engine, so not in this design yet |
+| 4b | Slices, nearest first | First marks appear in the same time on the big page as on a small one |
 | 5 | Command line: demand, record once, skip unchanged | Page loads per route before and after; a second run after a one-file change |
 | 6 | Families as modules | Bytes loaded into the page with one family off |
 | 7 | Budgets and the readout | A deliberately slow rule is refused |
 
 ## 5. Not known
 
-- **What a rule costs today.** Not measured. If most of the time is in a few heavy rules (text measuring, canvas)
-  rather than in the many cheap early exits, layer 2 matters less and those rules' fact classes (3.2) matter more.
-  Layer 1 decides the order of 2–4.
+- Which trigger causes each of the six passes, and whether any can simply not happen.
+- Where the rest of algorecall's 30–51 s goes. Only the engine and the drawing were timed.
+- How the numbers look in a real browser window with a person in it; these are headless.
 - Whether a kind mask can be computed without reads that are themselves the cost (a role lookup per element).
 - How often a route's key really stays the same between runs in a Tailwind project, where one class change
   rebuilds the stylesheet. The key may need to be the route's *used* declarations, not the whole file.

@@ -824,6 +824,7 @@
 - **The system behind it:** cost is two products, elements × rules on the page and routes × states on the command line. Each new rule or option multiplies instead of adding.
 - **What we chose and why:** one principle, a rule pays only where it could speak. Rules declare what kinds of element they are about and the engine hands each element only those; facts carry a price class; a page state is rendered only when a rule that is on asks for it and the page has something of its kind; a slow rule is refused by a budget. Timing each rule comes first, because none of this is measured yet.
 - **The fix and the proof:** none yet. Design: [engine-scaling.md](briefs/engine-scaling.md).
+- **Timed the same day, and the design's guess was wrong in order:** on algorecall's 15,907-element page one full judgement by all 82 rules takes about 0.8 s, and no rule is heavy (the slowest is 8%). But one read hands the whole page to the engine six times and judges it from nothing four of them, so the engine spends 3.7–5.8 s. Judging once comes before making each judgement cheaper. The engine is also only 4–6 s of a 30–51 s read; the rest is not looked at yet. Source: a timer now in the engine (off unless a page asks), one headless browser, numbers in the design's Measured section.
 - **Media hooks:** when built, the per-rule table before and after on algorecall's 16,000-element page.
 
 ## Open gaps

@@ -448,6 +448,8 @@ export class Craft {
   enrich(items) {
     const t0 = performance.now();
     if (!SPEC.loaded) loadSpec();
+    // per-rule timing (docs/briefs/engine-scaling.md): only when the page asks, by setting globalThis.__plumbPerf = {}
+    if (globalThis.__plumbPerf) { const P = globalThis.__plumbPerf; P.craft = this; (P.passes ??= []).push(items.length); P.els ??= new Set(); for (const i of items) if (i.checked !== false) P.els.add(i.el); }
     try {
       this.#theme.colors();
       this.#theme.roles();
@@ -465,7 +467,15 @@ export class Craft {
         this.#waiting = true;
         Promise.allSettled(ending.map((a) => a.finished)).then(() => { this.#waiting = false; this.#again?.(); });
       }
-      const out = verdicts(items.map((item) => ({ ...item, marks: [...item.marks, ...(item.checked === false || moving(item.el) ? [] : this.#marksFor(item.el, facts))] })), { facts, theme: this.#theme, rules: this.rules });
+      const t1 = performance.now();
+      const still = items.map((item) => item.checked !== false && !moving(item.el));
+      const t2 = performance.now();
+      const judged = items.map((item, i) => ({ ...item, marks: [...item.marks, ...(still[i] ? this.#marksFor(item.el, facts) : [])] }));
+      const t3 = performance.now();
+      const out = verdicts(judged, { facts, theme: this.#theme, rules: this.rules });
+      const t4 = performance.now();
+      performance.measure('plumb:craft-theme', { start: t0, end: t1 }); performance.measure('plumb:craft-moving', { start: t1, end: t2 });
+      performance.measure('plumb:craft-rules', { start: t2, end: t3 }); performance.measure('plumb:craft-verdicts', { start: t3, end: t4 });
       // dedupe: a finding an ancestor already carries, with the same text, is one decision, not two
       const carried = new Map(out.map((i) => [i.el, new Set(i.marks.filter((m) => m.family === 'craft').map((m) => `${m.rule}|${m.text}`))]));
       for (const item of out) {
@@ -476,8 +486,33 @@ export class Craft {
           return true;
         });
       }
+      performance.measure('plumb:craft-dedupe', { start: t4 });
       return out;
     } finally { performance.measure('plumb:craft', { start: t0 }); }
+  }
+
+  // What each rule costs on a set of elements: one timer around a rule's whole sweep, so a coarse clock still reads
+  // true. `base` is the shared reads (rect, style) taken first; `cold` is a rule's sweep with its own lazy facts still
+  // to be read, `warm` the same sweep again with every fact memoised: the rule's logic alone.
+  profile(els) {
+    els = [...els].filter((el) => el.isConnected && !el.closest('plumb-overlay'));
+    const facts = new Facts(); facts.items = els;
+    const now = () => performance.now();
+    let t0 = now();
+    for (const el of els) { facts.rect(el); void facts.style(el).display; }
+    const base = now() - t0;
+    const rules = this.rules, rows = [];
+    for (const round of ['cold', 'warm']) for (const [i, rule] of rules.entries()) {
+      let hits = 0, scoped = 0;
+      t0 = now();
+      for (const el of els) { try { if ((rule.check({ el, facts }, this.#theme) ?? []).some((f) => (f.confidence ?? 0) >= FLOOR)) hits++; } catch {} }
+      const ms = now() - t0;
+      t0 = now();
+      if (rule.scope) for (const el of els) { try { if (rule.scope({ el, facts })) scoped++; } catch {} }
+      const scope = now() - t0;
+      if (round === 'cold') rows[i] = { rule: rule.id, hits, scoped, cold: ms + scope }; else rows[i].warm = ms + scope;
+    }
+    return { elements: els.length, rules: rules.length, base, rows };
   }
 
   // The craft findings of one element, run fresh or from the cache by signature.
@@ -486,10 +521,13 @@ export class Craft {
     // what an element's own findings depend on: its and its parent's classes, its inline style, its words. A rule that
     // reads the page's census (the app's usual stroke, its usual gaps) also depends on how much of the page is read:
     // it is judged again on every pass, never cached, so a judgement made against half the page doesn't stick.
+    const P = globalThis.__plumbPerf, pa = P && performance.now();
     const sig = `${el.getAttribute('class') ?? ''}|${el.parentElement?.getAttribute('class') ?? ''}|${el.getAttribute('style') ?? ''}|${el.textContent?.length ?? 0}`;
+    const pb = P && performance.now();
     const rules = this.rules;
     const quiet = new Set();
     for (const rule of rules) if (rule.scope && rule.refines) { try { if (rule.scope({ el, facts })) for (const r of rule.refines) quiet.add(r); } catch {} }
+    const pc = P && performance.now();
     const judge = (rule) => {
       if (quiet.has(rule.id)) return [];
       let found = [];
@@ -497,11 +535,15 @@ export class Craft {
       return found.filter((f) => (f.confidence ?? 0) >= FLOOR).map((f) => markOf({ tier: rule.tier, ...f, rule: rule.id, key: f.key ?? rule.id, suggest: important(f.suggest) }));
     };
     const pageWide = (rule) => (rule.reads ?? []).includes('census');
-    let hit = this.#cache.get(el);
+    let hit = this.#cache.get(el), fresh = false;
     if (!hit || hit.sig !== sig) {
+      fresh = true;
       hit = { sig, marks: rules.filter((r) => !pageWide(r)).flatMap(judge) };
       this.#cache.set(el, hit);
     }
-    return [...hit.marks, ...rules.filter(pageWide).flatMap(judge)];
+    const pd = P && performance.now();
+    const wide = rules.filter(pageWide).flatMap(judge);
+    if (P) { const T = (P.parts ??= { calls: 0, fresh: 0, sig: 0, scope: 0, own: 0, wide: 0 }); T.calls++; if (fresh) T.fresh++; T.sig += pb - pa; T.scope += pc - pb; T.own += pd - pc; T.wide += performance.now() - pd; }
+    return [...hit.marks, ...wide];
   }
 }
