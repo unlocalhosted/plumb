@@ -40,7 +40,12 @@ export interface ComponentMemory {
   identities?: Map<string, ComponentIdentity | null>;
   rootRanges?: Map<ComponentIdentity, RootRange[]>;
   fingerprintClasses?: Map<ComponentIdentity, string[]>;
+  /** What one build of the graph shares across its per-file calls (the server discovers one file at a time, thousands
+   * of them): the resolvers and what they answered, and each component directory's listing. Set for the length of
+   * one build, when the files on disk are taken to stand still, exactly as a single call over every file takes them. */
+  batch?: ComponentBatch;
 }
+export interface ComponentBatch { resolver: ResolverFactory; contextResolver: ResolverFactory; resolutions: Map<string, string | undefined>; directories: Map<string, string[]> }
 export interface ComponentMount { component: ComponentIdentity; classes: string[]; ancestors: { element: string; classes: string[] }[] }
 interface Usage { start: number; end: number; component: ComponentIdentity; site: Site; classes: string[]; props: Record<string, string> }
 export interface ElementIdentity { start: number; end: number; tag: string; site: Site; styling: { start: number; end: number }[]; component?: ComponentIdentity }
@@ -83,6 +88,9 @@ const resolverOptions = { tsconfig: 'auto' as const, extensions: ['.tsx', '.ts',
   extensionAlias: { '.js': ['.ts', '.tsx', '.js'], '.mjs': ['.mts', '.mjs'], '.cjs': ['.cts', '.cjs'] },
   conditionNames: ['import', 'browser', 'default'], mainFields: ['browser', 'module', 'main'] };
 
+/** A fresh batch for one build of the graph (ComponentMemory.batch). */
+export const componentBatch = (): ComponentBatch => ({ resolver: new ResolverFactory(resolverOptions), contextResolver: new ResolverFactory({ tsconfig: 'auto', resolveToContext: true }), resolutions: new Map(), directories: new Map() });
+
 /** Read before collection so a warm graph does not retain unneeded source ASTs. */
 export function cachedComponents(root: string, files: string[], config: PlumbConfig, includeUnused = false): ComponentGraph | undefined {
   const resolver = new ResolverFactory(resolverOptions);
@@ -95,9 +103,9 @@ export function discoverComponents(root: string, files: string[], config: PlumbC
   const diagnostics: Finding[] = [];
   const rootRanges = new Map<ComponentIdentity, RootRange[]>();
   const fingerprintClasses = new Map<ComponentIdentity, string[]>();
-  const resolver = new ResolverFactory(resolverOptions);
+  const resolver = memory?.batch?.resolver ?? new ResolverFactory(resolverOptions);
   // Resolve shadcn aliases to directories even when callers use relative imports.
-  const contextResolver = new ResolverFactory({ tsconfig: 'auto', resolveToContext: true });
+  const contextResolver = memory?.batch?.contextResolver ?? new ResolverFactory({ tsconfig: 'auto', resolveToContext: true });
   const cache = !readOnly && !overrides.size ? componentCache(root, files, config, includeUnused) : undefined;
   const cached = cache?.read((file, specifier) => resolver.resolveFileSync(file, specifier).path,
     (file, specifier) => contextResolver.resolveFileSync(file, specifier).path);
@@ -139,7 +147,7 @@ export function discoverComponents(root: string, files: string[], config: PlumbC
     } else directories.push(join(root, exists(join(root, 'src/components/ui')) ? 'src/components/ui' : 'src/components'));
   }
   const discoveryDirectories = [...directories];
-  const resolutions = new Map<string, string | undefined>();
+  const resolutions = memory?.batch?.resolutions ?? new Map<string, string | undefined>();
   function selectedFile(file: string): boolean { return selected.has(file) || directories.some(directory => inDirectory(file, directory)); }
   function target(file: string, specifier: string): string | undefined {
     const key = `${file}\0${specifier}`;
@@ -534,7 +542,9 @@ export function discoverComponents(root: string, files: string[], config: PlumbC
   const fingerprints = Object.keys(config.imitation ?? {});
   if ((includeUnused || fingerprints.length) && files[0]) for (const specifier of [...packages, ...prefixes]) { const path = target(files[0], specifier); if (path) module(path); }
   for (const directory of discoveryDirectories) {
-    const discovered = componentFiles(directory); watchedDirectories.set(directory, discovered);
+    let discovered = memory?.batch?.directories.get(directory);
+    if (!discovered) { discovered = componentFiles(directory); memory?.batch?.directories.set(directory, discovered); }
+    watchedDirectories.set(directory, discovered);
     for (const file of discovered) module(file);
   }
   if (includeUnused || discoveryDirectories.length) {

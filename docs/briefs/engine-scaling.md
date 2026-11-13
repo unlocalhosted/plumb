@@ -203,6 +203,39 @@ before it answers anything. That is the analysis (finding components about 12 s,
 and declarations 5 s) plus a 2.6 s first scan. One odd number in it: the module cache reports 0 hits and 7,715
 misses on a second run. Not looked into.
 
+### The cold start: where 41 s goes, and why the one-off check is 6 times faster (2026-11-13)
+
+After a dev server restart plumber's server takes 41–44 s on algorecall before it answers anything. A CPU profile
+of each of its threads, as a call tree:
+
+| Analysis thread (the one a person waits for), about 35 s busy | |
+|---|---|
+| The component graph | 12 s before, 7 s after the change below |
+| Classes out of the source (parse, trace, inline) | 5.9 s |
+| Where each value comes from | 3.7 s |
+| Garbage collection | 3.2 s |
+| Reading source and dependency files (three separate passes over the same files) | about 5 s across them |
+| Module graph, project facts, selector hooks, ledger, Tailwind | about 7 s between them |
+
+There is no one cause. The work is spread flat across a 3,588-file project with 10,565 dependency files.
+
+**Changed:** the server discovers components one file at a time, 3,588 calls, and each call built two resolvers,
+resolved the same imports again and listed the component directory again. One set is now shared across a build.
+Component discovery 9.2 s → 3.7 s of CPU. **Ready time did not move outside the noise: 43.6 s → 41.3 s** on a busy
+machine.
+
+**The finding that matters:** `plumber check` on the same project takes 43 s the first time and **6.8 s the
+second**, because it keeps its result on disk and, when every input is unchanged, hands it back. The server never
+reads that: it is switched off whenever the analysis runs inside a session. So every dev server start redoes the
+whole analysis, including on a project nobody has touched.
+
+(A correction: an earlier note said the module cache "reports 0 hits on a second run". It hits. Each of my
+rebuilds of plumber changed the cache's key, so the runs I compared were all first runs.)
+
+**What would fix the cold start** is a design change, not a tune-up: on start, if the kept result's inputs are
+unchanged, the server answers from it at once (about 7 s) and builds its own incremental state behind that. Not
+done: it changes what the server may answer before it has analysed anything itself, and needs deciding.
+
 Raw tables were printed to the session's scratch folder and are not kept; run the timer again rather than trust
 these to the millisecond.
 

@@ -4,7 +4,7 @@ import { CollectionState, dependencySpecifiers } from './collection.js';
 import { JudgementState } from './judgement.js';
 import { lowerTailwind } from '../lower/tailwind.js';
 import type { TailwindMemory } from '../lower/tailwind.js';
-import { discoverComponents } from '../ownership/components.js';
+import { componentBatch, discoverComponents } from '../ownership/components.js';
 import type { ComponentGraph, ComponentMemory } from '../ownership/components.js';
 import type { PlumbConfig } from '../config.js';
 import { sourceHash } from '../collect/cache.js';
@@ -258,6 +258,9 @@ export class WarmState implements AnalysisRuntime {
     const wanted = new Set(files.filter(file => /\.[jt]sx?$/.test(file)));
     if ([...wanted].some(file => !this.shards.has(file))) this.reachability = new WeakMap();
     if (!local) for (const file of this.shards.keys()) if (!wanted.has(file)) { this.shards.delete(file); this.componentHashes.delete(file); this.componentDependencies.delete(file); }
+    // one file at a time, but one set of resolvers, resolutions and directory listings for the whole build
+    if ([...wanted].some(file => !this.shards.has(file))) this.componentMemory.batch = componentBatch();
+    try {
     for (const file of wanted) {
       if (this.shards.has(file)) continue;
       let text = ''; try { text = readFileSync(file, 'utf8'); } catch { /* Component discovery reports this file. */ }
@@ -292,6 +295,7 @@ export class WarmState implements AnalysisRuntime {
       for (const path of dependencies) { let users = this.componentConsumers.get(path); if (!users) this.componentConsumers.set(path, users = new Set()); users.add(file); }
       this.shards.set(file, shard); this.componentHashes.set(file, hash); this.componentDependencies.set(file, dependencies);
     }
+    } finally { delete this.componentMemory.batch; }
     const graph = this.mergeGraph(files, this.shards);
     this.collection.programs.clear();
     this.collection.specifiers.clear();

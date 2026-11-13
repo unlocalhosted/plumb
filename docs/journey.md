@@ -933,6 +933,14 @@
 - **The fix and the proof:** warm headless reads on algorecall 14.8–17.3 s → 10.4–12.8 s with the same script; 5.7–8.7 s through the overlay once the app has settled. `plumber check` 51.8 s → 42.2 s with an identical report. Two corrections: the 0.8 s and 2.5 s freezes I had put on plumber are algorecall mounting itself; and the cold start (41–44 s before the server answers) is not fixed, it is the analysis. Machine busy during the runs. Server tests pass in both watcher modes (one OS-probe timeout on the busy machine, gone on a rerun).
 - **Media hooks:** the server thread's CPU, idle, before and after.
 
+## The cold start: 41 s every time, while the one-off check takes 7 (2026-11-13)
+- **The itch:** after a dev server restart plumber says "still reading your project" for 41–44 s on algorecall. The owner: "Yes, cold start".
+- **How we found it:** a CPU profile of each server thread drawn as a call tree, then the one-off `plumber check` run twice in a row on the same project.
+- **The system behind it:** two things. The server builds its component graph one file at a time, 3,588 calls, each setting up its own resolvers and re-listing the component folder. And the server never reads the result the one-off check keeps on disk: that is switched off inside a session, so every start redoes everything.
+- **What we tried, what we chose:** shared one set of resolvers, resolutions and folder listings across a build: component discovery 9.2 s → 3.7 s of CPU. It did not move the wait (43.6 s → 41.3 s, inside the noise of a busy machine), because the rest is spread flat: no single cause is left. The fix that would matter, starting from the kept result when nothing changed, is a design change and is not made.
+- **The fix and the proof:** a small one, honestly: 5 s of CPU, no visible change in the wait. The proof of where the real gain is: `plumber check` 43 s the first time, 6.8 s the second. Component, imitation and server test files pass (40 of 40, 1 skipped). A correction: I had said the module cache never hits; it does, my rebuilds kept changing its key.
+- **Media hooks:** two bars: a server start, 41 s; the same project's check on a second run, 7 s.
+
 ## Open gaps
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
 
