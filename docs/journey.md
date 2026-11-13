@@ -597,6 +597,13 @@
 - **Now:** one finding on crafting-ui, the three figures on the templates page, drawn from a three-item list written in the code. At phone width it fits (358 of 358 px). It is a fixed set the check cannot yet tell from a list; noted, not fixed. No before and after from a real app.
 - **Seen on the way:** the motion vocabulary page (7,274 elements) closed the browser tab during plumber's read.
 
+## #42's film, polished in motion (2026-11-13)
+- **The itch:** the owner: "there is a lack of polish the toggle moves across the card, the property transition lands on the card and like noisy, please really put some focus on polish."
+- **How we found it:** every transition stepped through at 10 frames a second (before, I had looked at two or three stills).
+- **The system behind it:** a review made of stills; every fault was in motion. Four found: the crop was dropped the moment the camera started back, so the still-large card swept across the switch; while zoomed, a hard straight line cut the card just above the switch; the change card landed on the card's rows and widened when the fix arrived; on the fixed side a pill repeated what the change card says, and guides doubled the outlines where nothing had moved.
+- **The fix:** the camera works inside the card's own frame (its size, corners and shadow stay on the board, the magnified card always covers it) and the frame holds until the camera is fully back; the change card sits on the open board under the switch, one width from the start; the repeated pill and the doubled guides are gone. The craft-rule skill's review now has a polish pass: every transition at 10 fps against six checks.
+- **The proof:** the same transitions at 10 fps after the fix: the switch never crossed, nothing on the rows, no width jump, no cut. Clip: docs/media/showcase-42-polished.mp4.
+
 ## #42's film says the sauce: the property at fault and the one that fixes it (2026-11-13)
 - **The itch:** the owner: "we didn't really teach what the sauce is … show what property was at fault and what fixed it."
 - **The fix:** when the cause is named, plumber's change card (the way its cards show a change) rises above the switch with the class at fault, `hover:font-semibold`, and the property it sets, `font-weight: 600`, in coral. When the fix lands it is struck through and `hover:text-ink`, `color: ink`, arrives in mint. Screens now supply the class and property on both sides (`film.code`).
