@@ -2041,6 +2041,9 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   Now each scene is measured at its own size (all its parts) and scaled to fill its tile, up to 130%, whichever of
   width or height runs out first; the vase pin, a tall shape, became a landscape pin (photo left, details right) so it
   fills the width too. Its fix still measures 1.0px edge.
+- **"Too much empty space horizontally" meant the page's margins** (I first read it as space inside the tiles). The
+  section was capped at 72rem, about 1,150px, so on a wide window the grid sat in a narrow column with big empty bands
+  either side and the cards were crammed. Now it can be 104rem wide: 1,600px on a 1,940px window, 920px tall.
 
 ## Open gaps
 - The overlay writes about 180 corners as numbers (radius tokens about 45 times), many off its own scale; 6px is
