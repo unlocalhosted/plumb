@@ -196,7 +196,7 @@ export function mount(host, root, css) {
     const row = p.row;
     row.querySelector('.scrub').insertAdjacentHTML('afterend', `<span class="side" data-modes="${MODES.length}"><b>${SAID[0]}</b><i class="ud" aria-hidden="true"></i></span>`);
     // under the row: what two fingers do here, and the pull that syncs
-    stage.insertAdjacentHTML('beforeend', `<div class="xr-legend"><span data-s="mode">← ${z.side ? 'sides' : ''}</span><span data-s="value">↕ value</span><span data-s="apply">→ sync</span></div>
+    stage.insertAdjacentHTML('beforeend', `<div class="xr-legend"><span data-s="mode">← ${z.side ? 'sides' : ''}</span><span data-s="value">↕ value</span><span data-s="apply">→ or double-click: sync</span></div>
       <div class="xr-sync" hidden><i class="k"></i><span class="say">Keep going <b>→</b> to sync</span></div>`);
     const legend = stage.querySelector('.xr-legend'), sync = stage.querySelector('.xr-sync');
     if (!z.side) legend.querySelector('[data-s="mode"]').remove();
@@ -260,10 +260,13 @@ export function mount(host, root, css) {
       idle = setTimeout(() => { if (charge < 1 && charge > 0) { charge = 0; show(); } tx = 0; ty = 0; }, 700);
     };
     stage.addEventListener('wheel', wheel, { passive: false });
+    // a double-click anywhere (the part, the row, the page) syncs it, the same as the pull
+    const dbl = (e) => { if (!picking || synced || e.target.closest('.list')) return; e.preventDefault(); seg = 'apply'; charge = 1; show(); doSync(); };
+    stage.addEventListener('dblclick', dbl);
 
     const done = (keep) => {
       if (!keep) for (const [q, v] of Object.entries(before)) { if (v) el.style.setProperty(q, v); else el.style.removeProperty(q); }
-      stage.removeEventListener('wheel', wheel);
+      stage.removeEventListener('wheel', wheel); stage.removeEventListener('dblclick', dbl);
       row.nextElementSibling?.remove(); row.remove(); grab.remove(); legend.remove(); sync.remove();
       picking = null; stage.removeAttribute('data-picking');
       draw(el, null);
