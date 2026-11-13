@@ -200,6 +200,8 @@ TandemTabs.film = {
   frame: (root) => [...root.querySelectorAll('nav a')],
   set: (el, on) => (on ? el.setAttribute('data-film', '') : el.removeAttribute('data-film')),
   lead: 1,
+  // the sauce: the class that sets the weight on hover, and plumber's fix (craft-rules.js boldHover: the hover's colour, the same width)
+  code: { fault: { cls: 'hover:font-semibold', prop: 'font-weight: 600' }, fix: { cls: 'hover:text-ink', prop: 'color: ink' } },
   read(root, i, rest) {
     const at = local(root), tabs = [...root.querySelectorAll('nav a')].slice(1), now = tabs.map(at), s = getComputedStyle(tabs[i]);
     const weight = parseInt(s.fontWeight, 10) || 400, fixed = weight < 500;

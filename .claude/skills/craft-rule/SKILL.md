@@ -468,4 +468,9 @@ Each line is something the owner had to say once; the sections above exist so th
   surface. Plumber's own language (patterns say what a thing is, colour says the verdict, one value pill only where
   you point, name tags with their icon, the toy burst when a fix lands) was not used. → To be rewritten once the owner
   confirms the system: a reference yields principles of delivery only; how each is drawn comes from plumber's language.
+- 2026-11-13 · On #42's redrawn film: "we didn't really teach what the sauce is … show what property was at fault and
+  what fixed it." The film measured and named the weight but never showed the code. → A film says the sauce as code:
+  when the cause is named, plumber's change card shows the class at fault and the property it sets (coral); when the
+  fix lands it is struck and the class that holds arrives with its property (mint), as plumber's cards show a change
+  (widget.js `.change`). Screens supply `film.code = { fault: { cls, prop }, fix: { cls, prop } }`.
 
