@@ -7,7 +7,7 @@ import type { CheckOptions } from '../index.js';
 import type { LoadedConfig } from '../config.js';
 import type { Report } from '../report.js';
 import { drawn } from '../report.js';
-import { packReadings } from './kept.js';
+import { ReadingPacker } from './kept.js';
 import { atomicWrite } from '../atomic-write.js';
 import { mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -238,6 +238,8 @@ function queryInputs(files: Iterable<string> = [], known?: [string, string[]][])
   return { inputPatterns: [...state.inputPatterns], inputs: [...new Set([...state.configurationFiles, ...state.compilerFiles, ...raw.stylesheets.map(s => s.file), ...raw.declarations.filter(d => d.prop.startsWith('--')).map(d => d.site.file), ...raw.decisions.map(d => d.source.file), ...raw.decisionInventory?.map(d => d.source.file) ?? []])],
     queryDependencies: known ?? [...files].map(file => [file, state.queryDependencies(file)]) };
 }
+const KEEP_SLICE = 30; // ms of building the reading table before the worker looks at its queue again
+let keeping: { of: Report; packer: ReadingPacker; started: number; worked: number; longest: number; slices: number } | undefined;
 async function dispatch(method: string, params: Record<string, unknown>): Promise<unknown> {
   if (method === 'queryDependencies') return [...new Set((params.files as string[]).flatMap(file => state.queryDependencies(file)))];
   if (method === 'inventory') { state.inventory = params.files as string[]; return null; }
@@ -347,14 +349,23 @@ async function dispatch(method: string, params: Record<string, unknown>): Promis
       findings: view.findings.filter(f => !f.rule.startsWith('config/') && f.sites.some(s => s.file === file)).map(f => ({ ...drawn(f), sites: f.sites.filter(s => s.file === file), ...(f.occurrences ? { occurrences: f.occurrences.filter(d => d.site.file === file) } : {}) })),
       declarations: view.declarations.filter(d => d.site.file === file) })) };
   }
-  // the reading table, written to disk for the next start (session/kept.ts). Not read back yet.
+  // the reading table, written to disk for the next start (session/kept.ts). Not read back yet. Built a slice at a
+  // time: each call does a few milliseconds of it and returns, so a question asked meanwhile is answered between
+  // slices; a report that changed under it starts it again.
   if (method === 'keep') {
-    const start = performance.now(), view = await current();
-    const { data, stats } = packReadings(view);
-    const packed = performance.now() - start;
+    const view = await current();
+    if (!keeping || keeping.of !== view) keeping = { of: view, packer: new ReadingPacker(view), started: performance.now(), worked: 0, longest: 0, slices: 0 };
+    const job = keeping, start = performance.now();
+    const complete = job.packer.step(KEEP_SLICE);
+    let spent = performance.now() - start; job.worked += spent; job.longest = Math.max(job.longest, spent); job.slices++;
+    if (!complete) return { done: false };
+    const finish = performance.now();
+    const { data, stats } = job.packer.finish();
+    spent = performance.now() - finish; job.worked += spent; job.longest = Math.max(job.longest, spent);
+    keeping = undefined;
     await mkdir(params.directory as string, { recursive: true });
     await atomicWrite(join(params.directory as string, 'readings.v8'), data);
-    return { ...stats, packMs: Math.round(packed), ms: Math.round(performance.now() - start) };
+    return { done: true, ...stats, packMs: Math.round(job.worked), longestMs: Math.round(job.longest), slices: job.slices, ms: Math.round(performance.now() - job.started) };
   }
   if (method === 'health') return { status: 'ready', root: options.root, revision, pid: process.pid, rss: process.memoryUsage().rss, caches: state.caches, work: { fullReports, fullIndexes, localAnalyses }, ...(environment('PROFILE') === '1' ? { profile: performance.getEntriesByType('measure').map(p => [p.name, p.duration]) } : {}) };
   if (method === 'try') {

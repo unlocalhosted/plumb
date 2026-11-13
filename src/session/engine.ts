@@ -1932,7 +1932,7 @@ export class Session extends EventEmitter {
    * hash, every directory it lists with its stamp, and the table's own hash so the two cannot be mismatched.
    * (Not in it yet: what each import resolved to, which the check's receipt records.)
    */
-  private kept: (KeptStats & { ms: number; packMs: number; at: number; directory: string }) | undefined;
+  private kept: (KeptStats & { ms: number; packMs: number; longestMs: number; slices: number; at: number; directory: string }) | undefined;
   private keepTimer?: NodeJS.Timeout;
   private keeping = false;
   private keepLater(): void {
@@ -1948,7 +1948,13 @@ export class Session extends EventEmitter {
       const revision = this.revision;
       const directory = join(cacheDirectory(this.root), 'kept', createHash('sha256').update(JSON.stringify(['kept-v1', buildId(), process.versions.v8, this.root])).digest('hex').slice(0, 32));
       const files = [...this.hashes].sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0), directories = [...this.directories].sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0);
-      const stats = await this.serializeRead(() => this.request<KeptStats & { ms: number; packMs: number }>('keep', { directory }));
+      // a slice at a time, each through the same queue the reads use: a question asked meanwhile goes in between
+      let stats: KeptStats & { ms: number; packMs: number; longestMs: number; slices: number } | undefined;
+      while (!stats) {
+        if (revision !== this.revision || this.closed) return;
+        const step = await this.serializeRead(() => this.request<{ done: false } | ({ done: true } & KeptStats & { ms: number; packMs: number; longestMs: number; slices: number })>('keep', { directory }));
+        if (step.done) stats = step;
+      }
       // something changed while it was being written: it describes a project that is gone, and the change has
       // already asked for another
       if (revision !== this.revision || this.closed) return;
