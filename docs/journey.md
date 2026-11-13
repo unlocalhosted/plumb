@@ -2023,6 +2023,13 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   the card itself, edge to edge under its corners, a hairline above the words; so it's the card and the scene, and the
   photo stages (the pink table) fill the card's top. The dot grid is subtler too (a quarter of the card's pastel, 1px
   dots; "too contrasty").
+- **The card, after "it wasn't really looking good somehow" (the container-free try was undone at the owner's word).**
+  What was off: three controls floated on every scene (the state label, the switch, Replay), crowding and covering it,
+  and a white scene on a near-white stage in a white card had no separation. Now the stage holds only the example on a
+  light wash of the card's own colour; the switch and Replay sit with the title under it; the state label is gone (the
+  pill says it). And the floating review bar is removed ("remove this, it's annoying": it sat over the examples while
+  scrolling); the one-at-a-time tour, the spotlight and the burst stay. Checked: no errors through a press, its lift
+  and a Replay; the tour plays.
 
 ## Open gaps
 - The overlay writes about 180 corners as numbers (radius tokens about 45 times), many off its own scale; 6px is

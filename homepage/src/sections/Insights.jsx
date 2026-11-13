@@ -79,20 +79,6 @@ export function Insights() {
           {FAMILIES.map(([name, n]) => <li key={name}>{name} <span className="tabular">{n}</span></li>)}
         </ul>
       </header>
-      {!reduced && (
-        <div ref={bar} className="ins-review" data-phase={summary ? 4 : phase} aria-live="polite">
-          <span className="ins-review-n tabular">{summary ? <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.5 6.5 11.5 12.5 4.5" /></svg> : c.n}</span>
-          {!summary && <i className="ins-toy" aria-hidden="true" dangerouslySetInnerHTML={{ __html: toyOf(c.toy) }} />}
-          <span key={summary ? 'sum' : `${turn}-${phase}`} className="ins-review-say">
-            {summary && <><b>{CARDS.length} fixed, in your JSX.</b> <span className="ins-review-dim">You wrote none of it.</span></>}
-            {!summary && phase === 0 && <><b>{c.feel}</b></>}
-            {!summary && phase === 1 && <><span className="ins-review-tag off">{c.states[0]}</span> {c.why}</>}
-            {!summary && phase === 2 && <><span className="ins-review-tag on">{c.states[1]}<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.5 6.5 11.5 12.5 4.5" /></svg></span> Plumber wrote the fix.</>}
-            {!summary && phase === 3 && <span className="ins-review-after">{c.after}</span>}
-          </span>
-          <span className="ins-review-dots" aria-label={`${done.size} of ${CARDS.length} fixed`}>{CARDS.map((x, i) => <i key={x.n} data-done={done.has(i)} data-on={i === turn} />)}</span>
-        </div>
-      )}
       <div ref={grid} className="ins-x-grid" data-live={live && !reduced}>
         {CARDS.map((x, i) => <Card key={x.n} card={x} live={live} reduced={reduced} turn={live && turn === i} onBeat={step => beat(i, step)} onDone={next} />)}
       </div>
@@ -192,18 +178,20 @@ function Card({ card, live, reduced, turn, onBeat, onDone }) {
           <Scene fixed={fixed} live={live && !reduced && (turn || held) && (card.moving || step === STEP.rest || step === STEP.home)} />
         </div>
         {showMarks && <Marks marks={marks} fixed={fixed} out={step === STEP.out} card={card} />}
-        <span className="ins-state" data-fixed={fixed} aria-hidden="true"><i className="ins-toy" dangerouslySetInnerHTML={{ __html: toyOf(card.toy) }} /><span key={fixed ? 'f' : 'b'} className="ins-swap">{card.states[fixed ? 1 : 0]}</span></span>
-        {held && !reduced && <button type="button" className="ins-replay" onClick={replay} aria-label="Play the tour again"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8a4.5 4.5 0 1 0 1.3-3.2M3.5 2.8v2.4h2.4" /></svg>Replay</button>}
+      </div>
+      {/* the stage holds only the example; its controls sit with its words */}
+      <div className="ins-foot">
+        <span className="ins-n tabular">{card.n}</span>
+        <span className="ins-text"><b>{card.title}</b><span>{card.why}</span></span>
+        <span className="ins-ctl">
+        {held && !reduced && <button type="button" className="ins-replay" onClick={replay} aria-label="Play the tour again"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8a4.5 4.5 0 1 0 1.3-3.2M3.5 2.8v2.4h2.4" /></svg></button>}
         <div className="ins-switch" role="group" aria-label="Show it" data-fixed={fixed}>
           <span className="ins-thumb" aria-hidden="true" />
           {['Broken', 'Fixed'].map((label, k) => (
             <button key={label} type="button" aria-pressed={fixed === !!k} onClick={() => choose(!!k)}>{label}</button>
           ))}
-        </div>
-      </div>
-      <div className="ins-foot">
-        <span className="ins-n tabular">{card.n}</span>
-        <span className="ins-text"><b>{card.title}</b><span>{card.why}</span></span>
+          </div>
+        </span>
       </div>
     </article>
   );

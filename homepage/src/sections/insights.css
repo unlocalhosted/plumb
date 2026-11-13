@@ -59,7 +59,8 @@
 /* one container: the stage is the top of the card itself, edge to edge under its corners, divided from the words by a
    hairline; no panel inside the card */
 .ins-stage { position: relative; flex: 1; min-height: 262px; overflow: hidden; border-radius: 0;
-  background: radial-gradient(120% 90% at 30% 0%, var(--pl-bg-surface), color-mix(in oklab, var(--pl-bg-inset) 70%, var(--pl-bg-surface))); box-shadow: inset 0 -1px 0 var(--pl-border-default); }
+  background: radial-gradient(120% 100% at 30% 0%, color-mix(in oklab, var(--hue) 5%, var(--pl-bg-surface)), color-mix(in oklab, var(--hue) 13%, var(--pl-bg-surface)));
+  box-shadow: inset 0 -1px 0 var(--pl-border-default); }
 /* the state: a tag in the toy face with the principle's toy, coral while broken, mint once fixed */
 .ins-state { position: absolute; z-index: 3; left: 10px; top: 10px; display: inline-flex; gap: 5px; align-items: center; height: 26px; padding: 0 9px 0 6px; overflow: hidden;
   border-radius: var(--pl-radius-tag); font: var(--pl-round-w, 700) 12px/1 var(--pl-round); color: var(--pl-coral-ink); background: color-mix(in oklab, var(--pl-coral) 18%, var(--pl-bg-surface));
@@ -69,7 +70,7 @@
 .ins-swap { display: inline-block; animation: ins-swap-in 320ms var(--ins-ease) both; }
 @keyframes ins-swap-in { from { opacity: 0; translate: 0 8px; filter: blur(3px); } }
 /* the switch: our segmented control, a paper thumb on a well, overshooting a touch */
-.ins-switch { position: absolute; z-index: 3; right: 10px; bottom: 10px; display: grid; grid-template-columns: 1fr 1fr; padding: 3px; border-radius: 11px;
+.ins-switch { position: relative; display: grid; grid-template-columns: 1fr 1fr; padding: 3px; border-radius: 11px;
   background: color-mix(in oklab, var(--pl-bg-inset) 88%, transparent); box-shadow: var(--pl-shadow-well); backdrop-filter: blur(6px); }
 .ins-switch button { position: relative; z-index: 1; height: 24px; padding: 0 10px; border: 0; border-radius: 8px; background: transparent; color: var(--ink-2); font: var(--pl-round-w, 700) 11.5px/1 var(--pl-round); cursor: pointer;
   transition: color 200ms var(--ins-ease); }
@@ -79,14 +80,16 @@
 .ins-switch[data-fixed='true'] .ins-thumb { translate: 100% 0; }
 .ins-switch button:focus-visible { outline: 2px solid var(--pl-border-focus); outline-offset: 1px; }
 /* once you've pressed, the card is yours; Replay hands it back to the tour */
-.ins-replay { position: absolute; z-index: 3; right: 10px; top: 10px; display: inline-flex; align-items: center; gap: 5px; height: 26px; padding: 0 10px 0 8px; border: 0; border-radius: 99px;
+.ins-replay { display: inline-grid; place-items: center; width: 30px; height: 30px; padding: 0; border: 0; border-radius: 99px;
   background: var(--pl-bg-surface); box-shadow: var(--pl-shadow-tag); color: var(--ink-1); font: var(--pl-round-w, 700) 11.5px/1 var(--pl-round); cursor: pointer;
   animation: ins-pop-in 300ms var(--pl-spring-pop) both; }
 .ins-replay svg { width: 13px; height: 13px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; transition: rotate 420ms var(--pl-spring-pop); }
 @media (hover: hover) and (pointer: fine) { .ins-replay:hover svg { rotate: -200deg; } }
 .ins-replay:focus-visible { outline: 2px solid var(--pl-border-focus); outline-offset: 2px; }
 @keyframes ins-pop-in { from { opacity: 0; scale: 0.85; } }
-.ins-foot { display: flex; gap: 12px; align-items: flex-start; padding: 14px 16px 16px; }
+.ins-foot { display: flex; gap: 12px; align-items: flex-start; padding: 14px 14px 14px 16px; }
+.ins-ctl { display: flex; align-items: center; gap: 6px; flex: none; margin-left: auto; }
+.ins-text { flex: 1; }
 .ins-n { display: grid; place-items: center; flex: none; width: 30px; height: 30px; border-radius: 10px; translate: 0 -2px; color: #fff; font: var(--pl-round-w, 700) 12px/1 var(--pl-round);
   background: linear-gradient(180deg, color-mix(in oklab, var(--hue) 82%, #fff), var(--hue));
   box-shadow: inset 0 1.5px 0 rgb(255 255 255 / .4), 0 2px 0 color-mix(in oklab, var(--hue) 70%, #000), 0 6px 10px -4px color-mix(in oklab, var(--hue) 70%, transparent); }
