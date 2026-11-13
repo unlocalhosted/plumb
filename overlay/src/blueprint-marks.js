@@ -83,7 +83,7 @@ export const MARKS_CSS = `
   /* Alt held: the pointer reaches the page through the drawings (an Alt+click or Alt+scroll is aimed at the element) */
   :host([data-armed]) .bp, :host([data-armed]) .bp * { pointer-events: none !important; }
   .bp .hit:focus-visible { stroke: var(--pl-accent); stroke-width: 2px; }
-  .bp .hit[data-under], .bp svg[data-through] .hit { pointer-events: none; }
+  .bp .hit[data-under], .bp svg[data-through] .hit, .bp svg[data-moving] .hit { pointer-events: none; }
   /* Space held: the page is used, so a glow lets the click through to its element like the glass does */
   :host([data-bp-pass]) .bp .hit { pointer-events: none; cursor: inherit; }
   .bp g.break { transition: opacity var(--pl-dur-feedback) ease-out; opacity: 0; }
@@ -112,7 +112,7 @@ const soft = (mark) => /framework|tier|by-value|matches/.test(mark.rule);
 // top (a drawer, a sticky header, a dialog), the branch of the page that covers it is found, and when it spans a whole
 // side of the box that side is pulled in past it. Null when nothing of the element shows. Reads only; rects and
 // styles are memoised for the frame.
-function visibleBox(el, r, view, memo) {
+function visibleBox(el, r, view, memo, probe = true) {
   const rect = (e) => { let v = memo.rects.get(e); if (!v) memo.rects.set(e, (v = e.getBoundingClientRect())); return v; };
   const style = (e) => { let v = memo.styles.get(e); if (!v) memo.styles.set(e, (v = getComputedStyle(e))); return v; };
   const b = { left: Math.max(r.left, 0), top: Math.max(r.top, 0), right: Math.min(r.right, view.w), bottom: Math.min(r.bottom, view.h) };
@@ -128,6 +128,8 @@ function visibleBox(el, r, view, memo) {
   }
   // a hairline (a 1px rule) is seen: only a box with no width or no height is not
   if (b.right - b.left < 0.5 || b.bottom - b.top < 0.5) return null;
+  // the cheap half only: cut to the view and its scroll containers; what covers it is asked later (Marks #refine)
+  if (!probe) return { ...b, width: b.right - b.left, height: b.bottom - b.top, clipped: b.top > r.top + 0.5 || b.left > r.left + 0.5 || b.right < r.right - 0.5 || b.bottom < r.bottom - 0.5, topCut: b.top > r.top + 0.5 };
   let seen = false;
   for (const [fx, fy] of [[0.5, 0.5], [0.15, 0.2], [0.85, 0.2], [0.15, 0.8], [0.85, 0.8]]) {
     if (b.right - b.left < 0.5 || b.bottom - b.top < 0.5) return null;
@@ -373,8 +375,8 @@ export class MarkLayer {
     // the pill sits by the pointer, where the eye already is
     this.#svg.addEventListener('pointermove', (e) => { this.#hand = { x: e.clientX, y: e.clientY }; if (this.#hinted) this.#placeHint(); });
     this.#svg.addEventListener('pointerout', (e) => { if (e.target.closest?.('.hit') && !e.relatedTarget?.closest?.('.hit')) (this.#hand = null), this.#showHint(null); });
-    this.#svg.addEventListener('focusin', (e) => { over(e); const node = this.#nodes.get(e.target.closest?.('.hit')?.dataset.id); this.#focused = node?.el ?? null; this.invalidate(); });
-    this.#svg.addEventListener('focusout', () => { this.#showHint(null); this.#focused = null; this.invalidate(); });
+    this.#svg.addEventListener('focusin', (e) => { over(e); const node = this.#nodes.get(e.target.closest?.('.hit')?.dataset.id); this.#focused = node?.el ?? null; this.#redraw(); });
+    this.#svg.addEventListener('focusout', () => { this.#showHint(null); this.#focused = null; this.#redraw(); });
   }
 
   // The dim goes on (shown, then faded in with on) and off with the mode.
@@ -404,12 +406,12 @@ export class MarkLayer {
   // at the zone. Its cause lights with it.
   #showHint(id) {
     const node = id ? this.#nodes.get(id) : null;
-    if ((node ? id : null) !== this.#hinted) this.invalidate();
+    if ((node ? id : null) !== this.#hinted) this.#redraw();
     this.#hinted = node ? id : null;
     // a fix in hand owns the light: pointing elsewhere marks only the zone pointed at (it can still be clicked to
     // switch), never relights its cause or says its pill over the fix being worked on
     const held = this.#lit.length > 0, cause = node && !held ? causeOf(node.mark) : null;
-    if (cause !== this.#cause) { this.#cause = cause; this.invalidate(); }
+    if (cause !== this.#cause) { this.#cause = cause; this.#redraw(); }
     if (!node || (held && !this.#lit.includes(id))) { this.#hint.removeAttribute('data-on'); return; }
     const n = [...this.#nodes.values()].filter((x) => causeOf(x.mark) === cause).length;
     this.#hint.innerHTML = pillOf(node.mark, n);
@@ -438,12 +440,12 @@ export class MarkLayer {
   select(el) {
     if (el === this.#selected) return;
     this.#selected = el;
-    this.invalidate();
+    this.#redraw();
   }
   point(el) {
     if (el === this.#pointed) return;
     this.#pointed = el;
-    this.invalidate();
+    this.#redraw();
   }
 
   // The fix in hand: its zones (by id) light, `lead` (the zone of the place it is on) the strongest; [] lets go.
@@ -451,7 +453,7 @@ export class MarkLayer {
     this.#lit = ids ?? [];
     this.#lead = this.#lit.length ? lead : null;
     this.#showHint(this.#lit.length && this.#lit.includes(this.#hinted) ? this.#hinted : null); // a pill about another cause goes
-    this.invalidate();
+    this.#redraw();
   }
 
   // Magnetism: a pointer near a zone (within MAGNET px of its hit box, on nothing else) points at it, so a thin band
@@ -529,6 +531,7 @@ export class MarkLayer {
     this.#items = [];
     for (const node of this.#nodes.values()) node.g.remove(), node.hit.remove();
     this.#nodes.clear();
+    this.#geo = new Map(); this.#moved = true;
     this.#outlines.innerHTML = '';
     this.#outlineMarkup = '';
     this.#labels.innerHTML = '';
@@ -543,7 +546,44 @@ export class MarkLayer {
     this.#order = [];
   }
 
-  invalidate() {
+  // Where things are is measured only when it may have changed (docs/briefs/engine-foundations.md, the hand's lane).
+  // Measuring is the cost of a frame: what covers each element is probed at five points, for every marked element in
+  // view. So:
+  //   invalidate()  the page may have moved (new items, a resize, a write): measure everything again
+  //   #redraw()     only what is lit changed (the pointer, focus, the fix in hand): draw from what was measured
+  //   scrolled()    the page is scrolling: while it moves only what is lit is measured (a zone at rest is not drawn),
+  //                 the hit areas step aside, and everything is measured once when it stops
+  #geo = new Map(); #moved = true; #scrollUntil = 0; #settle = 0;
+  invalidate() { this.#moved = true; this.#redraw(); }
+  scrolled() {
+    this.#scrollUntil = performance.now() + 140;
+    clearTimeout(this.#settle);
+    this.#settle = setTimeout(() => { this.#scrollUntil = 0; this.invalidate(); }, 150);
+    this.invalidate();
+  }
+  // What covers each element in view, asked a few milliseconds a frame. One redraw at the end, and only if an
+  // answer changed what is drawn (something was covered after all).
+  #refining = 0; #refined = false;
+  #refine() {
+    if (this.#refining) return;
+    const same = (a, b) => (a === null || b === null ? a === b : Math.abs(a.left - b.left) < 0.5 && Math.abs(a.top - b.top) < 0.5 && Math.abs(a.right - b.right) < 0.5 && Math.abs(a.bottom - b.bottom) < 0.5);
+    const step = () => {
+      this.#refining = 0;
+      const t0 = performance.now(), view = { w: innerWidth, h: innerHeight }, memo = { rects: new Map(), styles: new Map() };
+      let left = false;
+      for (const [el, geo] of this.#geo) {
+        if (geo.exact) continue;
+        if (performance.now() - t0 > 6) { left = true; break; }
+        const box = el.isConnected ? visibleBox(el, geo.r, view, memo) : null;
+        if (!same(box, geo.box)) this.#refined = true;
+        geo.box = box; geo.exact = true;
+      }
+      if (left) { this.#refining = requestAnimationFrame(step); return; }
+      if (this.#refined) { this.#refined = false; this.#redraw(); }
+    };
+    this.#refining = requestAnimationFrame(step);
+  }
+  #redraw() {
     if (this.#scheduled) return;
     this.#scheduled = requestAnimationFrame(() => {
       this.#scheduled = 0;
@@ -568,15 +608,35 @@ export class MarkLayer {
     const memo = { rects: new Map(), styles: new Map() };
     const styleOf = (e) => { let v = memo.styles.get(e); if (!v) memo.styles.set(e, (v = getComputedStyle(e))); return v; };
     const tVis = performance.now();
+    const moved = this.#moved; this.#moved = false;
+    if (moved) this.#geo = new Map();
+    // mid-scroll: only what is lit is measured and drawn; the rest waits for the scroll to stop
+    const partial = moved && performance.now() < this.#scrollUntil;
+    const live = (item) => item.el === this.#pointed || item.el === this.#focused || item.el === this.#selected
+      || item.marks.some((m, k) => { const id = `${item.id}:${k}:${m.key}`; return id === this.#hinted || id === this.#lead || this.#lit.includes(id) || (this.#cause !== null && causeOf(m) === this.#cause); });
+    this.#svg.toggleAttribute('data-moving', partial);
+    let pending = false;
     for (const item of this.#items) {
       if (!item.el.isConnected) continue;
-      const r = item.el.getBoundingClientRect();
-      // in view, and visible: an element with visibility hidden has a box and is read, but there is nothing to see
-      const painted = item.el.checkVisibility ? item.el.checkVisibility({ visibilityProperty: true, contentVisibilityAuto: true }) : getComputedStyle(item.el).visibility !== 'hidden';
-      const near = r.bottom > 0 && r.top < view.h && r.right > 0 && r.left < view.w && r.width > 0 && r.height > 0 && painted;
-      // seen: what of it shows past its scroll containers and whatever the page paints over it. A covered element
-      // draws nothing, not even a hit area, so a click on the drawer over it never opens its chooser
-      const box = near && item.marks.length ? visibleBox(item.el, r, view, memo) : null;
+      let geo = this.#geo.get(item.el);
+      if (!geo) {
+        if (partial && !live(item)) continue;
+        const r = item.el.getBoundingClientRect();
+        // in view, and visible: an element with visibility hidden has a box and is read, but there is nothing to see
+        const painted = item.el.checkVisibility ? item.el.checkVisibility({ visibilityProperty: true, contentVisibilityAuto: true }) : getComputedStyle(item.el).visibility !== 'hidden';
+        const near = r.bottom > 0 && r.top < view.h && r.right > 0 && r.left < view.w && r.width > 0 && r.height > 0 && painted;
+        // seen: what of it shows past its scroll containers and whatever the page paints over it. A covered element
+        // draws nothing, not even a hit area, so a click on the drawer over it never opens its chooser
+        // what covers it costs five probes of the page (about a millisecond an element): asked at once for what is
+        // lit, and for the rest in slices after the frame, so a page with hundreds of marked elements in view is
+        // drawn now and corrected a moment later instead of blocking for most of a second
+        const wants = near && item.marks.length > 0, now = wants && live(item);
+        geo = { r, box: wants ? visibleBox(item.el, r, view, memo, now) : null, exact: !wants || now };
+        if (geo.box === null) geo.exact = true;
+        if (!geo.exact) pending = true;
+        this.#geo.set(item.el, geo);
+      }
+      const { r, box } = geo;
       // registration: what is off is drawn as a zone of heat (counted drift, and craft, advisories included)
       item.marks.forEach((mark, k) => { const zone = box && (counts(mark) || mark.family === 'craft') ? cutTo(zoneOf(item.el, mark, r, styleOf), box) : null; plan.push({ id: `${item.id}:${k}:${mark.key}`, item, mark, zone, er: r, heat: zone ? heatOf(mark, zone) : 0 }); });
     }
@@ -658,7 +718,7 @@ export class MarkLayer {
       void x; void y;
     }
     // hottest first, for Tab: the smaller of two overlapping boxes still wins a click (pick, above)
-    for (const p of byHeat) {
+    if (!partial) for (const p of byHeat) {
       const node = this.#nodes.get(p.id);
       if (!node) continue;
       const anchor = after ? after.nextSibling : this.#anchor.nextSibling;
@@ -673,6 +733,8 @@ export class MarkLayer {
     if (this.#lightMarkup) (this.#light.innerHTML = ''), (this.#lightMarkup = '');
     if (this.#dimPath) (this.#dim.style.removeProperty('clip-path'), (this.#dimPath = ''));
     performance.measure('plumb:marks-write-rest', { start: tRest });
+    if (pending) this.#refine();
+    if (partial) return; // the order is the whole page's: it is read again when the scroll stops
     this.#order = order;
     const key = order.map((o) => o.id).join(',');
     const tOrder = performance.now();

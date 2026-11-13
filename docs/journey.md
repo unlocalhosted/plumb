@@ -883,10 +883,19 @@
 - **The fix and the proof:** none; this is the measurement. crafting-ui scrolls at 57 frames a second alone and at 7 with plumber open and idle; the pointer goes from 60 to 15. algorecall goes from 12 to 3. Reading freezes the page for up to 0.6 s (small page) and 1.8 s (big). Headless, one run each; table in [engine-foundations.md](briefs/engine-foundations.md).
 - **Media hooks:** a screen recording of crafting-ui scrolling, alone and with plumber open, side by side.
 
+## With plumber open the app crawled; it was asking "what covers this?" four thousand times a frame (2026-11-13)
+- **The itch:** measured the same day: crafting-ui scrolled at 57 frames a second alone and 7 with plumber open and idle. The owner: "Yes, fix scrolling".
+- **How we found it:** a CPU profile of four seconds of scrolling and four of moving the pointer, plumber open. Both said the same: over 90% in one browser call, `elementsFromPoint`, from the function that works out how much of a marked element can be seen.
+- **The system behind it:** every frame re-measured everything, whatever had caused the frame. A pointer move changes what is lit, not where things are, and re-measured anyway. A scroll re-measured zones that are not even drawn until pointed at.
+- **What we tried, what we chose:** a cheaper probe (hide plumber's layer and ask for the top element only) looked 17 times faster until its answers were checked: it was hitting plumber's own layer. Done properly it saved 20%. So: ask less. Measure only when the page may have moved; mid-scroll measure only what is lit; confirm what is covered in slices after drawing.
+- **The fix and the proof:** plumber open, crafting-ui: scrolling 7 → 46 frames a second (alone 57), pointer 15 → 59 (alone 60). algorecall: scrolling 3 → 40, longest frame 0.98 s → 0.08 s, pointer 3 → 12 (alone 14). Pointing still lights a cause's places and its pill; zones follow a scroll (docs/media/marks-after-scroll-fix-2026-11-13.png). Headless, one run per state, no test. Not fixed: the page still freezes while it is read.
+- **Media hooks:** crafting-ui scrolling with plumber open, before and after, side by side; the screenshot above.
+
 ## Open gaps
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
 
 ## Shipped · 2026-W46
+- With plumber open, the app under it scrolls and answers the pointer nearly as it does alone (crafting-ui: 7 → 46 frames a second scrolling, 15 → 59 moving the pointer) ([entry](#with-plumber-open-the-app-crawled-it-was-asking-what-covers-this-four-thousand-times-a-frame-2026-11-13)).
 - plumber reads a 16,000-element page in about 15 s where it took 30–52 s: it asks the server about every element in a few round trips instead of 889, and redraws the page 3 times instead of 18 ([entry](#889-questions-asked-one-at-a-time-and-a-redraw-for-each-trickle-2026-11-13)).
 - plumber's server sends about a seventieth of what it did to draw a big page (811 MB → 12 MB on a 16,000-element page): a finding's edits travel only when a fix is applied ([entry](#811-mb-for-one-page-becomes-52-mb-2026-11-13)).
 - plumber judges a big page about once per read instead of four to six times: on a 16,000-element page its engine takes 2.1–3.1 s where it took 3.7–5.8 s, with the same findings ([entry](#the-page-was-judged-six-times-a-read-now-about-once-2026-11-13)).

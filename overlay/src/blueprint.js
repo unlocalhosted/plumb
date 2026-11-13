@@ -172,7 +172,7 @@ export class Blueprint {
       this.#layer.hidden = false;
       this.#reader.start(scope);
       performance.measure('plumb:reader-start', { start: t0 });
-      addEventListener('scroll', this.#invalidate, { passive: true, capture: true });
+      addEventListener('scroll', this.#scrolled, { passive: true, capture: true });
       addEventListener('resize', this.#invalidate);
       addEventListener('resize', this.#remeasure); // craft: a new layout is measured again
       addEventListener('pointermove', this.#point, { passive: true });
@@ -246,6 +246,8 @@ export class Blueprint {
   }
 
   #invalidate = () => { this.#marks.invalidate(); this.#selection.draw(); this.#walk.draw(); this.#focus(); };
+  // scrolling: the marks measure only what is lit until the page stops (blueprint-marks.js scrolled)
+  #scrolled = () => { this.#marks.scrolled(); this.#selection.draw(); this.#walk.draw(); this.#focus(); };
   // what the person is working on (the selection, else the walkthrough's element): the chrome keeps clear of it
   #focus() {
     const el = this.#selection.el ?? (this.#walk.active ? this.#walk.element : null);
@@ -721,7 +723,7 @@ export class Blueprint {
     this.#glass.off();
     this.#reader.stop();
     this.#marks.clear();
-    removeEventListener('scroll', this.#invalidate, { capture: true });
+    removeEventListener('scroll', this.#scrolled, { capture: true });
     removeEventListener('resize', this.#invalidate);
     removeEventListener('resize', this.#remeasure);
     this.#craft.invalidate();

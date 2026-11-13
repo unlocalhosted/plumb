@@ -51,6 +51,43 @@ remain the way to make reading not freeze the page.
 timed at 0.55–0.6 s on algorecall earlier today. It has not been confirmed for crafting-ui, where it would be
 smaller. First thing to find in layer 1.
 
+### After the first fix to the open state (2026-11-13, layer 1's first piece)
+
+A profile of both inputs said the same thing: over 90% of every frame was plumber asking the browser what covers
+each marked element in view, five probes an element, on every frame. A pointer move re-asked it though nothing had
+moved; a scroll re-asked it for zones that are not drawn at rest. A probe costs about 0.2 ms and a cheaper probe
+was tried and gave 20%, so the answer was to ask less often, not faster:
+
+- positions are measured only when the page may have moved; the pointer, focus and the fix in hand draw from what
+  was measured;
+- while the page scrolls, only what is lit is measured, the hit areas step aside, and everything is measured once
+  when it stops;
+- what covers each element is confirmed in slices of a few milliseconds a frame, after the frame is drawn from the
+  cheap half (cut to the view and its scroll containers). One redraw at the end, only if something was covered.
+
+| Plumber open, read finished | before | after | the app alone |
+|---|---|---|---|
+| crafting-ui, frames a second scrolling | 7 | 46 | 57 |
+| crafting-ui, longest frame scrolling | 0.50 s | 0.28 s | 0.07 s |
+| crafting-ui, frames a second moving the pointer | 15 | 59 | 60 |
+| algorecall, frames a second scrolling | 3 | 40 | 13 |
+| algorecall, longest frame scrolling | 0.98 s | 0.08 s | 0.10 s |
+| algorecall, frames a second moving the pointer | 3 | 12 | 14 |
+| algorecall, slowest answer to the pointer | 0.84 s | 0.46 s | 0.14 s |
+
+(algorecall scrolls faster with plumber open than alone because the page under it is inert.)
+
+Seen working on crafting-ui: pointing at a zone lights its six places and shows its pill; mid-scroll the hit areas
+step aside; after the scroll the zones are where the elements are (docs/media/marks-after-scroll-fix-2026-11-13.png).
+One run per state. No test run.
+
+What this costs: for up to about a second after the page moves, an element that is covered (under a drawer or a
+sticky header) can have a hit area it should not. It is corrected when the slices finish.
+
+Still there: crafting-ui's 0.28 s frame when a scroll stops (the full measure plus the app mounting its own
+examples); algorecall's 0.46 s answer to a pointer move; and **reading still freezes the page** (0.8 s on
+crafting-ui, 2.5 s on algorecall in this run), which is the snapshot and the worker.
+
 ## 1. What it has to carry
 
 The owner, 2026-11-13:
