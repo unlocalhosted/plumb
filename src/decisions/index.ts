@@ -104,6 +104,8 @@ export async function readDecisions(root: string, config: PlumbConfig, graph: St
     const family = familyFor(item.name) ?? inferred.get(item.name)?.family;
     if (family && !config.decisions?.[family]) add(defineDecisions([{ family, name: item.name, value: item.value, why: item.why, source: item.source, ...(item.tier ? { tier: item.tier } : {}) }])[0]!, item.tier !== undefined);
   }
+  // how each token was read: a guess says what decided it; a Tailwind name says its prefix
+  const readingOf = (name: string, family: Family) => inferred.get(name)?.family === family ? inferred.get(name)!.why : familyFor(name) === family ? `its name begins ${/^--[a-z]+(?:-(?:inset|drop|mono|line))?-/.exec(name)?.[0] ?? name}` : undefined;
   for (const [family, source] of Object.entries(config.decisions ?? {})) {
     if (typeof source.from === 'function') {
       const records = await source.from();
@@ -182,6 +184,7 @@ export async function readDecisions(root: string, config: PlumbConfig, graph: St
     resolveRecord(record);
     return [record];
   });
+  for (const record of [...decisions.values(), ...inventory]) { const reading = record.reading ?? readingOf(record.name, record.family); if (reading) record.reading = reading; }
   tokenReasons([...decisions.values(), ...inventory]);
   const spacing = readSpacing(raw, [...decisions.values()], variables, themeNames);
   return { numericSpacing: spacing.numeric, ...(spacing.numeric || !spacing.base ? {} : { spacingBase: spacing.base }), inventory, defined, frameworkVariables, definitions: raw, decisions: [...decisions.values()].sort((a, b) => a.family.localeCompare(b.family) || a.name.localeCompare(b.name)), variables, theme: new Set(theme.map(item => item.name)) };

@@ -72,6 +72,8 @@ export interface Decision {
   origin: Origin;
   tier: Tier;
   why: string;
+  /** How React Plumber read this token as its family: its name's prefix, or what its value, uses and name said. */
+  reading?: string;
   /** Shared recipe/group description, never displayed as this token's reason. */
   groupWhy?: string;
   source: { file: string; line: number };

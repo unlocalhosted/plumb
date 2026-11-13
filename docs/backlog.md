@@ -339,7 +339,7 @@ and none in `web/design/parts`.
   motion). Missing: the config saying why each token was taken as what it is, and the page showing it, so a wrong
   reading is seen and corrected in one place.
   **Slice 1 built (journey 34):** a token's kind from value, use and name (`src/decisions/infer.ts`), and `:host`
-  as root. Since: token files a script reads by path, and `:host()` selectors read without a crash. Since: whole text styles count by their parts. Left: the reason for each reading written to the config and shown.
+  as root. Since: token files a script reads by path, and `:host()` selectors read without a crash. Since: whole text styles count by their parts; each token's reading is printed by `plumber decisions` and written into the config by `plumber init`. Left: the page that shows the reading; the reason for each reading written to the config and shown.
 
 ### The command line
 

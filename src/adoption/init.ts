@@ -1,3 +1,4 @@
+import type { Decision } from '../report.js';
 import { statePath } from '../paths.js';
 import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
@@ -30,14 +31,32 @@ import { familyFor } from '../decisions/index.js';
 const defaults = ['hover-gate', 'focus-outline', 'transition-named', 'no-ease-in'];
 const pathFrom = (root: string, file: string) => relative(root, file).replaceAll('\\', '/');
 
+// A stem every token of one file shares and no token of another family does (`--pl-space-` for --pl-space-1 to -8):
+// one line in the config for the whole scale, so it reads as the system it is and is corrected in one place
+function stems(decisions: Decision[]): Map<Decision, string> {
+  const byFile = new Map<string, Decision[]>();
+  for (const d of decisions) byFile.set(d.source.file, [...byFile.get(d.source.file) ?? [], d]);
+  const result = new Map<Decision, string>();
+  for (const group of byFile.values()) for (const d of group) {
+    const parts = d.name.split('-');
+    for (let cut = parts.length - 1; cut >= 3; cut--) {
+      const stem = parts.slice(0, cut).join('-') + '-';
+      const sharing = group.filter(other => other.name.startsWith(stem));
+      if (sharing.length > 1 && sharing.every(other => other.family === d.family)) { result.set(d, `${stem}*`); break; }
+    }
+  }
+  return result;
+}
+
 function decisionSources(report: Report): NonNullable<PlumbConfig['decisions']> {
   const sources: Partial<Record<Family, DecisionSource>> = {};
-  for (const decision of currentDecisions(report)) {
+  const current = currentDecisions(report), stemOf = stems(current);
+  for (const decision of current) {
     const entry = sources[decision.family] ??= { inferred: true, from: [] };
     // Name live files rather than freeze today's values. New theme keys remain
     // visible through the engine's independent decision inventory.
     const prefix = /^--[^-]+-/.exec(decision.name)?.[0];
-    const pattern = prefix && familyFor(`${prefix}x`) === decision.family ? `${prefix}*` : decision.name;
+    const pattern = prefix && familyFor(`${prefix}x`) === decision.family ? `${prefix}*` : stemOf.get(decision) ?? decision.name;
     const source = decision.source.file.endsWith('.css') ? `css:${pathFrom(report.root, decision.source.file)}#${pattern}` : `theme:${pattern}`;
     const from = entry.from as string[];
     if (!from.includes(source)) from.push(source);
@@ -135,6 +154,17 @@ export async function initProject(root: string, options: InitOptions, print: (te
       `// Components: ${components.length} found${from && useShadcn ? ` from ${from}` : ''}.\n` +
       components.map(component => `// ${component.name}: ${pathFrom(root, component.source.file)}:${component.source.line}\n`).join('') +
       `export default ${serialized};\n`;
+    // each token source says how its tokens were read, so a wrong reading is seen here and fixed by moving the line
+    const readings = new Map<string, string[]>();
+    for (const [family, source] of Object.entries(sources)) for (const pattern of (Array.isArray(source?.from) ? source.from : []) as string[]) {
+      const [, , path, glob] = /^(css|theme):(?:(.*)#)?(.+)$/.exec(pattern) ?? [];
+      if (!glob) continue;
+      const like = new RegExp(`^${glob.split('*').map(part => part.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('.*')}$`);
+      const members = currentDecisions(report).filter(d => d.family === family && like.test(d.name) && (!path || pathFrom(root, d.source.file) === path));
+      const reasons = [...new Set(members.flatMap(d => (d.reading ?? '').split('; ')).filter(Boolean).map(reason => reason.replace(/ (?:once|\d+ times)$/, '')))];
+      if (reasons.length) readings.set(JSON.stringify(pattern), [`${members.length} ${members.length === 1 ? 'token' : 'tokens'}`, ...reasons.slice(0, 2), ...(reasons.length > 2 ? [`${reasons.length - 2} more reasons`] : [])]);
+    }
+    text = text.replace(/^(\s+)("(?:css|theme):[^"\n]+")(,?)$/gm, (line, indent: string, pattern: string, comma: string) => readings.has(pattern) ? `${indent}${pattern}${comma} // ${readings.get(pattern)!.join('; ')}` : line);
     const habits = report.habits ?? [];
     text = text.replace(/"habits": \[[\s\S]*?\n  \]/, '"habits": [\n' + habits.map(habit =>
       `    ${defaults.includes(habit.id) ? '' : '// '}${JSON.stringify(habit.id)}, // ${habit.breaks ?? 0} breaks`).join('\n') + '\n  ]');
