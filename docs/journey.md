@@ -1100,6 +1100,16 @@
 - **Honest limits:** the fixed pages are my reading of each advice line, applied by hand. Nothing yet applies advice mechanically, and the five new tests were not run against the code before the two fixes to see them fail.
 - **Media hooks:** the two ping-pong cases, before and after.
 
+## The lock, put to a model checker (2026-11-14)
+- **The itch:** the owner shared tla-ts and asked whether it could enforce correctness "across the rules and in the system", then chose "Model server state".
+- **How we found it:** the file lock that keeps two plumber processes from writing the ledger at once (on main) was written out as a model, one file operation per step, with processes that can die at any step and files that go stale once their owner is dead. The checker was asked one thing: can two live processes ever be inside at once?
+- **What it found:** yes. With three processes and one death, never (1,151 states). With four and two deaths, in 31 steps: the holder dies; a waiter starts the take-over, creates the guard file and dies holding it; two later waiters both see the stale guard; one removes it and makes its own, and the other, already past its look, removes that fresh guard and makes its own too; both then see the stale lock; one removes it, takes the lock and works; the other removes that fresh lock, takes it and works.
+- **The system behind it:** "look at the file, then remove it" is two steps, in two places. Between them the file at that path can become a different file. The lock's three rules each assumed the file looked at is the file removed.
+- **What we tried, in the model first:** guard files named for the one lock they are for, with a level; a stale guard is never removed by a waiter, who goes up a level instead; under its guard a taker removes the lock only if it still holds that token. With four processes and two deaths, where the lock as written fails: no error in 195,504 states, and a dead holder never blocks the rest. Five processes and three deaths ran out of memory on the laptop after 22 million states with no error found, so that run proves nothing.
+- **How likely it is:** very unlikely. It needs two processes to die in particular places (one of them inside a few lines), ten seconds to pass twice, and two waiters to interleave inside gaps of a few instructions. What it would cost: one lost ledger or change-log write.
+- **Not done:** the fix is a model, not code. The lock on main is unchanged. Nothing ties the model to the code but my reading of it.
+- **Media hooks:** the 31-step trace (specs/lock/README.md says how to run it); tla-ts's own output.
+
 ## Open gaps
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
 
