@@ -6,7 +6,7 @@ import { randomBytes, createHash } from 'node:crypto';
 import { ChangeLog, byLine, locate } from './changes.js';
 import type { ChangeRecord, TraceEntry } from './changes.js';
 import type { FSWatcher } from 'node:fs';
-import { stat, lstat, readdir, readFile, realpath, open, rm } from 'node:fs/promises';
+import { stat, lstat, readdir, readFile, realpath, open, rm, appendFile, mkdir } from 'node:fs/promises';
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { Worker } from 'node:worker_threads';
 import { EventEmitter } from 'node:events';
@@ -277,6 +277,7 @@ export class Session extends EventEmitter {
       await session.start(); await session.scan(true);
       await session.request('inventory', { files: session.retainedFiles() });
       if (options.watch !== false) session.observe();
+      await session.checkKept().catch(() => {});
       session.keepLater();
       return session;
     } catch (error) { await session.close(); throw error; }
@@ -492,7 +493,7 @@ export class Session extends EventEmitter {
       }
       if (!local) await this.retainLocations(new Set());
       this.failure = undefined; this.failurePaths = [];
-      this.revision++; this.pageGeneration++; this.emit('change', changed); this.keepLater();
+      this.revision++; this.pageGeneration++; this.emit('change', changed); this.keepLater(true);
     } catch (error) { this.failure = error as Error; this.failurePaths = changed; throw error; }
     return changed;
   }
@@ -1935,8 +1936,68 @@ export class Session extends EventEmitter {
   private kept: (KeptStats & { ms: number; packMs: number; longestMs: number; slices: number; at: number; directory: string }) | undefined;
   private keepTimer?: NodeJS.Timeout;
   private keeping = false;
-  private keepLater(): void {
+  private keptDirectory(): string {
+    return join(cacheDirectory(this.root), 'kept', createHash('sha256').update(JSON.stringify(['kept-v2', buildId(), process.versions.v8, this.root])).digest('hex').slice(0, 32));
+  }
+  /** What a directory holds, as one hash of its files' and folders' names: a listing, not a timestamp, so a checkout
+   * that puts the same files back reads as unchanged. */
+  private listing(files: Iterable<string>, children: Iterable<string>): string {
+    return createHash('sha256').update(JSON.stringify([[...files].sort(), [...children].sort()])).digest('hex').slice(0, 16);
+  }
+  /** Every input the server goes by, as it stands now: each known file with its hash, each listed directory with its listing. */
+  private inputs_(): { files: [string, string][]; directories: [string, string][] } {
+    const order = ([a]: [string, unknown], [b]: [string, unknown]) => a < b ? -1 : a > b ? 1 : 0;
+    return { files: [...this.hashes].sort(order),
+      directories: [...this.directories.keys()].map(path => [path, this.listing(this.directoryFiles.get(path) ?? [], this.directoryChildren.get(path) ?? [])] as [string, string]).sort(order) };
+  }
+  /**
+   * Check only (docs/briefs/server-warm-start.md, layer 2). On start, the kept table's receipt is held against the
+   * project as it is now. Nothing is answered from the table. If the receipt holds, the table the fresh analysis
+   * produces is compared with the kept one when it lands: the same, or not. Each start writes one line to
+   * warm.jsonl beside the table, so the evidence accumulates across days of ordinary work.
+   */
+  private warm: { receipt: 'none' | 'valid' | 'changed' | 'damaged'; checkMs: number; table?: string; changed?: { files: number; directories: number; sample: string[] };
+    /** true or false once the fresh table has landed; null when a change came before it could be compared */ matched?: boolean | null } | undefined;
+  private async checkKept(): Promise<void> {
+    if (this.options.keep === false || environment('KEEP') === '0') return;
+    const start = performance.now(), directory = this.keptDirectory();
+    const done = async (warm: NonNullable<Session['warm']>) => { this.warm = { ...warm, checkMs: Math.round(performance.now() - start) }; this.emit('kept', this.warm); if (warm.receipt !== 'valid') await this.warmLine(); };
+    let receipt: { version?: number; table?: string; files?: [string, string][]; directories?: [string, string][] };
+    try { receipt = JSON.parse(await readFile(join(directory, 'receipt.json'), 'utf8')); } catch { return done({ receipt: 'none', checkMs: 0 }); }
+    if (receipt.version !== 2 || !Array.isArray(receipt.files) || !Array.isArray(receipt.directories)) return done({ receipt: 'none', checkMs: 0 });
+    // the table the receipt speaks for must be the one on disk
+    let table: string | undefined;
+    try { table = createHash('sha256').update(await readFile(join(directory, 'readings.v8'))).digest('hex'); } catch { /* no table */ }
+    if (!table || table !== receipt.table) return done({ receipt: 'damaged', checkMs: 0 });
+    const sample: string[] = []; let files = 0, directories = 0;
+    const note = (what: string) => { if (sample.length < 8) sample.push(what); };
+    // every file the receipt names has the hash it had (a file the server has not come across yet this time is read
+    // for it), and every file the server knows now is one the receipt names
+    const before = new Map(receipt.files);
+    for (const [path, hash] of before) {
+      let now = this.hashes.get(path);
+      if (now === undefined) { try { now = sourceHash(await readFile(path, 'utf8')); } catch { now = undefined; } }
+      if (now !== hash) { files++; note(`${now === undefined ? 'gone' : 'changed'}: ${relative(this.root, path)}`); }
+    }
+    for (const path of this.hashes.keys()) if (!before.has(path)) { files++; note(`new: ${relative(this.root, path)}`); }
+    for (const [path, listing] of receipt.directories) {
+      let now: string | undefined;
+      if (this.directories.has(path)) now = this.listing(this.directoryFiles.get(path) ?? [], this.directoryChildren.get(path) ?? []);
+      else try { const entries = await readdir(path, { withFileTypes: true }); now = this.listing(entries.filter(e => e.isFile()).map(e => resolve(path, e.name)), entries.filter(e => e.isDirectory()).map(e => resolve(path, e.name))); } catch { now = undefined; }
+      if (now !== listing) { directories++; note(`listing: ${relative(this.root, path) || '.'}`); }
+    }
+    return done(files || directories ? { receipt: 'changed', checkMs: 0, changed: { files, directories, sample } } : { receipt: 'valid', checkMs: 0, table });
+  }
+  private async warmLine(): Promise<void> {
+    if (!this.warm) return;
+    const { table: _table, ...said } = this.warm;
+    await mkdir(dirname(this.keptDirectory()), { recursive: true }).catch(() => {});
+    await appendFile(join(dirname(this.keptDirectory()), 'warm.jsonl'), JSON.stringify({ at: new Date().toISOString(), build: buildId(), ...said }) + '\n').catch(() => {});
+  }
+  private keepLater(changed = false): void {
     if (this.closed || this.options.keep === false || environment('KEEP') === '0') return;
+    // a change before the fresh table landed: there is nothing left to compare the kept one with
+    if (changed && this.warm?.receipt === 'valid' && this.warm.matched === undefined) { this.warm.matched = null; void this.warmLine(); }
     if (this.keepTimer) clearTimeout(this.keepTimer);
     this.keepTimer = setTimeout(() => { void this.keep().catch(error => this.emit('diagnostic', error)); }, this.options.keepAfter ?? 5000);
     this.keepTimer.unref();
@@ -1945,23 +2006,26 @@ export class Session extends EventEmitter {
     if (this.closed || this.keeping || this.failure) return;
     this.keeping = true;
     try {
-      const revision = this.revision;
-      const directory = join(cacheDirectory(this.root), 'kept', createHash('sha256').update(JSON.stringify(['kept-v1', buildId(), process.versions.v8, this.root])).digest('hex').slice(0, 32));
-      const files = [...this.hashes].sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0), directories = [...this.directories].sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0);
+      const revision = this.revision, directory = this.keptDirectory();
+      const { files, directories } = this.inputs_();
+      // the kept table this start's receipt check stood behind, if it has not been compared yet
+      const awaited = this.warm?.receipt === 'valid' && this.warm.matched === undefined ? this.warm.table : undefined;
       // a slice at a time, each through the same queue the reads use: a question asked meanwhile goes in between
       let stats: KeptStats & { ms: number; packMs: number; longestMs: number; slices: number } | undefined;
       while (!stats) {
         if (revision !== this.revision || this.closed) return;
-        const step = await this.serializeRead(() => this.request<{ done: false } | ({ done: true } & KeptStats & { ms: number; packMs: number; longestMs: number; slices: number })>('keep', { directory }));
+        const step = await this.serializeRead(() => this.request<{ done: false } | ({ done: true } & KeptStats & { ms: number; packMs: number; longestMs: number; slices: number })>('keep', { directory, ...(awaited ? { previous: awaited } : {}) }));
         if (step.done) stats = step;
       }
       // something changed while it was being written: it describes a project that is gone, and the change has
       // already asked for another
       if (revision !== this.revision || this.closed) return;
-      await atomicWrite(join(directory, 'receipt.json'), JSON.stringify({ version: 1, build: buildId(), v8: process.versions.v8, root: this.root, table: stats.hash, files, directories }));
+      await atomicWrite(join(directory, 'receipt.json'), JSON.stringify({ version: 2, build: buildId(), v8: process.versions.v8, root: this.root, table: stats.hash, files, directories }));
       // one table per project: a table kept by another build of plumber can never be read by this one
-      for (const other of await readdir(dirname(directory)).catch(() => [] as string[])) if (join(dirname(directory), other) !== directory) await rm(join(dirname(directory), other), { recursive: true, force: true }).catch(() => {});
+      for (const other of await readdir(dirname(directory)).catch(() => [] as string[])) if (other !== 'warm.jsonl' && join(dirname(directory), other) !== directory) await rm(join(dirname(directory), other), { recursive: true, force: true }).catch(() => {});
       this.kept = { ...stats, at: Date.now(), directory };
+      // the check: with the same inputs, is the fresh table the kept one?
+      if (awaited && this.warm) { this.warm.matched = stats.hash === awaited; await this.warmLine(); }
       this.emit('kept', this.kept);
     } finally { this.keeping = false; }
   }
@@ -1989,7 +2053,7 @@ export class Session extends EventEmitter {
     });
   }
   health() {
-    return Promise.resolve({ ...this.healthSnapshot, ...(this.kept ? { kept: this.kept } : {}), work: { ...this.healthSnapshot.work, reconciliations: this.reconciliations, recipeIndexes: this.recipeIndexes }, status: this.failure ? 'invalid' : 'ready', root: this.root,
+    return Promise.resolve({ ...this.healthSnapshot, ...(this.kept ? { kept: this.kept } : {}), ...(this.warm ? { warm: (({ table: _table, ...said }) => said)(this.warm) } : {}), work: { ...this.healthSnapshot.work, reconciliations: this.reconciliations, recipeIndexes: this.recipeIndexes }, status: this.failure ? 'invalid' : 'ready', root: this.root,
       ...(this.outsideSources.size ? { outsideSource: [...this.outsideSources].filter(file => !this.sourceFiles.has(file)) } : {}),
       revision: this.revision, pid: process.pid, rss: process.memoryUsage().rss,
       ...(this.failure ? { diagnostic: this.failure.message } : {}) });

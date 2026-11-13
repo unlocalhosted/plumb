@@ -9,7 +9,7 @@ import type { Report } from '../report.js';
 import { drawn } from '../report.js';
 import { ReadingPacker } from './kept.js';
 import { atomicWrite } from '../atomic-write.js';
-import { mkdir } from 'node:fs/promises';
+import { mkdir, rename } from 'node:fs/promises';
 import { join } from 'node:path';
 import { finishMessages } from '../messages.js';
 import { causesOf } from '../causes.js';
@@ -364,6 +364,8 @@ async function dispatch(method: string, params: Record<string, unknown>): Promis
     spent = performance.now() - finish; job.worked += spent; job.longest = Math.max(job.longest, spent);
     keeping = undefined;
     await mkdir(params.directory as string, { recursive: true });
+    // the check found the same inputs and a different table: the old one is set aside to be looked at, not lost
+    if (typeof params.previous === 'string' && params.previous !== stats.hash) await rename(join(params.directory as string, 'readings.v8'), join(params.directory as string, 'readings.mismatch.v8')).catch(() => {});
     await atomicWrite(join(params.directory as string, 'readings.v8'), data);
     return { done: true, ...stats, packMs: Math.round(job.worked), longestMs: Math.round(job.longest), slices: job.slices, ms: Math.round(performance.now() - job.started) };
   }
