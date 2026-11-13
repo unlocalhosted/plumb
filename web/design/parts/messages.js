@@ -85,24 +85,24 @@ export function mount(host, root, css) {
     /* ── the toast as a toy (proposed; would replace .wt) ─────────────────────────────────────────────────────
        one body in the hue of what happened, lit from above, on a shadow of its own colour. It is not a button, so it
        has no side to press down onto. A white disc carries the one mark; the bar under it is the time it has left */
-    .mt { --h: var(--pl-mint); --f: var(--pl-mint-face); --i: var(--pl-mint-ink);
+    .mt { --h: var(--pl-mint); --f: var(--pl-mint-block); --i: var(--pl-mint-block-on); --s: var(--pl-mint-soft);
       position: relative; display: inline-flex; align-items: center; gap: 10px; max-width: min(460px, 100%); box-sizing: border-box; min-height: 44px; padding: 7px 8px 7px 9px; border-radius: 22px;
-      background: linear-gradient(180deg, color-mix(in oklab, var(--f) 78%, #fff), var(--f)); color: var(--i); font: 600 13.5px/18px var(--pl-sans); text-align: left;
-      box-shadow: inset 0 1.5px 0 0 color-mix(in oklab, #fff 65%, transparent), inset 0 -2px 0 0 color-mix(in oklab, var(--h) 26%, transparent),
-        0 16px 22px -14px color-mix(in oklab, var(--h) 75%, transparent), 0 3px 5px -2px color-mix(in oklab, var(--h) 38%, transparent); }
-    .mt[data-kind="yours"] { --h: var(--pl-butter); --f: var(--pl-butter-face); --i: var(--pl-butter-ink); }
-    .mt[data-kind="wrong"] { --h: var(--pl-coral); --f: var(--pl-coral-face); --i: var(--pl-coral-ink); }
-    .mt[data-kind="busy"] { --h: var(--pl-ink-2); --f: var(--pl-paper); --i: var(--pl-ink); box-shadow: inset 0 0 0 1.5px var(--pl-border-default), 0 14px 20px -14px rgb(0 0 0 / .3); }
+      background: linear-gradient(180deg, color-mix(in oklab, var(--f) 88%, #fff), var(--f)); color: var(--i); font: 700 14px/18px var(--pl-sans); text-align: left;
+      box-shadow: inset 0 1.5px 0 0 color-mix(in oklab, #fff 45%, transparent), inset 0 -2px 0 0 color-mix(in oklab, #000 12%, transparent),
+        0 16px 22px -14px color-mix(in oklab, var(--f) 75%, transparent), 0 3px 5px -2px color-mix(in oklab, var(--f) 38%, transparent); }
+    .mt[data-kind="yours"] { --h: var(--pl-butter-line); --f: var(--pl-butter); --i: var(--pl-butter-on); --s: var(--pl-butter-soft); }
+    :host([data-scheme="dark"]) .mt[data-kind="yours"] { --h: var(--pl-butter); --f: var(--pl-butter-soft); --i: #fff; --s: color-mix(in oklab, var(--pl-butter) 25%, transparent); }
+    .mt[data-kind="wrong"] { --h: var(--pl-coral); --f: var(--pl-coral-block); --i: var(--pl-coral-block-on); --s: var(--pl-coral-soft); }
+    .mt[data-kind="busy"] { --h: var(--pl-ink-2); --f: var(--pl-paper); --i: var(--pl-ink); font-weight: 600; box-shadow: inset 0 0 0 1.5px var(--pl-border-default), 0 14px 20px -14px rgb(0 0 0 / .3); }
     .mt .disc { flex: none; display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: var(--pl-cut); color: var(--h);
-      box-shadow: 0 1.5px 0 0 color-mix(in oklab, var(--h) 40%, transparent); }
-    .mt[data-kind="yours"] .disc { color: var(--pl-butter-line); }
+      box-shadow: 0 1.5px 0 0 color-mix(in oklab, #000 18%, transparent); }
     .mt[data-kind="busy"] .disc { background: none; box-shadow: none; }
     .mt .disc svg { display: block; width: 16px; height: 16px; }
     .mt .turn { display: block; animation: mt-turn 900ms steps(8) infinite; } .mt .turn svg { width: 22px; height: 22px; }
     .mt .say { min-width: 0; padding-right: 6px; }
-    .mt .say code { font: 600 12px/1 var(--pl-mono); padding: 2px 5px; border-radius: 6px; background: color-mix(in oklab, var(--pl-cut) 62%, transparent); white-space: nowrap; }
+    .mt .say code { font: 600 12px/1 var(--pl-mono); padding: 2px 5px; border-radius: 6px; background: color-mix(in oklab, var(--i) 20%, transparent); white-space: nowrap; }
     .mt .tb { flex: none; }
-    .mt .bar { position: absolute; left: 24px; right: 24px; top: calc(100% + 7px); height: 4px; border-radius: 2px; background: color-mix(in oklab, var(--h) 22%, transparent); overflow: hidden; }
+    .mt .bar { position: absolute; left: 24px; right: 24px; top: calc(100% + 7px); height: 4px; border-radius: 2px; background: var(--s); overflow: hidden; }
     .mt .bar i { display: block; height: 100%; border-radius: 2px; background: var(--h); transform-origin: left; animation: mt-time ${HOLD}ms linear both; }
     .mt:hover .bar i, .mt:focus-within .bar i { animation-play-state: paused; }
     .mt.still .bar i { animation: none; scale: .6 1; }
@@ -123,7 +123,6 @@ export function mount(host, root, css) {
     .show > small { position: absolute; left: 22px; top: 18px; font: var(--pl-round-w, 700) 13px/1 var(--pl-round); color: var(--pl-text-secondary); }
     .show .wt:not([data-on]) { pointer-events: none; }
     .ask { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 18px; }
-    .ask span { font: 500 13px/18px var(--pl-sans); color: var(--pl-text-secondary); margin-left: 6px; }
 
     /* what it is made of: one, large, with its parts named */
     .anat { display: grid; grid-template-columns: auto 1fr; gap: 28px; align-items: center; margin-top: 16px; }
@@ -172,9 +171,9 @@ export function mount(host, root, css) {
   <h2>What a toast is made of</h2>
   <div class="anat"><div class="big">${toy('done', SAYS.changed[1], { undo: true, still: true })}</div>
     <ol>
-      <li><b>The body.</b> One solid shape in one hue, lit from above, on a shadow of its own colour. It has no side under it, because it is not something you press.</li>
+      <li><b>The body.</b> One solid shape in the full hue, lettered in white like a button’s top, lit from above, on a shadow of its own colour. It has no side under it, because it is not something you press.</li>
       <li><b>The disc.</b> A white hole with one mark in the body’s hue: a tick, a return arrow, an exclamation mark. It pops a beat after the toast lands.</li>
-      <li><b>The words.</b> One sentence in the hue’s ink. Names from your code are set as code, on a paler chip, so you can find them with your eye.</li>
+      <li><b>The words.</b> One bold sentence cut out in white. Names from your code are set as code, on a chip, so you can find them with your eye.</li>
       <li><b>Undo.</b> The system’s quiet button, small: it goes down under the finger like every other button.</li>
       <li><b>The time.</b> A bar under the body runs out over six seconds, so the toast never leaves by surprise. Pointing at the toast holds it.</li>
     </ol></div>
