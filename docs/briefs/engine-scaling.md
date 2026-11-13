@@ -168,6 +168,41 @@ The clock did not move with this one: the bytes are no longer where the time is.
 What the 12 MB is: half of the 5.9 MB is the same reading sent again (742 distinct readings for 2,064 elements,
 2.2 MB of 5.1 MB), and a full file path repeated on every declaration. That is rule 4, tables.
 
+### The server checked every file four times a second (2026-11-13)
+
+Looking for why the first read after a restart is slow turned up two things on plumber's server, on algorecall
+(22,808 known files, 3,515 directories, 10,565 of the files dependencies).
+
+**1. The safety-net check ran every 250 ms whatever it cost.** Under the file watcher there is a timer that checks
+every known file again, because an event can be missed. On this app one check is about 0.2 s, so the server's
+thread was busy most of the time, for as long as the dev server ran, and every read waited behind a check. Counted
+with the server idle and nobody connected: 39 full checks in 12 s. The timer is now paced by its own last cost: at
+most a twentieth of the thread while a native watcher is also reporting, a quarter when polling is all there is.
+A small project still checks every 250 ms.
+
+**2. The same file was read and hashed several times a run.** Each cache that lists a file as an input hashes it
+when read and again when saved. A file's hash is now kept while its size, time and inode are the same. `plumber
+check` on algorecall: 51.8 s → 42.2 s, the report identical apart from its own timings.
+
+| algorecall, problems list, warm server | before | after |
+|---|---|---|
+| Headless read, reading 3 s after the page loads | 14.8–17.3 s | 10.4, 11.6, 12.8 s (clean runs) |
+| Headless read, reading 8 s after the page loads | not measured before | 6.5, 7.0, 10.8 s |
+| Read through the overlay itself, 8 s after load | not measured before | 5.7, 7.0, 8.7 s |
+| Longest block of the main thread from plumber | 0.33 s | 0.26 s |
+
+The machine was busy with another agent's test run (load 5–6) for these; they are not quiet-machine numbers.
+
+**The 0.8 s and 2.5 s blocks were the app, not plumber.** They appear only when the read starts 3 s after the page
+loads, while algorecall is still mounting its own 500 rows; with plumber's scripts blocked the same page shows the
+same blocks. Reads that start after the app has settled have none. Two entries above called them plumber's; they
+were not.
+
+**Not fixed: the cold start itself.** After a dev server restart plumber's server takes 41–44 s to read algorecall
+before it answers anything. That is the analysis (finding components about 12 s, provenance 5.6 s, the stylesheets
+and declarations 5 s) plus a 2.6 s first scan. One odd number in it: the module cache reports 0 hits and 7,715
+misses on a second run. Not looked into.
+
 Raw tables were printed to the session's scratch folder and are not kept; run the timer again rather than trust
 these to the millisecond.
 

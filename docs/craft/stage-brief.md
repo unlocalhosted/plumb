@@ -88,4 +88,82 @@ The qualities:
 
 ## Decisions
 
-Settled: one click runs the whole moment; the lesson is quiet and always there, below the fold.
+Settled then, **superseded 2026-11-13**: one click runs the whole moment (it started the lesson at "show me fixed" and dropped the act where the fault simply happens; see storyboard v2 and the skill's §3⅝); the lesson is quiet and always there, below the fold.
+
+---
+
+## Storyboard v2: show the problem, show how the fix works, then pay it off (2026-11-13)
+
+**The itch (owner, 2026-11-12 and 13):** "our showcase is being rushed … we don't show the problem very well, we rush the
+fix and don't have good payoff."
+
+**The reference:** maybepratikk's bold-on-hover tabs (~/Downloads/twitter_media_harvest/maybepratikk-2121151672756138484-01.mp4,
+22.8 s, read at 2 and 6 frames a second). Qualities taken, never its component, words or numbers.
+
+### What it does, measured
+
+| Time | Act | What happens |
+|---|---|---|
+| 0 – 4.5 s | **It happens** | At real size, nothing drawn. The pointer runs over each tab in turn, and the row jitters each time. You feel the fault before anyone names it. |
+| 4.5 – 5.5 s | camera in | Eases in to about 1.7×. |
+| 5.5 – 10.5 s | **Measure it** | Each tab's own box becomes a dashed guide. Hovering one tab: a red pill over it (its width, before → after) and a red "+2px" at every neighbour's edge that moved, with a hairline down that edge. The gesture is **repeated three times**; the marks come and go with it, so the number is tied to the motion. Then the **cause, in words**: "Bold is 2px wider". About 5 s in all. |
+| 11 – 11.5 s | the switch | The red marks fade, then the switch is pressed (Shifts → Stable). |
+| 12 – 14.5 s | **How the fix works** | The guides turn red → blue. The fix's hidden part is drawn: a faint bold copy of every label drops in under it (the space it reserves), with a blue pill counting "reserves 111px → 112px". It holds about 2 s, then folds back up out of sight. |
+| 15 – 19 s | **Payoff** | The same gesture as before, on every tab, one after another (~0.7 s each): a blue "124px → 124px" over it and "+0px" at every neighbour. Same ruler, same places, now zero. |
+| 19.5 – 22.8 s | out | Camera out; rest; the row is calm under the pointer. |
+
+**The proportions, measured** (pink and blue pill pixels counted in every frame at 10 fps): red marks on 5.7–6.9 s and
+7.7–10.8 s; blue on 13.4–15.5 s (the reserved copy) and 16.2–19.4 s (the payoff).
+
+| | Problem (incl. its live act) | Fix (working + payoff) | Problem ÷ fix |
+|---|---|---|---|
+| Bold-hover tabs (this reference) | 10.8 s | 6.7 s | 1.6× |
+| The ledger (first reference) | 5.9 s | 1.8 s | 3.3× |
+| Our stage | 1.4 s of marks, no live act | 1.7 s (0.4 s glide + 1.3 s hold) | 0.8× |
+
+### Why ours is rushed (the system, not the timings)
+
+1. **The problem is never seen happening.** Our moment starts from the switch, so the first thing anyone sees is
+   marks. The fault has to happen first, live and unannotated.
+2. **The number isn't tied to anything.** Our pills appear once and sit there. In the reference, the measure comes and
+   goes with the gesture, and the cause is said in words after the number.
+3. **The fix is a glide, not an explanation.** We morph to the fixed state. The reference draws *why* it works (the
+   reserved bold copy) before showing that it does.
+4. **There is no payoff.** We hold on the fixed state. The reference repeats the exact gesture with the exact ruler on
+   every instance, and the numbers read zero.
+
+### The storyboard to build (one stage, named timing)
+
+```
+ACT 1  IT HAPPENS                                   (~3–4.5 s)
+   0ms   the broken side at rest size, nothing drawn
+         the moment real use brings, played over each instance: a gesture with a drawn
+         pointer, or the content changing (data arriving, a longer name, a narrower width)
+ACT 2  MEASURE IT                                   (~5 s)
+  4000   camera eases in (1000ms, our in-curve)
+  5000   guides grow from each instance's own geometry (coral, dashed, 1px with halo)
+  5300   the gesture (or spotlight) again; coral pills count up as it lands; gone as it leaves   × 2–3
+  8500   the cause in words, one pill under the subject ("Bold is 2px wider")
+ 10000   coral marks fade (300ms)
+ACT 3  HOW THE FIX WORKS                            (~3 s)
+ 10300   the switch presses itself (its own spring); it names what you see on each side
+ 10600   guides turn coral → mint; the fix's working is drawn (Example.mechanism):
+         what the fix adds, made visible for a moment, with a mint pill counting to its value
+ 12600   the mechanism folds away; the fix stays
+ACT 4  PAYOFF                                        (~4 s)
+ 13000   the same gesture / spotlight, on every instance, ~700ms each:
+         the same pill in mint, reading the fixed number (+0px, ✓)
+ 17000   marks out, camera out (900ms)
+ 18000   rest; the viewer's switch now flips it by hand (acts 3–4 only, no camera)
+```
+
+**What each screen has to supply** (new): `Example.gesture` (the instances, in order, and what the act does at each)
+and `Example.mechanism` (a drawing of what the fix adds: a reserved copy, a trimmed line box, a hanging quote's
+margin). Without a mechanism, act 3 is only the colour change.
+
+**Decided by Claude:** the pointer in act 1 is a drawn cursor, part of the film. The viewer's own input is never
+synthesized (§3¾); the film plays, then the switch is theirs. **Decided by Claude:** the film plays once on arrival, as the reference does, and again on a
+Replay press; act lengths follow the instance count, not one fixed timeline. With reduced motion, the four acts are four
+still, annotated frames.
+
+**First screen:** #42 (tabs whose bold hover moves the row), since it is the reference's own principle. Then #16, the bar.

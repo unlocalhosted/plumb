@@ -548,7 +548,25 @@ export class Session extends EventEmitter {
         this.watchers[0]!.on('error', error => { this.native = false; this.inventoryDirty = true; this.watchers[0]?.close(); this.emit('diagnostic', error); });
       } catch { /* Polling below works on platforms without recursive fs.watch. */ }
     }
-    this.timer = setInterval(() => { void this.refresh().catch(error => this.emit('diagnostic', error)); }, this.options.pollInterval ?? 250);
+    this.poll();
+  }
+  // The safety net under the watcher: every file known is checked again on a timer, because an event can be missed.
+  // The check costs what the project costs (22,808 files and 3,515 directories on one real app: about 0.2 s), so it is
+  // paced by its own last cost and never takes more than a share of the thread: a twentieth while a native watcher is
+  // also reporting changes, a quarter when polling is all there is. A small project still checks every pollInterval.
+  // Before this it ran every 250 ms whatever it cost, and on that app held the thread, and every read queued behind
+  // it, most of the time.
+  private pollCost = 0;
+  private poll(): void {
+    const base = this.options.pollInterval ?? 250;
+    const wait = Math.min(Math.max(base, this.pollCost * (this.native ? 20 : 4)), this.native ? 10000 : 2000);
+    this.timer = setTimeout(() => {
+      const start = performance.now();
+      void this.refresh().catch(error => this.emit('diagnostic', error)).finally(() => {
+        this.pollCost = performance.now() - start;
+        if (!this.closed) this.poll();
+      });
+    }, wait);
   }
   /** Files written inside a many-file write (a rename, its undo), reconciled once when it ends instead of one by one. */
   private deferred: Set<string> | null = null;
