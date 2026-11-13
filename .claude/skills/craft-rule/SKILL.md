@@ -99,87 +99,76 @@ menus sit at z-10). Hold on what the gesture is about to lose before it moves, a
   (dashed guides, a measured pill: "commas drift 9.4px"), and for sub-pixel fixes a loupe. If you can't see the
   difference between broken and fixed, the example hasn't shown anything.
 
-## 3½. The stage: a staged moment, not an illustrated explanation (overlay/showcase/src/principles)
+## 3½. The stage: an explainer, built from the references (overlay/showcase/src/principles)
 
-The benchmark is ~/Downloads/twitter_media_harvest/maybepratikk-2117890135945822554-01.mp4 (an analytics table whose
-numbers tick live; a "Proportional / Tabular" switch; on switching the camera zooms into the columns, stripes drawn
-from the glyphs and pink pills with the drift turn to blue checks, then it zooms out). Watch it before building a
-screen. Ours used to be a teaching page with a still picture in it; that system is retired.
+**The delivery comes from the films, not from earlier rules.** The owner's two references, both read frame by frame:
+- **The delivery bar:** ~/Downloads/twitter_media_harvest/maybepratikk-2121151672756138484-01.mp4 (bold-on-hover tabs,
+  22.8 s): the fault happens, is measured while it happens, its cause is said in words, the fix's working is drawn,
+  and the same gesture pays off on every tab. §3⅝ is built from it.
+- **The first reference:** maybepratikk-2117890135945822554-01.mp4 (a ledger whose figures tick): its first 3 s are
+  the fault living on its own (the columns shimmer) before anything is drawn.
+The stage rules written before 2026-11-13 (one camera moment started by the click, still rules on still screens, the
+world frozen while marked, the fix as a glide, the teaching off the stage) made rushed explainers and are retired.
+When a rule here and the films disagree, the films win; change the rule.
 
 - **One principle, one screen** (`/rule/N`), the list of 77 on the left. Never a page carrying many problems.
 - **The stage is one dense, real component**, alone on the board: no app frame, no title block on the stage, no side
   card. Richness comes from the content: real photos, a real brand, tags, deltas, metadata, density. Not chrome.
-- **Motion is earned, never required.** A screen is live only when the principle is about change: figures that tick
-  (tabular figures), hover, a width that changes, loading. Every other principle gets a still, real screen where the
-  mistake is the one people naturally ship. Never invent a mistake so that something can move (#1 once became a
-  command menu whose highlight alone had padding: "why would any UI have extra padding"). The camera moment still
-  runs on plumber's fix either way.
-- **The switch names the technique, never "Broken / Fixed"**: "Proportional / Tabular", "Line box / Trimmed",
-  "Same radius / Concentric". It sits under the component, small, a segmented control. Default is the mistake; the
-  other side is plumber's own fix (`suggest`, taken with `inplace.js` `swapPreview`), and back gives it back exactly.
-- **plumber's read is a lesson in four acts (§3⅝), not one camera moment.** The fault happens before anything is
-  drawn; it is measured, with its cause in words; the fix's working is drawn; the same measure pays off on every
-  instance. Nothing is *drawn* at rest, but the fault is *shown* at rest. Detection is still `window.__plumb.craft({ scope: '[data-example]', hidden: true })`; nothing on the screen
+- **Every screen shows its fault happening.** The tabs' fault happens under a hover; the ledger's happens as its
+  figures change. A fault that looks still at rest still has a moment in real use that exposes it: the data that
+  arrives, the longer name, the narrower window, the photo of another shape. Act 1 (§3⅝) is that moment, played.
+  Never invent a mistake so that something can move (#1 once became a command menu whose highlight alone had padding:
+  "why would any UI have extra padding"); the moment must be the one real use brings.
+- **The switch names what you see on each side.** The tabs' switch reads "Shifts / Stable": the behaviour, in the
+  viewer's words. Small, under the component, a segmented control. Default is the mistake; the other side is plumber's
+  own fix (`suggest`, taken with `inplace.js` `swapPreview`), and back gives it back exactly.
+- **plumber's read is a lesson in four acts (§3⅝).** Every number and sentence on the stage is measured on the page;
+  detection is still `window.__plumb.craft({ scope: '[data-example]', hidden: true })`, and nothing on the screen
   states a finding plumber didn't make.
-- **A benchmark is a source of qualities, never a template.** Take from it what it does and why (the flaw shown
-  live, a camera moment, the figures as the hero, room to breathe), then design our own component from our own
-  domain: its own layout, columns, labels, data and copy. Never reuse its numbers, strings, column set or structure
+- **The world keeps moving while it is measured.** In the tabs film the hover repeats while the marks are on, and the
+  marks come and go with it. Nothing freezes; the number belongs to the motion.
+- **The camera frames the set the fault moves through.** The tabs film zooms to about 1.7× on the row of tabs, for a
+  2 px fault that is visible at 1×: close enough that every instance and every pill reads, wide enough to hold the
+  whole set. It holds that frame from act 2 to the end of act 4, so broken and fixed are compared in the same frame.
+- **The fix is explained, not glided.** A transition into the fixed state is fine, but it is never the explanation:
+  act 3 draws what the fix adds, and act 4 proves it with the act-2 measure. A fix that snaps (`object-fit`, a keyword)
+  still needs act 3.
+- **The cause is said on the stage.** One plain sentence, measured, under the subject ("Bold is 2px wider"). The
+  longer lesson (§5) stays below the stage, for after.
+- **The marks are a grammar (§3⅝), drawn with plumber's colours:** coral (`--pl-off`) for off, mint (`--pl-on`) once
+  fixed, 1px lines with the white halo, the blueprint tag as the pill (mono, white on the hue), `--pl-spring-pop` for
+  pills appearing. On a plain ground: the tabs film draws no shade over the rest and no heat dots, and the eye goes to
+  the marks.
+- **The marks draw what is true, so the eye can check the picture against them.** The guide is the real thing the
+  lesson turns on (each tab's own box, a stretched photo's own shape inside its box), and in the fix it stays where it
+  was, so the change is read against it.
+- **The film plays the gesture; then the stage is the viewer's.** Act 1 and act 4 play the gesture with a drawn
+  pointer, part of the film. After it, the viewer's own hand does it for real (hover, drag the edge, flip the switch),
+  following §3¾. A defensive rule's uncontrolled thing (the width, a photo's shape, a longer name) is what the film
+  changes and what the viewer then changes; content stepping in by itself with no gesture (#78's rows) reads as noise.
+- **A benchmark is a source of qualities, never a template.** Take from it what it does and why, then design our own
+  component from our own domain: its own layout, labels, data and copy. Never reuse its numbers, strings or structure
   (#16's first ledger reused the video's figures, deltas and table shape: copying, not inspiration). Before showing
-  anything, diff it against the benchmark for copied data, words and layout.
-- **Motion is authored before it's built, and judged moving.** Measure the benchmark frame by frame (`ffmpeg -vf
-  fps=10,tile=6x5`): every duration, the order, the zoom depth, when marks appear, how colour changes. Write the
-  storyboard (interface-craft: named TIMING, one stage integer, springs in config) and the look in
-  docs/craft/stage-brief.md, and get the owner's sign-off before code. Judge it by recording ours and comparing it
-  side by side with the benchmark, never from stills (a hidden pane freezes transitions). The world freezes for the
-  moment: settle, camera in, marks, hold, fix (pills count to zero, red → blue), hold, marks out, camera out, then
-  life resumes.
+  anything, diff it against the reference for copied data, words and layout.
+- **Motion is authored before it's built, and judged moving.** Measure the reference frame by frame (§3⅝ "Reading a
+  reference"), write the storyboard (interface-craft: named TIMING, one stage integer, springs in config) in
+  docs/craft/stage-brief.md, and judge ours by recording it and setting it beside the reference, never from stills (a
+  hidden pane freezes transitions).
+- **Look:** #16 (Quarry's running timer, commit ce37e8a) is the bar for how a component looks; the tabs film is the bar
+  for how it is explained.
 - **Quarry has designed primitives, and examples use only them.** Palette, surfaces, card, type ramp, status language,
   client marks and notes come from the chosen direction (/primitives, overlay/showcase/src/primitives), never from
-  a colour picked inside one example (a violet initials tile, a butter note, saturated pills read cheap). The bar is
-  Mercury / Stripe: calm finance software, one brand colour, soft status, a client shown by its own mark.
+  a colour picked inside one example. The bar is Mercury / Stripe: calm, one brand colour, soft status.
 - **Each principle lives in the product where it naturally bites,** not in one product's world: a Shapes picker on a
-  whiteboard (#3), not another invoice. All of them share Slate, so the showcase still reads as one family. One app
-  for everything turned every screen into money ("all the examples are becoming money theme").
-- **Media is real:** photos, covers and pictures come from free-licensed stock (Unsplash, searched in the browser),
-  saved small (480px) under overlay/showcase/src/media and credited in its CREDITS.md. Never drawn stand-ins, and never
-  real album covers or brand art (copyrighted). Real photos bring real edges: give them an inner hairline.
-- **Icons come from dithered.dev** (`@unlocalhosted/dither-icons`, the owner's own MIT set: `<LayersIcon size texture="dither" />`),
-  never hand-drawn, for a screen's own controls. Shapes that are the subject (a triangle in a play button, a picker's
-  shapes) stay drawn, since the principle is about their geometry.
-- **#16 is the bar** (Quarry's running timer, commit ce37e8a): every screen is held to it.
-- **plumber's read is drawn with plumber's own primitives,** imported from overlay/src/tokens.css and the blueprint
-  marks, never invented: coral (`--pl-off`) for off, mint (`--pl-on`) once fixed, 1px lines with the white halo, the
-  blueprint tag as the value pill (mono, white on the hue), heat dots where it's off, the blueprint shade over the rest,
-  `--pl-spring-pop` for marks appearing. Owner: "follow the same primitives we have created for plumber, not just
-  these orange and blue lines".
-- **The read covers every place the slip is, not one.** When a slip recurs across the card (§3), the example's
-  `measure` hands over marks for every instance (keyed lines, rules, bands and a pill each), the shade is cut around
-  all of them, and the camera stays on the whole card (`Example.camera = false`). The fix then lands on every
-  instance together, a beat apart down the card. Zooming into one "lead" instance is only for a slip too small to see
-  at 1× (a pixel, a hairline), and even then the others are marked when the camera is back out.
-- **The marks draw what is true, so the eye can check the picture against them.** Not a box round the subject with a
-  number: the guide is the real thing the lesson turns on (a stretched photo's own shape inside its box, with the
-  stretch dotted), and it moves to where the fix puts it.
-- **Every instance glides, even when CSS snaps.** A fix on a property the browser can't transition (`object-fit`,
-  `display`, a keyword) still has to be seen arriving: the stage animates the same pixels the fix will draw and lands
-  the fix as the glide ends (Principle.jsx `glideFit`). A fix that snaps on six rows reads as a page reload. Add the
-  glide to the stage, never to the example.
-- **A defensive rule puts the uncontrolled thing in the viewer's hand.** A rule about what you don't control (the
-  screen's width, a photo's shape, a longer name) is shown on one card the viewer changes themselves: #78's card has
-  an edge to drag, so the cover's box changes shape under a real hand, and the photo is pulled out of shape on one
-  side of the switch and holds on the other. The subject is big and one whose shape the eye knows (a building, a
-  circle, a face), with the fixed side still showing it at every size (pick the photo for the crop too). Small
-  thumbnails of landscapes don't show a stretch. The same slip recurs smaller on the card (§3). Never make content
-  arrive by itself to show this: #78's rows stepping down read as noise (owner: "really confusing"). One hint line
-  under the switch says what to try (`Example.hint`); the drag follows §3¾'s rules for ending a gesture.
-- **Teaching sits off the stage**, below it, read after watching: what plumber sees, why it happens, the habit,
-  plumber's fix in words (§5).
+  whiteboard (#3), not another invoice. All of them share Slate, so the showcase still reads as one family.
+- **Media is real:** free-licensed stock (Unsplash), saved small (480px) under overlay/showcase/src/media and credited
+  in its CREDITS.md. Never drawn stand-ins, never real album covers or brand art. Real photos get an inner hairline.
+- **Icons come from dithered.dev** (`@unlocalhosted/dither-icons`), never hand-drawn, for a screen's own controls.
+  Shapes that are the subject stay drawn, since the principle is about their geometry.
 - **Fit every width.** Lay out against the stage (container queries); check 1440, 1024 and a ~300px pane.
 - **The card and its switch are always in the window.** A card taller or wider than the room rests scaled to fit
-  (Principle.jsx, the fit); build the card at its real size, never shrink it for the stage. plumber measures pixels and
-  a scaled card reads wrong (targets look small, edges fall between pixels), so the card lifts to 1× whenever plumber
-  reads it, while the blueprint or inspector is on, and from the camera's way out until plumber has asked again.
-  Anything that reads from outside asks for the page as it is (`?side=`, never scaled); `scripts/screen.mjs` does.
+  (Principle.jsx, the fit); build the card at its real size. plumber measures pixels, so the card lifts to 1× whenever
+  plumber reads it, and anything that reads from outside asks for the page as it is (`?side=`, never scaled).
 
 ## 3⅝. The moment is a lesson in four acts, and the problem gets the most time
 
@@ -188,7 +177,7 @@ A screen is judged by whether those four things come across from the film alone,
 
 | Act | Its job: by the end the viewer knows… | How |
 |---|---|---|
-| 1 · It happens | that something is off, before anyone says so | The broken side at rest size, **nothing drawn**. A live rule plays its gesture over each instance (a drawn pointer, part of the film); a still rule leads the eye over each instance in turn. 3–4.5 s. |
+| 1 · It happens | that something is off, before anyone says so | The broken side at rest size, **nothing drawn**. The moment real use brings plays over each instance: a gesture with a drawn pointer (the tabs: 4.5 s, every tab hovered), or the content changing (the ledger: 3 s of figures ticking). |
 | 2 · Measure it | how much, where, and why | Camera in. Guides, then numbers, then **the cause in one plain sentence**, in that order. A live rule repeats its gesture 2–3 times and the marks come and go with it, so the number is tied to the motion. ≥ 5 s with the marks on. |
 | 3 · How the fix works | why the fix holds, not only that it does | The technique's switch is pressed. Guides change colour, and **the fix's working is drawn for a moment** (the reserved bold copy, the trimmed line box, the margin a quote hangs in), with its own pill counting to its value; then it folds away. 2–3.5 s. |
 | 4 · Payoff | that it is fixed everywhere | **The same gesture, the same ruler, the same places**, instance by instance (~0.7 s each), each pill now reading the fixed value (+0px, ✓). Then camera out and rest. 3–4 s. |
@@ -199,6 +188,10 @@ A screen is judged by whether those four things come across from the film alone,
   with no act 1 at all: that is what "rushed" was.
 - **The fix is never a glide alone.** A morph from broken to fixed shows *that*, not *why*. Act 3 needs a drawing of
   what the fix adds; a screen without one has not finished its design.
+- **Act lengths follow the instances.** The payoff takes about 0.7 s per instance (the tabs film walks all five), so
+  the storyboard gives each act its own length and lays them end to end, driven by one stage number; never one fixed
+  timeline for every screen. (Ours, not the films': the film plays once on arrival and again on a Replay press, and
+  with reduced motion the four acts are four still, annotated frames.)
 - **The viewer's own click doesn't start the lesson.** Pressing a switch means "show me fixed", so a moment that starts
   there squeezes the problem. The film runs acts 1–4 itself; afterwards the switch is the viewer's, and flipping it
   by hand replays acts 3–4 without the camera.
@@ -247,7 +240,7 @@ interrupt-marks.html (#64) and rubber-band.html (#65) follow it, and docs/craft/
 
 - **Earn it three ways, or don't build it.** The mistake happens only during the gesture; it's felt, not just seen;
   and plumber's probe (src/craft-probe.ts) records the very number the marks draw. A look (#63 scale from 0, #68 exit
-  speed) is slowed playback, not a demo. A mistake at rest stays a still screen.
+  speed) is slowed playback, not a demo. A mistake at rest is not a hands-on demo: the film plays the moment real use brings (§3½), then the viewer may try it.
 - **The component really behaves that way.** Real pointer, key and touch events, real timers, real CSS. Never
   synthesize the viewer's input, and never imitate what a desktop browser can't do (iOS zoom on focus, half-pixel
   blur): those are out. A slowed speed or a held reply is labelled ("¼ speed", a reply-speed dial) and applies to
@@ -419,7 +412,7 @@ Each line is something the owner had to say once; the sections above exist so th
 - 2026-11-12 · #78 again: "remove this moving animation … everything moving from second place but the first piece
   getting place, really confusing"; "i dont see the significance here why do we need this rule, please add relevant
   text". Cause: life was added to show the rule defending, and the lesson explained the mechanism without saying what
-  it costs a product. → §3½ a defensive rule stays a still screen; §5 the lesson opens with `matters`.
+  it costs a product. → §3½ a defensive rule stays a still screen (retired 2026-11-13: every screen shows its fault happening); §5 the lesson opens with `matters`.
 - 2026-11-12 · The owner took plumber's fix on #78 with the overlay, which wrote `object-cover` into the screen's
   file, so the mistake's side was already fixed and the demo had nothing to find. → When a screen shows no finding
   on its broken side, check `git diff` on its file first and put it back.
@@ -463,3 +456,8 @@ Each line is something the owner had to say once; the sections above exist so th
   understanding; one fixed timeline with a single before/after slot per screen; and a reference read as durations,
   not acts. → §3⅝ (four acts, the problem's share, the marks' grammar, what a screen supplies, reading a reference), §6
   (watch as a stranger, three sentences, act lengths beside the reference's).
+- 2026-11-13 · On a review that held the four acts against the older stage rules ("motion is earned", still rules on
+  still screens): "no the current skill is wrong, it doesn't make good explainers, we are updating based on evidence
+  from the video." → §3½ rewritten from the two films: every screen shows its fault happening, the world keeps moving
+  while measured, the camera frames the set, the fix is explained not glided, the cause is said on the stage, the
+  switch names what you see, no shade or heat dots on the stage; when a rule and the films disagree, the films win.

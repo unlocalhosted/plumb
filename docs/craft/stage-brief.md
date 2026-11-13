@@ -137,8 +137,8 @@ fix and don't have good payoff."
 ```
 ACT 1  IT HAPPENS                                   (~3–4.5 s)
    0ms   the broken side at rest size, nothing drawn
-         live rules: a drawn pointer plays the gesture over each instance
-         still rules: the eye is led over each instance by a soft spotlight, one by one
+         the moment real use brings, played over each instance: a gesture with a drawn
+         pointer, or the content changing (data arriving, a longer name, a narrower width)
 ACT 2  MEASURE IT                                   (~5 s)
   4000   camera eases in (1000ms, our in-curve)
   5000   guides grow from each instance's own geometry (coral, dashed, 1px with halo)
@@ -146,7 +146,7 @@ ACT 2  MEASURE IT                                   (~5 s)
   8500   the cause in words, one pill under the subject ("Bold is 2px wider")
  10000   coral marks fade (300ms)
 ACT 3  HOW THE FIX WORKS                            (~3 s)
- 10300   the switch presses itself (its own spring), labelled with the technique
+ 10300   the switch presses itself (its own spring); it names what you see on each side
  10600   guides turn coral → mint; the fix's working is drawn (Example.mechanism):
          what the fix adds, made visible for a moment, with a mint pill counting to its value
  12600   the mechanism folds away; the fix stays
@@ -162,7 +162,8 @@ and `Example.mechanism` (a drawing of what the fix adds: a reserved copy, a trim
 margin). Without a mechanism, act 3 is only the colour change.
 
 **Decided by Claude:** the pointer in act 1 is a drawn cursor, part of the film. The viewer's own input is never
-synthesized (§3¾); the film plays, then the switch is theirs. **Open for the owner:** the film plays by itself on
-arrival (the reference) or on a Play press (calmer on a page of 40 screens).
+synthesized (§3¾); the film plays, then the switch is theirs. **Decided by Claude:** the film plays once on arrival, as the reference does, and again on a
+Replay press; act lengths follow the instance count, not one fixed timeline. With reduced motion, the four acts are four
+still, annotated frames.
 
 **First screen:** #42 (tabs whose bold hover moves the row), since it is the reference's own principle. Then #16, the bar.
