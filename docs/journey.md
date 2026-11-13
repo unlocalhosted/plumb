@@ -1301,6 +1301,14 @@ field is empty). The table of five writes, before and after. The Next table: eig
 - **The fix and the proof:** algorecall: 116 MB → 20.9 MB, load 0.83 s → 0.17 s, longest hold 5.7 s → 0.07 s; all 2,411 files still identical to the server's answers. crafting-ui: 9.5 MB → 3.5 MB, loads in 8 ms. Not established: answers asked during the build took a median 0.30 s on algorecall, and I took no baseline, so I cannot say the build causes it.
 - **Media hooks:** three bars: 257 MB as objects, 116, 21.
 
+## The check said "not the same", and it was right to ask (2026-11-13)
+- **The itch:** before the server answers anything from a kept table, it has to show, start after start, that the kept table is what a fresh analysis would say. The owner: "Yes, check-only".
+- **How we found it:** built the check and ran three starts on each app. crafting-ui: matched. algorecall: receipt valid, tables different, twice.
+- **The system behind it:** I was comparing files, not what they say. The two tables were taken apart on vm-agent: same paths, same texts, all 2,411 files' readings identical. The bytes differed at one letter, `a` against `A`: the serialiser writes an array sparsely or densely depending on how the JavaScript engine is holding it in memory, which changes with how warm the code is. Layer 0's proof had compared plain text, where that cannot happen.
+- **What we chose and why:** the table carries a hash of what it says, fed from the numbers and texts themselves, and that is what is compared; a second hash of the bytes only tells a damaged file. Number columns became typed arrays, which have one way of being written.
+- **The fix and the proof:** after it, three starts on algorecall: no receipt, then valid and matched twice, 0.08–0.11 s to check. Same on crafting-ui. On a fixture: an edited file and an added file are each named and the receipt refused. This is one afternoon, not the days of ordinary work the layer is for. No test of the check yet.
+- **Media hooks:** the two hex lines side by side, one byte apart.
+
 ## Open gaps
 - The site's top bar doesn't fit a phone (390px): it widens the page to about 500px. Needs a compact bar.
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
