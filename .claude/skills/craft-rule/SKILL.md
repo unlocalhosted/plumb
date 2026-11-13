@@ -457,3 +457,11 @@ Each line is something the owner had to say once; the sections above exist so th
   from the video." → §3½ rewritten from the two films: every screen shows its fault happening, the world keeps moving
   while measured, the camera frames the set, the fix is explained not glided, the cause is said on the stage, the
   switch names what you see, no shade or heat dots on the stage; when a rule and the films disagree, the films win.
+- 2026-11-13 · On #42's first film: "you just copied the exact video … and didn't use our design language and
+  primitives … this is much better but what i want you to learn is how to make good video and not copy frame by
+  frame." The tabs, the dashed boxes, the "before → after" and "+2px" pills on every neighbour, the ghost bold row,
+  "Shifts / Stable" and the act lengths were all the reference's surface; §3⅝ itself had been written as that
+  surface. Plumber's own language (patterns say what a thing is, colour says the verdict, one value pill only where
+  you point, name tags with their icon, the toy burst when a fix lands) was not used. → To be rewritten once the owner
+  confirms the system: a reference yields principles of delivery only; how each is drawn comes from plumber's language.
+
