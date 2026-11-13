@@ -1046,10 +1046,19 @@
 - **The fix and the proof:** on a page with one of each problem, through the real command, 27 of 34 speak. The other seven need a page the test page cannot be (no language, no viewport, zoom off, no doctype, a lazy image on the first screen, a hero image, an oversized image) and are unproven. On real pages, 16 findings, all true when looked at: glyphwrite's 13 tooltips that exist only as title attributes; crafting-ui's one image with no size that also loads eight screens before it is seen, and one figure with no caption. No false hits. All four packs (104 rules) over 10,827 elements: 113 ms.
 - **Media hooks:** the broken page's output (27 rules, one line each); glyphwrite's title tooltips.
 
+## The checks from Chrome's guides get their tests (2026-11-14)
+- **The itch:** 135 checks from five batches and no test for any of them. The owner: "Write the tests".
+- **How we found it:** each batch had already been run by hand on a page with one of each problem. Those pages were the tests waiting to be written.
+- **The system behind it:** a check is right when it names its problem at the line that has it, and quiet when the part is built right. So one test per batch: a real page with every problem, through the real command, a real dev server and a real browser, each check expected at its own line. One more test is the twin: the same parts built right, with the cases that gave false hits while building (a keyboard hint inside a label, a selectable icon named Copy, a roving tab stop), where no check may speak. Security is tested the same way in source: each unsafe line beside its safe twin.
+- **The fix and the proof:** six tests, all pass, about 15 s together on the laptop. They prove 128 checks at their line: accessibility 24 of 24, forms 31 of 33, components 35 of 37, HTML 32 of 34, security 7 of 7. Writing them proved three things by hand runs could not: a form inside a form is caught (React builds it even though plain markup cannot), the two checks that need a really opened modal work, and the six page-wide checks are each said once.
+- **Not proven:** forms' two deliberate doubts (not shown as findings); the spinner check, which can never speak because the engine does not judge anything that holds a looping animation, the spinner's parents included; the hero-image and oversized-image checks, which need a real large picture.
+- **Media hooks:** the test run's six green lines.
+
 ## Open gaps
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
 
 ## Shipped · 2026-W46
+- The 135 checks from Chrome's guides have tests: six, each a real page through the real command, proving 128 checks at the line of their problem and one page built right where none may speak ([entry](#the-checks-from-chromes-guides-get-their-tests-2026-11-14)).
 - plumber now checks the markup itself: 34 checks from Chrome's HTML guide, such as an image with no size that makes the page jump, a box with a hand cursor that a keyboard cannot press, a list typed with bullet characters, and a tooltip that only a mouse can see ([entry](#thirty-four-html-checks-in-one-patch-2026-11-14)). On the homepage branch, not on main.
 - plumber now checks common parts: 37 checks from Chrome's component guides, such as a dialog with no name, tabs that are each a Tab stop, a breadcrumb trail that is not a list, and a button that says it is closed while its panel is open ([entry](#thirty-seven-component-checks-in-one-patch-2026-11-14)). On the homepage branch, not on main.
 - plumber now checks forms: 33 checks from Chrome's forms guide, from a helper button that submits the form by accident to a one-time code split over six boxes ([entry](#thirty-three-forms-checks-in-one-patch-2026-11-14)). On the homepage branch, not on main.
