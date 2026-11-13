@@ -597,6 +597,13 @@
 - **Now:** one finding on crafting-ui, the three figures on the templates page, drawn from a three-item list written in the code. At phone width it fits (358 of 358 px). It is a fixed set the check cannot yet tell from a list; noted, not fixed. No before and after from a real app.
 - **Seen on the way:** the motion vocabulary page (7,274 elements) closed the browser tab during plumber's read.
 
+## #42 as a React Plumber marketing film (2026-11-13)
+- **The itch:** the owner: "these videos will serve us marketing explainer videos for react plumber itself … we need some sort of watermark … and like sign of craft itself … make the example follow our design language … the delight particle thing is thrown randomly on last tab … think of them as video for marketing."
+- **Found on the way:** the branch this work was on was 424 commits behind main, without the toy set, the soft blocks or the site's faces. The film work moved to its own worktree from main (branch `showcase-film`), its seven commits carried over with nothing of main's lost (checked line by line).
+- **What changed:** `/film/42` is a 16:9 stage (1600 × 900) with no showcase around it and plumber's running dev overlay kept out of frame; signed top left "Craft № 42" and the principle's name in the toy face; React Plumber's plumb bob and name bottom right on every frame. The example card is redrawn in plumber's language: tokens on `.pl-light`, Bricolage Grotesque for names and labels, Instrument Sans for words, a toy for the project mark and the done task, pastel chips lettered in their ink, rings filled as far as a task has got; the tabs keep the classes plumber reads. The technique switch is ours (a sunk track, a lit thumb on the spring). The change card grows from the switch's centre to take the fix, on the spring. The burst comes from plumber's ✓, which draws on the change card once the payoff has shown every tab holds, as its fix panel does.
+- **The proof:** recorded at 1600 × 900, no console errors; the change, the burst and the ending checked at 8–10 fps and full size. Clip: docs/media/film-42-bold-on-hover.mp4.
+- **Not yet:** no opening or closing card (title in, mark out); the /rule/42 page also uses the new card and switch, and the other showcase screens still look like Quarry.
+
 ## #42's film, polished in motion (2026-11-13)
 - **The itch:** the owner: "there is a lack of polish the toggle moves across the card, the property transition lands on the card and like noisy, please really put some focus on polish."
 - **How we found it:** every transition stepped through at 10 frames a second (before, I had looked at two or three stills).
@@ -2343,6 +2350,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   Nothing finds a new one when it is written.
 
 ## Shipped · 2026-W46
+- Craft № 42 is a 16:9 React Plumber marketing film: the fault felt, measured in plumber's marks, the code that caused it and the code that fixes it, the payoff, and plumber's ✓ bursting where the fix was written, signed and watermarked ([entry](#42-as-a-react-plumber-marketing-film-2026-11-13)).
 - The showcase's #42 explains itself as a short film drawn in plumber's own marks: you feel the tabs jitter, see plumber measure it and name the weight, see the fix keep the width, and watch every tab hold ([entry](#42-redrawn-in-plumbers-own-language-after-copying-the-reference-2026-11-13)).
 - plumber's server no longer keeps a core busy on a big project: its safety-net file check is paced by its own cost, and a 16,000-element page now reads in 6–9 s ([entry](#the-server-was-checking-22808-files-four-times-a-second-2026-11-13)).
 - The page no longer freezes while plumber reads it: the longest block on a big page went from 1.8 s to 0.3 s, and the pointer stays live ([entry](#the-page-froze-while-plumber-read-it-the-judging-now-comes-in-slices-2026-11-13)).

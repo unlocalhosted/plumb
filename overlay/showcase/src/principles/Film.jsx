@@ -24,7 +24,27 @@
 //   read(root, i, rest) → { box, now, size: { icon, pre, from, to }, tags: [{ icon, pre, from, to } | { swatch, pre, text }],
 //                           pushed: [{ x0, x1, y, h }] }   (example-local px)          say → the hint after
 import { useEffect, useRef, useState } from 'react';
-import { PlumbLayer, Switch } from './Principle.jsx';
+import { PlumbLayer } from './Principle.jsx';
+import { ensureLook } from './look.js';
+
+ensureLook();
+
+// the technique switch, in plumber's language: a sunk track, a lit thumb that slides on the spring, names in the toy face
+function TechniqueSwitch({ names, fixed, ready, onBack, onFix }) {
+  const track = useRef(null);
+  const [thumb, setThumb] = useState(null);
+  useEffect(() => { const on = track.current?.querySelector('[aria-pressed="true"]'); if (on) setThumb({ left: on.offsetLeft, width: on.offsetWidth }); }, [fixed, names]);
+  const tab = (on) => ({ position: 'relative', zIndex: 1, height: 30, padding: '0 14px', border: 0, background: 'none', cursor: ready ? 'pointer' : 'default',
+    font: 'var(--pl-round-w2, 700) 13px/1 var(--pl-round)', color: on ? 'var(--pl-ink)' : 'var(--pl-ink-2)', transition: 'color 200ms ease', whiteSpace: 'nowrap' });
+  return (
+    <div ref={track} role="group" aria-label="Technique" style={{ position: 'relative', display: 'flex', padding: 3, borderRadius: 11, background: 'var(--pl-paper-2)', boxShadow: 'inset 0 1px 2px rgb(28 27 25 / 0.08), inset 0 0 0 1px var(--pl-rule)' }}>
+      {thumb ? <span aria-hidden="true" style={{ position: 'absolute', top: 3, bottom: 3, left: thumb.left, width: thumb.width, borderRadius: 8, background: 'var(--pl-paper)',
+        boxShadow: '0 1px 2px rgb(28 27 25 / 0.12), 0 0 0 1px var(--pl-rule)', transition: 'left 420ms var(--pl-spring), width 420ms var(--pl-spring)' }} /> : null}
+      <button type="button" aria-pressed={!fixed} disabled={!ready} onClick={onBack} style={tab(!fixed)}>{names[0]}</button>
+      <button type="button" aria-pressed={fixed} disabled={!ready} onClick={onFix} style={tab(fixed)}>{names[1]}</button>
+    </div>
+  );
+}
 
 const TIMING = {
   lead:      700,   // the stage settles before the pointer moves
@@ -41,7 +61,8 @@ const TIMING = {
   turn:      500,   // outlines sky → mint
   holds:    2400,   // why it holds: the gesture on the lead, the fixed values named
   payoff:    700,   // payoff: each place
-  clear:    1100,   // the burst plays, the row clear
+  check:     420,   // plumber's check draws on the change card before it bursts
+  clear:    1300,   // the burst plays
   out:       900,   // camera out
   count:     420,   // a pill's number counts this long
 };
@@ -90,7 +111,7 @@ function Pill({ x, y, k, tone, icon, icons, up, flow, children }) {
 
 // plumber's change, as its cards show it (overlay/src/widget.js .change): the class at fault in coral, then struck as
 // the class that fixes it arrives in mint; under each, the property it sets. The sauce, said as code.
-function Change({ code, fixed }) {
+function Change({ code, fixed, done }) {
   const chip = (tone) => ({ padding: '2px 7px', borderRadius: 5, font: 'var(--pl-card-code)', fontSize: 13, color: `var(--pl-${tone})`, background: `color-mix(in oklab, var(--pl-${tone}) ${tone === 'off' ? 9 : 11}%, transparent)` });
   const cap = { font: 'var(--pl-card-meta)', fontSize: 11.5, color: 'var(--pl-ink-2)', textAlign: 'center' };
   return (
@@ -101,12 +122,20 @@ function Change({ code, fixed }) {
         <code style={{ ...chip('off'), textDecorationLine: fixed ? 'line-through' : 'none', textDecorationThickness: 1, transition: 'opacity 300ms ease', opacity: fixed ? 0.75 : 1 }}>{code.fault.cls}</code>
         <span style={cap}>{code.fault.prop}</span>
       </span>
-      {/* the fix's place is kept from the start, so the card never changes width when it arrives */}
-      <span style={{ color: 'var(--pl-ink-3)', font: 'var(--pl-card-code)', paddingTop: 3, opacity: fixed ? 1 : 0, transition: 'opacity 200ms ease' }}>→</span>
-      <span style={{ display: 'flex', flexDirection: 'column', gap: 4, opacity: fixed ? 1 : 0, transform: `translateY(${fixed ? 0 : 3}px)`, transition: 'opacity 260ms ease 120ms, transform 420ms var(--pl-spring-pop) 120ms' }}>
-        <code style={chip('on')}>{code.fix.cls}</code>
-        <span style={cap}>{code.fix.prop}</span>
+      {/* the fix's part opens from nothing to its own width on the spring, then shows: the card grows to take it,
+          centred on the switch, never jumping and never holding an empty place */}
+      <span style={{ display: 'flex', alignItems: 'flex-start', gap: 10, overflow: 'hidden', interpolateSize: 'allow-keywords', width: fixed ? 'auto' : 0, marginLeft: fixed ? 0 : -10, transition: 'width 460ms var(--pl-spring), margin-left 460ms var(--pl-spring)' }}>
+        <span style={{ color: 'var(--pl-ink-3)', font: 'var(--pl-card-code)', paddingTop: 3, opacity: fixed ? 1 : 0, transition: 'opacity 200ms ease 160ms' }}>→</span>
+        <span style={{ display: 'flex', flexDirection: 'column', gap: 4, whiteSpace: 'nowrap', opacity: fixed ? 1 : 0, transform: `translateY(${fixed ? 0 : 3}px)`, transition: 'opacity 260ms ease 220ms, transform 420ms var(--pl-spring-pop) 220ms' }}>
+          <code style={chip('on')}>{code.fix.cls}</code>
+          <span style={cap}>{code.fix.prop}</span>
+        </span>
       </span>
+      {/* written, and it holds everywhere: plumber's check, drawn where the fix is; the burst comes from here */}
+      <svg data-done viewBox="0 0 20 20" width="20" height="20" aria-hidden="true" style={{ marginTop: 3, flex: 'none', width: done ? 20 : 0, marginLeft: done ? 0 : -10, opacity: done ? 1 : 0, transform: `scale(${done ? 1 : 0.6})`, transition: 'width 360ms var(--pl-spring), margin-left 360ms var(--pl-spring), opacity 200ms ease 120ms, transform 360ms var(--pl-spring-pop) 120ms' }}>
+        <circle cx="10" cy="10" r="10" fill="var(--pl-mint)" />
+        <path d="M5.8 10.4l2.7 2.7 5.6-6" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" strokeDasharray="14" strokeDashoffset={done ? 0 : 14} style={{ transition: 'stroke-dashoffset 300ms ease 120ms' }} />
+      </svg>
     </span>
   );
 }
@@ -137,7 +166,7 @@ function burst(canvas, ox, oy) {
   requestAnimationFrame(tick);
 }
 
-export function Film({ Example, names, onSaid }) {
+export function Film({ Example, names, onSaid, chrome = true }) {
   const spec = Example.film;
   const [side, setSide] = useState('broken');
   const [playing, setPlaying] = useState(false);
@@ -216,9 +245,12 @@ export function Film({ Example, names, onSaid }) {
         spec.set(all()[i], false);
       }
       setM({ tone: 'on', boxes: fixedRest }); setPtr((p) => p && { ...p, gone: true });
-      // everything holds: the burst, from the end of the set
-      const end = all().at(-1).getBoundingClientRect(), o = box.current.getBoundingClientRect();
-      if (fx.current) burst(fx.current, end.right - o.left, end.top - o.top + end.height / 2);
+      // every place holds: plumber's check draws where the fix was written, and bursts from there (as its fix panel does)
+      if (spec.code) {
+        setChange(3); await sleep(TIMING.check, live);
+        const host = sw.current?.querySelector('div[aria-hidden="true"]'), check = host?.shadowRoot?.querySelector('[data-done]')?.getBoundingClientRect(), o = box.current.getBoundingClientRect();
+        if (fx.current && check) burst(fx.current, check.left - o.left + check.width / 2, check.top - o.top + check.height / 2);
+      }
       await sleep(TIMING.clear, live);
       setM((x) => x && { ...x, fading: true }); await sleep(TIMING.fade, live);
       setM(null); setChange(0); setCam({ k: 1, x: 0, y: 0 });
@@ -234,7 +266,7 @@ export function Film({ Example, names, onSaid }) {
   const toneOf = (i) => (tone === 'sky' && m?.lead === i && pushed ? 'off' : tone);
   const tagTone = tone === 'on' ? 'on' : 'off';
   return (
-    <div ref={box} className="relative flex flex-col items-center gap-10">
+    <div ref={box} className="pl-light relative flex flex-col items-center gap-10">
       <style>{'@keyframes film-pop { from { opacity: 0; scale: 0.92 } to { opacity: 1; scale: 1 } }'}</style>
       <div className="relative" style={frame ? { overflow: 'clip', borderRadius: frame.radius, boxShadow: frame.shadow, isolation: 'isolate' } : undefined}>
         <div ref={camRef} className="relative" style={{ transform: `translate(${cam.x}px, ${cam.y}px) scale(${k})`, transformOrigin: '0 0', transition: `transform ${k > 1 ? TIMING.camera : TIMING.out}ms ${CAMERA.curve}`, pointerEvents: playing ? 'none' : undefined }}>
@@ -276,10 +308,10 @@ export function Film({ Example, names, onSaid }) {
         </div>
       </div>
       <div ref={sw} className="relative z-10 flex flex-col items-center">
-        {change && spec.code ? <PlumbLayer><Change code={spec.code} fixed={change === 2} /></PlumbLayer> : null}
-        <Switch names={names} fixed={side === 'fixed'} ready={!playing} onBack={() => setSide('broken')} onFix={() => setSide('fixed')} />
+        {change && spec.code ? <PlumbLayer><Change code={spec.code} fixed={change >= 2} done={change === 3} /></PlumbLayer> : null}
+        <TechniqueSwitch names={names} fixed={side === 'fixed'} ready={!playing} onBack={() => setSide('broken')} onFix={() => setSide('fixed')} />
       </div>
-      {!playing ? <button type="button" onClick={() => setRun((x) => x + 1)} className="-mt-7 text-[13px] font-medium text-ink-muted hover:text-ink">Replay</button> : <span className="-mt-7 h-5" />}
+      {chrome ? (!playing ? <button type="button" onClick={() => setRun((x) => x + 1)} style={{ marginTop: -28, border: 0, background: 'none', cursor: 'pointer', font: 'var(--pl-round-w2, 700) 13px/20px var(--pl-round)', color: 'var(--pl-ink-2)' }}>Replay</button> : <span style={{ marginTop: -28, height: 20 }} />) : null}
       <canvas ref={fx} aria-hidden="true" className="pointer-events-none absolute z-30" style={{ left: -160, top: -80, width: 'calc(100% + 320px)', height: 'calc(100% + 160px)' }} />
       {ptr ? (
         <svg aria-hidden="true" width="18" height="22" viewBox="0 0 18 22" style={{ position: 'absolute', left: 0, top: 0, zIndex: 40, pointerEvents: 'none',

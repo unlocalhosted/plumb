@@ -492,4 +492,14 @@ Each line is something the owner had to say once; the sections above exist so th
   film from two or three stills; every fault was in motion (the crop dropped as the camera began to leave, so the card
   swept across the switch; the change card landed on the rows and widened when the fix arrived; a pill repeated the
   card; guides doubled outlines). → §6 the polish pass: every transition at 10 fps, and six checks it must pass.
+- 2026-11-13 · "these videos will serve us marketing explainer videos for react plumber itself … we need some sort of
+  watermark … and like sign of craft itself … make the example follow our design language … the delight particle
+  thing is thrown randomly on last tab … think of them as video for marketing." → A film is a React Plumber marketing
+  piece: a 16:9 stage (`/film/N`, 1600 × 900) with nothing of the showcase or the running dev overlay in frame,
+  signed top left with the principle ("Craft № N" and its name, in the toy face) and React Plumber's mark (the plumb
+  bob and the name) on every frame. The example is drawn in plumber's own language (its tokens on `.pl-light`,
+  Bricolage Grotesque for names and labels, Instrument Sans for words, pastel chips, toys), loaded once by
+  principles/look.js. Delight has a cause: plumber's ✓ draws on the change card, where the fix was written, once the
+  payoff shows every place holds, and the burst comes from it (as plumber's fix panel does), never from a place on
+  the example.
 
