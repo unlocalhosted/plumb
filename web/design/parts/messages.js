@@ -77,123 +77,123 @@ export function mount(host, root, css) {
 
   root.innerHTML = `<style>${css}${LANGUAGE_CSS}${HISTORY_CSS}${BUTTON_CSS}
     :host { display: block; font-family: var(--pl-sans); color: var(--pl-text-primary); }
-    h2 { margin: 44px 0 6px; font: 600 20px/28px var(--pl-sans); letter-spacing: -0.01em; }
-    h2 + p, .prose p { margin: 0 0 10px; font: 400 14px/22px var(--pl-sans); color: var(--pl-text-secondary); max-width: 680px; }
+    h2 { margin: var(--pl-page-space-2) 0 var(--pl-space-4); font: var(--pl-page-title); letter-spacing: var(--pl-tracking-title); }
+    h2 + p, .prose p { margin: 0 0 var(--pl-space-5); font: var(--pl-page-small); color: var(--pl-text-secondary); max-width: 60ch; }
     .prose b { color: var(--pl-text-primary); font-weight: 600; }
-    .panel { margin-top: 16px; overflow: hidden; }
-    .cap { padding: 16px 18px 18px; display: grid; gap: 4px; align-content: start; }
-    .cap h3 { margin: 0; font: 600 16px/22px var(--pl-sans); }
-    .cap p { margin: 0; font: 400 13px/19px var(--pl-sans); color: var(--pl-text-secondary); }
+    .panel { margin-top: var(--pl-space-6); overflow: hidden; }
+    .cap { padding: var(--pl-space-6) var(--pl-space-7) var(--pl-space-7); display: grid; gap: var(--pl-space-2); align-content: start; }
+    .cap h3 { margin: 0; font: var(--pl-page-body); }
+    .cap p { margin: 0; font: var(--pl-page-meta); color: var(--pl-text-secondary); }
 
     /* the pieces stand on the page here; in the product they are fixed to the dock's corner */
     .wt, .tt { position: relative; inset: auto; }
     .tt { width: 100%; max-width: 760px; }
-    .stage { position: relative; display: grid; place-items: center; padding: 36px 24px; background: var(--pl-bg-inset); }
+    .stage { position: relative; display: grid; place-items: center; padding: var(--pl-page-space-1) var(--pl-space-8); background: var(--pl-bg-inset); }
 
     /* ── the toast as a toy (proposed; would replace .wt) ─────────────────────────────────────────────────────
        one body in the hue of what happened, lit from above, on a shadow of its own colour. It is not a button, so it
        has no side to press down onto. A white disc carries the one mark; the bar under it is the time it has left */
     .mt { --h: var(--pl-mint); --f: var(--pl-mint-block); --i: var(--pl-mint-block-on); --s: var(--pl-mint-soft);
-      position: relative; display: inline-flex; align-items: center; gap: 10px; max-width: min(460px, 100%); box-sizing: border-box; min-height: 44px; padding: 7px 8px 7px 9px; border-radius: 22px;
-      background: linear-gradient(180deg, color-mix(in oklab, var(--f) 88%, #fff), var(--f)); color: var(--i); font: 700 14px/18px var(--pl-sans); text-align: left;
+      position: relative; display: inline-flex; align-items: center; gap: var(--pl-space-5); max-width: min(calc(var(--pl-card-w) + var(--pl-page-space-4)), 100%); box-sizing: border-box; min-height: var(--pl-page-space-2); padding: var(--pl-space-4) var(--pl-space-4) var(--pl-space-4) var(--pl-space-4); border-radius: var(--pl-radius-card);
+      background: linear-gradient(180deg, color-mix(in oklab, var(--f) 88%, #fff), var(--f)); color: var(--i); font: var(--pl-card-title); text-align: left;
       box-shadow: inset 0 1.5px 0 0 color-mix(in oklab, #fff 45%, transparent), inset 0 -2px 0 0 color-mix(in oklab, #000 12%, transparent),
         0 16px 22px -14px color-mix(in oklab, var(--f) 75%, transparent), 0 3px 5px -2px color-mix(in oklab, var(--f) 38%, transparent); }
     .mt[data-kind="yours"] { --h: var(--pl-butter-line); --f: var(--pl-butter); --i: var(--pl-butter-on); --s: var(--pl-butter-soft); }
     :host([data-scheme="dark"]) .mt[data-kind="yours"] { --h: var(--pl-butter); --f: var(--pl-butter-soft); --i: #fff; --s: color-mix(in oklab, var(--pl-butter) 25%, transparent); }
     .mt[data-kind="wrong"] { --h: var(--pl-coral); --f: var(--pl-coral-block); --i: var(--pl-coral-block-on); --s: var(--pl-coral-soft); }
     .mt[data-kind="busy"] { --h: var(--pl-ink-2); --f: var(--pl-paper); --i: var(--pl-ink); font-weight: 600; box-shadow: inset 0 0 0 1.5px var(--pl-border-default), 0 14px 20px -14px rgb(0 0 0 / .3); }
-    .mt .disc { flex: none; display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: var(--pl-cut); color: var(--h);
+    .mt .disc { flex: none; display: grid; place-items: center; width: var(--pl-page-space-1); height: var(--pl-page-space-1); border-radius: 50%; background: var(--pl-cut); color: var(--h);
       box-shadow: 0 1.5px 0 0 color-mix(in oklab, #000 18%, transparent); }
     .mt[data-kind="busy"] .disc { background: none; box-shadow: none; }
-    .mt .disc svg { display: block; width: 16px; height: 16px; }
-    .mt .turn { display: block; animation: mt-turn 900ms steps(8) infinite; } .mt .turn svg { width: 22px; height: 22px; }
-    .mt .say { min-width: 0; padding-right: 6px; }
-    .mt .say code { font: 600 12px/1 var(--pl-mono); padding: 2px 5px; border-radius: 6px; background: color-mix(in oklab, var(--i) 20%, transparent); white-space: nowrap; }
+    .mt .disc svg { display: block; width: var(--pl-space-6); height: var(--pl-space-6); }
+    .mt .turn { display: block; animation: mt-turn var(--pl-dur-arrive) steps(8) infinite; } .mt .turn svg { width: var(--pl-tag-h); height: var(--pl-tag-h); }
+    .mt .say { min-width: 0; padding-right: var(--pl-space-4); }
+    .mt .say code { font: var(--pl-card-code); padding: var(--pl-space-1) var(--pl-space-2); border-radius: var(--pl-radius-tag); background: color-mix(in oklab, var(--i) 20%, transparent); white-space: nowrap; }
     .mt .tb { flex: none; }
-    .mt .bar { position: absolute; left: 24px; right: 24px; top: calc(100% + 7px); height: 4px; border-radius: 2px; background: var(--s); overflow: hidden; }
-    .mt .bar i { display: block; height: 100%; border-radius: 2px; background: var(--h); transform-origin: left; animation: mt-time ${HOLD}ms linear both; }
+    .mt .bar { position: absolute; left: var(--pl-space-8); right: var(--pl-space-8); top: calc(100% + var(--pl-space-4)); height: var(--pl-space-2); border-radius: var(--pl-radius-mark); background: var(--s); overflow: hidden; }
+    .mt .bar i { display: block; height: 100%; border-radius: var(--pl-radius-mark); background: var(--h); transform-origin: left; animation: mt-time ${HOLD}ms linear both; }
     .mt:hover .bar i, .mt:focus-within .bar i { animation-play-state: paused; }
     .mt.still .bar i { animation: none; scale: .6 1; }
     /* it arrives from the dock, a little small, and settles; the mark pops a beat later; it leaves by dropping */
-    .mt.in { animation: mt-in 420ms var(--pl-spring-pop) both; }
-    .mt.in .disc svg { animation: mt-mark 380ms 120ms var(--pl-spring-pop) both; }
-    .mt.out { animation: mt-out 180ms var(--pl-ease-out) both; pointer-events: none; }
-    @keyframes mt-in { from { opacity: 0; translate: 0 14px; scale: .9; } }
-    @keyframes mt-out { to { opacity: 0; translate: 0 8px; scale: .96; } }
+    .mt.in { animation: mt-in var(--pl-dur-build) var(--pl-spring-pop) both; }
+    .mt.in .disc svg { animation: mt-mark var(--pl-dur-build) var(--pl-dur-feedback) var(--pl-spring-pop) both; }
+    .mt.out { animation: mt-out var(--pl-dur-card) var(--pl-ease-out) both; pointer-events: none; }
+    @keyframes mt-in { from { opacity: 0; translate: 0 var(--pl-space-6); scale: .9; } }
+    @keyframes mt-out { to { opacity: 0; translate: 0 var(--pl-space-4); scale: .96; } }
     @keyframes mt-mark { from { scale: .2; rotate: -30deg; opacity: 0; } }
     @keyframes mt-time { from { scale: 1 1; } to { scale: 0 1; } }
     @keyframes mt-turn { to { rotate: 1turn; } }
     @media (prefers-reduced-motion: reduce) { .mt.in, .mt.in .disc svg, .mt.out, .mt .turn { animation: none; } }
 
     /* today and the toy, side by side, in the corner of a page */
-    .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }
-    .show { position: relative; display: grid; place-items: end; min-height: 230px; padding: 28px 24px 34px; border-radius: 24px; background: var(--pl-bg-inset); }
-    .show > small { position: absolute; left: 22px; top: 18px; font: var(--pl-round-w, 700) 13px/1 var(--pl-round); color: var(--pl-text-secondary); }
+    .pair { display: grid; grid-template-columns: 1fr 1fr; gap: var(--pl-space-6); margin-top: var(--pl-space-6); }
+    .show { position: relative; display: grid; place-items: end; min-height: calc(var(--pl-page-space-4) * 2); padding: var(--pl-page-space-1) var(--pl-space-8) var(--pl-page-space-1); border-radius: var(--pl-radius-card); background: var(--pl-bg-inset); }
+    .show > small { position: absolute; left: var(--pl-tag-h); top: var(--pl-space-7); font: var(--pl-card-title); font-family: var(--pl-round); color: var(--pl-text-secondary); }
     .show .wt:not([data-on]) { pointer-events: none; }
-    .ask { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 18px; }
+    .ask { display: flex; flex-wrap: wrap; align-items: center; gap: var(--pl-space-5); margin-top: var(--pl-space-7); }
 
     /* what it is made of: one, large, with its parts named */
-    .anat { display: grid; grid-template-columns: auto 1fr; gap: 28px; align-items: center; margin-top: 16px; }
-    .anat .big { display: grid; place-items: center; padding: 44px 40px 52px; border-radius: 24px; background: var(--pl-bg-inset); }
+    .anat { display: grid; grid-template-columns: auto 1fr; gap: var(--pl-page-space-1); align-items: center; margin-top: var(--pl-space-6); }
+    .anat .big { display: grid; place-items: center; padding: var(--pl-page-space-2) var(--pl-page-space-2) var(--pl-page-space-2); border-radius: var(--pl-radius-card); background: var(--pl-bg-inset); }
     .anat .big .mt { zoom: 1.35; }
-    .anat ol { margin: 0; padding-left: 20px; font: 400 14px/22px var(--pl-sans); color: var(--pl-text-secondary); }
-    .anat ol li + li { margin-top: 6px; } .anat ol b { color: var(--pl-text-primary); font-weight: 600; }
+    .anat ol { margin: 0; padding-left: var(--pl-space-7); font: var(--pl-page-small); color: var(--pl-text-secondary); }
+    .anat ol li + li { margin-top: var(--pl-space-4); } .anat ol b { color: var(--pl-text-primary); font-weight: 600; }
 
-    .cells { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-top: 16px; }
-    .cell { display: flex; flex-direction: column; gap: 4px; padding: 14px 18px 18px; border-radius: 24px; background: var(--pl-bg-inset); }
-    .cell .stage { background: none; min-height: 96px; padding: 14px 0 22px; }
-    .cell b { font: 600 15px/20px var(--pl-sans); }
-    .cell small { font: 400 13px/19px var(--pl-sans); color: var(--pl-text-secondary); }
+    .cells { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--pl-space-6); margin-top: var(--pl-space-6); }
+    .cell { display: flex; flex-direction: column; gap: var(--pl-space-2); padding: var(--pl-space-6) var(--pl-space-7) var(--pl-space-7); border-radius: var(--pl-radius-card); background: var(--pl-bg-inset); }
+    .cell .stage { background: none; min-height: var(--pl-page-space-4); padding: var(--pl-space-6) 0 var(--pl-space-8); }
+    .cell b { font: var(--pl-card-title); }
+    .cell small { font: var(--pl-page-meta); color: var(--pl-text-secondary); }
 
     /* ── a change as a picture (proposed; would replace the .tt-tick rules) ───────────────────────────────────
        each mark is the system's own icon for what the change is, at the size the icons are drawn to read at */
-    .tt.new .tt-ticks { gap: 7px; height: 30px; padding: 0 4px 5px; align-items: flex-end; border-bottom: 1.5px solid color-mix(in oklab, var(--pl-text-primary) 12%, transparent); }
-    .tt.new .tt-tick, .tt.new .tt-tick[data-state] { width: 20px; height: 20px; border-radius: 0; background: none; box-shadow: none; cursor: pointer;
-      transform-origin: 50% 100%; transition: scale 260ms var(--pl-spring-pop), opacity 200ms var(--pl-ease-out); }
+    .tt.new .tt-ticks { gap: var(--pl-space-4); height: var(--pl-page-space-1); padding: 0 var(--pl-space-2) var(--pl-space-2); align-items: flex-end; border-bottom: var(--pl-line) solid color-mix(in oklab, var(--pl-text-primary) 12%, transparent); }
+    .tt.new .tt-tick, .tt.new .tt-tick[data-state] { width: var(--pl-space-7); height: var(--pl-space-7); border-radius: 0; background: none; box-shadow: none; cursor: pointer;
+      transform-origin: 50% 100%; transition: scale var(--pl-dur-travel) var(--pl-spring-pop), opacity var(--pl-dur-card) var(--pl-ease-out); }
     .tt.new .tt-tick svg { display: block; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
     .tt.new .tt-tick[data-state="undone"] { opacity: .3; }
     .tt.new .tt-tick[data-undo]::before { content: none; }
-    .tt.new .tt-tick[aria-current="true"], .tt.new .tt-tick[aria-current="true"]:not([data-state="undone"]):not([data-state="changed"]) { height: 20px; background: none; box-shadow: none; scale: 1.3; }
-    .tt.new .tt-tick.shake { animation: tt-shake 160ms ease-in-out 2; }
-    @media (hover: hover) and (pointer: fine) { .tt.new .tt-tick:not(.ghost):hover { height: 20px; } .tt.new .tt-tick:not([aria-current]):hover { scale: 1.14; } }
+    .tt.new .tt-tick[aria-current="true"], .tt.new .tt-tick[aria-current="true"]:not([data-state="undone"]):not([data-state="changed"]) { height: var(--pl-space-7); background: none; box-shadow: none; scale: 1.3; }
+    .tt.new .tt-tick.shake { animation: tt-shake var(--pl-dur-drop) ease-in-out 2; }
+    @media (hover: hover) and (pointer: fine) { .tt.new .tt-tick:not(.ghost):hover { height: var(--pl-space-7); } .tt.new .tt-tick:not([aria-current]):hover { scale: 1.14; } }
     /* the playhead is a sky knob above the picture, not a line drawn through it */
-    .tt.new .tt-head { height: 46px; background: none; box-shadow: none; }
-    .tt.new .tt-seg .tt-name { font: var(--pl-round-w, 700) 12px/1 var(--pl-round); color: var(--pl-text-secondary); }
+    .tt.new .tt-head { height: var(--pl-page-space-2); background: none; box-shadow: none; }
+    .tt.new .tt-seg .tt-name { font: var(--pl-card-label); font-family: var(--pl-round); color: var(--pl-text-secondary); }
     .tt.new.leg .tt-tick[aria-current="true"] { position: relative; }
-    .tt.new.leg .tt-tick[aria-current="true"]::after { content: ''; position: absolute; left: 50%; bottom: calc(100% + 3px); width: 6px; height: 6px; margin-left: -3px; border-radius: 50%; background: var(--pl-instrument); }
-    .pic { display: block; width: 44px; height: 44px; flex: none; } .pic svg { display: block; width: 100%; height: 100%; overflow: visible; }
-    .pic.sm { width: 22px; height: 22px; } .pic.gone { opacity: .3; }
-    .pic.at { position: relative; scale: 1.2; } .pic.at::after { content: ''; position: absolute; left: 50%; bottom: calc(100% + 5px); width: 10px; height: 10px; margin-left: -5px; border-radius: 50%; background: var(--pl-instrument); }
-    .pic.no { animation: pic-no 1800ms ease-in-out infinite; }
-    @keyframes pic-no { 0%, 14%, 100% { translate: 0 0; } 3.500% { translate: -4px 0; } 7% { translate: 4px 0; } 10.500% { translate: -2px 0; } }
+    .tt.new.leg .tt-tick[aria-current="true"]::after { content: ''; position: absolute; left: 50%; bottom: calc(100% + var(--pl-space-2)); width: var(--pl-space-4); height: var(--pl-space-4); margin-left: calc(-1 * var(--pl-space-2)); border-radius: 50%; background: var(--pl-instrument); }
+    .pic { display: block; width: var(--pl-page-space-2); height: var(--pl-page-space-2); flex: none; } .pic svg { display: block; width: 100%; height: 100%; overflow: visible; }
+    .pic.sm { width: var(--pl-tag-h); height: var(--pl-tag-h); } .pic.gone { opacity: .3; }
+    .pic.at { position: relative; scale: 1.2; } .pic.at::after { content: ''; position: absolute; left: 50%; bottom: calc(100% + var(--pl-space-2)); width: var(--pl-space-5); height: var(--pl-space-5); margin-left: calc(-1 * var(--pl-space-2)); border-radius: 50%; background: var(--pl-instrument); }
+    .pic.no { animation: pic-no calc(var(--pl-dur-arrive) * 3) ease-in-out infinite; }
+    @keyframes pic-no { 0%, 14%, 100% { translate: 0 0; } 3.500% { translate: calc(-1 * var(--pl-space-2)) 0; } 7% { translate: var(--pl-space-2) 0; } 10.500% { translate: calc(-1 * var(--pl-space-1)) 0; } }
     @media (prefers-reduced-motion: reduce) { .pic.no { animation: none; } .tt.new .tt-tick { transition: none; } }
-    .means { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin-top: 16px; }
-    .means .stage { display: flex; align-items: flex-end; justify-content: flex-start; gap: 12px; min-height: 84px; padding: 22px 0 14px; }
+    .means { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--pl-space-6); margin-top: var(--pl-space-6); }
+    .means .stage { display: flex; align-items: flex-end; justify-content: flex-start; gap: var(--pl-space-5); min-height: var(--pl-page-space-4); padding: var(--pl-space-8) 0 var(--pl-space-6); }
 
     /* today's marks over the pictures: the same history */
-    .both { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }
-    .both > div { display: grid; gap: 26px; justify-items: start; align-content: start; padding: 22px 28px 34px; border-radius: 24px; background: var(--pl-bg-inset); }
-    .both small { font: var(--pl-round-w, 700) 13px/1 var(--pl-round); color: var(--pl-text-secondary); }
+    .both { display: grid; grid-template-columns: 1fr 1fr; gap: var(--pl-space-6); margin-top: var(--pl-space-6); }
+    .both > div { display: grid; gap: var(--pl-space-8); justify-items: start; align-content: start; padding: var(--pl-space-8) var(--pl-page-space-1) var(--pl-page-space-1); border-radius: var(--pl-radius-card); background: var(--pl-bg-inset); }
+    .both small { font: var(--pl-card-title); font-family: var(--pl-round); color: var(--pl-text-secondary); }
     .both .tt.leg { scale: none; zoom: 2; }
     .both .tt.leg:not(.new) .tt-ticks { border-bottom-color: var(--pl-border-default); }
     .both .tt.new.leg .tt-ticks { border-bottom-color: color-mix(in oklab, var(--pl-text-primary) 12%, transparent); }
 
     /* the strip is still today's: a grid of what it does, without boxes drawn round things */
-    .panel { box-shadow: none; background: var(--pl-bg-inset); border-radius: 24px; }
+    .panel { box-shadow: none; background: var(--pl-bg-inset); border-radius: var(--pl-radius-card); }
     .panel .stage { background: none; }
     .row { display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); }
     .row > div { display: grid; grid-template-rows: auto 1fr; min-width: 0; }
-    .row .stage { padding: 28px 14px 8px; min-height: 80px; box-sizing: border-box; }
+    .row .stage { padding: var(--pl-page-space-1) var(--pl-space-6) var(--pl-space-4); min-height: var(--pl-page-space-4); box-sizing: border-box; }
     /* the strip, with room above it for the pill */
-    .hist { padding: 64px 24px 28px; }
+    .hist { padding: var(--pl-page-space-3) var(--pl-space-8) var(--pl-page-space-1); }
     .tt.leg { width: auto; display: block; padding: 0; scale: 2; }
     .tt.leg .tt-ticks { border-bottom-color: transparent; }
-    .quiet .tt { width: auto; max-width: 100%; align-items: center; gap: 10px; padding: 10px 16px 10px 12px; border-radius: 18px; }
+    .quiet .tt { width: auto; max-width: 100%; align-items: center; gap: var(--pl-space-5); padding: var(--pl-space-5) var(--pl-space-6) var(--pl-space-5) var(--pl-space-5); border-radius: var(--pl-radius-card); }
     .quiet .tt .tt-say { white-space: normal; }
-    .open { margin-top: 14px; padding: 16px 20px 16px 38px; border-radius: 24px; background: var(--pl-bg-inset); font: 400 13px/21px var(--pl-sans); color: var(--pl-text-secondary); }
-    .open li + li { margin-top: 6px; } .open b { color: var(--pl-text-primary); font-weight: 600; }
-    @media (max-width: 1000px) { .row { grid-template-columns: 1fr 1fr; } }
-    @media (max-width: 760px) { .pair, .cells, .row, .anat, .both { grid-template-columns: 1fr; } .means { grid-template-columns: 1fr 1fr; } }
+    .open { margin-top: var(--pl-space-6); padding: var(--pl-space-6) var(--pl-space-7) var(--pl-space-6) var(--pl-page-space-1); border-radius: var(--pl-radius-card); background: var(--pl-bg-inset); font: var(--pl-page-meta); color: var(--pl-text-secondary); }
+    .open li + li { margin-top: var(--pl-space-4); } .open b { color: var(--pl-text-primary); font-weight: 600; }
+    @media (max-width: 720px) { .row { grid-template-columns: 1fr 1fr; } }
+    @media (max-width: 720px) { .pair, .cells, .row, .anat, .both { grid-template-columns: 1fr; } .means { grid-template-columns: 1fr 1fr; } }
   </style>${TOY_DEFS}
   <h2>How the system works</h2>
   <div class="prose">

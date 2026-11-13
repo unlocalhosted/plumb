@@ -39,52 +39,52 @@ export function mount(host, root, css) {
 
   root.innerHTML = `<style>${css}${LANGUAGE_CSS}${SOFT_CSS}${BUTTON_CSS}${FIX_FIELD_CSS}${NAME_TAG_CSS}
     :host { display: block; font-family: var(--pl-sans); color: var(--pl-text-primary); }
-    h2 { margin: 44px 0 6px; font: 600 20px/28px var(--pl-sans); letter-spacing: -0.01em; }
-    h2 + p { margin: 0 0 10px; font: 400 14px/22px var(--pl-sans); color: var(--pl-text-secondary); max-width: 680px; }
-    code { font: 500 12px/1.4 var(--pl-mono); }
+    h2 { margin: var(--pl-page-space-2) 0 var(--pl-space-4); font: var(--pl-page-title); letter-spacing: var(--pl-tracking-title); }
+    h2 + p { margin: 0 0 var(--pl-space-5); font: var(--pl-page-small); color: var(--pl-text-secondary); max-width: 60ch; }
+    code { font: var(--pl-card-code); }
 
     /* the pieces, standing still on this page instead of floating over yours */
     .tag { position: relative; display: inline-flex; }
     .fx .field { margin: 0; }
-    .crd { display: grid; gap: 12px; width: 300px; max-width: 100%; box-sizing: border-box; padding: 14px; }
-    .crd .hd { display: flex; align-items: center; gap: 8px; }
-    .crd .acts { display: flex; gap: 8px; }
-    .strip { display: flex; flex-wrap: wrap; gap: 8px; padding: 14px 16px; border-radius: 16px; background: var(--pl-bg-inset); }
-    .s-box { width: 210px; max-width: 100%; }
+    .crd { display: grid; gap: var(--pl-space-5); width: var(--pl-card-w); max-width: 100%; box-sizing: border-box; padding: var(--pl-space-6); }
+    .crd .hd { display: flex; align-items: center; gap: var(--pl-space-4); }
+    .crd .acts { display: flex; gap: var(--pl-space-4); }
+    .strip { display: flex; flex-wrap: wrap; gap: var(--pl-space-4); padding: var(--pl-space-6) var(--pl-space-6); border-radius: var(--pl-radius-card); background: var(--pl-bg-inset); }
+    .s-box { width: calc(var(--pl-page-space-4) * 2); max-width: 100%; }
     /* a soft block reads its night rules from data-scheme (soft.js), so each desk carries it; and the day desk keeps
        its day block when the site itself is dark */
     :host([data-scheme="dark"]) .pl-light .s-box { --side: var(--h); }
     :host([data-scheme="dark"]) .pl-light .s-box .in { background: linear-gradient(180deg, color-mix(in oklab, var(--hs) 82%, #fff), var(--hs)); box-shadow: inset 0 2px 0 0 color-mix(in oklab, #fff 75%, transparent), inset 0 -2.5px 0 0 color-mix(in oklab, var(--h) 22%, transparent); }
-    .s-box .toy { display: block; width: 40px; height: 40px; } .s-box .toy svg { display: block; width: 100%; height: 100%; overflow: visible; }
-    .pl-tag svg { width: 14px; height: 14px; }
+    .s-box .toy { display: block; width: var(--pl-row-h); height: var(--pl-row-h); } .s-box .toy svg { display: block; width: 100%; height: 100%; overflow: visible; }
+    .pl-tag svg { width: var(--pl-space-6); height: var(--pl-space-6); }
 
     /* day and night: the same desk twice. pl-light and pl-dark are the overlay's own switches for a part of a page */
-    .twin { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; padding: 16px; border-radius: 34px; background: var(--pl-bg-inset); }
-    .desk { position: relative; padding: 58px 30px 36px; border-radius: 26px; background: var(--pl-bg-page); color: var(--pl-text-primary); }
-    .desk > small { position: absolute; left: 26px; top: 22px; font: var(--pl-round-w, 700) 13px/1 var(--pl-round); color: var(--pl-text-secondary); }
-    .lay { display: flex; flex-wrap: wrap; gap: 26px 30px; align-items: flex-start; justify-content: center; }
-    .lay .left, .lay .right { display: grid; gap: 22px; justify-items: start; }
+    .twin { display: grid; grid-template-columns: 1fr 1fr; gap: var(--pl-space-6); margin-top: var(--pl-space-6); padding: var(--pl-space-6); border-radius: var(--pl-radius-card); background: var(--pl-bg-inset); }
+    .desk { position: relative; padding: var(--pl-page-space-3) var(--pl-page-space-1) var(--pl-page-space-1); border-radius: var(--pl-radius-card); background: var(--pl-bg-page); color: var(--pl-text-primary); }
+    .desk > small { position: absolute; left: var(--pl-space-8); top: var(--pl-tag-h); font: var(--pl-card-title); font-family: var(--pl-round); color: var(--pl-text-secondary); }
+    .lay { display: flex; flex-wrap: wrap; gap: var(--pl-space-8) var(--pl-page-space-1); align-items: flex-start; justify-content: center; }
+    .lay .left, .lay .right { display: grid; gap: var(--pl-space-8); justify-items: start; }
 
     /* each height on its own: the piece on the left, what it is on the right */
-    .heights { display: grid; gap: 0; margin-top: 10px; }
-    .rung { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 36px; align-items: center; padding: 34px 0; }
-    .rung + .rung { border-top: 1.5px solid color-mix(in oklab, var(--pl-text-primary) 7%, transparent); }
-    .rung .show { display: grid; place-items: center; min-height: 120px; }
-    .rung .on-card { padding: 16px; border-radius: var(--pl-radius-card); background: var(--pl-bg-surface); box-shadow: var(--pl-shadow-card); }
-    .rung .ground { display: flex; gap: 10px; }
-    .rung .say small { display: block; font: var(--pl-round-w, 700) 12px/1 var(--pl-round); letter-spacing: .04em; text-transform: uppercase; color: var(--pl-text-secondary); }
-    .rung .say b { display: block; margin: 8px 0 6px; font: var(--pl-round-w, 700) 22px/26px var(--pl-round); }
-    .rung .say p { margin: 0; font: 400 14px/22px var(--pl-sans); color: var(--pl-text-secondary); max-width: 420px; }
-    .rung .say .toks { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+    .heights { display: grid; gap: 0; margin-top: var(--pl-space-5); }
+    .rung { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--pl-page-space-1); align-items: center; padding: var(--pl-page-space-1) 0; }
+    .rung + .rung { border-top: var(--pl-line) solid color-mix(in oklab, var(--pl-text-primary) 7%, transparent); }
+    .rung .show { display: grid; place-items: center; min-height: var(--pl-page-space-4); }
+    .rung .on-card { padding: var(--pl-space-6); border-radius: var(--pl-radius-card); background: var(--pl-bg-surface); box-shadow: var(--pl-shadow-card); }
+    .rung .ground { display: flex; gap: var(--pl-space-5); }
+    .rung .say small { display: block; font: var(--pl-card-label); font-family: var(--pl-round); letter-spacing: var(--pl-tracking-caps); text-transform: uppercase; color: var(--pl-text-secondary); }
+    .rung .say b { display: block; margin: var(--pl-space-4) 0 var(--pl-space-4); font: var(--pl-page-title); font-family: var(--pl-round); }
+    .rung .say p { margin: 0; font: var(--pl-page-small); color: var(--pl-text-secondary); max-width: 60ch; }
+    .rung .say .toks { display: flex; flex-wrap: wrap; gap: var(--pl-space-4); margin-top: var(--pl-space-5); }
 
-    .toks-tbl { margin-top: 16px; border-radius: 24px; background: var(--pl-bg-inset); padding: 8px 22px; }
-    .tr { display: grid; grid-template-columns: 210px 46px minmax(0, 1fr); gap: 16px; align-items: center; padding: 12px 0; font: 400 13px/19px var(--pl-sans); color: var(--pl-text-secondary); }
-    .tr + .tr { border-top: 1.5px solid color-mix(in oklab, var(--pl-text-primary) 7%, transparent); }
+    .toks-tbl { margin-top: var(--pl-space-6); border-radius: var(--pl-radius-card); background: var(--pl-bg-inset); padding: var(--pl-space-4) var(--pl-space-8); }
+    .tr { display: grid; grid-template-columns: calc(var(--pl-page-space-4) * 2) var(--pl-page-space-2) minmax(0, 1fr); gap: var(--pl-space-6); align-items: center; padding: var(--pl-space-5) 0; font: var(--pl-page-meta); color: var(--pl-text-secondary); }
+    .tr + .tr { border-top: var(--pl-line) solid color-mix(in oklab, var(--pl-text-primary) 7%, transparent); }
     .tr code { color: var(--pl-text-primary); }
-    .tr .sw { width: 40px; height: 28px; border-radius: 8px; background: var(--pl-bg-surface); }
-    .open { margin-top: 14px; padding: 16px 20px 16px 38px; border-radius: 24px; background: var(--pl-bg-inset); font: 400 13px/21px var(--pl-sans); color: var(--pl-text-secondary); }
-    .open li + li { margin-top: 6px; } .open b { color: var(--pl-text-primary); font-weight: 600; }
-    @media (max-width: 900px) { .twin, .rung { grid-template-columns: 1fr; } .tr { grid-template-columns: 1fr 46px; } .tr span:last-child { grid-column: 1 / -1; } }
+    .tr .sw { width: var(--pl-row-h); height: var(--pl-page-space-1); border-radius: var(--pl-radius-row); background: var(--pl-bg-surface); }
+    .open { margin-top: var(--pl-space-6); padding: var(--pl-space-6) var(--pl-space-7) var(--pl-space-6) var(--pl-page-space-1); border-radius: var(--pl-radius-card); background: var(--pl-bg-inset); font: var(--pl-page-meta); color: var(--pl-text-secondary); }
+    .open li + li { margin-top: var(--pl-space-4); } .open b { color: var(--pl-text-primary); font-weight: 600; }
+    @media (max-width: 720px) { .twin, .rung { grid-template-columns: 1fr; } .tr { grid-template-columns: 1fr var(--pl-page-space-2); } .tr span:last-child { grid-column: 1 / -1; } }
   </style>${TOY_DEFS}
 
   <h2>Day and night</h2>
