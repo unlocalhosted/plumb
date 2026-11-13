@@ -156,6 +156,15 @@ export function oklab(value: string): Lab | undefined {
 }
 export function colorDistance(a: Lab, b: Lab): number { return Math.hypot(a[0]-b[0], a[1]-b[1], a[2]-b[2]); }
 
+/** The parts of a `font` shorthand (`600 20px/28px var(--sans)`): a whole text style held in one token. Undefined for
+ *  anything else, so a plain size or family is never mistaken for one. */
+export function fontParts(value: string | undefined): { size: string; line?: string; weight?: string } | undefined {
+  const match = /^((?:(?:normal|italic|oblique|small-caps|bold|bolder|lighter|[1-9]00)\s+)*)([\d.]+(?:px|rem|em|%))(?:\s*\/\s*([\d.]+(?:px|rem|em|%)?))?\s+\S/.exec(String(value ?? '').trim());
+  if (!match) return;
+  const weight = /(?:^|\s)(bold|bolder|lighter|[1-9]00)(?=\s|$)/.exec(match[1]!)?.[1];
+  return { size: match[2]!, ...(match[3] ? { line: match[3] } : {}), ...(weight ? { weight: weight === 'bold' ? '700' : weight } : {}) };
+}
+
 export function typeDeclarations(declaration: Declaration, refs: ReadonlySet<string>): Declaration[] {
   if (declaration.prop !== 'font' || declaration.opaque) return [declaration];
   // Whole type-role references stay whole; literal shorthands expose their knobs.

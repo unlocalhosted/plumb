@@ -2443,8 +2443,15 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   Proof: the site as it is, nothing imported, before → after: 22 findings, all "never defined" or "no tokens", 157
   values unchecked → 81 values judged against 231 tokens, no false ones of that kind. crafting-ui and the homepage
   app: identical before and after this step.
-- **Still open:** type tokens that are whole font styles (`600 20px/28px`) don't count
-  as a 16px step, so type findings on the site are mostly noise; the reason for each reading isn't written anywhere
+- **Then whole text styles (same day).** The system's type tokens are whole styles (`--pl-page-title: 600 20px/28px
+  var(--pl-sans)`), and type was matched by single sizes, so "no token is close to 16px" fired beside a 16px style. A
+  type token that is a `font` shorthand now counts by its parts: its size for `font-size`, its line height for
+  `line-height`, its weight for `font-weight`, even when its face is a font loaded at runtime. Its fix sets the whole
+  style (`Use font: var(--pl-page-title)`), because a style can't be put in one property; and it is shown as
+  `600 20px/28px`, not its list of faces. Site, before → after: 28 type findings → 18, the 10 gone all values that
+  are a step of a style; the rest name the nearest styles. crafting-ui and the homepage app unchanged.
+- **Still open:** a `font:` line that is off the scale shows the face's fix first ("use var(--font)"), not the
+  size's; the reason for each reading isn't written anywhere
   yet (the config and the page are the next slices).
 
 ## Open gaps
@@ -2499,6 +2506,8 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   value, how they are used and their name, so plain CSS and design systems with their own prefix get checked (entry 34).
 - Plumber finds a token file a script reads by path, as our site does, so a page whose tokens arrive at runtime is
   checked against them (entry 34).
+- Type tokens that are whole text styles (`600 20px/28px`) count by their size, line height and weight, and the fix
+  sets the whole style, so a design system built on text styles is checked by them (entry 34).
 - React Plumber has a mark: a pink stem and a violet bowl, the gap between them the P, with plumber's guardrail at hero size. It is in the site's bar, the overlay's dock and the films, from one source ([entry](#react-plumber-gets-a-mark-2026-11-13)).
 - Craft № 42 is a 16:9 React Plumber marketing film: the fault felt, measured in plumber's marks, the code that caused it and the code that fixes it, the payoff, and plumber's ✓ bursting where the fix was written, signed and watermarked ([entry](#42-as-a-react-plumber-marketing-film-2026-11-13)).
 - The showcase's #42 explains itself as a short film drawn in plumber's own marks: you feel the tabs jitter, see plumber measure it and name the weight, see the fix keep the width, and watch every tab hold ([entry](#42-redrawn-in-plumbers-own-language-after-copying-the-reference-2026-11-13)).

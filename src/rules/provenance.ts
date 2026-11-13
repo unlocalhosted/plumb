@@ -15,7 +15,7 @@ import { numericExpression, numericStep, numericUse } from '../decisions/spacing
 import { callerPolicy } from '../decisions/callers.js';
 import { attribution, indexDefinitions } from './attribution.js';
 
-import { isJudged, judgedFamilies, oklab, colorDistance, colorNeutral, tokens, typeDeclarations } from './families.js';
+import { isJudged, judgedFamilies, oklab, colorDistance, colorNeutral, tokens, typeDeclarations, fontParts } from './families.js';
 import type { JudgedFamily } from './families.js';
 export { isSpacing } from './families.js';
 export function isJudgedSpacing(declaration: Declaration): boolean { return isJudged(declaration, 'spacing'); }
@@ -64,6 +64,8 @@ export function newTokenFor(family: Decision['family'], declaration: Declaration
   return /^[^;{}]+$/.test(amount) ? { namespace: namespace.slice(0, -1), utility: expected, value: amount } : undefined;
 }
 export function useFor(decision: Decision, prop: string, theme: ReadonlySet<string>): { class?: string; css: string } {
+  // a whole text style can't be put in one property: the fix sets the whole style
+  if (decision.family === 'type' && prop !== 'font' && fontParts(decision.resolved ?? decision.value)) return { css: `font: ${decision.refs.find(ref => ref.startsWith('var(')) ?? `var(${decision.name})`}` };
   const prefix = tokenPrefix(decision.family, prop, decision.name);
   const namespace = tokenNamespace(decision.family, prop, decision.name);
   const numeric = numericUse(decision);
@@ -137,7 +139,9 @@ export function familyProvenance(family: JudgedFamily, declarations: Declaration
   sourceFiles: ReadonlySet<string> = new Set(declarations.map(d => d.site.file)), definitions = indexDefinitions(declarations, record), resolution = resolutionContext(declarations, record)): {
   findings: Finding[]; entries: ProvenanceEntry[]; usedNumericSpacing: string[]; coverage: Pick<FamilyCoverage, 'fromDecisions' | 'total' | 'findings'>;
 } {
-  const decisions = record.decisions.filter(decision => decision.family === family);
+  // a whole text style whose face can't be resolved (a font loaded at runtime) is still a size, a line height and a weight
+  const decisions = record.decisions.filter(decision => decision.family === family)
+    .map(decision => family === 'type' && decision.resolved === undefined && fontParts(decision.value) ? { ...decision, resolved: decision.value } : decision);
   const numeric = family === 'spacing' && !record.numericSpacing?.replaced ? record.numericSpacing : undefined;
   const source = config.decisions?.[family];
   const origins = source?.origins ?? ['project'];
@@ -146,6 +150,12 @@ export function familyProvenance(family: JudgedFamily, declarations: Declaration
   const refIndex = resolution.decisionIndex(family);
   const decisionRefs = new Set(refIndex.keys());
   const comparable = (value: string, prop: string): string | number | undefined => {
+    if (family === 'type') {
+      // a whole text style compares by the part this property sets
+      const parts = fontParts(value);
+      if (parts) { const part = prop === 'font-size' ? parts.size : prop === 'line-height' ? parts.line : prop === 'font-weight' ? parts.weight : undefined; if (part === undefined) return undefined; value = part; }
+      if (prop === 'font-weight' && /^[1-9]00$/.test(value.trim())) return Number(value);
+    }
     if (family === 'spacing') return pixels(value);
     if (family === 'radius' || family === 'type' && ['font-size', 'letter-spacing', 'line-height'].includes(prop)) { const length = pixels(value); if (length !== undefined) return length; }
     if (family === 'motion') { const time = /^([-+]?(?:\d*\.)?\d+)(ms|s)$/.exec(value); if (time) return Number(time[1]) * (time[2] === 's' ? 1000 : 1); }
