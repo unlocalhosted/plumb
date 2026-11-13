@@ -75,8 +75,15 @@ export function mount(host, root, css) {
     .xr-hand .row .ok, .xr-hand .list { display: none; }
     .xr-hand .row .val { flex: 1; }
     .xr-hand .side { display: inline-flex; align-items: center; gap: 4px; height: 26px; padding: 0 7px; border-radius: 8px; font: 600 11.5px/1 var(--pl-sans); color: var(--pl-ink-2); white-space: nowrap; transition: background-color 200ms var(--pl-ease-out), color 200ms var(--pl-ease-out); }
-    .xr-hand .row[data-seg="mode"] .side { background: var(--pl-lilac-soft); color: var(--pl-lilac-ink); }
-    .xr-hand .row[data-seg="value"] .val { box-shadow: 0 0 0 2px color-mix(in oklab, var(--pl-sky) 45%, transparent); border-radius: 8px; }
+    /* the thumb behind the place in force: lilac over the sides, sky over the value; it slides on the overlay's spring
+       and follows the fingers while they pull it */
+    .xr-hand .row > :not(.thumb) { position: relative; z-index: 1; }
+    .xr-hand .thumb { position: absolute; left: 0; top: 3px; bottom: 3px; z-index: 0; border-radius: 8px; pointer-events: none;
+      background: var(--pl-sky-soft); box-shadow: inset 0 0 0 1.5px color-mix(in oklab, var(--pl-sky) 50%, transparent);
+      transition: transform 420ms var(--pl-spring), width 420ms var(--pl-spring), background-color 220ms var(--pl-ease-out); }
+    .xr-hand .thumb[data-on="mode"] { background: var(--pl-lilac-soft); box-shadow: inset 0 0 0 1.5px color-mix(in oklab, var(--pl-lilac) 50%, transparent); }
+    .xr-hand .thumb[data-pulled] { transition: transform 60ms linear, width 60ms linear; }
+    .xr-hand .row[data-seg="mode"] .side { color: var(--pl-lilac-ink); }
     .xr-hand .say { display: flex; gap: 10px; margin: 6px 4px 0; font: 600 10.5px/1 var(--pl-sans); color: #8a8a94; }
     .xr-hand .say span[data-on] { color: var(--pl-text-primary); }
     /* the changes, collected at the foot of the card: how many, Sync, and the way back */
@@ -308,8 +315,11 @@ export function mount(host, root, css) {
     const label = sided ? sidesSaid(prop) : (prop === 'border-radius' ? 'corner' : prop === 'font-size' ? 'text size' : prop);
     p.row.querySelector('.scrub').insertAdjacentHTML('afterend', `<span class="side">${label}</span>`);
     hand.insertAdjacentHTML('beforeend', `<div class="say">${sided ? '<span data-s="mode">← sides</span>' : ''}<span data-s="value">↕ ${sided ? 'value' : 'your sizes'}</span></div>`);
-    inHand = { el, prop, p, S, sided, seg: 'value', tx: 0, ty: 0 };
+    // the lit place is a thumb that slides between the sides and the value: it follows the fingers, then snaps
+    p.row.insertAdjacentHTML('afterbegin', '<i class="thumb" aria-hidden="true"></i>');
+    inHand = { el, prop, p, S, sided, seg: 'value', tx: 0, ty: 0, axis: null, idle: 0 };
     showSeg();
+    requestAnimationFrame(() => thumbAt(0, true));
   };
   const showSeg = () => {
     if (!inHand) return;
@@ -317,6 +327,20 @@ export function mount(host, root, css) {
     for (const sp of hand.querySelectorAll('.say span')) sp.toggleAttribute('data-on', sp.dataset.s === inHand.seg);
     const side = inHand.p.row.querySelector('.side'); if (inHand.sided) side.textContent = sidesSaid(inHand.prop);
     if (shown && !held) draw(shown);
+  };
+  // the thumb: over the place in force, pulled toward the other by `pull` (-1..1 of the way); `still` places it at once
+  const thumbAt = (pull = 0, still = false) => {
+    const h = inHand; if (!h) return;
+    const row = h.p.row, t = row.querySelector('.thumb'), r = row.getBoundingClientRect();
+    const at = (el) => { const b = el.getBoundingClientRect(); return { x: b.left - r.left - 3, w: b.width + 6 }; };
+    const A = at(row.querySelector('.side')), B = at(row.querySelector('.val'));
+    const [from, to] = h.seg === 'mode' ? [A, B] : [B, A];
+    // toward the other place it follows the hand; away from it, it only leans a little (there's nothing there)
+    const k = Math.max(-0.12, Math.min(1, pull));
+    const x = from.x + (to.x - from.x) * Math.max(0, k) + (k < 0 ? k * 40 : 0), w = from.w + (to.w - from.w) * Math.max(0, k);
+    t.style.transition = still ? 'none' : '';
+    t.style.transform = `translateX(${x.toFixed(1)}px)`; t.style.width = `${w.toFixed(1)}px`;
+    t.dataset.on = h.seg; t.toggleAttribute('data-pulled', pull !== 0);
   };
   // after a drag or a list pick elsewhere, the row shows where the value is now
   const resync = () => { if (!inHand) return; const i = inHand.S.indexOf(nearest(inHand.S, read(inHand.el, inHand.prop))); if (i !== inHand.p.at()) inHand.p.set(i); };
@@ -328,13 +352,24 @@ export function mount(host, root, css) {
     if (!e.composedPath().some((n) => n === card || n === shown) && !(zone && shown)) return;
     e.preventDefault();
     const h = inHand, dx = -(e.deltaMode ? e.deltaX * 16 : e.deltaX), dy = -(e.deltaMode ? e.deltaY * 16 : e.deltaY);
-    if (Math.abs(dx) > Math.abs(dy)) {
-      h.ty = 0; h.tx += dx;
-      if (h.tx > 60 && h.seg === 'mode') { h.seg = 'value'; h.tx = 0; showSeg(); }
-      else if (h.tx < -60 && h.seg === 'value' && h.sided) { h.seg = 'mode'; h.tx = 0; showSeg(); }
+    // one gesture, one direction: the first clear movement decides it, and the other axis is ignored until the
+    // fingers rest (so a sideways swipe's small drift up or down never undoes it)
+    clearTimeout(h.idle);
+    h.idle = setTimeout(() => { h.axis = null; h.ty = 0; if (h.tx) { h.tx = 0; thumbAt(0); } }, 180);
+    if (!h.axis && Math.abs(dx) + Math.abs(dy) > 1.5) h.axis = Math.abs(dx) > Math.abs(dy) ? 'x' : 'y';
+    if (h.axis === 'x') {
+      if (!h.sided) return;
+      h.tx += dx;
+      const toward = h.seg === 'mode' ? 1 : -1, pull = (h.tx * toward) / 70;
+      if (pull >= 1) {
+        // past the middle and on: it snaps over, with a spring, and the next part of the swipe starts fresh
+        h.seg = h.seg === 'mode' ? 'value' : 'mode'; h.tx = 0; showSeg(); thumbAt(0);
+        h.p.row.querySelector('.thumb').animate?.([{ scale: '1.08 0.9' }, { scale: '0.97 1.04' }, { scale: '1 1' }], { duration: 380, easing: 'cubic-bezier(0.34, 1.56, 0.64, 1)' });
+      } else thumbAt(pull);
       return;
     }
-    h.tx = 0; h.ty += dy;
+    if (h.axis !== 'y') return;
+    h.ty += dy;
     while (Math.abs(h.ty) >= 30) {
       const up = h.ty > 0; h.ty -= Math.sign(h.ty) * 30;
       if (h.seg === 'mode') {
