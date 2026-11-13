@@ -1004,6 +1004,7 @@
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
 
 ## Shipped · 2026-W46
+- A write-up of the day's speed work, for people outside the session: each step's cause, fix and measured before/after, the mistakes, and what is still open ([docs/writeups/plumber-speed.html](writeups/plumber-speed.html), published as a private page). It is drawn from this log's entries, nothing new measured except crafting-ui's scrolling (53 frames a second open, 60 alone, one run).
 - The kept analysis and its start-up check now have tests: six, each a real server start on a small project, 9 s in all. It matters because three layers sit on this and the next one answers from it. The doctor test caught its own row being cut off when a start differs.
 - The start-up check now also notices when an import would find a different file than it did, even if no file plumber read has changed. It matters because that was the one way the kept analysis could be stale without the check seeing it. (crafting-ui: 4,638 imports re-asked in about 0.05 s; one altered by hand was named and refused.)
 - `plumber doctor --verbose` now says how the start-up check is going: how many dev-server starts were checked, how many were compared with a fresh analysis, and how many differed. It matters because that count is the evidence the fast start waits on. (crafting-ui on 2026-11-13: 8 starts, 6 compared, 0 differed.)
