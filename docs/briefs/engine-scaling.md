@@ -143,6 +143,31 @@ Still true:
 - Of the 15 s left: about 2 s is plumber waiting before it starts, 0.6–0.7 s finding where findings live, and the
   rest is the server answering 46 MB and the page parsing it.
 
+### The 46 MB that was left (2026-11-13)
+
+Measured again from inside the page, every answer counted. (The first look kept only the small answers: the
+browser tool drops large ones. The "7.7 MB for 77 elements" sample above was one of the small ones; its shape was
+right, its size was not typical.)
+
+- One answer of the sixteen was 42 MB. It held 31 elements whose classes are written somewhere other than their
+  own JSX; for those the server sends a trace of where each class is written, and each place in the trace carried
+  its findings **with the same edits and ledger keys** that had just been taken out of the direct readings. One
+  link in algorecall's site header was 22.5 MB by itself.
+- Taken out there too. The trace keeps each place's own structured edits, which the card uses.
+
+| algorecall, problems list | this morning | after hot/cold | now |
+|---|---|---|---|
+| "Read these elements" answers | 528 MB | 46.9 MB | 5.9 MB |
+| "Places in the code" answers | 283 MB | 6.2 MB | 6.2 MB |
+| Both | 811 MB | 53 MB | 12 MB |
+| Whole read, warm server | 30–52 s | 24 s | 16.7, 17.0 s (15–17 s before this change) |
+| Craft findings | 27–28 | 27–28 | 27–28 |
+
+The clock did not move with this one: the bytes are no longer where the time is.
+
+What the 12 MB is: half of the 5.9 MB is the same reading sent again (742 distinct readings for 2,064 elements,
+2.2 MB of 5.1 MB), and a full file path repeated on every declaration. That is rule 4, tables.
+
 Raw tables were printed to the session's scratch folder and are not kept; run the timer again rather than trust
 these to the millisecond.
 

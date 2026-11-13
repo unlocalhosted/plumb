@@ -859,12 +859,28 @@
 - **The fix and the proof:** algorecall's read on a warm server: 30–52 s this morning → 14.8–17.3 s (four runs). Engine 1.8 s, full redraws 18 → 3, main thread blocked 26 s → 4.7–7.4 s, the same 27 craft findings. crafting-ui 2.4 s → 1.7–1.9 s, same 26. Not fixed: the first read after a server restart is still about 50 s. No test run.
 - **Media hooks:** the request timeline before (a wall of 889 bars) and after (26).
 
+## The 46 MB I had not looked at was one 42 MB answer (2026-11-13)
+- **The itch:** the owner: "you didn't look at the 46 mb thing". Twice I had listed it as "not looked into" and offered something else first.
+- **How we found it:** every answer measured from inside the page. The first attempt, through the browser tool, silently kept only the small answers and made the 46 MB look like 4.6.
+- **The system behind it:** the same cause as the 811 MB, on a second path. For an element whose classes are written elsewhere, the server sends a trace of where; each place in the trace carried its findings with every edit and ledger key. 31 elements made 42 MB; one header link was 22.5 MB.
+- **What we chose and why:** the same cut, in the trace. The trace keeps each place's own structured edits, which the card reads.
+- **The fix and the proof:** 46.9 MB → 5.9 MB; everything sent for the page 811 MB this morning → 12 MB. Same 27–28 craft findings. The clock did not move (16.7 and 17.0 s): bytes are no longer where the time is. No test run.
+- **Media hooks:** three bars: 811, 53, 12.
+
+## Foundations for an editor, a layout generator and many scan modes (2026-11-13)
+- **The itch:** the owner, mid-work: the visual editor "will become similar to wix, figma"; "a procedural layout generator … pick one card and say show me 3 different layouts"; scan modes for performance, security, vulnerabilities, accessibility; all "kept responsive without feeling like a users application is being made dull".
+- **How we found it:** today's timings. Even after the day's fixes, one read of the big page blocks the app's main thread for 4.7–7.4 s in pieces of up to 1.3 s. Fine for a headless read; not for an editor.
+- **The system behind it:** plumber thinks where it looks: on the app's main thread, on the live page.
+- **What we chose and why:** plumber is a guest in someone else's page. Look once into a plain-data snapshot; rules are pure functions of it; judging moves to a worker; one scheduler with a lane for the hand that never waits; modes are packs that cost nothing when off; the engine is a function that can judge a candidate layout as well as the page. Nine foundations, eight layers, the first being to measure what plumber takes from the app today.
+- **The fix and the proof:** none; a design waiting for sign-off: [engine-foundations.md](briefs/engine-foundations.md).
+- **Media hooks:** when built, the app scrolling smoothly while plumber reads it, against today.
+
 ## Open gaps
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
 
 ## Shipped · 2026-W46
 - plumber reads a 16,000-element page in about 15 s where it took 30–52 s: it asks the server about every element in a few round trips instead of 889, and redraws the page 3 times instead of 18 ([entry](#889-questions-asked-one-at-a-time-and-a-redraw-for-each-trickle-2026-11-13)).
-- plumber's server sends a sixteenth of what it did to draw a big page (811 MB → 52 MB on a 16,000-element page): a finding's edits travel only when a fix is applied ([entry](#811-mb-for-one-page-becomes-52-mb-2026-11-13)).
+- plumber's server sends about a seventieth of what it did to draw a big page (811 MB → 12 MB on a 16,000-element page): a finding's edits travel only when a fix is applied ([entry](#811-mb-for-one-page-becomes-52-mb-2026-11-13)).
 - plumber judges a big page about once per read instead of four to six times: on a 16,000-element page its engine takes 2.1–3.1 s where it took 3.7–5.8 s, with the same findings ([entry](#the-page-was-judged-six-times-a-read-now-about-once-2026-11-13)).
 - plumber catches a wrapping list spread by `justify-between`, whose short last line is flung to the edges, and offers `justify-start` with a gap; every check from the defensive-CSS tips is now built ([entry](#the-left-over-space-checks-second-form-a-list-flung-to-the-edges-2026-11-13)).
 - plumber now catches the last three defensive-CSS slips: a picture pulled tall by its row, a background photo that repeats, and a fixed column with no phone layout, each with the one class that fixes it ([entry](#the-last-three-checks-from-the-tips-a-stretched-picture-a-tiling-photo-a-fixed-column-2026-11-13)).

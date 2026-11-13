@@ -95,7 +95,8 @@ export interface PageEntry {
   /** the reading at that JSX, as GET site answers it, less what only an opened finding needs (report.ts drawn):
    * its edits (asked for with `edits`) and its ledger keys */
   site?: Pick<SiteResult, 'declarations' | 'findings'>;
-  /** the trace of the element's classes when the JSX declares none, as GET classes answers it */
+  /** the trace of the element's classes when the JSX declares none, as GET classes answers it, its findings as a
+   * page draws them (report.ts drawn); each site still carries its own structured edits */
   traced?: ClassesResult;
   /** served from the page cache: nothing was analysed for it */
   cached?: true;
@@ -666,7 +667,7 @@ export class Session extends EventEmitter {
         if (!('value' in site)) { answers.set(key, { stamp: item.stamp, tag: item.tag, ...(item.classes !== undefined ? { classes: item.classes } : {}), status: 'unplaced' }); return; }
         const value = site.value as SiteResult;
         const entry: PageEntry = { stamp: item.stamp, tag: item.tag, ...(item.classes !== undefined ? { classes: item.classes } : {}), status: 'ready', ...where, site: { declarations: value.declarations, findings: value.findings.map(drawn) } };
-        if (item.classes && !value.declarations.length) { const trace = traces[traceAt++]!; if ('value' in trace) entry.traced = trace.value as ClassesResult; }
+        if (item.classes && !value.declarations.length) { const trace = traces[traceAt++]!; if ('value' in trace) { const traced = trace.value as ClassesResult; entry.traced = { ...traced, classes: traced.classes.map(c => ({ ...c, sites: c.sites.map(site => ({ ...site, findings: site.findings.map(drawn) as Report['findings'] })) })) }; } }
         answers.set(key, entry);
         const path = this.file(where.file), hash = this.hashes.get(path);
         // a trace still being read (pending) is not an answer to keep
