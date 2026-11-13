@@ -2417,6 +2417,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   Nothing finds a new one when it is written.
 
 ## Shipped · 2026-W46
+- **React Plumber 0.5.0 is released on GitHub** (tag `v0.5.0`, 2026-11-14): Alt+B X-ray with a readable card that waits for you to stop, a change lands in the class that is showing, resize by edges, repeated parts change every copy, big pages stay smooth. Proof: the full suite on vm-agent, 1061 passed; the 3 files that failed under load passed alone (14 of 14). The warm start that reached main the same day is held for 0.6.0, so GitHub's main stops at the tested commit. npm publish is the owner's step.
 - The speed work is on main: plumber stays out of the way on big pages (scroll at 53 of 60 frames a second with it open, no long freeze while it reads) and the server keeps what it learned between starts ([entry](#the-speed-work-lands-on-main-2026-11-14)).
 - The kept analysis and its start-up check now have tests: six, each a real server start on a small project, 9 s in all. It matters because three layers sit on this and the next one answers from it. The doctor test caught its own row being cut off when a start differs.
 - The start-up check now also notices when an import would find a different file than it did, even if no file plumber read has changed. It matters because that was the one way the kept analysis could be stale without the check seeing it. (crafting-ui: 4,638 imports re-asked in about 0.05 s; one altered by hand was named and refused.)
