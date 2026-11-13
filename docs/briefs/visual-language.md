@@ -64,7 +64,15 @@ using the semantic names, so the change lands everywhere at once.
    outlines and labels, marching ants for picks, mint for written.
 
 ## The DOM's building blocks (owner, 2026-10-27: "a better language for padding, border, margin, typography")
-Every part of the box model has one **pattern** (what it is) and takes its **hue** from the verdict (sky: measured
+**Changed 2026-11-13 (owner: "our colors and design for padding, margin, gap and all are not aligned"; the token
+pickers page is the reference):** every part of the box model has its own **pattern and hue**, always, so a block is
+known by sight: padding mint 45° hatch, margin butter dots, gap lilac stripes, the corner a pink arc, size sky rulers
+(tokens.css `--pl-block-*`). Whether a value is right is never the block's colour: it is said by the outline and the
+pill, coral dashed when hard-coded or off your scale (`--pl-off`), sky when a token is in hand (`--pl-instrument`),
+mint when it is on your scale or written (`--pl-on`). The older rule below (hue from the verdict) is replaced; the
+Alt-inspect drawing (`boxmodel.js`) still follows it until the X-ray replaces it.
+
+Before: every part of the box model has one **pattern** (what it is) and takes its **hue** from the verdict (sky: measured
 and on the scale; coral: off the scale; mint: just written). The same drawing is used everywhere an element is shown
 (Alt-inspect, a pointed-at drifted element in blueprint, the pinned card), drawn by one renderer (`boxmodel.js`) from
 the element's live layout.

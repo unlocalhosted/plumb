@@ -99,10 +99,10 @@ export function mount(host, root, css) {
     .badge.held.written { outline-color: var(--pl-mint); }
 
     /* ── the handle: on the element's corner, where a visual editor puts it. Drag it in or out ── */
-    .handle { position: absolute; width: 10px; height: 10px; margin: -5px 0 0 -5px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 1.5px var(--pl-coral), 0 1px 3px rgb(0 0 0 / .25); cursor: nwse-resize; touch-action: none; z-index: 3;
+    .handle { position: absolute; width: 10px; height: 10px; margin: -5px 0 0 -5px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 1.5px var(--pl-off), 0 1px 3px rgb(0 0 0 / .25); cursor: nwse-resize; touch-action: none; z-index: 3;
       transition: left 220ms var(--pl-spring-pop), top 220ms var(--pl-spring-pop), box-shadow 160ms var(--pl-ease-out), scale 160ms var(--pl-ease-out); }
     .handle:hover, .handle.dragging { scale: 1.25; }
-    .handle.on-token { box-shadow: 0 0 0 1.5px var(--pl-sky), 0 1px 3px rgb(0 0 0 / .25); }
+    .handle.on-token { box-shadow: 0 0 0 1.5px var(--pl-instrument), 0 1px 3px rgb(0 0 0 / .25); }
     .handle.dragging { transition: none; }
 
     .list .c { width: 16px; height: 16px; border-top: 2px solid var(--pl-ink-2); border-left: 2px solid var(--pl-ink-2); }
@@ -116,11 +116,11 @@ export function mount(host, root, css) {
     .dlg .foot button.go { border-color: #7f56d9; background: #7f56d9; color: #fff; }
     /* the gap itself is the handle: drawn in the gap's own pattern (lilac stripes), you drag it wider or narrower */
     .gapband { position: absolute; z-index: 3; border-radius: 3px; cursor: ew-resize; touch-action: none;
-      background: repeating-linear-gradient(90deg, color-mix(in oklab, var(--pl-lilac) 70%, transparent) 0 2px, transparent 2px 4px);
+      background: repeating-linear-gradient(90deg, color-mix(in oklab, var(--pl-block-gap) 70%, transparent) 0 2px, transparent 2px 4px);
       outline: 1.5px dashed var(--pl-coral); outline-offset: 3px;
       transition: left 220ms var(--pl-spring-pop), width 220ms var(--pl-spring-pop), scale 160ms var(--pl-ease-out); }
-    .gapband.on-token { outline: 1.5px solid var(--pl-sky); }
-    .gapband.written { outline: 1.5px solid var(--pl-mint); }
+    .gapband.on-token { outline: 1.5px solid var(--pl-instrument); }
+    .gapband.written { outline: 1.5px solid var(--pl-on); }
     .gapband:hover, .gapband.dragging { scale: 1 1.08; }
     .gapband.dragging { transition: none; }
     .list .g { display: flex; gap: var(--lg); align-items: center; justify-content: center; width: 20px; }
@@ -136,14 +136,14 @@ export function mount(host, root, css) {
     /* the padding itself is the handle: each side drawn in padding's pattern (mint hatch), each one dragged inward makes
        all four sides bigger */
     .padband { position: absolute; z-index: 3; touch-action: none; pointer-events: auto;
-      background: repeating-linear-gradient(45deg, color-mix(in oklab, var(--pl-mint) 55%, transparent) 0 2px, transparent 2px 5px);
+      background: repeating-linear-gradient(45deg, color-mix(in oklab, var(--pl-block-padding) 55%, transparent) 0 2px, transparent 2px 5px);
       transition: left 220ms var(--pl-spring-pop), top 220ms var(--pl-spring-pop), width 220ms var(--pl-spring-pop), height 220ms var(--pl-spring-pop), opacity 160ms; }
     .padband[data-side="top"], .padband[data-side="bottom"] { cursor: ns-resize; }
     .padband[data-side="left"], .padband[data-side="right"] { cursor: ew-resize; }
-    .padband:hover, .padband.dragging { background: repeating-linear-gradient(45deg, color-mix(in oklab, var(--pl-mint) 85%, transparent) 0 2px, transparent 2px 5px); }
+    .padband:hover, .padband.dragging { background: repeating-linear-gradient(45deg, color-mix(in oklab, var(--pl-block-padding) 85%, transparent) 0 2px, transparent 2px 5px); }
     .padband.dragging, .pads.dragging .padband { transition: none; }
     /* one side in hand: its band darker; the row names the sides it moves */
-    .padband.here { background: repeating-linear-gradient(45deg, color-mix(in oklab, var(--pl-mint) 95%, transparent) 0 2px, transparent 2px 5px); }
+    .padband.here { background: repeating-linear-gradient(45deg, color-mix(in oklab, var(--pl-block-padding) 95%, transparent) 0 2px, transparent 2px 5px); }
     .row[hidden], .list[hidden] { display: none; }
     .row .side { padding: 0 2px 0 0; font: 600 11.5px/1 var(--pl-sans); color: var(--pl-ink-2); white-space: nowrap; }
     /* ── the real UI for margin: a notification feed, as someone's app draws it ── */
@@ -155,18 +155,18 @@ export function mount(host, root, css) {
     .notif b { display: block; color: #101828; font: 600 13px/18px system-ui, sans-serif; }
     /* the margin is the handle: the space it makes, drawn in margin's pattern (butter dots) */
     .mband { position: absolute; z-index: 3; cursor: ns-resize; touch-action: none; border-radius: 3px;
-      background: radial-gradient(circle, color-mix(in oklab, var(--pl-butter) 85%, transparent) 1.25px, transparent 1.7px) 0 0 / 6px 6px;
+      background: radial-gradient(circle, color-mix(in oklab, var(--pl-block-margin) 85%, transparent) 1.25px, transparent 1.7px) 0 0 / 6px 6px;
       outline: 1.5px dashed var(--pl-coral); outline-offset: 2px;
       transition: top 220ms var(--pl-spring-pop), height 220ms var(--pl-spring-pop), scale 160ms var(--pl-ease-out); }
-    .mband.on-token { outline: 1.5px solid var(--pl-sky); }
-    .mband.written { outline: 1.5px solid var(--pl-mint); }
+    .mband.on-token { outline: 1.5px solid var(--pl-instrument); }
+    .mband.written { outline: 1.5px solid var(--pl-on); }
     .mband:hover, .mband.dragging { scale: 1.02 1; }
     .mband.dragging, .feed.dragging .notif.held { transition: none; }
     .list .mg { width: 16px; height: 16px; background: radial-gradient(circle, var(--pl-ink-2) 1px, transparent 1.4px) 0 0 / 4px 4px; border-radius: 3px; }
     .list .hard .mg { background-image: radial-gradient(circle, var(--pl-coral) 1px, transparent 1.4px); }
-    .padframe { position: absolute; z-index: 2; pointer-events: none; border-radius: 13px; outline: 1.5px dashed var(--pl-coral); outline-offset: 3px; transition: outline-color 160ms; }
-    .padframe.on-token { outline: 1.5px solid var(--pl-sky); outline-offset: 3px; }
-    .padframe.written { outline: 1.5px solid var(--pl-mint); outline-offset: 3px; }
+    .padframe { position: absolute; z-index: 2; pointer-events: none; border-radius: 13px; outline: 1.5px dashed var(--pl-off); outline-offset: 3px; transition: outline-color 160ms; }
+    .padframe.on-token { outline: 1.5px solid var(--pl-instrument); outline-offset: 3px; }
+    .padframe.written { outline: 1.5px solid var(--pl-on); outline-offset: 3px; }
     .list .pd { width: 16px; height: 16px; box-sizing: border-box; border-radius: 3px; background: repeating-linear-gradient(45deg, var(--pl-ink-3) 0 1px, transparent 1px 3px); position: relative; }
     .list .pd::after { content: ''; position: absolute; inset: var(--ip); border-radius: 2px; background: var(--pl-paper); box-shadow: inset 0 0 0 1.5px var(--pl-ink-2); }
     .list .hard .pd { background: repeating-linear-gradient(45deg, var(--pl-coral) 0 1px, transparent 1px 3px); }
@@ -180,10 +180,10 @@ export function mount(host, root, css) {
     /* the text itself is the handle: drag it up to make it bigger, down to make it smaller. Two type lines (the top of
        its capitals and its baseline) say it is type and hold the state colour */
     .typelines { position: absolute; z-index: 2; pointer-events: none; transition: left 220ms var(--pl-spring-pop), top 220ms var(--pl-spring-pop), width 220ms var(--pl-spring-pop), height 220ms var(--pl-spring-pop); }
-    .typelines::before, .typelines::after { content: ''; position: absolute; left: -10px; right: -10px; height: 0; border-top: 1.5px dashed var(--pl-coral); }
+    .typelines::before, .typelines::after { content: ''; position: absolute; left: -10px; right: -10px; height: 0; border-top: 1.5px dashed var(--pl-off); }
     .typelines::before { top: 0; } .typelines::after { bottom: 0; }
-    .typelines.on-token::before, .typelines.on-token::after { border-top: 1.5px solid var(--pl-sky); }
-    .typelines.written::before, .typelines.written::after { border-top: 1.5px solid var(--pl-mint); }
+    .typelines.on-token::before, .typelines.on-token::after { border-top: 1.5px solid var(--pl-instrument); }
+    .typelines.written::before, .typelines.written::after { border-top: 1.5px solid var(--pl-on); }
     .typelines.dragging { transition: none; }
     .post h3[contenteditable] { cursor: text; outline: 1.5px solid var(--pl-sky); outline-offset: 3px; border-radius: 3px; caret-color: var(--pl-sky); }
     .typelines.editing { opacity: 0; }

@@ -67,8 +67,8 @@ export const XRAY_CSS = `
   /* the box, drawn small: each ring in its pattern, each side's value on it */
   .xr-box { position: relative; margin: 12px 0 4px; height: 148px; border-radius: 14px; background: var(--pl-bg-inset); box-shadow: var(--pl-shadow-well); }
   .xr-box .ring { position: absolute; border-radius: 12px; }
-  .xr-box .m { inset: 8px; border: 1.5px dashed color-mix(in oklab, var(--pl-butter) 85%, var(--pl-text-primary)); background: radial-gradient(color-mix(in oklab, var(--pl-butter) 70%, transparent) 1px, transparent 1.4px) 0 0 / 6px 6px; }
-  .xr-box .p { inset: 30px 38px; border-radius: 10px; background: repeating-linear-gradient(-45deg, color-mix(in oklab, var(--c) 55%, transparent) 0 2px, transparent 2px 5px), color-mix(in oklab, var(--c) 10%, var(--pl-bg-surface)); box-shadow: 0 0 0 1.5px var(--c); }
+  .xr-box .m { inset: 8px; border: 1.5px dashed color-mix(in oklab, var(--pl-block-margin) 85%, var(--pl-text-primary)); background: radial-gradient(color-mix(in oklab, var(--pl-block-margin) 85%, transparent) 1.25px, transparent 1.7px) 0 0 / 6px 6px; }
+  .xr-box .p { inset: 30px 38px; border-radius: 10px; background: repeating-linear-gradient(-45deg, color-mix(in oklab, var(--pl-block-padding) 55%, transparent) 0 2px, transparent 2px 5px), color-mix(in oklab, var(--pl-block-padding) 10%, var(--pl-bg-surface)); box-shadow: 0 0 0 1.5px var(--c); }
   .xr-box .c { inset: 56px 70px; border-radius: 6px; display: grid; place-items: center; background: var(--pl-bg-surface); box-shadow: 0 1px 2px rgb(0 0 0 / .12); font: 600 10.5px/1 var(--pl-mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
   .xr-box .v { position: absolute; translate: -50% -50%; display: inline-flex; gap: 3px; align-items: baseline; padding: 2px 5px; border-radius: 99px; white-space: nowrap;
     font: 600 10.5px/1.1 var(--pl-mono); font-variant-numeric: tabular-nums; background: var(--pl-bg-surface); box-shadow: 0 0 0 1px color-mix(in oklab, var(--c) 45%, transparent); color: var(--pl-text-primary); }
@@ -138,7 +138,7 @@ export function xray(el, { tokenOf, origin = { left: 0, top: 0 }, room, source, 
     if (!n) return { n: 0, c: 'var(--pl-icon-tick, #bbb)', zero: true };
     if (!tokenOf) return { n: r1(n), c: 'var(--pl-sky)' };
     const t = tokenOf(family, n);
-    return t ? { n: r1(n), t, on: true, c: 'var(--pl-mint)' } : { n: r1(n), off: true, c: 'var(--pl-coral)' };
+    return t ? { n: r1(n), t, on: true, c: 'var(--pl-on)' } : { n: r1(n), off: true, c: 'var(--pl-off)' };
   };
   const m = SIDES.map((s) => px(cs.getPropertyValue(`margin-${s}`)));
   const b = SIDES.map((s) => (cs.getPropertyValue(`border-${s}-style`) === 'none' ? 0 : px(cs.getPropertyValue(`border-${s}-width`))));
@@ -149,55 +149,57 @@ export function xray(el, { tokenOf, origin = { left: 0, top: 0 }, room, source, 
   const rad = px(cs.borderTopLeftRadius), rj = judge('radius', rad);
   const fs = px(cs.fontSize), lh = cs.lineHeight === 'normal' ? fs * 1.2 : px(cs.lineHeight), tj = judge('type', fs);
   const anyOff = [...pj, ...mj, gj, rj, tj].some((v) => v?.off);
-  const ink = anyOff ? 'var(--pl-coral)' : tokenOf ? 'var(--pl-mint)' : 'var(--pl-sky)';
+  const ink = anyOff ? 'var(--pl-off)' : tokenOf ? 'var(--pl-on)' : 'var(--pl-instrument)';
 
   // ── on the element ──
-  const pat = (id, c, body) => `<pattern id="${id}" width="5" height="5" patternUnits="userSpaceOnUse"${id.includes('h') ? ' patternTransform="rotate(45)"' : ''}>${body(c)}</pattern>`;
-  const hues = { mint: 'var(--pl-mint)', coral: 'var(--pl-coral)', sky: 'var(--pl-sky)', butter: 'color-mix(in oklab, var(--pl-butter) 80%, var(--pl-butter-ink))', tick: 'var(--pl-icon-tick, #bbb)' };
-  const defs = Object.entries(hues).map(([k, c]) => pat(`xrh-${k}`, c, (h) => `<rect width="2" height="5" fill="${h}" opacity=".75"/>`)
-    + pat(`xrd-${k}`, c, (h) => `<circle cx="2.5" cy="2.5" r="1" fill="${h}"/>`)
-    + pat(`xrs-${k}`, c, (h) => `<rect width="1.6" height="5" fill="${h}" opacity=".8"/>`)).join('');
-  const key = (v) => (v.zero ? 'tick' : v.off ? 'coral' : v.on ? 'mint' : 'sky');
+  // Each block in its own hue and pattern, always (tokens.css --pl-block-*; the token pickers page is the reference):
+  // padding mint hatch, margin butter dots, gap lilac stripes, the corner a pink arc. Whether a value is right is never
+  // the block's colour: a band off your scale gets a coral dashed outline, and the pills and the card say the token.
+  const BLOCK = { padding: 'var(--pl-block-padding)', margin: 'var(--pl-block-margin)', gap: 'var(--pl-block-gap)', corner: 'var(--pl-block-corner)', size: 'var(--pl-block-size)', type: 'var(--pl-instrument)' };
+  const blockOf = (z) => (z.box ?? (z.prop === 'gap' || /gap$/.test(z.prop) ? 'gap' : z.family === 'radius' ? 'corner' : z.family === 'size' ? 'size' : 'type'));
+  const pat = (id, body, rot) => `<pattern id="${id}" width="5" height="5" patternUnits="userSpaceOnUse"${rot ? ' patternTransform="rotate(45)"' : ''}>${body}</pattern>`;
+  const defs = pat('xr-pad', `<rect width="2" height="5" fill="${BLOCK.padding}" opacity=".7"/>`, true)
+    + `<pattern id="xr-mar" width="6" height="6" patternUnits="userSpaceOnUse"><circle cx="3" cy="3" r="1.25" fill="color-mix(in oklab, ${BLOCK.margin} 85%, var(--pl-butter-ink))"/></pattern>`
+    + pat('xr-gap', `<rect width="2" height="5" fill="${BLOCK.gap}" opacity=".7"/>`, false);
   const rect = (x, y, w, h, fill, extra = '') => (w > 0.5 && h > 0.5 ? `<rect x="${r1(x)}" y="${r1(y)}" width="${r1(w)}" height="${r1(h)}" fill="${fill}" ${extra}/>` : '');
   const ix = r.left + b[3], iy = r.top + b[0], iw = r.width - b[1] - b[3], ih = r.height - b[0] - b[2];
-  const tint = (v) => `color-mix(in oklab, ${v.c} 12%, transparent)`;
+  const tintOf = (hue, k = 12) => `color-mix(in oklab, ${hue} ${k}%, transparent)`;
+  const offLine = 'stroke="var(--pl-off)" stroke-width="1.25" stroke-dasharray="3 2"';
   let draw = '';
-  // margin, dotted, outside the border
+  // margin: butter dots outside the border
   [[r.left - m[3], r.top - m[0], r.width + m[1] + m[3], m[0]], [r.right, r.top, m[1], r.height], [r.left - m[3], r.bottom, r.width + m[1] + m[3], m[2]], [r.left - m[3], r.top, m[3], r.height]]
-    // margin is butter dots in the visual language (padding is mint hatch); coral only when it's off your scale
-    .forEach(([x, y, w, h], i) => { if (m[i]) draw += rect(x, y, w, h, `color-mix(in oklab, ${mj[i].off ? 'var(--pl-coral)' : 'var(--pl-butter)'} 14%, transparent)`) + rect(x, y, w, h, `url(#xrd-${mj[i].off ? 'coral' : 'butter'})`); });
-  // padding, hatched, inside it
+    .forEach(([x, y, w, h], i) => { if (m[i]) draw += rect(x, y, w, h, tintOf(BLOCK.margin, 16)) + rect(x, y, w, h, 'url(#xr-mar)', mj[i].off ? offLine : ''); });
+  // padding: mint hatch inside it
   [[ix, iy, iw, p[0]], [ix + iw - p[1], iy + p[0], p[1], ih - p[0] - p[2]], [ix, iy + ih - p[2], iw, p[2]], [ix, iy + p[0], p[3], ih - p[0] - p[2]]]
-    .forEach(([x, y, w, h], i) => { if (p[i]) draw += rect(x, y, w, h, tint(pj[i])) + rect(x, y, w, h, `url(#xrh-${key(pj[i])})`); });
-  // gaps, striped
-  for (const g of G) draw += rect(g.x, g.y, g.w, g.h, tint(gj)) + rect(g.x, g.y, g.w, g.h, `url(#xrs-${key(gj)})`);
-  // the content, a faint dashed line; the element's own edge at its own corners, coral and dashed while anything's off
-  draw += rect(ix + p[3], iy + p[0], iw - p[1] - p[3], ih - p[0] - p[2], 'none', `stroke="var(--pl-sky)" stroke-opacity=".55" stroke-dasharray="3 3" rx="${Math.max(0, rad - Math.max(p[0], p[3]))}"`);
+    .forEach(([x, y, w, h], i) => { if (p[i]) draw += rect(x, y, w, h, tintOf(BLOCK.padding)) + rect(x, y, w, h, 'url(#xr-pad)', pj[i].off ? offLine : ''); });
+  // gaps: lilac stripes across each
+  for (const g of G) draw += rect(g.x, g.y, g.w, g.h, tintOf(BLOCK.gap)) + rect(g.x, g.y, g.w, g.h, 'url(#xr-gap)', gj?.off ? offLine : '');
+  // the content, a faint dashed line; the element's own edge: coral and dashed while anything is off, mint when all of it
+  // is on your scale, sky when there's no scale to judge by
+  draw += rect(ix + p[3], iy + p[0], iw - p[1] - p[3], ih - p[0] - p[2], 'none', `stroke="var(--pl-instrument)" stroke-opacity=".5" stroke-dasharray="3 3" rx="${Math.max(0, rad - Math.max(p[0], p[3]))}"`);
   draw += rect(r.left, r.top, r.width, r.height, 'none', `stroke="${ink}" stroke-width="1.5" rx="${Math.min(rad, r.width / 2, r.height / 2)}"${anyOff ? ' stroke-dasharray="4 3"' : ''}`);
-  // corners: where it rounds, the arc traced thick in its verdict
+  // corners: the pink arc where it rounds
   if (rad > 1) {
     const k = Math.min(rad, r.width / 2, r.height / 2);
     const arcs = [[r.left, r.top + k, r.left + k, r.top, 1], [r.right - k, r.top, r.right, r.top + k, 1], [r.right, r.bottom - k, r.right - k, r.bottom, 1], [r.left + k, r.bottom, r.left, r.bottom - k, 1]];
-    draw += arcs.map(([x1, y1, x2, y2]) => `<path d="M${r1(x1)} ${r1(y1)}A${r1(k)} ${r1(k)} 0 0 1 ${r1(x2)} ${r1(y2)}" fill="none" stroke="${rj.c}" stroke-width="3" stroke-linecap="round"/>`).join('');
+    draw += arcs.map(([x1, y1, x2, y2]) => `<path d="M${r1(x1)} ${r1(y1)}A${r1(k)} ${r1(k)} 0 0 1 ${r1(x2)} ${r1(y2)}" fill="none" stroke="${BLOCK.corner}" stroke-width="3" stroke-linecap="round"${rj.off ? ' stroke-dasharray="5 3"' : ''}/>`).join('');
   }
   // rulers: width above, height to the right, just clear of the margin
   const above = r.top - m[0] - 12, beside = r.right + m[1] + 12;
-  const tick = 'stroke="var(--pl-sky)" stroke-width="1.25"';
+  const tick = `stroke="${BLOCK.size}" stroke-width="1.25"`;
   draw += `<path d="M${r1(r.left)} ${r1(above)}H${r1(r.right)}M${r1(r.left)} ${r1(above - 4)}v8M${r1(r.right)} ${r1(above - 4)}v8M${r1(beside)} ${r1(r.top)}V${r1(r.bottom)}M${r1(beside - 4)} ${r1(r.top)}h8M${r1(beside - 4)} ${r1(r.bottom)}h8" ${tick} fill="none"/>`;
   // the part in hand: drawn stronger, with one pill that says it and the key that changes it
   let said = '';
   if (zone) {
-    const zj = judge(zone.family, zone.n), zx = zone.x - origin.left, zy = zone.y - origin.top;
-    if (zone.box === 'margin' && !zj.off) zj.c = 'color-mix(in oklab, var(--pl-butter) 80%, var(--pl-butter-ink))';
-    else if (zj.zero) zj.c = 'var(--pl-sky)';
-    draw += `<rect class="xr-zone" x="${r1(zx)}" y="${r1(zy)}" width="${r1(zone.w)}" height="${r1(zone.h)}" rx="${zone.family === 'radius' ? 4 : 2}" fill="color-mix(in oklab, ${zj.c} 22%, transparent)" stroke="${zj.c}" stroke-width="2"${zj.zero ? ' stroke-dasharray="4 3"' : ''}/>`;
+    const zj = judge(zone.family, zone.n), zx = zone.x - origin.left, zy = zone.y - origin.top, hue = BLOCK[blockOf(zone)];
+    draw += `<rect class="xr-zone" x="${r1(zx)}" y="${r1(zy)}" width="${r1(zone.w)}" height="${r1(zone.h)}" rx="${zone.family === 'radius' ? 4 : 2}" fill="${tintOf(hue, 24)}" stroke="${zj.off ? 'var(--pl-off)' : hue}" stroke-width="2"${zj.zero || zj.off ? ' stroke-dasharray="4 3"' : ''}/>`;
     // the pill sits outside the element, beside the part: under it for a bottom or inside part, above for a top one
     const up = zone.side === 'top' || zone.prop === 'width';
     const py = up ? Math.min(zy, r.top - m[0] - 12) - 32 : Math.max(zy + zone.h, r.bottom + m[2]) + 8;
     said = `<span class="xr-say" style="left:${r1(zx + zone.w / 2)}px;top:${r1(py)}px"><b>${esc(zone.said)}</b> ${zone.family === 'radius' && zone.n > 500 ? '' : zj.n}${zj.t ? ` <i class="on">${esc(zj.t)}</i>` : zj.off ? ' <i class="off">off scale</i>' : ''}</span>`;
   }
   // parts in hand while a picker has them: drawn strong, no pill (the picker says it)
-  for (const lz of lit) { const lj = judge(lz.family, lz.n); if (lz.box === 'margin' && !lj.off) lj.c = 'color-mix(in oklab, var(--pl-butter) 80%, var(--pl-butter-ink))'; draw += `<rect class="xr-zone" x="${r1(lz.x - origin.left)}" y="${r1(lz.y - origin.top)}" width="${r1(lz.w)}" height="${r1(lz.h)}" rx="2" fill="color-mix(in oklab, ${lj.c} 22%, transparent)" stroke="${lj.c}" stroke-width="2"/>`; }
+  for (const lz of lit) { const lj = judge(lz.family, lz.n), hue = BLOCK[blockOf(lz)]; draw += `<rect class="xr-zone" x="${r1(lz.x - origin.left)}" y="${r1(lz.y - origin.top)}" width="${r1(lz.w)}" height="${r1(lz.h)}" rx="2" fill="${tintOf(hue, 24)}" stroke="${lj.off ? 'var(--pl-off)' : hue}" stroke-width="2"${lj.off ? ' stroke-dasharray="4 3"' : ''}/>`; }
   const wSz = sizing(el, cs, 'w'), hSz = sizing(el, cs, 'h');
   // the rulers' numbers carry their verdict too: deep coral off your sizes, deep mint on one (with its name)
   const sz = (n) => { const v = judge('size', n); return v.off ? 'background:var(--pl-coral-ink)' : v.on ? 'background:var(--pl-mint-ink)' : ''; };
@@ -212,7 +214,7 @@ export function xray(el, { tokenOf, origin = { left: 0, top: 0 }, room, source, 
   // every number is a control: data-prop names the property it changes (drag it, scroll on it, click it for a list)
   const side = (v, x, y, prop) => `<span class="v ch${v.zero ? ' zero' : ''}" data-prop="${prop}" style="--c:${v.c};left:${x};top:${y}">${v.n}${v.t ? `<i>${esc(v.t)}</i>` : ''}</span>`;
   const chip = (prop, v, txt = v.n) => `<span class="ch n" data-prop="${prop}">${txt}</span>`;
-  const pc = pj.some((v) => v.off) ? 'var(--pl-coral)' : tokenOf ? 'var(--pl-mint)' : 'var(--pl-sky)';
+  const pc = pj.some((v) => v.off) ? 'var(--pl-off)' : tokenOf ? 'var(--pl-on)' : 'var(--pl-instrument)';
   const box = `<div class="xr-box">
       <span class="ring m"></span><span class="lab" style="left:14px;top:13px">margin</span>
       <span class="ring p" style="--c:${pc}"></span><span class="lab" style="left:44px;top:35px">padding</span>
