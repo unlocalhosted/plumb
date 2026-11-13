@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { spawnSync } from 'node:child_process';
 import { cp, mkdtemp, rm, writeFile, readFile, truncate, stat } from 'node:fs/promises';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import { Session } from '../dist/session/index.js';
 import { loadReadings, readingOf } from '../dist/session/kept.js';
 const repo = new URL('../', import.meta.url).pathname;
@@ -51,11 +51,13 @@ test('a start keeps its analysis, and what it kept says what the server answers'
   assert.equal(first.warm.receipt, 'none', 'nothing was kept before the first start');
   assert.ok(first.kept.files > 0 && first.kept.bytes > 0);
   const table = loadReadings(await readFile(join(first.kept.directory, 'readings.v8')));
+  const at = value => value && JSON.parse(JSON.stringify(value).split(JSON.stringify(root + '/').slice(1, -1)).join(''));
   let compared = 0;
   for (const answer of first.answers) {
-    const kept = readingOf(table, answer.file);
+    // the server names files from the project; what it keeps names them in full
+    const kept = at(readingOf(table, resolve(root, answer.file)));
     if (!kept) { assert.equal(answer.findings.length + answer.declarations.length, 0, `${answer.file} has a reading the kept analysis lacks`); continue; }
-    assert.deepEqual(bare({ findings: kept.findings, declarations: kept.declarations }), bare({ findings: answer.findings, declarations: answer.declarations }), answer.file);
+    assert.deepEqual(bare({ findings: kept.findings, declarations: kept.declarations }), bare(at({ findings: answer.findings, declarations: answer.declarations })), answer.file);
     compared++;
   }
   assert.ok(compared >= 2, 'the files with something to say were compared');
