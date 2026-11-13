@@ -13,6 +13,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { PRINCIPLES } from './catalogue.js';
 import { Film } from './Film.jsx';
 import { ensureLook } from './look.js';
+import { STEM, BOWL } from '../../../src/mark.js';
 
 ensureLook();
 const SCREENS = Object.fromEntries(Object.entries(import.meta.glob('./screens/[0-9]*.jsx', { eager: true })).map(([, m]) => [m.n, m]));
@@ -34,12 +35,7 @@ const LINE = 'A design review on every screen.';   // the site's hero line (home
 // space between is a decision, and it makes the P. With `guards`, plumber's own guardrails draw themselves on: the guides
 // the stem, cap and foot sit on, and the 4 it measures across the gap.
 const GUARD = '#2f86dc';
-// a box with its own corner radii, scaled down together when they don't fit (as CSS scales border-radius)
-const box = (x, y, w, h, r) => {
-  const f = Math.min(1, w / (r[0] + r[1] || 1), w / (r[3] + r[2] || 1), h / (r[0] + r[3] || 1), h / (r[1] + r[2] || 1)), [a, b, c, d] = r.map((v) => v * f);
-  return `M${x + a} ${y}H${x + w - b}${b ? `A${b} ${b} 0 0 1 ${x + w} ${y + b}` : ''}V${y + h - c}${c ? `A${c} ${c} 0 0 1 ${x + w - c} ${y + h}` : ''}H${x + d}${d ? `A${d} ${d} 0 0 1 ${x} ${y + h - d}` : ''}V${y + a}${a ? `A${a} ${a} 0 0 1 ${x + a} ${y}` : ''}Z`;
-};
-const STEM = box(24, 18, 34, 84, [24, 5, 10, 10]), BOWL = box(62, 18, 34, 56, [5, 28, 28, 5]);
+// the mark's two parts, from the one source the site's bar and the overlay's dock draw from too
 const Mark = ({ size, guards = false }) => (
   <svg viewBox="0 0 120 120" width={size} height={size} aria-hidden="true" style={{ overflow: 'visible' }}>
     <defs>
