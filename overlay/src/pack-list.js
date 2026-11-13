@@ -7,6 +7,7 @@
  * the server included.
  * ───────────────────────────────────────────────────────── */
 import { A11Y } from './pack-a11y.js';
+import { FORMS } from './pack-forms.js';
 import { SECURITY } from './pack-security.js';
 
-export const PACK_DATA = [A11Y, SECURITY];
+export const PACK_DATA = [A11Y, FORMS, SECURITY];

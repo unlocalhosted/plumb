@@ -233,6 +233,24 @@ guide a front-end project's code shows:
 custom controls, focus moved into dialogs, live regions), what is about the document (language, title), what is
 about media (captions, transcripts), and what is judgement (is this alt text informative).
 
+## 4d. The batch of 2026-11-14: 33 forms checks
+
+Source: `modern-web-guidance` 1.0.0, guide `forms` (92 dos and don'ts, eleven sections). Pack `forms`, page rules, files `overlay/src/pack-forms.js` (words, grounding) and `overlay/src/forms-rules.js`.
+
+| Section of the guide | Rules |
+|---|---|
+| 1. Structure | nested-form, button-type, submit-missing, fieldset-legend, field-name, password-no-form, search-landmark, form-unnamed, get-sensitive, textarea-resize, submit-wording, radio-group, input-type, visual-order |
+| 2. Labels and state | label-unbound, label-proximity, invalid-undescribed, required-unmarked (doubt), required-unsaid, label-overridden, describedby-missing, placeholder-instruction |
+| 3. Autofill and hints | autocomplete-off, numeric-keyboard, number-for-code, split-code, identifier-correction |
+| 4. Validation | invalid-on-load, submit-disabled |
+| 6. Styling | control-hidden |
+| 8. Identity and security | inline-handler |
+| 9. Addresses | name-split (doubt), latin-only |
+
+Not built, and why: paste blocked and Enter during composition (source only; a pack runs on the page or on source, not both yet); CSRF, HTTPS, server fallback (server); sections 10 and 11 (testing, analytics, wizard state: a person's work); font size, tap target and focus outline (craft already says them).
+
+Run (2026-11-14): broken page, 30 of 33 speak. crafting-ui /icons: 1 true finding (search-landmark). glyphschool, glyphwrite: 0. One false hit fixed (a `<kbd>` hint inside a label). 33 rules, 10,827 elements, 30 ms. These apps hold 2 to 29 form parts a page, so this run is thin evidence.
+
 ## 5. Order, and why not the signed-off one
 
 The foundations put packs at layer 5, after the snapshot (3) and pure rules in a worker (4), so that a new page pack

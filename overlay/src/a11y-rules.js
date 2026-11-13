@@ -313,3 +313,6 @@ export const fieldAutocomplete = rule('field-autocomplete', 'autocomplete', func
 export const A11Y_RULES = [controlName, imageAlt, altCliche, svgName, tabindexPositive, tabindexRedundant, hiddenFocusable, rolePresentationControl, labelOnGeneric, labelInName, roleInLabel, linkNameReused,
   headingSkip, headingH1Many, mainMany, navUnnamed, iframeTitle, iframeScroll, tableHeaders, headingInSummary, redundantRole, roleOnStructure, nativeOverRole, fieldAutocomplete];
 
+
+// what the other packs' page rules share with these (forms-rules.js)
+export { trimmed, hiddenFromAT, drawn, shown, named, page };

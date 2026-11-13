@@ -1024,10 +1024,19 @@
 - **The fix and the proof:** 31 pack rules now (24 accessibility, 7 security). A page with one of each accessibility problem makes all 24 speak through the real engine; a source file with a good and bad case of each security rule gives 12 found, 11 left alone. On the real apps the batch is quiet: crafting-ui 2 accessibility findings, glyphschool 0, the security ones nothing new. Three kinds of false hit showed up in the one run and were removed (a roving tab stop, a long row label, an escaped piece of markup). 24 rules over 1,169 elements take 7 ms. No tests of the new rules.
 - **Media hooks:** the broken page with every mark on it.
 
+## Thirty-three forms checks in one patch (2026-11-14)
+- **The itch:** the owner chose "Forms next" for the next batch, after "aim for bigger patch per iteration".
+- **How we found it:** Chrome's forms guide has 92 dos and don'ts in eleven sections. Sorted once: 33 show on the drawn page, 2 show only in source (a paste handler that blocks, Enter during text composition), the rest need a server or a person (CSRF, HTTPS, testing, analytics).
+- **The system behind it:** a pack is data plus rules, so a third pack was two new files and four lines in lists. The forms rules reuse the accessibility pack's name computation.
+- **What we chose and why:** a rule is sure only when the page itself shows the fault. Two are left as doubts on purpose (a required field whose label does not say so; a name asked as first and last), because a form can tell people another way. The submit button "disabled until valid" is sure only when the form itself reports it is incomplete.
+- **The fix and the proof:** on a page with one of each problem, through the real command, 30 of 33 speak; the two doubts stay quiet and a form inside a form cannot be written in markup (browsers drop it). On real pages: crafting-ui's icons page, one true finding (its search field is in no search landmark); glyphschool and glyphwrite, none. One false hit found and fixed: a "/" keyboard hint inside a label was read as the label's words. 33 rules over 10,827 elements took 30 ms. The honest gap: these apps have almost no forms (2 to 29 form parts a page), so the real-app run proves little. algorecall, which has sign-in forms, was not run.
+- **Media hooks:** the broken page's output (30 rules, one line each).
+
 ## Open gaps
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
 
 ## Shipped · 2026-W46
+- plumber now checks forms: 33 checks from Chrome's forms guide, from a helper button that submits the form by accident to a one-time code split over six boxes ([entry](#thirty-three-forms-checks-in-one-patch-2026-11-14)). On the homepage branch, not on main.
 - 29 more checks from Chrome's guides in one patch: 23 for accessibility on the page (missing alt, focus inside hidden content, labels that hide the words shown, repeated link text, skipped headings, unnamed navigations, fields the browser cannot fill, and more) and 6 for security in source (messages sent to any origin, listeners that never check the sender, cookies without Secure, third-party scripts with no integrity, plain http). Each names the guide section it comes from.
 - `plumber check` now finds places in your code that run markup or code built from something that is not fixed text (`innerHTML`, `dangerouslySetInnerHTML`, `eval`, `document.write`, string timers), the first check made from Chrome's security guide. It stays quiet about your own constants. Found 5 in glyphschool and 5 in algorecall's source.
 - Plumber can now hold kinds of rule other than craft, as packs a project turns on or off. The first is accessibility, drawn from Chrome's Modern Web Guidance; its first rule finds controls a screen reader cannot name, and found 5 real ones in the glyphwrite workbench that the source makes look labelled.
