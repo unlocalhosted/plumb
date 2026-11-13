@@ -597,6 +597,13 @@
 - **Now:** one finding on crafting-ui, the three figures on the templates page, drawn from a three-item list written in the code. At phone width it fits (358 of 358 px). It is a fixed set the check cannot yet tell from a list; noted, not fixed. No before and after from a real app.
 - **Seen on the way:** the motion vocabulary page (7,274 elements) closed the browser tab during plumber's read.
 
+## #42 redrawn in plumber's own language, after copying the reference (2026-11-13)
+- **The itch:** the owner, on the first film: "you just copied the exact video … and didn't use our design language and primitives … what i want you to learn is how to make good video and not copy frame by frame." Then: "show me the new video".
+- **The system behind it:** I took the reference as a spec and rebuilt its surface (its dashed boxes, its "before → after" and "+2px" pills on every neighbour, its ghost row of bold labels, its switch words, its timings), and had written that surface into the skill as rules. The step that turns *why a beat works* into *how plumber draws it* was missing.
+- **What changed:** the film keeps only the principles (feel it first, measure as it happens, cause after evidence, why the fix holds, the same test pays off). Every mark is plumber's: content boxes as 1px outlines with plumber's halo, sky while measured, coral on the tab that pushes, mint once fixed; dashed sky guides where the pushed tabs belonged; plumber's own pills with the property's icon from the overlay (boxmodel.js), counting to their value (width `W 57.3`, type `Aa sm · 600`), a value only where the pointer is; on the fixed side the weight stays 400 and plumber names the ink the hover uses (`text-ink`); when every tab holds, plumber's own burst (the fix panel's hatched squares, stripes and dots). The switch keeps its own names (Bold on hover / Darker on hover).
+- **The proof:** recorded headless: no console errors; frames checked for each beat; one fault found and fixed (the fixed side's two pills stacked onto "week 8 of 14"; now side by side). Clip: docs/media/showcase-42-plumber-language.mp4.
+- **Not yet:** the skill's §3⅝ still reads as the reference's surface and is to be rewritten as principles plus plumber's marks; reduced motion skips the film.
+
 ## #42 told in four acts: the first screen on the new stage (2026-11-13)
 - **The itch:** the owner, on the rewritten skill: "Yes, build it".
 - **What was built:** a film player for the stage (overlay/showcase/src/principles/Film.jsx) that a screen opts into with `Example.film`, and #42 (tabs that turn semibold on hover) as its first screen. Act 1: a drawn pointer runs over every tab and the row jitters, nothing drawn. Act 2: the camera frames the tabs (1.8×), every tab gets its own dashed outline, the hover repeats three times on Timeline with its width before → after over it and "+2.9px" at each tab that slid; on the third, "Semibold is 2.9px wider". Act 3: the pointer presses the switch (now "Shifts / Stable"), the outlines turn mint, a faint semibold copy of every label shows the width weight would add, with "darker, not bolder: same width", and folds away. Act 4: the same hover on every tab, "+0px" at every edge. Then the camera out, and the example and switch are the viewer's, with Replay.
@@ -1257,6 +1264,14 @@ field is empty). The table of five writes, before and after. The Next table: eig
 - **What we chose and why:** the server keeps its own small table of readings and a receipt of every input; uses it on start only if the receipt passes the same validation the check already trusts; answers reads from it while a second worker runs the real analysis; makes writes wait; drops it whole if a file changes first; and compares the two when the real analysis lands, so a wrong warm start corrects itself and leaves evidence. A check-only layer runs for days before any answer comes from it.
 - **The fix and the proof:** none; a design waiting for sign-off: [server-warm-start.md](briefs/server-warm-start.md). Target under 8 s to first answer; the server's own number is not measured.
 - **Media hooks:** when built, a restart on algorecall: the overlay drawing at 7 s against 41 s.
+
+## The warm start measured before anything is built (2026-11-13)
+- **The itch:** the owner signed off the warm-start design: "measure".
+- **How we found it:** two cold starts of plumber's server on crafting-ui, the reading tables compared byte for byte; on algorecall, the check's own receipt validation timed, and the reading table built from its kept result and weighed.
+- **The system behind it:** the design stands on one claim, that the same inputs always give the same table. If the analysis had any order that depends on timing, the self-check would cry wolf.
+- **What we found:** on crafting-ui the two tables are identical to the byte. On algorecall checking the receipt takes 0.9 s and loading the table 0.7 s, against a 41 s cold start, so the target of 8 s was timid. But as plain objects the table is 257 MB; nine in ten of its 304,350 declarations are the same declaration at another place, so it has to be stored as tables.
+- **The fix and the proof:** none built. Not done: algorecall's own two cold starts compared. They need 2 GB twice and the laptop was swapping (5.9 of 7.2 GB of swap used). Numbers in [server-warm-start.md](briefs/server-warm-start.md).
+- **Media hooks:** none yet.
 
 ## Open gaps
 - The site's top bar doesn't fit a phone (390px): it widens the page to about 500px. Needs a compact bar.
@@ -2346,7 +2361,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   Nothing finds a new one when it is written.
 
 ## Shipped · 2026-W46
-- The showcase's #42 now explains itself in four acts: you see the tabs jitter, see it measured with its cause, see why the fix holds, then see every tab hold still ([entry](#42-told-in-four-acts-the-first-screen-on-the-new-stage-2026-11-13)).
+- The showcase's #42 explains itself as a short film drawn in plumber's own marks: you feel the tabs jitter, see plumber measure it and name the weight, see the fix keep the width, and watch every tab hold ([entry](#42-redrawn-in-plumbers-own-language-after-copying-the-reference-2026-11-13)).
 - plumber's server no longer keeps a core busy on a big project: its safety-net file check is paced by its own cost, and a 16,000-element page now reads in 6–9 s ([entry](#the-server-was-checking-22808-files-four-times-a-second-2026-11-13)).
 - The page no longer freezes while plumber reads it: the longest block on a big page went from 1.8 s to 0.3 s, and the pointer stays live ([entry](#the-page-froze-while-plumber-read-it-the-judging-now-comes-in-slices-2026-11-13)).
 - With plumber open, the app under it scrolls and answers the pointer nearly as it does alone (crafting-ui: 7 → 46 frames a second scrolling, 15 → 59 moving the pointer) ([entry](#with-plumber-open-the-app-crawled-it-was-asking-what-covers-this-four-thousand-times-a-frame-2026-11-13)).
