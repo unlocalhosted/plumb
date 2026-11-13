@@ -167,20 +167,46 @@ function classesOfSides(letter, s) {
   if (t && t === b) out.push(`${letter}y-${t}`); else { if (t) out.push(`${letter}t-${t}`); if (b) out.push(`${letter}b-${b}`); }
   return out;
 }
+// The breakpoints in force at the window's width now, narrowest first: '' (the base) and each sm: md: … that applies.
+// Tailwind's default widths; a theme's own (--breakpoint-*) are read when the page has them.
+export function activeBreakpoints() {
+  if (typeof matchMedia === 'undefined') return [''];
+  const root = typeof document !== 'undefined' ? getComputedStyle(document.documentElement) : null;
+  const widths = { 'sm:': 640, 'md:': 768, 'lg:': 1024, 'xl:': 1280, '2xl:': 1536 };
+  for (const p of Object.keys(widths)) { const v = parseFloat(root?.getPropertyValue(`--breakpoint-${p.slice(0, -1)}`) ?? ''); if (v) widths[p] = v * (/rem/.test(root.getPropertyValue(`--breakpoint-${p.slice(0, -1)}`)) ? 16 : 1); }
+  return ['', ...Object.entries(widths).filter(([, w]) => matchMedia(`(min-width: ${w}px)`).matches).map(([p]) => p)];
+}
 /**
  * The class edit that writes per-property changes ([{ prop, to: { token } }]) on an element whose box family is set by
  * classes: { from, to } for `swap`, or null when a property isn't a box side or a side isn't set by a class.
+ *
+ * A change is made where it shows (owner, 2026-11-13: "our apply should never cause loss of behaviour, it should be
+ * smart and should only change the behavior on which we are operating upon"): each side is changed in the class that
+ * sets it at the width the page is seen at now, the widest breakpoint in force that sets that side (md:px-6 at a
+ * medium window), else the base. Every other class is left exactly as written: other breakpoints, hover:, focus:,
+ * dark:, and the base when a breakpoint is the one changed. `variants`: the breakpoints in force, narrowest first.
  */
-export function boxEdit(el, props) { return boxEditOf((el.getAttribute('class') ?? '').split(/\s+/).filter(Boolean), props); }
-export function boxEditOf(classes, props) {
+export function boxEdit(el, props, variants = activeBreakpoints()) { return boxEditOf((el.getAttribute('class') ?? '').split(/\s+/).filter(Boolean), props, variants); }
+export function boxEditOf(classes, props, variants = ['']) {
   let from = [], to = [];
+  // one variant's own classes, its prefix taken off; the base's are those with no variant at all
+  const of = (v) => classes.filter((c) => (v ? c.startsWith(v) && !c.slice(v.length).includes(':') : !c.includes(':'))).map((c) => c.slice(v.length));
   for (const [family, letter] of Object.entries(FAMILY)) {
     const mine = props.filter((p) => p.prop.startsWith(`${family}-`));
     if (!mine.length) continue;
-    const { sides, used } = sidesOf(classes, letter);
-    for (const p of mine) sides[p.prop.slice(family.length + 1)] = p.to.token;
-    from = from.concat(used);
-    to = to.concat(classesOfSides(letter, sides));
+    const groups = new Map();
+    for (const p of mine) {
+      const side = p.prop.slice(family.length + 1);
+      const v = [...variants].reverse().find((x) => x && sidesOf(of(x), letter).sides[side] !== undefined) ?? '';
+      if (!groups.has(v)) groups.set(v, []);
+      groups.get(v).push([side, p.to.token]);
+    }
+    for (const [v, list] of groups) {
+      const { sides, used } = sidesOf(of(v), letter);
+      for (const [side, token] of list) sides[side] = token;
+      from = from.concat(used.map((c) => v + c));
+      to = to.concat(classesOfSides(letter, sides).map((c) => v + c));
+    }
   }
   if (props.some((p) => !/^(padding|margin)-/.test(p.prop))) return null;
   const keep = from.filter((c) => to.includes(c));
@@ -269,11 +295,11 @@ export function applied(list, { from, to }) {
  * spacing changes as the fewest padding and margin classes. `classes`: the element's classes with every preview put
  * back. Null when a change can't be written as classes.
  */
-export function elementEdit(classes, writes, props) {
+export function elementEdit(classes, writes, props, variants = activeBreakpoints()) {
   let list = [...classes];
   for (const w of writes) { if (!w) return null; list = applied(list, w); }
   if (props.length) {
-    const box = boxEditOf(list, props);
+    const box = boxEditOf(list, props, variants);
     if (!box) return null;
     list = applied(list, box);
   }

@@ -56,6 +56,8 @@ reserved.)
 
 ## Doesn't do yet
 
+**Change the class in force, for every family (2026-11-13).** Padding and margin now edit the breakpoint in force at the window's width (`boxEditOf`). Still to do: `dark:` when the page is dark, `hover:`/`focus:` while Plumber holds that state, the branch of a condition that is active, and gap, radius, size and text size through the same rule. The plan is `docs/briefs/xray-propagation.md`.
+
 **The X-ray isn't in Plumber yet (2026-11-13).** The X-ray of the element under the pointer is a working prototype on the design site, and it should replace Alt+B's heat. What must carry over as it is: point at a part and drag it where it is (no mode, nothing drawn on top of the element); the token picker row in the card, where two fingers choose which sides or the value (the direction locks to the swipe, and the thumb resists and then snaps); changes collect for one Sync, and Esc puts them back; Enter opens a note for your agent with the file and line. **A repeated part changes everywhere by default** (every element the same line of code draws, found by its stamp: `peersOf` in `overlay/src/xray.js`), with the other places outlined and "×N places" in the card; Alt as a change starts changes only the one. Sync must write the class at that one line, not once per place.
 
 **The order** (decided 2026-11-12):
