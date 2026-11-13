@@ -350,6 +350,8 @@ class PlumbOverlay extends HTMLElement {
     this.#$('.pick').addEventListener('click', () => this.#armed && this.#sticky ? this.#disarm() : this.#arm(true));
     this.#blueprint = new Blueprint(this, this.#root, {
       onState: state => this.#blueprintState(state),
+      // the list (or a click blueprint took) picked an element: the X-ray shows it and holds it
+      onSelect: el => { if (el) this.#xray?.hold(el); else this.#xray?.release(); },
       // a page read through proves the server is ready: the dock says so now, not at the next health poll
       onProgress: progress => { this.#bp.progress = progress; if (progress.total && progress.read === progress.total && this.#health === 'starting') this.#health = 'ready'; this.#dock(); if (progress.total && progress.read === progress.total) this.#announce(this.#blueprintSays()); },
       // craft: the engine measures the theme's tokens from the same decisions the choosers use (asked for on first use)
@@ -390,7 +392,7 @@ class PlumbOverlay extends HTMLElement {
     // the X-ray, with what its Sync wrote, comes back after the write's reload (one written 30 s ago or less)
     try {
       const x = JSON.parse(sessionStorage.getItem('plumb:xray') ?? 'null');
-      if (x && Date.now() - x.at < 30000) { sessionStorage.removeItem('plumb:xray'); if (!this.#xray) this.#toggleXray(); if (x.results?.length) this.#xray?.showResults(x.results); }
+      if (x && Date.now() - x.at < 30000) { sessionStorage.removeItem('plumb:xray'); this.#xrayResults = x.results ?? null; await new Promise(r => setTimeout(r, 120)); if (!this.#blueprint?.active) this.#wholePage(); }
     } catch {}
     // an undo the page went away in the middle of (a write the dev server reloads for, sometimes twice): Blueprint comes
     // back, and the fix panel goes on with what's left (fixpanel.js)
@@ -500,16 +502,22 @@ class PlumbOverlay extends HTMLElement {
   // design site's X-ray page runs). This adapter tells it what your page is: names from your components, places from
   // the stamps, your theme's steps, and writes through the engine (the class showing now, variants.js; located in your
   // code, locate.js; written by the server's swaps, one Undo group per change).
-  #xray = null;
+  #xray = null; #xrayResults = null; // results said again after a write's reload
   #toggleXray() {
-    if (this.#xray) { this.#xray.destroy(); this.#xray = null; this.#root.querySelector('.xr-host')?.remove(); return; }
+    if (this.#xray) { this.#xray.destroy(); this.#xray = null; this.#root.querySelector('.xr-host')?.remove(); this.removeAttribute('data-xray'); return; }
     this.#ready?.dismiss();
-    if (this.#blueprint?.active) this.#toggleBlueprint();
+    this.setAttribute('data-xray', '');
     if (!this.#root.querySelector('style[data-xray]')) {
       const t = document.createElement('template');
       t.innerHTML = `<style data-xray>${XRAY_CSS}${PICKER_CSS}${XRAY_LIVE_CSS}
       .xr-host { position: fixed; inset: 0; pointer-events: none; z-index: 2147483000; font-family: var(--pl-sans); color: var(--pl-text-primary); }
-      .xr-host :is(.xr-card, .xr-list, .xr-note) { pointer-events: auto; }</style>${TOY_DEFS}`;
+      .xr-host :is(.xr-card, .xr-list, .xr-note) { pointer-events: auto; }
+      /* the X-ray in place of the heat: blueprint's marks keep their places (a click still picks), drawn no more; the
+         selection's old box drawing gives way to the X-ray's */
+      :host([data-xray]) .bp .heat { opacity: 0 !important; }
+      :host([data-xray]) .sel .bm { display: none; }
+      /* one label on the page at a time: the X-ray's pill and card say what blueprint's hover hint said */
+      :host([data-xray]) .bp .bp-hint { display: none; }</style>${TOY_DEFS}`;
       this.#root.append(t.content);
     }
     const host = document.createElement('div'); host.className = 'xr-host';
@@ -531,12 +539,15 @@ class PlumbOverlay extends HTMLElement {
     const self = this;
     this.#xray = mountXray({
       container: host, events: window, root: this.#root, contextStop: document.body, watch: document.body,
-      swallowClicks: true, dropPreviewOnWrite: true, cursorOn: document.documentElement,
+      clicks: false, keys: false, dropPreviewOnWrite: true, cursorOn: document.documentElement,
       room: () => ({ left: 12, top: 12, right: innerWidth - 12, bottom: innerHeight - 12 }),
+      // the page's element under the pointer: through blueprint's glass and marks, never the overlay's own panels
       partAt: (e) => {
-        if (e.composedPath().includes(self)) return null;
-        const el = reachable(document.elementFromPoint(e.clientX, e.clientY));
-        return el && el !== document.documentElement && el !== document.body ? el : null;
+        const first = e.composedPath()[0];
+        if (e.composedPath().includes(self) && !first?.closest?.('.glass, .bp')) return null;
+        const hit = () => document.elementFromPoint(e.clientX, e.clientY);
+        const el = reachable(self.#blueprint?.active ? self.#blueprint.through(hit) : hit());
+        return el && el !== self && el !== document.documentElement && el !== document.body ? el : null;
       },
       name: (el) => [nameOf(el), where(el)],
       key: (el) => placeOf(el),
@@ -582,6 +593,7 @@ class PlumbOverlay extends HTMLElement {
       },
       undo: (r) => post('undo-group', { group: r.group }),
     });
+    if (this.#xrayResults?.length) { this.#xray.showResults(this.#xrayResults); this.#xrayResults = null; }
   }
   // Alt+B: the whole page; while one element is read (an Alt+click), the reading widens to the page
   #wholePage() {
@@ -722,6 +734,9 @@ class PlumbOverlay extends HTMLElement {
     // left by the person while a write is out: the page a reload brings back stays out of Blueprint, and the write is
     // History's to say (fixpanel-spec.md, rule 4)
     if (state === 'leaving') this.#resumeOutside();
+    // the X-ray is blueprint's way of showing an element (Alt+B), for the whole page; it leaves with it
+    if ((state === 'leaving' || state === 'off') && this.#xray) this.#toggleXray();
+    if (state === 'on' && !this.#xray && !this.#blueprint?.scope) this.#toggleXray();
     if (state === 'entering') this.#bp.progress = null;
     // blueprint is the person's own page, dimmed: the overlay's cards keep the scheme they have everywhere else
     // one owner of the screen: the setup callout steps aside for Blueprint; the hint only when no card is open (the card
@@ -944,13 +959,15 @@ class PlumbOverlay extends HTMLElement {
       return;
     }
     // Alt+B: the whole view as its blueprint, every drift drawn where it lives
-    // Alt+X: the X-ray of the element under the pointer (owner, 2026-11-13). It takes Alt+B, in place of the heat, once
-    // it carries the list of causes too; until then Alt+B is still the way to the fixes
-    if (event.altKey && event.code === 'KeyX' && !event.repeat) { event.preventDefault(); event.stopPropagation(); this.#disarm(); this.#toggleXray(); return; }
-    // Alt+B: the whole view as its blueprint, every drift drawn where it lives
-    if (event.altKey && event.code === 'KeyB' && !event.repeat) { event.preventDefault(); event.stopPropagation(); this.#disarm(); if (this.#xray) this.#toggleXray(); this.#wholePage(); return; }
-    // Esc with nothing in hand leaves the X-ray (with changes or a list open, the X-ray's own Esc puts them back first)
-    if (event.key === 'Escape' && this.#xray && !this.#xray.pending && !this.#typing(event)) { event.preventDefault(); event.stopPropagation(); this.#toggleXray(); return; }
+    // Alt+B: blueprint, with the X-ray of the element under the pointer in place of the heat (owner, 2026-11-13); its
+    // list of causes, the fix bar and the clean-up are as they were. The X-ray comes and goes with it (#blueprintState)
+    if (event.altKey && event.code === 'KeyB' && !event.repeat) { event.preventDefault(); event.stopPropagation(); this.#disarm(); this.#wholePage(); return; }
+    // changes the X-ray has collected take Enter (Sync) and Esc (put back) before blueprint's own keys
+    if (this.#xray?.pending && (event.key === 'Enter' || event.key === 'Escape') && !event.altKey && !event.metaKey && !event.ctrlKey && !this.#typing(event)) {
+      event.preventDefault(); event.stopPropagation();
+      if (event.key === 'Enter') this.#xray.sync(); else this.#xray.putBack();
+      return;
+    }
     if (this.#xray && event.key === 'Alt') return;
     if (event.key === 'Alt' && !event.repeat) this.#arm();
     else if (event.key === 'Escape' && this.#armed && this.#sticky) { event.preventDefault(); event.stopPropagation(); this.#disarm(); }

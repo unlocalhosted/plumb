@@ -272,7 +272,7 @@ export function mountXray(o) {
   };
   on(E, 'pointermove', track);
   if (E !== window) on(E, 'pointerleave', () => { if (!pinned && !held && !noting && !count()) draw(null); });
-  on(E, 'click', (e) => {
+  if (o.clicks !== false) on(E, 'click', (e) => {
     if (justDragged) { justDragged = false; e.preventDefault?.(); e.stopPropagation?.(); return; }
     if (noting || ourUI(e)) return;
     const el = o.partAt(e);
@@ -555,7 +555,8 @@ export function mountXray(o) {
     requestAnimationFrame(() => ta.focus({ preventScroll: true }));
   };
   // while the X-ray is on, its keys come first, even inside the page's own fields; only its own note and list keep theirs
-  on(window, 'keydown', (e) => {
+  // (inside blueprint the host routes them: blueprint's own keys stay blueprint's)
+  if (o.keys !== false) on(window, 'keydown', (e) => {
     if (e.repeat || e.metaKey || e.ctrlKey || e.altKey) return;
     if (e.composedPath().some((n) => n.classList?.contains('xr-note') || n.classList?.contains('xr-list')) || noting) return;
     if (e.key === 'Enter' && shown) { e.preventDefault(); e.stopPropagation(); if (!sync()) startNote(); }
@@ -566,6 +567,9 @@ export function mountXray(o) {
 
   return {
     get pending() { return count(); },
+    // an element chosen elsewhere (blueprint's list, or a click blueprint took): shown and held
+    hold(el) { if (!el?.isConnected) return; pinned = el; lastOn = null; const r = el.getBoundingClientRect(); zone = null; draw(el); void r; },
+    release() { pinned = null; },
     // results from before a reload (a write the dev server reloaded the page for), said again
     showResults(list) { results = list.map((r) => ({ keys: [], els: [], befores: [], ...r })); lastCard = ''; card.hidden = false; if (shown) draw(shown); else { body.innerHTML = resultsHtml(); lastCard = ''; const s = box(); card.style.transform = `translate(${Math.max(12, s.width - (card.offsetWidth || 292) - 24)}px, 24px)`; } },
     get shown() { return shown; },

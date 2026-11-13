@@ -70,7 +70,7 @@ export class Blueprint {
 
   // host: the overlay element (readMarks, pin, pinnedElement, occluders); root: its shadow root;
   // theme: { decisions() } for the craft engine's scales (craft.js)
-  constructor(host, root, { onState, onProgress, theme } = {}) {
+  constructor(host, root, { onState, onProgress, theme, onSelect } = {}) {
     this.#host = host;
     this.#onState = onState;
     this.#onProgress = onProgress;
@@ -80,7 +80,7 @@ export class Blueprint {
     root.appendChild(this.#layer);
     this.#glass = new Glass(root, host);
     this.#changes = new Changes(root, { onAccept: (batch) => this.#apply(batch), onSelect: (el) => this.#selection.select(el, this.#itemOf(el)), onShow: () => queueMicrotask(() => this.#focus()), onDiscard: (el) => this.#selection.discarded(el) });
-    this.#selection = new Selection(root, { onFrame: () => this.#marks.invalidate(), tokenOf: (family, n) => this.#craft.theme.nearest(family, n, 0.5)?.short ?? null, health: () => host.health, onChange: (el) => { this.#marks.select(el); this.#focus(); },
+    this.#selection = new Selection(root, { onFrame: () => this.#marks.invalidate(), tokenOf: (family, n) => this.#craft.theme.nearest(family, n, 0.5)?.short ?? null, health: () => host.health, onChange: (el) => { this.#marks.select(el); this.#focus(); onSelect?.(el); },
       onDraw: () => this.#fix?.render(), changes: this.#changes, read: (el) => host.read(el), site: (el) => this.#siteOf(el), steps: (family) => this.#craft.theme.scale(family).filter((x) => Number.isFinite(x.px)).map((x) => ({ token: x.short, n: x.px })).sort((a, b) => a.n - b.n) });
     this.#glass.onPress = (e) => this.#selection.press(e);
     this.#glass.onClick = this.#click;
