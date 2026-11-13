@@ -437,11 +437,13 @@ export async function classEditsOf(element, from, to) {
 }
 // The other elements on the page drawn from an element's class site, outside it: the elements with its own stamp, and
 // when the site is a usage, only those whose component was used at that line (the rows of one list, not every Link).
-export function siteMates(element, site) {
+export function siteMates(element, site) { return siteMatesOf(element, site).length; }
+// The same, as the elements themselves (the X-ray outlines them and changes them together).
+export function siteMatesOf(element, site) {
   const own = stampOf(element);
-  if (!own) return 0;
+  if (!own) return [];
   const same = [...document.querySelectorAll(sameStamp(own))].filter((x) => x !== element && !element.contains(x));
-  if (!site?.usage) return same.length;
+  if (!site?.usage) return same;
   // Only DOM tags carry stamps: every <a> a Link draws has the Link's own line. The rows of one list are told apart by
   // the component they were made with and the classes that usage passed it (the site's prop, as a plain string):
   // the first component fiber above each host, compared with the element's own.
@@ -455,7 +457,7 @@ export function siteMates(element, site) {
     const key = fiberKey(x);
     for (let f = key ? x[key] : null, n = 0; f && n < 64; f = f.return, n++) if (typeof f.type !== 'string' && there(f.memoizedProps?.[STAMP_ATTRIBUTE])) return true;
     return false;
-  }).length;
+  });
 }
 
 async function locateOwner(element, options = {}) {

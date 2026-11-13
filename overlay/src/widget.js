@@ -46,7 +46,8 @@ import { PICKER_CSS } from './picker.js';
 import { TOY_DEFS } from './toys.js';
 import { elementEdit } from './inplace.js';
 import { activeVariants, swapInForce } from './variants.js';
-import { classEditsOf } from './locate.js';
+import { classEditsOf, classSiteOf, siteMatesOf } from './locate.js';
+import { utility } from './craft-read.js';
 
 const tokensCss = await (await fetch(new URL('./tokens.css', import.meta.url))).text();
 // the element an Alt+click read, kept across a reload: where it is written (its stamp without the file's hash, which a
@@ -552,7 +553,19 @@ class PlumbOverlay extends HTMLElement {
       name: (el) => [nameOf(el), where(el)],
       key: (el) => placeOf(el),
       all: (k) => [...document.querySelectorAll(atPlace(k))],
-      component: () => null, // 'everywhere' (a component's own file) comes with the scope layer
+      component: () => null,
+      // where the part's class is written (the class showing now, else where one would be added), and every element on
+      // the page that one written line draws. Several from one line change together: one of them alone would need a
+      // condition in your code, so 'just this one' is offered only when the line draws one element
+      scopeInfo: async (el, prop) => {
+        const side = /^(padding|margin)-(\w)/.exec(prop), L = side?.[1][0];
+        const PRE = side ? [`${L}${side[2]}`, `${L}${/^[tb]/.test(side[2]) ? 'y' : 'x'}`, L] : { gap: ['gap'], 'border-radius': ['rounded'], width: ['w'], height: ['h'], 'font-size': ['text'] }[prop] ?? [];
+        const cls = PRE.map((p) => utility(el, p)).find(Boolean);
+        const site = await classSiteOf(el, cls ? [cls] : []);
+        if (!site || site.refused || !site.file) return null;
+        const mates = [el, ...siteMatesOf(el, site)];
+        return { scopes: mates.length > 1 ? ['page'] : ['one'], mates, where: `${site.file}:${site.at ?? site.line}` };
+      },
       tokenOf: (f, n) => steps(f).find(([px]) => Math.abs(px - n) <= 0.5)?.[1] ?? null,
       scale: steps,
       isPage: (r) => !r.target.closest?.('plumb-overlay'),

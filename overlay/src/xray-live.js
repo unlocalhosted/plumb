@@ -30,6 +30,8 @@
  *   tokenOf(f, px)   the token name for a px value of a family (spacing, radius, size, type), or null
  *   scale(f)         [[px, name], …] your steps for a family
  *   write(groups)    → [{ id, state: 'ok' | 'moved' | 'failed', cls, where, why }] for each change written
+ *   scopeInfo(el, p) → { scopes, mates, where }: where the part's classes are written and every element that line
+ *                    draws (asked once per element; optional)
  *   undo(result)     puts one written change back in your code
  *   watch            the element whose re-renders are watched (default: container); isPage(node): one of the page's
  * ───────────────────────────────────────────────────────── */
@@ -132,7 +134,10 @@ export function mountXray(o) {
 
   // ── where a change reaches, and the changes ───────────────
   // a part's places on the page: every element its line of code draws (the rows of a list, the cards of a grid)
-  const peers = (el) => { const k = o.key(el); const all = k ? [...o.all(k)] : []; return all.includes(el) ? all : [el]; };
+  // where a part's classes are written, and every element that line draws (the adapter's scopeInfo, asked once per
+  // element when a part comes into hand): { scopes, mates, where }. Until it answers, the copies its stamp shares
+  const infos = new WeakMap();
+  const peers = (el) => { const i = infos.get(el); if (i) return i.mates; const k = o.key(el); const all = k ? [...o.all(k)] : []; return all.includes(el) ? all : [el]; };
   // the changes not yet synced, by place in the code and which copy ('key#n' → { prop → { before, value, scope } }),
   // never by element: a re-render replaces elements, and the change must find the new one
   const changes = new Map();
@@ -149,12 +154,13 @@ export function mountXray(o) {
   const unseen = () => [...changes.keys()].filter((k) => !elOf(k)).length;
   // the scope: 'one' just this; 'page' every place here its line draws; 'all' the component, everywhere it's used
   let scope = 'one';
-  const scopesOf = (el) => [...(peers(el).length > 1 ? ['one', 'page'] : ['one']), ...(o.component(el) ? ['all'] : [])];
+  const scopesOf = (el) => infos.get(el)?.scopes ?? [...(peers(el).length > 1 ? ['one', 'page'] : ['one']), ...(o.component(el) ? ['all'] : [])];
   const targets = (el) => {
     if (scope === 'all' && o.component(el)) return o.everywhere?.(el) ?? [el];
     return scope === 'page' ? peers(el) : [el];
   };
-  const scopeSaid = (el) => scope === 'all' ? `all ${o.component(el)?.uses ?? ''}`.trim() : scope === 'page' ? `×${peers(el).length} here` : 'this';
+  const tail = (w) => (w ? String(w).split('/').pop() : '');
+  const scopeSaid = (el) => scope === 'all' ? `all ${o.component(el)?.uses ?? ''}`.trim() : scope === 'page' ? `×${peers(el).length}` : 'this';
   const read = (el, prop) => { const cs = getComputedStyle(el); return prop === 'width' ? el.getBoundingClientRect().width : prop === 'height' ? el.getBoundingClientRect().height : prop === 'gap' ? parseFloat(cs.columnGap) || parseFloat(cs.rowGap) || 0 : parseFloat(cs.getPropertyValue(prop)) || 0; };
   const set = (el, prop, v) => {
     for (const t of targets(el)) {
@@ -196,7 +202,8 @@ export function mountXray(o) {
     if (!same || x.card + foot !== lastCard) { body.innerHTML = x.card + foot; lastCard = x.card + foot; }
     const head = body.querySelector('.xr-head b');
     head?.querySelector('.xr-many')?.remove();
-    if (head && scopesOf(el).length > 1) head.insertAdjacentHTML('beforeend', ` <span class="xr-many" data-scope="${scope}">${scope === 'all' ? `everywhere · ${o.component(el)?.uses ?? '?'} uses` : scope === 'page' ? `×${peers(el).length} here` : 'just this one'}</span>`);
+    const info = infos.get(el);
+    if (head && (scopesOf(el).length > 1 || peers(el).length > 1)) head.insertAdjacentHTML('beforeend', ` <span class="xr-many" data-scope="${scope}"${info?.where ? ` title="Written at ${esc(info.where)}"` : ''}>${scope === 'all' ? `everywhere · ${o.component(el)?.uses ?? '?'} uses` : scope === 'page' ? `×${peers(el).length}${info?.where ? ` · ${esc(tail(info.where))}` : ' here'}` : 'just this one'}</span>`);
     for (const ch of card.querySelectorAll('[data-prop]')) {
       ch.toggleAttribute('data-changed', !!changes.get(placeKey(el))?.has(ch.dataset.prop));
       ch.toggleAttribute('data-held', !!held?.chip && held.prop === ch.dataset.prop);
@@ -342,8 +349,16 @@ export function mountXray(o) {
     if (!el || !prop) return;
     const sided = sidesSaid(prop) !== null, sized = prop === 'width' || prop === 'height', now = read(el, prop), S = optionsFor(familyOf(prop), now);
     if (!S.length) return;
-    scope = peers(el).length > 1 ? 'page' : 'one';
+    const known = infos.get(el);
+    scope = known ? (known.scopes.includes('page') ? 'page' : known.scopes[0]) : peers(el).length > 1 ? 'page' : 'one';
     const scopes = scopesOf(el);
+    // ask once where this part is written and what else that line draws; the row is made again with the answer
+    if (!known && o.scopeInfo) Promise.resolve(o.scopeInfo(el, prop)).then((info) => {
+      if (!info || !el.isConnected) return;
+      infos.set(el, info);
+      if (inHand?.el === el) { const p = inHand.prop; hand.innerHTML = ''; inHand = null; hold(el, p); }
+      if (shown === el) { lastCard = ''; draw(el); }
+    }, () => {});
     const p = picker(C, {
       name: prop.replace('-', ' '), toy: TOYS[prop.split('-')[0]] ?? TOYS[prop] ?? 'size', options: S, into: hand, keys: 'row', start: S.indexOf(nearest(S, now)),
       mark: () => '', format: (x) => `${x.v}px`,
