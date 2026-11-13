@@ -891,10 +891,19 @@
 - **The fix and the proof:** plumber open, crafting-ui: scrolling 7 → 46 frames a second (alone 57), pointer 15 → 59 (alone 60). algorecall: scrolling 3 → 40, longest frame 0.98 s → 0.08 s, pointer 3 → 12 (alone 14). Pointing still lights a cause's places and its pill; zones follow a scroll (docs/media/marks-after-scroll-fix-2026-11-13.png). Headless, one run per state, no test. Not fixed: the page still freezes while it is read.
 - **Media hooks:** crafting-ui scrolling with plumber open, before and after, side by side; the screenshot above.
 
+## The page froze while plumber read it; the judging now comes in slices (2026-11-13)
+- **The itch:** reading a page froze it: up to 0.6 s on crafting-ui and 1.8–2.5 s on algorecall, and a pointer move could wait a second. The owner: "Yes, the freeze".
+- **How we found it:** a CPU profile of one read, start to settled, with the long tasks listed. Each freeze was one whole-page judgement: every element, every rule, in one block.
+- **The system behind it:** the engine was written as "hand me the page, I hand it back judged", so the smallest unit of work was the page.
+- **What we chose and why:** the smallest unit is now 8 ms. Kept findings are answered at once; the rest is judged a slice at a time between frames; the page is handed over again when the last slice lands. Not the worker yet: this is the cheapest change that removes the block, and it leaves the rules as they are.
+- **The fix and the proof:** while reading, crafting-ui's longest block 0.37 s → 0.09 s and the pointer 3 → 59 frames a second; algorecall's longest scrolling frame 1.77 s → 0.33 s and the pointer 1 → 20. Same findings (26; 27–28), same read time. Headless, no test. Left: a 0.8 s block at the start of algorecall's read, and 2.5 s blocks on the first read after a server restart.
+- **Media hooks:** moving the pointer over crafting-ui while plumber reads it, before and after.
+
 ## Open gaps
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
 
 ## Shipped · 2026-W46
+- The page no longer freezes while plumber reads it: the longest block on a big page went from 1.8 s to 0.3 s, and the pointer stays live ([entry](#the-page-froze-while-plumber-read-it-the-judging-now-comes-in-slices-2026-11-13)).
 - With plumber open, the app under it scrolls and answers the pointer nearly as it does alone (crafting-ui: 7 → 46 frames a second scrolling, 15 → 59 moving the pointer) ([entry](#with-plumber-open-the-app-crawled-it-was-asking-what-covers-this-four-thousand-times-a-frame-2026-11-13)).
 - plumber reads a 16,000-element page in about 15 s where it took 30–52 s: it asks the server about every element in a few round trips instead of 889, and redraws the page 3 times instead of 18 ([entry](#889-questions-asked-one-at-a-time-and-a-redraw-for-each-trickle-2026-11-13)).
 - plumber's server sends about a seventieth of what it did to draw a big page (811 MB → 12 MB on a 16,000-element page): a finding's edits travel only when a fix is applied ([entry](#811-mb-for-one-page-becomes-52-mb-2026-11-13)).

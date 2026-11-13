@@ -201,7 +201,7 @@ and icon passes' cases, and the palette after a write, were tested again through
 Design signed off 2026-11-13; only the first measurement is done: docs/briefs/engine-foundations.md.
 
 - plumber thinks on the app's main thread: one read of a big page still blocks it for 4.7–7.4 s in total.
-- Measured 2026-11-13: at rest plumber costs the app nothing measurable. Open, it took most of the frames; fixed the same day for scroll and pointer (crafting-ui 7 → 46 and 15 → 59 frames a second). Not fixed: reading freezes the page for 0.8–2.5 s; a 0.28 s frame when a scroll stops on crafting-ui; a 0.46 s answer to a pointer move on algorecall. For about a second after the page moves, a covered element can have a hit area it should not. No test covers any of it.
+- Measured 2026-11-13: at rest plumber costs the app nothing measurable. Open, it took most of the frames; fixed the same day for scroll and pointer (crafting-ui 7 → 46 and 15 → 59 frames a second). Reading no longer freezes the page (judging in 8 ms slices; longest block 0.09 s on crafting-ui, 0.33 s on algorecall). Not fixed: a 0.8 s block at the start of algorecall's read; four 2.5 s blocks on the first read after a dev server restart; a 0.4 s frame on crafting-ui when scrolled mid-read; judging is still on the app's main thread (the snapshot and worker are not built). For about a second after the page moves, a covered element can have a hit area it should not. No test covers any of it.
 - The measuring script is not in the repo yet; it joins it with the budget guard.
 - The engine can only judge the live page, not a candidate layout.
 - Every rule family is loaded whether or not it is on; there is no notion of a mode that runs on the server only.

@@ -9,7 +9,15 @@ import { resolveSpec, specFor } from './craft-spec.js';
 
 // The spec in effect on this page (docs/briefs/craft-spec.md): the standard until the project's own arrives from the
 // server (craft.js asks for it), then that. `rule(id)` is the resolved entry for one rule: { enabled, tier, …values }.
-export const SPEC = { value: resolveSpec(), loaded: false, rule(id) { return specFor(SPEC.value, id) ?? { enabled: true }; } };
+// A rule asks for its entry on every element it is shown (over a million times for a big page), so the entry is
+// found once per spec, not searched for each time. Entries are read, never written.
+let entries = new Map(), entriesOf = null;
+export const SPEC = { value: resolveSpec(), loaded: false, rule(id) {
+  if (entriesOf !== SPEC.value) { entries = new Map(); entriesOf = SPEC.value; }
+  let entry = entries.get(id);
+  if (!entry) entries.set(id, (entry = specFor(SPEC.value, id) ?? { enabled: true }));
+  return entry;
+} };
 
 // A colour as it appears inside a computed value (a shadow layer, a gradient stop), in every space rgb() reads
 export const COLOUR = /(?:rgba?|oklch|oklab|color)\([^)]*\)/g;

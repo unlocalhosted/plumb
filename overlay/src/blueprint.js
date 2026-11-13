@@ -238,7 +238,7 @@ export class Blueprint {
     return this.#items;
   }
   get settled() {
-    return this.active && this.#reader.settled;
+    return this.active && this.#reader.settled && !this.#craft.busy; // nothing left to read, and nothing left to judge
   }
 
   healthChanged(status) {

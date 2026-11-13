@@ -88,6 +88,45 @@ Still there: crafting-ui's 0.28 s frame when a scroll stops (the full measure pl
 examples); algorecall's 0.46 s answer to a pointer move; and **reading still freezes the page** (0.8 s on
 crafting-ui, 2.5 s on algorecall in this run), which is the snapshot and the worker.
 
+### After judging moved into slices (2026-11-13, layer 1's second piece)
+
+A profile of one read showed the freezes were whole-page judgements done in one block: every element, every rule,
+before the main thread was given back (0.3–0.4 s on crafting-ui, 1.3–2.5 s on algorecall).
+
+- The engine now answers at once for every element whose findings are kept, judges the rest for 8 ms, and does the
+  remainder a slice at a time between frames. While an element waits it shows what it last had. When the last
+  slice lands the page is handed over once more.
+- A read counts as finished only when nothing is left to judge, so the headless read and its findings are the
+  same.
+- Two small costs found in the same profile: every rule looked its settings up by searching the whole spec on
+  every call (over a million times a page; now found once per spec), and kept elements still asked which rules
+  quiet which (now asked only when something is judged).
+
+This is slicing on the main thread, not yet the snapshot and the worker. The work is the same size; it no longer
+arrives in one block.
+
+| While plumber reads the page | before | after |
+|---|---|---|
+| crafting-ui, longest block of the main thread | 0.37 s | 0.09 s |
+| crafting-ui, frames a second moving the pointer | 3 | 59 |
+| crafting-ui, slowest answer to the pointer | 0.81 s | 0.04 s |
+| crafting-ui, frames a second scrolling | 10 | 36 |
+| algorecall, longest frame scrolling | 1.77 s | 0.33 s |
+| algorecall, frames a second moving the pointer | 1 | 20 |
+| algorecall, slowest answer to the pointer | 1.04 s | 0.16 s |
+| algorecall, main thread blocked over the whole read | 4.7–7.4 s | 2.5 s |
+
+Findings unchanged: 26 on crafting-ui, 27–28 on algorecall. Read time unchanged (1.7 s and 14–15 s warm).
+Headless, one or two runs each. No test run.
+
+Still there:
+
+- algorecall's read begins with one block of about 0.8 s. The guess is the first sweep of 16,000 elements to find
+  which ones to ask the server about; not confirmed.
+- The first read after a dev server restart has four blocks of about 2.5 s each. Seen in every cold run today,
+  never in a warm one; not looked into.
+- crafting-ui can still drop one 0.4 s frame when scrolled while it is being read.
+
 ## 1. What it has to carry
 
 The owner, 2026-11-13:

@@ -30,6 +30,7 @@ import { lawsOf } from './laws.js';
 import { paletteOf } from './colours.js';
 
 const FLOOR = 0.8; // findings under this confidence are never shown
+const SLICE = 8; // ms of judging before the main thread is given back
 
 const px = (v) => parseFloat(v) || 0;
 const letters = (s) => /\S/.test(s);
@@ -493,7 +494,22 @@ export class Craft {
       const sigs = items.map((item, i) => (still[i] ? sigOf(item.el) : ''));
       let page = 5381;
       for (const sig of sigs) { for (let k = 0; k < sig.length; k++) page = ((page << 5) + page + sig.charCodeAt(k)) | 0; page = ((page << 5) + page + 124) | 0; }
-      const judged = items.map((item, i) => ({ ...item, marks: [...item.marks, ...(still[i] ? this.#marksFor(item.el, facts, sigs[i], page) : [])] }));
+      // Judging in slices (docs/briefs/engine-foundations.md, the view lane): an element whose findings are kept is
+      // answered at once; the rest are judged for a few milliseconds here and then a slice at a time between frames,
+      // so a page of thousands of elements never holds the app's main thread for one long block. While an element
+      // waits it shows what it last had. When the last slice lands the page is handed over again. A Craft with
+      // nobody to tell (the card's own) judges everything now, as before.
+      const queue = [], until = this.#again ? performance.now() + SLICE : Infinity;
+      const judged = items.map((item, i) => {
+        if (!still[i]) return { ...item, marks: [...item.marks] };
+        const el = item.el, hit = this.#cache.get(el);
+        if (!(hit && hit.sig === sigs[i] && hit.page === page && hit.wide) && performance.now() > until) {
+          queue.push([el, sigs[i]]);
+          return { ...item, marks: [...item.marks, ...(hit && hit.sig === sigs[i] ? [...hit.marks, ...(hit.wide ?? [])] : [])] };
+        }
+        return { ...item, marks: [...item.marks, ...this.#marksFor(el, facts, sigs[i], page)] };
+      });
+      this.#pump(queue, facts, page);
       const t3 = performance.now();
       const out = verdicts(judged, { facts, theme: this.#theme, rules: this.rules });
       const t4 = performance.now();
@@ -538,6 +554,27 @@ export class Craft {
     return { elements: els.length, rules: rules.length, base, rows };
   }
 
+  // The elements still to be judged, a slice at a time. A newer hand-over replaces the queue (its facts are the
+  // page as it is now); when the queue empties the page is handed over again, and that pass finds everything kept.
+  #queue = []; #pumping = 0;
+  get busy() { return this.#queue.length > 0; }
+  #pump(queue, facts, page) {
+    const run = ++this.#pumping;
+    this.#queue = queue;
+    if (!queue.length) return;
+    let at = 0;
+    const later = (fn) => (globalThis.scheduler?.postTask ? globalThis.scheduler.postTask(fn, { priority: 'background' }).catch(() => {}) : setTimeout(fn, 0));
+    const step = () => {
+      if (run !== this.#pumping) return; // a newer hand-over took the queue
+      const t = performance.now();
+      while (at < queue.length && performance.now() - t < SLICE) { const [el, sig] = queue[at++]; if (el.isConnected) this.#marksFor(el, facts, sig, page); }
+      if (at < queue.length) { later(step); return; }
+      this.#queue = [];
+      this.#again?.();
+    };
+    later(step);
+  }
+
   // The craft findings of one element, run fresh or from the cache by signature.
   #marksFor(el, facts, sig, page) {
     if (!el.isConnected || el.closest('plumb-overlay')) return [];
@@ -547,11 +584,17 @@ export class Craft {
     const P = globalThis.__plumbPerf, pb = P && performance.now();
     facts.late = false; this.#judging = el;
     const rules = this.rules;
-    const quiet = new Set();
-    for (const rule of rules) if (rule.scope && rule.refines) { try { if (rule.scope({ el, facts })) for (const r of rule.refines) quiet.add(r); } catch {} }
+    // which rules another rule quiets here: asked only when something is judged (a kept element asks nothing)
+    let quiet = null;
+    const quieted = () => {
+      if (quiet) return quiet;
+      quiet = new Set();
+      for (const rule of rules) if (rule.scope && rule.refines) { try { if (rule.scope({ el, facts })) for (const r of rule.refines) quiet.add(r); } catch {} }
+      return quiet;
+    };
     const pc = P && performance.now();
     const judge = (rule) => {
-      if (quiet.has(rule.id)) return [];
+      if (quieted().has(rule.id)) return [];
       let found = [];
       try { found = rule.check({ el, facts }, this.#theme) ?? []; } catch { found = []; } // a rule's error is its own, never the page's
       return found.filter((f) => (f.confidence ?? 0) >= FLOOR).map((f) => markOf({ tier: rule.tier, ...f, rule: rule.id, key: f.key ?? rule.id, suggest: important(f.suggest) }));
