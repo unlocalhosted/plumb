@@ -597,6 +597,13 @@
 - **Now:** one finding on crafting-ui, the three figures on the templates page, drawn from a three-item list written in the code. At phone width it fits (358 of 358 px). It is a fixed set the check cannot yet tell from a list; noted, not fixed. No before and after from a real app.
 - **Seen on the way:** the motion vocabulary page (7,274 elements) closed the browser tab during plumber's read.
 
+## #42's film, polished in motion (2026-11-13)
+- **The itch:** the owner: "there is a lack of polish the toggle moves across the card, the property transition lands on the card and like noisy, please really put some focus on polish."
+- **How we found it:** every transition stepped through at 10 frames a second (before, I had looked at two or three stills).
+- **The system behind it:** a review made of stills; every fault was in motion. Four found: the crop was dropped the moment the camera started back, so the still-large card swept across the switch; while zoomed, a hard straight line cut the card just above the switch; the change card landed on the card's rows and widened when the fix arrived; on the fixed side a pill repeated what the change card says, and guides doubled the outlines where nothing had moved.
+- **The fix:** the camera works inside the card's own frame (its size, corners and shadow stay on the board, the magnified card always covers it) and the frame holds until the camera is fully back; the change card sits on the open board under the switch, one width from the start; the repeated pill and the doubled guides are gone. The craft-rule skill's review now has a polish pass: every transition at 10 fps against six checks.
+- **The proof:** the same transitions at 10 fps after the fix: the switch never crossed, nothing on the rows, no width jump, no cut. Clip: docs/media/showcase-42-polished.mp4.
+
 ## #42's film says the sauce: the property at fault and the one that fixes it (2026-11-13)
 - **The itch:** the owner: "we didn't really teach what the sauce is … show what property was at fault and what fixed it."
 - **The fix:** when the cause is named, plumber's change card (the way its cards show a change) rises above the switch with the class at fault, `hover:font-semibold`, and the property it sets, `font-weight: 600`, in coral. When the fix lands it is struck through and `hover:text-ink`, `color: ink`, arrives in mint. Screens now supply the class and property on both sides (`film.code`).
@@ -1277,6 +1284,14 @@ field is empty). The table of five writes, before and after. The Next table: eig
 - **What we found:** on crafting-ui the two tables are identical to the byte. On algorecall checking the receipt takes 0.9 s and loading the table 0.7 s, against a 41 s cold start, so the target of 8 s was timid. But as plain objects the table is 257 MB; nine in ten of its 304,350 declarations are the same declaration at another place, so it has to be stored as tables.
 - **The fix and the proof:** none built. algorecall's own two cold starts needed 2 GB twice and the laptop was swapping (5.9 of 7.2 GB of swap used), so the owner had the app copied to vm-agent: there the two tables were identical to the byte too (254.6 MB each, same hash). The copy was removed afterwards. Numbers in [server-warm-start.md](briefs/server-warm-start.md).
 - **Media hooks:** none yet.
+
+## The server keeps what it learned (2026-11-13)
+- **The itch:** the warm start needs something to start from. The owner: "Yes, build it".
+- **How we found it:** built the first layer and checked it with a script: let the server keep its table, read the file back from disk, and compare every source file's reading with what the running server answers.
+- **The system behind it:** the server had nowhere to put what an analysis cost 41 s to learn.
+- **What we chose and why:** a table shaped for the questions (per file, its declarations and findings), with each distinct declaration stored once, plus a receipt of every input with its hash and the table's own hash. Written five quiet seconds after the server last had news. Nothing reads it yet; that is the next layer, and it is check-only first.
+- **The fix and the proof:** crafting-ui: 9.5 MB, written in 0.07 s, 237 of 238 files identical to the server's answers. algorecall (on vm-agent): 116 MB, 5.7 s to write, 0.83 s to load, 2,411 of 2,411 identical. Three honest marks: I predicted a few tens of MB and it is 116; writing it holds the server's worker for 5.7 s on the big app, which breaks the design's own budget; and one stylesheet differs because the ledger regroups findings when it answers, which the answering layer must handle. Four server test files pass.
+- **Media hooks:** none.
 
 ## Open gaps
 - The site's top bar doesn't fit a phone (390px): it widens the page to about 500px. Needs a compact bar.

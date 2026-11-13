@@ -17,6 +17,8 @@ try {
   // every file the engine writes, at once: the host hands it to its watcher (hosts/vite.ts onWritten) instead of
   // waiting for a poll that can miss a second write landing within the same tick
   session.on('written', value => port.postMessage({ event: 'written', value }));
+  // the reading table was kept: the host's health says so without waiting for the next question
+  session.on('kept', value => { void snapshot().then(state => port.postMessage({ event: 'kept', value, ...state })); });
   session.on('diagnostic', error => { void snapshot().then(state => port.postMessage({ event: 'diagnostic', value: error, ...state })); });
   async function execute(call: Call) {
     if (Date.now() >= call.deadline) { port.postMessage({ id: call.id, busy: true }); return; }

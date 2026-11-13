@@ -204,13 +204,11 @@ TandemTabs.film = {
   code: { fault: { cls: 'hover:font-semibold', prop: 'font-weight: 600' }, fix: { cls: 'hover:text-ink', prop: 'color: ink' } },
   read(root, i, rest) {
     const at = local(root), tabs = [...root.querySelectorAll('nav a')].slice(1), now = tabs.map(at), s = getComputedStyle(tabs[i]);
-    const weight = parseInt(s.fontWeight, 10) || 400, fixed = weight < 500;
+    const weight = parseInt(s.fontWeight, 10) || 400;
     return {
       box: now[i], now,
       size: { icon: 'c', pre: 'W ', from: fmt(rest[i].w), to: fmt(now[i].w) },
-      tags: fixed
-        ? [{ icon: 'line', pre: 'Aa sm · ', from: 400, to: weight }, { swatch: s.color, pre: '', text: 'text-ink' }]
-        : [{ icon: 'line', pre: 'Aa sm · ', from: 400, to: weight }],
+      tags: [{ icon: 'line', pre: 'Aa sm · ', from: 400, to: weight }], // the colour the fix uses is said once, in the change card
       pushed: tabs.map((_, j) => j).filter((j) => j > i).map((j) => ({ x0: rest[j].x, x1: now[j].x, y: now[j].y, h: now[j].h })),
     };
   },

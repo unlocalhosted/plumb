@@ -45,7 +45,7 @@ const TIMING = {
   out:       900,   // camera out
   count:     420,   // a pill's number counts this long
 };
-const CAMERA = { max: 1.8, fill: 0.92, at: 0.38, clipX: 200, clipY: 24, curve: 'cubic-bezier(0.7, 0, 0.3, 1)' };
+const CAMERA = { max: 1.8, fill: 0.92, at: 0.38, curve: 'cubic-bezier(0.7, 0, 0.3, 1)' };
 const PILL = { h: 20, gap: 6 };                       // px on screen, at any zoom
 // the burst's pieces, as plumber's fix panel throws them (overlay/src/fixpanel.js #burst): padding's hatched square,
 // the gap's stripes, margin's dots, a check
@@ -94,22 +94,19 @@ function Change({ code, fixed }) {
   const chip = (tone) => ({ padding: '2px 7px', borderRadius: 5, font: 'var(--pl-card-code)', fontSize: 13, color: `var(--pl-${tone})`, background: `color-mix(in oklab, var(--pl-${tone}) ${tone === 'off' ? 9 : 11}%, transparent)` });
   const cap = { font: 'var(--pl-card-meta)', fontSize: 11.5, color: 'var(--pl-ink-2)', textAlign: 'center' };
   return (
-    <span style={{ position: 'absolute', left: '50%', bottom: 'calc(100% + 14px)', transform: 'translateX(-50%)', display: 'flex', alignItems: 'flex-start', gap: 10, padding: '10px 14px 9px',
+    <span style={{ position: 'absolute', left: '50%', top: 'calc(100% + 16px)', transform: 'translateX(-50%)', display: 'flex', alignItems: 'flex-start', gap: 10, padding: '10px 14px 9px',
       borderRadius: 12, background: 'var(--pl-paper)', color: 'var(--pl-ink)', boxShadow: '0 0 0 1px rgb(0 0 0 / 0.06), 0 8px 24px -8px rgb(0 0 0 / 0.18)', whiteSpace: 'nowrap',
       animation: 'film-pop 300ms var(--pl-spring-pop) both' }}>
       <span style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
         <code style={{ ...chip('off'), textDecorationLine: fixed ? 'line-through' : 'none', textDecorationThickness: 1, transition: 'opacity 300ms ease', opacity: fixed ? 0.75 : 1 }}>{code.fault.cls}</code>
         <span style={cap}>{code.fault.prop}</span>
       </span>
-      {fixed ? (
-        <>
-          <span style={{ color: 'var(--pl-ink-3)', font: 'var(--pl-card-code)', paddingTop: 3, animation: 'film-pop 260ms ease both' }}>→</span>
-          <span style={{ display: 'flex', flexDirection: 'column', gap: 4, animation: 'film-pop 320ms var(--pl-spring-pop) 120ms both' }}>
-            <code style={chip('on')}>{code.fix.cls}</code>
-            <span style={cap}>{code.fix.prop}</span>
-          </span>
-        </>
-      ) : null}
+      {/* the fix's place is kept from the start, so the card never changes width when it arrives */}
+      <span style={{ color: 'var(--pl-ink-3)', font: 'var(--pl-card-code)', paddingTop: 3, opacity: fixed ? 1 : 0, transition: 'opacity 200ms ease' }}>→</span>
+      <span style={{ display: 'flex', flexDirection: 'column', gap: 4, opacity: fixed ? 1 : 0, transform: `translateY(${fixed ? 0 : 3}px)`, transition: 'opacity 260ms ease 120ms, transform 420ms var(--pl-spring-pop) 120ms' }}>
+        <code style={chip('on')}>{code.fix.cls}</code>
+        <span style={cap}>{code.fix.prop}</span>
+      </span>
     </span>
   );
 }
@@ -148,7 +145,8 @@ export function Film({ Example, names, onSaid }) {
   const [m, setM] = useState(null);                 // { tone, boxes, lead, read, cause, fading }
   const [ptr, setPtr] = useState(null);             // { x, y, down, gone } in the film's own box
   const [icons, setIcons] = useState(null);
-  const [change, setChange] = useState(0);         // plumber's change card: 0 none · 1 the fault · 2 the fix
+  const [change, setChange] = useState(0);
+  const [frame, setFrame] = useState(null);         // the card's own box, while the camera works inside it: { radius, shadow }         // plumber's change card: 0 none · 1 the fault · 2 the fix
   const [run, setRun] = useState(0);
   const box = useRef(null), camRef = useRef(null), sw = useRef(null), fx = useRef(null);
   const example = () => camRef.current?.firstElementChild;
@@ -163,7 +161,7 @@ export function Film({ Example, names, onSaid }) {
     const all = () => spec.instances(example());
     const boxes = () => { const at = local(example()); return all().map(at); };
     (async () => {
-      setPlaying(true); setSide('broken'); setM(null); setChange(0); setCam({ k: 1, x: 0, y: 0 }); onSaid?.('');
+      setPlaying(true); setSide('broken'); setM(null); setChange(0); setFrame(null); setCam({ k: 1, x: 0, y: 0 }); onSaid?.('');
       await sleep(TIMING.lead, live); await document.fonts?.ready;
       // FEEL IT: the gesture on every place, nothing drawn
       for (const el of all()) { setPtr(toward(el, 5)); await sleep(TIMING.move, live); spec.set(el, true); await sleep(TIMING.feel, live); spec.set(el, false); }
@@ -172,8 +170,12 @@ export function Film({ Example, names, onSaid }) {
       const parts = [spec.frame(root)].flat().map(at), l = Math.min(...parts.map((b) => b.x)), t = Math.min(...parts.map((b) => b.y));
       const f = { x: l, y: t, w: Math.max(...parts.map((b) => b.x + b.w)) - l, h: Math.max(...parts.map((b) => b.y + b.h)) - t };
       const k = Math.max(1, Math.min(CAMERA.max, (W * CAMERA.fill) / f.w));
+      // the camera works inside the card's own box: it keeps its size, corners and shadow on the board, and the
+      // magnified card always covers it (never a gap at an edge), so nothing on the stage is ever crossed
+      const cs = getComputedStyle(root), clamp = (v, lo) => Math.min(0, Math.max(lo, v));
+      setFrame({ radius: cs.borderRadius, shadow: cs.boxShadow });
       setPtr((p) => p && { ...p, gone: true });
-      setCam({ k, x: W / 2 - k * (f.x + f.w / 2), y: H * CAMERA.at - k * (f.y + f.h / 2) });
+      setCam({ k, x: clamp(W / 2 - k * (f.x + f.w / 2), W - k * W), y: clamp(H * CAMERA.at - k * (f.y + f.h / 2), H - k * H) });
       await sleep(TIMING.camera, live);
       // MEASURE IT: every place outlined in sky; the gesture on the lead twice, the cause named the second time
       const rest = boxes(), lead = () => all()[spec.lead];
@@ -220,7 +222,8 @@ export function Film({ Example, names, onSaid }) {
       await sleep(TIMING.clear, live);
       setM((x) => x && { ...x, fading: true }); await sleep(TIMING.fade, live);
       setM(null); setChange(0); setCam({ k: 1, x: 0, y: 0 });
-      await sleep(TIMING.out, live);
+      await sleep(TIMING.out + 40, live);
+      setFrame(null); // only once the camera is fully back
       setPtr(null); setPlaying(false); onSaid?.(spec.say);
     })();
     return () => { live.on = false; live.timers.forEach(clearTimeout); try { all().forEach((el) => spec.set(el, false)); } catch {} };
@@ -233,7 +236,7 @@ export function Film({ Example, names, onSaid }) {
   return (
     <div ref={box} className="relative flex flex-col items-center gap-10">
       <style>{'@keyframes film-pop { from { opacity: 0; scale: 0.92 } to { opacity: 1; scale: 1 } }'}</style>
-      <div className="relative" style={{ clipPath: k > 1.001 ? `inset(-${CAMERA.clipY}px -${CAMERA.clipX}px)` : 'none' }}>
+      <div className="relative" style={frame ? { overflow: 'clip', borderRadius: frame.radius, boxShadow: frame.shadow, isolation: 'isolate' } : undefined}>
         <div ref={camRef} className="relative" style={{ transform: `translate(${cam.x}px, ${cam.y}px) scale(${k})`, transformOrigin: '0 0', transition: `transform ${k > 1 ? TIMING.camera : TIMING.out}ms ${CAMERA.curve}`, pointerEvents: playing ? 'none' : undefined }}>
           <Example key={side} side={side} onStatus={playing ? undefined : onSaid} />
           <PlumbLayer>
@@ -246,7 +249,8 @@ export function Film({ Example, names, onSaid }) {
                     boxShadow: `0 0 0 ${1 / k}px ${hues[toneOf(i)][0]}, 0 0 0 ${2 / k}px var(--pl-halo)`, transition: 'box-shadow 450ms ease', animation: 'film-pop 260ms ease both' }} />;
                 })}
                 {/* where each pushed place belonged: a dashed guide; the ground it was pushed across, tinted */}
-                {r?.pushed?.map((p, i) => (
+                {/* only where something moved: a guide on an edge that stayed put would only double its outline */}
+                {r?.pushed?.filter((p) => p.x1 - p.x0 > 0.5).map((p, i) => (
                   <span key={i}>
                     <span style={{ position: 'absolute', left: p.x0, top: p.y - 6, height: p.h + 12, width: 0, borderLeft: `${1 / k}px dashed var(--pl-sky)` }} />
                     {p.x1 - p.x0 > 0.5 ? <span style={{ position: 'absolute', left: p.x0, top: p.y, height: p.h, width: p.x1 - p.x0, background: 'var(--pl-off-bg)', boxShadow: `inset ${-1 / k}px 0 0 var(--pl-coral)` }} /> : null}

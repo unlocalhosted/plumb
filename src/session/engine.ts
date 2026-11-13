@@ -1,11 +1,14 @@
-import { environment, stateDirectory, statePath, configurationNames, isLedgerPath, cacheDirectory, ignoreCache } from '../paths.js';
+import { environment, stateDirectory, statePath, configurationNames, isLedgerPath, cacheDirectory, ignoreCache, buildId } from '../paths.js';
+import { atomicWrite } from '../atomic-write.js';
+import type { KeptStats } from './kept.js';
 import { readFileSync, watch } from 'node:fs';
+import { createHash } from 'node:crypto';
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { ChangeLog, byLine, hunks, locate, mintId } from './changes.js';
 import type { ChangeRecord, TraceEntry } from './changes.js';
 import type { FSWatcher } from 'node:fs';
-import { stat, lstat, readdir, readFile, realpath } from 'node:fs/promises';
-import { dirname, isAbsolute, relative, resolve, sep } from 'node:path';
+import { stat, lstat, readdir, readFile, realpath, rm } from 'node:fs/promises';
+import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { Worker } from 'node:worker_threads';
 import { EventEmitter } from 'node:events';
 import { glob, isDynamicPattern } from 'tinyglobby';
@@ -68,7 +71,7 @@ import { recipesPlan, recipesPreview, recipesView } from '../recipes/service.js'
 import type { PlanParams, RecipeContext } from '../recipes/service.js';
 export type { TextRun, TextResult } from './text.js';
 
-export interface SessionOptions extends CheckOptions { watch?: boolean; pollInterval?: number; polling?: boolean;
+export interface SessionOptions extends CheckOptions { watch?: boolean; pollInterval?: number; polling?: boolean; /** false: do not keep the reading table for the next start */ keep?: boolean; /** ms of quiet before it is written (default 5000) */ keepAfter?: number;
   /** Maximum wait before read execution, in milliseconds (default 5000). */
   readQueueMs?: number
 }
@@ -301,6 +304,7 @@ export class Session extends EventEmitter {
       await session.start(); await session.scan(true);
       await session.request('inventory', { files: session.retainedFiles() });
       if (options.watch !== false) session.observe();
+      session.keepLater();
       return session;
     } catch (error) { await session.close(); throw error; }
   }
@@ -528,7 +532,7 @@ export class Session extends EventEmitter {
       }
       if (!local) await this.retainLocations(new Set());
       this.failure = undefined; this.failurePaths = [];
-      this.revision++; this.pageGeneration++; this.emit('change', changed);
+      this.revision++; this.pageGeneration++; this.emit('change', changed); this.keepLater();
     } catch (error) { this.failure = error as Error; this.failurePaths = changed; throw error; }
     return changed;
   }
@@ -1946,6 +1950,40 @@ export class Session extends EventEmitter {
   why(file: string, line: number): Promise<Awaited<ReturnType<typeof import('../ledger/commands.js').inspectLedger>>> { return this.read('why', { file: this.file(file), line: this.position(line) }); }
   try(code: string, options: Pick<TryOptions, 'lang' | 'as' | 'verbose'> = {}): Promise<Report> { return this.read('try', { code, ...options }); }
   private healthSnapshot: { caches: object; work?: object } = { caches: {} };
+  /**
+   * The reading table and its receipt, kept for the next start (docs/briefs/server-warm-start.md, layer 1). Written
+   * some seconds after the server last had something new to say, never while it is saying it. Nothing reads them
+   * back yet. The receipt is what the server itself goes by to say "nothing changed": every file it knows with its
+   * hash, every directory it lists with its stamp, and the table's own hash so the two cannot be mismatched.
+   * (Not in it yet: what each import resolved to, which the check's receipt records.)
+   */
+  private kept: (KeptStats & { ms: number; packMs: number; at: number; directory: string }) | undefined;
+  private keepTimer?: NodeJS.Timeout;
+  private keeping = false;
+  private keepLater(): void {
+    if (this.closed || this.options.keep === false || environment('KEEP') === '0') return;
+    if (this.keepTimer) clearTimeout(this.keepTimer);
+    this.keepTimer = setTimeout(() => { void this.keep().catch(error => this.emit('diagnostic', error)); }, this.options.keepAfter ?? 5000);
+    this.keepTimer.unref();
+  }
+  private async keep(): Promise<void> {
+    if (this.closed || this.keeping || this.failure) return;
+    this.keeping = true;
+    try {
+      const revision = this.revision;
+      const directory = join(cacheDirectory(this.root), 'kept', createHash('sha256').update(JSON.stringify(['kept-v1', buildId(), process.versions.v8, this.root])).digest('hex').slice(0, 32));
+      const files = [...this.hashes].sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0), directories = [...this.directories].sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0);
+      const stats = await this.serializeRead(() => this.request<KeptStats & { ms: number; packMs: number }>('keep', { directory }));
+      // something changed while it was being written: it describes a project that is gone, and the change has
+      // already asked for another
+      if (revision !== this.revision || this.closed) return;
+      await atomicWrite(join(directory, 'receipt.json'), JSON.stringify({ version: 1, build: buildId(), v8: process.versions.v8, root: this.root, table: stats.hash, files, directories }));
+      // one table per project: a table kept by another build of plumber can never be read by this one
+      for (const other of await readdir(dirname(directory)).catch(() => [] as string[])) if (join(dirname(directory), other) !== directory) await rm(join(dirname(directory), other), { recursive: true, force: true }).catch(() => {});
+      this.kept = { ...stats, at: Date.now(), directory };
+      this.emit('kept', this.kept);
+    } finally { this.keeping = false; }
+  }
   /** Where these words are written: JSX text in the element, an attribute at it or a use site, or a literal in source. */
   textAt(file: string, line: number, column: number, words: string, owners?: string): Promise<TextAtResult> {
     const path = this.file(file); this.position(line); this.position(column);
@@ -1970,7 +2008,7 @@ export class Session extends EventEmitter {
     });
   }
   health() {
-    return Promise.resolve({ ...this.healthSnapshot, work: { ...this.healthSnapshot.work, reconciliations: this.reconciliations, recipeIndexes: this.recipeIndexes }, status: this.failure ? 'invalid' : 'ready', root: this.root,
+    return Promise.resolve({ ...this.healthSnapshot, ...(this.kept ? { kept: this.kept } : {}), work: { ...this.healthSnapshot.work, reconciliations: this.reconciliations, recipeIndexes: this.recipeIndexes }, status: this.failure ? 'invalid' : 'ready', root: this.root,
       ...(this.outsideSources.size ? { outsideSource: [...this.outsideSources].filter(file => !this.sourceFiles.has(file)) } : {}),
       revision: this.revision, pid: process.pid, rss: process.memoryUsage().rss,
       ...(this.failure ? { diagnostic: this.failure.message } : {}) });
@@ -2014,7 +2052,7 @@ export class Session extends EventEmitter {
   private position(value: number): number { if (!Number.isSafeInteger(value) || value < 1) throw new UsageError('Line and column must be positive integers.'); return value; }
   async close(): Promise<void> {
     if (this.closed) return; this.closed = true;
-    if (this.timer) clearInterval(this.timer); if (this.debounce) clearTimeout(this.debounce);
+    if (this.timer) clearInterval(this.timer); if (this.debounce) clearTimeout(this.debounce); if (this.keepTimer) clearTimeout(this.keepTimer);
     for (const watcher of this.watchers) watcher.close();
     this.rejectPending(new Error('Session is closed.')); if (this.worker) await this.worker.terminate(); this.removeAllListeners();
   }
