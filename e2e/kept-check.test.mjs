@@ -129,7 +129,7 @@ test('a kept analysis that is damaged, or was never asked for, is not used', { t
 test('plumber doctor --verbose says how the start-up check is going', { timeout: 90000 }, async t => {
   const root = await project(t);
   const doctor = () => spawnSync(process.execPath, [join(repo, 'dist/cli.js'), 'doctor', '--verbose', '--root', root], { encoding: 'utf8', env: { ...process.env, NO_COLOR: '1', COLUMNS: '200' } }).stdout.split('\n').find(line => line.includes('Start-up:')) ?? '';
-  assert.match(doctor(), /ok\s+Start-up:\s+no start checked yet/);
+  assert.equal(doctor(), '', 'no row before any dev server has started');
   await start(root); await start(root);
   assert.match(doctor(), /ok\s+Start-up:\s+2 starts, 1 compared, 0 differed/);
   // a start whose fresh analysis differed from the kept one is counted, and never fails doctor on its own
