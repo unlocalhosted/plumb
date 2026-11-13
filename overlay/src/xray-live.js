@@ -134,6 +134,11 @@ export function mountXray(o) {
   const on = (target, type, fn, opts) => { target.addEventListener(type, fn, opts); off.push(() => target.removeEventListener(type, fn, opts)); };
   const box = () => C.getBoundingClientRect();
   const ourUI = (e) => e.composedPath().some((n) => n === card || n.classList?.contains('xr-list') || n.classList?.contains('xr-note'));
+  // the card waits for the hand and the page to come to rest (owner, 2026-11-13: "as i am scrolling wait for some time
+  // like a second"): while things move, only the drawing on the page follows. Once it has shown, it follows the pointer
+  // from element to element at once, as a tooltip does, until a scroll or the pointer leaving sends it back to waiting.
+  const REST = 1000;
+  let ready = false, restT = 0;
   let lastCard = '', shown = null, shownKey = null, pinned = null, noting = null, held = null, cardAt = { x: 0, y: 0 }, lastOn = null, waiting = 0;
 
   // ── where a change reaches, and the changes ───────────────
@@ -188,7 +193,7 @@ export function mountXray(o) {
   // ── the drawing and the card ───────────────────────────────
   let zone = null, justDragged = false, warm = 0, pending;
   const draw = (el) => {
-    if (!el) { layer.innerHTML = ''; card.hidden = true; shown = null; zone = null; return; }
+    if (!el) { layer.innerHTML = ''; card.hidden = true; shown = null; zone = null; ready = false; clearTimeout(restT); return; }
     const s = box(), [name, source] = o.name(el);
     const zs = zonesOf(el), inProp = held?.prop ?? zone?.prop;
     const lit = inProp ? zs.filter((q) => q.prop !== inProp && linkedOf(inProp).includes(q.prop)) : [];
@@ -231,7 +236,11 @@ export function mountXray(o) {
     else { beak.style.left = `${Math.max(14, Math.min(cw - 26, mid.x - at.x - 6))}px`; beak.style.top = ''; }
     card.toggleAttribute('data-short', !!at.maxH);
     body.style.maxHeight = at.maxH ? `${at.maxH - hand.offsetHeight - 30}px` : '';
-    card.hidden = !!noting;
+    // something deliberate (a click, a part held, changes waiting, a note) shows it at once; a pass over the page waits
+    const show = ready || !!pinned || !!held || changes.size > 0;
+    if (!show) { clearTimeout(restT); restT = setTimeout(() => { ready = true; if (shown?.isConnected && !o.paused?.()) draw(shown); }, REST); }
+    card.hidden = !!noting || !show;
+    if (first && !card.hidden) { card.removeAttribute('data-enter'); void card.offsetWidth; card.setAttribute('data-enter', ''); }
     if (first) requestAnimationFrame(() => card.removeAttribute('data-fresh'));
     shown = el; shownKey = o.key(el) ? placeKey(el) : null;
     cursor();
@@ -587,9 +596,14 @@ export function mountXray(o) {
   }, true);
   // a scroll or a resize moves what's shown: drawn again once a frame at most
   let frame = 0;
+  // a scroll: the card steps out of the way and waits for the page to stop again (it stays while it holds something)
+  const scrolled = () => {
+    if (shown && ready && !pinned && !held && !changes.size && !noting && !card.matches(':hover')) { ready = false; card.hidden = true; card.removeAttribute('data-reach'); }
+    follow();
+  };
   const follow = () => { if (frame || !shown) return; frame = requestAnimationFrame(() => { frame = 0; if (shown?.isConnected) draw(shown); }); };
   on(window, 'resize', follow);
-  on(window, 'scroll', follow, true);
+  on(window, 'scroll', scrolled, true);
 
   return {
     get pending() { return count(); },

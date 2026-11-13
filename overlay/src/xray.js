@@ -56,6 +56,11 @@ export const XRAY_CSS = `
     background: var(--pl-bg-surface); color: var(--pl-text-primary); box-shadow: var(--pl-shadow-card); font: 500 12px/16px var(--pl-sans);
     transition: transform 420ms var(--pl-spring); }
   .xr-card[data-fresh] { transition: none; }
+  /* arriving after the wait: it grows from 90% out of the side its beak is on, and fades in; gentle, no overshoot */
+  .xr-card[data-enter] { animation: xr-card-in 240ms var(--pl-ease-out, cubic-bezier(.2,.8,.2,1)) both; }
+  .xr-card[data-side="right"] { transform-origin: 0 50%; } .xr-card[data-side="left"] { transform-origin: 100% 50%; }
+  .xr-card[data-side="bottom"] { transform-origin: 50% 0; } .xr-card[data-side="top"] { transform-origin: 50% 100%; }
+  @keyframes xr-card-in { from { opacity: 0; scale: .9; } }
   /* the beak: a small point on the card's edge toward its element, like a tooltip's arrow, so it reads as anchored */
   .xr-card .beak { position: absolute; width: 12px; height: 12px; background: var(--pl-bg-surface); rotate: 45deg; box-shadow: -1px 1px 0 0 var(--pl-rule, rgb(0 0 0 / .08)); pointer-events: none; transition: top 420ms var(--pl-spring), left 420ms var(--pl-spring); }
   .xr-card[data-side="right"] .beak { left: -6px; } .xr-card[data-side="left"] .beak { right: -6px; rotate: 225deg; }
@@ -103,7 +108,7 @@ export const XRAY_CSS = `
   .xr-aa { font-family: var(--pl-sans); font-weight: 700; }
   /* the same element, another part pointed at: nothing arrives again; only what changed is redrawn, still */
   .xr[data-still] .xr-draw, .xr[data-still] .ruler-pill, .xr-card[data-still] .xr-row { animation: none; }
-  @media (prefers-reduced-motion: reduce) { .xr .xr-draw, .xr .ruler-pill, .xr-row { animation: none; } .xr-card { transition: none; } }
+  @media (prefers-reduced-motion: reduce) { .xr-card[data-enter] { animation-name: xr-in; } .xr .xr-draw, .xr .ruler-pill, .xr-row { animation: none; } .xr-card { transition: none; } }
 `;
 
 // what kind of part an element is, by its tag and role: the toy at the head of its card
