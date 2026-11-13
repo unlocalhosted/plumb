@@ -8,8 +8,8 @@
  *
  *  STEM, BOWL       the two parts, as paths on the 120 grid (drawn area 24..96 × 18..102, so 72 × 84)
  *  VIEW             the drawn area as a viewBox: the mark with no margin, 6:7
- *  markMono()       one colour (currentColor): takes whatever colour it is given, for a state or a small place
- *  markLit(id)      pink and violet, each lit from the top; `id` keeps its gradients apart from another copy's
+ *  markMono()       the P alone, one colour. Kept for the record of the first mark; nothing draws it now
+ *  markLit(id)      the P alone, pink and violet, each lit from the top. Kept for the same reason
  *
  * The R (chosen by the owner 2026-11-13; docs/design/comps/logo-r.html, logo-stress.html, the design site's Logo page,
  * docs/journey.md "A solid P inside a drawn R"): the P gains the one part it lacks to be an R, its leg, and reads as
@@ -75,17 +75,19 @@ export function markR({ h = 64, level = null, mono = false, dark = false, leg = 
   const lc = mono ? 'currentColor' : leg ?? (dark ? BLUE_NIGHT : BLUE);
   const defs = mono ? '' : `<defs>
 <linearGradient id="${id}-s" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff7ac0"/><stop offset=".55" stop-color="#f24a9f"/><stop offset="1" stop-color="#d0287f"/></linearGradient>
-<linearGradient id="${id}-b" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9a7dff"/><stop offset=".55" stop-color="#7356f0"/><stop offset="1" stop-color="#5232d4"/></linearGradient></defs>`;
+<linearGradient id="${id}-b" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9a7dff"/><stop offset=".55" stop-color="#7356f0"/><stop offset="1" stop-color="#5232d4"/></linearGradient>
+<linearGradient id="${id}-l" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".42"/><stop offset=".25" stop-color="#fff" stop-opacity="0"/></linearGradient></defs>`;
+  const lit = (d) => (mono ? '' : `<path d="${d}" fill="url(#${id}-l)" style="mix-blend-mode:soft-light"/>`); // each part lit from the top
   const size = L === 3 ? `height="${h}" width="${h}"` : `height="${h}" width="${(h * 76 / 88).toFixed(1)}"`;
   if (L === 0) return `<svg viewBox="22 16 76 88" ${size} aria-hidden="true">${defs}<clipPath id="${id}-c"><path d="${LEG_S}"/></clipPath>
-<path d="${STEM_S}" fill="${a}"/><path d="${BOWL_S}" fill="${b}"/>
+<path d="${STEM_S}" fill="${a}"/>${lit(STEM_S)}<path d="${BOWL_S}" fill="${b}"/>${lit(BOWL_S)}
 <path d="${LEG_S}" fill="${lc}" fill-opacity=".34" stroke="${lc}" stroke-width="${Math.min(9, 2 * 1.1 * 88 / h).toFixed(2)}" clip-path="url(#${id}-c)"/></svg>`;
   const u = (L === 3 ? 120 : 88) / h; // user units per px: the leg's line never falls under about 1.2px
   const sw = L === 3 ? .6 : L === 1 ? Math.min(3, Math.max(1, 1.7 * u)) : Math.min(2.4, Math.max(.8, 1.2 * u));
   const dash = L >= 2 ? ` stroke-dasharray="${(L === 3 ? 1.2 : sw * 1.7).toFixed(2)} ${(L === 3 ? 1.2 : sw * 1.5).toFixed(2)}"` : '';
   const tw = L === 3 ? .42 : Math.max(.5, .9 * u);
   const tree = L >= 2 ? `<path d="${JOINTS}" fill="none" stroke="${lc}" stroke-width="${tw.toFixed(2)}"/>${TREE.map(([x, y]) => `<rect x="${x}" y="${y}" width="10" height="4" rx="1.4" fill="none" stroke="${lc}" stroke-width="${tw.toFixed(2)}"/>`).join('')}` : '';
-  const body = `<path d="${STEM}" fill="${a}"/><path d="${BOWL}" fill="${b}"/>
+  const body = `<path d="${STEM}" fill="${a}"/>${lit(STEM)}<path d="${BOWL}" fill="${b}"/>${lit(BOWL)}
 <path d="${LEG}" fill="${lc}" fill-opacity="${L === 1 ? .2 : .1}" stroke="${lc}" stroke-width="${sw.toFixed(2)}" stroke-linejoin="round"${dash}/>${tree}`;
   if (L < 3) return `<svg viewBox="22 16 76 88" ${size} aria-hidden="true">${defs}${body}</svg>`;
   return `<svg viewBox="0 0 120 120" ${size} aria-hidden="true">${defs}

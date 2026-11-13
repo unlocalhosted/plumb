@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { soften } from '../../overlay/src/soft.js';
-import { markLit } from '../../overlay/src/mark.js';
+import { markR } from '../../overlay/src/mark.js';
 
 const PLACES = [['/', 'Home'], ['/docs', 'Docs'], ['/demo', 'Demo'], ['/design', 'Design']];
 
@@ -29,8 +29,9 @@ export function useScheme() {
   return [scheme, flip];
 }
 
-// the mark: React Plumber's P, lit (overlay/src/mark.js, one source with the overlay and the films)
-const MARK = markLit('bar');
+// the mark: a solid P inside a drawn R (overlay/src/mark.js, one source with the overlay and the films), in the drawing
+// its size calls for; its leg takes the tool's blue for the page's scheme (--rp-leg, app/globals.css)
+const MARK = markR({ h: 26, id: 'bar', leg: 'var(--rp-leg)' });
 
 export function Bar() {
   const path = usePathname();

@@ -8,12 +8,12 @@
 //   1800             the name travels up to its corner and becomes the signature; the card rises in beneath it
 //   2600             the film plays (Film.jsx: feel it, measure it, why it holds, payoff)
 //    end   CLOSING   the card and the signature step back; the mark travels from its corner to the middle and grows;
-//                    the mark's guardrails draw themselves on (the gap's guides, the 4 it measures); under it, the site's line
+//                    the mark's guardrails draw themselves on and the DOM tree appears in its leg; under it, the site's line
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { PRINCIPLES } from './catalogue.js';
 import { Film } from './Film.jsx';
 import { ensureLook } from './look.js';
-import { STEM, BOWL } from '../../../src/mark.js';
+import { STEM, BOWL, LEG, TREE, JOINTS } from '../../../src/mark.js';
 
 ensureLook();
 const SCREENS = Object.fromEntries(Object.entries(import.meta.glob('./screens/[0-9]*.jsx', { eager: true })).map(([, m]) => [m.n, m]));
@@ -30,10 +30,10 @@ const TIMING = {
 const MOVE = 'cubic-bezier(0.7, 0, 0.3, 1)';      // the camera's curve: slow start, slow finish
 const LINE = 'A design review on every screen.';   // the site's hero line (homepage/src/hero)
 
-// React Plumber's mark (owner's pick, 2026-11-13; docs/design/comps/logo-guides.html, the third mark with the second's
-// guardrail): a pink stem and a violet bowl, each lit from the top, with exactly the gap between them on a 120 grid; the
-// space between is a decision, and it makes the P. With `guards`, plumber's own guardrails draw themselves on: the guides
-// the stem, cap and foot sit on, and the 4 it measures across the gap.
+// React Plumber's mark (overlay/src/mark.js; the design site's Logo page): a solid P, pink stem and violet bowl, each
+// lit from the top, inside a drawn R: its leg is only an outline in plumber's tool blue. In the corner it is the plain
+// outline. With `guards` (the closing, where it grows) it becomes the hero: the leg thins to dashes, the small DOM tree
+// appears inside it, and the guardrails the mark is built in draw themselves on.
 const GUARD = '#2f86dc';
 // the mark's two parts, from the one source the site's bar and the overlay's dock draw from too
 const Mark = ({ size, guards = false }) => (
@@ -44,17 +44,18 @@ const Mark = ({ size, guards = false }) => (
       <linearGradient id="mk-lit" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#fff" stopOpacity=".42" /><stop offset=".25" stopColor="#fff" stopOpacity="0" /></linearGradient>
     </defs>
     {guards ? (
-      <g stroke={GUARD} strokeWidth=".8" strokeDasharray="2.4 2" strokeLinecap="round" fill="none" style={{ animation: 'mk-guide 700ms ease 900ms both' }}>
-        <path d="M24 4V116" /><path d="M4 18H116" /><path d="M4 102H40" />
+      <g stroke={GUARD} strokeWidth=".5" strokeDasharray="1.4 1.8" strokeLinecap="round" fill="none" style={{ animation: 'mk-guide 700ms ease 900ms both' }}>
+        <path d="M6 18H114" /><path d="M6 102H114" /><path d="M24 2V118" /><path d="M96 2V118" />
       </g>
     ) : null}
     <path d={STEM} fill="url(#mk-stem)" /><path d={STEM} fill="url(#mk-lit)" style={{ mixBlendMode: 'soft-light' }} />
     <path d={BOWL} fill="url(#mk-bowl)" /><path d={BOWL} fill="url(#mk-lit)" style={{ mixBlendMode: 'soft-light' }} />
+    <path d={LEG} fill={GUARD} fillOpacity={guards ? 0.1 : 0.2} stroke={GUARD} strokeLinejoin="round" strokeDasharray={guards ? '1.5 1.4' : undefined}
+      style={{ strokeWidth: guards ? 0.7 : 3, transition: 'stroke-width 700ms ease 500ms, fill-opacity 700ms ease 500ms' }} />
     {guards ? (
-      <g style={{ animation: 'mk-pill 420ms cubic-bezier(.3, 1.5, .5, 1) 1500ms both', transformOrigin: '60px 8px' }}>
-        <path d="M58 12H62M58 9.4V14.6M62 9.4V14.6" stroke={GUARD} strokeWidth=".9" strokeLinecap="round" />
-        <rect x="54" y="0.3" width="12" height="8.4" rx="3" fill={GUARD} />
-        <text x="60" y="7" textAnchor="middle" fontFamily="ui-monospace, Menlo" fontSize="6.4" fontWeight="700" fill="#fff">4</text>
+      <g fill="none" stroke={GUARD} strokeWidth=".5" style={{ animation: 'mk-pill 420ms cubic-bezier(.3, 1.5, .5, 1) 1500ms both', transformOrigin: '79px 90px' }}>
+        <path d={JOINTS} />
+        {TREE.map(([x, y]) => <rect key={y} x={x} y={y} width="10" height="4" rx="1.4" />)}
       </g>
     ) : null}
   </svg>

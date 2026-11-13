@@ -8,6 +8,9 @@
    - the toy face for what a toy has printed on it: titles, names, buttons
    - picked up when pointed at                  toys tip and grow */
 * { box-sizing: border-box; }
+/* the mark's leg: the tool's blue for the scheme (overlay/src/mark.js, BLUE and BLUE_NIGHT) */
+:root { --rp-leg: #2f86dc; } :root[data-scheme="dark"] { --rp-leg: #6db0f5; }
+@media (prefers-color-scheme: dark) { :root:not([data-scheme="light"]) { --rp-leg: #6db0f5; } }
 /* the site's faces go first in the product's two face tokens; everything after them is the product's own list */
 /* how heavy the toy face is set. Bricolage needs more weight than a rounded face to keep its character */
 :root:root { --pl-round-w: 750; --pl-round-w2: 800; --pl-round: var(--font-round), ui-rounded, "SF Pro Rounded", "Arial Rounded MT Bold", system-ui, sans-serif;
