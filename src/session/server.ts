@@ -9,9 +9,11 @@ import { createInterface } from 'node:readline';
 import type { Readable, Writable } from 'node:stream';
 import { Session } from './index.js';
 import type { ReadArgs, ReadMethod, SessionOptions } from './index.js';
-import { answersSerialized, isEndpoint, isRpcMethod, tracedWrites, verbOf } from './methods.js';
+import { answersSerialized, isEndpoint, isRpcMethod, isWriteEndpoint, tracedWrites, verbOf } from './methods.js';
 import type { CheckOptions } from '../index.js';
-import { BusyError, errorDiagnostic, errorMessage, UsageError } from '../errors.js';
+import { BusyError, errorCode, errorDiagnostic, errorMessage, UsageError } from '../errors.js';
+import type { ErrorCode } from '../errors.js';
+import { validateRequest } from './schema.js';
 import { isIP } from 'node:net';
 import { isOverlayModule, overlayClient } from '../hosts/client.js';
 
@@ -52,6 +54,27 @@ function position(params: Record<string, unknown>, name: string, optional = fals
 export async function dispatch(session: Session, method: string, raw: unknown = {}, options: Pick<HandlerOptions, 'servedRoot' | 'readiness' | 'readinessProject'> = {}): Promise<unknown> {
   return dispatchRequest(session, method, raw, options, false);
 }
+// A write may carry an idempotency key in the Idempotency-Key header: a retry after a dropped response (the same key,
+// the same body) returns the first answer, success or refusal, and never applies twice. A different body under a used
+// key is refused. The last 256 keys per session are kept; the overlay sends a fresh key for every write. The header,
+// not the body: `key` in a body is the endpoint's own (set's prop key), and means what it always meant.
+export const idempotencyHeader = 'idempotency-key';
+const answered = new WeakMap<Session, Map<string, { body: string; result: Promise<unknown> }>>();
+function idempotent(session: Session, method: string, params: Record<string, unknown>, key: string, run: () => Promise<unknown>): Promise<unknown> {
+  if (!key.trim() || key.length > 128) throw new UsageError('Idempotency-Key must be at most 128 characters.');
+  let keys = answered.get(session);
+  if (!keys) { keys = new Map(); answered.set(session, keys); }
+  const body = JSON.stringify([method, params]);
+  const seen = keys.get(key);
+  if (seen) {
+    if (seen.body !== body) throw new UsageError('That key was already used for a different write. Send a new key.');
+    return seen.result;
+  }
+  const result = run();
+  keys.set(key, { body, result });
+  if (keys.size > 256) keys.delete(keys.keys().next().value!);
+  return result;
+}
 // The writes a request's `trace` tag follows (engine traced): every change they record carries its group and meta (methods.ts).
 function tracing(session: Session, tag: unknown): Session {
   if (tag !== undefined && !object(tag)) throw new UsageError('trace must be an object: { group, meta }.');
@@ -75,9 +98,13 @@ function pinOf(edit: Record<string, unknown>): { at?: { line: number; column: nu
   return { ...(object(at) ? { at: { line: Number(at.line), column: Number(at.column) } } : {}),
     ...(object(of) ? { of: { file: text(of, 'file')!, line: position(of, 'line')!, column: position(of, 'column')!, chain: chainOf(of.chain) } } : {}) };
 }
-async function dispatchRequest(session: Session, method: string, raw: unknown, options: Pick<HandlerOptions, 'servedRoot' | 'readiness' | 'readinessProject'>, json: boolean): Promise<unknown> {
-  if (!object(raw)) throw new UsageError('Parameters must be a JSON object.');
-  const params = raw;
+async function dispatchRequest(session: Session, method: string, raw: unknown, options: Pick<HandlerOptions, 'servedRoot' | 'readiness' | 'readinessProject'>, json: boolean, idempotencyKey?: string): Promise<unknown> {
+  // the endpoint's shape first (schema.ts): a malformed request is refused with `bad-request` before any handler runs
+  const params = validateRequest(method, raw);
+  if (idempotencyKey !== undefined && isWriteEndpoint(method)) return idempotent(session, method, params, idempotencyKey, () => dispatchOnce(session, method, params, options, json));
+  return dispatchOnce(session, method, params, options, json);
+}
+async function dispatchOnce(session: Session, method: string, params: Record<string, unknown>, options: Pick<HandlerOptions, 'servedRoot' | 'readiness' | 'readinessProject'>, json: boolean): Promise<unknown> {
   // one request, one group: every write it makes is traced, under the caller's tag when it sends one
   session = tracing(session, params.trace);
   const read = <M extends ReadMethod>(method: M, args: ReadArgs<M>): Promise<unknown> =>
@@ -86,6 +113,7 @@ async function dispatchRequest(session: Session, method: string, raw: unknown, o
     root: session.root, ...(session.config === undefined ? {} : { config: session.config }),
     ...(options.readinessProject?.rootOverride ? { rootOverride: true } : {}),
     ...(options.readiness === undefined ? {} : { runtime: options.readiness }), report: () => session.report(),
+    ...(params.stamps === '0' || params.stamps === '1' ? { observed: { stamps: params.stamps === '1' } } : {}),
     sourceEvidence: async () => (await session.health()).outsideSource ?? [],
   }, method, params);
   if (method === 'report') {
@@ -118,6 +146,7 @@ async function dispatchRequest(session: Session, method: string, raw: unknown, o
     return read('classes', [text(params, 'file')!, position(params, 'line')!, position(params, 'column')!, params.classes]);
   }
   if (method === 'resolve') return read('resolveSource', [...resolveArgs(params)]);
+  if (method === 'index') return read('sourceIndex', [text(params, 'source')!, { ...(options.servedRoot === undefined ? {} : { servedRoot: options.servedRoot }) }]);
   if (method === 'text') return read('text', [text(params, 'file')!, position(params, 'line')!, position(params, 'column')!]);
   if (method === 'text-at') return read('textAt', [text(params, 'file')!, position(params, 'line')!, position(params, 'column')!, text(params, 'text')!, text(params, 'owners', true)]);
   if (method === 'edits') return read('edits', [text(params, 'file')!, position(params, 'line')!, position(params, 'column', true)]);
@@ -237,7 +266,7 @@ async function dispatchReadiness(context: ReadinessOptions, method: string, para
   // Keep analysis modules off the existing Session host's startup/hot routes.
   const { readiness, applyReadinessFix } = await import('../readiness/index.js');
   if (method === 'readiness') return readiness(context);
-  if (params.confirm !== true || params.allowDirty !== undefined && typeof params.allowDirty !== 'boolean') throw new UsageError('confirm must be true; allowDirty must be a boolean.');
+  if (params.confirm !== true || params.allowDirty !== undefined && typeof params.allowDirty !== 'boolean') throw new UsageError('confirm must be true; allowDirty must be a boolean.', 'bad-request');
   return applyReadinessFix(context, { id: text(params, 'id')!, hash: text(params, 'hash')!, confirm: true,
     ...(params.allowDirty === undefined ? {} : { allowDirty: params.allowDirty as boolean }) });
 }
@@ -274,7 +303,7 @@ function createRoute(session: Session | Promise<Session>, options: HandlerOption
     if (!url.pathname.startsWith(prefix)) return;
     const headers: Record<string, string> = { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', 'Cross-Origin-Resource-Policy': 'same-origin' };
     const respond = (status: number, value: unknown): TransportResponse => ({ status, headers, body: JSON.stringify(value) });
-    const refuse = (status: number, error: string) => respond(status, { error });
+    const refuse = (status: number, error: string, code: ErrorCode) => respond(status, { error, code });
     // GET system is the project page's data; the POST of that name is the engine's proposal (methods.ts)
     const named = url.pathname.slice(prefix.length);
     const method = named === 'system' && request.method === 'GET' ? 'system-page' : named;
@@ -285,16 +314,17 @@ function createRoute(session: Session | Promise<Session>, options: HandlerOption
     if (origin !== undefined) {
       headers.Vary = 'Origin';
       const supplied = request.header('origin');
-      if (supplied !== undefined && supplied !== origin) return refuse(403, 'Origin is not allowed.');
+      if (supplied !== undefined && supplied !== origin) return refuse(403, 'Origin is not allowed.', 'forbidden');
       if (supplied === origin) headers['Access-Control-Allow-Origin'] = origin;
       if (request.method === 'OPTIONS') {
-        if (supplied !== origin) return refuse(403, 'Origin is not allowed.');
-        if (!known) return refuse(404, 'Endpoint not found.');
-        if (request.header('access-control-request-method') !== expected) { headers.Allow = expected; return refuse(405, `Use ${expected} for this endpoint.`); }
+        if (supplied !== origin) return refuse(403, 'Origin is not allowed.', 'forbidden');
+        if (!known) return refuse(404, 'Endpoint not found.', 'not-found');
+        if (request.header('access-control-request-method') !== expected) { headers.Allow = expected; return refuse(405, `Use ${expected} for this endpoint.`, 'method-not-allowed'); }
         const requested = request.header('access-control-request-headers')?.split(',').map(header => header.trim().toLowerCase()) ?? [];
-        if (requested.some(header => !['content-type', tokenHeader].includes(header))) return refuse(403, 'Request headers are not allowed.');
+        if (requested.some(header => !['content-type', tokenHeader, idempotencyHeader].includes(header))) return refuse(403, 'Request headers are not allowed.', 'forbidden');
         headers['Access-Control-Allow-Methods'] = expected;
-        headers['Access-Control-Allow-Headers'] = `Content-Type, ${tokenHeader}`;
+        headers['Access-Control-Allow-Headers'] = `Content-Type, ${tokenHeader}, Idempotency-Key`;
+        headers['Access-Control-Max-Age'] = '600'; // one preflight per endpoint, not one per question
         return { status: 204, headers, body: '' };
       }
     }
@@ -302,7 +332,7 @@ function createRoute(session: Session | Promise<Session>, options: HandlerOption
     if (token !== undefined && !client) {
       const supplied = request.header(tokenHeader);
       if (supplied === undefined || Buffer.byteLength(supplied) !== Buffer.byteLength(token) || !timingSafeEqual(Buffer.from(supplied), Buffer.from(token)))
-        return refuse(401, 'A valid x-plumb-token header is required.');
+        return refuse(401, 'A valid x-plumb-token header is required.', 'unauthorized');
     } else if (token === undefined) {
       const address = request.peerAddress ?? '', ipv4 = address.replace(/^::ffff:/i, '');
       const loopback = address === '::1' || isIP(ipv4) === 4 && ipv4.startsWith('127.');
@@ -317,11 +347,11 @@ function createRoute(session: Session | Promise<Session>, options: HandlerOption
         if (origin !== undefined || request.method === 'POST') trusted &&= origin === authority.origin;
       } catch { trusted = false; }
       if (['cross-site', 'same-site'].includes(request.header('sec-fetch-site') ?? '')) trusted = false;
-      if (!trusted) return refuse(403, 'A same-origin request from a trusted loopback host is required.');
+      if (!trusted) return refuse(403, 'A same-origin request from a trusted loopback host is required.', 'forbidden');
     }
     try {
-      if (!known && (current || method.startsWith('readiness'))) return refuse(404, 'Endpoint not found.');
-      if (request.method !== expected) { headers.Allow = expected; return refuse(405, `Use ${expected} for this endpoint.`); }
+      if (!known && (current || method.startsWith('readiness'))) return refuse(404, 'Endpoint not found.', 'not-found');
+      if (request.method !== expected) { headers.Allow = expected; return refuse(405, `Use ${expected} for this endpoint.`, 'method-not-allowed'); }
       if (client) { headers['Content-Type'] = method === 'THIRD_PARTY_NOTICES' ? 'text/plain; charset=utf-8' : method.endsWith('.css') ? 'text/css; charset=utf-8' : 'text/javascript; charset=utf-8'; return { status: 200, headers, body: await overlayClient(method) }; }
       if (!current && !(diagnostic !== undefined && options.readinessProject && ['readiness', 'readiness/fix'].includes(method))) {
         const state = diagnostic === undefined ? { status: 'starting' } : { status: 'failed', diagnostic };
@@ -329,29 +359,24 @@ function createRoute(session: Session | Promise<Session>, options: HandlerOption
         return respond(method === 'health' ? 200 : 503, state);
       }
       let params: unknown = Object.fromEntries(url.searchParams);
-      if (method === 'report' && object(params)) for (const key of ['changed', 'strictLedger', 'verbose', 'ledger']) if (params[key] !== undefined) {
-        if (!['true', 'false'].includes(String(params[key]))) throw new UsageError(`${key} must be true or false.`);
-        params[key] = params[key] === 'true';
-      }
       if (expected === 'POST') {
         let size = 0; const chunks: Buffer[] = [];
         for await (const chunk of request.body) {
           size += chunk.byteLength;
-          if (size > 1024 * 1024) throw new UsageError(`${method === 'try' ? 'Snippet' : 'Request'} exceeds the 1 MiB request limit.`);
+          if (size > 1024 * 1024) throw new UsageError(`${method === 'try' ? 'Snippet' : 'Request'} exceeds the 1 MiB request limit.`, 'bad-request');
           chunks.push(Buffer.from(chunk));
         }
-        try { params = JSON.parse(Buffer.concat(chunks).toString('utf8')); } catch { throw new UsageError('Request body must be valid JSON.'); }
+        try { params = JSON.parse(Buffer.concat(chunks).toString('utf8')); } catch { throw new UsageError('Request body must be valid JSON.', 'bad-request'); }
       }
       const json = answersSerialized(method);
       let result: unknown;
-      if (current) result = await dispatchRequest(current, method, params, options, json);
+      if (current) result = await dispatchRequest(current, method, params, options, json, request.header(idempotencyHeader));
       else {
         const context = { ...options.readinessProject!, ...(options.readiness ? { runtime: options.readiness } : {}) };
-        if (!object(params)) throw new UsageError('Parameters must be a JSON object.');
-        result = await dispatchReadiness(context, method, params);
+        result = await dispatchReadiness(context, method, validateRequest(method, params));
       }
       return json ? { status: 200, headers, body: result as string } : respond(200, result);
-    } catch (error) { if (error instanceof BusyError) { headers["Retry-After"] = "1"; return respond(503, { status: "busy" }); } return refuse(error instanceof UsageError ? 400 : 500, errorMessage(error)); }
+    } catch (error) { if (error instanceof BusyError) { headers['Retry-After'] = '1'; return respond(503, { status: 'busy', code: 'busy' }); } return refuse(error instanceof UsageError ? 400 : 500, errorMessage(error), errorCode(error)); }
   };
 }
 
@@ -362,7 +387,7 @@ export function createHandler(session: Session | Promise<Session>, options: Hand
     let url: URL;
     const protocol = 'encrypted' in request.socket && request.socket.encrypted ? 'https:' : 'http:';
     try { url = new URL(request.url ?? '/', protocol + '//127.0.0.1'); url.protocol = protocol; }
-    catch { response.writeHead(400); response.end(JSON.stringify({ error: 'Request URL must be valid.' })); return; }
+    catch { response.writeHead(400); response.end(JSON.stringify({ error: 'Request URL must be valid.', code: 'bad-request' })); return; }
     void route({ url, method: request.method ?? 'GET', peerAddress: request.socket.remoteAddress,
       header: name => { const value = request.headers[name]; return typeof value === 'string' ? value : undefined; }, body: request,
     }).then(result => {
@@ -480,7 +505,7 @@ export async function serveStdio(options: SessionOptions = {}, input: Readable =
         }
         const result = await dispatch(session, method, request.params ?? {});
         if (request.id !== undefined) await write({ jsonrpc: '2.0', id: request.id, result });
-      } catch (error) { if (request.id !== undefined) await write({ jsonrpc: '2.0', id: request.id, error: { code: -32602, message: errorMessage(error) } }); }
+      } catch (error) { if (request.id !== undefined) await write({ jsonrpc: '2.0', id: request.id, error: { code: -32602, message: errorMessage(error), data: { code: errorCode(error) } } }); }
     }
   } finally { lines.close(); await session.close(); }
 }

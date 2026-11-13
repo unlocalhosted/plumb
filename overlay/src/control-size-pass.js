@@ -17,8 +17,9 @@ import { classEditsOf } from './locate.js';
 import { ease } from './show.js';
 import { loadSteps, unit } from './stacks.js';
 import { proposeControlSizes, readControls } from './control-size.js';
+import { placeOf } from './stamp.js';
 
-const keyOf = (el, to) => `${(el.getAttribute('data-plumb-source') ?? '').split('#')[0]}|${to}`;
+const keyOf = (el, to) => `${(placeOf(el) ?? '')}|${to}`;
 const mostOf = (vs) => vs.sort((a, b) => vs.filter((v) => v === b).length - vs.filter((v) => v === a).length)[0];
 // the chip: a control seen from the side, with its height marked
 const GLYPH = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="5.5" y="3.5" width="8" height="9" rx="2"/><path d="M2.5 3.5v9M1.2 5 2.5 3.5 3.8 5M1.2 11l1.3 1.5L3.8 11"/></svg>';

@@ -125,26 +125,30 @@ test('HTTP apply-text refuses invalid, stale, dynamic and unsafe writes without 
   const api = await project(t);
   const reading = (await api.text('<button id="plain"')).body;
   const valid = { file: 'src/App.tsx', hash: reading.hash, run: reading.runs[0].id, from: 'Send', to: 'Go' };
-  const refuse = async (params, error, file = api.file) => {
+  const refuse = async (params, error, file = api.file, code = 'refused') => {
     const before = await readFile(file);
-    assert.deepEqual(await api.call('apply-text', params, 'POST'), { status: 400, body: { error } });
+    const answer = await api.call('apply-text', params, 'POST');
+    assert.equal(answer.status, 400, JSON.stringify(answer.body));
+    assert.equal(answer.body.error, error);
+    assert.equal(answer.body.code, code);
     assert.deepEqual(await readFile(file), before);
   };
-  for (const [params, error] of [
-    [{ ...valid, from: 'Other' }, 'The text changed since the overlay read it. Read it again.'],
-    [{ ...valid, run: 'unknown' }, "Unknown text run id. Read the element's text again."],
+  for (const [params, error, file, want] of [
+    [{ ...valid, from: 'Other' }, 'The text changed since the overlay read it. Read it again.', undefined, 'stale-file'],
+    [{ ...valid, run: 'unknown' }, "Unknown text run id. Read the element's text again.", undefined, 'not-found'],
     [{ ...valid, to: '' }, 'Replacement text must not be empty.'],
     [{ ...valid, to: '   ' }, 'Replacement text must not be empty.'],
     [{ ...valid, to: 'a'.repeat(501) }, 'Replacement text must be at most 500 characters.'],
-    [{ ...valid, to: 1 }, 'Apply text requires a file, hash, run id, from string and to string.'],
+    // the router's shape check (src/session/schema.ts) refuses a mistyped field before the engine sees it
+    [{ ...valid, to: 1 }, 'to must be a string.', undefined, 'bad-request'],
     [{ ...valid, file: '../outside.tsx' }, 'File must be inside the project root.'],
-  ]) await refuse(params, error);
+  ]) await refuse(params, error, file, want);
   await writeFile(api.file, code + '// changed\n');
-  await refuse(valid, 'The file changed since the overlay read it. Read it again.');
+  await refuse(valid, 'The file changed since the overlay read it. Read it again.', undefined, 'stale-file');
   await writeFile(api.file, code);
   for (const anchor of ['<p id="expression"', '<p id="translation"', '<Trans>']) {
     assert.equal((await api.text(anchor)).body.editable, false);
-    await refuse({ ...valid, run: hash(JSON.stringify([valid.hash, code.indexOf(anchor), code.indexOf(anchor) + 1])) }, "Unknown text run id. Read the element's text again.");
+    await refuse({ ...valid, run: hash(JSON.stringify([valid.hash, code.indexOf(anchor), code.indexOf(anchor) + 1])) }, "Unknown text run id. Read the element's text again.", undefined, 'not-found');
   }
   await symlink(api.file, join(api.root, 'src/Alias.tsx'));
   await refuse({ ...valid, file: 'src/Alias.tsx' }, 'Apply cannot edit symbolic links or paths outside the project root.');

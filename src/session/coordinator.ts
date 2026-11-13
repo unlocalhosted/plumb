@@ -5,7 +5,7 @@ import { isReadMethod } from './methods.js';
 
 interface Call { id: number; method: string; args: unknown[]; deadline: number; json?: boolean }
 const port = parentPort!;
-const errorDetails = (error: unknown) => ({ errorStack: error instanceof Error ? error.stack : undefined, usageError: error instanceof UsageError });
+const errorDetails = (error: unknown) => ({ errorStack: error instanceof Error ? error.stack : undefined, usageError: error instanceof UsageError, ...(error instanceof UsageError ? { errorCode: error.code } : {}) });
 const queue: Call[] = [];
 let running = false;
 const read = (call: Call) => isReadMethod(call.method);
@@ -14,6 +14,9 @@ try {
   const snapshot = async () => ({ health: await session.health(), stats: session.stats });
   session.on('change', value => { void snapshot().then(state => port.postMessage({ event: 'change', value, ...state })); });
   session.on('transaction', value => port.postMessage({ event: 'transaction', value }));
+  // every file the engine writes, at once: the host hands it to its watcher (hosts/vite.ts onWritten) instead of
+  // waiting for a poll that can miss a second write landing within the same tick
+  session.on('written', value => port.postMessage({ event: 'written', value }));
   session.on('diagnostic', error => { void snapshot().then(state => port.postMessage({ event: 'diagnostic', value: error, ...state })); });
   async function execute(call: Call) {
     if (Date.now() >= call.deadline) { port.postMessage({ id: call.id, busy: true }); return; }

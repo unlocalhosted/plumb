@@ -11,5 +11,6 @@ const css = (await readFile(from, 'utf8'))
 // .pl-light: the light values again, as a scope. A part of the page that always shows light (the homepage's painted
 // frames, light in both schemes) wears it; every token, derived ones included, is declared again there so nothing it
 // holds inherits a dark value; and the text colour is set again, since it inherits already resolved from the page.
-const light = css.match(/^:root \{\n([\s\S]*?)\n\}/m)[1];
+// the light rule is `:root {` or, since the token file scopes light for a part too, `:root, .pl-light {`
+const light = css.match(/^:root(?:, \.pl-light)? \{\n([\s\S]*?)\n\}/m)[1];
 await writeFile(to, `/* Generated from overlay/src/tokens.css by scripts/sync-tokens.mjs. Do not edit: change the overlay's tokens. */\n\n${css}\n.pl-light {\n${light}\n  color: var(--pl-ink);\n}\n`);

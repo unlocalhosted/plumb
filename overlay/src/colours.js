@@ -30,6 +30,7 @@
 import { oklab, toRgb } from './craft-headless.js';
 import { apca, colourClass } from './craft-rules.js';
 import { SPEC, utility } from './craft-read.js';
+import { STAMP_ATTRIBUTE, STAMPED, stampOf } from './stamp.js';
 import { controlAround, controlKind } from './roles.js';
 
 const DE_OK = 0.03;      // keep: indistinguishable in UI (pass-colour.md step 4), our visibility threshold (§1.1)
@@ -362,7 +363,7 @@ export function readColours(root = document.body, { exclude = [], palette = pale
   const cut = exclude.length ? exclude.join(',') : null;
   const pageL = oklab(fullGround(document.body, memo).rgb)[0];
   const place = (el) => { let p = places.get(el); if (!p) places.set(el, (p = { el, colours: {} })); return p; };
-  for (const el of root.querySelectorAll('[data-plumb-source]')) {
+  for (const el of root.querySelectorAll(STAMPED)) {
     if (el.closest('plumb-overlay')) continue;
     const cs = getComputedStyle(el), d = drawn(el, cs);
     const content = el.closest(CONTENT) || (cut && el.closest(cut));
@@ -378,7 +379,7 @@ export function readColours(root = document.body, { exclude = [], palette = pale
         if (pcs.color !== ocs.color) break;
         owner = p; ocs = pcs;
       }
-      if (!owner.hasAttribute('data-plumb-source')) { owner = el; ocs = cs; }
+      if (!owner.hasAttribute(STAMP_ATTRIBUTE)) { owner = el; ocs = cs; }
       // a fade at rest is the text's colour; none at all (waiting to be revealed) or a fade still running is not
       const op = parseFloat(ocs.opacity), moving = owner.getAnimations?.().length > 0 || el.getAnimations?.().length > 0;
       if (op < 0.05) { /* not shown: nothing to read */ }
@@ -456,7 +457,7 @@ export function readColours(root = document.body, { exclude = [], palette = pale
 export function colourRows(places) {
   const rows = [];
   for (const pl of places) {
-    const stamp = pl.el.getAttribute('data-plumb-source');
+    const stamp = stampOf(pl.el);
     for (const [prop, c] of Object.entries(pl.colours)) if (c.oklab) rows.push({ stamp, prop, oklab: round3(c.oklab), cls: c.cls ?? null, ...(c.data ? { data: true } : {}) });
   }
   return rows;

@@ -1,0 +1,9 @@
+/* The homepage on the site. The homepage's own app draws these few utilities with Tailwind (homepage/src/theme.css);
+   the site has no Tailwind, so the five the sections use are here, on the same tokens. */
+.homepage .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+.homepage .select-all { user-select: all; }
+.homepage .tabular { font-variant-numeric: tabular-nums; }
+.homepage .translate-x-\[2px\] { translate: 2px 0; }
+.homepage.pb-page-4 { padding-bottom: var(--pl-page-space-4); }
+/* one navigation: the site's bar */
+.homepage .hero-nav { display: none; }

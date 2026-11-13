@@ -13,11 +13,8 @@ import { Session } from '../dist/session/index.js';
 import { plumb } from '@unlocalhosted/react-plumber/vite';
 
 // These regressions deliberately exercise owner-stack locate without stamps.
-function unstamped(options) {
-  const plugin = plumb(options);
-  delete plugin.transform;
-  return plugin;
-}
+// The internal switch: the host then tells the overlay stamps are off by choice, so project elements still answer.
+function unstamped(options) { return plumb({ ...options, stamp: false }); }
 
 const repo = fileURLToPath(new URL('../', import.meta.url));
 const source = `"use client";
@@ -136,7 +133,7 @@ async function assertions(page, version = 19) {
     return window.__plumb.site(element);
   }), null);
   // The request goes through the host's auth/origin core, never a mocked resolver.
-  for (const source of [join(repo, 'src/index.ts'), 'node_modules/react/index.js', 'untracked.jsx', 'webpack://_N_E/../../src/index.ts']) {
+  for (const source of [join(repo, 'src/index.ts'), 'node_modules/react/index.js', '.scratch/untracked.jsx', 'webpack://_N_E/../../src/index.ts']) {
     const result = await page.evaluate(async source => {
       const token = document.querySelector('script[data-plumb-token]')?.dataset.plumbToken;
       return (await fetch('/__plumb/resolve?' + new URLSearchParams({ source }), { headers: token ? { 'x-plumb-token': token } : {} })).json();
@@ -303,7 +300,8 @@ for (const bundler of ['webpack', 'turbopack']) test(`Next 16 ${bundler}: instal
   await writeFile(join(root, 'app/layout.jsx'), `import { PlumbOverlay } from '@unlocalhosted/react-plumber/next';\nexport default function Layout({children}) { return <html><body>{children}<PlumbOverlay /></body></html>; }\n`);
   await writeFile(join(root, 'app/page.jsx'), `import App from '../src/App.jsx'; import Large from '../src/Large.jsx'; export default function Page() { return <><App /><Large /></>; }\n`);
   await writeFile(join(root, 'next.config.mjs'), `import { withPlumb } from '@unlocalhosted/react-plumber/next/config';\nexport default withPlumb({ experimental: { agentUpgrade: false }, watchOptions: { pollIntervalMs: 100 }, turbopack: { root: ${JSON.stringify(repo)} } });\n`);
-  const env = { ...process.env, NEXT_TELEMETRY_DISABLED: '1', WATCHPACK_POLLING: 'true' }; delete env.NODE_ENV;
+  // these regressions exercise the owner stack: the internal switch runs Next without stamps on purpose
+  const env = { ...process.env, NEXT_TELEMETRY_DISABLED: '1', WATCHPACK_POLLING: 'true', PLUMB_INTERNAL_UNSTAMPED: '1' }; delete env.NODE_ENV;
   const grouped = process.platform !== 'win32';
   const child = spawn(process.execPath, [join(repo, 'node_modules/next/dist/bin/next'), 'dev', '--' + bundler, '--hostname', '127.0.0.1', '--port', '0'], { cwd: root, env, detached: grouped, stdio: ['ignore', 'pipe', 'pipe'] });
   let output = ''; child.stdout.on('data', chunk => output += chunk); child.stderr.on('data', chunk => output += chunk);
@@ -334,7 +332,9 @@ for (const bundler of ['webpack', 'turbopack']) test(`Next 16 ${bundler}: instal
 
 test('resolve validates tracked source identity and site queries select only exact JSX attributes', async t => {
   const root = await project(t);
-  await writeFile(join(root, 'untracked.jsx'), 'export default () => <div />;');
+  // a file the rule leaves out: under a dot folder nothing imports (every file under the root is otherwise yours)
+  await mkdir(join(root, '.scratch'), { recursive: true });
+  await writeFile(join(root, '.scratch/untracked.jsx'), 'export default () => <div />;');
   await writeFile(join(root, 'index.html'), '<html><head></head><body>Host</body></html>');
   await symlink(join(repo, 'src/index.ts'), join(root, 'src/escape.ts'));
   await mkdir(join(root, 'node_modules/local'), { recursive: true });
@@ -344,6 +344,13 @@ test('resolve validates tracked source identity and site queries select only exa
   const url = `http://127.0.0.1:${server.httpServer.address().port}/__plumb/`;
   await ready(new URL(url).origin);
   const html = await (await fetch(new URL('../', url))).text();
+  // the overlay's HMR hook is an inline module Vite leaves alone (vite-ignore, stripped on the way out): it takes its
+  // hot context from Vite's client and imports the source-map invalidation from the plugin's own route
+  const hook = /<script type="module"\s*>([^<]*invalidateSourceMaps[^<]*)<\/script>/.exec(html);
+  assert.ok(hook, html);
+  assert.match(hook[1], /import \{ createHotContext \} from '\/@vite\/client'/);
+  assert.match(hook[1], /import \{ invalidateSourceMaps \} from '\/__plumb\/src\/sourcemap\.js'/);
+  assert.match(hook[1], /const hot = createHotContext\([^)]*\);[\s\S]*\bhot\.on\('vite:afterUpdate', invalidateSourceMaps\)/);
   assert.doesNotMatch(html, /html-proxy|vite-ignore/);
   assert.equal((await fetch(new URL('../__plumb/src/sourcemap.js', url))).status, 200);
   const resolve = (source, params = {}, init) => fetch(url + 'resolve?' + new URLSearchParams({ source, ...params }), init);
@@ -359,7 +366,7 @@ test('resolve validates tracked source identity and site queries select only exa
     assert.deepEqual(await response.json(), { file: 'src/App.jsx', ...at, component });
   }
   assert.equal((await resolve('src/App.jsx', { ...position('<section'), tag: 'span' })).status, 400, 'span cannot resolve to caller section');
-  for (const source of [join(repo, 'src/index.ts'), pathToFileURL(join(repo, 'src/index.ts')).href, 'file:///src/App.jsx', 'node_modules/local/index.jsx', '/@fs/' + join(root, 'node_modules/local/index.jsx'), 'untracked.jsx', 'src/escape.ts', 'webpack://_N_E/../../src/index.ts', '%2e%2e/%2e%2e/src/index.ts', 'webpack://_N_E/./node_modules/local/index.jsx']) {
+  for (const source of [join(repo, 'src/index.ts'), pathToFileURL(join(repo, 'src/index.ts')).href, 'file:///src/App.jsx', 'node_modules/local/index.jsx', '/@fs/' + join(root, 'node_modules/local/index.jsx'), '.scratch/untracked.jsx', 'src/escape.ts', 'webpack://_N_E/../../src/index.ts', '%2e%2e/%2e%2e/src/index.ts', 'webpack://_N_E/./node_modules/local/index.jsx']) {
     const response = await resolve(source); assert.equal(response.status, 200, source);
     const result = await response.json(); assert.equal(result.library, true, source); assert.equal(result.file, undefined, source);
   }

@@ -30,12 +30,12 @@ import { PANEL_CSS } from './blueprint-panel.js';
 import { Craft, spec } from './craft.js'; // craft: the mentor's rules, read on the page and joined to the reader's items
 import { Selection, SELECT_CSS } from './select.js'; // the element is the target: a click anywhere on it selects it
 import { Changes, CHANGES_CSS } from './changes.js'; // what was changed on the page, per element, until it is applied
+import { activeVariants } from './variants.js';
 import { elementEdit, planOf, swapPlanOf } from './inplace.js';
-import { Walkthrough, WALK_CSS } from './walkthrough.js'; // the first time: one proven fix, walked find → quiet
 import { FixPanel, FIX_CSS } from './fixpanel.js'; // the one place you act: a cause in hand, its options, Take, Apply
 import { FIX } from './words.js';
 import { hasText } from './texteditor.js';
-import { post, request } from './api.js';
+import { errorIs, post, request } from './api.js';
 import { locate, classEditsOf, classSiteOf } from './locate.js';
 
 const FADE_IN = 160, FADE_OUT = 120; // ms, the same as --pl-dur-dim and --pl-dur-undim
@@ -57,7 +57,7 @@ const traceOf = ({ step = FIX.card.steps.edit, laws = [], group = null } = {}) =
   meta: { step, laws: [...new Map((laws ?? []).filter((l) => l?.id || typeof l === 'string').map((l) => (typeof l === 'string' ? [l, { id: l, name: l }] : [l.id, { id: l.id, name: l.name }]))).values()] },
 });
 
-export const BLUEPRINT_CSS = GLASS_CSS + MARKS_CSS + LAYER_CSS + PANEL_CSS + SELECT_CSS + CHANGES_CSS + WALK_CSS + FIX_CSS;
+export const BLUEPRINT_CSS = GLASS_CSS + MARKS_CSS + LAYER_CSS + PANEL_CSS + SELECT_CSS + CHANGES_CSS + FIX_CSS;
 
 const still = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -65,12 +65,12 @@ export class Blueprint {
   #host; #layer; #marks; #reader; #glass; #onState; #onProgress;
   #state = 'off';
   #timer = 0;
-  #craft; #items = []; #selection; #changes; #walk;
+  #craft; #items = []; #selection; #changes;
   #scope = null; // an Alt+click: the element read, with what's inside it; null is the whole page (Alt+B)
 
   // host: the overlay element (readMarks, pin, pinnedElement, occluders); root: its shadow root;
   // theme: { decisions() } for the craft engine's scales (craft.js)
-  constructor(host, root, { onState, onProgress, theme } = {}) {
+  constructor(host, root, { onState, onProgress, theme, onSelect } = {}) {
     this.#host = host;
     this.#onState = onState;
     this.#onProgress = onProgress;
@@ -79,9 +79,8 @@ export class Blueprint {
     this.#layer = Object.assign(document.createElement('div'), { className: 'bp', hidden: true });
     root.appendChild(this.#layer);
     this.#glass = new Glass(root, host);
-    this.#walk = new Walkthrough(root);
-    this.#changes = new Changes(root, { onAccept: (batch) => this.#apply(batch), onSelect: (el) => this.#selection.select(el, this.#itemOf(el)), onShow: () => queueMicrotask(() => this.#focus()), onDiscard: (el) => this.#selection.discarded(el), onPut: (el) => this.#walk.taken(el) });
-    this.#selection = new Selection(root, { onFrame: () => this.#marks.invalidate(), tokenOf: (family, n) => this.#craft.theme.nearest(family, n, 0.5)?.short ?? null, health: () => host.health, onChange: (el) => { this.#marks.select(el); this.#walk.selected(el); this.#focus(); },
+    this.#changes = new Changes(root, { onAccept: (batch) => this.#apply(batch), onSelect: (el) => this.#selection.select(el, this.#itemOf(el)), onShow: () => queueMicrotask(() => this.#focus()), onDiscard: (el) => this.#selection.discarded(el) });
+    this.#selection = new Selection(root, { onFrame: () => this.#marks.invalidate(), tokenOf: (family, n) => this.#craft.theme.nearest(family, n, 0.5)?.short ?? null, health: () => host.health, onChange: (el) => { this.#marks.select(el); this.#focus(); onSelect?.(el); },
       onDraw: () => this.#fix?.render(), changes: this.#changes, read: (el) => host.read(el), site: (el) => this.#siteOf(el), steps: (family) => this.#craft.theme.scale(family).filter((x) => Number.isFinite(x.px)).map((x) => ({ token: x.short, n: x.px })).sort((a, b) => a.n - b.n) });
     this.#glass.onPress = (e) => this.#selection.press(e);
     this.#glass.onClick = this.#click;
@@ -113,7 +112,10 @@ export class Blueprint {
       recipe: (at, body, said, meta) => this.#applyRecipe(at, body, said, meta),
       swaps: (writes, said, meta) => this.#swapsWrite(writes, said, meta),
       batch: (steps, said, meta) => this.#batchWrite(steps, said, meta),
-      undoGroup: async (group) => { this.#host.remember?.(FIX.undone); try { return await this.#undoGroup(group); } catch (error) { if (answeredNo(error)) this.#host.forgetResume?.(); throw error; } },
+      // a step's undo is History's to say (its toast carries the Undo). The sentence is still remembered for the page
+      // that comes back, marked as History's: the panel says it only if the reload came before History heard the
+      // answer (an undo across two files reloads at the first), and stays quiet when History has it
+      undoGroup: async (group) => { this.#host.remember?.(FIX.undone, undefined, null, null, { history: true }); try { return await this.#undoGroup(group); } catch (error) { if (answeredNo(error)) this.#host.forgetResume?.(); throw error; } },
       unwant: () => { this.#want = null; },
       climb: (el) => this.climbTo(el),
       // why an element can't be placed in the source, as the panel says it
@@ -121,7 +123,7 @@ export class Blueprint {
     });
     // the fix panel counts every place in the code the page renders, on the page or not; what is drawn, listed and
     // selected is what the page shows
-    this.#reader = new Reader(host, { unrendered: true, onChange: (all) => { const items = all.filter((i) => i.el); this.#items = items; this.#marks.set(items); this.#fix.set(all); this.#selection.refresh(this.#itemOf(this.#selection.el)); this.#offerWalk(); if (this.#want) this.#holdWanted(this.#settled); }, onProgress: (p) => { this.#fix.progress(p); this.#onProgress?.(p); this.#clearAfterWrite(p); this.#settled = p.done ?? (!!p.total && p.read === p.total); if (this.#want && this.#settled) { const want = this.#want; setTimeout(() => { if (this.#want === want) this.#holdWanted(true); }, 300); } }, enrich: (items) => this.#craft.enrich(items) });
+    this.#reader = new Reader(host, { unrendered: true, onChange: (all) => { const items = all.filter((i) => i.el); this.#items = items; this.#marks.set(items); this.#fix.set(all); this.#selection.refresh(this.#itemOf(this.#selection.el)); if (this.#want) this.#holdWanted(this.#settled); }, onProgress: (p) => { this.#fix.progress(p); this.#onProgress?.(p); this.#clearAfterWrite(p); this.#settled = p.done ?? (!!p.total && p.read === p.total); if (this.#want && this.#settled) { const want = this.#want; setTimeout(() => { if (this.#want === want) this.#holdWanted(true); }, 300); } }, enrich: (items) => this.#craft.enrich(items) });
   }
 
   // A key while blueprint is on (the widget asks only when nothing is pinned or being typed): true when used.
@@ -197,7 +199,6 @@ export class Blueprint {
     this.#glass.off(); // the page is usable again the moment blueprint is let go, not after the fade
     this.#selection.clear();
     this.#changes.discardAll(); // nothing previewed is left on the page
-    this.#walk.end();
     this.#layer.removeAttribute('data-on');
     this.#marks.dim('shown');
     this.#marks.clear();
@@ -245,26 +246,14 @@ export class Blueprint {
     if (this.active) this.#reader.healthChanged(status);
   }
 
-  #invalidate = () => { this.#marks.invalidate(); this.#selection.draw(); this.#walk.draw(); this.#focus(); };
+  #invalidate = () => { this.#marks.invalidate(); this.#selection.draw(); this.#focus(); };
   // scrolling: the marks measure only what is lit until the page stops (blueprint-marks.js scrolled)
-  #scrolled = () => { this.#marks.scrolled(); this.#selection.draw(); this.#walk.draw(); this.#focus(); };
-  // what the person is working on (the selection, else the walkthrough's element): the chrome keeps clear of it
+  #scrolled = () => { this.#marks.scrolled(); this.#selection.draw(); this.#focus(); };
+  // what the person is working on (the selection): the chrome keeps clear of it
   #focus() {
-    const el = this.#selection.el ?? (this.#walk.active ? this.#walk.element : null);
+    const el = this.#selection.el;
     const r = el?.isConnected ? el.getBoundingClientRect() : null;
     if (r) this.#changes.avoid(r);
-  }
-  // the walkthrough's first element: one whose first problem has a fix the verdict proved (or a theme choice)
-  #offerWalk() {
-    return; // the fix panel walks you through causes itself (Enter on Fix); the old walkthrough named the ring and Changes
-    if (this.#state !== 'on' || this.#walk.active) return;
-    const steps = this.#craft.theme.scale('spacing').filter((x) => Number.isFinite(x.px)).map((x) => ({ token: x.short, n: x.px })).sort((a, b) => a.n - b.n);
-    this.#walk.offer(this.#items, (i) => {
-      const m = i.marks.find((x) => x.family === 'craft' || x.ledger === 'new');
-      if (!m || m.family !== 'craft' || m.craft?.suggest?.kind !== 'class') return false;
-      return !!(planOf(m, i.el, steps, (n) => this.#craft.theme.nearest('spacing', n, 0.5)?.short ?? null) ?? swapPlanOf(m));
-    });
-    this.#focus();
   }
   // the page element under the pointer, looking through the glass and the overlay's own marks
   #under = (x, y) => document.elementsFromPoint(x, y).find((el) => !el.closest('plumb-overlay')) ?? null;
@@ -357,12 +346,12 @@ export class Blueprint {
       // is said. Forgetting it would leave changed files behind a reload with no word and no Undo (found on crafting-ui:
       // one swap of seventeen refused, classes split across a template string)
       const wrote = [...(results.tokens ?? []), ...(results.css ?? []), ...(results.swaps ?? [])].some((x) => x.ok && (!Array.isArray(x.applied) || x.applied.length));
-      const why = failed.length ? (/changed since/i.test(failed[0].error ?? '') ? FIX.changedSince : failed[0].error ?? failed[0].refused?.[0]?.reason ?? FIX.couldNot) : null;
+      const why = failed.length ? (errorIs(failed[0], 'stale-file') ? FIX.changedSince : failed[0].error ?? failed[0].refused?.[0]?.reason ?? FIX.couldNot) : null;
       if (failed.length && !wrote && !propUndo.length) { this.#host.forgetResume?.(); return { ok: false, undo, group: trace.group, why }; }
       this.#host.remember?.(said, undo, null, trace.group);
       const left = failed.flatMap((f) => (f.refused?.length ? f.refused.map((r) => ({ file: f.file, ...r })) : [{ file: f.file, reason: f.error ?? why }]));
       return { ok: true, undo, group: trace.group, refused: [...propLeft, ...left] };
-    } catch (error) { this.#host.forgetResume?.(); return { ok: false, why: /changed since/i.test(error?.message ?? '') ? FIX.changedSince : error?.message ?? FIX.couldNot }; }
+    } catch (error) { this.#host.forgetResume?.(); return { ok: false, why: errorIs(error, 'stale-file') ? FIX.changedSince : error?.message ?? FIX.couldNot }; }
     finally { removeEventListener('plumb:applied', heard); }
   }
   // The colour tokens renamed by job across the project (POST rename): like the text styles, a theme write that may
@@ -382,7 +371,7 @@ export class Blueprint {
   // A cause no element renders right now: its theme choices, each with its exact edit at every place, read from the
   // code (GET edits per place). The plan is the one a drawn element gets (swapPlanOf); writes[i] is choice i's edits.
   async #fromCode(mark, places) {
-    const read = await Promise.all(places.map((p) => request('edits', { file: p.file, line: p.line, column: p.column }).then((r) => ({ ...p, hash: r.hash, edits: r.edits ?? [] }))));
+    const read = await Promise.all(places.map((p) => request('edits', { file: p.file, line: p.line, column: p.column }, { throws: true }).then((r) => ({ ...p, hash: r.hash, edits: r.edits ?? [] }))));
     const here = (p, name) => p.edits.find((e) => e.token === name && e.line === p.line && e.column === p.column);
     const plan = swapPlanOf({ ...mark, choices: mark.choices.map((c) => ({ ...c, edit: here(read[0], c.name) ?? null })) });
     if (!plan) return null;
@@ -421,7 +410,7 @@ export class Blueprint {
       } catch (error) {
         this.#host.forgetResume?.();
         for (const s of f.of) if (!refused.includes(s)) refused.push(s);
-        why ??= /changed since/i.test(error?.message ?? '') ? FIX.changedSince : error?.message ?? FIX.couldNot;
+        why ??= errorIs(error, 'stale-file') ? FIX.changedSince : error?.message ?? FIX.couldNot;
       }
     }
     // then the rest in one request the server runs to the end (POST apply-all): new tokens' classes at every place,
@@ -448,7 +437,7 @@ export class Blueprint {
       const outcome = (results) => {
         const refused = [];
         let said = null;
-        const miss = (item, error) => { if (item && !refused.includes(item)) refused.push(item); said ??= /changed since/i.test(error ?? '') ? FIX.changedSince : error ?? FIX.couldNot; };
+        const miss = (item, error) => { if (item && !refused.includes(item)) refused.push(item); said ??= errorIs(error ?? '', 'stale-file') ? FIX.changedSince : error ?? FIX.couldNot; };
         results.tokens.forEach((r, i) => { if (!r.ok) miss(tokens[i], r.error); });
         for (const r of results.swaps) if (!r.ok || r.refused?.length) miss(tokens.find((t) => t.suggest.name === r.token), r.error ?? r.refused?.[0]?.reason);
         results.accepts.forEach((r, i) => { if (!r.ok) miss(keeps[i], r.error); });
@@ -487,7 +476,7 @@ export class Blueprint {
     const out = [], files = new Map(); // file → { hash, edits: [{ line, column, from, to }], els: [] }
     for (const b of batch) {
       // every change on the element as one class edit against its classes as written
-      const edit = elementEdit(b.classes, b.writes ?? [], b.props);
+      const edit = elementEdit(b.classes, b.writes ?? [], b.props, activeVariants(b.el)); // edited where it shows, the rest kept
       if (!edit) { out.push({ el: b.el, ok: false, why: 'This change can’t be written as classes here.' }); continue; }
       // where the classes are written (locate.js classEditsOf, as every card asks): the element's own string, or the
       // usage that passes them in when the element is drawn by a wrapper (a Link, a Button). Written at the element's
@@ -515,10 +504,9 @@ export class Blueprint {
         if (result?.undo) this.#undos.push(result.undo);
         this.invalidate({ file });
         for (const el of f.els) out.push({ el, ok: true });
-        if (f.els.includes(this.#walk.element)) this.#walk.applied(true);
       } catch (error) {
         this.#host.forgetResume?.();
-        const why = /changed since/i.test(error?.message ?? '') ? FIX.changedSince : error?.message ?? 'Couldn’t apply.';
+        const why = errorIs(error, 'stale-file') ? FIX.changedSince : error?.message ?? 'Couldn’t apply.';
         for (const el of f.els) out.push({ el, ok: false, why });
       }
     }
@@ -699,7 +687,6 @@ export class Blueprint {
     this.#marks.dim('on');
     this.#set('on');
     this.#marks.invalidate();
-    this.#offerWalk();
   }
 
   #off() {

@@ -15,6 +15,7 @@
  * ───────────────────────────────────────────────────────── */
 import { classesOf } from './craft-read.js';
 import { sourceTexts } from './theme-source.js';
+import { STAMPED } from './stamp.js';
 
 const MATERIAL = 38; // Material 3: disabled content at 38% opacity
 const STEP = 40;     // the nearest step every Tailwind version has (opacity-40)
@@ -36,7 +37,7 @@ export async function disabledOpacity() {
 /** Every stamped element with an opacity for its disabled state. */
 export function readStates(root = document.body) {
   const out = [];
-  for (const el of root.querySelectorAll('[data-plumb-source]')) {
+  for (const el of root.querySelectorAll(STAMPED)) {
     if (el.closest('plumb-overlay')) continue;
     for (const c of classesOf(el).split(/\s+/)) {
       const m = VARIANT.exec(c);

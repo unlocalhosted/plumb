@@ -1,0 +1,180 @@
+<!doctype html>
+<!-- COMP, #68 Exits faster than entrances (hands-on; docs/craft/taste-checklist.md, group 4). Almanac, a calendar for
+     a small design studio, on its week. The lesson lives in the event preview: the viewer opened Design crit and has
+     just pressed Close, and at ¼ speed the preview is half way out, taking the same 300ms to leave as it took to
+     arrive. plumber's marks: the two durations, as the browser ran them, to one scale under the window (in sky, out
+     coral) and one tag. The Speed switch is the showcase's control. Slate's tokens. Throwaway. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Almanac · Week 45 (comp)</title>
+<style>
+  :root {
+    --surface: #fff; --sunken: #f3f5f9; --ink: #12233d; --ink-muted: #5a6779; --ink-subtle: #6f7c90;
+    --line: rgb(18 35 61 / 0.09); --line-strong: rgb(18 35 61 / 0.14); --accent: #5550d8; --accent-soft: #efeefd; --accent-deep: #3631a6;
+    --board: #e9edf2; --board-dot: #d3d9e2;
+    --window: 0 1px 2px rgb(18 35 61 / 0.05), 0 8px 24px rgb(18 35 61 / 0.08), 0 24px 64px rgb(18 35 61 / 0.12);
+    --popover: 0 4px 8px rgb(18 35 61 / 0.05), 0 12px 32px rgb(18 35 61 / 0.14);
+    --pl-sky: #2a7fd0; --pl-off: #bf3a1e; --pl-on: #1a9460; --pl-ink-2: #6b665c; --pl-ink-3: #b3ad9f; --pl-halo: rgb(255 255 255 / 0.9);
+    --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, monospace;
+    /* calendars, each with its own colour */
+    --studio: #5550d8; --studio-bg: #efeefd; --client: #1f8a7a; --client-bg: #e2f3f0; --people: #c0602f; --people-bg: #fcece2; --me: #8a95a6; --me-bg: #eef0f4;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 48px 48px 32px; background: var(--board);
+    background-image: radial-gradient(var(--board-dot) 1px, transparent 1px); background-size: 16px 16px;
+    font: 14px/20px Inter, -apple-system, system-ui, sans-serif; color: var(--ink); -webkit-font-smoothing: antialiased; }
+  .num { font-variant-numeric: tabular-nums; }
+  .stage { position: relative; padding-bottom: 76px; }
+  .window { width: 1000px; height: 580px; display: grid; grid-template-columns: 220px 1fr; border-radius: 12px; overflow: hidden; background: var(--surface); box-shadow: var(--window), 0 0 0 0.5px rgb(18 35 61 / 0.18); }
+
+  .side { background: #f7f8fa; border-right: 0.5px solid var(--line-strong); padding: 12px 14px; display: flex; flex-direction: column; }
+  .lights { display: flex; gap: 7px; padding: 4px 0 16px; }
+  .lights i { width: 11px; height: 11px; border-radius: 50%; background: #d9dde3; box-shadow: inset 0 0 0 0.5px rgb(0 0 0 / 0.08); }
+  .mini h3 { margin: 0 0 8px; font-size: 13px; font-weight: 600; display: flex; justify-content: space-between; }
+  .mini h3 span { color: var(--ink-subtle); font-weight: 400; letter-spacing: 4px; }
+  .mini .g { display: grid; grid-template-columns: repeat(7, 1fr); row-gap: 2px; text-align: center; font-size: 11.5px; }
+  .mini .g b { font-weight: 500; color: var(--ink-subtle); font-size: 10.5px; }
+  .mini .g span { height: 24px; display: grid; place-items: center; border-radius: 6px; color: var(--ink-muted); }
+  .mini .g span.o { color: #b4bbc6; }
+  .mini .g span.wk { background: rgb(18 35 61 / 0.05); border-radius: 0; }
+  .mini .g span.wk.a { border-radius: 6px 0 0 6px; } .mini .g span.wk.z { border-radius: 0 6px 6px 0; }
+  .mini .g span.t { background: var(--accent); color: #fff; font-weight: 600; border-radius: 6px; }
+  .label { margin: 20px 0 6px; font-size: 11px; font-weight: 500; color: var(--ink-subtle); }
+  .cal { display: flex; align-items: center; gap: 9px; height: 28px; font-size: 13px; color: var(--ink); }
+  .cal i { width: 14px; height: 14px; border-radius: 4px; display: grid; place-items: center; }
+  .cal i::after { content: ''; width: 6px; height: 4px; border: solid #fff; border-width: 0 0 1.6px 1.6px; transform: rotate(-45deg) translate(1px, -1px); }
+  .cal.offc i { background: transparent !important; box-shadow: inset 0 0 0 1.5px var(--me); } .cal.offc i::after { display: none; }
+  .next { margin-top: auto; padding: 10px; border-radius: 9px; background: #fff; box-shadow: inset 0 0 0 0.5px var(--line-strong); font-size: 12px; }
+  .next b { display: block; font-size: 13px; font-weight: 500; margin-top: 2px; }
+  .next span { color: var(--ink-subtle); }
+
+  .main { display: flex; flex-direction: column; min-width: 0; position: relative; }
+  .top { display: flex; align-items: center; gap: 12px; height: 54px; padding: 0 18px; border-bottom: 0.5px solid var(--line-strong); }
+  .top h1 { margin: 0; font-size: 17px; font-weight: 600; letter-spacing: -0.01em; }
+  .top h1 span { color: var(--ink-subtle); font-weight: 400; }
+  .arrows { display: flex; gap: 2px; }
+  .arrows span, .today { height: 28px; border-radius: 6px; display: grid; place-items: center; box-shadow: inset 0 0 0 1px var(--line-strong); font-size: 13px; font-weight: 500; }
+  .arrows span { width: 28px; color: var(--ink-muted); }
+  .today { padding: 0 10px; margin-left: auto; }
+  .segv { display: flex; padding: 2px; border-radius: 7px; background: var(--sunken); box-shadow: inset 0 0 0 0.5px var(--line-strong); }
+  .segv span { height: 24px; padding: 0 10px; border-radius: 5px; display: grid; place-items: center; font-size: 12.5px; color: var(--ink-muted); }
+  .segv span.on { background: #fff; color: var(--ink); box-shadow: 0 1px 2px rgb(18 35 61 / 0.1); }
+
+  .days { display: grid; grid-template-columns: 52px repeat(5, 1fr); border-bottom: 0.5px solid var(--line-strong); }
+  .days div { padding: 8px 10px; font-size: 12px; color: var(--ink-subtle); border-left: 0.5px solid var(--line); }
+  .days div:first-child { border: 0; }
+  .days b { display: block; font-size: 20px; line-height: 24px; font-weight: 500; color: var(--ink); letter-spacing: -0.01em; }
+  .days .t b { color: #fff; background: var(--accent); width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; font-size: 16px; margin-top: 2px; }
+  .days .t { color: var(--accent-deep); font-weight: 500; }
+  .body { position: relative; flex: 1; display: grid; grid-template-columns: 52px repeat(5, 1fr); overflow: hidden; }
+  .hrs { position: relative; }
+  .hrs span { position: absolute; right: 8px; font-size: 10.5px; color: var(--ink-subtle); transform: translateY(-50%); }
+  .col { position: relative; border-left: 0.5px solid var(--line); background-image: repeating-linear-gradient(180deg, transparent 0 63.5px, var(--line) 63.5px 64px); }
+  .col.t { background-color: #fbfbfe; }
+  .ev { position: absolute; left: 4px; right: 5px; border-radius: 6px; padding: 5px 8px; font-size: 12px; line-height: 15px; overflow: hidden; border-left: 3px solid; }
+  .ev b { display: block; font-weight: 600; }
+  .ev span { opacity: 0.85; }
+  .ev.s { background: var(--studio-bg); color: var(--accent-deep); border-color: var(--studio); }
+  .ev.c { background: var(--client-bg); color: #155f54; border-color: var(--client); }
+  .ev.p { background: var(--people-bg); color: #8a4220; border-color: var(--people); }
+  .ev.m { background: var(--me-bg); color: var(--ink-muted); border-color: var(--me); }
+  .ev.sel { background: var(--studio); color: #fff; border-color: var(--accent-deep); box-shadow: 0 2px 8px rgb(85 80 216 / 0.35); }
+  .now { position: absolute; left: 0; right: 0; height: 2px; background: #d6503f; z-index: 2; }
+  .now::before { content: ''; position: absolute; left: -5px; top: -4px; width: 10px; height: 10px; border-radius: 50%; background: #d6503f; }
+
+  /* the subject: the event preview, half way out */
+  .pop { position: absolute; z-index: 5; width: 300px; border-radius: 12px; background: #fff; box-shadow: var(--popover), 0 0 0 0.5px var(--line-strong); padding: 16px; transform-origin: top right; opacity: 0.62; transform: scale(0.975); }
+  .pop .bar { position: absolute; left: 0; top: 16px; width: 3px; height: 22px; border-radius: 0 2px 2px 0; background: var(--studio); }
+  .pop h2 { margin: 0; font-size: 16px; font-weight: 600; letter-spacing: -0.01em; }
+  .pop .when { font-size: 13px; color: var(--ink-muted); margin-top: 2px; }
+  .pop .row { display: flex; align-items: center; gap: 8px; margin-top: 12px; font-size: 13px; color: var(--ink-muted); }
+  .pop .row svg { width: 15px; height: 15px; stroke: var(--ink-subtle); fill: none; stroke-width: 1.5; flex: none; }
+  .ppl { display: flex; align-items: center; margin-top: 12px; }
+  .ppl img { width: 26px; height: 26px; border-radius: 50%; box-shadow: 0 0 0 2px #fff; margin-right: -6px; }
+  .ppl span { margin-left: 14px; font-size: 12.5px; color: var(--ink-subtle); }
+  .pop p { margin: 12px 0 0; font-size: 13px; line-height: 19px; color: var(--ink-muted); }
+  .pop .acts { display: flex; gap: 8px; margin-top: 14px; }
+  .b { height: 32px; padding: 0 12px; border-radius: 7px; display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 500; box-shadow: inset 0 0 0 1px var(--line-strong); }
+  .b.go { background: var(--accent); color: #fff; box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.15); }
+  .b svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 1.6; }
+
+  .marks { position: absolute; inset: 0; pointer-events: none; z-index: 10; }
+  .mk { position: absolute; }
+  .tag { display: flex; align-items: center; height: 20px; padding: 0 6px; border-radius: 6px; font: 500 11px/1 var(--mono); white-space: nowrap; color: #fff; background: var(--pl-off); box-shadow: 0 0 0 1px var(--pl-halo); transform: translateY(-50%); }
+  .brow { display: flex; align-items: center; gap: 8px; font: 600 10.5px/14px system-ui, sans-serif; color: var(--pl-ink-2); }
+  .brow .l { width: 22px; }
+  .brow .bar { height: 6px; border-radius: 3px; }
+  .brow .ms { font: 500 11px var(--mono); }
+  .cursor { position: absolute; width: 18px; height: 24px; filter: drop-shadow(0 1px 1.5px rgb(0 0 0 / 0.3)); }
+  .ctl { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--ink-subtle); }
+  .ctl .seg { display: flex; gap: 2px; padding: 2px; border-radius: 6px; background: var(--sunken); box-shadow: inset 0 0 0 1px var(--line); }
+  .ctl .seg span { padding: 2px 8px; border-radius: 5px; }
+  .ctl .seg span.on { background: #fff; color: var(--ink); box-shadow: 0 1px 2px rgb(18 35 61 / 0.1); }
+</style>
+</head>
+<body>
+<div class="stage">
+<div class="window">
+  <aside class="side">
+    <div class="lights"><i></i><i></i><i></i></div>
+    <div class="mini"><h3>November 2025<span>‹ ›</span></h3>
+      <div class="g num"><b>M</b><b>T</b><b>W</b><b>T</b><b>F</b><b>S</b><b>S</b>
+        <span class="o">27</span><span class="o">28</span><span class="o">29</span><span class="o">30</span><span class="o">31</span><span>1</span><span>2</span>
+        <span class="wk a">3</span><span class="wk">4</span><span class="wk">5</span><span class="t">6</span><span class="wk">7</span><span class="wk">8</span><span class="wk z">9</span>
+        <span>10</span><span>11</span><span>12</span><span>13</span><span>14</span><span>15</span><span>16</span>
+        <span>17</span><span>18</span><span>19</span><span>20</span><span>21</span><span>22</span><span>23</span>
+        <span>24</span><span>25</span><span>26</span><span>27</span><span>28</span><span>29</span><span>30</span></div></div>
+    <div class="label">Calendars</div>
+    <div class="cal"><i style="background:var(--studio)"></i>Studio</div>
+    <div class="cal"><i style="background:var(--client)"></i>Clients</div>
+    <div class="cal"><i style="background:var(--people)"></i>People &amp; hiring</div>
+    <div class="cal offc"><i style="background:var(--me)"></i>Focus blocks</div>
+    <div class="next"><span>Up next · in 18 min</span><b>Design crit</b><span>Studio 2 · with 5 others</span></div>
+  </aside>
+
+  <main class="main" id="main">
+    <div class="top"><h1>November <span>2025</span></h1><span class="arrows"><span>‹</span><span>›</span></span><span class="today">Today</span>
+      <span class="segv"><span>Day</span><span class="on">Week</span><span>Month</span></span></div>
+    <div class="days"><div></div><div>Mon<b>3</b></div><div>Tue<b>4</b></div><div>Wed<b>5</b></div><div class="t">Thu<b>6</b></div><div>Fri<b>7</b></div></div>
+    <div class="body" id="body">
+      <div class="hrs num"><span style="top:0">&nbsp;</span><span style="top:64px">9:00</span><span style="top:128px">10:00</span><span style="top:192px">11:00</span><span style="top:256px">12:00</span><span style="top:320px">13:00</span><span style="top:384px">14:00</span></div>
+      <div class="col"><div class="ev c" style="top:66px;height:60px"><b>Northfield kickoff</b><span class="num">9:00 – 10:00</span></div><div class="ev c" style="top:322px;height:44px"><b>Okafor: site review</b></div></div>
+      <div class="col"><div class="ev s" style="top:34px;height:28px"><b>Stand-up</b></div><div class="ev p" style="top:322px;height:60px"><b>Portfolio review, Ines</b><span class="num">13:00 – 14:00</span></div></div>
+      <div class="col"><div class="ev s" style="top:34px;height:28px"><b>Stand-up</b></div><div class="ev c" style="top:322px;height:60px"><b>Halden: logo round 2</b><span class="num">13:00 – 14:00</span></div></div>
+      <div class="col t" id="thu"><div class="ev s" style="top:2px;height:28px"><b>Stand-up</b></div><div class="ev s sel" id="crit" style="top:66px;height:30px"><b>Design crit</b></div><div class="ev c" style="top:162px;height:60px"><b>Brightwater: checkout</b><span class="num">10:30 – 11:30</span></div><div class="ev p" style="top:258px;height:44px"><b>Lunch with Ama</b></div><div class="now" style="top:47px"></div></div>
+      <div class="col"><div class="ev s" style="top:34px;height:28px"><b>Stand-up</b></div><div class="ev s" style="top:226px;height:92px"><b>Show &amp; tell</b><span>Studio 1</span></div></div>
+    </div>
+    <div class="pop" id="pop">
+      <span class="bar"></span>
+      <h2>Design crit</h2>
+      <div class="when num">Thursday 6 November · 9:00 – 9:30</div>
+      <div class="row"><svg viewBox="0 0 16 16"><path d="M8 14s4.5-4 4.5-7.5a4.5 4.5 0 0 0-9 0C3.5 10 8 14 8 14z"/><circle cx="8" cy="6.5" r="1.6"/></svg>Studio 2, second floor</div>
+      <div class="ppl"><img src="../../../../overlay/showcase/src/media/people/person-07.jpg" alt=""><img src="../../../../overlay/showcase/src/media/people/person-02.jpg" alt=""><img src="../../../../overlay/showcase/src/media/people/person-09.jpg" alt=""><img src="../../../../overlay/showcase/src/media/people/person-05.jpg" alt=""><img src="../../../../overlay/showcase/src/media/people/person-06.jpg" alt=""><span class="num">5 going · 1 maybe</span></div>
+      <p>Bring the onboarding flows. We’ll go through the empty states first.</p>
+      <div class="acts"><span class="b go"><svg viewBox="0 0 16 16"><rect x="1.5" y="4" width="9" height="8" rx="1.5"/><path d="m10.5 7 4-2.5v7l-4-2.5"/></svg>Join</span><span class="b" id="close">Close</span></div>
+    </div>
+  </main>
+</div>
+<div class="marks" id="marks"></div>
+</div>
+<script>
+const stage = document.querySelector('.stage'), marks = document.getElementById('marks');
+const box = (el) => { const o = stage.getBoundingClientRect(), r = el.getBoundingClientRect(); return { x: r.left - o.left, y: r.top - o.top, w: r.width, h: r.height }; };
+const mk = (cls, s, html = '') => { const e = document.createElement('span'); e.className = 'mk ' + cls; for (const [k, v] of Object.entries(s)) e.style[k] = typeof v === 'number' ? v + 'px' : v; e.innerHTML = html; marks.appendChild(e); return e; };
+document.fonts.ready.then(() => {
+  const crit = box(document.getElementById('crit')), main = box(document.getElementById('main')), pop = document.getElementById('pop');
+  // the preview opens beside the event, from its corner
+  pop.style.left = (crit.x - main.x - 310) + 'px'; pop.style.top = (crit.y - main.y) + 'px';
+  const c = box(document.getElementById('close'));
+  mk('cursor', { left: c.x + c.w * 0.5, top: c.y + c.h * 0.55 }, '<svg viewBox="0 0 18 24" width="18" height="24"><path d="M1.5 1.5v17.2l4.3-4.1 2.9 6.6 2.7-1.2-2.8-6.4h6z" fill="#111" stroke="#fff" stroke-width="1.3" stroke-linejoin="round"/></svg>');
+  // under the window: the two durations, measured, to one scale (300ms = 220px), and the Speed switch
+  const w = box(document.querySelector('.window')), x0 = main.x + 18, y0 = w.y + w.h + 18, X = (ms) => (ms / 300) * 220;
+  [['in', 300, 'var(--pl-sky)'], ['out', 300, 'var(--pl-off)']].forEach(([l, ms, col], i) =>
+    mk('brow', { left: x0, top: y0 + i * 18 }, `<span class="l">${l}</span><span class="bar" style="width:${X(ms)}px;background:${col}"></span><span class="ms">${ms}ms</span>`));
+  mk('tag', { left: x0 + 30 + X(300) + 64, top: y0 + 16 }, 'no quicker out');
+  mk('ctl', { left: main.x + main.w - 150, top: y0 + 4 }, 'Speed <span class="seg"><span class="on">¼×</span><span>1×</span></span>');
+});
+</script>
+</body>
+</html>

@@ -20,7 +20,7 @@
  * Keys while it runs (from the fix panel): Enter apply · P preview · → skip the pass · Esc cancel the preview, then close;
  * held Space compares while previewing (its own listener, only then: Blueprint's keys never carry keyup)
  * ───────────────────────────────────────────────────────── */
-import { answered, post, request } from './api.js';
+import { answered, errorIs, post, request } from './api.js';
 import { inControl } from './roles.js';
 import { esc } from './choices.js';
 import { glide } from './inplace.js';
@@ -32,8 +32,10 @@ import { RadiusPass } from './radius-pass.js';
 import { ControlSizePass } from './control-size-pass.js';
 import { IconPass } from './icon-pass.js';
 import { CLEANUP as W } from './words.js';
+import { STAMPED, stampOf, sameStamp } from './stamp.js';
 import { declaredColours, loadPalette, paletteOf } from './colours.js';
 import { renameMap } from './colour-system.js';
+import { Scope } from './scope.js';
 
 const LAWS = [{ id: 'similarity', name: 'Law of similarity' }, { id: 'cognitive-load', name: 'Cognitive load' }];
 // the passes written as class swaps (spacing-pass.js, colour-pass.js): one shape, so the panel runs them one way
@@ -56,73 +58,73 @@ const kept = () => { try { const v = JSON.parse(sessionStorage.getItem(KEPT) ?? 
 export const CLEANUP_CSS = `
   .cu { display: grid; }
   .cu .steps { display: flex; gap: 2px; padding: 10px 10px 0; }
-  .cu .pass { flex: 1; display: flex; align-items: center; gap: 6px; padding: 6px 8px; border-radius: 8px; font: 600 11px/14px var(--pl-sans, system-ui); color: #b3ad9f; min-width: 0; }
+  .cu .pass { flex: 1; display: flex; align-items: center; gap: 6px; padding: 6px 8px; border-radius: 8px; font: 600 11px/14px var(--pl-sans, system-ui); color: var(--pl-text-disabled); min-width: 0; }
   .cu .pass i { flex: none; width: 14px; height: 14px; border-radius: 50%; box-shadow: inset 0 0 0 1.5px currentColor; display: grid; place-items: center; font: 700 9px/1 var(--pl-sans, system-ui); font-style: normal; }
   .cu .pass span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .cu .pass .n { margin-left: auto; font-weight: 500; }
-  .cu .pass.now { color: #1c1b19; background: #f4f3ef; }
-  .cu .pass.now i { box-shadow: inset 0 0 0 1.5px #1c1b19; background: radial-gradient(circle, #1c1b19 0 3px, transparent 3.5px); }
-  .cu .pass.done { color: var(--pl-mint); } .cu .pass.done i { background: var(--pl-mint); box-shadow: none; color: #fff; }
+  .cu .pass.now { color: var(--pl-text-primary); background: var(--pl-bg-inset); }
+  .cu .pass.now i { box-shadow: inset 0 0 0 1.5px var(--pl-icon-primary); background: radial-gradient(circle, var(--pl-icon-primary) 0 3px, transparent 3.5px); }
+  .cu .pass.done { color: var(--pl-state-written-text); } .cu .pass.done i { background: var(--pl-done-bg); box-shadow: none; color: var(--pl-done-text); }
   .cu .pass.skipped span { text-decoration: line-through; }
-  .cu .saved { display: flex; align-items: center; gap: 8px; padding: 8px 10px 0 16px; color: #6b665c; font-size: 12px; }
+  .cu .saved { display: flex; align-items: center; gap: 8px; padding: 8px 10px 0 16px; color: var(--pl-text-secondary); font-size: 12px; }
   .cu .saved b { color: var(--pl-mint); font-weight: 600; }
   .cu .saved button { margin-left: auto; }
   .cu .body { padding: 12px 16px 4px; display: grid; gap: 4px; }
   .cu .head { font-weight: 600; font-size: 14px; line-height: 1.35; text-wrap: balance; }
-  .cu .sub { color: #6b665c; font-size: 12px; }
-  .cu .law { color: #7a5cf0; font-size: 12px; }
+  .cu .sub { color: var(--pl-text-secondary); font-size: 12px; }
+  .cu .law { color: var(--pl-lilac); font-size: 12px; }
   .cu .ladder { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 1px; max-height: min(40vh, 330px); overflow-y: auto; overscroll-behavior: contain; }
   .cu .ladder li { display: grid; grid-template-columns: 44px 1fr auto; align-items: center; gap: 10px; min-height: 34px; padding: 2px 8px 2px 4px; border-radius: 9px; }
   .cu .ladder li.moves { background: rgb(255 31 143 / .05); }
-  .cu .ladder .ag { text-align: center; line-height: 1; color: #1c1b19; }
-  .cu .ladder .nm { font-weight: 550; } .cu .ladder .nm small { display: block; color: #6b665c; font-weight: 400; font-size: 12px; }
-  .cu .ladder .here { font-size: 12px; color: #6b665c; text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
-  .cu .ladder .here b { color: #ff1f8f; font-weight: 600; }
+  .cu .ladder .ag { text-align: center; line-height: 1; color: var(--pl-text-primary); }
+  .cu .ladder .nm { font-weight: 550; } .cu .ladder .nm small { display: block; color: var(--pl-text-secondary); font-weight: 400; font-size: 12px; }
+  .cu .ladder .here { font-size: 12px; color: var(--pl-text-secondary); text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .cu .ladder .here b { color: var(--pl-heat); font-weight: 600; }
   .cu .measure { display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 10px 0 2px; font-variant-numeric: tabular-nums; }
-  .cu .measure b { font-size: 18px; font-weight: 600; } .cu .measure .to { color: #b3ad9f; margin: 0 4px; }
-  .cu .measure small { display: block; color: #6b665c; font-size: 11px; }
-  .cu .cmd { display: flex; align-items: center; gap: 8px; margin-top: 8px; padding: 8px 10px; border-radius: 9px; background: #f4f3ef; font: 500 12px/1.4 var(--pl-mono, ui-monospace, monospace); }
+  .cu .measure b { font-size: 18px; font-weight: 600; } .cu .measure .to { color: var(--pl-icon-tick); margin: 0 4px; }
+  .cu .measure small { display: block; color: var(--pl-text-secondary); font-size: 11px; }
+  .cu .cmd { display: flex; align-items: center; gap: 8px; margin-top: 8px; padding: 8px 10px; border-radius: 9px; background: var(--pl-bg-inset); font: 500 12px/1.4 var(--pl-mono, ui-monospace, monospace); }
   .cu .cmd code { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .cu .acts { display: flex; align-items: center; gap: 4px; padding: 10px; border-top: 1px solid #ecebe6; margin-top: 12px; }
+  .cu .acts { display: flex; align-items: center; gap: 4px; padding: 10px; border-top: 1px solid var(--pl-border-default); margin-top: 12px; }
   .cu .acts .grow { flex: 1; }
-  .cu button.cu-btn { all: unset; cursor: pointer; font: 600 13px/18px var(--pl-sans, system-ui); padding: 7px 12px; border-radius: 9px; color: #1c1b19; white-space: nowrap; }
-  .cu button.cu-btn:hover { background: #f4f3ef; }
-  .cu button.cu-btn:focus-visible { outline: 2px solid #2a7fd0; outline-offset: 1px; }
-  .cu button.cu-btn:disabled { color: #b3ad9f; cursor: default; background: none; }
-  .cu button.cu-btn kbd { font: 500 10px/1 var(--pl-mono, ui-monospace, monospace); color: #b3ad9f; margin-left: 6px; }
-  .cu button.cu-btn.primary { background: #1c1b19; color: #fff; } .cu button.cu-btn.primary kbd { color: #9d9a92; }
-  .cu button.cu-btn.quiet { font-weight: 500; color: #6b665c; }
+  .cu button.cu-btn { all: unset; cursor: pointer; font: 600 13px/18px var(--pl-sans, system-ui); padding: 7px 12px; border-radius: 9px; color: var(--pl-text-primary); white-space: nowrap; }
+  .cu button.cu-btn:hover { background: var(--pl-bg-surface-hover); }
+  .cu button.cu-btn:focus-visible { outline: 2px solid var(--pl-border-focus); outline-offset: 1px; }
+  .cu button.cu-btn:disabled { color: var(--pl-text-disabled); cursor: default; background: none; }
+  .cu button.cu-btn kbd { font: 500 10px/1 var(--pl-mono, ui-monospace, monospace); color: var(--pl-text-secondary); margin-left: 6px; }
+  .cu button.cu-btn.primary { background: var(--pl-text-primary); color: var(--pl-bg-surface); } .cu button.cu-btn.primary kbd { color: color-mix(in oklab, var(--pl-bg-surface) 60%, transparent); }
+  .cu button.cu-btn.quiet { font-weight: 500; color: var(--pl-text-secondary); }
   .cu .bar { display: flex; align-items: center; gap: 10px; padding: 10px 10px 10px 16px; }
-  .cu .bar .live { flex: none; width: 8px; height: 8px; border-radius: 50%; background: #2a7fd0; animation: cu-live 1.6s ease-out infinite; }
+  .cu .bar .live { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--pl-instrument); animation: cu-live 1.6s ease-out infinite; }
   .cu .bar .msg { font-weight: 600; white-space: nowrap; }
-  .cu .bar .hint { flex: none; color: #6b665c; font-size: 12px; white-space: nowrap; }
-  .cu .bar .hint kbd { font: 500 11px/1 var(--pl-mono, ui-monospace, monospace); padding: 2px 5px; border-radius: 5px; background: #f4f3ef; color: #1c1b19; }
+  .cu .bar .hint { flex: none; color: var(--pl-text-secondary); font-size: 12px; white-space: nowrap; }
+  .cu .bar .hint kbd { font: 500 11px/1 var(--pl-mono, ui-monospace, monospace); padding: 2px 5px; border-radius: 5px; background: var(--pl-bg-inset); color: var(--pl-text-primary); }
   .cu .bar .grow { flex: 1; }
   @media (max-width: 560px) { .cu .bar .hint { display: none; } .cu .pass .n { display: none; } }
   .cu .error { color: var(--pl-coral); font-size: 12px; padding: 0 16px; }
   @keyframes cu-live { 0% { box-shadow: 0 0 0 0 rgb(42 127 208 / .4); } 70% { box-shadow: 0 0 0 6px transparent; } 100% { box-shadow: 0 0 0 0 transparent; } }
   @media (prefers-reduced-motion: reduce) { .cu .bar .live { animation: none; } }
   .cu .roles { padding: 12px 14px 0; }
-  .cu .names { margin: 12px 0 0; padding: 12px 16px 0; border-top: 1px solid #ecebe6; display: grid; gap: 4px; }
+  .cu .names { margin: 12px 0 0; padding: 12px 16px 0; border-top: 1px solid var(--pl-bg-surface-hover); display: grid; gap: 4px; }
   .cu .names.quiet { border-top: 0; margin-top: 4px; padding-top: 0; } .cu .names.quiet .nacts { margin: 0 0 0 -12px; }
   .cu .names .nhead { font-weight: 600; font-size: 13px; line-height: 1.35; text-wrap: balance; }
   .cu .names .nacts { display: flex; gap: 4px; margin: 8px 0 0; }
-  .cu button.cu-btn.soft { background: #f4f3ef; } .cu button.cu-btn.soft:hover { background: #ecebe6; }
+  .cu button.cu-btn.soft { background: var(--pl-bg-inset); } .cu button.cu-btn.soft:hover { background: var(--pl-bg-surface-hover); }
   .cu .names .nlist { margin: 4px 0; max-height: min(30vh, 240px); }
   .cu .names .nlist { gap: 2px; outline: none; }
   .cu .names .nlist li { grid-template-columns: 20px 1fr; min-height: 38px; padding: 4px 8px 4px 4px; }
-  .cu .names .sw { width: 14px; height: 14px; border-radius: 4px; justify-self: center; box-shadow: inset 0 0 0 1px rgb(0 0 0 / .12); }
+  .cu .names .sw { width: 14px; height: 14px; border-radius: 4px; justify-self: center; box-shadow: inset 0 0 0 1px var(--pl-border-default); }
   .cu .names .nm { font: 550 12px/1.3 var(--pl-mono, ui-monospace, monospace); } .cu .names .nm small { font-family: var(--pl-sans, system-ui); }
   .cu .names .error { padding: 0; }
-  .cu .ladder .sp-ic { display: inline-grid; place-items: center; width: 16px; height: 16px; color: #6b665c; } .cu .ladder .sp-ic svg { width: 16px; height: 16px; display: block; }
+  .cu .ladder .sp-ic { display: inline-grid; place-items: center; width: 16px; height: 16px; color: var(--pl-text-secondary); } .cu .ladder .sp-ic svg { width: 16px; height: 16px; display: block; }
 ${SHOW_CSS}
 `;
 
 // the page's text, as Blueprint reads it (blueprint.js #system): every stamped element with words of its own
 function pageCensus() {
-  return [...document.body.querySelectorAll('[data-plumb-source]')].filter((el) => !el.closest('plumb-overlay') && [...el.childNodes].some((n) => n.nodeType === 3 && /[\p{L}\p{N}]/u.test(n.nodeValue))).map((el) => {
+  return [...document.body.querySelectorAll(STAMPED)].filter((el) => !el.closest('plumb-overlay') && [...el.childNodes].some((n) => n.nodeType === 3 && /[\p{L}\p{N}]/u.test(n.nodeValue))).map((el) => {
     const cs = getComputedStyle(el);
-    return { stamp: el.getAttribute('data-plumb-source'), tag: el.localName, list: !!el.closest('li, ul, ol, dl'), control: inControl(el), number: /^[\s$€£¥₹+\-−–.,:%()\d]*\d[\s$€£¥₹+\-−–.,:%()\d]*[a-z]{0,2}$/i.test([...el.childNodes].filter((n) => n.nodeType === 3).map((n) => n.nodeValue).join(' ').trim()), sentence: /\S\s+\S.*[.!?…]["'”’)]*\s*$/s.test([...el.childNodes].filter((n) => n.nodeType === 3).map((n) => n.nodeValue).join(' ').trim()), computed: { size: parseFloat(cs.fontSize), lineHeight: cs.lineHeight === 'normal' ? null : parseFloat(cs.lineHeight), letterSpacing: cs.letterSpacing === 'normal' ? 0 : parseFloat(cs.letterSpacing), weight: parseInt(cs.fontWeight, 10), transform: cs.textTransform } };
+    return { stamp: stampOf(el), tag: el.localName, list: !!el.closest('li, ul, ol, dl'), control: inControl(el), number: /^[\s$€£¥₹+\-−–.,:%()\d]*\d[\s$€£¥₹+\-−–.,:%()\d]*[a-z]{0,2}$/i.test([...el.childNodes].filter((n) => n.nodeType === 3).map((n) => n.nodeValue).join(' ').trim()), sentence: /\S\s+\S.*[.!?…]["'”’)]*\s*$/s.test([...el.childNodes].filter((n) => n.nodeType === 3).map((n) => n.nodeValue).join(' ').trim()), computed: { size: parseFloat(cs.fontSize), lineHeight: cs.lineHeight === 'normal' ? null : parseFloat(cs.lineHeight), letterSpacing: cs.letterSpacing === 'normal' ? 0 : parseFloat(cs.letterSpacing), weight: parseInt(cs.fontWeight, 10), transform: cs.textTransform } };
   });
 }
 const sizeOf = (b) => (Number.isFinite(b?.size) ? b.size : null);
@@ -142,9 +144,37 @@ function nums(b) {
   return `${size}${Number(b.lineHeight) > 0 ? ` · ${+Number(b.lineHeight).toFixed(2)} line height` : ''}${b.weight && b.weight !== 400 ? ` · weight ${b.weight}` : ''}`;
 }
 
+// The clean-up's one phase (docs/state-machines/cleanup-spec.md, read by `sm`: docs/briefs/state-oracle-spec.md). A pass
+// is read, then shown (`preview`), then written as one step; `stop` (close, Esc with nothing to cancel) ends it from
+// anywhere. After a reload its own write caused, the kept record brings it back writing (its trace asked) or done.
+/** @machine */
+export const CLEANUP = {
+  id: 'cleanup',
+  owner: 'Cleanup',
+  field: '#state',
+  token: '#run',
+  initial: 'idle',
+  cancel: ['stop'],
+  states: {
+    idle:     { on: { read: 'reading', resumeWriting: 'writing', resumeDone: 'done' }, ignores: ['stop'] },
+    reading:  { flight: 'read', on: { ready: 'ready', nothing: 'nothing', failed: 'error', noCensus: 'noCensus', stop: 'idle' } },
+    ready:    { on: { preview: 'preview', read: 'reading', finished: 'done', stop: 'idle' } }, // Apply shows first, then writes from `preview`
+    nothing:  { on: { read: 'reading', finished: 'done', stop: 'idle' } },
+    preview:  { on: { cancel: 'ready', write: 'writing', stop: 'idle' } },
+    writing:  { flight: 'write', on: { landed: 'done', failed: 'error', notLanded: 'idle', stop: 'idle' } }, // notLanded: the page reloaded mid-write and the trace shows nothing
+    done:     { on: { read: 'reading', failed: 'error', stop: 'idle' } }, // read: the next pass, or the page again after Undo; failed: the undo refused
+    error:    { on: { read: 'reading', stop: 'idle' } },
+    noCensus: { on: { read: 'reading', stop: 'idle' } },
+  },
+  flights: {
+    read: { ifLeft: 'drop' },
+    write: { ifLeft: 'handOff' }, // closed while it was written: the step goes to History, with its Undo
+  },
+};
+
 export class Cleanup {
   #show = null; #marks = null; // the show playing: its stop, and the marks it draws on the page
-  #host; #el = null; #pass = 0; #done = new Map(); #state = 'idle'; #p = null; #page = null; #err = null; #preview = new StylePreview(); #held = false; #saved = null;
+  #host; #el = null; #pass = 0; #done = new Map(); #state = CLEANUP.initial; #p = null; #page = null; #err = null; #preview = new StylePreview(); #held = false; #saved = null;
   #swaps = { spacing: new SpacingPass(), colour: new ColourPass(), icons: new IconPass(), radius: new RadiusPass(), sizes: new ControlSizePass() };
   // The shadows pass is loaded on its own: a dev server that started before a pass's file existed does not hand it out
   // (the server lists the overlay's files when it starts), and one missing file must not take the whole overlay with it.
@@ -154,6 +184,17 @@ export class Cleanup {
     import('./states-pass.js').then((m) => { this.#swaps.states = new m.StatesPass(); }, () => {})]);
   // renaming the colour tokens by job: null until the colour step reads a plan; then { plan, open, busy, done, err }
   #rn = null;
+  // One run at a time (docs/state-machines/cleanup-spec.md): every move the person makes (start, a pass read, Esc out of
+  // the preview, Apply, Undo, stop) is a new run; an answer that comes back for an older run changes nothing on screen
+  #run = 0;
+  // the clean-up's own, whatever state it is in: a frame asked for here still runs after the state moved on (letting
+  // go of a preview the page no longer needs must happen), and is the clean-up's to cancel if it is ever removed
+  #life = new Scope();
+  #send(event) {
+    const next = CLEANUP.states[this.#state]?.on?.[event];
+    if (next) this.#state = next;
+    return !!next;
+  }
   get #sw() { return this.#swaps[PASSES[this.#pass]]; } // the pass in hand, when it is a class-swap pass
   get #words() { return this.#sw ? W[PASSES[this.#pass]] : W; }
   #hasNext() { return !!this.#swaps[PASSES[this.#pass + 1]]; }
@@ -167,7 +208,7 @@ export class Cleanup {
     this.#pass = 0; this.#done.clear(); this.#saved = null; this.#rn = null;
     await this.#read();
   }
-  stop() { this.#settle(); keep(null); this.#listen(false); this.#held = false; this.#preview.clear((el, f) => f()); for (const sw of Object.values(this.#swaps)) sw.clear(); this.#state = 'idle'; this.#p = null; this.#host.render(); }
+  stop() { this.#run++; this.#settle(); keep(null); this.#listen(false); this.#held = false; this.#preview.clear((el, f) => f()); for (const sw of Object.values(this.#swaps)) sw.clear(); this.#send('stop'); this.#p = null; this.#host.render(); }
 
   // back after a reload its own write or undo caused: the step written (with its Undo), or the page read again
   async resume() {
@@ -187,35 +228,47 @@ export class Cleanup {
       if (live.length) { this.#host.wrote?.({ undo: live.map(({ id, file, label }) => ({ change: id, file, label })), trace: { group: v.names.group } }, W.colour.names.done(v.names.names, files)); this.#host.announce?.(W.colour.names.done(v.names.names, files)); }
     }
     if (v.names) this.#rn = { plan: null, open: false, busy: false, err: null, done: v.names };
-    // the page went while its write was saving: the server's trace says whether the step landed (it may still be
-    // finishing, so it is asked a few times); landed, it comes back done with its Undo, else the page is read again
-    if (v.state === 'writing' && v.group) {
-      this.#page = v.page; if (this.#swaps[PASSES[pass]]) this.#swaps[PASSES[pass]].page = v.swap; this.#done = new Map(Object.entries(v.done ?? {}));
-      this.#state = 'writing'; this.#pass = pass; this.#host.render();
-      let changes = [];
-      for (let i = 0; i < 6 && !changes.length; i++) {
-        if (i) await new Promise((r) => setTimeout(r, 1000));
-        changes = ((await request('trace', { group: v.group }).catch(() => null))?.changes ?? []).filter((c) => c.state === 'live');
-      }
-      if (changes.length) {
-        const done = { ...(v.done ?? {}), [PASSES[pass]]: 'done' };
-        const said = v.said;
-        v = { state: 'done', pass, saved: v.saved, page: v.page, swap: v.swap, done };
-        keep(v);
-        this.#host.wrote?.({ undo: changes.map(({ id, file, label }) => ({ change: id, file, label })), trace: { group: v.saved.group } }, said);
-      } else { this.#state = 'idle'; v = { ...v, state: 'read', said: W.reloaded }; }
+    if (v.state === 'writing' && v.group) return this.#resumeWriting(v, pass);
+    this.#run++;
+    if (v.state === 'done') { this.#send('resumeDone'); this.#resumeDone(v, pass); }
+    else this.#resumeRead(v, pass);
+  }
+  // the page went while its write was saving: the server's trace says whether the step landed (it may still be
+  // finishing, so it is asked a few times); landed, it comes back done with its Undo, else the page is read again
+  async #resumeWriting(v, pass) {
+    const run = ++this.#run;
+    this.#page = v.page; if (this.#swaps[PASSES[pass]]) this.#swaps[PASSES[pass]].page = v.swap; this.#done = new Map(Object.entries(v.done ?? {}));
+    this.#send('resumeWriting'); this.#pass = pass; this.#host.render();
+    let changes = [];
+    for (let i = 0; i < 6 && !changes.length; i++) {
+      if (i) await new Promise((r) => setTimeout(r, 1000));
+      changes = ((await request('trace', { group: v.group }).catch(() => null))?.changes ?? []).filter((c) => c.state === 'live');
     }
-    if (v.state === 'done') { this.#saved = v.saved; this.#page = v.page; this.#done = new Map(Object.entries(v.done ?? {})); this.#pass = pass; if (this.#swaps[PASSES[pass]]) this.#swaps[PASSES[pass]].page = v.swap; this.#state = 'done'; this.#host.render(); this.#host.announce?.(`${W.pass[PASSES[pass]]}: ${this.#savedLine(v.saved)}`); }
-    else if (pass > 0) { this.#done = new Map(Object.entries(v.done ?? {})); this.#readPass(pass).then(() => v.said && this.#host.announce?.(v.said)); }
-    else { this.start().then(() => v.said && this.#host.announce?.(v.said)); }
+    if (run !== this.#run) return; // closed while the trace was asked
+    if (changes.length) {
+      const done = { ...(v.done ?? {}), [PASSES[pass]]: 'done' };
+      const landed = { state: 'done', pass, saved: v.saved, page: v.page, swap: v.swap, done };
+      keep(landed);
+      this.#host.wrote?.({ undo: changes.map(({ id, file, label }) => ({ change: id, file, label })), trace: { group: landed.saved.group } }, v.said);
+      this.#send('landed'); this.#resumeDone(landed, pass);
+    } else { this.#send('notLanded'); this.#resumeRead({ ...v, state: 'read', said: W.reloaded }, pass); }
+  }
+  // the kept step, back on screen with its Undo (the phase is done already)
+  #resumeDone(v, pass) { this.#saved = v.saved; this.#page = v.page; this.#done = new Map(Object.entries(v.done ?? {})); this.#pass = pass; if (this.#swaps[PASSES[pass]]) this.#swaps[PASSES[pass]].page = v.swap; this.#host.render(); this.#host.announce?.(`${W.pass[PASSES[pass]]}: ${this.#savedLine(v.saved)}`); }
+  // the page read again where the clean-up was, and what the reload was for said once it is
+  #resumeRead(v, pass) {
+    if (pass > 0) { this.#done = new Map(Object.entries(v.done ?? {})); this.#readPass(pass).then(() => v.said && this.#host.announce?.(v.said)); }
+    else this.start().then(() => v.said && this.#host.announce?.(v.said));
   }
 
   // the text pass: the project's ladder, this page's places in it
   async #read() {
-    this.#state = 'reading'; this.#err = null; this.#host.render();
+    const run = ++this.#run;
+    this.#send('read'); this.#err = null; this.#host.render();
     const census = pageCensus(), stamps = new Set(census.map((c) => c.stamp));
     try {
       const said = await post('system', { census, scope: 'project', route: location.pathname });
+      if (run !== this.#run) return; // closed (or moved on) while the page was read
       this.#p = said?.proposal ?? null;
       const roles = rolesInOrder(this.#p ?? { roles: [] }).map((r) => {
         const here = (r.members ?? []).filter((m) => m.stamp && stamps.has(m.stamp));
@@ -226,9 +279,10 @@ export class Cleanup {
       const before = sizes(census.map((c) => c.computed.size));
       const after = sizes(roles.filter((x) => x.here.length).map((x) => sizeOf(x.role.bundle) ?? x.role.bundle.sizeText));
       this.#page = { census, roles, before, after, moves: roles.reduce((n, x) => n + x.moves.length, 0), places: roles.reduce((n, x) => n + x.here.length, 0) };
-      this.#state = this.#page.moves ? 'ready' : 'nothing';
+      this.#send(this.#page.moves ? 'ready' : 'nothing');
     } catch (error) {
-      this.#state = /no census/i.test(error?.message ?? '') ? 'no-census' : 'error';
+      if (run !== this.#run) return;
+      this.#send(errorIs(error, 'no-census') ? 'noCensus' : 'failed');
       this.#err = error?.message ?? null;
     }
     this.#host.render();
@@ -236,12 +290,15 @@ export class Cleanup {
 
   // a class-swap pass (spacing, colour): this page against the site's, kept to what the app already has
   async #readPass(i) {
-    this.#pass = i; this.#saved = null; this.#state = 'reading'; this.#err = null; this.#host.render();
+    const run = ++this.#run;
+    this.#pass = i; this.#saved = null; this.#send('read'); this.#err = null; this.#host.render();
     try {
       const page = await this.#sw.read();
-      this.#state = page.places ? 'ready' : 'nothing';
+      if (run !== this.#run) return;
+      this.#send(page.places ? 'ready' : 'nothing');
     } catch (error) {
-      this.#state = /no census/i.test(error?.message ?? '') ? 'no-census' : 'error';
+      if (run !== this.#run) return;
+      this.#send(errorIs(error, 'no-census') ? 'noCensus' : 'failed');
       this.#err = error?.message ?? null;
     }
     this.#host.render();
@@ -251,7 +308,7 @@ export class Cleanup {
     const k = PASSES[this.#pass];
     if (!this.#done.has(k)) this.#done.set(k, 'skipped');
     if (this.#hasNext()) return this.#readPass(this.#pass + 1);
-    this.#state = 'done'; this.#host.render();
+    this.#send('finished'); this.#host.render();
   }
   #savedLine(saved) { return (saved?.pass ? W[PASSES[saved.pass]] : W).saved(saved.places, saved.files); }
   #moves() { return this.#sw ? this.#sw.page?.places ?? 0 : this.#page?.moves ?? 0; }
@@ -274,7 +331,7 @@ export class Cleanup {
     const s = this.#state, acts = (inner) => `<div class="acts">${inner}</div>`;
     const close = `<button type="button" class="cu-btn quiet" data-cu="close">${esc(W.close)}<kbd>esc</kbd></button>`;
     if (s === 'reading') return `<div class="body"><div class="sub" role="status">${esc(this.#words.reading)}</div></div>`;
-    if (s === 'no-census') return `<div class="body"><div class="head">${esc(W.noCensus)}</div><div class="sub">${esc(W.noCensusWhy)}</div>`
+    if (s === 'noCensus') return `<div class="body"><div class="head">${esc(W.noCensus)}</div><div class="sub">${esc(W.noCensusWhy)}</div>`
       + `<div class="cmd"><code>plumber census --url ${esc(this.#host.url?.() ?? location.origin + '/')}</code><button type="button" class="cu-btn quiet" data-cu="copy">${esc(W.copy)}</button></div></div>${acts(`<button type="button" class="cu-btn" data-cu="retry">${esc(W.retry)}</button><span class="grow"></span>${close}`)}`;
     if (s === 'error') return `<div class="body"><div class="head">${esc(this.#words.couldNot)}</div><div class="error">${esc(this.#err ?? '')}</div></div>${acts(`<button type="button" class="cu-btn" data-cu="retry">${esc(W.retry)}</button><span class="grow"></span>${close}`)}`;
     if (s === 'writing') return `<div class="body"><div class="sub" role="status">${esc(W.writing(this.#moves()))}</div></div>`;
@@ -411,7 +468,7 @@ export class Cleanup {
     // a size as the page draws it: the most common computed size among the places (a fluid style at this width)
     const drawn = (els) => { const n = els.map((el) => parseFloat(getComputedStyle(el).fontSize)).filter(Number.isFinite); return n.sort((a, b) => n.filter((v) => v === b).length - n.filter((v) => v === a).length)[0] ?? null; };
     return this.#page.roles.filter((x) => x.here.length).map(({ role, here }) => {
-      const els = () => here.flatMap((m) => [...document.querySelectorAll(`[data-plumb-source="${CSS.escape(m.stamp)}"]`)]);
+      const els = () => here.flatMap((m) => [...document.querySelectorAll(sameStamp(m.stamp))]);
       const from = drawn(els()), to = fluidPx(role.bundle) ?? from;
       return {
         // its icon: "Ag" in the style's own weight, sized by its rank (every text role is one property, so the drawing is the style)
@@ -426,19 +483,21 @@ export class Cleanup {
   async #play() {
     this.#show?.abort();
     const stop = (this.#show = new AbortController());
+    const run = this.#run; // the show belongs to the move that started it; a later move settles it itself
     this.#marks ??= new Marks(this.#el.getRootNode());
     const chips = [...this.#el.querySelectorAll('.sh-chip')];
     const steps = this.#steps().map((x, i) => ({ ...x, chip: chips[i] }));
     await (this.#sw?.beat === 'all' ? playAll : play)(steps, { marks: this.#marks, signal: stop.signal });
+    if (run !== this.#run) return;
     if (this.#show === stop) this.#show = null;
   }
   #settle() { this.#show?.abort(); this.#show = null; this.#marks?.clear(); }
   #togglePreview(on) {
     if (on && this.#state === 'ready') {
-      this.#state = 'preview'; this.#listen(true); this.#host.render(); this.#host.announce?.(W.previewing(this.#moves()));
+      this.#send('preview'); this.#listen(true); this.#host.render(); this.#host.announce?.(W.previewing(this.#moves()));
       return this.#play();
     }
-    if (!on && this.#state === 'preview') { this.#settle(); if (this.#sw) this.#sw.clear(); else this.#preview.clear(glide); this.#state = 'ready'; this.#listen(false); this.#held = false; }
+    if (!on && this.#state === 'preview') { this.#run++; this.#settle(); if (this.#sw) this.#sw.clear(); else this.#preview.clear(glide); this.#send('cancel'); this.#listen(false); this.#held = false; }
     this.#host.render();
   }
 
@@ -448,16 +507,22 @@ export class Cleanup {
     if (this.#sw) return this.#applySwaps();
     const w = this.#p.write ?? {}, sites = new Set(this.#page.roles.flatMap((x) => x.here).map((m) => `${m.site.file}:${m.site.line}:${m.site.column}`));
     const swaps = (w.swaps ?? []).map((f) => ({ ...f, edits: (f.edits ?? []).filter((e) => sites.has(`${f.file}:${e.line}:${e.column}`)) })).filter((f) => f.edits.length);
+    const run = ++this.#run;
     if (this.#state === 'ready') await this.#togglePreview(true); // Apply plays the show too
+    // Esc during the show took it back, or a second Enter took over: this Apply is over
+    if (run !== this.#run || this.#state !== 'preview') return;
     this.#settle(); this.#listen(false);
     if (this.#held) { this.#held = false; this.#preview.show(this.#p, null); }
-    this.#state = 'writing'; this.#host.render();
+    this.#send('write'); this.#host.render();
     const group = `cleanup-text-${Date.now().toString(36)}`;
     const files = new Set(swaps.map((f) => f.file)).size, places = swaps.reduce((n, f) => n + f.edits.length, 0), said = W.saved(places, files);
     const landed = (undo = []) => {
-      this.#saved = { group, places, files, refused: this.#saved?.group === group ? this.#saved.refused : 0 };
-      this.#done.set('text', 'done'); this.#state = 'done';
-      keep({ state: 'done', pass: 0, saved: this.#saved, page: kept_, done: Object.fromEntries(this.#done) });
+      // closed while it was written: the step is History's to say (the host hands it on), nothing comes back on screen
+      if (run === this.#run) {
+        this.#saved = { group, places, files, refused: this.#saved?.group === group ? this.#saved.refused : 0 };
+        this.#done.set('text', 'done'); this.#send('landed');
+        keep({ state: 'done', pass: 0, saved: this.#saved, page: kept_, done: Object.fromEntries(this.#done) });
+      }
       this.#host.wrote?.({ undo, trace: { group } }, said);
     };
     const { census: _c, roles: _r, ...kept_ } = this.#page;
@@ -472,22 +537,24 @@ export class Cleanup {
       const r = await answered(this.#host.write({ tokens: w.tokens ?? [], css: w.css ?? [], swaps }, said, { step: W.pass.text, laws: LAWS, group }), group);
       if (r?.lost && !r.landed) throw new Error(W.lost);
       if (!r?.lost && !r?.ok) throw new Error(r?.why ?? W.couldNot);
-      this.#saved = { group, refused: r.refused?.length ?? 0 };
+      if (run === this.#run) this.#saved = { group, refused: r.refused?.length ?? 0 };
       landed(r.undo);
       // the page now draws the styles from its own classes: the preview's inline values (the same) are let go
-      requestAnimationFrame(() => this.#preview.clear((el, f) => f()));
+      this.#life.frame(() => this.#preview.clear((el, f) => f()));
       this.#host.announce?.(`${W.pass.text}: ${said}`);
-    } catch (error) { keep(null); this.#preview.clear(glide); this.#state = 'error'; this.#err = error?.message ?? W.couldNot; }
+    } catch (error) { if (run === this.#run) { keep(null); this.#preview.clear(glide); this.#send('failed'); this.#err = error?.message ?? W.couldNot; } }
     finally { removeEventListener('plumb:applied', heard); }
     this.#host.render();
   }
   // a class-swap pass written: one class swap per write, through each class's site, as one step
   async #applySwaps() {
     const k = PASSES[this.#pass], i = this.#pass, sw = this.#sw, S = W[k];
+    const run = ++this.#run;
     if (this.#state === 'ready') await this.#togglePreview(true); // Apply plays the show too
+    if (run !== this.#run || this.#state !== 'preview') return; // taken back by Esc, or taken over by a second Enter
     this.#settle(); this.#listen(false);
     if (this.#held) { this.#held = false; sw.show(); }
-    this.#state = 'writing'; this.#host.render();
+    this.#send('write'); this.#host.render();
     const group = `cleanup-${k}-${Date.now().toString(36)}`;
     try {
       const { swaps, refused, places: wrote, props = [] } = await sw.edits();
@@ -496,9 +563,11 @@ export class Cleanup {
       const files = new Set([...swaps, ...props].map((x) => x.file)).size, places = wrote ?? sw.page.places, said = S.saved(places, files);
       const page = this.#page && (({ census: _c, roles: _r, ...rest }) => rest)(this.#page);
       const landed = (undo = []) => {
-        this.#saved = { group, places, files, pass: i, refused: refused.length };
-        this.#done.set(k, 'done'); this.#state = 'done';
-        keep({ state: 'done', pass: i, saved: this.#saved, page, swap: sw.page, done: Object.fromEntries(this.#done) });
+        if (run === this.#run) {
+          this.#saved = { group, places, files, pass: i, refused: refused.length };
+          this.#done.set(k, 'done'); this.#send('landed');
+          keep({ state: 'done', pass: i, saved: this.#saved, page, swap: sw.page, done: Object.fromEntries(this.#done) });
+        }
         this.#host.wrote?.({ undo, trace: { group } }, said);
       };
       keep({ state: 'writing', pass: i, group, said, saved: { group, places, files, pass: i, refused: refused.length }, page, swap: sw.page, done: Object.fromEntries(this.#done) });
@@ -508,22 +577,26 @@ export class Cleanup {
       refused.push(...(r?.refused ?? [])); // what the write itself left as it is (a partly landed step)
       landed(r.undo);
       // the page now draws the change from its own classes: the preview's inline values (the same) are let go
-      requestAnimationFrame(() => sw.clear());
+      this.#life.frame(() => sw.clear());
       this.#host.announce?.(`${W.pass[k]}: ${said}`);
-    } catch (error) { keep(null); sw.clear(); this.#state = 'error'; this.#err = error?.message ?? S.couldNot; }
+    } catch (error) { if (run === this.#run) { keep(null); sw.clear(); this.#send('failed'); this.#err = error?.message ?? S.couldNot; } }
     this.#host.render();
   }
   async #undo() {
     if (!this.#saved) return;
     const i = this.#saved.pass ?? 0, k = PASSES[i], said = (i ? W[k] : W).undone;
     keep({ state: 'read', pass: i, said, done: Object.fromEntries(this.#done) });
+    const run = ++this.#run;
     try {
-      await this.#host.undo(this.#saved.group); this.#saved = null;
+      await this.#host.undo(this.#saved.group);
+      if (run !== this.#run) return; // closed while it was taken back
+      this.#saved = null;
       this.#done.delete(k);
-      if (i) await this.#readPass(i); else { this.#pass = 0; await this.#read(); }
+      if (!i) this.#pass = 0;
+      await (i ? this.#readPass(i) : this.#read());
       this.#host.announce?.(said);
     }
-    catch (error) { keep(null); this.#err = error?.message ?? W.couldNot; this.#state = 'error'; this.#host.render(); }
+    catch (error) { if (run !== this.#run) return; keep(null); this.#err = error?.message ?? W.couldNot; this.#send('failed'); this.#host.render(); }
   }
 
   // keys while a clean-up runs (the fix panel passes the key's name): true when handled

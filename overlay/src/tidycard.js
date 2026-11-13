@@ -12,9 +12,12 @@
  * in (a component's usage: that prop's string, edited). A change with no such place is listed as left alone, and why.
  * ───────────────────────────────────────────────────────── */
 import { classEditsOf } from './locate.js';
+import { activeVariants, prefixesInForce, bareOf } from './variants.js';
 import { esc } from './choices.js';
 import { FIX } from './words.js';
 import { tidy, levelsOf } from './hierarchy.js';
+import { placeOf } from './stamp.js';
+import { Claims, LEVEL } from './claims.js';
 
 const W = FIX.card.tidy;
 const WEIGHT = { 100: 'thin', 200: 'extralight', 300: 'light', 400: 'normal', 500: 'medium', 600: 'semibold', 700: 'bold', 800: 'extrabold', 900: 'black' };
@@ -35,7 +38,6 @@ const PREVIEW = { 'font-size': (v) => ({ 'font-size': `${v}px` }), 'font-weight'
 // what the page computes for a change's property now: a change to what it already is changes nothing, and isn't listed
 const NOW = { 'font-size': (cs) => parseFloat(cs.fontSize), 'font-weight': (cs) => parseInt(cs.fontWeight, 10), gap: (cs) => parseFloat(cs.rowGap === 'normal' ? cs.columnGap : cs.rowGap), radius: (cs) => parseFloat(cs.borderTopLeftRadius), 'margin-top': (cs) => parseFloat(cs.marginTop) };
 // the code that draws an element (its stamp): copies drawn by one line are one change in the code
-const stampOf = (el) => el.getAttribute('data-plumb-source')?.split('#')[0] ?? null;
 // the sides a padding class sets (ps/pe as left/right: the pages read here run left to right)
 const SIDES = { p: ['top', 'right', 'bottom', 'left'], px: ['left', 'right'], py: ['top', 'bottom'], pt: ['top'], pr: ['right'], pb: ['bottom'], pl: ['left'], ps: ['left'], pe: ['right'] };
 const sidesOf = (c) => SIDES[/^(p[xytrblse]?)-/.exec(c)?.[1]] ?? [];
@@ -47,7 +49,7 @@ const named = (el) => { const t = [...el.childNodes].filter((n) => n.nodeType ==
 
 // host: { target(), props() → the element's props (its steps), name(el) }
 export class Tidy {
-  #host; #changes = []; #shown = new Map(); #before = false;
+  #host; #changes = []; #claims = new Claims(LEVEL.card); #before = false;
   constructor(host) { this.#host = host; }
   // a card with text levels in it: something tidy can read
   static offered(el) { try { return levelsOf(el).length >= 2; } catch { return false; } }
@@ -81,17 +83,20 @@ export class Tidy {
       // already what it would become (a class that computes the value the change names): nothing to change
       .filter((c) => { const now = NOW[c.prop]?.(getComputedStyle(c.el)); return !(Number.isFinite(now) && near(now, +c.to)); })
       .map((c) => {
-        const classes = [...c.el.classList].filter((x) => !x.includes(':'));
-        const from = classes.filter((x) => FAMILY[c.prop](x, sc.sizes));
+        // made where it shows (variants.js): the family's classes in the most particular variant in force (md: at a
+        // medium window, dark: while dark), the prefix carried over; every other class kept as written
+        const all = [...c.el.classList], fam = (x) => FAMILY[c.prop](x, sc.sizes);
+        const prefix = [...prefixesInForce(all, activeVariants(c.el))].reverse().find((p) => bareOf(all, p).some(fam)) ?? '';
+        const from = bareOf(all, prefix).filter(fam), pre = (str) => str.split(/\s+/).filter(Boolean).map((x) => prefix + x).join(' ');
         const to = this.#classFor(c.prop, +c.to, sc);
-        if (c.prop === 'padding' && c.sides) return { ...c, ...this.#padding(c, from, sc), step: to };
-        return { ...c, fromClass: from.join(' '), toClass: to, step: to };
+        if (c.prop === 'padding' && c.sides) { const r = this.#padding(c, from, sc); return { ...c, fromClass: pre(r.fromClass), toClass: pre(r.toClass), step: to }; }
+        return { ...c, fromClass: pre(from.join(' ')), toClass: prefix + to, step: to };
       }).filter((c) => c.fromClass !== c.toClass && stepped(c.step));
     // the same change to the same thing is one row: the copies a list draws (one line of code, or two lines that draw
     // the same words with the same classes) are listed once, previewed on every copy, and written once per line
     const one = new Map();
     for (const c of mapped) {
-      const key = stampOf(c.el) || named(c.el) ? `${named(c.el) ?? stampOf(c.el)}|${c.el.localName}|${c.prop}|${c.from}|${c.to}|${c.fromClass}|${c.toClass}` : c;
+      const key = placeOf(c.el) || named(c.el) ? `${named(c.el) ?? placeOf(c.el)}|${c.el.localName}|${c.prop}|${c.from}|${c.to}|${c.fromClass}|${c.toClass}` : c;
       if (one.has(key)) one.get(key).els.push(c.el); else one.set(key, { ...c, els: [c.el] });
     }
     this.#changes = [...one.values()];
@@ -123,14 +128,11 @@ export class Tidy {
     this.#unshow();
     if (this.#before) return;
     for (const c of this.#changes) for (const k of c.els ?? [c.el]) for (const [p, v] of Object.entries(PREVIEW[c.prop](+c.to, c))) {
-      let m = this.#shown.get(k); if (!m) this.#shown.set(k, (m = new Map()));
-      if (!m.has(p)) m.set(p, [k.style.getPropertyValue(p), k.style.getPropertyPriority(p)]);
-      k.style.setProperty(p, v, 'important');
+      this.#claims.set(k, p, v);
     }
   }
   #unshow() {
-    for (const [el, m] of this.#shown) for (const [p, [v, pr]] of m) { if (v) el.style.setProperty(p, v, pr); else el.style.removeProperty(p); }
-    this.#shown.clear();
+    this.#claims.clear();
   }
   hold(on) { if (on === this.#before) return; this.#before = on; this.#show(); }
   lift() { this.#unshow(); }
@@ -152,7 +154,7 @@ export class Tidy {
   async writes() {
     const steps = [], left = [], seen = new Set();
     // every line of code the change's copies come from, once (a copy without a stamp is its own line)
-    const lines = (c) => { const done = new Set(); return (c.els ?? [c.el]).filter((el) => { const k = stampOf(el) ?? el; if (done.has(k)) return false; done.add(k); return true; }).map((el) => ({ ...c, el })); };
+    const lines = (c) => { const done = new Set(); return (c.els ?? [c.el]).filter((el) => { const k = placeOf(el) ?? el; if (done.has(k)) return false; done.add(k); return true; }).map((el) => ({ ...c, el })); };
     for (const c of this.#changes.flatMap(lines)) {
       let edits;
       try { edits = await classEditsOf(c.el, c.fromClass, c.toClass); } catch { left.push(W.noPlace(W.props[c.prop])); continue; }

@@ -16,7 +16,9 @@ const late = `import { useEffect, useState } from 'react';
 import { App } from './App.jsx';
 export function Late() {
   const [mounted, setMounted] = useState(false);
-  useEffect(() => { const t = setTimeout(() => setMounted(true), 500); return () => clearTimeout(t); }, []);
+  // mounts when the test says so, not after a fixed wait: how long "ready" takes differs by machine, and on a slow
+  // one a timer had already fired before Blueprint could be opened
+  useEffect(() => { const mount = () => setMounted(true); window.addEventListener('late:mount', mount, { once: true }); return () => window.removeEventListener('late:mount', mount); }, []);
   return mounted ? <App /> : null;
 }
 `;
@@ -50,6 +52,9 @@ test('Blueprint opened before the app mounts is never done, and never says there
     window.__timer = setInterval(() => { const p = window.__plumb.overlay.progress; if (p) window.__samples.push({ t: performance.now(), done: p.done, total: p.total, drift: p.drift }); }, 25);
   });
   await page.keyboard.press('Alt+B');
+  // Blueprint is read for a while with no app on the page, then the app mounts
+  await page.waitForFunction(() => window.__samples.length > 8, null, { timeout: 30000 });
+  await page.evaluate(() => window.dispatchEvent(new Event('late:mount')));
   await page.waitForFunction(() => window.__mountedAt && window.__plumb.overlay.progress?.done === true && window.__plumb.overlay.progress.total > 1, null, { timeout: 60000 });
   await new Promise(resolve => setTimeout(resolve, 400));
   const { samples, panel, mountedAt } = await page.evaluate(() => { clearInterval(window.__timer); return { samples: window.__samples, panel: window.__panel, mountedAt: window.__mountedAt }; });

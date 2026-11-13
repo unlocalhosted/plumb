@@ -53,7 +53,10 @@ export async function withCliProgress<T>(root: string, disabled: boolean, run: (
     // Synchronous erase also covers signals received during a CPU-heavy phase.
     Atomics.store(active, 0, 0);
     writeSync(2, '\r\x1b[2K');
-    process.exit(130);
+    // A command that handles its own interrupt (the page: "Press Ctrl+C here when you're done") ends in its own
+    // words. Ending the process here cut it off before its closing line whenever the bar was still winding down.
+    // (`once` has already taken this listener off, so the count is the others'.)
+    if (process.listenerCount('SIGINT') === 0) process.exit(130);
   };
   process.stderr.on('resize', resize);
   process.once('SIGINT', interrupt);

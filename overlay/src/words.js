@@ -1,3 +1,4 @@
+import { errorIs } from './errors.js';
 /* ─────────────────────────────────────────────────────────
  * WORDS · React Plumber overlay
  *
@@ -618,10 +619,16 @@ export const FIX = {
     fitAround: (between) => `Around: at least the gap between (${between}).`,
     fitInside: (between) => `Inside: at most the gap between (${between}).`,
     spaced: (name, what, px, mates) => `${name}: ${what} ${px}px${mates ? ` · ${mates + 1} places, one line of code` : ''}`,
+    // the size handles on the element (sizecard.js)
+    sizeGrip: { e: 'Drag to change the width', w: 'Drag to change the width', n: 'Drag to change the height', s: 'Drag to change the height', ne: 'Drag to change the width and height', nw: 'Drag to change the width and height', se: 'Drag to change the width and height', sw: 'Drag to change the width and height' },
+    sizeFixed: (dim) => `Its ${dim} is set by the layout around it, so a ${dim} class wouldn’t change it here.`,
+    sizeInStyle: (dim) => `Its ${dim} is set in the element’s own style, which a class can’t override. Change it in your code.`,
+    sized: (name, parts, mates) => `${name}: ${parts.join(', ')}${mates ? ` · ${mates + 1} places, one line of code` : ''}`,
+    sizeFree: 'hard-coded · let go of ⌥ to snap',
     // tidy this card (tidycard.js): the rules as sentences, never their ids
     // the step a write is in History's timeline: what the person did, in a word (history.js names the tick after it)
     steps: {
-      edit: 'Edit', shadow: 'Shadow', motion: 'Motion', layout: 'Layout', spacing: 'Spacing', tidy: 'Tidy', fix: 'Fix', styles: 'Text styles',
+      edit: 'Edit', shadow: 'Shadow', motion: 'Motion', layout: 'Layout', spacing: 'Spacing', size: 'Size', tidy: 'Tidy', fix: 'Fix', styles: 'Text styles',
       text: (key) => ({ 'font-size': 'Size', 'line-height': 'Leading', 'letter-spacing': 'Tracking', 'font-weight': 'Weight', 'text-transform': 'Case', color: 'Colour', 'font-family': 'Font' }[key] ?? 'Text'),
     },
     tidy: {
@@ -666,7 +673,7 @@ export const FIX = {
   undo: 'Undo',
   undoing: 'Undoing…',
   undone: 'Undone. Your code is back as it was.',
-  couldNotUndo: (why) => /changed since/i.test(why ?? '') ? 'This file changed after the fix, so it can’t be undone here. Undo it in your editor.' : `Couldn’t undo. ${why ?? 'Check again.'}`,
+  couldNotUndo: (why) => errorIs(why ?? '', 'stale-file') ? 'This file changed after the fix, so it can’t be undone here. Undo it in your editor.' : `Couldn’t undo. ${why ?? 'Check again.'}`,
   couldNot: 'Couldn’t apply. Check again.',
   changedSince: 'This file changed after we checked it. Check again.',
   // a cause whose places no element renders right now: in your code, in a part this page shows only sometimes
@@ -731,6 +738,9 @@ export const FIX = {
   keepPlaces: (n) => `Keep ${count(n, 'place', 'places')}`,
   cancel: 'Cancel',
   skip: 'Skip',
+  // the "i" beside a craft finding: its rule's page in the docs (rule-docs.js), in a new tab
+  why: 'Why this matters',
+  whyLabel: (what) => `Why “${what}” matters (opens in a new tab)`,
 };
 
 // ── the dock ──────────────────────────────────────────────
@@ -745,18 +755,11 @@ export const TAG = {
   checking: 'Checking…',
   outside: 'Outside this project',
   notReact: 'Not drawn by React',
+  notHydrated: 'Still loading',
   library: 'Drawn by a library',
   noMap: 'No source map',
   notPlaced: 'Not in your code',
   known: 'Known, recorded as intended',
-};
-
-// the first time: one fix, walked through
-export const WALK = {
-  1: (line) => `${line} Click it.`,
-  2: '↑ ↓ to try another option. Enter puts it in your code.',
-  3: 'In your code now. Undo is right above it.',
-  4: 'Fixed. Nothing left to fix here.',
 };
 
 export const DOCK = {
@@ -807,7 +810,9 @@ export const SETUP = {
       'fast.config': { title: 'Make checks faster', loses: 'Without a config file, every check starts from scratch.' },
       'remember.baseline': { title: 'Start from today’s problems', loses: 'Every problem counts as new, so CI fails on all of them. Record today’s once you’ve looked them over, and only new ones fail.' },
       'write.watcher': { title: 'Check that saving updates the page', loses: 'Save any file once. If the page doesn’t update, applied changes won’t show until you reload.' },
+      'write.refresh': { title: 'Turn on React Fast Refresh', loses: 'Without it, every fix reloads the whole page and what you were doing on it is lost. With it, a fix lands in place.' },
       'locate.react-dev': { title: 'Use the development build', loses: 'In a production build, clicking an element may not find its component.' },
+      'locate.stamps': { title: 'Source stamping isn’t running', loses: 'Plumber can’t see where your elements are written, so clicking one finds nothing. It won’t guess.' },
     }[q.id] ?? { title: q.title, loses: q.loses };
   },
 };

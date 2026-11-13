@@ -1,13 +1,42 @@
-const base = new URL('../', import.meta.url).href;
-const script = [...document.querySelectorAll('script[type="module"][src]')].find(script => script.src === base + 'client.js');
+// Where questions go: the server this client was loaded from. On Next that is the route's sidecar (hosts/next-dev.ts),
+// another loopback origin; the page's own /__plumb/ (the route) is the door that always answers. When the sidecar stops
+// answering (its process gone, the port closed), every question moves to the door, once, and stays there.
+let base = new URL('../', import.meta.url).href;
+const door = new URL('/__plumb/', location.href).href;
+// The page's own tag for this client carries the token. It names the client on the page's origin, so it is found by
+// its path, whichever origin the module itself came from.
+const clientPath = new URL(base).pathname + 'client.js';
+const script = [...document.querySelectorAll('script[type="module"][src]')].find(script => script.src === base + 'client.js' || new URL(script.src, location.href).pathname === clientPath);
 const token = script?.dataset.plumbToken;
+/** fetch at `base`; a network failure at a sidecar moves base to the door and asks there, once; at the door it fails as it is. */
+async function reach(path, init) {
+  try { return await fetch(new URL(path, base), init); }
+  catch (error) {
+    if (error?.name === 'AbortError' || base === door) throw error;
+    base = door;
+    return fetch(new URL(path, base), init);
+  }
+}
+
+// The module generation a question is asked against. A hot update (plumb:updated, sent when the source maps are
+// invalidated) starts a new one: an answer that comes back for an older generation describes code that is gone, so it
+// is dropped and the question is asked again, once, against the code on screen.
+let generation = 0;
+globalThis.addEventListener?.('plumb:updated', () => { generation++; });
+export const moduleGeneration = () => generation;
+const unreachable = error => Object.assign(new Error('React Plumber’s server is not reachable; if the dev server is restarting, it will be back.'), { unreachable: true, cause: error });
 
 // Resolve, site and structure questions asked with { batch: true } in the same turn of the event loop go to the server as one
 // batch: the blueprint's reader asks about a view's worth of elements as one round trip and one read cohort, not
 // one per element behind a six-connection limit. A single reading (the Alt card) goes on its own, as it always
 // has. A server that refuses batches answers once, and every question goes on its own from then on.
 const BATCH = 128;
-let batched = true, queued = [], flushing = 0;
+let queued = [], flushing = 0;
+// A host that refused a batch is asked one question at a time, for a while: then batches are tried again (a dev server
+// that restarted mid-wave answers them again; one that never did refuses once more and costs one round trip).
+let directUntil = 0;
+const RETRY_BATCH_MS = 30000;
+const batching = () => Date.now() >= directUntil;
 const flights = new Map();
 function enqueue(method, params, options) {
   const key = JSON.stringify([method, Object.entries(params).sort(([a], [b]) => a.localeCompare(b)), !!options.explain]);
@@ -26,12 +55,12 @@ async function flush() {
   while (queued.length) {
     const wave = queued.splice(0, BATCH);
     let response;
-    try { response = await fetch(new URL('batch', base), { method: 'POST', cache: 'no-store', headers: { 'Content-Type': 'application/json', ...(token ? { 'x-plumb-token': token } : {}) }, body: JSON.stringify({ calls: wave.map(({ method, params }) => ({ method, params: Object.fromEntries(Object.entries(params).map(([k, v]) => [k, String(v)])) })) }) }); }
+    try { response = await reach('batch', { method: 'POST', cache: 'no-store', headers: { 'Content-Type': 'application/json', ...(token ? { 'x-plumb-token': token } : {}) }, body: JSON.stringify({ calls: wave.map(({ method, params }) => ({ method, params: Object.fromEntries(Object.entries(params).map(([k, v]) => [k, String(v)])) })) }) }); }
     catch (error) { for (const q of wave) q.reject(options404(q, error)); continue; }
     if (response.status === 503) { const body = await response.json().catch(() => ({})); for (const q of wave) q.reject(starting(body)); continue; }
     // a host that does not answer batches (an older server, the docs' replay) refuses the whole wave: every
     // question goes on its own from here, this wave included. A batch never speaks for one question's refusal
-    if (!response.ok) { batched = false; for (const q of wave) q.resolve(direct(q.method, q.params, q.options)); continue; }
+    if (!response.ok) { directUntil = Date.now() + RETRY_BATCH_MS; for (const q of wave) q.resolve(direct(q.method, q.params, q.options)); continue; }
     const results = await response.json().catch(() => null);
     wave.forEach((q, i) => {
       const r = results?.[i];
@@ -50,29 +79,40 @@ const options404 = (q, error) => q.options.explain ? Object.assign(new Error(err
 const resolved = new Map();
 export function forgetResolved() { resolved.clear(); }
 export async function request(method, params, options = {}) {
+  for (let asked = 0;; asked++) {
+    const sent = generation;
+    const answer = await ask(method, params, options);
+    // the answer belongs to the generation it was asked in; after an update, ask again (once) rather than show it
+    if (generation === sent || asked > 0 || !['resolve', 'site', 'index', 'class-site', 'text', 'props', 'edits'].includes(method)) return answer;
+  }
+}
+function ask(method, params, options) {
+  // a question with its own signal is the caller's alone: it is not shared, and its fetch is aborted with it
+  if (options.signal) return direct(method, params, options);
   if (method === 'resolve') {
     const key = JSON.stringify([params, !!options.explain]);
     let answer = resolved.get(key);
     if (!answer) {
-      answer = batched && options.batch ? enqueue(method, params, options) : direct(method, params, options);
+      answer = batching() && options.batch ? enqueue(method, params, options) : direct(method, params, options);
       resolved.set(key, answer);
       const done = () => { if (resolved.get(key) === answer) resolved.delete(key); };
       answer.then(done, done);
     }
     return answer;
   }
-  if (batched && options.batch && (method === 'site' || method === 'structure')) return enqueue(method, params, options);
+  if (batching() && options.batch && (method === 'site' || method === 'structure')) return enqueue(method, params, options);
   return direct(method, params, options);
 }
 
 async function direct(method, params, options = {}) {
-  const url = new URL(method, base);
-  for (const [key, value] of Object.entries(params)) url.searchParams.set(key, value);
+  const query = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) query.set(key, value);
   let response;
-  try { response = await fetch(url, { cache: 'no-store', headers: token ? { 'x-plumb-token': token } : {} }); }
+  try { response = await reach(`${method}?${query}`, { cache: 'no-store', headers: token ? { 'x-plumb-token': token } : {}, ...(options.signal ? { signal: options.signal } : {}) }); }
   catch (error) {
-    if (options.explain) throw Object.assign(new Error(error.message), { reason: 'resolve-refusal', detail: { method, source: params.source, error: error.message } });
-    throw error;
+    if (error?.name === 'AbortError') throw Object.assign(new Error('The question was withdrawn.'), { aborted: true, reason: 'map', detail: { step: 'cancelled', method } });
+    if (options.explain) throw Object.assign(new Error(error.message), { reason: 'resolve-refusal', unreachable: true, detail: { method, source: params.source, error: error.message, unreachable: true } });
+    throw unreachable(error);
   }
   // The project is still being read for the first time: a state to show, not a refusal.
   if (response.status === 503) {
@@ -83,16 +123,31 @@ async function direct(method, params, options = {}) {
   }
   if (!response.ok) {
     if (options.explain) throw Object.assign(new Error('Resolver refused source.'), { reason: 'resolve-refusal', detail: { method, source: params.source, status: response.status, response: await response.text() } });
+    // a caller that tells a refusal from an older server (404) asks for the error itself; the rest read "no answer"
+    if (options.throws) { const body = await response.json().catch(() => ({})); throw Object.assign(new Error(body?.error ?? `${method} answered ${response.status}`), { status: response.status, code: body?.code ?? null }); }
     return null;
   }
   return response.json();
 }
 
 // Writes go through the same token and origin policy as reads; the server re-derives every edit from current source.
+export { errorIs } from './errors.js';
+
+// Every write carries an idempotency key: a retry after a dropped response gets the first answer and applies nothing twice.
 export async function post(method, body) {
-  const response = await fetch(new URL(method, base), { method: 'POST', cache: 'no-store', headers: { 'Content-Type': 'application/json', ...(token ? { 'x-plumb-token': token } : {}) }, body: JSON.stringify(body) });
+  // the key travels in its own header: `key` in a body belongs to the endpoint (set's prop key)
+  const key = globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  const payload = JSON.stringify(body ?? {});
+  const send = () => reach(method, { method: 'POST', cache: 'no-store', headers: { 'Content-Type': 'application/json', 'Idempotency-Key': key, ...(token ? { 'x-plumb-token': token } : {}) }, body: payload });
+  let response;
+  try { response = await send(); }
+  catch (error) {
+    // the network dropped: the server may have applied the write; the same key asks for its answer, not a second write
+    await new Promise(resolve => setTimeout(resolve, 300));
+    try { response = await send(); } catch (again) { throw unreachable(again); }
+  }
   const result = await response.json().catch(() => ({}));
-  if (!response.ok) throw Object.assign(new Error(result.error ?? `React Plumber refused ${method}.`), { status: response.status });
+  if (!response.ok) throw Object.assign(new Error(result.error ?? `React Plumber refused ${method}.`), { status: response.status, code: result.code ?? null });
   return result;
 }
 

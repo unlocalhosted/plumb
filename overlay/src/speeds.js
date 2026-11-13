@@ -18,6 +18,7 @@
 import { classesOf } from './craft-read.js';
 import { controlKind, roleOf } from './roles.js';
 import { sourceTexts } from './theme-source.js';
+import { STAMPED } from './stamp.js';
 
 const SAME = 0.2; // two durations within a fifth read as one speed (Grondin 2001: Weber fraction 5–20%)
 const msOf = (v) => { const m = /^\s*([\d.]+)(ms|s)\s*$/.exec(v ?? ''); return m ? Number(m[1]) * (m[2] === 's' ? 1000 : 1) : null; };
@@ -67,7 +68,7 @@ export function themeSpeeds() {
 export function readMotion(root = document.body, { exclude = [] } = {}) {
   const out = [];
   const cut = exclude.length ? exclude.join(', ') : null;
-  for (const el of root.querySelectorAll('[data-plumb-source]')) {
+  for (const el of root.querySelectorAll(STAMPED)) {
     if (el.closest('plumb-overlay') || (cut && el.closest(cut))) continue;
     // no variant (hover:, md:), no negative, no variable the app computes; duration-0 is "no motion", a decision
     const cls = classesOf(el).split(/\s+/).find((c) => /^duration-(?:\d+|\[\d+(?:\.\d+)?(?:ms|s)\])$/.test(c));

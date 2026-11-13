@@ -130,7 +130,7 @@ export async function lowerTailwind(root: string, entry: string | null, version:
         if (nodeRequire.resolve('tailwindcss') === tailwindPath) { compilerPath = nodePath; nodeWrapper = true; }
       } catch (error) { if ((error as NodeJS.ErrnoException).code !== 'MODULE_NOT_FOUND') throw error; }
       // require.resolve finds a package's CommonJS build; importing that puts the API under default.
-      const loaded = await import(pathToFileURL(compilerPath).href) as Partial<Compiler> & { default?: Partial<Compiler> };
+      const loaded = await import(/* webpackIgnore: true */ /* turbopackIgnore: true */ pathToFileURL(compilerPath).href) as Partial<Compiler> & { default?: Partial<Compiler> };
       const compiler = (typeof loaded.__unstable__loadDesignSystem === 'function' ? loaded : loaded.default) as Compiler;
       if (typeof compiler?.__unstable__loadDesignSystem !== 'function') throw new Error(`${compilerPath} does not export __unstable__loadDesignSystem; React Plumber needs Tailwind CSS 4.`);
       const options: LoaderOptions = { base: dirname(entry) };
@@ -141,7 +141,7 @@ export async function lowerTailwind(root: string, entry: string | null, version:
         };
         options.loadModule = async (id, base) => {
           const path = resolved(jsResolver, id, base);
-          const module = await import(pathToFileURL(path).href) as { default?: unknown };
+          const module = await import(/* webpackIgnore: true */ /* turbopackIgnore: true */ pathToFileURL(path).href) as { default?: unknown };
           return { path, base: dirname(path), module: module.default ?? module };
         };
       }

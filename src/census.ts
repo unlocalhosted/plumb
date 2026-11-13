@@ -14,8 +14,8 @@
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { atomicWrite } from './atomic-write.js';
-import { sourceHash } from './collect/cache.js';
 import { cacheDirectory, ignoreCache } from './paths.js';
+import { STAMP_ATTRIBUTE, parseStamp, stampHash, stampedFile } from './stamp.js';
 import type { CensusEntry } from './session/engine.js';
 
 export interface CensusRoute { route: string; elements: number }
@@ -33,17 +33,17 @@ export const censusPath = (root: string) => resolve(cacheDirectory(root), 'censu
 
 // In the page: every stamped element that holds words of its own, its type as drawn, and whether it sits in a list.
 // The twin of Blueprint's #system census (overlay/src/blueprint.js): keep the two reading the same things.
-function readPage() {
-  const census = [...document.body.querySelectorAll('[data-plumb-source]')].filter((el) => !el.closest('plumb-overlay') && [...el.childNodes].some((n) => n.nodeType === 3 && /[\p{L}\p{N}]/u.test(n.nodeValue ?? ''))).map((el) => {
+function readPage(attribute: string) {
+  const census = [...document.body.querySelectorAll(`[${attribute}]`)].filter((el) => !el.closest('plumb-overlay') && [...el.childNodes].some((n) => n.nodeType === 3 && /[\p{L}\p{N}]/u.test(n.nodeValue ?? ''))).map((el) => {
     const cs = getComputedStyle(el);
-    return { stamp: el.getAttribute('data-plumb-source')!, tag: el.localName, list: !!el.closest('li, ul, ol, dl'), control: !!el.closest('button, [role=button], [role=tab], [role=menuitem], summary, label'), number: /^[\s$€£¥₹+\-−–.,:%()\d]*\d[\s$€£¥₹+\-−–.,:%()\d]*[a-z]{0,2}$/i.test([...el.childNodes].filter((n) => n.nodeType === 3).map((n) => n.nodeValue).join(' ').trim()), sentence: /\S\s+\S.*[.!?…]["'”’)]*\s*$/s.test([...el.childNodes].filter((n) => n.nodeType === 3).map((n) => n.nodeValue).join(' ').trim()), computed: { size: parseFloat(cs.fontSize), lineHeight: cs.lineHeight === 'normal' ? null : parseFloat(cs.lineHeight), letterSpacing: cs.letterSpacing === 'normal' ? 0 : parseFloat(cs.letterSpacing), weight: parseInt(cs.fontWeight, 10), transform: cs.textTransform } };
+    return { stamp: el.getAttribute(attribute)!, tag: el.localName, list: !!el.closest('li, ul, ol, dl'), control: !!el.closest('button, [role=button], [role=tab], [role=menuitem], summary, label'), number: /^[\s$€£¥₹+\-−–.,:%()\d]*\d[\s$€£¥₹+\-−–.,:%()\d]*[a-z]{0,2}$/i.test([...el.childNodes].filter((n) => n.nodeType === 3).map((n) => n.nodeValue).join(' ').trim()), sentence: /\S\s+\S.*[.!?…]["'”’)]*\s*$/s.test([...el.childNodes].filter((n) => n.nodeType === 3).map((n) => n.nodeValue).join(' ').trim()), computed: { size: parseFloat(cs.fontSize), lineHeight: cs.lineHeight === 'normal' ? null : parseFloat(cs.lineHeight), letterSpacing: cs.letterSpacing === 'normal' ? 0 : parseFloat(cs.letterSpacing), weight: parseInt(cs.fontWeight, 10), transform: cs.textTransform } };
   });
   const links = [...document.querySelectorAll('a[href]')].map((a) => (a as HTMLAnchorElement).href);
   return { census, links };
 }
 // In the page: which texts are a control's label, as the overlay's shared reading has it (roles.js inControl). Null
 // when the overlay is older than that file: the census keeps its own reading then
-const readControlled = `(async () => { try { const m = await import('/__plumb/src/roles.js'); return [...document.body.querySelectorAll('[data-plumb-source]')].filter((el) => m.inControl(el)).map((el) => el.getAttribute('data-plumb-source')); } catch { return null; } })()`;
+const readControlled = `(async () => { try { const m = await import('/__plumb/src/roles.js'); return [...document.body.querySelectorAll('[${STAMP_ATTRIBUTE}]')].filter((el) => m.inControl(el)).map((el) => el.getAttribute('${STAMP_ATTRIBUTE}')); } catch { return null; } })()`;
 // In the page: the spacing pass's own reader, loaded from the dev server (one reader for the page and the census)
 const readGaps = `(async () => { try { const m = await import('/__plumb/src/stacks.js'); return m.readStacks().flatMap((s) => s.gaps.filter((g) => g.d > 0.5 && !g.section).map((g) => ({ stamp: s.stamp, d: g.d, em: g.em }))); } catch { return []; } })()`;
 // In the page: the icon pass's own reader (overlay/src/icons.js), the same one the panel uses
@@ -58,11 +58,13 @@ export async function takeCensus(options: CensusOptions): Promise<ProjectCensus>
   const base = await reachable(options.url), origin = new URL(base).origin, max = options.max ?? 120, timeout = options.timeout ?? 30000;
   const given = (options.routes ?? []).filter(Boolean), queue = given.length ? [...given] : ['/'], seen = new Set(queue.map(r => new URL(r, base).pathname));
   const browser = await launchChromium(), routes: CensusRoute[] = [], entries: ProjectCensus['entries'] = [], gaps: CensusGap[] = [], colours: CensusColour[] = [], icons: CensusIcon[] = [];
-  let taken = 0;
+  // `failed` ends the crawl for both readers: a reader that throws leaves its route taken and never counted, so the
+  // other must not keep waiting for it to land
+  let taken = 0, failed = false;
   const reader = async () => {
     const page = await browser.newPage({ viewport: desktop, reducedMotion: 'reduce' });
     try {
-      for (;;) {
+      while (!failed) {
         const route = queue.shift();
         if (route === undefined) { if (taken - routes.length > 0) { await new Promise(r => setTimeout(r, 200)); continue; } return; }
         if (taken >= max) { queue.unshift(route); return; }
@@ -70,7 +72,7 @@ export async function takeCensus(options: CensusOptions): Promise<ProjectCensus>
         try { await page.goto(new URL(route, base).href, { waitUntil: 'load', timeout }); } catch { routes.push({ route, elements: 0 }); continue; }
         await page.waitForLoadState('networkidle', { timeout: 5000 }).catch(() => {});
         await settle(page);
-        const { census, links } = await page.evaluate(readPage);
+        const { census, links } = await page.evaluate(readPage, STAMP_ATTRIBUTE);
         const controlled = await page.evaluate(readControlled) as string[] | null;
         if (controlled) { const inside = new Set(controlled); for (const entry of census) entry.control = inside.has(entry.stamp); }
         routes.push({ route, elements: census.length });
@@ -85,7 +87,7 @@ export async function takeCensus(options: CensusOptions): Promise<ProjectCensus>
           seen.add(at.pathname); queue.push(at.pathname);
         }
       }
-    } finally { await page.close(); }
+    } catch (error) { failed = true; throw error; } finally { await page.close().catch(() => {}); }
   };
   try { await Promise.all([reader(), reader()]); } finally { await browser.close(); }
   const census: ProjectCensus = { schemaVersion: 1, at: new Date().toISOString(), url: base, viewport: desktop, routes: routes.filter(r => r.elements > 0 || given.includes(r.route)), entries, gaps, colours, icons, left: queue.length };
@@ -100,14 +102,14 @@ export async function projectCensus(root: string): Promise<{ census: ProjectCens
   try { census = JSON.parse(await readFile(censusPath(root), 'utf8')) as ProjectCensus; } catch { return null; }
   if (census?.schemaVersion !== 1 || !Array.isArray(census.entries)) return null;
   const hashes = new Map<string, string | null>();
-  const current = async (file: string) => {
-    if (!hashes.has(file)) hashes.set(file, await readFile(resolve(root, file), 'utf8').then(text => sourceHash(text).slice(0, 12), () => null));
-    return hashes.get(file);
+  // the hash a stamped file has now, by the stamp's own name for it; null when it cannot be read
+  const current = async (source: string) => {
+    if (!hashes.has(source)) hashes.set(source, await Promise.resolve().then(() => readFile(stampedFile(root, source), 'utf8')).then(stampHash, () => null));
+    return hashes.get(source);
   };
-  const fresh = async (stamp: string) => {
-    const m = /^(.+):\d+:\d+#([a-f0-9]+)$/.exec(stamp);
-    let file = m?.[1] ?? ''; try { file = decodeURIComponent(file); } catch { /* as written */ }
-    return !!m && await current(file) === m[2];
+  const fresh = async (text: string) => {
+    const stamp = parseStamp(text);
+    return !!stamp && await current(stamp.source) === stamp.hash;
   };
   const entries: CensusEntry[] = [], gaps: CensusGap[] = [];
   let stale = 0;

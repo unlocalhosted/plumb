@@ -1,11 +1,17 @@
+import { readFileSync } from 'node:fs';
 import { readFile, stat } from 'node:fs/promises';
+import { parseSync } from 'oxc-parser';
+import { moduleImports } from './collect/modules.js';
+import type { ModuleImport } from './collect/modules.js';
+import { projectModules } from './session/modules.js';
 import { dirname, extname, isAbsolute, relative, resolve, sep } from 'node:path';
 import { appTailwindEntry } from './collect/entries.js';
 import { unreadable } from './diagnostics.js';
 import type { Finding } from './report.js';
 import { matchesPath } from './collect/pattern.js';
 import { glob } from 'tinyglobby';
-import { ownSourcePath, sourceSelectors } from './source-boundary.js';
+import { containsPath, ownSourcePath, sourceBoundary, sourceSelectors } from './source-boundary.js';
+import { linkedSourceFolders, sourceIdentity } from './source-identity.js';
 import { projectIgnore, staticIgnore } from './project-facts/checkouts.js';
 import { tailwindInstalled } from './project-facts/index.js';
 import { userMessage, UsageError } from './errors.js';
@@ -14,7 +20,16 @@ import type { FileCounts, Report } from './report.js';
 
 /** The static part; `projectIgnore(root)` adds the nested checkouts (worktrees, submodules, vendored clones). */
 export const ignore = staticIgnore;
-export const defaultSource = ['src/**/*.{tsx,jsx,ts,js,css}', 'app/**/*.{tsx,jsx,ts,js,css}'];
+// With no `source` configured, your code is what the rule says it is (src/source-identity.ts): every file under the
+// root that is neither installed nor generated, whatever folder it sits in (src/, app/, components/, lib/, registry/…),
+// plus your own code reached through links. `source` in the config is the override.
+export const defaultSource = ['**/*.{tsx,jsx,ts,js,css}'];
+/** With no `source` configured: the app's own files, plus its own code reached through links (a workspace package, a tsconfig alias), each inside the boundary. */
+export async function defaultSourceSelectors(root: string): Promise<string[]> {
+  const boundary = sourceBoundary(root);
+  const linked = (await linkedSourceFolders(root)).filter(folder => containsPath(boundary, folder));
+  return [...defaultSource, ...linked.map(folder => `${relative(root, folder).replaceAll('\\', '/')}/**/*.{tsx,jsx,ts,js,css}`)];
+}
 const tailwindImport = /@import\s+(?:url\(\s*)?["']tailwindcss(?:\/[^"']*)?["']/;
 
 /** Warm hosts already own membership; filter their retained names instead of crawling again. */
@@ -26,7 +41,9 @@ export async function matchProjectFiles(root: string, patterns: string | string[
   const matches = known.filter(file => {
     const path = relative(root, file);
     const matches = (pattern: string) => matchesPath(isAbsolute(pattern) ? file : path, pattern) || matchesPath(isAbsolute(pattern) ? file : path, pattern + '/**');
-    return !ignore.some(pattern => matchesPath(path, pattern)) && positive.some(matches) && !negative.some(matches);
+    // A linked folder above the root is matched by its `../` path; the ignore list reads it from its first real segment.
+    const within = path.replace(/^(?:\.\.\/)+/, '');
+    return !ignore.some(pattern => matchesPath(path, pattern) || matchesPath(within, pattern)) && positive.some(matches) && !negative.some(matches);
   });
   // A changed config can introduce an external source location before its
   // worker has published those locations to the Session. Discover that bounded
@@ -96,9 +113,47 @@ export async function discoverProject(root: string, config: PlumbConfig, known?:
 }
 
 export async function projectSourceFiles(root: string, config: PlumbConfig, known?: readonly string[]): Promise<string[]> {
-  const files = await matchProjectFiles(root, sourceSelectors(root, config.source ?? defaultSource), known);
-  const owned = await Promise.all(files.map(file => ownSourcePath(root, file)));
-  return files.filter((_, index) => owned[index]).sort();
+  const files = await matchProjectFiles(root, sourceSelectors(root, config.source ?? await defaultSourceSelectors(root)), known);
+  // with no `source`, the rule decides (a git-ignored or installed file under the root is not yours); a configured
+  // selection is the override and is taken as written
+  const owned = await Promise.all(files.map(async file => await ownSourcePath(root, file) && (config.source !== undefined || await sourceIdentity(root, file) !== null)));
+  const yours = files.filter((_, index) => owned[index]);
+  return (config.source === undefined ? defaultSelection(root, yours) : yours).sort();
+}
+
+// The rest of the default selection, over files that are yours by the rule. A tool's config file (vite.config.ts,
+// tailwind.config.js, plumber.config.ts, eslint.config.mjs…) configures a tool: it is never your code. A dot folder
+// (.storybook/, .theme/, .github/…) is a tool's too, until the app's own import graph reaches a file in it: that file is
+// yours then, the way a linked package's are. `source` in the config is the override and never comes here.
+const toolConfig = /(?:^|\/)[^/]*\.config\.[cm]?[jt]s$/;
+const dotted = (path: string) => path.split('/').some(segment => segment !== '..' && segment !== '.' && segment.startsWith('.'));
+const moduleFile = (file: string) => /\.[cm]?[jt]sx?$/.test(file) && !/\.d\.[cm]?ts$/.test(file);
+function defaultSelection(root: string, files: string[]): string[] {
+  const path = (file: string) => relative(root, file).replaceAll('\\', '/');
+  const kept = files.filter(file => !toolConfig.test(path(file)));
+  const hidden = new Set(kept.filter(file => dotted(path(file))));
+  if (!hidden.size) return kept;
+  const plain = kept.filter(file => !hidden.has(file));
+  // the walk: every import written in a plain module, resolved the way the project's bundler resolves it; a dotted file
+  // it lands on is yours, and its own imports are followed in turn. Only run when a dot folder has candidates.
+  const texts = new Map<string, string | undefined>();
+  const read = (file: string) => { if (!texts.has(file)) { try { texts.set(file, readFileSync(file, 'utf8')); } catch { texts.set(file, undefined); } } return texts.get(file); };
+  const resolveModule = projectModules(root, read);
+  const reached = new Set<string>();
+  const queue = plain.filter(moduleFile);
+  for (let index = 0; index < queue.length; index++) {
+    const file = queue[index]!, text = read(file);
+    if (text === undefined) continue;
+    let edges: ModuleImport[];
+    try { edges = moduleImports(parseSync(file, text).module, text); } catch { continue; }
+    for (const edge of edges) {
+      const target = resolveModule(file, edge.specifier)?.path ?? (edge.specifier.startsWith('.') ? resolve(dirname(file), edge.specifier) : undefined);
+      if (target === undefined || !hidden.has(target) || reached.has(target)) continue;
+      reached.add(target);
+      if (moduleFile(target)) queue.push(target);
+    }
+  }
+  return kept.filter(file => !hidden.has(file) || reached.has(file));
 }
 
 export async function sourceFiles(root: string, config: PlumbConfig): Promise<string[]> {

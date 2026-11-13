@@ -17,9 +17,10 @@
 import { classEditsOf } from './locate.js';
 import { ease } from './show.js';
 import { loadRadii, proposeRadii, readRadii } from './radius.js';
+import { placeOf } from './stamp.js';
 
 const NAME = { tag: 'Tags', control: 'Controls', card: 'Cards' };
-const keyOf = (el, cls) => `${(el.getAttribute('data-plumb-source') ?? '').split('#')[0]}|${cls}`;
+const keyOf = (el, cls) => `${(placeOf(el) ?? '')}|${cls}`;
 const mostOf = (vs) => vs.sort((a, b) => vs.filter((v) => v === b).length - vs.filter((v) => v === a).length)[0];
 const shown = (n) => Math.round(n * 10) / 10;
 // the chip: one corner, drawn at the radius it has now (never larger than the glyph can show)

@@ -21,6 +21,7 @@ async function fixture(t) {
   // Node refuses native .ts config loading under node_modules.
   const root = await mkdtemp(join(repo, 'fixtures/.setup-'));
   t.after(() => rm(root, { recursive: true, force: true }));
+  spawnSync('git', ['init', '-q'], { cwd: root }); // its own repository: stamps name files from the repository root
   return root;
 }
 async function file(root, path, text) {

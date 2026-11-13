@@ -22,6 +22,7 @@
  * ───────────────────────────────────────────────────────── */
 import { classesOf } from './craft-read.js';
 import { controlKind } from './roles.js';
+import { STAMPED } from './stamp.js';
 
 const SIDES = { p: ['Top', 'Right', 'Bottom', 'Left'], px: ['Left', 'Right'], py: ['Top', 'Bottom'], pt: ['Top'], pr: ['Right'], pb: ['Bottom'], pl: ['Left'] };
 const NEAR_SHARE = 0.25; // stacks.js: a step further than a quarter of the distance away is another level
@@ -30,7 +31,7 @@ const px = (v) => parseFloat(v) || 0;
 /** Every padding and column-gap class on a stamped element, with the size it draws. */
 export function readInsets(root = document.body) {
   const out = [];
-  for (const el of root.querySelectorAll('[data-plumb-source]')) {
+  for (const el of root.querySelectorAll(STAMPED)) {
     if (el.closest('plumb-overlay') || el.closest('svg')) continue;
     const found = [];
     for (const c of classesOf(el).split(/\s+/)) {

@@ -494,6 +494,10 @@ export class Craft {
       const sigs = items.map((item, i) => (still[i] ? sigOf(item.el) : ''));
       let page = 5381;
       for (const sig of sigs) { for (let k = 0; k < sig.length; k++) page = ((page << 5) + page + sig.charCodeAt(k)) | 0; page = ((page << 5) + page + 124) | 0; }
+      // a craft mark is placed where the element's JSX opens (the page answer's file, line and column): that is the line
+      // its fix edits, and what makes it a place in your code; an element the server could not place leaves its marks
+      // without a position, and those are notes
+      const placed = (item, marks) => (item.file && Number.isInteger(item.line) && Number.isInteger(item.column) ? marks.map((m) => ({ ...m, file: item.file, line: item.line, column: item.column })) : marks);
       // Judging in slices (docs/briefs/engine-foundations.md, the view lane): an element whose findings are kept is
       // answered at once; the rest are judged for a few milliseconds here and then a slice at a time between frames,
       // so a page of thousands of elements never holds the app's main thread for one long block. While an element
@@ -505,9 +509,9 @@ export class Craft {
         const el = item.el, hit = this.#cache.get(el);
         if (!(hit && hit.sig === sigs[i] && hit.page === page && hit.wide) && performance.now() > until) {
           queue.push([el, sigs[i]]);
-          return { ...item, marks: [...item.marks, ...(hit && hit.sig === sigs[i] ? [...hit.marks, ...(hit.wide ?? [])] : [])] };
+          return { ...item, marks: [...item.marks, ...placed(item, hit && hit.sig === sigs[i] ? [...hit.marks, ...(hit.wide ?? [])] : [])] };
         }
-        return { ...item, marks: [...item.marks, ...this.#marksFor(el, facts, sigs[i], page)] };
+        return { ...item, marks: [...item.marks, ...placed(item, this.#marksFor(el, facts, sigs[i], page))] };
       });
       this.#pump(queue, facts, page);
       const t3 = performance.now();
@@ -597,7 +601,10 @@ export class Craft {
       if (quieted().has(rule.id)) return [];
       let found = [];
       try { found = rule.check({ el, facts }, this.#theme) ?? []; } catch { found = []; } // a rule's error is its own, never the page's
-      return found.filter((f) => (f.confidence ?? 0) >= FLOOR).map((f) => markOf({ tier: rule.tier, ...f, rule: rule.id, key: f.key ?? rule.id, suggest: important(f.suggest) }));
+      // a mark's key is unique on its element: a rule that finds two things here without keys of its own gets #2, #3…, so
+      // taking one never marks the other taken, and one preview never undoes the other (docs/invariants/overlay.md #10)
+      const kept = found.filter((f) => (f.confidence ?? 0) >= FLOOR), seen = new Map();
+      return kept.map((f) => { const base = f.key ?? rule.id, n = (seen.get(base) ?? 0) + 1; seen.set(base, n); return markOf({ tier: rule.tier, ...f, rule: rule.id, key: n === 1 ? base : `${base}#${n}`, suggest: important(f.suggest) }); });
     };
     const pageWide = (rule) => (rule.reads ?? []).includes('census');
     let hit = this.#cache.get(el), fresh = false;

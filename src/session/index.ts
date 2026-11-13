@@ -14,70 +14,98 @@ type Method = EngineMethod;
 export type { ReadMethod };
 export type ReadArgs<M extends ReadMethod> = Parameters<Engine[M]>;
 interface Pending { resolve(value: unknown): void; reject(error: Error): void; timer: NodeJS.Timeout | undefined }
+/**
+ * The coordinator thread's life. There is a `worker` to post to only while one is starting or ready, so a call can't
+ * be posted to a thread that is gone. `lost` is a thread that ended while the Session was open: the next call (or the
+ * next health question, when it died after it was ready) starts a new one. `boot` says the thread never got ready; the
+ * next try then waits a second, so a project that can't start isn't started once per request.
+ */
+type Life =
+  | { kind: 'starting'; worker: Worker; ready: Promise<void> }
+  | { kind: 'ready'; worker: Worker }
+  | { kind: 'lost'; error: Error; boot: boolean; at: number }
+  | { kind: 'closed' };
+const RETRY_MS = 1000;
+const closedError = () => new UsageError('Session is closed. Start a new session.');
 /** Host owns only bounded admission, worker messaging and the last health snapshot. */
 export class Session extends EventEmitter {
   readonly root: string;
   readonly config?: string;
-  private worker: Worker;
+  private life: Life;
   private pending = new Map<number, Pending>();
   private id = 0;
-  private closed = false;
-  private failure?: Error;
   private lastStats: unknown;
   private snapshot: Awaited<ReturnType<Engine['health']>>;
-  private constructor(options: SessionOptions) {
+  private constructor(private options: SessionOptions) {
     super(); if (options.config !== undefined) this.config = options.config; this.optionsBudget = options.readQueueMs; this.root = resolve(options.root ?? process.cwd());
     this.snapshot = { status: 'starting', root: this.root, revision: 0, pid: process.pid, rss: 0, caches: {}, work: { reconciliations: 0, recipeIndexes: 0 } };
-    this.worker = new Worker(new URL('./coordinator.js', import.meta.url), { workerData: { ...options, root: this.root } });
+    this.life = this.start();
   }
   static async create(options: SessionOptions = {}): Promise<Session> {
     if (options.readQueueMs !== undefined && (!Number.isFinite(options.readQueueMs) || options.readQueueMs < 0)) throw new UsageError('readQueueMs must be a non-negative finite number.');
     migrationNotice(resolve(options.root ?? process.cwd()), options.config);
     const session = new Session(options);
-    try {
-      await new Promise<void>((ready, reject) => {
-        session.worker.on('message', message => {
-          if (message.health) session.snapshot = message.health;
-          if (message.stats !== undefined) session.lastStats = message.stats;
-          if (message.ready) { ready(); return; }
-          const failure = (text: string): Error => {
-            const error = message.usageError ? new UsageError(text) : new Error(text);
-            if (message.errorStack) error.stack = message.errorStack;
-            return error;
-          };
-          if (message.startupError) { reject(failure(message.startupError)); return; }
-          if (message.event) { session.emit(message.event, message.value); return; }
-          const pending = session.pending.get(message.id); if (!pending) return;
-          if (message.started) { clearTimeout(pending.timer); return; }
-          session.pending.delete(message.id); clearTimeout(pending.timer);
-          if (message.busy) pending.reject(new BusyError());
-          else if (message.error) pending.reject(failure(message.error));
-          else pending.resolve(message.result);
-        });
-        session.worker.on('error', error => { session.fail(error); reject(error); });
-        session.worker.on('exit', code => {
-          if (!session.closed) { const error = new Error(`Session worker exited with code ${code}.`); session.fail(error); reject(error); }
-        });
-      });
-      return session;
-    } catch (error) { await session.close(); throw error; }
+    try { if (session.life.kind === 'starting') await session.life.ready; return session; }
+    catch (error) { await session.close(); throw error; }
   }
-  private fail(error: Error): void {
-    this.failure = error;
+  /** Start a coordinator thread. Its messages count only while it is the Session's current thread. */
+  private start(): Extract<Life, { kind: 'starting' }> {
+    const worker = new Worker(new URL('./coordinator.js', import.meta.url), { workerData: { ...this.options, root: this.root } });
+    const current = () => (this.life.kind === 'starting' || this.life.kind === 'ready') && this.life.worker === worker;
+    const ready = new Promise<void>((done, reject) => {
+      worker.on('message', message => {
+        if (!current()) return;
+        if (message.health) this.snapshot = message.health;
+        if (message.stats !== undefined) this.lastStats = message.stats;
+        if (message.ready) { this.life = { kind: 'ready', worker }; done(); return; }
+        const failure = (text: string): Error => {
+          const error = message.usageError ? new UsageError(text, message.errorCode) : new Error(text);
+          if (message.errorStack) error.stack = message.errorStack;
+          return error;
+        };
+        if (message.startupError) { const error = failure(message.startupError); this.lose(worker, error); reject(error); return; }
+        if (message.event) { this.emit(message.event, message.value); return; }
+        const pending = this.pending.get(message.id); if (!pending) return;
+        if (message.started) { clearTimeout(pending.timer); return; }
+        this.pending.delete(message.id); clearTimeout(pending.timer);
+        if (message.busy) pending.reject(new BusyError());
+        else if (message.error) pending.reject(failure(message.error));
+        else pending.resolve(message.result);
+      });
+      worker.on('error', error => { this.lose(worker, error); reject(error); });
+      worker.on('exit', code => { const error = new Error(`Session worker exited with code ${code}.`); this.lose(worker, error); reject(error); });
+    });
+    // whoever waits for it hears the failure; a restart nobody waits for must not be an unhandled rejection
+    ready.catch(() => {});
+    return this.life = { kind: 'starting', worker, ready };
+  }
+  /** The current thread ended, or never got ready: every call waiting on it is told, and the next one starts another. */
+  private lose(worker: Worker, error: Error): void {
+    if (!((this.life.kind === 'starting' || this.life.kind === 'ready') && this.life.worker === worker)) return;
+    this.life = { kind: 'lost', error, boot: this.life.kind === 'starting', at: Date.now() };
+    void worker.terminate();
+    this.drop(error);
+  }
+  private drop(error: Error): void {
     for (const pending of this.pending.values()) { clearTimeout(pending.timer); pending.reject(error); }
     this.pending.clear();
   }
   private call<M extends Method>(method: M, args: Parameters<Engine[M]>): ReturnType<Engine[M]>;
   private call<M extends ReadMethod>(method: M, args: Parameters<Engine[M]>, json: true): Promise<string>;
   private call<M extends Method>(method: M, args: Parameters<Engine[M]>, json = false): Promise<unknown> {
-    if (this.closed || this.failure) return Promise.reject(this.failure ?? new UsageError('Session is closed. Start a new session.'));
+    if (this.life.kind === 'closed') return Promise.reject(closedError());
+    if (this.life.kind === 'lost' && this.life.boot && Date.now() - this.life.at < RETRY_MS) return Promise.reject(this.life.error);
     // Bound both waiting time and retained host/worker queue memory.
     if (this.pending.size >= 512) return Promise.reject(new BusyError());
+    const life = this.life.kind === 'lost' ? this.start() : this.life;
     const id = ++this.id, deadline = patientMethods.has(method) ? Infinity : Date.now() + (this.optionsBudget ?? 5000);
     const promise = new Promise<unknown>((resolveValue, reject) => {
       const timer = Number.isFinite(deadline) ? setTimeout(() => { this.pending.delete(id); reject(new BusyError()); }, Math.max(0, deadline - Date.now())) : undefined;
       this.pending.set(id, { resolve: resolveValue, reject, timer });
-      this.worker.postMessage({ id, method, args, deadline, json });
+      const post = (worker: Worker) => worker.postMessage({ id, method, args, deadline, json });
+      if (life.kind === 'ready') post(life.worker);
+      // a thread that is starting takes the call once it is ready; if it never is, `lose` has already rejected the call
+      else void life.ready.then(() => { if (this.pending.has(id) && this.life.kind === 'ready') post(this.life.worker); }, () => {});
     });
     return promise;
   }
@@ -93,6 +121,7 @@ export class Session extends EventEmitter {
   /** What the project page draws: the scales, the strays beside them, and the 3 biggest causes (src/project-page/system.ts). */
   async projectSystem(): Promise<import('../project-page/system.js').SystemData> { return systemOf(await this.report()); }
   resolveSource(...args: Parameters<Engine['resolveSource']>) { return this.call('resolveSource', args); }
+  sourceIndex(...args: Parameters<Engine['sourceIndex']>) { return this.call('sourceIndex', args); }
   site(...args: Parameters<Engine['site']>) { return this.call('site', args); }
   many(...args: Parameters<Engine['many']>) { return this.call('many', args); }
   text(...args: Parameters<Engine['text']>) { return this.call('text', args); }
@@ -144,13 +173,22 @@ export class Session extends EventEmitter {
   why(...args: Parameters<Engine['why']>) { return this.call('why', args); }
   try(...args: Parameters<Engine['try']>) { return this.call('try', args); }
   refresh(...args: Parameters<Engine['refresh']>) { return this.call('refresh', args); }
-  health() { if (this.closed) return Promise.reject(new UsageError('Session is closed. Start a new session.')); return Promise.resolve({ ...this.snapshot, status: this.failure ? 'failed' : this.snapshot.status,
-    ...(this.failure ? { diagnostic: this.failure.message } : {}) }); }
+  health() {
+    if (this.life.kind === 'closed') return Promise.reject(closedError());
+    // a thread that died after it was ready comes back when anyone asks how the Session is: the overlay stops
+    // sending reads once it hears "failed", and only keeps asking this
+    const life = this.life.kind === 'lost' && !this.life.boot ? this.start() : this.life;
+    const status = life.kind === 'ready' ? this.snapshot.status : life.kind === 'starting' ? 'starting' : 'failed';
+    return Promise.resolve({ ...this.snapshot, status, ...(life.kind === 'lost' ? { diagnostic: life.error.message } : {}) });
+  }
   get stats(): unknown { return this.lastStats; }
   async close(): Promise<void> {
-    if (this.closed) return; this.closed = true;
-    this.fail(new UsageError('Session is closed. Start a new session.'));
-    await this.worker.terminate(); this.removeAllListeners();
+    const life = this.life;
+    if (life.kind === 'closed') return;
+    this.life = { kind: 'closed' };
+    this.drop(closedError());
+    if (life.kind === 'starting' || life.kind === 'ready') await life.worker.terminate();
+    this.removeAllListeners();
   }
 }
 export const createSession = Session.create;

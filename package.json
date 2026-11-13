@@ -1,6 +1,6 @@
 {
   "name": "@unlocalhosted/react-plumber",
-  "version": "0.3.0",
+  "version": "0.5.0",
   "description": "Find design drift: judge every styling choice by the CSS it compiles to, against your team's own decisions.",
   "license": "MIT",
   "type": "module",
@@ -52,9 +52,12 @@
     "build": "node scripts/clean-dist.mjs && tsc -p tsconfig.json && node scripts/executable-cli.mjs && npm run notices",
     "notices": "node scripts/third-party-notices.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit",
+    "bench:locate": "node bench/locate/run.mjs",
     "test": "npm run build && node scripts/test.mjs",
     "prepack": "npm run build",
-    "prepublishOnly": "npm run build && npm test"
+    "prepublishOnly": "npm run build && npm test",
+    "sm": "node ../sm/src/bin.mjs",
+    "contrast": "node scripts/contrast.mjs"
   },
   "devDependencies": {
     "@base-ui/react": "^1.8.0",

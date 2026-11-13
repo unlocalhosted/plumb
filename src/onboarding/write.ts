@@ -1,7 +1,6 @@
-import { existsSync } from 'node:fs';
-import { mkdir, readFile, rm } from 'node:fs/promises';
 import { dirname, relative, resolve } from 'node:path';
-import { atomicWrite } from '../atomic-write.js';
+import { readSource, readSourceIfExists, Transaction } from '../write/source-file.js';
+import type { Rollback } from '../write/source-file.js';
 import { count } from '../messages.js';
 import { readLedger } from '../ledger/store.js';
 import type { JudgedFamily } from '../rules/families.js';
@@ -18,6 +17,8 @@ export interface ThemeEdit {
   file: string;
   create: boolean;
   before: string;
+  /** the hash of `before`, the text the edit was planned from; null when the file is to be created */
+  hash: string | null;
   after: string;
   /** The lines this edit adds, for the diff the person reads first. */
   added: string[];
@@ -91,7 +92,8 @@ export async function planTheme(proposal: Proposal, root: string, families?: Rea
   const chosen = proposal.families.filter(item => !families || families.has(item.family));
   const tokens: Record<string, number> = {}, listed: { family: JudgedFamily; token: Token }[] = [];
   const target = resolve(root, proposal.target.file);
-  const original = existsSync(target) ? await readFile(target, 'utf8') : '';
+  const current = await readSourceIfExists(root, target), original = current?.text ?? '';
+  const create = current === undefined, hash = current?.hash ?? null;
   for (const item of chosen) {
     const all = item.scales.flatMap(scale => scale.tokens).filter(token => !declares(original, token.name));
     tokens[item.family] = all.length;
@@ -106,13 +108,13 @@ export async function planTheme(proposal: Proposal, root: string, families?: Rea
   let added: string[];
   if (proposal.shape === 'root') {
     ({ css, added } = put(css, /^:root$/, ':root', lines(plain), comment));
-    edits.push({ file: proposal.target.file, create: proposal.target.create, before: original, after: css, added });
+    edits.push({ file: proposal.target.file, create, before: original, hash, after: css, added });
     if (proposal.target.importedFrom) {
       const from = resolve(root, proposal.target.importedFrom);
       const specifier = relative(dirname(from), target).replaceAll('\\', '/');
-      const text = await readFile(from, 'utf8');
+      const host = await readSource(root, from), text = host.text;
       const imported = addImport(text, specifier.startsWith('.') ? specifier : `./${specifier}`);
-      if (imported.added.length) edits.push({ file: proposal.target.importedFrom, create: false, before: text, after: imported.css, added: imported.added });
+      if (imported.added.length) edits.push({ file: proposal.target.importedFrom, create: false, before: text, hash: host.hash, after: imported.css, added: imported.added });
     }
   } else if (proposal.shape === 'shadcn') {
     // Shadcn keeps colour values in :root and bridges them in `@theme inline`; every other token sits in that same block.
@@ -123,33 +125,21 @@ export async function planTheme(proposal: Proposal, root: string, families?: Rea
     const first = put(css, /^:root$/, ':root', lines(roots));
     const second = put(first.css, /^@theme inline$/, '@theme inline', [...lines(bridges), ...lines(rest)], comment);
     css = second.css; added = [...first.added, ...second.added];
-    edits.push({ file: proposal.target.file, create: false, before: original, after: css, added });
+    edits.push({ file: proposal.target.file, create, before: original, hash, after: css, added });
   } else {
     ({ css, added } = put(css, /^@theme$/, '@theme', lines(plain), comment));
-    edits.push({ file: proposal.target.file, create: false, before: original, after: css, added });
+    edits.push({ file: proposal.target.file, create, before: original, hash, after: css, added });
   }
   return { edits, tokens, total, shape: proposal.shape, target: proposal.target.file };
 }
 
-/** Write the edits. Returns a function that puts every file back as it was. */
-export async function applyTheme(root: string, plan: ThemePlan): Promise<() => Promise<void>> {
-  const done: ThemeEdit[] = [];
-  const undo = async () => {
-    for (const edit of done.reverse()) {
-      const path = resolve(root, edit.file);
-      if (edit.create) await rm(path, { force: true });
-      else await atomicWrite(path, edit.before);
-    }
-  };
-  try {
-    for (const edit of plan.edits) {
-      const path = resolve(root, edit.file);
-      await mkdir(dirname(path), { recursive: true });
-      await atomicWrite(path, edit.after);
-      done.push(edit);
-    }
-  } catch (error) { await undo(); throw error; }
-  return undo;
+/** Write the edits as one transaction (src/write/source-file.ts): each file must still hold what it was planned from.
+ * On failure the files already written go back, and what could not go back is named in the error. Returns a function
+ * that puts every file back as it was, saying what could not go back. */
+export async function applyTheme(root: string, plan: ThemePlan): Promise<() => Promise<Rollback>> {
+  const tx = new Transaction(root);
+  await tx.run(async () => { for (const edit of plan.edits) await tx.write(resolve(root, edit.file), { expectHash: edit.hash, next: edit.after }); });
+  return () => tx.rollback();
 }
 
 const shapeNames: Record<Shape, string> = { theme: '@theme', shadcn: '@theme inline', root: ':root' };

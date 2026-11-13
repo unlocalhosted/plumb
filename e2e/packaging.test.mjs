@@ -43,9 +43,9 @@ test('packed release rebuilds stale dist and installs the shipped CLI', { timeou
   const files = command(root, 'tar', ['-tzf', tarball]).trim().split('\n').map(path => path.replace(/^package\//, ''));
   assert.ok(files.includes('dist/cli.js'));
   for (const path of files.filter(path => path.startsWith('dist/'))) {
-    // built code, or a data file shipped as it is (the recipe packs are JSON): either way it has its source
+    // compiled modules and their declarations, and the JSON data modules tsc copies beside them
     assert.match(path, /(?:\.d\.ts|\.js|\.json)$/);
-    const source = path.endsWith('.json') ? path.replace(/^dist\//, 'src/') : path.replace(/^dist\//, 'src/').replace(/(?:\.d\.ts|\.js)$/, '.ts');
+    const source = path.replace(/^dist\//, 'src/').replace(/(?:\.d\.ts|\.js)$/, '.ts');
     await assert.doesNotReject(readFile(join(candidate, source)), `${path} must have source ${source}`);
   }
   await writeFile(join(consumer, 'package.json'), '{"name":"packed-consumer","private":true,"type":"module"}\n');
@@ -91,7 +91,7 @@ test('packed release rebuilds stale dist and installs the shipped CLI', { timeou
   command(consumer, 'git', ['init', '--quiet']);
   command(consumer, process.execPath, [cli, 'install', '--ci']);
   const workflow = await readFile(join(consumer, '.github/workflows/plumb.yml'), 'utf8');
-  assert.equal(metadata.version, '0.3.0');
+  assert.equal(metadata.version, '0.5.0');
   assert.ok(workflow.includes(`uses: unlocalhosted/plumb@v${metadata.version}\n`));
   assert.doesNotMatch(workflow, /@main\b/);
   const action = await readFile(join(installed, 'action.yml'), 'utf8');

@@ -443,7 +443,10 @@ import assert from 'node:assert/strict';
 import { writeFile } from 'node:fs/promises';
 import { setTimeout as delay } from 'node:timers/promises';
 import { createPlumbRoute, PlumbOverlay } from ${JSON.stringify(adapter)};
-const root = process.argv[2], headers = { 'x-plumb-token': PlumbOverlay().props['data-plumb-token'] };
+// the overlay is two scripts since ready waits for Next's first sync: the token is on the one that loads the client
+const tokenOf = element => element?.props?.['data-plumb-token'] ?? [].concat(element?.props?.children ?? []).map(tokenOf).find(Boolean);
+const root = process.argv[2], headers = { 'x-plumb-token': tokenOf(PlumbOverlay()) };
+assert.ok(headers['x-plumb-token'], 'the overlay element carries the token');
 const route = createPlumbRoute({root, watch:false});
 const send = path => route.GET(new Request('http://localhost:3000/__plumb/' + path, {headers}));
 assert.equal((await send('client.js')).status,200);

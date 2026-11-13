@@ -27,6 +27,7 @@
  * ───────────────────────────────────────────────────────── */
 import { utility } from './craft-read.js';
 import { controlKind } from './roles.js';
+import { STAMPED } from './stamp.js';
 
 const px = (v) => parseFloat(v) || 0;
 const alpha = (c) => { const m = /rgba?\(([^)]+)\)/.exec(c); if (!m) return c && c !== 'transparent' ? 1 : 0; const p = m[1].split(/[\s,/]+/).filter(Boolean); return p.length > 3 ? parseFloat(p[3]) : 1; };
@@ -35,7 +36,7 @@ const boxed = (s) => alpha(s.backgroundColor) > 0 || s.backgroundImage !== 'none
 /** Every stamped control drawn on the page, with its height. */
 export function readControls(root = document.body) {
   const out = [];
-  for (const el of root.querySelectorAll('[data-plumb-source]')) {
+  for (const el of root.querySelectorAll(STAMPED)) {
     if (el.closest('plumb-overlay') || el.closest('svg') || el.matches('input[type=file]')) continue;
     const r = el.getBoundingClientRect();
     if (!r.width || !r.height) continue;

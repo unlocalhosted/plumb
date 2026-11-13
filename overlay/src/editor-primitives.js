@@ -32,46 +32,46 @@ import { esc } from './choices.js';
 
 export const PRIMITIVES_CSS = `
   .ep-row { display: grid; grid-template-columns: 76px 1fr; align-items: center; column-gap: var(--pl-space-4); row-gap: var(--pl-space-1); padding: var(--pl-space-2) 0; }
-  .ep-row > .label { font: var(--pl-text-label); letter-spacing: var(--pl-tracking-label); color: var(--pl-ink-2); }
-  .ep-row > .note { grid-column: 2; font: var(--pl-card-meta); color: var(--pl-ink-2); }
+  .ep-row > .label { font: var(--pl-card-label); letter-spacing: var(--pl-tracking-label); color: var(--pl-text-secondary); }
+  .ep-row > .note { grid-column: 2; font: var(--pl-card-meta); color: var(--pl-text-secondary); }
   .ep-row > .note.err { color: var(--pl-off); }
-  .ep-row > .note code { font: var(--pl-card-code); color: var(--pl-ink); }
+  .ep-row > .note code { font: var(--pl-card-code); color: var(--pl-text-primary); }
 
   .ep { position: relative; display: flex; align-items: center; gap: 2px; min-width: 0; outline: none; }
   .ep .opt { all: unset; position: relative; z-index: 1; display: grid; place-items: center; box-sizing: border-box; height: 26px; min-width: 30px; padding: 0 var(--pl-space-3);
-    border-radius: var(--pl-radius-tag); font: 500 11px/1 var(--pl-mono); color: var(--pl-ink-2); cursor: pointer;
+    border-radius: var(--pl-radius-tag); font: 500 11px/1 var(--pl-mono); color: var(--pl-text-secondary); cursor: pointer;
     transition: background var(--pl-dur-feedback) ease-out, color var(--pl-dur-feedback) ease-out, scale var(--pl-dur-feedback) ease-out, box-shadow var(--pl-dur-feedback) ease-out; }
-  @media (hover: hover) and (pointer: fine) { .ep .opt:hover { background: var(--pl-paper-2); color: var(--pl-ink); } }
-  .ep .opt:focus-visible { box-shadow: 0 0 0 2px var(--pl-accent); }
+  @media (hover: hover) and (pointer: fine) { .ep .opt:hover { background: var(--pl-bg-surface-hover); color: var(--pl-text-primary); } }
+  .ep .opt:focus-visible { box-shadow: 0 0 0 2px var(--pl-instrument); }
   .ep .opt:active { scale: 0.96; }
   .ep .opt[aria-checked="true"] { color: var(--pl-on-accent); }
-  .ep .opt[data-picked] { box-shadow: inset 0 0 0 1.5px var(--pl-accent); color: var(--pl-ink); }
-  .ep .opt[data-picked]::after { content: ''; position: absolute; bottom: -5px; left: 50%; width: 4px; height: 4px; margin-left: -2px; border-radius: 50%; background: var(--pl-accent); }
+  .ep .opt[data-picked] { box-shadow: inset 0 0 0 1.5px var(--pl-instrument); color: var(--pl-text-primary); }
+  .ep .opt[data-picked]::after { content: ''; position: absolute; bottom: -5px; left: 50%; width: 4px; height: 4px; margin-left: -2px; border-radius: 50%; background: var(--pl-instrument); }
   /* the current fill: one element that slides to whichever step is current */
-  .ep .fill { position: absolute; z-index: 0; top: 0; height: 26px; border-radius: var(--pl-radius-tag); background: var(--pl-accent);
+  .ep .fill { position: absolute; z-index: 0; top: 0; height: 26px; border-radius: var(--pl-radius-tag); background: var(--pl-instrument);
     transition: translate var(--pl-dur-travel) var(--pl-spring), width var(--pl-dur-travel) var(--pl-spring); }
   .ep .fill[hidden] { display: none; }
   /* drift: the off-scale value, a dashed notch between the steps it falls between */
   .ep .notch { position: relative; z-index: 1; display: grid; place-items: center; height: 26px; padding: 0 var(--pl-space-2); font: 500 10px/1 var(--pl-mono); color: var(--pl-off);
     border-inline: 1.5px dashed var(--pl-off); border-radius: 2px; }
-  .ep .page { all: unset; display: grid; place-items: center; width: 18px; height: 26px; border-radius: var(--pl-radius-tag); color: var(--pl-ink-3); cursor: pointer; font: 600 12px/1 var(--pl-sans); }
-  @media (hover: hover) and (pointer: fine) { .ep .page:not(:disabled):hover { color: var(--pl-ink); background: var(--pl-paper-2); } }
+  .ep .page { all: unset; display: grid; place-items: center; width: 18px; height: 26px; border-radius: var(--pl-radius-tag); color: var(--pl-text-secondary); cursor: pointer; font: 600 12px/1 var(--pl-sans); }
+  @media (hover: hover) and (pointer: fine) { .ep .page:not(:disabled):hover { color: var(--pl-text-primary); background: var(--pl-bg-surface-hover); } }
   .ep .page:disabled { visibility: hidden; }
-  .ep[aria-disabled="true"] .opt { color: var(--pl-ink-3); cursor: default; pointer-events: none; }
-  .ep[aria-disabled="true"] .fill { background: var(--pl-paper-2); }
-  .ep[aria-disabled="true"] .opt[aria-checked="true"] { color: var(--pl-ink-2); }
-  .ep[aria-busy="true"] .opt { color: transparent; background: var(--pl-paper-2); pointer-events: none; }
+  .ep[aria-disabled="true"] .opt { color: var(--pl-text-disabled); cursor: default; pointer-events: none; }
+  .ep[aria-disabled="true"] .fill { background: var(--pl-bg-inset); }
+  .ep[aria-disabled="true"] .opt[aria-checked="true"] { color: var(--pl-text-secondary); }
+  .ep[aria-busy="true"] .opt { color: transparent; background: var(--pl-bg-inset); pointer-events: none; }
   .ep[aria-busy="true"] .fill { display: none; }
 
   /* the staircase: bars that grow with the scale; the current bar sky, the rest quiet; a picked bar ringed; drift a
      coral bar where its value falls; a step's name only while pointed at or focused */
   .ep.st { gap: 3px; align-items: center; }
   .ep.st .opt { min-width: 0; height: 30px; padding: 0 5px; flex-direction: column; justify-content: center; }
-  .ep.st .bar { display: block; height: 12px; border-radius: 3px; background: color-mix(in oklab, var(--pl-ink) 22%, transparent);
+  .ep.st .bar { display: block; height: 12px; border-radius: 3px; background: color-mix(in oklab, var(--pl-text-primary) 22%, transparent);
     transition: background var(--pl-dur-feedback) ease-out, height var(--pl-dur-feedback) var(--pl-spring-pop); }
   @media (hover: hover) and (pointer: fine) { .ep.st .opt:hover { background: none; } .ep.st .opt:hover .bar { background: color-mix(in oklab, var(--pl-sky) 55%, transparent); height: 14px; } }
   .ep.st .opt[aria-checked="true"] .bar { background: var(--pl-sky); height: 14px; }
-  .ep.st .opt[aria-checked="true"] { color: var(--pl-ink); }
+  .ep.st .opt[aria-checked="true"] { color: var(--pl-text-primary); }
   .ep.st .opt[data-picked] { box-shadow: none; }
   .ep.st .opt[data-picked] .bar { background: none; box-shadow: inset 0 0 0 1.5px var(--pl-sky); height: 14px; }
   .ep.st .opt[data-picked]::after { bottom: 1px; }
@@ -83,15 +83,15 @@ export const PRIMITIVES_CSS = `
   .ep.st .notch { pointer-events: auto; cursor: default; }
   .ep.st .notch .lab { background: var(--pl-coral-soft); color: var(--pl-coral-ink); }
   .ep.st .notch:hover .lab { opacity: 1; }
-  .ep.st[aria-disabled="true"] .bar { background: color-mix(in oklab, var(--pl-ink) 12%, transparent); }
-  .ep.st[aria-disabled="true"] .opt[aria-checked="true"] .bar { background: color-mix(in oklab, var(--pl-ink) 30%, transparent); }
+  .ep.st[aria-disabled="true"] .bar { background: color-mix(in oklab, var(--pl-text-primary) 12%, transparent); }
+  .ep.st[aria-disabled="true"] .opt[aria-checked="true"] .bar { background: color-mix(in oklab, var(--pl-text-primary) 30%, transparent); }
   .ep.st[aria-busy="true"] .opt { background: none; }
-  .ep.st[aria-busy="true"] .bar { background: var(--pl-paper-2); }
+  .ep.st[aria-busy="true"] .bar { background: var(--pl-bg-inset); }
 
   /* swatches */
   .ep.sw .opt { width: 26px; min-width: 26px; padding: 0; }
-  .ep.sw .chip { width: 18px; height: 18px; border-radius: 5px; box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--pl-ink) 22%, transparent); }
-  .ep.sw .opt[aria-checked="true"] .chip { box-shadow: 0 0 0 2px var(--pl-paper), 0 0 0 3.5px var(--pl-accent); }
+  .ep.sw .chip { width: 18px; height: 18px; border-radius: 5px; box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--pl-icon-primary) 22%, transparent); }
+  .ep.sw .opt[aria-checked="true"] .chip { box-shadow: 0 0 0 2px var(--pl-bg-surface), 0 0 0 3.5px var(--pl-instrument); }
   .ep.sw .fill { display: none; }
   .ep.sw .notch { width: 26px; padding: 0; }
   .ep.sw .notch .chip { width: 14px; height: 14px; border-radius: 4px; }
@@ -102,28 +102,28 @@ export const PRIMITIVES_CSS = `
   .ep.rad .corner { width: 14px; height: 14px; border-top: 1.5px solid currentColor; border-left: 1.5px solid currentColor; margin: 4px 0 0 4px; }
 
   /* segments: glyph and word */
-  .ep.seg { background: var(--pl-paper-2); border-radius: calc(var(--pl-radius-tag) + 2px); padding: 2px; width: max-content; }
-  .ep.seg .opt { gap: var(--pl-space-2); grid-auto-flow: column; font: var(--pl-text-label); }
-  .ep.seg .fill { top: 2px; background: var(--pl-paper); box-shadow: var(--pl-shadow-tag); }
-  .ep.seg .opt[aria-checked="true"] { color: var(--pl-ink); }
+  .ep.seg { background: var(--pl-bg-inset); border-radius: calc(var(--pl-radius-tag) + 2px); padding: 2px; width: max-content; }
+  .ep.seg .opt { gap: var(--pl-space-2); grid-auto-flow: column; font: var(--pl-card-label); }
+  .ep.seg .fill { top: 2px; background: var(--pl-bg-surface); box-shadow: var(--pl-shadow-tag); }
+  .ep.seg .opt[aria-checked="true"] { color: var(--pl-text-primary); }
   .ep.seg svg { width: 12px; height: 12px; }
 
   /* align: a 3×3 grid of where the children sit */
-  .ep.al { display: grid; grid-template-columns: repeat(3, 22px); gap: 2px; padding: 2px; width: max-content; background: var(--pl-paper-2); border-radius: var(--pl-radius-row); }
+  .ep.al { display: grid; grid-template-columns: repeat(3, 22px); gap: 2px; padding: 2px; width: max-content; background: var(--pl-bg-inset); border-radius: var(--pl-radius-row); }
   .ep.al .opt { width: 22px; min-width: 22px; height: 22px; padding: 0; }
-  .ep.al .opt::before { content: ''; width: 4px; height: 4px; border-radius: 50%; background: var(--pl-ink-3); }
-  .ep.al .opt[aria-checked="true"] { background: var(--pl-accent); }
+  .ep.al .opt::before { content: ''; width: 4px; height: 4px; border-radius: 50%; background: var(--pl-icon-tick); }
+  .ep.al .opt[aria-checked="true"] { background: var(--pl-instrument); }
   .ep.al .opt[aria-checked="true"]::before { width: 10px; height: 4px; border-radius: 2px; background: var(--pl-on-accent); }
   .ep.al .fill { display: none; }
 
   /* shadows: raised tiles */
   /* a shadow is seen on a page, so the tiles sit on a light ground of their own in either scheme */
-  .ep.sh { gap: var(--pl-space-2); padding: 3px; width: max-content; background: #eceae5; border-radius: var(--pl-radius-row); }
+  .ep.sh { gap: var(--pl-space-2); padding: 3px; width: max-content; background: var(--pl-bg-inset); border-radius: var(--pl-radius-row); }
   .ep.sh .opt { width: 38px; min-width: 38px; height: 30px; padding: 0; }
-  @media (hover: hover) and (pointer: fine) { .ep.sh .opt:hover { background: #e2dfd8; } }
+  @media (hover: hover) and (pointer: fine) { .ep.sh .opt:hover { background: var(--pl-bg-surface-pressed); } }
   .ep.sh .fill { display: none; }
-  .ep.sh .tile { width: 22px; height: 15px; border-radius: 3px; background: #fff; }
-  .ep.sh .opt[aria-checked="true"] { background: #fff0; box-shadow: 0 0 0 1.5px var(--pl-accent); }
+  .ep.sh .tile { width: 22px; height: 15px; border-radius: 3px; background: var(--pl-bg-surface); }
+  .ep.sh .opt[aria-checked="true"] { background: #fff0; box-shadow: 0 0 0 1.5px var(--pl-instrument); }
 
   @media (prefers-reduced-motion: reduce) { .ep .opt, .ep .fill { transition: none; } }
 `;

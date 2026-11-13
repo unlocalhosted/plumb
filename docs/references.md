@@ -66,6 +66,101 @@
 - What it changed: the disabled-look pass puts every disabled opacity on the theme's value or on 40% (Material's 38% on the nearest framework step).
 - Used in: overlay/src/states.js; docs/briefs/pass-states.md; journey entry "The disabled look: the ninth clean-up pass".
 
+Everything shared or found that shaped the work: what it is, why, what it changed, and where it was used.
+
+| Date | What | Shared by | Why | What it changed / where used |
+|---|---|---|---|---|
+| 2026-11-05 | [aidenybai/bippy](https://github.com/aidenybai/bippy/) — the library React Plumber uses to read React's internals | the owner | "check it out and see if i can fork and utilise anything which will make react-fork even more powerful" | Researched; not forked. Its main branch's path cleanup is the useful part (`docs/research/bippy-branches.md`); led to "find the line" being fixed in our own locator (Chapter 1) |
+| 2026-11-05 | [tailwindlabs/tailwindcss.com](https://github.com/tailwindlabs/tailwindcss.com) @ 7f92c22 | found by us | a real, mostly server-component Next 16 + Tailwind v4 app (source licensed for education only; no code committed) | locate bench corpus; README numbers (Chapter 1) |
+| 2026-11-05 | [magicuidesign/magicui](https://github.com/magicuidesign/magicui) `apps/www` @ 37ce829 | found by us | a real Next 15 monorepo app full of library-drawn animation components | locate bench corpus; found the monorepo `components/` miss and Next's per-route cost (Chapter 1) |
+| 2026-11-05 | [shadcn-ui/ui](https://github.com/shadcn-ui/ui) `apps/v4` @ 8a35366 | found by us | the largest real Next 16 UI surface | measured once on Turbopack; dropped after it used ~10 GB (Chapter 1) |
+| 2026-11-05 | Debuggers and devtools (gdb/lldb line tables, Ghidra, source maps and Sentry debug IDs, Istanbul, React DevTools, LocatorJS) | found by us | patterns for mapping running code back to source | `docs/research/meta-tool-patterns.md`; the "Patterns we hold to" section of `docs/briefs/stamping-everywhere.md` |
+
+Everything shared or found as a reference for React Plumber: what it is, why, what it changed, where it was used.
+
+## 2026-11-10 · BoardUI's token spec pages · shared by the owner
+
+- **What:** two documentation pages of the BoardUI component kit:
+  [Color](https://www.boardui.com/components/color) and [Typography](https://www.boardui.com/components/typography).
+- **Why they shared it:** "i like this kit part also please borrow this kind of spec". They wanted our design system
+  written down the same way before any more work, so the language doesn't drift.
+- **What the format is:** each page opens with "How the system works" (the layers, the naming rule, why parts only use
+  the top layer), then a short card on theming with three numbered rules, then one section per role with a table of
+  token, class, light value and dark value. Typography shows each style with its size and line height, what it is for,
+  and a specimen per weight beside the class that sets it.
+- **What it changed here:** the kit got spec pages in that shape, read from our own token file so they can't drift:
+  `overlay/demo/kit-color.html` and `overlay/demo/kit-type.html`, with `overlay/demo/kit-tokens.js` doing the reading.
+  Ours adds two things theirs doesn't have: what each hue *means* (the toy language's table) and a "what is still
+  open" list at the end of each page.
+- **Where it was used:** journey, Chapter 3.
+
+## 2026-11-10 · The burst when a fix lands · found by us (the owner pointed at it)
+
+- **What:** the pieces that fly out of the fix panel when a write lands (`overlay/src/fixpanel.js`, `#burst`): a hatched
+  green square, purple stripes, an orange dotted circle.
+- **Why:** the owner, on the first grey icon proposals: "i wanted colorfull you already created few good ones with
+  different colors and solid like for marging padding spacing the ones which appears when we apply the fixes".
+- **What it changed here:** it became the source of the visual language (`docs/design/visual-language.md`) and of the
+  toy icon set (`overlay/demo/toys.js`).
+
+## 2026-11-10 · Bricolage Grotesque and Instrument Sans · found by us
+
+- **What:** two open typefaces from Google Fonts: [Bricolage Grotesque](https://fonts.google.com/specimen/Bricolage+Grotesque)
+  and [Instrument Sans](https://fonts.google.com/specimen/Instrument+Sans).
+- **Why:** the owner, on the raised key with rounded lettering: "isn't these like overused to hell and like look like
+  just every other playful product. we don't have any unique identity here similar to what we have in terms of our
+  icons." Three candidates were put side by side on the design site's identity page.
+- **What it changed here:** tried across the whole site, then made heavier, then kept ("Keep Bricolage"). Fredoka and
+  Nunito are gone from the site.
+- **Where it was used:** `web/app/layout.jsx`; journey, Chapter 3, entry 9.
+
+## 2026-11-10 · A drag slider with a rolling number · shared by the owner
+
+- **What:** a short clip of a pill slider ("2 days" … "7 days"): a dark fill stretches as you drag, the number in it
+  rolls with a blur as it changes, the drag keeps working with the pointer well below the control, and the fill
+  gives a little past the end. `~/Downloads/twitter_media_harvest/nitishkmrk-2119695845679665608-01.mp4`
+  (https://x.com/nitishkmrk/status/2119695845679665608).
+- **Why they shared it:** "the drag control should allow me to drag all over, and the drag should feel like an
+  interface in itself, it should give me feedback and change values like a slider." Then: keep the dropdown, but
+  dragging gets "a drag mode", "going across the value in a vertical manner... rolling updates in the field... going
+  up and down across the options".
+- **What it changed here:** the token picker's value became a reel: press and drag anywhere, the options roll past
+  in the field with a blur at speed, neighbours open above and below, it gives past either end and settles on
+  release. Journey, Chapter 3, entry 11.
+
+## 2026-11-10 · BoardUI colour spec (shared by the owner)
+- **What:** https://www.boardui.com/components/color: a two-tier colour system (primitives, then semantic tokens named
+  `--color-<group>-<role>-<state>`), tables of Token / class / Light / Dark per group (Foreground, Text, Background,
+  Border, Graphs, State).
+- **Why shared:** "can we write our color spec similar to … it would be better if we state all possible state tokens
+  like background and what not".
+- **What it changed:** our token file gained a role-and-state tier (`--pl-text-*`, `--pl-icon-*`, `--pl-bg-*`,
+  `--pl-border-*`, `--pl-action-*`, `--pl-done-*`, `--pl-danger-*`, `--pl-quiet-*`, `--pl-state-*`, `--pl-mark-*`), and
+  the Colour page shows it as Token / What it is for / Light / Dark tables above the palette. Journey chapter 21.
+
+## 2026-11-13 · transitions.dev (shared by the owner, by name)
+- **What:** https://transitions.dev, Jakub Antalik's library of crafted UI transitions (CSS/React snippets, a CLI, a skill).
+- **Why the owner shared it:** "make the DOM thing guardrails appear transition in and transition out slowly ... use transition.dev library".
+- **What it changed:** the homepage examples' marks use its Panel reveal recipe (fade, cross-blur, a small rise, ease 0.22 1 0.36 1) and its Number subtle change idea, their tokens slowed (in 900ms, out 1000ms); copied as snippets, nothing installed. Used in homepage/src/sections/insights.css (the --t-* tokens). Journey: chapter 25+, "slow on purpose".
+
+## 2026-11-13 · "Abstract warm orange orb on blue gradient background" by mymind on Unsplash (found by us, at the owner's ask)
+- **What:** https://unsplash.com/photos/XUlsF9LYeVk, a free photo under the Unsplash License, hotlinked from images.unsplash.com as Unsplash asks.
+- **Why:** the owner: "use image from Unsplash to have like a good abstract art ... to really sell the illusion of the card".
+- **Where used:** the album example's cover ("Low Tide"), homepage/src/sections/insights.css.
+
+## 2026-11-13 · Four more Unsplash photos for the homepage examples (found by us, at the owner's ask)
+All free under the Unsplash License, hotlinked from images.unsplash.com as Unsplash asks; used in homepage/src/sections/insights.css.
+- **A lake among green mountains:** https://unsplash.com/photos/z_f2JrBRbOg, the optical-centre card's video still.
+- **A white building with blue glass:** https://images.unsplash.com/photo-1523274158540-2aa98c15ec26, the widow card's news photo.
+- **A table with a pink cake and macarons:** https://unsplash.com/photos/7wqE3mKvkm0, the coloured surface under the tinted-shadow card.
+- **A white vase on a white table:** https://unsplash.com/photos/aFvxASlms2A, the pale photo in the inner-outline card.
+- **Why:** the owner: "use image from Unsplash ... to really sell the illusion of the card".
+
+
+## 2026-11-13 · Apple's iPhone Duo page, "Get the highlights" carousel (shared by the owner, a screenshot)
+- **What:** https://www.apple.com/in/iphone-duo/, the highlights carousel: one large card at a time, a two-line headline above a big visual, the next card peeking from the right, a pill of dots under it (the current one a progress bar) and a play/pause button; it advances on its own.
+- **Why shared:** "I still don't like them, can we make them like a carousel like this?" (about the homepage's nine examples in a bento grid).
+- **What it changed:** the examples became that carousel (journey, "the examples as a carousel"); homepage/src/sections/Insights.jsx and insights.css.
 
 ## 2026-11-13 · Modern Web Guidance, the source repo (shared by the owner)
 - What: [GoogleChrome/modern-web-guidance-src](https://github.com/GoogleChrome/modern-web-guidance-src): guides for coding agents on what the web platform now does natively, each tied to browser-support (Baseline) data; a scanner that finds legacy patterns in source; stewarded, by its README, by the Chrome, Edge, Firefox and MDN teams. Apache-2.0.

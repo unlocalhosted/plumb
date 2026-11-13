@@ -1,6 +1,7 @@
-/* The install command: the page's one action, so its button is the accent.
- * States: rest, hover (the accent a step lighter), focus (accent ring), pressed (scale 0.97), copied ("Copied", the
- * on signal, 1.6s), couldn't copy (the command is selected and the button says so). */
+/* The install command: a line pressed into the page (a well, like every place you read or type text) with the page's
+ * one action beside it, a soft block in the action's pink (it goes down under the finger and springs back).
+ * States: rest, hover (lifts), focus (ring), pressed (down), copied ("Copied", mint, 1.6s), couldn't copy (the
+ * command is selected and the button says so). */
 import { useEffect, useRef, useState } from 'react';
 
 export function CopyCommand({ command }) {
@@ -21,8 +22,8 @@ export function CopyCommand({ command }) {
   return (
     <div className="install">
       <code ref={text} className="select-all">{command}</code>
-      <button type="button" className="install-copy" onClick={copy} data-state={state}>
-        {state === 'copied' ? 'Copied' : state === 'failed' ? 'Press ⌘C' : 'Copy'}
+      <button type="button" className="install-copy s-btn" onClick={copy} data-state={state}>
+        <span>{state === 'copied' ? 'Copied' : state === 'failed' ? 'Press ⌘C' : 'Copy'}</span>
       </button>
       <span className="sr-only" role="status" aria-live="polite">{state === 'copied' ? 'Copied' : state === 'failed' ? 'Couldn’t copy. The command is selected.' : ''}</span>
     </div>

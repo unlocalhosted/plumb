@@ -23,6 +23,7 @@ async function file(root, path, source) {
 for (const mode of ['linked', 'packed']) test(`Next 16 ${mode} install: overlay and health on Turbopack and webpack`, { timeout: 240000 }, async t => {
   const root = await mkdtemp(join(repo, 'fixtures/.next-install-'));
   t.after(() => rm(root, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }));
+  spawnSync('git', ['init', '-q'], { cwd: root }); // its own repository: stamps name files from the repository root
   // Next/React come from the workspace; npm installs the actual local package.
   await file(root, 'next.config.mjs', `export default { experimental: { agentUpgrade: false }, turbopack: { root: ${JSON.stringify(repo)} } };\n`);
   await file(root, 'app/layout.jsx', 'export default function Layout({ children }) { return <html><body>{children}</body></html>; }\n');
@@ -62,6 +63,8 @@ for (const mode of ['linked', 'packed']) test(`Next 16 ${mode} install: overlay 
         const response = await page.goto(url, { timeout: 60000 });
         assert.equal(response.status(), 200, logs);
         await page.getByText('Linked host page').waitFor();
+        // the written withPlumb stamps: the install is a stamping setup
+        assert.match(await page.locator('main').getAttribute('data-plumb-source'), /^app\/page\.jsx:1:\d+#[a-f0-9]{12}$/, 'the installed setup stamps');
         await page.waitForFunction(() => window.__plumb?.overlay, undefined, { timeout: 30000 });
         await page.evaluate(() => window.__plumb.ready());
         const health = await page.evaluate(async () => {

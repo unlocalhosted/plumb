@@ -21,6 +21,7 @@
  * ───────────────────────────────────────────────────────── */
 import { utility } from './craft-read.js';
 import { roleOf, roleOfToken } from './roles.js';
+import { STAMPED } from './stamp.js';
 
 // a theme's shadows name two jobs: over the page, or a card on it (roles.js)
 const roleOfName = (short) => { const r = roleOfToken(short); return r === 'overlay' || r === 'card' ? r : null; };
@@ -40,7 +41,7 @@ export const themeShadows = () => STEPS;
 /** Every stamped element that casts a shadow, with the class that sets it and what the element is. */
 export function readShadows(root = document.body) {
   const places = [];
-  for (const el of root.querySelectorAll('[data-plumb-source]')) {
+  for (const el of root.querySelectorAll(STAMPED)) {
     if (el.closest('plumb-overlay') || el.closest('svg')) continue;
     const s = getComputedStyle(el);
     if (!s.boxShadow || s.boxShadow === 'none') continue;

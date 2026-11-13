@@ -83,6 +83,8 @@ export interface Finding {
   title: string;
   because: string;
   action?: string;
+  /** Where the rule is read about (craft findings only): the rules reference's entry for it. */
+  docs?: string;
   accept: string;
   /** Suggestible tokens only; decisions also retains non-choice metadata. */
   choices?: Decision[];

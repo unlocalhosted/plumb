@@ -98,8 +98,20 @@ export class SourceMapStore {
       return index;
     });
   }
-  async forScript(url, chunks, cancelled) {
+  async forScript(url, chunks, cancelled, ran) {
     if (/^webpack(?:-internal)?:/.test(url)) {
+      // A module can sit in more than one chunk: Next keeps a page's original code in its base chunk after an edit has
+      // rebuilt the page's own chunk. The copy that holds the code that ran (`ran`: the source of the function that
+      // created the element) is the one, wherever it is; an element kept from before the edit still finds the old one
+      if (ran) for (const chunk of chunks) {
+        let index;
+        try { index = await this.moduleIndex(chunk, cancelled); } catch { continue; }
+        if (cancelled()) return null;
+        if (index?.get(url)?.includes(ran)) {
+          try { return await this.fromText(index.get(url), chunk); }
+          catch (error) { this.modules.delete(chunk); this.scripts.delete(chunk); throw error; }
+        }
+      }
       for (const chunk of chunks) {
         let index;
         // A removed hot-update resource must not hide modules in other chunks.
@@ -213,8 +225,8 @@ export class SourceMapStore {
           options.explain ? mapped ? { location: mapped } : failure('map', { step: 'unmapped-position', url, line, column }) : mapped;
       }
       // Cached fetch/index work belongs to the generation, not its first caller.
-      const key = /^webpack(?:-internal)?:/.test(url) ? JSON.stringify([url, chunks.filter(chunk => /\.hot-update\.js(?:\?|$)/.test(chunk))]) : url;
-      const decoded = await this.cached(this.decoded, key, () => this.forScript(url, chunks, () => generation !== this.generation));
+      const key = /^webpack(?:-internal)?:/.test(url) ? JSON.stringify([url, chunks.filter(chunk => /\.hot-update\.js(?:\?|$)/.test(chunk)), options.ran ?? null]) : url;
+      const decoded = await this.cached(this.decoded, key, () => this.forScript(url, chunks, () => generation !== this.generation, options.ran));
       // A yielded row must finish before another request advances its checkpoints.
       const work = this.queue.then(() => this.original(decoded, line - 1, column - 1, obsolete));
       this.queue = work.catch(() => {});
@@ -244,7 +256,7 @@ function finish(entry, result) {
   entry.callers.clear();
 }
 function decode(entry) {
-  void fallback.mapFrame(entry.url, entry.line, entry.column, entry.chunks, () => entry.cancelled, { explain: true, traceFile: entry.traceFile, contentVersion: entry.contentVersion })
+  void fallback.mapFrame(entry.url, entry.line, entry.column, entry.chunks, () => entry.cancelled, { explain: true, traceFile: entry.traceFile, contentVersion: entry.contentVersion, ran: entry.ran })
     .then(result => finish(entry, fallbackDetail ? { ...result, detail: { ...result.detail, fallback: fallbackDetail } } : result));
 }
 function useFallback(detail) {
@@ -280,6 +292,17 @@ function traceFile(url) {
   } catch { return undefined; }
 }
 /** Each caller owns its abort; identical in-flight frames share one decoding. */
+// Next's webpack hot-update chunks, in the order they loaded. Read from the page's resource timing, which keeps 250
+// entries and then drops the rest: plumber's own requests fill it on a page that has been read a while, and a hot
+// update after that was never seen, so a new element was mapped through the base chunk's original code ("source
+// changed"). An observer is told of every entry whether the buffer is full or not, so it keeps the list itself
+const HOT = /\/_next\/static\/.*\.hot-update\.js(?:\?|$)/;
+const seenUpdates = [];
+if (typeof document !== 'undefined' && typeof PerformanceObserver === 'function') {
+  try { new PerformanceObserver((list) => { for (const e of list.getEntries()) if (HOT.test(e.name) && !seenUpdates.includes(e.name)) seenUpdates.push(e.name); }).observe({ type: 'resource', buffered: true }); }
+  catch { /* no resource timing: the buffer is read instead */ }
+}
+const hotUpdates = () => { const buffered = performance.getEntriesByType('resource').map(entry => entry.name).filter(name => HOT.test(name)); return [...new Set([...buffered, ...seenUpdates])]; };
 export async function mapFrame(url, line, column, options = {}) {
   const { signal } = options;
   const cancelled = () => failure('map', { step: 'cancelled' });
@@ -288,12 +311,12 @@ export async function mapFrame(url, line, column, options = {}) {
   // Next's base webpack chunk can keep its initial eval bodies after HMR.
   // New stacks need the newest update first; old stacks retain decoded evidence.
   // Webpack removes loaded update tags, so resource timing keeps their URLs.
-  const updates = typeof document === 'undefined' ? [] : performance.getEntriesByType('resource').map(entry => entry.name).filter(name => /\/_next\/static\/.*\.hot-update\.js(?:\?|$)/.test(name)).reverse();
+  const updates = typeof document === 'undefined' ? [] : hotUpdates().reverse();
   const chunks = typeof document === 'undefined' ? [] : [...new Set([...updates, ...[...document.querySelectorAll('script[src]')].map(script => script.src)])];
-  const key = JSON.stringify([version, options.contentVersion, url, line, column, chunks]);
+  const key = JSON.stringify([version, options.contentVersion, url, line, column, chunks, options.ran ?? null]);
   let entry = flights.get(key), fresh = !entry;
   if (!entry) {
-    entry = { id: ++next, key, url, line, column, chunks, contentVersion: options.contentVersion, traceFile: traceFile(url), callers: new Set(), cancelled: false };
+    entry = { id: ++next, key, url, line, column, chunks, contentVersion: options.contentVersion, ran: options.ran, traceFile: traceFile(url), callers: new Set(), cancelled: false };
     pending.set(entry.id, entry); flights.set(key, entry);
   }
   const result = new Promise(resolve => {
@@ -310,7 +333,7 @@ export async function mapFrame(url, line, column, options = {}) {
   });
   if (fresh) {
     if (worker) {
-      try { worker.postMessage({ id: entry.id, url, line, column, chunks, traceFile: entry.traceFile, contentVersion: entry.contentVersion, explain: true }); }
+      try { worker.postMessage({ id: entry.id, url, line, column, chunks, traceFile: entry.traceFile, contentVersion: entry.contentVersion, ran: entry.ran, explain: true }); }
       catch (error) { useFallback({ step: 'worker-error', error: error.message }); }
     } else decode(entry);
   }

@@ -13,8 +13,9 @@
  * ───────────────────────────────────────────────────────── */
 import { classEditsOf } from './locate.js';
 import { disabledOpacity, proposeStates, readStates } from './states.js';
+import { placeOf } from './stamp.js';
 
-const keyOf = (el, cls) => `${(el.getAttribute('data-plumb-source') ?? '').split('#')[0]}|${cls}`;
+const keyOf = (el, cls) => `${(placeOf(el) ?? '')}|${cls}`;
 // the chip: a square, half of it faded
 const GLYPH = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="2.5" y="3.5" width="11" height="9" rx="2"/><path d="M8 3.5v9" /><path d="M10 6v4M12 7v2" opacity=".5"/></svg>';
 

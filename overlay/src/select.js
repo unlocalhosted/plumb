@@ -21,7 +21,7 @@ import { LANGUAGE_CSS } from './language.js';
 import { facetOf } from './craft-facets.js';
 import { PRIMITIVES_CSS, stepper, swatches } from './editor-primitives.js';
 import { esc } from './choices.js';
-import { planOf, moved, preview, glide, GLIDE, GLYPHS, SPACING_PROPS, swapPlanOf, swapPreview, swapRelease, FACET_SAID, glyphOf } from './inplace.js';
+import { planOf, moved, preview, glide, GLIDE, GLYPHS, SPACING_PROPS, swapPlanOf, swapPreview, swapRelease, swapTake, TRIAL, FACET_SAID, glyphOf } from './inplace.js';
 import { scrub, SCRUB_CSS, cursorOf } from './scrub.js';
 
 export const SELECT_CSS = `
@@ -32,14 +32,14 @@ export const SELECT_CSS = `
   /* the fix, drawn on the element: the ghost of the element as it will be, the scale with the target ringed, the
      reason at the band's end (docs/briefs/insight-not-noise.md §2.1) */
   .sel .ghost { position: fixed; box-sizing: border-box; border: 1.5px dashed var(--pl-sky); border-radius: 8px; animation: pl-pop 260ms var(--pl-spring-pop) 40ms both; }
-  .sel .stair { position: fixed; pointer-events: auto; padding: 2px 4px; border-radius: 9px; background: var(--pl-paper); box-shadow: 0 1px 3px rgb(0 0 0 / .18); animation: pl-pop 260ms var(--pl-spring-pop) 80ms both; }
+  .sel .stair { position: fixed; pointer-events: auto; padding: 2px 4px; border-radius: 9px; background: var(--pl-bg-surface); box-shadow: 0 1px 3px rgb(0 0 0 / .18); animation: pl-pop 260ms var(--pl-spring-pop) 80ms both; }
   .sel .reason { position: fixed; width: 20px; height: 20px; padding: 2px; box-sizing: border-box; border-radius: 6px; color: var(--pl-coral-ink); background: var(--pl-coral-soft); }
   .sel .reason svg { display: block; width: 100%; height: 100%; }
   .sel .reason[data-big] { width: 40px; height: 40px; padding: 6px; }
-  .sel .why { position: fixed; max-width: 320px; padding: 5px 10px; border-radius: 10px; font: 500 12px/1.35 var(--pl-sans); background: var(--pl-paper); color: var(--pl-ink); box-shadow: 0 1px 3px rgb(0 0 0 / .2); animation: pl-pop 200ms var(--pl-spring-pop) both; }
-  .sel .why .more { color: var(--pl-ink-2); }
+  .sel .why { position: fixed; max-width: 320px; padding: 5px 10px; border-radius: 10px; font: 500 12px/1.35 var(--pl-sans); background: var(--pl-bg-surface); color: var(--pl-text-primary); box-shadow: 0 1px 3px rgb(0 0 0 / .2); animation: pl-pop 200ms var(--pl-spring-pop) both; }
+  .sel .why .more { color: var(--pl-text-secondary); }
   /* no verified fix: the scale with a hollow bar where the step would be, or the target struck by a higher rule */
-  .sel .stair .gap { display: inline-block; width: 18px; height: 14px; margin: 0 4px; border-radius: 3px; box-shadow: inset 0 0 0 1.5px color-mix(in oklab, var(--pl-ink) 35%, transparent); vertical-align: middle; }
+  .sel .stair .gap { display: inline-block; width: 18px; height: 14px; margin: 0 4px; border-radius: 3px; box-shadow: inset 0 0 0 1.5px color-mix(in oklab, var(--pl-icon-primary) 35%, transparent); vertical-align: middle; }
   .sel .stair .struck { position: relative; display: inline-block; width: 18px; height: 14px; margin: 0 4px; border-radius: 3px; box-shadow: inset 0 0 0 1.5px var(--pl-sky); vertical-align: middle; }
   .sel .stair .struck::after { content: ''; position: absolute; left: -2px; right: -2px; top: 6px; height: 2px; border-radius: 2px; background: var(--pl-coral); rotate: -20deg; }
   /* accepted, not written: marching ants, the claimed bands mint */
@@ -50,7 +50,7 @@ export const SELECT_CSS = `
   .sel { position: fixed; inset: 0; pointer-events: none; }
   .sel[hidden] { display: none; }
   .sel .ring { position: fixed; box-sizing: border-box; border-radius: 6px; border: 1.5px solid var(--pl-sky); animation: pl-pop 260ms var(--pl-spring-pop) both; }
-  .sel .ring[data-state="disabled"] { border: 1.5px dashed color-mix(in oklab, var(--pl-ink) 40%, transparent); }
+  .sel .ring[data-state="disabled"] { border: 1.5px dashed color-mix(in oklab, var(--pl-icon-primary) 40%, transparent); }
   .sel .ring[data-state="loading"] { border-color: color-mix(in oklab, var(--pl-sky) 45%, transparent); animation: pl-pop 260ms var(--pl-spring-pop) both, sel-shimmer 1.2s ease-in-out infinite alternate; }
   @keyframes sel-shimmer { to { border-color: var(--pl-sky); } }
   .sel .bm { animation: pl-pop 260ms var(--pl-spring-pop) 40ms both; }
@@ -188,7 +188,7 @@ export class Selection {
   key(key) {
     if (!this.#el) return false;
     if (key === 'i') { const n = 2 + (this.current?.also?.length ?? 0); this.#why = (this.#why + 1) % n; this.draw(); return true; }
-    if (key === 'Backspace' && this.#changes?.has(this.#el)) { this.#changes.discard(this.#el); this.#taken = new Set(); this.#plan = null; this.draw(); return true; }
+    if (key === 'Backspace' && this.#changes?.has(this.#el)) { if (!this.#changes.discard(this.#el)) return true; /* being written: it lands */ this.#taken = new Set(); this.#plan = null; this.draw(); return true; }
     const plan = this.#plan;
     if (!plan) return false;
     const by = { ArrowUp: 1, ArrowRight: 1, ArrowDown: -1, ArrowLeft: -1 }[key];
@@ -228,7 +228,7 @@ export class Selection {
     const plan = this.#plan, el = this.#el, problem = this.current;
     if (!plan || !el || !this.#changes || !problem) return false;
     // the other places' previews hand over to Changes: put back, then recorded and shown again below
-    for (const g of this.#group) { const m = this.#gmemo.get(g.el); if (!m) continue; if (m.memo.done) swapPreview(g.el, null, false, m.memo); for (const [pp, v, pr] of m.had) { if (v) g.el.style.setProperty(pp, v, pr); else g.el.style.removeProperty(pp); } }
+    for (const g of this.#group) { const m = this.#gmemo.get(g.el); if (!m) continue; if (m.memo.done) swapPreview(g.el, null, false, m.memo); for (const pp of m.had) TRIAL.unset(g.el, pp); }
     this.#gmemo.clear();
     if (plan.kind === 'swap') {
       const opt = plan.options[plan.at];
@@ -237,24 +237,21 @@ export class Selection {
       // the sidebar keeps the classes as written: the preview is put back while it records them, then shown again
       swapPreview(el, null, false, memo);
       this.#changes.put(el, el.localName, problem.key, { label: FACET_SAID[plan.facet] ?? plan.facet ?? 'class', from: plan.now?.label ?? opt.write.from, to: opt.label, write: opt.write, undo: () => swapPreview(el, null, false, memo), release: () => swapRelease(el, memo) });
-      swapPreview(el, opt.write, true, memo, opt.styles);
+      swapPreview(el, opt.write, true, memo, opt.styles); swapTake(el, memo);
       // the same edit at every other place of the cause whose classes carry it
       for (const g of this.#group) {
         if (!String(opt.write.from).split(/\s+/).filter(Boolean).every((c) => g.el.classList.contains(c))) continue;
         const m = {};
         this.#changes.put(g.el, g.el.localName, g.key ?? problem.key, { label: FACET_SAID[plan.facet] ?? plan.facet ?? 'class', from: plan.now?.label ?? opt.write.from, to: opt.label, write: opt.write, undo: () => swapPreview(g.el, null, false, m), release: () => swapRelease(g.el, m) });
-        swapPreview(g.el, opt.write, true, m, opt.styles);
+        swapPreview(g.el, opt.write, true, m, opt.styles); swapTake(g.el, m);
       }
       this.#memo = {};
     } else {
+      // the trial becomes the taken change: Changes claims the step, then the trial lets go (the page doesn't move)
       preview(el, plan, true);
-      for (const p of plan.props) this.#changes.set(el, el.localName, p.prop, p.from, p.to, p.original);
+      for (const p of plan.props) { this.#changes.set(el, el.localName, p.prop, p.from, p.to); TRIAL.unset(el, p.prop); }
       // every other place of the cause takes the same steps
-      for (const g of this.#group) for (const p of plan.props) {
-        const original = [g.el.style.getPropertyValue(p.prop), g.el.style.getPropertyPriority(p.prop)];
-        glide(g.el, () => g.el.style.setProperty(p.prop, `${p.to.n}px`, 'important'));
-        this.#changes.set(g.el, g.el.localName, p.prop, p.from, p.to, original);
-      }
+      for (const g of this.#group) for (const p of plan.props) glide(g.el, () => this.#changes.set(g.el, g.el.localName, p.prop, p.from, p.to));
     }
     this.#previewing = false; // Changes owns the preview now
     // the file as it is now, for every element that just took its first change
@@ -276,12 +273,11 @@ export class Selection {
     const steps = this.#steps?.('spacing') ?? [];
     if (!steps.length) return false;
     const el = this.#el, prop = band.prop;
-    const original = [el.style.getPropertyValue(prop), el.style.getPropertyPriority(prop)];
     const from = { token: this.#tokenOf('spacing', band.n), n: band.n };
     this.#unpreview();
     pointAt(this.#pill, [], 0, 0);
     scrub(e, { el, prop, steps, from: band.n, host: this.#layer, onStep: () => this.draw(), onDone: (step) => {
-      if (step) this.#changes.set(el, el.localName, prop, from, step, original);
+      if (step) this.#changes.set(el, el.localName, prop, from, step);
       this.draw();
     } });
     return true;
@@ -300,7 +296,7 @@ export class Selection {
     return band ? cursorOf(band.prop) : '';
   }
   // Every other place of the cause previews what the selected one previews, and goes back with it
-  #gmemo = new Map(); // el → { memo (a class swap's), had: [[prop, value, priority]] (a spacing preview's) }
+  #gmemo = new Map(); // el → { memo (a class swap's), had: [prop] (the properties a spacing trial claims on it) }
   #groupPreview(on) {
     const plan = this.#plan;
     for (const g of this.#group) {
@@ -308,7 +304,7 @@ export class Selection {
       let m = this.#gmemo.get(g.el);
       if (!on) {
         if (!m) continue;
-        glide(g.el, () => { if (m.memo.done) swapPreview(g.el, null, false, m.memo); for (const [pp, v, pr] of m.had) { if (v) g.el.style.setProperty(pp, v, pr); else g.el.style.removeProperty(pp); } });
+        glide(g.el, () => { if (m.memo.done) swapPreview(g.el, null, false, m.memo); for (const pp of m.had) TRIAL.unset(g.el, pp); });
         this.#gmemo.delete(g.el);
         continue;
       }
@@ -318,7 +314,7 @@ export class Selection {
         const opt = plan.options[plan.at];
         if (String(opt.write?.from ?? '').split(/\s+/).filter(Boolean).every((c) => g.el.classList.contains(c))) swapPreview(g.el, opt.write, true, m.memo, opt.styles);
       } else {
-        glide(g.el, () => { for (const pr of plan.props) { if (!m.had.some(([x]) => x === pr.prop)) m.had.push([pr.prop, g.el.style.getPropertyValue(pr.prop), g.el.style.getPropertyPriority(pr.prop)]); g.el.style.setProperty(pr.prop, `${pr.to.n}px`, 'important'); } });
+        glide(g.el, () => { for (const pr of plan.props) { if (!m.had.includes(pr.prop)) m.had.push(pr.prop); TRIAL.set(g.el, pr.prop, `${pr.to.n}px`); } });
       }
     }
   }
@@ -326,7 +322,7 @@ export class Selection {
     this.#groupPreview(false);
     if (this.#previewing && this.#el && this.#plan) {
       if (this.#plan.kind === 'swap') swapPreview(this.#el, null, false, this.#memo);
-      else if (!this.#changes?.has(this.#el)) preview(this.#el, this.#plan, false);
+      else preview(this.#el, this.#plan, false); // a change already taken on it stays: it is Changes' claim, under this one
       this.#follow();
     }
     this.#previewing = false;

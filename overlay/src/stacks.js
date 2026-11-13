@@ -23,6 +23,7 @@
  * ───────────────────────────────────────────────────────── */
 import { utility } from './craft-read.js';
 import { detectScale, scaleOf } from './scale.js';
+import { STAMPED, stampOf, placeOf } from './stamp.js';
 
 const TOL = 1;   // distances within 1px are one level
 const NEAR = 0.5; // a distance within half a pixel of a step is on it
@@ -78,7 +79,7 @@ function setter(el, prefix, value, step) {
 
 export function readStacks(root = document.body) {
   const out = [], step = unit();
-  for (const el of root.querySelectorAll('[data-plumb-source]')) {
+  for (const el of root.querySelectorAll(STAMPED)) {
     if (el.closest('plumb-overlay, svg')) continue;
     const s = getComputedStyle(el);
     const flex = /flex/.test(s.display), grid = /grid/.test(s.display);
@@ -116,7 +117,7 @@ export function readStacks(root = document.body) {
       const heads = headed(kids[i]) && !headed(kids[i - 1]) && body(kids[i - 1]);
       gaps.push({ d, by, el: at, cls: set?.cls ?? null, why, after: i - 1, above: kids[i - 1], below: kids[i], section, em, heads });
     }
-    out.push({ stamp: el.getAttribute('data-plumb-source'), el, display: s.display, gaps });
+    out.push({ stamp: stampOf(el), el, display: s.display, gaps });
   }
   return out;
 }
@@ -257,7 +258,7 @@ function refine(stacks, rhythm, density = 0, site = null, steps = STEPS) {
   for (const row of rows) to.set(row.g, snap(levelOf(row.r).r * row.g.em * factor, Math.round(row.g.d)));
   // one class, one write: every gap one class makes (a container's gap, a stamp's margin drawn many times) moves together,
   // to the target most of them want (a tie: the one nearest what it is now)
-  const writeOf = (g) => `${g.by === 'gap' ? g.el?.getAttribute('data-plumb-source') ?? '' : (g.el?.getAttribute('data-plumb-source') ?? '').split('#')[0]}|${g.by}|${g.cls}`;
+  const writeOf = (g) => `${g.by === 'gap' ? stampOf(g.el) ?? '' : (placeOf(g.el) ?? '')}|${g.by}|${g.cls}`;
   const writes = new Map();
   for (const g of to.keys()) { const k = writeOf(g); if (!writes.has(k)) writes.set(k, []); writes.get(k).push(g); }
   for (const gs of writes.values()) {

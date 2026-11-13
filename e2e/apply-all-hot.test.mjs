@@ -9,10 +9,12 @@ import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
 import { createServer } from 'vite';
 import tailwindcss from '@tailwindcss/vite';
+import react from '@vitejs/plugin-react';
 import { plumb } from '../dist/hosts/vite.js';
 
 const repo = fileURLToPath(new URL('../', import.meta.url));
-async function app(t) {
+// `refresh`: the app runs React Fast Refresh (@vitejs/plugin-react), as an app made from Vite's React template does
+async function app(t, { refresh = false, source = null } = {}) {
   let browser;
   try { browser = await chromium.launch({ headless: true, executablePath: (process.env.PLUMBER_CHROMIUM ?? process.env.PLUMB_CHROMIUM) || undefined }); }
   catch (error) { if (!/Executable doesn't exist/.test(error.message)) throw error; t.skip('Playwright Chromium missing'); return; }
@@ -20,9 +22,9 @@ async function app(t) {
   const root = await mkdtemp(join(repo, 'fixtures/.apply-all-hot-'));
   t.after(() => rm(root, { recursive: true, force: true }));
   await cp(join(repo, 'fixtures/computed'), root, { recursive: true });
-  await writeFile(join(root, 'src/App.tsx'), `import { Button } from './Button';\nexport const App = () => <div id="a" className="px-[10px]"><Button /></div>;\n`);
+  await writeFile(join(root, 'src/App.tsx'), source ?? `import { Button } from './Button';\nexport const App = () => <div id="a" className="px-[10px]"><Button /></div>;\n`);
   await writeFile(join(root, 'src/Button.tsx'), `export const Button = () => <button id="b" className="py-[10px]">go</button>;\n`);
-  const server = await createServer({ root, cacheDir: join(root, '.cache/vite'), configFile: false, plugins: [tailwindcss(), plumb({ watch: false, stamp: false })], oxc: { jsx: { runtime: 'automatic', development: true } }, logLevel: 'silent', server: { host: '127.0.0.1', port: 0, watch: { usePolling: true, interval: 50 } } });
+  const server = await createServer({ root, cacheDir: join(root, '.cache/vite'), configFile: false, plugins: [...(refresh ? [react()] : []), tailwindcss(), plumb({ watch: false, stamp: false })], ...(refresh ? {} : { oxc: { jsx: { runtime: 'automatic', development: true } } }), logLevel: process.env.VITE_LOG ?? 'silent', server: { host: '127.0.0.1', port: 0, watch: { usePolling: true, interval: 50 } } });
   t.after(() => server.close()); await server.listen();
   const page = await browser.newPage();
   let loads = 0; page.on('load', () => loads++);
@@ -73,6 +75,34 @@ test('apply-all tells the page the whole result first, then reloads once, with e
   assert.match(await readFile(join(site.root, 'src/App.tsx'), 'utf8'), /className="px-s2"/);
   assert.match(await readFile(join(site.root, 'src/Button.tsx'), 'utf8'), /className="py-s3"/);
   assert.equal(await site.page.$eval('#a', el => el.className), 'px-s2');
+});
+
+// The experience the owner asked for (2026-11-10): applying fixes never throws away the page. In an app with Fast
+// Refresh, a batch that adds a theme token and changes classes in two files lands as hot updates: the page is not
+// reloaded, and what the person had done on it (a counter clicked, words typed) is still there.
+test('with Fast Refresh, apply-all with a new theme token lands without a reload and the page keeps its state', { timeout: 120000 }, async t => {
+  const source = `import { useState } from 'react';\nimport { Button } from './Button';\nexport const App = () => { const [n, setN] = useState(0); return <div id="a" className="px-[10px]"><button id="count" onClick={() => setN(n + 1)}>clicked {n}</button><input id="typed" /><Button /></div>; };\n`;
+  const site = await app(t, { refresh: true, source }); if (!site) return;
+  const spec = await site.get('spec', {});
+  const aColumn = source.indexOf('<div id="a"') - source.lastIndexOf('\n', source.indexOf('<div id="a"')), bColumn = 'export const Button = () => '.length + 1;
+  const a = await site.get('props', { file: 'src/App.tsx', line: 3, column: aColumn }), b = await site.get('props', { file: 'src/Button.tsx', line: 1, column: bColumn });
+  assert.ok(a.hash && b.hash, JSON.stringify({ a, b }));
+  await site.page.click('#count'); await site.page.fill('#typed', 'my words');
+  const body = {
+    tokens: [{ file: spec.tokens.file, hash: spec.tokens.hash, name: '--spacing-s4', value: '16px', why: 'Between groups.' }],
+    swaps: [{ file: 'src/App.tsx', hash: a.hash, edits: [{ line: 3, column: aColumn, from: 'px-[10px]', to: 'px-s4' }] }, { file: 'src/Button.tsx', hash: b.hash, edits: [{ line: 1, column: bColumn, from: 'py-[10px]', to: 'py-s3' }] }],
+  };
+  await site.page.evaluate(body => { void fetch('/__plumb/apply-all', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).catch(() => {}); }, body);
+  // the new class is on the element and the new token's value is what it draws with
+  await site.page.waitForFunction(() => { const el = document.querySelector('#a'); return el?.className === 'px-s4' && getComputedStyle(el).paddingLeft === '16px'; }, null, { timeout: 30000 });
+  await site.page.waitForFunction(() => document.querySelector('#b')?.className === 'py-s3', null, { timeout: 30000 });
+  await settle(1500);
+  const log = await site.log();
+  assert.equal(log[0], 'plumb:applied 1 2 3 3', 'the page hears the whole result first');
+  assert.ok(!log.includes('full-reload'), `no reload was asked for: ${JSON.stringify(log)}`);
+  assert.equal(site.loads(), 0, 'the page was never reloaded');
+  assert.equal(await site.page.textContent('#count'), 'clicked 1', 'React state is kept');
+  assert.equal(await site.page.inputValue('#typed'), 'my words', 'what was typed is kept');
 });
 
 test('a save from an editor, outside a transaction, is not held', { timeout: 120000 }, async t => {

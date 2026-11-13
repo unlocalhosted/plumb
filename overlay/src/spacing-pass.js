@@ -24,8 +24,10 @@ import { request } from './api.js';
 import { BLOCK_ICONS } from './boxmodel.js';
 import { classEditsOf } from './locate.js';
 import { ease } from './show.js';
+import { placeOf, stampOf } from './stamp.js';
 import { loadSteps, proposeSpacing, readStacks, rhythmOf, spacingScale, themeSteps, unit } from './stacks.js';
 import { proposeInsets, readInsets } from './insets.js';
+import { Claims, LEVEL } from './claims.js';
 
 const SIDE = /^(gap|gap-y|mt|mb)$/;
 const PROP = { gap: 'row-gap', mt: 'margin-top', mb: 'margin-bottom' };
@@ -37,7 +39,7 @@ const mostOf = (vs) => vs.sort((a, b) => vs.filter((v) => v === b).length - vs.f
 
 export class SpacingPass {
   beat = 'all'; // measured all at once, then snapped together (show.js playAll), as the reference does
-  #writes = []; #held = new Map(); // el → { prop: [value, priority] } as the page had it
+  #writes = []; #claims = new Claims(LEVEL.cleanup); // the page's own values are kept by claims.js, not here
   page = null; // { moves, writes, places, before, after, scale, levels }
 
   async read() {
@@ -51,7 +53,7 @@ export class SpacingPass {
     for (const m of p.moves) {
       const g = m.gap, prefix = prefixOf(g.cls ?? '');
       if (!SIDE.test(prefix) || !g.el) continue;
-      const key = `${g.by === 'gap' ? g.el.getAttribute('data-plumb-source') : (g.el.getAttribute('data-plumb-source') ?? '').split('#')[0]}|${g.by}|${g.cls}`;
+      const key = `${g.by === 'gap' ? stampOf(g.el) : (placeOf(g.el) ?? '')}|${g.by}|${g.cls}`;
       if (!writes.has(key)) writes.set(key, { by: g.by, prop: PROP[g.by], cls: g.cls, next: classFor(prefix, m.to, step), to: m.to, gaps: [], els: new Set() });
       const w = writes.get(key);
       w.gaps.push(g); w.els.add(g.el);
@@ -59,7 +61,7 @@ export class SpacingPass {
     // one class, one write: a class that also makes spaces that stay (the same mt-4 elsewhere on this page) is left as is,
     // or the write would move those too
     const all = new Map();
-    for (const g of stacks.flatMap((x) => x.gaps)) if (g.by && g.cls && g.el) { const k = `${g.by === 'gap' ? g.el.getAttribute('data-plumb-source') : (g.el.getAttribute('data-plumb-source') ?? '').split('#')[0]}|${g.by}|${g.cls}`; all.set(k, (all.get(k) ?? 0) + 1); }
+    for (const g of stacks.flatMap((x) => x.gaps)) if (g.by && g.cls && g.el) { const k = `${g.by === 'gap' ? stampOf(g.el) : (placeOf(g.el) ?? '')}|${g.by}|${g.cls}`; all.set(k, (all.get(k) ?? 0) + 1); }
     for (const [k, w] of writes) if ((all.get(k) ?? 0) > w.gaps.length || new Set(w.gaps.map((g) => p.moves.find((m) => m.gap === g)?.to)).size > 1) writes.delete(k);
     // a size moves everywhere on this page or nowhere: moving some of the 7s and leaving the rest would add a size, and a
     // pass that adds values is never offered (pass-spacing.md step 8)
@@ -76,7 +78,7 @@ export class SpacingPass {
     const insets = readInsets(), scale = spacingScale(site?.gaps?.length ? site.gaps.map((x) => x.d) : stacks.flatMap((x) => x.gaps.filter((g) => g.d > 0.5 && !g.section).map((g) => g.d)));
     const inner = new Map();
     for (const m of proposeInsets(insets, scale, { unit: step, steps: themeSteps() }).moves) {
-      const k = `${(m.el.getAttribute('data-plumb-source') ?? '').split('#')[0]}|${m.from.cls}`;
+      const k = `${(placeOf(m.el) ?? '')}|${m.from.cls}`;
       if (!inner.has(k)) inner.set(k, { inset: m.prefix.startsWith('gap') ? 'row' : 'pad', props: m.props, cls: m.from.cls, next: m.to.cls, from: m.from.px, to: m.to.px, gaps: [], els: new Set() });
       const w = inner.get(k);
       if (w.next !== m.to.cls) w.split = true;
@@ -84,13 +86,13 @@ export class SpacingPass {
     }
     const insetWrites = [...inner.values()].filter((w) => !w.split);
     this.#writes.push(...insetWrites);
-    const insetAfter = new Map(insetWrites.flatMap((w) => [...w.els].map((el) => [`${el.getAttribute('data-plumb-source')}|${w.cls}`, w.to])));
+    const insetAfter = new Map(insetWrites.flatMap((w) => [...w.els].map((el) => [`${stampOf(el)}|${w.cls}`, w.to])));
     // distinct spaces among this page's rows, before and after (the same rows: section breaks and refusals stay)
     const rows = stacks.flatMap((s) => s.gaps).filter((g) => g.d > 0.5 && !g.section), moved = new Map(this.#writes.flatMap((w) => w.gaps.map((g) => [g, w.to])));
     const distinct = (vs) => new Set(vs.map((v) => Math.round(v))).size;
     const open = insets.filter((i) => !i.vertical);
     this.page = { writes: this.#writes.length, places: moved.size + insetWrites.reduce((n, w) => n + w.els.size, 0), before: distinct([...rows.map((g) => g.d), ...open.map((i) => i.px)]),
-      after: distinct([...rows.map((g) => moved.get(g) ?? g.d), ...open.map((i) => insetAfter.get(`${i.el.getAttribute('data-plumb-source')}|${i.cls}`) ?? i.px)]), scale: p.scale, routes: site?.routes ?? null };
+      after: distinct([...rows.map((g) => moved.get(g) ?? g.d), ...open.map((i) => insetAfter.get(`${stampOf(i.el)}|${i.cls}`) ?? i.px)]), scale: p.scale, routes: site?.routes ?? null };
     return this.page;
   }
 
@@ -129,19 +131,10 @@ export class SpacingPass {
   // every role set at once (Space released, a reload's resume)
   show() { for (const s of this.steps()) s.morph(false); }
   #set(el, prop, value, animate) {
-    if (!this.#held.has(el)) this.#held.set(el, {});
-    const was = this.#held.get(el);
-    if (!(prop in was)) was[prop] = [el.style.getPropertyValue(prop), el.style.getPropertyPriority(prop)];
-    const set = () => el.style.setProperty(prop, value, 'important');
+    const set = () => this.#claims.set(el, prop, value);
     if (animate) ease(el, set, { props: [prop] }); else set();
   }
-  clear() {
-    for (const [el, was] of this.#held) {
-      for (const [prop, [v, pr]] of Object.entries(was)) { if (v) el.style.setProperty(prop, v, pr); else el.style.removeProperty(prop); }
-      if (!el.getAttribute('style')?.trim()) el.removeAttribute('style');
-    }
-    this.#held.clear();
-  }
+  clear() { this.#claims.clear(); }
 
   // the swaps for apply-all, one guarded write per file; a class that can't be reached is left as is with its reason
   async edits() {

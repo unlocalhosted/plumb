@@ -5,7 +5,8 @@
   "required": ["key", "kind"],
   "properties": {
     "key": { "type": "string", "minLength": 1 },
-    "kind": { "enum": ["debt", "exception", "decision"] },
+    "v": { "type": "integer", "minimum": 1, "description": "The format version that wrote the line; missing on lines written before versions" },
+    "kind": { "enum": ["debt", "exception", "decision", "declined"] },
     "count": { "type": "integer", "minimum": 1 },
     "resolved": { "type": "string" }, "why": { "type": "string" },
     "on": { "type": "string" }, "by": { "type": "string" }, "inferred": { "type": "boolean" },

@@ -312,7 +312,9 @@ const rules = sorted(ruleMap.keys()).map(id => {
   }
   if (id.startsWith('habits/')) {
     const index = builtins.findIndex(h => `habits/${h.id}` === id), builtin = builtinNodes[index];
-    const clause = firstMatch({ ...habits, ast: habitMessage }, node => id === 'habits/{id}' ? ts.isDefaultClause(node) : ts.isCaseClause(node) && literal(node.expression) === id.slice(7));
+    // a habit with no case of its own (real-quotes) is worded by the default clause
+    const hasCase = id !== 'habits/{id}' && (() => { try { firstMatch({ ...habits, ast: habitMessage }, node => ts.isCaseClause(node) && literal(node.expression) === id.slice(7)); return true; } catch { return false; } })();
+    const clause = firstMatch({ ...habits, ast: habitMessage }, node => hasCase ? ts.isCaseClause(node) && literal(node.expression) === id.slice(7) : ts.isDefaultClause(node));
     const returned = firstMatch({ ...habits, ast: clause }, ts.isReturnStatement).expression;
     templates.title = [expression(prop(returned, 'title'), habits)];
     templates.because = builtin ? [expression(prop(builtin, 'reason'), habits)] : [{ template: '{habit.message}', sources: ['src/habits/index.ts:186'] }];
@@ -346,6 +348,33 @@ const rules = sorted(ruleMap.keys()).map(id => {
     severitySources: severity ?? [], familySources: id.startsWith('ownership/') ? [cite(ownershipFamily, ownershipSource)] : record.emissions.map(e => e.source), ...templates, accept, printedAccept, acceptanceSources: [cite(acceptance, messages), ...(id.startsWith('parity/') ? ['src/parity.ts:90'] : []), ...(printedAccept !== accept ? ['src/cli.ts:248', 'src/index.ts:241', 'src/ledger/commands.ts:96'] : [])],
     ...(contract ? { messageContract: { text: contract.contract, sources: contract.sources } } : {}), emissions: record.emissions };
 });
+
+// Craft rules (overlay/src/craft-rules.js RULES, which holds the headless probes too) read from the modules themselves,
+// their principles from the showcase catalogue, their laws from laws.js, their screens from the screens folder.
+const { RULES: craftRules } = await import(resolve(repo, 'overlay/src/craft-rules.js'));
+const { PRINCIPLES } = await import(resolve(repo, 'overlay/showcase/src/principles/catalogue.js'));
+const { LAWS, lawsOf } = await import(resolve(repo, 'overlay/src/laws.js'));
+const screenNumbers = new Set((await readdir(resolve(repo, 'overlay/showcase/src/principles/screens'))).map(f => /^(\d+)-.*\.jsx$/.exec(f)).filter(Boolean).map(m => Number(m[1])));
+const craftOnce = [...new Map(craftRules.map(r => [r.id, r])).values()];
+const craft = craftOnce.map(r => ({ id: r.id, number: r.number ?? [],
+  laws: (lawsOf(r.id) ?? []).map(({ id, name }) => ({ name, says: LAWS[id].says })),
+  showcase: (r.number ?? []).filter(n => screenNumbers.has(n)) }));
+const craftPrinciples = Object.fromEntries([...new Set(craft.flatMap(r => r.number))].sort((a, b) => a - b)
+  .map(n => { const { title, why, detail } = PRINCIPLES.find(p => p.n === n); return [n, { title, why, detail }]; }));
+
+// --craft: refresh only what the craft rules and the report schema feed, in the display files, from their sources. The full
+// run below reads the CLI's help and every rule's emission and needs a build; this one needs neither.
+if (process.argv.includes('--craft')) {
+  const displayDir = resolve(repo, 'site/src/docs/recordings/reference');
+  const rulesFile = resolve(displayDir, 'rules.json'), reportFile = resolve(displayDir, 'report.json');
+  const rulesDisplay = JSON.parse(await readFile(rulesFile, 'utf8')), reportDisplay = JSON.parse(await readFile(reportFile, 'utf8'));
+  const fields = await flatten('schema/report.schema.json'), reportTypeOf = displayTypes(fields);
+  reportDisplay.fields = displayValue(fields.map(row => ({ path: row.path, type: reportTypeOf(row), required: row.required, description: row.description })));
+  await writeFile(rulesFile, JSON.stringify({ ...rulesDisplay, craft, principles: craftPrinciples }) + '\n');
+  await writeFile(reportFile, JSON.stringify(reportDisplay) + '\n');
+  console.log(`craft: ${craft.length} rules, ${Object.keys(craftPrinciples).length} principles; report: ${fields.length} fields`);
+  process.exit(0);
+}
 
 const cache = await mkdtemp(resolve(tmpdir(), 'plumb-reference-'));
 const portablePaths = recordingPaths({ repo, paths: [[cache, '.plumber/cache']] });
@@ -425,7 +454,7 @@ const displays = displayValue({
     families: rule.family === unsupported || rule.family == null ? null : Array.isArray(rule.family) ? rule.family : [rule.family],
     severity: rule.defaultSeverity === unsupported || rule.defaultSeverity == null ? null : Array.isArray(rule.defaultSeverity) ? rule.defaultSeverity : [rule.defaultSeverity],
     title: rule.title?.[0]?.template, because: rule.because?.[0]?.template, fix: rule.fix?.[0]?.template,
-    accept: rule.accept !== unsupported && rule.accept != null && Boolean(rule.accept) })) },
+    accept: rule.accept !== unsupported && rule.accept != null && Boolean(rule.accept) })), craft, principles: craftPrinciples },
   'report.json': { fields: reportFields.map(row => ({ path: row.path, type: reportType(row), required: row.required, description: row.description })),
     example: portable(firstFinding) },
 });

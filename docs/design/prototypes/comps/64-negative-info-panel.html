@@ -1,0 +1,175 @@
+<!doctype html>
+<!-- COMP, #64 Interruptible motion (hands-on; docs/craft/taste-checklist.md, group 4). Negative, a photo library for a
+     small studio, in an album from a mountain shoot. The lesson lives in the Info panel that slides in from the right:
+     its entrance and exit are two keyframe animations, so closing it 40% of the way in starts the exit from its own
+     first frame, fully open. The comp is the frame after that second click: the panel snapped open. plumber's marks:
+     the edge where you changed your mind (dashed coral), the ground it snapped across (hatch), a tag, and the
+     openness over time under the window, where the snap is a cliff. ¼ speed, as the showcase plays it. Throwaway. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Negative · Lakes, June (comp)</title>
+<style>
+  :root {
+    --canvas: #f5f7fa; --surface: #fff; --sunken: #f3f5f9; --ink: #12233d; --ink-muted: #5a6779; --ink-subtle: #6f7c90;
+    --line: rgb(18 35 61 / 0.09); --line-strong: rgb(18 35 61 / 0.14); --accent: #5550d8; --accent-soft: #efeefd; --accent-deep: #3631a6;
+    --board: #e9edf2; --board-dot: #d3d9e2;
+    --window: 0 1px 2px rgb(18 35 61 / 0.05), 0 8px 24px rgb(18 35 61 / 0.08), 0 24px 64px rgb(18 35 61 / 0.12);
+    --pl-sky: #2a7fd0; --pl-off: #bf3a1e; --pl-on: #1a9460; --pl-ink-2: #6b665c; --pl-ink-3: #b3ad9f; --pl-halo: rgb(255 255 255 / 0.9);
+    --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, monospace;
+    --m: ../../../../overlay/showcase/src/media;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 48px 48px 36px; background: var(--board);
+    background-image: radial-gradient(var(--board-dot) 1px, transparent 1px); background-size: 16px 16px;
+    font: 14px/20px Inter, -apple-system, system-ui, sans-serif; color: var(--ink); -webkit-font-smoothing: antialiased; }
+  .num { font-variant-numeric: tabular-nums; }
+  .stage { position: relative; padding-bottom: 104px; }
+  .window { width: 1000px; height: 560px; display: grid; grid-template-columns: 196px 1fr; border-radius: 12px; overflow: hidden; background: var(--surface); box-shadow: var(--window), 0 0 0 0.5px rgb(18 35 61 / 0.18); }
+
+  .side { background: #f7f8fa; border-right: 0.5px solid var(--line-strong); display: flex; flex-direction: column; padding: 12px 10px; gap: 1px; }
+  .lights { display: flex; gap: 7px; padding: 4px 6px 14px; }
+  .lights i { width: 11px; height: 11px; border-radius: 50%; background: #d9dde3; box-shadow: inset 0 0 0 0.5px rgb(0 0 0 / 0.08); }
+  .brand { display: flex; align-items: center; gap: 8px; padding: 2px 8px 12px; font-weight: 600; font-size: 14px; letter-spacing: -0.01em; }
+  .brand b { width: 22px; height: 22px; border-radius: 6px; background: #12233d; display: grid; place-items: center; }
+  .brand b i { width: 10px; height: 10px; border-radius: 50%; box-shadow: 0 0 0 2px #fff; }
+  .nav { display: flex; align-items: center; gap: 9px; height: 28px; padding: 0 8px; border-radius: 6px; color: var(--ink-muted); font-size: 13px; white-space: nowrap; }
+  .nav svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 1.5; flex: none; }
+  .nav .n { margin-left: auto; font-size: 11.5px; color: var(--ink-subtle); }
+  .nav.on { background: rgb(18 35 61 / 0.06); color: var(--ink); font-weight: 500; }
+  .nav .th { width: 18px; height: 18px; border-radius: 4px; flex: none; background-size: cover; background-position: center; }
+  .label { margin: 14px 8px 4px; font-size: 11px; font-weight: 500; color: var(--ink-subtle); }
+
+  .main { position: relative; overflow: hidden; display: flex; flex-direction: column; }
+  .top { display: flex; align-items: center; gap: 10px; height: 52px; padding: 0 18px; border-bottom: 0.5px solid var(--line); flex: none; }
+  .top h1 { margin: 0; font-size: 15px; font-weight: 600; letter-spacing: -0.01em; }
+  .top .meta { font-size: 12.5px; color: var(--ink-subtle); }
+  .seg { margin-left: auto; display: flex; padding: 2px; border-radius: 7px; background: var(--sunken); box-shadow: inset 0 0 0 0.5px var(--line-strong); }
+  .seg span { height: 24px; padding: 0 9px; border-radius: 5px; display: grid; place-items: center; font-size: 12px; color: var(--ink-muted); }
+  .seg span.on { background: #fff; color: var(--ink); box-shadow: 0 1px 2px rgb(18 35 61 / 0.1); }
+  .btn { height: 30px; display: inline-flex; align-items: center; gap: 6px; padding: 0 11px 0 9px; border-radius: 7px; font-size: 13px; font-weight: 500; box-shadow: inset 0 0 0 1px var(--line-strong); color: var(--ink); }
+  .btn svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 1.6; }
+  .btn.on { background: var(--sunken); }
+
+  .grid { padding: 16px 18px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; align-content: start; }
+  .day { grid-column: 1 / -1; font-size: 12px; font-weight: 500; color: var(--ink-subtle); display: flex; justify-content: space-between; padding: 2px 2px 0; }
+  .ph { height: 112px; border-radius: 6px; background-size: cover; position: relative; }
+  .ph.sel { box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--accent); }
+  .ph .fav { position: absolute; right: 6px; bottom: 6px; width: 16px; height: 16px; }
+
+  /* the subject: Info, sliding in from the right */
+  .panel { position: absolute; top: 52px; right: 0; bottom: 0; width: 280px; background: #fff; border-left: 0.5px solid var(--line-strong); box-shadow: -8px 0 24px rgb(18 35 61 / 0.06); padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+  .panel .pv { height: 150px; border-radius: 8px; background: url(../../../../overlay/showcase/src/media/valley.jpg) center 55% / cover; }
+  .panel h2 { margin: 0; font-size: 14px; font-weight: 600; display: flex; align-items: baseline; justify-content: space-between; }
+  .panel h2 small { font-size: 12px; font-weight: 400; color: var(--ink-subtle); }
+  .exif { display: grid; grid-template-columns: repeat(4, 1fr); border-radius: 8px; box-shadow: inset 0 0 0 0.5px var(--line-strong); overflow: hidden; }
+  .exif span { padding: 7px 0; text-align: center; font-size: 12.5px; font-weight: 500; border-left: 0.5px solid var(--line); }
+  .exif span:first-child { border: 0; }
+  .exif small { display: block; font-size: 10.5px; font-weight: 400; color: var(--ink-subtle); }
+  .kv { display: grid; grid-template-columns: 70px 1fr; row-gap: 6px; font-size: 12.5px; }
+  .kv dt { color: var(--ink-subtle); }
+  .kv dd { margin: 0; color: var(--ink); display: flex; align-items: center; gap: 6px; }
+  .kv img { width: 18px; height: 18px; border-radius: 50%; }
+  .map { height: 64px; border-radius: 8px; background: #e8efe6; position: relative; overflow: hidden; box-shadow: inset 0 0 0 0.5px var(--line-strong); }
+
+  .marks { position: absolute; inset: 0; pointer-events: none; z-index: 10; }
+  .mk { position: absolute; }
+  .line { width: 0; border-left: 1px dashed var(--pl-off); opacity: 0.9; }
+  .hatch { opacity: 0.42; background-image: repeating-linear-gradient(45deg, var(--pl-off) 0 1px, transparent 1px 4px); }
+  .tag { display: flex; align-items: center; height: 20px; padding: 0 6px; border-radius: 6px; font: 500 11px/1 var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; color: #fff; background: var(--pl-off); box-shadow: 0 0 0 1px var(--pl-halo); transform: translate(-100%, -50%); }
+  .cursor { position: absolute; width: 18px; height: 24px; filter: drop-shadow(0 1px 1.5px rgb(0 0 0 / 0.3)); }
+</style>
+</head>
+<body>
+<div class="stage">
+<div class="window">
+  <aside class="side">
+    <div class="lights"><i></i><i></i><i></i></div>
+    <div class="brand"><b><i></i></b>Negative</div>
+    <div class="nav"><svg viewBox="0 0 16 16"><rect x="2" y="2.5" width="12" height="11" rx="2"/><circle cx="6" cy="6.5" r="1.3"/><path d="m2.5 11.5 3.5-3 3 2.5 2-1.5 2.5 2"/></svg>Library<span class="n num">12,408</span></div>
+    <div class="nav"><svg viewBox="0 0 16 16"><path d="m8 13-5-4.6A3 3 0 0 1 8 4.3a3 3 0 0 1 5 4.1z"/></svg>Favourites<span class="n num">214</span></div>
+    <div class="nav"><svg viewBox="0 0 16 16"><circle cx="6" cy="6" r="2.5"/><path d="M2 13.5c.6-2.2 2.1-3.3 4-3.3s3.4 1.1 4 3.3M10.5 4.2a2.3 2.3 0 0 1 0 4.2M12 10.5c1 .5 1.7 1.5 2 3"/></svg>People</div>
+    <div class="label">Albums</div>
+    <div class="nav on"><span class="th" style="background-image:url(../../../../overlay/showcase/src/media/valley.jpg)"></span>Lakes, June<span class="n num">86</span></div>
+    <div class="nav"><span class="th" style="background-image:url(../../../../overlay/showcase/src/media/low-tide.jpg)"></span>Coast at dusk<span class="n num">41</span></div>
+    <div class="nav"><span class="th" style="background-image:url(../../../../overlay/showcase/src/media/paper-cities.jpg)"></span>Concrete<span class="n num">120</span></div>
+    <div class="nav"><span class="th" style="background-image:url(../../../../overlay/showcase/src/media/ceramic.jpg)"></span>Kiln &amp; Co. shoot<span class="n num">48</span></div>
+  </aside>
+
+  <main class="main" id="main">
+    <div class="top"><h1>Lakes, June</h1><span class="meta num">86 photos · 3 days</span>
+      <span class="seg"><span class="on">Grid</span><span>Map</span></span>
+      <span class="btn on" id="info"><svg viewBox="0 0 16 16"><rect x="2" y="2.5" width="12" height="11" rx="2"/><path d="M10 2.5v11"/></svg>Info</span>
+    </div>
+    <div class="grid">
+      <div class="day"><span>Tuesday 10 June · the lower lake</span><span class="num">32</span></div>
+      <div class="ph" style="background-image:url(../../../../overlay/showcase/src/media/lake.jpg);background-position:center 50%"></div>
+      <div class="ph sel" style="background-image:url(../../../../overlay/showcase/src/media/valley.jpg);background-position:center 55%"></div>
+      <div class="ph" style="background-image:url(../../../../overlay/showcase/src/media/peak.jpg);background-position:center 35%"><svg class="fav" viewBox="0 0 16 16"><path d="m8 13.5-5-4.6A3 3 0 0 1 8 4.8a3 3 0 0 1 5 4.1z" fill="#fff"/></svg></div>
+      <div class="ph" style="background-image:url(../../../../overlay/showcase/src/media/lake.jpg);background-position:80% 40%;background-size:160%"></div>
+      <div class="ph" style="background-image:url(../../../../overlay/showcase/src/media/peak.jpg);background-position:80% 70%;background-size:200%"></div>
+      <div class="ph" style="background-image:url(../../../../overlay/showcase/src/media/valley.jpg);background-position:10% 20%;background-size:240%"></div>
+      <div class="ph" style="background-image:url(../../../../overlay/showcase/src/media/peak.jpg);background-position:60% 90%;background-size:170%"></div>
+      <div class="ph" style="background-image:url(../../../../overlay/showcase/src/media/valley.jpg);background-position:90% 90%;background-size:210%"></div>
+      <div class="day" style="margin-top:6px"><span>Wednesday 11 June · up the ridge</span><span class="num">29</span></div>
+      <div class="ph" style="background-image:url(../../../../overlay/showcase/src/media/peak.jpg);background-position:center 20%"></div>
+      <div class="ph" style="background-image:url(../../../../overlay/showcase/src/media/peak.jpg);background-position:10% 10%;background-size:260%"></div>
+      <div class="ph" style="background-image:url(../../../../overlay/showcase/src/media/lake.jpg);background-position:30% 60%;background-size:170%"></div>
+      <div class="ph" style="background-image:url(../../../../overlay/showcase/src/media/lake.jpg);background-position:50% 0%;background-size:190%"></div>
+    </div>
+    <aside class="panel" id="panel">
+      <div class="pv"></div>
+      <h2>DSC_0418.ARW<small class="num">61 MP · 24.6 MB</small></h2>
+      <div class="exif num"><span>ƒ/8<small>aperture</small></span><span>1/250<small>shutter</small></span><span>ISO 100<small>iso</small></span><span>24mm<small>lens</small></span></div>
+      <dl class="kv">
+        <dt>Taken</dt><dd class="num">Tue 10 June, 07:42</dd>
+        <dt>Camera</dt><dd>Sony A7R IV</dd>
+        <dt>By</dt><dd><img src="../../../../overlay/showcase/src/media/people/person-08.jpg" alt="">Luca Ferri</dd>
+      </dl>
+      <div class="map"><svg viewBox="0 0 248 64" width="100%" height="64" preserveAspectRatio="none"><path d="M0 40 C40 30 70 48 110 36 S180 20 248 30" stroke="#cfdccb" stroke-width="10" fill="none"/><path d="M60 0 C70 20 90 30 120 64" stroke="#fff" stroke-width="2.5" fill="none"/><path d="M150 0 L170 64" stroke="#fff" stroke-width="1.5" fill="none"/><ellipse cx="128" cy="34" rx="22" ry="10" fill="#9ccbd9"/><circle cx="140" cy="30" r="5" fill="var(--accent)" stroke="#fff" stroke-width="2"/></svg></div>
+    </aside>
+  </main>
+</div>
+<div class="marks" id="marks"></div>
+</div>
+<script>
+const stage = document.querySelector('.stage'), marks = document.getElementById('marks');
+const box = (el) => { const o = stage.getBoundingClientRect(), r = el.getBoundingClientRect(); return { x: r.left - o.left, y: r.top - o.top, w: r.width, h: r.height }; };
+const mk = (cls, s, html = '') => { const e = document.createElement('span'); e.className = 'mk ' + cls; for (const [k, v] of Object.entries(s)) e.style[k] = typeof v === 'number' ? v + 'px' : v; e.innerHTML = html; marks.appendChild(e); return e; };
+// ease-arrive, cubic-bezier(0.2, 0.8, 0.2, 1): progress at a share of the time
+const bez = (t) => { const f = (a, b, s) => 3 * a * s * (1 - s) ** 2 + 3 * b * s * s * (1 - s) + s ** 3; let lo = 0, hi = 1; for (let i = 0; i < 40; i++) { const m = (lo + hi) / 2; f(0.2, 0.2, m) < t ? (lo = m) : (hi = m); } return f(0.8, 1, lo); };
+document.fonts.ready.then(() => {
+  const main = box(document.getElementById('main')), panel = box(document.getElementById('panel')), info = box(document.getElementById('info'));
+  const W = panel.w, right = main.x + main.w, edge = (v) => right - W * v, top = panel.y, H = main.y + main.h - top;
+  // the snap: closed at 40%, the exit's first frame fully open
+  const from = 0.4, to = 1;
+  mk('hatch', { left: edge(to), top: top + 6, width: edge(from) - edge(to), height: H - 12 });
+  mk('line', { left: edge(from), top, height: H });
+  mk('tag', { left: edge(to) - 8, top: top + 30 }, `jumped ${from * 100}% → ${to * 100}%`);
+  mk('cursor', { left: info.x + info.w * 0.5, top: info.y + info.h * 0.55 }, '<svg viewBox="0 0 18 24" width="18" height="24"><path d="M1.5 1.5v17.2l4.3-4.1 2.9 6.6 2.7-1.2-2.8-6.4h6z" fill="#111" stroke="#fff" stroke-width="1.3" stroke-linejoin="round"/></svg>');
+
+  // openness over time, as plumber samples it (hands-on.jsx): ¼ speed, a 1280ms slide, 3× that across
+  const dur = 1280, span = dur * 1.6, TW = main.w, TH = 52, x0 = main.x, y0 = main.y + main.h + 22;
+  const tx = (t) => x0 + (Math.min(span, t) / span) * TW, ty = (v) => y0 + 8 + TH - v * TH;
+  let tPress = 0; while (bez(tPress / dur) < from) tPress += 4;
+  const pts = [];
+  for (let t = 0; t <= tPress; t += 16) pts.push([t, bez(t / dur)]);
+  pts.push([tPress, from]);
+  const t1 = tPress + 16;
+  for (let t = t1; t <= t1 + dur; t += 16) pts.push([t, 1 - bez((t - t1) / dur)]);
+  pts.push([span, 0]);
+  const svg = `<svg width="${TW}" height="${TH + 26}" style="overflow:visible">
+    <line x1="0" y1="${ty(1) - y0}" x2="${TW}" y2="${ty(1) - y0}" stroke="#b3ad9f" stroke-dasharray="2 3"/>
+    <text x="0" y="${ty(1) - y0 - 5}" style="font:600 10.5px system-ui;fill:#6b665c">open</text>
+    <text x="${TW}" y="${ty(1) - y0 - 5}" text-anchor="end" style="font:600 10.5px system-ui;fill:#6b665c">¼ speed</text>
+    <line x1="0" y1="${ty(0) - y0}" x2="${TW}" y2="${ty(0) - y0}" stroke="#b3ad9f"/>
+    <polyline points="${pts.filter(([t]) => t <= tPress || t >= t1).map(([t, v]) => `${(tx(t) - x0).toFixed(1)},${(ty(v) - y0).toFixed(1)}`).join(' ')}" fill="none" stroke="#2a7fd0" stroke-width="1.5" stroke-linejoin="round"/>
+    <line x1="${tx(tPress) - x0}" y1="${ty(from) - y0}" x2="${tx(t1) - x0}" y2="${ty(1) - y0}" stroke="#bf3a1e" stroke-width="2.5"/>
+    <circle cx="${tx(0) - x0}" cy="${ty(0) - y0}" r="3" fill="#fff" stroke="#2a7fd0" stroke-width="1.5"/>
+    <circle cx="${tx(tPress) - x0}" cy="${ty(from) - y0}" r="3" fill="#fff" stroke="#2a7fd0" stroke-width="1.5"/>
+  </svg>`;
+  mk('', { left: x0, top: y0 }, svg);
+});
+</script>
+</body>
+</html>

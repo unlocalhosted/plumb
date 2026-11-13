@@ -10,6 +10,8 @@ import { getOwnerStack, getRawOwnerStack, isSourceFile } from '../vendor/bippy/s
 import { request } from './api.js';
 import { sourceMapVersion, mapFrame } from './sourcemap.js';
 import { FIX } from './words.js';
+import { pageHydrated, whenHydrated } from './hydration.js';
+import { STAMP_ATTRIBUTE, STAMPED, stampOf, parseStamp, sameStamp, stampNames } from './stamp.js';
 
 // Next's ?id names an eval module, and some versions reuse that id on later
 // saves. Only new Error evidence checks its current source version; retained
@@ -83,7 +85,10 @@ async function readCreationFrame(fiber) {
   for (const line of stack.split('\n').slice(1)) {
     const m = /\(?((?:https?|file|webpack(?:-internal)?):\/\/[^\s]+):(\d+):(\d+)\)?\s*$/.exec(line);
     if (!m || runtime(m[1])) continue;
-    const mapped = await mappedFrame(m[1], Number(m[2]), Number(m[3]) + 1, { explain: true }).catch(() => null);
+    // the code that ran: the source of the component function that created the element (forwardRef and memo unwrapped)
+    const owner = fiber._debugOwner?.type, made = typeof owner === 'function' ? owner : owner?.render ?? owner?.type;
+    const ran = typeof made === 'function' ? Function.prototype.toString.call(made) : undefined;
+    const mapped = await mappedFrame(m[1], Number(m[2]), Number(m[3]) + 1, { explain: true, ...(ran && ran.length > 20 ? { ran } : {}) }).catch(() => null);
     const at = mapped?.location;
     if (!at) return { rawSource: m[1], failure: { reason: mapped?.reason ?? 'map', detail: mapped?.detail ?? { step: 'unmapped-creation-frame', source: m[1] } } };
     // Turbopack flattens dependency paths in generated chunk names. Classify
@@ -194,63 +199,142 @@ async function readFrames(fiber) {
   });
 }
 
+// Whether the host stamps JSX, from the readiness report: true, false by the internal switch, null until it has said.
+let stampsExpected = null, settle;
+const known = new Promise(resolve => { settle = resolve; });
+export function expectStamps(value) { stampsExpected = value === true; settle(); }
+export function pageStamped() {
+  for (const node of document.querySelectorAll(STAMPED)) if (parseStamp(stampOf(node))) return true;
+  return false;
+}
+
+// ── usage: a host a library drew ─────────────────────────
+// A host with no stamp is not your JSX (every DOM tag of yours carries one). Its answer is where you used the component
+// that drew it: the nearest ancestor component (by `return`, so a portal follows React, not the DOM) whose element was
+// created in your files, read from React's creation stack and accepted only when it lands exactly on a row of the JSX
+// index with the same hash. Every host under that element, down to the last <path>, answers with the same usage, and
+// the chain stops there. Nothing is ever snapped to a nearby line.
+const indexes = new Map();
+async function indexOf(source, options) {
+  const key = source;
+  let pending = indexes.get(key);
+  if (!pending) {
+    pending = request('index', { source }, { explain: true, batch: options.batch, ...(options.signal ? { signal: options.signal } : {}) }).then(answer => answer?.rows ? answer : answer?.untracked ? { untracked: answer.untracked } : null, error => { if (error?.starting || error?.failed) throw error; return null; });
+    indexes.set(key, pending);
+    // a file changes under a running page: the next question reads the index again
+    // "outside your source" is not kept even for a moment: adding the file to `source` (setup's own fix) must show at
+    // the next click
+    pending.then((answer) => { if (answer?.untracked) { if (indexes.get(key) === pending) indexes.delete(key); } else setTimeout(() => { if (indexes.get(key) === pending) indexes.delete(key); }, 2000); }, () => indexes.delete(key));
+  }
+  return pending;
+}
+// The props written at a usage that can carry a change: the class list and the choices a component exposes.
+const carrier = name => /^(?:className|class|style|variant|size|color|colour|tone|intent|appearance|kind|look|shape|weight|radius|rounded|elevation|shadow|gap|padding|align|justify|direction|orientation)$|ClassName$/.test(name);
+// Exactly on the row: at its `<` (oxc, Babel map there) or at its tag name (SWC maps there). Never anywhere else.
+const atRow = (frame, row) => [row, row.name].some(at => at && at.line === frame.lineNumber && at.column === frame.columnNumber + 1);
+const libraryOf = fiber => /\/node_modules\/((?:@[^/]+\/)?[^/]+)|\/\.vite\/deps\/((?:@[^/]+_)?[^/.]+)/.exec(String(stackOf(fiber)?.stack ?? ''))?.slice(1).find(Boolean)?.replace(/^@([^_]+)_/, '@$1/') ?? null;
+const componentFiber = fiber => typeof fiber.type === 'function' || typeof fiber.type === 'object' && fiber.type !== null;
+async function usageOf(element, fiber, options) {
+  const refuse = (reason, detail) => options.explain ? { location: null, reason, detail } : null;
+  const indexFor = async frame => {
+    const index = await indexOf(frame.fileName, options);
+    if (!index || index.untracked) return index;
+    if (frame.hash && !frame.hash.startsWith(index.hash)) return { stale: { source: frame.fileName, mapHash: frame.hash, currentHash: index.hash } };
+    return index;
+  };
+  // The element's own creation, when it is in your files: a creator call indexed there, or nothing to point at.
+  const own = await creationFrame(fiber);
+  if (own && !own.failure) {
+    const index = await indexFor(own);
+    if (index?.stale) return refuse('source-mismatch', index.stale);
+    // Written in a file of yours that the project's `source` leaves out: that is the answer, with the file, so the
+    // person can add it. Never the line where the component around it was used: that is a library's answer, and
+    // this is not a library (docs/briefs/stamping-everywhere.md: the exact line, a library's usage, or not yours
+    // with the reason)
+    if (index?.untracked) return refuse('resolve-refusal', { source: own.fileName, file: index.untracked, response: 'Source is not a tracked project source.' });
+    if (index) {
+      if (!pageStamped()) return refuse('no-stamps', { file: index.file, line: own.lineNumber, column: own.columnNumber + 1 });
+      // Your own DOM tag whose stamp the author overrode, or a creator call: the frame is accepted where the index has it.
+      const row = index.rows.find(row => (row.kind === 'call' || row.kind === 'dom') && atRow(own, row));
+      const at = { file: index.file, line: own.lineNumber, column: own.columnNumber + 1 };
+      if (!row) return refuse('no-jsx', { ...at, step: 'created-without-jsx', component: nameOf(fiber._debugOwner) });
+      const link = { file: index.file, line: row.line, column: row.column, component: nameOf(fiber._debugOwner) };
+      return { ...link, tag: element.localName, via: row.kind === 'call' ? 'call' : 'frame', chain: [link], index: 0 };
+    }
+  }
+  let nearest = null;
+  for (let up = fiber.return, n = 0; up && n < 64; up = up.return, n++) {
+    if (up.tag === 3) break;
+    if (!componentFiber(up)) continue;
+    nearest ??= up;
+    const frame = await creationFrame(up);
+    if (!frame || frame.failure) continue;
+    const index = await indexFor(frame);
+    if (!index || index.untracked) continue;
+    if (index.stale) return refuse('source-mismatch', index.stale);
+    const at = { file: index.file, line: frame.lineNumber, column: frame.columnNumber + 1 };
+    const row = index.rows.find(row => row.kind === 'component' && atRow(frame, row));
+    if (!row) return refuse('not-indexed', { ...at, component: nameOf(up), step: 'usage-off-an-opening' });
+    const link = { file: index.file, line: row.line, column: row.column, component: row.tag, props: row.props.filter(carrier), usage: true };
+    return { ...link, tag: element.localName, via: 'usage', chain: [link], index: 0 };
+  }
+  return refuse('not-in-your-code', { library: libraryOf(fiber), component: nameOf(nearest) });
+}
+
 export async function locate(element, options = {}) {
-  const fiber = element?.nodeType === 1 ? hostOf(element) : null;
-  const stamp = fiber?.memoizedProps?.['data-plumb-source'];
-  const match = typeof stamp === 'string' && /^(.+):(\d+):(\d+)#([a-f0-9]{12})$/.exec(stamp);
-  let confirmed;
+  let fiber = element?.nodeType === 1 ? hostOf(element) : null;
+  // A click before React has hydrated the page (a server-rendered page right after load): wait for it, bounded,
+  // then read. A page that never hydrates is said so, not mistaken for one React did not draw.
+  if (!fiber && element?.nodeType === 1 && !pageHydrated()) {
+    const hydrated = await whenHydrated({ timeout: 15000, signal: options.signal });
+    fiber = hostOf(element);
+    if (!fiber && !hydrated) return options.explain ? { location: null, reason: 'not-hydrated', detail: {} } : null;
+  }
+  const stamp = fiber?.memoizedProps?.[STAMP_ATTRIBUTE];
+  const parsed = parseStamp(stamp);
+  // the request's fields, as the stamp writes them
+  const match = parsed && [stamp, parsed.source, String(parsed.line), String(parsed.column), parsed.hash];
+  let confirmed, refusal;
   if (match && typeof fiber.type === 'string' && !options.signal?.aborted) {
     try {
-      const answer = await request('resolve', { source: match[1], line: match[2], column: match[3], hash: match[4], tag: fiber.type, stamp: '1' }, { explain: true, batch: options.batch });
+      const answer = await request('resolve', { source: match[1], line: match[2], column: match[3], hash: match[4], tag: fiber.type, stamp: '1' }, { explain: true, batch: options.batch, ...(options.signal ? { signal: options.signal } : {}) });
       if (answer?.file && answer.line && answer.column) confirmed = answer;
-    } catch (error) { if (error?.starting || error?.failed) throw error; }
+      else refusal = { reason: answer?.refused === 'source-mismatch' ? 'source-mismatch' : 'resolve-refusal', detail: { source: match[1], line: Number(match[2]), column: Number(match[3]), response: answer?.refused ?? answer } };
+    } catch (error) {
+      if (error?.starting || error?.failed) throw error;
+      refusal = { reason: error?.reason ?? 'resolve-refusal', detail: { source: match[1], line: Number(match[2]), column: Number(match[3]), ...(error?.detail ?? { error: String(error?.message ?? error) }) } };
+    }
   }
-  // Owner-stack behavior remains the fallback and the navigation chain. A
-  // forwarded component stamp describes usage, never a new default target.
+  // A stamp that does not resolve (the file changed, the server refused, the network dropped) is the answer: said as
+  // such, never replaced by a guess from the owner stack.
+  if (refusal && !confirmed) return options.explain ? { location: null, ...refusal } : null;
   // A confirmed host stamp is the answer. The chain above it (for Alt+↑/↓) comes from the owner stack, which costs a few
   // hundred milliseconds; the overlay asks for it after the reading is up, with { chain: true }.
-  if (confirmed && !confirmed.usage && !options.chain && !options.signal?.aborted) {
+  if (confirmed && !options.chain && !options.signal?.aborted) {
     // The component whose JSX this is: the host's owner, read from React, no stack needed.
     const at = { file: confirmed.file, line: confirmed.line, column: confirmed.column, component: nameOf(fiber._debugOwner) };
     return { ...at, tag: element.localName, via: 'stamp', chain: [at], index: 0, partial: true };
   }
+  if (stampsExpected === null) await Promise.race([known, new Promise(resolve => setTimeout(resolve, 3000))]);
+  // No stamp on a host while the host stamps: a library drew it, and its answer is your usage of that library. The owner
+  // stack alone is kept only when stamps are off by choice (the internal switch), and for React 17/18, which record
+  // positions instead of creation stacks.
+  if (!match && fiber && typeof fiber.type === 'string' && stampsExpected !== false && !(!stackOf(fiber) && fiber._debugSource) && !options.signal?.aborted) {
+    return usageOf(element, fiber, options);
+  }
   const owner = await locateOwner(element, { ...options, explain: true });
   if (owner?.reason === 'resolve-refusal' && owner.detail?.file) return options.explain ? owner : null;
-  if (!confirmed && !match && fiber && (!owner || owner.location === null) && !options.signal?.aborted) {
-    // A host a library drew (an icon's <path>, a primitive's inner <div>) carries no stamp of its own. The component that
-    // drew it was stamped where it is used, in its props, so the nearest stamped owner is the usage site: exact, and no
-    // source map involved. Only a component stamp can stand in; a host stamp further up describes a different element.
-    for (let up = fiber._debugOwner, n = 0; up && n < 32; up = up._debugOwner, n++) {
-      const found = typeof up.memoizedProps?.['data-plumb-source'] === 'string' && /^(.+):(\d+):(\d+)#([a-f0-9]{12})$/.exec(up.memoizedProps['data-plumb-source']);
-      if (!found) continue;
-      try {
-        const answer = await request('resolve', { source: found[1], line: found[2], column: found[3], hash: found[4], tag: '*', stamp: '1' }, { explain: true, batch: options.batch });
-        if (answer?.usage && answer.file) {
-          const at = { file: answer.file, line: answer.line, column: answer.column, component: answer.component, usage: true };
-          return { ...at, tag: element.localName, via: 'stamp-owner', chain: [at], index: 0 };
-        }
-      } catch (error) { if (error?.starting || error?.failed) throw error; }
-      break;
-    }
-  }
   if (!confirmed || options.signal?.aborted) return owner?.location === null && !options.explain ? null : owner;
   const chain = [...(owner?.chain ?? [])];
   const index = chain.findIndex(link => link.file === confirmed.file && link.line === confirmed.line && link.column === confirmed.column);
-  if (confirmed.usage) {
-    // A component's stamp forwarded onto the host it renders (<Link> onto its <a>, <motion.span> onto its <span>) is the
-    // exact usage site. When the owner chain cannot answer, that link is the answer.
-    if (!owner?.chain) {
-      const at = { file: confirmed.file, line: confirmed.line, column: confirmed.column, component: confirmed.component, usage: true };
-      return { ...at, tag: element.localName, via: 'stamp-usage', chain: [at], index: 0 };
-    }
-    if (index >= 0) chain[index] = { ...chain[index], usage: true };
-    else chain.push({ file: confirmed.file, line: confirmed.line, column: confirmed.column, component: confirmed.component, usage: true });
-    return { ...owner, chain };
-  }
+  // Two witnesses: the stamp and the owner stack, for the same element. The stamp is the answer; when the owner stack
+  // says otherwise, the disagreement is recorded for whoever reads the explanation, never shown as a second answer.
+  const witness = owner?.file ? { file: owner.file, line: owner.line, column: owner.column } : null;
+  const witnesses = options.explain ? { witnesses: { stamp: { file: confirmed.file, line: confirmed.line, column: confirmed.column }, ownerStack: witness, agree: !!witness && index >= 0 } } : {};
   const at = { file: confirmed.file, line: confirmed.line, column: confirmed.column, component: index >= 0 ? chain[index].component : null };
   if (index >= 0) chain.splice(index, 1);
   chain.unshift(at);
-  return { ...at, tag: element.localName, via: 'stamp', chain, index: 0 };
+  return { ...at, tag: element.localName, via: 'stamp', chain, index: 0, ...(options.explain ? { detail: witnesses.witnesses } : {}) };
 }
 
 // Where an element's class list is written: its class site (docs/research/engine-review.md item 1), one resolver for
@@ -353,22 +437,27 @@ export async function classEditsOf(element, from, to) {
 }
 // The other elements on the page drawn from an element's class site, outside it: the elements with its own stamp, and
 // when the site is a usage, only those whose component was used at that line (the rows of one list, not every Link).
-export function siteMates(element, site) {
-  const own = element?.getAttribute('data-plumb-source');
-  if (!own) return 0;
-  const same = [...document.querySelectorAll(`[data-plumb-source="${CSS.escape(own)}"]`)].filter((x) => x !== element && !element.contains(x));
-  if (!site?.usage) return same.length;
-  const there = (stamp) => {
-    const m = typeof stamp === 'string' && /^(.+):(\d+):\d+#/.exec(stamp);
-    if (!m || +m[2] !== site.line) return false;
-    const file = decodeURIComponent(m[1]);
-    return site.file === file || site.file.endsWith('/' + file);
-  };
+export function siteMates(element, site) { return siteMatesOf(element, site).length; }
+// The same, as the elements themselves (the X-ray outlines them and changes them together).
+export function siteMatesOf(element, site) {
+  const own = stampOf(element);
+  if (!own) return [];
+  const same = [...document.querySelectorAll(sameStamp(own))].filter((x) => x !== element && !element.contains(x));
+  if (!site?.usage) return same;
+  // Only DOM tags carry stamps: every <a> a Link draws has the Link's own line. The rows of one list are told apart by
+  // the component they were made with and the classes that usage passed it (the site's prop, as a plain string):
+  // the first component fiber above each host, compared with the element's own.
+  const madeBy = (x) => { const key = fiberKey(x); for (let f = key ? x[key] : null, n = 0; f && n < 64; f = f.return, n++) if (typeof f.type !== 'string') return f; return null; };
+  const mine = madeBy(element), prop = site.prop ?? 'className', passed = mine?.memoizedProps?.[prop];
+  const there = (stamp) => { const parsed = parseStamp(stamp); return !!parsed && parsed.line === site.line && stampNames(parsed, site.file); };
   return same.filter((x) => {
+    const made = madeBy(x);
+    if (mine && made && made.type === mine.type && typeof passed === 'string' && made.memoizedProps?.[prop] === passed) return true;
+    // a host whose component carries the usage's stamp (a forwarded data-plumb-source): the old way, still honoured
     const key = fiberKey(x);
-    for (let f = key ? x[key] : null, n = 0; f && n < 64; f = f.return, n++) if (typeof f.type !== 'string' && there(f.memoizedProps?.['data-plumb-source'])) return true;
+    for (let f = key ? x[key] : null, n = 0; f && n < 64; f = f.return, n++) if (typeof f.type !== 'string' && there(f.memoizedProps?.[STAMP_ATTRIBUTE])) return true;
     return false;
-  }).length;
+  });
 }
 
 async function locateOwner(element, options = {}) {

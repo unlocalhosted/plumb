@@ -18,6 +18,7 @@
  * Reduced motion: no tour; pressing a pin cuts to its moment with no travel.
  * ───────────────────────────────────────────────────────── */
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { toyOf } from '../../../overlay/src/toys.js'; // each mistake wears its property's toy
 
 const W = 1040, H = 470; // the screen is drawn at this size and scaled to fit
 const T = { pinsIn: 500, pinGap: 90, tour: 1700, guides: 900, fix: 1900, out: 3000, done: 3600, next: 3700, hold: 3200 };
@@ -26,11 +27,11 @@ const half = v => (Math.round(v * 2) / 2).toFixed(1); // read off a scaled scree
 
 // what each mistake is called, in the overlay's words where it has them (overlay/src/words.js)
 const ISSUES = [
-  { id: '18', name: 'One word alone', rule: 'No widows in headings', said: 'A widow', done: 'No widow', num: v => Math.round(v), unit: v => (Math.round(v) === 1 ? ' word on the last line' : ' words on the last line') },
-  { id: 'space', name: 'gap-[13px] hardcodes 13px', rule: 'Spacing on your theme', done: 'gap-4, a step of your theme', num: v => Math.round(v), unit: () => 'px gap' },
-  { id: '2', name: 'Icon looks off-centre', rule: 'Optical centre beats geometric centre', done: 'Optically centred', num: v => half(v), unit: () => 'px off centre' },
-  { id: '16', name: 'Figures don’t line up', rule: 'Tabular figures', done: 'Tabular figures', pre: 'colons ', num: v => half(v), unit: () => 'px apart' },
-  { id: '21', name: 'Grey shadow on colour', rule: 'Shadows are tinted, not grey', done: 'Tinted with the card’s colour', pre: 'chroma ', num: v => v.toFixed(2), unit: () => '' },
+  { id: '18', toy: 'wrap', name: 'One word alone', rule: 'No widows in headings', said: 'A widow', done: 'No widow', num: v => Math.round(v), unit: v => (Math.round(v) === 1 ? ' word on the last line' : ' words on the last line') },
+  { id: 'space', toy: 'gap', name: 'gap-[13px] hardcodes 13px', rule: 'Spacing on your theme', done: 'gap-4, a step of your theme', num: v => Math.round(v), unit: () => 'px gap' },
+  { id: '2', toy: 'alignment', name: 'Icon looks off-centre', rule: 'Optical centre beats geometric centre', done: 'Optically centred', num: v => half(v), unit: () => 'px off centre' },
+  { id: '16', toy: 'type', name: 'Figures don’t line up', rule: 'Tabular figures', done: 'Tabular figures', pre: 'colons ', num: v => half(v), unit: () => 'px apart' },
+  { id: '21', toy: 'shadow', name: 'Grey shadow on colour', rule: 'Shadows are tinted, not grey', done: 'Tinted with the card’s colour', pre: 'chroma ', num: v => v.toFixed(2), unit: () => '' },
 ];
 
 export function Review() {
@@ -116,16 +117,8 @@ export function Review() {
   }, [moment]);
   const pause = () => { if (touring) { setTouring(false); stop(); setShown(true); } else { setTouring(true); setLoop(n => n + 1); } };
 
-  // the camera: in on the mistake's box, kept inside the screen
-  const cam = (() => {
-    if (!geo || !moment || moment.step === 4) return { k: 1, x: 0, y: 0 };
-    const b = geo.messy[moment.id].box;
-    // the mistake sits a little below the middle, leaving the pill room above it
-    const k = Math.max(1.1, Math.min(3, (0.6 * W) / b.w, (0.62 * H) / b.h));
-    const x = Math.min(0, Math.max(W - k * W, W / 2 - k * (b.x + b.w / 2)));
-    const y = Math.min(0, Math.max(H - k * H, H * 0.56 - k * (b.y + b.h / 2)));
-    return { k, x, y };
-  })();
+  // no camera: the screen never moves; each mistake is explained where it is, by its guides and its pill
+  const cam = { k: 1, x: 0, y: 0 };
   const found = ISSUES.length - fixed.size;
 
   return (
@@ -177,7 +170,7 @@ function Pin({ issue, n, g, fit, fixed, onPress, i }) {
       <button type="button" className={`rv-pin${kind}`} data-fixed={fixed}
         style={{ left, top, '--i': i }} onClick={onPress} aria-label={`${n}. ${issue.name}. ${issue.rule}. Show the fix.`}>
         <b>{fixed ? <svg viewBox="0 0 16 16"><path d="M3.5 8.5 6.5 11.5 12.5 4.5" /></svg> : n}</b>
-        <span key={fixed ? 'd' : 'n'}>{fixed ? issue.done : issue.name}</span>
+        <span key={fixed ? 'd' : 'n'}><i className="rv-toy" aria-hidden="true" dangerouslySetInnerHTML={{ __html: toyOf(issue.toy) }} />{fixed ? issue.done : issue.name}</span>
       </button>
     </>
   );
@@ -218,6 +211,7 @@ function Moment({ issue, step, geo, cam, fit }) {
       ))}
       {step >= 2 && (
         <span ref={pill} className="rv-pill" data-fixed={step >= 3} style={{ left: px, top: py }}>
+          <i className="rv-toy" aria-hidden="true" dangerouslySetInnerHTML={{ __html: toyOf(issue.toy) }} />
           {a.swatch && <i className="rv-swatch" style={{ background: g.swatch }} />}
           <span>{issue.pre}<b ref={num}>{issue.num(step >= 3 ? z.value : a.value)}</b>{issue.unit(step >= 3 ? z.value : a.value)}</span>
           <span className="rv-pill-sep">·</span>
@@ -231,17 +225,35 @@ function Moment({ issue, step, geo, cam, fit }) {
 
 /* The team's home page. Each mistake sits on the element that carries it (data-issue); data-fixed puts Plumber's fix
  * on it. */
+const NAV = [['Home', 'navigation'], ['Projects', 'grid'], ['Members', 'avatar'], ['Settings', 'switch']];
+const toy = (name, cls = 'rv-ty') => <i className={cls} aria-hidden="true" dangerouslySetInnerHTML={{ __html: toyOf(name) }} />;
 const Screen = ({ ref, fixed, titleW }) => {
   const fx = id => (fixed.has(id) ? '' : undefined);
   return (
     <div ref={ref} className="rv-scr">
-      <aside className="rv-side"><span className="rv-brand"><i />Northwind</span>{['Home', 'Projects', 'Members', 'Settings'].map(n => <span key={n} className={n === 'Home' ? 'on' : undefined}>{n}</span>)}</aside>
+      <aside className="rv-side">
+        <span className="rv-brand">{toy('chart', 'rv-brand-mark')}Northwind</span>
+        {NAV.map(([n, t]) => <span key={n} className={n === 'Home' ? 'on' : undefined}>{toy(t)}{n}</span>)}
+        <span className="rv-side-foot"><i className="rv-av" style={{ '--a': 'var(--pl-pink)' }}>M</i>Maya Ortiz</span>
+      </aside>
       <main className="rv-main">
         <h3 className="rv-title" data-issue="18" data-fixed={fx('18')} style={{ width: titleW }}>Good morning, Maya. Here’s what moved in your workspace this week</h3>
         <div className="rv-grid" data-issue="space" data-fixed={fx('space')}>
-          <section className="rv-video"><span className="rv-play" data-issue="2" data-fixed={fx('2')}><svg viewBox="0 0 24 24"><path d="M7 4.5v15L19 12z" /></svg></span><small>Welcome tour · 1:24</small></section>
-          <section className="rv-figs" data-issue="16" data-fixed={fx('16')}><small>Time this week</small>{[['Design', '12:06:18'], ['Reviews', '4:48:05'], ['Meetings', '7:11:40']].map(([l, v]) => <div key={l}><span>{l}</span><b>{v}</b></div>)}</section>
-          <section className="rv-promo"><div className="rv-promo-card" data-issue="21" data-fixed={fx('21')}><small>New</small><b>Invite your team</b><span>Three seats left on your plan</span></div></section>
+          <section className="rv-video">
+            <span className="rv-float f1">{toy('fill')}</span><span className="rv-float f2">{toy('corner')}</span><span className="rv-float f3">{toy('type')}</span><span className="rv-float f4">{toy('padding')}</span>
+            <span className="rv-play" data-issue="2" data-fixed={fx('2')}><svg viewBox="0 0 24 24"><path d="M7 4.5v15L19 12z" /></svg></span>
+            <small>Welcome tour · 1:24</small>
+          </section>
+          <section className="rv-figs" data-issue="16" data-fixed={fx('16')}>
+            <small>{toy('motion')}Time this week</small>
+            {[['Design', '12:06:18', 'pink'], ['Reviews', '4:48:05', 'sky'], ['Meetings', '7:11:40', 'mint']].map(([l, v, h]) => <div key={l}><span><i className="rv-dot" style={{ '--d': `var(--pl-${h})` }} />{l}</span><b>{v}</b></div>)}
+          </section>
+          <section className="rv-promo">
+            <div className="rv-promo-card" data-issue="21" data-fixed={fx('21')}>
+              <span className="rv-avs">{[['A', 'sky'], ['J', 'mint'], ['K', 'butter']].map(([c, h]) => <i key={c} className="rv-av" style={{ '--a': `var(--pl-${h})` }}>{c}</i>)}</span>
+              <b>Invite your team</b><span>Three seats left on your plan</span>
+            </div>
+          </section>
         </div>
       </main>
     </div>

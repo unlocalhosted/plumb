@@ -254,6 +254,44 @@ test('A write the server refuses as stale writes nothing: the fix comes back in 
   assert.equal(await readFile(file, 'utf8'), await readFile(join(repo, 'overlay/demo/src/App.jsx'), 'utf8'), 'nothing was written');
 });
 
+// The fix panel's phases (fixpanel.js): a write in flight is a fact of its own, so leaving while it runs never loses
+// it. Esc mid-write leaves Blueprint at once; the write still lands, and its Undo goes to History's toast.
+test('Esc while a fix is being written leaves Blueprint; the write still lands and History offers its Undo', { timeout: 120000 }, async (t) => {
+  const launched = await browser(t);
+  if (!launched) return;
+  const { root, url } = await demo(t);
+  const { page, errors, overlay } = await open(t, launched, url);
+  await page.keyboard.press('Alt+B');
+  await overlay.locator('.dock[data-in-view]').waitFor({ state: 'attached', timeout: 20000 });
+  await hold(page, overlay, 'gap-[10px]', 'gap-[10px]');
+  await pickStep(overlay, 's2');
+  // the write is held for a moment, as a slow disk or a busy dev server would
+  let release;
+  const held = new Promise((r) => { release = r; });
+  await page.route('**/swaps', async (route) => { await held; await route.continue(); });
+  await panel(overlay).locator('.take:not([disabled])').waitFor({ timeout: 10000 });
+  await page.keyboard.press('Enter');
+  await panel(overlay).locator('.writing').waitFor({ timeout: 5000 });
+  await page.keyboard.press('Escape');
+  await off(page);
+  release();
+  // the write lands even though the panel is gone, and History says it with its Undo
+  const file = join(root, 'src/App.jsx');
+  for (let i = 0; i < 100 && !/gap-s2 py-\[10px\]/.test(await readFile(file, 'utf8')); i++) await page.waitForTimeout(100);
+  assert.match(await readFile(file, 'utf8'), /gap-s2 py-\[10px\]/);
+  // the demo's dev server reloads the page for this write; the page it brings back is as the person left it: out of
+  // Blueprint, with the write said by History
+  await page.waitForFunction(() => performance.getEntriesByType('navigation')[0]?.type === 'reload', null, { timeout: 15000 });
+  await overlay.locator('.wt:not([hidden]) .undo').waitFor({ timeout: 15000 });
+  await page.waitForTimeout(1500); // the resume step runs 120 ms after load: time for it to turn Blueprint on, if it would
+  assert.equal(await page.evaluate(() => document.querySelector('plumb-overlay').shadowRoot.querySelector('.bp')?.hidden !== false), true, 'Blueprint stays off');
+  // back in Blueprint, the panel is at rest: nothing is still "writing"
+  await page.keyboard.press('Alt+B');
+  await overlay.locator('.fx[data-settled]').waitFor({ timeout: 20000 });
+  assert.equal(await panel(overlay).locator('.writing').count(), 0, 'the panel is not stuck writing');
+  assert.deepEqual(errors, []);
+});
+
 // Tab to the glow whose line names `text`; returns the label
 async function tabTo(page, text) {
   const active = () => page.evaluate(() => { const a = document.querySelector('plumb-overlay').shadowRoot.activeElement; return a ? { cls: a.className.baseVal ?? a.className, label: a.getAttribute('aria-label') } : null; });

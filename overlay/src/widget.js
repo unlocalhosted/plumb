@@ -22,9 +22,11 @@ const WALK = { step: 48, pause: 260 };
 const reachable = (el) => { while (el?.ownerSVGElement) el = el.ownerSVGElement; return el; }; // px of scroll per level; ms of stillness that resets the travel
 const TIMING = { hoverRead: 90, light: 120, swap: 140, reread: [250, 600, 1200, 2400], starting: 1000, maxDrawing: 160, healthStarting: 1000, healthReady: 10000, dockFold: 4000, dockCount: 3000, side: 3000 };
 
+import { pageHydrated } from './hydration.js';
 import { DOCK, TAG } from './words.js'; // the dock's and the hover tag's words
+import { NAME_TAG_CSS } from './nametag.js'; // the hover tag's look, shared with the design site
 import { locate, componentOf } from './locate.js';
-import { request, post, forgetResolved } from './api.js';
+import { errorIs, request, post, forgetResolved } from './api.js';
 import { reading, offCount } from './model.js';
 import { regionFor, outlineOf, childrenOf, groundIsDark, hostGround } from './geometry.js';
 import { GLYPH_CSS, glyph } from './glyphs.js';
@@ -37,12 +39,21 @@ import { History, HISTORY_CSS, HISTORY_ICON } from './history.js';
 import { Craft } from './craft.js';
 import { setSource } from './craft-headless.js';
 import { choicesHtml, bindChoices, whyLine, toPx, fmtPx, esc, code, VALUED, CHOICES_CSS } from './choices.js';
+import { placeOf, atPlace } from './stamp.js';
+import { XRAY_CSS } from './xray.js'; // the X-ray (Alt+B): the element under the pointer, drawn on and said beside it
+import { XRAY_LIVE_CSS, mountXray, familyOf } from './xray-live.js';
+import { PICKER_CSS } from './picker.js';
+import { TOY_DEFS } from './toys.js';
+import { elementEdit } from './inplace.js';
+import { activeVariants, swapInForce } from './variants.js';
+import { classEditsOf, classSiteOf, siteMatesOf } from './locate.js';
+import { utility } from './craft-read.js';
 
 const tokensCss = await (await fetch(new URL('./tokens.css', import.meta.url))).text();
 // the element an Alt+click read, kept across a reload: where it is written (its stamp without the file's hash, which a
 // write changes) and which of the elements written there it was
-const stampedAt = (at) => document.querySelectorAll(`[data-plumb-source^="${CSS.escape(at)}#"]`);
-const scopeKey = (el) => { const at = el?.getAttribute('data-plumb-source')?.split('#')[0]; return at ? { at, nth: [...stampedAt(at)].indexOf(el) } : null; };
+const stampedAt = (at) => document.querySelectorAll(atPlace(at));
+const scopeKey = (el) => { const at = placeOf(el); return at ? { at, nth: [...stampedAt(at)].indexOf(el) } : null; };
 const scopeOf = (key) => key?.at ? stampedAt(key.at)[key.nth] ?? null : null;
 const RESUME = 'plumb:resume';
 
@@ -63,6 +74,7 @@ function unplaced(found) {
     if (!detail.file) try { file = decodeURIComponent(new URL(file, location.href).pathname).replace(/^\/@fs/, ''); } catch {}
     return { short: TAG.outside, message: `Written in \`${file}\`, outside this project's source. Add it to \`source\` to check it.` };
   }
+  if (found?.reason === 'not-hydrated') return { short: TAG.notHydrated, message: 'The page is still loading. Try again in a moment.' };
   if (found?.reason === 'no-fiber') return { short: TAG.notReact, message: 'Not drawn by React, so it isn’t in your code.' };
   if (found?.reason === 'runtime-only-frames' || found?.reason === 'owner-unproven')
     return { short: TAG.library, message: 'A library drew this, and the line of your code that used it can’t be proven. Point at the component around it.' };
@@ -76,10 +88,10 @@ const pathTo = element => {
   return ['html', ...parts].join(' > ');
 };
 const css = `
-  :host { all: initial; position: fixed; inset: 0; pointer-events: none; z-index: var(--pl-z); font: var(--pl-text-row); color: var(--pl-ink); }
+  :host { all: initial; position: fixed; inset: 0; pointer-events: none; z-index: var(--pl-z); font: var(--pl-card-body); color: var(--pl-text-primary); }
   * { box-sizing: border-box; }
   [hidden] { display: none !important; }
-  code { font: var(--pl-text-reading); }
+  code { font: var(--pl-card-code); }
 
   /* the dock: what Plumb is doing, and Select, bottom right; text cross-fades, size snaps, nothing animates width */
   /* the dock never sits on the page's own controls: when something to press is under its corner it, and everything
@@ -101,27 +113,27 @@ const css = `
   :host([data-side="start"]) .pl .card { transform-origin: 0 100%; }
   .dock { position: fixed; inset-inline-end: var(--pl-space-6); inset-block-end: var(--pl-space-6); pointer-events: auto;
           display: flex; align-items: center; gap: var(--pl-space-3); height: var(--pl-tag-h); padding-inline: var(--pl-space-4) var(--pl-space-1);
-          background: var(--pl-paper); color: var(--pl-ink-2); border-radius: var(--pl-radius-card); box-shadow: var(--pl-shadow-tag);
-          font: var(--pl-text-label); letter-spacing: var(--pl-tracking-label); white-space: nowrap;
+          background: var(--pl-bg-surface); color: var(--pl-text-secondary); border-radius: var(--pl-radius-card); box-shadow: var(--pl-shadow-tag);
+          font: var(--pl-card-label); letter-spacing: var(--pl-tracking-label); white-space: nowrap;
           transition: opacity var(--pl-dur-card) var(--pl-ease-out), transform var(--pl-dur-card) var(--pl-ease-out); }
   .dock[data-enter] { opacity: 0; transform: translateY(4px); }
-  .dock .bob { display: grid; place-items: center; width: 12px; height: 14px; color: var(--pl-ink-2); transition: color var(--pl-dur-feedback) var(--pl-ease-out); }
+  .dock .bob { display: grid; place-items: center; width: 12px; height: 14px; color: var(--pl-icon-secondary); transition: color var(--pl-dur-feedback) var(--pl-ease-out); }
   .dock .bob svg { width: 12px; height: 14px; }
   .dock .say { transition: opacity var(--pl-dur-feedback) var(--pl-ease-out); }
-  .dock .say .count { font: var(--pl-text-reading); font-variant-numeric: tabular-nums; color: var(--pl-ink-3); }
+  .dock .say .count { font: var(--pl-card-code); font-variant-numeric: tabular-nums; color: var(--pl-text-secondary); }
   .dock[data-fold] .say { display: none; }
   @media (hover: hover) and (pointer: fine) { .dock[data-fold]:hover .say { display: inline; } }
   .dock[data-fold]:focus-within .say { display: inline; }
-  .dock :is(.pick, .bp-toggle, .list, .help, .history) { all: unset; display: grid; place-items: center; width: 18px; height: 18px; border-radius: var(--pl-radius-tag); color: var(--pl-ink-2); cursor: pointer; }
+  .dock :is(.pick, .bp-toggle, .list, .help, .history) { all: unset; display: grid; place-items: center; width: 18px; height: 18px; border-radius: var(--pl-radius-tag); color: var(--pl-icon-secondary); cursor: pointer; }
   .dock :is(.pick, .bp-toggle, .list, .help, .history) svg { width: 12px; height: 12px; }
   .dock :is(.pick, .bp-toggle, .list, .help, .history):focus-visible { outline: 1px solid var(--pl-instrument); outline-offset: 1px; }
-  @media (hover: hover) and (pointer: fine) { .dock :is(.pick, .bp-toggle, .list, .help, .history):not(:disabled):hover { color: var(--pl-ink); background: var(--pl-paper-2); } }
-  .dock :is(.pick, .bp-toggle, .list, .help, .history)[aria-pressed="true"] { color: var(--pl-instrument); background: var(--pl-paper-2); }
-  .dock :is(.pick, .bp-toggle, .list, .help, .history):disabled { color: var(--pl-ink-3); cursor: default; }
-  .dock .act { all: unset; display: inline-flex; align-items: center; height: 18px; padding: 0 7px; border-radius: var(--pl-radius-tag); font: var(--pl-text-label); letter-spacing: var(--pl-tracking-label); color: var(--pl-ink-2); cursor: pointer;
+  @media (hover: hover) and (pointer: fine) { .dock :is(.pick, .bp-toggle, .list, .help, .history):not(:disabled):hover { color: var(--pl-icon-hover); background: var(--pl-bg-surface-hover); } }
+  .dock :is(.pick, .bp-toggle, .list, .help, .history)[aria-pressed="true"] { color: var(--pl-instrument); background: var(--pl-bg-inset); }
+  .dock :is(.pick, .bp-toggle, .list, .help, .history):disabled { color: var(--pl-icon-disabled); cursor: default; }
+  .dock .act { all: unset; display: inline-flex; align-items: center; height: 18px; padding: 0 7px; border-radius: var(--pl-radius-tag); font: var(--pl-card-label); letter-spacing: var(--pl-tracking-label); color: var(--pl-text-secondary); cursor: pointer;
                transition: background var(--pl-dur-feedback), color var(--pl-dur-feedback); }
   .dock .act.write { color: var(--pl-on-action); background: var(--pl-action-soft); }
-  @media (hover: hover) and (pointer: fine) { .dock .act.undo:not(:disabled):hover { color: var(--pl-ink); background: var(--pl-paper-2); } .dock .act.write:not(:disabled):hover { background: color-mix(in oklab, var(--pl-action-soft) 85%, var(--pl-action)); } }
+  @media (hover: hover) and (pointer: fine) { .dock .act.undo:not(:disabled):hover { color: var(--pl-text-primary); background: var(--pl-bg-surface-hover); } .dock .act.write:not(:disabled):hover { background: color-mix(in oklab, var(--pl-action-soft) 85%, var(--pl-action)); } }
   .dock .act:focus-visible { outline: 1px solid var(--pl-instrument); outline-offset: 1px; }
   .dock .act:disabled { opacity: .55; cursor: default; }
   .dock .act[aria-busy="true"]::before { content: ""; width: 9px; height: 9px; margin-inline-end: 5px; border-radius: 50%; border: 1.5px solid currentColor; border-right-color: transparent; animation: pl-spin .7s linear infinite; }
@@ -138,19 +150,7 @@ const css = `
   .tick::before, .tick::after { content: ""; position: absolute; background: var(--pl-instrument); box-shadow: 0 0 0 1px var(--pl-halo); }
   .tick::before { width: var(--pl-tick); height: 1px; } .tick::after { width: 1px; height: var(--pl-tick); }
 
-  /* the hover tag: what the pointer is on, before anything is pinned */
-  .tag { position: fixed; left: 0; top: 0; height: var(--pl-tag-h); display: flex; align-items: center; gap: 6px; padding-inline: 8px; white-space: nowrap;
-         background: var(--pl-paper); border-radius: var(--pl-radius-tag); box-shadow: var(--pl-shadow-tag); font: var(--pl-text-label);
-         transition: transform var(--pl-dur-travel) var(--pl-spring), opacity var(--pl-dur-feedback) var(--pl-ease-out); }
-  .tag .el, .top .el { font-weight: 600; color: var(--pl-ink); }
-  .tag .who, .top .who { color: var(--pl-ink-2); font-weight: 500; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
-  .tag .n, .top .n, .top .el, .top .zoom, .top .close { flex: none; }
-  .tag .n, .top .n { font: var(--pl-text-reading); font-variant-numeric: tabular-nums; color: var(--pl-off); }
-  .n.ok { color: var(--pl-on); } .n.quiet { color: var(--pl-ink-2); }
-  .tag .path { display: inline-flex; align-items: center; gap: 4px; color: var(--pl-ink-2); font-weight: 500; }
-  .tag .path .here { color: var(--pl-ink); font-weight: 600; }
-  .tag .path .cmp { color: var(--pl-accent); }
-  .tag .path .sep, .tag .path .more { color: var(--pl-ink-3); }
+  ${NAME_TAG_CSS}
 
   /* the lit place on the real element: hatching over exactly the region the active mark is about */
   .lit { position: fixed; left: 0; top: 0; border-radius: 2px; opacity: 0; transition: opacity var(--pl-dur-feedback) var(--pl-ease-out);
@@ -174,27 +174,27 @@ const css = `
   .card :focus-visible { outline: 2px solid var(--pl-instrument); outline-offset: 2px; }
 
   /* head: one line, as before: the element, its count, where it's written, the drawing scale, close */
-  .top { display: flex; align-items: center; gap: 6px; height: 32px; padding-inline: 12px 6px; border-bottom: 1px solid var(--pl-rule); font: var(--pl-text-label); white-space: nowrap; }
-  .top .el { font-weight: 600; color: var(--pl-ink); }
-  .top .file { all: unset; flex: 0 1 auto; min-width: 0; font: var(--pl-card-meta); color: var(--pl-ink-2); margin-inline-start: auto; padding-inline-start: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: copy; }
-  @media (hover: hover) and (pointer: fine) { .top .file:hover { color: var(--pl-ink); } }
+  .top { display: flex; align-items: center; gap: 6px; height: 32px; padding-inline: 12px 6px; border-bottom: 1px solid var(--pl-border-default); font: var(--pl-card-label); white-space: nowrap; }
+  .top .el { font-weight: 600; color: var(--pl-text-primary); }
+  .top .file { all: unset; flex: 0 1 auto; min-width: 0; font: var(--pl-card-meta); color: var(--pl-text-secondary); margin-inline-start: auto; padding-inline-start: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: copy; }
+  @media (hover: hover) and (pointer: fine) { .top .file:hover { color: var(--pl-text-primary); } }
   .top .n.live { color: var(--pl-instrument); }
   .top .n.won { animation: pl-won 600ms var(--pl-ease-out); }
   @keyframes pl-won { 0% { transform: scale(.9); } 40% { transform: scale(1.1); } 100% { transform: scale(1); } }
   .top .zoom { display: flex; gap: 1px; margin-inline-start: 6px; }
-  .top button.z { all: unset; font: var(--pl-text-reading); font-variant-numeric: tabular-nums; color: var(--pl-ink-2); padding: 0 4px; height: 18px; line-height: 18px; border-radius: 3px; cursor: pointer; }
-  .top button.z[aria-pressed="true"] { color: var(--pl-instrument); background: var(--pl-paper-2); }
-  .top button.z:disabled { color: var(--pl-ink-3); cursor: default; }
-  .close { all: unset; display: grid; place-items: center; width: 24px; height: 24px; border-radius: 5px; color: var(--pl-ink-2); cursor: pointer; }
+  .top button.z { all: unset; font: var(--pl-card-code); font-variant-numeric: tabular-nums; color: var(--pl-text-secondary); padding: 0 4px; height: 18px; line-height: 18px; border-radius: 3px; cursor: pointer; }
+  .top button.z[aria-pressed="true"] { color: var(--pl-instrument); background: var(--pl-bg-inset); }
+  .top button.z:disabled { color: var(--pl-text-disabled); cursor: default; }
+  .close { all: unset; display: grid; place-items: center; width: 24px; height: 24px; border-radius: 5px; color: var(--pl-icon-secondary); cursor: pointer; }
   .close svg { width: 10px; height: 10px; }
-  @media (hover: hover) and (pointer: fine) { .close:hover { background: var(--pl-paper-2); color: var(--pl-ink); } }
+  @media (hover: hover) and (pointer: fine) { .close:hover { background: var(--pl-bg-surface-hover); color: var(--pl-icon-hover); } }
 
   /* the chain: where this element comes from, outermost usage first; the read link is marked */
   .chain { display: flex; align-items: center; gap: 2px; padding: 6px 12px 0; overflow-x: auto; scrollbar-width: none; overscroll-behavior: contain; }
-  .chain .link { all: unset; flex: none; font: var(--pl-card-meta); color: var(--pl-ink-2); padding: 0 6px; height: 22px; line-height: 22px; border-radius: 4px; cursor: pointer; white-space: nowrap; }
-  .chain .link[aria-current="true"] { color: var(--pl-ink); background: var(--pl-paper-2); }
-  @media (hover: hover) and (pointer: fine) { .chain .link:not([aria-current="true"]):hover { color: var(--pl-ink); } }
-  .chain .sep { color: var(--pl-ink-3); font: var(--pl-card-meta); }
+  .chain .link { all: unset; flex: none; font: var(--pl-card-meta); color: var(--pl-text-secondary); padding: 0 6px; height: 22px; line-height: 22px; border-radius: 4px; cursor: pointer; white-space: nowrap; }
+  .chain .link[aria-current="true"] { color: var(--pl-text-primary); background: var(--pl-bg-inset); }
+  @media (hover: hover) and (pointer: fine) { .chain .link:not([aria-current="true"]):hover { color: var(--pl-text-primary); } }
+  .chain .sep { color: var(--pl-icon-tick); font: var(--pl-card-meta); }
 
   /* the skeleton: the element at its real proportions, marks set into its outline */
   .diagram { position: relative; margin: 10px 12px 0; transition: opacity var(--pl-dur-feedback) var(--pl-ease-out); }
@@ -203,109 +203,109 @@ const css = `
   .txt { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin: 10px 12px 0; min-width: 0; }
   .txt[hidden] { display: none; }
   .txt .tk { flex: none; display: grid; place-items: center; width: 16px; height: 16px; border-radius: var(--pl-radius-tag);
-             background: var(--pl-paper-2); color: var(--pl-ink-2); font: 600 10.5px/1 Georgia, serif; }
+             background: var(--pl-bg-inset); color: var(--pl-icon-secondary); font: 600 10.5px/1 Georgia, serif; }
   .txt .run { all: unset; display: inline-flex; align-items: center; gap: 5px; min-width: 0; max-width: 100%; padding: 1px 6px; border-radius: var(--pl-radius-tag);
-              font: var(--pl-text-reading); color: var(--pl-ink); box-shadow: inset 0 0 0 1px var(--pl-rule); cursor: text; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+              font: var(--pl-card-code); color: var(--pl-text-primary); box-shadow: inset 0 0 0 1px var(--pl-border-default); cursor: text; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
               transition: box-shadow var(--pl-dur-feedback) var(--pl-ease-out); }
   .txt .run:focus-visible { outline: 2px solid var(--pl-instrument); outline-offset: 2px; }
   @media (hover: hover) and (pointer: fine) { .txt .run:hover { box-shadow: inset 0 0 0 1px var(--pl-instrument); } }
-  .txt .run .was { color: var(--pl-ink-2); text-decoration-thickness: 1px; }
-  .txt .run .arrow { color: var(--pl-ink-2); }
-  .txt .tr { font: var(--pl-text-label); color: var(--pl-ink-2); min-width: 0; }
+  .txt .run .was { color: var(--pl-text-secondary); text-decoration-thickness: 1px; }
+  .txt .run .arrow { color: var(--pl-text-secondary); }
+  .txt .tr { font: var(--pl-card-label); color: var(--pl-text-secondary); min-width: 0; }
   .txt .tr.hint { margin-inline-start: auto; }
   /* the editor laid over the words on the page: the page shows through, re-flowing as you type */
   .tedit { all: unset; position: fixed; box-sizing: border-box; pointer-events: auto; padding: 0 2px; color: transparent; caret-color: var(--pl-instrument);
            border-radius: 2px; outline: 1.5px dashed var(--pl-instrument); outline-offset: 2px; background: color-mix(in oklab, var(--pl-instrument) 6%, transparent); }
   .tedit::selection { background: color-mix(in oklab, var(--pl-instrument) 30%, transparent); color: transparent; }
   .diagram.swapping { opacity: 0; }
-  .d-child { position: absolute; box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--pl-ink-3) 60%, transparent); }
+  .d-child { position: absolute; box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--pl-icon-tick) 60%, transparent); }
   .d-child.text { box-shadow: none; }
-  .d-child.filled { box-shadow: none; background: color-mix(in oklab, var(--fill) 30%, var(--pl-paper)); }
+  .d-child.filled { box-shadow: none; background: color-mix(in oklab, var(--fill) 30%, var(--pl-bg-surface)); }
   .d-child, .d-part { font-style: normal; }
-  .d-part { position: absolute; box-shadow: inset 0 0 0 1px var(--pl-ink-3); }
-  .d-part.filled { box-shadow: none; background: color-mix(in oklab, var(--fill) 45%, var(--pl-paper)); }
-  .d-child b { position: absolute; display: block; white-space: nowrap; overflow: hidden; font-family: var(--pl-sans); color: var(--pl-ink-2); pointer-events: none; }
+  .d-part { position: absolute; box-shadow: inset 0 0 0 1px var(--pl-icon-tick); }
+  .d-part.filled { box-shadow: none; background: color-mix(in oklab, var(--fill) 45%, var(--pl-bg-surface)); }
+  .d-child b { position: absolute; display: block; white-space: nowrap; overflow: hidden; font-family: var(--pl-sans); color: var(--pl-text-secondary); pointer-events: none; }
   .dim { position: absolute; z-index: 1; translate: -50% -50%; padding: 0 3px; border-radius: 3px; font: 600 10px/14px var(--pl-mono); font-variant-numeric: tabular-nums;
-         color: var(--pl-paper); background: var(--pl-off); opacity: 0; scale: .9; pointer-events: none; transition: opacity var(--pl-dur-feedback) var(--pl-ease-out), scale var(--pl-dur-feedback) var(--pl-ease-out); }
+         color: var(--pl-bg-surface); background: var(--pl-off); opacity: 0; scale: .9; pointer-events: none; transition: opacity var(--pl-dur-feedback) var(--pl-ease-out), scale var(--pl-dur-feedback) var(--pl-ease-out); }
   .dim.left { translate: 0 -50%; } .dim.right { translate: -100% -50%; }
-  .dim.soft { background: var(--pl-soft); } .dim.ok { background: var(--pl-on); } .dim.quiet { background: var(--pl-ink-2); }
+  .dim.soft { background: var(--pl-soft); } .dim.ok { background: var(--pl-on); } .dim.quiet { background: var(--pl-text-secondary); }
   .dim[data-active] { opacity: 1; scale: 1; }
   .outline { position: absolute; left: 0; top: 0; overflow: visible; pointer-events: none; }
-  .outline path { fill: none; stroke: var(--pl-ink-2); stroke-opacity: .55; stroke-width: 1px; vector-effect: non-scaling-stroke; }
-  .outline .surface { fill: color-mix(in oklab, var(--fill) 30%, var(--pl-paper)); }
+  .outline path { fill: none; stroke: var(--pl-icon-secondary); stroke-opacity: .55; stroke-width: 1px; vector-effect: non-scaling-stroke; }
+  .outline .surface { fill: color-mix(in oklab, var(--fill) 30%, var(--pl-bg-surface)); }
   .outline .surface.bare { fill: none; }
   /* every finding is hatched where it lives; the one being read is hatched strongly */
   .outline .reg { fill: url(#pl-h-off); opacity: .35; transition: opacity var(--pl-dur-feedback) var(--pl-ease-out); }
   .outline .reg.soft { fill: url(#pl-h-soft); } .outline .reg.ok { fill: url(#pl-h-ok); } .outline .reg.quiet { fill: url(#pl-h-quiet); }
   .outline .reg[data-active] { opacity: 1; }
-  .pin { position: absolute; width: 16px; height: 16px; margin: -8px 0 0 -8px; border: 0; padding: 0; cursor: pointer; background: transparent; color: var(--pl-ink-2);
+  .pin { position: absolute; width: 16px; height: 16px; margin: -8px 0 0 -8px; border: 0; padding: 0; cursor: pointer; background: transparent; color: var(--pl-icon-secondary);
          display: grid; place-items: center; border-radius: 3px; transition: color var(--pl-dur-feedback) var(--pl-ease-out); }
   .pin .g { width: 13px; height: 13px; transform: var(--orient, none); }
-  .pin.on-arc { background: var(--pl-paper); border-radius: 50%; }
-  .pin.quiet { color: var(--pl-ink-3); }
+  .pin.on-arc { background: var(--pl-bg-surface); border-radius: 50%; }
+  .pin.quiet { color: var(--pl-icon-tick); }
   .pin[aria-current="true"] { color: var(--pl-off); }
   .pin.soft[aria-current="true"] { color: var(--pl-soft-text); }
   .pin.ok, .pin.ok[aria-current="true"] { color: var(--pl-on); }
   .pin:focus-visible { outline: 1px solid var(--pl-instrument); outline-offset: 1px; }
-  @media (hover: hover) and (pointer: fine) { .pin:not([aria-current="true"]):hover { color: var(--pl-ink); } }
+  @media (hover: hover) and (pointer: fine) { .pin:not([aria-current="true"]):hover { color: var(--pl-icon-hover); } }
 
   /* read: the change first, then the choice, then the reason */
   .read { display: grid; gap: 8px; padding: 10px 12px 12px; align-content: start; transition: opacity var(--pl-dur-feedback) var(--pl-ease-out); }
   .read.swapping { opacity: 0; }
   .read .t { display: flex; align-items: flex-start; gap: 8px; font: 600 13px/18px var(--pl-sans); text-wrap: pretty; }
   .read .t > .g { flex: none; width: 14px; height: 14px; margin-top: 2px; color: var(--pl-off); }
-  .read .t > .g.soft { color: var(--pl-soft-text); } .read .t > .g.ok { color: var(--pl-on); } .read .t > .g.quiet { color: var(--pl-ink-2); }
+  .read .t > .g.soft { color: var(--pl-soft-text); } .read .t > .g.ok { color: var(--pl-on); } .read .t > .g.quiet { color: var(--pl-text-secondary); }
   .read .t code { font: var(--pl-card-code); font-size: 12.5px; }
   .read .t .title { flex: 1; min-width: 0; }
-  .ledger { flex: none; margin-top: 1px; padding: 2px 6px; border-radius: 4px; font: var(--pl-text-label); letter-spacing: .04em; text-transform: uppercase; }
+  .ledger { flex: none; margin-top: 1px; padding: 2px 6px; border-radius: 4px; font: var(--pl-card-label); letter-spacing: .04em; text-transform: uppercase; }
   .ledger.new { color: var(--pl-off); background: color-mix(in oklab, var(--pl-off) 10%, transparent); }
-  .ledger.debt { color: var(--pl-ink-2); background: var(--pl-paper-2); }
+  .ledger.debt { color: var(--pl-text-secondary); background: var(--pl-bg-inset); }
   .ledger.exception { color: var(--pl-on); background: color-mix(in oklab, var(--pl-on) 10%, transparent); }
 
   /* the change: what is written → what it becomes */
   .change { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; font: var(--pl-card-code); font-size: 12px; }
   .change .from { padding: 1px 6px; border-radius: 4px; color: var(--pl-off); background: color-mix(in oklab, var(--pl-off) 9%, transparent); text-decoration: line-through; text-decoration-thickness: 1px; overflow-wrap: anywhere; }
   .change .from.soft { color: var(--pl-soft-text); background: color-mix(in oklab, var(--pl-soft) 11%, transparent); }
-  .change .arrow { color: var(--pl-ink-3); }
+  .change .arrow { color: var(--pl-icon-tick); }
   .change .to { padding: 1px 6px; border-radius: 4px; color: var(--pl-on); background: color-mix(in oklab, var(--pl-on) 11%, transparent); animation: pl-in var(--pl-dur-move, 200ms) var(--pl-ease-out); }
-  .change .to.waiting { color: var(--pl-ink-2); background: none; outline: 1px dashed var(--pl-ink-3); outline-offset: -1px; animation: pl-nudge 900ms var(--pl-ease-out) 700ms 1 both; }
-  .change .delta { margin-inline-start: auto; font: var(--pl-card-meta); color: var(--pl-ink-2); font-variant-numeric: tabular-nums; }
+  .change .to.waiting { color: var(--pl-text-secondary); background: none; outline: 1px dashed var(--pl-icon-tick); outline-offset: -1px; animation: pl-nudge 900ms var(--pl-ease-out) 700ms 1 both; }
+  .change .delta { margin-inline-start: auto; font: var(--pl-card-meta); color: var(--pl-text-secondary); font-variant-numeric: tabular-nums; }
   @keyframes pl-in { from { opacity: 0; transform: translateX(-4px); } }
-  @keyframes pl-nudge { 0%, 100% { outline-color: var(--pl-ink-3); } 45% { outline-color: var(--pl-instrument); color: var(--pl-instrument); } }
+  @keyframes pl-nudge { 0%, 100% { outline-color: var(--pl-icon-tick); } 45% { outline-color: var(--pl-instrument); color: var(--pl-instrument); } }
 
   /* the ask: what to do with the choices */
   .read .edit:empty { display: none; }
-  .read .edit { display: flex; align-items: baseline; gap: 8px; font: var(--pl-text-label); letter-spacing: .02em; color: var(--pl-ink-2); }
+  .read .edit { display: flex; align-items: baseline; gap: 8px; font: var(--pl-card-label); letter-spacing: .02em; color: var(--pl-text-secondary); }
   .read .edit .hint { flex: 1; text-transform: none; }
-  .read .edit code { font: var(--pl-card-meta); color: var(--pl-ink); overflow-wrap: anywhere; }
+  .read .edit code { font: var(--pl-card-meta); color: var(--pl-text-primary); overflow-wrap: anywhere; }
 
-  .read .because { font: 400 12px/17px var(--pl-sans); color: var(--pl-ink-2); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-  .read .empty { margin: 0; font: var(--pl-card-body); color: var(--pl-ink-2); }
+  .read .because { font: 400 12px/17px var(--pl-sans); color: var(--pl-text-secondary); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .read .empty { margin: 0; font: var(--pl-card-body); color: var(--pl-text-secondary); }
   .read.short { padding-block: 14px; }
 
   .notes { margin: 0 12px 10px; display: grid; gap: 4px; }
-  .notes p { margin: 0; font: var(--pl-card-body); font-size: 12px; color: var(--pl-ink-2); display: flex; gap: 8px; align-items: baseline; min-width: 0; }
+  .notes p { margin: 0; font: var(--pl-card-body); font-size: 12px; color: var(--pl-text-secondary); display: flex; gap: 8px; align-items: baseline; min-width: 0; }
   .notes p > * { min-width: 0; }
-  .notes p::before { content: ""; flex: none; width: 4px; height: 4px; border-radius: 50%; background: var(--pl-ink-3); transform: translateY(-2px); }
+  .notes p::before { content: ""; flex: none; width: 4px; height: 4px; border-radius: 50%; background: var(--pl-icon-tick); transform: translateY(-2px); }
   .notes code { font: var(--pl-card-meta); overflow-wrap: anywhere; }
 
   /* status: what happened, and what's left; then the foot, with one primary action */
-  .synced { display: flex; align-items: center; gap: 8px; padding: 8px 12px 0; border-top: 1px solid var(--pl-rule); }
-  .synced .state { font: var(--pl-card-body); font-size: 12px; color: var(--pl-ink-2); display: flex; align-items: center; gap: 8px; min-width: 0; }
+  .synced { display: flex; align-items: center; gap: 8px; padding: 8px 12px 0; border-top: 1px solid var(--pl-border-default); }
+  .synced .state { font: var(--pl-card-body); font-size: 12px; color: var(--pl-text-secondary); display: flex; align-items: center; gap: 8px; min-width: 0; }
   .synced .state::before { content: ""; flex: none; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
   .synced .state.live { color: var(--pl-instrument); } .synced .state.ok { color: var(--pl-on); } .synced .state.warn { color: var(--pl-soft-text); } .synced .state.err { color: var(--pl-off); }
   .foot { display: flex; align-items: center; gap: 4px; padding: 6px 6px 6px 8px; }
-  .synced[hidden] + .foot { border-top: 1px solid var(--pl-rule); }
-  .btn { display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 10px; border: 0; border-radius: 6px; background: transparent; color: var(--pl-ink-2);
+  .synced[hidden] + .foot { border-top: 1px solid var(--pl-border-default); }
+  .btn { display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 10px; border: 0; border-radius: 6px; background: transparent; color: var(--pl-text-secondary);
          font: 500 12.5px/1 var(--pl-sans); cursor: pointer; white-space: nowrap; transition: background var(--pl-dur-feedback), color var(--pl-dur-feedback), box-shadow var(--pl-dur-feedback); }
-  @media (hover: hover) and (pointer: fine) { .btn.plain:not(:disabled):hover { background: var(--pl-paper-2); color: var(--pl-ink); } }
-  .btn[aria-pressed="true"] { background: var(--pl-ink); color: var(--pl-paper); }
+  @media (hover: hover) and (pointer: fine) { .btn.plain:not(:disabled):hover { background: var(--pl-bg-surface-hover); color: var(--pl-text-primary); } }
+  .btn[aria-pressed="true"] { background: var(--pl-text-primary); color: var(--pl-bg-surface); }
   .btn:disabled { opacity: .4; cursor: default; }
   .btn.copy { margin-inline-start: auto; }
   .btn.primary { color: var(--pl-on-action); background: var(--pl-action-soft); box-shadow: 0 1px 0 rgb(0 0 0 / .08); }
   @media (hover: hover) and (pointer: fine) { .btn.primary:not(:disabled):hover { background: color-mix(in oklab, var(--pl-action-soft) 85%, var(--pl-action)); } }
   .btn.primary:active:not(:disabled) { transform: translateY(1px); }
-  .btn.primary:disabled { opacity: 1; color: var(--pl-ink-2); background: transparent; box-shadow: inset 0 0 0 1px var(--pl-ink-3); cursor: default; }
+  .btn.primary:disabled { opacity: 1; color: var(--pl-text-secondary); background: transparent; box-shadow: inset 0 0 0 1px var(--pl-border-strong); cursor: default; }
   .btn.primary.done { color: var(--pl-on); background: color-mix(in oklab, var(--pl-on) 12%, transparent); box-shadow: none; }
   .btn[aria-busy="true"]::before { content: ""; width: 11px; height: 11px; border-radius: 50%; border: 1.5px solid currentColor; border-right-color: transparent; animation: pl-spin .7s linear infinite; }
   @keyframes pl-spin { to { transform: rotate(1turn); } }
@@ -332,7 +332,9 @@ class PlumbOverlay extends HTMLElement {
 
   connectedCallback() {
     addEventListener('plumb:updated', this.#updated);
-    this.#root = this.attachShadow({ mode: 'open' });
+    // connected again after a move (a page that re-parents <html>'s children): the root it already has is drawn afresh;
+    // attachShadow a second time throws (docs/invariants/overlay.md #5)
+    this.#root = this.shadowRoot ?? this.attachShadow({ mode: 'open' });
     this.#root.innerHTML = `<style>${tokensCss}${LANGUAGE_CSS}${GLYPH_CSS}${CHOICES_CSS}${css}${BLUEPRINT_CSS}${READY_CSS}${TEXT_EDIT_CSS}${HELP_CSS}${HISTORY_CSS}</style>
       <i class="tick" data-c="tl" hidden></i><i class="tick" data-c="tr" hidden></i><i class="tick" data-c="bl" hidden></i><i class="tick" data-c="br" hidden></i>
       <div class="tag" hidden aria-hidden="true"></div>
@@ -349,6 +351,8 @@ class PlumbOverlay extends HTMLElement {
     this.#$('.pick').addEventListener('click', () => this.#armed && this.#sticky ? this.#disarm() : this.#arm(true));
     this.#blueprint = new Blueprint(this, this.#root, {
       onState: state => this.#blueprintState(state),
+      // the list (or a click blueprint took) picked an element: the X-ray shows it and holds it
+      onSelect: el => { if (el) this.#xray?.hold(el); else this.#xray?.release(); },
       // a page read through proves the server is ready: the dock says so now, not at the next health poll
       onProgress: progress => { this.#bp.progress = progress; if (progress.total && progress.read === progress.total && this.#health === 'starting') this.#health = 'ready'; this.#dock(); if (progress.total && progress.read === progress.total) this.#announce(this.#blueprintSays()); },
       // craft: the engine measures the theme's tokens from the same decisions the choosers use (asked for on first use)
@@ -361,7 +365,7 @@ class PlumbOverlay extends HTMLElement {
     // Every write, undoable: a toast after each one, and the recent ones from the dock.
     this.#history = new History(this.#root, { button: this.#$('.dock .history'), host: { announce: text => this.#announce(text), changed: () => this.#dock() } });
     // Words on the page, edited like a CMS: double-click, type, Enter (docs/briefs/text-editing.md).
-    this.#text = new TextEditor(this.#root, { editing: (on, rect) => { if (on) this.#help.hint('words'); this.#blueprint?.editing(on, rect); }, wrote: (result, text) => this.#history.wrote(result, text), announce: text => this.#announce(text), changed: () => this.#dock(),
+    this.#text = new TextEditor(this.#root, { editing: (on, rect) => { if (on) this.#help.hint('words'); this.#blueprint?.editing(on, rect); }, wrote: (result, text) => this.#history.wrote(result, text), heard: () => this.#history.resumed, announce: text => this.#announce(text), changed: () => this.#dock(),
       inBlueprint: () => !!this.#blueprint?.active, blueprint: () => setTimeout(() => this.#blueprint?.enter({ instant: true }), 120) });
     this.#ready = new Readiness(this.#root, { dock: this.#$('.dock'), onOpen: () => this.changed?.() });
     requestAnimationFrame(() => requestAnimationFrame(() => this.#$('.dock').removeAttribute('data-enter')));
@@ -386,6 +390,11 @@ class PlumbOverlay extends HTMLElement {
   // A write can make the dev server reload the whole page (no fast refresh). The reading picks up where it was: the
   // same element, found by its place in the document and confirmed by its source file, with the write reported.
   async #resume() {
+    // the X-ray, with what its Sync wrote, comes back after the write's reload (one written 30 s ago or less)
+    try {
+      const x = JSON.parse(sessionStorage.getItem('plumb:xray') ?? 'null');
+      if (x && Date.now() - x.at < 30000) { sessionStorage.removeItem('plumb:xray'); this.#xrayResults = x.results ?? null; await new Promise(r => setTimeout(r, 120)); if (!this.#blueprint?.active) this.#wholePage(); }
+    } catch {}
     // an undo the page went away in the middle of (a write the dev server reloads for, sometimes twice): Blueprint comes
     // back, and the fix panel goes on with what's left (fixpanel.js)
     try { const u = JSON.parse(sessionStorage.getItem('plumb:undoing') ?? 'null'); if ((u?.undo?.length || u?.group) && Date.now() - u.at < 30000) { await new Promise(r => setTimeout(r, 120)); if (!this.#blueprint?.active) this.#blueprint?.enter({ instant: true }); } } catch {}
@@ -413,7 +422,11 @@ class PlumbOverlay extends HTMLElement {
       const writes = (h?.writes ?? []).filter((w) => Date.parse(w.at) >= since && !w.stale).reverse().map(({ id, file, label }) => ({ id, file, label }));
       if (writes.length) { saved.undo = writes; saved.pending = false; try { sessionStorage.setItem(RESUME, JSON.stringify(saved)); } catch {} }
     }
-    if (saved.fix) this.#blueprint?.resumed?.(saved.fix, saved.undo ?? [], saved.place ?? null, saved.group ?? null);
+    // back in Blueprint, the panel says it; left before the write landed, History does, with its Undo
+    // One voice after a reload. A sentence that is History's to say (a step's undo) is said by the panel only when
+    // the reload cut the server's answer off before History heard it; when History has it, the panel stays quiet
+    if (saved.fix && saved.blueprint && !(saved.history && this.#history?.resumed)) this.#blueprint?.resumed?.(saved.fix, saved.undo ?? [], saved.place ?? null, saved.group ?? null);
+    else if (saved.fix && (saved.undo?.length || saved.group)) this.#history?.wrote({ undo: saved.undo ?? [], trace: { group: saved.group ?? null } }, saved.fix);
     // the old reading card is retired: a write never comes back as a card pinned to its element
   }
 
@@ -485,6 +498,116 @@ class PlumbOverlay extends HTMLElement {
     this.#ready?.dismiss();
     this.#blueprint.toggle(options);
   }
+  // ── THE X-RAY (Alt+B) ─────────────────────────────────────
+  // The element under the pointer, drawn on and said beside it, changed in place (xray-live.js, the same piece the
+  // design site's X-ray page runs). This adapter tells it what your page is: names from your components, places from
+  // the stamps, your theme's steps, and writes through the engine (the class showing now, variants.js; located in your
+  // code, locate.js; written by the server's swaps, one Undo group per change).
+  #xray = null; #xrayResults = null; // results said again after a write's reload
+  #toggleXray() {
+    if (this.#xray) { this.#xray.destroy(); this.#xray = null; this.#root.querySelector('.xr-host')?.remove(); this.removeAttribute('data-xray'); return; }
+    this.#ready?.dismiss();
+    this.setAttribute('data-xray', '');
+    if (!this.#root.querySelector('style[data-xray]')) {
+      const t = document.createElement('template');
+      t.innerHTML = `<style data-xray>${XRAY_CSS}${PICKER_CSS}${XRAY_LIVE_CSS}
+      .xr-host { position: fixed; inset: 0; pointer-events: none; z-index: 2147483000; font-family: var(--pl-sans); color: var(--pl-text-primary); }
+      .xr-host :is(.xr-card, .xr-list, .xr-note) { pointer-events: auto; }
+      /* the X-ray in place of the heat: blueprint's marks keep their places (a click still picks), drawn no more; the
+         selection's old box drawing gives way to the X-ray's */
+      :host([data-xray]) .bp .heat { opacity: 0 !important; }
+      :host([data-xray]) .sel .bm { display: none; }
+      /* one label on the page at a time: the X-ray's pill and card say what blueprint's hover hint said */
+      :host([data-xray]) .bp .bp-hint { display: none; }</style>${TOY_DEFS}`;
+      this.#root.append(t.content);
+    }
+    const host = document.createElement('div'); host.className = 'xr-host';
+    this.#root.append(host);
+    // your theme's steps; where it names none, Tailwind's own (its spacing multiplier, its type and corner steps), as a
+    // page on Tailwind's defaults is written in them
+    const rootPx = (v) => { const n = parseFloat(v); return /rem$/.test(v.trim()) ? n * (parseFloat(getComputedStyle(document.documentElement).fontSize) || 16) : n; };
+    const BUILT = { type: [[12, 'xs'], [14, 'sm'], [16, 'base'], [18, 'lg'], [20, 'xl'], [24, '2xl'], [30, '3xl'], [36, '4xl'], [48, '5xl']],
+      radius: [[2, 'xs'], [4, 'sm'], [6, 'md'], [8, 'lg'], [12, 'xl'], [16, '2xl'], [24, '3xl'], [32, '4xl'], [9999, 'full']] };
+    const MULTIPLES = [0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 5, 6, 7, 8, 9, 10, 11, 12, 14, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52, 56, 60, 64, 72, 80, 96];
+    const steps = (f) => {
+      const own = this.#scaleOf(f === 'size' ? 'spacing' : f).map((t) => [t.px, t.short]);
+      if (own.length) return own;
+      if (f === 'spacing' || f === 'size') { const base = rootPx(getComputedStyle(document.documentElement).getPropertyValue('--spacing') || '0.25rem') || 4; return MULTIPLES.map((n) => [n * base, String(n)]); }
+      return BUILT[f] ?? [];
+    };
+    const where = (el) => { const p = placeOf(el); if (!p) return null; const m = /^(.*):(\d+):\d+$/.exec(p); return m ? `${m[1]}:${m[2]}` : p; };
+    const nameOf = (el) => componentOf(el) ?? el.localName;
+    const self = this;
+    this.#xray = mountXray({
+      container: host, events: window, root: this.#root, contextStop: document.body, watch: document.body,
+      clicks: false, keys: false, dropPreviewOnWrite: true, cursorOn: document.documentElement,
+      room: () => ({ left: 12, top: 12, right: innerWidth - 12, bottom: innerHeight - 12 }),
+      // the page's element under the pointer: through blueprint's glass and marks, never the overlay's own panels
+      partAt: (e) => {
+        const first = e.composedPath()[0];
+        if (e.composedPath().includes(self) && !first?.closest?.('.glass, .bp')) return null;
+        const hit = () => document.elementFromPoint(e.clientX, e.clientY);
+        const el = reachable(self.#blueprint?.active ? self.#blueprint.through(hit) : hit());
+        return el && el !== self && el !== document.documentElement && el !== document.body ? el : null;
+      },
+      name: (el) => [nameOf(el), where(el)],
+      key: (el) => placeOf(el),
+      all: (k) => [...document.querySelectorAll(atPlace(k))],
+      component: () => null,
+      // where the part's class is written (the class showing now, else where one would be added), and every element on
+      // the page that one written line draws. Several from one line change together: one of them alone would need a
+      // condition in your code, so 'just this one' is offered only when the line draws one element
+      scopeInfo: async (el, prop) => {
+        const side = /^(padding|margin)-(\w)/.exec(prop), L = side?.[1][0];
+        const PRE = side ? [`${L}${side[2]}`, `${L}${/^[tb]/.test(side[2]) ? 'y' : 'x'}`, L] : { gap: ['gap'], 'border-radius': ['rounded'], width: ['w'], height: ['h'], 'font-size': ['text'] }[prop] ?? [];
+        const cls = PRE.map((p) => utility(el, p)).find(Boolean);
+        const site = await classSiteOf(el, cls ? [cls] : []);
+        if (!site || site.refused || !site.file) return null;
+        const mates = [el, ...siteMatesOf(el, site)];
+        return { scopes: mates.length > 1 ? ['page'] : ['one'], mates, where: `${site.file}:${site.at ?? site.line}` };
+      },
+      tokenOf: (f, n) => steps(f).find(([px]) => Math.abs(px - n) <= 0.5)?.[1] ?? null,
+      scale: steps,
+      isPage: (r) => !r.target.closest?.('plumb-overlay'),
+      // Sync: each change as the class edit that shows it, in the class showing now; located in your code; written
+      // with one Undo group per change
+      write: async (groups) => {
+        // the class family each property is written in (a text size is never a text colour)
+        const FAMILY = { gap: (c) => /^gap(-[xy])?-/.test(c), 'border-radius': (c) => /^rounded(-[\w[\].]+)?$/.test(c) && !/^rounded-[trblse]{1,2}(-|$)/.test(c),
+          width: (c) => /^w-/.test(c), height: (c) => /^h-/.test(c), 'font-size': (c) => /^text-(xs|sm|base|lg|\d?xl|\[[\d.]+(px|rem)\])$/.test(c), flex: (c) => /^flex-(1|none|auto|initial)$/.test(c) };
+        // one edit per element: every change to it at once (two writes to one line would trip over each other)
+        const byPart = new Map();
+        for (const g of groups) { const k = `${g.part}|${g.scope}`; (byPart.get(k) ?? byPart.set(k, []).get(k)).push(g); }
+        const out = [];
+        for (const list of byPart.values()) {
+          const el = list[0].els[0];
+          const fail = (why) => { for (const g of list) out.push({ id: g.id, state: 'failed', why }); };
+          if (!el) { fail("That element isn't on the page any more, so its line can't be found."); continue; }
+          try {
+            const classes = [...el.classList], active = activeVariants(el);
+            const box = list.filter((g) => /^(padding|margin)-/.test(g.prop)).map((g) => ({ prop: g.prop, to: { token: g.cls.replace(/^-?[a-z]+-/, '') } }));
+            const swaps = list.filter((g) => !/^(padding|margin)-/.test(g.prop)).map((g) => swapInForce(classes, FAMILY[g.prop] ?? (() => false), g.cls, active)).filter(Boolean);
+            const edit = elementEdit(classes, swaps, box, active);
+            if (!edit) { for (const g of list) out.push({ id: g.id, state: 'ok', where: 'already written that way' }); continue; }
+            const edits = await classEditsOf(el, edit.from, edit.to);
+            const group = `xray.${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+            const files = new Map();
+            for (const e of edits) (files.get(e.file) ?? files.set(e.file, { hash: e.hash, edits: [] }).get(e.file)).edits.push(e.edit);
+            // a write may reload the page: what it wrote is kept so the X-ray can say it when the page is back
+            const keep = (state) => { try { const x = JSON.parse(sessionStorage.getItem('plumb:xray') ?? 'null') ?? { results: [] }; x.at = Date.now(); x.results = [...(x.results ?? []).filter((r) => !list.some((g) => g.id === r.id)), ...list.map((g) => ({ id: g.id, name: g.name, prop: g.prop, keys: g.keys, ...state }))]; sessionStorage.setItem('plumb:xray', JSON.stringify(x)); } catch {} };
+            const at0 = edits[0] ? `${edits[0].file}:${edits[0].edit.line}` : '';
+            keep({ state: 'ok', cls: edit.to, where: at0, group });
+            for (const [file, f] of files) await post('swaps', { file, hash: f.hash, edits: f.edits, trace: { group, meta: { step: 'X-ray', laws: [] } } });
+            const first = edits[0], at = first ? `${first.file}:${first.edit.line}` : '';
+            for (const g of list) out.push({ id: g.id, state: 'ok', cls: edit.to, where: at, group });
+          } catch (error) { fail(error?.message ?? String(error)); }
+        }
+        return out;
+      },
+      undo: (r) => post('undo-group', { group: r.group }),
+    });
+    if (this.#xrayResults?.length) { this.#xray.showResults(this.#xrayResults); this.#xrayResults = null; }
+  }
   // Alt+B: the whole page; while one element is read (an Alt+click), the reading widens to the page
   #wholePage() {
     if (!this.#blueprint?.scope) return this.#toggleBlueprint();
@@ -499,7 +622,7 @@ class PlumbOverlay extends HTMLElement {
   readsFor(stamp) { return this.#readCounts.get(stamp) ?? 0; }
   readMarks(element, fresh = false, { computed = true } = {}) {
     if (!fresh && this.#marksCache.has(element)) return this.#marksCache.get(element);
-    const stamp = element.getAttribute?.('data-plumb-source')?.split('#')[0];
+    const stamp = placeOf(element);
     if (stamp) this.#readCounts.set(stamp, this.#readCounts.get(stamp) + 1 || 1);
     const promise = (async () => {
       const found = await locate(element, { explain: true, batch: true });
@@ -514,15 +637,18 @@ class PlumbOverlay extends HTMLElement {
     return promise;
   }
   // The page's code (blueprint-reader.js, docs/briefs/count-from-code.md): every finding at the places in the files
-  // the page renders (POST places), each file's marks built the way an element's are. null where there is no
-  // server for it (the docs replay): the reader counts from the rendered elements alone there.
+  // the page renders (POST places), each file's marks built the way an element's are. A file may be asked for by its
+  // stamp's name (from the repository root) or by the name the page answers gave (from the project root); the server
+  // answers each file once, by the project name, and that name is kept: it is the one every element's `file` carries,
+  // so a place from the code and the same place rendered are one place. null where there is no server for it (the
+  // docs replay): the reader counts from the rendered elements alone there.
   async readCode(files) {
     if (!files.length) return [];
     let answer;
     try { answer = await post('places', { files }); }
     catch (error) { if (error?.status === 404 || error?.status === 405) return null; throw error?.status === 503 ? Object.assign(error, { starting: true }) : error; }
     return (answer?.files ?? []).map((entry) => {
-      const file = files.find((f) => entry.file === f || entry.file.endsWith('/' + f)) ?? entry.file;
+      const file = entry.file;
       const location = { file, line: 1, column: 1, tag: null, via: 'code', chain: [], index: 0 };
       const r = reading(location, { findings: entry.findings ?? [], declarations: entry.declarations ?? [] }, undefined);
       return { file, hash: entry.hash, marks: r.marks.filter((m) => m.ledger !== 'exception') };
@@ -593,9 +719,11 @@ class PlumbOverlay extends HTMLElement {
   get blueprintReader() { return this.#blueprint; } // the headless craft run (craft-run.js)
   get progress() { return this.#bp.progress; }
   // the places Blueprint counted last (blueprint-reader.js): one row per class site in the page's code, with how many elements render it
-  #places = [];
-  placesRead(places) { this.#places = places; }
+  #places = []; #problems = [];
+  placesRead(places, problems = []) { this.#places = places; this.#problems = problems; }
   get places() { return this.#places; }
+  // the problems it counted: one key per (place, cause), the number the dock and the fix panel's line say
+  get problems() { return this.#problems; }
   get pinnedElement() { return this.#pinned?.element ?? null; }
   occluders() {
     return [...['.w:not([hidden]) .card', '.dock'].map(sel => this.#root.querySelector(sel)).filter(Boolean).map(el => el.getBoundingClientRect()), ...[this.#blueprint?.panelRect?.()].filter(Boolean), ...(this.#help?.occluders() ?? []), ...(this.#history?.occluders() ?? []), ...[this.#ready?.rect()].filter(Boolean)];
@@ -617,12 +745,19 @@ class PlumbOverlay extends HTMLElement {
   tool(name) { this.#$(`.dock .${name}`)?.click(); }
   setupLeft() { return this.#ready?.left ?? 0; }
   openSetup() { this.#ready?.toggle(true); }
-  remember(text, undo, place = null, group = null) { try { sessionStorage.setItem(RESUME, JSON.stringify({ at: Date.now(), blueprint: true, fix: text, undo: undo ?? [], group, pending: undo === undefined, place, scope: scopeKey(this.#blueprint?.scope), card: !!this.#blueprint?.carding })); } catch {} }
+  remember(text, undo, place = null, group = null, extra = {}) { try { sessionStorage.setItem(RESUME, JSON.stringify({ ...extra, at: Date.now(), blueprint: !!this.#blueprint?.active, fix: text, undo: undo ?? [], group, pending: undo === undefined, place, scope: scopeKey(this.#blueprint?.scope), card: !!this.#blueprint?.carding })); } catch {} }
   forgetResume() { try { sessionStorage.removeItem(RESUME); } catch {} }
+  #resumeOutside() { try { const saved = JSON.parse(sessionStorage.getItem(RESUME) ?? 'null'); if (saved?.blueprint) sessionStorage.setItem(RESUME, JSON.stringify({ ...saved, blueprint: false, card: false, scope: null })); } catch {} }
 
   #blueprintState(state) {
     if (state === 'refused') return this.#announce('Blueprint waits until React Plumber is running.');
     this.#bp.state = state;
+    // left by the person while a write is out: the page a reload brings back stays out of Blueprint, and the write is
+    // History's to say (fixpanel-spec.md, rule 4)
+    if (state === 'leaving') this.#resumeOutside();
+    // the X-ray is blueprint's way of showing an element (Alt+B), for the whole page; it leaves with it
+    if ((state === 'leaving' || state === 'off') && this.#xray) this.#toggleXray();
+    if (state === 'on' && !this.#xray && !this.#blueprint?.scope) this.#toggleXray();
     if (state === 'entering') this.#bp.progress = null;
     // blueprint is the person's own page, dimmed: the overlay's cards keep the scheme they have everywhere else
     // one owner of the screen: the setup callout steps aside for Blueprint; the hint only when no card is open (the card
@@ -654,6 +789,9 @@ class PlumbOverlay extends HTMLElement {
     try { const h = await request('health', {}); next = h?.status === 'ready' ? 'ready' : h?.status === 'failed' ? 'failed' : 'starting'; this.#reason = h?.diagnostic ?? h?.error ?? ''; }
     catch (error) { next = error?.failed ? 'failed' : error?.starting ? 'starting' : 'lost'; this.#reason = error?.message ?? ''; }
     if (!this.isConnected) return;
+    // the engine is ready before the page is: until React has hydrated it there is nothing to read (bounded: a page
+    // without React, or one that takes longer than half a minute, is shown ready as it is)
+    if (next === 'ready' && !pageHydrated() && performance.now() - this.#startedAt < 30000) next = 'starting';
     if (next !== this.#health) this.#blueprint?.healthChanged(next);
     if (next === 'ready' && this.#health !== 'ready') this.#ready?.read();
     this.#health = next; this.#dock();
@@ -842,7 +980,16 @@ class PlumbOverlay extends HTMLElement {
       return;
     }
     // Alt+B: the whole view as its blueprint, every drift drawn where it lives
+    // Alt+B: blueprint, with the X-ray of the element under the pointer in place of the heat (owner, 2026-11-13); its
+    // list of causes, the fix bar and the clean-up are as they were. The X-ray comes and goes with it (#blueprintState)
     if (event.altKey && event.code === 'KeyB' && !event.repeat) { event.preventDefault(); event.stopPropagation(); this.#disarm(); this.#wholePage(); return; }
+    // changes the X-ray has collected take Enter (Sync) and Esc (put back) before blueprint's own keys
+    if (this.#xray?.pending && (event.key === 'Enter' || event.key === 'Escape') && !event.altKey && !event.metaKey && !event.ctrlKey && !this.#typing(event)) {
+      event.preventDefault(); event.stopPropagation();
+      if (event.key === 'Enter') this.#xray.sync(); else this.#xray.putBack();
+      return;
+    }
+    if (this.#xray && event.key === 'Alt') return;
     if (event.key === 'Alt' && !event.repeat) this.#arm();
     else if (event.key === 'Escape' && this.#armed && this.#sticky) { event.preventDefault(); event.stopPropagation(); this.#disarm(); }
     // J/K, the arrows, N and Enter: the panel's causes, while blueprint is on and nothing is open or being typed
@@ -1645,7 +1792,7 @@ class PlumbOverlay extends HTMLElement {
       await this.#reread(p, classes, text, texts.length > 0);
     } catch (error) {
       try { sessionStorage.removeItem(RESUME); } catch {}
-      const stale = /changed since/i.test(error.message);
+      const stale = errorIs(error, 'stale-file');
       p.status = { kind: 'error', stale, text: stale ? 'The file changed since React Plumber read it.' : error.message };
       this.#updateSync();
     }

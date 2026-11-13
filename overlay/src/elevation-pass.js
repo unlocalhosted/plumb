@@ -15,9 +15,10 @@
 import { classEditsOf } from './locate.js';
 import { ease } from './show.js';
 import { loadShadows, proposeShadows, readShadows } from './elevation.js';
+import { placeOf } from './stamp.js';
 
 const NAME = { card: 'Cards', overlay: 'Floating things' };
-const keyOf = (el, cls) => `${(el.getAttribute('data-plumb-source') ?? '').split('#')[0]}|${cls}`;
+const keyOf = (el, cls) => `${(placeOf(el) ?? '')}|${cls}`;
 const mostOf = (vs) => vs.sort((a, b) => vs.filter((v) => v === b).length - vs.filter((v) => v === a).length)[0];
 const short = (cls) => String(cls ?? '').replace(/^shadow-?/, '') || 'shadow';
 // the chip: a square lifted off the line under it

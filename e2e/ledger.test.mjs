@@ -337,10 +337,11 @@ test('malformed ledgers and invalid command flags fail with actionable usage err
   const directory = await copy(t);
   run(directory, ['baseline']);
   const entries = await ledger(directory);
+  // a duplicate key or a broken line is skipped and said, never thrown on (docs/invariants/api-contract.md §3)
   await save(directory, [...entries, entries[0]]);
-  assert.match(run(directory, [], 2).stderr, /Duplicate ledger key/);
+  assert.ok(run(directory).notes.some(note => new RegExp(`skipped: duplicate key ${entries[0].key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`).test(note)));
   await writeFile(join(directory, '.plumber/ledger.jsonl'), '{broken\n');
-  assert.match(run(directory, [], 2).stderr, /Invalid ledger JSON/);
+  assert.ok(run(directory, [], 1).notes.some(note => /ledger\.jsonl:1 skipped: not JSON/.test(note)), 'with no entry left, every finding is new again');
   assert.match(run(directory, ['check', '--why', 'no'], 2).stderr, /--why requires/);
   await save(directory, entries);
   assert.match(run(directory, ['check', '--base=--not-a-ref'], 2).stderr, /Git comparison/);

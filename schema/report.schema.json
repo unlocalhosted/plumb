@@ -51,8 +51,13 @@
     "decisions": { "type": "array", "items": { "$ref": "#/$defs/decision" } },
     "numericSpacing": {
       "type": "object", "additionalProperties": false,
-      "required": ["unit", "replaced"],
-      "properties": { "unit": { "$ref": "#/$defs/decision" }, "replaced": { "type": "boolean" }, "reset": { "type": "boolean" }, "own": { "type": "boolean" } }
+      "required": ["unit", "replaced", "reset", "own"],
+      "properties": {
+        "unit": { "$ref": "#/$defs/decision" },
+        "replaced": { "type": "boolean", "description": "Named steps or a reset stand in for the numeric scale when judging." },
+        "reset": { "type": "boolean", "description": "The theme dropped the scale itself (`--spacing-*: initial`), so an editor has no multiplier to step by." },
+        "own": { "type": "boolean", "description": "The project itself defines `--spacing`, not only Tailwind's default." }
+      }
     },
     "decisionInventory": { "type": "array", "items": { "$ref": "#/$defs/decision" } },
     "deadDecisions": {
@@ -281,6 +286,7 @@
         "decisions": { "type": "array", "items": { "$ref": "#/$defs/decision" } },
         "title": { "type": "string", "minLength": 1 }, "because": { "type": "string", "minLength": 1 },
         "action": { "type": "string" }, "accept": { "type": "string" },
+        "docs": { "type": "string", "description": "Where the rule is read about: the docs page for a craft finding's rule (absent for other rules)." },
         "edits": { "type": "array", "items": { "type": "object", "additionalProperties": false, "required": ["site", "text"], "properties": { "site": { "$ref": "#/$defs/site" }, "text": { "type": "string" }, "token": { "type": "string" } } } },
         "choices": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/decision" } },
         "why": { "type": "string" }, "fix": { "type": "string" },

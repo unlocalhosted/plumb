@@ -1,3 +1,5 @@
+import { existsSync } from 'node:fs';
+import { resolve } from 'node:path';
 import type { Context, Detector } from '../detector.js';
 import { claim } from '../facts.js';
 
@@ -19,6 +21,14 @@ export const hostConfig: Detector = {
     return claims.length ? { host: claims } : {};
   },
 };
+
+/**
+ * The Next config file in a folder, by name, for a message that must name it while the config itself is being
+ * loaded (withPlumb runs inside it, before any project facts exist). 'next.config' when none is found.
+ */
+export function nextConfigName(folder: string = process.cwd()): string {
+  return hostConfigNames.next.find(name => existsSync(resolve(folder, name))) ?? 'next.config';
+}
 
 /** Bundler configs that may name the app's entry (for CSS entry discovery): the only place that looks for them. */
 export function bundlerConfigFiles(ctx: Context): string[] {

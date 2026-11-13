@@ -10,6 +10,7 @@ import { promisify } from 'node:util';
 import { createServer } from 'vite';
 import tailwindcss from '@tailwindcss/vite';
 import { plumb } from '@unlocalhosted/react-plumber/vite';
+import { docsUrl } from '../overlay/src/rule-docs.js';
 
 const repo = fileURLToPath(new URL('../', import.meta.url));
 const cli = join(repo, 'dist/cli.js');
@@ -75,11 +76,13 @@ test('plumber craft names each broken rule at its source line, writes SARIF, and
   assert.equal(sarif.version, '2.1.0');
   assert.ok(results.some((r) => r.ruleId === 'craft/tracking' && r.locations[0].physicalLocation.region.startLine === lineOf(BROKEN, 'track')));
   assert.ok(results.every((r) => r.locations[0].physicalLocation.artifactLocation.uri.endsWith('src/App.jsx')));
+  // every craft finding says where its rule is read about: the JSON's `docs`, the text's "Read more" line
+  assert.ok(report.findings.length && report.findings.every((f) => f.docs === docsUrl(f.rule) && /\/docs\/rules#craft-[a-z0-9-]+$/.test(f.docs)), `docs on every finding: ${JSON.stringify(report.findings.map((f) => [f.rule, f.docs]))}`);
   // the human report names the same lines
   const text = await plumber(['--url', url, '--root', root]);
   assert.equal(text.code, 1);
   assert.match(text.stdout, new RegExp(`src/App.jsx:${lineOf(BROKEN, 'pad')}:\\d+  craft/button-padding`));
-  assert.match(text.stdout, new RegExp(`src/App.jsx:${lineOf(BROKEN, 'tiny')}:\\d+  craft/hit-target\\n.*\\n.*\\n  Law: Fitts’s law\\n`));
+  assert.match(text.stdout, new RegExp(`src/App.jsx:${lineOf(BROKEN, 'tiny')}:\\d+  craft/hit-target\\n.*\\n.*\\n  Law: Fitts’s law\\n  Read more: ${docsUrl('craft/hit-target').replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\n`));
 });
 
 test('plumber craft on a clean page prints no findings and exits 0', { timeout: 240000 }, async (t) => {

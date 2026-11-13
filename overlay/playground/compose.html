@@ -39,9 +39,9 @@ const F = [
 
 const css = `
   ${GLYPH_CSS}
-  :host { display: block; background: var(--pl-paper); color: var(--pl-ink); border-radius: var(--pl-radius-card); box-shadow: var(--pl-shadow-card); font: var(--pl-text-row); }
-  .top { height: 26px; display: flex; align-items: center; gap: 6px; padding: 0 12px; font: var(--pl-text-label); }
-  .top b { font-weight: 600; } .top .f { margin-left: auto; color: var(--pl-ink-2); font: var(--pl-text-reading); }
+  :host { display: block; background: var(--pl-paper); color: var(--pl-ink); border-radius: var(--pl-radius-card); box-shadow: var(--pl-shadow-card); font: var(--pl-card-body); }
+  .top { height: 26px; display: flex; align-items: center; gap: 6px; padding: 0 12px; font: var(--pl-card-label); }
+  .top b { font-weight: 600; } .top .f { margin-left: auto; color: var(--pl-ink-2); font: var(--pl-card-code); }
   .stage { position: relative; margin: 6px 12px 0; }
   svg.draw { display: block; overflow: visible; }
   .draw .o { fill: none; stroke: var(--pl-ink-3); stroke-width: 1px; vector-effect: non-scaling-stroke; }
@@ -61,7 +61,7 @@ const css = `
   .tab[aria-current="true"]::after { content: ""; position: absolute; left: 8px; right: 8px; bottom: 2px; height: 1px; background: currentColor; }
   @media (hover: hover) and (pointer: fine) { .tab:hover, .mk:hover { color: var(--pl-ink); } }
   .tab:focus-visible, .mk:focus-visible { outline: 1px solid var(--pl-instrument); outline-offset: 1px; }
-  .read { padding: 10px 12px 12px; display: flex; align-items: center; gap: 8px; font: var(--pl-text-title); font-weight: 500; }
+  .read { padding: 10px 12px 12px; display: flex; align-items: center; gap: 8px; font: var(--pl-card-title); font-weight: 500; }
   .read .g { width: 14px; height: 14px; color: var(--pl-off); }
 `;
 
@@ -87,7 +87,7 @@ customElements.define('plumb-compose', class extends HTMLElement {
     };
     const tabs = () => v === 'inline' ? '' : `<div class="tabs" role="tablist">${F.map((f, i) => `<button class="tab ${f.soft ? 'soft' : ''}" role="tab" data-i="${i}" aria-current="${i === active}" aria-label="${f.label}">${glyph(f.fam)}</button>`).join('')}</div>`;
     const render = () => {
-      root.innerHTML = `<style>${tokens}${css}</style><div class="top"><b>div</b><span style="color:var(--pl-off);font:var(--pl-text-reading)">7 off</span><span class="f">SyncRow.tsx:18</span></div>
+      root.innerHTML = `<style>${tokens}${css}</style><div class="top"><b>div</b><span style="color:var(--pl-off);font:var(--pl-card-code)">7 off</span><span class="f">SyncRow.tsx:18</span></div>
         ${v === 'strip' ? tabs() + draw() : draw() + tabs()}
         <div class="read">${glyph(F[active].fam)}${F[active].label} isn't on your scale</div>`;
       root.querySelectorAll('[data-i]').forEach(b => { b.addEventListener('click', () => { active = Number(b.dataset.i); render(); }); b.addEventListener('mouseenter', () => { if (v !== 'region') { active = Number(b.dataset.i); render(); } }); });

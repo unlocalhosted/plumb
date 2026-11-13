@@ -29,19 +29,25 @@
  * Keys (while blueprint is on): Enter starts or fixes (written at once) · ↑ ↓ try · K keep it · → Tab skip · ← back · Esc put it down
  * ───────────────────────────────────────────────────────── */
 import { TextEditor, TEXT_EDITOR_CSS } from './texteditor.js';
+import { burst } from './burst.js'; // a fix landing, in pieces of the visual language
+import { SPRING, FIX_BUTTONS_CSS, FIX_NOTE_CSS, FIX_FIELD_CSS, fieldSays, shake, fit, fitFor } from './field.js'; // the fill-in parts, shared with the design site
+import { errorIs } from './api.js';
 import { ElementCard, ELEMENT_CARD_CSS } from './elementcard.js';
 import { esc } from './choices.js';
 import { groundIsDark } from './geometry.js';
 import { FIX, CLEANUP, written } from './words.js'; // every sentence the panel says
+import { docsUrl } from './rule-docs.js'; // where a craft rule is read about
 import { Cleanup, CLEANUP_CSS } from './cleanup.js'; // "Clean up this page": the passes, one at a time
-import { groupsOf, isNote } from './blueprint-panel.js';
+import { groupsOf, isNote, placeKey } from './blueprint-panel.js';
 import { glide } from './inplace.js'; // the text styles the code is reaching for
+import { stampOf, parseStamp, sameStamp, stampNames } from './stamp.js';
+import { Scope } from './scope.js';
+import { Claims, LEVEL } from './claims.js';
 
 const TIMING = { open: 260, next: 180, click: 60, clickGap: 45, breath: 480, check: 600, fold: 2300 };
 const CLICK = { drop: 3, over: -1, ms: 420 };
 const BREATH = { scale: 1.006, ms: 620 };
-const BURST = { pieces: 40, speed: [380, 760], spread: 1.1, gravity: 1100, spin: 9, life: 1600, size: [7, 11] };
-const SPRING = 'cubic-bezier(.3, 1.35, .5, 1)', EASE = 'cubic-bezier(.2, .8, .2, 1)';
+const EASE = 'cubic-bezier(.2, .8, .2, 1)';
 const SCALE = 0.62; // px of drawing per px of page, for padding specimens
 
 // the bar's tools (the dock's, pressed through the widget), shown only after ··· (docs/design/one-bar.md: tools stay out of
@@ -58,17 +64,17 @@ export const FIX_CSS = TEXT_EDITOR_CSS + ELEMENT_CARD_CSS + `
   /* the old pieces this panel replaces stay out of sight */
   .bpp, .cg, .sel { display: none !important; }
   .fx { position: fixed; left: 50%; bottom: 72px; translate: -50% 0; width: 520px; max-width: calc(100vw - 32px); box-sizing: border-box; pointer-events: auto; z-index: 2;
-    background: rgb(255 255 255 / .82); -webkit-backdrop-filter: blur(22px) saturate(1.6); backdrop-filter: blur(22px) saturate(1.6);
-    border-radius: 18px; color: #1c1b19; font: 13px/1.35 var(--pl-sans, system-ui), sans-serif; overflow: hidden;
+    background: color-mix(in oklab, var(--pl-bg-surface) 82%, transparent); -webkit-backdrop-filter: blur(22px) saturate(1.6); backdrop-filter: blur(22px) saturate(1.6);
+    border-radius: 18px; color: var(--pl-text-primary); font: 13px/1.35 var(--pl-sans, system-ui), sans-serif; overflow: hidden;
     box-shadow: 0 0 0 .5px rgb(0 0 0 / .09), 0 1px 1px rgb(0 0 0 / .04), 0 8px 20px -8px rgb(0 0 0 / .14), 0 28px 56px -24px rgb(0 0 0 / .18), inset 0 1px 0 rgb(255 255 255 / .9);
     transition: height ${TIMING.open}ms ${SPRING}; }
   .fx[hidden] { display: none; }
   .fx button:not(.pl-act) { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; }
-  .fx :not(.pl-act) > kbd { font: 500 10.5px/1 ui-monospace, monospace; color: #8b8a85; margin-left: 2px; }
+  .fx :not(.pl-act) > kbd { font: 500 10.5px/1 ui-monospace, monospace; color: var(--pl-text-secondary); margin-left: 2px; }
   .fx .line { display: flex; align-items: center; gap: 10px; height: 46px; padding: 0 7px 0 16px; }
-  .fx .dot { width: 7px; height: 7px; border-radius: 50%; background: #ff1f8f; box-shadow: 0 0 0 3px rgb(255 31 143 / .14); flex: none; }
-  .fx .count { font-weight: 550; } .fx .count span { color: #8b8a85; font-weight: 450; }
-  .fx .count .err { color: #c2304f; font-weight: 550; }
+  .fx .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--pl-heat); box-shadow: 0 0 0 3px color-mix(in oklab, var(--pl-heat) 14%, transparent); flex: none; }
+  .fx .count { font-weight: 550; } .fx .count span { color: var(--pl-text-secondary); font-weight: 450; }
+  .fx .count .err { color: var(--pl-text-hard-coded); font-weight: 550; }
   .fx .grow { flex: 1; }
   /* the bar at rest (docs/design/one-bar.md): one line, one count, each key on its action; it sits where the dock was */
   .fx[data-rest] { width: min(720px, calc(100vw - 32px)); bottom: var(--pl-space-6, 24px); overflow: visible; }
@@ -78,28 +84,31 @@ export const FIX_CSS = TEXT_EDITOR_CSS + ELEMENT_CARD_CSS + `
   .fx .bar { gap: 8px; height: 48px; padding: 0 7px 0 16px; }
   .fx .bar .pl-act { flex: none; }
   .fx .status { position: relative; display: inline-flex; align-items: center; gap: 8px; flex: none; padding: 6px 8px; margin-left: -8px; border-radius: 8px; outline: none; }
-  .fx .status:hover, .fx .status:focus-visible { background: rgb(0 0 0 / .045); }
-  .fx .status:focus-visible { box-shadow: 0 0 0 2px var(--pl-sky); }
-  .fx .readout { position: absolute; left: 0; bottom: calc(100% + 10px); padding: 8px 12px; border-radius: 12px; background: var(--pl-paper-2); color: var(--pl-ink-2);
-    box-shadow: 0 0 0 1px var(--pl-rule), 0 8px 20px -10px rgb(28 27 25 / .3); white-space: nowrap; font-weight: 500; opacity: 0; translate: 0 4px; pointer-events: none;
+  .fx .status:hover, .fx .status:focus-visible { background: var(--pl-bg-surface-hover); }
+  .fx .status:focus-visible { box-shadow: 0 0 0 2px var(--pl-border-focus); }
+  .fx .readout { position: absolute; left: 0; bottom: calc(100% + 10px); padding: 8px 12px; border-radius: 12px; background: var(--pl-bg-inset); color: var(--pl-text-secondary);
+    box-shadow: 0 0 0 1px var(--pl-border-default), 0 8px 20px -10px rgb(28 27 25 / .3); white-space: nowrap; font-weight: 500; opacity: 0; translate: 0 4px; pointer-events: none;
     transition: opacity 120ms ${SPRING}, translate 120ms ${SPRING}; }
   .fx .status:hover .readout, .fx .status:focus-visible .readout { opacity: 1; translate: 0 0; }
-  .fx .quiet-line { flex: 1; min-width: 0; color: #6b665c; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .fx .notice { display: inline-flex; align-items: center; gap: 8px; flex: none; padding-left: 10px; box-shadow: inset 1px 0 0 rgb(0 0 0 / .08); white-space: nowrap; }
-  .fx .notice b { color: #a8650f; font-weight: 600; }
-  .fx .notice .setup { color: var(--pl-sky); font-weight: 600; font-size: 12px; }
-  .fx .bar .more, .fx .bar .tool { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 8px; color: #6b665c; flex: none; }
-  .fx .bar .more:hover, .fx .bar .tool:hover, .fx .bar .more[aria-expanded="true"] { background: rgb(0 0 0 / .05); color: #1c1b19; }
+  .fx .quiet-line { flex: 1; min-width: 0; color: var(--pl-text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .fx .notice { display: inline-flex; align-items: center; gap: 8px; flex: none; padding-left: 10px; box-shadow: inset 1px 0 0 var(--pl-border-default); white-space: nowrap; }
+  .fx .notice b { color: var(--pl-text-soft); font-weight: 600; }
+  .fx .notice .setup { color: var(--pl-state-on-token-text); font-weight: 600; font-size: 12px; }
+  .fx .bar .more, .fx .bar .tool { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 8px; color: var(--pl-icon-secondary); flex: none; }
+  .fx .bar .more:hover, .fx .bar .tool:hover, .fx .bar .more[aria-expanded="true"] { background: var(--pl-bg-surface-hover); color: var(--pl-text-primary); }
   .fx .bar .more svg, .fx .bar .tool svg { width: 16px; height: 16px; }
   .fx .bar .tools { display: inline-flex; gap: 2px; animation: pl-pop 260ms var(--pl-spring-pop) both; }
-  .fx .bar .bar-close { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 6px; border-radius: 8px; color: #8b8a85; font-weight: 600; font-size: 12px; flex: none; }
-  .fx .bar .bar-close:hover { background: rgb(0 0 0 / .05); color: #1c1b19; }
+  .fx .bar .bar-close { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 6px; border-radius: 8px; color: var(--pl-text-secondary); font-weight: 600; font-size: 12px; flex: none; }
+  .fx .bar .bar-close:hover { background: var(--pl-bg-surface-hover); color: var(--pl-text-primary); }
   .fx .bar .bar-close kbd { display: inline-grid; place-items: center; height: 18px; padding: 0 5px; margin: 0; border-radius: 4px; font: 600 11px/1 var(--pl-mono, ui-monospace, monospace);
-    background: var(--pl-paper-2); box-shadow: inset 0 0 0 1px var(--pl-rule); color: var(--pl-ink-2); }
+    background: var(--pl-bg-inset); box-shadow: inset 0 0 0 1px var(--pl-border-default); color: var(--pl-text-secondary); }
   .fx .bar .bar-close .x { display: none; width: 16px; height: 16px; }
   .fx .bar.has-notice .long { display: none; }
   /* the tools out take the room Close's word had: Esc says it */
   .fx .bar:has(.tools) .bar-close .word { display: none; }
+  /* with the tools out, the setup note steps aside too: nothing else in the bar can give, and on a system whose
+     text runs wider (Linux, Windows) the tools pushed Close past the bar's edge */
+  .fx .bar:has(.tools) .notice { display: none; }
   @media (max-width: 560px) {
     .fx .bar { padding: 0 4px 0 12px; gap: 4px; }
     /* a phone's bar keeps the count, its two actions and Close; the tools are on the dock's mark once Blueprint closes */
@@ -108,78 +117,62 @@ export const FIX_CSS = TEXT_EDITOR_CSS + ELEMENT_CARD_CSS + `
     .fx .bar .bar-close .x { display: block; }
   }
   @media (prefers-reduced-motion: reduce) { .fx .readout { transition: none; } .fx .bar .tools { animation: none; } }
-  .fx .primary { height: 32px; padding: 0 12px 0 14px; border-radius: 11px; background: #1c1b19; color: #fff; font-weight: 550; display: inline-flex; align-items: center; gap: 6px;
-    box-shadow: inset 0 1px 0 rgb(255 255 255 / .12), 0 1px 2px rgb(0 0 0 / .2); transition: transform 160ms ${SPRING}, opacity 160ms; }
-  .fx .primary:active { transform: scale(.97); } .fx .primary kbd { color: rgb(255 255 255 / .55); } .fx .primary[disabled] { opacity: .28; cursor: default; }
-  .fx .ghost { height: 32px; padding: 0 10px; border-radius: 10px; color: #55544f; display: inline-flex; align-items: center; gap: 5px; }
-  .fx .ghost:hover { background: rgb(0 0 0 / .045); }
+  ${FIX_BUTTONS_CSS}
   /* the last fix written: what it changed and where, with Undo, above whatever the panel holds next */
-  .fx .said { display: flex; align-items: center; gap: 8px; padding: 6px 8px 6px 14px; border-bottom: .5px solid rgb(0 0 0 / .08); color: #1c1b19; animation: fx-rise 220ms ${EASE} both; }
+  .fx .said { display: flex; align-items: center; gap: 8px; padding: 6px 8px 6px 14px; border-bottom: .5px solid var(--pl-border-default); color: var(--pl-text-primary); animation: fx-rise 220ms ${EASE} both; }
   .fx .said .tick { width: 14px; height: 14px; flex: none; }
   .fx .said .tick path { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
   .fx .said .t { flex: 1; min-width: 0; font-weight: 550; overflow-wrap: anywhere; }
   .fx .said .undo { height: 28px; }
   .fx .cause { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 2px 10px; padding: 16px 12px 4px 18px; }
   .fx .cause .cls { font: 600 14px/1.2 ui-monospace, monospace; letter-spacing: -.01em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .fx .cause .what { grid-column: 2; color: #8b8a85; }
+  .fx .cause .what { grid-column: 2; color: var(--pl-text-secondary); }
   .fx .cause .what > span { white-space: nowrap; } /* it wraps between its parts, never inside one */
-  .fx .cause .nav { grid-row: span 2; grid-column: 3; display: flex; align-items: center; gap: 2px; color: #8b8a85; font: 500 11.5px/1 ui-monospace, monospace; font-variant-numeric: tabular-nums; }
-  .fx .cause .nav button { width: 26px; height: 26px; border-radius: 8px; display: grid; place-items: center; color: #55544f; }
-  .fx .cause .nav button:hover { background: rgb(0 0 0 / .05); }
-  .fx .note { margin: 2px 18px 0; padding: 8px 10px; border-radius: 10px; background: rgb(0 0 0 / .035); color: #55544f; font-size: 12px; line-height: 1.45; }
-  .fx .note code { font: 600 11.5px/1 ui-monospace, monospace; color: #1c1b19; }
-  .fx .say { padding: 8px 18px 14px; color: #55544f; max-width: 52ch; }
-  .fx .say.err { color: #c2304f; }
+  .fx .cause .nav { grid-row: span 2; grid-column: 3; display: flex; align-items: center; gap: 2px; color: var(--pl-text-secondary); font: 500 11.5px/1 ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+  .fx .cause .nav button { width: 26px; height: 26px; border-radius: 8px; display: grid; place-items: center; color: var(--pl-text-secondary); }
+  .fx .cause .nav button:hover { background: var(--pl-bg-surface-hover); }
+  ${FIX_NOTE_CSS}
+  /* the "i" after a craft finding's name: the glyph sits on the text, its 24px target overhangs the line, never moves it */
+  .fx .cause .info { display: inline-grid; place-items: center; width: 24px; height: 24px; margin: -6px -3px -6px 1px; vertical-align: middle; border-radius: 50%;
+    color: var(--pl-text-secondary); text-decoration: none; transition: color 120ms, background-color 120ms, transform 160ms ${SPRING}; }
+  .fx .cause .info svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 1.3; stroke-linecap: round; }
+  .fx .cause .info .tittle { fill: currentColor; stroke: none; }
+  .fx .cause .info:hover { color: var(--pl-text-primary); background: var(--pl-bg-surface-hover); }
+  .fx .cause .info:active { transform: scale(.88); background: var(--pl-bg-surface-pressed); }
+  .fx .cause .info:focus-visible { outline: 2px solid var(--pl-border-focus); outline-offset: -2px; color: var(--pl-text-primary); }
+  @media (prefers-reduced-motion: reduce) { .fx .cause .info { transition: none; } .fx .cause .info:active { transform: none; } }
   .fx .specimens { display: flex; gap: 6px; padding: 10px 14px 6px; }
   .fx .sp { flex: 1 1 0; min-width: 0; max-width: 104px; margin: 0 auto; display: grid; justify-items: center; gap: 6px; padding: 10px 4px 9px; border-radius: 12px; position: relative;
-    --hue: 120 120 120; --space: rgb(var(--hue) / .42); --space-line: rgb(var(--hue) / .35); --word: #8b8a85; color: #b4b3ad; transition: box-shadow 180ms, background 180ms; }
+    --hue: 120 120 120; --space: rgb(var(--hue) / .42); --space-line: rgb(var(--hue) / .35); --word: var(--pl-text-secondary); color: var(--pl-text-secondary); transition: box-shadow 180ms, background 180ms; }
   .fx .sp[data-kind="padding"] { --hue: 26 158 98; } .fx .sp[data-kind="margin"] { --hue: 226 128 10; } .fx .sp[data-kind="gap"] { --hue: 122 92 240; }
   .fx .sp svg { width: 52px; height: 40px; overflow: visible; }
   .fx .sp .space-fill { fill: var(--space); } .fx .sp .space-line { stroke: var(--space-line); } .fx .sp .word { fill: var(--word); }
-  .fx .sp .v { font: 600 13px/1 ui-monospace, monospace; font-variant-numeric: tabular-nums; color: #8b8a85; letter-spacing: -.01em; white-space: nowrap; }
-  .fx .sp .tk { font: 500 10.5px/1 ui-monospace, monospace; color: #a3a29c; white-space: nowrap; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
-  .fx button.sp:not([aria-pressed="true"]):hover { --space: rgb(var(--hue) / .62); --space-line: rgb(var(--hue) / .5); --word: #55544f; }
-  .fx button.sp:not([aria-pressed="true"]):hover .v { color: #55544f; }
-  .fx .sp[aria-pressed="true"] { background: #fff; --space: rgb(var(--hue)); --space-line: rgb(var(--hue)); --word: #1c1b19; box-shadow: 0 0 0 1.5px #1c1b19, 0 1px 2px rgb(0 0 0 / .06), 0 6px 14px -6px rgb(0 0 0 / .18); }
-  .fx .sp[aria-pressed="true"] .v { color: #1c1b19; } .fx .sp[aria-pressed="true"] .tk { color: #55544f; }
-  .fx .sp.off { opacity: .45; cursor: not-allowed; --space: #b4b3ad; --space-line: #c9c8c2; --word: #b4b3ad; }
+  .fx .sp .v { font: 600 13px/1 ui-monospace, monospace; font-variant-numeric: tabular-nums; color: var(--pl-text-secondary); letter-spacing: -.01em; white-space: nowrap; }
+  .fx .sp .tk { font: 500 10.5px/1 ui-monospace, monospace; color: var(--pl-text-secondary); white-space: nowrap; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+  .fx button.sp:not([aria-pressed="true"]):hover { --space: rgb(var(--hue) / .62); --space-line: rgb(var(--hue) / .5); --word: var(--pl-text-primary); }
+  .fx button.sp:not([aria-pressed="true"]):hover .v { color: var(--pl-text-primary); }
+  .fx .sp[aria-pressed="true"] { background: var(--pl-bg-surface); --space: rgb(var(--hue)); --space-line: rgb(var(--hue)); --word: var(--pl-text-primary); box-shadow: 0 0 0 1.5px var(--pl-text-primary), 0 1px 2px rgb(0 0 0 / .06), 0 6px 14px -6px rgb(0 0 0 / .18); }
+  .fx .sp[aria-pressed="true"] .v { color: var(--pl-text-primary); } .fx .sp[aria-pressed="true"] .tk { color: var(--pl-text-secondary); }
+  .fx .sp.off { opacity: .45; cursor: not-allowed; --space: var(--pl-icon-disabled); --space-line: var(--pl-border-default); --word: var(--pl-text-disabled); }
   .fx .sp.off .v { text-decoration: line-through; text-decoration-thickness: 1px; }
   .fx .sp .swatch { width: 26px; height: 26px; border-radius: 50%; box-shadow: inset 0 0 0 1px rgb(0 0 0 / .1); margin: 7px 0; }
-  .fx button:focus-visible, .fx input:focus-visible { outline: 2px solid #3b6cff; outline-offset: 2px; }
-  .fx .field { display: flex; align-items: center; gap: 0; margin: 8px 18px 2px; height: 34px; padding: 0 10px; border-radius: 10px; background: #fff;
-    box-shadow: inset 0 0 0 1px rgb(0 0 0 / .12); font: 500 12.5px/1 ui-monospace, monospace; color: #8b8a85; transition: box-shadow 140ms; }
-  .fx .field:focus-within { box-shadow: inset 0 0 0 1.5px #1c1b19; }
-  .fx .field[data-invalid] { box-shadow: inset 0 0 0 1.5px #c2304f; }
-  .fx .field input { all: unset; min-width: 4ch; color: #1c1b19; font: inherit; }
-  .fx .field.why input { flex: 1; }
-  .fx .field input::placeholder { color: #b4b3ad; }
-  .fx .field.why { gap: 6px; font: 13px/1.35 var(--pl-sans, system-ui), sans-serif; } .fx .field.why input { font: inherit; }
-  .fx .hint { margin: 4px 18px 0; color: #8b8a85; font-size: 12px; min-height: 16px; }
-  .fx .hint code { font: 600 11.5px/1 ui-monospace, monospace; color: #1c1b19; }
-  .fx .hint.err { color: #c2304f; }
-  .fx .acts { display: flex; align-items: center; gap: 6px; padding: 8px 8px 8px 12px; margin-top: 4px; border-top: .5px solid rgb(0 0 0 / .08); }
+  .fx button:focus-visible, .fx input:focus-visible { outline: 2px solid var(--pl-border-focus); outline-offset: 2px; }
+  ${FIX_FIELD_CSS}
   .fx .body { animation: fx-slide ${TIMING.next}ms ${EASE} both; }
   @keyframes fx-slide { from { opacity: 0; translate: 10px 0; } }
-  .fx .writing { display: flex; align-items: center; gap: 10px; height: 46px; padding: 0 16px; color: #55544f; }
-  .fx .writing i { width: 12px; height: 12px; border-radius: 50%; border: 1.5px solid #1c1b19; border-top-color: transparent; animation: fx-spin .7s linear infinite; }
+  .fx .writing { display: flex; align-items: center; gap: 10px; height: 46px; padding: 0 16px; color: var(--pl-text-secondary); }
+  .fx .writing i { width: 12px; height: 12px; border-radius: 50%; border: 1.5px solid var(--pl-icon-primary); border-top-color: transparent; animation: fx-spin .7s linear infinite; }
   @keyframes fx-spin { to { rotate: 1turn; } }
   .fx .done { justify-content: center; gap: 8px; padding: 0 16px; }
   .fx .check { width: 18px; height: 18px; }
-  .fx .check path { fill: none; stroke: #1c1b19; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 16; stroke-dashoffset: 16; animation: fx-draw 340ms ${TIMING.check}ms ${EASE} forwards; }
+  .fx .check path { fill: none; stroke: var(--pl-icon-primary); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 16; stroke-dashoffset: 16; animation: fx-draw 340ms ${TIMING.check}ms ${EASE} forwards; }
   .fx .done .words { font-weight: 600; opacity: 0; animation: fx-rise 280ms ${TIMING.check + 160}ms ${EASE} forwards; }
   @keyframes fx-draw { to { stroke-dashoffset: 0; } }
   @keyframes fx-rise { from { opacity: 0; translate: 0 2px; } to { opacity: 1; translate: 0 0; } }
   canvas.fx-burst { position: fixed; inset: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 3; }
   @media (prefers-reduced-motion: reduce) { .fx, .fx .sp { transition: none; } .fx .body { animation: none; } .fx .check path { animation: none; stroke-dashoffset: 0; } .fx .done .words { animation: none; opacity: 1; } }
-  /* dark: the page's own ground decides (as the overlay does), not the operating system */
-    .fx[data-scheme="dark"] { background: rgb(30 30 33 / .82); color: #f1f0ec; box-shadow: 0 0 0 .5px rgb(255 255 255 / .12), 0 8px 20px -8px rgb(0 0 0 / .5), 0 28px 56px -24px rgb(0 0 0 / .6), inset 0 1px 0 rgb(255 255 255 / .06); }
-    .fx[data-scheme="dark"] .primary { background: #f1f0ec; color: #1c1b19; } .fx[data-scheme="dark"] .primary kbd { color: rgb(0 0 0 / .45); }
-    .fx[data-scheme="dark"] .said { color: #f1f0ec; border-bottom-color: rgb(255 255 255 / .1); }
-    .fx[data-scheme="dark"] .ghost { color: #c9c8c2; } .fx[data-scheme="dark"] .note { background: rgb(255 255 255 / .06); color: #c9c8c2; } .fx[data-scheme="dark"] .note code, .fx[data-scheme="dark"] .cause .cls { color: #f1f0ec; }
-    .fx[data-scheme="dark"] .sp[aria-pressed="true"] { background: #2a2a2e; --word: #f1f0ec; box-shadow: 0 0 0 1.5px #f1f0ec; } .fx[data-scheme="dark"] .sp[aria-pressed="true"] .v { color: #f1f0ec; }
-    .fx[data-scheme="dark"] .say, .fx[data-scheme="dark"] .hint, .fx[data-scheme="dark"] .cause .what, .fx[data-scheme="dark"] .field { color: #a3a29c; }
-    .fx[data-scheme="dark"] .field { background: #2a2a2e; box-shadow: inset 0 0 0 1px rgb(255 255 255 / .16); } .fx[data-scheme="dark"] .field input, .fx[data-scheme="dark"] .hint code { color: #f1f0ec; }
-    .fx[data-scheme="dark"] .check path { stroke: #f1f0ec; } .fx[data-scheme="dark"] .writing i { border-color: #f1f0ec; border-top-color: transparent; }
+  /* on a dark page the bar takes the night palette (pl-dark, set with the page's ground); only its shadow is its own */
+  .fx.pl-dark { box-shadow: 0 0 0 .5px rgb(255 255 255 / .12), 0 8px 20px -8px rgb(0 0 0 / .5), 0 28px 56px -24px rgb(0 0 0 / .6), inset 0 1px 0 rgb(255 255 255 / .06); }
 ${CLEANUP_CSS}
 `;
 
@@ -234,7 +227,7 @@ function specimen(kind, mark, n, label, swatch) {
 const darkGround = () => groundIsDark();
 const plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`;
 // advice with no exact edit (a craft rule's words only): a note, shown after the causes and never counted
-const noteOf = (g) => g.members.every((m) => isNote(m.mark));
+const noteOf = (g) => g.members.every((m) => isNote(m.mark, fileOf(m)));
 // what a cause is called: its class, as written in your code; a craft rule with no class to point at names a tag
 // (a tap target, an icon inside it) or a CSS property (gap): those name the element instead, so neither passes for a
 // class. (Decided by the name, not the element's classes: a fix being tried has swapped them.)
@@ -259,10 +252,12 @@ const UNDOING = 'plumb:undoing';
 const saveUndoing = (rest) => { try { if (rest?.undo?.length || rest?.group) sessionStorage.setItem(UNDOING, JSON.stringify({ ...rest, at: Date.now() })); else sessionStorage.removeItem(UNDOING); } catch {} };
 const undoing_ = () => { try { const u = JSON.parse(sessionStorage.getItem(UNDOING) ?? 'null'); return u && Date.now() - u.at < 30000 ? u : null; } catch { return null; } };
 const RESUME_WAIT = 4000; // ms a reloaded page's readings may still have the fix just written, before the panel moves on anyway
-const placesOf = (g) => new Set(g.members.map((m) => `${fileOf(m)}:${m.mark.line}:${m.mark.column}`)).size;
+// the places of a cause: one per file:line:column its members are at (placeKey), none for a member with no place
+const placeOfMember = (m) => placeKey(m.mark, fileOf(m));
+const placesOf = (g) => new Set(g.members.map(placeOfMember).filter(Boolean)).size;
 const drawn = (g) => g.members.some((m) => m.el);
 // the other elements on the page drawn by the same line of code as this one (its stamp), outside it
-const stampMates = (el) => { const at = el?.getAttribute('data-plumb-source'); return at ? [...document.querySelectorAll(`[data-plumb-source="${CSS.escape(at)}"]`)].filter((x) => x !== el && !el.contains(x)).length : 0; };
+const stampMates = (el) => { const at = stampOf(el); return at ? [...document.querySelectorAll(sameStamp(at))].filter((x) => x !== el && !el.contains(x)).length : 0; };
 // an Alt+click reads one element (scope): a fix changes its line of code, so the places outside it that the same line
 // draws change too. Counted by stamp, only where the element's stamp is the fix's own line (a caller's classes are not)
 // One unit for both counts (F8-05): what the fix's line draws, counted once by its stamp, inside the element read
@@ -270,12 +265,12 @@ const stampMates = (el) => { const at = el?.getAttribute('data-plumb-source'); r
 // A craft finding carries no line of its own: its class is the element's own when the element's class attribute
 // holds it, so it is counted by the element's stamp too
 const ownClass = (m) => m.mark.line == null && !!m.mark.text && (m.el?.getAttribute('class') ?? '').split(/\s+/).includes(m.mark.text);
-const stampsOf = (g) => { const stamps = new Set(); for (const m of g.members) { const stamp = m.el?.getAttribute('data-plumb-source'); if (stamp?.startsWith(`${fileOf(m)}:${m.mark.line}:`) || (stamp && ownClass(m))) stamps.add(stamp); } return stamps; };
+const stampsOf = (g) => { const stamps = new Set(); for (const m of g.members) { const stamp = stampOf(m.el), parsed = parseStamp(stamp); if ((parsed && parsed.line === m.mark.line && stampNames(parsed, fileOf(m))) || (parsed && ownClass(m))) stamps.add(stamp); } return stamps; };
 const drawnOf = (g, scope) => {
   const stamps = stampsOf(g), own = elsOf(g);
   if (!scope || !stamps.size) return { here: own.length, elsewhere: 0 };
   const drawn = new Set(own);
-  for (const stamp of stamps) for (const el of document.querySelectorAll(`[data-plumb-source="${CSS.escape(stamp)}"]`)) drawn.add(el);
+  for (const stamp of stamps) for (const el of document.querySelectorAll(sameStamp(stamp))) drawn.add(el);
   let here = 0, elsewhere = 0;
   for (const el of drawn) if (scope.contains(el)) here++; else elsewhere++;
   return { here, elsewhere };
@@ -284,19 +279,65 @@ const elsewhere = (g, scope) => (scope ? drawnOf(g, scope).elsewhere : 0);
 const elsOf = (g) => [...new Set(g.members.map((m) => m.el).filter(Boolean))];
 const shown = (el) => el?.isConnected && (el.checkVisibility?.({ visibilityProperty: true }) ?? true) && el.getClientRects().length > 0;
 
+// The panel's one machine (docs/state-machines/fixpanel-spec.md, read by `sm`: docs/briefs/state-oracle-spec.md): what
+// it shows is its phase; a write or undo running against the server is its flight, kept apart so closing the panel
+// mid-write never loses the write. Every move between phases is an event in this table, sent through #send; any other
+// is refused and said in the console. Esc is the panel's own only with a cause in hand (`escape`); at rest, or while a
+// flight is out, it is Blueprint's, which closes the panel (`close`). Keeping takes `take` too: Enter with the why field
+// unfocused writes the fix, as it did before the table.
+/** @machine */
+export const FIX_PANEL = {
+  id: 'fix-panel',
+  owner: 'FixPanel',
+  field: '#phase',
+  token: '#flight',
+  initial: 'closed',
+  cancel: ['escape', 'close'],
+  states: {
+    closed:  { on: { open: 'resting', openWriting: 'writing', openUndoing: 'undoing' }, ignores: ['escape', 'close'] }, // opened with a flight in the air: the flight is shown
+    resting: { on: { hold: 'holding', undo: 'undoing', close: 'closed' }, ignores: ['escape'] },
+    holding: { on: { take: 'writing', keep: 'keeping', release: 'resting', hold: 'holding', undo: 'undoing', escape: 'resting', close: 'closed' } },
+    keeping: { on: { keepIt: 'writing', take: 'writing', closeKeep: 'holding', hold: 'holding', release: 'resting', undo: 'undoing', escape: 'resting', close: 'closed' } },
+    writing: { flight: 'write', on: { landedNext: 'holding', landedNone: 'resting', close: 'closed' }, ignores: ['escape'] }, // landed: the next cause in hand, or none left
+    undoing: { flight: 'undo', on: { landedResting: 'resting', landedHolding: 'holding', landedKeeping: 'keeping', close: 'closed' }, ignores: ['escape'] }, // landed: back where it was
+  },
+  flights: {
+    write: { ifLeft: 'handOff' }, // closed while it ran: History says it, with its Undo
+    undo: { ifLeft: 'drop' },
+  },
+};
+
 export class FixPanel {
-  #el; #host; #groups = []; #code = 0; #at = 0; #held = null; #pending = null; #error = null; #progress = null; #holding = false; #taken = new Map(); #tokens = new Map(); #writing = false; #done = false; #previewed = null; #fixed = []; #fixedCount = 0; #on = false;
+  #phase = FIX_PANEL.initial;
+  #flight = null; // { kind: 'writing' | 'undoing' } while a write or an undo runs, whether the panel is open or not
+  get #on() { return this.#phase !== 'closed'; }
+  get #holding() { return this.#phase === 'holding' || this.#phase === 'keeping'; } // a cause is in hand
+  get #keeping() { return this.#phase === 'keeping'; } // the why field is open for the cause in hand
+  get #writing() { return this.#phase === 'writing'; }
+  get #undoing() { return this.#phase === 'undoing'; }
+  // the one writer of #phase: the table says what the event does in the phase in hand (nothing, on purpose, when it is
+  // in `ignores`; nothing, and a warning, when the table has no answer)
+  // What a phase started ends when the phase is left (scope.js): `#scope` is the phase's. `#life` is the panel's own,
+  // for what must finish whatever the phase does next (a height put back after it moved, the ✓'s burst).
+  #scope = new Scope();
+  #life = new Scope();
+  #send(event) {
+    const next = FIX_PANEL.states[this.#phase]?.on?.[event];
+    if (next) { this.#phase = next; this.#scope.end(); this.#scope = new Scope(); }
+    else if (!FIX_PANEL.states[this.#phase]?.ignores?.includes(event)) console.warn(`plumb: fix panel can't ${event} while ${this.#phase}`);
+    return !!next;
+  }
+  get phase() { return this.#phase; }
+  #el; #host; #groups = []; #code = 0; #at = 0; #held = null; #pending = null; #error = null; #progress = null; #taken = new Map(); #tokens = new Map(); #done = false; #previewed = null; #fixed = []; #fixedCount = 0;
   #unsettledAt = 0; #unsettledTimer = 0;
   #steady = null; #doneText = null; #notice = null; #noticeTimer = 0;   // the last settled count { places, causes, notes }: said while the page is checked again
   #foldTimer = 0;
   #keeps = new Map(); // cause key → { rule, sites, why }: kept as intended, written on Apply
-  #keeping = false;   // the why field is open for the cause in hand
   #why = '';          // its words as typed
   #names = new Map(); // cause key → the new token's name as typed
   #fromCode = new Map(); // cause key → { reading } | { plan, writes, at } | { none }: a cause no element renders, its options read from the code
   #swaps = new Map();    // cause key → { writes }: taken from the code alone
-  #last = null; #textGroup = null;          // the last write: { text, undo: [handle] } (undo empty: nothing to take back), said above the panel
-  #undoing = false;
+  #last = null;          // the last write: { text, undo: [handle] } (undo empty: nothing to take back), said above the panel
   #writingText = null;   // what is being written, when it isn't a single fix
   #resumeAt = null;      // after a write reloaded the page: { at, key, since }, the place to hold once a reading no longer has the fix written
 
@@ -309,10 +350,11 @@ export class FixPanel {
     this.#el.setAttribute('aria-label', 'Fix');
     root.append(this.#el);
     // Alt+click on words: a card beside them with their own values, problem or not (texteditor.js)
+    let textGroup = null; // the step the card's last write made, until the card says it (the card's own bookkeeping, not the panel's)
     this.#editor = new TextEditor(root, {
       // the text card's write is one step: its group comes back with the answer, and its Undo is that step's
-      write: async (at, key, token, said) => { const r = await this.#host.set(at, key, token, said); this.#textGroup = r?.group ?? null; return r; },
-      said: (text, undo, group = this.#textGroup) => { this.#textGroup = null; this.#last = { text, undo, group, key: null }; this.#html = ''; this.render(); this.#host.announce?.(text); },
+      write: async (at, key, token, said) => { const r = await this.#host.set(at, key, token, said); textGroup = r?.group ?? null; return r; },
+      said: (text, undo, group = textGroup) => { textGroup = null; this.#last = { text, undo, group, key: null }; this.#html = ''; this.render(); this.#host.announce?.(text); },
       problems: () => this.#problemsIn(this.#editor.target),
       // the problems inside are the fix panel's: the card steps aside for them
       show: () => this.#handOver(this.#editor),
@@ -348,7 +390,8 @@ export class FixPanel {
       // while it runs, the problems' heat steps back (nothing lit): the page shows the clean-up's marks, not the fixes'
       render: () => { const on = this.#cleanup.running; if (on !== this.#quiet) { this.#quiet = on; this.#host.spotlight(on ? ['cleanup'] : []); } this.#html = ''; this.render(); },
       announce: (t) => this.#host.announce?.(t),
-      wrote: (r, text) => { this.#last = { text, undo: r?.undo ?? [], group: r?.trace?.group ?? null, key: null }; },
+      // a step written while the panel is open is said above it, with Undo; closed meanwhile, History says it
+      wrote: (r, text) => { const last = { text, undo: r?.undo ?? [], group: r?.trace?.group ?? null, key: null }; if (this.#on) this.#last = last; else if (last.undo.length || last.group) this.#host.handOff?.({ undo: last.undo, trace: { group: last.group } }, text); },
       // the one write of text styles (blueprint.js): remembered across the reload it may cause, its files read again
       write: (w, said, meta) => this.#host.applyStyles(w, said, meta),
       rename: (map, said, meta) => this.#host.renameColours(map, said, meta),
@@ -378,8 +421,8 @@ export class FixPanel {
     });
     // the fields own their keys: Enter does the field's action, Esc closes or leaves it; the page's keys never see them
     this.#el.addEventListener('input', (e) => {
-      if (e.target.name === 'token') { this.#names.set(this.#held?.key, e.target.value.trim()); e.target.size = Math.max(4, e.target.value.length + 1); this.#sayNew(); }
-      if (e.target.name === 'why') { this.#why = e.target.value; this.#el.querySelector('.keep-yes')?.toggleAttribute('disabled', this.#why.trim().length < 3); }
+      if (e.target.name === 'token') { this.#names.set(this.#held?.key, e.target.value.trim()); fit(e.target); this.#sayNew(); }
+      if (e.target.name === 'why') { this.#why = e.target.value; const ok = this.#why.trim().length >= 3; this.#el.querySelector('.keep-yes')?.toggleAttribute('disabled', !ok); fieldSays(e.target.closest('.field'), { ok }); }
     });
     this.#el.addEventListener('keydown', (e) => {
       if (!e.target.matches?.('input')) return;
@@ -405,7 +448,7 @@ export class FixPanel {
   #handOver(card) { const el = card.target; card.close(); if (!el || !this.holdEl(el, 'none')) this.hold(0); }
 
   // each opening starts unread: the last one's count and its settled mark never stand in for this reading
-  show(on) { if (on) { const rest = undoing_(); if (rest) queueMicrotask(() => this.#undo(rest)); this.#el.dataset.scheme = darkGround() ? 'dark' : 'light'; for (const w of written_()) if (!this.#taken.has(w.key)) this.#taken.set(w.key, { key: w.key, members: [] }); } if (on !== this.#on) { this.#groups = []; this.#progress = null; this.#steady = null; this.#notice = null; clearTimeout(this.#noticeTimer); this.#el.removeAttribute('data-settled'); } this.#on = on; this.#el.hidden = !on; if (!on) { this.#editor.close(); this.#card.close(); this.#letGo(false); this.#done = false; const last = this.#last; if (last?.undo?.length || last?.group) this.#host.handOff?.({ undo: last.undo ?? [], trace: { group: last.group ?? null } }, last.text); this.#last = null; this.#resumeAt = null; if (this.#cleanup.running) this.#cleanup.stop(); } else this.#cleanup.resume(); this.render(); }
+  show(on) { if (on) { const rest = undoing_(); if (rest) queueMicrotask(() => this.#undo(rest)); this.#el.dataset.scheme = darkGround() ? 'dark' : 'light'; this.#el.classList.toggle('pl-dark', this.#el.dataset.scheme === 'dark'); this.#el.classList.toggle('pl-light', this.#el.dataset.scheme !== 'dark'); for (const w of written_()) if (!this.#taken.has(w.key)) this.#taken.set(w.key, { key: w.key, members: [] }); } if (on !== this.#on) { this.#groups = []; this.#progress = null; this.#steady = null; this.#notice = null; clearTimeout(this.#noticeTimer); this.#el.removeAttribute('data-settled'); this.#send(on ? (this.#flight?.kind === 'undoing' ? 'openUndoing' : this.#flight?.kind === 'writing' ? 'openWriting' : 'open') : 'close'); } this.#el.hidden = !on; if (!on) { this.#editor.close(); this.#card.close(); this.#letGo(false); this.#done = false; const last = this.#last; if (last?.undo?.length || last?.group) this.#host.handOff?.({ undo: last.undo ?? [], trace: { group: last.group ?? null } }, last.text); this.#last = null; this.#resumeAt = null; if (this.#cleanup.running) this.#cleanup.stop(); } else this.#cleanup.resume(); this.render(); }
   // the reader handed on the page: causes, most places first; a cause taken stays taken until it is written
   // While a cause is in hand the page is read as previewed (its fix, and what that fix also mends, gone from it): the
   // causes stay as they were read before, and the new reading is taken when the cause is put down
@@ -433,13 +476,13 @@ export class FixPanel {
   }
   // put down: the page is back as it was read before (`keep` false), or what was taken is on it now (`keep`: the reading
   // made while it was tried is the page's)
-  #letGo(keep) { this.#holding = false; const p = this.#pending; this.#pending = null; if (keep && p) this.set(p); }
+  #letGo(keep) { const p = this.#pending; this.#pending = null; if (keep && p) this.set(p); }
   // "N problems here" on a card (N-08): the bar's unit (a problem is a place in the code), counted for what is drawn on
   // the card's element or inside it, the same in Blueprint over the whole page as over the element alone
   #problemsIn(el) {
     if (!el) return 0;
     let n = 0;
-    for (const g of this.#live()) if (!noteOf(g)) n += new Set(g.members.filter((m) => m.el && el.contains(m.el)).map((m) => `${fileOf(m)}:${m.mark.line}:${m.mark.column}`)).size;
+    for (const g of this.#live()) if (!noteOf(g)) n += new Set(g.members.filter((m) => m.el && el.contains(m.el)).map(placeOfMember).filter(Boolean)).size;
     return n;
   }
   #live() { const open = this.#groups.filter((g) => !this.#taken.has(g.key)); return [...open.filter((g) => !noteOf(g)), ...open.filter(noteOf)]; }
@@ -459,13 +502,14 @@ export class FixPanel {
   // that just opened), 'none' (clicked with the page in view: the page never moves under the pointer)
   hold(i, lead, reveal = lead ? 'none' : 'show') {
     const live = this.#live();
-    if (!live.length) return;
+    // nothing is put in hand while a write or an undo is out (the one that lands moves the panel on itself)
+    if (!live.length || this.#flight || !this.#send('hold')) return;
     // a cause in hand owns the screen: a card open is closed first
     if (this.#card.open) { this.#card.close(); this.#html = ''; }
     if (this.#editor.open) { this.#editor.close(); this.#html = ''; }
     this.#notice = null;
     this.#at = (i + live.length) % live.length;
-    this.#holding = true; this.#done = false; this.#previewed = null; this.#error = null; this.#keeping = false;
+    this.#done = false; this.#previewed = null; this.#error = null;
     this.#resumeAt = null; // a fix put in hand (by the person, or the move after a reload) ends the wait to move on
     const g = live[this.#at];
     this.#held = g;
@@ -485,8 +529,10 @@ export class FixPanel {
     // reached by keys: it is brought into view wherever it is
     if (el && reveal !== 'none') {
       const covered = reveal === 'uncover';
-      requestAnimationFrame(() => requestAnimationFrame(() => this.#reveal(el, covered)));
-      setTimeout(() => { if (this.#held === g) this.#reveal(el, covered); }, TIMING.open + 40);
+      // holding's own: put down (or another cause taken up) before they run, and they don't
+      const scope = this.#scope;
+      scope.frame(() => scope.frame(() => { if (this.#held === g) this.#reveal(el, covered); }));
+      scope.timeout(() => { if (this.#held === g) this.#reveal(el, covered); }, TIMING.open + 40);
     }
   }
   #reveal(el, coveredOnly = false) {
@@ -526,21 +572,25 @@ export class FixPanel {
   release() {
     this.#resumeAt = null;
     if (!this.#holding) return false;
-    this.#keeping = false;
     const g = this.#cause();
+    this.#send('release');
+    this.#putDown(g);
+    return true;
+  }
+  // the cause is out of hand (the phase has moved): its token preview undone, the reading made while it was tried let
+  // go, the page's hold and light released
+  #putDown(g) {
     if (g) this.#unpreviewToken(g);
     this.#letGo(false);
     this.#host.release();
     this.#host.spotlight([]);
     this.render();
-    return true;
   }
   skip(by) {
     if (!this.#holding) return;
     const g = this.#cause();
     if (g) this.#unpreviewToken(g);
     this.#host.release();
-    this.#holding = false;
     this.hold(this.#at + by);
   }
   // the selection's view, only when it is about this cause: never another problem's options, shown or taken
@@ -559,9 +609,11 @@ export class FixPanel {
     if (this.#fromCode.has(g.key) || mark.family === 'craft' || !mark.choices?.length || !this.#host.fromCode) return;
     const places = [...new Map(g.members.map((m) => [`${fileOf(m)}:${m.mark.line}:${m.mark.column}`, { file: fileOf(m), line: m.mark.line, column: m.mark.column }])).values()];
     this.#fromCode.set(g.key, { reading: true });
+    const flight = this.#flight; // null: nothing is put in hand while a write or an undo is out
     this.#host.fromCode(mark, places)
       .then((r) => this.#fromCode.set(g.key, r ? { ...r, at: r.plan.at } : { none: true }), () => this.#fromCode.set(g.key, { none: true }))
-      .finally(() => { if (this.#held?.key === g.key) { this.#html = ''; this.render(); } });
+      // a write or an undo started meanwhile draws the panel itself when it lands
+      .finally(() => { if (this.#flight !== flight) return; if (this.#held?.key === g.key) { this.#html = ''; this.render(); } });
   }
   // settled: every element read (the resting line never changes under the person after it)
   #settled(done = !!this.#progress && (this.#progress.done ?? this.#progress.read === this.#progress.total)) {
@@ -591,7 +643,7 @@ export class FixPanel {
       if (a?.kind === 'adopt') this.#tokens.set(g.key, { suggest: { kind: 'token', file: a.file, hash: a.hash, name: a.name, value: a.value }, els: [] });
       else if (a?.kind === 'new') {
         // no name yet: the field is where the answer goes
-        if (!a.ok) { const f = this.#el.querySelector('input[name="token"]'); f?.focus(); f?.closest('.field')?.toggleAttribute('data-invalid', !!a.name); return; }
+        if (!a.ok) { const f = this.#el.querySelector('input[name="token"]'), fld = f?.closest('.field'); f?.focus(); fieldSays(fld, { bad: !!a.name }); if (a.name) shake(fld); return; }
         this.#tokens.set(g.key, { suggest: { kind: 'token', file: a.file, hash: a.hash, name: a.token, value: a.value, then: { from: g.text, to: a.cls } }, els: elsOf(g), marks: g.members.map((m) => m.mark) });
       } else return;
     }
@@ -610,18 +662,17 @@ export class FixPanel {
   // Keep it: the cause is intended. Its why is asked in one line; every place is recorded as kept on Apply
   keep() {
     const g = this.#cause();
-    if (!g || this.#keeping) return;
-    this.#keeping = true; this.#why = ''; this.#html = ''; this.render();
+    if (!g || this.#keeping || !this.#send('keep')) return;
+    this.#why = ''; this.#html = ''; this.render();
     this.#el.querySelector('input[name="why"]')?.focus();
   }
-  #closeKeep() { this.#keeping = false; this.#html = ''; this.render(); }
+  #closeKeep() { this.#send('closeKeep'); this.#html = ''; this.render(); }
   #keepIt() {
     const g = this.#cause(), why = this.#why.trim();
     if (!g || why.length < 3) return;
     this.#keeps.set(g.key, { rule: g.members[0].mark.rule, why, els: elsOf(g), sites: g.members.map((m) => ({ file: fileOf(m), line: m.mark.line, column: m.mark.column, text: m.mark.text })) });
-    this.#keeping = false;
     this.#taken.set(g.key, g);
-    this.#write(this.#saying(g), g.key);
+    this.#write(this.#saying(g), g.key, true);
   }
   // What the theme can do for a cause with nothing to swap to: make a Tailwind default yours, or add the step it lacks
   #action(g, v) {
@@ -641,7 +692,7 @@ export class FixPanel {
     const g = this.#cause(), a = g && this.#action(g, this.#viewOf(g));
     const hint = this.#el.querySelector('.hint'), take = this.#el.querySelector('.take');
     if (!a || a.kind !== 'new' || !hint) return;
-    this.#el.querySelector('.field')?.toggleAttribute('data-invalid', !!a.name && !a.ok);
+    fieldSays(this.#el.querySelector('.field'), { ok: a.ok, bad: !!a.name && !a.ok });
     hint.classList.toggle('err', !!a.name && !a.ok);
     hint.innerHTML = this.#newHint(g, a);
     take?.toggleAttribute('disabled', !a.ok);
@@ -652,38 +703,47 @@ export class FixPanel {
   }
   // A fix is written the moment it is taken (one guarded write; there is no queue): the panel says what it changed and
   // where, with Undo, and moves on to the next fix. What didn't land comes back in hand, with why.
-  async #write(said, key) {
-    if (!this.#taken.size || this.#writing) return;
+  async #write(said, key, keep = false) {
+    if (!this.#taken.size || this.#flight || !this.#send(keep ? 'keepIt' : 'take')) return;
+    const flight = (this.#flight = { kind: 'writing' }); // this write's token; show(true) reads its kind while it is out
     const at = this.#at, g = this.#taken.get(key);
     this.#fixed = g ? elsOf(g) : [];
     this.#fixedCount = 1;
-    this.#writing = true; this.#holding = false; this.#host.release(); this.#host.spotlight([]);
+    this.#host.release(); this.#host.spotlight([]);
     this.#html = ''; this.render();
     let left = { count: 0 };
     // the fix is one step of the timeline: named after its cause, with the laws its rule serves
     const meta = { step: g ? nameOf(g) : FIX.card.steps.fix, laws: g ? g.members.flatMap((m) => m.mark?.laws ?? []) : [] };
     try { left = (await this.#host.applyAll([...this.#tokens.values()], [...this.#keeps.values()], 1, [...this.#swaps.values()], said, { at, key, meta })) ?? left; }
     catch (error) { left = { count: 1, why: error?.message }; }
-    this.#writing = false;
+    // replaced while it ran (the table forbids a second flight, so never): the write would be History's alone
+    if (this.#flight !== flight) { if (left.undo?.length || left.group) this.#host.handOff?.({ undo: left.undo ?? [], trace: { group: left.group ?? null } }, said); return; }
+    // still the panel's: it moves on. Closed while it ran, and not opened again: the write is History's to say, with its Undo
+    const mine = this.#phase === 'writing';
+    this.#flight = null;
     const ok = !left.count;
     if (ok && this.#steady && g) this.#steady = { ...this.#steady, places: Math.max(0, this.#steady.places - placesOf(g)), causes: Math.max(0, this.#steady.causes - 1) };
     // one fix at a time: written or not, nothing is left waiting
     if (!ok) this.#taken.delete(key);
-    else { this.#last = { text: said, undo: left.undo ?? [], group: left.group ?? null, key }; saveWritten([...written_().filter((w) => w.key !== key), { key, at: Date.now() }]); }
+    else { if (mine) this.#last = { text: said, undo: left.undo ?? [], group: left.group ?? null, key }; else if (left.undo?.length || left.group) this.#host.handOff?.({ undo: left.undo ?? [], trace: { group: left.group ?? null } }, said); saveWritten([...written_().filter((w) => w.key !== key), { key, at: Date.now() }]); }
     this.#tokens.clear(); this.#keeps.clear(); this.#swaps.clear(); this.#fromCode.clear();
     this.#host.announce?.(ok ? said : left.why ?? FIX.couldNot);
+    if (!mine) { this.#pending = null; return; }
     // the page as read while the fix was written: the list the panel moves on in
     const p = this.#pending; this.#pending = null;
     if (p) ({ groups: this.#groups, code: this.#code } = groupsOf(p));
     const live = this.#live();
-    if (live.length) this.hold(Math.min(at, live.length - 1)); else { this.#letGo(true); this.#html = ''; this.render(); }
+    if (live.length) { this.#send('landedNext'); this.hold(Math.min(at, live.length - 1)); } else { this.#send('landedNone'); this.#letGo(true); this.#html = ''; this.render(); }
     if (!ok) { this.#error = left.why ?? FIX.couldNot; this.#html = ''; this.render(); }
   }
   // Undo: the last fix's writes taken back, newest first; the page is read again and the fix comes back
   async #undo(rest = null) {
     const last = rest ?? this.#last;
-    if ((rest ? !last?.undo?.length && !last?.group : !last?.undo?.length) || this.#undoing || this.#writing) return;
-    this.#undoing = true; this.#html = ''; this.render();
+    if ((rest ? !last?.undo?.length && !last?.group : !last?.undo?.length) || !this.#on || this.#flight) return;
+    const back = this.#phase;
+    if (!this.#send('undo')) return;
+    const flight = (this.#flight = { kind: 'undoing' }); // this undo's token
+    this.#html = ''; this.render();
     let why = null;
     // newest first; what is left is kept in the tab before each one, so an undo that reloads the page (a source file
     // the dev server can't hot-swap) goes on with the rest when the page is back
@@ -700,7 +760,7 @@ export class FixPanel {
       try { await this.#host.undoGroup(last.group); }
       catch (error) {
         // a write the trace missed (it never fails the write) has only its handles: taken back as before
-        if (!rest && /Nothing in that group/i.test(error?.message ?? '') && handles.length) byGroup = false;
+        if (!rest && errorIs(error, 'nothing-in-group') && handles.length) byGroup = false;
         else if (!rest) why = error?.message ?? '';
       }
     }
@@ -712,10 +772,15 @@ export class FixPanel {
     removeEventListener('pagehide', leave);
     if (leaving) return; // the page is going: the reloaded one goes on with what's left
     saveUndoing(null);
-    this.#undoing = false;
+    if (this.#flight !== flight) return; // replaced while it ran (the table forbids a second flight, so never)
+    // still the panel's: back where it was. Closed while it ran: only said
+    const mine = this.#phase === 'undoing';
+    this.#flight = null;
+    if (mine) this.#send(back === 'holding' ? 'landedHolding' : back === 'keeping' ? 'landedKeeping' : 'landedResting');
     // a step undone by its group is said by History's toast, which carries the Undo: the panel says nothing more
-    this.#last = why === null && byGroup ? null : { text: why === null ? FIX.undone : FIX.couldNotUndo(why), undo: [] };
-    if (this.#last) this.#host.announce?.(this.#last.text);
+    const word = why === null && byGroup ? null : { text: why === null ? FIX.undone : FIX.couldNotUndo(why), undo: [] };
+    if (mine) this.#last = word;
+    if (word) this.#host.announce?.(word.text);
     // the fix undone is offered again (the others written stay written)
     if (why === null && last.key) { this.#taken.delete(last.key); saveWritten(written_().filter((w) => w.key !== last.key)); }
     this.#html = ''; this.render();
@@ -725,14 +790,16 @@ export class FixPanel {
     // Enter before the page is read again (a write reloaded it) is "start": the wait to hold the next fix goes on, and
     // holds it when the reading lands; any other key is the person's own move and ends the wait
     if (!(k === 'Enter' && !this.#live().length)) this.#resumeAt = null;
-    if (!this.#on || this.#writing) return false;
+    if (!this.#on) return false;
+    // a write or an undo out: every key but Esc waits for it (Esc leaves; the flight lands safely without the panel)
+    if (this.#writing || this.#undoing) return k !== 'Escape';
     if (this.#cleanup.running) return k === 'Escape' ? this.#cleanup.escape() : this.#cleanup.key(k);
     // Enter on something with focus is that thing's: a button here is pressed (a specimen is already picked, so Enter
     // takes it, as anywhere); a glow on the page, with nothing in hand, holds its own cause (with a cause in hand, the
     // glow a click left focused is that cause's, and Enter takes it)
     if (k === 'Enter') {
       const a = this.#el.getRootNode().activeElement;
-      if (a && this.#el.contains(a) && a.matches('button:not(.sp)')) { a.click(); return true; }
+      if (a && this.#el.contains(a) && a.matches('button:not(.sp), a[href]')) { a.click(); return true; }
       if (!this.#holding && a?.classList?.contains('hit')) return false;
     }
     if (!this.#holding && this.#editor.open) {
@@ -753,28 +820,27 @@ export class FixPanel {
     if (k === 'ArrowUp' || k === 'ArrowDown') { if (v?.ready) this.#pick(Math.max(0, Math.min(v.options.length - 1, v.at + (k === 'ArrowUp' ? 1 : -1)))); return true; }
     if (k === 'Enter') { this.take(); return true; }
     if (k === 'k' || k === 'K') { this.keep(); return true; }
+    // I: the "i" of a craft finding in hand, its rule's page in a new tab (Tab is the next fix here, so it has a key)
+    if (k === 'i' || k === 'I') { const info = this.#el.querySelector('.cause .info'); if (info) { info.click(); return true; } return false; }
     if (k === 'ArrowRight' || k === 'Tab') { this.skip(1); return true; }
     if (k === 'ArrowLeft') { this.skip(-1); return true; }
-    if (k === 'Escape') { this.release(); return true; }
+    if (k === 'Escape') { const g = this.#cause(); this.#send('escape'); this.#putDown(g); return true; }
     return false;
   }
 
   // a token's preview: the value it would set, on every place, as inline styles the panel owns. A suggestion's `sets`
   // are px for the element its finding is on (a line height is 1.5 × that element's size), so each place is previewed
   // with its own finding's values when it offers the same fix, and a number is written as px (inplace.js does the same)
-  #tokenPreview = new Map(); // el → [[prop, value, priority]]
+  #tokenPreview = new Claims(LEVEL.fix); // a new token tried at its places; claims.js keeps what the page had
   #previewToken(g, suggest) {
     if (this.#tokenPreview.size) return;
     const own = new Map(g.members.map((m) => { const s = m.mark?.craft?.suggest; return [m.el, s?.to === suggest.to && s?.sets ? s.sets : null]; }));
     for (const el of elsOf(g)) {
-      const had = [];
-      for (const [k, v] of Object.entries(own.get(el) ?? suggest.sets ?? {})) { const prop = k.replace(/[A-Z]/g, (m) => '-' + m.toLowerCase()); had.push([prop, el.style.getPropertyValue(prop), el.style.getPropertyPriority(prop)]); el.style.setProperty(prop, typeof v === 'number' ? `${v}px` : String(v), 'important'); }
-      this.#tokenPreview.set(el, had);
+      for (const [k, v] of Object.entries(own.get(el) ?? suggest.sets ?? {})) { const prop = k.replace(/[A-Z]/g, (m) => '-' + m.toLowerCase()); this.#tokenPreview.set(el, prop, typeof v === 'number' ? `${v}px` : v); }
     }
   }
   #unpreviewToken(g) {
     if (this.#tokens.has(g.key)) return; // taken: it stays until it is written
-    for (const [el, had] of this.#tokenPreview) for (const [p, v, pr] of had) { if (v) el.style.setProperty(p, v, pr); else el.style.removeProperty(p); }
     this.#tokenPreview.clear();
   }
 
@@ -817,7 +883,10 @@ export class FixPanel {
         : `<div class="line bar${notice ? ' has-notice' : ''}"><span class="quiet-line">${esc(this.#error ?? (!settled ? (this.#host.scope?.() ? FIX.checkingElement : FIX.checking) : this.#progress?.notChecked ? FIX.clearChecked(this.#progress.notChecked) : FIX.clear))}</span>${notice}${settled ? tidy : ''}${end}</div>`;
     } else {
       const mark = g.members[0].mark, kind = kindOf(mark);
-      const head = `<div class="cause"><i class="dot"></i><span class="cls">${esc(nameOf(g))}</span><span class="nav"><button class="prev" aria-label="Previous fix">‹</button>${esc(FIX.position(g, live, noteOf))}<button class="next" aria-label="Next fix">›</button></span><span class="what">${[FIX.what(mark), ...FIX.places(placesOf(g), drawnOf(g, this.#host.scope?.()).here, !!this.#host.scope?.()).split(' · ')].map((part) => `<span>${esc(part)}</span>`).join(' · ')}</span></div>`;
+      // a craft finding's name carries an "i": its rule's page, where the why is told in full
+      const docs = docsUrl(mark.rule), what = FIX.what(mark);
+      const info = docs ? `<a class="info" href="${esc(docs)}" target="_blank" rel="noopener" title="${esc(FIX.why)} · I" aria-keyshortcuts="I" aria-label="${esc(FIX.whyLabel(what))}"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.25"/><path d="M8 7.25v4"/><circle class="tittle" cx="8" cy="4.9" r=".9"/></svg></a>` : '';
+      const head = `<div class="cause"><i class="dot"></i><span class="cls">${esc(nameOf(g))}</span><span class="nav"><button class="prev" aria-label="Previous fix">‹</button>${esc(FIX.position(g, live, noteOf))}<button class="next" aria-label="Next fix">›</button></span><span class="what">${[what, ...FIX.places(placesOf(g), drawnOf(g, this.#host.scope?.()).here, !!this.#host.scope?.()).split(' · ')].map((part, i) => `<span>${esc(part)}${i ? '' : info}</span>`).join(' · ')}</span></div>`;
       const file = (f) => esc(String(f ?? '').split('/').slice(-2).join('/'));
       const adds = (name, value, f) => `<div class="hint"><code>${esc(name)}: ${esc(value)}</code> in <code>${file(f)}</code></div>`;
       let middle = '', canTake = false;
@@ -844,7 +913,7 @@ export class FixPanel {
         canTake = true;
       } else if (a?.kind === 'new') {
         middle = `<div class="note">${esc(FIX.newStep(FIX.what(mark).replace(/ not in your theme$/, ''), a.value))}</div>`
-          + `<label class="field"${a.name && !a.ok ? ' data-invalid' : ''}>${esc(a.namespace)}-<input name="token" value="${esc(a.name)}" size="${Math.max(4, a.name.length + 1)}" placeholder="${esc(FIX.newStepExample)}" autocomplete="off" spellcheck="false" aria-label="Name of the new ${esc(FIX.what(mark).replace(/ not in your theme$/, '').toLowerCase())}">: ${esc(a.value)}</label>`
+          + `<label class="field"${a.name && !a.ok ? ' data-invalid' : a.ok ? ' data-ok' : ''}>${esc(a.namespace)}-<span class="slot"><input name="token" value="${esc(a.name)}" style="${fitFor(a.name || FIX.newStepExample)}" placeholder="${esc(FIX.newStepExample)}" autocomplete="off" spellcheck="false" aria-label="Name of the new ${esc(FIX.what(mark).replace(/ not in your theme$/, '').toLowerCase())}"></span><span class="val" title="${esc(a.value)}">: ${esc(a.value)}</span><i class="ok-tick" aria-hidden="true"></i></label>`
           + `<div class="hint${a.name && !a.ok ? ' err' : ''}">${this.#newHint(g, a)}</div>`;
         canTake = a.ok;
       } else {
@@ -855,7 +924,7 @@ export class FixPanel {
       }
       const label = v?.ready ? FIX.use(v.options[v.at]?.cls ?? v.options[v.at]?.label ?? '') : v?.suggest?.kind === 'token' || a ? FIX.addToTheme : null;
       const acts = this.#keeping
-        ? `<label class="field why">${esc(FIX.keepWhy)} <input name="why" value="${esc(this.#why)}" placeholder="${esc(FIX.keepExample)}" maxlength="120" autocomplete="off"></label>`
+        ? `<label class="field why"${this.#why.trim().length >= 3 ? ' data-ok' : ''}>${esc(FIX.keepWhy)} <input name="why" value="${esc(this.#why)}" placeholder="${esc(FIX.keepExample)}" maxlength="120" autocomplete="off"><i class="ok-tick" aria-hidden="true"></i></label>`
           + `<div class="acts"><button class="primary keep-yes" ${this.#why.trim().length < 3 ? 'disabled' : ''}>${esc(FIX.keepPlaces(placesOf(g)))} <kbd>↵</kbd></button><button class="ghost keep-no">${FIX.cancel} <kbd>esc</kbd></button><span class="grow"></span></div>`
         : `<div class="acts">${label ? `<button class="primary take" ${canTake ? '' : 'disabled'}>${esc(label)} <kbd>↵</kbd></button>` : ''}<button class="ghost keep">${FIX.keep} <kbd>K</kbd></button><button class="ghost skip">${FIX.skip} <kbd>→</kbd></button><span class="grow"></span></div>`;
       const unseen = g.members.some((m) => shown(m.el)) ? '' : `<div class="say">${esc(drawn(g) ? FIX.unseen(placesOf(g)) : FIX.offPage(placesOf(g)))}</div>`;
@@ -875,9 +944,9 @@ export class FixPanel {
     this.#el.innerHTML = html;
     if (field) { const f = this.#el.querySelector(`input[name="${field.name}"]`); if (f) { f.value = field.value; f.focus(); f.setSelectionRange(...field.at); } }
     const to = this.#el.scrollHeight;
-    if (!still && from && from !== to) { this.#el.style.height = `${from}px`; void this.#el.offsetHeight; this.#el.style.height = `${to}px`; setTimeout(() => (this.#el.style.height = ''), TIMING.open + 20); }
+    if (!still && from && from !== to) { this.#el.style.height = `${from}px`; void this.#el.offsetHeight; this.#el.style.height = `${to}px`; this.#life.timeout(() => (this.#el.style.height = ''), TIMING.open + 20); }
     // the bar changed size: what is placed clear of it is placed again (now, and once its height has moved)
-    if (from !== to && this.#card.open) { this.#card.place(); if (!still) setTimeout(() => this.#card.place(), TIMING.open + 40); }
+    if (from !== to && this.#card.open) { this.#card.place(); if (!still) this.#life.timeout(() => this.#card.place(), TIMING.open + 40); }
   }
   #html = '';
 
@@ -888,11 +957,11 @@ export class FixPanel {
   // a line said for a moment at rest: why the element pointed at has nothing in hand
   notice(text) { this.#notice = text; this.#html = ''; this.render(); clearTimeout(this.#noticeTimer); this.#noticeTimer = setTimeout(() => { this.#notice = null; this.#html = ''; this.render(); }, 4000); }
   // after a reload: what the write before it applied, said as if it had just landed
-  resumed(text, undo = [], place = null, group = null) { this.#last = { text, undo, group, key: place?.key ?? null }; if (place?.key) this.#taken.set(place.key, { key: place.key, members: [] }); this.#resumeAt = Number.isInteger(place?.at) ? { at: place.at, key: place.key ?? null, since: performance.now() } : null; if (this.#resumeAt) setTimeout(() => { if (this.#resumeAt && this.#progress) this.progress(this.#progress); }, RESUME_WAIT + 50); this.#html = ''; this.render(); this.#host.announce?.(text); }
+  resumed(text, undo = [], place = null, group = null) { this.#last = { text, undo, group, key: place?.key ?? null }; if (place?.key) this.#taken.set(place.key, { key: place.key, members: [] }); this.#resumeAt = Number.isInteger(place?.at) ? { at: place.at, key: place.key ?? null, since: performance.now() } : null; if (this.#resumeAt) this.#life.timeout(() => { if (this.#resumeAt && this.#progress) this.progress(this.#progress); }, RESUME_WAIT + 50); this.#html = ''; this.render(); this.#host.announce?.(text); }
   celebrate() {
     clearTimeout(this.#foldTimer);
     this.#done = true; this.#html = ''; this.render();
-    const fold = () => setTimeout(() => { this.#done = false; this.#html = ''; this.render(); }, TIMING.fold);
+    const fold = () => { this.#foldTimer = setTimeout(() => { this.#done = false; this.#html = ''; this.render(); }, TIMING.fold); };
     if (matchMedia('(prefers-reduced-motion: reduce)').matches) return fold();
     const els = [...new Set(this.#fixed)].filter((el) => el.isConnected).sort((a, b) => (a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1));
     els.forEach((el, i) => el.animate(
@@ -901,36 +970,13 @@ export class FixPanel {
     const body = document.body;
     body.animate([{ scale: '1' }, { scale: String(BREATH.scale), offset: 0.45, easing: 'cubic-bezier(.3, 0, .2, 1)' }, { scale: '1' }],
       { duration: BREATH.ms, delay: TIMING.click + els.length * TIMING.clickGap + TIMING.breath - CLICK.ms / 2, easing: 'ease-in-out' });
-    setTimeout(() => this.#burst(), TIMING.check + 180);
+    this.#life.timeout(() => this.#burst(), TIMING.check + 180);
     this.#fixed = [];
     fold();
   }
   #burst() {
     const at = this.#el.querySelector('.check')?.getBoundingClientRect();
     if (!at) return;
-    const ox = at.left + at.width / 2, oy = at.top + at.height / 2, dpr = devicePixelRatio || 1;
-    const cv = Object.assign(document.createElement('canvas'), { className: 'fx-burst', width: innerWidth * dpr, height: innerHeight * dpr });
-    this.#el.getRootNode().append(cv);
-    const ctx = cv.getContext('2d'); ctx.scale(dpr, dpr);
-    const HUES = { pad: '#1a9e62', gap: '#7a5cf0', mar: '#e2800a', ink: '#1c1b19' }, rand = (a, b) => a + Math.random() * (b - a);
-    const kinds = ['pad', 'pad', 'gap', 'gap', 'mar', 'mar', 'ink'];
-    const parts = Array.from({ length: BURST.pieces }, (_, i) => { const a = -Math.PI / 2 + rand(-BURST.spread, BURST.spread), v = rand(...BURST.speed); return { kind: kinds[i % kinds.length], x: ox, y: oy, vx: Math.cos(a) * v, vy: Math.sin(a) * v, r: rand(0, Math.PI * 2), vr: rand(-BURST.spin, BURST.spin), size: rand(...BURST.size), wobble: rand(0, 6) }; });
-    const paint = (p, alpha) => {
-      const s = p.size, c = HUES[p.kind];
-      ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.r); ctx.globalAlpha = alpha; ctx.scale(1, Math.abs(Math.cos(p.r * 0.6 + p.wobble)) * 0.6 + 0.4);
-      if (p.kind === 'pad') { ctx.fillStyle = '#fff'; ctx.fillRect(-s / 2, -s / 2, s, s); ctx.strokeStyle = c; ctx.lineWidth = 1.2; ctx.strokeRect(-s / 2, -s / 2, s, s); ctx.beginPath(); for (let k = -s; k < s; k += 2.6) { ctx.moveTo(k - s / 2, s / 2); ctx.lineTo(k + s / 2, -s / 2); } ctx.save(); ctx.rect(-s / 2, -s / 2, s, s); ctx.clip(); ctx.lineWidth = 1; ctx.stroke(); ctx.restore(); }
-      else if (p.kind === 'gap') { const w = s * 1.5, h = s * 0.62; ctx.fillStyle = c; for (let k = 0; k < 3; k++) ctx.fillRect(-w / 2, -h / 2 + k * (h / 2.5), w, h / 5); }
-      else if (p.kind === 'mar') { ctx.fillStyle = c; ctx.beginPath(); ctx.arc(0, 0, s / 2, 0, Math.PI * 2); ctx.globalAlpha = alpha * 0.25; ctx.fill(); ctx.globalAlpha = alpha; for (const [dx, dy] of [[-1, -1], [1, -1], [-1, 1], [1, 1], [0, 0]]) { ctx.beginPath(); ctx.arc(dx * s * 0.2, dy * s * 0.2, 1, 0, Math.PI * 2); ctx.fill(); } }
-      else { ctx.strokeStyle = c; ctx.lineWidth = 2; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.beginPath(); ctx.moveTo(-s * 0.4, 0); ctx.lineTo(-s * 0.1, s * 0.3); ctx.lineTo(s * 0.45, -s * 0.35); ctx.stroke(); }
-      ctx.restore();
-    };
-    let last = performance.now(); const t0 = last;
-    const tick = (now) => {
-      const dt = Math.min(0.033, (now - last) / 1000), t = now - t0; last = now;
-      ctx.clearRect(0, 0, innerWidth, innerHeight);
-      for (const p of parts) { p.vy += BURST.gravity * dt; p.vx *= 0.992; p.x += p.vx * dt; p.y += p.vy * dt; p.r += p.vr * dt; paint(p, Math.max(0, Math.min(1, (BURST.life - t) / (BURST.life / 3)))); }
-      if (t < BURST.life) requestAnimationFrame(tick); else cv.remove();
-    };
-    requestAnimationFrame(tick);
+    burst(this.#el.getRootNode(), at.left + at.width / 2, at.top + at.height / 2, { frames: (f) => this.#life.frames(f) });
   }
 }

@@ -1,0 +1,54 @@
+diff --git a/overlay/src/locate.js b/overlay/src/locate.js
+index 58d2e69..6db4208 100644
+--- a/overlay/src/locate.js
++++ b/overlay/src/locate.js
+@@ -246,8 +246,8 @@ async function usageOf(element, fiber, options) {
+       // Your own DOM tag whose stamp the author overrode, or a creator call: the frame is accepted where the index has it.
+       const row = index.rows.find(row => (row.kind === 'call' || row.kind === 'dom') && atRow(own, row));
+       const at = { file: index.file, line: own.lineNumber, column: own.columnNumber + 1 };
+-      if (!row) return refuse('no-jsx', { ...at, step: 'created-without-jsx', component: nameOf(fiber._debugOwner) });
+-      const link = { file: index.file, line: row.line, column: row.column, component: nameOf(fiber._debugOwner) };
++      if (!row) return refuse('no-jsx', { ...at, step: 'created-without-jsx', component: nameOf(fiber?._debugOwner) });
++      const link = { file: index.file, line: row.line, column: row.column, component: nameOf(fiber?._debugOwner) };
+       return { ...link, tag: element.localName, via: row.kind === 'call' ? 'call' : 'frame', chain: [link], index: 0 };
+     }
+   }
+@@ -279,12 +279,26 @@ export async function locate(element, options = {}) {
+     fiber = hostOf(element);
+     if (!fiber && !hydrated) return options.explain ? { location: null, reason: 'not-hydrated', detail: {} } : null;
+   }
+-  const stamp = fiber?.memoizedProps?.['data-plumb-source'];
++  // The stamp is the host fiber's prop. A click that lands while React is still hydrating finds the element's fiber
++  // not yet completed (memoizedProps unset), or none yet and only a parent's: the same stamp is then read from the
++  // props being hydrated, else from the attribute the server rendered on the element itself, the same value from the
++  // same source, and the tag is the element's own. A parent's stamp is never taken for this element.
++  const K = 'data-plumb-source';
++  const domStamp = element?.nodeType === 1 ? element.getAttribute(K) : null;
++  let own = !!fiber && fiber.stateNode === element;
++  // no stamp on the element and no fiber of its own yet (a library's host mid-hydration): its answer is its usage,
++  // which needs its own fiber; wait for React to reach it, bounded
++  if (fiber && !own && !domStamp && element?.nodeType === 1) {
++    for (let waited = 0; waited < 5000 && !fiberKey(element) && !options.signal?.aborted; waited += 50) await new Promise(resolve => setTimeout(resolve, 50));
++    fiber = hostOf(element); own = !!fiber && fiber.stateNode === element;
++  }
++  const stamp = own ? fiber.memoizedProps?.[K] ?? fiber.pendingProps?.[K] ?? domStamp : (domStamp ?? fiber?.memoizedProps?.[K]);
++  const tag = own || domStamp ? element.localName : fiber?.type;
+   const match = typeof stamp === 'string' && /^(.+):(\d+):(\d+)#([a-f0-9]{12})$/.exec(stamp);
+   let confirmed, refusal;
+-  if (match && typeof fiber.type === 'string' && !options.signal?.aborted) {
++  if (match && typeof tag === 'string' && (!fiber || typeof fiber.type === 'string') && !options.signal?.aborted) {
+     try {
+-      const answer = await request('resolve', { source: match[1], line: match[2], column: match[3], hash: match[4], tag: fiber.type, stamp: '1' }, { explain: true, batch: options.batch, ...(options.signal ? { signal: options.signal } : {}) });
++      const answer = await request('resolve', { source: match[1], line: match[2], column: match[3], hash: match[4], tag, stamp: '1' }, { explain: true, batch: options.batch, ...(options.signal ? { signal: options.signal } : {}) });
+       if (answer?.file && answer.line && answer.column) confirmed = answer;
+       else refusal = { reason: answer?.refused === 'source-mismatch' ? 'source-mismatch' : 'resolve-refusal', detail: { source: match[1], line: Number(match[2]), column: Number(match[3]), response: answer?.refused ?? answer } };
+     } catch (error) {
+@@ -299,7 +313,7 @@ export async function locate(element, options = {}) {
+   // hundred milliseconds; the overlay asks for it after the reading is up, with { chain: true }.
+   if (confirmed && !options.chain && !options.signal?.aborted) {
+     // The component whose JSX this is: the host's owner, read from React, no stack needed.
+-    const at = { file: confirmed.file, line: confirmed.line, column: confirmed.column, component: nameOf(fiber._debugOwner) };
++    const at = { file: confirmed.file, line: confirmed.line, column: confirmed.column, component: nameOf(fiber?._debugOwner) };
+     return { ...at, tag: element.localName, via: 'stamp', chain: [at], index: 0, partial: true };
+   }
+   if (stampsExpected === null) await Promise.race([known, new Promise(resolve => setTimeout(resolve, 3000))]);

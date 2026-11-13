@@ -14,8 +14,9 @@
  * ───────────────────────────────────────────────────────── */
 import { classEditsOf } from './locate.js';
 import { loadSpeeds, proposeMotion, readMotion } from './speeds.js';
+import { placeOf } from './stamp.js';
 
-const keyOf = (el, cls) => `${(el.getAttribute('data-plumb-source') ?? '').split('#')[0]}|${cls}`;
+const keyOf = (el, cls) => `${(placeOf(el) ?? '')}|${cls}`;
 const mostOf = (vs) => vs.sort((a, b) => vs.filter((v) => v === b).length - vs.filter((v) => v === a).length)[0];
 // the chip: a clock face with its hand moved on
 const GLYPH = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="8" cy="8.5" r="5.5"/><path d="M8 8.5V5.5M8 8.5l2 1.5M6.5 1.5h3"/></svg>';

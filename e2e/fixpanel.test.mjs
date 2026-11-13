@@ -66,6 +66,9 @@ export function App() {
 }
 `;
 const panel = (overlay) => overlay.locator('.fx');
+// the bar's count as one sentence: the line says the problems; the causes (and notes) are one point away, in the count's readout
+const counted = (overlay) => panel(overlay).locator('.line').evaluate((line) => [line.querySelector('.count')?.textContent, line.querySelector('.readout')?.textContent].filter(Boolean).join(' · ').replace(/\s+/g, ' '));
+const countsAre = (page, re) => page.waitForFunction((source) => { const line = document.querySelector('plumb-overlay').shadowRoot.querySelector('.fx .line'); return new RegExp(source).test([line?.querySelector('.count')?.textContent, line?.querySelector('.readout')?.textContent].filter(Boolean).join(' · ')); }, re.source, { timeout: 10000 });
 // what the last fix written changed, said above the panel with its Undo
 const said = (overlay) => panel(overlay).locator('.said .t');
 const padding = (page, id) => page.locator(`#${id}`).evaluate((el) => getComputedStyle(el).paddingTop);

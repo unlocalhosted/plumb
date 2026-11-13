@@ -1,63 +1,50 @@
-@import url("https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,100..900&family=Geist+Mono:wght@400..600&display=swap");
 /* ─────────────────────────────────────────────────────────
- * THE HOMEPAGE'S FOUNDATIONS, signed off by the owner on 2026-11-04 (the overlay's tokens read cheap on a homepage;
- * the bar is Linear; the homepage gets its own type, colour and code system, hero included). The review sheet is
- * homepage/foundations.html. Fonts come from Google Fonts until the homepage hosts them itself.
+ * THE HOMEPAGE'S FOUNDATIONS, now our design system's (2026-11-13: the owner asked for the homepage to be brought to
+ * our design system and theme; it had its own, signed off on 2026-11-04, in Inter with a Linear bar). Every name the
+ * sections use is kept, so no section changes, and each one now points at the overlay's own tokens (--pl-*, from
+ * overlay/src/tokens.css: on the site through app/layout.jsx, in the homepage's own app through theme.css). Light and
+ * dark come from the tokens; only the light on a surface's top edge and its drop are the homepage's own.
  *
- * The rules that connect them:
- *   type     one family (Inter, optical sizes) for everything but code; display sizes are set tight (negative
- *            tracking grows with size); weight carries hierarchy only at 400/510/590, never bold-black
- *   colour   neutrals do almost all the work, in four ground levels and three ink levels; one accent, for what you can
- *            do; three signals that are the product's meaning (off, on, measured), used small and never as decoration
- *   surface  depth from light, not outlines: a 1px border at 7% white, a lip of light along the top edge, a soft drop
- *            far below; radius grows with size
- *   code     Geist Mono at 13/20; tokens in muted hues at one lightness, so code reads as texture until a diff line
- *            lights up
+ *   type     the toy face (Bricolage) for display, titles and headings; the reading face (Instrument Sans) for words;
+ *            the product's mono for code
+ *   colour   the roles: page, surface and inset grounds, three inks, the border; pink is the action; the signals are
+ *            the product's meaning (coral off your scale, mint on it, sky measured)
+ *   space    the card ladder and the page ladder; corners from the corner tokens
  * ───────────────────────────────────────────────────────── */
 :root {
-  --font: "Inter", system-ui, sans-serif;
-  --mono: "Geist Mono", ui-monospace, monospace;
+  --font: var(--pl-sans);
+  --round: var(--pl-round);
+  --mono: var(--pl-mono);
   /* type: size / line-height / tracking / weight */
-  --t-display: 590 72px/1.02 var(--font);   --tr-display: -0.04em;
-  --t-title: 590 48px/1.06 var(--font);     --tr-title: -0.032em;
-  --t-heading: 590 24px/1.25 var(--font);   --tr-heading: -0.018em;
-  --t-lead: 400 20px/1.5 var(--font);       --tr-lead: -0.011em;
-  --t-body: 400 16px/1.6 var(--font);       --tr-body: -0.006em;
-  --t-small: 400 14px/1.5 var(--font);      --tr-small: -0.003em;
-  --t-label: 510 13px/1.3 var(--font);      --tr-label: 0;
+  --t-display: var(--pl-round-w, 700) 72px/1.02 var(--round);  --tr-display: -0.025em;
+  --t-title: var(--pl-round-w, 700) 48px/1.06 var(--round);    --tr-title: -0.02em;
+  --t-heading: var(--pl-round-w, 700) 24px/1.25 var(--round);  --tr-heading: -0.01em;
+  --t-lead: 400 20px/1.5 var(--font);       --tr-lead: 0;
+  --t-body: 400 16px/1.6 var(--font);       --tr-body: 0;
+  --t-small: 400 14px/1.5 var(--font);      --tr-small: 0;
+  --t-label: 600 13px/1.3 var(--font);      --tr-label: 0;
   --t-code: 400 13px/20px var(--mono);
-  /* radius grows with size */
-  --r-xs: 6px; --r-sm: 8px; --r-md: 12px; --r-lg: 16px; --r-xl: 24px;
-  /* space: 4px base */
-  --s-1: 4px; --s-2: 8px; --s-3: 12px; --s-4: 16px; --s-5: 24px; --s-6: 32px; --s-7: 48px; --s-8: 64px; --s-9: 96px; --s-10: 128px;
-  --ease: cubic-bezier(0.25, 1, 0.5, 1);
+  /* corners: the corner tokens; the two bigger ones have no token yet (open on the Spacing and radius page) */
+  --r-xs: var(--pl-radius-tag); --r-sm: var(--pl-radius-row); --r-md: var(--pl-radius-card); --r-lg: 16px; --r-xl: 24px;
+  /* space: the card ladder, then the page ladder */
+  --s-1: var(--pl-space-2); --s-2: var(--pl-space-4); --s-3: var(--pl-space-5); --s-4: var(--pl-space-6); --s-5: var(--pl-space-8);
+  --s-6: var(--pl-page-space-1); --s-7: var(--pl-page-space-2); --s-8: var(--pl-page-space-3); --s-9: var(--pl-page-space-4); --s-10: 128px;
+  --ease: var(--pl-ease-out);
+  /* colour: the roles */
+  --g0: var(--pl-bg-page); --g1: var(--pl-bg-surface); --g2: var(--pl-bg-inset); --g3: var(--pl-bg-surface-pressed);
+  --line: var(--pl-border-default); --line-2: color-mix(in oklab, var(--pl-ink) 16%, transparent);
+  --ink-1: var(--pl-text-primary); --ink-2: var(--pl-text-secondary); --ink-3: var(--pl-text-disabled);
+  --accent: var(--pl-pink); --accent-ink: var(--pl-pink); --accent-soft: color-mix(in oklab, var(--pl-pink) 12%, transparent);
+  --off: var(--pl-coral); --off-soft: color-mix(in oklab, var(--pl-coral) 10%, transparent);
+  --on: var(--pl-mint); --on-soft: color-mix(in oklab, var(--pl-mint) 11%, transparent);
+  --measured: var(--pl-sky); --measured-soft: color-mix(in oklab, var(--pl-sky) 11%, transparent);
+  --display-fill: linear-gradient(180deg, var(--pl-ink) 40%, color-mix(in oklab, var(--pl-ink) 72%, transparent));
+  --c-tag: var(--pl-sky); --c-attr: var(--pl-lilac); --c-str: var(--pl-mint); --c-punc: var(--pl-ink-3); --c-text: var(--pl-ink);
+  --lip: rgb(255 255 255 / 0.9); --drop: 0 24px 48px -28px rgb(28 27 25 / 0.28);
 }
-:root[data-scheme='dark'] {
-  --g0: #08090a; --g1: #0f1012; --g2: #16171a; --g3: #1e2024;
-  --line: rgb(255 255 255 / 0.07); --line-2: rgb(255 255 255 / 0.12); --lip: rgb(255 255 255 / 0.06);
-  --ink-1: #f7f8f8; --ink-2: #9ea2a9; --ink-3: #62666d;
-  --accent: #8d7bff; --accent-ink: #b8acff; --accent-soft: rgb(141 123 255 / 0.14);
-  --off: #ff7a5c; --off-soft: rgb(255 122 92 / 0.1);
-  --on: #4cc38a; --on-soft: rgb(76 195 138 / 0.1);
-  --measured: #5aa9ff; --measured-soft: rgb(90 169 255 / 0.12);
-  --drop: 0 24px 64px -24px rgb(0 0 0 / 0.8);
-  --display-fill: linear-gradient(180deg, #fff 30%, rgb(255 255 255 / 0.58));
-  --c-tag: #8fb8ff; --c-attr: #c3b4ff; --c-str: #a6dcbc; --c-punc: #6c7078; --c-text: #d5d7db;
-}
-:root[data-scheme='light'] {
-  --g0: #fbfbfa; --g1: #ffffff; --g2: #f4f4f2; --g3: #ebebe8;
-  --line: rgb(0 0 0 / 0.08); --line-2: rgb(0 0 0 / 0.13); --lip: rgb(255 255 255 / 0.9);
-  --ink-1: #0e0f11; --ink-2: #5d6168; --ink-3: #8e9299;
-  --accent: #6b57f0; --accent-ink: #5340d6; --accent-soft: rgb(107 87 240 / 0.1);
-  --off: #e2533a; --off-soft: rgb(226 83 58 / 0.08);
-  --on: #1d9a62; --on-soft: rgb(29 154 98 / 0.09);
-  --measured: #2d7fe0; --measured-soft: rgb(45 127 224 / 0.09);
-  --drop: 0 24px 48px -28px rgb(20 20 30 / 0.28);
-  --display-fill: linear-gradient(180deg, #0e0f11 40%, rgb(14 15 17 / 0.72));
-  --c-tag: #2f6fd0; --c-attr: #7350d8; --c-str: #1f8a58; --c-punc: #9a9ea5; --c-text: #2a2c31;
-}
+:root[data-scheme='dark'] { --lip: rgb(255 255 255 / 0.06); --drop: 0 24px 64px -24px rgb(0 0 0 / 0.8); }
 * { box-sizing: border-box; }
-html { background: var(--g0); color: var(--ink-1); font: var(--t-body); letter-spacing: var(--tr-body); -webkit-font-smoothing: antialiased; font-feature-settings: "cv11", "ss03"; }
+html { background: var(--g0); color: var(--ink-1); font: var(--t-body); -webkit-font-smoothing: antialiased; }
 /* type */
 .display { margin: 0; font: var(--t-display); letter-spacing: var(--tr-display); background: var(--display-fill); -webkit-background-clip: text; background-clip: text; color: transparent; text-wrap: balance; }
 .title { margin: 0; font: var(--t-title); letter-spacing: var(--tr-title); text-wrap: balance; }

@@ -20,6 +20,7 @@
  *            cursor moving
  * ───────────────────────────────────────────────────────── */
 import { esc } from './choices.js';
+import { Claims, LEVEL } from './claims.js';
 
 const STEP = 22; // px of movement per step of the scale
 // The notch: an underdamped spring from the last step to the new one (about 10% past it, settled in ~220ms)
@@ -28,7 +29,7 @@ const NOTCH = { omega: 34, zeta: 0.5, settle: 240 };
 export const SCRUB_CSS = `
   .scrub-at { position: fixed; z-index: 3; pointer-events: none; display: flex; align-items: center; gap: 6px; translate: -9px -9px; }
   .scrub-at .grip { width: 18px; height: 18px; display: grid; place-items: center; border-radius: 50%; background: var(--pl-sky); color: var(--pl-sky-ink);
-    box-shadow: 0 0 0 2px var(--pl-paper), 0 4px 10px -4px rgb(0 0 0 / 0.5); }
+    box-shadow: 0 0 0 2px var(--pl-bg-surface), 0 4px 10px -4px rgb(0 0 0 / 0.5); }
   .scrub-at .grip svg { width: 12px; height: 12px; }
   .scrub-at .grip[data-tick] { animation: scrub-tick 180ms cubic-bezier(.3, 1.6, .5, 1); }
   @keyframes scrub-tick { 40% { scale: 1.22; } }
@@ -56,7 +57,7 @@ export function scrub(event, { el, prop, steps, from, host, onStep, onDone }) {
   // the step the value starts from: its own, else the nearest (an off-scale value starts between two)
   let at = steps.reduce((best, s, i) => (Math.abs(s.n - from) < Math.abs(steps[best].n - from) ? i : best), 0);
   const first = at;
-  const inline = el.style.getPropertyValue(prop), priority = el.style.getPropertyPriority(prop);
+  const drag = new Claims(LEVEL.drag); // the value under the finger; claims.js keeps what the page had
   const glyph = document.createElement('div');
   glyph.className = 'scrub-at';
   glyph.dataset.axis = axis;
@@ -69,7 +70,7 @@ export function scrub(event, { el, prop, steps, from, host, onStep, onDone }) {
   // the value lands on its step through the notch: x(t) = to + (from − to)·e^(−ζωt)·cos(ω√(1−ζ²)t)
   const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
   let shown = from, spring = 0;
-  const set = (v) => { shown = v; el.style.setProperty(prop, `${Math.round(v * 100) / 100}px`, 'important'); };
+  const set = (v) => { shown = v; drag.set(el, prop, `${Math.round(v * 100) / 100}px`); };
   const apply = () => {
     const to = steps[at].n, was = shown;
     cancelAnimationFrame(spring);
@@ -103,19 +104,26 @@ export function scrub(event, { el, prop, steps, from, host, onStep, onDone }) {
   const end = (keep) => {
     removeEventListener('pointermove', move, true);
     removeEventListener('pointerup', up, true);
+    removeEventListener('pointercancel', cancel, true);
+    removeEventListener('blur', cancel);
     removeEventListener('keydown', key, true);
     document.removeEventListener('pointerlockchange', onLock);
     if (document.pointerLockElement) document.exitPointerLock();
     cancelAnimationFrame(spring);
     if (keep) set(steps[at].n);
     glyph.remove();
-    if (!keep) { if (inline) el.style.setProperty(prop, inline, priority); else el.style.removeProperty(prop); if (!el.getAttribute('style')?.trim()) el.removeAttribute('style'); }
+    // kept: whoever takes the step claims it in onDone, then the drag lets go and the page doesn't move
     onDone?.(keep ? steps[at] : null);
+    drag.clear();
   };
   const up = (e) => { e.preventDefault(); e.stopPropagation(); end(at !== first || steps[first].n !== from); };
+  const cancel = () => end(false);
   const key = (e) => { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); end(false); } };
   addEventListener('pointermove', move, true);
   addEventListener('pointerup', up, true);
+  // a pointer the browser took away (a touch interrupted, the window left): the value goes back, like Esc
+  addEventListener('pointercancel', cancel, true);
+  addEventListener('blur', cancel);
   addEventListener('keydown', key, true);
   event.preventDefault();
 }

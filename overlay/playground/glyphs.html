@@ -26,15 +26,15 @@ customElements.define('plumb-glyphs', class extends HTMLElement {
       .g { width: 100%; height: 100%; display: block; }
       table { border-collapse: collapse; width: 100%; }
       td, th { padding: 7px 6px; border-bottom: 1px solid var(--pl-rule); text-align: center; vertical-align: middle; }
-      th { font: var(--pl-text-label); letter-spacing: var(--pl-tracking-label); color: var(--pl-ink-2); text-transform: uppercase; }
-      td.n { text-align: start; font: var(--pl-text-row); color: var(--pl-ink); white-space: nowrap; }
+      th { font: var(--pl-card-label); letter-spacing: var(--pl-tracking-label); color: var(--pl-ink-2); text-transform: uppercase; }
+      td.n { text-align: start; font: var(--pl-card-body); color: var(--pl-ink); white-space: nowrap; }
       .s12 { width: 14px; height: 14px; display: inline-block; } .s16 { width: 16px; height: 16px; display: inline-block; } .s24 { width: 24px; height: 24px; display: inline-block; }
       .big { width: 48px; height: 48px; display: inline-block; position: relative; background-image: linear-gradient(var(--pl-rule) 1px, transparent 1px), linear-gradient(90deg, var(--pl-rule) 1px, transparent 1px); background-size: 2px 2px; box-shadow: inset 0 0 0 1px var(--pl-ink-3); }
       .big::after { content: ""; position: absolute; inset: 6px; box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--pl-instrument) 55%, transparent); }
       .pin { width: 20px; height: 20px; border-radius: 50%; display: inline-grid; place-items: center; color: var(--pl-paper); box-shadow: 0 0 0 2px var(--pl-paper); }
       .pin .g { width: 13px; height: 13px; }
       .pin.off { background: var(--pl-off); } .pin.soft { background: var(--pl-soft); }
-      .inline { display: inline-flex; align-items: center; gap: 7px; font: var(--pl-text-title); font-weight: 500; }
+      .inline { display: inline-flex; align-items: center; gap: 7px; font: var(--pl-card-title); font-weight: 500; }
       .inline .g { width: 14px; height: 14px; color: var(--pl-off); }
     </style>
     <table><thead><tr><th></th><th>14</th><th>16</th><th>24</th><th>48 on grid</th><th>pin</th><th>soft</th><th>in a title</th></tr></thead><tbody>

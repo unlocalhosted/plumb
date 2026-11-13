@@ -37,6 +37,8 @@ export interface Requirement {
 }
 export interface ReadinessReport {
   schemaVersion: 1;
+  /** Whether the running host stamps JSX: true, false through the internal switch, absent when no host is running. */
+  stamping?: boolean;
   /** The project facts (experimental for one release): the same object `plumber state --json` prints as `facts`. */
   project: PublicFacts;
   capabilities: { id: Capability; label: string; status: 'full' | 'degraded' | 'off' | 'unknown'; requirements: string[]; available?: boolean }[];
@@ -51,8 +53,12 @@ export interface Runtime {
   hmr?: boolean;
   polling?: boolean;
   watching?: boolean;
+  /** Whether the host stamps JSX; false only through the internal switch (the static demo, the owner-stack tests). */
+  stamping?: boolean;
 }
-export interface ReadinessOptions { root: string; config?: string; rootOverride?: boolean; runtime?: Runtime; report?: () => Promise<Report>; /** Read the project's setup rows without analysing its styles (the rows that need the report say unknown). */ noReport?: boolean; sourceEvidence?: () => Promise<string[]> }
+export interface ReadinessOptions { root: string; config?: string; rootOverride?: boolean; runtime?: Runtime;
+  /** What the overlay saw on the page: whether any element carries a source stamp. */
+  observed?: { stamps?: boolean }; report?: () => Promise<Report>; /** Read the project's setup rows without analysing its styles (the rows that need the report say unknown). */ noReport?: boolean; sourceEvidence?: () => Promise<string[]> }
 const labels: Record<Capability, string> = { read: 'Read', remember: 'Remember', fast: 'Fast', locate: 'Locate', preview: 'Preview', write: 'Write in place', blueprint: 'Blueprint', system: 'System panel' };
 const hash = (text: string) => createHash('sha256').update(text).digest('hex');
 const status = (value: boolean | undefined): Status => value === undefined ? 'unknown' : value ? 'ok' : 'missing';
@@ -195,6 +201,19 @@ export async function readiness(options: ReadinessOptions): Promise<ReadinessRep
     'Places in your code may point at transformed code instead of what you wrote.', await configFix('locate.order', manual('Move plumb() before the plugins that transform JSX or TSX.')),
     // with no plugin there is no order to fix: adding the plugin (locate.plugin) puts it first
     plugin === false ? { derived: true, cause: 'locate.plugin' } : {});
+  // Stamping is what the host does; the page is the evidence: the overlay reports whether any element carries a stamp.
+  // The row exists once the page has been seen (or when stamps are off by the internal switch); from the CLI the
+  // config rows above say what the setup is. With no stamps the overlay does not guess where your elements come from.
+  const stamping = runtime?.stamping ?? (runtime ? true : undefined);
+  const stamps: Status | undefined = stamping === false ? 'ok' : !runtime || options.observed?.stamps === undefined ? undefined : options.observed.stamps ? 'ok' : 'missing';
+  if (stamps !== undefined) {
+    const stampsFix = runtime?.host.startsWith('next') ? await configFix('locate.plugin', step(`Wrap the export of ${hostFile} in withPlumb(), and restart the dev server.`, 'plumber install --overlay --write'))
+      : await configFix('locate.order', manual('Put plumb() before the plugin that compiles JSX (react()) in plugins, and restart the dev server.'));
+    add('locate.stamps', 'locate', stamps, stamps === 'missing' ? 'Source stamping isn’t running' : stamping === false ? 'Source stamping is off for this host' : 'Your elements carry their source',
+      stamps === 'missing' ? evidence('plugin', 'The page has elements from your files, none with a source stamp') : [{ file: hostFile, line: 1, text: stamping === false ? 'Stamps are off by choice' : 'Seen on the page' }],
+      'Clicking an element can’t find its place in your code, and Plumber won’t guess.', stampsFix,
+      plugin === false || host?.ordered === false ? { derived: true, cause: plugin === false ? 'locate.plugin' : 'locate.order' } : {});
+  }
   const react = facts.react.value?.installed ?? false;
   const reactDev = !react ? 'missing' : runtime ? status(runtime.development) : 'unknown';
   add('locate.react-dev', 'locate', reactDev, reactDev === 'ok' ? 'The development build of React is running' : 'Use the development build', [{ file: 'package.json', line: 1, text: react ? 'React is installed; which build runs is checked in the browser' : 'React is not installed' }],
@@ -242,7 +261,7 @@ export async function readiness(options: ReadinessOptions): Promise<ReadinessRep
     'The system panel can’t say where this project starts.', step('Run plumber doctor to see what stops the project being read.', 'plumber doctor'));
   // Only a live host can show these; from the CLI they read `unknown` (verify in dev), never degraded.
   const runtimeOnly = new Set(['locate.react-dev', 'write.watcher']);
-  return { schemaVersion: 1, project: publicFacts(facts), capabilities: (Object.keys(labels) as Capability[]).map(id => {
+  return { schemaVersion: 1, ...(stamping === undefined ? {} : { stamping }), project: publicFacts(facts), capabilities: (Object.keys(labels) as Capability[]).map(id => {
     const checks = requirements.filter(item => item.capability === id), missing = checks.some(item => item.status === 'missing'), unknown = checks.filter(item => item.status === 'unknown');
     // A system plumb skips (read.styling.*, read.library.*) or a token family it lacks degrades Read; it does not turn it off: the rest is judged.
     const essentialMissing = checks.some(item => item.status === 'missing' && (item.id.startsWith('read.') && !/^read\.(?:styling|library|tokens)\./.test(item.id) || item.id.startsWith('locate.') || item.id.endsWith('.locate') || item.id.endsWith('.blueprint') || item.id === 'system.preset'));

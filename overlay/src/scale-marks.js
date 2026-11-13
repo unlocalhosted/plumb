@@ -32,8 +32,8 @@ export const SCALE_CSS = `
     box-shadow: inset 0 0 0 1.5px var(--pl-sky); background: color-mix(in oklab, var(--pl-sky) 16%, transparent);
     transition: box-shadow 200ms var(--pl-ease-out), background-color 200ms var(--pl-ease-out), width 420ms var(--pl-spring), height 420ms var(--pl-spring); }
   .sc-step .v { position: absolute; top: 0; left: 50%; translate: -50% 0; opacity: 0; scale: .92; transition: opacity 160ms var(--pl-ease-out), scale 260ms var(--pl-spring-pop); }
-  .sc-step[data-state="unused"] .ring { box-shadow: none; background: none; outline: 1.5px dashed var(--pl-ink-3); outline-offset: -1.5px; }
-  .sc-step[data-state="unused"] .pl-tag { --pill-soft: var(--pl-paper-2); --pill-ink: var(--pl-ink-3); }
+  .sc-step[data-state="unused"] .ring { box-shadow: none; background: none; outline: 1.5px dashed var(--pl-icon-tick); outline-offset: -1.5px; }
+  .sc-step[data-state="unused"] .pl-tag { --pill-soft: var(--pl-bg-inset); --pill-ink: var(--pl-icon-tick); }
   .sc-step[data-state="pointed"] .ring { box-shadow: inset 0 0 0 2px var(--pl-sky);
     background: repeating-linear-gradient(45deg, color-mix(in oklab, var(--pl-sky) 60%, transparent) 0 1px, transparent 1px 6px), color-mix(in oklab, var(--pl-sky) 12%, transparent); }
   .sc-step[data-state="pointed"] .v, .sc-step[data-state="pulled"] .v, .sc-step[data-state="off"] .v { opacity: 1; scale: 1; }
@@ -45,24 +45,24 @@ export const SCALE_CSS = `
   .sc-step[data-state="off"] .v { --pill-soft: var(--pl-coral-soft); --pill-ink: var(--pl-coral-ink); }
 
   .sc-place { display: inline-block; width: 5px; height: 5px; box-sizing: border-box; background: var(--pl-coral); transition: opacity 160ms var(--pl-ease-out), scale 260ms var(--pl-spring-pop); }
-  .sc-place[data-tone="typed"] { width: 6px; height: 6px; border-radius: 50%; background: none; box-shadow: inset 0 0 0 1.5px var(--pl-butter); }
+  .sc-place[data-tone="typed"] { width: 6px; height: 6px; border-radius: 50%; background: none; box-shadow: inset 0 0 0 1.5px var(--pl-butter-line); }
   .sc-place[data-tone="on"] { width: 6px; height: 6px; border-radius: 50%; background: var(--pl-mint); }
   .sc-place[data-show="dim"] { opacity: .16; }
-  .sc-place[data-show="lit"] { scale: 1.5; outline: 1.5px solid color-mix(in oklab, var(--pl-paper) 90%, transparent); }
+  .sc-place[data-show="lit"] { scale: 1.5; outline: 1.5px solid color-mix(in oklab, var(--pl-bg-surface) 90%, transparent); }
   .sc-place[data-show="arrive"] { animation: pl-pop 260ms var(--pl-spring-pop) both; }
   .sc-places { display: inline-flex; flex-direction: column-reverse; gap: 2px; }
 
   .sc-count { display: inline-grid; gap: 4px; }
-  .sc-count .n { display: inline-flex; overflow: hidden; height: 1em; font: var(--pl-page-figure); line-height: 1; font-variant-numeric: tabular-nums; letter-spacing: var(--pl-tracking-display); color: var(--pl-ink); }
+  .sc-count .n { display: inline-flex; overflow: hidden; height: 1em; font: var(--pl-page-figure); line-height: 1; font-variant-numeric: tabular-nums; letter-spacing: var(--pl-tracking-display); color: var(--pl-text-primary); }
   .sc-count .d { display: inline-block; height: 1em; overflow: hidden; }
   .sc-count .d > span { display: flex; flex-direction: column; transition: translate 520ms var(--pl-spring); }
   .sc-count .d b { height: 1em; font-weight: inherit; }
-  .sc-count .say { font: var(--pl-page-small); color: var(--pl-ink-2); }
+  .sc-count .say { font: var(--pl-page-small); color: var(--pl-text-secondary); }
 
   /* the name sits on a plate of the card's own colour: invisible, except that marks behind it never cross the word */
-  .sc-quiet .sc-step .pl-tag { height: auto; padding: 0 5px; border-radius: 5px; background: var(--pl-paper); font: var(--pl-page-meta); color: var(--pl-lilac); transition: color 160ms var(--pl-ease-out); }
-  .sc-quiet .sc-step[data-state="unused"] .pl-tag { color: var(--pl-ink-3); }
-  .sc-quiet .sc-step[data-state="pointed"] .pl-tag { color: var(--pl-ink); font-weight: 600; }
+  .sc-quiet .sc-step .pl-tag { height: auto; padding: 0 5px; border-radius: 5px; background: var(--pl-bg-surface); font: var(--pl-page-meta); color: var(--pl-lilac); transition: color 160ms var(--pl-ease-out); }
+  .sc-quiet .sc-step[data-state="unused"] .pl-tag { color: var(--pl-text-secondary); }
+  .sc-quiet .sc-step[data-state="pointed"] .pl-tag { color: var(--pl-text-primary); font-weight: 600; }
   .sc-quiet .sc-step:not([data-state="pointed"]) .v { opacity: 0; scale: .92; }
 
   @media (prefers-reduced-motion: reduce) {

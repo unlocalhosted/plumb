@@ -19,9 +19,13 @@
  * Writes are class changes on an element ({ el, from, to }): the card writes each where the element's classes are
  * written (locate.js classSiteOf: its own line, or the usage that passes them in), and refuses one written nowhere.
  * ───────────────────────────────────────────────────────── */
+import { activeVariants, swapInForce } from './variants.js';
+import { boxEditOf } from './inplace.js';
 import { esc } from './choices.js';
 import { FIX } from './words.js';
 import { clearOf } from './geometry.js';
+import { STAMP_ATTRIBUTE, placeOf, atPlace } from './stamp.js';
+import { Claims, LEVEL } from './claims.js';
 
 const W = FIX.card;
 const STILL = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -41,47 +45,47 @@ export const LAYOUT_CSS = `
   /* the spacing layer: bands where the spacing lives, the value by the pointer */
   .sp-layer { position: fixed; inset: 0; z-index: 3; pointer-events: none; }
   .sp-band { position: fixed; border-radius: 2px; }
-  .sp-band.pad { background: repeating-linear-gradient(45deg, rgb(26 158 98 / .35) 0 1.5px, rgb(26 158 98 / .1) 1.5px 5px); }
-  .sp-band.mar { background: repeating-linear-gradient(45deg, rgb(226 128 10 / .4) 0 1.5px, rgb(226 128 10 / .1) 1.5px 5px); }
-  .sp-band.gap { background: repeating-linear-gradient(45deg, rgb(122 92 240 / .4) 0 1.5px, rgb(122 92 240 / .1) 1.5px 5px); }
-  .sp-box { position: fixed; border-radius: 6px; box-shadow: 0 0 0 1px rgb(26 158 98 / .55); }
-  .sp-box em { position: absolute; left: 0; top: -18px; font: 600 10px/1 ui-monospace, monospace; font-style: normal; color: #137a4b; background: #fff; padding: 2px 5px; border-radius: 4px; white-space: nowrap; box-shadow: 0 0 0 .5px rgb(26 158 98 / .4); }
-  .sp-bub { position: fixed; z-index: 6; pointer-events: none; display: grid; gap: 4px; padding: 7px 9px 8px; border-radius: 10px; background: #1c1b19; color: #fff; box-shadow: 0 8px 24px -8px rgb(0 0 0 / .4); font: 11px/1.3 var(--pl-sans, system-ui), sans-serif; max-width: 240px; }
+  .sp-band.pad { background: repeating-linear-gradient(45deg, color-mix(in oklab, var(--pl-mark-padding) 35%, transparent) 0 1.5px, color-mix(in oklab, var(--pl-mark-padding) 10%, transparent) 1.5px 5px); }
+  .sp-band.mar { background: repeating-linear-gradient(45deg, color-mix(in oklab, var(--pl-mark-margin) 40%, transparent) 0 1.5px, color-mix(in oklab, var(--pl-mark-margin) 10%, transparent) 1.5px 5px); }
+  .sp-band.gap { background: repeating-linear-gradient(45deg, color-mix(in oklab, var(--pl-mark-gap) 40%, transparent) 0 1.5px, color-mix(in oklab, var(--pl-mark-gap) 10%, transparent) 1.5px 5px); }
+  .sp-box { position: fixed; border-radius: 6px; box-shadow: 0 0 0 1px color-mix(in oklab, var(--pl-mark-padding) 55%, transparent); }
+  .sp-box em { position: absolute; left: 0; top: -18px; font: 600 10px/1 ui-monospace, monospace; font-style: normal; color: var(--pl-state-written-text); background: var(--pl-bg-surface); padding: 2px 5px; border-radius: 4px; white-space: nowrap; box-shadow: 0 0 0 .5px rgb(26 158 98 / .4); }
+  .sp-bub { position: fixed; z-index: 6; pointer-events: none; display: grid; gap: 4px; padding: 7px 9px 8px; border-radius: 10px; background: var(--pl-bg-surface); color: var(--pl-text-primary); box-shadow: 0 8px 24px -8px rgb(0 0 0 / .4); font: 11px/1.3 var(--pl-sans, system-ui), sans-serif; max-width: 240px; }
   .sp-bub[hidden] { display: none; }
-  .sp-bub b { font: 600 13px/1 ui-monospace, monospace; } .sp-bub b.off { color: #ff9b85; } .sp-bub > span { color: #a7a49c; }
-  .sp-bub .scale { display: flex; gap: 3px; } .sp-bub .scale i { font: 500 10px/1 ui-monospace, monospace; font-style: normal; padding: 3px 4px; border-radius: 4px; color: #a7a49c; }
-  .sp-bub .scale i.fit { color: #8ee0b5; } .sp-bub .scale i.breaks { color: #6d6a63; text-decoration: line-through; } .sp-bub .scale i.at { background: #2f6bff; color: #fff; text-decoration: none; }
-  .sp-bub small { color: #8a877f; font-size: 10.5px; }
+  .sp-bub b { font: 600 13px/1 ui-monospace, monospace; } .sp-bub b.off { color: var(--pl-text-hard-coded); } .sp-bub > span { color: var(--pl-text-secondary); }
+  .sp-bub .scale { display: flex; gap: 3px; } .sp-bub .scale i { font: 500 10px/1 ui-monospace, monospace; font-style: normal; padding: 3px 4px; border-radius: 4px; color: var(--pl-text-secondary); }
+  .sp-bub .scale i.fit { color: var(--pl-mint); } .sp-bub .scale i.breaks { color: var(--pl-text-disabled); text-decoration: line-through; } .sp-bub .scale i.at { background: var(--pl-sky-soft); color: var(--pl-sky-ink); text-decoration: none; }
+  .sp-bub small { color: var(--pl-text-secondary); font-size: 10.5px; }
   :host([data-spacing="ns"]), :host([data-spacing="ns"]) * { cursor: ns-resize !important; } :host([data-spacing="ew"]), :host([data-spacing="ew"]) * { cursor: ew-resize !important; }
   /* the layout drill */
-  .ec .lay-mode { display: flex; margin: 2px 12px 8px; padding: 2px; border-radius: 9px; background: var(--wash); }
-  .ec .lay-mode button { flex: 1; height: 28px; border-radius: 7px; font: 600 12.5px/1 var(--pl-sans, system-ui); color: var(--ink-2); transition: background 120ms, box-shadow 120ms, color 120ms; }
-  .ec .lay-mode button[aria-checked="true"] { background: #fff; color: #1c1b19; box-shadow: 0 1px 2px rgb(0 0 0 / .1), 0 0 0 .5px rgb(0 0 0 / .06); }
+  .ec .lay-mode { display: flex; margin: 2px 12px 8px; padding: 2px; border-radius: 9px; background: var(--pl-bg-inset); }
+  .ec .lay-mode button { flex: 1; height: 28px; border-radius: 7px; font: 600 12.5px/1 var(--pl-sans, system-ui); color: var(--pl-text-secondary); transition: background 120ms, box-shadow 120ms, color 120ms; }
+  .ec .lay-mode button[aria-checked="true"] { background: var(--pl-bg-surface); color: var(--pl-text-primary); box-shadow: 0 1px 2px rgb(0 0 0 / .1), 0 0 0 .5px rgb(0 0 0 / .06); }
   .ec .lay-row { display: grid; grid-template-columns: 70px 1fr; align-items: center; gap: 8px; margin: 0 12px 6px; }
-  .ec .lay-row .k { font-size: 11.5px; color: var(--ink-3); }
+  .ec .lay-row .k { font-size: 11.5px; color: var(--pl-text-secondary); }
   .ec .lay-row .seg { margin: 0; }
-  .ec .lay-lab { display: flex; justify-content: space-between; gap: 8px; margin: 6px 14px 6px; font: 600 10.5px/1 var(--pl-sans, system-ui); letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); }
+  .ec .lay-lab { display: flex; justify-content: space-between; gap: 8px; margin: 6px 14px 6px; font: 600 10.5px/1 var(--pl-sans, system-ui); letter-spacing: .06em; text-transform: uppercase; color: var(--pl-text-secondary); }
   .ec .lay-lab span { font: 500 11px/1 var(--pl-sans, system-ui); letter-spacing: 0; text-transform: none; }
   .ec .lay-tracks { display: flex; flex-wrap: wrap; gap: 4px; margin: 0 12px 8px; }
-  .ec .lay-tk { height: 28px; padding: 0 9px; border-radius: 8px; background: var(--wash); font: 600 11.5px/1 ui-monospace, monospace; color: #2f5bd3; transition: background 120ms, scale 140ms; }
+  .ec .lay-tk { height: 28px; padding: 0 9px; border-radius: 8px; background: var(--pl-bg-inset); font: 600 11.5px/1 ui-monospace, monospace; color: var(--pl-state-on-token-text); transition: background 120ms, scale 140ms; }
   @media (hover: hover) and (pointer: fine) { .ec .lay-tk:hover { background: rgb(0 0 0 / .07); } }
-  .ec .lay-tk:active { scale: .96; } .ec .lay-tk.add { color: var(--ink-2); min-width: 28px; }
-  .ec .lay-sub { display: flex; align-items: center; gap: 8px; width: calc(100% - 24px); margin: 0 12px 6px; height: 32px; padding: 0 9px; border-radius: 9px; background: var(--wash); text-align: left; }
+  .ec .lay-tk:active { scale: .96; } .ec .lay-tk.add { color: var(--pl-text-secondary); min-width: 28px; }
+  .ec .lay-sub { display: flex; align-items: center; gap: 8px; width: calc(100% - 24px); margin: 0 12px 6px; height: 32px; padding: 0 9px; border-radius: 9px; background: var(--pl-bg-inset); text-align: left; }
   .ec .lay-sub[disabled] { opacity: .45; cursor: default; }
-  .ec .lay-sub .val { font-weight: 550; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .ec .lay-sub .lay-subtag { margin-left: auto; font: 500 10.5px/1 ui-monospace, monospace; color: var(--ink-3); }
+  .ec .lay-sub .val { font-weight: 550; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .ec .lay-sub .lay-subtag { margin-left: auto; font: 500 10.5px/1 ui-monospace, monospace; color: var(--pl-text-secondary); }
   .ec .lay-sw { width: 28px; height: 16px; border-radius: 8px; background: rgb(0 0 0 / .15); position: relative; flex: none; transition: background 160ms; }
-  .ec .lay-sw i { position: absolute; left: 2px; top: 2px; width: 12px; height: 12px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgb(0 0 0 / .2); transition: translate 220ms cubic-bezier(.2, .9, .25, 1.2); }
-  .ec .lay-sub[aria-checked="true"] .lay-sw { background: var(--sky); } .ec .lay-sub[aria-checked="true"] .lay-sw i { translate: 12px 0; }
-  .ec .say { margin: 0 14px 8px; font-size: 11.5px; color: var(--ink-3); }
-  .ec .keys { display: flex; flex-wrap: wrap; gap: 4px 12px; margin: 0 14px 10px; font-size: 11px; color: var(--ink-3); } .ec .keys b { color: var(--ink-2); font-weight: 600; }
-  .ec .putback { height: 26px; padding: 0 9px; border-radius: 8px; color: var(--ink-2); font-weight: 550; } .ec .putback:hover { background: var(--wash); }
+  .ec .lay-sw i { position: absolute; left: 2px; top: 2px; width: 12px; height: 12px; border-radius: 50%; background: var(--pl-bg-surface); box-shadow: 0 1px 2px rgb(0 0 0 / .2); transition: translate 220ms cubic-bezier(.2, .9, .25, 1.2); }
+  .ec .lay-sub[aria-checked="true"] .lay-sw { background: var(--pl-border-focus); } .ec .lay-sub[aria-checked="true"] .lay-sw i { translate: 12px 0; }
+  .ec .say { margin: 0 14px 8px; font-size: 11.5px; color: var(--pl-text-secondary); }
+  .ec .keys { display: flex; flex-wrap: wrap; gap: 4px 12px; margin: 0 14px 10px; font-size: 11px; color: var(--pl-text-secondary); } .ec .keys b { color: var(--pl-text-primary); font-weight: 600; }
+  .ec .putback { height: 26px; padding: 0 9px; border-radius: 8px; color: var(--pl-text-secondary); font-weight: 550; } .ec .putback:hover { background: var(--pl-bg-surface-hover); }
   /* column lines and track names on the element */
   .lay-h { position: fixed; inset: 0; z-index: 3; pointer-events: none; }
   .lay-line { position: fixed; width: 10px; margin-left: -5px; pointer-events: auto; cursor: col-resize; }
-  .lay-line::before { content: ''; position: absolute; left: 4px; top: 0; bottom: 0; width: 2px; border-radius: 1px; background: rgb(47 107 255 / .35); transition: background 120ms, width 120ms, left 120ms; }
-  .lay-line:hover::before, .lay-line[data-held]::before { background: #2f6bff; width: 3px; left: 3.5px; }
+  .lay-line::before { content: ''; position: absolute; left: 4px; top: 0; bottom: 0; width: 2px; border-radius: 1px; background: color-mix(in oklab, var(--pl-border-focus) 35%, transparent); transition: background 120ms, width 120ms, left 120ms; }
+  .lay-line:hover::before, .lay-line[data-held]::before { background: var(--pl-border-focus); width: 3px; left: 3.5px; }
   .lay-track { position: fixed; height: 16px; display: flex; justify-content: center; pointer-events: none; }
-  .lay-track b { font: 600 10px/16px ui-monospace, monospace; padding: 0 6px; border-radius: 5px; background: rgb(47 107 255 / .1); color: #2f5bd3; white-space: nowrap; }
+  .lay-track b { font: 600 10px/16px ui-monospace, monospace; padding: 0 6px; border-radius: 5px; background: var(--pl-bg-selected); color: var(--pl-state-on-token-text); white-space: nowrap; }
   @media (prefers-reduced-motion: reduce) { .ec .lay-sw, .ec .lay-sw i { transition: none; } }
 `;
 
@@ -118,7 +122,7 @@ export function freeze(el) {
     if (i === 0) for (const p of cs) css += `${p}:${cs.getPropertyValue(p)};`;
     else for (const p of DRAWN) { const v = cs.getPropertyValue(p); if (v) css += `${p}:${v};`; }
     d.setAttribute('style', css);
-    d.removeAttribute('id'); d.removeAttribute('data-plumb-source'); d.removeAttribute('contenteditable');
+    d.removeAttribute('id'); d.removeAttribute(STAMP_ATTRIBUTE); d.removeAttribute('contenteditable');
     d.setAttribute('inert', '');
   });
   Object.assign(copy.style, { position: 'relative', inset: 'auto', margin: '0', transform: 'none', transition: 'none', animation: 'none', pointerEvents: 'none' });
@@ -135,24 +139,17 @@ export function fitCopy(copy, el) {
   return copy;
 }
 // inline values put on an element and taken off exactly
-class Inline {
-  #had = new Map(); // el → Map(prop → [value, priority])
+export class Inline {
+  #claims; // claims.js keeps what the page had
+  constructor(level) { this.#claims = new Claims(level); }
   set(el, props) {
-    let m = this.#had.get(el); if (!m) this.#had.set(el, (m = new Map()));
-    for (const [p, v] of Object.entries(props)) {
-      if (!m.has(p)) m.set(p, [el.style.getPropertyValue(p), el.style.getPropertyPriority(p)]);
-      if (v === null) { const [was, pr] = m.get(p); if (was) el.style.setProperty(p, was, pr); else el.style.removeProperty(p); } else el.style.setProperty(p, String(v), 'important');
-    }
+    for (const [p, v] of Object.entries(props)) { if (v === null) this.#claims.unset(el, p); else this.#claims.set(el, p, v); }
   }
-  clear() {
-    for (const [el, m] of this.#had) for (const [p, [v, pr]] of m) { if (v) el.style.setProperty(p, v, pr); else el.style.removeProperty(p); }
-    this.#had.clear();
-  }
-  get on() { return this.#had.size > 0; }
+  clear() { this.#claims.clear(); }
+  get on() { return this.#claims.size > 0; }
 }
 // the line an element is written on (a list's rows share one): its stamp
-const stampOf = (el) => el.getAttribute('data-plumb-source')?.split('#')[0] ?? null;
-const matesOf = (el) => { const s = stampOf(el); return s ? [...document.querySelectorAll(`[data-plumb-source^="${CSS.escape(s)}#"]`)].filter((x) => x !== el).length : 0; };
+const matesOf = (el) => { const s = placeOf(el); return s ? [...document.querySelectorAll(atPlace(s))].filter((x) => x !== el).length : 0; };
 
 // ── the spacing grammar ──────────────────────────────────
 // host: { release(), target() → el | null, name(el) → words, scale() → [{ px, token }] (0 first), write([{ el, from, to }],
@@ -163,17 +160,18 @@ export class Spacing {
   #host; #layer; #bub; #root;
   #on = false; #hover = null; #act = null; #at = [0, 0];
   #mods = { shift: false, meta: false };
-  #inline = new Inline();
+  #inline = new Inline(LEVEL.drag);
   #swallow = false;
 
   constructor(root, host) {
     this.#host = host; this.#root = root;
     this.#layer = Object.assign(document.createElement('div'), { className: 'sp-layer' });
-    this.#bub = Object.assign(document.createElement('div'), { className: 'sp-bub', hidden: true });
+    this.#bub = Object.assign(document.createElement('div'), { className: 'sp-bub pl-dark', hidden: true });
     this.#bub.setAttribute('role', 'status');
     root.append(this.#layer, this.#bub);
   }
   get active() { return !!this.#act; }
+  #unhand = null; // the band drag's listeners, let go however the drag ends (up, cancel, Esc, off)
   on() {
     if (this.#on) return;
     this.#on = true;
@@ -186,6 +184,7 @@ export class Spacing {
   }
   off() {
     if (!this.#on) return;
+    this.#unhand?.();
     this.#end(false);
     this.#on = false; this.#hover = null; this.#draw();
     removeEventListener('pointermove', this.#move, { capture: true });
@@ -251,15 +250,20 @@ export class Spacing {
     this.#start(b, true);
     const p0 = vertical ? e.clientY : e.clientX;
     let done = 0;
+    const stop = () => { removeEventListener('pointermove', move, true); removeEventListener('pointerup', up, true); removeEventListener('pointercancel', cancel, true); if (this.#unhand === stop) this.#unhand = null; };
     const move = (ev) => {
+      if (!this.#act) return stop(); // ended under the drag (Esc): its listeners go with it
       this.#modsOf(ev);
       const want = Math.trunc((((vertical ? ev.clientY : ev.clientX) - p0) * sign) / 10);
       while (done !== want) { const dir = want > done ? 1 : -1; this.#step(dir); done += dir; }
       this.#at = [ev.clientX, ev.clientY];
       this.#draw();
     };
-    const up = () => { removeEventListener('pointermove', move, true); removeEventListener('pointerup', up, true); this.#swallow = true; setTimeout(() => { this.#swallow = false; }, 0); this.#end(true); };
-    addEventListener('pointermove', move, true); addEventListener('pointerup', up, true);
+    const up = () => { stop(); this.#swallow = true; setTimeout(() => { this.#swallow = false; }, 0); this.#end(true); };
+    // the browser took the pointer: the band goes back, as Esc does
+    const cancel = () => { stop(); this.#end(false); };
+    this.#unhand = stop;
+    addEventListener('pointermove', move, true); addEventListener('pointerup', up, true); addEventListener('pointercancel', cancel, true);
   };
   // the pointer on one of the overlay's own surfaces (the fix bar over a large element) points at it, not at the page
   #onSurface(x, y) { return (this.#host.avoid?.() ?? []).some((r) => r && x >= r.left && x <= r.right && y >= r.top && y <= r.bottom); }
@@ -333,7 +337,8 @@ export class Spacing {
     if (!keep || !a.moved || Math.abs(a.value - a.from) < 0.5 && a.sides.length === 1) { this.#inline.clear(); this.#draw(); return; }
     const b = a.band, scale = this.#host.scale?.() ?? [], step = scale.find((s) => Math.abs(s.px - a.value) < 0.5);
     if (!step) { this.#inline.clear(); this.#draw(); return; }
-    const swap = edit(b, a.sides, step.token, classesOf(b.el));
+    // all its classes, variants too: the change is made in the one showing now (variants.js), the rest kept
+    const swap = edit(b, a.sides, step.token, [...b.el.classList], activeVariants(b.el));
     this.#draw();
     if (!swap) { this.#inline.clear(); return; }
     const mates = this.#host.mates?.(b.el) ?? matesOf(b.el), what = W.what(b.kind, a.sides.map((s) => W.sides[s]));
@@ -407,17 +412,13 @@ export class Spacing {
 }
 const same = (a, b) => (!a && !b) || (!!a && !!b && a.el === b.el && a.kind === b.kind && a.side === b.side && a.axis === b.axis);
 
-// the class swap for a spacing change: the classes it replaces (only those the element has) and the one it adds
-function edit(b, sides, token, classes) {
-  const pre = b.kind === 'pad' ? 'p' : 'm';
-  let gone, add;
-  if (b.kind === 'gap') { gone = (c) => /^gap(-[xy])?-/.test(c); add = `gap-${token}`; }
-  else if (sides.length === 4) { gone = (c) => new RegExp(`^${pre}[xytrblse]?-`).test(c); add = `${pre}-${token}`; }
-  else if (sides.length === 2) { const y = sides.includes('top'); gone = (c) => new RegExp(y ? `^${pre}[ytb]-` : `^${pre}[xlrse]-`).test(c); add = `${pre}${y ? 'y' : 'x'}-${token}`; }
-  else { const d = sides[0][0]; gone = (c) => c.startsWith(`${pre}${d}-`); add = `${pre}${d}-${token}`; }
-  const from = classes.filter(gone);
-  if (from.length === 1 && from[0] === add) return null;
-  return { from: from.join(' '), to: add };
+// the class swap for a spacing change, made where it shows: padding and margin side by side through the box edit (each
+// side in the class that sets it now, md:px-6 at a medium window), a gap in the gap class in force; every other class,
+// other breakpoints, dark:, hover:, kept as written
+function edit(b, sides, token, classes, active) {
+  if (b.kind === 'gap') return swapInForce(classes, (c) => /^gap(-[xy])?-/.test(c), `gap-${token}`, active);
+  const family = b.kind === 'pad' ? 'padding' : 'margin';
+  return boxEditOf(classes, sides.map((side) => ({ prop: `${family}-${side}`, to: { token } })), active);
 }
 
 // ── layout ───────────────────────────────────────────────
@@ -461,7 +462,7 @@ const linedCols = (el) => linesUp(el) ? Array.from({ length: rowParts(el) }, (_,
 
 // host: { target() → el, redraw(), restrip() }
 export class Layout {
-  #host; #layer; #from = null; #s = null; #inline = new Inline(); #peek = null; #line = null;
+  #host; #layer; #from = null; #s = null; #inline = new Inline(LEVEL.card); #peek = null; #line = null;
   constructor(root, host) {
     this.#host = host;
     this.#layer = Object.assign(document.createElement('div'), { className: 'lay-h' });
@@ -512,10 +513,10 @@ export class Layout {
     if (subNow !== subWas) {
       const seen = new Set();
       for (const r of kids(t)) {
-        const key = stampOf(r) ?? r; if (seen.has(key)) continue; seen.add(key);
+        const key = placeOf(r) ?? r; if (seen.has(key)) continue; seen.add(key);
         const has = classesOf(r).filter((c) => ROW_CLASS.test(c)), want = subNow ? ['col-span-full', 'grid', 'grid-cols-subgrid'] : ['flex'];
         const g = has.filter((c) => !want.includes(c)), a = want.filter((c) => !has.includes(c));
-        if (g.length || a.length) out.push({ el: r, from: g.join(' '), to: a.join(' '), rows: kids(t).filter((x) => (stampOf(x) ?? x) === key).length });
+        if (g.length || a.length) out.push({ el: r, from: g.join(' '), to: a.join(' '), rows: kids(t).filter((x) => (placeOf(x) ?? x) === key).length });
       }
     }
     return out;
@@ -593,8 +594,11 @@ export class Layout {
       else { if (!fr(cols0[i])) cols[i] = `${Math.round(a / 4) * 4}px`; if (!fr(cols0[i + 1])) cols[i + 1] = `${Math.round(b / 4) * 4}px`; }
       this.#s.cols = cols; this.#show();
     };
-    const up = () => { removeEventListener('pointermove', move); removeEventListener('pointerup', up); this.#changed(); };
-    addEventListener('pointermove', move); addEventListener('pointerup', up);
+    const stop = () => { removeEventListener('pointermove', move); removeEventListener('pointerup', up); removeEventListener('pointercancel', cancel); l.removeAttribute('data-held'); };
+    const up = () => { stop(); this.#changed(); };
+    // the browser took the pointer: the columns go back as they were
+    const cancel = () => { stop(); this.#s.cols = cols0; this.#show(); };
+    addEventListener('pointermove', move); addEventListener('pointerup', up); addEventListener('pointercancel', cancel);
   }
 }
 const sameLayout = (a, b) => !!a && !!b && a.mode === b.mode && (a.mode !== 'flex' || (a.dir === b.dir && a.wrap === b.wrap)) && (a.mode !== 'grid' || (JSON.stringify(a.cols) === JSON.stringify(b.cols) && !!a.sub === !!b.sub));

@@ -31,6 +31,7 @@ import { request } from './api.js';
 import { Facts, Theme, spec } from './craft.js';
 import { RULES, textCollision } from './craft-rules.js';
 import { lawsOf } from './laws.js';
+import { STAMPED } from './stamp.js';
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -54,7 +55,7 @@ async function operate(options) {
   }
   if (op === 'collisions') {
     const facts = new Facts();
-    facts.items = [...document.body.querySelectorAll('[data-plumb-source]')].filter((el) => !el.closest('plumb-overlay'));
+    facts.items = [...document.body.querySelectorAll(STAMPED)].filter((el) => !el.closest('plumb-overlay'));
     const found = [];
     for (const el of facts.items) { try { for (const f of textCollision.check({ el, facts }) ?? []) found.push({ el, f }); } catch { /* a rule's error is its own */ } }
     const sites = await Promise.all(found.map(({ el }) => locate(el, { explain: true, batch: true }).catch(() => null)));

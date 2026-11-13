@@ -159,7 +159,7 @@ async function compiler(entry: string): Promise<{ compile(css: string, options: 
     if (createRequire(node).resolve('tailwindcss') === tailwind) path = node;
   } catch (error) { if ((error as NodeJS.ErrnoException).code !== 'MODULE_NOT_FOUND') throw error; }
   // require.resolve finds a package's CommonJS build; importing that puts the API under default.
-  const loaded = await import(pathToFileURL(path).href) as { compile?: unknown; default?: { compile?: unknown } };
+  const loaded = await import(/* webpackIgnore: true */ /* turbopackIgnore: true */ pathToFileURL(path).href) as { compile?: unknown; default?: { compile?: unknown } };
   const api = typeof loaded.compile === 'function' ? loaded : loaded.default;
   if (typeof api?.compile !== 'function') throw new Error(`${path} does not export compile; React Plumber needs Tailwind CSS 4.`);
   return api as Awaited<ReturnType<typeof compiler>>;
@@ -239,7 +239,7 @@ export async function lowerStylesheets(root: string, entry: string | null, versi
     if (entry && file !== entry && !descendants(file).has(entry)) input += `\n@reference ${JSON.stringify(entry)};`;
     const options = { base: dirname(file), from: file, onDependency() {},
       loadStylesheet: async (id: string, base: string) => { const path = resolveStylesheet(id, base); return { path, base: dirname(path), content: await readFile(path, 'utf8') }; },
-      loadModule: async (id: string, base: string) => { const path = createRequire(join(base, 'package.json')).resolve(id); const module = await import(pathToFileURL(path).href) as { default?: unknown }; return { path, base: dirname(path), module: module.default ?? module }; },
+      loadModule: async (id: string, base: string) => { const path = createRequire(join(base, 'package.json')).resolve(id); const module = await import(/* webpackIgnore: true */ /* turbopackIgnore: true */ pathToFileURL(path).href) as { default?: unknown }; return { path, base: dirname(path), module: module.default ?? module }; },
     };
     // The Node wrapper adds its own file/module loaders; direct project compilers
     // use these callbacks instead. Both receive the authored source path.

@@ -110,11 +110,11 @@ test('Shadow ›: the strip tries each shadow on the element, a pick shows the e
   await page.mouse.down();
   await page.mouse.move(s.x + s.width / 2 + 30, s.y + s.height / 2 - 10, { steps: 6 });
   await page.mouse.up();
-  await page.waitForFunction(() => !/^0°/.test(document.querySelector('plumb-overlay').shadowRoot.querySelector('.ec .pad-read')?.textContent ?? '0°'), null, { timeout: 10000 });
+  await page.waitForFunction(() => !/^0°/.test(document.querySelector('plumb-overlay')?.shadowRoot?.querySelector('.ec .pad-read')?.textContent ?? '0°'), null, { timeout: 10000 });
   assert.notEqual(await card.locator('.pad-read').innerText(), readout);
   // lit from the right: the first layer falls to the left
   await page.waitForFunction(() => /^rgba?\([^)]*\) -\d/.test(getComputedStyle(document.getElementById('relative')).boxShadow), null, { timeout: 20000 });
-  await page.waitForFunction(() => /--shadow-raised: -/.test(document.querySelector('plumb-overlay').shadowRoot.querySelector('.ec .writes')?.textContent ?? ''), null, { timeout: 20000 });
+  await page.waitForFunction(() => /--shadow-raised: -/.test(document.querySelector('plumb-overlay')?.shadowRoot?.querySelector('.ec .writes')?.textContent ?? ''), null, { timeout: 20000 });
 
   // Write it: both files written in one go, said with Undo
   await page.evaluate(() => { window.__before = true; });
@@ -153,7 +153,7 @@ test('Motion ›: hover and press options play on copies, a pick shows its edit,
 
   // Entrance: its own options
   await card.locator('[data-tab="enter"]').click();
-  await page.waitForFunction(() => [...document.querySelector('plumb-overlay').shadowRoot.querySelectorAll('.ec-strip .shot')].some((s) => s.dataset.key === 'p:fade-rise'));
+  await page.waitForFunction(() => [...document.querySelector('plumb-overlay')?.shadowRoot?.querySelectorAll('.ec-strip .shot')].some((s) => s.dataset.key === 'p:fade-rise'));
   await card.locator('[data-tab="hover"]').click();
   await strip.locator('.shot[data-key="p:lift"]').waitFor();
 
@@ -170,7 +170,7 @@ test('Motion ›: hover and press options play on copies, a pick shows its edit,
   await page.mouse.down();
   await page.mouse.move(tl.x + tl.width * 0.5, h.y + h.height / 2, { steps: 5 });
   await page.mouse.up();
-  await page.waitForFunction(() => /duration-300/.test(document.querySelector('plumb-overlay').shadowRoot.querySelector('.ec .writes')?.textContent ?? ''), null, { timeout: 20000 });
+  await page.waitForFunction(() => /duration-300/.test(document.querySelector('plumb-overlay')?.shadowRoot?.querySelector('.ec .writes')?.textContent ?? ''), null, { timeout: 20000 });
   assert.equal(await card.locator('.tl-ms').innerText(), '300ms');
 
   // Esc goes back to the card at rest; nothing written, nothing left on the element
@@ -191,7 +191,7 @@ test('Motion ›: hover and press options play on copies, a pick shows its edit,
   await overlay.locator('.fx .said').filter({ hasText: /uses .* now/ }).waitFor({ timeout: 20000 });
   assert.notEqual((await read()).app, original.app, `${picked} was written`);
   await overlay.locator('.fx .said .undo').click();
-  await page.waitForFunction(() => /Undone/.test(document.querySelector('plumb-overlay').shadowRoot.querySelector('.wt:not([hidden]), .fx .said')?.textContent ?? ''), null, { timeout: 20000 });
+  await page.waitForFunction(() => /Undone/.test(document.querySelector('plumb-overlay')?.shadowRoot?.querySelector('.wt:not([hidden]), .fx .said')?.textContent ?? ''), null, { timeout: 20000 });
   assert.deepEqual(await read(), original);
 
   // Esc closes the card

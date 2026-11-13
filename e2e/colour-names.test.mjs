@@ -15,8 +15,10 @@ import { plumb } from '@unlocalhosted/react-plumber/vite';
 
 const repo = fileURLToPath(new URL('../', import.meta.url));
 const run = promisify(execFile);
-const snapshot = async (root) => Object.fromEntries(await Promise.all((await readdir(join(root, 'src'), { recursive: true, withFileTypes: true }))
-  .filter((d) => d.isFile()).map(async (d) => { const f = join(d.parentPath, d.name); return [f.slice(root.length + 1), await readFile(f, 'utf8')]; })));
+// the project's files; a write's temporary file (it is renamed over the file a moment later) is not one of them
+const snapshot = async (root) => Object.fromEntries((await Promise.all((await readdir(join(root, 'src'), { recursive: true, withFileTypes: true }))
+  .filter((d) => d.isFile() && !d.name.endsWith('.plumb-tmp')).map(async (d) => { const f = join(d.parentPath, d.name); return [f.slice(root.length + 1), await readFile(f, 'utf8').catch((e) => (e.code === 'ENOENT' ? null : Promise.reject(e)))]; })))
+  .filter(([, text]) => text !== null));
 
 // crafting-ui's theme shape: short role names, `bg` for the page, `surface-pressed` for the press state, a second ink
 const FLAT = `@import "tailwindcss";
@@ -102,7 +104,8 @@ async function site(t, theme, dashboard, { alone = false } = {}) {
   await writeFile(join(root, 'src/App.jsx'), `import { Dashboard } from './Dashboard.jsx';\nexport function App() { return <Dashboard />; }\n`);
   // alone: the page's code is only this screen (the demo's other screens use colours in ways of their own)
   if (alone) {
-    for (const f of ['Craft.jsx', 'Team.jsx', 'Rules.jsx', 'rules']) await rm(join(root, 'src', f), { recursive: true, force: true });
+    // only the files this page is made of: a demo screen added later must not lend the page colours of its own
+    for (const f of await readdir(join(root, 'src'))) if (!['styles.css', 'entry.jsx', 'App.jsx', 'Dashboard.jsx'].includes(f)) await rm(join(root, 'src', f), { recursive: true, force: true });
     await writeFile(join(root, 'src/entry.jsx'), `import { createRoot } from 'react-dom/client';\nimport './styles.css';\nimport { App } from './App.jsx';\ncreateRoot(document.getElementById('root')).render(<App />);\n`);
   }
   const server = await createServer({ root, cacheDir: join(root, '.vite-cache'), configFile: false, plugins: [plumb({ watch: false }), tailwindcss()],

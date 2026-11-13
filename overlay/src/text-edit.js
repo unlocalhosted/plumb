@@ -18,9 +18,10 @@
  *             refresh reloads the page after a write, and blueprint, if it was on, comes back with it
  *  refused    words that can't be edited say why, beside the words, and where to change them by hand
  * ───────────────────────────────────────────────────────── */
-import { request, post } from './api.js';
+import { errorIs, request, post } from './api.js';
 import { locate } from './locate.js';
 import { esc } from './choices.js';
+import { Scope } from './scope.js';
 
 const RESUME = 'plumb:text-resume';
 
@@ -35,17 +36,17 @@ function changed(from, to) {
   return !was ? `Added “${cut(now)}”` : !now ? `Removed “${cut(was)}”` : `Changed “${cut(was)}” to “${cut(now)}”`;
 }
 export const TEXT_EDIT_CSS = `
-  .tx-ring { position: fixed; pointer-events: none; border-radius: 3px; box-shadow: 0 0 0 1.5px var(--pl-accent), 0 0 0 3.5px var(--pl-halo); }
+  .tx-ring { position: fixed; pointer-events: none; border-radius: 3px; box-shadow: 0 0 0 1.5px var(--pl-instrument), 0 0 0 3.5px var(--pl-halo); }
   .tx-tag { position: fixed; pointer-events: none; display: flex; align-items: center; gap: var(--pl-space-3); height: var(--pl-tag-h); padding: 0 var(--pl-space-4);
-    border-radius: var(--pl-radius-tag); background: var(--pl-paper); box-shadow: var(--pl-shadow-tag); font: var(--pl-card-meta); color: var(--pl-ink-2); white-space: nowrap; }
-  .tx-tag code { font: var(--pl-card-code); color: var(--pl-ink); }
-  .tx-tag kbd { font: 500 10px/13px var(--pl-mono); color: var(--pl-ink-2); }
-  .tx-tag[data-kind="saving"] { color: var(--pl-accent); }
-  .tx-tag[data-kind="refused"] { color: var(--pl-ink); max-width: min(420px, calc(100vw - 32px)); height: auto; min-height: var(--pl-tag-h); padding-block: var(--pl-space-3); white-space: normal; }
+    border-radius: var(--pl-radius-tag); background: var(--pl-bg-surface); box-shadow: var(--pl-shadow-tag); font: var(--pl-card-meta); color: var(--pl-text-secondary); white-space: nowrap; }
+  .tx-tag code { font: var(--pl-card-code); color: var(--pl-text-primary); }
+  .tx-tag kbd { font: 500 10px/13px var(--pl-mono); color: var(--pl-text-secondary); }
+  .tx-tag[data-kind="saving"] { color: var(--pl-instrument); }
+  .tx-tag[data-kind="refused"] { color: var(--pl-text-primary); max-width: min(420px, calc(100vw - 32px)); height: auto; min-height: var(--pl-tag-h); padding-block: var(--pl-space-3); white-space: normal; }
   .tx-tag[data-kind="error"] { color: var(--pl-off); }
   .tx-area { position: fixed; margin: 0; padding: 0; border: 0; outline: none; resize: none; overflow: hidden; background: transparent;
-    color: transparent; caret-color: var(--pl-accent); pointer-events: auto; }
-  .tx-area::selection { background: color-mix(in oklab, var(--pl-accent) 28%, transparent); color: transparent; }
+    color: transparent; caret-color: var(--pl-instrument); pointer-events: auto; }
+  .tx-area::selection { background: color-mix(in oklab, var(--pl-instrument) 28%, transparent); color: transparent; }
 `;
 
 const norm = (v) => v.replace(/\s+/g, ' ').trim();
@@ -61,8 +62,44 @@ function caretAt(x, y) {
   return range ? { node: range.startContainer, offset: range.startOffset } : null;
 }
 
+// One phase (docs/state-machines/text-edit-spec.md, read by `sm`: docs/briefs/state-oracle-spec.md): idle → resolving →
+// editing → saving → idle, or → error → idle. Only `editing` owns the keys; saving and error are said beside the words
+// while the page's keys work as ever. `cancel` is Esc, and Enter with the words unchanged; `unmount` is the overlay
+// going (destroy), which also lets go of a lookup or a write still out (its token).
+/** @machine */
+export const TEXT_EDIT = {
+  id: 'text-edit',
+  owner: 'TextEditor',
+  field: '#phase',
+  token: '#flight',
+  initial: 'idle',
+  cancel: ['cancel', 'unmount'],
+  states: {
+    idle:      { on: { start: 'resolving' }, ignores: ['cancel', 'unmount'] },
+    resolving: { flight: 'resolve', on: { edit: 'editing', refused: 'idle', gone: 'idle', unmount: 'idle' }, ignores: ['cancel'] }, // a second double-click is the first's
+    editing:   { on: { save: 'saving', cancel: 'idle', unmount: 'idle' } },
+    saving:    { flight: 'write', on: { saved: 'idle', failed: 'error', unmount: 'idle' }, ignores: ['cancel'] }, // the keys are the page's: Esc is not the edit's
+    error:     { on: { dismiss: 'idle', expired: 'idle', unmount: 'idle' }, ignores: ['cancel'] },
+  },
+  flights: {
+    resolve: { ifLeft: 'drop' },
+    write: { ifLeft: 'handOff' }, // destroyed while it was written: History still says it
+  },
+};
+
 export class TextEditor {
-  #root; #host; #ring; #tag; #edit = null; #hideTimer = 0;
+  #root; #host; #ring; #tag; #edit = null;
+  #phase = TEXT_EDIT.initial;
+  #flight = null; // the lookup or the write out: {} per run; destroy() lets it go
+  // What the phase started (its listeners, its timer) ends when the phase is left (scope.js). An edit on screen has its
+  // own scope, across editing, saving and error; the note beside words that can't be edited has one too.
+  #scope = new Scope();
+  #notice = null;
+  #send(event) {
+    const next = TEXT_EDIT.states[this.#phase]?.on?.[event];
+    if (next) { this.#phase = next; this.#scope.end(); this.#scope = new Scope(); }
+    return !!next;
+  }
 
   // host: editing(on, rect) lets the edit through blueprint's glass; announce(text); changed(); inBlueprint() and
   // blueprint() say whether blueprint is on and turn it back on after a reload
@@ -76,18 +113,27 @@ export class TextEditor {
     this.#resume();
   }
 
-  // After a write that reloaded the page: blueprint, if it was on, comes back with it.
+  // After a write that reloaded the page: blueprint, if it was on, comes back with it. And when the reload came before
+  // the server's answer did, History never heard what was written: the words are said here, with the Undo of the write
+  // the server made to that file since.
   #resume() {
     let saved;
     try { saved = JSON.parse(sessionStorage.getItem(RESUME) ?? 'null'); sessionStorage.removeItem(RESUME); } catch { return; }
-    if (saved && Date.now() - saved.at < 15000 && saved.blueprint) this.#host.blueprint?.();
+    if (!saved || Date.now() - saved.at > 15000) return;
+    if (saved.blueprint) this.#host.blueprint?.();
+    if (!saved.said || this.#host.heard?.()) return;
+    request('history', {}).then((h) => {
+      const made = (h?.writes ?? []).find((w) => Date.parse(w.at) >= saved.at - 250 && !w.stale && (!saved.file || w.file === saved.file));
+      if (made) this.#host.wrote?.({ undo: { id: made.id, file: made.file, label: made.label } }, saved.said);
+    }, () => {});
   }
 
-  get editing() { return !!this.#edit; }
+  get editing() { return this.#phase === 'editing'; }
+  get phase() { return this.#phase; }
 
   // A double-click at a point on the page. True when it was taken (the words are being edited or explained).
   async dblclick(event) {
-    if (this.#edit) return false;
+    if (this.#phase !== 'idle' && this.#phase !== 'error') return false;
     const hit = caretAt(event.clientX, event.clientY);
     const node = hit?.node;
     if (node?.nodeType !== Node.TEXT_NODE || !norm(node.data)) return false;
@@ -98,10 +144,18 @@ export class TextEditor {
 
   // Edit one text node: resolve it, then make it editable where it is.
   async start(node, offset = null) {
+    // one edit at a time: a second double-click while the first is read is the first's. A failed save's message gives
+    // way to the next try
+    if (this.#phase === 'error') { this.#send('dismiss'); this.#end(); }
+    if (!this.#send('start')) return false;
+    this.#notice?.end(); // a note about other words must not hide this edit's tag when its time is up
+    const flight = (this.#flight = {});
     const el = node.parentElement, words = norm(node.data);
     const target = await this.#resolve(el, words).catch((error) => ({ editable: false, reason: error?.message ?? "React Plumber couldn't read this text." }));
-    if (!node.isConnected) return false;
-    if (!target.editable) { this.#refusal(node, target); return true; }
+    if (this.#flight !== flight) return false; // let go meanwhile (destroyed)
+    this.#flight = null;
+    if (!node.isConnected) { this.#send('gone'); return false; }
+    if (!target.editable) { this.#send('refused'); this.#refusal(node, target); return true; }
     this.#begin(node, target, offset);
     return true;
   }
@@ -113,10 +167,10 @@ export class TextEditor {
     const at = { file: found.file, line: found.line, column: found.column };
     const owners = (found.chain ?? []).filter((c) => c?.file).map((c) => `${c.file}:${c.line}:${c.column}`).join(',');
     try {
-      const r = await request('text-at', { ...at, text: words, owners });
+      const r = await request('text-at', { ...at, text: words, owners }, { throws: true });
       if (r) return r.editable ? { ...r, via: 'text-at' } : r;
     } catch (error) {
-      if (error?.status !== 404 && !/unknown|not found|404/i.test(error?.message ?? '')) throw error;
+      if (!errorIs(error, 'not-found')) throw error;
     }
     // an older server: the element's own JSX text
     const t = await request('text', at);
@@ -130,14 +184,15 @@ export class TextEditor {
     const el = node.parentElement;
     const leaf = [...el.childNodes].every((n) => n === node || (n.nodeType === Node.TEXT_NODE && !n.data.trim()));
     const lead = node.data.match(/^\s*/)[0], trail = node.data.match(/\s*$/)[0];
-    const ed = { node, el, target, leaf, lead, trail, before: node.data, area: null, done: false, prior: el.getAttribute('contenteditable') };
+    const ed = { node, el, target, leaf, lead, trail, before: node.data, area: null, done: false, prior: el.getAttribute('contenteditable'), kids: [...el.childNodes], scope: new Scope() };
     this.#edit = ed;
+    this.#send('edit');
     this.#host.editing?.(true, () => this.#rect());
     if (leaf) {
       el.setAttribute('contenteditable', 'plaintext-only');
-      el.addEventListener('keydown', this.#key);
-      el.addEventListener('blur', this.#blur);
-      el.addEventListener('input', this.#input);
+      this.#scope.listen(el, 'keydown', this.#key);
+      this.#scope.listen(el, 'blur', this.#blur);
+      this.#scope.listen(el, 'input', this.#input);
       el.focus({ preventScroll: true });
       // the word that was double-clicked stays selected, the way the page's own double-click selects it
       const sel = getSelection(), range = document.createRange();
@@ -158,14 +213,15 @@ export class TextEditor {
       for (const k of ['font', 'letterSpacing', 'textTransform', 'wordSpacing', 'lineHeight', 'textAlign']) area.style[k] = cs[k];
       this.#root.append(area);
       ed.area = area;
-      area.addEventListener('keydown', this.#key);
-      area.addEventListener('blur', this.#blur);
-      area.addEventListener('input', () => { node.data = lead + area.value + trail; });
+      this.#scope.listen(area, 'keydown', this.#key);
+      this.#scope.listen(area, 'blur', this.#blur);
+      this.#scope.listen(area, 'input', () => { node.data = lead + area.value + trail; });
       area.focus({ preventScroll: true });
       area.select();
     }
     this.#say('edit');
     this.#follow();
+    ed.scope.frames(this.#follow);
   }
 
   // The words' box on the page.
@@ -178,7 +234,7 @@ export class TextEditor {
     return range.getBoundingClientRect();
   }
 
-  // Ring, tag and textarea follow the words while the page scrolls or re-flows.
+  // Ring, tag and textarea follow the words while the page scrolls or re-flows: every frame of the edit's scope.
   #follow = () => {
     const ed = this.#edit;
     if (!ed) return;
@@ -190,7 +246,6 @@ export class TextEditor {
       Object.assign(this.#tag.style, { left: `${Math.max(8, Math.min(innerWidth - this.#tag.offsetWidth - 8, r.left))}px`, top: `${tagTop}px` });
       if (ed.area) Object.assign(ed.area.style, { left: `${r.left}px`, top: `${r.top}px`, width: `${Math.max(24, r.width + 2)}px`, height: `${r.height}px` });
     }
-    requestAnimationFrame(this.#follow);
   };
 
   #say(kind, text) {
@@ -220,33 +275,52 @@ export class TextEditor {
   // Save or cancel. Saving writes at once; the words stay as typed while the write runs and come back if it is refused.
   async #finish(save) {
     const ed = this.#edit;
-    if (!ed || ed.done) return;
+    if (!ed || ed.done || this.#phase !== 'editing') return;
     ed.done = true;
     const typed = norm(ed.leaf ? ed.el.textContent : ed.area.value);
     // put the element back the way it was, then show the words that stand
     if (ed.leaf) {
-      ed.el.removeEventListener('keydown', this.#key); ed.el.removeEventListener('blur', this.#blur); ed.el.removeEventListener('input', this.#input);
       if (ed.prior === null) ed.el.removeAttribute('contenteditable'); else ed.el.setAttribute('contenteditable', ed.prior);
-      // the browser may have split or replaced the text node while editing: the original node carries the words again
-      if (!ed.node.isConnected || ed.el.childNodes.length !== 1 || ed.el.firstChild !== ed.node) ed.el.replaceChildren(ed.node);
+      // the browser may have split or replaced the text node while editing: the element's own nodes go back, every one
+      // of them (React owns the whitespace beside the words too: a node it no longer finds breaks its next update), and
+      // the original node carries the words again
+      const kids = [...ed.el.childNodes];
+      if (kids.length !== ed.kids.length || kids.some((n, i) => n !== ed.kids[i])) ed.el.replaceChildren(...ed.kids);
     } else ed.area.remove();
     getSelection()?.removeAllRanges();
     const keep = save && typed && typed !== norm(ed.target.from);
     ed.node.data = keep ? ed.lead + typed + ed.trail : ed.before;
-    if (!keep) return this.#end();
+    if (!keep) { this.#send('cancel'); return this.#end(); }
+    // saving: the keys are the page's again (Esc, Alt+B); the words stay as typed until the write answers
+    this.#send('save');
+    const flight = (this.#flight = {});
+    this.#host.editing?.(false);
     this.#say('saving');
-    try { sessionStorage.setItem(RESUME, JSON.stringify({ at: Date.now(), blueprint: !!this.#host.inBlueprint?.() })); } catch {}
+    const said = `${changed(norm(ed.target.from), typed)} in ${short(ed.target.file)}`;
+    const resume = { at: Date.now(), blueprint: !!this.#host.inBlueprint?.() };
+    // what to say is kept with it until the answer is in: a dev server that reloads the page first must not lose it
+    try { sessionStorage.setItem(RESUME, JSON.stringify({ ...resume, said, file: ed.target.file })); } catch {}
+    const answered = () => { try { if (sessionStorage.getItem(RESUME)) sessionStorage.setItem(RESUME, JSON.stringify(resume)); } catch {} };
     try {
       const result = await this.#write(ed.target, ed.target.from, typed);
+      // destroyed while it was written: the write landed all the same, so History says it
+      if (this.#flight !== flight) { this.#host.wrote?.(result, said); answered(); return; }
+      this.#flight = null;
+      this.#send('saved');
       this.#end();
-      this.#host.wrote?.(result, `${changed(norm(ed.target.from), typed)} in ${short(ed.target.file)}`);
+      this.#host.wrote?.(result, said);
+      answered();
       this.#host.announce?.(`Applied in ${short(ed.target.file)}`);
     } catch (error) {
+      if (this.#flight !== flight) return; // destroyed while it was written: nothing to show it on
+      this.#flight = null;
       try { sessionStorage.removeItem(RESUME); } catch {}
       ed.node.data = ed.before;
-      const stale = /changed since/i.test(error?.message ?? '');
+      const stale = errorIs(error, 'stale-file');
+      this.#send('failed');
       this.#say('error', stale ? 'This file changed after we checked it. Double-click to try again.' : (error?.message ?? 'Couldn’t apply the edit.'));
-      setTimeout(() => this.#end(), 2400);
+      // the error phase's own timer: gone with the phase when the message is dismissed first
+      this.#scope.timeout(() => { this.#send('expired'); this.#end(); }, 2400);
     }
   }
 
@@ -256,7 +330,9 @@ export class TextEditor {
       : post('apply-text', { file: target.file, hash: target.hash, run: target.id, from, to });
   }
 
+  // the edit is over (the phase has moved to idle): nothing on screen, the host told
   #end() {
+    this.#edit?.scope.end();
     this.#edit = null;
     this.#ring.hidden = true;
     this.#tag.hidden = true;
@@ -274,14 +350,18 @@ export class TextEditor {
     this.#tag.innerHTML = `<span>${esc(target.reason ?? 'This text can’t be edited here.')}${where}</span>`;
     this.#tag.hidden = false;
     Object.assign(this.#tag.style, { left: `${Math.max(8, Math.min(innerWidth - 428, r.left))}px`, top: `${r.bottom + 8 + 60 > innerHeight ? r.top - 60 : r.bottom + 8}px` });
-    clearTimeout(this.#hideTimer);
-    const hide = () => { this.#tag.hidden = true; removeEventListener('pointerdown', hide, true); };
-    setTimeout(() => addEventListener('pointerdown', hide, true), 0);
-    this.#hideTimer = setTimeout(hide, 4000);
+    this.#notice?.end();
+    const notice = (this.#notice = new Scope());
+    const hide = () => { this.#tag.hidden = true; notice.end(); };
+    // after this click has gone by: the next press anywhere puts the note away, or its time does
+    notice.timeout(() => notice.listen(window, 'pointerdown', hide, true), 0);
+    notice.timeout(hide, 4000);
   }
 
   destroy() {
-    if (this.#edit) this.#finish(false);
-    clearTimeout(this.#hideTimer);
+    if (this.#phase === 'editing') this.#finish(false);
+    this.#send('unmount');
+    this.#flight = null; // a lookup or a write still out lands on no one
+    this.#scope.end(); this.#edit?.scope.end(); this.#notice?.end();
   }
 }

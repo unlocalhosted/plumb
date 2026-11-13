@@ -63,6 +63,7 @@ import { say } from './words.js';
 import { controlAround, controlKind, roleOf } from './roles.js';
 import { RUN_RULES } from './craft-headless.js';
 import { recommend, recommendColour } from './craft-recommend.js';
+import { STAMP_ATTRIBUTE, placeOf } from './stamp.js';
 
 // a class candidate where no class sets the property (the value comes from a stylesheet) is said, not written
 const asAdvice = (rec, said) => (rec.kind === 'class' ? { kind: 'advice', text: said(rec) } : rec);
@@ -1325,10 +1326,10 @@ const drawnAt = (k) => {
   const key = Object.keys(k).find((x) => x.startsWith('__reactFiber$'));
   for (let f = key ? k[key]?.return : null, n = 0; f && n < 12; f = f.return, n++) {
     if (typeof f.type === 'string') break; // another element in between: this part is not a component's root
-    const used = f.memoizedProps?.['data-plumb-source'];
+    const used = f.memoizedProps?.[STAMP_ATTRIBUTE];
     if (typeof used === 'string') return used.replace(/#.*$/, '');
   }
-  return (k.getAttribute('data-plumb-source') ?? '').replace(/#.*$/, '');
+  return (placeOf(k) ?? '');
 };
 
 export const declaredGap = {

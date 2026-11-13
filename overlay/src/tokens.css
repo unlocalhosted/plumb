@@ -2,28 +2,50 @@
    one accent for actions and the instrument lines, and colour otherwise kept to verdicts. Every value the components
    use comes from here (approved 2026-10-23, docs/briefs/readiness.md). Scoped to :host so nothing leaks either way. */
 
-:host {
+:host, .pl-light {
   /* ground and words: warm-biased neutrals, so the overlay separates from the page under it and nothing competes
      with the one accent. Every surface and every word comes from these. */
-  --pl-paper: #fdfcf8;          /* card background: off-white */
-  --pl-desk: #ecebe7;           /* what a page of cards sits on, a step darker than a card */
-  --pl-paper-2: #f4f1ea;        /* inset strip, hover, pressed */
-  --pl-rule: #e6e1d6;           /* row outlines, dividers, card edge */
+  --pl-paper: #ffffff;          /* card background: white (owner, 2026-11-10: no cream) */
+  --pl-desk: #ffffff;           /* what a page of cards sits on: white too; cards are told apart by their edge */
+  --pl-paper-2: #f6f6f4;        /* inset strip, hover, pressed: a near-neutral, not cream */
+  --pl-rule: #e9e8e4;           /* row outlines, dividers, card edge */
   --pl-ink: #1d1b17;            /* titles and values */
   --pl-ink-2: #6b665c;          /* secondary text, meta, labels */
   --pl-ink-3: #b3ad9f;          /* ticks and dividers only, never text */
 
   /* the language's hues (docs/briefs/visual-language.md): one meaning each. A line colour, a pastel fill, and the
      deep ink that letters the fill */
-  --pl-sky: #2a7fd0;    --pl-sky-soft: #c5e6fd;    --pl-sky-ink: #0b3554;     /* selected, measurements, focus */
+  /* re-tuned 2026-11-10 (owner: butter was "muddy... dull", pink and sky a little heavy). The hues are now bodies
+     first: big solid shapes, so each is as clear and bright as it can be and still hold white lettering in bold.
+     Butter can't hold white at any brightness worth having, so it is a true yellow lettered in its own ink, and thin
+     marks on paper use --pl-butter-line */
+  --pl-sky: #3391ee;    --pl-sky-soft: #c5e6fd;    --pl-sky-ink: #0b3554;     /* selected, measurements, focus */
   /* mint, butter and coral re-stepped 2026-11-04 (docs/design/page-primitives.md) so a deuteranope can tell them
      apart: worst pair ΔE 7.7, legal because every meaning also carries a shape or a word. Butter is a mark colour only
      (2.45:1 on paper); words in its tone use --pl-soft-text */
   --pl-coral: #bf3a1e;  --pl-coral-soft: #ffd3cd;  --pl-coral-ink: #5c160e;   /* not on your scale */
   --pl-mint: #1a9460;   --pl-mint-soft: #c9f2dd;   --pl-mint-ink: #0b3d26;    /* on your scale, or saved */
-  --pl-butter: #d19a00; --pl-butter-soft: #ffeab0; --pl-butter-ink: #4a3400;  /* your value, typed by hand; minor problems */
-  --pl-pink: #e0369f;   --pl-pink-soft: #ffd0ec;   --pl-pink-ink: #5a0d3c;    /* actions */
+  --pl-butter: #ffc21f; --pl-butter-soft: #ffeab0; --pl-butter-ink: #5c3a00;  /* your value, typed by hand; minor problems */
+  --pl-butter-line: #c28a00;   /* butter as a thin mark on paper (a ring, a hairline), where the yellow itself would vanish */
+  --pl-pink: #f24a9f;   --pl-pink-soft: #ffd0ec;   --pl-pink-ink: #5a0d3c;    /* actions */
   --pl-lilac: #7a5cf0;  --pl-lilac-soft: #e3dcff;  --pl-lilac-ink: #2b1a6b;   /* names */
+
+  /* what goes ON a hue. A part never writes #fff on a hue: it asks for the hue's -on (its lettering) or for the cut
+     (a hole in a body, which shows the paper). Both change with the scheme, and scripts/contrast.mjs checks every
+     pair in overlay/src/pairs.js against WCAG, so a pairing that can't be read fails before anyone sees it */
+  --pl-sky-on: #ffffff; --pl-coral-on: #ffffff; --pl-mint-on: #ffffff; --pl-pink-on: #ffffff; --pl-lilac-on: #ffffff;
+  --pl-butter-on: var(--pl-butter-ink);   /* yellow can't hold white */
+  --pl-cut: #ffffff;                      /* a hole cut in a solid body */
+  /* a card's face: the colour of a block you go to (a part, a callout). Light: the hue with more colour than the
+     chip tint (-soft), a little darker, never mixed toward grey (owner, 2026-11-10: "More colour"). Night: the -soft
+     tone, lettered in white */
+  --pl-pink-face: #ffbdd7; --pl-sky-face: #b5d7ff; --pl-butter-face: #ffd98a; --pl-mint-face: #99f0bf; --pl-lilac-face: #d1cfff; --pl-coral-face: #ffc1b3;
+  /* a block of colour you press (a button's top, the page you are on): its hue and its lettering. Light: the hue,
+     lettered in its -on. Night: the hue's -soft tone lettered in white (owner, 2026-11-10, "Between 2": white letters,
+     more colour than a greyed mid-tone, a step short of the full hue that glared) */
+  --pl-pink-block: var(--pl-pink);   --pl-pink-block-on: var(--pl-pink-on);
+  --pl-mint-block: var(--pl-mint);   --pl-mint-block-on: var(--pl-mint-on);
+  --pl-coral-block: var(--pl-coral); --pl-coral-block-on: var(--pl-coral-on);
 
   /* Blueprint: magenta where the page has too much (space, size, weight), cyan where space is missing. Outside the six
      hues on purpose: they sit on your page, not on Plumber's cards, and must read on any colour under them */
@@ -32,7 +54,6 @@
 
   /* the one accent: actions (Apply, Write, checks) and the instrument (reticle, plumb line, bob) */
   --pl-instrument: var(--pl-sky);    /* selection, measurements, focus; drawn with a halo so it shows on any page */
-  --pl-accent: var(--pl-instrument);
   --pl-on-accent: #ffffff;           /* text on a filled accent */
   --pl-action: var(--pl-pink);       /* what you can do: Write, Fix all */
   --pl-action-soft: var(--pl-pink-soft);
@@ -43,7 +64,17 @@
      state reads at a glance */
   --pl-on: var(--pl-mint);      /* uses a token */
   --pl-off: var(--pl-coral);    /* off the scale, override, imitation, broken, setup that turns a capability off */
-  --pl-soft: var(--pl-butter);  /* Tailwind default, wrong tier, setup that limits a capability */
+  /* the box model's blocks: each has its own hue and pattern wherever it's drawn (the X-ray, the token pickers, the
+     card's box, the toys), so a block is known by sight. Whether a value is right is never the block's colour: it is
+     said by the outline and the pill, --pl-off (hard-coded, off your scale), --pl-instrument (a token in hand, not yet
+     written), --pl-on (on your scale, written). Owner, 2026-11-13: "our colors and design for padding, margin, gap and
+     all are not aligned"; the token pickers page is the reference. */
+  --pl-block-padding: var(--pl-mint);    /* 45° hatch */
+  --pl-block-margin: var(--pl-butter);   /* dots */
+  --pl-block-gap: var(--pl-lilac);       /* stripes across the gap */
+  --pl-block-corner: var(--pl-pink);     /* the arc */
+  --pl-block-size: var(--pl-sky);        /* the rulers */
+  --pl-soft: var(--pl-butter-line);  /* Tailwind default, wrong tier, setup that limits a capability */
   --pl-soft-text: #8a6200;      /* a word or glyph in the soft tone: 5.3:1 on paper, where butter is 2.45:1 */
   --pl-unknown: #75736d;        /* computed at runtime, inherited, can't tell yet */
   --pl-on-bg: color-mix(in oklab, var(--pl-on) 12%, var(--pl-paper));
@@ -54,11 +85,15 @@
      diffs, commands, file:line), never for prose */
   --pl-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --pl-mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  /* the toy face (docs/design/visual-language.md, "Type"): the system's rounded face, heavy. For what a toy would have
+     printed on it: titles, names, buttons, numbers. Sans stays for reading. Still no font is fetched: where a system has
+     no rounded face, the next in the list is the closest it ships */
+  --pl-round: ui-rounded, "SF Pro Rounded", "Hiragino Maru Gothic ProN", "Nunito", "Quicksand", "Arial Rounded MT Bold", system-ui, sans-serif;
   --pl-card-title: 600 14px/20px var(--pl-sans);        /* title: what's off, in a sentence */
   --pl-card-body: 400 13px/19px var(--pl-sans);         /* body: reasons and guidance */
   --pl-card-meta: 400 12px/17px var(--pl-sans);         /* meta: counts, notes, file names */
   --pl-card-code: 500 12px/17px var(--pl-mono);         /* code: classes, values, file:line, a change */
-  --pl-text-label: 600 11px/14px var(--pl-sans);        /* label: tags, buttons, column and section labels */
+  --pl-card-label: 600 11px/14px var(--pl-sans);        /* label: tags, buttons, column and section labels */
   /* a page (the project page, anything bigger than a card): five steps, calm editorial. All sans; numbers set tabular;
      mono only for real code. Each step a clear jump from the next, so the eye always knows what to read first */
   --pl-page-display: 600 40px/46px var(--pl-sans);      /* a page's headline */
@@ -72,20 +107,15 @@
   --pl-tracking-title: -0.01em;
   --pl-tracking-label: 0.02em;
   --pl-tracking-caps: 0.05em;                            /* labels set in capitals */
-  /* older role names, each now one of the five */
-  --pl-text-title: 600 13px/18px var(--pl-sans);
-  --pl-text-row: 400 13px/18px var(--pl-sans);
-  --pl-text-reading: var(--pl-card-code);
-
   /* space: one 4-based ladder (6px stays only until each component moves to the ladder) */
-  --pl-space-1: 2px;
-  --pl-space-2: 4px;
-  --pl-space-3: 6px;
-  --pl-space-4: 8px;
-  --pl-space-5: 12px;
-  --pl-space-6: 16px;
-  --pl-space-7: 20px;
-  --pl-space-8: 24px;
+  --pl-space-1: 2px;           /* a hairline apart: a tick from its label, the gap inside a segmented control */
+  --pl-space-2: 4px;           /* an icon and its word; the inside of a chip */
+  --pl-space-3: 6px;           /* off the 4-based ladder, kept only until each part moves to 4 or 8 */
+  --pl-space-4: 8px;           /* controls side by side; a field's inside */
+  --pl-space-5: 12px;          /* rows in a card; a small card's inset */
+  --pl-space-6: 16px;          /* a card's inset, and the gap between its sections */
+  --pl-space-7: 20px;          /* a card's inset when it holds a large figure */
+  --pl-space-8: 24px;          /* the inset of a card on a page */
   /* a page (anything bigger than a card): four steps above the ladder, each a clear jump */
   --pl-page-space-1: 32px;      /* gutters; the gap under the lede */
   --pl-page-space-2: 48px;      /* above the first thing on a page */
@@ -108,15 +138,16 @@
   --pl-card-gap: 12px;          /* gap between a card and its element */
 
   /* corners: the instrument is square, the card is a held object */
-  --pl-radius-mark: 2px;
-  --pl-radius-tag: 6px;
-  --pl-radius-pill: 7px;
-  --pl-radius-row: 8px;
-  --pl-radius-card: 12px;
+  --pl-radius-mark: 2px;        /* a mark drawn on your page: a bar's end, a tick */
+  --pl-radius-tag: 6px;         /* a tag on your page, a key, a small button */
+  --pl-radius-pill: 7px;        /* a value pill */
+  --pl-radius-row: 8px;         /* a row or a field inside a card */
+  --pl-radius-card: 12px;       /* a card, a menu, a bar */
 
   /* depth: the card is the only lifted thing */
   --pl-shadow-card: 0 0 0 1px var(--pl-rule), 0 1px 2px rgb(28 27 25 / 0.06), 0 14px 32px -14px rgb(28 27 25 / 0.28);
   --pl-shadow-tag: 0 0 0 1px var(--pl-rule), 0 2px 6px -2px rgb(28 27 25 / 0.24);
+  --pl-shadow-well: inset 0 2px 3px -1px rgb(0 0 0 / .16), inset 0 0 0 1px rgb(0 0 0 / .05), 0 1px 0 rgb(255 255 255 / .7); /* pressed in: a field, a line to copy */
 
   /* motion: one authored moment, the reticle travelling and the plumb line dropping */
   --pl-ease-out: cubic-bezier(0.16, 1, 0.3, 1);      /* exponential ease-out */
@@ -137,7 +168,7 @@
   --pl-scrim: rgb(20 20 22 / 0.46);
   --pl-dim-filter: grayscale(1);
   --pl-dur-dim: 160ms;          /* Blueprint's dimming fades in; fading out is quicker */
-  --pl-dur-undim: 120ms;
+  --pl-dur-undim: 120ms;        /* Blueprint's dimming fades out */
 
   /* stacking: above everything on any page */
   --pl-z: 2147483647;
@@ -145,59 +176,144 @@
   color-scheme: light;
 }
 
-/* Night (owner, 2026-11-03, after comparing five strengths in the gallery): lines, rings and marks are the brief's
-   pastels; a pill is a deep, saturated version of its hue lettered in white (4.5:1 or more), never dark lettering on a
-   bright block. Butter can only carry white as an ochre. */
+/* Roles and states, in a rule of their own so they are worked out again wherever a part sets its own scheme. A part
+   that stays light on any page (a card held over your app) adds the class pl-light, and one that follows the page's
+   own ground (the fix bar) adds pl-light or pl-dark: it gets that palette and these roles worked out from it. A part that restates some colours itself adds pl-scheme. */
+:host, .pl-scheme, .pl-light, .pl-dark {
+  /* ── roles and states: what a part asks for, named --pl-<group>-<role>-<state> (like a Figma variable path). Every
+     one points at the palette above, so the dark scheme follows by itself. A part takes one of these before a hue ── */
+  /* text */
+  --pl-text-primary: var(--pl-ink);                 /* titles, values, anything read first */
+  --pl-text-secondary: var(--pl-ink-2);             /* sentences, labels, meta, hints, units */
+  --pl-text-placeholder: var(--pl-ink-2);           /* a field's hint before you type */
+  --pl-text-inherited: var(--pl-ink-2);             /* a value set above this element, not on it (set in italics) */
+  --pl-text-disabled: var(--pl-ink-3);              /* words on something you can't press now; the one place the faint ink is text */
+  --pl-text-hard-coded: var(--pl-coral);            /* a hard-coded value, written in the coral that means wrong */
+  --pl-text-soft: var(--pl-soft-text);              /* a word in butter's tone: a minor problem, a value typed by hand */
+  /* icons and marks drawn in ink */
+  --pl-icon-primary: var(--pl-ink);                 /* an icon you read or press */
+  --pl-icon-secondary: var(--pl-ink-2);             /* an icon at rest beside words */
+  --pl-icon-hover: var(--pl-ink);                   /* an icon pointed at */
+  --pl-icon-tick: var(--pl-ink-3);                  /* ticks, carets, dividers, a lock: marks, never words */
+  --pl-icon-disabled: var(--pl-ink-3);              /* an icon on something you can't press now */
+  /* backgrounds */
+  --pl-bg-page: var(--pl-desk);                     /* what a page of cards sits on */
+  --pl-bg-surface: var(--pl-paper);                 /* a card, a menu, a list, a bar */
+  --pl-bg-surface-hover: var(--pl-paper-2);         /* a row or a field pointed at */
+  --pl-bg-surface-pressed: color-mix(in oklab, var(--pl-ink) 8%, var(--pl-paper)); /* a row held down */
+  --pl-bg-inset: var(--pl-paper-2);                 /* a field, a strip, a track: sunk into the surface */
+  --pl-bg-selected: color-mix(in oklab, var(--pl-sky) 14%, var(--pl-paper)); /* the row or option in hand */
+  --pl-bg-disabled: var(--pl-paper-2);              /* a field or a button you can't use now */
+  --pl-bg-scrim: var(--pl-scrim);                   /* the dim over your page while Blueprint is on */
+  /* borders and rings */
+  --pl-border-default: var(--pl-rule);              /* a card's edge, a divider, a field at rest */
+  --pl-border-strong: var(--pl-ink-3);              /* a field pointed at, a quiet button's edge */
+  --pl-border-focus: var(--pl-sky);                 /* the keyboard focus ring */
+  --pl-border-selected: var(--pl-sky);              /* the element in hand, a value on one of your tokens */
+  --pl-border-hard-coded: var(--pl-coral);          /* a hard-coded value's ring (dashed) */
+  --pl-border-written: var(--pl-mint);              /* a value written to your code */
+  /* actions: the blocks you press. -bg the top, -text its lettering; hover and pressed lift and squash the block, so
+     their colour moves only a little */
+  --pl-action-bg: var(--pl-pink-block);             /* the one thing this moment is for */
+  --pl-action-bg-hover: color-mix(in oklab, var(--pl-pink-block) 92%, #fff); /* pointed at */
+  --pl-action-bg-pressed: color-mix(in oklab, var(--pl-pink-block) 90%, #000); /* held down */
+  --pl-action-text: var(--pl-pink-block-on);        /* lettering on the action */
+  --pl-action-bg-disabled: var(--pl-paper-2);       /* nothing to press: pale and flat */
+  --pl-action-text-disabled: var(--pl-ink-3);       /* lettering on a disabled action */
+  --pl-done-bg: var(--pl-mint-block);               /* an action that has landed */
+  --pl-done-text: var(--pl-mint-block-on);          /* lettering on it */
+  --pl-danger-bg: var(--pl-coral-block);            /* only for what can't be put back */
+  --pl-danger-text: var(--pl-coral-block-on);       /* lettering on it */
+  --pl-quiet-bg: var(--pl-paper);                   /* the quiet choice beside the action */
+  --pl-quiet-text: var(--pl-ink);                   /* lettering on it */
+  --pl-quiet-border: var(--pl-rule);                /* its edge */
+  /* states of a value: a tinted ground, words and a ring for each, so a state reads at a glance and never by colour
+     alone (each also has a shape or a word) */
+  --pl-state-hard-coded-bg: var(--pl-off-bg);       /* a hard-coded value's ground */
+  --pl-state-hard-coded-text: var(--pl-coral-ink);  /* words on it */
+  --pl-state-on-token-bg: color-mix(in oklab, var(--pl-sky) 12%, var(--pl-paper)); /* a value on one of your tokens, not written yet */
+  --pl-state-on-token-text: var(--pl-sky-ink);      /* words on it */
+  --pl-state-written-bg: var(--pl-on-bg);           /* a value written to your code */
+  --pl-state-written-text: var(--pl-mint-ink);      /* words on it */
+  --pl-state-minor-bg: var(--pl-soft-bg);           /* a minor problem: a default, the wrong tier */
+  --pl-state-minor-text: var(--pl-soft-text);       /* words on it */
+  --pl-state-unknown-text: var(--pl-unknown);       /* worked out at runtime, can't tell yet */
+  /* marks on your page: each kind of space has its own hue and pattern */
+  --pl-mark-padding: var(--pl-mint);                /* padding: hatched */
+  --pl-mark-margin: var(--pl-butter);               /* margin: dotted */
+  --pl-mark-gap: var(--pl-lilac);                   /* gap: striped */
+}
+
+/* Night surfaces are a warm graphite, lifted from near-black (owner, 2026-11-10), so a dark bar on a light page is not
+   a black slab.
+   Night (owner, 2026-11-03, after comparing five strengths in the gallery): lines, rings and marks are the brief's
+   pastels; a pill or a block is the hue's -soft tone lettered in white (4.5:1 or more), never dark lettering on a
+   bright block. The -soft tones were the full saturated hue until 2026-11-10, when the owner found them glaring on a
+   dark page and chose a step less colour ("Between 2"), not greyer and not darker. Butter can only carry white as an ochre. */
 @media (prefers-color-scheme: dark) {
   :host(:not([data-scheme="light"])) {
-    --pl-paper: #1c1c1e;
-    --pl-desk: #0f0f11;
-    --pl-paper-2: #26262a;
-    --pl-rule: #323236;
+    --pl-paper: #2e2d2b;
+    --pl-desk: #1f1e1d;
+    --pl-paper-2: #3a3936;
+    --pl-rule: #4a4844;
     --pl-ink: #f4f3ef;
     --pl-ink-2: #a8a6a0;
     --pl-ink-3: #5f5d58;
-    --pl-sky: #7cc4fa;    --pl-sky-soft: #0077d1;    --pl-sky-ink: #ffffff;
-    --pl-coral: #ff7a6b;  --pl-coral-soft: #eb1800;  --pl-coral-ink: #ffffff;
-    --pl-mint: #7ee0b0;   --pl-mint-soft: #12874e;   --pl-mint-ink: #ffffff;
-    --pl-butter: #ffd166; --pl-butter-soft: #9c6d00; --pl-butter-ink: #ffffff;
+    --pl-sky: #7cc4fa;    --pl-sky-soft: #1d77c8;    --pl-sky-ink: #ffffff;
+    --pl-coral: #ff7a6b;  --pl-coral-soft: #d83422;  --pl-coral-ink: #ffffff;
+    --pl-mint: #7ee0b0;   --pl-mint-soft: #21834f;   --pl-mint-ink: #ffffff;
+    --pl-butter: #ffd166; --pl-butter-soft: #976b0f; --pl-butter-ink: #ffffff; --pl-butter-line: #ffd166;
     --pl-soft-text: var(--pl-butter);
-    --pl-pink: #ff6ec7;   --pl-pink-soft: #e3008b;   --pl-pink-ink: #ffffff;
-    --pl-lilac: #b9a6ff;  --pl-lilac-soft: #7b57ff;  --pl-lilac-ink: #ffffff;
+    --pl-pink: #ff6ec7;   --pl-pink-soft: #d42e87;   --pl-pink-ink: #ffffff;
+    --pl-lilac: #b9a6ff;  --pl-lilac-soft: #775ceb;  --pl-lilac-ink: #ffffff;
+    --pl-sky-on: #0b3554; --pl-coral-on: #5c160e; --pl-mint-on: #0b3d26; --pl-pink-on: #5a0d3c; --pl-lilac-on: #2b1a6b; --pl-butter-on: #5c3a00;
+    --pl-cut: #1f1e1d;
+    --pl-pink-face: var(--pl-pink-soft); --pl-sky-face: var(--pl-sky-soft); --pl-butter-face: var(--pl-butter-soft); --pl-mint-face: var(--pl-mint-soft); --pl-lilac-face: var(--pl-lilac-soft); --pl-coral-face: var(--pl-coral-soft);
+    --pl-pink-block: var(--pl-pink-soft);   --pl-pink-block-on: var(--pl-pink-ink);
+    --pl-mint-block: var(--pl-mint-soft);   --pl-mint-block-on: var(--pl-mint-ink);
+    --pl-coral-block: var(--pl-coral-soft); --pl-coral-block-on: var(--pl-coral-ink);
     --pl-on-accent: #08263d;
     --pl-heat: #ff4fa7;
     --pl-sys: #2bb8ff;
     --pl-halo: rgb(10 10 12 / 0.85);
     --pl-unknown: #8f8d86;
-    --pl-shadow-card: 0 0 0 1px var(--pl-rule), 0 1px 1px rgb(0 0 0 / 0.3), 0 14px 32px -14px rgb(0 0 0 / 0.8);
+    --pl-shadow-card: 0 0 0 1px var(--pl-rule), 0 1px 1px rgb(0 0 0 / 0.18), 0 14px 32px -14px rgb(0 0 0 / 0.45);
     --pl-shadow-tag: 0 0 0 1px var(--pl-rule), 0 2px 8px -2px rgb(0 0 0 / 0.6);
+    --pl-shadow-well: inset 0 2px 4px -1px rgb(0 0 0 / .5), inset 0 0 0 1px rgb(255 255 255 / .04), 0 1px 0 rgb(255 255 255 / .06);
     color-scheme: dark;
   }
 }
 
 /* An explicit scheme wins over the OS, both ways. */
-:host([data-scheme="dark"]) {
-    --pl-paper: #1c1c1e;
-    --pl-desk: #0f0f11;
-    --pl-paper-2: #26262a;
-    --pl-rule: #323236;
+:host([data-scheme="dark"]), .pl-dark {
+    --pl-paper: #2e2d2b;
+    --pl-desk: #1f1e1d;
+    --pl-paper-2: #3a3936;
+    --pl-rule: #4a4844;
     --pl-ink: #f4f3ef;
     --pl-ink-2: #a8a6a0;
     --pl-ink-3: #5f5d58;
-    --pl-sky: #7cc4fa;    --pl-sky-soft: #0077d1;    --pl-sky-ink: #ffffff;
-    --pl-coral: #ff7a6b;  --pl-coral-soft: #eb1800;  --pl-coral-ink: #ffffff;
-    --pl-mint: #7ee0b0;   --pl-mint-soft: #12874e;   --pl-mint-ink: #ffffff;
-    --pl-butter: #ffd166; --pl-butter-soft: #9c6d00; --pl-butter-ink: #ffffff;
+    --pl-sky: #7cc4fa;    --pl-sky-soft: #1d77c8;    --pl-sky-ink: #ffffff;
+    --pl-coral: #ff7a6b;  --pl-coral-soft: #d83422;  --pl-coral-ink: #ffffff;
+    --pl-mint: #7ee0b0;   --pl-mint-soft: #21834f;   --pl-mint-ink: #ffffff;
+    --pl-butter: #ffd166; --pl-butter-soft: #976b0f; --pl-butter-ink: #ffffff; --pl-butter-line: #ffd166;
     --pl-soft-text: var(--pl-butter);
-    --pl-pink: #ff6ec7;   --pl-pink-soft: #e3008b;   --pl-pink-ink: #ffffff;
-    --pl-lilac: #b9a6ff;  --pl-lilac-soft: #7b57ff;  --pl-lilac-ink: #ffffff;
+    --pl-pink: #ff6ec7;   --pl-pink-soft: #d42e87;   --pl-pink-ink: #ffffff;
+    --pl-lilac: #b9a6ff;  --pl-lilac-soft: #775ceb;  --pl-lilac-ink: #ffffff;
+    --pl-sky-on: #0b3554; --pl-coral-on: #5c160e; --pl-mint-on: #0b3d26; --pl-pink-on: #5a0d3c; --pl-lilac-on: #2b1a6b; --pl-butter-on: #5c3a00;
+    --pl-cut: #1f1e1d;
+    --pl-pink-face: var(--pl-pink-soft); --pl-sky-face: var(--pl-sky-soft); --pl-butter-face: var(--pl-butter-soft); --pl-mint-face: var(--pl-mint-soft); --pl-lilac-face: var(--pl-lilac-soft); --pl-coral-face: var(--pl-coral-soft);
+    --pl-pink-block: var(--pl-pink-soft);   --pl-pink-block-on: var(--pl-pink-ink);
+    --pl-mint-block: var(--pl-mint-soft);   --pl-mint-block-on: var(--pl-mint-ink);
+    --pl-coral-block: var(--pl-coral-soft); --pl-coral-block-on: var(--pl-coral-ink);
     --pl-on-accent: #08263d;
     --pl-heat: #ff4fa7;
     --pl-sys: #2bb8ff;
     --pl-halo: rgb(10 10 12 / 0.85);
     --pl-unknown: #8f8d86;
-    --pl-shadow-card: 0 0 0 1px var(--pl-rule), 0 1px 1px rgb(0 0 0 / 0.3), 0 14px 32px -14px rgb(0 0 0 / 0.8);
+    --pl-shadow-card: 0 0 0 1px var(--pl-rule), 0 1px 1px rgb(0 0 0 / 0.18), 0 14px 32px -14px rgb(0 0 0 / 0.45);
     --pl-shadow-tag: 0 0 0 1px var(--pl-rule), 0 2px 8px -2px rgb(0 0 0 / 0.6);
+    --pl-shadow-well: inset 0 2px 4px -1px rgb(0 0 0 / .5), inset 0 0 0 1px rgb(255 255 255 / .04), 0 1px 0 rgb(255 255 255 / .06);
     color-scheme: dark;
 }
 

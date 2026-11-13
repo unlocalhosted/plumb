@@ -38,7 +38,7 @@ export const BOXMODEL_CSS = `
   .bm .m.off { background: color-mix(in oklab, var(--c) 22%, transparent); }
   .bm .p.off { background: color-mix(in oklab, var(--c) 38%, transparent); }
   .bm .g.off { background: color-mix(in oklab, var(--c) 42%, transparent); }
-  .bm .ic { width: ${ICON}px; height: ${ICON}px; color: color-mix(in oklab, var(--c, var(--pl-sky)) 85%, var(--pl-ink)); translate: -50% -50%; }
+  .bm .ic { width: ${ICON}px; height: ${ICON}px; color: color-mix(in oklab, var(--c, var(--pl-sky)) 85%, var(--pl-icon-primary)); translate: -50% -50%; }
   .bm .ic svg, .bm .bm-at svg { display: block; width: 100%; height: 100%; }
   .bm .ic.off { --c: var(--pl-coral); color: var(--pl-coral); }
   .bm .bm-at svg { width: 11px; height: 11px; }
@@ -68,7 +68,7 @@ const r1 = (n) => Math.round(n * 10) / 10;
 const box = (cls, x, y, w, h, extra = '') => (w > 0.5 && h > 0.5 ? `<div class="${cls}" style="left:${r1(x)}px;top:${r1(y)}px;width:${r1(w)}px;height:${r1(h)}px;${extra}"></div>` : '');
 
 // How the element sizes along one axis: it fills its container, hugs its content, or is a fixed number.
-function sizing(el, cs, axis) {
+export function sizing(el, cs, axis) {
   const parent = el.parentElement;
   const r = el.getBoundingClientRect();
   const size = axis === 'w' ? r.width : r.height;
@@ -84,7 +84,7 @@ function sizing(el, cs, axis) {
 }
 
 // The gaps between an element's laid-out children, along its flow.
-function gaps(el, cs) {
+export function gaps(el, cs) {
   const g = px(cs.columnGap === 'normal' ? 0 : cs.columnGap), rg = px(cs.rowGap === 'normal' ? 0 : cs.rowGap);
   if (!/flex|grid/.test(cs.display) || (!g && !rg)) return [];
   const kids = [...el.children].map((k) => k.getBoundingClientRect()).filter((k) => k.width || k.height);

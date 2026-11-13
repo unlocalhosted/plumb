@@ -367,7 +367,7 @@ parentPort!.on('message', ({ id, method, params }) => {
           [...new Set([...analysis.inputs, ...analysis.queryDependencies.flatMap(([, paths]) => paths as string[])])] } } : {}) });
       metadataDirty = false; metadataFull = false; queryChanges.clear();
     }
-    catch (error) { parentPort!.postMessage({ id, error: errorMessage(error), errorStack: error instanceof Error ? error.stack : undefined, usageError: error instanceof UsageError }); }
+    catch (error) { parentPort!.postMessage({ id, error: errorMessage(error), errorStack: error instanceof Error ? error.stack : undefined, usageError: error instanceof UsageError, ...(error instanceof UsageError ? { errorCode: error.code } : {}) }); }
   });
 });
 try {
@@ -376,4 +376,4 @@ try {
   index(await report());
   sharedInputs = new Set([...state.configurationFiles, ...state.compilerFiles, ...raw.decisions.map(d => d.source.file), ...raw.decisionInventory?.map(d => d.source.file) ?? []]);
   parentPort!.postMessage({ ready: true, health: await dispatch('health', {}), dependencies: dependencies(), patterns: [...state.patterns], files: sourceFiles(), configurationFiles: [...state.configurationFiles], ...queryInputs() });
-} catch (error) { parentPort!.postMessage({ startupError: errorMessage(error), errorStack: error instanceof Error ? error.stack : undefined, usageError: error instanceof UsageError }); }
+} catch (error) { parentPort!.postMessage({ startupError: errorMessage(error), errorStack: error instanceof Error ? error.stack : undefined, usageError: error instanceof UsageError, ...(error instanceof UsageError ? { errorCode: error.code } : {}) }); }

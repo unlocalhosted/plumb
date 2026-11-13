@@ -10,7 +10,9 @@
  *  GLYPHS                                 the reason drawn small: a ratio of two lengths, for spacing rules
  * ───────────────────────────────────────────────────────── */
 
+import { activeVariants, prefixesInForce, bareOf } from './variants.js'; // the class in force is the one a change edits
 import { pxOf } from './value.js';
+import { Claims, LEVEL } from './claims.js';
 
 // The style keys a fix sets, as CSS properties, and the Tailwind prefix that writes each one.
 const PROPS = {
@@ -68,11 +70,13 @@ export function planOf(problem, el, steps, tokenOf) {
     const [prop, prefix] = PROPS[k];
     const now = px(cs.getPropertyValue(prop));
     const step = (v) => ({ token: tokenOf(v), n: v });
-    return { key: k, prop, prefix, from: step(now), to: step(n), original: [el.style.getPropertyValue(prop), el.style.getPropertyPriority(prop)] };
+    return { key: k, prop, prefix, from: step(now), to: step(n) };
   });
   if (!props.length || props.some((p) => !p.to.token)) return null;
   const main = props.reduce((a, b) => (Math.abs(b.to.n - b.from.n) > Math.abs(a.to.n - a.from.n) ? b : a));
+  // the step it moves to is one of the scale's steps, or there is no plan: an index of -1 broke every redraw
   const at = steps.findIndex((s) => s.token === main.to.token);
+  if (at < 0) return null;
   return { props, main, steps, at, edit: { from: fix.from, to: fix.to }, ghost: ghostOf(el, props) };
 }
 
@@ -108,6 +112,9 @@ export function classesFor(plan) {
 // reduced motion. (Figma calls it Smart Animate; in code, a layout transition.)
 export const GLIDE = { ms: 360, ease: 'cubic-bezier(.2, .8, .2, 1)',
   props: ['padding', 'margin', 'gap', 'row-gap', 'column-gap', 'width', 'height', 'min-width', 'min-height', 'max-width', 'border-radius', 'border-width', 'font-size', 'font-weight', 'line-height', 'letter-spacing', 'translate', 'opacity', 'color', 'background-color', 'border-color', 'box-shadow'] };
+// What the page shows while a fix is tried or waits for Apply is claimed, never written here (claims.js): the fix being
+// tried on the selection sits above the changes already taken, so letting a trial go shows the taken change again.
+export const TRIAL = new Claims(LEVEL.trial), TAKEN = new Claims(LEVEL.fix);
 const gliding = new WeakMap(); // el → { timer, transition: [value, priority] as it was before the glide }
 export function glide(el, change) {
   if (!el?.style || matchMedia('(prefers-reduced-motion: reduce)').matches) return change();
@@ -131,10 +138,8 @@ export function glide(el, change) {
 export function preview(el, plan, on) { glide(el, () => previewNow(el, plan, on)); }
 function previewNow(el, plan, on) {
   for (const p of plan.props) {
-    if (on) el.style.setProperty(p.prop, `${p.to.n}px`, 'important');
-    else { const [v, pr] = p.original; if (v) el.style.setProperty(p.prop, v, pr); else el.style.removeProperty(p.prop); }
+    if (on) TRIAL.set(el, p.prop, `${p.to.n}px`); else TRIAL.unset(el, p.prop);
   }
-  if (!on && !el.getAttribute('style')?.trim()) el.removeAttribute('style');
 }
 
 // ── writing ────────────────────────────────────────────────
@@ -166,17 +171,34 @@ function classesOfSides(letter, s) {
 /**
  * The class edit that writes per-property changes ([{ prop, to: { token } }]) on an element whose box family is set by
  * classes: { from, to } for `swap`, or null when a property isn't a box side or a side isn't set by a class.
+ *
+ * A change is made where it shows (owner, 2026-11-13: "our apply should never cause loss of behaviour, it should be
+ * smart and should only change the behavior on which we are operating upon"): each side is changed in the class that
+ * sets it at the width the page is seen at now, the widest breakpoint in force that sets that side (md:px-6 at a
+ * medium window, dark:px-5 while the page is dark), else the base. Every other class is left exactly as written: other
+ * breakpoints, hover:, focus:, dark:, and the base when a variant is the one changed (variants.js: the rule for every
+ * write). `active`: the variant names in force (activeVariants).
  */
-export function boxEdit(el, props) { return boxEditOf((el.getAttribute('class') ?? '').split(/\s+/).filter(Boolean), props); }
-export function boxEditOf(classes, props) {
+export function boxEdit(el, props, active = activeVariants(el)) { return boxEditOf((el.getAttribute('class') ?? '').split(/\s+/).filter(Boolean), props, active); }
+export function boxEditOf(classes, props, active = new Set()) {
   let from = [], to = [];
+  const variants = prefixesInForce(classes, active), of = (v) => bareOf(classes, v);
   for (const [family, letter] of Object.entries(FAMILY)) {
     const mine = props.filter((p) => p.prop.startsWith(`${family}-`));
     if (!mine.length) continue;
-    const { sides, used } = sidesOf(classes, letter);
-    for (const p of mine) sides[p.prop.slice(family.length + 1)] = p.to.token;
-    from = from.concat(used);
-    to = to.concat(classesOfSides(letter, sides));
+    const groups = new Map();
+    for (const p of mine) {
+      const side = p.prop.slice(family.length + 1);
+      const v = [...variants].reverse().find((x) => x && sidesOf(of(x), letter).sides[side] !== undefined) ?? '';
+      if (!groups.has(v)) groups.set(v, []);
+      groups.get(v).push([side, p.to.token]);
+    }
+    for (const [v, list] of groups) {
+      const { sides, used } = sidesOf(of(v), letter);
+      for (const [side, token] of list) sides[side] = token;
+      from = from.concat(used.map((c) => v + c));
+      to = to.concat(classesOfSides(letter, sides).map((c) => v + c));
+    }
   }
   if (props.some((p) => !/^(padding|margin)-/.test(p.prop))) return null;
   const keep = from.filter((c) => to.includes(c));
@@ -216,7 +238,7 @@ export function swapPlanOf(problem) {
   const msOf = (value) => { const m = /^(-?[\d.]+)(ms|s)$/.exec(String(value ?? '').trim()); return m ? Number(m[1]) * (m[2] === 's' ? 1000 : 1) : null; };
   const nOf = (value, n) => (length ? pxOf(value, null, prop) ?? n ?? null : problem.family === 'motion' ? msOf(value) ?? n ?? null : n ?? null);
   return { kind: 'swap', facet: problem.facets?.[0], drift: true, options: choices.map((c) => ({ token: c.label ?? c.name, label: c.label ?? c.name, n: nOf(c.value, c.n), swatch: problem.family === 'color' ? c.value : null, write: c.edit ? { from: c.edit.from, to: c.edit.to } : null, styles: styleOf(c) })),
-    at: problem.pick ?? 0, now: { label: problem.text ?? String(problem.value ?? ''), n: nOf(problem.value, problem.n), swatch: problem.family === 'color' ? problem.value : null } };
+    at: Math.max(0, Math.min(choices.length - 1, Number.isInteger(problem.pick) ? problem.pick : 0)), now: { label: problem.text ?? String(problem.value ?? ''), n: nOf(problem.value, problem.n), swatch: problem.family === 'color' ? problem.value : null } };
 }
 
 // An option previewed on the element (its classes swapped, and the values it stands for as inline styles the overlay
@@ -228,24 +250,27 @@ function swapNow(el, write, on, memo, styles) {
     const removed = word(write?.from).filter((c) => el.classList.contains(c)), added = word(write?.to).filter((c) => !el.classList.contains(c));
     for (const c of removed) el.classList.remove(c);
     for (const c of added) el.classList.add(c);
-    const had = Object.keys(styles).map((p) => [p, el.style.getPropertyValue(p), el.style.getPropertyPriority(p)]);
-    for (const [p, v] of Object.entries(styles)) el.style.setProperty(p, v, 'important');
-    memo.done = { removed, added, had, attr: had.length ? el.getAttribute('style') === null : false };
+    for (const [p, v] of Object.entries(styles)) TRIAL.set(el, p, v);
+    memo.done = { removed, added, styles, at: TRIAL };
   } else if (memo.done) {
     for (const c of memo.done.added) el.classList.remove(c);
     for (const c of memo.done.removed) el.classList.add(c);
-    for (const [p, v, pr] of memo.done.had) { if (v) el.style.setProperty(p, v, pr); else el.style.removeProperty(p); }
-    if (memo.done.had.length && !el.getAttribute('style')?.trim()) el.removeAttribute('style');
+    for (const p of Object.keys(memo.done.styles)) memo.done.at.unset(el, p);
     memo.done = null;
   }
+}
+// The option tried becomes a change waiting for Apply: its styles are the taken change's now, under any later trial.
+export function swapTake(el, memo) {
+  if (!memo.done || memo.done.at === TAKEN) return;
+  for (const [p, v] of Object.entries(memo.done.styles)) { TAKEN.set(el, p, v); TRIAL.unset(el, p); }
+  memo.done.at = TAKEN;
 }
 
 // After the source carries an option: the inline styles its preview set are let go; the classes stay (React renders
 // them from the source now).
 export function swapRelease(el, memo) {
   if (!memo.done) return;
-  for (const [p, v, pr] of memo.done.had) { if (v) el.style.setProperty(p, v, pr); else el.style.removeProperty(p); }
-  if (memo.done.had.length && !el.getAttribute('style')?.trim()) el.removeAttribute('style');
+  for (const p of Object.keys(memo.done.styles)) memo.done.at.unset(el, p);
   memo.done = null;
 }
 
@@ -262,11 +287,11 @@ export function applied(list, { from, to }) {
  * spacing changes as the fewest padding and margin classes. `classes`: the element's classes with every preview put
  * back. Null when a change can't be written as classes.
  */
-export function elementEdit(classes, writes, props) {
+export function elementEdit(classes, writes, props, active = activeVariants(null)) {
   let list = [...classes];
   for (const w of writes) { if (!w) return null; list = applied(list, w); }
   if (props.length) {
-    const box = boxEditOf(list, props);
+    const box = boxEditOf(list, props, active);
     if (!box) return null;
     list = applied(list, box);
   }

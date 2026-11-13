@@ -20,3 +20,17 @@ dist/
 
 /overlay/showcase/.probe-cache/
 /docs/design/references/
+
+# bench/locate: throwaway hosts and the one tool it installs
+/bench/locate/.work/
+/bench/locate/.tools/
+
+# bench/locate: real Next apps cloned for the nextapps corpus (never committed; tailwindcss.com is education-only)
+/bench/locate/.corpus/
+.test-logs/
+
+# state oracle (tools/sm): the log and cache are local
+/.state/log*.jsonl
+/.state/open.json
+/.state/cache/
+.test-logs-remote/

@@ -26,6 +26,7 @@
  * ───────────────────────────────────────────────────────── */
 import { utility } from './craft-read.js';
 import { ownWords, paints, roleOf as whatIs, roleOfToken } from './roles.js';
+import { STAMPED } from './stamp.js';
 
 const SIDE_RADIUS = /^(?:[trblse]|tl|tr|bl|br|ss|se|es|ee)(?:-|$)/;
 // a theme's radius names three jobs; a token named for an overlay is a containment box like a card (roles.js)
@@ -57,7 +58,7 @@ export function roleOf(el, s) {
 /** Every stamped element that shows one even corner radius, with the class that sets it and what the element is. */
 export function readRadii(root = document.body) {
   const places = [];
-  for (const el of root.querySelectorAll('[data-plumb-source]')) {
+  for (const el of root.querySelectorAll(STAMPED)) {
     if (el.closest('plumb-overlay') || el.closest('svg')) continue;
     const s = getComputedStyle(el), r = px(s.borderTopLeftRadius);
     if (!(r > 0) || !paints(s)) continue;

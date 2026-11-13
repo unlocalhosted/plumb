@@ -61,6 +61,11 @@ reserved.)
 
 ## Doesn't do yet
 
+**Change the class in force (2026-11-13).** One rule (`overlay/src/variants.js`) for every class writer: breakpoints, dark and held states; the box edit, the layout card, Tidy and the shared reader use it. Still to do: a way for Plumber to hold hover/focus, the branch of a condition that is active, the text editor's text-size write, and a check on a running app with responsive classes. The plan is `docs/briefs/xray-propagation.md`.
+
+**The X-ray is Alt+B (2026-11-13).** Blueprint without heat, with the X-ray showing the element under the pointer and the one the list puts in hand. Still to check: the full suite on it (about 40 test files open blueprint; the X-ray's card now appears in them). Earlier note, kept for what must carry over: **The X-ray isn't in Plumber yet (2026-11-13).** The X-ray of the element under the pointer is a working prototype on the design site, and it should replace Alt+B's heat. What must carry over as it is: point at a part and drag it where it is (no mode, nothing drawn on top of the element); the token picker row in the card, where two fingers choose which sides or the value (the direction locks to the swipe, and the thumb resists and then snaps); changes collect for one Sync, and Esc puts them back; Enter opens a note for your agent with the file and line. **A repeated part changes everywhere by default** (every element the same line of code draws, found by its stamp: `peersOf` in `overlay/src/xray.js`), with the other places outlined and "×N places" in the card; Alt as a change starts changes only the one. Sync must write the class at that one line, not once per place.
+
+- **Resizing to a size that isn't one of yours.** A size drag always lands on the nearest step of your theme. Keeping an exact size (say 312px) as a new token through the naming flow isn't built yet; the likely gesture is holding ⌥ while dragging to turn snapping off, then naming the size on the element when you let go. (2026-11-13)
 **The order** (decided 2026-11-12):
 
 - **Now:** nothing of this session's. (A class fix offered and then refused is in the fix card, which another
@@ -293,11 +298,10 @@ Design written 2026-11-13, not signed off, nothing built: docs/briefs/platform-g
 
 ### Tests
 
-- Locating on Next 16 (webpack) fails about 2 runs in 5 after an edit: the element now showing the edit is mapped
-  through a chunk whose map still has the old file ("source changed"). Next serves its chunks at a stable URL and
-  plumber caches maps by URL; the code that dropped them on a new render was removed in October for speed. Tried and
-  reverted: re-reading once on a mismatch (it could remap an element kept from before the edit to a wrong line), and
-  dropping maps when a webpack hot update loads (no change, 2 of 5 still failed). Not fixed.
+- After an undo that reloads the page, closing the timeline with Esc does not always hand focus back to the history
+  button (timeline test, fails side by side on vm-agent, passes alone). Possibly the button is not focusable on the
+  reloaded page at that moment. Not looked into further; found while preparing 0.5.0.
+
 
 The whole suite on vm-agent (2026-11-12): 939 passed, 16 failed in 14 files. Since then the determinism, noise,
 one-bar and new-token tests are fixed and pass there on their own; the steady list is what is below.
