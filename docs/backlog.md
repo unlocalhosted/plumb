@@ -339,7 +339,7 @@ and none in `web/design/parts`.
   motion). Missing: the config saying why each token was taken as what it is, and the page showing it, so a wrong
   reading is seen and corrected in one place.
   **Slice 1 built (journey 34):** a token's kind from value, use and name (`src/decisions/infer.ts`), and `:host`
-  as root. Left: tokens put on a page by a script; token files outside the project's folder; whole-font-style type
+  as root. Since: token files a script reads by path, and `:host()` selectors read without a crash. Left: whole-font-style type
   tokens (`600 20px/28px`) not counted as type steps; the reason for each reading written to the config and shown.
 
 ### The command line

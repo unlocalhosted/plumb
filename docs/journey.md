@@ -2435,8 +2435,15 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   homepage app gained one (`--pl-z`). No tests run.
 - **Found on the way:** the history's new style file was missing from the list of files the overlay serves, so the
   history would not have loaded in an app; fixed.
-- **Still open:** tokens put on a page by a script (the site) are not seen without an import; a token file outside
-  the project's folder is reported as skipped; type tokens that are whole font styles (`600 20px/28px`) don't count
+- **Then tokens a script reads (same day).** The site puts the overlay's token file on the page from a server
+  component that reads it by path. Plumber now finds a quoted `.css` path in the project's code, tries it from the
+  module's folder and then the project's root, and reads the file like an imported stylesheet; nothing is run
+  (`src/collect/named-css.ts`). The "skipped token file" was not about the folder at all: reading `:host([…])`
+  crashed, because `:host()` holds one selector where `:is()` holds a list; fixed in `src/lower/stylesheets.ts`.
+  Proof: the site as it is, nothing imported, before → after: 22 findings, all "never defined" or "no tokens", 157
+  values unchecked → 81 values judged against 231 tokens, no false ones of that kind. crafting-ui and the homepage
+  app: identical before and after this step.
+- **Still open:** type tokens that are whole font styles (`600 20px/28px`) don't count
   as a 16px step, so type findings on the site are mostly noise; the reason for each reading isn't written anywhere
   yet (the config and the page are the next slices).
 
@@ -2490,6 +2497,8 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   desk by day and by night side by side (entry 33).
 - Plumber reads tokens however they are named: `--space-4`, `--pl-radius-card` and `--muted` are told apart by their
   value, how they are used and their name, so plain CSS and design systems with their own prefix get checked (entry 34).
+- Plumber finds a token file a script reads by path, as our site does, so a page whose tokens arrive at runtime is
+  checked against them (entry 34).
 - React Plumber has a mark: a pink stem and a violet bowl, the gap between them the P, with plumber's guardrail at hero size. It is in the site's bar, the overlay's dock and the films, from one source ([entry](#react-plumber-gets-a-mark-2026-11-13)).
 - Craft № 42 is a 16:9 React Plumber marketing film: the fault felt, measured in plumber's marks, the code that caused it and the code that fixes it, the payoff, and plumber's ✓ bursting where the fix was written, signed and watermarked ([entry](#42-as-a-react-plumber-marketing-film-2026-11-13)).
 - The showcase's #42 explains itself as a short film drawn in plumber's own marks: you feel the tabs jitter, see plumber measure it and name the weight, see the fix keep the width, and watch every tab hold ([entry](#42-redrawn-in-plumbers-own-language-after-copying-the-reference-2026-11-13)).
