@@ -95,7 +95,7 @@
 /* while a fix is happening the stage becomes a canvas under inspection: a fine dot grid fades in under the scene,
    and goes when the marks lift, so at rest the card is just a card */
 .ins-stage::before { content: ''; position: absolute; inset: 0; z-index: 0; pointer-events: none; opacity: 0; transition: opacity var(--t-reveal-out) var(--ins-ease);
-  background: radial-gradient(circle, color-mix(in oklab, var(--hue) 55%, transparent) 1.2px, transparent 1.7px) 0 0 / 14px 14px; } /* the dots in the card's own pastel */
+  background: radial-gradient(circle, color-mix(in oklab, var(--hue) 24%, transparent) 1px, transparent 1.5px) 0 0 / 14px 14px; } /* the dots in the card's own pastel */
 .ins-stage[data-inspect]::before { opacity: 1; transition-duration: var(--t-reveal-in); }
 
 /* ── the guides and the pill, over the scene, never scaled: coral while wrong, mint once fixed ── */
