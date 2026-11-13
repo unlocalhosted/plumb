@@ -1,6 +1,6 @@
 # Warm start: the server answers from what it knew, then checks itself
 
-Status: signed off by the owner, 2026-11-13. Layers 0 and 1 are done: the table is measured and kept, and nothing reads it back yet.
+Status: signed off by the owner, 2026-11-13. Layers 0, 1 and 2 are built: the table is kept and checked on every start, and nothing is answered from it yet.
 Stands on [engine-scaling.md](engine-scaling.md), "The cold start".
 
 ## Measured (2026-11-13, layer 0)
@@ -107,6 +107,44 @@ with the build off. The likelier cause is the one found earlier today: every rea
 
 Not run: the full test suite, and no test of the kept table yet.
 
+### Layer 2 built: the check runs on every start, and answers nothing (2026-11-13)
+
+On start the server holds the kept table's receipt against the project as it is: every file's hash (a file it has
+not come across yet this time is read for it), every directory's listing, and the table's own hash. If the receipt
+holds, the table the fresh analysis produces is compared with the kept one when it lands. Each start adds one
+line to `warm.jsonl` beside the table. The server's health carries the same.
+
+Seen on a small fixture, six starts in a row: no receipt → valid and matched → a file edited: "changed:
+src/App.tsx" → valid and matched → a file added: "new: src/New.tsx, listing: src" → valid and matched.
+
+| Three starts, nothing changed between them | crafting-ui (laptop) | algorecall (vm-agent) |
+|---|---|---|
+| First | no receipt | no receipt |
+| Second and third | valid, **matched** | valid, **matched** |
+| Time to check the receipt | 0.02 s | 0.08–0.11 s |
+| Table | 3.8 MB | 24.7 MB, loads in 0.14 s |
+
+**The gate did its job on the first try.** The first run on algorecall said: receipt valid, tables **not** the
+same, twice. Taken apart, the two tables said exactly the same thing: same paths, same texts, all 2,411 files'
+readings identical. The bytes differed because the serialiser writes an array either densely or sparsely depending
+on how the JavaScript engine happens to be holding it in memory, and that varies from run to run. It did not show
+on the smaller app. The table now carries a hash of what it says, used for the comparison, and a separate hash of
+its bytes, used only to tell a damaged file; its number columns are typed arrays, which are written one way only.
+After that: matched, on both apps.
+
+What this is not yet:
+
+- **Evidence over days.** Three starts on each app in one afternoon. The layer exists to run through ordinary
+  work, edits and branch switches included, before layer 3 answers anything from the table.
+- **The check's full rule.** The receipt compares files and directory listings. It still does not record what each
+  import resolved to. A new file that changes which module an import finds is caught only if it appears in a
+  directory the server lists.
+- **A line in `plumber doctor`.** The result is in the server's health and in the log; doctor does not say it yet.
+- **Tested.** Four server test files nearest the change pass (27 of 27, 1 skipped). No test of the check itself.
+
+Small things: the typed columns made algorecall's table 24.7 MB rather than 20.9 MB; the longest slice while
+building it there is now 0.10 s (a batch of 128 files converted at once).
+
 ## 1. What we are doing
 
 After a dev server restart, plumber says "still reading your project" until its server has analysed everything
@@ -208,7 +246,7 @@ One layer at a time, each seen on algorecall and crafting-ui, each timed. No tes
 |---|---|---|
 | 0 | **Done.** Measure, build nothing | How long the receipt check takes on algorecall; the reading table's size and load time; the memory of a second worker. And the proof the rest stands on: a cold server's reading table equals one rebuilt from a second cold start, byte for byte, on both apps |
 | 1 | **Done**, both passes (see above). Keep: write the table and receipt after a full analysis, in idle time | The files on disk; their size and write time in the server's health |
-| 2 | Check only: on start, load and validate the kept table but do not answer from it; compare when the fresh analysis lands | A line per start: matched or not, and what differed. Left running through normal work for a few days: the evidence before any answer is trusted |
+| 2 | **Built** (see above); now it has to run for days. Check only: on start, load and validate the kept table but do not answer from it; compare when the fresh analysis lands | A line per start: matched or not, and what differed. Left running through normal work for a few days: the evidence before any answer is trusted |
 | 3 | Answer from it: the kept state, the light worker, writes waiting | After a restart with nothing changed, the overlay draws in seconds |
 | 4 | A change before ready drops the table | Edit a file 5 s after a restart: the page waits for the real analysis, never shows the old file's findings |
 | 5 | Tests | The behaviours in 3.3 and 3.5 through the real server |
