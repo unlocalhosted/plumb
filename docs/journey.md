@@ -2013,6 +2013,11 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   fix now grows from Share's top-right corner). Each card's measure was checked by pressing Broken then Fixed on all
   nine: 1.8px → 0px, r 20 → r 12, 3.3px → 0px, 1 word → 3 words, C 0.00 → 0.20, C 0.01 → 0.17, 0.0 → 1.0px edge,
   1.0px → 0px, scale 0 → 0.96, each landing its check. The round's payoff line was seen. Light and dark.
+- **"The polka dots should resemble the pastel colour of the card; I don't like faded-out cards."** The dot-grid
+  canvas that comes in during a fix now takes each card's own colour (pink on the album, mint on the tracker, and so
+  on); the cards not on turn are no longer faded and desaturated, so the spotlight is the lift and the ring alone.
+  The big tile also became the player itself (its video fills the stage; the owner: "this card feels like wasted
+  space"). Light and dark.
 
 ## Open gaps
 - The overlay writes about 180 corners as numbers (radius tokens about 45 times), many off its own scale; 6px is
