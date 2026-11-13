@@ -41,7 +41,3 @@ export const A11Y = {
     'control-name': [GUIDE('accessibility', '3. Accessible Names and Descriptions'), WCAG('4.1.2', 'Name, Role, Value'), WCAG('3.3.2', 'Labels or Instructions')],
   },
 };
-
-// Every pack described as data, in the order they are listed. Craft is not here: its rules, words and numbers are
-// the original tables (craft-rules.js, words.js, craft-spec.js), which this list sits beside.
-export const PACK_DATA = [A11Y];

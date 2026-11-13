@@ -7,7 +7,7 @@
  *
  *  craft     per rule: label (a panel row, ≤ 32), line (what `i` shows, ≤ 72), reason (the second `i`, ≤ 90)
  * ───────────────────────────────────────────────────────── */
-import { PACK_DATA } from './pack-a11y.js';
+import { PACK_DATA } from './pack-list.js';
 
 const px = (n) => `${Math.round(n * 10) / 10}px`;
 

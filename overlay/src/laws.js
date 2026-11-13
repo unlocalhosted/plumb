@@ -12,7 +12,7 @@
  * Laws with no rule yet (Hick, Miller, Jakob, serial position, Von Restorff) are here so the page clean-up's layers
  * can add the rules that measure them.
  * ───────────────────────────────────────────────────────── */
-import { PACK_DATA } from './pack-a11y.js';
+import { PACK_DATA } from './pack-list.js';
 
 export const LAWS = {
   fitts: { name: 'Fitts’s law', says: 'A target is quicker to hit the bigger and nearer it is.' },

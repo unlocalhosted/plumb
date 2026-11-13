@@ -11,7 +11,7 @@ export interface CraftConfig {
   packs?: Record<string, boolean>;
 }
 export interface SpecRule {
-  id: string; short: string; enabled: boolean; tier: number; tierName: TierName; habit: boolean; severity: Severity | null;
+  id: string; short: string; enabled: boolean; tier: number; tierName: TierName; habit: boolean; /** a rule the server runs on source (a pack with runs: 'source') */ source: boolean; severity: Severity | null;
   values: Record<string, unknown>; from: Record<string, string>;
 }
 export interface SpecPrinciple { id: string; tier: number; why: string; rules: SpecRule[] }

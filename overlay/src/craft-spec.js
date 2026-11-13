@@ -15,7 +15,7 @@
  *
  * Nothing here reads the DOM or a file.
  * ───────────────────────────────────────────────────────── */
-import { PACK_DATA } from './pack-a11y.js';
+import { PACK_DATA } from './pack-list.js';
 
 export const TIER_NAMES = ['access', 'legibility', 'theme', 'craft', 'advisory'];
 export const tierNumber = (name) => (typeof name === 'number' ? name : TIER_NAMES.indexOf(name));
@@ -23,6 +23,7 @@ export const tierNumber = (name) => (typeof name === 'number' ? name : TIER_NAME
 // what we care about, in priority order
 export const PRINCIPLES = {
   access: { tier: 0, why: 'People must be able to read it and hit it, on every device. Never traded for looks.' },
+  safety: { tier: 0, why: 'What the code lets someone else do to the people using it. Never traded for anything.' },
   legibility: { tier: 1, why: 'Text that reads without effort: measure, leading, tracking, figures, line breaks, baselines, what is cut off.' },
   theme: { tier: 2, why: 'The project’s own decisions: its tokens are the allowed answers.' },
   rhythm: { tier: 3, why: 'Space says what belongs together.' },
@@ -43,6 +44,7 @@ const H = (severity) => ({ habit: true, severity });
 // The standard. Keys are rule short names (craft/<name>, or habits/<name> for a habit); values are the rule's numbers.
 // `want` is what a suggestion is built from: a range with a target, in the rule's unit.
 export const STANDARD = {
+  safety: {}, // filled by the packs (pack-security.js)
   access: {
     contrast: { small: 60, bold: 50, large: 45, largeAt: 24, boldLargeAt: 18, boldAt: 14, boldWeight: 600 }, // APCA Lc, and when text counts as large or bold
     'disabled-contrast': { min: 45 },
@@ -213,13 +215,13 @@ export function resolveSpec(craft = {}, layers = []) {
     for (const short of Object.keys(STANDARD[pid])) {
       const id = ruleId(short), values = {}, from = {};
       let enabled = true, tier = STANDARD[pid][short].tier ?? TIER_NAMES[p.tier], severity = STANDARD[pid][short].severity ?? null;
-      const habit = !!STANDARD[pid][short].habit;
+      const habit = !!STANDARD[pid][short].habit, source = !!STANDARD[pid][short].source;
       for (const layer of stack) {
         const v = layer.values?.[pid]?.[short];
         // the standard is the ground: only what sits over it is a source worth naming
         const noted = layer.from === 'standard' ? {} : from;
         if (v) {
-          const { tier: t, habit: _h, severity: s, ...rest } = v;
+          const { tier: t, habit: _h, source: _src, severity: s, ...rest } = v;
           merge(values, noted, rest, layer.from);
           if (t !== undefined) { tier = t; noted.tier = layer.from; }
           if (s !== undefined) { severity = s; noted.severity = layer.from; }
@@ -232,7 +234,7 @@ export function resolveSpec(craft = {}, layers = []) {
       }
       // a pack the config turns off turns off every rule in it; a rule's own entry is read after, so it still wins
       if (craft.packs?.[id.split('/')[0]] === false && from.enabled === undefined) enabled = false;
-      rules.push({ id, short, enabled, tier: tierNumber(tier), tierName: typeof tier === 'number' ? TIER_NAMES[tier] : tier, habit, severity, values, from });
+      rules.push({ id, short, enabled, tier: tierNumber(tier), tierName: typeof tier === 'number' ? TIER_NAMES[tier] : tier, habit, source, severity, values, from });
     }
     principles.push({ id: pid, tier: p.tier, why: p.why, rules });
   }
@@ -305,7 +307,7 @@ export function validateCraft(craft) {
       if ('enabled' in r && typeof r.enabled !== 'boolean') problems.push(`Set craft.rules["${id}"].enabled to a boolean.`);
       if ('tier' in r && !TIER_NAMES.includes(r.tier)) problems.push(`Set craft.rules["${id}"].tier to one of ${TIER_NAMES.join(', ')}.`);
       if ('severity' in r && !['error', 'warn', 'info'].includes(r.severity)) problems.push(`Set craft.rules["${id}"].severity to error, warn or info.`);
-      if ('severity' in r && !isHabit(INDEX.get(id).short)) problems.push(`craft.rules["${id}"] takes tier, not severity (severity is for habits/*).`);
+      if ('severity' in r && !isHabit(INDEX.get(id).short) && !STANDARD[INDEX.get(id).principle][INDEX.get(id).short].source) problems.push(`craft.rules["${id}"] takes tier, not severity (severity is for habits/* and rules that read source).`);
     }
   }
   if ('tokens' in craft) {

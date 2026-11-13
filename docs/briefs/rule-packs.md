@@ -118,6 +118,56 @@ Next candidates from the same guide, one at a time, each seen on a real app befo
 removed with nothing in its place (2.4.7, on the page rather than in source), the same name on controls that do
 different things (4.1.2).
 
+## 4b. The security pack: advice into checks, one at a time
+
+The owner, 2026-11-13: "i wanted you to turn the advice into the automated checks … lets pick one topic like
+security and then turn it into rules as part of the engine".
+
+Security rules read source, not the page, so the pack has `runs: 'source'` and its rules run on the server
+(`src/packs/source.ts`, the runner; `src/packs/security.ts`, the rules). They are part of the same analysis as
+drift and habits: `plumber check`, the report, the ledger and the server all see them, under the rule id
+`security/<name>` and a new principle, `safety`. The runner parses a file once for all rules, hands each rule only
+the kinds of syntax it is about, and never parses a file none of the active rules could speak about.
+
+**The guide, sorted.** Chrome's `security` guide has about 70 dos and don'ts. Most are about what a server sends,
+which a front-end project's source does not show:
+
+| What the guide covers | Can plumber check it | |
+|---|---|---|
+| §1.2 Dangerous DOM sinks (`innerHTML`, `outerHTML`, `document.write`, `eval`, string timers) | yes, in source | **built: `security/dom-sink`** |
+| §1.5 `postMessage` sent to `*`; a `message` listener that never checks `event.origin` | yes, in source | next |
+| §3.3 A Trusted Types policy that passes its input straight through | yes, in source | after |
+| §1.3 Cookies written from script (`document.cookie`) without `Secure` / `SameSite` | yes, in source | after |
+| Subresource Integrity: a third-party script or stylesheet with no `integrity` | yes, in `index.html` and on the page | after |
+| §1.1 A resource fetched over `http://` | yes, in source and on the page | after |
+| CSP, HSTS, frame-ancestors, COOP/CORP, nosniff, Referrer-Policy, Permissions-Policy, CORS, Fetch Metadata, Clear-Site-Data | no: response headers set where the app is deployed; a dev server does not send them | not rules |
+| Passkeys, encryption, signatures, email verification (11 guides) | no: how to build a feature, nothing to find in existing code | not rules |
+
+**`security/dom-sink`** (guide: security §1.2; fix: `sanitize-untrusted-html`). Says: this place runs what it is
+given as markup or code, and what it is given is not fixed text. It follows a value back through the file: a
+string, a template or join of fixed parts, one of the file's own constants, a property of fixed data, a number,
+and what the plain list and string methods make of those are all fixed, and nothing is said. A call whose name
+says it sanitises or escapes is taken at its word. A parameter, a prop, anything fetched or read from the page is
+not fixed. It cannot know whether such a value is trusted, so it is a warning that names the place, never "this
+is a hole".
+
+**Seen on real apps (2026-11-13),** app source only:
+
+| App | Files | Time | Found |
+|---|---|---|---|
+| crafting-ui | 600 | 0.2 s | 0 |
+| glyphschool | 51 | 0.1 s | 5: `innerHTML` given category names, prompt text and a colour swatch built from lesson data |
+| glyphwrite workbench | | 0.2 s | 5: the same recorder code |
+| algorecall | 3,797 (whole repo) | 2.7 s | 5 in `src`: highlighted code through `dangerouslySetInnerHTML`; `new Function` in its code-running worker (3), which is the feature |
+
+The first version said 11 on glyphwrite; three were `innerHTML = MARKUP` where `MARKUP` is a constant in the same
+file. Following constants removed those and nothing real. `plumber check` on glyphschool now lists "5 security
+findings" under Fix first, and `plumber check --rule security` shows each with its line and the guide to retrieve.
+
+Not done: the overlay does not draw these on the page (a finding is about a line of code; where it belongs to an
+element, it could be); no tests; on by default as warnings, and whether a new warning should fail an existing
+project's `check` is the owner's call.
+
 ## 5. Order, and why not the signed-off one
 
 The foundations put packs at layer 5, after the snapshot (3) and pure rules in a worker (4), so that a new page pack

@@ -25,6 +25,7 @@ import { cachedComponents, discoverComponents } from './ownership/components.js'
 import { judgeOwnership } from './ownership/judge.js';
 import { habitOverrides, judgeHabits } from './habits/index.js';
 import { realQuotes } from './habits/quotes.js';
+import { activeSourceRules, judgeSource } from './packs/source.js';
 import { judgeImitation, suggestImitation } from './imitation/index.js';
 import { tool } from './report.js';
 import type { Declaration, Report } from './report.js';
@@ -236,6 +237,8 @@ export async function analyze(options: CheckOptions, snippet?: Snippet, runtime?
     const summary = habits.summaries.find(h => h.id === 'real-quotes');
     if (summary && summary.breaks !== null) summary.breaks = quoted.length;
   }
+  // packs that read source (docs/briefs/rule-packs.md): security first. Not judged for a CSS snippet being tried.
+  if (!input || input.lang === 'tsx') findings.push(...await judgeSource([...sourceFiles], activeSourceRules(config.value), input ? new Map([[input.file, input.text]]) : undefined));
   const habitsMs = performance.now() - habitsStart;
   const imitationStart = performance.now();
   findings.push(...sync('imitation', [components, collected.sites, declarations, config.value], () => judgeImitation(components, collected.sites, declarations, config.value)));

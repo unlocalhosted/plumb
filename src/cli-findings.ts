@@ -1,4 +1,5 @@
 import { basename } from 'node:path';
+import { PACK_DATA } from '../overlay/src/pack-list.js';
 import type { Decision, Finding, Site } from './report.js';
 import { count, familyNames, scales, sourceEdit } from './messages.js';
 import { oneLine, paint, shorten, table, terminalWidth, visibleWidth, wrap, type Ink } from './cli-table.js';
@@ -7,6 +8,7 @@ import { atSite } from './surfaces/sites.js';
 import { logicalProperty } from './habits/index.js';
 import { tokens } from './rules/families.js';
 
+const SOURCE_PACKS = new Set(PACK_DATA.filter(pack => pack.runs === 'source').map(pack => pack.id));
 export interface FindingLine { subject: string; findings: Finding[]; sites: Site[]; /** The library state the declaration applies in: `checked`, `not checked`, `open, checked`; empty when none. */ state?: string }
 const identity = (site: Site) => `${site.file}:${site.line}:${site.column}`;
 function subject(finding: Finding, site: Site): string {
@@ -14,6 +16,8 @@ function subject(finding: Finding, site: Site): string {
   if (finding.rule.startsWith('config/')) return `${familyNames[finding.family] ?? finding.family} setup`;
   if (finding.rule.startsWith('dead/')) return `${familyNames[finding.family] ?? finding.family} tokens`;
   if (finding.rule === 'provenance/opaque-inline') return 'runtime styles';
+  // a source pack's finding is about code, not a style: its subject is what is written, as written
+  if (SOURCE_PACKS.has(finding.family)) return oneLine(site.text);
   const declaration = atSite(finding, site);
   if (['inline', 'stylesheet', 'custom-property', 'keyframes'].includes(declaration.origin)) {
     // Keep authored shorthands (font, padding, etc.), even when the judge expands them.

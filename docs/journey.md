@@ -1008,10 +1008,19 @@
 - **The fix and the proof:** `a11y/control-name`, run read-only on three of the owner's apps: crafting-ui (56 controls) and glyphschool (23) say nothing, correctly; the glyphwrite workbench has 5 sliders with no name, which Chrome's own accessibility tree confirms (the `<label>` names the `<output>` inside it, not the slider). Chrome's package read file by file: 208 guides, its scanner reaches 33; running the scanner was blocked as downloaded code. No tests (iterating).
 - **Media hooks:** the glyphwrite slider's markup beside Chrome's accessibility tree saying "slider, no name".
 
+## Security advice into checks: the first one reads where markup runs (2026-11-13)
+- **The itch:** the owner: "bro i wanted you to turn the advice into the automated checks can you do one by one? lets pick one topic like security and then turn it into rules as part of the engine". I had been reporting how little Chrome's repo checks by itself instead of doing the work.
+- **How we found it:** Chrome's `security` guide read whole and sorted: about 70 items, most of them response headers a front-end project's source never shows. Six things are in the code; the first is the guide's "Avoid dangerous DOM sinks".
+- **The system behind it:** plumber's source checks were habits: CSS declarations only, opt-in by name. There was no place for a rule about JavaScript.
+- **What we tried, what we chose:** a runner for packs that read source: one parse and one walk per file, each rule given only the syntax it is about, files nobody could speak about skipped. The first cut of the rule was a linter: it flagged `innerHTML = MARKUP` where `MARKUP` is a constant three lines up. It now follows a value back through the file and says nothing when it is built only from fixed text and numbers.
+- **The fix and the proof:** `security/dom-sink`, in `plumber check` like any finding. glyphschool: 5 (category names and prompt text put into `innerHTML`); algorecall's source: 5 (highlighted code through `dangerouslySetInnerHTML`, `new Function` in its code runner); crafting-ui: 0. algorecall's 3,797 files take 2.7 s. Constants removed 3 false hits on glyphwrite and no real one. Three nearby test files pass (29 tests); no test of the rule itself.
+- **Media hooks:** `plumber check` on glyphschool: "5 security findings · can run others' code".
+
 ## Open gaps
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
 
 ## Shipped · 2026-W46
+- `plumber check` now finds places in your code that run markup or code built from something that is not fixed text (`innerHTML`, `dangerouslySetInnerHTML`, `eval`, `document.write`, string timers), the first check made from Chrome's security guide. It stays quiet about your own constants. Found 5 in glyphschool and 5 in algorecall's source.
 - Plumber can now hold kinds of rule other than craft, as packs a project turns on or off. The first is accessibility, drawn from Chrome's Modern Web Guidance; its first rule finds controls a screen reader cannot name, and found 5 real ones in the glyphwrite workbench that the source makes look labelled.
 - A write-up of the day's speed work, for people outside the session: each step's cause, fix and measured before/after, the mistakes, and what is still open ([docs/writeups/plumber-speed.html](writeups/plumber-speed.html), published as a private page). It is drawn from this log's entries, nothing new measured except crafting-ui's scrolling (53 frames a second open, 60 alone, one run).
 - The kept analysis and its start-up check now have tests: six, each a real server start on a small project, 9 s in all. It matters because three layers sit on this and the next one answers from it. The doctor test caught its own row being cut off when a start differs.
