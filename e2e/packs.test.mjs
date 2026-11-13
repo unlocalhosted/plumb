@@ -438,3 +438,230 @@ test('security pack: each of its 7 rules names the unsafe line in source and lea
   assert.deepEqual(missing, [], `spoke: ${JSON.stringify(found.map((f) => `${f.rule}: ${f.text.trim().slice(0, 50)}`))}`);
   assert.deepEqual(SECURITY_SAFE.filter((text) => found.some((f) => f.text.includes(text))), [], 'a safe twin was named');
 });
+
+// ── near misses ─────────────────────────────────────────────
+// For every rule, the closest thing to its problem that is right. A rule that speaks here is wrong about something
+// people build on purpose. One page per pack; no pack may say anything on any of them.
+const NEAR_A11Y = `export function App() {
+  return (
+    <div className="flex flex-col gap-s4 p-s4">
+      <a href="#content">Skip to content</a>
+      <nav aria-label="Primary"><a href="/a">Read more</a> <a href="/a">Read more</a></nav>
+      <nav aria-label="Secondary"><a href="/b">Pricing</a></nav>
+      <main id="content">
+        <h1>Near misses</h1>
+        <h2>Section</h2>
+        <h3>Sub</h3>
+        <h2>Back up a level</h2>
+        <button type="button" aria-label="Close"><svg aria-hidden="true" width="16" height="16"><circle cx="8" cy="8" r="6" /></svg></button>
+        <span id="lbl">Volume</span>
+        <button type="button" aria-labelledby="lbl"><svg aria-hidden="true" width="16" height="16"><circle cx="8" cy="8" r="6" /></svg></button>
+        <label htmlFor="nm">Nickname</label>
+        <input id="nm" name="nickname" />
+        <img alt="" src="${PX}" width="40" height="40" />
+        <img role="presentation" src="${PX}" width="40" height="40" />
+        <img alt="Photo album cover for Blue" src="${PX}" width="40" height="40" />
+        <svg role="img" width="24" height="24"><title>Sales rising</title><circle cx="12" cy="12" r="10" /></svg>
+        <button type="button"><svg aria-hidden="true" width="16" height="16"><circle cx="8" cy="8" r="6" /></svg> Save</button>
+        <div role="tablist" aria-label="Views"><button type="button" role="tab" aria-selected="true" tabIndex={0}>One</button><button type="button" role="tab" aria-selected="false" tabIndex={-1}>Two</button></div>
+        <div aria-hidden="true"><button type="button" tabIndex={-1}>Decoration</button></div>
+        <div role="group" aria-label="Filters"><button type="button">All</button></div>
+        <button type="button" aria-label="Close dialog">Close</button>
+        <a href="/radio" aria-label="Listen to radio stations">Radio</a>
+        <iframe title="Map of the office" srcDoc="<p>x</p>" width="100" height="40" />
+        <table><thead><tr><th>Name</th><th>Age</th></tr></thead><tbody><tr><td>A</td><td>1</td></tr></tbody></table>
+        <table role="presentation"><tbody><tr><td>left</td><td>right</td></tr><tr><td>a</td><td>b</td></tr></tbody></table>
+        <h3>Questions</h3>
+        <details><summary>What is it?</summary>An answer.</details>
+        <div role="navigation" aria-label="Pages"><a href="/1">1</a></div>
+        <ul><li><button type="button">In a list</button></li></ul>
+        <label htmlFor="em">Email</label>
+        <input id="em" name="email" type="email" autoComplete="email" />
+        <label htmlFor="qy">Query</label>
+        <input id="qy" name="query" />
+      </main>
+    </div>
+  );
+}
+`;
+const NEAR_FORMS = `export function App() {
+  return (
+    <main className="flex flex-col gap-s4 p-s4">
+      <style>{"#uv:user-invalid { border-color: red } #fi:focus:invalid { border-color: red } .vh { position: absolute; width: 1px; height: 1px; clip-path: inset(50%); overflow: hidden; white-space: nowrap }"}</style>
+      <h1>Near forms</h1>
+      <search><form aria-label="Search" method="get" action="/search"><label htmlFor="q">Search</label><input id="q" name="q" type="search" /><button type="submit">Search site</button></form></search>
+      <form aria-label="Profile" method="post" action="/profile">
+        <fieldset><legend>Plan</legend><label><input type="radio" name="plan" value="a" /> Free</label><label><input type="radio" name="plan" value="b" /> Pro</label></fieldset>
+        <fieldset aria-label="Contact"><label htmlFor="ph">Phone</label><input id="ph" name="phone" type="tel" autoComplete="tel" aria-label="Phone number" /></fieldset>
+        <div style={{ marginTop: 24, marginBottom: 24 }}><label htmlFor="co" style={{ display: 'block', marginBottom: 4 }}>Company *</label><input id="co" name="company" autoComplete="organization" required /></div>
+        <div style={{ marginBottom: 24 }}><label htmlFor="un" style={{ display: 'block', marginBottom: 4 }}>Username</label><input id="un" name="username" autoComplete="username" autoCapitalize="none" autoCorrect="off" spellCheck={false} /></div>
+        <label htmlFor="otp">Verification code</label>
+        <input id="otp" name="otp" inputMode="numeric" autoComplete="one-time-code" />
+        <label htmlFor="qty">Quantity</label>
+        <input id="qty" name="quantity" type="number" />
+        <label htmlFor="in">Initials</label>
+        <div><input id="in" name="i1" maxLength={1} /><input name="i2" maxLength={1} aria-label="Second initial" /><input name="i3" maxLength={1} aria-label="Third initial" /></div>
+        <label htmlFor="uv">Team</label>
+        <input id="uv" name="team" required />
+        <label htmlFor="fi">Role</label>
+        <input id="fi" name="role" required />
+        <label htmlFor="bad">Website</label>
+        <input id="bad" name="website" type="url" aria-invalid="true" aria-describedby="bad-msg" />
+        <p id="bad-msg">Start with https://</p>
+        <label htmlFor="ok">Notes</label>
+        <input id="ok" name="notes" aria-invalid="false" aria-describedby="later" autoComplete="off" />
+        <label htmlFor="msg">Message</label>
+        <textarea id="msg" name="message" style={{ resize: 'none', fieldSizing: 'content' }} />
+        <label htmlFor="msg2">More</label>
+        <textarea id="msg2" name="more" style={{ resize: 'vertical' }} />
+        <label><input className="vh" type="checkbox" name="agree" /> I agree</label>
+        <label htmlFor="pc">Promo code</label>
+        <input id="pc" name="voucher" pattern="[A-Za-z]+" autoCapitalize="none" />
+        <label htmlFor="fn">Full name</label>
+        <input id="fn" name="name" autoComplete="name" pattern="[\\\\p{L}\\\\p{M}' .-]+" />
+        <label htmlFor="eu">Email or username</label>
+        <input id="eu" name="email_or_username" autoComplete="username" autoCapitalize="none" />
+        <label htmlFor="pw">Password (8-20 characters)</label>
+        <input id="pw" name="password" type="password" autoComplete="new-password" placeholder="8-20 characters" />
+        <label htmlFor="ex">Work email</label>
+        <input id="ex" name="work" type="email" autoComplete="email" placeholder="jane@example.com" />
+        <div style={{ display: 'flex' }}><button type="button">Cancel</button><button>Save changes</button></div>
+        <button type="submit" disabled aria-busy="true">Saving…</button>
+      </form>
+      <form aria-label="Quick add" onSubmit={(e) => e.preventDefault()}><label htmlFor="qa">Task</label><input id="qa" /></form>
+      <label>Legend for the chart below</label>
+    </main>
+  );
+}
+`;
+const NEAR_COMPONENTS = `export function App() {
+  return (
+    <div className="flex flex-col gap-s4 p-s4">
+      <style>{"@keyframes turn { to { rotate: 360deg } } .spinner { animation: turn 1s linear infinite } .vh { position: absolute; width: 1px; height: 1px; clip-path: inset(50%); overflow: hidden }"}</style>
+      <header><nav aria-label="Breadcrumb"><ol><li><a href="/x">Library</a></li><li><span aria-hidden="true">/</span><a href="/x/y" aria-current="page">Docs</a></li></ol></nav>
+        <nav aria-label="Site"><ul><li><a href="/" aria-current="page">Home</a></li><li><a href="/about">About</a></li></ul></nav></header>
+      <main>
+        <h1>Near components</h1>
+        <article><h2><a href="/card">Card title</a></h2><button type="button">Save for later</button></article>
+        <section aria-roledescription="carousel" aria-label="Featured"><div role="group" aria-roledescription="slide" aria-label="1 of 2">one</div><div role="group" aria-roledescription="slide" aria-label="2 of 2">two</div></section>
+        <dialog open aria-labelledby="dt"><h2 id="dt">Cookies</h2><form method="dialog"><button>Close</button></form></dialog>
+        <dialog aria-label="Closed and not drawn"><button type="button">x</button></dialog>
+        <button type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="m1">Options</button>
+        <div id="m1" role="menu" aria-label="Options" hidden><button type="button" role="menuitem">Rename</button></div>
+        <div role="menu" aria-label="Actions"><button type="button" role="menuitem">Rename</button><button type="button" role="menuitemcheckbox" aria-checked="true">Pinned</button></div>
+        <div role="switch" aria-checked="false" tabIndex={0} aria-label="Wifi" />
+        <details><summary>More links</summary><a href="/c">C</a></details>
+        <div role="tablist" aria-label="Views" style={{ display: 'flex' }}>
+          <button type="button" role="tab" id="t1" aria-selected="true" tabIndex={0}>One</button>
+          <button type="button" role="tab" id="t2" aria-selected="false" tabIndex={-1}>Two</button>
+          <button type="button" role="tab" id="t3" aria-selected="false" tabIndex={-1}>Three</button>
+        </div>
+        <div><div role="tabpanel" aria-labelledby="t1">Panel one</div><div role="tabpanel" aria-labelledby="t2" hidden>Panel two</div></div>
+        <div role="toolbar" aria-label="Formatting"><button type="button" aria-pressed="false">Bold</button><button type="button">Copy</button></div>
+        <div role="menubar" aria-label="App"><button type="button" role="menuitem">File</button></div>
+        <label htmlFor="up">Upload</label>
+        <progress id="up" value="40" max="100" />
+        <div role="status"><div className="spinner" style={{ width: 20, height: 20, border: '2px solid' }} /><span className="vh">Loading</span></div>
+        <button type="button"><span className="spinner" style={{ display: 'inline-block', width: 12, height: 12, border: '2px solid' }} /> Saving</button>
+        <button type="button" aria-expanded="true" aria-controls="open-panel">Details</button>
+        <div id="open-panel">Showing</div>
+        <button type="button" aria-expanded="false" aria-controls="shut-panel">More</button>
+        <div id="shut-panel" hidden>Not showing</div>
+      </main>
+    </div>
+  );
+}
+`;
+const NEAR_HTML = `export function App() {
+  return (
+    <div className="flex flex-col gap-s4 p-s4">
+      <header>Top</header>
+      <main>
+        <h1>Near html</h1>
+        <article><header>An article has its own header</header><p>Body</p><footer>and footer</footer></article>
+        <div><div>- 5 °C outside</div><div>- 2 °C tonight</div></div>
+        <ul><li>one</li></ul>
+        <ol><li>first</li></ol>
+        <dl><div><dt>Term</dt><dd>Meaning</dd></div></dl>
+        <div style={{ cursor: 'pointer', position: 'relative' }}><h2><a href="/card">A card whose link is stretched over it</a></h2></div>
+        <label style={{ cursor: 'pointer' }}><input type="checkbox" name="x" /> A label with a hand</label>
+        <ul role="listbox" aria-label="Sizes"><li role="option" aria-selected="false" tabIndex={0} style={{ cursor: 'pointer' }}>Small</li></ul>
+        <a href="#more">Jump to more</a>
+        <a>Current page</a>
+        <input aria-label="Off" disabled />
+        <figure><img alt="A chart" src="${PX}" width="40" height="40" /><figcaption>Sales by month</figcaption></figure>
+        <figure aria-label="Logo"><img alt="" src="${PX}" width="40" height="40" /></figure>
+        <pre><code>{"const answer = 42;"}</code></pre>
+        <pre>{"Monday  rain\\nTuesday sun"}</pre>
+        <pre tabIndex={0} role="region" aria-label="Long code" style={{ width: 200, overflowX: 'auto' }}><code>{"const veryLongNameThatRunsOffTheEdge = anotherVeryLongNameIndeed + 1;"}</code></pre>
+        <img alt="Sized" src="/wide.svg" width="400" height="300" fetchpriority="high" />
+        <img alt="By ratio" src="/wide.svg" style={{ width: 200, aspectRatio: '4 / 3' }} />
+        <picture><source srcSet="/wide.svg" /><img alt="In a picture" src="/wide.svg" width="400" height="300" /></picture>
+        <details><summary style={{ listStyle: 'none' }}><svg aria-hidden="true" width="12" height="12"><path d="M2 4l4 4 4-4" /></svg> With its own arrow</summary>body</details>
+        <span title="Exactly the words">Exactly the words</span>
+        <abbr title="World Health Organization">WHO</abbr>
+        <video controls width="320" height="180" poster="/wide.svg" src="/none.mp4"><track kind="captions" src="/c.vtt" srcLang="en" label="English" /></video>
+        <video autoPlay muted loop aria-hidden="true" width="100" height="60" src="/none.mp4" />
+        <audio controls src="/none.mp3" />
+        <iframe title="A frame" srcDoc="<p>x</p>" width="100" height="40" />
+        <div style={{ height: 2400 }} />
+        <img id="more" alt="Far and lazy" loading="lazy" src="/wide.svg" width="300" height="200" />
+      </main>
+      <footer>End</footer>
+    </div>
+  );
+}
+`;
+const NEAR_EXPERIENCE_INDEX = '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Near experience</title><script src="/blocking.js" defer></script></head><body><div id="root"></div><script type="module" src="/src/entry.jsx"></script></body></html>';
+const NEAR_EXPERIENCE = `export function App() {
+  return (
+    <div className="flex flex-col gap-s4 p-s4">
+      <style>{"@keyframes drift { to { translate: 20px 0 } } @media (prefers-reduced-motion: no-preference) { .drift { animation: drift 2s linear infinite alternate } }"}</style>
+      <a href="#content">Skip to content</a>
+      <nav aria-label="Main"><a href="/a">One</a><a href="/b">Two</a><a href="/c">Three</a><a href="/d">Four</a><a href="/e">Five</a><a href="/f">Six</a><a href="/g">Seven</a><a href="/h">Eight</a><a href="/i">Nine</a><a href="/j">Ten</a></nav>
+      <main id="content">
+        <h1>Near experience</h1>
+        <div style={{ position: 'relative', width: 240, height: 40 }}>
+          <button type="button" style={{ width: 240, height: 40 }}>Under a sheen</button>
+          <div aria-hidden="true" style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }} />
+        </div>
+        <article style={{ position: 'relative', width: 240 }}>
+          <h2><a href="/card" className="stretched">Card</a></h2>
+          <div style={{ position: 'absolute', inset: 0 }} onClick={() => {}} hidden />
+          <button type="button" style={{ position: 'relative', zIndex: 1 }}>Raised above</button>
+        </article>
+        <span style={{ whiteSpace: 'nowrap' }}>Three short words</span>
+        <p style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', width: 200 }} title="A long line that is cut off on purpose and shows its whole self when asked to by anyone">A long line that is cut off on purpose and shows its whole self when asked to by anyone</p>
+        <p lang="en" style={{ textAlign: 'justify', hyphens: 'auto', width: 260 }}>This paragraph is justified and hyphenated, so its spaces stay even from line to line and no rivers of white open up down through the words of the text.</p>
+        <span style={{ textTransform: 'uppercase' }}>New this week</span>
+        <div style={{ overflowX: 'auto', width: 300 }} tabIndex={0} role="region" aria-label="Wide table"><div style={{ width: 900, height: 20 }}>wide, in its own scroller</div></div>
+        <div className="drift" style={{ width: 200, height: 40 }}>drifting, unless asked not to</div>
+        <a href="/pricing">Pricing</a>
+        <a href="/pricing">See pricing</a>
+        <a href="/docs">Docs</a>
+        <a href="/docs">Docs</a>
+        <ul>
+          <li><span id="r1">First</span> <button type="button" aria-describedby="r1">Delete</button></li>
+          <li><span id="r2">Second</span> <button type="button" aria-describedby="r2">Delete</button></li>
+          <li><span id="r3">Third</span> <button type="button" aria-describedby="r3">Delete</button></li>
+        </ul>
+        <button type="button">Sign up</button>
+        <button type="button">Sign up</button>
+        <button type="button" aria-pressed="false" aria-label="Turn on notifications">n</button>
+        <button type="button" aria-pressed="true" aria-label="Active users">u</button>
+        <button type="button" aria-expanded="false" aria-label="Open menu">m</button>
+        <div tabIndex={0} role="region" aria-label="Chips" style={{ display: 'flex', overflowX: 'auto', scrollbarWidth: 'none', width: 300 }}><span style={{ flex: 'none', width: 130 }}>one</span><span style={{ flex: 'none', width: 130 }}>two</span><span style={{ flex: 'none', width: 130 }}>half in view</span></div>
+        <div style={{ height: 60, overflowY: 'auto', width: 300 }} tabIndex={0} role="region" aria-label="Log"><p>line one</p><p>line two</p><p>line three</p><p>line four</p></div>
+        <div style={{ height: 60, overflowY: 'auto', width: 300 }}><p><a href="/1">link one</a></p><p>line two</p><p>line three</p><p>line four</p></div>
+      </main>
+    </div>
+  );
+}
+`;
+for (const [name, app, options] of [['accessibility', NEAR_A11Y], ['forms', NEAR_FORMS], ['components', NEAR_COMPONENTS], ['HTML', NEAR_HTML, { files: { 'public/wide.svg': WIDE_SVG } }],
+  ['experience', NEAR_EXPERIENCE, { index: NEAR_EXPERIENCE_INDEX, files: { 'public/blocking.js': '/* nothing */' } }]]) {
+  test(`near misses, ${name}: the closest right thing to each rule's problem, and no pack says anything`, { timeout: 240000 }, async (t) => {
+    if (!await built()) return t.skip('Run npm run build first.');
+    assert.deepEqual(ofPacks(await said(t, app, options)), []);
+  });
+}

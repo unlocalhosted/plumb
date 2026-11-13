@@ -34,7 +34,8 @@ export const nestedForm = rule('nested-form', 'form', function (el, facts) {
 // with a sending word is its submit, and is left be.
 const HELPER = /^(?:cancel|close|back|previous|prev|show|hide|add|remove|delete|clear|reset|toggle|edit|copy|paste|browse|upload|attach|more|less|expand|collapse|dismiss|skip|generate|×|✕|\+|−|-)\b/i;
 export const buttonType = rule('button-type', 'type', function (el, facts) {
-  if (el.localName !== 'button' || el.hasAttribute('type') || !el.form || !shown(el, facts)) return;
+  // in a <form method="dialog"> submitting is closing: a Close button there is meant to submit
+  if (el.localName !== 'button' || el.hasAttribute('type') || !el.form || el.form.method === 'dialog' || !shown(el, facts)) return;
   const name = accessibleName(el).name, visible = trimmed(el.innerText);
   if (!HELPER.test(name) && visible) return;
   // an icon-only button that is the form's only button is its submit (a search or send arrow)

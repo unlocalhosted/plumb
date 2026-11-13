@@ -192,11 +192,13 @@ export const buttonNameReused = rule('button-name-reused', 'name', 'button,[role
   return found(this, el, { name: name.slice(0, 30), count: g.list.length }, { value: name.slice(0, 30), confidence: 0.8, advice: `Name each for its row: aria-label="${name.slice(0, 20)} <the row’s title>", or aria-labelledby with the button’s and the title’s ids.` });
 });
 // accessibility §3: "Don't repeat state information already exposed by ARIA inside the label"
-const STATES = [['aria-pressed', /\b(?:not )?(?:pressed|selected|active|on|off)\b/i], ['aria-selected', /\b(?:not |un)?selected\b/i], ['aria-checked', /\b(?:not |un)?checked\b/i], ['aria-expanded', /\b(?:expanded|collapsed|open|closed)\b/i]];
+// a state word counts only where a label states a state: at its end, set off from the name ("Copy, not selected"). "Turn on alerts", "Active users" and "Open menu" are names.
+const TAIL = (words) => new RegExp(`[,(:\\u2013-]\\s*((?:not |un)?(?:${words}))\\)?\\s*$`, 'i');
+const STATES = [['aria-pressed', TAIL('pressed|selected|active|on|off')], ['aria-selected', TAIL('selected')], ['aria-checked', TAIL('checked')], ['aria-expanded', TAIL('expanded|collapsed|open|closed')]];
 export const stateInLabel = rule('state-in-label', 'name', '[aria-label]', function (el, facts) {
   const label = trimmed(el.getAttribute('aria-label'));
-  const hit = label && STATES.map(([attr, re]) => el.hasAttribute(attr) && re.exec(label) ? { attr, word: re.exec(label)[0] } : null).find(Boolean);
-  if (!hit || /\b(?:open|close)\b/i.test(hit.word) && /^(?:open|close)\b/i.test(label) || !shown(el, facts)) return; // "Open menu" is a verb, not a state
+  const hit = label && STATES.map(([attr, re]) => el.hasAttribute(attr) && re.exec(label) ? { attr, word: re.exec(label)[1] } : null).find(Boolean);
+  if (!hit || !shown(el, facts)) return;
   return found(this, el, hit, { value: `aria-label="${label.slice(0, 40)}"`, confidence: 0.85, advice: `Take "${hit.word}" out of the label: ${hit.attr} already says it.` });
 });
 

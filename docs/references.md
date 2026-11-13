@@ -77,3 +77,10 @@
 - **2026-11-13 · maybepratikk, bold-on-hover tabs video** (~/Downloads/twitter_media_harvest/maybepratikk-2121151672756138484-01.mp4) · *shared by the owner*.
   Why: "our showcase is being rushed … we don't show the problem very well, we rush the fix and don't have good payoff … understand the demo delivery from there how to showcase a rule fix and please bring it."
   What it changed: the stage's storyboard v2 in docs/craft/stage-brief.md: the fault seen live first, measured with the gesture repeated and the cause in words, the fix's working drawn, then the same gesture on every instance reading zero.
+
+## 2026-11-14 · tla-ts, a TLA+ model checker in TypeScript (shared by the owner)
+- What: [aidenybai/tla-ts](https://github.com/aidenybai/tla-ts) (MIT): runs TLA+ specs and checks invariants over every reachable state, in Node or the browser; also compiles a small subset of TypeScript (variables as state, exported functions as actions, boolean functions as invariants) to a spec and checks it. Read: its README only.
+- Why: shared while the checks' correctness was being measured. The owner's words: "whether this package can be used for enforcing correctness accuracy and truthfulness in the rules across the rules and in the system".
+- What we took from it (ours, not a copy): a model checker proves things about a model with a small state space. In plumber that is the state logic: two processes writing the ledger, two Applies at once, the kept analysis and its start-up check, one verdict per element. It cannot say whether a check is true of a real page: the checks read a real browser's layout, which no model holds. For the checks, the same idea is applied to the real code instead: every small combination generated and the properties checked (asked by kind equals asked everywhere; a near miss is quiet; taking a check's advice silences it and wakes no other).
+- Used in: journey entry "Are the checks right, and does the engine keep what they find?". Nothing built with it yet; see docs/backlog.md.
+

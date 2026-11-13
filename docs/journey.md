@@ -1082,10 +1082,20 @@
 - **Not proven:** the font and the early-connection checks have no test (they need a real web font and a second site). Not run on algorecall: its copy was already removed.
 - **Media hooks:** crafting-ui's icon page, "89 buttons here are all named Replay".
 
+## Are the checks right, and does the engine keep what they find? (2026-11-14)
+- **The itch:** the owner: "please ensure the correctness of rule detection and how engine accuracy". Until now the tests proved one side: each check speaks on its problem. Almost nothing proved it stays quiet on the closest right thing, or that the engine reports what a check found.
+- **How we found it:** three measurements. (1) The index: on nine real pages, every check asked about every element against asked by kind. (2) The engine: plumber's own command on three crafting-ui pages against a plain sweep of the same pages, and the file and line it names for each finding. (3) Near misses: for every check, the closest correct thing to its problem, about 150 cases on five pages, where no check may speak.
+- **What they showed:** (1) identical: 162 findings, none lost, none extra. (2) the same checks speak; plumber names the right file and line for all eight findings on the icon page; it reports one finding per source line (89 buttons drawn from one line are one finding), and where two checks judge the same facet of one element only one is kept, by design. (3) seven checks spoke. Six were right: the "correct" page had real mistakes in it (a label nearer the field above, a promo-code field the keyboard would capitalise, two links both named Home, a div playing button, a scroll strip a keyboard cannot reach). One was a bug: a Close button in a form that closes its dialog was told it submits the form by accident.
+- **The system:** a check now has two kinds of test, one that it speaks at its line and one that it is quiet on its near miss. Thirteen tests, all pass.
+- **A reference from the owner, same turn:** tla-ts, a TLA+ model checker in TypeScript, with the question whether it can enforce correctness across the rules and the system (docs/references.md). The answer written there: it fits the parts of plumber that are state machines; it cannot say whether a check is true of a real page.
+- **Not measured:** how often the checks are right on apps other than the owner's four. The count of real findings judged true or false is small (about 200) and judged by me.
+- **Media hooks:** the near-miss page that turned out to have five real mistakes.
+
 ## Open gaps
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
 
 ## Shipped · 2026-W46
+- Every check from Chrome's guides is now tested both ways: it speaks at the line of its problem, and it stays quiet on the closest right thing. Thirteen tests; one wrong check found and fixed ([entry](#are-the-checks-right-and-does-the-engine-keep-what-they-find-2026-11-14)).
 - plumber now says seventeen things a linter cannot see, picked for being skipped: a button with something on top of it, twelve buttons all named "Delete", a page that scrolls sideways and what causes it, a dark page whose scrollbars stay white, motion that ignores "reduce motion" ([entry](#what-a-linter-cannot-see-seventeen-checks-picked-for-being-skipped-2026-11-14)). On the homepage branch.
 - One spinner no longer stops plumber judging the page around it (same entry).
 - The checks from Chrome's guides cost a third of what they did: each is asked only about the kind of element it is about (108 ms to 31 ms on a 10,827-element page) ([entry](#128-checks-asked-only-where-they-apply-2026-11-14)).
