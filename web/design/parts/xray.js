@@ -35,6 +35,7 @@ export function mount(host, root, css) {
     .prose b { color: var(--pl-text-primary); font-weight: 600; }
     .stage { position: relative; margin-top: 14px; min-height: 620px; border-radius: 22px; background: #f4f4f6; overflow: hidden; display: grid; align-items: center; padding: 72px 360px 72px 72px; }
     .stage .app { user-select: none; -webkit-user-select: none; }
+    .stage .rerender { position: absolute; right: 16px; bottom: 12px; height: 28px; padding: 0 12px; border: 0; border-radius: 9px; background: #fff; box-shadow: 0 0 0 1px #d8d8de; font: 600 12px/1 var(--pl-sans); color: #44444c; cursor: pointer; z-index: 7; }
     .stage .hint kbd { font: 600 11px/1 var(--pl-sans); padding: 2px 5px; border-radius: 5px; background: #fff; box-shadow: 0 0 0 1px #d8d8de; }
     .stage .hint { position: absolute; left: 0; right: 0; bottom: 18px; margin: 0; text-align: center; font: 500 12.5px/1 var(--pl-sans); color: #6b6b75; }
     .stage[data-pinned] .hint b { color: var(--pl-pink); }
@@ -135,15 +136,23 @@ export function mount(host, root, css) {
     </div>
     <div class="xr"></div>
     <div class="xr-card" hidden><div class="xr-hand"></div><div class="xr-body"></div></div>
+    <button type="button" class="rerender" title="Draws the card again from scratch, the way React does after a state change or a hot reload">Re-render the card</button>
     <p class="hint">Point at a part · hold <kbd>⇧</kbd> to drag it or scroll it · or change a number · <kbd>↵</kbd> sync, or a note for your agent · <kbd>Esc</kbd> put back</p>
   </div>`;
 
   const stage = root.querySelector('.stage'), layer = stage.querySelector('.xr'), card = stage.querySelector('.xr-card'), body = card.querySelector('.xr-body'), hand = card.querySelector('.xr-hand');
+  // the demo's re-render: the card drawn again from its markup, new elements in place of the old (as React does)
+  const APP_HTML = stage.querySelector('.app').outerHTML;
+  stage.querySelector('.rerender').addEventListener('click', (e) => { e.stopPropagation(); const t = document.createElement('div'); t.innerHTML = APP_HTML; stage.querySelector('.app').replaceWith(t.firstElementChild); });
   let lastCard = '', shown = null, pinned = null, noting = null, held = null, cardAt = { x: 0, y: 0 }, lastOn = null, waiting = 0;
   const box = () => stage.getBoundingClientRect();
   const nameOf = (el) => NAMES[el.dataset.x] ?? [el.localName, null];
-  // the changes not yet synced: element → { prop → the inline value it had before }
+  // the changes not yet synced, kept by the place in your code and which copy it is ('avatar#1' → { prop → { before,
+  // value } }), never by the element: a re-render (state, hot reload, a list re-keyed) replaces elements, and the
+  // change has to find the new one, show on it again, and still be put back or synced (Plumber: the stamp and nth)
   const changes = new Map();
+  const placeKey = (el) => `${el.dataset.x}#${Math.max(0, peers(el).indexOf(el))}`;
+  const elOf = (key) => { const [x, i] = key.split('#'); return stage.querySelectorAll(`.app [data-x="${x}"], .app[data-x="${x}"]`)[+i] ?? null; };
   // which sides move together, kept until changed: 'one', 'pair' or 'all' (the row's left place)
   let link = 'one';
   const LINKS = ['one', 'pair', 'all'];
@@ -155,9 +164,9 @@ export function mount(host, root, css) {
     return how === 'all' ? ['top', 'right', 'bottom', 'left'].map((k) => `${sided[1]}-${k}`) : how === 'pair' ? [prop, `${sided[1]}-${PAIR[sided[2]]}`] : [prop];
   };
   // one change is one property of one part of the code, however many places on the page draw that part
-  const keyOf = (el) => el.dataset.x ?? el;
-  const count = () => new Set([...changes].flatMap(([el, m]) => [...m.keys()].map((q) => `${keyOf(el)}|${q}`))).size;
-  const reach = () => new Set([...changes.keys()]).size;
+  const count = () => new Set([...changes].flatMap(([k, m]) => [...m.keys()].map((q) => `${k.split('#')[0]}|${q}`))).size;
+  const reach = () => changes.size;
+  const unseen = () => [...changes.keys()].filter((k) => !elOf(k)).length;
   // the places on the page that are this part: every element the same line of code draws (rows of a list, cards)
   const peers = (el) => peersOf(el, (t) => t.dataset.x, (k) => stage.querySelectorAll(`.app [data-x="${k}"], .app[data-x="${k}"]`)); // Plumber: by the element's stamp
   // Where a change reaches, chosen in the card's row (owner: "add an option similar to direction to choose scope"):
@@ -203,7 +212,7 @@ export function mount(host, root, css) {
     if (head && scopesOf(el).length > 1) head.insertAdjacentHTML('beforeend', ` <span class="xr-many" data-scope="${scope}">${scope === 'all' ? `everywhere · ${USES[el.dataset.x] ?? '?'}` : scope === 'page' ? `×${peers(el).length} here` : 'this one'}</span>`);
     // which numbers are changed, and the one in hand, kept true whether or not the card was written again
     for (const ch of card.querySelectorAll('[data-prop]')) {
-      ch.toggleAttribute('data-changed', !!changes.get(el)?.has(ch.dataset.prop));
+      ch.toggleAttribute('data-changed', !!changes.get(placeKey(el))?.has(ch.dataset.prop));
       ch.toggleAttribute('data-held', !!held?.chip && held.prop === ch.dataset.prop);
     }
     const first = card.hidden;
@@ -227,7 +236,7 @@ export function mount(host, root, css) {
     body.style.maxHeight = at.maxH ? `${at.maxH - hand.offsetHeight - 30}px` : '';
     card.hidden = !!noting;
     if (first) requestAnimationFrame(() => card.removeAttribute('data-fresh'));
-    shown = el;
+    shown = el; shownKey = el.dataset.x ? placeKey(el) : null;
     cursor?.();
   };
   // ⇧ is the hand: only while it's held do a press-and-drag and two fingers change the part pointed at, and the
@@ -306,10 +315,12 @@ export function mount(host, root, css) {
   const set = (el, prop, v) => {
     // a repeated part changes everywhere it's drawn, unless Alt said just this one
     for (const t of targets(el)) {
-      if (!changes.has(t)) changes.set(t, new Map());
-      const m = changes.get(t);
-      if (!m.has(prop)) m.set(prop, t.style.getPropertyValue(prop));
-      t.style.setProperty(prop, typeof v === 'number' ? `${v}px` : v);
+      const k = placeKey(t), val = typeof v === 'number' ? `${v}px` : v;
+      if (!changes.has(k)) changes.set(k, new Map());
+      const m = changes.get(k);
+      if (!m.has(prop)) m.set(prop, { before: t.style.getPropertyValue(prop) });
+      m.get(prop).value = val;
+      t.style.setProperty(prop, val);
     }
   };
   const nearest = (S, v) => S.reduce((b, o) => (Math.abs(o.v - v) < Math.abs(b.v - v) ? o : b), S[0]);
@@ -429,7 +440,7 @@ export function mount(host, root, css) {
     const v = h.el.style.getPropertyValue(h.prop) || null, before = new Set(targets(h.el));
     scope = next;
     const after = new Set(targets(h.el)), qs = linkedOf(h.prop);
-    for (const t of before) if (!after.has(t) && t !== h.el) for (const q of qs) { const m = changes.get(t); if (m?.has(q)) { const was = m.get(q); if (was) t.style.setProperty(q, was); else t.style.removeProperty(q); m.delete(q); if (!m.size) changes.delete(t); } }
+    for (const t of before) if (!after.has(t) && t !== h.el) for (const q of qs) { const k = placeKey(t), m = changes.get(k); if (m?.has(q)) { const was = m.get(q).before; if (was) t.style.setProperty(q, was); else t.style.removeProperty(q); m.delete(q); if (!m.size) changes.delete(k); } }
     if (v) for (const q of qs) set(h.el, q, h.el.style.getPropertyValue(q) || v);
   };
   // a size's way of sizing: fill its container, fit its content, or a fixed number
@@ -502,11 +513,24 @@ export function mount(host, root, css) {
     addEventListener('pointerdown', away, true);
   };
 
+  // ── a re-render: React put new elements where the old ones were. The changes find them by place, show on them
+  // again, and the X-ray moves to the new element if it was showing an old one ──
+  let shownKey = null;
+  const reapply = () => {
+    for (const [k, m] of changes) { const el = elOf(k); if (el) for (const [prop, { value }] of m) if (el.style.getPropertyValue(prop) !== value) el.style.setProperty(prop, value); }
+    if (shown && !shown.isConnected) { const again = shownKey && elOf(shownKey); if (pinned === shown) pinned = again; shown = null; if (inHand) inHand = null, hand.innerHTML = ''; draw(again ?? null); }
+    else if (shown) { lastCard = ''; draw(shown); }
+  };
+  let queued = 0;
+  // only the page's own elements count (the app, or anything inside it), never the X-ray's own drawing
+  const ofPage = (r) => r.target.closest?.('.app') || [...r.addedNodes, ...r.removedNodes].some((n) => n.nodeType === 1 && n.matches?.('.app'));
+  new MutationObserver((list) => { if (list.some((r) => r.type === 'childList' && ofPage(r))) { clearTimeout(queued); queued = setTimeout(reapply, 0); } }).observe(stage, { childList: true, subtree: true });
+
   // ── the changes: counted at the foot of the card; Sync writes them, Esc puts them back ──
   function pendHtml() {
     const n = count(); if (!n) return '';
-    const at = reach();
-    return `<div class="xr-pend"><span>${n} change${n > 1 ? 's' : ''}${at > n ? ` · ${at} places` : ''}</span><span class="sp"></span><button type="button" class="back" title="Esc">Put back</button><button type="button" class="sync">Sync <kbd>↵</kbd></button></div>`;
+    const at = reach(), gone = unseen();
+    return `<div class="xr-pend"><span>${n} change${n > 1 ? 's' : ''}${at > n ? ` · ${at} places` : ''}${gone ? ` · ${gone} not on screen` : ''}</span><span class="sp"></span><button type="button" class="back" title="Esc">Put back</button><button type="button" class="sync">Sync <kbd>↵</kbd></button></div>`;
   }
   const sync = () => {
     const n = count(); if (!n) return false;
@@ -521,7 +545,7 @@ export function mount(host, root, css) {
   };
   const putBack = () => {
     if (!count()) return false;
-    for (const [el, m] of changes) for (const [prop, was] of m) { if (was) el.style.setProperty(prop, was); else el.style.removeProperty(prop); }
+    for (const [k, m] of changes) { const el = elOf(k); if (el) for (const [prop, { before }] of m) { if (before) el.style.setProperty(prop, before); else el.style.removeProperty(prop); } }
     changes.clear(); lastCard = ''; if (shown) draw(shown);
     return true;
   };
