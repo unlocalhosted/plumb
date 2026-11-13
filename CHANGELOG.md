@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.5.0 · 2026-11-13
+
+Everything since 0.4.0, as a person using it sees it.
+
+- **Clean up this page has nine passes.** To text, spacing, colour and icons it adds corners, control sizes, shadows, timings and the disabled look. Each takes the value your theme names for the job: a card's corner, a button's height on your spacing unit, the shadow for something that floats, the speed your theme calls `fast`, one opacity for every disabled control. A pass proposes nothing your theme has no name for, and says why.
+- **Plumber reads what each element is, once.** One reading (a button, a field, a tab, a link in a sentence or standing alone, a tag, a card, something over the page) is shared by every pass and craft rule, so a card gets a card's corner, shadow and padding, a tab bar is read as controls, and a linked card stays a card. A theme's tokens are read for their job the same way, by name.
+- **Text styles by job.** A heading, words you read, a figure and a control's label each have their own ladder, so a 48px hero title and a 48px number are no longer the same style. Hero titles, large figures, captions and button labels join the system; two styles that come out looking the same are one style.
+- **Spacing on your theme's own steps.** When your theme names a spacing scale (`--spacing-s4`), the spacing pass uses it, and padding and gaps in rows are put on it too.
+- **Colour by job.** A colour used only for words is text, one only filled with is a surface, a fill darker than the page is sunken, and hover and press colours are read from where the code uses them. **Rename my colours…** moves your colour tokens to job names across the project in one step, with Undo, and refuses a rename that would merge two colours. One brand colour can generate the whole colour system, light and dark.
+- **New craft checks:** words that run into other words, a picture stretched instead of cropped, a picture pulled tall by its row, a background photo that tiles, text in a flex row that can't shrink, a grid cell held open, a set height on text that wraps, a scrollbar with nothing to scroll, a sticky column stretched to its row, a fixed column with no narrow form, a list row that can't wrap, parts kept apart only by left-over space, and words over a picture with nothing behind them. Every suggestion uses the value your page already uses for the same job.
+- **`plumber craft` reads more than the page at rest.** It reads each page at four window widths and with the pointer over things, so an overlap that only shows on a tablet or on hover is found. A finding says when it is true ("Seen in a window 768px wide").
+- **Each craft finding links to its rule.** An "i" beside it in the fix panel, and a docs link in the CLI and `--json`.
+- **The overlay in a new visual language.** Every panel uses the product's own colour and state names. The text card's size, style, case and colour are token pickers, and colour opens a picker that lists the nearest colours first, then every colour by role.
+- **Locating after an edit on Next.js.** Right after you edit a file, Alt+click on what changed could refuse with "source changed" on Next's webpack dev server; it now finds the line.
+- **Writes.** A rename and any undo re-read your project once at the end (a rename's undo went from about 30 s to 7–13 s); a write answers in about 150 ms; two Applies never end each other's hold on hot updates; a file with many class swaps is no longer refused for its long history label.
+- **Smaller fixes.** An overlay file added after your dev server started is served, without a restart. `plumber` with nothing after it listens for Ctrl+C before telling you to press it. A craft fix on a list row says how many other places the same line draws.
+
 ## 0.4.0 · 2026-11-06
 
 Everything since 0.3.0, as a person using it sees it.

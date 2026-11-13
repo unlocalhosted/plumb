@@ -115,7 +115,8 @@ test('A click on an element with a problem puts a cause of it in hand: the class
   await click(page, gx, gy);
   await inHand(overlay).filter({ hasText: /^px-s3$/ }).waitFor({ timeout: 10000 });
   await panel(overlay).locator('.sp[aria-pressed="true"]').waitFor({ timeout: 10000 });
-  assert.match(await panel(overlay).locator('.cause .what').innerText(), /^Sides too tight · 1 place$/);
+  // read as one line: the "i" after a craft finding's name is its own box, and the browser reports a break around it
+  assert.match((await panel(overlay).locator('.cause .what').innerText()).replace(/\s+/g, ' ').trim(), /^Sides too tight · 1 place$/);
   // the theme's steps are the options, each with its token; the suggestion (wider on the sides) is the pick
   assert.deepEqual(await panel(overlay).locator('.sp .tk').allInnerTexts(), ['s1', 's2', 's3', 's4', 's6']);
   const picked = await panel(overlay).locator('.sp[aria-pressed="true"] .v').innerText();

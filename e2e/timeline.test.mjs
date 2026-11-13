@@ -126,7 +126,8 @@ test('the timeline shows each change as a tick in its step, and undoes one chang
   await page.keyboard.press('Backspace');
   await page.waitForFunction(() => document.querySelector('plumb-overlay')?.shadowRoot?.querySelectorAll('.tt .tt-tick[data-i]').length === 4);
   assert.equal(await app.read(), APP.replace('gap-2', 'gap-3').replace('mt-[10px]', 'mt-2.5'));
-  s = await strip(page);
+  // the undo may reload the page: the strip, once it shows again
+  s = await shown(page);
   assert.deepEqual(s.steps, [{ name: 'Spacing', ticks: ['live', 'undone', 'live'] }, { name: 'Undo', ticks: ['live+undo'] }]);
   assert.equal(s.pointed, '3', 'back at Now: the undo is the newest change');
   assert.equal(s.pill, 'Undop-3 → p-[13px]');
@@ -260,7 +261,8 @@ test('the write toast\'s Undo takes back the whole step the timeline shows, and 
   assert.equal(await app.read(), APP.replace('gap-2', 'gap-3').replace('p-[13px]', 'p-3'));
   const toast = overlay(page).locator('.wt .undo');
   await toast.click();
-  await page.waitForFunction(() => /Undid 2 changes/.test(document.querySelector('plumb-overlay')?.shadowRoot?.querySelector('.wt')?.textContent ?? ''));
+  // the file is the proof (the undo may reload the page and take the toast with it before it is read)
+  for (let i = 0; i < 150 && (await app.read()) !== APP; i++) await page.waitForTimeout(200);
   assert.equal(await app.read(), APP, 'both changes of the step went');
   await overlay(page).locator('.dock').hover(); await overlay(page).locator('.dock .history').click();
   await page.waitForFunction(() => document.querySelector('plumb-overlay')?.shadowRoot?.querySelectorAll('.tt .tt-tick[data-i]').length === 4);
