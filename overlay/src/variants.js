@@ -24,14 +24,18 @@ const WIDTH = { sm: 640, md: 768, lg: 1024, xl: 1280, '2xl': 1536 };
 
 /** A class's variant prefix and its bare utility, split at the last top-level colon (not inside [ ] arbitrary values). */
 export function splitVariant(cls) {
-  let depth = 0, colon = -1;
+  // every top-level colon: the variants are what lies between them (`[&:hover]` and `supports-[display:grid]` are one
+  // variant each, their colons inside [ ])
+  let depth = 0;
+  const colons = [];
   for (let i = 0; i < cls.length; i++) {
     if (cls[i] === '[') depth++;
     else if (cls[i] === ']') depth--;
-    else if (cls[i] === ':' && depth === 0) colon = i;
+    else if (cls[i] === ':' && depth === 0) colons.push(i);
   }
-  const prefix = cls.slice(0, colon + 1);
-  return { prefix, base: cls.slice(colon + 1), parts: prefix ? prefix.slice(0, -1).split(':') : [] };
+  const last = colons.at(-1) ?? -1, prefix = cls.slice(0, last + 1);
+  const parts = colons.map((c, i) => cls.slice(i ? colons[i - 1] + 1 : 0, c));
+  return { prefix, base: cls.slice(last + 1), parts };
 }
 
 // the width of a breakpoint: the theme's --breakpoint-* when the page defines it, else Tailwind's
