@@ -7,9 +7,6 @@
  * the Day/Night button, or a page holding this one (?scheme= first, then postMessage).
  */
 import { LANGUAGE_CSS } from './language.js';
-import { SCALE_CSS } from './scale-marks.js';
-import { GRAVITY_CSS, Gravity } from './gravity.js';
-import { SPECIMEN_CSS, Specimen } from './specimen.js';
 import { CAUSE_LIST_CSS, CauseList } from './cause-list.js';
 import { TOY_DEFS } from './toys.js';
 import { mountReview } from './system-review.js';
@@ -25,34 +22,11 @@ const PAGE_CSS = `
   .top .read { font: var(--pl-card-meta); color: var(--pl-text-secondary); }
   .top .pl-act { margin-left: auto; }
   main { max-width: var(--pl-page-max); margin: 0 auto; padding: var(--pl-page-space-2) var(--pl-page-space-1) var(--pl-page-space-4); color: var(--pl-text-primary); }
-  .eyebrow { font: var(--pl-page-meta); color: var(--pl-text-secondary); }
-  h1 { margin: 10px 0 14px; max-width: 26ch; font: var(--pl-page-display); letter-spacing: var(--pl-tracking-display); text-wrap: balance; }
-  h1 .n { font-variant-numeric: tabular-nums; }
-  h1 .off { color: var(--pl-coral); } h1 .on { color: var(--pl-mint); }
-  #specimen:not(:empty), #causes { display: block; margin-top: var(--pl-page-space-1); }
-  .lede { max-width: 60ch; margin: 0 0 var(--pl-page-space-1); font: var(--pl-page-body); color: var(--pl-text-secondary); text-wrap: pretty; }
-  @media (max-width: 720px) { main { padding: var(--pl-page-space-1) var(--pl-space-6) var(--pl-page-space-3); } .top { padding: 10px 16px; } .top .read { display: none; } h1 { font: var(--pl-page-display-narrow); } }
+  /* the causes sit in step 3 under its own heading ("In your code"), so the list's heading steps aside */
+  #causes { display: block; }
+  #causes .cl-head { display: none; }
+  @media (max-width: 720px) { main { padding: var(--pl-page-space-1) var(--pl-space-6) var(--pl-page-space-3); } .top { padding: 10px 16px; } .top .read { display: none; } }
 `;
-
-/** What the type scale says, in one heading and one paragraph. */
-function typeScale(size) {
-  const steps = size.steps, strays = size.strays.filter((s) => s.px >= 6);
-  const onScale = steps.reduce((n, s) => n + s.uses, 0), byHand = strays.reduce((n, s) => n + s.places, 0);
-  const copies = strays.filter((s) => s.copy).reduce((n, s) => n + s.places, 0), unused = steps.filter((s) => !s.uses);
-  const inUse = new Set([...strays.map((s) => s.px), ...steps.filter((s) => s.uses).map((s) => s.px)]).size;
-  if (!steps.length) return { steps, strays, html: `
-    <span class="eyebrow">Your type scale</span>
-    <h1>Your theme has no text sizes yet.</h1>
-    <p class="lede">${byHand ? `${nf.format(byHand)} places type a text size by hand${inUse > 1 ? `, in ${inUse} different sizes` : ''}.` : 'Nothing in your code sets a text size either.'}</p>` };
-  if (!byHand) return { steps, strays, html: `
-    <span class="eyebrow">Your type scale</span>
-    <h1>All <span class="n on">${nf.format(onScale)}</span> places that set a text size use your scale.</h1>
-    <p class="lede">Your theme has ${steps.length} text sizes.${unused.length ? ` ${unused.length === 1 ? 'One' : unused.length} of them ${unused.length === 1 ? 'is' : 'are'} never used: ${unused.map((s) => esc(s.name)).join(', ')}.` : ''}</p>` };
-  return { steps, strays, html: `
-    <span class="eyebrow">Your type scale</span>
-    <h1><span class="n off">${nf.format(byHand)}</span> places type a text size by hand. Only <span class="n on">${nf.format(onScale)}</span> use your scale.</h1>
-    <p class="lede">Your theme has ${steps.length} text sizes; your code uses ${inUse}. ${nf.format(copies)} of the hand-typed places pick a size your theme already has, so they're one rename away.${unused.length ? ` ${unused.length === 1 ? 'One size' : `${unused.length} sizes`} in your theme ${unused.length === 1 ? 'is' : 'are'} never used: ${unused.map((s) => esc(s.name)).join(', ')}.` : ''}</p>` };
-}
 
 /**
  * @param host    the element the page draws into (it gets a shadow root)
@@ -61,14 +35,11 @@ function typeScale(size) {
  */
 export function mountProjectPage(host, data, tokens) {
   const doc = host.ownerDocument, root = host.attachShadow({ mode: 'open' });
-  const type = typeScale(data.size);
-  root.innerHTML = `<style>${tokens}${LANGUAGE_CSS}${SCALE_CSS}${GRAVITY_CSS}${SPECIMEN_CSS}${CAUSE_LIST_CSS}${PAGE_CSS}</style>${TOY_DEFS}
+  root.innerHTML = `<style>${tokens}${LANGUAGE_CSS}${CAUSE_LIST_CSS}${PAGE_CSS}</style>${TOY_DEFS}
   <header class="top"><span class="pl-rainbow"></span><b>React Plumber</b><span class="pl-tag">${esc(data.project)}</span><span class="read">${nf.format(data.files)} files read</span><button type="button" class="pl-act quiet" id="scheme">Day</button></header>
-  <main>${type.html}<div id="gravity"></div><div id="specimen"></div><div id="causes"></div><div id="reading"></div></main>`;
-  const gravity = new Gravity(root.getElementById('gravity'), { steps: type.steps, strays: type.strays });
-  const specimen = new Specimen(root.getElementById('specimen'), { steps: type.steps, strays: type.strays });
+  <main><div id="reading"><div id="causes" slot="causes"></div></div></main>`;
   const causes = new CauseList(root.getElementById('causes'), { causes: data.causes, open: data.open });
-  mountReview(root.getElementById('reading'), data.reading);
+  mountReview(root.getElementById('reading'), data.reading, { handTyped: data.open, project: data.project });
 
   // the body around the root shows on overscroll and at the edges, so it takes the desk colour the root resolves
   doc.body.style.margin = '0';
@@ -82,5 +53,5 @@ export function mountProjectPage(host, data, tokens) {
   setScheme(asked ? asked === 'dark' : doc.defaultView.matchMedia('(prefers-color-scheme: dark)').matches);
   doc.defaultView.addEventListener('message', (e) => { if (e.origin === doc.defaultView.location.origin && e.data?.scheme) setScheme(e.data.scheme === 'dark'); });
   button.addEventListener('click', () => setScheme(host.dataset.scheme !== 'dark'));
-  return { root, gravity, specimen, causes };
+  return { root, causes };
 }

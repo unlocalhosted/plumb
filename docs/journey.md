@@ -2496,6 +2496,12 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   choices: one scale per kind, its name, the steps that came from a dropped scale marked yellow, how many old names
   now point at it, and "Copy the CSS". Deterministic; choices live in the tab. On the site: 9 decisions; choosing keep
   `--pl-space-*`, round, `--spacing-*` gives one 10-step spacing scale with 10 old names pointing at it.
+- **Then the four steps became the whole page (same day; owner: "Yes, whole page").** The page opens on one headline
+  about the system ("231 tokens in 39 scales. 9 decisions get you to one system.") and a line saying nothing changes
+  until you say so. The older type headline and "where your text sizes land" chart went; the specimen went (step 2
+  sets each size at its size); the biggest causes in your code moved into step 3 as "In your code", under the system
+  decisions, its own heading hidden; step 1 counts what's typed by hand. A test (e2e/bare-page) still expects the
+  page to load the landing chart and specimen modules; it needs rewriting with the new page's tests.
 - **Open on the four steps:** nothing is written to your files from the page yet; colour has no roles map (29 role
   scales show as swatch strips); steps that came from a dropped scale are named by their size (`--spacing-32`)
   beside inherited names (`--spacing-8` is 24px), a mixed numbering a naming choice should settle; the page's older

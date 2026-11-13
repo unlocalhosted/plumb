@@ -32,7 +32,15 @@ function pxOf(family, value) {
 }
 
 export const REVIEW_CSS = BUTTON_CSS + `
-  .review { display: grid; gap: var(--pl-page-space-2); margin-top: var(--pl-page-space-3); }
+  .intro .eyebrow { font: var(--pl-page-meta); color: var(--pl-text-secondary); }
+  .intro h1 { margin: var(--pl-space-4) 0 var(--pl-space-6); max-width: 24ch; font: var(--pl-page-display); letter-spacing: var(--pl-tracking-display); text-wrap: balance; }
+  .intro h1 .n { color: var(--pl-pink); }
+  .intro .lede { max-width: 60ch; margin: 0; font: var(--pl-page-body); color: var(--pl-text-secondary); }
+  .review { display: grid; gap: var(--pl-page-space-2); margin-top: var(--pl-page-space-2); }
+  .incode { margin-top: var(--pl-page-space-1); }
+  .incode h3 { margin: 0 0 var(--pl-space-2); font: var(--pl-card-title); font-size: 17px; }
+  .incode > p { max-width: 60ch; margin: 0 0 var(--pl-space-6); font: var(--pl-page-small); color: var(--pl-text-secondary); }
+  @media (max-width: 720px) { .intro h1 { font: var(--pl-page-display-narrow); } }
   .step > header { display: grid; grid-template-columns: var(--pl-space-8) 1fr; gap: var(--pl-space-2) var(--pl-space-5); align-items: baseline; margin-bottom: var(--pl-space-7); }
   .step .num { display: grid; place-items: center; width: var(--pl-space-8); height: var(--pl-space-8); border-radius: 50%; background: var(--pl-text-primary); color: var(--pl-bg-surface); font: var(--pl-card-title); font-family: var(--pl-round); align-self: center; }
   .step h2 { margin: 0; font: var(--pl-page-title); letter-spacing: var(--pl-tracking-title); }
@@ -176,7 +184,7 @@ function cssOf(systems) {
  * Draws the four steps into `el` from the project page's reading (src/decisions/stems.ts readingOf) and keeps
  * steps 3 and 4 live as choices are made.
  */
-export function mountReview(host, kinds) {
+export function mountReview(host, kinds, { handTyped = 0, project = '' } = {}) {
   // its own shadow root: the page's other parts use the same short class names (.step, .panel); custom properties
   // (the tokens) still inherit through
   const el = host.shadowRoot ?? host.attachShadow({ mode: 'open' });
@@ -208,13 +216,19 @@ export function mountReview(host, kinds) {
     return `<div class="panel">${kindHd(k)}<div class="strips">${lanes.map((l) => `<div class="strip"><code>${esc(l.name)}</code><span class="steps-text">${l.tokens.length} ${l.tokens.length === 1 ? 'step' : 'steps'}</span></div>`).join('')}</div></div>`;
   };
 
-  el.innerHTML = `<style>:host { display: block; color: var(--pl-text-primary); }${REVIEW_CSS}</style>${TOY_DEFS}<div class="review">
-    <section class="step"><header><span class="num">1</span><h2>What Plumber found</h2><p>${tokens} tokens in your stylesheets, sorted by what each one is for.</p></header>${found}</section>
+  const stems = new Set(all.filter((g) => g.pattern).map((g) => g.pattern)).size;
+  el.innerHTML = `<style>:host { display: block; color: var(--pl-text-primary); }${REVIEW_CSS}</style>${TOY_DEFS}
+  <div class="intro"><span class="eyebrow">${esc(project || 'Your project')} · your design system</span>
+    <h1>${tokens} tokens in ${stems} scales. ${decisions.length ? `<span class="n">${decisions.length}</span> ${decisions.length === 1 ? 'decision gets' : 'decisions get'} you to one system.` : 'It already reads as one system.'}</h1>
+    <p class="lede">Four steps: what Plumber found, how it fits together, what to decide, and the system you land on. Nothing changes in your files until you say so.</p></div>
+  <div class="review">
+    <section class="step"><header><span class="num">1</span><h2>What Plumber found</h2><p>${tokens} tokens in your stylesheets, sorted by what each one is for.${handTyped ? ` And ${handTyped} ${handTyped === 1 ? 'value' : 'kinds of value'} in your code typed by hand instead of a token; the biggest are in step 3.` : ''}</p></header>${found}</section>
     <section class="step"><header><span class="num">2</span><h2>How they fit together</h2><p>Each kind's scales side by side, every step drawn at its real size. A step two scales share is ringed in blue; a step off the size the others are built on is yellow.</p></header>
       <div class="legend"><span><i style="background: var(--pl-mint)"></i>a spacing step, as wide as it is</span><span><i style="outline: var(--pl-space-1) solid color-mix(in oklab, var(--pl-instrument) 35%, transparent)"></i>held by two scales</span><span><i style="background: var(--pl-soft-text)"></i>off the base</span></div>
       <div class="sense">${kinds.map(picture).join('')}</div></section>
     <section class="step"><header><span class="num">3</span><h2>Decide</h2><p>${decisions.length ? `${decisions.length} ${decisions.length === 1 ? 'decision' : 'decisions'}, from the pictures above. Pick one answer each; your system below follows.` : 'Nothing to decide: each kind is one scale, one name, on one base.'}</p></header>
-      <p class="tally" data-tally></p><ol class="decisions">${decisions.map((d) => `<li class="decision" data-id="${esc(d.id)}"><span class="q">${esc(d.q)}</span><span class="why">${esc(d.why)}</span><div class="opts">${d.options.map(([value, label]) => button(esc(label), { cls: 'sm quiet', attrs: `data-value="${esc(value)}"` })).join('')}</div></li>`).join('')}</ol></section>
+      <p class="tally" data-tally></p><ol class="decisions">${decisions.map((d) => `<li class="decision" data-id="${esc(d.id)}"><span class="q">${esc(d.q)}</span><span class="why">${esc(d.why)}</span><div class="opts">${d.options.map(([value, label]) => button(esc(label), { cls: 'sm quiet', attrs: `data-value="${esc(value)}"` })).join('')}</div></li>`).join('')}</ol>
+      <div class="incode"><h3>In your code</h3><p>Values typed by hand where a token would do, biggest first. Each fix uses your tokens, the ones you settle above.</p><slot name="causes"></slot></div></section>
     <section class="step"><header><span class="num">4</span><h2>Your system</h2><p>Your tokens after these choices: one scale per kind, one name, and what the old names point at. It redraws as you choose. Nothing is written to your files from here yet; copy the CSS to try it.</p></header><div class="result" data-result></div></section>
   </div>`;
 
