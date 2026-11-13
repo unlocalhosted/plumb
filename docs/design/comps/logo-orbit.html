@@ -35,10 +35,18 @@
   /* the orbits never move: centred, each at its angle; they only open (once their line arrives) and close */
   .o { transform-box: view-box; transform-origin: 60px 60px; }
   .o1 { transform: rotate(0deg); } .o2 { transform: rotate(60deg); } .o3 { transform: rotate(120deg); }
-  .o ellipse { cx: 60px; cy: 60px; rx: 56px; ry: .01px; fill: none; stroke: var(--guard); stroke-width: .6; stroke-dasharray: 2 1.6; stroke-linecap: round; opacity: 0;
+  .o ellipse { cx: 60px; cy: 60px; rx: 56px; ry: .01px; fill: none; opacity: 0;
     transition: ry 360ms cubic-bezier(.4, 0, .2, 1) var(--d, 0ms), opacity 120ms ease calc(340ms + var(--d, 0ms)); }
   .on .o ellipse { ry: 20px; opacity: 1; transition: opacity 120ms ease calc(880ms + var(--d, 0ms)), ry 760ms var(--open) calc(900ms + var(--d, 0ms)); }
   .back ellipse { stroke-opacity: .42; }
+  /* each orbit is one of plumber's box-model marks: margin (pink dots), padding (a violet hatched ribbon with its two
+     edges), radius (a pink-to-violet line), in the P's own colours */
+  .o .m { stroke: #f24a9f; stroke-width: 2; stroke-linecap: round; stroke-dasharray: 0 3.2; }
+  .o .p { stroke: url(#ribbon); stroke-width: 2.8; }
+  .o .pe { stroke: #7356f0; stroke-width: .45; }
+  .o .pe-in { rx: 54.6px; } .on .o .pe-in { ry: 18.6px; }
+  .o .pe-out { rx: 57.4px; } .on .o .pe-out { ry: 21.4px; }
+  .o .r { stroke: url(#pv); stroke-width: 1; }
 
   /* what each orbit carries, riding round it: plumber's own marks; drawn twice like the orbit, so on the far side it
      passes behind the P and on the near side in front */
@@ -68,6 +76,8 @@
       <!-- plumber's selection handle, and the pill with the 4 it measured -->
       <g id="handle"><rect x="-2" y="-2" width="4" height="4" rx=".9" fill="#fff" stroke="#2f86dc" stroke-width=".7"/></g>
       <g id="four"><rect x="-6" y="-4.2" width="12" height="8.4" rx="3" fill="#2f86dc"/><text x="0" y="2.3" text-anchor="middle" font-family="ui-monospace, Menlo" font-size="6.4" font-weight="700" fill="#fff">4</text></g>
+      <pattern id="ribbon" width="2.4" height="2.4" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="2.4" height="2.4" fill="#efeaff"/><rect width=".9" height="2.4" fill="#7356f0"/></pattern>
+      <linearGradient id="pv" gradientUnits="userSpaceOnUse" x1="10" y1="10" x2="110" y2="110"><stop offset="0" stop-color="#f24a9f"/><stop offset="1" stop-color="#7356f0"/></linearGradient>
       <!-- the construction's own pieces: a faint light hatch over the material, and the handle-points' small lift -->
       <pattern id="hatch" width="1.1" height="4" patternUnits="userSpaceOnUse"><rect width=".24" height="4" fill="#fff"/></pattern>
       <filter id="lift" x="-1" y="-1" width="3" height="3"><feDropShadow dx="0" dy=".25" stdDeviation=".3" flood-color="#1d1b17" flood-opacity=".25"/></filter>
@@ -75,14 +85,14 @@
     <!-- the guides, at rest on the mark's edges -->
     <path class="line l1"/><path class="line l2"/><path class="line l3"/>
     <!-- behind the P: every orbit whole and fainter, and what it carries -->
-    <g class="o o1 back"><ellipse/><use class="rider" href="#four" style="--from: 18%"/></g>
-    <g class="o o2 back"><ellipse/><use class="rider" href="#handle" style="--from: 52%"/></g>
-    <g class="o o3 back"><ellipse/><use class="rider" href="#handle" style="--from: 84%"/></g>
+    <g class="o o1 back"><ellipse class="m"/><use class="rider" href="#four" style="--from: 18%"/></g>
+    <g class="o o2 back"><ellipse class="r"/><use class="rider" href="#handle" style="--from: 52%"/></g>
+    <g class="o o3 back"><ellipse class="p"/><ellipse class="pe pe-in"/><ellipse class="pe pe-out"/><use class="rider" href="#handle" style="--from: 84%"/></g>
     <g class="mark" id="mark"></g>
     <!-- in front of the P: each orbit's near half, and its rider while it is on that half -->
-    <g class="o o1"><g clip-path="url(#near)"><ellipse/><use class="rider" href="#four" style="--from: 18%"/></g></g>
-    <g class="o o2"><g clip-path="url(#near)"><ellipse/><use class="rider" href="#handle" style="--from: 52%"/></g></g>
-    <g class="o o3"><g clip-path="url(#near)"><ellipse/><use class="rider" href="#handle" style="--from: 84%"/></g></g>
+    <g class="o o1"><g clip-path="url(#near)"><ellipse class="m"/><use class="rider" href="#four" style="--from: 18%"/></g></g>
+    <g class="o o2"><g clip-path="url(#near)"><ellipse class="r"/><use class="rider" href="#handle" style="--from: 52%"/></g></g>
+    <g class="o o3"><g clip-path="url(#near)"><ellipse class="p"/><ellipse class="pe pe-in"/><ellipse class="pe pe-out"/><use class="rider" href="#handle" style="--from: 84%"/></g></g>
   </svg>
   <p>Click to play: the guardrails become orbits, then guides again.</p>
 </div>
