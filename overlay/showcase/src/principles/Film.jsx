@@ -166,7 +166,7 @@ function burst(canvas, ox, oy) {
   requestAnimationFrame(tick);
 }
 
-export function Film({ Example, names, onSaid, chrome = true }) {
+export function Film({ Example, names, onSaid, chrome = true, start = true, onDone }) {
   const spec = Example.film;
   const [side, setSide] = useState('broken');
   const [playing, setPlaying] = useState(false);
@@ -185,7 +185,8 @@ export function Film({ Example, names, onSaid, chrome = true }) {
   useEffect(() => { import(/* @vite-ignore */ BOXMODEL).then((mod) => setIcons(mod.BLOCK_ICONS)).catch(() => {}); }, []);
 
   useEffect(() => {
-    if (still()) { onSaid?.(spec.say); return; }
+    if (!start) return; // a frame around the film (FilmPage's opening) says when it begins
+    if (still()) { onSaid?.(spec.say); onDone?.(); return; }
     const live = { on: true, timers: [] };
     const all = () => spec.instances(example());
     const boxes = () => { const at = local(example()); return all().map(at); };
@@ -256,10 +257,10 @@ export function Film({ Example, names, onSaid, chrome = true }) {
       setM(null); setChange(0); setCam({ k: 1, x: 0, y: 0 });
       await sleep(TIMING.out + 40, live);
       setFrame(null); // only once the camera is fully back
-      setPtr(null); setPlaying(false); onSaid?.(spec.say);
+      setPtr(null); setPlaying(false); onSaid?.(spec.say); onDone?.();
     })();
     return () => { live.on = false; live.timers.forEach(clearTimeout); try { all().forEach((el) => spec.set(el, false)); } catch {} };
-  }, [run]);
+  }, [run, start]);
 
   const k = cam.k, r = m?.read, tone = m?.tone, pushed = tone === 'sky' && r?.pushed?.some((p) => p.x1 - p.x0 > 0.5);
   // the lead place turns coral while it pushes; mint once it holds

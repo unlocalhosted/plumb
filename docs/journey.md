@@ -597,6 +597,12 @@
 - **Now:** one finding on crafting-ui, the three figures on the templates page, drawn from a three-item list written in the code. At phone width it fits (358 of 358 px). It is a fixed set the check cannot yet tell from a list; noted, not fixed. No before and after from a real app.
 - **Seen on the way:** the motion vocabulary page (7,274 elements) closed the browser tab during plumber's read.
 
+## The film opens and closes like a React Plumber film (2026-11-13)
+- **The itch:** the owner, on adding an opening title card and a closing mark card: "Yes, add them".
+- **What it does:** the film opens on the empty desk; "Craft № 42" and the principle's name rise in large in the middle, hold, then travel up to the corner and become the signature, and only then does the card rise in under it (the name never crosses the card). At the end the card and signature step back, React Plumber's mark travels from its corner to the middle and grows, its plumb bob swings and settles on its line, and the site's own line comes in under it: "A design review on every screen."
+- **Found on the way:** the name first landed 90 px left of centre. The measure took the text's boxes (each as wide as the 420 px column) for the text; it now measures the text runs themselves and lands within a pixel of the stage's centre (checked in the browser: 800 of 1600).
+- **The proof:** recorded at 1600 × 900, no console errors; the opening at 10 fps (the name travels clear before the card rises), the end card at full size. Clip: docs/media/film-42-bold-on-hover.mp4 (33 s).
+
 ## #42 as a React Plumber marketing film (2026-11-13)
 - **The itch:** the owner: "these videos will serve us marketing explainer videos for react plumber itself … we need some sort of watermark … and like sign of craft itself … make the example follow our design language … the delight particle thing is thrown randomly on last tab … think of them as video for marketing."
 - **Found on the way:** the branch this work was on was 424 commits behind main, without the toy set, the soft blocks or the site's faces. The film work moved to its own worktree from main (branch `showcase-film`), its seven commits carried over with nothing of main's lost (checked line by line).
