@@ -271,6 +271,25 @@ Not built, and why: most of these guides say how to build with popover, anchor p
 
 Run (2026-11-14): broken page, 34 of 37 speak (two need a real opened modal; spinner-silent does not speak, cause not found). crafting-ui: breadcrumb-list on every page and tab-stops on /icons, both true; pressed-on-action gave 3 false hits (selectable icons named Copy, Close, Download), fixed. glyphschool, glyphwrite: 0. Forms and components together, 70 rules over 10,827 elements: 60 ms.
 
+## 4f. The batch of 2026-11-14: 34 HTML checks
+
+Source: `modern-web-guidance` 1.0.0, guide `html` (82 dos and don'ts, nine sections). Pack `html`, page rules, files `overlay/src/pack-html.js` (one table) and `overlay/src/html-rules.js`.
+
+| Section | Rules |
+|---|---|
+| 1. Semantics | page-lang, viewport-meta, zoom-disabled, quirks-mode, landmark-main, banner-many, h1-missing, list-fake, list-structure, pointer-generic, link-as-button, boolean-value |
+| 2. Grouping | figure-caption, pre-no-code, pre-scroll-keyboard, pre-scroll-region |
+| 3. Priority | img-size, lazy-above-fold, eager-below-fold, fetchpriority-overused, hero-priority, img-oversized, picture-img |
+| 5. Disclosures | summary-first, summary-nested-control, summary-no-cue, title-tooltip |
+| 8. Media | video-size, video-poster, video-captions, background-video, autoplay-sound, iframe-hidden |
+| 9. Interactivity | inline-handler |
+
+Not built, and why: what the other packs say already (§1 names, heading order, roles; §4 dialogs; §6 tabindex and order; §7 autocomplete); blockquote, cite and code semantics (meaning, not markup); focus management (behaviour over time); inline styles (every React app has them for good reason).
+
+A page-wide rule is said on the first element the engine judges (it judges only what comes from the project's source), remembered across passes.
+
+Run (2026-11-14): broken page, 27 of 34 speak; 7 need a different page and are unproven. Real pages: 16 findings, all true (13 title tooltips on glyphwrite; img-size, eager-below-fold and figure-caption on crafting-ui). Four packs, 104 rules, 10,827 elements: 113 ms.
+
 ## 5. Order, and why not the signed-off one
 
 The foundations put packs at layer 5, after the snapshot (3) and pure rules in a worker (4), so that a new page pack

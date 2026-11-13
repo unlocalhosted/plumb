@@ -15,12 +15,15 @@ import { FORMS } from './pack-forms.js';
 import { FORMS_RULES } from './forms-rules.js';
 import { COMPONENTS } from './pack-components.js';
 import { COMPONENTS_RULES } from './components-rules.js';
+import { HTML } from './pack-html.js';
+import { HTML_RULES } from './html-rules.js';
 
 export const PACKS = [
   { id: 'craft', title: 'Craft', ground: 'the craft rules (docs/craft/rules.md)', runs: 'page', rules: RULES },
   { ...A11Y, rules: A11Y_RULES },
   { ...FORMS, rules: FORMS_RULES },
   { ...COMPONENTS, rules: COMPONENTS_RULES },
+  { ...HTML, rules: HTML_RULES },
 ];
 
 // which pack a rule belongs to, by its id: craft/… and habits/… are craft's, the rest name their pack
