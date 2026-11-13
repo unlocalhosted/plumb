@@ -68,6 +68,13 @@ const around = async (page, marks, selectors) => {
 // (a read that lands mid-reload is read again once the page is back)
 const strip = async (page) => { for (let i = 0; ; i++) { try { return await readStrip(page); } catch (e) { if (i > 20 || !/context was destroyed|navigation/i.test(e.message)) throw e; await page.waitForLoadState('load').catch(() => {}); await page.waitForTimeout(250); } } };
 // the strip once it is showing (a write's reload hides it for a moment)
+// a write may make the dev server reload the page, a little after the file has changed: mark the page before it, and
+// once the file is written, wait out the reload if one comes (keys pressed into a page about to go are lost)
+const marked = (page) => page.evaluate(() => { window.__mark = true; });
+const settled = async (page) => {
+  if (await page.waitForFunction(() => !window.__mark, null, { timeout: 2500 }).then(() => true, () => false))
+    await page.waitForFunction(() => document.querySelector('plumb-overlay')?.shadowRoot.querySelector('.dock')?.dataset.state === 'ready', null, { timeout: 60000 });
+};
 const shown = async (page) => { for (let i = 0; i < 80; i++) { const s = await strip(page); if (s) return s; await page.waitForTimeout(250); } return null; };
 const readStrip = (page) => page.evaluate(() => {
   const root = document.querySelector('plumb-overlay')?.shadowRoot, tt = root?.querySelector('.tt');
@@ -123,9 +130,11 @@ test('the timeline shows each change as a tick in its step, and undoes one chang
   await page.waitForTimeout(300); // the playhead travels
   assert.ok((await strip(page)).headOnTick, 'the playhead is over the pointed tick');
   assert.ok(await around(page, (await strip(page)).marks, ['#b']), 'the outline travels to the middle change\'s element');
+  await marked(page);
   await page.keyboard.press('Backspace');
   await page.waitForFunction(() => document.querySelector('plumb-overlay')?.shadowRoot?.querySelectorAll('.tt .tt-tick[data-i]').length === 4);
   assert.equal(await app.read(), APP.replace('gap-2', 'gap-3').replace('mt-[10px]', 'mt-2.5'));
+  await settled(page);
   // the undo may reload the page: the strip, once it shows again
   s = await shown(page);
   assert.deepEqual(s.steps, [{ name: 'Spacing', ticks: ['live', 'undone', 'live'] }, { name: 'Undo', ticks: ['live+undo'] }]);
