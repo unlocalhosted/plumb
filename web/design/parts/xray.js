@@ -344,7 +344,7 @@ export function mount(host, root, css) {
   };
   // after a drag or a list pick elsewhere, the row shows where the value is now
   const resync = () => { if (!inHand) return; const i = inHand.S.indexOf(nearest(inHand.S, read(inHand.el, inHand.prop))); if (i !== inHand.p.at()) inHand.p.set(i); };
-  stage.addEventListener('pointerover', (e) => { if (held) return; const t = e.target.closest?.('.xr-body [data-prop]'); if (t && shown) hold(shown, t.dataset.prop); });
+  // (pointing at a number in the card doesn't change what the row holds: crossing the card to reach the row would)
   // two fingers over the element or the card: left and right choose sides or value, up and down change it
   // (the fingers' own direction: up is bigger, right is toward the value)
   stage.addEventListener('wheel', (e) => {
@@ -352,20 +352,27 @@ export function mount(host, root, css) {
     if (!e.composedPath().some((n) => n === card || n === shown) && !(zone && shown)) return;
     e.preventDefault();
     const h = inHand, dx = -(e.deltaMode ? e.deltaX * 16 : e.deltaX), dy = -(e.deltaMode ? e.deltaY * 16 : e.deltaY);
-    // one gesture, one direction: the first clear movement decides it, and the other axis is ignored until the
-    // fingers rest (so a sideways swipe's small drift up or down never undoes it)
+    // one gesture, one direction, decided from its first few px together (a swipe's first event is often a pixel or
+    // two of drift); the other axis is then ignored until the fingers rest
     clearTimeout(h.idle);
-    h.idle = setTimeout(() => { h.axis = null; h.ty = 0; if (h.tx) { h.tx = 0; thumbAt(0); } }, 180);
-    if (!h.axis && Math.abs(dx) + Math.abs(dy) > 1.5) h.axis = Math.abs(dx) > Math.abs(dy) ? 'x' : 'y';
+    h.idle = setTimeout(() => { h.axis = null; h.ax = h.ay = 0; h.ty = 0; h.switched = false; if (h.tx) { h.tx = 0; thumbAt(0); } }, 200);
+    if (!h.axis) { h.ax = (h.ax ?? 0) + dx; h.ay = (h.ay ?? 0) + dy; if (Math.abs(h.ax) + Math.abs(h.ay) < 6) return; h.axis = Math.abs(h.ax) > Math.abs(h.ay) ? 'x' : 'y'; }
     if (h.axis === 'x') {
-      if (!h.sided) return;
+      // one switch per swipe: the swipe's own coasting never throws it back
+      if (!h.sided || h.switched) return;
       h.tx += dx;
-      const toward = h.seg === 'mode' ? 1 : -1, pull = (h.tx * toward) / 70;
-      if (pull >= 1) {
-        // past the middle and on: it snaps over, with a spring, and the next part of the swipe starts fresh
-        h.seg = h.seg === 'mode' ? 'value' : 'mode'; h.tx = 0; showSeg(); thumbAt(0);
-        h.p.row.querySelector('.thumb').animate?.([{ scale: '1.08 0.9' }, { scale: '0.97 1.04' }, { scale: '1 1' }], { duration: 380, easing: 'cubic-bezier(0.34, 1.56, 0.64, 1)' });
-      } else thumbAt(pull);
+      const toward = h.seg === 'mode' ? 1 : -1, raw = h.tx * toward;
+      if (raw >= 44) {
+        // the detent: past it, the thumb lets go of the hand and clicks the rest of the way, on a spring, with a squash
+        h.seg = h.seg === 'mode' ? 'value' : 'mode'; h.tx = 0; h.switched = true; showSeg(); thumbAt(0);
+        const row = h.p.row, t = row.querySelector('.thumb');
+        t.animate?.([{ scale: '1.12 0.86' }, { scale: '0.96 1.05', offset: 0.45 }, { scale: '1.01 0.99', offset: 0.75 }, { scale: '1 1' }], { duration: 420, easing: 'ease-out' });
+        const now = row.querySelector(h.seg === 'mode' ? '.side' : '.drum');
+        now?.animate?.([{ scale: 0.9 }, { scale: 1.06, offset: 0.5 }, { scale: 1 }], { duration: 320, easing: 'cubic-bezier(0.34, 1.56, 0.64, 1)' });
+      } else {
+        // before it: the thumb follows with resistance (the further, the less it gives), up to a third of the way
+        thumbAt(raw > 0 ? 0.36 * (1 - Math.exp(-raw / 22)) : Math.max(-0.12, raw / 160));
+      }
       return;
     }
     if (h.axis !== 'y') return;
