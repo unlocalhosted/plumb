@@ -146,7 +146,11 @@
 .sc-play[data-fixed='true'] .sc-play-btn svg { translate: 1.08px 0; } /* its weight (x 11 of 24) on the circle's centre */
 
 /* the big tile: the video drawn larger, to fill it */
-.ins-card[data-size='big'] .sc-video { width: 440px; height: 260px; border-radius: 26px; }
+/* the big tile is the player: the video fills the stage, clear of the label above and the switch below */
+.ins-card[data-size='big'] .sc { padding: 50px 16px 54px; place-items: stretch; }
+.ins-card[data-size='big'] .sc-video { width: auto; height: auto; min-height: 0; border-radius: 18px; }
+.ins-card[data-size='big'] .sc-vid-title { left: 20px; top: 18px; font-size: 16px; }
+.ins-card[data-size='big'] .sc-vid-bar { left: 20px; right: 20px; bottom: 18px; gap: 12px; } .ins-card[data-size='big'] .sc-vid-bar small { font-size: 12px; } .ins-card[data-size='big'] .sc-vid-bar i { height: 4px; }
 .ins-card[data-size='big'] .sc-play-btn { width: 96px; height: 96px; }
 .ins-card[data-size='big'] .sc-play-btn svg { width: 42px; height: 42px; translate: -1.75px 0; }
 .ins-card[data-size='big'] .sc-play[data-fixed='true'] .sc-play-btn svg { translate: 1.75px 0; }
