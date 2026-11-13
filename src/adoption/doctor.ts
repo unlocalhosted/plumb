@@ -91,7 +91,7 @@ export async function doctorVerbose(root: string, configPath?: string): Promise<
     const compared = starts.filter(start => typeof start.matched === 'boolean'), differed = compared.filter(start => start.matched === false);
     line('Start-up', !differed.length, `${count(starts.length, 'start')}, ${compared.length} compared, ${differed.length} differed`,
       differed.length ? 'Report it: .plumber/cache/kept/warm.jsonl' : 'No change needed.', false);
-  } catch { line('Start-up', true, 'no start checked yet', 'No change needed.'); }
+  } catch { /* no dev server has started here: nothing to say, and no row (doctor's rows are what a person can act on) */ }
   const ready = await readiness({ root, ...(configPath === undefined ? {} : { config: configPath }), ...(checked ? { report: async () => checked! } : {}) });
   ok &&= !blocking(ready);
   // One row per fact: value, then how it is known and the first evidence line (R8).
