@@ -41,7 +41,9 @@ const C = { pink: ['#ff6fb5', '#f24a9f', '#d8338a'], ink: ['#3a3733', '#1d1b17',
 // on a dark ground the ink parts turn to paper, so the mark keeps its whole shape
 let DARK = false; const hueOf = (h) => (DARK && h === 'ink' ? 'paper' : h);
 // a box with its own corner radii [top-left, top-right, bottom-right, bottom-left]
-const R = (x, y, w, h, [a, b, c, d]) => `M${x + a} ${y}H${x + w - b}${b ? `A${b} ${b} 0 0 1 ${x + w} ${y + b}` : ''}V${y + h - c}${c ? `A${c} ${c} 0 0 1 ${x + w - c} ${y + h}` : ''}H${x + d}${d ? `A${d} ${d} 0 0 1 ${x} ${y + h - d}` : ''}V${y + a}${a ? `A${a} ${a} 0 0 1 ${x + a} ${y}` : ''}Z`;
+// corners that don't fit their side are scaled down together, the way CSS scales border-radius (no arc ever overshoots)
+const R = (x, y, w, h, radii) => { const f = Math.min(1, w / (radii[0] + radii[1] || 1), w / (radii[3] + radii[2] || 1), h / (radii[0] + radii[3] || 1), h / (radii[1] + radii[2] || 1)); return R0(x, y, w, h, radii.map((r) => r * f)); };
+const R0 = (x, y, w, h, [a, b, c, d]) => `M${x + a} ${y}H${x + w - b}${b ? `A${b} ${b} 0 0 1 ${x + w} ${y + b}` : ''}V${y + h - c}${c ? `A${c} ${c} 0 0 1 ${x + w - c} ${y + h}` : ''}H${x + d}${d ? `A${d} ${d} 0 0 1 ${x} ${y + h - d}` : ''}V${y + a}${a ? `A${a} ${a} 0 0 1 ${x + a} ${y}` : ''}Z`;
 let uid = 0;
 // a part, lit: a vertical gradient (lighter at the top), and a fine highlight along its top edge
 function part(d, hue, lit, id = `p${uid++}`) {
