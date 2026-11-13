@@ -48,6 +48,10 @@ export const XRAY_CSS = `
     font: 600 10.5px/1 var(--pl-mono); font-variant-numeric: tabular-nums; white-space: nowrap; box-shadow: 0 0 0 2px var(--pl-bg-surface); animation: pl-pop 260ms var(--pl-spring-pop) 80ms both; }
 
   /* the card: paper, lifted, travelling to its element on the overlay's spring */
+  /* the card's words come in two colours only, and nothing is smaller than 11px (owner, 2026-11-13: "the text is muddy
+     and merging in the background"): values and names in primary; labels, units and paths in a secondary lifted toward
+     primary, so a label reads at a glance on the card (about 9:1 dark, 10:1 light) instead of sinking into it */
+  .xr-card, .xr-hand, .xr-list, .xr-res, .xr-note, .xr-live { --xr-label: color-mix(in oklab, var(--pl-text-secondary) 45%, var(--pl-text-primary)); }
   .xr-card { position: absolute; left: 0; top: 0; width: ${CARD_W}px; box-sizing: border-box; padding: 14px 14px 12px; border-radius: 18px;
     background: var(--pl-bg-surface); color: var(--pl-text-primary); box-shadow: var(--pl-shadow-card); font: 500 12px/16px var(--pl-sans);
     transition: transform 420ms var(--pl-spring); }
@@ -61,25 +65,27 @@ export const XRAY_CSS = `
   .xr-head .toy { grid-row: span 2; width: 30px; height: 30px; }
   .xr-head .toy svg { width: 100%; height: 100%; display: block; overflow: visible; }
   .xr-head b { font: 700 14px/18px var(--pl-sans); letter-spacing: -0.01em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .xr-head code { font: 500 11px/14px var(--pl-mono); color: var(--pl-text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; direction: rtl; text-align: left; }
-  .xr-head code.none { color: var(--pl-text-tertiary, var(--pl-text-secondary)); direction: ltr; }
+  .xr-head code { font: 500 11px/14px var(--pl-mono); color: var(--xr-label); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; direction: rtl; text-align: left; }
+  .xr-head code.none { color: var(--xr-label); direction: ltr; }
 
   /* the box, drawn small: each ring in its pattern, each side's value on it */
   .xr-box { position: relative; margin: 12px 0 4px; height: 148px; border-radius: 14px; background: var(--pl-bg-inset); box-shadow: var(--pl-shadow-well); }
   .xr-box .ring { position: absolute; border-radius: 12px; }
   .xr-box .m { inset: 8px; border: 1.5px dashed color-mix(in oklab, var(--pl-block-margin) 85%, var(--pl-text-primary)); background: radial-gradient(color-mix(in oklab, var(--pl-block-margin) 85%, transparent) 1.25px, transparent 1.7px) 0 0 / 6px 6px; }
   .xr-box .p { inset: 30px 38px; border-radius: 10px; background: repeating-linear-gradient(-45deg, color-mix(in oklab, var(--pl-block-padding) 55%, transparent) 0 2px, transparent 2px 5px), color-mix(in oklab, var(--pl-block-padding) 10%, var(--pl-bg-surface)); box-shadow: 0 0 0 1.5px var(--c); }
-  .xr-box .c { inset: 56px 70px; border-radius: 6px; display: grid; place-items: center; background: var(--pl-bg-surface); box-shadow: 0 1px 2px rgb(0 0 0 / .12); font: 600 10.5px/1 var(--pl-mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .xr-box .c { inset: 56px 70px; border-radius: 6px; display: grid; place-items: center; background: var(--pl-bg-surface); box-shadow: 0 1px 2px rgb(0 0 0 / .12); font: 600 11px/1 var(--pl-mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
   .xr-box .v { position: absolute; translate: -50% -50%; display: inline-flex; gap: 3px; align-items: baseline; padding: 2px 5px; border-radius: 99px; white-space: nowrap;
-    font: 600 10.5px/1.1 var(--pl-mono); font-variant-numeric: tabular-nums; background: var(--pl-bg-surface); box-shadow: 0 0 0 1px color-mix(in oklab, var(--c) 45%, transparent); color: var(--pl-text-primary); }
+    font: 600 11px/1.1 var(--pl-mono); font-variant-numeric: tabular-nums; background: var(--pl-bg-surface); box-shadow: 0 0 0 1px color-mix(in oklab, var(--c) 45%, transparent); color: var(--pl-text-primary); }
   .xr-box .v i { font-style: normal; color: var(--c); }
-  .xr-box .v.zero { box-shadow: 0 0 0 1px var(--pl-border-default); color: var(--pl-text-secondary); }
-  .xr-box .lab { position: absolute; font: 600 9.5px/1 var(--pl-sans); letter-spacing: .02em; text-transform: uppercase; color: var(--pl-text-secondary); }
+  .xr-box .v.zero { box-shadow: 0 0 0 1px var(--pl-border-default); color: var(--xr-label); }
+  /* a name on a pattern sits on something solid, like the values do (nothing crosses text): a small tag keyed in its block's colour */
+  .xr-box .lab { position: absolute; padding: 2px 5px; border-radius: var(--pl-radius-tag, 4px); font: 600 11px/1 var(--pl-sans);
+    color: var(--xr-label); background: var(--pl-bg-surface); box-shadow: 0 0 0 1px color-mix(in oklab, var(--k) 45%, transparent); }
 
   .xr-rows { display: grid; gap: 2px; margin-top: 8px; }
   .xr-row { display: grid; grid-template-columns: 22px 58px 1fr; gap: 8px; align-items: center; min-height: 30px; padding: 0 4px; border-radius: 10px; animation: xr-row 360ms var(--pl-ease-out) both; }
   .xr-row .toy { width: 22px; height: 22px; } .xr-row .toy svg { width: 100%; height: 100%; display: block; overflow: visible; }
-  .xr-row .k { color: var(--pl-text-secondary); font-weight: 600; }
+  .xr-row .k { color: var(--xr-label); font-weight: 600; }
   .xr-row .val { display: flex; flex-wrap: nowrap; white-space: nowrap; gap: 4px 6px; align-items: center; font: 500 12px/16px var(--pl-mono); font-variant-numeric: tabular-nums; }
   @keyframes xr-row { from { opacity: 0; translate: 0 4px; } }
   .xr-tok { display: inline-flex; align-items: center; height: 20px; padding: 0 7px; border-radius: 99px; font: 600 11px/1 var(--pl-sans); }
@@ -216,8 +222,8 @@ export function xray(el, { tokenOf, origin = { left: 0, top: 0 }, room, source, 
   const chip = (prop, v, txt = v.n) => `<span class="ch n" data-prop="${prop}">${txt}</span>`;
   const pc = pj.some((v) => v.off) ? 'var(--pl-off)' : tokenOf ? 'var(--pl-on)' : 'var(--pl-instrument)';
   const box = `<div class="xr-box">
-      <span class="ring m"></span><span class="lab" style="left:14px;top:13px">margin</span>
-      <span class="ring p" style="--c:${pc}"></span><span class="lab" style="left:44px;top:35px">padding</span>
+      <span class="ring m"></span><span class="lab" style="left:13px;top:12px;--k:var(--pl-block-margin)">Margin</span>
+      <span class="ring p" style="--c:${pc}"></span><span class="lab" style="left:43px;top:34px;--k:var(--pl-block-padding)">Padding</span>
       <span class="ring c">${Math.round(r.width - b[1] - b[3] - p[1] - p[3])} × ${Math.round(r.height - b[0] - b[2] - p[0] - p[2])}</span>
       ${side(mj[0], '50%', '19px', 'margin-top')}${side(mj[1], 'calc(100% - 23px)', '50%', 'margin-right')}${side(mj[2], '50%', 'calc(100% - 19px)', 'margin-bottom')}${side(mj[3], '23px', '50%', 'margin-left')}
       ${side(pj[0], '50%', '43px', 'padding-top')}${side(pj[1], 'calc(100% - 54px)', '50%', 'padding-right')}${side(pj[2], '50%', 'calc(100% - 43px)', 'padding-bottom')}${side(pj[3], '54px', '50%', 'padding-left')}
@@ -226,11 +232,11 @@ export function xray(el, { tokenOf, origin = { left: 0, top: 0 }, room, source, 
   const pass = ratio >= (big ? 3 : 4.5);
   const fam = cs.fontFamily.split(',')[0].replace(/["']/g, '').trim();
   const rows = [
-    ['size', 'Size', `${chip('width', judge('size', r.width), Math.round(r.width))}<span style="color:var(--pl-text-secondary)">×</span>${chip('height', judge('size', r.height), Math.round(r.height))}`],
+    ['size', 'Size', `${chip('width', judge('size', r.width), Math.round(r.width))}<span style="color:var(--xr-label)">×</span>${chip('height', judge('size', r.height), Math.round(r.height))}`],
     ['corner', 'Corner', `${chip('border-radius', rj, rad > 500 ? 'full' : rj.n)}${tok(rj)}`],
     // a row or a grid always has its gap here, even at 0, so a gap can be added from the card
     gj || /flex|grid/.test(cs.display) ? ['gap', 'Gap', (() => { const v = gj ?? judge('spacing', px(cs.columnGap) || px(cs.rowGap)); return `${chip('gap', v, v.n)}${tok(v)}`; })()] : null,
-    ['type', 'Type', `${chip('font-size', tj, r1(fs))}<span style="color:var(--pl-text-secondary)">/${r1(lh)} · ${cs.fontWeight}</span>${tok(tj)}`],
+    ['type', 'Type', `${chip('font-size', tj, r1(fs))}<span style="color:var(--xr-label)">/${r1(lh)} · ${cs.fontWeight}</span>${tok(tj)}`],
     ['text colour', 'Colour', `<span class="xr-chip" style="color:${hex(fg)};background:${hex(bg)};font-family:${esc(cs.fontFamily)};font-weight:${cs.fontWeight}" title="${hex(fg)} on ${hex(bg)}">Aa</span>${ratio.toFixed(1)}<span class="xr-tok ${pass ? 'on' : 'off'}"><span class="xr-aa">${pass ? 'AA' : 'Below AA'}</span></span>`],
   ].filter(Boolean);
   // a picture has no words: its rows are its shape and how it fills its box, not type and colour
@@ -239,7 +245,7 @@ export function xray(el, { tokenOf, origin = { left: 0, top: 0 }, room, source, 
     const nice = [[1, 1], [4, 3], [3, 2], [16, 9], [3, 4], [2, 3], [9, 16]].find(([a, b2]) => Math.abs(w0 / h0 - a / b2) < 0.02);
     rows.splice(rows.findIndex((x) => x[0] === 'type'), 2,
       ['ratio', 'Ratio', nice ? `${nice[0]}:${nice[1]}<span class="xr-tok on">aspect-${nice[0] === nice[1] ? 'square' : nice.join('/')}</span>` : `${w0 / d}:${h0 / d}<span class="xr-tok off">no ratio</span>`],
-      ['size', 'Fit', `${esc(cs.objectFit)}<span style="color:var(--pl-text-secondary)"> · ${esc(cs.objectPosition)}</span>`]);
+      ['size', 'Fit', `${esc(cs.objectFit)}<span style="color:var(--xr-label)"> · ${esc(cs.objectPosition)}</span>`]);
   }
   const card = `<div class="xr-head"><i class="toy">${toyOf(partOf(el))}</i><b>${esc(name ?? el.localName)}</b>${source ? `<code>${esc(source)}</code>` : '<code class="none">not tied to a line yet</code>'}</div>
     ${box}
