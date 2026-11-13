@@ -35,6 +35,13 @@ export const XRAY_CSS = `
   .xr svg.xr-on { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
   .xr .xr-draw { animation: xr-in 260ms var(--pl-ease-out) both; }
   @keyframes xr-in { from { opacity: 0; } }
+  .xr .xr-zone { animation: xr-in 160ms var(--pl-ease-out) both; }
+  .xr-say { position: absolute; translate: -50% 0; z-index: 2; display: inline-flex; align-items: center; gap: 5px; height: 24px; padding: 0 5px 0 9px; border-radius: 99px; white-space: nowrap;
+    background: var(--pl-bg-surface); color: var(--pl-text-primary); box-shadow: var(--pl-shadow-tag); font: 500 11.5px/1 var(--pl-mono); font-variant-numeric: tabular-nums; animation: pl-pop 220ms var(--pl-spring-pop) both; }
+  .xr-say b { font: 600 11.5px/1 var(--pl-sans); }
+  .xr-say i { font: 600 10.5px/1 var(--pl-sans); font-style: normal; padding: 3px 6px; border-radius: 99px; }
+  .xr-say i.on { background: var(--pl-mint-soft); color: var(--pl-mint-ink); } .xr-say i.off { background: var(--pl-coral-soft); color: var(--pl-coral-ink); }
+  .xr-say kbd { display: inline-grid; place-items: center; min-width: 18px; height: 18px; padding: 0 3px; border-radius: 6px; font: 600 11px/1 var(--pl-sans); background: var(--pl-bg-inset); box-shadow: inset 0 -1px 0 var(--pl-border-default), 0 0 0 1px var(--pl-border-default); }
   .xr .ruler { font: 600 10.5px/1 var(--pl-mono); font-variant-numeric: tabular-nums; }
   .xr .ruler-pill { position: absolute; translate: -50% -50%; padding: 3px 6px; border-radius: 99px; background: var(--pl-sky-ink); color: #fff;
     font: 600 10.5px/1 var(--pl-mono); font-variant-numeric: tabular-nums; white-space: nowrap; box-shadow: 0 0 0 2px var(--pl-bg-surface); animation: pl-pop 260ms var(--pl-spring-pop) 80ms both; }
@@ -107,7 +114,7 @@ const lum = ([r, g, b]) => [r, g, b].map((v) => { v /= 255; return v <= 0.03928 
 const contrast = (a, b) => { const [x, y] = [lum(a), lum(b)].sort((m, n) => n - m); return (x + 0.05) / (y + 0.05); };
 
 /** The X-ray of one element: the drawing on it and the card beside it, as html for a positioned layer. */
-export function xray(el, { tokenOf, origin = { left: 0, top: 0 }, room, source, name, fresh = false } = {}) {
+export function xray(el, { tokenOf, origin = { left: 0, top: 0 }, room, source, name, fresh = false, zone = null } = {}) {
   const cs = getComputedStyle(el), R = el.getBoundingClientRect();
   const r = { left: R.left - origin.left, top: R.top - origin.top, right: R.right - origin.left, bottom: R.bottom - origin.top, width: R.width, height: R.height };
   room ??= { left: 8, top: 8, right: innerWidth - origin.left - 8, bottom: innerHeight - origin.top - 8 };
@@ -161,9 +168,16 @@ export function xray(el, { tokenOf, origin = { left: 0, top: 0 }, room, source, 
   const above = r.top - m[0] - 12, beside = r.right + m[1] + 12;
   const tick = 'stroke="var(--pl-sky)" stroke-width="1.25"';
   draw += `<path d="M${r1(r.left)} ${r1(above)}H${r1(r.right)}M${r1(r.left)} ${r1(above - 4)}v8M${r1(r.right)} ${r1(above - 4)}v8M${r1(beside)} ${r1(r.top)}V${r1(r.bottom)}M${r1(beside - 4)} ${r1(r.top)}h8M${r1(beside - 4)} ${r1(r.bottom)}h8" ${tick} fill="none"/>`;
+  // the part in hand: drawn stronger, with one pill that says it and the key that changes it
+  let said = '';
+  if (zone) {
+    const zj = judge(zone.family, zone.n), zx = zone.x - origin.left, zy = zone.y - origin.top;
+    draw += `<rect class="xr-zone" x="${r1(zx)}" y="${r1(zy)}" width="${r1(zone.w)}" height="${r1(zone.h)}" rx="${zone.family === 'radius' ? 4 : 2}" fill="color-mix(in oklab, ${zj.c} 22%, transparent)" stroke="${zj.c}" stroke-width="2"/>`;
+    said = `<span class="xr-say" style="left:${r1(zx + zone.w / 2)}px;top:${r1(zy + zone.h + 8)}px"><b>${esc(zone.said)}</b> ${zj.n}${zj.t ? ` <i class="on">${esc(zj.t)}</i>` : zj.off ? ' <i class="off">off scale</i>' : ''} <kbd>⇧</kbd></span>`;
+  }
   const wSz = sizing(el, cs, 'w'), hSz = sizing(el, cs, 'h');
   const pills = `<span class="ruler-pill" style="left:${r1(r.left + r.width / 2)}px;top:${r1(above)}px">${esc(wSz)}</span>`
-    + `<span class="ruler-pill" style="left:${r1(beside)}px;top:${r1(r.top + r.height / 2)}px">${esc(hSz)}</span>`;
+    + `<span class="ruler-pill" style="left:${r1(beside)}px;top:${r1(r.top + r.height / 2)}px">${esc(hSz)}</span>` + said;
 
   // ── the card ──
   const tok = (v) => (v.zero ? '' : v.on ? `<span class="xr-tok on">${esc(v.t)}</span>` : v.off ? '<span class="xr-tok off">off scale</span>' : '');
@@ -201,3 +215,23 @@ export function xray(el, { tokenOf, origin = { left: 0, top: 0 }, room, source, 
     card, at: { x: Math.round(cx), y: Math.round(cy) }, fresh,
   };
 }
+
+/* The parts of an element you can point at, each a property you can change: a padding side, a gap, a corner, the
+ * words. Viewport rects, smallest first, so the pointer finds the most particular one. */
+export function zonesOf(el) {
+  const cs = getComputedStyle(el), r = el.getBoundingClientRect();
+  const b = SIDES.map((s) => (cs.getPropertyValue(`border-${s}-style`) === 'none' ? 0 : px(cs.getPropertyValue(`border-${s}-width`))));
+  const p = SIDES.map((s) => px(cs.getPropertyValue(`padding-${s}`)));
+  const ix = r.left + b[3], iy = r.top + b[0], iw = r.width - b[1] - b[3], ih = r.height - b[0] - b[2];
+  const out = [];
+  const add = (z) => { if (z.w > 0.5 && z.h > 0.5) out.push(z); };
+  const rad = px(cs.borderTopLeftRadius);
+  if (rad > 1) { const k = Math.max(10, Math.min(rad, r.width / 2, r.height / 2)); [[r.left, r.top], [r.right - k, r.top], [r.right - k, r.bottom - k], [r.left, r.bottom - k]].forEach(([x, y]) => add({ prop: 'border-radius', family: 'radius', toy: 'corner', said: 'Corner', n: rad, x, y, w: k, h: k })); }
+  const pad = [[ix, iy, iw, p[0]], [ix + iw - p[1], iy + p[0], p[1], ih - p[0] - p[2]], [ix, iy + ih - p[2], iw, p[2]], [ix, iy + p[0], p[3], ih - p[0] - p[2]]];
+  pad.forEach(([x, y, w, h], i) => add({ prop: `padding-${SIDES[i]}`, side: SIDES[i], family: 'spacing', toy: 'padding', said: `Padding ${SIDES[i]}`, n: p[i], x, y, w, h }));
+  for (const g of gaps(el, cs)) add({ prop: g.col ? 'row-gap' : 'column-gap', family: 'spacing', toy: 'gap', said: 'Gap', n: g.n, x: g.x, y: g.y, w: g.w, h: g.h, col: g.col });
+  const words = [...el.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim());
+  if (words) add({ prop: 'font-size', family: 'type', toy: 'type', said: 'Text size', n: px(cs.fontSize), x: ix + p[3], y: iy + p[0], w: iw - p[1] - p[3], h: ih - p[0] - p[2] });
+  return out;
+}
+export const zoneAt = (zones, x, y) => zones.filter((z) => x >= z.x && x <= z.x + z.w && y >= z.y && y <= z.y + z.h).sort((a, b) => a.w * a.h - b.w * b.h)[0] ?? null;

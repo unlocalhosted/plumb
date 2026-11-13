@@ -3,7 +3,9 @@
 // theme scale so each value is judged: mint on the scale, coral off it.
 import { LANGUAGE_CSS } from '../../../overlay/src/language.js';
 import { TOY_DEFS } from '../../../overlay/src/toys.js';
-import { XRAY_CSS, xray } from '../../../overlay/src/xray.js';
+import { XRAY_CSS, xray, zonesOf, zoneAt } from '../../../overlay/src/xray.js';
+import { PICKER_CSS, picker } from '../../../overlay/src/picker.js';
+import { burst } from '../../../overlay/src/burst.js';
 
 // someone's theme (Tailwind's): spacing, radius and type steps in px
 const SCALE = {
@@ -23,12 +25,13 @@ const NAMES = {
 
 export function mount(host, root, css) {
   const people = [['MA', 'Mara Ellis', 'mara@shoreline.co', 'Owner', '#ffd3cd'], ['JK', 'Jun Kato', 'jun@shoreline.co', 'Editor', '#c5e6fd'], ['SR', 'Sami Reyes', 'sami@shoreline.co', 'Viewer', '#e3dcff']];
-  root.innerHTML = `<style>${css}${LANGUAGE_CSS}${XRAY_CSS}
+  root.innerHTML = `<style>${css}${LANGUAGE_CSS}${XRAY_CSS}${PICKER_CSS}
     :host { display: block; font-family: var(--pl-sans); color: var(--pl-text-primary); }
     h2 { margin: 44px 0 6px; font: 600 20px/28px var(--pl-sans); letter-spacing: -0.01em; }
     h2 + p, .prose p { margin: 0 0 10px; font: 400 14px/22px var(--pl-sans); color: var(--pl-text-secondary); max-width: 680px; }
     .prose b { color: var(--pl-text-primary); font-weight: 600; }
     .stage { position: relative; margin-top: 14px; min-height: 620px; border-radius: 22px; background: #f4f4f6; overflow: hidden; display: grid; align-items: center; padding: 72px 360px 72px 72px; }
+    .stage .hint kbd { font: 600 11px/1 var(--pl-sans); padding: 2px 5px; border-radius: 5px; background: #fff; box-shadow: 0 0 0 1px #d8d8de; }
     .stage .hint { position: absolute; left: 0; right: 0; bottom: 18px; margin: 0; text-align: center; font: 500 12.5px/1 var(--pl-sans); color: #6b6b75; }
     .stage[data-pinned] .hint b { color: var(--pl-pink); }
     .xr-card[hidden] { display: block; opacity: 0; }
@@ -49,13 +52,34 @@ export function mount(host, root, css) {
     .app .foot { display: flex; justify-content: flex-end; gap: 8px; padding-top: 4px; }
     .app button { padding: 9px 15px; border: 0; border-radius: 7px; font: 600 14px/20px ui-sans-serif, system-ui, sans-serif; cursor: default; }
     .app .invite { background: #2563eb; color: #fff; } .app .cancel { background: #fff; color: #344054; box-shadow: inset 0 0 0 1px #d0d5dd; }
+    /* a part in hand is its own handle: drag it, as on the token pickers */
+    .xr-grab { position: absolute; z-index: 3; touch-action: none; border-radius: 3px; }
+    .xr-grab[data-axis="y"] { cursor: ns-resize; } .xr-grab[data-axis="x"] { cursor: ew-resize; } .xr-grab[data-axis="d"] { cursor: nwse-resize; }
+    .stage[data-picking] .xr-card { opacity: 0; pointer-events: none; }
+    .stage .row { z-index: 6; }
+    .row .side { padding: 0 2px 0 0; font: 600 11.5px/1 var(--pl-sans); color: var(--pl-ink-2); white-space: nowrap; }
+    /* a note for your agent: a well to write in, the place it's about above it */
+    .xr-note { position: absolute; z-index: 7; width: 300px; box-sizing: border-box; padding: 12px; border-radius: 18px; background: var(--pl-bg-surface); box-shadow: var(--pl-shadow-card);
+      animation: pl-pop 280ms var(--pl-spring-pop) both; transform-origin: 0 0; }
+    .xr-note .nh { display: flex; align-items: center; gap: 8px; font: 700 13px/18px var(--pl-sans); }
+    .xr-note .nh .toy { width: 22px; height: 22px; } .xr-note .nh .toy svg { width: 100%; height: 100%; display: block; overflow: visible; }
+    .xr-note code { display: block; margin: 2px 0 8px 30px; font: 500 11px/14px var(--pl-mono); color: var(--pl-text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .xr-note textarea { display: block; width: 100%; box-sizing: border-box; min-height: 84px; resize: none; padding: 10px 12px; border: 0; border-radius: 12px; outline: none;
+      background: var(--pl-bg-inset); box-shadow: var(--pl-shadow-well); color: var(--pl-text-primary); font: 400 13.5px/20px var(--pl-sans); }
+    .xr-note textarea:focus { box-shadow: var(--pl-shadow-well), 0 0 0 2px color-mix(in oklab, var(--pl-lilac) 45%, transparent); }
+    .xr-note .nf { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; font: 500 11.5px/1 var(--pl-sans); color: var(--pl-text-secondary); }
+    .xr-note kbd { display: inline-grid; place-items: center; min-width: 18px; height: 18px; padding: 0 4px; margin-right: 3px; border-radius: 6px; font: 600 11px/1 var(--pl-sans); color: var(--pl-text-primary); background: var(--pl-bg-inset); box-shadow: inset 0 -1px 0 var(--pl-border-default), 0 0 0 1px var(--pl-border-default); }
+    .xr-note[data-done] textarea { opacity: .5; }
+    .xr-note .done { display: none; align-items: center; gap: 6px; color: var(--pl-mint-ink); font-weight: 700; }
+    .xr-note[data-done] .done { display: inline-flex; } .xr-note[data-done] .keys { display: none; }
+    .xr-note .done i { display: grid; place-items: center; width: 18px; height: 18px; border-radius: 99px; background: var(--pl-mint); color: #fff; font-style: normal; font-size: 11px; }
     @media (max-width: 900px) { .stage { padding: 56px 20px 340px; } }
   </style>
   ${TOY_DEFS}
   <h2>The idea</h2>
   <div class="prose">
     <p>Point at anything on your page and see what it's made of. <b>On the element</b>, its space in the patterns: padding hatched, margin dotted, gaps striped, corners traced, its size on rulers. Mint where a value is on your scale, coral where it's written by hand. <b>Beside it</b>, a card says the same in numbers: which part it is and where it's written, its box drawn small, then corner, gap, type, colour and contrast, each value with its token.</p>
-    <p>It follows the pointer; a click holds it. Next, the values on it can be dragged to change, snapping to your scale.</p>
+    <p>It follows the pointer; a click holds it. Point at one part of it, a padding side, a gap, a corner, its words, and <b>⇧ turns that part into its token picker</b>: drag the part itself or the row, arrows step, ↵ writes, Esc puts it back. At any moment <b>↵ opens a note for your agent</b> about what you're pointing at; ⌘↵ copies it with the file and line.</p>
   </div>
   <h2>Point at the card</h2>
   <div class="stage" tabindex="0">
@@ -67,32 +91,135 @@ export function mount(host, root, css) {
     </div>
     <div class="xr"></div>
     <div class="xr-card" hidden></div>
-    <p class="hint">Point at anything · click to hold it · click again to let go</p>
+    <p class="hint">Point at anything · click to hold it · over a part, <kbd>⇧</kbd> changes it · <kbd>↵</kbd> a note for your agent</p>
   </div>`;
 
   const stage = root.querySelector('.stage'), layer = stage.querySelector('.xr'), card = stage.querySelector('.xr-card');
-  let shown = null, pinned = null;
-  const draw = (el) => {
-    if (!el) { layer.innerHTML = ''; card.hidden = true; shown = null; return; }
-    const s = stage.getBoundingClientRect(), [name, source] = NAMES[el.dataset.x] ?? [el.localName, null];
-    const x = xray(el, { tokenOf, origin: { left: s.left, top: s.top }, room: { left: 12, top: 12, right: s.width - 12, bottom: s.height - 40 }, name, source });
+  let shown = null, pinned = null, zone = null, picking = null, noting = null, cardAt = { x: 0, y: 0 }, mouse = { x: 0, y: 0 };
+  const box = () => stage.getBoundingClientRect();
+  const nameOf = (el) => NAMES[el.dataset.x] ?? [el.localName, null];
+  const draw = (el, z = zone) => {
+    if (!el) { layer.innerHTML = ''; card.hidden = true; shown = null; zone = null; return; }
+    const s = box(), [name, source] = nameOf(el);
+    const x = xray(el, { tokenOf, origin: { left: s.left, top: s.top }, room: { left: 12, top: 12, right: s.width - 12, bottom: s.height - 40 }, name, source, zone: picking ? null : z });
     layer.innerHTML = x.page;
-    if (el !== shown) card.innerHTML = x.card;
+    if (el !== shown || !picking) card.innerHTML = x.card;
     const first = card.hidden;
     if (first) card.setAttribute('data-fresh', '');
-    card.style.transform = `translate(${x.at.x}px, ${x.at.y}px)`;
+    card.style.transform = `translate(${x.at.x}px, ${x.at.y}px)`; cardAt = x.at;
     card.hidden = false;
     if (first) requestAnimationFrame(() => card.removeAttribute('data-fresh'));
     shown = el;
   };
-  stage.addEventListener('pointermove', (e) => { if (pinned) return; const el = e.target.closest?.('[data-x]'); if (el !== shown) draw(el); });
-  stage.addEventListener('pointerleave', () => { if (!pinned) draw(null); });
+  const busy = () => picking || noting;
+  const track = (e) => {
+    mouse = { x: e.clientX, y: e.clientY };
+    if (busy()) return;
+    const el = pinned ?? e.target.closest?.('[data-x]');
+    const z = el ? zoneAt(zonesOf(el), e.clientX, e.clientY) : null;
+    if (el !== shown || z?.prop !== zone?.prop || z?.side !== zone?.side) { zone = z; draw(el, z); }
+  };
+  stage.addEventListener('pointermove', track);
+  stage.addEventListener('pointerleave', () => { if (!pinned && !busy()) draw(null); });
   stage.addEventListener('click', (e) => {
+    if (busy() || e.target.closest('.row, .list, .xr-note, .xr-grab')) return;
     const el = e.target.closest?.('[data-x]');
     pinned = pinned || !el ? null : el;
     stage.toggleAttribute('data-pinned', !!pinned);
-    draw(el);
+    track(e);
   });
+
+  // ── ⇧ over a part: it becomes that property's token picker, on the same row the token pickers page uses ──
+  const optionsFor = (family, n) => {
+    const S = SCALE[family].map(([v, name]) => ({ name, v }));
+    if (!S.some((o) => Math.abs(o.v - n) <= 0.5) && !(family === 'radius' && n > 500)) S.push({ name: `${Math.round(n * 10) / 10}px`, v: n, hard: true });
+    return S.sort((a, b) => a.v - b.v);
+  };
+  // dragging the part: inward makes padding bigger; a gap and a corner grow down and right; words grow up
+  const PER = { top: (dx, dy) => dy, bottom: (dx, dy) => -dy, left: (dx) => dx, right: (dx) => -dx };
+  const startPick = () => {
+    const el = shown, z = zone; if (!el || !z) return;
+    pinned = el; stage.setAttribute('data-pinned', ''); stage.setAttribute('data-picking', '');
+    const S = optionsFor(z.family, z.n), here = S.findIndex((o) => Math.abs(o.v - z.n) <= 0.5 || (o.v === 9999 && z.n > 500));
+    const before = el.style.getPropertyValue(z.prop);
+    const s = box(), grab = document.createElement('i');
+    grab.className = 'xr-grab';
+    grab.dataset.axis = z.side ? (z.side === 'top' || z.side === 'bottom' ? 'y' : 'x') : z.family === 'radius' ? 'd' : z.col ? 'y' : z.family === 'type' ? 'y' : 'x';
+    grab.style.cssText = `left:${z.x - s.left}px;top:${z.y - s.top}px;width:${z.w}px;height:${z.h}px`;
+    stage.append(grab);
+    const perPx = z.side ? (dx, dy) => PER[z.side](dx, dy) / 12 : z.family === 'type' ? (dx, dy) => -dy / 16 : z.col ? (dx, dy) => dy / 12 : (dx, dy) => (dx + dy) / 14;
+    const p = picker(stage, {
+      name: z.said, toy: z.toy, options: S, keys: 'row', start: here < 0 ? undefined : here,
+      mark: () => '',
+      format: (o) => (o.v === 9999 ? '∞' : `${o.v}px`),
+      apply: (o) => {
+        el.style.setProperty(z.prop, o.v === 9999 ? '9999px' : `${o.v}px`);
+        // the part moved with the value: the handle follows it, the X-ray is drawn again
+        const nz = zonesOf(el).find((q) => q.prop === z.prop && q.side === z.side && (!z.corner || true)) ?? z, b2 = box();
+        grab.style.cssText = `left:${nz.x - b2.left}px;top:${nz.y - b2.top}px;width:${nz.w}px;height:${nz.h}px`;
+        requestAnimationFrame(() => draw(el, null));
+      },
+      place: (row, list) => { row.style.left = `${cardAt.x}px`; row.style.top = `${cardAt.y}px`; list.style.left = row.style.left; list.style.top = `${cardAt.y + 40}px`; },
+      handles: [{ el: grab, perPx }],
+    });
+    const done = (keep) => {
+      if (!keep) { if (before) el.style.setProperty(z.prop, before); else el.style.removeProperty(z.prop); }
+      p.row.nextElementSibling?.remove(); p.row.remove(); grab.remove();
+      picking = null; stage.removeAttribute('data-picking');
+      draw(el, null);
+    };
+    p.row.querySelector('.scrub').insertAdjacentHTML('afterend', `<span class="side">${z.side ?? z.said.toLowerCase()}</span>`);
+    picking = { done, p };
+    p.row.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') { e.preventDefault(); e.stopImmediatePropagation(); done(false); }
+      else if (e.key === 'Enter') setTimeout(() => { if (p.row.classList.contains('written')) { const b = p.row.getBoundingClientRect(); burst(root, b.right - 16, b.top + 17, { pieces: 14 }); setTimeout(() => done(true), 700); } });
+    }, true);
+    p.row.querySelector('.ok').addEventListener('click', () => setTimeout(() => { if (p.row.classList.contains('written')) { const b = p.row.getBoundingClientRect(); burst(root, b.right - 16, b.top + 17, { pieces: 14 }); setTimeout(() => done(true), 700); } }));
+    requestAnimationFrame(() => p.row.querySelector('.val').focus({ preventScroll: true }));
+  };
+
+  // ── ↵ anywhere: a note for your agent about what you're pointing at; ⌘↵ copies it with the file and line ──
+  const startNote = () => {
+    const el = shown; if (!el) return;
+    pinned = el; stage.setAttribute('data-pinned', '');
+    const [name, source] = nameOf(el);
+    const note = document.createElement('div');
+    note.className = 'xr-note';
+    note.innerHTML = `<div class="nh"><i class="toy">${card.querySelector('.xr-head .toy')?.innerHTML ?? ''}</i>Note for your agent</div><code>${name}${source ? ` · ${source}` : ''}</code>
+      <textarea placeholder="What should change here?" aria-label="Note for your agent about ${name}"></textarea>
+      <div class="nf"><span class="keys"><kbd>⌘</kbd><kbd>↵</kbd>copy for your agent</span><span class="done"><i>✓</i>Copied with its place</span><span><kbd>Esc</kbd></span></div>`;
+    note.style.left = `${cardAt.x}px`; note.style.top = `${cardAt.y}px`;
+    stage.append(note); card.hidden = true;
+    const ta = note.querySelector('textarea');
+    const close = () => { note.remove(); noting = null; draw(el, null); };
+    noting = { close };
+    zone = null; draw(el, null);
+    ta.addEventListener('keydown', async (e) => {
+      e.stopPropagation();
+      if (e.key === 'Escape') { e.preventDefault(); close(); }
+      else if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        const said = ta.value.trim(); if (!said) return;
+        const text = `${said}\n\nWhere: <${name}> at ${source ?? 'an element with no source line yet'}`;
+        try { await navigator.clipboard.writeText(text); } catch { ta.select(); document.execCommand?.('copy'); }
+        note.setAttribute('data-done', '');
+        const b = note.getBoundingClientRect(); burst(root, b.left + 40, b.bottom - 16, { pieces: 16 });
+        setTimeout(close, 1400);
+      }
+    });
+    requestAnimationFrame(() => ta.focus({ preventScroll: true }));
+  };
+
+  const keys = (e) => {
+    if (!root.host.isConnected) { removeEventListener('keydown', keys, true); return; }
+    if (e.repeat || e.metaKey || e.ctrlKey || e.altKey) return;
+    const typing = e.composedPath().some((n) => n.localName === 'textarea' || n.localName === 'input');
+    if (typing || noting) return;
+    if (e.key === 'Shift' && !picking && zone && shown) { e.preventDefault(); startPick(); }
+    else if (e.key === 'Enter' && !picking && shown) { e.preventDefault(); startNote(); }
+    else if (e.key === 'Escape' && pinned && !picking) { pinned = null; stage.removeAttribute('data-pinned'); draw(null); }
+  };
+  addEventListener('keydown', keys, true);
   addEventListener('resize', () => shown && draw(shown));
   void host;
 }
