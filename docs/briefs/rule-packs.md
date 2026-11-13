@@ -251,6 +251,26 @@ Not built, and why: paste blocked and Enter during composition (source only; a p
 
 Run (2026-11-14): broken page, 30 of 33 speak. crafting-ui /icons: 1 true finding (search-landmark). glyphschool, glyphwrite: 0. One false hit fixed (a `<kbd>` hint inside a label). 33 rules, 10,827 elements, 30 ms. These apps hold 2 to 29 form parts a page, so this run is thin evidence.
 
+## 4e. The batch of 2026-11-14: 37 component checks
+
+Source: `modern-web-guidance` 1.0.0, the 22 `ui-components` guides. Pack `components`, page rules, files `overlay/src/pack-components.js` (one table: guide, spec entry, words, grounding per rule) and `overlay/src/components-rules.js`.
+
+| Guide | Rules |
+|---|---|
+| breadcrumbs | breadcrumb-list, breadcrumb-current, breadcrumb-separator |
+| card | link-nested-control |
+| carousel | carousel-name |
+| dialog (and prevent-page-scroll-under-modal-dialog) | dialog-name, dialog-native, dialog-aria-extras, dialog-fake-modal, dialog-close, dialog-scroll-lock, dialog-display |
+| menu, app-menus | menu-structure, popup-expanded, checked-missing, expanded-out-of-sync, menubar-name |
+| navbar | nav-as-menu, nav-current, nav-details, current-many, expanded-on-generic |
+| tabs | tablist-name, tab-selected, tabpanel-name, tabs-as-nav, tab-shift, tabs-wrap, tab-structure, tabpanel-many, tab-stops |
+| toolbar | toolbar-name, pressed-on-action |
+| progress, spinner | progress-name, progress-tabindex, progress-native, spinner-silent |
+
+Not built, and why: most of these guides say how to build with popover, anchor positioning, invoker commands and focusgroup; a page that does it another way is not wrong. Toasts, hovercards, tours, drawers, scrollspy, the dark-mode toggle and stack drill-down are about behaviour over time.
+
+Run (2026-11-14): broken page, 34 of 37 speak (two need a real opened modal; spinner-silent does not speak, cause not found). crafting-ui: breadcrumb-list on every page and tab-stops on /icons, both true; pressed-on-action gave 3 false hits (selectable icons named Copy, Close, Download), fixed. glyphschool, glyphwrite: 0. Forms and components together, 70 rules over 10,827 elements: 60 ms.
+
 ## 5. Order, and why not the signed-off one
 
 The foundations put packs at layer 5, after the snapshot (3) and pure rules in a worker (4), so that a new page pack

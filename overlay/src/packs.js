@@ -13,11 +13,14 @@ import { A11Y } from './pack-a11y.js';
 import { A11Y_RULES } from './a11y-rules.js';
 import { FORMS } from './pack-forms.js';
 import { FORMS_RULES } from './forms-rules.js';
+import { COMPONENTS } from './pack-components.js';
+import { COMPONENTS_RULES } from './components-rules.js';
 
 export const PACKS = [
   { id: 'craft', title: 'Craft', ground: 'the craft rules (docs/craft/rules.md)', runs: 'page', rules: RULES },
   { ...A11Y, rules: A11Y_RULES },
   { ...FORMS, rules: FORMS_RULES },
+  { ...COMPONENTS, rules: COMPONENTS_RULES },
 ];
 
 // which pack a rule belongs to, by its id: craft/… and habits/… are craft's, the rest name their pack
