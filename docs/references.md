@@ -137,3 +137,14 @@ Everything shared or found as a reference for React Plumber: what it is, why, wh
 - **What it changed:** our token file gained a role-and-state tier (`--pl-text-*`, `--pl-icon-*`, `--pl-bg-*`,
   `--pl-border-*`, `--pl-action-*`, `--pl-done-*`, `--pl-danger-*`, `--pl-quiet-*`, `--pl-state-*`, `--pl-mark-*`), and
   the Colour page shows it as Token / What it is for / Light / Dark tables above the palette. Journey chapter 21.
+
+## 2026-11-13 · transitions.dev (shared by the owner, by name)
+- **What:** https://transitions.dev, Jakub Antalik's library of crafted UI transitions (CSS/React snippets, a CLI, a skill).
+- **Why the owner shared it:** "make the DOM thing guardrails appear transition in and transition out slowly ... use transition.dev library".
+- **What it changed:** the homepage examples' marks use its Panel reveal recipe (fade, cross-blur, a small rise, ease 0.22 1 0.36 1) and its Number subtle change idea, their tokens slowed (in 900ms, out 1000ms); copied as snippets, nothing installed. Used in homepage/src/sections/insights.css (the --t-* tokens). Journey: chapter 25+, "slow on purpose".
+
+## 2026-11-13 · "Abstract warm orange orb on blue gradient background" by mymind on Unsplash (found by us, at the owner's ask)
+- **What:** https://unsplash.com/photos/XUlsF9LYeVk, a free photo under the Unsplash License, hotlinked from images.unsplash.com as Unsplash asks.
+- **Why:** the owner: "use image from Unsplash to have like a good abstract art ... to really sell the illusion of the card".
+- **Where used:** the album example's cover ("Low Tide"), homepage/src/sections/insights.css.
+

@@ -2,7 +2,11 @@
  * our coloured faces, the toy face for names, toys for properties, coral while wrong and mint once fixed. The scenes
  * are paper and soft blocks; they keep their own colours only where the principle is about colour (a forecast's blue
  * and amber, a pale glaze photo). */
-.ins-x { --ins-ease: cubic-bezier(0.22, 1, 0.36, 1); max-width: 72rem; margin: 0 auto; padding: var(--s-10) var(--s-6) var(--s-9); color: var(--ink-1); }
+.ins-x { --ins-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  /* transitions.dev's Panel reveal and Number subtle change, their tokens slowed so the fix can be watched */
+  --t-reveal-in: 900ms; --t-reveal-out: 1000ms; --t-reveal-blur: 3px; --t-reveal-rise: 6px; --t-fix: 1600ms; --t-draw: 900ms;
+  /* the fix itself moves evenly in and out, so it's visible the whole way, not done in its first third */
+  --t-fix-ease: cubic-bezier(0.65, 0, 0.35, 1); max-width: 72rem; margin: 0 auto; padding: var(--s-10) var(--s-6) var(--s-9); color: var(--ink-1); }
 .ins-x-head { max-width: 44rem; margin: 0 auto; text-align: center; }
 .ins-x-eyebrow { display: inline-block; margin-bottom: var(--s-4); font: var(--t-label); color: var(--accent-ink); }
 .ins-x .title { margin-bottom: var(--s-4); }
@@ -90,27 +94,35 @@
 .ins-text b { font: var(--pl-round-w, 700) 15px/20px var(--pl-round); letter-spacing: -0.005em; }
 .ins-text span { font: 400 13px/18px var(--font); color: var(--ink-2); }
 
+/* while a fix is happening the stage becomes a canvas under inspection: a fine dot grid fades in under the scene,
+   and goes when the marks lift, so at rest the card is just a card */
+.ins-stage::before { content: ''; position: absolute; inset: 0; z-index: 0; pointer-events: none; opacity: 0; transition: opacity var(--t-reveal-out) var(--ins-ease);
+  background: radial-gradient(circle, color-mix(in oklab, var(--pl-ink) 18%, transparent) 1px, transparent 1.5px) 0 0 / 14px 14px; }
+.ins-stage[data-inspect]::before { opacity: 1; transition-duration: var(--t-reveal-in); }
+
 /* ── the guides and the pill, over the scene, never scaled: coral while wrong, mint once fixed ── */
-.ins-marks { position: absolute; inset: 0; z-index: 2; pointer-events: none; --mk: var(--pl-coral); transition: opacity 300ms var(--ins-ease), filter 300ms var(--ins-ease); }
+.ins-marks { position: absolute; inset: 0; z-index: 2; pointer-events: none; --mk: var(--pl-coral); animation: ins-reveal var(--t-reveal-in) var(--ins-ease) backwards;
+  transition: opacity var(--t-reveal-out) var(--ins-ease), filter var(--t-reveal-out) var(--ins-ease), translate var(--t-reveal-out) var(--ins-ease); }
+@keyframes ins-reveal { from { opacity: 0; filter: blur(var(--t-reveal-blur)); translate: 0 var(--t-reveal-rise); } }
 .ins-marks[data-on='true'] { --mk: var(--pl-mint); }
-.ins-marks[data-out='true'] { opacity: 0; filter: blur(3px); }
+.ins-marks[data-out='true'] { opacity: 0; filter: blur(var(--t-reveal-blur)); translate: 0 calc(-1 * var(--t-reveal-rise)); }
 .ins-marks svg { position: absolute; inset: 0; overflow: visible; }
 /* guides in the overlay's language: a 2px line with a light halo so it reads on any stage, space hatched */
 .ins-marks svg { filter: drop-shadow(0 0 1.2px var(--pl-bg-surface)) drop-shadow(0 1px 1px rgb(0 0 0 / .12)); }
 .ins-guide.ins-hatch { fill: var(--hatch); }
-.ins-guide { fill: none; stroke: var(--mk); stroke-width: 2; stroke-linecap: round; stroke-dasharray: 1; stroke-dashoffset: 1; animation: ins-draw 300ms var(--ins-ease) forwards; transition: stroke 300ms ease; }
+.ins-guide { fill: none; stroke: var(--mk); stroke-width: 2; stroke-linecap: round; stroke-dasharray: 1; stroke-dashoffset: 1; animation: ins-draw var(--t-draw) var(--ins-ease) 150ms forwards; transition: stroke 900ms var(--ins-ease); }
 @keyframes ins-draw { to { stroke-dashoffset: 0; } }
-.ins-cross line { stroke: var(--mk); stroke-width: 2; stroke-linecap: round; transition: stroke 300ms ease; }
+.ins-cross line { stroke: var(--mk); stroke-width: 2; stroke-linecap: round; transition: stroke 900ms var(--ins-ease); }
 .ins-pill { position: absolute; display: inline-flex; gap: 6px; align-items: center; height: 26px; padding: 0 10px; translate: -50% 0; border-radius: var(--pl-radius-pill);
   background: linear-gradient(180deg, color-mix(in oklab, var(--mk) 84%, #fff), var(--mk)); color: #fff; font: 600 11.5px/1 var(--pl-mono); white-space: nowrap;
   box-shadow: inset 0 1.5px 0 rgb(255 255 255 / .4), 0 2px 0 color-mix(in oklab, var(--mk) 72%, #000), 0 10px 18px -8px color-mix(in oklab, var(--mk) 70%, transparent);
-  animation: ins-pop 360ms var(--pl-spring-pop) 40ms both; transition: background 300ms ease, box-shadow 300ms ease; }
+  animation: ins-pop 700ms var(--ins-ease) 250ms both; transition: background 900ms var(--ins-ease), box-shadow 900ms var(--ins-ease); }
 @keyframes ins-pop { from { opacity: 0; scale: 0.8; filter: blur(4px); translate: -50% 4px; } }
 .ins-digits { display: inline-flex; }
 .ins-digit { display: inline-block; animation: ins-flip 220ms var(--ins-ease) both; }
 @keyframes ins-flip { from { opacity: 0; translate: 0 5px; filter: blur(2px); } }
 .ins-check { display: grid; place-items: center; width: 0; overflow: hidden; opacity: 0; scale: 0.25; filter: blur(4px);
-  transition: width 240ms var(--ins-ease), opacity 300ms var(--ins-ease), scale 300ms var(--pl-spring-pop), filter 300ms var(--ins-ease); }
+  transition: width 500ms var(--ins-ease), opacity 600ms var(--ins-ease), scale 600ms var(--pl-spring-pop), filter 600ms var(--ins-ease); }
 .ins-check[data-on='true'] { width: 12px; opacity: 1; scale: 1; filter: blur(0); }
 .ins-check svg { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
 
@@ -124,7 +136,7 @@
   background: linear-gradient(150deg, var(--pl-lilac), var(--pl-sky)); box-shadow: inset 0 1.5px 0 rgb(255 255 255 / .35), 0 4px 0 color-mix(in oklab, var(--pl-lilac) 65%, #000), 0 16px 26px -12px color-mix(in oklab, var(--pl-lilac) 70%, transparent); }
 .sc-video small { position: absolute; left: 10px; bottom: 10px; padding: 4px 8px; border-radius: 99px; background: rgb(255 255 255 / .9); font: var(--pl-round-w, 700) 11px/1 var(--pl-round); color: #2b1a6b; }
 .sc-play-btn { display: grid; place-items: center; width: 58px; height: 58px; border-radius: 50%; background: linear-gradient(180deg, #fff, #f1efff); box-shadow: 0 4px 0 rgb(43 26 107 / .25), 0 12px 20px -8px rgb(43 26 107 / .55); }
-.sc-play-btn svg { width: 26px; height: 26px; fill: #2b1a6b; translate: -1.08px 0; transition: translate 420ms var(--ins-ease); } /* the triangle's box (7–19 of 24) on the circle's centre */
+.sc-play-btn svg { width: 26px; height: 26px; fill: #2b1a6b; translate: -1.08px 0; transition: translate var(--t-fix) var(--t-fix-ease); } /* the triangle's box (7–19 of 24) on the circle's centre */
 .sc-play[data-fixed='true'] .sc-play-btn svg { translate: 1.08px 0; } /* its weight (x 11 of 24) on the circle's centre */
 
 /* the big tile: the video drawn larger, to fill it */
@@ -136,15 +148,13 @@
 
 /* #8 nested radius: a player tile on a paper canvas (a fine dot grid, the way a design canvas looks), its cover art
    drawn in layers; the stage keeps no flat colour */
-.ins-card:has(.sc-album) .ins-stage { background: radial-gradient(circle, color-mix(in oklab, var(--pl-ink) 16%, transparent) 1px, transparent 1.5px) 0 0 / 14px 14px,
-  radial-gradient(120% 90% at 30% 0%, var(--pl-bg-surface), var(--pl-bg-inset)); box-shadow: inset 0 0 0 1px var(--pl-border-default); }
+.ins-card:has(.sc-album) .ins-stage { background: radial-gradient(120% 90% at 30% 0%, var(--pl-bg-surface), var(--pl-bg-inset)); box-shadow: inset 0 0 0 1px var(--pl-border-default); }
 .sc-tile { display: grid; grid-template-columns: 96px 1fr; gap: 12px; align-items: center; width: 268px; padding: 8px 14px 8px 8px; border-radius: 20px; background: var(--pl-bg-surface);
   box-shadow: 0 0 0 1px var(--pl-border-default), 0 2px 4px rgb(0 0 0 / .05), 0 18px 32px -16px rgb(0 0 0 / .35); }
-.sc-cover { position: relative; aspect-ratio: 1; overflow: hidden; border-radius: 20px; transition: border-radius 420ms var(--ins-ease);
-  background: linear-gradient(180deg, #ff9cc2 0%, #d6a8ff 48%, #a9c7ff 72%); }
-.sc-sun { position: absolute; left: 58%; top: 18%; width: 30%; aspect-ratio: 1; border-radius: 50%; background: radial-gradient(circle at 40% 40%, #fff3c4, #ffc94d 60%, #ffab3d); box-shadow: 0 0 24px 6px rgb(255 201 77 / .55); }
-.sc-wave { position: absolute; left: -20%; right: -20%; border-radius: 50% 50% 0 0 / 100% 100% 0 0; }
-.sc-wave.w1 { bottom: -38%; height: 74%; background: #7aa6f0; } .sc-wave.w2 { bottom: -52%; height: 74%; left: -40%; background: #4b78d6; } .sc-wave.w3 { bottom: -64%; height: 74%; right: -50%; background: #2c4f9e; }
+.sc-cover { position: relative; aspect-ratio: 1; overflow: hidden; border-radius: 20px; transition: border-radius var(--t-fix) var(--t-fix-ease);
+  /* "Abstract warm orange orb on blue gradient background" by mymind on Unsplash (free, Unsplash License), hotlinked as
+     Unsplash asks: https://unsplash.com/photos/XUlsF9LYeVk */
+  background: #3f63b8 url('https://images.unsplash.com/photo-1604079628040-94301bb21b91?w=320&h=320&fit=crop&q=80&auto=format') center / cover; }
 .sc-album[data-fixed='true'] .sc-cover { border-radius: 12px; } /* 20 − 8 */
 .sc-meta { min-width: 0; }
 .sc-track { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
@@ -152,7 +162,7 @@
 .sc-heart { flex: none; width: 16px; height: 16px; fill: var(--pl-pink); }
 .sc-prog { height: 4px; margin: 10px 2px 0; border-radius: 2px; background: var(--pl-bg-inset); overflow: hidden; } .sc-prog i { display: block; width: 38%; height: 100%; border-radius: inherit; background: var(--ink-1); }
 .sc-times { display: flex; justify-content: space-between; margin: 5px 2px 0; font: 500 10px/1 var(--pl-mono); color: var(--ink-2); }
-.ins-pad { animation: ins-fade 300ms var(--ins-ease) both; } @keyframes ins-fade { from { opacity: 0; } }
+.ins-pad { animation: ins-fade var(--t-reveal-in) var(--ins-ease) both; } @keyframes ins-fade { from { opacity: 0; } }
 
 /* #16 figures: a time tracker on paper */
 .sc-timer { align-content: center; gap: 0; }
@@ -175,7 +185,7 @@
 /* #21 tinted shadow: a recipe card on a pink page; its shadow grey, then the page's own pink (written in rgb, which
    the build leaves alone and the measure reads) */
 .sc-recipe { display: grid; gap: 4px; width: 210px; padding: 14px 16px; border-radius: 16px; background: var(--pl-bg-surface); color: var(--ink-1);
-  box-shadow: 0 2px 4px rgb(0 0 0 / 0.25), 0 18px 32px -10px rgb(0 0 0 / 0.5); transition: box-shadow 450ms var(--ins-ease); }
+  box-shadow: 0 2px 4px rgb(0 0 0 / 0.25), 0 18px 32px -10px rgb(0 0 0 / 0.5); transition: box-shadow var(--t-fix) var(--t-fix-ease); }
 .sc-shadow[data-fixed='true'] .sc-recipe { box-shadow: 0 2px 4px rgb(214 64 140 / 0.35), 0 18px 32px -10px rgb(200 40 120 / 0.65); }
 .sc-recipe small { font: var(--pl-round-w, 700) 11px/1 var(--pl-round); color: var(--pl-pink); }
 .sc-recipe b { font: var(--pl-round-w, 700) 18px/1.2 var(--pl-round); }
@@ -189,14 +199,14 @@
 .sc-day i { position: relative; height: 10px; border-radius: 5px; background: var(--pl-bg-inset); box-shadow: var(--pl-shadow-well); }
 .sc-day b { position: absolute; top: 0; bottom: 0; border-radius: 5px; background: linear-gradient(in srgb 90deg, #2f6fe4, #f5a524); }
 .sc-day b em { position: absolute; inset: 0; border-radius: inherit; background: linear-gradient(in oklch 90deg, #2f6fe4, #f5a524); opacity: 0; filter: blur(2px);
-  transition: opacity 450ms var(--ins-ease), filter 450ms var(--ins-ease); }
+  transition: opacity var(--t-fix) var(--t-fix-ease), filter var(--t-fix) var(--t-fix-ease); }
 .sc-forecast[data-fixed='true'] .sc-day b em { opacity: 1; filter: blur(0); }
 
 /* #39 image outline: a pale glaze photo on a pale pin; the principle needs the pale */
 .sc-pin { width: 140px; padding: 8px 8px 10px; border-radius: 16px; background: #fbfaf7; color: #2a2723;
   box-shadow: inset 0 1.5px 0 #fff, 0 4px 0 color-mix(in oklab, var(--hue) 45%, #fbfaf7), 0 16px 26px -14px color-mix(in oklab, var(--hue) 70%, transparent); }
 .sc-glaze { position: relative; aspect-ratio: 4 / 3; border-radius: 8px; background: radial-gradient(120% 90% at 30% 20%, #fdfcf9, #ede9e0 60%, #e3ddd0); }
-.sc-glaze::after { content: ''; position: absolute; inset: 0; border-radius: inherit; box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.1); opacity: 0; transition: opacity 450ms var(--ins-ease); }
+.sc-glaze::after { content: ''; position: absolute; inset: 0; border-radius: inherit; box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.1); opacity: 0; transition: opacity var(--t-fix) var(--t-fix-ease); }
 .sc-photo[data-fixed='true'] .sc-glaze::after { opacity: 1; }
 .sc-pin b { display: block; margin-top: 8px; font: var(--pl-round-w, 700) 12.5px/1 var(--pl-round); }
 .sc-pin small { font-size: 10.5px; color: #8a847a; }

@@ -30,7 +30,9 @@ import { toyOf } from '../../../overlay/src/toys.js'; // each principle wears it
 import { burst } from '../../../overlay/src/burst.js'; // a fix landing, in pieces of the visual language
 
 const FAMILIES = [['Interaction feel', 16], ['Typography', 15], ['Colour and light', 15], ['Layout and platform', 13], ['Alignment and balance', 6], ['Spacing and rhythm', 6], ['Rendering and pixels', 6]];
-const T = { cameraIn: 600, marks: 1600, fix: 3000, marksOut: 4500, cameraOut: 4800, alive: 5700, back: 7600, loop: 9000 };
+// slow on purpose (the owner: "let the user feel it ... bring things slowly, take them out slowly"): the problem is named
+// for 1.8s, the fix takes 1.6s on the scene, it holds a second, then the marks take 0.8s to leave
+const T = { cameraIn: 600, marks: 1600, fix: 3400, marksOut: 6000, cameraOut: 6000, alive: 7000, back: 9000, loop: 10500 };
 const STEP = { rest: 0, camera: 1, marks: 2, fix: 3, out: 4, home: 5 };
 const FEEL = 2000; // the broken scene alone, before anything is marked: a moment to feel that something's off
 
@@ -106,7 +108,7 @@ function Card({ card, live, reduced, turn, onBeat, onDone }) {
   const [cam, setCam] = useState(null);        // the camera's transform, or null at rest
   const [marks, setMarks] = useState(null);    // the guides and the pill, in the stage's pixels
   const [held, setHeld] = useState(false), [paused, setPaused] = useState(false);
-  const timers = useRef([]), shown = useRef(null), again = useRef(false);
+  const timers = useRef([]), shown = useRef(null), again = useRef(false), lift = useRef([]);
   const clear = () => { timers.current.forEach(clearTimeout); timers.current = []; };
   const at = (ms, fn) => timers.current.push(setTimeout(fn, ms));
 
@@ -142,7 +144,7 @@ function Card({ card, live, reduced, turn, onBeat, onDone }) {
       if (!el) return;
       const r = el.getBoundingClientRect();
       burst(document.body, r.left + r.width / 2, r.top + r.height / 2, { pieces: 26 });
-    }, 900);
+    }, 1700);
     return () => clearTimeout(id);
   }, [step, fixed]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -151,12 +153,12 @@ function Card({ card, live, reduced, turn, onBeat, onDone }) {
   useLayoutEffect(() => {
     if (step < STEP.marks || step > STEP.out) { if (step === STEP.rest || step === STEP.home) { setMarks(null); shown.current = null; } return; }
     let raf = 0;
-    const until = performance.now() + 700;
+    const until = performance.now() + 1900;
     const read = () => {
       const s = stage.current.getBoundingClientRect(), m = card.measure(scene.current, fixed);
       const k = cam?.k ?? 1;
       // the pill's number eases toward what's measured, so a value that jumps in the scene still counts
-      shown.current = shown.current == null ? m.value : shown.current + (m.value - shown.current) * 0.16;
+      shown.current = shown.current == null ? m.value : shown.current + (m.value - shown.current) * 0.06;
       if (Math.abs(shown.current - m.value) < 0.005) shown.current = m.value;
       setMarks({ ...m, value: shown.current, s, k, focus: undefined, box: m.focus.getBoundingClientRect() });
       if (card.moving || performance.now() < until || shown.current !== m.value) raf = requestAnimationFrame(read);
@@ -171,15 +173,21 @@ function Card({ card, live, reduced, turn, onBeat, onDone }) {
   const choose = wantFixed => {
     clear(); setHeld(true); setCam(null);
     setFixed(wantFixed);
-    if (!reduced) setStep(wantFixed ? STEP.fix : STEP.marks);
+    if (reduced) return;
+    // the marks are up only while the change is happening; then the card is a normal card again
+    setStep(wantFixed ? STEP.fix : STEP.marks);
+    // its own timers: the tour's are cleared the moment a press holds the card
+    lift.current.forEach(clearTimeout);
+    lift.current = [setTimeout(() => setStep(STEP.out), 3200), setTimeout(() => setStep(STEP.home), 4300)];
   };
-  const replay = () => { again.current = true; setStep(STEP.rest); setMarks(null); shown.current = null; setHeld(false); };
+  useEffect(() => () => lift.current.forEach(clearTimeout), []);
+  const replay = () => { lift.current.forEach(clearTimeout); again.current = true; setStep(STEP.rest); setMarks(null); shown.current = null; setHeld(false); };
 
   const { Scene } = card;
   const showMarks = marks && step >= STEP.marks && step <= STEP.out;
   return (
     <article className="ins-card" data-hue={card.hue} data-size={card.size || undefined} data-turn={turn || held || undefined} style={{ gridArea: card.area }} onPointerEnter={() => setPaused(true)} onPointerLeave={() => setPaused(false)} aria-label={`${card.n}. ${card.title}`}>
-      <div ref={stage} className="ins-stage">
+      <div ref={stage} className="ins-stage" data-inspect={showMarks || undefined}>
         <div ref={scene} className="ins-cam" style={cam ? { transform: `translate(${cam.x}px, ${cam.y}px) scale(${cam.k})` } : undefined} data-moving={!!cam}>
           <Scene fixed={fixed} live={live && !reduced && (turn || held) && (card.moving || step === STEP.rest || step === STEP.home)} />
         </div>
@@ -275,7 +283,7 @@ function Album({ fixed }) {
   return (
     <div className="sc sc-album" data-fixed={fixed}>
       <div className="sc-tile">
-        <div className="sc-cover"><i className="sc-sun" /><i className="sc-wave w1" /><i className="sc-wave w2" /><i className="sc-wave w3" /></div>
+        <div className="sc-cover" role="img" aria-label="Album cover: a warm orange orb on blue" />
         <div className="sc-meta">
           <div className="sc-track"><span><b>Low Tide</b><small>Mara Ellis · Shoreline</small></span><svg className="sc-heart" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z" /></svg></div>
           <div className="sc-prog"><i /></div>

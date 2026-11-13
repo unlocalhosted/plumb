@@ -1995,6 +1995,16 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   is hatched the way the overlay marks padding (a band cut between the tile's outline and the cover's) and both
   corners are drawn; on the fix the inner corner tightens to 12, the pill turning mint. Shown to the owner before
   carrying it to the other eight.
+- **"That's it", with three refinements.** (1) The guardrail marks only while a fix is happening: at rest the card is
+  a normal card; the hatching, the corner arcs, the pill and a dot-grid canvas come in for the fix and lift after it,
+  a press included (its lift timers are its own: the tour clears its timers when a press holds the card). (2) The
+  cover is a real abstract photo from Unsplash (mymind's warm orb on blue, which reads as a sun over the sea, for
+  "Low Tide"). (3) Slow, visible motion with transitions.dev's recipes, their tokens slowed: marks come in over 0.9s
+  and leave over 1s with a fade, a soft blur and a small rise; guides draw over 0.9s; the fix itself takes 1.6s on an
+  even in-and-out curve (transitions.dev's front-loaded ease finished the corner in its first 0.6s, measured); the
+  pill counts with it; the fixed state holds before the marks leave; the tour's beats are spaced to match. Measured
+  on the album card: the corner went 20 → 12 over about 1.4s, the pill 20 → 12 over about 1.8s, the marks faded
+  out over about a second.
 
 ## Open gaps
 - The overlay writes about 180 corners as numbers (radius tokens about 45 times), many off its own scale; 6px is
