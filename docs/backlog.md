@@ -198,10 +198,11 @@ and icon passes' cases, and the palette after a write, were tested again through
 
 ### Foundations for the editor, the layout generator and more scan modes
 
-Design written 2026-11-13, not signed off, nothing built: docs/briefs/engine-foundations.md.
+Design signed off 2026-11-13; only the first measurement is done: docs/briefs/engine-foundations.md.
 
 - plumber thinks on the app's main thread: one read of a big page still blocks it for 4.7–7.4 s in total.
-- What plumber costs the app when nothing is open has never been measured.
+- Measured 2026-11-13: at rest plumber costs the app nothing measurable. Open, it does: crafting-ui scrolls at 57 frames a second alone and 7 with plumber open and idle; algorecall 12 and 3. Reading freezes the page for 0.6–1.8 s. Not fixed. What each scroll costs is not yet known (redrawing every mark is the guess).
+- The measuring script is not in the repo yet; it joins it with the budget guard.
 - The engine can only judge the live page, not a candidate layout.
 - Every rule family is loaded whether or not it is on; there is no notion of a mode that runs on the server only.
 

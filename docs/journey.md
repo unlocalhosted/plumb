@@ -875,6 +875,14 @@
 - **The fix and the proof:** none; a design waiting for sign-off: [engine-foundations.md](briefs/engine-foundations.md).
 - **Media hooks:** when built, the app scrolling smoothly while plumber reads it, against today.
 
+## What plumber takes from the app: nothing at rest, most of the frames when open (2026-11-13)
+- **The itch:** the owner signed off the foundations and said "measure": how much does plumber dull the app it sits in?
+- **How we found it:** the same page four ways (plumber's scripts blocked, loaded, reading, open) with real wheel and pointer input, counting frames, on algorecall's 16,000-element list and crafting-ui's vocabulary page.
+- **The system behind it:** plumber does nothing until asked, and that holds: at rest the frames are the app's own. Once open, every scroll and pointer move is answered with work over the whole page, on the app's main thread.
+- **What we chose and why:** the build order changed. The scheduler and "draw only what is in view, on one layer" come first, because a person feels them on any page today; the snapshot and the worker follow, for the freeze while reading.
+- **The fix and the proof:** none; this is the measurement. crafting-ui scrolls at 57 frames a second alone and at 7 with plumber open and idle; the pointer goes from 60 to 15. algorecall goes from 12 to 3. Reading freezes the page for up to 0.6 s (small page) and 1.8 s (big). Headless, one run each; table in [engine-foundations.md](briefs/engine-foundations.md).
+- **Media hooks:** a screen recording of crafting-ui scrolling, alone and with plumber open, side by side.
+
 ## Open gaps
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
 

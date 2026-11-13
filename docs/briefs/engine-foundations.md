@@ -1,8 +1,55 @@
 # Foundations: an engine and an interface that can grow without making the app dull
 
-Status: design, 2026-11-13. Nothing here is built. Waiting for the owner's sign-off.
+Status: signed off by the owner, 2026-11-13. Layer 0 (the measurement) is done: see **Measured**. Nothing else is built.
 Stands on what was measured the same day ([engine-scaling.md](engine-scaling.md)); where this document has no
 number, it says so.
+
+## Measured: what plumber takes from the app (2026-11-13, layer 0)
+
+One headless Chromium on the laptop, 1280×800, one run per state per app. Real wheel and pointer input for four
+seconds each; frames counted in the page. "Off" is the same page with plumber's scripts blocked (its source
+stamps stay in the page). Headless draws in software, so the app's own numbers are lower than in a real window;
+read the columns against each other, not against 60.
+
+**algorecall, problems list (15,993 elements)**
+
+| State | Frames a second while scrolling | Longest frame | Frames a second moving the pointer | Slowest answer to input |
+|---|---|---|---|---|
+| plumber off | 12 | 0.13 s | 11 | 0.18 s |
+| plumber loaded, nothing open | 13 | 0.12 s | 13 | 0.14 s |
+| plumber reading the page | 23* | 1.77 s | 1 | 1.04 s |
+| plumber open, read finished | 3 | 0.98 s | 3 | 0.84 s |
+
+**crafting-ui, motion vocabulary (2,443 elements)**
+
+| State | Frames a second while scrolling | Longest frame | Frames a second moving the pointer | Slowest answer to input |
+|---|---|---|---|---|
+| plumber off | 57 | 0.07 s | 60 | 0.02 s |
+| plumber loaded, nothing open | 57 | 0.05 s | 60 | 0.02 s |
+| plumber reading the page | 10 | 0.58 s | 3 | 0.81 s |
+| plumber open, read finished | 7 | 0.50 s | 15 | 0.19 s |
+
+\* an average over a window with one 1.8 s freeze in it; the freeze is the number that matters.
+
+What it says:
+
+1. **At rest plumber costs nothing that can be measured.** Same frames, same longest frame, no long tasks of its
+   own, on both apps. It adds about 17 MB of memory on the big page and makes about 80 small requests to its server
+   while the page loads. "Nothing until asked" already holds.
+2. **Open, plumber makes the app dull, and not only on big pages.** crafting-ui scrolls at 57 frames a second
+   alone and at 7 with plumber open and *idle*: every scroll costs half a second. The pointer drops from 60 to 15.
+   This is the state an editor lives in.
+3. **While reading, the page freezes** for up to 0.6 s on the small page and 1.8 s on the big one, and a pointer
+   move can wait a second for an answer.
+4. Sitting still with plumber open costs nothing. The cost is all in answering scroll and pointer.
+
+What this changes in the order below: the scheduler (layer 1) and drawing only what is in view on one layer
+(layer 5) are what a person feels, on any page, today. Layer 5 moves up to second. The snapshot and the worker
+remain the way to make reading not freeze the page.
+
+*Not known:* what the half-second per scroll is. The guess is redrawing every mark on the page: that redraw was
+timed at 0.55–0.6 s on algorecall earlier today. It has not been confirmed for crafting-ui, where it would be
+smaller. First thing to find in layer 1.
 
 ## 1. What it has to carry
 
@@ -136,17 +183,17 @@ has settled.
 
 | # | Layer | What can be seen |
 |---|---|---|
-| 0 | Measure the guest tax, at rest and in use, on both apps | The first table of what plumber takes from the app. Decides how urgent each layer is |
-| 1 | The scheduler and its lanes; today's work moved onto it | No block of the main thread over 50 ms from plumber on the big page; the app scrolls while plumber reads |
-| 2 | The snapshot and lists by kind | Its cost on 16,000 elements; rule calls fall to about the number of things each rule is about |
-| 3 | Pure rules, then judging in a worker | Main-thread time for a read falls to reading and drawing |
-| 4 | Packs: the manifest, loading on demand, today's families moved in | Bytes loaded with a family off; the Chrome guidance arrives as a pack |
-| 5 | One drawing layer, only what is in view; changes from the server | Redraw time on the big page; a one-file change costs a small answer |
+| 0 | Measure the guest tax, at rest and in use, on both apps | **Done.** See Measured |
+| 1 | The scheduler and its lanes; today's work moved onto it. First: find what each scroll and pointer move costs when plumber is open | No block of the main thread over 50 ms from plumber; the app scrolls at its own speed with plumber open |
+| 2 | One drawing layer, only what is in view | crafting-ui scrolls with plumber open as it does alone (57 frames a second; 7 today) |
+| 3 | The snapshot and lists by kind | Its cost on 16,000 elements; rule calls fall to about the number of things each rule is about |
+| 4 | Pure rules, then judging in a worker | The page does not freeze while it is read (0.6–1.8 s today) |
+| 5 | Packs: the manifest, loading on demand, today's families moved in; changes from the server | Bytes loaded with a family off; the Chrome guidance arrives as a pack |
 | 6 | `judge` on a candidate | Two hand-made variants of one card, ranked. The generator is built on this |
 | 7 | Each new mode | One pack each |
 
 Layers 1 and 2 are independent of each other. The Chrome guidance work ([platform-guidance-lld.md](platform-guidance-lld.md))
-should wait for layer 4: it is the first new pack.
+should wait for layer 5: it is the first new pack.
 
 ## 5. Decided here, and why (change any at sign-off)
 
@@ -162,7 +209,8 @@ should wait for layer 4: it is the first new pack.
 
 ## 6. Not known
 
-- The guest tax today. Layer 0.
+- What the half-second per scroll is when plumber is open (see Measured).
+- The numbers in a real window with a graphics card; these are headless.
 - What the snapshot costs, and how many rules cannot be made pure without a fact provider.
 - Whether sending the snapshot to a worker and findings back costs less than it saves on small pages. It may be
   that small pages stay on the main thread and only large ones use the worker.
