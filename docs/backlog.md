@@ -332,6 +332,12 @@ and none in `web/design/parts`.
   `--acme-radius-card`), and whether it belongs to a scale (siblings with one stem and ordered values). Separately,
   read tokens wherever they live: any stylesheet, a file loaded by a script, `:host` blocks, a JS theme object, a
   DTCG file. Config still wins over a guess. Not started; waiting on the owner.
+  Owner, same day: "generate one config file where the user can see visually how his design system is being
+  interpreted by plumber". Two pieces exist to build on: `plumber init` already writes each family's token sources
+  into the config, marked `inferred: true` (src/adoption/init.ts), and the project page already draws each scale's
+  steps with how many places use them (src/project-page/system.ts: text size, weight, radius, colour; not spacing or
+  motion). Missing: the config saying why each token was taken as what it is, and the page showing it, so a wrong
+  reading is seen and corrected in one place.
 
 ### The command line
 
