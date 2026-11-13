@@ -33,49 +33,74 @@ const PAGE_CSS = `
   @media (max-width: 720px) { main { padding: var(--pl-page-space-1) var(--pl-space-6) var(--pl-page-space-3); } .top { padding: 10px 16px; } .top .read { display: none; } h1 { font: var(--pl-page-display-narrow); } }
 `;
 
-/* How Plumber read your system: one block per kind of token, its toy and its count the loud thing; under it, one line
-   per scale (a file's tokens that share a stem), with the scale's values and why it was read as this kind */
+/* How Plumber read your system, as a review: per kind, one verdict line is the loud thing; under it one quiet row per
+   scale (its stem, its steps as plain numbers or swatches, how it was read). A reading from the name alone is the only
+   thing marked, because it is the only one worth a second look. Files are said once; lone tokens fold away */
 const READING_CSS = `
   #reading { display: block; margin-top: var(--pl-page-space-3); }
-  #reading h2 { margin: 0 0 var(--pl-space-4); font: var(--pl-page-title); letter-spacing: var(--pl-tracking-title); }
-  #reading > p { max-width: 60ch; margin: 0 0 var(--pl-page-space-1); font: var(--pl-page-small); color: var(--pl-text-secondary); }
-  #reading > p code { font: var(--pl-card-code); }
-  .kinds { display: grid; gap: var(--pl-space-6); }
-  .kind { display: grid; grid-template-columns: var(--pl-page-space-1) minmax(0, 1fr); gap: var(--pl-space-2) var(--pl-space-6); padding: var(--pl-space-7) var(--pl-space-8); border-radius: var(--pl-radius-card); background: var(--pl-bg-inset); }
-  .kind .toy { width: var(--pl-page-space-1); height: var(--pl-page-space-1); }
+  #reading h2 { margin: 0; font: var(--pl-page-title); letter-spacing: var(--pl-tracking-title); }
+  #reading .verdict { max-width: 60ch; margin: var(--pl-space-4) 0 var(--pl-page-space-1); font: var(--pl-page-body); color: var(--pl-text-secondary); }
+  #reading .verdict b { color: var(--pl-text-primary); font-weight: 600; }
+  .kinds { display: grid; gap: var(--pl-space-5); }
+  .kind { padding: var(--pl-space-6) var(--pl-space-8) var(--pl-space-7); border-radius: var(--pl-radius-card); background: var(--pl-bg-inset); }
+  .kind > header { display: grid; grid-template-columns: var(--pl-space-8) minmax(0, 1fr); align-items: center; gap: var(--pl-space-5); }
+  .kind .toy { width: var(--pl-space-8); height: var(--pl-space-8); }
   .kind .toy svg { display: block; width: 100%; height: 100%; overflow: visible; }
-  .kind .hd { display: flex; align-items: baseline; gap: var(--pl-space-4); align-self: center; }
-  .kind .hd b { font: var(--pl-page-title); font-family: var(--pl-round); }
-  .kind .hd span { font: var(--pl-page-meta); color: var(--pl-text-secondary); font-variant-numeric: tabular-nums; }
-  .kind ul { grid-column: 2; display: grid; gap: var(--pl-space-5); margin: var(--pl-space-4) 0 0; padding: 0; list-style: none; }
-  .kind li { display: grid; gap: var(--pl-space-3); }
-  .kind .line { display: flex; flex-wrap: wrap; align-items: center; gap: var(--pl-space-4); }
-  .kind .line .pl-tag { font: var(--pl-card-code); }
-  .kind .line .lone { font: var(--pl-card-title); }
-  .kind .line small { font: var(--pl-card-meta); color: var(--pl-text-secondary); }
-  .kind .vals { display: flex; flex-wrap: wrap; gap: var(--pl-space-2); }
-  .kind .sw { width: var(--pl-space-7); height: var(--pl-space-7); border-radius: 50%; box-shadow: inset 0 0 0 var(--pl-line) color-mix(in oklab, var(--pl-text-primary) 12%, transparent); }
-  .kind .more { font: var(--pl-card-meta); color: var(--pl-text-secondary); align-self: center; }
-  .kind .why { font: var(--pl-card-body); color: var(--pl-text-secondary); }
-  @media (max-width: 720px) { .kind { grid-template-columns: 1fr; padding: var(--pl-space-6); } .kind ul { grid-column: 1; } }
+  .kind header b { font: var(--pl-card-title); font-family: var(--pl-round); font-size: 17px; }
+  .kind header span { margin-left: var(--pl-space-4); font: var(--pl-card-body); color: var(--pl-text-secondary); }
+  .rows { display: grid; margin: var(--pl-space-5) 0 0 calc(var(--pl-space-8) + var(--pl-space-5)); }
+  .row { display: grid; grid-template-columns: minmax(0, 11rem) minmax(0, 1fr) auto; align-items: baseline; gap: var(--pl-space-6); padding: var(--pl-space-3) 0; }
+  .row code { font: var(--pl-card-code); color: var(--pl-text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .row .steps { display: flex; flex-wrap: wrap; align-items: center; gap: var(--pl-space-1) var(--pl-space-4); font: var(--pl-card-code); color: var(--pl-text-secondary); font-variant-numeric: tabular-nums; }
+  .row .steps .unit { color: var(--pl-text-placeholder); }
+  .row .sw { width: var(--pl-space-6); height: var(--pl-space-6); border-radius: 50%; box-shadow: inset 0 0 0 var(--pl-line) color-mix(in oklab, var(--pl-text-primary) 14%, transparent); }
+  .row .how { font: var(--pl-card-meta); color: var(--pl-text-secondary); white-space: nowrap; }
+  .row .how.look { color: var(--pl-soft-text); font-weight: 600; }
+  .file { margin: var(--pl-space-5) 0 0 calc(var(--pl-space-8) + var(--pl-space-5)); font: var(--pl-card-meta); color: var(--pl-text-secondary); }
+  .kind details { margin: var(--pl-space-4) 0 0 calc(var(--pl-space-8) + var(--pl-space-5)); }
+  .kind summary { cursor: pointer; font: var(--pl-card-meta); color: var(--pl-text-secondary); }
+  .kind details .rows { margin-left: 0; }
+  @media (max-width: 720px) { .kind { padding: var(--pl-space-6); } .rows, .file, .kind details { margin-left: 0; } .row { grid-template-columns: 1fr auto; } .row .steps { grid-column: 1 / -1; } }
 `;
 // each kind by the toy and the word the rest of Plumber uses for it
 const KINDS = { spacing: ['padding', 'Spacing'], color: ['fill', 'Colour'], radius: ['corner', 'Corners'], type: ['type', 'Type'], motion: ['motion', 'Motion'],
   elevation: ['shadow', 'Shadows'], z: ['layer', 'Layers'], size: ['size', 'Sizes'], opacity: ['opacity', 'Opacity'] };
-const short = (value) => { const v = String(value).trim(), style = /^((?:(?:normal|italic|bold|[1-9]00)\s+)*[\d.]+(?:px|rem|em|%)(?:\s*\/\s*[\d.]+(?:px|rem|em|%)?)?)\s+\S/.exec(v); return style ? style[1] : v.length > 18 ? `${v.slice(0, 17)}…` : v; };
+const STYLE = /^(?:(?:normal|italic|bold|\d{3})\s+)*([\d.]+)(px|rem|em|%)(?:\s*\/\s*[\d.]+(?:px|rem|em|%)?)?\s+\S/;
+// a scale's steps as plain numbers with their unit said once: 2 4 6 8 px; a text style by its size; a face by its first name
+function steps(family, tokens) {
+  if (family === 'elevation') return `<span>${tokens.length} ${tokens.length === 1 ? 'shadow' : 'shadows'}</span>`;
+  if (family === 'color') return tokens.slice(0, 14).map((t) => `<i class="sw" style="background: ${esc(t.value)}" title="${esc(t.value)}"></i>`).join('') + (tokens.length > 14 ? `<span>+${tokens.length - 14}</span>` : '');
+  const parts = tokens.map((t) => { const v = String(t.value).trim(), style = STYLE.exec(v), n = /^(-?[\d.]+)(px|rem|em|ms|s|%)?$/.exec(v);
+    return style ? [style[1], style[2]] : n ? [n[1], n[2] ?? ''] : [v.split(',')[0].replace(/["']/g, '').slice(0, 16), null]; });
+  const unit = parts.every((p) => p[1] !== null && p[1] === parts[0][1]) ? parts[0][1] : null;
+  const shown = parts.map((p) => (unit === null && p[1] ? `${p[0]}${p[1]}` : p[0]));
+  const list = [...new Set(unit === null ? shown : shown.sort((a, b) => Number(a) - Number(b)))];
+  return list.slice(0, 12).map((v) => `<span>${esc(v)}</span>`).join('') + (list.length > 12 ? `<span>+${list.length - 12}</span>` : '') + (unit ? `<span class="unit">${esc(unit)}</span>` : '');
+}
+// how a line was read, in a word or two; the name alone is a guess worth a look
+function how(reasons) {
+  const by = [reasons.some((r) => r.startsWith('its value')) && 'value', reasons.some((r) => r.startsWith('used in')) && 'use', reasons.some((r) => r.startsWith('its name')) && 'name'].filter(Boolean);
+  if (by.length === 1 && by[0] === 'name') return `<span class="how look" title="${esc(reasons.join(' · '))}">by its name only</span>`;
+  return `<span class="how" title="${esc(reasons.join(' · '))}"></span>`;
+}
 function reading(kinds) {
   if (!kinds?.length) return '';
-  const tokens = kinds.reduce((n, k) => n + k.groups.reduce((m, g) => m + g.tokens.length, 0), 0);
-  const value = (family, v) => family === 'color' ? `<i class="sw" style="background: ${esc(v)}" title="${esc(v)}"></i>` : `<span class="pl-pill" data-hue="sky">${esc(short(v))}</span>`;
+  const all = kinds.flatMap((k) => k.groups), tokens = all.reduce((m, g) => m + g.tokens.length, 0);
+  const scales = all.filter((g) => g.pattern).length, looks = all.filter((g) => g.pattern && how(g.reasons).includes('look')).length;
+  const row = (k, g) => `<div class="row"><code>${esc(g.pattern)}</code><div class="steps">${steps(k.family, g.tokens)}</div>${how(g.reasons)}</div>`;
   return `<h2>How Plumber read your system</h2>
-    <p>${nf.format(tokens)} tokens, sorted into ${kinds.length} ${kinds.length === 1 ? 'kind' : 'kinds'}. Each line is one scale and why it was read that way. If a line is in the wrong kind, move it in <code>plumber.config</code>; your config always wins.</p>
+    <p class="verdict"><b>${nf.format(tokens)} tokens in ${kinds.length} kinds, ${scales} scales.</b> ${looks ? `${looks} ${looks === 1 ? 'was' : 'were'} read from the name alone; check ${looks === 1 ? 'it' : 'those'}.` : 'Each was read from more than its name.'} A scale in the wrong kind moves in <code>plumber.config</code>.</p>
     <div class="kinds">${kinds.map((k) => {
       const [toy, name] = KINDS[k.family] ?? ['size', k.family], n = k.groups.reduce((m, g) => m + g.tokens.length, 0);
-      return `<section class="kind"><i class="toy">${toyOf(toy)}</i><div class="hd"><b>${name}</b><span>${nf.format(n)} ${n === 1 ? 'token' : 'tokens'}</span></div>
-        <ul>${k.groups.slice(0, 8).map((g) => `<li><div class="line">${g.pattern ? `<span class="pl-tag">${esc(g.pattern)}</span>` : `<b class="lone">${g.tokens.length === 1 ? esc(g.tokens[0].name) : `${g.tokens.length} on their own`}</b>`}<small>${esc(g.file)}</small></div>
-          <div class="vals">${g.tokens.slice(0, 10).map((t) => value(k.family, t.value)).join('')}${g.tokens.length > 10 ? `<span class="more">+${g.tokens.length - 10}</span>` : ''}</div>
-          ${g.reasons.length ? `<div class="why">${esc(g.reasons.slice(0, 3).join(' · '))}</div>` : ''}</li>`).join('')}
-          ${k.groups.length > 8 ? `<li class="more">${k.groups.length - 8} more ${k.groups.length - 8 === 1 ? 'line' : 'lines'}</li>` : ''}</ul></section>`;
+      const groups = k.groups.filter((g) => g.pattern), lone = k.groups.filter((g) => !g.pattern), loneCount = lone.reduce((m, g) => m + g.tokens.length, 0);
+      const files = [...new Set(k.groups.map((g) => g.file))];
+      const byFile = files.map((file) => [file, groups.filter((g) => g.file === file)]).filter(([, gs]) => gs.length);
+      return `<section class="kind"><header><i class="toy">${toyOf(toy)}</i><div><b>${name}</b><span>${groups.length ? `${groups.length} ${groups.length === 1 ? 'scale' : 'scales'}` : 'no scale'}${loneCount ? `, ${loneCount} on their own` : ''} · ${nf.format(n)} ${n === 1 ? 'token' : 'tokens'}</span></div></header>
+        ${(() => { let shown = 0; const head = [], rest = []; for (const [file, gs] of byFile) for (const g of gs) (shown++ < 6 ? head : rest).push([file, g]);
+          const block = (list) => [...new Set(list.map(([f]) => f))].map((file) => `${byFile.length > 1 ? `<div class="file">${esc(file)}</div>` : ''}<div class="rows">${list.filter(([f]) => f === file).map(([, g]) => row(k, g)).join('')}</div>`).join('');
+          return block(head) + (rest.length ? `<details><summary>${rest.length} more ${rest.length === 1 ? 'scale' : 'scales'}</summary>${block(rest)}</details>` : ''); })()}
+        ${loneCount ? `<details><summary>${loneCount} on their own</summary><div class="rows">${lone.map((g) => row(k, { ...g, pattern: g.tokens.length === 1 ? g.tokens[0].name : g.file.split('/').pop() })).join('')}</div></details>` : ''}
+      </section>`;
     }).join('')}</div>`;
 }
 

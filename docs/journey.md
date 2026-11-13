@@ -2471,6 +2471,13 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   reads "Your theme has 18 text sizes". It still says none are used, because the ~30 places that use them
   (`font: var(--t-label)` and others) are in the homepage app's stylesheets, outside the site's folder: their tokens
   are read but their declarations aren't counted as the site's code.
+- **Then "I can't read anything, it's just noise" (owner, same day).** The system behind it: the section was a report,
+  every fact at one loudness (filled lilac tags, filled blue value pills, a file path and a reason on every line), drawn
+  without a design pass. Redrawn as a review: per kind one loud line, its name and a verdict ("3 scales, 3 on their own
+  · 21 tokens"); each scale a quiet row, its stem in plain mono and its steps as plain numbers with the unit once
+  (`2 4 6 8 12 16 20 24 px`) or swatches; files said once; past six scales and the lone tokens fold away; the reading
+  itself is shown only where it is a guess from the name alone, marked "by its name only" (2 on the site), since that
+  is the only line that needs a person. Seen running in dark, desktop width.
 - **Still open on the page:** some motion tokens show `0ms`, the
   value from the token file's reduced-motion block; nothing on the page can move a line yet (the config does).
 - **Still open:** a `font:` line that is off the scale shows the face's fix first ("use var(--font)"), not the
