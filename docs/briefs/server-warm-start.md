@@ -1,7 +1,38 @@
 # Warm start: the server answers from what it knew, then checks itself
 
-Status: design, 2026-11-13. Nothing built. Waiting for the owner's sign-off.
+Status: signed off by the owner, 2026-11-13. Layer 0 (measuring) is done except one item: see **Measured**. Nothing is built.
 Stands on [engine-scaling.md](engine-scaling.md), "The cold start".
+
+## Measured (2026-11-13, layer 0)
+
+On the laptop, which was short of memory throughout (5.9 of 7.2 GB of swap in use, another agent's tests running).
+
+| | crafting-ui (622 source files) | algorecall (2,411 files with something in them) |
+|---|---|---|
+| Cold start today | 4.8–5.7 s | 41–44 s |
+| **Two cold starts, same inputs: reading tables equal?** | **Yes, byte for byte** (16.1 MB each, same hash) | **Not run**: needs two 2 GB starts, and the laptop was swapping |
+| Checking the receipt (the check's own validation) | 0.25 s | 0.9 s |
+| Reading table, as plain objects | 16.1 MB (13.5 MB packed) | 257 MB (195 MB packed) |
+| Loading it | 0.04 s, 30 MB | 0.72 s, 329 MB |
+| Findings / declarations in it | 1,665 / 22,486 | 2,984 / 304,350 |
+
+What it says:
+
+1. **The warm path is short.** On algorecall: 0.9 s to check the receipt plus 0.7 s to load, against 41 s. The 8 s
+   target was timid; 2–3 s to a first answer is the honest expectation, before a worker's start-up is counted.
+2. **The receipt check is not the risk** the design feared: under a second, not three.
+3. **The table must be tables.** As plain objects algorecall's is 257 MB and 329 MB in memory, over the budget. But
+   of its 304,350 declarations only 32,797 are distinct once their place is set aside: nine in ten are the same
+   declaration at another place. Stored once and pointed at, with each of 2,414 file paths stored once, it should
+   be a few tens of MB. That is rule 4 of the data-oriented rules, and here it is not optional.
+4. **Equality holds where it could be tested.** crafting-ui's two cold starts were identical to the byte, so the
+   analysis has no timing-dependent order on that app. algorecall is ten times the size and is the one that
+   matters; it is not proven.
+5. **crafting-ui gains little** (5 s cold). This is for large projects.
+
+**Left of layer 0:** algorecall's two cold starts compared. It needs about 2 GB twice on a machine that is not
+swapping: this laptop when it is free, or vm-agent with a copy of the app and its dependencies (vm-agent has
+plumber's CI checkout and 12 GB free, but only algorecall's infra folder, not the app).
 
 ## 1. What we are doing
 
@@ -14,8 +45,7 @@ The server should do the same: on start, if nothing has changed since it last fi
 knew**, and build its own working state behind that. When the fresh analysis lands it **compares the two**, so
 every warm start is checked a little later by the cold one it replaced.
 
-Target: answers about 7 s after a restart instead of 41 s. The 7 s is the one-off check's second run; the server's
-own number is not measured yet (layer 0).
+Target: answers within a few seconds of a restart instead of 41 s (measured below: 0.9 s to check, 0.7 s to load).
 
 ## 2. Why the server cannot simply read the check's kept result
 
@@ -116,8 +146,8 @@ Layer 2 is the gate. If warm and cold ever differ there, layer 3 does not start 
 
 | Stage | Budget on algorecall |
 |---|---|
-| Checking the receipt | under 3 s |
-| Loading the reading table | under 2 s, under 300 MB |
+| Checking the receipt | under 3 s (measured: 0.9 s) |
+| Loading the reading table | under 2 s, under 300 MB (measured as plain objects: 0.7 s, 329 MB; as tables: to be measured) |
 | First answer after a restart | under 8 s |
 | Writing the table after an analysis | idle time only; never delays an answer |
 

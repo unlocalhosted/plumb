@@ -956,6 +956,14 @@
 - **The fix and the proof:** none; a design waiting for sign-off: [server-warm-start.md](briefs/server-warm-start.md). Target under 8 s to first answer; the server's own number is not measured.
 - **Media hooks:** when built, a restart on algorecall: the overlay drawing at 7 s against 41 s.
 
+## The warm start measured before anything is built (2026-11-13)
+- **The itch:** the owner signed off the warm-start design: "measure".
+- **How we found it:** two cold starts of plumber's server on crafting-ui, the reading tables compared byte for byte; on algorecall, the check's own receipt validation timed, and the reading table built from its kept result and weighed.
+- **The system behind it:** the design stands on one claim, that the same inputs always give the same table. If the analysis had any order that depends on timing, the self-check would cry wolf.
+- **What we found:** on crafting-ui the two tables are identical to the byte. On algorecall checking the receipt takes 0.9 s and loading the table 0.7 s, against a 41 s cold start, so the target of 8 s was timid. But as plain objects the table is 257 MB; nine in ten of its 304,350 declarations are the same declaration at another place, so it has to be stored as tables.
+- **The fix and the proof:** none built. Not done: algorecall's own two cold starts compared. They need 2 GB twice and the laptop was swapping (5.9 of 7.2 GB of swap used). Numbers in [server-warm-start.md](briefs/server-warm-start.md).
+- **Media hooks:** none yet.
+
 ## Open gaps
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
 
