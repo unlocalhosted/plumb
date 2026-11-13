@@ -151,8 +151,22 @@ export function mountXray(o) {
   // the changes not yet synced, by place in the code and which copy ('key#n' → { prop → { before, value, scope } }),
   // never by element: a re-render replaces elements, and the change must find the new one
   const changes = new Map();
-  const placeKey = (el) => `${o.key(el) ?? '?'}#${Math.max(0, peers(el).indexOf(el))}`;
-  const elOf = (k) => { const i = k.lastIndexOf('#'); const all = o.all(k.slice(0, i)); return all?.[+k.slice(i + 1)] ?? null; };
+  // A change is kept by place: the element's line and its position among everything that line draws, so a re-render
+  // that replaces the element finds the new one at the same place. The position is counted in the one list the change
+  // is found again by (o.all), never in another (the copies a scope reaches can be listed in another order, or miss the
+  // element): two lists put the pointed element at 0, on top of the first copy, and Put back restored that copy twice
+  // and left the pointed one changed. An element its line's list doesn't hold is kept by itself.
+  const loose = new Map(); let looseN = 0; const looseId = new WeakMap();
+  const placeKey = (el) => {
+    const k = o.key(el), i = k ? (o.all(k) ?? []).indexOf(el) : -1;
+    if (i >= 0) return `${k}#${i}`;
+    if (!looseId.has(el)) { looseId.set(el, `${k ?? '?'}#el${++looseN}`); loose.set(looseId.get(el), new WeakRef(el)); }
+    return looseId.get(el);
+  };
+  const elOf = (k) => {
+    if (loose.has(k)) { const el = loose.get(k).deref(); return el?.isConnected ? el : null; }
+    const i = k.lastIndexOf('#'); const all = o.all(k.slice(0, i)); return all?.[+k.slice(i + 1)] ?? null;
+  };
   // which sides move together, kept until changed: 'one', 'pair' or 'all'
   let link = 'one';
   const linkedOf = (prop) => {
@@ -560,7 +574,10 @@ export function mountXray(o) {
   const putBack = () => {
     if (!count()) return false;
     for (const [k, m] of changes) { const el = elOf(k); if (el) for (const [prop, { before }] of m) { if (before) el.style.setProperty(prop, before); else el.style.removeProperty(prop); } }
-    changes.clear(); refresh();
+    changes.clear();
+    // the row in hand says the value put back, not the one taken away
+    if (inHand?.el?.isConnected) { const { el, prop } = inHand; hand.innerHTML = ''; inHand = null; hold(el, prop); }
+    refresh();
     return true;
   };
   on(card, 'click', (e) => {
