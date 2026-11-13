@@ -66,3 +66,9 @@
 - What it changed: the disabled-look pass puts every disabled opacity on the theme's value or on 40% (Material's 38% on the nearest framework step).
 - Used in: overlay/src/states.js; docs/briefs/pass-states.md; journey entry "The disabled look: the ninth clean-up pass".
 
+
+## 2026-11-13 · Modern Web Guidance, the source repo (shared by the owner)
+- What: [GoogleChrome/modern-web-guidance-src](https://github.com/GoogleChrome/modern-web-guidance-src): guides for coding agents on what the web platform now does natively, each tied to browser-support (Baseline) data; a scanner that finds legacy patterns in source; stewarded, by its README, by the Chrome, Edge, Firefox and MDN teams. Apache-2.0.
+- Why: the owner's words: "please plan on architecture level how can we bring these things into plumber".
+- What it changed: a design for a third way plumber looks, beside drift and craft: "you built by hand what the browser now gives you". Their guides are the ground, their Baseline data gates every suggestion that uses a modern feature (existing craft suggestions too), and plumber checks their source hits against the running page. Nothing built yet.
+- Used in: docs/briefs/platform-guidance-lld.md; journey entry "A third way of looking: what the browser does now".

@@ -810,6 +810,14 @@
 - **bare-page:** `plumber` with nothing after it printed "Press Ctrl+C here when you're done" and only then started listening for Ctrl+C. A Ctrl+C in that gap killed the process outright: the page's server was not closed and it said nothing. The faster Linux box hit the gap; the laptop rarely did. Now it listens first, then says so.
 - **timeline:** the test read the history strip right after an undo write that, as its own comment says, reloads the page; on a slower machine the reload came first. The test now reads the strip again on the new page (it comes back the same).
 
+## A third way of looking: what the browser does now (2026-11-13)
+- **The itch:** the owner shared Chrome's Modern Web Guidance repo: "please plan on architecture level how can we bring these things into plumber".
+- **How we found it:** read the repo first-hand ([reference](references.md)): about 170 guides in its UI categories, a source scanner with 37 rules, and browser-support data behind every guide. Their own notes say a source scanner misfires more than half the time on patterns written with everyday code, which is why they hand each hit to an LLM to check.
+- **The system behind it:** plumber judges values against the design system (drift) and against their neighbours (craft). It has no way to say "this whole hand-built tooltip should not exist". And its craft suggestions already use modern CSS without asking whether the project's browsers have it.
+- **What we chose and why:** join, not copy. Their guides are the ground and the how; their scanner is called, not ported; the check they give to an LLM reading code, plumber does by looking at the running page (is the input hidden, does the modal close on Escape). Small changes plumber writes itself; rebuilds go to the coding agent with the guide's name, and plumber proves the behaviour is the same after. Left out: their search, their test rig, the non-UI guides.
+- **The fix and the proof:** none yet. A design only: [platform-guidance-lld.md](briefs/platform-guidance-lld.md), eight layers, the first being the browser-support gate on suggestions plumber already makes. Their published npm package has not been read; three choices in the design depend on it and say so.
+- **Media hooks:** when built, a hand-built modal on a real app before and after, with the recorded open, Escape and outside-click side by side.
+
 ## Open gaps
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
 

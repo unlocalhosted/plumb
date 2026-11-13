@@ -42,6 +42,9 @@ engineer would do." These calls were open questions until then. Each is decided 
 | One disabled opacity when the theme names none | Material's 38%, as `opacity-40` | A published system's value, on the step every Tailwind version has |
 | The most impactful next piece | One shared reading of what each element is, used by every pass and craft rule | Seven places decide "is this a control" today; on four crafting-ui pages they disagree on 137 of 174 elements, 134 of them links |
 | The four "proposed to drop" lines | Dropped | Not observed problems |
+| Chrome's Modern Web Guidance: copy it or call it | Call their scanner and keep only a small index of their guides | Four browser teams update it weekly; a copy is stale the day it lands (docs/briefs/platform-guidance-lld.md, not signed off) |
+| Which of its guides plumber uses | The 8 UI categories only | Plumber judges what is seen and touched; performance, security and the rest are another tool's job |
+| Who replaces a hand-built widget with the browser's own | The coding agent, from a brief; plumber writes only one-class or one-attribute swaps | Plumber writes classes and proves them by re-reading; it does not rewrite event handlers |
 
 ## Open questions
 
@@ -190,6 +193,15 @@ and icon passes' cases, and the palette after a write, were tested again through
   first.
 - A finding on a wrapped element is reported at the component's line, not where it is used; the fix card says
   "Changed X to Y" when Y was added beside X.
+
+### What the browser does now (platform guidance)
+
+Design written 2026-11-13, not signed off, nothing built: docs/briefs/platform-guidance-lld.md.
+
+- plumber never says "you built by hand what the browser gives you" (a div modal, a script-positioned tooltip, a max-height accordion).
+- A suggestion that uses a modern CSS feature never checks whether the project's browsers have it.
+- Not read yet: what Chrome's published npm package ships. Three choices in the design wait on it.
+- Method worth borrowing for our own rules: sort each by "can it be seen" and "how big is the change"; score a check on apps it was not written against.
 
 ### Defensive checks
 
