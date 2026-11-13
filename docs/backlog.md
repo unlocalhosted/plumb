@@ -315,6 +315,15 @@ and none in `web/design/parts`.
   `--spacing-*` (the config's `decisions.<family>.from` may cover it; not tried), and the live overlay can't write a
   fix into a `.css` file (journey: the homepage's cards "can't take a size class"). CSS in template strings is still
   unread apart from a literal `<style>`.
+- **On the site's homepage, same day.** The check read all nine of the homepage's plain stylesheets, and every one of its
+  22 findings came from one blind spot: the site puts the overlay's token file on the page at runtime, read as text
+  (`web/site/tokens.js`), so no `--pl-*` token exists for Plumber. 13 findings say a token is "never defined" (false);
+  6 say "no tokens", hiding 157 values (66 spacing, 34 colour, 44 type, 10 radius, 2 motion, 1 layer). With the token
+  file imported for one run: the 13 false findings went, colours were read (34 unchecked → 4), but spacing (65), type
+  (45) and radius (10) stayed unchecked, and the run said it skipped the token file as outside the project. Causes, as
+  far as read: tokens put on a page by script are never seen; a token file outside the project's folder is skipped;
+  and token names with a prefix (`--pl-space-*`, `--pl-radius-*`) are not taken as spacing or radius, as `--space-*`
+  was not in the probe.
 
 ### The command line
 
