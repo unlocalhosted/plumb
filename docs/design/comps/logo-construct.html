@@ -6,7 +6,9 @@
 <title>React Plumber · the P, in construction</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400..700&display=swap">
 <style>
-  /* The owner's reference (docs/design/refs/construction-view-aero.png): glyphs as a type designer sees them: a hairline
+  /* The owner: "dont change the material we have just add this on top of it". The mark stays as it is (pink and violet,
+     lit); the construction is drawn over it.
+     The owner's reference (docs/design/refs/construction-view-aero.png): glyphs as a type designer sees them: a hairline
      outline, each on-curve point a small black square, each curve's handles a line ending in a dot, a fine vertical
      hatch for the fill, and the metric lines running edge to edge. Here, the P drawn that way: plumber sees a page by its
      points, edges and guides. Its metric lines are the P's own: cap and baseline, the bowl's underside and middle, the
@@ -18,13 +20,11 @@
   .grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; padding: 16px 32px 32px; }
   .card { border-radius: 20px; box-shadow: 0 0 0 1px var(--rule), 0 12px 30px -22px rgb(0 0 0 / .3); overflow: hidden; background: #fff; cursor: pointer; }
   .art { aspect-ratio: 1; display: grid; place-items: center; overflow: hidden; }
-  .grey .art { background: #b4b3bb; }
   .txt { padding: 14px 18px 18px; border-top: 1px solid var(--rule); background: #fff; }
   .txt b { display: block; font: 650 15px/20px "Instrument Sans"; } .txt span { color: var(--ink-2); font-size: 13px; }
   svg { display: block; width: 100%; height: 100%; }
   /* the move, in the third card: the lit P gives way to its construction, then comes back */
-  .lit, .build { transition: opacity 700ms ease; }
-  .play .lit { opacity: 0; } .build { opacity: 0; } .play .build { opacity: 1; }
+  .build .fade { opacity: 0; transition: opacity 600ms ease 300ms; } .play .build .fade { opacity: 1; }
   .build .pt { transform-box: fill-box; transform-origin: center; transform: scale(0); transition: transform 380ms cubic-bezier(.3, 1.6, .5, 1); }
   .play .build .pt { transform: scale(1); }
   .build .metric { stroke-dasharray: 160; stroke-dashoffset: 160; transition: stroke-dashoffset 900ms cubic-bezier(.6, 0, .2, 1); }
@@ -49,28 +49,31 @@ const HANDLES = [
 // the P's own metric lines: cap, the bowl's middle and underside, baseline; the stem's sides, the bowl's sides
 const H = [18, 46, 74, 102], V = [24, 58, 62, 96];
 
-function construction({ line, stem, bowl, hatch, bowlHatch = hatch, cls = '' }) {
-  return `<g class="${cls}">
-    <defs><pattern id="hs-${cls}" width="1.1" height="4" patternUnits="userSpaceOnUse"><rect width=".26" height="4" fill="${hatch}"/></pattern><pattern id="hb-${cls}" width="1.1" height="4" patternUnits="userSpaceOnUse"><rect width=".26" height="4" fill="${bowlHatch}"/></pattern></defs>
-    <g stroke="${line}" stroke-width=".22" opacity=".55">${H.map((y) => `<path class="metric" d="M-10 ${y}H130"/>`).join('')}${V.map((x) => `<path class="metric" d="M${x} -10V130"/>`).join('')}</g>
-    <path d="${STEM}" fill="${stem}"/><path d="${BOWL}" fill="${bowl}"/>
-    <path d="${STEM}" fill="url(#hs-${cls})"/><path d="${BOWL}" fill="url(#hb-${cls})"/>
-    <path d="${STEM}" fill="none" stroke="${line}" stroke-width=".3"/><path d="${BOWL}" fill="none" stroke="${line}" stroke-width=".3"/>
-    <g stroke="${line}" stroke-width=".22">${HANDLES.map(([a, b]) => `<path d="M${a[0]} ${a[1]}L${b[0].toFixed(2)} ${b[1].toFixed(2)}"/>`).join('')}</g>
-    <g fill="${line}">${HANDLES.map(([, b]) => `<circle class="pt" cx="${b[0].toFixed(2)}" cy="${b[1].toFixed(2)}" r=".62"/>`).join('')}
+// the mark, unchanged: pink stem and violet bowl, lit from the top
+const MATERIAL = `<defs>
+  <linearGradient id="gs" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff7ac0"/><stop offset=".55" stop-color="#f24a9f"/><stop offset="1" stop-color="#d0287f"/></linearGradient>
+  <linearGradient id="gb" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9a7dff"/><stop offset=".55" stop-color="#7356f0"/><stop offset="1" stop-color="#5232d4"/></linearGradient>
+  <linearGradient id="gl" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".42"/><stop offset=".25" stop-color="#fff" stop-opacity="0"/></linearGradient>
+  <pattern id="hatch" width="1.1" height="4" patternUnits="userSpaceOnUse"><rect width=".24" height="4" fill="#fff"/></pattern></defs>
+  <path d="${STEM}" fill="url(#gs)"/><path d="${STEM}" fill="url(#gl)" style="mix-blend-mode:soft-light"/>
+  <path d="${BOWL}" fill="url(#gb)"/><path d="${BOWL}" fill="url(#gl)" style="mix-blend-mode:soft-light"/>`;
+// the construction, on top of it: metric lines behind, then a faint light hatch over the material, the hairline
+// outline, the handles and the points in ink
+const construction = ({ hatch = true, cls = '' } = {}) => `<g class="${cls}">
+    ${hatch ? `<g class="fade"><path d="${STEM}" fill="url(#hatch)" opacity=".22"/><path d="${BOWL}" fill="url(#hatch)" opacity=".22"/></g>` : ''}
+    <g class="fade"><path d="${STEM}" fill="none" stroke="#1d1b17" stroke-width=".3"/><path d="${BOWL}" fill="none" stroke="#1d1b17" stroke-width=".3"/></g>
+    <g class="fade" stroke="#1d1b17" stroke-width=".22">${HANDLES.map(([a, b]) => `<path d="M${a[0]} ${a[1]}L${b[0].toFixed(2)} ${b[1].toFixed(2)}"/>`).join('')}</g>
+    <g fill="#1d1b17">${HANDLES.map(([, b]) => `<circle class="pt" cx="${b[0].toFixed(2)}" cy="${b[1].toFixed(2)}" r=".62"/>`).join('')}
       ${POINTS.map(([x, y]) => `<rect class="pt" x="${x - 1.05}" y="${y - 1.05}" width="2.1" height="2.1"/>`).join('')}</g>
   </g>`;
-}
-const LIT = `<defs>
-  <linearGradient id="gs" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff7ac0"/><stop offset=".55" stop-color="#f24a9f"/><stop offset="1" stop-color="#d0287f"/></linearGradient>
-  <linearGradient id="gb" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9a7dff"/><stop offset=".55" stop-color="#7356f0"/><stop offset="1" stop-color="#5232d4"/></linearGradient></defs>`;
+const metrics = (cls = '') => `<g class="${cls}" stroke="#1d1b17" stroke-width=".22" opacity=".45">${H.map((y) => `<path class="metric" d="M-10 ${y}H130"/>`).join('')}${V.map((x) => `<path class="metric" d="M${x} -10V130"/>`).join('')}</g>`;
 const CARDS = [
-  ['grey', 'As in the reference', 'The P as a type designer draws it: grey ground, hairline outline, its points and handles in black, a fine vertical hatch, and its own metric lines edge to edge.',
-    construction({ line: '#1d1b17', stem: '#a9a8b1', bowl: '#a9a8b1', hatch: '#8a8992', cls: 'g' })],
-  ['', 'In the mark\'s colours', 'The same drawing on paper: the stem in pale pink, the bowl in pale violet, each hatched in its own tone, outlined and pointed in ink like the reference.',
-    `<g>${construction({ line: '#1d1b17', stem: '#ffe1ef', bowl: '#e9e3ff', hatch: '#f39ac6', bowlHatch: '#ad9cff', cls: 'c' })}</g>`],
-  ['', 'From the mark to its construction', 'Click: the lit P gives way to its drawing; the metric lines run out, the points pop on. Click again to bring the mark back. For the films.',
-    `${LIT}<g class="lit"><path d="${STEM}" fill="url(#gs)"/><path d="${BOWL}" fill="url(#gb)"/></g>${construction({ line: '#1d1b17', stem: '#ffe1ef', bowl: '#e9e3ff', hatch: '#f39ac6', bowlHatch: '#ad9cff', cls: 'build' })}`],
+  ['', 'The mark, with its construction', 'The mark as it is, and its construction drawn on top: its own metric lines behind it, a faint light hatch over the material, the hairline outline, the points and handles in ink.',
+    `${metrics()}${MATERIAL}${construction()}`],
+  ['', 'Without the hatch', 'The same, the material left clean: only the lines, the outline, the points and handles.',
+    `${metrics()}${MATERIAL}${construction({ hatch: false })}`],
+  ['', 'The construction arriving', 'The mark at rest; then its metric lines run out, the outline and hatch fade in, the points pop on. Click to take it away and bring it back. For the films.',
+    `${metrics('build')}${MATERIAL}${construction({ cls: 'build' })}`],
 ];
 document.getElementById('grid').innerHTML = CARDS.map(([cls, name, idea, art]) => `<section class="card ${cls}"><div class="art"><svg viewBox="4 0 112 120">${art}</svg></div><div class="txt"><b>${name}</b><span>${idea}</span></div></section>`).join('');
 const last = document.querySelectorAll('.card')[2];
