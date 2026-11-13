@@ -597,6 +597,14 @@
 - **Now:** one finding on crafting-ui, the three figures on the templates page, drawn from a three-item list written in the code. At phone width it fits (358 of 358 px). It is a fixed set the check cannot yet tell from a list; noted, not fixed. No before and after from a real app.
 - **Seen on the way:** the motion vocabulary page (7,274 elements) closed the browser tab during plumber's read.
 
+## #42 told in four acts: the first screen on the new stage (2026-11-13)
+- **The itch:** the owner, on the rewritten skill: "Yes, build it".
+- **What was built:** a film player for the stage (overlay/showcase/src/principles/Film.jsx) that a screen opts into with `Example.film`, and #42 (tabs that turn semibold on hover) as its first screen. Act 1: a drawn pointer runs over every tab and the row jitters, nothing drawn. Act 2: the camera frames the tabs (1.8×), every tab gets its own dashed outline, the hover repeats three times on Timeline with its width before → after over it and "+2.9px" at each tab that slid; on the third, "Semibold is 2.9px wider". Act 3: the pointer presses the switch (now "Shifts / Stable"), the outlines turn mint, a faint semibold copy of every label shows the width weight would add, with "darker, not bolder: same width", and folds away. Act 4: the same hover on every tab, "+0px" at every edge. Then the camera out, and the example and switch are the viewer's, with Replay.
+- **The proof:** recorded in headless Chromium and measured the way the reference was (pill colours counted per frame, in the tabs' band): marks off for the first 6.4 s (act 1 and the camera), coral 6.4–12.0 s, switch and turn 12.0–14.2 s, the mechanism 14.2–16.4 s, the payoff 17.2–20.7 s. Problem 12.0 s against fix 8.7 s (1.4×); the reference 10.8 s against 6.7 s (1.6×). No console errors. Clip: docs/media/showcase-42-four-acts.mp4.
+- **Fixed on the way:** the camera first framed the whole tab bar, as wide as the card, and shrank the card; it now frames the tabs. The subject's widths were rounded to whole pixels beside a 2.9px shift ("54px → 57px"), false arithmetic; now one decimal.
+- **Not yet:** the other screens keep the old moment until each gets instances, a cause and a mechanism; with reduced motion the film is skipped, not shown as four still frames; not watched in the browser pane by a person yet.
+- **Media hooks:** docs/media/showcase-42-four-acts.mp4 beside the reference.
+
 ## The showcase rushed the problem: the cause was the system, not the timings (2026-11-13)
 - **The itch:** the owner: "our showcase is being rushed … we don't show the problem very well, we rush the fix and don't have good payoff", with a new reference (maybepratikk's bold-on-hover tabs, 22.8 s), then "compare the time we spend b/w showing problem vs showing fix … also the guardrails", then "first analyse and fix the root cause in the skill and the system".
 - **How we found it:** the reference read frame by frame, and its red and blue marks counted in every frame. Problem against fix: the tabs 10.8 s to 6.7 s (1.6×), the first reference 5.9 s to 1.8 s (3.3×), ours 1.4 s of marks to 1.7 s (0.8×), and ours never shows the fault happening before marking it.
@@ -2316,6 +2324,8 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   Nothing finds a new one when it is written.
 
 ## Shipped · 2026-W46
+- The showcase's #42 now explains itself in four acts: you see the tabs jitter, see it measured with its cause, see why the fix holds, then see every tab hold still ([entry](#42-told-in-four-acts-the-first-screen-on-the-new-stage-2026-11-13)).
+- plumber's server no longer keeps a core busy on a big project: its safety-net file check is paced by its own cost, and a 16,000-element page now reads in 6–9 s ([entry](#the-server-was-checking-22808-files-four-times-a-second-2026-11-13)).
 - The page no longer freezes while plumber reads it: the longest block on a big page went from 1.8 s to 0.3 s, and the pointer stays live ([entry](#the-page-froze-while-plumber-read-it-the-judging-now-comes-in-slices-2026-11-13)).
 - With plumber open, the app under it scrolls and answers the pointer nearly as it does alone (crafting-ui: 7 → 46 frames a second scrolling, 15 → 59 moving the pointer) ([entry](#with-plumber-open-the-app-crawled-it-was-asking-what-covers-this-four-thousand-times-a-frame-2026-11-13)).
 - plumber reads a 16,000-element page in about 15 s where it took 30–52 s: it asks the server about every element in a few round trips instead of 889, and redraws the page 3 times instead of 18 ([entry](#889-questions-asked-one-at-a-time-and-a-redraw-for-each-trickle-2026-11-13)).

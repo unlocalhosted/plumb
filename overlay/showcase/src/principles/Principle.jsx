@@ -7,6 +7,7 @@ import { createPortal } from 'react-dom';
 import { PRINCIPLES as ALL } from './catalogue.js';
 import { MERGED, shown } from './curation.js';
 import { ProbeStage } from './ProbeStage.jsx';
+import { Film } from './Film.jsx';
 
 // the principles the showcase stages; the others are reached by their number and say why they have no screen
 const PRINCIPLES = ALL.filter((p) => shown(p.n));
@@ -430,7 +431,7 @@ function Lesson({ state, lesson, away }) {
 }
 
 // The switch names the two techniques. Its thumb slides between them.
-function Switch({ names, fixed, ready, onBack, onFix }) {
+export function Switch({ names, fixed, ready, onBack, onFix }) {
   const track = useRef(null);
   const [thumb, setThumb] = useState(null);
   useEffect(() => {
@@ -545,7 +546,8 @@ export function Principle({ n }) {
           <div className="w-full" style={{ transform: `scale(${fit.current})`, transformOrigin: '50% 0', transition: still() || !room.h ? 'none' : CAMERA.out }}>
           <div ref={moment.cam} className="relative flex w-full justify-center" style={moment.style}>
             <section data-example aria-label="Example" className={probe || handsOn ? 'w-fit' : Example?.stage ? 'flex w-full min-w-0 justify-center' : 'flex w-full max-w-2xl min-w-0 justify-center overflow-hidden rounded-sheet corner-squircle bg-surface shadow-window ' + (Example?.framed ? 'ring-1 ring-line' : 'border border-line px-4 pt-4 pb-5 sm:px-6 sm:pt-5 sm:pb-6')}>
-              {handsOn ? <Example key={side} side={side} onStatus={setSaid} />
+              {handsOn && Example.film ? <Film Example={Example} names={names} onSaid={setSaid} />
+                : handsOn ? <Example key={side} side={side} onStatus={setSaid} />
                 : probe ? (probing ? <Example key={side} side={side} /> : <ProbeStage n={n} side={side} setSide={setSide} onState={setStage}><Example key={side} side={side} /></ProbeStage>)
                 : <Taken.Provider value={plumb.rewrite}>{Example ? <Example broken live={moment.live && !plumb.reading} /> : <p className="text-sm text-ink-muted">This example isn’t built yet.</p>}</Taken.Provider>}
             </section>
@@ -558,7 +560,7 @@ export function Principle({ n }) {
             {live ? <Switch names={names} fixed={fixed} ready={ready} onBack={() => fixed && moment.give()} onFix={() => !fixed && moment.take()} /> : null}
             {/* a card the viewer can change says what to try, in one line */}
             {live && Example?.hint ? <p className="mt-3 max-w-md text-center text-[13px] text-ink-muted text-pretty">{Example.hint}</p> : null}
-            {handsOn ? <Switch names={names} fixed={side === 'fixed'} ready onBack={() => setSide('broken')} onFix={() => setSide('fixed')} /> : null}
+            {handsOn && !Example.film ? <Switch names={names} fixed={side === 'fixed'} ready onBack={() => setSide('broken')} onFix={() => setSide('fixed')} /> : null}
             {handsOn ? <p className="mt-3 h-10 max-w-md text-center text-[13px] text-ink-muted text-pretty">{said}</p> : null}
             {probe && !probing ? <Switch names={names} fixed={side === 'fixed'} ready={!stage?.busy} onBack={() => stage?.pick('broken')} onFix={() => stage?.pick('fixed')} /> : null}
             {probe && stage?.status ? <p className="mt-3 text-center text-[13px] text-ink-muted">{stage.status}</p> : null}
