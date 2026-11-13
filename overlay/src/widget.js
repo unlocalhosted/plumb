@@ -40,6 +40,13 @@ import { Craft } from './craft.js';
 import { setSource } from './craft-headless.js';
 import { choicesHtml, bindChoices, whyLine, toPx, fmtPx, esc, code, VALUED, CHOICES_CSS } from './choices.js';
 import { placeOf, atPlace } from './stamp.js';
+import { XRAY_CSS } from './xray.js'; // the X-ray (Alt+B): the element under the pointer, drawn on and said beside it
+import { XRAY_LIVE_CSS, mountXray, familyOf } from './xray-live.js';
+import { PICKER_CSS } from './picker.js';
+import { TOY_DEFS } from './toys.js';
+import { elementEdit } from './inplace.js';
+import { activeVariants, swapInForce } from './variants.js';
+import { classEditsOf } from './locate.js';
 
 const tokensCss = await (await fetch(new URL('./tokens.css', import.meta.url))).text();
 // the element an Alt+click read, kept across a reload: where it is written (its stamp without the file's hash, which a
@@ -483,6 +490,90 @@ class PlumbOverlay extends HTMLElement {
     this.#ready?.dismiss();
     this.#blueprint.toggle(options);
   }
+  // ── THE X-RAY (Alt+B) ─────────────────────────────────────
+  // The element under the pointer, drawn on and said beside it, changed in place (xray-live.js, the same piece the
+  // design site's X-ray page runs). This adapter tells it what your page is: names from your components, places from
+  // the stamps, your theme's steps, and writes through the engine (the class showing now, variants.js; located in your
+  // code, locate.js; written by the server's swaps, one Undo group per change).
+  #xray = null;
+  #toggleXray() {
+    if (this.#xray) { this.#xray.destroy(); this.#xray = null; this.#root.querySelector('.xr-host')?.remove(); return; }
+    this.#ready?.dismiss();
+    if (this.#blueprint?.active) this.#toggleBlueprint();
+    if (!this.#root.querySelector('style[data-xray]')) {
+      const t = document.createElement('template');
+      t.innerHTML = `<style data-xray>${XRAY_CSS}${PICKER_CSS}${XRAY_LIVE_CSS}
+      .xr-host { position: fixed; inset: 0; pointer-events: none; z-index: 2147483000; font-family: var(--pl-sans); color: var(--pl-text-primary); }
+      .xr-host :is(.xr-card, .xr-list, .xr-note) { pointer-events: auto; }</style>${TOY_DEFS}`;
+      this.#root.append(t.content);
+    }
+    const host = document.createElement('div'); host.className = 'xr-host';
+    this.#root.append(host);
+    // your theme's steps; where it names none, Tailwind's own (its spacing multiplier, its type and corner steps), as a
+    // page on Tailwind's defaults is written in them
+    const rootPx = (v) => { const n = parseFloat(v); return /rem$/.test(v.trim()) ? n * (parseFloat(getComputedStyle(document.documentElement).fontSize) || 16) : n; };
+    const BUILT = { type: [[12, 'xs'], [14, 'sm'], [16, 'base'], [18, 'lg'], [20, 'xl'], [24, '2xl'], [30, '3xl'], [36, '4xl'], [48, '5xl']],
+      radius: [[2, 'xs'], [4, 'sm'], [6, 'md'], [8, 'lg'], [12, 'xl'], [16, '2xl'], [24, '3xl'], [32, '4xl'], [9999, 'full']] };
+    const MULTIPLES = [0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 5, 6, 7, 8, 9, 10, 11, 12, 14, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52, 56, 60, 64, 72, 80, 96];
+    const steps = (f) => {
+      const own = this.#scaleOf(f === 'size' ? 'spacing' : f).map((t) => [t.px, t.short]);
+      if (own.length) return own;
+      if (f === 'spacing' || f === 'size') { const base = rootPx(getComputedStyle(document.documentElement).getPropertyValue('--spacing') || '0.25rem') || 4; return MULTIPLES.map((n) => [n * base, String(n)]); }
+      return BUILT[f] ?? [];
+    };
+    const where = (el) => { const p = placeOf(el); if (!p) return null; const m = /^(.*):(\d+):\d+$/.exec(p); return m ? `${m[1]}:${m[2]}` : p; };
+    const nameOf = (el) => componentOf(el) ?? el.localName;
+    const self = this;
+    this.#xray = mountXray({
+      container: host, events: window, root: this.#root, contextStop: document.body, watch: document.body,
+      swallowClicks: true, dropPreviewOnWrite: true, cursorOn: document.documentElement,
+      room: () => ({ left: 12, top: 12, right: innerWidth - 12, bottom: innerHeight - 12 }),
+      partAt: (e) => {
+        if (e.composedPath().includes(self)) return null;
+        const el = reachable(document.elementFromPoint(e.clientX, e.clientY));
+        return el && el !== document.documentElement && el !== document.body ? el : null;
+      },
+      name: (el) => [nameOf(el), where(el)],
+      key: (el) => placeOf(el),
+      all: (k) => [...document.querySelectorAll(atPlace(k))],
+      component: () => null, // 'everywhere' (a component's own file) comes with the scope layer
+      tokenOf: (f, n) => steps(f).find(([px]) => Math.abs(px - n) <= 0.5)?.[1] ?? null,
+      scale: steps,
+      isPage: (r) => !r.target.closest?.('plumb-overlay'),
+      // Sync: each change as the class edit that shows it, in the class showing now; located in your code; written
+      // with one Undo group per change
+      write: async (groups) => {
+        // the class family each property is written in (a text size is never a text colour)
+        const FAMILY = { gap: (c) => /^gap(-[xy])?-/.test(c), 'border-radius': (c) => /^rounded(-[\w[\].]+)?$/.test(c) && !/^rounded-[trblse]{1,2}(-|$)/.test(c),
+          width: (c) => /^w-/.test(c), height: (c) => /^h-/.test(c), 'font-size': (c) => /^text-(xs|sm|base|lg|\d?xl|\[[\d.]+(px|rem)\])$/.test(c), flex: (c) => /^flex-(1|none|auto|initial)$/.test(c) };
+        // one edit per element: every change to it at once (two writes to one line would trip over each other)
+        const byPart = new Map();
+        for (const g of groups) { const k = `${g.part}|${g.scope}`; (byPart.get(k) ?? byPart.set(k, []).get(k)).push(g); }
+        const out = [];
+        for (const list of byPart.values()) {
+          const el = list[0].els[0];
+          const fail = (why) => { for (const g of list) out.push({ id: g.id, state: 'failed', why }); };
+          if (!el) { fail("That element isn't on the page any more, so its line can't be found."); continue; }
+          try {
+            const classes = [...el.classList], active = activeVariants(el);
+            const box = list.filter((g) => /^(padding|margin)-/.test(g.prop)).map((g) => ({ prop: g.prop, to: { token: g.cls.replace(/^-?[a-z]+-/, '') } }));
+            const swaps = list.filter((g) => !/^(padding|margin)-/.test(g.prop)).map((g) => swapInForce(classes, FAMILY[g.prop] ?? (() => false), g.cls, active)).filter(Boolean);
+            const edit = elementEdit(classes, swaps, box, active);
+            if (!edit) { for (const g of list) out.push({ id: g.id, state: 'ok', where: 'already written that way' }); continue; }
+            const edits = await classEditsOf(el, edit.from, edit.to);
+            const group = `xray.${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+            const files = new Map();
+            for (const e of edits) (files.get(e.file) ?? files.set(e.file, { hash: e.hash, edits: [] }).get(e.file)).edits.push(e.edit);
+            for (const [file, f] of files) await post('swaps', { file, hash: f.hash, edits: f.edits, trace: { group, meta: { step: 'X-ray', laws: [] } } });
+            const first = edits[0], at = first ? `${first.file}:${first.edit.line}` : '';
+            for (const g of list) out.push({ id: g.id, state: 'ok', cls: edit.to, where: at, group });
+          } catch (error) { fail(error?.message ?? String(error)); }
+        }
+        return out;
+      },
+      undo: (r) => post('undo-group', { group: r.group }),
+    });
+  }
   // Alt+B: the whole page; while one element is read (an Alt+click), the reading widens to the page
   #wholePage() {
     if (!this.#blueprint?.scope) return this.#toggleBlueprint();
@@ -844,7 +935,11 @@ class PlumbOverlay extends HTMLElement {
       return;
     }
     // Alt+B: the whole view as its blueprint, every drift drawn where it lives
-    if (event.altKey && event.code === 'KeyB' && !event.repeat) { event.preventDefault(); event.stopPropagation(); this.#disarm(); this.#wholePage(); return; }
+    // Alt+B: the X-ray of the element under the pointer (owner, 2026-11-13: in place of the whole page's heat)
+    if (event.altKey && event.code === 'KeyB' && !event.repeat) { event.preventDefault(); event.stopPropagation(); this.#disarm(); this.#toggleXray(); return; }
+    // Esc with nothing in hand leaves the X-ray (with changes or a list open, the X-ray's own Esc puts them back first)
+    if (event.key === 'Escape' && this.#xray && !this.#xray.pending && !this.#typing(event)) { event.preventDefault(); event.stopPropagation(); this.#toggleXray(); return; }
+    if (this.#xray && event.key === 'Alt') return;
     if (event.key === 'Alt' && !event.repeat) this.#arm();
     else if (event.key === 'Escape' && this.#armed && this.#sticky) { event.preventDefault(); event.stopPropagation(); this.#disarm(); }
     // J/K, the arrows, N and Enter: the panel's causes, while blueprint is on and nothing is open or being typed
