@@ -3,7 +3,8 @@ import { profileProgress } from '../profile.js';
 import { basename, dirname, join, resolve, sep } from 'node:path';
 import { parseSync, rawTransferSupported, visitorKeys } from 'oxc-parser';
 import type { Node, Program } from 'oxc-parser';
-import { ResolverFactory } from 'oxc-resolver';
+import type { ResolverFactory } from 'oxc-resolver';
+import { tracked } from '../collect/resolved.js';
 import { componentCache, componentFiles, fileHash } from './cache.js';
 import type { PlumbConfig } from '../config.js';
 import type { Declaration, Site } from '../report.js';
@@ -89,12 +90,12 @@ const resolverOptions = { tsconfig: 'auto' as const, extensions: ['.tsx', '.ts',
   conditionNames: ['import', 'browser', 'default'], mainFields: ['browser', 'module', 'main'] };
 
 /** A fresh batch for one build of the graph (ComponentMemory.batch). */
-export const componentBatch = (): ComponentBatch => ({ resolver: new ResolverFactory(resolverOptions), contextResolver: new ResolverFactory({ tsconfig: 'auto', resolveToContext: true }), resolutions: new Map(), directories: new Map() });
+export const componentBatch = (): ComponentBatch => ({ resolver: tracked(resolverOptions), contextResolver: tracked({ tsconfig: 'auto', resolveToContext: true }), resolutions: new Map(), directories: new Map() });
 
 /** Read before collection so a warm graph does not retain unneeded source ASTs. */
 export function cachedComponents(root: string, files: string[], config: PlumbConfig, includeUnused = false): ComponentGraph | undefined {
-  const resolver = new ResolverFactory(resolverOptions);
-  const contexts = new ResolverFactory({ tsconfig: 'auto', resolveToContext: true });
+  const resolver = tracked(resolverOptions);
+  const contexts = tracked({ tsconfig: 'auto', resolveToContext: true });
   return componentCache(root, files, config, includeUnused).read((file, specifier) => resolver.resolveFileSync(file, specifier).path,
     (file, specifier) => contexts.resolveFileSync(file, specifier).path);
 }
@@ -103,9 +104,9 @@ export function discoverComponents(root: string, files: string[], config: PlumbC
   const diagnostics: Finding[] = [];
   const rootRanges = new Map<ComponentIdentity, RootRange[]>();
   const fingerprintClasses = new Map<ComponentIdentity, string[]>();
-  const resolver = memory?.batch?.resolver ?? new ResolverFactory(resolverOptions);
+  const resolver = memory?.batch?.resolver ?? tracked(resolverOptions);
   // Resolve shadcn aliases to directories even when callers use relative imports.
-  const contextResolver = memory?.batch?.contextResolver ?? new ResolverFactory({ tsconfig: 'auto', resolveToContext: true });
+  const contextResolver = memory?.batch?.contextResolver ?? tracked({ tsconfig: 'auto', resolveToContext: true });
   const cache = !readOnly && !overrides.size ? componentCache(root, files, config, includeUnused) : undefined;
   const cached = cache?.read((file, specifier) => resolver.resolveFileSync(file, specifier).path,
     (file, specifier) => contextResolver.resolveFileSync(file, specifier).path);

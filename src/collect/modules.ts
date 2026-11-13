@@ -7,7 +7,8 @@ import { join, resolve } from 'node:path';
 import { performance } from 'node:perf_hooks';
 import { parseSync } from 'oxc-parser';
 import type { EcmaScriptModule } from 'oxc-parser';
-import { ResolverFactory } from 'oxc-resolver';
+import type { ResolverFactory } from 'oxc-resolver';
+import { tracked } from './resolved.js';
 import { profileProgress } from '../profile.js';
 import { unreadable } from '../diagnostics.js';
 import type { Finding } from '../report.js';
@@ -50,7 +51,7 @@ export async function collectModules(root: string, sources: Map<string, ModuleIm
   try { cache = Object.assign(cache, JSON.parse(await readFile(path, 'utf8')) as Record<string, CachedModule>); }
   catch (error) { if ((error as NodeJS.ErrnoException).code !== 'ENOENT' && !(error instanceof SyntaxError)) throw error; }
   const nextCache: Record<string, CachedModule> = Object.create(null) as Record<string, CachedModule>;
-  const resolver = new ResolverFactory({ tsconfig: 'auto', extensions: ['.tsx', '.ts', '.jsx', '.js', '.mts', '.mjs', '.cts', '.cjs'],
+  const resolver = tracked({ tsconfig: 'auto', extensions: ['.tsx', '.ts', '.jsx', '.js', '.mts', '.mjs', '.cts', '.cjs'],
     extensionAlias: { '.js': ['.ts', '.tsx', '.js'], '.mjs': ['.mts', '.mjs'], '.cjs': ['.cts', '.cjs'] },
     conditionNames: ['import', 'browser', 'default'], mainFields: ['browser', 'module', 'main'], aliasFields: ['browser'], builtinModules: true });
   const diagnostics: Finding[] = [];

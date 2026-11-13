@@ -3,7 +3,8 @@ import { readFile } from 'node:fs/promises';
 import { dirname, isAbsolute, relative, resolve, sep } from 'node:path';
 import { parseSync, visitorKeys } from 'oxc-parser';
 import type { Node } from 'oxc-parser';
-import { ResolverFactory } from 'oxc-resolver';
+import type { ResolverFactory } from 'oxc-resolver';
+import { tracked } from './resolved.js';
 import { configDiagnostic, unreadable } from '../diagnostics.js';
 import type { Finding } from '../report.js';
 import { cssImports, resolveStylesheet } from './stylesheets.js';
@@ -11,7 +12,7 @@ import { moduleImports } from './modules.js';
 
 /** Resolve runtime entries without importing/executing a project's bundler config. */
 export async function appTailwindEntry(root: string, candidates: string[], diagnostics: Finding[], inputs: string[]): Promise<string | undefined> {
-  const resolver = new ResolverFactory({ tsconfig: 'auto', extensions: ['.tsx', '.ts', '.jsx', '.js', '.mts', '.mjs', '.css'],
+  const resolver = tracked({ tsconfig: 'auto', extensions: ['.tsx', '.ts', '.jsx', '.js', '.mts', '.mjs', '.css'],
     extensionAlias: { '.js': ['.ts', '.tsx', '.js'] }, conditionNames: ['import', 'browser', 'default'], mainFields: ['browser', 'module', 'main'] });
   const texts = new Map<string, string | undefined>();
   const modules = new Map<string, { imports: string[]; css: string[] }>();

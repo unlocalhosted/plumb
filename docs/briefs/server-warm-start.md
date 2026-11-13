@@ -136,10 +136,19 @@ What this is not yet:
 
 - **Evidence over days.** Three starts on each app in one afternoon. The layer exists to run through ordinary
   work, edits and branch switches included, before layer 3 answers anything from the table.
-- **The check's full rule.** The receipt compares files and directory listings. It still does not record what each
-  import resolved to. A new file that changes which module an import finds is caught only if it appears in a
-  directory the server lists.
-- **A line in `plumber doctor`.** The result is in the server's health and in the log; doctor does not say it yet.
+- **The check's full rule.** Done 2026-11-13. Every place the analysis resolves an import now goes through one
+  resolver that remembers its answers (six kinds of resolver, each kept with its own options). The receipt holds
+  them, and the check asks each one again the same way. crafting-ui: 4,638 imports, the check went from 0.02 s to
+  0.05–0.07 s. Proof: one recorded answer altered by hand, and the next start said "changed, 1 import" and named
+  it; the start after matched. algorecall on vm-agent the same day: three starts, none then valid and matched
+  twice; 60,989 imports; the check takes 0.47–0.49 s (it was 0.08–0.11 s without them, and the design's guess was
+  0.9 s); the receipt is 15.5 MB, most of it full paths written once per import, which layer 3 will have to read
+  before it answers (tables of paths would shrink it). The two disk caches that can answer without resolving
+  (class collection, the component graph) both re-ask every import they recorded through these same resolvers when
+  they are reused, so their imports are in the receipt too.
+- **A line in `plumber doctor`.** Done 2026-11-13: `plumber doctor --verbose` has a Start-up row (starts checked,
+  how many were compared with a fresh analysis, how many differed). A difference never fails doctor, since nothing
+  is answered from the kept table yet.
 - **Tested.** Four server test files nearest the change pass (27 of 27, 1 skipped). No test of the check itself.
 
 Small things: the typed columns made algorecall's table 24.7 MB rather than 20.9 MB; the longest slice while

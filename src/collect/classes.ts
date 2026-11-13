@@ -6,7 +6,8 @@ import { unreadable } from '../diagnostics.js';
 import type { Finding } from '../report.js';
 import { parseSync, rawTransferSupported, visitorKeys } from 'oxc-parser';
 import type { Node, Program } from 'oxc-parser';
-import { ResolverFactory } from 'oxc-resolver';
+import type { ResolverFactory } from 'oxc-resolver';
+import { tracked } from './resolved.js';
 import type { Condition, Declaration, Site } from '../report.js';
 import { collectInline, moduleScope, embedded } from './inline.js';
 import type { SourceStyles } from './inline.js';
@@ -129,7 +130,7 @@ export async function collectClasses(files: string[], classHelpers: ClassHelperI
   const helpers = classHelperRegistry(classHelpers);
   const helperNames = [...helpers.keys()];
   const canContainClasses = (text: string) => text.includes('class') || text.includes('\\') || helperNames.some(helper => text.includes(helper));
-  const resolver = shared.resolver ??= new ResolverFactory({ tsconfig: 'auto', extensions: ['.tsx', '.ts', '.jsx', '.js'], extensionAlias: { '.js': ['.ts', '.tsx', '.js'] }, conditionNames: ['import', 'node', 'default'] });
+  const resolver = shared.resolver ??= tracked({ tsconfig: 'auto', extensions: ['.tsx', '.ts', '.jsx', '.js'], extensionAlias: { '.js': ['.ts', '.tsx', '.js'] }, conditionNames: ['import', 'node', 'default'] });
   const dependencies = new Map<string, string>(), resolutions = new Map<string, string | undefined>();
   const resolveImport = (file: string, specifier: string) => {
     const key = `${file}\0${specifier}`;

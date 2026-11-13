@@ -1,7 +1,8 @@
 import { readFile } from 'node:fs/promises';
 import { realpathSync } from 'node:fs';
 import { dirname, join, sep } from 'node:path';
-import { ResolverFactory } from 'oxc-resolver';
+import type { ResolverFactory } from 'oxc-resolver';
+import { tracked } from './resolved.js';
 import { unreadable } from '../diagnostics.js';
 import type { Finding } from '../report.js';
 import type { Report } from '../report.js';
@@ -21,7 +22,7 @@ export interface StylesheetGraph { diagnostics: Finding[]; files: Map<string, St
 
 // Same CSS resolution options as @tailwindcss/node: style exports/main field,
 // .css extension, node_modules (including NODE_PATH). Never JS main fallbacks.
-const resolver = new ResolverFactory({ extensions: ['.css'], mainFields: ['style'], conditionNames: ['style'],
+const resolver = tracked({ extensions: ['.css'], mainFields: ['style'], conditionNames: ['style'],
   modules: ['node_modules', ...(process.env.NODE_PATH?.split(sep === '/' ? ':' : ';') ?? [])] });
 
 export function resolveStylesheet(id: string, base: string): string {
