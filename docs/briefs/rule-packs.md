@@ -290,6 +290,24 @@ A page-wide rule is said on the first element the engine judges (it judges only 
 
 Run (2026-11-14): broken page, 27 of 34 speak; 7 need a different page and are unproven. Real pages: 16 findings, all true (13 title tooltips on glyphwrite; img-size, eager-below-fold and figure-caption on crafting-ui). Four packs, 104 rules, 10,827 elements: 113 ms.
 
+## 4g. The batch of 2026-11-14: 17 checks a linter cannot see
+
+The brief, in the owner's words: "triage and prioritise which often gets ignore and non obvious to linters". The test for an item: its evidence is not in the source. Pack `experience`, files `overlay/src/pack-experience.js` and `overlay/src/experience-rules.js`.
+
+| What it reads | Rules (guide) |
+|---|---|
+| Computed text style and laid-out text | nowrap-sentence (respect-os-text-scale), justify-rivers, caps-long (typography) |
+| The laid-out page | page-overflow-x (responsive-design), skip-link (accessibility), color-scheme-missing (dark-mode) |
+| What is running or loaded | motion-no-opt-out (motion), font-display (visually-stable-font-fallbacks), preconnect-missing, script-blocking (performance), page-title (accessibility) |
+| Two places compared | button-name-reused, link-target-renamed, state-in-label (accessibility §3) |
+| Scroll boxes and what is on top | scroll-no-hint (scrollability-affordance-hints), scroll-keyboard (accessibility), control-covered (card; asked with elementsFromPoint) |
+
+Triage left out: what craft already says (measure, truncate-intent, anchor-offset, fixed-height); a control shown only on hover (needs the stylesheet read for a matching focus rule); long tasks and layout shift (need an observer running before the page loads); px font sizes and vw-only type (the computed style does not keep the unit).
+
+Engine change with this batch: a looping animation keeps only its own element and what is inside it from being judged, not what holds it (overlay/src/craft.js). Before, one spinner stopped craft for every ancestor, the page's root included.
+
+Run (2026-11-14): tests, 15 of 17 at their line plus spinner-silent. crafting-ui: state-in-label ×89, button-name-reused ("Replay" ×89), caps-long, link-target-renamed ×1. glyphschool: font-display. glyphwrite: skip-link. Three false hits fixed. Five page packs, 145 rules, 10,827 elements: 56 ms by kind.
+
 ## 5. Order, and why not the signed-off one
 
 The foundations put packs at layer 5, after the snapshot (3) and pure rules in a worker (4), so that a new page pack

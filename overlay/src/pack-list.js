@@ -10,6 +10,7 @@ import { A11Y } from './pack-a11y.js';
 import { FORMS } from './pack-forms.js';
 import { COMPONENTS } from './pack-components.js';
 import { HTML } from './pack-html.js';
+import { EXPERIENCE } from './pack-experience.js';
 import { SECURITY } from './pack-security.js';
 
-export const PACK_DATA = [A11Y, FORMS, COMPONENTS, HTML, SECURITY];
+export const PACK_DATA = [A11Y, FORMS, COMPONENTS, HTML, EXPERIENCE, SECURITY];

@@ -17,7 +17,7 @@ const rule = (short, owns, check) => ({ id: `html/${short}`, family: 'craft', ow
 // the first element a pass judges stands for the page: page-wide rules are said there, once (each rule keeps its own)
 // (kept across passes, while that element is still in the page: a second pass that starts elsewhere must not say it again)
 const ROOT = new WeakMap(); // document → the element that stands for it
-const isPage = (el) => { const kept = ROOT.get(document)?.deref(); if (kept?.isConnected) return kept === el; ROOT.set(document, new WeakRef(el)); return true; };
+export const isPage = (el) => { const kept = ROOT.get(document)?.deref(); if (kept?.isConnected) return kept === el; ROOT.set(document, new WeakRef(el)); return true; };
 const PRESSABLE = 'a[href], button, input, select, textarea, summary, label, [role], [tabindex], [contenteditable]';
 const viewport = () => document.querySelector('meta[name="viewport"]')?.getAttribute('content') ?? null;
 const fold = () => window.innerHeight;

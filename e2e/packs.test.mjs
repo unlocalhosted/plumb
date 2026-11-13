@@ -52,7 +52,7 @@ function speaks(by, pack, source, expected) {
   }
   assert.deepEqual(missing, []);
 }
-const ofPacks = (by) => [...by].filter(([rule]) => /^(?:a11y|forms|components|html)\//.test(rule)).map(([rule, lines]) => `${rule} @${lines.join(',')}`);
+const ofPacks = (by) => [...by].filter(([rule]) => /^(?:a11y|forms|components|html|experience)\//.test(rule)).map(([rule, lines]) => `${rule} @${lines.join(',')}`);
 const PX = 'data:image/gif;base64,R0lGODlhAQABAAAAACw=';
 
 const A11Y = `export function App() {
@@ -260,6 +260,45 @@ const HTML_EXPECTED = [['page-lang', 'root-el'], ['viewport-meta', 'root-el'], [
   ['summary-nested-control', 'd2'], ['summary-no-cue', 'd2'], ['title-tooltip', 'tip'], ['video-size', 'vid'], ['video-poster', 'vid'], ['video-captions', 'vid'], ['background-video', 'bg'], ['autoplay-sound', 'aud'],
   ['iframe-hidden', 'fr'], ['inline-handler', 'inl'], ['eager-below-fold', 'far']];
 
+// what only the drawn page shows. No title, a dark ground the browser is never told about, a web font with no font-display,
+// a loop with no reduced-motion style, and a spinner that says nothing (it speaks now that what holds a loop is judged).
+const EXPERIENCE_INDEX = '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><script src="/blocking.js"></script></head><body style="background:#111;color:#eee"><div id="root"></div><script type="module" src="/src/entry.jsx"></script></body></html>';
+const EXPERIENCE = `export function App() {
+  return (
+    <div id="root-el" className="flex flex-col gap-s4 p-s4">
+      <style>{"@font-face { font-family: Slowface; src: url(/wide.svg) format('woff2'); } @keyframes drift { to { translate: 20px 0 } } @keyframes turn { to { rotate: 360deg } } .drift { animation: drift 2s linear infinite alternate } .spinner { animation: turn 1s linear infinite }"}</style>
+      <div style={{ position: 'relative', width: 200, height: 40 }}>
+        <button id="under" type="button" style={{ width: 200, height: 40 }}>Under</button>
+        <div id="cover" style={{ position: 'absolute', inset: 0, zIndex: 5 }} />
+      </div>
+      <nav aria-label="Main"><a href="/a">One</a><a href="/b">Two</a><a href="/c">Three</a><a href="/d">Four</a><a href="/e">Five</a><a href="/f">Six</a><a href="/g">Seven</a><a href="/h">Eight</a><a href="/i">Nine</a><a href="/j">Ten</a></nav>
+      <main>
+        <h1>Bad experience</h1>
+        <p id="nowrap" style={{ whiteSpace: 'nowrap' }}>This is a whole sentence of ordinary words that has been told it may never wrap onto a second line.</p>
+        <p id="just" style={{ textAlign: 'justify', width: 260 }}>This paragraph is justified without hyphenation, so its spaces stretch to fill every line and open rivers of white that run down through the text for anyone reading it.</p>
+        <p id="caps" style={{ textTransform: 'uppercase' }}>An entire sentence set in capitals is read letter by letter instead of word by word.</p>
+        <div id="wide" style={{ width: 3000, height: 4 }} />
+        <div><div id="loop" className="drift" style={{ width: 200, height: 40 }}>drifting</div></div>
+        <div id="spinbox"><div className="spinner" style={{ width: 20, height: 20, border: '2px solid' }} /></div>
+        <a id="l1" href="/pricing">Pricing</a>
+        <a id="l2" href="/pricing">What it costs</a>
+        <ul>
+          <li>First <button id="del1" type="button">Delete</button></li>
+          <li>Second <button type="button">Delete</button></li>
+          <li>Third <button type="button">Delete</button></li>
+        </ul>
+        <button id="state" type="button" aria-pressed="false" aria-label="Copy, not selected">c</button>
+        <div id="scroller" style={{ height: 60, overflowY: 'auto', width: 300 }}><p>line one</p><p>line two</p><p>line three</p><p>line four</p><p>line five</p></div>
+        <div id="strip" style={{ display: 'flex', overflowX: 'auto', scrollbarWidth: 'none', width: 300 }}><span style={{ flex: 'none', width: 150 }}>one</span><span style={{ flex: 'none', width: 150 }}>two</span><span style={{ flex: 'none', width: 150 }}>three</span></div>
+      </main>
+    </div>
+  );
+}
+`;
+const EXPERIENCE_EXPECTED = [['nowrap-sentence', 'nowrap'], ['justify-rivers', 'just'], ['caps-long', 'caps'], ['page-overflow-x', 'root-el'], ['motion-no-opt-out', 'root-el'], ['script-blocking', 'root-el'],
+  ['page-title', 'root-el'], ['skip-link', 'root-el'], ['color-scheme-missing', 'root-el'], ['link-target-renamed', 'l2'], ['button-name-reused', 'del1'], ['state-in-label', 'state'], ['scroll-no-hint', 'strip'],
+  ['scroll-keyboard', 'scroller'], ['control-covered', 'under']];
+
 // The same parts, built as the guides say, and the cases that once gave false hits: a keyboard hint inside a label,
 // selectable icons named like actions, a roving tab stop, and four from algorecall: a form sent by script with no
 // method, a switch named by a <label for>, a drawing whose numbers are not its name (and a page still loading, below).
@@ -270,7 +309,7 @@ const RIGHT = `export function App() {
       <main>
         <h1>Right page</h1>
         <search><label>Find <kbd>/</kbd><input type="search" name="q" aria-label="Find an icon" /></label></search>
-        <button type="button" aria-pressed="false" aria-label="Copy, not selected">c</button>
+        <button type="button" aria-pressed="false" aria-label="Icon: copy">c</button>
         <div role="tablist" aria-label="Views">
           <button type="button" role="tab" id="t1" aria-selected="true" tabIndex={0}>One</button>
           <button type="button" role="tab" id="t2" aria-selected="false" tabIndex={-1}>Two</button>
@@ -301,6 +340,8 @@ const RIGHT = `export function App() {
         <progress id="up" value="40" max="100" />
         <button type="button" aria-expanded="false" aria-controls="later">Toggle</button>
         <a href="/elsewhere" title="Elsewhere">Elsewhere</a>
+        <a href="/interfaces">Interfaces</a>
+        <a href="/interfaces"><span>Vol. I</span><span>Interfaces</span></a>
       </main>
       <footer>End</footer>
     </div>
@@ -360,6 +401,15 @@ test('HTML pack: 32 rules name their problem at its line, the page-wide ones onc
   const by = await said(t, HTML, { index: BARE_INDEX, files: { 'public/wide.svg': WIDE_SVG } });
   speaks(by, 'html', HTML, HTML_EXPECTED);
   for (const rule of ['page-lang', 'viewport-meta', 'zoom-disabled', 'quirks-mode', 'landmark-main', 'h1-missing']) assert.equal(by.get(`html/${rule}`).length, 1, `${rule} is said once`);
+});
+
+test('experience pack: 15 rules name what only the drawn page shows, and the spinner that says nothing is heard', { timeout: 240000 }, async (t) => {
+  if (!await built()) return t.skip('Run npm run build first.');
+  const by = await said(t, EXPERIENCE, { index: EXPERIENCE_INDEX, files: { 'public/wide.svg': WIDE_SVG, 'public/blocking.js': '/* nothing */' } });
+  speaks(by, 'experience', EXPERIENCE, EXPERIENCE_EXPECTED);
+  speaks(by, 'components', EXPERIENCE, [['spinner-silent', 'spinbox']]);
+  // an icon called Copy that can be picked: its state is in its label (said above), and it is not an action given a state
+  assert.equal(by.get('components/pressed-on-action'), undefined);
 });
 
 test('the same parts built right, with the cases that once gave false hits: no pack says anything', { timeout: 240000 }, async (t) => {

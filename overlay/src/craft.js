@@ -480,9 +480,11 @@ export class Craft {
       // an element mid-animation (an entrance, a stroke drawing in) is judged at rest, not mid-flight: its craft waits
       // for this pass, and the page is judged again once what moves has stopped
       const anims = document.getAnimations().filter((a) => a.playState === 'running' && a.effect?.target);
-      const moving = (el) => anims.some((a) => el === a.effect.target || el.contains(a.effect.target));
-      // a loop (a spinner, a marquee) never comes to rest: what it moves is never judged, and nothing waits on it
+      // a loop (a spinner, a marquee) never comes to rest: what it moves is never judged, and nothing waits on it. What
+      // holds a loop is still: a page with one spinner on it is judged like any other, the spinner aside.
       const ending = anims.filter((a) => a.effect.getComputedTiming?.().iterations !== Infinity);
+      const loops = anims.filter((a) => !ending.includes(a)).map((a) => a.effect.target);
+      const moving = (el) => ending.some((a) => el === a.effect.target || el.contains(a.effect.target)) || loops.some((t) => t === el || t.contains(el));
       if (ending.length && this.#again && !this.#waiting) {
         this.#waiting = true;
         Promise.allSettled(ending.map((a) => a.finished)).then(() => { this.#waiting = false; this.#again?.(); });
