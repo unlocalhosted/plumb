@@ -597,6 +597,15 @@
 - **Now:** one finding on crafting-ui, the three figures on the templates page, drawn from a three-item list written in the code. At phone width it fits (358 of 358 px). It is a fixed set the check cannot yet tell from a list; noted, not fixed. No before and after from a real app.
 - **Seen on the way:** the motion vocabulary page (7,274 elements) closed the browser tab during plumber's read.
 
+## The showcase rushed the problem: the cause was the system, not the timings (2026-11-13)
+- **The itch:** the owner: "our showcase is being rushed … we don't show the problem very well, we rush the fix and don't have good payoff", with a new reference (maybepratikk's bold-on-hover tabs, 22.8 s), then "compare the time we spend b/w showing problem vs showing fix … also the guardrails", then "first analyse and fix the root cause in the skill and the system".
+- **How we found it:** the reference read frame by frame, and its red and blue marks counted in every frame. Problem against fix: the tabs 10.8 s to 6.7 s (1.6×), the first reference 5.9 s to 1.8 s (3.3×), ours 1.4 s of marks to 1.7 s (0.8×), and ours never shows the fault happening before marking it.
+- **The system behind it:** the moment started from the viewer's click ("show me fixed"), so the act where the fault simply happens was dropped, though the first reference had it (3 s of shimmer); the skill's bar was plumber's correctness (one finding, none after), never whether a viewer understood; the stage has one fixed timeline and one before/after slot per screen, so no screen could say its cause, show how its fix works or pay off on every instance; and the first reference was read as durations to copy, not acts with a job each.
+- **The guides:** the reference's marks say four different things (every instance's own outline as the ruler; the subject's before → after; the effect marked where it lands, per neighbour; the cause in one sentence after the numbers) and the fix repeats the same grammar in the other colour. Ours said one thing: a number counting to zero.
+- **What changed (no code yet):** the craft-rule skill now tells the moment in four acts (it happens, measure it, how the fix works, payoff) with the problem getting the larger share, the marks' grammar, what each screen must supply (instances, gesture, cause, mechanism), how to read a reference, and a review that watches the film as a stranger and writes three sentences from it. Storyboard v2 is in the stage brief.
+- **Next:** the stage's code to the new contract, then #42 (bold hover) as the first screen, then #16.
+- **Media hooks:** the reference beside our current #42 moment; the timing table as a bar chart.
+
 ## The left-over-space check's second form: a list flung to the edges (2026-11-13)
 - **The itch:** the last unbuilt piece of the tips; the owner: "Yes, build it".
 - **The slip:** a list from data that wraps, spread with `justify-between`. Each line is spaced by how many items it holds, so a last line with fewer is flung to the edges, out of line with the columns above. A gap is no help, so the first form, which looks for rows with no gap, never saw it.
