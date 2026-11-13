@@ -15,5 +15,8 @@
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
     "remark-gfm": "^4.0.0"
+  },
+  "devDependencies": {
+    "@unlocalhosted/react-plumber": "file:.."
   }
 }

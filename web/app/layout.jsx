@@ -4,6 +4,7 @@ import { Bar } from '../site/Bar.jsx';
 import { rootTokens } from '../site/tokens.js';
 import { SOFT_CSS } from '../../overlay/src/soft.js';
 import { TOY_DEFS } from '../../overlay/src/toys.js';
+import { PlumbOverlay } from '@unlocalhosted/react-plumber/next/overlay';
 
 // The site's two faces: Bricolage Grotesque for what a toy has printed on it (titles, names, buttons), Instrument
 // Sans for sentences. The overlay itself never fetches a font (it runs inside other people's apps), so its tokens
@@ -24,6 +25,8 @@ export default async function Layout({ children }) {
         <div dangerouslySetInnerHTML={{ __html: TOY_DEFS }} />
         <Bar />
         {children}
+        {/* React Plumber on its own site, in development (renders nothing in production) */}
+        <PlumbOverlay />
       </body>
     </html>
   );
