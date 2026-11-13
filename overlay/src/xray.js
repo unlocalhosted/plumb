@@ -67,7 +67,7 @@ export const XRAY_CSS = `
   .xr-box .v { position: absolute; translate: -50% -50%; display: inline-flex; gap: 3px; align-items: baseline; padding: 2px 5px; border-radius: 99px; white-space: nowrap;
     font: 600 10.5px/1.1 var(--pl-mono); font-variant-numeric: tabular-nums; background: var(--pl-bg-surface); box-shadow: 0 0 0 1px color-mix(in oklab, var(--c) 45%, transparent); color: var(--pl-text-primary); }
   .xr-box .v i { font-style: normal; color: var(--c); }
-  .xr-box .v.zero { box-shadow: none; background: none; color: var(--pl-text-secondary); opacity: .7; }
+  .xr-box .v.zero { box-shadow: 0 0 0 1px var(--pl-border-default); color: var(--pl-text-secondary); }
   .xr-box .lab { position: absolute; font: 600 9.5px/1 var(--pl-sans); letter-spacing: .02em; text-transform: uppercase; color: var(--pl-text-secondary); }
 
   .xr-rows { display: grid; gap: 2px; margin-top: 8px; }
@@ -79,6 +79,13 @@ export const XRAY_CSS = `
   .xr-tok { display: inline-flex; align-items: center; height: 20px; padding: 0 7px; border-radius: 99px; font: 600 11px/1 var(--pl-sans); }
   .xr-tok.on { background: var(--pl-mint-soft); color: var(--pl-mint-ink); }
   .xr-tok.off { background: var(--pl-coral-soft); color: var(--pl-coral-ink); }
+  /* a number you can change: it looks pressable, lifts under the pointer, and says how (drag sideways) */
+  .xr-card .ch { cursor: ew-resize; touch-action: none; user-select: none; -webkit-user-select: none; transition: background-color 140ms var(--pl-ease-out), box-shadow 140ms var(--pl-ease-out), scale 220ms var(--pl-spring-pop); }
+  .xr-card .ch.n { display: inline-grid; place-items: center; min-width: 28px; height: 22px; padding: 0 6px; border-radius: 7px; background: var(--pl-bg-inset); box-shadow: inset 0 -1px 0 var(--pl-border-default); }
+  .xr-card .ch:hover { background: var(--pl-sky-soft); scale: 1.06; }
+  .xr-card .ch[data-held] { background: var(--pl-sky); color: #fff; scale: 1.1; }
+  .xr-card .ch[data-held] i { color: #fff; }
+  .xr-card .ch[data-changed]:not([data-held]) { box-shadow: 0 0 0 1.5px var(--pl-pink); }
   .xr-chip { display: inline-grid; place-items: center; width: 30px; height: 20px; border-radius: 6px; font-size: 12px; line-height: 1; box-shadow: inset 0 0 0 1px rgb(0 0 0 / .12); }
   .xr-sw { display: inline-block; width: 16px; height: 16px; border-radius: 5px; box-shadow: inset 0 0 0 1px rgb(0 0 0 / .14); vertical-align: -3px; }
   .xr-aa { font-family: var(--pl-sans); font-weight: 700; }
@@ -189,23 +196,25 @@ export function xray(el, { tokenOf, origin = { left: 0, top: 0 }, room, source, 
 
   // ── the card ──
   const tok = (v) => (v.zero ? '' : v.on ? `<span class="xr-tok on">${esc(v.t)}</span>` : v.off ? '<span class="xr-tok off">off scale</span>' : '');
-  const side = (v, x, y) => `<span class="v${v.zero ? ' zero' : ''}" style="--c:${v.c};left:${x};top:${y}">${v.n}${v.t ? `<i>${esc(v.t)}</i>` : ''}</span>`;
+  // every number is a control: data-prop names the property it changes (drag it, scroll on it, click it for a list)
+  const side = (v, x, y, prop) => `<span class="v ch${v.zero ? ' zero' : ''}" data-prop="${prop}" style="--c:${v.c};left:${x};top:${y}">${v.n}${v.t ? `<i>${esc(v.t)}</i>` : ''}</span>`;
+  const chip = (prop, v, txt = v.n) => `<span class="ch n" data-prop="${prop}">${txt}</span>`;
   const pc = pj.some((v) => v.off) ? 'var(--pl-coral)' : tokenOf ? 'var(--pl-mint)' : 'var(--pl-sky)';
   const box = `<div class="xr-box">
       <span class="ring m"></span><span class="lab" style="left:14px;top:13px">margin</span>
       <span class="ring p" style="--c:${pc}"></span><span class="lab" style="left:44px;top:35px">padding</span>
       <span class="ring c">${Math.round(r.width - b[1] - b[3] - p[1] - p[3])} × ${Math.round(r.height - b[0] - b[2] - p[0] - p[2])}</span>
-      ${side(mj[0], '50%', '19px')}${side(mj[1], 'calc(100% - 23px)', '50%')}${side(mj[2], '50%', 'calc(100% - 19px)')}${side(mj[3], '23px', '50%')}
-      ${side(pj[0], '50%', '43px')}${side(pj[1], 'calc(100% - 54px)', '50%')}${side(pj[2], '50%', 'calc(100% - 43px)')}${side(pj[3], '54px', '50%')}
+      ${side(mj[0], '50%', '19px', 'margin-top')}${side(mj[1], 'calc(100% - 23px)', '50%', 'margin-right')}${side(mj[2], '50%', 'calc(100% - 19px)', 'margin-bottom')}${side(mj[3], '23px', '50%', 'margin-left')}
+      ${side(pj[0], '50%', '43px', 'padding-top')}${side(pj[1], 'calc(100% - 54px)', '50%', 'padding-right')}${side(pj[2], '50%', 'calc(100% - 43px)', 'padding-bottom')}${side(pj[3], '54px', '50%', 'padding-left')}
     </div>`;
   const fg = rgbOf(cs.color), bg = backdrop(el), ratio = contrast(fg, bg), big = fs >= 24 || (fs >= 18.66 && px(cs.fontWeight) >= 700);
   const pass = ratio >= (big ? 3 : 4.5);
   const fam = cs.fontFamily.split(',')[0].replace(/["']/g, '').trim();
   const rows = [
-    ['size', 'Size', `${esc(wSz.replace(/^Fill /, 'fill ').replace(/^Hug /, 'hug '))} <span style="color:var(--pl-text-secondary)">×</span> ${esc(hSz.replace(/^Fill /, 'fill ').replace(/^Hug /, 'hug '))}`],
-    rad ? ['corner', 'Corner', `${rj.n}${tok(rj)}`] : null,
-    gj ? ['gap', 'Gap', `${gj.n}${tok(gj)}`] : null,
-    ['type', 'Type', `${r1(fs)}/${r1(lh)} · ${cs.fontWeight}${tok(tj)}`],
+    ['size', 'Size', `${chip('width', judge('size', r.width), Math.round(r.width))}<span style="color:var(--pl-text-secondary)">×</span>${chip('height', judge('size', r.height), Math.round(r.height))}`],
+    ['corner', 'Corner', `${chip('border-radius', rj, rad > 500 ? 'full' : rj.n)}${tok(rj)}`],
+    gj ? ['gap', 'Gap', `${chip('gap', gj)}${tok(gj)}`] : null,
+    ['type', 'Type', `${chip('font-size', tj, r1(fs))}<span style="color:var(--pl-text-secondary)">/${r1(lh)} · ${cs.fontWeight}</span>${tok(tj)}`],
     ['text colour', 'Colour', `<span class="xr-chip" style="color:${hex(fg)};background:${hex(bg)};font-family:${esc(cs.fontFamily)};font-weight:${cs.fontWeight}" title="${hex(fg)} on ${hex(bg)}">Aa</span>${ratio.toFixed(1)}<span class="xr-tok ${pass ? 'on' : 'off'}"><span class="xr-aa">${pass ? 'AA' : 'Below AA'}</span></span>`],
   ].filter(Boolean);
   const card = `<div class="xr-head"><i class="toy">${toyOf(partOf(el))}</i><b>${esc(name ?? el.localName)}</b>${source ? `<code>${esc(source)}</code>` : '<code class="none">not tied to a line yet</code>'}</div>
@@ -251,3 +260,29 @@ export function zonesOf(el) {
   return out;
 }
 export const zoneAt = (zones, x, y) => zones.filter((z) => x >= z.x && x <= z.x + z.w && y >= z.y && y <= z.y + z.h).sort((a, b) => a.w * a.h - b.w * b.h)[0] ?? null;
+
+/* The grips on the page: one per value you can change, always visible while the element is shown, each where its
+ * value lives. Padding inside its side, margin outside it (even at 0), width and height on the right and bottom
+ * edges, the corner on its arc, a gap in its middle. Along a side they never stack: padding at 35%, the edge at 50%,
+ * margin at 65%. `sign(dx, dy)` turns a drag into px of the value (inward grows padding, outward grows margin). */
+export function gripsOf(el) {
+  const cs = getComputedStyle(el), r = el.getBoundingClientRect();
+  const p = SIDES.map((s) => px(cs.getPropertyValue(`padding-${s}`))), m = SIDES.map((s) => px(cs.getPropertyValue(`margin-${s}`)));
+  const out = [];
+  const along = (side, f) => (side === 'top' || side === 'bottom' ? [r.left + r.width * f, side === 'top' ? r.top : r.bottom] : [side === 'left' ? r.left : r.right, r.top + r.height * f]);
+  const IN = { top: [0, 1], bottom: [0, -1], left: [1, 0], right: [-1, 0] };
+  SIDES.forEach((side, i) => {
+    const [ux, uy] = IN[side], flat = side === 'top' || side === 'bottom';
+    let [x, y] = along(side, 0.35);
+    out.push({ prop: `padding-${side}`, box: 'padding', side, family: 'spacing', n: p[i], x: x + ux * Math.max(p[i] / 2, 5), y: y + uy * Math.max(p[i] / 2, 5), flat, sign: (dx, dy) => dx * ux + dy * uy });
+    [x, y] = along(side, 0.65);
+    out.push({ prop: `margin-${side}`, box: 'margin', side, family: 'spacing', n: m[i], x: x - ux * Math.max(m[i] / 2, 7), y: y - uy * Math.max(m[i] / 2, 7), flat, sign: (dx, dy) => -(dx * ux + dy * uy) });
+  });
+  out.push({ prop: 'width', family: 'size', n: r.width, x: r.right, y: r.top + r.height / 2, flat: false, edge: true, sign: (dx) => dx });
+  out.push({ prop: 'height', family: 'size', n: r.height, x: r.left + r.width / 2, y: r.bottom, flat: true, edge: true, sign: (dx, dy) => dy });
+  const rad = px(cs.borderTopLeftRadius), k = Math.min(rad, r.width / 2, r.height / 2);
+  out.push({ prop: 'border-radius', family: 'radius', n: rad, x: r.left + Math.max(k * 0.29, 6), y: r.top + Math.max(k * 0.29, 6), dot: true, sign: (dx, dy) => (dx + dy) / 2 });
+  const g = gaps(el, cs)[0];
+  if (g) out.push({ prop: 'gap', family: 'spacing', n: g.n, x: g.x + g.w / 2, y: g.y + g.h / 2, flat: !g.col ? false : true, gap: true, sign: g.col ? (dx, dy) => dy : (dx) => dx });
+  return out;
+}

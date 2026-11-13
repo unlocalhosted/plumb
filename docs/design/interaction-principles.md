@@ -75,6 +75,14 @@ pickers.
     its own handle, drawn in its pattern (padding hatched mint, margin butter dots). A drag moves that side alone; ⇧
     as it starts moves the pair (top and bottom, or left and right), ⌘ all four: the keys the product's spacing
     already uses. The row says which sides are in hand ("top + bottom"); one tick writes every side that changed.
+18e. **No mode to arrive in.** Every value you can see is a control where it is shown: a grip on the page for each
+    value (padding inside its side, margin outside it even at 0, width and height on the edges, the corner on its
+    arc, the gap in its middle; along a side they never stack) and every number in the card (drag it, scroll on it,
+    click it for the list). Nothing has to be aimed at precisely and then switched on with a key. A drag follows the
+    hand in px and snaps to your nearest size as it goes. Changes collect and are counted; one Sync (or ↵, or a
+    double-click) writes them, Esc puts them back. The card a pointer is heading for waits for it, the way a menu lets
+    you cross to its submenu. (Owner, 2026-11-13: "i have to fight the system a lot of time to arrive in editable mode.
+    people will just stop using it if the hinderance is there".)
 19. **The hard-coded value is an option, not an error message.** It is listed and reachable, in coral, marked
     "hard-coded". Keeping it is just picking it.
 
