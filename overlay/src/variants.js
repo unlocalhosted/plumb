@@ -47,17 +47,28 @@ function widthOf(name) {
 }
 // dark is in force when the element sits under a dark class or attribute, or the system is dark and the page hasn't
 // chosen light
+let systemDark = null; // one media query, kept: its answer follows the system
 function isDark(el) {
   if (typeof document === 'undefined') return false;
   const at = el?.closest?.('.dark, .light, [data-theme], [data-mode], [data-color-scheme]');
   if (at) return at.classList.contains('dark') || ['dark'].includes(at.getAttribute('data-theme') ?? at.getAttribute('data-mode') ?? at.getAttribute('data-color-scheme'));
-  return typeof matchMedia !== 'undefined' && matchMedia('(prefers-color-scheme: dark)').matches;
+  systemDark ??= typeof matchMedia !== 'undefined' ? matchMedia('(prefers-color-scheme: dark)') : null;
+  return !!systemDark?.matches;
+}
+
+// the breakpoints the window has reached, worked out once per width (the craft rules ask for every element, many
+// times; ten style reads each time was most of a page's judging)
+let reached = { w: -1, list: [] };
+function breakpointsNow() {
+  if (typeof matchMedia === 'undefined') return [];
+  if (reached.w !== innerWidth) reached = { w: innerWidth, list: BREAKPOINTS.filter((b) => matchMedia(`(min-width: ${widthOf(b)}px)`).matches) };
+  return reached.list;
 }
 
 /** The variant names in force for an element now: breakpoints that apply, 'dark' if dark, and any states held. */
 export function activeVariants(el, { held = [] } = {}) {
   const on = new Set(held);
-  if (typeof matchMedia !== 'undefined') for (const b of BREAKPOINTS) if (matchMedia(`(min-width: ${widthOf(b)}px)`).matches) on.add(b);
+  for (const b of breakpointsNow()) on.add(b);
   if (isDark(el)) on.add('dark');
   return on;
 }

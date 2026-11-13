@@ -42,6 +42,8 @@ import { burst } from './burst.js';
 
 export const XRAY_LIVE_CSS = `
   .xr-card[hidden] { display: block; opacity: 0; pointer-events: none; }
+  /* the card takes the pointer only once the pointer is over it: until then a click there lands on the page below it */
+  .xr-card:not([data-reach]), .xr-card[hidden] { pointer-events: none; }
   .xr-card { opacity: 1; transition: transform 420ms var(--pl-spring), opacity 200ms var(--pl-ease-out); z-index: 6; }
   .xr-many { display: inline-flex; align-items: center; height: 18px; padding: 0 6px; margin-left: 4px; border-radius: 99px; vertical-align: 2px; background: var(--pl-sky-soft); color: var(--pl-sky-ink); font: 600 10.5px/1 var(--pl-sans); letter-spacing: 0; }
   .xr-many[data-scope="all"] { background: var(--pl-pink-soft); color: var(--pl-pink-ink); } .xr-many[data-scope="one"] { background: var(--pl-bg-inset); color: var(--pl-text-secondary); }
@@ -249,6 +251,10 @@ export function mountXray(o) {
     return inTri(pt, lastOn, { x: near, y: c.top - 24 }, { x: near, y: c.bottom + 24 });
   };
   const track = (e) => {
+    // something else is in hand (a card open in blueprint): the X-ray steps aside first, and takes no pointer
+    if (o.paused?.()) { card.removeAttribute('data-reach'); if (shown && !changes.size) draw(null); return; }
+    // the card wakes to the pointer when the pointer is over it (with a little margin to reach its edge)
+    if (!card.hidden) { const c = card.getBoundingClientRect(), on = e.clientX >= c.left - 4 && e.clientX <= c.right + 4 && e.clientY >= c.top - 4 && e.clientY <= c.bottom + 4; card.toggleAttribute('data-reach', on); if (on) { clearTimeout(waiting); return; } }
     if (held || noting) return;
     const pt = { x: e.clientX, y: e.clientY };
     if (ourUI(e)) { clearTimeout(waiting); return; }
@@ -322,7 +328,7 @@ export function mountXray(o) {
     return z.col ? (dx, dy) => dy : (dx) => dx;
   };
   on(E, 'pointerdown', (e) => {
-    if (!shown || !zone || noting || e.button !== 0 || !e.shiftKey || ourUI(e)) return;
+    if (!shown || !zone || noting || e.button !== 0 || !e.shiftKey || ourUI(e) || o.paused?.()) return;
     const z = zoneAt(zonesOf(shown), e.clientX, e.clientY) ?? zone, el = shown, x0 = e.clientX, y0 = e.clientY;
     e.preventDefault(); e.stopPropagation();
     const first = (m) => {
@@ -412,7 +418,7 @@ export function mountXray(o) {
   };
   // two fingers: with ⇧ over the element, or on the card's row; left and right choose, up and down change
   on(E, 'wheel', (e) => {
-    if (!inHand || !shown || inHand.el !== shown) return;
+    if (!inHand || !shown || inHand.el !== shown || o.paused?.()) return;
     const onRow = e.composedPath().includes(hand);
     if (!onRow && !(e.shiftKey && (zone || e.composedPath().includes(shown)))) return;
     e.preventDefault(); e.stopPropagation();
@@ -466,12 +472,12 @@ export function mountXray(o) {
   // ── a re-render: the changes find the new elements by place and show on them again ──
   const reapply = () => {
     for (const [k, m] of changes) { const el = elOf(k); if (el) for (const [prop, { value }] of m) if (el.style.getPropertyValue(prop) !== value) el.style.setProperty(prop, value); }
+    // redrawn only when the element shown was replaced (a live page changes itself all the time; the rest is the same)
     if (shown && !shown.isConnected) { const again = shownKey && elOf(shownKey); if (pinned === shown) pinned = again; shown = null; if (inHand) { inHand = null; hand.innerHTML = ''; } draw(again ?? null); }
-    else if (shown) { lastCard = ''; draw(shown); }
   };
   let queued = 0;
   const isPage = o.isPage ?? (() => true);
-  const mo = new MutationObserver((list) => { if (changes.size || shown) if (list.some((r) => r.type === 'childList' && !C.contains(r.target) && isPage(r))) { clearTimeout(queued); queued = setTimeout(reapply, 0); } });
+  const mo = new MutationObserver((list) => { if (changes.size || (shown && !shown.isConnected)) if (list.some((r) => r.type === 'childList' && !C.contains(r.target) && isPage(r))) { clearTimeout(queued); queued = setTimeout(reapply, 0); } });
   mo.observe(watch, { childList: true, subtree: true });
   off.push(() => mo.disconnect());
 
@@ -577,14 +583,19 @@ export function mountXray(o) {
     if (e.key === 'Enter' && shown) { e.preventDefault(); e.stopPropagation(); if (!sync()) startNote(); }
     else if (e.key === 'Escape' && (count() || pinned || C.querySelector(':scope > .xr-list'))) { e.preventDefault(); e.stopPropagation(); C.querySelector(':scope > .xr-list')?.remove(); if (!putBack() && pinned) { pinned = null; draw(null); } }
   }, true);
-  on(window, 'resize', () => shown && draw(shown));
-  on(window, 'scroll', () => shown && draw(shown), true);
+  // a scroll or a resize moves what's shown: drawn again once a frame at most
+  let frame = 0;
+  const follow = () => { if (frame || !shown) return; frame = requestAnimationFrame(() => { frame = 0; if (shown?.isConnected) draw(shown); }); };
+  on(window, 'resize', follow);
+  on(window, 'scroll', follow, true);
 
   return {
     get pending() { return count(); },
     // an element chosen elsewhere (blueprint's list, or a click blueprint took): shown and held
-    hold(el) { if (!el?.isConnected) return; pinned = el; lastOn = null; const r = el.getBoundingClientRect(); zone = null; draw(el); void r; },
+    hold(el) { if (!el?.isConnected || o.paused?.()) return; pinned = el; lastOn = null; const r = el.getBoundingClientRect(); zone = null; draw(el); void r; },
     release() { pinned = null; },
+    // something else took the screen (a card opened): out of the way at once
+    hide() { card.removeAttribute('data-reach'); pinned = null; if (!changes.size) draw(null); },
     // results from before a reload (a write the dev server reloaded the page for), said again
     showResults(list) { results = list.map((r) => ({ keys: [], els: [], befores: [], ...r })); lastCard = ''; card.hidden = false; if (shown) draw(shown); else { body.innerHTML = resultsHtml(); lastCard = ''; const s = box(); card.style.transform = `translate(${Math.max(12, s.width - (card.offsetWidth || 292) - 24)}px, 24px)`; } },
     get shown() { return shown; },

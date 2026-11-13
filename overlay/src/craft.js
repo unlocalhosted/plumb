@@ -459,6 +459,12 @@ export class Craft {
     for (const x of els) { for (const el of this.#askers.get(x) ?? []) this.#cache.delete(el); this.#askers.delete(x); }
     this.onFacts?.();
   }
+  // these elements show their own values again (a preview ended): what was measured of them then was the preview
+  again(els) {
+    let any = false;
+    for (const el of els) if (this.#cache.has(el)) { this.#cache.delete(el); any = true; }
+    if (any) this.onFacts?.();
+  }
   specChanged() { this.invalidate(); this.onFacts?.(); }
 
   // items: [{ id, el, marks, dims, file }]. Returns the same items with each element's craft marks appended. One
