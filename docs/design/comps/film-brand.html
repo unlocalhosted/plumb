@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>React Plumber · mark and film type, three directions</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Instrument+Sans:wght@400..700&display=swap">
+<style>
+  /* React Plumber's own colours (overlay/src/tokens.css): ink, ink-2, the pink of actions, white paper */
+  :root { --ink: #1d1b17; --ink-2: #6b665c; --rule: rgb(29 27 23 / 0.09); --pink: #f24a9f; --paper: #fff; --desk: #f6f5f2; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--desk); color: var(--ink); font: 400 15px/22px "Instrument Sans", system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  .sheet { display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px; padding: 40px; }
+  .col { display: flex; flex-direction: column; gap: 14px; }
+  .head { font: 600 13px/18px "Instrument Sans"; color: var(--ink-2); }
+  .head b { display: block; font: 600 20px/26px "Instrument Sans"; color: var(--ink); letter-spacing: -0.01em; margin-bottom: 2px; }
+  .card { background: var(--paper); border-radius: 14px; box-shadow: 0 0 0 1px var(--rule), 0 10px 30px -18px rgb(0 0 0 / .25); }
+  .big { height: 220px; display: grid; place-items: center; }
+  .small { height: 64px; display: flex; align-items: center; justify-content: flex-end; padding: 0 22px; }
+  .frame { aspect-ratio: 16 / 9; position: relative; overflow: hidden; }
+  .frame .center { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; }
+  .frame .corner { position: absolute; right: 16px; bottom: 12px; }
+  .note { font-size: 13px; line-height: 19px; color: var(--ink-2); margin: 0; }
+  .lock { display: inline-flex; align-items: center; }
+
+  /* ── A · Instrument: a machined bob, the name in the words' own face ── */
+  .A .word { font: 600 44px/1 "Instrument Sans"; letter-spacing: -0.03em; }
+  .A .lock { gap: 12px; }
+  .A .kicker { font: 600 12px/1 "Instrument Sans"; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-2); }
+  .A .title { font: 600 34px/36px "Instrument Sans"; letter-spacing: -0.032em; text-wrap: balance; max-width: 360px; margin-top: 10px; }
+  .A .line { font: 400 15px/20px "Instrument Sans"; color: var(--ink-2); margin-top: 10px; }
+
+  /* ── B · Toy: a solid toy bob, the name stacked in the toy face, tight ── */
+  .B .word { font: 720 44px/0.94 "Bricolage Grotesque"; font-variation-settings: "opsz" 96; letter-spacing: -0.028em; }
+  .B .lock { gap: 12px; align-items: center; }
+  .B .kicker { font: 650 14px/1 "Bricolage Grotesque"; font-variation-settings: "opsz" 24; color: var(--ink-2); }
+  .B .title { font: 680 36px/38px "Bricolage Grotesque"; font-variation-settings: "opsz" 96; letter-spacing: -0.025em; text-wrap: balance; max-width: 360px; margin-top: 8px; }
+  .B .line { font: 400 15px/20px "Instrument Sans"; color: var(--ink-2); margin-top: 10px; }
+
+  /* ── C · Tile: the bob cut out of a pink tile, the name in the words' face ── */
+  .C .word { font: 650 40px/1 "Instrument Sans"; letter-spacing: -0.03em; }
+  .C .lock { gap: 14px; }
+  .C .kicker { display: inline-flex; align-items: center; gap: 8px; font: 500 14px/1 "Instrument Sans"; color: var(--ink-2); }
+  .C .title { font: 600 34px/36px "Instrument Sans"; letter-spacing: -0.03em; text-wrap: balance; max-width: 360px; margin-top: 10px; }
+  .C .line { font: 400 15px/20px "Instrument Sans"; color: var(--ink-2); margin-top: 10px; }
+</style>
+</head>
+<body>
+<!-- the marks, drawn once -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <!-- A: string, a short cap, a gap, a long cone to a point: a plumb bob as a machined part -->
+    <symbol id="bob-a" viewBox="0 0 30 56">
+      <path d="M15 1.5v9" stroke="#1d1b17" stroke-width="2.4" stroke-linecap="round" fill="none"/>
+      <rect x="8" y="10.5" width="14" height="6.5" rx="2" fill="#f24a9f"/>
+      <path d="M5.5 19.5h19L15 53z" fill="#f24a9f" stroke="#f24a9f" stroke-width="2.2" stroke-linejoin="round"/>
+    </symbol>
+    <!-- B: a chunky toy bob, one solid body, the eye the string goes through cut in white -->
+    <symbol id="bob-b" viewBox="0 0 40 56">
+      <path d="M20 1.5v7" stroke="#1d1b17" stroke-width="3.4" stroke-linecap="round" fill="none"/>
+      <path d="M9 9h22a4 4 0 0 1 4 4v4.5L21.7 51.4a1.9 1.9 0 0 1-3.4 0L5 17.5V13a4 4 0 0 1 4-4z" fill="#f24a9f"/>
+      <circle cx="20" cy="15" r="3" fill="#fff"/>
+    </symbol>
+    <!-- C: the bob cut out of a pink tile -->
+    <symbol id="bob-c" viewBox="0 0 48 48">
+      <rect width="48" height="48" rx="13" fill="#f24a9f"/>
+      <path d="M24 7v7" stroke="#fff" stroke-width="2.6" stroke-linecap="round" fill="none"/>
+      <rect x="17.5" y="14" width="13" height="5.5" rx="1.8" fill="#fff"/>
+      <path d="M15.5 21.8h17L24 40z" fill="#fff" stroke="#fff" stroke-width="2" stroke-linejoin="round"/>
+    </symbol>
+  </defs>
+</svg>
+
+<div class="sheet">
+  <!-- A -->
+  <section class="col A">
+    <p class="head"><b>A · Instrument</b>A machined bob: string, cap, cone to a point. The name in Instrument Sans, tight. Calm, precise, a tool.</p>
+    <div class="card big"><span class="lock"><svg width="27" height="50"><use href="#bob-a"/></svg><span class="word">React Plumber</span></span></div>
+    <div class="card small"><span class="lock" style="gap:7px"><svg width="11" height="20"><use href="#bob-a"/></svg><span class="word" style="font-size:17px">React Plumber</span></span></div>
+    <div class="card frame"><div class="center"><div><div class="kicker">Craft № 42</div><div class="title">Bold on hover must not shift layout</div></div></div>
+      <span class="corner lock" style="gap:5px"><svg width="8" height="15"><use href="#bob-a"/></svg><span class="word" style="font-size:12.5px">React Plumber</span></span></div>
+    <div class="card frame"><div class="center"><div><span class="lock"><svg width="21" height="39"><use href="#bob-a"/></svg><span class="word" style="font-size:34px">React Plumber</span></span><div class="line">A design review on every screen.</div></div></div></div>
+  </section>
+
+  <!-- B -->
+  <section class="col B">
+    <p class="head"><b>B · Toy</b>One solid toy body, its eye cut in white. The name stacked in the toy face, heavy and tight. Ours, playful, a product you'd keep on the desk.</p>
+    <div class="card big"><span class="lock"><svg width="40" height="56"><use href="#bob-b"/></svg><span class="word">React<br>Plumber</span></span></div>
+    <div class="card small"><span class="lock" style="gap:6px"><svg width="15" height="21"><use href="#bob-b"/></svg><span class="word" style="font-size:18px;line-height:1">React Plumber</span></span></div>
+    <div class="card frame"><div class="center"><div><div class="kicker">No. 42</div><div class="title">Bold on hover must not shift layout</div></div></div>
+      <span class="corner lock" style="gap:4px"><svg width="11" height="15"><use href="#bob-b"/></svg><span class="word" style="font-size:13px;line-height:1">React Plumber</span></span></div>
+    <div class="card frame"><div class="center"><div><span class="lock"><svg width="34" height="48"><use href="#bob-b"/></svg><span class="word" style="font-size:36px">React<br>Plumber</span></span><div class="line">A design review on every screen.</div></div></div></div>
+  </section>
+
+  <!-- C -->
+  <section class="col C">
+    <p class="head"><b>C · Tile</b>The bob cut out of a pink tile, like an app icon. The name in Instrument Sans. Reads at any size, sits well in a corner.</p>
+    <div class="card big"><span class="lock"><svg width="52" height="52"><use href="#bob-c"/></svg><span class="word">React Plumber</span></span></div>
+    <div class="card small"><span class="lock" style="gap:8px"><svg width="22" height="22"><use href="#bob-c"/></svg><span class="word" style="font-size:17px">React Plumber</span></span></div>
+    <div class="card frame"><div class="center"><div><div class="kicker"><svg width="16" height="16"><use href="#bob-c"/></svg>Craft № 42</div><div class="title">Bold on hover must not shift layout</div></div></div>
+      <span class="corner lock" style="gap:5px"><svg width="15" height="15"><use href="#bob-c"/></svg><span class="word" style="font-size:12.5px">React Plumber</span></span></div>
+    <div class="card frame"><div class="center"><div><span class="lock"><svg width="40" height="40"><use href="#bob-c"/></svg><span class="word" style="font-size:32px">React Plumber</span></span><div class="line">A design review on every screen.</div></div></div></div>
+  </section>
+</div>
+</body>
+</html>
