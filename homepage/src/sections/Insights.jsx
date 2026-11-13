@@ -95,12 +95,21 @@ function Card({ card, live, reduced, turn, onBeat, onDone }) {
   const [marks, setMarks] = useState(null);    // the guides and the pill, in the stage's pixels
   const [held, setHeld] = useState(false), [paused, setPaused] = useState(false);
   const timers = useRef([]), shown = useRef(null), again = useRef(false), lift = useRef([]);
-  // the scene is drawn for a 340 × 228 stage; in a smaller tile it scales down to fit (the big tile fills its own)
+  // each scene is scaled to fill its tile: its own drawn size (all its parts, at scale 1) against the stage, with a
+  // little margin, up to 130%; the big tile fills its own
   const [fit, setFit] = useState(1);
   useLayoutEffect(() => {
     if (card.size === 'big') return;
-    const el = stage.current, ro = new ResizeObserver(() => { const r = el.getBoundingClientRect(); setFit(Math.min(1, r.height / 228, r.width / 340)); });
-    ro.observe(el); return () => ro.disconnect();
+    const el = stage.current;
+    const measure = () => {
+      const r = el.getBoundingClientRect(), sc = el.querySelector('.sc'), k = parseFloat(getComputedStyle(el).getPropertyValue('--fit')) || 1;
+      let l = Infinity, t = Infinity, rr = -Infinity, b = -Infinity;
+      for (const c of sc.children) { const q = c.getBoundingClientRect(); if (!q.width) continue; l = Math.min(l, q.left); t = Math.min(t, q.top); rr = Math.max(rr, q.right); b = Math.max(b, q.bottom); }
+      const w = (rr - l) / k, h = (b - t) / k;
+      if (w > 0 && h > 0) setFit(Math.min(1.3, (r.width - 28) / w, (r.height - 24) / h));
+    };
+    const ro = new ResizeObserver(measure); ro.observe(el); requestAnimationFrame(measure);
+    return () => ro.disconnect();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const clear = () => { timers.current.forEach(clearTimeout); timers.current = []; };
   const at = (ms, fn) => timers.current.push(setTimeout(fn, ms));
@@ -373,7 +382,7 @@ Forecast.measure = (root) => {
 function Photo({ fixed }) {
   return (
     <div className="sc sc-photo" data-fixed={fixed}>
-      <div className="sc-pin"><div className="sc-glaze" role="img" aria-label="A pale white vase on a white table" /><b>Celadon test 4</b><small>cone 6 · reduction</small><span className="sc-pin-tags"><i>glaze</i><i>white</i></span></div>
+      <div className="sc-pin"><div className="sc-glaze" role="img" aria-label="A pale white vase on a white table" /><span className="sc-pin-meta"><b>Celadon test 4</b><small>cone 6 · reduction</small><span className="sc-pin-tags"><i>glaze</i><i>white</i></span></span></div>
     </div>
   );
 }

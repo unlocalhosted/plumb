@@ -2036,6 +2036,11 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   base (84% at a 1280 × 965 window), and the marks still line up because every measure reads live rects. Small tiles
   keep only the number, the switch and the title (two lines); the big tile also says why. Below desktop width the
   earlier two-column layout returns.
+- **"Too much empty space horizontally."** Every scene had been scaled against one fixed 340 × 228 size, so narrow
+  ones (the vase pin, the tracker, the player) sat small and centred with wide gaps either side, and none could grow.
+  Now each scene is measured at its own size (all its parts) and scaled to fill its tile, up to 130%, whichever of
+  width or height runs out first; the vase pin, a tall shape, became a landscape pin (photo left, details right) so it
+  fills the width too. Its fix still measures 1.0px edge.
 
 ## Open gaps
 - The overlay writes about 180 corners as numbers (radius tokens about 45 times), many off its own scale; 6px is
