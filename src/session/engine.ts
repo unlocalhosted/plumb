@@ -1,4 +1,6 @@
 import { environment, stateDirectory, statePath, configurationNames, isLedgerPath, cacheDirectory, ignoreCache, buildId } from '../paths.js';
+import { resolutionsChanged } from '../collect/resolved.js';
+import type { Resolutions } from '../collect/resolved.js';
 import { atomicWrite } from '../atomic-write.js';
 import type { KeptStats } from './kept.js';
 import { constants, readFileSync, watch } from 'node:fs';
@@ -1931,7 +1933,7 @@ export class Session extends EventEmitter {
    * some seconds after the server last had something new to say, never while it is saying it. Nothing reads them
    * back yet. The receipt is what the server itself goes by to say "nothing changed": every file it knows with its
    * hash, every directory it lists with its stamp, and the table's own hash so the two cannot be mismatched.
-   * (Not in it yet: what each import resolved to, which the check's receipt records.)
+   * And what every import resolved to, each asked through the resolver that asked it (collect/resolved.ts).
    */
   private kept: (KeptStats & { ms: number; packMs: number; longestMs: number; slices: number; at: number; directory: string }) | undefined;
   private keepTimer?: NodeJS.Timeout;
@@ -1956,15 +1958,15 @@ export class Session extends EventEmitter {
    * produces is compared with the kept one when it lands: the same, or not. Each start writes one line to
    * warm.jsonl beside the table, so the evidence accumulates across days of ordinary work.
    */
-  private warm: { receipt: 'none' | 'valid' | 'changed' | 'damaged'; checkMs: number; table?: string; changed?: { files: number; directories: number; sample: string[] };
+  private warm: { receipt: 'none' | 'valid' | 'changed' | 'damaged'; checkMs: number; table?: string; changed?: { files: number; directories: number; imports: number; sample: string[] };
     /** true or false once the fresh table has landed; null when a change came before it could be compared */ matched?: boolean | null } | undefined;
   private async checkKept(): Promise<void> {
     if (this.options.keep === false || environment('KEEP') === '0') return;
     const start = performance.now(), directory = this.keptDirectory();
     const done = async (warm: NonNullable<Session['warm']>) => { this.warm = { ...warm, checkMs: Math.round(performance.now() - start) }; this.emit('kept', this.warm); if (warm.receipt !== 'valid') await this.warmLine(); };
-    let receipt: { version?: number; table?: string; bytes?: string; files?: [string, string][]; directories?: [string, string][] };
+    let receipt: { version?: number; table?: string; bytes?: string; files?: [string, string][]; directories?: [string, string][]; resolutions?: Resolutions };
     try { receipt = JSON.parse(await readFile(join(directory, 'receipt.json'), 'utf8')); } catch { return done({ receipt: 'none', checkMs: 0 }); }
-    if (receipt.version !== 3 || typeof receipt.table !== 'string' || !Array.isArray(receipt.files) || !Array.isArray(receipt.directories)) return done({ receipt: 'none', checkMs: 0 });
+    if (receipt.version !== 4 || typeof receipt.table !== 'string' || !Array.isArray(receipt.files) || !Array.isArray(receipt.directories) || !Array.isArray(receipt.resolutions)) return done({ receipt: 'none', checkMs: 0 });
     // the table the receipt speaks for must be the one on disk
     let bytes: string | undefined;
     try { bytes = createHash('sha256').update(await readFile(join(directory, 'readings.v8'))).digest('hex'); } catch { /* no table */ }
@@ -1987,7 +1989,9 @@ export class Session extends EventEmitter {
       else try { const entries = await readdir(path, { withFileTypes: true }); now = this.listing(entries.filter(e => e.isFile()).map(e => resolve(path, e.name)), entries.filter(e => e.isDirectory()).map(e => resolve(path, e.name))); } catch { now = undefined; }
       if (now !== listing) { directories++; note(`listing: ${relative(this.root, path) || '.'}`); }
     }
-    return done(files || directories ? { receipt: 'changed', checkMs: 0, changed: { files, directories, sample } } : { receipt: 'valid', checkMs: 0, table });
+    // every import still finds the file it found (a new file can change that without touching any file read before)
+    const imports = resolutionsChanged(receipt.resolutions, what => { const [, specifier, file] = /^import: (.*) in (.*)$/.exec(what) ?? []; note(file ? `import: ${specifier} in ${relative(this.root, file)}` : what); });
+    return done(files || directories || imports ? { receipt: 'changed', checkMs: 0, changed: { files, directories, imports, sample } } : { receipt: 'valid', checkMs: 0, table });
   }
   private async warmLine(): Promise<void> {
     if (!this.warm) return;
@@ -2012,16 +2016,16 @@ export class Session extends EventEmitter {
       // the kept table this start's receipt check stood behind, if it has not been compared yet
       const awaited = this.warm?.receipt === 'valid' && this.warm.matched === undefined ? this.warm.table : undefined;
       // a slice at a time, each through the same queue the reads use: a question asked meanwhile goes in between
-      let stats: KeptStats & { ms: number; packMs: number; longestMs: number; slices: number } | undefined;
+      let stats: KeptStats & { ms: number; packMs: number; longestMs: number; slices: number } | undefined, resolved: Resolutions = [];
       while (!stats) {
         if (revision !== this.revision || this.closed) return;
-        const step = await this.serializeRead(() => this.request<{ done: false } | ({ done: true } & KeptStats & { ms: number; packMs: number; longestMs: number; slices: number })>('keep', { directory, ...(awaited ? { previous: awaited } : {}) }));
-        if (step.done) stats = step;
+        const step = await this.serializeRead(() => this.request<{ done: false } | ({ done: true; resolutions: Resolutions } & KeptStats & { ms: number; packMs: number; longestMs: number; slices: number })>('keep', { directory, ...(awaited ? { previous: awaited } : {}) }));
+        if (step.done) { const { done: _done, resolutions, ...rest } = step; stats = rest; resolved = resolutions; }
       }
       // something changed while it was being written: it describes a project that is gone, and the change has
       // already asked for another
       if (revision !== this.revision || this.closed) return;
-      await atomicWrite(join(directory, 'receipt.json'), JSON.stringify({ version: 3, build: buildId(), v8: process.versions.v8, root: this.root, table: stats.hash, bytes: stats.bytesHash, files, directories }));
+      await atomicWrite(join(directory, 'receipt.json'), JSON.stringify({ version: 4, build: buildId(), v8: process.versions.v8, root: this.root, table: stats.hash, bytes: stats.bytesHash, files, directories, resolutions: resolved }));
       // one table per project: a table kept by another build of plumber can never be read by this one
       for (const other of await readdir(dirname(directory)).catch(() => [] as string[])) if (other !== 'warm.jsonl' && join(dirname(directory), other) !== directory) await rm(join(dirname(directory), other), { recursive: true, force: true }).catch(() => {});
       this.kept = { ...stats, at: Date.now(), directory };

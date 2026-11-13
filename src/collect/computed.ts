@@ -1,7 +1,8 @@
 import { readFileSync } from 'node:fs';
 import { parseSync, rawTransferSupported, visitorKeys } from 'oxc-parser';
 import type { Node } from 'oxc-parser';
-import { ResolverFactory } from 'oxc-resolver';
+import type { ResolverFactory } from 'oxc-resolver';
+import { tracked } from './resolved.js';
 import { embedded } from './inline.js';
 import { lineStarts, nodeName, sourceSite, unwrap } from './source.js';
 import type { SourceProgram } from './source.js';
@@ -29,7 +30,7 @@ function children(node: Node): Node[] {
 /** Authored complete tokens only. No JS execution, string synthesis or runtime guesses. */
 export class ComputedClasses {
   private modules = new Map<string, Module>();
-  private resolver = new ResolverFactory({ tsconfig: 'auto', extensions: ['.tsx', '.ts', '.jsx', '.js', '.mts', '.mjs', '.cts', '.cjs'], extensionAlias: { '.js': ['.ts', '.tsx', '.js'] }, conditionNames: ['import', 'node', 'default'] });
+  private resolver = tracked({ tsconfig: 'auto', extensions: ['.tsx', '.ts', '.jsx', '.js', '.mts', '.mjs', '.cts', '.cjs'], extensionAlias: { '.js': ['.ts', '.tsx', '.js'] }, conditionNames: ['import', 'node', 'default'] });
   readonly dependencies = new Set<string>();
   readonly resolutions = new Map<string, string | undefined>();
   private steps = 0;

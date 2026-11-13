@@ -136,9 +136,12 @@ What this is not yet:
 
 - **Evidence over days.** Three starts on each app in one afternoon. The layer exists to run through ordinary
   work, edits and branch switches included, before layer 3 answers anything from the table.
-- **The check's full rule.** The receipt compares files and directory listings. It still does not record what each
-  import resolved to. A new file that changes which module an import finds is caught only if it appears in a
-  directory the server lists.
+- **The check's full rule.** Done 2026-11-13. Every place the analysis resolves an import now goes through one
+  resolver that remembers its answers (six kinds of resolver, each kept with its own options). The receipt holds
+  them, and the check asks each one again the same way. crafting-ui: 4,638 imports, the check went from 0.02 s to
+  0.05–0.07 s. Proof: one recorded answer altered by hand, and the next start said "changed, 1 import" and named
+  it; the start after matched. Not yet run on algorecall. Known limit: it records what this run asked; an import a
+  disk cache answered without asking is only there if that cache re-asked it.
 - **A line in `plumber doctor`.** Done 2026-11-13: `plumber doctor --verbose` has a Start-up row (starts checked,
   how many were compared with a fresh analysis, how many differed). A difference never fails doctor, since nothing
   is answered from the kept table yet.

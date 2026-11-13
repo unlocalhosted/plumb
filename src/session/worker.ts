@@ -1,4 +1,5 @@
 import { isLedgerPath } from '../paths.js';
+import { resolutions } from '../collect/resolved.js';
 import { environment } from '../paths.js';
 import { parentPort, workerData } from 'node:worker_threads';
 import { analyze } from '../index.js';
@@ -367,7 +368,8 @@ async function dispatch(method: string, params: Record<string, unknown>): Promis
     // the check found the same inputs and a different table: the old one is set aside to be looked at, not lost
     if (typeof params.previous === 'string' && params.previous !== stats.hash) await rename(join(params.directory as string, 'readings.v8'), join(params.directory as string, 'readings.mismatch.v8')).catch(() => {});
     await atomicWrite(join(params.directory as string, 'readings.v8'), data);
-    return { done: true, ...stats, packMs: Math.round(job.worked), longestMs: Math.round(job.longest), slices: job.slices, ms: Math.round(performance.now() - job.started) };
+    // what every import resolved to goes with it, for the receipt
+    return { done: true, ...stats, packMs: Math.round(job.worked), longestMs: Math.round(job.longest), slices: job.slices, ms: Math.round(performance.now() - job.started), resolutions: resolutions() };
   }
   if (method === 'health') return { status: 'ready', root: options.root, revision, pid: process.pid, rss: process.memoryUsage().rss, caches: state.caches, work: { fullReports, fullIndexes, localAnalyses }, ...(environment('PROFILE') === '1' ? { profile: performance.getEntriesByType('measure').map(p => [p.name, p.duration]) } : {}) };
   if (method === 'try') {
