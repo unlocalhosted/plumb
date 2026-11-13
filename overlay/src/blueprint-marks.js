@@ -616,6 +616,7 @@ export class MarkLayer {
       || item.marks.some((m, k) => { const id = `${item.id}:${k}:${m.key}`; return id === this.#hinted || id === this.#lead || this.#lit.includes(id) || (this.#cause !== null && causeOf(m) === this.#cause); });
     this.#svg.toggleAttribute('data-moving', partial);
     let pending = false;
+    const probeUntil = performance.now() + 8;
     for (const item of this.#items) {
       if (!item.el.isConnected) continue;
       let geo = this.#geo.get(item.el);
@@ -628,9 +629,10 @@ export class MarkLayer {
         // seen: what of it shows past its scroll containers and whatever the page paints over it. A covered element
         // draws nothing, not even a hit area, so a click on the drawer over it never opens its chooser
         // what covers it costs five probes of the page (about a millisecond an element): asked at once for what is
-        // lit, and for the rest in slices after the frame, so a page with hundreds of marked elements in view is
-        // drawn now and corrected a moment later instead of blocking for most of a second
-        const wants = near && item.marks.length > 0, now = wants && live(item);
+        // lit and for as many others as a few milliseconds allow (a page with a handful of marks is exact in its
+        // first frame), and for the rest in slices after the frame, so a page with hundreds of marked elements in
+        // view is drawn now and corrected a moment later instead of blocking for most of a second
+        const wants = near && item.marks.length > 0, now = wants && (live(item) || performance.now() < probeUntil);
         geo = { r, box: wants ? visibleBox(item.el, r, view, memo, now) : null, exact: !wants || now };
         if (geo.box === null) geo.exact = true;
         if (!geo.exact) pending = true;

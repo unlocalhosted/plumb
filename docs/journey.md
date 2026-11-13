@@ -899,6 +899,14 @@
 - **The fix and the proof:** while reading, crafting-ui's longest block 0.37 s → 0.09 s and the pointer 3 → 59 frames a second; algorecall's longest scrolling frame 1.77 s → 0.33 s and the pointer 1 → 20. Same findings (26; 27–28), same read time. Headless, no test. Left: a 0.8 s block at the start of algorecall's read, and 2.5 s blocks on the first read after a server restart.
 - **Media hooks:** moving the pointer over crafting-ui while plumber reads it, before and after.
 
+## Tests for the day's speed work, and the regression one of the old ones caught (2026-11-13)
+- **The itch:** five changes in one day to how findings are kept, sent, asked for, drawn and scheduled, none covered. The owner: "Yes, write tests".
+- **How we found it:** each test is the behaviour a person or a caller would lose if the change were wrong. Running the old Blueprint tests beside the new ones found a real break.
+- **The system behind it:** the drawing change confirmed "what covers this element" a moment after the frame, for every element that was not lit. An old test expects a zone under a drawer to be cut back the first time it is seen, and it was right to: a page with a handful of marks has no reason to wait.
+- **What we chose and why:** the frame now confirms as many elements as 8 ms allows and leaves only the overflow for later, so a small page is exact in its first frame and a page with hundreds of marks in view is still not blocked.
+- **The fix and the proof:** four new tests in two files: a page and its places carry no finding's edits or ledger keys while a fix still gets its edit; a source question in a batch answers as it does alone and never from a changed file's old index; with Blueprint open a zone follows a scroll, steps aside while the page moves, lights when pointed at, and a covered element loses its zone and gets it back; a page of 900 rows is read whole, the same findings as a page of 3. With five existing files nearest the changes: 31 tests, 31 pass, on the laptop, once. crafting-ui's frames after the fix: 50 a second scrolling with plumber open (57 alone), 60 moving the pointer. The full suite has not been run.
+- **Media hooks:** none.
+
 ## Open gaps
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
 

@@ -81,8 +81,10 @@ Seen working on crafting-ui: pointing at a zone lights its six places and shows 
 step aside; after the scroll the zones are where the elements are (docs/media/marks-after-scroll-fix-2026-11-13.png).
 One run per state. No test run.
 
-What this costs: for up to about a second after the page moves, an element that is covered (under a drawer or a
-sticky header) can have a hit area it should not. It is corrected when the slices finish.
+What this costs: on a page with many marked elements in view, an element that is covered (under a drawer or a
+sticky header) can keep a hit area for a moment after the page moves. Each frame confirms as many as 8 ms allows,
+so a page with a handful of marks is exact in its first frame. (The first version confirmed none in the frame; an
+existing test about a drawer caught it the same day.)
 
 Still there: crafting-ui's 0.28 s frame when a scroll stops (the full measure plus the app mounting its own
 examples); algorecall's 0.46 s answer to a pointer move; and **reading still freezes the page** (0.8 s on
