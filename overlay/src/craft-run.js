@@ -200,7 +200,9 @@ async function readOnce(overlay, { timeout = 60000, quiet = 600, grey = false, s
   // read of it would report a clean page, or nonsense, without a word
   if (!(innerWidth > 0 && innerHeight > 0)) throw new Error('This window has no size, so nothing on the page can be measured. Bring it to the front, then read again.');
   // what the page is judged against is asked for before the read, not during it (each late arrival judges everything again)
+  const t0 = performance.now();
   await Promise.all([prepareSources(), overlay?.themeReady?.()]);
+  performance.measure('plumb:run-prepare', { start: t0 });
   const blueprint = overlay?.blueprintReader;
   if (!blueprint) throw new Error('The Plumb overlay is not mounted on this page.');
   const within = scope ? document.querySelector(scope) : null;
@@ -223,12 +225,15 @@ async function readOnce(overlay, { timeout = 60000, quiet = 600, grey = false, s
       if (performance.now() - started > timeout) { complete = false; break; }
       await sleep(100);
     }
+    performance.measure('plumb:run-read', { start: started });
+    const t1 = performance.now();
     const found = new Map();
     // its own craft marks, and those the theme's mark outranked on the same facet (verdict.js craftUnder)
     const marked = blueprint.items.map((item) => ({ item, marks: [...item.marks.filter((m) => m.family === 'craft'), ...item.marks.flatMap((m) => m.craftUnder ?? [])] })).filter((x) => x.marks.length);
     // where each was written, asked together: questions asked in one turn go to the server as one round trip (api.js).
     // Asked one after another they were a round trip each, and most of a read's time (5 s of 8 on a 1,400-element page)
     const sites = await Promise.all(marked.map(({ item }) => locate(item.el, { explain: true, batch: true }).catch(() => null)));
+    performance.measure('plumb:run-sites', { start: t1 });
     for (const [i, { item, marks }] of marked.entries()) {
       const at = sites[i];
       for (const m of marks) {

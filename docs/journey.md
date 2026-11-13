@@ -835,6 +835,14 @@
 - **The fix and the proof:** algorecall: whole-page judgements from nothing per read 4 → 1.2–1.7, engine time 3.7–5.8 s → 2.1–3.1 s, 27 findings before and after. crafting-ui: 2 → 1, 0.82 s → 0.47–0.50 s, 26 findings before and after. Headless, two runs each after; table in [engine-scaling.md](briefs/engine-scaling.md). No test was run.
 - **Media hooks:** the before/after table; a screen recording of the overlay opening on algorecall's problems list.
 
+## Where a 52-second read goes: 811 MB and 20 redraws (2026-11-13)
+- **The itch:** after the engine fix, plumber's read of algorecall's big page still took 30–50 s and the engine was a few seconds of it. The owner: "Find the 30 s", then "please time and adapt to more data oriented principles".
+- **How we found it:** one headless read with every stage, long task and server request timed, then one of the big answers taken apart by field.
+- **The system behind it:** the data is shaped for one element at a time. Each finding on each element carries every edit it could lead to anywhere in the project (434 on average), so the server sends 811 MB for one page; the overlay draws none of it. What each element is in the source is asked one request at a time, 889 of them, and the page is reported and redrawn after each trickle of answers, 20 times.
+- **What we chose and why:** eight data-oriented rules in the design, each tied to a measured number: batches, hot and cold apart, tables, once per distinct input, lists by kind, facts in columns, budgets. Hot/cold first, because it is 98% of the bytes.
+- **The fix and the proof:** none yet; this entry is the finding. A correction too: the engine fix's "2.1–3.1 s" came from runs with 9–10 hand-overs of the page; this run had 26 and the engine took 7.5 s. Numbers in [engine-scaling.md](briefs/engine-scaling.md).
+- **Media hooks:** a bar of the 52 s split into its four stages; the one 7.7 MB answer drawn as 98% grey, 2% used.
+
 ## Open gaps
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
 

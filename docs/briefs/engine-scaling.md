@@ -70,6 +70,27 @@ What is left of the six-times:
   the page once more. Once, not per batch.
 - Algorecall's remaining 0.2–0.7 judgements above one are not explained. Elements the app re-renders is the guess.
 
+### Where a 52-second read goes (2026-11-13, one run, algorecall's problems list)
+
+Stages, long tasks and every request to plumber's server were timed around one headless read.
+
+| When | What is happening | Size |
+|---|---|---|
+| 0–8.5 s | the app is still mounting on a cold dev server; plumber waits. Partly the timing script starting early, not plumber | 8.5 s |
+| 8.5–26 s | waiting for the server and parsing what it sends. 33 "read these elements" answers: **528 MB**. 4 "places in the code" answers: **283 MB**. 889 "what is this element in the source" requests, one HTTP request each, each queued about 18 s | 17 s; long tasks total 26 s over the read |
+| 26–50 s | the page is reported and redrawn **20 times**, once per trickle of those 889 answers: reporting 7.9 s (engine 7.5 s of it), redrawing the marks 10.4 s (0.55–0.6 s each time) | 24 s |
+| 50–51 s | asking where each finding lives in the source | 0.6 s |
+
+Inside one "read these elements" answer (7.7 MB for 77 elements, about 100 KB an element): 98% is two fields on
+each finding, the list of edits (5.4 MB: 46 findings carried 19,945 edits, 434 each, every one a different place in
+the project) and the ledger keys (2.1 MB). The overlay needs neither to draw a mark. They matter only when a
+person opens that one finding.
+
+**A correction to the table above it.** "Engine time 2.1–3.1 s after the fix" was from runs where the page was
+handed over 9–10 times. In this run it was handed over 26 times and the engine took 7.5 s. Each element's own rules
+are kept, but page-wide rules and picking verdicts are paid on every hand-over. The fix holds; the number depends
+on how many hand-overs a run has, and that is what the next change removes.
+
 Raw tables were printed to the session's scratch folder and are not kept; run the timer again rather than trust
 these to the millisecond.
 
@@ -96,6 +117,34 @@ of rules that exist. Adding the 200th rule should cost what its own subject cost
 something on a page with a dialog and nothing on a page without one.
 
 Everything below is that one idea applied at each level: element, fact, time, page load, bundle.
+
+## 2b. Data-oriented rules (owner, 2026-11-13: "time and adapt to more data oriented principles")
+
+The principle in section 2 says what should be true. These say how the data has to be shaped for it to be true.
+Each one is tied to a number measured above; none is here for its own sake.
+
+1. **Measure the data before shaping the code.** Counts, bytes and milliseconds per stage, on the two reference
+   pages, before and after every change. The timer and the stage measures stay in the code for this.
+2. **Where there is one, there are many.** Nothing is asked, answered, judged or drawn one at a time.
+   *Measured:* 889 single requests, each queued 18 s; 20 redraws for 20 trickles. → one request for the batch, one
+   report when the batch has landed.
+3. **Hot and cold apart.** Hot is what every element needs to be drawn: the rule, the class, the place. Cold is
+   what one opened finding needs: its edits, its ledger keys, its long words. Cold is fetched when a finding is
+   opened. *Measured:* cold is 98% of 811 MB.
+4. **Tables, not trees.** A response is a few flat tables (files, sites, findings, elements) that point at each
+   other by number. A file path is sent once, not once per edit. Rows of a list that share a class list share one
+   reading.
+5. **Once per distinct input.** Work is keyed by what it depends on: a class list, an icon's drawing, a source
+   position. *Already true* for icon pixels (one icon used forty times is rasterised once); to be made true for
+   readings and structure answers.
+6. **Lists by kind, not tests by element.** The engine keeps a list per kind (every flex row, every button, every
+   image) built in one pass; a rule walks its own list. This is dispatch (3.1) said as data: 1.3 million calls
+   become about as many as there are things of each kind.
+7. **Facts in columns.** One read phase fills flat arrays for the page (rects, paddings, radii, a kind mask per
+   element), indexed by the element's number. Rules read columns. One layout, no reads after writes. *Not yet
+   measured as a cost:* shared reads are 0.02 s today, so this is last, and only if a timing says so.
+8. **A budget per stage, in bytes and milliseconds,** checked by the same timer. A response over its byte budget
+   is a failure like a slow rule is.
 
 ## 3. The design
 
@@ -200,7 +249,9 @@ Each is seen before the next. Nothing here needs the platform work; the platform
 | 1 | Per-rule timing on the two reference pages | **Done.** The table above |
 | 2 | Judge the page once: throw away less (3.4), page-wide rules kept against the census (3.4) | **First part done** (see Measured): judgements from nothing 4 → 1.2–1.7 on algorecall, engine time 3.7–5.8 s → 2.1–3.1 s. Left: the census-value key, fewer hand-overs |
 | 3 | Dispatch (`on`, kind mask, index, refusal) | Calls per rule fall to about its hits; the 0.8 s falls by a measured amount |
-| 4 | Where the other 25–45 s of algorecall's read goes | A second table: waiting, source lookups, drawing. Not the engine, so not in this design yet |
+| 4 | Where the rest of algorecall's read goes | **Done** (see Measured): 811 MB of answers, 889 single requests, 20 redraws |
+| 4a | Hot and cold apart in the server's answers (rule 3), then tables (rule 4) | Bytes per read on algorecall: 811 MB → a measured number; the 17 s of waiting and parsing with it |
+| 4c | One request for the batch, one report when it lands (rule 2) | Hand-overs per read 9–26 → a few; redraws 20 → a few; the 24 s with it |
 | 4b | Slices, nearest first | First marks appear in the same time on the big page as on a small one |
 | 5 | Command line: demand, record once, skip unchanged | Page loads per route before and after; a second run after a one-file change |
 | 6 | Families as modules | Bytes loaded into the page with one family off |

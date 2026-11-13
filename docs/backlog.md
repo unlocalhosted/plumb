@@ -203,7 +203,8 @@ Design written 2026-11-13, nothing built or measured: docs/briefs/engine-scaling
 - The command line loads a route once per width, view, hover and gesture, whether or not a rule will read it.
 - Fixed 2026-11-13: a late fact judged the whole page again (four to six times a read); now only the elements that asked. Left: page-wide rules still run 2–3 times per element on a big page; the page is still handed over four to six times; no test covers any of it.
 - A per-rule timer exists (off unless a page asks); nothing yet refuses a slow rule.
-- Algorecall's full read takes 30–51 s; only 4–6 s is the engine. Where the rest goes is not known.
+- Algorecall's full read takes 30–52 s. Found 2026-11-13: the server sends 811 MB for the page (98% is edits and ledger keys nothing draws), 889 source questions go one request each, and the page is redrawn 20 times as they answer. Not fixed.
+- The engine fix's saving depends on how often the page is handed over: 2.1–3.1 s with 9–10 hand-overs, 7.5 s with 26.
 
 ### What the browser does now (platform guidance)
 
