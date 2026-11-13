@@ -292,6 +292,24 @@ Design written 2026-11-13, not signed off, nothing built: docs/briefs/platform-g
 - Two neighbours of the repaired fix-card write were not driven by hand: a fix taken on the element itself, and the
   class written after a new theme token.
 
+### Plumber on its own design pages (found 2026-11-14)
+
+The owner asked why Plumber did not flag, live, the values typed by hand on the design site's Messages and Surfaces
+pages (73 spacings, 22 type styles, a dozen corners and timings, all beside tokens that exist). Tried: `plumber check`
+in `web/` read 19 JSX files and 2 stylesheets, reported 22 findings (13 dead variables, 6 "no tokens", 3 dead classes),
+and none in `web/design/parts`.
+
+- **Styles written as text inside a JavaScript file are not read.** The design pages (`web/design/parts/*.js`) and the
+  overlay itself write CSS in template strings; the check counts those files as "other" and skips them. The overlay on
+  the page can't point into them either: they are drawn inside a shadow root from a string, with no place in the code
+  stamped on each element.
+- **Tokens that are CSS variables, not a Tailwind theme, are not a scale to Plumber.** The system's tokens live in
+  `overlay/src/tokens.css` as `--pl-*`. The check answered "no tokens" six times for the site, so even a stylesheet it
+  does read has nothing to be compared against.
+- **Open question for the owner:** move the design pages to JSX with classes on a theme Plumber can read (it would then
+  check its own site, live), or teach Plumber to read plain CSS and CSS in strings against variable tokens (useful to
+  every project that isn't all Tailwind, and much more work). Not decided.
+
 ### The command line
 
 - At 80 columns the report breaks a rule's name across two lines (`[habits/` / `focus-outline]`).
