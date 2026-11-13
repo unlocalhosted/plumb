@@ -75,6 +75,38 @@ What it says:
 Not run: the full test suite. Four server test files nearest the change pass (27 of 27, 1 skipped). No test of the
 kept table itself yet; the comparison above was a script.
 
+### Layer 1, second pass: a third the size, and built between answers (2026-11-13)
+
+The two faults of the first pass, fixed.
+
+**Size.** Taking the first table apart showed where it went: findings were three quarters of it, because each
+finding repeated in full the declarations it is about, and 20,000 findings carried 200 distinct lists of decisions
+between them. Now places are columns of numbers; a finding points at the file's own declarations; every text and
+every list that repeats is stored once.
+
+**The hold.** The worker builds the table in slices of about 30 ms, each one a separate step through the same
+queue the reads use, so a question asked meanwhile is answered between slices. One real fault found on the way: a
+finding with thousands of places in hundreds of files was searched through again for each file, which made one
+slice 0.7 s; its places are now sorted by file once.
+
+| | crafting-ui (laptop) | algorecall (vm-agent) |
+|---|---|---|
+| Table on disk | 9.5 MB → 3.5 MB | 116 MB → 20.9 MB |
+| Time to load it back | 0.05 s → 0.008 s | 0.83 s → 0.17 s |
+| Longest the worker is held | 0.07 s → 0.03 s | 5.7 s → 0.07 s |
+| Work to build it | 0.06 s | 4.9 s → 2.2 s, in 64 slices |
+| An answer asked for while it is built | median 0.02 s, slowest 0.03 s | median 0.30 s, slowest 0.67 s |
+| Read back from disk and compared with the server's answers | 237 the same, 1 differs (the ledger regrouping, as before) | 2,411 the same, 0 differ |
+
+Budgets: loading (under 2 s, under 300 MB) is met with room. "Never delays an answer" is met as far as the
+worker goes: 0.07 s at most.
+
+**Not established:** whether algorecall's 0.30 s per answer during the build is the build. No baseline was taken
+with the build off. The likelier cause is the one found earlier today: every read first re-checks the project's
+14,830 files, which costs about that on vm-agent whatever else is happening. To measure next, not to assume.
+
+Not run: the full test suite, and no test of the kept table yet.
+
 ## 1. What we are doing
 
 After a dev server restart, plumber says "still reading your project" until its server has analysed everything
@@ -175,7 +207,7 @@ One layer at a time, each seen on algorecall and crafting-ui, each timed. No tes
 | # | Layer | What can be seen |
 |---|---|---|
 | 0 | **Done.** Measure, build nothing | How long the receipt check takes on algorecall; the reading table's size and load time; the memory of a second worker. And the proof the rest stands on: a cold server's reading table equals one rebuilt from a second cold start, byte for byte, on both apps |
-| 1 | **Done** (see above; two things to fix before layer 3). Keep: write the table and receipt after a full analysis, in idle time | The files on disk; their size and write time in the server's health |
+| 1 | **Done**, both passes (see above). Keep: write the table and receipt after a full analysis, in idle time | The files on disk; their size and write time in the server's health |
 | 2 | Check only: on start, load and validate the kept table but do not answer from it; compare when the fresh analysis lands | A line per start: matched or not, and what differed. Left running through normal work for a few days: the evidence before any answer is trusted |
 | 3 | Answer from it: the kept state, the light worker, writes waiting | After a restart with nothing changed, the overlay draws in seconds |
 | 4 | A change before ready drops the table | Edit a file 5 s after a restart: the page waits for the real analysis, never shows the old file's findings |

@@ -984,6 +984,14 @@
 - **The fix and the proof:** crafting-ui: 9.5 MB, written in 0.07 s, 237 of 238 files identical to the server's answers. algorecall (on vm-agent): 116 MB, 5.7 s to write, 0.83 s to load, 2,411 of 2,411 identical. Three honest marks: I predicted a few tens of MB and it is 116; writing it holds the server's worker for 5.7 s on the big app, which breaks the design's own budget; and one stylesheet differs because the ledger regroups findings when it answers, which the answering layer must handle. Four server test files pass.
 - **Media hooks:** none.
 
+## The kept table: 116 MB to 21, and no more 5.7 s hold (2026-11-13)
+- **The itch:** the first kept table was 116 MB on algorecall where I had predicted a few tens, and writing it held the server's only worker for 5.7 s. The owner: "Yes, fix those first".
+- **How we found it:** the table taken apart by field. Findings were three quarters of it: each repeated in full the declarations it is about, and 20,000 findings shared 200 lists of decisions.
+- **The system behind it:** I had applied "store each thing once" to declarations and stopped. The same repetition was inside the findings, and in every place's text.
+- **What we chose and why:** places as columns of numbers; a finding points at its file's own declarations; texts and repeated lists stored once. And the table is built in 30 ms slices through the queue the reads use. One slice was 0.7 s until a finding's places were sorted by file once instead of searched per file.
+- **The fix and the proof:** algorecall: 116 MB → 20.9 MB, load 0.83 s → 0.17 s, longest hold 5.7 s → 0.07 s; all 2,411 files still identical to the server's answers. crafting-ui: 9.5 MB → 3.5 MB, loads in 8 ms. Not established: answers asked during the build took a median 0.30 s on algorecall, and I took no baseline, so I cannot say the build causes it.
+- **Media hooks:** three bars: 257 MB as objects, 116, 21.
+
 ## Open gaps
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
 
