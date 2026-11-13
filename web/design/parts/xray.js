@@ -20,11 +20,13 @@ const tokenOf = (family, n) => SCALE[family]?.find(([v]) => Math.abs(v - n) <= 0
 
 // each part of the card: the name its code gives it, and the line it's written on
 // where each part is used (its call site), for a change written at the use rather than in the component's own file
-const CALLS = { avatar: 'app/settings/MemberRow.tsx:9', role: 'app/settings/MemberRow.tsx:12', invite: 'app/settings/TeamCard.tsx:42', cancel: 'app/settings/TeamCard.tsx:41', badge: 'app/settings/TeamCard.tsx:17' };
+const CALLS = { tool: 'components/editor/Toolbar.tsx:30', image: 'app/feed/PhotoCard.tsx:13', like: 'app/feed/PhotoCard.tsx:19', editor: 'app/notes/NoteCard.tsx:12', avatar: 'app/settings/MemberRow.tsx:9', role: 'app/settings/MemberRow.tsx:12', invite: 'app/settings/TeamCard.tsx:42', cancel: 'app/settings/TeamCard.tsx:41', badge: 'app/settings/TeamCard.tsx:17' };
 const NAMES = {
   card: ['TeamCard', 'app/settings/TeamCard.tsx:14'], head: ['CardHeader', 'app/settings/TeamCard.tsx:16'], title: ['h3', 'app/settings/TeamCard.tsx:18'],
   badge: ['Badge', 'node_modules/@acme/ui/dist/badge.js:1'], lede: ['p', 'app/settings/TeamCard.tsx:21'], list: ['ul', 'app/settings/TeamCard.tsx:24'],
   member: ['MemberRow', 'app/settings/MemberRow.tsx:7'], avatar: ['Avatar', 'components/ui/avatar.tsx:12'], who: ['div', 'app/settings/MemberRow.tsx:10'],
+  note: ['NoteCard', 'app/notes/NoteCard.tsx:8'], toolbar: ['Toolbar', 'components/editor/Toolbar.tsx:6'], tool: ['ToolbarButton', 'components/editor/Toolbar.tsx:14'], editor: ['Editor', 'components/editor/Editor.tsx:20'],
+  photo: ['PhotoCard', 'app/feed/PhotoCard.tsx:11'], image: ['Image', 'components/ui/image.tsx:5'], pbody: ['div', 'app/feed/PhotoCard.tsx:14'], ptitle: ['h4', 'app/feed/PhotoCard.tsx:15'], pmeta: ['p', 'app/feed/PhotoCard.tsx:16'], like: ['Button', 'components/ui/button.tsx:22'],
   role: ['Select', 'components/ui/select.tsx:31'], foot: ['div', 'app/settings/TeamCard.tsx:40'], invite: ['Button', 'components/ui/button.tsx:22'], cancel: ['Button', 'components/ui/button.tsx:22'],
 };
 
@@ -35,8 +37,23 @@ export function mount(host, root, css) {
     h2 { margin: 44px 0 6px; font: 600 20px/28px var(--pl-sans); letter-spacing: -0.01em; }
     h2 + p, .prose p { margin: 0 0 10px; font: 400 14px/22px var(--pl-sans); color: var(--pl-text-secondary); max-width: 680px; }
     .prose b { color: var(--pl-text-primary); font-weight: 600; }
-    .stage { position: relative; margin-top: 14px; min-height: 620px; border-radius: 22px; background: #f4f4f6; overflow: hidden; display: grid; align-items: center; padding: 72px 360px 72px 72px; }
-    .stage .app { user-select: none; -webkit-user-select: none; }
+    .stage { position: relative; margin-top: 14px; min-height: 620px; border-radius: 22px; background: #f4f4f6; overflow: hidden; display: flex; flex-wrap: wrap; gap: 32px; align-items: flex-start; justify-content: center; padding: 72px 48px 110px; }
+    .stage .app:not(.note) { user-select: none; -webkit-user-select: none; }
+    /* someone's note editor: a toolbar of the same button three times, and words you can type (Enter is the X-ray's
+       while it's on) */
+    .app.note { width: 340px; padding: 0; gap: 0; overflow: hidden; }
+    .note .tb { display: flex; gap: 4px; padding: 8px 10px; border-bottom: 1px solid #eaecf0; }
+    .note .tb button { width: 30px; height: 28px; padding: 0; border-radius: 6px; background: #f2f4f7; color: #344054; font: 600 13px/1 ui-sans-serif, system-ui, sans-serif; }
+    .note .ed { padding: 14px 18px 18px; outline: none; font: 400 14px/22px ui-sans-serif, system-ui, sans-serif; color: #344054; cursor: text; }
+    .note .ed h4 { margin: 0 0 6px; font: 650 16px/22px ui-sans-serif, system-ui, sans-serif; color: #101828; }
+    .note .ed p { margin: 0 0 8px; } .note .ed ul { display: block; margin: 0; padding-left: 18px; list-style: disc; } .note .ed li { display: list-item; }
+    /* someone's photo card: a picture, its title, who saved it, a like */
+    .app.photo { width: 280px; padding: 0; gap: 0; overflow: hidden; border-radius: 16px; }
+    .photo img { display: block; width: 100%; height: 180px; object-fit: cover; border-radius: 10px 10px 0 0; }
+    .photo .pb { display: grid; gap: 6px; padding: 12px 14px 14px; }
+    .photo h4 { margin: 0; font: 650 15px/20px ui-sans-serif, system-ui, sans-serif; color: #101828; }
+    .photo p { margin: 0; font: 400 13px/18px ui-sans-serif, system-ui, sans-serif; color: #667085; }
+    .photo .like { justify-self: start; padding: 6px 11px; border-radius: 99px; background: #fdf2f8; color: #c11574; font: 600 13px/18px ui-sans-serif, system-ui, sans-serif; box-shadow: none; }
     .stage .rerender { position: absolute; right: 16px; bottom: 12px; height: 28px; padding: 0 12px; border: 0; border-radius: 9px; background: #fff; box-shadow: 0 0 0 1px #d8d8de; font: 600 12px/1 var(--pl-sans); color: #44444c; cursor: pointer; z-index: 7; }
     .stage .server { position: absolute; right: 150px; bottom: 12px; height: 28px; padding: 0 12px; border: 0; border-radius: 9px; background: #fff; box-shadow: 0 0 0 1px #d8d8de; font: 600 12px/1 var(--pl-sans); color: #44444c; cursor: pointer; z-index: 7; }
     .stage .server[aria-pressed="true"] { background: var(--pl-coral-soft); color: var(--pl-coral-ink); box-shadow: 0 0 0 1px var(--pl-coral); }
@@ -61,7 +78,7 @@ export function mount(host, root, css) {
     .xr-card { opacity: 1; transition: transform 420ms var(--pl-spring), opacity 200ms var(--pl-ease-out); }
 
     /* someone's card, in someone's styles: some on their scale, some written by hand */
-    .app { justify-self: center; width: 420px; box-sizing: border-box; padding: 22px; border-radius: 14px; background: #fff; color: #101828; box-shadow: 0 1px 2px rgb(16 24 40 / .06), 0 12px 32px -16px rgb(16 24 40 / .28);
+    .app { flex: none; width: 420px; box-sizing: border-box; padding: 22px; border-radius: 14px; background: #fff; color: #101828; box-shadow: 0 1px 2px rgb(16 24 40 / .06), 0 12px 32px -16px rgb(16 24 40 / .28);
       font: 400 14px/20px ui-sans-serif, system-ui, sans-serif; display: grid; gap: 18px; cursor: default; }
     .app .head { display: flex; align-items: center; gap: 10px; }
     .app h3 { margin: 0; font: 650 17px/24px ui-sans-serif, system-ui, sans-serif; letter-spacing: -0.01em; }
@@ -144,13 +161,22 @@ export function mount(host, root, css) {
     <p>Point at anything on your page and see what it's made of. <b>On the element</b>, its space in the patterns: padding hatched, margin dotted, gaps striped, corners traced, its size on rulers. Mint where a value is on your scale, coral where it's written by hand. <b>Beside it</b>, a card says the same in numbers: which part it is and where it's written, its box drawn small, then corner, gap, type, colour and contrast, each value with its token.</p>
     <p>Nothing to switch on. <b>Point at a part and it's in hand</b>: a padding side, a margin side (a band outside it, even at 0), the width or height ruler, a corner, the gap, the words. It lights up with one pill saying what it is; <b>hold ⇧</b> and the pointer becomes its drag cursor: press and drag, or scroll with two fingers, and it snaps to your scale. Without ⇧ the page scrolls and clicks as usual. The row at the top of the card holds it too: two fingers left and right choose which sides or the value, up and down change it. <b>Every number in the card is a control too</b>: drag it sideways, scroll on it, or click it for the list. The card waits while you move to it. Changes collect at the foot of the card; <b>Sync</b> (or ↵) writes them, Esc puts them back. With nothing to sync, ↵ opens a note for your agent.</p>
   </div>
-  <h2>Point at the card</h2>
+  <h2>Point at the cards</h2>
+  <p>Three pieces of someone's app: a team card with repeated rows, a note editor you can type in (while the X-ray is on, ↵ is its own), and a photo card.</p>
   <div class="stage" tabindex="0">
     <div class="app" data-x="card">
       <div class="head" data-x="head"><h3 data-x="title">Your team</h3><span class="badge" data-x="badge">3 seats left</span></div>
       <p class="lede" data-x="lede">People here can edit the workspace and its billing.</p>
       <ul data-x="list">${people.map(([i, n, e, r, c]) => `<li data-x="member"><span class="av" data-x="avatar" style="background:${c}">${i}</span><span class="who" data-x="who"><b>${n}</b><span>${e}</span></span><span class="role" data-x="role">${r}</span></li>`).join('')}</ul>
       <div class="foot" data-x="foot"><button class="cancel" data-x="cancel">Cancel</button><button class="invite" data-x="invite">Invite people</button></div>
+    </div>
+    <div class="app note" data-x="note">
+      <div class="tb" data-x="toolbar"><button data-x="tool">B</button><button data-x="tool"><i>I</i></button><button data-x="tool">U</button></div>
+      <div class="ed" contenteditable="true" spellcheck="false" data-x="editor"><h4>Release notes</h4><p>Teams can now invite up to five people from settings.</p><ul><li>Faster sync between devices</li><li>New avatars and roles</li></ul></div>
+    </div>
+    <div class="app photo" data-x="photo">
+      <img data-x="image" src="https://images.unsplash.com/photo-1603979649806-5299879db16b?w=600&q=80&auto=format&fit=crop" alt="A lake below green mountains at dawn">
+      <div class="pb" data-x="pbody"><h4 data-x="ptitle">Bachalpsee at dawn</h4><p data-x="pmeta">Saved by Mara · 2 days ago</p><button class="like" data-x="like">♥ 128</button></div>
     </div>
     <div class="xr"></div>
     <div class="xr-card" hidden><div class="xr-hand"></div><div class="xr-body"></div></div>
@@ -161,9 +187,9 @@ export function mount(host, root, css) {
 
   const stage = root.querySelector('.stage'), layer = stage.querySelector('.xr'), card = stage.querySelector('.xr-card'), body = card.querySelector('.xr-body'), hand = card.querySelector('.xr-hand');
   // the demo's re-render: the card drawn again from its markup, new elements in place of the old (as React does)
-  const APP_HTML = stage.querySelector('.app').outerHTML;
+  const APP_HTML = [...stage.querySelectorAll('.app')].map((a) => a.outerHTML);
   stage.querySelector('.server').addEventListener('click', (e) => { e.stopPropagation(); serverUp = !serverUp; e.currentTarget.textContent = `Server: ${serverUp ? 'on' : 'off'}`; e.currentTarget.setAttribute('aria-pressed', String(!serverUp)); });
-  stage.querySelector('.rerender').addEventListener('click', (e) => { e.stopPropagation(); const t = document.createElement('div'); t.innerHTML = APP_HTML; stage.querySelector('.app').replaceWith(t.firstElementChild); });
+  stage.querySelector('.rerender').addEventListener('click', (e) => { e.stopPropagation(); const t = document.createElement('div'); [...stage.querySelectorAll('.app')].forEach((a, i) => { t.innerHTML = APP_HTML[i]; a.replaceWith(t.firstElementChild); }); });
   let lastCard = '', shown = null, pinned = null, noting = null, held = null, cardAt = { x: 0, y: 0 }, lastOn = null, waiting = 0;
   const box = () => stage.getBoundingClientRect();
   const nameOf = (el) => NAMES[el.dataset.x] ?? [el.localName, null];
@@ -194,7 +220,7 @@ export function mount(host, root, css) {
   //   page  every place on this page the same line draws (the rows of a list, the cards of a grid)
   //   all   the component itself: every place your app uses it (written in its own file, not at the call site)
   // A part repeated on the page starts at 'page'; one drawn once starts at 'one'.
-  const USES = { avatar: 14, role: 9, invite: 31, cancel: 31, badge: 6 }; // how many places the demo's app uses each component
+  const USES = { avatar: 14, role: 9, invite: 31, cancel: 31, like: 31, badge: 6, tool: 18, image: 42, editor: 3 }; // how many places the demo's app uses each component
   const compOf = (el) => { const n = NAMES[el.dataset.x]; return n && /^(components|node_modules)\//.test(n[1] ?? '') ? n : null; }; // a shared component: yours, or a library's
   let scope = 'one';
   const scopesOf = (el) => [...(peers(el).length > 1 ? ['one', 'page'] : ['one']), ...(compOf(el) ? ['all'] : [])];

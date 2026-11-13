@@ -233,6 +233,14 @@ export function xray(el, { tokenOf, origin = { left: 0, top: 0 }, room, source, 
     ['type', 'Type', `${chip('font-size', tj, r1(fs))}<span style="color:var(--pl-text-secondary)">/${r1(lh)} · ${cs.fontWeight}</span>${tok(tj)}`],
     ['text colour', 'Colour', `<span class="xr-chip" style="color:${hex(fg)};background:${hex(bg)};font-family:${esc(cs.fontFamily)};font-weight:${cs.fontWeight}" title="${hex(fg)} on ${hex(bg)}">Aa</span>${ratio.toFixed(1)}<span class="xr-tok ${pass ? 'on' : 'off'}"><span class="xr-aa">${pass ? 'AA' : 'Below AA'}</span></span>`],
   ].filter(Boolean);
+  // a picture has no words: its rows are its shape and how it fills its box, not type and colour
+  if (/^(img|picture|video|canvas)$/.test(el.localName)) {
+    const g = (a, b2) => (b2 ? g(b2, a % b2) : a), w0 = Math.round(r.width), h0 = Math.round(r.height), d = g(w0, h0) || 1;
+    const nice = [[1, 1], [4, 3], [3, 2], [16, 9], [3, 4], [2, 3], [9, 16]].find(([a, b2]) => Math.abs(w0 / h0 - a / b2) < 0.02);
+    rows.splice(rows.findIndex((x) => x[0] === 'type'), 2,
+      ['ratio', 'Ratio', nice ? `${nice[0]}:${nice[1]}<span class="xr-tok on">aspect-${nice[0] === nice[1] ? 'square' : nice.join('/')}</span>` : `${w0 / d}:${h0 / d}<span class="xr-tok off">no ratio</span>`],
+      ['size', 'Fit', `${esc(cs.objectFit)}<span style="color:var(--pl-text-secondary)"> · ${esc(cs.objectPosition)}</span>`]);
+  }
   const card = `<div class="xr-head"><i class="toy">${toyOf(partOf(el))}</i><b>${esc(name ?? el.localName)}</b>${source ? `<code>${esc(source)}</code>` : '<code class="none">not tied to a line yet</code>'}</div>
     ${box}
     <div class="xr-rows">${rows.map(([t, k, v], i) => `<div class="xr-row" style="animation-delay:${60 + i * 45}ms"><i class="toy">${toyOf(t)}</i><span class="k">${k}</span><span class="val">${v}</span></div>`).join('')}</div>`;
