@@ -228,7 +228,8 @@ export function xray(el, { tokenOf, origin = { left: 0, top: 0 }, room, source, 
   const rows = [
     ['size', 'Size', `${chip('width', judge('size', r.width), Math.round(r.width))}<span style="color:var(--pl-text-secondary)">×</span>${chip('height', judge('size', r.height), Math.round(r.height))}`],
     ['corner', 'Corner', `${chip('border-radius', rj, rad > 500 ? 'full' : rj.n)}${tok(rj)}`],
-    gj ? ['gap', 'Gap', `${chip('gap', gj)}${tok(gj)}`] : null,
+    // a row or a grid always has its gap here, even at 0, so a gap can be added from the card
+    gj || /flex|grid/.test(cs.display) ? ['gap', 'Gap', (() => { const v = gj ?? judge('spacing', px(cs.columnGap) || px(cs.rowGap)); return `${chip('gap', v, v.n)}${tok(v)}`; })()] : null,
     ['type', 'Type', `${chip('font-size', tj, r1(fs))}<span style="color:var(--pl-text-secondary)">/${r1(lh)} · ${cs.fontWeight}</span>${tok(tj)}`],
     ['text colour', 'Colour', `<span class="xr-chip" style="color:${hex(fg)};background:${hex(bg)};font-family:${esc(cs.fontFamily)};font-weight:${cs.fontWeight}" title="${hex(fg)} on ${hex(bg)}">Aa</span>${ratio.toFixed(1)}<span class="xr-tok ${pass ? 'on' : 'off'}"><span class="xr-aa">${pass ? 'AA' : 'Below AA'}</span></span>`],
   ].filter(Boolean);

@@ -117,7 +117,7 @@ export function mount(host, root, css) {
   <h2>The idea</h2>
   <div class="prose">
     <p>Point at anything on your page and see what it's made of. <b>On the element</b>, its space in the patterns: padding hatched, margin dotted, gaps striped, corners traced, its size on rulers. Mint where a value is on your scale, coral where it's written by hand. <b>Beside it</b>, a card says the same in numbers: which part it is and where it's written, its box drawn small, then corner, gap, type, colour and contrast, each value with its token.</p>
-    <p>Nothing to switch on. <b>Point at a part and it's in hand</b>: a padding side, a margin side (a band outside it, even at 0), the width or height ruler, a corner, the gap, the words. It lights up with one pill saying what it is; press on it and drag, and it snaps to your scale as you go. The row at the top of the card holds it too: two fingers left and right choose which sides or the value, up and down change it. <b>Every number in the card is a control too</b>: drag it sideways, scroll on it, or click it for the list. The card waits while you move to it. Changes collect at the foot of the card; <b>Sync</b> (or ↵, or a double-click) writes them, Esc puts them back. With nothing to sync, ↵ opens a note for your agent.</p>
+    <p>Nothing to switch on. <b>Point at a part and it's in hand</b>: a padding side, a margin side (a band outside it, even at 0), the width or height ruler, a corner, the gap, the words. It lights up with one pill saying what it is; <b>hold ⇧</b> and the pointer becomes its drag cursor: press and drag, or scroll with two fingers, and it snaps to your scale. Without ⇧ the page scrolls and clicks as usual. The row at the top of the card holds it too: two fingers left and right choose which sides or the value, up and down change it. <b>Every number in the card is a control too</b>: drag it sideways, scroll on it, or click it for the list. The card waits while you move to it. Changes collect at the foot of the card; <b>Sync</b> (or ↵) writes them, Esc puts them back. With nothing to sync, ↵ opens a note for your agent.</p>
   </div>
   <h2>Point at the card</h2>
   <div class="stage" tabindex="0">
@@ -129,7 +129,7 @@ export function mount(host, root, css) {
     </div>
     <div class="xr"></div>
     <div class="xr-card" hidden><div class="xr-hand"></div><div class="xr-body"></div></div>
-    <p class="hint">Point at a part · drag it, or a number · <kbd>↵</kbd> sync, or a note for your agent · <kbd>Esc</kbd> put back</p>
+    <p class="hint">Point at a part · hold <kbd>⇧</kbd> to drag it or scroll it · or change a number · <kbd>↵</kbd> sync, or a note for your agent · <kbd>Esc</kbd> put back</p>
   </div>`;
 
   const stage = root.querySelector('.stage'), layer = stage.querySelector('.xr'), card = stage.querySelector('.xr-card'), body = card.querySelector('.xr-body'), hand = card.querySelector('.xr-hand');
@@ -145,7 +145,7 @@ export function mount(host, root, css) {
   // the properties a side's change moves: by the toggle, or for this drag by ⇧ (pair) and ⌘ (all four)
   const linkedOf = (prop, e = {}) => {
     const sided = prop.match(/^(padding|margin)-(top|right|bottom|left)$/); if (!sided) return [prop];
-    const how = e.metaKey || e.ctrlKey ? 'all' : e.shiftKey ? 'pair' : link;
+    const how = link;
     return how === 'all' ? ['top', 'right', 'bottom', 'left'].map((k) => `${sided[1]}-${k}`) : how === 'pair' ? [prop, `${sided[1]}-${PAIR[sided[2]]}`] : [prop];
   };
   // one change is one property of one part of the code, however many places on the page draw that part
@@ -208,10 +208,18 @@ export function mount(host, root, css) {
     card.hidden = !!noting;
     if (first) requestAnimationFrame(() => card.removeAttribute('data-fresh'));
     shown = el;
+    cursor?.();
   };
-  let keysNow = {};
-  addEventListener('keydown', (e) => { if (e.key === 'Shift' || e.key === 'Meta') { keysNow = e; if (shown && !held) draw(shown); } });
-  addEventListener('keyup', (e) => { if (e.key === 'Shift' || e.key === 'Meta') { keysNow = {}; if (shown && !held) draw(shown); } });
+  // ⇧ is the hand: only while it's held do a press-and-drag and two fingers change the part pointed at, and the
+  // pointer turns into the part's drag cursor. Without it the page scrolls and clicks as it always does (owner,
+  // 2026-11-13: "combine it with shift"). Which sides move and the scope are chosen in the card's row, not by keys.
+  const keysNow = {};
+  let shiftDown = false;
+  const AXIS = (z) => (!z ? '' : z.side ? (z.side === 'top' || z.side === 'bottom' ? 'ns-resize' : 'ew-resize') : z.prop === 'width' ? 'ew-resize' : z.prop === 'height' ? 'ns-resize' : z.family === 'radius' ? 'nwse-resize' : z.family === 'type' ? 'ns-resize' : z.col ? 'ns-resize' : 'ew-resize');
+  const cursor = () => { stage.style.cursor = shiftDown && zone && shown ? AXIS(zone) : ''; stage.toggleAttribute('data-shift', shiftDown); };
+  addEventListener('keydown', (e) => { if (e.key === 'Shift' && !shiftDown) { shiftDown = true; cursor(); } });
+  addEventListener('keyup', (e) => { if (e.key === 'Shift') { shiftDown = false; cursor(); } });
+  addEventListener('blur', () => { shiftDown = false; cursor(); });
 
   // ── reaching the card: moving toward it keeps the element shown (the way a menu lets you cross to its submenu) ──
   const inTri = (p, a, b, c) => { const d = (u, v, w) => (u.x - w.x) * (v.y - w.y) - (v.x - w.x) * (u.y - w.y); const d1 = d(p, a, b), d2 = d(p, b, c), d3 = d(p, c, a); return !((d1 < 0 || d2 < 0 || d3 < 0) && (d1 > 0 || d2 > 0 || d3 > 0)); };
@@ -324,14 +332,14 @@ export function mount(host, root, css) {
     return z.col ? (dx, dy) => dy : (dx) => dx;
   };
   stage.addEventListener('pointerdown', (e) => {
-    if (!shown || !zone || noting || e.button !== 0) return;
+    if (!shown || !zone || noting || e.button !== 0 || !e.shiftKey) return;
     if (e.composedPath().some((n) => n === card || n.classList?.contains('xr-list') || n.classList?.contains('xr-note'))) return;
     // the part under the press itself (not the last one pointed at); no text is selected while the part is dragged
     const z = zoneAt(zonesOf(shown), e.clientX, e.clientY) ?? zone, el = shown, x0 = e.clientX, y0 = e.clientY;
     e.preventDefault();
     // a press that moves is a drag of the part; one that doesn't is a click (it holds the element)
     const first = (m) => {
-      if (Math.abs(m.clientX - x0) + Math.abs(m.clientY - y0) < 3) return;
+      if (Math.abs(m.clientX - x0) + Math.abs(m.clientY - y0) < 2) return;
       removeEventListener('pointermove', first, true); removeEventListener('pointerup', cancel, true);
       drag(e, el, z.prop, signOf(z), 1, false);
     };
@@ -395,7 +403,9 @@ export function mount(host, root, css) {
   // (the fingers' own direction: up is bigger, right is toward the value)
   stage.addEventListener('wheel', (e) => {
     if (!inHand || !shown || inHand.el !== shown) return;
-    if (!e.composedPath().some((n) => n === card || n === shown) && !(zone && shown)) return;
+    // two fingers act on the part only with ⇧ held (else the page scrolls), or right on the card's row (it's ours)
+    const onRow = e.composedPath().includes(hand);
+    if (!onRow && !(e.shiftKey && (zone || e.composedPath().includes(shown)))) return;
     e.preventDefault();
     const h = inHand, dx = -(e.deltaMode ? e.deltaX * 16 : e.deltaX), dy = -(e.deltaMode ? e.deltaY * 16 : e.deltaY);
     // one gesture, one direction, decided from its first few px together (a swipe's first event is often a pixel or
@@ -475,7 +485,7 @@ export function mount(host, root, css) {
     return true;
   };
   card.addEventListener('click', (e) => { if (e.target.closest('.sync')) sync(); else if (e.target.closest('.back')) putBack(); });
-  stage.addEventListener('dblclick', (e) => { if (count() && !e.target.closest('.xr-note')) { e.preventDefault(); sync(); } });
+  // (no double-click sync: double-click edits words, everywhere in Plumber; the card's Sync button and ↵ save)
 
   // ── ↵ anywhere: a note for your agent about what you're pointing at; ⌘↵ copies it with the file and line ──
   const startNote = () => {
@@ -512,8 +522,10 @@ export function mount(host, root, css) {
   const keys = (e) => {
     if (!root.host.isConnected) { removeEventListener('keydown', keys, true); return; }
     if (e.repeat || e.metaKey || e.ctrlKey || e.altKey) return;
-    const typing = e.composedPath().some((n) => n.localName === 'textarea' || n.localName === 'input');
-    if (typing || noting) return;
+    // while the X-ray is on, its keys come first, even inside the page's own fields and editors; only our own note
+    // and list keep theirs
+    const ours = e.composedPath().some((n) => n.classList?.contains('xr-note') || n.classList?.contains('xr-list'));
+    if (ours || noting) return;
     // ↵: sync what's collected; with nothing to sync, a note for your agent
     if (e.key === 'Enter' && shown) { e.preventDefault(); if (!sync()) startNote(); }
     else if (e.key === 'Escape') { e.preventDefault(); stage.querySelector('.xr-list')?.remove(); if (!putBack() && pinned) { pinned = null; stage.removeAttribute('data-pinned'); draw(null); } }
