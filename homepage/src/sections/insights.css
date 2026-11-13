@@ -16,7 +16,7 @@
   font: var(--pl-round-w, 700) 12.5px/1 var(--pl-round); color: var(--ink-1); }
 .ins-x-families li span { font: 600 11px/1 var(--pl-mono); color: var(--pl-pink); }
 /* a bento: the play button the big tile, three wide ones, the rest single; wide and single swap sides row by row */
-.ins-x-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-auto-rows: auto; gap: 16px; margin-top: var(--s-6);
+.ins-x-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-auto-rows: auto; gap: 48px 32px; margin-top: var(--s-7);
   grid-template-areas: 'play play album' 'play play timer' 'news shadow shadow' 'forecast forecast photo' 'tabs menu menu'; }
 
 /* ── the review bar: what Plumber is doing to the card on turn, in three beats (checking, found and why, fixed), in the
@@ -46,20 +46,20 @@
 
 /* ── the spotlight: the card on turn lifts with a ring in its colour; the others sit still, at full strength ── */
 .ins-x-grid[data-live='true'] .ins-card { transition: translate 400ms var(--pl-spring-pop), opacity 400ms var(--ease), filter 400ms var(--ease), box-shadow 400ms var(--ease); }
-.ins-x-grid[data-live='true'] .ins-card[data-turn] { translate: 0 -5px; box-shadow: var(--pl-shadow-card), 0 0 0 2px color-mix(in oklab, var(--hue) 70%, transparent), 0 26px 44px -22px color-mix(in oklab, var(--hue) 70%, transparent); }
 
 /* ── the card: paper, its stage on a coloured face, in our design language ── */
-.ins-card { --hue: var(--pl-sky); --face: var(--pl-sky-face); display: flex; flex-direction: column; padding: 0; overflow: hidden; border-radius: 22px; background: var(--pl-bg-surface); box-shadow: var(--pl-shadow-card);
+.ins-card { --hue: var(--pl-sky); --face: var(--pl-sky-face); display: flex; flex-direction: column; padding: 0; background: none; box-shadow: none;
   transition: translate 300ms var(--pl-spring-pop), box-shadow 200ms var(--ease); }
 .ins-card[data-hue='pink'] { --hue: var(--pl-pink); --face: var(--pl-pink-face); }
 .ins-card[data-hue='mint'] { --hue: var(--pl-mint); --face: var(--pl-mint-face); }
 .ins-card[data-hue='lilac'] { --hue: var(--pl-lilac); --face: var(--pl-lilac-face); }
 .ins-card[data-hue='butter'] { --hue: var(--pl-butter); --face: var(--pl-butter-face); }
-@media (hover: hover) and (pointer: fine) { .ins-card:hover { translate: 0 -3px; } }
 /* one container: the stage is the top of the card itself, edge to edge under its corners, divided from the words by a
    hairline; no panel inside the card */
-.ins-stage { position: relative; flex: 1; min-height: 262px; overflow: hidden; border-radius: 0;
-  background: radial-gradient(120% 90% at 30% 0%, var(--pl-bg-surface), color-mix(in oklab, var(--pl-bg-inset) 70%, var(--pl-bg-surface))); box-shadow: inset 0 -1px 0 var(--pl-border-default); }
+/* no container: each example is its scene on the page, with its words under it; the dot grid of a fix fades out at
+   its edges, since there is no box to stop it */
+.ins-stage { position: relative; flex: 1; min-height: 262px; overflow: visible; background: none; box-shadow: none; }
+.ins-stage::before { -webkit-mask: radial-gradient(closest-side, #000 55%, transparent); mask: radial-gradient(closest-side, #000 55%, transparent); }
 /* the state: a tag in the toy face with the principle's toy, coral while broken, mint once fixed */
 .ins-state { position: absolute; z-index: 3; left: 10px; top: 10px; display: inline-flex; gap: 5px; align-items: center; height: 26px; padding: 0 9px 0 6px; overflow: hidden;
   border-radius: var(--pl-radius-tag); font: var(--pl-round-w, 700) 12px/1 var(--pl-round); color: var(--pl-coral-ink); background: color-mix(in oklab, var(--pl-coral) 18%, var(--pl-bg-surface));
@@ -86,7 +86,7 @@
 @media (hover: hover) and (pointer: fine) { .ins-replay:hover svg { rotate: -200deg; } }
 .ins-replay:focus-visible { outline: 2px solid var(--pl-border-focus); outline-offset: 2px; }
 @keyframes ins-pop-in { from { opacity: 0; scale: 0.85; } }
-.ins-foot { display: flex; gap: 12px; align-items: flex-start; padding: 14px 16px 16px; }
+.ins-foot { display: flex; gap: 12px; align-items: flex-start; padding: 10px 4px 0; }
 .ins-n { display: grid; place-items: center; flex: none; width: 30px; height: 30px; border-radius: 10px; translate: 0 -2px; color: #fff; font: var(--pl-round-w, 700) 12px/1 var(--pl-round);
   background: linear-gradient(180deg, color-mix(in oklab, var(--hue) 82%, #fff), var(--hue));
   box-shadow: inset 0 1.5px 0 rgb(255 255 255 / .4), 0 2px 0 color-mix(in oklab, var(--hue) 70%, #000), 0 6px 10px -4px color-mix(in oklab, var(--hue) 70%, transparent); }
@@ -200,7 +200,8 @@
 
 /* #21 tinted shadow: a recipe card on a real coloured table (a pink cake and macarons, Unsplash); its shadow grey,
    then the table's own pink (written in rgb, which the build leaves alone and the measure reads) */
-.ins-card:has(.sc-shadow) .ins-stage { background: #e9b8c4 url('https://images.unsplash.com/photo-1714566927165-1fd42fdd870c?w=900&q=80&auto=format&fit=crop') center / cover; }
+/* the coloured table is part of this scene: a rounded photo, not a box around it */
+.ins-card:has(.sc-shadow) .ins-stage { border-radius: 20px; overflow: hidden; background: #e9b8c4 url('https://images.unsplash.com/photo-1714566927165-1fd42fdd870c?w=900&q=80&auto=format&fit=crop') center / cover; }
 .sc-recipe { position: relative; display: grid; gap: 4px; width: 214px; padding: 14px 16px; border-radius: 16px; background: var(--pl-bg-surface); color: var(--ink-1);
   box-shadow: 0 2px 4px rgb(0 0 0 / 0.25), 0 18px 32px -10px rgb(0 0 0 / 0.5); transition: box-shadow var(--t-fix) var(--t-fix-ease); }
 .sc-shadow[data-fixed='true'] .sc-recipe { box-shadow: 0 2px 4px rgb(214 64 140 / 0.35), 0 18px 32px -10px rgb(200 40 120 / 0.65); }

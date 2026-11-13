@@ -2023,6 +2023,12 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   the card itself, edge to edge under its corners, a hairline above the words; so it's the card and the scene, and the
   photo stages (the pink table) fill the card's top. The dot grid is subtler too (a quarter of the card's pastel, 1px
   dots; "too contrasty").
+- **"Remove this container layer itself and use the content with text in a real clean, flowy, minimal way."** The
+  example cards have no box at all now: each is its scene on the page with its number, title and why under it, the grid
+  given more air (48px between rows, 32px between columns). The label and the switch are small chips beside the scene;
+  the dot grid of a fix fades out at its edges, having no box to stop it; the pink table stays as a rounded photo, the
+  ground of that scene. The review bar is what points at the example being reviewed (the lift and ring went with the
+  box).
 
 ## Open gaps
 - The overlay writes about 180 corners as numbers (radius tokens about 45 times), many off its own scale; 6px is
