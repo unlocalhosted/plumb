@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>React Plumber · silhouettes, round 1</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400..700&display=swap">
+<style>
+  /* Silhouettes only: black, no colour, no detail. A mark must be unmistakable as a blot at 16px before anything else.
+     Rules taken from the references (Raycast: one 45° construction; Arc: equal round strokes; Figma: grid units). */
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #f6f5f2; color: #1d1b17; font: 400 13px/18px "Instrument Sans", system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  h1 { margin: 32px 40px 2px; font: 600 20px/26px "Instrument Sans"; }
+  .sub { margin: 0 40px 20px; color: #6b665c; max-width: 980px; }
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; padding: 0 40px 40px; }
+  .card { background: #fff; border-radius: 14px; box-shadow: 0 0 0 1px rgb(29 27 23 / .09); padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+  .sizes { display: flex; align-items: flex-end; gap: 26px; height: 104px; }
+  .n { font-weight: 650; } .n i { font-style: normal; color: #6b665c; margin-right: 6px; }
+  .idea { margin: 0; color: #6b665c; }
+  svg { display: block; flex: none; }
+</style>
+</head>
+<body>
+<h1>Silhouettes, round 1: the six that survived</h1>
+<p class="sub">Black outlines only, at 96, 32 and 16 px. Each from one idea of React or the DOM, built by one rule (equal round strokes, 45° bands, or grid units). Pick the outlines worth constructing; colour and depth come after.</p>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <!-- strokes: one weight (8 on 48), round caps, like Arc's -->
+  <symbol id="s1" viewBox="0 0 48 48"><g fill="none" stroke="#000" stroke-width="8" stroke-linecap="round"><path d="M17 6a23 23 0 0 0 0 36"/><path d="M31 6a23 23 0 0 1 0 36"/></g><circle cx="24" cy="24" r="6" fill="#000"/></symbol>
+  <symbol id="s2" viewBox="0 0 48 48"><g fill="none" stroke="#000" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"><path d="M24 6v12"/><path d="M24 18c0 8-12 9-12 20"/><path d="M24 18c0 8 12 9 12 20"/></g></symbol>
+  <symbol id="s3" viewBox="0 0 48 48"><g fill="none" stroke="#000" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 10 4 24l10 14"/><path d="M34 10l10 14-10 14"/><path d="M24 6v36"/></g></symbol>
+  <symbol id="s4" viewBox="0 0 48 48"><g fill="none" stroke="#000" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 42V16a10 10 0 0 1 10-10h2a11 11 0 0 1 0 22H13"/><path d="M33 28v14"/></g></symbol>
+  <!-- grid units: circles and quarter-rounds on a 2 × 3 grid, like Figma's -->
+  <symbol id="s5" viewBox="0 0 48 48"><circle cx="24" cy="10" r="8" fill="#000"/><path d="M8 26a8 8 0 0 1 8-8h8v16H16a8 8 0 0 1-8-8z" fill="#000"/><path d="M24 18h8a8 8 0 0 1 0 16h-8z" fill="#000"/><rect x="16" y="34" width="16" height="12" rx="6" fill="#000"/></symbol>
+  <symbol id="s6" viewBox="0 0 48 48"><path d="M8 4h16v20H8z" fill="#000"/><path d="M24 4h4a10 10 0 0 1 0 20h-4z" fill="#000"/><circle cx="16" cy="34" r="10" fill="#000"/></symbol>
+  <!-- 45° bands, like Raycast's -->
+  <symbol id="s7" viewBox="0 0 48 48"><path d="M24 2 46 24 24 46 2 24zm0 10L12 24l12 12 12-12z" fill="#000" fill-rule="evenodd"/><path d="M24 18l6 6-6 6-6-6z" fill="#000"/></symbol>
+  <symbol id="s8" viewBox="0 0 48 48"><path d="M4 12l8-8 20 20-8 8zM16 24l8-8 20 20-8 8z" fill="#000"/></symbol>
+  <!-- the box: content, padding, border as rings -->
+  <symbol id="s9" viewBox="0 0 48 48"><path d="M14 2h20a12 12 0 0 1 12 12v20a12 12 0 0 1-12 12H14A12 12 0 0 1 2 34V14A12 12 0 0 1 14 2zm2 9a5 5 0 0 0-5 5v16a5 5 0 0 0 5 5h16a5 5 0 0 0 5-5V16a5 5 0 0 0-5-5z" fill="#000" fill-rule="evenodd"/><rect x="17" y="17" width="14" height="14" rx="3.5" fill="#000"/></symbol>
+  <!-- concentric corners: the inner radius is the outer one less the gap (a craft rule plumber checks) -->
+  <symbol id="s10" viewBox="0 0 48 48"><g fill="none" stroke="#000" stroke-width="7" stroke-linecap="round"><path d="M5.5 42V24A18.5 18.5 0 0 1 24 5.5h18"/><path d="M18 42V27a9 9 0 0 1 9-9h15"/></g></symbol>
+  <!-- render and re-render: two squares, the second offset; where they overlap is cut -->
+  <symbol id="s11" viewBox="0 0 48 48"><path d="M10 4h18a6 6 0 0 1 6 6v4H20a6 6 0 0 0-6 6v14h-4a6 6 0 0 1-6-6V10a6 6 0 0 1 6-6z" fill="#000"/><rect x="18" y="18" width="26" height="26" rx="6" fill="#000"/></symbol>
+  <!-- a level: the vial and its bubble, centred -->
+  <symbol id="s12" viewBox="0 0 48 48"><path d="M14 12h20a12 12 0 0 1 0 24H14a12 12 0 0 1 0-24zm4 6a6 6 0 0 0 0 12h12a6 6 0 0 0 0-12z" fill="#000" fill-rule="evenodd"/></symbol>
+  <!-- the flow: state comes in from the left and leaves as two -->
+  <symbol id="s13" viewBox="0 0 48 48"><g fill="none" stroke="#000" stroke-width="8" stroke-linecap="round"><path d="M4 24h14c8 0 10-14 22-14h4"/><path d="M18 24c8 0 10 14 22 14h4"/></g></symbol>
+  <!-- one tag: the element, its angle brackets closing on a centre -->
+  <symbol id="s14" viewBox="0 0 48 48"><path d="M20 4 2 24l18 20h10L12 24 30 4z" fill="#000"/><path d="M28 18h10l8 6-8 6H28l6-6z" fill="#000"/></symbol>
+  <!-- f(state): the function's f, its crossbar running into the state -->
+  <symbol id="s15" viewBox="0 0 48 48"><g fill="none" stroke="#000" stroke-width="8" stroke-linecap="round"><path d="M28 6h-2a8 8 0 0 0-8 8v28"/><path d="M8 22h14"/></g><circle cx="35" cy="22" r="7" fill="#000"/></symbol>
+  <!-- the plumb: one true vertical, and what hangs square on it -->
+  <symbol id="s16" viewBox="0 0 48 48"><path d="M20 2h8v12h10a6 6 0 0 1 6 6v8a6 6 0 0 1-6 6H28v12h-8V34H10a6 6 0 0 1-6-6v-8a6 6 0 0 1 6-6h10z" fill="#000"/></symbol>
+</defs></svg>
+<div class="grid" id="g"></div>
+<script>
+const S = [
+  ['( • )', 'f(state): the state held inside the function, two equal strokes and a dot.'],
+  ['The fork', 'One source dividing into two: the smallest component tree, three strokes.'],
+  ['< | >', 'A tag, closed on one true vertical: JSX and the plumb line at once.'],
+  ['Open P', 'A P whose bowl leaves a gap, a second stroke completing it below: equal strokes.'],
+  ['Stacked units', 'Figma-style units: state on top, two halves, a base: the tree as grid parts.'],
+  ['P from units', 'A square, a half-round, a circle: a P built from three grid units.'],
+  ['The gem', '45° bands: a diamond within a diamond: a nested element, cut with Raycast\'s angle.'],
+  ['Two steps', '45° bands: two equal steps, one placed exactly after the other.'],
+  ['The box', 'Content, padding, border: the element as rings.'],
+  ['Concentric', 'Two corners, the inner radius the outer one less the gap: a craft rule as a mark.'],
+  ['Re-render', 'Two squares, the second offset; the first cut where they meet.'],
+  ['Level', 'A vial with its bubble dead centre.'],
+  ['Flow', 'State comes in as one and leaves as two: one-way data flow in two strokes.'],
+  ['The tag', 'An angle bracket and a pointer: an element, pointed at.'],
+  ['f( • )', 'The function\'s f, its crossbar running into the state.'],
+  ['Plumb cross', 'One true vertical, and a block hung square on it.'],
+];
+// my own cull: these six survive; the other ten read as something else (a clover, a cross, Square's logo, a copy icon) or are broken
+const KEEP = [1, 3, 6, 10, 13, 15];
+document.getElementById('g').innerHTML = S.map(([n, idea], i) => [n, idea, i]).filter(([, , i]) => KEEP.includes(i + 1)).map(([n, idea, i]) => `<section class="card"><span class="n"><i>${i + 1}</i>${n}</span><span class="sizes">${[96, 32, 16].map((s) => `<svg width="${s}" height="${s}"><use href="#s${i + 1}"/></svg>`).join('')}</span><p class="idea">${idea}</p></section>`).join('');
+</script>
+</body>
+</html>
