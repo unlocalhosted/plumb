@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>React Plumber · the box model, round the P</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400..700&display=swap">
+<style>
+  /* The owner (2026-11-13): "maybe you could have gutter for like margin, padding, radius and all forming a react logo and
+     maybe you dont have to show the whole react logo, somehow it adjust itself around the p".
+     So: three orbits, each one of plumber's own box-model marks (visual-language.md: dots are margin, hatch is padding,
+     the radius a fine guide with its corner handles), each only an arc of its ellipse, drawn on round the P: it passes
+     behind the P on its far side and in front on its near side, and leaves off before it closes. The atom is hinted,
+     never drawn whole; the P stays full size at the heart. React's atom is Meta's trademark: a film moment, not the mark. */
+  :root { --ink-2: #6b665c; --desk: #f6f5f2; --sky: #2f86dc; --mint: #1aa36a; --butter: #f5b400; }
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: var(--desk); font: 400 14px/20px "Instrument Sans", system-ui, sans-serif; }
+  .stage { display: flex; flex-direction: column; align-items: center; gap: 16px; cursor: pointer; }
+  p { margin: 0; color: var(--ink-2); }
+  svg { overflow: visible; }
+  .o { transform-box: view-box; transform-origin: 60px 60px; }
+  .o1 { transform: rotate(0deg); } .o2 { transform: rotate(60deg); } .o3 { transform: rotate(120deg); }
+  /* the arc of each orbit that is drawn: revealed by a mask stroke that grows along the ellipse */
+  .reveal { fill: none; stroke: #fff; stroke-width: 14; stroke-dasharray: 0 100; transition: stroke-dasharray 1300ms cubic-bezier(.6, 0, .2, 1) var(--d, 0ms); }
+  .on .reveal { stroke-dasharray: var(--len) 100; }
+  .back { opacity: .5; }
+  /* margin: dots */
+  .margin { fill: none; stroke: var(--butter); stroke-width: 2.4; stroke-linecap: round; stroke-dasharray: 0 3.6; }
+  /* padding: a hatched ribbon with its two edges */
+  .padding { fill: none; stroke: url(#hatch); stroke-width: 4.4; }
+  .padding-edge { fill: none; stroke: var(--mint); stroke-width: .5; opacity: .9; }
+  /* radius: a fine guide */
+  .radius { fill: none; stroke: var(--sky); stroke-width: .7; }
+  .handle { opacity: 0; transform-box: fill-box; transform-origin: center; transition: opacity 200ms ease, transform 300ms cubic-bezier(.3, 1.6, .5, 1); transform: scale(.4); }
+  .on .handle { opacity: 1; transform: scale(1); transition-delay: calc(var(--d, 0ms) + 1150ms); }
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+  <svg id="s" viewBox="0 0 120 120" width="460" height="460">
+    <defs>
+      <linearGradient id="stem" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff7ac0"/><stop offset=".55" stop-color="#f24a9f"/><stop offset="1" stop-color="#d0287f"/></linearGradient>
+      <linearGradient id="bowl" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9a7dff"/><stop offset=".55" stop-color="#7356f0"/><stop offset="1" stop-color="#5232d4"/></linearGradient>
+      <linearGradient id="lit" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".42"/><stop offset=".25" stop-color="#fff" stop-opacity="0"/></linearGradient>
+      <pattern id="hatch" width="2.6" height="2.6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="2.6" height="2.6" fill="#e6f6ee"/><rect width="1" height="2.6" fill="#1aa36a"/></pattern>
+      <clipPath id="near" clipPathUnits="userSpaceOnUse"><rect x="-20" y="60" width="160" height="80"/></clipPath>
+      <!-- the orbit's line: starts at its left end, goes over the top first (pathLength 100) -->
+      <path id="ring" d="M3 60A57 19 0 1 1 117 60A57 19 0 1 1 3 60"/>
+      <path id="ringIn" d="M5.2 60A54.8 16.8 0 1 1 114.8 60A54.8 16.8 0 1 1 5.2 60"/>
+      <path id="ringOut" d="M.8 60A59.2 21.2 0 1 1 119.2 60A59.2 21.2 0 1 1 .8 60"/>
+      <!-- each orbit's reveal: how much of it is drawn, from where -->
+      <mask id="m1" maskUnits="userSpaceOnUse" x="-30" y="-30" width="180" height="180"><path d="M3 60A57 19 0 1 1 117 60A57 19 0 1 1 3 60" class="reveal" pathLength="100" style="--len: 74; --d: 0ms; stroke-dashoffset: -30"/></mask>
+      <mask id="m2" maskUnits="userSpaceOnUse" x="-30" y="-30" width="180" height="180"><path d="M3 60A57 19 0 1 1 117 60A57 19 0 1 1 3 60" class="reveal" pathLength="100" style="--len: 70; --d: 160ms; stroke-dashoffset: -8"/></mask>
+      <mask id="m3" maskUnits="userSpaceOnUse" x="-30" y="-30" width="180" height="180"><path d="M3 60A57 19 0 1 1 117 60A57 19 0 1 1 3 60" class="reveal" pathLength="100" style="--len: 60; --d: 320ms; stroke-dashoffset: -45"/></mask>
+      <g id="h"><rect x="-1.9" y="-1.9" width="3.8" height="3.8" rx=".9" fill="#fff" stroke="#2f86dc" stroke-width=".7"/></g>
+    </defs>
+
+    <!-- behind the P: each orbit's whole drawn arc, fainter -->
+    <g class="o o1 back" mask="url(#m1)"><use href="#ring" class="margin"/></g>
+    <g class="o o2 back" mask="url(#m2)"><use href="#ring" class="padding"/><use href="#ringIn" class="padding-edge"/><use href="#ringOut" class="padding-edge"/></g>
+    <g class="o o3 back" mask="url(#m3)"><use href="#ring" class="radius"/></g>
+
+    <g id="mark" transform="translate(60 60) scale(.62) translate(-60 -60)"></g>
+
+    <!-- in front of the P: each orbit's near half -->
+    <g class="o o1" mask="url(#m1)"><g clip-path="url(#near)"><use href="#ring" class="margin"/></g></g>
+    <g class="o o2" mask="url(#m2)"><g clip-path="url(#near)"><use href="#ring" class="padding"/><use href="#ringIn" class="padding-edge"/><use href="#ringOut" class="padding-edge"/></g></g>
+    <g class="o o3" mask="url(#m3)"><g clip-path="url(#near)"><use href="#ring" class="radius"/></g></g>
+    <!-- the radius guide's ends: plumber's corner handles -->
+    <g class="o o3"><use href="#h" class="handle" x="5.8" y="54.1" style="--d: 320ms"/><use href="#h" class="handle" x="114.2" y="54.1" style="--d: 320ms"/></g>
+  </svg>
+  <p>Click to play again. Margin (dots), padding (hatch) and radius (a guide with its handles), round the P.</p>
+</div>
+<script>
+const STEM = 'M48 18H53A5 5 0 0 1 58 23V92A10 10 0 0 1 48 102H34A10 10 0 0 1 24 92V42A24 24 0 0 1 48 18Z';
+const BOWL = 'M67 18H68A28 28 0 0 1 96 46V46A28 28 0 0 1 68 74H67A5 5 0 0 1 62 69V23A5 5 0 0 1 67 18Z';
+document.getElementById('mark').innerHTML = `<path d="${STEM}" fill="url(#stem)"/><path d="${STEM}" fill="url(#lit)" style="mix-blend-mode:soft-light"/><path d="${BOWL}" fill="url(#bowl)"/><path d="${BOWL}" fill="url(#lit)" style="mix-blend-mode:soft-light"/>`;
+const s = document.getElementById('s');
+const play = () => { s.classList.remove('on'); void s.getBoundingClientRect(); requestAnimationFrame(() => s.classList.add('on')); };
+document.getElementById('stage').addEventListener('click', play);
+setTimeout(play, 500);
+</script>
+</body>
+</html>
