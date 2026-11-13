@@ -944,8 +944,11 @@ class PlumbOverlay extends HTMLElement {
       return;
     }
     // Alt+B: the whole view as its blueprint, every drift drawn where it lives
-    // Alt+B: the X-ray of the element under the pointer (owner, 2026-11-13: in place of the whole page's heat)
-    if (event.altKey && event.code === 'KeyB' && !event.repeat) { event.preventDefault(); event.stopPropagation(); this.#disarm(); this.#toggleXray(); return; }
+    // Alt+X: the X-ray of the element under the pointer (owner, 2026-11-13). It takes Alt+B, in place of the heat, once
+    // it carries the list of causes too; until then Alt+B is still the way to the fixes
+    if (event.altKey && event.code === 'KeyX' && !event.repeat) { event.preventDefault(); event.stopPropagation(); this.#disarm(); this.#toggleXray(); return; }
+    // Alt+B: the whole view as its blueprint, every drift drawn where it lives
+    if (event.altKey && event.code === 'KeyB' && !event.repeat) { event.preventDefault(); event.stopPropagation(); this.#disarm(); if (this.#xray) this.#toggleXray(); this.#wholePage(); return; }
     // Esc with nothing in hand leaves the X-ray (with changes or a list open, the X-ray's own Esc puts them back first)
     if (event.key === 'Escape' && this.#xray && !this.#xray.pending && !this.#typing(event)) { event.preventDefault(); event.stopPropagation(); this.#toggleXray(); return; }
     if (this.#xray && event.key === 'Alt') return;
