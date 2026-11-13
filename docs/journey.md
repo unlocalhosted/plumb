@@ -2502,7 +2502,19 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   sets each size at its size); the biggest causes in your code moved into step 3 as "In your code", under the system
   decisions, its own heading hidden; step 1 counts what's typed by hand. A test (e2e/bare-page) still expects the
   page to load the landing chart and specimen modules; it needs rewriting with the new page's tests.
-- **Open on the four steps:** nothing is written to your files from the page yet; colour has no roles map (29 role
+- **Then write-back (same day; owner: "Yes, write-back").** Step 4 has "Write it to your files". The chosen system is
+  sent as plain edits per token file to a new server method, `system-apply` (src/session/engine.ts `systemApply`):
+  values set on tokens that are there, and tokens added after one that is there. Nothing is renamed or deleted: a
+  token given a new name keeps its old one pointing at it (`--space-1: var(--spacing-1)`), a dropped scale's tokens
+  point at the kept scale, a rounded step gets its new value, a step only a dropped scale had is added after the kept
+  scale's last step. Every file is worked out before any lands; each goes through the same guarded write as every fix
+  (the project boundary, the config files refused, the stylesheet's block count kept, each value checked where it
+  landed), and all of them are one Undo. Proof on a copy (the plain-CSS probe with two overlapping spacing scales):
+  15 tokens written, `--space-*` and `--gap-*` now pointing at a new `--spacing-*` scale, 6 rounded to 8, Plumber's
+  check on it still 100% on tokens; Undo put the file back byte for byte. Fixed on the way: added steps landed in
+  reverse order; a Tailwind name (`--radius-*`) was asked about as a guess. Not tried on the real site: there it
+  would edit `../overlay/src/tokens.css` and the homepage app's foundations.
+- **Open on the four steps:**  colour has no roles map (29 role
   scales show as swatch strips); steps that came from a dropped scale are named by their size (`--spacing-32`)
   beside inherited names (`--spacing-8` is 24px), a mixed numbering a naming choice should settle.
 - **Still open on the page:** some motion tokens show `0ms`, the

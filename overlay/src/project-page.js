@@ -32,14 +32,15 @@ const PAGE_CSS = `
  * @param host    the element the page draws into (it gets a shadow root)
  * @param data    the page data: { project, files, size: { steps, strays }, … } (src/project-page/system.ts)
  * @param tokens  the text of tokens.css
+ * @param io      { post(path, body) }: how the page writes, when it may (the CLI's page); without it, nothing is written
  */
-export function mountProjectPage(host, data, tokens) {
+export function mountProjectPage(host, data, tokens, io = {}) {
   const doc = host.ownerDocument, root = host.attachShadow({ mode: 'open' });
   root.innerHTML = `<style>${tokens}${LANGUAGE_CSS}${CAUSE_LIST_CSS}${PAGE_CSS}</style>${TOY_DEFS}
   <header class="top"><span class="pl-rainbow"></span><b>React Plumber</b><span class="pl-tag">${esc(data.project)}</span><span class="read">${nf.format(data.files)} files read</span><button type="button" class="pl-act quiet" id="scheme">Day</button></header>
   <main><div id="reading"><div id="causes" slot="causes"></div></div></main>`;
   const causes = new CauseList(root.getElementById('causes'), { causes: data.causes, open: data.open });
-  mountReview(root.getElementById('reading'), data.reading, { handTyped: data.open, project: data.project });
+  mountReview(root.getElementById('reading'), data.reading, { handTyped: data.open, project: data.project, post: io.post });
 
   // the body around the root shows on overscroll and at the edges, so it takes the desk colour the root resolves
   doc.body.style.margin = '0';

@@ -175,6 +175,11 @@ export interface TokenOptions { file: string; hash: string; name: string; value:
 export interface TokenResult { revision: number; file: string; hash: string; applied: string[]; written: boolean; undo: UndoHandle | null; then?: ApplyResult }
 /** Several tokens into one theme file as one guarded write: each token stands alone (already there → fine, clashes → its own refusal). */
 export interface TokensOptions { file: string; hash: string; tokens: { name: string; value: string; why?: string }[] }
+/** A design system settled on the project page, written as plain edits to token definitions (system-review.js): in
+ *  each file, values set on tokens that are there (an old name now pointing at the scale, a rounded step) and tokens
+ *  added after one that is there. Nothing is renamed or deleted, so every place that uses a token keeps working. */
+export interface SystemApplyOptions { files: { file: string; set: { name: string; value: string }[]; add: { after: string; name: string; value: string }[] }[]; label?: string }
+export interface SystemApplyResult { revision: number; written: { file: string; set: number; added: number }[]; undo: UndoHandle | null }
 export interface TokensResult { revision: number; file: string; hash: string; applied: string[]; written: boolean; undo: UndoHandle | null; results: { name: string; ok: boolean; written: boolean; error?: string }[] }
 export interface SwapOptions { file: string; hash: string; line: number; column: number; from: string; to: string; at?: { line: number; column: number }; of?: PinOrigin }
 export interface UndoResult { revision: number; file: string; hash: string; undone: string; remaining: Report['findings'] }
@@ -1548,6 +1553,59 @@ export class Session extends EventEmitter {
       const label = written.length === 1 ? `${written[0]!.name}: ${tokens.find(t => t.name === written[0]!.name)!.value.trim()}` : `${written.length} tokens`;
       const undo = this.record(path, before, made.hash, 1, label, true);
       return { revision: this.revision, file: path, hash: made.hash, applied: written.map(r => `token:${r.name}`), written: true, undo, results };
+    });
+  }
+  /** The system the project page settled, into the files that define its tokens: one guarded write per file, one undo
+   * for all of them. A value set on a token that isn't there, or a token added after one that isn't, refuses the whole
+   * write before anything lands; a token to add that is already there with its value is fine. */
+  async systemApply(options: SystemApplyOptions): Promise<SystemApplyResult> {
+    const files = options?.files;
+    if (!Array.isArray(files) || !files.length || files.length > 20) throw new UsageError('A system write needs the files to change.');
+    const tokenName = /^--[\w-]+$/, safeValue = (v: unknown) => typeof v === 'string' && v.trim() !== '' && !/[;{}]/.test(v) && v.length < 200;
+    for (const f of files) for (const item of [...(f?.set ?? []), ...(f?.add ?? [])]) {
+      if (!tokenName.test(String(item?.name)) || !safeValue(item?.value) || ('after' in item && !tokenName.test(String(item.after)))) throw new UsageError(`Not a token: ${JSON.stringify(item)}.`);
+    }
+    const escape = (n: string) => n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const declaration = (n: string) => new RegExp(`(^|[\\s;{])(${escape(n)}\\s*:\\s*)([^;}]+)`, 'g');
+    return this.serialize(async (): Promise<SystemApplyResult> => {
+      // every file is read and every edit worked out first; nothing lands unless all of it can
+      const plans: { path: string; current: SourceText; next: string; set: number; added: number }[] = [];
+      for (const f of files) {
+        const path = this.editable(f.file);
+        if (!/\.css$/.test(path)) throw new UsageError(`Tokens are written to a stylesheet, not ${f.file}.`);
+        const current = await this.readForWrite(path);
+        let next = current.text, added = 0;
+        const placed = new Set<string>();
+        for (const { name, value } of f.set ?? []) {
+          if (!declaration(name).test(next)) throw new UsageError(`${name} isn't in ${f.file} any more. Reload the page.`);
+          next = next.replace(declaration(name), (_m, lead, head) => `${lead}${head}${value.trim()}`);
+        }
+        for (const { after, name, value } of f.add ?? []) {
+          const there = new RegExp(`(?:^|[\\s;{])${escape(name)}\\s*:\\s*([^;}]+)`).exec(next);
+          if (there) { if (there[1]!.trim() === value.trim()) continue; throw new UsageError(`${name} is already ${there[1]!.trim()} in ${f.file}.`); }
+          const at = new RegExp(`(^|\\n)([ \\t]*)[^\\n]*?${escape(after)}\\s*:[^;}]*;[^\\n]*`).exec(next);
+          if (!at) throw new UsageError(`${after} isn't in ${f.file} any more. Reload the page.`);
+          // after the anchor's line and after any lines this write already put there, so added steps keep their order
+          let end = at.index + at[0].length;
+          for (let line; (line = /^\n[ \t]*(--[\w-]+)\s*:[^\n]*/.exec(next.slice(end))) && placed.has(line[1]!);) end += line[0].length;
+          next = `${next.slice(0, end)}\n${at[2]}${name}: ${value.trim()};${next.slice(end)}`;
+          placed.add(name);
+          added++;
+        }
+        if (next === current.text) continue;
+        // the stylesheet's last guard: the same blocks, and every value asked for where it was asked
+        if (topBlocks(next).length !== topBlocks(current.text).length) throw new UsageError(`The change would reshape ${f.file}; nothing was written.`);
+        for (const { name, value } of [...(f.set ?? []), ...(f.add ?? [])]) if (!new RegExp(`${escape(name)}\\s*:\\s*${escape(value.trim())}\\s*[;}]`).test(next)) throw new UsageError(`${name} didn't land in ${f.file}; nothing was written.`);
+        plans.push({ path, current, next, set: (f.set ?? []).length, added });
+      }
+      if (!plans.length) return { revision: this.revision, written: [], undo: null };
+      const handles: UndoHandle[] = [];
+      for (const plan of plans) {
+        const made = await this.commit(plan.path, plan.current, plan.next);
+        handles.push(this.record(plan.path, plan.current.text, made.hash, 1, `${plan.set + plan.added} tokens`, true));
+      }
+      const undo = this.asOneWrite(handles, options.label ?? 'Your system');
+      return { revision: this.revision, written: plans.map(p => ({ file: relative(this.root, p.path).replaceAll('\\', '/'), set: p.set, added: p.added })), undo };
     });
   }
   /** Several class swaps in one file, written together in one guarded write (one reload, one undo): the changes a person

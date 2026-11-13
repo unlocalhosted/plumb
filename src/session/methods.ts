@@ -55,6 +55,8 @@ export const methods = [
   { http: 'swaps', engine: 'swaps', post: true, traced: true, patient: true },
   { http: 'prop', engine: 'propEdit', post: true, traced: true, patient: true },
   { http: 'token', engine: 'token', post: true, traced: true, patient: true },
+  // the system settled on the project page, into its token files (one undo for all of them)
+  { http: 'system-apply', engine: 'systemApply', post: true, traced: true, patient: true },
   { http: 'accept', engine: 'accept', post: true, patient: true },
   { http: 'apply-all', engine: 'applyAll', post: true, traced: true, patient: true },
   { http: 'rename', engine: 'rename', post: true, traced: true, patient: true },

@@ -177,6 +177,12 @@ async function dispatchOnce(session: Session, method: string, params: Record<str
     if (typeof value !== 'string' && typeof value !== 'number' && typeof value !== 'boolean') throw new UsageError('value must be a JSON string, number or boolean.');
     return session.propEdit({ file: text(params, 'file')!, hash: text(params, 'hash')!, line: position(params, 'line')!, column: position(params, 'column')!, name: text(params, 'name')!, value });
   }
+  if (method === 'system-apply') {
+    const files = (params as { files?: unknown }).files;
+    if (!Array.isArray(files)) throw new UsageError('files must be a list of { file, set, add }.');
+    return session.systemApply({ files: files.map(f => ({ file: text(f, 'file')!, set: Array.isArray((f as { set?: unknown }).set) ? (f as { set: { name: string; value: string }[] }).set : [], add: Array.isArray((f as { add?: unknown }).add) ? (f as { add: { after: string; name: string; value: string }[] }).add : [] })),
+      ...(typeof params.label === 'string' ? { label: params.label } : {}) });
+  }
   if (method === 'token') {
     const then = (params as { then?: unknown }).then;
     if (then !== undefined && !object(then)) throw new UsageError('then must be a swap: { file, hash, line, column, from, to }.');
