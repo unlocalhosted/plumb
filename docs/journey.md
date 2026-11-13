@@ -2504,8 +2504,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   page to load the landing chart and specimen modules; it needs rewriting with the new page's tests.
 - **Open on the four steps:** nothing is written to your files from the page yet; colour has no roles map (29 role
   scales show as swatch strips); steps that came from a dropped scale are named by their size (`--spacing-32`)
-  beside inherited names (`--spacing-8` is 24px), a mixed numbering a naming choice should settle; the page's older
-  parts (type headline, landing chart, specimen, causes) still sit above the four steps.
+  beside inherited names (`--spacing-8` is 24px), a mixed numbering a naming choice should settle.
 - **Still open on the page:** some motion tokens show `0ms`, the
   value from the token file's reduced-motion block; nothing on the page can move a line yet (the config does).
 - **Still open:** a `font:` line that is off the scale shows the face's fix first ("use var(--font)"), not the
