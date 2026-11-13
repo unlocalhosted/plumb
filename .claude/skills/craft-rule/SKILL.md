@@ -299,6 +299,20 @@ as a stranger would** (a recording, not stills) and write three sentences from t
 and why the fix holds. If any of the three needs the lesson below the stage, the moment is not finished (§3⅝). Then
 measure the acts from the recording and put them beside the reference's: the problem's share must be the larger.
 
+**Then the polish pass, on the film, in motion.** Record it headless and step through every transition (camera in,
+each mark arriving and leaving, the switch, the fix landing, camera out) at 10 frames a second. Stills at two or three
+moments miss exactly the faults that read as unpolished. Each transition must pass:
+- **Nothing crosses a control.** The switch and its line never move, and nothing sweeps over them, at any frame
+  (the camera works inside the card's own frame, kept until the camera is fully back).
+- **Nothing lands on content.** Pills sit in the gaps around their subject; a card of plumber's (the change) sits on
+  the open board, never on the example's rows.
+- **Nothing changes size when it arrives.** A thing that gains a part (the fix's class) keeps that part's place from
+  the start.
+- **The frame is never cut or exposed.** No straight crop line through the card, no gap at an edge while zoomed.
+- **No mark says what another already says.** A value said in the change card isn't also a pill; a guide on an edge
+  that didn't move isn't drawn.
+- **Leaving is as clean as arriving.** Marks fade before the camera moves; the frame holds until the motion ends.
+
 Then look at every screen, Broken and Fixed, at a wide window and in a narrow pane, and check:
 
 - nothing clipped, overflowing, or wrapping where it shouldn't (a price unit under its price, a banner cut at the top);
@@ -469,4 +483,9 @@ Each line is something the owner had to say once; the sections above exist so th
   when the cause is named, plumber's change card shows the class at fault and the property it sets (coral); when the
   fix lands it is struck and the class that holds arrives with its property (mint), as plumber's cards show a change
   (widget.js `.change`). Screens supply `film.code = { fault: { cls, prop }, fix: { cls, prop } }`.
+- 2026-11-13 · On #42's film with the change card: "there is a lack of polish the toggle moves across the card, the
+  property transition lands on the card and like noisy, please really put some focus on polish." Cause: I judged the
+  film from two or three stills; every fault was in motion (the crop dropped as the camera began to leave, so the card
+  swept across the switch; the change card landed on the rows and widened when the fix arrived; a pill repeated the
+  card; guides doubled outlines). → §6 the polish pass: every transition at 10 fps, and six checks it must pass.
 
