@@ -184,7 +184,10 @@ export function xray(el, { tokenOf, origin = { left: 0, top: 0 }, room, source, 
     const zj = judge(zone.family, zone.n), zx = zone.x - origin.left, zy = zone.y - origin.top;
     if (zj.zero) zj.c = 'var(--pl-sky)';
     draw += `<rect class="xr-zone" x="${r1(zx)}" y="${r1(zy)}" width="${r1(zone.w)}" height="${r1(zone.h)}" rx="${zone.family === 'radius' ? 4 : 2}" fill="color-mix(in oklab, ${zj.c} 22%, transparent)" stroke="${zj.c}" stroke-width="2"${zj.zero ? ' stroke-dasharray="4 3"' : ''}/>`;
-    said = `<span class="xr-say" style="left:${r1(zx + zone.w / 2)}px;top:${r1(zy + zone.h + 8)}px"><b>${esc(zone.said)}</b> ${zone.family === 'radius' && zone.n > 500 ? '' : zj.n}${zj.t ? ` <i class="on">${esc(zj.t)}</i>` : zj.off ? ' <i class="off">off scale</i>' : ''}</span>`;
+    // the pill sits outside the element, beside the part: under it for a bottom or inside part, above for a top one
+    const up = zone.side === 'top' || zone.prop === 'width';
+    const py = up ? Math.min(zy, r.top - m[0] - 12) - 32 : Math.max(zy + zone.h, r.bottom + m[2]) + 8;
+    said = `<span class="xr-say" style="left:${r1(zx + zone.w / 2)}px;top:${r1(py)}px"><b>${esc(zone.said)}</b> ${zone.family === 'radius' && zone.n > 500 ? '' : zj.n}${zj.t ? ` <i class="on">${esc(zj.t)}</i>` : zj.off ? ' <i class="off">off scale</i>' : ''}</span>`;
   }
   // parts in hand while a picker has them: drawn strong, no pill (the picker says it)
   for (const lz of lit) { const lj = judge(lz.family, lz.n); draw += `<rect class="xr-zone" x="${r1(lz.x - origin.left)}" y="${r1(lz.y - origin.top)}" width="${r1(lz.w)}" height="${r1(lz.h)}" rx="2" fill="color-mix(in oklab, ${lj.c} 22%, transparent)" stroke="${lj.c}" stroke-width="2"/>`; }
@@ -192,8 +195,10 @@ export function xray(el, { tokenOf, origin = { left: 0, top: 0 }, room, source, 
   // the rulers' numbers carry their verdict too: deep coral off your sizes, deep mint on one (with its name)
   const sz = (n) => { const v = judge('size', n); return v.off ? 'background:var(--pl-coral-ink)' : v.on ? 'background:var(--pl-mint-ink)' : ''; };
   const named = (txt, n) => { const v = judge('size', n); return v.on ? `${txt} · ${v.t}` : txt; };
-  const pills = `<span class="ruler-pill" style="left:${r1(r.left + r.width / 2)}px;top:${r1(above)}px;${sz(r.width)}">${esc(named(wSz, r.width))}</span>`
-    + `<span class="ruler-pill" style="left:${r1(beside)}px;top:${r1(r.top + r.height / 2)}px;${sz(r.height)}">${esc(named(hSz, r.height))}</span>` + said;
+  // one pill on the page at a time: the part pointed at says itself and nothing else does; at rest the size pills
+  // show only on an element big enough to carry them clear of itself and its neighbours (the card has the size)
+  const pills = said || ((r.width >= 120 ? `<span class="ruler-pill" style="left:${r1(r.left + r.width / 2)}px;top:${r1(above)}px;${sz(r.width)}">${esc(named(wSz, r.width))}</span>` : '')
+    + (r.height >= 96 ? `<span class="ruler-pill" style="left:${r1(beside)}px;top:${r1(r.top + r.height / 2)}px;${sz(r.height)}">${esc(named(hSz, r.height))}</span>` : ''));
 
   // ── the card ──
   const tok = (v) => (v.zero ? '' : v.on ? `<span class="xr-tok on">${esc(v.t)}</span>` : v.off ? '<span class="xr-tok off">off scale</span>' : '');
@@ -304,7 +309,15 @@ export function peersOf(el, keyOf = placeOf, all = (k) => document.querySelector
  * card's coordinates), `size` the card's own measured size, `room` where it must stay. Right of the element, else
  * left, else below, else above: the first side where the whole card fits. Along that side it slides to stay in the
  * room, but it never crosses onto the element. If no side fits, the side with the most room, clear of the element. */
-export function placeCard(box, size, room, gap = 16) {
+export function placeCard(box, size, room, gap = 16, context = null) {
+  // first, outside the container the element lives in (the card or list around it), level with the element: then it
+  // covers nothing the element is read with. Only if neither side of that has room does it come in beside the element
+  if (context) {
+    const c = { ...context, top: box.top, bottom: box.bottom };
+    const yy = Math.max(room.top, Math.min(box.top, room.bottom - size.h));
+    if (room.right - (c.right + gap) >= size.w) return { x: Math.round(c.right + gap), y: Math.round(yy) };
+    if (c.left - gap - room.left >= size.w) return { x: Math.round(c.left - gap - size.w), y: Math.round(yy) };
+  }
   const { w, h } = size, clampY = (y) => Math.max(room.top, Math.min(y, room.bottom - h)), clampX = (x) => Math.max(room.left, Math.min(x, room.right - w));
   const sides = [
     { fit: room.right - (box.right + gap), need: w, at: () => ({ x: box.right + gap, y: clampY(box.top) }) },
@@ -315,4 +328,15 @@ export function placeCard(box, size, room, gap = 16) {
   const side = sides.find((s) => s.fit >= s.need) ?? sides.reduce((a, b) => (b.fit / b.need > a.fit / a.need ? b : a));
   const at = side.at();
   return { x: Math.round(at.x), y: Math.round(at.y) };
+}
+
+/* The container an element is read with: the nearest ancestor that is a surface (its own background, a shadow or a
+ * border) and is more than the element itself. The card is placed outside it when there's room. */
+export function contextOf(el, stop = document.body) {
+  for (let a = el.parentElement; a && a !== stop && a !== document.body; a = a.parentElement) {
+    const cs = getComputedStyle(a), bg = cs.backgroundColor;
+    const painted = (bg && bg !== 'transparent' && !/rgba\([^)]*,\s*0\)$/.test(bg)) || cs.boxShadow !== 'none' || (parseFloat(cs.borderTopWidth) > 0 && cs.borderTopStyle !== 'none');
+    if (painted) return a;
+  }
+  return null;
 }
