@@ -262,6 +262,16 @@ export function mountXray(o) {
     const c = card.getBoundingClientRect(), near = c.left > lastOn.x ? c.left : c.right;
     return inTri(pt, lastOn, { x: near, y: c.top - 24 }, { x: near, y: c.bottom + 24 });
   };
+  // heading for the card: the pointer is inside the shape joining where the hand rested to the whole card (a little
+  // wider all round, since a hand wanders as it sets off). That shape is the union of the triangles from the rest point
+  // to each of the card's edges, so it holds wherever the card sits: beside, above or below.
+  const SLACK = 28;
+  const towardCard = (pt) => {
+    const c = card.getBoundingClientRect(), l = c.left - SLACK, t = c.top - SLACK, r = c.right + SLACK, b = c.bottom + SLACK;
+    if (pt.x >= l && pt.x <= r && pt.y >= t && pt.y <= b) return true;
+    const k = [{ x: l, y: t }, { x: r, y: t }, { x: r, y: b }, { x: l, y: b }];
+    return k.some((q, i) => inTri(pt, restAt, q, k[(i + 1) % 4]));
+  };
   const track = (e) => {
     // something else is in hand (a card open in blueprint): the X-ray steps aside first, and takes no pointer
     if (o.paused?.()) { card.removeAttribute('data-reach'); if (shown && !changes.size) draw(null); return; }
@@ -269,11 +279,9 @@ export function mountXray(o) {
     if (!card.hidden) { const c = card.getBoundingClientRect(), on = e.clientX >= c.left - 4 && e.clientX <= c.right + 4 && e.clientY >= c.top - 4 && e.clientY <= c.bottom + 4; card.toggleAttribute('data-reach', on); if (on) { clearTimeout(waiting); return; } }
     if (held || noting) return;
     const pt = { x: e.clientX, y: e.clientY }; ptNow = pt;
-    // shown, and the hand moves on: toward the card it stays (the triangle from where the hand rested to the card's
-    // near edge); anywhere else it goes, and only the drawing follows until the hand rests again
+    // shown, and the hand moves on: toward the card it stays (towardCard); anywhere else it goes, and only the drawing follows until the hand rests again
     if (!card.hidden && ready && !pinned && !changes.size && restAt && Math.hypot(pt.x - restAt.x, pt.y - restAt.y) > DRIFT) {
-      const c = card.getBoundingClientRect(), from = restAt, near = c.left > from.x ? c.left : c.right;
-      if (inTri(pt, from, { x: near, y: c.top - 24 }, { x: near, y: c.bottom + 24 })) { clearTimeout(waiting); return; }
+      if (towardCard(pt)) { clearTimeout(waiting); return; }
       ready = false; restAt = null; card.hidden = true; card.removeAttribute('data-reach');
     }
     if (ourUI(e)) { clearTimeout(waiting); return; }
