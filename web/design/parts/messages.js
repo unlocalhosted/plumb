@@ -53,13 +53,17 @@ export function mount(host, root, css) {
     + `<span class="tt-now" aria-hidden="true">${T.now}</span><div class="tt-pill" aria-hidden="true" hidden></div>`
     + `<div class="tt-acts"><button type="button" data-act="change">${T.undoChange}<kbd>⌫</kbd></button><button type="button" data-act="step">${T.undoStep}<kbd>⇧⌫</kbd></button></div><button type="button" class="tt-x" aria-label="${T.close}" tabindex="-1">${X}</button>`;
 
-  const tick = (attrs) => `<span class="tt leg"><span class="tt-ticks"><span class="tt-tick" ${attrs}></span></span></span>`;
+  // a tick as a toy: a peg standing on a rail. Its hue and its pose say its state; nothing is an outline or a hairline
+  const HOOK = '<svg viewBox="0 0 14 22" aria-hidden="true"><path d="M11 19V8a4 4 0 0 0-8 0v2.500" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round"/></svg>';
+  const peg = (kind) => `<i class="pg" data-kind="${kind}">${kind === 'undo' ? HOOK : ''}</i>`;
+  const rail = (kinds, cls = '') => `<span class="rail ${cls}">${kinds.map(peg).join('')}</span>`;
   const TICKS = [
-    ['A change', 'In your code now. It can be undone.', tick('data-state="live"')],
-    ['Undone', 'Hollow: taken back, still in the record.', tick('data-state="undone"')],
-    ['Changed since', 'Hatched butter: edited after, so it can’t be undone alone.', tick('data-state="changed"')],
-    ['An undo', 'A small return notch: taking something back is a change too.', tick('data-state="live" data-undo')],
-    ['Pointed at', 'Taller and sky: the one the playhead is on.', tick('data-state="live" aria-current="true"')],
+    ['A change', 'A mint peg, standing: it is in your code now, on your tokens. It can be undone.', 'live'],
+    ['Undone', 'Pushed down and pale, as what is not there is. Still in the record.', 'undone'],
+    ['Edited by hand since', 'Butter, as a value typed by hand is. It can’t be undone alone.', 'hand'],
+    ['An undo', 'A peg that turns back on itself: taking something back is a change too.', 'undo'],
+    ['Pointed at', 'It comes up to meet you, under a pink knob: pink is what is current.', 'at'],
+    ['Says no', 'One small shake in coral, then it is itself again. The words say why.', 'no'],
   ];
   const QUIET = [
     ['Reading', 'Six ghost ticks breathe while the history is read.', `<span class="tt-glyph">${HISTORY_ICON}</span><div class="tt-track"><div class="tt-steps"><div class="tt-seg"><span class="tt-name">&nbsp;</span><div class="tt-ticks">${'<span class="tt-tick ghost"></span>'.repeat(6)}</div></div></div></div>`],
@@ -137,6 +141,32 @@ export function mount(host, root, css) {
     .cell b { font: 600 15px/20px var(--pl-sans); }
     .cell small { font: 400 13px/19px var(--pl-sans); color: var(--pl-text-secondary); }
 
+    /* ── a tick as a toy (proposed; would replace .tt-tick) ───────────────────────────────────────────────────
+       a peg on a rail: one solid body, lit from above, on a shadow of its own colour */
+    .rail { --u: 1; position: relative; display: inline-flex; align-items: flex-end; gap: calc(5px * var(--u)); height: calc(34px * var(--u)); padding: 0 calc(8px * var(--u)) calc(3px * var(--u)); }
+    .rail::before { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: calc(6px * var(--u)); border-radius: calc(3px * var(--u)); background: color-mix(in oklab, var(--pl-text-primary) 9%, transparent);
+      box-shadow: inset 0 calc(1px * var(--u)) 0 0 color-mix(in oklab, var(--pl-text-primary) 8%, transparent); }
+    .rail.big { --u: 3; } .rail.x2 { --u: 2; }
+    .pg { --f: var(--pl-mint-block); position: relative; flex: none; display: block; width: calc(8px * var(--u)); height: calc(22px * var(--u)); border-radius: calc(4px * var(--u));
+      background: linear-gradient(180deg, color-mix(in oklab, var(--f) 82%, #fff), var(--f)); color: var(--f);
+      box-shadow: inset 0 calc(1.2px * var(--u)) 0 0 color-mix(in oklab, #fff 50%, transparent), inset 0 calc(-1.5px * var(--u)) 0 0 color-mix(in oklab, #000 14%, transparent), 0 calc(5px * var(--u)) calc(5px * var(--u)) calc(-3px * var(--u)) color-mix(in oklab, var(--f) 80%, transparent);
+      transform-origin: 50% 100%; transition: translate 300ms var(--pl-spring-pop), height 300ms var(--pl-spring-pop); }
+    .pg[data-kind="undone"] { height: calc(7px * var(--u)); background: color-mix(in oklab, var(--pl-mint-block) 30%, var(--pl-bg-inset)); box-shadow: none; }
+    .pg[data-kind="hand"] { --f: var(--pl-butter); }
+    .pg[data-kind="undo"] { width: calc(14px * var(--u)); background: none; box-shadow: none; filter: drop-shadow(0 calc(2.5px * var(--u)) calc(2px * var(--u)) color-mix(in oklab, var(--f) 55%, transparent)); }
+    .pg[data-kind="undo"] svg { display: block; width: 100%; height: 100%; }
+    .pg[data-kind="at"] { translate: 0 calc(-4px * var(--u)); box-shadow: inset 0 calc(1.2px * var(--u)) 0 0 color-mix(in oklab, #fff 50%, transparent), inset 0 calc(-1.5px * var(--u)) 0 0 color-mix(in oklab, #000 14%, transparent), 0 calc(9px * var(--u)) calc(7px * var(--u)) calc(-4px * var(--u)) color-mix(in oklab, var(--f) 80%, transparent); }
+    .pg[data-kind="at"]::after { content: ''; position: absolute; left: 50%; bottom: calc(100% + 3px * var(--u)); width: calc(7px * var(--u)); height: calc(7px * var(--u)); margin-left: calc(-3.5px * var(--u)); border-radius: 50%;
+      background: var(--pl-pink-block); box-shadow: inset 0 calc(1px * var(--u)) 0 0 color-mix(in oklab, #fff 50%, transparent), 0 calc(2px * var(--u)) calc(3px * var(--u)) calc(-1px * var(--u)) color-mix(in oklab, var(--pl-pink-block) 80%, transparent); }
+    .pg[data-kind="no"] { --f: var(--pl-coral-block); animation: pg-no 1600ms ease-in-out infinite; }
+    @keyframes pg-no { 0%, 16%, 100% { translate: 0 0; } 4% { translate: calc(-2px * var(--u)) 0; } 8% { translate: calc(2px * var(--u)) 0; } 12% { translate: calc(-1px * var(--u)) 0; } }
+    @media (hover: hover) { .pg:not([data-kind="undone"], [data-kind="at"]):hover { translate: 0 calc(-2px * var(--u)); } }
+    @media (prefers-reduced-motion: reduce) { .pg { transition: none; } .pg[data-kind="no"] { animation: none; } }
+    .pegs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin-top: 16px; }
+    .pegs .stage { min-height: 150px; padding: 24px 0 18px; place-items: end center; }
+    p.after { margin-top: 22px; }
+    .run { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 40px; margin-top: 16px; padding: 34px 30px 30px; border-radius: 24px; background: var(--pl-bg-inset); }
+
     /* the strip is still today's: a grid of what it does, without boxes drawn round things */
     .panel { box-shadow: none; background: var(--pl-bg-inset); border-radius: 24px; }
     .panel .stage { background: none; }
@@ -152,7 +182,7 @@ export function mount(host, root, css) {
     .open { margin-top: 14px; padding: 16px 20px 16px 38px; border-radius: 24px; background: var(--pl-bg-inset); font: 400 13px/21px var(--pl-sans); color: var(--pl-text-secondary); }
     .open li + li { margin-top: 6px; } .open b { color: var(--pl-text-primary); font-weight: 600; }
     @media (max-width: 1000px) { .row { grid-template-columns: 1fr 1fr; } }
-    @media (max-width: 760px) { .pair, .cells, .row, .anat { grid-template-columns: 1fr; } }
+    @media (max-width: 760px) { .pair, .cells, .row, .anat { grid-template-columns: 1fr; } .pegs { grid-template-columns: 1fr 1fr; } }
   </style>${TOY_DEFS}
   <h2>How the system works</h2>
   <div class="prose">
@@ -187,9 +217,11 @@ export function mount(host, root, css) {
   <div class="panel"><div class="stage hist"><div class="tt pl-card" data-live>${strip}</div></div>
     <div class="cap"><h3>One change at a time</h3><p>The playhead points at one change and a pill above it says what it was and what it became. Undo change takes back that one; Undo step takes back everything written with it. Try the hatched tick: it was edited again later, so it says no, and says why.</p></div></div>
 
-  <h2>A tick, in each state</h2>
-  <p>Drawn at twice their size.</p>
-  <div class="panel row" style="--n: 5">${TICKS.map(([h, p, t]) => `<div><div class="stage">${t}</div><div class="cap"><h3>${h}</h3><p>${p}</p></div></div>`).join('')}</div>
+  <h2>A tick, as a toy</h2>
+  <p>Today a change is a hairline, and its states are an outline, a hatch and a notch. Rebuilt: a change is a peg standing on a rail. Its colour and its pose say its state. Drawn at three times their size; point at one.</p>
+  <div class="pegs">${TICKS.map(([h, p, k]) => `<div class="cell"><div class="stage">${rail([k], 'big')}</div><b>${h}</b><small>${p}</small></div>`).join('')}</div>
+  <p class="after">In a row, at their real size, as a history reads: three changes, one taken back, the undo that did it, one edited by hand, and the newest, pointed at.</p>
+  <div class="run">${rail(['live', 'live', 'live', 'undone', 'undo', 'hand', 'live', 'at'])}${rail(['live', 'live', 'live', 'undone', 'undo', 'hand', 'live', 'at'], 'x2')}</div>
 
   <h2>When there is nothing to show</h2>
   <div class="panel row quiet" style="--n: 3">${QUIET.map(([h, p, t]) => `<div><div class="stage"><div class="tt pl-card">${t}</div></div><div class="cap"><h3>${h}</h3><p>${p}</p></div></div>`).join('')}</div>
@@ -197,7 +229,7 @@ export function mount(host, root, css) {
   <h2>What is still open</h2>
   <ul class="open">
     <li><b>The toy toast is on this page only.</b> The product still shows today’s. Moving it in is a change to the overlay, after you have judged it here.</li>
-    <li><b>The strip is not rebuilt.</b> Thin ink ticks, a grey line picture, plain-text buttons: the same gap the toast had.</li>
+    <li><b>The strip is not rebuilt.</b> The pegs are drawn on this page; the strip above still has its hairlines, a grey line picture and plain-text buttons.</li>
     <li><b>Butter for “your own value” is my reading of the hue table</b>, used for Kept and for Undone. If Undone should be quiet paper, it is one line.</li>
   </ul>`;
 

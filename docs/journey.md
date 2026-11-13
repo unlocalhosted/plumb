@@ -2371,6 +2371,13 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   set as code, the system's quiet Undo button, and a bar under it that runs out over the six seconds and waits while
   it is pointed at (the language's own line: "a toast is already timing out"). Seen running in light and dark; no
   tests. It lives on the page only; the product still shows today's. The strip is next.
+- **Then two corrections and the ticks (owner, same day).** "these button are broken": a caption style on the page
+  reached inside the system's buttons and pushed their tops off their sides; removed. "this color is not accurate":
+  the toast was in the pale card tone; it is now the full hue lettered in white, as a Written button is. "improve
+  these are ass", of the history's ticks (a hairline, an outline, a hatch, a notch): redrawn as pegs standing on a
+  rail. Mint standing is a change; pushed down and pale is undone; butter is edited by hand since; a peg that turns
+  back on itself is an undo; lifted under a pink knob is the one pointed at; a coral shake says no. The hatch is
+  gone because a pattern only ever means space. On the page only; the strip itself still draws hairlines.
 - **Media hooks:** a clip of Take a fix → Undo, and of the hatched tick saying no.
 
 ## Open gaps
