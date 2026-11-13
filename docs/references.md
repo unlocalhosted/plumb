@@ -72,6 +72,7 @@
 - Why: the owner's words: "please plan on architecture level how can we bring these things into plumber".
 - What it changed: a design for a third way plumber looks, beside drift and craft: "you built by hand what the browser now gives you". Their guides are the ground, their Baseline data gates every suggestion that uses a modern feature (existing craft suggestions too), and plumber checks their source hits against the running page. Nothing built yet.
 - Used in: docs/briefs/platform-guidance-lld.md; journey entry "A third way of looking: what the browser does now".
+- Shared again 2026-11-13, as the answer to "where are you bringing these rules from?": "i hope they are coming from here". It is now the source of every rule in plumber's new packs: the published package (modern-web-guidance 1.0.0) read for the accessibility pack, whose first rule cites its accessibility guide section by section (docs/briefs/rule-packs.md, journey entry "Kinds of rule as packs; the first one from Chrome's guides").
 
 - **2026-11-13 · maybepratikk, bold-on-hover tabs video** (~/Downloads/twitter_media_harvest/maybepratikk-2121151672756138484-01.mp4) · *shared by the owner*.
   Why: "our showcase is being rushed … we don't show the problem very well, we rush the fix and don't have good payoff … understand the demo delivery from there how to showcase a rule fix and please bring it."

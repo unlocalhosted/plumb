@@ -226,7 +226,8 @@ Design written 2026-11-13, not signed off, nothing built: docs/briefs/platform-g
 
 - plumber never says "you built by hand what the browser gives you" (a div modal, a script-positioned tooltip, a max-height accordion).
 - A suggestion that uses a modern CSS feature never checks whether the project's browsers have it.
-- Not read yet: what Chrome's published npm package ships. Three choices in the design wait on it.
+- Read 2026-11-13 (docs/briefs/rule-packs.md §3): modern-web-guidance 1.0.0 has 208 guides; its index carries no triage or rubric as data; its scanner reaches 33 guides. Running the scanner needs the owner's permission (blocked in-session as downloaded code).
+- Rules now come from these guides as packs (docs/briefs/rule-packs.md). Built: the pack seam, and an accessibility pack with one rule (`a11y/control-name`, from the accessibility guide §3). Open: the guide's other ~106 accessibility items; the overlay does not yet show packs apart; the CLI cannot run one pack alone; nothing tested.
 - Method worth borrowing for our own rules: sort each by "can it be seen" and "how big is the change"; score a check on apps it was not written against.
 
 ### Defensive checks

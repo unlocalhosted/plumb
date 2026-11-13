@@ -7,6 +7,8 @@ export interface CraftConfig {
   values?: Record<string, Record<string, Record<string, unknown>>>;
   rules?: Record<string, boolean | CraftRuleConfig>;
   tokens?: { create?: boolean; name?: string | Record<string, string>; file?: string };
+  /** Kinds of rule, on or off as a whole: craft, a11y (docs/briefs/rule-packs.md). */
+  packs?: Record<string, boolean>;
 }
 export interface SpecRule {
   id: string; short: string; enabled: boolean; tier: number; tierName: TierName; habit: boolean; severity: Severity | null;

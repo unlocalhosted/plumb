@@ -20,7 +20,7 @@
  *  cache      an element's findings are kept by its signature (its class and its parent's) until invalidate(); a
  *             page-wide rule's also by the page's signature; a late fact (an icon's ink) re-judges only who asked
  * ───────────────────────────────────────────────────────── */
-import { RULES } from './craft-rules.js';
+import { PACK_RULES, packOf } from './packs.js';
 import { verdicts } from './verdict.js';
 import { rgb, VIRTUAL, SPEC, elevation } from './craft-read.js';
 import { TIER } from './craft-facets.js';
@@ -410,7 +410,7 @@ function markOf(f) {
   // a class suggestion that takes nothing out adds one: never "Change `` to …"
   const action = suggest?.kind === 'class' ? `${suggest.from ? `Change \`${suggest.from}\` to` : 'Add'} \`${suggest.to}\`${suggest.why ? `: ${suggest.why}` : ''}.` : suggest?.text ?? '';
   return {
-    key: f.key ?? f.rule, rule: f.rule, family: 'craft', glyph: 'craft', ledger: 'new', soft: f.tier === TIER.advisory,
+    key: f.key ?? f.rule, rule: f.rule, family: 'craft', pack: packOf(f.rule), glyph: 'craft', ledger: 'new', soft: f.tier === TIER.advisory,
     ...(f.tier !== undefined ? { tier: f.tier } : {}),
     text: f.text, props: f.props ?? [], value: f.value, n: f.n,
     title: f.title, because: f.because, action, what: f.what, laws: lawsOf(f.rule),
@@ -430,7 +430,7 @@ export class Craft {
   // told when a late fact (an icon's ink) lands: judge the page again
   onFacts = null;
   // again: asked when elements left unjudged because they were moving have come to rest (the reader reports again)
-  constructor({ rules = RULES, theme, again } = {}) {
+  constructor({ rules = PACK_RULES, theme, again } = {}) {
     this.#again = again ?? null;
     INK.crafts.add(this);
     LOAD.crafts.add(this);

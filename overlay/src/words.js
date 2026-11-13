@@ -7,6 +7,7 @@
  *
  *  craft     per rule: label (a panel row, ≤ 32), line (what `i` shows, ≤ 72), reason (the second `i`, ≤ 90)
  * ───────────────────────────────────────────────────────── */
+import { PACK_DATA } from './pack-a11y.js';
 
 const px = (n) => `${Math.round(n * 10) / 10}px`;
 
@@ -443,7 +444,8 @@ export const CRAFT = {
 
 // A rule's words as the finding's fields: what (its label), title (its line), because (its reason).
 export function say(rule, n = {}) {
-  const w = CRAFT[rule.replace(/^craft\//, '')]?.(n);
+  const [pack, short] = String(rule).split('/');
+  const w = (pack === 'craft' ? CRAFT[short] : PACK_DATA.find((p) => p.id === pack)?.words[short])?.(n);
   return w ? { what: w.label, title: w.line, because: w.reason } : {};
 }
 

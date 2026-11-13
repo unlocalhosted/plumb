@@ -12,6 +12,7 @@
  * Laws with no rule yet (Hick, Miller, Jakob, serial position, Von Restorff) are here so the page clean-up's layers
  * can add the rules that measure them.
  * ───────────────────────────────────────────────────────── */
+import { PACK_DATA } from './pack-a11y.js';
 
 export const LAWS = {
   fitts: { name: 'Fitts’s law', says: 'A target is quicker to hit the bigger and nearer it is.' },
@@ -126,5 +127,8 @@ const RULE_LAWS = {
 /** The laws a rule measures, as { id, name }; null for a rule the table does not know. */
 export function lawsOf(rule) {
   const ids = RULE_LAWS[rule];
-  return ids ? ids.map((id) => ({ id, name: LAWS[id].name })) : null;
+  if (ids) return ids.map((id) => ({ id, name: LAWS[id].name }));
+  // a pack's rule is grounded by its pack (a WCAG criterion, a guide), not by a law of UX
+  const [pack, short] = String(rule).split('/');
+  return PACK_DATA.find((p) => p.id === pack)?.laws?.[short]?.map(({ id, name }) => ({ id, name })) ?? null;
 }

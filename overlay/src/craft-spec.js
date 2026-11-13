@@ -15,6 +15,7 @@
  *
  * Nothing here reads the DOM or a file.
  * ───────────────────────────────────────────────────────── */
+import { PACK_DATA } from './pack-a11y.js';
 
 export const TIER_NAMES = ['access', 'legibility', 'theme', 'craft', 'advisory'];
 export const tierNumber = (name) => (typeof name === 'number' ? name : TIER_NAMES.indexOf(name));
@@ -169,7 +170,10 @@ export const TOKENS = { create: true, name: '{family}-{job}', file: null };
 // ── the index: rule id ↔ principle ──────────────────────────
 
 const isHabit = (short) => HABITS.includes(short);
-export const ruleId = (short) => (isHabit(short) ? `habits/${short}` : `craft/${short}`);
+// a pack's rules are kept in the standard under their full id (a11y/control-name): rule-packs.md
+export const ruleId = (short) => (short.includes('/') ? short : isHabit(short) ? `habits/${short}` : `craft/${short}`);
+for (const pack of PACK_DATA) for (const [principle, rules] of Object.entries(pack.spec)) for (const [short, values] of Object.entries(rules)) STANDARD[principle][`${pack.id}/${short}`] = values;
+export const PACK_IDS = ['craft', ...PACK_DATA.map((p) => p.id)];
 const INDEX = new Map(); // id → { principle, short }
 for (const [principle, rules] of Object.entries(STANDARD)) for (const short of Object.keys(rules)) INDEX.set(ruleId(short), { principle, short });
 export const RULE_IDS = [...INDEX.keys()];
@@ -226,6 +230,8 @@ export function resolveSpec(craft = {}, layers = []) {
         if (r && r.tier !== undefined) { tier = r.tier; from.tier = layer.from; }
         if (r && r.severity !== undefined) { severity = r.severity; from.severity = layer.from; }
       }
+      // a pack the config turns off turns off every rule in it; a rule's own entry is read after, so it still wins
+      if (craft.packs?.[id.split('/')[0]] === false && from.enabled === undefined) enabled = false;
       rules.push({ id, short, enabled, tier: tierNumber(tier), tierName: typeof tier === 'number' ? TIER_NAMES[tier] : tier, habit, severity, values, from });
     }
     principles.push({ id: pid, tier: p.tier, why: p.why, rules });
@@ -263,7 +269,14 @@ const hint = (input, names) => { const m = close(input, names); return m ? ` Did
 export function validateCraft(craft) {
   const problems = [];
   if (!plain(craft)) return ['Set craft to an object.'];
-  for (const key of Object.keys(craft)) if (!['preset', 'values', 'rules', 'tokens'].includes(key)) problems.push(`Remove unknown key "craft.${key}"; allowed keys: preset, values, rules, tokens.`);
+  for (const key of Object.keys(craft)) if (!['preset', 'values', 'rules', 'tokens', 'packs'].includes(key)) problems.push(`Remove unknown key "craft.${key}"; allowed keys: preset, values, rules, tokens, packs.`);
+  if ('packs' in craft) {
+    if (!plain(craft.packs)) problems.push('Set craft.packs to an object of pack names, each true or false.');
+    else for (const [id, on] of Object.entries(craft.packs)) {
+      if (!PACK_IDS.includes(id)) problems.push(`Unknown pack "${id}" in craft.packs; packs: ${PACK_IDS.join(', ')}.${hint(id, PACK_IDS)}`);
+      else if (typeof on !== 'boolean') problems.push(`Set craft.packs.${id} to true or false.`);
+    }
+  }
   if ('preset' in craft && !(typeof craft.preset === 'string' && craft.preset in PRESETS)) problems.push(`Set craft.preset to one of ${Object.keys(PRESETS).join(', ')}.`);
   if ('values' in craft) {
     if (!plain(craft.values)) problems.push('Set craft.values to an object of principles.');

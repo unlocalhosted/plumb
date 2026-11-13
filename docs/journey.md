@@ -1000,10 +1000,19 @@
 - **The fix and the proof:** after it, three starts on algorecall: no receipt, then valid and matched twice, 0.08–0.11 s to check. Same on crafting-ui. On a fixture: an edited file and an added file are each named and the receipt refused. This is one afternoon, not the days of ordinary work the layer is for. No test of the check yet.
 - **Media hooks:** the two hex lines side by side, one byte apart.
 
+## Kinds of rule as packs; the first one from Chrome's guides (2026-11-13)
+- **The itch:** the owner: "lets work on extendability / architecture and bring other kind of rules into the app". Then, on the first rule: "hey where are you bringing these rules from?" and "i hope they are coming from here" (Chrome's Modern Web Guidance).
+- **How we found it:** reading how a page rule is known. Its object, its words, its numbers and its grounding live in four files, each assuming the id starts with `craft/`. A new kind of rule had nowhere to go but the craft files.
+- **The system behind it:** plumber had one kind of page rule, so "a page rule" and "a craft rule" were the same thing in the code.
+- **What we chose and why:** a pack is the unit of a kind of rule: id, title, where its rules come from, its rules, words, numbers and grounding in one place; the engine runs the packs that are on; `craft.packs` turns one off. Built ahead of the snapshot and worker the foundations put first, because a second family tests the seam now (rule-packs.md says why). My mistake, corrected the same hour: the first rule was written from WCAG alone, not from the source the owner had already named. It now cites Chrome's accessibility guide section by section, and follows it where WCAG's name rules are looser (a `title` or `placeholder` is not a name).
+- **The fix and the proof:** `a11y/control-name`, run read-only on three of the owner's apps: crafting-ui (56 controls) and glyphschool (23) say nothing, correctly; the glyphwrite workbench has 5 sliders with no name, which Chrome's own accessibility tree confirms (the `<label>` names the `<output>` inside it, not the slider). Chrome's package read file by file: 208 guides, its scanner reaches 33; running the scanner was blocked as downloaded code. No tests (iterating).
+- **Media hooks:** the glyphwrite slider's markup beside Chrome's accessibility tree saying "slider, no name".
+
 ## Open gaps
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
 
 ## Shipped · 2026-W46
+- Plumber can now hold kinds of rule other than craft, as packs a project turns on or off. The first is accessibility, drawn from Chrome's Modern Web Guidance; its first rule finds controls a screen reader cannot name, and found 5 real ones in the glyphwrite workbench that the source makes look labelled.
 - A write-up of the day's speed work, for people outside the session: each step's cause, fix and measured before/after, the mistakes, and what is still open ([docs/writeups/plumber-speed.html](writeups/plumber-speed.html), published as a private page). It is drawn from this log's entries, nothing new measured except crafting-ui's scrolling (53 frames a second open, 60 alone, one run).
 - The kept analysis and its start-up check now have tests: six, each a real server start on a small project, 9 s in all. It matters because three layers sit on this and the next one answers from it. The doctor test caught its own row being cut off when a start differs.
 - The start-up check now also notices when an import would find a different file than it did, even if no file plumber read has changed. It matters because that was the one way the kept analysis could be stale without the check seeing it. (crafting-ui: 4,638 imports re-asked in about 0.05 s; one altered by hand was named and refused.)
