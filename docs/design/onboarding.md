@@ -201,6 +201,40 @@ component at a time: Gravity first (docs/design/prototypes/project-page.html).
 **What it's built on:** the same causes model as the CLI and the overlay (layer 2), served by the CLI's local
 server. Nothing leaves the machine.
 
+## The lesson (2026-11-14)
+
+Owner, 2026-11-14: the page "just throws you a bunch of numbers with nothing to make sense of; someone who doesn't
+know a thing about design systems and has been vibe-coding will make zero sense of it"; "imagine this is the
+onboarding to Plumber: use this moment to teach them about the config they will develop, which becomes the baseline
+for the rest of the interaction".
+
+**Who it is for.** Someone who built a UI fast and has never heard "token" or "scale". They know what their app looks
+like, not how its look is built.
+
+**What it is.** A short lesson on their own app, one idea per screen, that ends in **their rules**: the config
+Plumber holds their code to from then on. Each screen's one answer adds a line to the rules, shown filling in beside
+the lesson as it's written, each line said in plain words ("from now on, a gap must be one of these 8"). The last
+screen writes the rules and remembers today's state, so only new problems are flagged later.
+
+**Screens, in order.** Welcome (what's about to happen, 30 seconds) → Spacing → Colours → Text → Corners → Your
+rules (the summary, "Set it up", Undo). A row of toys at the top says where you are; one screen shows at a time.
+
+**Every screen, the same five parts:**
+1. **What it is**, one sentence, no jargon: "Spacing is the room between things."
+2. **Yours, drawn**: Gravity for sizes (each place your code types one by hand, a dot beside the step it's closest
+   to; "Snap" pulls them in), swatches for colours. A thing worth noticing is pointed at on the drawing, in words.
+3. **Why it matters**, one line about their app and their week, not about systems.
+4. **One choice**, shown as what you get, not as names. A sensible answer is picked already, so "Next" is enough.
+5. **The rule it becomes**, the line added to their rules, in plain words with the real line under it.
+
+**Words.** A word from the Words table below is introduced only once the reader has seen the thing it names ("we call
+these your spacing steps"). Numbers, file names and token names sit behind "Details", for a designer.
+
+**Built on what exists**: the token reading and its reasons, the decisions and the system they make (step 3 and 4 of
+the four-step review, `overlay/src/system-review.js`), the write (`system-apply`, one Undo), and `plumber init`'s
+config and record of today's state. Spacing is built first, as the model the other screens follow, and reviewed by
+the owner before the rest.
+
 ## Words
 
 | Say | Not |
