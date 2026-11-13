@@ -149,7 +149,11 @@ What this is not yet:
 - **A line in `plumber doctor`.** Done 2026-11-13: `plumber doctor --verbose` has a Start-up row (starts checked,
   how many were compared with a fresh analysis, how many differed). A difference never fails doctor, since nothing
   is answered from the kept table yet.
-- **Tested.** Four server test files nearest the change pass (27 of 27, 1 skipped). No test of the check itself.
+- **Tested.** Done 2026-11-13: six tests in e2e/kept-check.test.mjs, each through a real server start on a small
+  project (9 s in all). What is kept says what the server answers; nothing changed gives valid and matched; an
+  edited, added or removed file is named and nothing is compared; an import that would find another file is named;
+  a damaged table and a switched-off keep are not used; doctor's row. The doctor test found its own row cut off
+  when a start differs; the row is shorter now.
 
 Small things: the typed columns made algorecall's table 24.7 MB rather than 20.9 MB; the longest slice while
 building it there is now 0.10 s (a batch of 128 files converted at once).
