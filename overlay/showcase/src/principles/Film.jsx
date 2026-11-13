@@ -20,6 +20,7 @@
 // What a screen supplies (Example.film):
 //   instances(root) → elements, in order          set(el, on) → plays the gesture's state on one place
 //   frame(root) → the elements the camera frames   lead → which place the measure is shown on
+//   code → { fault: { cls, prop }, fix: { cls, prop } }: the class at fault and the one that fixes it, with the property each sets
 //   read(root, i, rest) → { box, now, size: { icon, pre, from, to }, tags: [{ icon, pre, from, to } | { swatch, pre, text }],
 //                           pushed: [{ x0, x1, y, h }] }   (example-local px)          say → the hint after
 import { useEffect, useRef, useState } from 'react';
@@ -87,6 +88,32 @@ function Pill({ x, y, k, tone, icon, icons, up, flow, children }) {
   );
 }
 
+// plumber's change, as its cards show it (overlay/src/widget.js .change): the class at fault in coral, then struck as
+// the class that fixes it arrives in mint; under each, the property it sets. The sauce, said as code.
+function Change({ code, fixed }) {
+  const chip = (tone) => ({ padding: '2px 7px', borderRadius: 5, font: 'var(--pl-card-code)', fontSize: 13, color: `var(--pl-${tone})`, background: `color-mix(in oklab, var(--pl-${tone}) ${tone === 'off' ? 9 : 11}%, transparent)` });
+  const cap = { font: 'var(--pl-card-meta)', fontSize: 11.5, color: 'var(--pl-ink-2)', textAlign: 'center' };
+  return (
+    <span style={{ position: 'absolute', left: '50%', bottom: 'calc(100% + 14px)', transform: 'translateX(-50%)', display: 'flex', alignItems: 'flex-start', gap: 10, padding: '10px 14px 9px',
+      borderRadius: 12, background: 'var(--pl-paper)', color: 'var(--pl-ink)', boxShadow: '0 0 0 1px rgb(0 0 0 / 0.06), 0 8px 24px -8px rgb(0 0 0 / 0.18)', whiteSpace: 'nowrap',
+      animation: 'film-pop 300ms var(--pl-spring-pop) both' }}>
+      <span style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+        <code style={{ ...chip('off'), textDecorationLine: fixed ? 'line-through' : 'none', textDecorationThickness: 1, transition: 'opacity 300ms ease', opacity: fixed ? 0.75 : 1 }}>{code.fault.cls}</code>
+        <span style={cap}>{code.fault.prop}</span>
+      </span>
+      {fixed ? (
+        <>
+          <span style={{ color: 'var(--pl-ink-3)', font: 'var(--pl-card-code)', paddingTop: 3, animation: 'film-pop 260ms ease both' }}>→</span>
+          <span style={{ display: 'flex', flexDirection: 'column', gap: 4, animation: 'film-pop 320ms var(--pl-spring-pop) 120ms both' }}>
+            <code style={chip('on')}>{code.fix.cls}</code>
+            <span style={cap}>{code.fix.prop}</span>
+          </span>
+        </>
+      ) : null}
+    </span>
+  );
+}
+
 function burst(canvas, ox, oy) {
   const dpr = devicePixelRatio || 1, W = canvas.clientWidth, H = canvas.clientHeight, cr = canvas.getBoundingClientRect(), pr = canvas.parentElement.getBoundingClientRect();
   ox += pr.left - cr.left; oy += pr.top - cr.top; // the burst's origin is given in the film's box; the canvas reaches past it
@@ -121,6 +148,7 @@ export function Film({ Example, names, onSaid }) {
   const [m, setM] = useState(null);                 // { tone, boxes, lead, read, cause, fading }
   const [ptr, setPtr] = useState(null);             // { x, y, down, gone } in the film's own box
   const [icons, setIcons] = useState(null);
+  const [change, setChange] = useState(0);         // plumber's change card: 0 none · 1 the fault · 2 the fix
   const [run, setRun] = useState(0);
   const box = useRef(null), camRef = useRef(null), sw = useRef(null), fx = useRef(null);
   const example = () => camRef.current?.firstElementChild;
@@ -135,7 +163,7 @@ export function Film({ Example, names, onSaid }) {
     const all = () => spec.instances(example());
     const boxes = () => { const at = local(example()); return all().map(at); };
     (async () => {
-      setPlaying(true); setSide('broken'); setM(null); setCam({ k: 1, x: 0, y: 0 }); onSaid?.('');
+      setPlaying(true); setSide('broken'); setM(null); setChange(0); setCam({ k: 1, x: 0, y: 0 }); onSaid?.('');
       await sleep(TIMING.lead, live); await document.fonts?.ready;
       // FEEL IT: the gesture on every place, nothing drawn
       for (const el of all()) { setPtr(toward(el, 5)); await sleep(TIMING.move, live); spec.set(el, true); await sleep(TIMING.feel, live); spec.set(el, false); }
@@ -155,6 +183,7 @@ export function Film({ Example, names, onSaid }) {
         setPtr(toward(lead(), 5)); await sleep(TIMING.move, live);
         spec.set(lead(), true);
         setM({ tone: 'sky', boxes: rest, lead: spec.lead, read: spec.read(example(), spec.lead, rest), cause: rep === 1 });
+        if (rep === 1 && spec.code) setChange(1); // the cause named: the class at fault, and the property it sets
         await sleep(rep === 1 ? TIMING.cause : TIMING.measure, live);
         spec.set(lead(), false);
         setM({ tone: 'sky', boxes: rest });
@@ -165,6 +194,7 @@ export function Film({ Example, names, onSaid }) {
       const fixBtn = sw.current?.querySelectorAll('button')[1];
       if (fixBtn) { setPtr(toward(fixBtn)); await sleep(TIMING.toSwitch, live); setPtr((p) => ({ ...p, down: true })); await sleep(TIMING.press, live); }
       setSide('fixed'); setPtr((p) => ({ ...p, down: false }));
+      if (spec.code) setChange(2); // the fix lands: struck, and the class that holds arrives
       await sleep(60, live);
       const fixedRest = boxes();
       setM({ tone: 'on', boxes: fixedRest });
@@ -189,7 +219,7 @@ export function Film({ Example, names, onSaid }) {
       if (fx.current) burst(fx.current, end.right - o.left, end.top - o.top + end.height / 2);
       await sleep(TIMING.clear, live);
       setM((x) => x && { ...x, fading: true }); await sleep(TIMING.fade, live);
-      setM(null); setCam({ k: 1, x: 0, y: 0 });
+      setM(null); setChange(0); setCam({ k: 1, x: 0, y: 0 });
       await sleep(TIMING.out, live);
       setPtr(null); setPlaying(false); onSaid?.(spec.say);
     })();
@@ -242,6 +272,7 @@ export function Film({ Example, names, onSaid }) {
         </div>
       </div>
       <div ref={sw} className="relative z-10 flex flex-col items-center">
+        {change && spec.code ? <PlumbLayer><Change code={spec.code} fixed={change === 2} /></PlumbLayer> : null}
         <Switch names={names} fixed={side === 'fixed'} ready={!playing} onBack={() => setSide('broken')} onFix={() => setSide('fixed')} />
       </div>
       {!playing ? <button type="button" onClick={() => setRun((x) => x + 1)} className="-mt-7 text-[13px] font-medium text-ink-muted hover:text-ink">Replay</button> : <span className="-mt-7 h-5" />}
