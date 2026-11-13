@@ -324,6 +324,14 @@ and none in `web/design/parts`.
   far as read: tokens put on a page by script are never seen; a token file outside the project's folder is skipped;
   and token names with a prefix (`--pl-space-*`, `--pl-radius-*`) are not taken as spacing or radius, as `--space-*`
   was not in the probe.
+- **Proposed, same day (owner: "a smart parser where we can parse the tokens from various files, as it's hard to
+  always get a pre-defined shape"):** today a token's kind is decided by its name alone, nine Tailwind prefixes
+  (`familyFor`, src/decisions/index.ts: `--spacing-*`, `--radius-*`, `--text-*`…). Proposed: decide it from several
+  signals, deterministically, and say which ones decided: how the variable is used (`padding: var(--x)`), what its
+  value is (a colour, a duration, a shadow, a length), the words in its name after any prefix (`--pl-space-4`,
+  `--acme-radius-card`), and whether it belongs to a scale (siblings with one stem and ordered values). Separately,
+  read tokens wherever they live: any stylesheet, a file loaded by a script, `:host` blocks, a JS theme object, a
+  DTCG file. Config still wins over a guess. Not started; waiting on the owner.
 
 ### The command line
 
