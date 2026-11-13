@@ -1150,6 +1150,7 @@ class PlumbOverlay extends HTMLElement {
       // One interface: the pick opens blueprint on that element, in its card. Alt is let go with it.
       this.#disarm();
       this.#ready?.dismiss();
+      this.#xray?.hide();
       this.#blueprint.enterAt(element, { card: true, box: walked });
     }
   };

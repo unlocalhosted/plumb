@@ -43,7 +43,7 @@ import { burst } from './burst.js';
 export const XRAY_LIVE_CSS = `
   .xr-card[hidden] { display: block; opacity: 0; pointer-events: none; }
   /* the card takes the pointer only once the pointer is over it: until then a click there lands on the page below it */
-  .xr-card:not([data-reach]) { pointer-events: none; }
+  .xr-card:not([data-reach]), .xr-card[hidden] { pointer-events: none; }
   .xr-card { opacity: 1; transition: transform 420ms var(--pl-spring), opacity 200ms var(--pl-ease-out); z-index: 6; }
   .xr-many { display: inline-flex; align-items: center; height: 18px; padding: 0 6px; margin-left: 4px; border-radius: 99px; vertical-align: 2px; background: var(--pl-sky-soft); color: var(--pl-sky-ink); font: 600 10.5px/1 var(--pl-sans); letter-spacing: 0; }
   .xr-many[data-scope="all"] { background: var(--pl-pink-soft); color: var(--pl-pink-ink); } .xr-many[data-scope="one"] { background: var(--pl-bg-inset); color: var(--pl-text-secondary); }
@@ -251,9 +251,10 @@ export function mountXray(o) {
     return inTri(pt, lastOn, { x: near, y: c.top - 24 }, { x: near, y: c.bottom + 24 });
   };
   const track = (e) => {
+    // something else is in hand (a card open in blueprint): the X-ray steps aside first, and takes no pointer
+    if (o.paused?.()) { card.removeAttribute('data-reach'); if (shown && !changes.size) draw(null); return; }
     // the card wakes to the pointer when the pointer is over it (with a little margin to reach its edge)
     if (!card.hidden) { const c = card.getBoundingClientRect(), on = e.clientX >= c.left - 4 && e.clientX <= c.right + 4 && e.clientY >= c.top - 4 && e.clientY <= c.bottom + 4; card.toggleAttribute('data-reach', on); if (on) { clearTimeout(waiting); return; } }
-    if (o.paused?.()) { if (shown && !changes.size) draw(null); return; }
     if (held || noting) return;
     const pt = { x: e.clientX, y: e.clientY };
     if (ourUI(e)) { clearTimeout(waiting); return; }
@@ -593,6 +594,8 @@ export function mountXray(o) {
     // an element chosen elsewhere (blueprint's list, or a click blueprint took): shown and held
     hold(el) { if (!el?.isConnected || o.paused?.()) return; pinned = el; lastOn = null; const r = el.getBoundingClientRect(); zone = null; draw(el); void r; },
     release() { pinned = null; },
+    // something else took the screen (a card opened): out of the way at once
+    hide() { card.removeAttribute('data-reach'); pinned = null; if (!changes.size) draw(null); },
     // results from before a reload (a write the dev server reloaded the page for), said again
     showResults(list) { results = list.map((r) => ({ keys: [], els: [], befores: [], ...r })); lastCard = ''; card.hidden = false; if (shown) draw(shown); else { body.innerHTML = resultsHtml(); lastCard = ''; const s = box(); card.style.transform = `translate(${Math.max(12, s.width - (card.offsetWidth || 292) - 24)}px, 24px)`; } },
     get shown() { return shown; },
