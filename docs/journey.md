@@ -1004,6 +1004,7 @@
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
 
 ## Shipped · 2026-W46
+- The kept analysis and its start-up check now have tests: six, each a real server start on a small project, 9 s in all. It matters because three layers sit on this and the next one answers from it. The doctor test caught its own row being cut off when a start differs.
 - The start-up check now also notices when an import would find a different file than it did, even if no file plumber read has changed. It matters because that was the one way the kept analysis could be stale without the check seeing it. (crafting-ui: 4,638 imports re-asked in about 0.05 s; one altered by hand was named and refused.)
 - `plumber doctor --verbose` now says how the start-up check is going: how many dev-server starts were checked, how many were compared with a fresh analysis, and how many differed. It matters because that count is the evidence the fast start waits on. (crafting-ui on 2026-11-13: 8 starts, 6 compared, 0 differed.)
 - The showcase's #42 explains itself as a short film drawn in plumber's own marks: you feel the tabs jitter, see plumber measure it and name the weight, see the fix keep the width, and watch every tab hold ([entry](#42-redrawn-in-plumbers-own-language-after-copying-the-reference-2026-11-13)).

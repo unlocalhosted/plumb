@@ -87,9 +87,8 @@ export async function doctorVerbose(root: string, configPath?: string): Promise<
   try {
     const starts = (await readFile(join(cache, 'kept', 'warm.jsonl'), 'utf8')).split('\n').filter(Boolean).map(text => { try { return JSON.parse(text) as { at?: string; receipt?: string; matched?: boolean | null }; } catch { return {}; } });
     const compared = starts.filter(start => typeof start.matched === 'boolean'), differed = compared.filter(start => start.matched === false);
-    const last = differed.at(-1)?.at;
-    line('Start-up', !differed.length, `${count(starts.length, 'start')}, ${compared.length} compared, ${differed.length} differed${last ? `, last ${last.slice(0, 10)}` : ''}`,
-      differed.length ? 'Nothing is answered from the kept analysis yet. Report this with .plumber/cache/kept/warm.jsonl.' : 'No change needed.', false);
+    line('Start-up', !differed.length, `${count(starts.length, 'start')}, ${compared.length} compared, ${differed.length} differed`,
+      differed.length ? 'Report it: .plumber/cache/kept/warm.jsonl' : 'No change needed.', false);
   } catch { line('Start-up', true, 'no start checked yet', 'No change needed.'); }
   const ready = await readiness({ root, ...(configPath === undefined ? {} : { config: configPath }), ...(checked ? { report: async () => checked! } : {}) });
   ok &&= !blocking(ready);
