@@ -66,6 +66,16 @@
      state reads at a glance */
   --pl-on: var(--pl-mint);      /* uses a token */
   --pl-off: var(--pl-coral);    /* off the scale, override, imitation, broken, setup that turns a capability off */
+  /* the box model's blocks: each has its own hue and pattern wherever it's drawn (the X-ray, the token pickers, the
+     card's box, the toys), so a block is known by sight. Whether a value is right is never the block's colour: it is
+     said by the outline and the pill, --pl-off (hard-coded, off your scale), --pl-instrument (a token in hand, not yet
+     written), --pl-on (on your scale, written). Owner, 2026-11-13: "our colors and design for padding, margin, gap and
+     all are not aligned"; the token pickers page is the reference. */
+  --pl-block-padding: var(--pl-mint);    /* 45° hatch */
+  --pl-block-margin: var(--pl-butter);   /* dots */
+  --pl-block-gap: var(--pl-lilac);       /* stripes across the gap */
+  --pl-block-corner: var(--pl-pink);     /* the arc */
+  --pl-block-size: var(--pl-sky);        /* the rulers */
   --pl-soft: var(--pl-butter-line);  /* Tailwind default, wrong tier, setup that limits a capability */
   --pl-soft-text: #8a6200;      /* a word or glyph in the soft tone: 5.3:1 on paper, where butter is 2.45:1 */
   --pl-unknown: #75736d;        /* computed at runtime, inherited, can't tell yet */
@@ -383,6 +393,16 @@
      state reads at a glance */
   --pl-on: var(--pl-mint);      /* uses a token */
   --pl-off: var(--pl-coral);    /* off the scale, override, imitation, broken, setup that turns a capability off */
+  /* the box model's blocks: each has its own hue and pattern wherever it's drawn (the X-ray, the token pickers, the
+     card's box, the toys), so a block is known by sight. Whether a value is right is never the block's colour: it is
+     said by the outline and the pill, --pl-off (hard-coded, off your scale), --pl-instrument (a token in hand, not yet
+     written), --pl-on (on your scale, written). Owner, 2026-11-13: "our colors and design for padding, margin, gap and
+     all are not aligned"; the token pickers page is the reference. */
+  --pl-block-padding: var(--pl-mint);    /* 45° hatch */
+  --pl-block-margin: var(--pl-butter);   /* dots */
+  --pl-block-gap: var(--pl-lilac);       /* stripes across the gap */
+  --pl-block-corner: var(--pl-pink);     /* the arc */
+  --pl-block-size: var(--pl-sky);        /* the rulers */
   --pl-soft: var(--pl-butter-line);  /* Tailwind default, wrong tier, setup that limits a capability */
   --pl-soft-text: #8a6200;      /* a word or glyph in the soft tone: 5.3:1 on paper, where butter is 2.45:1 */
   --pl-unknown: #75736d;        /* computed at runtime, inherited, can't tell yet */
