@@ -140,8 +140,12 @@ What this is not yet:
   resolver that remembers its answers (six kinds of resolver, each kept with its own options). The receipt holds
   them, and the check asks each one again the same way. crafting-ui: 4,638 imports, the check went from 0.02 s to
   0.05–0.07 s. Proof: one recorded answer altered by hand, and the next start said "changed, 1 import" and named
-  it; the start after matched. Not yet run on algorecall. Known limit: it records what this run asked; an import a
-  disk cache answered without asking is only there if that cache re-asked it.
+  it; the start after matched. algorecall on vm-agent the same day: three starts, none then valid and matched
+  twice; 60,989 imports; the check takes 0.47–0.49 s (it was 0.08–0.11 s without them, and the design's guess was
+  0.9 s); the receipt is 15.5 MB, most of it full paths written once per import, which layer 3 will have to read
+  before it answers (tables of paths would shrink it). The two disk caches that can answer without resolving
+  (class collection, the component graph) both re-ask every import they recorded through these same resolvers when
+  they are reused, so their imports are in the receipt too.
 - **A line in `plumber doctor`.** Done 2026-11-13: `plumber doctor --verbose` has a Start-up row (starts checked,
   how many were compared with a fresh analysis, how many differed). A difference never fails doctor, since nothing
   is answered from the kept table yet.
