@@ -418,7 +418,19 @@ const same = (a, b) => (!a && !b) || (!!a && !!b && a.el === b.el && a.kind === 
 function edit(b, sides, token, classes, active) {
   if (b.kind === 'gap') return swapInForce(classes, (c) => /^gap(-[xy])?-/.test(c), `gap-${token}`, active);
   const family = b.kind === 'pad' ? 'padding' : 'margin';
-  return boxEditOf(classes, sides.map((side) => ({ prop: `${family}-${side}`, to: { token } })), active);
+  const split = boxEditOf(classes, sides.map((side) => ({ prop: `${family}-${side}`, to: { token } })), active);
+  // a variant is showing (md:p-6 at a medium window): the edit is made in it, side by side (variants.js)
+  if (split && split.from.split(/\s+/).some((c) => c.includes(':'))) return split;
+  // the base is showing: the smallest edit, as written before (pl-s4 beside p-[14px], or the one class of that side
+  // replaced), so the rest of the line is untouched
+  const pre = b.kind === 'pad' ? 'p' : 'm';
+  let gone, add;
+  if (sides.length === 4) { gone = (c) => new RegExp(`^${pre}[xytrblse]?-`).test(c); add = `${pre}-${token}`; }
+  else if (sides.length === 2) { const y = sides.includes('top'); gone = (c) => new RegExp(y ? `^${pre}[ytb]-` : `^${pre}[xlrse]-`).test(c); add = `${pre}${y ? 'y' : 'x'}-${token}`; }
+  else { const d = sides[0][0]; gone = (c) => c.startsWith(`${pre}${d}-`); add = `${pre}${d}-${token}`; }
+  const from = classes.filter((c) => !c.includes(':') && gone(c));
+  if (from.length === 1 && from[0] === add) return null;
+  return { from: from.join(' '), to: add };
 }
 
 // ── layout ───────────────────────────────────────────────

@@ -249,6 +249,7 @@ export function mountXray(o) {
     return inTri(pt, lastOn, { x: near, y: c.top - 24 }, { x: near, y: c.bottom + 24 });
   };
   const track = (e) => {
+    if (o.paused?.()) { if (shown && !changes.size) draw(null); return; }
     if (held || noting) return;
     const pt = { x: e.clientX, y: e.clientY };
     if (ourUI(e)) { clearTimeout(waiting); return; }
@@ -322,7 +323,7 @@ export function mountXray(o) {
     return z.col ? (dx, dy) => dy : (dx) => dx;
   };
   on(E, 'pointerdown', (e) => {
-    if (!shown || !zone || noting || e.button !== 0 || !e.shiftKey || ourUI(e)) return;
+    if (!shown || !zone || noting || e.button !== 0 || !e.shiftKey || ourUI(e) || o.paused?.()) return;
     const z = zoneAt(zonesOf(shown), e.clientX, e.clientY) ?? zone, el = shown, x0 = e.clientX, y0 = e.clientY;
     e.preventDefault(); e.stopPropagation();
     const first = (m) => {
@@ -412,7 +413,7 @@ export function mountXray(o) {
   };
   // two fingers: with ⇧ over the element, or on the card's row; left and right choose, up and down change
   on(E, 'wheel', (e) => {
-    if (!inHand || !shown || inHand.el !== shown) return;
+    if (!inHand || !shown || inHand.el !== shown || o.paused?.()) return;
     const onRow = e.composedPath().includes(hand);
     if (!onRow && !(e.shiftKey && (zone || e.composedPath().includes(shown)))) return;
     e.preventDefault(); e.stopPropagation();
@@ -583,7 +584,7 @@ export function mountXray(o) {
   return {
     get pending() { return count(); },
     // an element chosen elsewhere (blueprint's list, or a click blueprint took): shown and held
-    hold(el) { if (!el?.isConnected) return; pinned = el; lastOn = null; const r = el.getBoundingClientRect(); zone = null; draw(el); void r; },
+    hold(el) { if (!el?.isConnected || o.paused?.()) return; pinned = el; lastOn = null; const r = el.getBoundingClientRect(); zone = null; draw(el); void r; },
     release() { pinned = null; },
     // results from before a reload (a write the dev server reloaded the page for), said again
     showResults(list) { results = list.map((r) => ({ keys: [], els: [], befores: [], ...r })); lastCard = ''; card.hidden = false; if (shown) draw(shown); else { body.innerHTML = resultsHtml(); lastCard = ''; const s = box(); card.style.transform = `translate(${Math.max(12, s.width - (card.offsetWidth || 292) - 24)}px, 24px)`; } },

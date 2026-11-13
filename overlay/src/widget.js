@@ -516,9 +516,7 @@ class PlumbOverlay extends HTMLElement {
       /* the X-ray in place of the heat: blueprint's marks keep their places (a click still picks), drawn no more; the
          selection's old box drawing gives way to the X-ray's */
       :host([data-xray]) .bp .heat { opacity: 0 !important; }
-      :host([data-xray]) .sel .bm { display: none; }
-      /* one label on the page at a time: the X-ray's pill and card say what blueprint's hover hint said */
-      :host([data-xray]) .bp .bp-hint { display: none; }</style>${TOY_DEFS}`;
+      :host([data-xray]) .sel .bm { display: none; }</style>${TOY_DEFS}`;
       this.#root.append(t.content);
     }
     const host = document.createElement('div'); host.className = 'xr-host';
@@ -541,6 +539,8 @@ class PlumbOverlay extends HTMLElement {
     this.#xray = mountXray({
       container: host, events: window, root: this.#root, contextStop: document.body, watch: document.body,
       clicks: false, keys: false, dropPreviewOnWrite: true, cursorOn: document.documentElement,
+      // a card open in blueprint (an Alt+click, an element read alone, words being edited) is what's in hand: the X-ray steps aside
+      paused: () => !!(self.#blueprint?.scope || self.#blueprint?.cardOpen || self.#pinned || self.#text?.editing),
       room: () => ({ left: 12, top: 12, right: innerWidth - 12, bottom: innerHeight - 12 }),
       // the page's element under the pointer: through blueprint's glass and marks, never the overlay's own panels
       partAt: (e) => {
@@ -989,7 +989,6 @@ class PlumbOverlay extends HTMLElement {
       if (event.key === 'Enter') this.#xray.sync(); else this.#xray.putBack();
       return;
     }
-    if (this.#xray && event.key === 'Alt') return;
     if (event.key === 'Alt' && !event.repeat) this.#arm();
     else if (event.key === 'Escape' && this.#armed && this.#sticky) { event.preventDefault(); event.stopPropagation(); this.#disarm(); }
     // J/K, the arrows, N and Enter: the panel's causes, while blueprint is on and nothing is open or being typed
