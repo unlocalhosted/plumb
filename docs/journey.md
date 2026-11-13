@@ -1279,6 +1279,14 @@ field is empty). The table of five writes, before and after. The Next table: eig
 
 **The full suite on main, with the speed work and the X-ray together (2026-11-13).** *Result on vm-agent:* 1034 passed, 30 failed in 15 files, 25.6 min. *Sorted before fixing:* most were real and mine, from the X-ray on Alt+B, not the machine. (1) Hiding blueprint's hover hint ("one label at a time") hid where blueprint says the fix (`gap-[18px] → s4`); several craft and verdict tests wait for it, and they were right to. It is back. (2) The X-ray swallowed the Alt key, so Alt+click inside blueprint stopped opening an element's card or the text card. Fixed. (3) The X-ray could sit under an open card; it now steps aside while blueprint has a card open, an element read alone, or words being edited. (4) The "class in force" change made the layout card rewrite `p-[14px]` into separate sides for a one-side change, where it used to add `pl-s4` beside it. The small edit is back whenever the base is the class showing; the split edit only when a breakpoint or dark class is. *Not ours:* `page-drawn` is the speed session's new test; it calls a server method main doesn't have yet ("calls[0].method must be site or resolve"). *Next:* the 15 files run again on the fixed main.
 
+### The logo film (2026-11-13)
+
+- **The itch:** the owner settled the mark (a solid P inside a drawn R, docs/design/comps/logo-stress.html) and asked for a video of it: one for Shorts and Reels, one for Twitter, LinkedIn and Threads.
+- **What we chose:** the mark is built the way plumber sees a page. The guides run out first, then the stem and bowl arrive, and the P's points pop on. A pen draws the R's leg in dashes, and the DOM tree grows inside the leg. The construction then leaves, the mark settles, and "React Plumber" rises in with "A design review on every screen."
+- **How:** one page (docs/design/comps/logo-film.html) draws every frame from one clock, render(t). It is captured frame by frame at 60fps, so the motion is exact and the same in both sizes. The first cut faded the name in while the mark was still sliding over it; the name now waits for the mark to settle.
+- **Proof:** docs/media/react-plumber-logo-9x16.mp4 (1080×1920) and docs/media/react-plumber-logo-1x1.mp4 (1080×1080), 9s each, no sound.
+- **Media hooks:** both clips as they are.
+
 ## Open gaps
 - The site's top bar doesn't fit a phone (390px): it widens the page to about 500px. Needs a compact bar.
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
@@ -2379,6 +2387,8 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   Nothing finds a new one when it is written.
 
 ## Shipped · 2026-W46
+
+- The React Plumber logo film, in a tall size for Shorts and Reels and a square size for Twitter, LinkedIn and Threads ([the logo film](#the-logo-film-2026-11-13)).
 - A logo that reads as both letters, with its brand sheet: React Plumber's mark is a solid P inside a drawn R whose leg is a small DOM tree, and the design site has a Logo page with its rules, sizes, colours and surfaces. See "It reads both R and P" (entry 31).
 - React Plumber has a mark: a pink stem and a violet bowl, the gap between them the P, with plumber's guardrail at hero size. It is in the site's bar, the overlay's dock and the films, from one source ([entry](#react-plumber-gets-a-mark-2026-11-13)).
 - Craft № 42 is a 16:9 React Plumber marketing film: the fault felt, measured in plumber's marks, the code that caused it and the code that fixes it, the payoff, and plumber's ✓ bursting where the fix was written, signed and watermarked ([entry](#42-as-a-react-plumber-marketing-film-2026-11-13)).

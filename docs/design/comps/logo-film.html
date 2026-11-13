@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>React Plumber · logo film</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400..700&display=swap">
+<style>
+  /* The logo film: the final mark (logo-stress.html, the owner's pick 2026-11-13) built the way plumber sees a page.
+     It is drawn frame by frame from one clock, render(t), so a capture is exact; ?w=&h= picks the format.
+     ─────────────────────────────────────────────────────────
+     STORYBOARD (seconds)
+       0.3  the guardrails run out from the mark's centre, their crosses pop
+       0.9  the stem rises into the frame
+       1.15 the bowl slides in beside it, leaving the 4-unit gap
+       1.8  the P's points pop on, one after another
+       2.5  a pen draws the leg in the guide's dashes; its blue tint follows
+       3.3  the leg's points pop; the DOM tree grows inside it, node by node
+       4.8  the construction leaves: guides, crosses and points fade
+       4.9  the mark steps up and settles; once it has, the name rises in, then the line
+       9.0  end
+     ───────────────────────────────────────────────────────── */
+  :root { --ink: #1d1b17; --ink-2: #6b665c; --desk: #f6f5f2; }
+  html, body { margin: 0; overflow: hidden; background: var(--desk); }
+  #stage { position: relative; overflow: hidden; background: radial-gradient(120% 80% at 50% 45%, #fbfaf8 0%, var(--desk) 60%, #efede8 100%); }
+  #m { position: absolute; left: 50%; top: 0; transform-origin: center; }
+  .txt { position: absolute; left: 0; right: 0; text-align: center; font-family: "Instrument Sans", system-ui, sans-serif; }
+  #word { font-weight: 650; letter-spacing: -.025em; color: var(--ink); line-height: 1; }
+  #tag { font-weight: 450; color: var(--ink-2); letter-spacing: -.005em; line-height: 1.2; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <svg id="m" viewBox="0 0 120 120">
+    <defs>
+      <linearGradient id="stem" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff7ac0"/><stop offset=".55" stop-color="#f24a9f"/><stop offset="1" stop-color="#d0287f"/></linearGradient>
+      <linearGradient id="bowl" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9a7dff"/><stop offset=".55" stop-color="#7356f0"/><stop offset="1" stop-color="#5232d4"/></linearGradient>
+      <clipPath id="ch" clipPathUnits="userSpaceOnUse"><rect id="chr" y="0" height="120"/></clipPath>
+      <clipPath id="cv" clipPathUnits="userSpaceOnUse"><rect id="cvr" x="0" width="120"/></clipPath>
+      <mask id="pen" maskUnits="userSpaceOnUse" x="50" y="66" width="60" height="50"><path id="penp" fill="none" stroke="#fff" stroke-width="3" pathLength="1" stroke-dasharray="1 2"/></mask>
+    </defs>
+    <g id="guides" fill="none" stroke="#2f86dc" stroke-width=".4" stroke-dasharray="1.2 1.8" stroke-linecap="round">
+      <path clip-path="url(#ch)" d="M6 18H114M6 102H114"/><path clip-path="url(#cv)" d="M24 2V118M96 2V118"/>
+    </g>
+    <g id="crosses"></g>
+    <g id="stemg"><path id="stemp" fill="url(#stem)"/></g>
+    <g id="bowlg"><path id="bowlp" fill="url(#bowl)"/></g>
+    <path id="legfill" fill="#2f86dc"/>
+    <path id="legline" fill="none" stroke="#2f86dc" stroke-width=".6" stroke-linejoin="round" stroke-dasharray="1.2 1.2" mask="url(#pen)"/>
+    <path id="joints" fill="none" stroke="#2f86dc" stroke-width=".42"/>
+    <g id="nodes"></g>
+    <g id="points"></g>
+  </svg>
+  <div class="txt" id="word">React Plumber</div>
+  <div class="txt" id="tag">A design review on every screen.</div>
+</div>
+<script>
+const STEM = 'M48 18H53A5 5 0 0 1 58 23V92A10 10 0 0 1 48 102H34A10 10 0 0 1 24 92V42A24 24 0 0 1 48 18Z';
+const BOWL = 'M67 18H68A28 28 0 0 1 96 46V46A28 28 0 0 1 68 74H67A5 5 0 0 1 62 69V23A5 5 0 0 1 67 18Z';
+const QUARTER = 'M72 78A24 24 0 0 1 96 102H67A5 5 0 0 1 62 97V83A5 5 0 0 1 67 78Z';
+const TREE = [[66, 83], [71.5, 89], [77, 95]], JOINTS = 'M68 87V90A1 1 0 0 0 69 91H71.5M73.5 93V96A1 1 0 0 0 74.5 97H77';
+const P_POINTS = [[48, 18], [24, 42], [24, 92], [34, 102], [48, 102], [58, 92], [68, 18], [96, 46], [68, 74]];
+const L_POINTS = [[72, 78], [96, 102]];
+const CROSS = [[24, 18], [96, 18], [24, 102], [96, 102]];
+
+// the format: the hero mark's size, the settled mark's size, the type sizes
+const q = new URLSearchParams(location.search), W = +q.get('w') || 1080, H = +q.get('h') || 1920;
+const tall = H / W > 1.3;
+const L = tall ? { hero: 900, fin: 640, word: 108, tag: 42, gap: 64, tgap: 26 } : { hero: 860, fin: 480, word: 92, tag: 36, gap: 48, tgap: 20 };
+const stage = document.getElementById('stage'); stage.style.width = W + 'px'; stage.style.height = H + 'px';
+const $ = (id) => document.getElementById(id);
+$('m').setAttribute('width', L.hero); $('m').setAttribute('height', L.hero); $('m').style.marginLeft = -L.hero / 2 + 'px';
+$('stemp').setAttribute('d', STEM); $('bowlp').setAttribute('d', BOWL);
+for (const id of ['penp', 'legfill', 'legline']) $(id).setAttribute('d', QUARTER);
+$('joints').setAttribute('d', JOINTS);
+$('word').style.fontSize = L.word + 'px'; $('tag').style.fontSize = L.tag + 'px';
+const handle = ([x, y], i) => `<g data-x="${x}" data-y="${y}"><rect x="${x - 1.1}" y="${y - 1.1}" width="2.2" height="2.2" rx=".55" fill="#fff" stroke="#2f86dc" stroke-width=".42"/></g>`;
+$('points').innerHTML = [...P_POINTS, ...L_POINTS].map(handle).join('');
+$('crosses').innerHTML = CROSS.map(([x, y]) => `<g data-x="${x}" data-y="${y}"><path d="M${x - 1.4} ${y}H${x + 1.4}M${x} ${y - 1.4}V${y + 1.4}" fill="none" stroke="#2f86dc" stroke-width=".5" stroke-linecap="round"/></g>`).join('');
+$('nodes').innerHTML = TREE.map(([x, y]) => `<g data-x="${x + 5}" data-y="${y + 2}"><rect x="${x}" y="${y}" width="10" height="4" rx="1.4" fill="#fff" stroke="#2f86dc" stroke-width=".42"/></g>`).join('');
+
+// the clock's tools
+const clamp = (v) => Math.max(0, Math.min(1, v));
+const span = (t, a, b) => clamp((t - a) / (b - a));
+const out3 = (x) => 1 - (1 - x) ** 3;
+const inOut = (x) => (x < .5 ? 4 * x ** 3 : 1 - (-2 * x + 2) ** 3 / 2);
+const back = (x, s = 1.9) => 1 + (s + 1) * (x - 1) ** 3 + s * (x - 1) ** 2;   // overshoots, then settles
+const pop = (g, k) => { const x = +g.dataset.x, y = +g.dataset.y; g.setAttribute('transform', `translate(${x} ${y}) scale(${Math.max(0, k)}) translate(${-x} ${-y})`); g.style.opacity = clamp(k * 3); };
+
+window.render = (t) => {
+  const away = 1 - span(t, 4.8, 5.3);                          // the construction leaving
+  // guardrails run out from the centre, both ways
+  const g = out3(span(t, .3, 1.2)), half = 2 + 56 * g;
+  $('chr').setAttribute('x', 60 - half); $('chr').setAttribute('width', 2 * half);
+  $('cvr').setAttribute('y', 60 - half); $('cvr').setAttribute('height', 2 * half);
+  $('guides').style.opacity = .85 * clamp(g * 4) * away;
+  [...$('crosses').children].forEach((c, i) => { pop(c, back(span(t, .85 + i * .06, 1.25 + i * .06))); c.style.opacity *= away; });
+  // the P: stem rises, bowl slides in
+  const s = span(t, .9, 1.6), b = span(t, 1.15, 1.85);
+  $('stemg').setAttribute('transform', `translate(0 ${(1 - out3(s)) * 10}) translate(41 60) scale(${.94 + .06 * back(s, 1.2)}) translate(-41 -60)`); $('stemg').style.opacity = clamp(s * 2.5);
+  $('bowlg').setAttribute('transform', `translate(${(1 - out3(b)) * 14} 0)`); $('bowlg').style.opacity = clamp(b * 2.5);
+  // the points
+  [...$('points').children].forEach((p, i) => { const at = i < P_POINTS.length ? 1.8 + i * .05 : 3.3 + (i - P_POINTS.length) * .1; pop(p, back(span(t, at, at + .35))); p.style.opacity *= away; });
+  // the leg: a pen draws it, its tint follows
+  const pen = inOut(span(t, 2.5, 3.4)); $('penp').setAttribute('stroke-dashoffset', 1 - pen); $('legline').style.opacity = pen > 0 ? 1 : 0;
+  $('legfill').setAttribute('fill-opacity', .1 * span(t, 3.0, 3.6));
+  // the DOM tree grows inside it
+  [...$('nodes').children].forEach((n, i) => pop(n, back(span(t, 3.4 + i * .2, 3.75 + i * .2))));
+  $('joints').style.opacity = span(t, 3.55, 4.1);
+  // the settle: the mark steps up and shrinks; the name and the line rise in
+  const m = inOut(span(t, 4.9, 5.8)), k = 1 + (L.fin / L.hero - 1) * m;
+  const block = .7 * L.fin + L.gap + L.word + L.tgap + L.tag * 1.2, yEnd = H / 2 - block / 2 + .35 * L.fin;
+  const yc = H / 2 + (yEnd - H / 2) * m;
+  $('m').style.transform = `translateY(${yc - L.hero / 2}px) scale(${k})`;
+  const wordTop = yEnd + .35 * L.fin + L.gap, w = out3(span(t, 5.65, 6.35)), tg = out3(span(t, 5.95, 6.65));
+  $('word').style.top = wordTop + (1 - w) * 28 + 'px'; $('word').style.opacity = w;
+  $('tag').style.top = wordTop + L.word + L.tgap + (1 - tg) * 22 + 'px'; $('tag').style.opacity = tg;
+};
+render(+q.get('t') || 0);
+</script>
+</body>
+</html>
