@@ -42,6 +42,8 @@ import { burst } from './burst.js';
 
 export const XRAY_LIVE_CSS = `
   .xr-card[hidden] { display: block; opacity: 0; pointer-events: none; }
+  /* the card takes the pointer only once the pointer is over it: until then a click there lands on the page below it */
+  .xr-card:not([data-reach]) { pointer-events: none; }
   .xr-card { opacity: 1; transition: transform 420ms var(--pl-spring), opacity 200ms var(--pl-ease-out); z-index: 6; }
   .xr-many { display: inline-flex; align-items: center; height: 18px; padding: 0 6px; margin-left: 4px; border-radius: 99px; vertical-align: 2px; background: var(--pl-sky-soft); color: var(--pl-sky-ink); font: 600 10.5px/1 var(--pl-sans); letter-spacing: 0; }
   .xr-many[data-scope="all"] { background: var(--pl-pink-soft); color: var(--pl-pink-ink); } .xr-many[data-scope="one"] { background: var(--pl-bg-inset); color: var(--pl-text-secondary); }
@@ -249,6 +251,8 @@ export function mountXray(o) {
     return inTri(pt, lastOn, { x: near, y: c.top - 24 }, { x: near, y: c.bottom + 24 });
   };
   const track = (e) => {
+    // the card wakes to the pointer when the pointer is over it (with a little margin to reach its edge)
+    if (!card.hidden) { const c = card.getBoundingClientRect(), on = e.clientX >= c.left - 4 && e.clientX <= c.right + 4 && e.clientY >= c.top - 4 && e.clientY <= c.bottom + 4; card.toggleAttribute('data-reach', on); if (on) { clearTimeout(waiting); return; } }
     if (o.paused?.()) { if (shown && !changes.size) draw(null); return; }
     if (held || noting) return;
     const pt = { x: e.clientX, y: e.clientY };

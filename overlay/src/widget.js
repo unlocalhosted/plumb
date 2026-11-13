@@ -512,7 +512,7 @@ class PlumbOverlay extends HTMLElement {
       const t = document.createElement('template');
       t.innerHTML = `<style data-xray>${XRAY_CSS}${PICKER_CSS}${XRAY_LIVE_CSS}
       .xr-host { position: fixed; inset: 0; pointer-events: none; z-index: 2147483000; font-family: var(--pl-sans); color: var(--pl-text-primary); }
-      .xr-host :is(.xr-card, .xr-list, .xr-note) { pointer-events: auto; }
+      .xr-host :is(.xr-list, .xr-note, .xr-card[data-reach]) { pointer-events: auto; }
       /* the X-ray in place of the heat: blueprint's marks keep their places (a click still picks), drawn no more; the
          selection's old box drawing gives way to the X-ray's */
       :host([data-xray]) .bp .heat { opacity: 0 !important; }
