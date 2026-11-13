@@ -2387,6 +2387,14 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   whether it is there (solid, or pale when taken back), colour is whose it is (ink Plumber's, butter edited by hand
   since, coral for the moment of a no). The pointed one stands taller under a sky knob and keeps its colour. Shown
   as today over redrawn, the same history, and used in the page's live strip. On the page only.
+- **Plain strokes were wrong too (owner: "use proper semantic icons", "toy doesn't mean make ms paint rectangles",
+  "why are you losing details").** The lesson, in the owner's terms: a toy is a crafted picture with its details, and
+  the product already has 76 of them. Every drawing I made by hand for this page (pegs, strokes) threw that craft
+  away. What we chose: a change in the history is the icon set's own picture of what it changed (a gap, padding, a
+  type size, a colour, a corner, a shadow), so the row can be read before pointing. Taken back is the same picture,
+  pale. An undo is the Undo button's arrow. Typed over by hand since is the key. A no is the warning sign for a
+  moment. Reading, nothing yet and can't read take the turning dots, the ghost and the warning sign. Open: the icon
+  set has no undo picture; the arrow used is borrowed from the button and should be drawn into the set.
 - **Media hooks:** a clip of Take a fix → Undo, and of the hatched tick saying no.
 
 ## Open gaps
