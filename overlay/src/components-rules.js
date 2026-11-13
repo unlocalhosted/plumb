@@ -239,6 +239,9 @@ export const menubarName = rule('menubar-name', 'name', function (el, facts) {
 const ACTION = /^(?:copy|undo|redo|save|delete|remove|download|print|share|send|refresh|reload|close|clear|add|new|export|import)\b/i;
 export const pressedOnAction = rule('pressed-on-action', 'state', function (el, facts) {
   if (!el.hasAttribute('aria-pressed') || !shown(el, facts)) return;
+  // one of a set of toggles (a grid of icons that can be picked): the set is the evidence, not what each is called
+  const set = el.closest('ul, ol, [role="group"], [role="toolbar"], [role="listbox"], [role="grid"]') ?? el.parentElement;
+  if (set && set.querySelectorAll('[aria-pressed]').length >= 3) return;
   const name = accessibleName(el).name;
   // a name that carries a state ("Copy, not selected": an icon called Copy that can be picked) is a toggle, rightly
   if (!ACTION.test(name) || /,|\b(?:selected|on|off|enabled|pinned|active)\b/i.test(name) || name.split(' ').length > 3) return;

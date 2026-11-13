@@ -153,7 +153,7 @@ export const tabindexPositive = rule('tabindex-positive', 'tabindex', function (
   if (!el.hasAttribute('tabindex')) return;
   const n = parseInt(el.getAttribute('tabindex'), 10);
   if (!(n > 0) || !shown(el, facts)) return;
-  return found(this, el, { n }, { value: `tabindex="${n}"`, advice: 'Use tabindex="0" and put it where it belongs in the page’s order.' });
+  return found(this, el, { n }, { value: `tabindex="${n}"`, advice: el.matches(INTERACTIVE) ? 'Remove tabindex (it takes focus already) and put it where it belongs in the page’s order.' : 'Use tabindex="0" and put it where it belongs in the page’s order.' });
 });
 // §5 Tab order: "Don't apply tabindex="0" to interactive elements that are already focusable by default" (best practice)
 export const tabindexRedundant = rule('tabindex-redundant', 'tabindex', function (el, facts) {

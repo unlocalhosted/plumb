@@ -665,3 +665,217 @@ for (const [name, app, options] of [['accessibility', NEAR_A11Y], ['forms', NEAR
     assert.deepEqual(ofPacks(await said(t, app, options)), []);
   });
 }
+
+// ── the advice, taken ───────────────────────────────────────
+// Each broken page above, with every rule's own advice applied to its problem. A rule that still speaks gave advice
+// that does not fix what it found; another rule that wakes was woken by the fix. Neither may happen.
+const TAKEN_A11Y = `export function App() {
+  return (
+    <main className="mx-auto flex max-w-5xl flex-col gap-s4 p-s4">
+      <h1>Bad page</h1>
+      <h2>Skipped</h2>
+      <h2>Second</h2>
+      <nav aria-label="First"><a href="/a">Read more about A</a></nav>
+      <nav aria-label="Second"><a href="/b">Read more about B</a></nav>
+      <img alt="A grey dot" src="${PX}" width="40" height="40" />
+      <img alt="A cat" src="${PX}" width="40" height="40" />
+      <svg role="img" width="24" height="24"><title>A full circle</title><circle cx="12" cy="12" r="10" /></svg>
+      <button type="button">Third</button>
+      <button type="button">Zero</button>
+      <div inert=""><button type="button">Hidden</button></div>
+      <button type="button">Gone</button>
+      <div role="group" aria-label="A box">box</div>
+      <button type="button" aria-label="Dismiss dialog">Dismiss</button>
+      <button type="button" aria-label="Save">Save</button>
+      <iframe title="A small frame" srcDoc="<p>x</p>" width="100" height="40" />
+      <table><tbody><tr><th>Name</th><th>Age</th></tr><tr><td>A</td><td>1</td></tr></tbody></table>
+      <h3>In summary</h3>
+      <details><summary>In summary</summary>body</details>
+      <nav aria-label="Third"><a href="/c">C</a></nav>
+      <ul><li><button type="button">Li button</button></li></ul>
+      <button type="button">Div button</button>
+      <input type="email" aria-label="Email" autoComplete="email" />
+      <button type="button" aria-label="Refresh"><svg aria-hidden="true" width="16" height="16"><circle cx="8" cy="8" r="6" /></svg></button>
+      <div>another</div>
+    </main>
+  );
+}
+`;
+const TAKEN_FORMS = `export function App() {
+  return (
+    <main className="mx-auto flex max-w-5xl flex-col gap-s4 p-s4">
+      <style>{"#inv2:user-invalid { border-color: red } .vh { position: absolute; width: 1px; height: 1px; clip-path: inset(50%); overflow: hidden; white-space: nowrap }"}</style>
+      <h1>Bad forms</h1>
+      <form aria-label="Outer" action="/send" method="post">
+        <label htmlFor="loose">Loose label</label><input id="loose" name="loose" />
+        <label htmlFor="dang">Dangling</label><input id="dang" name="dangling" />
+        <input name="named" aria-label="No name" />
+        <button type="button">Cancel</button>
+        <button type="submit">Save changes</button>
+        <fieldset><legend>Group</legend><input aria-label="in group" name="g" /></fieldset>
+        <div style={{ display: 'flex' }}><button type="button">One</button><button type="button">Two</button></div>
+        <input name="inl" aria-label="inline" />
+      </form>
+      <form aria-label="Inner" method="post" action="/inner"><input name="n" aria-label="n" /></form>
+      <search><form aria-label="Search" method="get" action="/s"><input type="search" name="q" aria-label="Search" /></form></search>
+      <form aria-label="Sign in" method="post" action="/in"><input type="password" name="p" aria-label="Password" autoComplete="current-password" /><button type="submit">Sign in</button></form>
+      <form aria-label="Third" method="post" action="/third">
+        <textarea name="msg" aria-label="Message" style={{ resize: 'none', fieldSizing: 'content' }} />
+        <div style={{ marginBottom: 24 }}><input name="above" aria-label="above" /></div>
+        <label htmlFor="far" style={{ display: 'block', marginBottom: 2 }}>Far label</label>
+        <input id="far" name="far" />
+        <input name="contact" aria-label="Contact" aria-invalid="true" aria-describedby="contact-msg" />
+        <p id="contact-msg">Give a way to reach you.</p>
+        <input id="inv2" name="need" aria-label="Needed" required />
+        <label htmlFor="star">Company *</label>
+        <input id="star" name="company" autoComplete="organization" required />
+        <label htmlFor="over">Phone</label>
+        <input id="over" name="phone" type="tel" autoComplete="tel" />
+        <label htmlFor="otp">Verification code</label>
+        <input id="otp" name="otp" inputMode="numeric" autoComplete="one-time-code" />
+        <label htmlFor="zip">ZIP</label>
+        <input id="zip" name="zip" inputMode="numeric" autoComplete="postal-code" />
+        <input name="code" aria-label="Six digit code" inputMode="numeric" autoComplete="one-time-code" />
+        <label htmlFor="user">Username</label>
+        <input id="user" name="username" autoComplete="username" autoCapitalize="none" autoCorrect="off" spellCheck={false} />
+        <label htmlFor="hidcheck">Agree</label>
+        <input id="hidcheck" className="vh" type="checkbox" name="agree" />
+        <label htmlFor="full">Full name</label>
+        <input id="full" name="name" autoComplete="name" />
+        <fieldset><legend>Plan</legend><input type="radio" name="plan" aria-label="Free" /><input type="radio" name="plan" aria-label="Pro" /></fieldset>
+        <label htmlFor="desc">Described</label>
+        <input id="desc" name="desc" aria-invalid="true" aria-describedby="gone" />
+        <p id="gone">This one is wrong.</p>
+        <label htmlFor="mail">Mail</label>
+        <input id="mail" name="email" type="email" autoComplete="email" />
+        <label htmlFor="ph">Password hint (8-20 characters)</label>
+        <input id="ph" name="hint" placeholder="8-20 characters" />
+        <button type="submit">Create account</button>
+      </form>
+    </main>
+  );
+}
+`;
+const TAKEN_COMPONENTS = `export function App() {
+  return (
+    <main className="mx-auto flex max-w-5xl flex-col gap-s4 p-s4">
+      <h1>Bad components</h1>
+      <nav aria-label="Breadcrumb"><ol><li><a href="/x">Library</a></li><li><span aria-hidden="true">/</span><a href="/x/y" aria-current="page">Docs</a></li></ol></nav>
+      <article><a href="/card">Card title</a> <button type="button">Save</button></article>
+      <section aria-roledescription="carousel" aria-label="Featured"><div role="group" aria-roledescription="slide" aria-label="1 of 2">one</div><div role="group" aria-roledescription="slide" aria-label="2 of 2">two</div></section>
+      <dialog open aria-label="Are you sure?"><p>Are you sure?</p><form method="dialog"><button>Close</button></form></dialog>
+      <dialog aria-label="Shown"><button type="button">x</button></dialog>
+      <dialog open aria-label="Open attr"><button type="button">Close</button></dialog>
+      <div role="menu" aria-label="Actions"><button type="button" role="menuitem">Rename</button></div>
+      <button type="button">Stray item</button>
+      <nav aria-label="Site"><ul><li><a href="/a">A</a></li><li><a href="/b">B</a></li></ul></nav>
+      <button type="button" aria-haspopup="menu" aria-expanded="false">Options</button>
+      <div role="switch" aria-checked="false" tabIndex={0}>Wifi</div>
+      <nav aria-label="Main"><a href="/" aria-current="page">Home</a><a href="/about">About</a></nav>
+      <nav aria-label="More"><a href="/m">M</a><button type="button" aria-expanded="false" aria-controls="more-list">More</button><ul id="more-list" hidden><li><a href="/c">C</a></li></ul></nav>
+      <nav aria-label="Two"><a href="/p">P</a><a href="/q">Q</a></nav>
+      <div role="tablist" aria-label="Views" style={{ display: 'flex' }}>
+        <button type="button" role="tab" id="tb1" aria-selected="true" tabIndex={0}>One</button>
+        <button type="button" role="tab" id="tb2" aria-selected="false" tabIndex={-1}>Two</button>
+        <button type="button" role="tab" id="tb3" aria-selected="false" tabIndex={-1}>Three</button>
+        <button type="button" role="tab" id="tb4" aria-selected="false" tabIndex={-1}>Four</button>
+      </div>
+      <div>
+        <div role="tabpanel" aria-labelledby="tb1">Panel one</div>
+        <div role="tabpanel" aria-labelledby="tb2" hidden>Panel two</div>
+      </div>
+      <nav aria-label="Pages"><a href="/one">One</a><a href="/two">Two</a></nav>
+      <button type="button">Loose tab</button>
+      <div role="toolbar" aria-label="Formatting"><button type="button">Bold</button></div>
+      <button type="button">Copy</button>
+      <div role="menubar" aria-label="App"><button type="button" role="menuitem">File</button></div>
+      <progress aria-label="Download" value="40" max="100" />
+      <progress aria-label="Upload" value="40" max="100" />
+      <button type="button" aria-expanded="false" aria-controls="plain">Plain box</button>
+      <div id="plain" hidden>inside</div>
+      <button type="button" aria-expanded="true" aria-controls="panel">Toggle</button>
+      <div id="panel">I am showing</div>
+    </main>
+  );
+}
+`;
+const TAKEN_HTML = `export function App() {
+  return (
+    <div className="mx-auto flex max-w-5xl flex-col gap-s4 p-s4">
+      <header>Top</header>
+      <main>
+        <h1>Bad html</h1>
+        <img alt="first screen" src="/wide.svg" width="400" height="300" fetchpriority="high" />
+        <section aria-label="Second"><header>Second top</header></section>
+        <ul><li>one thing</li><li>two things</li><li>three things</li></ul>
+        <ul><li>loose item</li></ul>
+        <button type="button">Click me</button>
+        <button type="button">Do it</button>
+        <input aria-label="b" disabled />
+        <figure><img alt="x" src="${PX}" width="40" height="40" /><figcaption>A dot</figcaption></figure>
+        <pre tabIndex={0} role="region" aria-label="Example" style={{ width: 200, overflowX: 'auto' }}><code>{"const answer = 42; function veryLongFunctionNameThatRunsOffTheEdgeOfItsBox() { return answer; }"}</code></pre>
+        <pre tabIndex={0} role="region" aria-label="Short"><code>x</code></pre>
+        <img alt="sized" src="/wide.svg" width="400" height="300" style={{ width: 300, height: 'auto' }} />
+        <img alt="b" src="${PX}" width="10" height="10" />
+        <picture><source srcSet="/wide.svg" /><img alt="pictured" src="/wide.svg" width="400" height="300" /></picture>
+        <details><summary>Late summary</summary><p>before</p></details>
+        <details><summary>No arrow</summary>body <a href="/x">link</a></details>
+        <span>Hover me: more about this</span>
+        <video controls width="320" height="180" poster="/wide.svg" src="/none.mp4"><track kind="captions" src="/c.vtt" srcLang="en" label="English" /></video>
+        <video autoPlay muted loop aria-hidden="true" src="/none.mp4" width="100" height="60" />
+        <audio controls src="/none.mp3" />
+        <iframe title="f" srcDoc="<p>x</p>" width="100" height="40" />
+        <button type="button">Inline</button>
+        <div style={{ height: 2400 }} />
+        <img alt="far" loading="lazy" src="/wide.svg" width="300" height="200" />
+      </main>
+      <footer>End</footer>
+    </div>
+  );
+}
+`;
+const TAKEN_EXPERIENCE_INDEX = '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="color-scheme" content="dark"><title>Experience, fixed</title><script src="/blocking.js" defer></script></head><body style="background:#111;color:#eee;color-scheme:dark"><div id="root"></div><script type="module" src="/src/entry.jsx"></script></body></html>';
+const TAKEN_EXPERIENCE = `export function App() {
+  return (
+    <div className="flex flex-col gap-s4 p-s4">
+      <style>{"@keyframes drift { to { translate: 20px 0 } } @keyframes turn { to { rotate: 360deg } } @media (prefers-reduced-motion: no-preference) { .drift { animation: drift 2s linear infinite alternate } } .spinner { animation: turn 1s linear infinite } .vh { position: absolute; width: 1px; height: 1px; clip-path: inset(50%); overflow: hidden }"}</style>
+      <a href="#content">Skip to content</a>
+      <div style={{ position: 'relative', width: 200, height: 40 }}>
+        <button type="button" style={{ width: 200, height: 40 }}>Under</button>
+        <div style={{ position: 'absolute', inset: 0, zIndex: 5, pointerEvents: 'none' }} />
+      </div>
+      <nav aria-label="Main"><a href="/a">One</a><a href="/b">Two</a><a href="/c">Three</a><a href="/d">Four</a><a href="/e">Five</a><a href="/f">Six</a><a href="/g">Seven</a><a href="/h">Eight</a><a href="/i">Nine</a><a href="/j">Ten</a></nav>
+      <main id="content">
+        <h1>Bad experience</h1>
+        <p>This is a whole sentence of ordinary words that has been told it may never wrap onto a second line.</p>
+        <p lang="en" style={{ textAlign: 'justify', hyphens: 'auto', width: 260 }}>This paragraph is justified without hyphenation, so its spaces stretch to fill every line and open rivers of white that run down through the text for anyone reading it.</p>
+        <p>An entire sentence set in capitals is read letter by letter instead of word by word.</p>
+        <div style={{ maxWidth: '100%', height: 4 }} />
+        <div><div className="drift" style={{ width: 200, height: 40 }}>drifting</div></div>
+        <div role="status"><div className="spinner" style={{ width: 20, height: 20, border: '2px solid' }} /><span className="vh">Loading</span></div>
+        <a href="/pricing">Pricing</a>
+        <a href="/pricing">Pricing</a>
+        <ul>
+          <li>First <button type="button" aria-label="Delete First">Delete</button></li>
+          <li>Second <button type="button" aria-label="Delete Second">Delete</button></li>
+          <li>Third <button type="button" aria-label="Delete Third">Delete</button></li>
+        </ul>
+        <ul>
+          <li><button type="button" aria-pressed="false" aria-label="Copy">c</button></li>
+          <li><button type="button" aria-pressed="true" aria-label="Close">x</button></li>
+          <li><button type="button" aria-pressed="false" aria-label="Download">d</button></li>
+        </ul>
+        <div tabIndex={0} role="region" aria-label="Log" style={{ height: 60, overflowY: 'auto', width: 300 }}><p>line one</p><p>line two</p><p>line three</p><p>line four</p><p>line five</p></div>
+        <div tabIndex={0} role="region" aria-label="Chips" style={{ display: 'flex', overflowX: 'auto', scrollbarWidth: 'none', width: 300, maskImage: 'linear-gradient(to right, black 85%, transparent)' }}><span style={{ flex: 'none', width: 150 }}>one</span><span style={{ flex: 'none', width: 150 }}>two</span><span style={{ flex: 'none', width: 150 }}>three</span></div>
+      </main>
+    </div>
+  );
+}
+`;
+for (const [name, app, options] of [['accessibility', TAKEN_A11Y], ['forms', TAKEN_FORMS], ['components', TAKEN_COMPONENTS], ['HTML', TAKEN_HTML, { files: { 'public/wide.svg': WIDE_SVG } }],
+  ['experience', TAKEN_EXPERIENCE, { index: TAKEN_EXPERIENCE_INDEX, files: { 'public/blocking.js': '/* nothing */' } }]]) {
+  test(`the advice taken, ${name}: every rule's fix applied to its problem silences it and wakes no other`, { timeout: 240000 }, async (t) => {
+    if (!await built()) return t.skip('Run npm run build first.');
+    assert.deepEqual(ofPacks(await said(t, app, options)), []);
+  });
+}

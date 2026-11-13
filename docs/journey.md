@@ -1091,10 +1091,20 @@
 - **Not measured:** how often the checks are right on apps other than the owner's four. The count of real findings judged true or false is small (about 200) and judged by me.
 - **Media hooks:** the near-miss page that turned out to have five real mistakes.
 
+## Taking the advice has to work (2026-11-14)
+- **The itch:** the open gap from the correctness work: nothing proved that doing what a check says makes the check go quiet, or that the fix does not cause the next finding. The owner chose it: "Advice must work".
+- **How we found it:** each batch's broken test page was rewritten with every check's own advice applied to its own problem. Five pages. On them no check may speak: one that still speaks gave advice that does not fix what it found; another that wakes was woken by the fix.
+- **What it found, before a test ran:** writing the fixed pages by following the advice word for word showed two fixes that cause the next finding. A button with tabindex="3" was told to use tabindex="0", which is itself a finding on a button. An icon that can be picked, labelled "Copy, not selected", was told to drop the state from its label, which left "Copy" with an on/off state: the other check's exact target.
+- **The fix:** the first advice now says to remove tabindex where the element takes focus already. The second check now leaves a set of toggles alone (three or more with an on/off state together), whatever each is called: the set is the evidence, not the name.
+- **The proof:** eighteen tests, all pass, about 50 s on the laptop: each check speaks at its line, is quiet on its near miss, and is quiet after its advice is taken.
+- **Honest limits:** the fixed pages are my reading of each advice line, applied by hand. Nothing yet applies advice mechanically, and the five new tests were not run against the code before the two fixes to see them fail.
+- **Media hooks:** the two ping-pong cases, before and after.
+
 ## Open gaps
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
 
 ## Shipped · 2026-W46
+- Doing what a check says now provably works: for every check, the fix it advises makes it go quiet and causes no other finding. Two pieces of advice that led straight to the next finding were corrected ([entry](#taking-the-advice-has-to-work-2026-11-14)).
 - Every check from Chrome's guides is now tested both ways: it speaks at the line of its problem, and it stays quiet on the closest right thing. Thirteen tests; one wrong check found and fixed ([entry](#are-the-checks-right-and-does-the-engine-keep-what-they-find-2026-11-14)).
 - plumber now says seventeen things a linter cannot see, picked for being skipped: a button with something on top of it, twelve buttons all named "Delete", a page that scrolls sideways and what causes it, a dark page whose scrollbars stay white, motion that ignores "reduce motion" ([entry](#what-a-linter-cannot-see-seventeen-checks-picked-for-being-skipped-2026-11-14)). On the homepage branch.
 - One spinner no longer stops plumber judging the page around it (same entry).
