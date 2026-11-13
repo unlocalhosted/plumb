@@ -48,7 +48,7 @@ const Tag = ({ x, y, off, children }) => (
     color: 'var(--pl-on-accent)', background: hue(off), boxShadow: '0 0 0 1px var(--pl-halo)', animation: 'none' }}>{children}</span>
 );
 // a box in the example's own pixels, whatever the stage's camera does to it (a scale on an ancestor)
-function local(root) {
+export function local(root) {
   const o = root.getBoundingClientRect(), k = o.width / root.offsetWidth || 1;
   return (el) => { const r = el.getBoundingClientRect(); return { x: (r.left - o.left) / k, y: (r.top - o.top) / k, w: r.width / k, h: r.height / k }; };
 }
@@ -75,7 +75,8 @@ export default function TandemTabs({ side = 'broken', onStatus }) {
   const root = useRef(null), nav = useRef(null);
   const [rest, setRest] = useState(null);
   const [read, setRead] = useState(null); // the last hover read: held after the pointer leaves, until the next one
-  const hover = side === 'broken' ? 'hover:font-semibold hover:text-ink' : 'hover:text-ink';
+  // the film plays the hover with data-film (Film.jsx): the same look as the pointer's
+  const hover = side === 'broken' ? 'hover:font-semibold hover:text-ink data-[film]:font-semibold data-[film]:text-ink' : 'hover:text-ink data-[film]:text-ink';
   const tabs = () => [...(nav.current?.querySelectorAll('a') ?? [])];
   // where each tab rests, read with nothing hovered: on mount, on each side, once the font is in, on resize
   const measure = () => { if (!root.current || tabs().some((t) => t.matches(':hover'))) return; const at = local(root.current); setRest(tabs().map(at)); };
@@ -187,7 +188,40 @@ export default function TandemTabs({ side = 'broken', onStatus }) {
     </article>
   );
 }
-TandemTabs.names = ['Bold on hover', 'Darker on hover'];
+TandemTabs.names = ['Shifts', 'Stable'];
+
+// The film (Film.jsx, four acts). The places the fault lives: every view tab but the current one, which is already
+// semibold. The measure, read from the real tabs: the hovered tab's width before → after, and how far each tab after
+// it slid, at its right edge. The cause, measured. The mechanism of plumber's fix (a colour, not a weight): a faint
+// semibold copy of every label, under it, shows the width weight would add; it folds away and the labels keep theirs.
+const fmt = (v) => { const r = Math.round(v * 10) / 10; return Number.isInteger(r) ? String(r) : r.toFixed(1); };
+TandemTabs.film = {
+  instances: (root) => [...root.querySelectorAll('nav a')].slice(1),
+  frame: (root) => [...root.querySelectorAll('nav a')],
+  set: (el, on) => (on ? el.setAttribute('data-film', '') : el.removeAttribute('data-film')),
+  lead: 1,
+  read(root, i, rest) {
+    const at = local(root), tabs = [...root.querySelectorAll('nav a')].slice(1), now = tabs.map(at);
+    const grew = now[i].w - rest[i].w;
+    return {
+      value: grew,
+      subject: { box: now[i], text: `${fmt(rest[i].w)}px → ${fmt(now[i].w)}px` }, // one decimal, so before → after agrees with the shift
+      effects: tabs.map((_, j) => j).filter((j) => j > i).map((j) => ({ x: now[j].x + now[j].w, y: now[j].y, h: now[j].h, text: `+${fmt(now[j].x - rest[j].x)}px` })),
+    };
+  },
+  cause: (read) => `Semibold is ${fmt(read.value)}px wider`,
+  mechanism: {
+    pill: 'darker, not bolder: same width',
+    Draw({ boxes, t, root }) {
+      const tabs = [...root.querySelectorAll('nav a')].slice(1);
+      return boxes.map((b, i) => (
+        <span key={i} style={{ position: 'absolute', left: b.x, top: b.y + b.h - 8, whiteSpace: 'nowrap', font: '600 14px/20px var(--font-sans, Inter, system-ui)', letterSpacing: 'normal',
+          color: 'var(--pl-off)', opacity: t ? 0.45 : 0, transform: `translateY(${t ? 4 : -14}px)`, transition: 'opacity 450ms ease, transform 500ms cubic-bezier(0.3, 0, 0.2, 1)' }}>{tabs[i]?.textContent}</span>
+      ));
+    },
+  },
+  say: 'Run your pointer along the tabs.',
+};
 TandemTabs.lesson = {
   why: 'Bold letters are wider than regular ones. When a tab turns semibold under the pointer it grows a few pixels, and every tab after it slides over: move along the row and the whole row jitters under your cursor.',
   habit: 'Show hover with colour, not weight; if a hover must be bold, reserve the bold width first.',
