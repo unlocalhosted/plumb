@@ -19,9 +19,11 @@ const SCALE = {
 const tokenOf = (family, n) => SCALE[family]?.find(([v]) => Math.abs(v - n) <= 0.5 || (v === 9999 && n > 500))?.[1] ?? null;
 
 // each part of the card: the name its code gives it, and the line it's written on
+// where each part is used (its call site), for a change written at the use rather than in the component's own file
+const CALLS = { avatar: 'app/settings/MemberRow.tsx:9', role: 'app/settings/MemberRow.tsx:12', invite: 'app/settings/TeamCard.tsx:42', cancel: 'app/settings/TeamCard.tsx:41', badge: 'app/settings/TeamCard.tsx:17' };
 const NAMES = {
   card: ['TeamCard', 'app/settings/TeamCard.tsx:14'], head: ['CardHeader', 'app/settings/TeamCard.tsx:16'], title: ['h3', 'app/settings/TeamCard.tsx:18'],
-  badge: ['Badge', 'components/ui/badge.tsx:9'], lede: ['p', 'app/settings/TeamCard.tsx:21'], list: ['ul', 'app/settings/TeamCard.tsx:24'],
+  badge: ['Badge', 'node_modules/@acme/ui/dist/badge.js:1'], lede: ['p', 'app/settings/TeamCard.tsx:21'], list: ['ul', 'app/settings/TeamCard.tsx:24'],
   member: ['MemberRow', 'app/settings/MemberRow.tsx:7'], avatar: ['Avatar', 'components/ui/avatar.tsx:12'], who: ['div', 'app/settings/MemberRow.tsx:10'],
   role: ['Select', 'components/ui/select.tsx:31'], foot: ['div', 'app/settings/TeamCard.tsx:40'], invite: ['Button', 'components/ui/button.tsx:22'], cancel: ['Button', 'components/ui/button.tsx:22'],
 };
@@ -36,6 +38,22 @@ export function mount(host, root, css) {
     .stage { position: relative; margin-top: 14px; min-height: 620px; border-radius: 22px; background: #f4f4f6; overflow: hidden; display: grid; align-items: center; padding: 72px 360px 72px 72px; }
     .stage .app { user-select: none; -webkit-user-select: none; }
     .stage .rerender { position: absolute; right: 16px; bottom: 12px; height: 28px; padding: 0 12px; border: 0; border-radius: 9px; background: #fff; box-shadow: 0 0 0 1px #d8d8de; font: 600 12px/1 var(--pl-sans); color: #44444c; cursor: pointer; z-index: 7; }
+    .stage .server { position: absolute; right: 150px; bottom: 12px; height: 28px; padding: 0 12px; border: 0; border-radius: 9px; background: #fff; box-shadow: 0 0 0 1px #d8d8de; font: 600 12px/1 var(--pl-sans); color: #44444c; cursor: pointer; z-index: 7; }
+    .stage .server[aria-pressed="true"] { background: var(--pl-coral-soft); color: var(--pl-coral-ink); box-shadow: 0 0 0 1px var(--pl-coral); }
+    /* what Sync did, one line per change */
+    .xr-res { margin: 10px -2px 0; padding: 8px; border-radius: 12px; background: var(--pl-bg-inset); box-shadow: var(--pl-shadow-well); animation: pl-pop 260ms var(--pl-spring-pop) both; }
+    .xr-res .rh { display: flex; align-items: center; justify-content: space-between; padding: 0 2px 6px 4px; font: 700 12px/1 var(--pl-sans); }
+    .xr-res .rx { width: 22px; height: 22px; border: 0; border-radius: 7px; background: none; color: var(--pl-text-secondary); cursor: pointer; font-size: 15px; line-height: 1; }
+    .xr-res .rr { display: grid; grid-template-columns: 20px 1fr auto; gap: 8px; align-items: start; padding: 7px 6px; border-radius: 9px; background: var(--pl-bg-surface); font: 500 12px/16px var(--pl-sans); }
+    .xr-res .rr + .rr { margin-top: 4px; }
+    .xr-res .rr > i { display: grid; place-items: center; width: 20px; height: 20px; border-radius: 99px; font: 800 11px/1 var(--pl-sans); font-style: normal; color: #fff; background: var(--pl-on); }
+    .xr-res .rr[data-state="moved"] > i { background: color-mix(in oklab, var(--pl-butter) 80%, var(--pl-butter-ink)); }
+    .xr-res .rr[data-state="failed"] > i { background: var(--pl-off); }
+    .xr-res .rr[data-state="undone"] > i { background: var(--pl-icon-tick, #aaa); }
+    .xr-res .rr b { font: 600 12px/16px var(--pl-mono); }
+    .xr-res .rr span { display: block; margin-top: 2px; color: var(--pl-text-secondary); font: 500 11px/15px var(--pl-mono); word-break: break-word; }
+    .xr-res .rr[data-state="failed"] span { font-family: var(--pl-sans); color: var(--pl-coral-ink); }
+    .xr-res .rr button { height: 24px; padding: 0 9px; border: 0; border-radius: 8px; background: var(--pl-bg-inset); font: 600 11.5px/1 var(--pl-sans); color: var(--pl-text-primary); cursor: pointer; box-shadow: inset 0 -1px 0 var(--pl-border-default); }
     .stage .hint kbd { font: 600 11px/1 var(--pl-sans); padding: 2px 5px; border-radius: 5px; background: #fff; box-shadow: 0 0 0 1px #d8d8de; }
     .stage .hint { position: absolute; left: 0; right: 0; bottom: 18px; margin: 0; text-align: center; font: 500 12.5px/1 var(--pl-sans); color: #6b6b75; }
     .stage[data-pinned] .hint b { color: var(--pl-pink); }
@@ -136,6 +154,7 @@ export function mount(host, root, css) {
     </div>
     <div class="xr"></div>
     <div class="xr-card" hidden><div class="xr-hand"></div><div class="xr-body"></div></div>
+    <button type="button" class="server" aria-pressed="false" title="Pretend Plumber's server is down, to see what Sync says">Server: on</button>
     <button type="button" class="rerender" title="Draws the card again from scratch, the way React does after a state change or a hot reload">Re-render the card</button>
     <p class="hint">Point at a part · hold <kbd>⇧</kbd> to drag it or scroll it · or change a number · <kbd>↵</kbd> sync, or a note for your agent · <kbd>Esc</kbd> put back</p>
   </div>`;
@@ -143,6 +162,7 @@ export function mount(host, root, css) {
   const stage = root.querySelector('.stage'), layer = stage.querySelector('.xr'), card = stage.querySelector('.xr-card'), body = card.querySelector('.xr-body'), hand = card.querySelector('.xr-hand');
   // the demo's re-render: the card drawn again from its markup, new elements in place of the old (as React does)
   const APP_HTML = stage.querySelector('.app').outerHTML;
+  stage.querySelector('.server').addEventListener('click', (e) => { e.stopPropagation(); serverUp = !serverUp; e.currentTarget.textContent = `Server: ${serverUp ? 'on' : 'off'}`; e.currentTarget.setAttribute('aria-pressed', String(!serverUp)); });
   stage.querySelector('.rerender').addEventListener('click', (e) => { e.stopPropagation(); const t = document.createElement('div'); t.innerHTML = APP_HTML; stage.querySelector('.app').replaceWith(t.firstElementChild); });
   let lastCard = '', shown = null, pinned = null, noting = null, held = null, cardAt = { x: 0, y: 0 }, lastOn = null, waiting = 0;
   const box = () => stage.getBoundingClientRect();
@@ -175,14 +195,15 @@ export function mount(host, root, css) {
   //   all   the component itself: every place your app uses it (written in its own file, not at the call site)
   // A part repeated on the page starts at 'page'; one drawn once starts at 'one'.
   const USES = { avatar: 14, role: 9, invite: 31, cancel: 31, badge: 6 }; // how many places the demo's app uses each component
-  const compOf = (el) => { const n = NAMES[el.dataset.x]; return n && /^components\//.test(n[1] ?? '') ? n : null; };
+  const compOf = (el) => { const n = NAMES[el.dataset.x]; return n && /^(components|node_modules)\//.test(n[1] ?? '') ? n : null; }; // a shared component: yours, or a library's
   let scope = 'one';
   const scopesOf = (el) => [...(peers(el).length > 1 ? ['one', 'page'] : ['one']), ...(compOf(el) ? ['all'] : [])];
   const targets = (el) => {
     if (scope === 'all' && compOf(el)) { const c = compOf(el); return [...stage.querySelectorAll('.app [data-x], .app[data-x]')].filter((t) => { const n = NAMES[t.dataset.x]; return n && n[0] === c[0] && n[1] === c[1]; }); }
     return scope === 'page' ? peers(el) : [el];
   };
-  const scopeSaid = (el) => scope === 'all' ? `everywhere · ${USES[el.dataset.x] ?? '?'} uses` : scope === 'page' ? `all ${peers(el).length} here` : 'just this';
+  // short, so the row's three places fit: the card's head says it in full
+  const scopeSaid = (el) => scope === 'all' ? `all ${USES[el.dataset.x] ?? ''}`.trim() : scope === 'page' ? `×${peers(el).length} here` : 'this';
 
   // the part pointed at (a padding side, a margin side, the width or height ruler, a corner, the gap, the words)
   let zone = null, justDragged = false, warm = 0, pending;
@@ -209,7 +230,7 @@ export function mount(host, root, css) {
     // how many places this part is drawn: said beside its name
     const head = body.querySelector('.xr-head b');
     head?.querySelector('.xr-many')?.remove();
-    if (head && scopesOf(el).length > 1) head.insertAdjacentHTML('beforeend', ` <span class="xr-many" data-scope="${scope}">${scope === 'all' ? `everywhere · ${USES[el.dataset.x] ?? '?'}` : scope === 'page' ? `×${peers(el).length} here` : 'this one'}</span>`);
+    if (head && scopesOf(el).length > 1) head.insertAdjacentHTML('beforeend', ` <span class="xr-many" data-scope="${scope}">${scope === 'all' ? `everywhere · ${USES[el.dataset.x] ?? '?'} uses` : scope === 'page' ? `×${peers(el).length} here` : 'just this one'}</span>`);
     // which numbers are changed, and the one in hand, kept true whether or not the card was written again
     for (const ch of card.querySelectorAll('[data-prop]')) {
       ch.toggleAttribute('data-changed', !!changes.get(placeKey(el))?.has(ch.dataset.prop));
@@ -319,7 +340,7 @@ export function mount(host, root, css) {
       if (!changes.has(k)) changes.set(k, new Map());
       const m = changes.get(k);
       if (!m.has(prop)) m.set(prop, { before: t.style.getPropertyValue(prop) });
-      m.get(prop).value = val;
+      m.get(prop).value = val; m.get(prop).scope = scope;
       t.style.setProperty(prop, val);
     }
   };
@@ -335,7 +356,7 @@ export function mount(host, root, css) {
     hold(el, prop);
     const x0 = e.clientX, y0 = e.clientY, at = e.target;
     let moved = false, cur = nearest(S, start);
-    held = { prop, chip }; pinned = el; stage.setAttribute('data-pinned', '');
+    held = { prop, chip }; // a drag doesn't hold the element: pointing elsewhere afterwards shows that one
     const move = (m) => {
       if (!moved && Math.abs(m.clientX - x0) + Math.abs(m.clientY - y0) < 3) return;
       moved = true; justDragged = true;
@@ -527,29 +548,72 @@ export function mount(host, root, css) {
   new MutationObserver((list) => { if (list.some((r) => r.type === 'childList' && ofPage(r))) { clearTimeout(queued); queued = setTimeout(reapply, 0); } }).observe(stage, { childList: true, subtree: true });
 
   // ── the changes: counted at the foot of the card; Sync writes them, Esc puts them back ──
+  // ── Sync, and what came of it, said for each change: where it was written (the line, the class), or why it wasn't,
+  // with Undo for each written one and Retry for each that failed. Nothing is quiet: a change that couldn't be
+  // written stays pending and says so ──
+  let results = null; // [{ id, part, name, prop, value, cls, where, state: 'ok' | 'moved' | 'failed', why, keys, befores }]
+  let serverUp = true;
+  const PREFIX = { 'padding-top': 'pt', 'padding-right': 'pr', 'padding-bottom': 'pb', 'padding-left': 'pl', 'margin-top': 'mt', 'margin-right': 'mr', 'margin-bottom': 'mb', 'margin-left': 'ml', gap: 'gap', width: 'w', height: 'h', 'border-radius': 'rounded', 'font-size': 'text', flex: 'flex' };
+  const classOf = (prop, value) => {
+    if (prop === 'flex') return value === '1 1 0%' ? 'flex-1' : 'flex-none';
+    if (value === '100%') return `${PREFIX[prop]}-full`;
+    if (value === 'fit-content') return `${PREFIX[prop]}-fit`;
+    const n = parseFloat(value), t = tokenOf(familyOf(prop), n);
+    return t ? `${PREFIX[prop]}-${t}` : `${PREFIX[prop]}-[${value}]`;
+  };
   function pendHtml() {
-    const n = count(); if (!n) return '';
+    const n = count();
+    const res = results ? resultsHtml() : '';
+    if (!n) return res;
     const at = reach(), gone = unseen();
-    return `<div class="xr-pend"><span>${n} change${n > 1 ? 's' : ''}${at > n ? ` · ${at} places` : ''}${gone ? ` · ${gone} not on screen` : ''}</span><span class="sp"></span><button type="button" class="back" title="Esc">Put back</button><button type="button" class="sync">Sync <kbd>↵</kbd></button></div>`;
+    return res + `<div class="xr-pend"><span>${n} change${n > 1 ? 's' : ''}${at > n ? ` · ${at} places` : ''}${gone ? ` · ${gone} not on screen` : ''}</span><span class="sp"></span><button type="button" class="back" title="Esc">Put back</button><button type="button" class="sync">Sync <kbd>↵</kbd></button></div>`;
   }
-  const sync = () => {
-    const n = count(); if (!n) return false;
-    const pend = card.querySelector('.xr-pend');
-    changes.clear();
-    if (pend) {
-      pend.setAttribute('data-done', ''); pend.innerHTML = `<span>✓ Synced ${n} change${n > 1 ? 's' : ''} to your code</span>`;
-      const b = pend.getBoundingClientRect(); burst(root, b.left + 30, b.top + b.height / 2, { pieces: 18 });
-      setTimeout(() => { lastCard = ''; if (shown) draw(shown); }, 1400);
-    }
-    return true;
-  };
-  const putBack = () => {
+  const ICON = { ok: '✓', moved: '↪', failed: '!', undone: '↺' };
+  function resultsHtml() {
+    const ok = results.filter((r) => r.state === 'ok' || r.state === 'moved').length;
+    return `<div class="xr-res"><div class="rh"><b>${ok === results.length ? `Synced ${ok} change${ok > 1 ? 's' : ''}` : `${ok} of ${results.length} synced`}</b><button type="button" class="rx" aria-label="Close">×</button></div>
+      ${results.map((r) => `<div class="rr" data-state="${r.state}"><i>${ICON[r.state]}</i><div><b>${r.cls}</b> on ${r.name}${r.keys.length > 1 ? ` ×${r.keys.length}` : ''}<span>${r.state === 'failed' ? r.why : r.state === 'undone' ? 'Put back in your code' : `${r.state === 'moved' ? `${r.why} ` : ''}${r.where}`}</span></div>${r.state === 'failed' ? `<button type="button" data-retry="${r.id}">Retry</button>` : r.state === 'undone' ? '' : `<button type="button" data-undo="${r.id}">Undo</button>`}</div>`).join('')}</div>`;
+  }
+  const sync = (only = null) => {
     if (!count()) return false;
-    for (const [k, m] of changes) { const el = elOf(k); if (el) for (const [prop, { before }] of m) { if (before) el.style.setProperty(prop, before); else el.style.removeProperty(prop); } }
-    changes.clear(); lastCard = ''; if (shown) draw(shown);
+    // one result per change: one property of one part, at one scope, however many places it reaches
+    const groups = new Map();
+    for (const [k, m] of changes) for (const [prop, c] of m) {
+      const part = k.split('#')[0], id = `${part}|${prop}|${c.scope}`;
+      if (only && !only.includes(id)) continue;
+      if (!groups.has(id)) groups.set(id, { id, part, name: NAMES[part]?.[0] ?? part, prop, value: c.value, scope: c.scope, keys: [], befores: [] });
+      groups.get(id).keys.push(k); groups.get(id).befores.push(c.before);
+    }
+    const out = [...groups.values()].map((g) => {
+      const own = NAMES[g.part]?.[1] ?? '', lib = /node_modules/.test(own);
+      const cls = classOf(g.prop, g.value);
+      if (!serverUp) return { ...g, cls, state: 'failed', why: "Plumber's server isn't answering, so nothing was written. It's still pending." };
+      // everywhere: the component's own file; a library's file isn't yours, so the class goes where it's used instead
+      if (g.scope === 'all' && lib) return { ...g, cls, state: 'moved', why: 'Badge comes from a library, so it was written where you use it:', where: CALLS[g.part] ?? own };
+      const where = g.scope === 'all' ? own : CALLS[g.part] ?? own;
+      return { ...g, cls, state: 'ok', where };
+    });
+    // the written ones leave the pending list; the failed ones stay pending
+    for (const r of out) if (r.state !== 'failed') for (const k of r.keys) { const m = changes.get(k); m?.delete(r.prop); if (m && !m.size) changes.delete(k); }
+    results = [...(results ?? []).filter((r) => !out.some((o) => o.id === r.id)), ...out];
+    lastCard = ''; if (shown) draw(shown);
+    const firstOk = out.find((r) => r.state !== 'failed'), panel = card.querySelector('.xr-res');
+    if (firstOk && panel) { const b = panel.getBoundingClientRect(); burst(root, b.left + 24, b.top + 18, { pieces: 18 }); }
     return true;
   };
-  card.addEventListener('click', (e) => { if (e.target.closest('.sync')) sync(); else if (e.target.closest('.back')) putBack(); });
+  // Undo one written change: its places go back to how they were (in Plumber: the write is reverted at its line)
+  const undo = (id) => {
+    const r = results?.find((x) => x.id === id); if (!r) return;
+    r.keys.forEach((k, i) => { const el = elOf(k); if (!el) return; const was = r.befores[i]; if (was) el.style.setProperty(r.prop, was); else el.style.removeProperty(r.prop); });
+    r.state = 'undone'; lastCard = ''; if (shown) draw(shown);
+  };
+  card.addEventListener('click', (e) => {
+    const t = e.target;
+    if (t.closest('.sync')) sync(); else if (t.closest('.back')) putBack();
+    else if (t.closest('[data-undo]')) undo(t.closest('[data-undo]').dataset.undo);
+    else if (t.closest('[data-retry]')) sync([t.closest('[data-retry]').dataset.retry]);
+    else if (t.closest('.rx')) { results = null; lastCard = ''; if (shown) draw(shown); }
+  });
   // (no double-click sync: double-click edits words, everywhere in Plumber; the card's Sync button and ↵ save)
 
   // ── ↵ anywhere: a note for your agent about what you're pointing at; ⌘↵ copies it with the file and line ──

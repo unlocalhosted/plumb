@@ -259,7 +259,8 @@ export function zonesOf(el) {
   const out = [];
   const add = (z) => { if (z.w > 0.5 && z.h > 0.5) out.push(z); };
   const rad = px(cs.borderTopLeftRadius);
-  if (rad > 1) { const k = Math.max(10, Math.min(rad, r.width / 2, r.height / 2)); [[r.left, r.top], [r.right - k, r.top], [r.right - k, r.bottom - k], [r.left, r.bottom - k]].forEach(([x, y]) => add({ prop: 'border-radius', family: 'radius', toy: 'corner', said: 'Corner', n: rad, x, y, w: k, h: k })); }
+  // the corner is a small square at each corner (at most 9px), so on a pill the side padding stays reachable
+  if (rad > 1) { const k = Math.max(6, Math.min(rad * 0.6, 9, r.width / 4, r.height / 3)); [[r.left, r.top], [r.right - k, r.top], [r.right - k, r.bottom - k], [r.left, r.bottom - k]].forEach(([x, y]) => add({ prop: 'border-radius', family: 'radius', toy: 'corner', said: 'Corner', n: rad, x, y, w: k, h: k })); }
   const pad = [[ix, iy, iw, p[0]], [ix + iw - p[1], iy + p[0], p[1], ih - p[0] - p[2]], [ix, iy + ih - p[2], iw, p[2]], [ix, iy + p[0], p[3], ih - p[0] - p[2]]];
   pad.forEach(([x, y, w, h], i) => add({ prop: `padding-${SIDES[i]}`, side: SIDES[i], box: 'padding', family: 'spacing', toy: 'padding', said: `Padding ${SIDES[i]}`, n: p[i], x, y, w, h }));
   for (const g of gaps(el, cs)) add({ prop: g.col ? 'row-gap' : 'column-gap', family: 'spacing', toy: 'gap', said: 'Gap', n: g.n, x: g.x, y: g.y, w: g.w, h: g.h, col: g.col });
