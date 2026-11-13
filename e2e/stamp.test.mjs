@@ -82,7 +82,9 @@ test('Vite stamps prove exact host JSX, preserve usage and refuse stale evidence
   t.after(() => browser.close());
   const page = await browser.newPage(), errors = [];
   page.on('pageerror', error => errors.push(error.message));
-  page.on('console', message => { if (message.type() === 'error') errors.push(message.text()); });
+  // a 503 from plumber's own server says "starting" or "busy", and the overlay asks again: under load the server starts
+  // later, and the browser still logs the first answer as an error. Any other error counts
+  page.on('console', message => { if (message.type() === 'error' && !(/status of 503/.test(message.text()) && /\/__plumb\//.test(message.location()?.url ?? ''))) errors.push(message.text()); });
   await page.goto(url);
   try { await page.waitForSelector('#host'); } catch (error) { error.message += '\n' + errors.join('\n'); throw error; }
   await page.waitForFunction(() => window.__plumb?.ready);
