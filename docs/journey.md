@@ -2347,6 +2347,23 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - **Then into the product (same day):** the site's bar, the overlay's dock and the films' closing mark draw the R from the same source. Seen running: the bar at 26px, the dock's 14px mark in its state colour, and film 42's closing shot, where the leg thins to dashes, the tree appears inside it and the four guardrails draw on (the old three guides and the "4" pill are gone). The dock and the closing shot are small on screen, so they were checked by what is in the page as well as by eye.
 - **Media hooks:** docs/design/comps/logo-r.html (the leg draws in, then its three nodes drop in), logo-stress.html (every surface), logo-orbit.html (the rings that were dropped), and the Logo page of the design site.
 
+### 32. Messages get their page: the toast and the history strip (2026-11-13)
+
+- **The itch:** the design site listed "Messages" with no page. What plumber says after it writes to your code (the
+  toast with Undo, the history strip, a refusal) was only visible by making a real write in a real app.
+- **How we found it:** it was the first page in the design site's list without a page, after the Logo page was locked.
+- **The system behind it:** the history's styles lived in the same file as the code that talks to the dev server, so
+  no page could show the pieces without pulling in that code (the design site failed to build on the first try).
+- **What we chose:** the history's styles moved to their own file, the way the fix bar's field styles already are. The
+  page draws the product's own toast and strip with the product's own words; only the behaviour on the page is a
+  stand-in (nothing is written). Dead end: importing the history module itself.
+- **The fix and the proof:** `web/design/parts/messages.js`, seen running: the toast says what was written, holds six
+  seconds, Undo answers in the same toast; the strip's playhead, pill, Undo change, Undo step and the refusal on the
+  hatched tick all answer. No tests were run. Dark mode and phone width were not looked at.
+- **Open, written on the page itself:** the toast's Undo is plain text, not a system button; nothing shows the six
+  seconds running out; a refusal is words only.
+- **Media hooks:** a clip of Take a fix → Undo, and of the hatched tick saying no.
+
 ## Open gaps
 - **The mark was never tried among real neighbours** (a row of browser tabs, an npm page, a README header), only on empty tiles. Nobody outside has been asked whether the round leg reads as an R or leans towards a B.
 - Resizing: a size between your steps always lands on the nearest one; there is no way yet to keep an exact size as
@@ -2390,6 +2407,9 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 
 - The React Plumber logo film, in a tall size for Shorts and Reels and a square size for Twitter, LinkedIn and Threads ([the logo film](#the-logo-film-2026-11-13)).
 - A logo that reads as both letters, with its brand sheet: React Plumber's mark is a solid P inside a drawn R whose leg is a small DOM tree, and the design site has a Logo page with its rules, sizes, colours and surfaces. See "It reads both R and P" (entry 31).
+- A Messages page in the design site: you can see and press the toast that follows a write (with Undo) and the history
+  strip, with every state, without making a real write. It matters because these were only visible inside a real app
+  (entry 32).
 - React Plumber has a mark: a pink stem and a violet bowl, the gap between them the P, with plumber's guardrail at hero size. It is in the site's bar, the overlay's dock and the films, from one source ([entry](#react-plumber-gets-a-mark-2026-11-13)).
 - Craft № 42 is a 16:9 React Plumber marketing film: the fault felt, measured in plumber's marks, the code that caused it and the code that fixes it, the payoff, and plumber's ✓ bursting where the fix was written, signed and watermarked ([entry](#42-as-a-react-plumber-marketing-film-2026-11-13)).
 - The showcase's #42 explains itself as a short film drawn in plumber's own marks: you feel the tabs jitter, see plumber measure it and name the weight, see the fix keep the width, and watch every tab hold ([entry](#42-redrawn-in-plumbers-own-language-after-copying-the-reference-2026-11-13)).
