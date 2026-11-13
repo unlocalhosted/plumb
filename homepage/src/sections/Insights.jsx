@@ -95,6 +95,13 @@ function Card({ card, live, reduced, turn, onBeat, onDone }) {
   const [marks, setMarks] = useState(null);    // the guides and the pill, in the stage's pixels
   const [held, setHeld] = useState(false), [paused, setPaused] = useState(false);
   const timers = useRef([]), shown = useRef(null), again = useRef(false), lift = useRef([]);
+  // the scene is drawn for a 340 × 228 stage; in a smaller tile it scales down to fit (the big tile fills its own)
+  const [fit, setFit] = useState(1);
+  useLayoutEffect(() => {
+    if (card.size === 'big') return;
+    const el = stage.current, ro = new ResizeObserver(() => { const r = el.getBoundingClientRect(); setFit(Math.min(1, r.height / 228, r.width / 340)); });
+    ro.observe(el); return () => ro.disconnect();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const clear = () => { timers.current.forEach(clearTimeout); timers.current = []; };
   const at = (ms, fn) => timers.current.push(setTimeout(fn, ms));
 
@@ -173,7 +180,7 @@ function Card({ card, live, reduced, turn, onBeat, onDone }) {
   const showMarks = marks && step >= STEP.marks && step <= STEP.out;
   return (
     <article className="ins-card" data-hue={card.hue} data-size={card.size || undefined} data-turn={turn || held || undefined} style={{ gridArea: card.area }} onPointerEnter={() => setPaused(true)} onPointerLeave={() => setPaused(false)} aria-label={`${card.n}. ${card.title}`}>
-      <div ref={stage} className="ins-stage" data-inspect={showMarks || undefined}>
+      <div ref={stage} className="ins-stage" data-inspect={showMarks || undefined} style={{ '--fit': fit }}>
         <div ref={scene} className="ins-cam" style={cam ? { transform: `translate(${cam.x}px, ${cam.y}px) scale(${cam.k})` } : undefined} data-moving={!!cam}>
           <Scene fixed={fixed} live={live && !reduced && (turn || held) && (card.moving || step === STEP.rest || step === STEP.home)} />
         </div>

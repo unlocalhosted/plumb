@@ -2030,6 +2030,12 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   pill says it). And the floating review bar is removed ("remove this, it's annoying": it sat over the examples while
   scrolling); the one-at-a-time tour, the spotlight and the burst stay. Checked: no errors through a press, its lift
   and a Replay; the tour plays.
+- **"This bento grid is way too big, it should fit one viewport."** It was about 1,800px. Re-packed as four columns by
+  three rows (the play tile two by two, the other eight in single cells: all twelve cells used), the grid sized to the
+  screen (100svh less the bar, between 620 and 920px); each scene scales to its tile, measured live against a 340 × 228
+  base (84% at a 1280 × 965 window), and the marks still line up because every measure reads live rects. Small tiles
+  keep only the number, the switch and the title (two lines); the big tile also says why. Below desktop width the
+  earlier two-column layout returns.
 
 ## Open gaps
 - The overlay writes about 180 corners as numbers (radius tokens about 45 times), many off its own scale; 6px is

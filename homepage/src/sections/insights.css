@@ -16,8 +16,9 @@
   font: var(--pl-round-w, 700) 12.5px/1 var(--pl-round); color: var(--ink-1); }
 .ins-x-families li span { font: 600 11px/1 var(--pl-mono); color: var(--pl-pink); }
 /* a bento: the play button the big tile, three wide ones, the rest single; wide and single swap sides row by row */
-.ins-x-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-auto-rows: auto; gap: 16px; margin-top: var(--s-6);
-  grid-template-areas: 'play play album' 'play play timer' 'news shadow shadow' 'forecast forecast photo' 'tabs menu menu'; }
+.ins-x-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); grid-template-rows: repeat(3, minmax(0, 1fr)); gap: 14px; margin-top: var(--s-6);
+  height: calc(100svh - 104px); min-height: 620px; max-height: 920px;
+  grid-template-areas: 'play play album timer' 'play play news shadow' 'forecast photo tabs menu'; }
 
 /* ── the review bar: what Plumber is doing to the card on turn, in three beats (checking, found and why, fixed), in the
    fix bar's language; it stays in view while the grid scrolls under it ── */
@@ -49,7 +50,7 @@
 .ins-x-grid[data-live='true'] .ins-card[data-turn] { translate: 0 -5px; box-shadow: var(--pl-shadow-card), 0 0 0 2px color-mix(in oklab, var(--hue) 70%, transparent), 0 26px 44px -22px color-mix(in oklab, var(--hue) 70%, transparent); }
 
 /* ── the card: paper, its stage on a coloured face, in our design language ── */
-.ins-card { --hue: var(--pl-sky); --face: var(--pl-sky-face); display: flex; flex-direction: column; padding: 0; overflow: hidden; border-radius: 22px; background: var(--pl-bg-surface); box-shadow: var(--pl-shadow-card);
+.ins-card { --hue: var(--pl-sky); --face: var(--pl-sky-face); min-height: 0; display: flex; flex-direction: column; padding: 0; overflow: hidden; border-radius: 22px; background: var(--pl-bg-surface); box-shadow: var(--pl-shadow-card);
   transition: translate 300ms var(--pl-spring-pop), box-shadow 200ms var(--ease); }
 .ins-card[data-hue='pink'] { --hue: var(--pl-pink); --face: var(--pl-pink-face); }
 .ins-card[data-hue='mint'] { --hue: var(--pl-mint); --face: var(--pl-mint-face); }
@@ -58,7 +59,7 @@
 @media (hover: hover) and (pointer: fine) { .ins-card:hover { translate: 0 -3px; } }
 /* one container: the stage is the top of the card itself, edge to edge under its corners, divided from the words by a
    hairline; no panel inside the card */
-.ins-stage { position: relative; flex: 1; min-height: 262px; overflow: hidden; border-radius: 0;
+.ins-stage { position: relative; flex: 1; min-height: 0; overflow: hidden; border-radius: 0;
   background: radial-gradient(120% 100% at 30% 0%, color-mix(in oklab, var(--hue) 5%, var(--pl-bg-surface)), color-mix(in oklab, var(--hue) 13%, var(--pl-bg-surface)));
   box-shadow: inset 0 -1px 0 var(--pl-border-default); }
 /* the state: a tag in the toy face with the principle's toy, coral while broken, mint once fixed */
@@ -90,12 +91,19 @@
 .ins-foot { display: flex; gap: 12px; align-items: flex-start; padding: 14px 14px 14px 16px; }
 .ins-ctl { display: flex; align-items: center; gap: 6px; flex: none; margin-left: auto; }
 .ins-text { flex: 1; }
+/* a small tile: the number and the switch share a row, the title runs under them; only the big tile says why */
+.ins-card:not([data-size='big']) .ins-foot { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 8px 10px; padding: 10px 12px 12px; }
+.ins-card:not([data-size='big']) .ins-ctl { grid-column: 3; grid-row: 1; }
+.ins-card:not([data-size='big']) .ins-text { grid-column: 1 / -1; grid-row: 2; }
+.ins-card:not([data-size='big']) .ins-text span { display: none; }
+.ins-card:not([data-size='big']) .ins-text b { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.ins-card:not([data-size='big']) .ins-n { width: 26px; height: 26px; font-size: 11px; }
 .ins-n { display: grid; place-items: center; flex: none; width: 30px; height: 30px; border-radius: 10px; translate: 0 -2px; color: #fff; font: var(--pl-round-w, 700) 12px/1 var(--pl-round);
   background: linear-gradient(180deg, color-mix(in oklab, var(--hue) 82%, #fff), var(--hue));
   box-shadow: inset 0 1.5px 0 rgb(255 255 255 / .4), 0 2px 0 color-mix(in oklab, var(--hue) 70%, #000), 0 6px 10px -4px color-mix(in oklab, var(--hue) 70%, transparent); }
 .ins-text { display: grid; gap: 3px; min-width: 0; }
-.ins-text b { font: var(--pl-round-w, 700) 15px/20px var(--pl-round); letter-spacing: -0.005em; }
-.ins-text span { font: 400 13px/18px var(--font); color: var(--ink-2); }
+.ins-text b { font: var(--pl-round-w, 700) 14px/18px var(--pl-round); letter-spacing: -0.005em; }
+.ins-text span { font: 400 12.5px/17px var(--font); color: var(--ink-2); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 
 /* while a fix is happening the stage becomes a canvas under inspection: a fine dot grid fades in under the scene,
    and goes when the marks lift, so at rest the card is just a card */
@@ -130,9 +138,9 @@
 .ins-check svg { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
 
 /* ── the scenes: paper and soft blocks on the stage's face, each wrong in exactly one way ── */
-.ins-cam { position: absolute; inset: 0; transform-origin: 0 0; transition: transform 900ms cubic-bezier(0.7, 0, 0.3, 1); will-change: transform; }
+.ins-cam { position: absolute; inset: 0; transform-origin: 50% 50%; scale: var(--fit, 1); }
 .ins-cam[data-moving='true'] { transition-duration: 1000ms; }
-.sc { position: absolute; inset: 0; display: grid; place-items: center; padding: 42px 0 46px; font-family: var(--font); color: var(--ink-1); }
+.sc { position: absolute; inset: 0; display: grid; place-items: center; padding: 12px 0; font-family: var(--font); color: var(--ink-1); }
 
 /* #2 play button: a real video still (a lake among green mountains, by an Unsplash photographer; see references), the
    player's chrome over it, a soft white button */
@@ -263,7 +271,7 @@
 .sc-menu[data-fixed='true'] .sc-pop { scale: 0.96; transform-origin: top right; }
 .sc-menu[data-fixed='true'][data-open='true'] .sc-pop { scale: 1; }
 
-@media (max-width: 64rem) { .ins-x-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-areas: none; } .ins-card { grid-area: auto !important; } .ins-card[data-size='big'] { grid-column: span 2; } }
+@media (max-width: 64rem) { .ins-card:not([data-size='big']) .ins-text span { display: block; } .ins-x-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: none; grid-auto-rows: auto; height: auto; min-height: 0; max-height: none; grid-template-areas: none; } .ins-stage { min-height: 262px; } .ins-card { grid-area: auto !important; } .ins-card[data-size='big'] { grid-column: span 2; } }
 @media (max-width: 40rem) { .ins-x { padding-left: var(--s-4); padding-right: var(--s-4); } .ins-x-grid { grid-template-columns: 1fr; } .ins-card[data-size='big'] { grid-column: auto; } .ins-card[data-size='big'] .sc-video { width: 260px; height: 156px; } }
 @media (prefers-reduced-motion: reduce) {
   .ins-state, .sc-play-btn svg, .sc-cover, .sc-recipe, .sc-glaze::after, .sc-pop, .ins-card, .ins-thumb, .ins-cam, .sc-day b em, .ins-check { transition: none; }
