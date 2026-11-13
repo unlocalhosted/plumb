@@ -557,10 +557,10 @@ class PlumbOverlay extends HTMLElement {
   }
   // craft: what the source says about an element (its component, library, handlers), for the rules that judge by it
   // (touch handling, a tooltip provider's delays). Asked only for the elements those rules can judge; when answers
-  // land, the page is judged again once.
+  // land, the elements whose rules asked about them are judged again (not the page).
   // One structure read per source position per file revision (#structures, dropped with the other caches on a hot
   // update): a list's rows and every re-render of an element share it; each element still gets the answer applied.
-  #sourced = new WeakSet(); #structures = new Map(); #resourced = 0;
+  #sourced = new WeakSet(); #structures = new Map(); #resourced = 0; #landed = new Set();
   #learnSource(element, found) {
     if (this.#sourced.has(element) || !Number.isFinite(found.line)) return;
     const candidate = element.matches?.('[role="button"], [data-state], [aria-haspopup]')
@@ -577,8 +577,9 @@ class PlumbOverlay extends HTMLElement {
     structure.then((s) => {
       if (!s || s.error) return;
       setSource(element, s);
+      this.#landed.add(element);
       clearTimeout(this.#resourced);
-      this.#resourced = setTimeout(() => this.#blueprint?.themeChanged(), 120);
+      this.#resourced = setTimeout(() => { const els = [...this.#landed]; this.#landed.clear(); this.#blueprint?.sourced(els); }, 120);
     });
   }
   get health() { return this.#health; }

@@ -827,10 +827,19 @@
 - **Timed the same day, and the design's guess was wrong in order:** on algorecall's 15,907-element page one full judgement by all 82 rules takes about 0.8 s, and no rule is heavy (the slowest is 8%). But one read hands the whole page to the engine six times and judges it from nothing four of them, so the engine spends 3.7–5.8 s. Judging once comes before making each judgement cheaper. The engine is also only 4–6 s of a 30–51 s read; the rest is not looked at yet. Source: a timer now in the engine (off unless a page asks), one headless browser, numbers in the design's Measured section.
 - **Media hooks:** when built, the per-rule table before and after on algorecall's 16,000-element page.
 
+## The page was judged six times a read; now about once (2026-11-13)
+- **The itch:** the timing showed plumber's engine spending 3.7–5.8 s on algorecall's big page to do 0.8 s of judging. The owner: "Yes, fix it".
+- **How we found it:** a counter on every time the engine's kept findings were thrown away, with who asked. On algorecall six of seven were the same caller: the server's answer about what an element is in the source (its component, its handlers).
+- **The system behind it:** every fact that arrives late (an icon's pixels, a source answer) was treated as "everything may have changed", so the whole page's findings were dropped and all 82 rules ran on all 15,907 elements again. The answers arrive in batches, so it happened per batch.
+- **What we chose and why:** the engine now notes which element asked for which late fact, and judges only those again when it lands. Page-wide rules keep their result while the page's signature is unchanged. Tried and left out: holding the first judgement until the theme's values arrive; the headless read already waits for them, and in the overlay it costs one extra judgement, once.
+- **The fix and the proof:** algorecall: whole-page judgements from nothing per read 4 → 1.2–1.7, engine time 3.7–5.8 s → 2.1–3.1 s, 27 findings before and after. crafting-ui: 2 → 1, 0.82 s → 0.47–0.50 s, 26 findings before and after. Headless, two runs each after; table in [engine-scaling.md](briefs/engine-scaling.md). No test was run.
+- **Media hooks:** the before/after table; a screen recording of the overlay opening on algorecall's problems list.
+
 ## Open gaps
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
 
 ## Shipped · 2026-W46
+- plumber judges a big page about once per read instead of four to six times: on a 16,000-element page its engine takes 2.1–3.1 s where it took 3.7–5.8 s, with the same findings ([entry](#the-page-was-judged-six-times-a-read-now-about-once-2026-11-13)).
 - plumber catches a wrapping list spread by `justify-between`, whose short last line is flung to the edges, and offers `justify-start` with a gap; every check from the defensive-CSS tips is now built ([entry](#the-left-over-space-checks-second-form-a-list-flung-to-the-edges-2026-11-13)).
 - plumber now catches the last three defensive-CSS slips: a picture pulled tall by its row, a background photo that repeats, and a fixed column with no phone layout, each with the one class that fixes it ([entry](#the-last-three-checks-from-the-tips-a-stretched-picture-a-tiling-photo-a-fixed-column-2026-11-13)).
 - The colour and icon clean-up passes are tested case by case through the panel and Apply, 14 tests ([entry](#the-colour-and-icon-passes-tested-the-way-a-person-meets-them-2026-11-12)).

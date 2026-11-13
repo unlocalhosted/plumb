@@ -40,6 +40,36 @@ What it says:
    it. Drawing the marks took another 2.3–3.8 s. The rest was not looked at: waiting between waves and for source
    lookups is the guess.
 
+### After the first fix (2026-11-13, same day)
+
+Three changes, all in how findings are kept, none in the rules:
+
+- an icon's pixels landing judges again only the elements whose rules asked for an icon (2 on algorecall, 36 on
+  crafting-ui), not the page;
+- the server's answer about what an element is in the source does the same. **This was the cause on algorecall:**
+  every batch of answers threw the whole page's findings away, six times in one run;
+- the eight page-wide rules keep their result while neither the element nor the page (every element's signature, in
+  order) has changed.
+
+| | algorecall before | algorecall after | crafting-ui before | crafting-ui after |
+|---|---|---|---|---|
+| Whole-page judgements from nothing, per read | 4 (up to 8.5 on a cold server) | 1.2–1.7 | 2 | 1 |
+| Engine time in the read | 3.7–5.8 s (10.8 s cold) | 2.1–3.1 s | 0.82 s | 0.47–0.50 s |
+| Findings reported | 27–28 | 27 | 26 | 26 |
+
+Two runs after on algorecall, two on crafting-ui; same headless set-up. Not run: any test.
+
+What is left of the six-times:
+
+- The page is still *handed over* about four to six times per read; with findings kept that is cheap for each
+  element's own rules, but picking one verdict per element and the page-wide rules still pay part of it.
+- Page-wide rules ran 2.2–2.7 times per element on algorecall: the page's signature changes as the last elements
+  arrive (15,889 → 15,910), and one new element re-judges all of them. The census-value key in 3.4 would fix that;
+  the page signature was the safe first step.
+- In the overlay with a person (not the headless read, which waits first), the theme's values arriving still judge
+  the page once more. Once, not per batch.
+- Algorecall's remaining 0.2–0.7 judgements above one are not explained. Elements the app re-renders is the guess.
+
 Raw tables were printed to the session's scratch folder and are not kept; run the timer again rather than trust
 these to the millisecond.
 
@@ -168,7 +198,7 @@ Each is seen before the next. Nothing here needs the platform work; the platform
 | # | Layer | What can be seen |
 |---|---|---|
 | 1 | Per-rule timing on the two reference pages | **Done.** The table above |
-| 2 | Judge the page once: throw away less (3.4), page-wide rules kept against the census (3.4) | Passes per read fall from 6 towards 1; algorecall's engine time from 4–6 s towards 0.8 s |
+| 2 | Judge the page once: throw away less (3.4), page-wide rules kept against the census (3.4) | **First part done** (see Measured): judgements from nothing 4 → 1.2–1.7 on algorecall, engine time 3.7–5.8 s → 2.1–3.1 s. Left: the census-value key, fewer hand-overs |
 | 3 | Dispatch (`on`, kind mask, index, refusal) | Calls per rule fall to about its hits; the 0.8 s falls by a measured amount |
 | 4 | Where the other 25–45 s of algorecall's read goes | A second table: waiting, source lookups, drawing. Not the engine, so not in this design yet |
 | 4b | Slices, nearest first | First marks appear in the same time on the big page as on a small one |

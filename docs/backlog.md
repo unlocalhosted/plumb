@@ -201,7 +201,7 @@ Design written 2026-11-13, nothing built or measured: docs/briefs/engine-scaling
 - Every rule is called on every element; a new rule costs the whole page even where it could never apply.
 - Any write or late fact re-judges the whole page.
 - The command line loads a route once per width, view, hover and gesture, whether or not a rule will read it.
-- Measured 2026-11-13: one read judges the whole page about six times (algorecall: 3.7–5.8 s of engine time for 0.8 s of judging). First thing to fix.
+- Fixed 2026-11-13: a late fact judged the whole page again (four to six times a read); now only the elements that asked. Left: page-wide rules still run 2–3 times per element on a big page; the page is still handed over four to six times; no test covers any of it.
 - A per-rule timer exists (off unless a page asks); nothing yet refuses a slow rule.
 - Algorecall's full read takes 30–51 s; only 4–6 s is the engine. Where the rest goes is not known.
 

@@ -221,6 +221,10 @@ export class Blueprint {
 
   // craft: measured again on the next hand-off (a resize moved everything)
   #remeasure = () => this.#craft.invalidate();
+  // craft: what the source says of some elements arrived: the engine judges again only the elements that asked
+  sourced(els) {
+    this.#craft.sourced(els);
+  }
   // craft: the theme's decisions arrived (or changed): suggestions name its tokens, so everything is judged again
   themeChanged() {
     this.#craft.invalidate();

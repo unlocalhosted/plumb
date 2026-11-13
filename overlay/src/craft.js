@@ -17,7 +17,8 @@
  *             its place, `rule|text` for its cause row, choices [] (writing a suggestion is the next layer)
  *  noise      a confidence floor (FLOOR), per-rule thresholds in the spec, a rule the spec turns off never run, and a
  *             finding dropped when an ancestor carries the same one with the same text (one row of a nested list is enough)
- *  cache      an element's findings are kept by its signature (its class and its parent's) until invalidate()
+ *  cache      an element's findings are kept by its signature (its class and its parent's) until invalidate(); a
+ *             page-wide rule's also by the page's signature; a late fact (an icon's ink) re-judges only who asked
  * ───────────────────────────────────────────────────────── */
 import { RULES } from './craft-rules.js';
 import { verdicts } from './verdict.js';
@@ -115,7 +116,7 @@ export class Facts {
     const real = base.style(el);
     const over = new Proxy(real, { get: (t, k) => (k in sets ? (typeof sets[k] === 'number' ? `${sets[k]}px` : sets[k]) : Reflect.get(t, k, t)) });
     // every read delegates to this pass's memo (its private fields stay its own); only the element's style is new
-    const virtual = { rect: (x) => base.rect(x), kids: (x) => base.kids(x), text: (x) => base.text(x), ground: (x) => base.ground(x), metrics: (x) => base.metrics(x), census: (n) => base.census(n), ink: (x) => base.ink(x), stroke: (x) => base.stroke(x), other: (c) => base.other(c), probe: (x, g) => base.probe(x, g), source: (x) => base.source(x), style: (x) => (x === el ? over : base.style(x)) };
+    const virtual = { get late() { return base.late; }, set late(v) { base.late = v; }, get asked() { return base.asked; }, rect: (x) => base.rect(x), kids: (x) => base.kids(x), text: (x) => base.text(x), ground: (x) => base.ground(x), metrics: (x) => base.metrics(x), census: (n) => base.census(n), ink: (x) => base.ink(x), stroke: (x) => base.stroke(x), other: (c) => base.other(c), probe: (x, g) => base.probe(x, g), source: (x) => base.source(x), style: (x) => (x === el ? over : base.style(x)) };
     virtual.box = Facts.prototype.box.bind(virtual);
     virtual.with = Facts.prototype.with.bind(virtual);
     if (classes !== undefined) VIRTUAL.set(el, classes);
@@ -196,16 +197,19 @@ export class Facts {
   // An inline icon's ink, in px of its own box: { bbox, centroid, area, fill } (fill = area / bbox area); null while it is
   // rasterised (it lands in idle time and the page is judged again), for anything that isn't a small inline svg, and
   // when it could not be read.
-  #ink = new Map();
+  #ink = new Map(); #inkPending = new Set();
+  // set when a rule asked for a fact that has not landed yet (an icon still being rasterised): the engine judges the
+  // element that asked again when it lands, and only that element
+  late = false;
   ink(svg) {
     if (svg?.localName !== 'svg') return null;
-    if (this.#ink.has(svg)) return this.#ink.get(svg);
+    if (this.#ink.has(svg)) { if (this.#inkPending.has(svg)) this.late = true; return this.#ink.get(svg); }
     const r = this.rect(svg);
     let v = null;
     if (r.width >= 4 && r.height >= 4 && r.width <= 64 && r.height <= 64) {
       const job = inkMarkup(svg, r), key = `${job.W}x${job.H}|${job.markup}`;
       const hit = INK.done.get(key);
-      if (hit === undefined) inkWant(key, job); else v = hit || null;
+      if (hit === undefined) { inkWant(key, job); this.#inkPending.add(svg); this.late = true; } else v = hit || null;
     }
     this.#ink.set(svg, v);
     return v;
@@ -228,7 +232,9 @@ export class Facts {
   // Null in the live overlay, so the rules that need them stay quiet there.
   other(condition) { return HEADLESS.other(condition, this); }
   probe(el, gesture) { return HEADLESS.probe(el, gesture); }
-  source(el) { return HEADLESS.source(el); }
+  // asked(x): told each time a rule asks what the source says of x, so the engine knows who to judge again when it lands
+  asked = null;
+  source(el) { this.asked?.(el); return HEADLESS.source(el); }
   // the ground an element's text sits on: the nearest painted background up the tree, else the page's
   ground(el) {
     for (let n = el; n && n !== document.documentElement; n = n.parentElement) {
@@ -412,9 +418,14 @@ function markOf(f) {
   };
 }
 
+// What an element's own findings depend on: its and its parent's classes, its inline style, its words.
+const sigOf = (el) => `${el.getAttribute('class') ?? ''}|${el.parentElement?.getAttribute('class') ?? ''}|${el.getAttribute('style') ?? ''}|${el.textContent?.length ?? 0}`;
+
 export class Craft {
   #again = null; #waiting = false;
-  #rules; #theme; #cache = new WeakMap(); // el → { sig, marks }
+  #rules; #theme; #cache = new WeakMap(); // el → { sig, marks, page, wide }
+  #late = new Set(); // elements judged while a fact they asked for was still on its way
+  #askers = new WeakMap(); #judging = null; // x → the elements whose rules asked what the source says of x
   // told when a late fact (an icon's ink) lands: judge the page again
   onFacts = null;
   // again: asked when elements left unjudged because they were moving have come to rest (the reader reports again)
@@ -439,8 +450,14 @@ export class Craft {
   get theme() { return this.#theme; }
 
   // Everything measured is measured again on the next run (a resize, a write, the page changed under us).
-  invalidate() { this.#cache = new WeakMap(); }
-  inked() { this.invalidate(); this.onFacts?.(); }
+  invalidate() { this.#cache = new WeakMap(); this.#late.clear(); }
+  // an icon's ink landed: only the elements that asked for one are judged again; the rest of the page keeps its findings
+  inked() { for (const el of this.#late) this.#cache.delete(el); this.#late.clear(); this.onFacts?.(); }
+  // what the source says of these elements landed: only the elements whose rules asked about them are judged again
+  sourced(els) {
+    for (const x of els) { for (const el of this.#askers.get(x) ?? []) this.#cache.delete(el); this.#askers.delete(x); }
+    this.onFacts?.();
+  }
   specChanged() { this.invalidate(); this.onFacts?.(); }
 
   // items: [{ id, el, marks, dims, file }]. Returns the same items with each element's craft marks appended. One
@@ -454,6 +471,7 @@ export class Craft {
       this.#theme.colors();
       this.#theme.roles();
       const facts = new Facts();
+      facts.asked = (x) => { const el = this.#judging; if (!el || !x) return; let set = this.#askers.get(x); if (!set) this.#askers.set(x, (set = new Set())); set.add(el); };
       facts.items = items.filter((i) => i.checked !== false).map((i) => i.el);
       // the rules, then the hierarchy: one verdict per element: a kept mark per facet, its fix tried before it is offered (verdict.js)
       // craft judges what it can reach: an element outside the project's source has no line to fix, so it is left be
@@ -470,7 +488,12 @@ export class Craft {
       const t1 = performance.now();
       const still = items.map((item) => item.checked !== false && !moving(item.el));
       const t2 = performance.now();
-      const judged = items.map((item, i) => ({ ...item, marks: [...item.marks, ...(still[i] ? this.#marksFor(item.el, facts) : [])] }));
+      // the page's signature: every judged element's own, in order. A page-wide rule (one that reads the census, or
+      // looks across the page) is judged again only when this changes, not on every hand-off of the same page.
+      const sigs = items.map((item, i) => (still[i] ? sigOf(item.el) : ''));
+      let page = 5381;
+      for (const sig of sigs) { for (let k = 0; k < sig.length; k++) page = ((page << 5) + page + sig.charCodeAt(k)) | 0; page = ((page << 5) + page + 124) | 0; }
+      const judged = items.map((item, i) => ({ ...item, marks: [...item.marks, ...(still[i] ? this.#marksFor(item.el, facts, sigs[i], page) : [])] }));
       const t3 = performance.now();
       const out = verdicts(judged, { facts, theme: this.#theme, rules: this.rules });
       const t4 = performance.now();
@@ -516,14 +539,13 @@ export class Craft {
   }
 
   // The craft findings of one element, run fresh or from the cache by signature.
-  #marksFor(el, facts) {
+  #marksFor(el, facts, sig, page) {
     if (!el.isConnected || el.closest('plumb-overlay')) return [];
-    // what an element's own findings depend on: its and its parent's classes, its inline style, its words. A rule that
-    // reads the page's census (the app's usual stroke, its usual gaps) also depends on how much of the page is read:
-    // it is judged again on every pass, never cached, so a judgement made against half the page doesn't stick.
-    const P = globalThis.__plumbPerf, pa = P && performance.now();
-    const sig = `${el.getAttribute('class') ?? ''}|${el.parentElement?.getAttribute('class') ?? ''}|${el.getAttribute('style') ?? ''}|${el.textContent?.length ?? 0}`;
-    const pb = P && performance.now();
+    // its own rules are kept by its signature. A rule that reads the page's census (the app's usual stroke, its usual
+    // gaps) also depends on how much of the page is read: it is kept by the page's signature too, so a judgement made
+    // against half the page doesn't stick, and one made against the same page isn't made twice.
+    const P = globalThis.__plumbPerf, pb = P && performance.now();
+    facts.late = false; this.#judging = el;
     const rules = this.rules;
     const quiet = new Set();
     for (const rule of rules) if (rule.scope && rule.refines) { try { if (rule.scope({ el, facts })) for (const r of rule.refines) quiet.add(r); } catch {} }
@@ -542,8 +564,11 @@ export class Craft {
       this.#cache.set(el, hit);
     }
     const pd = P && performance.now();
-    const wide = rules.filter(pageWide).flatMap(judge);
-    if (P) { const T = (P.parts ??= { calls: 0, fresh: 0, sig: 0, scope: 0, own: 0, wide: 0 }); T.calls++; if (fresh) T.fresh++; T.sig += pb - pa; T.scope += pc - pb; T.own += pd - pc; T.wide += performance.now() - pd; }
-    return [...hit.marks, ...wide];
+    // page-wide rules: kept while neither this element nor the page has changed
+    const again = fresh || hit.page !== page || !hit.wide;
+    if (again) { hit.wide = rules.filter(pageWide).flatMap(judge); hit.page = page; }
+    if (facts.late) this.#late.add(el);
+    if (P) { const T = (P.parts ??= { calls: 0, fresh: 0, wideFresh: 0, scope: 0, own: 0, wide: 0 }); T.calls++; if (fresh) T.fresh++; if (again) T.wideFresh++; T.scope += pc - pb; T.own += pd - pc; T.wide += performance.now() - pd; }
+    return [...hit.marks, ...hit.wide];
   }
 }
