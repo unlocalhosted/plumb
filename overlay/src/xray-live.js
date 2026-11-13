@@ -135,10 +135,11 @@ export function mountXray(o) {
   const box = () => C.getBoundingClientRect();
   const ourUI = (e) => e.composedPath().some((n) => n === card || n.classList?.contains('xr-list') || n.classList?.contains('xr-note'));
   // the card waits for the hand and the page to come to rest (owner, 2026-11-13: "as i am scrolling wait for some time
-  // like a second"): while things move, only the drawing on the page follows. Once it has shown, it follows the pointer
-  // from element to element at once, as a tooltip does, until a scroll or the pointer leaving sends it back to waiting.
-  const REST = 1000;
-  let ready = false, restT = 0;
+  // like a second"): while things move, only the drawing on the page follows. Once shown, it stays only while the hand
+  // stays or heads for it ("it should disappear again as i start moving, but follow the triangle principle"): a move
+  // away of more than a few pixels, or a scroll, puts it away and the wait starts again.
+  const REST = 1000, DRIFT = 6;
+  let ready = false, restT = 0, ptNow = null, restAt = null;
   let lastCard = '', shown = null, shownKey = null, pinned = null, noting = null, held = null, cardAt = { x: 0, y: 0 }, lastOn = null, waiting = 0;
 
   // ── where a change reaches, and the changes ───────────────
@@ -238,7 +239,7 @@ export function mountXray(o) {
     body.style.maxHeight = at.maxH ? `${at.maxH - hand.offsetHeight - 30}px` : '';
     // something deliberate (a click, a part held, changes waiting, a note) shows it at once; a pass over the page waits
     const show = ready || !!pinned || !!held || changes.size > 0;
-    if (!show) { clearTimeout(restT); restT = setTimeout(() => { ready = true; if (shown?.isConnected && !o.paused?.()) draw(shown); }, REST); }
+    if (!show) { clearTimeout(restT); restT = setTimeout(() => { ready = true; restAt = ptNow; if (shown?.isConnected && !o.paused?.()) draw(shown); }, REST); }
     card.hidden = !!noting || !show;
     if (first && !card.hidden) { card.removeAttribute('data-enter'); void card.offsetWidth; card.setAttribute('data-enter', ''); }
     if (first) requestAnimationFrame(() => card.removeAttribute('data-fresh'));
@@ -267,7 +268,14 @@ export function mountXray(o) {
     // the card wakes to the pointer when the pointer is over it (with a little margin to reach its edge)
     if (!card.hidden) { const c = card.getBoundingClientRect(), on = e.clientX >= c.left - 4 && e.clientX <= c.right + 4 && e.clientY >= c.top - 4 && e.clientY <= c.bottom + 4; card.toggleAttribute('data-reach', on); if (on) { clearTimeout(waiting); return; } }
     if (held || noting) return;
-    const pt = { x: e.clientX, y: e.clientY };
+    const pt = { x: e.clientX, y: e.clientY }; ptNow = pt;
+    // shown, and the hand moves on: toward the card it stays (the triangle from where the hand rested to the card's
+    // near edge); anywhere else it goes, and only the drawing follows until the hand rests again
+    if (!card.hidden && ready && !pinned && !changes.size && restAt && Math.hypot(pt.x - restAt.x, pt.y - restAt.y) > DRIFT) {
+      const c = card.getBoundingClientRect(), from = restAt, near = c.left > from.x ? c.left : c.right;
+      if (inTri(pt, from, { x: near, y: c.top - 24 }, { x: near, y: c.bottom + 24 })) { clearTimeout(waiting); return; }
+      ready = false; restAt = null; card.hidden = true; card.removeAttribute('data-reach');
+    }
     if (ourUI(e)) { clearTimeout(waiting); return; }
     const under = o.partAt(e);
     const outside = shown && !pinned && (!under || under.contains(shown)) ? zoneAt(zonesOf(shown).filter((q) => q.outside), pt.x, pt.y) : null;
