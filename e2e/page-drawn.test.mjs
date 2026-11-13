@@ -39,7 +39,7 @@ async function project(t) {
   const at = async (needle, tag) => {
     const text = await readFile(join(root, 'src/App.tsx'), 'utf8'), lines = text.split('\n');
     const line = lines.findIndex(l => l.includes(needle)) + 1, column = lines[line - 1].indexOf(`<${tag}`) + 1;
-    // a stamp names its file from the repository root, as the host writes it (src/source-identity.ts)
+    // stamps name files from the repository root (the fixture sits inside this repository)
     return { stamp: `${relative(repo, join(root, 'src/App.tsx'))}:${line}:${column}#${hash12(text)}`, line, column };
   };
   return { root, call, at };

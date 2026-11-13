@@ -541,7 +541,13 @@ class PlumbOverlay extends HTMLElement {
       clicks: false, keys: false, dropPreviewOnWrite: true, cursorOn: document.documentElement,
       // a card open in blueprint (an Alt+click, an element read alone, words being edited) is what's in hand: the X-ray steps aside
       paused: () => !!(self.#blueprint?.scope || self.#blueprint?.cardOpen || self.#pinned || self.#text?.editing),
-      room: () => ({ left: 12, top: 12, right: innerWidth - 12, bottom: innerHeight - 12 }),
+      // the card's room is the page above Plumber's own bar: it never sits on the fix panel or the dock (a card placed
+      // over the panel took the click meant for its Undo)
+      room: () => {
+        let bottom = innerHeight - 12;
+        for (const el of self.#root.querySelectorAll('.fx, .dock')) { const r = el.getBoundingClientRect(); if (r.height && r.top > 220 && el.checkVisibility?.() !== false) bottom = Math.min(bottom, r.top - 8); }
+        return { left: 12, top: 12, right: innerWidth - 12, bottom };
+      },
       // the page's element under the pointer: through blueprint's glass and marks, never the overlay's own panels
       partAt: (e) => {
         const first = e.composedPath()[0];

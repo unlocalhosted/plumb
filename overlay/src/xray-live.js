@@ -45,24 +45,24 @@ export const XRAY_LIVE_CSS = `
   /* the card takes the pointer only once the pointer is over it: until then a click there lands on the page below it */
   .xr-card:not([data-reach]), .xr-card[hidden] { pointer-events: none; }
   .xr-card { opacity: 1; transition: transform 420ms var(--pl-spring), opacity 200ms var(--pl-ease-out); z-index: 6; }
-  .xr-many { display: inline-flex; align-items: center; height: 18px; padding: 0 6px; margin-left: 4px; border-radius: 99px; vertical-align: 2px; background: var(--pl-sky-soft); color: var(--pl-sky-ink); font: 600 10.5px/1 var(--pl-sans); letter-spacing: 0; }
-  .xr-many[data-scope="all"] { background: var(--pl-pink-soft); color: var(--pl-pink-ink); } .xr-many[data-scope="one"] { background: var(--pl-bg-inset); color: var(--pl-text-secondary); }
+  .xr-many { display: inline-flex; align-items: center; height: 18px; padding: 0 6px; margin-left: 4px; border-radius: 99px; vertical-align: 2px; background: var(--pl-sky-soft); color: var(--pl-sky-ink); font: 600 11px/1 var(--pl-sans); letter-spacing: 0; }
+  .xr-many[data-scope="all"] { background: var(--pl-pink-soft); color: var(--pl-pink-ink); } .xr-many[data-scope="one"] { background: var(--pl-bg-inset); color: var(--xr-label); }
   /* the value in hand, beside the pointer: its number and its token, while you drag or scroll */
   .xr-live { position: absolute; z-index: 8; pointer-events: none; display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 6px 0 10px; border-radius: 99px; white-space: nowrap;
     background: var(--pl-text-primary); color: var(--pl-bg-surface); font: 600 12px/1 var(--pl-mono); font-variant-numeric: tabular-nums; box-shadow: 0 6px 16px -6px rgb(0 0 0 / .4); }
   .xr-live[hidden] { display: none; }
   .xr-live .x { font: 600 11px/1 var(--pl-sans); opacity: .7; padding-right: 4px; }
-  .xr-live b { font-family: var(--pl-sans); } .xr-live i { font: 700 10.5px/1 var(--pl-sans); font-style: normal; padding: 4px 7px; border-radius: 99px; background: var(--pl-on); color: #fff; }
+  .xr-live b { font-family: var(--pl-sans); } .xr-live i { font: 700 11px/1 var(--pl-sans); font-style: normal; padding: 4px 7px; border-radius: 99px; background: var(--pl-on); color: #fff; }
   .xr-live i.off { background: var(--pl-off); }
   /* a list, from a click on a number: your sizes in order */
   .xr-list { position: absolute; z-index: 9; display: grid; padding: 4px; min-width: 120px; max-height: 240px; overflow: auto; border-radius: 12px; background: var(--pl-bg-surface); box-shadow: var(--pl-shadow-card); animation: pl-pop 200ms var(--pl-spring-pop) both; }
   .xr-list button { display: flex; justify-content: space-between; gap: 12px; padding: 6px 8px; border: 0; border-radius: 8px; background: none; font: 600 12px/1 var(--pl-sans); color: var(--pl-text-primary); cursor: pointer; }
-  .xr-list button span { font: 500 11.5px/1 var(--pl-mono); color: var(--pl-text-secondary); }
+  .xr-list button span { font: 500 11.5px/1 var(--pl-mono); color: var(--xr-label); }
   .xr-list button:hover, .xr-list button[aria-selected="true"] { background: var(--pl-sky-soft); }
   .xr-list button.hard { color: var(--pl-coral-ink); }
   /* the value in hand, as the token picker row at the top of the card: where, how and the value, side by side */
   .xr-hand { margin: -2px -2px 10px; min-height: 34px; }
-  .xr-hand:empty::before { content: 'Point at a part or a number'; display: flex; align-items: center; height: 34px; padding: 0 10px; border-radius: 11px; background: var(--pl-bg-inset); font: 500 12px/1 var(--pl-sans); color: var(--pl-text-secondary); }
+  .xr-hand:empty::before { content: 'Point at a part or a number'; display: flex; align-items: center; height: 34px; padding: 0 10px; border-radius: 11px; background: var(--pl-bg-inset); font: 500 12px/1 var(--pl-sans); color: var(--xr-label); }
   .xr-hand .row { position: relative; width: 100%; box-sizing: border-box; box-shadow: 0 0 0 1px var(--pl-border-default); }
   .xr-hand .row .ok, .xr-hand .list { display: none; }
   .xr-hand .row .val { flex: 1; min-width: 0; }
@@ -77,7 +77,9 @@ export const XRAY_LIVE_CSS = `
   .xr-hand .thumb[data-pulled] { transition: transform 60ms linear, width 60ms linear; }
   .xr-hand .row[data-seg="mode"] [data-s="mode"], .xr-hand .row[data-seg="scope"] [data-s="scope"] { color: var(--pl-lilac-ink); }
   .xr-hand [data-s="scope"] { max-width: 92px; overflow: hidden; text-overflow: ellipsis; }
-  .xr-hand .say { display: flex; gap: 10px; margin: 6px 4px 0; font: 600 10.5px/1 var(--pl-sans); color: #8a8a94; }
+  /* the token picker's own secondary words (the side, the px beside a token) follow the X-ray's label colour */
+  .xr-hand :is(.side, .slot span) { color: var(--xr-label); }
+  .xr-hand .say { display: flex; gap: 10px; margin: 6px 4px 0; font: 600 11px/1 var(--pl-sans); color: var(--xr-label); }
   .xr-hand .say span[data-on] { color: var(--pl-text-primary); }
   .xr-hand .say .how { margin-left: auto; font-weight: 500; }
   /* the changes, collected at the foot of the card: how many, Sync, and the way back */
@@ -87,11 +89,11 @@ export const XRAY_LIVE_CSS = `
   .xr-pend .sync { background: var(--pl-pink); color: #fff; box-shadow: 0 2px 0 color-mix(in oklab, var(--pl-pink) 60%, #000); }
   .xr-pend .sync[disabled] { opacity: .6; cursor: progress; }
   .xr-pend .back { background: none; color: var(--pl-pink-ink); }
-  .xr-pend kbd { font: 600 10.5px/1 var(--pl-sans); opacity: .8; }
+  .xr-pend kbd { font: 600 11px/1 var(--pl-sans); opacity: .8; }
   /* what Sync did, one line per change */
   .xr-res { margin: 10px -2px 0; padding: 8px; border-radius: 12px; background: var(--pl-bg-inset); box-shadow: var(--pl-shadow-well); animation: pl-pop 260ms var(--pl-spring-pop) both; }
   .xr-res .rh { display: flex; align-items: center; justify-content: space-between; padding: 0 2px 6px 4px; font: 700 12px/1 var(--pl-sans); }
-  .xr-res .rx { width: 22px; height: 22px; border: 0; border-radius: 7px; background: none; color: var(--pl-text-secondary); cursor: pointer; font-size: 15px; line-height: 1; }
+  .xr-res .rx { width: 22px; height: 22px; border: 0; border-radius: 7px; background: none; color: var(--xr-label); cursor: pointer; font-size: 15px; line-height: 1; }
   .xr-res .rr { display: grid; grid-template-columns: 20px 1fr auto; gap: 8px; align-items: start; padding: 7px 6px; border-radius: 9px; background: var(--pl-bg-surface); font: 500 12px/16px var(--pl-sans); }
   .xr-res .rr + .rr { margin-top: 4px; }
   .xr-res .rr > i { display: grid; place-items: center; width: 20px; height: 20px; border-radius: 99px; font: 800 11px/1 var(--pl-sans); font-style: normal; color: #fff; background: var(--pl-on); }
@@ -99,17 +101,17 @@ export const XRAY_LIVE_CSS = `
   .xr-res .rr[data-state="failed"] > i { background: var(--pl-off); }
   .xr-res .rr[data-state="undone"] > i { background: var(--pl-icon-tick, #aaa); }
   .xr-res .rr b { font: 600 12px/16px var(--pl-mono); }
-  .xr-res .rr span { display: block; margin-top: 2px; color: var(--pl-text-secondary); font: 500 11px/15px var(--pl-mono); word-break: break-word; }
+  .xr-res .rr span { display: block; margin-top: 2px; color: var(--xr-label); font: 500 11px/15px var(--pl-mono); word-break: break-word; }
   .xr-res .rr[data-state="failed"] span { font-family: var(--pl-sans); color: var(--pl-coral-ink); }
   .xr-res .rr button { height: 24px; padding: 0 9px; border: 0; border-radius: 8px; background: var(--pl-bg-inset); font: 600 11.5px/1 var(--pl-sans); color: var(--pl-text-primary); cursor: pointer; box-shadow: inset 0 -1px 0 var(--pl-border-default); }
   /* a note for your agent: a well to write in, the place it's about above it */
   .xr-note { position: absolute; z-index: 7; width: 300px; box-sizing: border-box; padding: 12px; border-radius: 18px; background: var(--pl-bg-surface); box-shadow: var(--pl-shadow-card); animation: pl-pop 280ms var(--pl-spring-pop) both; transform-origin: 0 0; }
   .xr-note .nh { display: flex; align-items: center; gap: 8px; font: 700 13px/18px var(--pl-sans); }
   .xr-note .nh .toy { width: 22px; height: 22px; } .xr-note .nh .toy svg { width: 100%; height: 100%; display: block; overflow: visible; }
-  .xr-note code { display: block; margin: 2px 0 8px 30px; font: 500 11px/14px var(--pl-mono); color: var(--pl-text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .xr-note code { display: block; margin: 2px 0 8px 30px; font: 500 11px/14px var(--pl-mono); color: var(--xr-label); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .xr-note textarea { display: block; width: 100%; box-sizing: border-box; min-height: 84px; resize: none; padding: 10px 12px; border: 0; border-radius: 12px; outline: none; background: var(--pl-bg-inset); box-shadow: var(--pl-shadow-well); color: var(--pl-text-primary); font: 400 13.5px/20px var(--pl-sans); }
   .xr-note textarea:focus { box-shadow: var(--pl-shadow-well), 0 0 0 2px color-mix(in oklab, var(--pl-lilac) 45%, transparent); }
-  .xr-note .nf { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; font: 500 11.5px/1 var(--pl-sans); color: var(--pl-text-secondary); }
+  .xr-note .nf { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; font: 500 11.5px/1 var(--pl-sans); color: var(--xr-label); }
   .xr-note kbd { display: inline-grid; place-items: center; min-width: 18px; height: 18px; padding: 0 4px; margin-right: 3px; border-radius: 6px; font: 600 11px/1 var(--pl-sans); color: var(--pl-text-primary); background: var(--pl-bg-inset); box-shadow: inset 0 -1px 0 var(--pl-border-default), 0 0 0 1px var(--pl-border-default); }
   .xr-note[data-done] textarea { opacity: .5; }
   .xr-note .done { display: none; align-items: center; gap: 6px; color: var(--pl-mint-ink); font-weight: 700; }
@@ -132,6 +134,12 @@ export function mountXray(o) {
   const on = (target, type, fn, opts) => { target.addEventListener(type, fn, opts); off.push(() => target.removeEventListener(type, fn, opts)); };
   const box = () => C.getBoundingClientRect();
   const ourUI = (e) => e.composedPath().some((n) => n === card || n.classList?.contains('xr-list') || n.classList?.contains('xr-note'));
+  // the card waits for the hand and the page to come to rest (owner, 2026-11-13: "as i am scrolling wait for some time
+  // like a second"): while things move, only the drawing on the page follows. Once shown, it stays only while the hand
+  // stays or heads for it ("it should disappear again as i start moving, but follow the triangle principle"): a move
+  // away of more than a few pixels, or a scroll, puts it away and the wait starts again.
+  const REST = 1000, DRIFT = 6;
+  let ready = false, restT = 0, ptNow = null, restAt = null;
   let lastCard = '', shown = null, shownKey = null, pinned = null, noting = null, held = null, cardAt = { x: 0, y: 0 }, lastOn = null, waiting = 0;
 
   // ── where a change reaches, and the changes ───────────────
@@ -143,8 +151,22 @@ export function mountXray(o) {
   // the changes not yet synced, by place in the code and which copy ('key#n' → { prop → { before, value, scope } }),
   // never by element: a re-render replaces elements, and the change must find the new one
   const changes = new Map();
-  const placeKey = (el) => `${o.key(el) ?? '?'}#${Math.max(0, peers(el).indexOf(el))}`;
-  const elOf = (k) => { const i = k.lastIndexOf('#'); const all = o.all(k.slice(0, i)); return all?.[+k.slice(i + 1)] ?? null; };
+  // A change is kept by place: the element's line and its position among everything that line draws, so a re-render
+  // that replaces the element finds the new one at the same place. The position is counted in the one list the change
+  // is found again by (o.all), never in another (the copies a scope reaches can be listed in another order, or miss the
+  // element): two lists put the pointed element at 0, on top of the first copy, and Put back restored that copy twice
+  // and left the pointed one changed. An element its line's list doesn't hold is kept by itself.
+  const loose = new Map(); let looseN = 0; const looseId = new WeakMap();
+  const placeKey = (el) => {
+    const k = o.key(el), i = k ? (o.all(k) ?? []).indexOf(el) : -1;
+    if (i >= 0) return `${k}#${i}`;
+    if (!looseId.has(el)) { looseId.set(el, `${k ?? '?'}#el${++looseN}`); loose.set(looseId.get(el), new WeakRef(el)); }
+    return looseId.get(el);
+  };
+  const elOf = (k) => {
+    if (loose.has(k)) { const el = loose.get(k).deref(); return el?.isConnected ? el : null; }
+    const i = k.lastIndexOf('#'); const all = o.all(k.slice(0, i)); return all?.[+k.slice(i + 1)] ?? null;
+  };
   // which sides move together, kept until changed: 'one', 'pair' or 'all'
   let link = 'one';
   const linkedOf = (prop) => {
@@ -186,7 +208,7 @@ export function mountXray(o) {
   // ── the drawing and the card ───────────────────────────────
   let zone = null, justDragged = false, warm = 0, pending;
   const draw = (el) => {
-    if (!el) { layer.innerHTML = ''; card.hidden = true; shown = null; zone = null; return; }
+    if (!el) { layer.innerHTML = ''; card.hidden = true; shown = null; zone = null; ready = false; clearTimeout(restT); return; }
     const s = box(), [name, source] = o.name(el);
     const zs = zonesOf(el), inProp = held?.prop ?? zone?.prop;
     const lit = inProp ? zs.filter((q) => q.prop !== inProp && linkedOf(inProp).includes(q.prop)) : [];
@@ -229,7 +251,11 @@ export function mountXray(o) {
     else { beak.style.left = `${Math.max(14, Math.min(cw - 26, mid.x - at.x - 6))}px`; beak.style.top = ''; }
     card.toggleAttribute('data-short', !!at.maxH);
     body.style.maxHeight = at.maxH ? `${at.maxH - hand.offsetHeight - 30}px` : '';
-    card.hidden = !!noting;
+    // something deliberate (a click, a part held, changes waiting, a note) shows it at once; a pass over the page waits
+    const show = ready || !!pinned || !!held || changes.size > 0;
+    if (!show) { clearTimeout(restT); restT = setTimeout(() => { ready = true; restAt = ptNow; if (shown?.isConnected && !o.paused?.()) draw(shown); }, REST); }
+    card.hidden = !!noting || !show;
+    if (first && !card.hidden) { card.removeAttribute('data-enter'); void card.offsetWidth; card.setAttribute('data-enter', ''); }
     if (first) requestAnimationFrame(() => card.removeAttribute('data-fresh'));
     shown = el; shownKey = o.key(el) ? placeKey(el) : null;
     cursor();
@@ -250,13 +276,28 @@ export function mountXray(o) {
     const c = card.getBoundingClientRect(), near = c.left > lastOn.x ? c.left : c.right;
     return inTri(pt, lastOn, { x: near, y: c.top - 24 }, { x: near, y: c.bottom + 24 });
   };
+  // heading for the card: the pointer is inside the shape joining where the hand rested to the whole card (a little
+  // wider all round, since a hand wanders as it sets off). That shape is the union of the triangles from the rest point
+  // to each of the card's edges, so it holds wherever the card sits: beside, above or below.
+  const SLACK = 28;
+  const towardCard = (pt) => {
+    const c = card.getBoundingClientRect(), l = c.left - SLACK, t = c.top - SLACK, r = c.right + SLACK, b = c.bottom + SLACK;
+    if (pt.x >= l && pt.x <= r && pt.y >= t && pt.y <= b) return true;
+    const k = [{ x: l, y: t }, { x: r, y: t }, { x: r, y: b }, { x: l, y: b }];
+    return k.some((q, i) => inTri(pt, restAt, q, k[(i + 1) % 4]));
+  };
   const track = (e) => {
     // something else is in hand (a card open in blueprint): the X-ray steps aside first, and takes no pointer
     if (o.paused?.()) { card.removeAttribute('data-reach'); if (shown && !changes.size) draw(null); return; }
     // the card wakes to the pointer when the pointer is over it (with a little margin to reach its edge)
     if (!card.hidden) { const c = card.getBoundingClientRect(), on = e.clientX >= c.left - 4 && e.clientX <= c.right + 4 && e.clientY >= c.top - 4 && e.clientY <= c.bottom + 4; card.toggleAttribute('data-reach', on); if (on) { clearTimeout(waiting); return; } }
     if (held || noting) return;
-    const pt = { x: e.clientX, y: e.clientY };
+    const pt = { x: e.clientX, y: e.clientY }; ptNow = pt;
+    // shown, and the hand moves on: toward the card it stays (towardCard); anywhere else it goes, and only the drawing follows until the hand rests again
+    if (!card.hidden && ready && !pinned && !changes.size && restAt && Math.hypot(pt.x - restAt.x, pt.y - restAt.y) > DRIFT) {
+      if (towardCard(pt)) { clearTimeout(waiting); return; }
+      ready = false; restAt = null; card.hidden = true; card.removeAttribute('data-reach');
+    }
     if (ourUI(e)) { clearTimeout(waiting); return; }
     const under = o.partAt(e);
     const outside = shown && !pinned && (!under || under.contains(shown)) ? zoneAt(zonesOf(shown).filter((q) => q.outside), pt.x, pt.y) : null;
@@ -533,7 +574,10 @@ export function mountXray(o) {
   const putBack = () => {
     if (!count()) return false;
     for (const [k, m] of changes) { const el = elOf(k); if (el) for (const [prop, { before }] of m) { if (before) el.style.setProperty(prop, before); else el.style.removeProperty(prop); } }
-    changes.clear(); refresh();
+    changes.clear();
+    // the row in hand says the value put back, not the one taken away
+    if (inHand?.el?.isConnected) { const { el, prop } = inHand; hand.innerHTML = ''; inHand = null; hold(el, prop); }
+    refresh();
     return true;
   };
   on(card, 'click', (e) => {
@@ -585,9 +629,14 @@ export function mountXray(o) {
   }, true);
   // a scroll or a resize moves what's shown: drawn again once a frame at most
   let frame = 0;
+  // a scroll: the card steps out of the way and waits for the page to stop again (it stays while it holds something)
+  const scrolled = () => {
+    if (shown && ready && !pinned && !held && !changes.size && !noting && !card.matches(':hover')) { ready = false; card.hidden = true; card.removeAttribute('data-reach'); }
+    follow();
+  };
   const follow = () => { if (frame || !shown) return; frame = requestAnimationFrame(() => { frame = 0; if (shown?.isConnected) draw(shown); }); };
   on(window, 'resize', follow);
-  on(window, 'scroll', follow, true);
+  on(window, 'scroll', scrolled, true);
 
   return {
     get pending() { return count(); },
