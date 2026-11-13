@@ -25,9 +25,23 @@ export const SECURITY = {
   runs: 'source',
   // principle → rule short name → its entry. `source: true` marks a rule the server runs on source; it has a severity
   // (as a habit has), not a tier.
-  spec: { safety: { 'dom-sink': { source: true, severity: 'warn' } } },
+  spec: { safety: {
+    'dom-sink': { source: true, severity: 'warn' },
+    'postmessage-target': { source: true, severity: 'warn' },
+    'message-origin': { source: true, severity: 'warn' },
+    'trusted-types-pass-through': { source: true, severity: 'warn' },
+    'cookie-flags': { source: true, severity: 'warn' },
+    'subresource-integrity': { source: true, severity: 'warn' },
+    'insecure-resource': { source: true, severity: 'warn' },
+  } },
   words: {},
   laws: {
     'dom-sink': [GUIDE('security', '1.2 Avoid Dangerous DOM Sinks'), GUIDE('sanitize-untrusted-html', 'the modern way to insert untrusted HTML')],
+    'postmessage-target': [GUIDE('security', '1.5 Secure Window Messaging'), GUIDE('validate-origins', 'comparing origins safely')],
+    'message-origin': [GUIDE('security', '1.5 Secure Window Messaging'), GUIDE('validate-origins', 'comparing origins safely')],
+    'trusted-types-pass-through': [GUIDE('security', '3.3 Trusted Types Enforcement'), GUIDE('trusted-types', 'defining a policy')],
+    'cookie-flags': [GUIDE('security', '1.3 Secure Cookies')],
+    'subresource-integrity': [GUIDE('security', 'Subresource Integrity (SRI)'), GUIDE('secure-external-subresources', 'integrity and crossorigin')],
+    'insecure-resource': [GUIDE('security', '1.1 Secure Contexts')],
   },
 };

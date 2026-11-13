@@ -1016,10 +1016,19 @@
 - **The fix and the proof:** `security/dom-sink`, in `plumber check` like any finding. glyphschool: 5 (category names and prompt text put into `innerHTML`); algorecall's source: 5 (highlighted code through `dangerouslySetInnerHTML`, `new Function` in its code runner); crafting-ui: 0. algorecall's 3,797 files take 2.7 s. Constants removed 3 false hits on glyphwrite and no real one. Three nearby test files pass (29 tests); no test of the rule itself.
 - **Media hooks:** `plumber check` on glyphschool: "5 security findings · can run others' code".
 
+## Twenty-nine checks in one patch (2026-11-13)
+- **The itch:** two rules in a long day. The owner: "bruh this is very slow aim for bigger patch per iteration otherwise it will take a month just to add these rules".
+- **How we found it:** counting. The pack groundwork was done; I was still building one rule, running it on four apps, writing it up, and stopping.
+- **The system behind it:** "one at a time, seen on a real app before the next" is right for a component a person looks at. For checks drawn from one guide it only repeats the same build, run and write-up for each.
+- **What we chose and why:** sort a guide once, write every item the page or the source shows in one patch, run once. Chrome's accessibility guide gave 23 page checks; its security guide the 6 that were left.
+- **The fix and the proof:** 31 pack rules now (24 accessibility, 7 security). A page with one of each accessibility problem makes all 24 speak through the real engine; a source file with a good and bad case of each security rule gives 12 found, 11 left alone. On the real apps the batch is quiet: crafting-ui 2 accessibility findings, glyphschool 0, the security ones nothing new. Three kinds of false hit showed up in the one run and were removed (a roving tab stop, a long row label, an escaped piece of markup). 24 rules over 1,169 elements take 7 ms. No tests of the new rules.
+- **Media hooks:** the broken page with every mark on it.
+
 ## Open gaps
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
 
 ## Shipped · 2026-W46
+- 29 more checks from Chrome's guides in one patch: 23 for accessibility on the page (missing alt, focus inside hidden content, labels that hide the words shown, repeated link text, skipped headings, unnamed navigations, fields the browser cannot fill, and more) and 6 for security in source (messages sent to any origin, listeners that never check the sender, cookies without Secure, third-party scripts with no integrity, plain http). Each names the guide section it comes from.
 - `plumber check` now finds places in your code that run markup or code built from something that is not fixed text (`innerHTML`, `dangerouslySetInnerHTML`, `eval`, `document.write`, string timers), the first check made from Chrome's security guide. It stays quiet about your own constants. Found 5 in glyphschool and 5 in algorecall's source.
 - Plumber can now hold kinds of rule other than craft, as packs a project turns on or off. The first is accessibility, drawn from Chrome's Modern Web Guidance; its first rule finds controls a screen reader cannot name, and found 5 real ones in the glyphwrite workbench that the source makes look labelled.
 - A write-up of the day's speed work, for people outside the session: each step's cause, fix and measured before/after, the mistakes, and what is still open ([docs/writeups/plumber-speed.html](writeups/plumber-speed.html), published as a private page). It is drawn from this log's entries, nothing new measured except crafting-ui's scrolling (53 frames a second open, 60 alone, one run).

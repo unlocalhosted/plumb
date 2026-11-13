@@ -168,6 +168,71 @@ Not done: the overlay does not draw these on the page (a finding is about a line
 element, it could be); no tests; on by default as warnings, and whether a new warning should fail an existing
 project's `check` is the owner's call.
 
+## 4c. The batch of 2026-11-13: 23 accessibility checks and 6 security checks at once
+
+The owner: "this is very slow aim for bigger patch per iteration otherwise it will take a month just to add these
+rules". From here a guide is sorted once and every item the page or the source shows is written in one patch,
+then run once on the real apps.
+
+**Security, from the `security` guide (source, in `plumber check`).** With `dom-sink` that is every item of the
+guide a front-end project's code shows:
+
+| Rule | Says | Guide |
+|---|---|---|
+| `security/postmessage-target` | `postMessage(data, '*')` sends to any origin | §1.5 |
+| `security/message-origin` | a `message` listener on the window that never reads the event's origin | §1.5 |
+| `security/trusted-types-pass-through` | a policy whose `createHTML` returns its input | §3.3 |
+| `security/cookie-flags` | `document.cookie = …` without `Secure` or `SameSite` (a deletion is left be) | §1.3 |
+| `security/subresource-integrity` | a `<script>` or stylesheet `<link>` from another site with no `integrity` (font services aside) | Subresource Integrity |
+| `security/insecure-resource` | `fetch`, `WebSocket`, `<img>`, `<script>`, `<form action>` … on `http://` or `ws://` (a link a person follows, and local addresses, are left be) | §1.1 |
+
+**Accessibility, from the `accessibility` guide (the page).** `control-name` plus:
+
+| Rule | Says | Guide section, criterion |
+|---|---|---|
+| `image-alt` | an `<img>` with no `alt` | 6 Images, 1.1.1 |
+| `alt-cliche` (advisory) | alt starts "Image of…" | 6 Images |
+| `svg-name` | an `svg role="img"` with no description; an icon beside a control's words that is not hidden | 6 Inline SVGs, 1.1.1, 4.1.2 |
+| `tabindex-positive` | `tabindex` above 0 | 5 Tab order, 2.4.3 |
+| `tabindex-redundant` (advisory) | `tabindex="0"` on what takes focus already (a roving tab stop aside) | 5 Tab order |
+| `hidden-focusable` | something that takes focus inside `aria-hidden` | 2 ARIA, 4.1.2 |
+| `role-presentation-control` | `role="presentation"` on a control | 2 ARIA, 4.1.2 |
+| `label-on-generic` | `aria-label` on a plain `div` or `span` | 3 Naming, 1.3.1 |
+| `label-in-name` | a control's `aria-label` shares no word with the words it shows | 3 Choosing the name, 2.5.3 |
+| `role-in-label` (advisory) | "Save button", "Main navigation" | 3 Choosing the name |
+| `link-name-reused` | the same link text going to different pages | 3 Choosing the name, 2.4.4 |
+| `heading-skip` (advisory) | an h4 after an h1 | 1 Headings |
+| `heading-h1-many` (advisory) | a second h1 outside a dialog | 1 Headings |
+| `main-many` | a second `<main>` | 1 Landmarks, 1.3.1 |
+| `nav-unnamed` | several navigations, this one unnamed or sharing a name | 1 Landmarks, 1.3.1 |
+| `iframe-title`, `iframe-scroll` | a frame with no title; `scrolling="no"` | 4 Iframes, 4.1.2, 1.4.4 |
+| `table-headers` | a table of rows with no header cells | 1 Tables, 1.3.1 |
+| `heading-in-summary` (advisory) | a heading inside `<summary>` | 1 Headings |
+| `redundant-role` (advisory) | `<nav role="navigation">`, `required` with `aria-required` | 2 Native HTML |
+| `role-on-structure` | `<li role="button">` | 2 Native HTML, 4.1.2 |
+| `native-over-role` (advisory) | `<div role="button">` | 2 Native HTML, 4.1.2 |
+| `field-autocomplete` | an email, phone, password, name or address field with no `autocomplete` | 7 Input assistance, 1.3.5 |
+
+**Proof.**
+- A page with one of each accessibility problem, through the real CLI and engine: all 24 rules speak, each with the
+  right sentence (29 findings).
+- A source file with a good and a bad case of each security rule: the 12 bad lines are found, the 11 good ones
+  (an origin check, a named target, `Secure; SameSite`, a deletion, localhost, a constant, an escaped piece,
+  `integrity`, a font service, a plain link) are not.
+- Real apps, accessibility: crafting-ui 2 (two links called "Primitives" going to different pages; nothing else);
+  glyphwrite workbench 5 (the unnamed sliders); glyphschool 0. All 24 rules over crafting-ui's 1,169 elements
+  take 7 ms.
+- Real apps, security: nothing beyond `dom-sink` (crafting-ui 0, glyphwrite 5, glyphschool 5, algorecall 4). None
+  of these apps sends window messages, writes cookies from script or loads third-party scripts in JSX.
+- False hits found in this run and removed: `tabindex="0"` on a tab (a roving tab stop); a row link whose
+  `aria-label` says its pieces at more length (13 on glyphschool); `${esc(name)}` inside markup (9 on plumber's
+  own overlay).
+- Five nearby test files pass (34 tests). No tests of the new rules.
+
+**Left in the accessibility guide** (about 80 items): what needs the source or a gesture (keyboard handlers on
+custom controls, focus moved into dialogs, live regions), what is about the document (language, title), what is
+about media (captions, transcripts), and what is judgement (is this alt text informative).
+
 ## 5. Order, and why not the signed-off one
 
 The foundations put packs at layer 5, after the snapshot (3) and pure rules in a worker (4), so that a new page pack
