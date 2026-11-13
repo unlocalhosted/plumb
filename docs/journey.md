@@ -2414,6 +2414,32 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   edge is a hairline ring, which the language says a thing should not need; the scrim has no picture.
 - **Media hooks:** the day and night desks side by side.
 
+### 34. Plumber reads tokens that aren't named the Tailwind way (2026-11-14)
+
+- **The itch:** the owner asked why Plumber didn't flag, live, the values typed by hand on our own design pages, and
+  then: "can we have a smart parser where we can parse the tokens from various files, as it's hard to always get a
+  pre-defined shape", with "without involving llm in the loop" and a config the user can see.
+- **How we found it:** a four-file plain-CSS probe, then the site's homepage. The probe's tokens counted only when
+  named `--spacing-*`; the homepage's 22 findings were all one blind spot, with 157 values left unchecked.
+- **The system behind it:** a variable was a token only if its name began with one of nine Tailwind prefixes
+  (`familyFor`). `--space-4`, `--pl-radius-card`, `--muted` were invisible. Variables on `:host` (the overlay's token
+  file) weren't counted as root variables either.
+- **What we chose:** decide a token's kind from three signals, deterministically, no model: its value once resolved
+  (a colour, a time or easing, a shadow, a font), the properties that read it with `var()`, and a word in its name
+  after any prefix. Points per signal, highest wins, a tie is no answer. A theme's backing value is left alone, the
+  config still wins, and `:host` now counts as root. `src/decisions/infer.ts`, wired in `src/decisions/index.ts`.
+- **The proof:** the probe with `--space-*` now gets `padding: 18px → var(--space-4) or var(--space-6)` without
+  renaming. The site with the token file imported for one run: 231 tokens read, 64 values off them found (none
+  before; 157 unchecked). crafting-ui, before and after: 17 more tokens (`--muted`, `--faint`, `--sunken`,
+  `--c-design`…), 13 fewer off-token colours, 17 more tokens waiting to be accepted, 23 more stale debt entries; the
+  homepage app gained one (`--pl-z`). No tests run.
+- **Found on the way:** the history's new style file was missing from the list of files the overlay serves, so the
+  history would not have loaded in an app; fixed.
+- **Still open:** tokens put on a page by a script (the site) are not seen without an import; a token file outside
+  the project's folder is reported as skipped; type tokens that are whole font styles (`600 20px/28px`) don't count
+  as a 16px step, so type findings on the site are mostly noise; the reason for each reading isn't written anywhere
+  yet (the config and the page are the next slices).
+
 ## Open gaps
 - **The mark was never tried among real neighbours** (a row of browser tabs, an npm page, a README header), only on empty tiles. Nobody outside has been asked whether the round leg reads as an R or leans towards a B.
 - Resizing: a size between your steps always lands on the nearest one; there is no way yet to keep an exact size as
@@ -2462,6 +2488,8 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   (entry 32).
 - A Surfaces page in the design site: the three heights a thing can have, each holding real pieces, and the same
   desk by day and by night side by side (entry 33).
+- Plumber reads tokens however they are named: `--space-4`, `--pl-radius-card` and `--muted` are told apart by their
+  value, how they are used and their name, so plain CSS and design systems with their own prefix get checked (entry 34).
 - React Plumber has a mark: a pink stem and a violet bowl, the gap between them the P, with plumber's guardrail at hero size. It is in the site's bar, the overlay's dock and the films, from one source ([entry](#react-plumber-gets-a-mark-2026-11-13)).
 - Craft № 42 is a 16:9 React Plumber marketing film: the fault felt, measured in plumber's marks, the code that caused it and the code that fixes it, the payoff, and plumber's ✓ bursting where the fix was written, signed and watermarked ([entry](#42-as-a-react-plumber-marketing-film-2026-11-13)).
 - The showcase's #42 explains itself as a short film drawn in plumber's own marks: you feel the tabs jitter, see plumber measure it and name the weight, see the fix keep the width, and watch every tab hold ([entry](#42-redrawn-in-plumbers-own-language-after-copying-the-reference-2026-11-13)).

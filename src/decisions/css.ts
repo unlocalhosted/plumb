@@ -69,7 +69,7 @@ export function readCssVariables(graph: StylesheetGraph): CssVariable[] {
         const text = css.slice(offset, index).trim(), delimiter = css[index];
         if (delimiter === '{') {
           const isTheme = /^@theme\b/.test(text);
-          const isRoot = !text.startsWith('@') && /(?:^|,)\s*(?::root|html)\s*(?:,|$)/.test(text);
+          const isRoot = !text.startsWith('@') && /(?:^|,)\s*(?::root|html|:host)\s*(?:,|$)/.test(text);
           index = walk(index + 1, theme || isTheme, isRoot || (root && text === '&'), dynamic || /^@(media|container|supports)\b/.test(text), themeScopeFor(text, themeScope),
             inline || isTheme && /\binline\b/.test(text), /^\.dark$/.test(text) || dark && (text === '&' || text.startsWith('@')));
           continue;

@@ -15,6 +15,7 @@ import { resolveValue } from './resolve.js';
 import { themeSourceGraph } from './theme-sources.js';
 import { motionDefinitions } from './motion.js';
 import { readSpacing } from './spacing.js';
+import { inferFamily, variableUses } from './infer.js';
 import type { NumericSpacing, SpacingBase } from './spacing.js';
 import type { Variable } from './resolve.js';
 
@@ -88,11 +89,19 @@ export async function readDecisions(root: string, config: PlumbConfig, graph: St
     const record = defineDecisions([{ family, name: item.name, value: item.value, origin: meta.origin, why: meta.why, source: meta.source, ...(meta.tier ? { tier: meta.tier } : {}) }])[0]!;
     add(record, meta.tier !== undefined);
   }
+  // a variable whose name isn't one of Tailwind's prefixes is still a token when its value, its uses and its name agree
+  // on what it is (infer.ts). Not for a theme's backing value: the theme key that reads it is the token
+  const uses = variableUses(graph);
+  const backing = new Set(theme.flatMap(item => references(item.value)));
+  const inferred = new Map<string, ReturnType<typeof inferFamily>>();
+  for (const item of raw) if (item.root && !item.theme && item.origin === 'project' && !familyFor(item.name) && !backing.has(item.name) && !inferred.has(item.name)) {
+    inferred.set(item.name, inferFamily(item.name, resolveValue(item.value, variables, new Set([item.name])) ?? item.value, uses));
+  }
   for (const item of raw.filter(item => item.root && !item.theme && item.origin === 'project')) {
-    for (const family of Object.keys(config.decisions ?? {}) as Family[]) if (selected(item.name, family, item.source.file, false)) {
+    for (const family of Object.keys(config.decisions ?? {}) as Family[]) if (selected(item.name, family, item.source.file, false, inferred.get(item.name)?.family)) {
       add(defineDecisions([{ family, name: item.name, value: item.value, why: item.why, source: item.source, ...(item.tier ? { tier: item.tier } : {}) }])[0]!, item.tier !== undefined);
     }
-    const family = familyFor(item.name);
+    const family = familyFor(item.name) ?? inferred.get(item.name)?.family;
     if (family && !config.decisions?.[family]) add(defineDecisions([{ family, name: item.name, value: item.value, why: item.why, source: item.source, ...(item.tier ? { tier: item.tier } : {}) }])[0]!, item.tier !== undefined);
   }
   for (const [family, source] of Object.entries(config.decisions ?? {})) {
