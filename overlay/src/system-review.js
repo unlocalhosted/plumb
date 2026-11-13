@@ -142,6 +142,15 @@ function decisionsOf(kind) {
   if (LENGTHS.has(kind.family) && convention && (stems.length > 1 || (stems[0] && stems[0] !== convention))) out.push({ id: `name:${kind.family}`, family: kind.family, q: `What should ${NOUN[kind.family]} tokens be called?`,
     why: `${stems.length > 1 ? `Today ${stems.length} names: ${stems.join(', ')}. ` : ''}One name for one kind lets anyone find every step by typing it. Tailwind's theme calls this ${convention}*, which is what most React projects already read.`,
     options: [...new Set([...stems, convention])].slice(0, 4).map((s) => [s, `${s}*`]) });
+  // how steps are numbered: asked when a kind's names mix numbering (an order and a size) or a scale is being merged
+  const suffixes = lanes.flatMap((l) => l.tokens.map((t) => t.suffix));
+  const mixed = suffixes.some((x) => /^\d+$/.test(x)) && suffixes.some((x) => !/^\d+$/.test(x)) || sized.length > 1;
+  if (LENGTHS.has(kind.family) && mixed) {
+    const sizeName = kind.family === 'spacing' ? 'in 4px units: --spacing-4 is 16px' : `by pixels: ${CONVENTION[kind.family]}12 is 12px`;
+    out.push({ id: `count:${kind.family}`, family: kind.family, q: `How are ${NOUN[kind.family]} steps numbered?`,
+      why: `By size (${sizeName}): a name says its size, and a step added later fits between without renaming. In order (1, 2, 3): shorter, but a step added later renames every step after it.`,
+      options: [['size', 'By size'], ['order', 'In order'], ['keep', 'Keep the names you have']] });
+  }
   for (const l of lanes) if (nameOnly(l.reasons)) out.push({ id: `guess:${l.name}`, family: kind.family, q: `Is ${l.name} really ${NOUN[kind.family] ?? label.toLowerCase()}?`,
     why: `Plumber read it from its name alone (${l.reasons.join(', ')}); nothing in your stylesheets uses it yet to confirm it.`, options: [['yes', `Yes, it is ${NOUN[kind.family] ?? label.toLowerCase()}`], ['no', 'No, leave it out']] });
   return out;
@@ -160,15 +169,26 @@ function systemOf(kind, choices) {
   const scales = kept.map((lane) => {
     const stem = naming && kept.length === 1 ? naming : lane.stem;
     const steps = new Map();
-    for (const t of lane.tokens) { const px = fix(t.px), key = px ?? t.value; if (!steps.has(key)) steps.set(key, { name: `${stem}${t.suffix}`, value: px === null ? t.value : `${px}px`, px, from: t.name, orig: t.value, file: lane.file, added: false }); }
+    for (const t of lane.tokens) { const px = fix(t.px), key = px ?? t.value; if (!steps.has(key)) steps.set(key, { name: `${stem}${t.suffix}`, value: px !== null && px !== t.px ? `${px}px` : t.value, px, from: t.name, orig: t.value, file: lane.file, added: false }); }
     // a step only a dropped scale had comes along, named by its size, marked to check
-    for (const d of dropped) for (const t of d.tokens) { const px = fix(t.px); if (px !== null && !steps.has(px) && kept.length === 1) steps.set(px, { name: `${stem}${px}`, value: `${px}px`, px, from: t.name, file: lane.file, added: true }); }
+    for (const d of dropped) for (const t of d.tokens) { const px = fix(t.px); if (px !== null && !steps.has(px) && kept.length === 1) steps.set(px, { name: `${stem}${px}`, value: px !== t.px ? `${px}px` : t.value, px, from: t.name, file: lane.file, added: true }); }
     return { stem, lane, steps: [...steps.values()].sort((a, b) => (a.px ?? 0) - (b.px ?? 0)) };
   });
+  // numbering: by size or in order, only under a new name for the kind (renumbering a scale in place would collide
+  // with its own names); otherwise the names stay and the step says why
+  const count = choices[`count:${kind.family}`];
+  let numbering = '';
+  if (count === 'size' || count === 'order') {
+    for (const s of scales) {
+      if (s.stem === s.lane.stem) { numbering = 'Numbering needs a new name for the kind first (the question above it).'; continue; }
+      const unit = kind.family === 'spacing' ? base : 1;
+      s.steps.forEach((st, i) => { if (st.px === null) return; const n = count === 'order' ? i + 1 : st.px / unit; st.name = `${s.stem}${String(n).replace('.', '-')}`; });
+    }
+  }
   const one = scales.length === 1 ? scales[0] : null;
   const aliases = one ? dropped.flatMap((d) => d.tokens.map((t) => ({ from: t.name, file: d.file, to: one.steps.find((s) => s.px !== null && s.px === fix(t.px))?.name })).filter((a) => a.to)) : [];
   const renames = scales.flatMap((s) => s.steps.filter((st) => !st.added && st.from !== st.name).map((st) => ({ from: st.from, to: st.name })));
-  return { kind, scales, aliases, renames };
+  return { kind, scales, aliases, renames, numbering };
 }
 
 /** The system as edits to the files that define its tokens. Nothing is renamed or deleted: a token given a new name keeps
@@ -261,6 +281,7 @@ export function mountReview(host, kinds, { handTyped = 0, project = '', post } =
       return `<div class="panel">${kindHd(k, `<span>${sys.scales.map((s) => `<code>${esc(s.stem)}*</code>`).join(', ')} · ${sys.scales.reduce((m, s) => m + s.steps.length, 0)} steps</span>`)}
         ${one ? `<div class="scale">${one.steps.slice(0, 16).map((st) => `<code class="${st.added ? 'new' : ''}" title="${st.added ? `came from ${esc(st.from)}; check its name` : ''}">${esc(st.name)}</code><span class="steps-text">${esc(st.value)}</span><span>${LENGTHS.has(k.family) && st.px ? (k.family === 'radius' ? `<i class="arc" style="border-top-left-radius: ${st.px}px"></i>` : k.family === 'type' ? `<span class="aa" style="font-size: ${Math.min(st.px, 40)}px">Aa</span>` : `<i class="bar" style="width: ${Math.min(st.px, 160)}px"></i>`) : ''}</span>`).join('')}</div>`
           : `<p class="more">${sys.scales.length} scales kept as they are.</p>`}
+        ${sys.numbering ? `<p class="aliases">${esc(sys.numbering)}</p>` : ''}
         ${sys.aliases.length || sys.renames.length ? `<p class="aliases">${sys.aliases.length ? `${sys.aliases.length} old ${sys.aliases.length === 1 ? 'name points' : 'names point'} at it, e.g. <code>${esc(sys.aliases[0].from)}</code> → <code>${esc(sys.aliases[0].to)}</code>. ` : ''}${sys.renames.length ? `${sys.renames.length} ${sys.renames.length === 1 ? 'token is' : 'tokens are'} renamed, e.g. <code>${esc(sys.renames[0].from)}</code> → <code>${esc(sys.renames[0].to)}</code>.` : ''}</p>` : ''}</div>`;
     }).join('') + `<div class="copy">${post ? button('Write it to your files', { attrs: 'data-write' }) : ''}${button('Copy the CSS', { cls: post ? 'sm quiet' : 'sm', attrs: 'data-copy' })}<span data-copied></span></div>`;
     const write = el.querySelector('[data-write]');

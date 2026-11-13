@@ -2514,6 +2514,15 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   check on it still 100% on tokens; Undo put the file back byte for byte. Fixed on the way: added steps landed in
   reverse order; a Tailwind name (`--radius-*`) was asked about as a guess. Not tried on the real site: there it
   would edit `../overlay/src/tokens.css` and the homepage app's foundations.
+- **Then numbering (same day; owner: "Yes, numbering").** A merged scale mixed names by order with names by size
+  (`--spacing-8` was 24px beside `--spacing-32`). Step 3 now asks how a length kind's steps are numbered, when its names
+  mix the two or its scales are merged: by size (spacing in 4px units, Tailwind's way: `--spacing-4` is 16px; corners
+  and type by pixels), in order (1, 2, 3), or keep the names; each with its cost in one line (a step added later fits
+  between by size, renames everything after it in order). Renumbering applies only under a new name for the kind,
+  since renumbering a scale in place collides with its own names; step 4 says so until a new name is chosen. Proof on
+  the probe: keep `--space-*`, round, by size, `--spacing-*` wrote `--spacing-1/2/3/4/6/8` for 4 to 32px with both old
+  scales pointing at it; check still 100%. Fixed on the way: step 4 would have written a whole type style as its size
+  alone (`--t-body: 16px`), breaking every `font: var(--t-body)`; a step now keeps its own value unless rounded.
 - **Open on the four steps:**  colour has no roles map (29 role
   scales show as swatch strips); steps that came from a dropped scale are named by their size (`--spacing-32`)
   beside inherited names (`--spacing-8` is 24px), a mixed numbering a naming choice should settle.
