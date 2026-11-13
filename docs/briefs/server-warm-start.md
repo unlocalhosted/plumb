@@ -1,6 +1,6 @@
 # Warm start: the server answers from what it knew, then checks itself
 
-Status: signed off by the owner, 2026-11-13. Layer 0 (measuring) is done except one item: see **Measured**. Nothing is built.
+Status: signed off by the owner, 2026-11-13. Layer 0 (measuring) is done: see **Measured**. Nothing is built.
 Stands on [engine-scaling.md](engine-scaling.md), "The cold start".
 
 ## Measured (2026-11-13, layer 0)
@@ -10,7 +10,7 @@ On the laptop, which was short of memory throughout (5.9 of 7.2 GB of swap in us
 | | crafting-ui (622 source files) | algorecall (2,411 files with something in them) |
 |---|---|---|
 | Cold start today | 4.8–5.7 s | 41–44 s |
-| **Two cold starts, same inputs: reading tables equal?** | **Yes, byte for byte** (16.1 MB each, same hash) | **Not run**: needs two 2 GB starts, and the laptop was swapping |
+| **Two cold starts, same inputs: reading tables equal?** | **Yes, byte for byte** (16.1 MB each, same hash) | **Yes, byte for byte** (254.6 MB each, same hash), run on vm-agent |
 | Checking the receipt (the check's own validation) | 0.25 s | 0.9 s |
 | Reading table, as plain objects | 16.1 MB (13.5 MB packed) | 257 MB (195 MB packed) |
 | Loading it | 0.04 s, 30 MB | 0.72 s, 329 MB |
@@ -25,14 +25,15 @@ What it says:
    of its 304,350 declarations only 32,797 are distinct once their place is set aside: nine in ten are the same
    declaration at another place. Stored once and pointed at, with each of 2,414 file paths stored once, it should
    be a few tens of MB. That is rule 4 of the data-oriented rules, and here it is not optional.
-4. **Equality holds where it could be tested.** crafting-ui's two cold starts were identical to the byte, so the
-   analysis has no timing-dependent order on that app. algorecall is ten times the size and is the one that
-   matters; it is not proven.
+4. **Equality holds on both apps.** Two cold starts on the same inputs gave tables identical to the byte: 16.1 MB on
+   crafting-ui, 254.6 MB on algorecall (3,663 files asked, 304,400 declarations). The analysis has no order that
+   depends on timing, so the self-check in 3.5 will not cry wolf for that reason.
 5. **crafting-ui gains little** (5 s cold). This is for large projects.
 
-**Left of layer 0:** algorecall's two cold starts compared. It needs about 2 GB twice on a machine that is not
-swapping: this laptop when it is free, or vm-agent with a copy of the app and its dependencies (vm-agent has
-plumber's CI checkout and 12 GB free, but only algorecall's infra folder, not the app).
+**Layer 0 is complete.** algorecall's run was done on vm-agent from a copy of the working tree (uncommitted
+changes included) with its dependencies installed there; the copy was removed afterwards. On that slower machine
+one cold start that also answers every file's places took 120–135 s and 5.1–5.5 GB, most of the memory being the
+255 MB table held twice by the measuring script.
 
 ## 1. What we are doing
 
@@ -133,7 +134,7 @@ One layer at a time, each seen on algorecall and crafting-ui, each timed. No tes
 
 | # | Layer | What can be seen |
 |---|---|---|
-| 0 | Measure, build nothing | How long the receipt check takes on algorecall; the reading table's size and load time; the memory of a second worker. And the proof the rest stands on: a cold server's reading table equals one rebuilt from a second cold start, byte for byte, on both apps |
+| 0 | **Done.** Measure, build nothing | How long the receipt check takes on algorecall; the reading table's size and load time; the memory of a second worker. And the proof the rest stands on: a cold server's reading table equals one rebuilt from a second cold start, byte for byte, on both apps |
 | 1 | Keep: write the table and receipt after a full analysis, in idle time | The files on disk; their size and write time in the server's health |
 | 2 | Check only: on start, load and validate the kept table but do not answer from it; compare when the fresh analysis lands | A line per start: matched or not, and what differed. Left running through normal work for a few days: the evidence before any answer is trusted |
 | 3 | Answer from it: the kept state, the light worker, writes waiting | After a restart with nothing changed, the overlay draws in seconds |

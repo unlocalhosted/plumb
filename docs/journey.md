@@ -966,7 +966,7 @@
 - **How we found it:** two cold starts of plumber's server on crafting-ui, the reading tables compared byte for byte; on algorecall, the check's own receipt validation timed, and the reading table built from its kept result and weighed.
 - **The system behind it:** the design stands on one claim, that the same inputs always give the same table. If the analysis had any order that depends on timing, the self-check would cry wolf.
 - **What we found:** on crafting-ui the two tables are identical to the byte. On algorecall checking the receipt takes 0.9 s and loading the table 0.7 s, against a 41 s cold start, so the target of 8 s was timid. But as plain objects the table is 257 MB; nine in ten of its 304,350 declarations are the same declaration at another place, so it has to be stored as tables.
-- **The fix and the proof:** none built. Not done: algorecall's own two cold starts compared. They need 2 GB twice and the laptop was swapping (5.9 of 7.2 GB of swap used). Numbers in [server-warm-start.md](briefs/server-warm-start.md).
+- **The fix and the proof:** none built. algorecall's own two cold starts needed 2 GB twice and the laptop was swapping (5.9 of 7.2 GB of swap used), so the owner had the app copied to vm-agent: there the two tables were identical to the byte too (254.6 MB each, same hash). The copy was removed afterwards. Numbers in [server-warm-start.md](briefs/server-warm-start.md).
 - **Media hooks:** none yet.
 
 ## Open gaps
