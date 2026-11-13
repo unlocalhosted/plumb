@@ -81,7 +81,9 @@ export const classesOf = (el) => VIRTUAL.get(el) ?? el.getAttribute('class') ?? 
 // changes the class this returns, so every other class stays as written. Side and corner forms are excluded by `not`.
 export function utility(el, prefix, { not } = {}) {
   const list = classesOf(el).split(/\s+/).filter(Boolean);
-  for (const p of [...prefixesInForce(list, activeVariants(el))].reverse()) {
+  // an element written with no variants at all (most are): the base is the only class there is to show
+  const order = list.some((c) => c.includes(':')) ? [...prefixesInForce(list, activeVariants(el))].reverse() : [''];
+  for (const p of order) {
     for (const c of list) {
       const v = splitVariant(c);
       if (v.prefix !== p) continue;

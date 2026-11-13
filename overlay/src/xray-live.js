@@ -471,12 +471,12 @@ export function mountXray(o) {
   // ── a re-render: the changes find the new elements by place and show on them again ──
   const reapply = () => {
     for (const [k, m] of changes) { const el = elOf(k); if (el) for (const [prop, { value }] of m) if (el.style.getPropertyValue(prop) !== value) el.style.setProperty(prop, value); }
+    // redrawn only when the element shown was replaced (a live page changes itself all the time; the rest is the same)
     if (shown && !shown.isConnected) { const again = shownKey && elOf(shownKey); if (pinned === shown) pinned = again; shown = null; if (inHand) { inHand = null; hand.innerHTML = ''; } draw(again ?? null); }
-    else if (shown) { lastCard = ''; draw(shown); }
   };
   let queued = 0;
   const isPage = o.isPage ?? (() => true);
-  const mo = new MutationObserver((list) => { if (changes.size || shown) if (list.some((r) => r.type === 'childList' && !C.contains(r.target) && isPage(r))) { clearTimeout(queued); queued = setTimeout(reapply, 0); } });
+  const mo = new MutationObserver((list) => { if (changes.size || (shown && !shown.isConnected)) if (list.some((r) => r.type === 'childList' && !C.contains(r.target) && isPage(r))) { clearTimeout(queued); queued = setTimeout(reapply, 0); } });
   mo.observe(watch, { childList: true, subtree: true });
   off.push(() => mo.disconnect());
 
@@ -582,8 +582,11 @@ export function mountXray(o) {
     if (e.key === 'Enter' && shown) { e.preventDefault(); e.stopPropagation(); if (!sync()) startNote(); }
     else if (e.key === 'Escape' && (count() || pinned || C.querySelector(':scope > .xr-list'))) { e.preventDefault(); e.stopPropagation(); C.querySelector(':scope > .xr-list')?.remove(); if (!putBack() && pinned) { pinned = null; draw(null); } }
   }, true);
-  on(window, 'resize', () => shown && draw(shown));
-  on(window, 'scroll', () => shown && draw(shown), true);
+  // a scroll or a resize moves what's shown: drawn again once a frame at most
+  let frame = 0;
+  const follow = () => { if (frame || !shown) return; frame = requestAnimationFrame(() => { frame = 0; if (shown?.isConnected) draw(shown); }); };
+  on(window, 'resize', follow);
+  on(window, 'scroll', follow, true);
 
   return {
     get pending() { return count(); },
