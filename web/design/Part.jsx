@@ -23,6 +23,7 @@ const PAGE_CSS = `
 `;
 
 const LOAD = {
+  logo: () => import('./parts/logo.js'),
   identity: () => import('./parts/identity.js'),
   color: () => import('./parts/color.js'),
   type: () => import('./parts/type.js'),

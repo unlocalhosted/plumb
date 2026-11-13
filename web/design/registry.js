@@ -3,6 +3,8 @@
 // listed so the whole system is in view and nothing is drawn without its turn. 
 export const GROUPS = [
   ['Foundations', [
+    { id: 'logo', hue: 'pink', toy: 'corner', name: 'Logo', says: 'A solid P inside a drawn R. How it is built, its rules, sizes, colours and surfaces.', ready: true,
+      lede: 'The mark is a solid P with an R drawn around it in plumber’s own line. This is its sheet: how it is built, the four rules that keep it one mark, the drawing each size gets, and how it sits on real surfaces.' },
     { id: 'identity', hue: 'lilac', toy: 'ratio', name: 'Identity', says: 'What makes a raised thing a delight, taken apart: soft blocks, and the face.', ready: true,
       lede: 'The raised key and the rounded face are borrowed: a hundred playful products look like this. The icons are ours. Here is what replaced them: soft blocks, rebuilt from where the delight comes from, and a face with its own hand. Point at each and press.' },
     { id: 'color', hue: 'pink', toy: 'fill', name: 'Colour', says: 'Six hues with one meaning each, the neutrals, the roles. Tables read from the token file.', ready: true,

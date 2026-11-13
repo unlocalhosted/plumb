@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>React Plumber · the mark under stress</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400..700&display=swap">
+<style>
+  /* The mark (docs/design/comps/logo-r.html): a solid P inside a drawn R, put on the surfaces a brand has to live on,
+     to see where it holds and where it breaks. Detail drops away with size; the levels are listed at mark() below. */
+  :root { --ink: #1d1b17; --ink-2: #6b665c; --desk: #f6f5f2; --line: #e3e0d9; --guard: #2f86dc; }
+  body { margin: 0; padding: 40px 32px 80px; background: var(--desk); color: var(--ink); font: 400 14px/20px "Instrument Sans", system-ui, sans-serif; }
+  main { max-width: 1040px; margin: 0 auto; display: grid; gap: 44px; }
+  h1 { font: 600 22px/28px "Instrument Sans"; margin: 0 0 4px; } h2 { font: 600 14px/20px "Instrument Sans"; margin: 0 0 4px; }
+  p { margin: 0; color: var(--ink-2); max-width: 70ch; }
+  .row { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 14px; align-items: stretch; }
+  .tile { border-radius: 14px; padding: 20px; display: flex; gap: 22px; align-items: flex-end; background: #fff; box-shadow: inset 0 0 0 1px var(--line); }
+  .tile.dark { background: #16151a; box-shadow: none; color: #f3f1ec; }
+  .tile.c { align-items: center; justify-content: center; }
+  .cell { display: grid; justify-items: center; gap: 8px; } .cell small { font: 500 11px/14px ui-monospace, Menlo, monospace; color: var(--ink-2); } .dark .cell small { color: #9a968c; }
+  svg { display: block; overflow: visible; }
+  .icon { width: 96px; height: 96px; border-radius: 22px; display: grid; place-items: center; }
+  .avatar { width: 72px; height: 72px; border-radius: 50%; display: grid; place-items: center; }
+  .lock { display: flex; align-items: center; gap: .42em; font: 650 28px/1 "Instrument Sans"; letter-spacing: -.015em; }
+  .tab { display: flex; align-items: center; gap: 8px; padding: 7px 14px 7px 10px; border-radius: 9px 9px 0 0; font: 500 12px/16px system-ui; width: 190px; }
+  .bar { padding: 8px 8px 0; border-radius: 10px; display: flex; }
+  .busy { background: linear-gradient(120deg, #ffd166, #ef476f 35%, #118ab2 70%, #06d6a0); }
+  .grid { background-color: #fff; background-image: linear-gradient(#d9d6cf 1px, transparent 1px), linear-gradient(90deg, #d9d6cf 1px, transparent 1px); background-size: 12px 12px; }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute"><defs>
+  <linearGradient id="stem" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff7ac0"/><stop offset=".55" stop-color="#f24a9f"/><stop offset="1" stop-color="#d0287f"/></linearGradient>
+  <linearGradient id="bowl" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9a7dff"/><stop offset=".55" stop-color="#7356f0"/><stop offset="1" stop-color="#5232d4"/></linearGradient>
+  <clipPath id="leg-s" clipPathUnits="userSpaceOnUse"><path d="M73 79A23 23 0 0 1 96 102H67A4 4 0 0 1 63 98V83A4 4 0 0 1 67 79Z"/></clipPath>
+</defs></svg>
+<main id="main"></main>
+<script>
+const STEM = 'M48 18H53A5 5 0 0 1 58 23V92A10 10 0 0 1 48 102H34A10 10 0 0 1 24 92V42A24 24 0 0 1 48 18Z';
+const BOWL = 'M67 18H68A28 28 0 0 1 96 46V46A28 28 0 0 1 68 74H67A5 5 0 0 1 62 69V23A5 5 0 0 1 67 18Z';
+// under 40px: the gaps opened (4 to 7 between stem and bowl, 4 to 5 above the leg) so they do not close up
+const STEM_S = 'M48 18H51A5 5 0 0 1 56 23V92A10 10 0 0 1 46 102H34A10 10 0 0 1 24 92V42A24 24 0 0 1 48 18Z';
+const BOWL_S = 'M68 18A28 28 0 0 1 96 46A28 28 0 0 1 68 74A5 5 0 0 1 63 69V23A5 5 0 0 1 68 18Z';
+const QUARTER_S = 'M73 79A23 23 0 0 1 96 102H67A4 4 0 0 1 63 98V83A4 4 0 0 1 67 79Z';
+const QUARTER = 'M72 78A24 24 0 0 1 96 102H67A5 5 0 0 1 62 97V83A5 5 0 0 1 67 78Z';
+const TREE = [[66, 83], [71.5, 89], [77, 95]], JOINTS = 'M68 87V90A1 1 0 0 0 69 91H71.5M73.5 93V96A1 1 0 0 0 74.5 97H77';
+// Detail drops away as the mark shrinks; the rule never changes: the P is solid, the R's leg is only drawn.
+//   hero  (level 3): guardrails, points, the ghost leg, the DOM tree inside it
+//   large (level 2, 96px and up): the ghost leg dashed, the DOM tree inside it
+//   mid   (level 1, 40 to 95px): the ghost leg as one plain outline, a heavier line and more tint so it holds beside the P
+//   small (level 0, under 40px): wider gaps, and the leg still there (the owner, 2026-11-13: without it the mark is
+//     ambiguous): its line drawn inside its edge so the gaps stay open, with enough tint to hold at 16px
+// mark({ h: height in px, level: force a level, mono: one colour, dark: on a dark surface })
+// The leg's colour (owner's choice, 2026-11-13, after trying violet): plumber's tool blue everywhere, the same as the
+// hero's guardrails. It keeps the leg apart from the P, which is what makes it a P inside an R
+function mark({ h = 64, level = null, mono = null, dark = false } = {}) {
+  const L = level ?? (h >= 96 ? 2 : h >= 40 ? 1 : 0);
+  const a = mono || 'url(#stem)', b = mono || 'url(#bowl)', lc = mono || (dark ? '#6db0f5' : '#2f86dc');
+  if (L === 0) return `<svg viewBox="22 16 76 88" height="${h}" width="${(h * 76 / 88).toFixed(1)}"><path d="${STEM_S}" fill="${a}"/><path d="${BOWL_S}" fill="${b}"/><path d="${QUARTER_S}" fill="${lc}" fill-opacity=".34" stroke="${lc}" stroke-width="${Math.min(9, 2 * 1.1 * 88 / h).toFixed(2)}" clip-path="url(#leg-s)"/></svg>`;
+  const u = L === 3 ? 120 / h : 88 / h;                       // user units per px
+  const sw = L === 3 ? .6 : L === 1 ? Math.min(3, Math.max(1, 1.7 * u)) : Math.min(2.4, Math.max(.8, 1.2 * u)); // the leg's line: never under about 1.2px
+  const dash = L >= 2 ? ` stroke-dasharray="${(L === 3 ? 1.2 : sw * 1.7).toFixed(2)} ${(L === 3 ? 1.2 : sw * 1.5).toFixed(2)}"` : '';
+  const nodeFill = mono ? 'none' : dark ? '#16151a' : '#fff', tw = L === 3 ? .42 : Math.max(.5, .9 * u);
+  const tree = L >= 2 ? `<path d="${JOINTS}" fill="none" stroke="${lc}" stroke-width="${tw.toFixed(2)}"/>` + TREE.map(([x, y]) => `<rect x="${x}" y="${y}" width="10" height="4" rx="1.4" fill="${nodeFill}" stroke="${lc}" stroke-width="${tw.toFixed(2)}"/>`).join('') : '';
+  const leg = `<path d="${QUARTER}" fill="${lc}" fill-opacity="${L === 1 ? (mono ? .22 : .2) : .1}" stroke="${lc}" stroke-width="${sw.toFixed(2)}" stroke-linejoin="round"${dash}/>${tree}`;
+  const body = `<path d="${STEM}" fill="${a}"/><path d="${BOWL}" fill="${b}"/>${leg}`;
+  if (L < 3) return `<svg viewBox="22 16 76 88" height="${h}" width="${(h * 76 / 88).toFixed(1)}">${body}</svg>`;
+  const pts = [[48, 18], [58, 92], [48, 102], [34, 102], [24, 92], [24, 42], [68, 18], [96, 46], [68, 74], [72, 78], [96, 102]];
+  return `<svg viewBox="0 0 120 120" height="${h}" width="${h}">
+    <g fill="none" stroke="${lc}" stroke-width=".4" stroke-dasharray="1.2 1.8" stroke-linecap="round" opacity=".85"><path d="M6 18H114M6 102H114M24 2V118M96 2V118"/></g>
+    <path fill="none" stroke="${lc}" stroke-width=".5" stroke-linecap="round" d="M22.6 18H25.4M24 16.6V19.4M94.6 18H97.4M96 16.6V19.4M22.6 102H25.4M24 100.6V103.4M94.6 102H97.4M96 100.6V103.4"/>
+    ${body}
+    ${pts.map(([x, y]) => `<rect x="${x - 1.1}" y="${y - 1.1}" width="2.2" height="2.2" rx=".55" fill="#fff" stroke="${lc}" stroke-width=".42"/>`).join('')}</svg>`;
+}
+const cell = (svg, label) => `<div class="cell">${svg}<small>${label}</small></div>`;
+const sizes = (dark) => [256, 128, 96, 64, 48, 40, 32, 24, 16].map((h) => cell(mark({ h, dark }), h + 'px')).join('');
+const levels = (dark) => [[2, 'large: 96px and up'], [1, 'mid: 40 to 95px'], [0, 'small: under 40px']].map(([level, label]) => cell(mark({ h: 150, level, dark }), label)).join('');
+const tabs = () => ['#e9e6df,#fff,#1d1b17', '#0f0e12,#26242b,#f3f1ec'].map((t, i) => { const [bar, tab, ink] = t.split(','); return `<div class="bar" style="background:${bar}"><div class="tab" style="background:${tab};color:${ink}">${mark({ h: 16, dark: i === 1 })}React Plumber</div></div>`; }).join('');
+const lock = (h, opts = {}) => `<div class="lock" style="font-size:${h}px">${mark({ h: h * 1.3, ...opts })}<span>React Plumber</span></div>`;
+const S = (title, note, html) => `<section><h2>${title}</h2><p>${note}</p>${html}</section>`;
+document.getElementById('main').innerHTML = `
+  <header><h1>The mark under stress</h1><p>A solid P inside a drawn R, on the surfaces a brand has to live on. The P is always solid and the R's leg is always only drawn. Detail drops away as the mark gets smaller: first the DOM tree, then the dashes. The leg itself always stays.</p></header>
+  ${S('1 · The hero, with its guardrails', 'Only for big, quiet places: a homepage, a film title, a README header.', `<div class="row"><div class="tile c">${mark({ level: 3, h: 300 })}</div><div class="tile dark c">${mark({ level: 3, h: 300, dark: true })}</div></div>`)}
+  ${S('2 · The three drawings, at one size', 'What each size range gets, blown up so the difference is plain.', `<div class="row"><div class="tile">${levels()}</div><div class="tile dark">${levels(true)}</div></div>`)}
+  ${S('3 · Getting smaller', 'Each size picks its own drawing. Watch where the R stops reading.', `<div class="row"><div class="tile">${sizes()}</div></div><div class="row"><div class="tile dark">${sizes(true)}</div></div>`)}
+  ${S('4 · Browser tab', 'The hardest surface: 16px beside a title. The leg stays, as a tinted shape with a drawn edge.', `<div class="row">${tabs()}</div>`)}
+  ${S('5 · App icon and avatar', 'A rounded square and a circle, on white, ink, and the brand colours.', `<div class="row"><div class="tile" style="gap:16px;align-items:center">
+      ${[['#fff', null, 'inset 0 0 0 1px #e3e0d9'], ['#16151a', null, 'none'], ['linear-gradient(#ff7ac0,#d0287f)', '#fff', 'none'], ['linear-gradient(#9a7dff,#5232d4)', '#fff', 'none'], ['#2f86dc', '#fff', 'none']].map(([bg, mono, sh], i) => `<div class="icon" style="background:${bg};box-shadow:${sh}">${mark({ h: 58, mono, dark: i === 1 })}</div>`).join('')}
+      ${[['#fff', null, 'inset 0 0 0 1px #e3e0d9'], ['#16151a', null, 'none'], ['#f24a9f', '#fff', 'none']].map(([bg, mono, sh], i) => `<div class="avatar" style="background:${bg};box-shadow:${sh}">${mark({ h: 40, mono, dark: i === 1 })}</div>`).join('')}
+    </div></div>`)}
+  ${S('6 · With the name', 'Mark and name on one line, large and small, light and dark.', `<div class="row"><div class="tile" style="flex-direction:column;align-items:flex-start">${lock(40)}${lock(22)}${lock(14)}</div><div class="tile dark" style="flex-direction:column;align-items:flex-start">${lock(40, { dark: true })}${lock(22, { dark: true })}${lock(14, { dark: true })}</div></div>`)}
+  ${S('7 · One colour', 'When colour is not available: print, a stamp, a footer, an embossed sticker.', `<div class="row"><div class="tile">${[128, 48, 16].map((h) => cell(mark({ h, mono: '#1d1b17' }), 'ink ' + h)).join('')}</div><div class="tile dark">${[128, 48, 16].map((h) => cell(mark({ h, mono: '#fff' }), 'white ' + h)).join('')}</div><div class="tile" style="background:#f24a9f;box-shadow:none">${cell(mark({ h: 128, mono: '#fff' }), '')}</div></div>`)}
+  ${S('8 · Unfriendly backgrounds', 'A loud gradient, a grid, a mid grey: places we do not control.', `<div class="row"><div class="tile busy c" style="box-shadow:none">${mark({ h: 96 })}</div><div class="tile busy c" style="box-shadow:none">${mark({ h: 96, mono: '#fff' })}</div><div class="tile grid c">${mark({ h: 96 })}</div><div class="tile c" style="background:#8a8a8a;box-shadow:none">${mark({ h: 96 })}</div><div class="tile c" style="background:#8a8a8a;box-shadow:none">${mark({ h: 96, mono: '#fff' })}</div></div>`)}`;
+</script>
+</body>
+</html>
