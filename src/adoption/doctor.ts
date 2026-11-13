@@ -4,7 +4,7 @@ import { stackLine } from '../onboarding/path.js';
 import type { Report } from '../report.js';
 import { cacheDirectory } from '../paths.js';
 import { existsSync } from 'node:fs';
-import { access, readdir, stat } from 'node:fs/promises';
+import { access, readdir, readFile, stat } from 'node:fs/promises';
 import { constants } from 'node:fs';
 import { dirname, join, relative, resolve } from 'node:path';
 import { loadConfig } from '../config.js';
@@ -82,6 +82,15 @@ export async function doctorVerbose(root: string, configPath?: string): Promise<
     await access(parent, constants.W_OK);
     line('Cache', true, `${cache}, ${count(bytes, 'byte')}${existsSync(cache) ? '' : ', not created'}`, 'No change needed.');
   } catch (error) { line('Cache', false, `${cache}: ${userMessage(error)}`, 'Set PLUMBER_CACHE_DIR to a writable directory.'); }
+  // The warm start's check (docs/briefs/server-warm-start.md, layer 2): each dev-server start holds the analysis it
+  // kept against a fresh one and writes one line. Nothing is answered from the kept one yet, so a difference never blocks.
+  try {
+    const starts = (await readFile(join(cache, 'kept', 'warm.jsonl'), 'utf8')).split('\n').filter(Boolean).map(text => { try { return JSON.parse(text) as { at?: string; receipt?: string; matched?: boolean | null }; } catch { return {}; } });
+    const compared = starts.filter(start => typeof start.matched === 'boolean'), differed = compared.filter(start => start.matched === false);
+    const last = differed.at(-1)?.at;
+    line('Start-up', !differed.length, `${count(starts.length, 'start')}, ${compared.length} compared, ${differed.length} differed${last ? `, last ${last.slice(0, 10)}` : ''}`,
+      differed.length ? 'Nothing is answered from the kept analysis yet. Report this with .plumber/cache/kept/warm.jsonl.' : 'No change needed.', false);
+  } catch { line('Start-up', true, 'no start checked yet', 'No change needed.'); }
   const ready = await readiness({ root, ...(configPath === undefined ? {} : { config: configPath }), ...(checked ? { report: async () => checked! } : {}) });
   ok &&= !blocking(ready);
   // One row per fact: value, then how it is known and the first evidence line (R8).

@@ -139,7 +139,9 @@ What this is not yet:
 - **The check's full rule.** The receipt compares files and directory listings. It still does not record what each
   import resolved to. A new file that changes which module an import finds is caught only if it appears in a
   directory the server lists.
-- **A line in `plumber doctor`.** The result is in the server's health and in the log; doctor does not say it yet.
+- **A line in `plumber doctor`.** Done 2026-11-13: `plumber doctor --verbose` has a Start-up row (starts checked,
+  how many were compared with a fresh analysis, how many differed). A difference never fails doctor, since nothing
+  is answered from the kept table yet.
 - **Tested.** Four server test files nearest the change pass (27 of 27, 1 skipped). No test of the check itself.
 
 Small things: the typed columns made algorecall's table 24.7 MB rather than 20.9 MB; the longest slice while
