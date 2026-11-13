@@ -6,6 +6,7 @@ import { projectSpec } from '../craft-spec.js';
 import type { CheckOptions } from '../index.js';
 import type { LoadedConfig } from '../config.js';
 import type { Report } from '../report.js';
+import { drawn } from '../report.js';
 import { finishMessages } from '../messages.js';
 import { causesOf } from '../causes.js';
 import { applyLedger } from '../ledger/check.js';
@@ -339,7 +340,7 @@ async function dispatch(method: string, params: Record<string, unknown>): Promis
   if (method === 'places') {
     const files = params.files as string[], view = await report();
     return { revision: params.revision, files: files.map(file => ({ file, hash: state.sourceHash(file) ?? null,
-      findings: view.findings.filter(f => !f.rule.startsWith('config/') && f.sites.some(s => s.file === file)).map(f => ({ ...f, sites: f.sites.filter(s => s.file === file), ...(f.occurrences ? { occurrences: f.occurrences.filter(d => d.site.file === file) } : {}) })),
+      findings: view.findings.filter(f => !f.rule.startsWith('config/') && f.sites.some(s => s.file === file)).map(f => ({ ...drawn(f), sites: f.sites.filter(s => s.file === file), ...(f.occurrences ? { occurrences: f.occurrences.filter(d => d.site.file === file) } : {}) })),
       declarations: view.declarations.filter(d => d.site.file === file) })) };
   }
   if (method === 'health') return { status: 'ready', root: options.root, revision, pid: process.pid, rss: process.memoryUsage().rss, caches: state.caches, work: { fullReports, fullIndexes, localAnalyses }, ...(environment('PROFILE') === '1' ? { profile: performance.getEntriesByType('measure').map(p => [p.name, p.duration]) } : {}) };

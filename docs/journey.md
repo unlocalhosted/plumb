@@ -843,10 +843,19 @@
 - **The fix and the proof:** none yet; this entry is the finding. A correction too: the engine fix's "2.1–3.1 s" came from runs with 9–10 hand-overs of the page; this run had 26 and the engine took 7.5 s. Numbers in [engine-scaling.md](briefs/engine-scaling.md).
 - **Media hooks:** a bar of the 52 s split into its four stages; the one 7.7 MB answer drawn as 98% grey, 2% used.
 
+## 811 MB for one page becomes 52 MB (2026-11-13)
+- **The itch:** plumber's server sent 811 MB to draw algorecall's problems list. The owner: "Yes, start there".
+- **How we found it:** one answer taken apart by field: 98% was each finding's list of edits (every place in the project the same change could be made, 434 on average) and its ledger keys.
+- **The system behind it:** a finding was one object that carried everything anyone might ever want from it, and it was sent whole to whoever asked. Someone had already narrowed its places to the file asked about; the edits were missed.
+- **What we chose and why:** hot and cold apart. A page is sent what it draws. The edits were already asked for on their own when a fix is applied, so nothing in the overlay had to change. Tables (each file path once) come next for what is left.
+- **The fix and the proof:** 811 MB → 52 MB on algorecall; same 27–28 craft findings; 9,758 drift marks still drawn with their choices, and asking for one mark's edits returns it. The clock: 24 s on the like-for-like run against 30–52 s before, but that is one run; the first run after a restart was still 50 s. No test run, no fix applied by hand.
+- **Media hooks:** two bars, 811 and 52.
+
 ## Open gaps
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
 
 ## Shipped · 2026-W46
+- plumber's server sends a sixteenth of what it did to draw a big page (811 MB → 52 MB on a 16,000-element page): a finding's edits travel only when a fix is applied ([entry](#811-mb-for-one-page-becomes-52-mb-2026-11-13)).
 - plumber judges a big page about once per read instead of four to six times: on a 16,000-element page its engine takes 2.1–3.1 s where it took 3.7–5.8 s, with the same findings ([entry](#the-page-was-judged-six-times-a-read-now-about-once-2026-11-13)).
 - plumber catches a wrapping list spread by `justify-between`, whose short last line is flung to the edges, and offers `justify-start` with a gap; every check from the defensive-CSS tips is now built ([entry](#the-left-over-space-checks-second-form-a-list-flung-to-the-edges-2026-11-13)).
 - plumber now catches the last three defensive-CSS slips: a picture pulled tall by its row, a background photo that repeats, and a fixed column with no phone layout, each with the one class that fixes it ([entry](#the-last-three-checks-from-the-tips-a-stretched-picture-a-tiling-photo-a-fixed-column-2026-11-13)).

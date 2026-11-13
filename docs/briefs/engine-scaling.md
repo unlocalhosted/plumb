@@ -91,6 +91,27 @@ handed over 9–10 times. In this run it was handed over 26 times and the engine
 are kept, but page-wide rules and picking verdicts are paid on every hand-over. The fix holds; the number depends
 on how many hand-overs a run has, and that is what the next change removes.
 
+### After hot and cold were split (2026-11-13, rule 3)
+
+The server no longer puts a finding's edits and ledger keys in the two answers a page is drawn from. The overlay
+never read them from there: a fix has always asked for its edits on its own when it is applied.
+
+| algorecall, problems list | before | after |
+|---|---|---|
+| "Read these elements" answers | 528 MB | 46 MB |
+| "Places in the code" answers | 283 MB | 6 MB |
+| Both | 811 MB | 52 MB |
+| Whole read, wall clock | 30–52 s (five runs) | 24 s and 50 s (two runs) |
+| Craft findings | 27–28 | 27–28 |
+
+Checked after: 9,758 drift marks drawn with their choices; asking for one mark's edits returned the edit with its
+id. Not run: any test. Not done: an actual fix applied through the overlay by hand.
+
+The clock did not fall as the bytes did. The 50 s run was the first after a server restart and asked for everything
+about twice (66 answers instead of 16); the 24 s run is the like-for-like one, but it is one run. What is left in
+it: 889 single requests and the redraws (long tasks 14 s), which is rule 2, next. And 46 MB is still 5 KB an
+element; what fills it has not been looked at.
+
 Raw tables were printed to the session's scratch folder and are not kept; run the timer again rather than trust
 these to the millisecond.
 
@@ -250,7 +271,7 @@ Each is seen before the next. Nothing here needs the platform work; the platform
 | 2 | Judge the page once: throw away less (3.4), page-wide rules kept against the census (3.4) | **First part done** (see Measured): judgements from nothing 4 → 1.2–1.7 on algorecall, engine time 3.7–5.8 s → 2.1–3.1 s. Left: the census-value key, fewer hand-overs |
 | 3 | Dispatch (`on`, kind mask, index, refusal) | Calls per rule fall to about its hits; the 0.8 s falls by a measured amount |
 | 4 | Where the rest of algorecall's read goes | **Done** (see Measured): 811 MB of answers, 889 single requests, 20 redraws |
-| 4a | Hot and cold apart in the server's answers (rule 3), then tables (rule 4) | Bytes per read on algorecall: 811 MB → a measured number; the 17 s of waiting and parsing with it |
+| 4a | Hot and cold apart in the server's answers (rule 3), then tables (rule 4) | **Hot/cold done:** 811 MB → 52 MB. Tables next, for the 46 MB left |
 | 4c | One request for the batch, one report when it lands (rule 2) | Hand-overs per read 9–26 → a few; redraws 20 → a few; the 24 s with it |
 | 4b | Slices, nearest first | First marks appear in the same time on the big page as on a small one |
 | 5 | Command line: demand, record once, skip unchanged | Page loads per route before and after; a second run after a one-file change |

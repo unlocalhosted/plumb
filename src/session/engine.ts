@@ -11,6 +11,7 @@ import { EventEmitter } from 'node:events';
 import { glob, isDynamicPattern } from 'tinyglobby';
 import type { CheckOptions } from '../index.js';
 import type { Report } from '../report.js';
+import { drawn } from '../report.js';
 import type { TryOptions } from '../try.js';
 import { errorMessage, UsageError } from '../errors.js';
 import { ledgerCommand } from '../ledger/commands.js';
@@ -91,7 +92,8 @@ export interface PageEntry {
   stamp: string; tag: string; classes?: string;
   status: 'ready' | 'unplaced';
   file?: string; line?: number; column?: number; component?: string; usage?: true; outsideSource?: true;
-  /** the reading at that JSX, as GET site answers it */
+  /** the reading at that JSX, as GET site answers it, less what only an opened finding needs (report.ts drawn):
+   * its edits (asked for with `edits`) and its ledger keys */
   site?: Pick<SiteResult, 'declarations' | 'findings'>;
   /** the trace of the element's classes when the JSX declares none, as GET classes answers it */
   traced?: ClassesResult;
@@ -663,7 +665,7 @@ export class Session extends EventEmitter {
         const site = sites[i]!;
         if (!('value' in site)) { answers.set(key, { stamp: item.stamp, tag: item.tag, ...(item.classes !== undefined ? { classes: item.classes } : {}), status: 'unplaced' }); return; }
         const value = site.value as SiteResult;
-        const entry: PageEntry = { stamp: item.stamp, tag: item.tag, ...(item.classes !== undefined ? { classes: item.classes } : {}), status: 'ready', ...where, site: { declarations: value.declarations, findings: value.findings } };
+        const entry: PageEntry = { stamp: item.stamp, tag: item.tag, ...(item.classes !== undefined ? { classes: item.classes } : {}), status: 'ready', ...where, site: { declarations: value.declarations, findings: value.findings.map(drawn) } };
         if (item.classes && !value.declarations.length) { const trace = traces[traceAt++]!; if ('value' in trace) entry.traced = trace.value as ClassesResult; }
         answers.set(key, entry);
         const path = this.file(where.file), hash = this.hashes.get(path);

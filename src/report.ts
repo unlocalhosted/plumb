@@ -245,3 +245,11 @@ export function formatVerboseDetails(report: Report): string {
     ...report.notes.map(note => `note: ${note}`),
   ].join('\n') + '\n';
 }
+
+/** A finding as a page draws it: without what only one opened finding needs. Its edits name every place the same
+ * change could be made (hundreds, each with its file path) and are asked for on their own (`edits`); its ledger keys
+ * are the ledger's. Measured 2026-11-13: the two were 98% of what a page was sent (docs/briefs/engine-scaling.md). */
+export function drawn<F extends { edits?: unknown; ledgerKeys?: unknown }>(finding: F): Omit<F, 'edits' | 'ledgerKeys'> {
+  const { edits: _edits, ledgerKeys: _keys, ...rest } = finding;
+  return rest;
+}
