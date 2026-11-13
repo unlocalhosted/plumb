@@ -37,6 +37,7 @@ const LOAD = {
   pills: () => import('./parts/pills.js'),
   inputs: () => import('./parts/inputs.js'),
   hover: () => import('./parts/hover.js'),
+  xray: () => import('./parts/xray.js'),
 };
 
 export function Part({ id, css }) {

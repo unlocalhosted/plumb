@@ -33,6 +33,8 @@ export const GROUPS = [
       lede: 'When a value is hard-coded, the element gets the control a visual editor gives that property, made small, snapping to your tokens. One property at a time, each on a real piece of UI.' },
     { id: 'hover', hue: 'butter', toy: 'tooltip', name: 'Words on hover', says: 'The name tag, the hint, the key: what appears when you point, live on a real card.', ready: true,
       lede: 'Three kinds of words appear when you point: the name tag says what something is and whether it’s right, the hint says what it becomes, the key says what to press. Point at the card.' },
+    { id: 'xray', hue: 'sky', toy: 'size', name: 'X-ray', says: 'Point at anything and see what it is made of: its space, size, type, colour and source.', ready: true,
+      lede: 'Point at any part of someone’s card. Its space is drawn on it in the patterns, mint on the scale and coral off it, and a card beside it says the numbers. Prototype.' },
     { id: 'messages', hue: 'mint', toy: 'toast', name: 'Messages', says: 'The toast after a write, Undo, the history strip, a refusal.' },
     { id: 'surfaces', hue: 'butter', toy: 'card', name: 'Surfaces', says: 'Paper, cards, bars, the dock. Light and dark.' },
     { id: 'marks', hue: 'lilac', toy: 'gap', name: 'Marks on the page', says: 'What Blueprint draws on your app: the three patterns, heat, a place in hand.' },
