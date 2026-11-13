@@ -64,6 +64,9 @@
       <!-- plumber's selection handle, and the pill with the 4 it measured -->
       <g id="handle"><rect x="-2" y="-2" width="4" height="4" rx=".9" fill="#fff" stroke="#2f86dc" stroke-width=".7"/></g>
       <g id="four"><rect x="-6" y="-4.2" width="12" height="8.4" rx="3" fill="#2f86dc"/><text x="0" y="2.3" text-anchor="middle" font-family="ui-monospace, Menlo" font-size="6.4" font-weight="700" fill="#fff">4</text></g>
+      <!-- the construction's own pieces: a faint light hatch over the material, and the handle-points' small lift -->
+      <pattern id="hatch" width="1.1" height="4" patternUnits="userSpaceOnUse"><rect width=".24" height="4" fill="#fff"/></pattern>
+      <filter id="lift" x="-1" y="-1" width="3" height="3"><feDropShadow dx="0" dy=".25" stdDeviation=".3" flood-color="#1d1b17" flood-opacity=".25"/></filter>
     </defs>
     <!-- the guides, at rest on the mark's edges -->
     <path class="line l1"/><path class="line l2"/><path class="line l3"/>
@@ -84,6 +87,19 @@
 const STEM = 'M48 18H53A5 5 0 0 1 58 23V92A10 10 0 0 1 48 102H34A10 10 0 0 1 24 92V42A24 24 0 0 1 48 18Z';
 const BOWL = 'M67 18H68A28 28 0 0 1 96 46V46A28 28 0 0 1 68 74H67A5 5 0 0 1 62 69V23A5 5 0 0 1 67 18Z';
 document.getElementById('mark').innerHTML = `<path d="${STEM}" fill="url(#stem)"/><path d="${STEM}" fill="url(#lit)" style="mix-blend-mode:soft-light"/><path d="${BOWL}" fill="url(#bowl)"/><path d="${BOWL}" fill="url(#lit)" style="mix-blend-mode:soft-light"/>`;
+// the P's construction, drawn on top of its material (docs/design/comps/logo-construct.html): the outline in each part's
+// deep tone, the hatch, the curve handles as sky dots, and every on-curve point as plumber's selection handle. It lives
+// inside the mark, so it steps back with the P to the heart of the orbits and comes forward again.
+const POINTS = [[48, 18], [53, 18], [58, 23], [58, 92], [48, 102], [34, 102], [24, 92], [24, 42], [68, 18], [96, 46], [68, 74], [62, 69], [62, 23]];
+const K = 0.5523;
+const arc = (x1, y1, x2, y2, r, tx1, ty1, tx2, ty2) => (r <= 5 ? [] : [[[x1, y1], [x1 + tx1 * r * K, y1 + ty1 * r * K]], [[x2, y2], [x2 + tx2 * r * K, y2 + ty2 * r * K]]]);
+const HANDLES = [...arc(58, 92, 48, 102, 10, 0, 1, 1, 0), ...arc(34, 102, 24, 92, 10, -1, 0, 0, 1), ...arc(24, 42, 48, 18, 24, 0, -1, -1, 0), ...arc(68, 18, 96, 46, 28, 1, 0, 0, -1), ...arc(96, 46, 68, 74, 28, 0, 1, 1, 0)];
+document.getElementById('mark').insertAdjacentHTML('beforeend', `
+  <path d="${STEM}" fill="url(#hatch)" opacity=".22"/><path d="${BOWL}" fill="url(#hatch)" opacity=".22"/>
+  <path d="${STEM}" fill="none" stroke="#5a0d3c" stroke-width=".32"/><path d="${BOWL}" fill="none" stroke="#2b1a6b" stroke-width=".32"/>
+  <g stroke="#2f86dc" stroke-width=".24">${HANDLES.map(([a, b]) => `<path d="M${a[0]} ${a[1]}L${b[0].toFixed(2)} ${b[1].toFixed(2)}"/>`).join('')}</g>
+  ${HANDLES.map(([, b]) => `<circle cx="${b[0].toFixed(2)}" cy="${b[1].toFixed(2)}" r=".72" fill="#2f86dc" stroke="#fff" stroke-width=".38"/>`).join('')}
+  ${POINTS.map(([x, y]) => `<rect x="${x - 1.25}" y="${y - 1.25}" width="2.5" height="2.5" rx=".6" fill="#fff" stroke="#2f86dc" stroke-width=".42" filter="url(#lift)"/>`).join('')}`);
 const s = document.getElementById('s');
 const play = () => { s.classList.add('on'); setTimeout(() => s.classList.remove('on'), 4200); };
 document.getElementById('stage').addEventListener('click', play);
