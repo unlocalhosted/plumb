@@ -34,6 +34,7 @@ import { esc } from './choices.js';
 import { FIX } from './words.js';
 import { clearOf } from './geometry.js';
 import { Spacing, Layout, LAYOUT_CSS, freeze, fitCopy, groundOf } from './layoutcard.js';
+import { Size, SIZE_CSS } from './sizecard.js';
 import { lawsOf } from './laws.js';
 import { Tidy } from './tidycard.js'; // layer 3: Tidy this card // layer 2: Layout › and the spacing on the element
 import { placeOf, atPlace } from './stamp.js';
@@ -188,7 +189,7 @@ export const ELEMENT_CARD_CSS = `
   @media (prefers-reduced-motion: reduce) { .ec, .ec .body[data-in], .ec-strip { animation: none; } }
   /* one owner of the screen: while a card is open, Blueprint's pointing pills don't show over it or its bubble (N-11) */
   :host([data-card]) .bp .bp-hint { visibility: hidden; }
-` + LAYOUT_CSS;
+` + LAYOUT_CSS + SIZE_CSS;
 
 // one play of a motion: an entrance comes in; hover and press go to their state and back (a cursor arrives on a copy)
 function play(el, css, cursor) {
@@ -224,7 +225,7 @@ export class ElementCard {
   #writing = false; #wrong = null;
   #props = null;        // the element's props, read at its class site: that line's hash, and the spacing scale
   #site = null;         // where its classes are written: { file, line, column, hash, usage } or { refused }
-  #spacing; #layout; #tidy; #plan = null;
+  #spacing; #size; #layout; #tidy; #plan = null;
 
   // root: the overlay's shadow root; host: { apply(at, body, said) → Promise<result>, said(text, undo), problems() → n,
   // show(), closed(), elsewhere(el) → n, dark() → bool, why(el) → Promise<words | null>, release() }
@@ -237,10 +238,10 @@ export class ElementCard {
     this.#strip = Object.assign(document.createElement('div'), { className: 'ec-strip pl-light', hidden: true });
     this.#strip.setAttribute('role', 'listbox');
     root.append(this.#ring, this.#strip, this.#el, this.#caret);
-    const ours = (e) => e.composedPath().some((n) => n === this.#el || n === this.#strip || n.classList?.contains?.('fx') || n.classList?.contains?.('lay-line'));
+    const ours = (e) => e.composedPath().some((n) => n === this.#el || n === this.#strip || n.classList?.contains?.('fx') || n.classList?.contains?.('lay-line') || n.classList?.contains?.('sz-grip'));
     this.#spacing = new Spacing(root, {
       target: () => this.#target, name: (el) => el === this.#target ? this.name : componentOf(el) ?? el.localName,
-      scale: () => this.#scale(), held: () => !!this.#hand, ours,
+      scale: () => this.#scale(), held: () => !!this.#hand || !!this.#size?.active, ours,
       // a spacing change is a step of its own; it serves proximity (inside < between ≤ around)
       write: (edits, said) => this.#classWrite(edits, said, { step: W.steps.spacing, laws: lawsOf('hierarchy/S1') ?? [] }),
       locked: (el) => (el === this.#target ? this.#site?.refused ?? null : null),
@@ -248,6 +249,17 @@ export class ElementCard {
       refused: (text) => { if (text === this.#site?.refused) return; this.#wrong = text; this.#draw(); },
       avoid: () => [this.#el, this.#strip].filter((n) => !n.hidden).map((n) => n.getBoundingClientRect()).concat(this.#host.bar?.() ?? []),
       release: () => this.#host.release?.(),
+    });
+    // the size grips on the element: width and height dragged onto your theme's sizes
+    this.#size = new Size(root, {
+      target: () => this.#target, name: (el) => el === this.#target ? this.name : componentOf(el) ?? el.localName,
+      steps: (dim) => this.#props?.props?.find((p) => p.key === dim)?.steps ?? [],
+      write: (edits, said) => this.#classWrite(edits, said, { step: W.steps.size, laws: [] }),
+      locked: (el) => (el === this.#target ? this.#site?.refused ?? null : null),
+      mates: (el) => (el === this.#target && this.#site && !this.#site.refused ? this.#reach() : null),
+      refused: (text) => { this.#wrong = text; this.#draw(); },
+      avoid: () => [this.#el, this.#strip].filter((n) => !n.hidden).map((n) => n.getBoundingClientRect()).concat(this.#host.bar?.() ?? []),
+      moved: () => this.#place(),
     });
     this.#tidy = new Tidy({ target: () => this.#target, props: () => this.#props, name: (el) => componentOf(el) ?? el.localName });
     // held Space shows a tidied card as it was (before the glass takes Space for the page: this listener is older)
@@ -305,10 +317,11 @@ export class ElementCard {
     this.#draw();
     this.#spacing.on();
     await this.#read();
+    if (this.#target === el) this.#size.on();
   }
   close() {
     this.#seq++; this.#pseq++; // a read or a preview still out lands on a closed card: it is no one's now
-    this.#spacing.off();
+    this.#spacing.off(); this.#size.off();
     this.#reset();
     this.#target = null; this.#state = 'off'; this.#data = null;
     this.#el.hidden = this.#caret.hidden = this.#ring.hidden = true; this.#el.innerHTML = '';
@@ -335,6 +348,7 @@ export class ElementCard {
       this.#target = again;
     }
     await this.#read();
+    this.#size.follow();
   }
 
   async #read() {
@@ -890,7 +904,7 @@ export class ElementCard {
 
   // ── placement: texteditor.js's, unchanged ──
   // the page scrolled or resized: the card follows. Its own body scrolling is not the page moving
-  #follow = (e) => { if (e?.composedPath?.().includes(this.#el)) return; if (this.#target) requestAnimationFrame(() => { this.#place(); this.#layout.follow(); }); };
+  #follow = (e) => { if (e?.composedPath?.().includes(this.#el)) return; if (this.#target) requestAnimationFrame(() => { this.#place(); this.#layout.follow(); this.#size.follow(); }); };
   #place() {
     const el = this.#target;
     if (!el?.isConnected) return;
@@ -973,6 +987,7 @@ export class ElementCard {
     if (this.#hand) { if (k === 'Escape') this.#hand.cancel(); return true; }
     // a spacing change in hand on the element: Enter writes it, Esc puts it back
     if (this.#spacing.key(k)) return true;
+    if (this.#size.key(k)) return true;
     if (!this.#view) {
       const fields = this.#fieldsNow();
       if (k === 'ArrowUp' || k === 'ArrowDown') { this.#row = Math.max(0, Math.min(fields.length - 1, this.#row + (k === 'ArrowDown' ? 1 : -1))); this.#draw(); return true; }

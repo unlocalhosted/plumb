@@ -615,10 +615,16 @@ export const FIX = {
     fitAround: (between) => `Around: at least the gap between (${between}).`,
     fitInside: (between) => `Inside: at most the gap between (${between}).`,
     spaced: (name, what, px, mates) => `${name}: ${what} ${px}px${mates ? ` · ${mates + 1} places, one line of code` : ''}`,
+    // the size handles on the element (sizecard.js)
+    sizeGrip: { e: 'Drag to change the width', w: 'Drag to change the width', n: 'Drag to change the height', s: 'Drag to change the height', ne: 'Drag to change the width and height', nw: 'Drag to change the width and height', se: 'Drag to change the width and height', sw: 'Drag to change the width and height' },
+    sizeFixed: (dim) => `Its ${dim} is set by the layout around it, so a ${dim} class wouldn’t change it here.`,
+    sizeInStyle: (dim) => `Its ${dim} is set in the element’s own style, which a class can’t override. Change it in your code.`,
+    sized: (name, parts, mates) => `${name}: ${parts.join(', ')}${mates ? ` · ${mates + 1} places, one line of code` : ''}`,
+    sizeFree: 'hard-coded · let go of ⌥ to snap',
     // tidy this card (tidycard.js): the rules as sentences, never their ids
     // the step a write is in History's timeline: what the person did, in a word (history.js names the tick after it)
     steps: {
-      edit: 'Edit', shadow: 'Shadow', motion: 'Motion', layout: 'Layout', spacing: 'Spacing', tidy: 'Tidy', fix: 'Fix', styles: 'Text styles',
+      edit: 'Edit', shadow: 'Shadow', motion: 'Motion', layout: 'Layout', spacing: 'Spacing', size: 'Size', tidy: 'Tidy', fix: 'Fix', styles: 'Text styles',
       text: (key) => ({ 'font-size': 'Size', 'line-height': 'Leading', 'letter-spacing': 'Tracking', 'font-weight': 'Weight', 'text-transform': 'Case', color: 'Colour', 'font-family': 'Font' }[key] ?? 'Text'),
     },
     tidy: {

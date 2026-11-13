@@ -137,7 +137,7 @@ export function fitCopy(copy, el) {
   return copy;
 }
 // inline values put on an element and taken off exactly
-class Inline {
+export class Inline {
   #claims; // claims.js keeps what the page had
   constructor(level) { this.#claims = new Claims(level); }
   set(el, props) {

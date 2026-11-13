@@ -2067,7 +2067,30 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   on. The bento grid and its spotlight are gone.
 - **Checked:** at 1440×900 and 1280×720 the slide and its controls fit the screen; light and dark; no errors.
 
+### 30. A card you can resize by its edges, snapping to your sizes (2026-11-13)
+- **The itch:** in the element editor a selected card couldn't be resized. The owner: "I should see visual gutters to
+  easily change the height and width and I should be shown the scale across the page to see the sizes I can snap to".
+- **The system behind it:** the editor only edited what it could list (shadow, motion, layout, spacing). Size had no
+  control on the element, although plumber already reads the width and height steps from the theme.
+- **What we chose:** eight grips on the selected element (edges and corners), white knobs ringed in the instrument's
+  sky. Pressing one hides the editor panel and draws a ruler from the element across the page: a tick per size in
+  your theme (your named spacing, Tailwind's number ladder, the container sizes sm…7xl, full), your named ones
+  labelled first. The edge follows the hand; within 10px of a tick it snaps, the tick's hairline crosses the page and
+  the pill by the pointer turns sky with the class ("w-sm 384"); between ticks it is coral and names where it will
+  land. Letting go springs onto the nearest step and writes that class where the element's classes are written, one
+  change with Undo, the way a spacing drag writes. A centred element grows from its middle, so the pull is measured
+  once at the start and the edge stays under the hand; a size the layout decides is said, not tried.
+- **Dead end:** the first measurement read the old width: previews on this branch go through the shared claims
+  table at a level, and an unlevelled preview never showed.
+- **The fix and the proof:** on the overlay's demo page (Tailwind v4, plumber from this branch) a drag of the Sync
+  calendar card's right edge snapped to w-sm and wrote `w-sm` into App.jsx with no reload; a real mouse drag of its
+  bottom edge wrote `h-28` (112px). Both reset afterwards.
+- **Media hooks:** `docs/qa/resize/0-dragging-between-stops.jpg`, `1-dragging-snapped-w-sm.jpg`,
+  `2-landed-w-sm.jpg`, `3-height-h-28.jpg`; a short clip of a corner drag would show it best.
+
 ## Open gaps
+- Resizing: a size between your steps always lands on the nearest one; there is no way yet to keep an exact size as
+  a new token through the naming flow. The site's homepage is plain CSS, so its cards can't take a size class.
 - The overlay writes about 180 corners as numbers (radius tokens about 45 times), many off its own scale; 6px is
   its most-used gap; --pl-card-pad and --pl-card-gap are unused; the soft blocks' corners aren't tokens.
 - The text panel can't take a typed number, doesn't flag a style the words don't measure, and has no "fits here"
@@ -2104,6 +2127,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   Nothing finds a new one when it is written.
 
 ## Shipped · 2026-W46
+- In the element editor you can resize a selected element by its edges and corners: a ruler of your theme's sizes crosses the page, the edge snaps to them, and letting go writes the class, with Undo ([entry](#30-a-card-you-can-resize-by-its-edges-snapping-to-your-sizes-2026-11-13)).
 - plumber now catches the last three defensive-CSS slips: a picture pulled tall by its row, a background photo that repeats, and a fixed column with no phone layout, each with the one class that fixes it ([entry](#the-last-three-checks-from-the-tips-a-stretched-picture-a-tiling-photo-a-fixed-column-2026-11-13)).
 - The colour and icon clean-up passes are tested case by case through the panel and Apply, 14 tests ([entry](#the-colour-and-icon-passes-tested-the-way-a-person-meets-them-2026-11-12)).
 - The test suite no longer checks plumber's inner functions, only what a person or a caller can see; the behaviour left without a test is listed in the backlog ([entry](#tests-that-tested-the-code-not-the-behaviour-2026-11-12)).
