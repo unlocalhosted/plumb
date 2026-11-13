@@ -309,6 +309,12 @@ and none in `web/design/parts`.
 - **Open question for the owner:** move the design pages to JSX with classes on a theme Plumber can read (it would then
   check its own site, live), or teach Plumber to read plain CSS and CSS in strings against variable tokens (useful to
   every project that isn't all Tailwind, and much more work). Not decided.
+- **Probe, same day: plain CSS already works on the command line.** A four-file React project with `.css` files and
+  `:root` variable tokens got four right findings with fixes (`padding: 18px` → `var(--spacing-4)` or `-6`, a 9px
+  corner, a 15px size, `margin: 0 0 7px`). Two limits: tokens named `--space-*` were not seen as spacing until renamed
+  `--spacing-*` (the config's `decisions.<family>.from` may cover it; not tried), and the live overlay can't write a
+  fix into a `.css` file (journey: the homepage's cards "can't take a size class"). CSS in template strings is still
+  unread apart from a literal `<style>`.
 
 ### The command line
 
