@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>React Plumber · the P and its orbits, three compositions</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400..700&display=swap">
+<style>
+  /* The owner (2026-11-13), on the three-quadrant atom: "can't you see the dead space, so abrupt alignment at bottom and
+     at right … create 3 prototypes fixing this, increase the size of p, maybe move it bottom right, be creative and add
+     balance and composition". Three answers, each with no dead space and no chopped ends:
+     1 the bowl is the nucleus: a large P, a small atom spinning round its bowl, balancing the heavy stem
+     2 the P fills the open corner: the orbits top-left, the P large in the quadrant they leave; they vanish behind it
+     3 the app tile: a large P, the orbits running out to the tile's edges; the crop is the frame's, so every edge is clean
+     Marks: margin (pink dots), padding (a violet hatched ribbon), radius (a pink-to-violet line), in the P's own colours. */
+  :root { --ink: #1d1b17; --ink-2: #6b665c; --desk: #f6f5f2; --rule: rgb(29 27 23 / .09); }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--desk); color: var(--ink); font: 400 14px/20px "Instrument Sans", system-ui, sans-serif; }
+  h1 { margin: 28px 32px 4px; font: 600 20px/26px "Instrument Sans"; }
+  .grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; padding: 16px 32px 32px; }
+  .card { background: #fff; border-radius: 20px; box-shadow: 0 0 0 1px var(--rule), 0 12px 30px -22px rgb(0 0 0 / .3); overflow: hidden; }
+  .art { aspect-ratio: 1; display: grid; place-items: center; }
+  .txt { padding: 14px 18px 18px; border-top: 1px solid var(--rule); }
+  .txt b { display: block; font: 650 15px/20px "Instrument Sans"; } .txt span { color: var(--ink-2); font-size: 13px; }
+  svg { display: block; overflow: visible; width: 86%; height: auto; }
+</style>
+</head>
+<body>
+<h1>The P and its orbits: three compositions</h1>
+<div class="grid" id="grid"></div>
+<script>
+const STEM = 'M48 18H53A5 5 0 0 1 58 23V92A10 10 0 0 1 48 102H34A10 10 0 0 1 24 92V42A24 24 0 0 1 48 18Z';
+const BOWL = 'M67 18H68A28 28 0 0 1 96 46V46A28 28 0 0 1 68 74H67A5 5 0 0 1 62 69V23A5 5 0 0 1 67 18Z';
+const DEFS = `<defs>
+  <linearGradient id="stem" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff7ac0"/><stop offset=".55" stop-color="#f24a9f"/><stop offset="1" stop-color="#d0287f"/></linearGradient>
+  <linearGradient id="bowl" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9a7dff"/><stop offset=".55" stop-color="#7356f0"/><stop offset="1" stop-color="#5232d4"/></linearGradient>
+  <linearGradient id="lit" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".42"/><stop offset=".25" stop-color="#fff" stop-opacity="0"/></linearGradient>
+  <linearGradient id="pv" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="120" y2="120"><stop offset="0" stop-color="#f24a9f"/><stop offset="1" stop-color="#7356f0"/></linearGradient>
+  <pattern id="hatch" width="2.4" height="2.4" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="2.4" height="2.4" fill="#efeaff"/><rect width=".9" height="2.4" fill="#7356f0"/></pattern>
+</defs>`;
+// the P, placed: its centre on the grid at (cx, cy), at scale k
+const P = (cx, cy, k) => `<g transform="translate(${cx} ${cy}) scale(${k}) translate(-60 -60)"><path d="${STEM}" fill="url(#stem)"/><path d="${STEM}" fill="url(#lit)" style="mix-blend-mode:soft-light"/><path d="${BOWL}" fill="url(#bowl)"/><path d="${BOWL}" fill="url(#lit)" style="mix-blend-mode:soft-light"/></g>`;
+// one orbit: an ellipse round (cx, cy), at angle phi, drawn as one of plumber's box-model marks; `half` 'far' or 'near'
+// draws only that half (in the orbit's own frame, the near half is the lower one), so it can pass behind and before the P
+let uid = 0;
+function orbit(cx, cy, rx, ry, phi, mark, half, w = 1) {
+  const d = `M${cx - rx} ${cy}A${rx} ${ry} 0 1 0 ${cx + rx} ${cy}A${rx} ${ry} 0 1 0 ${cx - rx} ${cy}`;
+  const id = `c${uid++}`;
+  const clip = half ? `<clipPath id="${id}" clipPathUnits="userSpaceOnUse"><rect x="${cx - rx - 10}" y="${half === 'near' ? cy : cy - ry - 10}" width="${2 * rx + 20}" height="${ry + 10}"/></clipPath>` : '';
+  const body = {
+    margin: `<path d="${d}" fill="none" stroke="#f24a9f" stroke-width="${1.9 * w}" stroke-linecap="round" stroke-dasharray="0 ${3.1 * w}"/>`,
+    padding: `<path d="${d}" fill="none" stroke="url(#hatch)" stroke-width="${2.8 * w}"/><path d="M${cx - rx + 1.4 * w} ${cy}A${rx - 1.4 * w} ${ry - 1.4 * w} 0 1 0 ${cx + rx - 1.4 * w} ${cy}A${rx - 1.4 * w} ${ry - 1.4 * w} 0 1 0 ${cx - rx + 1.4 * w} ${cy}" fill="none" stroke="#7356f0" stroke-width=".45"/><path d="M${cx - rx - 1.4 * w} ${cy}A${rx + 1.4 * w} ${ry + 1.4 * w} 0 1 0 ${cx + rx + 1.4 * w} ${cy}A${rx + 1.4 * w} ${ry + 1.4 * w} 0 1 0 ${cx - rx - 1.4 * w} ${cy}" fill="none" stroke="#7356f0" stroke-width=".45"/>`,
+    radius: `<path d="${d}" fill="none" stroke="url(#pv)" stroke-width="${.95 * w}"/>`,
+  }[mark];
+  return `<g transform="rotate(${phi} ${cx} ${cy})">${clip}<g ${half ? `clip-path="url(#${id})"` : ''} ${half === 'far' ? 'opacity=".55"' : ''}>${body}</g></g>`;
+}
+const atom = (cx, cy, rx, ry, w, half) => [[0, 'margin'], [60, 'padding'], [120, 'radius']].map(([phi, m]) => orbit(cx, cy, rx, ry, phi, m, half, w)).join('');
+
+const COMPOSITIONS = [
+  ['The bowl is the nucleus', 'A large P; a small atom spins round its bowl, passing behind the stem and in front of the bowl. The light atom balances the heavy stem, and nothing floats in empty space.', () => {
+    const k = .92, pcx = 58, pcy = 62, ncx = pcx + (78 - 60) * k, ncy = pcy + (46 - 60) * k;  // the bowl's round centre, placed
+    return atom(ncx, ncy, 34, 11, .8, 'far') + P(pcx, pcy, k) + atom(ncx, ncy, 34, 11, .8, 'near');
+  }],
+  ['The P fills the open corner', 'The orbits turn top-left; the P, large, sits in the quadrant they leave, its corner tucked to their centre. One diagonal from the atom to the P, and the orbits vanish behind it instead of ending in a cut.', () => {
+    const ocx = 44, ocy = 44;
+    return atom(ocx, ocy, 40, 13.5, .9, 'far') + atom(ocx, ocy, 40, 13.5, .9, 'near') + P(72, 72, .7);
+  }],
+  ['The app tile', 'A soft tile holds a large P; the orbits pass behind it, larger than the tile, and run out to its edges, so the frame makes every cut. Ready as an app icon and an avatar.', () => {
+    const tile = 'M30 6H90C110 6 114 10 114 30V90C114 110 110 114 90 114H30C10 114 6 110 6 90V30C6 10 10 6 30 6Z';
+    return `<defs><clipPath id="tile"><path d="${tile}"/></clipPath><linearGradient id="tg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fbf9ff"/><stop offset="1" stop-color="#efeaff"/></linearGradient></defs>
+      <path d="${tile}" fill="url(#tg)"/><path d="${tile}" fill="none" stroke="rgb(115 86 240 / .14)" stroke-width=".6"/>
+      <g clip-path="url(#tile)">${atom(60, 60, 66, 22, 1.05)}${P(60, 60, .74)}</g>`;
+  }],
+];
+document.getElementById('grid').innerHTML = COMPOSITIONS.map(([name, idea, draw], i) => `<section class="card"><div class="art"><svg viewBox="0 0 120 120">${DEFS}${draw()}</svg></div><div class="txt"><b>${i + 1} · ${name}</b><span>${idea}</span></div></section>`).join('');
+</script>
+</body>
+</html>
