@@ -3,7 +3,8 @@
 // theme scale so each value is judged: mint on the scale, coral off it.
 import { LANGUAGE_CSS } from '../../../overlay/src/language.js';
 import { TOY_DEFS } from '../../../overlay/src/toys.js';
-import { XRAY_CSS, xray, gripsOf } from '../../../overlay/src/xray.js';
+import { XRAY_CSS, xray, zonesOf, zoneAt } from '../../../overlay/src/xray.js';
+import { PICKER_CSS, picker } from '../../../overlay/src/picker.js';
 import { burst } from '../../../overlay/src/burst.js';
 
 // someone's theme (Tailwind's): spacing, radius and type steps in px
@@ -26,12 +27,13 @@ const NAMES = {
 
 export function mount(host, root, css) {
   const people = [['MA', 'Mara Ellis', 'mara@shoreline.co', 'Owner', '#ffd3cd'], ['JK', 'Jun Kato', 'jun@shoreline.co', 'Editor', '#c5e6fd'], ['SR', 'Sami Reyes', 'sami@shoreline.co', 'Viewer', '#e3dcff']];
-  root.innerHTML = `<style>${css}${LANGUAGE_CSS}${XRAY_CSS}
+  root.innerHTML = `<style>${css}${LANGUAGE_CSS}${XRAY_CSS}${PICKER_CSS}
     :host { display: block; font-family: var(--pl-sans); color: var(--pl-text-primary); }
     h2 { margin: 44px 0 6px; font: 600 20px/28px var(--pl-sans); letter-spacing: -0.01em; }
     h2 + p, .prose p { margin: 0 0 10px; font: 400 14px/22px var(--pl-sans); color: var(--pl-text-secondary); max-width: 680px; }
     .prose b { color: var(--pl-text-primary); font-weight: 600; }
     .stage { position: relative; margin-top: 14px; min-height: 620px; border-radius: 22px; background: #f4f4f6; overflow: hidden; display: grid; align-items: center; padding: 72px 360px 72px 72px; }
+    .stage .app { user-select: none; -webkit-user-select: none; }
     .stage .hint kbd { font: 600 11px/1 var(--pl-sans); padding: 2px 5px; border-radius: 5px; background: #fff; box-shadow: 0 0 0 1px #d8d8de; }
     .stage .hint { position: absolute; left: 0; right: 0; bottom: 18px; margin: 0; text-align: center; font: 500 12.5px/1 var(--pl-sans); color: #6b6b75; }
     .stage[data-pinned] .hint b { color: var(--pl-pink); }
@@ -53,18 +55,6 @@ export function mount(host, root, css) {
     .app .foot { display: flex; justify-content: flex-end; gap: 8px; padding-top: 4px; }
     .app button { padding: 9px 15px; border: 0; border-radius: 7px; font: 600 14px/20px ui-sans-serif, system-ui, sans-serif; cursor: default; }
     .app .invite { background: #2563eb; color: #fff; } .app .cancel { background: #fff; color: #344054; box-shadow: inset 0 0 0 1px #d0d5dd; }
-    /* grips: every value you can change has one on the page, always there while the element is shown. Each is a small
-       soft key in its value's colour: mint on your scale, coral off it, white with a blue ring for size and corner */
-    .xr-grips { position: absolute; inset: 0; pointer-events: none; z-index: 5; }
-    .grip { position: absolute; pointer-events: auto; touch-action: none; translate: -50% -50%; display: grid; place-items: center; width: 26px; height: 26px; }
-    .grip::before { content: ''; width: 18px; height: 7px; border-radius: 99px; background: var(--c); box-shadow: 0 0 0 2px #fff, 0 1px 4px rgb(0 0 0 / .3); transition: scale 260ms var(--pl-spring-pop), width 200ms var(--pl-ease-out); }
-    .grip[data-flat="false"]::before { width: 7px; height: 18px; }
-    .grip[data-edge]::before { background: #fff; box-shadow: 0 0 0 2px var(--pl-sky), 0 1px 4px rgb(0 0 0 / .3); }
-    .grip[data-dot]::before { width: 10px; height: 10px; }
-    .grip[data-box="margin"]::before { background: repeating-linear-gradient(90deg, var(--c) 0 2px, #fff 2px 4px); }
-    .grip[data-flat="true"] { cursor: ns-resize; } .grip[data-flat="false"] { cursor: ew-resize; } .grip[data-dot] { cursor: nwse-resize; }
-    .grip:hover::before, .grip[data-held]::before { scale: 1.35; }
-    .xrs[data-dragging] .grip:not([data-held]) { opacity: .25; }
     /* the value in hand, beside the pointer: its number and its token, while you drag or scroll */
     .xr-live { position: absolute; z-index: 8; pointer-events: none; display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 6px 0 10px; border-radius: 99px; white-space: nowrap;
       background: var(--pl-text-primary); color: var(--pl-bg-surface); font: 600 12px/1 var(--pl-mono); font-variant-numeric: tabular-nums; box-shadow: 0 6px 16px -6px rgb(0 0 0 / .4); }
@@ -77,16 +67,18 @@ export function mount(host, root, css) {
     .xr-list button span { font: 500 11.5px/1 var(--pl-mono); color: var(--pl-text-secondary); }
     .xr-list button:hover, .xr-list button[aria-selected="true"] { background: var(--pl-sky-soft); }
     .xr-list button.hard { color: var(--pl-coral-ink); }
-    /* which sides move together: one, the opposite pair, all four. Three small keys in the box's corner, the one in
-       force lit; ⇧ and ⌘ as a drag starts still pick pair and all for that drag */
-    .xr-link { position: absolute; right: 6px; top: 6px; z-index: 2; display: flex; gap: 2px; padding: 2px; border-radius: 9px; background: var(--pl-bg-surface); box-shadow: 0 0 0 1px var(--pl-border-default), 0 1px 2px rgb(0 0 0 / .08); }
-    .xr-link button { display: grid; place-items: center; width: 24px; height: 22px; padding: 0; border: 0; border-radius: 7px; background: none; color: var(--pl-text-secondary); cursor: pointer; transition: background-color 160ms var(--pl-ease-out), color 160ms var(--pl-ease-out), scale 240ms var(--pl-spring-pop); }
-    .xr-link button:hover { color: var(--pl-text-primary); background: var(--pl-bg-inset); }
-    .xr-link button[aria-pressed="true"] { background: var(--pl-sky); color: #fff; }
-    .xr-link button:active { scale: .92; }
-    .xr-link svg { width: 15px; height: 15px; display: block; }
-    /* pointing at a grip lights every side that will move with it */
-    .grip[data-linked]::before { scale: 1.35; box-shadow: 0 0 0 2px #fff, 0 0 0 4px color-mix(in oklab, var(--pl-sky) 55%, transparent); }
+    /* the value in hand, as the token picker row at the top of the card: which sides and the value, side by side.
+       Two fingers left and right move between them; up and down change the one lit. No tick: the card's Sync writes */
+    .xr-hand { margin: -2px -2px 10px; min-height: 34px; }
+    .xr-hand:empty::before { content: 'Point at a part or a number'; display: flex; align-items: center; height: 34px; padding: 0 10px; border-radius: 11px; background: var(--pl-bg-inset); font: 500 12px/1 var(--pl-sans); color: var(--pl-text-secondary); }
+    .xr-hand .row { position: relative; width: 100%; box-sizing: border-box; box-shadow: 0 0 0 1px var(--pl-border-default); }
+    .xr-hand .row .ok, .xr-hand .list { display: none; }
+    .xr-hand .row .val { flex: 1; }
+    .xr-hand .side { display: inline-flex; align-items: center; gap: 4px; height: 26px; padding: 0 7px; border-radius: 8px; font: 600 11.5px/1 var(--pl-sans); color: var(--pl-ink-2); white-space: nowrap; transition: background-color 200ms var(--pl-ease-out), color 200ms var(--pl-ease-out); }
+    .xr-hand .row[data-seg="mode"] .side { background: var(--pl-lilac-soft); color: var(--pl-lilac-ink); }
+    .xr-hand .row[data-seg="value"] .val { box-shadow: 0 0 0 2px color-mix(in oklab, var(--pl-sky) 45%, transparent); border-radius: 8px; }
+    .xr-hand .say { display: flex; gap: 10px; margin: 6px 4px 0; font: 600 10.5px/1 var(--pl-sans); color: #8a8a94; }
+    .xr-hand .say span[data-on] { color: var(--pl-text-primary); }
     /* the changes, collected at the foot of the card: how many, Sync, and the way back */
     .xr-pend { display: flex; align-items: center; gap: 4px; white-space: nowrap; margin: 10px -2px -2px; padding: 8px 8px 8px 12px; border-radius: 12px; background: var(--pl-pink-soft); color: var(--pl-pink-ink); font: 600 12px/1 var(--pl-sans); animation: pl-pop 260ms var(--pl-spring-pop) both; }
     .xr-pend .sp { flex: 1; }
@@ -116,7 +108,7 @@ export function mount(host, root, css) {
   <h2>The idea</h2>
   <div class="prose">
     <p>Point at anything on your page and see what it's made of. <b>On the element</b>, its space in the patterns: padding hatched, margin dotted, gaps striped, corners traced, its size on rulers. Mint where a value is on your scale, coral where it's written by hand. <b>Beside it</b>, a card says the same in numbers: which part it is and where it's written, its box drawn small, then corner, gap, type, colour and contrast, each value with its token.</p>
-    <p>Nothing to switch on. <b>Every value has a grip on the page</b>: padding inside each side, margin outside it (even at 0), width and height on the edges, the corner on its arc, the gap in its middle. Drag one and it snaps to your scale as you go. <b>Every number in the card is a control too</b>: drag it sideways, scroll on it, or click it for the list. The card waits while you move to it. Changes collect at the foot of the card; <b>Sync</b> (or ↵, or a double-click) writes them, Esc puts them back. With nothing to sync, ↵ opens a note for your agent.</p>
+    <p>Nothing to switch on. <b>Point at a part and it's in hand</b>: a padding side, a margin side (a band outside it, even at 0), the width or height ruler, a corner, the gap, the words. It lights up with one pill saying what it is; press on it and drag, and it snaps to your scale as you go. The row at the top of the card holds it too: two fingers left and right choose which sides or the value, up and down change it. <b>Every number in the card is a control too</b>: drag it sideways, scroll on it, or click it for the list. The card waits while you move to it. Changes collect at the foot of the card; <b>Sync</b> (or ↵, or a double-click) writes them, Esc puts them back. With nothing to sync, ↵ opens a note for your agent.</p>
   </div>
   <h2>Point at the card</h2>
   <div class="stage" tabindex="0">
@@ -127,22 +119,19 @@ export function mount(host, root, css) {
       <div class="foot" data-x="foot"><button class="cancel" data-x="cancel">Cancel</button><button class="invite" data-x="invite">Invite people</button></div>
     </div>
     <div class="xr"></div>
-    <div class="xr-card" hidden></div>
-    <div class="xr-grips xrs"></div>
-    <p class="hint">Point at anything · drag a grip or a number · <kbd>↵</kbd> sync, or a note for your agent · <kbd>Esc</kbd> put back</p>
+    <div class="xr-card" hidden><div class="xr-hand"></div><div class="xr-body"></div></div>
+    <p class="hint">Point at a part · drag it, or a number · <kbd>↵</kbd> sync, or a note for your agent · <kbd>Esc</kbd> put back</p>
   </div>`;
 
-  const stage = root.querySelector('.stage'), layer = stage.querySelector('.xr'), card = stage.querySelector('.xr-card'), grips = stage.querySelector('.xr-grips');
+  const stage = root.querySelector('.stage'), layer = stage.querySelector('.xr'), card = stage.querySelector('.xr-card'), body = card.querySelector('.xr-body'), hand = card.querySelector('.xr-hand');
   let lastCard = '', shown = null, pinned = null, noting = null, held = null, cardAt = { x: 0, y: 0 }, lastOn = null, waiting = 0;
   const box = () => stage.getBoundingClientRect();
   const nameOf = (el) => NAMES[el.dataset.x] ?? [el.localName, null];
   // the changes not yet synced: element → { prop → the inline value it had before }
   const changes = new Map();
-  // which sides move together, kept until changed: 'one', 'pair' or 'all'
+  // which sides move together, kept until changed: 'one', 'pair' or 'all' (the row's left place)
   let link = 'one';
-  const SIDE_ICON = (lit) => `<svg viewBox="0 0 16 16" aria-hidden="true"><rect x="3" y="3" width="10" height="10" rx="2" fill="none" stroke="currentColor" stroke-opacity=".35" stroke-width="1.4"/>${lit.map((k) => ({ top: '<path d="M4 3h8"/>', bottom: '<path d="M4 13h8"/>', left: '<path d="M3 4v8"/>', right: '<path d="M13 4v8"/>' })[k]).join('')}</svg>`.replace(/<path /g, '<path stroke="currentColor" stroke-width="2.6" stroke-linecap="round" ');
-  const LINKS = [['one', 'One side', ['top']], ['pair', 'Both sides opposite', ['top', 'bottom']], ['all', 'All four sides', ['top', 'right', 'bottom', 'left']]];
-  const linkHtml = () => `<div class="xr-link" role="radiogroup" aria-label="Sides that move together">${LINKS.map(([k, label, lit]) => `<button type="button" data-link="${k}" aria-pressed="${link === k}" title="${label}" aria-label="${label}">${SIDE_ICON(lit)}</button>`).join('')}</div>`;
+  const LINKS = ['one', 'pair', 'all'];
   const PAIR = { top: 'bottom', bottom: 'top', left: 'right', right: 'left' };
   // the properties a side's change moves: by the toggle, or for this drag by ⇧ (pair) and ⌘ (all four)
   const linkedOf = (prop, e = {}) => {
@@ -152,20 +141,25 @@ export function mount(host, root, css) {
   };
   const count = () => [...changes.values()].reduce((n, m) => n + m.size, 0);
 
+  // the part pointed at (a padding side, a margin side, the width or height ruler, a corner, the gap, the words)
+  let zone = null, justDragged = false;
   const draw = (el) => {
-    if (!el) { layer.innerHTML = ''; grips.innerHTML = ''; card.hidden = true; shown = null; return; }
+    if (!el) { layer.innerHTML = ''; card.hidden = true; shown = null; zone = null; return; }
     const s = box(), [name, source] = nameOf(el);
-    const x = xray(el, { tokenOf, origin: { left: s.left, top: s.top }, room: { left: 12, top: 12, right: s.width - 12, bottom: s.height - 40 }, name, source });
+    // the sides that move with the one in hand are lit with it
+    const zs = zonesOf(el), inProp = held?.prop ?? zone?.prop;
+    const lit = inProp ? zs.filter((q) => q.prop !== inProp && linkedOf(inProp, keysNow).includes(q.prop)) : [];
+    const z = zone && zs.find((q) => q.prop === zone.prop) || zone;
+    const x = xray(el, { tokenOf, origin: { left: s.left, top: s.top }, room: { left: 12, top: 12, right: s.width - 12, bottom: s.height - 96 }, name, source, zone: z, lit });
     const same = el === shown;
+    if (!same) hold(null);
     layer.toggleAttribute('data-still', same);
     layer.innerHTML = x.page;
     card.toggleAttribute('data-still', same);
     const foot = pendHtml();
     if (!same || x.card + foot !== lastCard) {
-      card.innerHTML = x.card + foot; lastCard = x.card + foot;
-      card.querySelector('.xr-box')?.insertAdjacentHTML('beforeend', linkHtml());
+      body.innerHTML = x.card + foot; lastCard = x.card + foot;
     }
-    for (const bt of card.querySelectorAll('[data-link]')) bt.setAttribute('aria-pressed', String(bt.dataset.link === link));
     // which numbers are changed, and the one in hand, kept true whether or not the card was written again
     for (const ch of card.querySelectorAll('[data-prop]')) {
       ch.toggleAttribute('data-changed', !!changes.get(el)?.has(ch.dataset.prop));
@@ -176,14 +170,11 @@ export function mount(host, root, css) {
     card.style.transform = `translate(${x.at.x}px, ${x.at.y}px)`; cardAt = x.at;
     card.hidden = !!noting;
     if (first) requestAnimationFrame(() => card.removeAttribute('data-fresh'));
-    // the grips, where each value lives
-    grips.innerHTML = gripsOf(el).map((g, i) => {
-      const v = g.family === 'size' ? tokenOf('size', g.n) : tokenOf(g.family, g.n);
-      const c = !g.n ? 'var(--pl-sky)' : v ? 'var(--pl-mint)' : 'var(--pl-coral)';
-      return `<i class="grip" data-i="${i}" data-prop="${g.prop}" data-flat="${!!g.flat}"${g.edge ? ' data-edge' : ''}${g.dot ? ' data-dot' : ''}${g.box ? ` data-box="${g.box}"` : ''}${held?.prop === g.prop && !held.chip ? ' data-held' : ''} style="--c:${c};left:${g.x - s.left}px;top:${g.y - s.top}px" title="${g.prop.replace('-', ' ')}"></i>`;
-    }).join('');
     shown = el;
   };
+  let keysNow = {};
+  addEventListener('keydown', (e) => { if (e.key === 'Shift' || e.key === 'Meta') { keysNow = e; if (shown && !held) draw(shown); } });
+  addEventListener('keyup', (e) => { if (e.key === 'Shift' || e.key === 'Meta') { keysNow = {}; if (shown && !held) draw(shown); } });
 
   // ── reaching the card: moving toward it keeps the element shown (the way a menu lets you cross to its submenu) ──
   const inTri = (p, a, b, c) => { const d = (u, v, w) => (u.x - w.x) * (v.y - w.y) - (v.x - w.x) * (u.y - w.y); const d1 = d(p, a, b), d2 = d(p, b, c), d3 = d(p, c, a); return !((d1 < 0 || d2 < 0 || d3 < 0) && (d1 > 0 || d2 > 0 || d3 > 0)); };
@@ -196,19 +187,30 @@ export function mount(host, root, css) {
   const track = (e) => {
     if (held || noting) return;
     const pt = { x: e.clientX, y: e.clientY };
-    if (e.composedPath().some((n) => n === card || n === grips || n.classList?.contains('xr-list'))) { clearTimeout(waiting); return; }
-    const el = pinned ?? e.target.closest?.('[data-x]');
-    if (el && el === shown) { lastOn = pt; clearTimeout(waiting); return; }
+    if (e.composedPath().some((n) => n === card || n.classList?.contains('xr-list'))) { clearTimeout(waiting); return; }
+    // on the shown element's outside parts (its margin, its rulers) it stays shown, unless the pointer is on another element
+    const under = e.target.closest?.('[data-x]');
+    const outside = shown && !pinned && (!under || under.contains(shown)) ? zoneAt(zonesOf(shown).filter((q) => q.outside), pt.x, pt.y) : null;
+    const el = pinned ?? (outside ? shown : under);
+    if (el && el === shown) {
+      lastOn = pt; clearTimeout(waiting);
+      const z = zoneAt(zonesOf(el), pt.x, pt.y);
+      if (z?.prop !== zone?.prop) { zone = z; if (z) hold(el, z.prop); draw(el); }
+      return;
+    }
     // on the way to the card: keep what's shown, a moment longer than it takes to get there
     if (shown && !pinned && headingToCard(pt)) { clearTimeout(waiting); waiting = setTimeout(() => { if (!card.matches(':hover')) { draw(null); } }, 500); return; }
     clearTimeout(waiting);
     lastOn = el ? pt : null;
+    zone = el ? zoneAt(zonesOf(el), pt.x, pt.y) : null;
     draw(el);
+    if (el && zone) hold(el, zone.prop);
   };
   stage.addEventListener('pointermove', track);
   stage.addEventListener('pointerleave', () => { if (!pinned && !held && !noting && !count()) draw(null); });
   stage.addEventListener('click', (e) => {
-    if (noting || e.composedPath().some((n) => n === card || n === grips || n.classList?.contains('xr-list') || n.classList?.contains('xr-note'))) return;
+    if (justDragged) { justDragged = false; return; }
+    if (noting || e.composedPath().some((n) => n === card || n.classList?.contains('xr-list') || n.classList?.contains('xr-note'))) return;
     const el = e.target.closest?.('[data-x]');
     pinned = pinned || !el ? null : el;
     stage.toggleAttribute('data-pinned', !!pinned);
@@ -239,51 +241,113 @@ export function mount(host, root, css) {
     e.preventDefault(); e.stopPropagation();
     const fam = familyOf(prop), start = read(el, prop), S = optionsFor(fam, start);
     const linked = linkedOf(prop, e);
+    hold(el, prop);
     const x0 = e.clientX, y0 = e.clientY, at = e.target;
     let moved = false, cur = nearest(S, start);
-    held = { prop, chip }; pinned = el; stage.setAttribute('data-pinned', ''); grips.setAttribute('data-dragging', '');
+    held = { prop, chip }; pinned = el; stage.setAttribute('data-pinned', '');
     const move = (m) => {
       if (!moved && Math.abs(m.clientX - x0) + Math.abs(m.clientY - y0) < 3) return;
-      moved = true;
+      moved = true; justDragged = true;
       const want = Math.max(0, start + sign(m.clientX - x0, m.clientY - y0) * gain), o = nearest(S, want);
       if (o !== cur) { cur = o; for (const q of linked) set(el, q, o.v); draw(el); }
       say(cur, m.clientX, m.clientY);
     };
     const up = (u) => {
       removeEventListener('pointermove', move, true); removeEventListener('pointerup', up, true);
-      held = null; live.hidden = true; grips.removeAttribute('data-dragging');
+      held = null; live.hidden = true; resync();
       if (!moved && chip) openList(el, prop, at); else draw(el);
     };
-    // on the window: the grip under the hand is drawn again as the value moves, so it can't hold the pointer itself
+    // on the window: the part under the hand is drawn again as the value moves, so it can't hold the pointer itself
     addEventListener('pointermove', move, true); addEventListener('pointerup', up, true);
   };
-  // pointing at a grip (or a side's number in the card) lights every side that will move with it
-  const preview = (prop, e) => { const on = prop ? linkedOf(prop, e) : []; for (const g of grips.querySelectorAll('.grip')) g.toggleAttribute('data-linked', on.length > 1 && on.includes(g.dataset.prop)); };
-  stage.addEventListener('pointerover', (e) => { if (held) return; const t = e.target.closest?.('.grip, .xr-box [data-prop]'); preview(t?.dataset.prop, e); });
-  addEventListener('keydown', (e) => { if ((e.key === 'Shift' || e.key === 'Meta') && !held) { const t = stage.querySelector('.grip:hover, .xr-box [data-prop]:hover'); if (t) preview(t.dataset.prop, e); } });
-  addEventListener('keyup', (e) => { if ((e.key === 'Shift' || e.key === 'Meta') && !held) { const t = stage.querySelector('.grip:hover, .xr-box [data-prop]:hover'); preview(t?.dataset.prop, e); } });
-  grips.addEventListener('pointerdown', (e) => {
-    const g = e.target.closest('.grip'); if (!g || !shown) return;
-    const spec = gripsOf(shown)[Number(g.dataset.i)];
-    drag(e, shown, spec.prop, spec.sign, 1, false);
-  });
+  // press on the part pointed at and drag: the part itself is the handle
+  const signOf = (z) => {
+    const IN = { top: [0, 1], bottom: [0, -1], left: [1, 0], right: [-1, 0] };
+    if (z.side) { const [ux, uy] = IN[z.side], k = z.box === 'margin' ? -1 : 1; return (dx, dy) => k * (dx * ux + dy * uy); }
+    if (z.prop === 'width') return (dx) => dx;
+    if (z.prop === 'height') return (dx, dy) => dy;
+    if (z.family === 'radius') return (dx, dy) => (dx + dy) / 2;
+    if (z.family === 'type') return (dx, dy) => -dy / 2;
+    return z.col ? (dx, dy) => dy : (dx) => dx;
+  };
+  stage.addEventListener('pointerdown', (e) => {
+    if (!shown || !zone || noting || e.button !== 0) return;
+    if (e.composedPath().some((n) => n === card || n.classList?.contains('xr-list') || n.classList?.contains('xr-note'))) return;
+    // the part under the press itself (not the last one pointed at); no text is selected while the part is dragged
+    const z = zoneAt(zonesOf(shown), e.clientX, e.clientY) ?? zone, el = shown, x0 = e.clientX, y0 = e.clientY;
+    e.preventDefault();
+    // a press that moves is a drag of the part; one that doesn't is a click (it holds the element)
+    const first = (m) => {
+      if (Math.abs(m.clientX - x0) + Math.abs(m.clientY - y0) < 3) return;
+      removeEventListener('pointermove', first, true); removeEventListener('pointerup', cancel, true);
+      drag(e, el, z.prop, signOf(z), 1, false);
+    };
+    const cancel = () => { removeEventListener('pointermove', first, true); removeEventListener('pointerup', cancel, true); };
+    addEventListener('pointermove', first, true); addEventListener('pointerup', cancel, true);
+  }, true);
   card.addEventListener('pointerdown', (e) => {
-    if (e.target.closest('.xr-link')) return;
+    if (e.target.closest('.xr-hand')) return;
     const ch = e.target.closest('[data-prop]'); if (!ch || !shown) return;
     drag(e, shown, ch.dataset.prop, (dx) => dx, familyOf(ch.dataset.prop) === 'size' ? 2 : 0.5, true);
   });
-  // scrolling on a grip or a number steps through your scale, the way the fingers go (up or right: bigger)
+  // ── the value in hand: the token picker row at the top of the card, for the part or number last pointed at ──
+  let inHand = null; // { el, prop, p (the picker), S }
+  const sidesSaid = (prop) => { const m = prop.match(/^(padding|margin)-(\w+)$/); if (!m) return null; return link === 'all' ? `all ${m[1]}` : link === 'pair' ? `${m[2]} + ${PAIR[m[2]]}` : m[2]; };
+  const TOYS = { padding: 'padding', margin: 'margin', width: 'width', height: 'height', 'border-radius': 'corner', gap: 'gap', 'font-size': 'type' };
+  const hold = (el, prop) => {
+    if (inHand && inHand.el === el && inHand.prop === prop) return;
+    hand.innerHTML = ''; inHand = null;
+    if (!el || !prop) return;
+    const sided = sidesSaid(prop) !== null, now = read(el, prop), S = optionsFor(familyOf(prop), now);
+    const p = picker(stage, {
+      name: prop.replace('-', ' '), toy: TOYS[prop.split('-')[0]] ?? TOYS[prop] ?? 'size', options: S, into: hand, keys: 'row', start: S.indexOf(nearest(S, now)),
+      mark: () => '', format: (o) => `${o.v}px`,
+      // the element takes the value only when it differs (the row also calls this as it is made)
+      apply: (o) => { const qs = linkedOf(prop); if (qs.every((q) => Math.abs(read(el, q) - o.v) < 0.5)) return; for (const q of qs) set(el, q, o.v); draw(el); },
+    });
+    const label = sided ? sidesSaid(prop) : (prop === 'border-radius' ? 'corner' : prop === 'font-size' ? 'text size' : prop);
+    p.row.querySelector('.scrub').insertAdjacentHTML('afterend', `<span class="side">${label}</span>`);
+    hand.insertAdjacentHTML('beforeend', `<div class="say">${sided ? '<span data-s="mode">← sides</span>' : ''}<span data-s="value">↕ ${sided ? 'value' : 'your sizes'}</span></div>`);
+    inHand = { el, prop, p, S, sided, seg: 'value', tx: 0, ty: 0 };
+    showSeg();
+  };
+  const showSeg = () => {
+    if (!inHand) return;
+    inHand.p.row.dataset.seg = inHand.seg;
+    for (const sp of hand.querySelectorAll('.say span')) sp.toggleAttribute('data-on', sp.dataset.s === inHand.seg);
+    const side = inHand.p.row.querySelector('.side'); if (inHand.sided) side.textContent = sidesSaid(inHand.prop);
+    if (shown && !held) draw(shown);
+  };
+  // after a drag or a list pick elsewhere, the row shows where the value is now
+  const resync = () => { if (!inHand) return; const i = inHand.S.indexOf(nearest(inHand.S, read(inHand.el, inHand.prop))); if (i !== inHand.p.at()) inHand.p.set(i); };
+  stage.addEventListener('pointerover', (e) => { if (held) return; const t = e.target.closest?.('.xr-body [data-prop]'); if (t && shown) hold(shown, t.dataset.prop); });
+  // two fingers over the element or the card: left and right choose sides or value, up and down change it
+  // (the fingers' own direction: up is bigger, right is toward the value)
   stage.addEventListener('wheel', (e) => {
-    const t = e.target.closest?.('.grip, .xr-card [data-prop]'); if (!t || !shown) return;
+    if (!inHand || !shown || inHand.el !== shown) return;
+    if (!e.composedPath().some((n) => n === card || n === shown) && !(zone && shown)) return;
     e.preventDefault();
-    const prop = t.dataset.prop, el = shown, now = read(el, prop), S = optionsFor(familyOf(prop), now);
-    const d = -(Math.abs(e.deltaY) > Math.abs(e.deltaX) ? e.deltaY : e.deltaX);
-    t._acc = (t._acc ?? 0) + d;
-    if (Math.abs(t._acc) < 24) return;
-    const i = S.indexOf(nearest(S, now)), o = S[Math.max(0, Math.min(S.length - 1, i + Math.sign(t._acc)))]; t._acc = 0;
-    pinned = el; stage.setAttribute('data-pinned', '');
-    for (const q of linkedOf(prop, e)) set(el, q, o.v); draw(el); say(o, e.clientX, e.clientY);
-    clearTimeout(t._t); t._t = setTimeout(() => { live.hidden = true; }, 700);
+    const h = inHand, dx = -(e.deltaMode ? e.deltaX * 16 : e.deltaX), dy = -(e.deltaMode ? e.deltaY * 16 : e.deltaY);
+    if (Math.abs(dx) > Math.abs(dy)) {
+      h.ty = 0; h.tx += dx;
+      if (h.tx > 60 && h.seg === 'mode') { h.seg = 'value'; h.tx = 0; showSeg(); }
+      else if (h.tx < -60 && h.seg === 'value' && h.sided) { h.seg = 'mode'; h.tx = 0; showSeg(); }
+      return;
+    }
+    h.tx = 0; h.ty += dy;
+    while (Math.abs(h.ty) >= 30) {
+      const up = h.ty > 0; h.ty -= Math.sign(h.ty) * 30;
+      if (h.seg === 'mode') {
+        const i = LINKS.indexOf(link), j = Math.max(0, Math.min(2, i + (up ? 1 : -1)));
+        if (j !== i) {
+          link = LINKS[j];
+          // the sides just taken in take the value the side in hand has
+          const v = read(h.el, h.prop); for (const q of linkedOf(h.prop)) if (Math.abs(read(h.el, q) - v) >= 0.5) set(h.el, q, v);
+          draw(h.el); showSeg();
+          h.p.row.querySelector('.side').animate?.([{ transform: `translateY(${up ? 5 : -5}px)`, opacity: 0.4 }, { transform: 'none', opacity: 1 }], { duration: 220, easing: 'cubic-bezier(0.22, 1, 0.36, 1)' });
+        }
+      } else h.p.set(h.p.at() + (up ? 1 : -1));
+    }
   }, { passive: false });
   // a click on a number: the list of your sizes
   const openList = (el, prop, at) => {
@@ -294,7 +358,7 @@ export function mount(host, root, css) {
     list.style.left = `${b.left - s.left}px`; list.style.top = `${b.bottom - s.top + 6}px`;
     stage.append(list);
     list.querySelector('[aria-selected="true"]')?.scrollIntoView({ block: 'nearest' });
-    list.addEventListener('click', (e) => { const o = S[Number(e.target.closest('[data-i]')?.dataset.i)]; if (!o) return; for (const q of linkedOf(prop)) set(el, q, o.v); list.remove(); draw(el); });
+    list.addEventListener('click', (e) => { const o = S[Number(e.target.closest('[data-i]')?.dataset.i)]; if (!o) return; for (const q of linkedOf(prop)) set(el, q, o.v); list.remove(); draw(el); resync(); });
     const away = (e) => { if (!e.composedPath().includes(list)) { list.remove(); removeEventListener('pointerdown', away, true); } };
     addEventListener('pointerdown', away, true);
   };
@@ -321,7 +385,7 @@ export function mount(host, root, css) {
     changes.clear(); lastCard = ''; if (shown) draw(shown);
     return true;
   };
-  card.addEventListener('click', (e) => { const lk = e.target.closest('[data-link]'); if (lk) { link = lk.dataset.link; if (shown) draw(shown); return; } if (e.target.closest('.sync')) sync(); else if (e.target.closest('.back')) putBack(); });
+  card.addEventListener('click', (e) => { if (e.target.closest('.sync')) sync(); else if (e.target.closest('.back')) putBack(); });
   stage.addEventListener('dblclick', (e) => { if (count() && !e.target.closest('.xr-note')) { e.preventDefault(); sync(); } });
 
   // ── ↵ anywhere: a note for your agent about what you're pointing at; ⌘↵ copies it with the file and line ──

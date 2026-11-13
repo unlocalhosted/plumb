@@ -183,7 +183,7 @@ export function xray(el, { tokenOf, origin = { left: 0, top: 0 }, room, source, 
     const zj = judge(zone.family, zone.n), zx = zone.x - origin.left, zy = zone.y - origin.top;
     if (zj.zero) zj.c = 'var(--pl-sky)';
     draw += `<rect class="xr-zone" x="${r1(zx)}" y="${r1(zy)}" width="${r1(zone.w)}" height="${r1(zone.h)}" rx="${zone.family === 'radius' ? 4 : 2}" fill="color-mix(in oklab, ${zj.c} 22%, transparent)" stroke="${zj.c}" stroke-width="2"${zj.zero ? ' stroke-dasharray="4 3"' : ''}/>`;
-    said = `<span class="xr-say" style="left:${r1(zx + zone.w / 2)}px;top:${r1(zy + zone.h + 8)}px"><b>${esc(zone.said)}</b> ${zj.n}${zj.t ? ` <i class="on">${esc(zj.t)}</i>` : zj.off ? ' <i class="off">off scale</i>' : ''} <kbd>⇧</kbd></span>`;
+    said = `<span class="xr-say" style="left:${r1(zx + zone.w / 2)}px;top:${r1(zy + zone.h + 8)}px"><b>${esc(zone.said)}</b> ${zone.family === 'radius' && zone.n > 500 ? '' : zj.n}${zj.t ? ` <i class="on">${esc(zj.t)}</i>` : zj.off ? ' <i class="off">off scale</i>' : ''}</span>`;
   }
   // parts in hand while a picker has them: drawn strong, no pill (the picker says it)
   for (const lz of lit) { const lj = judge(lz.family, lz.n); draw += `<rect class="xr-zone" x="${r1(lz.x - origin.left)}" y="${r1(lz.y - origin.top)}" width="${r1(lz.w)}" height="${r1(lz.h)}" rx="2" fill="color-mix(in oklab, ${lj.c} 22%, transparent)" stroke="${lj.c}" stroke-width="2"/>`; }
