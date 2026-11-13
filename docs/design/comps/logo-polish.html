@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>React Plumber · three marks, polished</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400..700&display=swap">
+<style>
+  /* Three marks the owner picked (the turning sides, registration, the declared gap), polished as one family:
+     - one grid (120 units), one outer size (84), one gap (4) everywhere, corners concentric with the whole
+     - one palette: pink is the hero, ink holds it, one accent per mark (no rainbow)
+     - one finish: React Plumber's tactile language, lit from the top, a soft shadow, a fine highlight on each top edge
+     Each shown lit, flat in one colour, on a dark app tile, at 32/24/16 px, and beside the name. */
+  :root { --ink: #1d1b17; --ink-2: #6b665c; --rule: rgb(29 27 23 / 0.09); --desk: #f6f5f2; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--desk); color: var(--ink); font: 400 14px/20px "Instrument Sans", system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  header { padding: 28px 32px 16px; }
+  h1 { margin: 0; font: 600 20px/26px "Instrument Sans"; letter-spacing: -0.01em; }
+  .sub { margin: 4px 0 0; color: var(--ink-2); max-width: 900px; }
+  .list { display: flex; flex-direction: column; gap: 16px; padding: 0 32px 32px; }
+  .card { background: #fff; border-radius: 20px; box-shadow: 0 0 0 1px var(--rule), 0 12px 30px -22px rgb(0 0 0 / .3); display: grid; grid-template-columns: 300px 1fr; overflow: hidden; }
+  .hero { display: grid; place-items: center; height: 300px; background: radial-gradient(circle at 50% 40%, #fff, #f7f5f0); border-right: 1px solid var(--rule); }
+  .side { display: grid; grid-template-columns: repeat(3, 1fr); }
+  .cell { display: grid; place-items: center; border-bottom: 1px solid var(--rule); border-right: 1px solid var(--rule); min-height: 150px; }
+  .cell.dark { background: #1d1b17; }
+  .sizes { display: flex; align-items: flex-end; gap: 18px; }
+  .lock { display: flex; align-items: center; gap: 12px; font: 650 28px/1 "Instrument Sans"; letter-spacing: -0.035em; }
+  .lock.dark { color: #fff; }
+  .tile { width: 84px; height: 84px; border-radius: 20px; background: linear-gradient(#2c2a26, #191815); display: grid; place-items: center; box-shadow: inset 0 1px 0 rgb(255 255 255 / .08), 0 10px 20px -12px rgb(0 0 0 / .6); }
+  .name { grid-column: 1 / -1; padding: 14px 20px; display: flex; gap: 10px; align-items: baseline; }
+  .name b { font: 650 15px/20px "Instrument Sans"; } .name span { color: var(--ink-2); }
+  svg { display: block; overflow: visible; }
+</style>
+</head>
+<body>
+<header><h1>Three marks, polished as one family</h1>
+<p class="sub">One grid, one gap, corners concentric with the whole; pink as the hero, ink to hold it, one accent each; lit from the top in React Plumber's tactile finish. Then flat in one colour, on a dark app tile, small, and beside the name.</p></header>
+<div class="list" id="list"></div>
+<script>
+const C = { pink: ['#ff6fb5', '#f24a9f', '#d8338a'], ink: ['#3a3733', '#1d1b17', '#0f0e0c'], butter: ['#ffd24d', '#ffbf1a', '#eaa800'], sky: ['#5aa2ea', '#2f86dc', '#1f6ec1'], violet: ['#8b6bff', '#6a4ae6', '#5233c9'], paper: ['#ffffff', '#f4f1ea', '#dcd7cc'] };
+// on a dark ground the ink parts turn to paper, so the mark keeps its whole shape
+let DARK = false; const hueOf = (h) => (DARK && h === 'ink' ? 'paper' : h);
+// a box with its own corner radii [top-left, top-right, bottom-right, bottom-left]
+const R = (x, y, w, h, [a, b, c, d]) => `M${x + a} ${y}H${x + w - b}${b ? `A${b} ${b} 0 0 1 ${x + w} ${y + b}` : ''}V${y + h - c}${c ? `A${c} ${c} 0 0 1 ${x + w - c} ${y + h}` : ''}H${x + d}${d ? `A${d} ${d} 0 0 1 ${x} ${y + h - d}` : ''}V${y + a}${a ? `A${a} ${a} 0 0 1 ${x + a} ${y}` : ''}Z`;
+let uid = 0;
+// a part, lit: a vertical gradient (lighter at the top), and a fine highlight along its top edge
+function part(d, hue, lit, id = `p${uid++}`) {
+  if (!lit) return `<path d="${d}" fill="${DARK && hue === C.ink[1] ? C.paper[1] : hue}"/>`;
+  const [hi, base, lo] = C[hueOf(hue)];
+  // lit from the top: the body's own gradient, and a soft light over its top quarter only (no rim round the sides)
+  return `<defs><linearGradient id="${id}g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${hi}"/><stop offset=".55" stop-color="${base}"/><stop offset="1" stop-color="${lo}"/></linearGradient>
+    <linearGradient id="${id}h" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".42"/><stop offset=".22" stop-color="#fff" stop-opacity="0"/></linearGradient><clipPath id="${id}c"><path d="${d}"/></clipPath></defs>
+    <path d="${d}" fill="url(#${id}g)"/><path d="${d}" fill="url(#${id}h)" style="mix-blend-mode:soft-light"/>`;
+}
+
+// the grid: 120 across; every mark fills 18..102 (84), the gap is 4, outer corners 24 (the whole's), inner corners 5
+const G = 4, O = 24, I = 5, A = 18, B = 102;
+const MARKS = [
+  {
+    name: 'The turning sides', idea: 'Four identical sides of padding turning round the content: the box model, in motion. Built by rotation, so the gap between every side is the same 4.',
+    accent: 'butter',
+    draw: (lit, one) => {
+      // one side: from the outer edge to the content; rotated a quarter at a time about the centre
+      const side = R(A, A, 54, 26, [O, I, I, I]); // 54 long: rotated a quarter, each side ends 4 short of the next
+      const hues = one ? Array(4).fill(one) : ['pink', 'ink', 'pink', 'ink'];
+      const body = [0, 90, 180, 270].map((r, i) => `<g transform="rotate(${r} 60 60)">${part(side, lit ? hues[i] : (one || C[hues[i]][1]), lit)}</g>`).join('');
+      // the content, in the middle: the accent, a little lit square, concentric with its frame
+      const content = part(R(48, 48, 24, 24, [I, I, I, I]), lit ? 'butter' : (one || C.butter[1]), lit);
+      return body + content;
+    },
+  },
+  {
+    name: 'Registration', idea: 'Two identical squircles, one placed exactly one module off the other; where they overlap, a third colour chosen, not mixed. The fix is that offset closing.',
+    accent: 'violet',
+    draw: (lit, one) => {
+      const a = R(A, A, 60, 60, [O, O, O, O]), b = R(A + 24, A + 24, 60, 60, [O, O, O, O]);
+      if (one) return `<path d="${a}" fill="none" stroke="${one}" stroke-width="9"/><path d="${b}" fill="${one}"/>`;
+      const id = `r${uid++}`;
+      return `${part(a, lit ? 'pink' : C.pink[1], lit)}${part(b, lit ? 'ink' : C.ink[1], lit)}
+        <defs><clipPath id="${id}"><path d="${a}"/></clipPath></defs><g clip-path="url(#${id})">${part(b, lit ? 'violet' : C.violet[1], lit)}</g>`;
+    },
+  },
+  {
+    name: 'The declared gap', idea: 'Three blocks on the grid with exactly the same gap between them: the space between things is a decision, and here it is the mark.',
+    accent: 'sky',
+    draw: (lit, one) => {
+      const w1 = 40, x2 = A + w1 + G, h2 = (B - A - G) / 2;
+      const p = [[R(A, A, w1, 84, [O, I, I, O]), 'pink'], [R(x2, A, B - x2, h2, [I, O, I, I]), 'ink'], [R(x2, A + h2 + G, B - x2, h2, [I, I, O, I]), 'sky']];
+      return p.map(([d, h]) => part(d, lit ? h : (one || C[h][1]), lit)).join('');
+    },
+  },
+];
+const svg = (s, draw, lit, one, extra = '', dark = false) => { DARK = dark; const out = `<svg width="${s}" height="${s}" viewBox="0 0 120 120" ${extra}>${draw(lit, one)}</svg>`; DARK = false; return out; };
+document.getElementById('list').innerHTML = MARKS.map((m) => `<section class="card">
+  <div class="hero">${svg(220, m.draw, true, null, 'style="filter: drop-shadow(0 14px 18px rgb(29 27 23 / .16)) drop-shadow(0 2px 3px rgb(29 27 23 / .12))"')}</div>
+  <div class="side">
+    <div class="cell">${svg(96, m.draw, false, '#1d1b17')}</div>
+    <div class="cell dark"><div class="tile">${svg(58, m.draw, true, null, '', true)}</div></div>
+    <div class="cell"><div class="sizes">${svg(32, m.draw, false, null)}${svg(24, m.draw, false, null)}${svg(16, m.draw, false, null)}</div></div>
+    <div class="cell" style="grid-column: span 2"><div class="lock">${svg(40, m.draw, true, null)}React Plumber</div></div>
+    <div class="cell dark"><div class="lock dark" style="font-size:22px">${svg(30, m.draw, false, '#fff')}React Plumber</div></div>
+    <div class="name"><b>${m.name}</b><span>${m.idea}</span></div>
+  </div></section>`).join('');
+</script>
+</body>
+</html>
