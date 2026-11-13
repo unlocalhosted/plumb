@@ -1322,6 +1322,13 @@ field is empty). The table of five writes, before and after. The Next table: eig
 
 **Release 0.5.0: the last full run (2026-11-13).** *Found by the release run on vm-agent:* 1061 passed, 3 failed. `apply-all-hot` was load (it passes alone, as the backlog says). Two were ours from today. (1) The X-ray card, pinned to the element whose fix was just taken, was placed over Plumber's fix panel and took the click meant for its Undo; the card's room now ends above Plumber's own bar and dock. (2) The determinism test counted structure questions only when sent alone; since the batch fix they travel together, so it counts both. *Also:* the run had first been cut short because another session's run replaced the shared checkout on vm-agent mid-run; each branch now runs in its own folder there (`scripts/test-remote.sh`). *Proof:* the three files pass together on vm-agent; the full suite runs once more before the push.
 
+## The speed work lands on main (2026-11-14)
+- **The itch:** the owner: "okay merge to main". The speed work had lived on its own branch for days while main moved on.
+- **How we found it:** the full suite on the merged branch, in a folder on the test server that only this work uses (a shared folder had been rebuilt by another session mid-run and gave results nobody could trust).
+- **The system behind it:** main had gained a layer that checks every request's shape. It allowed two kinds of question in a batch; the speed work asks a third (what many elements are in the source, in one request), so the merged server refused it. Two tests also assumed old conventions (full paths, stamps named from the project folder). The release work on main found and fixed the same batch shape on its own, so the two fixes met in the merge and main's wording was kept.
+- **The fix and the proof:** full suite on the merged branch: 1,067 passed, 3 failed. One is main's own (a click on a Next app the moment plumber appears, also red on main). The other two passed once main's newest commits were merged in (one was a test main had already updated for batched reads) and run again: 20 tests in the five files the merge touches, all green. Main was then moved forward to the merged branch; nothing pushed.
+- **Media hooks:** the published write-up of the speed work (docs/writeups/plumber-speed.html).
+
 ## Open gaps
 - The site's top bar doesn't fit a phone (390px): it widens the page to about 500px. Needs a compact bar.
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
@@ -2410,6 +2417,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   Nothing finds a new one when it is written.
 
 ## Shipped · 2026-W46
+- The speed work is on main: plumber stays out of the way on big pages (scroll at 53 of 60 frames a second with it open, no long freeze while it reads) and the server keeps what it learned between starts ([entry](#the-speed-work-lands-on-main-2026-11-14)).
 - The kept analysis and its start-up check now have tests: six, each a real server start on a small project, 9 s in all. It matters because three layers sit on this and the next one answers from it. The doctor test caught its own row being cut off when a start differs.
 - The start-up check now also notices when an import would find a different file than it did, even if no file plumber read has changed. It matters because that was the one way the kept analysis could be stale without the check seeing it. (crafting-ui: 4,638 imports re-asked in about 0.05 s; one altered by hand was named and refused.)
 - `plumber doctor --verbose` now says how the start-up check is going: how many dev-server starts were checked, how many were compared with a fresh analysis, and how many differed. It matters because that count is the evidence the fast start waits on. (crafting-ui on 2026-11-13: 8 starts, 6 compared, 0 differed.)
