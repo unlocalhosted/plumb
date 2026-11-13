@@ -81,7 +81,8 @@ pickers.
     click it for the list). Nothing has to be aimed at precisely and then switched on with a key. A drag follows the
     hand in px and snaps to your nearest size as it goes. Changes collect and are counted; one Sync (or ↵, or a
     double-click) writes them, Esc puts them back. The card a pointer is heading for waits for it, the way a menu lets
-    you cross to its submenu. (Owner, 2026-11-13: "i have to fight the system a lot of time to arrive in editable mode.
+    you cross to its submenu. Which sides move together is a visible choice, not only a key: one, the pair, all four,
+    in the card's box, kept until changed, with the grips that will move lit as you point. (Owner, 2026-11-13: "i have to fight the system a lot of time to arrive in editable mode.
     people will just stop using it if the hinderance is there".)
 19. **The hard-coded value is an option, not an error message.** It is listed and reachable, in coral, marked
     "hard-coded". Keeping it is just picking it.

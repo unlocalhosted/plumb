@@ -77,6 +77,16 @@ export function mount(host, root, css) {
     .xr-list button span { font: 500 11.5px/1 var(--pl-mono); color: var(--pl-text-secondary); }
     .xr-list button:hover, .xr-list button[aria-selected="true"] { background: var(--pl-sky-soft); }
     .xr-list button.hard { color: var(--pl-coral-ink); }
+    /* which sides move together: one, the opposite pair, all four. Three small keys in the box's corner, the one in
+       force lit; ⇧ and ⌘ as a drag starts still pick pair and all for that drag */
+    .xr-link { position: absolute; right: 6px; top: 6px; z-index: 2; display: flex; gap: 2px; padding: 2px; border-radius: 9px; background: var(--pl-bg-surface); box-shadow: 0 0 0 1px var(--pl-border-default), 0 1px 2px rgb(0 0 0 / .08); }
+    .xr-link button { display: grid; place-items: center; width: 24px; height: 22px; padding: 0; border: 0; border-radius: 7px; background: none; color: var(--pl-text-secondary); cursor: pointer; transition: background-color 160ms var(--pl-ease-out), color 160ms var(--pl-ease-out), scale 240ms var(--pl-spring-pop); }
+    .xr-link button:hover { color: var(--pl-text-primary); background: var(--pl-bg-inset); }
+    .xr-link button[aria-pressed="true"] { background: var(--pl-sky); color: #fff; }
+    .xr-link button:active { scale: .92; }
+    .xr-link svg { width: 15px; height: 15px; display: block; }
+    /* pointing at a grip lights every side that will move with it */
+    .grip[data-linked]::before { scale: 1.35; box-shadow: 0 0 0 2px #fff, 0 0 0 4px color-mix(in oklab, var(--pl-sky) 55%, transparent); }
     /* the changes, collected at the foot of the card: how many, Sync, and the way back */
     .xr-pend { display: flex; align-items: center; gap: 4px; white-space: nowrap; margin: 10px -2px -2px; padding: 8px 8px 8px 12px; border-radius: 12px; background: var(--pl-pink-soft); color: var(--pl-pink-ink); font: 600 12px/1 var(--pl-sans); animation: pl-pop 260ms var(--pl-spring-pop) both; }
     .xr-pend .sp { flex: 1; }
@@ -128,6 +138,18 @@ export function mount(host, root, css) {
   const nameOf = (el) => NAMES[el.dataset.x] ?? [el.localName, null];
   // the changes not yet synced: element → { prop → the inline value it had before }
   const changes = new Map();
+  // which sides move together, kept until changed: 'one', 'pair' or 'all'
+  let link = 'one';
+  const SIDE_ICON = (lit) => `<svg viewBox="0 0 16 16" aria-hidden="true"><rect x="3" y="3" width="10" height="10" rx="2" fill="none" stroke="currentColor" stroke-opacity=".35" stroke-width="1.4"/>${lit.map((k) => ({ top: '<path d="M4 3h8"/>', bottom: '<path d="M4 13h8"/>', left: '<path d="M3 4v8"/>', right: '<path d="M13 4v8"/>' })[k]).join('')}</svg>`.replace(/<path /g, '<path stroke="currentColor" stroke-width="2.6" stroke-linecap="round" ');
+  const LINKS = [['one', 'One side', ['top']], ['pair', 'Both sides opposite', ['top', 'bottom']], ['all', 'All four sides', ['top', 'right', 'bottom', 'left']]];
+  const linkHtml = () => `<div class="xr-link" role="radiogroup" aria-label="Sides that move together">${LINKS.map(([k, label, lit]) => `<button type="button" data-link="${k}" aria-pressed="${link === k}" title="${label}" aria-label="${label}">${SIDE_ICON(lit)}</button>`).join('')}</div>`;
+  const PAIR = { top: 'bottom', bottom: 'top', left: 'right', right: 'left' };
+  // the properties a side's change moves: by the toggle, or for this drag by ⇧ (pair) and ⌘ (all four)
+  const linkedOf = (prop, e = {}) => {
+    const sided = prop.match(/^(padding|margin)-(top|right|bottom|left)$/); if (!sided) return [prop];
+    const how = e.metaKey || e.ctrlKey ? 'all' : e.shiftKey ? 'pair' : link;
+    return how === 'all' ? ['top', 'right', 'bottom', 'left'].map((k) => `${sided[1]}-${k}`) : how === 'pair' ? [prop, `${sided[1]}-${PAIR[sided[2]]}`] : [prop];
+  };
   const count = () => [...changes.values()].reduce((n, m) => n + m.size, 0);
 
   const draw = (el) => {
@@ -141,7 +163,9 @@ export function mount(host, root, css) {
     const foot = pendHtml();
     if (!same || x.card + foot !== lastCard) {
       card.innerHTML = x.card + foot; lastCard = x.card + foot;
+      card.querySelector('.xr-box')?.insertAdjacentHTML('beforeend', linkHtml());
     }
+    for (const bt of card.querySelectorAll('[data-link]')) bt.setAttribute('aria-pressed', String(bt.dataset.link === link));
     // which numbers are changed, and the one in hand, kept true whether or not the card was written again
     for (const ch of card.querySelectorAll('[data-prop]')) {
       ch.toggleAttribute('data-changed', !!changes.get(el)?.has(ch.dataset.prop));
@@ -214,9 +238,7 @@ export function mount(host, root, css) {
   const drag = (e, el, prop, sign, gain, chip) => {
     e.preventDefault(); e.stopPropagation();
     const fam = familyOf(prop), start = read(el, prop), S = optionsFor(fam, start);
-    // a side: ⇧ as the drag starts takes its pair with it, ⌘ all four (the product's spacing keys)
-    const sided = prop.match(/^(padding|margin)-(top|right|bottom|left)$/), PAIR = { top: 'bottom', bottom: 'top', left: 'right', right: 'left' };
-    const linked = !sided ? [prop] : e.metaKey || e.ctrlKey ? ['top', 'right', 'bottom', 'left'].map((k) => `${sided[1]}-${k}`) : e.shiftKey ? [prop, `${sided[1]}-${PAIR[sided[2]]}`] : [prop];
+    const linked = linkedOf(prop, e);
     const x0 = e.clientX, y0 = e.clientY, at = e.target;
     let moved = false, cur = nearest(S, start);
     held = { prop, chip }; pinned = el; stage.setAttribute('data-pinned', ''); grips.setAttribute('data-dragging', '');
@@ -235,12 +257,18 @@ export function mount(host, root, css) {
     // on the window: the grip under the hand is drawn again as the value moves, so it can't hold the pointer itself
     addEventListener('pointermove', move, true); addEventListener('pointerup', up, true);
   };
+  // pointing at a grip (or a side's number in the card) lights every side that will move with it
+  const preview = (prop, e) => { const on = prop ? linkedOf(prop, e) : []; for (const g of grips.querySelectorAll('.grip')) g.toggleAttribute('data-linked', on.length > 1 && on.includes(g.dataset.prop)); };
+  stage.addEventListener('pointerover', (e) => { if (held) return; const t = e.target.closest?.('.grip, .xr-box [data-prop]'); preview(t?.dataset.prop, e); });
+  addEventListener('keydown', (e) => { if ((e.key === 'Shift' || e.key === 'Meta') && !held) { const t = stage.querySelector('.grip:hover, .xr-box [data-prop]:hover'); if (t) preview(t.dataset.prop, e); } });
+  addEventListener('keyup', (e) => { if ((e.key === 'Shift' || e.key === 'Meta') && !held) { const t = stage.querySelector('.grip:hover, .xr-box [data-prop]:hover'); preview(t?.dataset.prop, e); } });
   grips.addEventListener('pointerdown', (e) => {
     const g = e.target.closest('.grip'); if (!g || !shown) return;
     const spec = gripsOf(shown)[Number(g.dataset.i)];
     drag(e, shown, spec.prop, spec.sign, 1, false);
   });
   card.addEventListener('pointerdown', (e) => {
+    if (e.target.closest('.xr-link')) return;
     const ch = e.target.closest('[data-prop]'); if (!ch || !shown) return;
     drag(e, shown, ch.dataset.prop, (dx) => dx, familyOf(ch.dataset.prop) === 'size' ? 2 : 0.5, true);
   });
@@ -254,7 +282,7 @@ export function mount(host, root, css) {
     if (Math.abs(t._acc) < 24) return;
     const i = S.indexOf(nearest(S, now)), o = S[Math.max(0, Math.min(S.length - 1, i + Math.sign(t._acc)))]; t._acc = 0;
     pinned = el; stage.setAttribute('data-pinned', '');
-    set(el, prop, o.v); draw(el); say(o, e.clientX, e.clientY);
+    for (const q of linkedOf(prop, e)) set(el, q, o.v); draw(el); say(o, e.clientX, e.clientY);
     clearTimeout(t._t); t._t = setTimeout(() => { live.hidden = true; }, 700);
   }, { passive: false });
   // a click on a number: the list of your sizes
@@ -266,7 +294,7 @@ export function mount(host, root, css) {
     list.style.left = `${b.left - s.left}px`; list.style.top = `${b.bottom - s.top + 6}px`;
     stage.append(list);
     list.querySelector('[aria-selected="true"]')?.scrollIntoView({ block: 'nearest' });
-    list.addEventListener('click', (e) => { const o = S[Number(e.target.closest('[data-i]')?.dataset.i)]; if (!o) return; set(el, prop, o.v); list.remove(); draw(el); });
+    list.addEventListener('click', (e) => { const o = S[Number(e.target.closest('[data-i]')?.dataset.i)]; if (!o) return; for (const q of linkedOf(prop)) set(el, q, o.v); list.remove(); draw(el); });
     const away = (e) => { if (!e.composedPath().includes(list)) { list.remove(); removeEventListener('pointerdown', away, true); } };
     addEventListener('pointerdown', away, true);
   };
@@ -293,7 +321,7 @@ export function mount(host, root, css) {
     changes.clear(); lastCard = ''; if (shown) draw(shown);
     return true;
   };
-  card.addEventListener('click', (e) => { if (e.target.closest('.sync')) sync(); else if (e.target.closest('.back')) putBack(); });
+  card.addEventListener('click', (e) => { const lk = e.target.closest('[data-link]'); if (lk) { link = lk.dataset.link; if (shown) draw(shown); return; } if (e.target.closest('.sync')) sync(); else if (e.target.closest('.back')) putBack(); });
   stage.addEventListener('dblclick', (e) => { if (count() && !e.target.closest('.xr-note')) { e.preventDefault(); sync(); } });
 
   // ── ↵ anywhere: a note for your agent about what you're pointing at; ⌘↵ copies it with the file and line ──
