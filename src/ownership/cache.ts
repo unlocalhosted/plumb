@@ -12,8 +12,23 @@ const hash = (text: string) => createHash('sha256').update(text).digest('hex');
 export const componentFiles = (directory: string) => existsSync(directory) ? globSync('**/*.{tsx,jsx,ts,js,mts,mjs,cts,cjs}', {
   cwd: directory, absolute: true, ignore: ['**/node_modules/**', '**/*.d.ts'], followSymbolicLinks: false,
 }).sort() : [];
+// A file's hash, kept while the file's size and modification time are the same. One run asks for the same file's
+// hash several times over (each cache that lists it as an input checks it when read and again when saved), and a
+// project's inputs run to thousands of files: on a 16,000-element app this was a quarter of a 50-second start, all
+// of it reading and hashing files it had already read and hashed. The key is the stamp the check cache already
+// trusts to say a file has not changed.
+const hashes = new Map<string, { stamp: string; hash: string }>();
 export const fileHash = (file: string) => {
-  try { return existsSync(file) ? statSync(file).isDirectory() ? '<directory>' : hash(readFileSync(file, 'utf8')) : null; }
+  try {
+    if (!existsSync(file)) return null;
+    const stat = statSync(file);
+    if (stat.isDirectory()) return '<directory>';
+    const stamp = `${stat.mtimeMs}:${stat.size}:${stat.ino}`, kept = hashes.get(file);
+    if (kept && kept.stamp === stamp) return kept.hash;
+    const value = hash(readFileSync(file, 'utf8'));
+    hashes.set(file, { stamp, hash: value });
+    return value;
+  }
   catch { return null; }
 };
 

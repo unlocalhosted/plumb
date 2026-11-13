@@ -917,10 +917,19 @@
 - **The fix and the proof:** four new tests in two files: a page and its places carry no finding's edits or ledger keys while a fix still gets its edit; a source question in a batch answers as it does alone and never from a changed file's old index; with Blueprint open a zone follows a scroll, steps aside while the page moves, lights when pointed at, and a covered element loses its zone and gets it back; a page of 900 rows is read whole, the same findings as a page of 3. With five existing files nearest the changes: 31 tests, 31 pass, on the laptop, once. crafting-ui's frames after the fix: 50 a second scrolling with plumber open (57 alone), 60 moving the pointer. The full suite has not been run.
 - **Media hooks:** none.
 
+## The server was checking 22,808 files four times a second (2026-11-13)
+- **The itch:** the first read after a dev server restart took about 50 s, and warm reads were still 14–17 s. The owner: "lets continue the improvement".
+- **How we found it:** a CPU profile of plumber's own server starting on algorecall. One thread spent 27 s in a file scan. A counter said why: with nobody connected, 39 full scans in 12 s.
+- **The system behind it:** under the file watcher sits a timer that re-checks every known file, in case an event is missed. It was set to 250 ms for every project, and on this one a check costs about 0.2 s. So the thread was nearly always busy, and every answer queued behind a check.
+- **What we chose and why:** keep the safety net, pace it by what it costs: a twentieth of the thread with a native watcher, a quarter when polling is all there is. Also on the way: a file's hash is kept while the file is unchanged, since each cache hashed the same thousands of files again.
+- **The fix and the proof:** warm headless reads on algorecall 14.8–17.3 s → 10.4–12.8 s with the same script; 5.7–8.7 s through the overlay once the app has settled. `plumber check` 51.8 s → 42.2 s with an identical report. Two corrections: the 0.8 s and 2.5 s freezes I had put on plumber are algorecall mounting itself; and the cold start (41–44 s before the server answers) is not fixed, it is the analysis. Machine busy during the runs. Server tests pass in both watcher modes (one OS-probe timeout on the busy machine, gone on a rerun).
+- **Media hooks:** the server thread's CPU, idle, before and after.
+
 ## Open gaps
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
 
 ## Shipped · 2026-W46
+- plumber's server no longer keeps a core busy on a big project: its safety-net file check is paced by its own cost, and a 16,000-element page now reads in 6–9 s ([entry](#the-server-was-checking-22808-files-four-times-a-second-2026-11-13)).
 - The page no longer freezes while plumber reads it: the longest block on a big page went from 1.8 s to 0.3 s, and the pointer stays live ([entry](#the-page-froze-while-plumber-read-it-the-judging-now-comes-in-slices-2026-11-13)).
 - With plumber open, the app under it scrolls and answers the pointer nearly as it does alone (crafting-ui: 7 → 46 frames a second scrolling, 15 → 59 moving the pointer) ([entry](#with-plumber-open-the-app-crawled-it-was-asking-what-covers-this-four-thousand-times-a-frame-2026-11-13)).
 - plumber reads a 16,000-element page in about 15 s where it took 30–52 s: it asks the server about every element in a few round trips instead of 889, and redraws the page 3 times instead of 18 ([entry](#889-questions-asked-one-at-a-time-and-a-redraw-for-each-trickle-2026-11-13)).
