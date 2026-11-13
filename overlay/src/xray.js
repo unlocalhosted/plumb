@@ -52,6 +52,11 @@ export const XRAY_CSS = `
     background: var(--pl-bg-surface); color: var(--pl-text-primary); box-shadow: var(--pl-shadow-card); font: 500 12px/16px var(--pl-sans);
     transition: transform 420ms var(--pl-spring); }
   .xr-card[data-fresh] { transition: none; }
+  /* the beak: a small point on the card's edge toward its element, like a tooltip's arrow, so it reads as anchored */
+  .xr-card .beak { position: absolute; width: 12px; height: 12px; background: var(--pl-bg-surface); rotate: 45deg; box-shadow: -1px 1px 0 0 var(--pl-rule, rgb(0 0 0 / .08)); pointer-events: none; transition: top 420ms var(--pl-spring), left 420ms var(--pl-spring); }
+  .xr-card[data-side="right"] .beak { left: -6px; } .xr-card[data-side="left"] .beak { right: -6px; rotate: 225deg; }
+  .xr-card[data-side="bottom"] .beak { top: -6px; rotate: 135deg; } .xr-card[data-side="top"] .beak { bottom: -6px; rotate: -45deg; }
+  .xr-card[data-short] .xr-body { overflow: auto; overscroll-behavior: contain; }
   .xr-head { display: grid; grid-template-columns: 30px 1fr; gap: 0 10px; align-items: center; }
   .xr-head .toy { grid-row: span 2; width: 30px; height: 30px; }
   .xr-head .toy svg { width: 100%; height: 100%; display: block; overflow: visible; }
@@ -148,7 +153,7 @@ export function xray(el, { tokenOf, origin = { left: 0, top: 0 }, room, source, 
 
   // ── on the element ──
   const pat = (id, c, body) => `<pattern id="${id}" width="5" height="5" patternUnits="userSpaceOnUse"${id.includes('h') ? ' patternTransform="rotate(45)"' : ''}>${body(c)}</pattern>`;
-  const hues = { mint: 'var(--pl-mint)', coral: 'var(--pl-coral)', sky: 'var(--pl-sky)', tick: 'var(--pl-icon-tick, #bbb)' };
+  const hues = { mint: 'var(--pl-mint)', coral: 'var(--pl-coral)', sky: 'var(--pl-sky)', butter: 'color-mix(in oklab, var(--pl-butter) 80%, var(--pl-butter-ink))', tick: 'var(--pl-icon-tick, #bbb)' };
   const defs = Object.entries(hues).map(([k, c]) => pat(`xrh-${k}`, c, (h) => `<rect width="2" height="5" fill="${h}" opacity=".75"/>`)
     + pat(`xrd-${k}`, c, (h) => `<circle cx="2.5" cy="2.5" r="1" fill="${h}"/>`)
     + pat(`xrs-${k}`, c, (h) => `<rect width="1.6" height="5" fill="${h}" opacity=".8"/>`)).join('');
@@ -159,7 +164,8 @@ export function xray(el, { tokenOf, origin = { left: 0, top: 0 }, room, source, 
   let draw = '';
   // margin, dotted, outside the border
   [[r.left - m[3], r.top - m[0], r.width + m[1] + m[3], m[0]], [r.right, r.top, m[1], r.height], [r.left - m[3], r.bottom, r.width + m[1] + m[3], m[2]], [r.left - m[3], r.top, m[3], r.height]]
-    .forEach(([x, y, w, h], i) => { if (m[i]) draw += rect(x, y, w, h, `url(#xrd-${key(mj[i])})`); });
+    // margin is butter dots in the visual language (padding is mint hatch); coral only when it's off your scale
+    .forEach(([x, y, w, h], i) => { if (m[i]) draw += rect(x, y, w, h, `color-mix(in oklab, ${mj[i].off ? 'var(--pl-coral)' : 'var(--pl-butter)'} 14%, transparent)`) + rect(x, y, w, h, `url(#xrd-${mj[i].off ? 'coral' : 'butter'})`); });
   // padding, hatched, inside it
   [[ix, iy, iw, p[0]], [ix + iw - p[1], iy + p[0], p[1], ih - p[0] - p[2]], [ix, iy + ih - p[2], iw, p[2]], [ix, iy + p[0], p[3], ih - p[0] - p[2]]]
     .forEach(([x, y, w, h], i) => { if (p[i]) draw += rect(x, y, w, h, tint(pj[i])) + rect(x, y, w, h, `url(#xrh-${key(pj[i])})`); });
@@ -182,7 +188,8 @@ export function xray(el, { tokenOf, origin = { left: 0, top: 0 }, room, source, 
   let said = '';
   if (zone) {
     const zj = judge(zone.family, zone.n), zx = zone.x - origin.left, zy = zone.y - origin.top;
-    if (zj.zero) zj.c = 'var(--pl-sky)';
+    if (zone.box === 'margin' && !zj.off) zj.c = 'color-mix(in oklab, var(--pl-butter) 80%, var(--pl-butter-ink))';
+    else if (zj.zero) zj.c = 'var(--pl-sky)';
     draw += `<rect class="xr-zone" x="${r1(zx)}" y="${r1(zy)}" width="${r1(zone.w)}" height="${r1(zone.h)}" rx="${zone.family === 'radius' ? 4 : 2}" fill="color-mix(in oklab, ${zj.c} 22%, transparent)" stroke="${zj.c}" stroke-width="2"${zj.zero ? ' stroke-dasharray="4 3"' : ''}/>`;
     // the pill sits outside the element, beside the part: under it for a bottom or inside part, above for a top one
     const up = zone.side === 'top' || zone.prop === 'width';
@@ -190,7 +197,7 @@ export function xray(el, { tokenOf, origin = { left: 0, top: 0 }, room, source, 
     said = `<span class="xr-say" style="left:${r1(zx + zone.w / 2)}px;top:${r1(py)}px"><b>${esc(zone.said)}</b> ${zone.family === 'radius' && zone.n > 500 ? '' : zj.n}${zj.t ? ` <i class="on">${esc(zj.t)}</i>` : zj.off ? ' <i class="off">off scale</i>' : ''}</span>`;
   }
   // parts in hand while a picker has them: drawn strong, no pill (the picker says it)
-  for (const lz of lit) { const lj = judge(lz.family, lz.n); draw += `<rect class="xr-zone" x="${r1(lz.x - origin.left)}" y="${r1(lz.y - origin.top)}" width="${r1(lz.w)}" height="${r1(lz.h)}" rx="2" fill="color-mix(in oklab, ${lj.c} 22%, transparent)" stroke="${lj.c}" stroke-width="2"/>`; }
+  for (const lz of lit) { const lj = judge(lz.family, lz.n); if (lz.box === 'margin' && !lj.off) lj.c = 'color-mix(in oklab, var(--pl-butter) 80%, var(--pl-butter-ink))'; draw += `<rect class="xr-zone" x="${r1(lz.x - origin.left)}" y="${r1(lz.y - origin.top)}" width="${r1(lz.w)}" height="${r1(lz.h)}" rx="2" fill="color-mix(in oklab, ${lj.c} 22%, transparent)" stroke="${lj.c}" stroke-width="2"/>`; }
   const wSz = sizing(el, cs, 'w'), hSz = sizing(el, cs, 'h');
   // the rulers' numbers carry their verdict too: deep coral off your sizes, deep mint on one (with its name)
   const sz = (n) => { const v = judge('size', n); return v.off ? 'background:var(--pl-coral-ink)' : v.on ? 'background:var(--pl-mint-ink)' : ''; };
@@ -305,29 +312,33 @@ export function peersOf(el, keyOf = placeOf, all = (k) => document.querySelector
   return found.includes(el) ? found : [el];
 }
 
-/* Where the card goes: beside its element, never on it. `box` is the element with its margin and rulers (in the
- * card's coordinates), `size` the card's own measured size, `room` where it must stay. Right of the element, else
- * left, else below, else above: the first side where the whole card fits. Along that side it slides to stay in the
- * room, but it never crosses onto the element. If no side fits, the side with the most room, clear of the element. */
+/* Where the card goes, the way a tooltip finds its place (Floating UI's flip, shift and size): it never covers what it
+ * points at.
+ *   1. outside the container the element is read with, level with the element (it covers nothing read with it);
+ *   2. else beside the element: right, then flipped to the left, then below, then above, the first side where it fits
+ *      whole; along that side it shifts to stay in the room;
+ *   3. else the side with the most room, and the card is shortened to fit there (its body scrolls) rather than cross
+ *      onto the element.
+ * Returns where, which side it's on (for the arrow) and the height it may have. */
 export function placeCard(box, size, room, gap = 16, context = null) {
-  // first, outside the container the element lives in (the card or list around it), level with the element: then it
-  // covers nothing the element is read with. Only if neither side of that has room does it come in beside the element
+  const { w, h } = size, clampY = (y, hh = h) => Math.max(room.top, Math.min(y, room.bottom - hh)), clampX = (x) => Math.max(room.left, Math.min(x, room.right - w));
   if (context) {
-    const c = { ...context, top: box.top, bottom: box.bottom };
-    const yy = Math.max(room.top, Math.min(box.top, room.bottom - size.h));
-    if (room.right - (c.right + gap) >= size.w) return { x: Math.round(c.right + gap), y: Math.round(yy) };
-    if (c.left - gap - room.left >= size.w) return { x: Math.round(c.left - gap - size.w), y: Math.round(yy) };
+    if (room.right - (context.right + gap) >= w) return { x: Math.round(context.right + gap), y: Math.round(clampY(box.top)), side: 'right', maxH: null };
+    if (context.left - gap - room.left >= w) return { x: Math.round(context.left - gap - w), y: Math.round(clampY(box.top)), side: 'left', maxH: null };
   }
-  const { w, h } = size, clampY = (y) => Math.max(room.top, Math.min(y, room.bottom - h)), clampX = (x) => Math.max(room.left, Math.min(x, room.right - w));
   const sides = [
-    { fit: room.right - (box.right + gap), need: w, at: () => ({ x: box.right + gap, y: clampY(box.top) }) },
-    { fit: box.left - gap - room.left, need: w, at: () => ({ x: box.left - gap - w, y: clampY(box.top) }) },
-    { fit: room.bottom - (box.bottom + gap), need: h, at: () => ({ x: clampX(box.left), y: box.bottom + gap }) },
-    { fit: box.top - gap - room.top, need: h, at: () => ({ x: clampX(box.left), y: box.top - gap - h }) },
+    { side: 'right', fit: room.right - (box.right + gap), need: w, along: room.bottom - room.top, at: (hh) => ({ x: box.right + gap, y: clampY(box.top, hh) }) },
+    { side: 'left', fit: box.left - gap - room.left, need: w, along: room.bottom - room.top, at: (hh) => ({ x: box.left - gap - w, y: clampY(box.top, hh) }) },
+    { side: 'bottom', fit: room.bottom - (box.bottom + gap), need: h, along: room.bottom - (box.bottom + gap), at: () => ({ x: clampX(box.left), y: box.bottom + gap }) },
+    { side: 'top', fit: box.top - gap - room.top, need: h, along: box.top - gap - room.top, at: (hh) => ({ x: clampX(box.left), y: box.top - gap - hh }) },
   ];
-  const side = sides.find((s) => s.fit >= s.need) ?? sides.reduce((a, b) => (b.fit / b.need > a.fit / a.need ? b : a));
-  const at = side.at();
-  return { x: Math.round(at.x), y: Math.round(at.y) };
+  const whole = sides.find((s) => s.fit >= s.need && (s.side === 'right' || s.side === 'left' ? s.along >= h : true));
+  if (whole) { const at = whole.at(h); return { x: Math.round(at.x), y: Math.round(at.y), side: whole.side, maxH: null }; }
+  // nothing fits whole: the roomiest side, the card shortened to the room that side has
+  const best = sides.filter((s) => s.fit >= Math.min(s.need, 160)).sort((a, b) => b.fit * b.along - a.fit * a.along)[0] ?? sides[0];
+  const maxH = Math.max(160, Math.min(h, best.side === 'right' || best.side === 'left' ? room.bottom - room.top : best.fit));
+  const at = best.at(maxH);
+  return { x: Math.round(at.x), y: Math.round(at.y), side: best.side, maxH: Math.round(maxH) };
 }
 
 /* The container an element is read with: the nearest ancestor that is a surface (its own background, a shadow or a

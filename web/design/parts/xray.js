@@ -157,7 +157,7 @@ export function mount(host, root, css) {
   let onlyThis = false; // Alt as a change starts: just the one pointed at
 
   // the part pointed at (a padding side, a margin side, the width or height ruler, a corner, the gap, the words)
-  let zone = null, justDragged = false;
+  let zone = null, justDragged = false, warm = 0, pending;
   const draw = (el) => {
     if (!el) { layer.innerHTML = ''; card.hidden = true; shown = null; zone = null; return; }
     const s = box(), [name, source] = nameOf(el);
@@ -191,10 +191,20 @@ export function mount(host, root, css) {
     // beside the element, never on it: its box with its margin and its rulers, against the card's measured size
     const R = el.getBoundingClientRect(), cs = getComputedStyle(el), mg = (q) => parseFloat(cs.getPropertyValue(`margin-${q}`)) || 0;
     const around = { left: R.left - s.left - mg('left') - 6, top: R.top - s.top - mg('top') - 24, right: R.right - s.left + mg('right') + 28, bottom: R.bottom - s.top + mg('bottom') + 6 };
+    body.style.maxHeight = ''; // its whole height, measured before any shortening
     const ctx = contextOf(el, stage), C = ctx?.getBoundingClientRect();
     const context = C && { left: C.left - s.left, top: C.top - s.top, right: C.right - s.left, bottom: C.bottom - s.top };
     const at = placeCard(around, { w: card.offsetWidth || 292, h: card.offsetHeight || 420 }, { left: 12, top: 12, right: s.width - 12, bottom: s.height - 12 }, 16, context);
     card.style.transform = `translate(${at.x}px, ${at.y}px)`; cardAt = at;
+    // the side it's on, its beak toward the element, and a height cap when it had to shorten to fit
+    card.dataset.side = at.side;
+    if (!card.querySelector('.beak')) card.insertAdjacentHTML('afterbegin', '<i class="beak" aria-hidden="true"></i>');
+    const beak = card.querySelector('.beak'), mid = { x: (R.left + R.right) / 2 - s.left, y: (R.top + R.bottom) / 2 - s.top };
+    const cw = card.offsetWidth, chh = at.maxH ?? card.offsetHeight;
+    if (at.side === 'left' || at.side === 'right') { beak.style.top = `${Math.max(14, Math.min(chh - 26, mid.y - at.y - 6))}px`; beak.style.left = ''; }
+    else { beak.style.left = `${Math.max(14, Math.min(cw - 26, mid.x - at.x - 6))}px`; beak.style.top = ''; }
+    card.toggleAttribute('data-short', !!at.maxH);
+    body.style.maxHeight = at.maxH ? `${at.maxH - hand.offsetHeight - 30}px` : '';
     card.hidden = !!noting;
     if (first) requestAnimationFrame(() => card.removeAttribute('data-fresh'));
     shown = el;
@@ -222,11 +232,23 @@ export function mount(host, root, css) {
     if (el && el === shown) {
       lastOn = pt; clearTimeout(waiting);
       const z = zoneAt(zonesOf(el), pt.x, pt.y);
-      if (z?.prop !== zone?.prop) { zone = z; if (z) hold(el, z.prop); draw(el); }
+      if (z?.prop === zone?.prop) { clearTimeout(warm); pending = undefined; return; }
+      if (z?.prop === pending) return; // already warming up for this one: let it finish
+      // a warm-up outside the element: the margin bands and the size rulers sit side by side there, and a pointer
+      // crossing them shouldn't take each in turn; a part is taken once the pointer has rested on it for a moment.
+      // Inside the element a part is taken at once
+      const take = () => { pending = undefined; zone = z; if (z) hold(el, z.prop); draw(el); };
+      clearTimeout(warm); pending = z?.prop ?? null;
+      if (z?.outside || zone?.outside) warm = setTimeout(take, 200); else take();
       return;
     }
     // on the way to the card: keep what's shown, a moment longer than it takes to get there
-    if (shown && !pinned && headingToCard(pt)) { clearTimeout(waiting); waiting = setTimeout(() => { if (!card.matches(':hover')) { draw(null); } }, 500); return; }
+    // …and if it doesn't reach the card, the element under the pointer then is the one shown
+    if (shown && !pinned && headingToCard(pt)) {
+      clearTimeout(waiting);
+      waiting = setTimeout(() => { if (card.matches(':hover')) return; lastOn = el ? pt : null; zone = el ? zoneAt(zonesOf(el), pt.x, pt.y) : null; draw(el); if (el && zone) hold(el, zone.prop); }, 450);
+      return;
+    }
     clearTimeout(waiting);
     lastOn = el ? pt : null;
     zone = el ? zoneAt(zonesOf(el), pt.x, pt.y) : null;
