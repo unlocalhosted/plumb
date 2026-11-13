@@ -2378,6 +2378,15 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   rail. Mint standing is a change; pushed down and pale is undone; butter is edited by hand since; a peg that turns
   back on itself is an undo; lifted under a pink knob is the one pointed at; a coral shake says no. The hatch is
   gone because a pattern only ever means space. On the page only; the strip itself still draws hairlines.
+- **The pegs were a dead end (owner, same day: "you made them even worse... the most useless icons", "not a single
+  thought given by you").** The system behind it: a new shape invented in code in one go, with no question asked
+  first; coloured blobs that said nothing about what a change is. Asked what a change should look like, the owner
+  chose "plain marks, done well". The thought the first marks lacked: each state had its own trick (an outline, a
+  hatch, a notch, a colour, two widths). Redrawn, a mark is one round-ended stroke on a baseline, and each thing it
+  says has exactly one way of being said: height is what it was (full stroke a change, half stroke an undo), fill is
+  whether it is there (solid, or pale when taken back), colour is whose it is (ink Plumber's, butter edited by hand
+  since, coral for the moment of a no). The pointed one stands taller under a sky knob and keeps its colour. Shown
+  as today over redrawn, the same history, and used in the page's live strip. On the page only.
 - **Media hooks:** a clip of Take a fix → Undo, and of the hatched tick saying no.
 
 ## Open gaps
