@@ -1,6 +1,6 @@
 // A principle as a marketing film for React Plumber: one 16:9 stage (1600 × 900, scaled to the window), nothing of the
 // showcase around it. Signed as a piece of craft: the principle's number and name, top left, in the toy face; React
-// Plumber's mark, bottom right, quiet, on every frame (the plumb bob on its line, the site's own mark: web/site/Bar.jsx).
+// Plumber's mark, bottom right, quiet, on every frame (the turning-sides P, chosen 2026-11-13).
 //
 // THE FRAME (ms)
 //      0   OPENING   the desk, empty
@@ -8,7 +8,7 @@
 //   1800             the name travels up to its corner and becomes the signature; the card rises in beneath it
 //   2600             the film plays (Film.jsx: feel it, measure it, why it holds, payoff)
 //    end   CLOSING   the card and the signature step back; the mark travels from its corner to the middle and grows;
-//                    the plumb bob swings and settles on its line (true, as the name says); under it, the site's line
+//                    the mark's guardrails draw themselves on (the gap's guides, the 4 it measures); under it, the site's line
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { PRINCIPLES } from './catalogue.js';
 import { Film } from './Film.jsx';
@@ -29,13 +29,39 @@ const TIMING = {
 const MOVE = 'cubic-bezier(0.7, 0, 0.3, 1)';      // the camera's curve: slow start, slow finish
 const LINE = 'A design review on every screen.';   // the site's hero line (homepage/src/hero)
 
-const Bob = ({ swing }) => (
-  <svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true" style={{ overflow: 'visible' }}>
-    <g style={{ transformOrigin: '12px 1.5px', animation: swing ? 'film-swing 1600ms cubic-bezier(0.3, 0, 0.2, 1) both' : 'none' }}>
-      <path d="M12 1.5v6" fill="none" stroke="var(--pl-ink)" strokeWidth="2.2" strokeLinecap="round" />
-      <path d="M6.2 8.8h11.6L12 22z" fill="var(--pl-pink)" stroke="var(--pl-pink)" strokeWidth="2.4" strokeLinejoin="round" />
-      <circle cx="12" cy="12.4" r="1.7" fill="#fff" />
-    </g>
+// React Plumber's mark (owner's pick, 2026-11-13; docs/design/comps/logo-guides.html, "the turning sides, one gradient"):
+// four sides of padding turning round the content make a P, cut from one pink-to-violet gradient, the content in butter,
+// lit from the top; every gap exactly 4 on a 120 grid. With `guards`, plumber's own guardrails draw themselves on: the
+// guides the stem, cap and foot sit on, and the 4 it keeps between the sides.
+const GUARD = '#2f86dc';
+// a box with its own corner radii, scaled down together when they don't fit (as CSS scales border-radius)
+const box = (x, y, w, h, r) => {
+  const f = Math.min(1, w / (r[0] + r[1] || 1), w / (r[3] + r[2] || 1), h / (r[0] + r[3] || 1), h / (r[1] + r[2] || 1)), [a, b, c, d] = r.map((v) => v * f);
+  return `M${x + a} ${y}H${x + w - b}${b ? `A${b} ${b} 0 0 1 ${x + w} ${y + b}` : ''}V${y + h - c}${c ? `A${c} ${c} 0 0 1 ${x + w - c} ${y + h}` : ''}H${x + d}${d ? `A${d} ${d} 0 0 1 ${x} ${y + h - d}` : ''}V${y + a}${a ? `A${a} ${a} 0 0 1 ${x + a} ${y}` : ''}Z`;
+};
+const SIDES = [box(24, 18, 48, 20, [24, 5, 5, 5]), box(76, 18, 20, 38, [5, 24, 5, 5]), box(48, 60, 48, 20, [5, 5, 24, 5]), box(24, 42, 20, 60, [5, 5, 10, 10])];
+const CONTENT = box(48, 42, 24, 14, [5, 5, 5, 5]);
+const Mark = ({ size, guards = false }) => (
+  <svg viewBox="0 0 120 120" width={size} height={size} aria-hidden="true" style={{ overflow: 'visible' }}>
+    <defs>
+      <linearGradient id="mk-sweep" gradientUnits="userSpaceOnUse" x1="24" y1="18" x2="96" y2="102"><stop offset="0" stopColor="#ff7ac0" /><stop offset=".5" stopColor="#e84aa8" /><stop offset="1" stopColor="#6a4ae6" /></linearGradient>
+      <linearGradient id="mk-butter" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#ffd24d" /><stop offset=".55" stopColor="#ffbf1a" /><stop offset="1" stopColor="#eaa800" /></linearGradient>
+      <linearGradient id="mk-lit" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#fff" stopOpacity=".42" /><stop offset=".25" stopColor="#fff" stopOpacity="0" /></linearGradient>
+    </defs>
+    {guards ? (
+      <g stroke={GUARD} strokeWidth=".8" strokeDasharray="2.4 2" strokeLinecap="round" fill="none" style={{ animation: 'mk-guide 700ms ease 900ms both' }}>
+        <path d="M24 4V116" /><path d="M4 18H116" /><path d="M4 102H40" />
+      </g>
+    ) : null}
+    {SIDES.map((d) => <g key={d}><path d={d} fill="url(#mk-sweep)" /><path d={d} fill="url(#mk-lit)" style={{ mixBlendMode: 'soft-light' }} /></g>)}
+    <path d={CONTENT} fill="url(#mk-butter)" /><path d={CONTENT} fill="url(#mk-lit)" style={{ mixBlendMode: 'soft-light' }} />
+    {guards ? (
+      <g style={{ animation: 'mk-pill 420ms cubic-bezier(.3, 1.5, .5, 1) 1500ms both', transformOrigin: '74px 8px' }}>
+        <path d="M72 12H76M72 9.4V14.6M76 9.4V14.6" stroke={GUARD} strokeWidth=".9" strokeLinecap="round" />
+        <rect x="68" y="0.3" width="12" height="8.4" rx="3" fill={GUARD} />
+        <text x="74" y="7" textAnchor="middle" fontFamily="ui-monospace, Menlo" fontSize="6.4" fontWeight="700" fill="#fff">4</text>
+      </g>
+    ) : null}
   </svg>
 );
 
@@ -92,7 +118,7 @@ export function FilmPage({ n }) {
   return (
     <div className="pl-light" style={{ position: 'fixed', inset: 0, display: 'grid', placeItems: 'center', overflow: 'hidden', background: 'var(--pl-desk)' }}>
       {/* plumber's own overlay (its toasts, its Alt pill) runs on this dev page; it is not part of the film */}
-      <style>{'plumb-overlay { display: none !important; } @keyframes film-swing { 0% { rotate: -22deg } 30% { rotate: 13deg } 55% { rotate: -6deg } 78% { rotate: 2.5deg } 100% { rotate: 0deg } }'}</style>
+      <style>{'plumb-overlay { display: none !important; } @keyframes mk-guide { from { opacity: 0; stroke-dashoffset: 40 } to { opacity: 1; stroke-dashoffset: 0 } } @keyframes mk-pill { from { opacity: 0; transform: scale(.6) } to { opacity: 1; transform: scale(1) } }'}</style>
       <div style={{ position: 'relative', width: STAGE.w, height: STAGE.h, flex: 'none', transform: `scale(${k})`, background: 'var(--pl-desk)', color: 'var(--pl-ink)', visibility: to ? 'visible' : 'hidden' }}>
         {/* the signature: which piece of craft this is; it opens the film large in the middle, then takes its corner */}
         <div ref={sig} style={{ position: 'absolute', left: STAGE.edge, top: STAGE.edge - 8, display: 'flex', flexDirection: 'column', gap: 8, maxWidth: 420,
@@ -110,8 +136,8 @@ export function FilmPage({ n }) {
         {/* the mark, on every frame; at the end it comes to the middle, and the bob settles on its line */}
         <div ref={mark} style={{ position: 'absolute', right: STAGE.edge, bottom: STAGE.edge - 12, display: 'flex', alignItems: 'center', gap: 9,
           opacity: shown ? 0.92 : 0, transform: marked && to ? to.mark : 'none', transition: `transform 1000ms ${MOVE}, opacity 600ms ease` }}>
-          <Bob swing={marked} />
-          <span style={{ font: 'var(--pl-round-w, 750) 21px/1 var(--pl-round)', letterSpacing: '-0.005em' }}>React Plumber</span>
+          <Mark size={38} guards={marked} />
+          <span style={{ font: '650 22px/1 var(--pl-sans)', letterSpacing: '-0.035em' }}>React Plumber</span>
         </div>
         <p style={{ position: 'absolute', left: 0, right: 0, top: STAGE.h / 2 + 34, margin: 0, textAlign: 'center', font: '400 22px/30px var(--pl-sans)', color: 'var(--pl-ink-2)',
           opacity: phase === 'line' ? 1 : 0, transform: `translateY(${phase === 'line' ? 0 : 8}px)`, transition: 'opacity 600ms ease, transform 700ms var(--pl-spring)' }}>{LINE}</p>
