@@ -1040,6 +1040,7 @@ field is empty). The table of five writes, before and after. The Next table: eig
 - **The design system:** the state-by-design branch (the toy language, its picker, kit, toys, claims and scope, and every overlay part on its role and state names) is merged into main. Its parts read stamps through main's stamp module; the text-style preview keeps its claims with main's leading and weights. Two tests copied the whole demo folder and so took in the design branch's new Workbench screen; each now keeps only the page it measures. Full suite on vm-agent: 1014 passed; the 7 failures were each fixed or passed on their own.
 
 ## Open gaps
+- The site's top bar doesn't fit a phone (390px): it widens the page to about 500px. Needs a compact bar.
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
 
 ### Open gaps from the 0.4.0 release work
@@ -2044,6 +2045,16 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - **"Too much empty space horizontally" meant the page's margins** (I first read it as space inside the tiles). The
   section was capped at 72rem, about 1,150px, so on a wide window the grid sat in a narrow column with big empty bands
   either side and the cards were crammed. Now it can be 104rem wide: 1,600px on a 1,940px window, 920px tall.
+- **"Make sure it's suitable for all screen sizes."** Measured the grid at 1280×720, 1366×768, 1440×900, 1536×864,
+  1920×1080 and 2560×1440, then 1100×800, 820 (tablet) and 390 (phone): whether it fits the screen, each scene's scale,
+  and whether any part leaves its tile. Found and fixed: the menu was measured while closed (scale 0), so it spilled
+  when open; scenes are now measured by their layout boxes, re-measured when fonts load or a part resizes, and the menu
+  is centred like the rest; a hidden 8px nudge on the news card spilled at 130%; a tab going bold needed more margin;
+  on a 2560 monitor the grid stopped at 1,600px (480px empty each side) and now reaches 1,856px. On short laptops the
+  grid keeps at least 690px tall rather than shrinking scenes below about 60%. Result: no part leaves its tile at any
+  size checked; tablet and phone fall back to two and one columns.
+- **Found, not fixed:** on a 390px phone the site's top bar (logo, four nav buttons, Dark) doesn't fit and lays the
+  page out about 500px wide. That's the site's bar, not this section.
 
 ## Open gaps
 - The overlay writes about 180 corners as numbers (radius tokens about 45 times), many off its own scale; 6px is

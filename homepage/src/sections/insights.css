@@ -6,7 +6,7 @@
   /* transitions.dev's Panel reveal and Number subtle change, their tokens slowed so the fix can be watched */
   --t-reveal-in: 900ms; --t-reveal-out: 1000ms; --t-reveal-blur: 3px; --t-reveal-rise: 6px; --t-fix: 1600ms; --t-draw: 900ms;
   /* the fix itself moves evenly in and out, so it's visible the whole way, not done in its first third */
-  --t-fix-ease: cubic-bezier(0.65, 0, 0.35, 1); max-width: 104rem; margin: 0 auto; padding: var(--s-10) var(--s-6) var(--s-9); color: var(--ink-1); }
+  --t-fix-ease: cubic-bezier(0.65, 0, 0.35, 1); max-width: 120rem; margin: 0 auto; padding: var(--s-10) var(--s-6) var(--s-9); color: var(--ink-1); }
 .ins-x-head { max-width: 44rem; margin: 0 auto; text-align: center; }
 .ins-x-eyebrow { display: inline-block; margin-bottom: var(--s-4); font: var(--t-label); color: var(--accent-ink); }
 .ins-x .title { margin-bottom: var(--s-4); }
@@ -17,7 +17,8 @@
 .ins-x-families li span { font: 600 11px/1 var(--pl-mono); color: var(--pl-pink); }
 /* a bento: the play button the big tile, three wide ones, the rest single; wide and single swap sides row by row */
 .ins-x-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); grid-template-rows: repeat(3, minmax(0, 1fr)); gap: 14px; margin-top: var(--s-6);
-  height: calc(100svh - 104px); min-height: 620px; max-height: 920px;
+  /* one screen on most displays; on a short laptop it may run a little past the fold rather than shrink the scenes */
+  height: calc(100svh - 104px); min-height: 690px; max-height: 1120px;
   grid-template-areas: 'play play album timer' 'play play news shadow' 'forecast photo tabs menu'; }
 
 /* ── the review bar: what Plumber is doing to the card on turn, in three beats (checking, found and why, fixed), in the
@@ -201,7 +202,7 @@
 
 /* #18 widows: a news card with its photo (a white building with blue glass, Unsplash), the headline in the toy face */
 .sc-news { align-content: center; justify-items: center; }
-.sc-news-card { display: grid; gap: 6px; width: 280px; padding: 8px 12px 10px; translate: 0 -8px; border-radius: 16px; background: var(--pl-bg-surface); box-shadow: 0 0 0 1px var(--pl-border-default), 0 18px 30px -16px rgb(0 0 0 / .3); }
+.sc-news-card { display: grid; gap: 6px; width: 280px; padding: 8px 12px 10px; border-radius: 16px; background: var(--pl-bg-surface); box-shadow: 0 0 0 1px var(--pl-border-default), 0 18px 30px -16px rgb(0 0 0 / .3); }
 .sc-news-photo { height: 44px; border-radius: 10px; background: #9fb7d8 url('https://images.unsplash.com/photo-1523274158540-2aa98c15ec26?w=600&q=80&auto=format&fit=crop') center 40% / cover; }
 .sc-news small { justify-self: start; font: 600 10.5px/1 var(--font); letter-spacing: .04em; text-transform: uppercase; color: var(--pl-sky); }
 .sc-news h4 { width: 256px; margin: 0; font: var(--pl-round-w, 700) 19px/1.15 var(--pl-round); letter-spacing: -0.015em; text-wrap: wrap; color: var(--ink-1); }
@@ -257,7 +258,7 @@
 .sc-task b { justify-self: end; display: grid; place-items: center; width: 18px; height: 18px; border-radius: 50%; background: var(--c); color: #fff; font: 700 9px/1 var(--pl-round); }
 
 /* #63 menu: a document's header, its Share button, a menu with pictures */
-.sc-menu { align-content: start; justify-items: center; padding-top: 36px; }
+.sc-menu { align-content: center; justify-items: center; }
 .sc-doc { display: flex; align-items: center; gap: 10px; width: 280px; padding: 8px 8px 8px 12px; border-radius: 14px; background: var(--pl-bg-surface); box-shadow: 0 0 0 1px var(--pl-border-default); }
 .sc-doc > b { flex: 1; font: var(--pl-round-w, 700) 14px/1 var(--pl-round); }
 .sc-faces { display: flex; } .sc-faces i { display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--c); color: #fff; font: 700 9.5px/1 var(--pl-round); font-style: normal; box-shadow: 0 0 0 2px var(--pl-bg-surface); } .sc-faces i + i { margin-left: -6px; }

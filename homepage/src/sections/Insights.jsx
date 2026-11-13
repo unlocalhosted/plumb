@@ -101,14 +101,17 @@ function Card({ card, live, reduced, turn, onBeat, onDone }) {
   useLayoutEffect(() => {
     if (card.size === 'big') return;
     const el = stage.current;
+    // layout boxes (offsets), which ignore the scene's current scale and a menu's closed scale of 0
     const measure = () => {
-      const r = el.getBoundingClientRect(), sc = el.querySelector('.sc'), k = parseFloat(getComputedStyle(el).getPropertyValue('--fit')) || 1;
-      let l = Infinity, t = Infinity, rr = -Infinity, b = -Infinity;
-      for (const c of sc.children) { const q = c.getBoundingClientRect(); if (!q.width) continue; l = Math.min(l, q.left); t = Math.min(t, q.top); rr = Math.max(rr, q.right); b = Math.max(b, q.bottom); }
-      const w = (rr - l) / k, h = (b - t) / k;
-      if (w > 0 && h > 0) setFit(Math.min(1.3, (r.width - 28) / w, (r.height - 24) / h));
+      const sc = el.querySelector('.sc'); if (!sc) return;
+      let l = Infinity, t = Infinity, r = -Infinity, b = -Infinity;
+      for (const c of sc.children) { if (!c.offsetWidth) continue; l = Math.min(l, c.offsetLeft); t = Math.min(t, c.offsetTop); r = Math.max(r, c.offsetLeft + c.offsetWidth); b = Math.max(b, c.offsetTop + c.offsetHeight); }
+      const w = r - l, h = b - t;
+      if (w > 0 && h > 0) setFit(Math.min(1.3, (el.clientWidth - 40) / w, (el.clientHeight - 28) / h)); // a margin wide enough for a tab going bold
     };
-    const ro = new ResizeObserver(measure); ro.observe(el); requestAnimationFrame(measure);
+    const ro = new ResizeObserver(measure); ro.observe(el);
+    const sc = el.querySelector('.sc'); if (sc) for (const c of sc.children) ro.observe(c);
+    requestAnimationFrame(measure); document.fonts?.ready.then(measure);
     return () => ro.disconnect();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const clear = () => { timers.current.forEach(clearTimeout); timers.current = []; };
