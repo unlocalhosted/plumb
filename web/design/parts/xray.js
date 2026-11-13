@@ -4,6 +4,7 @@
 import { LANGUAGE_CSS } from '../../../overlay/src/language.js';
 import { TOY_DEFS } from '../../../overlay/src/toys.js';
 import { XRAY_CSS, xray, zonesOf, zoneAt, peersOf, placeCard, contextOf } from '../../../overlay/src/xray.js';
+import { sizing } from '../../../overlay/src/boxmodel.js';
 import { PICKER_CSS, picker } from '../../../overlay/src/picker.js';
 import { burst } from '../../../overlay/src/burst.js';
 
@@ -83,9 +84,14 @@ export function mount(host, root, css) {
     .xr-hand .thumb { position: absolute; left: 0; top: 3px; bottom: 3px; z-index: 0; border-radius: 8px; pointer-events: none;
       background: var(--pl-sky-soft); box-shadow: inset 0 0 0 1.5px color-mix(in oklab, var(--pl-sky) 50%, transparent);
       transition: transform 420ms var(--pl-spring), width 420ms var(--pl-spring), background-color 220ms var(--pl-ease-out); }
-    .xr-hand .thumb[data-on="mode"] { background: var(--pl-lilac-soft); box-shadow: inset 0 0 0 1.5px color-mix(in oklab, var(--pl-lilac) 50%, transparent); }
+    .xr-hand .thumb:is([data-on="mode"], [data-on="scope"]) { background: var(--pl-lilac-soft); box-shadow: inset 0 0 0 1.5px color-mix(in oklab, var(--pl-lilac) 50%, transparent); }
     .xr-hand .thumb[data-pulled] { transition: transform 60ms linear, width 60ms linear; }
-    .xr-hand .row[data-seg="mode"] .side { color: var(--pl-lilac-ink); }
+    .xr-hand .row[data-seg="mode"] [data-s="mode"], .xr-hand .row[data-seg="scope"] [data-s="scope"] { color: var(--pl-lilac-ink); }
+    .xr-hand [data-s="scope"] { max-width: 92px; overflow: hidden; text-overflow: ellipsis; }
+    .xr-hand .say .how { margin-left: auto; font-weight: 500; }
+    .xr-hand .row .drum { min-width: 0; overflow: hidden; } .xr-hand .row .val { min-width: 0; }
+    .xr-hand .row .drum .slot span { overflow: hidden; text-overflow: ellipsis; }
+    .xr-many[data-scope="all"] { background: var(--pl-pink-soft); color: var(--pl-pink-ink); } .xr-many[data-scope="one"] { background: var(--pl-bg-inset); color: var(--pl-text-secondary); }
     .xr-hand .say { display: flex; gap: 10px; margin: 6px 4px 0; font: 600 10.5px/1 var(--pl-sans); color: #8a8a94; }
     .xr-hand .say span[data-on] { color: var(--pl-text-primary); }
     /* the changes, collected at the foot of the card: how many, Sync, and the way back */
@@ -154,7 +160,20 @@ export function mount(host, root, css) {
   const reach = () => new Set([...changes.keys()]).size;
   // the places on the page that are this part: every element the same line of code draws (rows of a list, cards)
   const peers = (el) => peersOf(el, (t) => t.dataset.x, (k) => stage.querySelectorAll(`.app [data-x="${k}"], .app[data-x="${k}"]`)); // Plumber: by the element's stamp
-  let onlyThis = false; // Alt as a change starts: just the one pointed at
+  // Where a change reaches, chosen in the card's row (owner: "add an option similar to direction to choose scope"):
+  //   one   just the element pointed at
+  //   page  every place on this page the same line draws (the rows of a list, the cards of a grid)
+  //   all   the component itself: every place your app uses it (written in its own file, not at the call site)
+  // A part repeated on the page starts at 'page'; one drawn once starts at 'one'.
+  const USES = { avatar: 14, role: 9, invite: 31, cancel: 31, badge: 6 }; // how many places the demo's app uses each component
+  const compOf = (el) => { const n = NAMES[el.dataset.x]; return n && /^components\//.test(n[1] ?? '') ? n : null; };
+  let scope = 'one';
+  const scopesOf = (el) => [...(peers(el).length > 1 ? ['one', 'page'] : ['one']), ...(compOf(el) ? ['all'] : [])];
+  const targets = (el) => {
+    if (scope === 'all' && compOf(el)) { const c = compOf(el); return [...stage.querySelectorAll('.app [data-x], .app[data-x]')].filter((t) => { const n = NAMES[t.dataset.x]; return n && n[0] === c[0] && n[1] === c[1]; }); }
+    return scope === 'page' ? peers(el) : [el];
+  };
+  const scopeSaid = (el) => scope === 'all' ? `everywhere · ${USES[el.dataset.x] ?? '?'} uses` : scope === 'page' ? `all ${peers(el).length} here` : 'just this';
 
   // the part pointed at (a padding side, a margin side, the width or height ruler, a corner, the gap, the words)
   let zone = null, justDragged = false, warm = 0, pending;
@@ -171,7 +190,7 @@ export function mount(host, root, css) {
     layer.toggleAttribute('data-still', same);
     layer.innerHTML = x.page;
     // the other places the same part is drawn: outlined, so you see a change will reach them too
-    const others = peers(el).filter((t) => t !== el);
+    const others = targets(el).filter((t) => t !== el);
     if (others.length) layer.insertAdjacentHTML('beforeend', `<svg class="xr-on xr-peers" aria-hidden="true">${others.map((t) => { const r = t.getBoundingClientRect(), rad = Math.min(parseFloat(getComputedStyle(t).borderTopLeftRadius) || 0, r.height / 2); return `<rect x="${r.left - s.left - 2}" y="${r.top - s.top - 2}" width="${r.width + 4}" height="${r.height + 4}" rx="${rad + 2}" fill="color-mix(in oklab, var(--pl-sky) 7%, transparent)" stroke="var(--pl-sky)" stroke-width="1.5" stroke-dasharray="4 3"/>`; }).join('')}</svg>`);
     card.toggleAttribute('data-still', same);
     const foot = pendHtml();
@@ -179,8 +198,9 @@ export function mount(host, root, css) {
       body.innerHTML = x.card + foot; lastCard = x.card + foot;
     }
     // how many places this part is drawn: said beside its name
-    const many = peers(el).length, head = body.querySelector('.xr-head b');
-    if (head && many > 1 && !head.querySelector('.xr-many')) head.insertAdjacentHTML('beforeend', ` <span class="xr-many" title="A change reaches every place; hold Alt as you start for just this one">×${many} places</span>`);
+    const head = body.querySelector('.xr-head b');
+    head?.querySelector('.xr-many')?.remove();
+    if (head && scopesOf(el).length > 1) head.insertAdjacentHTML('beforeend', ` <span class="xr-many" data-scope="${scope}">${scope === 'all' ? `everywhere · ${USES[el.dataset.x] ?? '?'}` : scope === 'page' ? `×${peers(el).length} here` : 'this one'}</span>`);
     // which numbers are changed, and the one in hand, kept true whether or not the card was written again
     for (const ch of card.querySelectorAll('[data-prop]')) {
       ch.toggleAttribute('data-changed', !!changes.get(el)?.has(ch.dataset.prop));
@@ -285,23 +305,22 @@ export function mount(host, root, css) {
   const read = (el, prop) => { const cs = getComputedStyle(el); return prop === 'width' ? el.getBoundingClientRect().width : prop === 'height' ? el.getBoundingClientRect().height : prop === 'gap' ? parseFloat(cs.columnGap) || parseFloat(cs.rowGap) || 0 : parseFloat(cs.getPropertyValue(prop)) || 0; };
   const set = (el, prop, v) => {
     // a repeated part changes everywhere it's drawn, unless Alt said just this one
-    for (const t of onlyThis ? [el] : peers(el)) {
+    for (const t of targets(el)) {
       if (!changes.has(t)) changes.set(t, new Map());
       const m = changes.get(t);
       if (!m.has(prop)) m.set(prop, t.style.getPropertyValue(prop));
-      t.style.setProperty(prop, `${v}px`);
+      t.style.setProperty(prop, typeof v === 'number' ? `${v}px` : v);
     }
   };
   const nearest = (S, v) => S.reduce((b, o) => (Math.abs(o.v - v) < Math.abs(b.v - v) ? o : b), S[0]);
   const live = document.createElement('div'); live.className = 'xr-live'; live.hidden = true; stage.append(live);
-  const say = (o, x, y) => { const s = box(); live.hidden = false; const n = shown && !onlyThis ? peers(shown).length : 1; live.innerHTML = `<b>${o.v}</b>${o.hard ? '<i class="off">off scale</i>' : `<i>${o.name}</i>`}${n > 1 ? `<span class="x">×${n}</span>` : ''}`; live.style.left = `${x - s.left + 16}px`; live.style.top = `${y - s.top + 14}px`; };
+  const say = (o, x, y) => { const s = box(); live.hidden = false; const n = shown ? targets(shown).length : 1; live.innerHTML = `<b>${o.v}</b>${o.hard ? '<i class="off">off scale</i>' : `<i>${o.name}</i>`}${n > 1 ? `<span class="x">×${n}</span>` : ''}`; live.style.left = `${x - s.left + 16}px`; live.style.top = `${y - s.top + 14}px`; };
 
   // drag: the value follows the hand in px and snaps to the nearest of your sizes as it goes
   const drag = (e, el, prop, sign, gain, chip) => {
     e.preventDefault(); e.stopPropagation();
     const fam = familyOf(prop), start = read(el, prop), S = optionsFor(fam, start);
     const linked = linkedOf(prop, e);
-    onlyThis = e.altKey;
     hold(el, prop);
     const x0 = e.clientX, y0 = e.clientY, at = e.target;
     let moved = false, cur = nearest(S, start);
@@ -315,7 +334,7 @@ export function mount(host, root, css) {
     };
     const up = (u) => {
       removeEventListener('pointermove', move, true); removeEventListener('pointerup', up, true);
-      held = null; live.hidden = true; onlyThis = false; resync();
+      held = null; live.hidden = true; resync();
       if (!moved && chip) openList(el, prop, at); else draw(el);
     };
     // on the window: the part under the hand is drawn again as the value moves, so it can't hold the pointer itself
@@ -351,56 +370,77 @@ export function mount(host, root, css) {
     const ch = e.target.closest('[data-prop]'); if (!ch || !shown) return;
     drag(e, shown, ch.dataset.prop, (dx) => dx, familyOf(ch.dataset.prop) === 'size' ? 2 : 0.5, true);
   });
-  // ── the value in hand: the token picker row at the top of the card, for the part or number last pointed at ──
-  let inHand = null; // { el, prop, p (the picker), S }
+  // ── the value in hand: the token picker row at the top of the card, for the part or number last pointed at. Its
+  // places, left to right: where it reaches (scope), how (which sides, or fill / fit / fixed for a size), the value.
+  // Two fingers left and right move between them; up and down change the one lit ──
+  let inHand = null;
   const sidesSaid = (prop) => { const m = prop.match(/^(padding|margin)-(\w+)$/); if (!m) return null; return link === 'all' ? `all ${m[1]}` : link === 'pair' ? `${m[2]} + ${PAIR[m[2]]}` : m[2]; };
   const TOYS = { padding: 'padding', margin: 'margin', width: 'width', height: 'height', 'border-radius': 'corner', gap: 'gap', 'font-size': 'type' };
+  const SIZINGS = ['fixed', 'fill', 'fit'];
+  const sizingOf = (el, prop) => { const t = sizing(el, getComputedStyle(el), prop === 'width' ? 'w' : 'h'); return /^Fill/.test(t) ? 'fill' : /^Hug/.test(t) ? 'fit' : 'fixed'; };
   const hold = (el, prop) => {
     if (inHand && inHand.el === el && inHand.prop === prop) return;
     hand.innerHTML = ''; inHand = null;
     if (!el || !prop) return;
-    const sided = sidesSaid(prop) !== null, now = read(el, prop), S = optionsFor(familyOf(prop), now);
+    const sided = sidesSaid(prop) !== null, sized = prop === 'width' || prop === 'height', now = read(el, prop), S = optionsFor(familyOf(prop), now);
+    scope = peers(el).length > 1 ? 'page' : 'one';
+    const scopes = scopesOf(el);
     const p = picker(stage, {
       name: prop.replace('-', ' '), toy: TOYS[prop.split('-')[0]] ?? TOYS[prop] ?? 'size', options: S, into: hand, keys: 'row', start: S.indexOf(nearest(S, now)),
       mark: () => '', format: (o) => `${o.v}px`,
-      // the element takes the value only when it differs (the row also calls this as it is made)
-      apply: (o) => { const qs = linkedOf(prop); if (qs.every((q) => Math.abs(read(el, q) - o.v) < 0.5)) return; for (const q of qs) set(el, q, o.v); draw(el); },
+      // the element takes the value only when it differs (the row also calls this as it is made); a size given a
+      // number is fixed
+      apply: (o) => { const qs = linkedOf(prop); if (qs.every((q) => Math.abs(read(el, q) - o.v) < 0.5)) return; for (const q of qs) set(el, q, o.v); if (inHand?.sized) { inHand.sizing = 'fixed'; showSeg(); } draw(el); },
     });
-    const label = sided ? sidesSaid(prop) : (prop === 'border-radius' ? 'corner' : prop === 'font-size' ? 'text size' : prop);
-    p.row.querySelector('.scrub').insertAdjacentHTML('afterend', `<span class="side">${label}</span>`);
-    hand.insertAdjacentHTML('beforeend', `<div class="say">${sided ? '<span data-s="mode">← sides</span>' : ''}<span data-s="value">↕ ${sided ? 'value' : 'your sizes'}</span></div>`);
-    // the lit place is a thumb that slides between the sides and the value: it follows the fingers, then snaps
+    const segs = [...(scopes.length > 1 ? ['scope'] : []), ...(sided || sized ? ['mode'] : []), 'value'];
+    const label = (prop === 'border-radius' ? 'corner' : prop === 'font-size' ? 'text size' : prop);
+    p.row.querySelector('.scrub').insertAdjacentHTML('afterend', (segs.includes('scope') ? '<span class="side" data-s="scope"></span>' : '') + `<span class="side" data-s="mode">${label}</span>`);
+    hand.insertAdjacentHTML('beforeend', `<div class="say">${segs.includes('scope') ? '<span data-s="scope">where</span>' : ''}${segs.includes('mode') ? `<span data-s="mode">${sided ? 'sides' : 'sizing'}</span>` : ''}<span data-s="value">value</span><span class="how">← → choose · ↕ change</span></div>`);
     p.row.insertAdjacentHTML('afterbegin', '<i class="thumb" aria-hidden="true"></i>');
-    inHand = { el, prop, p, S, sided, seg: 'value', tx: 0, ty: 0, axis: null, idle: 0 };
+    inHand = { el, prop, p, S, sided, sized, sizing: sized ? sizingOf(el, prop) : null, scopes, segs, seg: 'value', tx: 0, ty: 0, axis: null, idle: 0 };
     showSeg();
-    requestAnimationFrame(() => thumbAt(0, true));
+    requestAnimationFrame(() => thumbAt(0, 0, true));
   };
   const showSeg = () => {
-    if (!inHand) return;
-    inHand.p.row.dataset.seg = inHand.seg;
-    for (const sp of hand.querySelectorAll('.say span')) sp.toggleAttribute('data-on', sp.dataset.s === inHand.seg);
-    const side = inHand.p.row.querySelector('.side'); if (inHand.sided) side.textContent = sidesSaid(inHand.prop);
+    const h = inHand; if (!h) return;
+    h.p.row.dataset.seg = h.seg;
+    for (const sp of hand.querySelectorAll('.say [data-s]')) sp.toggleAttribute('data-on', sp.dataset.s === h.seg);
+    const sc = h.p.row.querySelector('[data-s="scope"]'); if (sc) sc.textContent = scopeSaid(h.el);
+    const md = h.p.row.querySelector('[data-s="mode"]');
+    if (h.sided) md.textContent = sidesSaid(h.prop); else if (h.sized) md.textContent = h.sizing;
     if (shown && !held) draw(shown);
   };
-  // the thumb: over the place in force, pulled toward the other by `pull` (-1..1 of the way); `still` places it at once
-  const thumbAt = (pull = 0, still = false) => {
+  // the thumb: over the place in force; `pull` (0..1) of the way toward the next place in `dir` (-1 left, 1 right)
+  const thumbAt = (pull = 0, dir = 0, still = false) => {
     const h = inHand; if (!h) return;
     const row = h.p.row, t = row.querySelector('.thumb'), r = row.getBoundingClientRect();
-    const at = (el) => { const b = el.getBoundingClientRect(); return { x: b.left - r.left - 3, w: b.width + 6 }; };
-    const A = at(row.querySelector('.side')), B = at(row.querySelector('.val'));
-    const [from, to] = h.seg === 'mode' ? [A, B] : [B, A];
-    // toward the other place it follows the hand; away from it, it only leans a little (there's nothing there)
-    const k = Math.max(-0.12, Math.min(1, pull));
-    const x = from.x + (to.x - from.x) * Math.max(0, k) + (k < 0 ? k * 40 : 0), w = from.w + (to.w - from.w) * Math.max(0, k);
+    const box1 = (s) => { const el = s === 'value' ? row.querySelector('.val') : row.querySelector(`[data-s="${s}"]`), b = el.getBoundingClientRect(); return { x: b.left - r.left - 3, w: b.width + 6 }; };
+    const i = h.segs.indexOf(h.seg), next = h.segs[i + dir];
+    const from = box1(h.seg), to = next ? box1(next) : from;
+    const k = next ? Math.min(1, Math.max(0, pull)) : 0, lean = next ? 0 : dir * Math.min(6, pull * 18);
     t.style.transition = still ? 'none' : '';
-    t.style.transform = `translateX(${x.toFixed(1)}px)`; t.style.width = `${w.toFixed(1)}px`;
+    t.style.transform = `translateX(${(from.x + (to.x - from.x) * k + lean).toFixed(1)}px)`; t.style.width = `${(from.w + (to.w - from.w) * k).toFixed(1)}px`;
     t.dataset.on = h.seg; t.toggleAttribute('data-pulled', pull !== 0);
   };
   // after a drag or a list pick elsewhere, the row shows where the value is now
   const resync = () => { if (!inHand) return; const i = inHand.S.indexOf(nearest(inHand.S, read(inHand.el, inHand.prop))); if (i !== inHand.p.at()) inHand.p.set(i); };
+  // a new scope: the places it now takes in get the value, the places it lets go of go back to how they were
+  const rescope = (h, next) => {
+    const v = h.el.style.getPropertyValue(h.prop) || null, before = new Set(targets(h.el));
+    scope = next;
+    const after = new Set(targets(h.el)), qs = linkedOf(h.prop);
+    for (const t of before) if (!after.has(t) && t !== h.el) for (const q of qs) { const m = changes.get(t); if (m?.has(q)) { const was = m.get(q); if (was) t.style.setProperty(q, was); else t.style.removeProperty(q); m.delete(q); if (!m.size) changes.delete(t); } }
+    if (v) for (const q of qs) set(h.el, q, h.el.style.getPropertyValue(q) || v);
+  };
+  // a size's way of sizing: fill its container, fit its content, or a fixed number
+  const resize = (h, how) => {
+    h.sizing = how;
+    const parent = h.el.parentElement, ps = parent && getComputedStyle(parent), main = ps && /flex/.test(ps.display) && (/column/.test(ps.flexDirection) ? h.prop === 'height' : h.prop === 'width');
+    if (how === 'fill') { if (main) set(h.el, 'flex', '1 1 0%'); else set(h.el, h.prop, '100%'); }
+    else if (how === 'fit') { if (main) set(h.el, 'flex', '0 0 auto'); set(h.el, h.prop, 'fit-content'); }
+    else set(h.el, h.prop, Math.round(read(h.el, h.prop)));
+  };
   // (pointing at a number in the card doesn't change what the row holds: crossing the card to reach the row would)
-  // two fingers over the element or the card: left and right choose sides or value, up and down change it
-  // (the fingers' own direction: up is bigger, right is toward the value)
   stage.addEventListener('wheel', (e) => {
     if (!inHand || !shown || inHand.el !== shown) return;
     // two fingers act on the part only with ⇧ held (else the page scrolls), or right on the card's row (it's ours)
@@ -408,43 +448,44 @@ export function mount(host, root, css) {
     if (!onRow && !(e.shiftKey && (zone || e.composedPath().includes(shown)))) return;
     e.preventDefault();
     const h = inHand, dx = -(e.deltaMode ? e.deltaX * 16 : e.deltaX), dy = -(e.deltaMode ? e.deltaY * 16 : e.deltaY);
-    // one gesture, one direction, decided from its first few px together (a swipe's first event is often a pixel or
-    // two of drift); the other axis is then ignored until the fingers rest
+    // one gesture, one direction, decided from its first few px together; the other axis waits for the fingers to rest
     clearTimeout(h.idle);
     h.idle = setTimeout(() => { h.axis = null; h.ax = h.ay = 0; h.ty = 0; h.switched = false; if (h.tx) { h.tx = 0; thumbAt(0); } }, 200);
     if (!h.axis) { h.ax = (h.ax ?? 0) + dx; h.ay = (h.ay ?? 0) + dy; if (Math.abs(h.ax) + Math.abs(h.ay) < 6) return; h.axis = Math.abs(h.ax) > Math.abs(h.ay) ? 'x' : 'y'; }
     if (h.axis === 'x') {
-      // one switch per swipe: the swipe's own coasting never throws it back
-      if (!h.sided || h.switched) return;
+      if (h.segs.length < 2 || h.switched) return;
+      // fingers right is toward the value, the right-hand place (dx is already the fingers' direction)
       h.tx += dx;
-      const toward = h.seg === 'mode' ? 1 : -1, raw = h.tx * toward;
-      if (raw >= 44) {
-        // the detent: past it, the thumb lets go of the hand and clicks the rest of the way, on a spring, with a squash
-        h.seg = h.seg === 'mode' ? 'value' : 'mode'; h.tx = 0; h.switched = true; showSeg(); thumbAt(0);
-        const row = h.p.row, t = row.querySelector('.thumb');
-        t.animate?.([{ scale: '1.12 0.86' }, { scale: '0.96 1.05', offset: 0.45 }, { scale: '1.01 0.99', offset: 0.75 }, { scale: '1 1' }], { duration: 420, easing: 'ease-out' });
-        const now = row.querySelector(h.seg === 'mode' ? '.side' : '.drum');
-        now?.animate?.([{ scale: 0.9 }, { scale: 1.06, offset: 0.5 }, { scale: 1 }], { duration: 320, easing: 'cubic-bezier(0.34, 1.56, 0.64, 1)' });
-      } else {
-        // before it: the thumb follows with resistance (the further, the less it gives), up to a third of the way
-        thumbAt(raw > 0 ? 0.36 * (1 - Math.exp(-raw / 22)) : Math.max(-0.12, raw / 160));
-      }
+      const dir = Math.sign(h.tx), i = h.segs.indexOf(h.seg), next = h.segs[i + dir];
+      if (next && Math.abs(h.tx) >= 44) {
+        // the detent: past it the thumb lets go of the hand and clicks the rest of the way, with a squash
+        h.seg = next; h.tx = 0; h.switched = true; showSeg(); thumbAt(0);
+        const row = h.p.row;
+        row.querySelector('.thumb').animate?.([{ scale: '1.12 0.86' }, { scale: '0.96 1.05', offset: 0.45 }, { scale: '1.01 0.99', offset: 0.75 }, { scale: '1 1' }], { duration: 420, easing: 'ease-out' });
+        (h.seg === 'value' ? row.querySelector('.drum') : row.querySelector(`[data-s="${h.seg}"]`))?.animate?.([{ scale: 0.9 }, { scale: 1.06, offset: 0.5 }, { scale: 1 }], { duration: 320, easing: 'cubic-bezier(0.34, 1.56, 0.64, 1)' });
+      } else thumbAt(next ? 0.36 * (1 - Math.exp(-Math.abs(h.tx) / 22)) : Math.min(1, Math.abs(h.tx) / 60), dir);
       return;
     }
     if (h.axis !== 'y') return;
     h.ty += dy;
     while (Math.abs(h.ty) >= 30) {
-      const up = h.ty > 0; h.ty -= Math.sign(h.ty) * 30;
-      if (h.seg === 'mode') {
-        const i = LINKS.indexOf(link), j = Math.max(0, Math.min(2, i + (up ? 1 : -1)));
+      const up = h.ty > 0, step = up ? 1 : -1; h.ty -= Math.sign(h.ty) * 30;
+      const bump = (sel) => h.p.row.querySelector(sel)?.animate?.([{ transform: `translateY(${up ? 5 : -5}px)`, opacity: 0.4 }, { transform: 'none', opacity: 1 }], { duration: 220, easing: 'cubic-bezier(0.22, 1, 0.36, 1)' });
+      if (h.seg === 'scope') {
+        const j = Math.max(0, Math.min(h.scopes.length - 1, h.scopes.indexOf(scope) + step));
+        if (h.scopes[j] !== scope) { rescope(h, h.scopes[j]); draw(h.el); showSeg(); bump('[data-s="scope"]'); }
+      } else if (h.seg === 'mode' && h.sided) {
+        const i = LINKS.indexOf(link), j = Math.max(0, Math.min(2, i + step));
         if (j !== i) {
           link = LINKS[j];
           // the sides just taken in take the value the side in hand has
           const v = read(h.el, h.prop); for (const q of linkedOf(h.prop)) if (Math.abs(read(h.el, q) - v) >= 0.5) set(h.el, q, v);
-          draw(h.el); showSeg();
-          h.p.row.querySelector('.side').animate?.([{ transform: `translateY(${up ? 5 : -5}px)`, opacity: 0.4 }, { transform: 'none', opacity: 1 }], { duration: 220, easing: 'cubic-bezier(0.22, 1, 0.36, 1)' });
+          draw(h.el); showSeg(); bump('[data-s="mode"]');
         }
-      } else h.p.set(h.p.at() + (up ? 1 : -1));
+      } else if (h.seg === 'mode' && h.sized) {
+        const j = Math.max(0, Math.min(2, SIZINGS.indexOf(h.sizing) + step));
+        if (SIZINGS[j] !== h.sizing) { resize(h, SIZINGS[j]); draw(h.el); showSeg(); resync(); bump('[data-s="mode"]'); }
+      } else h.p.set(h.p.at() + step);
     }
   }, { passive: false });
   // a click on a number: the list of your sizes
