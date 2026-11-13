@@ -143,10 +143,12 @@ test('the timeline shows each change as a tick in its step, and undoes one chang
 
   // Home, then ⇧⌫: the rest of the step goes, the file is as it started
   await page.keyboard.press('Home');
+  await marked(page);
   await page.keyboard.press('Shift+Backspace');
   await page.waitForFunction(() => document.querySelector('plumb-overlay')?.shadowRoot?.querySelectorAll('.tt .tt-tick[data-i]').length === 6);
   assert.equal(await app.read(), APP);
-  assert.deepEqual((await strip(page)).steps[0], { name: 'Spacing', ticks: ['undone', 'undone', 'undone'] });
+  await settled(page);
+  assert.deepEqual((await shown(page)).steps[0], { name: 'Spacing', ticks: ['undone', 'undone', 'undone'] });
 
   // Esc closes and hands focus back to the history button; the outline goes with it
   await page.keyboard.press('Escape');
