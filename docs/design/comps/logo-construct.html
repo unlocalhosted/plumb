@@ -27,8 +27,8 @@
   .build .fade { opacity: 0; transition: opacity 600ms ease 300ms; } .play .build .fade { opacity: 1; }
   .build .pt { transform-box: fill-box; transform-origin: center; transform: scale(0); transition: transform 380ms cubic-bezier(.3, 1.6, .5, 1); }
   .play .build .pt { transform: scale(1); }
-  .build .metric { stroke-dasharray: 160; stroke-dashoffset: 160; transition: stroke-dashoffset 900ms cubic-bezier(.6, 0, .2, 1); }
-  .play .build .metric { stroke-dashoffset: 0; }
+  .build .metric { opacity: 0; transition: opacity 700ms ease; }
+  .play .build .metric { opacity: 1; }
 </style>
 </head>
 <body>
@@ -38,7 +38,7 @@
 // the P on its 120 grid (overlay/src/mark.js): its outline, its on-curve points, and each arc's two handles
 const STEM = 'M48 18H53A5 5 0 0 1 58 23V92A10 10 0 0 1 48 102H34A10 10 0 0 1 24 92V42A24 24 0 0 1 48 18Z';
 const BOWL = 'M67 18H68A28 28 0 0 1 96 46A28 28 0 0 1 68 74H67A5 5 0 0 1 62 69V23A5 5 0 0 1 67 18Z';
-const POINTS = [[48, 18], [53, 18], [58, 23], [58, 92], [48, 102], [34, 102], [24, 92], [24, 42], [67, 18], [68, 18], [96, 46], [68, 74], [67, 74], [62, 69], [62, 23]];
+const POINTS = [[48, 18], [53, 18], [58, 23], [58, 92], [48, 102], [34, 102], [24, 92], [24, 42], [68, 18], [96, 46], [68, 74], [62, 69], [62, 23]]; // the bowl's 1-unit flats are drawn as one point each, not two touching
 const K = 0.5523; // a quarter arc's handle, as a share of its radius
 // [from, handle] for both ends of every arc
 const arc = (x1, y1, x2, y2, r, tx1, ty1, tx2, ty2) => (r <= 5 ? [] : [[[x1, y1], [x1 + tx1 * r * K, y1 + ty1 * r * K]], [[x2, y2], [x2 + tx2 * r * K, y2 + ty2 * r * K]]]); // small corners: points only
@@ -54,21 +54,26 @@ const MATERIAL = `<defs>
   <linearGradient id="gs" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff7ac0"/><stop offset=".55" stop-color="#f24a9f"/><stop offset="1" stop-color="#d0287f"/></linearGradient>
   <linearGradient id="gb" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9a7dff"/><stop offset=".55" stop-color="#7356f0"/><stop offset="1" stop-color="#5232d4"/></linearGradient>
   <linearGradient id="gl" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".42"/><stop offset=".25" stop-color="#fff" stop-opacity="0"/></linearGradient>
-  <pattern id="hatch" width="1.1" height="4" patternUnits="userSpaceOnUse"><rect width=".24" height="4" fill="#fff"/></pattern></defs>
+  <pattern id="hatch" width="1.1" height="4" patternUnits="userSpaceOnUse"><rect width=".24" height="4" fill="#fff"/></pattern>
+  <filter id="lift" x="-1" y="-1" width="3" height="3"><feDropShadow dx="0" dy=".25" stdDeviation=".3" flood-color="#1d1b17" flood-opacity=".25"/></filter></defs>
   <path d="${STEM}" fill="url(#gs)"/><path d="${STEM}" fill="url(#gl)" style="mix-blend-mode:soft-light"/>
   <path d="${BOWL}" fill="url(#gb)"/><path d="${BOWL}" fill="url(#gl)" style="mix-blend-mode:soft-light"/>`;
 // the construction, on top of it: metric lines behind, then a faint light hatch over the material, the hairline
 // outline, the handles and the points in ink
 const construction = ({ hatch = true, cls = '' } = {}) => `<g class="${cls}">
     ${hatch ? `<g class="fade"><path d="${STEM}" fill="url(#hatch)" opacity=".22"/><path d="${BOWL}" fill="url(#hatch)" opacity=".22"/></g>` : ''}
-    <g class="fade"><path d="${STEM}" fill="none" stroke="#1d1b17" stroke-width=".3"/><path d="${BOWL}" fill="none" stroke="#1d1b17" stroke-width=".3"/></g>
-    <g class="fade" stroke="#1d1b17" stroke-width=".22">${HANDLES.map(([a, b]) => `<path d="M${a[0]} ${a[1]}L${b[0].toFixed(2)} ${b[1].toFixed(2)}"/>`).join('')}</g>
-    <g fill="#1d1b17">${HANDLES.map(([, b]) => `<circle class="pt" cx="${b[0].toFixed(2)}" cy="${b[1].toFixed(2)}" r=".62"/>`).join('')}
-      ${POINTS.map(([x, y]) => `<rect class="pt" x="${x - 1.05}" y="${y - 1.05}" width="2.1" height="2.1"/>`).join('')}</g>
+    <!-- the outline in each part's own deep tone (pink-ink, violet-ink): the drawing belongs to the material -->
+    <g class="fade"><path d="${STEM}" fill="none" stroke="#5a0d3c" stroke-width=".32"/><path d="${BOWL}" fill="none" stroke="#2b1a6b" stroke-width=".32"/></g>
+    <!-- the handles: fine sky lines to sky dots with a white halo -->
+    <g class="fade" stroke="#2f86dc" stroke-width=".24">${HANDLES.map(([a, b]) => `<path d="M${a[0]} ${a[1]}L${b[0].toFixed(2)} ${b[1].toFixed(2)}"/>`).join('')}</g>
+    ${HANDLES.map(([, b]) => `<circle class="pt" cx="${b[0].toFixed(2)}" cy="${b[1].toFixed(2)}" r=".72" fill="#2f86dc" stroke="#fff" stroke-width=".38"/>`).join('')}
+    <!-- the points: plumber's selection handles, white rounded squares with a sky edge, lifted a little -->
+    ${POINTS.map(([x, y]) => `<rect class="pt" x="${x - 1.25}" y="${y - 1.25}" width="2.5" height="2.5" rx=".6" fill="#fff" stroke="#2f86dc" stroke-width=".42" filter="url(#lift)"/>`).join('')}
   </g>`;
-const metrics = (cls = '') => `<g class="${cls}" stroke="#1d1b17" stroke-width=".22" opacity=".45">${H.map((y) => `<path class="metric" d="M-10 ${y}H130"/>`).join('')}${V.map((x) => `<path class="metric" d="M${x} -10V130"/>`).join('')}</g>`;
+// the metric lines: plumber's guides, dashed sky hairlines (the same guardrail the mark carries)
+const metrics = (cls = '') => `<g class="${cls}" stroke="#2f86dc" stroke-width=".22" stroke-dasharray="1.6 1.2" opacity=".75">${H.map((y) => `<path class="metric" d="M-10 ${y}H130"/>`).join('')}${V.map((x) => `<path class="metric" d="M${x} -10V130"/>`).join('')}</g>`;
 const CARDS = [
-  ['', 'The mark, with its construction', 'The mark as it is, and its construction drawn on top: its own metric lines behind it, a faint light hatch over the material, the hairline outline, the points and handles in ink.',
+  ['', 'The mark, with its construction', 'The mark as it is, and its construction drawn on top: its own metric lines behind it, a faint light hatch over the material, the outline in each part’s deep tone, and plumber’s own handles: white points edged in sky, sky handle dots, dashed sky guides.',
     `${metrics()}${MATERIAL}${construction()}`],
   ['', 'Without the hatch', 'The same, the material left clean: only the lines, the outline, the points and handles.',
     `${metrics()}${MATERIAL}${construction({ hatch: false })}`],
