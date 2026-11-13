@@ -597,6 +597,11 @@
 - **Now:** one finding on crafting-ui, the three figures on the templates page, drawn from a three-item list written in the code. At phone width it fits (358 of 358 px). It is a fixed set the check cannot yet tell from a list; noted, not fixed. No before and after from a real app.
 - **Seen on the way:** the motion vocabulary page (7,274 elements) closed the browser tab during plumber's read.
 
+## #42's film says the sauce: the property at fault and the one that fixes it (2026-11-13)
+- **The itch:** the owner: "we didn't really teach what the sauce is … show what property was at fault and what fixed it."
+- **The fix:** when the cause is named, plumber's change card (the way its cards show a change) rises above the switch with the class at fault, `hover:font-semibold`, and the property it sets, `font-weight: 600`, in coral. When the fix lands it is struck through and `hover:text-ink`, `color: ink`, arrives in mint. Screens now supply the class and property on both sides (`film.code`).
+- **The proof:** recorded headless, no console errors; frames at the cause and the fix checked. Clip: docs/media/showcase-42-the-sauce.mp4.
+
 ## #42 redrawn in plumber's own language, after copying the reference (2026-11-13)
 - **The itch:** the owner, on the first film: "you just copied the exact video … and didn't use our design language and primitives … what i want you to learn is how to make good video and not copy frame by frame." Then: "show me the new video".
 - **The system behind it:** I took the reference as a spec and rebuilt its surface (its dashed boxes, its "before → after" and "+2px" pills on every neighbour, its ghost row of bold labels, its switch words, its timings), and had written that surface into the skill as rules. The step that turns *why a beat works* into *how plumber draws it* was missing.
