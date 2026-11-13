@@ -387,6 +387,11 @@ class PlumbOverlay extends HTMLElement {
   // A write can make the dev server reload the whole page (no fast refresh). The reading picks up where it was: the
   // same element, found by its place in the document and confirmed by its source file, with the write reported.
   async #resume() {
+    // the X-ray, with what its Sync wrote, comes back after the write's reload (one written 30 s ago or less)
+    try {
+      const x = JSON.parse(sessionStorage.getItem('plumb:xray') ?? 'null');
+      if (x && Date.now() - x.at < 30000) { sessionStorage.removeItem('plumb:xray'); if (!this.#xray) this.#toggleXray(); if (x.results?.length) this.#xray?.showResults(x.results); }
+    } catch {}
     // an undo the page went away in the middle of (a write the dev server reloads for, sometimes twice): Blueprint comes
     // back, and the fix panel goes on with what's left (fixpanel.js)
     try { const u = JSON.parse(sessionStorage.getItem('plumb:undoing') ?? 'null'); if ((u?.undo?.length || u?.group) && Date.now() - u.at < 30000) { await new Promise(r => setTimeout(r, 120)); if (!this.#blueprint?.active) this.#blueprint?.enter({ instant: true }); } } catch {}
@@ -564,6 +569,10 @@ class PlumbOverlay extends HTMLElement {
             const group = `xray.${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
             const files = new Map();
             for (const e of edits) (files.get(e.file) ?? files.set(e.file, { hash: e.hash, edits: [] }).get(e.file)).edits.push(e.edit);
+            // a write may reload the page: what it wrote is kept so the X-ray can say it when the page is back
+            const keep = (state) => { try { const x = JSON.parse(sessionStorage.getItem('plumb:xray') ?? 'null') ?? { results: [] }; x.at = Date.now(); x.results = [...(x.results ?? []).filter((r) => !list.some((g) => g.id === r.id)), ...list.map((g) => ({ id: g.id, name: g.name, prop: g.prop, keys: g.keys, ...state }))]; sessionStorage.setItem('plumb:xray', JSON.stringify(x)); } catch {} };
+            const at0 = edits[0] ? `${edits[0].file}:${edits[0].edit.line}` : '';
+            keep({ state: 'ok', cls: edit.to, where: at0, group });
             for (const [file, f] of files) await post('swaps', { file, hash: f.hash, edits: f.edits, trace: { group, meta: { step: 'X-ray', laws: [] } } });
             const first = edits[0], at = first ? `${first.file}:${first.edit.line}` : '';
             for (const g of list) out.push({ id: g.id, state: 'ok', cls: edit.to, where: at, group });

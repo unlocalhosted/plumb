@@ -299,6 +299,8 @@ export function mountXray(o) {
     const up = () => {
       removeEventListener('pointermove', move, true); removeEventListener('pointerup', up, true);
       held = null; live.hidden = true; resync();
+      // only the click that ends this drag is swallowed (it comes right after the release), never the next one
+      setTimeout(() => { justDragged = false; }, 0);
       if (!moved && chip) openList(el, prop, at); else draw(el);
     };
     addEventListener('pointermove', move, true); addEventListener('pointerup', up, true);
@@ -564,6 +566,8 @@ export function mountXray(o) {
 
   return {
     get pending() { return count(); },
+    // results from before a reload (a write the dev server reloaded the page for), said again
+    showResults(list) { results = list.map((r) => ({ keys: [], els: [], befores: [], ...r })); lastCard = ''; card.hidden = false; if (shown) draw(shown); else { body.innerHTML = resultsHtml(); lastCard = ''; const s = box(); card.style.transform = `translate(${Math.max(12, s.width - (card.offsetWidth || 292) - 24)}px, 24px)`; } },
     get shown() { return shown; },
     putBack, sync,
     destroy() { putBack(); for (const f of off) f(); clearTimeout(waiting); clearTimeout(warm); clearTimeout(queued); layer.remove(); card.remove(); live.remove(); C.querySelector(':scope > .xr-list')?.remove(); C.querySelector(':scope > .xr-note')?.remove(); },
