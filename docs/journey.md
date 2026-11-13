@@ -2457,6 +2457,17 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   (`--pl-space-*`, `--space-*`), with the reading as a comment beside it, so a wrong reading is seen there and fixed by
   moving the line. Proof, on the plain-CSS probe: `"css:src/tokens.css#--space-*" // 5 tokens; its name says
   spacing; used in gap`. Findings on crafting-ui and the homepage app unchanged. The page that draws this is next.
+- **Then the page (same day).** The project page `npx plumber` opens has a new section, "How Plumber read your
+  system": one block per kind of token, with its toy and its count, then one line per scale (a file's tokens that share
+  a stem, `--pl-space-*`), its values as pills (colours as swatches), its file, and why it was read that way; lone
+  tokens of a kind are gathered into one line. Built only from the overlay's toys, tags and pills, on its tokens
+  (`overlay/src/project-page.js`; data from `src/decisions/stems.ts`, shared with the config `init` writes). Seen
+  running on the site: 231 tokens in 8 kinds. Found on the way: the page's long-running session skipped the token
+  files a script reads (it showed 51 tokens); it doesn't now. Media hook: the Spacing and Motion blocks side by side
+  with the config line that says the same.
+- **Still open on the page:** its top still says "Your theme has no text sizes yet" for the site, because that part
+  only knows `--text-*` sizes, while the new section below lists 35 type tokens; some motion tokens show `0ms`, the
+  value from the token file's reduced-motion block; nothing on the page can move a line yet (the config does).
 - **Still open:** a `font:` line that is off the scale shows the face's fix first ("use var(--font)"), not the
   size's; the reason for each reading isn't written anywhere
   yet (the config and the page are the next slices).
@@ -2517,6 +2528,8 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   sets the whole style, so a design system built on text styles is checked by them (entry 34).
 - Plumber says how it read each token: `plumber decisions` gives the reason under each one, and `plumber init` writes
   one line per scale into the config with the reason beside it, so a wrong reading is seen and fixed in one place (entry 34).
+- The project page shows how Plumber read your design system: each kind of token, its scales with their values, and why
+  each was read that way, so a wrong reading is seen at a glance (entry 34).
 - React Plumber has a mark: a pink stem and a violet bowl, the gap between them the P, with plumber's guardrail at hero size. It is in the site's bar, the overlay's dock and the films, from one source ([entry](#react-plumber-gets-a-mark-2026-11-13)).
 - Craft № 42 is a 16:9 React Plumber marketing film: the fault felt, measured in plumber's marks, the code that caused it and the code that fixes it, the payoff, and plumber's ✓ bursting where the fix was written, signed and watermarked ([entry](#42-as-a-react-plumber-marketing-film-2026-11-13)).
 - The showcase's #42 explains itself as a short film drawn in plumber's own marks: you feel the tabs jitter, see plumber measure it and name the weight, see the fix keep the width, and watch every tab hold ([entry](#42-redrawn-in-plumbers-own-language-after-copying-the-reference-2026-11-13)).

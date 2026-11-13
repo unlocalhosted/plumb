@@ -1,3 +1,5 @@
+import { readingOf } from '../decisions/stems.js';
+import type { FamilyReading } from '../decisions/stems.js';
 import { basename, relative } from 'node:path';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -28,6 +30,8 @@ export interface SystemData {
   weight: { used: { weight: number; places: number; written: Written[] }[] };
   colour: { steps: ColourStep[]; strays: ColourStray[] };
   dead: { class: string; places: number; meant: string[] }[];
+  /** How each token was read: by family, its tokens grouped by file and shared stem, with the reasons. */
+  reading: FamilyReading[];
   /** The three biggest causes, biggest first, in the terminal's words. */
   causes: PageCause[];
   /** How many causes there are in all. */
@@ -242,6 +246,7 @@ export function systemOf(report: Report): SystemData {
     weight: weights(),
     colour: colours(),
     dead: dead(),
+    reading: readingOf(report.decisions, report.root),
     causes: causes.slice(0, 3).map(cause => pageCause(cause, report)),
     open: causes.length,
   };

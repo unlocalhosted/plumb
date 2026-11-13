@@ -11,6 +11,7 @@ import { SCALE_CSS } from './scale-marks.js';
 import { GRAVITY_CSS, Gravity } from './gravity.js';
 import { SPECIMEN_CSS, Specimen } from './specimen.js';
 import { CAUSE_LIST_CSS, CauseList } from './cause-list.js';
+import { TOY_DEFS, toyOf } from './toys.js';
 
 const nf = new Intl.NumberFormat('en');
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
@@ -31,6 +32,52 @@ const PAGE_CSS = `
   .lede { max-width: 60ch; margin: 0 0 var(--pl-page-space-1); font: var(--pl-page-body); color: var(--pl-text-secondary); text-wrap: pretty; }
   @media (max-width: 720px) { main { padding: var(--pl-page-space-1) var(--pl-space-6) var(--pl-page-space-3); } .top { padding: 10px 16px; } .top .read { display: none; } h1 { font: var(--pl-page-display-narrow); } }
 `;
+
+/* How Plumber read your system: one block per kind of token, its toy and its count the loud thing; under it, one line
+   per scale (a file's tokens that share a stem), with the scale's values and why it was read as this kind */
+const READING_CSS = `
+  #reading { display: block; margin-top: var(--pl-page-space-3); }
+  #reading h2 { margin: 0 0 var(--pl-space-4); font: var(--pl-page-title); letter-spacing: var(--pl-tracking-title); }
+  #reading > p { max-width: 60ch; margin: 0 0 var(--pl-page-space-1); font: var(--pl-page-small); color: var(--pl-text-secondary); }
+  #reading > p code { font: var(--pl-card-code); }
+  .kinds { display: grid; gap: var(--pl-space-6); }
+  .kind { display: grid; grid-template-columns: var(--pl-page-space-1) minmax(0, 1fr); gap: var(--pl-space-2) var(--pl-space-6); padding: var(--pl-space-7) var(--pl-space-8); border-radius: var(--pl-radius-card); background: var(--pl-bg-inset); }
+  .kind .toy { width: var(--pl-page-space-1); height: var(--pl-page-space-1); }
+  .kind .toy svg { display: block; width: 100%; height: 100%; overflow: visible; }
+  .kind .hd { display: flex; align-items: baseline; gap: var(--pl-space-4); align-self: center; }
+  .kind .hd b { font: var(--pl-page-title); font-family: var(--pl-round); }
+  .kind .hd span { font: var(--pl-page-meta); color: var(--pl-text-secondary); font-variant-numeric: tabular-nums; }
+  .kind ul { grid-column: 2; display: grid; gap: var(--pl-space-5); margin: var(--pl-space-4) 0 0; padding: 0; list-style: none; }
+  .kind li { display: grid; gap: var(--pl-space-3); }
+  .kind .line { display: flex; flex-wrap: wrap; align-items: center; gap: var(--pl-space-4); }
+  .kind .line .pl-tag { font: var(--pl-card-code); }
+  .kind .line .lone { font: var(--pl-card-title); }
+  .kind .line small { font: var(--pl-card-meta); color: var(--pl-text-secondary); }
+  .kind .vals { display: flex; flex-wrap: wrap; gap: var(--pl-space-2); }
+  .kind .sw { width: var(--pl-space-7); height: var(--pl-space-7); border-radius: 50%; box-shadow: inset 0 0 0 var(--pl-line) color-mix(in oklab, var(--pl-text-primary) 12%, transparent); }
+  .kind .more { font: var(--pl-card-meta); color: var(--pl-text-secondary); align-self: center; }
+  .kind .why { font: var(--pl-card-body); color: var(--pl-text-secondary); }
+  @media (max-width: 720px) { .kind { grid-template-columns: 1fr; padding: var(--pl-space-6); } .kind ul { grid-column: 1; } }
+`;
+// each kind by the toy and the word the rest of Plumber uses for it
+const KINDS = { spacing: ['padding', 'Spacing'], color: ['fill', 'Colour'], radius: ['corner', 'Corners'], type: ['type', 'Type'], motion: ['motion', 'Motion'],
+  elevation: ['shadow', 'Shadows'], z: ['layer', 'Layers'], size: ['size', 'Sizes'], opacity: ['opacity', 'Opacity'] };
+const short = (value) => { const v = String(value).trim(), style = /^((?:(?:normal|italic|bold|[1-9]00)\s+)*[\d.]+(?:px|rem|em|%)(?:\s*\/\s*[\d.]+(?:px|rem|em|%)?)?)\s+\S/.exec(v); return style ? style[1] : v.length > 18 ? `${v.slice(0, 17)}…` : v; };
+function reading(kinds) {
+  if (!kinds?.length) return '';
+  const tokens = kinds.reduce((n, k) => n + k.groups.reduce((m, g) => m + g.tokens.length, 0), 0);
+  const value = (family, v) => family === 'color' ? `<i class="sw" style="background: ${esc(v)}" title="${esc(v)}"></i>` : `<span class="pl-pill" data-hue="sky">${esc(short(v))}</span>`;
+  return `<h2>How Plumber read your system</h2>
+    <p>${nf.format(tokens)} tokens, sorted into ${kinds.length} ${kinds.length === 1 ? 'kind' : 'kinds'}. Each line is one scale and why it was read that way. If a line is in the wrong kind, move it in <code>plumber.config</code>; your config always wins.</p>
+    <div class="kinds">${kinds.map((k) => {
+      const [toy, name] = KINDS[k.family] ?? ['size', k.family], n = k.groups.reduce((m, g) => m + g.tokens.length, 0);
+      return `<section class="kind"><i class="toy">${toyOf(toy)}</i><div class="hd"><b>${name}</b><span>${nf.format(n)} ${n === 1 ? 'token' : 'tokens'}</span></div>
+        <ul>${k.groups.slice(0, 8).map((g) => `<li><div class="line">${g.pattern ? `<span class="pl-tag">${esc(g.pattern)}</span>` : `<b class="lone">${g.tokens.length === 1 ? esc(g.tokens[0].name) : `${g.tokens.length} on their own`}</b>`}<small>${esc(g.file)}</small></div>
+          <div class="vals">${g.tokens.slice(0, 10).map((t) => value(k.family, t.value)).join('')}${g.tokens.length > 10 ? `<span class="more">+${g.tokens.length - 10}</span>` : ''}</div>
+          ${g.reasons.length ? `<div class="why">${esc(g.reasons.slice(0, 3).join(' · '))}</div>` : ''}</li>`).join('')}
+          ${k.groups.length > 8 ? `<li class="more">${k.groups.length - 8} more ${k.groups.length - 8 === 1 ? 'line' : 'lines'}</li>` : ''}</ul></section>`;
+    }).join('')}</div>`;
+}
 
 /** What the type scale says, in one heading and one paragraph. */
 function typeScale(size) {
@@ -60,9 +107,9 @@ function typeScale(size) {
 export function mountProjectPage(host, data, tokens) {
   const doc = host.ownerDocument, root = host.attachShadow({ mode: 'open' });
   const type = typeScale(data.size);
-  root.innerHTML = `<style>${tokens}${LANGUAGE_CSS}${SCALE_CSS}${GRAVITY_CSS}${SPECIMEN_CSS}${CAUSE_LIST_CSS}${PAGE_CSS}</style>
+  root.innerHTML = `<style>${tokens}${LANGUAGE_CSS}${SCALE_CSS}${GRAVITY_CSS}${SPECIMEN_CSS}${CAUSE_LIST_CSS}${PAGE_CSS}${READING_CSS}</style>${TOY_DEFS}
   <header class="top"><span class="pl-rainbow"></span><b>React Plumber</b><span class="pl-tag">${esc(data.project)}</span><span class="read">${nf.format(data.files)} files read</span><button type="button" class="pl-act quiet" id="scheme">Day</button></header>
-  <main>${type.html}<div id="gravity"></div><div id="specimen"></div><div id="causes"></div></main>`;
+  <main>${type.html}<div id="gravity"></div><div id="specimen"></div><div id="causes"></div><div id="reading">${reading(data.reading)}</div></main>`;
   const gravity = new Gravity(root.getElementById('gravity'), { steps: type.steps, strays: type.strays });
   const specimen = new Specimen(root.getElementById('specimen'), { steps: type.steps, strays: type.strays });
   const causes = new CauseList(root.getElementById('causes'), { causes: data.causes, open: data.open });

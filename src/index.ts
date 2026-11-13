@@ -120,7 +120,7 @@ export async function analyze(options: CheckOptions, snippet?: Snippet, runtime?
   const modules = await phase('modules', [root, collected.modules], () => collectModules(root, collected.modules, !!input || !!runtime));
   profileProgress('phase:stylesheet-graph');
   // stylesheets a script reads by path (a token file put on the page at runtime) count like imported ones
-  const named = input || runtime ? [] : namedStylesheets(root, files);
+  const named = input ? [] : namedStylesheets(root, files);
   const cssImports = [...modules.imports, ...named.filter(item => !modules.imports.some(other => other.resolved === item.resolved))];
   const graph = await phase('graph', [project.tailwind.entry, files, cssImports, input], () => collectStylesheets(project.tailwind.entry, files, cssImports,
     input?.lang === 'css' ? new Map([[input.file, input.text]]) : undefined));
