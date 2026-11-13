@@ -44,10 +44,21 @@ export const SIZE_CSS = `
     background: #fff; border-radius: 99px;
     box-shadow: 0 0 0 1.5px var(--pl-sky), 0 1px 2px rgb(0 0 0 / .18), inset 0 1px 0 rgb(255 255 255 / .9);
     transition: scale 160ms cubic-bezier(.3, 1.35, .5, 1), background-color 120ms ease-out; }
+  /* a grip reaches outward for the hand, never inward: just inside an edge is the element's padding, which has its own
+     handle (the spacing bubble); a corner reaches out past its corner */
   .sz-grip::before { content: ''; position: absolute; inset: -7px; }
+  .sz-grip[data-g="w"]::before { inset: -7px 0 -7px -9px; } .sz-grip[data-g="e"]::before { inset: -7px -9px -7px 0; }
+  .sz-grip[data-g="n"]::before { inset: -9px -7px 0 -7px; } .sz-grip[data-g="s"]::before { inset: 0 -7px -9px -7px; }
+  .sz-grip[data-g="nw"]::before { inset: -9px 0 0 -9px; } .sz-grip[data-g="ne"]::before { inset: -9px -9px 0 0; }
+  .sz-grip[data-g="sw"]::before { inset: 0 0 -9px -9px; } .sz-grip[data-g="se"]::before { inset: 0 -9px -9px 0; }
   .sz-grip[data-g="e"], .sz-grip[data-g="w"] { width: 6px; height: 22px; margin: -11px 0 0 -3px; }
+  .sz-grip[data-g="w"] { margin-left: -5px; } .sz-grip[data-g="e"] { margin-left: -1px; }
   .sz-grip[data-g="n"], .sz-grip[data-g="s"] { width: 22px; height: 6px; margin: -3px 0 0 -11px; }
+  .sz-grip[data-g="n"] { margin-top: -5px; } .sz-grip[data-g="s"] { margin-top: -1px; }
   .sz-grip[data-g$="e"]:not([data-g="e"]), .sz-grip[data-g$="w"]:not([data-g="w"]) { width: 10px; height: 10px; margin: -5px 0 0 -5px; border-radius: 3.5px; }
+  /* corners sit just outside their corner (a click a few px inside the element is the element's) */
+  .sz-grip[data-g="nw"] { margin: -9px 0 0 -9px; } .sz-grip[data-g="ne"] { margin: -9px 0 0 -1px; }
+  .sz-grip[data-g="sw"] { margin: -1px 0 0 -9px; } .sz-grip[data-g="se"] { margin: -1px 0 0 -1px; }
   @media (hover: hover) and (pointer: fine) { .sz-grip:hover { scale: 1.3; background: #c5e6fd; } }
   .sz-grip[data-held] { scale: 1.3; background: var(--pl-sky); box-shadow: 0 0 0 1.5px var(--pl-sky), 0 2px 6px color-mix(in oklab, var(--pl-sky) 45%, transparent); }
   /* while a size is dragged the card steps aside: nothing covers the element or its scale */
