@@ -1,6 +1,6 @@
 // A principle as a marketing film for React Plumber: one 16:9 stage (1600 × 900, scaled to the window), nothing of the
 // showcase around it. Signed as a piece of craft: the principle's number and name, top left, in the toy face; React
-// Plumber's mark, bottom right, quiet, on every frame (the turning-sides P, chosen 2026-11-13).
+// Plumber's mark, bottom right, quiet, on every frame (the two-block P with its guardrail, chosen 2026-11-13).
 //
 // THE FRAME (ms)
 //      0   OPENING   the desk, empty
@@ -29,23 +29,22 @@ const TIMING = {
 const MOVE = 'cubic-bezier(0.7, 0, 0.3, 1)';      // the camera's curve: slow start, slow finish
 const LINE = 'A design review on every screen.';   // the site's hero line (homepage/src/hero)
 
-// React Plumber's mark (owner's pick, 2026-11-13; docs/design/comps/logo-guides.html, "the turning sides, one gradient"):
-// four sides of padding turning round the content make a P, cut from one pink-to-violet gradient, the content in butter,
-// lit from the top; every gap exactly 4 on a 120 grid. With `guards`, plumber's own guardrails draw themselves on: the
-// guides the stem, cap and foot sit on, and the 4 it keeps between the sides.
+// React Plumber's mark (owner's pick, 2026-11-13; docs/design/comps/logo-guides.html, the third mark with the second's
+// guardrail): a pink stem and a violet bowl, each lit from the top, with exactly the gap between them on a 120 grid; the
+// space between is a decision, and it makes the P. With `guards`, plumber's own guardrails draw themselves on: the guides
+// the stem, cap and foot sit on, and the 4 it measures across the gap.
 const GUARD = '#2f86dc';
 // a box with its own corner radii, scaled down together when they don't fit (as CSS scales border-radius)
 const box = (x, y, w, h, r) => {
   const f = Math.min(1, w / (r[0] + r[1] || 1), w / (r[3] + r[2] || 1), h / (r[0] + r[3] || 1), h / (r[1] + r[2] || 1)), [a, b, c, d] = r.map((v) => v * f);
   return `M${x + a} ${y}H${x + w - b}${b ? `A${b} ${b} 0 0 1 ${x + w} ${y + b}` : ''}V${y + h - c}${c ? `A${c} ${c} 0 0 1 ${x + w - c} ${y + h}` : ''}H${x + d}${d ? `A${d} ${d} 0 0 1 ${x} ${y + h - d}` : ''}V${y + a}${a ? `A${a} ${a} 0 0 1 ${x + a} ${y}` : ''}Z`;
 };
-const SIDES = [box(24, 18, 48, 20, [24, 5, 5, 5]), box(76, 18, 20, 38, [5, 24, 5, 5]), box(48, 60, 48, 20, [5, 5, 24, 5]), box(24, 42, 20, 60, [5, 5, 10, 10])];
-const CONTENT = box(48, 42, 24, 14, [5, 5, 5, 5]);
+const STEM = box(24, 18, 34, 84, [24, 5, 10, 10]), BOWL = box(62, 18, 34, 56, [5, 28, 28, 5]);
 const Mark = ({ size, guards = false }) => (
   <svg viewBox="0 0 120 120" width={size} height={size} aria-hidden="true" style={{ overflow: 'visible' }}>
     <defs>
-      <linearGradient id="mk-sweep" gradientUnits="userSpaceOnUse" x1="24" y1="18" x2="96" y2="102"><stop offset="0" stopColor="#ff7ac0" /><stop offset=".5" stopColor="#e84aa8" /><stop offset="1" stopColor="#6a4ae6" /></linearGradient>
-      <linearGradient id="mk-butter" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#ffd24d" /><stop offset=".55" stopColor="#ffbf1a" /><stop offset="1" stopColor="#eaa800" /></linearGradient>
+      <linearGradient id="mk-stem" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#ff7ac0" /><stop offset=".55" stopColor="#f24a9f" /><stop offset="1" stopColor="#d0287f" /></linearGradient>
+      <linearGradient id="mk-bowl" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#9a7dff" /><stop offset=".55" stopColor="#7356f0" /><stop offset="1" stopColor="#5232d4" /></linearGradient>
       <linearGradient id="mk-lit" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#fff" stopOpacity=".42" /><stop offset=".25" stopColor="#fff" stopOpacity="0" /></linearGradient>
     </defs>
     {guards ? (
@@ -53,13 +52,13 @@ const Mark = ({ size, guards = false }) => (
         <path d="M24 4V116" /><path d="M4 18H116" /><path d="M4 102H40" />
       </g>
     ) : null}
-    {SIDES.map((d) => <g key={d}><path d={d} fill="url(#mk-sweep)" /><path d={d} fill="url(#mk-lit)" style={{ mixBlendMode: 'soft-light' }} /></g>)}
-    <path d={CONTENT} fill="url(#mk-butter)" /><path d={CONTENT} fill="url(#mk-lit)" style={{ mixBlendMode: 'soft-light' }} />
+    <path d={STEM} fill="url(#mk-stem)" /><path d={STEM} fill="url(#mk-lit)" style={{ mixBlendMode: 'soft-light' }} />
+    <path d={BOWL} fill="url(#mk-bowl)" /><path d={BOWL} fill="url(#mk-lit)" style={{ mixBlendMode: 'soft-light' }} />
     {guards ? (
-      <g style={{ animation: 'mk-pill 420ms cubic-bezier(.3, 1.5, .5, 1) 1500ms both', transformOrigin: '74px 8px' }}>
-        <path d="M72 12H76M72 9.4V14.6M76 9.4V14.6" stroke={GUARD} strokeWidth=".9" strokeLinecap="round" />
-        <rect x="68" y="0.3" width="12" height="8.4" rx="3" fill={GUARD} />
-        <text x="74" y="7" textAnchor="middle" fontFamily="ui-monospace, Menlo" fontSize="6.4" fontWeight="700" fill="#fff">4</text>
+      <g style={{ animation: 'mk-pill 420ms cubic-bezier(.3, 1.5, .5, 1) 1500ms both', transformOrigin: '60px 8px' }}>
+        <path d="M58 12H62M58 9.4V14.6M62 9.4V14.6" stroke={GUARD} strokeWidth=".9" strokeLinecap="round" />
+        <rect x="54" y="0.3" width="12" height="8.4" rx="3" fill={GUARD} />
+        <text x="60" y="7" textAnchor="middle" fontFamily="ui-monospace, Menlo" fontSize="6.4" fontWeight="700" fill="#fff">4</text>
       </g>
     ) : null}
   </svg>
