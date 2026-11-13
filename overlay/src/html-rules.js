@@ -292,3 +292,36 @@ export const inlineHandler = rule('inline-handler', 'script', function (el, fact
 export const HTML_RULES = [pageLang, viewportMeta, zoomDisabled, quirksMode, landmarkMain, bannerMany, h1Missing, listFake, listStructure, pointerGeneric, linkAsButton, booleanValue,
   figureCaption, preNoCode, preScrollKeyboard, preScrollRegion, imgSize, lazyAboveFold, eagerBelowFold, fetchpriorityOverused, heroPriority, imgOversized, pictureImg,
   summaryFirst, summaryNestedControl, summaryNoCue, titleTooltip, videoSize, videoPoster, videoCaptions, backgroundVideo, autoplaySound, iframeHidden, inlineHandler];
+
+// what each rule is about (kinds.js): where the engine asks it. No narrower than the rule's own first test; a rule not
+// listed is asked about every element.
+const ON = {
+  'banner-many': 'header,footer,[role="banner"],[role="contentinfo"]',
+  'list-structure': 'li,dt,dd',
+  'pointer-generic': 'div,span,li,td,tr,img,svg,p,section,article',
+  'link-as-button': 'a',
+  'boolean-value': '[disabled],[checked],[required],[readonly],[hidden],[selected],[multiple],[open],[autofocus],[inert],[controls],[loop],[muted],[autoplay]',
+  'figure-caption': 'figure',
+  'pre-no-code': 'pre',
+  'pre-scroll-keyboard': 'pre',
+  'pre-scroll-region': 'pre',
+  'img-size': 'img',
+  'lazy-above-fold': 'img',
+  'eager-below-fold': 'img,iframe',
+  'fetchpriority-overused': 'img',
+  'hero-priority': 'img',
+  'img-oversized': 'img',
+  'picture-img': 'picture',
+  'summary-first': 'details',
+  'summary-nested-control': 'summary',
+  'summary-no-cue': 'summary',
+  'title-tooltip': '[title]',
+  'video-size': 'video',
+  'video-poster': 'video',
+  'video-captions': 'video',
+  'background-video': 'video',
+  'autoplay-sound': 'video,audio',
+  'iframe-hidden': 'iframe',
+  'inline-handler': '[on*]',
+};
+for (const r of HTML_RULES) { const on = ON[r.id.split('/')[1]]; if (on) r.on = on; }

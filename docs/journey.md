@@ -1064,10 +1064,20 @@
 - **Not known:** what a signed-in member sees that a visitor does not (their own data, onboarding). The copy and its settings file are removed from the server.
 - **Media hooks:** the first and second runs side by side.
 
+## 128 checks, asked only where they apply (2026-11-14)
+- **The itch:** on algorecall's biggest page (15,951 elements) the four page batches took 296 ms. The owner had just said he was happy with the speed work; these checks would be on by default.
+- **How we found it:** each check timed alone on a 10,827-element page. Two were slow by themselves (17 ms between them, both reading every attribute of every element). The rest was no one check: 128 checks each asked about every element, 1.39 million calls, most answered "not my kind" in the first line.
+- **The system behind it:** the engine asked every rule about every element. That was fine for sixty craft rules that are mostly about any box. A check about a tab list or a video is about a handful of elements.
+- **What we chose and why:** lists by kind, the rule the speed work already wrote down. Each check says what it is about (a tag, an attribute, a role) and the engine keeps an index, so an element is shown only to the checks that could speak about it. A check that says nothing is asked about everything, as before, so no craft rule changed. The other way, speeding up each check's first line, would have left the million calls.
+- **The fix and the proof:** on the 10,827-element page: 1,385,856 calls and 108 ms before, 124,250 calls and 31 ms after. On a 1,169-element page: 14 ms to 4. The seven tests pass with the index on, which is the proof that no check was labelled narrower than it judges: every one still speaks at its line. Measured in a plain browser with the rule files, not inside plumber's own pass, where each call costs more, so the real saving is larger and not yet measured.
+- **Left:** eleven checks are still asked about every element (the six page-wide ones, hand-typed lists, reversed order in a form, the spinner, repeated roles, several h1s).
+- **Media hooks:** the two call counts.
+
 ## Open gaps
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
 
 ## Shipped · 2026-W46
+- The checks from Chrome's guides cost a third of what they did: each is asked only about the kind of element it is about (108 ms to 31 ms on a 10,827-element page) ([entry](#128-checks-asked-only-where-they-apply-2026-11-14)).
 - The checks from Chrome's guides were run on a real app with real forms (algorecall, 14 pages). Four kinds of false alarm were found and fixed, and each is now a test ([entry](#the-checks-meet-a-real-app-algorecall-2026-11-14)).
 - The 135 checks from Chrome's guides have tests: six, each a real page through the real command, proving 128 checks at the line of their problem and one page built right where none may speak ([entry](#the-checks-from-chromes-guides-get-their-tests-2026-11-14)).
 - plumber now checks the markup itself: 34 checks from Chrome's HTML guide, such as an image with no size that makes the page jump, a box with a hand cursor that a keyboard cannot press, a list typed with bullet characters, and a tooltip that only a mouse can see ([entry](#thirty-four-html-checks-in-one-patch-2026-11-14)). On the homepage branch, not on main.

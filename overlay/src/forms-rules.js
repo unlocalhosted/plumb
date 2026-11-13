@@ -304,3 +304,41 @@ export const inlineHandler = rule('inline-handler', 'script', function (el, fact
 export const FORMS_RULES = [nestedForm, buttonType, submitMissing, fieldsetLegend, fieldName, passwordNoForm, searchLandmark, formUnnamed, getSensitive, textareaResize, labelUnbound, labelProximity,
   invalidUndescribed, requiredUnmarked, requiredUnsaid, labelOverridden, autocompleteOff, numericKeyboard, numberForCode, splitCode, identifierCorrection, invalidOnLoad, submitDisabled, controlHidden,
   nameSplit, latinOnly, submitWording, radioGroup, describedbyMissing, inputType, visualOrder, placeholderInstruction, inlineHandler];
+
+// what each rule is about (kinds.js): where the engine asks it. No narrower than the rule's own first test; a rule not
+// listed is asked about every element.
+const ON = {
+  'nested-form': 'form',
+  'button-type': 'button',
+  'submit-missing': 'form',
+  'fieldset-legend': 'fieldset',
+  'field-name': 'input,select,textarea',
+  'password-no-form': 'input',
+  'search-landmark': 'input,[role="searchbox"]',
+  'form-unnamed': 'form',
+  'get-sensitive': 'form',
+  'textarea-resize': 'textarea',
+  'label-unbound': 'label',
+  'label-proximity': 'label',
+  'invalid-undescribed': '[aria-invalid]',
+  'required-unmarked': 'input,select,textarea',
+  'required-unsaid': 'input,select,textarea',
+  'label-overridden': 'input,select,textarea',
+  'autocomplete-off': 'input',
+  'numeric-keyboard': 'input',
+  'number-for-code': 'input',
+  'split-code': 'input',
+  'identifier-correction': 'input',
+  'invalid-on-load': 'input,select,textarea',
+  'submit-disabled': 'button,input',
+  'control-hidden': 'label',
+  'name-split': 'input',
+  'latin-only': 'input',
+  'submit-wording': 'button,input',
+  'radio-group': 'input',
+  'describedby-missing': 'input,select,textarea',
+  'input-type': 'input',
+  'placeholder-instruction': 'input,textarea',
+  'inline-handler': 'input,select,textarea,button,form',
+};
+for (const r of FORMS_RULES) { const on = ON[r.id.split('/')[1]]; if (on) r.on = on; }

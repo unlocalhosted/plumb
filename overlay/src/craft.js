@@ -21,6 +21,7 @@
  *             page-wide rule's also by the page's signature; a late fact (an icon's ink) re-judges only who asked
  * ───────────────────────────────────────────────────────── */
 import { PACK_RULES, packOf } from './packs.js';
+import { rulesFor } from './kinds.js';
 import { verdicts } from './verdict.js';
 import { rgb, VIRTUAL, SPEC, elevation } from './craft-read.js';
 import { TIER } from './craft-facets.js';
@@ -603,7 +604,7 @@ export class Craft {
     let hit = this.#cache.get(el), fresh = false;
     if (!hit || hit.sig !== sig) {
       fresh = true;
-      hit = { sig, marks: rules.filter((r) => !pageWide(r)).flatMap(judge) };
+      hit = { sig, marks: rulesFor(rules, el).filter((r) => !pageWide(r)).flatMap(judge) };
       this.#cache.set(el, hit);
     }
     const pd = P && performance.now();

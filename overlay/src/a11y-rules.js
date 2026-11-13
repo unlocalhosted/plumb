@@ -318,5 +318,33 @@ export const A11Y_RULES = [controlName, imageAlt, altCliche, svgName, tabindexPo
   headingSkip, headingH1Many, mainMany, navUnnamed, iframeTitle, iframeScroll, tableHeaders, headingInSummary, redundantRole, roleOnStructure, nativeOverRole, fieldAutocomplete];
 
 
+// what each rule is about (kinds.js): where the engine asks it. No narrower than the rule's own first test; a rule not
+// listed is asked about every element.
+const ON = {
+  'control-name': 'button,a,input,select,textarea,summary,[role="button"],[role="link"],[role="checkbox"],[role="radio"],[role="switch"],[role="tab"],[role="menuitem"],[role="menuitemcheckbox"],[role="menuitemradio"],[role="combobox"],[role="textbox"],[role="searchbox"],[role="slider"],[role="spinbutton"],[role="option"]',
+  'image-alt': 'img',
+  'alt-cliche': 'img',
+  'svg-name': 'svg',
+  'tabindex-positive': '[tabindex]',
+  'tabindex-redundant': '[tabindex]',
+  'hidden-focusable': 'button,a,input,select,textarea,summary,[tabindex]',
+  'role-presentation-control': '[role="presentation"],[role="none"]',
+  'label-on-generic': '[aria-label],[aria-labelledby]',
+  'label-in-name': '[aria-label]',
+  'role-in-label': '[aria-label]',
+  'link-name-reused': 'a',
+  'heading-skip': 'h1,h2,h3,h4,h5,h6,[role="heading"]',
+  'main-many': 'main,[role="main"]',
+  'nav-unnamed': 'nav,[role="navigation"]',
+  'iframe-title': 'iframe',
+  'iframe-scroll': 'iframe',
+  'table-headers': 'table',
+  'heading-in-summary': 'h1,h2,h3,h4,h5,h6',
+  'role-on-structure': '[role]',
+  'native-over-role': '[role="button"],[role="link"],[role="checkbox"]',
+  'field-autocomplete': 'input,select,textarea',
+};
+for (const r of A11Y_RULES) { const on = ON[r.id.split('/')[1]]; if (on) r.on = on; }
+
 // what the other packs' page rules share with these (forms-rules.js)
 export { trimmed, hiddenFromAT, drawn, shown, named, page };
