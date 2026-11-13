@@ -31,6 +31,7 @@ import { Craft, spec } from './craft.js'; // craft: the mentor's rules, read on 
 import { Selection, SELECT_CSS } from './select.js'; // the element is the target: a click anywhere on it selects it
 import { Changes, CHANGES_CSS } from './changes.js'; // what was changed on the page, per element, until it is applied
 import { activeVariants } from './variants.js';
+import { onReleased } from './claims.js';
 import { elementEdit, planOf, swapPlanOf } from './inplace.js';
 import { FixPanel, FIX_CSS } from './fixpanel.js'; // the one place you act: a cause in hand, its options, Take, Apply
 import { FIX } from './words.js';
@@ -76,6 +77,7 @@ export class Blueprint {
     this.#onProgress = onProgress;
     this.#craft = new Craft({ theme, again: () => this.#reader?.refresh() });
     this.#craft.onFacts = () => { if (this.active) this.#reader.refresh(); }; // an icon's ink landed
+    onReleased((els) => this.#craft.again(els)); // a preview ended: what was judged under it is judged again, on the page's own values
     this.#layer = Object.assign(document.createElement('div'), { className: 'bp', hidden: true });
     root.appendChild(this.#layer);
     this.#glass = new Glass(root, host);

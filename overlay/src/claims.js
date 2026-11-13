@@ -28,6 +28,18 @@ const LEVELS = Object.keys(LEVEL).length;
 // el → Map<prop, { base: [value, priority], slots: (string|undefined)[], shown: string|null }>
 const table = new WeakMap();
 
+// Whoever judges the page (the craft engine) hears when an element shows its own values again: anything it measured
+// while a preview was on was the preview, not the page. Batched to one call per task.
+const listeners = new Set();
+let back = null;
+/** fn(elements) runs once per task with the elements whose last claim ended. Returns the unsubscribe. */
+export function onReleased(fn) { listeners.add(fn); return () => listeners.delete(fn); }
+function released(el) {
+  if (!listeners.size) return;
+  if (!back) { back = new Set(); queueMicrotask(() => { const els = [...back]; back = null; for (const fn of listeners) fn(els); }); }
+  back.add(el);
+}
+
 function entryOf(el, prop, make) {
   let props = table.get(el);
   if (!props) { if (!make) return null; table.set(el, (props = new Map())); }
@@ -50,7 +62,7 @@ function show(el, prop, entry) {
   const [value, priority] = entry.base;
   if (value) el.style.setProperty(prop, value, priority); else el.style.removeProperty(prop);
   table.get(el).delete(prop);
-  if (!table.get(el).size) table.delete(el);
+  if (!table.get(el).size) { table.delete(el); released(el); }
   if (!el.getAttribute('style')?.trim()) el.removeAttribute('style');
 }
 
