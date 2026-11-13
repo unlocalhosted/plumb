@@ -224,7 +224,9 @@ export function mount(host, root, css) {
     const wheel = (e) => {
       if (!picking || synced) return;
       e.preventDefault();
-      const dx = e.deltaMode ? e.deltaX * 16 : e.deltaX, dy = e.deltaMode ? e.deltaY * 16 : e.deltaY;
+      // the fingers' own direction: a trackpad with natural scrolling reports the page's travel, the opposite of the
+      // hand, so both axes are turned round (fingers right = toward sync, fingers up = bigger)
+      const dx = -(e.deltaMode ? e.deltaX * 16 : e.deltaX), dy = -(e.deltaMode ? e.deltaY * 16 : e.deltaY);
       clearTimeout(idle);
       if (Math.abs(dx) > Math.abs(dy)) {
         ty = 0;
@@ -240,7 +242,7 @@ export function mount(host, root, css) {
       } else {
         tx = 0; ty += dy;
         while (Math.abs(ty) >= 34) {
-          const up = ty < 0; ty -= Math.sign(ty) * 34;
+          const up = ty > 0; ty -= Math.sign(ty) * 34;
           if (seg === 'mode') setMode(mode + (up ? 1 : -1));
           else if (seg === 'value') p.set(p.at() + (up ? 1 : -1));
         }
