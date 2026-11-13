@@ -57,7 +57,22 @@ export function mount(host, root, css) {
     .xr-grab[data-axis="y"] { cursor: ns-resize; } .xr-grab[data-axis="x"] { cursor: ew-resize; } .xr-grab[data-axis="d"] { cursor: nwse-resize; }
     .stage[data-picking] .xr-card { opacity: 0; pointer-events: none; }
     .stage .row { z-index: 6; }
-    .row .side { padding: 0 2px 0 0; font: 600 11.5px/1 var(--pl-sans); color: var(--pl-ink-2); white-space: nowrap; }
+    .row .side { display: inline-flex; align-items: center; gap: 4px; height: 26px; padding: 0 6px; border-radius: 8px; font: 600 11.5px/1 var(--pl-sans); color: var(--pl-ink-2); white-space: nowrap; transition: background-color 200ms var(--pl-ease-out), color 200ms var(--pl-ease-out); }
+    .row .side .ud { display: none; width: 6px; height: 10px; background: currentColor; clip-path: polygon(50% 0, 100% 35%, 0 35%, 0 65%, 100% 65%, 50% 100%); }
+    /* the lit part of the row: where two fingers act */
+    .row[data-seg="mode"] .side { background: var(--pl-lilac-soft); color: var(--pl-lilac-ink); } .row[data-seg="mode"] .side .ud { display: block; }
+    .row[data-seg="value"] .val { box-shadow: 0 0 0 2px color-mix(in oklab, var(--pl-sky) 45%, transparent); border-radius: 8px; }
+    .row[data-seg="apply"] .ok { background: var(--pl-mint); color: #fff; }
+    .xr-legend { position: absolute; z-index: 6; display: flex; gap: 10px; font: 600 10.5px/1 var(--pl-sans); color: #8a8a94; pointer-events: none; }
+    .xr-legend span { transition: color 200ms var(--pl-ease-out); } .xr-legend span[data-on] { color: var(--pl-text-primary); }
+    /* the pull that syncs: a pill beside the row that fills as you keep going right */
+    .xr-sync { position: absolute; z-index: 6; display: flex; align-items: center; height: 34px; padding: 0 14px; border-radius: 11px; overflow: hidden; isolation: isolate;
+      background: var(--pl-bg-surface); box-shadow: var(--pl-shadow-card); font: 600 12px/1 var(--pl-sans); color: var(--pl-text-primary); white-space: nowrap;
+      animation: pl-pop 260ms var(--pl-spring-pop) both; }
+    .xr-sync[hidden] { display: none; }
+    .xr-sync .k { position: absolute; inset: 0; z-index: -1; transform-origin: left; transform: scaleX(var(--k, 0)); background: linear-gradient(90deg, var(--pl-mint-soft), color-mix(in oklab, var(--pl-mint) 55%, var(--pl-mint-soft))); transition: transform 120ms linear; }
+    .xr-sync b { color: var(--pl-mint-ink); }
+    .xr-sync[data-full] { color: var(--pl-mint-ink); }
     /* a note for your agent: a well to write in, the place it's about above it */
     .xr-note { position: absolute; z-index: 7; width: 300px; box-sizing: border-box; padding: 12px; border-radius: 18px; background: var(--pl-bg-surface); box-shadow: var(--pl-shadow-card);
       animation: pl-pop 280ms var(--pl-spring-pop) both; transform-origin: 0 0; }
@@ -98,10 +113,10 @@ export function mount(host, root, css) {
   let shown = null, pinned = null, zone = null, picking = null, noting = null, cardAt = { x: 0, y: 0 }, mouse = { x: 0, y: 0 };
   const box = () => stage.getBoundingClientRect();
   const nameOf = (el) => NAMES[el.dataset.x] ?? [el.localName, null];
-  const draw = (el, z = zone) => {
+  const draw = (el, z = zone, lit = []) => {
     if (!el) { layer.innerHTML = ''; card.hidden = true; shown = null; zone = null; return; }
     const s = box(), [name, source] = nameOf(el);
-    const x = xray(el, { tokenOf, origin: { left: s.left, top: s.top }, room: { left: 12, top: 12, right: s.width - 12, bottom: s.height - 40 }, name, source, zone: picking ? null : z });
+    const x = xray(el, { tokenOf, origin: { left: s.left, top: s.top }, room: { left: 12, top: 12, right: s.width - 12, bottom: s.height - 40 }, name, source, zone: picking ? null : z, lit });
     layer.innerHTML = x.page;
     if (el !== shown || !picking) card.innerHTML = x.card;
     const first = card.hidden;
@@ -137,45 +152,121 @@ export function mount(host, root, css) {
   };
   // dragging the part: inward makes padding bigger; a gap and a corner grow down and right; words grow up
   const PER = { top: (dx, dy) => dy, bottom: (dx, dy) => -dy, left: (dx) => dx, right: (dx) => -dx };
+  const PAIR = { top: 'bottom', bottom: 'top', left: 'right', right: 'left' }, ALL = ['top', 'right', 'bottom', 'left'];
   const startPick = () => {
     const el = shown, z = zone; if (!el || !z) return;
     pinned = el; stage.setAttribute('data-pinned', ''); stage.setAttribute('data-picking', '');
     const S = optionsFor(z.family, z.n), here = S.findIndex((o) => Math.abs(o.v - z.n) <= 0.5 || (o.v === 9999 && z.n > 500));
-    const before = el.style.getPropertyValue(z.prop);
+    // padding moves one side, its pair, or all four; every other part is one property
+    const MODES = z.side ? [[z.side], [z.side, PAIR[z.side]], ALL] : [null];
+    const SAID = z.side ? [z.side, `${z.side} + ${PAIR[z.side]}`, 'all sides'] : [z.said.toLowerCase()];
+    let mode = 0;
+    const props = () => (MODES[mode] ? MODES[mode].map((k) => `padding-${k}`) : [z.prop]);
+    const before = Object.fromEntries((z.side ? ALL.map((k) => `padding-${k}`) : [z.prop]).map((q) => [q, el.style.getPropertyValue(q)]));
+    const lit = () => zonesOf(el).filter((q) => props().includes(q.prop) && (q.prop.startsWith('padding') ? true : q.side === z.side));
     const s = box(), grab = document.createElement('i');
     grab.className = 'xr-grab';
     grab.dataset.axis = z.side ? (z.side === 'top' || z.side === 'bottom' ? 'y' : 'x') : z.family === 'radius' ? 'd' : z.col ? 'y' : z.family === 'type' ? 'y' : 'x';
     grab.style.cssText = `left:${z.x - s.left}px;top:${z.y - s.top}px;width:${z.w}px;height:${z.h}px`;
     stage.append(grab);
     const perPx = z.side ? (dx, dy) => PER[z.side](dx, dy) / 12 : z.family === 'type' ? (dx, dy) => -dy / 16 : z.col ? (dx, dy) => dy / 12 : (dx, dy) => (dx + dy) / 14;
+    let cur = S[here < 0 ? 0 : here];
+    const paint = () => {
+      for (const q of props()) el.style.setProperty(q, cur.v === 9999 ? '9999px' : `${cur.v}px`);
+      const nz = zonesOf(el).find((q) => q.prop === z.prop) ?? z, b2 = box();
+      grab.style.cssText = `left:${nz.x - b2.left}px;top:${nz.y - b2.top}px;width:${nz.w}px;height:${nz.h}px`;
+      requestAnimationFrame(() => draw(el, null, lit()));
+    };
     const p = picker(stage, {
       name: z.said, toy: z.toy, options: S, keys: 'row', start: here < 0 ? undefined : here,
       mark: () => '',
       format: (o) => (o.v === 9999 ? '∞' : `${o.v}px`),
-      apply: (o) => {
-        el.style.setProperty(z.prop, o.v === 9999 ? '9999px' : `${o.v}px`);
-        // the part moved with the value: the handle follows it, the X-ray is drawn again
-        const nz = zonesOf(el).find((q) => q.prop === z.prop && q.side === z.side && (!z.corner || true)) ?? z, b2 = box();
-        grab.style.cssText = `left:${nz.x - b2.left}px;top:${nz.y - b2.top}px;width:${nz.w}px;height:${nz.h}px`;
-        requestAnimationFrame(() => draw(el, null));
-      },
+      apply: (o) => { cur = o; paint(); },
       place: (row, list) => { row.style.left = `${cardAt.x}px`; row.style.top = `${cardAt.y}px`; list.style.left = row.style.left; list.style.top = `${cardAt.y + 40}px`; },
       handles: [{ el: grab, perPx }],
     });
+    const row = p.row;
+    row.querySelector('.scrub').insertAdjacentHTML('afterend', `<span class="side" data-modes="${MODES.length}"><b>${SAID[0]}</b><i class="ud" aria-hidden="true"></i></span>`);
+    // under the row: what two fingers do here, and the pull that syncs
+    stage.insertAdjacentHTML('beforeend', `<div class="xr-legend"><span data-s="mode">← ${z.side ? 'sides' : ''}</span><span data-s="value">↕ value</span><span data-s="apply">→ sync</span></div>
+      <div class="xr-sync" hidden><i class="k"></i><span class="say">Keep going <b>→</b> to sync</span></div>`);
+    const legend = stage.querySelector('.xr-legend'), sync = stage.querySelector('.xr-sync');
+    if (!z.side) legend.querySelector('[data-s="mode"]').remove();
+    const lay = () => { const r = row.getBoundingClientRect(), b2 = box(); legend.style.left = `${r.left - b2.left + 6}px`; legend.style.top = `${r.bottom - b2.top + 8}px`; sync.style.left = `${r.right - b2.left + 10}px`; sync.style.top = `${r.top - b2.top}px`; };
+    requestAnimationFrame(lay);
+
+    // ── two fingers: left and right move between the sides, the value and apply; up and down act on the one lit ──
+    const SEGS = z.side ? ['mode', 'value', 'apply'] : ['value', 'apply'];
+    let seg = 'value', tx = 0, ty = 0, charge = 0, idle = 0, synced = false;
+    const show = () => {
+      row.dataset.seg = seg; legend.dataset.seg = seg;
+      for (const sp of legend.children) sp.toggleAttribute('data-on', sp.dataset.s === seg);
+      sync.hidden = seg !== 'apply';
+      sync.style.setProperty('--k', charge.toFixed(3));
+      sync.toggleAttribute('data-full', charge >= 1);
+      lay();
+    };
+    const setMode = (m) => {
+      if (m === mode || m < 0 || m >= MODES.length) return;
+      const dir = m > mode ? 6 : -6;
+      mode = m; row.querySelector('.side b').textContent = SAID[mode];
+      row.querySelector('.side').animate?.([{ transform: `translateY(${dir}px)`, opacity: 0.4 }, { transform: 'none', opacity: 1 }], { duration: 220, easing: 'cubic-bezier(0.22, 1, 0.36, 1)' });
+      paint();
+    };
+    const doSync = () => {
+      if (synced) return;
+      if (!p.ready()) { sync.querySelector('.say').innerHTML = cur.hard ? 'Pick one of your sizes first' : 'Nothing to sync'; sync.animate?.([{ translate: '0 0' }, { translate: '-5px 0' }, { translate: '4px 0' }, { translate: '0 0' }], { duration: 260 }); charge = 0; show(); return; }
+      synced = true; p.write();
+      sync.querySelector('.say').innerHTML = `<b>✓</b> Synced: ${SAID[mode]} ${cur.name}`;
+      const b2 = sync.getBoundingClientRect(); burst(root, b2.left + 20, b2.top + b2.height / 2, { pieces: 18 });
+      setTimeout(() => done(true), 1100);
+    };
+    const wheel = (e) => {
+      if (!picking || synced) return;
+      e.preventDefault();
+      const dx = e.deltaMode ? e.deltaX * 16 : e.deltaX, dy = e.deltaMode ? e.deltaY * 16 : e.deltaY;
+      clearTimeout(idle);
+      if (Math.abs(dx) > Math.abs(dy)) {
+        ty = 0;
+        if (seg === 'apply' && (dx > 0 || charge > 0)) {
+          // past apply, the pull charges the sync; back off and it drains; it never needs a second gesture
+          charge = Math.max(0, Math.min(1, charge + dx / 260));
+          if (charge >= 1) { show(); doSync(); return; }
+          if (charge === 0 && dx < 0) tx += dx;
+        } else tx += dx;
+        const i = SEGS.indexOf(seg);
+        if (tx > 70 && i < SEGS.length - 1) { seg = SEGS[i + 1]; tx = 0; charge = 0; sync.querySelector('.say').innerHTML = 'Keep going <b>→</b> to sync'; }
+        else if (tx < -70 && i > 0) { seg = SEGS[i - 1]; tx = 0; charge = 0; }
+      } else {
+        tx = 0; ty += dy;
+        while (Math.abs(ty) >= 34) {
+          const up = ty < 0; ty -= Math.sign(ty) * 34;
+          if (seg === 'mode') setMode(mode + (up ? 1 : -1));
+          else if (seg === 'value') p.set(p.at() + (up ? 1 : -1));
+        }
+      }
+      show();
+      // let go of the pull: an uncharged sync springs back
+      idle = setTimeout(() => { if (charge < 1 && charge > 0) { charge = 0; show(); } tx = 0; ty = 0; }, 700);
+    };
+    stage.addEventListener('wheel', wheel, { passive: false });
+
     const done = (keep) => {
-      if (!keep) { if (before) el.style.setProperty(z.prop, before); else el.style.removeProperty(z.prop); }
-      p.row.nextElementSibling?.remove(); p.row.remove(); grab.remove();
+      if (!keep) for (const [q, v] of Object.entries(before)) { if (v) el.style.setProperty(q, v); else el.style.removeProperty(q); }
+      stage.removeEventListener('wheel', wheel);
+      row.nextElementSibling?.remove(); row.remove(); grab.remove(); legend.remove(); sync.remove();
       picking = null; stage.removeAttribute('data-picking');
       draw(el, null);
     };
-    p.row.querySelector('.scrub').insertAdjacentHTML('afterend', `<span class="side">${z.side ?? z.said.toLowerCase()}</span>`);
     picking = { done, p };
-    p.row.addEventListener('keydown', (e) => {
+    show(); paint();
+    const written = () => setTimeout(() => { if (row.classList.contains('written') && !synced) { synced = true; const b = row.getBoundingClientRect(); burst(root, b.right - 16, b.top + 17, { pieces: 14 }); setTimeout(() => done(true), 700); } });
+    row.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') { e.preventDefault(); e.stopImmediatePropagation(); done(false); }
-      else if (e.key === 'Enter') setTimeout(() => { if (p.row.classList.contains('written')) { const b = p.row.getBoundingClientRect(); burst(root, b.right - 16, b.top + 17, { pieces: 14 }); setTimeout(() => done(true), 700); } });
+      else if (e.key === 'Enter') written();
     }, true);
-    p.row.querySelector('.ok').addEventListener('click', () => setTimeout(() => { if (p.row.classList.contains('written')) { const b = p.row.getBoundingClientRect(); burst(root, b.right - 16, b.top + 17, { pieces: 14 }); setTimeout(() => done(true), 700); } }));
-    requestAnimationFrame(() => p.row.querySelector('.val').focus({ preventScroll: true }));
+    row.querySelector('.ok').addEventListener('click', written);
+    requestAnimationFrame(() => row.querySelector('.val').focus({ preventScroll: true }));
   };
 
   // ── ↵ anywhere: a note for your agent about what you're pointing at; ⌘↵ copies it with the file and line ──

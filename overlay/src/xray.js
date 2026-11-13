@@ -114,7 +114,7 @@ const lum = ([r, g, b]) => [r, g, b].map((v) => { v /= 255; return v <= 0.03928 
 const contrast = (a, b) => { const [x, y] = [lum(a), lum(b)].sort((m, n) => n - m); return (x + 0.05) / (y + 0.05); };
 
 /** The X-ray of one element: the drawing on it and the card beside it, as html for a positioned layer. */
-export function xray(el, { tokenOf, origin = { left: 0, top: 0 }, room, source, name, fresh = false, zone = null } = {}) {
+export function xray(el, { tokenOf, origin = { left: 0, top: 0 }, room, source, name, fresh = false, zone = null, lit = [] } = {}) {
   const cs = getComputedStyle(el), R = el.getBoundingClientRect();
   const r = { left: R.left - origin.left, top: R.top - origin.top, right: R.right - origin.left, bottom: R.bottom - origin.top, width: R.width, height: R.height };
   room ??= { left: 8, top: 8, right: innerWidth - origin.left - 8, bottom: innerHeight - origin.top - 8 };
@@ -175,6 +175,8 @@ export function xray(el, { tokenOf, origin = { left: 0, top: 0 }, room, source, 
     draw += `<rect class="xr-zone" x="${r1(zx)}" y="${r1(zy)}" width="${r1(zone.w)}" height="${r1(zone.h)}" rx="${zone.family === 'radius' ? 4 : 2}" fill="color-mix(in oklab, ${zj.c} 22%, transparent)" stroke="${zj.c}" stroke-width="2"/>`;
     said = `<span class="xr-say" style="left:${r1(zx + zone.w / 2)}px;top:${r1(zy + zone.h + 8)}px"><b>${esc(zone.said)}</b> ${zj.n}${zj.t ? ` <i class="on">${esc(zj.t)}</i>` : zj.off ? ' <i class="off">off scale</i>' : ''} <kbd>⇧</kbd></span>`;
   }
+  // parts in hand while a picker has them: drawn strong, no pill (the picker says it)
+  for (const lz of lit) { const lj = judge(lz.family, lz.n); draw += `<rect class="xr-zone" x="${r1(lz.x - origin.left)}" y="${r1(lz.y - origin.top)}" width="${r1(lz.w)}" height="${r1(lz.h)}" rx="2" fill="color-mix(in oklab, ${lj.c} 22%, transparent)" stroke="${lj.c}" stroke-width="2"/>`; }
   const wSz = sizing(el, cs, 'w'), hSz = sizing(el, cs, 'h');
   const pills = `<span class="ruler-pill" style="left:${r1(r.left + r.width / 2)}px;top:${r1(above)}px">${esc(wSz)}</span>`
     + `<span class="ruler-pill" style="left:${r1(beside)}px;top:${r1(r.top + r.height / 2)}px">${esc(hSz)}</span>` + said;
