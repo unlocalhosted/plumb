@@ -1,6 +1,6 @@
 # Warm start: the server answers from what it knew, then checks itself
 
-Status: signed off by the owner, 2026-11-13. Layer 0 (measuring) is done: see **Measured**. Nothing is built.
+Status: signed off by the owner, 2026-11-13. Layers 0 and 1 are done: the table is measured and kept, and nothing reads it back yet.
 Stands on [engine-scaling.md](engine-scaling.md), "The cold start".
 
 ## Measured (2026-11-13, layer 0)
@@ -34,6 +34,46 @@ What it says:
 changes included) with its dependencies installed there; the copy was removed afterwards. On that slower machine
 one cold start that also answers every file's places took 120–135 s and 5.1–5.5 GB, most of the memory being the
 255 MB table held twice by the measuring script.
+
+### Layer 1 built: the table is kept (2026-11-13)
+
+About five seconds after the server last had something new to say, it writes the reading table and a receipt
+under the project's cache folder. Nothing reads them back yet. The server's health says what was kept, how big and
+how long it took; a table kept by another build of plumber is removed.
+
+| | crafting-ui (laptop) | algorecall (vm-agent) |
+|---|---|---|
+| Files with something in them | 238 | 2,411 |
+| Declarations / distinct once the place is set aside | 22,486 / 7,440 | 304,400 / 32,836 |
+| Table on disk | 9.5 MB (16.1 MB as plain objects) | 116 MB (257 MB as plain objects) |
+| Receipt on disk | 0.4 MB: 1,415 files, 666 directories | 2.6 MB: 14,830 files, 1,182 directories |
+| Time to build and write it | 0.07 s | 5.7 s (4.9 s building) |
+| Time to load it back | 0.05 s | 0.83 s |
+| Read back from disk, every file compared with the server's own answer | 237 the same, 1 differs (below) | 2,411 the same, 0 differ |
+
+What it says:
+
+1. **It is lossless.** Every declaration matches on both apps. Findings match once the one field the ledger
+   rewrites when it answers (a finding's severity) is set aside: the table holds the view before the ledger, as
+   designed.
+2. **My size prediction was wrong.** I said "a few tens of MB" for algorecall; it is 116 MB. Storing each
+   declaration once took out more than half, but the places themselves (304,400 of them, each with its line,
+   column and text) and the findings (20,032 file entries, each carrying its decisions list) are the rest. More
+   to take out: a finding's decisions stored once, places as columns.
+3. **Writing it holds the server's one worker for 5.7 s on algorecall** (on vm-agent, a slower machine). That
+   breaks the budget "never delays an answer": a question arriving in that window waits. It is asked for only
+   after five quiet seconds, but it is not interruptible. To fix before layer 3: build it in pieces, or in the
+   second worker the design already has.
+4. **One file differs on crafting-ui, and it matters for layer 3.** For the theme stylesheet the server answers 60
+   findings where the table holds 29: the ledger step regroups findings when it answers, and today it does that
+   over the whole report. Answering from the table needs that step run over the table. Not a fault in what is
+   kept; a job for the layer that answers.
+5. **The receipt is the server's own evidence, not yet the check's.** It lists every file the server knows with
+   its hash and every directory it lists with its stamp, plus the table's hash so the two cannot be mismatched.
+   It does not yet record what each import resolved to.
+
+Not run: the full test suite. Four server test files nearest the change pass (27 of 27, 1 skipped). No test of the
+kept table itself yet; the comparison above was a script.
 
 ## 1. What we are doing
 
@@ -135,7 +175,7 @@ One layer at a time, each seen on algorecall and crafting-ui, each timed. No tes
 | # | Layer | What can be seen |
 |---|---|---|
 | 0 | **Done.** Measure, build nothing | How long the receipt check takes on algorecall; the reading table's size and load time; the memory of a second worker. And the proof the rest stands on: a cold server's reading table equals one rebuilt from a second cold start, byte for byte, on both apps |
-| 1 | Keep: write the table and receipt after a full analysis, in idle time | The files on disk; their size and write time in the server's health |
+| 1 | **Done** (see above; two things to fix before layer 3). Keep: write the table and receipt after a full analysis, in idle time | The files on disk; their size and write time in the server's health |
 | 2 | Check only: on start, load and validate the kept table but do not answer from it; compare when the fresh analysis lands | A line per start: matched or not, and what differed. Left running through normal work for a few days: the evidence before any answer is trusted |
 | 3 | Answer from it: the kept state, the light worker, writes waiting | After a restart with nothing changed, the overlay draws in seconds |
 | 4 | A change before ready drops the table | Edit a file 5 s after a restart: the page waits for the real analysis, never shows the old file's findings |

@@ -976,6 +976,14 @@
 - **The fix and the proof:** none built. algorecall's own two cold starts needed 2 GB twice and the laptop was swapping (5.9 of 7.2 GB of swap used), so the owner had the app copied to vm-agent: there the two tables were identical to the byte too (254.6 MB each, same hash). The copy was removed afterwards. Numbers in [server-warm-start.md](briefs/server-warm-start.md).
 - **Media hooks:** none yet.
 
+## The server keeps what it learned (2026-11-13)
+- **The itch:** the warm start needs something to start from. The owner: "Yes, build it".
+- **How we found it:** built the first layer and checked it with a script: let the server keep its table, read the file back from disk, and compare every source file's reading with what the running server answers.
+- **The system behind it:** the server had nowhere to put what an analysis cost 41 s to learn.
+- **What we chose and why:** a table shaped for the questions (per file, its declarations and findings), with each distinct declaration stored once, plus a receipt of every input with its hash and the table's own hash. Written five quiet seconds after the server last had news. Nothing reads it yet; that is the next layer, and it is check-only first.
+- **The fix and the proof:** crafting-ui: 9.5 MB, written in 0.07 s, 237 of 238 files identical to the server's answers. algorecall (on vm-agent): 116 MB, 5.7 s to write, 0.83 s to load, 2,411 of 2,411 identical. Three honest marks: I predicted a few tens of MB and it is 116; writing it holds the server's worker for 5.7 s on the big app, which breaks the design's own budget; and one stylesheet differs because the ledger regroups findings when it answers, which the answering layer must handle. Four server test files pass.
+- **Media hooks:** none.
+
 ## Open gaps
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
 
