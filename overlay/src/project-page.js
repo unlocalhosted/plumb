@@ -83,6 +83,53 @@ function how(reasons) {
   if (by.length === 1 && by[0] === 'name') return `<span class="how look" title="${esc(reasons.join(' · '))}">by its name only</span>`;
   return `<span class="how" title="${esc(reasons.join(' · '))}"></span>`;
 }
+/* The ladder: a length scale drawn as real space, so a decision can be seen. One row per distinct value across the
+   kind's scales, one column per scale; a step is drawn at its size (a spacing bar as wide as its pixels, a corner as
+   round as its radius). Two scales holding one value share a row, so an overlap is visible; a value off the base the
+   steps share is flagged on its row. Above it, at most three sentences say what to decide, from these numbers only */
+const LADDER_CSS = `
+  .ladder { margin: var(--pl-space-6) 0 var(--pl-space-2) calc(var(--pl-space-8) + var(--pl-space-5)); }
+  .ladder .say { display: grid; gap: var(--pl-space-2); margin: 0 0 var(--pl-space-6); padding: 0; list-style: none; max-width: 64ch; font: var(--pl-page-small); color: var(--pl-text-primary); }
+  .ladder .say li::before { content: '→ '; color: var(--pl-text-secondary); }
+  .ladder .say code { font: var(--pl-card-code); }
+  .ladder .grid { display: grid; grid-template-columns: var(--pl-page-space-2) repeat(var(--cols), minmax(var(--pl-page-space-4), 1fr)); column-gap: var(--pl-space-6); align-items: center; overflow-x: auto; }
+  .ladder .grid > * { min-height: var(--pl-space-8); }
+  .ladder .col { display: flex; align-items: end; font: var(--pl-card-code); color: var(--pl-text-secondary); padding-bottom: var(--pl-space-3); }
+  .ladder .v { display: flex; align-items: center; gap: var(--pl-space-2); font: var(--pl-card-code); color: var(--pl-text-primary); font-variant-numeric: tabular-nums; }
+  .ladder .v.off { color: var(--pl-soft-text); font-weight: 600; }
+  .ladder .cell { display: flex; align-items: center; }
+  .ladder .bar { height: var(--pl-space-3); border-radius: var(--pl-radius-mark); background: var(--pl-mint); }
+  .ladder .shared .bar { box-shadow: 0 0 0 var(--pl-space-1) color-mix(in oklab, var(--pl-mint) 30%, transparent); }
+  .ladder .arc { width: var(--pl-space-8); height: var(--pl-space-8); border-top: var(--pl-space-1) solid var(--pl-pink); border-left: var(--pl-space-1) solid var(--pl-pink); box-sizing: border-box; }
+  .ladder .row-rule { grid-column: 1 / -1; min-height: 0; height: var(--pl-line); background: color-mix(in oklab, var(--pl-text-primary) 5%, transparent); }
+`;
+function ladder(k) {
+  if (k.family !== 'spacing' && k.family !== 'radius') return '';
+  const pxOf = (v) => { const m = /^(-?[\d.]+)(px|rem)$/.exec(String(v).trim()); return m ? Number(m[1]) * (m[2] === 'rem' ? 16 : 1) : null; };
+  const lanes = k.groups.filter((g) => g.pattern).map((g) => ({ name: g.pattern, values: [...new Set(g.tokens.map((t) => pxOf(t.value)).filter((n) => n !== null && n > 0))] })).filter((l) => l.values.length > 1);
+  if (!lanes.length) return '';
+  const rows = [...new Set(lanes.flatMap((l) => l.values))].sort((a, b) => a - b);
+  // the base most steps share: 4 when at least three in four are multiples of 4, else 2
+  const base = rows.filter((v) => v % 4 === 0).length >= rows.length * 0.75 ? 4 : 2, off = rows.filter((v) => v % base !== 0);
+  const say = [];
+  for (let i = 0; i < lanes.length; i++) for (let j = i + 1; j < lanes.length; j++) {
+    const both = lanes[i].values.filter((v) => lanes[j].values.includes(v)).sort((a, b) => a - b);
+    if (both.length >= 2) say.push(`<code>${esc(lanes[i].name)}</code> and <code>${esc(lanes[j].name)}</code> both hold ${both.join(', ')}. Two names for one step: keep one scale and point the other at it.`);
+  }
+  if (off.length) say.push(`${off.join(' and ')} ${off.length === 1 ? 'is' : 'are'} off the ${base}px base the other steps share. Is ${off.length === 1 ? 'it' : 'each'} meant, or a rounding of ${off.map((v) => Math.round(v / base) * base).join(' and ')}?`);
+  const stems = new Set(lanes.map((l) => l.name.replace(/\*$/, '')));
+  if (stems.size > 1) say.push(`${stems.size} names for one kind (${[...stems].map((s) => `<code>${esc(s)}</code>`).join(', ')}). One name reads as one system; Tailwind calls this <code>--${k.family === 'radius' ? 'radius' : 'spacing'}-*</code>.`);
+  const cell = (lane, v) => {
+    if (!lane.values.includes(v)) return '<span class="cell"></span>';
+    const shared = lanes.filter((l) => l.values.includes(v)).length > 1;
+    const mark = k.family === 'radius' ? `<i class="arc" style="border-top-left-radius: ${v}px"></i>` : `<i class="bar" style="width: ${Math.min(v, 160)}px"></i>`;
+    return `<span class="cell${shared ? ' shared' : ''}" title="${esc(lane.name)}: ${v}px">${mark}</span>`;
+  };
+  return `<div class="ladder">${say.length ? `<ul class="say">${say.map((t) => `<li>${t}</li>`).join('')}</ul>` : ''}
+    <div class="grid" style="--cols: ${lanes.length}"><span></span>${lanes.map((l) => `<span class="col">${esc(l.name)}</span>`).join('')}
+      ${rows.map((v) => `<span class="row-rule"></span><span class="v${off.includes(v) ? ' off' : ''}">${v}</span>${lanes.map((l) => cell(l, v)).join('')}`).join('')}</div></div>`;
+}
+
 function reading(kinds) {
   if (!kinds?.length) return '';
   const all = kinds.flatMap((k) => k.groups), tokens = all.reduce((m, g) => m + g.tokens.length, 0);
@@ -95,9 +142,9 @@ function reading(kinds) {
       const groups = k.groups.filter((g) => g.pattern), lone = k.groups.filter((g) => !g.pattern), loneCount = lone.reduce((m, g) => m + g.tokens.length, 0);
       const files = [...new Set(k.groups.map((g) => g.file))];
       const byFile = files.map((file) => [file, groups.filter((g) => g.file === file)]).filter(([, gs]) => gs.length);
-      return `<section class="kind"><header><i class="toy">${toyOf(toy)}</i><div><b>${name}</b><span>${groups.length ? `${groups.length} ${groups.length === 1 ? 'scale' : 'scales'}` : 'no scale'}${loneCount ? `, ${loneCount} on their own` : ''} · ${nf.format(n)} ${n === 1 ? 'token' : 'tokens'}</span></div></header>
+      return `<section class="kind"><header><i class="toy">${toyOf(toy)}</i><div><b>${name}</b><span>${groups.length ? `${groups.length} ${groups.length === 1 ? 'scale' : 'scales'}` : 'no scale'}${loneCount ? `, ${loneCount} on their own` : ''} · ${nf.format(n)} ${n === 1 ? 'token' : 'tokens'}</span></div></header>${ladder(k)}
         ${(() => { let shown = 0; const head = [], rest = []; for (const [file, gs] of byFile) for (const g of gs) (shown++ < 6 ? head : rest).push([file, g]);
-          const block = (list) => [...new Set(list.map(([f]) => f))].map((file) => `${byFile.length > 1 ? `<div class="file">${esc(file)}</div>` : ''}<div class="rows">${list.filter(([f]) => f === file).map(([, g]) => row(k, g)).join('')}</div>`).join('');
+          const block = (list) => [...new Set(list.map(([f]) => f))].map((file) => `${byFile.length > 1 && !ladder(k) ? `<div class="file">${esc(file)}</div>` : ''}<div class="rows">${list.filter(([f]) => f === file).map(([, g]) => row(k, g)).join('')}</div>`).join('');
           return block(head) + (rest.length ? `<details><summary>${rest.length} more ${rest.length === 1 ? 'scale' : 'scales'}</summary>${block(rest)}</details>` : ''); })()}
         ${loneCount ? `<details><summary>${loneCount} on their own</summary><div class="rows">${lone.map((g) => row(k, { ...g, pattern: g.tokens.length === 1 ? g.tokens[0].name : g.file.split('/').pop() })).join('')}</div></details>` : ''}
       </section>`;
@@ -132,7 +179,7 @@ function typeScale(size) {
 export function mountProjectPage(host, data, tokens) {
   const doc = host.ownerDocument, root = host.attachShadow({ mode: 'open' });
   const type = typeScale(data.size);
-  root.innerHTML = `<style>${tokens}${LANGUAGE_CSS}${SCALE_CSS}${GRAVITY_CSS}${SPECIMEN_CSS}${CAUSE_LIST_CSS}${PAGE_CSS}${READING_CSS}</style>${TOY_DEFS}
+  root.innerHTML = `<style>${tokens}${LANGUAGE_CSS}${SCALE_CSS}${GRAVITY_CSS}${SPECIMEN_CSS}${CAUSE_LIST_CSS}${PAGE_CSS}${READING_CSS}${LADDER_CSS}</style>${TOY_DEFS}
   <header class="top"><span class="pl-rainbow"></span><b>React Plumber</b><span class="pl-tag">${esc(data.project)}</span><span class="read">${nf.format(data.files)} files read</span><button type="button" class="pl-act quiet" id="scheme">Day</button></header>
   <main>${type.html}<div id="gravity"></div><div id="specimen"></div><div id="causes"></div><div id="reading">${reading(data.reading)}</div></main>`;
   const gravity = new Gravity(root.getElementById('gravity'), { steps: type.steps, strays: type.strays });

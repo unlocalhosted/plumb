@@ -2478,6 +2478,14 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   (`2 4 6 8 12 16 20 24 px`) or swatches; files said once; past six scales and the lone tokens fold away; the reading
   itself is shown only where it is a guess from the name alone, marked "by its name only" (2 on the site), since that
   is the only line that needs a person. Seen running in dark, desktop width.
+- **Then "teach them and help them make better decisions, not throw them into a jungle" (owner, same day).** First
+  widget, the ladder, for spacing and corners: one row per distinct value across a kind's scales, one column per scale,
+  each step drawn at its real size (a mint bar as wide as its pixels, a pink corner as round as its radius), so two
+  scales holding one value share a row and a value off the shared base is flagged on its row; above it, up to three
+  sentences from those numbers only. On the site: `--pl-space-*` and `--s-*` both hold 16 and 24; `--s-*` and
+  `--pl-page-space-*` both hold 32, 48, 64, 96; 2 and 6 are off the 4px base; three names for one kind.
+- **The owner's frame for the page, same day:** it has four jobs, "what it found, how to make sense of it, how to fix
+  it, help user arrive at a good system". Today they are mixed in one section.
 - **Still open on the page:** some motion tokens show `0ms`, the
   value from the token file's reduced-motion block; nothing on the page can move a line yet (the config does).
 - **Still open:** a `font:` line that is off the scale shows the face's fix first ("use var(--font)"), not the
