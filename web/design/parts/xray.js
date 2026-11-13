@@ -3,7 +3,7 @@
 // theme scale so each value is judged: mint on the scale, coral off it.
 import { LANGUAGE_CSS } from '../../../overlay/src/language.js';
 import { TOY_DEFS } from '../../../overlay/src/toys.js';
-import { XRAY_CSS, xray, zonesOf, zoneAt } from '../../../overlay/src/xray.js';
+import { XRAY_CSS, xray, zonesOf, zoneAt, peersOf } from '../../../overlay/src/xray.js';
 import { PICKER_CSS, picker } from '../../../overlay/src/picker.js';
 import { burst } from '../../../overlay/src/burst.js';
 
@@ -55,10 +55,12 @@ export function mount(host, root, css) {
     .app .foot { display: flex; justify-content: flex-end; gap: 8px; padding-top: 4px; }
     .app button { padding: 9px 15px; border: 0; border-radius: 7px; font: 600 14px/20px ui-sans-serif, system-ui, sans-serif; cursor: default; }
     .app .invite { background: #2563eb; color: #fff; } .app .cancel { background: #fff; color: #344054; box-shadow: inset 0 0 0 1px #d0d5dd; }
+    .xr-many { display: inline-flex; align-items: center; height: 18px; padding: 0 6px; margin-left: 4px; border-radius: 99px; vertical-align: 2px; background: var(--pl-sky-soft); color: var(--pl-sky-ink); font: 600 10.5px/1 var(--pl-sans); letter-spacing: 0; }
     /* the value in hand, beside the pointer: its number and its token, while you drag or scroll */
     .xr-live { position: absolute; z-index: 8; pointer-events: none; display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 6px 0 10px; border-radius: 99px; white-space: nowrap;
       background: var(--pl-text-primary); color: var(--pl-bg-surface); font: 600 12px/1 var(--pl-mono); font-variant-numeric: tabular-nums; box-shadow: 0 6px 16px -6px rgb(0 0 0 / .4); }
     .xr-live[hidden] { display: none; }
+    .xr-live .x { font: 600 11px/1 var(--pl-sans); opacity: .7; padding-right: 4px; }
     .xr-live b { font-family: var(--pl-sans); } .xr-live i { font: 700 10.5px/1 var(--pl-sans); font-style: normal; padding: 4px 7px; border-radius: 99px; background: var(--pl-mint); color: #fff; }
     .xr-live i.off { background: var(--pl-coral); }
     /* a list, from a click on a number: your sizes, nearest first in order */
@@ -146,7 +148,13 @@ export function mount(host, root, css) {
     const how = e.metaKey || e.ctrlKey ? 'all' : e.shiftKey ? 'pair' : link;
     return how === 'all' ? ['top', 'right', 'bottom', 'left'].map((k) => `${sided[1]}-${k}`) : how === 'pair' ? [prop, `${sided[1]}-${PAIR[sided[2]]}`] : [prop];
   };
-  const count = () => [...changes.values()].reduce((n, m) => n + m.size, 0);
+  // one change is one property of one part of the code, however many places on the page draw that part
+  const keyOf = (el) => el.dataset.x ?? el;
+  const count = () => new Set([...changes].flatMap(([el, m]) => [...m.keys()].map((q) => `${keyOf(el)}|${q}`))).size;
+  const reach = () => new Set([...changes.keys()]).size;
+  // the places on the page that are this part: every element the same line of code draws (rows of a list, cards)
+  const peers = (el) => peersOf(el, (t) => t.dataset.x, (k) => stage.querySelectorAll(`.app [data-x="${k}"], .app[data-x="${k}"]`)); // Plumber: by the element's stamp
+  let onlyThis = false; // Alt as a change starts: just the one pointed at
 
   // the part pointed at (a padding side, a margin side, the width or height ruler, a corner, the gap, the words)
   let zone = null, justDragged = false;
@@ -162,11 +170,17 @@ export function mount(host, root, css) {
     if (!same) hold(null);
     layer.toggleAttribute('data-still', same);
     layer.innerHTML = x.page;
+    // the other places the same part is drawn: outlined, so you see a change will reach them too
+    const others = peers(el).filter((t) => t !== el);
+    if (others.length) layer.insertAdjacentHTML('beforeend', `<svg class="xr-on xr-peers" aria-hidden="true">${others.map((t) => { const r = t.getBoundingClientRect(), rad = Math.min(parseFloat(getComputedStyle(t).borderTopLeftRadius) || 0, r.height / 2); return `<rect x="${r.left - s.left - 2}" y="${r.top - s.top - 2}" width="${r.width + 4}" height="${r.height + 4}" rx="${rad + 2}" fill="color-mix(in oklab, var(--pl-sky) 7%, transparent)" stroke="var(--pl-sky)" stroke-width="1.5" stroke-dasharray="4 3"/>`; }).join('')}</svg>`);
     card.toggleAttribute('data-still', same);
     const foot = pendHtml();
     if (!same || x.card + foot !== lastCard) {
       body.innerHTML = x.card + foot; lastCard = x.card + foot;
     }
+    // how many places this part is drawn: said beside its name
+    const many = peers(el).length, head = body.querySelector('.xr-head b');
+    if (head && many > 1 && !head.querySelector('.xr-many')) head.insertAdjacentHTML('beforeend', ` <span class="xr-many" title="A change reaches every place; hold Alt as you start for just this one">×${many} places</span>`);
     // which numbers are changed, and the one in hand, kept true whether or not the card was written again
     for (const ch of card.querySelectorAll('[data-prop]')) {
       ch.toggleAttribute('data-changed', !!changes.get(el)?.has(ch.dataset.prop));
@@ -234,20 +248,24 @@ export function mount(host, root, css) {
   const familyOf = (prop) => (prop === 'width' || prop === 'height' ? 'size' : prop === 'border-radius' ? 'radius' : prop === 'font-size' ? 'type' : 'spacing');
   const read = (el, prop) => { const cs = getComputedStyle(el); return prop === 'width' ? el.getBoundingClientRect().width : prop === 'height' ? el.getBoundingClientRect().height : prop === 'gap' ? parseFloat(cs.columnGap) || parseFloat(cs.rowGap) || 0 : parseFloat(cs.getPropertyValue(prop)) || 0; };
   const set = (el, prop, v) => {
-    if (!changes.has(el)) changes.set(el, new Map());
-    const m = changes.get(el);
-    if (!m.has(prop)) m.set(prop, el.style.getPropertyValue(prop));
-    el.style.setProperty(prop, `${v}px`);
+    // a repeated part changes everywhere it's drawn, unless Alt said just this one
+    for (const t of onlyThis ? [el] : peers(el)) {
+      if (!changes.has(t)) changes.set(t, new Map());
+      const m = changes.get(t);
+      if (!m.has(prop)) m.set(prop, t.style.getPropertyValue(prop));
+      t.style.setProperty(prop, `${v}px`);
+    }
   };
   const nearest = (S, v) => S.reduce((b, o) => (Math.abs(o.v - v) < Math.abs(b.v - v) ? o : b), S[0]);
   const live = document.createElement('div'); live.className = 'xr-live'; live.hidden = true; stage.append(live);
-  const say = (o, x, y) => { const s = box(); live.hidden = false; live.innerHTML = `<b>${o.v}</b>${o.hard ? '<i class="off">off scale</i>' : `<i>${o.name}</i>`}`; live.style.left = `${x - s.left + 16}px`; live.style.top = `${y - s.top + 14}px`; };
+  const say = (o, x, y) => { const s = box(); live.hidden = false; const n = shown && !onlyThis ? peers(shown).length : 1; live.innerHTML = `<b>${o.v}</b>${o.hard ? '<i class="off">off scale</i>' : `<i>${o.name}</i>`}${n > 1 ? `<span class="x">×${n}</span>` : ''}`; live.style.left = `${x - s.left + 16}px`; live.style.top = `${y - s.top + 14}px`; };
 
   // drag: the value follows the hand in px and snaps to the nearest of your sizes as it goes
   const drag = (e, el, prop, sign, gain, chip) => {
     e.preventDefault(); e.stopPropagation();
     const fam = familyOf(prop), start = read(el, prop), S = optionsFor(fam, start);
     const linked = linkedOf(prop, e);
+    onlyThis = e.altKey;
     hold(el, prop);
     const x0 = e.clientX, y0 = e.clientY, at = e.target;
     let moved = false, cur = nearest(S, start);
@@ -261,7 +279,7 @@ export function mount(host, root, css) {
     };
     const up = (u) => {
       removeEventListener('pointermove', move, true); removeEventListener('pointerup', up, true);
-      held = null; live.hidden = true; resync();
+      held = null; live.hidden = true; onlyThis = false; resync();
       if (!moved && chip) openList(el, prop, at); else draw(el);
     };
     // on the window: the part under the hand is drawn again as the value moves, so it can't hold the pointer itself
@@ -408,7 +426,8 @@ export function mount(host, root, css) {
   // ── the changes: counted at the foot of the card; Sync writes them, Esc puts them back ──
   function pendHtml() {
     const n = count(); if (!n) return '';
-    return `<div class="xr-pend"><span>${n} change${n > 1 ? 's' : ''}</span><span class="sp"></span><button type="button" class="back" title="Esc">Put back</button><button type="button" class="sync">Sync <kbd>↵</kbd></button></div>`;
+    const at = reach();
+    return `<div class="xr-pend"><span>${n} change${n > 1 ? 's' : ''}${at > n ? ` · ${at} places` : ''}</span><span class="sp"></span><button type="button" class="back" title="Esc">Put back</button><button type="button" class="sync">Sync <kbd>↵</kbd></button></div>`;
   }
   const sync = () => {
     const n = count(); if (!n) return false;

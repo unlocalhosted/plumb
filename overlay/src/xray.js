@@ -24,6 +24,7 @@
 import { gaps, sizing } from './boxmodel.js';
 import { toyOf } from './toys.js';
 import { esc } from './choices.js';
+import { placeOf, atPlace } from './stamp.js';
 
 const SIDES = ['top', 'right', 'bottom', 'left'];
 const px = (v) => parseFloat(v) || 0;
@@ -285,4 +286,16 @@ export function gripsOf(el) {
   const g = gaps(el, cs)[0];
   if (g) out.push({ prop: 'gap', family: 'spacing', n: g.n, x: g.x + g.w / 2, y: g.y + g.h / 2, flat: !g.col ? false : true, gap: true, sign: g.col ? (dx, dy) => dy : (dx) => dx });
   return out;
+}
+
+/* A repeated part (the rows of a list, a grid of cards, every avatar in them) is one part of your code drawn in many
+ * places; a change to it is a change to that line, so by default it reaches every place (owner, 2026-11-13: "when we
+ * have these repetitive elements the default behaviour should be to apply the changes to all the components not just
+ * one"). The places are found by the element's place in your code, its stamp: every element the same line draws.
+ * keyOf/all: another way to tell the places (the design site's demo uses its own labels). Alt as a change starts
+ * changes only the one pointed at. */
+export function peersOf(el, keyOf = placeOf, all = (k) => document.querySelectorAll(atPlace(k))) {
+  const k = keyOf(el);
+  const found = k ? [...all(k)] : [];
+  return found.includes(el) ? found : [el];
 }
