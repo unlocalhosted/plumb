@@ -56,6 +56,7 @@ reserved.)
 
 ## Doesn't do yet
 
+- **Resizing to a size that isn't one of yours.** A size drag always lands on the nearest step of your theme. Keeping an exact size (say 312px) as a new token through the naming flow isn't built yet; the likely gesture is holding ⌥ while dragging to turn snapping off, then naming the size on the element when you let go. (2026-11-13)
 **The order** (decided 2026-11-12):
 
 - **Now:** nothing of this session's. (A class fix offered and then refused is in the fix card, which another
