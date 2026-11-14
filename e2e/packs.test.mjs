@@ -260,13 +260,16 @@ const HTML_EXPECTED = [['page-lang', 'root-el'], ['viewport-meta', 'root-el'], [
   ['summary-nested-control', 'd2'], ['summary-no-cue', 'd2'], ['title-tooltip', 'tip'], ['video-size', 'vid'], ['video-poster', 'vid'], ['video-captions', 'vid'], ['background-video', 'bg'], ['autoplay-sound', 'aud'],
   ['iframe-hidden', 'fr'], ['inline-handler', 'inl'], ['eager-below-fold', 'far']];
 
+// a 1.4 KB TrueType face (boxes for a to z), made with fontTools: a real web font the page can load
+const SLOW_TTF = Buffer.from('AAEAAAAKAIAAAwAgT1MvMkEXQbIAAAEoAAAAYGNtYXAAzQA8AAABxAAAADxnbHlmYcqN5AAAAjwAAAK+aGVhZC9Gbg4AAACsAAAANmhoZWEFFgFgAAAA5AAAACRobXR4BLACvAAAAYgAAAA6bG9jYQn0CUsAAAIAAAAAOm1heHAAHgAGAAABCAAAACBuYW1lkMmi3gAABPwAAABjcG9zdAQ+BBAAAAVgAAAAWgABAAAAAQAAre6uDF8PPPUAAwPoAAAAAOceFTkAAAAA5x4VOQAyAAABwgK8AAAAAwACAAAAAAAAAAEAAAMg/zgAAAH0ADIAMgHCAAEAAAAAAAAAAAAAAAAAAAABAAEAAAAcAAQAAQAAAAAAAgAAAAAAAAAAAAAAAAAAAAAAAwH0AZAABQAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAPz8/PwAAACAAegAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAB9AAyADIAMgAyADIAMgAyADIAMgAyADIAMgAyADIAMgAyADIAMgAyADIAMgAyADIAMgAyADIAMgAyAAAAAAACAAAAAwAAABQAAwABAAAAFAAEACgAAAAGAAQAAQACACAAev//AAAAIABh////4f+hAAEAAAAAAAAAAAANAA0AGgAnADQAQQBOAFsAaAB1AIIAjwCcAKkAtgDDANAA3QDqAPcBBAERAR4BKwE4AUUBUgFfAAAAAQAyAAABwgK8AAMAADMRIREyAZACvP1EAAABADIAAAHCArwAAwAAMxEhETIBkAK8/UQAAAEAMgAAAcICvAADAAAzESERMgGQArz9RAAAAQAyAAABwgK8AAMAADMRIREyAZACvP1EAAABADIAAAHCArwAAwAAMxEhETIBkAK8/UQAAAEAMgAAAcICvAADAAAzESERMgGQArz9RAAAAQAyAAABwgK8AAMAADMRIREyAZACvP1EAAABADIAAAHCArwAAwAAMxEhETIBkAK8/UQAAAEAMgAAAcICvAADAAAzESERMgGQArz9RAAAAQAyAAABwgK8AAMAADMRIREyAZACvP1EAAABADIAAAHCArwAAwAAMxEhETIBkAK8/UQAAAEAMgAAAcICvAADAAAzESERMgGQArz9RAAAAQAyAAABwgK8AAMAADMRIREyAZACvP1EAAABADIAAAHCArwAAwAAMxEhETIBkAK8/UQAAAEAMgAAAcICvAADAAAzESERMgGQArz9RAAAAQAyAAABwgK8AAMAADMRIREyAZACvP1EAAABADIAAAHCArwAAwAAMxEhETIBkAK8/UQAAAEAMgAAAcICvAADAAAzESERMgGQArz9RAAAAQAyAAABwgK8AAMAADMRIREyAZACvP1EAAABADIAAAHCArwAAwAAMxEhETIBkAK8/UQAAAEAMgAAAcICvAADAAAzESERMgGQArz9RAAAAQAyAAABwgK8AAMAADMRIREyAZACvP1EAAABADIAAAHCArwAAwAAMxEhETIBkAK8/UQAAAEAMgAAAcICvAADAAAzESERMgGQArz9RAAAAQAyAAABwgK8AAMAADMRIREyAZACvP1EAAABADIAAAHCArwAAwAAMxEhETIBkAK8/UQAAAEAMgAAAcICvAADAAAzESERMgGQArz9RAAAAAAAAAQANgABAAAAAAABAAgAAAABAAAAAAACAAcACAADAAEECQABABAADwADAAEECQACAA4AH1Nsb3dmYWNlUmVndWxhcgBTAGwAbwB3AGYAYQBjAGUAUgBlAGcAdQBsAGEAcgAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAcAAAAAwBEAEUARgBHAEgASQBKAEsATABNAE4ATwBQAFEAUgBTAFQAVQBWAFcAWABZAFoAWwBcAF0AAA==', 'base64');
 // what only the drawn page shows. No title, a dark ground the browser is never told about, a web font with no font-display,
 // a loop with no reduced-motion style, and a spinner that says nothing (it speaks now that what holds a loop is judged).
 const EXPERIENCE_INDEX = '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><script src="/blocking.js"></script></head><body style="background:#111;color:#eee"><div id="root"></div><script type="module" src="/src/entry.jsx"></script></body></html>';
 const EXPERIENCE = `export function App() {
+  const far = 'http://[::ffff:7f00:1]:' + location.port; // this server under an address that is not plainly local
   return (
     <div id="root-el" className="flex flex-col gap-s4 p-s4">
-      <style>{"@font-face { font-family: Slowface; src: url(/wide.svg) format('woff2'); } @keyframes drift { to { translate: 20px 0 } } @keyframes turn { to { rotate: 360deg } } .drift { animation: drift 2s linear infinite alternate } .spinner { animation: turn 1s linear infinite }"}</style>
+      <style>{"@font-face { font-family: Slowface; src: url(/slow.ttf) format('truetype'); } @keyframes drift { to { translate: 20px 0 } } @keyframes turn { to { rotate: 360deg } } .drift { animation: drift 2s linear infinite alternate } .spinner { animation: turn 1s linear infinite }"}</style>
       <div style={{ position: 'relative', width: 200, height: 40 }}>
         <button id="under" type="button" style={{ width: 200, height: 40 }}>Under</button>
         <div id="cover" style={{ position: 'absolute', inset: 0, zIndex: 5 }} />
@@ -274,6 +277,8 @@ const EXPERIENCE = `export function App() {
       <nav aria-label="Main"><a href="/a">One</a><a href="/b">Two</a><a href="/c">Three</a><a href="/d">Four</a><a href="/e">Five</a><a href="/f">Six</a><a href="/g">Seven</a><a href="/h">Eight</a><a href="/i">Nine</a><a href="/j">Ten</a></nav>
       <main>
         <h1>Bad experience</h1>
+        <p style={{ fontFamily: 'Slowface' }}>set in a web font that hides its words while it loads</p>
+        <img src={far + '/wide.svg'} alt="" width="20" height="20" /><img src={far + '/wide.svg?2'} alt="" width="20" height="20" />
         <p id="nowrap" style={{ whiteSpace: 'nowrap' }}>This is a whole sentence of ordinary words that has been told it may never wrap onto a second line.</p>
         <p id="just" style={{ textAlign: 'justify', width: 260 }}>This paragraph is justified without hyphenation, so its spaces stretch to fill every line and open rivers of white that run down through the text for anyone reading it.</p>
         <p id="caps" style={{ textTransform: 'uppercase' }}>An entire sentence set in capitals is read letter by letter instead of word by word.</p>
@@ -297,7 +302,7 @@ const EXPERIENCE = `export function App() {
 `;
 const EXPERIENCE_EXPECTED = [['nowrap-sentence', 'nowrap'], ['justify-rivers', 'just'], ['caps-long', 'caps'], ['page-overflow-x', 'root-el'], ['motion-no-opt-out', 'root-el'], ['script-blocking', 'root-el'],
   ['page-title', 'root-el'], ['skip-link', 'root-el'], ['color-scheme-missing', 'root-el'], ['link-target-renamed', 'l2'], ['button-name-reused', 'del1'], ['state-in-label', 'state'], ['scroll-no-hint', 'strip'],
-  ['scroll-keyboard', 'scroller'], ['control-covered', 'under']];
+  ['scroll-keyboard', 'scroller'], ['control-covered', 'under'], ['font-display', 'root-el'], ['preconnect-missing', 'root-el']];
 
 // The same parts, built as the guides say, and the cases that once gave false hits: a keyboard hint inside a label,
 // selectable icons named like actions, a roving tab stop, and four from algorecall: a form sent by script with no
@@ -403,9 +408,9 @@ test('HTML pack: 32 rules name their problem at its line, the page-wide ones onc
   for (const rule of ['page-lang', 'viewport-meta', 'zoom-disabled', 'quirks-mode', 'landmark-main', 'h1-missing']) assert.equal(by.get(`html/${rule}`).length, 1, `${rule} is said once`);
 });
 
-test('experience pack: 15 rules name what only the drawn page shows, and the spinner that says nothing is heard', { timeout: 240000 }, async (t) => {
+test('experience pack: 17 rules name what only the drawn page shows, and the spinner that says nothing is heard', { timeout: 240000 }, async (t) => {
   if (!await built()) return t.skip('Run npm run build first.');
-  const by = await said(t, EXPERIENCE, { index: EXPERIENCE_INDEX, files: { 'public/wide.svg': WIDE_SVG, 'public/blocking.js': '/* nothing */' } });
+  const by = await said(t, EXPERIENCE, { index: EXPERIENCE_INDEX, files: { 'public/wide.svg': WIDE_SVG, 'public/slow.ttf': SLOW_TTF, 'public/blocking.js': '/* nothing */' } });
   speaks(by, 'experience', EXPERIENCE, EXPERIENCE_EXPECTED);
   speaks(by, 'components', EXPERIENCE, [['spinner-silent', 'spinbox']]);
   // an icon called Copy that can be picked: its state is in its label (said above), and it is not an action given a state
