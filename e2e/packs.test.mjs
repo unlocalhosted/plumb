@@ -19,14 +19,14 @@ const cli = join(repo, 'dist/cli.js');
 const run = promisify(execFile);
 const built = () => readFile(cli).then(() => true, () => false);
 
-async function fixture(t, app, { index, files = {} } = {}) {
+async function fixture(t, app, { index, files = {}, plugins = [] } = {}) {
   const root = await mkdtemp(join(repo, 'fixtures/.packs-'));
   t.after(() => rm(root, { recursive: true, force: true }));
   await cp(join(repo, 'overlay/demo/src'), join(root, 'src'), { recursive: true });
   if (index) await writeFile(join(root, 'index.html'), index); else await cp(join(repo, 'overlay/demo/index.html'), join(root, 'index.html'));
   await writeFile(join(root, 'src/App.jsx'), app);
   for (const [name, text] of Object.entries(files)) { await mkdir(dirname(join(root, name)), { recursive: true }); await writeFile(join(root, name), text); }
-  const server = await createServer({ root, cacheDir: join(root, '.vite-cache'), configFile: false, plugins: [tailwindcss(), plumb({ watch: false })],
+  const server = await createServer({ root, cacheDir: join(root, '.vite-cache'), configFile: false, plugins: [tailwindcss(), plumb({ watch: false }), ...plugins],
     oxc: { jsx: { runtime: 'automatic', development: true } }, logLevel: 'silent', server: { host: '127.0.0.1', port: 0 } });
   t.after(() => server.close());
   await server.listen();
@@ -548,6 +548,32 @@ test('a page with a box moved by script every frame is still read through', { ti
   const page = JSON.parse(result.stdout).routes[0];
   assert.ok(page.read > 0, `read ${page.read}`);
   assert.equal(page.complete, true, 'stopped before every element was read');
+});
+
+// algorecall's /login was judged as its loading screen (14 elements of 118) once pages settled quickly: the dev server was
+// still compiling the route on its first visit. A route whose code arrives three seconds late, behind a small fallback.
+const LATE = `import { lazy, Suspense } from 'react';
+const late = '/late-route.js';
+const Real = lazy(() => import(/* @vite-ignore */ late).then(() => import('./Real.jsx')));
+export function App() {
+  return <Suspense fallback={<div><span>Loading</span></div>}><Real /></Suspense>;
+}
+`;
+const REAL = `export default function Real() {
+  return (
+    <main className="flex flex-col gap-s4 p-s4">
+      <h1>Sign in</h1>
+      <h3 id="skipped">Welcome back</h3>
+      ${'<p>Words on the page, so there is a page to judge once it is here.</p>\n      '.repeat(30)}
+    </main>
+  );
+}
+`;
+const lateRoute = { name: 'late-route', configureServer(server) { server.middlewares.use('/late-route.js', (_req, res) => setTimeout(() => { res.setHeader('content-type', 'text/javascript'); res.end('export default 1;'); }, 3000)); } };
+test('a route whose code arrives late is judged once it is there, not as its loading screen', { timeout: 240000 }, async (t) => {
+  if (!await built()) return t.skip('Run npm run build first.');
+  const by = await said(t, LATE, { files: { 'src/Real.jsx': REAL }, plugins: [lateRoute] });
+  assert.deepEqual(by.get('a11y/heading-skip'), [lineOf(REAL, 'skipped')], JSON.stringify(ofPacks(by)));
 });
 
 test('a page that is still loading is not told it has no main and no h1', { timeout: 240000 }, async (t) => {

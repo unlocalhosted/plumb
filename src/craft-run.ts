@@ -190,6 +190,9 @@ export async function craftRun(options: CraftRunOptions): Promise<CraftPage[]> {
       const page = await browser.newPage({ reducedMotion: 'no-preference', viewport: options.viewport ?? desktop });
       try {
         await open(page, url, options.timeout, true);
+        // the route's own code and data first: a page judged while its route was still being fetched (a dev server
+        // compiles a route on its first visit) was judged as its loading screen (algorecall's /login: 14 elements of 118)
+        await settle(page, Math.min(options.timeout, 30000));
         if (options.pairs !== false) await takePairs(browser, url, page, options.timeout);
         if (options.probe !== false) {
           const list = await takeProbes(browser, url, options.timeout, { budget: options.probeBudget ?? 24, drag: options.probeDrag === true, ...(options.scope ? { scope: options.scope } : {}), ...(options.recordProbe ? { record: options.recordProbe } : {}) }).catch(quiet('probes'));
