@@ -520,6 +520,32 @@ test('a finding about the whole page is said on the page, not on a dock drawn be
   assert.deepEqual(by.get('html/landmark-main'), [lineOf(DOCKED, 'page-root')], JSON.stringify(ofPacks(by)));
 });
 
+// algorecall's skill tree never counted as read through: something on it rewrites an inline style every frame, the page's
+// fingerprint changed with it, and every element's page-wide judgement was put back in the queue before the queue could
+// drain. A box moved by script, as an animation library moves it, beside 1,500 elements to judge.
+const MOVED = `import { useEffect, useRef } from 'react';
+const ROWS = Array.from({ length: 300 }, (_, i) => i);
+export function App() {
+  const box = useRef(null);
+  useEffect(() => { let f = 0, id = 0; const tick = () => { if (box.current) box.current.style.transform = 'translateX(' + (f++ % 40) + 'px)'; id = requestAnimationFrame(tick); }; id = requestAnimationFrame(tick); return () => cancelAnimationFrame(id); }, []);
+  return (
+    <main className="flex flex-col gap-s4 p-s4">
+      <h1>Moving</h1>
+      <div ref={box} id="moved" style={{ width: 40, height: 40 }}>moved by script</div>
+      <ul>{ROWS.map((i) => <li key={i}><span>Row {i}</span> <b>{i}</b> <i>note</i> <em>more</em></li>)}</ul>
+    </main>
+  );
+}
+`;
+test('a page with a box moved by script every frame is still read through', { timeout: 240000 }, async (t) => {
+  if (!await built()) return t.skip('Run npm run build first.');
+  const { root, url } = await fixture(t, MOVED);
+  const result = await plumber(['craft', '--url', url, '--json', '--no-probe', '--no-pairs', '--timeout', '45000', '--root', root]);
+  const page = JSON.parse(result.stdout).routes[0];
+  assert.ok(page.read > 0, `read ${page.read}`);
+  assert.equal(page.complete, true, 'stopped before every element was read');
+});
+
 test('a page that is still loading is not told it has no main and no h1', { timeout: 240000 }, async (t) => {
   if (!await built()) return t.skip('Run npm run build first.');
   assert.deepEqual(ofPacks(await said(t, LOADING)), []);
