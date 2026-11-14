@@ -27,8 +27,9 @@ async function host(t, kind) {
   await writeFile(join(root, 'app/styles.css'), ':root { --space-3: 12px; --space-4: 16px; } body { margin: 8px; } ul { display: grid; grid-template-columns: repeat(4, 1fr); list-style: none; margin: 0; padding: 0; } .card { box-sizing: border-box; height: 12px; font-size: 8px; }');
   await writeFile(join(root, 'plumber.config.mjs'), "export default { css: 'app/styles.css', source: ['app/**'], decisions: { spacing: { from: 'css:app/styles.css' } } };\n");
   await writeFile(join(root, 'app/page.jsx'), "'use client'; import Board from './Board.jsx'; import Stable from './Stable.jsx'; export default function App() { return <main><Stable /><Board /></main>; }\n");
+  // a well-formed document (doctype, lang, viewport, title), so the HTML checks have nothing to mark: only the cards and the header are
   if (kind === 'vite') {
-    await writeFile(join(root, 'index.html'), '<div id="root"></div><script type="module" src="/app/entry.jsx"></script>');
+    await writeFile(join(root, 'index.html'), '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Board</title></head><body><div id="root"></div><script type="module" src="/app/entry.jsx"></script></body></html>');
     await writeFile(join(root, 'app/entry.jsx'), "import React from 'react'; import { createRoot } from 'react-dom/client'; import App from './page.jsx'; import './styles.css'; createRoot(document.getElementById('root')).render(<App />);");
     const server = await createServer({ root, configFile: false, plugins: [plumb({ watch: false })], oxc: { jsx: { runtime: 'automatic', development: true } }, resolve: { dedupe: ['react', 'react-dom'] }, logLevel: 'silent', server: { host: '127.0.0.1', port: 0, watch: null } });
     stop = () => server.close(); await server.listen(); return { root, url: `http://127.0.0.1:${server.httpServer.address().port}` };
@@ -37,7 +38,7 @@ async function host(t, kind) {
   await symlink(repo, join(root, 'node_modules/@unlocalhosted/react-plumber'));
   const route = join(root, 'app/%5F_plumb/[...path]'); await mkdir(route, { recursive: true });
   await writeFile(join(route, 'route.plumb.ts'), "import { createPlumbRoute } from '@unlocalhosted/react-plumber/next'; export const runtime = 'nodejs'; export const { GET, POST } = createPlumbRoute({ watch: false });");
-  await writeFile(join(root, 'app/layout.jsx'), "import { PlumbOverlay } from '@unlocalhosted/react-plumber/next'; import './styles.css'; export default function Layout({ children }) { return <html><body>{children}<PlumbOverlay /></body></html>; }");
+  await writeFile(join(root, 'app/layout.jsx'), "import { PlumbOverlay } from '@unlocalhosted/react-plumber/next'; import './styles.css'; export const metadata = { title: 'Board' }; export default function Layout({ children }) { return <html lang={'en'}><body>{children}<PlumbOverlay /></body></html>; }");
   await writeFile(join(root, 'next.config.mjs'), `import { withPlumb } from '@unlocalhosted/react-plumber/next/config'; export default withPlumb({ experimental: { agentUpgrade: false }, turbopack: { root: ${JSON.stringify(repo)} } });`);
   // this test measures the unstamped path (reading 216 cards through React's own records). withPlumb always stamps
   // since 0.4.0, so the internal switch turns it off here, as e2e/locate.test.mjs does
