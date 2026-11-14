@@ -4,6 +4,7 @@ import { request } from './src/api.js';
 import { mountOverlay } from './src/widget.js';
 import { craftRun } from './src/craft-run.js';
 import { hostSynced, whenHydrated } from './src/hydration.js';
+import { readGuides, showGuides, hideGuides, toggleGuides } from './src/guides.js';
 
 window.__plumb = {
   locate,
@@ -18,6 +19,9 @@ window.__plumb = {
   // Resolves once Plumb has finished its first read of the project (the dev server never waits for it) and the page is
   // one that can be read: React has hydrated it, and on Next the host's client has had its first sync (a reload on a
   // changed bundle hash restarts the overlay with the page). Both bounded, so a page without React still resolves.
+  // The lines things sit on, across the whole screen (Alt+G): read and drawn, not judged yet.
+  guides: { read: readGuides, show: showGuides, hide: hideGuides, toggle: toggleGuides },
+  // Resolves once Plumb has finished its first read of the project (the dev server never waits for it).
   async ready(interval = 100) {
     for (;;) {
       const health = await request('health', {}).catch(() => null);
