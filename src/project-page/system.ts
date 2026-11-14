@@ -196,7 +196,8 @@ export function systemOf(report: Report): SystemData {
 
   function colours(): SystemData['colour'] {
     const tokens = new Map<string, string>();
-    for (const d of decisions) if (d.family === 'color' && d.name.startsWith('--color-')) tokens.set(d.name, d.resolved || d.value);
+    // the colours Plumber read as colours, whatever they are named (--color-*, --pl-ink, --accent)
+    for (const d of decisions) if (d.family === 'color' && (d.resolved || d.value)) tokens.set(d.name, d.resolved || d.value);
     const uses = new Map<string, number>();
     const strays = new Map<string, { places: number; written: Map<string, number> }>();
     for (const d of decls) {

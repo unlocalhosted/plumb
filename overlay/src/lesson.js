@@ -10,14 +10,14 @@
  *            closest to) · why it matters (one line) · one choice, shown as what you get, a sensible one picked ·
  *            the rule it becomes, in plain words with the real line under it
  *  words     "token", "scale", "theme" only after the reader has seen the thing; numbers and names behind Details
- *  built     Spacing first, as the model the others follow; Colours, Text and Corners show as next
+ *  built     Spacing, Corners and Text from one builder for sizes; Colours its own; Set it up comes next
  * ───────────────────────────────────────────────────────── */
 import { LANGUAGE_CSS } from './language.js';
 import { SCALE_CSS } from './scale-marks.js';
 import { GRAVITY_CSS, Gravity } from './gravity.js';
 import { TOY_DEFS, toyOf } from './toys.js';
 import { BUTTON_CSS, button } from './kit.js';
-import { decisionsOf, lanesOf, systemOf } from './system-review.js';
+import { colourModel, decisionsOf, lanesOf, systemOf } from './system-review.js';
 
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
 const nf = new Intl.NumberFormat('en');
@@ -25,9 +25,9 @@ const nf = new Intl.NumberFormat('en');
 const SCREENS = [
   { id: 'welcome', toy: 'tooltip', hue: 'butter', name: 'Welcome' },
   { id: 'spacing', toy: 'padding', hue: 'mint', name: 'Spacing' },
-  { id: 'colour', toy: 'fill', hue: 'pink', name: 'Colours', soon: true },
-  { id: 'text', toy: 'type', hue: 'sky', name: 'Text', soon: true },
-  { id: 'corners', toy: 'corner', hue: 'pink', name: 'Corners', soon: true },
+  { id: 'colour', toy: 'fill', hue: 'pink', name: 'Colours' },
+  { id: 'text', toy: 'type', hue: 'sky', name: 'Text' },
+  { id: 'corners', toy: 'corner', hue: 'pink', name: 'Corners' },
   { id: 'rules', toy: 'card', hue: 'lilac', name: 'Your rules' },
 ];
 
@@ -76,6 +76,21 @@ const LESSON_CSS = `
   .steps.many i { background: color-mix(in oklab, var(--pl-mint) 55%, var(--pl-butter)); }
   .steps i.twice { background: var(--pl-butter); }
 
+  .steps.aa { align-items: baseline; gap: var(--pl-space-4); flex-wrap: wrap; }
+  .steps.aa span { font-family: var(--pl-sans); font-weight: 600; line-height: 1; color: var(--pl-sky); }
+  .steps.aa span.twice { color: var(--pl-butter-line); }
+  .steps.arcs { align-items: flex-end; gap: var(--pl-space-4); }
+  .steps.arcs i { width: var(--pl-space-8); height: var(--pl-space-8); background: none; border-top: var(--pl-space-1) solid var(--pl-pink); border-left: var(--pl-space-1) solid var(--pl-pink); border-radius: 0; box-sizing: border-box; }
+  .steps.arcs i.twice { border-color: var(--pl-butter-line); }
+  /* colours: the palette as chips by hue, and colours typed by hand beside the palette colour they're closest to */
+  .palette { display: grid; gap: var(--pl-space-3); padding: var(--pl-space-6); border-radius: var(--pl-radius-card); background: var(--pl-bg-inset); }
+  .palette .hue { display: flex; flex-wrap: wrap; gap: var(--pl-space-2); }
+  .chip { width: var(--pl-space-8); height: var(--pl-space-8); border-radius: var(--pl-radius-row); box-shadow: inset 0 0 0 var(--pl-line) color-mix(in oklab, var(--pl-text-primary) 12%, transparent); }
+  .typed { display: grid; gap: var(--pl-space-3); margin-top: var(--pl-space-6); }
+  .typed .t { display: grid; grid-template-columns: var(--pl-space-8) minmax(0, 9rem) var(--pl-space-6) var(--pl-space-8) minmax(0, 1fr); align-items: center; gap: var(--pl-space-4); font: var(--pl-card-body); }
+  .typed .t code { font: var(--pl-card-code); color: var(--pl-text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .typed .t span { color: var(--pl-text-secondary); }
+
   /* the rule it becomes */
   .rule { display: grid; gap: var(--pl-space-3); padding: var(--pl-space-6); border-radius: var(--pl-radius-card); background: var(--pl-lilac-soft); color: var(--pl-lilac-ink); }
   .rule p { margin: 0; font: var(--pl-page-small); font-weight: 600; }
@@ -102,20 +117,48 @@ const LESSON_CSS = `
 
 const HUES = { butter: ['--pl-butter-face', '--pl-butter-ink'], mint: ['--pl-mint-face', '--pl-mint-ink'], pink: ['--pl-pink-face', '--pl-pink-ink'], sky: ['--pl-sky-face', '--pl-sky-ink'], lilac: ['--pl-lilac-face', '--pl-lilac-ink'] };
 
-/** The spacing screen's model: what the reader is shown and the two answers, from the reading and the review's model. */
-function spacingModel(data) {
-  const kind = (data.reading ?? []).find((k) => k.family === 'spacing');
+/* A size kind's screen (spacing, corners, text), all built the same way: its words, its data, and the tidy answer the
+   review's model suggests (one list, steps on a base, Tailwind's name, numbered by size) */
+const SIZES = {
+  spacing: { screen: 'spacing', data: 'spacing', convention: '--spacing-', noun: 'gap and padding', nouns: 'gaps and paddings',
+    title: 'Spacing is the room between things.', line: 'Inside a card, between a row of buttons, around a section. Same room, same feel.',
+    why: 'When every gap is a little different, screens feel uneven, and changing how roomy your app feels means hunting through every file. One short list of steps, used everywhere, fixes both.',
+    gravity: { sizes: 'spacing steps', title: 'Where your gaps and paddings land', empty: 'Add spacing to your theme, and this fills in.' } },
+  radius: { screen: 'corners', data: 'radius', convention: '--radius-', noun: 'rounded corner', nouns: 'rounded corners',
+    title: 'Corners are how round things are.', line: 'Buttons, cards, inputs, pictures. A few roundnesses, each for a kind of thing, make an app feel made by one hand.',
+    why: 'Corners that are almost the same (7px here, 8px there) read as a mistake even when nobody can say why. A small set, one for each kind of thing, keeps the app calm.',
+    gravity: { sizes: 'corner sizes', title: 'Where your rounded corners land', empty: 'Add corner sizes to your theme, and this fills in.' } },
+  type: { screen: 'text', data: 'size', convention: '--text-', noun: 'text size', nouns: 'text sizes',
+    title: 'Text sizes are your app’s voice levels.', line: 'A title, a paragraph, a label, small print. Each level should be clearly bigger or smaller than the next.',
+    why: 'Sizes a pixel apart look like the same size set carelessly. A few clear levels tell the reader what to read first, on every screen.',
+    gravity: { sizes: 'text sizes', title: 'Where your text sizes land', empty: 'Add text sizes to your theme, and this fills in.' } },
+};
+function sizeModel(data, family) {
+  const spec = SIZES[family], kind = (data.reading ?? []).find((k) => k.family === family);
   const lanes = kind ? lanesOf(kind).filter((l) => l.values.length > 1) : [];
   const decisions = kind ? decisionsOf(kind) : [];
-  const has = (id) => decisions.some((d) => d.id === id);
+  const offered = (id, value) => decisions.find((d) => d.id === id)?.options.some(([v]) => v === value);
   const biggest = [...lanes].sort((a, b) => b.tokens.length - a.tokens.length)[0];
-  const tidy = { ...(has('keep:spacing') && biggest ? { 'keep:spacing': biggest.name } : {}), ...(has('base:spacing') ? { 'base:spacing': 'round' } : {}),
-    ...(has('name:spacing') ? { 'name:spacing': '--spacing-' } : {}), ...(has('count:spacing') ? { 'count:spacing': 'size' } : {}) };
-  const tidied = kind ? systemOf(kind, tidy) : null, one = tidied?.scales.length === 1 ? tidied.scales[0] : null;
+  const tidy = { ...(offered(`keep:${family}`, biggest?.name) ? { [`keep:${family}`]: biggest.name } : {}), ...(offered(`base:${family}`, 'round') ? { [`base:${family}`]: 'round' } : {}),
+    ...(offered(`name:${family}`, spec.convention) ? { [`name:${family}`]: spec.convention } : {}), ...(offered(`count:${family}`, 'size') ? { [`count:${family}`]: 'size' } : {}) };
+  const tidied = kind && Object.keys(tidy).length ? systemOf(kind, tidy) : null, one = tidied?.scales.length === 1 ? tidied.scales[0] : null;
   const values = [...new Set(lanes.flatMap((l) => l.values))].sort((a, b) => a - b);
   const twice = values.filter((v) => lanes.filter((l) => l.values.includes(v)).length > 1);
-  const byHand = (data.spacing?.strays ?? []).reduce((n, s) => n + s.places, 0);
-  return { kind, lanes, values, twice, byHand, tidy, one, needed: Object.keys(tidy).length > 0 };
+  const byHand = (data[spec.data]?.strays ?? []).reduce((n, s) => n + s.places, 0);
+  return { family, spec, kind, lanes, values, twice, byHand, tidy, one, needed: !!one };
+}
+
+/** The colour screen's model: the palette by hue, and the colours your code types by hand, nearest palette colour first. */
+function colourScreenModel(data) {
+  const kind = (data.reading ?? []).find((k) => k.family === 'color');
+  const model = kind ? colourModel(kind) : { palette: [], roles: [], unused: [], hard: [] };
+  const hueOf = (name) => { const parts = name.split('-'), keep = name.startsWith('--pl-') ? 4 : 3; let n = parts.length; while (n > keep && /^(?:\d+|soft|ink|on|face|line|block|bg|text|accent)$/.test(parts[n - 1])) n--; return parts.slice(0, n).join('-'); };
+  const hues = [...new Set(model.palette.map((p) => hueOf(p.name)))].map((h) => model.palette.filter((p) => hueOf(p.name) === h));
+  const typed = (data.colour?.strays ?? []).slice().sort((a, b) => b.places - a.places);
+  const byHand = typed.reduce((n, s) => n + s.places, 0);
+  const files = [...new Set(kind?.groups.map((g) => g.file) ?? [])];
+  const fixable = model.hard.filter((h) => h.match);
+  return { kind, ...model, hues, typed, byHand, files, fixable };
 }
 
 /**
@@ -124,27 +167,33 @@ function spacingModel(data) {
  */
 export function mountLesson(host, data, { post } = {}) {
   const root = host.shadowRoot ?? host.attachShadow({ mode: 'open' });
-  const sp = spacingModel(data);
-  const state = { at: 'welcome', spacing: sp.needed ? 'tidy' : 'keep', decided: new Set(), fresh: '' };
+  const sizes = { spacing: sizeModel(data, 'spacing'), radius: sizeModel(data, 'radius'), type: sizeModel(data, 'type') };
+  const col = colourScreenModel(data);
+  const screenOf = { spacing: 'spacing', radius: 'corners', type: 'text' };
+  const state = { at: 'welcome', choice: { spacing: sizes.spacing.needed ? 'tidy' : 'keep', radius: sizes.radius.needed ? 'tidy' : 'keep', type: sizes.type.needed ? 'tidy' : 'keep', color: col.fixable.length ? 'point' : 'keep' }, decided: new Set(), fresh: '' };
+  const ORDER = ['welcome', 'spacing', 'colour', 'text', 'corners', 'rules'];
+  const nextOf = (id) => SCREENS.find((s) => s.id === ORDER[ORDER.indexOf(id) + 1]);
 
-  const trail = () => `<ol class="trail" aria-label="The lesson">${SCREENS.map((s) => `<li><button type="button" data-go="${s.id}"${s.id === state.at ? ' aria-current="step"' : ''}${state.decided.has(s.id) ? ' data-done' : ''}${s.soon ? ' disabled title="Next, after spacing"' : ''}><i class="toy">${toyOf(s.toy)}</i>${esc(s.name)}</button></li>`).join('')}</ol>`;
+  const trail = () => `<ol class="trail" aria-label="The lesson">${SCREENS.map((s) => `<li><button type="button" data-go="${s.id}"${s.id === state.at ? ' aria-current="step"' : ''}${state.decided.has(s.id) ? ' data-done' : ''}><i class="toy">${toyOf(s.toy)}</i>${esc(s.name)}</button></li>`).join('')}</ol>`;
   const face = (s, title, line) => `<div class="face" style="--hf: var(${HUES[s.hue][0]}); --hi: var(${HUES[s.hue][1]})"><span class="plate"><i class="toy">${toyOf(s.toy)}</i></span><div><h2>${title}</h2>${line ? `<p>${line}</p>` : ''}</div></div>`;
+  const nav = (id) => { const n = nextOf(id); return `<div class="nav">${button(n.id === 'rules' ? 'Add this rule and finish' : `Add this rule, then ${n.name.toLowerCase()}`, { key: '→', attrs: `data-next="${id}"` })}<span class="later">You can come back and change it.</span></div>`; };
 
-  // the spacing rule, in plain words and as the line it writes
-  const spacingRule = () => {
-    if (state.spacing === 'tidy' && sp.one) {
-      const file = sp.one.lane.file;
-      return { plain: `Every gap and padding uses one of these ${sp.one.steps.length} steps. Anything else, Plumber points out.`, code: `spacing: { from: ['css:${file}#${sp.one.stem}*'] }` };
-    }
-    return { plain: `Gaps and paddings use the spacing you already have (${sp.lanes.length} ${sp.lanes.length === 1 ? 'list' : 'lists'}). Anything else, Plumber points out.`, code: `spacing: { from: [${sp.lanes.map((l) => `'css:${l.file}#${l.name}'`).join(', ')}] }` };
+  // a size kind's rule, in plain words and as the line it writes
+  const sizeRule = (m) => {
+    const key = m.family === 'type' ? 'type' : m.family;
+    if (state.choice[m.family] === 'tidy' && m.one) return { plain: `Every ${m.spec.noun} uses one of these ${m.one.steps.length}. Anything else, Plumber points out.`, code: `${key}: { from: ['css:${m.one.lane.file}#${m.one.stem}*'] }` };
+    const from = m.lanes.length ? m.lanes.map((l) => `'css:${l.file}#${l.name}'`) : [...new Set((m.kind?.groups ?? []).map((g) => `'css:${g.file}'`))];
+    return { plain: `${m.spec.nouns[0].toUpperCase()}${m.spec.nouns.slice(1)} use the ones you already have. Anything else, Plumber points out.`, code: `${key}: { from: [${from.join(', ')}] }` };
   };
+  const colourRule = () => ({ plain: `Colours come from your palette of ${col.palette.length} and the ${col.roles.length} named uses built on it${state.choice.color === 'point' && col.fixable.length ? `, with ${col.fixable.length} copies pointed back at it` : ''}. A colour typed by hand, Plumber points out.`,
+    code: `color: { from: [${col.files.map((f) => `'css:${f}'`).join(', ')}] }` });
+  const ruleOf = (id) => id === 'colour' ? colourRule() : sizeRule(sizes[Object.keys(screenOf).find((f) => screenOf[f] === id)]);
 
   const rules = () => {
-    const lines = [];
-    if (state.decided.has('spacing')) lines.push({ id: 'spacing', title: 'Spacing', ...spacingRule() });
+    const done = ORDER.filter((id) => !['welcome', 'rules'].includes(id) && state.decided.has(id));
     return `<aside class="rules" aria-live="polite"><h3><i class="toy">${toyOf('card')}</i>Your rules</h3>
       <p>Each answer adds a rule. Plumber keeps your code to them from now on: it points out what breaks one, and fixes it with you.</p>
-      <ol>${lines.map((l) => `<li class="${l.id === state.fresh ? 'fresh' : ''}"><b>${esc(l.title)}</b>${esc(l.plain)}<code>${esc(l.code)}</code></li>`).join('')}
+      <ol>${done.map((id) => { const l = ruleOf(id), name = SCREENS.find((s) => s.id === id).name; return `<li class="${id === state.fresh ? 'fresh' : ''}"><b>${esc(name)}</b>${esc(l.plain)}<code>${esc(l.code)}</code></li>`; }).join('')}
         ${SCREENS.filter((s) => !['welcome', 'rules'].includes(s.id) && !state.decided.has(s.id)).map((s) => `<li class="empty"><b>${esc(s.name)}</b>Not decided yet.</li>`).join('')}</ol></aside>`;
   };
 
@@ -159,51 +208,77 @@ export function mountLesson(host, data, { post } = {}) {
       </div></section>`;
   };
 
-  const spacing = () => {
-    const s = SCREENS[1], rule = spacingRule();
-    const bars = (vals, cls = '', mark = []) => `<div class="steps ${cls}">${vals.slice(0, 16).map((v) => `<i class="${mark.includes(v) ? 'twice' : ''}" style="height: ${Math.max(4, Math.min(v, 96)) * 0.75}px" title="${v}px"></i>`).join('')}</div>`;
+  // the steps a choice gives you, drawn as the kind is: bars for spacing, corners for corners, "Aa" for text
+  const preview = (family, vals, mark = []) => family === 'type' ? `<div class="steps aa">${vals.slice(0, 12).map((v) => `<span class="${mark.includes(v) ? 'twice' : ''}" style="font-size: ${Math.min(v, 40)}px" title="${v}px">Aa</span>`).join('')}</div>`
+    : family === 'radius' ? `<div class="steps arcs">${vals.slice(0, 10).map((v) => `<i class="${mark.includes(v) ? 'twice' : ''}" style="border-top-left-radius: ${v}px" title="${v}px"></i>`).join('')}</div>`
+    : `<div class="steps">${vals.slice(0, 16).map((v) => `<i class="${mark.includes(v) ? 'twice' : ''}" style="height: ${Math.max(4, Math.min(v, 96)) * 0.75}px" title="${v}px"></i>`).join('')}</div>`;
+
+  const sizeScreen = (m) => {
+    const s = SCREENS.find((x) => x.id === m.spec.screen), rule = sizeRule(m);
     const notice = [];
-    if (sp.lanes.length > 1) notice.push(`<b>You have ${sp.lanes.length} separate lists of spacing, and they repeat each other.</b> ${sp.twice.length ? `${sp.twice.join(', ')} each appear in two lists under different names (yellow below).` : ''}`);
-    if (sp.byHand) notice.push(`<b>${nf.format(sp.byHand)} ${sp.byHand === 1 ? 'place types' : 'places type'} a gap or padding by hand</b> instead of using any of them: the dots above.`);
-    return `<section class="screen">${face(s, 'Spacing is the room between things.', 'Inside a card, between a row of buttons, around a section. Same room, same feel.')}
+    if (m.lanes.length > 1) notice.push(`<b>You have ${m.lanes.length} separate lists of ${m.spec.nouns}, and they repeat each other.</b> ${m.twice.length ? `${m.twice.join(', ')} each appear in more than one list under different names (yellow below).` : ''}`);
+    if (m.byHand) notice.push(`<b>${nf.format(m.byHand)} ${m.byHand === 1 ? 'place types a' : 'places type a'} ${m.spec.noun} by hand</b> instead of using one of them: the dots above.`);
+    const keepVals = m.values.length ? m.values : (data[m.spec.data]?.steps ?? []).map((x) => x.px).filter((v, i, a) => a.indexOf(v) === i).sort((a, b) => a - b);
+    return `<section class="screen">${face(s, m.spec.title, m.spec.line)}
       <div class="body">
         <div class="part"><h3>Yours, drawn</h3><div id="gravity"></div>${notice.length ? `<div class="notice">${notice.map((n) => `<span>${n}</span>`).join('')}</div>` : ''}</div>
-        <div class="part"><h3>Why it matters</h3><p>When every gap is a little different, screens feel uneven, and changing how roomy your app feels means hunting through every file. One short list of steps, used everywhere, fixes both.</p></div>
-        <div class="part"><h3>Your choice</h3><div class="choices" role="radiogroup" aria-label="Spacing">
-          ${sp.needed && sp.one ? `<button type="button" class="choice" role="radio" aria-checked="${state.spacing === 'tidy'}" data-pick="tidy"><b>One list of ${sp.one.steps.length} steps<span class="rec">Suggested</span></b>${bars(sp.one.steps.map((x) => x.px))}<span>Your lists merged into one, each step 4px apart or a multiple of it. The old names keep working, pointing at the new steps.</span></button>` : ''}
-          <button type="button" class="choice" role="radio" aria-checked="${state.spacing === 'keep'}" data-pick="keep"><b>Keep what you have</b>${bars(sp.values, sp.lanes.length > 1 ? 'many' : '', sp.twice)}<span>${sp.lanes.length > 1 ? `All ${sp.lanes.length} lists stay as they are. You can tidy them later.` : 'Your spacing stays as it is.'}</span></button>
+        <div class="part"><h3>Why it matters</h3><p>${m.spec.why}</p></div>
+        <div class="part"><h3>Your choice</h3><div class="choices" role="radiogroup" aria-label="${esc(s.name)}">
+          ${m.needed ? `<button type="button" class="choice" role="radio" aria-checked="${state.choice[m.family] === 'tidy'}" data-pick="${m.family}:tidy"><b>One list of ${m.one.steps.length}<span class="rec">Suggested</span></b>${preview(m.family, m.one.steps.map((x) => x.px))}<span>Your lists merged into one, with Tailwind's name. The old names keep working, pointing at the new ones.</span></button>` : ''}
+          <button type="button" class="choice" role="radio" aria-checked="${state.choice[m.family] === 'keep'}" data-pick="${m.family}:keep"><b>Keep what you have</b>${preview(m.family, keepVals, m.twice)}<span>${m.lanes.length > 1 ? `All ${m.lanes.length} lists stay as they are. You can tidy them later.` : `Your ${m.spec.nouns} stay as they are.`}</span></button>
         </div></div>
         <div class="part"><h3>The rule it becomes</h3><div class="rule"><p>${esc(rule.plain)}</p><code>${esc(rule.code)}</code></div>
-          <details class="more"><summary>Details for designers</summary><p>${sp.lanes.map((l) => `${esc(l.name)} in ${esc(l.file)}: ${l.values.join(', ')}px`).join('<br>')}${sp.one ? `<br>Merged: ${sp.one.steps.map((x) => `${esc(x.name)} ${esc(x.value)}`).join(', ')}` : ''}</p></details></div>
-        <div class="nav">${button('Add this rule', { key: '→', attrs: 'data-next="spacing"' })}<span class="later">Colours, text and corners are the next screens to be built; this one is the model for them.</span></div>
+          <details class="more"><summary>Details for designers</summary><p>${m.lanes.map((l) => `${esc(l.name)} in ${esc(l.file)}: ${l.values.join(', ')}px`).join('<br>') || 'No lists of steps; single tokens only.'}${m.one ? `<br>Merged: ${m.one.steps.map((x) => `${esc(x.name)} ${esc(x.value)}`).join(', ')}` : ''}</p></details></div>
+        ${nav(s.id)}
+      </div></section>`;
+  };
+
+  const colourScreen = () => {
+    const s = SCREENS[2], rule = colourRule();
+    const chip = (v, title) => `<i class="chip" style="background: ${esc(v)}" title="${esc(title)}"></i>`;
+    return `<section class="screen">${face(s, 'Colours: a small palette, and a name for each job.', 'Your palette is the colours themselves. Each job (text, a background, a border, a button) gets a name that points at one of them.')}
+      <div class="body">
+        <div class="part"><h3>Yours, drawn</h3><div class="palette">${col.hues.slice(0, 12).map((h) => `<div class="hue">${h.map((p) => chip(p.value, `${p.name}: ${p.value}`)).join('')}</div>`).join('')}${col.hues.length > 12 ? `<span class="later">and ${col.hues.length - 12} more</span>` : ''}</div>
+          ${col.typed.length ? `<div class="typed">${col.typed.slice(0, 6).map((t) => { const near = col.palette.find((p) => p.name.slice(2) === t.near) ?? col.roles.find((p) => p.name.slice(2) === t.near); return `<div class="t">${chip(t.css, t.css)}<code>${esc(t.written[0]?.text ?? t.css)}</code><span>→</span>${near ? chip(near.value, near.name) : '<i></i>'}<span>${nf.format(t.places)} ${t.places === 1 ? 'place' : 'places'}${near ? `; your ${esc(near.name)}${t.distance === 0 ? ' exactly' : ' is close'}` : ''}</span></div>`; }).join('')}</div>` : ''}
+          <div class="notice"><span><b>${col.palette.length} colours in your palette, ${col.roles.length} named uses built on them.</b>${col.byHand ? ` ${nf.format(col.byHand)} ${col.byHand === 1 ? 'place types' : 'places type'} a colour by hand instead; the most common are above, each beside the palette colour it's closest to.` : ''}</span>${col.fixable.length ? `<span><b>${col.fixable.length} named ${col.fixable.length === 1 ? 'use copies' : 'uses copy'} a palette colour</b> instead of pointing at it, so ${col.fixable.length === 1 ? 'it won’t follow' : 'they won’t follow'} if the palette changes.</span>` : ''}</div></div>
+        <div class="part"><h3>Why it matters</h3><p>Ten slightly different greys make an app look tired, and changing your brand colour means finding every copy. Named uses that point at one palette change everywhere at once, and let dark mode swap the palette underneath.</p></div>
+        <div class="part"><h3>Your choice</h3><div class="choices" role="radiogroup" aria-label="Colours">
+          ${col.fixable.length ? `<button type="button" class="choice" role="radio" aria-checked="${state.choice.color === 'point'}" data-pick="color:point"><b>Point the copies at the palette<span class="rec">Suggested</span></b><div class="steps">${col.fixable.slice(0, 8).map((h) => chip(h.value, `${h.name} → ${h.match.name}`)).join('')}</div><span>${col.fixable.length} named ${col.fixable.length === 1 ? 'use stops' : 'uses stop'} copying and ${col.fixable.length === 1 ? 'points' : 'point'} at the palette. Nothing looks different today.</span></button>` : ''}
+          <button type="button" class="choice" role="radio" aria-checked="${state.choice.color === 'keep'}" data-pick="color:keep"><b>${col.fixable.length ? 'Leave them' : 'Keep your palette as it is'}</b><span>${col.fixable.length ? 'The copies stay copies.' : 'Your palette and its named uses already point the right way.'}</span></button>
+        </div></div>
+        <div class="part"><h3>The rule it becomes</h3><div class="rule"><p>${esc(rule.plain)}</p><code>${esc(rule.code)}</code></div></div>
+        ${nav('colour')}
       </div></section>`;
   };
 
   const rulesScreen = () => {
-    const s = SCREENS[5], rule = state.decided.has('spacing') ? spacingRule() : null;
+    const s = SCREENS[5], done = ORDER.filter((id) => !['welcome', 'rules'].includes(id) && state.decided.has(id));
+    const code = `export default {\n  decisions: {\n${done.map((id) => `    ${ruleOf(id).code},`).join('\n')}\n  },\n};`;
     return `<section class="screen">${face(s, 'Your rules', 'What you chose, in one place. This becomes plumber.config, the file Plumber reads every time it checks your app.')}
-      <div class="body"><div class="part"><h3>So far</h3>${rule ? `<div class="rule"><p>${esc(rule.plain)}</p><code>${esc(`export default {\n  decisions: {\n    ${rule.code},\n  },\n};`)}</code></div>` : '<p>Nothing decided yet. Start with spacing.</p>'}</div>
-        <div class="part"><h3>Setting it up</h3><p>Writing your rules and remembering what's already there is the step that comes after colours, text and corners. Until then, nothing in your files changes.</p></div></div></section>`;
+      <div class="body"><div class="part"><h3>${done.length ? `${done.length} of 4 decided` : 'Nothing decided yet'}</h3>${done.length ? `<div class="rule">${done.map((id) => `<p>${esc(ruleOf(id).plain)}</p>`).join('')}<code>${esc(code)}</code></div>` : '<p>Start with spacing.</p>'}</div>
+        <div class="part"><h3>Setting it up</h3><p>Next: writing these rules into plumber.config, tidying your tokens as you chose, and remembering what's already in your code so you only hear about new problems. Nothing in your files has changed yet.</p></div></div></section>`;
   };
 
   const draw = () => {
-    const screen = state.at === 'welcome' ? welcome() : state.at === 'spacing' ? spacing() : rulesScreen();
+    const sizeFamily = Object.keys(screenOf).find((f) => screenOf[f] === state.at);
+    const screen = state.at === 'welcome' ? welcome() : state.at === 'colour' ? colourScreen() : sizeFamily ? sizeScreen(sizes[sizeFamily]) : rulesScreen();
     root.innerHTML = `<style>${LANGUAGE_CSS}${SCALE_CSS}${GRAVITY_CSS}${BUTTON_CSS}${LESSON_CSS}</style>${TOY_DEFS}
       <div class="lesson">${trail()}<div>${screen}</div>${rules()}</div>`;
     const g = root.getElementById('gravity');
-    // for this reader a step is its size, once: three names for 16px are one step here (the names are in Details)
-    const bySize = new Map();
-    for (const st of data.spacing?.steps ?? []) { const k = `${st.px}px`, had = bySize.get(k); bySize.set(k, { name: k, px: st.px, uses: (had?.uses ?? 0) + st.uses }); }
-    const named = (data.spacing?.steps ?? []).reduce((m, st) => m.set(st.name, `${st.px}px`), new Map());
-    const strays = (data.spacing?.strays ?? []).map((st) => ({ ...st, near: named.get(st.near) ?? st.near }));
-    if (g) new Gravity(g, { steps: [...bySize.values()], strays, words: { sizes: 'spacing steps', title: 'Where your gaps and paddings land', empty: 'Add spacing to your theme, and this fills in.' } });
+    if (g && sizeFamily) {
+      // for this reader a step is its size, once: three names for 16px are one step here (the names are in Details)
+      const d = data[SIZES[sizeFamily].data] ?? { steps: [], strays: [] }, bySize = new Map();
+      for (const st of d.steps) { const k = `${st.px}px`, had = bySize.get(k); bySize.set(k, { name: k, px: st.px, uses: (had?.uses ?? 0) + st.uses }); }
+      const named = d.steps.reduce((m, st) => m.set(st.name, `${st.px}px`), new Map());
+      new Gravity(g, { steps: [...bySize.values()], strays: d.strays.map((st) => ({ ...st, near: named.get(st.near) ?? st.near })), words: SIZES[sizeFamily].gravity });
+    }
     state.fresh = '';
   };
 
   root.addEventListener('click', (e) => {
     const go = e.target.closest('[data-go]'), pick = e.target.closest('[data-pick]'), next = e.target.closest('[data-next]');
-    if (pick) { state.spacing = pick.dataset.pick; draw(); return; }
-    if (next) { state.decided.add(next.dataset.next); state.fresh = next.dataset.next; state.at = 'rules'; draw(); return; }
+    if (pick) { const [family, value] = pick.dataset.pick.split(':'); state.choice[family] = value; draw(); return; }
+    if (next) { state.decided.add(next.dataset.next); state.fresh = next.dataset.next; state.at = nextOf(next.dataset.next).id; draw(); window.scrollTo?.({ top: 0 }); return; }
     if (go && !go.disabled) { state.at = go.dataset.go; draw(); }
   });
   draw();

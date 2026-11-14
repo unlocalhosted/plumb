@@ -2547,7 +2547,15 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   rounds earlier I had removed Gravity, the owner's chosen hero from 2026-11-03, without checking the spec; it is
   back as the spacing screen's drawing, its steps named by size (16px once, not three token names). Built: Welcome,
   Spacing in full, Your rules; Colours, Text and Corners show as next. Seen running on the site, dark, desktop.
-- **Open on the lesson:** Colours, Text and Corners screens; "Set it up" (write the rules, the tokens and today's
+- **Then the rest of the screens (owner: "Yes, build the rest").** Spacing, Corners and Text now come from one builder
+  for sizes (each its words, its data, Gravity with steps named by size, and the tidy answer the review's model
+  suggests), each choice drawn as the kind is: bars for spacing, real corners, "Aa" at size. Colours has its own: the
+  palette as chips by hue, the colours your code types by hand each beside the palette colour it's closest to, and one
+  choice (point named uses that copy a palette colour back at it, when there are any). Found on the way: the page's
+  colours only knew tokens named `--color-*`; they now come from every colour Plumber read. On the site: corners show 2
+  lists repeating 6, 8, 12 and 11 places typed by hand; text 5 places; colours 47 in the palette, 97 named uses, 4
+  places typed by hand, and nothing to point back.
+- **Open on the lesson:** "Set it up" (write the rules, the tokens and today's
   state) on the last screen; the causes list ("What I'd stop first") is off the page until it has a place in the
   lesson; the e2e bare-page test still expects the old page's modules.
 - **Open on the four steps:**   steps that came from a dropped scale are named by their size (`--spacing-32`)
