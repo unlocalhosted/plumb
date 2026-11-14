@@ -640,6 +640,8 @@ export function mountXray(o) {
 
   return {
     get pending() { return count(); },
+    // what the card keeps clear of moved: placed again, once a frame at most
+    follow,
     // an element chosen elsewhere (blueprint's list, or a click blueprint took): shown and held
     hold(el) { if (!el?.isConnected || o.paused?.()) return; pinned = el; lastOn = null; const r = el.getBoundingClientRect(); zone = null; draw(el); void r; },
     release() { pinned = null; },

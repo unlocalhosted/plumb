@@ -504,8 +504,9 @@ class PlumbOverlay extends HTMLElement {
   // the stamps, your theme's steps, and writes through the engine (the class showing now, variants.js; located in your
   // code, locate.js; written by the server's swaps, one Undo group per change).
   #xray = null; #xrayResults = null; // results said again after a write's reload
+  #barSeen = null; // the bar the X-ray card keeps clear of, watched while the X-ray is on
   #toggleXray() {
-    if (this.#xray) { this.#xray.destroy(); this.#xray = null; this.#root.querySelector('.xr-host')?.remove(); this.removeAttribute('data-xray'); return; }
+    if (this.#xray) { this.#barSeen?.disconnect(); this.#barSeen = null; this.#xray.destroy(); this.#xray = null; this.#root.querySelector('.xr-host')?.remove(); this.removeAttribute('data-xray'); return; }
     this.#ready?.dismiss();
     this.setAttribute('data-xray', '');
     if (!this.#root.querySelector('style[data-xray]')) {
@@ -543,9 +544,12 @@ class PlumbOverlay extends HTMLElement {
       paused: () => !!(self.#blueprint?.scope || self.#blueprint?.cardOpen || self.#pinned || self.#text?.editing),
       // the card's room is the page above Plumber's own bar: it never sits on the fix panel or the dock (a card placed
       // over the panel took the click meant for its Undo)
+      // The bar can change after the card is placed (the fix panel is rebuilt when a write lands, and comes back taller):
+      // whatever the room was measured against is watched, and the card is placed again when it changes size
       room: () => {
         let bottom = innerHeight - 12;
-        for (const el of self.#root.querySelectorAll('.fx, .dock')) { const r = el.getBoundingClientRect(); if (r.height && r.top > 220 && el.checkVisibility?.() !== false) bottom = Math.min(bottom, r.top - 8); }
+        self.#barSeen ??= new ResizeObserver(() => self.#xray?.follow());
+        for (const el of self.#root.querySelectorAll('.fx, .dock')) { self.#barSeen.observe(el); const r = el.getBoundingClientRect(); if (r.height && r.top > 220 && el.checkVisibility?.() !== false) bottom = Math.min(bottom, r.top - 8); }
         return { left: 12, top: 12, right: innerWidth - 12, bottom };
       },
       // the page's element under the pointer: through blueprint's glass and marks, never the overlay's own panels
