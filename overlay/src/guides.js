@@ -22,10 +22,19 @@
  *           past it, on the edge that is closest:
  *             near     off the guide by less than one unit of the app's spacing grid. The grid has no step that
  *                      small, so the offset cannot have been chosen; it reads as a miss
+ *           held     first, which line is it on? If the nearest things above and below it in its column (looking
+ *                    past up to WALK things, so a stray beside a stray still finds the line) sit on one line, the
+ *                    thing belongs to that line, and an offset under HELD_STEPS grid steps is a slip, not an indent:
+ *                    an indent says "child of the thing above", and a child its siblings resume after, a step or
+ *                    two in, reads as a mistake. The column's line outranks a line the thing touches by chance
+ *                    (a ragged right edge that happens to match another word's), never another line of its own
+ *                    kind. Words that follow words on their row (a count after a heading) start no column. A nested group that means it shares its own line and is never
+ *                    judged here. GUESS, not yet sourced: the 2 steps; Linear's nested rows sit about 20px in
+ *           a thing not held is judged against the nearest line that runs past it, "just off" under one step only.
  *           an offset of a unit or more is left alone for now: it may be an indent. (Tried 2026-11-15: "further
  *           than a unit and not a whole number of units". On the messy tracker 8 of its 9 were toolbar buttons
  *           measured against a guide far away, so "the nearest guide that runs past it" is not yet a good enough
- *           test of which guide a thing belongs to. Known miss: a label 4px off its line passes as an indent.)
+ *           test of which guide a thing belongs to. The miss this left, a label 4px off its line between two on it, is what "held" catches.)
  *           unit: the theme's --spacing (Tailwind v4's base unit) when the page declares it, else 4px (Tailwind's
  *           default, and the small step of Material's 4dp/8dp grid)
  *  look     the product's own picture (glyphs.js, "habit": the plumb line). A guide is a plumb line: a pin at the
@@ -39,6 +48,8 @@
  * Nothing here writes. NEAR is the measuring tolerance (sub-pixel layout), not a judgement of "close enough".
  * ───────────────────────────────────────────────────────── */
 
+const WALK = 3;         // things to look past, up or down, for a neighbour on a line (a stray beside a stray)
+const HELD_STEPS = 2;   // a thing held between two neighbours on one line is a slip up to this many grid steps off
 const NEAR = 0.5;        // px: two edges this close are one line (sub-pixel rounding), never "nearly aligned"
 const MIN_SIDE = 4;      // px: smaller than this is a hairline or a dot, not a thing with edges
 const MEDIA = 'svg, img, canvas, video, picture';
@@ -121,25 +132,56 @@ const gridUnit = () => {
 
 /** Things with no anchor, each against the nearest guide that runs past it. → [{ thing, kind, guide, by, verdict }] */
 function judge(things, guides) {
-  const unit = gridUnit(), anchored = new Set();
-  for (const g of guides) for (const t of g.things) anchored.add(t);
+  const unit = gridUnit(), anchored = new Map();          // thing → the guides it sits on
+  for (const g of guides) for (const t of g.things) anchored.set(t, [...(anchored.get(t) ?? []), g]);
+  const edgeOf = (t, kind) => (kind === 'left' ? t.left : kind === 'right' ? t.right : (t.left + t.right) / 2);
+  const column = (t) => things.filter((o) => o !== t && o.kind === t.kind && o.left < t.right && o.right > t.left);
+  // the nearest thing above (dir -1) or below (dir 1) in t's column that sits on a line of this kind, within WALK things
+  const neighbour = (t, dir, kind) => {
+    const side = column(t).filter((o) => (dir < 0 ? o.bottom <= t.top + NEAR : o.top >= t.bottom - NEAR))
+      .sort((a, b) => (dir < 0 ? b.bottom - a.bottom : a.top - b.top)).slice(0, WALK);
+    for (const o of side) {
+      const on = anchored.get(o) ?? [];
+      // left-aligned words end where their words end: a right line they touch is chance, not their line
+      if (kind === 'right' && o.kind === 'words' && on.some((h) => h.kind === 'left')) continue;
+      const g = on.find((h) => h.kind === kind); if (g) return g;
+    }
+    return null;
+  };
   const strays = [], seen = new Set();
+  // words that follow other words on their row (a count after a heading) are mid-row: they start no column
+  const midRow = (t) => things.some((o) => o !== t && o.kind === 'words' && o.right <= t.left + NEAR && t.left - o.right < 24
+    && o.top < t.bottom && o.bottom > t.top && o.el.parentElement === t.el.parentElement);
   for (const t of things) {
-    if (anchored.has(t)) continue;
-    const mine = [['left', t.left]]; if (t.lines === 1) mine.push(['right', t.right]); if (t.kind === 'picture') mine.push(['centre', (t.left + t.right) / 2]);
+    const on = anchored.get(t) ?? [];
+    const mine = ['left']; if (t.lines === 1) mine.push('right'); if (t.kind === 'picture') mine.push('centre');
     let best = null;
-    for (const [kind, x] of mine) for (const g of guides) {
+    // 1. held between neighbours: the things above and below it in its column sit on one line, so it belongs there.
+    //    The column's line outranks a line it touches by chance (a ragged right edge that matches another word's),
+    //    but not another line of the same kind: on a different left line, it is somewhere else on purpose
+    if (!midRow(t)) for (const kind of mine) {
+      if (on.some((h) => h.kind === kind)) continue;
+      if (kind === 'right' && t.kind === 'words' && getComputedStyle(t.el).textAlign.match(/^(start|left|justify)$/)) continue;
+      const g = neighbour(t, -1, kind);
+      if (!g || g !== neighbour(t, 1, kind)) continue;
+      const by = edgeOf(t, kind) - g.x;
+      if (!best || Math.abs(by) < Math.abs(best.by)) best = { thing: t, kind, guide: g, by, x: edgeOf(t, kind), held: true };
+    }
+    // 2. else, if it sits on no line at all, the nearest line that runs past it
+    if (!best && !on.length) for (const kind of mine) for (const g of guides) {
       if (g.kind !== kind || t.bottom <= g.top || t.top >= g.bottom) continue;
-      const by = x - g.x;
-      if (!best || Math.abs(by) < Math.abs(best.by)) best = { thing: t, kind, guide: g, by, x };
+      const by = edgeOf(t, kind) - g.x;
+      if (!best || Math.abs(by) < Math.abs(best.by)) best = { thing: t, kind, guide: g, by, x: edgeOf(t, kind) };
     }
     if (!best) continue;
+    // inside a framed thing on the same line, by exactly its border: it sits on the frame's inner edge, as it must
+    const side = best.kind === 'right' ? 'Right' : 'Left';
+    if (best.guide.things.some((o) => o.el !== t.el && o.el.contains(t.el) && Math.abs(Math.abs(best.by) - parseFloat(getComputedStyle(o.el)[`border${side}Width`])) <= NEAR)) continue;
     const d = Math.abs(best.by);
-    const verdict = d > NEAR && d < unit ? 'near' : null;
-    if (!verdict) continue;
+    if (d <= NEAR || d >= (best.held ? HELD_STEPS : 1) * unit) continue;
     const place = `${best.kind}:${Math.round(best.x)}:${Math.round(t.top)}:${Math.round(t.bottom)}`; // a box and its words: once
     if (seen.has(place)) continue; seen.add(place);
-    strays.push({ ...best, verdict, unit });
+    strays.push({ ...best, verdict: 'near', unit });
   }
   return strays;
 }
