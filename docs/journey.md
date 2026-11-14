@@ -1145,7 +1145,19 @@
   indent. The look is plumber's own picture, the plumb line from its glyph set: a pin, a string, a bob, a bead per
   thing; a stray is a coral bead that came off the string. Lines drop from their pins left to right and swing once
   before they hang; lines only two things share are faint threads so the strong lines and the stray read first.
-- **Media hooks:** docs/qa/guides-first-look-issues.jpg (guides on the messy page), docs/qa/guides-plumb-lines-issues.jpg
+- **Layer 3, which line a thing belongs to** (owner: "Catch the missed label"). "Views" was missed for two reasons:
+  4px is one whole grid step, so it read as an indent; and its ragged right end happened to match "Mobile" and
+  "Cycles", so it counted as on a line and was never judged. The fix: a thing belongs to the line its neighbours
+  above and below share (looking past up to three, so a stray next to a stray still finds it). Held like that, a
+  slip of up to two grid steps is a mistake, because a real indent starts a group of its own that shares its own line.
+  The column's line outranks a line touched by chance; a left-aligned word's right end is never a line. Three false
+  catches found and removed on the way: the "Todo" heading's right end, a count "2" after "Backlog" read as part of
+  the titles' column, and a nav tab 1px inside its frame's border. Result: messy tracker 3 just off, all real
+  ("Projects" 2px, its icon 1px, "Views" 5px); the site's Home, Primitives, Interfaces and Motion pages 0 each; the
+  messy chat page 0, so whatever is wrong there is not this kind of fault. Seen once: two numbers in an animated
+  demo flagged mid-move, gone on the next read; guides read a moving page as it is at that instant.
+- **Media hooks:** docs/qa/guides-first-look-issues.jpg (guides on the messy page), docs/qa/guides-held-issues.jpg
+  (the three strays held by their neighbours), docs/qa/guides-plumb-lines-issues.jpg
   (the plumb lines and the one stray); a screen recording of the drop-and-swing arrival would show the toy best; the three source screenshots in
   docs/references-media/; a clean page beside a messy one with the guide counts would make the point in one frame.
 - References: the five 2026-11-15 entries in docs/references.md.
