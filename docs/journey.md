@@ -1458,6 +1458,15 @@ field is empty). The table of five writes, before and after. The Next table: eig
 - **Full suite, on the test server:** 1,089 passed, 1 failed: the Next click-the-moment-it-appears test, already known on main, which passed alone right after. Main moved forward to the fix (local, not pushed).
 - **Media hooks:** Playwright's call log, "subtree intercepts pointer events", beside the panel's Undo.
 
+## "Said 89 times" was my count, not what anyone reads (2026-11-15)
+- **The itch:** the owner: "please fix the open item and do thorough testing". The open item, in my words: a check says the same thing 89 times on crafting-ui's icon page.
+- **How we found it:** crafting-ui's icon page judged through the real command, and opened in the browser with Alt+B. The 89 buttons are drawn by one line (`Card.tsx:46`). The command says the label problem once, at that line; the bar on the page says "7 problems", with 6 fixes and 14 notes in its readout, and the label problem is one of the notes.
+- **The system behind it:** a mistake in how I reported, not in plumber: I counted the elements a check spoke on, and wrote it as if a person reads it 89 times. Plumber already merges in three places: the page records (one per check and line, with a count), the command's findings (one per check and line), and the panel (one per check and words).
+- **What we chose:** no change to plumber; two tests so the merging cannot quietly break. One line drawing thirty buttons, each with a label that repeats its state and all named "Delete": (1) the command gives one finding per check at that line, the record knows it stands for thirty, and the plain report names each once; (2) on the page, thirty rows read the same in the bar as three ("3 notes").
+- **The proof:** 20 of 20 in the checks' test file. Each new test was run with its merge switched off and failed (with the panel's grouping off, the bar read "62 notes" against "8 notes").
+- **Seen on the way:** a three-element test page reads "1 element can't be checked". Not looked at.
+- **Media hooks:** the bar on crafting-ui's icon page, "7 problems", beside the 89 cards.
+
 ## Open gaps
 - The site's top bar doesn't fit a phone (390px): it widens the page to about 500px. Needs a compact bar.
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
