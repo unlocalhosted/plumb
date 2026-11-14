@@ -402,7 +402,7 @@ test('components pack: 33 rules name their problem at its line, and a real modal
   speaks(await said(t, MODAL), 'components', MODAL, [['dialog-aria-extras', 'modal'], ['dialog-scroll-lock', 'modal']]);
 });
 
-test('HTML pack: 32 rules name their problem at its line, the page-wide ones once, on the page's own element', { timeout: 240000 }, async (t) => {
+test('HTML pack: 32 rules name their problem at its line, the page-wide ones once, on the page’s own element', { timeout: 240000 }, async (t) => {
   if (!await built()) return t.skip('Run npm run build first.');
   const by = await said(t, HTML, { index: BARE_INDEX, files: { 'public/wide.svg': WIDE_SVG } });
   speaks(by, 'html', HTML, HTML_EXPECTED);
