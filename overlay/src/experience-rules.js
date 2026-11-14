@@ -113,7 +113,10 @@ export const preconnectMissing = rule('preconnect-missing', 'hint', null, functi
 // performance: "DO use async or defer for all non-critical scripts"
 export const scriptBlocking = rule('script-blocking', 'script', null, function (el) {
   if (!isPage(el)) return;
-  const count = document.querySelectorAll('head script[src]:not([async]):not([defer]):not([type="module"])').length;
+  // a nomodule script never runs in a browser that has modules; the dev server's own scripts (Next's /_next/ chunks,
+  // Turbopack's reload client, Vite's client) are not in the project and are gone in a build
+  const count = [...document.querySelectorAll('head script[src]:not([async]):not([defer]):not([type="module"]):not([nomodule])')]
+    .filter((s) => !/\/(?:_next|@vite|@react-refresh)\//.test(new URL(s.src, location.href).pathname)).length;
   if (!count) return;
   return found(this, el, { count }, { value: `${count} in <head>`, confidence: 0.85, advice: 'Add defer (or async where order does not matter), or load them as type="module".' });
 });
