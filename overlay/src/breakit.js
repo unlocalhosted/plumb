@@ -38,6 +38,10 @@
  *           one unbroken word (a link, an ID) and, where there is a number, a nine-digit one. Each break says which
  *           content did it; stepping to it puts that content back on the page. A drawn box (a button, a badge) that
  *           shrinks to a sliver when it is empty is a break of its own
+ *  action   you press the button you care about (plumber does not guess which is the main one). Its requests (fetch, XHR)
+ *           get a server error, or are held 4 seconds in Slow. Then plumber watches and says what a person meets: no
+ *           words saying it failed, a button left disabled or still saying "Creating…", a spinner that never stops;
+ *           in Slow, nothing showing it is working, and a button that can be pressed twice
  *  toys     one at a time; the bar opens with none on. Picking one turns the last one off
  *  keys     Alt+S opens and closes. ← → between breaks, Esc closes
  * Nothing here writes to source.
@@ -345,7 +349,7 @@ svg.page { position: absolute; inset: 0; width: 100%; height: 100%; overflow: vi
 .hatch { stroke: var(--pl-off); stroke-width: 1.5; opacity: .55; }
 .mark { animation: pop 240ms var(--pl-spring-pop) both; transform-box: fill-box; transform-origin: center; }
 
-.bar { position: absolute; left: 50%; bottom: 16px; translate: -50% 0; width: min(560px, calc(100vw - 32px)); box-sizing: border-box;
+.bar { position: absolute; left: 50%; bottom: 16px; translate: -50% 0; width: min(664px, calc(100vw - 32px)); box-sizing: border-box;
   display: grid; gap: 10px; padding: 12px 14px 14px; background: var(--pl-paper); color: var(--pl-ink);
   border-radius: var(--pl-radius-card); box-shadow: var(--pl-shadow-card); pointer-events: auto; font: var(--pl-card-body); }
 .toys { display: flex; gap: 6px; align-items: center; }
@@ -360,6 +364,11 @@ svg.page { position: absolute; inset: 0; width: 100%; height: 100%; overflow: vi
 .toy[aria-pressed="true"] .face { background: var(--pl-off); color: var(--pl-coral-ink, #fff); }
 .toy:focus-visible, .step button:focus-visible { outline: 2px solid var(--pl-instrument); outline-offset: 2px; }
 .toys .grow { flex: 1; }
+.toys { flex-wrap: wrap; }
+.modes { display: inline-flex; gap: 2px; padding: 2px; border-radius: var(--pl-radius-pill); background: var(--pl-paper-2); justify-self: start; }
+.modes button { height: 24px; padding: 0 10px; border: 0; border-radius: var(--pl-radius-pill); background: none; color: var(--pl-ink-2); font: var(--pl-text-label); font-size: 12px; cursor: pointer; }
+.modes button[aria-pressed="true"] { background: var(--pl-paper); color: var(--pl-ink); box-shadow: var(--pl-shadow-tag); }
+.modes button:focus-visible { outline: 2px solid var(--pl-instrument); outline-offset: 2px; }
 .verdict { margin: 0; font: var(--pl-card-meta); color: var(--pl-ink-2); }
 .note { display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: start; }
 .say { min-width: 0; display: grid; gap: 2px; }
@@ -530,6 +539,99 @@ function showVariant(i) {
   paint();
 }
 
+// ── the action fails, or is slow ──────────────────────────────
+
+// You press the button you care about; plumber answers the requests that press sends (fetch and XHR, never its own
+// or the dev server's) with a server error, or holds them for SLOW_MS and then lets them through. Then it watches
+// WATCH_MS and says what a person would meet. A WebSocket (Convex, Firebase) is not reached: said when nothing was sent
+const SLOW_MS = 4000, WATCH_MS = 5000, CATCH_MS = 1500;
+const MINE = /\/__plumb|\/@vite|\/@fs\/|\/node_modules\/|hot-update|\/@react-refresh/;
+let act = null;   // { mode, phase: 'armed' | 'watching' | 'done', control, label, sent, before, said, t0, timer }
+let mode = 'fail';
+const realFetch = window.fetch, realOpen = XMLHttpRequest.prototype.open, realSend = XMLHttpRequest.prototype.send;
+
+function caught(url) { return act && act.phase === 'watching' && performance.now() - act.t0 < CATCH_MS && !MINE.test(String(url)); }
+
+function hook() {
+  window.fetch = function (input, init) {
+    const url = typeof input === 'string' ? input : input?.url ?? String(input);
+    if (!caught(url)) return realFetch.apply(this, arguments);
+    act.sent.push(url);
+    if (act.mode === 'slow') return new Promise((r) => setTimeout(r, SLOW_MS)).then(() => realFetch.call(window, input, init));
+    act.failedAt = performance.now();
+    // what a server that fell over sends: a 500 with a plain-text page, not the JSON the app hoped for
+    return Promise.resolve(new Response('Internal Server Error', { status: 500, statusText: 'Internal Server Error', headers: { 'Content-Type': 'text/plain' } }));
+  };
+  XMLHttpRequest.prototype.open = function (method, url) { this.__plumbUrl = url; this.__plumbArgs = [...arguments]; return realOpen.apply(this, arguments); };
+  XMLHttpRequest.prototype.send = function () {
+    if (!caught(this.__plumbUrl)) return realSend.apply(this, arguments);
+    act.sent.push(this.__plumbUrl);
+    if (act.mode === 'slow') { setTimeout(() => realSend.apply(this, arguments), SLOW_MS); return; }
+    act.failedAt = performance.now();
+    // an XHR cannot be answered by hand: sent to a closed port, it fails as a network error does
+    const args = this.__plumbArgs.slice(); args[1] = 'http://127.0.0.1:9/plumber-failed-this';
+    realOpen.apply(this, args); return realSend.call(this);
+  };
+}
+function unhook() { window.fetch = realFetch; XMLHttpRequest.prototype.open = realOpen; XMLHttpRequest.prototype.send = realSend; }
+
+const CONTROL = 'button, [role="button"], a[href], input[type="submit"], input[type="button"], summary';
+const stateOf = (c) => ({ disabled: !!c.disabled || c.getAttribute('aria-disabled') === 'true', busy: c.getAttribute('aria-busy') === 'true', text: norm(c.textContent ?? c.value ?? '') });
+const spinners = () => new Set(document.getAnimations().filter((a) => a.effect?.getTiming().iterations === Infinity && a.effect.target && !a.effect.target.closest?.(OURS) && a.effect.target.isConnected && a.effect.target.checkVisibility?.()).map((a) => a.effect.target));
+
+function pressed(event) {
+  if (!act || act.phase === 'watching' || event.button !== 0 || event.composedPath().includes(host)) return;   // a press in plumber's own bar is not the app's
+  if (act.phase === 'done') { notes = []; Object.assign(act, { phase: 'armed', said: null, failedAt: null, during: null }); }
+  const c = event.composedPath().find((n) => n instanceof Element && n.matches?.(CONTROL));
+  if (!c || c.closest(OURS)) return;
+  const words = [];
+  const seen = new MutationObserver((records) => {
+    for (const r of records) {
+      const nodes = r.type === 'characterData' ? [r.target] : [...r.addedNodes].flatMap((n) => (n.nodeType === 3 ? [n] : n.nodeType === 1 ? [...walkText(n)] : []));
+      for (const n of nodes) {
+        const el = n.parentElement, t = norm(n.data ?? '');
+        if (!el || el.closest(OURS) || !LETTER.test(t)) continue;
+        words.push({ t, el, at: performance.now() });
+      }
+    }
+  });
+  seen.observe(document.body, { childList: true, subtree: true, characterData: true });
+  Object.assign(act, { phase: 'watching', control: c, label: norm(c.textContent || c.value || c.getAttribute('aria-label') || 'it').slice(0, 30), before: stateOf(c), spinBefore: spinners(), t0: performance.now(), sent: [], words, seen });
+  setTimeout(() => { if (act?.control === c) act.during = { ...stateOf(c), spin: spinners() }; }, 600);
+  act.timer = setTimeout(() => judgeAction(), act.mode === 'slow' ? SLOW_MS + 1500 : WATCH_MS);
+  paint();
+}
+function* walkText(root) { const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT); for (let n = w.nextNode(); n; n = w.nextNode()) yield n; }
+
+function judgeAction() {
+  if (!act || act.phase !== 'watching') return;
+  act.seen.disconnect(); act.phase = 'done';
+  const c = act.control, now = stateOf(c), out = [], label = `“${act.label}”`;
+  const stillSpinning = [...spinners()].filter((el) => !act.spinBefore.has(el));
+  if (!act.sent.length) {
+    out.push({ kind: 'nothing', el: c, live: true, title: `${label} sent nothing plumber could fail.`, why: 'No request went out in the 1.5 seconds after the press. It may work without the network, send over a WebSocket (Convex, Firebase) or reload the page, which this toy does not reach yet.' });
+  } else if (act.mode === 'fail') {
+    // what changed on the page after the failure, other than the button's own words
+    const said = act.words.filter((w) => w.at >= (act.failedAt ?? act.t0) && !c.contains(w.el) && w.el.checkVisibility?.());
+    if (!said.length) out.push({ kind: 'silent', el: c, live: true, title: 'Nothing tells the person it failed.', why: `The request ${label} sent got a server error, and for ${WATCH_MS / 1000} seconds no words appeared anywhere on the page. Say what went wrong and what to do next, near the button.` });
+    else act.said = said[said.length - 1].t;
+    if (now.disabled && !act.before.disabled) out.push({ kind: 'stuck', el: c, live: true, title: `${label} stays disabled after the failure.`, why: 'It turned off when pressed and never came back, so the person cannot try again without reloading.' });
+    else if (now.text !== act.before.text) out.push({ kind: 'stuck', el: c, live: true, title: `${label} still says “${now.text.slice(0, 30)}”.`, why: 'It changed its words for the wait and never changed them back after the failure.' });
+    for (const el of stillSpinning) out.push({ kind: 'spinning', el, live: true, title: 'A spinner keeps spinning.', why: `It started with the press and is still going ${WATCH_MS / 1000} seconds after the request failed: it promises progress that will never come.` });
+  } else {
+    const d = act.during ?? {};
+    const shows = d.disabled || d.busy || d.text !== act.before.text || [...(d.spin ?? [])].some((el) => !act.spinBefore.has(el));
+    if (!shows) out.push({ kind: 'still', el: c, live: true, title: `Nothing shows ${label} is working.`, why: `The request takes ${SLOW_MS / 1000} seconds, and for that time the page looks exactly as it did before the press. Show it is working within a moment of the press.` });
+    if (!d.disabled && !d.busy) out.push({ kind: 'twice', el: c, live: true, title: `${label} can be pressed again while it waits.`, why: 'Nothing stops a second press while the first request is still out, and a second press sends it again: two projects, two payments.' });
+  }
+  notes = out.map((n) => ({ ...n, source: sourceOf(n.el) })); index = 0;
+  paint();
+}
+
+function arm() { hook(); act = { mode, phase: 'armed' }; addEventListener('pointerdown', pressed, true); }
+function disarm() { if (act?.timer) clearTimeout(act.timer); act?.seen?.disconnect(); act = null; unhook(); removeEventListener('pointerdown', pressed, true); }
+export function setMode(next) { mode = next; if (toy === 'action') { disarm(); arm(); notes = []; paint(); } }
+
 // ── the toys ────────────────────────────────────────────────
 
 let toy = null;
@@ -539,11 +641,13 @@ export function setToy(next) {
   if (toy === 'narrower') unstage();
   if (toy === 'bigger') unbig();
   if (toy === 'extreme') { unswap(); probing = false; }
+  if (toy === 'action') disarm();
   toy = next; notes = []; index = 0;
   if (toy === 'longer') { on = true; grow(); }
   if (toy === 'narrower') narrower();
   if (toy === 'bigger') bigger();
   if (toy === 'extreme') extreme();
+  if (toy === 'action') arm();
   paint();
 }
 export const setLonger = (yes) => setToy(yes ? 'longer' : null);
@@ -553,7 +657,7 @@ export const setLonger = (yes) => setToy(yes ? 'longer' : null);
 function rectOf(n) {
   if (!n.live) return n.rect;
   if (n.kind === 'sideways') { if (!n.cause) return null; const r = n.cause.getBoundingClientRect(); const off = stage ? stage.frame.getBoundingClientRect() : { left: 0, top: 0 }; return { left: r.left + off.left, top: r.top + off.top, width: r.width, height: r.height }; }
-  const r = n.kind === 'cut' || n.kind === 'collapse' ? n.box.getBoundingClientRect() : n.kind === 'overlap' ? (() => { const a = wordsRect(n.el), b = wordsRect(n.other); return a && b ? union(a, b) : a ?? b; })() : wordsRect(n.el);
+  const r = ['nothing', 'silent', 'stuck', 'still', 'twice', 'spinning'].includes(n.kind) ? n.el.getBoundingClientRect() : n.kind === 'cut' || n.kind === 'collapse' ? n.box.getBoundingClientRect() : n.kind === 'overlap' ? (() => { const a = wordsRect(n.el), b = wordsRect(n.other); return a && b ? union(a, b) : a ?? b; })() : wordsRect(n.el);
   if (!r) return null;
   const off = stage ? stage.frame.getBoundingClientRect() : { left: 0, top: 0 };
   return { left: r.left + off.left, top: r.top + off.top, width: r.width, height: r.height };
@@ -589,6 +693,16 @@ function verdict() {
     if (!notes.length) return `From ${stage.from}px down to ${NARROWEST}px, nothing breaks.`;
     return `From ${stage.from}px down to ${NARROWEST}px, ${count(notes.length, 'thing breaks', 'things break')}. The first at ${notes[0].width}px.`;
   }
+  if (toy === 'action') {
+    const what = mode === 'fail' ? 'its request will fail with a server error' : `its request will take ${SLOW_MS / 1000} seconds`;
+    if (!act || act.phase === 'armed') return `Press the button you want to test: ${what}. Your page stays usable.`;
+    if (act.phase === 'watching') return mode === 'fail' ? `“${act.label}” was pressed and its request failed. Watching what a person would see…` : `“${act.label}” was pressed; its request is held for ${SLOW_MS / 1000} seconds. Watching…`;
+    const good = mode === 'fail'
+      ? [act.said && `it said “${act.said.slice(0, 40)}”`, !notes.some((n) => n.kind === 'stuck') && act.sent.length && 'the button came back'].filter(Boolean)
+      : act.sent.length ? [!notes.some((n) => n.kind === 'still') && 'it showed it was working', !notes.some((n) => n.kind === 'twice') && 'it could not be pressed twice'].filter(Boolean) : [];
+    return notes.length ? `${count(notes.length, 'thing a person would trip on', 'things a person would trip on')}${good.length ? ` (${good.join(', and ')})` : ''}. Press it again to test once more.`
+      : `It handled it${good.length ? `: ${good.join(', and ')}` : ''}. Press it again to test once more.`;
+  }
   if (toy === 'extreme') {
     if (sorting) return 'Finding the words that can change: the ones passed into reusable parts, and the ones from data…';
     const where = tally ? `${tally.prop + tally.list + tally.data} places that can change` : 'the places that can change';
@@ -611,6 +725,7 @@ const TOYS = [
   ['longer', 'Longer words', LONGER],
   ['narrower', 'Narrower', '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M1.5 8h4M14.5 8h-4"/><path d="M3.5 5.5 6 8l-2.5 2.5M12.5 5.5 10 8l2.5 2.5"/><path d="M8 3v10" opacity=".6"/></svg>'],
   ['extreme', 'Extreme content', '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="1.5" y="5" width="3" height="6" rx="1" opacity=".6"/><rect x="6" y="5" width="8.5" height="6" rx="1"/><path d="M8 8h4.5"/></svg>'],
+  ['action', 'Action fails', '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="1.5" y="4" width="13" height="8" rx="2.5"/><path d="M6.5 6.5l3 3M9.5 6.5l-3 3"/></svg>'],
   ['bigger', 'Bigger text', '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M1.5 12.5l2-5 2 5M2.3 10.8h2.4"/><path d="M7.5 13.5l3-10 3 10M8.7 10h3.6"/></svg>'],
 ];
 
@@ -620,7 +735,7 @@ function skeleton() {
     <div class="bar" role="region" aria-label="Break it" aria-live="polite"></div>`;
   host.shadowRoot.querySelector('.bar').addEventListener('click', (e) => {
     const b = e.target.closest('button'); if (!b) return;
-    if (b.dataset.toy) setToy(b.dataset.toy); else if (b.classList.contains('prev')) go(-1); else if (b.classList.contains('next')) go(1);
+    if (b.dataset.mode) setMode(b.dataset.mode); else if (b.dataset.toy) setToy(b.dataset.toy); else if (b.classList.contains('prev')) go(-1); else if (b.classList.contains('next')) go(1);
   });
 }
 
@@ -633,13 +748,14 @@ function paint() {
     const again = keep ? notes.findIndex((n) => n.el === keep) : -1;
     index = again >= 0 ? again : Math.min(index, Math.max(0, notes.length - 1));
   }
-  const busy = growing || sorting || stage?.sweeping || probing;
+  const busy = growing || sorting || stage?.sweeping || probing || act?.phase === 'watching';
   const n = toy && !busy ? notes[index] : null;
   const step = notes.length > 1 && n ? `<span class="step"><button class="prev" aria-label="Previous break" ${index ? '' : 'disabled'}>‹</button>${index + 1} of ${notes.length}<button class="next" aria-label="Next break" ${index < notes.length - 1 ? '' : 'disabled'}>›</button></span>` : '<span></span>';
   const note = n ? `<div class="note"><div class="say"><p class="title">${esc(n.title)}</p><p class="why">${esc(n.why)}${n.source ? ` <span class="src">${esc(n.source)}</span>` : ''}</p></div>${step}</div>` : '';
   const root = host.shadowRoot;
   root.querySelector('.marks').innerHTML = toy && !busy ? marks() : '';
   root.querySelector('.bar').innerHTML = `<div class="toys">${TOYS.map(([id, label, face]) => `<button class="toy" data-toy="${id}" aria-pressed="${toy === id}"><span class="face">${face}</span>${label}</button>`).join('')}</div>
+      ${toy === 'action' ? `<div class="modes" role="group" aria-label="How it goes wrong">${[['fail', 'Fails'], ['slow', 'Slow']].map(([id, l]) => `<button data-mode="${id}" aria-pressed="${mode === id}">${l}</button>`).join('')}</div>` : ''}
       <p class="verdict">${esc(verdict())}</p>${note}`;
 }
 const later = () => { if (host && !frame) frame = requestAnimationFrame(paint); };

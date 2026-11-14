@@ -1263,10 +1263,36 @@
 - **Not yet:** emoji and right-to-left words; one cause seen under two kinds of content is two notes; no tests.
 - **Media hooks:** docs/qa/break-it-extreme-content.jpg (the counts as unbroken words, "8 ways" ringed past the edge).
 
+## Break it: the main action fails, or is slow (2026-11-15)
+- **The itch:** the third line of the post the owner shared: "make the main action fail". The owner chose it as a
+  first-version toy, with "or is slow".
+- **What we chose and why:** plumber does not guess which button is the main one; you press the one you care about,
+  as a person would. The requests that press sends (fetch and XHR, never plumber's own or the dev server's) get a
+  server error: a 500 with a plain-text page, which is what a server that fell over sends, not the JSON the app hoped
+  for. In Slow they are held four seconds and then let through. Then plumber watches for five seconds and says what
+  a person meets: whether any words appeared saying it failed, whether the button came back or stays disabled or
+  still says "Creating…", whether a spinner keeps going; in Slow, whether anything showed it was working and whether
+  the button could be pressed twice. If the press sent nothing plumber could fail, it says so and why that may be.
+- **How we found something to test it on:** none of the apps here has a button that sends a request through fetch.
+  algorecall saves over a WebSocket (Convex), which this toy cannot reach yet. So the messy dashboard bench (written
+  the way an LLM writes one) got its "New project" button wired the way an LLM writes it: a loading state, the
+  request, the happy path, and nothing for a failure.
+- **The proof:** pressing "New project" with Fails on: three things a person would trip on, each ringed on the page:
+  nothing tells them it failed, "New project" stays disabled (it still says "Creating…"), and its spinner keeps
+  spinning (App.jsx:83). With Slow on: it handled it, showing it was working and refusing a second press.
+- **Dead end:** a press on Break it's own bar counted as "the button you want to test", because the page-side check
+  cannot see inside plumber's shadow DOM; presses in the bar are now left out.
+- **Not yet:** WebSockets (Convex, Firebase, Supabase realtime), a form that submits by reloading the page, and an
+  offline mode where the request never answers at all. In Slow the request really goes through after four seconds, so
+  it does whatever the button does. No tests.
+- **Media hooks:** docs/qa/break-it-action-fails.jpg ("Creating…" stuck with its spinner, ringed, and the first of
+  the three notes).
+
 ## Open gaps
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
 
 ## Shipped · 2026-W46
+- Break it's Action fails toy: press the button you care about and plumber makes its request fail (or take four seconds), then says what a person would meet: no message, a button stuck on "Creating…", a spinner that never stops, a second press that sends it twice ([entry](#break-it-the-main-action-fails-or-is-slow-2026-11-15)). On its own branch.
 - Break it's Extreme content toy puts no words, one letter, 60 letters, an unbroken link-like word and a nine-digit number into every place on your page that can change, and says which content broke what ([entry](#break-it-extreme-content-2026-11-15)). On its own branch.
 - Break it has two more toys: Narrower squeezes a copy of your page down to 320px and says the width where each thing first breaks; Bigger text turns the reader's text size up to 200% and names the classes that keep text from growing, with the rem class to use instead ([entry](#break-it-narrower-and-bigger-text-2026-11-15)). On its own branch.
 - Press Alt+S and plumber breaks your screen on purpose: the words that can change (items from data, labels passed into reusable parts, counts) grow to twice their length, the way a translation would, and plumber marks only what that broke, on your live page. Copy typed once into a one-off component is left alone ([entry](#break-it-stretches-only-words-that-can-change-2026-11-15)). On its own branch.
