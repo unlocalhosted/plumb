@@ -212,7 +212,9 @@ onProgress(event => appendFileSync(${JSON.stringify(events)}, JSON.stringify(eve
 test('short runs never flash; terminal width, Unicode and locale fallbacks hold', async t => {
   const project = await fixture(t, 0);
   await run(project, ['decisions'], { pipe: true });
-  const fast = await run(project, ['decisions'], { env: { PLUMBER_TEST_PROGRESS_DELAY_MS: '300' } });
+  // a cached run is short, but on a busy test machine it takes about 350 ms; the delay is set well above any cached run so
+  // the test asks only "a run that ends before the delay draws nothing", not how fast this machine is
+  const fast = await run(project, ['decisions'], { env: { PLUMBER_TEST_PROGRESS_DELAY_MS: '2000' } });
   assert.equal(fast.stderr, '');
   const narrow = await run(project, ['decisions'], { columns: 18, env: { NO_COLOR: undefined } });
   assert.match(narrow.stderr, /\x1b\[2m/);
