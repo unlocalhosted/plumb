@@ -347,6 +347,8 @@ and none in `web/design/parts`.
 
 ### Tests
 
+- Failing before 2026-11-14's token work and still failing (vm-agent, each file alone): select (1 test), element-site (2), locate-bench (1), cli-findings' 80/140-column report (1), page-drawn (2). timeline and apply-all-hot fail only in a crowded full run.
+
 - After an undo that reloads the page, closing the timeline with Esc does not always hand focus back to the history
   button (timeline test, fails side by side on vm-agent, passes alone). Possibly the button is not focusable on the
   reloaded page at that moment. Not looked into further; found while preparing 0.5.0.

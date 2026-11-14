@@ -2608,6 +2608,11 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   keeps to Tailwind's names. After it: those files pass (125 tests), crafting-ui is back to its 205 tokens (the 17
   extra guesses earlier were wrong to add; `--shadow-ink` reading as the colour it holds is the one change left), the
   homepage app is as before, and the site loses one lone `--pl-z`.
+- **Then the browser and host tiers (2026-11-15).** Queued on vm-agent behind another session's full run, then run whole:
+  browser 4 files failing, host 1. Each failing file was then run alone, at the commit before the token work and at
+  this branch's head: select (1 test), element-site (2) and locate-bench (1) fail the same way on both, so they predate
+  this work; timeline and apply-all-hot pass on both alone, so their failures were the crowded run, not the code. No
+  browser or host failure is this branch's. With the command-line tier: this branch adds no failing test.
 - **Open on the lesson:** the causes list ("What I'd stop first") is off the page until it has a place in the
   lesson; Undo after Set it up covers the tokens, not the config.
 - **Open on the four steps:** settled by numbering (above).
