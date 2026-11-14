@@ -100,6 +100,11 @@ export async function readDecisions(root: string, config: PlumbConfig, graph: St
   for (const item of raw) if (item.root && !item.theme && item.origin === 'project' && !familyFor(item.name) && !backing.has(item.name) && !inferred.has(item.name)) {
     inferred.set(item.name, inferFamily(item.name, resolveValue(item.value, variables, new Set([item.name])) ?? item.value, uses));
   }
+  // a lone guessed variable is a shortcut someone took, not a system: a kind counts from guesses only when two or more
+  // variables are read as it
+  const guessed = new Map<Family, number>();
+  for (const reading of inferred.values()) if (reading) guessed.set(reading.family, (guessed.get(reading.family) ?? 0) + 1);
+  for (const [name, reading] of inferred) if (reading && (guessed.get(reading.family) ?? 0) < 2) inferred.set(name, undefined);
   const plainColour = (item: typeof raw[number]) => { const named = familyFor(item.name); return !!named && named !== 'color' && byValue(resolveValue(item.value, variables, new Set([item.name])) ?? item.value) === 'color'; };
   for (const item of raw.filter(item => item.root && !item.theme && item.origin === 'project')) {
     const hint = plainColour(item) ? 'color' : inferred.get(item.name)?.family;
