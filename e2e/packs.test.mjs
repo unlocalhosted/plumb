@@ -10,6 +10,7 @@ import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 import { createServer } from 'vite';
+import { chromium } from 'playwright';
 import tailwindcss from '@tailwindcss/vite';
 import { plumb } from '@unlocalhosted/react-plumber/vite';
 
@@ -426,6 +427,69 @@ const LOADING = `export function App() {
   return (<div role="status" aria-busy="true"><h2>Loading</h2><p>Fetching your problems</p></div>);
 }
 `;
+// one line of code that draws thirty buttons, each with the same two faults: said once per check, at that line, with the
+// count in its words, never thirty times (crafting-ui's icon grid draws 89 such buttons from one line). Marks on the page
+// stay per element; what a person reads (the CLI's findings, the overlay's records) is per place.
+const MANY = `const ICONS = Array.from({ length: 30 }, (_, i) => 'Icon ' + (i + 1));
+export function App() {
+  return (
+    <main className="flex flex-col gap-s4 p-s4">
+      <h1>Thirty</h1>
+      <ul>{ICONS.map((name) => <li key={name}>{name}
+        <button id="pick" type="button" aria-pressed="false" aria-label={name + ', not selected'}>i</button>
+        <button id="del" type="button">Delete</button></li>)}</ul>
+      <button id="lone" type="button" aria-pressed="true" aria-label="Bold, selected">B</button>
+    </main>
+  );
+}
+`;
+test('one line that draws thirty buttons is one finding per check, at that line, with the count said', { timeout: 240000 }, async (t) => {
+  if (!await built()) return t.skip('Run npm run build first.');
+  const { root, url } = await fixture(t, MANY);
+  const result = await plumber(['craft', '--url', url, '--json', '--no-probe', '--no-pairs', '--root', root]);
+  const report = JSON.parse(result.stdout);
+  const records = report.routes.flatMap((r) => r.findings);
+  const at = (list, rule) => list.filter((f) => f.rule === rule).map((f) => f.line ?? f.sites[0].line).sort((a, b) => a - b);
+  const pick = lineOf(MANY, 'pick'), del = lineOf(MANY, 'del'), lone = lineOf(MANY, 'lone');
+  // the label that repeats its state: the thirty from one line are one, the lone toggle on its own line is another
+  assert.deepEqual(at(report.findings, 'experience/state-in-label'), [pick, lone]);
+  assert.deepEqual(at(records, 'experience/state-in-label'), [pick, lone], 'the overlay records it per place too');
+  // and the one place knows it stands for thirty elements
+  assert.equal(records.find((f) => f.rule === 'experience/state-in-label' && f.line === pick).count, 30);
+  // thirty buttons named Delete: one finding, and its words carry the count rather than repeating it
+  const reused = report.findings.filter((f) => f.rule === 'experience/button-name-reused');
+  assert.equal(reused.length, 1, JSON.stringify(reused));
+  assert.equal(reused[0].sites[0].line, del);
+  assert.match(reused[0].title, /\b30 buttons\b/);
+  // and the plain report says each once
+  const text = await plumber(['craft', '--url', url, '--no-probe', '--no-pairs', '--root', root]);
+  assert.equal(text.stdout.match(/experience\/state-in-label/g)?.length, 2, text.stdout);
+  assert.equal(text.stdout.match(/experience\/button-name-reused/g)?.length, 1, text.stdout);
+});
+
+test('on the page, thirty rows from one line say as much as three (the fewest the repeated-name check needs)', { timeout: 240000 }, async (t) => {
+  const browser = await chromium.launch({ headless: true, executablePath: process.env.PLUMBER_CHROMIUM || undefined });
+  t.after(() => browser.close());
+  const problems = async (app) => {
+    const { url } = await fixture(t, app);
+    const page = await browser.newPage({ viewport: { width: 1280, height: 900 }, reducedMotion: 'reduce' });
+    await page.goto(url);
+    await page.waitForFunction(() => window.__plumb); await page.evaluate(() => window.__plumb.ready());
+    await page.keyboard.press('Alt+B');
+    await page.waitForFunction(() => window.__plumb.overlay.progress?.done, null, { timeout: 60000 });
+    // what the bar says: its count, and the rest of the line it reads out (fixes, notes)
+    await page.waitForFunction(() => !/checking/i.test(document.querySelector('plumb-overlay').shadowRoot.querySelector('.fx .status')?.textContent ?? 'checking'), null, { timeout: 60000 });
+    const said = await page.evaluate(() => { const st = document.querySelector('plumb-overlay').shadowRoot.querySelector('.fx .status'); return { count: st.querySelector('.count').textContent, rest: st.getAttribute('aria-description') ?? '' }; });
+    const marked = await page.evaluate(() => [...document.querySelector('plumb-overlay').shadowRoot.querySelectorAll('.bp .hit')].filter((h) => h.dataset.id.endsWith('experience/state-in-label')).length);
+    await page.close();
+    return { ...said, marked };
+  };
+  const many = await problems(MANY), three = await problems(MANY.replace('length: 30', 'length: 3'));
+  // what is counted is places; what is marked is elements (the thirty each carry their own mark)
+  assert.deepEqual({ count: many.count, rest: many.rest }, { count: three.count, rest: three.rest }, JSON.stringify({ many, three }));
+  assert.ok(many.marked > three.marked, JSON.stringify({ many, three }));
+});
+
 test('a page that is still loading is not told it has no main and no h1', { timeout: 240000 }, async (t) => {
   if (!await built()) return t.skip('Run npm run build first.');
   assert.deepEqual(ofPacks(await said(t, LOADING)), []);
