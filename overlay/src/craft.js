@@ -20,7 +20,8 @@
  *  cache      an element's findings are kept by its signature (its class and its parent's) until invalidate(); a
  *             page-wide rule's also by the page's signature; a late fact (an icon's ink) re-judges only who asked
  * ───────────────────────────────────────────────────────── */
-import { RULES } from './craft-rules.js';
+import { PACK_RULES, packOf } from './packs.js';
+import { rulesFor } from './kinds.js';
 import { verdicts } from './verdict.js';
 import { rgb, VIRTUAL, SPEC, elevation } from './craft-read.js';
 import { TIER } from './craft-facets.js';
@@ -410,7 +411,7 @@ function markOf(f) {
   // a class suggestion that takes nothing out adds one: never "Change `` to …"
   const action = suggest?.kind === 'class' ? `${suggest.from ? `Change \`${suggest.from}\` to` : 'Add'} \`${suggest.to}\`${suggest.why ? `: ${suggest.why}` : ''}.` : suggest?.text ?? '';
   return {
-    key: f.key ?? f.rule, rule: f.rule, family: 'craft', glyph: 'craft', ledger: 'new', soft: f.tier === TIER.advisory,
+    key: f.key ?? f.rule, rule: f.rule, family: 'craft', pack: packOf(f.rule), glyph: 'craft', ledger: 'new', soft: f.tier === TIER.advisory,
     ...(f.tier !== undefined ? { tier: f.tier } : {}),
     text: f.text, props: f.props ?? [], value: f.value, n: f.n,
     title: f.title, because: f.because, action, what: f.what, laws: lawsOf(f.rule),
@@ -430,7 +431,7 @@ export class Craft {
   // told when a late fact (an icon's ink) lands: judge the page again
   onFacts = null;
   // again: asked when elements left unjudged because they were moving have come to rest (the reader reports again)
-  constructor({ rules = RULES, theme, again } = {}) {
+  constructor({ rules = PACK_RULES, theme, again } = {}) {
     this.#again = again ?? null;
     INK.crafts.add(this);
     LOAD.crafts.add(this);
@@ -485,9 +486,11 @@ export class Craft {
       // an element mid-animation (an entrance, a stroke drawing in) is judged at rest, not mid-flight: its craft waits
       // for this pass, and the page is judged again once what moves has stopped
       const anims = document.getAnimations().filter((a) => a.playState === 'running' && a.effect?.target);
-      const moving = (el) => anims.some((a) => el === a.effect.target || el.contains(a.effect.target));
-      // a loop (a spinner, a marquee) never comes to rest: what it moves is never judged, and nothing waits on it
+      // a loop (a spinner, a marquee) never comes to rest: what it moves is never judged, and nothing waits on it. What
+      // holds a loop is still: a page with one spinner on it is judged like any other, the spinner aside.
       const ending = anims.filter((a) => a.effect.getComputedTiming?.().iterations !== Infinity);
+      const loops = anims.filter((a) => !ending.includes(a)).map((a) => a.effect.target);
+      const moving = (el) => ending.some((a) => el === a.effect.target || el.contains(a.effect.target)) || loops.some((t) => t === el || t.contains(el));
       if (ending.length && this.#again && !this.#waiting) {
         this.#waiting = true;
         Promise.allSettled(ending.map((a) => a.finished)).then(() => { this.#waiting = false; this.#again?.(); });
@@ -616,7 +619,7 @@ export class Craft {
     let hit = this.#cache.get(el), fresh = false;
     if (!hit || hit.sig !== sig) {
       fresh = true;
-      hit = { sig, marks: rules.filter((r) => !pageWide(r)).flatMap(judge) };
+      hit = { sig, marks: rulesFor(rules, el).filter((r) => !pageWide(r)).flatMap(judge) };
       this.#cache.set(el, hit);
     }
     const pd = P && performance.now();

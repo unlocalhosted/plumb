@@ -1,0 +1,269 @@
+<title>Plumber Speed Log</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Layout: one reading column; each fix is a numbered step (the order is the real order of the work), with its before/after drawn as bars to one scale. Plumber's own paper, ink and verdict colours. */
+:root {
+  --paper: #fdfcf8; --paper-2: #f4f1ea; --ink: #1d1b17; --ink-2: #6b665c; --rule: #e4dfd3;
+  --sky: #2a7fd0; --before: #bf3a1e; --before-soft: #ffd3cd; --after: #1a9460; --after-soft: #c9f2dd;
+  --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --paper: #1c1c1e; --paper-2: #26262a; --ink: #f4f3ef; --ink-2: #a8a6a0; --rule: #3a3a3f;
+  --sky: #7cc4fa; --before: #ff7a6b; --before-soft: #5c2a24; --after: #7ee0b0; --after-soft: #1d4a35; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --paper: #1c1c1e; --paper-2: #26262a; --ink: #f4f3ef; --ink-2: #a8a6a0; --rule: #3a3a3f;
+  --sky: #7cc4fa; --before: #ff7a6b; --before-soft: #5c2a24; --after: #7ee0b0; --after-soft: #1d4a35; color-scheme: dark }
+
+body { background: var(--paper); color: var(--ink); font: 16px/1.6 var(--sans); }
+.page { max-width: 760px; margin: 0 auto; padding-block: 48px 80px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: flex; flex-direction: column; gap: 56px; }
+h1, h2, h3 { text-wrap: balance; line-height: 1.2; margin: 0; }
+h1 { font-size: clamp(30px, 5vw, 42px); letter-spacing: -0.02em; }
+h2 { font-size: 24px; letter-spacing: -0.01em; }
+h3 { font-size: 19px; }
+p { margin: 0; max-width: 65ch; }
+.lede { font-size: 18px; color: var(--ink-2); }
+.eyebrow { font: 600 12px/1 var(--sans); letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-2); }
+code { font: 0.88em var(--mono); background: var(--paper-2); padding: 1px 5px; border-radius: 4px; }
+section { display: flex; flex-direction: column; gap: 16px; }
+.head { display: flex; flex-direction: column; gap: 14px; }
+
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
+.tile { background: var(--paper-2); border-radius: 10px; padding: 16px; display: flex; flex-direction: column; gap: 6px; }
+.tile .what { font-size: 13px; color: var(--ink-2); }
+.tile .nums { font: 600 22px/1.2 var(--sans); font-variant-numeric: tabular-nums; }
+.tile .nums s { color: var(--before); text-decoration-thickness: 2px; font-weight: 500; }
+.tile .nums b { color: var(--after); }
+
+.apps { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+.app { border: 1px solid var(--rule); border-radius: 10px; padding: 14px 16px; display: flex; flex-direction: column; gap: 4px; }
+.app strong { font-size: 15px; }
+.app span { font-size: 14px; color: var(--ink-2); }
+
+.step { border-top: 1px solid var(--rule); padding-top: 28px; display: flex; flex-direction: column; gap: 14px; }
+.step .n { font: 600 13px/1 var(--mono); color: var(--sky); }
+.facts { display: grid; grid-template-columns: 7.5em 1fr; gap: 8px 16px; margin: 0; }
+.facts dt { font: 600 12px/1.6 var(--sans); letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-2); padding-top: 2px; }
+.facts dd { margin: 0; min-width: 0; }
+@media (max-width: 520px) { .facts { grid-template-columns: 1fr; gap: 2px; } .facts dd { margin-bottom: 10px; } }
+
+.bars { display: flex; flex-direction: column; gap: 10px; background: var(--paper-2); border-radius: 10px; padding: 14px 16px; }
+.bars .title { font-size: 13px; color: var(--ink-2); }
+.bar { display: grid; grid-template-columns: 5.5em 1fr; align-items: center; gap: 10px; font-size: 13px; }
+.bar .label { color: var(--ink-2); }
+.track { position: relative; height: 22px; min-width: 0; }
+.fill { height: 100%; border-radius: 4px; min-width: 3px; }
+.fill.before { background: var(--before-soft); box-shadow: inset 0 0 0 1px var(--before); }
+.fill.after { background: var(--after-soft); box-shadow: inset 0 0 0 1px var(--after); }
+.val { position: absolute; top: 0; height: 100%; display: flex; align-items: center; padding-left: 8px; font: 600 13px var(--sans); font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+.table-wrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; font-variant-numeric: tabular-nums; }
+th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--rule); white-space: nowrap; }
+th { font: 600 12px var(--sans); letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink-2); }
+td.good { color: var(--after); font-weight: 600; }
+
+ul.plain { margin: 0; padding-left: 1.2em; display: flex; flex-direction: column; gap: 8px; max-width: 65ch; }
+.rules { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+.rule { border-left: 3px solid var(--sky); padding: 2px 0 2px 12px; display: flex; flex-direction: column; gap: 2px; }
+.rule strong { font-size: 15px; }
+.rule span { font-size: 14px; color: var(--ink-2); }
+.note { font-size: 14px; color: var(--ink-2); }
+a { color: var(--sky); }
+</style>
+
+<main class="page">
+  <header class="head">
+    <span class="eyebrow">React Plumber · engine and server · 13 November 2026</span>
+    <h1>Plumber was making the app it inspects slow. One day of measuring fixed most of it.</h1>
+    <p class="lede">Plumber reads a running React app and judges its design against the project's own tokens. On a big page it took up to 52 seconds to read, sent 811 MB to draw one list, and dropped scrolling to 7 frames a second while open. This is how each of those was found and fixed, in the order it happened, with the number behind every claim.</p>
+    <div class="tiles" aria-label="Headline results">
+      <div class="tile"><span class="what">Read of the big page, warm</span><span class="nums"><s>30–52 s</s> <b>6–9 s</b></span></div>
+      <div class="tile"><span class="what">Sent to draw one page</span><span class="nums"><s>811 MB</s> <b>12 MB</b></span></div>
+      <div class="tile"><span class="what">Scrolling with plumber open</span><span class="nums"><s>7 fps</s> <b>53 fps</b></span></div>
+      <div class="tile"><span class="what">Moving the pointer, plumber open</span><span class="nums"><s>15 fps</s> <b>59 fps</b></span></div>
+    </div>
+  </header>
+
+  <section>
+    <h2>The two apps every number comes from</h2>
+    <div class="apps">
+      <div class="app"><strong>algorecall</strong><span>A large app with a 15,907-element list page and 2,411 source files. The worst case.</span></div>
+      <div class="app"><strong>crafting-ui</strong><span>A small design-vocabulary app. The everyday case. Alone it scrolls at 57–60 frames a second.</span></div>
+    </div>
+    <p class="note">Measured with headless Chromium driven by scripts, with real wheel and pointer input, usually one or two runs per state. Heavy runs on algorecall went to a separate server, because the laptop was swapping.</p>
+  </section>
+
+  <section>
+    <h2>How the work was done</h2>
+    <p>One rule held all day: time it before touching it. The first design guessed that some rules were expensive. The timer said no rule was heavy, and that the real cost was the same work being done again and again. Every step below starts with a measurement that surprised us.</p>
+  </section>
+
+  <article class="step">
+    <span class="n">01</span>
+    <h3>The page was judged six times per read</h3>
+    <dl class="facts">
+      <dt>Found by</dt><dd>A counter on every time the engine threw its findings away, with who asked.</dd>
+      <dt>Cause</dt><dd>Any fact that arrived late, such as the server's answer about which component an element is, was treated as "everything may have changed". All 82 rules then ran on all 15,907 elements again, once per batch of answers.</dd>
+      <dt>Fix</dt><dd>The engine notes which element asked for which late fact and re-judges only those. Page-wide rules keep their result while the page is unchanged.</dd>
+    </dl>
+    <div class="bars" role="img" aria-label="Engine time on algorecall: 3.7 to 5.8 seconds before, 2.1 to 3.1 after">
+      <span class="title">Engine time per read, algorecall (upper end of each range). Findings: 27 before, 27 after.</span>
+      <div class="bar"><span class="label">Before</span><div class="track"><div class="fill before" style="width:100%"></div><span class="val" style="left:100%;transform:translateX(-100%);padding-right:8px">5.8 s</span></div></div>
+      <div class="bar"><span class="label">After</span><div class="track"><div class="fill after" style="width:53%"></div><span class="val" style="left:53%">3.1 s</span></div></div>
+    </div>
+  </article>
+
+  <article class="step">
+    <span class="n">02</span>
+    <h3>811 MB sent to draw one page</h3>
+    <dl class="facts">
+      <dt>Found by</dt><dd>One server answer taken apart field by field.</dd>
+      <dt>Cause</dt><dd>98% of the bytes were each finding's list of every edit it could lead to anywhere in the project, 434 on average. The overlay drew none of them. A second path, the trace of where an element's classes are written, carried the same baggage: 42 MB for 31 elements, one header link alone 22.5 MB.</dd>
+      <dt>Fix</dt><dd>Keep hot and cold apart. A page is sent what it draws; the edits are fetched on their own when a fix is applied, which the overlay already did.</dd>
+    </dl>
+    <div class="bars" role="img" aria-label="Bytes sent for one page: 811 MB, then 52 MB, then 12 MB">
+      <span class="title">Everything sent for algorecall's page. Same craft findings at each step.</span>
+      <div class="bar"><span class="label">Before</span><div class="track"><div class="fill before" style="width:100%"></div><span class="val" style="left:100%;transform:translateX(-100%);padding-right:8px">811 MB</span></div></div>
+      <div class="bar"><span class="label">Edits cut</span><div class="track"><div class="fill after" style="width:6.4%"></div><span class="val" style="left:6.4%">52 MB</span></div></div>
+      <div class="bar"><span class="label">Trace cut</span><div class="track"><div class="fill after" style="width:1.5%"></div><span class="val" style="left:1.5%">12 MB</span></div></div>
+    </div>
+    <p class="note">The clock did not move with the second cut (16.7 and 17.0 s). Bytes were no longer where the time went, which pointed at the next step.</p>
+  </article>
+
+  <article class="step">
+    <span class="n">03</span>
+    <h3>889 questions asked one at a time</h3>
+    <dl class="facts">
+      <dt>Found by</dt><dd>The request timeline of one read: a wall of 889 separate requests, each waiting about 18 s.</dd>
+      <dt>Cause</dt><dd>One at a time at every level. The overlay asked per element. The server indexed the element's file again for each question. The page was reported and redrawn after every trickle of answers, 20 times.</dd>
+      <dt>Fix</dt><dd>Where there is one, there are many. Questions ride the batch other readings already use, the server keeps a file's index while its text is unchanged, and the engine is told once when nothing is still being asked.</dd>
+    </dl>
+    <div class="table-wrap"><table>
+      <thead><tr><th>algorecall, warm server</th><th>Before</th><th>After</th></tr></thead>
+      <tbody>
+        <tr><td>Requests</td><td>889</td><td class="good">26 batches</td></tr>
+        <tr><td>Full redraws</td><td>18</td><td class="good">3</td></tr>
+        <tr><td>Main thread blocked</td><td>26 s</td><td class="good">4.7–7.4 s</td></tr>
+        <tr><td>Read time</td><td>30–52 s</td><td class="good">14.8–17.3 s</td></tr>
+      </tbody>
+    </table></div>
+  </article>
+
+  <article class="step">
+    <span class="n">04</span>
+    <h3>Open, plumber dropped scrolling to 7 frames a second</h3>
+    <dl class="facts">
+      <dt>Found by</dt><dd>The same page measured four ways (plumber blocked, loaded, reading, open), then a CPU profile of four seconds of scrolling. Over 90% of the time was one browser call, <code>elementsFromPoint</code>, asking "what covers this element?" thousands of times a frame.</dd>
+      <dt>Cause</dt><dd>Every frame re-measured everything, whatever caused the frame. A pointer move changes what is lit, not where things are, and still re-measured the page.</dd>
+      <dt>Fix</dt><dd>Ask less. Measure only when the page may have moved; mid-scroll, measure only what is lit; confirm what is covered in 6 ms slices after drawing. A cheaper probe that looked 17 times faster was rejected once its answers were checked: it was hitting plumber's own layer.</dd>
+    </dl>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Frames a second, plumber open</th><th>Alone</th><th>Before</th><th>After</th></tr></thead>
+      <tbody>
+        <tr><td>crafting-ui, scrolling</td><td>57–60</td><td>7</td><td class="good">53</td></tr>
+        <tr><td>crafting-ui, pointer</td><td>60</td><td>15</td><td class="good">59</td></tr>
+        <tr><td>algorecall, scrolling</td><td>12</td><td>3</td><td class="good">40</td></tr>
+        <tr><td>algorecall, longest frame</td><td></td><td>0.98 s</td><td class="good">0.08 s</td></tr>
+      </tbody>
+    </table></div>
+    <p class="note">crafting-ui's 53 is the latest run, on the merged build. algorecall's figures are from the day of the fix and were not re-measured.</p>
+  </article>
+
+  <article class="step">
+    <span class="n">05</span>
+    <h3>The page froze while plumber read it</h3>
+    <dl class="facts">
+      <dt>Found by</dt><dd>A profile of one read with its long tasks listed. Each freeze was one whole-page judgement in a single block.</dd>
+      <dt>Cause</dt><dd>The engine's smallest unit of work was the whole page.</dd>
+      <dt>Fix</dt><dd>The smallest unit is now 8 ms. Kept findings answer at once; the rest is judged a slice at a time between frames.</dd>
+    </dl>
+    <div class="table-wrap"><table>
+      <thead><tr><th>While reading</th><th>Before</th><th>After</th></tr></thead>
+      <tbody>
+        <tr><td>crafting-ui, longest block</td><td>0.37 s</td><td class="good">0.09 s</td></tr>
+        <tr><td>crafting-ui, pointer</td><td>3 fps</td><td class="good">59 fps</td></tr>
+        <tr><td>algorecall, longest scrolling frame</td><td>1.77 s</td><td class="good">0.33 s</td></tr>
+      </tbody>
+    </table></div>
+  </article>
+
+  <article class="step">
+    <span class="n">06</span>
+    <h3>The server checked 22,808 files four times a second</h3>
+    <dl class="facts">
+      <dt>Found by</dt><dd>A CPU profile of plumber's own server on algorecall: 27 s in one file scan, and 39 full scans in 12 s with nobody connected.</dd>
+      <dt>Cause</dt><dd>A safety-net timer under the file watcher re-checks every known file in case an event is missed. It ran every 250 ms on every project. On this one a check costs about 0.2 s, so every answer queued behind a check.</dd>
+      <dt>Fix</dt><dd>The net stays, paced by what it costs: a twentieth of the thread with a native watcher, a quarter when polling is all there is. File hashes are kept while a file is unchanged.</dd>
+    </dl>
+    <div class="bars" role="img" aria-label="Warm read on algorecall: 17.3 seconds before, 8.7 seconds after through the overlay">
+      <span class="title">Warm read on algorecall through the overlay, once the app has settled (upper end of each range)</span>
+      <div class="bar"><span class="label">Before</span><div class="track"><div class="fill before" style="width:100%"></div><span class="val" style="left:100%;transform:translateX(-100%);padding-right:8px">17.3 s</span></div></div>
+      <div class="bar"><span class="label">After</span><div class="track"><div class="fill after" style="width:50%"></div><span class="val" style="left:50%">5.7–8.7 s</span></div></div>
+    </div>
+  </article>
+
+  <article class="step">
+    <span class="n">07</span>
+    <h3>Every restart starts from nothing: building the warm start</h3>
+    <dl class="facts">
+      <dt>Found by</dt><dd>Profiling a server start, then running the one-off <code>plumber check</code> twice: 43 s, then 6.8 s. The command-line check keeps its result between runs. The server never did.</dd>
+      <dt>Plan</dt><dd>The server keeps a table of what it learned plus a receipt of every input. A start may answer from it only after checking it, and only once days of starts show the kept table always equals a fresh one.</dd>
+      <dt>Built</dt><dd>Keeping the table, checking it on every start, recording what every import resolved to, a line in <code>plumber doctor</code>, and six tests. Nothing is answered from the table yet.</dd>
+    </dl>
+    <div class="bars" role="img" aria-label="Kept table size on algorecall: 116 MB first, 20.9 MB after reshaping">
+      <span class="title">The kept table on algorecall</span>
+      <div class="bar"><span class="label">First</span><div class="track"><div class="fill before" style="width:100%"></div><span class="val" style="left:100%;transform:translateX(-100%);padding-right:8px">116 MB, 5.7 s to write</span></div></div>
+      <div class="bar"><span class="label">Reshaped</span><div class="track"><div class="fill after" style="width:21%"></div><span class="val" style="left:21%">24.7 MB, longest hold 0.10 s</span></div></div>
+    </div>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Start-up check</th><th>crafting-ui</th><th>algorecall</th></tr></thead>
+      <tbody>
+        <tr><td>Loads the kept table</td><td>under 0.1 s</td><td>0.14 s</td></tr>
+        <tr><td>Checks the receipt, with imports</td><td>0.05–0.07 s</td><td>0.47–0.49 s</td></tr>
+        <tr><td>Imports re-asked</td><td>4,638</td><td>60,989</td></tr>
+        <tr><td>Kept equals fresh</td><td class="good">every start</td><td class="good">every start</td></tr>
+      </tbody>
+    </table></div>
+    <p class="note">The check caught something on its first run: on algorecall the receipt was valid but the tables differed. All 2,411 files' readings were identical; the serialiser writes an array densely or sparsely depending on how the engine happens to hold it. The comparison now hashes what the table says, not its bytes.</p>
+  </article>
+
+  <section>
+    <h2>The rules this left behind</h2>
+    <p>Each one came from a measured number, and they now guide new engine work.</p>
+    <div class="rules">
+      <div class="rule"><strong>Measure first</strong><span>The guess about heavy rules was wrong in order. The timer was right.</span></div>
+      <div class="rule"><strong>Nothing one at a time</strong><span>889 requests, 20 redraws and one file index per question all became batches.</span></div>
+      <div class="rule"><strong>Hot and cold apart</strong><span>Send what is drawn; fetch the rest when someone acts. 811 MB became 12.</span></div>
+      <div class="rule"><strong>Once per distinct input</strong><span>Re-judge only what a late fact touches; keep a file's index while its text holds.</span></div>
+      <div class="rule"><strong>Tables, not trees</strong><span>Each path and text stored once, numbers in typed columns. 116 MB became 21.</span></div>
+      <div class="rule"><strong>Small slices</strong><span>No unit of work bigger than a few milliseconds on the app's main thread.</span></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Mistakes along the way</h2>
+    <ul class="plain">
+      <li>The browser tool silently dropped large answers, so a 46 MB answer first looked like 4.6 MB. Measuring inside the page found it.</li>
+      <li>I twice listed that 46 MB as "not looked into" and offered other work first, until the owner pointed it out.</li>
+      <li>Two freezes of 0.8 s and 2.5 s were first blamed on plumber; they were algorecall mounting itself.</li>
+      <li>The first kept table was 116 MB where I had predicted a few tens.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>What is still open</h2>
+    <ul class="plain">
+      <li><strong>A cold start on algorecall still takes about 41 s.</strong> The fast start answers from the kept table only after the check has matched through days of ordinary work. It has 12 starts so far.</li>
+      <li><strong>Scrolling with plumber open is 53 frames a second, not 60.</strong> About 20 frames in a scroll take double time; their cause is not profiled yet.</li>
+      <li><strong>The receipt is 15.5 MB on algorecall,</strong> mostly repeated paths. It needs the same table treatment before the fast start reads it.</li>
+      <li><strong>Judging still runs on the app's main thread.</strong> Moving it to a worker is part of the signed-off foundations for new scan modes.</li>
+    </ul>
+  </section>
+
+  <footer class="note">
+    Sources, in the plumber repository: <code>docs/journey.md</code> (one entry per step, written as the work happened), <code>docs/briefs/engine-scaling.md</code>, <code>docs/briefs/engine-foundations.md</code> and <code>docs/briefs/server-warm-start.md</code> (the measured tables).
+  </footer>
+</main>

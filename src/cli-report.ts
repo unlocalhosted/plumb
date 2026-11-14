@@ -1,4 +1,5 @@
 import { basename, isAbsolute, relative } from 'node:path';
+import { PACK_DATA } from '../overlay/src/pack-list.js';
 import picomatch from 'picomatch';
 import { count } from './messages.js';
 import { formatText, formatVerboseDetails, setupGapFamilies } from './report.js';
@@ -119,6 +120,11 @@ export function formatCheck(report: Report, filters: DetailFilters = {}, verbose
   if (brokenCount) fix.push([`✗ ${count(brokenCount, 'broken style')}`, 'browser drops them', 'plumber check --broken']);
   if (gapCount) fix.push([`! ${count(gapCount, 'setup gap')}`, 'tokens missing', 'plumber check --rule config']);
   if (overrides) fix.push([`· ${count(overrides, 'component override')}`, 'callers restyle them', 'plumber check --rule ownership']);
+  // a pack that reads source says what it found in one line (docs/briefs/rule-packs.md)
+  for (const pack of PACK_DATA) if (pack.runs === 'source') {
+    const found = findings.filter(finding => finding.family === pack.id).length;
+    if (found) fix.push([`! ${count(found, `${pack.title.toLowerCase()} finding`)}`, pack.summary ?? '', `plumber check --rule ${pack.id}`]);
+  }
   const off = findings.filter(offToken);
   if (off.length) {
     // Class/value counts use distinct authored sites, so text-xs isn't counted twice for size and leading.
