@@ -75,7 +75,7 @@ export function readNotes() {
     while (row.parentElement && !row.parentElement.contains(near.el)) row = row.parentElement;
     const group = row.parentElement;
     if (!group || group === document.body) continue;
-    const others = [...new Set(holders.filter((o) => group.contains(o.el)).map((o) => { let r = o.el; while (r.parentElement !== group) r = r.parentElement; return r; }))].filter((r) => r !== row);
+    const others = [...new Set(holders.filter((o) => o.el !== group && group.contains(o.el)).map((o) => { let r = o.el; while (r && r.parentElement !== group) r = r.parentElement; return r; }))].filter((r) => r && r !== row);
     const note = rows.get(row) ?? rows.set(row, { row, group, others, strays: [], guide: z.guide }).get(row);
     note.strays.push(z);
   }
