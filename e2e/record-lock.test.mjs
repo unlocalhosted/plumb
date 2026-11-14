@@ -3,9 +3,9 @@
 // the lock, writes `in`, works, writes `out`; the log must read in, out, in, out.
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
-import { mkdtemp, readFile, rm, utimes, writeFile } from 'node:fs/promises';
+import { mkdtemp, readdir, readFile, rm, utimes, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 
@@ -80,4 +80,37 @@ test('a lock left by a process that died is taken over by one waiter at a time',
   const { lines, overlaps } = await together(files.log);
   assert.deepEqual(overlaps, [], lines.join(', '));
   assert.equal(lines.length, 12);
+});
+
+// The order a model checker found in the first design (specs/lock): the holder dies, then the waiter taking its lock
+// over dies under its guard. Later waiters must each still take over that one lock, never a fresh one, and never
+// remove a guard on the strength of an earlier look. The two files the dead left are set up by hand; ten processes
+// then arrive together, which is as close as real processes get to the model's interleaving.
+test('a lock and the guards of takers that died under them: waiters still get in, one at a time, and leave nothing behind', async t => {
+  const files = await scratch(t);
+  const old = new Date(Date.now() - 60_000), lock = `${files.record}.lock`;
+  await writeFile(lock, '1 dead\n');
+  await utimes(lock, old, old);
+  for (const level of [1, 2]) { await writeFile(`${lock}.takeover.1_dead.${level}`, ''); await utimes(`${lock}.takeover.1_dead.${level}`, old, old); }
+  const ids = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j'];
+  await Promise.all(ids.map(id => run(files, id, { work: 40, stale: 300 })));
+  const { lines, overlaps } = await together(files.log);
+  assert.deepEqual(overlaps, [], lines.join(', '));
+  assert.equal(lines.length, ids.length * 2);
+  assert.deepEqual((await readdir(dirname(files.record))).filter(name => name.includes('.lock')), [], 'no lock or guard is left');
+});
+
+test('a taker at work is waited for: its fresh guard is not passed, and the stale lock goes once', async t => {
+  const files = await scratch(t);
+  const old = new Date(Date.now() - 60_000), lock = `${files.record}.lock`;
+  await writeFile(lock, '1 dead\n');
+  await utimes(lock, old, old);
+  // a live taker's guard (fresh), which then goes: the waiter must not have removed the lock while it stood
+  await writeFile(`${lock}.takeover.1_dead.1`, '');
+  const waiter = run(files, 'a', { work: 20, stale: 2000 });
+  await new Promise(resolve => setTimeout(resolve, 300));
+  assert.equal(await readFile(lock, 'utf8'), '1 dead\n', 'the lock is left alone while another taker holds its guard');
+  await rm(`${lock}.takeover.1_dead.1`);
+  await waiter;
+  assert.deepEqual((await together(files.log)).lines, ['in a', 'out a']);
 });

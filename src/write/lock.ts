@@ -6,8 +6,12 @@
  *
  * - **A working holder is never stale.** The awaiting form touches its lock every quarter of the stale time, so a lock
  *   whose mtime is older than 10 s belongs to a process that died (or one whose event loop stopped for that long).
- * - **One waiter takes a stale lock over.** Removing it happens under `<file>.lock.takeover` (O_EXCL too), where the
- *   lock is looked at again: a waiter that saw the old lock can't remove the fresh one another waiter just made.
+ * - **One waiter takes a stale lock over, and only that lock.** It first creates a guard named for the lock it saw,
+ *   `<file>.lock.takeover.<token>.<level>` (O_EXCL too). Under the guard it removes the lock only if the file still
+ *   holds that token and is still stale. A guard left by a taker that died is never removed by a waiter: the waiter
+ *   goes up a level instead. So a file is never removed on the strength of a look at an earlier file of the same name
+ *   (the model in specs/lock found that hole in the first design: two deaths and two waiters let two writers in).
+ *   The guards of a lock are removed once that lock is gone.
  * - **A holder releases only its own lock.** It removes the file only while the file still holds its token, so a holder
  *   that was taken over (the sync form can't touch its lock while it works) leaves the new holder's lock alone.
  *
@@ -16,9 +20,9 @@
  * already landed.
  */
 import { randomUUID } from 'node:crypto';
-import { mkdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
-import { mkdir, readFile, rm, stat, utimes, writeFile } from 'node:fs/promises';
-import { dirname } from 'node:path';
+import { mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { mkdir, readdir, readFile, rm, stat, utimes, writeFile } from 'node:fs/promises';
+import { basename, dirname, join } from 'node:path';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { UsageError } from '../errors.js';
 
@@ -31,33 +35,63 @@ const token = () => `${process.pid} ${randomUUID()}\n`;
 const old = (mtimeMs: number, staleMs: number) => Date.now() - mtimeMs > staleMs;
 const pause = (ms: number) => { Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms); };
 
+// A guard is for one lock: its name carries that lock's token, so a guard for a lock that is gone guards nothing.
+const LEVELS = 8; // takers that may die inside the few lines under a guard before a lock is left alone until its stale time passes again
+const keyOf = (held: string) => held.trim().replace(/[^A-Za-z0-9-]/g, '_').slice(0, 80) || 'empty';
+const guardOf = (lock: string, key: string, level: number) => `${lock}.takeover.${key}.${level}`;
+const guardsOf = (lock: string, key: string) => `${basename(lock)}.takeover.${key}.`;
+
 /** Remove the lock if it is stale. True when the caller should try to take the lock again at once. */
 function takeOverSync(lock: string, staleMs: number): boolean {
-  try { if (!old(statSync(lock).mtimeMs, staleMs)) return false; } catch { return true; }
-  const guard = `${lock}.takeover`;
-  try { writeFileSync(guard, '', { flag: 'wx' }); }
-  catch (error) {
-    if (!exists(error)) throw error;
-    // a guard left by a process that died inside the few lines below
-    try { if (old(statSync(guard).mtimeMs, staleMs)) rmSync(guard, { force: true }); } catch { /* gone */ }
-    return false;
+  let key: string;
+  try { if (!old(statSync(lock).mtimeMs, staleMs)) return false; key = keyOf(readFileSync(lock, 'utf8')); } catch { return true; }
+  for (let level = 1; level <= LEVELS; level++) {
+    const guard = guardOf(lock, key, level);
+    try { writeFileSync(guard, '', { flag: 'wx' }); }
+    catch (error) {
+      if (!exists(error)) throw error;
+      // a guard left by a taker that died under it is passed, never removed; a fresh one belongs to a taker at work
+      try { if (old(statSync(guard).mtimeMs, staleMs)) continue; } catch { /* gone: its taker finished */ }
+      return false;
+    }
+    let gone = false;
+    try {
+      // the lock this guard is for, and still stale: nothing else may be removed here
+      if (keyOf(readFileSync(lock, 'utf8')) === key) { if (old(statSync(lock).mtimeMs, staleMs)) { rmSync(lock, { force: true }); gone = true; } }
+      else gone = true;
+    } catch { gone = true; }
+    finally {
+      // once that lock is gone its guards guard nothing (a taker still under one finds another lock and removes nothing)
+      if (gone) { try { for (const name of readdirSync(dirname(lock))) if (name.startsWith(guardsOf(lock, key))) rmSync(join(dirname(lock), name), { force: true }); } catch { /* the folder went */ } }
+      else rmSync(guard, { force: true });
+    }
+    return true;
   }
-  try { if (old(statSync(lock).mtimeMs, staleMs)) rmSync(lock, { force: true }); } catch { /* gone */ }
-  finally { rmSync(guard, { force: true }); }
-  return true;
+  return false;
 }
 async function takeOver(lock: string, staleMs: number): Promise<boolean> {
-  try { if (!old((await stat(lock)).mtimeMs, staleMs)) return false; } catch { return true; }
-  const guard = `${lock}.takeover`;
-  try { await writeFile(guard, '', { flag: 'wx' }); }
-  catch (error) {
-    if (!exists(error)) throw error;
-    try { if (old((await stat(guard)).mtimeMs, staleMs)) await rm(guard, { force: true }); } catch { /* gone */ }
-    return false;
+  let key: string;
+  try { if (!old((await stat(lock)).mtimeMs, staleMs)) return false; key = keyOf(await readFile(lock, 'utf8')); } catch { return true; }
+  for (let level = 1; level <= LEVELS; level++) {
+    const guard = guardOf(lock, key, level);
+    try { await writeFile(guard, '', { flag: 'wx' }); }
+    catch (error) {
+      if (!exists(error)) throw error;
+      try { if (old((await stat(guard)).mtimeMs, staleMs)) continue; } catch { /* gone: its taker finished */ }
+      return false;
+    }
+    let gone = false;
+    try {
+      if (keyOf(await readFile(lock, 'utf8')) === key) { if (old((await stat(lock)).mtimeMs, staleMs)) { await rm(lock, { force: true }); gone = true; } }
+      else gone = true;
+    } catch { gone = true; }
+    finally {
+      if (gone) { try { for (const name of await readdir(dirname(lock))) if (name.startsWith(guardsOf(lock, key))) await rm(join(dirname(lock), name), { force: true }); } catch { /* the folder went */ } }
+      else await rm(guard, { force: true });
+    }
+    return true;
   }
-  try { if (old((await stat(lock)).mtimeMs, staleMs)) await rm(lock, { force: true }); } catch { /* gone */ }
-  finally { await rm(guard, { force: true }); }
-  return true;
+  return false;
 }
 
 /** Run `work` holding the lock of `path`. */
