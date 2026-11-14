@@ -2578,6 +2578,18 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   space-1, gap-sm…", "a whole style, not its size alone: 16px"). bare-page and project-page-data updated for the new
   page and passing. A shared browser helper (e2e/helpers/browser.mjs) instead of a launch in the file. Corrected on the
   way: the history-style "could not load" claim (see above).
+- **Then the existing suite (same day).** The command-line tier on vm-agent (3 cores, beside another session's run) had 9
+  files failing; the same files at the commit before the token work had 3 failing (the 80/140-column report and two
+  page-drawn tests), so 7 were this work's. All were assertions about the product, none a time-out. The causes: the
+  report schema didn't know a token's `reading`; one stray `--page` variable made a bare project read as "a system,
+  half in use"; and guessed tokens swallowed variables that are deliberately not tokens: beside a theme's shadows an
+  extra `:root --well: 0 2px 4px …` is a raw value Plumber points at the theme (e2e/attribution), and shadcn's and the
+  motion fixtures' backing variables likewise. The rule that replaced the guesswork: Plumber guesses tokens only for a
+  kind no theme block, Tailwind-named variable or config declares, and only when two or more variables read as that
+  kind; the reading still decides what a config's whole-file source takes, and a config kind listed with no source
+  keeps to Tailwind's names. After it: those files pass (125 tests), crafting-ui is back to its 205 tokens (the 17
+  extra guesses earlier were wrong to add; `--shadow-ink` reading as the colour it holds is the one change left), the
+  homepage app is as before, and the site loses one lone `--pl-z`.
 - **Open on the lesson:** the causes list ("What I'd stop first") is off the page until it has a place in the
   lesson; Undo after Set it up covers the tokens, not the config.
 - **Open on the four steps:** settled by numbering (above).
