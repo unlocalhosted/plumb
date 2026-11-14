@@ -3,7 +3,8 @@ import { locate } from './src/locate.js';
 import { request } from './src/api.js';
 import { mountOverlay } from './src/widget.js';
 import { craftRun } from './src/craft-run.js';
-import { readGuides, showGuides, hideGuides, toggleGuides } from './src/guides.js';
+import { readGuides } from './src/guides.js';
+import { readNotes, showRoast, hideRoast, toggleRoast } from './src/roast.js';
 
 window.__plumb = {
   locate,
@@ -15,8 +16,10 @@ window.__plumb = {
   overlay: mountOverlay(),
   // The craft engine over the whole page, as plain JSON (plumber craft).
   craft: options => craftRun(window.__plumb.overlay, options),
-  // The lines things sit on, across the whole screen (Alt+G): read and drawn, not judged yet.
-  guides: { read: readGuides, show: showGuides, hide: hideGuides, toggle: toggleGuides },
+  // The lines things sit on, across the whole screen, and what is off them.
+  guides: { read: readGuides },
+  // A principal designer's notes on the screen, one at a time, each with its fix (Alt+G).
+  roast: { read: readNotes, show: showRoast, hide: hideRoast, toggle: toggleRoast },
   // Resolves once Plumb has finished its first read of the project (the dev server never waits for it).
   async ready(interval = 100) {
     for (;;) {

@@ -1156,7 +1156,20 @@
   ("Projects" 2px, its icon 1px, "Views" 5px); the site's Home, Primitives, Interfaces and Motion pages 0 each; the
   messy chat page 0, so whatever is wrong there is not this kind of fault. Seen once: two numbers in an animated
   demo flagged mid-move, gone on the next read; guides read a moving page as it is at that instant.
-- **Media hooks:** docs/qa/guides-first-look-issues.jpg (guides on the messy page), docs/qa/guides-held-issues.jpg
+- **Layer 4, from lines to a roast** (owner: "make the drawing calmer, no lines crossing text and i dont see like
+  insights by seeing the lines they should guide me", then "i want to emulate the experience of like sitting beside
+  a principle ux guy who is roasting my website … i dont want to draw the lines without actionable outcome and
+  judgement"). The system behind the complaint: plumber drew every line it measured at one weight, a measurement
+  dump; a critic draws a line only to prove the point in hand. Now Alt+G opens a roast: one verdict for the screen
+  ("Close, but your sidebar doesn't line up: 2 things are a few pixels off."), then one note at a time, worst first,
+  each with what is wrong ("Views sits 5px right of the other labels."), why, in the classes that differ from its
+  neighbours' ("Its gap is gap-[13px]; the others use gap-2."), the file and line, and a button that says what it
+  writes ("Use gap-2"). Only that note's line is drawn, 3px out in the gutter beside the edge it marks so it never
+  touches a letter, with a coral ring on the row. Proof: on the messy tracker the button wrote exactly
+  gap-[13px] → gap-2 at SloppyIssuesPage.tsx:47, the page hot-updated, the note left and the Projects note
+  ("Its icon size is size-[18px]; the others use size-5.") came up; the file was restored with git afterwards. On the
+  site's Primitives page: "Everything here hangs true. Nothing to roast." Only alignment notes exist so far.
+- **Media hooks:** docs/qa/roast-first-note.jpg (the roast's first note on the messy page), docs/qa/guides-first-look-issues.jpg (guides on the messy page), docs/qa/guides-held-issues.jpg
   (the three strays held by their neighbours), docs/qa/guides-plumb-lines-issues.jpg
   (the plumb lines and the one stray); a screen recording of the drop-and-swing arrival would show the toy best; the three source screenshots in
   docs/references-media/; a clean page beside a messy one with the guide counts would make the point in one frame.
