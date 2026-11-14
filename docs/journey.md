@@ -1241,10 +1241,33 @@
   docs/qa/break-it-bigger-text.jpg (the doubled headline beside the labels that stay 11px). A recording of the
   squeeze would show it best.
 
+## Break it: extreme content (2026-11-15)
+- **The itch:** the owner picked "extreme content" among the first toys: what a slot that can change might really
+  hold, not just a longer version of today's words.
+- **What we chose and why:** only the places that can change (the same sort as Longer words: passed into reusable
+  parts, lists fed from elsewhere, data) get five kinds of content in turn: no words, one letter, 60 letters, one
+  unbroken word (a link or an ID) and, where there is a number, a nine-digit one. Each break says which content did
+  it, and stepping to it puts that content back on the page so you see it. A button or badge that shrinks to a
+  sliver when it is empty counts as a break. The whole page is measured, not only what is on screen, because a
+  person scrolls. A page that scrolls sideways now names what reaches past the edge, for every toy.
+- **Dead ends:** the first run found nothing, though the hero's tabs were visibly pushed out of their frame: the cut
+  check only looked four levels up for a box that clips, and the frame was further up. Then "cap height runs into
+  x-height" appeared under every kind of content, even no words: the two labels already sat a pixel or two apart and
+  any relayout tipped them over. Words that already touch before a toy are no longer its news. Then a collision in
+  plain sight was missed because it was below the fold.
+- **The proof:** crafting-ui's home page, 30 places that can change: 10 breaks, the same on two runs in a row. At 60
+  letters the hero's "Pull" tab runs out of its box and the page scrolls sideways (Plumber.tsx:138); as one unbroken
+  word the contents' counts ("8 ways", "7 live of 112") push the page 95px sideways and run into the next column
+  (Contents.tsx:149). No words and one letter break nothing here. The probe takes under a second; sorting where words
+  come from takes 5 to 13 seconds the first time.
+- **Not yet:** emoji and right-to-left words; one cause seen under two kinds of content is two notes; no tests.
+- **Media hooks:** docs/qa/break-it-extreme-content.jpg (the counts as unbroken words, "8 ways" ringed past the edge).
+
 ## Open gaps
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
 
 ## Shipped · 2026-W46
+- Break it's Extreme content toy puts no words, one letter, 60 letters, an unbroken link-like word and a nine-digit number into every place on your page that can change, and says which content broke what ([entry](#break-it-extreme-content-2026-11-15)). On its own branch.
 - Break it has two more toys: Narrower squeezes a copy of your page down to 320px and says the width where each thing first breaks; Bigger text turns the reader's text size up to 200% and names the classes that keep text from growing, with the rem class to use instead ([entry](#break-it-narrower-and-bigger-text-2026-11-15)). On its own branch.
 - Press Alt+S and plumber breaks your screen on purpose: the words that can change (items from data, labels passed into reusable parts, counts) grow to twice their length, the way a translation would, and plumber marks only what that broke, on your live page. Copy typed once into a one-off component is left alone ([entry](#break-it-stretches-only-words-that-can-change-2026-11-15)). On its own branch.
 - The ledger's lock can no longer let two writers in when processes die mid-way: a model checker found the hole, the fix was proved in the model, then written, tested between real processes, and merged into main ([entry](#the-lock-put-to-a-model-checker-2026-11-14)).

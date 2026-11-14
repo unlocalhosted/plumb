@@ -34,6 +34,10 @@
  *             sideways the whole page now scrolls sideways
  *  draw     a coral ring round each break; the one in hand is filled with a coral hatch. One note at a time in the bar
  *  off      every word goes back exactly as it was, unless the app has changed it since (then the app's is kept)
+ *  extreme  the places that can change (the same sort as Longer words) get, in turn: no words, one letter, 60 letters,
+ *           one unbroken word (a link, an ID) and, where there is a number, a nine-digit one. Each break says which
+ *           content did it; stepping to it puts that content back on the page. A drawn box (a button, a badge) that
+ *           shrinks to a sliver when it is empty is a break of its own
  *  toys     one at a time; the bar opens with none on. Picking one turns the last one off
  *  keys     Alt+S opens and closes. ← → between breaks, Esc closes
  * Nothing here writes to source.
@@ -228,7 +232,8 @@ function wordsRect(el) {
 /** Every text-holding element in view, and what is wrong with it now: Map(el → { kind, box, ... }). */
 function measure(win = window, { all = false } = {}) {
   const doc = win.document, innerWidth = win.innerWidth, getComputedStyle = cssOf;
-  const found = new Map(), boxes = [];
+  const found = new Map(), boxes = [], touching = new Set();
+  found.touching = touching;
   const els = new Set();
   const walk = doc.createTreeWalker(doc.body, NodeFilter.SHOW_TEXT);
   for (let n = walk.nextNode(); n; n = walk.nextNode()) if (eligible(n)) els.add(n.parentElement);
@@ -243,7 +248,7 @@ function measure(win = window, { all = false } = {}) {
     // cut: this element or a close ancestor hides what overflows, and the words need more room than it has
     // (and its own words are what goes past the box's edge, so a wide section clipping something else says nothing)
     let cut = null;
-    for (let a = el, i = 0; a && a !== doc.body && i < 4 && !cut; a = a.parentElement, i++) {
+    for (let a = el; a && a !== doc.body && !cut; a = a.parentElement) {   // any box up the chain that clips: a row pushed out of its frame is cut by the frame
       const cs = getComputedStyle(a), r = a.getBoundingClientRect();
       const fixed = (o) => o !== 'auto' && o !== 'scroll';
       if (hides(cs, 'x') && fixed(cs.overflowX) && a.scrollWidth > a.clientWidth + 1 && (w.right > r.right + 1 || w.left < r.left - 1 || cs.textOverflow === 'ellipsis' && a === el)) cut = { box: a, need: a.scrollWidth, have: a.clientWidth, axis: 'x' };
@@ -271,11 +276,21 @@ function measure(win = window, { all = false } = {}) {
     for (let j = i + 1; j < boxes.length && boxes[j].w.top < A.w.bottom; j++) {
       const B = boxes[j]; if (A.el.contains(B.el) || B.el.contains(A.el) || pinnedOf(A.el) !== pinnedOf(B.el)) continue;   // a sticky bar over scrolled content is not words running into words
       const x = Math.min(A.w.right, B.w.right) - Math.max(A.w.left, B.w.left), y = Math.min(A.w.bottom, B.w.bottom) - Math.max(A.w.top, B.w.top);
+      if (x > -3 && y > -3) { touching.add(A.el); touching.add(B.el); }   // within a few pixels: a hair of relayout tips it
       if (x > 2 && y > 2) { found.set(A.el, { kind: 'overlap', el: A.el, other: B.el, rect: union(A.w, B.w) }); break; }
     }
   }
   const page = doc.scrollingElement;
-  if (page.scrollWidth > innerWidth + 1) found.set(doc.documentElement, { kind: 'sideways', el: doc.documentElement, by: page.scrollWidth - innerWidth, rect: null });
+  if (page.scrollWidth > innerWidth + 1) {
+    // what pushes it: the deepest thing whose right edge passes the screen's by the most (not inside a row that scrolls)
+    let cause = null, far = innerWidth + 1;
+    for (const e of doc.body.querySelectorAll('*')) {
+      if (e.closest(OURS)) continue;
+      const r = e.getBoundingClientRect();
+      if (r.width && r.right > far - 0.5 && !inScroller(e)) { far = r.right; cause = e; }
+    }
+    found.set(doc.documentElement, { kind: 'sideways', el: cause ?? doc.documentElement, cause, by: page.scrollWidth - innerWidth, rect: null });
+  }
   return found;
 }
 // a row that scrolls sideways (a carousel) is meant to run past the screen
@@ -283,12 +298,13 @@ const inScroller = (el) => { for (let a = el.parentElement; a && a !== el.ownerD
 const pinnedOf = (el) => { for (let a = el; a && a !== el.ownerDocument.body; a = a.parentElement) if (/fixed|sticky/.test(cssOf(a).position)) return a; return null; };
 const union = (a, b) => { const l = Math.min(a.left, b.left), t = Math.min(a.top, b.top), r = Math.max(a.right, b.right), bo = Math.max(a.bottom, b.bottom); return { left: l, top: t, right: r, bottom: bo, width: r - l, height: bo - t }; };
 
-const nameOf = (el) => { const rec = [...el.childNodes].map((n) => held.get(n)).find(Boolean); const s = (rec ? rec.orig : el.textContent ?? '').trim().replace(/\s+/g, ' '); return s.length > 26 ? s.slice(0, 25) + '…' : s; };
+const nameOf = (el) => { const rec = [...el.childNodes].map((n) => held.get(n) ?? swapped.get(n)).find(Boolean); const s = (rec ? rec.orig : el.textContent ?? '').trim().replace(/\s+/g, ' '); return s.length > 26 ? s.slice(0, 25) + '…' : s; };
 const sourceOf = (el) => { const s = el.closest?.('[data-plumb-source]')?.getAttribute('data-plumb-source')?.split('#')[0]; if (!s) return null; const m = /([^/]+?):(\d+)(?::\d+)?$/.exec(s); return m ? `${m[1]}:${m[2]}` : s; };
 
 function say(b) {
   const name = `“${nameOf(b.el)}”`;
   if (b.kind === 'cut') return { title: `${name} gets cut off.`, why: `Its box is ${Math.round(b.have)}px ${b.axis === 'x' ? 'wide' : 'tall'} and hides the rest; the words need ${Math.round(b.need)}px.` };
+  if (b.kind === 'collapse') return { title: `the box round “${b.name.slice(0, 25)}” shrinks to ${b.w}×${b.h}px.`, why: 'With nothing in it, it reads as a stray dot or line. Give it a minimum size, or leave it out when there is nothing to show.' };
   if (b.kind === 'locked') {
     const rem = `${+(b.px / 16).toFixed(4)}rem`;
     return b.cls
@@ -297,14 +313,18 @@ function say(b) {
   }
   if (b.kind === 'spill') return { title: `${name} runs out of its box.`, why: b.edge === 'screen' ? `It runs ${b.by}px off the screen.` : `It crosses the box's edge by ${b.by}px.` };
   if (b.kind === 'overlap') return { title: `${name} runs into “${nameOf(b.other)}”.`, why: 'The two sets of words now sit on top of each other.' };
-  return { title: 'The whole page scrolls sideways.', why: `Something is ${Math.round(b.by)}px wider than the screen.` };
+  const what = b.cause ? `“${nameOf(b.cause) || b.cause.localName}”` : 'Something';
+  return { title: 'the whole page scrolls sideways.', why: `${what} reaches ${Math.round(b.by)}px past the screen's edge.` };
 }
 
+// words that already touched before the toy are not its news when they now run into each other
+const old = (b, base) => b.kind === 'overlap' && !!base?.touching && (base.touching.has(b.el) && base.touching.has(b.other));
+const cap = (t) => t.replace(/^[a-z]/, (c) => c.toUpperCase());
 function judge() {
   const now = measure();
-  const fresh = [...now.values()].filter((b) => !before?.has(b.el) || before.get(b.el).kind !== b.kind);
+  const fresh = [...now.values()].filter((b) => (!before?.has(b.el) || before.get(b.el).kind !== b.kind) && !old(b, before));
   const order = { sideways: 0, cut: 1, overlap: 2, spill: 3 };
-  return fresh.sort((a, b) => order[a.kind] - order[b.kind] || (a.rect?.top ?? 0) - (b.rect?.top ?? 0)).map((b) => ({ ...b, ...say(b), source: sourceOf(b.el) }));
+  return fresh.sort((a, b) => order[a.kind] - order[b.kind] || (a.rect?.top ?? 0) - (b.rect?.top ?? 0)).map((b) => { const t = say(b); return { ...b, ...t, title: cap(t.title), source: sourceOf(b.el) }; });
 }
 
 // ── drawing ─────────────────────────────────────────────────
@@ -385,7 +405,7 @@ async function narrower() {
     if (stage !== mine) return;
     setWidth(w); await frames(1);
     for (const b of measure(win, { all: true }).values()) {
-      if (base.get(b.el)?.kind === b.kind || first.has(b.el)) continue;
+      if (base.get(b.el)?.kind === b.kind || first.has(b.el) || old(b, base)) continue;
       first.set(b.el, { ...b, width: w });
     }
     if (w === NARROWEST) break;
@@ -394,7 +414,7 @@ async function narrower() {
   // one row or list giving way breaks several of its things at the same width: said once, by its first
   const seen = new Map();
   for (const b of first.values()) { const k = `${b.kind}|${b.width}|${sourceOf(b.el.parentElement) ?? ''}`; if (seen.has(k)) seen.get(k).more++; else seen.set(k, Object.assign(b, { more: 0 })); }
-  notes = [...seen.values()].sort((x, y) => y.width - x.width).map((n) => { const t = say(n); return { ...n, ...t, title: t.title.replace(/\.$/, ` at ${n.width}px${n.more ? `, and ${n.more} more like it` : ''}.`).replace(' scrolls sideways at', ' scrolls sideways from'), source: sourceOf(n.el), live: true }; });
+  notes = [...seen.values()].sort((x, y) => y.width - x.width).map((n) => { const t = say(n); return { ...n, ...t, title: cap(t.title).replace(/\.$/, ` at ${n.width}px${n.more ? `, and ${n.more} more like it` : ''}.`).replace(' scrolls sideways at', ' scrolls sideways from'), source: sourceOf(n.el), live: true }; });
   index = 0;
   if (notes.length) showAt(0); else { setWidth(NARROWEST); paint(); }
 }
@@ -434,6 +454,82 @@ function bigger() {
 }
 function unbig() { document.documentElement.style.fontSize = saved ?? ''; saved = null; locked = []; before = null; }
 
+// ── extreme content: what a slot that can change might really hold ──
+
+// each kind, and what it does to one run of words. A kind that has nothing to say about a run (a number for words
+// with no digits) leaves it as it is
+const KINDS = [
+  { id: 'empty', as: 'With no words', make: () => '' },
+  { id: 'one', as: 'As one letter', make: (t) => t.trim()[0] ?? '' },
+  { id: 'long', as: 'At 60 letters', make: (t) => { const w = t.trim().split(/\s+/); let o = t.trim(); for (let i = 0; o.length < 60; i++) o += ' ' + w[i % w.length]; return o.slice(0, 60); } },
+  { id: 'unbroken', as: 'As one unbroken word, like a link or an ID,', make: (t) => { const c = t.replace(/\s+/g, '').toLowerCase() || 'x'; let o = ''; while (o.length < 48) o += c; return o.slice(0, 48); } },
+  { id: 'number', as: 'With a nine-digit number', make: (t) => (/\d/.test(t) ? t.replace(/\d[\d,.]*/g, '123,456,789') : null) },
+];
+const swapped = new Map();   // text node → { orig, now }
+let probing = false, tried = 0;
+
+function swapTo(kind) {
+  unswap();
+  for (const [node, k] of kinds) {
+    if (k === 'fixed' || !node.isConnected) continue;
+    const to = kind.make(node.data);
+    if (to === null || to === node.data) continue;
+    const m = /^(\s*)[\s\S]*?(\s*)$/.exec(node.data), now = to ? m[1] + to + m[2] : '';
+    swapped.set(node, { orig: node.data, now });
+    node.data = now;
+  }
+}
+function unswap() { for (const [node, r] of swapped) if (node.data === r.now) node.data = r.orig; swapped.clear(); }
+
+/** The drawn box round each run of words that can change (a button, a badge, a chip): its size, to see it collapse. */
+function boxesOf() {
+  const out = new Map();
+  for (const [node, k] of kinds) {
+    if (k === 'fixed' || !node.isConnected) continue;
+    for (let a = node.parentElement, i = 0; a && a !== document.body && i < 3; a = a.parentElement, i++) {
+      if (!drawn(cssOf(a))) continue;
+      const r = a.getBoundingClientRect();
+      if (r.width > 0 && r.height > 0) out.set(a, { node, w: r.width, h: r.height });
+      break;
+    }
+  }
+  return out;
+}
+
+async function extreme() {
+  if (!tally) { sorting = true; paint(); await sortAll(); sorting = false; if (toy !== 'extreme') return; }
+  probing = true; tried = 0; paint();
+  const base = measure(window, { all: true }), sized = boxesOf(), found = new Map();   // the whole page: a person scrolls
+  for (const kind of KINDS) {
+    if (toy !== 'extreme') { unswap(); return; }
+    swapTo(kind); await frames(2); tried++;
+    for (const b of measure(window, { all: true }).values()) {
+      const k = `${b.kind}|${sourceOf(b.el) ?? ''}|${kind.id}`;
+      if (base.get(b.el)?.kind === b.kind || found.has(k) || old(b, base)) continue;
+      found.set(k, { ...b, variant: kind, live: true, name: nameOf(b.el) });
+    }
+    // a box that held words and now holds none, or one letter, shrinks to a sliver: a button or a badge with nothing in it
+    if (kind.id === 'empty' || kind.id === 'one') for (const [a, was] of sized) {
+      const r = a.getBoundingClientRect();
+      if ((r.width < 16 && was.w >= 24) || (r.height < 8 && was.h >= 16)) {
+        const k = `collapse|${sourceOf(a) ?? ''}|${kind.id}`;
+        if (!found.has(k)) found.set(k, { kind: 'collapse', el: a, box: a, w: Math.round(r.width), h: Math.round(r.height), variant: kind, live: true, name: swapped.get(was.node)?.orig.trim() ?? '' });
+      }
+    }
+  }
+  unswap(); await frames(1);
+  probing = false;
+  notes = [...found.values()].map((n) => { const t = say(n); return { ...n, ...t, title: `${n.variant.as}${n.variant.as.endsWith(',') ? '' : ','} ${t.title}`, source: sourceOf(n.el) }; });
+  index = 0;
+  if (notes.length) showVariant(0); else paint();
+}
+function showVariant(i) {
+  index = i; const n = notes[i];
+  swapTo(n.variant);
+  requestAnimationFrame(() => { const r = rectOf(n); if (r && (r.top < 0 || r.top + r.height > innerHeight - 160)) n.el.scrollIntoView({ block: 'center' }); later(); });
+  paint();
+}
+
 // ── the toys ────────────────────────────────────────────────
 
 let toy = null;
@@ -442,10 +538,12 @@ export function setToy(next) {
   if (toy === 'longer') { on = false; shrink(); }
   if (toy === 'narrower') unstage();
   if (toy === 'bigger') unbig();
+  if (toy === 'extreme') { unswap(); probing = false; }
   toy = next; notes = []; index = 0;
   if (toy === 'longer') { on = true; grow(); }
   if (toy === 'narrower') narrower();
   if (toy === 'bigger') bigger();
+  if (toy === 'extreme') extreme();
   paint();
 }
 export const setLonger = (yes) => setToy(yes ? 'longer' : null);
@@ -454,8 +552,8 @@ export const setLonger = (yes) => setToy(yes ? 'longer' : null);
 
 function rectOf(n) {
   if (!n.live) return n.rect;
-  if (n.kind === 'sideways') return null;
-  const r = n.kind === 'cut' ? n.box.getBoundingClientRect() : n.kind === 'overlap' ? (() => { const a = wordsRect(n.el), b = wordsRect(n.other); return a && b ? union(a, b) : a ?? b; })() : wordsRect(n.el);
+  if (n.kind === 'sideways') { if (!n.cause) return null; const r = n.cause.getBoundingClientRect(); const off = stage ? stage.frame.getBoundingClientRect() : { left: 0, top: 0 }; return { left: r.left + off.left, top: r.top + off.top, width: r.width, height: r.height }; }
+  const r = n.kind === 'cut' || n.kind === 'collapse' ? n.box.getBoundingClientRect() : n.kind === 'overlap' ? (() => { const a = wordsRect(n.el), b = wordsRect(n.other); return a && b ? union(a, b) : a ?? b; })() : wordsRect(n.el);
   if (!r) return null;
   const off = stage ? stage.frame.getBoundingClientRect() : { left: 0, top: 0 };
   return { left: r.left + off.left, top: r.top + off.top, width: r.width, height: r.height };
@@ -491,6 +589,12 @@ function verdict() {
     if (!notes.length) return `From ${stage.from}px down to ${NARROWEST}px, nothing breaks.`;
     return `From ${stage.from}px down to ${NARROWEST}px, ${count(notes.length, 'thing breaks', 'things break')}. The first at ${notes[0].width}px.`;
   }
+  if (toy === 'extreme') {
+    if (sorting) return 'Finding the words that can change: the ones passed into reusable parts, and the ones from data…';
+    const where = tally ? `${tally.prop + tally.list + tally.data} places that can change` : 'the places that can change';
+    if (probing) return `Trying no words, one letter, 60 letters, one unbroken word and a nine-digit number in ${where}… (${tried} of ${KINDS.length})`;
+    return `Tried five kinds of content in ${where}: ${notes.length ? count(notes.length, 'thing breaks', 'things break') : 'nothing breaks'}.`;
+  }
   if (toy === 'bigger') {
     const lay = notes.filter((n) => n.kind !== 'locked').length;
     const stuck = locked.reduce((t, g) => t + g.count, 0);
@@ -506,6 +610,7 @@ function verdict() {
 const TOYS = [
   ['longer', 'Longer words', LONGER],
   ['narrower', 'Narrower', '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M1.5 8h4M14.5 8h-4"/><path d="M3.5 5.5 6 8l-2.5 2.5M12.5 5.5 10 8l2.5 2.5"/><path d="M8 3v10" opacity=".6"/></svg>'],
+  ['extreme', 'Extreme content', '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="1.5" y="5" width="3" height="6" rx="1" opacity=".6"/><rect x="6" y="5" width="8.5" height="6" rx="1"/><path d="M8 8h4.5"/></svg>'],
   ['bigger', 'Bigger text', '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M1.5 12.5l2-5 2 5M2.3 10.8h2.4"/><path d="M7.5 13.5l3-10 3 10M8.7 10h3.6"/></svg>'],
 ];
 
@@ -528,7 +633,7 @@ function paint() {
     const again = keep ? notes.findIndex((n) => n.el === keep) : -1;
     index = again >= 0 ? again : Math.min(index, Math.max(0, notes.length - 1));
   }
-  const busy = growing || sorting || stage?.sweeping;
+  const busy = growing || sorting || stage?.sweeping || probing;
   const n = toy && !busy ? notes[index] : null;
   const step = notes.length > 1 && n ? `<span class="step"><button class="prev" aria-label="Previous break" ${index ? '' : 'disabled'}>‹</button>${index + 1} of ${notes.length}<button class="next" aria-label="Next break" ${index < notes.length - 1 ? '' : 'disabled'}>›</button></span>` : '<span></span>';
   const note = n ? `<div class="note"><div class="say"><p class="title">${esc(n.title)}</p><p class="why">${esc(n.why)}${n.source ? ` <span class="src">${esc(n.source)}</span>` : ''}</p></div>${step}</div>` : '';
@@ -543,6 +648,7 @@ function go(dir) {
   const to = Math.max(0, Math.min(notes.length - 1, index + dir));
   if (to === index) return;
   if (toy === 'narrower') { showAt(to); return; }
+  if (toy === 'extreme') { showVariant(to); return; }
   index = to;
   const r = rectOf(notes[index]);
   if (r && (r.top < 0 || r.top + r.height > innerHeight - 160)) notes[index].el.scrollIntoView({ block: 'center', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
@@ -585,3 +691,5 @@ addEventListener('keydown', (event) => {
 }, true);
 /** Where each run of words on the page comes from, as sorted for Longer words. */
 export const readKinds = () => [...kinds].filter(([n]) => n.isConnected).map(([n, kind]) => ({ words: (held.get(n)?.orig ?? n.data).trim().slice(0, 40), kind }));
+/** Put one kind of extreme content into every place that can change (or none, to put the words back). */
+export const tryContent = (id) => { const k = KINDS.find((x) => x.id === id); if (k) swapTo(k); else unswap(); };
