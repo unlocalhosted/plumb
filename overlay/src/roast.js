@@ -30,7 +30,10 @@
  *           dimension mark above and below, from its edge to the line
  *  fix      the button writes the swap where the class is written (locate.js classEditsOf, POST swaps); the page
  *           hot-updates, the note leaves, the next one comes up. Refused: the reason, in coral, in its place
- *  keys     ← → between notes, Enter fixes the one in hand, Esc closes. Alt+G opens and closes
+ *  keys     ← → between notes, Enter fixes the one in hand, Esc closes. Alt+G opens and closes. The bar shows them
+ *           as keycaps; plumber's at-rest hint and its keyboard help name Alt+G
+ *  ghost    every note shows where the thing should be: what is there in coral on its own edge, and a dashed sky
+ *           ghost of the fix over it (the right corners, the right height, the icon where its siblings put theirs)
  *  motion   the bar pops in; the line drops from its pin and swings once; the marks pop after. Nothing loops.
  *           Under reduced motion it all appears at once
  * ───────────────────────────────────────────────────────── */
@@ -85,7 +88,7 @@ const nameOf = (el) => {
   return (first && (first.length > 28 ? `${first.slice(0, 26).replace(/\s+\S*$/, '')}…` : first)) || el.getAttribute('aria-label') || 'This';
 };
 const TEXT_BLOCK = 'h1, h2, h3, h4, h5, h6, p, blockquote, figcaption, label, button, li > a, td, th';
-const centred = (el) => [el, el.parentElement].some((e) => { const cs = e && getComputedStyle(e); return cs && (cs.textAlign === 'center' || (/grid|flex/.test(cs.display) && (cs.justifyItems === 'center' || cs.justifyContent === 'center' || cs.placeItems?.startsWith('center')))); });
+const centred = (el) => [el, el.parentElement].some((e) => { const cs = e && getComputedStyle(e); return cs && (cs.textAlign === 'center' || (/grid/.test(cs.display) && cs.justifyItems === 'center') || (/flex/.test(cs.display) && !/column/.test(cs.flexDirection) && cs.justifyContent === 'center')); });
 // a thing a script or an animation is moving (a draggable letter, a spring): where it is now is not where it was put
 const moving = (el) => { for (let e = el; e && e !== document.body; e = e.parentElement) { if (/transform|translate|rotate|scale/.test(e.getAttribute('style') ?? '') || e.getAnimations?.().some((a) => a.playState === 'running')) return true; } return false; };
 // how a thing is built: its children's tags in order. Only things built alike are siblings to compare
@@ -211,13 +214,13 @@ function judgeSet(g, out, rowOf) {
       if (mh.n / boxes.length >= MOST) boxes.forEach((el, i) => {
         if (Math.abs(hs[i] - mh.v) < NOTICE.height) return;
         const d = Math.round(Math.abs(hs[i] - mh.v) * 10) / 10, others = boxes.filter((o, j) => Math.abs(hs[j] - mh.v) < 1);
-        out.push(sibling(el, others, 'height', d, `${nameOf(el)} is ${d}px ${hs[i] > mh.v ? 'taller' : 'shorter'} than the other ${NOUN(el)}.`, TALL));
+        out.push(sibling(el, others, 'height', d, `${nameOf(el)} is ${d}px ${hs[i] > mh.v ? 'taller' : 'shorter'} than the other ${NOUN(el)}.`, TALL, { height: mh.v }));
       });
       const shapes = boxes.map(shapeOf), ms = mode(shapes);
       if (ms.n / boxes.length >= MOST) boxes.forEach((el, i) => {
         if (shapes[i] === ms.v) return;
         const others = boxes.filter((o, j) => shapes[j] === ms.v);
-        out.push(sibling(el, others, 'corners', 6, `${nameOf(el)} has ${shapeWord(shapes[i])} corners; the other ${NOUN(el)} are ${shapeWord(ms.v)}.`, CORNER));
+        out.push(sibling(el, others, 'corners', 6, `${nameOf(el)} has ${shapeWord(shapes[i])} corners; the other ${NOUN(el)} are ${shapeWord(ms.v)}.`, CORNER, { shape: ms.v }));
       });
     }
   }
@@ -261,6 +264,7 @@ svg.page { position: absolute; inset: 0; width: 100%; height: 100%; overflow: vi
 .pin { stroke: var(--pl-instrument); stroke-width: 1.5; }
 .bob { fill: var(--pl-instrument); stroke: var(--pl-halo); stroke-width: 1; paint-order: stroke; }
 .ring { fill: none; stroke: var(--pl-off); stroke-width: 1.5; }
+.ghost { fill: none; stroke: var(--pl-instrument); stroke-width: 1.5; stroke-dasharray: 4 3; }
 .dim { fill: none; stroke: var(--pl-off); stroke-width: 1.5; stroke-linecap: round; }
 .g, .mark { transform-box: view-box; }
 
@@ -287,6 +291,9 @@ svg.page { position: absolute; inset: 0; width: 100%; height: 100%; overflow: vi
 .fix[disabled] { cursor: default; opacity: 0.6; }
 .fix[data-done] { background: var(--pl-mint-soft); color: var(--pl-mint-ink); opacity: 1; }
 .step { display: flex; align-items: center; gap: 2px; font: var(--pl-card-meta); color: var(--pl-ink-2); font-variant-numeric: tabular-nums; }
+.keys { display: flex; align-items: center; gap: 4px; font: var(--pl-card-meta); color: var(--pl-ink-2); white-space: nowrap; }
+kbd { min-width: 18px; height: 18px; padding: 0 4px; box-sizing: border-box; display: inline-grid; place-items: center; border-radius: 5px;
+  background: var(--pl-paper-2); box-shadow: inset 0 -1px 0 var(--pl-rule); font: var(--pl-card-code); font-size: 11px; color: var(--pl-ink); }
 .step button { width: 24px; height: 24px; border: 0; border-radius: 6px; background: none; color: var(--pl-ink-2); cursor: pointer; font: inherit; font-size: 15px; line-height: 1; }
 .step button:hover { background: var(--pl-paper-2); color: var(--pl-ink); }
 .step button[disabled] { opacity: 0.35; cursor: default; background: none; }
@@ -345,15 +352,22 @@ function draw() {
 function drawSibling(n) {
   const fresh = drawnFor !== n.row; drawnFor = n.row;
   const anim = fresh ? '' : ' style="animation:none"';
-  const r = n.row.getBoundingClientRect();
+  const r = n.row.getBoundingClientRect(), rad = Math.min(parseFloat(getComputedStyle(n.row).borderTopLeftRadius) || 0, r.height / 2);
   const ticks = n.others.map((o) => { const b = o.getBoundingClientRect(); return `<circle class="bob" cx="${b.left - 6}" cy="${(b.top + b.bottom) / 2}" r="2"/>`; }).join('');
-  let dim = '';
-  if (n.type === 'icon' && n.icon) {
-    const b = n.icon.getBoundingClientRect(), x = b.left - 4, y1 = (b.top + b.bottom) / 2, y0 = y1 - n.by;
-    const d = `M${x - 3} ${y0}H${x + 1}M${x - 1} ${y0}V${y1}M${x - 3} ${y1}H${x + 1}`;
-    dim = `<path class="halo" d="${d}" stroke-width="3.5"/><path class="dim" d="${d}"/>`;
+  // what is there, in coral, on its own edge; where it should be, a dashed sky ghost over it
+  let is = `<rect class="ring" x="${r.left}" y="${r.top}" width="${r.width}" height="${r.height}" rx="${rad}"/>`, ghost = '';
+  if (n.type === 'corners') {
+    const want = n.shape === 'round' ? r.height / 2 : n.shape === 'square' ? 0 : parseFloat(n.shape);
+    ghost = `<rect class="ghost" x="${r.left}" y="${r.top}" width="${r.width}" height="${r.height}" rx="${want}"/>`;
+  } else if (n.type === 'height') {
+    const y = (r.top + r.bottom) / 2 - n.height / 2;
+    ghost = `<rect class="ghost" x="${r.left}" y="${y}" width="${r.width}" height="${n.height}" rx="${rad}"/>`;
+  } else if (n.type === 'icon' && n.icon) {
+    const b = n.icon.getBoundingClientRect(), ir = Math.min(3, b.height / 2);
+    is = `<rect class="ring" x="${b.left - 1}" y="${b.top - 1}" width="${b.width + 2}" height="${b.height + 2}" rx="${ir}"/>`;
+    ghost = `<rect class="ghost" x="${b.left - 1}" y="${b.top - 1 - n.by}" width="${b.width + 2}" height="${b.height + 2}" rx="${ir}"/>`;
   }
-  return `<g class="mark"${anim}>${ticks}<rect class="ring" x="${r.left - 3}" y="${r.top - 3}" width="${r.width + 6}" height="${r.height + 6}" rx="8"/>${dim}</g>`;
+  return `<g class="mark"${anim}>${ticks}<path class="halo" d=""/>${is}${ghost}</g>`;
 }
 
 function paint() {
@@ -369,7 +383,8 @@ function paint() {
   const step = notes.length > 1 ? `<span class="step"><button class="prev" aria-label="Previous note" ${index ? '' : 'disabled'}>‹</button>${index + 1} of ${notes.length}<button class="next" aria-label="Next note" ${index < notes.length - 1 ? '' : 'disabled'}>›</button></span>` : '';
   host.shadowRoot.innerHTML = `<style>${tokensCss}${CSS_TEXT}</style><svg class="page">${draw()}</svg>
     <div class="bar ${n ? '' : 'clear'}" role="region" aria-label="Plumber's notes" aria-live="polite"><div class="who">${PLUMB}</div>
-    <div class="say"><p class="verdict">${esc(verdictOf(notes))}</p>${say}</div><div class="acts">${btn}${step}</div></div>`;
+    <div class="say"><p class="verdict">${esc(verdictOf(notes))}</p>${say}</div><div class="acts">${btn}${step}
+    <span class="keys">${notes.length > 1 ? '<kbd>←</kbd><kbd>→</kbd> notes · ' : ''}${n?.act ? '<kbd>↵</kbd> fix · ' : ''}<kbd>esc</kbd> close</span></div></div>`;
   const root = host.shadowRoot;
   root.querySelector('.fix')?.addEventListener('click', fix);
   root.querySelector('.prev')?.addEventListener('click', () => go(-1));

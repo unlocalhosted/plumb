@@ -768,7 +768,7 @@ export const DOCK = {
   starting: 'Checking your project…',
   failed: 'Couldn’t start. Check your dev server’s terminal.',
   select: 'Click an element to inspect it · Esc',
-  idle: 'Hold Alt to inspect',
+  idle: 'Hold Alt to inspect · Alt+G for notes',
   // while Blueprint is on, the fix bar has the count: the dock only says how to leave
   blueprint: 'Alt+B to close',
   // one element is read: Alt+B widens to the whole page, it does not close

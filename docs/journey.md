@@ -1557,7 +1557,16 @@ field is empty). The table of five writes, before and after. The Next table: eig
   letter's width; centred words are no longer judged by an edge. Second run: 4 of 4, no false notes. The avatar's
   fix, whose class sits inside a ternary, wrote the right branch (rounded-md → rounded-full) and the page updated;
   it leaves a ternary with two equal branches that a person would collapse. Page restored afterwards.
-- **Media hooks:** docs/qa/roast-settings-cousin.jpg (a cousin note on the settings page), docs/qa/roast-icon-note.jpg (the icon note), docs/qa/roast-first-note.jpg (the roast's first note on the messy page), docs/qa/guides-first-look-issues.jpg (guides on the messy page), docs/qa/guides-held-issues.jpg
+- **Layer 7, you can see it and you can find it** (owner: "i dont see any lines or anything and i dont know how to
+  interact in this mode"). Two causes. Nothing said the roast existed: it opened on a hidden key, and so did stepping
+  and fixing. And only alignment notes drew a line; the others ringed the odd one and said what was wrong without
+  showing it. Now every note draws what is there in coral, on the thing's own edge, and a dashed sky ghost of the
+  fix over it (the right corners, the right height, the icon where its siblings put theirs). The bar shows its keys
+  as keycaps (← → notes · ↵ fix · esc close); plumber's at-rest hint says "Hold Alt to inspect · Alt+G for notes", and
+  its keyboard help has a Notes section. On the way, my own "centred words" check from the round before was reading
+  items-center (vertical) as horizontal centring and hid every label note on the messy tracker; caught on the
+  re-check and fixed. Sweep after: tracker 3, settings page 4, five real pages 0.
+- **Media hooks:** docs/qa/roast-ghost-keys.jpg (the ghost of the fix and the keycaps), docs/qa/roast-settings-cousin.jpg (a cousin note on the settings page), docs/qa/roast-icon-note.jpg (the icon note), docs/qa/roast-first-note.jpg (the roast's first note on the messy page), docs/qa/guides-first-look-issues.jpg (guides on the messy page), docs/qa/guides-held-issues.jpg
   (the three strays held by their neighbours), docs/qa/guides-plumb-lines-issues.jpg
   (the plumb lines and the one stray); a screen recording of the drop-and-swing arrival would show the toy best; the three source screenshots in
   docs/references-media/; a clean page beside a messy one with the guide counts would make the point in one frame.
