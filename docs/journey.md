@@ -1455,6 +1455,7 @@ field is empty). The table of five writes, before and after. The Next table: eig
 - **The system behind the Undo one:** the X-ray card keeps clear of Plumber's bar by measuring the bar when the card is placed. After a write lands, the fix panel is rebuilt: it is gone for about half a second and comes back taller. A card placed while it was gone stayed where it was, over the Undo button. A person on a slow machine meets the same thing: the Undo they want is under the card. It was fixed once before (2026-11-13) for the panel as it stood; the panel moving later was not covered.
 - **The fix and the proof:** whatever the card's room is measured against (the fix panel, the dock) is now watched, and the card is placed again when it changes size. Alone on the test server: 0 failures in 3 runs (was 3 in 3).
 - **The other one was the test:** "short runs never flash" set the progress delay at 300 ms and expected a cached run to finish inside it; on the test server a cached run takes about 350 ms. The test now sets the delay at 2 s, so it asks only "a run that ends before the delay draws nothing". A slow machine can still see a bar flash for a cached run; the product's 300 ms is unchanged.
+- **Full suite, on the test server:** 1,089 passed, 1 failed: the Next click-the-moment-it-appears test, already known on main, which passed alone right after. Main moved forward to the fix (local, not pushed).
 - **Media hooks:** Playwright's call log, "subtree intercepts pointer events", beside the panel's Undo.
 
 ## Open gaps
