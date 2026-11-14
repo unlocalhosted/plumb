@@ -1523,6 +1523,13 @@ field is empty). The table of five writes, before and after. The Next table: eig
   gap-[13px] → gap-2 at SloppyIssuesPage.tsx:47, the page hot-updated, the note left and the Projects note
   ("Its icon size is size-[18px]; the others use size-5.") came up; the file was restored with git afterwards. On the
   site's Primitives page: "Everything here hangs true. Nothing to roast." Only alignment notes exist so far.
+- **Shown on the wrong plumber, then moved** (owner: "didn't we updating the plumber itself to version without heatmap
+  … why its showing old version here ?"). crafting-ui loads plumber through a link to the main checkout, which was on
+  the homepage branch, 470 commits behind main, so it showed a 15-hour-old overlay; the guides and roast had been
+  built and committed there. They now sit on a branch of their own on top of main (four add-beside-add conflicts,
+  both sides kept), and crafting-ui's link points at that worktree, sharing the main checkout's installed packages
+  (dependencies are the same). The roast found one crash on the newer page (a neighbour that is its row group);
+  fixed. To point crafting-ui back: relink node_modules/@unlocalhosted/react-plumber to ../../../plumb.
 - **Media hooks:** docs/qa/roast-first-note.jpg (the roast's first note on the messy page), docs/qa/guides-first-look-issues.jpg (guides on the messy page), docs/qa/guides-held-issues.jpg
   (the three strays held by their neighbours), docs/qa/guides-plumb-lines-issues.jpg
   (the plumb lines and the one stray); a screen recording of the drop-and-swing arrival would show the toy best; the three source screenshots in
