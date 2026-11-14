@@ -80,6 +80,7 @@ if (!isMainThread) {
   let text = 'Reading your project', visible = false, noticed = false, percent = 0;
   let previous = '', lastDraw = -Infinity;
   let activePhase = '';
+  const counted = new Map<string, number>();
   // Non-overlapping execution steps; parse/inline are nested inside collection,
   // and provenance families/components are nested inside their parent timings.
   // Calibration and cold-run measurements live in cli-progress-bar-fixups.result.md.
@@ -156,6 +157,12 @@ if (!isMainThread) {
       // Entering a later step grants every preceding (possibly cached) step.
       // Nested CLI checks may restart phases; the outer operation never regresses.
       percent = Math.max(percent, Math.min(99, Math.floor(step[0] + (step[1] - step[0]) * fraction)));
+    }
+    // A nested check reading the project again restarts a step's count ("2 of 2", then "0 of 2"). The bar holds its
+    // percentage; the words hold too: the step is named without numbers until its count passes what was shown.
+    if (message.current !== undefined && message.phase) {
+      if (message.current < (counted.get(message.phase) ?? 0)) { const { current: _restarted, ...named } = message; message = named; }
+      else counted.set(message.phase, message.current);
     }
     switch (message.phase) {
       case 'phase:config': case 'phase:discover': case 'phase:source-files':
