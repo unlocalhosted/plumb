@@ -1287,6 +1287,15 @@ field is empty). The table of five writes, before and after. The Next table: eig
 - **Proof:** docs/media/react-plumber-logo-9x16.mp4 (1080×1920) and docs/media/react-plumber-logo-1x1.mp4 (1080×1080), 9s each, no sound.
 - **Media hooks:** both clips as they are.
 
+### Film № 37: the camera goes down to the pixels (2026-11-15)
+
+- **The itch:** the owner wanted a craft-rule film that isn't generic, and picked #37, never land on half pixels.
+- **The system behind it:** the film player told a gesture (hover, push, fix), and #37's fault has no gesture. It sits at rest: a tooltip centred with `top-1/2 -translate-y-1/2` moves up half its 46.375px height, 23.19px, so its words sit 0.19px between two pixel rows and smear.
+- **What we chose:** a second kind of film for faults at rest. The pointer rests on the chart. The camera comes in, and the tooltip turns coral with how far it is moved (-23.19) and how far off the grid that leaves it (0.19). Then the camera goes on down into the tooltip's pixels: a loupe redraws its own words, fonts and colours sharp, places them exactly 0.19px between rows, and marks in coral every pixel the fraction changed. plumber's fix lands (`inset-y-0 my-auto h-fit`), and the same pixels snap onto the rows with nothing marked. Then back out: every pinned label is mint, and the burst plays.
+- **Dead end:** the first read measured the height with a call that rounds (46 instead of 46.375), so it said 0px off and both sides looked sharp. It now uses the used height.
+- **Proof:** docs/media/film-37-never-land-on-half-pixels.mp4 (1920x1080, 32s).
+- **Media hooks:** the dive from the card into the pixels, and the smear-to-sharp snap.
+
 ## Open gaps
 - The site's top bar doesn't fit a phone (390px): it widens the page to about 500px. Needs a compact bar.
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
@@ -2639,6 +2648,8 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   Nothing finds a new one when it is written.
 
 ## Shipped · 2026-W46
+
+- A film of craft rule № 37: the camera dives into a tooltip's pixels to show its words smeared 0.19px between rows, then snapping sharp when plumber's fix lands (Film № 37 in the journey).
 
 - The React Plumber logo film, in a tall size for Shorts and Reels and a square size for Twitter, LinkedIn and Threads ([the logo film](#the-logo-film-2026-11-13)).
 - A logo that reads as both letters, with its brand sheet: React Plumber's mark is a solid P inside a drawn R whose leg is a small DOM tree, and the design site has a Logo page with its rules, sizes, colours and surfaces. See "It reads both R and P" (entry 31).
