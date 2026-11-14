@@ -1112,6 +1112,44 @@
 - **Still true:** nothing ties the model to the code but my reading of it. Two real processes cannot be made to die at the exact steps the model found, so the tests set up the files the dead would leave instead.
 - **Media hooks:** the 31-step trace (specs/lock/README.md says how to run it); tla-ts's own output.
 
+## Seeing a screen whole: the lines a designer draws (2026-11-15)
+
+- **The itch:** the owner shared a marked-up critique of Lovable's new sidebar and asked "how can i add this kind of
+  taste judgement in plumber ?". The first answer turned the critic's three notes into four checks. The owner: "i want
+  the system not these rigid 1 to 1 copy of the rules", then: "dont you think if plumber has a concept of guardrails to
+  see the alignment vertically about different things that would be helpful ?"
+- **How we found it:** three screenshots in one afternoon, all with thin vertical lines drawn on a screen: the Lovable
+  critique, Chris Frantz on GitHub's new pull-request page ("nothing is aligned to anything", 2.1K likes), and Karri
+  Saarinen's redraw of a vibe-coded app next to Linear's own sidebar. Then about 260 replies under them, read in full
+  (docs/research/alignment-discourse.md).
+- **The system behind it:** plumber judges one element against a number or its parent. A critic judges the screen:
+  they see lines, count them, and look at what sits near a line but not on it. The fault lives between parts that are
+  each fine ("each row is a different org/team"; "what if i told you this followed the design system perfectly"), so
+  a check of values against tokens cannot see it. People feel it before they can name it; the drawn lines name it.
+- **What we tried, what we chose and why:** four checks copied from one critique (rejected by the owner); five general
+  laws over a picture of the page (agreement, distinction, balance, economy, order), which needs groups found first,
+  the hard part; then guides, which get round that: things on one line are a group. Also read lintapple, the linter
+  recommended in the replies: its alignment check needs every group marked by hand, but it is better than plumber at
+  saying what it could not measure and at measuring what is painted (docs/backlog.md, "Seeing a screen whole").
+- **The fix and the proof:** layer 1 only, read and draw, no judgement. Plumber reads the left edge, right edge and
+  (for pictures) centre of everything in view, groups edges within half a pixel into guides, and draws them (Alt+G).
+  On the messy issue-tracker practice page: 23 guides and 66 edges on none. On the site's own Primitives page: 2
+  guides. Not yet judged by the owner; not committed.
+- **Layer 2, the first judgement and its look** (owner: "Yes, add judgement", then "think about visual identity and
+  keep it lighthearted and delightful too"). One rule, from Saarinen: "Either be left-right positioning, or
+  centering": every thing sits on a line by one edge or its centre. A thing on no line, within one step of the app's
+  spacing grid (4px here) of a line that runs past it, is "just off": the grid has no step that small, so it was not
+  chosen. A second verdict ("off the grid", any offset not a whole number of steps) was tried and dropped the same
+  hour: on the messy tracker 8 of its 9 were toolbar buttons measured against a line far away. Result on the messy
+  tracker: 1 just off ("Projects", 2px left of the sidebar's label line). Known miss: "Views", 4px off, passes as an
+  indent. The look is plumber's own picture, the plumb line from its glyph set: a pin, a string, a bob, a bead per
+  thing; a stray is a coral bead that came off the string. Lines drop from their pins left to right and swing once
+  before they hang; lines only two things share are faint threads so the strong lines and the stray read first.
+- **Media hooks:** docs/qa/guides-first-look-issues.jpg (guides on the messy page), docs/qa/guides-plumb-lines-issues.jpg
+  (the plumb lines and the one stray); a screen recording of the drop-and-swing arrival would show the toy best; the three source screenshots in
+  docs/references-media/; a clean page beside a messy one with the guide counts would make the point in one frame.
+- References: the five 2026-11-15 entries in docs/references.md.
+
 ## Open gaps
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
 

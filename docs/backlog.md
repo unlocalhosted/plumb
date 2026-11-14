@@ -290,6 +290,38 @@ Design written 2026-11-13, not signed off, nothing built: docs/briefs/platform-g
   mid-animation rather than a resting overlap. If so, words that are moving should be skipped.
 - Words meeting words is advice only: it names the two texts, it does not offer a class to fix them.
 
+### Seeing a screen whole: guides, and what lintapple does that plumber does not (2026-11-15)
+
+Direction under discussion with the owner, nothing built. Sources: docs/research/alignment-discourse.md and the four
+2026-11-15 entries in docs/references.md.
+
+- **Guides.** Read every drawn left edge, centre and right edge across a whole screen, group them into guides, draw
+  them on the page, and judge from the guides (how many, how many things on each, how close two are). Open: when two
+  regions should share a line; the numbers for "near miss" and "strong guide" need a source or measurements.
+- **Open question for the owner:** is the overview (one verdict and the top few notes per screen) the product, or do
+  these feed the findings list? How far beyond visual judgement should it go (wording, structure, flow)?
+
+From reading lintapple's source (read, not run; plumber's side only skimmed, so each line is "likely missing"):
+
+- **Say what was not measured, everywhere.** Three answers per check (passed, failed, could not tell), a count of how
+  many things of each kind were actually checked so an empty pass shows as empty, and exceptions that need a reason
+  and are listed in the report.
+- **Measure what is painted, not the box.** The part of an element left after its ancestors clip it; boxes under a
+  scale or flip; text that lives in ::before and ::after; text cut off by a clip as a finding of its own.
+- **Refuse a contrast verdict when it cannot be trusted** (opacity, filters, blend modes, shadows in the way), and
+  cover placeholder text and text inside SVG.
+- **Screens reached by acting.** A written plan (click, type, press, then wait for a named thing) so an open dialog,
+  an error state or an open tooltip is checked like any page, and tooltips opened by themselves and re-checked at each
+  window width.
+- **Keyboard behaviour.** Tab reaches the control, a focus ring appears (found by comparing styles before and after
+  focus), nothing covers the focused control, a dialog holds focus and gives it back, tabs and menus answer the arrow
+  keys. A different product area; parked here.
+- **One problem, reported once,** with every size, theme and state it was seen in.
+- **A contract for coding agents:** run on every changed screen; never loosen the settings, add an exception or remove
+  a mark to pass.
+- **Small checks:** numbers in table cells right-aligned with equal-width digits; a font file that failed to load;
+  the page scrolling sideways; phrases the project bans.
+
 ### Writes and speed
 
 
