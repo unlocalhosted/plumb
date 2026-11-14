@@ -423,7 +423,13 @@ function markOf(f) {
 // What an element's own findings depend on: its and its parent's classes, its inline style, its words.
 // What the page's shape is made of, element by element: its classes and its parent's (no style, no words).
 const shapeOf = (el) => `${el.getAttribute('class') ?? ''}|${el.parentElement?.getAttribute('class') ?? ''}`;
-const sigOf = (el) => `${el.getAttribute('class') ?? ''}|${el.parentElement?.getAttribute('class') ?? ''}|${el.getAttribute('style') ?? ''}|${el.textContent?.length ?? 0}`;
+// Motion in an inline style is not a decision: an animation library rewrites transform, opacity, filter and its own
+// custom properties every frame, and an element whose signature changed with them was never judged for good (sixty
+// labels in algorecall's skill-tree drawing kept the page from ever being read through). What a rule reads in a style
+// (padding, a colour, a size) still changes the signature.
+const MOTION = /(?:^|;)\s*(?:transform(?:-origin|-box)?|translate|rotate|scale|opacity|filter|will-change|--[\w-]+)\s*:[^;]*/g;
+const stillStyle = (style) => style.replace(MOTION, '').trim();
+const sigOf = (el) => `${el.getAttribute('class') ?? ''}|${el.parentElement?.getAttribute('class') ?? ''}|${stillStyle(el.getAttribute('style') ?? '')}|${el.textContent?.length ?? 0}`;
 
 export class Craft {
   #again = null; #waiting = false;

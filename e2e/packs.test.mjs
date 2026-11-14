@@ -522,16 +522,20 @@ test('a finding about the whole page is said on the page, not on a dock drawn be
 
 // algorecall's skill tree never counted as read through: something on it rewrites an inline style every frame, the page's
 // fingerprint changed with it, and every element's page-wide judgement was put back in the queue before the queue could
-// drain. A box moved by script, as an animation library moves it, beside 1,500 elements to judge.
+// drain. Then the same for an element's own: sixty labels in a drawing, each moved every frame, never stayed judged.
+// A box and sixty labels moved by script, as an animation library moves them, beside 1,500 elements to judge.
 const MOVED = `import { useEffect, useRef } from 'react';
 const ROWS = Array.from({ length: 300 }, (_, i) => i);
 export function App() {
   const box = useRef(null);
-  useEffect(() => { let f = 0, id = 0; const tick = () => { if (box.current) box.current.style.transform = 'translateX(' + (f++ % 40) + 'px)'; id = requestAnimationFrame(tick); }; id = requestAnimationFrame(tick); return () => cancelAnimationFrame(id); }, []);
+  const dots = useRef(null);
+  // as an animation library moves things: an inline transform rewritten every frame, on one box and on sixty labels in a drawing
+  useEffect(() => { let f = 0, id = 0; const tick = () => { f++; if (box.current) box.current.style.transform = 'translateX(' + (f % 40) + 'px)'; for (const [i, t] of [...(dots.current?.children ?? [])].entries()) t.style.transform = 'translateX(' + ((f + i) % 30) + 'px) translateY(' + (i % 6) * 12 + 'px)'; id = requestAnimationFrame(tick); }; id = requestAnimationFrame(tick); return () => cancelAnimationFrame(id); }, []);
   return (
     <main className="flex flex-col gap-s4 p-s4">
       <h1>Moving</h1>
       <div ref={box} id="moved" style={{ width: 40, height: 40 }}>moved by script</div>
+      <svg width="400" height="80" viewBox="0 0 400 80"><g ref={dots}>{Array.from({ length: 60 }, (_, i) => <text key={i} x={(i % 10) * 36} y="12" fontSize="10">{i}</text>)}</g></svg>
       <ul>{ROWS.map((i) => <li key={i}><span>Row {i}</span> <b>{i}</b> <i>note</i> <em>more</em></li>)}</ul>
     </main>
   );
