@@ -32,8 +32,11 @@
  *           hot-updates, the note leaves, the next one comes up. Refused: the reason, in coral, in its place
  *  keys     ← → between notes, Enter fixes the one in hand, Esc closes. Alt+G opens and closes. The bar shows them
  *           as keycaps; plumber's at-rest hint and its keyboard help name Alt+G
- *  ghost    every note shows where the thing should be: what is there in coral on its own edge, and a dashed sky
- *           ghost of the fix over it (the right corners, the right height, the icon where its siblings put theirs)
+ *  proof    every note draws the lines the good siblings share, run across all of them and a little past (the top
+ *           and bottom of a row of buttons, every chip's corners, the middle each icon sits on beside its label, the
+ *           edge the labels start at), so you see the odd one break them; the break in coral (the part past the line,
+ *           the corner that differs, the shaded gap), and its size in one pill, like a redline in a design review.
+ *           Lines run in gutters and along edges, never over words
  *  motion   the bar pops in; the line drops from its pin and swings once; the marks pop after. Nothing loops.
  *           Under reduced motion it all appears at once
  * ───────────────────────────────────────────────────────── */
@@ -264,6 +267,10 @@ svg.page { position: absolute; inset: 0; width: 100%; height: 100%; overflow: vi
 .pin { stroke: var(--pl-instrument); stroke-width: 1.5; }
 .bob { fill: var(--pl-instrument); stroke: var(--pl-halo); stroke-width: 1; paint-order: stroke; }
 .ring { fill: none; stroke: var(--pl-off); stroke-width: 1.5; }
+.brk { stroke: var(--pl-off); fill: none; stroke-linecap: round; }
+.gapfill { fill: color-mix(in oklab, var(--pl-off) 22%, transparent); }
+.pill rect { fill: var(--pl-coral-soft); stroke: var(--pl-halo); stroke-width: 1; }
+.pill text { fill: var(--pl-coral-ink); font: 600 11px var(--pl-mono); text-anchor: middle; font-variant-numeric: tabular-nums; }
 .ghost { fill: none; stroke: var(--pl-instrument); stroke-width: 1.5; stroke-dasharray: 4 3; }
 .dim { fill: none; stroke: var(--pl-off); stroke-width: 1.5; stroke-linecap: round; }
 .g, .mark { transform-box: view-box; }
@@ -321,7 +328,7 @@ function lineOf(n) {
   // drawn in the gutter beside the edge it marks, never on it: a line on a text's edge would touch every letter
   const x = Math.round((n.guide.x + (n.guide.kind === 'left' ? -GUTTER : n.guide.kind === 'right' ? GUTTER : 0)) * 2) / 2;
   const rs = [n.row, ...n.others].map((r) => r.getBoundingClientRect());
-  const top = Math.min(...rs.map((r) => r.top)), bottom = Math.max(...rs.map((r) => r.bottom));
+  const top = Math.min(...rs.map((r) => r.top)) - OVER, bottom = Math.max(...rs.map((r) => r.bottom)) + OVER;
   const cuts = n.all.filter((t) => t.kind !== 'box' && t.left - 3 < x && t.right + 3 > x && t.bottom > top && t.top < bottom).map((t) => [t.top - 3, t.bottom + 3]).sort((a, b) => a[0] - b[0]);
   const segs = []; let y = top;
   for (const [a, b] of cuts) { if (a > y + 2) segs.push([y, a]); y = Math.max(y, b); }
@@ -332,6 +339,7 @@ function lineOf(n) {
 function draw() {
   const n = notes[index];
   if (!n) return '';
+  FREE = (n.all ?? []).filter((t) => t.kind !== 'box');
   if (n.type !== 'line') return drawSibling(n);
   const { x, top, bottom, segs } = lineOf(n), fresh = drawnFor !== n.row;
   drawnFor = n.row;
@@ -344,30 +352,70 @@ function draw() {
       <path class="pin" d="M${x - 4} ${top}h8"/><path class="bob" d="${BOB(x, bottom + 2, 3.2)}"/></g>
     <g class="mark"${anim}><rect class="ring" x="${r.left - 3}" y="${r.top - 3}" width="${r.width + 6}" height="${r.height + 6}" rx="8"/>
       <path class="halo" d="${dim(t.top - 5, false)}" stroke-width="3.5"/><path class="dim" d="${dim(t.top - 5, false)}"/>
-      <path class="halo" d="${dim(t.bottom + 5, true)}" stroke-width="3.5"/><path class="dim" d="${dim(t.bottom + 5, true)}"/></g>`;
+      <path class="halo" d="${dim(t.bottom + 5, true)}" stroke-width="3.5"/><path class="dim" d="${dim(t.bottom + 5, true)}"/>
+      <rect class="gapfill" x="${Math.min(ex, x)}" y="${t.top - 5}" width="${Math.abs(ex - x)}" height="${t.bottom - t.top + 10}"/>${pill(r, (r.top + r.bottom) / 2, `${n.d}px ${n.lead.by > 0 ? 'right' : 'left'}`)}</g>`;
 }
 
 // a sibling note: the odd one ringed; its siblings marked with a quiet tick so you see who it is measured against;
 // for an icon, a dimension mark from where the others' icons sit to where this one does, beside it, clear of its label
+// the lines the good siblings share, drawn across all of them and a little past; the break in coral; its size in one pill
+const median = (xs) => { const v = [...xs].sort((a, b) => a - b); return v[Math.floor(v.length / 2)]; };
+const seg = (x1, y1, x2, y2, cls = 'str') => `<path class="halo" d="M${x1} ${y1}L${x2} ${y2}" stroke-width="3"/><path class="${cls}" d="M${x1} ${y1}L${x2} ${y2}" stroke-width="1.25"/>`;
+const OVER = 14;   // px a shared line runs past the first and last sibling
+// the pill goes where it covers nothing: above the thing, below it, right of it, left of it, the first that is clear
+let FREE = [];   // the words and pictures on screen, set before each drawing
+function pill(r, y, text) {
+  const w = text.length * 6.6 + 14, h = 20, cx = (r.left + r.right) / 2 - w / 2;
+  const spots = [[r.right + 10, y - h / 2], [r.left - 10 - w, y - h / 2]];
+  for (let k = 0; k < 6; k++) spots.push([cx, r.top - 8 - h - k * 14], [cx, r.bottom + 8 + k * 14]);
+  spots.sort((a, b) => Math.hypot(a[0] + w / 2 - (r.left + r.right) / 2, a[1] + h / 2 - y) - Math.hypot(b[0] + w / 2 - (r.left + r.right) / 2, b[1] + h / 2 - y));
+  // how much of a spot is on something: zero is clear; off screen counts as fully covered
+  const covered = ([x, t]) => (x < 4 || t < 4 || x + w > innerWidth - 4 || t + h > innerHeight - 4 ? Infinity
+    : FREE.reduce((sum, b) => sum + Math.max(0, Math.min(b.right + 2, x + w) - Math.max(b.left - 2, x)) * Math.max(0, Math.min(b.bottom + 2, t + h) - Math.max(b.top - 2, t)), 0));
+  const [x, t] = spots.reduce((best, sp) => (covered(sp) < covered(best) ? sp : best), spots[0]);
+  return `<g class="pill"><rect x="${x}" y="${t}" width="${w}" height="${h}" rx="7"/><text x="${x + w / 2}" y="${t + 14}">${esc(text)}</text></g>`;
+}
+function corners(b, rr, cls) {
+  const o = 2.5, R = Math.min(rr, b.height / 2, b.width / 2) + o, L = b.left - o, T = b.top - o, Rt = b.right + o, B = b.bottom + o, k = Math.max(R, 7);
+  const arc = (x, y, sx, sy) => (R > o + 0.5
+    ? `M${x} ${y + sy * k}V${y + sy * R}A${R} ${R} 0 0 ${sx * sy > 0 ? 1 : 0} ${x + sx * R} ${y}H${x + sx * k}`
+    : `M${x} ${y + sy * k}V${y}H${x + sx * k}`);
+  const d = [arc(L, T, 1, 1), arc(Rt, T, -1, 1), arc(L, B, 1, -1), arc(Rt, B, -1, -1)].join('');
+  return `<path class="halo" d="${d}" stroke-width="3.5"/><path class="${cls}" d="${d}" stroke-width="1.5" fill="none"/>`;
+}
+const radiusOf = (el) => { const b = el.getBoundingClientRect(); return Math.min(parseFloat(getComputedStyle(el).borderTopLeftRadius) || 0, b.height / 2); };
+const radiusWord = (el) => { const b = el.getBoundingClientRect(), r = radiusOf(el); return r >= b.height / 2 - 0.5 ? 'full' : `${Math.round(r)}px`; };
+
 function drawSibling(n) {
   const fresh = drawnFor !== n.row; drawnFor = n.row;
   const anim = fresh ? '' : ' style="animation:none"';
-  const r = n.row.getBoundingClientRect(), rad = Math.min(parseFloat(getComputedStyle(n.row).borderTopLeftRadius) || 0, r.height / 2);
-  const ticks = n.others.map((o) => { const b = o.getBoundingClientRect(); return `<circle class="bob" cx="${b.left - 6}" cy="${(b.top + b.bottom) / 2}" r="2"/>`; }).join('');
-  // what is there, in coral, on its own edge; where it should be, a dashed sky ghost over it
-  let is = `<rect class="ring" x="${r.left}" y="${r.top}" width="${r.width}" height="${r.height}" rx="${rad}"/>`, ghost = '';
-  if (n.type === 'corners') {
-    const want = n.shape === 'round' ? r.height / 2 : n.shape === 'square' ? 0 : parseFloat(n.shape);
-    ghost = `<rect class="ghost" x="${r.left}" y="${r.top}" width="${r.width}" height="${r.height}" rx="${want}"/>`;
-  } else if (n.type === 'height') {
-    const y = (r.top + r.bottom) / 2 - n.height / 2;
-    ghost = `<rect class="ghost" x="${r.left}" y="${y}" width="${r.width}" height="${n.height}" rx="${rad}"/>`;
+  const r = n.row.getBoundingClientRect(), os = n.others.map((o) => o.getBoundingClientRect()), all = [r, ...os];
+  const lines = [], breaks = [];
+  if (n.type === 'height') {
+    // the top and bottom every other one sits between, run across the row; the odd one pokes past them
+    const top = median(os.map((b) => b.top)), bottom = median(os.map((b) => b.bottom));
+    const x0 = Math.min(...all.map((b) => b.left)) - OVER, x1 = Math.max(...all.map((b) => b.right)) + OVER;
+    lines.push(seg(x0, top, x1, top), seg(x0, bottom, x1, bottom));
+    const band = (y0, y1) => (y1 - y0 > 0.4 ? `<rect class="gapfill" x="${r.left}" y="${y0}" width="${r.width}" height="${y1 - y0}"/>` : '');
+    breaks.push(band(Math.min(r.top, top), Math.max(r.top, top)), band(Math.min(r.bottom, bottom), Math.max(r.bottom, bottom)));
+    breaks.push(seg(r.left, r.top, r.right, r.top, 'brk'), seg(r.left, r.bottom, r.right, r.bottom, 'brk'));
+    breaks.push(pill(r, (r.top + r.bottom) / 2, `${r.height > n.height ? '+' : '−'}${n.d}px`));
+  } else if (n.type === 'corners') {
+    // every sibling's corners traced in sky; the odd one's in coral, its ghost the shape it should have
+    for (const o of n.others) lines.push(corners(o.getBoundingClientRect(), radiusOf(o), 'str'));
+    breaks.push(corners(r, radiusOf(n.row), 'brk'));
+    breaks.push(pill(r, (r.top + r.bottom) / 2, `${radiusWord(n.row)} → ${radiusWord(n.others[0])}`));
   } else if (n.type === 'icon' && n.icon) {
-    const b = n.icon.getBoundingClientRect(), ir = Math.min(3, b.height / 2);
-    is = `<rect class="ring" x="${b.left - 1}" y="${b.top - 1}" width="${b.width + 2}" height="${b.height + 2}" rx="${ir}"/>`;
-    ghost = `<rect class="ghost" x="${b.left - 1}" y="${b.top - 1 - n.by}" width="${b.width + 2}" height="${b.height + 2}" rx="${ir}"/>`;
+    // through every row, the line its icon sits on, from the icon to just before the words, never over them
+    const across = (el, y) => { const i = iconOf(el)?.getBoundingClientRect(), t = textBox(el); return i && t ? [i.left - 6, y, Math.max(i.right + 2, t.left - 3), y] : null; };
+    for (const o of n.others) { const i = iconOf(o)?.getBoundingClientRect(); const a = i && across(o, (i.top + i.bottom) / 2); if (a) lines.push(seg(...a)); }
+    const b = n.icon.getBoundingClientRect(), now = (b.top + b.bottom) / 2, want = now - n.by, a = across(n.row, want);
+    if (a) lines.push(seg(...a));
+    breaks.push(`<rect class="gapfill" x="${b.left}" y="${Math.min(now, want)}" width="${b.width}" height="${Math.abs(n.by)}"/>`);
+    if (a) breaks.push(seg(a[0], now, a[2], now, 'brk'));
+    breaks.push(pill(r, now, `${n.d}px ${n.by > 0 ? 'low' : 'high'}`));
   }
-  return `<g class="mark"${anim}>${ticks}<path class="halo" d=""/>${is}${ghost}</g>`;
+  return `<g class="mark"${anim}>${lines.join('')}${breaks.join('')}</g>`;
 }
 
 function paint() {

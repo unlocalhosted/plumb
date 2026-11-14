@@ -1566,7 +1566,16 @@ field is empty). The table of five writes, before and after. The Next table: eig
   its keyboard help has a Notes section. On the way, my own "centred words" check from the round before was reading
   items-center (vertical) as horizontal centring and hid every label note on the messy tracker; caught on the
   re-check and fixed. Sweep after: tracker 3, settings page 4, five real pages 0.
-- **Media hooks:** docs/qa/roast-ghost-keys.jpg (the ghost of the fix and the keycaps), docs/qa/roast-settings-cousin.jpg (a cousin note on the settings page), docs/qa/roast-icon-note.jpg (the icon note), docs/qa/roast-first-note.jpg (the roast's first note on the messy page), docs/qa/guides-first-look-issues.jpg (guides on the messy page), docs/qa/guides-held-issues.jpg
+- **Layer 8, lines that prove it** (owner: "no lines i think its essential to show lines and breaking things to user
+  otherwise he wont believe us … like how a ux designer will breakdown a design on figma … to show improvement to an
+  engineer"). The ghost of the fix said the answer but proved nothing. A designer's breakdown draws the lines the good
+  pieces share, runs them past the broken one, and writes the size on the gap. Now every note does: the top and
+  bottom every other button sits between, run across the row, with the tall one poking past in coral and "+4px"; every
+  chip's and avatar's corners traced in sky and the odd one's in coral with "3px → full"; through every row, the line
+  its icon sits on, stopping before the words, the low one's in coral with "2px low"; the labels' edge in the gutter,
+  run past the first and last row, the gap shaded and "5px right". The size goes in one pill placed where it covers
+  no words or icons (the nearest clear spot); a first version put it over "Projects" and "Mei Tanaka".
+- **Media hooks:** docs/qa/roast-proof-avatars.jpg, docs/qa/roast-proof-height.png, docs/qa/roast-proof-line.png (the proof lines for corners, height and alignment), docs/qa/roast-ghost-keys.jpg (the ghost of the fix and the keycaps), docs/qa/roast-settings-cousin.jpg (a cousin note on the settings page), docs/qa/roast-icon-note.jpg (the icon note), docs/qa/roast-first-note.jpg (the roast's first note on the messy page), docs/qa/guides-first-look-issues.jpg (guides on the messy page), docs/qa/guides-held-issues.jpg
   (the three strays held by their neighbours), docs/qa/guides-plumb-lines-issues.jpg
   (the plumb lines and the one stray); a screen recording of the drop-and-swing arrival would show the toy best; the three source screenshots in
   docs/references-media/; a clean page beside a messy one with the guide counts would make the point in one frame.
