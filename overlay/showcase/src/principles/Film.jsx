@@ -231,7 +231,8 @@ export function Film({ Example, names, onSaid, chrome = true, start = true, onDo
   const [frame, setFrame] = useState(null);         // the card's own box, while the camera works inside it: { radius, shadow }         // plumber's change card: 0 none · 1 the fault · 2 the fix
   const [run, setRun] = useState(0);
   const [loupe, setLoupe] = useState(null);          // still films: the pixels, { x, y, w, h, url, focus, on }
-  const [px, setPx] = useState(null);                // still films: the pill over the pixels, { x, y, tone, text }
+  const [px, setPx] = useState(null);                // still films: the pills over the dive, [{ x, y, tone, text }]
+  const [drawing, setDrawing] = useState(null);      // still films that dive into a construction: { svg, on }
   const box = useRef(null), camRef = useRef(null), sw = useRef(null), fx = useRef(null);
   const example = () => camRef.current?.firstElementChild;
   const toward = (el, dy = 0) => { const o = box.current.getBoundingClientRect(), r = el.getBoundingClientRect(); return { x: r.left - o.left + r.width / 2, y: r.top - o.top + r.height / 2 + dy }; };
@@ -275,23 +276,37 @@ export function Film({ Example, names, onSaid, chrome = true, start = true, onDo
         // down into the pixels: the words between two rows
         const frac = (v) => v - Math.round(v);
         const dive = (lp) => { const K = CAMERA.pixels; return { k: K, x: clamp(W / 2 - K * lp.focus.x, W - K * W), y: clamp(H / 2 - K * lp.focus.y, H - K * H), ms: TIMING.dive }; };
-        const lp = pixelsOf(example(), spec.pixels(example()), frac(read.ty));
-        setLoupe({ ...lp, on: false }); await sleep(30, live); setLoupe({ ...lp, on: true });
-        setCam(dive(lp)); await sleep(TIMING.dive, live);
-        setPx({ x: lp.focus.x, y: lp.focus.top - 1.5, tone: 'off', text: `${read.off.toFixed(2)}px between two rows` });
+        let lp;
+        if (spec.pixels) {
+          lp = pixelsOf(example(), spec.pixels(example()), frac(read.ty));
+          setLoupe({ ...lp, on: false }); await sleep(30, live); setLoupe({ ...lp, on: true });
+          setCam(dive(lp)); await sleep(TIMING.dive, live);
+          setPx([{ x: lp.focus.x, y: lp.focus.top - 1.5, tone: 'off', text: `${read.off.toFixed(2)}px between two rows` }]);
+        } else {
+          lp = spec.dive(example(), 'broken');
+          const K = lp.k ?? CAMERA.pixels;
+          setDrawing({ svg: lp.svg, on: false }); await sleep(30, live); setDrawing({ svg: lp.svg, on: true });
+          setCam({ k: K, x: clamp(W / 2 - K * lp.focus.x, W - K * W), y: clamp(H / 2 - K * lp.focus.y, H - K * H), ms: TIMING.dive }); await sleep(TIMING.dive, live);
+          setPx(lp.pills);
+        }
         await sleep(TIMING.smear, live);
         // the fix lands: the same pixels, on the rows
         const fixBtn = sw.current?.querySelectorAll('button')[1];
         if (fixBtn) { setPtr(toward(fixBtn)); await sleep(TIMING.toSwitch, live); setPtr((p) => ({ ...p, down: true })); await sleep(TIMING.press, live); }
         setSide('fixed'); setPtr((p) => ({ ...p, down: false })); if (spec.code) setChange(2);
         await sleep(80, live);
-        const fixedRead = spec.read(example(), lead()), lf = pixelsOf(example(), spec.pixels(example()), frac(fixedRead.ty));
-        setLoupe({ ...lp, url: lf.url, on: true });
-        setPx({ x: lp.focus.x, y: lp.focus.top - 1.5, tone: 'on', text: `${fixedRead.off.toFixed(2)}px · on the rows` });
+        if (spec.pixels) {
+          const fixedRead = spec.read(example(), lead()), lf = pixelsOf(example(), spec.pixels(example()), frac(fixedRead.ty));
+          setLoupe({ ...lp, url: lf.url, on: true });
+          setPx([{ x: lp.focus.x, y: lp.focus.top - 1.5, tone: 'on', text: `${fixedRead.off.toFixed(2)}px · on the rows` }]);
+        } else {
+          const lf = spec.dive(example(), 'fixed');
+          setDrawing({ svg: lf.svg, on: true }); setPx(lf.pills);
+        }
         setPtr((p) => p && { ...p, gone: true });
         await sleep(TIMING.snap, live);
         // back up; every place holds
-        setPx(null); setLoupe((x) => x && { ...x, on: false }); setCam({ ...near, ms: TIMING.rise }); await sleep(TIMING.rise, live); setLoupe(null);
+        setPx(null); setLoupe((x) => x && { ...x, on: false }); setDrawing((x) => x && { ...x, on: false }); setCam({ ...near, ms: TIMING.rise }); await sleep(TIMING.rise, live); setLoupe(null); setDrawing(null);
         const fixedRest = boxes();
         setM({ tone: 'on', boxes: fixedRest }); await sleep(TIMING.turn, live);
         for (let i = 0; i < all().length; i++) {
@@ -393,6 +408,9 @@ export function Film({ Example, names, onSaid, chrome = true, start = true, onDo
           {/* still films: the pixels, laid exactly over the element they show */}
           {loupe ? <img alt="" src={loupe.url} style={{ position: 'absolute', left: loupe.x, top: loupe.y, width: loupe.w, height: loupe.h, imageRendering: 'pixelated', maxWidth: 'none',
             opacity: loupe.on ? 1 : 0, transition: loupe.on ? 'opacity 500ms ease 350ms' : 'opacity 250ms ease 800ms' }} /> : null}
+          {/* still films that dive into a construction: the drawing, in the example's own px, its lines a constant width */}
+          {drawing ? <div aria-hidden="true" style={{ position: 'absolute', inset: 0, pointerEvents: 'none', opacity: drawing.on ? 1 : 0, transition: drawing.on ? 'opacity 450ms ease 500ms' : 'opacity 250ms ease' }}
+            dangerouslySetInnerHTML={{ __html: `<svg width="100%" height="100%" style="position:absolute;inset:0;overflow:visible">${drawing.svg}</svg>` }} /> : null}
           <PlumbLayer>
             {m ? (
               <div style={{ position: 'absolute', inset: 0, opacity: m.fading ? 0 : 1, transition: `opacity ${TIMING.fade}ms ease` }}>
@@ -426,7 +444,7 @@ export function Film({ Example, names, onSaid, chrome = true, start = true, onDo
                 ) : null}
               </div>
             ) : null}
-            {px ? <Pill key={px.tone} x={px.x} y={px.y} k={k} tone={px.tone} up>{px.text}</Pill> : null}
+            {px ? px.map((q, i) => <Pill key={`${q.tone}${i}`} x={q.x} y={q.y} k={k} tone={q.tone} up>{q.text}</Pill>) : null}
           </PlumbLayer>
         </div>
       </div>

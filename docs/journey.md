@@ -1296,6 +1296,15 @@ field is empty). The table of five writes, before and after. The Next table: eig
 - **Proof:** docs/media/film-37-never-land-on-half-pixels.mp4 (1920x1080, 32s).
 - **Media hooks:** the dive from the card into the pixels, and the smear-to-sharp snap.
 
+### Film № 3: the shapes as a type designer draws them (2026-11-15)
+
+- **The itch:** the owner asked for one more craft film after № 37. We picked #3, optical overshoot: a type designer's insight app makers almost never meet.
+- **What it shows:** a whiteboard's Shapes picker draws every shape in one 20px box, so the circle reads smaller than the square beside it. The camera dives into the Basic row and draws the pair the way a type designer would. Dashed guides carry the square's top and bottom across. The corners the circle leaves empty are hatched in coral (it fills 78.5% of the box; the square fills 99.8%). plumber's fix lands (`[&>:nth-child(2)>svg]:scale-[1.04]`), and the circle passes the guides into mint overshoot zones, like an O past the baseline.
+- **The system behind it:** the still film now takes either kind of dive: into pixels (№ 37) or into a construction drawing (№ 3).
+- **Dead ends:** the icon package found React through another checkout, so every screen with those icons broke in this worktree; the showcase now uses one React. The board took its width from the film's frame and collapsed to a line; it now has its own width. Lines drawn with a constant-width setting ignored the camera's zoom and came out six times too thick; they are now sized for the zoom.
+- **Proof:** docs/media/film-03-optical-overshoot.mp4 (1920x1080).
+- **Open:** the fix is honest at 4%, which is 0.4px past each guide, so the mint zones are thin even at 6x.
+
 ## Open gaps
 - The site's top bar doesn't fit a phone (390px): it widens the page to about 500px. Needs a compact bar.
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
@@ -2648,6 +2657,8 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   Nothing finds a new one when it is written.
 
 ## Shipped · 2026-W46
+
+- A film of craft rule № 3: the camera dives into a shapes picker and draws its square and circle as a type designer would, the circle's missing corners hatched, then the overshoot once plumber's fix lands (Film № 3 in the journey).
 
 - A film of craft rule № 37: the camera dives into a tooltip's pixels to show its words smeared 0.19px between rows, then snapping sharp when plumber's fix lands (Film № 37 in the journey).
 

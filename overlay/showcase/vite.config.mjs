@@ -95,5 +95,8 @@ export default {
   root: import.meta.dirname,
   plugins: [tailwindcss(), plumb(), api, probeRoutes],
   oxc: { jsx: { runtime: 'automatic', development: true } },
+  // one React: in a worktree, node_modules are links into other checkouts, and a package found through one (the dither
+  // icons) would otherwise bring that checkout's own React, and every hook in it fails
+  resolve: { dedupe: ['react', 'react-dom'] },
   server: { host: '127.0.0.1', port: 4312, strictPort: true },
 };
