@@ -30,7 +30,11 @@
 // fonts and colours, then placed exactly as far between pixel rows as it is), the words smeared across two rows; the
 // fix lands and the same pixels snap onto the rows; back out, every place mint, the burst.
 //   still: true    pixels(root) → the element the loupe looks into    read(root, el) → { ty, off, size, tags }
-import { useEffect, useRef, useState } from 'react';
+import { createContext, useContext, useEffect, useRef, useState } from 'react';
+
+// the size plumber's own marks are drawn at: 1 in the showcase, larger in a film, which is watched smaller than it is
+// made (FilmPage passes its own; the film's reviewers check it can be read at the size people watch)
+const UI = createContext(1);
 import { PlumbLayer } from './Principle.jsx';
 import { ensureLook } from './look.js';
 
@@ -38,14 +42,15 @@ ensureLook();
 
 // the technique switch, in plumber's language: a sunk track, a lit thumb that slides on the spring, names in the toy face
 function TechniqueSwitch({ names, fixed, ready, onBack, onFix }) {
+  const s = useContext(UI);
   const track = useRef(null);
   const [thumb, setThumb] = useState(null);
   useEffect(() => { const on = track.current?.querySelector('[aria-pressed="true"]'); if (on) setThumb({ left: on.offsetLeft, width: on.offsetWidth }); }, [fixed, names]);
-  const tab = (on) => ({ position: 'relative', zIndex: 1, height: 30, padding: '0 14px', border: 0, background: 'none', cursor: ready ? 'pointer' : 'default',
-    font: 'var(--pl-round-w2, 700) 13px/1 var(--pl-round)', color: on ? 'var(--pl-ink)' : 'var(--pl-ink-2)', transition: 'color 200ms ease', whiteSpace: 'nowrap' });
+  const tab = (on) => ({ position: 'relative', zIndex: 1, height: 30 * s, padding: `0 ${14 * s}px`, border: 0, background: 'none', cursor: ready ? 'pointer' : 'default',
+    font: `var(--pl-round-w2, 700) ${13 * s}px/1 var(--pl-round)`, color: on ? 'var(--pl-ink)' : 'var(--pl-ink-2)', transition: 'color 200ms ease', whiteSpace: 'nowrap' });
   return (
-    <div ref={track} role="group" aria-label="Technique" style={{ position: 'relative', display: 'flex', padding: 3, borderRadius: 11, background: 'var(--pl-paper-2)', boxShadow: 'inset 0 1px 2px rgb(28 27 25 / 0.08), inset 0 0 0 1px var(--pl-rule)' }}>
-      {thumb ? <span aria-hidden="true" style={{ position: 'absolute', top: 3, bottom: 3, left: thumb.left, width: thumb.width, borderRadius: 8, background: 'var(--pl-paper)',
+    <div ref={track} role="group" aria-label="Technique" style={{ position: 'relative', display: 'flex', padding: 3 * s, borderRadius: 11 * s, background: 'var(--pl-paper-2)', boxShadow: 'inset 0 1px 2px rgb(28 27 25 / 0.08), inset 0 0 0 1px var(--pl-rule)' }}>
+      {thumb ? <span aria-hidden="true" style={{ position: 'absolute', top: 3 * s, bottom: 3 * s, left: thumb.left, width: thumb.width, borderRadius: 8 * s, background: 'var(--pl-paper)',
         boxShadow: '0 1px 2px rgb(28 27 25 / 0.12), 0 0 0 1px var(--pl-rule)', transition: 'left 420ms var(--pl-spring), width 420ms var(--pl-spring)' }} /> : null}
       <button type="button" aria-pressed={!fixed} disabled={!ready} onClick={onBack} style={tab(!fixed)}>{names[0]}</button>
       <button type="button" aria-pressed={fixed} disabled={!ready} onClick={onFix} style={tab(fixed)}>{names[1]}</button>
@@ -153,13 +158,14 @@ function Count({ from, to, ms = TIMING.count }) {
 
 // plumber's pill: pastel fill, inked mono, the property's icon in its line hue; never scaled by the camera
 function Pill({ x, y, k, tone, icon, icons, up, flow, children }) {
+  const s = useContext(UI);
   const [line, soft, ink] = hues[tone];
   return (
     <span style={{ ...(flow ? {} : { position: 'absolute', left: x, top: y, transform: `translate(-50%, ${up ? '-100%' : '0'}) scale(${1 / k})`, transformOrigin: up ? '50% 100%' : '50% 0' }),
-      display: 'flex', alignItems: 'center', gap: 5, height: PILL.h, padding: '0 7px 0 5px', borderRadius: 7, whiteSpace: 'nowrap',
-      font: '500 11px/1 var(--pl-mono)', fontVariantNumeric: 'tabular-nums', color: ink, background: soft, boxShadow: `0 0 0 1px var(--pl-halo), inset 0 0 0 1px color-mix(in oklab, ${line} 30%, transparent)`,
+      display: 'flex', alignItems: 'center', gap: 5 * s, height: PILL.h * s, padding: `0 ${7 * s}px 0 ${(icon ? 5 : 7) * s}px`, borderRadius: 7 * s, whiteSpace: 'nowrap',
+      font: `500 ${11 * s}px/1 var(--pl-mono)`, fontVariantNumeric: 'tabular-nums', color: ink, background: soft, boxShadow: `0 0 0 1px var(--pl-halo), inset 0 0 0 1px color-mix(in oklab, ${line} 30%, transparent)`,
       transition: 'background-color 450ms ease, color 450ms ease', animation: 'film-pop 260ms var(--pl-spring-pop) both' }}>
-      {icon && icons?.[icon] ? <span style={{ display: 'grid', width: 12, height: 12, color: line }} dangerouslySetInnerHTML={{ __html: icons[icon] }} /> : null}
+      {icon && icons?.[icon] ? <span style={{ display: 'grid', width: 12 * s, height: 12 * s, color: line }} dangerouslySetInnerHTML={{ __html: icons[icon] }} /> : null}
       {children}
     </span>
   );
@@ -168,13 +174,14 @@ function Pill({ x, y, k, tone, icon, icons, up, flow, children }) {
 // plumber's change, as its cards show it (overlay/src/widget.js .change): the class at fault in coral, then struck as
 // the class that fixes it arrives in mint; under each, the property it sets. The sauce, said as code.
 function Change({ code, fixed, done }) {
-  const chip = (tone) => ({ padding: '2px 7px', borderRadius: 5, font: 'var(--pl-card-code)', fontSize: 13, color: `var(--pl-${tone})`, background: `color-mix(in oklab, var(--pl-${tone}) ${tone === 'off' ? 9 : 11}%, transparent)` });
-  const cap = { font: 'var(--pl-card-meta)', fontSize: 11.5, color: 'var(--pl-ink-2)', textAlign: 'center' };
+  const s = useContext(UI);
+  const chip = (tone) => ({ padding: `${2 * s}px ${7 * s}px`, borderRadius: 5 * s, font: 'var(--pl-card-code)', fontSize: 13 * s, color: `var(--pl-${tone})`, background: `color-mix(in oklab, var(--pl-${tone}) ${tone === 'off' ? 9 : 11}%, transparent)` });
+  const cap = { font: 'var(--pl-card-meta)', fontSize: 11.5 * s, color: 'var(--pl-ink-2)', textAlign: 'center' };
   return (
-    <span style={{ position: 'absolute', left: '50%', top: 'calc(100% + 16px)', transform: 'translateX(-50%)', display: 'flex', alignItems: 'flex-start', gap: 10, padding: '10px 14px 9px',
-      borderRadius: 12, background: 'var(--pl-paper)', color: 'var(--pl-ink)', boxShadow: '0 0 0 1px rgb(0 0 0 / 0.06), 0 8px 24px -8px rgb(0 0 0 / 0.18)', whiteSpace: 'nowrap',
+    <span style={{ position: 'absolute', left: '50%', top: `calc(100% + ${12 * s}px)`, transform: 'translateX(-50%)', display: 'flex', alignItems: 'flex-start', gap: 10 * s, padding: `${10 * s}px ${14 * s}px ${9 * s}px`,
+      borderRadius: 12 * s, background: 'var(--pl-paper)', color: 'var(--pl-ink)', boxShadow: '0 0 0 1px rgb(0 0 0 / 0.06), 0 8px 24px -8px rgb(0 0 0 / 0.18)', whiteSpace: 'nowrap',
       animation: 'film-pop 300ms var(--pl-spring-pop) both' }}>
-      <span style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+      <span style={{ display: 'flex', flexDirection: 'column', gap: 4 * s }}>
         <code style={{ ...chip('off'), textDecorationLine: fixed ? 'line-through' : 'none', textDecorationThickness: 1, transition: 'opacity 300ms ease', opacity: fixed ? 0.75 : 1 }}>{code.fault.cls}</code>
         <span style={cap}>{code.fault.prop}</span>
       </span>
@@ -188,12 +195,22 @@ function Change({ code, fixed, done }) {
         </span>
       </span>
       {/* written, and it holds everywhere: plumber's check, drawn where the fix is; the burst comes from here */}
-      <svg data-done viewBox="0 0 20 20" width="20" height="20" aria-hidden="true" style={{ marginTop: 3, flex: 'none', width: done ? 20 : 0, marginLeft: done ? 0 : -10, opacity: done ? 1 : 0, transform: `scale(${done ? 1 : 0.6})`, transition: 'width 360ms var(--pl-spring), margin-left 360ms var(--pl-spring), opacity 200ms ease 120ms, transform 360ms var(--pl-spring-pop) 120ms' }}>
+      <svg data-done viewBox="0 0 20 20" width={20 * s} height={20 * s} aria-hidden="true" style={{ marginTop: 3 * s, flex: 'none', width: done ? 20 * s : 0, marginLeft: done ? 0 : -10, opacity: done ? 1 : 0, transform: `scale(${done ? 1 : 0.6})`, transition: 'width 360ms var(--pl-spring), margin-left 360ms var(--pl-spring), opacity 200ms ease 120ms, transform 360ms var(--pl-spring-pop) 120ms' }}>
         <circle cx="10" cy="10" r="10" fill="var(--pl-mint)" />
         <path d="M5.8 10.4l2.7 2.7 5.6-6" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" strokeDasharray="14" strokeDashoffset={done ? 0 : 14} style={{ transition: 'stroke-dashoffset 300ms ease 120ms' }} />
       </svg>
     </span>
   );
+}
+
+// the camera's framing of a screen's subject (its film.frame): as close as fits, inside the card's own box (the magnified
+// card always covers it); `at` is where the subject sits in the frame's height (0.5 the middle)
+function framing(spec, root, at) {
+  const lc = local(root), W = root.offsetWidth, H = root.offsetHeight;
+  const parts = [spec.frame(root)].flat().map(lc), l = Math.min(...parts.map((b) => b.x)), t = Math.min(...parts.map((b) => b.y));
+  const f = { x: l, y: t, w: Math.max(...parts.map((b) => b.x + b.w)) - l, h: Math.max(...parts.map((b) => b.y + b.h)) - t };
+  const k = Math.max(1, Math.min(CAMERA.max, (W * CAMERA.fill) / f.w)), clamp = (v, lo) => Math.min(0, Math.max(lo, v));
+  return { k, x: clamp(W / 2 - k * (f.x + f.w / 2), W - k * W), y: clamp(H * at - k * (f.y + f.h / 2), H - k * H) };
 }
 
 function burst(canvas, ox, oy) {
@@ -222,7 +239,7 @@ function burst(canvas, ox, oy) {
   requestAnimationFrame(tick);
 }
 
-export function Film({ Example, names, onSaid, chrome = true, start = true, onDone }) {
+export function Film({ Example, names, onSaid, chrome = true, start = true, onDone, ui = 1, openIn = false }) {
   const spec = Example.film;
   const [side, setSide] = useState('broken');
   const [playing, setPlaying] = useState(false);
@@ -243,6 +260,20 @@ export function Film({ Example, names, onSaid, chrome = true, start = true, onDo
   // plumber's property icons, from the overlay itself (served by its dev server), never redrawn
   useEffect(() => { import(/* @vite-ignore */ BOXMODEL).then((mod) => setIcons(mod.BLOCK_ICONS)).catch(() => {}); }, []);
 
+  // a film that opens on its subject: the camera is already in when the first frame is seen, so the problem is on screen
+  // from the start (the story review's first check), and the film's own camera-in has nowhere to go
+  useEffect(() => {
+    if (!openIn) return;
+    let gone = false;
+    (document.fonts?.ready ?? Promise.resolve()).then(() => requestAnimationFrame(() => {
+      const root = example(); if (gone || !root) return;
+      const cs = getComputedStyle(root);
+      setFrame({ radius: cs.borderRadius, shadow: cs.boxShadow });
+      setCam({ ...framing(spec, root, spec.still ? 0.5 : CAMERA.at), ms: 0 });
+    }));
+    return () => { gone = true; };
+  }, [openIn]);
+
   useEffect(() => {
     if (!start) return; // a frame around the film (FilmPage's opening) says when it begins
     if (still()) { onSaid?.(spec.say); onDone?.(); return; }
@@ -250,7 +281,7 @@ export function Film({ Example, names, onSaid, chrome = true, start = true, onDo
     const all = () => spec.instances(example());
     const boxes = () => { const at = local(example()); return all().map(at); };
     (async () => {
-      setPlaying(true); setSide('broken'); setM(null); setChange(0); setFrame(null); setCam({ k: 1, x: 0, y: 0 }); onSaid?.('');
+      setPlaying(true); setSide('broken'); setM(null); setChange(0); if (!openIn) { setFrame(null); setCam({ k: 1, x: 0, y: 0 }); } onSaid?.('');
       await sleep(TIMING.lead, live); await document.fonts?.ready;
       if (spec.still) {
         const lead = () => all()[spec.lead];
@@ -266,9 +297,8 @@ export function Film({ Example, names, onSaid, chrome = true, start = true, onDo
         const cs = getComputedStyle(root);
         setFrame({ radius: cs.borderRadius, shadow: cs.boxShadow });
         setPtr((p) => p && { ...p, gone: true });
-        const near = { k, x: clamp(W / 2 - k * (f.x + f.w / 2), W - k * W), y: clamp(H / 2 - k * (f.y + f.h / 2), H - k * H) };
-        beat('camera in on the subject'); setCam(near);
-        await sleep(TIMING.camera, live);
+        const near = framing(spec, root, 0.5);
+        if (!openIn) { beat('camera in on the subject'); setCam(near); await sleep(TIMING.camera, live); } // opened in: already there
         // MEASURE IT: the places outlined; the lead coral, how far it is moved, then how far off the grid that leaves it
         const rest = boxes();
         setM({ tone: 'sky', boxes: rest }); await sleep(TIMING.outline, live);
@@ -343,8 +373,8 @@ export function Film({ Example, names, onSaid, chrome = true, start = true, onDo
       const cs = getComputedStyle(root), clamp = (v, lo) => Math.min(0, Math.max(lo, v));
       setFrame({ radius: cs.borderRadius, shadow: cs.boxShadow });
       setPtr((p) => p && { ...p, gone: true });
-      setCam({ k, x: clamp(W / 2 - k * (f.x + f.w / 2), W - k * W), y: clamp(H * CAMERA.at - k * (f.y + f.h / 2), H - k * H) });
-      await sleep(TIMING.camera, live);
+      setCam(framing(spec, root, CAMERA.at));
+      if (!openIn) await sleep(TIMING.camera, live);
       // MEASURE IT: every place outlined in sky; the gesture on the lead twice, the cause named the second time
       const rest = boxes(), lead = () => all()[spec.lead];
       beat('2 · measure it: every place outlined'); setM({ tone: 'sky', boxes: rest });
@@ -406,6 +436,7 @@ export function Film({ Example, names, onSaid, chrome = true, start = true, onDo
   const toneOf = (i) => (tone === 'sky' && m?.lead === i && (pushed || r?.off > 0.05) ? 'off' : tone);
   const tagTone = tone === 'on' ? 'on' : 'off';
   return (
+    <UI.Provider value={ui}>
     <div ref={box} className="pl-light relative flex flex-col items-center gap-10">
       <style>{'@keyframes film-pop { from { opacity: 0; scale: 0.92 } to { opacity: 1; scale: 1 } }'}</style>
       <div className="relative" style={frame ? { overflow: 'clip', borderRadius: frame.radius, boxShadow: frame.shadow, isolation: 'isolate' } : undefined}>
@@ -435,11 +466,11 @@ export function Film({ Example, names, onSaid, chrome = true, start = true, onDo
                   </span>
                 ))}
                 {/* a value only where the pointer is: the size, counting, under the place */}
-                {r ? <Pill key={`s${m.lead}${tone}`} x={r.box.x + r.box.w / 2} y={r.box.y + r.box.h + PILL.gap / k} k={k} tone={toneOf(m.lead) === 'sky' ? 'on' : toneOf(m.lead)} icon={r.size.icon} icons={icons}>{r.size.pre}<Count from={r.size.from} to={r.size.to} /></Pill> : null}
+                {r ? <Pill key={`s${m.lead}${tone}`} x={r.box.x + r.box.w / 2} y={r.box.y + r.box.h + (PILL.gap * ui) / k} k={k} tone={toneOf(m.lead) === 'sky' ? 'on' : toneOf(m.lead)} icon={r.size.icon} icons={icons}>{r.size.pre}<Count from={r.size.from} to={r.size.to} /></Pill> : null}
                 {/* the cause, as plumber names it: its own pills, above the place */}
                 {/* side by side in one row, so they never climb onto the words above */}
                 {r && m.cause && r.tags?.length ? (
-                  <span style={{ position: 'absolute', left: r.box.x + r.box.w / 2, top: r.box.y - PILL.gap / k, display: 'flex', gap: 4, transform: `translate(-50%, -100%) scale(${1 / k})`, transformOrigin: '50% 100%' }}>
+                  <span style={{ position: 'absolute', left: r.box.x + r.box.w / 2, top: r.box.y - (PILL.gap * ui) / k, display: 'flex', gap: 4 * ui, transform: `translate(-50%, -100%) scale(${1 / k})`, transformOrigin: '50% 100%' }}>
                     {r.tags.map((g, i) => (
                       <Pill key={`t${i}${tone}`} flow k={k} tone={tagTone} icon={g.icon} icons={icons}>
                         {g.swatch ? <span style={{ width: 9, height: 9, borderRadius: 3, background: g.swatch, boxShadow: '0 0 0 1px rgb(0 0 0 / 0.12)' }} /> : null}
@@ -462,11 +493,12 @@ export function Film({ Example, names, onSaid, chrome = true, start = true, onDo
       <canvas ref={fx} aria-hidden="true" className="pointer-events-none absolute z-30" style={{ left: -160, top: -80, width: 'calc(100% + 320px)', height: 'calc(100% + 160px)' }} />
       {ptr ? (
         <svg aria-hidden="true" width="18" height="22" viewBox="0 0 18 22" style={{ position: 'absolute', left: 0, top: 0, zIndex: 40, pointerEvents: 'none',
-          transform: `translate(${ptr.x - 3}px, ${ptr.y - 2}px) scale(${ptr.down ? 0.86 : 1})`, opacity: ptr.gone ? 0 : 1,
+          transform: `translate(${ptr.x - 3}px, ${ptr.y - 2}px) scale(${(ptr.down ? 0.86 : 1) * Math.max(1, ui * 0.75)})`, transformOrigin: '3px 2px', opacity: ptr.gone ? 0 : 1,
           transition: 'transform 420ms cubic-bezier(0.3, 0, 0.2, 1), opacity 250ms ease', filter: 'drop-shadow(0 1px 1.5px rgb(0 0 0 / 0.25))' }}>
           <path d="M2 1.5v16.2l4.1-3.9 2.6 6.2 3-1.3-2.6-6h5.7z" fill="#111" stroke="#fff" strokeWidth="1.4" strokeLinejoin="round" />
         </svg>
       ) : null}
     </div>
+    </UI.Provider>
   );
 }

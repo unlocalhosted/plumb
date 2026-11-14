@@ -36,11 +36,12 @@ The final render (1920 × 1080, and any other format) happens only after both re
    *Source: craft-rule §3½ and §6 (the stage's own motion rules).*
 5. **Each level of zoom shows something new.** Card → element → detail: if a deeper view shows the same thing bigger,
    it is a zoom for its own sake. The dive is earned when the detail can only be seen there (pixels, a construction).
-6. **Readable on a phone.** The film is watched on a phone more than anywhere. A 1920 × 1080 frame shown across a
-   phone held upright is roughly a fifth of its size, so on-screen text needs to be about 28 px tall in the frame to
-   read, and pills and labels the same. Small mono text inside the example (a class name in the change card) counts
-   too. If it can only be read at full size, it is decoration.
-   *Source: arithmetic on the output size; check it by viewing the keyframe at 400 px wide.*
+6. **Readable where it is watched.** A wide (16:9) film shown across a phone held upright is about a fifth of its size,
+   so even 28 px text in a 1920 × 1080 frame lands near 6 px: no wide film is truly readable upright, which is why the
+   phone cut is tall (9:16). For the wide cut, plumber's marks, the change card and the switch are drawn at the film
+   size (FilmPage's FILM_UI, twice the showcase's: pills about 26 px in a 1080p frame) and read on a laptop, a tablet
+   or a phone turned sideways. Check a keyframe at 400 px wide: if the pills can't be read, they are decoration.
+   *Source: arithmetic on the output size.*
 7. **Colour means one thing each.** Sky measures, coral is broken, mint is fixed (plumber's own primitives,
    overlay/src/tokens.css). No other accent competes, and the example's own colours don't borrow those meanings.
 8. **Motion is calm.** Unrelated things never move at once. Big moves don't overshoot; springs are for small things

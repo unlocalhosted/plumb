@@ -19,15 +19,16 @@ ensureLook();
 const SCREENS = Object.fromEntries(Object.entries(import.meta.glob('./screens/[0-9]*.jsx', { eager: true })).map(([, m]) => [m.n, m]));
 const STAGE = { w: 1600, h: 900, edge: 56 };
 const TIMING = {
-  name:     250,   // the number and the name rise in, in the middle
-  travel:  1800,   // the name goes to its corner
-  clear:    650,   // ...and the card rises in once the name has left the middle (nothing crosses it)
-  film:    3100,   // the film begins
+  name:     150,   // the signature and the card come in together: the card already in on its subject, the problem on screen
+  travel:   700,   // (the opening no longer centres the name: a title on an empty desk gave a feed nothing to look at)
+  clear:      0,
+  film:    1500,   // the film begins
   back:     300,   // closing: after the film, the card and signature step back
   mark:     700,   // the mark travels to the middle
   line:    1500,   // the site's line under it
 };
-const MOVE = 'cubic-bezier(0.7, 0, 0.3, 1)';      // the camera's curve: slow start, slow finish
+const MOVE = 'cubic-bezier(0.7, 0, 0.3, 1)';
+const FILM_UI = 2;                                 // plumber's marks at twice their showcase size: a film is watched smaller than it is made      // the camera's curve: slow start, slow finish
 const LINE = 'A design review on every screen.';   // the site's hero line (homepage/src/hero)
 
 // React Plumber's mark (overlay/src/mark.js; the design site's Logo page): a solid P, pink stem and violet bowl, each
@@ -110,7 +111,7 @@ export function FilmPage({ n }) {
     setTimeout(() => setPhase('line'), TIMING.back + TIMING.line);
   };
   if (!Example?.film) return <p style={{ padding: 40 }}>No film for № {n} yet.</p>;
-  const centred = phase === 'empty' || phase === 'name', shown = phase !== 'empty';
+  const centred = false, shown = phase !== 'empty';
   const closing = phase === 'back' || phase === 'mark' || phase === 'line', marked = phase === 'mark' || phase === 'line';
   return (
     <div className="pl-light" style={{ position: 'fixed', inset: 0, display: 'grid', placeItems: 'center', overflow: 'hidden', background: 'var(--pl-desk)' }}>
@@ -118,25 +119,25 @@ export function FilmPage({ n }) {
       <style>{'plumb-overlay { display: none !important; } @keyframes mk-guide { from { opacity: 0; stroke-dashoffset: 40 } to { opacity: 1; stroke-dashoffset: 0 } } @keyframes mk-pill { from { opacity: 0; transform: scale(.6) } to { opacity: 1; transform: scale(1) } }'}</style>
       <div style={{ position: 'relative', width: STAGE.w, height: STAGE.h, flex: 'none', transform: `scale(${k})`, background: 'var(--pl-desk)', color: 'var(--pl-ink)', visibility: to ? 'visible' : 'hidden' }}>
         {/* the signature: which piece of craft this is; it opens the film large in the middle, then takes its corner */}
-        <div ref={sig} style={{ position: 'absolute', left: STAGE.edge, top: STAGE.edge - 8, display: 'flex', flexDirection: 'column', gap: 8, maxWidth: 420,
+        <div ref={sig} style={{ position: 'absolute', left: STAGE.edge, top: STAGE.edge - 8, display: 'flex', flexDirection: 'column', gap: 10, maxWidth: 380,
           transform: centred && to ? to.name : 'none', opacity: shown && !closing ? 1 : 0,
           transition: `transform 1000ms ${MOVE}, opacity ${closing ? 500 : 600}ms ease` }}>
-          <span style={{ font: 'var(--pl-round-w2, 800) 15px/1 var(--pl-round)', color: 'var(--pl-ink-2)', letterSpacing: '0.01em' }}>Craft № {n}</span>
-          <span style={{ font: 'var(--pl-round-w, 750) 34px/38px var(--pl-round)', letterSpacing: '-0.015em', textWrap: 'balance' }}>{p.title}</span>
+          <span style={{ font: 'var(--pl-round-w2, 800) 22px/1 var(--pl-round)', color: 'var(--pl-ink-2)', letterSpacing: '0.01em' }}>Craft № {n}</span>
+          <span style={{ font: 'var(--pl-round-w, 750) 44px/50px var(--pl-round)', letterSpacing: '-0.015em', textWrap: 'balance' }}>{p.title}</span>
         </div>
         {/* the film itself, in the middle of the stage; it rises in as the name leaves, and steps back at the end */}
-        <div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', paddingBottom: 40,
-          opacity: (phase === 'film' || phase === 'playing') ? 1 : 0, transform: `translateY(${phase === 'film' || phase === 'playing' ? 0 : closing ? 0 : 18}px) scale(${closing ? 0.97 : 1})`,
+        <div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', paddingBottom: 150, /* room under the switch for plumber's change card */
+          opacity: (phase === 'name' || phase === 'film' || phase === 'playing') ? 1 : 0, transform: `translateY(${phase === 'name' || phase === 'film' || phase === 'playing' ? 0 : closing ? 0 : 12}px) scale(${closing ? 0.97 : 1})`,
           transition: `opacity 600ms ease ${phase === 'film' ? TIMING.clear : 0}ms, transform 800ms var(--pl-spring) ${phase === 'film' ? TIMING.clear : 0}ms` }}>
-          <Film Example={Example} names={Example.names} chrome={false} start={phase === 'playing'} onDone={done} />
+          <Film Example={Example} names={Example.names} chrome={false} start={phase === 'playing'} onDone={done} ui={FILM_UI} openIn />
         </div>
         {/* the mark, on every frame; at the end it comes to the middle, and the bob settles on its line */}
         <div ref={mark} style={{ position: 'absolute', right: STAGE.edge, bottom: STAGE.edge - 12, display: 'flex', alignItems: 'center', gap: 9,
           opacity: shown ? 0.92 : 0, transform: marked && to ? to.mark : 'none', transition: `transform 1000ms ${MOVE}, opacity 600ms ease` }}>
-          <Mark size={38} guards={marked} />
-          <span style={{ font: '650 22px/1 var(--pl-sans)', letterSpacing: '-0.035em' }}>React Plumber</span>
+          <Mark size={46} guards={marked} />
+          <span style={{ font: '650 28px/1 var(--pl-sans)', letterSpacing: '-0.035em' }}>React Plumber</span>
         </div>
-        <p style={{ position: 'absolute', left: 0, right: 0, top: STAGE.h / 2 + 34, margin: 0, textAlign: 'center', font: '400 22px/30px var(--pl-sans)', color: 'var(--pl-ink-2)',
+        <p style={{ position: 'absolute', left: 0, right: 0, top: STAGE.h / 2 + 44, margin: 0, textAlign: 'center', font: '400 34px/42px var(--pl-sans)', color: 'var(--pl-ink-2)',
           opacity: phase === 'line' ? 1 : 0, transform: `translateY(${phase === 'line' ? 0 : 8}px)`, transition: 'opacity 600ms ease, transform 700ms var(--pl-spring)' }}>{LINE}</p>
       </div>
     </div>

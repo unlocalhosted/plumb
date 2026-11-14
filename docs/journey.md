@@ -1305,6 +1305,16 @@ field is empty). The table of five writes, before and after. The Next table: eig
 - **Proof:** docs/media/film-03-optical-overshoot.mp4 (1920x1080).
 - **Open:** the fix is honest at 4%, which is 0.4px past each guide, so the mint zones are thin even at 6x.
 
+### The films, reviewed before they are rendered (2026-11-15)
+
+- **The itch:** the owner asked for a storytelling reviewer and a cinematography reviewer that check a film before it is rendered, "to keep cost low", and make films people watch to the end without tipping into cringe.
+- **What we built:** two skills (film-story-review, film-camera-review), each a written, sourced list of checks: the problem on screen in the first two seconds, one question planted early and answered late, more time on the problem than the fix, every beat teaching something, a payoff seen without reading, one subject per frame, motivated camera moves, readable marks, and a cringe list both refuse. They read a cheap draft: the films now log their beats, and film-draft.mjs plays a film once and writes each beat's timecode, a keyframe per beat and a contact sheet. Nobody watches the draft.
+- **What the first review found (film № 3):** a title on an empty desk for the first 3.6 s, a payoff only the pills could show, marks far too small to read where films are watched, and real-time recording at 25 fps re-timed to 30.
+- **The fixes, made on the system, not the one film:** films open with the card already in on its subject; plumber's marks are drawn at twice their size in films; № 3's dive dims the card and keeps the old circle as a ghost; and finals are rendered frame by frame at 60 fps by film-render.mjs, which pauses the page's clock and every CSS animation and moves them one frame at a time.
+- **Dead ends:** the renderer first ended early twice: the page's performance.now kept real time, and Playwright's installed clock kept running until paused. Showing all three rows in № 3's dive made it too shallow to see.
+- **Proof:** docs/films/03-review.md and 37-review.md; docs/media/film-03-optical-overshoot.mp4 and film-37-never-land-on-half-pixels.mp4, both 1920x1080 at 60 fps.
+- **Open:** a wide film can't be truly read on an upright phone; the phone cut needs a tall layout.
+
 ## Open gaps
 - The site's top bar doesn't fit a phone (390px): it widens the page to about 500px. Needs a compact bar.
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
@@ -2662,6 +2672,8 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   Nothing finds a new one when it is written.
 
 ## Shipped · 2026-W46
+
+- Films are reviewed for story and camera on a cheap draft before they are rendered, and rendered frame by frame at 60 fps: № 3 and № 37 re-made after their first review (The films, reviewed before they are rendered, in the journey).
 
 - A film of craft rule № 3: the camera dives into a shapes picker and draws its square and circle as a type designer would, the circle's missing corners hatched, then the overshoot once plumber's fix lands (Film № 3 in the journey).
 

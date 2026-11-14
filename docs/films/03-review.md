@@ -62,3 +62,16 @@ coral. Answered at 12.4 s ("fills 78.5% of the same box"). Before 6.7 s nothing 
 - **Cringe check:** passes.
 
 **Verdict:** fix, then run the draft again.
+
+## After the fixes (2026-11-15)
+
+- **The opening:** every film now opens with the card already in on its subject and the title in the corner (no title
+  on an empty desk). №3's first frame shows the picker's shapes.
+- **Readable marks:** plumber's pills, change card and switch are drawn at twice their showcase size in films.
+- **The payoff:** the dive dims the card, so only the square and circle are bright. Fixed, the old circle stays as a
+  dashed ghost inside the new one, and the mint overshoot zones show where it passes the line. Trying all three rows
+  at once made the dive too shallow to see anything, so it stays on the Basic row.
+- **Smooth motion:** finals are drawn frame by frame at 60 fps (film-render.mjs), not recorded in real time.
+- **Still open:** the payoff at card size (the three rows turning mint) is still subtle at 4%; the close-up carries it.
+
+**Verdict:** rendered, docs/media/film-03-optical-overshoot.mp4 (1920 × 1080, 60 fps, 27.6 s).

@@ -173,25 +173,32 @@ LaunchBoard.film = {
     const row = el.closest('[data-shapes]'), { ci, sq, fill } = fillOf(root, row), short = Math.max(0, sq.h * 1.04 - ci.h);
     return { off: short > 0.3 ? 1 : 0, size: { icon: null, pre: '⌀ ', from: 0, to: Math.round(ci.w * 10) / 10 }, tags: [{ icon: null, pre: 'fills ', text: `${pct(fill)}% of its box` }] };
   },
+  // the Basic row's square and circle, drawn as a type designer would; the rest of the card dimmed so only they are bright
   dive(root, side) {
-    const row = shapesOf(root)[0], { sq, ci, fill } = fillOf(root, row), sqFill = (sq.w * sq.h - (4 - Math.PI) * 1 ** 2) / (sq.w * sq.h);
-    const cx = ci.x + ci.w / 2, cy = ci.y + ci.h / 2, r = ci.w / 2, top = sq.y, bot = sq.y + sq.h, left = sq.x - 8, right = cx + sq.w / 2 + 8;
-    const box = { x: cx - sq.w / 2, y: sq.y, w: sq.w, h: sq.h }, ns = '', K = 6, u = (v) => +(v / K).toFixed(3); // drawn at the dive's zoom: u(px on screen) → px in the example
-    const circle = `M${cx - r} ${cy}a${r} ${r} 0 1 0 ${2 * r} 0a${r} ${r} 0 1 0 ${-2 * r} 0`;
-    const guides = `<g stroke="#2f86dc" stroke-width="${u(1.25)}" stroke-dasharray="${u(6)} ${u(5)}" ${ns} fill="none"><path ${ns} d="M${left} ${top}H${right}M${left} ${bot}H${right}"/></g>`
-      + `<rect ${ns} x="${sq.x}" y="${sq.y}" width="${sq.w}" height="${sq.h}" rx="1" fill="none" stroke="#2f86dc" stroke-width="${u(2)}"/>`
-      + `<rect ${ns} x="${box.x}" y="${box.y}" width="${box.w}" height="${box.h}" fill="none" stroke="#2f86dc" stroke-width="${u(1)}" stroke-dasharray="${u(3)} ${u(3)}"/>`;
-    const hatch = `<defs><pattern id="ov-h" width="0.7" height="0.7" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="0.22" height="0.7" fill="#e0533f"/></pattern></defs>`;
-    const svg = side === 'fixed'
-      // the overshoot zones, as a type designer marks them: a band past each guide, as deep as the round one goes past it
-      ? `<rect x="${left}" y="${cy - r}" width="${right - left}" height="${top - (cy - r)}" fill="#1fa774" fill-opacity=".3"/><rect x="${left}" y="${bot}" width="${right - left}" height="${cy + r - bot}" fill="#1fa774" fill-opacity=".3"/>${guides}`
-        + `<clipPath id="ov-c"><path d="${circle}"/></clipPath><g clip-path="url(#ov-c)"><rect x="${box.x}" y="${cy - r}" width="${box.w}" height="${top - (cy - r)}" fill="#1fa774" fill-opacity=".55"/><rect x="${box.x}" y="${bot}" width="${box.w}" height="${cy + r - bot}" fill="#1fa774" fill-opacity=".55"/></g>`
-        + `<path ${ns} d="${circle}" fill="none" stroke="#1fa774" stroke-width="${u(2)}"/>`
-      : `${hatch}${guides}<path fill-rule="evenodd" d="M${box.x} ${box.y}h${box.w}v${box.h}h${-box.w}Z ${circle}" fill="url(#ov-h)"/><path ${ns} d="${circle}" fill="none" stroke="#e0533f" stroke-width="${u(2)}"/>`;
+    const rows = shapesOf(root).slice(0, 1).map((row) => fillOf(root, row)), W = root.offsetWidth, H = root.offsetHeight; // one row, close: three rows at once made the dive too shallow to see
+    const L = Math.min(...rows.map((r) => r.sq.x)) - 12, R = Math.max(...rows.map((r) => r.ci.x + r.ci.w / 2 + r.sq.w / 2)) + 12;
+    const T = Math.min(...rows.map((r) => r.sq.y)) - 24, B = Math.max(...rows.map((r) => r.sq.y + r.sq.h)) + 14;
+    const K = Math.min(6, (W * 0.84) / (R - L), (H * 0.84) / (B - T)), u = (v) => +(v / K).toFixed(3); // drawn at the dive's zoom
+    const hatch = `<defs><pattern id="ov-h" width="${u(5)}" height="${u(5)}" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="${u(1.6)}" height="${u(5)}" fill="#e0533f"/></pattern></defs>`;
+    const holes = rows.map((r) => { const x = r.sq.x - 8, y = r.sq.y - 7, w = r.ci.x + r.ci.w / 2 + r.sq.w / 2 + 8 - x, h = r.sq.h + 14; return `M${x} ${y}h${w}v${h}h${-w}Z`; }).join('');
+    const shade = `<path fill-rule="evenodd" d="M-2000 -2000h${W + 4000}v${H + 4000}h${-(W + 4000)}Z ${holes}" fill="#f7f6f3" fill-opacity=".82"/>`;
+    const pair = ({ sq, ci, fill }, i) => {
+      const cx = ci.x + ci.w / 2, cy = ci.y + ci.h / 2, r = ci.w / 2, r0 = sq.w / 2, top = sq.y, bot = sq.y + sq.h, left = sq.x - 6, right = cx + sq.w / 2 + 6;
+      const box = { x: cx - sq.w / 2, y: sq.y, w: sq.w, h: sq.h }, ring = (rr) => `M${cx - rr} ${cy}a${rr} ${rr} 0 1 0 ${2 * rr} 0a${rr} ${rr} 0 1 0 ${-2 * rr} 0`;
+      const guides = `<path d="M${left} ${top}H${right}M${left} ${bot}H${right}" fill="none" stroke="#2f86dc" stroke-width="${u(1.5)}" stroke-dasharray="${u(7)} ${u(5)}"/>`
+        + `<rect x="${sq.x}" y="${sq.y}" width="${sq.w}" height="${sq.h}" rx="1" fill="none" stroke="#2f86dc" stroke-width="${u(2)}"/>`;
+      return side === 'fixed'
+        // the overshoot zones past each guide, the circle reaching into them, and the old circle as a dashed coral ghost
+        ? `<rect x="${left}" y="${cy - r}" width="${right - left}" height="${top - (cy - r)}" fill="#1fa774" fill-opacity=".35"/><rect x="${left}" y="${bot}" width="${right - left}" height="${cy + r - bot}" fill="#1fa774" fill-opacity=".35"/>${guides}`
+          + `<path d="${ring(r)}" fill="none" stroke="#1fa774" stroke-width="${u(2.5)}"/><path d="${ring(r0)}" fill="none" stroke="#f3a091" stroke-width="${u(1.5)}" stroke-dasharray="${u(4)} ${u(3)}"/>`
+        : `${guides}<path fill-rule="evenodd" d="M${box.x} ${box.y}h${box.w}v${box.h}h${-box.w}Z ${ring(r)}" fill="url(#ov-h)"/><path d="${ring(r)}" fill="none" stroke="#e0533f" stroke-width="${u(2.5)}"/>`;
+    };
+    const first = rows[0], fcx = first.ci.x + first.ci.w / 2;
     const pills = side === 'fixed'
-      ? [{ x: cx, y: cy - r - 1.2, tone: 'on', text: `+${Math.round((ci.h / sq.h - 1) * 100)}% · past the line, like an O` }]
-      : [{ x: sq.x + sq.w / 2, y: top - 1.2, tone: 'sky', text: `fills ${pct(sqFill)}%` }, { x: cx, y: top - 1.2, tone: 'off', text: `fills ${pct(fill)}% of the same box` }];
-    return { focus: { x: (sq.x + cx + sq.w / 2) / 2 - 2, y: cy }, k: K, svg, pills };
+      ? [{ x: fcx, y: first.sq.y - 1.5, tone: 'on', text: `+${Math.round((first.ci.h / first.sq.h - 1) * 100)}%, past the line` }]
+      : [{ x: first.sq.x + first.sq.w / 2, y: first.sq.y - 1.5, tone: 'sky', text: `${pct(first.fill === 0 ? 0 : (first.sq.w * first.sq.h - (4 - Math.PI)) / (first.sq.w * first.sq.h))}%` },
+         { x: fcx, y: first.sq.y - 1.5, tone: 'off', text: `${pct(first.fill)}% of the same box` }];
+    return { focus: { x: (L + R) / 2, y: (T + B) / 2 }, k: K, svg: `${hatch}${shade}${rows.map(pair).join('')}`, pills };
   },
   say: 'Compare the circle with the square beside it.',
 };
