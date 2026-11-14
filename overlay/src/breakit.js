@@ -1,5 +1,5 @@
 /* ─────────────────────────────────────────────────────────
- * BREAK IT · React Plumber overlay (layer 1: longer words)
+ * BREAK IT · React Plumber overlay (toys: longer words, narrower, bigger text)
  *
  * Break your own screen before a user does (a post the owner shared on 2026-11-15, docs/references.md: "double the
  * length of every label, turn the system text size all the way up, make the main action fail"). A page never shows
@@ -19,7 +19,13 @@
  *           way a German or Finnish translation does ("Save changes" → "Šàvé çhàñgéš šàvé çhàñgéš"). Placeholders
  *           too. The page stays usable: it is not frozen, and words React draws while it is on grow as they arrive
  *  grow     the words grow over a moment, so you watch the screen give way. Reduced motion: at once
- *  breaks   only what broke because of the toggle (each check runs before and after; what was already broken is
+ *  narrower a copy of the page (an iframe of this URL, so the app's own breakpoints fire) squeezed a step a frame from
+ *           the window's width down to 320px; each break is caught at the width it starts, and stepping to it puts the
+ *           copy at that width with the break ringed. Things of one row or list that break at one width are one note
+ *  bigger   the reader's text size at 200%: the root size doubles, as a browser's setting does, so text in rem grows.
+ *           Text that stays the same size is set in pixels: one note per class that does it (text-[11px] → its rem
+ *           twin), every place it is used ringed. Layout breaks under the bigger text are noted too
+ *  breaks   only what broke because of the toy (each check runs before and after; what was already broken is
  *           not this toggle's news):
  *             cut      the words no longer fit a box that hides what overflows (an ellipsis, a clipped line, a clamp)
  *             spill    the words run past the edge of the box drawn around them, or off the screen
@@ -27,6 +33,7 @@
  *             sideways the whole page now scrolls sideways
  *  draw     a coral ring round each break; the one in hand is filled with a coral hatch. One note at a time in the bar
  *  off      every word goes back exactly as it was, unless the app has changed it since (then the app's is kept)
+ *  toys     one at a time; the bar opens with none on. Picking one turns the last one off
  *  keys     Alt+S opens and closes. ← → between breaks, Esc closes
  * Nothing here writes to source.
  * ───────────────────────────────────────────────────────── */
@@ -202,7 +209,8 @@ const stressed = (node) => node.nodeType === 3 && kinds.has(node) && kinds.get(n
 
 // ── what broke ──────────────────────────────────────────────
 
-const inView = (r) => r.width > 0 && r.height > 0 && r.bottom > 0 && r.right > 0 && r.top < innerHeight && r.left < innerWidth;
+const inView = (r, win = window) => r.width > 0 && r.height > 0 && r.bottom > 0 && r.right > 0 && r.top < win.innerHeight && r.left < win.innerWidth;
+const cssOf = (el) => el.ownerDocument.defaultView.getComputedStyle(el);
 const hides = (cs, axis) => /hidden|clip|auto|scroll/.test(axis === 'x' ? cs.overflowX : cs.overflowY);
 const drawn = (cs) => { const bg = /rgba?\(([^)]+)\)/.exec(cs.backgroundColor); const a = bg ? (bg[1].split(/[,/]/)[3] ?? 1) : 0; return parseFloat(a) > 0.05 || parseFloat(cs.borderLeftWidth) > 0 || cs.boxShadow !== 'none' || cs.backgroundImage !== 'none'; };
 
@@ -210,26 +218,31 @@ function wordsRect(el) {
   let l = Infinity, t = Infinity, r = -Infinity, b = -Infinity;
   for (const n of el.childNodes) {
     if (n.nodeType !== 3 || !n.data.trim()) continue;
-    const range = document.createRange(); range.selectNodeContents(n);
+    const range = el.ownerDocument.createRange(); range.selectNodeContents(n);
     for (const q of range.getClientRects()) { if (!q.width) continue; l = Math.min(l, q.left); t = Math.min(t, q.top); r = Math.max(r, q.right); b = Math.max(b, q.bottom); }
   }
   return r > l ? { left: l, top: t, right: r, bottom: b, width: r - l, height: b - t } : null;
 }
 
 /** Every text-holding element in view, and what is wrong with it now: Map(el → { kind, box, ... }). */
-function measure() {
+function measure(win = window, { all = false } = {}) {
+  const doc = win.document, innerWidth = win.innerWidth, getComputedStyle = cssOf;
   const found = new Map(), boxes = [];
   const els = new Set();
-  const walk = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+  const walk = doc.createTreeWalker(doc.body, NodeFilter.SHOW_TEXT);
   for (let n = walk.nextNode(); n; n = walk.nextNode()) if (eligible(n)) els.add(n.parentElement);
   for (const el of els) {
     const w = wordsRect(el);
-    if (!w || !inView(w)) continue;
+    if (!w || !(all ? w.width > 0 && w.height > 0 : inView(w, win))) continue;
+    // words the browser lays out but does not show (a label a narrow layout hides with opacity or visibility)
+    if (el.checkVisibility && !el.checkVisibility({ opacityProperty: true, visibilityProperty: true })) continue;
+    // words for screen readers only: a box of a pixel or so, clipped, whatever width the words would take
+    { const bx = el.getBoundingClientRect(); if (cssOf(el).display !== 'inline' && (bx.width < 4 || bx.height < 4)) continue; }
     boxes.push({ el, w });
     // cut: this element or a close ancestor hides what overflows, and the words need more room than it has
     // (and its own words are what goes past the box's edge, so a wide section clipping something else says nothing)
     let cut = null;
-    for (let a = el, i = 0; a && a !== document.body && i < 4 && !cut; a = a.parentElement, i++) {
+    for (let a = el, i = 0; a && a !== doc.body && i < 4 && !cut; a = a.parentElement, i++) {
       const cs = getComputedStyle(a), r = a.getBoundingClientRect();
       const fixed = (o) => o !== 'auto' && o !== 'scroll';
       if (hides(cs, 'x') && fixed(cs.overflowX) && a.scrollWidth > a.clientWidth + 1 && (w.right > r.right + 1 || w.left < r.left - 1 || cs.textOverflow === 'ellipsis' && a === el)) cut = { box: a, need: a.scrollWidth, have: a.clientWidth, axis: 'x' };
@@ -239,7 +252,7 @@ function measure() {
     if (cut) { found.set(el, { kind: 'cut', el, ...cut, rect: cut.box.getBoundingClientRect() }); continue; }
     // spill: the words cross the edge of the nearest box drawn around them, or the screen's
     if ((w.right > innerWidth + 1 || w.left < -1) && !inScroller(el)) { found.set(el, { kind: 'spill', el, rect: w, edge: 'screen', by: Math.round(Math.max(w.right - innerWidth, -w.left)) }); continue; }
-    for (let a = el, i = 0; a && a !== document.body && i < 6; a = a.parentElement, i++) {
+    for (let a = el, i = 0; a && a !== doc.body && i < 6; a = a.parentElement, i++) {
       const cs = getComputedStyle(a);
       if (!drawn(cs)) continue;
       const r = a.getBoundingClientRect();
@@ -251,20 +264,20 @@ function measure() {
   // overlap: words that run into other words (a pair, said once, by the first)
   boxes.sort((a, b) => a.w.top - b.w.top);
   for (let i = 0; i < boxes.length; i++) {
-    const A = boxes[i]; if (found.has(A.el)) continue;
+    const A = boxes[i]; if (found.has(A.el) || [...found.values()].some((f) => f.other === A.el)) continue;
     for (let j = i + 1; j < boxes.length && boxes[j].w.top < A.w.bottom; j++) {
       const B = boxes[j]; if (A.el.contains(B.el) || B.el.contains(A.el) || pinnedOf(A.el) !== pinnedOf(B.el)) continue;   // a sticky bar over scrolled content is not words running into words
       const x = Math.min(A.w.right, B.w.right) - Math.max(A.w.left, B.w.left), y = Math.min(A.w.bottom, B.w.bottom) - Math.max(A.w.top, B.w.top);
       if (x > 2 && y > 2) { found.set(A.el, { kind: 'overlap', el: A.el, other: B.el, rect: union(A.w, B.w) }); break; }
     }
   }
-  const page = document.scrollingElement;
-  if (page.scrollWidth > innerWidth + 1) found.set(document.documentElement, { kind: 'sideways', el: document.documentElement, by: page.scrollWidth - innerWidth, rect: null });
+  const page = doc.scrollingElement;
+  if (page.scrollWidth > innerWidth + 1) found.set(doc.documentElement, { kind: 'sideways', el: doc.documentElement, by: page.scrollWidth - innerWidth, rect: null });
   return found;
 }
 // a row that scrolls sideways (a carousel) is meant to run past the screen
-const inScroller = (el) => { for (let a = el.parentElement; a && a !== document.body; a = a.parentElement) if (/hidden|clip|auto|scroll/.test(getComputedStyle(a).overflowX)) return true; return false; };
-const pinnedOf = (el) => { for (let a = el; a && a !== document.body; a = a.parentElement) if (/fixed|sticky/.test(getComputedStyle(a).position)) return a; return null; };
+const inScroller = (el) => { for (let a = el.parentElement; a && a !== el.ownerDocument.body; a = a.parentElement) if (/hidden|clip|auto|scroll/.test(cssOf(a).overflowX)) return true; return false; };
+const pinnedOf = (el) => { for (let a = el; a && a !== el.ownerDocument.body; a = a.parentElement) if (/fixed|sticky/.test(cssOf(a).position)) return a; return null; };
 const union = (a, b) => { const l = Math.min(a.left, b.left), t = Math.min(a.top, b.top), r = Math.max(a.right, b.right), bo = Math.max(a.bottom, b.bottom); return { left: l, top: t, right: r, bottom: bo, width: r - l, height: bo - t }; };
 
 const nameOf = (el) => { const rec = [...el.childNodes].map((n) => held.get(n)).find(Boolean); const s = (rec ? rec.orig : el.textContent ?? '').trim().replace(/\s+/g, ' '); return s.length > 26 ? s.slice(0, 25) + '…' : s; };
@@ -272,10 +285,16 @@ const sourceOf = (el) => { const s = el.closest?.('[data-plumb-source]')?.getAtt
 
 function say(b) {
   const name = `“${nameOf(b.el)}”`;
-  if (b.kind === 'cut') return { title: `${name} gets cut off.`, why: `Its box ${b.axis === 'x' ? 'is' : 'is'} ${Math.round(b.have)}px ${b.axis === 'x' ? 'wide' : 'tall'} and hides the rest; the longer words need ${Math.round(b.need)}px.` };
+  if (b.kind === 'cut') return { title: `${name} gets cut off.`, why: `Its box is ${Math.round(b.have)}px ${b.axis === 'x' ? 'wide' : 'tall'} and hides the rest; the words need ${Math.round(b.need)}px.` };
+  if (b.kind === 'locked') {
+    const rem = `${+(b.px / 16).toFixed(4)}rem`;
+    return b.cls
+      ? { title: `${b.count > 1 ? `${name} and ${b.count - 1} more stay` : `${name} stays`} ${b.px}px when the reader asks for bigger text.`, why: `${b.count > 1 ? 'They all use' : 'It uses'} ${b.cls}, a size in pixels. ${b.cls.replace(/\[[\d.]+px\]/, `[${rem}]`)} looks the same and grows with the reader's setting.` }
+      : { title: `${name} stays ${b.px}px when the reader asks for bigger text.`, why: `Its size is set in pixels${b.count > 1 ? `, here and in ${b.count - 1} more place${b.count > 2 ? 's' : ''} drawn by the same line` : ''}. In rem (${rem}) it would grow with the reader's setting.` };
+  }
   if (b.kind === 'spill') return { title: `${name} runs out of its box.`, why: b.edge === 'screen' ? `It runs ${b.by}px off the screen.` : `It crosses the box's edge by ${b.by}px.` };
   if (b.kind === 'overlap') return { title: `${name} runs into “${nameOf(b.other)}”.`, why: 'The two sets of words now sit on top of each other.' };
-  return { title: 'The whole page now scrolls sideways.', why: `Something is ${Math.round(b.by)}px wider than the screen.` };
+  return { title: 'The whole page scrolls sideways.', why: `Something is ${Math.round(b.by)}px wider than the screen.` };
 }
 
 function judge() {
@@ -290,6 +309,13 @@ function judge() {
 const CSS_TEXT = `
 :host { position: fixed; inset: 0; z-index: 2147483000; pointer-events: none; display: block; }
 svg.page { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.stage { position: absolute; inset: 0; display: none; pointer-events: auto; background: color-mix(in oklab, var(--pl-ink) 72%, var(--pl-paper)); }
+.stage.on { display: block; animation: fade 200ms var(--pl-ease-out) both; }
+.stage iframe { position: absolute; top: 40px; left: 50%; translate: -50% 0; height: calc(100% - 40px - 176px); border: 0; border-radius: 10px;
+  background: var(--pl-paper); box-shadow: var(--pl-shadow-card); }
+.wpx { position: absolute; top: 10px; left: 50%; translate: -50% 0; padding: 2px 10px; border-radius: var(--pl-radius-pill);
+  background: var(--pl-paper); color: var(--pl-ink); font: var(--pl-card-code); font-variant-numeric: tabular-nums; }
+@keyframes fade { from { opacity: 0; } }
 .ring { fill: none; stroke: var(--pl-off); stroke-width: 1.5; }
 .halo { fill: none; stroke: var(--pl-halo); stroke-width: 3.5; }
 .hand { fill: url(#hatch); }
@@ -330,10 +356,117 @@ svg.page { position: absolute; inset: 0; width: 100%; height: 100%; overflow: vi
 const LONGER = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M2 8h7"/><path d="M11.5 5.5 14 8l-2.5 2.5"/><path d="M2 5v6" opacity=".6"/></svg>';
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 
+// ── narrower: a copy of the page, squeezed ──────────────────
+
+let stage = null, ground = [255, 255, 255];   // { frame, from, width, sweeping }
+// a frame, or 50ms when the tab is in the background and frames stop: the sweep never stalls
+const frames = (n = 1) => new Promise((r) => { let left = n, done = false; const tick = () => { if (done) return; if (--left <= 0) { done = true; r(); } else wait(); }; const wait = () => { requestAnimationFrame(tick); setTimeout(tick, 50); }; wait(); });
+const STEP = 16, NARROWEST = 320;
+
+function setWidth(w) { if (!stage) return; stage.width = w; stage.frame.style.width = `${w}px`; const pill = host?.shadowRoot.querySelector('.wpx'); if (pill) pill.textContent = `${w}px`; }
+
+async function narrower() {
+  const root = host.shadowRoot, box = root.querySelector('.stage');
+  box.innerHTML = '<span class="wpx"></span><iframe title="This page, narrower"></iframe>';
+  stage = { frame: box.querySelector('iframe'), from: Math.min(innerWidth - 32, 1440), width: 0, sweeping: true };
+  box.classList.add('on');
+  setWidth(stage.from);
+  const loaded = new Promise((r) => stage.frame.addEventListener('load', r, { once: true }));
+  stage.frame.style.background = `rgb(${ground.slice(0, 3).join(' ')})`;   // the page's own ground: an app with a transparent body is not see-through
+  stage.frame.src = location.href;
+  await loaded; await new Promise((r) => setTimeout(r, 900));   // the app's first render, its fonts
+  const mine = stage; if (!mine || toy !== 'narrower') return;
+  const win = mine.frame.contentWindow, base = measure(win, { all: true }), first = new Map();
+  // squeeze a step a frame: you watch the page give way, and each break is caught at the width it starts
+  for (let w = mine.from - STEP; ; w = Math.max(NARROWEST, w - STEP)) {
+    if (stage !== mine) return;
+    setWidth(w); await frames(1);
+    for (const b of measure(win, { all: true }).values()) {
+      if (base.get(b.el)?.kind === b.kind || first.has(b.el)) continue;
+      first.set(b.el, { ...b, width: w });
+    }
+    if (w === NARROWEST) break;
+  }
+  mine.sweeping = false;
+  // one row or list giving way breaks several of its things at the same width: said once, by its first
+  const seen = new Map();
+  for (const b of first.values()) { const k = `${b.kind}|${b.width}|${sourceOf(b.el.parentElement) ?? ''}`; if (seen.has(k)) seen.get(k).more++; else seen.set(k, Object.assign(b, { more: 0 })); }
+  notes = [...seen.values()].sort((x, y) => y.width - x.width).map((n) => { const t = say(n); return { ...n, ...t, title: t.title.replace(/\.$/, ` at ${n.width}px${n.more ? `, and ${n.more} more like it` : ''}.`).replace(' scrolls sideways at', ' scrolls sideways from'), source: sourceOf(n.el), live: true }; });
+  index = 0;
+  if (notes.length) showAt(0); else { setWidth(NARROWEST); paint(); }
+}
+function showAt(i) {
+  index = i; const n = notes[i];
+  setWidth(n.width);
+  if (n.el !== n.el.ownerDocument.documentElement) n.el.scrollIntoView({ block: 'center' });
+  paint();
+}
+function unstage() {
+  stage = null;
+  const box = host?.shadowRoot.querySelector('.stage');
+  if (box) { box.classList.remove('on'); box.innerHTML = ''; }
+}
+
+// ── bigger text: the reader's setting at 200% ───────────────
+
+let saved = null, locked = [];
+function bigger() {
+  const html = document.documentElement, sizes = new Map();
+  before = measure();
+  const walk = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+  for (let n = walk.nextNode(); n; n = walk.nextNode()) if (eligible(n) && !sizes.has(n.parentElement)) sizes.set(n.parentElement, parseFloat(cssOf(n.parentElement).fontSize));
+  saved = html.style.fontSize;
+  // what a browser's text-size setting does: the root size doubles, and everything set in rem or em follows it
+  html.style.fontSize = `${parseFloat(cssOf(html).fontSize) * 2}px`;
+  const bySite = new Map();
+  for (const [el, px] of sizes) {
+    if (parseFloat(cssOf(el).fontSize) / px > 1.25) continue;
+    // one cause, one note: the class that sets the size in pixels (text-[11px]), else the line of source that draws it
+    let cls = null; for (let a = el, i = 0; a && i < 4 && !cls; a = a.parentElement, i++) cls = (a.getAttribute('class') ?? '').split(/\s+/).find((c) => /^(?:[\w-]+:)*text-\[[\d.]+px\]$/.test(c)) ?? null;
+    const site = cls ?? el.closest('[data-plumb-source]')?.getAttribute('data-plumb-source') ?? el;
+    (bySite.get(site) ?? bySite.set(site, []).get(site)).push({ el, px, cls });
+  }
+  locked = [...bySite.values()].sort((a, b) => b.length - a.length).map((g) => ({ kind: 'locked', el: g[0].el, els: g.map((x) => x.el), px: Math.round(g[0].px), count: g.length, cls: g[0].cls, live: true }));
+  later();
+}
+function unbig() { document.documentElement.style.fontSize = saved ?? ''; saved = null; locked = []; before = null; }
+
+// ── the toys ────────────────────────────────────────────────
+
+let toy = null;
+export function setToy(next) {
+  if (next === toy) next = null;
+  if (toy === 'longer') { on = false; shrink(); }
+  if (toy === 'narrower') unstage();
+  if (toy === 'bigger') unbig();
+  toy = next; notes = []; index = 0;
+  if (toy === 'longer') { on = true; grow(); }
+  if (toy === 'narrower') narrower();
+  if (toy === 'bigger') bigger();
+  paint();
+}
+export const setLonger = (yes) => setToy(yes ? 'longer' : null);
+
+// ── drawing ─────────────────────────────────────────────────
+
+function rectOf(n) {
+  if (!n.live) return n.rect;
+  if (n.kind === 'sideways') return null;
+  const r = n.kind === 'cut' ? n.box.getBoundingClientRect() : n.kind === 'overlap' ? (() => { const a = wordsRect(n.el), b = wordsRect(n.other); return a && b ? union(a, b) : a ?? b; })() : wordsRect(n.el);
+  if (!r) return null;
+  const off = stage ? stage.frame.getBoundingClientRect() : { left: 0, top: 0 };
+  return { left: r.left + off.left, top: r.top + off.top, width: r.width, height: r.height };
+}
+
 function marks() {
+  // narrower: only the break in hand, at its own width; the others are not broken at this width yet
   return notes.map((n, i) => {
-    if (!n.rect) return '';
-    const r = n.rect, x = r.left - 3, y = r.top - 3, w = r.width + 6, h = r.height + 6;
+    if (toy === 'narrower' && i !== index) return '';
+    // one cause in many places: the one in hand rings every place, the others are not drawn
+    if (n.els) return i !== index ? '' : n.els.map((el) => ring(wordsRect(el), false)).join('');
+    const r = rectOf(n);
+    if (!r || r.width <= 0) return '';
+    const x = r.left - 3, y = r.top - 3, w = r.width + 6, h = r.height + 6;
     // the one in hand: a hatched band round the box, never over the words in it
     const B = 6, band = `M${x - B} ${y - B}h${w + 2 * B}v${h + 2 * B}h${-(w + 2 * B)}z M${x} ${y}v${h}h${w}v${-h}z`;
     const fill = i === index ? `<path class="hand" fill-rule="evenodd" d="${band}"/>` : '';
@@ -341,52 +474,75 @@ function marks() {
   }).join('');
 }
 
+function ring(r, hand) {
+  if (!r || r.width <= 0 || r.bottom < 0 || r.top > innerHeight) return '';
+  const x = r.left - 3, y = r.top - 3, w = r.width + 6, h = r.height + 6, B = 6;
+  const band = `M${x - B} ${y - B}h${w + 2 * B}v${h + 2 * B}h${-(w + 2 * B)}z M${x} ${y}v${h}h${w}v${-h}z`;
+  return `<g class="mark">${hand ? `<path class="hand" fill-rule="evenodd" d="${band}"/>` : ''}<rect class="halo" x="${x}" y="${y}" width="${w}" height="${h}" rx="6"/><rect class="ring" x="${x}" y="${y}" width="${w}" height="${h}" rx="6"/></g>`;
+}
+const count = (n, one, many) => (n === 1 ? `one ${one}` : `${n} ${many}`);
 function verdict() {
-  if (!on) return 'Turn a toy on to break this screen on purpose. Your page stays usable.';
+  if (!toy) return 'Pick a toy to break this screen on purpose. Your page stays usable.';
+  if (toy === 'narrower') {
+    if (!stage || stage.sweeping) return `Squeezing a copy of this page from ${stage?.from ?? innerWidth}px down to ${NARROWEST}px…`;
+    if (!notes.length) return `From ${stage.from}px down to ${NARROWEST}px, nothing breaks.`;
+    return `From ${stage.from}px down to ${NARROWEST}px, ${count(notes.length, 'thing breaks', 'things break')}. The first at ${notes[0].width}px.`;
+  }
+  if (toy === 'bigger') {
+    const lay = notes.filter((n) => n.kind !== 'locked').length;
+    const stuck = locked.reduce((t, g) => t + g.count, 0);
+    return `Text at 200%: ${count(lay, 'thing breaks', 'things break')}, and ${count(stuck, 'run of words stays', 'runs of words stay')} the same size, from ${count(locked.length, 'cause', 'causes')}.`;
+  }
   if (sorting) return 'Finding the words that can change: the ones passed into reusable parts, and the ones from data…';
   const of = tally ? `${tally.prop + tally.list + tally.data} runs of words can change (${tally.list} in repeated parts, ${tally.prop} passed into reusable parts, ${tally.data} from data); ${tally.fixed} are fixed copy, left alone. ` : '';
   if (growing) return of + 'Growing them to twice their length…';
   if (!notes.length) return of + 'At twice the length, nothing breaks.';
-  return of + `At twice the length, ${notes.length === 1 ? 'one thing breaks' : `${notes.length} things break`}.`;
+  return of + `At twice the length, ${count(notes.length, 'thing breaks', 'things break')}.`;
+}
+
+const TOYS = [
+  ['longer', 'Longer words', LONGER],
+  ['narrower', 'Narrower', '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M1.5 8h4M14.5 8h-4"/><path d="M3.5 5.5 6 8l-2.5 2.5M12.5 5.5 10 8l2.5 2.5"/><path d="M8 3v10" opacity=".6"/></svg>'],
+  ['bigger', 'Bigger text', '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M1.5 12.5l2-5 2 5M2.3 10.8h2.4"/><path d="M7.5 13.5l3-10 3 10M8.7 10h3.6"/></svg>'],
+];
+
+function skeleton() {
+  host.shadowRoot.innerHTML = `<style>${tokensCss}${CSS_TEXT}</style><div class="stage"></div>
+    <svg class="page"><defs><pattern id="hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line class="hatch" x1="0" y1="0" x2="0" y2="6"/></pattern></defs><g class="marks"></g></svg>
+    <div class="bar" role="region" aria-label="Break it" aria-live="polite"></div>`;
+  host.shadowRoot.querySelector('.bar').addEventListener('click', (e) => {
+    const b = e.target.closest('button'); if (!b) return;
+    if (b.dataset.toy) setToy(b.dataset.toy); else if (b.classList.contains('prev')) go(-1); else if (b.classList.contains('next')) go(1);
+  });
 }
 
 function paint() {
   frame = 0;
   if (!host) return;
-  if (on && !growing && !sorting && tally) {
+  if (toy === 'longer' && on && !growing && !sorting && tally || toy === 'bigger') {
     const keep = notes[index]?.el;
-    notes = judge();
+    notes = [...judge(), ...(toy === 'bigger' ? locked.map((n) => ({ ...n, ...say(n), source: sourceOf(n.el) })) : [])];
     const again = keep ? notes.findIndex((n) => n.el === keep) : -1;
     index = again >= 0 ? again : Math.min(index, Math.max(0, notes.length - 1));
   }
-  const n = on && !growing && !sorting ? notes[index] : null;
+  const busy = growing || sorting || stage?.sweeping;
+  const n = toy && !busy ? notes[index] : null;
   const step = notes.length > 1 && n ? `<span class="step"><button class="prev" aria-label="Previous break" ${index ? '' : 'disabled'}>‹</button>${index + 1} of ${notes.length}<button class="next" aria-label="Next break" ${index < notes.length - 1 ? '' : 'disabled'}>›</button></span>` : '<span></span>';
   const note = n ? `<div class="note"><div class="say"><p class="title">${esc(n.title)}</p><p class="why">${esc(n.why)}${n.source ? ` <span class="src">${esc(n.source)}</span>` : ''}</p></div>${step}</div>` : '';
-  host.shadowRoot.innerHTML = `<style>${tokensCss}${CSS_TEXT}</style>
-    <svg class="page"><defs><pattern id="hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line class="hatch" x1="0" y1="0" x2="0" y2="6"/></pattern></defs>${on && !growing && !sorting ? marks() : ''}</svg>
-    <div class="bar" role="region" aria-label="Break it" aria-live="polite">
-      <div class="toys"><button class="toy" data-toy="longer" aria-pressed="${on}"><span class="face">${LONGER}</span>Longer words</button><span class="grow"></span></div>
-      <p class="verdict">${esc(verdict())}</p>${note}</div>`;
   const root = host.shadowRoot;
-  root.querySelector('[data-toy="longer"]').addEventListener('click', () => setLonger(!on));
-  root.querySelector('.prev')?.addEventListener('click', () => go(-1));
-  root.querySelector('.next')?.addEventListener('click', () => go(1));
+  root.querySelector('.marks').innerHTML = toy && !busy ? marks() : '';
+  root.querySelector('.bar').innerHTML = `<div class="toys">${TOYS.map(([id, label, face]) => `<button class="toy" data-toy="${id}" aria-pressed="${toy === id}"><span class="face">${face}</span>${label}</button>`).join('')}</div>
+      <p class="verdict">${esc(verdict())}</p>${note}`;
 }
 const later = () => { if (host && !frame) frame = requestAnimationFrame(paint); };
 
 function go(dir) {
   const to = Math.max(0, Math.min(notes.length - 1, index + dir));
   if (to === index) return;
+  if (toy === 'narrower') { showAt(to); return; }
   index = to;
-  const r = notes[index].rect;
-  if (r && (r.top < 0 || r.bottom > innerHeight - 160)) notes[index].el.scrollIntoView({ block: 'center', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
-  paint();
-}
-
-export function setLonger(next) {
-  if (next === on) return;
-  on = next;
-  if (on) grow(); else shrink();
+  const r = rectOf(notes[index]);
+  if (r && (r.top < 0 || r.top + r.height > innerHeight - 160)) notes[index].el.scrollIntoView({ block: 'center', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
   paint();
 }
 
@@ -395,19 +551,19 @@ export function showBreakIt() {
   host = document.createElement('div');
   host.setAttribute('data-plumb-layer', 'break-it');
   host.attachShadow({ mode: 'open' });
-  const ground = [document.body, document.documentElement].map((e) => /rgba?\(([^)]+)\)/.exec(getComputedStyle(e).backgroundColor)?.[1].split(/[,/]/).map(parseFloat)).find((c) => c && (c[3] ?? 1) > 0.5) ?? [255, 255, 255];
+  ground = [document.body, document.documentElement].map((e) => /rgba?\(([^)]+)\)/.exec(getComputedStyle(e).backgroundColor)?.[1].split(/[,/]/).map(parseFloat)).find((c) => c && (c[3] ?? 1) > 0.5) ?? [255, 255, 255];
   host.setAttribute('data-scheme', 0.2126 * ground[0] + 0.7152 * ground[1] + 0.0722 * ground[2] < 128 ? 'dark' : 'light');
   host.setAttribute('data-arrive', '');
   setTimeout(() => host?.removeAttribute('data-arrive'), 600);
   document.documentElement.append(host);
+  skeleton();
   addEventListener('scroll', later, { capture: true, passive: true });
   addEventListener('resize', later, { passive: true });
-  setLonger(true);
   paint();
 }
 export function hideBreakIt() {
   if (!host) return;
-  setLonger(false);
+  setToy(null);
   removeEventListener('scroll', later, { capture: true });
   removeEventListener('resize', later);
   cancelAnimationFrame(frame); frame = 0;

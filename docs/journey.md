@@ -1216,10 +1216,35 @@
 - **Media hooks:** docs/qa/break-it-only-what-changes.jpg (the showcase index with only the catalogue names
   stretched and the two cut ones ringed).
 
+## Break it: narrower, and bigger text (2026-11-15)
+- **The itch:** the owner, on fixed copy: "for hardcoded maybe like simulating in like small width and such", then
+  picked "Width and text size" as the next toy.
+- **What we chose and why:** two toys beside Longer words, one on at a time. Narrower squeezes a copy of the page
+  (the same URL in a frame, so the app's own breakpoints fire, which squeezing the live page cannot do) from the
+  window's width down to 320px, a step each frame, so you watch it give way. Each break is caught at the width where
+  it starts; stepping to a break puts the copy at that width with the break ringed. Bigger text doubles the root text
+  size, which is what a browser's text-size setting does, and marks text that stays the same size: it is set in
+  pixels. One note per class that does it, with its rem twin (text-[11px] → text-[0.6875rem]) and every place ringed.
+- **Dead ends:** screen-reader-only words (a 1px clipped box) and labels a narrow layout hides with opacity read as
+  words running into words; both are skipped now. The same collision was said from both sides; now once. A copy with
+  a transparent page showed the real page through it; the copy now carries the page's ground. In a background tab
+  the browser stops animation frames and the sweep stalled; it now falls back to a 50ms timer.
+- **The proof:** crafting-ui's home page: narrower, nothing breaks from 873px to 320px (it already adapts). Bigger
+  text: 52 runs of words stay the same size, from 3 causes (text-[11px] in 41 places, text-[12px] in 7, text-[9px]
+  in 4), while the headline doubles; the page also starts scrolling sideways by 61px. Plumber's showcase index:
+  narrower finds principle names cut off from 457px down (Principle.jsx:604). Those names end in an ellipsis on
+  purpose, so whether a designed truncation counts as a break is open. A sweep takes about 3 seconds.
+- **Not yet:** plumber's own overlay loads inside the copy and shows its "Hold Alt" hint there; the sideways scroll
+  under bigger text does not say what causes it; no tests.
+- **Media hooks:** docs/qa/break-it-narrower.jpg (the copy at 457px, the cut name ringed),
+  docs/qa/break-it-bigger-text.jpg (the doubled headline beside the labels that stay 11px). A recording of the
+  squeeze would show it best.
+
 ## Open gaps
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
 
 ## Shipped · 2026-W46
+- Break it has two more toys: Narrower squeezes a copy of your page down to 320px and says the width where each thing first breaks; Bigger text turns the reader's text size up to 200% and names the classes that keep text from growing, with the rem class to use instead ([entry](#break-it-narrower-and-bigger-text-2026-11-15)). On its own branch.
 - Press Alt+S and plumber breaks your screen on purpose: the words that can change (items from data, labels passed into reusable parts, counts) grow to twice their length, the way a translation would, and plumber marks only what that broke, on your live page. Copy typed once into a one-off component is left alone ([entry](#break-it-stretches-only-words-that-can-change-2026-11-15)). On its own branch.
 - The ledger's lock can no longer let two writers in when processes die mid-way: a model checker found the hole, the fix was proved in the model, then written, tested between real processes, and merged into main ([entry](#the-lock-put-to-a-model-checker-2026-11-14)).
 - Doing what a check says now provably works: for every check, the fix it advises makes it go quiet and causes no other finding. Two pieces of advice that led straight to the next finding were corrected ([entry](#taking-the-advice-has-to-work-2026-11-14)).
