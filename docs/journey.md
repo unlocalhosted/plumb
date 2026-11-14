@@ -1191,11 +1191,36 @@
   screen recording of the words growing and the screen giving way would show it best.
 - References: "Three ways to break a screen" in docs/references.md.
 
+## Break it stretches only words that can change (2026-11-15)
+- **The itch:** the owner, on the first version of Longer words: "you are being dumb this is hardcoded text on
+  single use components, this kind of stress testing would work better on something reusable, something user would
+  interact with and for hardcoded maybe like simulating in like small width and such".
+- **The system behind it:** Longer words treated every word on the page as the same kind of thing. A heading typed
+  once into a one-off component never changes at runtime, so doubling it tests nothing real. The words that do
+  change are the ones that flow in: a label passed into a reusable part, an item from a catalogue, a count, a name.
+  Fixed copy still meets stress, but from the space around it (a narrow screen, bigger text), not from its words.
+- **What we chose, confirmed by the owner:** every run of words is traced to where it is written, with the lookup
+  that text editing already uses, and sorted into fixed copy (typed in the component that draws it), passed in (a
+  string at a use site), or data (no single string in source, or one kept in another file). Items drawn from one line
+  of source are one list and share a kind, so a list typed into its own component stays fixed and a list fed from
+  elsewhere is content. Only content is stretched. Placeholders are left for the typing toy.
+- **Dead ends:** marking every repeated line as content counted 83 of 103 runs on crafting-ui's home page as
+  content, including the hero's own labels, which are typed in. Giving a list its items' majority kind fixed it.
+- **The proof:** crafting-ui's home page, a marketing page: 30 runs can change (counts like "7 skills", the hero's
+  tabs, items passed in), 73 are fixed copy and stay put; the one break left is the hint that runs into the readout.
+  Plumber's showcase index: 48 principle names from its catalogue stretch, 9 section headings stay; two names get cut
+  off at 612px (Principle.jsx:604). Sorting a page takes 1 to 5 seconds (about 50ms per lookup, eight at a time).
+- **Not yet:** the width and text-size toys for fixed copy; extreme content (empty, one letter, nine digits, a long
+  URL, emoji); typing into fields; lists at 0, 1 and 100; a failing or slow main action. All four were chosen by the
+  owner for the first version.
+- **Media hooks:** docs/qa/break-it-only-what-changes.jpg (the showcase index with only the catalogue names
+  stretched and the two cut ones ringed).
+
 ## Open gaps
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
 
 ## Shipped · 2026-W46
-- Press Alt+S and plumber breaks your screen on purpose: every label grows to twice its length, the way a translation would, and plumber marks only what that broke, on your live page. On crafting-ui it found one real collision ([entry](#breaking-the-screen-on-purpose-longer-words-2026-11-15)). On its own branch.
+- Press Alt+S and plumber breaks your screen on purpose: the words that can change (items from data, labels passed into reusable parts, counts) grow to twice their length, the way a translation would, and plumber marks only what that broke, on your live page. Copy typed once into a one-off component is left alone ([entry](#break-it-stretches-only-words-that-can-change-2026-11-15)). On its own branch.
 - The ledger's lock can no longer let two writers in when processes die mid-way: a model checker found the hole, the fix was proved in the model, then written, tested between real processes, and merged into main ([entry](#the-lock-put-to-a-model-checker-2026-11-14)).
 - Doing what a check says now provably works: for every check, the fix it advises makes it go quiet and causes no other finding. Two pieces of advice that led straight to the next finding were corrected ([entry](#taking-the-advice-has-to-work-2026-11-14)).
 - Every check from Chrome's guides is now tested both ways: it speaks at the line of its problem, and it stays quiet on the closest right thing. Thirteen tests; one wrong check found and fixed ([entry](#are-the-checks-right-and-does-the-engine-keep-what-they-find-2026-11-14)).

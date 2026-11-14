@@ -5,7 +5,17 @@
  * length of every label, turn the system text size all the way up, make the main action fail"). A page never shows
  * these states by itself, so plumber puts it into them, on the live page, and marks what broke.
  *
- *  toggle   Longer words: every run of words on the page grows to about twice its length, in accented letters, the
+ *  kinds    stress only text that can change. Each run of words is traced to where it is written (locate, then
+ *           text-at over the owner chain), and sorted (owner, 2026-11-15: "this is hardcoded text on single use
+ *           components … stress testing would work better on something reusable, something user would interact with"):
+ *             fixed  written in the component that draws it: copy the author typed once. Never stretched; its
+ *                    stress is the space round it (narrow widths, bigger text: later toys)
+ *             prop   written at a use site and passed in: a reusable part's label or title. Stretched
+ *             list   one line of source drawn several times with different words (a list's items, cards, tabs) whose
+ *                    items mostly come from props or data. A list typed into its own component stays fixed
+ *             data   not one string in source, or a string kept elsewhere and looked up (a list, a record, what the
+ *                    user typed). Stretched
+ *  toggle   Longer words: every run of words that is a prop or data grows to about twice its length, in accented letters, the
  *           way a German or Finnish translation does ("Save changes" → "Šàvé çhàñgéš šàvé çhàñgéš"). Placeholders
  *           too. The page stays usable: it is not frozen, and words React draws while it is on grow as they arrive
  *  grow     the words grow over a moment, so you watch the screen give way. Reduced motion: at once
@@ -20,6 +30,9 @@
  *  keys     Alt+S opens and closes. ← → between breaks, Esc closes
  * Nothing here writes to source.
  * ───────────────────────────────────────────────────────── */
+
+import { locate } from './locate.js';
+import { request } from './api.js';
 
 const tokensCss = await (await fetch(new URL('./tokens.css', import.meta.url))).text();
 
@@ -43,6 +56,7 @@ const LETTER = /\p{L}/u, LETTERS = /\p{L}/gu;
 
 // ── state ───────────────────────────────────────────────────
 
+let kinds = new Map(), sorting = false, tally = null;   // text node → 'fixed' | 'prop' | 'list' | 'data'
 let host = null, on = false, frame = 0, growing = 0, notes = [], index = 0, before = null, observer = null;
 const held = new Map();   // text node or input → { orig, base, extra, now }
 
@@ -76,9 +90,9 @@ const current = (node) => (node.nodeType === 3 ? node.data : node.placeholder);
 
 function stretchUnder(root, f) {
   const walk = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
-  for (let n = walk.nextNode(); n; n = walk.nextNode()) if (!held.has(n) && eligible(n)) take(n, f);
+  for (let n = walk.nextNode(); n; n = walk.nextNode()) if (!held.has(n) && eligible(n) && kinds.has(n) && stressed(n)) take(n, f);
   const fields = root.querySelectorAll ? root.querySelectorAll('input[placeholder], textarea[placeholder]') : [];
-  for (const el of fields) if (!held.has(el) && el.placeholder && LETTER.test(el.placeholder) && !el.closest(OURS)) takeField(el, f);
+  for (const el of fields) if (stressed(el) && !held.has(el) && el.placeholder && LETTER.test(el.placeholder) && !el.closest(OURS)) takeField(el, f);
 }
 
 /** Write without hearing our own writes. */
@@ -93,16 +107,17 @@ function heard(records) {
         const rec = held.get(r.target);
         if (rec && r.target.data === rec.now) continue;
         held.delete(r.target);
-        if (eligible(r.target)) take(r.target, 1);
+        if (eligible(r.target) && stressed(r.target)) take(r.target, 1);
       } else for (const n of r.addedNodes) {
-        if (n.nodeType === 3) { if (!held.has(n) && eligible(n)) take(n, 1); } else if (n.nodeType === 1 && !n.closest?.(OURS)) stretchUnder(n, 1);
+        if (n.nodeType === 3) { if (!held.has(n) && eligible(n)) { kinds.set(n, 'data'); take(n, 1); } } else if (n.nodeType === 1 && !n.closest?.(OURS)) { const w = document.createTreeWalker(n, NodeFilter.SHOW_TEXT); for (let t = w.nextNode(); t; t = w.nextNode()) if (!kinds.has(t)) kinds.set(t, 'data'); stretchUnder(n, 1); }
       }
     }
   });
   later();
 }
 
-function grow() {
+async function grow() {
+  if (!tally) { sorting = true; paint(); await sortAll(); sorting = false; if (!on) return; }
   before = measure();
   observer = new MutationObserver(heard);
   const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -127,6 +142,63 @@ function shrink() {
   }
   held.clear(); notes = []; index = 0; before = null;
 }
+
+// ── where words come from ───────────────────────────────
+
+const norm = (t) => t.replace(/\s+/g, ' ').trim();
+const tail = (f) => f.replace(/^.*?\b(src|app|components|pages)\//, '$1/');
+const same = (a, b) => tail(a) === tail(b);
+async function kindOf(node) {
+  const el = node.parentElement, words = norm(node.data);
+  const found = await locate(el, { chain: true }).catch(() => null);
+  if (!found?.file) return 'data';
+  const owners = (found.chain ?? []).filter((c) => c?.file && !(c.file === found.file && c.line === found.line));
+  const r = await request('text-at', { file: found.file, line: found.line, column: found.column, text: words, owners: owners.map((c) => `${c.file}:${c.line}:${c.column}`).join(',') }).catch(() => null);
+  // several strings in source say these words: still words someone typed (a label repeated across a list or a file)
+  if (!r?.file && /places in your code say/.test(r?.reason ?? '')) return r.where?.file && owners.some((o) => same(o.file, r.where.file) && !same(o.file, found.file)) ? 'prop' : 'fixed';
+  if (!r?.file) return 'data';                                   // not written in source as one string: built at runtime
+  // the string sits nearer a use site of the part than the part's own element: passed in. Same file counts too
+  const own = same(r.file, found.file) ? Math.abs(found.line - r.line) : Infinity;
+  const used = owners.filter((o) => same(o.file, r.file));
+  if (used.length && Math.min(...used.map((o) => Math.abs(o.line - r.line))) < own) return 'prop';
+  if (own < Infinity) return 'fixed';                             // typed in the component that draws it
+  return 'data';                                                  // a string kept elsewhere and looked up
+}
+
+/** Sort every eligible run of words on the page, a few at a time. */
+async function sortAll() {
+  const nodes = [], seen = new Set();
+  const walk = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+  for (let n = walk.nextNode(); n; n = walk.nextNode()) if (eligible(n) && !kinds.has(n)) nodes.push(n);
+  // one line of source drawn several times with different words is a repeated part (a list's items, cards, tabs):
+  // its words are content, whatever the strings are written as
+  const bySite = new Map();
+  for (const n of nodes) { const at = n.parentElement.getAttribute('data-plumb-source'); if (at) (bySite.get(at) ?? bySite.set(at, []).get(at)).push(n); }
+  const memo = new Map();                                          // one lookup per element and words
+  let next = 0;
+  const work = async () => {
+    while (next < nodes.length) {
+      const n = nodes[next++], key = n.parentElement;
+      const k = `${norm(n.data)}`;
+      let byEl = memo.get(key); if (!byEl) memo.set(key, byEl = new Map());
+      if (!byEl.has(k)) byEl.set(k, kindOf(n));
+      kinds.set(n, await byEl.get(k));
+    }
+  };
+  await Promise.all(Array.from({ length: 8 }, work));
+  // a list is one thing: its items take the kind most of them have (an array typed into the component stays fixed;
+  // items fed from a catalogue elsewhere are content). Its stretched items say so as 'list'
+  for (const group of bySite.values()) {
+    if (new Set(group.map((n) => norm(n.data))).size < 2) continue;
+    const votes = new Map(); for (const n of group) votes.set(kinds.get(n), (votes.get(kinds.get(n)) ?? 0) + 1);
+    const top = [...votes].sort((a, b) => b[1] - a[1])[0][0];
+    for (const n of group) kinds.set(n, top === 'fixed' ? 'fixed' : 'list');
+  }
+  tally = { fixed: 0, prop: 0, data: 0, list: 0 };
+  for (const n of nodes) tally[kinds.get(n)]++;
+  void seen;
+}
+const stressed = (node) => node.nodeType === 3 && kinds.has(node) && kinds.get(node) !== 'fixed';   // placeholders are copy too; typing into fields is its own toy
 
 // ── what broke ──────────────────────────────────────────────
 
@@ -271,25 +343,27 @@ function marks() {
 
 function verdict() {
   if (!on) return 'Turn a toy on to break this screen on purpose. Your page stays usable.';
-  if (growing) return 'Growing every word to twice its length…';
-  if (!notes.length) return 'Twice the words, and nothing here breaks.';
-  return `Twice the words: ${notes.length === 1 ? 'one thing breaks' : `${notes.length} things break`}.`;
+  if (sorting) return 'Finding the words that can change: the ones passed into reusable parts, and the ones from data…';
+  const of = tally ? `${tally.prop + tally.list + tally.data} runs of words can change (${tally.list} in repeated parts, ${tally.prop} passed into reusable parts, ${tally.data} from data); ${tally.fixed} are fixed copy, left alone. ` : '';
+  if (growing) return of + 'Growing them to twice their length…';
+  if (!notes.length) return of + 'At twice the length, nothing breaks.';
+  return of + `At twice the length, ${notes.length === 1 ? 'one thing breaks' : `${notes.length} things break`}.`;
 }
 
 function paint() {
   frame = 0;
   if (!host) return;
-  if (on && !growing) {
+  if (on && !growing && !sorting && tally) {
     const keep = notes[index]?.el;
     notes = judge();
     const again = keep ? notes.findIndex((n) => n.el === keep) : -1;
     index = again >= 0 ? again : Math.min(index, Math.max(0, notes.length - 1));
   }
-  const n = on && !growing ? notes[index] : null;
+  const n = on && !growing && !sorting ? notes[index] : null;
   const step = notes.length > 1 && n ? `<span class="step"><button class="prev" aria-label="Previous break" ${index ? '' : 'disabled'}>‹</button>${index + 1} of ${notes.length}<button class="next" aria-label="Next break" ${index < notes.length - 1 ? '' : 'disabled'}>›</button></span>` : '<span></span>';
   const note = n ? `<div class="note"><div class="say"><p class="title">${esc(n.title)}</p><p class="why">${esc(n.why)}${n.source ? ` <span class="src">${esc(n.source)}</span>` : ''}</p></div>${step}</div>` : '';
   host.shadowRoot.innerHTML = `<style>${tokensCss}${CSS_TEXT}</style>
-    <svg class="page"><defs><pattern id="hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line class="hatch" x1="0" y1="0" x2="0" y2="6"/></pattern></defs>${on && !growing ? marks() : ''}</svg>
+    <svg class="page"><defs><pattern id="hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line class="hatch" x1="0" y1="0" x2="0" y2="6"/></pattern></defs>${on && !growing && !sorting ? marks() : ''}</svg>
     <div class="bar" role="region" aria-label="Break it" aria-live="polite">
       <div class="toys"><button class="toy" data-toy="longer" aria-pressed="${on}"><span class="face">${LONGER}</span>Longer words</button><span class="grow"></span></div>
       <p class="verdict">${esc(verdict())}</p>${note}</div>`;
@@ -350,3 +424,5 @@ addEventListener('keydown', (event) => {
   const k = { ArrowLeft: () => go(-1), ArrowRight: () => go(1), Escape: hideBreakIt }[event.key];
   if (k) { event.preventDefault(); event.stopPropagation(); k(); }
 }, true);
+/** Where each run of words on the page comes from, as sorted for Longer words. */
+export const readKinds = () => [...kinds].filter(([n]) => n.isConnected).map(([n, kind]) => ({ words: (held.get(n)?.orig ?? n.data).trim().slice(0, 40), kind }));

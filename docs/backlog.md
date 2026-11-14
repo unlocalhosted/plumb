@@ -325,16 +325,20 @@ From reading lintapple's source (read, not run; plumber's side only skimmed, so 
 ### Breaking a screen on purpose (2026-11-15)
 Asked by the owner after a post listing three ways to break a screen before users do: double every label, turn the
 system text size all the way up, make the main action fail. Plumber judges the screen as it is drawn; none of the
-three is a state the page reaches by itself. - **Built (layer 1):** Alt+S opens "Break it" with one toy, Longer words. See the journey entry "Breaking the screen
-  on purpose: longer words".
+three is a state the page reaches by itself. - **Built (layer 1):** Alt+S opens "Break it" with one toy, Longer words, which stretches only words that can change
+  (passed into reusable parts, list items fed from elsewhere, data). See the journey entries "Breaking the screen on
+  purpose: longer words" and "Break it stretches only words that can change".
+- **Owner's direction (2026-11-15):** stress what can change and what people interact with. Fixed copy in a one-off
+  component is stressed by the space around it (narrow widths, text at 200%), never by its words. Chosen for the
+  first version: extreme content in data slots and props, typing into fields, lists at 0, 1 and 100, and a failing
+  or slow main action.
 - **One "Break it" switch on the live page,** three toggles that change the page in place (longer words, bigger
   text, the main action's request answered with an error), the page left usable, and off puts everything back.
 - **What it marks:** text cut off, pushed out or overlapping; text that stays the same size when the reader's size
   goes up (set in px); after a failed action, whether anything told the person, whether the button came back, and
   whether a spinner never stops.
 - **The same three in the headless run,** as more passes beside widths and dark, for the agent contract.
-- **Longer words, not yet:** a heading split into one element per letter (for animation) is skipped as art, so it
-  never grows; button values and aria-labels are not stretched; nothing groups one cause seen in many places.
+- **Longer words, not yet:** button values and aria-labels are not stretched; a same-file prop is told apart from fixed copy only by which line it sits nearer; nothing groups one cause seen in many places.
 - **More toys asked for (owner, 2026-11-15: "stress testing of various different component and interaction"):**
   - *Empty and huge data:* every list shows none, one, and a hundred items; a name 60 letters long; a number with
     nine digits; a missing picture.
