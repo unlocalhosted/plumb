@@ -1575,6 +1575,14 @@ field is empty). The table of five writes, before and after. The Next table: eig
   its icon sits on, stopping before the words, the low one's in coral with "2px low"; the labels' edge in the gutter,
   run past the first and last row, the gap shaded and "5px right". The size goes in one pill placed where it covers
   no words or icons (the nearest clear spot); a first version put it over "Projects" and "Mei Tanaka".
+- **A fix that could not be written** (owner, with a screenshot of "Remove translate-y-[2px]" answered by
+  "edits[0].to must be a non-empty string."). Plumber's class swap only ever replaced a class with another; the
+  roast's first fix that removes one (the Cycles icon's nudge, which its siblings simply do not have) hit three
+  guards in turn: the request schema, the engine's check, and the change history's label. The code that rewrites
+  the class string already handled an empty replacement. Now a swap needs a class to take out or one to put in, and a
+  removal is recorded as ∅, the way an addition already recorded an empty "from". Proof: the button took
+  translate-y-[2px] out of SloppyIssuesPage.tsx:48, the page updated, and the roast said "Everything here hangs true.
+  Nothing to roast." (the owner had already fixed the other two notes with the button). Practice page restored.
 - **Media hooks:** docs/qa/roast-proof-avatars.jpg, docs/qa/roast-proof-height.png, docs/qa/roast-proof-line.png (the proof lines for corners, height and alignment), docs/qa/roast-ghost-keys.jpg (the ghost of the fix and the keycaps), docs/qa/roast-settings-cousin.jpg (a cousin note on the settings page), docs/qa/roast-icon-note.jpg (the icon note), docs/qa/roast-first-note.jpg (the roast's first note on the messy page), docs/qa/guides-first-look-issues.jpg (guides on the messy page), docs/qa/guides-held-issues.jpg
   (the three strays held by their neighbours), docs/qa/guides-plumb-lines-issues.jpg
   (the plumb lines and the one stray); a screen recording of the drop-and-swing arrival would show the toy best; the three source screenshots in

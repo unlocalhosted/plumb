@@ -1585,7 +1585,7 @@ export class Session extends EventEmitter {
     // one swap per element: the same element twice with the same edit is one
     const unique = [...new Map(edits.map(e => [`${e.line}:${e.column}|${e.from}|${e.to}|${e.at?.line ?? ''}:${e.at?.column ?? ''}`, e])).values()];
     for (const e of unique) {
-      if (typeof e?.from !== 'string' || typeof e?.to !== 'string' || !e.to.trim() || names(e.from).length > 8 || names(e.to).length > 8) throw new UsageError('Each swap needs from and to (at most eight classes).');
+      if (typeof e?.from !== 'string' || typeof e?.to !== 'string' || (!e.to.trim() && !e.from.trim()) || names(e.from).length > 8 || names(e.to).length > 8) throw new UsageError('Each swap needs a class to take out or one to put in (at most eight of each).');
       this.position(e.line); this.position(e.column);
     }
     // Every place that can be written is; a place that can't (a className built at runtime, a component's usage, a
@@ -1612,7 +1612,7 @@ export class Session extends EventEmitter {
     if (!starts.length) throw nothing();
     // the history label: each distinct value once, cut to fit the text guard (a big file's swaps are one write)
     const summary = (xs: string[]) => { const all = [...new Set(xs)].join(', '); return all.length <= 500 ? all : `${all.slice(0, 470).replace(/,[^,]*$/, '')} … (${xs.length} in all)`; };
-    const result = await this.writeText(path, hash, `swaps:${unique.length}`, summary(unique.map(e => e.from || '∅')), summary(unique.map(e => e.to)), (_file, source) => {
+    const result = await this.writeText(path, hash, `swaps:${unique.length}`, summary(unique.map(e => e.from || '∅')), summary(unique.map(e => e.to || '∅')), (_file, source) => {
       if (sourceHash(source) !== hash) throw stale();
       const changes: (ReturnType<typeof swapClasses> & { edit: SwapsOptions['edits'][number] })[] = [];
       for (const s of starts) {
