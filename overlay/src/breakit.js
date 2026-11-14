@@ -27,7 +27,8 @@
  *           twin), every place it is used ringed. Layout breaks under the bigger text are noted too
  *  breaks   only what broke because of the toy (each check runs before and after; what was already broken is
  *           not this toggle's news):
- *             cut      the words no longer fit a box that hides what overflows (an ellipsis, a clipped line, a clamp)
+ *             cut      the words no longer fit a box that hides what overflows. Not when it ends them in an ellipsis
+ *                      or clamps their lines: that cut is designed
  *             spill    the words run past the edge of the box drawn around them, or off the screen
  *             overlap  the words now run into other words
  *             sideways the whole page now scrolls sideways
@@ -249,6 +250,8 @@ function measure(win = window, { all = false } = {}) {
       else if (hides(cs, 'y') && fixed(cs.overflowY) && a.scrollHeight > a.clientHeight + 2 && w.bottom > r.bottom + 1) cut = { box: a, need: a.scrollHeight, have: a.clientHeight, axis: 'y' };
     }
     if (cut && (cut.box.clientWidth < 4 || cut.box.clientHeight < 4)) continue;   // hidden on purpose: words for screen readers only
+    // cut on purpose: an ellipsis or a line clamp is the design saying "this may not fit" (owner, 2026-11-15: skip it)
+    if (cut) { const c = cssOf(cut.box); if (c.textOverflow === 'ellipsis' || cssOf(el).textOverflow === 'ellipsis' || (c.webkitLineClamp && c.webkitLineClamp !== 'none')) continue; }
     if (cut) { found.set(el, { kind: 'cut', el, ...cut, rect: cut.box.getBoundingClientRect() }); continue; }
     // spill: the words cross the edge of the nearest box drawn around them, or the screen's
     if ((w.right > innerWidth + 1 || w.left < -1) && !inScroller(el)) { found.set(el, { kind: 'spill', el, rect: w, edge: 'screen', by: Math.round(Math.max(w.right - innerWidth, -w.left)) }); continue; }

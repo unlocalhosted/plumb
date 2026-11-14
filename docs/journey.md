@@ -1232,8 +1232,9 @@
 - **The proof:** crafting-ui's home page: narrower, nothing breaks from 873px to 320px (it already adapts). Bigger
   text: 52 runs of words stay the same size, from 3 causes (text-[11px] in 41 places, text-[12px] in 7, text-[9px]
   in 4), while the headline doubles; the page also starts scrolling sideways by 61px. Plumber's showcase index:
-  narrower finds principle names cut off from 457px down (Principle.jsx:604). Those names end in an ellipsis on
-  purpose, so whether a designed truncation counts as a break is open. A sweep takes about 3 seconds.
+  narrower found principle names cut off from 457px down (Principle.jsx:604). Those names end in an ellipsis on
+  purpose; the owner ruled a designed cut is not a break ("No, skip ellipsis"), so text ended in an ellipsis or a
+  line clamp is skipped, and the index now reads "nothing breaks" from 873px to 320px. A sweep takes about 3 seconds.
 - **Not yet:** plumber's own overlay loads inside the copy and shows its "Hold Alt" hint there; the sideways scroll
   under bigger text does not say what causes it; no tests.
 - **Media hooks:** docs/qa/break-it-narrower.jpg (the copy at 457px, the cut name ringed),

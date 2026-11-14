@@ -338,8 +338,7 @@ three is a state the page reaches by itself. - **Built (layer 1):** Alt+S opens 
   goes up (set in px); after a failed action, whether anything told the person, whether the button came back, and
   whether a spinner never stops.
 - **The same three in the headless run,** as more passes beside widths and dark, for the agent contract.
-- **Narrower and Bigger text, built; open:** does a designed truncation (an ellipsis on purpose) count as a break?
-  Plumber's own overlay loads inside the narrow copy. The sideways scroll under bigger text does not name its cause.
+- **Narrower and Bigger text, built; open:** Plumber's own overlay loads inside the narrow copy. The sideways scroll under bigger text does not name its cause.
 - **Longer words, not yet:** button values and aria-labels are not stretched; a same-file prop is told apart from fixed copy only by which line it sits nearer; nothing groups one cause seen in many places.
 - **More toys asked for (owner, 2026-11-15: "stress testing of various different component and interaction"):**
   - *Empty and huge data:* every list shows none, one, and a hundred items; a name 60 letters long; a number with
