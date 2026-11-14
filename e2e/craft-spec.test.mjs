@@ -63,7 +63,7 @@ test('plumber spec: without a config it is the standard; every value says so', {
   const json = await plumber(['spec', '--json'], root);
   const spec = JSON.parse(json.stdout);
   assert.equal(spec.preset, 'balanced');
-  assert.deepEqual(spec.principles.map((p) => p.id), ['access', 'legibility', 'theme', 'rhythm', 'shape', 'depth', 'colour', 'hierarchy', 'alignment', 'motion', 'taste']);
+  assert.deepEqual(spec.principles.map((p) => p.id), ['access', 'safety', 'legibility', 'theme', 'rhythm', 'shape', 'depth', 'colour', 'hierarchy', 'alignment', 'motion', 'taste']);
   const measure = ruleOf(spec, 'craft/measure');
   assert.deepEqual([measure.enabled, measure.tierName, measure.values.max, measure.values.want, measure.from], [true, 'legibility', 90, { min: 45, max: 75, target: 65 }, {}]);
   const quotes = ruleOf(spec, 'habits/real-quotes');
@@ -103,7 +103,7 @@ test('plumber spec: a wrong config says what to set, where, and what it could ha
   if (!await built()) return t.skip('Run npm run build first.');
   const cases = [
     [`export default { craft: { values: { legibility: { measure: { max: '70' } } } } };`, /Set craft\.values\.legibility\.measure\.max to a number\./],
-    [`export default { craft: { values: { legibilty: {} } } };`, /Remove unknown key "craft\.values\.legibilty"; principles: access, legibility.*Did you mean legibility\?/],
+    [`export default { craft: { values: { legibilty: {} } } };`, /Remove unknown key "craft\.values\.legibilty"; principles: safety, access, legibility.*Did you mean legibility\?/],
     [`export default { craft: { values: { access: { measure: { max: 70 } } } } };`, /Move craft\.values\.access\.measure to craft\.values\.legibility\.measure\./],
     [`export default { craft: { rules: { 'craft/measurr': false } } };`, /Unknown rule "craft\/measurr" in craft\.rules\. Did you mean craft\/measure\?/],
     [`export default { craft: { rules: { 'craft/measure': { tier: 'high' } } } };`, /Set craft\.rules\["craft\/measure"\]\.tier to one of access, legibility, theme, craft, advisory\./],
