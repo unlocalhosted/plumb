@@ -57,6 +57,9 @@ export const methods = [
   { http: 'token', engine: 'token', post: true, traced: true, patient: true },
   // the system settled on the project page, into its token files (one undo for all of them)
   { http: 'system-apply', engine: 'systemApply', post: true, traced: true, patient: true },
+  // the lesson's last step: your rules written as the config, and today's state recorded (plumber init, with the
+  // sources you chose); over HTTP only, from the project page
+  { http: 'setup', post: true, patient: true, rpc: false },
   { http: 'accept', engine: 'accept', post: true, patient: true },
   { http: 'apply-all', engine: 'applyAll', post: true, traced: true, patient: true },
   { http: 'rename', engine: 'rename', post: true, traced: true, patient: true },

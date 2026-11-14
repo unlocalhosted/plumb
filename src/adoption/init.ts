@@ -65,6 +65,8 @@ export interface InitOptions {
   asker?: Asker;
   /** Say nothing about the questions (for --json). */
   quiet?: boolean;
+  /** The token sources to write, as chosen on the project page's lesson; without them, init infers them from your code. */
+  decisions?: NonNullable<PlumbConfig['decisions']>;
 }
 const labels: Record<string, string> = { color: 'colour', z: 'z-index' };
 
@@ -125,7 +127,7 @@ export async function initProject(root: string, options: InitOptions, print: (te
         report = await checkProject(root, temporary, true);
       }
     }
-    const sources = decisionSources(report);
+    const sources = options.decisions ?? decisionSources(report);
     const components = componentList;
     // no `source`: your code is what the rule says (src/source-identity.ts), with its installed, generated and
     // git-ignored filters; a `source` written here would replace that rule with a glob

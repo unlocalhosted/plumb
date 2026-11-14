@@ -73,13 +73,16 @@ export async function readDecisions(root: string, config: PlumbConfig, graph: St
   function selected(name: string, family: Family, file: string, isTheme: boolean, inferredFamily?: Family): boolean {
     const source = config.decisions?.[family]?.from;
     if (source === undefined) return (familyFor(name) ?? inferredFamily) === family;
-    if (familyFor(name) !== undefined && familyFor(name) !== family) return false;
+    // a Tailwind name says its kind, unless the token was read otherwise by its value (a colour named --text-…)
+    if (familyFor(name) !== undefined && familyFor(name) !== family && inferredFamily !== family) return false;
     if (typeof source === 'function') return false;
     return (Array.isArray(source) ? source : [source]).some(pattern => {
       if (pattern.startsWith('theme:')) return isTheme && matches(name, pattern.slice(6));
       if (pattern.startsWith('dtcg:')) return false;
       const selector = pattern.replace(/^css:/, ''), fragment = /^(.*)#(--[^#]+)$/.exec(selector);
       const path = fragment?.[1] ?? selector;
+      // a whole file holds every kind: from it, a token is this kind only when its name or its reading says so
+      if (!fragment && ((familyFor(name) ?? inferredFamily) !== family && inferredFamily !== family || inferredFamily !== undefined && inferredFamily !== family)) return false;
       return (!fragment || matches(name, fragment[2]!)) && (matches(file, path) || matches(relative(root, file).replaceAll('\\', '/'), path));
     });
   }
@@ -97,13 +100,15 @@ export async function readDecisions(root: string, config: PlumbConfig, graph: St
   for (const item of raw) if (item.root && !item.theme && item.origin === 'project' && !familyFor(item.name) && !backing.has(item.name) && !inferred.has(item.name)) {
     inferred.set(item.name, inferFamily(item.name, resolveValue(item.value, variables, new Set([item.name])) ?? item.value, uses));
   }
+  const plainColour = (item: typeof raw[number]) => { const named = familyFor(item.name); return !!named && named !== 'color' && byValue(resolveValue(item.value, variables, new Set([item.name])) ?? item.value) === 'color'; };
   for (const item of raw.filter(item => item.root && !item.theme && item.origin === 'project')) {
-    for (const family of Object.keys(config.decisions ?? {}) as Family[]) if (selected(item.name, family, item.source.file, false, inferred.get(item.name)?.family)) {
+    const hint = plainColour(item) ? 'color' : inferred.get(item.name)?.family;
+    for (const family of Object.keys(config.decisions ?? {}) as Family[]) if (selected(item.name, family, item.source.file, false, hint)) {
       add(defineDecisions([{ family, name: item.name, value: item.value, why: item.why, source: item.source, ...(item.tier ? { tier: item.tier } : {}) }])[0]!, item.tier !== undefined);
     }
     // a Tailwind prefix that says one kind over a value that is plainly a colour (`--text-primary: #1d1b17` in plain CSS):
     // the value wins, and the reading says so
-    const named = familyFor(item.name), plain = named && named !== 'color' && byValue(resolveValue(item.value, variables, new Set([item.name])) ?? item.value) === 'color';
+    const named = familyFor(item.name), plain = plainColour(item);
     if (plain) colourOverName.set(item.name, named!);
     const family = plain ? 'color' : named ?? inferred.get(item.name)?.family;
     if (family && !config.decisions?.[family]) add(defineDecisions([{ family, name: item.name, value: item.value, why: item.why, source: item.source, ...(item.tier ? { tier: item.tier } : {}) }])[0]!, item.tier !== undefined);

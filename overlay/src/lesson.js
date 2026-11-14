@@ -17,7 +17,7 @@ import { SCALE_CSS } from './scale-marks.js';
 import { GRAVITY_CSS, Gravity } from './gravity.js';
 import { TOY_DEFS, toyOf } from './toys.js';
 import { BUTTON_CSS, button } from './kit.js';
-import { colourModel, decisionsOf, lanesOf, systemOf } from './system-review.js';
+import { colourModel, decisionsOf, editsOf, lanesOf, systemOf } from './system-review.js';
 
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
 const nf = new Intl.NumberFormat('en');
@@ -181,12 +181,12 @@ export function mountLesson(host, data, { post } = {}) {
   // a size kind's rule, in plain words and as the line it writes
   const sizeRule = (m) => {
     const key = m.family === 'type' ? 'type' : m.family;
-    if (state.choice[m.family] === 'tidy' && m.one) return { plain: `Every ${m.spec.noun} uses one of these ${m.one.steps.length}. Anything else, Plumber points out.`, code: `${key}: { from: ['css:${m.one.lane.file}#${m.one.stem}*'] }` };
-    const from = m.lanes.length ? m.lanes.map((l) => `'css:${l.file}#${l.name}'`) : [...new Set((m.kind?.groups ?? []).map((g) => `'css:${g.file}'`))];
-    return { plain: `${m.spec.nouns[0].toUpperCase()}${m.spec.nouns.slice(1)} use the ones you already have. Anything else, Plumber points out.`, code: `${key}: { from: [${from.join(', ')}] }` };
+    if (state.choice[m.family] === 'tidy' && m.one) { const from = [`css:${m.one.lane.file}#${m.one.stem}*`]; return { plain: `Every ${m.spec.noun} uses one of these ${m.one.steps.length}. Anything else, Plumber points out.`, key, from, code: `${key}: { from: ['${from[0]}'] }` }; }
+    const from = m.lanes.length ? m.lanes.map((l) => `css:${l.file}#${l.name}`) : [...new Set((m.kind?.groups ?? []).map((g) => `css:${g.file}`))];
+    return { plain: `${m.spec.nouns[0].toUpperCase()}${m.spec.nouns.slice(1)} use the ones you already have. Anything else, Plumber points out.`, key, from, code: `${key}: { from: [${from.map((f) => `'${f}'`).join(', ')}] }` };
   };
   const colourRule = () => ({ plain: `Colours come from your palette of ${col.palette.length} and the ${col.roles.length} named uses built on it${state.choice.color === 'point' && col.fixable.length ? `, with ${col.fixable.length} copies pointed back at it` : ''}. A colour typed by hand, Plumber points out.`,
-    code: `color: { from: [${col.files.map((f) => `'css:${f}'`).join(', ')}] }` });
+    key: 'color', from: col.files.map((f) => `css:${f}`), code: `color: { from: [${col.files.map((f) => `'css:${f}'`).join(', ')}] }` });
   const ruleOf = (id) => id === 'colour' ? colourRule() : sizeRule(sizes[Object.keys(screenOf).find((f) => screenOf[f] === id)]);
 
   const rules = () => {
@@ -256,7 +256,8 @@ export function mountLesson(host, data, { post } = {}) {
     const code = `export default {\n  decisions: {\n${done.map((id) => `    ${ruleOf(id).code},`).join('\n')}\n  },\n};`;
     return `<section class="screen">${face(s, 'Your rules', 'What you chose, in one place. This becomes plumber.config, the file Plumber reads every time it checks your app.')}
       <div class="body"><div class="part"><h3>${done.length ? `${done.length} of 4 decided` : 'Nothing decided yet'}</h3>${done.length ? `<div class="rule">${done.map((id) => `<p>${esc(ruleOf(id).plain)}</p>`).join('')}<code>${esc(code)}</code></div>` : '<p>Start with spacing.</p>'}</div>
-        <div class="part"><h3>Setting it up</h3><p>Next: writing these rules into plumber.config, tidying your tokens as you chose, and remembering what's already in your code so you only hear about new problems. Nothing in your files has changed yet.</p></div></div></section>`;
+        <div class="part"><h3>Set it up</h3><p>One press does three things: tidies your tokens as you chose (old names keep working), writes these rules into plumber.config, and remembers what's already in your code, so from now on you only hear about new problems.</p>
+          <div class="nav">${post && done.length ? button('Set it up', { attrs: 'data-setup' }) : ''}<span class="later" data-said>${!post ? 'Open this page with npx plumber to set it up from here.' : done.length ? 'You can undo the token changes right after.' : ''}</span></div></div></div></section>`;
   };
 
   const draw = () => {
@@ -275,12 +276,35 @@ export function mountLesson(host, data, { post } = {}) {
     state.fresh = '';
   };
 
+  // the systems your answers make, for the token edits: a tidy size kind, and colour copies pointed back
+  const chosenSystems = () => {
+    const out = [];
+    for (const f of Object.keys(screenOf)) if (state.decided.has(screenOf[f]) && state.choice[f] === 'tidy' && sizes[f].kind) out.push(systemOf(sizes[f].kind, sizes[f].tidy));
+    if (state.decided.has('colour') && state.choice.color === 'point' && col.kind) out.push(systemOf(col.kind, { 'roles:color': 'point' }));
+    return out.filter(Boolean);
+  };
+  const setUp = async (b) => {
+    const said = root.querySelector('[data-said]');
+    b.setAttribute('aria-busy', 'true');
+    try {
+      const edits = editsOf(chosenSystems());
+      const wrote = edits.length ? await post('/__plumb/system-apply', { files: edits, label: 'Your system' }) : null;
+      const decisions = Object.fromEntries(ORDER.filter((id) => !['welcome', 'rules'].includes(id) && state.decided.has(id)).map((id) => { const r = ruleOf(id); return [r.key, { from: r.from }]; }));
+      const set = await post('/__plumb/setup', { decisions });
+      said.innerHTML = `Done. Your rules are in plumber.config${wrote?.written?.length ? `, ${wrote.written.reduce((n, f) => n + f.set + f.added, 0)} tokens tidied` : ''}, and ${nf.format(set.recorded)} ${set.recorded === 1 ? 'problem' : 'problems'} already in your code remembered, so you'll only hear about new ones. `;
+      if (wrote?.undo) { const undo = document.createElement('button'); undo.type = 'button'; undo.className = 'tb sm quiet'; undo.innerHTML = '<span class="top"><span class="lb">Undo the token changes</span></span>'; undo.onclick = async () => { try { await post('/__plumb/undo', { id: wrote.undo.id }); said.textContent = 'Token changes undone. Your rules stay in plumber.config.'; } catch (err) { said.textContent = `Couldn’t undo: ${err.message}`; } }; said.append(undo); }
+      b.remove();
+    } catch (err) { said.textContent = `Nothing more was written. ${err.message}`; }
+    finally { b.removeAttribute('aria-busy'); }
+  };
+
   root.addEventListener('click', (e) => {
+    const setup = e.target.closest('[data-setup]');
+    if (setup) { setUp(setup); return; }
     const go = e.target.closest('[data-go]'), pick = e.target.closest('[data-pick]'), next = e.target.closest('[data-next]');
     if (pick) { const [family, value] = pick.dataset.pick.split(':'); state.choice[family] = value; draw(); return; }
     if (next) { state.decided.add(next.dataset.next); state.fresh = next.dataset.next; state.at = nextOf(next.dataset.next).id; draw(); window.scrollTo?.({ top: 0 }); return; }
     if (go && !go.disabled) { state.at = go.dataset.go; draw(); }
   });
   draw();
-  void post;
 }

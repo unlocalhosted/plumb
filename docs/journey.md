@@ -2555,6 +2555,16 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   colours only knew tokens named `--color-*`; they now come from every colour Plumber read. On the site: corners show 2
   lists repeating 6, 8, 12 and 11 places typed by hand; text 5 places; colours 47 in the palette, 97 named uses, 4
   places typed by hand, and nothing to point back.
+- **Then Set it up (same day).** The Your rules screen's one button does three things in order: tidies the tokens as
+  chosen (`system-apply`, one Undo), writes the rules as plumber.config, and remembers what's already wrong in the code
+  so only new problems are flagged. The last two are `plumber init` itself, called from the page through a new
+  `setup` route with the sources chosen in the lesson instead of the ones init would infer (`InitOptions.decisions`).
+  Proof on the probe, Welcome to Set it up: 17 tokens tidied (one `--spacing-*` list, colour copies pointing at the
+  palette), the config holding the four rules, 6 problems remembered; the check after it shows them as known, not new.
+  Found on the way, and older than the lesson: a whole-file source (`css:src/tokens.css`) pulled every token without a
+  Tailwind prefix into that kind, so `--space-1` counted as a colour and as type. A whole file now gives a kind only the
+  tokens read as that kind (by name, or by value, use and name), and a colour named `--text-…` stays a colour.
+  crafting-ui, the homepage app and the site: unchanged by the fix.
 - **Open on the lesson:** "Set it up" (write the rules, the tokens and today's
   state) on the last screen; the causes list ("What I'd stop first") is off the page until it has a place in the
   lesson; the e2e bare-page test still expects the old page's modules.
