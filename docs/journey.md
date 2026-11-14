@@ -2565,11 +2565,10 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   Tailwind prefix into that kind, so `--space-1` counted as a colour and as type. A whole file now gives a kind only the
   tokens read as that kind (by name, or by value, use and name), and a colour named `--text-…` stays a colour.
   crafting-ui, the homepage app and the site: unchanged by the fix.
-- **Open on the lesson:** "Set it up" (write the rules, the tokens and today's
-  state) on the last screen; the causes list ("What I'd stop first") is off the page until it has a place in the
-  lesson; the e2e bare-page test still expects the old page's modules.
-- **Open on the four steps:**   steps that came from a dropped scale are named by their size (`--spacing-32`)
-  beside inherited names (`--spacing-8` is 24px), a mixed numbering a naming choice should settle.
+- **Open on the lesson:** the causes list ("What I'd stop first") is off the page until it has a place in the
+  lesson; Undo after Set it up covers the tokens, not the config; the e2e bare-page test still expects the old page's
+  modules; no tests for any of this yet.
+- **Open on the four steps:** settled by numbering (above).
 - **Still open on the page:** some motion tokens show `0ms`, the
   value from the token file's reduced-motion block; nothing on the page can move a line yet (the config does).
 - **Still open:** a `font:` line that is off the scale shows the face's fix first ("use var(--font)"), not the
