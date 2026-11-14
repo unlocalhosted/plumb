@@ -1162,10 +1162,40 @@
   docs/references-media/; a clean page beside a messy one with the guide counts would make the point in one frame.
 - References: the five 2026-11-15 entries in docs/references.md.
 
+## Breaking the screen on purpose: longer words (2026-11-15)
+- **The itch:** a post the owner shared: "Three ways to break a screen before your users do: double the length of
+  every label, turn the system text size all the way up, make the main action fail." The owner asked where this fits
+  in plumber and what the most natural way to bring it is, then: "labels first".
+- **The system behind it:** plumber judges the screen as it is drawn. None of the three is a state a page reaches by
+  itself, so no check could ever see them. Plumber has to put the page into the state, then judge it.
+- **What we chose and why:** one "Break it" bar with toys you switch on, on the live page. The page stays usable,
+  because the third toy (a failing action) only means something when you press the real button yourself. The first
+  toy, Longer words, grows every run of words to about twice its length in accented letters, the way a German or
+  Finnish translation would, and you watch it grow. Placeholders too, and words React draws while it is on. Then
+  plumber marks only what broke because of it: each check runs before and after, so what was already broken is not
+  this toy's news. Four kinds: words cut off by a box that hides overflow, words that run out of the box drawn round
+  them or off the screen, words that run into other words, and a page that now scrolls sideways. Turning it off puts
+  every word back as it was, unless the app changed it in the meantime.
+- **Dead ends, found on crafting-ui:** the first run gave 18 breaks and almost all were wrong. A wide section that
+  hides overflow was blamed for every word inside it, so a cut now counts only when the element's own words go past
+  the edge. A hero drawn one letter per element had each letter doubled, so runs of fewer than three letters are now
+  treated as art and left alone. Words kept for screen readers in a 1px box read as cut off, so those are skipped.
+  A sticky header read as running into the content scrolled under it, and a carousel's last card read as running off
+  the screen; both are now ignored. The coral hatch first sat over the words it marked, so it is now a band round the
+  box.
+- **The fix and the proof:** on crafting-ui's home page one break is left, and it is real: the "Grab a letter and
+  pull" hint wraps onto a second line and lands on the "px · cap" readout under it (Play.tsx:92). Turning the toy
+  off leaves no accented letter on the page. Not yet: a heading split into one element per letter never grows,
+  button values and aria-labels are not stretched, and nothing has been tested.
+- **Media hooks:** docs/qa/break-it-longer-words.png (the hint running into the readout, with the band round it). A
+  screen recording of the words growing and the screen giving way would show it best.
+- References: "Three ways to break a screen" in docs/references.md.
+
 ## Open gaps
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
 
 ## Shipped · 2026-W46
+- Press Alt+S and plumber breaks your screen on purpose: every label grows to twice its length, the way a translation would, and plumber marks only what that broke, on your live page. On crafting-ui it found one real collision ([entry](#breaking-the-screen-on-purpose-longer-words-2026-11-15)). On its own branch.
 - The ledger's lock can no longer let two writers in when processes die mid-way: a model checker found the hole, the fix was proved in the model, then written, tested between real processes, and merged into main ([entry](#the-lock-put-to-a-model-checker-2026-11-14)).
 - Doing what a check says now provably works: for every check, the fix it advises makes it go quiet and causes no other finding. Two pieces of advice that led straight to the next finding were corrected ([entry](#taking-the-advice-has-to-work-2026-11-14)).
 - Every check from Chrome's guides is now tested both ways: it speaks at the line of its problem, and it stays quiet on the closest right thing. Thirteen tests; one wrong check found and fixed ([entry](#are-the-checks-right-and-does-the-engine-keep-what-they-find-2026-11-14)).

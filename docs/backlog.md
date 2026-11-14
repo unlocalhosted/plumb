@@ -322,6 +322,36 @@ From reading lintapple's source (read, not run; plumber's side only skimmed, so 
 - **Small checks:** numbers in table cells right-aligned with equal-width digits; a font file that failed to load;
   the page scrolling sideways; phrases the project bans.
 
+### Breaking a screen on purpose (2026-11-15)
+Asked by the owner after a post listing three ways to break a screen before users do: double every label, turn the
+system text size all the way up, make the main action fail. Plumber judges the screen as it is drawn; none of the
+three is a state the page reaches by itself. - **Built (layer 1):** Alt+S opens "Break it" with one toy, Longer words. See the journey entry "Breaking the screen
+  on purpose: longer words".
+- **One "Break it" switch on the live page,** three toggles that change the page in place (longer words, bigger
+  text, the main action's request answered with an error), the page left usable, and off puts everything back.
+- **What it marks:** text cut off, pushed out or overlapping; text that stays the same size when the reader's size
+  goes up (set in px); after a failed action, whether anything told the person, whether the button came back, and
+  whether a spinner never stops.
+- **The same three in the headless run,** as more passes beside widths and dark, for the agent contract.
+- **Longer words, not yet:** a heading split into one element per letter (for animation) is skipped as art, so it
+  never grows; button values and aria-labels are not stretched; nothing groups one cause seen in many places.
+- **More toys asked for (owner, 2026-11-15: "stress testing of various different component and interaction"):**
+  - *Empty and huge data:* every list shows none, one, and a hundred items; a name 60 letters long; a number with
+    nine digits; a missing picture.
+  - *Slow:* every request takes four seconds, to see whether loading is shown, whether layout jumps when it lands,
+    and whether a second click sends the action twice.
+  - *Double click and fast hands:* the main action clicked twice quickly, a dialog closed while it opens, typing
+    before the page is ready.
+  - *Narrow and touch:* the screen at 320px wide, every target checked against a finger's size, hover-only things
+    found (nothing on a touch screen can hover).
+  - *Keyboard only:* the mouse taken away; Tab walks the screen and plumber marks what it cannot reach or where the
+    focus ring disappears.
+  - *Right to left:* the page flipped to Arabic or Hebrew direction; icons that should mirror, and margins set on
+    one side only.
+  - *No motion and high contrast:* reduced motion and forced colours on, to see what loses its meaning.
+- **Open:** which control is "the main action" when a screen has several (hierarchy already ranks emphasis); and how
+  to fail a request when the app uses something other than fetch.
+
 ### Writes and speed
 
 

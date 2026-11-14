@@ -4,6 +4,7 @@ import { request } from './src/api.js';
 import { mountOverlay } from './src/widget.js';
 import { craftRun } from './src/craft-run.js';
 import { readGuides, showGuides, hideGuides, toggleGuides } from './src/guides.js';
+import { readBreaks, showBreakIt, hideBreakIt, toggleBreakIt } from './src/breakit.js';
 
 window.__plumb = {
   locate,
@@ -17,6 +18,8 @@ window.__plumb = {
   craft: options => craftRun(window.__plumb.overlay, options),
   // The lines things sit on, across the whole screen (Alt+G): read and drawn, not judged yet.
   guides: { read: readGuides, show: showGuides, hide: hideGuides, toggle: toggleGuides },
+  // Break the screen on purpose (Alt+S): longer words, and what breaks under them.
+  breakIt: { read: readBreaks, show: showBreakIt, hide: hideBreakIt, toggle: toggleBreakIt },
   // Resolves once Plumb has finished its first read of the project (the dev server never waits for it).
   async ready(interval = 100) {
     for (;;) {
