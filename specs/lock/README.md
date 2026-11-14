@@ -7,7 +7,7 @@ processes can take their steps, die, and have their files go stale.
 | File | What it is | Result (2026-11-14, tla-ts 0.0.10) |
 |---|---|---|
 | `Lock.tla` | the lock as written on main, one file operation per step | **fails** `OneWriter` with 4 processes and 2 deaths, in 31 steps; passes with 3 processes and 1 death (1,151 states) |
-| `LockKeyed.tla` | a candidate fix: guard files named for the lock they are for, never removed while stale | passes `OneWriter` and `NotStuck` with 4 processes and 2 deaths (195,504 states). 5 processes and 3 deaths ran out of memory after 22 million states with no error found: not finished |
+| `LockKeyed.tla` | the fix, now in `src/write/lock.ts` (branch `lock-keyed-guards`): guard files named for the lock they are for, never removed while stale | passes `OneWriter` and `NotStuck` with 4 processes and 2 deaths (195,504 states) and with 5 processes and 2 deaths (5,015,777 states, on vm-agent) |
 
 Run one:
 
