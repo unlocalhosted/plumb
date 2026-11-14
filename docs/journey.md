@@ -1441,6 +1441,14 @@ field is empty). The table of five writes, before and after. The Next table: eig
 - **Still true:** nothing ties the model to the code but my reading of it. Two real processes cannot be made to die at the exact steps the model found, so the tests set up the files the dead would leave instead.
 - **Media hooks:** the 31-step trace (specs/lock/README.md says how to run it); tla-ts's own output.
 
+## The checks from Chrome's guides go to main (2026-11-14)
+- **The itch:** the owner: "keep going". The 152 checks, their tests and two engine changes had lived only on the homepage branch, and the full suite had never run with them.
+- **How we found it:** the branch merged onto main in a copy, then the full suite on the test server: 1,085 passed, 5 failed in 4 files. Each failure rerun alone, on this branch and on main, to sort the machine from the product.
+- **What it found:** two failures were the new checks being right on test pages that were not. (1) The spec test still expected `access` to be the first principle; the security pack put `safety` beside it. (2) The 216-card speed test counts marks; its pages had no doctype, `lang`, viewport or title, so the HTML checks marked four more. Its pages are now well-formed and the test measures speed again. One was a real false hit: on a Next page the blocking-script check counted Next's own `nomodule` polyfill and Turbopack's reload client, which are not the project's and are gone in a build. Now left out. The other two are old and timing-bound: a cached run on the test server takes about 350 ms against a 300 ms "never flash" line (fails 1 in 5 on main too), and the Undo click in the corner-suggestion test (fails alone on main too, passes in its file).
+- **Also fixed on the way:** the progress-bar check that failed twice in 20 runs. `init` reads the project twice and the second read restarts the stylesheet count; the words on the bar now hold like its percentage does. The web-font and early-connection checks got their test (a 1.4 KB font made for it; images from this server under an address that does not read as local).
+- **The proof:** each fix rerun on the test server: the 216-card test passes; the spec test passes 4 of 4. Full suite after all of them: see the next line.
+- **Media hooks:** the 221 and 218 mark counts beside the 217 the test expects.
+
 ## Open gaps
 - The site's top bar doesn't fit a phone (390px): it widens the page to about 500px. Needs a compact bar.
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
@@ -2529,6 +2537,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   Nothing finds a new one when it is written.
 
 ## Shipped · 2026-W46
+- The 152 checks from Chrome's guides are on main, with their tests, after a full suite run; a blocking-script false hit that every Next app would have seen is fixed on the way ([entry](#the-checks-from-chromes-guides-go-to-main-2026-11-14)).
 - **React Plumber 0.5.0 is released on GitHub** (tag `v0.5.0`, 2026-11-14): Alt+B X-ray with a readable card that waits for you to stop, a change lands in the class that is showing, resize by edges, repeated parts change every copy, big pages stay smooth. Proof: the full suite on vm-agent, 1061 passed; the 3 files that failed under load passed alone (14 of 14). The warm start that reached main the same day is held for 0.6.0, so GitHub's main stops at the tested commit. npm publish is the owner's step.
 - The speed work is on main: plumber stays out of the way on big pages (scroll at 53 of 60 frames a second with it open, no long freeze while it reads) and the server keeps what it learned between starts ([entry](#the-speed-work-lands-on-main-2026-11-14)).
 - The ledger's lock can no longer let two writers in when processes die mid-way: a model checker found the hole, the fix was proved in the model, then written, tested between real processes, and merged into main ([entry](#the-lock-put-to-a-model-checker-2026-11-14)).

@@ -325,3 +325,4 @@ one-bar and new-token tests are fixed and pass there on their own; the steady li
 - readiness-panel and text-edit (4 tests): another session has uncommitted changes to these files.
 - The new messy-page test was never run against the old code to see it fail there.
 - New behaviour without a test: a theme whose radii are named by size.
+- Two timing-bound tests fail on the test server on main too (2026-11-14): `cli-progress` "short runs never flash" (a cached run takes about 350 ms there against the 300 ms delay, so a slow machine does see a bar flash: 1 in 5 runs) and `craft` "A suggestion is written in one pick" (Undo click never stable when run alone; passes inside its file). Neither looked at further.
