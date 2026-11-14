@@ -492,21 +492,26 @@ test('on the page, thirty rows from one line say as much as three (the fewest th
 
 // algorecall's showcase page has no <main>; the finding was said on the first element judged, an icon in a feedback dock
 // drawn before the page, so the report named the dock's file. A finding about the page belongs on the page's own element.
-const DOCKED = `import { Dock } from './Dock.jsx';
+const DOCKED = `import { useEffect, useState } from 'react';
+import { Dock } from './Dock.jsx';
 export function App() {
+  // the page's body arrives after a moment (its data loads), the dock is there at once: the page is read in waves
+  const [ready, setReady] = useState(false);
+  useEffect(() => { const t = setTimeout(() => setReady(true), 1200); return () => clearTimeout(t); }, []);
   return (
     <>
       <Dock />
-      <div id="page-root" className="flex flex-col gap-s4 p-s4">
+      {ready && <div id="page-root" className="flex flex-col gap-s4 p-s4">
         <h1>Showcase</h1>
         ${'<p>A section of the page, with enough words in it to be read as content.</p>\n        '.repeat(40)}
-      </div>
+      </div>}
     </>
   );
 }
 `;
-const DOCK = `export function Dock() {
-  return <div id="dock" style={{ position: 'fixed', right: 16, bottom: 16, width: 40, height: 40 }}><svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><path d="M4 4h12v12H4z" /></svg></div>;
+const DOCK = `const NOTES = Array.from({ length: 48 }, (_, i) => 'Note ' + (i + 1));
+export function Dock() {
+  return <div id="dock" style={{ position: 'fixed', right: 16, bottom: 16, width: 120, height: 160, overflow: 'hidden' }}><ul>{NOTES.map((n) => <li key={n}><span>{n}</span></li>)}</ul></div>;
 }
 `;
 test('a finding about the whole page is said on the page, not on a dock drawn before it', { timeout: 240000 }, async (t) => {

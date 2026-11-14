@@ -9,7 +9,7 @@
  * ───────────────────────────────────────────────────────── */
 import { say } from './words.js';
 import { accessibleName, trimmed, hiddenFromAT, drawn, shown, page } from './a11y-rules.js';
-import { isPage } from './html-rules.js';
+import { isPage, pageWide } from './html-rules.js';
 import { EXPERIENCE } from './pack-experience.js';
 
 const found = (rule, el, n, { value = el.localName, confidence = 0.9, advice }) => [{
@@ -255,5 +255,6 @@ export const controlCovered = rule('control-covered', 'cover', 'button,a,input,s
   return found(this, el, { what, by: describe(top) }, { value: describe(top), confidence: 0.8, advice: `Raise this ${what} above ${describe(top)} (position: relative and a z-index), or give what covers it pointer-events: none.` });
 });
 
+for (const r of [pageOverflowX, motionNoOptOut, fontDisplay, preconnectMissing, scriptBlocking, pageTitle, skipLink, colorSchemeMissing]) pageWide(r);
 export const EXPERIENCE_RULES = [nowrapSentence, justifyRivers, capsLong, pageOverflowX, motionNoOptOut, fontDisplay, preconnectMissing, scriptBlocking, pageTitle, skipLink, colorSchemeMissing,
   linkTargetRenamed, buttonNameReused, stateInLabel, scrollNoHint, scrollKeyboard, controlCovered];

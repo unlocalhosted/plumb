@@ -19,7 +19,7 @@ const rule = (short, owns, check) => ({ id: `html/${short}`, family: 'craft', ow
 const ROOT = new WeakMap(); // document → the element that stands for it
 // The page's own element, where a finding about the whole page is said: the outermost judged element that covers the
 // most of the page (a route's root, a layout), not whichever was judged first (that was an icon in a feedback dock on
-// algorecall, and the report named its file for a page with no <main>). Chosen once per page and kept, so it is said once.
+// algorecall, and the report named its file for a page with no <main>). One per pass, so it is said once.
 const rootOf = (facts) => {
   const items = facts?.items; if (!items?.length) return null;
   const judged = new Set(items);
@@ -32,10 +32,17 @@ const rootOf = (facts) => {
   }
   return best;
 };
+// Chosen afresh for each pass over the page (it is read in waves: a fixed dock can be all there is of it at first), so
+// the page-wide checks read the census (craft.js judges them again whenever the page has changed) and the finding moves
+// to the page's own element as the page fills in. Without the pass's list (no facts), the first element asked keeps it.
+const ROOTS = new WeakMap();
 export const isPage = (el, facts) => {
-  const kept = ROOT.get(document)?.deref(); if (kept?.isConnected) return kept === el;
-  const root = rootOf(facts) ?? el; ROOT.set(document, new WeakRef(root)); return root === el;
+  if (!facts?.items) { const kept = ROOT.get(document)?.deref(); if (kept?.isConnected) return kept === el; ROOT.set(document, new WeakRef(el)); return true; }
+  let root = ROOTS.get(facts); if (root === undefined) ROOTS.set(facts, (root = rootOf(facts)));
+  return root === el;
 };
+// a check that speaks once for the whole page is judged with the census: again whenever the page has changed
+export const pageWide = (rule) => { rule.reads = [...(rule.reads ?? []), 'census']; return rule; };
 const PRESSABLE = 'a[href], button, input, select, textarea, summary, label, [role], [tabindex], [contenteditable]';
 const viewport = () => document.querySelector('meta[name="viewport"]')?.getAttribute('content') ?? null;
 const fold = () => window.innerHeight;
@@ -307,6 +314,7 @@ export const inlineHandler = rule('inline-handler', 'script', function (el, fact
   return found(this, el, { attr }, { value: attr, confidence: 0.85, advice: 'Attach it with addEventListener from a script file.' });
 });
 
+for (const r of [pageLang, viewportMeta, zoomDisabled, quirksMode, landmarkMain, h1Missing]) pageWide(r);
 export const HTML_RULES = [pageLang, viewportMeta, zoomDisabled, quirksMode, landmarkMain, bannerMany, h1Missing, listFake, listStructure, pointerGeneric, linkAsButton, booleanValue,
   figureCaption, preNoCode, preScrollKeyboard, preScrollRegion, imgSize, lazyAboveFold, eagerBelowFold, fetchpriorityOverused, heroPriority, imgOversized, pictureImg,
   summaryFirst, summaryNestedControl, summaryNoCue, titleTooltip, videoSize, videoPoster, videoCaptions, backgroundVideo, autoplaySound, iframeHidden, inlineHandler];
