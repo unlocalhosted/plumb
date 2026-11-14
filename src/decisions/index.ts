@@ -97,6 +97,11 @@ export async function readDecisions(root: string, config: PlumbConfig, graph: St
   const uses = variableUses(graph);
   const backing = new Set(theme.flatMap(item => references(item.value)));
   const inferred = new Map<string, ReturnType<typeof inferFamily>>(), colourOverName = new Map<string, Family>();
+  // where a theme or the config already declares a kind, its other variables are not guessed into it: an extra :root
+  // `--well: 0 2px 4px …` beside a theme's shadows is a raw value to point at them, not a token (e2e/attribution)
+  const declared = new Set<Family>([...decisions.values()].map(d => d.family));
+  for (const item of raw) if (item.root && !item.theme && item.origin === 'project') { const named = familyFor(item.name); if (named) declared.add(named); }
+  for (const family of Object.keys(config.decisions ?? {}) as Family[]) declared.add(family);
   for (const item of raw) if (item.root && !item.theme && item.origin === 'project' && !familyFor(item.name) && !backing.has(item.name) && !inferred.has(item.name)) {
     inferred.set(item.name, inferFamily(item.name, resolveValue(item.value, variables, new Set([item.name])) ?? item.value, uses));
   }
@@ -104,10 +109,13 @@ export async function readDecisions(root: string, config: PlumbConfig, graph: St
   // variables are read as it
   const guessed = new Map<Family, number>();
   for (const reading of inferred.values()) if (reading) guessed.set(reading.family, (guessed.get(reading.family) ?? 0) + 1);
-  for (const [name, reading] of inferred) if (reading && (guessed.get(reading.family) ?? 0) < 2) inferred.set(name, undefined);
+  // what each variable reads as stays known (a config's whole-file source takes a token by it); only adding a token
+  // on a guess alone is held back
+  const readAs = new Map(inferred);
+  for (const [name, reading] of inferred) if (reading && ((guessed.get(reading.family) ?? 0) < 2 || declared.has(reading.family))) inferred.set(name, undefined);
   const plainColour = (item: typeof raw[number]) => { const named = familyFor(item.name); return !!named && named !== 'color' && byValue(resolveValue(item.value, variables, new Set([item.name])) ?? item.value) === 'color'; };
   for (const item of raw.filter(item => item.root && !item.theme && item.origin === 'project')) {
-    const hint = plainColour(item) ? 'color' : inferred.get(item.name)?.family;
+    const hint = plainColour(item) ? 'color' : readAs.get(item.name)?.family;
     for (const family of Object.keys(config.decisions ?? {}) as Family[]) if (selected(item.name, family, item.source.file, false, hint)) {
       add(defineDecisions([{ family, name: item.name, value: item.value, why: item.why, source: item.source, ...(item.tier ? { tier: item.tier } : {}) }])[0]!, item.tier !== undefined);
     }
@@ -119,7 +127,7 @@ export async function readDecisions(root: string, config: PlumbConfig, graph: St
     if (family && !config.decisions?.[family]) add(defineDecisions([{ family, name: item.name, value: item.value, why: item.why, source: item.source, ...(item.tier ? { tier: item.tier } : {}) }])[0]!, item.tier !== undefined);
   }
   // how each token was read: a guess says what decided it; a Tailwind name says its prefix
-  const readingOf = (name: string, family: Family) => colourOverName.has(name) && family === 'color' ? `its value is a colour, though its name begins ${/^--[a-z]+-/.exec(name)?.[0] ?? name}` : inferred.get(name)?.family === family ? inferred.get(name)!.why : familyFor(name) === family ? `its name begins ${/^--[a-z]+(?:-(?:inset|drop|mono|line))?-/.exec(name)?.[0] ?? name}` : undefined;
+  const readingOf = (name: string, family: Family) => colourOverName.has(name) && family === 'color' ? `its value is a colour, though its name begins ${/^--[a-z]+-/.exec(name)?.[0] ?? name}` : readAs.get(name)?.family === family ? readAs.get(name)!.why : familyFor(name) === family ? `its name begins ${/^--[a-z]+(?:-(?:inset|drop|mono|line))?-/.exec(name)?.[0] ?? name}` : undefined;
   for (const [family, source] of Object.entries(config.decisions ?? {})) {
     if (typeof source.from === 'function') {
       const records = await source.from();
