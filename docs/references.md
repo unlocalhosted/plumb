@@ -178,3 +178,9 @@ All free under the Unsplash License, hotlinked from images.unsplash.com as Unspl
   fill, and the metric lines (cap height, baseline, side bearings) running edge to edge.
   What it changed: React Plumber's P gets a construction view (docs/design/comps/logo-construct.html), the mark drawn
   the way plumber sees a page: by its points, edges and guides.
+
+## 2026-11-15 · declauding v0.13.0, a skill that takes the LLM tics out of prose (shared by the owner)
+
+- **What:** https://github.com/oaustegard/claude-skills/releases/tag/declauding-v0.13.0, by oaustegard. It lists the constructions that mark prose as model-written (staged reveals, verdict headers, aphoristic closers, "it's not X, it's Y", forced triads, noun stacks) and rewrites them as plain prose. It comes with a linter and a diff that checks no claim was lost.
+- **Why the owner shared it:** after the film words read like a robot ("fills 78.5% of its box"): "fucking use this for anytime you are asked to write".
+- **What it changed:** it is installed globally (~/.claude/skills/declauding, without its stop hook, which needs subagents), and ~/.claude/CLAUDE.md now says every written piece goes through it, film scripts and on-screen words included.
