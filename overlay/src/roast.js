@@ -15,7 +15,9 @@
  *           a radius, fully rounded), heights and corners only for controls and one-line boxed items (a list
  *           row with more to say is taller for a reason). Only things built alike (the same children, in order) are
  *           siblings. Line notes are about content, never a box's edge: a fill may bleed past the line on purpose
- *           (craft rule #1, align content, not boxes). A thing a script or an animation is moving is never judged.
+ *           (craft rule #1, align content, not boxes); centred words have no edge to judge. A thing a script or an
+ *           animation is moving is never judged. Cousins too: the things at the same place in rows built alike (the
+ *           avatar in each member row) are judged as one set and said with their row.
  *           The odd one is the note, ringed, its siblings ticked
  *  cause    the class that makes the difference: the row and its first two levels of children, place by place,
  *           against the same places in the neighbour rows on the line. A horizontal property (gap, size, padding,
@@ -83,6 +85,7 @@ const nameOf = (el) => {
   return (first && (first.length > 28 ? `${first.slice(0, 26).replace(/\s+\S*$/, '')}…` : first)) || el.getAttribute('aria-label') || 'This';
 };
 const TEXT_BLOCK = 'h1, h2, h3, h4, h5, h6, p, blockquote, figcaption, label, button, li > a, td, th';
+const centred = (el) => [el, el.parentElement].some((e) => { const cs = e && getComputedStyle(e); return cs && (cs.textAlign === 'center' || (/grid|flex/.test(cs.display) && (cs.justifyItems === 'center' || cs.justifyContent === 'center' || cs.placeItems?.startsWith('center')))); });
 // a thing a script or an animation is moving (a draggable letter, a spring): where it is now is not where it was put
 const moving = (el) => { for (let e = el; e && e !== document.body; e = e.parentElement) { if (/transform|translate|rotate|scale/.test(e.getAttribute('style') ?? '') || e.getAnimations?.().some((a) => a.playState === 'running')) return true; } return false; };
 // how a thing is built: its children's tags in order. Only things built alike are siblings to compare
@@ -97,6 +100,7 @@ export function readNotes() {
   for (const z of strays) {
     if (z.thing.kind === 'box') continue;   // align content, not boxes (craft rule #1): a fill may bleed past the line on purpose
     if (moving(z.thing.el)) continue;
+    if (z.thing.kind === 'words' && centred(z.thing.el)) continue;   // centred words start where their width puts them
     const holders = z.guide.things.filter((o) => o.kind === z.thing.kind && o.el !== z.thing.el);
     if (!holders.length) continue;
     const near = [...holders].sort((a, b) => Math.abs(a.top - z.thing.top) - Math.abs(b.top - z.thing.top))[0];
@@ -172,9 +176,22 @@ function siblingGroups() {
 
 function siblingNotes() {
   const out = [];
-  for (const g0 of siblingGroups()) {
-    const g = g0.filter((el) => !moving(el));
-    if (g.length < MIN_GROUP) continue;
+  for (const rows of siblingGroups()) {
+    judgeSet(rows.filter((el) => !moving(el)), out, null);
+    // cousins: the avatar in each member row, the tag in each issue row; judged as one set, said with their row
+    const paths = [];
+    for (let i = 0; i < rows[0].children.length; i++) { paths.push([i]); for (let j = 0; j < rows[0].children[i].children.length; j++) paths.push([i, j]); }
+    for (const p of paths) {
+      const set = rows.map((r) => at(r, p)).filter((el) => el && !moving(el));
+      if (set.length === rows.length) judgeSet(set, out, (el) => rows.find((r) => r.contains(el)));
+    }
+  }
+  return out;
+}
+
+function judgeSet(g, out, rowOf) {
+  {
+    if (g.length < MIN_GROUP) return;
     // the icon beside its label: where its middle sits against the words' middle
     const dy = g.map((el) => { const i = iconOf(el), t = textBox(el); if (!i || !t) return null; const b = i.getBoundingClientRect(); return (b.top + b.bottom) / 2 - (t.top + t.bottom) / 2; });
     const withIcon = dy.filter((v) => v !== null);
@@ -204,7 +221,13 @@ function siblingNotes() {
       });
     }
   }
-  return out;
+  // said with its row, named by the row's own words (not the cousin's): "In Mei Tanaka's row, MT has …"
+  if (rowOf) for (const n of out) if (!n.said && g.includes(n.row)) {
+    n.said = true;
+    const row = rowOf(n.row), w = document.createTreeWalker(row, NodeFilter.SHOW_TEXT, { acceptNode: (t) => (t.data.trim() && !n.row.contains(t) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_SKIP) });
+    const who = w.nextNode()?.data.trim().replace(/\s+/g, ' ').slice(0, 28);
+    n.title = `${who ? `In ${who}'s row, ` : ''}${n.title.replace(/^The /, 'the ')}`.replace(/the other (buttons|rows|items|fields)/, 'the others in its place');
+  }
 }
 
 function sibling(el, others, type, weight, title, FAMS, extra = {}) {
@@ -213,7 +236,7 @@ function sibling(el, others, type, weight, title, FAMS, extra = {}) {
     row: el, others, type, weight, d: weight, title, ...extra,
     cause,
     why: cause
-      ? `Its ${wordFor(cause.fam, cause.el)} is ${cause.from ?? 'not set'}; the others use ${cause.to ?? 'none'}.`
+      ? `Its ${wordFor(cause.fam, cause.el)} ${/s$/.test(wordFor(cause.fam, cause.el)) ? 'are' : 'is'} ${cause.from ?? 'not set'}; the others use ${cause.to ?? 'none'}.`
       : `Nothing in its classes differs from the ${NOUN(el)} beside it; what is inside it makes the difference.`,
     act: cause && cause.from ? (cause.to ? `Use ${cause.to}` : `Remove ${cause.from}`) : null,
     source: sourceOf(el), region: regionOf(el),

@@ -1547,7 +1547,17 @@ field is empty). The table of five writes, before and after. The Next table: eig
   other (at display sizes a T and a b start a few px apart by their shapes), and things a script or animation moves
   are skipped. Final sweep: the messy tracker 3 notes, all real; 17 other pages 0. Not yet tried: corners and heights
   on a page that really mixes them, dark mode, any app but crafting-ui.
-- **Media hooks:** docs/qa/roast-icon-note.jpg (the icon note), docs/qa/roast-first-note.jpg (the roast's first note on the messy page), docs/qa/guides-first-look-issues.jpg (guides on the messy page), docs/qa/guides-held-issues.jpg
+- **Layer 6, a page that mixes shapes** (owner: "Yes, add one"). A third practice page in crafting-ui
+  (/sloppy/settings, "Ledgerly"), a settings screen with four faults planted the way Karri named them: one pill
+  button among rounded ones, one square chip among pills, one 36px button among 32px ones, one rounded-square
+  avatar among circles. First run: 3 of 4 caught with exact fixes, and one false note. The miss: avatars are not
+  siblings, each sits in its own member row; now "cousins" (the things at the same place in rows built alike) are
+  judged as one set and said with their row ("In Mei Tanaka's row, MT has 3px rounded corners; the others in its
+  place are fully rounded."). The false note: centred initials were judged by their left edge, which moves with each
+  letter's width; centred words are no longer judged by an edge. Second run: 4 of 4, no false notes. The avatar's
+  fix, whose class sits inside a ternary, wrote the right branch (rounded-md → rounded-full) and the page updated;
+  it leaves a ternary with two equal branches that a person would collapse. Page restored afterwards.
+- **Media hooks:** docs/qa/roast-settings-cousin.jpg (a cousin note on the settings page), docs/qa/roast-icon-note.jpg (the icon note), docs/qa/roast-first-note.jpg (the roast's first note on the messy page), docs/qa/guides-first-look-issues.jpg (guides on the messy page), docs/qa/guides-held-issues.jpg
   (the three strays held by their neighbours), docs/qa/guides-plumb-lines-issues.jpg
   (the plumb lines and the one stray); a screen recording of the drop-and-swing arrival would show the toy best; the three source screenshots in
   docs/references-media/; a clean page beside a messy one with the guide counts would make the point in one frame.
