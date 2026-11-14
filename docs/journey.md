@@ -2433,8 +2433,10 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   before; 157 unchecked). crafting-ui, before and after: 17 more tokens (`--muted`, `--faint`, `--sunken`,
   `--c-design`…), 13 fewer off-token colours, 17 more tokens waiting to be accepted, 23 more stale debt entries; the
   homepage app gained one (`--pl-z`). No tests run.
-- **Found on the way:** the history's new style file was missing from the list of files the overlay serves, so the
-  history would not have loaded in an app; fixed.
+- **Found on the way:** the history's new style file was missing from the overlay's module list. Corrected later the
+  same day, when a test was written for it: the server serves any plainly named file in overlay/src that exists, so
+  the history always loaded; the missing line only failed the build's licence check (scripts/third-party-notices.mjs).
+  The first account here, and the commit message "the overlay's history could not load it in an app", were wrong.
 - **Then tokens a script reads (same day).** The site puts the overlay's token file on the page from a server
   component that reads it by path. Plumber now finds a quoted `.css` path in the project's code, tries it from the
   module's folder and then the project's root, and reads the file like an imported stylesheet; nothing is run
@@ -2565,9 +2567,19 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   Tailwind prefix into that kind, so `--space-1` counted as a colour and as type. A whole file now gives a kind only the
   tokens read as that kind (by name, or by value, use and name), and a colour named `--text-…` stays a colour.
   crafting-ui, the homepage app and the site: unchanged by the fix.
+- **Then the tests (owner: "Yes, write tests").** Integration and end-to-end only, each from a failure seen this day:
+  e2e/token-reading.test.mjs (8, the command line on a plain-CSS app: tokens without a Tailwind prefix, a token file a
+  script reads, `:host(…)`, whole text styles, a colour named `--text-…`, `plumber decisions`' readings, whole-file
+  sources, init's lines), e2e/lesson-routes.test.mjs (5, the page's server: its data, the system write in order and
+  its byte-exact Undo, a refused write that writes nothing, Set it up, a refused source), e2e/lesson-page.test.mjs (4,
+  the lesson in a browser: plain Welcome, steps named by size, a rule per answer, Set it up keeping a whole text style).
+  Proof each guards something: the 8 command-line tests all fail on the code before the token work, each on its own
+  assertion; the two browser regressions fail when their old lines are put back in a scratch copy ("steps by size:
+  space-1, gap-sm…", "a whole style, not its size alone: 16px"). bare-page and project-page-data updated for the new
+  page and passing. A shared browser helper (e2e/helpers/browser.mjs) instead of a launch in the file. Corrected on the
+  way: the history-style "could not load" claim (see above).
 - **Open on the lesson:** the causes list ("What I'd stop first") is off the page until it has a place in the
-  lesson; Undo after Set it up covers the tokens, not the config; the e2e bare-page test still expects the old page's
-  modules; no tests for any of this yet.
+  lesson; Undo after Set it up covers the tokens, not the config.
 - **Open on the four steps:** settled by numbering (above).
 - **Still open on the page:** some motion tokens show `0ms`, the
   value from the token file's reduced-motion block; nothing on the page can move a line yet (the config does).

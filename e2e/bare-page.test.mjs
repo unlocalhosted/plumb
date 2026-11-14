@@ -32,9 +32,11 @@ test('bare plumber on a terminal prints the short report, opens the page, serves
     seen.add(name);
     const res = await fetch(`${url}/__plumb/src/${name}`);
     assert.equal(res.status, 200, `${name} isn't served`);
-    for (const [, dep] of (await res.text()).matchAll(/from '\.\/([\w-]+\.js)'/g)) queue.push(dep);
+    // real import lines only, not a usage example in a comment
+    for (const [, dep] of (await res.text()).matchAll(/^(?:import|export)\b[^;]*?from '\.\/([\w-]+\.js)'/gm)) queue.push(dep);
   }
-  assert.ok(seen.has('gravity.js') && seen.has('specimen.js') && seen.has('cause-list.js') && seen.has('motion.js'), [...seen].join(', '));
+  // the page is the lesson (overlay/src/lesson.js): its screens draw with Gravity and the review's model
+  assert.ok(seen.has('lesson.js') && seen.has('system-review.js') && seen.has('gravity.js') && seen.has('motion.js'), [...seen].join(', '));
   const done = await running.stop();
   assert.equal(done.code, 0, done.stderr);
   assert.match(done.stdout, /Press Ctrl\+C here when you're done\.\n\nNo changes made\.\n$/);
