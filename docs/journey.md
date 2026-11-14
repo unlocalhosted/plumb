@@ -1449,6 +1449,14 @@ field is empty). The table of five writes, before and after. The Next table: eig
 - **The proof:** each fix rerun on the test server: the 216-card test passes; the spec test passes 4 of 4. Full suite after all of them, on the test server: 4 files red; three pass alone (14 of 14: a run that killed one file at six minutes was load), the fourth is the Undo click that fails on main too. Main moved forward to the branch (local, not pushed).
 - **Media hooks:** the 221 and 218 mark counts beside the 217 the test expects.
 
+## Two flaky tests: one was the machine, one was a real bug (2026-11-15)
+- **The itch:** the owner: "fix", about the two tests that failed on the test server on main too.
+- **How we found it:** each run alone on the test server, then watched from inside the page. The Undo test failed 3 of 3 alone on main; Playwright's own log named what took the click: a value label in the X-ray card.
+- **The system behind the Undo one:** the X-ray card keeps clear of Plumber's bar by measuring the bar when the card is placed. After a write lands, the fix panel is rebuilt: it is gone for about half a second and comes back taller. A card placed while it was gone stayed where it was, over the Undo button. A person on a slow machine meets the same thing: the Undo they want is under the card. It was fixed once before (2026-11-13) for the panel as it stood; the panel moving later was not covered.
+- **The fix and the proof:** whatever the card's room is measured against (the fix panel, the dock) is now watched, and the card is placed again when it changes size. Alone on the test server: 0 failures in 3 runs (was 3 in 3).
+- **The other one was the test:** "short runs never flash" set the progress delay at 300 ms and expected a cached run to finish inside it; on the test server a cached run takes about 350 ms. The test now sets the delay at 2 s, so it asks only "a run that ends before the delay draws nothing". A slow machine can still see a bar flash for a cached run; the product's 300 ms is unchanged.
+- **Media hooks:** Playwright's call log, "subtree intercepts pointer events", beside the panel's Undo.
+
 ## Open gaps
 - The site's top bar doesn't fit a phone (390px): it widens the page to about 500px. Needs a compact bar.
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
@@ -2537,6 +2545,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   Nothing finds a new one when it is written.
 
 ## Shipped · 2026-W46
+- The X-ray card no longer sits on the fix panel's Undo after a write lands: it moves when the panel comes back ([entry](#two-flaky-tests-one-was-the-machine-one-was-a-real-bug-2026-11-15)).
 - The 152 checks from Chrome's guides are on main, with their tests, after a full suite run; a blocking-script false hit that every Next app would have seen is fixed on the way ([entry](#the-checks-from-chromes-guides-go-to-main-2026-11-14)).
 - **React Plumber 0.5.0 is released on GitHub** (tag `v0.5.0`, 2026-11-14): Alt+B X-ray with a readable card that waits for you to stop, a change lands in the class that is showing, resize by edges, repeated parts change every copy, big pages stay smooth. Proof: the full suite on vm-agent, 1061 passed; the 3 files that failed under load passed alone (14 of 14). The warm start that reached main the same day is held for 0.6.0, so GitHub's main stops at the tested commit. npm publish is the owner's step.
 - The speed work is on main: plumber stays out of the way on big pages (scroll at 53 of 60 frames a second with it open, no long freeze while it reads) and the server keeps what it learned between starts ([entry](#the-speed-work-lands-on-main-2026-11-14)).
