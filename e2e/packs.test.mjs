@@ -402,7 +402,7 @@ test('components pack: 33 rules name their problem at its line, and a real modal
   speaks(await said(t, MODAL), 'components', MODAL, [['dialog-aria-extras', 'modal'], ['dialog-scroll-lock', 'modal']]);
 });
 
-test('HTML pack: 32 rules name their problem at its line, the page-wide ones once on the first element', { timeout: 240000 }, async (t) => {
+test('HTML pack: 32 rules name their problem at its line, the page-wide ones once, on the page's own element', { timeout: 240000 }, async (t) => {
   if (!await built()) return t.skip('Run npm run build first.');
   const by = await said(t, HTML, { index: BARE_INDEX, files: { 'public/wide.svg': WIDE_SVG } });
   speaks(by, 'html', HTML, HTML_EXPECTED);
@@ -488,6 +488,31 @@ test('on the page, thirty rows from one line say as much as three (the fewest th
   // what is counted is places; what is marked is elements (the thirty each carry their own mark)
   assert.deepEqual({ count: many.count, rest: many.rest }, { count: three.count, rest: three.rest }, JSON.stringify({ many, three }));
   assert.ok(many.marked > three.marked, JSON.stringify({ many, three }));
+});
+
+// algorecall's showcase page has no <main>; the finding was said on the first element judged, an icon in a feedback dock
+// drawn before the page, so the report named the dock's file. A finding about the page belongs on the page's own element.
+const DOCKED = `import { Dock } from './Dock.jsx';
+export function App() {
+  return (
+    <>
+      <Dock />
+      <div id="page-root" className="flex flex-col gap-s4 p-s4">
+        <h1>Showcase</h1>
+        ${'<p>A section of the page, with enough words in it to be read as content.</p>\n        '.repeat(40)}
+      </div>
+    </>
+  );
+}
+`;
+const DOCK = `export function Dock() {
+  return <div id="dock" style={{ position: 'fixed', right: 16, bottom: 16, width: 40, height: 40 }}><svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><path d="M4 4h12v12H4z" /></svg></div>;
+}
+`;
+test('a finding about the whole page is said on the page, not on a dock drawn before it', { timeout: 240000 }, async (t) => {
+  if (!await built()) return t.skip('Run npm run build first.');
+  const by = await said(t, DOCKED, { files: { 'src/Dock.jsx': DOCK } });
+  assert.deepEqual(by.get('html/landmark-main'), [lineOf(DOCKED, 'page-root')], JSON.stringify(ofPacks(by)));
 });
 
 test('a page that is still loading is not told it has no main and no h1', { timeout: 240000 }, async (t) => {
@@ -690,6 +715,7 @@ const NEAR_EXPERIENCE = `export function App() {
       <nav aria-label="Main"><a href="/a">One</a><a href="/b">Two</a><a href="/c">Three</a><a href="/d">Four</a><a href="/e">Five</a><a href="/f">Six</a><a href="/g">Seven</a><a href="/h">Eight</a><a href="/i">Nine</a><a href="/j">Ten</a></nav>
       <main id="content">
         <h1>Near experience</h1>
+        <p style={{ textTransform: 'uppercase', fontSize: 10 }}>AlgoRecall &middot; Field Guide &middot; Vol. I &middot; April MMXXVI &middot; Set in dark mode by default</p>
         <div style={{ position: 'relative', width: 240, height: 40 }}>
           <button type="button" style={{ width: 240, height: 40 }}>Under a sheen</button>
           <div aria-hidden="true" style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }} />

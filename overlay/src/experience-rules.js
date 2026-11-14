@@ -5,7 +5,7 @@
  * only the drawn page shows. Each reads something the source does not hold: a computed style, a laid-out box, what is
  * on top at a point, the fonts and requests the page made, two elements compared across the page.
  * The same rule object craft uses: it reads, never writes, and says nothing when its evidence is ambiguous.
- * A rule about the page as a whole is said once, on the first element judged (html-rules.js, isPage).
+ * A rule about the page as a whole is said once, on the page's own element: the outermost judged element that covers the most of it (html-rules.js, isPage).
  * ───────────────────────────────────────────────────────── */
 import { say } from './words.js';
 import { accessibleName, trimmed, hiddenFromAT, drawn, shown, page } from './a11y-rules.js';
@@ -54,7 +54,10 @@ export const justifyRivers = rule('justify-rivers', 'align', 'p,div,li,td,dd,blo
 // typography: "Don't rely on all-caps for emphasis"
 export const capsLong = rule('caps-long', 'case', TEXT, function (el, facts) {
   if (facts.style(el).textTransform !== 'uppercase') return;
-  const text = ownText(el), words = wordsIn(text);
+  const text = ownText(el);
+  // a run of labels joined by separators ("Field Guide · Vol. I · April") is labels, each read as one: the longest
+  // piece is what is read in capitals (a colophon on algorecall was counted as twelve words)
+  const words = Math.max(0, ...text.split(/\s[·•|/–—]\s|\s*[·•|]\s*/).map(wordsIn));
   if (words < 7 || text.length < 45 || !shown(el, facts)) return;
   return found(this, el, { words }, { value: 'text-transform: uppercase', confidence: 0.85, advice: 'Set it in sentence case; keep capitals for labels of a word or two.' });
 });
@@ -62,7 +65,7 @@ export const capsLong = rule('caps-long', 'case', TEXT, function (el, facts) {
 // ── the page ────────────────────────────────────────────────
 // responsive-design / WCAG 1.4.10: the page itself must not scroll sideways
 export const pageOverflowX = rule('page-overflow-x', 'overflow', null, function (el, facts) {
-  if (!isPage(el)) return;
+  if (!isPage(el, facts)) return;
   const doc = document.documentElement, by = doc.scrollWidth - doc.clientWidth;
   if (by < 2) return;
   // the deepest thing that runs past the edge and is not inside something that clips or scrolls it
@@ -77,7 +80,7 @@ export const pageOverflowX = rule('page-overflow-x', 'overflow', null, function 
 });
 // motion / WCAG 2.2.2: something that loops for ever, on a page whose styles never ask about reduced motion
 export const motionNoOptOut = rule('motion-no-opt-out', 'motion', null, function (el, facts) {
-  if (!isPage(el)) return;
+  if (!isPage(el, facts)) return;
   const loop = document.getAnimations().map((a) => a.effect?.getComputedTiming?.().iterations === Infinity && a.playState === 'running' ? a.effect.target : null)
     .find((t) => t && !t.closest('plumb-overlay, [aria-hidden="true"]') && (() => { const r = facts.rect(t); return r.width > 96 || r.height > 96; })());
   // a small spinner is a status, not decoration in motion; what is hidden from assistive tech is still seen, but is usually a backdrop
@@ -85,8 +88,8 @@ export const motionNoOptOut = rule('motion-no-opt-out', 'motion', null, function
   return found(this, el, { what: describe(loop) }, { value: 'no prefers-reduced-motion', confidence: 0.8, advice: 'Wrap the animation in @media (prefers-reduced-motion: no-preference), or stop it under (prefers-reduced-motion: reduce).' });
 });
 // visually-stable-font-fallbacks: a web font with no font-display hides its text while it loads
-export const fontDisplay = rule('font-display', 'font', null, function (el) {
-  if (!isPage(el)) return;
+export const fontDisplay = rule('font-display', 'font', null, function (el, facts) {
+  if (!isPage(el, facts)) return;
   let face = null;
   for (const f of document.fonts) if (f.status === 'loaded' && (f.display === 'auto' || f.display === 'block')) { face = f; break; }
   if (!face) return;
@@ -96,8 +99,8 @@ export const fontDisplay = rule('font-display', 'font', null, function (el) {
   return found(this, el, { family }, { value: `font-display: ${face.display}`, confidence: 0.85, advice: 'Add font-display: swap to its @font-face (or optional, with a size-adjusted fallback).' });
 });
 // performance: "DO utilize resource hints: Add preconnect or dns-prefetch for essential third-party domains"
-export const preconnectMissing = rule('preconnect-missing', 'hint', null, function (el) {
-  if (!isPage(el)) return;
+export const preconnectMissing = rule('preconnect-missing', 'hint', null, function (el, facts) {
+  if (!isPage(el, facts)) return;
   const hinted = new Set([...document.querySelectorAll('link[rel~="preconnect"], link[rel~="dns-prefetch"]')].map((l) => { try { return new URL(l.href).origin; } catch { return ''; } }));
   const counts = new Map();
   for (const e of performance.getEntriesByType('resource')) {
@@ -111,8 +114,8 @@ export const preconnectMissing = rule('preconnect-missing', 'hint', null, functi
   return found(this, el, { host: worst[0].replace(/^https?:\/\//, ''), count: worst[1] }, { value: worst[0], confidence: 0.8, advice: `Add <link rel="preconnect" href="${worst[0]}"> to the <head> (crossorigin too, if it serves fonts).` });
 });
 // performance: "DO use async or defer for all non-critical scripts"
-export const scriptBlocking = rule('script-blocking', 'script', null, function (el) {
-  if (!isPage(el)) return;
+export const scriptBlocking = rule('script-blocking', 'script', null, function (el, facts) {
+  if (!isPage(el, facts)) return;
   // a nomodule script never runs in a browser that has modules; the dev server's own scripts (Next's /_next/ chunks,
   // Turbopack's reload client, Vite's client) are not in the project and are gone in a build
   const count = [...document.querySelectorAll('head script[src]:not([async]):not([defer]):not([type="module"]):not([nomodule])')]
@@ -121,14 +124,14 @@ export const scriptBlocking = rule('script-blocking', 'script', null, function (
   return found(this, el, { count }, { value: `${count} in <head>`, confidence: 0.85, advice: 'Add defer (or async where order does not matter), or load them as type="module".' });
 });
 // accessibility: "Don't include an empty <title>" (2.4.2)
-export const pageTitle = rule('page-title', 'title', null, function (el) {
-  if (!isPage(el) || trimmed(document.title)) return;
+export const pageTitle = rule('page-title', 'title', null, function (el, facts) {
+  if (!isPage(el, facts) || trimmed(document.title)) return;
   return found(this, el, {}, { value: 'no <title>', advice: 'Give the page a <title> that says what it is, most specific words first.' });
 });
 // accessibility §1 (skip links) / 2.4.1: a long run of stops before the content, and nothing to jump it
 const STOP = 'a[href], button, input:not([type="hidden"]), select, textarea, [tabindex]:not([tabindex="-1"])';
 export const skipLink = rule('skip-link', 'skip', null, function (el, facts) {
-  if (!isPage(el)) return;
+  if (!isPage(el, facts)) return;
   const main = document.querySelector('main, [role="main"]');
   if (!main) return;
   const stops = [...document.querySelectorAll(STOP)].filter((s) => !s.closest('plumb-overlay'));
@@ -141,7 +144,7 @@ export const skipLink = rule('skip-link', 'skip', null, function (el, facts) {
 // dark-mode: a dark page that does not declare color-scheme keeps light scrollbars, controls and first paint
 const luminance = (css) => { const m = /^rgba?\(\s*([\d.]+)[,\s]+([\d.]+)[,\s]+([\d.]+)(?:[,/\s]+([\d.]+))?/.exec(css); if (!m || m[4] === '0') return null; const [r, g, b] = [m[1], m[2], m[3]].map((v) => { const c = v / 255; return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4; }); return 0.2126 * r + 0.7152 * g + 0.0722 * b; };
 export const colorSchemeMissing = rule('color-scheme-missing', 'scheme', null, function (el, facts) {
-  if (!isPage(el) || document.querySelector('meta[name="color-scheme"]')) return;
+  if (!isPage(el, facts) || document.querySelector('meta[name="color-scheme"]')) return;
   if (!/^normal$|^light$/.test(facts.style(document.documentElement).colorScheme)) return;
   const ground = luminance(facts.style(document.body).backgroundColor) ?? luminance(facts.style(document.documentElement).backgroundColor);
   if (ground === null || ground > 0.12) return;

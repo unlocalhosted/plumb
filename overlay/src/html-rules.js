@@ -17,7 +17,25 @@ const rule = (short, owns, check) => ({ id: `html/${short}`, family: 'craft', ow
 // the first element a pass judges stands for the page: page-wide rules are said there, once (each rule keeps its own)
 // (kept across passes, while that element is still in the page: a second pass that starts elsewhere must not say it again)
 const ROOT = new WeakMap(); // document → the element that stands for it
-export const isPage = (el) => { const kept = ROOT.get(document)?.deref(); if (kept?.isConnected) return kept === el; ROOT.set(document, new WeakRef(el)); return true; };
+// The page's own element, where a finding about the whole page is said: the outermost judged element that covers the
+// most of the page (a route's root, a layout), not whichever was judged first (that was an icon in a feedback dock on
+// algorecall, and the report named its file for a page with no <main>). Chosen once per page and kept, so it is said once.
+const rootOf = (facts) => {
+  const items = facts?.items; if (!items?.length) return null;
+  const judged = new Set(items);
+  let best = null, area = -1;
+  for (const el of items) {
+    let inner = false; for (let p = el.parentElement; p; p = p.parentElement) if (judged.has(p)) { inner = true; break; }
+    if (inner) continue;
+    const r = facts.rect(el), a = r.width * r.height;
+    if (a > area) { best = el; area = a; }
+  }
+  return best;
+};
+export const isPage = (el, facts) => {
+  const kept = ROOT.get(document)?.deref(); if (kept?.isConnected) return kept === el;
+  const root = rootOf(facts) ?? el; ROOT.set(document, new WeakRef(root)); return root === el;
+};
 const PRESSABLE = 'a[href], button, input, select, textarea, summary, label, [role], [tabindex], [contenteditable]';
 const viewport = () => document.querySelector('meta[name="viewport"]')?.getAttribute('content') ?? null;
 const fold = () => window.innerHeight;
@@ -29,19 +47,19 @@ const loaded = () => !document.querySelector('[aria-busy="true"]') && document.b
 // ── §1 the page ─────────────────────────────────────────────
 // "DO set the lang attribute on the <html> element"
 export const pageLang = rule('page-lang', 'lang', function (el, facts) {
-  if (!isPage(el) || trimmed(document.documentElement.getAttribute('lang'))) return;
+  if (!isPage(el, facts) || trimmed(document.documentElement.getAttribute('lang'))) return;
   return found(this, el, {}, { value: '<html>', advice: 'Add lang to <html> (lang="en").' });
 });
 // "DO use the <meta name="viewport"> element with … width=device-width, initial-scale=1.0"
 export const viewportMeta = rule('viewport-meta', 'viewport', function (el, facts) {
-  if (!isPage(el)) return;
+  if (!isPage(el, facts)) return;
   const content = viewport();
   if (content !== null && /width\s*=\s*device-width/i.test(content)) return;
   return found(this, el, { has: content !== null }, { value: content ?? 'no viewport', advice: 'Add <meta name="viewport" content="width=device-width, initial-scale=1"> to the <head>.' });
 });
 // "DON'T disable page zooming capabilities"
 export const zoomDisabled = rule('zoom-disabled', 'zoom', function (el, facts) {
-  if (!isPage(el)) return;
+  if (!isPage(el, facts)) return;
   const content = viewport() ?? '';
   const how = /user-scalable\s*=\s*(?:no|0)\b/i.exec(content)?.[0] ?? (() => { const m = /maximum-scale\s*=\s*([\d.]+)/i.exec(content); return m && parseFloat(m[1]) < 2 ? m[0] : null; })();
   if (!how) return;
@@ -49,12 +67,12 @@ export const zoomDisabled = rule('zoom-disabled', 'zoom', function (el, facts) {
 });
 // "DO use the standard HTML5 doctype <!DOCTYPE html> to prevent quirky rendering modes"
 export const quirksMode = rule('quirks-mode', 'doctype', function (el, facts) {
-  if (!isPage(el) || document.compatMode !== 'BackCompat') return;
+  if (!isPage(el, facts) || document.compatMode !== 'BackCompat') return;
   return found(this, el, {}, { value: 'no doctype', advice: 'Start the document with <!DOCTYPE html>.' });
 });
 // "DO use semantic landmarks (<header>, <nav>, <main>, <aside>, <footer>)"
 export const landmarkMain = rule('landmark-main', 'landmark', function (el, facts) {
-  if (!isPage(el) || document.querySelector('main, [role="main"]') || !loaded()) return;
+  if (!isPage(el, facts) || document.querySelector('main, [role="main"]') || !loaded()) return;
   return found(this, el, {}, { value: 'no <main>', confidence: 0.85, advice: 'Wrap the page’s content, apart from its header and footer, in <main>.' });
 });
 // "DON'T use more than one banner, main, or contentinfo landmark per page" (main is the accessibility pack's)
@@ -69,7 +87,7 @@ export const bannerMany = rule('banner-many', 'landmark', function (el, facts) {
 });
 // "DO use a single <h1> per page/view representing the main topic"
 export const h1Missing = rule('h1-missing', 'heading', function (el, facts) {
-  if (!isPage(el) || document.querySelector('h1, [role="heading"][aria-level="1"]') || !loaded()) return;
+  if (!isPage(el, facts) || document.querySelector('h1, [role="heading"][aria-level="1"]') || !loaded()) return;
   if (!document.querySelector('h2, h3, h4')) return; // a page with no headings at all is an app surface, judged elsewhere
   return found(this, el, {}, { value: 'no <h1>', confidence: 0.85, advice: 'Make the page’s title an <h1>.' });
 });
