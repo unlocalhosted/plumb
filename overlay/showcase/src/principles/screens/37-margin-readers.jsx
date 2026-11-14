@@ -26,10 +26,11 @@ const POSTS = [
 const ENVELOPE = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M1 3h14v10H1z M1 3l7 5.5L15 3" fill="none" stroke="black" stroke-width="1.8" stroke-linejoin="round"/></svg>');
 const SOURCES = [['Email', 64, 'var(--color-accent)', ENVELOPE], ['Bluesky', 14, '#0085ff', blueskyLogo], ['Google', 9, '#34a853', googleLogo], ['Reddit', 6, '#ff4500', redditLogo], ['Direct', 7, '#c3cad5']];
 
-// a label pinned to a point on the chart: a zero-height anchor at the point, the label centred on it
-const Pin = ({ x, y, className = '', children, ...rest }) => (
+// a label pinned to a point on the chart: a zero-height anchor at the point, the label centred on it. Broken: by
+// translating half its own height up. Fixed (plumber's fix): by layout, pinned top and bottom with auto margins
+const Pin = ({ x, y, fixed, className = '', children, ...rest }) => (
   <span className="absolute h-0" style={{ left: x, top: y }}>
-    <span {...rest} className={'absolute top-1/2 -translate-y-1/2 ' + className}>{children}</span>
+    <span {...rest} data-pin="" className={(fixed ? 'absolute inset-y-0 my-auto h-fit ' : 'absolute top-1/2 -translate-y-1/2 ') + className}>{children}</span>
   </span>
 );
 // a smooth line through the points, flat at each one
@@ -39,7 +40,7 @@ const curve = (p) => p.map(([a, b], i) => {
   return `C${pa + c},${pb} ${a - c},${b} ${a},${b}`;
 }).join(' ');
 
-function Chart() {
+function Chart({ fixed }) {
   const box = useRef(null);
   const [w, setW] = useState(452);
   useLayoutEffect(() => {
@@ -61,12 +62,12 @@ function Chart() {
         <path d={curve(pts)} fill="none" className="stroke-accent" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
       </svg>
       <span className="absolute top-8 left-0 h-[140px] w-8">
-        {[0, 500, 1000].map((v) => <Pin key={v} x={0} y={y(v)} className="left-0 w-8 text-right text-[11px] text-ink-subtle tabular-nums">{v.toLocaleString('en')}</Pin>)}
+        {[0, 500, 1000].map((v) => <Pin key={v} fixed={fixed} x={0} y={y(v)} className="left-0 w-8 text-right text-[11px] text-ink-subtle tabular-nums">{v.toLocaleString('en')}</Pin>)}
       </span>
       <span className="absolute top-8 right-0 left-0 h-[140px]">
         <span className="absolute -mt-1.5 -ml-1.5 size-3 rounded-full bg-accent shadow-[0_0_0_2.5px_var(--color-surface),0_0_0_6px_rgb(85_80_216/0.18)]" style={{ left: x(AT), top: y(READERS[AT]) }} />
         {/* the tooltip, pinned to the point, on its left (on its right it would run off the card) */}
-        <Pin x={x(AT)} y={y(READERS[AT])} data-tip className="right-3.5 flex flex-col rounded-control bg-ink px-2.5 py-1.5 whitespace-nowrap text-white shadow-[0_2px_4px_rgb(18_35_61/0.08),0_6px_16px_rgb(18_35_61/0.16)]">
+        <Pin fixed={fixed} x={x(AT)} y={y(READERS[AT])} data-tip className="right-3.5 flex flex-col rounded-control bg-ink px-2.5 py-1.5 whitespace-nowrap text-white shadow-[0_2px_4px_rgb(18_35_61/0.08),0_6px_16px_rgb(18_35_61/0.16)]">
           <span className="text-xs leading-snug text-[#b9c2d0]">Tue 4 Nov · post sent</span>
           <span className="text-[13px] leading-snug font-medium tabular-nums">1,284 readers<span className="ml-1 text-[#8fe0bd]">+23%</span></span>
         </Pin>
@@ -84,7 +85,7 @@ function Chart() {
 
 const Mark = ({ className }) => <span className={'grid shrink-0 place-items-center bg-[#1d2a3a] font-serif font-semibold text-[#f3eee4] ' + className}>L</span>;
 
-export default function MarginReaders() {
+export default function MarginReaders({ side = 'broken' }) {
   return (
     <article className="w-full max-w-[31.25rem] overflow-hidden rounded-card bg-surface shadow-card">
       <header className="flex items-center gap-3 px-6 pt-5">
@@ -113,7 +114,7 @@ export default function MarginReaders() {
         ))}
       </dl>
 
-      <Chart />
+      <Chart fixed={side === 'fixed'} />
 
       <section className="border-t-hairline border-line px-6 pt-3.5 pb-1">
         <h3 className="flex justify-between pb-1 text-xs font-medium text-ink-subtle"><span>Posts this week</span><span>Opened</span></h3>
@@ -150,6 +151,28 @@ export default function MarginReaders() {
 }
 MarginReaders.stage = true;
 MarginReaders.names = ['Centred by transform', 'Centred by layout'];
+// The film (Film.jsx, a still film: the fault is at rest, so the camera goes down to the pixels). The places: every
+// label pinned to the chart; the lead is the tooltip. What is measured, from the real tooltip: how far its translate
+// moves it, and how far that leaves its words off the pixel grid (at 1×, as recorded). The loupe redraws the tooltip
+// from its own words, fonts and colours, sharp, then places it exactly that far between rows.
+const fmt = (v) => Math.round(v * 100) / 100;
+const shift = (el) => {
+  const s = getComputedStyle(el), ty = s.translate.split(' ')[1] ?? '0px';
+  return /%$/.test(ty) ? (parseFloat(ty) / 100) * parseFloat(s.height) : parseFloat(ty) || 0; // the used height, fractions kept (offsetHeight rounds them away)
+};
+MarginReaders.film = {
+  still: true,
+  instances: (root) => [...root.querySelectorAll('[data-pin]')],
+  frame: (root) => [root.querySelector('[data-tip]')],
+  lead: 3,
+  pixels: (root) => root.querySelector('[data-tip]'),
+  code: { fault: { cls: 'top-1/2 -translate-y-1/2', prop: 'translate: 0 -23.19px' }, fix: { cls: 'inset-y-0 my-auto h-fit', prop: 'margin: auto' } },
+  read(root, el) {
+    const ty = shift(el), off = Math.abs(ty - Math.round(ty));
+    return { ty, off: fmt(off), size: { icon: null, pre: '↕ ', from: 0, to: fmt(ty) }, tags: [{ icon: null, pre: 'off the grid · ', from: 0, to: fmt(off) }] };
+  },
+  say: 'Look at the tooltip\'s words beside the figures.',
+};
 MarginReaders.lesson = {
   why: 'translate moves a box by exactly what you ask, fractions included, and a fraction of a pixel down is a place no pixel row is. Half of the 46.4px tooltip is 23.19px, half of each 16.5px axis label 8.25px, so their words sit between rows and every letter smears across two: soft, beside the sharp figures around them.',
   habit: 'Centre with layout (inset-y-0 my-auto, flex or grid), which lands on whole pixels; translate by whole pixels only.',

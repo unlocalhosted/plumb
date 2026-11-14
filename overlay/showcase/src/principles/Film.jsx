@@ -23,6 +23,13 @@
 //   code → { fault: { cls, prop }, fix: { cls, prop } }: the class at fault and the one that fixes it, with the property each sets
 //   read(root, i, rest) → { box, now, size: { icon, pre, from, to }, tags: [{ icon, pre, from, to } | { swatch, pre, text }],
 //                           pushed: [{ x0, x1, y, h }] }   (example-local px)          say → the hint after
+//
+// A STILL FILM (Example.film.still: the fault is at rest, nothing to gesture; #37 half pixels): the pointer comes to rest
+// on the subject; camera in; the places outlined, the lead coral with how far it is moved and how far off the grid that
+// leaves it; then the camera goes on down into the lead's pixels (a loupe: the element redrawn sharp from its own words,
+// fonts and colours, then placed exactly as far between pixel rows as it is), the words smeared across two rows; the
+// fix lands and the same pixels snap onto the rows; back out, every place mint, the burst.
+//   still: true    pixels(root) → the element the loupe looks into    read(root, el) → { ty, off, size, tags }
 import { useEffect, useRef, useState } from 'react';
 import { PlumbLayer } from './Principle.jsx';
 import { ensureLook } from './look.js';
@@ -64,9 +71,55 @@ const TIMING = {
   check:     420,   // plumber's check draws on the change card before it bursts
   clear:    1300,   // the burst plays
   out:       900,   // camera out
+  rest:     1700,   // still: the pointer rests on the subject, nothing drawn
+  dive:     1600,   // still: the camera goes down into the pixels
+  smear:    2600,   // still: held on the smeared rows
+  snap:     2800,   // still: held on the sharp rows, once fixed
+  rise:     1300,   // still: back up out of the pixels
   count:     420,   // a pill's number counts this long
 };
-const CAMERA = { max: 1.8, fill: 0.92, at: 0.38, curve: 'cubic-bezier(0.7, 0, 0.3, 1)' };
+const CAMERA = { max: 1.8, fill: 0.92, at: 0.38, curve: 'cubic-bezier(0.7, 0, 0.3, 1)', pixels: 15 };
+const LOUPE = { pad: 10, n: 16 };                     // the loupe's margin round the element (px), and its pixels' size when drawn
+
+// The loupe: the element redrawn from its own words, fonts and colours on a 1× pixel grid, sharp, then placed `dy` (the
+// fraction of a pixel its translate leaves) between the rows, the way the browser blends a box placed between rows;
+// blown up so each pixel is a square, with the grid between them. Example-local px.
+function pixelsOf(root, el, dy) {
+  const at = local(root), b = at(el), o = root.getBoundingClientRect(), k = o.width / root.offsetWidth || 1;
+  const x0 = Math.floor(b.x) - LOUPE.pad, y0 = Math.round(b.y - dy) - LOUPE.pad, w = Math.ceil(b.w) + 2 * LOUPE.pad, h = Math.ceil(b.h) + 2 * LOUPE.pad;
+  const sharp = Object.assign(document.createElement('canvas'), { width: w, height: h }), c = sharp.getContext('2d');
+  const ground = getComputedStyle(root).backgroundColor, es = getComputedStyle(el);
+  c.fillStyle = ground; c.fillRect(0, 0, w, h);
+  c.fillStyle = es.backgroundColor; c.beginPath(); c.roundRect(Math.round(b.x) - x0, LOUPE.pad, Math.round(b.w), Math.round(b.h), parseFloat(es.borderTopLeftRadius) || 0); c.fill();
+  const walk = document.createTreeWalker(el, NodeFilter.SHOW_TEXT), range = document.createRange(), runs = [];
+  for (let node = walk.nextNode(); node; node = walk.nextNode()) {
+    if (!node.textContent.trim()) continue;
+    range.selectNodeContents(node); const r = range.getClientRects()[0]; if (!r) continue;
+    const s = getComputedStyle(node.parentElement);
+    c.font = `${s.fontStyle} ${s.fontWeight} ${s.fontSize} ${s.fontFamily}`; c.letterSpacing = s.letterSpacing === 'normal' ? '0px' : s.letterSpacing; c.fillStyle = s.color;
+    const m = c.measureText(node.textContent), left = (r.left - o.left) / k, top = (r.top - o.top) / k - dy, hgt = r.height / k;
+    const base = Math.round(top + (hgt - m.fontBoundingBoxAscent - m.fontBoundingBoxDescent) / 2 + m.fontBoundingBoxAscent);
+    c.fillText(node.textContent, left - x0, base - y0);
+    runs.push({ x: left, y: top + dy, w: r.width / k, h: hgt });
+  }
+  const placed = Object.assign(document.createElement('canvas'), { width: w, height: h }), p = placed.getContext('2d');
+  p.fillStyle = ground; p.fillRect(0, 0, w, h); p.imageSmoothingEnabled = true; p.drawImage(sharp, 0, dy);
+  const N = LOUPE.n, big = Object.assign(document.createElement('canvas'), { width: w * N, height: h * N }), g = big.getContext('2d');
+  g.imageSmoothingEnabled = false; g.drawImage(placed, 0, 0, w * N, h * N);
+  g.strokeStyle = 'rgb(128 128 128 / 0.22)'; g.lineWidth = 1; g.beginPath();
+  for (let i = 0; i <= w; i++) { g.moveTo(i * N + 0.5, 0); g.lineTo(i * N + 0.5, h * N); }
+  for (let j = 0; j <= h; j++) { g.moveTo(0, j * N + 0.5); g.lineTo(w * N, j * N + 0.5); }
+  g.stroke();
+  // the smear, marked: every pixel the fraction changed from the sharp drawing, in plumber's coral (none once on the rows)
+  const A = c.getImageData(0, 0, w, h).data, B = p.getImageData(0, 0, w, h).data, luma = (d, i) => 0.3 * d[i] + 0.59 * d[i + 1] + 0.11 * d[i + 2];
+  g.strokeStyle = 'rgb(240 96 80 / 0.95)'; g.lineWidth = 2; g.fillStyle = 'rgb(240 96 80 / 0.28)';
+  for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) {
+    const q = (j * w + i) * 4;
+    if (Math.abs(luma(A, q) - luma(B, q)) > 14) { g.fillRect(i * N + 1, j * N + 1, N - 1, N - 1); g.strokeRect(i * N + 2, j * N + 2, N - 3, N - 3); }
+  }
+  const line = runs[1] ?? runs[0];
+  return { x: x0, y: y0, w, h, url: big.toDataURL(), focus: { x: line.x + 16, y: line.y + line.h / 2, top: line.y } };
+}
 const PILL = { h: 20, gap: 6 };                       // px on screen, at any zoom
 // the burst's pieces, as plumber's fix panel throws them (overlay/src/fixpanel.js #burst): padding's hatched square,
 // the gap's stripes, margin's dots, a check
@@ -91,8 +144,8 @@ function Count({ from, to, ms = TIMING.count }) {
     raf = requestAnimationFrame(step);
     return () => cancelAnimationFrame(raf);
   }, [from, to]);
-  const r = Math.round(v * 10) / 10;
-  return <>{Number.isInteger(to) && Number.isInteger(from) ? Math.round(v) : Number.isInteger(r) ? r : r.toFixed(1)}</>;
+  const places = Math.min(2, (String(to).split('.')[1] ?? '').length), r = Math.round(v * 10 ** places) / 10 ** places;
+  return <>{Number.isInteger(to) && Number.isInteger(from) ? Math.round(v) : places === 2 ? r.toFixed(2) : Number.isInteger(r) ? r : r.toFixed(1)}</>;
 }
 
 // plumber's pill: pastel fill, inked mono, the property's icon in its line hue; never scaled by the camera
@@ -177,6 +230,8 @@ export function Film({ Example, names, onSaid, chrome = true, start = true, onDo
   const [change, setChange] = useState(0);
   const [frame, setFrame] = useState(null);         // the card's own box, while the camera works inside it: { radius, shadow }         // plumber's change card: 0 none · 1 the fault · 2 the fix
   const [run, setRun] = useState(0);
+  const [loupe, setLoupe] = useState(null);          // still films: the pixels, { x, y, w, h, url, focus, on }
+  const [px, setPx] = useState(null);                // still films: the pill over the pixels, { x, y, tone, text }
   const box = useRef(null), camRef = useRef(null), sw = useRef(null), fx = useRef(null);
   const example = () => camRef.current?.firstElementChild;
   const toward = (el, dy = 0) => { const o = box.current.getBoundingClientRect(), r = el.getBoundingClientRect(); return { x: r.left - o.left + r.width / 2, y: r.top - o.top + r.height / 2 + dy }; };
@@ -193,6 +248,69 @@ export function Film({ Example, names, onSaid, chrome = true, start = true, onDo
     (async () => {
       setPlaying(true); setSide('broken'); setM(null); setChange(0); setFrame(null); setCam({ k: 1, x: 0, y: 0 }); onSaid?.('');
       await sleep(TIMING.lead, live); await document.fonts?.ready;
+      if (spec.still) {
+        const lead = () => all()[spec.lead];
+        // FEEL IT: the pointer comes to rest on the subject; nothing drawn, the words just soft
+        { const o = box.current.getBoundingClientRect(), r = lead().getBoundingClientRect(); setPtr({ x: r.right - o.left + 16, y: r.top - o.top + r.height / 2 + 2 }); }
+        await sleep(TIMING.rest, live);
+        // camera in on the subject
+        const root = example(), at = local(root), W = root.offsetWidth, H = root.offsetHeight;
+        const parts = [spec.frame(root)].flat().map(at), l = Math.min(...parts.map((b) => b.x)), t = Math.min(...parts.map((b) => b.y));
+        const f = { x: l, y: t, w: Math.max(...parts.map((b) => b.x + b.w)) - l, h: Math.max(...parts.map((b) => b.y + b.h)) - t };
+        const k = Math.max(1, Math.min(CAMERA.max, (W * CAMERA.fill) / f.w)), clamp = (v, lo) => Math.min(0, Math.max(lo, v));
+        const cs = getComputedStyle(root);
+        setFrame({ radius: cs.borderRadius, shadow: cs.boxShadow });
+        setPtr((p) => p && { ...p, gone: true });
+        const near = { k, x: clamp(W / 2 - k * (f.x + f.w / 2), W - k * W), y: clamp(H / 2 - k * (f.y + f.h / 2), H - k * H) };
+        setCam(near);
+        await sleep(TIMING.camera, live);
+        // MEASURE IT: the places outlined; the lead coral, how far it is moved, then how far off the grid that leaves it
+        const rest = boxes();
+        setM({ tone: 'sky', boxes: rest }); await sleep(TIMING.outline, live);
+        const read = { ...spec.read(example(), lead()), box: rest[spec.lead] };
+        setM({ tone: 'sky', boxes: rest, lead: spec.lead, read }); await sleep(TIMING.measure, live);
+        setM({ tone: 'sky', boxes: rest, lead: spec.lead, read, cause: true }); if (spec.code) setChange(1);
+        await sleep(TIMING.cause, live);
+        setM((x) => x && { ...x, fading: true }); await sleep(TIMING.fade, live); setM(null);
+        // down into the pixels: the words between two rows
+        const frac = (v) => v - Math.round(v);
+        const dive = (lp) => { const K = CAMERA.pixels; return { k: K, x: clamp(W / 2 - K * lp.focus.x, W - K * W), y: clamp(H / 2 - K * lp.focus.y, H - K * H), ms: TIMING.dive }; };
+        const lp = pixelsOf(example(), spec.pixels(example()), frac(read.ty));
+        setLoupe({ ...lp, on: false }); await sleep(30, live); setLoupe({ ...lp, on: true });
+        setCam(dive(lp)); await sleep(TIMING.dive, live);
+        setPx({ x: lp.focus.x, y: lp.focus.top - 1.5, tone: 'off', text: `${read.off.toFixed(2)}px between two rows` });
+        await sleep(TIMING.smear, live);
+        // the fix lands: the same pixels, on the rows
+        const fixBtn = sw.current?.querySelectorAll('button')[1];
+        if (fixBtn) { setPtr(toward(fixBtn)); await sleep(TIMING.toSwitch, live); setPtr((p) => ({ ...p, down: true })); await sleep(TIMING.press, live); }
+        setSide('fixed'); setPtr((p) => ({ ...p, down: false })); if (spec.code) setChange(2);
+        await sleep(80, live);
+        const fixedRead = spec.read(example(), lead()), lf = pixelsOf(example(), spec.pixels(example()), frac(fixedRead.ty));
+        setLoupe({ ...lp, url: lf.url, on: true });
+        setPx({ x: lp.focus.x, y: lp.focus.top - 1.5, tone: 'on', text: `${fixedRead.off.toFixed(2)}px · on the rows` });
+        setPtr((p) => p && { ...p, gone: true });
+        await sleep(TIMING.snap, live);
+        // back up; every place holds
+        setPx(null); setLoupe((x) => x && { ...x, on: false }); setCam({ ...near, ms: TIMING.rise }); await sleep(TIMING.rise, live); setLoupe(null);
+        const fixedRest = boxes();
+        setM({ tone: 'on', boxes: fixedRest }); await sleep(TIMING.turn, live);
+        for (let i = 0; i < all().length; i++) {
+          setM({ tone: 'on', boxes: fixedRest, lead: i, read: { ...spec.read(example(), all()[i]), box: fixedRest[i] }, cause: i === spec.lead });
+          await sleep(i === spec.lead ? TIMING.payoff * 2 : TIMING.payoff, live);
+        }
+        setM({ tone: 'on', boxes: fixedRest });
+        if (spec.code) {
+          setChange(3); await sleep(TIMING.check, live);
+          const host = sw.current?.querySelector('div[aria-hidden="true"]'), check = host?.shadowRoot?.querySelector('[data-done]')?.getBoundingClientRect(), o = box.current.getBoundingClientRect();
+          if (fx.current && check) burst(fx.current, check.left - o.left + check.width / 2, check.top - o.top + check.height / 2);
+        }
+        await sleep(TIMING.clear, live);
+        setM((x) => x && { ...x, fading: true }); await sleep(TIMING.fade, live);
+        setM(null); setChange(0); setCam({ k: 1, x: 0, y: 0 });
+        await sleep(TIMING.out + 40, live);
+        setFrame(null); setPtr(null); setPlaying(false); onSaid?.(spec.say); onDone?.();
+        return;
+      }
       // FEEL IT: the gesture on every place, nothing drawn
       for (const el of all()) { setPtr(toward(el, 5)); await sleep(TIMING.move, live); spec.set(el, true); await sleep(TIMING.feel, live); spec.set(el, false); }
       // camera in on the set
@@ -264,14 +382,17 @@ export function Film({ Example, names, onSaid, chrome = true, start = true, onDo
 
   const k = cam.k, r = m?.read, tone = m?.tone, pushed = tone === 'sky' && r?.pushed?.some((p) => p.x1 - p.x0 > 0.5);
   // the lead place turns coral while it pushes; mint once it holds
-  const toneOf = (i) => (tone === 'sky' && m?.lead === i && pushed ? 'off' : tone);
+  const toneOf = (i) => (tone === 'sky' && m?.lead === i && (pushed || r?.off > 0.05) ? 'off' : tone);
   const tagTone = tone === 'on' ? 'on' : 'off';
   return (
     <div ref={box} className="pl-light relative flex flex-col items-center gap-10">
       <style>{'@keyframes film-pop { from { opacity: 0; scale: 0.92 } to { opacity: 1; scale: 1 } }'}</style>
       <div className="relative" style={frame ? { overflow: 'clip', borderRadius: frame.radius, boxShadow: frame.shadow, isolation: 'isolate' } : undefined}>
-        <div ref={camRef} className="relative" style={{ transform: `translate(${cam.x}px, ${cam.y}px) scale(${k})`, transformOrigin: '0 0', transition: `transform ${k > 1 ? TIMING.camera : TIMING.out}ms ${CAMERA.curve}`, pointerEvents: playing ? 'none' : undefined }}>
+        <div ref={camRef} className="relative" style={{ transform: `translate(${cam.x}px, ${cam.y}px) scale(${k})`, transformOrigin: '0 0', transition: `transform ${cam.ms ?? (k > 1 ? TIMING.camera : TIMING.out)}ms ${CAMERA.curve}`, pointerEvents: playing ? 'none' : undefined }}>
           <Example key={side} side={side} onStatus={playing ? undefined : onSaid} />
+          {/* still films: the pixels, laid exactly over the element they show */}
+          {loupe ? <img alt="" src={loupe.url} style={{ position: 'absolute', left: loupe.x, top: loupe.y, width: loupe.w, height: loupe.h, imageRendering: 'pixelated', maxWidth: 'none',
+            opacity: loupe.on ? 1 : 0, transition: loupe.on ? 'opacity 500ms ease 350ms' : 'opacity 250ms ease 800ms' }} /> : null}
           <PlumbLayer>
             {m ? (
               <div style={{ position: 'absolute', inset: 0, opacity: m.fading ? 0 : 1, transition: `opacity ${TIMING.fade}ms ease` }}>
@@ -293,7 +414,7 @@ export function Film({ Example, names, onSaid, chrome = true, start = true, onDo
                 {r ? <Pill key={`s${m.lead}${tone}`} x={r.box.x + r.box.w / 2} y={r.box.y + r.box.h + PILL.gap / k} k={k} tone={toneOf(m.lead) === 'sky' ? 'on' : toneOf(m.lead)} icon={r.size.icon} icons={icons}>{r.size.pre}<Count from={r.size.from} to={r.size.to} /></Pill> : null}
                 {/* the cause, as plumber names it: its own pills, above the place */}
                 {/* side by side in one row, so they never climb onto the words above */}
-                {r && m.cause ? (
+                {r && m.cause && r.tags?.length ? (
                   <span style={{ position: 'absolute', left: r.box.x + r.box.w / 2, top: r.box.y - PILL.gap / k, display: 'flex', gap: 4, transform: `translate(-50%, -100%) scale(${1 / k})`, transformOrigin: '50% 100%' }}>
                     {r.tags.map((g, i) => (
                       <Pill key={`t${i}${tone}`} flow k={k} tone={tagTone} icon={g.icon} icons={icons}>
@@ -305,6 +426,7 @@ export function Film({ Example, names, onSaid, chrome = true, start = true, onDo
                 ) : null}
               </div>
             ) : null}
+            {px ? <Pill key={px.tone} x={px.x} y={px.y} k={k} tone={px.tone} up>{px.text}</Pill> : null}
           </PlumbLayer>
         </div>
       </div>
