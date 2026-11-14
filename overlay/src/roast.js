@@ -9,6 +9,14 @@
  *
  *  note     one per row that is off its line (guides.js judge: the line its neighbours share). A row's label and its
  *           icon off together are one note, said by the label
+ *  agree    the same judgement for everything else a critic names: siblings (the rows of one menu, the buttons of
+ *           one toolbar) should agree. Per property, against the value most of them share (60% or more): where an
+ *           icon sits beside its label (1px and up), a boxed sibling's height (2px and up), its corners (square,
+ *           a radius, fully rounded), heights and corners only for controls and one-line boxed items (a list
+ *           row with more to say is taller for a reason). Only things built alike (the same children, in order) are
+ *           siblings. Line notes are about content, never a box's edge: a fill may bleed past the line on purpose
+ *           (craft rule #1, align content, not boxes). A thing a script or an animation is moving is never judged.
+ *           The odd one is the note, ringed, its siblings ticked
  *  cause    the class that makes the difference: the row and its first two levels of children, place by place,
  *           against the same places in the neighbour rows on the line. A horizontal property (gap, size, padding,
  *           margin, width, nudge) whose value differs from the one most neighbours use is the cause, and the fix is
@@ -33,21 +41,31 @@ const tokensCss = await (await fetch(new URL('./tokens.css', import.meta.url))).
 // ── what to say ─────────────────────────────────────────────
 
 const ACROSS = /^-?(gap-x|gap|size|w|min-w|max-w|px|pl|pr|ps|pe|p|ml|mr|ms|me|mx|m|translate-x|space-x|left|right|start|end|inset-x|indent)$/;
-const familyOf = (tok) => { if (tok.includes(':')) return null; const m = /^(-?[a-z-]+?)-(\[[^\]]+\]|[\d.]+(?:\/[\d.]+)?|px|full|auto|screen|fit|min|max)$/.exec(tok); return m ? m[1] : null; };
+const DOWN = /^-?(translate-y|mt|mb|my|top|bottom|self|items|size|h|min-h|leading|py|pt|pb|align|place-self|inset-y)$/;
+const TALL = /^(h|min-h|max-h|py|pt|pb|p|size|leading|text|border|border-y|border-t|border-b|ring)$/;
+const CORNER = /^(rounded|rounded-t|rounded-b|rounded-l|rounded-r|rounded-tl|rounded-tr|rounded-bl|rounded-br)$/;
+const BARE = new Set(['rounded', 'border', 'ring', 'shadow']);
+const familyOf = (tok) => {
+  if (tok.includes(':')) return null;
+  if (BARE.has(tok)) return tok;
+  const m = /^(-?[a-z-]+?)-(\[[^\]]+\]|[\d.]+(?:\/[\d.]+)?|px|full|auto|screen|fit|min|max|none|xs|sm|md|lg|xl|[2-9]xl|start|end|center|baseline|stretch)$/.exec(tok);
+  return m ? m[1] : null;
+};
 const classes = (el) => (el?.getAttribute?.('class') ?? '').split(/\s+/).filter(Boolean);
 const valueIn = (el, fam) => classes(el).find((c) => familyOf(c) === fam) ?? null;
 const at = (root, path) => path.reduce((n, i) => n?.children[i] ?? null, root);
 const WORD = { gap: 'gap', 'gap-x': 'gap', size: 'size', w: 'width', 'min-w': 'width', 'max-w': 'width', px: 'side padding', p: 'padding', pl: 'left padding', ps: 'left padding', pr: 'right padding', pe: 'right padding', ml: 'left margin', ms: 'left margin', mr: 'right margin', me: 'right margin', mx: 'side margin', m: 'margin', 'translate-x': 'nudge', 'space-x': 'spacing', indent: 'indent' };
-const wordFor = (fam, el) => (fam === 'size' && el?.matches?.('svg, img') ? 'icon size' : WORD[fam.replace(/^-/, '')] ?? fam);
+Object.assign(WORD, { 'translate-y': 'nudge', mt: 'top margin', mb: 'bottom margin', my: 'margin', top: 'offset', self: 'alignment', items: 'alignment', h: 'height', 'min-h': 'height', leading: 'line height', py: 'top and bottom padding', pt: 'top padding', pb: 'bottom padding', text: 'text size', border: 'border', ring: 'ring', rounded: 'corners' });
+const wordFor = (fam, el) => (fam === 'size' && el?.matches?.('svg, img') ? 'icon size' : /^rounded/.test(fam) ? 'corners' : WORD[fam.replace(/^-/, '')] ?? fam);
 
 /** The class that sets this row apart from the rows on its line: { el, fam, from, to } or null. */
-function causeOf(row, others) {
+function causeOf(row, others, FAMS = ACROSS) {
   const paths = [[]];
   for (let i = 0; i < row.children.length; i++) { paths.push([i]); for (let j = 0; j < row.children[i].children.length; j++) paths.push([i, j]); }
   for (const p of paths) {
     const mine = at(row, p), theirs = others.map((r) => at(r, p)).filter(Boolean);
     if (!mine || theirs.length < Math.max(1, others.length / 2)) continue;
-    const fams = new Set([...classes(mine), ...theirs.flatMap(classes)].map(familyOf).filter((f) => f && ACROSS.test(f)));
+    const fams = new Set([...classes(mine), ...theirs.flatMap(classes)].map(familyOf).filter((f) => f && FAMS.test(f)));
     for (const fam of fams) {
       const from = valueIn(mine, fam), votes = new Map();
       for (const t of theirs) { const v = valueIn(t, fam); votes.set(v, (votes.get(v) ?? 0) + 1); }
@@ -59,7 +77,16 @@ function causeOf(row, others) {
 }
 
 const regionOf = (el) => (el.closest('aside') ? 'sidebar' : el.closest('header') ? 'header' : el.closest('nav') ? 'menu' : el.closest('footer') ? 'footer' : el.closest('dialog, [role="dialog"]') ? 'dialog' : 'page');
-const nameOf = (el) => (el.textContent ?? '').trim().replace(/\s+/g, ' ').slice(0, 28) || el.getAttribute('aria-label') || 'This';
+const nameOf = (el) => {
+  const w = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, { acceptNode: (n) => (n.data.trim() ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_SKIP) });
+  const first = w.nextNode()?.data.trim().replace(/\s+/g, ' ');
+  return (first && (first.length > 28 ? `${first.slice(0, 26).replace(/\s+\S*$/, '')}…` : first)) || el.getAttribute('aria-label') || 'This';
+};
+const TEXT_BLOCK = 'h1, h2, h3, h4, h5, h6, p, blockquote, figcaption, label, button, li > a, td, th';
+// a thing a script or an animation is moving (a draggable letter, a spring): where it is now is not where it was put
+const moving = (el) => { for (let e = el; e && e !== document.body; e = e.parentElement) { if (/transform|translate|rotate|scale/.test(e.getAttribute('style') ?? '') || e.getAnimations?.().some((a) => a.playState === 'running')) return true; } return false; };
+// how a thing is built: its children's tags in order. Only things built alike are siblings to compare
+const builtAs = (el) => [...el.children].map((c) => c.tagName).join(',');
 const sourceOf = (el) => { const s = el.closest?.('[data-plumb-source]')?.getAttribute('data-plumb-source')?.split('#')[0]; if (!s) return null; const m = /([^/]+?):(\d+)(?::\d+)?$/.exec(s); return m ? `${m[1]}:${m[2]}` : s; };
 const KIND = { words: 'labels', picture: 'icons', box: 'boxes' };
 
@@ -68,6 +95,8 @@ export function readNotes() {
   const { strays, all } = readGuides();
   const rows = new Map();
   for (const z of strays) {
+    if (z.thing.kind === 'box') continue;   // align content, not boxes (craft rule #1): a fill may bleed past the line on purpose
+    if (moving(z.thing.el)) continue;
     const holders = z.guide.things.filter((o) => o.kind === z.thing.kind && o.el !== z.thing.el);
     if (!holders.length) continue;
     const near = [...holders].sort((a, b) => Math.abs(a.top - z.thing.top) - Math.abs(b.top - z.thing.top))[0];
@@ -75,7 +104,11 @@ export function readNotes() {
     while (row.parentElement && !row.parentElement.contains(near.el)) row = row.parentElement;
     const group = row.parentElement;
     if (!group || group === document.body) continue;
-    const others = [...new Set(holders.filter((o) => o.el !== group && group.contains(o.el)).map((o) => { let r = o.el; while (r && r.parentElement !== group) r = r.parentElement; return r; }))].filter((r) => r && r !== row);
+    // the lines of one heading or paragraph share their edge by construction; at display sizes the first letters'
+    // own shapes differ by a few px (a T against a b), which is type, not layout
+    if (group.closest(TEXT_BLOCK)) continue;
+    const others = [...new Set(holders.filter((o) => o.el !== group && group.contains(o.el)).map((o) => { let r = o.el; while (r && r.parentElement !== group) r = r.parentElement; return r; }))].filter((r) => r && r !== row && builtAs(r) === builtAs(row));
+    if (!others.length) continue;
     const note = rows.get(row) ?? rows.set(row, { row, group, others, strays: [], guide: z.guide }).get(row);
     note.strays.push(z);
   }
@@ -92,16 +125,107 @@ export function readNotes() {
         : 'Nothing in its classes differs from the rows around it; something outside the row pushes it.',
       act: cause && cause.from ? (cause.to ? `Use ${cause.to}` : `Remove ${cause.from}`) : null,
       source: sourceOf(n.row),   // where the row is written: an icon's own file is not where its size was chosen
-      region: regionOf(n.row),
+      region: regionOf(n.row), type: 'line', weight: d,
     };
   });
-  return notes.sort((a, b) => b.d - a.d);
+  const seen = new Set(notes.map((n) => n.row));
+  for (const n of siblingNotes()) if (!seen.has(n.row)) { seen.add(n.row); notes.push({ ...n, all }); }
+  return notes.sort((a, b) => b.weight - a.weight);
+}
+
+// ── siblings agree ──────────────────────────────────────────
+// The rest of what a critic sees is one judgement too: things that are siblings (the rows of one menu, the buttons of
+// one toolbar) should agree, and the one that disagrees with most of them is the note. Measured per property, against
+// the value most of them share; the cause is the class that differs where the others agree, the fix their value.
+
+const MIN_GROUP = 3;     // fewer than three cannot show what most of them do
+const MOST = 0.6;        // the share of siblings that must agree before the odd one is wrong
+const NOTICE = { icon: 1, height: 2 };   // px: below this nobody sees it (sub-pixel layout, a rounding)
+const boxed = (el) => { const cs = getComputedStyle(el); return el.matches('button, [role="button"], input, select') || /^rgba?\([^)]*[1-9][^)]*\)$/.test(cs.backgroundColor) && !/, 0\)$/.test(cs.backgroundColor) || parseFloat(cs.borderTopWidth) > 0 || cs.boxShadow !== 'none'; };
+const NOUN = (el) => (el.matches('button, [role="button"]') ? 'buttons' : el.matches('li, a') ? 'rows' : el.matches('input, select, textarea') ? 'fields' : 'items');
+const textBox = (el) => { const n = [...el.childNodes].find((c) => c.nodeType === 3 && c.data.trim()) ?? el.querySelector('*:not(svg):not(img)')?.firstChild; if (!n || n.nodeType !== 3) return null; const r = document.createRange(); r.selectNodeContents(n); const b = r.getBoundingClientRect(); return b.height ? b : null; };
+const iconOf = (el) => [...el.querySelectorAll('svg, img')].find((i) => !i.parentElement.closest('svg') && i.getBoundingClientRect().height > 0) ?? null;
+const shapeOf = (el) => { const h = el.getBoundingClientRect().height, r = parseFloat(getComputedStyle(el).borderTopLeftRadius) || 0; return r >= h / 2 - 0.5 ? 'round' : r < 0.5 ? 'square' : `${Math.round(r)}px`; };
+const SHAPE = { round: 'fully rounded', square: 'square' };
+const shapeWord = (v) => SHAPE[v] ?? `${v} rounded`;
+
+function mode(values, near) {
+  let best = null;
+  for (const v of values) {
+    const n = values.filter((w) => (near ? Math.abs(w - v) < near : w === v)).length;
+    if (!best || n > best.n) best = { v, n };
+  }
+  return best;
+}
+
+function siblingGroups() {
+  const groups = [];
+  for (const parent of document.querySelectorAll('body *')) {
+    if (parent.closest('[data-plumb-layer], plumb-overlay')) continue;
+    const kids = [...parent.children].filter((k) => { const r = k.getBoundingClientRect(); return r.height > 0 && r.bottom > 0 && r.top < innerHeight; });
+    const byKind = new Map();
+    for (const k of kids) { const key = k.tagName + (k.matches('button, [role="button"]') ? ':button' : '') + '|' + builtAs(k); byKind.set(key, [...(byKind.get(key) ?? []), k]); }
+    for (const g of byKind.values()) if (g.length >= MIN_GROUP) groups.push(g);
+  }
+  return groups;
+}
+
+function siblingNotes() {
+  const out = [];
+  for (const g0 of siblingGroups()) {
+    const g = g0.filter((el) => !moving(el));
+    if (g.length < MIN_GROUP) continue;
+    // the icon beside its label: where its middle sits against the words' middle
+    const dy = g.map((el) => { const i = iconOf(el), t = textBox(el); if (!i || !t) return null; const b = i.getBoundingClientRect(); return (b.top + b.bottom) / 2 - (t.top + t.bottom) / 2; });
+    const withIcon = dy.filter((v) => v !== null);
+    if (withIcon.length >= MIN_GROUP) {
+      const m = mode(withIcon, 0.5);
+      if (m.n / withIcon.length >= MOST) g.forEach((el, i) => {
+        const v = dy[i]; if (v === null || Math.abs(v - m.v) < NOTICE.icon) return;
+        const d = Math.round(Math.abs(v - m.v) * 10) / 10, others = g.filter((o, j) => j !== i && dy[j] !== null && Math.abs(dy[j] - m.v) < 0.5);
+        out.push(sibling(el, others, 'icon', d, `The ${nameOf(el)} icon sits ${d}px ${v > m.v ? 'lower' : 'higher'} than the other icons beside their labels.`, DOWN, { icon: iconOf(el), by: v - m.v }));
+      });
+    }
+    // controls and boxed rows: the same height and the same corners
+    const oneLine = (el) => { const t = textBox(el); return !!t && t.height < el.getBoundingClientRect().height && el.querySelectorAll('p, li, div > div').length === 0; };
+    const boxes = g.filter((el) => el.matches('button, [role="button"], input, select, textarea') || (boxed(el) && oneLine(el)));
+    if (boxes.length >= MIN_GROUP && boxes.length / g.length >= MOST) {
+      const hs = boxes.map((el) => el.getBoundingClientRect().height), mh = mode(hs, 1);
+      if (mh.n / boxes.length >= MOST) boxes.forEach((el, i) => {
+        if (Math.abs(hs[i] - mh.v) < NOTICE.height) return;
+        const d = Math.round(Math.abs(hs[i] - mh.v) * 10) / 10, others = boxes.filter((o, j) => Math.abs(hs[j] - mh.v) < 1);
+        out.push(sibling(el, others, 'height', d, `${nameOf(el)} is ${d}px ${hs[i] > mh.v ? 'taller' : 'shorter'} than the other ${NOUN(el)}.`, TALL));
+      });
+      const shapes = boxes.map(shapeOf), ms = mode(shapes);
+      if (ms.n / boxes.length >= MOST) boxes.forEach((el, i) => {
+        if (shapes[i] === ms.v) return;
+        const others = boxes.filter((o, j) => shapes[j] === ms.v);
+        out.push(sibling(el, others, 'corners', 6, `${nameOf(el)} has ${shapeWord(shapes[i])} corners; the other ${NOUN(el)} are ${shapeWord(ms.v)}.`, CORNER));
+      });
+    }
+  }
+  return out;
+}
+
+function sibling(el, others, type, weight, title, FAMS, extra = {}) {
+  const cause = causeOf(el, others, FAMS);
+  return {
+    row: el, others, type, weight, d: weight, title, ...extra,
+    cause,
+    why: cause
+      ? `Its ${wordFor(cause.fam, cause.el)} is ${cause.from ?? 'not set'}; the others use ${cause.to ?? 'none'}.`
+      : `Nothing in its classes differs from the ${NOUN(el)} beside it; what is inside it makes the difference.`,
+    act: cause && cause.from ? (cause.to ? `Use ${cause.to}` : `Remove ${cause.from}`) : null,
+    source: sourceOf(el), region: regionOf(el),
+  };
 }
 
 function verdictOf(notes) {
   if (!notes.length) return 'Everything here hangs true. Nothing to roast.';
   const regions = new Set(notes.map((n) => n.region)), where = regions.size === 1 ? `your ${[...regions][0]}` : 'this screen';
-  return notes.length === 1 ? `Close, but ${where} has one thing off its line.` : `Close, but ${where} doesn't line up: ${notes.length} things are a few pixels off.`;
+  const kinds = new Set(notes.map((n) => (n.type === 'line' || n.type === 'icon' ? 'line' : 'shape')));
+  const what = kinds.size > 1 ? "doesn't line up, and its pieces don't match" : kinds.has('line') ? "doesn't line up" : "has pieces that don't match";
+  return notes.length === 1 ? `Close, but ${where} has one thing that breaks ranks.` : `Close, but ${where} ${what}: ${notes.length} things break ranks.`;
 }
 
 // ── drawing ─────────────────────────────────────────────────
@@ -178,6 +302,7 @@ function lineOf(n) {
 function draw() {
   const n = notes[index];
   if (!n) return '';
+  if (n.type !== 'line') return drawSibling(n);
   const { x, top, bottom, segs } = lineOf(n), fresh = drawnFor !== n.row;
   drawnFor = n.row;
   const a = (Math.atan(5 / Math.max(1, bottom - top)) * 180 / Math.PI).toFixed(2);
@@ -190,6 +315,22 @@ function draw() {
     <g class="mark"${anim}><rect class="ring" x="${r.left - 3}" y="${r.top - 3}" width="${r.width + 6}" height="${r.height + 6}" rx="8"/>
       <path class="halo" d="${dim(t.top - 5, false)}" stroke-width="3.5"/><path class="dim" d="${dim(t.top - 5, false)}"/>
       <path class="halo" d="${dim(t.bottom + 5, true)}" stroke-width="3.5"/><path class="dim" d="${dim(t.bottom + 5, true)}"/></g>`;
+}
+
+// a sibling note: the odd one ringed; its siblings marked with a quiet tick so you see who it is measured against;
+// for an icon, a dimension mark from where the others' icons sit to where this one does, beside it, clear of its label
+function drawSibling(n) {
+  const fresh = drawnFor !== n.row; drawnFor = n.row;
+  const anim = fresh ? '' : ' style="animation:none"';
+  const r = n.row.getBoundingClientRect();
+  const ticks = n.others.map((o) => { const b = o.getBoundingClientRect(); return `<circle class="bob" cx="${b.left - 6}" cy="${(b.top + b.bottom) / 2}" r="2"/>`; }).join('');
+  let dim = '';
+  if (n.type === 'icon' && n.icon) {
+    const b = n.icon.getBoundingClientRect(), x = b.left - 4, y1 = (b.top + b.bottom) / 2, y0 = y1 - n.by;
+    const d = `M${x - 3} ${y0}H${x + 1}M${x - 1} ${y0}V${y1}M${x - 3} ${y1}H${x + 1}`;
+    dim = `<path class="halo" d="${d}" stroke-width="3.5"/><path class="dim" d="${d}"/>`;
+  }
+  return `<g class="mark"${anim}>${ticks}<rect class="ring" x="${r.left - 3}" y="${r.top - 3}" width="${r.width + 6}" height="${r.height + 6}" rx="8"/>${dim}</g>`;
 }
 
 function paint() {

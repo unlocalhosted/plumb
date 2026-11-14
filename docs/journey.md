@@ -1530,7 +1530,24 @@ field is empty). The table of five writes, before and after. The Next table: eig
   both sides kept), and crafting-ui's link points at that worktree, sharing the main checkout's installed packages
   (dependencies are the same). The roast found one crash on the newer page (a neighbour that is its row group);
   fixed. To point crafting-ui back: relink node_modules/@unlocalhosted/react-plumber to ../../../plumb.
-- **Media hooks:** docs/qa/roast-first-note.jpg (the roast's first note on the messy page), docs/qa/guides-first-look-issues.jpg (guides on the messy page), docs/qa/guides-held-issues.jpg
+- **Layer 5, siblings agree** (owner, on the three open gaps: other things Karri named, vertical alignment, busier
+  pages; "and also overall improvement"). Not three new rules: everything Karri listed is one judgement, that
+  siblings (the rows of one menu, the buttons of one toolbar) should agree, and the one that disagrees with most of
+  them is the note. Horizontal alignment was one property of it; now also where an icon sits beside its label, a
+  control's height and its corners. The cause is found the same way (the class that differs where the others
+  agree). Result: the Cycles icon, 2px low, is caught with the exact fix ("Its nudge is translate-y-[2px]; the others
+  use none." → "Remove translate-y-[2px]"). The messy chat page still reads 0, and that is right: by its own header
+  its faults are values off the system, the clean-up's job, not ranks broken. A first sweep of 10 busier real pages
+  gave 3 notes, all false, each a gap in the judgement, all fixed: a fill pulled out on purpose (-mx-1; plumber's
+  own rule #1 is "align content, not boxes", so box edges no longer make line notes), a row compared with rows built
+  differently (only things with the same children in order are siblings now), and a list row "shorter" because it
+  says less (height and corners are judged for controls and one-line items only). Names now use a thing's first
+  words, not every word inside it. A second sweep (18 pages) found one more false
+  note, a letter of the home page's animated headline: the lines of one heading are now never compared with each
+  other (at display sizes a T and a b start a few px apart by their shapes), and things a script or animation moves
+  are skipped. Final sweep: the messy tracker 3 notes, all real; 17 other pages 0. Not yet tried: corners and heights
+  on a page that really mixes them, dark mode, any app but crafting-ui.
+- **Media hooks:** docs/qa/roast-icon-note.jpg (the icon note), docs/qa/roast-first-note.jpg (the roast's first note on the messy page), docs/qa/guides-first-look-issues.jpg (guides on the messy page), docs/qa/guides-held-issues.jpg
   (the three strays held by their neighbours), docs/qa/guides-plumb-lines-issues.jpg
   (the plumb lines and the one stray); a screen recording of the drop-and-swing arrival would show the toy best; the three source screenshots in
   docs/references-media/; a clean page beside a messy one with the guide counts would make the point in one frame.
