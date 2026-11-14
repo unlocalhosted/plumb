@@ -11,7 +11,7 @@
 //                    the mark's guardrails draw themselves on and the DOM tree appears in its leg; under it, the site's line
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { PRINCIPLES } from './catalogue.js';
-import { Film } from './Film.jsx';
+import { Film, beat } from './Film.jsx';
 import { ensureLook } from './look.js';
 import { STEM, BOWL, LEG, TREE, JOINTS } from '../../../src/mark.js';
 
@@ -98,6 +98,7 @@ export function FilmPage({ n }) {
     });
     return () => { gone = true; };
   }, []);
+  useEffect(() => { if (phase !== 'empty') beat(`frame: ${phase}`); }, [phase]);
   useEffect(() => {
     if (!to) return;
     const t = [setTimeout(() => setPhase('name'), TIMING.name), setTimeout(() => setPhase('film'), TIMING.travel), setTimeout(() => setPhase('playing'), TIMING.film)];

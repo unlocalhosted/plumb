@@ -127,6 +127,9 @@ const BURST = { pieces: 34, speed: [300, 620], spread: 1.1, gravity: 1000, spin:
 const BURST_HUES = { pad: '#1a9e62', gap: '#7a5cf0', mar: '#e2800a', ink: '#1c1b19' };
 
 const BOXMODEL = '/__plumb/src/boxmodel.js'; // served by the overlay at runtime, not bundled with the showcase
+// each beat, as it starts, for the film's reviewers (the story and camera reviews read a draft by its beats; see the
+// film-draft script): window.__filmBeat, when the draft recorder listens, and window.__filmBeats always
+export const beat = (name) => { const t = Math.round(performance.now()); (window.__filmBeats ??= []).push({ name, t }); window.__filmBeat?.(name, t); };
 const sleep = (ms, live) => new Promise((ok) => { live.timers.push(setTimeout(() => live.on && ok(), ms)); });
 const still = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
 export function local(root) {
@@ -252,6 +255,7 @@ export function Film({ Example, names, onSaid, chrome = true, start = true, onDo
       if (spec.still) {
         const lead = () => all()[spec.lead];
         // FEEL IT: the pointer comes to rest on the subject; nothing drawn, the words just soft
+        beat('1 · it happens: the pointer rests, nothing drawn');
         { const o = box.current.getBoundingClientRect(), r = lead().getBoundingClientRect(); setPtr({ x: r.right - o.left + 16, y: r.top - o.top + r.height / 2 + 2 }); }
         await sleep(TIMING.rest, live);
         // camera in on the subject
@@ -263,20 +267,20 @@ export function Film({ Example, names, onSaid, chrome = true, start = true, onDo
         setFrame({ radius: cs.borderRadius, shadow: cs.boxShadow });
         setPtr((p) => p && { ...p, gone: true });
         const near = { k, x: clamp(W / 2 - k * (f.x + f.w / 2), W - k * W), y: clamp(H / 2 - k * (f.y + f.h / 2), H - k * H) };
-        setCam(near);
+        beat('camera in on the subject'); setCam(near);
         await sleep(TIMING.camera, live);
         // MEASURE IT: the places outlined; the lead coral, how far it is moved, then how far off the grid that leaves it
         const rest = boxes();
         setM({ tone: 'sky', boxes: rest }); await sleep(TIMING.outline, live);
         const read = { ...spec.read(example(), lead()), box: rest[spec.lead] };
-        setM({ tone: 'sky', boxes: rest, lead: spec.lead, read }); await sleep(TIMING.measure, live);
-        setM({ tone: 'sky', boxes: rest, lead: spec.lead, read, cause: true }); if (spec.code) setChange(1);
+        beat('2 · measure it: the lead in coral, its numbers'); setM({ tone: 'sky', boxes: rest, lead: spec.lead, read }); await sleep(TIMING.measure, live);
+        beat('2 · the cause named, the class at fault'); setM({ tone: 'sky', boxes: rest, lead: spec.lead, read, cause: true }); if (spec.code) setChange(1);
         await sleep(TIMING.cause, live);
         setM((x) => x && { ...x, fading: true }); await sleep(TIMING.fade, live); setM(null);
         // down into the pixels: the words between two rows
         const frac = (v) => v - Math.round(v);
         const dive = (lp) => { const K = CAMERA.pixels; return { k: K, x: clamp(W / 2 - K * lp.focus.x, W - K * W), y: clamp(H / 2 - K * lp.focus.y, H - K * H), ms: TIMING.dive }; };
-        let lp;
+        let lp; beat('the dive: down into the detail');
         if (spec.pixels) {
           lp = pixelsOf(example(), spec.pixels(example()), frac(read.ty));
           setLoupe({ ...lp, on: false }); await sleep(30, live); setLoupe({ ...lp, on: true });
@@ -289,12 +293,12 @@ export function Film({ Example, names, onSaid, chrome = true, start = true, onDo
           setCam({ k: K, x: clamp(W / 2 - K * lp.focus.x, W - K * W), y: clamp(H / 2 - K * lp.focus.y, H - K * H), ms: TIMING.dive }); await sleep(TIMING.dive, live);
           setPx(lp.pills);
         }
-        await sleep(TIMING.smear, live);
+        beat('the dive arrives: the fault drawn up close'); await sleep(TIMING.smear, live);
         // the fix lands: the same pixels, on the rows
         const fixBtn = sw.current?.querySelectorAll('button')[1];
         if (fixBtn) { setPtr(toward(fixBtn)); await sleep(TIMING.toSwitch, live); setPtr((p) => ({ ...p, down: true })); await sleep(TIMING.press, live); }
         setSide('fixed'); setPtr((p) => ({ ...p, down: false })); if (spec.code) setChange(2);
-        await sleep(80, live);
+        beat('3 · the fix lands, up close'); await sleep(80, live);
         if (spec.pixels) {
           const fixedRead = spec.read(example(), lead()), lf = pixelsOf(example(), spec.pixels(example()), frac(fixedRead.ty));
           setLoupe({ ...lp, url: lf.url, on: true });
@@ -306,16 +310,16 @@ export function Film({ Example, names, onSaid, chrome = true, start = true, onDo
         setPtr((p) => p && { ...p, gone: true });
         await sleep(TIMING.snap, live);
         // back up; every place holds
-        setPx(null); setLoupe((x) => x && { ...x, on: false }); setDrawing((x) => x && { ...x, on: false }); setCam({ ...near, ms: TIMING.rise }); await sleep(TIMING.rise, live); setLoupe(null); setDrawing(null);
+        beat('back up out of the detail'); setPx(null); setLoupe((x) => x && { ...x, on: false }); setDrawing((x) => x && { ...x, on: false }); setCam({ ...near, ms: TIMING.rise }); await sleep(TIMING.rise, live); setLoupe(null); setDrawing(null);
         const fixedRest = boxes();
-        setM({ tone: 'on', boxes: fixedRest }); await sleep(TIMING.turn, live);
+        beat('4 · payoff: every place mint'); setM({ tone: 'on', boxes: fixedRest }); await sleep(TIMING.turn, live);
         for (let i = 0; i < all().length; i++) {
           setM({ tone: 'on', boxes: fixedRest, lead: i, read: { ...spec.read(example(), all()[i]), box: fixedRest[i] }, cause: i === spec.lead });
           await sleep(i === spec.lead ? TIMING.payoff * 2 : TIMING.payoff, live);
         }
         setM({ tone: 'on', boxes: fixedRest });
         if (spec.code) {
-          setChange(3); await sleep(TIMING.check, live);
+          beat('the check and the burst'); setChange(3); await sleep(TIMING.check, live);
           const host = sw.current?.querySelector('div[aria-hidden="true"]'), check = host?.shadowRoot?.querySelector('[data-done]')?.getBoundingClientRect(), o = box.current.getBoundingClientRect();
           if (fx.current && check) burst(fx.current, check.left - o.left + check.width / 2, check.top - o.top + check.height / 2);
         }
@@ -327,6 +331,7 @@ export function Film({ Example, names, onSaid, chrome = true, start = true, onDo
         return;
       }
       // FEEL IT: the gesture on every place, nothing drawn
+      beat('1 · it happens: the gesture on every place, nothing drawn');
       for (const el of all()) { setPtr(toward(el, 5)); await sleep(TIMING.move, live); spec.set(el, true); await sleep(TIMING.feel, live); spec.set(el, false); }
       // camera in on the set
       const root = example(), at = local(root), W = root.offsetWidth, H = root.offsetHeight;
@@ -342,7 +347,7 @@ export function Film({ Example, names, onSaid, chrome = true, start = true, onDo
       await sleep(TIMING.camera, live);
       // MEASURE IT: every place outlined in sky; the gesture on the lead twice, the cause named the second time
       const rest = boxes(), lead = () => all()[spec.lead];
-      setM({ tone: 'sky', boxes: rest });
+      beat('2 · measure it: every place outlined'); setM({ tone: 'sky', boxes: rest });
       await sleep(TIMING.outline, live);
       for (let rep = 0; rep < 2; rep++) {
         setPtr(toward(lead(), 5)); await sleep(TIMING.move, live);
@@ -358,7 +363,7 @@ export function Film({ Example, names, onSaid, chrome = true, start = true, onDo
       // WHY IT HOLDS: the other side; outlines mint; the same gesture on the lead names what the fix uses instead
       const fixBtn = sw.current?.querySelectorAll('button')[1];
       if (fixBtn) { setPtr(toward(fixBtn)); await sleep(TIMING.toSwitch, live); setPtr((p) => ({ ...p, down: true })); await sleep(TIMING.press, live); }
-      setSide('fixed'); setPtr((p) => ({ ...p, down: false }));
+      setSide('fixed'); setPtr((p) => ({ ...p, down: false })); beat('3 · the fix lands');
       if (spec.code) setChange(2); // the fix lands: struck, and the class that holds arrives
       await sleep(60, live);
       const fixedRest = boxes();
@@ -371,6 +376,7 @@ export function Film({ Example, names, onSaid, chrome = true, start = true, onDo
       spec.set(lead(), false);
       setM({ tone: 'on', boxes: fixedRest });
       // PAYOFF: the same gesture on every place
+      beat('4 · payoff: the same gesture on every place');
       for (let i = 0; i < all().length; i++) {
         setPtr(toward(all()[i], 5)); await sleep(TIMING.move, live);
         spec.set(all()[i], true);
@@ -381,7 +387,7 @@ export function Film({ Example, names, onSaid, chrome = true, start = true, onDo
       setM({ tone: 'on', boxes: fixedRest }); setPtr((p) => p && { ...p, gone: true });
       // every place holds: plumber's check draws where the fix was written, and bursts from there (as its fix panel does)
       if (spec.code) {
-        setChange(3); await sleep(TIMING.check, live);
+        beat('the check and the burst'); setChange(3); await sleep(TIMING.check, live);
         const host = sw.current?.querySelector('div[aria-hidden="true"]'), check = host?.shadowRoot?.querySelector('[data-done]')?.getBoundingClientRect(), o = box.current.getBoundingClientRect();
         if (fx.current && check) burst(fx.current, check.left - o.left + check.width / 2, check.top - o.top + check.height / 2);
       }

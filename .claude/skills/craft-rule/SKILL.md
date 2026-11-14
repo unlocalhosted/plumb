@@ -231,6 +231,14 @@ colours per frame) so act lengths come from the film, not from memory. Then writ
 viewer**, not only its length. The first stage copied the ledger video's durations and lost its first act, because
 "figures ticking for 3 s" was read as a detail and not as the act that shows the fault.
 
+### Before a film is rendered: two reviews on a cheap draft
+
+A film is never rendered or published straight from its code. First the story review (film-story-review) and the
+camera review (film-camera-review) read its storyboard; then one cheap draft run
+(`node overlay/showcase/scripts/film-draft.mjs <N>`: its beats with timecodes, a keyframe per beat, a sheet at one frame
+a second) goes through both again. Only when both say "render it" is the 1920 × 1080 film made. Their findings go in
+docs/films/<N>-review.md.
+
 ## 3¾. Hands-on demos: the viewer's hand is the probe
 
 Some mistakes only exist while something happens, and are felt in the hand: a wait, a jump, a wall. For those, the
