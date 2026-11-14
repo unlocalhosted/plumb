@@ -1467,6 +1467,16 @@ field is empty). The table of five writes, before and after. The Next table: eig
 - **Seen on the way:** a three-element test page reads "1 element can't be checked". Not looked at.
 - **Media hooks:** the bar on crafting-ui's icon page, "7 problems", beside the 89 cards.
 
+## Every check on algorecall, through the real command (2026-11-15)
+- **The itch:** the open gap: the seventeen "a linter cannot see" checks had never met algorecall, the app whose forms and pages found four false alarms in the earlier batches. The owner: "okay lets do".
+- **How we found it:** a copy of algorecall's current source on the test server, its sign-in wait switched off in the copy, and `plumber craft` over 14 public pages with every check on (the earlier run used a plain-browser script; this one is what a person gets).
+- **What it found:** 19 places from 11 checks. 17 true: a `<div role="button">` in the hero and on 25 skill cards; a decorative icon not hidden from screen readers; a `<figure>` with no caption; code in a `<pre>` with no `<code>`; `tabindex="0"` on buttons in 5 places; a link that shows "AlgoRecall" and is named "Return to home"; the LLD page going from h1 to h3; a search field outside `<search>`; four links that give one destination two names (notes, as the guide intends). Two wrong:
+  - the showcase page has no `<main>`, and the report named the feedback dock's file. **The system behind it:** a finding about the whole page was said on the first element judged. The first fix (the biggest element, chosen once) still named the dock, because the page is read in waves and the first wave held only the dock. **The fix:** the fourteen page-wide checks are judged again whenever the page has changed (the census path the engine already had), and the page's element is chosen afresh each pass. On algorecall it now names `ShowcasePage.tsx:58` (the page's sticky header, inside its root).
+  - "AlgoRecall · Field Guide · Vol. I · April MMXXVI · Set in dark mode by default" counted as twelve words in capitals. A row of labels joined by separators is labels; the longest piece (six words) is what is read.
+- **The proof:** each fix has a test that fails on the code before it (the page test loads its body a second after the dock, as algorecall does, and fails on the first fix too). 21 of 21 in the checks' file; the third run on algorecall shows both fixed and nothing else changed.
+- **Found, not fixed:** three big pages (problems, curriculum, tree) never count as read through, at 90 s or 4 min alike. On the tree page every element is read and the reader's "settled" still flips back; my guess, not proven, is styles changed every frame by an animation library re-queue elements. Findings are still reported; the "read in full" mark is missing. In the backlog.
+- **Media hooks:** the run's list of 19, with the two wrong ones beside their fixed lines.
+
 ## Open gaps
 - The site's top bar doesn't fit a phone (390px): it widens the page to about 500px. Needs a compact bar.
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
@@ -2555,6 +2565,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   Nothing finds a new one when it is written.
 
 ## Shipped · 2026-W46
+- plumber's checks were run on algorecall's 14 pages: 17 of 19 findings true; a page-wide finding now names the page, not whatever was read first, and a row of capital labels is no longer read as a sentence ([entry](#every-check-on-algorecall-through-the-real-command-2026-11-15)).
 - The X-ray card no longer sits on the fix panel's Undo after a write lands: it moves when the panel comes back ([entry](#two-flaky-tests-one-was-the-machine-one-was-a-real-bug-2026-11-15)).
 - The 152 checks from Chrome's guides are on main, with their tests, after a full suite run; a blocking-script false hit that every Next app would have seen is fixed on the way ([entry](#the-checks-from-chromes-guides-go-to-main-2026-11-14)).
 - **React Plumber 0.5.0 is released on GitHub** (tag `v0.5.0`, 2026-11-14): Alt+B X-ray with a readable card that waits for you to stop, a change lands in the class that is showing, resize by edges, repeated parts change every copy, big pages stay smooth. Proof: the full suite on vm-agent, 1061 passed; the 3 files that failed under load passed alone (14 of 14). The warm start that reached main the same day is held for 0.6.0, so GitHub's main stops at the tested commit. npm publish is the owner's step.
