@@ -100,7 +100,8 @@ export async function readDecisions(root: string, config: PlumbConfig, graph: St
   // where a theme or the config already declares a kind, its other variables are not guessed into it: an extra :root
   // `--well: 0 2px 4px …` beside a theme's shadows is a raw value to point at them, not a token (e2e/attribution)
   const declared = new Set<Family>([...decisions.values()].map(d => d.family));
-  for (const item of raw) if (item.root && !item.theme && item.origin === 'project') { const named = familyFor(item.name); if (named) declared.add(named); }
+  // a kind is declared by a token already taken, a Tailwind-named root variable, or any variable in a theme block
+  for (const item of raw) if (item.theme || item.root && item.origin === 'project') { const named = familyFor(item.name); if (named) declared.add(named); }
   for (const family of Object.keys(config.decisions ?? {}) as Family[]) declared.add(family);
   for (const item of raw) if (item.root && !item.theme && item.origin === 'project' && !familyFor(item.name) && !backing.has(item.name) && !inferred.has(item.name)) {
     inferred.set(item.name, inferFamily(item.name, resolveValue(item.value, variables, new Set([item.name])) ?? item.value, uses));
@@ -116,7 +117,9 @@ export async function readDecisions(root: string, config: PlumbConfig, graph: St
   const plainColour = (item: typeof raw[number]) => { const named = familyFor(item.name); return !!named && named !== 'color' && byValue(resolveValue(item.value, variables, new Set([item.name])) ?? item.value) === 'color'; };
   for (const item of raw.filter(item => item.root && !item.theme && item.origin === 'project')) {
     const hint = plainColour(item) ? 'color' : readAs.get(item.name)?.family;
-    for (const family of Object.keys(config.decisions ?? {}) as Family[]) if (selected(item.name, family, item.source.file, false, hint)) {
+    // the reading helps a source the config names (a whole file) take the right tokens; a kind the config lists
+    // without a source keeps to Tailwind's names
+    for (const family of Object.keys(config.decisions ?? {}) as Family[]) if (selected(item.name, family, item.source.file, false, config.decisions?.[family]?.from === undefined ? undefined : hint)) {
       add(defineDecisions([{ family, name: item.name, value: item.value, why: item.why, source: item.source, ...(item.tier ? { tier: item.tier } : {}) }])[0]!, item.tier !== undefined);
     }
     // a Tailwind prefix that says one kind over a value that is plainly a colour (`--text-primary: #1d1b17` in plain CSS):
