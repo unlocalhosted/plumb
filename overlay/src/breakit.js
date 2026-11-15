@@ -38,6 +38,10 @@
  *           one unbroken word (a link, an ID) and, where there is a number, a nine-digit one. Each break says which
  *           content did it; stepping to it puts that content back on the page. A drawn box (a button, a badge) that
  *           shrinks to a sliver when it is empty is a break of its own
+ *  typing   every field gets, in turn, a long line, a pasted link, pasted lines (a textarea) and nothing, entered so
+ *           the app reacts. Then: new breaks, a field that grows and moves its row, lines a box hides with no scroll,
+ *           words running under an icon drawn inside the field, a list a search empties with nothing saying why.
+ *           Each value is taken back
  *  action   you press the button you care about (plumber does not guess which is the main one). Its requests (fetch, XHR)
  *           get a server error, or are held 4 seconds in Slow. Then plumber watches and says what a person meets: no
  *           words saying it failed, a button left disabled or still saying "Creating…", a spinner that never stops;
@@ -349,7 +353,7 @@ svg.page { position: absolute; inset: 0; width: 100%; height: 100%; overflow: vi
 .hatch { stroke: var(--pl-off); stroke-width: 1.5; opacity: .55; }
 .mark { animation: pop 240ms var(--pl-spring-pop) both; transform-box: fill-box; transform-origin: center; }
 
-.bar { position: absolute; left: 50%; bottom: 16px; translate: -50% 0; width: min(664px, calc(100vw - 32px)); box-sizing: border-box;
+.bar { position: absolute; left: 50%; bottom: 16px; translate: -50% 0; width: min(760px, calc(100vw - 32px)); box-sizing: border-box;
   display: grid; gap: 10px; padding: 12px 14px 14px; background: var(--pl-paper); color: var(--pl-ink);
   border-radius: var(--pl-radius-card); box-shadow: var(--pl-shadow-card); pointer-events: auto; font: var(--pl-card-body); }
 .toys { display: flex; gap: 6px; align-items: center; }
@@ -511,7 +515,9 @@ async function extreme() {
   const base = measure(window, { all: true }), sized = boxesOf(), found = new Map();   // the whole page: a person scrolls
   for (const kind of KINDS) {
     if (toy !== 'extreme') { unswap(); return; }
+    const wide = innerWidth;
     swapTo(kind); await frames(2); tried++;
+    if (innerWidth !== wide) continue;   // the window changed size mid-step: not the content's doing
     for (const b of measure(window, { all: true }).values()) {
       const k = `${b.kind}|${sourceOf(b.el) ?? ''}|${kind.id}`;
       if (base.get(b.el)?.kind === b.kind || found.has(k) || old(b, base)) continue;
@@ -632,6 +638,108 @@ function arm() { hook(); act = { mode, phase: 'armed' }; addEventListener('point
 function disarm() { if (act?.timer) clearTimeout(act.timer); act?.seen?.disconnect(); act = null; unhook(); removeEventListener('pointerdown', pressed, true); }
 export function setMode(next) { mode = next; if (toy === 'action') { disarm(); arm(); notes = []; paint(); } }
 
+// ── typing into fields ───────────────────────────────────────
+
+// each field gets, in turn, what people really put there. Entered the way typing is (the value set, then an input
+// event), so the app reacts: a search filters, a counter counts. Put back after each one
+const TYPED = [
+  { id: 'long', as: 'a long line', value: (f) => (f.type === 'email' ? 'a.very.long.name.with.several.parts@a-company-with-a-rather-long-name.example.com' : 'A long thing someone might really type here, the way people do when they explain themselves properly') },
+  { id: 'link', as: 'a pasted link', value: () => 'https://example.com/a/very/long/link/someone/pasted/without/a/single/space?ref=0123456789abcdef' },
+  { id: 'lines', as: 'several pasted lines', value: (f) => (f.localName === 'textarea' ? 'First line\nSecond line\nThird line\nFourth line\nFifth line\nSixth line' : null) },
+  { id: 'empty', as: 'nothing', value: () => '' },
+];
+const FIELD = 'input:not([type]), input[type="text"], input[type="search"], input[type="email"], input[type="url"], input[type="tel"], input[type="password"], textarea';
+let typing = false, typedIn = 0, shown = null;   // shown: { f, orig } while a note's value sits in its field
+
+function enter(f, v) {
+  const proto = f.localName === 'textarea' ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
+  Object.getOwnPropertyDescriptor(proto, 'value').set.call(f, v);
+  f.dispatchEvent(new Event('input', { bubbles: true }));
+}
+const fieldName = (f) => norm(f.getAttribute('aria-label') || (f.id && document.querySelector(`label[for="${CSS.escape(f.id)}"]`)?.textContent) || f.closest('label')?.textContent || f.placeholder || f.name || 'this field').slice(0, 30);
+const pause = (ms) => new Promise((r) => setTimeout(r, ms));
+
+/** What a person can read on the page: every visible run of words. */
+function visibleWords() {
+  const out = new Set(); const w = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+  for (let n = w.nextNode(); n; n = w.nextNode()) { const el = n.parentElement; if (el && !el.closest(OURS) && LETTER.test(n.data) && el.checkVisibility?.()) out.add(norm(n.data)); }
+  return out;
+}
+/** Lines of source drawn two or more times and visible: the page's lists, by the line that draws their items. */
+function lists() {
+  const by = new Map();
+  for (const el of document.querySelectorAll('[data-plumb-source]')) { if (el.closest(OURS) || !el.checkVisibility?.()) continue; const k = el.getAttribute('data-plumb-source').split('#')[0]; (by.get(k) ?? by.set(k, []).get(k)).push(el); }
+  return new Map([...by].filter(([, els]) => els.length >= 2));
+}
+
+async function typeAll() {
+  typing = true; typedIn = 0; paint();
+  const fields = [...document.querySelectorAll(FIELD)].filter((f) => !f.closest(OURS) && !f.disabled && !f.readOnly && f.checkVisibility?.());
+  const found = new Map();
+  for (const f of fields) {
+    if (toy !== 'typing') break;
+    typedIn++; paint();
+    const orig = f.value, name = `“${fieldName(f)}”`;
+    for (const t of TYPED) {
+      const v = t.value(f);
+      if (v === null || v === orig) continue;
+      const base = measure(window, { all: true }), box = f.getBoundingClientRect(), words = visibleWords(), had = lists(), wide = innerWidth;
+      enter(f, v); await frames(2); await pause(350);   // a search that waits for typing to stop (300ms is common)
+      if (toy !== 'typing') { enter(f, orig); break; }
+      if (innerWidth !== wide) { enter(f, orig); await frames(2); continue; }   // the window changed size, not the content: nothing to judge
+      const into = `Typing ${t.as} into ${name}`, add = (k, n) => { if (!found.has(k)) found.set(k, { live: true, ...n, field: f, typed: t, title: `${into}, ${n.title}` }); };
+      for (const b of measure(window, { all: true }).values()) {
+        if (base.get(b.el)?.kind === b.kind || old(b, base) || b.el === f) continue;
+        const said = say(b); add(`${b.kind}|${sourceOf(b.el) ?? ''}|${t.id}`, { ...b, ...said, title: said.title.replace(/^[A-Z]/, (c) => c.toLowerCase()).replace(/^the whole/, 'the whole') });
+      }
+      const now = f.getBoundingClientRect();
+      if (Math.abs(now.width - box.width) > 4 && t.id !== 'empty') add(`grows|${t.id}|${sourceOf(f)}`, { kind: 'grows', el: f, px: Math.round(now.width - box.width), title: `the field grows ${Math.round(now.width - box.width)}px wider and moves what is beside it.`, why: 'A field that changes size as you type makes the row jump under your eyes. Give it a fixed width and let the text scroll inside it.' });
+      const cs = cssOf(f);
+      if (f.localName === 'textarea' && /hidden|clip/.test(cs.overflowY) && f.scrollHeight > f.clientHeight + 2) add(`clipped|${sourceOf(f)}`, { kind: 'clipped', el: f, title: 'the lines past the box’s height vanish.', why: 'The box hides what overflows and cannot scroll, so the person cannot see or check what they wrote. Let it scroll, or grow.' });
+      if (f.scrollWidth > f.clientWidth + 1) {
+        // something drawn inside the field's box (an icon, a shortcut hint, a clear button) that the text now runs under
+        for (const el of f.parentElement?.querySelectorAll(':scope > *:not(input):not(textarea), :scope > * > svg') ?? []) {
+          const r = el.getBoundingClientRect();
+          if (r.width && r.left < now.right - 2 && r.right > now.left + 2 && r.top < now.bottom && r.bottom > now.top && !el.contains(f)) add(`under|${sourceOf(f)}|${t.id}`, { kind: 'under', el: f, other: el, title: `the words run under ${el.textContent.trim() ? `“${norm(el.textContent).slice(0, 12)}”` : 'the icon inside it'}.`, why: 'The text box reaches under something drawn on top of it. Pad the field on that side by the width of what sits there.' });
+        }
+      }
+      // a search that matches nothing: a list emptied, and no new words to say so
+      const nowLists = lists(), newWords = [...visibleWords()].filter((x) => !words.has(x) && x !== norm(v));
+      for (const [k, els] of had) if (!nowLists.has(k) && els.length >= 3 && !newWords.length) {
+        add(`emptied|${k}|${t.id}`, { kind: 'emptied', el: f, title: `the list of ${els.length} it filters disappears, and nothing says why.`, why: `With nothing matching, the page shows a blank space. Say that nothing matches “${norm(v).slice(0, 24)}…”, and how to get back.` });
+        break;
+      }
+      enter(f, orig); await frames(2); await pause(200);
+    }
+  }
+  typing = false;
+  // a field that grows is the cause; what it pushes off the screen is its consequence, said in the same note
+  const all = [...found.values()], out = [];
+  for (const f of new Set(all.map((n) => n.field))) {
+    const mine = all.filter((n) => n.field === f), grows = mine.filter((n) => n.kind === 'grows');
+    if (!grows.length) { out.push(...mine); continue; }
+    const rest = mine.filter((n) => n.kind !== 'grows'), by = Math.max(...grows.map((g) => g.px));
+    const ways = [...new Set(grows.map((g) => g.typed.as))].join(' or '), sideways = rest.some((n) => n.kind === 'sideways');
+    const pushed = new Set(rest.filter((n) => n.kind !== 'sideways').map((n) => sourceOf(n.el))).size;
+    out.push({ ...grows[0], title: `Typing ${ways} into “${fieldName(f)}”, the field grows up to ${by}px wider${pushed ? ` and pushes ${count(pushed, 'thing', 'things')} off the screen` : ''}${sideways ? '; the page scrolls sideways' : ''}.`, why: 'A field that changes size as you type moves everything after it. Give it a width (or a maximum) and let the text scroll inside it.' });
+    out.push(...rest.filter((n) => !['sideways', 'spill', 'cut', 'overlap'].includes(n.kind)));
+  }
+  notes = out.map((n) => ({ ...n, source: sourceOf(n.el) })); index = 0;
+  typedIn = fields.length;
+  if (notes.length) showTyped(0); else paint();
+}
+// put the note's value back in its field, so the break is on screen; the field's own value comes back after
+function showTyped(i) {
+  unshow(); index = i; const n = notes[i];
+  if (n?.field && n.typed) { shown = { f: n.field, orig: n.field.value }; enter(n.field, n.typed.value(n.field)); }
+  requestAnimationFrame(() => { if (n) scrollToNote(n.el); later(); });
+  paint();
+}
+// up and down only: a field that grew past the screen must not drag the page sideways into empty space
+function scrollToNote(el) { const r = el.getBoundingClientRect(); if (r.top < 0 || r.bottom > innerHeight - 160) scrollTo({ top: scrollY + r.top - innerHeight / 3, left: scrollX }); }
+function unshow() { if (shown) { enter(shown.f, shown.orig); shown = null; }
+}
+
 // ── the toys ────────────────────────────────────────────────
 
 let toy = null;
@@ -642,12 +750,14 @@ export function setToy(next) {
   if (toy === 'bigger') unbig();
   if (toy === 'extreme') { unswap(); probing = false; }
   if (toy === 'action') disarm();
+  if (toy === 'typing') { unshow(); typing = false; }
   toy = next; notes = []; index = 0;
   if (toy === 'longer') { on = true; grow(); }
   if (toy === 'narrower') narrower();
   if (toy === 'bigger') bigger();
   if (toy === 'extreme') extreme();
   if (toy === 'action') arm();
+  if (toy === 'typing') typeAll();
   paint();
 }
 export const setLonger = (yes) => setToy(yes ? 'longer' : null);
@@ -657,7 +767,7 @@ export const setLonger = (yes) => setToy(yes ? 'longer' : null);
 function rectOf(n) {
   if (!n.live) return n.rect;
   if (n.kind === 'sideways') { if (!n.cause) return null; const r = n.cause.getBoundingClientRect(); const off = stage ? stage.frame.getBoundingClientRect() : { left: 0, top: 0 }; return { left: r.left + off.left, top: r.top + off.top, width: r.width, height: r.height }; }
-  const r = ['nothing', 'silent', 'stuck', 'still', 'twice', 'spinning'].includes(n.kind) ? n.el.getBoundingClientRect() : n.kind === 'cut' || n.kind === 'collapse' ? n.box.getBoundingClientRect() : n.kind === 'overlap' ? (() => { const a = wordsRect(n.el), b = wordsRect(n.other); return a && b ? union(a, b) : a ?? b; })() : wordsRect(n.el);
+  const r = ['nothing', 'silent', 'stuck', 'still', 'twice', 'spinning', 'grows', 'clipped', 'under', 'emptied'].includes(n.kind) ? n.el.getBoundingClientRect() : n.kind === 'cut' || n.kind === 'collapse' ? n.box.getBoundingClientRect() : n.kind === 'overlap' ? (() => { const a = wordsRect(n.el), b = wordsRect(n.other); return a && b ? union(a, b) : a ?? b; })() : wordsRect(n.el);
   if (!r) return null;
   const off = stage ? stage.frame.getBoundingClientRect() : { left: 0, top: 0 };
   return { left: r.left + off.left, top: r.top + off.top, width: r.width, height: r.height };
@@ -693,6 +803,11 @@ function verdict() {
     if (!notes.length) return `From ${stage.from}px down to ${NARROWEST}px, nothing breaks.`;
     return `From ${stage.from}px down to ${NARROWEST}px, ${count(notes.length, 'thing breaks', 'things break')}. The first at ${notes[0].width}px.`;
   }
+  if (toy === 'typing') {
+    if (typing) return `Typing a long line, a pasted link, pasted lines and nothing into each field… (field ${typedIn})`;
+    if (!typedIn) return 'There is no field on this page to type into.';
+    return `Typed four kinds of value into ${count(typedIn, 'field', 'fields')}: ${notes.length ? count(notes.length, 'thing breaks', 'things break') : 'nothing breaks'}. Each field is back as it was.`;
+  }
   if (toy === 'action') {
     const what = mode === 'fail' ? 'its request will fail with a server error' : `its request will take ${SLOW_MS / 1000} seconds`;
     if (!act || act.phase === 'armed') return `Press the button you want to test: ${what}. Your page stays usable.`;
@@ -725,6 +840,7 @@ const TOYS = [
   ['longer', 'Longer words', LONGER],
   ['narrower', 'Narrower', '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M1.5 8h4M14.5 8h-4"/><path d="M3.5 5.5 6 8l-2.5 2.5M12.5 5.5 10 8l2.5 2.5"/><path d="M8 3v10" opacity=".6"/></svg>'],
   ['extreme', 'Extreme content', '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="1.5" y="5" width="3" height="6" rx="1" opacity=".6"/><rect x="6" y="5" width="8.5" height="6" rx="1"/><path d="M8 8h4.5"/></svg>'],
+  ['typing', 'Typing', '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="1.5" y="4" width="13" height="8" rx="2"/><path d="M4.5 8h4"/><path d="M10.5 6v4" opacity=".7"/></svg>'],
   ['action', 'Action fails', '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="1.5" y="4" width="13" height="8" rx="2.5"/><path d="M6.5 6.5l3 3M9.5 6.5l-3 3"/></svg>'],
   ['bigger', 'Bigger text', '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M1.5 12.5l2-5 2 5M2.3 10.8h2.4"/><path d="M7.5 13.5l3-10 3 10M8.7 10h3.6"/></svg>'],
 ];
@@ -748,7 +864,7 @@ function paint() {
     const again = keep ? notes.findIndex((n) => n.el === keep) : -1;
     index = again >= 0 ? again : Math.min(index, Math.max(0, notes.length - 1));
   }
-  const busy = growing || sorting || stage?.sweeping || probing || act?.phase === 'watching';
+  const busy = growing || sorting || stage?.sweeping || probing || typing || act?.phase === 'watching';
   const n = toy && !busy ? notes[index] : null;
   const step = notes.length > 1 && n ? `<span class="step"><button class="prev" aria-label="Previous break" ${index ? '' : 'disabled'}>‹</button>${index + 1} of ${notes.length}<button class="next" aria-label="Next break" ${index < notes.length - 1 ? '' : 'disabled'}>›</button></span>` : '<span></span>';
   const note = n ? `<div class="note"><div class="say"><p class="title">${esc(n.title)}</p><p class="why">${esc(n.why)}${n.source ? ` <span class="src">${esc(n.source)}</span>` : ''}</p></div>${step}</div>` : '';
@@ -765,6 +881,7 @@ function go(dir) {
   if (to === index) return;
   if (toy === 'narrower') { showAt(to); return; }
   if (toy === 'extreme') { showVariant(to); return; }
+  if (toy === 'typing') { showTyped(to); return; }
   index = to;
   const r = rectOf(notes[index]);
   if (r && (r.top < 0 || r.top + r.height > innerHeight - 160)) notes[index].el.scrollIntoView({ block: 'center', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });

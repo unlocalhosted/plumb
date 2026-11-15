@@ -1288,10 +1288,34 @@
 - **Media hooks:** docs/qa/break-it-action-fails.jpg ("Creating…" stuck with its spinner, ringed, and the first of
   the three notes).
 
+## Break it: typing into fields (2026-11-15)
+- **The itch:** the owner chose "typing into fields" as a first-version toy: what a field and its neighbours do with
+  what people really type.
+- **What we chose and why:** every field on the page gets, in turn, a long line, a pasted link, several pasted lines
+  (in a textarea) and nothing. Each is entered the way typing is, so the app reacts (a search filters), then taken
+  back. Plumber then looks for new breaks, a field that grows and moves its row, lines a box hides with no way to
+  scroll, words running under an icon drawn inside the field, and a list a search empties with nothing saying why.
+  A field that grows is the cause, so what it pushes off the screen is said in the same note, not as notes of its
+  own. Stepping to a note puts that value back in the field so the break is on screen; turning the toy off puts the
+  field's own value back.
+- **Dead ends:** the first run on the vocabulary page said typing pushed the page 309px sideways. It was the browser
+  pane being shown and hidden mid-run: the window changed size, not the content. A step where the window resizes is
+  now thrown away, here and in Extreme content. One growing field first came out as ten notes. Jumping to its note
+  scrolled the page sideways along the 1,200px field into empty space; jumps are now up and down only.
+- **The proof:** crafting-ui's templates page: "Your topic" sits inline in "Make a reel about ___" and grows with what
+  is typed; a long line or a pasted link makes it up to 1232px wider, pushes the things after it off the screen and
+  makes the page scroll sideways (TemplatesPage.tsx:209). The vocabulary page and the icons page handle all four
+  values (the vocabulary search says "No motion match …" when nothing matches), so nothing is said about them.
+  Turning the toy off left the field at "why we get goosebumps" and the page 1024px wide, as before.
+- **Not yet:** typing key by key (some fields only react to keystrokes), number and date fields, editable regions,
+  pasting rich text; no tests.
+- **Media hooks:** docs/qa/break-it-typing.jpg (the long line filling the reel card and running off the screen).
+
 ## Open gaps
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
 
 ## Shipped · 2026-W46
+- Break it's Typing toy puts a long line, a pasted link, pasted lines and nothing into every field on your page, the way typing does, and says what the field and its neighbours do; on crafting-ui it found a topic field that grows 1232px and drags the page sideways ([entry](#break-it-typing-into-fields-2026-11-15)). On its own branch.
 - Break it's Action fails toy: press the button you care about and plumber makes its request fail (or take four seconds), then says what a person would meet: no message, a button stuck on "Creating…", a spinner that never stops, a second press that sends it twice ([entry](#break-it-the-main-action-fails-or-is-slow-2026-11-15)). On its own branch.
 - Break it's Extreme content toy puts no words, one letter, 60 letters, an unbroken link-like word and a nine-digit number into every place on your page that can change, and says which content broke what ([entry](#break-it-extreme-content-2026-11-15)). On its own branch.
 - Break it has two more toys: Narrower squeezes a copy of your page down to 320px and says the width where each thing first breaks; Bigger text turns the reader's text size up to 200% and names the classes that keep text from growing, with the rem class to use instead ([entry](#break-it-narrower-and-bigger-text-2026-11-15)). On its own branch.
