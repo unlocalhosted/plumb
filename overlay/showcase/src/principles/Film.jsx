@@ -240,13 +240,13 @@ function burst(canvas, ox, oy) {
   requestAnimationFrame(tick);
 }
 
-export function Film({ Example, names, onSaid, chrome = true, start = true, onDone, ui = 1, openIn = false, onLine }) {
+export function Film({ Example, names, onSaid, chrome = true, start = true, onDone, ui = 1, openIn = false, onLine, onBurst }) {
   const spec = Example.film;
   // a film with a script (spec.script, the owner-approved words, one line a moment) tells its story in those words, set
   // under the stage by FilmPage; plumber's raw readings (pills, the class chips) then stay off screen and only the
   // drawings speak: the outlines, the hatch, the ghost, the pixels
   const words = !!(onLine && spec.script);
-  const say = (at) => { const l = spec.script?.find((x) => x.at === at); if (l && onLine) onLine(l.text); };
+  const say = (at) => { const l = spec.script?.find((x) => x.at === at); if (l && onLine) onLine(l.text, at); };
   const has = (at) => !!spec.script?.some((x) => x.at === at);
   const [side, setSide] = useState('broken');
   const [playing, setPlaying] = useState(false);
@@ -363,6 +363,7 @@ export function Film({ Example, names, onSaid, chrome = true, start = true, onDo
           beat('the burst'); say('end'); await sleep(TIMING.check, live);
           const e = local(box.current)(lead());
           if (fx.current) burst(fx.current, e.x + e.w / 2, e.y + e.h / 2);
+          onBurst?.();
           if (has('end')) await sleep(1800, live);
         } else if (spec.code) {
           beat('the check and the burst'); setChange(3); await sleep(TIMING.check, live);

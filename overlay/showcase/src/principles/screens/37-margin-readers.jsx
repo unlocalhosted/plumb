@@ -174,12 +174,12 @@ MarginReaders.film = {
   say: 'Look at the tooltip\'s words beside the figures.',
   // the words on screen, approved by the owner 2026-11-15; `at` is the film's moment for each line
   script: [
-    { at: 'rest', text: 'These words are blurry. The numbers above are sharp.' },
+    { at: 'rest', text: 'These words are *blurry*. The numbers above are sharp.' },
     { at: 'measure', text: 'Tooltips and dialogs are often centred by moving up half their height.' },
     { at: 'dive', text: 'Here that\'s 23.19 pixels. A screen only draws whole pixels.' },
-    { at: 'smear', text: 'So each letter smears across two rows.' },
+    { at: 'smear', text: 'So each letter *smears* across two rows.' },
     { at: 'fix', text: 'Centre it with layout instead.' },
-    { at: 'payoff', text: 'Now every letter is sharp.' },
+    { at: 'payoff', text: 'Now every letter is *sharp*.' },
   ],
 };
 MarginReaders.lesson = {

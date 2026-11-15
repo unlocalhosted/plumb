@@ -204,10 +204,10 @@ LaunchBoard.film = {
   // the words on screen, approved by the owner 2026-11-15; `at` is the film's moment for each line
   script: [
     { at: 'rest', text: 'These two shapes are the same size.' },
-    { at: 'measure', text: 'But people see the circle as smaller.' },
+    { at: 'measure', text: 'But people see the circle as *smaller*.' },
     { at: 'dive', text: 'Its corners are empty, so there\'s less of it.' },
     { at: 'fix', text: 'Draw it a little bigger, just past the lines.' },
-    { at: 'payoff', text: 'Now they look equal.' },
+    { at: 'payoff', text: 'Now they look *equal*.' },
     { at: 'end', text: 'It\'s why an O is drawn taller than an H.' },
   ],
 };
