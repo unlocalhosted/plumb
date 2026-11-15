@@ -1324,6 +1324,16 @@ field is empty). The table of five writes, before and after. The Next table: eig
 - **Proof:** keyframes in docs/films/03-draft and 37-draft (not kept in git); docs/media/film-03-optical-overshoot.mp4 and film-37-never-land-on-half-pixels.mp4, re-rendered at 1920x1080, 60 fps.
 - **Media hooks:** the old frame with "fills 78.5% of its box" beside the new one with "But people see the circle as smaller."
 
+### Film 55, the first one made from the film skill (2026-11-15)
+
+- **The itch:** the owner kept correcting the same things on each film (too many words, plumber's numbers as the story, a block of CSS in the change card, the demo too small). They asked for those corrections to become a skill, so the next film starts from them: "apply this skill and write a skill to make the film for next lessons" (learn-taste, from aiforui.dev).
+- **The system behind it:** the corrections lived in one long conversation and one memory file. A new film would have started from the older craft-rule notes and repeated the mistakes.
+- **What we chose:** a craft-film skill: the order of work (script first and shown to the owner, one property in the change card, draft, two reviews, render) and twelve rules, each with the owner's words and date. Three of the rules became a check that the draft and the render run first: sentence and script length, no plumber readings in the words, and one property on each side of the change card. The check's word limits come from the two approved scripts (12 words a sentence, 55 a film), not from the first guess of ten.
+- **The film:** № 55, gradients mixed in OKLCH, on a weather app's ten-day forecast. In sRGB a blue-to-orange bar goes grey in the middle; up close, nine swatches of the bar's own colour show the grey ones. The fix is one phrase, `in oklch`. The owner approved the six lines before any code.
+- **Found on the way:** a gradient is too long to sit beside its fix in the change card, so the card now opens the fix under the fault when the two together pass 40 characters. Ten bars at the usual payoff pace made the film 42 s, so a film can now walk its places faster (`payoff` in the film spec).
+- **Proof:** docs/films/55-review.md; docs/media/film-55-gradients-in-oklch.mp4.
+- **Media hooks:** the dive frame, the sRGB swatches with three grey ones beside the OKLCH swatches running through green.
+
 ## Open gaps
 - The site's top bar doesn't fit a phone (390px): it widens the page to about 500px. Needs a compact bar.
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
@@ -2683,6 +2693,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 ## Shipped · 2026-W46
 
 - The craft films № 3 and № 37 now tell their story in plain words, one line at a time, instead of plumber's raw numbers, with a clear type hierarchy on the stage (The films say what a person would say, in the journey).
+- A third craft film, № 55 (gradients go grey in the middle; mix them in OKLCH), made from the new film skill, whose check stops a film with too many words, plumber's numbers in its words, or more than one property in its change card (Film 55, the first one made from the film skill, in the journey).
 
 - Films are reviewed for story and camera on a cheap draft before they are rendered, and rendered frame by frame at 60 fps: № 3 and № 37 re-made after their first review (The films, reviewed before they are rendered, in the journey).
 

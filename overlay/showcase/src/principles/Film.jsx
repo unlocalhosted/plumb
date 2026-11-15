@@ -177,22 +177,28 @@ function Change({ code, fixed, done, inline = false }) {
   const s = useContext(UI);
   const chip = (tone) => ({ padding: `${2 * s}px ${7 * s}px`, borderRadius: 5 * s, font: 'var(--pl-card-code)', fontSize: 13 * s, color: `var(--pl-${tone})`, background: `color-mix(in oklab, var(--pl-${tone}) ${tone === 'off' ? 9 : 11}%, transparent)` });
   const cap = { font: 'var(--pl-card-meta)', fontSize: 11.5 * s, color: 'var(--pl-ink-2)', textAlign: 'center' };
+  // a long fault and fix (a gradient) don't fit side by side in the film's column: the fix opens under the fault instead
+  const stack = inline && code.fault.cls.length + code.fix.cls.length > 40;
   return (
     <span style={{ position: 'absolute', ...(inline ? { left: 0, top: 0 } : { left: '50%', top: `calc(100% + ${12 * s}px)`, transform: 'translateX(-50%)' }), display: 'flex', alignItems: 'flex-start', gap: 10 * s, padding: `${10 * s}px ${14 * s}px ${9 * s}px`,
       borderRadius: 12 * s, background: 'var(--pl-paper)', color: 'var(--pl-ink)', boxShadow: '0 0 0 1px rgb(0 0 0 / 0.06), 0 8px 24px -8px rgb(0 0 0 / 0.18)', whiteSpace: 'nowrap',
       animation: 'film-pop 300ms var(--pl-spring-pop) both' }}>
+      <span style={{ display: 'flex', flexDirection: stack ? 'column' : 'row', alignItems: 'flex-start', gap: stack ? 0 : 10 * s }}>
       <span style={{ display: 'flex', flexDirection: 'column', gap: 4 * s }}>
         <code style={{ ...chip('off'), textDecorationLine: fixed ? 'line-through' : 'none', textDecorationThickness: 1, transition: 'opacity 300ms ease', opacity: fixed ? 0.75 : 1 }}>{code.fault.cls}</code>
         {code.fault.prop ? <span style={cap}>{code.fault.prop}</span> : null}
       </span>
       {/* the fix's part opens from nothing to its own width on the spring, then shows: the card grows to take it,
           centred on the switch, never jumping and never holding an empty place */}
-      <span style={{ display: 'flex', alignItems: 'flex-start', gap: 10, overflow: 'hidden', interpolateSize: 'allow-keywords', width: fixed ? 'auto' : 0, marginLeft: fixed ? 0 : -10, transition: 'width 460ms var(--pl-spring), margin-left 460ms var(--pl-spring)' }}>
+      <span style={{ display: 'flex', alignItems: 'flex-start', gap: 10, overflow: 'hidden', interpolateSize: 'allow-keywords',
+        ...(stack ? { height: fixed ? 'auto' : 0, marginTop: fixed ? 6 * s : 0, transition: 'height 460ms var(--pl-spring), margin-top 460ms var(--pl-spring)' }
+          : { width: fixed ? 'auto' : 0, marginLeft: fixed ? 0 : -10, transition: 'width 460ms var(--pl-spring), margin-left 460ms var(--pl-spring)' }) }}>
         <span style={{ color: 'var(--pl-ink-3)', font: 'var(--pl-card-code)', paddingTop: 3, opacity: fixed ? 1 : 0, transition: 'opacity 200ms ease 160ms' }}>→</span>
         <span style={{ display: 'flex', flexDirection: 'column', gap: 4, whiteSpace: 'nowrap', opacity: fixed ? 1 : 0, transform: `translateY(${fixed ? 0 : 3}px)`, transition: 'opacity 260ms ease 220ms, transform 420ms var(--pl-spring-pop) 220ms' }}>
           <code style={chip('on')}>{code.fix.cls}</code>
           {code.fix.prop ? <span style={cap}>{code.fix.prop}</span> : null}
         </span>
+      </span>
       </span>
       {/* written, and it holds everywhere: plumber's check, drawn where the fix is; the burst comes from here */}
       <svg data-done viewBox="0 0 20 20" width={20 * s} height={20 * s} aria-hidden="true" style={{ marginTop: 3 * s, flex: 'none', width: done ? 20 * s : 0, marginLeft: done ? 0 : -10, opacity: done ? 1 : 0, transform: `scale(${done ? 1 : 0.6})`, transition: 'width 360ms var(--pl-spring), margin-left 360ms var(--pl-spring), opacity 200ms ease 120ms, transform 360ms var(--pl-spring-pop) 120ms' }}>
@@ -356,7 +362,7 @@ export function Film({ Example, names, onSaid, chrome = true, start = true, onDo
         beat('4 · payoff: every place mint'); say('payoff'); setM({ tone: 'on', boxes: fixedRest }); await sleep(TIMING.turn, live);
         for (let i = 0; i < all().length; i++) {
           setM({ tone: 'on', boxes: fixedRest, lead: i, read: { ...spec.read(example(), all()[i]), box: fixedRest[i] }, cause: i === spec.lead });
-          await sleep(i === spec.lead ? TIMING.payoff * 2 : TIMING.payoff, live);
+          const each = spec.payoff ?? TIMING.payoff; await sleep(i === spec.lead ? each * 2 : each, live); // a film with many places walks them faster
         }
         setM({ tone: 'on', boxes: fixedRest });
         if (spec.code) {
@@ -478,7 +484,7 @@ export function Film({ Example, names, onSaid, chrome = true, start = true, onDo
                   </span>
                 ))}
                 {/* a value only where the pointer is: the size, counting, under the place */}
-                {r ? <Pill key={`s${m.lead}${tone}`} x={r.box.x + r.box.w / 2} y={r.box.y + r.box.h + (PILL.gap * ui) / k} k={k} tone={toneOf(m.lead) === 'sky' ? 'on' : toneOf(m.lead)} icon={r.size.icon} icons={icons}>{r.size.pre}<Count from={r.size.from} to={r.size.to} /></Pill> : null}
+                {r ? <Pill key={`s${m.lead}${tone}`} x={r.box.x + r.box.w / 2} y={r.box.y + r.box.h + (PILL.gap * ui) / k} k={k} tone={toneOf(m.lead) === 'sky' ? 'on' : toneOf(m.lead)} icon={r.size.icon} icons={icons}>{r.size.pre}<Count from={r.size.from} to={r.size.to} />{r.size.post}</Pill> : null}
                 {/* the cause, as plumber names it: its own pills, above the place */}
                 {/* side by side in one row, so they never climb onto the words above */}
                 {r && m.cause && r.tags?.length ? (

@@ -10,7 +10,8 @@ export const LIMITS = { sentence: 12, sentences: 2, words: 55 };
 const words = (s) => s.replace(/\*/g, '').split(/\s+/).filter(Boolean);
 // what plumber reads, not what a person says: a share, an arrow, a pixel unit on a number, a class name with a digit
 const READING = [[/%/, 'a percentage'], [/[↕↔→←↑↓]/, 'an arrow'], [/\d\s*px\b/i, 'a px value'], [/\b[a-z]+(?:-[a-z]+)*-[\d[]\S*/, 'a class name']];
-const ONE_PROPERTY = /^[a-z-]+\s*:\s*[^;:{}]+;?$/;
+// one declaration ("margin-block: auto"), or one value whose function carries the idea ("linear-gradient(in oklch, …)")
+const ONE_PROPERTY = /^(?:[a-z-]+\s*:\s*[^;:{}]+;?|[a-z-]+\([^;:{}]*\))$/;
 
 export function checkFilm(film) {
   if (!film?.script) return [];   // a film without words has nothing to check
