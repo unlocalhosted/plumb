@@ -1750,9 +1750,23 @@ field is empty). The table of five writes, before and after. The Next table: eig
   On algorecall the fix now offers "Use text-sm-minus". Not taken there (algorecall has other uncommitted work); the
   mint button itself still can't be located, so a take would write the other places and say that one didn't land.
 
+### 33. Finding a class kept in a lookup table (2026-11-15)
+- **The itch:** the owner said yes to teaching plumber to write a class it couldn't find: algorecall's mint button
+  takes its text size from a table at the top of its file (`SIZE.sm.text = 'text-sm'`), read as `SIZE[size].text` and
+  passed to an inner `<Face text={…}>`.
+- **The system behind it:** three gaps in a row. The class finder stopped at any key read at run time
+  (`SIZE[size]`). It followed a component's prop only through the usage chain the page reports, and algorecall's
+  page names those frames by bare file name, which the server rejects. And when that chain failed, the locator threw
+  away the element's own confirmed place too.
+- **What we chose:** a key read at run time reads every entry of the table, each entry its own case; a component the
+  file never exports is followed to its usages in that file, each its own case; a chain that can't be read leaves the
+  confirmed place standing. Cases are changed in place and never added into, so a new class never lands in a shared
+  table.
+- **The proof:** on algorecall, the class finder places the mint button's `text-sm` at line 129, column 36. One write
+  through plumber's own path changed exactly `text: 'text-sm'` to `text: 'text-sm-minus'` in the `sm` entry, and
+  nothing else. The file was restored afterwards.
+
 ## Open gaps
-- A class kept in a lookup table (`sizes.sm.text = 'text-sm'`, algorecall's mint button) can't be located for a
-  write, so a fix skips that place and says so.
 - The site's top bar doesn't fit a phone (390px): it widens the page to about 500px. Needs a compact bar.
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
 

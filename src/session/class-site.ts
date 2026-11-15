@@ -144,6 +144,22 @@ function resolve(input: ClassSiteInput, usageProps = false): Resolved {
       for (const spread of usage.spreads) follow({ ...spread, path: [prop, ...rest], trail: ref.trail }, next);
       return; // the usage does not pass it: nothing of it is written there
     }
+    // the chain did not reach a usage (the page gave no owner stack): a component the file never exports is used only
+    // in that file, so its usages there are the ones. Each is a case of its own (it may not be the one that drew this
+    // element): a class there is changed, never added into
+    if (!holder.src.text.match(new RegExp(`export\\s+(?:default\\s+)?(?:function|const|class)\\s+(?:${component.names.join('|')})\\b|export\\s*\\{[^}]*\\b(?:${component.names.join('|')})\\b`))) {
+      const usages = localUsages(holder.src.program, component.names);
+      for (const start of usages) {
+        const usage = elementSources(holder.src.path, holder.src.text, start), where = position(holder.src, start);
+        const attribute = usage.attributes.get(prop);
+        if (!attribute) continue;
+        const next: Holder = { src: holder.src, kind: 'usage', prop, element: { file: holder.src.file, line: where.line, column: where.column, tag: usage.tag }, level: holder.level + 1, next: holder.next };
+        const outer: Trail = [...ref.trail, { condition: `drawn by the <${usage.tag}> at line ${where.line}`, which: 'then' }];
+        const value = rest.length ? classSourcesAt(attribute.value, rest, holder.src.text) : attribute;
+        take({ strings: value.strings.map(s => under(outer, s)), refs: value.refs.map(r => ({ ...r, trail: [...outer, ...r.trail] })) }, next);
+      }
+      if (usages.length) return;
+    }
     unfollowed.push(prop);
   };
 
@@ -257,6 +273,16 @@ const children = (node: Node): Node[] => {
   }
   return out;
 };
+/** Where a component is used in a file: the start of each `<Name …>` whose tag is one of its names. */
+function localUsages(program: Node, names: string[]): number[] {
+  const out: number[] = [];
+  const walk = (node: Node): void => {
+    if (node.type === 'JSXOpeningElement' && node.name.type === 'JSXIdentifier' && names.includes(node.name.name)) out.push(node.start);
+    for (const child of children(node)) walk(child);
+  };
+  walk(program);
+  return out;
+}
 /** The nodes that contain an offset, outermost first. */
 function ancestorsAt(program: Node, offset: number): Node[] {
   const path: Node[] = [];

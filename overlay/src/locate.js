@@ -323,7 +323,9 @@ export async function locate(element, options = {}) {
     return usageOf(element, fiber, options);
   }
   const owner = await locateOwner(element, { ...options, explain: true });
-  if (owner?.reason === 'resolve-refusal' && owner.detail?.file) return options.explain ? owner : null;
+  // an owner stack the server can't place (a frame named by a bare file name) is no answer; but with a confirmed stamp
+  // the stamp still is, with no chain above it (the class finder then reads usages in the component's own file)
+  if (owner?.reason === 'resolve-refusal' && owner.detail?.file && !confirmed) return options.explain ? owner : null;
   if (!confirmed || options.signal?.aborted) return owner?.location === null && !options.explain ? null : owner;
   const chain = [...(owner?.chain ?? [])];
   const index = chain.findIndex(link => link.file === confirmed.file && link.line === confirmed.line && link.column === confirmed.column);

@@ -170,13 +170,18 @@ function quasiTexts(expression: Extract<Node, { type: 'TemplateLiteral' }>, sour
  * property path read from it (`['className']`, `['root']`; empty for the name itself) and the conditions it is under. */
 export interface ClassRef { name: string; path: string[]; start: number; trail: Trail }
 const keyName = (key: Node): string | undefined => key.type === 'Identifier' ? key.name : key.type === 'Literal' && typeof key.value === 'string' ? key.value : undefined;
-/** `a.b.c` as the name it starts from and the path read from it; undefined for anything computed or not rooted in a name. */
+/** A path step read by a key known only at run time (`SIZE[size]`): every entry of the table it reads. */
+export const ANY_KEY = '*';
+/** `a.b.c` as the name it starts from and the path read from it; a key read at run time (`SIZE[size].text`) is
+ * ANY_KEY, a key written as a string (`SIZE['sm']`) is that key; undefined for anything not rooted in a name. */
 export function memberPath(node: Node): { name: string; path: string[] } | undefined {
   const path: string[] = [];
   let at = unwrap(node);
   while (at.type === 'MemberExpression') {
-    if (at.computed || at.property.type !== 'Identifier') return undefined;
-    path.unshift(at.property.name); at = unwrap(at.object);
+    const property = at.property as Node;
+    if (!at.computed) { if (property.type !== 'Identifier') return undefined; path.unshift(property.name); }
+    else path.unshift(property.type === 'Literal' && typeof property.value === 'string' ? property.value : ANY_KEY);
+    at = unwrap(at.object);
   }
   return at.type === 'Identifier' ? { name: at.name, path } : undefined;
 }
@@ -236,6 +241,19 @@ export function classSources(node: Node, source: string, trail: Trail = []): { s
 export function classSourcesAt(node: Node, path: string[], source: string, trail: Trail = []): { strings: Text[]; refs: ClassRef[] } {
   let at = unwrap(node);
   for (let i = 0; i < path.length; i++) {
+    if (at.type === 'ObjectExpression' && path[i] === ANY_KEY) {
+      // a table read by a key known at run time (`SIZE[size].text`): each entry's value, as the case it is written for,
+      // so a class there is changed in its own entry and nothing is ever added into the table
+      const out = { strings: [] as Text[], refs: [] as ClassRef[] };
+      for (const p of at.properties) {
+        if (p.type !== 'Property' || p.computed) continue;
+        const key = keyName(p.key);
+        if (key === undefined) continue;
+        const each = classSourcesAt(p.value, path.slice(i + 1), source, [...trail, { condition: `the key is ${key}`, which: 'then' }]);
+        out.strings.push(...each.strings); out.refs.push(...each.refs);
+      }
+      return out;
+    }
     if (at.type === 'ObjectExpression') {
       const property = at.properties.find(p => p.type === 'Property' && !p.computed && keyName(p.key) === path[i]);
       if (!property || property.type !== 'Property') return { strings: [], refs: [] };
