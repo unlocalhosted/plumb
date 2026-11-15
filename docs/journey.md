@@ -1491,6 +1491,15 @@ field is empty). The table of five writes, before and after. The Next table: eig
 - **Full suite, on the test server:** 1,095 passed, 1 failed: the spacing proofs' two-page test, a reload race that fails on main too (main 2 of 3, this branch 1 of 3, alone). Main moved forward to the branch (local, not pushed).
 - **Media hooks:** the counter log for the tree page: the queue at 1,122, then 15, then 0.
 
+## One finding, one line, every run (2026-11-15)
+- **The itch:** on algorecall's problems page one button's finding was named at the line that uses the feedback dock (`App.tsx:190`) in one run and inside the dock (`AdminFeedbackDock.tsx:459`) in the next. Plumber saying two places for one problem on the same code. The owner: "okay lets do".
+- **How we found it:** the lookup's answer recorded for that button, run after run, then every step of its walk. The button is drawn by `motion.button`, a library's component, so its answer is where the dock uses that component; to get there the lookup walks up through the components that made it.
+- **The system behind it:** the walk stepped past any component it could not read, as if it were not in your files. Two ways to be unreadable: (1) its source map failed to load once on the busy page, and the failure was kept for the page's life; (2) React itself had not recorded where it was made: in development React records at most 10,000 creations per burst of rendering and marks the rest `UnknownOwner`. The page draws 14,000; whether the dock fell before or after the cut decided the answer.
+- **What we chose and why:** a failed read is tried once more and not kept. `UnknownOwner` is "React did not record it", a reason of its own, never "not yours". A component in your files that still cannot be read is said as not placed (the overlay counts it among the elements it can't check), never as the place around it. A library's own unreadable component is still stepped past, as before. React's limit is left alone: it keeps big pages fast in development. My first version only refused; that made a one-off hiccup drop the finding for the whole run, so the retry went in.
+- **The proof:** tests: a library button in a Dock with the first read of the Dock failing (old: the App's line, new: the Dock's); 10,200 elements then the Dock (old: `src/entry.jsx`, where the App is mounted; new: not placed, `react-stack-limit`). On algorecall, five runs: `AdminFeedbackDock.tsx:459` three times, not placed twice, never a wrong line (before: 3 of 8 runs named `App.tsx:190`). 162 lookup, engine and Next tests pass on the test server.
+- **Left:** when React did not record a part, its findings are gone from that run (two on algorecall's problems page). An honest gap, not a fix.
+- **Media hooks:** the walk log: `MotionDOMComponent:none: at UnknownOwner`, then `AdminFeedbackDock:ok:App.tsx:190`.
+
 ## Open gaps
 - The site's top bar doesn't fit a phone (390px): it widens the page to about 500px. Needs a compact bar.
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
@@ -2579,6 +2588,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   Nothing finds a new one when it is written.
 
 ## Shipped · 2026-W46
+- A finding names one line, every run: on very big pages a part a library draws was sometimes named at a wider line; now it is named where your code uses the library, or said as not placed with the reason ([entry](#one-finding-one-line-every-run-2026-11-15)).
 - Big pages finish being read: a page with animations, a route still loading, or 14,000 elements is now judged through to the end (algorecall's problems, curriculum and tree never were) ([entry](#big-pages-read-through-2026-11-15)).
 - plumber's checks were run on algorecall's 14 pages: 17 of 19 findings true; a page-wide finding now names the page, not whatever was read first, and a row of capital labels is no longer read as a sentence ([entry](#every-check-on-algorecall-through-the-real-command-2026-11-15)).
 - The X-ray card no longer sits on the fix panel's Undo after a write lands: it moves when the panel comes back ([entry](#two-flaky-tests-one-was-the-machine-one-was-a-real-bug-2026-11-15)).
