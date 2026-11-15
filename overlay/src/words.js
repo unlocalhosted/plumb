@@ -199,6 +199,18 @@ export const CRAFT = {
     line: `${w}×${h}. People miss anything under ${min}×${min}.`,
     reason: 'The tap area can be bigger than what’s drawn.',
   }),
+  'column-edge': ({ d, dir, name }) => ({
+    label: 'Off the line',
+    line: `${name ?? 'This row'} starts ${d}px ${dir} of where the rows around it start.`,
+    reason: 'Rows of one column share one edge. A few pixels off reads as a mistake.',
+  }),
+  'sibling-match': ({ kind, d, dir, name, noun, mine, want, where }) => {
+    const who = `${where ? `In ${where}'s row, ` : ''}${kind === 'icon' ? `the ${name ?? 'this'} icon` : name ?? 'This one'}`;
+    const Who = who[0].toUpperCase() + who.slice(1);
+    return kind === 'icon' ? { label: 'Icon off its label', line: `${Who} sits ${d}px ${dir} than the other icons beside their labels.`, reason: 'Icons in one list sit the same way beside their words.' }
+      : kind === 'height' ? { label: 'One size off', line: `${Who} is ${d}px ${dir} than the other ${noun}.`, reason: 'Buttons side by side share one height.' }
+      : { label: 'Corners don’t match', line: `${Who} has ${mine} corners; the other ${where ? 'ones in its place' : noun} are ${want}.`, reason: 'Pieces of one kind share one shape.' };
+  },
   'media-size': ({ mine, mode }) => ({
     label: 'One size off',
     line: `This one is ${mine}px. The rest of the list is ${mode}px.`,
