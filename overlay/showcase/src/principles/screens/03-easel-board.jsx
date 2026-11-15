@@ -181,7 +181,7 @@ LaunchBoard.film = {
     const K = Math.min(6, (W * 0.84) / (R - L), (H * 0.84) / (B - T)), u = (v) => +(v / K).toFixed(3); // drawn at the dive's zoom
     const hatch = `<defs><pattern id="ov-h" width="${u(5)}" height="${u(5)}" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="${u(1.6)}" height="${u(5)}" fill="#f24a9f"/></pattern></defs>`;
     const holes = rows.map((r) => { const x = r.sq.x - 8, y = r.sq.y - 7, w = r.ci.x + r.ci.w / 2 + r.sq.w / 2 + 8 - x, h = r.sq.h + 14; return `M${x} ${y}h${w}v${h}h${-w}Z`; }).join('');
-    const shade = `<path fill-rule="evenodd" d="M-2000 -2000h${W + 4000}v${H + 4000}h${-(W + 4000)}Z ${holes}" fill="#f7f6f3" fill-opacity=".82"/>`;
+    const shade = `<path fill-rule="evenodd" d="M-2000 -2000h${W + 4000}v${H + 4000}h${-(W + 4000)}Z ${holes}" fill="#ffffff" fill-opacity=".86"/>`;
     const pair = ({ sq, ci, fill }, i) => {
       const cx = ci.x + ci.w / 2, cy = ci.y + ci.h / 2, r = ci.w / 2, r0 = sq.w / 2, top = sq.y, bot = sq.y + sq.h, left = sq.x - 6, right = cx + sq.w / 2 + 6;
       const box = { x: cx - sq.w / 2, y: sq.y, w: sq.w, h: sq.h }, ring = (rr) => `M${cx - rr} ${cy}a${rr} ${rr} 0 1 0 ${2 * rr} 0a${rr} ${rr} 0 1 0 ${-2 * rr} 0`;

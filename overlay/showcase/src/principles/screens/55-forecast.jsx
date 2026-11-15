@@ -224,7 +224,7 @@ Forecast.film = {
     const N = 7, gap = bar.w * 0.04, sw = (bar.w - gap * (N - 1)) / N, top = bar.y + bar.h + gap * 2.2;
     const L = bar.x - 10, R = bar.x + bar.w + 10, T = bar.y - 16, B = top + sw + sw * 0.75;
     const K = Math.min(9, (W * 0.84) / (R - L), (H * 0.6) / (B - T)), u = (v) => +(v / K).toFixed(3);
-    const shade = `<path fill-rule="evenodd" d="M-2000 -2000h${W + 4000}v${H + 4000}h${-(W + 4000)}Z M${L} ${T}h${R - L}v${B - T}h${L - R}Z" fill="#f7f6f3" fill-opacity=".9"/>`;
+    const shade = `<path fill-rule="evenodd" d="M-2000 -2000h${W + 4000}v${H + 4000}h${-(W + 4000)}Z M${L} ${T}h${R - L}v${B - T}h${L - R}Z" fill="#ffffff" fill-opacity=".88"/>`;
     const swatches = Array.from({ length: N }, (_, i) => {
       const c = mixAt(i / (N - 1), oklch), x = bar.x + i * (sw + gap), score = Math.round(Math.min(1, chromaOf(c.lab) / ENDS) * 100), dull = score < 50, d = u(3.5);
       return `<rect x="${x}" y="${top}" width="${sw}" height="${sw}" rx="${sw * 0.28}" fill="${hexOf(c.rgb)}" style="transition:fill 600ms ease ${i * 60}ms"/>`

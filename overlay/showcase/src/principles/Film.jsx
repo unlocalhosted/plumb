@@ -142,6 +142,8 @@ export function local(root) {
   const o = root.getBoundingClientRect(), k = o.width / root.offsetWidth || 1;
   return (el) => { const r = el.getBoundingClientRect(); return { x: (r.left - o.left) / k, y: (r.top - o.top) / k, w: r.width / k, h: r.height / k }; };
 }
+// the example lifted off the film's canvas: a crisp edge and a soft, slightly lilac light under it, not a grey smudge
+const FILM_SHADOW = '0 0 0 1px rgb(18 35 61 / 0.07), 0 2px 4px rgb(18 35 61 / 0.05), 0 24px 48px -16px rgb(76 52 170 / 0.22)';
 // in a film, "wrong" is plumber's pink, solid (owner, 2026-11-15, picked over the coral as brighter: the coral read muddy)
 const hues = { sky: ['var(--pl-sky)', 'var(--pl-sky-soft)', 'var(--pl-sky-ink)'], off: ['var(--pl-pink)', 'var(--pl-pink-soft)', 'var(--pl-pink-ink)'], on: ['var(--pl-mint)', 'var(--pl-mint-soft)', 'var(--pl-mint-ink)'] };
 
@@ -458,7 +460,7 @@ export function Film({ Example, names, onSaid, chrome = true, start = true, onDo
   const tagTone = tone === 'on' ? 'on' : 'off';
   return (
     <UI.Provider value={ui}>
-    <div ref={box} className="pl-light relative flex flex-col items-center gap-10" style={{ '--pl-off': 'var(--pl-pink)', '--pl-off-bg': 'var(--pl-pink-soft)' }}>
+    <div ref={box} className="pl-light relative flex flex-col items-center gap-10" style={{ '--pl-off': 'var(--pl-pink)', '--pl-off-bg': 'var(--pl-pink-soft)', '--shadow-card': FILM_SHADOW }}>
       <style>{'@keyframes film-pop { from { opacity: 0; scale: 0.92 } to { opacity: 1; scale: 1 } } @keyframes film-ring { from { opacity: 0; scale: 1.25 } to { opacity: 1; scale: 1 } } @keyframes film-tag { from { opacity: 0; scale: 0.6; translate: 0 6px } to { opacity: 1; scale: 1; translate: 0 0 } }'}</style>
       <div aria-hidden="true" dangerouslySetInnerHTML={{ __html: TOY_DEFS }} />
       <div className="relative" style={frame ? { overflow: 'clip', borderRadius: frame.radius, boxShadow: frame.shadow, isolation: 'isolate' } : undefined}>

@@ -30,6 +30,9 @@ const TIMING = {
 };
 const CLOSING = 'React Plumber is a smart design engineer in your app, looking for 100+ design issues.';   // the owner's words, 2026-11-15
 const MOVE = 'cubic-bezier(0.7, 0, 0.3, 1)';
+// the stage's canvas: a light wash of plumber's lilac and sky over white, so the white card lifts off it instead of
+// white sitting on white (owner, 2026-11-15: "make the canvas and example little bright and not dull")
+const CANVAS = 'radial-gradient(70% 80% at 12% 8%, #efeaff 0%, transparent 70%), radial-gradient(60% 75% at 92% 95%, #e6f4ff 0%, transparent 70%), #fbfaff';
 const FIT = 0.95; // a film without a script: card and switch stacked                                  // a scripted film: the card and switch a step smaller, so the story's line fits under them
 const MARKS = 1.4;                                 // a scripted film: plumber's marks (pills, the change card) a step under the story's 30px line, never louder
 const FILM_UI = 2;                                 // plumber's marks at twice their showcase size: a film is watched smaller than it is made      // the camera's curve: slow start, slow finish
@@ -153,7 +156,7 @@ export function FilmPage({ n }) {
     <div className="pl-light" style={{ position: 'fixed', inset: 0, display: 'grid', placeItems: 'center', overflow: 'hidden', background: 'var(--pl-desk)' }}>
       {/* plumber's own overlay (its toasts, its Alt pill) runs on this dev page; it is not part of the film */}
       <style>{'plumb-overlay { display: none !important; } @keyframes mk-guide { from { opacity: 0; stroke-dashoffset: 40 } to { opacity: 1; stroke-dashoffset: 0 } } @keyframes mk-pill { from { opacity: 0; transform: scale(.6) } to { opacity: 1; transform: scale(1) } } @keyframes film-word { from { opacity: 0; transform: translateY(6px); filter: blur(5px) } to { opacity: 1; transform: none; filter: none } } @keyframes film-ink { from { background-size: 0% 3px } to { background-size: 100% 3px } } @keyframes mk-nod { 0% { transform: none } 22% { transform: scale(.86) rotate(-6deg); animation-timing-function: cubic-bezier(.3, 1.6, .5, 1) } 100% { transform: none } }'}</style>
-      <div style={{ position: 'relative', width: STAGE.w, height: STAGE.h, flex: 'none', transform: `scale(${k})`, background: 'var(--pl-desk)', color: 'var(--pl-ink)', visibility: to ? 'visible' : 'hidden' }}>
+      <div style={{ position: 'relative', width: STAGE.w, height: STAGE.h, flex: 'none', transform: `scale(${k})`, background: CANVAS, color: 'var(--pl-ink)', visibility: to ? 'visible' : 'hidden' }}>
         {/* the signature: which piece of craft this is; it opens the film large in the middle, then takes its corner */}
         <div ref={sig} style={{ position: 'absolute', left: STAGE.edge, top: STAGE.edge - 8, display: 'flex', flexDirection: 'column', gap: 8, maxWidth: 340,
           transform: centred && to ? to.name : 'none', opacity: shown && !closing ? 1 : 0,
