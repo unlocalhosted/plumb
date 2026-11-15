@@ -192,7 +192,9 @@ async function readFrames(fiber) {
     if (!/^[a-z]+:/i.test(fileName) && !fileName.startsWith('/')) {
       // The module this name came from: the raw frame whose URL ends in the same path (positions need not line up).
       const tail = '/' + fileName.replace(/^(?:\.\.?\/)+/, '');
-      const base = urls.find(url => pathOf(url).endsWith(tail)) ?? raw[i]?.fileName;
+      // with no raw frames (bippy's own reading), the modules the page loaded: only when exactly one ends in the name
+      const loaded = urls.length ? [] : [...new Set(performance.getEntriesByType('resource').map((e) => e.name.split(/[?#]/)[0]).filter((u) => pathOf(u).endsWith(tail) && !runtime(u)))];
+      const base = urls.find(url => pathOf(url).endsWith(tail)) ?? raw[i]?.fileName ?? (loaded.length === 1 ? loaded[0] : undefined);
       try { if (base) fileName = new URL(fileName, base).href; } catch {}
     }
     return { ...frame, fileName, functionName: frame.functionName ?? raw[i]?.functionName };
@@ -332,7 +334,7 @@ export async function locate(element, options = {}) {
   // Two witnesses: the stamp and the owner stack, for the same element. The stamp is the answer; when the owner stack
   // says otherwise, the disagreement is recorded for whoever reads the explanation, never shown as a second answer.
   const witness = owner?.file ? { file: owner.file, line: owner.line, column: owner.column } : null;
-  const witnesses = options.explain ? { witnesses: { stamp: { file: confirmed.file, line: confirmed.line, column: confirmed.column }, ownerStack: witness, agree: !!witness && index >= 0 } } : {};
+  const witnesses = options.explain ? { witnesses: { stamp: { file: confirmed.file, line: confirmed.line, column: confirmed.column }, ownerStack: witness, agree: !!witness && index >= 0, ...(owner?.reason ? { ownerRefused: { reason: owner.reason, detail: owner.detail } } : {}) } } : {};
   const at = { file: confirmed.file, line: confirmed.line, column: confirmed.column, component: index >= 0 ? chain[index].component : null };
   if (index >= 0) chain.splice(index, 1);
   chain.unshift(at);
@@ -597,6 +599,9 @@ async function locateOwner(element, options = {}) {
       // Only an element's own creation frame draws the no-JSX boundary. Later frames in a stack are the code that
       // called it, such as App calling items.map(...): not JSX, and not a reason to refuse.
       if (result?.reason === 'no-jsx' && !(unmapped && i === 0)) continue;
+      // a frame further up that its map can't place (a line past the file's end) ends the chain there: the links
+      // already proven are still proven, and nothing above the bad frame is guessed
+      if (result?.reason === 'map' && i > 0 && chain.length) { ownerStackProven = true; break; }
       if (result?.reason) return refuse(result.reason, result.detail);
       ownerStackProven ||= result?.proven === true;
     }

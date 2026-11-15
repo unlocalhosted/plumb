@@ -73,7 +73,7 @@ const sharedVariable = (name: string, readers: number) => `The classes that alwa
 interface Parsed extends SourceText { program: Node; starts: number[] }
 interface Holder { src: Parsed; kind: 'own' | 'usage'; prop: string; element: ElementRef; level: number; next: number; variable?: string; readers?: number }
 interface Found { string: ClassString; holder: Holder }
-type Binding = { kind: 'variable'; init: Node } | { kind: 'prop'; prop: string | null; /** a rest pattern: the props its siblings took out of it */ except?: string[]; component: Component } | undefined;
+type Binding = { kind: 'variable'; init: Node; /** the keys read from it by destructuring (`const { icon } = DISC[size]`) */ path?: string[] } | { kind: 'prop'; prop: string | null; /** a rest pattern: the props its siblings took out of it */ except?: string[]; component: Component } | undefined;
 /** A component: every name it answers to (the declarator first, then the function's own: `const Panel = memo(function Inner…)`), and the file it is in. */
 interface Component { names: string[]; isDefault: boolean; file?: string }
 interface Resolved {
@@ -119,7 +119,7 @@ function resolve(input: ClassSiteInput, usageProps = false): Resolved {
     seen.add(key);
     const binding = bindingOf(holder.src.program, ref.start, ref.name);
     if (binding?.kind === 'variable') {
-      take(classSourcesAt(binding.init, ref.path, holder.src.text, ref.trail), { ...holder, variable: ref.name, readers: readers(holder.src.program, ref.name, binding.init) });
+      take(classSourcesAt(binding.init, [...binding.path ?? [], ...ref.path], holder.src.text, ref.trail), { ...holder, variable: ref.name, readers: readers(holder.src.program, ref.name, binding.init) });
       return;
     }
     if (binding?.kind !== 'prop') return;
@@ -337,8 +337,11 @@ function bindingOf(program: Node, offset: number, name: string, seen = new Set<s
         // const { className } = props: the prop the whole props object carries; const { className, ...rest } = props: the rest without it
         const bound = binds(d.id, name), source = unwrapped(d.init);
         if (!bound) continue;
-        if (source.type !== 'Identifier') return undefined;
+        // const { icon } = DISC[size]: the key read from the value written there (a table, an object)
+        if (source.type !== 'Identifier') return bound.key !== null && (source.type === 'MemberExpression' || source.type === 'ObjectExpression') ? { kind: 'variable', init: source, path: [bound.key] } : undefined;
         const outer = bindingOf(program, source.start, source.name, seen);
+        // const { icon } = DISC, a variable written in the file
+        if (outer?.kind === 'variable' && bound.key !== null) return { kind: 'variable', init: outer.init, path: [...outer.path ?? [], bound.key] };
         if (outer?.kind !== 'prop' || outer.prop !== null) return undefined;
         if (bound.key === null) return { ...outer, except: [...outer.except ?? [], ...bound.except ?? []] };
         // a key its rest's siblings took out (`{ className: c, ...rest }` then `const { className } = rest`): never in it

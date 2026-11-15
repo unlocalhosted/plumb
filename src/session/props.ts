@@ -172,6 +172,38 @@ export interface ClassRef { name: string; path: string[]; start: number; trail: 
 const keyName = (key: Node): string | undefined => key.type === 'Identifier' ? key.name : key.type === 'Literal' && typeof key.value === 'string' ? key.value : undefined;
 /** A path step read by a key known only at run time (`SIZE[size]`): every entry of the table it reads. */
 export const ANY_KEY = '*';
+/** A path step that calls what it reads (`buttonVariants({ size })`): the classes a recipe made there returns. */
+export const CALLED = '()';
+/**
+ * The classes a recipe returns (`const v = cva(base, { variants })`, `tv({ base, variants })`): its base as written, and
+ * each variant's value as the case it is written for (`size is sm`), so a class there is changed in its own case and
+ * nothing is added into one. Compound variants and defaults are not read. Nothing for a call that is not a recipe.
+ */
+function recipeSources(call: Extract<Node, { type: 'CallExpression' }>, source: string, trail: Trail): { strings: Text[]; refs: ClassRef[] } {
+  const helper = helperOf(call.callee), out = { strings: [] as Text[], refs: [] as ClassRef[] };
+  if (!helper || (helper.name !== 'cva' && helper.name !== 'tv')) return out;
+  const add = (each: { strings: Text[]; refs: ClassRef[] }) => { out.strings.push(...each.strings); out.refs.push(...each.refs); };
+  const args = call.arguments.filter(a => a.type !== 'SpreadElement').map(a => unwrap(a as Node));
+  const config = args.find((a, i) => a.type === 'ObjectExpression' && (helper.name === 'tv' || i >= (helper.configFrom ?? 1) || i === 0));
+  if (helper.name === 'cva' && args[0] && args[0].type !== 'ObjectExpression') add(classSources(args[0], source, trail));
+  if (config?.type !== 'ObjectExpression') return out;
+  const prop = (o: Node, key: string) => o.type === 'ObjectExpression' ? o.properties.find(p => p.type === 'Property' && !p.computed && keyName(p.key) === key) : undefined;
+  const base = prop(config, 'base');
+  if (base?.type === 'Property') add(classSources(base.value, source, trail));
+  const variants = prop(config, 'variants');
+  if (variants?.type !== 'Property' || unwrap(variants.value).type !== 'ObjectExpression') return out;
+  for (const v of (unwrap(variants.value) as Extract<Node, { type: 'ObjectExpression' }>).properties) {
+    if (v.type !== 'Property' || v.computed || unwrap(v.value).type !== 'ObjectExpression') continue;
+    const name = keyName(v.key);
+    for (const k of (unwrap(v.value) as Extract<Node, { type: 'ObjectExpression' }>).properties) {
+      if (k.type !== 'Property' || k.computed) continue;
+      const key = keyName(k.key) ?? (k.key.type === 'Literal' ? String(k.key.value) : undefined);
+      if (name === undefined || key === undefined) continue;
+      add(classSources(k.value, source, [...trail, { condition: `${name} is ${key}`, which: 'then' }]));
+    }
+  }
+  return out;
+}
 /** `a.b.c` as the name it starts from and the path read from it; a key read at run time (`SIZE[size].text`) is
  * ANY_KEY, a key written as a string (`SIZE['sm']`) is that key; undefined for anything not rooted in a name. */
 export function memberPath(node: Node): { name: string; path: string[] } | undefined {
@@ -221,9 +253,13 @@ export function classSources(node: Node, source: string, trail: Trail = []): { s
           else if (property.key.type === 'Literal' && typeof property.key.value === 'string') strings.push(withBranch({ start: property.key.start + 1, end: property.key.end - 1, text: property.key.value }, under));
         }
         return;
+      // 'a ' + 'b': each string as written
+      case 'BinaryExpression': if (expression.operator === '+') { visit(expression.left, trail, keys); visit(expression.right, trail, keys); } return;
       case 'CallExpression': {
         const helper = helperOf(expression.callee);
-        if (!helper) return;
+        // a function of this file called for classes (`buttonVariants({ size })`): followed to what it is, a recipe
+        // (cva) made in a variable, read in classSourcesAt at CALLED
+        if (!helper) { if (expression.callee.type === 'Identifier') refs.push({ name: expression.callee.name, path: [CALLED], start: expression.start, trail }); return; }
         expression.arguments.forEach((argument, index) => {
           if (argument.type === 'SpreadElement' || argumentMode(helper, index, index === 0 && unwrap(argument).type === 'ObjectExpression' && helper.configFrom !== undefined) !== 'classes') return;
           visit(argument, trail, helper.objects === 'keys');
@@ -241,6 +277,7 @@ export function classSources(node: Node, source: string, trail: Trail = []): { s
 export function classSourcesAt(node: Node, path: string[], source: string, trail: Trail = []): { strings: Text[]; refs: ClassRef[] } {
   let at = unwrap(node);
   for (let i = 0; i < path.length; i++) {
+    if (path[i] === CALLED) return i === path.length - 1 && at.type === 'CallExpression' ? recipeSources(at, source, trail) : { strings: [], refs: [] };
     if (at.type === 'ObjectExpression' && path[i] === ANY_KEY) {
       // a table read by a key known at run time (`SIZE[size].text`): each entry's value, as the case it is written for,
       // so a class there is changed in its own entry and nothing is ever added into the table

@@ -1766,7 +1766,28 @@ field is empty). The table of five writes, before and after. The Next table: eig
   through plumber's own path changed exactly `text: 'text-sm'` to `text: 'text-sm-minus'` in the `sm` entry, and
   nothing else. The file was restored afterwards.
 
+### 34. Sweeping for classes plumber can't find, page by page (2026-11-15)
+- **The itch:** the owner, after the lookup-table fix: "next look for more such bugs".
+- **How we found them:** a sweep on algorecall that asks, for every element with classes, where each class is
+  written, the same way the overlay asks before a write. Before: the home page 4 of 152 classes unplaced, the
+  problems page 23 of 734.
+- **The causes, and what changed:**
+  - the usage chain was thrown away whole when one frame high up mapped past its file's end (a map error in the
+    site header): it now ends at that frame and keeps the links already proven;
+  - with no raw stack, the fallback reader named files bare (`HomePage.tsx`), which the server rejects: a bare name
+    is now resolved against the modules the page loaded, when exactly one matches;
+  - `const { d, icon } = DISC[size]` (a table read by destructuring) was not followed: it is now, each entry a case;
+  - `'a ' + 'b'` (a class string split with +) was not read: it is now;
+  - shadcn's `cva(base, { variants })`, called as `inputGroupAddonVariants({ align })`, was "built in code": the
+    call is now followed to the recipe, its base read as written and each variant value as its own case.
+- **The proof:** after, home 152 of 152 placed, problems 734 of 734, Two Sum 295 of 296.
+- **Still open:** a class table imported from another file (`ICON_CAT_CLS` in richtext-word-icons.ts) is not
+  followed; a write there lands in a different file from the element, which the write path doesn't carry yet.
+
 ## Open gaps
+- A class table imported from another file (`ICON_CAT_CLS[cat]`) can't be placed: the write path assumes the string
+  is in the element's file or a usage's. Also: algorecall's site header has a source map that places a frame past
+  the end of the file; plumber now stops there, but the map itself is wrong somewhere upstream.
 - The site's top bar doesn't fit a phone (390px): it widens the page to about 500px. Needs a compact bar.
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
 
