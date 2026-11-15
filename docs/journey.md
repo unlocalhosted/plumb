@@ -1644,7 +1644,18 @@ field is empty). The table of five writes, before and after. The Next table: eig
   as a quiet soft button with Esc. One old rule (the card's reset for its buttons) had been taking the soft buttons'
   side lip; it no longer reaches them. Seen on the settings and issues practice pages and the real workshop page.
   Not seen: the checking and nothing-to-fix lines (they pass too quickly, or no page here is clean).
-- **Media hooks:** docs/qa/fixbar-at-rest.jpg (the bar at rest), docs/qa/fixbar-two-things.jpg (the bar and the row on the element, nothing else), docs/qa/fixbar-in-hand-corners.jpg and docs/qa/fixbar-in-hand-type.jpg (the new bar with a place in hand), docs/qa/roast-invite.png (the invitation beside the dock), docs/qa/roast-proof-avatars.jpg, docs/qa/roast-proof-height.png, docs/qa/roast-proof-line.png (the proof lines for corners, height and alignment), docs/qa/roast-ghost-keys.jpg (the ghost of the fix and the keycaps), docs/qa/roast-settings-cousin.jpg (a cousin note on the settings page), docs/qa/roast-icon-note.jpg (the icon note), docs/qa/roast-first-note.jpg (the roast's first note on the messy page), docs/qa/guides-first-look-issues.jpg (guides on the messy page), docs/qa/guides-held-issues.jpg
+- **The clean-up in the bar** (owner: "now do the clean up in the bar"). The comp's second job: one pass at a time as
+  one line, the pass's toy, its headline and detail, the passes as a strip of toys (in hand in a sky ring, done with a
+  mint dot, skipped and still to come grey), and soft buttons. Every state has its line: reading, ready ("Your site
+  uses 25 text sizes. These 15 styles cover them." · Preview P · Apply ↵ · Skip →), preview ("Previewing 5 changes"
+  with the styles as chips under it · Apply ↵ · Cancel Esc), writing, nothing to change ("The space on this page already
+  follows your scale." · Next pass →), done, error. What a pass changes is shown on the page, not in a list in a card.
+  Kept in the old body: the two setup screens (the census command, renaming colour tokens). On a narrow screen the
+  strip shows only the pass in hand, so the headline keeps its room. Slips: my check for the one-line bar looked for an
+  exact class name, so the clean-up's line kept the old card's width; colour's toy is named fill. Walked on the settings
+  practice page through all nine passes by Preview, Cancel and Skip; Apply not pressed here (it writes the theme file,
+  which has other sessions' changes in it).
+- **Media hooks:** docs/qa/fixbar-cleanup-pass.jpg and docs/qa/fixbar-cleanup-preview.png (the clean-up in the bar), docs/qa/fixbar-at-rest.jpg (the bar at rest), docs/qa/fixbar-two-things.jpg (the bar and the row on the element, nothing else), docs/qa/fixbar-in-hand-corners.jpg and docs/qa/fixbar-in-hand-type.jpg (the new bar with a place in hand), docs/qa/roast-invite.png (the invitation beside the dock), docs/qa/roast-proof-avatars.jpg, docs/qa/roast-proof-height.png, docs/qa/roast-proof-line.png (the proof lines for corners, height and alignment), docs/qa/roast-ghost-keys.jpg (the ghost of the fix and the keycaps), docs/qa/roast-settings-cousin.jpg (a cousin note on the settings page), docs/qa/roast-icon-note.jpg (the icon note), docs/qa/roast-first-note.jpg (the roast's first note on the messy page), docs/qa/guides-first-look-issues.jpg (guides on the messy page), docs/qa/guides-held-issues.jpg
   (the three strays held by their neighbours), docs/qa/guides-plumb-lines-issues.jpg
   (the plumb lines and the one stray); a screen recording of the drop-and-swing arrival would show the toy best; the three source screenshots in
   docs/references-media/; a clean page beside a messy one with the guide counts would make the point in one frame.

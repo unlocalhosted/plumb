@@ -73,7 +73,7 @@ const FIX_CSS_BASE = TEXT_EDITOR_CSS + ELEMENT_CARD_CSS + `
     transition: height ${TIMING.open}ms ${SPRING}; }
   .fx[hidden] { display: none; }
   /* one place in hand: the comp's bar (design site: Fix bar) — a card, not glass; one line, a headline and a detail */
-  .fx[data-one] { width: auto; min-width: 420px; max-width: min(760px, calc(100vw - 32px)); border-radius: 22px; background: var(--pl-paper); -webkit-backdrop-filter: none; backdrop-filter: none;
+  .fx[data-one] { width: auto; min-width: 420px; max-width: min(980px, calc(100vw - 32px)); border-radius: 22px; background: var(--pl-paper); -webkit-backdrop-filter: none; backdrop-filter: none;
     box-shadow: var(--pl-shadow-card); }
   .fx .one { display: flex; align-items: center; gap: 12px; height: 64px; padding: 0 10px 0 12px; white-space: nowrap; animation: pl-pop 260ms var(--pl-spring-pop) both; }
   .fx .one .ic { display: block; width: 36px; height: 36px; flex: none; } .fx .one .ic svg { display: block; width: 100%; height: 100%; overflow: visible; }
@@ -86,6 +86,23 @@ const FIX_CSS_BASE = TEXT_EDITOR_CSS + ELEMENT_CARD_CSS + `
   .fx .one .onav button { display: grid; place-items: center; width: 22px; height: 22px; border-radius: 6px; color: var(--pl-ink-2); }
   .fx .one .onav button:hover { background: var(--pl-paper-2); }
   .fx .one .tb { flex: none; }
+  .fx .one .passes { display: inline-flex; align-items: center; gap: 6px; padding: 0 4px; flex: none; }
+  .fx .one .ps { position: relative; display: block; width: 22px; height: 22px; transition: opacity 240ms var(--pl-ease-out), scale 320ms var(--pl-spring-pop), filter 240ms var(--pl-ease-out); }
+  .fx .one .ps svg { display: block; width: 100%; height: 100%; overflow: visible; }
+  .fx .one .ps.soon { opacity: .35; filter: grayscale(1); scale: .86; }
+  .fx .one .ps.skipped { opacity: .3; filter: grayscale(1); scale: .8; }
+  .fx .one .ps.now { scale: 1.12; }
+  .fx .one .ps.now::before { content: ''; position: absolute; inset: -5px; border-radius: 9px; box-shadow: 0 0 0 2px var(--pl-sky); }
+  .fx .one .ps.done::after { content: ''; position: absolute; right: -4px; bottom: -4px; width: 10px; height: 10px; border-radius: 50%; background: var(--pl-mint); box-shadow: 0 0 0 1.5px var(--pl-paper); }
+  .fx .one .ic.pop { animation: pl-pop 320ms var(--pl-spring-pop) both; }
+  .fx .one .roles { display: inline-flex; flex: none; }
+  .fx .one .dt kbd { font: 600 11px/1 var(--pl-mono); padding: 2px 5px; border-radius: 5px; background: var(--pl-paper-2); color: var(--pl-ink-2); }
+  .fx .cu-one { gap: 10px; }
+  .fx .cu-one .lines { min-width: 180px; }
+  .fx .cu-one .dt .roles .sh-chips, .fx .cu-one .dt .roles { display: inline-flex; gap: 4px; }
+  .fx .cu-one .dt .cmp { margin-left: 6px; white-space: nowrap; }
+  /* a narrow screen keeps the headline: the strip shows only the pass in hand */
+  @media (max-width: 1080px) { .fx .one .passes .ps:not(.now) { display: none; } }
   ${BUTTON_CSS}
   .tb.sm { --h: 30px; }
   .tb.sm .top { padding: 0 11px; font-size: 12.5px; border-radius: 11px; }
@@ -243,7 +260,7 @@ const propWord = (mark) => { const p = (mark?.props ?? []).join(' '); return PRO
 const NOUNS = { button: ['button', 'buttons'], a: ['link', 'links'], li: ['row', 'rows'], input: ['field', 'fields'], textarea: ['field', 'fields'], select: ['field', 'fields'],
   img: ['image', 'images'], svg: ['icon', 'icons'], h1: ['heading', 'headings'], h2: ['heading', 'headings'], h3: ['heading', 'headings'], h4: ['heading', 'headings'], p: ['paragraph', 'paragraphs'], label: ['label', 'labels'] };
 const nounOf = (g, n) => { const tags = new Set(g.members.map((m) => m.el?.localName).filter(Boolean)); const w = tags.size === 1 ? NOUNS[[...tags][0]] : null; return w ? w[n === 1 ? 0 : 1] : n === 1 ? 'place' : 'places'; };
-const TOY_OF = { padding: 'padding', margin: 'margin', gap: 'gap', type: 'type', colour: 'colour', radius: 'corner', time: 'motion' };
+const TOY_OF = { padding: 'padding', margin: 'margin', gap: 'gap', type: 'type', colour: 'fill', radius: 'corner', time: 'motion' };
 const toyFor = (mark, kind) => toyOf(TOY_OF[kind] ?? ({ height: 'height', translate: 'position', 'margin-left': 'alignment', size: 'size' }[(mark?.props ?? [])[0]] ?? 'alignment'));
 const listOf = (xs) => (xs.length < 2 ? xs.join('') : `${xs.slice(0, -1).join(', ')} and ${xs.at(-1)}`);
 
@@ -955,7 +972,7 @@ export class FixPanel {
       + (this.#tools ? `<span class="tools">${Object.entries(B.tools).map(([n, label]) => `<button class="tool" data-tool="${n}" aria-label="${esc(label)}" title="${esc(label)}">${BAR_ICON[n]}</button>`).join('')}</span>` : '')
       + button(esc(B.close), { cls: 'sm quiet bar-close', key: 'Esc', attrs: `aria-keyshortcuts="Escape" aria-label="${esc(B.close)}"` });
     const notice = left ? `<span class="notice"><b>${esc(B.setup(left))}</b><button class="setup">${esc(B.review)}</button></span>` : '';
-    if (this.#cleanup.running) html = this.#cleanup.html();
+    if (this.#cleanup.running) html = this.#cleanup.bar() ?? this.#cleanup.html();
     else if (this.#writing || this.#undoing) html = `<div class="writing"><i></i>${esc(this.#undoing ? FIX.undoing : this.#writingText ?? FIX.writing)}</div>`;
     else if (this.#done) html = `<div class="line done"><svg class="check" viewBox="0 0 20 20" aria-hidden="true"><path d="M5 10.5l3.2 3.2L15 6.8"/></svg><span class="words">${esc(this.#doneText ?? FIX.applied(this.#fixedCount))}</span></div>`;
     // a word about what was just pointed at (why nothing is in hand) comes before any offer
@@ -1052,7 +1069,7 @@ export class FixPanel {
     // the last fix written stays said above, with its Undo, until the next one is written
     if (this.#last && !this.#cleanup.running && !this.#writing && !this.#undoing && !this.#done) html = `<div class="said" role="status"><svg class="tick" viewBox="0 0 20 20" aria-hidden="true"><path d="M5 10.5l3.2 3.2L15 6.8"/></svg><span class="t">${esc(this.#last.text)}</span>${this.#last.undo?.length ? `<button class="ghost undo">${FIX.undo}</button>` : ''}</div>${html}`;
     this.#el.toggleAttribute('data-rest', html.includes('class="line bar'));
-    this.#el.toggleAttribute('data-one', html.includes('class="one"'));
+    this.#el.toggleAttribute('data-one', /class="one[" ]/.test(html));
     this.#placeOn();
     if (html === this.#html) return;
     this.#html = html;
