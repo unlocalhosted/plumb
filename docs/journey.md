@@ -1664,6 +1664,17 @@ field is empty). The table of five writes, before and after. The Next table: eig
   wants, the corner it has), so the square chip shows "0px" as its notch and a rounded corner as its step. Kept on one
   line, as the comp's row (an old rule let the buttons wrap). Seen on the settings practice page for a font size and a
   corners fix; not yet seen for spacing or colour (no such fix on that page).
+- **Algorecall hangs with Blueprint open** (owner: "the performance is horrible this page just hangs really really bad
+  on algorecall. my scroll event are getting ignored and apart from hero section the subsequent sections takes so much
+  time to load"). Measured in the page, Blueprint open, scrolling 8 times over 4 seconds: 17 long tasks, about 2 s, the
+  longest frame gap 1,034 ms. My new check (craft-ranks) took 354 ms of it: the engine hands it new facts every pass,
+  so it scanned the whole page 26 times, and asked every ancestor of every element for its animations. Now it scans
+  once and reuses the scan until the page changes (elements, a class or a style, the window's width; scrolling does
+  not change a sibling verdict), and reads running animations once per scan: 152 ms in 17 scans (algorecall's own
+  animations keep changing styles), the longest 46 ms. With the check switched off entirely the page is no better:
+  13 long tasks, 2.1 s, the same 1-second frame gap; the time is the reader's report (about 1.7–2.4 s) and the
+  engine's verdicts and motion reads. So the hang is the engine's reading of algorecall, which this branch does not
+  change. Not yet measured: whether it hangs with Blueprint closed.
 - **Media hooks:** docs/qa/fixbar-control-corners.jpg and docs/qa/fixbar-control-type.png (the control on the element), docs/qa/fixbar-cleanup-pass.jpg and docs/qa/fixbar-cleanup-preview.png (the clean-up in the bar), docs/qa/fixbar-at-rest.jpg (the bar at rest), docs/qa/fixbar-two-things.jpg (the bar and the row on the element, nothing else), docs/qa/fixbar-in-hand-corners.jpg and docs/qa/fixbar-in-hand-type.jpg (the new bar with a place in hand), docs/qa/roast-invite.png (the invitation beside the dock), docs/qa/roast-proof-avatars.jpg, docs/qa/roast-proof-height.png, docs/qa/roast-proof-line.png (the proof lines for corners, height and alignment), docs/qa/roast-ghost-keys.jpg (the ghost of the fix and the keycaps), docs/qa/roast-settings-cousin.jpg (a cousin note on the settings page), docs/qa/roast-icon-note.jpg (the icon note), docs/qa/roast-first-note.jpg (the roast's first note on the messy page), docs/qa/guides-first-look-issues.jpg (guides on the messy page), docs/qa/guides-held-issues.jpg
   (the three strays held by their neighbours), docs/qa/guides-plumb-lines-issues.jpg
   (the plumb lines and the one stray); a screen recording of the drop-and-swing arrival would show the toy best; the three source screenshots in
