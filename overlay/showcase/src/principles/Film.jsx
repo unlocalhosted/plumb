@@ -37,6 +37,7 @@ import { createContext, useContext, useEffect, useRef, useState } from 'react';
 const UI = createContext(1);
 import { PlumbLayer } from './Principle.jsx';
 import { ensureLook } from './look.js';
+import { TOY_DEFS, toyOf } from '../../../src/toys.js';
 
 ensureLook();
 
@@ -157,14 +158,15 @@ function Count({ from, to, ms = TIMING.count }) {
 }
 
 // plumber's pill: pastel fill, inked mono, the property's icon in its line hue; never scaled by the camera
-function Pill({ x, y, k, tone, icon, icons, up, flow, children }) {
+function Pill({ x, y, k, tone, icon, icons, toy, up, flow, mono = false, children }) {
   const s = useContext(UI);
   const [line, soft, ink] = hues[tone];
   return (
     <span style={{ ...(flow ? {} : { position: 'absolute', left: x, top: y, transform: `translate(-50%, ${up ? '-100%' : '0'}) scale(${1 / k})`, transformOrigin: up ? '50% 100%' : '50% 0' }),
       display: 'flex', alignItems: 'center', gap: 5 * s, height: PILL.h * s, padding: `0 ${7 * s}px 0 ${(icon ? 5 : 7) * s}px`, borderRadius: 7 * s, whiteSpace: 'nowrap',
-      font: `500 ${11 * s}px/1 var(--pl-mono)`, fontVariantNumeric: 'tabular-nums', color: ink, background: soft, boxShadow: `0 0 0 1px var(--pl-halo), inset 0 0 0 1px color-mix(in oklab, ${line} 30%, transparent)`,
-      transition: 'background-color 450ms ease, color 450ms ease', animation: 'film-pop 260ms var(--pl-spring-pop) both' }}>
+      font: mono ? `600 ${11 * s}px/1 var(--pl-mono)` : `600 ${12 * s}px/1 var(--pl-sans)`, fontVariantNumeric: 'tabular-nums', color: ink, background: soft, boxShadow: `0 0 0 1px var(--pl-halo), inset 0 0 0 1px color-mix(in oklab, ${line} 30%, transparent)`,
+      transition: 'background-color 450ms ease, color 450ms ease', animation: 'film-tag 520ms var(--pl-spring-pop) both' }}>
+      {toy ? <span style={{ display: 'grid', width: 14 * s, height: 14 * s, flex: 'none' }} dangerouslySetInnerHTML={{ __html: toyOf(toy).replace('<svg ', '<svg width="100%" height="100%" ') }} /> : null}
       {icon && icons?.[icon] ? <span style={{ display: 'grid', width: 12 * s, height: 12 * s, color: line }} dangerouslySetInnerHTML={{ __html: icons[icon] }} /> : null}
       {children}
     </span>
@@ -294,7 +296,7 @@ export function Film({ Example, names, onSaid, chrome = true, start = true, onDo
     if (still()) { onSaid?.(spec.say); onDone?.(); return; }
     const live = { on: true, timers: [] };
     const all = () => spec.instances(example());
-    const boxes = () => { const at = local(example()); return all().map(at); };
+    const boxes = () => { const at = local(example()); return all().map((el) => (spec.ring ? spec.ring(example(), el) : at(el))); }; // spec.ring: the part of a place the fault is in
     (async () => {
       setPlaying(true); setSide('broken'); setM(null); setChange(0); if (!openIn) { setFrame(null); setCam({ k: 1, x: 0, y: 0 }); } onSaid?.(''); if (spec.still) say('rest');
       await sleep(TIMING.lead, live); await document.fonts?.ready;
@@ -330,7 +332,7 @@ export function Film({ Example, names, onSaid, chrome = true, start = true, onDo
           lp = pixelsOf(example(), spec.pixels(example()), frac(read.ty));
           setLoupe({ ...lp, on: false }); await sleep(30, live); setLoupe({ ...lp, on: true });
           setCam(dive(lp)); await sleep(TIMING.dive, live);
-          setPx([{ x: lp.focus.x, y: lp.focus.top - 1.5, tone: 'off', text: `${read.off.toFixed(2)}px between two rows` }]);
+          setPx([{ x: lp.focus.x, y: lp.focus.top - 1.5, tone: 'off', toy: 'position', text: `${read.off.toFixed(2)}px between two rows` }]);
         } else {
           lp = spec.dive(example(), 'broken');
           const K = lp.k ?? CAMERA.pixels;
@@ -349,7 +351,7 @@ export function Film({ Example, names, onSaid, chrome = true, start = true, onDo
         if (spec.pixels) {
           const fixedRead = spec.read(example(), lead()), lf = pixelsOf(example(), spec.pixels(example()), frac(fixedRead.ty));
           setLoupe({ ...lp, url: lf.url, on: true });
-          setPx([{ x: lp.focus.x, y: lp.focus.top - 1.5, tone: 'on', text: `${fixedRead.off.toFixed(2)}px · on the rows` }]);
+          setPx([{ x: lp.focus.x, y: lp.focus.top - 1.5, tone: 'on', toy: 'position', text: `${fixedRead.off.toFixed(2)}px · on the rows` }]);
         } else {
           const lf = spec.dive(example(), 'fixed');
           setDrawing({ svg: lf.svg, on: true }); setPx(lf.pills);
@@ -456,7 +458,8 @@ export function Film({ Example, names, onSaid, chrome = true, start = true, onDo
   return (
     <UI.Provider value={ui}>
     <div ref={box} className="pl-light relative flex flex-col items-center gap-10">
-      <style>{'@keyframes film-pop { from { opacity: 0; scale: 0.92 } to { opacity: 1; scale: 1 } }'}</style>
+      <style>{'@keyframes film-pop { from { opacity: 0; scale: 0.92 } to { opacity: 1; scale: 1 } } @keyframes film-ring { from { opacity: 0; scale: 1.25 } to { opacity: 1; scale: 1 } } @keyframes film-tag { from { opacity: 0; scale: 0.6; translate: 0 6px } to { opacity: 1; scale: 1; translate: 0 0 } }'}</style>
+      <div aria-hidden="true" dangerouslySetInnerHTML={{ __html: TOY_DEFS }} />
       <div className="relative" style={frame ? { overflow: 'clip', borderRadius: frame.radius, boxShadow: frame.shadow, isolation: 'isolate' } : undefined}>
         <div ref={camRef} className="relative" style={{ transform: `translate(${cam.x}px, ${cam.y}px) scale(${k})`, transformOrigin: '0 0', transition: `transform ${cam.ms ?? (k > 1 ? TIMING.camera : TIMING.out)}ms ${CAMERA.curve}`, pointerEvents: playing ? 'none' : undefined }}>
           <Example key={side} side={side} onStatus={playing ? undefined : onSaid} />
@@ -469,11 +472,13 @@ export function Film({ Example, names, onSaid, chrome = true, start = true, onDo
           <PlumbLayer>
             {m ? (
               <div style={{ position: 'absolute', inset: 0, opacity: m.fading ? 0 : 1, transition: `opacity ${TIMING.fade}ms ease` }}>
-                {/* every place's content box, where it is now: plumber's 1px outline with its halo */}
+                {/* every place, ringed as plumber rings what it judges (show.js .sh-mark.ink): a dashed ring, never a fill,
+                    so what is under it is what's judged; the rings land one after another, each with a small spring */}
                 {m.boxes.map((b, i) => {
-                  const at = r?.now?.[i] ?? b;
-                  return <span key={i} style={{ position: 'absolute', left: at.x, top: at.y, width: at.w, height: at.h, borderRadius: 3,
-                    boxShadow: `0 0 0 ${1 / k}px ${hues[toneOf(i)][0]}, 0 0 0 ${2 / k}px var(--pl-halo)`, transition: 'box-shadow 450ms ease', animation: 'film-pop 260ms ease both' }} />;
+                  const at = r?.now?.[i] ?? b, pad = 4 / k, hue = hues[spec.ring && tone === 'sky' ? 'off' : toneOf(i)][0];
+                  return <span key={i} style={{ position: 'absolute', left: at.x - pad, top: at.y - pad, width: at.w + 2 * pad, height: at.h + 2 * pad, borderRadius: 7 / k, boxSizing: 'border-box',
+                    border: `${1.5 / k}px dashed ${hue}`, boxShadow: `0 0 0 ${1 / k}px var(--pl-halo), inset 0 0 0 ${1 / k}px var(--pl-halo)`, transition: 'border-color 450ms ease',
+                    animation: `film-ring 480ms var(--pl-spring-pop) ${Math.min(i, 12) * 55}ms both` }} />;
                 })}
                 {/* where each pushed place belonged: a dashed guide; the ground it was pushed across, tinted */}
                 {/* only where something moved: a guide on an edge that stayed put would only double its outline */}
@@ -484,13 +489,13 @@ export function Film({ Example, names, onSaid, chrome = true, start = true, onDo
                   </span>
                 ))}
                 {/* a value only where the pointer is: the size, counting, under the place */}
-                {r ? <Pill key={`s${m.lead}${tone}`} x={r.box.x + r.box.w / 2} y={r.box.y + r.box.h + (PILL.gap * ui) / k} k={k} tone={toneOf(m.lead) === 'sky' ? 'on' : toneOf(m.lead)} icon={r.size.icon} icons={icons}>{r.size.pre}<Count from={r.size.from} to={r.size.to} />{r.size.post}</Pill> : null}
+                {r ? <Pill key={`s${m.lead}${tone}`} x={r.box.x + r.box.w / 2} y={r.box.y + r.box.h + (PILL.gap * ui) / k} k={k} tone={toneOf(m.lead) === 'sky' ? 'on' : toneOf(m.lead)} icon={r.size.icon} icons={icons} toy={r.size.toy} mono>{r.size.pre}<Count from={r.size.from} to={r.size.to} />{r.size.post}</Pill> : null}
                 {/* the cause, as plumber names it: its own pills, above the place */}
                 {/* side by side in one row, so they never climb onto the words above */}
                 {r && m.cause && r.tags?.length ? (
                   <span style={{ position: 'absolute', left: r.box.x + r.box.w / 2, top: r.box.y - (PILL.gap * ui) / k, display: 'flex', gap: 4 * ui, transform: `translate(-50%, -100%) scale(${1 / k})`, transformOrigin: '50% 100%' }}>
                     {r.tags.map((g, i) => (
-                      <Pill key={`t${i}${tone}`} flow k={k} tone={tagTone} icon={g.icon} icons={icons}>
+                      <Pill key={`t${i}${tone}`} flow k={k} tone={tagTone} icon={g.icon} icons={icons} toy={g.toy}>
                         {g.swatch ? <span style={{ width: 9, height: 9, borderRadius: 3, background: g.swatch, boxShadow: '0 0 0 1px rgb(0 0 0 / 0.12)' }} /> : null}
                         {g.pre}{g.text ?? <Count from={g.from} to={g.to} />}
                       </Pill>
@@ -499,7 +504,7 @@ export function Film({ Example, names, onSaid, chrome = true, start = true, onDo
                 ) : null}
               </div>
             ) : null}
-            {px ? px.map((q, i) => <Pill key={`${q.tone}${i}`} x={q.x} y={q.y} k={k} tone={q.tone} up>{q.text}</Pill>) : null}
+            {px ? px.map((q, i) => <Pill key={`${q.tone}${i}`} x={q.x} y={q.y} k={k} tone={q.tone} toy={q.toy} up>{q.text}</Pill>) : null}
           </PlumbLayer>
         </div>
       </div>

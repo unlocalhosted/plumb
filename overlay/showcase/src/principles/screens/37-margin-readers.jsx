@@ -169,7 +169,7 @@ MarginReaders.film = {
   code: { fault: { cls: 'top-1/2 -translate-y-1/2', prop: 'translate: 0 -23.19px' }, fix: { cls: 'inset-y-0 my-auto h-fit', prop: 'margin: auto' } },
   read(root, el) {
     const ty = shift(el), off = Math.abs(ty - Math.round(ty));
-    return { ty, off: fmt(off), size: { icon: null, pre: '↕ ', from: 0, to: fmt(ty) }, tags: [{ icon: null, pre: 'off the grid · ', from: 0, to: fmt(off) }] };
+    return { ty, off: fmt(off), size: { icon: null, toy: 'position', pre: '', from: 0, to: fmt(ty), post: 'px' }, tags: [{ icon: null, toy: 'position', pre: 'off the grid · ', from: 0, to: fmt(off) }] };
   },
   say: 'Look at the tooltip\'s words beside the figures.',
   // the words on screen, approved by the owner 2026-11-15; `at` is the film's moment for each line

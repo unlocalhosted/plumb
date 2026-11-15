@@ -135,7 +135,7 @@ When a rule here and the films disagree, the films win; change the rule.
   still needs act 3.
 - **The cause is said on the stage.** One plain sentence, measured, under the subject ("Bold is 2px wider"). The
   longer lesson (§5) stays below the stage, for after.
-- **The marks are a grammar (§3⅝), drawn with plumber's colours:** coral (`--pl-off`) for off, mint (`--pl-on`) once
+- **The marks are a grammar (§3⅝), drawn with plumber's own pieces (rings, toys, counting values: the craft-film skill's Marks), in its colours:** coral (`--pl-off`) for off, mint (`--pl-on`) once
   fixed, 1px lines with the white halo, the blueprint tag as the pill (mono, white on the hue), `--pl-spring-pop` for
   pills appearing. On a plain ground: the tabs film draws no shade over the rest and no heat dots, and the eye goes to
   the marks.

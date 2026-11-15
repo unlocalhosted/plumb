@@ -1334,6 +1334,15 @@ field is empty). The table of five writes, before and after. The Next table: eig
 - **Proof:** docs/films/55-review.md; docs/media/film-55-gradients-in-oklch.mp4.
 - **Media hooks:** the dive frame, the sRGB swatches with three grey ones beside the OKLCH swatches running through green.
 
+### The films' marks speak plumber's language (2026-11-15)
+
+- **The itch:** the owner on film 55: "i dont like the guardrails / annotations, we already have our visual language which is fun and delightful in our design page but you just put a boring blue box; remember people need constant dopamine hit and delight to keep them engaged."
+- **The system behind it:** the films drew their marks with their own small kit (1px outline boxes, mono pills, hairline drawings) and borrowed only plumber's colours; the rule said "drawn with plumber's colours", so every film inherited the flat look while the design pages had the real pieces.
+- **What we chose:** a still prototype first (docs/films/55-marks-proto.png, the route /proto/marks in the showcase), approved, then the film's kit itself: every place gets plumber's dashed colour ring, landing one after another; tags and values carry their toy from the toy set; a screen can ring only the part of a place the fault is in. Films 3, 37 and 55 all change, since they share the kit.
+- **Proof:** the three films rendered again, docs/media/film-03-optical-overshoot.mp4, film-37-never-land-on-half-pixels.mp4, film-55-gradients-in-oklch.mp4.
+- **Still open:** film 55's close-up is narrow, because the card is tall and thin and the camera can only zoom as far as its width; the swatches read but are small.
+- **Media hooks:** the old measure frame (blue boxes, mono pills) beside the new one (coral rings on each grey middle, the droplet tag "Goes grey").
+
 ## Open gaps
 - The site's top bar doesn't fit a phone (390px): it widens the page to about 500px. Needs a compact bar.
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.

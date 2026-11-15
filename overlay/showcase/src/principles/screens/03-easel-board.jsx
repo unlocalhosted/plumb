@@ -171,7 +171,7 @@ LaunchBoard.film = {
   code: { fault: { cls: 'size-6', prop: 'one box for every shape' }, fix: { cls: '[&>:nth-child(2)>svg]:scale-[1.04]', prop: 'scale: 1.04' } },
   read(root, el) {
     const row = el.closest('[data-shapes]'), { ci, sq, fill } = fillOf(root, row), short = Math.max(0, sq.h * 1.04 - ci.h);
-    return { off: short > 0.3 ? 1 : 0, size: { icon: null, pre: '⌀ ', from: 0, to: Math.round(ci.w * 10) / 10 }, tags: [{ icon: null, pre: 'fills ', text: `${pct(fill)}% of its box` }] };
+    return { off: short > 0.3 ? 1 : 0, size: { icon: null, toy: 'size', pre: '', from: 0, to: Math.round(ci.w * 10) / 10, post: 'px' }, tags: [{ icon: null, toy: 'size', pre: 'fills ', text: `${pct(fill)}% of its box` }] };
   },
   // the Basic row's square and circle, drawn as a type designer would; the rest of the card dimmed so only they are bright
   dive(root, side) {
@@ -195,9 +195,9 @@ LaunchBoard.film = {
     };
     const first = rows[0], fcx = first.ci.x + first.ci.w / 2;
     const pills = side === 'fixed'
-      ? [{ x: fcx, y: first.sq.y - 1.5, tone: 'on', text: `+${Math.round((first.ci.h / first.sq.h - 1) * 100)}%, past the line` }]
-      : [{ x: first.sq.x + first.sq.w / 2, y: first.sq.y - 1.5, tone: 'sky', text: `${pct(first.fill === 0 ? 0 : (first.sq.w * first.sq.h - (4 - Math.PI)) / (first.sq.w * first.sq.h))}%` },
-         { x: fcx, y: first.sq.y - 1.5, tone: 'off', text: `${pct(first.fill)}% of the same box` }];
+      ? [{ x: fcx, y: first.sq.y - 1.5, tone: 'on', toy: 'size', text: `+${Math.round((first.ci.h / first.sq.h - 1) * 100)}%, past the line` }]
+      : [{ x: first.sq.x + first.sq.w / 2, y: first.sq.y - 1.5, tone: 'sky', toy: 'size', text: `${pct(first.fill === 0 ? 0 : (first.sq.w * first.sq.h - (4 - Math.PI)) / (first.sq.w * first.sq.h))}%` },
+         { x: fcx, y: first.sq.y - 1.5, tone: 'off', toy: 'size', text: `${pct(first.fill)}% of the same box` }];
     return { focus: { x: (L + R) / 2, y: (T + B) / 2 }, k: K, svg: `${hatch}${shade}${rows.map(pair).join('')}`, pills };
   },
   say: 'Compare the circle with the square beside it.',

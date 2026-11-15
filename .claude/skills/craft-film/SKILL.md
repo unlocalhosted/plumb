@@ -122,6 +122,21 @@ holds the date and what they said.
   Why: the owner asked for "some micro interaction on text and react plumber" and said "nice" to this.
   <!-- 2026-11-15 -->
 
+### Marks
+
+- **Plumber's marks in a film are drawn with plumber's own pieces, never a box or a plain pill.** Every place is
+  circled by a dashed ring (show.js `.sh-mark.ink`, the ring plumber uses to judge a colour) that lands one after another; every
+  tag and value carries its toy from overlay/src/toys.js (`toy:` on a read's `size` and `tags`, and on a dive's
+  pills); values count up or down. A screen whose fault lives in part of a place gives `ring(root, el)`, that part's
+  box (film 55 rings only the grey middle of each bar). Close-ups show the thing itself, big and judged (film 55's
+  swatches with their scores), not a diagram in hairlines.
+  Why: "we already have our visual language which is fun and delightful in our design page but you just put a boring
+  blue box; remember people need constant dopamine hit and delight to keep them engaged."
+  <!-- 2026-11-15: approved from the still at docs/films/55-marks-proto.png -->
+- **Every act ends on something that moves, pops or counts.** Rings spring in one by one, tags pop, numbers roll,
+  swatches change colour in place, the burst comes from the change card. A beat where nothing arrives is a beat to cut.
+  Why: the same message; *inferred:* the reward keeps the viewer watching to the payoff.
+
 ### Never take away
 
 - **A change to the words or layout never removes plumber's marks:** the guardrail and measure animation, the pills,
@@ -147,3 +162,5 @@ holds the date and what they said.
 - 2026-11-15 · "Demo left, words right"; "css is overlapping … move the toggle to bottom" → the column layout.
 - 2026-11-15 · "no atomic teaching here" → one property in the change card.
 - 2026-11-15 · the closing line, in the owner's words.
+- 2026-11-15 · "you just put a boring blue box … people need constant dopamine hit and delight" → marks drawn with
+  plumber's own pieces: dashed rings, toys on every tag, counting values.

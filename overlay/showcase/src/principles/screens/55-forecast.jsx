@@ -196,6 +196,7 @@ const mixAt = (t, oklch) => {
 };
 const hexOf = (rgb) => '#' + rgb.map((c) => Math.round(c * 255).toString(16).padStart(2, '0')).join('');
 const bars = (root) => [...root.querySelectorAll('[data-range]')];
+const ENDS = Math.min(chromaOf(toLab(hex2rgb(COLD))), chromaOf(toLab(hex2rgb(WARM)))); // how colourful the bar's two ends are
 Forecast.film = {
   still: true,
   instances: bars,
@@ -203,29 +204,33 @@ Forecast.film = {
   payoff: 350, // ten bars: half the usual time on each, so the payoff stays about 4 s
   lead: 4, // Monday: a long bar in the middle of the list, with no 'now' dot on it
   code: { fault: { cls: 'bg-[linear-gradient(90deg,#1b9fd0,#f28c28)]', prop: 'mixed in sRGB' }, fix: { cls: 'bg-[linear-gradient(90deg_in_oklch,#1b9fd0,#f28c28)]', prop: 'mixed in OKLCH' } },
-  read(root, el) {
-    const oklch = /in oklch/.test(getComputedStyle(el).backgroundImage), ends = Math.min(chromaOf(toLab(hex2rgb(COLD))), chromaOf(toLab(hex2rgb(WARM))));
-    const kept = Math.min(...Array.from({ length: 21 }, (_, i) => chromaOf(mixAt(i / 20, oklch).lab))) / ends;
-    return { off: kept < 0.5 ? 1 : 0, size: { icon: null, pre: '', from: 100, to: Math.round(Math.min(1, kept) * 100), post: '% colour' }, tags: [{ icon: null, text: oklch ? 'stays bright' : 'goes grey' }] };
+  // the ring goes round the part of each bar that goes grey (below half its ends' colour); fixed, round the whole bar
+  ring(root, el) {
+    const b = local(root)(el), oklch = /in oklch/.test(getComputedStyle(el).backgroundImage);
+    const dull = Array.from({ length: 41 }, (_, i) => i / 40).filter((t) => chromaOf(mixAt(t, oklch).lab) < ENDS * 0.5);
+    return oklch || !dull.length ? b : { x: b.x + b.w * dull[0], y: b.y, w: b.w * (dull.at(-1) - dull[0]), h: b.h };
   },
-  // the first bar, close: nine swatches of its colour along its length, the grey ones hatched; the rest of the card dimmed
+  read(root, el) {
+    const oklch = /in oklch/.test(getComputedStyle(el).backgroundImage);
+    const kept = Math.min(...Array.from({ length: 21 }, (_, i) => chromaOf(mixAt(i / 20, oklch).lab))) / ENDS;
+    return { off: kept < 0.5 ? 1 : 0, size: { toy: 'fill', pre: '', from: 100, to: Math.round(Math.min(1, kept) * 100), post: '% colour' }, tags: [{ toy: 'fill', text: oklch ? 'Stays bright' : 'Goes grey' }] };
+  },
+  // one bar, close: under it, seven swatches of its colour along its length, each with how colourful it is; the grey
+  // ones ringed coral. Fixed, the same swatches in OKLCH. The rest of the card dimmed
   dive(root, side) {
     const at = local(root), bar = at(bars(root)[Forecast.film.lead]), W = root.offsetWidth, H = root.offsetHeight, oklch = side === 'fixed';
-    const N = 9, gap = 1.2, sw = (bar.w - gap * (N - 1)) / N, top = bar.y + bar.h + 4, sh = sw;
-    const L = bar.x - 8, R = bar.x + bar.w + 8, T = bar.y - 12, B = top + sh + 6;
+    const N = 7, gap = bar.w * 0.04, sw = (bar.w - gap * (N - 1)) / N, top = bar.y + bar.h + gap * 2.2;
+    const L = bar.x - 10, R = bar.x + bar.w + 10, T = bar.y - 16, B = top + sw + sw * 0.75;
     const K = Math.min(9, (W * 0.84) / (R - L), (H * 0.6) / (B - T)), u = (v) => +(v / K).toFixed(3);
-    const ends = Math.min(chromaOf(toLab(hex2rgb(COLD))), chromaOf(toLab(hex2rgb(WARM))));
-    const hatch = `<defs><pattern id="ov-h55" width="${u(5)}" height="${u(5)}" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="${u(1.6)}" height="${u(5)}" fill="#e0533f"/></pattern></defs>`;
     const shade = `<path fill-rule="evenodd" d="M-2000 -2000h${W + 4000}v${H + 4000}h${-(W + 4000)}Z M${L} ${T}h${R - L}v${B - T}h${L - R}Z" fill="#f7f6f3" fill-opacity=".9"/>`;
     const swatches = Array.from({ length: N }, (_, i) => {
-      const t = i / (N - 1), c = mixAt(t, oklch), x = bar.x + i * (sw + gap), dull = chromaOf(c.lab) < ends * 0.5;
-      return `<rect x="${x}" y="${top}" width="${sw}" height="${sh}" rx="${u(4)}" fill="${hexOf(c.rgb)}"/>`
-        + (dull ? `<rect x="${x}" y="${top}" width="${sw}" height="${sh}" rx="${u(4)}" fill="url(#ov-h55)" fill-opacity=".55"/><rect x="${x}" y="${top}" width="${sw}" height="${sh}" rx="${u(4)}" fill="none" stroke="#e0533f" stroke-width="${u(2)}"/>` : '');
+      const c = mixAt(i / (N - 1), oklch), x = bar.x + i * (sw + gap), score = Math.round(Math.min(1, chromaOf(c.lab) / ENDS) * 100), dull = score < 50, d = u(3.5);
+      return `<rect x="${x}" y="${top}" width="${sw}" height="${sw}" rx="${sw * 0.28}" fill="${hexOf(c.rgb)}" style="transition:fill 600ms ease ${i * 60}ms"/>`
+        + (dull ? `<rect x="${x - d}" y="${top - d}" width="${sw + 2 * d}" height="${sw + 2 * d}" rx="${sw * 0.28 + d}" fill="none" stroke="#e0533f" stroke-width="${u(1.5)}" stroke-dasharray="${u(4)} ${u(3)}"/>` : '')
+        + `<text x="${x + sw / 2}" y="${top + sw + sw * 0.5}" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-weight="600" font-size="${u(11)}" fill="${dull ? '#b4321f' : '#6b6b6b'}">${score}</text>`;
     }).join('');
-    const outline = `<rect x="${bar.x}" y="${bar.y}" width="${bar.w}" height="${bar.h}" rx="${u(3)}" fill="none" stroke="${oklch ? '#1fa774' : '#2f86dc'}" stroke-width="${u(2)}"/>`;
-    const mid = bar.x + bar.w / 2;
-    const pills = oklch ? [{ x: mid, y: bar.y - 1.5, tone: 'on', text: 'bright all the way' }] : [{ x: mid, y: bar.y - 1.5, tone: 'off', text: 'grey in the middle' }];
-    return { focus: { x: (L + R) / 2, y: (T + B) / 2 }, k: K, svg: `${hatch}${shade}${outline}${swatches}`, pills };
+    const pills = [{ x: bar.x + bar.w / 2, y: bar.y - u(6), tone: oklch ? 'on' : 'off', toy: 'fill', text: oklch ? 'Stays bright' : 'Goes grey' }];
+    return { focus: { x: (L + R) / 2, y: (T + B) / 2 }, k: K, svg: `${shade}${swatches}`, pills };
   },
   say: 'Look at the middle of each day\'s bar.',
   // the words on screen, approved by the owner 2026-11-15; `at` is the film's moment for each line
@@ -238,4 +243,11 @@ Forecast.film = {
     { at: 'fix', text: 'Mix the colours the way eyes see them instead.' },
     { at: 'payoff', text: 'Now every bar stays *bright* all the way across.' },
   ],
+};
+
+// for the marks prototype (principles/proto/MarksProto.jsx): the bar's colour along its length, and how colourful
+export const film = {
+  lead: Forecast.film.lead,
+  gradient: (oklch) => (oklch ? FIXED : `linear-gradient(90deg, ${COLD}, ${WARM})`),
+  samples: (oklch) => ({ ends: ENDS, points: Array.from({ length: 41 }, (_, i) => { const m = mixAt(i / 40, oklch); return { t: i / 40, c: chromaOf(m.lab), hex: hexOf(m.rgb) }; }) }),
 };

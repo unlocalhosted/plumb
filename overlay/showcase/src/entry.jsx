@@ -11,6 +11,7 @@ import { Shell } from './Shell.jsx';
 import { Index, Layout, Principle } from './principles/Principle.jsx';
 import { Primitives } from './primitives/Primitives.jsx';
 import { FilmPage } from './principles/FilmPage.jsx';
+import { MarksProto } from './principles/proto/MarksProto.jsx';
 
 const path = location.pathname.replace(/\/$/, '');
 const rule = path.match(/^\/rule\/(\d+)(\/fixed)?$/);
@@ -19,5 +20,5 @@ const film = path.match(/^\/film\/(\d+)$/);
 const broken = rule ? !rule[2] : all ? !all[1] : true;
 await (broken ? import('./broken.css') : import('./fixed.css'));
 createRoot(document.getElementById('root')).render(
-  film ? <FilmPage n={Number(film[1])} /> : path === '/primitives' ? <Primitives /> : rule ? <Layout current={Number(rule[1])}><Principle n={Number(rule[1])} /></Layout> : all ? <Shell broken={broken} /> : <Index />,
+  path === '/proto/marks' ? <MarksProto /> : film ? <FilmPage n={Number(film[1])} /> : path === '/primitives' ? <Primitives /> : rule ? <Layout current={Number(rule[1])}><Principle n={Number(rule[1])} /></Layout> : all ? <Shell broken={broken} /> : <Index />,
 );
