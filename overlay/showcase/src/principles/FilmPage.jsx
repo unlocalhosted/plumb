@@ -14,6 +14,7 @@ import { PRINCIPLES } from './catalogue.js';
 import { Film, beat } from './Film.jsx';
 import { ensureLook } from './look.js';
 import { STEM, BOWL, LEG, TREE, JOINTS } from '../../../src/mark.js';
+import silk from './silk-deep.svg'; // the stage's wallpaper: folds of plumber's violet and magenta, lit, with grain (owner, 2026-11-15)
 
 ensureLook();
 const SCREENS = Object.fromEntries(Object.entries(import.meta.glob('./screens/[0-9]*.jsx', { eager: true })).map(([, m]) => [m.n, m]));
@@ -79,8 +80,8 @@ function Line({ text, fixed }) {
     const marked = /^\*.+\*[.,]?$/.test(w), bare = w.replace(/\*/g, ''), [, core, tail] = bare.match(/^(.*?)([.,]?)$/);
     return (
       <span key={i} style={{ display: 'inline-block', whiteSpace: 'pre', animation: `film-word ${FOCUS}ms cubic-bezier(.2, .7, .2, 1) ${i * WORD}ms both` }}>
-        {marked ? <span style={{ backgroundImage: `linear-gradient(var(--pl-${fixed ? 'mint' : 'pink'}), var(--pl-${fixed ? 'mint' : 'pink'}))`, backgroundRepeat: 'no-repeat', backgroundPosition: '0 92%',
-          backgroundSize: '0% 3px', animation: `film-ink 420ms cubic-bezier(.6, 0, .2, 1) ${words.length * WORD + FOCUS}ms both` }}>{core}</span> : core}{tail}{i < words.length - 1 ? ' ' : ''}
+        {marked ? <span style={{ backgroundImage: `linear-gradient(${fixed ? '#3fd18f' : '#ff5fb0'}, ${fixed ? '#3fd18f' : '#ff5fb0'})`, backgroundRepeat: 'no-repeat', backgroundPosition: '0 94%', // bright enough on the dark silk
+          backgroundSize: '0% 4px', animation: `film-ink 420ms cubic-bezier(.6, 0, .2, 1) ${words.length * WORD + FOCUS}ms both` }}>{core}</span> : core}{tail}{i < words.length - 1 ? ' ' : ''}
       </span>
     );
   });
@@ -93,8 +94,9 @@ export function FilmPage({ n }) {
   const [caption, setCaption] = useState(null);    // the script's line now on screen (a film with spec.script): { text, at }
   const [nod, setNod] = useState(0);               // the brand nods once, when the fix lands and the burst fires
   const sig = useRef(null), mark = useRef(null), stack = useRef(null);
+  const [fw, setFw] = useState(0);                 // and its width: a scripted film scales its card to fill the stage
   const [fh, setFh] = useState(0);                 // the card and switch's own height, so the scaled stack takes only the room it shows
-  useLayoutEffect(() => { const el = stack.current; if (!el) return; const ro = new ResizeObserver(() => setFh(el.offsetHeight)); ro.observe(el); return () => ro.disconnect(); }, []);
+  useLayoutEffect(() => { const el = stack.current; if (!el) return; const ro = new ResizeObserver(() => { setFh(el.offsetHeight); setFw(el.offsetWidth); }); ro.observe(el); return () => ro.disconnect(); }, []);
   const [to, setTo] = useState(null);              // where the name and the mark travel from / to: their centred transforms
   useEffect(() => {
     document.title = `${n} · ${p?.title ?? ''} · React Plumber`;
@@ -145,7 +147,9 @@ export function FilmPage({ n }) {
   // a scripted film puts the demo on the left, as tall as the stage allows, and the words, the switch and plumber's change
   // card in a column on its right (owner's pick, 2026-11-15: stacked under it, the demo was small in a wide frame)
   const side = scripted;
-  const fit = side ? 1.1 : FIT;
+  // a scripted film: the card as large as the stage allows, tall cards by height, wide ones by width (with the words'
+  // column, COLUMN px at the same scale, beside it)
+  const COLUMN = 544, fit = side ? (fh && fw ? Math.max(0.85, Math.min(1.5, 820 / fh, 1460 / (fw + COLUMN))) : 1) : FIT;
   const on = phase === 'name' || phase === 'film' || phase === 'playing';
   const said = caption ?? (scripted ? Example.film.script[0] : { text: '' });
   const closingWords = scripted && said.at === 'close';
@@ -156,38 +160,43 @@ export function FilmPage({ n }) {
     <div className="pl-light" style={{ position: 'fixed', inset: 0, display: 'grid', placeItems: 'center', overflow: 'hidden', background: 'var(--pl-desk)' }}>
       {/* plumber's own overlay (its toasts, its Alt pill) runs on this dev page; it is not part of the film */}
       <style>{'plumb-overlay { display: none !important; } @keyframes mk-guide { from { opacity: 0; stroke-dashoffset: 40 } to { opacity: 1; stroke-dashoffset: 0 } } @keyframes mk-pill { from { opacity: 0; transform: scale(.6) } to { opacity: 1; transform: scale(1) } } @keyframes film-word { from { opacity: 0; transform: translateY(6px); filter: blur(5px) } to { opacity: 1; transform: none; filter: none } } @keyframes film-ink { from { background-size: 0% 3px } to { background-size: 100% 3px } } @keyframes mk-nod { 0% { transform: none } 22% { transform: scale(.86) rotate(-6deg); animation-timing-function: cubic-bezier(.3, 1.6, .5, 1) } 100% { transform: none } }'}</style>
-      <div style={{ position: 'relative', width: STAGE.w, height: STAGE.h, flex: 'none', transform: `scale(${k})`, background: CANVAS, color: 'var(--pl-ink)', visibility: to ? 'visible' : 'hidden' }}>
+      <div style={{ position: 'relative', width: STAGE.w, height: STAGE.h, flex: 'none', transform: `scale(${k})`, background: `url("${silk}") center / cover`, color: '#fff', visibility: to ? 'visible' : 'hidden' }}>
         {/* the signature: which piece of craft this is; it opens the film large in the middle, then takes its corner */}
         <div ref={sig} style={{ position: 'absolute', left: STAGE.edge, top: STAGE.edge - 8, display: 'flex', flexDirection: 'column', gap: 8, maxWidth: 340,
-          transform: centred && to ? to.name : 'none', opacity: shown && !closing ? 1 : 0,
+          transform: centred && to ? to.name : 'none', opacity: shown && !closing && !scripted ? 1 : 0, // a scripted film carries its name at the top of the words' column
           transition: `transform 1000ms ${MOVE}, opacity ${closing ? 500 : 600}ms ease` }}>
           {/* the label level: what this film is, quiet, so the story's words under the card are the loudest type on the stage */}
           <span style={{ font: 'var(--pl-round-w2, 800) 15px/1 var(--pl-round)', color: 'var(--pl-ink-3)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Craft № {n}</span>
           <span style={{ font: 'var(--pl-round-w, 700) 24px/30px var(--pl-round)', color: 'var(--pl-ink-2)', letterSpacing: '-0.01em', textWrap: 'balance' }}>{p.title}</span>
         </div>
         {/* the film itself, in the middle of the stage; it rises in as the name leaves, and steps back at the end */}
-        <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', paddingRight: side ? 436 : 0 }}>
+        <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', paddingRight: side ? COLUMN * fit : 0 }}>
           {/* the demo, with the words, switch and change card beside it, fades and steps back at the closing */}
           <div ref={stack} style={{ opacity: on ? 1 : 0, transform: `translateY(${on || closing ? 0 : 12}px) scale(${(closing ? 0.97 : 1) * (scripted ? fit : 1)})`, transformOrigin: '50% 0',
             marginBottom: scripted ? -(1 - fit) * fh : 0, flex: 'none', transition: `opacity 600ms ease ${phase === 'film' ? TIMING.clear : 0}ms, transform 800ms var(--pl-spring) ${phase === 'film' ? TIMING.clear : 0}ms` }}>
-            <Film Example={Example} names={Example.names} chrome={false} start={phase === 'playing'} onDone={done} ui={scripted ? MARKS / fit : FILM_UI} openIn onLine={(text, at) => setCaption({ text, at })} onBurst={() => setNod((x) => x + 1)} aside={side ? <p aria-live="polite" style={{ margin: 0, minHeight: 80, font: `400 ${30 / fit}px/${40 / fit}px var(--pl-sans)`, letterSpacing: '-0.01em', color: 'var(--pl-ink)', textWrap: 'balance' }}>{closingWords ? null : <Line key={said.text} text={said.text} fixed={['fix', 'payoff', 'end'].includes(said.at)} />}</p> : null} />
+            <Film Example={Example} names={Example.names} chrome={false} start={phase === 'playing'} onDone={done} ui={scripted ? MARKS / fit : FILM_UI} openIn onLine={(text, at) => setCaption({ text, at })} onBurst={() => setNod((x) => x + 1)} head={side ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 14 / fit }}>
+                <span style={{ font: `700 ${13 / fit}px/1 var(--pl-sans)`, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'rgb(255 255 255 / 0.6)' }}>Craft № {n}</span>
+                <span style={{ maxWidth: 480 - 230 / fit, font: `var(--pl-round-w, 750) ${40 / fit}px/1.05 var(--pl-round)`, letterSpacing: '-0.02em', color: '#fff', textWrap: 'balance' }}>{p.title}</span>
+              </div>
+            ) : null} aside={side ? <p aria-live="polite" style={{ margin: 0, minHeight: 80, font: `400 ${44 / fit}px/1.18 var(--pl-sans)`, letterSpacing: '-0.022em', color: '#fff', textWrap: 'balance' }}>{closingWords ? null : <Line key={said.text} text={said.text} fixed={['fix', 'payoff', 'end'].includes(said.at)} />}</p> : null} />
           </div>
         </div>
         {/* the closing words, in the middle of the stage once the demo has stepped back, before the mark comes in */}
         {scripted ? (
-          <p style={{ position: 'absolute', left: 0, right: 0, top: STAGE.h / 2 - 20, margin: 0, textAlign: 'center', font: '400 30px/40px var(--pl-sans)', letterSpacing: '-0.01em', color: 'var(--pl-ink)',
+          <p style={{ position: 'absolute', left: 0, right: 0, top: STAGE.h / 2 - 20, margin: 0, textAlign: 'center', font: '400 40px/52px var(--pl-sans)', letterSpacing: '-0.02em', color: '#fff',
             opacity: closingWords && said.text ? 1 : 0, transition: 'opacity 400ms ease' }}>
             {closingWords && said.text ? <Line key={said.text} text={said.text} fixed /> : null}
           </p>
         ) : null}
         {/* the mark, on every frame; at the end it comes to the middle, and the bob settles on its line */}
-        <div ref={mark} style={{ position: 'absolute', right: STAGE.edge, bottom: STAGE.edge - 12, display: 'flex', alignItems: 'center', gap: 9,
+        <div ref={mark} style={{ position: 'absolute', right: 96, ...(scripted ? { top: 40 } : { bottom: STAGE.edge - 12 }), display: 'flex', alignItems: 'center', gap: 9,
           opacity: shown ? 0.92 : 0, transform: marked && to ? to.mark : 'none', transition: `transform 1000ms ${MOVE}, opacity 600ms ease` }}>
           {/* chrome level: the brand stays small on every frame; it grows only at the closing */}
           <span key={nod} style={{ display: 'grid', animation: nod ? 'mk-nod 700ms both' : undefined, transformOrigin: '50% 80%' }}><Mark size={32} guards={marked} /></span>
           <span style={{ font: '650 20px/1 var(--pl-sans)', letterSpacing: '-0.03em' }}>React Plumber</span>
         </div>
-        <p style={{ position: 'absolute', left: 0, right: 0, top: STAGE.h / 2 + 44, margin: 0, textAlign: 'center', font: '400 34px/42px var(--pl-sans)', color: 'var(--pl-ink-2)',
+        <p style={{ position: 'absolute', left: 0, right: 0, top: STAGE.h / 2 + 44, margin: 0, textAlign: 'center', font: '400 34px/42px var(--pl-sans)', color: 'rgb(255 255 255 / 0.7)',
           opacity: phase === 'line' ? 1 : 0, transform: `translateY(${phase === 'line' ? 0 : 8}px)`, transition: 'opacity 600ms ease, transform 700ms var(--pl-spring)' }}>{LINE}</p>
       </div>
     </div>

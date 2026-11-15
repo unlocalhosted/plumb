@@ -42,15 +42,21 @@ import { TOY_DEFS, toyOf } from '../../../src/toys.js';
 ensureLook();
 
 // the technique switch, in plumber's language: a sunk track, a lit thumb that slides on the spring, names in the toy face
-function TechniqueSwitch({ names, fixed, ready, onBack, onFix }) {
+function TechniqueSwitch({ names, fixed, ready, onBack, onFix, glass = false }) {
   const s = useContext(UI);
   const track = useRef(null);
   const [thumb, setThumb] = useState(null);
-  useEffect(() => { const on = track.current?.querySelector('[aria-pressed="true"]'); if (on) setThumb({ left: on.offsetLeft, width: on.offsetWidth }); }, [fixed, names]);
+  // measured again whenever the track changes size (the toy face loading late, the film's scale): the thumb sits on its label
+  useEffect(() => {
+    const el = track.current; if (!el) return;
+    const put = () => { const on = el.querySelector('[aria-pressed="true"]'); if (on) setThumb({ left: on.offsetLeft, width: on.offsetWidth }); };
+    put(); document.fonts?.ready.then(put);
+    const ro = new ResizeObserver(put); ro.observe(el); return () => ro.disconnect();
+  }, [fixed, names, s]);
   const tab = (on) => ({ position: 'relative', zIndex: 1, height: 30 * s, padding: `0 ${14 * s}px`, border: 0, background: 'none', cursor: ready ? 'pointer' : 'default',
-    font: `var(--pl-round-w2, 700) ${13 * s}px/1 var(--pl-round)`, color: on ? 'var(--pl-ink)' : 'var(--pl-ink-2)', transition: 'color 200ms ease', whiteSpace: 'nowrap' });
+    font: `var(--pl-round-w2, 700) ${13 * s}px/1 var(--pl-round)`, color: on ? (glass ? '#1c1530' : 'var(--pl-ink)') : (glass ? 'rgb(255 255 255 / 0.62)' : 'var(--pl-ink-2)'), transition: 'color 200ms ease', whiteSpace: 'nowrap' });
   return (
-    <div ref={track} role="group" aria-label="Technique" style={{ position: 'relative', display: 'flex', padding: 3 * s, borderRadius: 11 * s, background: 'var(--pl-paper-2)', boxShadow: 'inset 0 1px 2px rgb(28 27 25 / 0.08), inset 0 0 0 1px var(--pl-rule)' }}>
+    <div ref={track} role="group" aria-label="Technique" style={{ position: 'relative', display: 'flex', padding: 3 * s, borderRadius: 11 * s, ...(glass ? { background: 'rgb(20 10 50 / 0.45)', backdropFilter: 'blur(18px)', boxShadow: 'inset 0 0 0 1px rgb(255 255 255 / 0.14)' } : { background: 'var(--pl-paper-2)', boxShadow: 'inset 0 1px 2px rgb(28 27 25 / 0.08), inset 0 0 0 1px var(--pl-rule)' }) }}>
       {thumb ? <span aria-hidden="true" style={{ position: 'absolute', top: 3 * s, bottom: 3 * s, left: thumb.left, width: thumb.width, borderRadius: 8 * s, background: 'var(--pl-paper)',
         boxShadow: '0 1px 2px rgb(28 27 25 / 0.12), 0 0 0 1px var(--pl-rule)', transition: 'left 420ms var(--pl-spring), width 420ms var(--pl-spring)' }} /> : null}
       <button type="button" aria-pressed={!fixed} disabled={!ready} onClick={onBack} style={tab(!fixed)}>{names[0]}</button>
@@ -180,13 +186,13 @@ function Pill({ x, y, k, tone, icon, icons, toy, up, right, flow, mono = false, 
 // the class that fixes it arrives in mint; under each, the property it sets. The sauce, said as code.
 function Change({ code, fixed, done, inline = false }) {
   const s = useContext(UI);
-  const chip = (t) => { const tone = t === 'off' ? 'pink' : t; return ({ padding: `${2 * s}px ${7 * s}px`, borderRadius: 5 * s, font: 'var(--pl-card-code)', fontSize: 13 * s, color: `var(--pl-${tone})`, background: `color-mix(in oklab, var(--pl-${tone}) ${tone === 'pink' ? 9 : 11}%, transparent)` }); }; // "wrong" is pink in a film
+  const chip = (t) => { const tone = t === 'off' ? 'pink' : t; if (inline) return { padding: `${3 * s}px ${8 * s}px`, borderRadius: 6 * s, font: 'var(--pl-card-code)', fontSize: 13 * s, color: '#fff', background: `var(--pl-${tone})` }; return ({ padding: `${2 * s}px ${7 * s}px`, borderRadius: 5 * s, font: 'var(--pl-card-code)', fontSize: 13 * s, color: `var(--pl-${tone})`, background: `color-mix(in oklab, var(--pl-${tone}) ${tone === 'pink' ? 9 : 11}%, transparent)` }); }; // "wrong" is pink in a film
   const cap = { font: 'var(--pl-card-meta)', fontSize: 11.5 * s, color: 'var(--pl-ink-2)', textAlign: 'center' };
   // a long fault and fix (a gradient) don't fit side by side in the film's column: the fix opens under the fault instead
   const stack = inline && code.fault.cls.length + code.fix.cls.length > 40;
   return (
     <span style={{ position: 'absolute', ...(inline ? { left: 0, top: 0 } : { left: '50%', top: `calc(100% + ${12 * s}px)`, transform: 'translateX(-50%)' }), display: 'flex', alignItems: 'flex-start', gap: 10 * s, padding: `${10 * s}px ${14 * s}px ${9 * s}px`,
-      borderRadius: 12 * s, background: 'var(--pl-paper)', color: 'var(--pl-ink)', boxShadow: '0 0 0 1px rgb(0 0 0 / 0.06), 0 8px 24px -8px rgb(0 0 0 / 0.18)', whiteSpace: 'nowrap',
+      borderRadius: 12 * s, ...(inline ? { background: 'rgb(20 10 50 / 0.45)', backdropFilter: 'blur(18px)', color: '#fff', boxShadow: 'inset 0 0 0 1px rgb(255 255 255 / 0.14), 0 12px 30px -12px rgb(10 4 30 / 0.4)' } : { background: 'var(--pl-paper)', color: 'var(--pl-ink)', boxShadow: '0 0 0 1px rgb(0 0 0 / 0.06), 0 8px 24px -8px rgb(0 0 0 / 0.18)' }), whiteSpace: 'nowrap',
       animation: 'film-pop 300ms var(--pl-spring-pop) both' }}>
       <span style={{ display: 'flex', flexDirection: stack ? 'column' : 'row', alignItems: 'flex-start', gap: stack ? 0 : 10 * s }}>
       <span style={{ display: 'flex', flexDirection: 'column', gap: 4 * s }}>
@@ -251,7 +257,7 @@ function burst(canvas, ox, oy) {
   requestAnimationFrame(tick);
 }
 
-export function Film({ Example, names, onSaid, chrome = true, start = true, onDone, ui = 1, openIn = false, onLine, onBurst, aside = null }) {
+export function Film({ head = null,  Example, names, onSaid, chrome = true, start = true, onDone, ui = 1, openIn = false, onLine, onBurst, aside = null }) {
   const spec = Example.film;
   // a film with a script (spec.script, the owner-approved words, one line a moment) says its story in those words, set
   // under the stage by FilmPage; plumber's own marks (pills, the change card, the check and burst) all stay as they are
@@ -463,6 +469,9 @@ export function Film({ Example, names, onSaid, chrome = true, start = true, onDo
     <div ref={box} className="pl-light relative flex flex-col items-center gap-10" style={{ '--pl-off': 'var(--pl-pink)', '--pl-off-bg': 'var(--pl-pink-soft)', '--shadow-card': FILM_SHADOW }}>
       <style>{'@keyframes film-pop { from { opacity: 0; scale: 0.92 } to { opacity: 1; scale: 1 } } @keyframes film-ring { from { opacity: 0; scale: 1.25 } to { opacity: 1; scale: 1 } } @keyframes film-tag { from { opacity: 0; scale: 0.6; translate: 0 6px } to { opacity: 1; scale: 1; translate: 0 0 } }'}</style>
       <div aria-hidden="true" dangerouslySetInnerHTML={{ __html: TOY_DEFS }} />
+      {/* on the film's silk, the card sits as a window: a thin glass rim, its own corners, a deep soft shadow under it */}
+      <div style={aside ? { color: 'var(--color-ink)', padding: 10, borderRadius: 26, background: 'rgb(255 255 255 / 0.14)', backdropFilter: 'blur(24px) saturate(1.4)',
+        boxShadow: 'inset 0 0 0 1px rgb(255 255 255 / 0.3), inset 0 1px 0 rgb(255 255 255 / 0.55), 0 50px 90px -24px rgb(10 4 30 / 0.55), 0 14px 28px -10px rgb(10 4 30 / 0.3)' } : undefined}>
       <div className="relative" style={frame ? { overflow: 'clip', borderRadius: frame.radius, boxShadow: frame.shadow, isolation: 'isolate' } : undefined}>
         <div ref={camRef} className="relative" style={{ transform: `translate(${cam.x}px, ${cam.y}px) scale(${k})`, transformOrigin: '0 0', transition: `transform ${cam.ms ?? (k > 1 ? TIMING.camera : TIMING.out)}ms ${CAMERA.curve}`, pointerEvents: playing ? 'none' : undefined }}>
           <Example key={side} side={side} onStatus={playing ? undefined : onSaid} />
@@ -512,15 +521,20 @@ export function Film({ Example, names, onSaid, chrome = true, start = true, onDo
           </PlumbLayer>
         </div>
       </div>
+      </div>
       {/* aside: the words, the switch and the change card in a column to the right of the card, so the card can take the whole height */}
-      <div ref={sw} className={aside ? 'z-10 flex flex-col items-start' : 'relative z-10 flex flex-col items-center'} style={aside ? { position: 'absolute', left: 'calc(100% + 56px)', top: '50%', translate: '0 -50%', width: 380, gap: 28 } : undefined}>
-        {aside}
+      <div ref={sw} className={aside ? 'z-10 flex flex-col items-start' : 'relative z-10 flex flex-col items-center'} style={aside ? { position: 'absolute', left: 'calc(100% + 64px)', top: 0, bottom: 0, width: 480, justifyContent: 'space-between' } : undefined}>
+        {aside ? head : null}
+        {aside ? <div style={{ flex: 1, display: 'flex', alignItems: 'center', width: '100%' }}>{aside}</div> : null}
         {aside ? (
-          // beside the demo: the change card in its own row, its room kept so the switch under it never jumps
-          <div style={{ position: 'relative', width: '100%', height: 44 * ui }}>{change && spec.code ? <PlumbLayer><Change code={teach} fixed={change >= 2} done={change === 3} inline /></PlumbLayer> : null}</div>
-        ) : change && spec.code ? <PlumbLayer><Change code={spec.code} fixed={change >= 2} done={change === 3} /></PlumbLayer> : null}
-        {/* in a scripted film the switch is chrome, a step under the story's words: smaller than plumber's film-size marks */}
-        <UI.Provider value={words ? Math.min(ui, 1.4 / 0.95) : ui}><TechniqueSwitch names={names} fixed={side === 'fixed'} ready={!playing} onBack={() => setSide('broken')} onFix={() => setSide('fixed')} /></UI.Provider>
+          // the foot: the change card in its own room (a stacked card needs two rows), so the switch under it never jumps
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 16, width: '100%' }}>
+            <div style={{ position: 'relative', width: '100%', height: (teach && teach.fault.cls.length + teach.fix.cls.length > 40 ? 76 : 44) * ui }}>{change && spec.code ? <PlumbLayer><Change code={teach} fixed={change >= 2} done={change === 3} inline /></PlumbLayer> : null}</div>
+            <UI.Provider value={Math.min(ui, 1.4 / 0.95)}><TechniqueSwitch glass names={names} fixed={side === 'fixed'} ready={!playing} onBack={() => setSide('broken')} onFix={() => setSide('fixed')} /></UI.Provider>
+          </div>
+        ) : null}
+        {!aside && change && spec.code ? <PlumbLayer><Change code={spec.code} fixed={change >= 2} done={change === 3} /></PlumbLayer> : null}
+        {!aside ? <UI.Provider value={ui}><TechniqueSwitch names={names} fixed={side === 'fixed'} ready={!playing} onBack={() => setSide('broken')} onFix={() => setSide('fixed')} /></UI.Provider> : null}
       </div>
       {chrome ? (!playing ? <button type="button" onClick={() => setRun((x) => x + 1)} style={{ marginTop: -28, border: 0, background: 'none', cursor: 'pointer', font: 'var(--pl-round-w2, 700) 13px/20px var(--pl-round)', color: 'var(--pl-ink-2)' }}>Replay</button> : <span style={{ marginTop: -28, height: 20 }} />) : null}
       <canvas ref={fx} aria-hidden="true" className="pointer-events-none absolute z-30" style={{ left: -160, top: -80, width: 'calc(100% + 320px)', height: 'calc(100% + 160px)' }} />
