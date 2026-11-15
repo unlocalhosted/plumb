@@ -277,7 +277,12 @@ export function classSources(node: Node, source: string, trail: Trail = []): { s
 export function classSourcesAt(node: Node, path: string[], source: string, trail: Trail = []): { strings: Text[]; refs: ClassRef[] } {
   let at = unwrap(node);
   for (let i = 0; i < path.length; i++) {
-    if (path[i] === CALLED) return i === path.length - 1 && at.type === 'CallExpression' ? recipeSources(at, source, trail) : { strings: [], refs: [] };
+    if (path[i] === CALLED) {
+      if (i !== path.length - 1) return { strings: [], refs: [] };
+      if (at.type === 'CallExpression') return recipeSources(at, source, trail);
+      if (at.type === 'ArrowFunctionExpression' || at.type === 'FunctionExpression') return returnedSources(at, source, trail);
+      return { strings: [], refs: [] };
+    }
     if (at.type === 'ObjectExpression' && path[i] === ANY_KEY) {
       // a table read by a key known at run time (`SIZE[size].text`): each entry's value, as the case it is written for,
       // so a class there is changed in its own entry and nothing is ever added into the table
@@ -300,6 +305,27 @@ export function classSourcesAt(node: Node, path: string[], source: string, trail
     return read ? { strings: [], refs: [{ name: read.name, path: [...read.path, ...path.slice(i)], start: at.start, trail }] } : { strings: [], refs: [] };
   }
   return classSources(at, source, trail);
+}
+/** What a local function called for a className gives back (`const full = (cls = '') => tight ? 'sr-only' : cls`): the
+ * strings it returns, and a parameter's string default, which applies when the call leaves it out. Nested functions
+ * return for themselves, not for it. */
+function returnedSources(fn: Node, source: string, trail: Trail): { strings: Text[]; refs: ClassRef[] } {
+  const out = { strings: [] as Text[], refs: [] as ClassRef[] };
+  const add = (node: Node, t: Trail) => { const each = classSources(node, source, t); out.strings.push(...each.strings); out.refs.push(...each.refs); };
+  const f = fn as unknown as { params: Node[]; body: Node; expression?: boolean };
+  for (const param of f.params) {
+    if (param.type === 'AssignmentPattern' && param.left.type === 'Identifier') add(param.right, [...trail, { condition: `${param.left.name} is left out`, which: 'then' }]);
+  }
+  if (f.body.type !== 'BlockStatement') { add(f.body, trail); return out; }
+  const walk = (node: Node): void => {
+    if (node.type === 'ArrowFunctionExpression' || node.type === 'FunctionExpression' || node.type === 'FunctionDeclaration') return;
+    if (node.type === 'ReturnStatement') { if (node.argument) add(node.argument, trail); return; }
+    for (const value of Object.values(node as unknown as Record<string, unknown>)) {
+      for (const child of Array.isArray(value) ? value : [value]) if (child && typeof child === 'object' && typeof (child as Node).type === 'string') walk(child as Node);
+    }
+  };
+  walk(f.body);
+  return out;
 }
 const stringsIn = (node: Node, source: string, trail: Trail): Text[] => classSources(node, source, trail).strings;
 /** An element's className as its props read it: `static` when any plain string holds a class (each with the condition it
