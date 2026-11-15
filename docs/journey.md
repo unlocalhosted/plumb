@@ -1809,9 +1809,19 @@ field is empty). The table of five writes, before and after. The Next table: eig
   names put together from data (`fr-m-${k.cls}`). No string in the source holds them, so refusing is right.
 - **Not done:** no tests were run on any of this. The laptop was out of memory for most of the run (under 200 MB
   free), and after its cache was cleared plumber took about 15 minutes to read algorecall again.
+- **Twelve more crafting-ui pages (2026-11-16):** 3,365 classes across /interfaces, /motion and its primitives,
+  vocabulary and standards pages, /assets, /how-its-made, /workshop, the craft index and two craft articles, and
+  the glyphwrite tooling page. One new cause, on /motion: the isometric `Box` and the paper `Cutout` draw
+  `className={side}` with a default written in the component (`side = 'fill-draw-soft'`), and the page's usages
+  leave the prop out. The finder stopped at a usage that didn't pass the prop. It now reads the default, under
+  the condition that the prop is left out, and treats it like a variable other elements read: a change there
+  changes every box drawn without a `side` of its own, and nothing new is added there. All four classes now place
+  on the line where the default is written (drawing.tsx:183, draw.tsx:198). The only other misses were the six
+  icon classes put together from data on /assets, the same kind as on the home page. No write was made to prove
+  the default fix; it goes through the same lookup the writers use, but that is not the same as seeing a write.
 
 ## Open gaps
-- Sweeps covered six algorecall pages and one crafting-ui page. A class passed as an argument to a local function
+- Sweeps covered six algorecall pages and thirteen crafting-ui pages. A class passed as an argument to a local function
   (`drop(FIT.section, 'max-sm:hidden')`) is not yet read from the call; only the function's own strings are.
 - The site's top bar doesn't fit a phone (390px): it widens the page to about 500px. Needs a compact bar.
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
