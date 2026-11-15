@@ -798,8 +798,16 @@ export class FixPanel {
     if (!nt?.namespace || !nt.utility) return null;
     const name = this.#names.get(g.key) ?? FIX.nameFor(nt.namespace, String(nt.value)), ok = /^[a-z][a-z0-9-]{0,30}$/.test(name);
     // the class as written at the place keeps its variants and sign: hover:-mx-[…] becomes hover:-mx-<name>
+    // a style written in JavaScript (fontWeight: on ? 600 : 400) takes no class: its quoted value becomes the token's
+    // variable where it is written ('oklch(…)' → 'var(--color-name)'), and a value it doesn't quote can't be written
+    const value = String(nt.value);
+    if (!/^[^\s'"(),]+$/.test(g.text)) {
+      const q = [`'${value}'`, `"${value}"`].find((s) => g.text.includes(s));
+      if (!q) return null;
+      return { kind: 'new', name, ok, value, token: `${nt.namespace}-${name}`, cls: g.text.replace(q, `${q[0]}var(--${nt.namespace}-${name})${q[0]}`), namespace: nt.namespace, utility: nt.utility, file: policy.file, hash: policy.hash ?? null };
+    }
     const lead = /^((?:[^:\[\]]+:)*)(!?-?)/.exec(g.text) ?? ['', '', ''];
-    return { kind: 'new', name, ok, value: String(nt.value), token: `${nt.namespace}-${name}`, cls: `${lead[1]}${lead[2]}${nt.utility}-${name}`, namespace: nt.namespace, utility: nt.utility, file: policy.file, hash: policy.hash ?? null };
+    return { kind: 'new', name, ok, value, token: `${nt.namespace}-${name}`, cls: `${lead[1]}${lead[2]}${nt.utility}-${name}`, namespace: nt.namespace, utility: nt.utility, file: policy.file, hash: policy.hash ?? null };
   }
   // the class the new token becomes, said as it is typed (the field is not drawn again while it has the caret)
   #sayNew() {
@@ -1075,15 +1083,21 @@ export class FixPanel {
       // the bar (design site: Fix bar): the property's toy, the headline and the detail, where you are, the way into the
       // other job. The choice (the options, Use, Keep, Skip) is made on the element, in its own box beside it
       const n = placesOf(g), prop = propWord(mark, nameOf(g)), kindNow = KIND_OF_WORD[prop] ?? kind;
-      const unitOf = (x) => (Number.isFinite(x) ? `${Math.round(x * 10) / 10}${kindNow === 'time' ? 'ms' : prop === 'font weight' ? '' : 'px'}` : null);
-      // what it is now: its value, else the class itself (a Tailwind default has no number of its own here)
-      const now = unitOf(v?.now?.n) ?? (prop ? nameOf(g) : null);
+      // a weight, a layer, an opacity is a bare number
+      const bare = prop === 'font weight' || mark.family === 'z' || (mark.props ?? []).some((p) => /^(z-index|opacity|font-weight|order)$/.test(p));
+      const unitOf = (x) => (Number.isFinite(x) ? `${Math.round(x * 10) / 10}${kindNow === 'time' ? 'ms' : bare ? '' : 'px'}` : null);
       const framework = /framework/.test(mark.rule ?? '');
+      // what it is now: its value, else the class itself. A Tailwind default is said by its class (text-lg), which is
+      // what the headline is about; its number is in the control
+      const cls = nameOf(g), isClass = !!cls && /[a-z]/i.test(cls) && !/^-?[\d.]+[a-z%]*$/i.test(cls);
+      const now = framework && isClass ? cls : unitOf(v?.now?.n) ?? cls ?? null;
       const sayLine = mark.family === 'craft' ? `${n} ${nounOf(g, n)}: ${String(what).replace(/^./, (c) => c.toLowerCase())}`
         : prop && framework ? `${n} ${nounOf(g, n)} use${n === 1 ? 's' : ''} Tailwind’s default ${prop}` : prop ? `${n} ${nounOf(g, n)} ${n === 1 ? 'has' : 'have'} a hard-coded ${prop}` : `${n} ${nounOf(g, n)}: ${what.toLowerCase()}`;
       const tokens = v?.ready ? [...new Map([...v.options].sort((a, b) => (a.n ?? 0) - (b.n ?? 0)).map((o) => [unitOf(o.n) ?? o.label, 1])).keys()].filter(Boolean) : [];
       const moreLine = mark.family === 'craft' ? esc(String(mark.title ?? mark.because ?? ''))
-        : `${now != null && now !== '' ? `<span class="pl-pill" data-hue="coral">${esc(String(now))}</span> ` : ''}${esc(framework ? (tokens.length && prop ? `isn’t one of your ${prop} tokens: ${listOf(tokens)}.` : `comes from Tailwind’s defaults. Your theme doesn’t set it.`) : tokens.length && prop ? `isn’t one of your ${prop} tokens: ${listOf(tokens)}.` : prop ? `isn’t one of your ${prop} tokens.` : what)}`;
+        : `${now != null && now !== '' ? `<span class="pl-pill" data-hue="coral">${esc(String(now))}</span> ` : ''}${esc(framework ? (tokens.length && prop ? `isn’t one of your ${prop} tokens: ${listOf(tokens)}.` : `comes from Tailwind’s defaults. Your theme doesn’t set it.`) : tokens.length && prop ? `isn’t one of your ${prop} tokens: ${listOf(tokens)}.` : prop ? `isn’t one of your ${prop} tokens.`
+          // no property word: say the value against your steps, never the headline again
+          : /by-value|matches/.test(mark.rule ?? '') ? 'is typed by hand. Your theme has a token with this value.' : tokens.length ? `isn’t one of your steps: ${listOf(tokens)}.` : 'isn’t in your theme.')}`;
       const nav = `<span class="onav"><button class="prev" aria-label="Previous fix">‹</button><span>${esc(FIX.position(g, live, noteOf))}</span><button class="next" aria-label="Next fix">›</button></span>`;
       html = `<div class="one"${slide ? '' : ' style="animation:none"'}><i class="ic big">${toyFor(mark, kindNow)}</i><span class="lines"><span class="hl">${esc(sayLine)}${info}</span><span class="dt">${moreLine}</span></span>`
         + `<span class="sep"></span>${nav}${button(CLEANUP.bar, { cls: 'sm quiet cleanup', attrs: 'aria-keyshortcuts="c"', icon: toyOf('icon') })}</div>`;

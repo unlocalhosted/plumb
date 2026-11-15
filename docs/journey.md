@@ -1729,7 +1729,26 @@ field is empty). The table of five writes, before and after. The Next table: eig
 - **Full suite, on the test server:** 1,095 passed, 1 failed: the spacing proofs' two-page test, a reload race that fails on main too (main 2 of 3, this branch 1 of 3, alone). Main moved forward to the branch (local, not pushed).
 - **Media hooks:** the counter log for the tree page: the queue at 1,122, then 15, then 0.
 
+### 32. Stepping through every fix in the bar, on algorecall (2026-11-15)
+- **The itch:** the owner: "now come back to testing the bars". All 55 fixes on algorecall's home page, one by one.
+- **What was wrong:** a margin of -2px was offered as +2px (`marginTop: "calc(var(--spacing) * 0.5)"`), so taking it
+  would have flipped the layout. A new token for a style written in JavaScript would have spliced a class into the
+  code (`fontWeight: on ? 600 :font-strong`). Findings with no property word repeated their headline as the detail
+  ("Spacing not in your theme"). A Tailwind size was named by its number while the headline was about its class. A
+  layer (z-index) got "px".
+- **The system behind it:** the steps a value can take are stored as sizes without a sign, and the two places that
+  write a token into an inline style (the agent's edit and the overlay's edit) each rebuilt the value on their own,
+  neither one with the sign. The bar's new-token line assumed every place is a class.
+- **The fix and the proof:** one shared helper keeps the sign for both writers; a JavaScript style takes the token's
+  variable in its quoted value, or no new-token offer when the value isn't quoted; details say the value against
+  your steps ("-1px isn't one of your steps: 0px and 2px."). On algorecall the margin now offers
+  `calc(var(--spacing) * -0.5)`. The overlay's served-file list was also missing `soft.js`, which failed the build.
+- **Still open:** the first fix (text-sm, 18 places) says it can't be written, because the place it shows (the mint
+  button) builds its size elsewhere in the file. The other places have edits.
+
 ## Open gaps
+- The fix bar judges "can it be written" by the one place it shows; when that place builds its class elsewhere
+  (algorecall's mint button, text-sm) the whole fix reads as unwritable though its other places have edits.
 - The site's top bar doesn't fit a phone (390px): it widens the page to about 500px. Needs a compact bar.
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
 
