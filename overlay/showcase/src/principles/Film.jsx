@@ -42,7 +42,7 @@ import { TOY_DEFS, toyOf } from '../../../src/toys.js';
 ensureLook();
 
 // the technique switch, in plumber's language: a sunk track, a lit thumb that slides on the spring, names in the toy face
-function TechniqueSwitch({ names, fixed, ready, onBack, onFix, glass = false }) {
+function TechniqueSwitch({ names, fixed, ready, onBack, onFix, glass = false, full = false }) {
   const s = useContext(UI);
   const track = useRef(null);
   const [thumb, setThumb] = useState(null);
@@ -53,10 +53,10 @@ function TechniqueSwitch({ names, fixed, ready, onBack, onFix, glass = false }) 
     put(); document.fonts?.ready.then(put);
     const ro = new ResizeObserver(put); ro.observe(el); return () => ro.disconnect();
   }, [fixed, names, s]);
-  const tab = (on) => ({ position: 'relative', zIndex: 1, height: 30 * s, padding: `0 ${14 * s}px`, border: 0, background: 'none', cursor: ready ? 'pointer' : 'default',
+  const tab = (on) => ({ position: 'relative', zIndex: 1, height: (full ? 40 : 30) * s, ...(full ? { flex: 1 } : null), padding: `0 ${14 * s}px`, border: 0, background: 'none', cursor: ready ? 'pointer' : 'default',
     font: `var(--pl-round-w2, 700) ${13 * s}px/1 var(--pl-round)`, color: on ? (glass ? '#1c1530' : 'var(--pl-ink)') : (glass ? 'rgb(255 255 255 / 0.62)' : 'var(--pl-ink-2)'), transition: 'color 200ms ease', whiteSpace: 'nowrap' });
   return (
-    <div ref={track} role="group" aria-label="Technique" style={{ position: 'relative', display: 'flex', padding: 3 * s, borderRadius: 11 * s, ...(glass ? { background: 'rgb(20 10 50 / 0.45)', backdropFilter: 'blur(18px)', boxShadow: 'inset 0 0 0 1px rgb(255 255 255 / 0.14)' } : { background: 'var(--pl-paper-2)', boxShadow: 'inset 0 1px 2px rgb(28 27 25 / 0.08), inset 0 0 0 1px var(--pl-rule)' }) }}>
+    <div ref={track} role="group" aria-label="Technique" style={{ position: 'relative', display: 'flex', ...(full ? { width: '100%', boxSizing: 'border-box' } : null), padding: 3 * s, borderRadius: (full ? 12 : 11) * s, ...(glass ? { background: 'rgb(20 10 50 / 0.45)', backdropFilter: 'blur(18px)', boxShadow: 'inset 0 0 0 1px rgb(255 255 255 / 0.14)' } : { background: 'var(--pl-paper-2)', boxShadow: 'inset 0 1px 2px rgb(28 27 25 / 0.08), inset 0 0 0 1px var(--pl-rule)' }) }}>
       {thumb ? <span aria-hidden="true" style={{ position: 'absolute', top: 3 * s, bottom: 3 * s, left: thumb.left, width: thumb.width, borderRadius: 8 * s, background: 'var(--pl-paper)',
         boxShadow: '0 1px 2px rgb(28 27 25 / 0.12), 0 0 0 1px var(--pl-rule)', transition: 'left 420ms var(--pl-spring), width 420ms var(--pl-spring)' }} /> : null}
       <button type="button" aria-pressed={!fixed} disabled={!ready} onClick={onBack} style={tab(!fixed)}>{names[0]}</button>
@@ -184,15 +184,15 @@ function Pill({ x, y, k, tone, icon, icons, toy, up, right, flow, mono = false, 
 
 // plumber's change, as its cards show it (overlay/src/widget.js .change): the class at fault in coral, then struck as
 // the class that fixes it arrives in mint; under each, the property it sets. The sauce, said as code.
-function Change({ code, fixed, done, inline = false }) {
+function Change({ code, fixed, done, inline = false, glass = inline }) {
   const s = useContext(UI);
-  const chip = (t) => { const tone = t === 'off' ? 'pink' : t; if (inline) return { padding: `${3 * s}px ${8 * s}px`, borderRadius: 6 * s, font: 'var(--pl-card-code)', fontSize: 13 * s, color: '#fff', background: `var(--pl-${tone})` }; return ({ padding: `${2 * s}px ${7 * s}px`, borderRadius: 5 * s, font: 'var(--pl-card-code)', fontSize: 13 * s, color: `var(--pl-${tone})`, background: `color-mix(in oklab, var(--pl-${tone}) ${tone === 'pink' ? 9 : 11}%, transparent)` }); }; // "wrong" is pink in a film
+  const chip = (t) => { const tone = t === 'off' ? 'pink' : t; if (glass) return { padding: `${3 * s}px ${8 * s}px`, borderRadius: 6 * s, font: 'var(--pl-card-code)', fontSize: 13 * s, color: '#fff', background: `var(--pl-${tone})` }; return ({ padding: `${2 * s}px ${7 * s}px`, borderRadius: 5 * s, font: 'var(--pl-card-code)', fontSize: 13 * s, color: `var(--pl-${tone})`, background: `color-mix(in oklab, var(--pl-${tone}) ${tone === 'pink' ? 9 : 11}%, transparent)` }); }; // "wrong" is pink in a film
   const cap = { font: 'var(--pl-card-meta)', fontSize: 11.5 * s, color: 'var(--pl-ink-2)', textAlign: 'center' };
   // a long fault and fix (a gradient) don't fit side by side in the film's column: the fix opens under the fault instead
   const stack = inline && code.fault.cls.length + code.fix.cls.length > 40;
   return (
-    <span style={{ position: 'absolute', ...(inline ? { left: 0, top: 0 } : { left: '50%', top: `calc(100% + ${12 * s}px)`, transform: 'translateX(-50%)' }), display: 'flex', alignItems: 'flex-start', gap: 10 * s, padding: `${10 * s}px ${14 * s}px ${9 * s}px`,
-      borderRadius: 12 * s, ...(inline ? { background: 'rgb(20 10 50 / 0.45)', backdropFilter: 'blur(18px)', color: '#fff', boxShadow: 'inset 0 0 0 1px rgb(255 255 255 / 0.14), 0 12px 30px -12px rgb(10 4 30 / 0.4)' } : { background: 'var(--pl-paper)', color: 'var(--pl-ink)', boxShadow: '0 0 0 1px rgb(0 0 0 / 0.06), 0 8px 24px -8px rgb(0 0 0 / 0.18)' }), whiteSpace: 'nowrap',
+    <span style={{ position: 'absolute', ...(inline ? { left: 0, top: 0, right: 0, bottom: 0, boxSizing: 'border-box', alignItems: 'center' } : { left: '50%', top: `calc(100% + ${12 * s}px)`, transform: 'translateX(-50%)' }), display: 'flex', alignItems: inline ? 'center' : 'flex-start', gap: 10 * s, padding: `${10 * s}px ${14 * s}px ${9 * s}px`,
+      borderRadius: 12 * s, ...(glass ? { background: 'rgb(20 10 50 / 0.45)', backdropFilter: 'blur(18px)', color: '#fff', boxShadow: 'inset 0 0 0 1px rgb(255 255 255 / 0.14), 0 12px 30px -12px rgb(10 4 30 / 0.4)' } : { background: 'var(--pl-paper)', color: 'var(--pl-ink)', boxShadow: '0 0 0 1px rgb(0 0 0 / 0.06), 0 8px 24px -8px rgb(0 0 0 / 0.18)' }), whiteSpace: 'nowrap',
       animation: 'film-pop 300ms var(--pl-spring-pop) both' }}>
       <span style={{ display: 'flex', flexDirection: stack ? 'column' : 'row', alignItems: 'flex-start', gap: stack ? 0 : 10 * s }}>
       <span style={{ display: 'flex', flexDirection: 'column', gap: 4 * s }}>
@@ -257,7 +257,7 @@ function burst(canvas, ox, oy) {
   requestAnimationFrame(tick);
 }
 
-export function Film({ head = null,  Example, names, onSaid, chrome = true, start = true, onDone, ui = 1, openIn = false, onLine, onBurst, aside = null }) {
+export function Film({ head = null, panel = 'glass',  Example, names, onSaid, chrome = true, start = true, onDone, ui = 1, openIn = false, onLine, onBurst, aside = null }) {
   const spec = Example.film;
   // a film with a script (spec.script, the owner-approved words, one line a moment) says its story in those words, set
   // under the stage by FilmPage; plumber's own marks (pills, the change card, the check and burst) all stay as they are
@@ -523,14 +523,16 @@ export function Film({ head = null,  Example, names, onSaid, chrome = true, star
       </div>
       </div>
       {/* aside: the words, the switch and the change card in a column to the right of the card, so the card can take the whole height */}
-      <div ref={sw} className={aside ? 'z-10 flex flex-col items-start' : 'relative z-10 flex flex-col items-center'} style={aside ? { position: 'absolute', left: 'calc(100% + 64px)', top: 0, bottom: 0, width: 480, justifyContent: 'space-between' } : undefined}>
-        {aside ? head : null}
+      <div ref={sw} className={aside ? 'z-10 flex flex-col items-start' : 'relative z-10 flex flex-col items-center'} style={aside ? { position: 'absolute', left: 'calc(100% + 40px)', top: 0, bottom: 0, width: 520, justifyContent: 'space-between', padding: 40, boxSizing: 'border-box', borderRadius: 26, '--film-ink': panel === 'paper' ? '#1c1530' : '#fff', '--film-sub': panel === 'paper' ? '#7d6f98' : 'rgb(255 255 255 / 0.6)', '--film-rule': panel === 'paper' ? 'rgb(28 21 48 / 0.08)' : 'rgb(255 255 255 / 0.12)',
+        ...(panel === 'paper' ? { background: '#fff', boxShadow: 'inset 0 0 0 1px rgb(255 255 255 / 0.9), 0 50px 90px -24px rgb(10 4 30 / 0.55), 0 14px 28px -10px rgb(10 4 30 / 0.3)' }
+          : { background: 'rgb(20 10 50 / 0.42)', backdropFilter: 'blur(28px) saturate(1.3)', boxShadow: 'inset 0 0 0 1px rgb(255 255 255 / 0.16), inset 0 1px 0 rgb(255 255 255 / 0.3), 0 50px 90px -24px rgb(10 4 30 / 0.55)' }) } : undefined}>
+        {aside ? <div style={{ width: '100%', paddingBottom: 28, borderBottom: '1px solid var(--film-rule)' }}>{head}</div> : null}
         {aside ? <div style={{ flex: 1, display: 'flex', alignItems: 'center', width: '100%' }}>{aside}</div> : null}
         {aside ? (
           // the foot: the change card in its own room (a stacked card needs two rows), so the switch under it never jumps
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 16, width: '100%' }}>
-            <div style={{ position: 'relative', width: '100%', height: (teach && teach.fault.cls.length + teach.fix.cls.length > 40 ? 76 : 44) * ui }}>{change && spec.code ? <PlumbLayer><Change code={teach} fixed={change >= 2} done={change === 3} inline /></PlumbLayer> : null}</div>
-            <UI.Provider value={Math.min(ui, 1.4 / 0.95)}><TechniqueSwitch glass names={names} fixed={side === 'fixed'} ready={!playing} onBack={() => setSide('broken')} onFix={() => setSide('fixed')} /></UI.Provider>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 12, width: '100%', paddingTop: 28, borderTop: '1px solid var(--film-rule)' }}>
+            <div style={{ position: 'relative', width: '100%', height: (teach && teach.fault.cls.length + teach.fix.cls.length > 40 ? 76 : 44) * ui }}>{change && spec.code ? <PlumbLayer><Change code={teach} fixed={change >= 2} done={change === 3} inline glass={panel !== 'paper'} /></PlumbLayer> : null}</div>
+            <UI.Provider value={Math.min(ui, 1.4 / 0.95)}><TechniqueSwitch full glass={panel !== 'paper'} names={names} fixed={side === 'fixed'} ready={!playing} onBack={() => setSide('broken')} onFix={() => setSide('fixed')} /></UI.Provider>
           </div>
         ) : null}
         {!aside && change && spec.code ? <PlumbLayer><Change code={spec.code} fixed={change >= 2} done={change === 3} /></PlumbLayer> : null}

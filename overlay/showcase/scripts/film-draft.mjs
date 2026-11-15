@@ -19,7 +19,7 @@ import { checkPage, refuse } from './film-script-check.mjs';
 const args = process.argv.slice(2), n = Number(args[0]);
 if (!n) { console.error('usage: film-draft.mjs <N> [--origin URL] [--out DIR]'); process.exit(2); }
 const opt = (name, fallback) => { const i = args.indexOf(name); return i > 0 ? args[i + 1] : fallback; };
-const origin = opt('--origin', 'http://localhost:4313');
+const origin = opt('--origin', 'http://localhost:4313'), query = opt('--query', ''); // --query '?panel=paper': a variant to compare
 const out = resolve(opt('--out', `docs/films/${String(n).padStart(2, '0')}-draft`));
 const SETTLE = 900;      // ms after a beat starts before its keyframe: its marks drawn, its camera move mostly done
 const LIMIT = 60000;     // a film never runs longer than this
@@ -43,7 +43,7 @@ await page.exposeFunction('__filmBeat', (name, t) => {
   shots.push(new Promise((ok) => setTimeout(() => page.screenshot({ path: join(out, file) }).then(() => ok(file), () => ok(null)), SETTLE)));
   if (name === 'frame: line') setTimeout(done, 2500); // the closing line is the last beat; hold a moment past it
 });
-await page.goto(`${origin}/film/${n}`);
+await page.goto(`${origin}/film/${n}${query}`);
 const problems = await checkPage(page);
 if (problems.length) { await ctx.close(); await browser.close(); rmSync(out, { recursive: true, force: true }); refuse(n, problems); }
 await Promise.race([finished, new Promise((ok) => setTimeout(ok, LIMIT))]);

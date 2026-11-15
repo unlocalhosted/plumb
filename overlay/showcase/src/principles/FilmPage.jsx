@@ -149,7 +149,7 @@ export function FilmPage({ n }) {
   const side = scripted;
   // a scripted film: the card as large as the stage allows, tall cards by height, wide ones by width (with the words'
   // column, COLUMN px at the same scale, beside it)
-  const COLUMN = 544, fit = side ? (fh && fw ? Math.max(0.85, Math.min(1.5, 820 / fh, 1460 / (fw + COLUMN))) : 1) : FIT;
+  const COLUMN = 560, fit = side ? (fh && fw ? Math.max(0.85, Math.min(1.5, 820 / fh, 1460 / (fw + COLUMN))) : 1) : FIT;
   const on = phase === 'name' || phase === 'film' || phase === 'playing';
   const said = caption ?? (scripted ? Example.film.script[0] : { text: '' });
   const closingWords = scripted && said.at === 'close';
@@ -174,12 +174,18 @@ export function FilmPage({ n }) {
           {/* the demo, with the words, switch and change card beside it, fades and steps back at the closing */}
           <div ref={stack} style={{ opacity: on ? 1 : 0, transform: `translateY(${on || closing ? 0 : 12}px) scale(${(closing ? 0.97 : 1) * (scripted ? fit : 1)})`, transformOrigin: '50% 0',
             marginBottom: scripted ? -(1 - fit) * fh : 0, flex: 'none', transition: `opacity 600ms ease ${phase === 'film' ? TIMING.clear : 0}ms, transform 800ms var(--pl-spring) ${phase === 'film' ? TIMING.clear : 0}ms` }}>
-            <Film Example={Example} names={Example.names} chrome={false} start={phase === 'playing'} onDone={done} ui={scripted ? MARKS / fit : FILM_UI} openIn onLine={(text, at) => setCaption({ text, at })} onBurst={() => setNod((x) => x + 1)} head={side ? (
+            <Film panel={new URLSearchParams(location.search).get('panel') ?? 'glass'} Example={Example} names={Example.names} chrome={false} start={phase === 'playing'} onDone={done} ui={scripted ? MARKS / fit : FILM_UI} openIn onLine={(text, at) => setCaption({ text, at })} onBurst={() => setNod((x) => x + 1)} head={side ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 14 / fit }}>
-                <span style={{ font: `700 ${13 / fit}px/1 var(--pl-sans)`, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'rgb(255 255 255 / 0.6)' }}>Craft № {n}</span>
-                <span style={{ maxWidth: 480 - 230 / fit, font: `var(--pl-round-w, 750) ${40 / fit}px/1.05 var(--pl-round)`, letterSpacing: '-0.02em', color: '#fff', textWrap: 'balance' }}>{p.title}</span>
+                {/* the panel's top line: which lesson, and whose (the brand lives in the panel while the film plays, never on top of it) */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span style={{ font: `700 ${13 / fit}px/1 var(--pl-sans)`, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--film-sub)' }}>Craft № {n}</span>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 7 / fit, font: `650 ${15 / fit}px/1 var(--pl-sans)`, letterSpacing: '-0.02em', color: 'var(--film-ink)' }}>
+                    <span key={nod} style={{ display: 'grid', animation: nod ? 'mk-nod 700ms both' : undefined, transformOrigin: '50% 80%' }}><Mark size={22 / fit} /></span>React Plumber
+                  </span>
+                </div>
+                <span style={{ font: `var(--pl-round-w, 750) ${40 / fit}px/1.05 var(--pl-round)`, letterSpacing: '-0.02em', color: 'var(--film-ink)', textWrap: 'balance' }}>{p.title}</span>
               </div>
-            ) : null} aside={side ? <p aria-live="polite" style={{ margin: 0, minHeight: 80, font: `400 ${44 / fit}px/1.18 var(--pl-sans)`, letterSpacing: '-0.022em', color: '#fff', textWrap: 'balance' }}>{closingWords ? null : <Line key={said.text} text={said.text} fixed={['fix', 'payoff', 'end'].includes(said.at)} />}</p> : null} />
+            ) : null} aside={side ? <p aria-live="polite" style={{ margin: 0, minHeight: 80, font: `400 ${44 / fit}px/1.18 var(--pl-sans)`, letterSpacing: '-0.022em', color: 'var(--film-ink)', textWrap: 'balance' }}>{closingWords ? null : <Line key={said.text} text={said.text} fixed={['fix', 'payoff', 'end'].includes(said.at)} />}</p> : null} />
           </div>
         </div>
         {/* the closing words, in the middle of the stage once the demo has stepped back, before the mark comes in */}
@@ -191,7 +197,7 @@ export function FilmPage({ n }) {
         ) : null}
         {/* the mark, on every frame; at the end it comes to the middle, and the bob settles on its line */}
         <div ref={mark} style={{ position: 'absolute', right: 96, ...(scripted ? { top: 40 } : { bottom: STAGE.edge - 12 }), display: 'flex', alignItems: 'center', gap: 9,
-          opacity: shown ? 0.92 : 0, transform: marked && to ? to.mark : 'none', transition: `transform 1000ms ${MOVE}, opacity 600ms ease` }}>
+          opacity: shown && (!scripted || marked) ? 0.92 : 0, transform: marked && to ? to.mark : 'none', transition: `transform 1000ms ${MOVE}, opacity 600ms ease` }}>
           {/* chrome level: the brand stays small on every frame; it grows only at the closing */}
           <span key={nod} style={{ display: 'grid', animation: nod ? 'mk-nod 700ms both' : undefined, transformOrigin: '50% 80%' }}><Mark size={32} guards={marked} /></span>
           <span style={{ font: '650 20px/1 var(--pl-sans)', letterSpacing: '-0.03em' }}>React Plumber</span>
