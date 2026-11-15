@@ -26,9 +26,9 @@ const TIMING = {
   back:     300,   // closing: after the film, the card and signature step back
   mark:     700,   // the mark travels to the middle
   line:    1500,   // the site's line under it
-  says:    2600,   // a scripted film: the closing words held before the mark comes in
+  says:    4800,   // a scripted film: the closing words held before the mark comes in (15 words)
 };
-const CLOSING = 'React Plumber spots this in your app.';
+const CLOSING = 'React Plumber is a smart design engineer in your app, looking for 100+ design issues.';   // the owner's words, 2026-11-15
 const MOVE = 'cubic-bezier(0.7, 0, 0.3, 1)';
 const FIT = 0.95; // a film without a script: card and switch stacked                                  // a scripted film: the card and switch a step smaller, so the story's line fits under them
 const MARKS = 1.4;                                 // a scripted film: plumber's marks (pills, the change card) a step under the story's 30px line, never louder
