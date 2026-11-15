@@ -603,6 +603,42 @@ test('a crowded page with pass-through parts is read through', { timeout: 240000
   assert.equal(JSON.parse(result.stdout).routes[0].complete, true, 'stopped before every element was read');
 });
 
+// algorecall's dock button (drawn by a component the dock uses) was named at the line that uses the dock in one run and
+// inside the dock in the next: when the dock's own source could not be read once, the walk up stepped past it to the
+// wider place, and the failure was kept for the page's life. A library button inside a Dock; the overlay's first read
+// of Dock.jsx fails (the browser's own module load does not).
+const DOCKED_LIB = `import { Dock } from './Dock.jsx';
+export function App() {
+  return (
+    <main className="flex flex-col gap-s4 p-s4">
+      <h1>Docked</h1>
+      <Dock id="dock-usage" />
+    </main>
+  );
+}
+`;
+const DOCK_LIB = `import { LibButton } from 'fakelib';
+export function Dock() {
+  return (
+    <div>
+      <LibButton id="lib-usage">Notes</LibButton>
+    </div>
+  );
+}
+`;
+const FAKELIB = `import { createElement } from 'react';
+export function LibButton(props) { return createElement('button', { type: 'button', tabIndex: 0, ...props }); }
+`;
+const failOnce = () => { let failed = false; return { name: 'fail-once', configureServer(server) { server.middlewares.use((req, res, next) => {
+  if (!failed && req.url.startsWith('/src/Dock.jsx') && req.headers['sec-fetch-dest'] === 'empty') { failed = true; res.statusCode = 503; res.end('busy'); return; }
+  next();
+}); } }; };
+test('a part a library draws is named where your code uses it, even when that code could not be read once', { timeout: 240000 }, async (t) => {
+  if (!await built()) return t.skip('Run npm run build first.');
+  const by = await said(t, DOCKED_LIB, { files: { 'src/Dock.jsx': DOCK_LIB, 'node_modules/fakelib/package.json': JSON.stringify({ name: 'fakelib', version: '1.0.0', type: 'module', main: 'index.js' }), 'node_modules/fakelib/index.js': FAKELIB }, plugins: [failOnce()] });
+  assert.deepEqual(by.get('a11y/tabindex-redundant'), [lineOf(DOCK_LIB, 'lib-usage')], JSON.stringify(ofPacks(by)));
+});
+
 test('a page that is still loading is not told it has no main and no h1', { timeout: 240000 }, async (t) => {
   if (!await built()) return t.skip('Run npm run build first.');
   assert.deepEqual(ofPacks(await said(t, LOADING)), []);

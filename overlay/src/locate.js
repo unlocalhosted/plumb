@@ -68,12 +68,16 @@ function creationFrame(fiber) {
   const old = creationEvidence.get(evidence);
   if (old) return old.pending;
   const version = sourceMapVersion();
-  const pending = readCreationFrame(fiber).then(frame => {
+  // a read that failed (a map that did not load on a busy page) is tried once more before it counts
+  const pending = readCreationFrame(fiber).then(frame => frame?.failure ? readCreationFrame(fiber) : frame).then(frame => {
     // Successful evidence belongs to this Error, not the current module URL.
     // Retained stacks must never be remapped after cache invalidation.
     if (sourceMapVersion() !== version && (!frame || frame.failure)) return { failure: { reason: 'map', detail: { step: 'obsolete-stack' } } };
     // No raw creation frame is different from an unmapped raw frame. The
     // latter must not borrow an owner's JSX or retry through a future map.
+    // A frame that could not be read (a map that failed to load on a busy page) is not kept: the next question reads
+    // it again. Kept, it gave one answer for the whole page's life, and the usage walk below stepped past it.
+    if (frame?.failure && creationEvidence.get(evidence)?.pending === pending) creationEvidence.delete(evidence);
     return frame;
   });
   creationEvidence.set(evidence, { version, pending });
@@ -232,6 +236,7 @@ async function indexOf(source, options) {
 const carrier = name => /^(?:className|class|style|variant|size|color|colour|tone|intent|appearance|kind|look|shape|weight|radius|rounded|elevation|shadow|gap|padding|align|justify|direction|orientation)$|ClassName$/.test(name);
 // Exactly on the row: at its `<` (oxc, Babel map there) or at its tag name (SWC maps there). Never anywhere else.
 const atRow = (frame, row) => [row, row.name].some(at => at && at.line === frame.lineNumber && at.column === frame.columnNumber + 1);
+const LIBRARY_URL = /\/node_modules\/|\/\.vite\/deps\/|\/_next\/static\/chunks\/.*node_modules/;
 const libraryOf = fiber => /\/node_modules\/((?:@[^/]+\/)?[^/]+)|\/\.vite\/deps\/((?:@[^/]+_)?[^/.]+)/.exec(String(stackOf(fiber)?.stack ?? ''))?.slice(1).find(Boolean)?.replace(/^@([^_]+)_/, '@$1/') ?? null;
 const componentFiber = fiber => typeof fiber.type === 'function' || typeof fiber.type === 'object' && fiber.type !== null;
 async function usageOf(element, fiber, options) {
@@ -268,7 +273,15 @@ async function usageOf(element, fiber, options) {
     if (!componentFiber(up)) continue;
     nearest ??= up;
     const frame = await creationFrame(up);
-    if (!frame || frame.failure) continue;
+    if (!frame) continue;
+    // A component whose creation could not be read is not "not yours": stepping past it answered with a wider place
+    // (algorecall's dock button, named at the line that uses the dock in one run and inside the dock in the next).
+    // Said as not placed, never as the place around it.
+    // A library's own component with no readable map is still stepped past: its usage in your files is the answer.
+    if (frame.failure) {
+      if (LIBRARY_URL.test(frame.rawSource ?? '')) continue;
+      return refuse(frame.failure.reason, { ...frame.failure.detail, component: nameOf(up), step: 'usage-unread' });
+    }
     const index = await indexFor(frame);
     if (!index || index.untracked) continue;
     if (index.stale) return refuse('source-mismatch', index.stale);
