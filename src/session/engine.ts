@@ -1390,7 +1390,9 @@ export class Session extends EventEmitter {
     const names = (v: string) => v.split(/\s+/).filter(Boolean);
     if (names(from).length > 8 || names(to).length > 8) throw new UsageError('Swap changes at most eight classes.');
     const path = this.file(file); this.position(line); this.position(column);
-    const facts = await this.elementFacts(path, line, column);
+    // a write pinned to a string reached from the element asked about (`of`) is checked against what that element
+    // reaches, so its holder need not be a JSX element: a table another file exports is held by its declaration
+    const facts = at && of ? await this.pinFacts(path, line, column) : await this.elementFacts(path, line, column);
     if (sourceHash(facts.text) !== hash) throw stale();
     // a component's usage is not the element that was measured: a class added there may land elsewhere or nowhere
     if (!at && !names(from).length && isComponentJSX(facts.location.tag)) throw new UsageError(`<${facts.location.tag}> is a component; add the class inside it, by hand.`);
@@ -1399,6 +1401,11 @@ export class Session extends EventEmitter {
       if (sourceHash(source) !== hash) throw stale();
       return swapClasses(_file, source, facts.location.start, names(from), names(to), pinned);
     }, changed(from, to, ''));
+  }
+  /** The file a pinned write goes into, read as it is, and the holder's position in it as sent. */
+  private async pinFacts(path: string, line: number, column: number) {
+    await this.readableSource(path);
+    return { text: await readFile(path, 'utf8'), location: { line, column, tag: '', start: 0 } };
   }
   /** How class-site reaches a component's file from a usage's import (src/session/modules.ts): the project's resolution
    * (relative, index files, tsconfig paths, vite aliases), source files inside the root only, read as they are now. */
@@ -1495,6 +1502,8 @@ export class Session extends EventEmitter {
     const answer = classSites({ element, chain: links, modules: this.modules(), ...(names?.length ? { classes: names } : {}) });
     const hashes: Record<string, string> = {};
     for (const name of [element, ...links]) hashes[name.file] = sourceHash(name.text);
+    // a class written in a table another file exports: the writer needs that file's hash too
+    for (const site of answer.classes.flatMap(c => c.sites)) if (!(site.file in hashes)) hashes[site.file] = sourceHash(await readFile(this.file(site.file), 'utf8'));
     return { revision: this.revision, file, hash: hashes[file]!, hashes, ...answer };
   }
   /** Set a literal prop on a component (a craft suggestion of kind prop: delayDuration={500}), in one guarded write. */
@@ -1600,7 +1609,7 @@ export class Session extends EventEmitter {
     const starts: { edit: SwapsOptions['edits'][number]; start: number; from: string[]; to: string[]; pin?: ClassString }[] = [];
     for (const e of unique) {
       try {
-        const facts = await this.elementFacts(path, e.line, e.column);
+        const facts = e.at && e.of ? await this.pinFacts(path, e.line, e.column) : await this.elementFacts(path, e.line, e.column);
         if (sourceHash(facts.text) !== hash) throw stale();
         if (!e.at && !names(e.from).length && isComponentJSX(facts.location.tag)) throw new UsageError(`<${facts.location.tag}> is a component; add the class inside it, by hand.`);
         const pin = e.at ? await this.pinned(path, facts, { line: e.line, column: e.column, at: e.at, ...(e.of ? { of: e.of } : {}) }, pinWrite(names(e.from), names(e.to))) : undefined;

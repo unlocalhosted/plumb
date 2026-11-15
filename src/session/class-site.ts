@@ -118,6 +118,18 @@ function resolve(input: ClassSiteInput, usageProps = false): Resolved {
     if (seen.has(key)) return;
     seen.add(key);
     const binding = bindingOf(holder.src.program, ref.start, ref.name);
+    // a table imported from another file of the project (`ICON_CAT_CLS[cat]`): its strings are written there. The holder
+    // is the table's declaration in that file; it is exported, so other files may read it (a change there changes them)
+    if (!binding && !boundBelow(holder.src.program, ref.start, ref.name)) {
+      const table = importedVariable(holder.src, ref.name, { modules: input.modules, open });
+      if (table) {
+        const where = position(table.src, table.declaration);
+        const at: Holder = { src: table.src, kind: 'own', prop: holder.prop, element: { file: table.src.file, line: where.line, column: where.column, tag: '' }, level: holder.level, next: holder.next,
+          variable: table.name, readers: Math.max(2, readers(table.src.program, table.name, table.init)) };
+        take(classSourcesAt(table.init, ref.path, table.src.text, ref.trail), at);
+        return;
+      }
+    }
     if (binding?.kind === 'variable') {
       take(classSourcesAt(binding.init, [...binding.path ?? [], ...ref.path], holder.src.text, ref.trail), { ...holder, variable: ref.name, readers: readers(holder.src.program, ref.name, binding.init) });
       return;
@@ -410,7 +422,7 @@ function wrappedName(node: Node): string | undefined {
 }
 const statements = (src: Parsed): Node[] => src.program.type === 'Program' ? src.program.body as Node[] : [];
 interface Modules { modules: ModuleFacts; open: (source: SourceText) => Parsed }
-interface Reached { path: string; local: string }
+interface Reached { path: string; local: string; src: Parsed }
 
 /** Whether a usage's tag names the component. A tag imported in the usage's file is followed through its import (the
  * engine's module facts: relative paths, index files, the project's aliases) and every re-export on the way to the file
@@ -456,11 +468,11 @@ function exportOf(file: Parsed, name: string, m: Modules, seen: Set<string>): Re
         if (local === undefined) return undefined;
         return st.source ? exported(file, String(st.source.value), local, m, seen) : localOf(file, local, m, seen);
       }
-      if (st.declaration && declares(st.declaration as Node, name)) return { path: file.path, local: name };
+      if (st.declaration && declares(st.declaration as Node, name)) return { path: file.path, local: name, src: file };
     }
     if (st.type === 'ExportDefaultDeclaration' && name === 'default') {
       const d = unwrapped(st.declaration as Node);
-      return d.type === 'Identifier' ? localOf(file, d.name, m, seen) : { path: file.path, local: 'default' };
+      return d.type === 'Identifier' ? localOf(file, d.name, m, seen) : { path: file.path, local: 'default', src: file };
     }
     if (st.type === 'ExportAllDeclaration' && !st.exported && name !== 'default') stars.push(String(st.source.value));
   }
@@ -478,8 +490,39 @@ function localOf(file: Parsed, local: string, m: Modules, seen: Set<string>): Re
       return imported === undefined ? undefined : exported(file, String(st.source.value), imported, m, seen);
     }
   }
-  return { path: file.path, local };
+  return { path: file.path, local, src: file };
 }
 const declares = (declaration: Node, name: string): boolean =>
   (declaration.type === 'FunctionDeclaration' || declaration.type === 'ClassDeclaration') ? declaration.id?.name === name
     : declaration.type === 'VariableDeclaration' && declaration.declarations.some(d => d.id.type === 'Identifier' && d.id.name === name);
+/** A variable imported from another file of the project, as written there: its file, its name there, its value and
+ * where it is declared. Undefined for a package, a namespace or type import, or a name that is not a variable there. */
+function importedVariable(src: Parsed, name: string, m: Modules): { src: Parsed; name: string; init: Node; declaration: number } | undefined {
+  for (const st of statements(src)) {
+    if (st.type !== 'ImportDeclaration' || st.importKind === 'type') continue;
+    for (const s of st.specifiers ?? []) {
+      if (s.local.name !== name) continue;
+      if (s.type === 'ImportNamespaceSpecifier') return undefined;
+      const imported = s.type === 'ImportDefaultSpecifier' ? 'default' : keyName(s.imported as Node);
+      const reached = imported === undefined ? undefined : exported(src, String(st.source.value), imported, m, new Set());
+      if (!reached || reached.local === 'default') return undefined;
+      for (const top of statements(reached.src)) {
+        const declaration = top.type === 'VariableDeclaration' ? top : top.type === 'ExportNamedDeclaration' && top.declaration?.type === 'VariableDeclaration' ? top.declaration : undefined;
+        for (const d of declaration?.declarations ?? []) if (d.id.type === 'Identifier' && d.id.name === reached.local && d.init) return { src: reached.src, name: reached.local, init: d.init, declaration: d.start };
+      }
+      return undefined;
+    }
+  }
+  return undefined;
+}
+/** Whether a name read at an offset is bound inside the file before the top level: a parameter or a local of a function
+ * around it (a callback's `cat`), which shadows an import of the same name. */
+function boundBelow(program: Node, offset: number, name: string): boolean {
+  const path = ancestorsAt(program, offset);
+  for (let i = path.length - 1; i > 0; i--) {
+    const node = path[i]!;
+    if (isFunction(node) && (node as unknown as { params: Node[] }).params.some(p => binds(p, name))) return true;
+    if (node.type === 'BlockStatement' && (node.body as Node[]).some(st => st.type === 'VariableDeclaration' && st.declarations.some(d => binds(d.id, name)))) return true;
+  }
+  return false;
+}
