@@ -1488,6 +1488,7 @@ field is empty). The table of five writes, before and after. The Next table: eig
 - **What we tried that was wrong:** my first guess ("styles changed every frame re-queue elements in the reader") named the right cause in the wrong place: the reader never watches style. My first version of the one line skipped every element handed to it (they arrive marked "reading"); the crowded-page test caught it.
 - **The proof:** on algorecall, all 14 pages read through: curriculum and tree after (1) and (2), login back to 118 after (3), problems in 65–107 s after (4), twice. Tests: a box and sixty labels moved by script every frame (fails on the old code at the 45 s limit, passes in 4 s); a route whose code arrives 3 s late (old code judged its fallback, no finding); a crowded page with a pass-through part (guards the line; it does not force the race in (4), which only the app showed). 115 engine and blueprint tests pass on the test server.
 - **Seen, not fixed:** on the problems page one button's finding is named at the line that uses the dock in one run and inside the dock in the next.
+- **Full suite, on the test server:** 1,095 passed, 1 failed: the spacing proofs' two-page test, a reload race that fails on main too (main 2 of 3, this branch 1 of 3, alone). Main moved forward to the branch (local, not pushed).
 - **Media hooks:** the counter log for the tree page: the queue at 1,122, then 15, then 0.
 
 ## Open gaps
