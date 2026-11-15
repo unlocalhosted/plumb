@@ -1817,15 +1817,20 @@ field is empty). The table of five writes, before and after. The Next table: eig
   the condition that the prop is left out, and treats it like a variable other elements read: a change there
   changes every box drawn without a `side` of its own, and nothing new is added there. All four classes now place
   on the line where the default is written (drawing.tsx:183, draw.tsx:198). The only other misses were the six
-  icon classes put together from data on /assets, the same kind as on the home page. No write was made to prove
-  the default fix; it goes through the same lookup the writers use, but that is not the same as seeing a write.
+  icon classes put together from data on /assets, the same kind as on the home page.
 - **Classes passed into a local function (2026-11-16):** the header's `drop(level, guess, gone = 'hidden')` returns
   `guess`, and every call passes its own class there: `drop(FIT.section, 'max-sm:hidden')`. The finder read the
   function body but had no idea what the call passed in. A call now carries its arguments along, so a parameter
   the function returns is read as the argument written at that call, and a default counts only where the call
   leaves that argument out. On /motion/primitives, the breadcrumb's `max-sm:hidden` and `max-lg:hidden` now place
   on their own spots in the calls on lines 145 and 148, each under the conditions that pick that call. Before, they
-  placed nowhere. Not tested, and no write made.
+  placed nowhere.
+- **Both proved with real writes (2026-11-16):** through the overlay's own write path on crafting-ui. On /motion,
+  changing a box's `fill-draw-soft` to `fill-draw-tint` rewrote only the default `side = 'fill-draw-soft'` on
+  drawing.tsx:183. On /motion/primitives, changing the breadcrumb slash's `max-sm:hidden` to `max-md:hidden`
+  rewrote only the argument in `drop(FIT.section, 'max-sm:hidden')` on SiteHeader.tsx:148. Each diff was one line;
+  both files were restored (the header from a copy taken first, because it held the owner's uncommitted work).
+  No test suite was run.
 
 ## Open gaps
 - Sweeps covered six algorecall pages and thirteen crafting-ui pages. A class that comes in through a local
