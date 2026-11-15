@@ -1836,6 +1836,12 @@ field is empty). The table of five writes, before and after. The Next table: eig
   writes it, which nothing else reads. Proof, a real write: adding `max-sm:opacity-0` beside the slash's
   `max-sm:hidden` rewrote only that call's argument on SiteHeader.tsx:148; the file was restored from a copy.
 
+- **Two backlog lines checked and closed (2026-11-16):** "an icon that joins its classes with `+` is refused" no
+  longer holds: run straight through the class finder, `'block ' + className` places `block` in the icon and the
+  usage's `size-4` at the usage, and the icon pass writes through that finder. "A class fix is offered, then
+  refused at write" no longer holds either: Alt+click on a frosted icon whose classes are built from data opens a
+  card that says "Set in code" on each field before anything is offered. Both lines left the backlog.
+
 ## Open gaps
 - Sweeps covered six algorecall pages and thirteen crafting-ui pages.
 - The site's top bar doesn't fit a phone (390px): it widens the page to about 500px. Needs a compact bar.

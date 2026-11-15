@@ -70,8 +70,7 @@ reserved.)
 - **Resizing to a size that isn't one of yours.** A size drag always lands on the nearest step of your theme. Keeping an exact size (say 312px) as a new token through the naming flow isn't built yet; the likely gesture is holding ⌥ while dragging to turn snapping off, then naming the size on the element when you let go. (2026-11-13)
 **The order** (decided 2026-11-12):
 
-- **Now:** nothing of this session's. (A class fix offered and then refused is in the fix card, which another
-  session has been changing today; left to it.)
+- **Now:** nothing of this session's.
 - **Next:** the Next performance test · the tests that fail only under the full run's load.
 - **Decided 2026-11-12:** shadows went ahead of padding-by-job. After padding is snapped to the scale, sibling cards on
   the messy page already agree, so reading padding by job has little to show yet; shadows were a missing primitive.
@@ -141,9 +140,6 @@ and icon passes' cases, and the palette after a write, were tested again through
 - A stroke passed as a prop goes through the same path as a size, untried. A size passed through more layers of
   components is untried.
 - The step's count adds sizes and strokes together, so fixing one icon's size can read "10 → 10".
-- An icon component that joins its classes with `+` (`'block ' + className`) is refused as "built in code", even
-  when the usage passes a plain string; the same component written with a template literal is followed to the usage
-  and written. Found 2026-11-12 writing the icon tests.
 
 ### Clean-up: corners
 
@@ -198,8 +194,6 @@ and icon passes' cases, and the palette after a write, were tested again through
 - The same page gives different craft findings on a Mac and on Linux (two of them depend on the fonts' measurements).
 - The suggestion engine's ranking and the standard's numbers name no source where they are defined
   (docs/PRINCIPLES.md, known debt).
-- A class fix is offered on an element whose classes are built in code, then refused at write. It should say so
-  first.
 - A finding on a wrapped element is reported at the component's line, not where it is used; the fix card says
   "Changed X to Y" when Y was added beside X.
 
