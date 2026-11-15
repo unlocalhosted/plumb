@@ -121,7 +121,10 @@ const textTags = new Set(['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'span', 'stro
 export interface Branch { condition: string; which: 'then' | 'else'; /** the conditions outside it, outermost first, when it sits under more than one */ within?: { condition: string; which: 'then' | 'else' }[] }
 interface Text { start: number; end: number; text: string; quote?: string; branch?: Branch;
   /** a key of a class helper's object written without quotes (`{ hidden: !open }`), or as shorthand (`{ active }`): a write re-quotes it when the new name is not an identifier */
-  key?: 'identifier' | 'shorthand' }
+  key?: 'identifier' | 'shorthand';
+  /** written as an argument of a call to a local function (`drop(FIT.section, 'max-sm:hidden')`): held by that call,
+   * which only it reads, not by the function every call shares */
+  passed?: true }
 type ClassName =
   | { kind: 'none' }
   | { kind: 'static'; attribute: Node; strings: Text[] }
@@ -324,7 +327,7 @@ function returnedSources(fn: Node, source: string, trail: Trail, args?: Node[]):
       const arg = passed(i);
       if (!arg) continue; // left out: its default, read below
       const value = classSourcesAt(arg, ref.path, source, ref.trail);
-      out.strings.push(...value.strings); out.refs.push(...value.refs);
+      out.strings.push(...value.strings.map(s => ({ ...s, passed: true as const }))); out.refs.push(...value.refs);
     }
   };
   f.params.forEach((param, i) => {

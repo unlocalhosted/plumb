@@ -1831,11 +1831,13 @@ field is empty). The table of five writes, before and after. The Next table: eig
   rewrote only the argument in `drop(FIT.section, 'max-sm:hidden')` on SiteHeader.tsx:148. Each diff was one line;
   both files were restored (the header from a copy taken first, because it held the owner's uncommitted work).
   No test suite was run.
+- **A class passed in is the call's own (2026-11-16):** a class written as an argument was held like the function
+  every call shares, so plumber would change it but not add a class beside it. It is now held by the call that
+  writes it, which nothing else reads. Proof, a real write: adding `max-sm:opacity-0` beside the slash's
+  `max-sm:hidden` rewrote only that call's argument on SiteHeader.tsx:148; the file was restored from a copy.
 
 ## Open gaps
-- Sweeps covered six algorecall pages and thirteen crafting-ui pages. A class that comes in through a local
-  function's argument is held like the function itself, a shared variable: it can be changed in place, but plumber
-  won't add a class next to it, even though only that one call reads it.
+- Sweeps covered six algorecall pages and thirteen crafting-ui pages.
 - The site's top bar doesn't fit a phone (390px): it widens the page to about 500px. Needs a compact bar.
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
 

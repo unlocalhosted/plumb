@@ -131,7 +131,11 @@ function resolve(input: ClassSiteInput, usageProps = false): Resolved {
       }
     }
     if (binding?.kind === 'variable') {
-      take(classSourcesAt(binding.init, [...binding.path ?? [], ...ref.path], holder.src.text, ref.trail, ref.args), { ...holder, variable: ref.name, readers: readers(holder.src.program, ref.name, binding.init) });
+      const sources = classSourcesAt(binding.init, [...binding.path ?? [], ...ref.path], holder.src.text, ref.trail, ref.args);
+      // a class the call passes in is written at the call, which no other place reads: it stays with the holder it was
+      // read from; what the function writes itself is held by the function, read by every call
+      take({ strings: sources.strings.filter(s => !s.passed), refs: sources.refs }, { ...holder, variable: ref.name, readers: readers(holder.src.program, ref.name, binding.init) });
+      take({ strings: sources.strings.filter(s => s.passed), refs: [] }, holder);
       return;
     }
     if (binding?.kind !== 'prop') return;
