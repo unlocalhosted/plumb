@@ -137,6 +137,27 @@ holds the date and what they said.
   swatches change colour in place, the burst comes from the change card. A beat where nothing arrives is a beat to cut.
   Why: the same message; *inferred:* the reward keeps the viewer watching to the payoff.
 
+### The stage
+
+- **The stage is a deep silk wallpaper** (`principles/silk-deep.svg`: indigo, violet and magenta folds, shaded, lit
+  on their crests, a vignette and grain), the way screen recorders frame a recording. Its folds fall away to the
+  right so the words sit on calm ground. Never flat white, never big blobs of colour.
+  Why: "make the canvas and example little bright and not dull"; "see how the tools give you gradient in the video
+  recording software"; the pink blobs: "have some class".
+  <!-- 2026-11-15: approved "Yes, deep" from docs/films/silk-layout.png -->
+- **The card is a window** (a thin glass rim, its own corners, a deep shadow), scaled to fill the stage: tall cards by
+  height, wide ones by width.
+- **The words have their own panel**, the same height as the card's window: the lesson number and the brand on its
+  top line, the title (two lines at most), a rule, the spoken line, a rule, then the code card and a full-width
+  switch with equal halves. Everything sits on one left edge, 40px in; 28px either side of each rule.
+  Why: "give the text, the explaining and everything a dedicated template or section"; "look at the alignment of
+  toggle and all 4 things, make them look craftful"; a four-line title was called out.
+  <!-- 2026-11-15 -->
+- **"Wrong" is solid pink with white letters; "fixed" is mint.** Coral read muddy.
+  <!-- 2026-11-15: picked A from docs/films/55-pill-colours.png -->
+- **Nothing renders without the owner's OK.** Change, draft, show stills, stop.
+  <!-- 2026-11-15: "dont render without my permission" -->
+
 ### Never take away
 
 - **A change to the words or layout never removes plumber's marks:** the guardrail and measure animation, the pills,

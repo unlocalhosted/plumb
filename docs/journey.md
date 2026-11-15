@@ -1343,6 +1343,14 @@ field is empty). The table of five writes, before and after. The Next table: eig
 - **Still open:** film 55's close-up is narrow, because the card is tall and thin and the camera can only zoom as far as its width; the swatches read but are small.
 - **Media hooks:** the old measure frame (blue boxes, mono pills) beside the new one (coral rings on each grey middle, the droplet tag "Goes grey").
 
+### The films get a stage: silk, a window and a panel (2026-11-15)
+
+- **The itch:** the owner, over several rounds: the coral marks were "muddy", the white stage "dull", the pink canvases needed "some class", and the words needed "a dedicated template or section", lined up "craftful".
+- **The system behind it:** each round I guessed a colour or a layout from an adjective and showed one answer. What worked was showing options side by side on the real frame (four pill colours, three benches, three pink canvases, light against deep silk, glass against paper panel) and letting the owner pick, with a named reference once they gave one (how screen recorders frame a recording).
+- **What we chose:** solid pink for wrong; a deep silk wallpaper; the card as a glass-rimmed window; the words in their own glass panel on one left edge, with rules between header, line and foot, and a full-width code card and switch. The film skill's Stage section holds the rules.
+- **Dead ends:** a pastel pill with brown letters, a brick-red pill, pink gradient blobs over half the frame, a bench with rulers. A misplaced comment once broke the film page, and a render was started without the owner's OK; renders now wait for it.
+- **Proof:** docs/films/panel-stills.png; the three films rendered again in docs/media.
+
 ## Open gaps
 - The site's top bar doesn't fit a phone (390px): it widens the page to about 500px. Needs a compact bar.
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
