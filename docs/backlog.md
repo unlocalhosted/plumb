@@ -356,6 +356,8 @@ three is a state the page reaches by itself. - **Built (layer 1):** Alt+S opens 
   - *No motion and high contrast:* reduced motion and forced colours on, to see what loses its meaning.
 - **Lists, built; open:** a list drawn from a value computed inside its part (a filter, a memo) is not reached; when
   a crash takes the page down, the lists after it are not tried.
+- **Break it, fixes:** it advises but does not apply or preview a fix on the page; words that run out of their box get
+  no advice; Narrower does not see text cut off by a box that clips it (the crafting-ui hero at 320px).
 - **Open:** which control is "the main action" when a screen has several (hierarchy already ranks emphasis); and how
   to fail a request when the app uses something other than fetch.
 

@@ -168,12 +168,17 @@ function shrink() {
 const norm = (t) => t.replace(/\s+/g, ' ').trim();
 const tail = (f) => f.replace(/^.*?\b(src|app|components|pages)\//, '$1/');
 const same = (a, b) => tail(a) === tail(b);
+// words written as a string in source, on an element: an author typed them (a tab's name, a menu item), not a person
+const literal = new WeakSet();
+// a control's label: the author's vocabulary for the screen, not content that grows
+const LABELLED = 'button, [role=tab], [role=radio], [role=menuitem], [role=menuitemradio], [role=option], select, nav a';
 async function kindOf(node) {
   const el = node.parentElement, words = norm(node.data);
   const found = await locate(el, { chain: true }).catch(() => null);
   if (!found?.file) return 'data';
   const owners = (found.chain ?? []).filter((c) => c?.file && !(c.file === found.file && c.line === found.line));
   const r = await request('text-at', { file: found.file, line: found.line, column: found.column, text: words, owners: owners.map((c) => `${c.file}:${c.line}:${c.column}`).join(',') }).catch(() => null);
+  if (r?.file || /places in your code say/.test(r?.reason ?? '')) literal.add(el);
   // several strings in source say these words: still words someone typed (a label repeated across a list or a file)
   if (!r?.file && /places in your code say/.test(r?.reason ?? '')) return r.where?.file && owners.some((o) => same(o.file, r.where.file) && !same(o.file, found.file)) ? 'prop' : 'fixed';
   if (!r?.file) return 'data';                                   // not written in source as one string: built at runtime
@@ -183,6 +188,16 @@ async function kindOf(node) {
   if (used.length && Math.min(...used.map((o) => Math.abs(o.line - r.line))) < own) return 'prop';
   if (own < Infinity) return 'fixed';                             // typed in the component that draws it
   return 'data';                                                  // a string kept elsewhere and looked up
+}
+
+/** A field set inside running text ("Make a reel about ___"), not a form field on its own line. */
+function inSentence(f) {
+  let b = f.parentElement, inline = false;
+  while (b && /^inline/.test(cssOf(b).display)) { inline = true; b = b.parentElement; }
+  if (!inline || !b) return false;
+  const w = document.createTreeWalker(b, NodeFilter.SHOW_TEXT);
+  for (let t = w.nextNode(); t; t = w.nextNode()) if (norm(t.data) && !t.parentElement.closest('[aria-hidden="true"]') && !(f.parentElement.contains(t))) return true;
+  return false;
 }
 
 /** Sort every eligible run of words on the page, a few at a time. */
@@ -212,8 +227,11 @@ async function sortAll() {
     if (new Set(group.map((n) => norm(n.data))).size < 2) continue;
     const votes = new Map(); for (const n of group) votes.set(kinds.get(n), (votes.get(kinds.get(n)) ?? 0) + 1);
     const top = [...votes].sort((a, b) => b[1] - a[1])[0][0];
-    for (const n of group) kinds.set(n, top === 'fixed' ? 'fixed' : 'list');
+    // tabs, options, menu items from a list the author typed (even one kept in another file): fixed copy
+    const authored = group.every((n) => literal.has(n.parentElement) && n.parentElement.closest(LABELLED));
+    for (const n of group) kinds.set(n, top === 'fixed' || (top === 'data' && authored) ? 'fixed' : 'list');
   }
+  for (const n of nodes) if (kinds.get(n) === 'data' && literal.has(n.parentElement) && n.parentElement.closest(LABELLED)) kinds.set(n, 'fixed');
   tally = { fixed: 0, prop: 0, data: 0, list: 0 };
   for (const n of nodes) tally[kinds.get(n)]++;
   void seen;
@@ -722,7 +740,10 @@ async function typeAll() {
     const rest = mine.filter((n) => n.kind !== 'grows'), by = Math.max(...grows.map((g) => g.px));
     const ways = [...new Set(grows.map((g) => g.typed.as))].join(' or '), sideways = rest.some((n) => n.kind === 'sideways');
     const pushed = new Set(rest.filter((n) => n.kind !== 'sideways').map((n) => sourceOf(n.el))).size;
-    out.push({ ...grows[0], title: `Typing ${ways} into “${fieldName(f)}”, the field grows up to ${by}px wider${pushed ? ` and pushes ${count(pushed, 'thing', 'things')} off the screen` : ''}${sideways ? '; the page scrolls sideways' : ''}.`, why: 'A field that changes size as you type moves everything after it. Give it a width (or a maximum) and let the text scroll inside it.' });
+    const why = inSentence(f)
+      ? 'This field sits inside a sentence. Scrolling would hide most of what was typed, so it could not be read back. Let the words wrap onto the next line inside the sentence: a box that grows down, not across.'
+      : 'A field that changes size as you type moves everything after it. Give it a width (or a maximum) and let the text scroll inside it.';
+    out.push({ ...grows[0], why, title: `Typing ${ways} into “${fieldName(f)}”, the field grows up to ${by}px wider${pushed ? ` and pushes ${count(pushed, 'thing', 'things')} off the screen` : ''}${sideways ? '; the page scrolls sideways' : ''}.` });
     out.push(...rest.filter((n) => !['sideways', 'spill', 'cut', 'overlap'].includes(n.kind)));
   }
   notes = out.map((n) => ({ ...n, source: sourceOf(n.el) })); index = 0;
@@ -862,7 +883,9 @@ async function sizeAll() {
         if (size.id === 'one') {
           refresh(list);
           const solo = list.items.length === 1 ? list.items[0] : null, r = solo?.getBoundingClientRect();
-          if (r && r.width > one.width * 1.8 && r.width - one.width > 160) add({ kind: 'stretch', el: solo, title: `the one left stretches to ${Math.round(r.width)}px wide.`, why: `Each one was ${Math.round(one.width)}px; alone it fills the row and reads as a different thing. Keep its width when it is on its own.` });
+          if (r && r.width > one.width * 1.8 && r.width - one.width > 160) add({ kind: 'stretch', el: solo, title: `the one left stretches to ${Math.round(r.width)}px wide.`, why: norm(solo.innerText ?? '')
+            ? `Each one was ${Math.round(one.width)}px; alone it fills the row and reads as a different thing. Keep its width when it is on its own.`
+            : `These are markers with no words, there to step through. With one there is nothing to step through: leave the part out when there is only one.` });
           const plural = fresh.find((x) => /(^|\s)1\s+\p{L}+s\b/u.test(x));
           if (plural) add({ kind: 'plural', el: list.box, title: `the page says “${plural.slice(0, 30)}”.`, why: 'One of something is singular. Pick the word by the count.' });
         }

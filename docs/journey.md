@@ -1340,10 +1340,43 @@
   later lists are not tried; no tests.
 - **Media hooks:** docs/qa/break-it-lists-crash.jpg (the vocabulary page gone white, the note naming the line).
 
+## Break it: a fix is judged by the person, not by the number (2026-11-16)
+- **The itch:** asked for before-and-after pictures of the worst breaks, I first sent the normal page next to the
+  broken one. The owner wanted the broken page next to the same page fixed. Then, looking at the fixed pictures, the
+  owner asked "from a ux point can you check if youve made good decisions?" Most were not good.
+- **How we found it:** reading the five fixed pictures as a designer. Tab names cut off with "…" are harder to choose
+  between. The topic field set to scroll hides most of a sentence the person typed and needs to read back. A step
+  rail kept at 44px with one step is a stray dash next to Pause. The bigger-text "after" still had labels on top of
+  each other. And the tab-name break could never happen: those four names are typed once by the author.
+- **The system behind it:** the worst case was picked by how dramatic it looked, not by whether real content could
+  make it, and a fix was called done when the measurement stopped failing. Break it's own advice had the same habit:
+  "give it a width and let the text scroll" and "keep its width when it is on its own", whatever the part is for.
+- **What we chose and why:** two rules. Stress only what real content or real people could do in that place. Judge a
+  fix by what the person needs in that state: to read back what they typed, the hero to stay a hero, a rail that
+  means something. In Break it that became three changes. Labels of controls (tabs, options, menu items) looked up
+  from a list the author typed, even one kept in another file, are now fixed copy, so Extreme content leaves them
+  alone. A field set inside a sentence gets "let the words wrap onto the next line, a box that grows down, not
+  across" instead of "scroll". A list whose items have no words (steps, dots) gets "with one there is nothing to step
+  through: leave the part out" instead of "keep its width".
+- **Dead ends:** for the narrow phone, letting the hero's lines wrap kept it large but left one word per line over
+  eight lines and set the type guides crooked. The hero is a type specimen whose hand-set line breaks are the design,
+  so scaling it to fit was right. Putting the guide names inside the frame laid them over the words; on a phone they
+  hide, as the site already hides the hint.
+- **The fix and the proof:** on crafting-ui, the four tab names are now fixed copy (they were "data"); Typing on the
+  templates page gives the wrap advice for the topic field; Lists gives "leave the part out" for the one-step rail.
+  Four pairs show the page broken under stress next to the same stress with the fix applied in the page (crafting-ui
+  is not ours, so its source is unchanged): bigger text, a 320px phone, a long topic, one step.
+- **Not yet:** the fixes in the pictures were applied by hand in the browser; Break it does not apply or preview its
+  advice. Words running out of their box still get no advice. Narrower missed the cut-off headline, because a box
+  that clips its text is neither an overflow nor an overlap. No tests.
+- **Media hooks:** docs/qa/break-it-fixed/1-bigger.jpg, 2-narrower.jpg, 3-typing.jpg, 4-lists.jpg (broken under
+  stress next to fixed).
+
 ## Open gaps
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
 
 ## Shipped · 2026-W46
+- Break it's advice now depends on what the part is for: a field inside a sentence is told to wrap, not scroll, so a person can read back what they typed; a rail of wordless steps with one step is told to leave itself out; and tab and menu names the author typed are no longer stretched as if they were content ([entry](#break-it-a-fix-is-judged-by-the-person-not-by-the-number-2026-11-16)). On its own branch.
 - Break it's Lists toy hands every list on your page that is fed data or passed in no items, one, and a hundred, through React itself, so the app draws its real empty state and its real crowd; on crafting-ui it found a page that crashes white when a player gets no scenes, and a step that stretches tenfold when it is alone ([entry](#break-it-lists-at-none-one-and-a-hundred-2026-11-15)). On its own branch.
 - Break it's Typing toy puts a long line, a pasted link, pasted lines and nothing into every field on your page, the way typing does, and says what the field and its neighbours do; on crafting-ui it found a topic field that grows 1232px and drags the page sideways ([entry](#break-it-typing-into-fields-2026-11-15)). On its own branch.
 - Break it's Action fails toy: press the button you care about and plumber makes its request fail (or take four seconds), then says what a person would meet: no message, a button stuck on "Creating…", a spinner that never stops, a second press that sends it twice ([entry](#break-it-the-main-action-fails-or-is-slow-2026-11-15)). On its own branch.
