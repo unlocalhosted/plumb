@@ -173,6 +173,7 @@ MarginReaders.film = {
   },
   say: 'Look at the tooltip\'s words beside the figures.',
   // the words on screen, approved by the owner 2026-11-15; `at` is the film's moment for each line
+  teach: { fault: 'translate: 0 -50%', fix: 'margin-block: auto' },   // the film's change card: the one idea
   script: [
     { at: 'rest', text: 'These words are *blurry*. The numbers above are sharp.' },
     { at: 'measure', text: 'Tooltips and dialogs are often centred by moving up half their height.' },

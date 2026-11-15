@@ -202,6 +202,7 @@ LaunchBoard.film = {
   },
   say: 'Compare the circle with the square beside it.',
   // the words on screen, approved by the owner 2026-11-15; `at` is the film's moment for each line
+  teach: { fault: 'scale: 1', fix: 'scale: 1.04' },   // the film's change card: the one idea
   script: [
     { at: 'rest', text: 'These two shapes are the same size.' },
     { at: 'measure', text: 'But people see the circle as *smaller*.' },

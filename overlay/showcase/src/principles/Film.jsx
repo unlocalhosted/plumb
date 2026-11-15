@@ -173,17 +173,17 @@ function Pill({ x, y, k, tone, icon, icons, up, flow, children }) {
 
 // plumber's change, as its cards show it (overlay/src/widget.js .change): the class at fault in coral, then struck as
 // the class that fixes it arrives in mint; under each, the property it sets. The sauce, said as code.
-function Change({ code, fixed, done }) {
+function Change({ code, fixed, done, inline = false }) {
   const s = useContext(UI);
   const chip = (tone) => ({ padding: `${2 * s}px ${7 * s}px`, borderRadius: 5 * s, font: 'var(--pl-card-code)', fontSize: 13 * s, color: `var(--pl-${tone})`, background: `color-mix(in oklab, var(--pl-${tone}) ${tone === 'off' ? 9 : 11}%, transparent)` });
   const cap = { font: 'var(--pl-card-meta)', fontSize: 11.5 * s, color: 'var(--pl-ink-2)', textAlign: 'center' };
   return (
-    <span style={{ position: 'absolute', left: '50%', top: `calc(100% + ${12 * s}px)`, transform: 'translateX(-50%)', display: 'flex', alignItems: 'flex-start', gap: 10 * s, padding: `${10 * s}px ${14 * s}px ${9 * s}px`,
+    <span style={{ position: 'absolute', ...(inline ? { left: 0, top: 0 } : { left: '50%', top: `calc(100% + ${12 * s}px)`, transform: 'translateX(-50%)' }), display: 'flex', alignItems: 'flex-start', gap: 10 * s, padding: `${10 * s}px ${14 * s}px ${9 * s}px`,
       borderRadius: 12 * s, background: 'var(--pl-paper)', color: 'var(--pl-ink)', boxShadow: '0 0 0 1px rgb(0 0 0 / 0.06), 0 8px 24px -8px rgb(0 0 0 / 0.18)', whiteSpace: 'nowrap',
       animation: 'film-pop 300ms var(--pl-spring-pop) both' }}>
       <span style={{ display: 'flex', flexDirection: 'column', gap: 4 * s }}>
         <code style={{ ...chip('off'), textDecorationLine: fixed ? 'line-through' : 'none', textDecorationThickness: 1, transition: 'opacity 300ms ease', opacity: fixed ? 0.75 : 1 }}>{code.fault.cls}</code>
-        <span style={cap}>{code.fault.prop}</span>
+        {code.fault.prop ? <span style={cap}>{code.fault.prop}</span> : null}
       </span>
       {/* the fix's part opens from nothing to its own width on the spring, then shows: the card grows to take it,
           centred on the switch, never jumping and never holding an empty place */}
@@ -191,7 +191,7 @@ function Change({ code, fixed, done }) {
         <span style={{ color: 'var(--pl-ink-3)', font: 'var(--pl-card-code)', paddingTop: 3, opacity: fixed ? 1 : 0, transition: 'opacity 200ms ease 160ms' }}>→</span>
         <span style={{ display: 'flex', flexDirection: 'column', gap: 4, whiteSpace: 'nowrap', opacity: fixed ? 1 : 0, transform: `translateY(${fixed ? 0 : 3}px)`, transition: 'opacity 260ms ease 220ms, transform 420ms var(--pl-spring-pop) 220ms' }}>
           <code style={chip('on')}>{code.fix.cls}</code>
-          <span style={cap}>{code.fix.prop}</span>
+          {code.fix.prop ? <span style={cap}>{code.fix.prop}</span> : null}
         </span>
       </span>
       {/* written, and it holds everywhere: plumber's check, drawn where the fix is; the burst comes from here */}
@@ -247,6 +247,8 @@ export function Film({ Example, names, onSaid, chrome = true, start = true, onDo
   const words = !!(onLine && spec.script);
   const say = (at) => { const l = spec.script?.find((x) => x.at === at); if (l && onLine) onLine(l.text, at); };
   const has = (at) => !!spec.script?.some((x) => x.at === at);
+  // a scripted film teaches one thing: the change card shows the one property that changes (spec.teach), not the classes
+  const teach = words && spec.teach ? { fault: { cls: spec.teach.fault }, fix: { cls: spec.teach.fix } } : spec.code;
   const [side, setSide] = useState('broken');
   const [playing, setPlaying] = useState(false);
   const [cam, setCam] = useState({ k: 1, x: 0, y: 0 });
@@ -498,7 +500,10 @@ export function Film({ Example, names, onSaid, chrome = true, start = true, onDo
       {/* aside: the words, the switch and the change card in a column to the right of the card, so the card can take the whole height */}
       <div ref={sw} className={aside ? 'z-10 flex flex-col items-start' : 'relative z-10 flex flex-col items-center'} style={aside ? { position: 'absolute', left: 'calc(100% + 56px)', top: '50%', translate: '0 -50%', width: 380, gap: 28 } : undefined}>
         {aside}
-        {change && spec.code ? <PlumbLayer><Change code={spec.code} fixed={change >= 2} done={change === 3} /></PlumbLayer> : null}
+        {aside ? (
+          // beside the demo: the change card in its own row, its room kept so the switch under it never jumps
+          <div style={{ position: 'relative', width: '100%', height: 44 * ui }}>{change && spec.code ? <PlumbLayer><Change code={teach} fixed={change >= 2} done={change === 3} inline /></PlumbLayer> : null}</div>
+        ) : change && spec.code ? <PlumbLayer><Change code={spec.code} fixed={change >= 2} done={change === 3} /></PlumbLayer> : null}
         {/* in a scripted film the switch is chrome, a step under the story's words: smaller than plumber's film-size marks */}
         <UI.Provider value={words ? Math.min(ui, 1.4 / 0.95) : ui}><TechniqueSwitch names={names} fixed={side === 'fixed'} ready={!playing} onBack={() => setSide('broken')} onFix={() => setSide('fixed')} /></UI.Provider>
       </div>
