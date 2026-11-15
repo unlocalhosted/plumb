@@ -1842,9 +1842,15 @@ field is empty). The table of five writes, before and after. The Next table: eig
   refused at write" no longer holds either: Alt+click on a frosted icon whose classes are built from data opens a
   card that says "Set in code" on each field before anything is offered. Both lines left the backlog.
 
+- **The site's bar fits a phone (2026-11-16):** on a 390px phone the bar (name, four places, Dark) needed about
+  500px, so the whole page was laid out 110px too wide and slid sideways. The places are the bar's job, so they
+  never give way; what gives way, in order: at 520px and under the name "React Plumber" folds into the plumb-bob mark
+  (a screen reader still hears the name) and the buttons tighten; at 380px and under the word Dark becomes a
+  half-ink disc (its spoken name stays "Switch to dark"). Measured: 390px wide, the page is 390 and the bar ends at
+  374; 360px, it ends at 344; on desktop every part sits where it did, to the pixel. No test written.
+
 ## Open gaps
 - Sweeps covered six algorecall pages and thirteen crafting-ui pages.
-- The site's top bar doesn't fit a phone (390px): it widens the page to about 500px. Needs a compact bar.
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
 
 ### Open gaps from the 0.4.0 release work

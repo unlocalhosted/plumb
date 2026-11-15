@@ -31,6 +31,9 @@ export function useScheme() {
 // the mark: a plumb bob on its line
 const BOB = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.500v6" fill="none" stroke="var(--pl-ink)" stroke-width="2.200" stroke-linecap="round"/><path d="M6.200 8.800h11.600L12 22z" fill="var(--pl-pink)" stroke="var(--pl-pink)" stroke-width="2.400" stroke-linejoin="round"/><circle cx="12" cy="12.400" r="1.700" fill="#fff"/></svg>';
 
+// light or dark, for a phone too narrow for the word: a disc, half of it the ink
+const DISC = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="7.600" fill="var(--pl-bg-surface)" stroke="var(--pl-text-primary)" stroke-width="2.200"/><path d="M12 4.400a7.600 7.600 0 0 1 0 15.200z" fill="var(--pl-text-primary)"/></svg>';
+
 export function Bar() {
   const path = usePathname();
   const [scheme, flip] = useScheme();
@@ -38,11 +41,11 @@ export function Bar() {
   const here = (href) => (href === '/' ? path === '/' : path.startsWith(href));
   return (
     <header className="bar">
-      <Link className="name" href="/"><i className="toy" style={{ width: 26, height: 26 }} dangerouslySetInnerHTML={{ __html: BOB }} />React Plumber</Link>
+      <Link className="name" href="/"><i className="toy" style={{ width: 26, height: 26 }} dangerouslySetInnerHTML={{ __html: BOB }} /><span className="word">React Plumber</span></Link>
       <nav aria-label="Site">
         {PLACES.map(([href, text]) => <Link key={href} href={href} className={`s-btn ${here(href) ? '' : 'bare'}`} aria-current={here(href) ? 'page' : undefined}><span>{text}</span></Link>)}
       </nav>
-      <span className="end"><button type="button" className="s-btn q" onClick={flip} aria-label={scheme === 'dark' ? 'Switch to light' : 'Switch to dark'}><span>{scheme === 'dark' ? 'Light' : 'Dark'}</span></button></span>
+      <span className="end"><button type="button" className="s-btn q" onClick={flip} aria-label={scheme === 'dark' ? 'Switch to light' : 'Switch to dark'}><span><i className="toy disc" aria-hidden="true" dangerouslySetInnerHTML={{ __html: DISC }} /><b className="word">{scheme === 'dark' ? 'Light' : 'Dark'}</b></span></button></span>
     </header>
   );
 }
