@@ -46,6 +46,7 @@ import { Claims, LEVEL } from './claims.js';
 import { BUTTON_CSS, button } from './kit.js'; // the soft button (design site: Buttons)
 import { soften } from './soft.js'; // its press
 import { toyOf } from './toys.js'; // the property's toy, at the head of the bar
+import { stepper, radius as radiusControl, swatches, bind as bindControl } from './editor-primitives.js'; // the property's control on the element (design site: Pickers)
 
 const TIMING = { open: 260, next: 180, click: 60, clickGap: 45, breath: 480, check: 600, fold: 2300 };
 const CLICK = { drop: 3, over: -1, ms: 420 };
@@ -109,13 +110,17 @@ const FIX_CSS_BASE = TEXT_EDITOR_CSS + ELEMENT_CARD_CSS + `
   /* the choice, on the element: a small card beside it, the options and the soft buttons */
   /* it is a .fx (the card's inner rules apply as they are), undocked: placed beside the element, a card, not glass */
   .fx.fx-on { left: 0; top: 0; bottom: auto; translate: none; width: auto; height: auto; max-width: min(560px, calc(100vw - 24px)); z-index: 3; overflow: visible;
-    display: flex; flex-flow: row wrap; align-items: center; gap: 6px; padding: 5px; background: var(--pl-paper); -webkit-backdrop-filter: none; backdrop-filter: none;
+    display: flex; flex-flow: row nowrap; align-items: center; gap: 6px; padding: 5px; width: max-content; background: var(--pl-paper); -webkit-backdrop-filter: none; backdrop-filter: none;
     border-radius: 16px; box-shadow: var(--pl-shadow-tag); transition: none; animation: pl-pop 220ms var(--pl-spring-pop) both; }
+  .fx.fx-on:has(.field, .say, .note, .hint) { flex-wrap: wrap; width: auto; }
   .fx.fx-on .chips { display: inline-flex; gap: 3px; padding: 0 2px; }
+  .fx.fx-on > .ic.sm { display: block; width: 22px; height: 22px; margin: 0 2px 0 4px; flex: none; } .fx.fx-on > .ic.sm svg { display: block; width: 100%; height: 100%; overflow: visible; }
+  .fx.fx-on .ctl { display: inline-flex; align-items: center; flex: none; }
+  .fx.fx-on .ctl .ep { flex: none; }
   .fx.fx-on .chip { height: 26px; min-width: 34px; padding: 0 8px; border-radius: 8px; font: 500 12px/26px var(--pl-mono); color: var(--pl-ink-2); background: var(--pl-paper-2); }
   .fx.fx-on .chip:hover { color: var(--pl-ink); }
   .fx.fx-on .chip[aria-pressed="true"] { color: var(--pl-sky-ink); background: var(--pl-sky-soft); box-shadow: inset 0 0 0 1.5px var(--pl-instrument); }
-  .fx.fx-on .acts { display: inline-flex; align-items: center; gap: 6px; margin: 0; padding: 0; border: 0; }
+  .fx.fx-on .acts { display: inline-flex; flex-wrap: nowrap; align-items: center; gap: 6px; margin: 0; padding: 0; border: 0; }
   .fx.fx-on .say, .fx.fx-on .note, .fx.fx-on .hint { flex-basis: 100%; padding: 2px 6px; }
   .fx.fx-on[hidden] { display: none; }
   .fx-on .acts { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
@@ -492,6 +497,7 @@ export class FixPanel {
       else if (b.classList.contains('tool')) this.#host.tool?.(b.dataset.tool);
       else if (b.classList.contains('bar-close')) this.#host.tool?.('bp-toggle');
       else if (b.classList.contains('setup')) this.#host.openSetup?.();
+      else if (b.classList.contains('opt') || b.classList.contains('page')) return; // the control's own (bindControl)
       else if (b.classList.contains('sp')) this.#pick(+b.dataset.i);
       else if (b.classList.contains('take')) this.take();
       else if (b.classList.contains('skip') || b.classList.contains('next')) this.skip(1);
@@ -941,6 +947,7 @@ export class FixPanel {
     if (body !== this.#onHtml) {
       const typing = this.#choice.getRootNode().activeElement, field = typing?.matches?.('input') && this.#choice.contains(typing) ? { name: typing.name, at: [typing.selectionStart, typing.selectionEnd] } : null;
       this.#choice.innerHTML = body; this.#onHtml = body;
+      bindControl(this.#choice, { pick: (_, i) => this.#pick(this.#stepOf[i] ?? i) });
       if (field) { const f = this.#choice.querySelector(`input[name="${field.name}"]`); if (f) { f.focus(); f.setSelectionRange(...field.at); } }
     }
     this.#choice.hidden = false;
@@ -1062,7 +1069,25 @@ export class FixPanel {
         .replace(/<button class="ghost skip">([\s\S]*?)<\/button>/, (m, l) => button(l.replace(/<kbd>.*?<\/kbd>/, '').trim(), { cls: 'sm quiet skip', key: '→' }));
       // the choice is one row on the element (the comp's): the values as small chips, then Use, Keep, Skip. A field
       // (naming a new token, a reason to keep) stays as it is
-      const chips = v?.ready ? `<span class="chips">${v.options.map((o, i) => `<button class="sp chip" data-i="${i}" aria-pressed="${v.at === i}" title="${esc(o.cls ?? o.label ?? '')}">${esc(unitOf(o.n) ?? o.label ?? '')}</button>`).join('')}</span>` : middle;
+      // the property's own control (design site: Pickers, editor-primitives.js): corners drawn as corners, colours as
+      // swatches, everything with a size as a staircase; the value it has now as the coral notch where it falls. The
+      // steps are your tokens; pressing one tries it on the page (as ↑ ↓ do), Use writes it
+      let chips = middle;
+      if (v?.ready) {
+        const order = v.options.map((o, i) => ({ o, i })).sort((a, b) => (Number.isFinite(a.o.n) && Number.isFinite(b.o.n) ? a.o.n - b.o.n : 0));
+        this.#stepOf = order.map((x) => x.i);
+        // an engine finding's option may carry no number: its proof recorded the corner it wants and the one it has
+        const proof = mark.craft?.proof, wantN = (o) => (Number.isFinite(o.n) ? o.n : kind === 'radius' && Number.isFinite(proof?.wantR) ? proof.wantR : o.n);
+        const steps = order.map(({ o }) => ({ token: String(o.cls ?? o.label ?? o.n), label: unitOf(wantN(o)) ?? o.label ?? '', n: wantN(o), swatch: o.swatch }));
+        const nowN = Number.isFinite(v.now?.n) ? v.now.n : kind === 'radius' && Number.isFinite(proof?.mineR) ? proof.mineR : null;
+        const state = { steps, current: null, picked: steps[order.findIndex((x) => x.i === v.at)]?.token ?? null,
+          drift: nowN != null ? { n: nowN, label: unitOf(nowN) ?? String(v.now?.label ?? '') } : null };
+        const name = prop ? prop[0].toUpperCase() + prop.slice(1) : FIX.what(mark);
+        const control = kind === 'radius' ? radiusControl(name, state) : kind === 'colour' && steps.every((x) => x.swatch) ? swatches(name, state)
+          : steps.every((x) => Number.isFinite(x.n)) ? stepper(name, state) : null;
+        chips = control ? `<span class="ic sm" aria-hidden="true">${toyFor(mark, kind)}</span><span class="ctl">${control}</span>`
+          : `<span class="chips">${v.options.map((o, i) => `<button class="sp chip" data-i="${i}" aria-pressed="${v.at === i}" title="${esc(o.cls ?? o.label ?? '')}">${esc(unitOf(o.n) ?? o.label ?? '')}</button>`).join('')}</span>`;
+      }
       this.#onBody = `${failed}${unseen}${reach}${chips}${soft}`;
       this.#onAt = g.members.find((m) => shown(m.el))?.el ?? null;
     }
@@ -1083,7 +1108,7 @@ export class FixPanel {
     // the bar changed size: what is placed clear of it is placed again (now, and once its height has moved)
     if (from !== to && this.#card.open) { this.#card.place(); if (!still) this.#life.timeout(() => this.#card.place(), TIMING.open + 40); }
   }
-  #html = ''; #choice; #onHtml = ''; #onBody = ''; #onAt = null;
+  #html = ''; #choice; #onHtml = ''; #onBody = ''; #onAt = null; #stepOf = [];
 
   // The page celebrates: every fixed place clicks into place, one after another; the page breathes once; the ✓ draws
   // and bursts. Then the panel folds. (Places that a reload replaced are found again by nothing: the breath and the
