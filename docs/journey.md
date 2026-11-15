@@ -1618,7 +1618,21 @@ field is empty). The table of five writes, before and after. The Next table: eig
   Alt+G, the invitation pill and the guides reader are removed. Seen: on the settings page Blueprint's walk reaches
   "Corners don't match · Use rounded-full" for the square chip, with every chip's corners traced and "0px → full". Not
   yet: the avatar finding (its class sits in a ternary inside a loop) does not reach Blueprint's walk.
-- **Media hooks:** docs/qa/roast-invite.png (the invitation beside the dock), docs/qa/roast-proof-avatars.jpg, docs/qa/roast-proof-height.png, docs/qa/roast-proof-line.png (the proof lines for corners, height and alignment), docs/qa/roast-ghost-keys.jpg (the ghost of the fix and the keycaps), docs/qa/roast-settings-cousin.jpg (a cousin note on the settings page), docs/qa/roast-icon-note.jpg (the icon note), docs/qa/roast-first-note.jpg (the roast's first note on the messy page), docs/qa/guides-first-look-issues.jpg (guides on the messy page), docs/qa/guides-held-issues.jpg
+- **The fix bar, from the design site into the product: the place in hand** (owner: "bro this is old thing i already
+  designed the toolbar and other stuff with our new design system", then "it's on main, check the fix bar in the
+  design site", "Yes, fix bar first"). The design site's Fix bar (decided 2026-11-10) was a comp; the overlay still
+  shipped the old card, as the comp itself said. First layer: with a cause in hand, Blueprint's panel is the comp's
+  bar: the property's toy, a headline in plain words ("14 places have a hard-coded font size"), a detail in values
+  ("13px isn't one of your font size tokens: 12px and 14px."), where you are, and Clean up as a soft button. The
+  choice moves onto the page beside the element, in its own card (the bar blurs and clips what is inside it): the
+  options as before and the design's soft buttons (Use, pink with ↵; Keep and Skip, quiet), pressing down and springing
+  back. Engine findings read the same way ("1 button: corners don't match · Lifetime has square corners; the other
+  buttons are fully rounded."). Slips on the way: a private field named like one the panel already had; copying the
+  card's styles across copied its container too (the choice is now a card of the panel's own kind, undocked); the old
+  card's .say and .nav rules reached into the new line (own class names now). Not yet: the design's per-property control
+  on the element (the options are still the old specimens), the clean-up job in the bar, the bar at rest, and the
+  choice can still sit partly under the X-ray card when the element is near the top of the screen.
+- **Media hooks:** docs/qa/fixbar-in-hand-corners.jpg and docs/qa/fixbar-in-hand-type.jpg (the new bar with a place in hand), docs/qa/roast-invite.png (the invitation beside the dock), docs/qa/roast-proof-avatars.jpg, docs/qa/roast-proof-height.png, docs/qa/roast-proof-line.png (the proof lines for corners, height and alignment), docs/qa/roast-ghost-keys.jpg (the ghost of the fix and the keycaps), docs/qa/roast-settings-cousin.jpg (a cousin note on the settings page), docs/qa/roast-icon-note.jpg (the icon note), docs/qa/roast-first-note.jpg (the roast's first note on the messy page), docs/qa/guides-first-look-issues.jpg (guides on the messy page), docs/qa/guides-held-issues.jpg
   (the three strays held by their neighbours), docs/qa/guides-plumb-lines-issues.jpg
   (the plumb lines and the one stray); a screen recording of the drop-and-swing arrival would show the toy best; the three source screenshots in
   docs/references-media/; a clean page beside a messy one with the guide counts would make the point in one frame.

@@ -43,6 +43,9 @@ import { glide } from './inplace.js'; // the text styles the code is reaching fo
 import { stampOf, parseStamp, sameStamp, stampNames } from './stamp.js';
 import { Scope } from './scope.js';
 import { Claims, LEVEL } from './claims.js';
+import { BUTTON_CSS, button } from './kit.js'; // the soft button (design site: Buttons)
+import { soften } from './soft.js'; // its press
+import { toyOf } from './toys.js'; // the property's toy, at the head of the bar
 
 const TIMING = { open: 260, next: 180, click: 60, clickGap: 45, breath: 480, check: 600, fold: 2300 };
 const CLICK = { drop: 3, over: -1, ms: 420 };
@@ -60,7 +63,7 @@ const BAR_ICON = {
   x: '<svg class="x" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"/></svg>',
 };
 
-export const FIX_CSS = TEXT_EDITOR_CSS + ELEMENT_CARD_CSS + `
+const FIX_CSS_BASE = TEXT_EDITOR_CSS + ELEMENT_CARD_CSS + `
   /* the old pieces this panel replaces stay out of sight */
   .bpp, .cg, .sel { display: none !important; }
   .fx { position: fixed; left: 50%; bottom: 72px; translate: -50% 0; width: 520px; max-width: calc(100vw - 32px); box-sizing: border-box; pointer-events: auto; z-index: 2;
@@ -69,6 +72,32 @@ export const FIX_CSS = TEXT_EDITOR_CSS + ELEMENT_CARD_CSS + `
     box-shadow: 0 0 0 .5px rgb(0 0 0 / .09), 0 1px 1px rgb(0 0 0 / .04), 0 8px 20px -8px rgb(0 0 0 / .14), 0 28px 56px -24px rgb(0 0 0 / .18), inset 0 1px 0 rgb(255 255 255 / .9);
     transition: height ${TIMING.open}ms ${SPRING}; }
   .fx[hidden] { display: none; }
+  /* one place in hand: the comp's bar (design site: Fix bar) — a card, not glass; one line, a headline and a detail */
+  .fx[data-one] { width: auto; min-width: 420px; max-width: min(760px, calc(100vw - 32px)); border-radius: 22px; background: var(--pl-paper); -webkit-backdrop-filter: none; backdrop-filter: none;
+    box-shadow: var(--pl-shadow-card); }
+  .fx .one { display: flex; align-items: center; gap: 12px; height: 64px; padding: 0 10px 0 12px; white-space: nowrap; animation: pl-pop 260ms var(--pl-spring-pop) both; }
+  .fx .one .ic { display: block; width: 36px; height: 36px; flex: none; } .fx .one .ic svg { display: block; width: 100%; height: 100%; overflow: visible; }
+  .fx .one .lines { display: flex; flex-direction: column; gap: 7px; min-width: 0; flex: 1 1 auto; }
+  .fx .one .hl { display: inline-flex; align-items: center; gap: 7px; font: 650 14.5px/1 var(--pl-sans); color: var(--pl-ink); overflow: hidden; text-overflow: ellipsis; }
+  .fx .one .dt { display: inline-flex; align-items: center; gap: 6px; font: 500 13px/1 var(--pl-sans); color: var(--pl-ink-2); overflow: hidden; text-overflow: ellipsis; }
+  .fx .one .dt .pl-pill { margin: 0; }
+  .fx .one .sep { width: 1px; height: 22px; margin: 0 2px; background: var(--pl-rule); flex: none; }
+  .fx .one .onav { display: inline-flex; align-items: center; gap: 2px; font: 500 12px/1 var(--pl-mono); color: var(--pl-ink-2); flex: none; }
+  .fx .one .onav button { display: grid; place-items: center; width: 22px; height: 22px; border-radius: 6px; color: var(--pl-ink-2); }
+  .fx .one .onav button:hover { background: var(--pl-paper-2); }
+  .fx .one .tb { flex: none; }
+  ${BUTTON_CSS}
+  .tb.sm { --h: 30px; }
+  .tb.sm .top { padding: 0 11px; font-size: 12.5px; border-radius: 11px; }
+  /* the choice, on the element: a small card beside it, the options and the soft buttons */
+  /* it is a .fx (the card's inner rules apply as they are), undocked: placed beside the element, a card, not glass */
+  .fx.fx-on { left: 0; top: 0; bottom: auto; translate: none; width: auto; height: auto; max-width: min(460px, calc(100vw - 24px)); z-index: 3; overflow: visible;
+    display: flex; flex-direction: column; gap: 10px; padding: 10px 12px; background: var(--pl-paper); -webkit-backdrop-filter: none; backdrop-filter: none;
+    border-radius: var(--pl-radius-card); box-shadow: var(--pl-shadow-card); transition: none; animation: pl-pop 260ms var(--pl-spring-pop) both; }
+  .fx.fx-on[hidden] { display: none; }
+  .fx-on .acts { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .fx-on .say, .fx-on .note { color: var(--pl-ink-2); }
+  .fx-on .say.err { color: var(--pl-off); }
   .fx button:not(.pl-act) { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; }
   .fx :not(.pl-act) > kbd { font: 500 10.5px/1 ui-monospace, monospace; color: var(--pl-text-secondary); margin-left: 2px; }
   .fx .line { display: flex; align-items: center; gap: 10px; height: 46px; padding: 0 7px 0 16px; }
@@ -175,6 +204,7 @@ export const FIX_CSS = TEXT_EDITOR_CSS + ELEMENT_CARD_CSS + `
   .fx.pl-dark { box-shadow: 0 0 0 .5px rgb(255 255 255 / .12), 0 8px 20px -8px rgb(0 0 0 / .5), 0 28px 56px -24px rgb(0 0 0 / .6), inset 0 1px 0 rgb(255 255 255 / .06); }
 ${CLEANUP_CSS}
 `;
+export const FIX_CSS = FIX_CSS_BASE;
 
 // What kind of thing a mark's value is, for its specimen
 function kindOf(mark) {
@@ -188,6 +218,20 @@ function kindOf(mark) {
   if (/duration|delay/.test(p) || mark?.family === 'motion') return 'time';
   return 'value';
 }
+
+// ── the bar's one line (design site: Fix bar, decided 2026-11-10) ──
+// The headline says what was done by hand, in your words and the real CSS name; the detail says what it is and what your
+// tokens are. A craft finding says its own line and its reason.
+const PROP_WORD = [[/border-radius|radius/, 'border radius'], [/font-size/, 'font size'], [/font-weight/, 'font weight'], [/line-height/, 'line height'],
+  [/letter-spacing/, 'letter spacing'], [/padding/, 'padding'], [/margin/, 'margin'], [/gap/, 'gap'], [/background/, 'background colour'],
+  [/box-shadow/, 'shadow'], [/border-color|outline-color/, 'border colour'], [/color/, 'colour'], [/duration|delay/, 'duration'], [/width|height|size/, 'size']];
+const propWord = (mark) => { const p = (mark?.props ?? []).join(' '); return PROP_WORD.find(([re]) => re.test(p))?.[1] ?? null; };
+const NOUNS = { button: ['button', 'buttons'], a: ['link', 'links'], li: ['row', 'rows'], input: ['field', 'fields'], textarea: ['field', 'fields'], select: ['field', 'fields'],
+  img: ['image', 'images'], svg: ['icon', 'icons'], h1: ['heading', 'headings'], h2: ['heading', 'headings'], h3: ['heading', 'headings'], h4: ['heading', 'headings'], p: ['paragraph', 'paragraphs'], label: ['label', 'labels'] };
+const nounOf = (g, n) => { const tags = new Set(g.members.map((m) => m.el?.localName).filter(Boolean)); const w = tags.size === 1 ? NOUNS[[...tags][0]] : null; return w ? w[n === 1 ? 0 : 1] : n === 1 ? 'place' : 'places'; };
+const TOY_OF = { padding: 'padding', margin: 'margin', gap: 'gap', type: 'type', colour: 'colour', radius: 'corner', time: 'motion' };
+const toyFor = (mark, kind) => toyOf(TOY_OF[kind] ?? ({ height: 'height', translate: 'position', 'margin-left': 'alignment', size: 'size' }[(mark?.props ?? [])[0]] ?? 'alignment'));
+const listOf = (xs) => (xs.length < 2 ? xs.join('') : `${xs.slice(0, -1).join(', ')} and ${xs.at(-1)}`);
 
 let hatchN = 0;
 // An option drawn as what it is (overlay/demo/fix-flow.html): the space hatched in its property's own pattern, the
@@ -349,6 +393,13 @@ export class FixPanel {
     this.#el.setAttribute('role', 'region');
     this.#el.setAttribute('aria-label', 'Fix');
     root.append(this.#el);
+    // the choice is made on the element (design site: Fix bar): its own box beside the place in hand, outside the bar,
+    // which clips and blurs what is inside it
+    this.#choice = Object.assign(document.createElement('div'), { className: 'fx fx-on', hidden: true });
+    this.#choice.setAttribute('role', 'group');
+    this.#choice.setAttribute('aria-label', 'Choose');
+    root.append(this.#choice);
+    soften(root);
     // Alt+click on words: a card beside them with their own values, problem or not (texteditor.js)
     let textGroup = null; // the step the card's last write made, until the card says it (the card's own bookkeeping, not the panel's)
     this.#editor = new TextEditor(root, {
@@ -400,7 +451,7 @@ export class FixPanel {
       url: () => location.origin + '/',
     });
     this.#cleanup.mount(this.#el);
-    this.#el.addEventListener('click', (e) => {
+    const onClick = (e) => {
       if (this.#cleanup.running) { this.#cleanup.click(e.target); return; }
       const b = e.target.closest('button');
       if (!b) return;
@@ -418,18 +469,24 @@ export class FixPanel {
       else if (b.classList.contains('keep')) this.keep();
       else if (b.classList.contains('keep-yes')) this.#keepIt();
       else if (b.classList.contains('keep-no')) this.#closeKeep();
-    });
+    };
+    this.#el.addEventListener('click', onClick);
+    this.#choice.addEventListener('click', onClick);
     // the fields own their keys: Enter does the field's action, Esc closes or leaves it; the page's keys never see them
-    this.#el.addEventListener('input', (e) => {
+    const onInput = (e) => {
       if (e.target.name === 'token') { this.#names.set(this.#held?.key, e.target.value.trim()); fit(e.target); this.#sayNew(); }
-      if (e.target.name === 'why') { this.#why = e.target.value; const ok = this.#why.trim().length >= 3; this.#el.querySelector('.keep-yes')?.toggleAttribute('disabled', !ok); fieldSays(e.target.closest('.field'), { ok }); }
-    });
-    this.#el.addEventListener('keydown', (e) => {
+      if (e.target.name === 'why') { this.#why = e.target.value; const ok = this.#why.trim().length >= 3; (this.#choice.querySelector('.keep-yes') ?? this.#el.querySelector('.keep-yes'))?.toggleAttribute('disabled', !ok); fieldSays(e.target.closest('.field'), { ok }); }
+    };
+    this.#el.addEventListener('input', onInput);
+    this.#choice.addEventListener('input', onInput);
+    const onKey = (e) => {
       if (!e.target.matches?.('input')) return;
       e.stopPropagation();
       if (e.key === 'Enter') { e.preventDefault(); e.target.name === 'why' ? this.#keepIt() : this.take(); }
       if (e.key === 'Escape') { e.preventDefault(); e.target.name === 'why' ? this.#closeKeep() : e.target.blur(); }
-    });
+    };
+    this.#el.addEventListener('keydown', onKey);
+    this.#choice.addEventListener('keydown', onKey);
   }
   get rect() { return this.#el.hidden ? null : this.#el.getBoundingClientRect(); }
   #editor; #card; #cleanup; #quiet = false; #tools = false; // #tools: the bar's ··· is open (its tools shown inline)
@@ -448,7 +505,7 @@ export class FixPanel {
   #handOver(card) { const el = card.target; card.close(); if (!el || !this.holdEl(el, 'none')) this.hold(0); }
 
   // each opening starts unread: the last one's count and its settled mark never stand in for this reading
-  show(on) { if (on) { const rest = undoing_(); if (rest) queueMicrotask(() => this.#undo(rest)); this.#el.dataset.scheme = darkGround() ? 'dark' : 'light'; this.#el.classList.toggle('pl-dark', this.#el.dataset.scheme === 'dark'); this.#el.classList.toggle('pl-light', this.#el.dataset.scheme !== 'dark'); for (const w of written_()) if (!this.#taken.has(w.key)) this.#taken.set(w.key, { key: w.key, members: [] }); } if (on !== this.#on) { this.#groups = []; this.#progress = null; this.#steady = null; this.#notice = null; clearTimeout(this.#noticeTimer); this.#el.removeAttribute('data-settled'); this.#send(on ? (this.#flight?.kind === 'undoing' ? 'openUndoing' : this.#flight?.kind === 'writing' ? 'openWriting' : 'open') : 'close'); } this.#el.hidden = !on; if (!on) { this.#editor.close(); this.#card.close(); this.#letGo(false); this.#done = false; const last = this.#last; if (last?.undo?.length || last?.group) this.#host.handOff?.({ undo: last.undo ?? [], trace: { group: last.group ?? null } }, last.text); this.#last = null; this.#resumeAt = null; if (this.#cleanup.running) this.#cleanup.stop(); } else this.#cleanup.resume(); this.render(); }
+  show(on) { if (on) { const rest = undoing_(); if (rest) queueMicrotask(() => this.#undo(rest)); this.#el.dataset.scheme = darkGround() ? 'dark' : 'light'; this.#el.classList.toggle('pl-dark', this.#el.dataset.scheme === 'dark'); this.#el.classList.toggle('pl-light', this.#el.dataset.scheme !== 'dark'); this.#choice.dataset.scheme = this.#el.dataset.scheme; this.#choice.className = `fx fx-on ${this.#el.dataset.scheme === 'dark' ? 'pl-dark' : 'pl-light'}`; for (const w of written_()) if (!this.#taken.has(w.key)) this.#taken.set(w.key, { key: w.key, members: [] }); } if (on !== this.#on) { this.#groups = []; this.#progress = null; this.#steady = null; this.#notice = null; clearTimeout(this.#noticeTimer); this.#el.removeAttribute('data-settled'); this.#send(on ? (this.#flight?.kind === 'undoing' ? 'openUndoing' : this.#flight?.kind === 'writing' ? 'openWriting' : 'open') : 'close'); } this.#el.hidden = !on; if (!on) { this.#choice.hidden = true; this.#onHtml = ""; this.#editor.close(); this.#card.close(); this.#letGo(false); this.#done = false; const last = this.#last; if (last?.undo?.length || last?.group) this.#host.handOff?.({ undo: last.undo ?? [], trace: { group: last.group ?? null } }, last.text); this.#last = null; this.#resumeAt = null; if (this.#cleanup.running) this.#cleanup.stop(); } else this.#cleanup.resume(); this.render(); }
   // the reader handed on the page: causes, most places first; a cause taken stays taken until it is written
   // While a cause is in hand the page is read as previewed (its fix, and what that fix also mends, gone from it): the
   // causes stay as they were read before, and the new reading is taken when the cause is put down
@@ -846,6 +903,28 @@ export class FixPanel {
 
   // a card open owns the screen: the host says so, and Blueprint's pills step aside under it (N-11)
   #cardFlag() { const h = this.#el.getRootNode()?.host, on = !!(this.#editor?.open || this.#card?.open); if (h && h.hasAttribute('data-card') !== on) h.toggleAttribute('data-card', on); }
+  // the choice, on the page beside the element in hand: below it when there is room, else above; never over the bar
+  #placeOn() {
+    const body = this.#onBody, at = this.#onAt;
+    if (!body || !at) { this.#choice.hidden = true; this.#onHtml = ''; return; }
+    if (body !== this.#onHtml) {
+      const typing = this.#choice.getRootNode().activeElement, field = typing?.matches?.('input') && this.#choice.contains(typing) ? { name: typing.name, at: [typing.selectionStart, typing.selectionEnd] } : null;
+      this.#choice.innerHTML = body; this.#onHtml = body;
+      if (field) { const f = this.#choice.querySelector(`input[name="${field.name}"]`); if (f) { f.focus(); f.setSelectionRange(...field.at); } }
+    }
+    this.#choice.hidden = false;
+    const r = at.getBoundingClientRect(), box = this.#choice.getBoundingClientRect(), bar = this.#el.getBoundingClientRect(), gap = 10, w = box.width, h = box.height;
+    // what else the overlay shows (the X-ray card on the element, its caret): the choice keeps clear of it and of the bar
+    const others = [...this.#choice.getRootNode().querySelectorAll('*')].filter((e) => e !== this.#choice && e !== this.#el && !this.#choice.contains(e) && !this.#el.contains(e)
+      && (e.matches('.xr-card, .ec, .ec-strip') || getComputedStyle(e).position === 'fixed') && e.getClientRects().length).map((e) => e.getBoundingClientRect()).filter((b) => b.width > 40 && b.height > 40 && b.width < innerWidth * 0.9);
+    const taken = [...others, bar, r];
+    const clamp = (x, y) => [Math.min(Math.max(gap, x), innerWidth - w - gap), Math.min(Math.max(gap, y), innerHeight - h - gap)];
+    const spots = [[r.left, r.bottom + gap], [r.right - w, r.bottom + gap], [r.left, r.top - gap - h], [r.right - w, r.top - gap - h], [r.right + gap, r.top], [r.left - gap - w, r.top]].map(([x, y]) => clamp(x, y));
+    const over = ([x, y]) => taken.reduce((sum, b) => sum + Math.max(0, Math.min(b.right, x + w) - Math.max(b.left, x)) * Math.max(0, Math.min(b.bottom, y + h) - Math.max(b.top, y)), 0);
+    const [left, top] = spots.reduce((best, sp) => (over(sp) < over(best) ? sp : best), spots[0]);
+    this.#choice.style.top = `${Math.round(top)}px`; this.#choice.style.left = `${Math.round(left)}px`;
+  }
+
   render(slide = false) {
     this.#cardFlag();
     if (!this.#on) return;
@@ -854,6 +933,7 @@ export class FixPanel {
     const settledNow = this.#progress?.done ?? (!!this.#progress?.total && this.#progress.read === this.#progress.total);
     const settled = settledNow || (this.#steady?.path === location.pathname && !!this.#unsettledAt && performance.now() - this.#unsettledAt < BRIEF);
     let html;
+    this.#onBody = ''; this.#onAt = null;
     const tidy = `<button class="pl-act quiet cleanup" aria-keyshortcuts="c"><span>${esc(CLEANUP.bar)}<span class="long"> ${esc(CLEANUP.barLong)}</span></span> <kbd>C</kbd></button>`;
     // the bar's end: ··· (its tools, only once asked for) and Close; and the setup steps left, said in the line
     const B = FIX.bar, left = this.#host.setupLeft?.() ?? 0;
@@ -931,11 +1011,32 @@ export class FixPanel {
       // a write that didn't land: why, on the fix it was for (back in hand, to try again)
       const also = elsewhere(g, this.#host.scope?.()), reach = also ? `<div class="say">${esc(FIX.elsewhere(also))}</div>` : '';
       const failed = this.#error ? `<div class="say err" role="alert">${esc(this.#error)}</div>` : '';
-      html = `<div class="body"${slide ? '' : ' style="animation:none"'}>${head}${failed}${unseen}${reach}${middle}${acts}</div>`;
+      // the bar (design site: Fix bar): the property's toy, the headline and the detail, where you are, the way into the
+      // other job. The choice (the options, Use, Keep, Skip) is made on the element, in its own box beside it
+      const n = placesOf(g), prop = propWord(mark), unitOf = (x) => (Number.isFinite(x) ? `${Math.round(x * 100) / 100}${kind === 'time' ? 'ms' : kind === 'type' && /weight/.test((mark.props ?? []).join()) ? '' : 'px'}` : null);
+      const now = unitOf(v?.now?.n) ?? (mark.value != null && !/^[a-z-]+-\[/.test(String(mark.value)) ? mark.value : null);
+      const sayLine = mark.family === 'craft' ? `${n} ${nounOf(g, n)}: ${String(what).replace(/^./, (c) => c.toLowerCase())}` : prop ? `${n} ${nounOf(g, n)} ${n === 1 ? 'has' : 'have'} a hard-coded ${prop}` : `${n} ${nounOf(g, n)}: ${what.toLowerCase()}`;
+      const tokens = v?.ready ? [...new Map([...v.options].sort((a, b) => (a.n ?? 0) - (b.n ?? 0)).map((o) => [unitOf(o.n) ?? o.label, 1])).keys()].filter(Boolean) : [];
+      const moreLine = mark.family === 'craft' ? esc(String(mark.title ?? mark.because ?? ''))
+        : `${now != null && now !== '' ? `<span class="pl-pill" data-hue="coral">${esc(String(now))}</span> ` : ''}${esc(tokens.length && prop ? `isn’t one of your ${prop} tokens: ${listOf(tokens)}.` : what)}`;
+      const nav = `<span class="onav"><button class="prev" aria-label="Previous fix">‹</button><span>${esc(FIX.position(g, live, noteOf))}</span><button class="next" aria-label="Next fix">›</button></span>`;
+      html = `<div class="one"${slide ? '' : ' style="animation:none"'}><i class="ic big">${toyFor(mark, kind)}</i><span class="lines"><span class="hl">${esc(sayLine)}${info}</span><span class="dt">${moreLine}</span></span>`
+        + `<span class="sep"></span>${nav}${button(CLEANUP.bar, { cls: 'sm quiet cleanup', attrs: 'aria-keyshortcuts="c"', icon: toyOf('icon') })}</div>`;
+      // the soft buttons replace the old ones in the choice: Use (pink, ↵), Keep and Skip (quiet)
+      const soft = acts
+        .replace(/<button class="primary take"\s*(disabled)?\s*>([\s\S]*?) <kbd>↵<\/kbd><\/button>/, (m, dis, l) => button(l, { cls: 'sm take', key: '↵', attrs: dis ? 'disabled' : '' }))
+        .replace(/<button class="primary keep-yes"\s*(disabled)?\s*>([\s\S]*?) <kbd>↵<\/kbd><\/button>/, (m, dis, l) => button(l, { cls: 'sm keep-yes', key: '↵', attrs: dis ? 'disabled' : '' }))
+        .replace(/<button class="ghost keep">([\s\S]*?) <kbd>K<\/kbd><\/button>/, (m, l) => button(l, { cls: 'sm quiet keep', key: 'K' }))
+        .replace(/<button class="ghost keep-no">([\s\S]*?) <kbd>esc<\/kbd><\/button>/, (m, l) => button(l, { cls: 'sm quiet keep-no', key: 'Esc' }))
+        .replace(/<button class="ghost skip">([\s\S]*?)<\/button>/, (m, l) => button(l.replace(/<kbd>.*?<\/kbd>/, '').trim(), { cls: 'sm quiet skip', key: '→' }));
+      this.#onBody = `${failed}${unseen}${reach}${middle}${soft}`;
+      this.#onAt = g.members.find((m) => shown(m.el))?.el ?? null;
     }
     // the last fix written stays said above, with its Undo, until the next one is written
     if (this.#last && !this.#cleanup.running && !this.#writing && !this.#undoing && !this.#done) html = `<div class="said" role="status"><svg class="tick" viewBox="0 0 20 20" aria-hidden="true"><path d="M5 10.5l3.2 3.2L15 6.8"/></svg><span class="t">${esc(this.#last.text)}</span>${this.#last.undo?.length ? `<button class="ghost undo">${FIX.undo}</button>` : ''}</div>${html}`;
     this.#el.toggleAttribute('data-rest', html.includes('class="line bar'));
+    this.#el.toggleAttribute('data-one', html.includes('class="one"'));
+    this.#placeOn();
     if (html === this.#html) return;
     this.#html = html;
     const still = matchMedia('(prefers-reduced-motion: reduce)').matches, from = this.#el.offsetHeight;
@@ -948,7 +1049,7 @@ export class FixPanel {
     // the bar changed size: what is placed clear of it is placed again (now, and once its height has moved)
     if (from !== to && this.#card.open) { this.#card.place(); if (!still) this.#life.timeout(() => this.#card.place(), TIMING.open + 40); }
   }
-  #html = '';
+  #html = ''; #choice; #onHtml = ''; #onBody = ''; #onAt = null;
 
   // The page celebrates: every fixed place clicks into place, one after another; the page breathes once; the ✓ draws
   // and bursts. Then the panel folds. (Places that a reload replaced are found again by nothing: the breath and the
