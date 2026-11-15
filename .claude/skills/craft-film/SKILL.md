@@ -49,6 +49,12 @@ here:
 
 ## Rules from the owner's feedback
 
+`overlay/showcase/scripts/film-script-check.mjs` checks the rules a machine can match: sentence and script length, no
+percentages, arrows, px values or class names in the words, and one property on each side of the change card. The
+draft and the render both run it and refuse a film that fails; run it alone with
+`node overlay/showcase/scripts/film-script-check.mjs <N>`. When the owner moves a limit, change `LIMITS` there and the
+rule here together.
+
 Each rule has its why: the owner's reason in their words, or *inferred* where they gave none. The comment under each
 holds the date and what they said.
 
@@ -66,7 +72,8 @@ holds the date and what they said.
   Why: the owner asked for exactly this on both scripts. *Inferred:* a lesson lands when the viewer recognises it from
   their own screens.
   <!-- 2026-11-14: "first script say that human dont percieve them same; in the second tell why things might get blurry and in what scenario" -->
-- **About six lines, each one sentence of ten words or fewer; about 50 words in the whole film.**
+- **About six lines, each one or two sentences of 12 words or fewer; at most 55 words in the whole film.** The
+  approved scripts of films 3 and 37 hold 46 and 48 words, and their longest sentence is 12.
   Why: "too much text, balance it out, make it half of it." *Inferred:* the viewer reads and watches at once, and the
   demo is the lesson, so the words must be short enough to leave the eyes on it.
   <!-- 2026-11-15: "too much text balance it out make it half of it" -->

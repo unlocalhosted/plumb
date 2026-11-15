@@ -95,6 +95,7 @@ export function FilmPage({ n }) {
   const [to, setTo] = useState(null);              // where the name and the mark travel from / to: their centred transforms
   useEffect(() => {
     document.title = `${n} · ${p?.title ?? ''} · React Plumber`;
+    window.__filmSpec = Example?.film ? { script: Example.film.script ?? null, teach: Example.film.teach ?? null } : null; // read by film-script-check
     document.body.style.background = 'var(--pl-desk, #fff)';
     const fit = () => setK(Math.min(innerWidth / STAGE.w, innerHeight / STAGE.h));
     fit(); addEventListener('resize', fit);

@@ -11,6 +11,7 @@
 // Run it only after the story and camera reviews pass on the draft (film-draft.mjs); it takes a few minutes.
 import { spawn } from 'node:child_process';
 import { chromium } from 'playwright';
+import { checkPage, refuse } from './film-script-check.mjs';
 
 const args = process.argv.slice(2), n = Number(args[0]), out = args[1];
 if (!n || !out) { console.error('usage: film-render.mjs <N> <out.mp4> [--fps 60] [--size 1920x1080] [--origin URL]'); process.exit(2); }
@@ -26,6 +27,7 @@ const T0 = Date.now();
 await page.clock.install({ time: T0 });
 await page.clock.pauseAt(T0 + 10); // an installed clock still runs in real time: paused, only the frames below move it
 await page.goto(`${origin}/film/${n}`);
+{ const problems = await checkPage(page); if (problems.length) { await browser.close(); refuse(n, problems); } }
 
 // the film's own time, counted here frame by frame (the page's performance.now keeps running in real time while frames
 // are taken, so it can't be the clock); every animation is held to it: tagged when first seen, paused, and set

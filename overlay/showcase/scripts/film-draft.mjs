@@ -14,6 +14,7 @@ import { execFileSync } from 'node:child_process';
 import { mkdirSync, readdirSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { chromium } from 'playwright';
+import { checkPage, refuse } from './film-script-check.mjs';
 
 const args = process.argv.slice(2), n = Number(args[0]);
 if (!n) { console.error('usage: film-draft.mjs <N> [--origin URL] [--out DIR]'); process.exit(2); }
@@ -43,6 +44,8 @@ await page.exposeFunction('__filmBeat', (name, t) => {
   if (name === 'frame: line') setTimeout(done, 2500); // the closing line is the last beat; hold a moment past it
 });
 await page.goto(`${origin}/film/${n}`);
+const problems = await checkPage(page);
+if (problems.length) { await ctx.close(); await browser.close(); rmSync(out, { recursive: true, force: true }); refuse(n, problems); }
 await Promise.race([finished, new Promise((ok) => setTimeout(ok, LIMIT))]);
 const files = await Promise.all(shots);
 await ctx.close(); await browser.close();
