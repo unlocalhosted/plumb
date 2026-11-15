@@ -39,7 +39,8 @@ The final render (1920 × 1080, and any other format) happens only after both re
 6. **Readable where it is watched.** A wide (16:9) film shown across a phone held upright is about a fifth of its size,
    so even 28 px text in a 1920 × 1080 frame lands near 6 px: no wide film is truly readable upright, which is why the
    phone cut is tall (9:16). For the wide cut, plumber's marks, the change card and the switch are drawn at the film
-   size (FilmPage's FILM_UI, twice the showcase's: pills about 26 px in a 1080p frame) and read on a laptop, a tablet
+   size (FilmPage's FILM_UI, twice the showcase's, in a film without a script; in a scripted film MARKS, a step under
+   the 30 px story line, never louder than it: craft-film's type rule) and read on a laptop, a tablet
    or a phone turned sideways. Check a keyframe at 400 px wide: if the pills can't be read, they are decoration.
    *Source: arithmetic on the output size.*
 7. **Colour means one thing each.** Sky measures, coral is broken, mint is fixed (plumber's own primitives,

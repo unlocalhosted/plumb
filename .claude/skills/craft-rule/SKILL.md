@@ -233,6 +233,9 @@ viewer**, not only its length. The first stage copied the ledger video's duratio
 
 ### Before a film is rendered: two reviews on a cheap draft
 
+The whole order of work for a lesson film (the script first, the one-property change card, the layout, type and
+closing line the owner settled on) is the craft-film skill.
+
 A film is never rendered or published straight from its code. First the story review (film-story-review) and the
 camera review (film-camera-review) read its storyboard; then one cheap draft run
 (`node overlay/showcase/scripts/film-draft.mjs <N>`: its beats with timecodes, a keyframe per beat, a sheet at one frame
