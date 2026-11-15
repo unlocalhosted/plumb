@@ -30,6 +30,8 @@
  *           dimension mark above and below, from its edge to the line
  *  fix      the button writes the swap where the class is written (locate.js classEditsOf, POST swaps); the page
  *           hot-updates, the note leaves, the next one comes up. Refused: the reason, in coral, in its place
+ *  invite   at rest, when the screen has notes, a pill beside plumber's dock (the bob, "3 notes on this screen", ⌥G)
+ *           opens them; it is the only thing shown uninvited (see "the invitation" below)
  *  keys     ← → between notes, Enter fixes the one in hand, Esc closes. Alt+G opens and closes. The bar shows them
  *           as keycaps; plumber's at-rest hint and its keyboard help name Alt+G
  *  proof    every note draws the lines the good siblings share, run across all of them and a little past (the top
@@ -468,18 +470,23 @@ async function fix() {
   } catch (error) { state = 'idle'; wrong = error?.message ?? 'That change could not be written.'; paint(); }
 }
 
+// drawn on the page, so the page's ground picks light or dark
+function schemeOfPage() {
+  const ground = [document.body, document.documentElement].map((e) => /rgba?\(([^)]+)\)/.exec(getComputedStyle(e).backgroundColor)?.[1].split(/[,/]/).map(parseFloat)).find((c) => c && (c[3] ?? 1) > 0.5) ?? [255, 255, 255];
+  return 0.2126 * ground[0] + 0.7152 * ground[1] + 0.0722 * ground[2] < 128 ? 'dark' : 'light';
+}
+
 export function showRoast() {
   if (host) return;
   host = document.createElement('div');
   host.setAttribute('data-plumb-layer', 'roast');
   host.attachShadow({ mode: 'open' });
-  // drawn on the page, so the page's ground picks light or dark
-  const ground = [document.body, document.documentElement].map((e) => /rgba?\(([^)]+)\)/.exec(getComputedStyle(e).backgroundColor)?.[1].split(/[,/]/).map(parseFloat)).find((c) => c && (c[3] ?? 1) > 0.5) ?? [255, 255, 255];
-  host.setAttribute('data-scheme', 0.2126 * ground[0] + 0.7152 * ground[1] + 0.0722 * ground[2] < 128 ? 'dark' : 'light');
+  host.setAttribute('data-scheme', schemeOfPage());
   host.setAttribute('data-arrive', '');
   setTimeout(() => host?.removeAttribute('data-arrive'), 600);
   document.documentElement.append(host);
   index = 0; state = 'idle'; wrong = null; drawnFor = null;
+  invite?.remove(); invite = null; inviteCount = -1;
   addEventListener('scroll', later, { capture: true, passive: true });
   addEventListener('resize', later, { passive: true });
   paint();
@@ -490,8 +497,85 @@ export function hideRoast() {
   removeEventListener('resize', later);
   cancelAnimationFrame(frame); frame = 0;
   host.remove(); host = null;
+  settle();
 }
 export const toggleRoast = () => (host ? hideRoast() : showRoast());
+
+// ── the invitation ──────────────────────────────────────────
+// At rest, when the screen has notes, a small pill beside plumber's dock says so and opens them: the plumb bob, "3 notes
+// on this screen", the key. It is the only thing the roast shows uninvited. It arrives once the page has settled, its
+// bob swinging once from its pin, swings again under the pointer, and leaves while the notes are open or when there is
+// nothing to say. It reads the page again only when the page has been still for a moment, and never while you type.
+
+const INVITE_CSS = `
+:host { position: fixed; inset: 0; z-index: 2147482999; pointer-events: none; display: block; }
+.inv { position: absolute; display: flex; align-items: center; gap: 8px; height: 28px; padding: 0 6px 0 4px; box-sizing: border-box;
+  border: 0; border-radius: 14px; background: var(--pl-paper); color: var(--pl-ink); box-shadow: var(--pl-shadow-tag);
+  font: var(--pl-card-meta); white-space: nowrap; cursor: pointer; pointer-events: auto;
+  animation: in 320ms var(--pl-spring-pop) both; transform-origin: 100% 50%;
+  transition: box-shadow 160ms var(--pl-ease-out), translate 160ms var(--pl-ease-out); }
+.inv:hover { translate: 0 -1px; box-shadow: var(--pl-shadow-tag), 0 6px 16px -6px rgb(28 27 25 / 0.28); }
+.inv:active { translate: 0 0; scale: 0.97; }
+.inv:focus-visible { outline: 2px solid var(--pl-instrument); outline-offset: 2px; }
+.inv b { font-weight: 600; font-variant-numeric: tabular-nums; }
+.who { width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; background: var(--pl-coral-soft); color: var(--pl-coral-ink); }
+.who svg { width: 14px; height: 14px; overflow: visible; }
+.who .str, .who .pin { stroke: currentColor; fill: none; } .who .bob { fill: currentColor; }
+.swing { transform-box: view-box; transform-origin: 9px 2.5px; animation: swing 1100ms var(--pl-ease-out) 200ms both; }
+.inv:hover .swing { animation: nudge 700ms var(--pl-ease-out) both; }
+kbd { min-width: 18px; height: 18px; padding: 0 4px; box-sizing: border-box; display: inline-grid; place-items: center; border-radius: 5px;
+  background: var(--pl-paper-2); box-shadow: inset 0 -1px 0 var(--pl-rule); font: var(--pl-card-code); font-size: 11px; color: var(--pl-ink-2); }
+@keyframes in { from { opacity: 0; scale: 0.9; } }
+@keyframes swing { 0% { rotate: 28deg; } 35% { rotate: -14deg; } 62% { rotate: 6deg; } 82% { rotate: -2deg; } 100% { rotate: 0deg; } }
+@keyframes nudge { 0% { rotate: 0deg; } 30% { rotate: 12deg; } 60% { rotate: -5deg; } 100% { rotate: 0deg; } }
+@media (prefers-reduced-motion: reduce) { .inv, .swing, .inv:hover .swing { animation: none; transition: none; } }
+`;
+const INVITE_BOB = `<svg viewBox="0 0 18 18"><path class="pin" d="M5 2.5h8" stroke-width="1.5"/><g class="swing"><path class="str" d="M9 2.5V9" stroke-width="1.5"/><path class="bob" d="${BOB(9, 9, 2.8)}"/></g></svg>`;
+
+let invite = null, inviteCount = -1, idle = 0, watcher = null;
+const typing = () => { const a = document.activeElement; return !!a && (a.isContentEditable || a.matches?.('input, textarea, select')); };
+
+function placeInvite(btn) {
+  // left of plumber's dock, centred on it; where the dock is not drawn, the corner it would be in
+  const d = document.querySelector('plumb-overlay')?.shadowRoot?.querySelector('.dock')?.getBoundingClientRect();
+  const ok = d && d.width > 0 && d.right > 0 && d.bottom > 0;
+  // from the dock's right edge and its folded size (a square mark): the dock is wide for a few seconds while it shows
+  // its own hint, then folds, and the pill must not be left stranded where the wide dock ended
+  btn.style.right = `${ok ? innerWidth - d.right + d.height + 8 : 46}px`;
+  btn.style.bottom = `${ok ? innerHeight - d.bottom - (28 - d.height) / 2 : 9}px`;
+}
+
+function refreshInvite() {
+  idle = 0;
+  if (host || typing() || document.hidden) return;
+  let count = 0;
+  try { count = readNotes().length; } catch { count = 0; }
+  if (count === inviteCount && invite) { placeInvite(invite.shadowRoot.querySelector('.inv')); return; }
+  inviteCount = count;
+  invite?.remove(); invite = null;
+  if (!count) return;
+  invite = document.createElement('div');
+  invite.setAttribute('data-plumb-layer', 'roast-invite');
+  invite.setAttribute('data-scheme', schemeOfPage());
+  invite.attachShadow({ mode: 'open' }).innerHTML = `<style>${tokensCss}${INVITE_CSS}</style>
+    <button class="inv" type="button" aria-label="${count} ${count === 1 ? 'note' : 'notes'} on this screen. Open them with Alt G.">
+    <span class="who">${INVITE_BOB}</span><span><b>${count}</b> ${count === 1 ? 'note' : 'notes'} on this screen</span><kbd>⌥G</kbd></button>`;
+  const btn = invite.shadowRoot.querySelector('.inv');
+  btn.addEventListener('click', () => showRoast());
+  document.documentElement.append(invite);
+  placeInvite(btn);
+}
+// read again once the page has been still for a moment (a route change, a fix landing, content loading)
+const settle = () => { if (idle) clearTimeout(idle); idle = setTimeout(() => (window.requestIdleCallback ?? setTimeout)(refreshInvite), 900); };
+function watch() {
+  if (watcher) return;
+  watcher = new MutationObserver((records) => { if (records.some((r) => !r.target.closest?.('[data-plumb-layer], plumb-overlay'))) settle(); });
+  watcher.observe(document.body, { subtree: true, childList: true, attributes: true, attributeFilter: ['class', 'style'], characterData: true });
+  addEventListener('resize', settle, { passive: true });
+  addEventListener('popstate', settle);
+  settle();
+}
+if (document.readyState === 'complete') watch(); else addEventListener('load', watch, { once: true });
 
 addEventListener('keydown', (event) => {
   const at = event.composedPath()[0];

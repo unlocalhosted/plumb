@@ -1583,7 +1583,15 @@ field is empty). The table of five writes, before and after. The Next table: eig
   removal is recorded as ∅, the way an addition already recorded an empty "from". Proof: the button took
   translate-y-[2px] out of SloppyIssuesPage.tsx:48, the page updated, and the roast said "Everything here hangs true.
   Nothing to roast." (the owner had already fixed the other two notes with the button). Practice page restored.
-- **Media hooks:** docs/qa/roast-proof-avatars.jpg, docs/qa/roast-proof-height.png, docs/qa/roast-proof-line.png (the proof lines for corners, height and alignment), docs/qa/roast-ghost-keys.jpg (the ghost of the fix and the keycaps), docs/qa/roast-settings-cousin.jpg (a cousin note on the settings page), docs/qa/roast-icon-note.jpg (the icon note), docs/qa/roast-first-note.jpg (the roast's first note on the messy page), docs/qa/guides-first-look-issues.jpg (guides on the messy page), docs/qa/guides-held-issues.jpg
+- **An invitation** (owner: "make it invite me to open the notes"). At rest, when the screen has notes, a small pill
+  sits beside plumber's dock: the plumb bob in coral, "3 notes on this screen", and the ⌥G key. Clicking it opens the
+  notes; it steps aside while they are open and comes back after; a page with nothing to say shows nothing. Its bob
+  swings once from its pin when it arrives and again under the pointer. It reads the page again only once the page has
+  been still for a moment, never while you type. Two slips on the way: it first drew in plumber's dark set on a light
+  page (it now takes the page's ground, like the notes bar), and it placed itself against the dock while the dock was
+  still wide with its own hint, so it was stranded mid-screen once the dock folded (now placed from the dock's right
+  edge and folded size).
+- **Media hooks:** docs/qa/roast-invite.png (the invitation beside the dock), docs/qa/roast-proof-avatars.jpg, docs/qa/roast-proof-height.png, docs/qa/roast-proof-line.png (the proof lines for corners, height and alignment), docs/qa/roast-ghost-keys.jpg (the ghost of the fix and the keycaps), docs/qa/roast-settings-cousin.jpg (a cousin note on the settings page), docs/qa/roast-icon-note.jpg (the icon note), docs/qa/roast-first-note.jpg (the roast's first note on the messy page), docs/qa/guides-first-look-issues.jpg (guides on the messy page), docs/qa/guides-held-issues.jpg
   (the three strays held by their neighbours), docs/qa/guides-plumb-lines-issues.jpg
   (the plumb lines and the one stray); a screen recording of the drop-and-swing arrival would show the toy best; the three source screenshots in
   docs/references-media/; a clean page beside a messy one with the guide counts would make the point in one frame.
