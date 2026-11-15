@@ -172,6 +172,15 @@ MarginReaders.film = {
     return { ty, off: fmt(off), size: { icon: null, pre: '↕ ', from: 0, to: fmt(ty) }, tags: [{ icon: null, pre: 'off the grid · ', from: 0, to: fmt(off) }] };
   },
   say: 'Look at the tooltip\'s words beside the figures.',
+  // the words on screen, approved by the owner 2026-11-15; `at` is the film's moment for each line
+  script: [
+    { at: 'rest', text: 'These words are blurry. The numbers above are sharp.' },
+    { at: 'measure', text: 'Tooltips and dialogs are often centred by moving up half their height.' },
+    { at: 'dive', text: 'Here that\'s 23.19 pixels. A screen only draws whole pixels.' },
+    { at: 'smear', text: 'So each letter smears across two rows.' },
+    { at: 'fix', text: 'Centre it with layout instead.' },
+    { at: 'payoff', text: 'Now every letter is sharp.' },
+  ],
 };
 MarginReaders.lesson = {
   why: 'translate moves a box by exactly what you ask, fractions included, and a fraction of a pixel down is a place no pixel row is. Half of the 46.4px tooltip is 23.19px, half of each 16.5px axis label 8.25px, so their words sit between rows and every letter smears across two: soft, beside the sharp figures around them.',

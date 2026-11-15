@@ -201,6 +201,15 @@ LaunchBoard.film = {
     return { focus: { x: (L + R) / 2, y: (T + B) / 2 }, k: K, svg: `${hatch}${shade}${rows.map(pair).join('')}`, pills };
   },
   say: 'Compare the circle with the square beside it.',
+  // the words on screen, approved by the owner 2026-11-15; `at` is the film's moment for each line
+  script: [
+    { at: 'rest', text: 'These two shapes are the same size.' },
+    { at: 'measure', text: 'But people see the circle as smaller.' },
+    { at: 'dive', text: 'Its corners are empty, so there\'s less of it.' },
+    { at: 'fix', text: 'Draw it a little bigger, just past the lines.' },
+    { at: 'payoff', text: 'Now they look equal.' },
+    { at: 'end', text: 'It\'s why an O is drawn taller than an H.' },
+  ],
 };
 LaunchBoard.lesson = {
   why: 'A circle fills about 78% of its box, a square nearly all of it. Drawn in the same box, the circle carries less ink, so in every row it reads smaller than the square beside it.',

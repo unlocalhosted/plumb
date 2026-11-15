@@ -26,8 +26,11 @@ const TIMING = {
   back:     300,   // closing: after the film, the card and signature step back
   mark:     700,   // the mark travels to the middle
   line:    1500,   // the site's line under it
+  says:    2600,   // a scripted film: the closing words held before the mark comes in
 };
+const CLOSING = 'React Plumber spots this in your app.';
 const MOVE = 'cubic-bezier(0.7, 0, 0.3, 1)';
+const FIT = 0.86;                                  // a scripted film: the card and switch a step smaller, so the story's line fits under them
 const FILM_UI = 2;                                 // plumber's marks at twice their showcase size: a film is watched smaller than it is made      // the camera's curve: slow start, slow finish
 const LINE = 'A design review on every screen.';   // the site's hero line (homepage/src/hero)
 
@@ -66,7 +69,10 @@ export function FilmPage({ n }) {
   const p = PRINCIPLES.find((x) => x.n === n), screen = SCREENS[n], Example = screen?.default;
   const [k, setK] = useState(1);
   const [phase, setPhase] = useState('empty');     // empty · name · film · playing · back · mark · line
-  const sig = useRef(null), mark = useRef(null);
+  const [caption, setCaption] = useState(null);    // the script's line now on screen (a film with spec.script)
+  const sig = useRef(null), mark = useRef(null), stack = useRef(null);
+  const [fh, setFh] = useState(0);                 // the card and switch's own height, so the scaled stack takes only the room it shows
+  useLayoutEffect(() => { const el = stack.current; if (!el) return; const ro = new ResizeObserver(() => setFh(el.offsetHeight)); ro.observe(el); return () => ro.disconnect(); }, []);
   const [to, setTo] = useState(null);              // where the name and the mark travel from / to: their centred transforms
   useEffect(() => {
     document.title = `${n} · ${p?.title ?? ''} · React Plumber`;
@@ -95,7 +101,7 @@ export function FilmPage({ n }) {
         // the scale is about the box's centre, so the drawn centre moves with it: move that point to the stage's centre
         const cx = d.x + d.w / 2, cy = d.y + d.h / 2, sx = ox + (cx - ox) * s, sy = oy + (cy - oy) * s;
         return `translate(${STAGE.w / 2 - sx}px, ${y - sy}px) scale(${s})`; };
-      setTo({ name: at(sig.current, 1.6, STAGE.h / 2), mark: at(mark.current, 2.4, STAGE.h / 2 - 30) });
+      setTo({ name: at(sig.current, 1.6, STAGE.h / 2), mark: at(mark.current, 3.4, STAGE.h / 2 - 30) });
     });
     return () => { gone = true; };
   }, []);
@@ -105,37 +111,55 @@ export function FilmPage({ n }) {
     const t = [setTimeout(() => setPhase('name'), TIMING.name), setTimeout(() => setPhase('film'), TIMING.travel), setTimeout(() => setPhase('playing'), TIMING.film)];
     return () => t.forEach(clearTimeout);
   }, [to]);
+  const scripted = !!Example?.film?.script;
   const done = () => {
-    setTimeout(() => setPhase('back'), TIMING.back);
-    setTimeout(() => setPhase('mark'), TIMING.back + TIMING.mark);
-    setTimeout(() => setPhase('line'), TIMING.back + TIMING.line);
+    const hold = scripted ? TIMING.says : 0;
+    setTimeout(() => { setPhase('back'); if (scripted) setCaption(CLOSING); }, TIMING.back);
+    setTimeout(() => { setPhase('mark'); setCaption(''); }, TIMING.back + hold + TIMING.mark);
+    setTimeout(() => setPhase('line'), TIMING.back + hold + TIMING.line);
   };
+  // the line on screen: the script's first line from the first frame (the question asked at once), then whatever the film says
+  const on = phase === 'name' || phase === 'film' || phase === 'playing';
+  const said = caption ?? (scripted ? Example.film.script[0].text : '');
   if (!Example?.film) return <p style={{ padding: 40 }}>No film for № {n} yet.</p>;
   const centred = false, shown = phase !== 'empty';
   const closing = phase === 'back' || phase === 'mark' || phase === 'line', marked = phase === 'mark' || phase === 'line';
   return (
     <div className="pl-light" style={{ position: 'fixed', inset: 0, display: 'grid', placeItems: 'center', overflow: 'hidden', background: 'var(--pl-desk)' }}>
       {/* plumber's own overlay (its toasts, its Alt pill) runs on this dev page; it is not part of the film */}
-      <style>{'plumb-overlay { display: none !important; } @keyframes mk-guide { from { opacity: 0; stroke-dashoffset: 40 } to { opacity: 1; stroke-dashoffset: 0 } } @keyframes mk-pill { from { opacity: 0; transform: scale(.6) } to { opacity: 1; transform: scale(1) } }'}</style>
+      <style>{'plumb-overlay { display: none !important; } @keyframes mk-guide { from { opacity: 0; stroke-dashoffset: 40 } to { opacity: 1; stroke-dashoffset: 0 } } @keyframes mk-pill { from { opacity: 0; transform: scale(.6) } to { opacity: 1; transform: scale(1) } } @keyframes film-line { from { opacity: 0; transform: translateY(10px) } to { opacity: 1; transform: none } }'}</style>
       <div style={{ position: 'relative', width: STAGE.w, height: STAGE.h, flex: 'none', transform: `scale(${k})`, background: 'var(--pl-desk)', color: 'var(--pl-ink)', visibility: to ? 'visible' : 'hidden' }}>
         {/* the signature: which piece of craft this is; it opens the film large in the middle, then takes its corner */}
-        <div ref={sig} style={{ position: 'absolute', left: STAGE.edge, top: STAGE.edge - 8, display: 'flex', flexDirection: 'column', gap: 10, maxWidth: 380,
+        <div ref={sig} style={{ position: 'absolute', left: STAGE.edge, top: STAGE.edge - 8, display: 'flex', flexDirection: 'column', gap: 8, maxWidth: 340,
           transform: centred && to ? to.name : 'none', opacity: shown && !closing ? 1 : 0,
           transition: `transform 1000ms ${MOVE}, opacity ${closing ? 500 : 600}ms ease` }}>
-          <span style={{ font: 'var(--pl-round-w2, 800) 22px/1 var(--pl-round)', color: 'var(--pl-ink-2)', letterSpacing: '0.01em' }}>Craft № {n}</span>
-          <span style={{ font: 'var(--pl-round-w, 750) 44px/50px var(--pl-round)', letterSpacing: '-0.015em', textWrap: 'balance' }}>{p.title}</span>
+          {/* the label level: what this film is, quiet, so the story's words under the card are the loudest type on the stage */}
+          <span style={{ font: 'var(--pl-round-w2, 800) 15px/1 var(--pl-round)', color: 'var(--pl-ink-3)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Craft № {n}</span>
+          <span style={{ font: 'var(--pl-round-w, 700) 24px/30px var(--pl-round)', color: 'var(--pl-ink-2)', letterSpacing: '-0.01em', textWrap: 'balance' }}>{p.title}</span>
         </div>
         {/* the film itself, in the middle of the stage; it rises in as the name leaves, and steps back at the end */}
-        <div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', paddingBottom: 150, /* room under the switch for plumber's change card */
-          opacity: (phase === 'name' || phase === 'film' || phase === 'playing') ? 1 : 0, transform: `translateY(${phase === 'name' || phase === 'film' || phase === 'playing' ? 0 : closing ? 0 : 12}px) scale(${closing ? 0.97 : 1})`,
-          transition: `opacity 600ms ease ${phase === 'film' ? TIMING.clear : 0}ms, transform 800ms var(--pl-spring) ${phase === 'film' ? TIMING.clear : 0}ms` }}>
-          <Film Example={Example} names={Example.names} chrome={false} start={phase === 'playing'} onDone={done} ui={FILM_UI} openIn />
+        <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', paddingBottom: scripted ? 0 : 150, /* room under the switch for plumber's change card */
+          }}>
+          {/* the card and switch fade and step back at the closing; the story's line under them stays for the closing words */}
+          <div ref={stack} style={{ opacity: on ? 1 : 0, transform: `translateY(${on || closing ? 0 : 12}px) scale(${(closing ? 0.97 : 1) * (scripted ? FIT : 1)})`, transformOrigin: '50% 0',
+            marginBottom: scripted ? -(1 - FIT) * fh : 0, transition: `opacity 600ms ease ${phase === 'film' ? TIMING.clear : 0}ms, transform 800ms var(--pl-spring) ${phase === 'film' ? TIMING.clear : 0}ms` }}>
+            <Film Example={Example} names={Example.names} chrome={false} start={phase === 'playing'} onDone={done} ui={scripted ? FILM_UI / FIT : FILM_UI} openIn onLine={setCaption} />
+          </div>
+          {/* the story level: the script, one line at a time, in the same stack as the card and switch (a set gap under the
+              switch, room for two lines kept so the stack never jumps when a line changes) */}
+          {scripted ? (
+            <p aria-live="polite" style={{ margin: '40px 0 0', minHeight: 100, maxWidth: 1000, textAlign: 'center', textWrap: 'balance',
+              font: '500 40px/50px var(--pl-sans)', letterSpacing: '-0.02em', color: 'var(--pl-ink)', opacity: said ? 1 : 0, transition: 'opacity 400ms ease' }}>
+              <span key={said} style={{ display: 'inline-block', animation: 'film-line 520ms var(--pl-spring) both' }}>{said}</span>
+            </p>
+          ) : null}
         </div>
         {/* the mark, on every frame; at the end it comes to the middle, and the bob settles on its line */}
         <div ref={mark} style={{ position: 'absolute', right: STAGE.edge, bottom: STAGE.edge - 12, display: 'flex', alignItems: 'center', gap: 9,
           opacity: shown ? 0.92 : 0, transform: marked && to ? to.mark : 'none', transition: `transform 1000ms ${MOVE}, opacity 600ms ease` }}>
-          <Mark size={46} guards={marked} />
-          <span style={{ font: '650 28px/1 var(--pl-sans)', letterSpacing: '-0.035em' }}>React Plumber</span>
+          {/* chrome level: the brand stays small on every frame; it grows only at the closing */}
+          <Mark size={32} guards={marked} />
+          <span style={{ font: '650 20px/1 var(--pl-sans)', letterSpacing: '-0.03em' }}>React Plumber</span>
         </div>
         <p style={{ position: 'absolute', left: 0, right: 0, top: STAGE.h / 2 + 44, margin: 0, textAlign: 'center', font: '400 34px/42px var(--pl-sans)', color: 'var(--pl-ink-2)',
           opacity: phase === 'line' ? 1 : 0, transform: `translateY(${phase === 'line' ? 0 : 8}px)`, transition: 'opacity 600ms ease, transform 700ms var(--pl-spring)' }}>{LINE}</p>

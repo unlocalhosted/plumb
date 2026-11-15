@@ -215,7 +215,8 @@ function framing(spec, root, at) {
 
 function burst(canvas, ox, oy) {
   const dpr = devicePixelRatio || 1, W = canvas.clientWidth, H = canvas.clientHeight, cr = canvas.getBoundingClientRect(), pr = canvas.parentElement.getBoundingClientRect();
-  ox += pr.left - cr.left; oy += pr.top - cr.top; // the burst's origin is given in the film's box; the canvas reaches past it
+  const ks = pr.width / canvas.parentElement.offsetWidth || 1; // the film may be drawn scaled (the stage fits the window)
+  ox += (pr.left - cr.left) / ks; oy += (pr.top - cr.top) / ks; // the burst's origin is given in the film's box; the canvas reaches past it
   canvas.width = W * dpr; canvas.height = H * dpr;
   const ctx = canvas.getContext('2d'); ctx.scale(dpr, dpr);
   const rand = (a, b) => a + Math.random() * (b - a), kinds = ['pad', 'pad', 'gap', 'gap', 'mar', 'mar', 'ink'];
@@ -239,8 +240,14 @@ function burst(canvas, ox, oy) {
   requestAnimationFrame(tick);
 }
 
-export function Film({ Example, names, onSaid, chrome = true, start = true, onDone, ui = 1, openIn = false }) {
+export function Film({ Example, names, onSaid, chrome = true, start = true, onDone, ui = 1, openIn = false, onLine }) {
   const spec = Example.film;
+  // a film with a script (spec.script, the owner-approved words, one line a moment) tells its story in those words, set
+  // under the stage by FilmPage; plumber's raw readings (pills, the class chips) then stay off screen and only the
+  // drawings speak: the outlines, the hatch, the ghost, the pixels
+  const words = !!(onLine && spec.script);
+  const say = (at) => { const l = spec.script?.find((x) => x.at === at); if (l && onLine) onLine(l.text); };
+  const has = (at) => !!spec.script?.some((x) => x.at === at);
   const [side, setSide] = useState('broken');
   const [playing, setPlaying] = useState(false);
   const [cam, setCam] = useState({ k: 1, x: 0, y: 0 });
@@ -255,7 +262,8 @@ export function Film({ Example, names, onSaid, chrome = true, start = true, onDo
   const [drawing, setDrawing] = useState(null);      // still films that dive into a construction: { svg, on }
   const box = useRef(null), camRef = useRef(null), sw = useRef(null), fx = useRef(null);
   const example = () => camRef.current?.firstElementChild;
-  const toward = (el, dy = 0) => { const o = box.current.getBoundingClientRect(), r = el.getBoundingClientRect(); return { x: r.left - o.left + r.width / 2, y: r.top - o.top + r.height / 2 + dy }; };
+  // in the film's own px, whatever scale it is drawn at (screen px would put the pointer off when the stage is scaled)
+  const toward = (el, dy = 0) => { const b = local(box.current)(el); return { x: b.x + b.w / 2, y: b.y + b.h / 2 + dy }; };
 
   // plumber's property icons, from the overlay itself (served by its dev server), never redrawn
   useEffect(() => { import(/* @vite-ignore */ BOXMODEL).then((mod) => setIcons(mod.BLOCK_ICONS)).catch(() => {}); }, []);
@@ -281,14 +289,14 @@ export function Film({ Example, names, onSaid, chrome = true, start = true, onDo
     const all = () => spec.instances(example());
     const boxes = () => { const at = local(example()); return all().map(at); };
     (async () => {
-      setPlaying(true); setSide('broken'); setM(null); setChange(0); if (!openIn) { setFrame(null); setCam({ k: 1, x: 0, y: 0 }); } onSaid?.('');
+      setPlaying(true); setSide('broken'); setM(null); setChange(0); if (!openIn) { setFrame(null); setCam({ k: 1, x: 0, y: 0 }); } onSaid?.(''); if (spec.still) say('rest');
       await sleep(TIMING.lead, live); await document.fonts?.ready;
       if (spec.still) {
         const lead = () => all()[spec.lead];
         // FEEL IT: the pointer comes to rest on the subject; nothing drawn, the words just soft
         beat('1 · it happens: the pointer rests, nothing drawn');
-        { const o = box.current.getBoundingClientRect(), r = lead().getBoundingClientRect(); setPtr({ x: r.right - o.left + 16, y: r.top - o.top + r.height / 2 + 2 }); }
-        await sleep(TIMING.rest, live);
+        { const b = local(box.current)(lead()); setPtr({ x: b.x + b.w + 16, y: b.y + b.h / 2 + 2 }); }
+        await sleep(TIMING.rest + (words ? 700 : 0), live);
         // camera in on the subject
         const root = example(), at = local(root), W = root.offsetWidth, H = root.offsetHeight;
         const parts = [spec.frame(root)].flat().map(at), l = Math.min(...parts.map((b) => b.x)), t = Math.min(...parts.map((b) => b.y));
@@ -303,8 +311,8 @@ export function Film({ Example, names, onSaid, chrome = true, start = true, onDo
         const rest = boxes();
         setM({ tone: 'sky', boxes: rest }); await sleep(TIMING.outline, live);
         const read = { ...spec.read(example(), lead()), box: rest[spec.lead] };
-        beat('2 · measure it: the lead in coral, its numbers'); setM({ tone: 'sky', boxes: rest, lead: spec.lead, read }); await sleep(TIMING.measure, live);
-        beat('2 · the cause named, the class at fault'); setM({ tone: 'sky', boxes: rest, lead: spec.lead, read, cause: true }); if (spec.code) setChange(1);
+        beat('2 · measure it: the lead in coral, its numbers'); say('measure'); setM({ tone: 'sky', boxes: rest, lead: spec.lead, read }); await sleep(TIMING.measure, live);
+        beat('2 · the cause named, the class at fault'); setM({ tone: 'sky', boxes: rest, lead: spec.lead, read, cause: true }); if (spec.code && !words) setChange(1);
         await sleep(TIMING.cause, live);
         setM((x) => x && { ...x, fading: true }); await sleep(TIMING.fade, live); setM(null);
         // down into the pixels: the words between two rows
@@ -323,11 +331,13 @@ export function Film({ Example, names, onSaid, chrome = true, start = true, onDo
           setCam({ k: K, x: clamp(W / 2 - K * lp.focus.x, W - K * W), y: clamp(H / 2 - K * lp.focus.y, H - K * H), ms: TIMING.dive }); await sleep(TIMING.dive, live);
           setPx(lp.pills);
         }
-        beat('the dive arrives: the fault drawn up close'); await sleep(TIMING.smear, live);
+        beat('the dive arrives: the fault drawn up close'); say('dive');
+        if (words && has('smear')) { await sleep(3600, live); beat('the dive: why it is soft'); say('smear'); await sleep(2800, live); }
+        else await sleep(words ? 3200 : TIMING.smear, live);
         // the fix lands: the same pixels, on the rows
         const fixBtn = sw.current?.querySelectorAll('button')[1];
         if (fixBtn) { setPtr(toward(fixBtn)); await sleep(TIMING.toSwitch, live); setPtr((p) => ({ ...p, down: true })); await sleep(TIMING.press, live); }
-        setSide('fixed'); setPtr((p) => ({ ...p, down: false })); if (spec.code) setChange(2);
+        setSide('fixed'); setPtr((p) => ({ ...p, down: false })); say('fix'); if (spec.code && !words) setChange(2);
         beat('3 · the fix lands, up close'); await sleep(80, live);
         if (spec.pixels) {
           const fixedRead = spec.read(example(), lead()), lf = pixelsOf(example(), spec.pixels(example()), frac(fixedRead.ty));
@@ -342,16 +352,22 @@ export function Film({ Example, names, onSaid, chrome = true, start = true, onDo
         // back up; every place holds
         beat('back up out of the detail'); setPx(null); setLoupe((x) => x && { ...x, on: false }); setDrawing((x) => x && { ...x, on: false }); setCam({ ...near, ms: TIMING.rise }); await sleep(TIMING.rise, live); setLoupe(null); setDrawing(null);
         const fixedRest = boxes();
-        beat('4 · payoff: every place mint'); setM({ tone: 'on', boxes: fixedRest }); await sleep(TIMING.turn, live);
+        beat('4 · payoff: every place mint'); say('payoff'); setM({ tone: 'on', boxes: fixedRest }); await sleep(TIMING.turn, live);
         for (let i = 0; i < all().length; i++) {
           setM({ tone: 'on', boxes: fixedRest, lead: i, read: { ...spec.read(example(), all()[i]), box: fixedRest[i] }, cause: i === spec.lead });
           await sleep(i === spec.lead ? TIMING.payoff * 2 : TIMING.payoff, live);
         }
         setM({ tone: 'on', boxes: fixedRest });
-        if (spec.code) {
+        if (words) {
+          // no change card: the burst comes from the fixed subject itself
+          beat('the burst'); say('end'); await sleep(TIMING.check, live);
+          const e = local(box.current)(lead());
+          if (fx.current) burst(fx.current, e.x + e.w / 2, e.y + e.h / 2);
+          if (has('end')) await sleep(1800, live);
+        } else if (spec.code) {
           beat('the check and the burst'); setChange(3); await sleep(TIMING.check, live);
           const host = sw.current?.querySelector('div[aria-hidden="true"]'), check = host?.shadowRoot?.querySelector('[data-done]')?.getBoundingClientRect(), o = box.current.getBoundingClientRect();
-          if (fx.current && check) burst(fx.current, check.left - o.left + check.width / 2, check.top - o.top + check.height / 2);
+          if (fx.current && check) { const ks = o.width / box.current.offsetWidth || 1; burst(fx.current, (check.left - o.left + check.width / 2) / ks, (check.top - o.top + check.height / 2) / ks); }
         }
         await sleep(TIMING.clear, live);
         setM((x) => x && { ...x, fading: true }); await sleep(TIMING.fade, live);
@@ -419,7 +435,7 @@ export function Film({ Example, names, onSaid, chrome = true, start = true, onDo
       if (spec.code) {
         beat('the check and the burst'); setChange(3); await sleep(TIMING.check, live);
         const host = sw.current?.querySelector('div[aria-hidden="true"]'), check = host?.shadowRoot?.querySelector('[data-done]')?.getBoundingClientRect(), o = box.current.getBoundingClientRect();
-        if (fx.current && check) burst(fx.current, check.left - o.left + check.width / 2, check.top - o.top + check.height / 2);
+        if (fx.current && check) { const ks = o.width / box.current.offsetWidth || 1; burst(fx.current, (check.left - o.left + check.width / 2) / ks, (check.top - o.top + check.height / 2) / ks); }
       }
       await sleep(TIMING.clear, live);
       setM((x) => x && { ...x, fading: true }); await sleep(TIMING.fade, live);
@@ -466,10 +482,10 @@ export function Film({ Example, names, onSaid, chrome = true, start = true, onDo
                   </span>
                 ))}
                 {/* a value only where the pointer is: the size, counting, under the place */}
-                {r ? <Pill key={`s${m.lead}${tone}`} x={r.box.x + r.box.w / 2} y={r.box.y + r.box.h + (PILL.gap * ui) / k} k={k} tone={toneOf(m.lead) === 'sky' ? 'on' : toneOf(m.lead)} icon={r.size.icon} icons={icons}>{r.size.pre}<Count from={r.size.from} to={r.size.to} /></Pill> : null}
+                {r && !words ? <Pill key={`s${m.lead}${tone}`} x={r.box.x + r.box.w / 2} y={r.box.y + r.box.h + (PILL.gap * ui) / k} k={k} tone={toneOf(m.lead) === 'sky' ? 'on' : toneOf(m.lead)} icon={r.size.icon} icons={icons}>{r.size.pre}<Count from={r.size.from} to={r.size.to} /></Pill> : null}
                 {/* the cause, as plumber names it: its own pills, above the place */}
                 {/* side by side in one row, so they never climb onto the words above */}
-                {r && m.cause && r.tags?.length ? (
+                {r && m.cause && !words && r.tags?.length ? (
                   <span style={{ position: 'absolute', left: r.box.x + r.box.w / 2, top: r.box.y - (PILL.gap * ui) / k, display: 'flex', gap: 4 * ui, transform: `translate(-50%, -100%) scale(${1 / k})`, transformOrigin: '50% 100%' }}>
                     {r.tags.map((g, i) => (
                       <Pill key={`t${i}${tone}`} flow k={k} tone={tagTone} icon={g.icon} icons={icons}>
@@ -481,13 +497,14 @@ export function Film({ Example, names, onSaid, chrome = true, start = true, onDo
                 ) : null}
               </div>
             ) : null}
-            {px ? px.map((q, i) => <Pill key={`${q.tone}${i}`} x={q.x} y={q.y} k={k} tone={q.tone} up>{q.text}</Pill>) : null}
+            {px && !words ? px.map((q, i) => <Pill key={`${q.tone}${i}`} x={q.x} y={q.y} k={k} tone={q.tone} up>{q.text}</Pill>) : null}
           </PlumbLayer>
         </div>
       </div>
       <div ref={sw} className="relative z-10 flex flex-col items-center">
         {change && spec.code ? <PlumbLayer><Change code={spec.code} fixed={change >= 2} done={change === 3} /></PlumbLayer> : null}
-        <TechniqueSwitch names={names} fixed={side === 'fixed'} ready={!playing} onBack={() => setSide('broken')} onFix={() => setSide('fixed')} />
+        {/* in a scripted film the switch is chrome, a step under the story's words: smaller than plumber's film-size marks */}
+        <UI.Provider value={words ? Math.min(ui, 1.4 / 0.86) : ui}><TechniqueSwitch names={names} fixed={side === 'fixed'} ready={!playing} onBack={() => setSide('broken')} onFix={() => setSide('fixed')} /></UI.Provider>
       </div>
       {chrome ? (!playing ? <button type="button" onClick={() => setRun((x) => x + 1)} style={{ marginTop: -28, border: 0, background: 'none', cursor: 'pointer', font: 'var(--pl-round-w2, 700) 13px/20px var(--pl-round)', color: 'var(--pl-ink-2)' }}>Replay</button> : <span style={{ marginTop: -28, height: 20 }} />) : null}
       <canvas ref={fx} aria-hidden="true" className="pointer-events-none absolute z-30" style={{ left: -160, top: -80, width: 'calc(100% + 320px)', height: 'calc(100% + 160px)' }} />

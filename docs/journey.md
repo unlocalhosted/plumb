@@ -1315,6 +1315,15 @@ field is empty). The table of five writes, before and after. The Next table: eig
 - **Proof:** docs/films/03-review.md and 37-review.md; docs/media/film-03-optical-overshoot.mp4 and film-37-never-land-on-half-pixels.mp4, both 1920x1080 at 60 fps.
 - **Open:** a wide film can't be truly read on an upright phone; the phone cut needs a tall layout.
 
+### The films say what a person would say (2026-11-15)
+
+- **The itch:** the owner on films 3 and 37: "fills 70.8% wtf does this mean to a normal person", "the idea was to show a problem and then show a solution", "robot looking shit". Then, on the first frames with words: "look at the typography hierarchy, they are all over the place" and "the text is cramped and fighting with the toggle".
+- **The system behind it:** the words on screen were plumber's own readings, taken straight from the measurements, and nobody wrote them as a script; the story review only checked reading time, not meaning. The stage had no type scale and no layout for words either: each piece of text was sized on its own, at different times, and the caption sat at a fixed spot that the toggle could run into.
+- **What we chose:** the words are a script, written first and approved by the owner before any code (twice: once for meaning, once at half the length), and every piece of writing now goes through the declauding pass. A film with a script shows one line at a time under the card, and plumber's number pills and class chips stay off screen; the drawings carry the rest. The stage has three type levels: the story's line is the loudest (40px), the rule's name is a quiet label in the corner, and the switch and the brand are small chrome. The card, switch and line are one stack with set gaps, the card drawn a step smaller so the line fits.
+- **Found on the way:** the pointer and the burst were placed in screen pixels, so whenever the stage was scaled (the 1920 render) they landed off their subject. They are now placed in the film's own pixels.
+- **Proof:** keyframes in docs/films/03-draft and 37-draft (not kept in git); docs/media/film-03-optical-overshoot.mp4 and film-37-never-land-on-half-pixels.mp4, re-rendered at 1920x1080, 60 fps.
+- **Media hooks:** the old frame with "fills 78.5% of its box" beside the new one with "But people see the circle as smaller."
+
 ## Open gaps
 - The site's top bar doesn't fit a phone (390px): it widens the page to about 500px. Needs a compact bar.
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
@@ -2672,6 +2681,8 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   Nothing finds a new one when it is written.
 
 ## Shipped · 2026-W46
+
+- The craft films № 3 and № 37 now tell their story in plain words, one line at a time, instead of plumber's raw numbers, with a clear type hierarchy on the stage (The films say what a person would say, in the journey).
 
 - Films are reviewed for story and camera on a cheap draft before they are rendered, and rendered frame by frame at 60 fps: № 3 and № 37 re-made after their first review (The films, reviewed before they are rendered, in the journey).
 
