@@ -19,14 +19,14 @@ const cli = join(repo, 'dist/cli.js');
 const run = promisify(execFile);
 const built = () => readFile(cli).then(() => true, () => false);
 
-async function fixture(t, app, { index, files = {} } = {}) {
+async function fixture(t, app, { index, files = {}, plugins = [] } = {}) {
   const root = await mkdtemp(join(repo, 'fixtures/.packs-'));
   t.after(() => rm(root, { recursive: true, force: true }));
   await cp(join(repo, 'overlay/demo/src'), join(root, 'src'), { recursive: true });
   if (index) await writeFile(join(root, 'index.html'), index); else await cp(join(repo, 'overlay/demo/index.html'), join(root, 'index.html'));
   await writeFile(join(root, 'src/App.jsx'), app);
   for (const [name, text] of Object.entries(files)) { await mkdir(dirname(join(root, name)), { recursive: true }); await writeFile(join(root, name), text); }
-  const server = await createServer({ root, cacheDir: join(root, '.vite-cache'), configFile: false, plugins: [tailwindcss(), plumb({ watch: false })],
+  const server = await createServer({ root, cacheDir: join(root, '.vite-cache'), configFile: false, plugins: [tailwindcss(), plumb({ watch: false }), ...plugins],
     oxc: { jsx: { runtime: 'automatic', development: true } }, logLevel: 'silent', server: { host: '127.0.0.1', port: 0 } });
   t.after(() => server.close());
   await server.listen();
@@ -402,7 +402,7 @@ test('components pack: 33 rules name their problem at its line, and a real modal
   speaks(await said(t, MODAL), 'components', MODAL, [['dialog-aria-extras', 'modal'], ['dialog-scroll-lock', 'modal']]);
 });
 
-test('HTML pack: 32 rules name their problem at its line, the page-wide ones once on the first element', { timeout: 240000 }, async (t) => {
+test('HTML pack: 32 rules name their problem at its line, the page-wide ones once, on the page’s own element', { timeout: 240000 }, async (t) => {
   if (!await built()) return t.skip('Run npm run build first.');
   const by = await said(t, HTML, { index: BARE_INDEX, files: { 'public/wide.svg': WIDE_SVG } });
   speaks(by, 'html', HTML, HTML_EXPECTED);
@@ -488,6 +488,119 @@ test('on the page, thirty rows from one line say as much as three (the fewest th
   // what is counted is places; what is marked is elements (the thirty each carry their own mark)
   assert.deepEqual({ count: many.count, rest: many.rest }, { count: three.count, rest: three.rest }, JSON.stringify({ many, three }));
   assert.ok(many.marked > three.marked, JSON.stringify({ many, three }));
+});
+
+// algorecall's showcase page has no <main>; the finding was said on the first element judged, an icon in a feedback dock
+// drawn before the page, so the report named the dock's file. A finding about the page belongs on the page's own element.
+const DOCKED = `import { useEffect, useState } from 'react';
+import { Dock } from './Dock.jsx';
+export function App() {
+  // the page's body arrives after a moment (its data loads), the dock is there at once: the page is read in waves
+  const [ready, setReady] = useState(false);
+  useEffect(() => { const t = setTimeout(() => setReady(true), 1200); return () => clearTimeout(t); }, []);
+  return (
+    <>
+      <Dock />
+      {ready && <div id="page-root" className="flex flex-col gap-s4 p-s4">
+        <h1>Showcase</h1>
+        ${'<p>A section of the page, with enough words in it to be read as content.</p>\n        '.repeat(40)}
+      </div>}
+    </>
+  );
+}
+`;
+const DOCK = `const NOTES = Array.from({ length: 48 }, (_, i) => 'Note ' + (i + 1));
+export function Dock() {
+  return <div id="dock" style={{ position: 'fixed', right: 16, bottom: 16, width: 120, height: 160, overflow: 'hidden' }}><ul>{NOTES.map((n) => <li key={n}><span>{n}</span></li>)}</ul></div>;
+}
+`;
+test('a finding about the whole page is said on the page, not on a dock drawn before it', { timeout: 240000 }, async (t) => {
+  if (!await built()) return t.skip('Run npm run build first.');
+  const by = await said(t, DOCKED, { files: { 'src/Dock.jsx': DOCK } });
+  assert.deepEqual(by.get('html/landmark-main'), [lineOf(DOCKED, 'page-root')], JSON.stringify(ofPacks(by)));
+});
+
+// algorecall's skill tree never counted as read through: something on it rewrites an inline style every frame, the page's
+// fingerprint changed with it, and every element's page-wide judgement was put back in the queue before the queue could
+// drain. Then the same for an element's own: sixty labels in a drawing, each moved every frame, never stayed judged.
+// A box and sixty labels moved by script, as an animation library moves them, beside 1,500 elements to judge.
+const MOVED = `import { useEffect, useRef } from 'react';
+const ROWS = Array.from({ length: 300 }, (_, i) => i);
+export function App() {
+  const box = useRef(null);
+  const dots = useRef(null);
+  // as an animation library moves things: an inline transform rewritten every frame, on one box and on sixty labels in a drawing
+  useEffect(() => { let f = 0, id = 0; const tick = () => { f++; if (box.current) box.current.style.transform = 'translateX(' + (f % 40) + 'px)'; for (const [i, t] of [...(dots.current?.children ?? [])].entries()) t.style.transform = 'translateX(' + ((f + i) % 30) + 'px) translateY(' + (i % 6) * 12 + 'px)'; id = requestAnimationFrame(tick); }; id = requestAnimationFrame(tick); return () => cancelAnimationFrame(id); }, []);
+  return (
+    <main className="flex flex-col gap-s4 p-s4">
+      <h1>Moving</h1>
+      <div ref={box} id="moved" style={{ width: 40, height: 40 }}>moved by script</div>
+      <svg width="400" height="80" viewBox="0 0 400 80"><g ref={dots}>{Array.from({ length: 60 }, (_, i) => <text key={i} x={(i % 10) * 36} y="12" fontSize="10">{i}</text>)}</g></svg>
+      <ul>{ROWS.map((i) => <li key={i}><span>Row {i}</span> <b>{i}</b> <i>note</i> <em>more</em></li>)}</ul>
+    </main>
+  );
+}
+`;
+test('a page with a box moved by script every frame is still read through', { timeout: 240000 }, async (t) => {
+  if (!await built()) return t.skip('Run npm run build first.');
+  const { root, url } = await fixture(t, MOVED);
+  const result = await plumber(['craft', '--url', url, '--json', '--no-probe', '--no-pairs', '--timeout', '45000', '--root', root]);
+  const page = JSON.parse(result.stdout).routes[0];
+  assert.ok(page.read > 0, `read ${page.read}`);
+  assert.equal(page.complete, true, 'stopped before every element was read');
+});
+
+// algorecall's /login was judged as its loading screen (14 elements of 118) once pages settled quickly: the dev server was
+// still compiling the route on its first visit. A route whose code arrives three seconds late, behind a small fallback.
+const LATE = `import { lazy, Suspense } from 'react';
+const late = '/late-route.js';
+const Real = lazy(() => import(/* @vite-ignore */ late).then(() => import('./Real.jsx')));
+export function App() {
+  return <Suspense fallback={<div><span>Loading</span></div>}><Real /></Suspense>;
+}
+`;
+const REAL = `export default function Real() {
+  return (
+    <main className="flex flex-col gap-s4 p-s4">
+      <h1>Sign in</h1>
+      <h3 id="skipped">Welcome back</h3>
+      ${'<p>Words on the page, so there is a page to judge once it is here.</p>\n      '.repeat(30)}
+    </main>
+  );
+}
+`;
+const lateRoute = { name: 'late-route', configureServer(server) { server.middlewares.use('/late-route.js', (_req, res) => setTimeout(() => { res.setHeader('content-type', 'text/javascript'); res.end('export default 1;'); }, 3000)); } };
+test('a route whose code arrives late is judged once it is there, not as its loading screen', { timeout: 240000 }, async (t) => {
+  if (!await built()) return t.skip('Run npm run build first.');
+  const by = await said(t, LATE, { files: { 'src/Real.jsx': REAL }, plugins: [lateRoute] });
+  assert.deepEqual(by.get('a11y/heading-skip'), [lineOf(REAL, 'skipped')], JSON.stringify(ofPacks(by)));
+});
+
+// The reader's one line of readings: 600 elements built by script (each read on its own) and twenty from a pass-through
+// component, all read through. This guards the line; it does not force the race that stranded six elements on
+// algorecall's problems page (a pass-through element asked again while 128 readings were in flight, in a line of its
+// own that nothing pumped): batching lands readings together, so a small page rarely meets it. That is proven on the app.
+const CROWD = `import { useLayoutEffect, useRef } from 'react';
+import { Box } from './Box.jsx';
+export function App() {
+  const host = useRef(null);
+  useLayoutEffect(() => { for (let i = 0; i < 600; i++) { const d = document.createElement('div'); d.className = 'p-2'; d.textContent = 'built ' + i; host.current.append(d); } }, []);
+  return (
+    <main className="flex flex-col gap-s4 p-s4">
+      <h1>Crowd</h1>
+      {Array.from({ length: 20 }, (_, i) => <Box key={i} className="p-3 rounded-md">passed {i}</Box>)}
+      <div ref={host} />
+    </main>
+  );
+}
+`;
+const BOX = `export function Box({ className, children }) { return <div className={className}>{children}</div>; }
+`;
+test('a crowded page with pass-through parts is read through', { timeout: 240000 }, async (t) => {
+  if (!await built()) return t.skip('Run npm run build first.');
+  const { root, url } = await fixture(t, CROWD, { files: { 'src/Box.jsx': BOX } });
+  const result = await plumber(['craft', '--url', url, '--json', '--no-probe', '--no-pairs', '--timeout', '45000', '--root', root]);
+  assert.equal(JSON.parse(result.stdout).routes[0].complete, true, 'stopped before every element was read');
 });
 
 test('a page that is still loading is not told it has no main and no h1', { timeout: 240000 }, async (t) => {
@@ -690,6 +803,7 @@ const NEAR_EXPERIENCE = `export function App() {
       <nav aria-label="Main"><a href="/a">One</a><a href="/b">Two</a><a href="/c">Three</a><a href="/d">Four</a><a href="/e">Five</a><a href="/f">Six</a><a href="/g">Seven</a><a href="/h">Eight</a><a href="/i">Nine</a><a href="/j">Ten</a></nav>
       <main id="content">
         <h1>Near experience</h1>
+        <p style={{ textTransform: 'uppercase', fontSize: 10 }}>AlgoRecall &middot; Field Guide &middot; Vol. I &middot; April MMXXVI &middot; Set in dark mode by default</p>
         <div style={{ position: 'relative', width: 240, height: 40 }}>
           <button type="button" style={{ width: 240, height: 40 }}>Under a sheen</button>
           <div aria-hidden="true" style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }} />

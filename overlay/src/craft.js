@@ -421,7 +421,15 @@ function markOf(f) {
 }
 
 // What an element's own findings depend on: its and its parent's classes, its inline style, its words.
-const sigOf = (el) => `${el.getAttribute('class') ?? ''}|${el.parentElement?.getAttribute('class') ?? ''}|${el.getAttribute('style') ?? ''}|${el.textContent?.length ?? 0}`;
+// What the page's shape is made of, element by element: its classes and its parent's (no style, no words).
+const shapeOf = (el) => `${el.getAttribute('class') ?? ''}|${el.parentElement?.getAttribute('class') ?? ''}`;
+// Motion in an inline style is not a decision: an animation library rewrites transform, opacity, filter and its own
+// custom properties every frame, and an element whose signature changed with them was never judged for good (sixty
+// labels in algorecall's skill-tree drawing kept the page from ever being read through). What a rule reads in a style
+// (padding, a colour, a size) still changes the signature.
+const MOTION = /(?:^|;)\s*(?:transform(?:-origin|-box)?|translate|rotate|scale|opacity|filter|will-change|--[\w-]+)\s*:[^;]*/g;
+const stillStyle = (style) => style.replace(MOTION, '').trim();
+const sigOf = (el) => `${el.getAttribute('class') ?? ''}|${el.parentElement?.getAttribute('class') ?? ''}|${stillStyle(el.getAttribute('style') ?? '')}|${el.textContent?.length ?? 0}`;
 
 export class Craft {
   #again = null; #waiting = false;
@@ -501,8 +509,12 @@ export class Craft {
       // the page's signature: every judged element's own, in order. A page-wide rule (one that reads the census, or
       // looks across the page) is judged again only when this changes, not on every hand-off of the same page.
       const sigs = items.map((item, i) => (still[i] ? sigOf(item.el) : ''));
+      // The page's own fingerprint is its shape: which elements are judged, and their classes. An inline style or a
+      // count of letters is an element's own (sigOf): an animation library rewrites a style every frame, and when that
+      // changed the page's fingerprint every element's page-wide judgement went back in the queue before it could
+      // drain (algorecall's skill tree never counted as read through).
       let page = 5381;
-      for (const sig of sigs) { for (let k = 0; k < sig.length; k++) page = ((page << 5) + page + sig.charCodeAt(k)) | 0; page = ((page << 5) + page + 124) | 0; }
+      for (const [i, item] of items.entries()) { const sig = still[i] ? shapeOf(item.el) : ''; for (let k = 0; k < sig.length; k++) page = ((page << 5) + page + sig.charCodeAt(k)) | 0; page = ((page << 5) + page + 124) | 0; }
       // a craft mark is placed where the element's JSX opens (the page answer's file, line and column): that is the line
       // its fix edits, and what makes it a place in your code; an element the server could not place leaves its marks
       // without a position, and those are notes

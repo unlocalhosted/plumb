@@ -36,9 +36,9 @@ export async function open(page: Page, url: string, timeout: number, ready: bool
   }
 }
 
-/** The page has drawn what it will draw: requests quiet, fonts in. */
-export async function settle(page: Page): Promise<void> {
-  await page.waitForLoadState('networkidle', { timeout: 5000 }).catch(() => {});
+/** The page has drawn what it will draw: requests quiet (for up to `network` ms), fonts in. */
+export async function settle(page: Page, network = 5000): Promise<void> {
+  await page.waitForLoadState('networkidle', { timeout: network }).catch(() => {});
   await page.evaluate(() => document.fonts.ready).catch(() => {});
   await sleep(300);
 }
