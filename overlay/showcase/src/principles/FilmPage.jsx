@@ -30,7 +30,7 @@ const TIMING = {
 };
 const CLOSING = 'React Plumber spots this in your app.';
 const MOVE = 'cubic-bezier(0.7, 0, 0.3, 1)';
-const FIT = 0.86;                                  // a scripted film: the card and switch a step smaller, so the story's line fits under them
+const FIT = 0.8;                                   // a scripted film: the card and switch a step smaller, so the story's line fits under them
 const FILM_UI = 2;                                 // plumber's marks at twice their showcase size: a film is watched smaller than it is made      // the camera's curve: slow start, slow finish
 const LINE = 'A design review on every screen.';   // the site's hero line (homepage/src/hero)
 
@@ -156,7 +156,7 @@ export function FilmPage({ n }) {
           <span style={{ font: 'var(--pl-round-w, 700) 24px/30px var(--pl-round)', color: 'var(--pl-ink-2)', letterSpacing: '-0.01em', textWrap: 'balance' }}>{p.title}</span>
         </div>
         {/* the film itself, in the middle of the stage; it rises in as the name leaves, and steps back at the end */}
-        <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', paddingBottom: scripted ? 0 : 150, /* room under the switch for plumber's change card */
+        <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', paddingBottom: 0,
           }}>
           {/* the card and switch fade and step back at the closing; the story's line under them stays for the closing words */}
           <div ref={stack} style={{ opacity: on ? 1 : 0, transform: `translateY(${on || closing ? 0 : 12}px) scale(${(closing ? 0.97 : 1) * (scripted ? FIT : 1)})`, transformOrigin: '50% 0',
@@ -166,7 +166,7 @@ export function FilmPage({ n }) {
           {/* the story level: the script, one line at a time, in the same stack as the card and switch (a set gap under the
               switch, room for two lines kept so the stack never jumps when a line changes) */}
           {scripted ? (
-            <p aria-live="polite" style={{ margin: '40px 0 0', minHeight: 80, maxWidth: 960, textAlign: 'center', textWrap: 'balance',
+            <p aria-live="polite" style={{ margin: '144px 0 0', minHeight: 40, /* under the switch and the change card that opens beneath it */ maxWidth: 960, textAlign: 'center', textWrap: 'balance',
               font: '400 30px/40px var(--pl-sans)', letterSpacing: '-0.01em', color: 'var(--pl-ink)', opacity: said.text ? 1 : 0, transition: 'opacity 400ms ease' }}>
               <Line key={said.text} text={said.text} fixed={['fix', 'payoff', 'end'].includes(said.at)} />
             </p>

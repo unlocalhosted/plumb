@@ -42,7 +42,11 @@ const tick = async () => { await page.clock.runFor(step); v += step; return sync
 
 // until the film's first beat (fonts loading, the opening measured), time runs but nothing is filmed
 let state = await sync(), waited = 0;
-while (!state.started && waited < 20000) { state = await tick(); await page.waitForTimeout(5); waited += step; }
+// the dev server may reload the page once after an edit; before filming starts that only means waiting for it again
+while (!state.started && waited < 20000) {
+  try { state = await tick(); } catch { await page.waitForLoadState('load'); state = { started: false }; }
+  await page.waitForTimeout(5); waited += step;
+}
 if (!state.started) { console.error('the film never started'); await browser.close(); process.exit(1); }
 const start = v; let endAt = null;
 
