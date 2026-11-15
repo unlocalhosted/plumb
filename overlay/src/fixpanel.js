@@ -104,8 +104,8 @@ const FIX_CSS_BASE = TEXT_EDITOR_CSS + ELEMENT_CARD_CSS + `
   .fx-on .acts { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
   .fx-on .say, .fx-on .note { color: var(--pl-ink-2); }
   .fx-on .say.err { color: var(--pl-off); }
-  .fx button:not(.pl-act) { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; }
-  .fx :not(.pl-act) > kbd { font: 500 10.5px/1 ui-monospace, monospace; color: var(--pl-text-secondary); margin-left: 2px; }
+  .fx button:not(.pl-act):not(.tb) { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; }
+  .fx :not(.pl-act):not(.tb) > kbd { font: 500 10.5px/1 ui-monospace, monospace; color: var(--pl-text-secondary); margin-left: 2px; }
   .fx .line { display: flex; align-items: center; gap: 10px; height: 46px; padding: 0 7px 0 16px; }
   .fx .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--pl-heat); box-shadow: 0 0 0 3px color-mix(in oklab, var(--pl-heat) 14%, transparent); flex: none; }
   .fx .count { font-weight: 550; } .fx .count span { color: var(--pl-text-secondary); font-weight: 450; }
@@ -116,6 +116,14 @@ const FIX_CSS_BASE = TEXT_EDITOR_CSS + ELEMENT_CARD_CSS + `
   /* at rest the panel is the bar alone, and is never narrower than the bar's one line: with its tools out on a wider
      system font (Linux) the last control fell off the edge. The window's width is still the limit */
   .fx[data-rest] { min-width: max-content; }
+  /* at rest, the design site's bar: a pill card, one line; the count in the headline's type, the actions soft */
+  .fx[data-rest] { height: auto; border-radius: 25px; background: var(--pl-paper); -webkit-backdrop-filter: none; backdrop-filter: none; box-shadow: var(--pl-shadow-card); }
+  .fx[data-rest] .line.bar { height: 54px; padding: 0 8px 0 18px; gap: 10px; }
+  .fx[data-rest] .count { font: 650 14.5px/1 var(--pl-sans); color: var(--pl-ink); }
+  .fx[data-rest] .quiet-line { font: 500 13.5px/1 var(--pl-sans); color: var(--pl-ink-2); }
+  .fx[data-rest] .tb { flex: none; }
+  .fx[data-rest] .more { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 9px; color: var(--pl-ink-2); }
+  .fx[data-rest] .more:hover { background: var(--pl-paper-2); color: var(--pl-ink); }
   .fx .bar { gap: 8px; height: 48px; padding: 0 7px 0 16px; }
   .fx .bar .pl-act { flex: none; }
   .fx .status { position: relative; display: inline-flex; align-items: center; gap: 8px; flex: none; padding: 6px 8px; margin-left: -8px; border-radius: 8px; outline: none; }
@@ -133,11 +141,11 @@ const FIX_CSS_BASE = TEXT_EDITOR_CSS + ELEMENT_CARD_CSS + `
   .fx .bar .more:hover, .fx .bar .tool:hover, .fx .bar .more[aria-expanded="true"] { background: var(--pl-bg-surface-hover); color: var(--pl-text-primary); }
   .fx .bar .more svg, .fx .bar .tool svg { width: 16px; height: 16px; }
   .fx .bar .tools { display: inline-flex; gap: 2px; animation: pl-pop 260ms var(--pl-spring-pop) both; }
-  .fx .bar .bar-close { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 6px; border-radius: 8px; color: var(--pl-text-secondary); font-weight: 600; font-size: 12px; flex: none; }
-  .fx .bar .bar-close:hover { background: var(--pl-bg-surface-hover); color: var(--pl-text-primary); }
-  .fx .bar .bar-close kbd { display: inline-grid; place-items: center; height: 18px; padding: 0 5px; margin: 0; border-radius: 4px; font: 600 11px/1 var(--pl-mono, ui-monospace, monospace);
+  .fx .bar .bar-close:not(.tb) { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 6px; border-radius: 8px; color: var(--pl-text-secondary); font-weight: 600; font-size: 12px; flex: none; }
+  .fx .bar .bar-close:not(.tb):hover { background: var(--pl-bg-surface-hover); color: var(--pl-text-primary); }
+  .fx .bar .bar-close:not(.tb) kbd { display: inline-grid; place-items: center; height: 18px; padding: 0 5px; margin: 0; border-radius: 4px; font: 600 11px/1 var(--pl-mono, ui-monospace, monospace);
     background: var(--pl-bg-inset); box-shadow: inset 0 0 0 1px var(--pl-border-default); color: var(--pl-text-secondary); }
-  .fx .bar .bar-close .x { display: none; width: 16px; height: 16px; }
+  .fx .bar .bar-close:not(.tb) .x { display: none; width: 16px; height: 16px; }
   .fx .bar.has-notice .long { display: none; }
   /* the tools out take the room Close's word had: Esc says it */
   .fx .bar:has(.tools) .bar-close .word { display: none; }
@@ -149,7 +157,7 @@ const FIX_CSS_BASE = TEXT_EDITOR_CSS + ELEMENT_CARD_CSS + `
     /* a phone's bar keeps the count, its two actions and Close; the tools are on the dock's mark once Blueprint closes */
     .fx .bar .long, .fx .bar .notice, .fx .bar .more, .fx .bar .tools, .fx .bar .bar-close .word, .fx .bar .bar-close kbd { display: none; }
     .fx .bar .pl-act.quiet kbd { display: none; } .fx .bar .pl-act { padding: 0 11px; }
-    .fx .bar .bar-close .x { display: block; }
+    .fx .bar .bar-close:not(.tb) .x { display: block; }
   }
   @media (prefers-reduced-motion: reduce) { .fx .readout { transition: none; } .fx .bar .tools { animation: none; } }
   ${FIX_BUTTONS_CSS}
@@ -940,12 +948,12 @@ export class FixPanel {
     const settled = settledNow || (this.#steady?.path === location.pathname && !!this.#unsettledAt && performance.now() - this.#unsettledAt < BRIEF);
     let html;
     this.#onBody = ''; this.#onAt = null;
-    const tidy = `<button class="pl-act quiet cleanup" aria-keyshortcuts="c"><span>${esc(CLEANUP.bar)}<span class="long"> ${esc(CLEANUP.barLong)}</span></span> <kbd>C</kbd></button>`;
+    const tidy = button(`${esc(CLEANUP.bar)}<span class="long"> ${esc(CLEANUP.barLong)}</span>`, { cls: 'sm quiet cleanup', key: 'C', attrs: 'aria-keyshortcuts="c"', icon: toyOf('icon') });
     // the bar's end: ··· (its tools, only once asked for) and Close; and the setup steps left, said in the line
     const B = FIX.bar, left = this.#host.setupLeft?.() ?? 0;
     const end = `<button class="more" aria-expanded="${this.#tools}" aria-label="${esc(this.#tools ? B.less : B.more)}" title="${esc(this.#tools ? B.less : B.more)}">${BAR_ICON.more}</button>`
       + (this.#tools ? `<span class="tools">${Object.entries(B.tools).map(([n, label]) => `<button class="tool" data-tool="${n}" aria-label="${esc(label)}" title="${esc(label)}">${BAR_ICON[n]}</button>`).join('')}</span>` : '')
-      + `<button class="bar-close" aria-keyshortcuts="Escape" aria-label="${esc(B.close)}"><span class="word">${esc(B.close)}</span> <kbd>Esc</kbd>${BAR_ICON.x}</button>`;
+      + button(esc(B.close), { cls: 'sm quiet bar-close', key: 'Esc', attrs: `aria-keyshortcuts="Escape" aria-label="${esc(B.close)}"` });
     const notice = left ? `<span class="notice"><b>${esc(B.setup(left))}</b><button class="setup">${esc(B.review)}</button></span>` : '';
     if (this.#cleanup.running) html = this.#cleanup.html();
     else if (this.#writing || this.#undoing) html = `<div class="writing"><i></i>${esc(this.#undoing ? FIX.undoing : this.#writingText ?? FIX.writing)}</div>`;
@@ -965,7 +973,7 @@ export class FixPanel {
       const status = `<span class="status" tabindex="0"${rest ? ` aria-description="${esc(rest)}"` : ''}><i class="dot"></i><span class="count">${places ? FIX.problems(places) : FIX.notes(notes)}</span>${rest ? `<span class="readout" aria-hidden="true">${esc(rest)}</span>` : ''}</span>`;
       void unchecked;
       html = places || notes
-        ? `<div class="line bar${notice ? ' has-notice' : ''}">${this.#error ? `<span class="quiet-line err">${esc(this.#error)}</span>` : status}${notice}<span class="grow"></span>${tidy}<button class="pl-act start" aria-keyshortcuts="Enter">${FIX.start} <kbd>↵</kbd></button>${end}</div>`
+        ? `<div class="line bar${notice ? ' has-notice' : ''}">${this.#error ? `<span class="quiet-line err">${esc(this.#error)}</span>` : status}${notice}<span class="grow"></span>${tidy}${button(esc(FIX.start), { cls: 'sm start', key: '↵', attrs: 'aria-keyshortcuts="Enter"' })}${end}</div>`
         : `<div class="line bar${notice ? ' has-notice' : ''}"><span class="quiet-line">${esc(this.#error ?? (!settled ? (this.#host.scope?.() ? FIX.checkingElement : FIX.checking) : this.#progress?.notChecked ? FIX.clearChecked(this.#progress.notChecked) : FIX.clear))}</span>${notice}${settled ? tidy : ''}${end}</div>`;
     } else {
       const mark = g.members[0].mark, kind = kindOf(mark);
