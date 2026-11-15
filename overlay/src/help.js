@@ -36,12 +36,6 @@ const KEYS = [
     ['K', 'Keep as is'],
     ['Space', 'Hold to use the page'],
   ]],
-  ['Notes', [
-    ['Alt + G', 'A designer’s notes on this screen'],
-    ['←  →', 'Previous or next note'],
-    ['↵', 'Make the change the note asks for'],
-    ['Esc', 'Close the notes'],
-  ]],
 ];
 
 const HINTS = {

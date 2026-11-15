@@ -171,7 +171,8 @@ function matchSet(facts, g, out, rowOf) {
   if (ms.n / boxes.length >= 0.6) boxes.forEach((el, i) => {
     if (shapes[i] === ms.v) return;
     const others = boxes.filter((_, j) => shapes[j] === ms.v);
-    add(el, { kind: 'corners', mine: shapes[i], want: ms.v, others, cause: causeOf(el, others, CORNER) });
+    const radius = (e) => Math.min(parseFloat(facts.style(e).borderTopLeftRadius) || 0, facts.rect(e).height / 2);
+    add(el, { kind: 'corners', mine: shapes[i], want: ms.v, mineR: radius(el), wantR: radius(others[0]), wantH: facts.rect(others[0]).height, others, cause: causeOf(el, others, CORNER) });
   });
 }
 
@@ -187,7 +188,7 @@ export const columnEdge_ = {
       ...say(this.id, { d: f.d, dir, name: nameOf(el) }),
       key: this.id, text: f.cause?.from ?? 'position', props: ['margin-left'], value: `${f.d}px`, n: f.d,
       evidence: { by: f.by, x: f.x, rows: f.others.length + 1, cause: f.cause && `${f.cause.from ?? 'none'} → ${f.cause.to ?? 'none'}` },
-      proof: { kind: 'edge', x: f.x, by: f.by, others: f.others, words: f.words },
+      proof: { kind: 'edge', x: f.x, by: f.by, others: f.others, words: f.words, rect: facts.rect(el) },
       confidence: f.cause ? 0.9 : 0.7,
       suggest: fixOf(f.cause, f.cause ? `The other rows use ${f.cause.to ?? 'none'}.` : 'Nothing in its classes differs from the rows around it; something outside the row pushes it.'),
     }];
@@ -209,7 +210,8 @@ export const siblingMatch = {
         key: `${this.id}/${f.kind}`, text: f.cause?.from ?? f.kind, props: [f.kind === 'corners' ? 'border-radius' : f.kind === 'height' ? 'height' : 'translate'],
         value: f.kind === 'corners' ? f.mine : `${f.d}px`, n: f.d ?? 0,
         evidence: { kind: f.kind, of: f.others.length + 1, cause: f.cause && `${f.cause.from ?? 'none'} → ${f.cause.to ?? 'none'}` },
-        proof: { kind: f.kind, others: f.others, by: f.by, want: f.want, icon: f.icon },
+        // what the fault measured when it was found: Blueprint previews the fix in place, so the page may already look fixed
+        proof: { kind: f.kind, others: f.others, by: f.by, want: f.want, d: f.d, icon: f.icon, mineR: f.mineR, wantR: f.wantR, wantH: f.wantH, rect: facts.rect(el) },
         confidence: f.cause ? 0.9 : 0.7,
         suggest: fixOf(f.cause, f.cause ? `The others use ${f.cause.to ?? 'none'}.` : `Nothing in its classes differs from the ${NOUN(el)} beside it.`),
       });

@@ -416,7 +416,7 @@ function markOf(f) {
     text: f.text, props: f.props ?? [], value: f.value, n: f.n,
     title: f.title, because: f.because, action, what: f.what, laws: lawsOf(f.rule),
     choices: [], pick: null,
-    craft: { evidence: f.evidence ?? {}, confidence: f.confidence, suggest },
+    craft: { evidence: f.evidence ?? {}, confidence: f.confidence, suggest, ...(f.proof ? { proof: f.proof } : {}) },
   };
 }
 

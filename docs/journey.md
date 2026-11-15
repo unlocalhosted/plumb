@@ -1606,6 +1606,18 @@ field is empty). The table of five writes, before and after. The Next table: eig
   for control-sized things); and screen-reader-only text ("Not yet.", Tailwind's sr-only, clipped to 1px) was read as
   a label 1px off its line (text hidden from sight is no longer read). After: the real pages 0, the practice pages 7.
   That one only showed at 1280px wide: the sweeps now need more than one width.
+- **One engine, not a second judge** (owner: "bro why do you keep coming back to these screen, i asked for real issues in
+  any of my app … it should work similarly to the whole engine, its not a roast. its deterministic fault finding,
+  issues in our ui"; then "inside is fine"). My mistake, said first: I measured success as no false notes on clean
+  pages and kept making the roast more careful until it found only the faults I had planted, then called real apps
+  clean. Worse, it was a second judge beside the engine: on the settings page the engine reported 30 problems while the
+  roast said there were 4. Now the judgement is two ordinary engine checks (craft/column-edge, craft/sibling-match in
+  overlay/src/craft-ranks.js), listed, counted and fixed in Blueprint with everything else; their proof (the lines
+  the good siblings share, the break, the size) draws inside Blueprint for the finding in hand (proof.js), from the
+  values recorded when the fault was found, since Blueprint previews the fix in place. The separate notes bar, its
+  Alt+G, the invitation pill and the guides reader are removed. Seen: on the settings page Blueprint's walk reaches
+  "Corners don't match · Use rounded-full" for the square chip, with every chip's corners traced and "0px → full". Not
+  yet: the avatar finding (its class sits in a ternary inside a loop) does not reach Blueprint's walk.
 - **Media hooks:** docs/qa/roast-invite.png (the invitation beside the dock), docs/qa/roast-proof-avatars.jpg, docs/qa/roast-proof-height.png, docs/qa/roast-proof-line.png (the proof lines for corners, height and alignment), docs/qa/roast-ghost-keys.jpg (the ghost of the fix and the keycaps), docs/qa/roast-settings-cousin.jpg (a cousin note on the settings page), docs/qa/roast-icon-note.jpg (the icon note), docs/qa/roast-first-note.jpg (the roast's first note on the messy page), docs/qa/guides-first-look-issues.jpg (guides on the messy page), docs/qa/guides-held-issues.jpg
   (the three strays held by their neighbours), docs/qa/guides-plumb-lines-issues.jpg
   (the plumb lines and the one stray); a screen recording of the drop-and-swing arrival would show the toy best; the three source screenshots in
