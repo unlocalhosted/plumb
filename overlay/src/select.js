@@ -21,7 +21,7 @@ import { LANGUAGE_CSS } from './language.js';
 import { facetOf } from './craft-facets.js';
 import { PRIMITIVES_CSS, stepper, swatches } from './editor-primitives.js';
 import { esc } from './choices.js';
-import { planOf, moved, preview, glide, GLIDE, GLYPHS, SPACING_PROPS, swapPlanOf, swapPreview, swapRelease, swapTake, TRIAL, FACET_SAID, glyphOf } from './inplace.js';
+import { planOf, moved, preview, glide, GLIDE, GLYPHS, SPACING_PROPS, swapPlanOf, classSwapOf, swapPreview, swapRelease, swapTake, TRIAL, FACET_SAID, glyphOf } from './inplace.js';
 import { scrub, SCRUB_CSS, cursorOf } from './scrub.js';
 
 export const SELECT_CSS = `
@@ -379,14 +379,23 @@ export class Selection {
           plan.reading = true;
           const key = current.key;
           plan.key = key;
-          this.#read(el).then((full) => {
-            const m = full?.marks?.find((x) => x.key === key);
+          // the exact edit when the element's reading has one; else the choice's class swap, found in the code when
+          // written (the element's own reading may hold no finding for a class built elsewhere, or fail to read)
+          const fill = (full) => {
+            const m = full?.marks?.find((x) => x.key === key) ?? current;
             // the plan may have moved on (an arrow made a new one): the edits go to whichever plan is current for it
             const now = this.#plan;
-            if (!m || !now || now.key !== key || this.#el !== el) return;
-            now.options = now.options.map((o) => { const c = m.choices?.find((x) => (x.label ?? x.name) === o.label); return c?.edit ? { ...o, write: { from: c.edit.from, to: c.edit.to } } : o; });
+            if (!now || now.key !== key || this.#el !== el) return;
+            const choiceOf = (list, o) => list?.find((x) => (x.label ?? x.name) === o.label || x.name === o.token);
+            now.options = now.options.map((o) => {
+              if (o.write) return o;
+              const c = choiceOf(m.choices, o) ?? choiceOf(current.choices, o);
+              const w = c?.edit ? { from: c.edit.from, to: c.edit.to } : classSwapOf(m.text ?? current.text, c?.use);
+              return w ? { ...o, write: w } : o;
+            });
             this.draw();
-          }).catch(() => { if (this.#plan?.key === key) this.#plan.reading = false; });
+          };
+          this.#read(el).then(fill, () => fill(null));
         }
         const o = plan.options;
         const control = o.every((x) => x.swatch) ? swatches(plan.facet ?? 'colour', { steps: o.map((x) => ({ token: x.label, swatch: x.swatch })), current: null, picked: o[plan.at].label, drift: plan.now?.swatch ? { label: plan.now.label, swatch: plan.now.swatch } : undefined })

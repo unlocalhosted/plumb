@@ -220,6 +220,22 @@ export const FACET_SAID = { radius: 'corners', 'font-size': 'text size', 'letter
  * staircase (sizes), swatches (colours) or a single target.
  */
 export function swapPlanOf(problem) {
+  return swapPlan(problem);
+}
+/**
+ * A theme choice as a class swap, when the reading of this one element has no exact edit for it (its class is built
+ * elsewhere in the file: a size map, a helper). The write finds each place from the class text (locate.js
+ * classEditsOf), so `text-sm` → `text-sm-minus` is enough. Only a plain class of the same utility, variants and sign
+ * kept (`md:-mt-2` → `md:-mt-<token>`); anything else waits for an exact edit.
+ */
+export function classSwapOf(text, use) {
+  const cls = use?.class;
+  if (!cls || !text || /[\s/\[\]'"(),]/.test(text)) return null;
+  const lead = /^((?:[^:]+:)*)(!?-?)(.*)$/.exec(text);
+  if (!lead || lead[3].split('-')[0] !== cls.split('-')[0] || lead[3] === cls) return null;
+  return { from: text, to: `${lead[1]}${lead[2]}${cls}` };
+}
+function swapPlan(problem) {
   if (problem.family === 'craft') {
     const fix = problem.craft?.suggest;
     if (fix?.kind !== 'class') return null;

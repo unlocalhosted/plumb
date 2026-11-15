@@ -1743,12 +1743,16 @@ field is empty). The table of five writes, before and after. The Next table: eig
   variable in its quoted value, or no new-token offer when the value isn't quoted; details say the value against
   your steps ("-1px isn't one of your steps: 0px and 2px."). On algorecall the margin now offers
   `calc(var(--spacing) * -0.5)`. The overlay's served-file list was also missing `soft.js`, which failed the build.
-- **Still open:** the first fix (text-sm, 18 places) says it can't be written, because the place it shows (the mint
-  button) builds its size elsewhere in the file. The other places have edits.
+- **Then text-sm (same day):** the bar asked the one place it shows for an exact edit, and the mint button's size
+  comes from a table further up its file (`sm: { text: 'text-sm' }`), so the whole fix of 18 places read as
+  unwritable. The write itself finds every place from the class text, so when a place has no exact edit the option
+  now carries the theme choice's class swap (`text-sm` → `text-sm-minus`, variants and sign kept, same utility only).
+  On algorecall the fix now offers "Use text-sm-minus". Not taken there (algorecall has other uncommitted work); the
+  mint button itself still can't be located, so a take would write the other places and say that one didn't land.
 
 ## Open gaps
-- The fix bar judges "can it be written" by the one place it shows; when that place builds its class elsewhere
-  (algorecall's mint button, text-sm) the whole fix reads as unwritable though its other places have edits.
+- A class kept in a lookup table (`sizes.sm.text = 'text-sm'`, algorecall's mint button) can't be located for a
+  write, so a fix skips that place and says so.
 - The site's top bar doesn't fit a phone (390px): it widens the page to about 500px. Needs a compact bar.
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
 
