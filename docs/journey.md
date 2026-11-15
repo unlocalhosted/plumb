@@ -1311,10 +1311,40 @@
   pasting rich text; no tests.
 - **Media hooks:** docs/qa/break-it-typing.jpg (the long line filling the reel card and running off the screen).
 
+## Break it: lists at none, one and a hundred (2026-11-15)
+- **The itch:** the last first-version toy the owner picked: what a list does with no items, with one, and with a
+  hundred. A page under development almost always shows the handful of items its author had.
+- **What we chose and why:** hiding items on the page would only fake an empty list; the app's own empty message, or
+  its crash, appears only when its data is empty. So plumber walks from a list's first item up through React to the
+  part that holds the array the list is drawn from, either a prop passed in (a reusable part's `steps`, `items`,
+  `scenes`) or the part's own state. Then it hands the part, through React's own override (the one React DevTools
+  edits props with), no items, one item and a hundred copies, each round of copies given its own id so React's keys
+  stay apart. After each size: new breaks, a space left blank with nothing saying why, one item stretched across the
+  row, "1 items", a hundred that take more than 200 ms to draw, a box that hides most of the hundred with no way to
+  scroll, and a page that crashes. An empty list passed into a reusable part gets different advice from empty data:
+  the part should leave itself out or say so; for data, the page owes the person a line on how to add one. A list
+  built inside a part from a constant is the author's copy, so it is left alone and only counted.
+- **Dead ends:** the first run said "each one was 0px wide": the item it measured had been replaced when React drew
+  the list again; items are now found again by the line that draws them after each size. A step-name ticker that
+  crossfades two words through each other was reported as words running into words; words partly faded no longer
+  count. A second run straight after the first found no lists, because it looked before React had drawn the items
+  back. The 100-item timing first included plumber's own settling pause.
+- **The proof:** crafting-ui's templates page, two runs, the same three notes: with no steps, the step rail leaves an
+  empty frame; with one step, that step stretches from 44px to 496px wide; with no questions, the question list
+  leaves an empty space. On the vocabulary page, handing the motion player no scenes crashes the whole page: it goes
+  white, and plumber says `ExamplePlayer` throws "Cannot read properties of undefined (reading 'versions')" at
+  player.tsx:453. A crash the page cannot recover from stops the run, and turning the toy off reloads the page. The
+  messy bench's lists are all constants typed into the file, so the toy rightly leaves them alone.
+- **Not yet:** a list drawn from a value computed inside the part (a filter, a memo) is not reached; a production
+  build has no override, so the toy says to use the dev server; a crash that takes the page down is reported but the
+  later lists are not tried; no tests.
+- **Media hooks:** docs/qa/break-it-lists-crash.jpg (the vocabulary page gone white, the note naming the line).
+
 ## Open gaps
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
 
 ## Shipped · 2026-W46
+- Break it's Lists toy hands every list on your page that is fed data or passed in no items, one, and a hundred, through React itself, so the app draws its real empty state and its real crowd; on crafting-ui it found a page that crashes white when a player gets no scenes, and a step that stretches tenfold when it is alone ([entry](#break-it-lists-at-none-one-and-a-hundred-2026-11-15)). On its own branch.
 - Break it's Typing toy puts a long line, a pasted link, pasted lines and nothing into every field on your page, the way typing does, and says what the field and its neighbours do; on crafting-ui it found a topic field that grows 1232px and drags the page sideways ([entry](#break-it-typing-into-fields-2026-11-15)). On its own branch.
 - Break it's Action fails toy: press the button you care about and plumber makes its request fail (or take four seconds), then says what a person would meet: no message, a button stuck on "Creating…", a spinner that never stops, a second press that sends it twice ([entry](#break-it-the-main-action-fails-or-is-slow-2026-11-15)). On its own branch.
 - Break it's Extreme content toy puts no words, one letter, 60 letters, an unbroken link-like word and a nine-digit number into every place on your page that can change, and says which content broke what ([entry](#break-it-extreme-content-2026-11-15)). On its own branch.

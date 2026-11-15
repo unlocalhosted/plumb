@@ -1,5 +1,5 @@
 /* ─────────────────────────────────────────────────────────
- * BREAK IT · React Plumber overlay (toys: longer words, narrower, bigger text)
+ * BREAK IT · React Plumber overlay (toys: longer words, narrower, extreme content, typing, lists, action, bigger text)
  *
  * Break your own screen before a user does (a post the owner shared on 2026-11-15, docs/references.md: "double the
  * length of every label, turn the system text size all the way up, make the main action fail"). A page never shows
@@ -282,7 +282,7 @@ function measure(win = window, { all = false } = {}) {
   for (let i = 0; i < boxes.length; i++) {
     const A = boxes[i]; if (found.has(A.el) || [...found.values()].some((f) => f.other === A.el)) continue;
     for (let j = i + 1; j < boxes.length && boxes[j].w.top < A.w.bottom; j++) {
-      const B = boxes[j]; if (A.el.contains(B.el) || B.el.contains(A.el) || pinnedOf(A.el) !== pinnedOf(B.el)) continue;   // a sticky bar over scrolled content is not words running into words
+      const B = boxes[j]; if (A.el.contains(B.el) || B.el.contains(A.el) || pinnedOf(A.el) !== pinnedOf(B.el) || faded(A.el) || faded(B.el)) continue;   // a crossfade passes two words through each other on purpose   // a sticky bar over scrolled content is not words running into words
       const x = Math.min(A.w.right, B.w.right) - Math.max(A.w.left, B.w.left), y = Math.min(A.w.bottom, B.w.bottom) - Math.max(A.w.top, B.w.top);
       if (x > -3 && y > -3) { touching.add(A.el); touching.add(B.el); }   // within a few pixels: a hair of relayout tips it
       if (x > 2 && y > 2) { found.set(A.el, { kind: 'overlap', el: A.el, other: B.el, rect: union(A.w, B.w) }); break; }
@@ -303,6 +303,7 @@ function measure(win = window, { all = false } = {}) {
 }
 // a row that scrolls sideways (a carousel) is meant to run past the screen
 const inScroller = (el) => { for (let a = el.parentElement; a && a !== el.ownerDocument.body; a = a.parentElement) if (/hidden|clip|auto|scroll/.test(cssOf(a).overflowX)) return true; return false; };
+const faded = (el) => { let o = 1; for (let a = el; a && a !== el.ownerDocument.body; a = a.parentElement) o *= parseFloat(cssOf(a).opacity); return o < 0.98; };
 const pinnedOf = (el) => { for (let a = el; a && a !== el.ownerDocument.body; a = a.parentElement) if (/fixed|sticky/.test(cssOf(a).position)) return a; return null; };
 const union = (a, b) => { const l = Math.min(a.left, b.left), t = Math.min(a.top, b.top), r = Math.max(a.right, b.right), bo = Math.max(a.bottom, b.bottom); return { left: l, top: t, right: r, bottom: bo, width: r - l, height: bo - t }; };
 
@@ -353,7 +354,7 @@ svg.page { position: absolute; inset: 0; width: 100%; height: 100%; overflow: vi
 .hatch { stroke: var(--pl-off); stroke-width: 1.5; opacity: .55; }
 .mark { animation: pop 240ms var(--pl-spring-pop) both; transform-box: fill-box; transform-origin: center; }
 
-.bar { position: absolute; left: 50%; bottom: 16px; translate: -50% 0; width: min(760px, calc(100vw - 32px)); box-sizing: border-box;
+.bar { position: absolute; left: 50%; bottom: 16px; translate: -50% 0; width: min(860px, calc(100vw - 32px)); box-sizing: border-box;
   display: grid; gap: 10px; padding: 12px 14px 14px; background: var(--pl-paper); color: var(--pl-ink);
   border-radius: var(--pl-radius-card); box-shadow: var(--pl-shadow-card); pointer-events: auto; font: var(--pl-card-body); }
 .toys { display: flex; gap: 6px; align-items: center; }
@@ -740,6 +741,174 @@ function scrollToNote(el) { const r = el.getBoundingClientRect(); if (r.top < 0 
 function unshow() { if (shown) { enter(shown.f, shown.orig); shown = null; }
 }
 
+// ── lists at none, one and a hundred ─────────────────────────
+
+// A list on the page is a line of source drawn several times side by side. Plumber walks from one item up through
+// React to the part that holds the array it is drawn from: a prop passed in (a reusable part's `items`, `steps`) or
+// the part's own state (data it fetched or keeps). Then it hands the part, through React's own override (what React
+// DevTools edits props with), no items, one item and a hundred, so the app draws its real empty state and its real
+// crowd. A list built inside a part from a constant is the author's copy, not data: left alone, and counted
+const SIZES = [
+  { id: 'none', as: 'With no', make: () => [] },
+  { id: 'one', as: 'With one of the', make: (a) => a.slice(0, 1) },
+  { id: 'many', as: 'With a hundred', make: (a) => Array.from({ length: 100 }, (_, i) => copyItem(a[i % a.length], Math.floor(i / a.length))) },
+];
+// the copies of a round after the first get their own id, so React's keys stay apart
+function copyItem(item, round) {
+  if (!round) return item;
+  if (typeof item === 'string') return `${item} ${round + 1}`;
+  if (typeof item === 'number') return item + round * 1000;
+  if (!item || typeof item !== 'object' || Array.isArray(item)) return item;
+  const out = { ...item };
+  for (const k of ['id', 'key', 'slug', 'value', 'uuid', '_id', 'name', 'href', 'to']) if (typeof out[k] === 'string' || typeof out[k] === 'number') out[k] = `${out[k]}-${round + 1}`;
+  return out;
+}
+const renderer = () => [...(window.__REACT_DEVTOOLS_GLOBAL_HOOK__?.renderers?.values?.() ?? [])].find((r) => r.overrideProps);
+const fiberOf = (el) => { const k = Object.keys(el).find((x) => x.startsWith('__reactFiber$')); return k ? el[k] : null; };
+const partName = (f) => f.type?.displayName || f.type?.name || f.type?.render?.name || 'a part';
+let listing = false, listed = 0, sizedLists = [], unreached = 0, sized = null;   // sized: { list, size } on screen now
+
+/** The page's lists and the array each is drawn from: [{ fiber, how: 'prop' | 'state', key | hook, orig, items, noun }]. */
+function findLists() {
+  const out = [], seen = new Set();
+  unreached = 0;
+  for (const [, els] of lists()) {
+    const sib = els.filter((e) => e.parentElement === els[0].parentElement);
+    if (sib.length < 2 || els.some((e) => els.some((o) => o !== e && o.contains(e)))) continue;
+    if (out.some((l) => l.items.some((i) => i.contains(sib[0])))) continue;   // a list inside another list's item: the outer one is the list
+    let hit = null;
+    for (let f = fiberOf(sib[0]), i = 0; f && i < 40 && !hit; f = f.return, i++) {
+      if (typeof f.type !== 'function' && typeof f.type?.render !== 'function') continue;
+      for (const [k, v] of Object.entries(f.memoizedProps ?? {})) if (k !== 'children' && Array.isArray(v) && v.length >= sib.length && v.length <= sib.length * 3) { hit = { fiber: f, how: 'prop', key: k, orig: v }; break; }
+      if (hit) break;
+      let s = f.memoizedState, j = 0;
+      for (; s && j < 60; s = s.next, j++) if (s.queue && Array.isArray(s.memoizedState) && s.memoizedState.length >= sib.length && s.memoizedState.length <= sib.length * 3) { hit = { fiber: f, how: 'state', hook: j, orig: s.memoizedState }; break; }
+    }
+    if (!hit) { unreached++; continue; }
+    const id = hit.orig;
+    if (seen.has(id)) continue;
+    seen.add(id);
+    const noun = hit.key && hit.key !== 'items' && /^[a-z]+s$/i.test(hit.key) ? hit.key.toLowerCase() : 'items';
+    out.push({ ...hit, at: sib[0].getAttribute('data-plumb-source').split('#')[0], items: sib, box: sib[0].parentElement, noun, name: partName(hit.fiber), source: sourceOf(sib[0]) });
+  }
+  return out;
+}
+function feed(list, arr) {
+  const r = renderer(); if (!r) return false;
+  try {
+    if (list.how === 'prop') r.overrideProps(list.fiber, [list.key], arr);
+    else r.overrideHookState(list.fiber, list.hook, [], arr);
+    return true;
+  } catch { return false; }   // the part is gone (the page crashed and React took it down)
+}
+// a part that throws while drawing: React reports it on the window (nothing caught it) or on the console (a boundary did)
+let crash = null, wrecked = false;
+const realError = console.error;
+// the first line of the app's own code in the stack: where it throws
+const thrownAt = (err) => { const m = /\/src\/(?:[^\s?:()]*\/)?([^/\s?:()]+\.[jt]sx?)(?:\?[^:\s)]*)?:(\d+)/.exec(String(err?.stack ?? '')); return m ? `${m[1]}:${m[2]}` : null; };
+function onCrash(e) { const err = e.error ?? e.reason; crash ??= { message: String(err?.message ?? e.message ?? 'an error').slice(0, 90), at: thrownAt(err) }; }
+function listenCrash() {
+  crash = null; addEventListener('error', onCrash); addEventListener('unhandledrejection', onCrash);
+  console.error = function (...a) { const m = /error occurred in the <(\w+)> component/.exec(String(a[0])); if (m) crash ??= { part: m[1], message: String(a[1]?.message ?? '').slice(0, 90), at: thrownAt(a[1]) }; return realError.apply(this, a); };
+}
+function unlistenCrash() { removeEventListener('error', onCrash); removeEventListener('unhandledrejection', onCrash); console.error = realError; }
+const settle = async () => { await frames(2); await pause(120); };
+// React draws new elements after each size: find the list's items and box again by the line that draws them
+function refresh(list) {
+  const items = [...document.querySelectorAll('[data-plumb-source]')].filter((e) => e.getAttribute('data-plumb-source').split('#')[0] === list.at && !e.closest(OURS) && e.checkVisibility?.());
+  if (items.length) { list.items = items; list.box = items[0].parentElement; }
+}
+
+async function sizeAll() {
+  listing = true; listed = 0; paint();
+  if (!renderer()) { listing = false; sizedLists = []; notes = []; paint(); return; }
+  await settle();   // a list the last run put back is drawn again first
+  if (toy !== 'lists') return;
+  sizedLists = findLists();
+  const found = [];
+  wrecked = false;
+  for (const list of sizedLists) {
+    if (toy !== 'lists' || wrecked) break;
+    listed++; paint();
+    const label = list.noun === 'items' ? `items in ${list.name}` : list.noun;
+    for (const size of SIZES) {
+      refresh(list);
+      const base = measure(window, { all: true }), words = visibleWords(), wide = innerWidth, area = list.box.getBoundingClientRect();
+      const one = list.items[0].getBoundingClientRect();
+      const t0 = performance.now();
+      listenCrash();
+      feed(list, size.make(list.orig)); await frames(1);
+      const took = performance.now() - t0;   // React draws before the next frame: how long the screen was frozen
+      await settle(); unlistenCrash();
+      if (crash) {
+        // the page threw: say so, and stop here. If React took the page down, turning the toy off reloads it
+        found.push({ live: true, list, size, kind: 'crash', el: list.box, at: crash.at, title: `${size.as} ${label}, the page crashes.`, why: `${crash.part ?? list.name} throws “${crash.message}”. Code that reads the ${list.noun} must expect ${size.id === 'none' ? 'none' : size.id === 'one' ? 'only one' : 'a hundred'}.` });
+        if (!feed(list, list.orig) || !document.body.innerText.trim()) wrecked = true;
+        await settle(); if (!list.box.isConnected && !document.querySelector(`[data-plumb-source^="${CSS.escape(list.at)}"]`)) wrecked = true;
+        break;
+      }
+      if (toy !== 'lists') break;
+      if (innerWidth === wide) {
+        const add = (n) => found.push({ live: true, list, size, ...n, title: `${size.as} ${label}, ${n.title}` });
+        for (const b of measure(window, { all: true }).values()) {
+          if (base.get(b.el)?.kind === b.kind || old(b, base)) continue;
+          const said = say(b); add({ ...b, ...said, title: said.title.replace(/^[A-Z]/, (c) => c.toLowerCase()) });
+        }
+        const fresh = [...visibleWords()].filter((x) => !words.has(x));
+        // passed in: the part decides what an empty list looks like. Its own state: the page owes the person a word
+        if (size.id === 'none' && !fresh.length) add({ kind: 'blank', el: list.box, ...(list.how === 'prop'
+          ? { title: `${list.noun === 'items' ? 'it' : list.name} leaves an empty space.`, why: `It can be handed an empty list, and then draws its frame with nothing in it. Leave the part out when there are no ${list.noun}, or have it say so.` }
+          : { title: 'the space goes blank and nothing says why.', why: `With nothing to show, the page should say there are no ${list.noun} yet, and how to add one. Today they just vanish.` }) });
+        if (size.id === 'one') {
+          refresh(list);
+          const solo = list.items.length === 1 ? list.items[0] : null, r = solo?.getBoundingClientRect();
+          if (r && r.width > one.width * 1.8 && r.width - one.width > 160) add({ kind: 'stretch', el: solo, title: `the one left stretches to ${Math.round(r.width)}px wide.`, why: `Each one was ${Math.round(one.width)}px; alone it fills the row and reads as a different thing. Keep its width when it is on its own.` });
+          const plural = fresh.find((x) => /(^|\s)1\s+\p{L}+s\b/u.test(x));
+          if (plural) add({ kind: 'plural', el: list.box, title: `the page says “${plural.slice(0, 30)}”.`, why: 'One of something is singular. Pick the word by the count.' });
+        }
+        if (size.id === 'many') {
+          refresh(list);
+          const now = list.box.isConnected ? list.box.getBoundingClientRect() : area;
+          if (took > 200) add({ kind: 'slow', el: list.box, title: `the page takes ${Math.round(took)}ms to draw them.`, why: 'The screen freezes while a hundred are drawn. Draw only what is on screen (a virtual list), or draw them a page at a time.' });
+          // a hundred items and no way to reach most of them: a box that clips its list and cannot scroll
+          for (let a = list.box; a && a !== document.body; a = a.parentElement) {
+            const cs = cssOf(a);
+            if (/hidden|clip/.test(cs.overflowY) && a.scrollHeight > a.clientHeight + 40 || /hidden|clip/.test(cs.overflowX) && a.scrollWidth > a.clientWidth + 40) {
+              add({ kind: 'hidden', el: a, title: `most of them are hidden, with no way to scroll to them.`, why: `The box is ${Math.round(a.clientWidth)}×${Math.round(a.clientHeight)}px and hides the rest. Let it scroll, or show how many more there are.` });
+              break;
+            }
+          }
+          void now;
+        }
+      }
+      feed(list, list.orig); await settle();
+    }
+  }
+  listing = false;
+  // one note per break and list and size: the same break said once
+  const keyed = new Map();
+  for (const n of found) { const k = `${n.kind}|${n.list.source}|${n.size.id}|${n.kind === 'sideways' ? '' : sourceOf(n.el) ?? ''}`; if (!keyed.has(k)) keyed.set(k, n); }
+  notes = [...keyed.values()].map((n) => ({ ...n, title: cap(n.title), source: n.at ?? n.list.source })); index = 0;
+  if (notes.length) showSized(0); else paint();
+}
+// put the note's size back on its list, so the break is on screen; the list's own items come back after
+async function showSized(i) {
+  unsize(); index = i; const n = notes[i];
+  if (n && (n.kind === 'crash' || wrecked)) { paint(); return; }   // never crash the page again to show it
+  if (n) {
+    sized = n.list; feed(n.list, n.size.make(n.list.orig)); await settle(); refresh(n.list);
+    // React drew new elements for this size: point the note at the ones now on screen
+    if (!n.el?.isConnected) {
+      if (n.kind === 'stretch') n.el = n.list.items[0];
+      else if (['blank', 'plural', 'slow', 'hidden'].includes(n.kind)) n.el = n.list.box;
+      else { const again = [...measure(window, { all: true }).values()].find((b) => b.kind === n.kind && (n.kind === 'sideways' || sourceOf(b.el) === sourceOf(n.el))); if (again) Object.assign(n, { el: again.el, other: again.other, box: again.box, cause: again.cause }); }
+    }
+    if (n.el?.isConnected) scrollToNote(n.el);
+  }
+  paint();
+}
+function unsize() { if (sized) { feed(sized, sized.orig); sized = null; } }
+
 // ── the toys ────────────────────────────────────────────────
 
 let toy = null;
@@ -751,6 +920,7 @@ export function setToy(next) {
   if (toy === 'extreme') { unswap(); probing = false; }
   if (toy === 'action') disarm();
   if (toy === 'typing') { unshow(); typing = false; }
+  if (toy === 'lists') { unsize(); listing = false; unlistenCrash(); if (wrecked) { wrecked = false; location.reload(); } }
   toy = next; notes = []; index = 0;
   if (toy === 'longer') { on = true; grow(); }
   if (toy === 'narrower') narrower();
@@ -758,6 +928,7 @@ export function setToy(next) {
   if (toy === 'extreme') extreme();
   if (toy === 'action') arm();
   if (toy === 'typing') typeAll();
+  if (toy === 'lists') sizeAll();
   paint();
 }
 export const setLonger = (yes) => setToy(yes ? 'longer' : null);
@@ -767,7 +938,7 @@ export const setLonger = (yes) => setToy(yes ? 'longer' : null);
 function rectOf(n) {
   if (!n.live) return n.rect;
   if (n.kind === 'sideways') { if (!n.cause) return null; const r = n.cause.getBoundingClientRect(); const off = stage ? stage.frame.getBoundingClientRect() : { left: 0, top: 0 }; return { left: r.left + off.left, top: r.top + off.top, width: r.width, height: r.height }; }
-  const r = ['nothing', 'silent', 'stuck', 'still', 'twice', 'spinning', 'grows', 'clipped', 'under', 'emptied'].includes(n.kind) ? n.el.getBoundingClientRect() : n.kind === 'cut' || n.kind === 'collapse' ? n.box.getBoundingClientRect() : n.kind === 'overlap' ? (() => { const a = wordsRect(n.el), b = wordsRect(n.other); return a && b ? union(a, b) : a ?? b; })() : wordsRect(n.el);
+  const r = ['nothing', 'silent', 'stuck', 'still', 'twice', 'spinning', 'grows', 'clipped', 'under', 'emptied', 'blank', 'stretch', 'plural', 'slow', 'hidden', 'crash'].includes(n.kind) ? n.el.getBoundingClientRect() : n.kind === 'cut' || n.kind === 'collapse' ? n.box.getBoundingClientRect() : n.kind === 'overlap' ? (() => { const a = wordsRect(n.el), b = wordsRect(n.other); return a && b ? union(a, b) : a ?? b; })() : wordsRect(n.el);
   if (!r) return null;
   const off = stage ? stage.frame.getBoundingClientRect() : { left: 0, top: 0 };
   return { left: r.left + off.left, top: r.top + off.top, width: r.width, height: r.height };
@@ -776,7 +947,7 @@ function rectOf(n) {
 function marks() {
   // narrower: only the break in hand, at its own width; the others are not broken at this width yet
   return notes.map((n, i) => {
-    if (toy === 'narrower' && i !== index) return '';
+    if ((toy === 'narrower' || toy === 'lists') && i !== index) return '';   // lists: the other notes are other sizes, not on screen
     // one cause in many places: the one in hand rings every place, the others are not drawn
     if (n.els) return i !== index ? '' : n.els.map((el) => ring(wordsRect(el), false)).join('');
     const r = rectOf(n);
@@ -807,6 +978,14 @@ function verdict() {
     if (typing) return `Typing a long line, a pasted link, pasted lines and nothing into each field… (field ${typedIn})`;
     if (!typedIn) return 'There is no field on this page to type into.';
     return `Typed four kinds of value into ${count(typedIn, 'field', 'fields')}: ${notes.length ? count(notes.length, 'thing breaks', 'things break') : 'nothing breaks'}. Each field is back as it was.`;
+  }
+  if (toy === 'lists') {
+    const missed = unreached ? ` ${count(unreached, 'list is', 'lists are')} drawn from words written into the part itself, left alone.` : '';
+    if (!renderer()) return 'This page’s React does not let plumber hand a list other items (a production build). Try it on the dev server.';
+    if (listing) return `Giving each list no items, one, and a hundred… (list ${listed} of ${sizedLists.length})`;
+    if (wrecked) return `The page crashed and React took it down, so plumber stopped there. Turning Lists off reloads the page.`;
+    if (!sizedLists.length) return `No list on this page is fed from data or passed in.${missed}`;
+    return `Gave ${count(sizedLists.length, 'list', 'lists')} no items, one and a hundred: ${notes.length ? count(notes.length, 'thing breaks', 'things break') : 'nothing breaks'}. Each is back as it was.${missed}`;
   }
   if (toy === 'action') {
     const what = mode === 'fail' ? 'its request will fail with a server error' : `its request will take ${SLOW_MS / 1000} seconds`;
@@ -841,6 +1020,7 @@ const TOYS = [
   ['narrower', 'Narrower', '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M1.5 8h4M14.5 8h-4"/><path d="M3.5 5.5 6 8l-2.5 2.5M12.5 5.5 10 8l2.5 2.5"/><path d="M8 3v10" opacity=".6"/></svg>'],
   ['extreme', 'Extreme content', '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="1.5" y="5" width="3" height="6" rx="1" opacity=".6"/><rect x="6" y="5" width="8.5" height="6" rx="1"/><path d="M8 8h4.5"/></svg>'],
   ['typing', 'Typing', '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="1.5" y="4" width="13" height="8" rx="2"/><path d="M4.5 8h4"/><path d="M10.5 6v4" opacity=".7"/></svg>'],
+  ['lists', 'Lists', '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 4h8M5.5 8h8M5.5 12h8"/><path d="M2.5 4h0M2.5 8h0M2.5 12h0" stroke-width="2.2"/></svg>'],
   ['action', 'Action fails', '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="1.5" y="4" width="13" height="8" rx="2.5"/><path d="M6.5 6.5l3 3M9.5 6.5l-3 3"/></svg>'],
   ['bigger', 'Bigger text', '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M1.5 12.5l2-5 2 5M2.3 10.8h2.4"/><path d="M7.5 13.5l3-10 3 10M8.7 10h3.6"/></svg>'],
 ];
@@ -864,7 +1044,7 @@ function paint() {
     const again = keep ? notes.findIndex((n) => n.el === keep) : -1;
     index = again >= 0 ? again : Math.min(index, Math.max(0, notes.length - 1));
   }
-  const busy = growing || sorting || stage?.sweeping || probing || typing || act?.phase === 'watching';
+  const busy = growing || sorting || stage?.sweeping || probing || typing || listing || act?.phase === 'watching';
   const n = toy && !busy ? notes[index] : null;
   const step = notes.length > 1 && n ? `<span class="step"><button class="prev" aria-label="Previous break" ${index ? '' : 'disabled'}>‹</button>${index + 1} of ${notes.length}<button class="next" aria-label="Next break" ${index < notes.length - 1 ? '' : 'disabled'}>›</button></span>` : '<span></span>';
   const note = n ? `<div class="note"><div class="say"><p class="title">${esc(n.title)}</p><p class="why">${esc(n.why)}${n.source ? ` <span class="src">${esc(n.source)}</span>` : ''}</p></div>${step}</div>` : '';
@@ -882,6 +1062,7 @@ function go(dir) {
   if (toy === 'narrower') { showAt(to); return; }
   if (toy === 'extreme') { showVariant(to); return; }
   if (toy === 'typing') { showTyped(to); return; }
+  if (toy === 'lists') { showSized(to); return; }
   index = to;
   const r = rectOf(notes[index]);
   if (r && (r.top < 0 || r.top + r.height > innerHeight - 160)) notes[index].el.scrollIntoView({ block: 'center', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
@@ -926,3 +1107,5 @@ addEventListener('keydown', (event) => {
 export const readKinds = () => [...kinds].filter(([n]) => n.isConnected).map(([n, kind]) => ({ words: (held.get(n)?.orig ?? n.data).trim().slice(0, 40), kind }));
 /** Put one kind of extreme content into every place that can change (or none, to put the words back). */
 export const tryContent = (id) => { const k = KINDS.find((x) => x.id === id); if (k) swapTo(k); else unswap(); };
+/** The page's lists plumber can hand other items: the part that holds each, and where its array comes from. */
+export const readLists = () => (renderer() ? findLists() : []).map((l) => ({ part: l.name, how: l.how, key: l.key, items: l.orig.length, source: l.source }));

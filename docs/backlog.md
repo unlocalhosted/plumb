@@ -354,6 +354,8 @@ three is a state the page reaches by itself. - **Built (layer 1):** Alt+S opens 
   - *Right to left:* the page flipped to Arabic or Hebrew direction; icons that should mirror, and margins set on
     one side only.
   - *No motion and high contrast:* reduced motion and forced colours on, to see what loses its meaning.
+- **Lists, built; open:** a list drawn from a value computed inside its part (a filter, a memo) is not reached; when
+  a crash takes the page down, the lists after it are not tried.
 - **Open:** which control is "the main action" when a screen has several (hierarchy already ranks emphasis); and how
   to fail a request when the app uses something other than fetch.
 
