@@ -118,7 +118,7 @@ function pixelsOf(root, el, dy) {
   g.stroke();
   // the smear, marked: every pixel the fraction changed from the sharp drawing, in plumber's coral (none once on the rows)
   const A = c.getImageData(0, 0, w, h).data, B = p.getImageData(0, 0, w, h).data, luma = (d, i) => 0.3 * d[i] + 0.59 * d[i + 1] + 0.11 * d[i + 2];
-  g.strokeStyle = 'rgb(240 96 80 / 0.95)'; g.lineWidth = 2; g.fillStyle = 'rgb(240 96 80 / 0.28)';
+  g.strokeStyle = 'rgb(242 74 159 / 0.95)'; g.lineWidth = 2; g.fillStyle = 'rgb(242 74 159 / 0.28)'; // plumber's pink
   for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) {
     const q = (j * w + i) * 4;
     if (Math.abs(luma(A, q) - luma(B, q)) > 14) { g.fillRect(i * N + 1, j * N + 1, N - 1, N - 1); g.strokeRect(i * N + 2, j * N + 2, N - 3, N - 3); }
@@ -142,7 +142,8 @@ export function local(root) {
   const o = root.getBoundingClientRect(), k = o.width / root.offsetWidth || 1;
   return (el) => { const r = el.getBoundingClientRect(); return { x: (r.left - o.left) / k, y: (r.top - o.top) / k, w: r.width / k, h: r.height / k }; };
 }
-const hues = { sky: ['var(--pl-sky)', 'var(--pl-sky-soft)', 'var(--pl-sky-ink)'], off: ['var(--pl-coral)', 'var(--pl-coral-soft)', 'var(--pl-coral-ink)'], on: ['var(--pl-mint)', 'var(--pl-mint-soft)', 'var(--pl-mint-ink)'] };
+// in a film, "wrong" is plumber's pink, solid (owner, 2026-11-15, picked over the coral as brighter: the coral read muddy)
+const hues = { sky: ['var(--pl-sky)', 'var(--pl-sky-soft)', 'var(--pl-sky-ink)'], off: ['var(--pl-pink)', 'var(--pl-pink-soft)', 'var(--pl-pink-ink)'], on: ['var(--pl-mint)', 'var(--pl-mint-soft)', 'var(--pl-mint-ink)'] };
 
 // a number that counts to its value, the way plumber's chips show a value arriving
 function Count({ from, to, ms = TIMING.count }) {
@@ -158,15 +159,15 @@ function Count({ from, to, ms = TIMING.count }) {
 }
 
 // plumber's pill: pastel fill, inked mono, the property's icon in its line hue; never scaled by the camera
-function Pill({ x, y, k, tone, icon, icons, toy, up, flow, mono = false, children }) {
-  const s = useContext(UI);
+function Pill({ x, y, k, tone, icon, icons, toy, up, right, flow, mono = false, children }) {
+  const s = useContext(UI) * 0.8; // a mark is never bigger than the words of the screen it sits on
   const [line, soft, ink] = hues[tone];
   return (
-    <span style={{ ...(flow ? {} : { position: 'absolute', left: x, top: y, transform: `translate(-50%, ${up ? '-100%' : '0'}) scale(${1 / k})`, transformOrigin: up ? '50% 100%' : '50% 0' }),
+    <span style={{ ...(flow ? {} : right ? { position: 'absolute', left: x, top: y, transform: `translate(${right === 'left' ? '-100%' : '0'}, -50%) scale(${1 / k})`, transformOrigin: right === 'left' ? '100% 50%' : '0 50%' } : { position: 'absolute', left: x, top: y, transform: `translate(-50%, ${up ? '-100%' : '0'}) scale(${1 / k})`, transformOrigin: up ? '50% 100%' : '50% 0' }),
       display: 'flex', alignItems: 'center', gap: 5 * s, height: PILL.h * s, padding: `0 ${7 * s}px 0 ${(icon ? 5 : 7) * s}px`, borderRadius: 7 * s, whiteSpace: 'nowrap',
-      font: mono ? `600 ${11 * s}px/1 var(--pl-mono)` : `600 ${12 * s}px/1 var(--pl-sans)`, fontVariantNumeric: 'tabular-nums', color: ink, background: soft, boxShadow: `0 0 0 1px var(--pl-halo), inset 0 0 0 1px color-mix(in oklab, ${line} 30%, transparent)`,
+      font: mono ? `600 ${11 * s}px/1 var(--pl-mono)` : `600 ${12 * s}px/1 var(--pl-sans)`, fontVariantNumeric: 'tabular-nums', color: '#fff', background: line, boxShadow: '0 0 0 1px var(--pl-halo), 0 1px 2px rgb(0 0 0 / 0.18)', // plumber's pill: the hue, solid, lettered in white
       transition: 'background-color 450ms ease, color 450ms ease', animation: 'film-tag 520ms var(--pl-spring-pop) both' }}>
-      {toy ? <span style={{ display: 'grid', width: 14 * s, height: 14 * s, flex: 'none' }} dangerouslySetInnerHTML={{ __html: toyOf(toy).replace('<svg ', '<svg width="100%" height="100%" ') }} /> : null}
+      {toy ? <span style={{ display: 'grid', width: 13 * s, height: 13 * s, flex: 'none', filter: 'brightness(0) invert(1)' }} dangerouslySetInnerHTML={{ __html: toyOf(toy).replace('<svg ', '<svg width="100%" height="100%" ') }} /> : null}
       {icon && icons?.[icon] ? <span style={{ display: 'grid', width: 12 * s, height: 12 * s, color: line }} dangerouslySetInnerHTML={{ __html: icons[icon] }} /> : null}
       {children}
     </span>
@@ -177,7 +178,7 @@ function Pill({ x, y, k, tone, icon, icons, toy, up, flow, mono = false, childre
 // the class that fixes it arrives in mint; under each, the property it sets. The sauce, said as code.
 function Change({ code, fixed, done, inline = false }) {
   const s = useContext(UI);
-  const chip = (tone) => ({ padding: `${2 * s}px ${7 * s}px`, borderRadius: 5 * s, font: 'var(--pl-card-code)', fontSize: 13 * s, color: `var(--pl-${tone})`, background: `color-mix(in oklab, var(--pl-${tone}) ${tone === 'off' ? 9 : 11}%, transparent)` });
+  const chip = (t) => { const tone = t === 'off' ? 'pink' : t; return ({ padding: `${2 * s}px ${7 * s}px`, borderRadius: 5 * s, font: 'var(--pl-card-code)', fontSize: 13 * s, color: `var(--pl-${tone})`, background: `color-mix(in oklab, var(--pl-${tone}) ${tone === 'pink' ? 9 : 11}%, transparent)` }); }; // "wrong" is pink in a film
   const cap = { font: 'var(--pl-card-meta)', fontSize: 11.5 * s, color: 'var(--pl-ink-2)', textAlign: 'center' };
   // a long fault and fix (a gradient) don't fit side by side in the film's column: the fix opens under the fault instead
   const stack = inline && code.fault.cls.length + code.fix.cls.length > 40;
@@ -457,7 +458,7 @@ export function Film({ Example, names, onSaid, chrome = true, start = true, onDo
   const tagTone = tone === 'on' ? 'on' : 'off';
   return (
     <UI.Provider value={ui}>
-    <div ref={box} className="pl-light relative flex flex-col items-center gap-10">
+    <div ref={box} className="pl-light relative flex flex-col items-center gap-10" style={{ '--pl-off': 'var(--pl-pink)', '--pl-off-bg': 'var(--pl-pink-soft)' }}>
       <style>{'@keyframes film-pop { from { opacity: 0; scale: 0.92 } to { opacity: 1; scale: 1 } } @keyframes film-ring { from { opacity: 0; scale: 1.25 } to { opacity: 1; scale: 1 } } @keyframes film-tag { from { opacity: 0; scale: 0.6; translate: 0 6px } to { opacity: 1; scale: 1; translate: 0 0 } }'}</style>
       <div aria-hidden="true" dangerouslySetInnerHTML={{ __html: TOY_DEFS }} />
       <div className="relative" style={frame ? { overflow: 'clip', borderRadius: frame.radius, boxShadow: frame.shadow, isolation: 'isolate' } : undefined}>
@@ -485,11 +486,12 @@ export function Film({ Example, names, onSaid, chrome = true, start = true, onDo
                 {r?.pushed?.filter((p) => p.x1 - p.x0 > 0.5).map((p, i) => (
                   <span key={i}>
                     <span style={{ position: 'absolute', left: p.x0, top: p.y - 6, height: p.h + 12, width: 0, borderLeft: `${1 / k}px dashed var(--pl-sky)` }} />
-                    {p.x1 - p.x0 > 0.5 ? <span style={{ position: 'absolute', left: p.x0, top: p.y, height: p.h, width: p.x1 - p.x0, background: 'var(--pl-off-bg)', boxShadow: `inset ${-1 / k}px 0 0 var(--pl-coral)` }} /> : null}
+                    {p.x1 - p.x0 > 0.5 ? <span style={{ position: 'absolute', left: p.x0, top: p.y, height: p.h, width: p.x1 - p.x0, background: 'var(--pl-off-bg)', boxShadow: `inset ${-1 / k}px 0 0 var(--pl-pink)` }} /> : null}
                   </span>
                 ))}
                 {/* a value only where the pointer is: the size, counting, under the place */}
-                {r ? <Pill key={`s${m.lead}${tone}`} x={r.box.x + r.box.w / 2} y={r.box.y + r.box.h + (PILL.gap * ui) / k} k={k} tone={toneOf(m.lead) === 'sky' ? 'on' : toneOf(m.lead)} icon={r.size.icon} icons={icons} toy={r.size.toy} mono>{r.size.pre}<Count from={r.size.from} to={r.size.to} />{r.size.post}</Pill> : null}
+                {/* a screen can pin the value beside its place, in the place's own row (spec.read's `pin`), so it never covers a neighbour */}
+                {r ? <Pill key={`s${m.lead}${tone}`} right={r.pin ? r.pin.side ?? true : false} x={r.pin ? r.pin.x + (r.pin.side === 'left' ? -1 : 1) * (PILL.gap * ui) / k : r.box.x + r.box.w / 2} y={r.pin ? r.pin.y : r.box.y + r.box.h + (PILL.gap * ui) / k} k={k} tone={toneOf(m.lead) === 'sky' ? 'on' : toneOf(m.lead)} icon={r.size.icon} icons={icons} toy={r.size.toy} mono>{r.size.pre}<Count from={r.size.from} to={r.size.to} />{r.size.post}</Pill> : null}
                 {/* the cause, as plumber names it: its own pills, above the place */}
                 {/* side by side in one row, so they never climb onto the words above */}
                 {r && m.cause && r.tags?.length ? (

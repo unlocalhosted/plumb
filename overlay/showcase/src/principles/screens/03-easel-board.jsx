@@ -179,7 +179,7 @@ LaunchBoard.film = {
     const L = Math.min(...rows.map((r) => r.sq.x)) - 12, R = Math.max(...rows.map((r) => r.ci.x + r.ci.w / 2 + r.sq.w / 2)) + 12;
     const T = Math.min(...rows.map((r) => r.sq.y)) - 24, B = Math.max(...rows.map((r) => r.sq.y + r.sq.h)) + 14;
     const K = Math.min(6, (W * 0.84) / (R - L), (H * 0.84) / (B - T)), u = (v) => +(v / K).toFixed(3); // drawn at the dive's zoom
-    const hatch = `<defs><pattern id="ov-h" width="${u(5)}" height="${u(5)}" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="${u(1.6)}" height="${u(5)}" fill="#e0533f"/></pattern></defs>`;
+    const hatch = `<defs><pattern id="ov-h" width="${u(5)}" height="${u(5)}" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="${u(1.6)}" height="${u(5)}" fill="#f24a9f"/></pattern></defs>`;
     const holes = rows.map((r) => { const x = r.sq.x - 8, y = r.sq.y - 7, w = r.ci.x + r.ci.w / 2 + r.sq.w / 2 + 8 - x, h = r.sq.h + 14; return `M${x} ${y}h${w}v${h}h${-w}Z`; }).join('');
     const shade = `<path fill-rule="evenodd" d="M-2000 -2000h${W + 4000}v${H + 4000}h${-(W + 4000)}Z ${holes}" fill="#f7f6f3" fill-opacity=".82"/>`;
     const pair = ({ sq, ci, fill }, i) => {
@@ -190,8 +190,8 @@ LaunchBoard.film = {
       return side === 'fixed'
         // the overshoot zones past each guide, the circle reaching into them, and the old circle as a dashed coral ghost
         ? `<rect x="${left}" y="${cy - r}" width="${right - left}" height="${top - (cy - r)}" fill="#1fa774" fill-opacity=".35"/><rect x="${left}" y="${bot}" width="${right - left}" height="${cy + r - bot}" fill="#1fa774" fill-opacity=".35"/>${guides}`
-          + `<path d="${ring(r)}" fill="none" stroke="#1fa774" stroke-width="${u(2.5)}"/><path d="${ring(r0)}" fill="none" stroke="#f3a091" stroke-width="${u(1.5)}" stroke-dasharray="${u(4)} ${u(3)}"/>`
-        : `${guides}<path fill-rule="evenodd" d="M${box.x} ${box.y}h${box.w}v${box.h}h${-box.w}Z ${ring(r)}" fill="url(#ov-h)"/><path d="${ring(r)}" fill="none" stroke="#e0533f" stroke-width="${u(2.5)}"/>`;
+          + `<path d="${ring(r)}" fill="none" stroke="#1fa774" stroke-width="${u(2.5)}"/><path d="${ring(r0)}" fill="none" stroke="#f9a3cf" stroke-width="${u(1.5)}" stroke-dasharray="${u(4)} ${u(3)}"/>`
+        : `${guides}<path fill-rule="evenodd" d="M${box.x} ${box.y}h${box.w}v${box.h}h${-box.w}Z ${ring(r)}" fill="url(#ov-h)"/><path d="${ring(r)}" fill="none" stroke="#f24a9f" stroke-width="${u(2.5)}"/>`;
     };
     const first = rows[0], fcx = first.ci.x + first.ci.w / 2;
     const pills = side === 'fixed'

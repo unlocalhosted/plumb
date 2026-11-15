@@ -213,7 +213,9 @@ Forecast.film = {
   read(root, el) {
     const oklch = /in oklch/.test(getComputedStyle(el).backgroundImage);
     const kept = Math.min(...Array.from({ length: 21 }, (_, i) => chromaOf(mixAt(i / 20, oklch).lab))) / ENDS;
-    return { off: kept < 0.5 ? 1 : 0, size: { toy: 'fill', pre: '', from: 100, to: Math.round(Math.min(1, kept) * 100), post: '% colour' }, tags: [{ toy: 'fill', text: oklch ? 'Stays bright' : 'Goes grey' }] };
+    // one pill, in the empty track right of the bar, in the bar's own row; the caption says "grey", so no second tag
+    const at = local(root), b = at(el), track = at(el.parentElement), left = b.x - track.x > track.x + track.w - (b.x + b.w); // the side with more empty track
+    return { off: kept < 0.5 ? 1 : 0, pin: left ? { x: b.x, y: b.y + b.h / 2, side: 'left' } : { x: b.x + b.w, y: b.y + b.h / 2 }, size: { toy: 'fill', pre: '', from: 100, to: Math.round(Math.min(1, kept) * 100), post: '%' }, tags: [] };
   },
   // one bar, close: under it, seven swatches of its colour along its length, each with how colourful it is; the grey
   // ones ringed coral. Fixed, the same swatches in OKLCH. The rest of the card dimmed
@@ -226,8 +228,8 @@ Forecast.film = {
     const swatches = Array.from({ length: N }, (_, i) => {
       const c = mixAt(i / (N - 1), oklch), x = bar.x + i * (sw + gap), score = Math.round(Math.min(1, chromaOf(c.lab) / ENDS) * 100), dull = score < 50, d = u(3.5);
       return `<rect x="${x}" y="${top}" width="${sw}" height="${sw}" rx="${sw * 0.28}" fill="${hexOf(c.rgb)}" style="transition:fill 600ms ease ${i * 60}ms"/>`
-        + (dull ? `<rect x="${x - d}" y="${top - d}" width="${sw + 2 * d}" height="${sw + 2 * d}" rx="${sw * 0.28 + d}" fill="none" stroke="#e0533f" stroke-width="${u(1.5)}" stroke-dasharray="${u(4)} ${u(3)}"/>` : '')
-        + `<text x="${x + sw / 2}" y="${top + sw + sw * 0.5}" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-weight="600" font-size="${u(11)}" fill="${dull ? '#b4321f' : '#6b6b6b'}">${score}</text>`;
+        + (dull ? `<rect x="${x - d}" y="${top - d}" width="${sw + 2 * d}" height="${sw + 2 * d}" rx="${sw * 0.28 + d}" fill="none" stroke="#f24a9f" stroke-width="${u(1.5)}" stroke-dasharray="${u(4)} ${u(3)}"/>` : '')
+        + `<text x="${x + sw / 2}" y="${top + sw + sw * 0.5}" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-weight="600" font-size="${u(11)}" fill="${dull ? '#c2186f' : '#6b6b6b'}">${score}</text>`;
     }).join('');
     const pills = [{ x: bar.x + bar.w / 2, y: bar.y - u(6), tone: oklch ? 'on' : 'off', toy: 'fill', text: oklch ? 'Stays bright' : 'Goes grey' }];
     return { focus: { x: (L + R) / 2, y: (T + B) / 2 }, k: K, svg: `${shade}${swatches}`, pills };

@@ -76,7 +76,7 @@ function Line({ text, fixed }) {
     const marked = /^\*.+\*[.,]?$/.test(w), bare = w.replace(/\*/g, ''), [, core, tail] = bare.match(/^(.*?)([.,]?)$/);
     return (
       <span key={i} style={{ display: 'inline-block', whiteSpace: 'pre', animation: `film-word ${FOCUS}ms cubic-bezier(.2, .7, .2, 1) ${i * WORD}ms both` }}>
-        {marked ? <span style={{ backgroundImage: `linear-gradient(var(--pl-${fixed ? 'mint' : 'coral'}), var(--pl-${fixed ? 'mint' : 'coral'}))`, backgroundRepeat: 'no-repeat', backgroundPosition: '0 92%',
+        {marked ? <span style={{ backgroundImage: `linear-gradient(var(--pl-${fixed ? 'mint' : 'pink'}), var(--pl-${fixed ? 'mint' : 'pink'}))`, backgroundRepeat: 'no-repeat', backgroundPosition: '0 92%',
           backgroundSize: '0% 3px', animation: `film-ink 420ms cubic-bezier(.6, 0, .2, 1) ${words.length * WORD + FOCUS}ms both` }}>{core}</span> : core}{tail}{i < words.length - 1 ? ' ' : ''}
       </span>
     );
