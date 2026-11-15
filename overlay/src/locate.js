@@ -85,7 +85,11 @@ function creationFrame(fiber) {
 }
 async function readCreationFrame(fiber) {
   const stack = String(stackOf(fiber)?.stack ?? '');
-  if (!stack || stack.includes('UnknownOwner')) return null;
+  if (!stack) return null;
+  // React (19, in development) records where at most 10,000 elements were made per burst of rendering, and gives the
+  // rest a stand-in: UnknownOwner. That is "React did not record it", not "made outside your files": read as the
+  // latter, the walk below stepped past it to a wider place (algorecall's 14,000-element problems page).
+  if (stack.includes('UnknownOwner')) return { failure: { reason: 'react-stack-limit', detail: { step: 'react-did-not-record', limit: 10000 } } };
   for (const line of stack.split('\n').slice(1)) {
     const m = /\(?((?:https?|file|webpack(?:-internal)?):\/\/[^\s]+):(\d+):(\d+)\)?\s*$/.exec(line);
     if (!m || runtime(m[1])) continue;

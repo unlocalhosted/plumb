@@ -639,6 +639,35 @@ test('a part a library draws is named where your code uses it, even when that co
   assert.deepEqual(by.get('a11y/tabindex-redundant'), [lineOf(DOCK_LIB, 'lib-usage')], JSON.stringify(ofPacks(by)));
 });
 
+// React records where at most 10,000 elements were made in one burst and marks the rest UnknownOwner. On algorecall's
+// problems page the dock was drawn past that, and its button was named at the line that uses the dock. Past the limit,
+// a part a library draws is said as not placed, with the reason, never as the place around it.
+const CROWDED_DOCK = `import { Dock } from './Dock.jsx';
+const MANY = Array.from({ length: 10200 }, (_, i) => i);
+export function App() {
+  return (
+    <main>
+      <h1>Many</h1>
+      <div style={{ height: 40, overflow: 'hidden' }}>{MANY.map((i) => <span key={i}>.</span>)}</div>
+      <Dock />
+    </main>
+  );
+}
+`;
+test('past React\u2019s 10,000 recorded elements, a part a library draws is not placed at a wider line', { timeout: 240000 }, async (t) => {
+  if (!await built()) return t.skip('Run npm run build first.');
+  const { url } = await fixture(t, CROWDED_DOCK, { files: { 'src/Dock.jsx': DOCK_LIB, 'node_modules/fakelib/package.json': JSON.stringify({ name: 'fakelib', version: '1.0.0', type: 'module', main: 'index.js' }), 'node_modules/fakelib/index.js': FAKELIB } });
+  const browser = await chromium.launch({ headless: true, executablePath: process.env.PLUMBER_CHROMIUM || undefined });
+  t.after(() => browser.close());
+  const page = await browser.newPage();
+  await page.goto(url);
+  await page.waitForFunction(() => window.__plumb && document.querySelector('#lib-usage'));
+  await page.evaluate(() => window.__plumb.ready());
+  const at = await page.evaluate(() => window.__plumb.locate(document.querySelector('#lib-usage'), { explain: true }));
+  assert.equal(at?.file ?? at?.location?.file ?? null, null, JSON.stringify(at));
+  assert.equal(at.reason, 'react-stack-limit', JSON.stringify(at));
+});
+
 test('a page that is still loading is not told it has no main and no h1', { timeout: 240000 }, async (t) => {
   if (!await built()) return t.skip('Run npm run build first.');
   assert.deepEqual(ofPacks(await said(t, LOADING)), []);
