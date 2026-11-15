@@ -91,9 +91,15 @@ const FIX_CSS_BASE = TEXT_EDITOR_CSS + ELEMENT_CARD_CSS + `
   .tb.sm .top { padding: 0 11px; font-size: 12.5px; border-radius: 11px; }
   /* the choice, on the element: a small card beside it, the options and the soft buttons */
   /* it is a .fx (the card's inner rules apply as they are), undocked: placed beside the element, a card, not glass */
-  .fx.fx-on { left: 0; top: 0; bottom: auto; translate: none; width: auto; height: auto; max-width: min(460px, calc(100vw - 24px)); z-index: 3; overflow: visible;
-    display: flex; flex-direction: column; gap: 10px; padding: 10px 12px; background: var(--pl-paper); -webkit-backdrop-filter: none; backdrop-filter: none;
-    border-radius: var(--pl-radius-card); box-shadow: var(--pl-shadow-card); transition: none; animation: pl-pop 260ms var(--pl-spring-pop) both; }
+  .fx.fx-on { left: 0; top: 0; bottom: auto; translate: none; width: auto; height: auto; max-width: min(560px, calc(100vw - 24px)); z-index: 3; overflow: visible;
+    display: flex; flex-flow: row wrap; align-items: center; gap: 6px; padding: 5px; background: var(--pl-paper); -webkit-backdrop-filter: none; backdrop-filter: none;
+    border-radius: 16px; box-shadow: var(--pl-shadow-tag); transition: none; animation: pl-pop 220ms var(--pl-spring-pop) both; }
+  .fx.fx-on .chips { display: inline-flex; gap: 3px; padding: 0 2px; }
+  .fx.fx-on .chip { height: 26px; min-width: 34px; padding: 0 8px; border-radius: 8px; font: 500 12px/26px var(--pl-mono); color: var(--pl-ink-2); background: var(--pl-paper-2); }
+  .fx.fx-on .chip:hover { color: var(--pl-ink); }
+  .fx.fx-on .chip[aria-pressed="true"] { color: var(--pl-sky-ink); background: var(--pl-sky-soft); box-shadow: inset 0 0 0 1.5px var(--pl-instrument); }
+  .fx.fx-on .acts { display: inline-flex; align-items: center; gap: 6px; margin: 0; padding: 0; border: 0; }
+  .fx.fx-on .say, .fx.fx-on .note, .fx.fx-on .hint { flex-basis: 100%; padding: 2px 6px; }
   .fx.fx-on[hidden] { display: none; }
   .fx-on .acts { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
   .fx-on .say, .fx-on .note { color: var(--pl-ink-2); }
@@ -1029,7 +1035,10 @@ export class FixPanel {
         .replace(/<button class="ghost keep">([\s\S]*?) <kbd>K<\/kbd><\/button>/, (m, l) => button(l, { cls: 'sm quiet keep', key: 'K' }))
         .replace(/<button class="ghost keep-no">([\s\S]*?) <kbd>esc<\/kbd><\/button>/, (m, l) => button(l, { cls: 'sm quiet keep-no', key: 'Esc' }))
         .replace(/<button class="ghost skip">([\s\S]*?)<\/button>/, (m, l) => button(l.replace(/<kbd>.*?<\/kbd>/, '').trim(), { cls: 'sm quiet skip', key: '→' }));
-      this.#onBody = `${failed}${unseen}${reach}${middle}${soft}`;
+      // the choice is one row on the element (the comp's): the values as small chips, then Use, Keep, Skip. A field
+      // (naming a new token, a reason to keep) stays as it is
+      const chips = v?.ready ? `<span class="chips">${v.options.map((o, i) => `<button class="sp chip" data-i="${i}" aria-pressed="${v.at === i}" title="${esc(o.cls ?? o.label ?? '')}">${esc(unitOf(o.n) ?? o.label ?? '')}</button>`).join('')}</span>` : middle;
+      this.#onBody = `${failed}${unseen}${reach}${chips}${soft}`;
       this.#onAt = g.members.find((m) => shown(m.el))?.el ?? null;
     }
     // the last fix written stays said above, with its Undo, until the next one is written

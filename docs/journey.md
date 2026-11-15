@@ -1632,7 +1632,13 @@ field is empty). The table of five writes, before and after. The Next table: eig
   card's .say and .nav rules reached into the new line (own class names now). Not yet: the design's per-property control
   on the element (the options are still the old specimens), the clean-up job in the bar, the bar at rest, and the
   choice can still sit partly under the X-ray card when the element is near the top of the screen.
-- **Media hooks:** docs/qa/fixbar-in-hand-corners.jpg and docs/qa/fixbar-in-hand-type.jpg (the new bar with a place in hand), docs/qa/roast-invite.png (the invitation beside the dock), docs/qa/roast-proof-avatars.jpg, docs/qa/roast-proof-height.png, docs/qa/roast-proof-line.png (the proof lines for corners, height and alignment), docs/qa/roast-ghost-keys.jpg (the ghost of the fix and the keycaps), docs/qa/roast-settings-cousin.jpg (a cousin note on the settings page), docs/qa/roast-icon-note.jpg (the icon note), docs/qa/roast-first-note.jpg (the roast's first note on the messy page), docs/qa/guides-first-look-issues.jpg (guides on the messy page), docs/qa/guides-held-issues.jpg
+- **Two things on screen, not four** (owner: "why is the toolbar floating … it looks broken and now we have like 4
+  … different things floating 1 tool bar, 1 this status bar, 1 element popover and 1 small tool tip"). My mistake: I
+  added the choice as a card on top of what was already there, so a fix in hand showed the bar, my choice card, the
+  X-ray card and the proof's size pill. The design shows two: the bar, and one small row on the element. Now the X-ray
+  card stays closed while a fix is in hand; the choice is one compact row (the values as small chips, then Use, Keep,
+  Skip); the proof keeps its lines and drops its pill (the size is in the bar's detail).
+- **Media hooks:** docs/qa/fixbar-two-things.jpg (the bar and the row on the element, nothing else), docs/qa/fixbar-in-hand-corners.jpg and docs/qa/fixbar-in-hand-type.jpg (the new bar with a place in hand), docs/qa/roast-invite.png (the invitation beside the dock), docs/qa/roast-proof-avatars.jpg, docs/qa/roast-proof-height.png, docs/qa/roast-proof-line.png (the proof lines for corners, height and alignment), docs/qa/roast-ghost-keys.jpg (the ghost of the fix and the keycaps), docs/qa/roast-settings-cousin.jpg (a cousin note on the settings page), docs/qa/roast-icon-note.jpg (the icon note), docs/qa/roast-first-note.jpg (the roast's first note on the messy page), docs/qa/guides-first-look-issues.jpg (guides on the messy page), docs/qa/guides-held-issues.jpg
   (the three strays held by their neighbours), docs/qa/guides-plumb-lines-issues.jpg
   (the plumb lines and the one stray); a screen recording of the drop-and-swing arrival would show the toy best; the three source screenshots in
   docs/references-media/; a clean page beside a messy one with the guide counts would make the point in one frame.

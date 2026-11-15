@@ -70,7 +70,6 @@ export function proofSvg(el, proof) {
     const w = firstWords(el) ?? proof.words, ex = w.left - GUTTER;
     breaks.push(shade(Math.min(ex, x), w.top - 4, Math.abs(ex - x), w.bottom - w.top + 8));
     breaks.push(seg(ex, w.top - 4, ex, w.bottom + 4, CORAL));
-    breaks.push(pill(r, (r.top + r.bottom) / 2, `${Math.round(Math.abs(proof.by) * 10) / 10}px ${proof.by > 0 ? 'right' : 'left'}`, taken));
   } else if (proof.kind === 'height') {
     const top = median(os.map((b) => b.top)), bottom = median(os.map((b) => b.bottom)), all = [r, ...os];
     const x0 = Math.min(...all.map((b) => b.left)) - OVER, x1 = Math.max(...all.map((b) => b.right)) + OVER;
@@ -78,13 +77,11 @@ export function proofSvg(el, proof) {
     breaks.push(shade(r.left, Math.min(r.top, top), r.width, Math.abs(r.top - top)), shade(r.left, Math.min(r.bottom, bottom), r.width, Math.abs(r.bottom - bottom)));
     breaks.push(seg(r.left, r.top, r.right, r.top, CORAL), seg(r.left, r.bottom, r.right, r.bottom, CORAL));
     const was = proof.rect?.height ?? r.height;
-    breaks.push(pill(r, (r.top + r.bottom) / 2, `${was > proof.want ? '+' : '−'}${Math.round(Math.abs(was - proof.want) * 10) / 10}px`, taken));
   } else if (proof.kind === 'corners') {
     // the corners as found, not as previewed: Blueprint may already be showing the fix on the element
     const word = (rad, h) => (rad >= h / 2 - 0.5 ? 'full' : `${Math.round(rad)}px`);
     for (const o of others) lines.push(corners(o.getBoundingClientRect(), radiusOf(o), SKY));
     breaks.push(corners(r, proof.mineR ?? radiusOf(el), CORAL));
-    breaks.push(pill(r, (r.top + r.bottom) / 2, `${word(proof.mineR ?? radiusOf(el), r.height)} → ${word(proof.wantR ?? 0, proof.wantH ?? r.height)}`, taken));
   } else if (proof.kind === 'icon') {
     const across = (row, y) => { const i = iconOf(row)?.getBoundingClientRect(), t = firstWords(row); return i && t ? [i.left - 6, y, Math.max(i.right + 2, t.left - 3), y] : null; };
     for (const o of others) { const i = iconOf(o)?.getBoundingClientRect(), a = i && across(o, (i.top + i.bottom) / 2); if (a) lines.push(seg(...a)); }
@@ -94,7 +91,6 @@ export function proofSvg(el, proof) {
       if (a) lines.push(seg(...a));
       breaks.push(shade(b.left, Math.min(now, want), b.width, Math.abs(proof.by)));
       if (a) breaks.push(seg(a[0], now, a[2], now, CORAL));
-      breaks.push(pill(r, now, `${Math.round(Math.abs(proof.by) * 10) / 10}px ${proof.by > 0 ? 'low' : 'high'}`, taken));
     }
   }
   return lines.join('') + breaks.join('');

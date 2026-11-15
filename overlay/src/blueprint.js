@@ -66,7 +66,7 @@ export class Blueprint {
   #host; #layer; #marks; #reader; #glass; #onState; #onProgress;
   #state = 'off';
   #timer = 0;
-  #craft; #items = []; #selection; #changes;
+  #craft; #items = []; #selection; #changes; #holding = false;
   #scope = null; // an Alt+click: the element read, with what's inside it; null is the whole page (Alt+B)
 
   // host: the overlay element (readMarks, pin, pinnedElement, occluders); root: its shadow root;
@@ -82,7 +82,7 @@ export class Blueprint {
     root.appendChild(this.#layer);
     this.#glass = new Glass(root, host);
     this.#changes = new Changes(root, { onAccept: (batch) => this.#apply(batch), onSelect: (el) => this.#selection.select(el, this.#itemOf(el)), onShow: () => queueMicrotask(() => this.#focus()), onDiscard: (el) => this.#selection.discarded(el) });
-    this.#selection = new Selection(root, { onFrame: () => this.#marks.invalidate(), tokenOf: (family, n) => this.#craft.theme.nearest(family, n, 0.5)?.short ?? null, health: () => host.health, onChange: (el) => { this.#marks.select(el); this.#focus(); onSelect?.(el); },
+    this.#selection = new Selection(root, { onFrame: () => this.#marks.invalidate(), tokenOf: (family, n) => this.#craft.theme.nearest(family, n, 0.5)?.short ?? null, health: () => host.health, onChange: (el) => { this.#marks.select(el); this.#focus(); onSelect?.(this.#holding ? null : el); },
       onDraw: () => this.#fix?.render(), changes: this.#changes, read: (el) => host.read(el), site: (el) => this.#siteOf(el), steps: (family) => this.#craft.theme.scale(family).filter((x) => Number.isFinite(x.px)).map((x) => ({ token: x.short, n: x.px })).sort((a, b) => a.n - b.n) });
     this.#glass.onPress = (e) => this.#selection.press(e);
     this.#glass.onClick = this.#click;
@@ -90,8 +90,8 @@ export class Blueprint {
     // the fix panel drives the selection without drawing it: a cause in hand is its first place selected with every
     // other place as its group; the panel reads the plan, picks, takes, and applies through Changes' guarded writes
     this.#fix = new FixPanel(root, {
-      hold: (g, lead) => { const on = g.members.filter((m) => m.el), first = on.find((m) => m.el === lead) ?? on[0], rest = on.filter((m) => m !== first); this.#marks.prove(first?.el ?? null, first?.mark ?? null); if (!first) return; this.#selection.select(first.el, this.#itemOf(first.el), { key: first.mark.key, rule: first.mark.rule, mark: first.mark, group: rest.filter((m) => m.el !== first.el).map((m) => ({ el: m.el, item: this.#itemOf(m.el), key: m.mark.key })) }); },
-      release: () => { this.#marks.prove(null, null); this.#selection.clear(); },
+      hold: (g, lead) => { this.#holding = true; const on = g.members.filter((m) => m.el), first = on.find((m) => m.el === lead) ?? on[0], rest = on.filter((m) => m !== first); this.#marks.prove(first?.el ?? null, first?.mark ?? null); if (!first) return; this.#selection.select(first.el, this.#itemOf(first.el), { key: first.mark.key, rule: first.mark.rule, mark: first.mark, group: rest.filter((m) => m.el !== first.el).map((m) => ({ el: m.el, item: this.#itemOf(m.el), key: m.mark.key })) }); },
+      release: () => { this.#holding = false; this.#marks.prove(null, null); this.#selection.clear(); },
       // the bar's tools and setup notice are the widget's (docs/design/one-bar.md)
       tool: (name) => this.#host.tool?.(name), setupLeft: () => this.#host.setupLeft?.() ?? 0, openSetup: () => this.#host.openSetup?.(),
       // the last write, still undoable when Blueprint closes: History's toast keeps its Undo once the bar is gone
