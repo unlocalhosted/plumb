@@ -326,5 +326,5 @@ one-bar and new-token tests are fixed and pass there on their own; the steady li
 - The new messy-page test was never run against the old code to see it fail there.
 - New behaviour without a test: a theme whose radii are named by size.
 - A cached run on a slow machine (about 350 ms on the test server) can flash the progress bar: the delay is 300 ms. The test no longer depends on machine speed (2026-11-15); the product behaviour is unchanged.
-- Big pages never count as read through (2026-11-15, algorecall /problems, /curriculum, /tree): the same element count at a 90 s and a 4 min limit. On /tree every element is ready and `settled` flips back; guess, not proven: styles changed every frame (framer-motion) re-queue elements. On /problems a plain browser read 4 of 14,473 in 40 s while the command reached 8,228. Findings are still reported.
+- On algorecall's problems page (14,473 elements) one button's finding is named at the line that uses the dock in one run and inside the dock in the next (2026-11-15). Not looked at.
 - A page-wide finding on algorecall's showcase names its sticky header (line 58), not the root `<div>` on line 57: the root is probably not among the judged elements while its children animate in. Right file; not checked further.

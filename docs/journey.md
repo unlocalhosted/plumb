@@ -1477,6 +1477,19 @@ field is empty). The table of five writes, before and after. The Next table: eig
 - **Found, not fixed:** three big pages (problems, curriculum, tree) never count as read through, at 90 s or 4 min alike. On the tree page every element is read and the reader's "settled" still flips back; my guess, not proven, is styles changed every frame by an animation library re-queue elements. Findings are still reported; the "read in full" mark is missing. In the backlog.
 - **Media hooks:** the run's list of 19, with the two wrong ones beside their fixed lines.
 
+## Big pages read through (2026-11-15)
+- **The itch:** three of algorecall's pages (problems 14,473 elements, curriculum, tree) never counted as read through: the same count at a 90 s limit and at 4 min. The owner: "Yes, look into it".
+- **How we found it:** counters added for a run to the copy on the test server (the reader's queue and requests in flight, the engine's judging queue, the page's fingerprint, each element that changed it), sampled every few seconds. Four causes, one under the other; each fix uncovered the next.
+- **The system behind it:**
+  1. *The page's fingerprint* (when the checks about the whole page are judged again) included every element's inline style. Something on the page rewrites styles all the time, so every hand-over put every element back in the queue (1,122 on the tree page) and the queue was replaced before it drained. Now it is the page's shape: which elements, and their classes.
+  2. *An element's own fingerprint* included motion: 56 labels in the tree page's animated drawing have their `transform` rewritten every frame by the animation library, so each was queued again forever. Now transform, translate, rotate, scale, opacity, filter, will-change and custom properties are left out; what a check reads in a style (padding, a colour) still counts.
+  3. *The command judged a page before its route had loaded*. Pages settling properly showed it: `/login` was judged as its loading screen (14 elements of 118) while the dev server compiled the route on its first visit. It now waits for the network to go quiet first (up to 30 s).
+  4. *A queue that nothing pumped*: six elements whose classes their caller passes in were asked again while 128 readings were in flight, each in a little line of its own that only its own readings moved. The reader now has one line, pumped whenever any reading lands.
+- **What we tried that was wrong:** my first guess ("styles changed every frame re-queue elements in the reader") named the right cause in the wrong place: the reader never watches style. My first version of the one line skipped every element handed to it (they arrive marked "reading"); the crowded-page test caught it.
+- **The proof:** on algorecall, all 14 pages read through: curriculum and tree after (1) and (2), login back to 118 after (3), problems in 65–107 s after (4), twice. Tests: a box and sixty labels moved by script every frame (fails on the old code at the 45 s limit, passes in 4 s); a route whose code arrives 3 s late (old code judged its fallback, no finding); a crowded page with a pass-through part (guards the line; it does not force the race in (4), which only the app showed). 115 engine and blueprint tests pass on the test server.
+- **Seen, not fixed:** on the problems page one button's finding is named at the line that uses the dock in one run and inside the dock in the next.
+- **Media hooks:** the counter log for the tree page: the queue at 1,122, then 15, then 0.
+
 ## Open gaps
 - The site's top bar doesn't fit a phone (390px): it widens the page to about 500px. Needs a compact bar.
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
@@ -2565,6 +2578,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   Nothing finds a new one when it is written.
 
 ## Shipped · 2026-W46
+- Big pages finish being read: a page with animations, a route still loading, or 14,000 elements is now judged through to the end (algorecall's problems, curriculum and tree never were) ([entry](#big-pages-read-through-2026-11-15)).
 - plumber's checks were run on algorecall's 14 pages: 17 of 19 findings true; a page-wide finding now names the page, not whatever was read first, and a row of capital labels is no longer read as a sentence ([entry](#every-check-on-algorecall-through-the-real-command-2026-11-15)).
 - The X-ray card no longer sits on the fix panel's Undo after a write lands: it moves when the panel comes back ([entry](#two-flaky-tests-one-was-the-machine-one-was-a-real-bug-2026-11-15)).
 - The 152 checks from Chrome's guides are on main, with their tests, after a full suite run; a blocking-script false hit that every Next app would have seen is fixed on the way ([entry](#the-checks-from-chromes-guides-go-to-main-2026-11-14)).
