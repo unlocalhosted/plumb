@@ -1498,6 +1498,7 @@ field is empty). The table of five writes, before and after. The Next table: eig
 - **What we chose and why:** a failed read is tried once more and not kept. `UnknownOwner` is "React did not record it", a reason of its own, never "not yours". A component in your files that still cannot be read is said as not placed (the overlay counts it among the elements it can't check), never as the place around it. A library's own unreadable component is still stepped past, as before. React's limit is left alone: it keeps big pages fast in development. My first version only refused; that made a one-off hiccup drop the finding for the whole run, so the retry went in.
 - **The proof:** tests: a library button in a Dock with the first read of the Dock failing (old: the App's line, new: the Dock's); 10,200 elements then the Dock (old: `src/entry.jsx`, where the App is mounted; new: not placed, `react-stack-limit`). On algorecall, five runs: `AdminFeedbackDock.tsx:459` three times, not placed twice, never a wrong line (before: 3 of 8 runs named `App.tsx:190`). 162 lookup, engine and Next tests pass on the test server.
 - **Left:** when React did not record a part, its findings are gone from that run (two on algorecall's problems page). An honest gap, not a fix.
+- **Full suite, on the test server:** 1,098 passed, 0 failed. Main moved forward to the fix (local, not pushed).
 - **Media hooks:** the walk log: `MotionDOMComponent:none: at UnknownOwner`, then `AdminFeedbackDock:ok:App.tsx:190`.
 
 ## Open gaps
