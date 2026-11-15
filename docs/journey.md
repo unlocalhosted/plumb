@@ -1598,6 +1598,14 @@ field is empty). The table of five writes, before and after. The Next table: eig
   plumber within the wait and were not read. One real flaw it showed: the bar was drawn light on algorecall's dark
   page, because its ground is an oklch colour on the body, which the scheme reader did not parse; it now reads the
   ground under the bar, up through its parents, and reads oklch and oklab by their lightness.
+- **Every crafting-ui page** (owner: "try it on crafting ui pages"). 51 pages read at 1280px: the 22 fixed pages and up
+  to four of each kind of entry page. 44 clean; the two practice pages gave their 7 planted notes; 5 real pages gave
+  notes, all false, from three gaps, all fixed: a film player's Play button, 40px between two 32px ones, is a size
+  hierarchy players use on purpose (height is now judged only among buttons with words on them; icon-only controls
+  size up for emphasis); a scrolling score track that is a button measured 14,700px tall (height and corners now only
+  for control-sized things); and screen-reader-only text ("Not yet.", Tailwind's sr-only, clipped to 1px) was read as
+  a label 1px off its line (text hidden from sight is no longer read). After: the real pages 0, the practice pages 7.
+  That one only showed at 1280px wide: the sweeps now need more than one width.
 - **Media hooks:** docs/qa/roast-invite.png (the invitation beside the dock), docs/qa/roast-proof-avatars.jpg, docs/qa/roast-proof-height.png, docs/qa/roast-proof-line.png (the proof lines for corners, height and alignment), docs/qa/roast-ghost-keys.jpg (the ghost of the fix and the keycaps), docs/qa/roast-settings-cousin.jpg (a cousin note on the settings page), docs/qa/roast-icon-note.jpg (the icon note), docs/qa/roast-first-note.jpg (the roast's first note on the messy page), docs/qa/guides-first-look-issues.jpg (guides on the messy page), docs/qa/guides-held-issues.jpg
   (the three strays held by their neighbours), docs/qa/guides-plumb-lines-issues.jpg
   (the plumb lines and the one stray); a screen recording of the drop-and-swing arrival would show the toy best; the three source screenshots in

@@ -12,7 +12,8 @@
  *  agree    the same judgement for everything else a critic names: siblings (the rows of one menu, the buttons of
  *           one toolbar) should agree. Per property, against the value most of them share (60% or more): where an
  *           icon sits beside its label (1px and up), a boxed sibling's height (2px and up), its corners (square,
- *           a radius, fully rounded), heights and corners only for controls and one-line boxed items (a list
+ *           a radius, fully rounded), heights and corners only for control-sized things, controls and one-line boxed
+ *           items; heights only among buttons with words (icon-only controls size up on purpose: a play button) (a list
  *           row with more to say is taller for a reason). Only things built alike (the same children, in order) are
  *           siblings. Line notes are about content, never a box's edge: a fill may bleed past the line on purpose
  *           (craft rule #1, align content, not boxes); centred words have no edge to judge. A thing a script or an
@@ -213,10 +214,15 @@ function judgeSet(g, out, rowOf) {
     }
     // controls and boxed rows: the same height and the same corners
     const oneLine = (el) => { const t = textBox(el); return !!t && t.height < el.getBoundingClientRect().height && el.querySelectorAll('p, li, div > div').length === 0; };
-    const boxes = g.filter((el) => el.matches('button, [role="button"], input, select, textarea') || (boxed(el) && oneLine(el)));
+    // control-sized only (a scrolling track that happens to be a button is not one), and for height, buttons with words
+    // on them: a row of labelled buttons shares one height, while icon-only controls use size for emphasis on purpose
+    // (the play button between previous and next)
+    const controlSized = (el) => { const b = el.getBoundingClientRect(); return b.height <= 120 && b.width <= 640; };
+    const boxes = g.filter((el) => controlSized(el) && (el.matches('button, [role="button"], input, select, textarea') || (boxed(el) && oneLine(el))));
     if (boxes.length >= MIN_GROUP && boxes.length / g.length >= MOST) {
+      const worded = boxes.every((el) => !!textBox(el));
       const hs = boxes.map((el) => el.getBoundingClientRect().height), mh = mode(hs, 1);
-      if (mh.n / boxes.length >= MOST) boxes.forEach((el, i) => {
+      if (worded && mh.n / boxes.length >= MOST) boxes.forEach((el, i) => {
         if (Math.abs(hs[i] - mh.v) < NOTICE.height) return;
         const d = Math.round(Math.abs(hs[i] - mh.v) * 10) / 10, others = boxes.filter((o, j) => Math.abs(hs[j] - mh.v) < 1);
         out.push(sibling(el, others, 'height', d, `${nameOf(el)} is ${d}px ${hs[i] > mh.v ? 'taller' : 'shorter'} than the other ${NOUN(el)}.`, TALL, { height: mh.v }));

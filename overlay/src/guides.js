@@ -67,6 +67,8 @@ export function readThings(root = document.body) {
     const inView = r.bottom > 0 && r.top < vh && r.right > 0 && r.left < vw;
     const cs = getComputedStyle(el);
     if (cs.display === 'none' || cs.visibility !== 'visible' || parseFloat(cs.opacity) === 0) return;
+    // text for screen readers only (sr-only: a 1px clipped box) is not seen, so it has no edge to line up
+    if ((r.width <= 1 || r.height <= 1) && cs.overflow !== 'visible' || /^rect\(0(px)?,?\s*0/.test(cs.clip) || /inset\(50%\)/.test(cs.clipPath)) return;
     const add = (kind, b, lines = 1) => {
       if (b.right - b.left < MIN_SIDE || b.bottom - b.top < MIN_SIDE) return;
       if (b.bottom <= 0 || b.top >= vh || b.right <= 0 || b.left >= vw) return;
