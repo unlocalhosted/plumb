@@ -327,6 +327,25 @@ From reading lintapple's source (read, not run; plumber's side only skimmed, so 
 - **Small checks:** numbers in table cells right-aligned with equal-width digits; a font file that failed to load;
   the page scrolling sideways; phrases the project bans.
 
+### The design site against the product (checked 2026-11-15)
+
+Owner: "check if something is still not aligned from design to here". Each design part (web/design/parts) against
+what the overlay draws, by the modules each imports and by eye in the browser.
+
+- **Fix bar: not in the product.** The design's one-line bar (headline, detail, "3 of 60", Clean up all) with the
+  choice made on the element is a comp; the overlay still ships the old card (the design page says so itself). The
+  on-element picker for the fix is also still to be ported.
+- **Buttons: not in the product's fix flow.** The designed soft block (kit.js `button()`: lit top, side lip, key cap,
+  press and spring) is used only by the text editor; the fix card and the bar draw their own flat `primary`/`ghost`
+  buttons and `.pl-act` pills.
+- **Soft blocks (Identity): used nowhere in the product.** soft.js is imported by no product surface.
+- **The round face: not in the product's cards** (the Type page says so itself); `--pl-round` is in the token file only.
+- **Aligned:** the X-ray inspector (xray-live.js is shared by the design page and the product), pills and the box-model
+  icons (boxmodel.js), the clean-up's chips (show.js), the fields (field.js), the burst (burst.js), the name tag (nametag.js).
+- **Not sure:** the inspector card was dark on a light page in the product (it may follow the system's dark setting,
+  not the page's ground, as the roast bar did before it read the ground); its header says "Point at a part or a
+  number" where the design shows the control row and the component's name (a plain button has no component name).
+
 ### Writes and speed
 
 
