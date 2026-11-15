@@ -472,8 +472,20 @@ async function fix() {
 
 // drawn on the page, so the page's ground picks light or dark
 function schemeOfPage() {
-  const ground = [document.body, document.documentElement].map((e) => /rgba?\(([^)]+)\)/.exec(getComputedStyle(e).backgroundColor)?.[1].split(/[,/]/).map(parseFloat)).find((c) => c && (c[3] ?? 1) > 0.5) ?? [255, 255, 255];
-  return 0.2126 * ground[0] + 0.7152 * ground[1] + 0.0722 * ground[2] < 128 ? 'dark' : 'light';
+  // the ground where the bar sits: the first opaque background under the bottom of the screen, up through its parents,
+  // then the body and the root (an app may paint its dark ground on a wrapper, not on the root)
+  const under = document.elementsFromPoint(innerWidth / 2, innerHeight - 40).find((e) => !e.closest('[data-plumb-layer], plumb-overlay'));
+  const chain = []; for (let e = under; e; e = e.parentElement) chain.push(e);
+  // each ground as [lightness 0–1, alpha]: rgb by its luminance, oklch and oklab by their own L
+  const read = (c) => {
+    let m = /^rgba?\(([^)]+)\)/.exec(c);
+    if (m) { const v = m[1].split(/[\s,/]+/).filter(Boolean).map(parseFloat); return [(0.2126 * v[0] + 0.7152 * v[1] + 0.0722 * v[2]) / 255, v[3] ?? 1]; }
+    m = /^okl(?:ch|ab)\(\s*([\d.]+)(%?)[^/)]*(?:\/\s*([\d.]+)(%?))?/.exec(c);
+    if (m) return [parseFloat(m[1]) / (m[2] ? 100 : 1), m[3] === undefined ? 1 : parseFloat(m[3]) / (m[4] ? 100 : 1)];
+    return null;
+  };
+  const ground = [...chain, document.body, document.documentElement].map((e) => read(getComputedStyle(e).backgroundColor)).find((g) => g && g[1] > 0.5);
+  return ground && ground[0] < 0.5 ? 'dark' : 'light';
 }
 
 export function showRoast() {

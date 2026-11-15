@@ -1591,6 +1591,13 @@ field is empty). The table of five writes, before and after. The Next table: eig
   page (it now takes the page's ground, like the notes bar), and it placed itself against the dock while the dock was
   still wide with its own hint, so it was stranded mid-screen once the dock folded (now placed from the dock's right
   edge and folded size).
+- **On a real app: algorecall** (owner: "nice can i see it , in one of my app"). algorecall's plumber link pointed at the
+  roast branch and its dev server started. On the four pages that loaded plumber in time (home, problems, two-sum,
+  login) the roast has nothing to say, and that is a reading, not blindness: on the home page it measured 35 things
+  and found the hero's heading, paragraph, button and footnote on one left line. Two pages (/tree, /lld) did not load
+  plumber within the wait and were not read. One real flaw it showed: the bar was drawn light on algorecall's dark
+  page, because its ground is an oklch colour on the body, which the scheme reader did not parse; it now reads the
+  ground under the bar, up through its parents, and reads oklch and oklab by their lightness.
 - **Media hooks:** docs/qa/roast-invite.png (the invitation beside the dock), docs/qa/roast-proof-avatars.jpg, docs/qa/roast-proof-height.png, docs/qa/roast-proof-line.png (the proof lines for corners, height and alignment), docs/qa/roast-ghost-keys.jpg (the ghost of the fix and the keycaps), docs/qa/roast-settings-cousin.jpg (a cousin note on the settings page), docs/qa/roast-icon-note.jpg (the icon note), docs/qa/roast-first-note.jpg (the roast's first note on the messy page), docs/qa/guides-first-look-issues.jpg (guides on the messy page), docs/qa/guides-held-issues.jpg
   (the three strays held by their neighbours), docs/qa/guides-plumb-lines-issues.jpg
   (the plumb lines and the one stray); a screen recording of the drop-and-swing arrival would show the toy best; the three source screenshots in
