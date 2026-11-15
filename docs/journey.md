@@ -2792,6 +2792,10 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - **The proof:** on algorecall the bar shows "18 places use Tailwind's default font size" / "text-sm isn't one of
   your font size tokens: 13px and 14.1px." The skill's claim check found nothing lost. The structural read was done
   by the same session that wrote the strings, so it is not independent.
+- **Help and the project page (same day):** the keyboard help is short key labels and stays. On the page `npx
+  plumber` opens and in its terminal steps, two lines were rewritten: the scale's intro ("Each size in your theme,
+  set at that size, with the sizes typed by hand…") is now two sentences, and the missing-React note says "Add React
+  to this project so the overlay can read and write your source." The rest already said one thing plainly.
 
 ## Open gaps
 - Resizing: a size between your steps always lands on the nearest one; there is no way yet to keep an exact size as

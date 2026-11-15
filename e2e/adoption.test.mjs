@@ -261,7 +261,7 @@ for (const version of [null, '3.4.19']) {
 test('overlay install explains missing React while plain CSS checks and install exit codes stay unchanged', async t => {
   const directory = await fixture(t);
   const original = await readFile(join(directory, 'src/styles.css'), 'utf8');
-  const notice = 'React is not installed. Add React to this development project to read and write source with the overlay. Plain CSS checks work without React.';
+  const notice = 'React is not installed. Add React to this project so the overlay can read and write your source. Plain CSS checks work without React.';
   const advisory = run(directory, ['install', '--overlay']);
   assert.ok(advisory.stdout.startsWith(notice + '\n\n'));
   assert.equal(advisory.stderr, '');

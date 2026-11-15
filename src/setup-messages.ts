@@ -57,7 +57,7 @@ export function tailwindAdvisory(sites: readonly ClassSite[], manager: string): 
   return `! These classes look like Tailwind, but Tailwind isn't set up: ${classes.slice(0, 3).join(', ')}${classes.length > 3 ? ` (+${classes.length - 3} more)` : ''}.\n` +
     `  → ${manager} ${manager === 'npm' ? 'install' : 'add'} tailwindcss @tailwindcss/vite, then @import "tailwindcss"; in your CSS entry\n  Checking plain CSS only for now.\n`;
 }
-export const reactOverlayFix = 'Add React to this development project to read and write source with the overlay. Plain CSS checks work without React.';
+export const reactOverlayFix = 'Add React to this project so the overlay can read and write your source. Plain CSS checks work without React.';
 export function overlaySetupNotice(root: string): string {
   const react = reactOf(root);
   if (react.value?.installed) return '';

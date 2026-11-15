@@ -138,7 +138,7 @@ export class Specimen {
 
   render() {
     this.el.innerHTML = `<section class="sp pl-card" aria-labelledby="sp-title">
-      <div class="sp-head"><h2 id="sp-title">Your scale, size by size</h2><p>Each size in your theme, set at that size, with the sizes typed by hand that should become it, and how many places use each. Point at one to see it snap.</p></div>
+      <div class="sp-head"><h2 id="sp-title">Your scale, size by size</h2><p>Each size in your theme, shown at that size. Beside it are the sizes typed by hand that should become it, and how many places use each. Point at one to see it snap.</p></div>
       <ol>${this.rows().join('')}</ol></section>`;
   }
 
