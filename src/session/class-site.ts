@@ -73,7 +73,7 @@ const sharedVariable = (name: string, readers: number) => `The classes that alwa
 interface Parsed extends SourceText { program: Node; starts: number[] }
 interface Holder { src: Parsed; kind: 'own' | 'usage'; prop: string; element: ElementRef; level: number; next: number; variable?: string; readers?: number }
 interface Found { string: ClassString; holder: Holder }
-type Binding = { kind: 'variable'; init: Node; /** the keys read from it by destructuring (`const { icon } = DISC[size]`) */ path?: string[] } | { kind: 'prop'; prop: string | null; /** a rest pattern: the props its siblings took out of it */ except?: string[]; component: Component } | undefined;
+type Binding = { kind: 'variable'; init: Node; /** the keys read from it by destructuring (`const { icon } = DISC[size]`) */ path?: string[] } | { kind: 'prop'; prop: string | null; /** a rest pattern: the props its siblings took out of it */ except?: string[]; component: Component; /** the default written for it (`side = 'fill-draw-soft'`): what a usage that leaves it out draws */ fallback?: Node } | undefined;
 /** A component: every name it answers to (the declarator first, then the function's own: `const Panel = memo(function Inner…)`), and the file it is in. */
 interface Component { names: string[]; isDefault: boolean; file?: string }
 interface Resolved {
@@ -141,6 +141,12 @@ function resolve(input: ClassSiteInput, usageProps = false): Resolved {
     // a rest pattern its siblings took this prop out of (`{ className, ...rest }`): the rest does not carry it
     if (binding.except?.includes(prop)) return;
     const component = { ...binding.component, file: holder.src.path };
+    // the default the component writes for it (`side = 'fill-draw-soft'`) draws every usage that leaves the prop out:
+    // a change there changes all of those, so it is held like a variable other places read
+    const fallback = () => {
+      if (!binding.fallback) return;
+      take(classSourcesAt(binding.fallback, rest, holder.src.text, [...ref.trail, { condition: `\`${prop}\` is left out`, which: 'then' }]), { ...holder, variable: prop, readers: 2 });
+    };
     for (let i = holder.next; i < input.chain.length; i++) {
       const link = input.chain[i]!, at = locate(link);
       if (!usesComponent(at.src, at.ref.tag, component, { modules: input.modules, open })) continue;
@@ -154,6 +160,7 @@ function resolve(input: ClassSiteInput, usageProps = false): Resolved {
       }
       // not passed by name: a usage that spreads its own props on (`<Panel {...props} />`) passes whatever it was given
       for (const spread of usage.spreads) follow({ ...spread, path: [prop, ...rest], trail: ref.trail }, next);
+      fallback();
       return; // the usage does not pass it: nothing of it is written there
     }
     // the chain did not reach a usage (the page gave no owner stack): a component the file never exports is used only
@@ -170,8 +177,9 @@ function resolve(input: ClassSiteInput, usageProps = false): Resolved {
         const value = rest.length ? classSourcesAt(attribute.value, rest, holder.src.text) : attribute;
         take({ strings: value.strings.map(s => under(outer, s)), refs: value.refs.map(r => ({ ...r, trail: [...outer, ...r.trail] })) }, next);
       }
-      if (usages.length) return;
+      if (usages.length) { fallback(); return; }
     }
+    fallback();
     unfollowed.push(prop);
   };
 
@@ -306,7 +314,7 @@ const isFunction = (node: Node) => node.type === 'FunctionDeclaration' || node.t
 const keyName = (key: Node): string | undefined => key.type === 'Identifier' ? key.name : key.type === 'Literal' && typeof key.value === 'string' ? key.value : undefined;
 /** Whether a binding pattern binds a name: `null` for the whole value (`props`, `...rest`), else the key it is read from.
  * A rest pattern also says which keys its siblings took out of it (`{ className, ...rest }`: rest has no className). */
-function binds(pattern: Node, name: string): { key: string | null; except?: string[] } | undefined {
+function binds(pattern: Node, name: string): { key: string | null; except?: string[]; fallback?: Node } | undefined {
   const target = pattern.type === 'AssignmentPattern' ? pattern.left : pattern;
   if (target.type === 'Identifier') return target.name === name ? { key: null } : undefined;
   if (target.type !== 'ObjectPattern') return undefined;
@@ -319,7 +327,7 @@ function binds(pattern: Node, name: string): { key: string | null; except?: stri
     if (property.type !== 'Property' || property.computed) continue;
     const value = property.value.type === 'AssignmentPattern' ? property.value.left : property.value;
     const key = keyName(property.key);
-    if (key !== undefined && value.type === 'Identifier' && value.name === name) return { key };
+    if (key !== undefined && value.type === 'Identifier' && value.name === name) return { key, ...(property.value.type === 'AssignmentPattern' ? { fallback: property.value.right } : {}) };
   }
   return undefined;
 }
@@ -338,7 +346,7 @@ function bindingOf(program: Node, offset: number, name: string, seen = new Set<s
       if (at < 0) continue;
       const component = at === 0 ? componentOf(path.slice(0, i + 1)) : undefined;
       const bound = binds(list[0]!, name)!;
-      return component ? { kind: 'prop', prop: bound.key, ...(bound.except ? { except: bound.except } : {}), component } : undefined;
+      return component ? { kind: 'prop', prop: bound.key, ...(bound.except ? { except: bound.except } : {}), ...(bound.fallback ? { fallback: bound.fallback } : {}), component } : undefined;
     }
     const body = node.type === 'Program' || node.type === 'BlockStatement' ? node.body as Node[] : undefined;
     for (const statement of body ?? []) {
@@ -357,7 +365,7 @@ function bindingOf(program: Node, offset: number, name: string, seen = new Set<s
         if (outer?.kind !== 'prop' || outer.prop !== null) return undefined;
         if (bound.key === null) return { ...outer, except: [...outer.except ?? [], ...bound.except ?? []] };
         // a key its rest's siblings took out (`{ className: c, ...rest }` then `const { className } = rest`): never in it
-        return outer.except?.includes(bound.key) ? undefined : { kind: 'prop', prop: bound.key, component: outer.component };
+        return outer.except?.includes(bound.key) ? undefined : { kind: 'prop', prop: bound.key, ...(bound.fallback ? { fallback: bound.fallback } : {}), component: outer.component };
       }
     }
   }
