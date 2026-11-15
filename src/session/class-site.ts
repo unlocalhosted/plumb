@@ -429,8 +429,12 @@ interface Reached { path: string; local: string; src: Parsed }
  * that declares it; it is the component when that file is the component's and the name it lands on is one the component
  * answers to (a default export: when the component is the file's default). A tag not imported names a component of its
  * own file only: a same-named component in another file is not it, nor is one imported from a package. */
-function usesComponent(usage: Parsed, tag: string, component: Component, m: Modules): boolean {
+function usesComponent(usage: Parsed, tag: string, component: Component, m: Modules, seen = new Set<string>()): boolean {
   const [head, ...rest] = tag.split('.');
+  // a local wrapper around a component (`const MotionChoice = motion.create(ChoiceSlab)`, `memo(Impl)`) passes its
+  // props on: a usage of it is a usage of the component it wraps
+  const inner = rest.length || seen.has(head!) ? undefined : wrapperOf(usage, head!);
+  if (inner) { seen.add(head!); return usesComponent(usage, inner, component, m, seen); }
   for (const statement of statements(usage)) {
     if (statement.type !== 'ImportDeclaration') continue;
     for (const s of statement.specifiers ?? []) {
@@ -525,4 +529,16 @@ function boundBelow(program: Node, offset: number, name: string): boolean {
     if (node.type === 'BlockStatement' && (node.body as Node[]).some(st => st.type === 'VariableDeclaration' && st.declarations.some(d => binds(d.id, name)))) return true;
   }
   return false;
+}
+/** The component a top-level `const Name = wrapper(Component, …)` wraps (`motion.create(ChoiceSlab as …)`, `memo(Impl)`,
+ * `styled(Card)`): the name inside the calls, when that is a plain name. */
+function wrapperOf(src: Parsed, name: string): string | undefined {
+  for (const top of statements(src)) {
+    const declaration = top.type === 'VariableDeclaration' ? top : top.type === 'ExportNamedDeclaration' && top.declaration?.type === 'VariableDeclaration' ? top.declaration : undefined;
+    for (const d of declaration?.declarations ?? []) {
+      if (d.id.type !== 'Identifier' || d.id.name !== name || !d.init) continue;
+      return unwrapped(d.init).type === 'CallExpression' ? wrappedName(d.init) : undefined;
+    }
+  }
+  return undefined;
 }
