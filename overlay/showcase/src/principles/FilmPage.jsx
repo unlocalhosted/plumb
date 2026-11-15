@@ -30,7 +30,8 @@ const TIMING = {
 };
 const CLOSING = 'React Plumber spots this in your app.';
 const MOVE = 'cubic-bezier(0.7, 0, 0.3, 1)';
-const FIT = 0.8;                                   // a scripted film: the card and switch a step smaller, so the story's line fits under them
+const FIT = 0.95; // a film without a script: card and switch stacked                                  // a scripted film: the card and switch a step smaller, so the story's line fits under them
+const MARKS = 1.4;                                 // a scripted film: plumber's marks (pills, the change card) a step under the story's 30px line, never louder
 const FILM_UI = 2;                                 // plumber's marks at twice their showcase size: a film is watched smaller than it is made      // the camera's curve: slow start, slow finish
 const LINE = 'A design review on every screen.';   // the site's hero line (homepage/src/hero)
 
@@ -137,8 +138,13 @@ export function FilmPage({ n }) {
     setTimeout(() => setPhase('line'), TIMING.back + hold + TIMING.line);
   };
   // the line on screen: the script's first line from the first frame (the question asked at once), then whatever the film says
+  // a scripted film puts the demo on the left, as tall as the stage allows, and the words, the switch and plumber's change
+  // card in a column on its right (owner's pick, 2026-11-15: stacked under it, the demo was small in a wide frame)
+  const side = scripted;
+  const fit = side ? 1.1 : FIT;
   const on = phase === 'name' || phase === 'film' || phase === 'playing';
   const said = caption ?? (scripted ? Example.film.script[0] : { text: '' });
+  const closingWords = scripted && said.at === 'close';
   if (!Example?.film) return <p style={{ padding: 40 }}>No film for № {n} yet.</p>;
   const centred = false, shown = phase !== 'empty';
   const closing = phase === 'back' || phase === 'mark' || phase === 'line', marked = phase === 'mark' || phase === 'line';
@@ -156,22 +162,20 @@ export function FilmPage({ n }) {
           <span style={{ font: 'var(--pl-round-w, 700) 24px/30px var(--pl-round)', color: 'var(--pl-ink-2)', letterSpacing: '-0.01em', textWrap: 'balance' }}>{p.title}</span>
         </div>
         {/* the film itself, in the middle of the stage; it rises in as the name leaves, and steps back at the end */}
-        <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', paddingBottom: 0,
-          }}>
-          {/* the card and switch fade and step back at the closing; the story's line under them stays for the closing words */}
-          <div ref={stack} style={{ opacity: on ? 1 : 0, transform: `translateY(${on || closing ? 0 : 12}px) scale(${(closing ? 0.97 : 1) * (scripted ? FIT : 1)})`, transformOrigin: '50% 0',
-            marginBottom: scripted ? -(1 - FIT) * fh : 0, transition: `opacity 600ms ease ${phase === 'film' ? TIMING.clear : 0}ms, transform 800ms var(--pl-spring) ${phase === 'film' ? TIMING.clear : 0}ms` }}>
-            <Film Example={Example} names={Example.names} chrome={false} start={phase === 'playing'} onDone={done} ui={scripted ? FILM_UI / FIT : FILM_UI} openIn onLine={(text, at) => setCaption({ text, at })} onBurst={() => setNod((x) => x + 1)} />
+        <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', paddingRight: side ? 436 : 0 }}>
+          {/* the demo, with the words, switch and change card beside it, fades and steps back at the closing */}
+          <div ref={stack} style={{ opacity: on ? 1 : 0, transform: `translateY(${on || closing ? 0 : 12}px) scale(${(closing ? 0.97 : 1) * (scripted ? fit : 1)})`, transformOrigin: '50% 0',
+            marginBottom: scripted ? -(1 - fit) * fh : 0, flex: 'none', transition: `opacity 600ms ease ${phase === 'film' ? TIMING.clear : 0}ms, transform 800ms var(--pl-spring) ${phase === 'film' ? TIMING.clear : 0}ms` }}>
+            <Film Example={Example} names={Example.names} chrome={false} start={phase === 'playing'} onDone={done} ui={scripted ? MARKS / fit : FILM_UI} openIn onLine={(text, at) => setCaption({ text, at })} onBurst={() => setNod((x) => x + 1)} aside={side ? <p aria-live="polite" style={{ margin: 0, minHeight: 80, font: `400 ${30 / fit}px/${40 / fit}px var(--pl-sans)`, letterSpacing: '-0.01em', color: 'var(--pl-ink)', textWrap: 'balance' }}>{closingWords ? null : <Line key={said.text} text={said.text} fixed={['fix', 'payoff', 'end'].includes(said.at)} />}</p> : null} />
           </div>
-          {/* the story level: the script, one line at a time, in the same stack as the card and switch (a set gap under the
-              switch, room for two lines kept so the stack never jumps when a line changes) */}
-          {scripted ? (
-            <p aria-live="polite" style={{ margin: '144px 0 0', minHeight: 40, /* under the switch and the change card that opens beneath it */ maxWidth: 960, textAlign: 'center', textWrap: 'balance',
-              font: '400 30px/40px var(--pl-sans)', letterSpacing: '-0.01em', color: 'var(--pl-ink)', opacity: said.text ? 1 : 0, transition: 'opacity 400ms ease' }}>
-              <Line key={said.text} text={said.text} fixed={['fix', 'payoff', 'end'].includes(said.at)} />
-            </p>
-          ) : null}
         </div>
+        {/* the closing words, in the middle of the stage once the demo has stepped back, before the mark comes in */}
+        {scripted ? (
+          <p style={{ position: 'absolute', left: 0, right: 0, top: STAGE.h / 2 - 20, margin: 0, textAlign: 'center', font: '400 30px/40px var(--pl-sans)', letterSpacing: '-0.01em', color: 'var(--pl-ink)',
+            opacity: closingWords && said.text ? 1 : 0, transition: 'opacity 400ms ease' }}>
+            {closingWords && said.text ? <Line key={said.text} text={said.text} fixed /> : null}
+          </p>
+        ) : null}
         {/* the mark, on every frame; at the end it comes to the middle, and the bob settles on its line */}
         <div ref={mark} style={{ position: 'absolute', right: STAGE.edge, bottom: STAGE.edge - 12, display: 'flex', alignItems: 'center', gap: 9,
           opacity: shown ? 0.92 : 0, transform: marked && to ? to.mark : 'none', transition: `transform 1000ms ${MOVE}, opacity 600ms ease` }}>

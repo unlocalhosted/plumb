@@ -240,7 +240,7 @@ function burst(canvas, ox, oy) {
   requestAnimationFrame(tick);
 }
 
-export function Film({ Example, names, onSaid, chrome = true, start = true, onDone, ui = 1, openIn = false, onLine, onBurst }) {
+export function Film({ Example, names, onSaid, chrome = true, start = true, onDone, ui = 1, openIn = false, onLine, onBurst, aside = null }) {
   const spec = Example.film;
   // a film with a script (spec.script, the owner-approved words, one line a moment) says its story in those words, set
   // under the stage by FilmPage; plumber's own marks (pills, the change card, the check and burst) all stay as they are
@@ -495,10 +495,12 @@ export function Film({ Example, names, onSaid, chrome = true, start = true, onDo
           </PlumbLayer>
         </div>
       </div>
-      <div ref={sw} className="relative z-10 flex flex-col items-center">
+      {/* aside: the words, the switch and the change card in a column to the right of the card, so the card can take the whole height */}
+      <div ref={sw} className={aside ? 'z-10 flex flex-col items-start' : 'relative z-10 flex flex-col items-center'} style={aside ? { position: 'absolute', left: 'calc(100% + 56px)', top: '50%', translate: '0 -50%', width: 380, gap: 28 } : undefined}>
+        {aside}
         {change && spec.code ? <PlumbLayer><Change code={spec.code} fixed={change >= 2} done={change === 3} /></PlumbLayer> : null}
         {/* in a scripted film the switch is chrome, a step under the story's words: smaller than plumber's film-size marks */}
-        <UI.Provider value={words ? Math.min(ui, 1.4 / 0.8) : ui}><TechniqueSwitch names={names} fixed={side === 'fixed'} ready={!playing} onBack={() => setSide('broken')} onFix={() => setSide('fixed')} /></UI.Provider>
+        <UI.Provider value={words ? Math.min(ui, 1.4 / 0.95) : ui}><TechniqueSwitch names={names} fixed={side === 'fixed'} ready={!playing} onBack={() => setSide('broken')} onFix={() => setSide('fixed')} /></UI.Provider>
       </div>
       {chrome ? (!playing ? <button type="button" onClick={() => setRun((x) => x + 1)} style={{ marginTop: -28, border: 0, background: 'none', cursor: 'pointer', font: 'var(--pl-round-w2, 700) 13px/20px var(--pl-round)', color: 'var(--pl-ink-2)' }}>Replay</button> : <span style={{ marginTop: -28, height: 20 }} />) : null}
       <canvas ref={fx} aria-hidden="true" className="pointer-events-none absolute z-30" style={{ left: -160, top: -80, width: 'calc(100% + 320px)', height: 'calc(100% + 160px)' }} />
