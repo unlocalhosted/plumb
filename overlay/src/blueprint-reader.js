@@ -42,6 +42,7 @@
  *             { unrendered: true } (the panel must know how to hold one). Where a mark is drawn is the layer's business
  * ───────────────────────────────────────────────────────── */
 
+import { quiet, startLive, handsBusy, whenIdle } from './live.js'; // what is moving, and whether the person is scrolling
 import { inCode, isNote, placeKey } from './blueprint-panel.js';
 import { STAMP_ATTRIBUTE, stampOf, parseStamp } from './stamp.js';
 
@@ -82,12 +83,17 @@ export class Reader {
   }
 
   start(scope = null) {
+    startLive();
     this.#running = true;
     this.#scope = scope;
-    this.#mo = new MutationObserver((records) => {
+    this.#mo = new MutationObserver((all) => {
+      // a change inside something moving (an animation, a part the page redraws every frame) is not a reason to read
+      // the page again: it will change again in a moment, and it is not judged while it moves (live.js)
+      const records = quiet(all);
+      if (!records.length) return;
       const pinned = this.#host.pinnedElement;
       const relevant = records.some((r) => !r.target.closest?.('plumb-overlay') && r.target !== pinned && (!this.#scope || this.#scope.contains(r.target)) && (r.type === 'childList' || r.attributeName === 'class' || r.attributeName === STAMP_ATTRIBUTE));
-      if (relevant) { this.#changed(); this.#throttled(() => this.#scan(true)); }
+      if (relevant) { this.#changed(); if (handsBusy()) whenIdle(this.#scanLater); else this.#throttled(() => this.#scan(true)); }
     });
     this.#mo.observe(document.body, { subtree: true, childList: true, attributes: true, attributeFilter: ['class', 'open', 'hidden', STAMP_ATTRIBUTE] });
     this.#startedAt = performance.now();
@@ -151,6 +157,8 @@ export class Reader {
     this.#read();
   }
 
+  #reportLater = () => this.#report();
+  #scanLater = () => this.#scan(true);
   #throttled(fn) {
     if (this.#throttle) return;
     fn();
@@ -337,6 +345,8 @@ export class Reader {
 
   #report() {
     if (!this.#running) return;
+    // judging the whole page never competes with the person scrolling it: while they scroll or type, it waits
+    if (handsBusy()) { whenIdle(this.#reportLater); return; }
     const t0 = performance.now();
     // craft: every read element goes through the craft engine first, so the counts below and the items handed on
     // agree on what is drawn (its marks are appended to the element's own), once over the whole page

@@ -20,6 +20,7 @@
  *  cache      an element's findings are kept by its signature (its class and its parent's) until invalidate(); a
  *             page-wide rule's also by the page's signature; a late fact (an icon's ink) re-judges only who asked
  * ───────────────────────────────────────────────────────── */
+import { isLive } from './live.js'; // what is moving right now, shared
 import { PACK_RULES, packOf } from './packs.js';
 import { rulesFor } from './kinds.js';
 import { verdicts } from './verdict.js';
@@ -497,8 +498,9 @@ export class Craft {
       // a loop (a spinner, a marquee) never comes to rest: what it moves is never judged, and nothing waits on it. What
       // holds a loop is still: a page with one spinner on it is judged like any other, the spinner aside.
       const ending = anims.filter((a) => a.effect.getComputedTiming?.().iterations !== Infinity);
-      const loops = anims.filter((a) => !ending.includes(a)).map((a) => a.effect.target);
-      const moving = (el) => ending.some((a) => el === a.effect.target || el.contains(a.effect.target)) || loops.some((t) => t === el || t.contains(el));
+      // what moves (animations, and what JavaScript rewrites frame by frame) is read once, shared (live.js): an
+      // element asks its ancestors, not every animation on the page
+      const moving = (el) => isLive(el);
       if (ending.length && this.#again && !this.#waiting) {
         this.#waiting = true;
         Promise.allSettled(ending.map((a) => a.finished)).then(() => { this.#waiting = false; this.#again?.(); });

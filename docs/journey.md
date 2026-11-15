@@ -1675,6 +1675,19 @@ field is empty). The table of five writes, before and after. The Next table: eig
   13 long tasks, 2.1 s, the same 1-second frame gap; the time is the reader's report (about 1.7–2.4 s) and the
   engine's verdicts and motion reads. So the hang is the engine's reading of algorecall, which this branch does not
   change. Not yet measured: whether it hangs with Blueprint closed.
+- **Motion is not measured, and plumber waits for still hands** (owner: "we have to find a way to ignore animation as
+  its not static so no point in measuring it"). The system behind the hang, measured once the first read had settled:
+  scrolling makes algorecall render its lower sections, every new section was a change, and every change re-read the
+  page, wrote the report again (16 times in 6.5 s of scrolling, about 210 ms each) and re-judged every element (about
+  156 ms each): 17 long tasks, 4.1 s, while the person scrolled. Two parts to the fix. One record of what is moving,
+  shared (overlay/src/live.js): running animations, read once, and parts the page rewrites five times or more within a
+  second (what JavaScript animates frame by frame), until they have been quiet 1.5 s; the engine, the new checks and
+  the reader all ask it, it replaces the engine's every-element-against-every-animation test (350–500 ms a pass), and a
+  change inside something moving is no longer a reason to read the page again. And the reader's report and rescans wait
+  while the person scrolls or types (an input within 400 ms), then run in idle time. Proof, same page, same scroll:
+  while scrolling, 2 long tasks and 477 ms (was 17 and 4.1 s); after the pause, 7 reports in idle time. Not changed:
+  one report still costs about 190 ms when it runs; the engine's verdicts over the whole page are the next thing to
+  make incremental. Earlier frame-gap numbers (1,033 ms every run) were the browser pane throttling frames, not the page.
 - **Media hooks:** docs/qa/fixbar-control-corners.jpg and docs/qa/fixbar-control-type.png (the control on the element), docs/qa/fixbar-cleanup-pass.jpg and docs/qa/fixbar-cleanup-preview.png (the clean-up in the bar), docs/qa/fixbar-at-rest.jpg (the bar at rest), docs/qa/fixbar-two-things.jpg (the bar and the row on the element, nothing else), docs/qa/fixbar-in-hand-corners.jpg and docs/qa/fixbar-in-hand-type.jpg (the new bar with a place in hand), docs/qa/roast-invite.png (the invitation beside the dock), docs/qa/roast-proof-avatars.jpg, docs/qa/roast-proof-height.png, docs/qa/roast-proof-line.png (the proof lines for corners, height and alignment), docs/qa/roast-ghost-keys.jpg (the ghost of the fix and the keycaps), docs/qa/roast-settings-cousin.jpg (a cousin note on the settings page), docs/qa/roast-icon-note.jpg (the icon note), docs/qa/roast-first-note.jpg (the roast's first note on the messy page), docs/qa/guides-first-look-issues.jpg (guides on the messy page), docs/qa/guides-held-issues.jpg
   (the three strays held by their neighbours), docs/qa/guides-plumb-lines-issues.jpg
   (the plumb lines and the one stray); a screen recording of the drop-and-swing arrival would show the toy best; the three source screenshots in

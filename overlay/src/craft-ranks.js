@@ -20,6 +20,7 @@
  * facts, so a check per element costs a lookup.
  * ───────────────────────────────────────────────────────── */
 import { say } from './words.js';
+import { isLive, quiet } from './live.js';
 
 const MIN_GROUP = 3;
 const ACROSS = /^-?(gap-x|gap|size|w|min-w|max-w|px|pl|pr|ps|pe|p|ml|mr|ms|me|mx|m|translate-x|space-x|left|right|start|end|inset-x|indent)$/;
@@ -68,9 +69,8 @@ function mode(values, near) {
   return best;
 }
 
-// what is moving, read once per scan: every running animation's element, and inline transforms (a script's spring)
-let ANIMATED = new Set();
-const moving = (el) => { for (let e = el; e && e !== document.body; e = e.parentElement) { if (ANIMATED.has(e) || /transform|translate|rotate|scale/.test(e.getAttribute('style') ?? '')) return true; } return false; };
+// what is moving: the shared record (live.js), plus an inline transform a script set and left (a spring at rest)
+const moving = (el) => { if (isLive(el)) return true; for (let e = el; e && e !== document.body; e = e.parentElement) if (/transform|translate|rotate|scale/.test(e.getAttribute('style') ?? '')) return true; return false; };
 const hidden = (r, s) => ((r.width <= 1 || r.height <= 1) && s.overflow !== 'visible') || /^rect\(0(px)?,?\s*0/.test(s.clip) || /inset\(50%\)/.test(s.clipPath);
 const centred = (facts, el) => [el, el.parentElement].some((e) => { const s = e && facts.style(e); return s && (s.textAlign === 'center' || (/grid/.test(s.display) && s.justifyItems === 'center') || (/flex/.test(s.display) && !/column/.test(s.flexDirection) && s.justifyContent === 'center')); });
 const gridUnit = () => { const v = getComputedStyle(document.documentElement).getPropertyValue('--spacing').trim(), n = parseFloat(v); return !n ? 4 : /rem$/.test(v) ? n * parseFloat(getComputedStyle(document.documentElement).fontSize) : n; };
@@ -103,7 +103,7 @@ function watch() {
   watching = true;
   // what changes a verdict: elements in or out, a class or a style changed, the window's width; scrolling does not
   // (every verdict compares siblings with each other, so it holds wherever the page is scrolled)
-  new MutationObserver((records) => { if (records.some((r) => !(r.target instanceof Element && r.target.closest('[data-plumb-layer], plumb-overlay')))) dirty = true; })
+  new MutationObserver((records) => { if (quiet(records).some((r) => !(r.target instanceof Element && r.target.closest('[data-plumb-layer], plumb-overlay')))) dirty = true; })
     .observe(document.body, { subtree: true, childList: true, attributes: true, attributeFilter: ['class', 'style'] });
   addEventListener('resize', () => { dirty = true; }, { passive: true });
 }
@@ -113,7 +113,6 @@ function verdicts(facts) {
   watch();
   if (!dirty && LAST) { PASS.set(facts, LAST); return LAST; }
   dirty = false;
-  ANIMATED = new Set(document.getAnimations().filter((a) => a.playState === 'running').map((a) => a.effect?.target).filter(Boolean));
   v = new Map();
   PASS.set(facts, v);
   LAST = v;
