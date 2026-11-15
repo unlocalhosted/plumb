@@ -131,7 +131,7 @@ function resolve(input: ClassSiteInput, usageProps = false): Resolved {
       }
     }
     if (binding?.kind === 'variable') {
-      take(classSourcesAt(binding.init, [...binding.path ?? [], ...ref.path], holder.src.text, ref.trail), { ...holder, variable: ref.name, readers: readers(holder.src.program, ref.name, binding.init) });
+      take(classSourcesAt(binding.init, [...binding.path ?? [], ...ref.path], holder.src.text, ref.trail, ref.args), { ...holder, variable: ref.name, readers: readers(holder.src.program, ref.name, binding.init) });
       return;
     }
     if (binding?.kind !== 'prop') return;

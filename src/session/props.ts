@@ -168,7 +168,7 @@ function quasiTexts(expression: Extract<Node, { type: 'TemplateLiteral' }>, sour
 }
 /** A name an expression reads its classes from (a variable, a prop, `props.className`, `styles.root`), with the
  * property path read from it (`['className']`, `['root']`; empty for the name itself) and the conditions it is under. */
-export interface ClassRef { name: string; path: string[]; start: number; trail: Trail }
+export interface ClassRef { name: string; path: string[]; start: number; trail: Trail; /** a call (`drop(FIT.section, 'max-sm:hidden')`): what it passes, read where the function returns a parameter */ args?: Node[] }
 const keyName = (key: Node): string | undefined => key.type === 'Identifier' ? key.name : key.type === 'Literal' && typeof key.value === 'string' ? key.value : undefined;
 /** A path step read by a key known only at run time (`SIZE[size]`): every entry of the table it reads. */
 export const ANY_KEY = '*';
@@ -259,7 +259,7 @@ export function classSources(node: Node, source: string, trail: Trail = []): { s
         const helper = helperOf(expression.callee);
         // a function of this file called for classes (`buttonVariants({ size })`): followed to what it is, a recipe
         // (cva) made in a variable, read in classSourcesAt at CALLED
-        if (!helper) { if (expression.callee.type === 'Identifier') refs.push({ name: expression.callee.name, path: [CALLED], start: expression.start, trail }); return; }
+        if (!helper) { if (expression.callee.type === 'Identifier') refs.push({ name: expression.callee.name, path: [CALLED], start: expression.start, trail, args: expression.arguments as Node[] }); return; }
         expression.arguments.forEach((argument, index) => {
           if (argument.type === 'SpreadElement' || argumentMode(helper, index, index === 0 && unwrap(argument).type === 'ObjectExpression' && helper.configFrom !== undefined) !== 'classes') return;
           visit(argument, trail, helper.objects === 'keys');
@@ -274,13 +274,13 @@ export function classSources(node: Node, source: string, trail: Trail = []): { s
 }
 /** The value an expression holds at a property path (`styles={{ root: 'p-4' }}` at ['root'] is `'p-4'`), as class
  * sources; a name met on the way is read on with the rest of the path. Nothing when the path leads nowhere written here. */
-export function classSourcesAt(node: Node, path: string[], source: string, trail: Trail = []): { strings: Text[]; refs: ClassRef[] } {
+export function classSourcesAt(node: Node, path: string[], source: string, trail: Trail = [], args?: Node[]): { strings: Text[]; refs: ClassRef[] } {
   let at = unwrap(node);
   for (let i = 0; i < path.length; i++) {
     if (path[i] === CALLED) {
       if (i !== path.length - 1) return { strings: [], refs: [] };
       if (at.type === 'CallExpression') return recipeSources(at, source, trail);
-      if (at.type === 'ArrowFunctionExpression' || at.type === 'FunctionExpression') return returnedSources(at, source, trail);
+      if (at.type === 'ArrowFunctionExpression' || at.type === 'FunctionExpression') return returnedSources(at, source, trail, args);
       return { strings: [], refs: [] };
     }
     if (at.type === 'ObjectExpression' && path[i] === ANY_KEY) {
@@ -307,15 +307,29 @@ export function classSourcesAt(node: Node, path: string[], source: string, trail
   return classSources(at, source, trail);
 }
 /** What a local function called for a className gives back (`const full = (cls = '') => tight ? 'sr-only' : cls`): the
- * strings it returns, and a parameter's string default, which applies when the call leaves it out. Nested functions
- * return for themselves, not for it. */
-function returnedSources(fn: Node, source: string, trail: Trail): { strings: Text[]; refs: ClassRef[] } {
+ * strings it returns, and a parameter's string default, which applies when the call leaves it out. A parameter it
+ * returns is what the call passes there (`drop(FIT.section, 'max-sm:hidden')` returning `guess`), when the call is
+ * known (`args`); a default then applies only where the call passes nothing. Nested functions return for themselves. */
+function returnedSources(fn: Node, source: string, trail: Trail, args?: Node[]): { strings: Text[]; refs: ClassRef[] } {
   const out = { strings: [] as Text[], refs: [] as ClassRef[] };
-  const add = (node: Node, t: Trail) => { const each = classSources(node, source, t); out.strings.push(...each.strings); out.refs.push(...each.refs); };
   const f = fn as unknown as { params: Node[]; body: Node; expression?: boolean };
-  for (const param of f.params) {
-    if (param.type === 'AssignmentPattern' && param.left.type === 'Identifier') add(param.right, [...trail, { condition: `${param.left.name} is left out`, which: 'then' }]);
-  }
+  const params = f.params.map(p => p.type === 'AssignmentPattern' ? p.left : p).map(p => p.type === 'Identifier' ? p.name : undefined);
+  const passed = (i: number) => { const a = args?.[i]; return a && a.type !== 'SpreadElement' && !(args ?? []).slice(0, i).some(x => x.type === 'SpreadElement') ? a : undefined; };
+  const add = (node: Node, t: Trail) => {
+    const each = classSources(node, source, t);
+    out.strings.push(...each.strings);
+    for (const ref of each.refs) {
+      const i = args ? params.indexOf(ref.name) : -1;
+      if (i < 0) { out.refs.push(ref); continue; }
+      const arg = passed(i);
+      if (!arg) continue; // left out: its default, read below
+      const value = classSourcesAt(arg, ref.path, source, ref.trail);
+      out.strings.push(...value.strings); out.refs.push(...value.refs);
+    }
+  };
+  f.params.forEach((param, i) => {
+    if (param.type === 'AssignmentPattern' && param.left.type === 'Identifier' && !(args && passed(i))) add(param.right, [...trail, { condition: `${param.left.name} is left out`, which: 'then' }]);
+  });
   if (f.body.type !== 'BlockStatement') { add(f.body, trail); return out; }
   const walk = (node: Node): void => {
     if (node.type === 'ArrowFunctionExpression' || node.type === 'FunctionExpression' || node.type === 'FunctionDeclaration') return;
