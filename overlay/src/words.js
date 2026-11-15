@@ -47,7 +47,7 @@ export const CRAFT = {
   'flex-min': ({ over, scrolls, grid }) => ({
     label: over ? (grid ? 'Pushed out of its column' : 'Row pushed out of its box') : scrolls ? 'Can never scroll' : 'Text can never be cut off',
     line: over ? (grid ? `This runs ${px(over)} past its column.` : `This row runs ${px(over)} past its box.`)
-      : scrolls ? 'A part in here is set to scroll sideways, but its box can’t shrink, so it never will.' : 'This text is set to cut off, but its box can’t shrink, so it never will.',
+      : scrolls ? 'A part in here is set to scroll sideways, but its box can’t shrink, so it grows instead of scrolling.' : 'This text is set to cut off, but its box can’t shrink, so the text pushes out instead of being cut off.',
     reason: scrolls ? 'A flex item or a grid cell is never narrower than what it holds, unless it is told it may be. So the part that should scroll grows instead, and pushes out.'
       : 'A flex item is never narrower than its longest line. A longer name or a narrower screen pushes the rest of the row out.',
   }),
@@ -77,7 +77,7 @@ export const CRAFT = {
   }),
   'list-wrap': ({ over, n }) => ({
     label: over ? 'List runs off its row' : 'List can run off its row',
-    line: over ? `This list of ${n} runs ${px(over)} past its row and has nowhere to go.` : `This row holds a list (${n} today) that can only grow sideways. A longer list or a narrower screen runs it off the edge.`,
+    line: over ? `This list of ${n} runs ${px(over)} past its row, because the row doesn’t wrap.` : `This row holds a list (${n} today) that can only grow sideways. A longer list or a narrower screen runs it off the edge.`,
     reason: 'A flex row does not wrap unless it is told to, and a list has whatever length its data has.',
   }),
   'image-stretch': ({ tall }) => ({
@@ -97,7 +97,7 @@ export const CRAFT = {
   }),
   'sticky-room': ({ spare }) => ({
     label: 'Set to stick, but can’t',
-    line: `This is set to stay in view as the page scrolls, but it is stretched ${px(spare)} past its own content, to the full height of its row, so it has nowhere to move.`,
+    line: `This is set to stay in view as the page scrolls, but it is stretched ${px(spare)} past its own content, to the full height of its row, so it has no room to stay in view.`,
     reason: 'A sticky element moves only inside its parent’s box. Stretched to the same height, it scrolls away with the page.',
   }),
   'image-ground': ({ n, broken }) => ({
@@ -207,9 +207,9 @@ export const CRAFT = {
   'sibling-match': ({ kind, d, dir, name, noun, mine, want, where }) => {
     const who = `${where ? `In ${where}'s row, ` : ''}${kind === 'icon' ? `the ${name ?? 'this'} icon` : name ?? 'This one'}`;
     const Who = who[0].toUpperCase() + who.slice(1);
-    return kind === 'icon' ? { label: 'Icon off its label', line: `${Who} sits ${d}px ${dir} than the other icons beside their labels.`, reason: 'Icons in one list sit the same way beside their words.' }
-      : kind === 'height' ? { label: 'One size off', line: `${Who} is ${d}px ${dir} than the other ${noun}.`, reason: 'Buttons side by side share one height.' }
-      : { label: 'Corners don’t match', line: `${Who} has ${mine} corners; the other ${where ? 'ones in its place' : noun} are ${want}.`, reason: 'Pieces of one kind share one shape.' };
+    return kind === 'icon' ? { label: 'Icon off its label', line: `${Who} sits ${d}px ${dir} than the other icons beside their labels.`, reason: 'An icon off its label’s middle makes the row look misaligned.' }
+      : kind === 'height' ? { label: 'One size off', line: `${Who} is ${d}px ${dir} than the other ${noun}.`, reason: 'Buttons of different heights in one row don’t line up top and bottom.' }
+      : { label: 'Corners don’t match', line: `${Who} has ${mine} corners; the other ${where ? 'ones in its place' : noun} are ${want}.`, reason: 'Mixed corners make one set of pieces look like two.' };
   },
   'media-size': ({ mine, mode }) => ({
     label: 'One size off',

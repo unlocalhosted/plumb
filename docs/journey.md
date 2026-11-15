@@ -2778,6 +2778,21 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - **Media hooks:** `docs/qa/resize/0-dragging-between-stops.jpg`, `1-dragging-snapped-w-sm.jpg`,
   `2-landed-w-sm.jpg`, `3-height-h-28.jpg`; a short clip of a corner drag would show it best.
 
+### 31. The words a person reads, through the writing pass (2026-11-15)
+- **The itch:** the owner asked for their writing skill (declauding) on "all the writing thing and how we present
+  warnings and everything that user reads".
+- **How we found it:** the skill's scan over the 743 strings in the overlay's words file, then a read of the strings
+  the fix bar builds itself.
+- **What changed:** two findings ended on a closer (", so it never will."); two leaned on a metaphor ("nowhere to
+  go"); three reasons in the new sibling check were maxims ("Mixed corners make one set of pieces look like two." now
+  says what the reader sees). The fix bar's note on a framework value said "is Tailwind's default, not yours"; it
+  now reads "comes from Tailwind's defaults. Your theme doesn't set it."
+- **What we kept:** short fragments ("Saved.", "Nothing to fix.") are normal in a toolbar; the skill flags them as a
+  run, and they stay.
+- **The proof:** on algorecall the bar shows "18 places use Tailwind's default font size" / "text-sm isn't one of
+  your font size tokens: 13px and 14.1px." The skill's claim check found nothing lost. The structural read was done
+  by the same session that wrote the strings, so it is not independent.
+
 ## Open gaps
 - Resizing: a size between your steps always lands on the nearest one; there is no way yet to keep an exact size as
   a new token through the naming flow. The site's homepage is plain CSS, so its cards can't take a size class.
