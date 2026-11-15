@@ -74,13 +74,14 @@ const FIX_CSS_BASE = TEXT_EDITOR_CSS + ELEMENT_CARD_CSS + `
     transition: height ${TIMING.open}ms ${SPRING}; }
   .fx[hidden] { display: none; }
   /* one place in hand: the comp's bar (design site: Fix bar) — a card, not glass; one line, a headline and a detail */
-  .fx[data-one] { width: auto; min-width: 420px; max-width: min(980px, calc(100vw - 32px)); border-radius: 22px; background: var(--pl-paper); -webkit-backdrop-filter: none; backdrop-filter: none;
+  .fx[data-one] { width: max-content; min-width: min(420px, calc(100vw - 32px)); max-width: min(980px, calc(100vw - 32px)); border-radius: 22px; background: var(--pl-paper); -webkit-backdrop-filter: none; backdrop-filter: none;
     box-shadow: var(--pl-shadow-card); }
   .fx .one { display: flex; align-items: center; gap: 12px; height: 64px; padding: 0 10px 0 12px; white-space: nowrap; animation: pl-pop 260ms var(--pl-spring-pop) both; }
   .fx .one .ic { display: block; width: 36px; height: 36px; flex: none; } .fx .one .ic svg { display: block; width: 100%; height: 100%; overflow: visible; }
-  .fx .one .lines { display: flex; flex-direction: column; gap: 7px; min-width: 0; flex: 1 1 auto; }
-  .fx .one .hl { display: inline-flex; align-items: center; gap: 7px; font: 650 14.5px/1 var(--pl-sans); color: var(--pl-ink); overflow: hidden; text-overflow: ellipsis; }
-  .fx .one .dt { display: inline-flex; align-items: center; gap: 6px; font: 500 13px/1 var(--pl-sans); color: var(--pl-ink-2); overflow: hidden; text-overflow: ellipsis; }
+  .fx .one .lines { display: flex; flex-direction: column; gap: 7px; min-width: 0; flex: 1 1 auto; overflow: hidden; }
+  .fx.fx-on .cant { font: 500 12.5px/1.3 var(--pl-sans); color: var(--pl-ink-2); max-width: 260px; white-space: normal; padding: 0 4px; }
+  .fx .one .hl { display: block; white-space: nowrap; font: 650 14.5px/1 var(--pl-sans); color: var(--pl-ink); overflow: hidden; text-overflow: ellipsis; }
+  .fx .one .dt { display: block; white-space: nowrap; font: 500 13px/1 var(--pl-sans); color: var(--pl-ink-2); overflow: hidden; text-overflow: ellipsis; }
   .fx .one .dt .pl-pill { margin: 0; }
   .fx .one .sep { width: 1px; height: 22px; margin: 0 2px; background: var(--pl-rule); flex: none; }
   .fx .one .onav { display: inline-flex; align-items: center; gap: 2px; font: 500 12px/1 var(--pl-mono); color: var(--pl-ink-2); flex: none; }
@@ -261,7 +262,26 @@ function kindOf(mark) {
 const PROP_WORD = [[/border-radius|radius/, 'border radius'], [/font-size/, 'font size'], [/font-weight/, 'font weight'], [/line-height/, 'line height'],
   [/letter-spacing/, 'letter spacing'], [/padding/, 'padding'], [/margin/, 'margin'], [/gap/, 'gap'], [/background/, 'background colour'],
   [/box-shadow/, 'shadow'], [/border-color|outline-color/, 'border colour'], [/color/, 'colour'], [/duration|delay/, 'duration'], [/width|height|size/, 'size']];
-const propWord = (mark) => { const p = (mark?.props ?? []).join(' '); return PROP_WORD.find(([re]) => re.test(p))?.[1] ?? null; };
+// the property a cause is about, read from its own class first (a Tailwind-default mark carries every property of
+// its element, so its props say nothing), then from its family, then from props when there is just one
+const CLASS_WORD = [[/^fontWeight\b|^font-weight\b/, 'font weight'], [/^fontSize\b|^font-size\b/, 'font size'], [/^fontFamily\b|^font-family\b/, 'font family'],
+  [/^(color|fill|stroke|background(Color)?|borderColor)\b\s*:/, 'colour'],
+  [/^text-(xs|sm|base|lg|[2-9]?xl|\[\d)/, 'font size'], [/^font-(thin|extralight|light|normal|medium|semibold|bold|extrabold|black|\[\d)/, 'font weight'], [/^font-/, 'font family'],
+  [/^leading-/, 'line height'], [/^tracking-/, 'letter spacing'], [/^rounded/, 'border radius'], [/^-?p[xytrblse]?-/, 'padding'], [/^-?m[xytrblse]?-/, 'margin'],
+  [/^gap-/, 'gap'], [/^bg-/, 'background colour'], [/^(border|outline|ring)-(?!\d|\[\d)/, 'border colour'], [/^text-/, 'colour'], [/^shadow/, 'shadow'],
+  [/^(duration|delay)-/, 'duration'], [/^(size|w|h|min-w|min-h|max-w|max-h)-/, 'size']];
+const propWord = (mark, cls = '') => {
+  // a style written in JavaScript ("fontWeight: on ? 600 : 400") is read as it is; a class loses its variants (hover:, md:)
+  const raw = String(cls), c = /^[a-zA-Z-]+\s*:\s/.test(raw) ? raw : raw.split(':').pop().replace(/^!|!$/g, '');
+  const byClass = CLASS_WORD.find(([re]) => re.test(c))?.[1];
+  if (byClass) return byClass;
+  if (mark?.family === 'type') return 'font size';
+  if (mark?.family === 'color') return 'colour';
+  const props = mark?.props ?? [];
+  return props.length <= 2 ? PROP_WORD.find(([re]) => re.test(props.join(' ')))?.[1] ?? null : null;
+};
+const KIND_OF_WORD = { 'font size': 'type', 'font weight': 'type', 'font family': 'type', 'line height': 'type', 'letter spacing': 'type', 'border radius': 'radius', padding: 'padding', margin: 'margin', gap: 'gap',
+  colour: 'colour', 'background colour': 'colour', 'border colour': 'colour', duration: 'time' };
 const NOUNS = { button: ['button', 'buttons'], a: ['link', 'links'], li: ['row', 'rows'], input: ['field', 'fields'], textarea: ['field', 'fields'], select: ['field', 'fields'],
   img: ['image', 'images'], svg: ['icon', 'icons'], h1: ['heading', 'headings'], h2: ['heading', 'headings'], h3: ['heading', 'headings'], h4: ['heading', 'headings'], p: ['paragraph', 'paragraphs'], label: ['label', 'labels'] };
 const nounOf = (g, n) => { const tags = new Set(g.members.map((m) => m.el?.localName).filter(Boolean)); const w = tags.size === 1 ? NOUNS[[...tags][0]] : null; return w ? w[n === 1 ? 0 : 1] : n === 1 ? 'place' : 'places'; };
@@ -943,7 +963,7 @@ export class FixPanel {
   // the choice, on the page beside the element in hand: below it when there is room, else above; never over the bar
   #placeOn() {
     const body = this.#onBody, at = this.#onAt;
-    if (!body || !at) { this.#choice.hidden = true; this.#onHtml = ''; return; }
+    if (!body) { this.#choice.hidden = true; this.#onHtml = ''; return; }
     if (body !== this.#onHtml) {
       const typing = this.#choice.getRootNode().activeElement, field = typing?.matches?.('input') && this.#choice.contains(typing) ? { name: typing.name, at: [typing.selectionStart, typing.selectionEnd] } : null;
       this.#choice.innerHTML = body; this.#onHtml = body;
@@ -951,7 +971,10 @@ export class FixPanel {
       if (field) { const f = this.#choice.querySelector(`input[name="${field.name}"]`); if (f) { f.focus(); f.setSelectionRange(...field.at); } }
     }
     this.#choice.hidden = false;
-    const r = at.getBoundingClientRect(), box = this.#choice.getBoundingClientRect(), bar = this.#el.getBoundingClientRect(), gap = 10, w = box.width, h = box.height;
+    const bar = this.#el.getBoundingClientRect(), gap = 10, box = this.#choice.getBoundingClientRect(), w = box.width, h = box.height;
+    // no place of it can be seen (off screen, inside something closed, only on focus): the row waits above the bar
+    if (!at) { this.#choice.style.left = `${Math.round(Math.max(gap, Math.min(innerWidth - w - gap, bar.left + bar.width / 2 - w / 2)))}px`; this.#choice.style.top = `${Math.round(Math.max(gap, bar.top - gap - h))}px`; return; }
+    const r = at.getBoundingClientRect();
     // what else the overlay shows (the X-ray card on the element, its caret): the choice keeps clear of it and of the bar
     const others = [...this.#choice.getRootNode().querySelectorAll('*')].filter((e) => e !== this.#choice && e !== this.#el && !this.#choice.contains(e) && !this.#el.contains(e)
       && (e.matches('.xr-card, .ec, .ec-strip') || getComputedStyle(e).position === 'fixed') && e.getClientRects().length).map((e) => e.getBoundingClientRect()).filter((b) => b.width > 40 && b.height > 40 && b.width < innerWidth * 0.9);
@@ -1051,14 +1074,18 @@ export class FixPanel {
       const failed = this.#error ? `<div class="say err" role="alert">${esc(this.#error)}</div>` : '';
       // the bar (design site: Fix bar): the property's toy, the headline and the detail, where you are, the way into the
       // other job. The choice (the options, Use, Keep, Skip) is made on the element, in its own box beside it
-      const n = placesOf(g), prop = propWord(mark), unitOf = (x) => (Number.isFinite(x) ? `${Math.round(x * 100) / 100}${kind === 'time' ? 'ms' : kind === 'type' && /weight/.test((mark.props ?? []).join()) ? '' : 'px'}` : null);
-      const now = unitOf(v?.now?.n) ?? (mark.value != null && !/^[a-z-]+-\[/.test(String(mark.value)) ? mark.value : null);
-      const sayLine = mark.family === 'craft' ? `${n} ${nounOf(g, n)}: ${String(what).replace(/^./, (c) => c.toLowerCase())}` : prop ? `${n} ${nounOf(g, n)} ${n === 1 ? 'has' : 'have'} a hard-coded ${prop}` : `${n} ${nounOf(g, n)}: ${what.toLowerCase()}`;
+      const n = placesOf(g), prop = propWord(mark, nameOf(g)), kindNow = KIND_OF_WORD[prop] ?? kind;
+      const unitOf = (x) => (Number.isFinite(x) ? `${Math.round(x * 10) / 10}${kindNow === 'time' ? 'ms' : prop === 'font weight' ? '' : 'px'}` : null);
+      // what it is now: its value, else the class itself (a Tailwind default has no number of its own here)
+      const now = unitOf(v?.now?.n) ?? (prop ? nameOf(g) : null);
+      const framework = /framework/.test(mark.rule ?? '');
+      const sayLine = mark.family === 'craft' ? `${n} ${nounOf(g, n)}: ${String(what).replace(/^./, (c) => c.toLowerCase())}`
+        : prop && framework ? `${n} ${nounOf(g, n)} use${n === 1 ? 's' : ''} Tailwind’s default ${prop}` : prop ? `${n} ${nounOf(g, n)} ${n === 1 ? 'has' : 'have'} a hard-coded ${prop}` : `${n} ${nounOf(g, n)}: ${what.toLowerCase()}`;
       const tokens = v?.ready ? [...new Map([...v.options].sort((a, b) => (a.n ?? 0) - (b.n ?? 0)).map((o) => [unitOf(o.n) ?? o.label, 1])).keys()].filter(Boolean) : [];
       const moreLine = mark.family === 'craft' ? esc(String(mark.title ?? mark.because ?? ''))
-        : `${now != null && now !== '' ? `<span class="pl-pill" data-hue="coral">${esc(String(now))}</span> ` : ''}${esc(tokens.length && prop ? `isn’t one of your ${prop} tokens: ${listOf(tokens)}.` : what)}`;
+        : `${now != null && now !== '' ? `<span class="pl-pill" data-hue="coral">${esc(String(now))}</span> ` : ''}${esc(framework ? (tokens.length && prop ? `isn’t one of your ${prop} tokens: ${listOf(tokens)}.` : `is Tailwind’s default, not yours.`) : tokens.length && prop ? `isn’t one of your ${prop} tokens: ${listOf(tokens)}.` : prop ? `isn’t one of your ${prop} tokens.` : what)}`;
       const nav = `<span class="onav"><button class="prev" aria-label="Previous fix">‹</button><span>${esc(FIX.position(g, live, noteOf))}</span><button class="next" aria-label="Next fix">›</button></span>`;
-      html = `<div class="one"${slide ? '' : ' style="animation:none"'}><i class="ic big">${toyFor(mark, kind)}</i><span class="lines"><span class="hl">${esc(sayLine)}${info}</span><span class="dt">${moreLine}</span></span>`
+      html = `<div class="one"${slide ? '' : ' style="animation:none"'}><i class="ic big">${toyFor(mark, kindNow)}</i><span class="lines"><span class="hl">${esc(sayLine)}${info}</span><span class="dt">${moreLine}</span></span>`
         + `<span class="sep"></span>${nav}${button(CLEANUP.bar, { cls: 'sm quiet cleanup', attrs: 'aria-keyshortcuts="c"', icon: toyOf('icon') })}</div>`;
       // the soft buttons replace the old ones in the choice: Use (pink, ↵), Keep and Skip (quiet)
       const soft = acts
@@ -1077,18 +1104,21 @@ export class FixPanel {
         const order = v.options.map((o, i) => ({ o, i })).sort((a, b) => (Number.isFinite(a.o.n) && Number.isFinite(b.o.n) ? a.o.n - b.o.n : 0));
         this.#stepOf = order.map((x) => x.i);
         // an engine finding's option may carry no number: its proof recorded the corner it wants and the one it has
-        const proof = mark.craft?.proof, wantN = (o) => (Number.isFinite(o.n) ? o.n : kind === 'radius' && Number.isFinite(proof?.wantR) ? proof.wantR : o.n);
+        const proof = mark.craft?.proof, wantN = (o) => (Number.isFinite(o.n) ? o.n : kindNow === 'radius' && Number.isFinite(proof?.wantR) ? proof.wantR : o.n);
         const steps = order.map(({ o }) => ({ token: String(o.cls ?? o.label ?? o.n), label: unitOf(wantN(o)) ?? o.label ?? '', n: wantN(o), swatch: o.swatch }));
-        const nowN = Number.isFinite(v.now?.n) ? v.now.n : kind === 'radius' && Number.isFinite(proof?.mineR) ? proof.mineR : null;
+        const nowN = Number.isFinite(v.now?.n) ? v.now.n : kindNow === 'radius' && Number.isFinite(proof?.mineR) ? proof.mineR : null;
         const state = { steps, current: null, picked: steps[order.findIndex((x) => x.i === v.at)]?.token ?? null,
           drift: nowN != null ? { n: nowN, label: unitOf(nowN) ?? String(v.now?.label ?? '') } : null };
         const name = prop ? prop[0].toUpperCase() + prop.slice(1) : FIX.what(mark);
-        const control = kind === 'radius' ? radiusControl(name, state) : kind === 'colour' && steps.every((x) => x.swatch) ? swatches(name, state)
+        const control = kindNow === 'radius' ? radiusControl(name, state) : kindNow === 'colour' && steps.every((x) => x.swatch) ? swatches(name, state)
           : steps.every((x) => Number.isFinite(x.n)) ? stepper(name, state) : null;
-        chips = control ? `<span class="ic sm" aria-hidden="true">${toyFor(mark, kind)}</span><span class="ctl">${control}</span>`
+        chips = control ? `<span class="ic sm" aria-hidden="true">${toyFor(mark, kindNow)}</span><span class="ctl">${control}</span>`
           : `<span class="chips">${v.options.map((o, i) => `<button class="sp chip" data-i="${i}" aria-pressed="${v.at === i}" title="${esc(o.cls ?? o.label ?? '')}">${esc(unitOf(o.n) ?? o.label ?? '')}</button>`).join('')}</span>`;
       }
-      this.#onBody = `${failed}${unseen}${reach}${chips}${soft}`;
+      const writable = !v?.ready || v.options.some((o) => o.ok);
+      const cant = writable ? '' : `<span class="cant">${esc(FIX.cantWrite ?? 'Plumber can’t write this change in your code yet. Keep it, or change it by hand.')}</span>`;
+      const acts2 = writable ? soft : soft.replace(/<button type="button" class="tb sm take"[\s\S]*?<\/button>/, '');
+      this.#onBody = `${failed}${unseen}${reach}${chips}${cant}${acts2}`;
       this.#onAt = g.members.find((m) => shown(m.el))?.el ?? null;
     }
     // the last fix written stays said above, with its Undo, until the next one is written
