@@ -106,6 +106,7 @@ export class Reader {
   stop() {
     this.#running = false;
     this.#run++;
+    this.#line = []; this.#at = 0; this.#lined.clear(); // a stopped reading's line is not the next one's
     this.#mo?.disconnect();
     clearTimeout(this.#throttle); this.#throttle = 0;
     clearTimeout(this.#retry); this.#retry = 0;
@@ -249,26 +250,31 @@ export class Reader {
         if (error?.status === 404) { this.#noPage = true; for (const item of items) if (item.state === 'reading') item.state = 'queued'; this.#elements(items.filter((item) => item.state === 'queued')); return; }
         this.#parked(items, error);
       })
-      .finally(() => { if (run === this.#run) this.#inflight--, this.#settle(); });
+      .finally(() => { if (run === this.#run) this.#inflight--, this.#pump(), this.#settle(); });
   }
 
-  // Per-element readings, WAVE in flight at once, in document order; a wave that lands starts the next.
-  #elements(items) {
-    const queue = [...items];
-    const pump = () => {
-      while (this.#running && queue.length && this.#inflight < WAVE) {
-        const item = queue.shift();
-        const fresh = item.fresh; item.fresh = false;
-        item.state = 'reading';
-        this.#inflight++;
-        const run = this.#run;
-        this.#host.readMarks(item.el, fresh || item.caller === true, { computed: true })
-          .then((state) => { if (this.#live(run)) this.#landed(item, state); })
-          .catch((error) => { if (this.#live(run)) this.#parked([item], error); })
-          .finally(() => { if (run === this.#run) this.#inflight--, pump(), this.#settle(); });
-      }
-    };
-    pump();
+  // Per-element readings, WAVE in flight at once, in document order. One line for the whole reader, pumped again when
+  // any reading lands (a whole-page one too): a line of its own per call was pumped only by its own readings, so one
+  // started while WAVE were already in flight (a pass-through element asked again) never started and never ended
+  // (six elements on algorecall's problems page, and the page never counted as read through).
+  // Each read pass hands over every element still queued: one already in the line is not added again (the line grew by
+  // thousands a pass, and walking it took longer than reading).
+  #line = []; #at = 0; #lined = new Set();
+  #elements(items) { for (const item of items) if (!this.#lined.has(item)) { this.#lined.add(item); this.#line.push(item); } this.#pump(); }
+  #pump() {
+    while (this.#running && this.#at < this.#line.length && this.#inflight < WAVE) {
+      const item = this.#line[this.#at++]; this.#lined.delete(item);
+      if (this.#at > 4096) { this.#line = this.#line.slice(this.#at); this.#at = 0; }
+      if (item.state === 'ready' || !this.#items.has(item.id)) continue; // read already, or gone (one handed over waits as 'reading')
+      const fresh = item.fresh; item.fresh = false;
+      item.state = 'reading';
+      this.#inflight++;
+      const run = this.#run;
+      this.#host.readMarks(item.el, fresh || item.caller === true, { computed: true })
+        .then((state) => { if (this.#live(run)) this.#landed(item, state); })
+        .catch((error) => { if (this.#live(run)) this.#parked([item], error); })
+        .finally(() => { if (run === this.#run) this.#inflight--, this.#pump(), this.#settle(); });
+    }
   }
 
   #landed(item, state) {

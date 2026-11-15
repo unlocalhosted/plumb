@@ -576,6 +576,33 @@ test('a route whose code arrives late is judged once it is there, not as its loa
   assert.deepEqual(by.get('a11y/heading-skip'), [lineOf(REAL, 'skipped')], JSON.stringify(ofPacks(by)));
 });
 
+// The reader's one line of readings: 600 elements built by script (each read on its own) and twenty from a pass-through
+// component, all read through. This guards the line; it does not force the race that stranded six elements on
+// algorecall's problems page (a pass-through element asked again while 128 readings were in flight, in a line of its
+// own that nothing pumped): batching lands readings together, so a small page rarely meets it. That is proven on the app.
+const CROWD = `import { useLayoutEffect, useRef } from 'react';
+import { Box } from './Box.jsx';
+export function App() {
+  const host = useRef(null);
+  useLayoutEffect(() => { for (let i = 0; i < 600; i++) { const d = document.createElement('div'); d.className = 'p-2'; d.textContent = 'built ' + i; host.current.append(d); } }, []);
+  return (
+    <main className="flex flex-col gap-s4 p-s4">
+      <h1>Crowd</h1>
+      {Array.from({ length: 20 }, (_, i) => <Box key={i} className="p-3 rounded-md">passed {i}</Box>)}
+      <div ref={host} />
+    </main>
+  );
+}
+`;
+const BOX = `export function Box({ className, children }) { return <div className={className}>{children}</div>; }
+`;
+test('a crowded page with pass-through parts is read through', { timeout: 240000 }, async (t) => {
+  if (!await built()) return t.skip('Run npm run build first.');
+  const { root, url } = await fixture(t, CROWD, { files: { 'src/Box.jsx': BOX } });
+  const result = await plumber(['craft', '--url', url, '--json', '--no-probe', '--no-pairs', '--timeout', '45000', '--root', root]);
+  assert.equal(JSON.parse(result.stdout).routes[0].complete, true, 'stopped before every element was read');
+});
+
 test('a page that is still loading is not told it has no main and no h1', { timeout: 240000 }, async (t) => {
   if (!await built()) return t.skip('Run npm run build first.');
   assert.deepEqual(ofPacks(await said(t, LOADING)), []);
