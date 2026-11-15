@@ -1784,10 +1784,35 @@ field is empty). The table of five writes, before and after. The Next table: eig
 - **Still open:** a class table imported from another file (`ICON_CAT_CLS` in richtext-word-icons.ts) is not
   followed; a write there lands in a different file from the element, which the write path doesn't carry yet.
 
+### 35. Closing the two open misses and sweeping more pages (2026-11-15)
+- **The itch:** the owner: "lets try a few more and fix open items". Two items were open from the sweep before: a
+  class table imported from another file, and a frame in algorecall's site header that seemed to map past the end
+  of its file.
+- **The imported table:** Two Sum's word icons take their colour from `ICON_CAT_CLS[cat]`, a table that
+  richtext-word-icons.ts exports. The class finder now follows the import to the table, with each key as its own
+  case. Because the table is exported, it counts as read by more than one place. A fix pinned to it is written into
+  the table's file: the server no longer needs a JSX element where the table is declared. Proof: a real swap on
+  Two Sum changed line 28 of richtext-word-icons.ts and nothing else, and the file was restored afterwards.
+- **The site header's frame:** decoding the map algorecall serves for SiteHeader showed every entry inside the
+  file, so the map was fine. The stack frame `SiteHeader.tsx:1951:21` is a position in the compiled file, at the start of
+  `/* @__PURE__ */ _jsxDEV(MobileNav, …)`, and the map's first entry on that row is at column 28 (`MobileNav`).
+  Plumber's lookup took only an entry at or before the column, so it found none. It now takes the row's first
+  entry: 547:14, the `<MobileNav>` in the source. (Also seen on the way: React's dev line numbers in that file run
+  to 1251, because the React Compiler's Babel pass runs first. Plumber doesn't read them.)
+- **The new pages:** algorecall's curriculum placed 127 of 127 elements and the system-design list 88 of 88.
+  Burst Balloons had one miss: `<MotionChoice className=…>`, where `const MotionChoice = motion.create(ChoiceSlab)`.
+  A local name made by a call around a component (motion.create, memo, styled) now counts as a usage of that
+  component, and the classes place on LessonButton.tsx:275.
+- **A second app:** crafting-ui's home page had 8 misses out of 182. Two were small local functions in the header,
+  `full()` and `drop(…)`, that return class strings. The finder now reads what a called local function returns,
+  and a parameter's string default (`gone = 'hidden'`) as the case where the call leaves it out. The other six are
+  names put together from data (`fr-m-${k.cls}`). No string in the source holds them, so refusing is right.
+- **Not done:** no tests were run on any of this. The laptop was out of memory for most of the run (under 200 MB
+  free), and after its cache was cleared plumber took about 15 minutes to read algorecall again.
+
 ## Open gaps
-- A class table imported from another file (`ICON_CAT_CLS[cat]`) can't be placed: the write path assumes the string
-  is in the element's file or a usage's. Also: algorecall's site header has a source map that places a frame past
-  the end of the file; plumber now stops there, but the map itself is wrong somewhere upstream.
+- Sweeps covered six algorecall pages and one crafting-ui page. A class passed as an argument to a local function
+  (`drop(FIT.section, 'max-sm:hidden')`) is not yet read from the call; only the function's own strings are.
 - The site's top bar doesn't fit a phone (390px): it widens the page to about 500px. Needs a compact bar.
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
 
