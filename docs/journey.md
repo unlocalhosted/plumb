@@ -1372,8 +1372,37 @@
 - **Media hooks:** docs/qa/break-it-fixed/1-bigger.jpg, 2-narrower.jpg, 3-typing.jpg, 4-lists.jpg (broken under
   stress next to fixed).
 
+## Break it: Broken, then Fixed, on the page (2026-11-17)
+- **The itch:** after the pictures of fixes made by hand, the owner said "Yes, build that" to Break it showing its
+  own fix on the page when you step to a note. Advice in words asks the person to picture the result; the page can
+  show it.
+- **What we chose and why:** a Broken / Fixed switch on the note line, and the F key. Fixed applies the note's advice
+  to the live page, under the same stress, and Broken puts the page back. It appears only where plumber has a fix to
+  show: text sizes in pixels (the rem class, or rem on the elements), a field that grows as you type (wrap inside a
+  sentence, or keep its width and scroll for a form field), and lists (leave the part out when its items have no
+  words or it was handed none; keep its width when the one left has words). A crash, a failed action and words
+  running out of their box show no switch, because plumber has no fix to show for them yet. The ring of a fixed note
+  turns mint and loses its hatch.
+- **A fix is judged like the stress:** after applying it, Break it measures the page again, and anything newly broken
+  is said in the note and ringed in coral. Without that, the switch would claim "fixed" over a page that still breaks.
+- **Dead ends:** "leave the part out" first hid the whole step part, its title and text too; it now takes out only
+  the list and the controls that serve it (the rail and its Pause), stopping at anything with words of its own. The
+  wrap message read "keeps its width" because the check for "inside a sentence" ran after the fix had changed the
+  page; it is now asked first. The check after the fix first ran while the page was still moving and named the
+  wrong thing; it now waits for the page to settle. Runs in a hidden browser pane gave the page no width and every
+  list "scrolled sideways"; the runs were redone at a set size.
+- **The proof:** on crafting-ui. Typing: Fixed wraps the long topic inside "Make a reel about …" and the Start from
+  buttons come back. Lists: Fixed takes out the one-step rail and Pause and keeps "Check the topic". Bigger text: Fixed
+  makes the 11px labels rem, then says the "83 px · cap 59" label now runs into the hint, and 6 more things.
+- **Not yet:** the fix is a preview in the page, not a change to source; words running out of their box, a failed
+  action and a crash have no fix to show; Narrower's copy has no switch; no tests.
+- **Media hooks:** docs/qa/break-it-switch/1-typing.jpg, 2-lists.jpg, 3-bigger.jpg (Broken next to Fixed).
+
 ## Open gaps
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
+
+## Shipped · 2026-W47
+- In Break it, press F on a note and plumber shows its fix on your live page under the same stress, then checks the page again and says what the fix itself breaks; on crafting-ui a long topic wraps inside its sentence, a one-step rail leaves itself out, and 11px labels grow in rem ([entry](#break-it-broken-then-fixed-on-the-page-2026-11-17)). On its own branch.
 
 ## Shipped · 2026-W46
 - Break it's advice now depends on what the part is for: a field inside a sentence is told to wrap, not scroll, so a person can read back what they typed; a rail of wordless steps with one step is told to leave itself out; and tab and menu names the author typed are no longer stretched as if they were content ([entry](#break-it-a-fix-is-judged-by-the-person-not-by-the-number-2026-11-16)). On its own branch.

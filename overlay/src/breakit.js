@@ -392,8 +392,11 @@ svg.page { position: absolute; inset: 0; width: 100%; height: 100%; overflow: vi
 .modes button { height: 24px; padding: 0 10px; border: 0; border-radius: var(--pl-radius-pill); background: none; color: var(--pl-ink-2); font: var(--pl-text-label); font-size: 12px; cursor: pointer; }
 .modes button[aria-pressed="true"] { background: var(--pl-paper); color: var(--pl-ink); box-shadow: var(--pl-shadow-tag); }
 .modes button:focus-visible { outline: 2px solid var(--pl-instrument); outline-offset: 2px; }
+.modes.fix { align-self: start; }
+.note.is-fixed .title { color: var(--pl-ink); }
+.ring.ok { stroke: var(--pl-on); }
 .verdict { margin: 0; font: var(--pl-card-meta); color: var(--pl-ink-2); }
-.note { display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: start; }
+.note { display: grid; grid-template-columns: 1fr auto auto; gap: 12px; align-items: start; }
 .say { min-width: 0; display: grid; gap: 2px; }
 .title { margin: 0; font: var(--pl-card-title); text-wrap: pretty; }
 .why { margin: 0; color: var(--pl-ink-2); text-wrap: pretty; }
@@ -883,7 +886,7 @@ async function sizeAll() {
         if (size.id === 'one') {
           refresh(list);
           const solo = list.items.length === 1 ? list.items[0] : null, r = solo?.getBoundingClientRect();
-          if (r && r.width > one.width * 1.8 && r.width - one.width > 160) add({ kind: 'stretch', el: solo, title: `the one left stretches to ${Math.round(r.width)}px wide.`, why: norm(solo.innerText ?? '')
+          if (r && r.width > one.width * 1.8 && r.width - one.width > 160) add({ kind: 'stretch', el: solo, keep: Math.round(one.width), title: `the one left stretches to ${Math.round(r.width)}px wide.`, why: norm(solo.innerText ?? '')
             ? `Each one was ${Math.round(one.width)}px; alone it fills the row and reads as a different thing. Keep its width when it is on its own.`
             : `These are markers with no words, there to step through. With one there is nothing to step through: leave the part out when there is only one.` });
           const plural = fresh.find((x) => /(^|\s)1\s+\p{L}+s\b/u.test(x));
@@ -932,10 +935,76 @@ async function showSized(i) {
 }
 function unsize() { if (sized) { feed(sized, sized.orig); sized = null; } }
 
+// ── the fix, shown: the note's advice applied on the page, under the same stress ─────
+
+let fixed = null;   // { n, undo } while the note in hand shows its fix
+const restyle = (el, css) => { const was = el.getAttribute('style'); Object.assign(el.style, css); return () => (was == null ? el.removeAttribute('style') : el.setAttribute('style', was)); };
+/** What "leave the part out" leaves out: the list and the controls that only serve it (a Pause beside a step rail),
+ *  stopping before anything that carries words of its own (the step's title and text). */
+function partRoot(list) {
+  let top = null;
+  for (let f = list.fiber.child; f; f = f.child) if (f.stateNode instanceof Element) { top = f.stateNode; break; }
+  const bare = (el) => !norm([...el.querySelectorAll('*')].reduce((t, c) => (c.closest('button, [role=button]') ? t : t + [...c.childNodes].filter((x) => x.nodeType === 3).map((x) => x.data).join(' ')), ''));
+  let el = list.box;
+  while (el.parentElement && el !== top && bare(el.parentElement)) el = el.parentElement;
+  return el;
+}
+/** How to show a note's advice on the page, or null when plumber has no fix to show for it. Returns undo. */
+function fixFor(n) {
+  if (!n?.live && n?.kind !== 'locked') return null;
+  if (n.kind === 'locked') return () => {
+    const rem = `${+(n.px / 16).toFixed(4)}rem`;
+    if (n.cls) { const st = document.createElement('style'); st.textContent = `.${CSS.escape(n.cls)} { font-size: ${rem} !important; }`; document.head.append(st); return () => st.remove(); }
+    const undos = (n.els ?? [n.el]).map((el) => restyle(el, { fontSize: rem })); return () => undos.forEach((u) => u());
+  };
+  if (n.kind === 'grows' && n.field) return () => {
+    const f = n.field;
+    n.sentence ??= inSentence(f);   // asked before the fix changes the page
+    if (n.sentence) {
+      // a box that grows down, not across: the words wrap inside the sentence and can all be read back
+      const at = /^inline/.test(cssOf(f.parentElement).display) ? f.parentElement : null;
+      const ta = document.createElement('textarea');
+      ta.className = f.className; ta.setAttribute('style', f.getAttribute('style') ?? ''); ta.value = f.value; ta.rows = 1; ta.setAttribute('data-plumb-fix', '');
+      Object.assign(ta.style, { fieldSizing: 'content', resize: 'none', overflowWrap: 'anywhere', display: 'block', width: '100%', maxWidth: '100%', minWidth: '0', boxSizing: 'border-box' });
+      const undos = at ? [restyle(at, { display: 'block', maxWidth: '100%' }), ...[...at.children].map((c) => restyle(c, { display: 'none' }))] : [restyle(f, { display: 'none' })];
+      (at ?? f.parentElement).insertBefore(ta, at ? null : f.nextSibling);
+      return () => { ta.remove(); undos.reverse().forEach((u) => u()); };
+    }
+    // a form field: it keeps the width it has and the text scrolls inside it
+    const undos = [restyle(f, { maxWidth: '100%', minWidth: '0' })];
+    for (let a = f.parentElement, i = 0; a && i < 3; a = a.parentElement, i++) undos.push(restyle(a, /grid/.test(cssOf(a).display) ? { minWidth: '0', maxWidth: '100%', gridTemplateColumns: 'minmax(0, auto)' } : { minWidth: '0', maxWidth: '100%' }));
+    return () => undos.reverse().forEach((u) => u());
+  };
+  if ((n.kind === 'blank' && n.list?.how === 'prop') || (n.kind === 'stretch' && !norm(n.el?.innerText ?? ''))) return () => restyle(partRoot(n.list), { display: 'none' });
+  if (n.kind === 'stretch' && n.keep) return () => {
+    refresh(n.list); const st = document.createElement('style'); const at = n.list.items[0]; at.setAttribute('data-plumb-keep', '');
+    st.textContent = `[data-plumb-keep] { max-width: ${n.keep}px !important; }`; document.head.append(st);
+    return () => { st.remove(); at.removeAttribute('data-plumb-keep'); };
+  };
+  return null;
+}
+function unfix() { if (fixed) { fixed.undo(); fixed = null; } }
+async function toggleFix() {
+  const n = notes[index], make = fixFor(n);
+  if (!make) return;
+  if (fixed) { unfix(); paint(); return; }
+  // the fix is judged like the stress was: what it breaks that was not broken a moment ago is said, not hidden
+  const was = measure(window, { all: true });
+  fixed = { n, undo: make(), after: null };
+  paint(); await frames(2); await pause(400);   // let transitions the fix set off finish before judging it
+  if (!fixed || fixed.n !== n) return;
+  const now = [...measure(window, { all: true }).values()].filter((b) => (!was.has(b.el) || was.get(b.el).kind !== b.kind) && b.kind !== 'sideways' ? true : b.kind === 'sideways' && ![...was.values()].some((w) => w.kind === 'sideways'));
+  const rank = { sideways: 0, cut: 1, overlap: 2, spill: 3 }; now.sort((x, y) => (rank[x.kind] ?? 9) - (rank[y.kind] ?? 9));
+  fixed.moved = now.map((b) => `${b.kind}: ${nameOf(b.el)}${b.other ? ' / ' + nameOf(b.other) : ''}`);
+  if (now.length) fixed.after = { ...now[0], ...say(now[0]), live: false, rect: rectOf({ ...now[0], live: false, rect: now[0].rect }) };
+  paint();
+}
+
 // ── the toys ────────────────────────────────────────────────
 
 let toy = null;
 export function setToy(next) {
+  unfix();
   if (next === toy) next = null;
   if (toy === 'longer') { on = false; shrink(); }
   if (toy === 'narrower') unstage();
@@ -969,25 +1038,27 @@ function rectOf(n) {
 
 function marks() {
   // narrower: only the break in hand, at its own width; the others are not broken at this width yet
-  return notes.map((n, i) => {
+  const moved = fixed?.after ? (() => { const r = fixed.after.kind === 'overlap' ? (() => { const a = wordsRect(fixed.after.el), b = wordsRect(fixed.after.other); return a && b ? union(a, b) : a ?? b; })() : wordsRect(fixed.after.el) ?? fixed.after.el.getBoundingClientRect(); return ring(r, true); })() : '';
+  return moved + notes.map((n, i) => {
     if ((toy === 'narrower' || toy === 'lists') && i !== index) return '';   // lists: the other notes are other sizes, not on screen
     // one cause in many places: the one in hand rings every place, the others are not drawn
-    if (n.els) return i !== index ? '' : n.els.map((el) => ring(wordsRect(el), false)).join('');
+    if (n.els) return i !== index ? '' : n.els.map((el) => ring(wordsRect(el), false, !!fixed)).join('');
     const r = rectOf(n);
     if (!r || r.width <= 0) return '';
     const x = r.left - 3, y = r.top - 3, w = r.width + 6, h = r.height + 6;
     // the one in hand: a hatched band round the box, never over the words in it
     const B = 6, band = `M${x - B} ${y - B}h${w + 2 * B}v${h + 2 * B}h${-(w + 2 * B)}z M${x} ${y}v${h}h${w}v${-h}z`;
-    const fill = i === index ? `<path class="hand" fill-rule="evenodd" d="${band}"/>` : '';
-    return `<g class="mark">${fill}<rect class="halo" x="${x}" y="${y}" width="${w}" height="${h}" rx="6"/><rect class="ring" x="${x}" y="${y}" width="${w}" height="${h}" rx="6"${i === index ? '' : ' opacity=".55"'}/></g>`;
+    const ok = i === index && fixed;
+    const fill = i === index && !ok ? `<path class="hand" fill-rule="evenodd" d="${band}"/>` : '';
+    return `<g class="mark">${fill}<rect class="halo" x="${x}" y="${y}" width="${w}" height="${h}" rx="6"/><rect class="ring${ok ? ' ok' : ''}" x="${x}" y="${y}" width="${w}" height="${h}" rx="6"${i === index ? '' : ' opacity=".55"'}/></g>`;
   }).join('');
 }
 
-function ring(r, hand) {
+function ring(r, hand, ok = false) {
   if (!r || r.width <= 0 || r.bottom < 0 || r.top > innerHeight) return '';
   const x = r.left - 3, y = r.top - 3, w = r.width + 6, h = r.height + 6, B = 6;
   const band = `M${x - B} ${y - B}h${w + 2 * B}v${h + 2 * B}h${-(w + 2 * B)}z M${x} ${y}v${h}h${w}v${-h}z`;
-  return `<g class="mark">${hand ? `<path class="hand" fill-rule="evenodd" d="${band}"/>` : ''}<rect class="halo" x="${x}" y="${y}" width="${w}" height="${h}" rx="6"/><rect class="ring" x="${x}" y="${y}" width="${w}" height="${h}" rx="6"/></g>`;
+  return `<g class="mark">${hand ? `<path class="hand" fill-rule="evenodd" d="${band}"/>` : ''}<rect class="halo" x="${x}" y="${y}" width="${w}" height="${h}" rx="6"/><rect class="ring${ok ? ' ok' : ''}" x="${x}" y="${y}" width="${w}" height="${h}" rx="6"/></g>`;
 }
 const count = (n, one, many) => (n === 1 ? `one ${one}` : `${n} ${many}`);
 function verdict() {
@@ -1054,14 +1125,14 @@ function skeleton() {
     <div class="bar" role="region" aria-label="Break it" aria-live="polite"></div>`;
   host.shadowRoot.querySelector('.bar').addEventListener('click', (e) => {
     const b = e.target.closest('button'); if (!b) return;
-    if (b.dataset.mode) setMode(b.dataset.mode); else if (b.dataset.toy) setToy(b.dataset.toy); else if (b.classList.contains('prev')) go(-1); else if (b.classList.contains('next')) go(1);
+    if (b.dataset.fix) { if ((b.dataset.fix === 'fixed') !== !!fixed) toggleFix(); } else if (b.dataset.mode) setMode(b.dataset.mode); else if (b.dataset.toy) setToy(b.dataset.toy); else if (b.classList.contains('prev')) go(-1); else if (b.classList.contains('next')) go(1);
   });
 }
 
 function paint() {
   frame = 0;
   if (!host) return;
-  if (toy === 'longer' && on && !growing && !sorting && tally || toy === 'bigger') {
+  if (!fixed && (toy === 'longer' && on && !growing && !sorting && tally || toy === 'bigger')) {
     const keep = notes[index]?.el;
     notes = [...judge(), ...(toy === 'bigger' ? locked.map((n) => ({ ...n, ...say(n), source: sourceOf(n.el) })) : [])];
     const again = keep ? notes.findIndex((n) => n.el === keep) : -1;
@@ -1070,7 +1141,10 @@ function paint() {
   const busy = growing || sorting || stage?.sweeping || probing || typing || listing || act?.phase === 'watching';
   const n = toy && !busy ? notes[index] : null;
   const step = notes.length > 1 && n ? `<span class="step"><button class="prev" aria-label="Previous break" ${index ? '' : 'disabled'}>‹</button>${index + 1} of ${notes.length}<button class="next" aria-label="Next break" ${index < notes.length - 1 ? '' : 'disabled'}>›</button></span>` : '<span></span>';
-  const note = n ? `<div class="note"><div class="say"><p class="title">${esc(n.title)}</p><p class="why">${esc(n.why)}${n.source ? ` <span class="src">${esc(n.source)}</span>` : ''}</p></div>${step}</div>` : '';
+  const sw = n && fixFor(n) ? `<div class="modes fix" role="group" aria-label="Show this broken or fixed (F)">${[['broken', 'Broken'], ['fixed', 'Fixed']].map(([id, l]) => `<button data-fix="${id}" aria-pressed="${!!fixed === (id === 'fixed')}">${l}</button>`).join('')}</div>` : '<span></span>';
+  const more = (fixed?.moved?.length ?? 0) - 1;
+  const after = fixed?.after ? ` It moves the problem: ${fixed.after.title.replace(/^[A-Z“]/, (c) => (c === '“' ? c : c.toLowerCase()))}${more > 0 ? ` (and ${count(more, 'more thing', 'more things')})` : ''}` : '';
+  const note = n ? `<div class="note${fixed ? ' is-fixed' : ''}"><div class="say"><p class="title">${esc(fixed ? fixedTitle(n) + after : n.title)}</p><p class="why">${esc(n.why)}${n.source ? ` <span class="src">${esc(n.source)}</span>` : ''}</p></div>${sw}${step}</div>` : '';
   const root = host.shadowRoot;
   root.querySelector('.marks').innerHTML = toy && !busy ? marks() : '';
   root.querySelector('.bar').innerHTML = `<div class="toys">${TOYS.map(([id, label, face]) => `<button class="toy" data-toy="${id}" aria-pressed="${toy === id}"><span class="face">${face}</span>${label}</button>`).join('')}</div>
@@ -1079,9 +1153,18 @@ function paint() {
 }
 const later = () => { if (host && !frame) frame = requestAnimationFrame(paint); };
 
+/** What the note says while its fix is shown: the same stress, and what the fix does about it. */
+function fixedTitle(n) {
+  if (n.kind === 'locked') return `With rem, ${n.count > 1 ? 'these grow' : 'it grows'} with the reader's setting.`;
+  if (n.kind === 'grows') return (n.sentence ?? inSentence(n.field)) ? 'With the fix, the words wrap inside the sentence and can all be read back.' : 'With the fix, the field keeps its width and the text scrolls inside it.';
+  if (n.kind === 'stretch' && norm(n.el?.innerText ?? '')) return `With the fix, the one left keeps its ${n.keep}px.`;
+  return 'With the fix, the part leaves itself out.';
+}
+
 function go(dir) {
   const to = Math.max(0, Math.min(notes.length - 1, index + dir));
   if (to === index) return;
+  unfix();
   if (toy === 'narrower') { showAt(to); return; }
   if (toy === 'extreme') { showVariant(to); return; }
   if (toy === 'typing') { showTyped(to); return; }
@@ -1116,6 +1199,7 @@ export function hideBreakIt() {
   host.remove(); host = null;
 }
 export const toggleBreakIt = () => (host ? hideBreakIt() : showBreakIt());
+export const readFixed = () => fixed && { title: fixedTitle(fixed.n), moved: fixed.moved ?? [] };
 export const readBreaks = () => notes.map(({ kind, title, why, source }) => ({ kind, title, why, source }));
 
 addEventListener('keydown', (event) => {
@@ -1123,7 +1207,7 @@ addEventListener('keydown', (event) => {
   if (at?.isContentEditable || at?.matches?.('input, textarea, select')) return;
   if (event.altKey && event.code === 'KeyS' && !event.repeat && !event.metaKey && !event.ctrlKey) { event.preventDefault(); event.stopPropagation(); toggleBreakIt(); return; }
   if (!host || event.altKey || event.metaKey || event.ctrlKey) return;
-  const k = { ArrowLeft: () => go(-1), ArrowRight: () => go(1), Escape: hideBreakIt }[event.key];
+  const k = { ArrowLeft: () => go(-1), ArrowRight: () => go(1), Escape: hideBreakIt, f: toggleFix, F: toggleFix }[event.key];
   if (k) { event.preventDefault(); event.stopPropagation(); k(); }
 }, true);
 /** Where each run of words on the page comes from, as sorted for Longer words. */
