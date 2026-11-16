@@ -58,6 +58,24 @@ Object.defineProperty = function (target, key, descriptor) {
   return result;
 };
 const stackOf = fiber => elementStacks.get(fiber?.memoizedProps) ?? fiber?._debugStack;
+// React 19.1+ records the creation stack of only the first 10,000 elements made in a second; every element after that
+// gets one shared "UnknownOwner" stack, and the line that made it is lost for good unless it renders again. A page that
+// draws more than that at load (a long page of live examples) loses the usage lines of everything below, so a class
+// passed in from a usage can't be found. React before 19.1 always recorded them; in dev, so does plumber: the count
+// React keeps (on the internals it hands the devtools hook) always reads 0.
+const liftStackCap = (renderer) => {
+  const internals = renderer?.currentDispatcherRef;
+  if (!internals || typeof internals !== 'object' || !('recentlyCreatedOwnerStacks' in internals)) return;
+  try { defineProperty(internals, 'recentlyCreatedOwnerStacks', { configurable: true, get: () => 0, set() {} }); } catch { /* frozen: React keeps its cap */ }
+};
+{
+  const hook = globalThis.__REACT_DEVTOOLS_GLOBAL_HOOK__;
+  if (hook && typeof hook === 'object') {
+    for (const renderer of hook.renderers?.values?.() ?? []) liftStackCap(renderer);
+    const inject = hook.inject;
+    if (typeof inject === 'function') hook.inject = function (renderer) { liftStackCap(renderer); return inject.apply(this, arguments); };
+  }
+}
 // The server's hash of a file when a creation stack was first read from it. Seeing the same stack after the file
 // changed means the element was kept from before the edit: its positions describe code that no longer exists.
 const stackHashes = new WeakMap();
