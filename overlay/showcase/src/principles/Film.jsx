@@ -307,7 +307,7 @@ export function Film({ head = null, panel = 'glass',  Example, names, onSaid, ch
     const all = () => spec.instances(example());
     const boxes = () => { const at = local(example()); return all().map((el) => (spec.ring ? spec.ring(example(), el) : at(el))); }; // spec.ring: the part of a place the fault is in
     (async () => {
-      setPlaying(true); setSide('broken'); setM(null); setChange(0); if (!openIn) { setFrame(null); setCam({ k: 1, x: 0, y: 0 }); } onSaid?.(''); if (spec.still) say('rest');
+      setPlaying(true); setSide('broken'); setM(null); setChange(0); if (!openIn) { setFrame(null); setCam({ k: 1, x: 0, y: 0 }); } onSaid?.(''); say('rest');
       await sleep(TIMING.lead, live); await document.fonts?.ready;
       if (spec.still) {
         const lead = () => all()[spec.lead];
@@ -406,7 +406,7 @@ export function Film({ head = null, panel = 'glass',  Example, names, onSaid, ch
       if (!openIn) await sleep(TIMING.camera, live);
       // MEASURE IT: every place outlined in sky; the gesture on the lead twice, the cause named the second time
       const rest = boxes(), lead = () => all()[spec.lead];
-      beat('2 · measure it: every place outlined'); setM({ tone: 'sky', boxes: rest });
+      beat('2 · measure it: every place outlined'); say('measure'); setM({ tone: 'sky', boxes: rest });
       await sleep(TIMING.outline, live);
       for (let rep = 0; rep < 2; rep++) {
         setPtr(toward(lead(), 5)); await sleep(TIMING.move, live);
@@ -422,7 +422,7 @@ export function Film({ head = null, panel = 'glass',  Example, names, onSaid, ch
       // WHY IT HOLDS: the other side; outlines mint; the same gesture on the lead names what the fix uses instead
       const fixBtn = sw.current?.querySelectorAll('button')[1];
       if (fixBtn) { setPtr(toward(fixBtn)); await sleep(TIMING.toSwitch, live); setPtr((p) => ({ ...p, down: true })); await sleep(TIMING.press, live); }
-      setSide('fixed'); setPtr((p) => ({ ...p, down: false })); beat('3 · the fix lands');
+      setSide('fixed'); setPtr((p) => ({ ...p, down: false })); beat('3 · the fix lands'); say('fix');
       if (spec.code) setChange(2); // the fix lands: struck, and the class that holds arrives
       await sleep(60, live);
       const fixedRest = boxes();
@@ -435,7 +435,7 @@ export function Film({ head = null, panel = 'glass',  Example, names, onSaid, ch
       spec.set(lead(), false);
       setM({ tone: 'on', boxes: fixedRest });
       // PAYOFF: the same gesture on every place
-      beat('4 · payoff: the same gesture on every place');
+      beat('4 · payoff: the same gesture on every place'); say('payoff');
       for (let i = 0; i < all().length; i++) {
         setPtr(toward(all()[i], 5)); await sleep(TIMING.move, live);
         spec.set(all()[i], true);
@@ -446,7 +446,7 @@ export function Film({ head = null, panel = 'glass',  Example, names, onSaid, ch
       setM({ tone: 'on', boxes: fixedRest }); setPtr((p) => p && { ...p, gone: true });
       // every place holds: plumber's check draws where the fix was written, and bursts from there (as its fix panel does)
       if (spec.code) {
-        beat('the check and the burst'); setChange(3); await sleep(TIMING.check, live);
+        beat('the check and the burst'); say('end'); setChange(3); await sleep(TIMING.check, live);
         const host = sw.current?.querySelector('div[aria-hidden="true"]'), check = host?.shadowRoot?.querySelector('[data-done]')?.getBoundingClientRect(), o = box.current.getBoundingClientRect();
         if (fx.current && check) { const ks = o.width / box.current.offsetWidth || 1; burst(fx.current, (check.left - o.left + check.width / 2) / ks, (check.top - o.top + check.height / 2) / ks); }
       }

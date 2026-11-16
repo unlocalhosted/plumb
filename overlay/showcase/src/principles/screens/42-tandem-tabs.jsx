@@ -263,6 +263,14 @@ TandemTabs.film = {
     };
   },
   say: 'Run your pointer along the tabs.',
+  // the words on screen, approved by the owner 2026-11-16
+  teach: { fault: 'font-weight: 600', fix: 'color: var(--ink)' },
+  script: [
+    { at: 'rest', text: 'Run your pointer along these tabs, and the whole row *jitters*.' },
+    { at: 'measure', text: 'These tabs turn bold on hover. Bold letters are wider, so the rest get pushed.' },
+    { at: 'fix', text: 'Show the hover with a darker colour instead.' },
+    { at: 'payoff', text: 'Now the row stays *still* under your hand.' },
+  ],
 };
 TandemTabs.lesson = {
   why: 'Bold letters are wider than regular ones. When a tab turns semibold under the pointer it grows a few pixels, and every tab after it slides over: move along the row and the whole row jitters under your cursor.',
