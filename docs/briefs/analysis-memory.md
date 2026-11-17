@@ -108,6 +108,28 @@ is the thing that pays for reading everything.
 The worker sends the main thread what changed, by number, instead of whole structures. The first start-up crash died
 while decoding one such copy.
 
+## Step 1, measured (2026-11-17)
+
+The component pass now keeps an index per file (imports, exports, and where each declaration sits) and parses the
+file again when a question needs its code. The parsed code lives for one build of the graph. Building it this way
+found a second holder: each file's finished graph kept a reference to every lookup table its build used, and the
+server keeps one graph per file. Those tables are now emptied when a build ends.
+
+Same heap profile of the analysis worker at rest on algorecall, on vm-agent:
+
+| | Before the cap | After step 1 |
+|---|---|---|
+| live heap | 2.17 GB | 1.26 GB |
+| parsed code (oxc) | 781 MB | 56 MB |
+| lookup keys in the component pass | 163 MB | not in the top eight |
+| whole process at rest (default heap limit) | did not start | 2.46 GB (2.7 GB with the cap alone) |
+
+The component graph is byte-identical before and after, on algorecall (342 components, 108,286 elements) and
+crafting-ui (37, 8,856), built in one call and file by file. The file-by-file build takes 10.1 s against 9.2 s before.
+
+What is left at the top of the heap: per-file maps in `sync` (110 MB), provenance (81 MB), file texts read twice
+(74 MB and 56 MB), the worker's lookup index (66 MB). Text and maps are steps 3 and 4.
+
 ## Expected (guesses until measured)
 
 - Step 1 removes most of the 781 MB of trees and a share of the 234 MB that points into them.

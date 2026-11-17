@@ -24,13 +24,15 @@ export interface ComponentIdentity {
   roots: { elements: string[]; classes: string[] };
   recipes?: ClassRecipe[];
 }
-interface Binding { node: Node }
+/** Where a declaration sits in its file: the top-level statement, and the declarator in it (-1: the declaration itself). */
+type At = readonly [statement: number, declarator: number];
 interface Import { file: string; name: string }
+/** What the graph needs to know about a file without its syntax tree. The tree is parsed again when a question needs
+ * it and kept only for the length of one build (`tree()` below), so a large app does not hold every file's tree. */
 interface Module extends SourceText {
-  ast: Program;
   diagnostic?: Finding;
-  bindings: Map<string, Binding>;
-  types: Map<string, Node>;
+  bindings: Map<string, At>;
+  types: Map<string, At>;
   imports: Map<string, Import>;
   exports: Map<string, Import | string>;
   stars: string[];
@@ -82,6 +84,8 @@ function children(node: Node, types = false): Node[] {
 function walk(node: Node, visit: (node: Node) => void, types = false): void {
   visit(node); for (const child of children(node, types)) walk(child, visit, types);
 }
+const declarationOf = (statement: Node): Node | null | undefined =>
+  statement.type === 'ExportNamedDeclaration' ? statement.declaration : statement.type === 'ExportDefaultDeclaration' ? statement.declaration : statement;
 const inDirectory = (file: string, directory: string) => file === directory || file.startsWith(directory + sep);
 const isFunction = (node: Node) => ['ArrowFunctionExpression', 'FunctionExpression', 'FunctionDeclaration'].includes(node.type);
 const memberName = (node: Node): string => node.type === 'MemberExpression' && !node.computed ? `${memberName(node.object)}.${nodeName(node.property)}` : nodeName(node);
@@ -116,7 +120,7 @@ export function discoverComponents(root: string, files: string[], config: PlumbC
   function exists(file: string): boolean {
     if (cache) watchedFiles.set(file, fileHash(file)); return existsSync(file);
   }
-  const modules = new Map<string, Module>(), selected = new Set<string>(), identities = new Map<string, ComponentIdentity | null>();
+  const modules = new Map<string, Module>(), trees = new Map<Module, Program>(), selected = new Set<string>(), identities = new Map<string, ComponentIdentity | null>();
   const directories: string[] = [], prefixes: string[] = [], packages: string[] = [];
   const configured = config.components?.from;
   if (configured !== undefined) {
@@ -194,9 +198,9 @@ export function discoverComponents(root: string, files: string[], config: PlumbC
       diagnostic = unreadable(file, file, error); diagnostics.push(diagnostic);
       ast = parseSync(file, '', parserOptions).program;
     }
-    const value: Module = { file, text, lineStarts: shared?.text === text ? shared.lineStarts : lineStarts(text), ast, ...(diagnostic ? { diagnostic } : {}), bindings: new Map(), types: new Map(), imports: new Map(), exports: new Map(), stars: [] };
-    modules.set(file, value);
-    for (const statement of value.ast.body) {
+    const value: Module = { file, text, lineStarts: shared?.text === text ? shared.lineStarts : lineStarts(text), ...(diagnostic ? { diagnostic } : {}), bindings: new Map(), types: new Map(), imports: new Map(), exports: new Map(), stars: [] };
+    modules.set(file, value); trees.set(value, ast);
+    for (const [index, statement] of ast.body.entries()) {
       if (statement.type === 'ImportDeclaration') {
         if (statement.importKind === 'type') continue;
         // Resolve lazily below; imports unrelated to identity need no AST.
@@ -205,16 +209,16 @@ export function discoverComponents(root: string, files: string[], config: PlumbC
           value.imports.set(item.local.name, { file: statement.source.value, name: item.type === 'ImportNamespaceSpecifier' ? '*' : item.type === 'ImportSpecifier' ? nodeName(item.imported) : 'default' });
         }
       }
-      const declaration = statement.type === 'ExportNamedDeclaration' ? statement.declaration : statement.type === 'ExportDefaultDeclaration' ? statement.declaration : statement;
+      const declaration = declarationOf(statement);
       if (declaration?.type === 'VariableDeclaration') {
-        for (const item of declaration.declarations) if (item.id.type === 'Identifier' && item.init) {
-          value.bindings.set(item.id.name, { node: item.init });
+        for (const [position, item] of declaration.declarations.entries()) if (item.id.type === 'Identifier' && item.init) {
+          value.bindings.set(item.id.name, [index, position]);
           if (statement.type === 'ExportNamedDeclaration') value.exports.set(item.id.name, item.id.name);
         }
       } else if (declaration?.type === 'FunctionDeclaration' && declaration.id) {
-        value.bindings.set(declaration.id.name, { node: declaration });
+        value.bindings.set(declaration.id.name, [index, -1]);
         if (statement.type === 'ExportNamedDeclaration') value.exports.set(declaration.id.name, declaration.id.name);
-      } else if (declaration?.type === 'TSTypeAliasDeclaration' || declaration?.type === 'TSInterfaceDeclaration') value.types.set(declaration.id.name, declaration);
+      } else if (declaration?.type === 'TSTypeAliasDeclaration' || declaration?.type === 'TSInterfaceDeclaration') value.types.set(declaration.id.name, [index, -1]);
       if (statement.type === 'ExportNamedDeclaration' && statement.exportKind !== 'type') {
         for (const item of statement.specifiers) if (item.exportKind !== 'type') value.exports.set(nodeName(item.exported), statement.source ? { file: statement.source.value, name: nodeName(item.local) } : nodeName(item.local));
       }
@@ -226,13 +230,27 @@ export function discoverComponents(root: string, files: string[], config: PlumbC
         if (declaration?.type === 'Identifier') value.exports.set('default', declaration.name);
         else if (declaration) {
           const name = declaration.type === 'FunctionDeclaration' && declaration.id ? declaration.id.name : 'default';
-          value.bindings.set(name, { node: declaration }); value.exports.set('default', name);
+          value.bindings.set(name, [index, -1]); value.exports.set('default', name);
         }
       }
     }
     if (!overrides.has(file)) memory?.modules.set(file, value);
     return value;
   }
+  /** The file's syntax tree, parsed again if this build has not seen it; dropped when the build ends. */
+  function tree(value: Module): Program {
+    let ast = trees.get(value); if (ast) return ast;
+    const shared = programs.get(value.file);
+    ast = value.diagnostic ? parseSync(value.file, '', parserOptions).program : shared?.text === value.text ? shared.ast : parseSync(value.file, value.text, parserOptions).program;
+    trees.set(value, ast); return ast;
+  }
+  function nodeAt(value: Module, at: At | undefined): Node | undefined {
+    if (!at) return;
+    const declaration = declarationOf(tree(value).body[at[0]]!)!;
+    return at[1] < 0 ? declaration : declaration.type === 'VariableDeclaration' ? declaration.declarations[at[1]]!.init ?? undefined : undefined;
+  }
+  const bindingNode = (value: Module, name: string) => nodeAt(value, value.bindings.get(name));
+  const typeNode = (value: Module, name: string) => nodeAt(value, value.types.get(name));
   function exported(file: string, name: string, seen: Set<string>): ComponentIdentity | undefined {
     const key = `export:${file}:${name}`; if (seen.has(key)) return;
     seen = new Set([...seen, key]);
@@ -254,8 +272,8 @@ export function discoverComponents(root: string, files: string[], config: PlumbC
     node = unwrap(node);
     if (isFunction(node)) return node;
     if (node.type === 'Identifier' && !seen.has(node.name)) {
-      const binding = value.bindings.get(node.name);
-      if (binding) return functionNode(binding.node, value, new Set([...seen, node.name]));
+      const bound = bindingNode(value, node.name);
+      if (bound) return functionNode(bound, value, new Set([...seen, node.name]));
     }
     if (node.type === 'CallExpression' && /(?:^|\.)(?:forwardRef|memo)$/.test(memberName(node.callee))) {
       for (const arg of node.arguments) { const found = functionNode(arg, value, seen); if (found) return found; }
@@ -269,13 +287,13 @@ export function discoverComponents(root: string, files: string[], config: PlumbC
     if (node.type === 'TSUnionType') return [...new Set(node.types.flatMap(type => values(value, type, seen)))];
     if (node.type === 'TSTypeReference' && node.typeName.type === 'Identifier') {
       const name = node.typeName.name; if (seen.has(name)) return [];
-      const type = value.types.get(name); if (type) return values(value, type, new Set([...seen, name]));
+      const type = typeNode(value, name); if (type) return values(value, type, new Set([...seen, name]));
       // Imported string unions (including aliases) are source decisions too.
-      for (const statement of value.ast.body) if (statement.type === 'ImportDeclaration') for (const specifier of statement.specifiers) {
+      for (const statement of tree(value).body) if (statement.type === 'ImportDeclaration') for (const specifier of statement.specifiers) {
         if (specifier.local.name !== name || specifier.type === 'ImportNamespaceSpecifier') continue;
         const path = target(value.file, statement.source.value); if (!path) continue;
         const other = module(path), id = specifier.type === 'ImportSpecifier' ? nodeName(specifier.imported) : 'default';
-        const type = other.types.get(id); if (type) return values(other, type, new Set([...seen, name]));
+        const type = typeNode(other, id); if (type) return values(other, type, new Set([...seen, name]));
       }
     }
     return [];
@@ -290,9 +308,9 @@ export function discoverComponents(root: string, files: string[], config: PlumbC
     }
     const imported = value.imports.get(edge);
     if (imported) { const path = target(value.file, imported.file); if (path) return implementation(module(path), imported.name, seen); return; }
-    const binding = value.bindings.get(edge);
-    if (binding) {
-      const node = unwrap(binding.node);
+    const bound = bindingNode(value, edge);
+    if (bound) {
+      const node = unwrap(bound);
       return node.type === 'Identifier' ? implementation(value, node.name, seen) : { value, node };
     }
     for (const star of value.stars) { const path = target(value.file, star); if (path) { const found = implementation(module(path), name, seen); if (found) return found; } }
@@ -306,7 +324,7 @@ export function discoverComponents(root: string, files: string[], config: PlumbC
     const declarationFile = value.file.replace(/\.[cm]?jsx?$/, '.d.ts');
     const propSource = !value.types.size && declarationFile !== value.file && exists(declarationFile) ? module(declarationFile) : value;
     for (const propName of propNames) {
-      const type = propSource.types.get(propName); if (!type) continue;
+      const type = typeNode(propSource, propName); if (!type) continue;
       walk(type, item => {
         if (item.type !== 'TSPropertySignature' || !item.typeAnnotation) return;
         const axis = nodeName(item.key), choices = values(propSource, item.typeAnnotation.typeAnnotation);
@@ -314,7 +332,7 @@ export function discoverComponents(root: string, files: string[], config: PlumbC
         else if (choices.length && !['children', 'className', 'class'].includes(axis)) variants[axis] = choices;
       }, true);
     }
-    const bindings = new Map([...value.bindings].map(([id, binding]) => [id, binding.node]));
+    const bindings = new Map([...value.bindings.keys()].map(id => [id, bindingNode(value, id)!]));
     walk(node, item => { if (item.type === 'VariableDeclarator' && item.id.type === 'Identifier' && item.init) bindings.set(item.id.name, item.init); });
     const visited = new Set<string>();
     function dependency(item: Node, collectClasses = true): void {
@@ -427,8 +445,10 @@ export function discoverComponents(root: string, files: string[], config: PlumbC
       if (found) identities.set(key, found);
       return found;
     }
-    const binding = value.bindings.get(base!); if (!binding) return;
-    let node = unwrap(binding.node), publicName = [...value.exports].find(([exported, local]) => exported !== 'default' && local === base)?.[0] ?? base!;
+    // the index answers whether the name is declared here; the tree is parsed only when it is
+    if (!value.bindings.has(base!)) return;
+    const bound = bindingNode(value, base!); if (!bound) return;
+    let node = unwrap(bound), publicName = [...value.exports].find(([exported, local]) => exported !== 'default' && local === base)?.[0] ?? base!;
     if (publicName === 'default') publicName = basename(value.file).replace(/\.[cm]?[jt]sx?$/, '').replace(/(?:^|-)([a-z])/g, (_, letter: string) => letter.toUpperCase());
     if (node.type === 'Identifier') return local(value, [node.name, ...parts].join('.'), seen);
     // Compound components: object namespaces and Object.assign(Root, { Root, Screen }).
@@ -437,13 +457,13 @@ export function discoverComponents(root: string, files: string[], config: PlumbC
       const part = parts.shift();
       const property = object?.type === 'ObjectExpression' && object.properties.find(item => item.type === 'Property' && nodeName(item.key) === part);
       const child = property && property.type === 'Property' ? property.value : !part && node.type === 'CallExpression' ? node.arguments[0] : undefined;
-      if (!child) return;
+      if (!child) { identities.set(key, null); return; }
       if (child.type === 'Identifier') {
-        const childBinding = value.bindings.get(child.name);
-        if (childBinding) node = unwrap(childBinding.node); else return local(value, child.name, seen);
+        const childBound = bindingNode(value, child.name);
+        if (childBound) node = unwrap(childBound); else return local(value, child.name, seen);
       } else node = unwrap(child);
       publicName += part ? `.${part}` : '';
-    } else if (parts.length) return;
+    } else if (parts.length) { identities.set(key, null); return; }
     const body = functionNode(node, value);
     let hasReact = false;
     if (body) walk(body, item => {
@@ -532,7 +552,7 @@ export function discoverComponents(root: string, files: string[], config: PlumbC
       }
       for (const child of children(node)) scan(child, inherited, shadows, ancestors);
     }
-    if (value.text.includes('<')) scan(value.ast);
+    if (value.text.includes('<')) scan(tree(value));
     usages.set(file, ranges);
   }
   profileProgress('phase:components', { current: sourceFiles.length, total: sourceFiles.length });
@@ -563,7 +583,7 @@ export function discoverComponents(root: string, files: string[], config: PlumbC
   const sourceTokens = new Map<string, { classes: Set<string>; variables: Set<string> }>();
   if (includeUnused) for (const file of new Set(components.map(component => component.source.file))) {
     const inventory = { classes: new Set<string>(), variables: new Set<string>() };
-    walk(module(file).ast, item => {
+    walk(tree(module(file)), item => {
       const texts = item.type === 'Literal' && typeof item.value === 'string' ? [item.value] : item.type === 'TemplateLiteral' ? item.quasis.map(quasi => quasi.value.cooked ?? '') : [];
       for (const text of texts) {
         for (const token of text.split(/\s+/)) if (token) inventory.classes.add(token);
@@ -611,6 +631,9 @@ export function discoverComponents(root: string, files: string[], config: PlumbC
     for (const [identity, ranges] of rootRanges) memory.rootRanges.set(identity, ranges);
     for (const [identity, classes] of fingerprintClasses) memory.fingerprintClasses.set(identity, classes);
   }
-  modules.clear();
+  // The graph's methods close over this call's scope, and the server keeps one graph per file: empty what only the
+  // build needed, or each of thousands of graphs holds its own copy of the lookups it made.
+  modules.clear(); trees.clear(); identities.clear(); selected.clear(); watchedFiles.clear(); watchedDirectories.clear(); contexts.clear();
+  if (!memory?.batch) resolutions.clear();
   return graph;
 }

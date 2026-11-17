@@ -20,19 +20,6 @@ import { declaredClasses } from '../lower/css.js';
 import { presetInputs } from '../presets/index.js';
 import { defaultSourceSelectors } from '../project.js';
 
-/** A map that keeps its `limit` most recently read or written entries and drops the oldest past that. */
-class Recent<K, V> extends Map<K, V> {
-  constructor(private limit: number) { super(); }
-  override get(key: K): V | undefined {
-    if (!super.has(key)) return undefined;
-    const value = super.get(key)!; super.delete(key); super.set(key, value); return value;
-  }
-  override set(key: K, value: V): this {
-    super.delete(key); super.set(key, value);
-    while (this.size > this.limit) super.delete(this.keys().next().value!);
-    return this;
-  }
-}
 import type { StylesheetGraph } from '../collect/stylesheets.js';
 
 const signature = (inputs: unknown[]) => JSON.stringify(inputs, (_, value) => value instanceof Map || value instanceof Set ? [...value] : value);
@@ -59,7 +46,7 @@ export class WarmState implements AnalysisRuntime {
   private dependencyEdges = new Map<string, string[]>();
   // the parsed modules the component graph reads, the most recently used ones only: kept for every file, they held each
   // file's whole syntax tree for the life of the session (most of 2 GB on a 3,600-file app); one dropped is parsed again
-  private componentMemory: ComponentMemory = { modules: new Recent(400) };
+  private componentMemory: ComponentMemory = { modules: new Map() };
   private snippetGraph: { key: string; value: ComponentGraph } | undefined;
   private componentResolver = new ResolverFactory({ tsconfig: 'auto', extensions: ['.tsx', '.ts', '.jsx', '.js', '.mts', '.mjs', '.cts', '.cjs'], extensionAlias: { '.js': ['.ts', '.tsx', '.js'] }, conditionNames: ['import', 'browser', 'default'], mainFields: ['browser', 'module', 'main'] });
   private globalGraph: { key: string; graph: ComponentGraph } | undefined;

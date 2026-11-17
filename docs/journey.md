@@ -1889,6 +1889,14 @@ field is empty). The table of five writes, before and after. The Next table: eig
   (`docs/briefs/analysis-memory.md`) proposes per-file facts with parse-on-demand, files as numbers, links in flat
   arrays walked when asked, and the open page first, in seven steps, each profiled on algorecall. Its sizes are
   guesses until the first step is measured. Waiting for sign-off.
+- **The component pass keeps an index, not code (2026-11-17):** the owner signed off the brief and asked for step 1.
+  The component pass now remembers each file's imports, exports and where its declarations sit, and parses the file
+  again when a question needs the code. The first try made the file-by-file build eleven times slower (9 s to 100 s):
+  asking whether a name was declared parsed the file. Counting parses showed it (136,299 for 3,649 files); checking
+  the index first brought it to 1,555. The heap profile then showed a second holder: every file's finished graph kept
+  the lookup tables of its build alive, thousands of copies. They are emptied when a build ends. Proof: the component
+  graph is byte-identical on algorecall and crafting-ui; the worker's resting heap went from 2.17 GB to 1.26 GB,
+  parsed code from 781 MB to 56 MB; the process rests at 2.46 GB. Media hook: the two heap tables side by side.
 
 ## Open gaps
 - Sweeps covered six algorecall pages and thirteen crafting-ui pages.
