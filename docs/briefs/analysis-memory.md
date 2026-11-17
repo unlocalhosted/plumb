@@ -340,6 +340,71 @@ line and column views are now built the first time that file is asked about at a
 Checked identical: the findings (2,935, same fingerprint) and every file's line and column views (2,277 files, hashed
 in full in a fixed order, eager before and built on demand after).
 
+## Open page first: design for sign-off (2026-11-17)
+
+Status: proposed. The owner chose this direction; the layers below wait for sign-off because they change what the
+analysis does at start-up and what a person sees while it fills in.
+
+### Why
+
+At 811 MB live on algorecall, what is left is mostly rows: declarations, sites and findings for all 3,649 files,
+shared by the report, the classified report, the indexes and judgement. Collection plus the component graph is about
+194 MB of it (measured outside the worker); the judgement and report side is most of the rest. A page shows a few
+dozen files. Holding the judged rows for every file while a person looks at one page is the cost.
+
+### What exists
+
+- A per-file path: after a change, `localReport(file)` analyses one file with `Focus` (src/session/focus.ts) and is
+  how a single edit stays fast.
+- It is not independent. `Focus` reads products the full analysis built: the module and component graphs, the
+  decision record, the unreachable-token set, the Tailwind compiler (compiled from every class in the app) and the
+  shared custom-property definitions. Its own comment: "A local read uses the warm global compiler, module graph and
+  token record."
+- Start-up runs the full analysis, builds the classified report and indexes every finding before it says ready.
+- The overlay's first requests: `decisions` (the record, from CSS), and per place `edits`, which today builds the full
+  report. The reading table kept for the next start (`keep`) also builds the full report.
+
+### What is app-wide and what is per file
+
+| Product | Needs every file? | Plan |
+|---|---|---|
+| project discovery, Tailwind entry, config | no | stays at start-up |
+| decision record (the theme's tokens) | no, CSS and config | stays at start-up |
+| module import graph | imports of every file, cheap | stays at start-up |
+| custom-property definitions written in source | every file's `--` declarations | stays at start-up (layer 2 makes it a pre-pass) |
+| class sites (collection) | per file | layer 2: per page |
+| component graph shards | per file | layer 2: per page |
+| Tailwind compiler candidates | every class in the app | layer 2: grows as pages open |
+| judgement, findings, report, indexes | per file, plus project-wide sums | layer 1: per page |
+| problems list, dead tokens, coverage, the kept reading table | every file | built when asked, then let go |
+
+### Layer 1: judge on demand
+
+Start-up collects and builds the app-wide products as it does now, but stops before judging every file. Page
+requests (`edits`, `site`, `index`, `class-site`, `text`, `props`) judge the page's files through the per-file path.
+Project-wide requests (the problems list, `report`, `why`, `keep`) build the full report when asked; it is dropped
+after a quiet period, so memory comes back down.
+
+What a person sees: the page's findings as now, a little sooner; the problems list and other project-wide counts are
+built the first time they are opened (on algorecall, start to ready is about 66 s today, most of it this analysis).
+
+Proof required before it ships: for every file, the findings from the per-file path equal the full report's findings
+for that file (a fingerprint per file, as used in the passes above), apart from the project-wide ones (dead tokens,
+coverage), which are listed. Then the live heap after opening one page, against 811 MB.
+
+Expected (a guess): most of the judgement and report side, several hundred MB, while no project-wide view is open.
+
+### Layer 2: collect on demand
+
+Collection and component shards for the page's files and what they import; the Tailwind compiler compiled for the
+classes seen so far and grown as pages open; source-defined custom properties found by a pre-pass that reads only
+`--` declarations. Expected (a guess): most of the 194 MB of collection and graph. Riskier: the compiler's output
+for a class must not depend on which other classes were compiled with it, which is checked first.
+
+### Order
+
+Layer 1 first, measured and proven, then layer 2. Each is one commit with its proof.
+
 ## Expected (guesses until measured)
 
 - Step 1 removes most of the 781 MB of trees and a share of the 234 MB that points into them.

@@ -1953,6 +1953,12 @@ field is empty). The table of five writes, before and after. The Next table: eig
   when the page only ever asks lines of its own files. Line and column views are now built for a file on its first
   question. Proof: algorecall's worker holds 811 MB instead of 924, with identical findings and identical line and
   column views for all 2,277 files.
+- **Open page first, designed (2026-11-17):** the owner chose analysing the open page first. Mapping the engine found
+  that the per-file path used after an edit is not independent: it reads the module and component graphs, the token
+  record and the Tailwind compiler that the full analysis builds, and the overlay's first requests build the full
+  report. The design (in the analysis-memory brief) has two layers: judge on demand (start-up builds the app-wide
+  products, pages are judged per file, project-wide views are built when opened and let go), then collect on demand.
+  Waiting for sign-off before code.
 
 ## Open gaps
 - Sweeps covered six algorecall pages and thirteen crafting-ui pages.
