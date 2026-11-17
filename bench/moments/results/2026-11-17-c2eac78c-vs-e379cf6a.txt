@@ -1,0 +1,13 @@
+
+/home/admin/projects/algorecall-sweep
+  start      base   65729 ms [64639-67838]   522 MB   head   53329 ms [51904-54004]  2504 MB
+  page       base                              -   head     994 ms [951-1043]  2657 MB
+  edit       base                              -   head      735 ms [649-755]  2521 MB
+  pageLater  base                              -   head   19321 ms [18551-19462]  1971 MB
+  base errors: Error: plumber did not start: {"status":"failed","diagnostic":"Error [ERR_WORKER_OUT_OF_MEMORY]: Worker terminated due to reaching memory limit: JS heap out of memory\n    at [kOnExit] (node:internal/worker:316:26)\n    at Worker.<computed>.onexit (node:internal/worker:232:20)"} | Error: plumber did not start: {"status":"failed","diagnostic":"Error [ERR_WORKER_OUT_OF_MEMORY]: Worker terminated due to reaching memory limit: JS heap out of memory\n    at [kOnExit] (node:internal/worker:316:26)\n    at Worker.<computed>.onexit (node:internal/worker:232:20)"} | Error: plumber did not start: {"status":"failed","diagnostic":"Error [ERR_WORKER_OUT_OF_MEMORY]: Worker terminated due to reaching memory limit: JS heap out of memory\n    at [kOnExit] (node:internal/worker:316:26)\n    at Worker.<computed>.onexit (node:internal/worker:232:20)"}
+
+/home/admin/projects/cui
+  start      base    8840 ms [8624-8849]  1045 MB   head    8602 ms [8399-9013]   927 MB
+  page       base      608 ms [590-655]  1095 MB   head      586 ms [539-640]   955 MB
+  edit       base      834 ms [809-841]  1222 MB   head       103 ms [94-111]   955 MB
+  pageLater  base      908 ms [875-967]  1010 MB   head      897 ms [796-900]   635 MB
