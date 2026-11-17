@@ -2062,7 +2062,9 @@ export class Session extends EventEmitter {
       let stats: KeptStats & { ms: number; packMs: number; longestMs: number; slices: number } | undefined, resolved: Resolutions = [];
       while (!stats) {
         if (revision !== this.revision || this.closed) return;
-        const step = await this.serializeRead(() => this.request<{ done: false } | ({ done: true; resolutions: Resolutions } & KeptStats & { ms: number; packMs: number; longestMs: number; slices: number })>('keep', { directory, ...(awaited ? { previous: awaited } : {}) }));
+        const step = await this.serializeRead(() => this.request<{ done: false } | { done: true; skipped: true } | ({ done: true; resolutions: Resolutions } & KeptStats & { ms: number; packMs: number; longestMs: number; slices: number })>('keep', { directory, ...(awaited ? { previous: awaited } : {}) }));
+        // the worker has let go of the whole-app report (open page first): the table is written when it exists again
+        if ('skipped' in step) return;
         if (step.done) { const { done: _done, resolutions, ...rest } = step; stats = rest; resolved = resolutions; }
       }
       // something changed while it was being written: it describes a project that is gone, and the change has

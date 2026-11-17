@@ -1964,6 +1964,13 @@ field is empty). The table of five writes, before and after. The Next table: eig
   findings in one file, and it exists today after an edit there). Timing it showed 2.3 s of every 2.6 s went to
   library detection, whose two-second cache every read outlived. The session now holds those facts until it restarts.
   Every single-file edit on algorecall is about 2.3 s faster because of it. Full-report findings unchanged.
+- **Open page first, layer 1 (2026-11-17):** the whole-app report is now let go after a quiet minute, and pages are
+  judged a file at a time. Proving it equal to the full report, file by file, found three bugs that already showed
+  after any edit: ownership judged without the class lookup, Tailwind recompiled with one file's classes (so a
+  component's own classes were unknown), and files of shared class strings never judged alone. Proof: 456 sampled
+  files give the same findings alone as in the full report; algorecall's worker holds 556 MB released (638 MB after
+  judging those 456 files) instead of 866 MB; a file is judged in 39 ms. Media hook: the heap line dropping a minute
+  after start.
 
 ## Open gaps
 - Sweeps covered six algorecall pages and thirteen crafting-ui pages.

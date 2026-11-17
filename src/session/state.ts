@@ -6,6 +6,7 @@ import { lowerTailwind } from '../lower/tailwind.js';
 import type { TailwindMemory } from '../lower/tailwind.js';
 import { componentBatch, discoverComponents } from '../ownership/components.js';
 import type { ComponentGraph, ComponentMemory } from '../ownership/components.js';
+import type { LoweredProps } from '../ownership/judge.js';
 import type { PlumbConfig } from '../config.js';
 import { sourceHash } from '../collect/cache.js';
 import { ResolverFactory } from 'oxc-resolver';
@@ -26,8 +27,12 @@ const signature = (inputs: unknown[]) => JSON.stringify(inputs, (_, value) => va
 interface Memo { key: string; value: unknown }
 export class WarmState implements AnalysisRuntime {
   readonly collection: CollectionState;
-  readonly judgement = new JudgementState();
+  judgement = new JudgementState();
   readonly localJudgements = new Map<string, JudgementState>();
+  /** Lets go of what only the whole-app judgement keeps: its caches, every site's expanded declarations and the merged
+   * component graph. The collected files, the component shards and the app-wide phases stay, so a file is judged
+   * alone as fast as before, and the whole app again when asked (docs/briefs/analysis-memory.md, open page first). */
+  release(): void { this.judgement = new JudgementState(); this.siteCache = new WeakMap(); this.globalGraph = undefined; this.dead = undefined; }
   localJudgement(file: string): JudgementState {
     let value = this.localJudgements.get(file);
     if (!value) { if (this.localJudgements.size >= 64) this.localJudgements.delete(this.localJudgements.keys().next().value!); value = new JudgementState(); this.localJudgements.set(file, value); }
@@ -367,7 +372,7 @@ export class WarmState implements AnalysisRuntime {
     if (name === 'components') return this.componentGraph(inputs[1] as string[], inputs[2] as PlumbConfig, inputs[3] as Parameters<WarmState['componentGraph']>[2]) as T;
     if (this.snippet && ['provenance', 'ownership', 'habits', 'imitation'].includes(name)) return compute();
     if (name === 'provenance') return this.judgement.provenance(...inputs as Parameters<JudgementState['provenance']>) as T;
-    if (name === 'ownership') return this.judgement.ownership(inputs[0] as Declaration[], inputs[1] as ComponentGraph, this.shards, this.config) as T;
+    if (name === 'ownership') return this.judgement.ownership(inputs[0] as Declaration[], inputs[1] as ComponentGraph, this.shards, this.config, inputs[3], inputs[4] as LoweredProps) as T;
     if (name === 'habits') return this.judgement.habits(inputs[0] as Declaration[], this.config, inputs[2] as Map<Declaration, string>, inputs[3] as string[], inputs[4] as boolean | undefined, inputs[5] as ReadonlySet<Declaration>) as T;
     if (name === 'imitation') return this.judgement.imitation(inputs[0] as ComponentGraph, this.shards, inputs[1] as Parameters<JudgementState['imitation']>[2], inputs[2] as Declaration[], this.config) as T;
     return compute();

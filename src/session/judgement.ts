@@ -5,6 +5,7 @@ import type { DecisionRecord } from '../decisions/index.js';
 import { familyProvenance, findingsForFamily, groupByValue, presentProvenance, resolutionContext } from '../rules/provenance.js';
 import { judgedFamilies, isJudged, familiesFor, varUses } from '../rules/families.js';
 import { judgeOwnership } from '../ownership/judge.js';
+import type { LoweredProps } from '../ownership/judge.js';
 import { habitOverrides, judgeHabits } from '../habits/index.js';
 import { judgeImitation } from '../imitation/index.js';
 import { indexDefinitions } from '../rules/attribution.js';
@@ -176,11 +177,13 @@ export class JudgementState {
     });
     return { findings: presentProvenance(findings), coverage, usedNumericSpacing: [...usedNumericSpacing].sort() };
   }
-  ownership(declarations: Declaration[], graph: ComponentGraph, shards: Map<string, ComponentGraph>, config: PlumbConfig) {
+  // `candidates` keys the cache (the compiled classes); `propsOf` reads them. Without it a class's own props were
+  // missing here and this judge disagreed with the whole-app one on component-owned classes.
+  ownership(declarations: Declaration[], graph: ComponentGraph, shards: Map<string, ComponentGraph>, config: PlumbConfig, candidates?: unknown, propsOf?: LoweredProps) {
     const files = byFile(declarations); this.ownershipCache.keep(new Set(files.keys()));
     const results = [...files].map(([file, ds]) => {
       const context = ds.some(d => ['stylesheet', 'apply'].includes(d.origin)) ? graph : shards.get(file) ?? graph;
-      return this.ownershipCache.get(file, [context, config, ...ds], () => judgeOwnership(ds, context, config));
+      return this.ownershipCache.get(file, [context, config, candidates, ...ds], () => judgeOwnership(ds, context, config, propsOf));
     });
     const coverage = { callerDeclarations: 0, findings: 0, heuristicFindings: 0, byFamily: {} as ReturnType<typeof judgeOwnership>['coverage']['byFamily'] };
     for (const result of results) {

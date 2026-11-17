@@ -419,6 +419,45 @@ it. A per-file read is 0.3 s, which also makes every single-file edit about 2.3 
 
 Full-report findings and line and column views are unchanged (same fingerprints, 2,935 findings, 2,277 files).
 
+## Layer 1, built: the whole-app report is let go (2026-11-17)
+
+Built differently from the design above, for a reason: start-up still runs the full analysis once (it warms the
+app-wide products the per-file path reads), then lets go of the judged rows after a quiet period (60 s,
+`PLUMBER_RELEASE_MS`). The same release follows any project-wide read, so one mechanism covers both. Skipping the
+judging at start-up, which would also cut the start-up peak and time, is left for later.
+
+What release drops: the full and classified reports, the findings indexes, the judgement caches, every site's
+expanded declarations and the merged component graph. What it keeps: the collected files, the component shards, the
+app-wide phases (compile, graphs, token record), and a summary for whole-app answers (decisions, spacing in use,
+stylesheets, the files the rows came from, so the session watches the same files).
+
+After release, page reads judge a file alone. Three causes of disagreement with the full report were found and fixed
+on the way, each a bug that already showed after an edit:
+
+- the session's file-by-file ownership judge was called without the class lookup the whole-app judge gets, so after
+  the first report some component-ownership findings changed;
+- judging one file recompiled Tailwind with only that file's classes, so a component's own root classes (in another
+  file) had no props and ownership conflicts went unseen; it also replaced the app-wide compile. A file now reads the
+  app-wide compile when it has all the file's classes;
+- a file whose class strings are used only where other files import them was not judged alone at all (the full report
+  was rebuilt); it is now judged from its own slice plus the collections of the files that import it.
+
+A stylesheet is still answered by the full report when nothing has changed: its variables and colours are judged
+against every file that uses them. Asking about one rebuilds the report, held until the next quiet period
+(in the proof run, a stylesheet in the sample took the worker back to 1,148 MB until its release).
+
+The reading table kept for the next start is written while a full report exists and skipped otherwise.
+
+| algorecall, live heap of the analysis worker after a forced collection | |
+|---|---|
+| with the full report | 866 MB |
+| released | 556 MB |
+| released, after judging 456 files one at a time | 638 MB |
+
+A file judged alone takes 39 ms on average (2.6 s before the session held library facts and reused the compile).
+Proof: for all 456 sampled files, the findings judged alone equal the full report's findings for that file (fingerprint
+over key, rule, message, severity, status and every site with its ledger key and status).
+
 ## Expected (guesses until measured)
 
 - Step 1 removes most of the 781 MB of trees and a share of the 234 MB that points into them.

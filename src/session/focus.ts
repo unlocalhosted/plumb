@@ -13,7 +13,17 @@ export class Focus implements AnalysisRuntime {
   private candidates: string[] = [];
   private queryTokens: string[] = [];
   private judgement: JudgementState;
-  constructor(private state: WarmState, private file: string, private line?: number) { this.judgement = state.localJudgement(file); }
+  /** `consumers`: for a file whose class literals are only lowered where other files use them (a helper of class
+   * strings), the files that import it; its sites are read from their collections, as the whole-app report reads them. */
+  constructor(private state: WarmState, private file: string, private line?: number, private consumers: string[] = []) { this.judgement = state.localJudgement(file); }
+  private collected() {
+    if (!this.consumers.length) return this.state.collection.local(this.file);
+    // its own slice (inline styles, definitions) and its sites as lowered in each file that imports it
+    const parts = [this.file, ...this.consumers].map(file => this.state.collection.local(file)), first = parts[0]!;
+    return { ...first, diagnostics: parts.flatMap(p => p.diagnostics), sites: parts.flatMap(p => p.sites), modules: new Map(parts.flatMap(p => [...p.modules])),
+      styles: { declarations: parts.flatMap(p => p.styles.declarations), sites: parts.flatMap(p => p.styles.sites), stylesheets: parts.flatMap(p => p.styles.stylesheets),
+        imports: parts.flatMap(p => p.styles.imports), definedVariables: parts.flatMap(p => p.styles.definedVariables) } };
+  }
   async phase<T>(name: string, inputs: unknown[], compute: () => T | Promise<T>): Promise<T> {
     if (name === 'ranking' && this.queryTokens.every(token => (inputs[1] as Map<string, { css: string | null }>).get(token)?.css?.trim())) return { rankings: new Map(), save: async () => {} } as T;
     if (name === 'files') return [this.file] as T;
@@ -21,8 +31,16 @@ export class Focus implements AnalysisRuntime {
       const shared = this.state.shared<T>(name);
       if (shared !== undefined) return shared;
     }
-    if (name === 'tailwind') inputs = [...inputs.slice(0, 3), this.candidates, ...inputs.slice(4)];
-    const value = name === 'collect' ? this.state.collection.local(this.file) : name === 'css' ? this.state.localStyles(this.file) : await this.state.phase(name, inputs, compute);
+    if (name === 'tailwind') {
+      // The app-wide compile already has this file's classes unless one was just typed: reading it gives the file the
+      // same class props the whole-app report reads, including the classes of components it uses, which live in other
+      // files (ownership compares an element's classes with its component's root). Compiling only this file's classes
+      // missed those, and replaced the app-wide compile the session keeps.
+      const shared = this.state.shared<{ candidates: ReadonlyMap<string, unknown> }>('tailwind');
+      if (shared && this.candidates.every(token => shared.candidates.has(token))) return shared as T;
+      inputs = [...inputs.slice(0, 3), this.candidates, ...inputs.slice(4)];
+    }
+    const value = name === 'collect' ? this.collected() : name === 'css' ? this.state.localStyles(this.file) : await this.state.phase(name, inputs, compute);
     if (name === 'collect') {
       const collection = value as Awaited<ReturnType<WarmState['collection']['collect']>>;
       this.candidates = [...new Set(collection.sites.filter(s => !s.opaque).map(s => s.token))].sort();

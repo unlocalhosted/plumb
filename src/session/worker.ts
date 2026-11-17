@@ -37,7 +37,20 @@ import { isAbsolute, relative, sep } from 'node:path';
 
 const options = workerData as CheckOptions;
 const state = new WarmState(options.root!, workerData.inventory as string[] | undefined);
-let raw: Report;
+let raw: Report | undefined;
+/** What the session keeps of the whole-app report once it has let go of its rows (`release`): decisions, spacing,
+ * stylesheets and timing, with no declarations or findings, and the files those rows came from. */
+let project: Report | undefined;
+let released: { declarationFiles: string[]; customPropertyFiles: string[]; spacingUsed: number[] } | undefined;
+const known = (): Report => (raw ?? project)!;
+const declarationFiles = () => raw ? raw.declarations.map(d => d.site.file) : released?.declarationFiles ?? [];
+const customPropertyFiles = () => raw ? raw.declarations.filter(d => d.prop.startsWith('--')).map(d => d.site.file) : released?.customPropertyFiles ?? [];
+const spacingUses = (view: Report): number[] => {
+  if (view === project && released) return released.spacingUsed;
+  const used = new Set<number>();
+  for (const d of view.declarations) if (d.origin === 'class' && d.sourceOrigin !== 'framework') { const m = /^calc\(var\(--spacing\) \* (\d*\.?\d+)\)$/.exec(d.value); if (m) used.add(Number(m[1])); }
+  return [...used].sort((a, b) => a - b);
+};
 let classified: Report | undefined;
 let revision = 0;
 let dirty = false;
@@ -71,7 +84,7 @@ function changedQueries(files: Iterable<string>): void {
 }
 let ledger: Awaited<ReturnType<typeof readLedger>>;
 const dependencies = () => [...new Set([...state.dependencies, ...state.collection.dependencies,
-  ...raw.declarations.map(d => d.site.file), ...raw.stylesheets.map(s => s.file), ...raw.decisions.map(d => d.source.file), ...(raw.config.path ? [raw.config.path] : [])])];
+  ...declarationFiles(), ...known().stylesheets.map(s => s.file), ...known().decisions.map(d => d.source.file), ...(known().config.path ? [known().config.path!] : [])])];
 async function update(paths: string[]): Promise<string[]> {
   let affected: string[] = [];
   if (paths.some(p => isLedgerPath(p))) ledger = await readLedger(options.root!);
@@ -97,7 +110,8 @@ async function update(paths: string[]): Promise<string[]> {
   return affected;
 }
 async function current(): Promise<Report> {
-  if (dirty) { fullReports++; raw = (await analyze({ ...options, ledger: false }, undefined, state)).report; dirty = false; sharedDirty = false; localReports.clear(); metadataDirty = true; metadataFull = true; }
+  releaseLater();
+  if (dirty || !raw) { fullReports++; released = undefined; project = undefined; raw = (await analyze({ ...options, ledger: false }, undefined, state)).report; dirty = false; sharedDirty = false; localReports.clear(); metadataDirty = true; metadataFull = true; }
   return raw;
 }
 async function report(extra: CheckOptions = {}, ordinaryLedger = false): Promise<Report> {
@@ -108,9 +122,10 @@ async function report(extra: CheckOptions = {}, ordinaryLedger = false): Promise
     const view = (await analyze({ ...effective, ledger: false }, undefined, state)).report;
     return effective.ledger === false ? view : finishMessages(await applyLedger(view, effective, ledger));
   }
-  if (effective.ledger === false) return raw;
-  if (effective.base !== undefined || effective.changed || effective.strictLedger) return finishMessages(await applyLedger(ledgerView(raw), effective, ledger));
-  if (!classified) classified = finishMessages(await applyLedger(ledgerView(raw), effective, ledger));
+  const full = raw!;
+  if (effective.ledger === false) return full;
+  if (effective.base !== undefined || effective.changed || effective.strictLedger) return finishMessages(await applyLedger(ledgerView(full), effective, ledger));
+  if (!classified) classified = finishMessages(await applyLedger(ledgerView(full), effective, ledger));
   return classified;
 }
 /** Ledger presentation writes findings, coverage, notes and timing. Authored
@@ -227,30 +242,52 @@ function scoped(view: Report, file: string, line?: number, column?: number, text
   return { ...view, findings };
 }
 async function localReport(file: string): Promise<Report> {
-  if (!dirty || sharedDirty || !state.collection.slices.has(file) && !file.endsWith('.css')) return report();
-  // Imported class literals can be lowered only in their consumer's JSX context.
-  // An empty helper slice cannot replace that retained evidence with an empty view.
-  if (state.collection.consumers.get(file)?.size && !state.collection.slices.get(file)?.value.sites.some(site => site.file === file)) return report();
+  // A stylesheet's variables and colours are judged against every file that uses them: with nothing changed it is read
+  // from the whole-app report, built again if it was let go.
+  if (!dirty && (raw || file.endsWith('.css')) || sharedDirty || !state.collection.slices.has(file) && !file.endsWith('.css')) return report();
+  // Imported class literals can be lowered only in their consumer's JSX context: such a file is judged from the
+  // collections of the files that import it, never from its own empty slice.
+  const helperOf = state.collection.consumers.get(file)?.size && !state.collection.slices.get(file)?.value.sites.some(site => site.file === file)
+    ? [...state.collection.consumers.get(file)!].filter(consumer => state.collection.slices.has(consumer)) : [];
   let view = localReports.get(file);
   if (!view) {
     localAnalyses++;
     changedQueries([file]);
-    const result = (await analyze({ ...options, ledger: false }, undefined, new Focus(state, file))).report;
+    const result = (await analyze({ ...options, ledger: false }, undefined, new Focus(state, file, undefined, helperOf))).report;
     changedQueries([file]);
     view = finishMessages(await applyLedger(result, options, ledger));
+    if (localReports.size >= 256) localReports.delete(localReports.keys().next().value!);
     localReports.set(file, view); metadataDirty = true;
   }
   index(view, file);
   return view;
 }
-const sourceFiles = () => [...new Set([...state.collection.slices.keys(), ...raw.stylesheets.filter(sheet => sheet.reached.some(reach => reach.kind === 'source')).map(sheet => sheet.file)])];
+const sourceFiles = () => [...new Set([...state.collection.slices.keys(), ...known().stylesheets.filter(sheet => sheet.reached.some(reach => reach.kind === 'source')).map(sheet => sheet.file)])];
 /** The files every query over `files` reads, as one set (state.queryDependenciesOf), never a list per file. */
 function queryInputs(files: Iterable<string> = []) {
-  return { inputPatterns: [...state.inputPatterns], inputs: [...new Set([...state.configurationFiles, ...state.compilerFiles, ...raw.stylesheets.map(s => s.file), ...raw.declarations.filter(d => d.prop.startsWith('--')).map(d => d.site.file), ...raw.decisions.map(d => d.source.file), ...raw.decisionInventory?.map(d => d.source.file) ?? []])],
+  return { inputPatterns: [...state.inputPatterns], inputs: [...new Set([...state.configurationFiles, ...state.compilerFiles, ...known().stylesheets.map(s => s.file), ...customPropertyFiles(), ...known().decisions.map(d => d.source.file), ...known().decisionInventory?.map(d => d.source.file) ?? []])],
     queryPaths: [...state.queryDependenciesOf(files)] };
 }
 const KEEP_SLICE = 30; // ms of building the reading table before the worker looks at its queue again
 let keeping: { of: Report; packer: ReadingPacker; started: number; worked: number; longest: number; slices: number } | undefined;
+// Open page first, layer 1 (docs/briefs/analysis-memory.md): the whole-app report is let go after a quiet period, and
+// pages are judged a file at a time against the app-wide products the session keeps. A project-wide read builds the
+// report again and starts the quiet period over.
+const QUIET_MS = Number(environment('RELEASE_MS') ?? 60_000);
+let releaseTimer: ReturnType<typeof setTimeout> | undefined;
+function releaseLater(): void {
+  if (releaseTimer) clearTimeout(releaseTimer);
+  releaseTimer = setTimeout(() => { queue = queue.then(release, release); }, QUIET_MS); releaseTimer.unref();
+}
+function release(): void {
+  if (!raw) return;
+  if (keeping) { releaseLater(); return; }
+  released = { declarationFiles: [...new Set(raw.declarations.map(d => d.site.file))], customPropertyFiles: [...new Set(raw.declarations.filter(d => d.prop.startsWith('--')).map(d => d.site.file))], spacingUsed: spacingUses(raw) };
+  project = { ...raw, declarations: [], findings: [] };
+  raw = undefined; classified = undefined; indexedReport = undefined; indexedFiles.clear();
+  fileFindings = new Map(); lineFindings = new Map(); columnFindings = new Map(); localReports.clear();
+  state.release();
+}
 async function dispatch(method: string, params: Record<string, unknown>): Promise<unknown> {
   if (method === 'queryDependencies') return [...state.queryDependenciesOf(params.files as string[])];
   if (method === 'inventory') { state.inventory = params.files as string[]; return null; }
@@ -259,7 +296,7 @@ async function dispatch(method: string, params: Record<string, unknown>): Promis
     const affected = await update(params.paths as string[]);
     return { revision, dependencyDelta: [...state.queryDependenciesOf(affected)],
       files: state.collection.parsedFiles, visited: state.collection.visitedFiles, judged: state.judgement.judgedFiles,
-      timing: raw.timing,
+      timing: known().timing,
       ...(environment('PROFILE') === '1' ? { profile: performance.getEntriesByType('measure').map(p => [p.name, p.duration]) } : {}) };
   }
   // A copy, so the shared report the other reads hand out never carries causes computed for another ledger view.
@@ -328,9 +365,9 @@ async function dispatch(method: string, params: Record<string, unknown>): Promis
     const file = params.file as string, line = params.line as number;
     // Definition queries need all consumer counts. A source query can judge
     // its own declarations against the shared project record immediately.
-    const definitions = state.collection.slices.get(file)?.value.styles.declarations.some(d => d.prop.startsWith('--')) || raw.decisions.some(d => d.source.file === file);
+    const definitions = state.collection.slices.get(file)?.value.styles.declarations.some(d => d.prop.startsWith('--')) || known().decisions.some(d => d.source.file === file);
     const start = performance.now();
-    const localQuery = dirty && !sharedDirty && !definitions;
+    const localQuery = (dirty || !raw) && !sharedDirty && !definitions;
     // Site has always applied the ordinary ledger, even when report()/edits()
     // were configured for raw or changed-scope inspection.
     const scopedOptions = options.ledger === false || options.base !== undefined || options.changed || options.strictLedger;
@@ -339,22 +376,22 @@ async function dispatch(method: string, params: Record<string, unknown>): Promis
     profileDuration('phase:site-analysis', performance.now() - start);
     return site(readingView(view, file), file, line, params.column as number | undefined, await readFile(file, 'utf8'));
   }
-  if (method === 'decisions') return (sharedDirty ? await current() : raw).decisions;
+  if (method === 'decisions') return (sharedDirty ? await current() : known()).decisions;
   // the spacing multiplier an element editor steps by: the theme's `--spacing`, kept beside any named steps (decisions/spacing.ts spacingUnit)
   if (method === 'spacingUnit') {
-    const view = sharedDirty ? await current() : raw, base = spacingUnit(view.numericSpacing, view.spacingBase);
+    const view = sharedDirty ? await current() : known(), base = spacingUnit(view.numericSpacing, view.spacingBase);
     if (!base) return null;
-    const used = new Set<number>();
-    for (const d of view.declarations) if (d.origin === 'class' && d.sourceOrigin !== 'framework') { const m = /^calc\(var\(--spacing\) \* (\d*\.?\d+)\)$/.exec(d.value); if (m) used.add(Number(m[1])); }
-    return { px: base.px, text: base.text, ...(base.note ? { note: base.note } : {}), used: [...used].sort((a, b) => a - b) };
+    return { px: base.px, text: base.text, ...(base.note ? { note: base.note } : {}), used: spacingUses(view) };
   }
   // the craft spec (docs/briefs/craft-spec.md): the standard as this project's config tunes it, and where a new token goes
-  if (method === 'spec') return projectSpec(options.root!, state.settings, sharedDirty ? await current() : raw);
+  if (method === 'spec') return projectSpec(options.root!, state.settings, sharedDirty ? await current() : known());
   if (method === 'why') return inspectLedger('why', `${params.file}:${params.line}`, await report());
   // every finding at the places in these files, rendered on the page or not (docs/briefs/count-from-code.md)
   if (method === 'places') {
-    const files = params.files as string[], view = await report();
-    return { revision: params.revision, files: files.map(file => ({ file, hash: state.sourceHash(file) ?? null,
+    // per file, as the page's own reads are: with the whole-app report let go, these files are judged alone
+    const files = params.files as string[], views = new Map<string, Report>();
+    for (const file of files) views.set(file, await localReport(file));
+    return { revision: params.revision, files: files.map(file => ({ file, hash: state.sourceHash(file) ?? null, view: views.get(file)! })).map(({ file, hash, view }) => ({ file, hash,
       findings: view.findings.filter(f => !f.rule.startsWith('config/') && f.sites.some(s => s.file === file)).map(f => ({ ...drawn(f), sites: f.sites.filter(s => s.file === file), ...(f.occurrences ? { occurrences: f.occurrences.filter(d => d.site.file === file) } : {}) })),
       declarations: view.declarations.filter(d => d.site.file === file) })) };
   }
@@ -362,7 +399,10 @@ async function dispatch(method: string, params: Record<string, unknown>): Promis
   // time: each call does a few milliseconds of it and returns, so a question asked meanwhile is answered between
   // slices; a report that changed under it starts it again.
   if (method === 'keep') {
-    const view = await current();
+    // the reading table describes the whole-app report; with that let go it is not rebuilt for this, it is written the
+    // next time the report exists (at start-up, before release, or after a project-wide view)
+    if (!raw || dirty) return { done: true, skipped: true };
+    const view = raw;
     if (!keeping || keeping.of !== view) keeping = { of: view, packer: new ReadingPacker(view), started: performance.now(), worked: 0, longest: 0, slices: 0 };
     const job = keeping, start = performance.now();
     const complete = job.packer.step(KEEP_SLICE);
@@ -407,6 +447,7 @@ try {
   ledger = await readLedger(options.root!);
   raw = (await analyze({ ...options, ledger: false }, undefined, state)).report;
   index(await report());
+  releaseLater();
   sharedInputs = new Set([...state.configurationFiles, ...state.compilerFiles, ...raw.decisions.map(d => d.source.file), ...raw.decisionInventory?.map(d => d.source.file) ?? []]);
   parentPort!.postMessage({ ready: true, health: await dispatch('health', {}), dependencies: dependencies(), patterns: [...state.patterns], files: sourceFiles(), configurationFiles: [...state.configurationFiles], entryGraph: [...state.entryGraph], ...queryInputs() });
 } catch (error) { parentPort!.postMessage({ startupError: errorMessage(error), errorStack: error instanceof Error ? error.stack : undefined, usageError: error instanceof UsageError, ...(error instanceof UsageError ? { errorCode: error.code } : {}) }); }

@@ -221,7 +221,9 @@ export async function analyze(options: CheckOptions, snippet?: Snippet, runtime?
   profileDuration('phase:components', performance.now() - ownershipStart + componentCacheMs);
   const ownershipJudgeStart = performance.now();
   profileProgress('rule:ownership');
-  const owned = sync('ownership', [declarations, components, config.value], () => judgeOwnership(declarations, components, config.value, token => lowered.candidates.get(token)?.declarations ?? []));
+  // the class lookup goes in with the inputs, so the session's file-by-file judge reads the same props as this one
+  const propsOf = (token: string) => lowered.candidates.get(token)?.declarations ?? [];
+  const owned = sync('ownership', [declarations, components, config.value, lowered.candidates, propsOf], () => judgeOwnership(declarations, components, config.value, propsOf));
   profileDuration('rule:ownership', performance.now() - ownershipJudgeStart);
   findings.push(...owned.findings);
   const ownershipMs = performance.now() - ownershipStart + componentCacheMs;
