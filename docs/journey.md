@@ -1929,6 +1929,12 @@ field is empty). The table of five writes, before and after. The Next table: eig
   record of every import answer held 75 MB of texts after everything else was released. The next moves are a string
   table at the parser boundary and one graph table instead of a graph per file. Media hook: the 50 MB of rows next to
   the 380 MB held.
+- **One string table (2026-11-17):** the owner said build it. Every name, tag, specifier and value plumber keeps past a
+  parse now goes through one table that stores its own copy once. A heap snapshot that names the holder of every piece
+  of file text guided it, and caught a miss of mine: export names stored as map values. Proof: collection plus the
+  graph hold 234 MB instead of 382; texts kept alive by pieces of them fell from 97 MB to 1 MB; the worker rests at
+  1.09 GB instead of 1.24; plumber starts under a 1.1 GB heap. Results are byte-identical on algorecall and
+  crafting-ui, and start-up time did not change.
 
 ## Open gaps
 - Sweeps covered six algorecall pages and thirteen crafting-ui pages.

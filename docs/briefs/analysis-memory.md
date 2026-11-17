@@ -244,6 +244,29 @@ So the data-oriented moves that would pay, in order:
 3. **The same check on the judgement side** (judgement, the lookup index, finding groups: about 700 MB of the worker
    at rest), which this harness does not run. Not measured.
 
+## One string table (2026-11-17)
+
+Built: `src/collect/strings.ts` keeps one copy of every string the analysis holds past a parse, and hands the same copy
+to every caller. The component index (its names and the map keys), each graph build's results, collection's results,
+the import specifiers, the component lookup keys and the resolver's record of import answers go through it. Ids
+(numbers) instead of copies are left for when tables become columns; the copies alone stop the pinning.
+
+Found while building: an export that maps to a local name stored that name as a map value, which the first pass missed
+and the holder attribution caught.
+
+| On algorecall, vm-agent | Before | After |
+|---|---|---|
+| collection plus component graph, held after a forced collection | 382 MB | 234 MB |
+| whole file texts kept alive by pieces of them | 97 MB | 1 MB |
+| analysis worker at rest (sampled under a 1.5 GB limit) | 1.24 GB | 1.09 GB |
+| smallest heap plumber starts under | 1.1 to 1.25 GB | 0.95 to 1.1 GB |
+
+Collection results and the component graph are byte-identical on algorecall and crafting-ui; start-up stays at 65 to
+70 s. The table grows by distinct strings only and is never emptied; a name removed from the code stays in it.
+
+Next in this order: one graph table instead of a graph per file (the graph still adds about 130 MB for about 10 MB of
+rows), then the judgement side (judgement, lookup index, finding groups), which has not been measured this way.
+
 ## Expected (guesses until measured)
 
 - Step 1 removes most of the 781 MB of trees and a share of the 234 MB that points into them.

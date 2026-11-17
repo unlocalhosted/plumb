@@ -7,6 +7,7 @@ import type { ResolverFactory } from 'oxc-resolver';
 import { tracked } from '../collect/resolved.js';
 import { componentCache, componentFiles, fileHash } from './cache.js';
 import { sourceHash } from '../collect/cache.js';
+import { intern, internAll } from '../collect/strings.js';
 import type { PlumbConfig } from '../config.js';
 import type { Declaration, Site } from '../report.js';
 import { lineStarts, nodeName, references, sourceSite, unwrap } from '../collect/source.js';
@@ -240,6 +241,11 @@ export function discoverComponents(root: string, files: string[], config: PlumbC
         }
       }
     }
+    // the index outlives the parse: its names are pieces of the file's text, so it keeps the table's copies
+    for (const map of [value.bindings, value.types, value.imports, value.exports] as Map<string, unknown>[]) {
+      const entries = [...map]; map.clear(); for (const [name, item] of entries) map.set(intern(name), typeof item === 'string' ? intern(item) : item);
+    }
+    internAll([[...value.imports.values()], [...value.exports.values()], value.stars]);
     if (!overrides.has(file)) memory?.modules.set(file, value);
     return value;
   }
@@ -602,6 +608,9 @@ export function discoverComponents(root: string, files: string[], config: PlumbC
     sourceTokens.set(file, inventory);
   }
   const sourceLines = new Map([...modules].map(([file, value]) => [file, value.lineStarts]));
+  // what the graph keeps (tags, names, props, classes, sites) is cut from the files' text: keep the table's copies
+  internAll([elements, [...usages.values()], mounts, components, [...rootRanges.values()], [...fingerprintClasses.values()]]);
+  for (const item of sourceTokens.values()) { item.classes = new Set([...item.classes].map(intern)); item.variables = new Set([...item.variables].map(intern)); }
   const graph: ComponentGraph = { diagnostics, root, components, used: [...used.values()], usages, mounts, elements, rootRanges, fingerprintClasses, sourceTokens,
     element(site) {
       const lines = sourceLines.get(site.file); if (!lines) return;
@@ -636,7 +645,7 @@ export function discoverComponents(root: string, files: string[], config: PlumbC
   if (!diagnostics.length) cache?.write(graph, new Map([...modules].map(([file, value]) => [file, value.lineStarts])), watchedFiles, watchedDirectories, resolutions, contexts);
   if (memory && !overrides.size) {
     memory.identities ??= new Map(); memory.rootRanges ??= new Map(); memory.fingerprintClasses ??= new Map();
-    for (const [key, identity] of identities) memory.identities.set(key, identity);
+    for (const [key, identity] of identities) memory.identities.set(intern(key), identity);
     for (const [identity, ranges] of rootRanges) memory.rootRanges.set(identity, ranges);
     for (const [identity, classes] of fingerprintClasses) memory.fingerprintClasses.set(identity, classes);
   }

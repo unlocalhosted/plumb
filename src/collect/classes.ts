@@ -5,6 +5,7 @@ import { profileProgress } from '../profile.js';
 import { unreadable } from '../diagnostics.js';
 import type { Finding } from '../report.js';
 import { parseSync, rawTransferSupported, visitorKeys } from 'oxc-parser';
+import { intern } from './strings.js';
 import type { Node, Program } from 'oxc-parser';
 import type { ResolverFactory } from 'oxc-resolver';
 import { tracked } from './resolved.js';
@@ -167,7 +168,7 @@ export async function collectClasses(files: string[], classHelpers: ClassHelperI
         ast = result.program;
         shared.imports.set(file, moduleImports(result.module, text));
         shared.specifiers.set(file, [...new Set([...result.module.staticImports.map(edge => edge.moduleRequest.value),
-          ...result.module.staticExports.flatMap(edge => edge.entries.flatMap(entry => entry.moduleRequest ? [entry.moduleRequest.value] : []))])]);
+          ...result.module.staticExports.flatMap(edge => edge.entries.flatMap(entry => entry.moduleRequest ? [entry.moduleRequest.value] : []))])].map(intern));
       }
       if (texts.has(file)) modules.set(file, shared.imports.get(file) ?? []);
     } catch (error) {
