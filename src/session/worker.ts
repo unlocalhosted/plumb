@@ -403,5 +403,5 @@ try {
   raw = (await analyze({ ...options, ledger: false }, undefined, state)).report;
   index(await report());
   sharedInputs = new Set([...state.configurationFiles, ...state.compilerFiles, ...raw.decisions.map(d => d.source.file), ...raw.decisionInventory?.map(d => d.source.file) ?? []]);
-  parentPort!.postMessage({ ready: true, health: await dispatch('health', {}), dependencies: dependencies(), patterns: [...state.patterns], files: sourceFiles(), configurationFiles: [...state.configurationFiles], ...queryInputs() });
+  parentPort!.postMessage({ ready: true, health: await dispatch('health', {}), dependencies: dependencies(), patterns: [...state.patterns], files: sourceFiles(), configurationFiles: [...state.configurationFiles], entryGraph: [...state.entryGraph], ...queryInputs() });
 } catch (error) { parentPort!.postMessage({ startupError: errorMessage(error), errorStack: error instanceof Error ? error.stack : undefined, usageError: error instanceof UsageError, ...(error instanceof UsageError ? { errorCode: error.code } : {}) }); }

@@ -64,7 +64,7 @@ export async function tailwindEntryCandidates(root: string, diagnostics: Finding
   }
   return candidates;
 }
-async function entryCss(root: string, diagnostics: Finding[], inputs: string[], css?: string, known?: readonly string[]): Promise<string | null> {
+async function entryCss(root: string, diagnostics: Finding[], inputs: string[], css?: string, known?: readonly string[], graph?: Map<string, string | null>): Promise<string | null> {
   if (css !== undefined) {
     const path = resolve(root, css);
     try {
@@ -80,7 +80,7 @@ async function entryCss(root: string, diagnostics: Finding[], inputs: string[], 
   const candidates = await tailwindEntryCandidates(root, diagnostics, known);
   if (candidates.length > 1) {
     inputs.push(...candidates);
-    const entry = await appTailwindEntry(root, candidates, diagnostics, inputs);
+    const entry = await appTailwindEntry(root, candidates, diagnostics, inputs, graph);
     if (entry) return entry;
     throw new UsageError(`Multiple Tailwind entry files: ${candidates.join(', ')}; set css in plumber.config.ts to one of them.\n  → \${EDITOR:-vi} plumber.config.ts`);
   }
@@ -99,9 +99,11 @@ async function tailwindVersion(entry: string | null): Promise<string | null> {
 
 export async function discoverProject(root: string, config: PlumbConfig, known?: readonly string[]): Promise<{
   diagnostics: Finding[]; inputs: string[]; tailwind: Report['tailwind']; files: FileCounts;
+  /** the modules walked to choose the Tailwind entry, each with its import list: they choose again only when that changes */
+  entryGraph: [string, string | null][];
 }> {
-  const diagnostics: Finding[] = [], inputs: string[] = [];
-  const entry = await entryCss(root, diagnostics, inputs, config.css, known);
+  const diagnostics: Finding[] = [], inputs: string[] = [], graph = new Map<string, string | null>();
+  const entry = await entryCss(root, diagnostics, inputs, config.css, known, graph);
   const files = await projectSourceFiles(root, config, known);
   const counts: FileCounts = { tsx: 0, jsx: 0, css: 0, other: 0 };
   for (const file of files) {
@@ -109,7 +111,7 @@ export async function discoverProject(root: string, config: PlumbConfig, known?:
     if (extension === 'tsx' || extension === 'jsx' || extension === 'css') counts[extension]++;
     else counts.other++;
   }
-  return { diagnostics, inputs: [...new Set(inputs)], tailwind: { entry, version: await tailwindVersion(entry) }, files: counts };
+  return { diagnostics, inputs: [...new Set(inputs)], tailwind: { entry, version: await tailwindVersion(entry) }, files: counts, entryGraph: [...graph] };
 }
 
 export async function projectSourceFiles(root: string, config: PlumbConfig, known?: readonly string[]): Promise<string[]> {

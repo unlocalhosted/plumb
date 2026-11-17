@@ -35,6 +35,9 @@ export class WarmState implements AnalysisRuntime {
   readonly shards = new Map<string, ComponentGraph>();
   readonly dependencies = new Set<string>();
   readonly configurationFiles = new Set<string>();
+  /** the modules walked to choose the Tailwind entry and their import lists (discoverProject): a change to one is a
+   * configuration change only when its imports change */
+  readonly entryGraph = new Map<string, string | null>();
   readonly patterns = new Set<string>();
   readonly inputPatterns = new Set<string>();
   private componentConsumers = new Map<string, Set<string>>();
@@ -212,7 +215,10 @@ export class WarmState implements AnalysisRuntime {
     if (name === 'collect') { this.snippet = !!inputs[2]; return await this.collection.collect(inputs[0] as string[], this.config, inputs[2] as Parameters<CollectionState['collect']>[2]) as T; }
     if (name === 'project' || name === 'files') {
       const value = await this.memo(name, [], compute);
-      if (name === 'project') for (const file of (value as { inputs: string[] }).inputs) { this.dependencies.add(file); this.configurationFiles.add(file); }
+      if (name === 'project') {
+        for (const file of (value as { inputs: string[] }).inputs) { this.dependencies.add(file); this.configurationFiles.add(file); }
+        for (const [file, imports] of (value as { entryGraph?: [string, string | null][] }).entryGraph ?? []) { this.dependencies.add(file); this.entryGraph.set(file, imports); }
+      }
       // Snippets may extend the file list or change file counts. Never mutate
       // the warm project's identity through the cold pipeline's local view.
       return structuredClone(value);

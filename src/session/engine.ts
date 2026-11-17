@@ -1,5 +1,6 @@
 import { environment, stateDirectory, statePath, configurationNames, isLedgerPath, cacheDirectory, ignoreCache, buildId } from '../paths.js';
 import { resolutionsChanged } from '../collect/resolved.js';
+import { importSignature } from '../collect/entries.js';
 import type { Resolutions } from '../collect/resolved.js';
 import { atomicWrite } from '../atomic-write.js';
 import type { KeptStats } from './kept.js';
@@ -257,6 +258,9 @@ export class Session extends EventEmitter {
   private sourceFiles = new Set<string>();
   private outsideSources = new Set<string>();
   private configurationFiles = new Set<string>();
+  /** the modules walked to choose the Tailwind entry and their import lists (collect/entries.ts): a write inside one that
+   * keeps its imports is an ordinary source change, not a new project */
+  private entryGraph = new Map<string, string | null>();
   private inputs: string[] = [];
   private inputPatterns: string[] = [];
   private analysisInputs = new Set<string>();
@@ -331,6 +335,7 @@ export class Session extends EventEmitter {
         if (message.ready) { this.dependencies.clear(); for (const file of message.dependencies) this.dependencies.add(file);
           this.patterns = message.patterns; this.patternsDirty = true; this.sourceFiles.clear(); for (const file of message.files) this.sourceFiles.add(file);
           this.configurationFiles.clear(); for (const file of message.configurationFiles) this.configurationFiles.add(file);
+          this.entryGraph = new Map(message.entryGraph ?? []);
           this.inputs = message.inputs; this.inputPatterns = message.inputPatterns; this.selectAnalysisInputs(); this.queryDependencies.clear(); for (const [file, paths] of message.queryDependencies) this.queryDependencies.set(file, paths);
           resolveReady(); return; }
         const failure = (text: string): Error => {
@@ -524,7 +529,14 @@ export class Session extends EventEmitter {
     if (!local) this.selectAnalysisInputs();
     if (initial) return [];
     if (!changed.length) { if (this.failure) throw this.failure; return []; }
-    const broad = changed.some(path => !isLedgerPath(path) && (this.configurationFiles.has(path) || !/\.(?:[jt]sx?|css)$/.test(path) || !this.sourceFiles.has(path) && !this.dependencies.has(path) || !this.hashes.has(path)));
+    // a module on the way to the Tailwind entry chooses it again only when its imports change; a missing or unparsable
+    // text counts as changed
+    const rechoose = (path: string) => {
+      if (!this.entryGraph.has(path)) return false;
+      const text = this.sourceTexts.get(path), was = this.entryGraph.get(path);
+      return was === null || text === undefined || importSignature(path, text) !== was;
+    };
+    const broad = changed.some(path => !isLedgerPath(path) && (this.configurationFiles.has(path) || rechoose(path) ||!/\.(?:[jt]sx?|css)$/.test(path) || !this.sourceFiles.has(path) && !this.dependencies.has(path) || !this.hashes.has(path)));
     try {
       if (broad || this.failure) { await this.worker.terminate(); this.rejectPending(new Error('Session inputs changed.')); await this.restart(); }
       else {

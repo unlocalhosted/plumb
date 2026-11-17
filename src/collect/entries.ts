@@ -10,8 +10,19 @@ import type { Finding } from '../report.js';
 import { cssImports, resolveStylesheet } from './stylesheets.js';
 import { moduleImports } from './modules.js';
 
-/** Resolve runtime entries without importing/executing a project's bundler config. */
-export async function appTailwindEntry(root: string, candidates: string[], diagnostics: Finding[], inputs: string[]): Promise<string | undefined> {
+/** What a module walked to find the Tailwind entry adds to that choice: the modules it imports, nothing else. Two texts
+ * with the same import list choose the same entry; null when the text does not parse (then any change counts). */
+export function importSignature(file: string, text: string): string | null {
+  try {
+    const parsed = parseSync(file, text); if (parsed.errors.length) return null;
+    return [...new Set(moduleImports(parsed.module, text).map(edge => edge.specifier))].sort().join('\n');
+  } catch { return null; }
+}
+
+/** Resolve runtime entries without importing/executing a project's bundler config. The modules walked from the entry
+ * are not inputs: each goes in `graph` with its import list (importSignature), so a change inside one that keeps its
+ * imports (a class written into a component) leaves the choice standing; the HTML, bundler config and CSS are inputs. */
+export async function appTailwindEntry(root: string, candidates: string[], diagnostics: Finding[], inputs: string[], graph?: Map<string, string | null>): Promise<string | undefined> {
   const resolver = tracked({ tsconfig: 'auto', extensions: ['.tsx', '.ts', '.jsx', '.js', '.mts', '.mjs', '.css'],
     extensionAlias: { '.js': ['.ts', '.tsx', '.js'] }, conditionNames: ['import', 'browser', 'default'], mainFields: ['browser', 'module', 'main'] });
   const texts = new Map<string, string | undefined>();
@@ -25,9 +36,9 @@ export async function appTailwindEntry(root: string, candidates: string[], diagn
     const path = html ? clean.startsWith('/') ? resolve(root, '.' + clean) : resolve(dirname(file), clean) : resolver.resolveFileSync(file, clean).path;
     return path && local(path) ? path : undefined;
   }
-  async function read(file: string): Promise<string | undefined> {
+  async function read(file: string, input = true): Promise<string | undefined> {
     if (texts.has(file)) return texts.get(file);
-    inputs.push(file);
+    if (input) inputs.push(file);
     try { const text = await readFile(file, 'utf8'); texts.set(file, text); return text; }
     catch (error) { texts.set(file, undefined); if ((error as NodeJS.ErrnoException).code !== 'ENOENT') diagnostics.push(unreadable(file, file, error)); return; }
   }
@@ -86,11 +97,12 @@ export async function appTailwindEntry(root: string, candidates: string[], diagn
     if (file.endsWith('.html')) { await html(file); for (const root of roots) if (!scheduled.has(root)) { scheduled.add(root); queue.push(root); } continue; }
     if (file.endsWith('.css')) { cssRoots.push(file); continue; }
     if (!/\.[cm]?[jt]sx?$/.test(file)) continue;
-    const text = await read(file); if (text === undefined) continue;
+    const text = await read(file, !graph); if (text === undefined) { graph?.set(file, null); continue; }
     try {
-      const parsed = parseSync(file, text); if (parsed.errors.length) throw new Error(parsed.errors[0]?.message);
-      const imports: string[] = [], css: string[] = [];
-      for (const edge of moduleImports(parsed.module, text)) {
+      const parsed = parseSync(file, text); if (parsed.errors.length) { graph?.set(file, null); throw new Error(parsed.errors[0]?.message); }
+      const imports: string[] = [], css: string[] = [], edges = moduleImports(parsed.module, text);
+      graph?.set(file, [...new Set(edges.map(edge => edge.specifier))].sort().join('\n'));
+      for (const edge of edges) {
         const path = target(file, edge.specifier); if (!path) continue;
         if (path.endsWith('.css')) css.push(path);
         else if (/\.[cm]?[jt]sx?$/.test(path)) { imports.push(path); if (!scheduled.has(path)) { scheduled.add(path); queue.push(path); } }
