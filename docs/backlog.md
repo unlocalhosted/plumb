@@ -64,7 +64,7 @@ reserved.)
 ## Doesn't do yet
 
 - **A large app rests at 2.5 GB (2026-11-17).** Step 1 of `docs/briefs/analysis-memory.md` took the analysis worker's
-  heap from 2.17 GB to 1.26 GB; the process rests at 2.46 GB. Step 2 lowered the heap it needs to start from 1.6–1.8 GB to 1.25–1.4 GB. Steps 3 to 7 are open. Earlier note: On algorecall (3,662 source files) plumber now starts at node's
+  heap from 2.17 GB to 1.26 GB; the process rests at 2.46 GB. Step 2 lowered the heap it needs to start from 1.6–1.8 GB to 1.25–1.4 GB. Step 3 was measured and dropped (tens of MB). Open: one copy of each text (up to about 200 MB) and open-page-first analysis, which waits for the owner because the project-wide list would fill in later. Earlier note: On algorecall (3,662 source files) plumber now starts at node's
   default heap limit (it failed 3 of 3 before the module cache was capped) and rests at about 2.7 GB. The engine
   keeps syntax trees, string-keyed maps and per-file sets where small per-file facts would do. Memory also crept
   0.8 GB over 12 changes. The design is proposed in `docs/briefs/analysis-memory.md` (keep per-file facts, not

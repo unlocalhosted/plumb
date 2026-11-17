@@ -1902,6 +1902,13 @@ field is empty). The table of five writes, before and after. The Next table: eig
   recently used. Resident memory varied by 250 MB between identical starts, too much to show the change, so the
   proof is the smallest heap plumber starts under: 1.6 to 1.8 GB before, 1.25 to 1.4 GB after. Results are
   byte-identical on algorecall and crafting-ui; start-up stays at about 66 s.
+- **Step 3 measured before it was built (2026-11-17):** step 3 (files as numbers, links as flat lists) was written
+  against the per-file sets that broke writes, and those no longer exist at rest. A profile of what stays alive, by
+  the code that made it, showed the links do not appear at all; path-built keys are about 95 MB of 1.32 GB, and
+  numbering files would save part of that. The rest is volume: texts (about 200 MB), judgements (about 270 MB), the
+  lookup index, the component graph, for every file in the app. So step 3 was dropped, and the next real lever is
+  analysing the open page first, which changes what a person sees and is the owner's call. A heap snapshot was tried
+  first; writing it needed more than 11 GB and was killed twice.
 
 ## Open gaps
 - Sweeps covered six algorecall pages and thirteen crafting-ui pages.

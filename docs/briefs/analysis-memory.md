@@ -151,6 +151,32 @@ against 6.5 s, the parses the store no longer saves.
 This is a cap, not facts: collection still builds whole trees and drops them. Per-file facts for collection wait
 until a profile shows the parse work, not the memory, is the cost.
 
+## Before step 3: what holds the rest (2026-11-17)
+
+Step 3 was planned against the per-file sets that broke writes. Those are gone at rest (writes walk the links when
+asked), so before building it, the live heap after steps 1 and 2 was charged to the plumber function that allocated
+each surviving object and its caller (sampling heap profile, algorecall, vm-agent; 1.32 GB live). A full heap
+snapshot was tried first and was killed at an 11 GB cap while writing.
+
+| MB | What it is |
+|---|---|
+| 206 | file texts and line tables, read by collection (127) and the class collector's sources (79) |
+| about 270 | judgement: orders (94), provenance (93) and family provenance (75 over four call sites) |
+| 133 | the worker's lookup index of findings and declarations |
+| 95 | ledger finding groups (53) and the location key cached for every site (42) |
+| 93 | the component graph's elements and usages |
+| 53 + 18 | report assembly in the analysis entry point |
+
+Files as numbers would shorten the location keys and the ledger's group keys, where the path is about half of each
+string: tens of MB, an estimate from the table, not a measurement. The links between files do not appear. Almost
+everything else scales with how much of the app is analysed: every class site (228,484), element (108,286) and
+judgement for all 3,649 files.
+
+Decision: step 3 is not built as written. The lever that reaches the rows above together is step 6, analysing the
+open page's files first and the rest only when asked, which changes what the person sees (a project-wide list fills
+in later) and so waits for the owner. Steps 4 (one copy of each text, up to about 200 MB here) and 5 (columns for
+sites and findings) remain the order otherwise.
+
 ## Expected (guesses until measured)
 
 - Step 1 removes most of the 781 MB of trees and a share of the 234 MB that points into them.
