@@ -1863,17 +1863,25 @@ field is empty). The table of five writes, before and after. The Next table: eig
   38 refused to 0; the 7 writes it unlocked were all right.
 - **One write could hang the laptop (2026-11-17):** on algorecall a write took about 40 seconds and its undo another
   40, and the dev server grew past 5 GB; while the sweep and a profile ran, the owner's laptop ran out of memory and
-  hung. Two causes found so far. First, algorecall has several Tailwind stylesheets, and every file plumber passes on
-  its way from index.html to the right one counted as configuration, so a class written into the app's layout
-  restarted the whole analysis; those files now count only when their imports change. Second, and not solved:
-  plumber's analysis of algorecall's 3,662 files sits at about 4 GB, the default limit, and dies there about half the
-  time at start; with more room on vm-agent, one write took the server from 4.7 GB to 14 GB in 30 seconds before the
-  machine killed it. Whether the second fix changes that is not known yet. Media hook: the memory trace of one write.
+  hung. The runs moved to vm-agent, in a memory-capped scope, with V8's heap profiler on. Two causes, both fixed:
+  - algorecall has several Tailwind stylesheets, and every file plumber passes on its way from index.html to the
+    right one counted as configuration, so a class written into the app's layout restarted the whole analysis. Those
+    files now count only when their imports change.
+  - With that fixed, the change went down the ordinary refresh, which was worse: restoring one file by hand took the
+    server from 3.9 GB to 6.9 GB in 9 seconds. The refresh worked out, for every file the change touched, its own
+    list of the files it depends on, and sent them all to the main thread, which never read them. The layout reaches
+    about 3,600 files, so that was about 13 million paths. It now walks once from all the changed files and sends the
+    one set the main thread uses.
+
+  Proof, on vm-agent: six writes and their undos, each about 3 seconds; memory 4.4 to 5.2 GB, where before one write
+  ran it past 14 GB until the machine killed it. Still open: plumber needs about 4 to 5 GB just to start on algorecall,
+  and at the default heap limit it failed to start in 3 of 7 tries; memory crept 0.8 GB over 12 changes. Media hook:
+  the two memory traces, before and after.
 
 ## Open gaps
 - Sweeps covered six algorecall pages and thirteen crafting-ui pages.
-- One write on algorecall (3,662 files) takes the dev server from about 4.7 GB to past 14 GB; plumber cannot write
-  there yet without risking the machine. See "One write could hang the laptop".
+- Plumber needs about 4 to 5 GB to start on algorecall (3,662 files) and fails at the default heap limit about
+  half the time. See "One write could hang the laptop".
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
 
 ### Open gaps from the 0.4.0 release work

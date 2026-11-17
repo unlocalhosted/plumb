@@ -63,10 +63,11 @@ reserved.)
 
 ## Doesn't do yet
 
-- **A large app runs plumber out of memory (2026-11-17).** On algorecall (3,662 source files) the analysis sits at
-  about 4 GB, the default heap limit, and dies there about half the time at start; one class write took the server
-  from 4.7 GB to past 14 GB on vm-agent. Not known yet: what grows during a write. Next: a heap profile of one write
-  on vm-agent, in a memory-capped run.
+- **A large app needs 4 to 5 GB just to start (2026-11-17).** On algorecall (3,662 source files) the analysis
+  worker holds about 2.2 GB live after start (parsed files, the component and ownership tables), and the process
+  sits at 4 to 5 GB; at node's default heap limit start-up failed in 3 of 7 tries. Writes are fixed (about 3 s, no
+  runaway). Also seen: memory crept 0.8 GB over 12 changes. Next: what the worker keeps that it needn't, from the
+  resting heap profile (~/projects/sweep/heap-rest on vm-agent).
 
 **Change the class in force (2026-11-13).** One rule (`overlay/src/variants.js`) for every class writer: breakpoints, dark and held states; the box edit, the layout card, Tidy and the shared reader use it. Still to do: a way for Plumber to hold hover/focus, the branch of a condition that is active, the text editor's text-size write, and a check on a running app with responsive classes. The plan is `docs/briefs/xray-propagation.md`.
 
