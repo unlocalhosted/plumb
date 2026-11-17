@@ -1988,6 +1988,10 @@ field is empty). The table of five writes, before and after. The Next table: eig
   order-dependence already in the code (a component's root ranges are missing from later graphs if it was first found
   by a build that did not keep it); the kept replay copies today's behaviour exactly and the order-dependence went to
   the backlog. Graph and findings identical on both apps.
+- **Shards built while files are hot (2026-11-17):** the owner said keep cutting. Each file's component shard is now
+  built right after collection reads it, so its parsed code is reused instead of parsed and read again. Graph,
+  findings and views identical on both apps. Start to ready went from 60 to 63 s down to 58 to 60 s: about 2 s, near
+  the noise, less than the profile suggested, because some of the work moved rather than vanished.
 
 ## Open gaps
 - Sweeps covered six algorecall pages and thirteen crafting-ui pages.

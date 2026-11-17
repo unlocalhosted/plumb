@@ -547,6 +547,25 @@ the order-dependence is in the backlog.
 Proof: the component graph, whole and file by file, byte-identical to this morning's baseline on algorecall and
 crafting-ui; full-report findings identical (2,935 and 927). Component discovery: 13.4 s to 9.5 s.
 
+## Component discovery, second pass (2026-11-17)
+
+After the first pass, a profile put 7.5 s under the graph build: scanning each file's JSX and resolving each
+element's component 3.2 s, parsing files again about 2.5 s, reading them 0.8 s, the rest spread thin. The parsing and
+reading existed because shards were built after collection had let go of each file's parsed code.
+
+Built: a whole-app collection builds each file's component shard right after collecting it, reading the file's text
+and parsed code from what collection still holds; the graph build then only builds shards that are missing (after an
+edit). Shards are built in the same order as before.
+
+Proof: on algorecall and crafting-ui, the session's merged component graph (components, used, elements, mounts,
+usages, fingerprinted), the full-report findings and the line and column views are identical before and after; 127
+sampled files judged alone match the full report.
+
+Measured, start to ready on algorecall: 60 and 63 s before, 58, 59 and 60 s after. About 2 s, close to the
+run-to-run spread; less than the 3 s of parsing and reading the profile showed, because part of that work moved into
+collection rather than going away. What is left in component discovery is mostly resolving each JSX element's
+component (about 3 s).
+
 ## Expected (guesses until measured)
 
 Provenance from 8.6 s to about 1 s, expansion and existence from 7 s to about 1 s: about 13 s off start-up and off
@@ -596,6 +615,25 @@ the order-dependence is in the backlog.
 
 Proof: the component graph, whole and file by file, byte-identical to this morning's baseline on algorecall and
 crafting-ui; full-report findings identical (2,935 and 927). Component discovery: 13.4 s to 9.5 s.
+
+## Component discovery, second pass (2026-11-17)
+
+After the first pass, a profile put 7.5 s under the graph build: scanning each file's JSX and resolving each
+element's component 3.2 s, parsing files again about 2.5 s, reading them 0.8 s, the rest spread thin. The parsing and
+reading existed because shards were built after collection had let go of each file's parsed code.
+
+Built: a whole-app collection builds each file's component shard right after collecting it, reading the file's text
+and parsed code from what collection still holds; the graph build then only builds shards that are missing (after an
+edit). Shards are built in the same order as before.
+
+Proof: on algorecall and crafting-ui, the session's merged component graph (components, used, elements, mounts,
+usages, fingerprinted), the full-report findings and the line and column views are identical before and after; 127
+sampled files judged alone match the full report.
+
+Measured, start to ready on algorecall: 60 and 63 s before, 58, 59 and 60 s after. About 2 s, close to the
+run-to-run spread; less than the 3 s of parsing and reading the profile showed, because part of that work moved into
+collection rather than going away. What is left in component discovery is mostly resolving each JSX element's
+component (about 3 s).
 
 ## Expected (guesses until measured)
 

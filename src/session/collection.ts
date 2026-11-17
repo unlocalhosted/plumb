@@ -115,14 +115,19 @@ export class CollectionState {
     // Shared definitions are semantic inputs, retained by file across targeted refreshes.
     return { ...value, styles: { ...value.styles, declarations: [...value.styles.declarations, ...[...this.definitions].flatMap(([source, ds]) => source === file ? [] : ds)] } };
   }
-  async collect(files: string[], config: PlumbConfig, input?: { file: string; text: string; lang: 'tsx' | 'css' }): Promise<Collection> {
+  /** `afterFile`: called after each file is collected, while its parsed code is still among the shared programs. */
+  async collect(files: string[], config: PlumbConfig, input?: { file: string; text: string; lang: 'tsx' | 'css' }, afterFile?: (file: string) => void): Promise<Collection> {
     const current = new Set(files);
     if (!input) for (const file of this.slices.keys()) if (!current.has(file)) this.slices.delete(file);
     const values: Collection[] = [];
     this.memory = { programs: new RecentPrograms(256), imports: new Map(), specifiers: new Map(), texts: new Map() };
+    // visible while collecting, so a component shard built after each file (afterFile) reuses its parsed code
+    this.programs = this.memory.programs;
+    this.specifiers = this.memory.specifiers;
     this.parsedFiles = []; this.visitedFiles = [];
     for (const file of files.filter(file => file === input?.file ? input.lang === 'tsx' : /\.[jt]sx?$/.test(file))) {
       values.push(await this.read(file, config, input));
+      afterFile?.(file);
     }
     this.programs = this.memory.programs;
     this.specifiers = this.memory.specifiers;

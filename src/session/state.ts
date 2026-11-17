@@ -238,7 +238,14 @@ export class WarmState implements AnalysisRuntime {
       }
       return value;
     }
-    if (name === 'collect') { this.snippet = !!inputs[2]; return await this.collection.collect(inputs[0] as string[], this.config, inputs[2] as Parameters<CollectionState['collect']>[2]) as T; }
+    if (name === 'collect') {
+      this.snippet = !!inputs[2];
+      // a whole-app collection builds each file's component shard as it goes (buildShard); componentGraph ends the batch
+      const prebuild = !inputs[2] && /\.[jt]sx?$/;
+      if (prebuild && !this.componentMemory.batch) this.componentMemory.batch = componentBatch();
+      return await this.collection.collect(inputs[0] as string[], this.config, inputs[2] as Parameters<CollectionState['collect']>[2],
+        prebuild ? file => { if (prebuild.test(file) && !this.shards.has(file)) this.buildShard(file, this.config); } : undefined) as T;
+    }
     if (name === 'project' || name === 'files') {
       const value = await this.memo(name, [], compute);
       if (name === 'project') {
@@ -293,40 +300,7 @@ export class WarmState implements AnalysisRuntime {
     // one file at a time, but one set of resolvers, resolutions and directory listings for the whole build
     if ([...wanted].some(file => !this.shards.has(file))) this.componentMemory.batch = componentBatch();
     try {
-    for (const file of wanted) {
-      if (this.shards.has(file)) continue;
-      let text = ''; try { text = readFileSync(file, 'utf8'); } catch { /* Component discovery reports this file. */ }
-      const hash = sourceHash(text);
-      const dependencies = new Set<string>();
-      const queue = [file], visited = new Set<string>();
-      for (let i = 0; i < queue.length; i++) {
-        const source = queue[i]!;
-        if (visited.has(source)) continue;
-        visited.add(source);
-        if (this.dependencyEdges.has(source)) continue;
-        let text: string; try { text = readFileSync(source, 'utf8'); } catch { continue; }
-        const edges = (this.collection.specifiers.get(source) ?? dependencySpecifiers(source, text)).flatMap(id => {
-          const target = this.componentResolver.resolveFileSync(source, id).path;
-          return target && /\.[cm]?[jt]sx?$/.test(target) ? [target] : [];
-        });
-        this.dependencyEdges.set(source, edges);
-        for (const path of this.componentDependencies.get(source) ?? []) this.componentConsumers.get(path)?.delete(source);
-        this.componentDependencies.set(source, new Set(edges));
-        for (const target of edges) {
-          this.dependencies.add(target);
-          let users = this.componentConsumers.get(target);
-          if (!users) this.componentConsumers.set(target, users = new Set());
-          users.add(source);
-          if (!this.dependencyEdges.has(target) && queue.length < 20_000) queue.push(target);
-        }
-      }
-      for (const target of this.componentDependencies.get(file) ?? []) dependencies.add(target);
-      const shard = discoverComponents(this.root, [file], config, undefined, false, this.collection.programs, true, this.componentMemory);
-      for (const identity of shard.components) { dependencies.add(identity.source.file); this.dependencies.add(identity.source.file); }
-      for (const path of this.componentDependencies.get(file) ?? []) this.componentConsumers.get(path)?.delete(file);
-      for (const path of dependencies) { let users = this.componentConsumers.get(path); if (!users) this.componentConsumers.set(path, users = new Set()); users.add(file); }
-      this.shards.set(file, shard); this.componentHashes.set(file, hash); this.componentDependencies.set(file, dependencies);
-    }
+    for (const file of wanted) if (!this.shards.has(file)) this.buildShard(file, config);
     } finally { delete this.componentMemory.batch; }
     const graph = this.mergeGraph(files, this.shards);
     this.collection.programs.clear();
@@ -338,6 +312,44 @@ export class WarmState implements AnalysisRuntime {
       return this.globalGraph.graph;
     }
     this.globalGraph = { key, graph }; return graph;
+  }
+  /** One file's component shard and the import edges it reaches. Built right after the file is collected when the
+   * whole app is collected (its parsed code is still in memory then: building every shard afterwards parsed and read
+   * each file again, about 3 s on a 3,600-file app), otherwise by componentGraph for the files that lack one. The
+   * order is the files' order either way, so the shards are the same. */
+  private buildShard(file: string, config: PlumbConfig): void {
+    // the text collection just parsed, when it is still held; otherwise the file
+    let text = this.collection.programs.get(file)?.text ?? ''; if (!this.collection.programs.has(file)) try { text = readFileSync(file, 'utf8'); } catch { /* Component discovery reports this file. */ }
+    const hash = sourceHash(text);
+    const dependencies = new Set<string>();
+    const queue = [file], visited = new Set<string>();
+    for (let i = 0; i < queue.length; i++) {
+      const source = queue[i]!;
+      if (visited.has(source)) continue;
+      visited.add(source);
+      if (this.dependencyEdges.has(source)) continue;
+      let text = this.collection.programs.get(source)?.text; if (text === undefined) try { text = readFileSync(source, 'utf8'); } catch { continue; }
+      const edges = (this.collection.specifiers.get(source) ?? dependencySpecifiers(source, text)).flatMap(id => {
+        const target = this.componentResolver.resolveFileSync(source, id).path;
+        return target && /\.[cm]?[jt]sx?$/.test(target) ? [target] : [];
+      });
+      this.dependencyEdges.set(source, edges);
+      for (const path of this.componentDependencies.get(source) ?? []) this.componentConsumers.get(path)?.delete(source);
+      this.componentDependencies.set(source, new Set(edges));
+      for (const target of edges) {
+        this.dependencies.add(target);
+        let users = this.componentConsumers.get(target);
+        if (!users) this.componentConsumers.set(target, users = new Set());
+        users.add(source);
+        if (!this.dependencyEdges.has(target) && queue.length < 20_000) queue.push(target);
+      }
+    }
+    for (const target of this.componentDependencies.get(file) ?? []) dependencies.add(target);
+    const shard = discoverComponents(this.root, [file], config, undefined, false, this.collection.programs, true, this.componentMemory);
+    for (const identity of shard.components) { dependencies.add(identity.source.file); this.dependencies.add(identity.source.file); }
+    for (const path of this.componentDependencies.get(file) ?? []) this.componentConsumers.get(path)?.delete(file);
+    for (const path of dependencies) { let users = this.componentConsumers.get(path); if (!users) this.componentConsumers.set(path, users = new Set()); users.add(file); }
+    this.shards.set(file, shard); this.componentHashes.set(file, hash); this.componentDependencies.set(file, dependencies);
   }
   private mergeGraph(files: string[], shards: Map<string, ComponentGraph>): ComponentGraph {
     const graphs = files.flatMap(file => shards.get(file) ?? []);
