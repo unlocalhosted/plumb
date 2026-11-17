@@ -11,6 +11,7 @@ import { indexDefinitions } from '../rules/attribution.js';
 import { references } from '../collect/source.js';
 import type { ComponentGraph } from '../ownership/components.js';
 import type { ClassSite } from '../collect/classes.js';
+import { siteLocation } from '../ledger/keys.js';
 import { deadVariables } from '../rules/existence.js';
 
 const same = (a: unknown[], b: unknown[]) => a.length === b.length && a.every((v, i) => v === b[i]);
@@ -29,10 +30,9 @@ export function byFile(declarations: Declaration[]): Map<string, Declaration[]> 
   for (const d of declarations) { const group = files.get(d.site.file) ?? []; group.push(d); files.set(d.site.file, group); }
   return files;
 }
-const locations = new WeakMap<Declaration['site'], string>();
-const siteKey = (s: Declaration['site']) => {
-  let key = locations.get(s); if (key === undefined) { key = `${s.file}\0${s.line}:${s.column}\0${s.text}`; locations.set(s, key); } return key;
-};
+// one key per site for the whole worker: the ledger builds the same one for every site it groups, and a second
+// spelling of file, line, column and text here held a second string per site (docs/briefs/analysis-memory.md)
+const siteKey = siteLocation;
 const location = (d: Declaration) => siteKey(d.site);
 const indices = new WeakMap<Declaration[], { order: Map<string, number>; declarations: Map<Declaration, number> }>();
 function orders(ds: Declaration[]) {
@@ -73,7 +73,9 @@ function mergeFindings(parts: Finding[][], declarations: Declaration[]): Finding
 }
 
 export class JudgementState {
-  private provenanceCache = new FileCache<ReturnType<typeof familyProvenance>>();
+  // what judgement reads back: entries, numeric spacing in use and coverage. familyProvenance's findings are built
+  // again from the merged entries below, so keeping them here held a second copy of every provenance finding
+  private provenanceCache = new FileCache<Omit<ReturnType<typeof familyProvenance>, 'findings'>>();
   private ownershipCache = new FileCache<ReturnType<typeof judgeOwnership>>();
   private habitCache = new FileCache<ReturnType<typeof judgeHabits>>();
   private imitationCache = new FileCache<ReturnType<typeof judgeImitation>>();
@@ -150,7 +152,8 @@ export class JudgementState {
         const dependencies = custom.filter(d => refs.has(d.prop));
         const key = `${family}:${JSON.stringify(cluster)}`; keys.add(key);
         const result = this.provenanceCache.get(key, [record, config, ...ds, '|definitions', ...dependencies], () => {
-          return familyProvenance(family, ds, record, config, sourceFiles, definitions, resolution);
+          const { findings: _rebuiltFromEntries, ...kept } = familyProvenance(family, ds, record, config, sourceFiles, definitions, resolution);
+          return kept;
         });
         parts.get(family)!.push(...result.entries);
         for (const name of result.usedNumericSpacing) usedNumericSpacing.add(name);

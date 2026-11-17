@@ -63,7 +63,7 @@ reserved.)
 
 ## Doesn't do yet
 
-- **A large app's analysis rests at 1.04 GB (2026-11-17).** One string table and trimmed per-file graphs took it from 1.24 GB; next is measuring the judgement side field by field. Step 1 of `docs/briefs/analysis-memory.md` took the analysis worker's
+- **A large app's analysis holds 924 MB live (2026-11-17).** Measured after a forced collection (about 1.04 GB sampled at rest before the judgement pass). Next: the provenance cache's entries (1.2 million objects) and the findings indexes. Step 1 of `docs/briefs/analysis-memory.md` took the analysis worker's
   heap from 2.17 GB to 1.26 GB; the process rests at 2.46 GB. Step 2 lowered the heap it needs to start from 1.6–1.8 GB to 1.25–1.4 GB. Step 3 was measured and dropped (tens of MB). One copy of each text was tried and undone (texts are held once, at two bytes a character, kept alive by pieces of them in the results; up to about 125 MB if results held their own strings). Results now own their strings (worker at rest 1.24 GB, starts under 1.25 GB). Open: open-page-first analysis, which waits for the owner because the project-wide list would fill in later. Earlier note: On algorecall (3,662 source files) plumber now starts at node's
   default heap limit (it failed 3 of 3 before the module cache was capped) and rests at about 2.7 GB. The engine
   keeps syntax trees, string-keyed maps and per-file sets where small per-file facts would do. Memory also crept

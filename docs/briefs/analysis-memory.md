@@ -292,6 +292,34 @@ What is left at rest is mostly the judgement side: the report assembled in the a
 and provenance, the worker's lookup index, and finding groups. It has not been measured field by field yet; that is
 the next step.
 
+## The judgement side, first pass (2026-11-17)
+
+A full snapshot of algorecall's analysis worker needs more than 9.5 GB to write, so two other measures were used:
+a snapshot of crafting-ui's worker (622 files, 103 MB live), labelled by owning field and variable; and, on
+algorecall, a walk inside the worker after a forced collection that charges every object it can reach to the first
+field reaching it (a size model; it reaches about 200 MB of the 1 GB, the rest sits in closures and object-keyed
+tables).
+
+crafting-ui by owner: the last report 18%, two per-site location-key tables 9%, the findings indexes by file, line and
+column 6.5%, the per-site cache 6%, the provenance cache 5.5%, node's own code and built-ins about 25%.
+
+Fixed:
+- **One site key, not two.** Judgement and the ledger each built a string per site from its file, line, column and
+  text, in two spellings. Judgement now uses the ledger's. The ledger's spelling stays as it is: it is part of the
+  SARIF fingerprints that code-scanning services keep.
+- **The provenance cache keeps what is read.** It kept each group's findings, which judgement never reads (it builds
+  them again from the merged entries), so every provenance finding was held twice.
+
+| algorecall, live heap of the analysis worker after a forced collection | |
+|---|---|
+| before | 1,015 MB |
+| after | 924 MB |
+
+Findings are identical: 2,935 before and after, with the same fingerprint over each finding's key, rule, message,
+severity and every site with its ledger key and status.
+
+Next: the provenance cache still holds 1.2 million objects on algorecall, its entries; and the findings indexes.
+
 ## Expected (guesses until measured)
 
 - Step 1 removes most of the 781 MB of trees and a share of the 234 MB that points into them.

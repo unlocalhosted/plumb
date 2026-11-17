@@ -1941,6 +1941,12 @@ field is empty). The table of five writes, before and after. The Next table: eig
   map only their own files, and the index packs line tables four bytes a line. Proof: collection plus the graph hold
   194 MB instead of 234; the worker rests at 1.04 GB instead of 1.09; results byte-identical. Packing elements (about
   10 to 15 MB) was left, because it changes the graph cache's format.
+- **The judgement side, first pass (2026-11-17):** the owner asked for the judgement side next. A snapshot of
+  algorecall's worker needs more than 9.5 GB to write and was killed, so crafting-ui's worker was snapshotted instead
+  and algorecall was measured by a walk inside the worker. Two wastes were fixed: judgement and the ledger each kept
+  their own key string for every site, and the provenance cache kept findings nobody reads. Proof: algorecall's
+  worker holds 924 MB after a forced collection instead of 1,015, and its 2,935 findings are identical, checked by a
+  fingerprint over every finding and site.
 
 ## Open gaps
 - Sweeps covered six algorecall pages and thirteen crafting-ui pages.
