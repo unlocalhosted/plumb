@@ -1,0 +1,151 @@
+# What the analysis keeps in memory
+
+Status: proposed 2026-11-17, waiting for the owner's sign-off. No code until then.
+
+## The problem
+
+On algorecall (about 3,650 source files), plumber's analysis worker rests at about 2.7 GB, and grew past node's 4 GB limit
+during start-up until the 2026-11-17 cap. A person runs plumber next to their own dev server, a browser and an editor
+on a 16 GB laptop. Gigabytes for remembering facts about a few thousand files is the wrong order of magnitude: the
+facts plumber reads are kilobytes per file.
+
+The cap (keep the parsed code of the 400 most recently used files, parse again when needed) made start-up work. It
+does not change the design that made the memory big, and the next feature that keeps something per file will grow it
+again.
+
+## Measured
+
+One heap profile of the analysis worker at rest on algorecall, on vm-agent, 2026-11-17, before the cap: 2.17 GB live.
+
+| MB | Allocated in | What it is |
+|---|---|---|
+| 781 | `collect/classes.ts` `source()` | parsed code (oxc trees as JavaScript objects), about 210 KB per file |
+| 234 | `ownership/components.ts` `local()` | component identities and what they point at in those trees |
+| 119 | `session/collection.ts` `read()` | file texts |
+| 118 | `session/state.ts` `sync()` | per-file maps and sets |
+| 92 | judgement | findings |
+| 74 | provenance | where a class came from |
+| 68 | worker index | lookup maps |
+| 66 | ledger | finding groups |
+
+Separately, the write path held one "everything this file reaches" set per file, about 13 million paths in all.
+Writes now walk the links when asked (commit ef95361c) and that cost is gone; the per-file reach cache in
+`WorkerState.reachable()` still exists for other questions.
+
+What is not measured: the size each step below would reach. Every number in "Expected" is a guess until the step is
+built and profiled the same way.
+
+## Where the memory comes from
+
+Three habits, each sensible alone:
+
+1. **Parsed code is kept so later questions can walk it.** `collectClasses` keeps each file's tree in
+   `shared.programs` for the component pass; `discoverComponents` keeps a `Module` per file with its tree, and its
+   `bindings` and `types` maps hold nodes inside that tree. Questions asked later (what does this component render,
+   which class list sits at this position, what tokens does this file use) walk the tree again. So the tree stays,
+   and a node kept in a map keeps the whole tree alive even after `ast` is set to null.
+2. **Paths are the keys everywhere.** Every map and set is keyed by an absolute path string. The import graph, the
+   component graph, consumers, dependencies and the reach cache each hold their own references, and sets of paths per
+   file grow with files × files.
+3. **Everything is analysed up front.** All of algorecall's files are parsed and judged at start-up, whether or not the open
+   page uses them.
+
+## The design
+
+The rule: **after a file is read, plumber keeps facts, not code.** A fact is something a question needs, in a flat
+shape, pointing at the source by position. When a question needs more than the facts, the file is parsed again; oxc
+parses a typical file in a few milliseconds.
+
+### 1. Per-file facts instead of trees
+
+One pass over a freshly parsed file fills a small record, then the tree is dropped:
+
+- **imports and exports:** specifier, imported name, local name, as small numbers into a string table;
+- **class sites:** start and end in the text, the attribute or helper it belongs to, the literal classes when they
+  are static, and a flag when they are computed;
+- **JSX elements:** start, end, tag, parent element, the component they sit in;
+- **components:** name, where the function starts and ends, exported as what, the root elements it returns;
+- **bindings the component pass follows:** name and the position of its value, never the node.
+
+Questions that today walk a kept tree (`functionNode`, `values`, `implementation`, the token inventory in
+`discoverComponents`) either read these facts or parse that one file again. The test for whether something belongs
+in the facts is whether a question asks for it on every file; the rest is parsed on demand.
+
+This is where most of the memory is: the 781 MB of trees and much of the 234 MB that points into them.
+
+### 2. File numbers instead of paths
+
+Each file gets a number the first time plumber sees it. Paths live once, in one table. Every graph, map and finding
+stores the number. Results sent to the page turn numbers back into paths at the edge.
+
+### 3. Links in flat arrays
+
+The import graph and the component graph are each stored once, in both directions, as two number arrays per
+direction (where each file's list starts, and the lists end to end). "What does this file reach" and "who depends on
+this file" are a walk over those arrays with a bitset of files seen, done when asked. Nothing stores a set per file.
+The walk is linear in the links; on algorecall that is a fraction of a millisecond per question.
+
+### 4. Columns for sites and findings
+
+Class sites, elements and findings are rows in tables: one typed array per field (file number, start, end, kind,
+rule), with text as a position in the file, never a copy. This is rule 4 and rule 7 of engine-scaling 2b, applied to
+the analysis instead of the page.
+
+### 5. One copy of each text
+
+A file's text is held once, by the session, and everything else refers to it. Today it is held by the collection
+reader, the component pass and the engine's `sourceTexts`. Unchanged files whose facts are fresh could drop their
+text entirely and read it from disk when a write needs it.
+
+### 6. Open page first
+
+Start-up analyses what the open page imports, then the rest in the background at low priority, or only when a
+question asks for it. The person sees findings for their page sooner, and a project-wide question (the problems list)
+is the thing that pays for reading everything.
+
+### 7. Only changed rows between threads
+
+The worker sends the main thread what changed, by number, instead of whole structures. The first start-up crash died
+while decoding one such copy.
+
+## Expected (guesses until measured)
+
+- Step 1 removes most of the 781 MB of trees and a share of the 234 MB that points into them.
+- Steps 2 and 3 remove the per-file sets and most repeated path strings.
+- Taken together, an app of algorecall's size resting in the hundreds of megabytes looks realistic. That claim needs
+  the same heap profile, on vm-agent, after each step.
+
+## Order
+
+Each step is one layer, measured before and after on algorecall on vm-agent with the same heap profile, and committed
+on its own:
+
+1. Per-file facts for the component pass (the largest share).
+2. Per-file facts for class collection, so `shared.programs` goes away.
+3. File numbers and flat links; the reach cache goes away.
+4. The text once.
+5. Columns for sites and findings.
+6. The open page first.
+7. Changes between threads.
+
+Steps 1 to 3 are the memory. Steps 4 to 7 are smaller or change behaviour the person sees (6), and each waits for a
+profile that says it is worth doing.
+
+## Risks
+
+- **Questions that need the tree come back slower.** Parsing a file again costs milliseconds; a question that touches
+  hundreds of files would pay that hundreds of times. Each step lists the questions it moves to parse-on-demand, with a
+  timing on algorecall.
+- **Facts go stale.** A fact is valid for one text of one file. The file's hash keys its facts, as it keys the cache
+  today.
+- **The component pass is subtle.** It follows bindings, re-exports and stars across files. Step 1 must keep its
+  results identical; the check is the component graph on algorecall and crafting-ui before and after, compared
+  whole.
+
+## Not known
+
+- How much of the 234 MB is held only through tree nodes, and how much is identities that stay. The profile after
+  step 1 says.
+- Whether oxc's raw transfer (reading the parser's buffer without building JavaScript objects) is fast enough to fill
+  the facts directly. If it is, step 1 never builds the trees at all.
+- How many questions need more than the facts. Counted while writing step 1.

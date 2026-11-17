@@ -1883,6 +1883,12 @@ field is empty). The table of five writes, before and after. The Next table: eig
   session. The cache now keeps the 400 most recently used and parses a dropped one again. Proof: 2 of 2 starts at the
   default limit, ready in about 70 s, resting at about 2.7 GB. The deeper fix, keeping small facts per file instead
   of trees, is in the backlog.
+- **A design for keeping facts, not code (2026-11-17):** the owner asked what data structure would take the
+  analysis out of gigabytes. The profile above pointed at three habits: parsed code kept so later questions can walk
+  it, paths as keys in every map and set, and every file analysed at start-up. The brief
+  (`docs/briefs/analysis-memory.md`) proposes per-file facts with parse-on-demand, files as numbers, links in flat
+  arrays walked when asked, and the open page first, in seven steps, each profiled on algorecall. Its sizes are
+  guesses until the first step is measured. Waiting for sign-off.
 
 ## Open gaps
 - Sweeps covered six algorecall pages and thirteen crafting-ui pages.

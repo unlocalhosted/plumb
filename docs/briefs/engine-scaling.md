@@ -291,6 +291,9 @@ Each one is tied to a number measured above; none is here for its own sake.
 8. **A budget per stage, in bytes and milliseconds,** checked by the same timer. A response over its byte budget
    is a failure like a slow rule is.
 
+These rules are written for what the page receives. The same rules applied to the analysis worker's own memory
+(trees, path-keyed maps, per-file sets) are in `docs/briefs/analysis-memory.md`.
+
 ## 3. The design
 
 ### 3.1 Dispatch: an element meets only the rules that could apply to it
