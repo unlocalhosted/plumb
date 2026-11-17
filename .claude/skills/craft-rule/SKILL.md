@@ -135,7 +135,7 @@ When a rule here and the films disagree, the films win; change the rule.
   still needs act 3.
 - **The cause is said on the stage.** One plain sentence, measured, under the subject ("Bold is 2px wider"). The
   longer lesson (§5) stays below the stage, for after.
-- **The marks are a grammar (§3⅝), drawn with plumber's colours:** coral (`--pl-off`) for off, mint (`--pl-on`) once
+- **The marks are a grammar (§3⅝), drawn with plumber's own pieces (rings, toys, counting values: the craft-film skill's Marks), in its colours:** coral (`--pl-off`) for off, mint (`--pl-on`) once
   fixed, 1px lines with the white halo, the blueprint tag as the pill (mono, white on the hue), `--pl-spring-pop` for
   pills appearing. On a plain ground: the tabs film draws no shade over the rest and no heat dots, and the eye goes to
   the marks.
@@ -230,6 +230,17 @@ Measure it frame by frame (`ffmpeg -vf fps=10`), and count when each colour of m
 colours per frame) so act lengths come from the film, not from memory. Then write, per act, **its job for the
 viewer**, not only its length. The first stage copied the ledger video's durations and lost its first act, because
 "figures ticking for 3 s" was read as a detail and not as the act that shows the fault.
+
+### Before a film is rendered: two reviews on a cheap draft
+
+The whole order of work for a lesson film (the script first, the one-property change card, the layout, type and
+closing line the owner settled on) is the craft-film skill.
+
+A film is never rendered or published straight from its code. First the story review (film-story-review) and the
+camera review (film-camera-review) read its storyboard; then one cheap draft run
+(`node overlay/showcase/scripts/film-draft.mjs <N>`: its beats with timecodes, a keyframe per beat, a sheet at one frame
+a second) goes through both again. Only when both say "render it" is the 1920 × 1080 film made. Their findings go in
+docs/films/<N>-review.md.
 
 ## 3¾. Hands-on demos: the viewer's hand is the probe
 
@@ -492,4 +503,14 @@ Each line is something the owner had to say once; the sections above exist so th
   film from two or three stills; every fault was in motion (the crop dropped as the camera began to leave, so the card
   swept across the switch; the change card landed on the rows and widened when the fix arrived; a pill repeated the
   card; guides doubled outlines). → §6 the polish pass: every transition at 10 fps, and six checks it must pass.
+- 2026-11-13 · "these videos will serve us marketing explainer videos for react plumber itself … we need some sort of
+  watermark … and like sign of craft itself … make the example follow our design language … the delight particle
+  thing is thrown randomly on last tab … think of them as video for marketing." → A film is a React Plumber marketing
+  piece: a 16:9 stage (`/film/N`, 1600 × 900) with nothing of the showcase or the running dev overlay in frame,
+  signed top left with the principle ("Craft № N" and its name, in the toy face) and React Plumber's mark (the plumb
+  bob and the name) on every frame. The example is drawn in plumber's own language (its tokens on `.pl-light`,
+  Bricolage Grotesque for names and labels, Instrument Sans for words, pastel chips, toys), loaded once by
+  principles/look.js. Delight has a cause: plumber's ✓ draws on the change card, where the fix was written, once the
+  payoff shows every place holds, and the burst comes from it (as plumber's fix panel does), never from a place on
+  the example.
 

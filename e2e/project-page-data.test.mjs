@@ -25,7 +25,7 @@ test('GET / is the page shell with the project name, and loads the page module',
   // the credential is in the body, never in a URL
   assert.ok(html.includes(server.info.token));
   assert.ok(!html.includes('?token') && !html.includes('token='));
-  for (const module of ['project-page.js', 'gravity.js', 'specimen.js', 'cause-list.js', 'scale-marks.js', 'tokens.css']) {
+  for (const module of ['project-page.js', 'lesson.js', 'system-review.js', 'gravity.js', 'scale-marks.js', 'tokens.css']) {
     const served = await fetch(`${base}/__plumb/src/${module}`);
     assert.equal(served.status, 200, module);
     assert.ok((await served.text()).length > 100, module);

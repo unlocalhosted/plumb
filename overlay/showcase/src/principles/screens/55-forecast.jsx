@@ -2,6 +2,7 @@
 // and ten days, each day's range a bar on one shared 7–24° scale, running from a cool blue to a warm orange. The bars
 // are a plain CSS gradient, as design tools export it, so they mix in sRGB, and a blue and an orange pass through
 // grey on the way: every one of the ten sags into a dull middle. plumber mixes them in OKLCH.
+import { local } from '../Film.jsx';
 
 export const n = 55;
 
@@ -49,8 +50,10 @@ const DAYS = [
 ];
 const at = (t) => (t - SCALE.low) / (SCALE.high - SCALE.low);
 const pct = (x) => `${(x * 100).toFixed(1)}%`;
+// plumber's fix (craft-rules.js gradient-space): the same gradient, mixed in OKLCH
+const FIXED = `linear-gradient(90deg in oklch, ${COLD}, ${WARM})`;
 
-export default function Forecast() {
+export default function Forecast({ side = 'broken' }) {
   return (
     <article className="w-full max-w-[27rem] overflow-hidden rounded-card bg-surface shadow-card">
       <header className="grid grid-cols-[1fr_auto] gap-x-4 gap-y-1 px-5 pt-[18px] pb-1.5">
@@ -103,7 +106,7 @@ export default function Forecast() {
               <span className="text-right text-ink-muted tabular-nums">{d.low}°</span>
               <span className="relative h-1.5 rounded-[3px] bg-sunken">
                 {/* the range on the shared scale, its gradient as a design tool exports it */}
-                <span data-range className="absolute inset-y-0 rounded-[3px] bg-[linear-gradient(90deg,#1b9fd0,#f28c28)]" style={{ left: pct(at(d.low)), right: pct(1 - at(d.high)) }} />
+                <span data-range className="absolute inset-y-0 rounded-[3px] bg-[linear-gradient(90deg,#1b9fd0,#f28c28)]" style={{ left: pct(at(d.low)), right: pct(1 - at(d.high)), ...(side === 'fixed' ? { backgroundImage: FIXED } : null) }} />
                 {d.now ? <span className="absolute top-1/2 -mt-[5px] -ml-[5px] size-2.5 rounded-full bg-surface shadow-[0_0_0_1.5px_var(--color-ink),0_1px_2px_rgb(18_35_61/0.3)]" style={{ left: pct(at(d.now)) }} /> : null}
               </span>
               <span className="font-medium tabular-nums">{d.high}°</span>
@@ -171,4 +174,82 @@ Forecast.measure = (root) => {
     cut: { left: t0.left - 6 * k, right: t0.right + 6 * k, top: t0.top - 8 * k, bottom: last.bottom + 8 * k, r: 6 * k },
     subject: { left: t0.left - 30 * k, right: t0.right + 30 * k, top: t0.top - 50 * k, bottom: last.bottom + 30 * k },
   };
+};
+
+// The film (Film.jsx, a still film: the fault is at rest, so the camera goes down into one bar). The places: the ten
+// days' bars. Up close, under the first bar, nine swatches of its own colour along its length, mixed the way the
+// browser mixes them: in sRGB the middle ones are grey, in OKLCH they stay coloured.
+const oklabToRgb = ([L, a, b]) => {
+  const l = (L + 0.3963377774 * a + 0.2158037573 * b) ** 3, m = (L - 0.1055613458 * a - 0.0638541728 * b) ** 3, s2 = (L - 0.0894841775 * a - 1.291485548 * b) ** 3;
+  const lin = [4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s2, -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s2, -0.0041960863 * l - 0.7034186147 * m + 1.707614701 * s2];
+  return lin.map((c) => { c = Math.min(1, Math.max(0, c)); return c <= 0.0031308 ? 12.92 * c : 1.055 * c ** (1 / 2.4) - 0.055; });
+};
+// the colour at t along the bar, as the browser mixes it on each side
+const mixAt = (t, oklch) => {
+  const [a, b] = [hex2rgb(COLD), hex2rgb(WARM)];
+  if (!oklch) return { rgb: a.map((x, i) => x + (b[i] - x) * t), lab: toLab(a.map((x, i) => x + (b[i] - x) * t)) };
+  const [A, B] = [toLab(a), toLab(b)], lch = ([L, x, y]) => [L, Math.hypot(x, y), Math.atan2(y, x)];
+  const [P, Q] = [lch(A), lch(B)];
+  let dh = Q[2] - P[2]; if (dh > Math.PI) dh -= 2 * Math.PI; if (dh < -Math.PI) dh += 2 * Math.PI; // the shorter way round
+  const L = P[0] + (Q[0] - P[0]) * t, C = P[1] + (Q[1] - P[1]) * t, h = P[2] + dh * t, lab = [L, C * Math.cos(h), C * Math.sin(h)];
+  return { rgb: oklabToRgb(lab), lab };
+};
+const hexOf = (rgb) => '#' + rgb.map((c) => Math.round(c * 255).toString(16).padStart(2, '0')).join('');
+const bars = (root) => [...root.querySelectorAll('[data-range]')];
+const ENDS = Math.min(chromaOf(toLab(hex2rgb(COLD))), chromaOf(toLab(hex2rgb(WARM)))); // how colourful the bar's two ends are
+Forecast.film = {
+  still: true,
+  instances: bars,
+  frame: (root) => [root.querySelector('section[aria-label="10 days"] ul')],
+  payoff: 350, // ten bars: half the usual time on each, so the payoff stays about 4 s
+  lead: 4, // Monday: a long bar in the middle of the list, with no 'now' dot on it
+  code: { fault: { cls: 'bg-[linear-gradient(90deg,#1b9fd0,#f28c28)]', prop: 'mixed in sRGB' }, fix: { cls: 'bg-[linear-gradient(90deg_in_oklch,#1b9fd0,#f28c28)]', prop: 'mixed in OKLCH' } },
+  // the ring goes round the part of each bar that goes grey (below half its ends' colour); fixed, round the whole bar
+  ring(root, el) {
+    const b = local(root)(el), oklch = /in oklch/.test(getComputedStyle(el).backgroundImage);
+    const dull = Array.from({ length: 41 }, (_, i) => i / 40).filter((t) => chromaOf(mixAt(t, oklch).lab) < ENDS * 0.5);
+    return oklch || !dull.length ? b : { x: b.x + b.w * dull[0], y: b.y, w: b.w * (dull.at(-1) - dull[0]), h: b.h };
+  },
+  read(root, el) {
+    const oklch = /in oklch/.test(getComputedStyle(el).backgroundImage);
+    const kept = Math.min(...Array.from({ length: 21 }, (_, i) => chromaOf(mixAt(i / 20, oklch).lab))) / ENDS;
+    // one pill, in the empty track right of the bar, in the bar's own row; the caption says "grey", so no second tag
+    const at = local(root), b = at(el), track = at(el.parentElement), left = b.x - track.x > track.x + track.w - (b.x + b.w); // the side with more empty track
+    return { off: kept < 0.5 ? 1 : 0, pin: left ? { x: b.x, y: b.y + b.h / 2, side: 'left' } : { x: b.x + b.w, y: b.y + b.h / 2 }, size: { toy: 'fill', pre: '', from: 100, to: Math.round(Math.min(1, kept) * 100), post: '%' }, tags: [] };
+  },
+  // one bar, close: under it, seven swatches of its colour along its length, each with how colourful it is; the grey
+  // ones ringed coral. Fixed, the same swatches in OKLCH. The rest of the card dimmed
+  dive(root, side) {
+    const at = local(root), bar = at(bars(root)[Forecast.film.lead]), W = root.offsetWidth, H = root.offsetHeight, oklch = side === 'fixed';
+    const N = 7, gap = bar.w * 0.04, sw = (bar.w - gap * (N - 1)) / N, top = bar.y + bar.h + gap * 2.2;
+    const L = bar.x - 10, R = bar.x + bar.w + 10, T = bar.y - 16, B = top + sw + sw * 0.75;
+    const K = Math.min(9, (W * 0.84) / (R - L), (H * 0.6) / (B - T)), u = (v) => +(v / K).toFixed(3);
+    const shade = `<path fill-rule="evenodd" d="M-2000 -2000h${W + 4000}v${H + 4000}h${-(W + 4000)}Z M${L} ${T}h${R - L}v${B - T}h${L - R}Z" fill="#ffffff" fill-opacity=".88"/>`;
+    const swatches = Array.from({ length: N }, (_, i) => {
+      const c = mixAt(i / (N - 1), oklch), x = bar.x + i * (sw + gap), score = Math.round(Math.min(1, chromaOf(c.lab) / ENDS) * 100), dull = score < 50, d = u(3.5);
+      return `<rect x="${x}" y="${top}" width="${sw}" height="${sw}" rx="${sw * 0.28}" fill="${hexOf(c.rgb)}" style="transition:fill 600ms ease ${i * 60}ms"/>`
+        + (dull ? `<rect x="${x - d}" y="${top - d}" width="${sw + 2 * d}" height="${sw + 2 * d}" rx="${sw * 0.28 + d}" fill="none" stroke="#f24a9f" stroke-width="${u(1.5)}" stroke-dasharray="${u(4)} ${u(3)}"/>` : '')
+        + `<text x="${x + sw / 2}" y="${top + sw + sw * 0.5}" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-weight="600" font-size="${u(11)}" fill="${dull ? '#c2186f' : '#6b6b6b'}">${score}</text>`;
+    }).join('');
+    const pills = [{ x: bar.x + bar.w / 2, y: bar.y - u(6), tone: oklch ? 'on' : 'off', toy: 'fill', text: oklch ? 'Stays bright' : 'Goes grey' }];
+    return { focus: { x: (L + R) / 2, y: (T + B) / 2 }, k: K, svg: `${shade}${swatches}`, pills };
+  },
+  say: 'Look at the middle of each day\'s bar.',
+  // the words on screen, approved by the owner 2026-11-15; `at` is the film's moment for each line
+  teach: { fault: 'linear-gradient(blue, orange)', fix: 'linear-gradient(in oklch, …)' },   // the film's change card: the one idea, short enough for the column
+  script: [
+    { at: 'rest', text: 'Blue for cool, orange for warm.' },
+    { at: 'measure', text: 'But in the middle, every bar turns *grey*.' },
+    { at: 'dive', text: 'Design tools export gradients that mix red, green and blue separately.' },
+    { at: 'smear', text: 'Halfway from blue to orange, that mix lands on grey.' },
+    { at: 'fix', text: 'Mix the colours the way eyes see them instead.' },
+    { at: 'payoff', text: 'Now every bar stays *bright* all the way across.' },
+  ],
+};
+
+// for the marks prototype (principles/proto/MarksProto.jsx): the bar's colour along its length, and how colourful
+export const film = {
+  lead: Forecast.film.lead,
+  gradient: (oklch) => (oklch ? FIXED : `linear-gradient(90deg, ${COLD}, ${WARM})`),
+  samples: (oklch) => ({ ends: ENDS, points: Array.from({ length: 41 }, (_, i) => { const m = mixAt(i / 40, oklch); return { t: i / 40, c: chromaOf(m.lab), hex: hexOf(m.rgb) }; }) }),
 };

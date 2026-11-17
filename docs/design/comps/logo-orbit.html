@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>React Plumber · the guardrails become orbits</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400..700&display=swap">
+<style>
+  /* A motion moment for the films (the owner wants it improved, 2026-11-13: the first cut "looks cheap and not crafted").
+     Built so: the true dashed guides do the travelling (each path reshapes point to point, so its dashes never stretch);
+     the orbits never move, they only open at the centre once their guide arrives, and close before it leaves.
+     The mark's guardrails (the guides its stem, cap and foot sit on) glide to the centre and open, a beat apart, into
+     three orbits round the P, then close and glide home onto the edges they guard. What makes it crafted, not clip art:
+     - the orbits stay the guardrail's own hairline dashes the whole way (they never thicken)
+     - they pass behind the P and in front of it (each drawn twice: whole behind, its near half in front), so it has depth
+     - each orbit carries one of plumber's own marks: a selection handle, a handle, and the 4 it measured, riding round
+     React's atom is Meta's trademark: this is a moment in the films, never the still mark. */
+  :root { --ink: #1d1b17; --ink-2: #6b665c; --desk: #f6f5f2; --guard: #2f86dc; --react: #58c4dc; --open: cubic-bezier(.22, 1, .36, 1); --glide: cubic-bezier(.7, 0, .3, 1); }
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: var(--desk); color: var(--ink); font: 400 14px/20px "Instrument Sans", system-ui, sans-serif; }
+  .stage { display: flex; flex-direction: column; align-items: center; gap: 18px; cursor: pointer; }
+  p { margin: 0; color: var(--ink-2); }
+  svg { overflow: visible; }
+
+  /* the guides do the travelling: each line reshapes point to point from its edge to its orbit's axis through the
+     centre (the path itself changes, so its dashes never stretch); at the centre it hands over to its orbit */
+  .line { fill: none; stroke: var(--guard); stroke-width: .45; stroke-dasharray: 1.6 1.6;
+    /* coming home: shown again as the orbit closes, then glides back to its edge */
+    transition: opacity 120ms ease calc(340ms + var(--d, 0ms)), d 900ms var(--glide) calc(420ms + var(--d, 0ms)); }
+  .on .line { opacity: 0; transition: d 900ms var(--glide) var(--d, 0ms), opacity 140ms ease calc(880ms + var(--d, 0ms)); }
+  .l1 { d: path("M12 18 L108 18"); } .on .l1 { d: path("M8 60 L112 60"); }
+  .l2 { d: path("M24 6 L24 114"); } .on .l2 { d: path("M34 14.97 L86 105.03"); }
+  .l3 { d: path("M12 102 L70 102"); } .on .l3 { d: path("M34 105.03 L86 14.97"); }
+  .l2, .o2 { --d: 90ms; } .l3, .o3 { --d: 180ms; }
+
+  /* the orbits never move: centred, each at its angle; they only open (once their line arrives) and close */
+  .o { transform-box: view-box; transform-origin: 60px 60px; }
+  .o1 { transform: rotate(0deg); } .o2 { transform: rotate(60deg); } .o3 { transform: rotate(120deg); }
+  .o ellipse { cx: 60px; cy: 60px; rx: 52px; ry: .01px; fill: none; opacity: 0; stroke: var(--guard); stroke-width: .45; stroke-dasharray: 1.6 1.6;
+    transition: ry 360ms cubic-bezier(.4, 0, .2, 1) var(--d, 0ms), stroke 300ms ease var(--d, 0ms), stroke-width 300ms ease var(--d, 0ms), stroke-dasharray 300ms ease var(--d, 0ms), opacity 120ms ease calc(340ms + var(--d, 0ms)); }
+  /* opened, it is React's ring: the dashes close up into one solid bold line in React's blue. Closing, it thins back to the guide */
+  .on .o ellipse { ry: 20px; opacity: 1; stroke: var(--react); stroke-width: 3; stroke-dasharray: 1.6 0;
+    transition: opacity 120ms ease calc(880ms + var(--d, 0ms)), ry 760ms var(--open) calc(900ms + var(--d, 0ms)), stroke 620ms ease calc(1000ms + var(--d, 0ms)), stroke-width 620ms var(--open) calc(1000ms + var(--d, 0ms)), stroke-dasharray 620ms ease calc(1000ms + var(--d, 0ms)); }
+
+  /* what each orbit carries, riding round it: plumber's own marks; drawn twice like the orbit, so on the far side it
+     passes behind the P and on the near side in front */
+  .rider { offset-path: path("M8 60 A52 20 0 1 1 112 60 A52 20 0 1 1 8 60"); offset-rotate: 0deg; opacity: 0; transition: opacity 160ms ease; animation: ride 4.6s linear infinite; }
+  .on .rider { opacity: 1; transition: opacity 300ms ease calc(1400ms + var(--d, 0ms)); }
+
+  @keyframes ride { from { offset-distance: var(--from, 0%); } to { offset-distance: calc(var(--from, 0%) + 100%); } }
+
+  /* the mark: steps back a little to sit at the heart, and comes forward again */
+  .mark { transform-box: view-box; transform-origin: 60px 60px; transition: transform 900ms var(--glide) 420ms; }
+  /* the P steps right back to be the small thing at the heart, where the atom keeps its dot: the rings clear it */
+  .on .mark { transform: scale(.28); transition: transform 900ms var(--glide); }
+  /* the points and curve handles rest while the guides are away, so the P at the heart is clean material */
+  .con { transition: opacity 320ms ease 1100ms; }
+  .on .con { opacity: 0; transition: opacity 240ms ease; }
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+  <svg id="s" viewBox="0 0 120 120" width="440" height="440">
+    <defs>
+      <linearGradient id="stem" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff7ac0"/><stop offset=".55" stop-color="#f24a9f"/><stop offset="1" stop-color="#d0287f"/></linearGradient>
+      <linearGradient id="bowl" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9a7dff"/><stop offset=".55" stop-color="#7356f0"/><stop offset="1" stop-color="#5232d4"/></linearGradient>
+      <linearGradient id="lit" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".42"/><stop offset=".25" stop-color="#fff" stop-opacity="0"/></linearGradient>
+      <!-- an orbit's near half: below its centre line, in its own turned frame -->
+      <clipPath id="near" clipPathUnits="userSpaceOnUse"><rect x="0" y="60" width="120" height="60"/></clipPath>
+      <!-- plumber's selection handle, and the pill with the 4 it measured -->
+      <g id="handle"><rect x="-2.2" y="-2.2" width="4.4" height="4.4" rx="1.1" fill="#fff" stroke="#2f86dc" stroke-width=".7"/></g>
+      <g id="four"><rect x="-4.2" y="-3" width="8.4" height="6" rx="2.2" fill="#2f86dc"/><text x="0" y="1.6" text-anchor="middle" font-family="ui-monospace, Menlo" font-size="4.4" font-weight="700" fill="#fff">4</text></g>
+      <pattern id="ribbon" width="2.4" height="2.4" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="2.4" height="2.4" fill="#efeaff"/><rect width=".9" height="2.4" fill="#7356f0"/></pattern>
+      <linearGradient id="pv" gradientUnits="userSpaceOnUse" x1="10" y1="10" x2="110" y2="110"><stop offset="0" stop-color="#f24a9f"/><stop offset="1" stop-color="#7356f0"/></linearGradient>
+      <!-- the construction's own pieces: a faint light hatch over the material, and the handle-points' small lift -->
+      <pattern id="hatch" width="2" height="4" patternUnits="userSpaceOnUse"><rect width=".3" height="4" fill="#fff"/></pattern>
+      <filter id="lift" x="-1" y="-1" width="3" height="3"><feDropShadow dx="0" dy=".25" stdDeviation=".3" flood-color="#1d1b17" flood-opacity=".25"/></filter>
+    </defs>
+    <!-- the guides, at rest on the mark's edges -->
+    <path class="line l1"/><path class="line l2"/><path class="line l3"/>
+    <!-- behind the P: every orbit whole and fainter, and what it carries -->
+    <g>
+    <g class="o o1 back"><ellipse/><use class="rider" href="#handle" style="--from: 18%"/></g>
+    <g class="o o2 back"><ellipse/><use class="rider" href="#handle" style="--from: 52%"/></g>
+    <g class="o o3 back"><ellipse/><use class="rider" href="#handle" style="--from: 84%"/></g>
+    </g>
+    <!-- the rings thread the P's gap: behind both parts on the far side, across the stem on the near side, and
+         under the bowl, so the bowl sits whole in front like the thing they turn round -->
+    <g class="mark" id="g-stem"></g>
+    <!-- in front of the P: each orbit's near half, and its rider while it is on that half -->
+    <g>
+    <g class="o o1"><g clip-path="url(#near)"><ellipse/><use class="rider" href="#handle" style="--from: 18%"/></g></g>
+    <g class="o o2"><g clip-path="url(#near)"><ellipse/><use class="rider" href="#handle" style="--from: 52%"/></g></g>
+    <g class="o o3"><g clip-path="url(#near)"><ellipse/><use class="rider" href="#handle" style="--from: 84%"/></g></g>
+    </g>
+    <g class="mark" id="g-bowl"></g>
+  </svg>
+  <p>Click to play: the guardrails become orbits, then guides again.</p>
+</div>
+<script>
+// the mark's two parts, the same as overlay/src/mark.js (this page is a plain file, so they are written out)
+const STEM = 'M48 18H53A5 5 0 0 1 58 23V92A10 10 0 0 1 48 102H34A10 10 0 0 1 24 92V42A24 24 0 0 1 48 18Z';
+const BOWL = 'M67 18H68A28 28 0 0 1 96 46V46A28 28 0 0 1 68 74H67A5 5 0 0 1 62 69V23A5 5 0 0 1 67 18Z';
+// the P's construction, drawn on top of its material (docs/design/comps/logo-construct.html): the outline in each part's
+// deep tone, the hatch, the curve handles as sky dots, and every on-curve point as plumber's selection handle. It lives
+// inside the mark, so it steps back with the P to the heart of the orbits and comes forward again.
+const POINTS = [[48, 18], [58, 92], [48, 102], [34, 102], [24, 92], [24, 42], [68, 18], [96, 46], [68, 74]];
+const K = 0.5523;
+const arc = (x1, y1, x2, y2, r, tx1, ty1, tx2, ty2) => (r <= 5 ? [] : [[[x1, y1], [x1 + tx1 * r * K, y1 + ty1 * r * K]], [[x2, y2], [x2 + tx2 * r * K, y2 + ty2 * r * K]]]);
+const HANDLES = [...arc(24, 42, 48, 18, 24, 0, -1, -1, 0), ...arc(68, 18, 96, 46, 28, 1, 0, 0, -1), ...arc(96, 46, 68, 74, 28, 0, 1, 1, 0)];
+const part = (d, fill, deep) => `<path d="${d}" fill="url(#${fill})"/><path d="${d}" fill="url(#lit)" style="mix-blend-mode:soft-light"/><path d="${d}" fill="url(#hatch)" opacity=".16"/><path d="${d}" fill="none" stroke="${deep}" stroke-opacity=".45" stroke-width=".3"/>`;
+document.getElementById('g-stem').innerHTML = part(STEM, 'stem', '#5a0d3c');
+document.getElementById('g-bowl').innerHTML = part(BOWL, 'bowl', '#2b1a6b') + `<g class="con">
+  <g stroke="#2f86dc" stroke-width=".24">${HANDLES.map(([a, b]) => `<path d="M${a[0]} ${a[1]}L${b[0].toFixed(2)} ${b[1].toFixed(2)}"/>`).join('')}</g>
+  ${HANDLES.map(([, b]) => `<circle cx="${b[0].toFixed(2)}" cy="${b[1].toFixed(2)}" r=".6" fill="#2f86dc" stroke="#fff" stroke-width=".3"/>`).join('')}
+  ${POINTS.map(([x, y]) => `<rect x="${x - 1.1}" y="${y - 1.1}" width="2.2" height="2.2" rx=".55" fill="#fff" stroke="#2f86dc" stroke-width=".42"/>`).join('')}</g>`;
+const s = document.getElementById('s');
+const play = () => { s.classList.add('on'); setTimeout(() => s.classList.remove('on'), 4200); };
+document.getElementById('stage').addEventListener('click', play);
+setTimeout(play, 700);
+</script>
+</body>
+</html>

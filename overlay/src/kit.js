@@ -1,7 +1,7 @@
 // The kit's shared parts, in the new visual language (docs/design/visual-language.md): one place for every page of
 // the kit to take them from, so no page draws its own. Proposed: beside the demo until approved, then into overlay/src.
 //
-//   import { BUTTON_CSS, button } from './kit-parts.js';
+//   import { BUTTON_CSS, button } from './kit.js';
 
 /** The toy button's styles (see kit-buttons.html for every state). */
 export const BUTTON_CSS = `

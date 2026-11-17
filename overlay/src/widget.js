@@ -23,6 +23,7 @@ const reachable = (el) => { while (el?.ownerSVGElement) el = el.ownerSVGElement;
 const TIMING = { hoverRead: 90, light: 120, swap: 140, reread: [250, 600, 1200, 2400], starting: 1000, maxDrawing: 160, healthStarting: 1000, healthReady: 10000, dockFold: 4000, dockCount: 3000, side: 3000 };
 
 import { pageHydrated } from './hydration.js';
+import { markR } from './mark.js';
 import { DOCK, TAG } from './words.js'; // the dock's and the hover tag's words
 import { NAME_TAG_CSS } from './nametag.js'; // the hover tag's look, shared with the design site
 import { locate, componentOf } from './locate.js';
@@ -315,7 +316,7 @@ const css = `
 const ICON = {
   prev: '<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M7.5 2.5 4 6l3.5 3.5" stroke="currentColor" stroke-width="1.4" fill="none"/></svg>',
   next: '<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M4.5 2.5 8 6 4.5 9.5" stroke="currentColor" stroke-width="1.4" fill="none"/></svg>',
-  bob: '<svg viewBox="0 0 12 14" aria-hidden="true"><path d="M6 .5v4" stroke="currentColor" stroke-width="1.2"/><path d="M6 4.5 9.25 8.75 6 13.5 2.75 8.75Z" fill="currentColor"/></svg>',
+  bob: markR({ h: 14, mono: true, id: 'pl-bob' }), // React Plumber's mark, in the dock's state colour (overlay/src/mark.js)
   pick: '<svg viewBox="0 0 12 12" aria-hidden="true"><circle cx="6" cy="6" r="3.25" stroke="currentColor" stroke-width="1.2" fill="none"/><path d="M6 .5v2.25M6 9.25v2.25M.5 6h2.25M9.25 6h2.25" stroke="currentColor" stroke-width="1.2"/></svg>',
   check: '<svg viewBox="0 0 10 10" aria-hidden="true"><path d="M2 5.2 4.1 7.3 8 2.9" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>',
   blueprint: '<svg viewBox="0 0 12 12" aria-hidden="true"><rect x="1" y="1" width="10" height="10" rx="1" stroke="currentColor" stroke-width="1.2" fill="none"/><path d="M1 4.5h10M1 7.5h10M4.5 1v10M7.5 1v10" stroke="currentColor" stroke-width="0.8" opacity="0.7"/></svg>',

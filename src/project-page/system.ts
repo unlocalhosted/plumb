@@ -1,3 +1,6 @@
+import { fontParts } from '../rules/families.js';
+import { readingOf } from '../decisions/stems.js';
+import type { FamilyReading } from '../decisions/stems.js';
 import { basename, relative } from 'node:path';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -25,9 +28,13 @@ export interface SystemData {
   files: number;
   size: { steps: Step[]; strays: Stray[] };
   radius: { steps: Step[]; strays: Stray[] };
+  /** the spacing steps and the gaps and paddings typed by hand, for the lesson's spacing screen */
+  spacing: { steps: Step[]; strays: Stray[] };
   weight: { used: { weight: number; places: number; written: Written[] }[] };
   colour: { steps: ColourStep[]; strays: ColourStray[] };
   dead: { class: string; places: number; meant: string[] }[];
+  /** How each token was read: by family, its tokens grouped by file and shared stem, with the reasons. */
+  reading: FamilyReading[];
   /** The three biggest causes, biggest first, in the terminal's words. */
   causes: PageCause[];
   /** How many causes there are in all. */
@@ -129,11 +136,15 @@ export function systemOf(report: Report): SystemData {
   const decls = report.declarations as Decl[];
   const decisions = report.decisions.filter((d: Dec) => d.origin === 'project');
 
-  function scale(prefix: string, props: Set<string>, least = 0): { steps: Step[]; strays: Stray[] } {
+  // a scale is the tokens Plumber read as this family, whatever they are named: a length (`--radius-md: 12px`,
+  // `--pl-space-4`), or, for text sizes, the size inside a whole text style (`--pl-page-title: 600 20px/28px …`)
+  function scale(family: Report['decisions'][number]['family'], props: Set<string>, least = 0): { steps: Step[]; strays: Stray[] } {
     const steps = new Map<string, Step>();
     for (const d of decisions) {
-      if (!d.name.startsWith(prefix) || d.name.slice(prefix.length).includes('--')) continue;
-      const value = px(d.resolved || d.value);
+      if (d.family !== family || d.name.includes('--', 2)) continue;
+      const raw = String(d.resolved || d.value).trim(), part = family === 'type' ? fontParts(raw)?.size ?? raw : raw;
+      if (!/^-?[\d.]+(?:px|rem)$/.test(part)) continue;
+      const value = px(part);
       if (value !== null) steps.set(d.name, { name: d.name.slice(2), px: value, uses: 0 });
     }
     const strays = new Map<number, { places: number; written: Map<string, number>; scaled: number }>();
@@ -185,7 +196,8 @@ export function systemOf(report: Report): SystemData {
 
   function colours(): SystemData['colour'] {
     const tokens = new Map<string, string>();
-    for (const d of decisions) if (d.family === 'color' && d.name.startsWith('--color-')) tokens.set(d.name, d.resolved || d.value);
+    // the colours Plumber read as colours, whatever they are named (--color-*, --pl-ink, --accent)
+    for (const d of decisions) if (d.family === 'color' && (d.resolved || d.value)) tokens.set(d.name, d.resolved || d.value);
     const uses = new Map<string, number>();
     const strays = new Map<string, { places: number; written: Map<string, number> }>();
     for (const d of decls) {
@@ -237,11 +249,13 @@ export function systemOf(report: Report): SystemData {
   return {
     project: projectName(report.root),
     files: typeof files === 'number' ? files : Object.values(files).reduce((sum, n) => sum + n, 0),
-    size: scale('--text-', new Set(['font-size']), 6),
-    radius: scale('--radius-', new Set(['border-radius'])),
+    size: scale('type', new Set(['font-size', 'font']), 6),
+    radius: scale('radius', new Set(['border-radius'])),
+    spacing: scale('spacing', new Set(['padding', 'padding-top', 'padding-right', 'padding-bottom', 'padding-left', 'padding-inline', 'padding-block', 'margin', 'margin-top', 'margin-right', 'margin-bottom', 'margin-left', 'margin-inline', 'margin-block', 'gap', 'row-gap', 'column-gap']), 1),
     weight: weights(),
     colour: colours(),
     dead: dead(),
+    reading: readingOf(report.decisions, report.root),
     causes: causes.slice(0, 3).map(cause => pageCause(cause, report)),
     open: causes.length,
   };

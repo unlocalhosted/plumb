@@ -177,6 +177,26 @@ async function dispatchOnce(session: Session, method: string, params: Record<str
     if (typeof value !== 'string' && typeof value !== 'number' && typeof value !== 'boolean') throw new UsageError('value must be a JSON string, number or boolean.');
     return session.propEdit({ file: text(params, 'file')!, hash: text(params, 'hash')!, line: position(params, 'line')!, column: position(params, 'column')!, name: text(params, 'name')!, value });
   }
+  if (method === 'setup') {
+    const decisions = (params as { decisions?: unknown }).decisions;
+    if (!object(decisions)) throw new UsageError('decisions must be { family: { from: [...] } }.');
+    for (const [family, source] of Object.entries(decisions)) {
+      const from = (source as { from?: unknown })?.from;
+      if (!Array.isArray(from) || !from.length || from.some(f => typeof f !== 'string' || !/^(?:css|theme):/.test(f))) throw new UsageError(`decisions.${family}.from must list css: or theme: sources.`);
+    }
+    const { initProject } = await import('../adoption/init.js');
+    const lines: string[] = [];
+    const done = await initProject(session.root, { unattended: true, quiet: true, decisions: decisions as never, ...(session.config === undefined ? {} : { config: session.config }) }, (text) => lines.push(text));
+    await session.refresh?.();
+    // what was already wrong in the code, remembered so only new problems are flagged (the accepted tokens aren't counted)
+    return { message: done.message, recorded: done.entries.filter(entry => entry.kind === 'debt').length };
+  }
+  if (method === 'system-apply') {
+    const files = (params as { files?: unknown }).files;
+    if (!Array.isArray(files)) throw new UsageError('files must be a list of { file, set, add }.');
+    return session.systemApply({ files: files.map(f => ({ file: text(f, 'file')!, set: Array.isArray((f as { set?: unknown }).set) ? (f as { set: { name: string; value: string }[] }).set : [], add: Array.isArray((f as { add?: unknown }).add) ? (f as { add: { after: string; name: string; value: string }[] }).add : [] })),
+      ...(typeof params.label === 'string' ? { label: params.label } : {}) });
+  }
   if (method === 'token') {
     const then = (params as { then?: unknown }).then;
     if (then !== undefined && !object(then)) throw new UsageError('then must be a swap: { file, hash, line, column, from, to }.');

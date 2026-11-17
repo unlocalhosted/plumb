@@ -16,7 +16,9 @@ export const familyReasons: Record<string, string> = {
   z: 'A raw z-index competes with every other layer; named layers keep stacking predictable.',
 };
 export const noFit = (amount: string) => `No token is close to ${amount}. Pick one with the design owner, or add one to the theme.`;
-export const choiceText = (decisions: Decision[]) => decisions.map(d => `${d.resolved ?? d.value} ${d.name}${d.use?.class ? ` ${d.use.class}` : ''}${d.use?.css ? ` ${d.use.css}` : ''}${d.why ? ` "${d.why}"` : ''}`).join('; ');
+// a whole text style is shown by its weight, size and line height, not its list of faces
+export const shown = (d: Decision) => { const value = d.resolved ?? d.value, parts = d.family === 'type' ? /^((?:(?:normal|italic|bold|[1-9]00)\s+)*[\d.]+(?:px|rem|em|%)(?:\s*\/\s*[\d.]+(?:px|rem|em|%)?)?)\s+\S/.exec(value.trim()) : null; return parts ? parts[1]! : value; };
+export const choiceText = (decisions: Decision[]) => decisions.map(d => `${shown(d)} ${d.name}${d.use?.class ? ` ${d.use.class}` : ''}${d.use?.css ? ` ${d.use.css}` : ''}${d.why ? ` "${d.why}"` : ''}`).join('; ');
 
 type MessageInput = Omit<Finding, 'why' | 'fix' | 'accept'> & { accept?: string };
 export function makeFinding(input: MessageInput): Finding {

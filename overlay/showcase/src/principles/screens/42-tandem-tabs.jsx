@@ -10,8 +10,10 @@
 // grew, and the shift in px, read from the real tabs against where they rest. Nothing is drawn at rest.
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { PlusIcon } from '@unlocalhosted/dither-icons';
-import duolingoLogo from '../../media/logos/duolingo.svg';
+import { toyOf } from '../../../../src/toys.js';
+import { ensureLook } from '../look.js';
+
+ensureLook();
 import ines from '../../media/people/person-05.jpg';
 import theo from '../../media/people/person-08.jpg';
 import ama from '../../media/people/person-03.jpg';
@@ -57,19 +59,73 @@ const VIEWS = ['Overview', 'Board', 'Timeline', 'Files', 'Settings'];
 // kickoff to launch: where each milestone falls on the 14 weeks, done or ahead; today is in week 8
 const ROAD = [['Kickoff', '15 Sep', 0, true], ['Designs signed', '20 Oct', 45, true], ['Copy freeze', '1 Dec', 80], ['Launch', '19 Dec', 100]];
 const TODAY = 55;
-// status: done, half, a quarter, not started
-const STATUS = {
-  done: <><circle cx="8" cy="8" r="6.5" fill="none" className="stroke-[#1f9d6b]" strokeWidth="1.5" /><path d="M5 8.2l2 2 4-4.2" fill="none" className="stroke-[#1f9d6b]" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></>,
-  half: <><circle cx="8" cy="8" r="6.5" fill="none" className="stroke-accent" strokeWidth="1.5" /><path d="M8 3.5a4.5 4.5 0 0 1 0 9z" className="fill-accent" /></>,
-  quarter: <><circle cx="8" cy="8" r="6.5" fill="none" className="stroke-accent" strokeWidth="1.5" /><path d="M8 3.5a4.5 4.5 0 0 1 4.5 4.5H8z" className="fill-accent" /></>,
-  todo: <circle cx="8" cy="8" r="6.5" fill="none" className="stroke-[#a3acb9] [stroke-dasharray:2.2_2]" strokeWidth="1.5" />,
-};
 const TASKS = [
-  ['Hero animation, final cut', 'Motion', theo, 'Mon', 'done'],
-  ['Streak calculator, mobile layout', 'Build', ines, 'Today', 'half', true],
-  ['Localise the pricing page, 9 languages', 'Content', ama, 'Fri', 'quarter', true],
-  ['Accessibility pass on the quiz', 'QA', arlo, 'Fri', 'todo'],
+  ['Hero animation, final cut', 'Motion', 'lilac', theo, 'Mon', 'done'],
+  ['Streak calculator, mobile layout', 'Build', 'sky', ines, 'Today', 'half', true],
+  ['Localise the pricing page, 9 languages', 'Content', 'pink', ama, 'Fri', 'quarter', true],
+  ['Accessibility pass on the quiz', 'QA', 'mint', arlo, 'Fri', 'todo'],
 ];
+
+// React Plumber's own language (docs/design/visual-language.md, overlay/src/tokens.css): paper and rule, the card's
+// shadow, the toy face for what a toy has printed on it (names, labels, buttons), Instrument Sans for words, pastel
+// chips lettered in their own ink, toys for status. The tabs keep the classes plumber reads (hover:font-semibold).
+const TT_CSS = `
+.tt { width: min(33rem, calc(100vw - 2rem)); background: var(--pl-paper); border-radius: var(--pl-radius-card); box-shadow: var(--pl-shadow-card);
+  color: var(--pl-ink); font: 400 14px/20px var(--pl-sans); -webkit-font-smoothing: antialiased; }
+.tt-num { font-variant-numeric: tabular-nums; }
+.tt-head { display: flex; align-items: center; gap: 12px; padding: 18px 20px 14px; }
+.tt-mark { display: block; width: 36px; height: 36px; flex: none; }
+.tt-mark svg { display: block; width: 100%; height: 100%; }
+.tt-title { display: flex; flex-direction: column; min-width: 0; }
+.tt-name { font: var(--pl-round-w, 700) 18px/24px var(--pl-round); letter-spacing: -0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tt-meta { font-size: 13px; line-height: 18px; color: var(--pl-ink-2); }
+.tt-faces { margin-left: auto; display: flex; }
+.tt-faces img { display: block; width: 26px; height: 26px; border-radius: 99px; object-fit: cover; box-shadow: 0 0 0 2px var(--pl-paper); }
+.tt-faces img + img { margin-left: -6px; }
+.tt-new { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 12px; border: 0; border-radius: 10px; cursor: pointer;
+  font: var(--pl-round-w, 700) 13px/1 var(--pl-round); color: var(--pl-pink-block-on, #fff); background: var(--pl-pink-block, var(--pl-pink));
+  box-shadow: inset 0 -2px 0 rgb(0 0 0 / 0.14), 0 1px 2px rgb(0 0 0 / 0.08); }
+.tt-tabs { display: flex; gap: 20px; padding: 0 20px; box-shadow: inset 0 -1px 0 var(--pl-rule); }
+.tt-tab { padding: 10px 0; font-size: 14px; line-height: 20px; color: var(--pl-ink-2); text-decoration: none; border-bottom: 2px solid transparent; }
+.tt-tab:hover, .tt-tab[data-film] { color: var(--pl-ink); }
+.tt-tab[aria-current="page"] { color: var(--pl-ink); border-bottom-color: var(--pl-ink); }
+.tt-label { display: flex; justify-content: space-between; margin: 0; font: var(--pl-round-w2, 700) 12px/16px var(--pl-round); color: var(--pl-ink-2); }
+.tt-quiet { font: 400 12px/16px var(--pl-sans); color: var(--pl-ink-2); }
+.tt-road { padding: 18px 20px 16px; }
+.tt-track { position: relative; display: block; height: 6px; margin: 20px 6px 0; border-radius: 99px; background: var(--pl-paper-2); }
+.tt-fill { position: absolute; inset: 0 auto 0 0; border-radius: 99px; background: var(--pl-mint); }
+.tt-stop { position: absolute; top: -3px; width: 12px; height: 12px; margin-left: -6px; border-radius: 99px; background: var(--pl-paper); box-shadow: inset 0 0 0 2px var(--pl-ink-3); }
+.tt-stop.done { background: var(--pl-mint); box-shadow: 0 0 0 2px var(--pl-paper); }
+.tt-today { position: absolute; top: -8px; bottom: -8px; width: 2px; margin-left: -1px; border-radius: 2px; background: var(--pl-ink); }
+.tt-stops { position: relative; display: block; height: 34px; margin: 10px 6px 0; font-size: 12px; line-height: 16px; color: var(--pl-ink-2); }
+.tt-at { position: absolute; display: flex; flex-direction: column; white-space: nowrap; transform: translateX(-50%); text-align: center; }
+.tt-at.first { transform: none; text-align: left; } .tt-at.last { transform: translateX(-100%); text-align: right; }
+.tt-at b { font: var(--pl-round-w2, 700) 12px/16px var(--pl-round); color: var(--pl-ink); }
+.tt-week { padding: 4px 20px 8px; box-shadow: inset 0 1px 0 var(--pl-rule); }
+.tt-week .tt-label { padding: 12px 0 4px; }
+.tt-week ul { margin: 0; padding: 0; list-style: none; }
+.tt-week li { display: grid; grid-template-columns: 18px 1fr auto 24px 52px; align-items: center; gap: 12px; height: 44px; box-shadow: inset 0 -1px 0 var(--pl-rule); }
+.tt-week li:last-child { box-shadow: none; }
+.tt-status { display: block; width: 18px; height: 18px; border-radius: 6px; }
+.tt-status svg { display: block; width: 100%; height: 100%; }
+.tt-status.half, .tt-status.quarter { border-radius: 99px; padding: 4px; box-shadow: inset 0 0 0 2px var(--pl-sky); background-clip: content-box; }
+.tt-status.half { background-image: conic-gradient(var(--pl-sky) 0 50%, transparent 0); }
+.tt-status.quarter { background-image: conic-gradient(var(--pl-sky) 0 25%, transparent 0); }
+.tt-status.todo { border-radius: 99px; box-shadow: inset 0 0 0 2px var(--pl-ink-3); }
+.tt-task { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.tt-task.done { color: var(--pl-ink-2); text-decoration: line-through; text-decoration-color: var(--pl-ink-3); }
+.tt-chip { display: inline-grid; place-items: center; height: 22px; padding: 0 8px; border-radius: var(--pl-radius-tag); font: var(--pl-round-w2, 700) 11.5px/1 var(--pl-round); }
+.tt-face { display: block; width: 24px; height: 24px; border-radius: 99px; object-fit: cover; }
+.tt-due { display: grid; place-items: center; height: 22px; border-radius: var(--pl-radius-tag); font-size: 12px; color: var(--pl-ink-2); }
+.tt-due.soon { background: var(--pl-butter-soft); color: var(--pl-butter-ink); font-weight: 600; }
+.tt-foot { display: flex; align-items: center; gap: 14px; padding: 14px 20px 16px; border-radius: 0 0 var(--pl-radius-card) var(--pl-radius-card); background: var(--pl-paper-2); }
+.tt-budget { display: flex; flex-direction: column; }
+.tt-label-s { font: var(--pl-round-w2, 700) 12px/16px var(--pl-round); color: var(--pl-ink-2); }
+.tt-budget b { font: var(--pl-round-w, 700) 16px/22px var(--pl-round); }
+.tt-budget b span { font: 400 12.5px/1 var(--pl-sans); color: var(--pl-ink-2); }
+.tt-bar { flex: 1; height: 8px; overflow: hidden; border-radius: 99px; background: rgb(28 27 25 / 0.07); }
+.tt-bar i { display: block; height: 100%; border-radius: 99px; background: var(--pl-pink); }
+`;
 
 export default function TandemTabs({ side = 'broken', onStatus }) {
   const root = useRef(null), nav = useRef(null);
@@ -108,67 +164,61 @@ export default function TandemTabs({ side = 'broken', onStatus }) {
   const off = read && read.shift >= 0.5;
 
   return (
-    <article ref={root} onPointerMove={look} onPointerOver={look} className="relative w-[min(32.5rem,calc(100vw-2rem))] rounded-card bg-surface shadow-card">
-      <header className="flex items-center gap-3 px-5 pt-[18px] pb-3.5">
-        <span className="grid size-9 shrink-0 place-items-center rounded-[8px] bg-[#58cc02]"><span className="size-5 bg-white" style={{ mask: `url("${duolingoLogo}") center / contain no-repeat` }} /></span>
-        <span className="flex min-w-0 flex-col">
-          <span className="truncate text-[17px] leading-6 font-medium tracking-[-0.01em]">Spring campaign site</span>
-          <span className="text-[13px] text-ink-muted">Duolingo · week <span className="tabular-nums">8</span> of <span className="tabular-nums">14</span></span>
+    <article ref={root} onPointerMove={look} onPointerOver={look} className="tt pl-light relative">
+      <style>{TT_CSS}</style>
+      <header className="tt-head">
+        <span className="tt-mark" dangerouslySetInnerHTML={{ __html: toyOf('grid') }} />
+        <span className="tt-title">
+          <span className="tt-name">Spring campaign site</span>
+          <span className="tt-meta">Duolingo · week <span className="tt-num">8</span> of <span className="tt-num">14</span></span>
         </span>
-        <span className="ml-auto flex">
-          {[ines, theo, ama, arlo].map((src, i) => <img key={i} src={src} alt="" className={'block size-[26px] rounded-full object-cover ring-2 ring-surface outline-1 -outline-offset-1 outline-black/10 ' + (i ? '-ml-1.5' : '')} />)}
-        </span>
-        <button type="button" className="inline-flex h-7 shrink-0 items-center gap-1.5 rounded-control pr-2.5 pl-2 text-[13px] font-medium text-ink-muted ring-1 ring-line ring-inset hover:bg-sunken hover:text-ink"><PlusIcon size={14} texture="solid" />New task</button>
+        <span className="tt-faces">{[ines, theo, ama, arlo].map((src, i) => <img key={i} src={src} alt="" />)}</span>
+        <button type="button" className="tt-new"><span aria-hidden="true">+</span> New task</button>
       </header>
 
-      <nav ref={nav} aria-label="Views" className="flex gap-5 border-b-hairline border-line px-5">
+      <nav ref={nav} aria-label="Views" className="tt-tabs">
         {VIEWS.map((v, i) => (
           <a key={v} href={`#${v.toLowerCase()}`} onClick={(e) => e.preventDefault()} aria-current={i === 0 ? 'page' : undefined}
-            className={i === 0 ? 'border-b-2 border-ink py-2.5 text-sm font-semibold' : `border-b-2 border-transparent py-2.5 text-sm text-ink-muted ${hover}`}>{v}</a>
+            className={i === 0 ? 'tt-tab font-semibold' : `tt-tab ${hover}`}>{v}</a>
         ))}
       </nav>
 
       {/* kickoff to launch: done milestones filled, today's line, launch ahead */}
-      <section className="px-5 pt-[18px] pb-4">
-        <h3 className="flex justify-between text-xs font-medium text-ink-subtle"><span>Road to launch</span><span><span className="tabular-nums">58%</span> · on track</span></h3>
-        <span className="relative mx-1.5 mt-5 block h-1.5 rounded-full bg-sunken">
-          <span className="absolute inset-y-0 left-0 rounded-full bg-accent" style={{ width: `${TODAY}%` }} />
-          {ROAD.map(([what, , at, done]) => (
-            <span key={what} className={'absolute top-0 -mt-[3px] -ml-1.5 size-3 rounded-full ' + (done ? 'bg-accent ring-2 ring-surface' : 'bg-surface shadow-[inset_0_0_0_2px_#c7cdd8]')} style={{ left: `${at}%` }} />
-          ))}
-          <span aria-label="Today" className="absolute -inset-y-2 -ml-px w-0.5 rounded-full bg-ink" style={{ left: `${TODAY}%` }} />
+      <section className="tt-road">
+        <h3 className="tt-label"><span>Road to launch</span><span className="tt-quiet"><span className="tt-num">58%</span> · on track</span></h3>
+        <span className="tt-track">
+          <span className="tt-fill" style={{ width: `${TODAY}%` }} />
+          {ROAD.map(([what, , at, done]) => <span key={what} className={'tt-stop' + (done ? ' done' : '')} style={{ left: `${at}%` }} />)}
+          <span aria-label="Today" className="tt-today" style={{ left: `${TODAY}%` }} />
         </span>
-        <span className="relative mx-1.5 mt-2.5 block h-[34px] text-xs leading-4 text-ink-muted">
+        <span className="tt-stops">
           {ROAD.map(([what, date, at], i) => (
-            <span key={what} className={'absolute whitespace-nowrap ' + (i === 0 ? 'text-left' : i === ROAD.length - 1 ? '-translate-x-full text-right' : '-translate-x-1/2 text-center')} style={{ left: `${at}%` }}>
-              <span className="block font-medium text-ink">{what}</span><span className="tabular-nums">{date}</span>
+            <span key={what} className={'tt-at ' + (i === 0 ? 'first' : i === ROAD.length - 1 ? 'last' : '')} style={{ left: `${at}%` }}>
+              <b>{what}</b><span className="tt-num">{date}</span>
             </span>
           ))}
         </span>
       </section>
 
-      <section className="border-t-hairline border-line px-5 pt-1 pb-2">
-        <h3 className="flex justify-between pt-3 pb-1 text-xs font-medium text-ink-subtle"><span>Due this week</span><span><span className="tabular-nums">4</span> of <span className="tabular-nums">12</span> open</span></h3>
+      <section className="tt-week">
+        <h3 className="tt-label"><span>Due this week</span><span className="tt-quiet"><span className="tt-num">4</span> of <span className="tt-num">12</span> open</span></h3>
         <ul>
-          {TASKS.map(([task, label, face, due, status, soon]) => (
-            <li key={task} className="grid h-11 grid-cols-[1rem_1fr_auto_1.5rem_3.5rem] items-center gap-3 border-b-hairline border-line last:hairline-none">
-              <svg viewBox="0 0 16 16" className="size-4" aria-label={status}>{STATUS[status]}</svg>
-              <span className={'truncate text-sm ' + (status === 'done' ? 'text-ink-muted line-through decoration-ink/30' : '')}>{task}</span>
-              <span className="inline-grid h-5 place-items-center rounded-chip bg-sunken px-1.5 text-[11.5px] font-medium text-ink-muted">{label}</span>
-              <img src={face} alt="" className="size-6 rounded-full object-cover outline-1 -outline-offset-1 outline-black/10" />
-              <span className={'grid h-[22px] place-items-center rounded-chip text-xs font-medium tabular-nums ' + (soon ? 'bg-caution-soft text-caution' : 'text-ink-subtle')}>{due}</span>
+          {TASKS.map(([task, label, hue, face, due, status, soon]) => (
+            <li key={task}>
+              <span className={'tt-status ' + status} dangerouslySetInnerHTML={{ __html: status === 'done' ? toyOf('checkbox') : '' }} />
+              <span className={'tt-task' + (status === 'done' ? ' done' : '')}>{task}</span>
+              <span className="tt-chip" style={{ background: `var(--pl-${hue}-soft)`, color: `var(--pl-${hue}-ink)` }}>{label}</span>
+              <img src={face} alt="" className="tt-face" />
+              <span className={'tt-due tt-num' + (soon ? ' soon' : '')}>{due}</span>
             </li>
           ))}
         </ul>
       </section>
 
-      <footer className="flex items-center gap-3.5 rounded-b-card border-t-hairline border-line bg-sunken px-5 pt-3.5 pb-4">
-        <span className="flex flex-col">
-          <span className="text-xs font-medium text-ink-subtle">Budget used</span>
-          <span className="text-[15px] font-semibold tabular-nums">182h <span className="text-[12.5px] font-normal text-ink-muted">of 300h</span></span>
-        </span>
-        <span className="flex h-2 flex-1 overflow-hidden rounded-full bg-[rgb(18_35_61/0.07)]"><i className="h-full rounded-full bg-accent" style={{ width: '61%' }} /></span>
-        <span className="text-xs font-medium text-ink-subtle tabular-nums">61%</span>
+      <footer className="tt-foot">
+        <span className="tt-budget"><span className="tt-label-s">Budget used</span><b className="tt-num">182h <span>of 300h</span></b></span>
+        <span className="tt-bar"><i style={{ width: '61%' }} /></span>
+        <span className="tt-quiet tt-num">61%</span>
       </footer>
 
       <MarksLayer>
@@ -213,6 +263,14 @@ TandemTabs.film = {
     };
   },
   say: 'Run your pointer along the tabs.',
+  // the words on screen, approved by the owner 2026-11-16
+  teach: { fault: 'font-weight: 600', fix: 'color: var(--ink)' },
+  script: [
+    { at: 'rest', text: 'Run your pointer along these tabs, and the whole row *jitters*.' },
+    { at: 'measure', text: 'These tabs turn bold on hover. Bold letters are wider, so the rest get pushed.' },
+    { at: 'fix', text: 'Show the hover with a darker colour instead.' },
+    { at: 'payoff', text: 'Now the row stays *still* under your hand.' },
+  ],
 };
 TandemTabs.lesson = {
   why: 'Bold letters are wider than regular ones. When a tab turns semibold under the pointer it grows a few pixels, and every tab after it slides over: move along the row and the whole row jitters under your cursor.',

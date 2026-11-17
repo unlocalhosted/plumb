@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>React Plumber · marks from the method</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400..700&display=swap">
+<style>
+  /* The method (read 2026-11-13):
+     - a logo identifies, it doesn't describe; distinctive, simple, legible tiny, works in one colour (Paul Rand,
+       "Logos, Flags, and Escutcheons", 1991)
+     - abstract or pictorial is a strategic choice; a name that already says what it does wants an abstract mark
+       (Chermayeff & Geismar & Haviv, Print, "To Abstract or Not Abstract?"; Chase: four pieces round a square)
+     - build from the craft's own building blocks on a modular grid, like components (Figma, "Figma's new icon")
+     Ours: the box model's parts (content, the four sides of padding, the edge), the grid, the gap. */
+  :root { --ink: #1d1b17; --ink-2: #6b665c; --rule: rgb(29 27 23 / 0.09); --desk: #f6f5f2; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--desk); color: var(--ink); font: 400 14px/20px "Instrument Sans", system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  header { display: flex; align-items: flex-end; gap: 24px; padding: 28px 32px 16px; }
+  h1 { margin: 0; font: 600 20px/26px "Instrument Sans"; letter-spacing: -0.01em; }
+  .sub { margin: 4px 0 0; color: var(--ink-2); max-width: 880px; }
+  label { margin-left: auto; display: flex; gap: 8px; align-items: center; font-weight: 600; cursor: pointer; white-space: nowrap; }
+  .grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; padding: 0 32px 32px; }
+  .card { background: #fff; border-radius: 18px; box-shadow: 0 0 0 1px var(--rule), 0 12px 30px -22px rgb(0 0 0 / .3); overflow: hidden; }
+  .art { height: 290px; display: grid; place-items: center; }
+  .row { display: flex; align-items: center; gap: 18px; padding: 14px 18px; border-top: 1px solid var(--rule); }
+  .tile { width: 64px; height: 64px; border-radius: 15px; display: grid; place-items: center; background: #1d1b17; }
+  .t { margin-left: auto; text-align: right; max-width: 52%; } .t b { display: block; font: 650 14px/18px "Instrument Sans"; } .t span { color: var(--ink-2); font-size: 12.5px; line-height: 17px; }
+  svg { display: block; overflow: visible; }
+  .construct { display: none; } body.show .construct { display: inline; }
+</style>
+</head>
+<body>
+<header><div><h1>Marks from the method</h1>
+<p class="sub">Abstract, because the name already says what it does. Built on a 12-unit grid from the box model's own parts: content, the four sides of padding, the edge, the gap. Each in colour, then in one colour, then on a dark app tile, at 24 and 16 px.</p></div>
+<label><input type="checkbox" id="g"> Show the construction</label></header>
+<div class="grid" id="list"></div>
+<script>
+const PINK = '#f24a9f', SKY = '#2f86dc', MINT = '#1aa36a', BUTTER = '#ffbf1a', LILAC = '#7a5cf0', INK = '#1d1b17';
+// the grid: 120 units across, a module of 10; every edge below lands on it
+const GRID = `<g class="construct" stroke="#2f86dc" stroke-width=".4" opacity=".55">${Array.from({ length: 13 }, (_, i) => `<path d="M${i * 10} 0V120M0 ${i * 10}H120"/>`).join('')}<circle cx="60" cy="60" r="36" fill="none" stroke-dasharray="2 2"/></g>`;
+// a rectangle with only some corners rounded: [top-left, top-right, bottom-right, bottom-left]
+const R = (x, y, w, h, [a, b, c, d]) => `M${x + a} ${y}H${x + w - b}${b ? `A${b} ${b} 0 0 1 ${x + w} ${y + b}` : ''}V${y + h - c}${c ? `A${c} ${c} 0 0 1 ${x + w - c} ${y + h}` : ''}H${x + d}${d ? `A${d} ${d} 0 0 1 ${x} ${y + h - d}` : ''}V${y + a}${a ? `A${a} ${a} 0 0 1 ${x + a} ${y}` : ''}Z`;
+
+const MARKS = [
+  ['Padding, all four sides', 'The box model as a mark: four identical sides of padding turning round the content. Like Chase\'s four pieces, from our own part.', (one) => {
+    const c = one ? [INK, INK, INK, INK] : [PINK, SKY, BUTTER, MINT];
+    // each side: 50 × 20, outer corner rounded 14 (concentric with the whole), the rest 3; a 2-unit gap between sides
+    return `${GRID}<path d="${R(20, 20, 58, 22, [16, 4, 4, 4])}" fill="${c[0]}"/><path d="${R(78, 20, 22, 58, [4, 16, 4, 4])}" fill="${c[1]}" transform="translate(2 0)"/>
+      <path d="${R(42, 78, 58, 22, [4, 4, 16, 4])}" fill="${c[2]}" transform="translate(0 2)"/><path d="${R(20, 42, 22, 58, [4, 4, 4, 16])}" fill="${c[3]}" transform="translate(-2 0)"/>`; }],
+  ['Padding, turning', 'The same four sides, each one turned a quarter more than the last: a valve, a pinwheel, the box in motion.', (one) => {
+    const c = one ? [INK, INK, INK, INK] : [PINK, LILAC, SKY, MINT];
+    const side = R(30, 18, 60, 22, [11, 11, 4, 4]);
+    return `${GRID}<g transform="rotate(0 60 60)"><path d="${side}" fill="${c[0]}" transform="translate(-9 0)"/></g><g transform="rotate(90 60 60)"><path d="${side}" fill="${c[1]}" transform="translate(-9 0)"/></g>
+      <g transform="rotate(180 60 60)"><path d="${side}" fill="${c[2]}" transform="translate(-9 0)"/></g><g transform="rotate(270 60 60)"><path d="${side}" fill="${c[3]}" transform="translate(-9 0)"/></g>`; }],
+  ['Content and its inset', 'One rounded square and its content, inset by exactly one module; the inset\'s corner is concentric (outer radius less the inset). One shape, two readings.', (one) => `
+    ${GRID}<path d="${R(20, 20, 80, 80, [28, 28, 28, 28])}" fill="${one ? INK : PINK}"/><path d="${R(40, 40, 40, 40, [8, 8, 8, 8])}" fill="#fff"/><path d="${R(60, 40, 20, 20, [0, 8, 0, 0])}" fill="${one ? INK : BUTTER}"/>`],
+  ['Two that fit', 'Two identical L-shapes, one turned, closing on each other with a one-unit gap: two components, aligned exactly.', (one) => `
+    ${GRID}<path d="M20 48A28 28 0 0 1 48 20H78V42H52A10 10 0 0 0 42 52V100H20Z" fill="${one ? INK : PINK}"/><path d="M100 72A28 28 0 0 1 72 100H42V78H68A10 10 0 0 0 78 68V20H100Z" fill="${one ? INK : SKY}"/>`],
+  ['Registration, refined', 'Two identical rounded squares, one offset by a module, the overlap a third colour. One shape, placed twice: the fix is the offset closing.', (one) => one
+    ? `${GRID}<path d="${R(18, 18, 64, 64, [22, 22, 22, 22])}" fill="none" stroke="${INK}" stroke-width="10"/><path d="${R(38, 38, 64, 64, [22, 22, 22, 22])}" fill="${INK}"/>`
+    : `${GRID}<g style="isolation:isolate"><path d="${R(18, 18, 64, 64, [22, 22, 22, 22])}" fill="${SKY}"/><path d="${R(38, 38, 64, 64, [22, 22, 22, 22])}" fill="${PINK}" style="mix-blend-mode:multiply"/></g>`],
+  ['The gap, declared', 'Three blocks on the grid, and the gaps between them equal and exact: the space between things is the mark.', (one) => `
+    ${GRID}<path d="${R(20, 20, 38, 80, [22, 6, 6, 22])}" fill="${one ? INK : PINK}"/><path d="${R(64, 20, 36, 37, [6, 22, 6, 6])}" fill="${one ? INK : BUTTER}"/><path d="${R(64, 63, 36, 37, [6, 6, 22, 6])}" fill="${one ? INK : SKY}"/>`],
+];
+const svg = (s, draw, one, extra = '') => `<svg width="${s}" height="${s}" viewBox="0 0 120 120" ${extra}>${draw(one)}</svg>`;
+document.getElementById('list').innerHTML = MARKS.map(([name, idea, draw]) => `<section class="card"><div class="art"><div style="display:flex;gap:26px;align-items:center">${svg(170, draw, false)}${svg(110, draw, true)}</div></div>
+  <div class="row"><div class="tile">${svg(44, (o) => draw(o).replaceAll('#fff', '#1d1b17'), false)}</div>${svg(24, draw, false)}${svg(16, draw, false)}<div class="t"><b>${name}</b><span>${idea}</span></div></div></section>`).join('');
+document.getElementById('g').addEventListener('change', (e) => document.body.classList.toggle('show', e.target.checked));
+</script>
+</body>
+</html>

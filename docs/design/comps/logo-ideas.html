@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>React Plumber · eight logo ideas, drawn</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400..700&display=swap">
+<style>
+  :root { --ink: #1d1b17; --ink-2: #6b665c; --rule: rgb(29 27 23 / 0.09); --pink: #f24a9f; --pink-d: #c4207a; --pink-l: #ffb3d9; --sky: #2a7fd0; --mint: #1a9460; --butter: #f5b800; --glass: #ece8df; --desk: #f6f5f2; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--desk); color: var(--ink); font: 400 14px/20px "Instrument Sans", system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  h1 { margin: 28px 32px 2px; font: 600 20px/26px "Instrument Sans"; letter-spacing: -0.01em; }
+  .sub { margin: 0 32px 18px; color: var(--ink-2); }
+  .grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; padding: 0 32px 32px; }
+  .card { background: #fff; border-radius: 18px; box-shadow: 0 0 0 1px var(--rule), 0 12px 30px -22px rgb(0 0 0 / .3); cursor: pointer; display: flex; flex-direction: column; overflow: hidden; }
+  .art { height: 270px; display: grid; place-items: center; position: relative; }
+  .small { position: absolute; left: 14px; bottom: 12px; display: flex; gap: 10px; align-items: flex-end; opacity: .9; }
+  .txt { padding: 12px 16px 16px; border-top: 1px solid var(--rule); }
+  .t { font: 650 15px/20px "Instrument Sans"; letter-spacing: -0.01em; } .t i { font-style: normal; color: var(--ink-2); margin-right: 6px; }
+  .d { margin: 3px 0 0; color: var(--ink-2); font-size: 13px; line-height: 18px; }
+  svg { display: block; overflow: visible; }
+  .play * { animation-play-state: running; }
+
+  /* 1 vessels: pour into the left arm; both levels rise together */
+  .v-liquid { transform: translateY(90px); animation: v-rise 1.6s cubic-bezier(.3,.7,.3,1) .9s forwards; }
+  .v-stream { stroke-dasharray: 90; stroke-dashoffset: 90; animation: v-pour 2.6s ease .2s forwards; }
+  .v-level { opacity: 0; animation: fade .4s ease 2.6s forwards; }
+  @keyframes v-rise { to { transform: translateY(0); } }
+  @keyframes v-pour { 0% { stroke-dashoffset: 90; } 30% { stroke-dashoffset: 0; } 75% { stroke-dashoffset: 0; opacity: 1; } 100% { stroke-dashoffset: -90; opacity: 0; } }
+  @keyframes fade { to { opacity: 1; } }
+
+  /* 2 option key: the flow takes the branch */
+  .o-flow { stroke-dasharray: 1; stroke-dashoffset: 1; animation: o-run 1.4s cubic-bezier(.4,0,.2,1) .5s forwards; }
+  .o-flow2 { stroke-dasharray: 1; stroke-dashoffset: 1; animation: o-run .6s cubic-bezier(.4,0,.2,1) .5s forwards; }
+  @keyframes o-run { to { stroke-dashoffset: 0; } }
+
+  /* 3 the bug: one tile sits off; plumber marks it; it snaps home */
+  .b-off { animation: b-snap 2.8s cubic-bezier(.3,1.5,.5,1) both; }
+  .b-mark { opacity: 0; animation: b-mark 2.8s ease both; }
+  @keyframes b-snap { 0%, 55% { transform: translate(5px, 4px); } 70%, 100% { transform: translate(0, 0); } }
+  @keyframes b-mark { 0%, 20% { opacity: 0; } 30%, 60% { opacity: 1; } 75%, 100% { opacity: 0; } }
+  .b-ok { opacity: 0; animation: b-ok 2.8s ease both; }
+  @keyframes b-ok { 0%, 68% { opacity: 0; transform: scale(.6); } 80% { opacity: 1; transform: scale(1.08); } 100% { opacity: 1; transform: scale(1); } }
+
+  /* 4 P in the gap: the blocks start shut, then open by the declared space, and the P appears in it */
+  .g-l { animation: g-l 1.4s cubic-bezier(.3,1.3,.5,1) .5s both; } .g-r { animation: g-r 1.4s cubic-bezier(.3,1.3,.5,1) .5s both; } .g-i { animation: g-i 1.4s cubic-bezier(.3,1.3,.5,1) .5s both; }
+  @keyframes g-l { from { transform: translateX(7px); } } @keyframes g-r { from { transform: translateX(-7px); } } @keyframes g-i { from { transform: translate(-3px, 0); } }
+
+  /* 5 caret: it drops in true, then blinks */
+  .c-car { animation: c-drop .7s cubic-bezier(.3,1.4,.5,1) both, c-blink 1.05s steps(1) .9s infinite; }
+  @keyframes c-drop { from { transform: translateY(-30px); opacity: 0; } }
+  @keyframes c-blink { 50% { opacity: 0; } }
+
+  /* 6 equal is a lie: the measure reveals the circle is bigger */
+  .e-guide { opacity: 0; animation: fade .5s ease 1s forwards; }
+  .e-pill { opacity: 0; animation: e-pop .5s cubic-bezier(.3,1.5,.5,1) 1.6s forwards; }
+  @keyframes e-pop { from { opacity: 0; transform: scale(.7); } to { opacity: 1; transform: scale(1); } }
+
+  /* 7 the leak: a drop forms, falls, then the seam is sealed */
+  .l-drop { animation: l-drop 2.6s cubic-bezier(.5,0,.7,.4) both; transform-box: fill-box; transform-origin: 50% 0; }
+  @keyframes l-drop { 0% { transform: scale(0); } 35% { transform: scale(1); } 45% { transform: translateY(0) scale(1); } 75% { transform: translateY(70px) scale(.9); opacity: 1; } 76%, 100% { opacity: 0; } }
+  .l-seal { stroke-dasharray: 60; stroke-dashoffset: 60; animation: l-seal .6s ease 2.1s forwards; }
+  @keyframes l-seal { to { stroke-dashoffset: 0; } }
+
+  /* 8 before / after: a wipe crafts the raw half */
+  .a-wipe { animation: a-wipe 1.6s cubic-bezier(.6,0,.2,1) .6s both; }
+  @keyframes a-wipe { from { transform: scaleX(0); } }
+</style>
+</head>
+<body>
+<h1>Eight logo ideas, drawn</h1>
+<p class="sub">Click a card to play it again. Bottom left of each: the same mark at 32 and 16 px.</p>
+<div class="grid">
+
+  <!-- 1 communicating vessels -->
+  <section class="card" data-n="1"><div class="art">
+    <svg width="190" height="200" viewBox="0 0 190 200" class="m">
+      <!-- one glass tube bent into a U; the liquid is the same path, thinner, shown only below its level -->
+      <defs><clipPath id="v-lvl"><rect class="v-liquid" x="0" y="84" width="190" height="140"/></clipPath></defs>
+      <path d="M50 26v94a45 45 0 0 0 90 0V26" fill="none" stroke="var(--glass)" stroke-width="40" stroke-linecap="round"/>
+      <path d="M50 26v94a45 45 0 0 0 90 0V26" fill="none" stroke="var(--pink)" stroke-width="24" clip-path="url(#v-lvl)"/>
+      <path class="v-stream" d="M50 -24V84" stroke="var(--pink)" stroke-width="7" stroke-linecap="round"/>
+      <path class="v-level" d="M14 84h162" stroke="var(--ink)" stroke-width="2" stroke-dasharray="4 5" stroke-linecap="round"/>
+    </svg>
+    <span class="small"><svg width="32" height="32" viewBox="0 0 190 200"><path d="M50 26v94a45 45 0 0 0 90 0V26" fill="none" stroke="var(--glass)" stroke-width="40" stroke-linecap="round"/><path d="M50 84v36a45 45 0 0 0 90 0V84" fill="none" stroke="var(--pink)" stroke-width="24"/></svg><svg width="16" height="16" viewBox="0 0 190 200"><path d="M50 26v94a45 45 0 0 0 90 0V26" fill="none" stroke="var(--glass)" stroke-width="40" stroke-linecap="round"/><path d="M50 84v36a45 45 0 0 0 90 0V84" fill="none" stroke="var(--pink)" stroke-width="24"/></svg></span></div>
+    <div class="txt"><div class="t"><i>1</i>Communicating vessels</div><p class="d">Pour into one side and both rise to the same level: what a design token does.</p></div></section>
+
+  <!-- 2 option key as plumbing -->
+  <section class="card" data-n="2"><div class="art">
+    <svg width="200" height="140" viewBox="0 0 200 140">
+      <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M14 34h52l58 72h62" stroke="var(--glass)" stroke-width="26"/><path d="M128 34h58" stroke="var(--glass)" stroke-width="26"/>
+        <path class="o-flow" pathLength="1" d="M14 34h52l58 72h62" stroke="var(--pink)" stroke-width="14"/>
+        <path class="o-flow2" pathLength="1" d="M128 34h58" stroke="var(--sky)" stroke-width="14"/>
+      </g>
+      <g fill="var(--ink)"><rect x="60" y="18" width="10" height="32" rx="4"/><rect x="122" y="18" width="10" height="32" rx="4"/></g>
+    </svg>
+    <span class="small"><svg width="32" height="32" viewBox="0 0 200 140"><path d="M14 34h52l58 72h62M128 34h58" fill="none" stroke="var(--pink)" stroke-width="26" stroke-linecap="round" stroke-linejoin="round"/></svg><svg width="16" height="16" viewBox="0 0 200 140"><path d="M14 34h52l58 72h62M128 34h58" fill="none" stroke="var(--pink)" stroke-width="26" stroke-linecap="round" stroke-linejoin="round"/></svg></span></div>
+    <div class="txt"><div class="t"><i>2</i>⌥ is already plumbing</div><p class="d">The Option key's glyph, the key that wakes plumber, drawn as the pipe that diverts the flow.</p></div></section>
+
+  <!-- 3 the bug -->
+  <section class="card" data-n="3"><div class="art">
+    <svg width="170" height="170" viewBox="0 0 170 170">
+      <g fill="var(--ink)">
+        <rect x="10" y="10" width="44" height="44" rx="12"/><rect x="63" y="10" width="44" height="44" rx="12"/><rect x="116" y="10" width="44" height="44" rx="12"/>
+        <rect x="10" y="63" width="44" height="44" rx="12"/><rect x="63" y="63" width="44" height="44" rx="12"/><rect x="116" y="63" width="44" height="44" rx="12"/>
+        <rect x="10" y="116" width="44" height="44" rx="12"/><rect x="63" y="116" width="44" height="44" rx="12"/>
+      </g>
+      <g class="b-off"><rect x="116" y="116" width="44" height="44" rx="12" fill="var(--pink)"/></g>
+      <rect class="b-mark" x="111" y="111" width="54" height="54" rx="15" fill="none" stroke="var(--sky)" stroke-width="2.5" stroke-dasharray="5 4"/>
+      <g class="b-ok" style="transform-box: fill-box; transform-origin: center"><circle cx="138" cy="138" r="11" fill="#fff"/><path d="M132.5 138.5l4 4 7-8" fill="none" stroke="var(--pink)" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></g>
+    </svg>
+    <span class="small"><svg width="32" height="32" viewBox="0 0 170 170"><g fill="var(--ink)"><rect x="10" y="10" width="44" height="44" rx="12"/><rect x="63" y="10" width="44" height="44" rx="12"/><rect x="116" y="10" width="44" height="44" rx="12"/><rect x="10" y="63" width="44" height="44" rx="12"/><rect x="63" y="63" width="44" height="44" rx="12"/><rect x="116" y="63" width="44" height="44" rx="12"/><rect x="10" y="116" width="44" height="44" rx="12"/><rect x="63" y="116" width="44" height="44" rx="12"/></g><rect x="116" y="116" width="44" height="44" rx="12" fill="var(--pink)"/></svg><svg width="16" height="16" viewBox="0 0 170 170"><g fill="var(--ink)"><rect x="10" y="10" width="44" height="44" rx="12"/><rect x="63" y="10" width="44" height="44" rx="12"/><rect x="116" y="10" width="44" height="44" rx="12"/><rect x="10" y="63" width="44" height="44" rx="12"/><rect x="63" y="63" width="44" height="44" rx="12"/><rect x="116" y="63" width="44" height="44" rx="12"/><rect x="10" y="116" width="44" height="44" rx="12"/><rect x="63" y="116" width="44" height="44" rx="12"/></g><rect x="116" y="116" width="44" height="44" rx="12" fill="var(--pink)"/></svg></span></div>
+    <div class="txt"><div class="t"><i>3</i>A logo with a bug in it</div><p class="d">One tile sits off. Plumber marks it, and it snaps home: plumber sees what you don't.</p></div></section>
+
+  <!-- 4 the P in the gap -->
+  <section class="card" data-n="4"><div class="art">
+    <svg width="180" height="180" viewBox="0 0 180 180">
+      <defs><clipPath id="g-tile"><rect x="10" y="10" width="160" height="160" rx="42"/></clipPath></defs>
+      <g clip-path="url(#g-tile)">
+        <!-- the tile, cut into three blocks by one channel shaped like a P: the space between them is the letter -->
+        <path class="g-l" d="M10 10h52v160H10z" fill="var(--ink)"/>
+        <path class="g-r" d="M80 10h90v160H80V122h18a40 40 0 0 0 0-80H80z" fill="var(--ink)"/>
+        <path class="g-i" d="M80 60h18a22 22 0 0 1 0 44H80z" fill="var(--pink)"/>
+      </g>
+    </svg>
+    <span class="small"><svg width="32" height="32" viewBox="0 0 180 180"><defs><clipPath id="g-tile2"><rect x="10" y="10" width="160" height="160" rx="42"/></clipPath></defs><g clip-path="url(#g-tile2)" fill="var(--ink)"><path d="M10 10h52v160H10z"/><path d="M80 10h90v160H80V122h18a40 40 0 0 0 0-80H80z"/><path d="M80 60h18a22 22 0 0 1 0 44H80z" fill="var(--pink)"/></g></svg><svg width="16" height="16" viewBox="0 0 180 180"><g clip-path="url(#g-tile2)" fill="var(--ink)"><path d="M10 10h52v160H10z"/><path d="M80 10h90v160H80V122h18a40 40 0 0 0 0-80H80z"/><path d="M80 60h18a22 22 0 0 1 0 44H80z" fill="var(--pink)"/></g></svg></span></div>
+    <div class="txt"><div class="t"><i>4</i>The P lives in the gap</div><p class="d">A tile cut into blocks. The space left between them, a decision plumber checks, is the P.</p></div></section>
+
+  <!-- 5 caret -->
+  <section class="card" data-n="5"><div class="art">
+    <svg width="190" height="150" viewBox="0 0 190 150">
+      <text x="14" y="98" font-family="Instrument Sans" font-weight="650" font-size="72" letter-spacing="-3" fill="var(--ink)">UI</text>
+      <g class="c-car"><rect x="102" y="22" width="12" height="104" rx="6" fill="var(--pink)"/><rect x="92" y="18" width="32" height="10" rx="5" fill="var(--pink)"/><rect x="92" y="120" width="32" height="10" rx="5" fill="var(--pink)"/></g>
+    </svg>
+    <span class="small"><svg width="32" height="32" viewBox="0 0 40 40"><rect x="16" y="6" width="8" height="28" rx="4" fill="var(--pink)"/><rect x="10" y="3" width="20" height="6" rx="3" fill="var(--pink)"/><rect x="10" y="31" width="20" height="6" rx="3" fill="var(--pink)"/></svg><svg width="16" height="16" viewBox="0 0 40 40"><rect x="16" y="6" width="8" height="28" rx="4" fill="var(--pink)"/><rect x="10" y="3" width="20" height="6" rx="3" fill="var(--pink)"/><rect x="10" y="31" width="20" height="6" rx="3" fill="var(--pink)"/></svg></span></div>
+    <div class="txt"><div class="t"><i>5</i>The caret is the plumb line</div><p class="d">The blinking text cursor: every interface's true vertical, and live editing.</p></div></section>
+
+  <!-- 6 equal is a lie -->
+  <section class="card" data-n="6"><div class="art">
+    <svg width="210" height="150" viewBox="0 0 210 150">
+      <rect x="20" y="35" width="76" height="76" rx="6" fill="var(--ink)"/>
+      <circle cx="152" cy="73" r="42" fill="var(--pink)"/>
+      <g class="e-guide" stroke="var(--sky)" stroke-width="1.5" stroke-dasharray="4 4"><path d="M6 35h196M6 111h196"/></g>
+      <g class="e-pill"><rect x="125" y="122" width="54" height="22" rx="7" fill="var(--sky)"/><text x="152" y="137.5" text-anchor="middle" font-family="ui-monospace, Menlo" font-size="12" font-weight="600" fill="#fff">+8px</text></g>
+    </svg>
+    <span class="small"><svg width="32" height="32" viewBox="0 0 210 150"><rect x="20" y="35" width="76" height="76" rx="6" fill="var(--ink)"/><circle cx="152" cy="73" r="42" fill="var(--pink)"/></svg><svg width="16" height="16" viewBox="0 0 210 150"><rect x="20" y="35" width="76" height="76" rx="6" fill="var(--ink)"/><circle cx="152" cy="73" r="42" fill="var(--pink)"/></svg></span></div>
+    <div class="txt"><div class="t"><i>6</i>Equal is a lie</div><p class="d">They look the same size; the circle is bigger. Circles overshoot to look equal.</p></div></section>
+
+  <!-- 7 the leak -->
+  <section class="card" data-n="7"><div class="art">
+    <svg width="170" height="200" viewBox="0 0 170 200">
+      <rect x="25" y="20" width="120" height="110" rx="26" fill="var(--sky)"/>
+      <path class="l-drop" d="M85 128c0 0 12 14 12 23a12 12 0 0 1-24 0c0-9 12-23 12-23z" fill="var(--sky)"/>
+      <path class="l-seal" d="M55 130h60" stroke="var(--mint)" stroke-width="6" stroke-linecap="round"/>
+    </svg>
+    <span class="small"><svg width="32" height="32" viewBox="0 0 170 200"><rect x="25" y="20" width="120" height="110" rx="26" fill="var(--sky)"/><path d="M85 128c0 0 12 14 12 23a12 12 0 0 1-24 0c0-9 12-23 12-23z" fill="var(--sky)"/></svg><svg width="16" height="16" viewBox="0 0 170 200"><rect x="25" y="20" width="120" height="110" rx="26" fill="var(--sky)"/><path d="M85 128c0 0 12 14 12 23a12 12 0 0 1-24 0c0-9 12-23 12-23z" fill="var(--sky)"/></svg></span></div>
+    <div class="txt"><div class="t"><i>7</i>The leak</div><p class="d">A drop forms on the edge of a perfect block, falls, and the seam is sealed.</p></div></section>
+
+  <!-- 8 before / after -->
+  <section class="card" data-n="8"><div class="art">
+    <svg width="190" height="170" viewBox="0 0 190 170">
+      <path d="M20 22 96 18v134l-74 -4z" fill="var(--ink)"/>
+      <g class="a-wipe" style="transform-box: fill-box; transform-origin: 0 50%"><path d="M95 20h30c32 0 45 13 45 45v40c0 32-13 45-45 45H95z" fill="var(--pink)"/></g>
+    </svg>
+    <span class="small"><svg width="32" height="32" viewBox="0 0 190 170"><path d="M20 22 96 18v134l-74 -4z" fill="var(--ink)"/><path d="M95 20h30c32 0 45 13 45 45v40c0 32-13 45-45 45H95z" fill="var(--pink)"/></svg><svg width="16" height="16" viewBox="0 0 190 170"><path d="M20 22 96 18v134l-74 -4z" fill="var(--ink)"/><path d="M95 20h30c32 0 45 13 45 45v40c0 32-13 45-45 45H95z" fill="var(--pink)"/></svg></span></div>
+    <div class="txt"><div class="t"><i>8</i>Before and after in one shape</div><p class="d">The left half as written, the right half as crafted: ui = f(state) as a fix.</p></div></section>
+
+</div>
+<script>
+  // click a card to play it again: replace its drawing with a fresh copy, so every animation starts over
+  document.querySelectorAll('.card').forEach((c) => c.addEventListener('click', () => { const a = c.querySelector('.art > svg'); a.replaceWith(a.cloneNode(true)); }));
+</script>
+</body>
+</html>

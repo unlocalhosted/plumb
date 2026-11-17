@@ -156,6 +156,7 @@ export class Session extends EventEmitter {
   propEdit(...args: Parameters<Engine['propEdit']>) { return this.call('propEdit', args); }
   spec(...args: Parameters<Engine['spec']>) { return this.call('spec', args); }
   token(...args: Parameters<Engine['token']>) { return this.call('token', args); }
+  systemApply(...args: Parameters<Engine['systemApply']>) { return this.call('systemApply', args); }
   structure(...args: Parameters<Engine['structure']>) { return this.call('structure', args); }
   classSite(...args: Parameters<Engine['classSite']>) { return this.call('classSite', args); }
   undo(...args: Parameters<Engine['undo']>) { return this.call('undo', args); }

@@ -3,6 +3,8 @@
 // listed so the whole system is in view and nothing is drawn without its turn. 
 export const GROUPS = [
   ['Foundations', [
+    { id: 'logo', hue: 'pink', toy: 'corner', name: 'Logo', says: 'A solid P inside a drawn R. How it is built, its rules, sizes, colours and surfaces.', ready: true,
+      lede: 'The mark is a solid P with an R drawn around it in plumber’s own line. This is its sheet: how it is built, the four rules that keep it one mark, the drawing each size gets, and how it sits on real surfaces.' },
     { id: 'identity', hue: 'lilac', toy: 'ratio', name: 'Identity', says: 'What makes a raised thing a delight, taken apart: soft blocks, and the face.', ready: true,
       lede: 'The raised key and the rounded face are borrowed: a hundred playful products look like this. The icons are ours. Here is what replaced them: soft blocks, rebuilt from where the delight comes from, and a face with its own hand. Point at each and press.' },
     { id: 'color', hue: 'pink', toy: 'fill', name: 'Colour', says: 'Six hues with one meaning each, the neutrals, the roles. Tables read from the token file.', ready: true,
@@ -35,8 +37,10 @@ export const GROUPS = [
       lede: 'Three kinds of words appear when you point: the name tag says what something is and whether it’s right, the hint says what it becomes, the key says what to press. Point at the card.' },
     { id: 'xray', hue: 'sky', toy: 'size', name: 'X-ray', says: 'Point at anything and see what it is made of: its space, size, type, colour and source.', ready: true,
       lede: 'Point at any part of someone’s card. Its space is drawn on it in the patterns, mint on the scale and coral off it, and a card beside it says the numbers. Prototype.' },
-    { id: 'messages', hue: 'mint', toy: 'toast', name: 'Messages', says: 'The toast after a write, Undo, the history strip, a refusal.' },
-    { id: 'surfaces', hue: 'butter', toy: 'card', name: 'Surfaces', says: 'Paper, cards, bars, the dock. Light and dark.' },
+    { id: 'messages', hue: 'mint', toy: 'toast', name: 'Messages', says: 'The toast after a write, Undo, the history strip, a refusal.', ready: true,
+      lede: 'Plumber speaks up only after it has written to your code: a toast by the dock that says what changed, with Undo, and a history where every change can be taken back on its own. Both are live here.' },
+    { id: 'surfaces', hue: 'butter', toy: 'card', name: 'Surfaces', says: 'Three heights: pressed in, flat, lifted. The same pieces by day and by night.', ready: true,
+      lede: 'What things sit on, and how high. There are three heights and no others: pressed in, flat, lifted. Each is shown holding the product’s own pieces, by day and by night.' },
     { id: 'marks', hue: 'lilac', toy: 'gap', name: 'Marks on the page', says: 'What Blueprint draws on your app: the three patterns, heat, a place in hand.' },
     { id: 'states', hue: 'lilac', toy: 'empty', name: 'States', says: 'Empty, loading, error, nothing to fix. A toy and one sentence.' },
   ]],

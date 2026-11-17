@@ -79,8 +79,10 @@ function selectorConditions(selector: string): Condition[] {
   function positive(selector: Selector): string[] {
     return selector.flatMap(component => {
       if (component.type !== 'pseudo-class') return component.type === 'pseudo-element' ? pseudos([component]) : [];
-      const children = (component as unknown as { selectors?: Selector[] }).selectors;
-      return [...pseudos([component]), ...(component.kind !== 'not' && children ? children.flatMap(positive) : [])];
+      // :is(), :where(), :has() hold a list of selectors; :host() and :host-context() hold one compound selector
+      const held = (component as unknown as { selectors?: Selector[] | Selector | null }).selectors;
+      const children: Selector[] = !held ? [] : held.length && !Array.isArray(held[0]) ? [held as Selector] : held as Selector[];
+      return [...pseudos([component]), ...(component.kind !== 'not' ? children.flatMap(positive) : [])];
     });
   }
   return [{ kind: 'selector', text: selector }, ...[...new Set(rule.value.selectors.flatMap(positive))].map(text => ({ kind: 'pseudo' as const, text }))];

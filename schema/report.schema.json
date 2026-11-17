@@ -271,7 +271,7 @@
         "exported": { "type": "boolean" },
         "family": { "$ref": "#/$defs/family" }, "name": { "type": "string" }, "value": { "type": "string" }, "resolved": { "type": "string" },
         "refs": { "$ref": "#/$defs/strings" }, "origin": { "enum": ["project", "framework", "inferred"] },
-        "tier": { "enum": ["primitive", "semantic"] }, "why": { "type": "string" }, "groupWhy": { "type": "string" }, "use": { "type": "object", "additionalProperties": false, "required": ["css"], "properties": { "class": { "type": "string" }, "css": { "type": "string" } } }, "source": { "type": "object", "additionalProperties": false, "required": ["file", "line"], "properties": { "file": { "type": "string" }, "line": { "type": "integer", "minimum": 1 } } }
+        "tier": { "enum": ["primitive", "semantic"] }, "why": { "type": "string" }, "reading": { "type": "string" }, "groupWhy": { "type": "string" }, "use": { "type": "object", "additionalProperties": false, "required": ["css"], "properties": { "class": { "type": "string" }, "css": { "type": "string" } } }, "source": { "type": "object", "additionalProperties": false, "required": ["file", "line"], "properties": { "file": { "type": "string" }, "line": { "type": "integer", "minimum": 1 } } }
       }
     },
     "finding": {

@@ -597,6 +597,30 @@
 - **Now:** one finding on crafting-ui, the three figures on the templates page, drawn from a three-item list written in the code. At phone width it fits (358 of 358 px). It is a fixed set the check cannot yet tell from a list; noted, not fixed. No before and after from a real app.
 - **Seen on the way:** the motion vocabulary page (7,274 elements) closed the browser tab during plumber's read.
 
+## React Plumber gets a mark (2026-11-13)
+- **The itch:** the owner, on the film's plumb bob and type: "fix the react plumber logo and typography this is fucking shit", then, round after round: a "dangling butt plug"; "using existing icons and trying to force them for logo"; "cheap boxes … look at the arc, figma, raycast logos"; "cheap and generic … without thinking about anything unusual / delightful / insightful / non obvious".
+- **The system behind it:** no brand mark had ever been designed; I kept drawing instead of designing: a site icon scaled up, then icons from our toy set, then literal pictures of keywords, colour from the first sketch, no brief, no study of the references.
+- **What changed it:** a brief agreed with the owner (React Plumber; playful but crafted; Raycast, Arc, Figma/Framer); ideas judged in words before drawing; then a method read from the field: a logo identifies rather than describes (Paul Rand), a name that already says what it does wants an abstract mark (Chermayeff & Geismar & Haviv), and a mark is built from the craft's own parts on a grid (Figma). Ours are the box model's parts.
+- **The mark:** a pink stem and a violet bowl, each lit from the top, with exactly the gap between them on a 120 grid: the space between is a decision, and it makes the P (the owner's third pick, with the second's guardrail). At hero size it carries plumber's guardrails: dashed guides on its stem, cap and foot, and the 4 it measures across the gap. In the films it is the watermark, and on the closing card its guardrails draw themselves on. (I first put the second pick, the turning sides, in the film; the owner: "i said i like 3 option but the gutter of second". Corrected the same hour.) Comps: docs/design/comps/logo-guides.html (and the rounds before it); clip: docs/media/film-42-bold-on-hover.mp4.
+- **A motion idea, crafted:** the guardrails becoming orbits round the P. The first cut "looks cheap and not crafted"; I then retired it, which was wrong: "i wanted to improve the morphing part not remove it". What was cheap: the orbits thickened into heavy dashes, flat clip art with nothing on them, and the flattened orbits drew solid. Now the true dashed guides do the travelling (each path reshapes point to point, so its dashes never stretch); the orbits stay hairline, open at the centre a beat apart on a spring, pass behind the P on their far side and in front on the near; and they carry plumber's own marks, two selection handles and the 4 it measured, riding round. Coming home, they close first and the guides glide back onto the edges. Clip: docs/design/comps/logo-orbit.mp4. React's atom is Meta's trademark, so this stays a film moment, never the still mark.
+- **Then, the box model round the P (owner: "still the same … gutter for like margin, padding, radius and all forming a react logo … dont have to show the whole react logo, somehow it adjust itself around the p"):** three partial orbits at React's angles, each one of plumber's own box-model marks (margin as butter dots, padding as a hatched mint ribbon, radius as a sky guide with its corner handles), drawn on round a P that sits a little smaller at the heart; each passes behind the P on its far side and in front on its near side, and none closes. docs/design/comps/logo-atom.html, .mp4, .png.
+- **The P in construction (owner: "one polish add this kind of effect to p", with a type-design construction view, docs/design/refs/construction-view-aero.png):** the P drawn as a type designer sees it: hairline outline, its on-curve points as small black squares, its larger curves' handles as lines ending in dots (the small 5-unit corners keep only their points; four handles there only crowded them), a fine vertical hatch, and its own metric lines edge to edge (cap, the bowl's middle and underside, baseline; the stem's and bowl's sides). In grey as in the reference, in the mark's pink and violet, and moving from the lit mark to its construction for the films. docs/design/comps/logo-construct.html.
+- **Swapped in everywhere (same day):** the mark has one source, overlay/src/mark.js (its two parts on the grid, a one-colour form and the lit pink-and-violet form). The site's bar draws the lit P (it tips from its centre on hover, where the bob swung from its line); the overlay's dock draws the one-colour P, so it still takes the dock's state colours; the films take its geometry from the same file. Screenshots: docs/media/mark-site-bar.png, docs/media/mark-overlay-dock.png.
+- **Not yet:** the mark's optical refinements at 16 px; a favicon; nothing merged into main (the design session also edits the bar and the dock).
+
+## The film opens and closes like a React Plumber film (2026-11-13)
+- **The itch:** the owner, on adding an opening title card and a closing mark card: "Yes, add them".
+- **What it does:** the film opens on the empty desk; "Craft № 42" and the principle's name rise in large in the middle, hold, then travel up to the corner and become the signature, and only then does the card rise in under it (the name never crosses the card). At the end the card and signature step back, React Plumber's mark travels from its corner to the middle and grows, its plumb bob swings and settles on its line, and the site's own line comes in under it: "A design review on every screen."
+- **Found on the way:** the name first landed 90 px left of centre. The measure took the text's boxes (each as wide as the 420 px column) for the text; it now measures the text runs themselves and lands within a pixel of the stage's centre (checked in the browser: 800 of 1600).
+- **The proof:** recorded at 1600 × 900, no console errors; the opening at 10 fps (the name travels clear before the card rises), the end card at full size. Clip: docs/media/film-42-bold-on-hover.mp4 (33 s).
+
+## #42 as a React Plumber marketing film (2026-11-13)
+- **The itch:** the owner: "these videos will serve us marketing explainer videos for react plumber itself … we need some sort of watermark … and like sign of craft itself … make the example follow our design language … the delight particle thing is thrown randomly on last tab … think of them as video for marketing."
+- **Found on the way:** the branch this work was on was 424 commits behind main, without the toy set, the soft blocks or the site's faces. The film work moved to its own worktree from main (branch `showcase-film`), its seven commits carried over with nothing of main's lost (checked line by line).
+- **What changed:** `/film/42` is a 16:9 stage (1600 × 900) with no showcase around it and plumber's running dev overlay kept out of frame; signed top left "Craft № 42" and the principle's name in the toy face; React Plumber's plumb bob and name bottom right on every frame. The example card is redrawn in plumber's language: tokens on `.pl-light`, Bricolage Grotesque for names and labels, Instrument Sans for words, a toy for the project mark and the done task, pastel chips lettered in their ink, rings filled as far as a task has got; the tabs keep the classes plumber reads. The technique switch is ours (a sunk track, a lit thumb on the spring). The change card grows from the switch's centre to take the fix, on the spring. The burst comes from plumber's ✓, which draws on the change card once the payoff has shown every tab holds, as its fix panel does.
+- **The proof:** recorded at 1600 × 900, no console errors; the change, the burst and the ending checked at 8–10 fps and full size. Clip: docs/media/film-42-bold-on-hover.mp4.
+- **Not yet:** no opening or closing card (title in, mark out); the /rule/42 page also uses the new card and switch, and the other showcase screens still look like Quarry.
+
 ## #42's film, polished in motion (2026-11-13)
 - **The itch:** the owner: "there is a lack of polish the toggle moves across the card, the property transition lands on the card and like noisy, please really put some focus on polish."
 - **How we found it:** every transition stepped through at 10 frames a second (before, I had looked at two or three stills).
@@ -2249,6 +2273,77 @@ field is empty). The table of five writes, before and after. The Next table: eig
 - **Not yet:** the fix is a preview in the page, not a change to source; words running out of their box, a failed
   action and a crash have no fix to show; Narrower's copy has no switch; no tests.
 - **Media hooks:** docs/qa/break-it-switch/1-typing.jpg, 2-lists.jpg, 3-bigger.jpg (Broken next to Fixed).
+### The logo film (2026-11-13)
+
+- **The itch:** the owner settled the mark (a solid P inside a drawn R, docs/design/comps/logo-stress.html) and asked for a video of it: one for Shorts and Reels, one for Twitter, LinkedIn and Threads.
+- **What we chose:** the mark is built the way plumber sees a page. The guides run out first, then the stem and bowl arrive, and the P's points pop on. A pen draws the R's leg in dashes, and the DOM tree grows inside the leg. The construction then leaves, the mark settles, and "React Plumber" rises in with "A design review on every screen."
+- **How:** one page (docs/design/comps/logo-film.html) draws every frame from one clock, render(t). It is captured frame by frame at 60fps, so the motion is exact and the same in both sizes. The first cut faded the name in while the mark was still sliding over it; the name now waits for the mark to settle.
+- **Proof:** docs/media/react-plumber-logo-9x16.mp4 (1080×1920) and docs/media/react-plumber-logo-1x1.mp4 (1080×1080), 9s each, no sound.
+- **Media hooks:** both clips as they are.
+
+### Film № 37: the camera goes down to the pixels (2026-11-15)
+
+- **The itch:** the owner wanted a craft-rule film that isn't generic, and picked #37, never land on half pixels.
+- **The system behind it:** the film player told a gesture (hover, push, fix), and #37's fault has no gesture. It sits at rest: a tooltip centred with `top-1/2 -translate-y-1/2` moves up half its 46.375px height, 23.19px, so its words sit 0.19px between two pixel rows and smear.
+- **What we chose:** a second kind of film for faults at rest. The pointer rests on the chart. The camera comes in, and the tooltip turns coral with how far it is moved (-23.19) and how far off the grid that leaves it (0.19). Then the camera goes on down into the tooltip's pixels: a loupe redraws its own words, fonts and colours sharp, places them exactly 0.19px between rows, and marks in coral every pixel the fraction changed. plumber's fix lands (`inset-y-0 my-auto h-fit`), and the same pixels snap onto the rows with nothing marked. Then back out: every pinned label is mint, and the burst plays.
+- **Dead end:** the first read measured the height with a call that rounds (46 instead of 46.375), so it said 0px off and both sides looked sharp. It now uses the used height.
+- **Proof:** docs/media/film-37-never-land-on-half-pixels.mp4 (1920x1080, 32s).
+- **Media hooks:** the dive from the card into the pixels, and the smear-to-sharp snap.
+
+### Film № 3: the shapes as a type designer draws them (2026-11-15)
+
+- **The itch:** the owner asked for one more craft film after № 37. We picked #3, optical overshoot: a type designer's insight app makers almost never meet.
+- **What it shows:** a whiteboard's Shapes picker draws every shape in one 20px box, so the circle reads smaller than the square beside it. The camera dives into the Basic row and draws the pair the way a type designer would. Dashed guides carry the square's top and bottom across. The corners the circle leaves empty are hatched in coral (it fills 78.5% of the box; the square fills 99.8%). plumber's fix lands (`[&>:nth-child(2)>svg]:scale-[1.04]`), and the circle passes the guides into mint overshoot zones, like an O past the baseline.
+- **The system behind it:** the still film now takes either kind of dive: into pixels (№ 37) or into a construction drawing (№ 3).
+- **Dead ends:** the icon package found React through another checkout, so every screen with those icons broke in this worktree; the showcase now uses one React. The board took its width from the film's frame and collapsed to a line; it now has its own width. Lines drawn with a constant-width setting ignored the camera's zoom and came out six times too thick; they are now sized for the zoom.
+- **Proof:** docs/media/film-03-optical-overshoot.mp4 (1920x1080).
+- **Open:** the fix is honest at 4%, which is 0.4px past each guide, so the mint zones are thin even at 6x.
+
+### The films, reviewed before they are rendered (2026-11-15)
+
+- **The itch:** the owner asked for a storytelling reviewer and a cinematography reviewer that check a film before it is rendered, "to keep cost low", and make films people watch to the end without tipping into cringe.
+- **What we built:** two skills (film-story-review, film-camera-review), each a written, sourced list of checks: the problem on screen in the first two seconds, one question planted early and answered late, more time on the problem than the fix, every beat teaching something, a payoff seen without reading, one subject per frame, motivated camera moves, readable marks, and a cringe list both refuse. They read a cheap draft: the films now log their beats, and film-draft.mjs plays a film once and writes each beat's timecode, a keyframe per beat and a contact sheet. Nobody watches the draft.
+- **What the first review found (film № 3):** a title on an empty desk for the first 3.6 s, a payoff only the pills could show, marks far too small to read where films are watched, and real-time recording at 25 fps re-timed to 30.
+- **The fixes, made on the system, not the one film:** films open with the card already in on its subject; plumber's marks are drawn at twice their size in films; № 3's dive dims the card and keeps the old circle as a ghost; and finals are rendered frame by frame at 60 fps by film-render.mjs, which pauses the page's clock and every CSS animation and moves them one frame at a time.
+- **Dead ends:** the renderer first ended early twice: the page's performance.now kept real time, and Playwright's installed clock kept running until paused. Showing all three rows in № 3's dive made it too shallow to see.
+- **Proof:** docs/films/03-review.md and 37-review.md; docs/media/film-03-optical-overshoot.mp4 and film-37-never-land-on-half-pixels.mp4, both 1920x1080 at 60 fps.
+- **Open:** a wide film can't be truly read on an upright phone; the phone cut needs a tall layout.
+
+### The films say what a person would say (2026-11-15)
+
+- **The itch:** the owner on films 3 and 37: "fills 70.8% wtf does this mean to a normal person", "the idea was to show a problem and then show a solution", "robot looking shit". Then, on the first frames with words: "look at the typography hierarchy, they are all over the place" and "the text is cramped and fighting with the toggle".
+- **The system behind it:** the words on screen were plumber's own readings, taken straight from the measurements, and nobody wrote them as a script; the story review only checked reading time, not meaning. The stage had no type scale and no layout for words either: each piece of text was sized on its own, at different times, and the caption sat at a fixed spot that the toggle could run into.
+- **What we chose:** the words are a script, written first and approved by the owner before any code (twice: once for meaning, once at half the length), and every piece of writing now goes through the declauding pass. A film with a script shows one line at a time under the card, and plumber's number pills and class chips stay off screen; the drawings carry the rest. The stage has three type levels: the story's line is the loudest (40px), the rule's name is a quiet label in the corner, and the switch and the brand are small chrome. The card, switch and line are one stack with set gaps, the card drawn a step smaller so the line fits.
+- **Found on the way:** the pointer and the burst were placed in screen pixels, so whenever the stage was scaled (the 1920 render) they landed off their subject. They are now placed in the film's own pixels.
+- **Proof:** keyframes in docs/films/03-draft and 37-draft (not kept in git); docs/media/film-03-optical-overshoot.mp4 and film-37-never-land-on-half-pixels.mp4, re-rendered at 1920x1080, 60 fps.
+- **Media hooks:** the old frame with "fills 78.5% of its box" beside the new one with "But people see the circle as smaller."
+
+### Film 55, the first one made from the film skill (2026-11-15)
+
+- **The itch:** the owner kept correcting the same things on each film (too many words, plumber's numbers as the story, a block of CSS in the change card, the demo too small). They asked for those corrections to become a skill, so the next film starts from them: "apply this skill and write a skill to make the film for next lessons" (learn-taste, from aiforui.dev).
+- **The system behind it:** the corrections lived in one long conversation and one memory file. A new film would have started from the older craft-rule notes and repeated the mistakes.
+- **What we chose:** a craft-film skill: the order of work (script first and shown to the owner, one property in the change card, draft, two reviews, render) and twelve rules, each with the owner's words and date. Three of the rules became a check that the draft and the render run first: sentence and script length, no plumber readings in the words, and one property on each side of the change card. The check's word limits come from the two approved scripts (12 words a sentence, 55 a film), not from the first guess of ten.
+- **The film:** № 55, gradients mixed in OKLCH, on a weather app's ten-day forecast. In sRGB a blue-to-orange bar goes grey in the middle; up close, nine swatches of the bar's own colour show the grey ones. The fix is one phrase, `in oklch`. The owner approved the six lines before any code.
+- **Found on the way:** a gradient is too long to sit beside its fix in the change card, so the card now opens the fix under the fault when the two together pass 40 characters. Ten bars at the usual payoff pace made the film 42 s, so a film can now walk its places faster (`payoff` in the film spec).
+- **Proof:** docs/films/55-review.md; docs/media/film-55-gradients-in-oklch.mp4.
+- **Media hooks:** the dive frame, the sRGB swatches with three grey ones beside the OKLCH swatches running through green.
+
+### The films' marks speak plumber's language (2026-11-15)
+
+- **The itch:** the owner on film 55: "i dont like the guardrails / annotations, we already have our visual language which is fun and delightful in our design page but you just put a boring blue box; remember people need constant dopamine hit and delight to keep them engaged."
+- **The system behind it:** the films drew their marks with their own small kit (1px outline boxes, mono pills, hairline drawings) and borrowed only plumber's colours; the rule said "drawn with plumber's colours", so every film inherited the flat look while the design pages had the real pieces.
+- **What we chose:** a still prototype first (docs/films/55-marks-proto.png, the route /proto/marks in the showcase), approved, then the film's kit itself: every place gets plumber's dashed colour ring, landing one after another; tags and values carry their toy from the toy set; a screen can ring only the part of a place the fault is in. Films 3, 37 and 55 all change, since they share the kit.
+- **Proof:** the three films rendered again, docs/media/film-03-optical-overshoot.mp4, film-37-never-land-on-half-pixels.mp4, film-55-gradients-in-oklch.mp4.
+- **Still open:** film 55's close-up is narrow, because the card is tall and thin and the camera can only zoom as far as its width; the swatches read but are small.
+- **Media hooks:** the old measure frame (blue boxes, mono pills) beside the new one (coral rings on each grey middle, the droplet tag "Goes grey").
+
+### The films get a stage: silk, a window and a panel (2026-11-15)
+
+- **The itch:** the owner, over several rounds: the coral marks were "muddy", the white stage "dull", the pink canvases needed "some class", and the words needed "a dedicated template or section", lined up "craftful".
+- **The system behind it:** each round I guessed a colour or a layout from an adjective and showed one answer. What worked was showing options side by side on the real frame (four pill colours, three benches, three pink canvases, light against deep silk, glass against paper panel) and letting the owner pick, with a named reference once they gave one (how screen recorders frame a recording).
+- **What we chose:** solid pink for wrong; a deep silk wallpaper; the card as a glass-rimmed window; the words in their own glass panel on one left edge, with rules between header, line and foot, and a full-width code card and switch. The film skill's Stage section holds the rules.
+- **Dead ends:** a pastel pill with brown letters, a brick-red pill, pink gradient blobs over half the frame, a bench with rulers. A misplaced comment once broke the film page, and a render was started without the owner's OK; renders now wait for it.
+- **Proof:** docs/films/panel-stills.png; the three films rendered again in docs/media.
 
 ## Open gaps
 - Sweeps covered six algorecall pages and thirteen crafting-ui pages.
@@ -3318,8 +3413,276 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   plumber` opens and in its terminal steps, two lines were rewritten: the scale's intro ("Each size in your theme,
   set at that size, with the sizes typed by hand…") is now two sentences, and the missing-React note says "Add React
   to this project so the overlay can read and write your source." The rest already said one thing plainly.
+### 31. "It reads both R and P": a solid P inside a drawn R (2026-11-13)
+
+- **The itch:** the owner on the mark's film moment (the P's guides turning into rings round it): "it looks too much noisy and not polished", then of the morph, "it just breaks the composition", "what does it even mean? makes no sense". A P inside dashed rings said nothing; made into React's real atom it said React, but with Meta's mark, so never a logo.
+- **How we found it:** the owner looking at the page after each change, and saying what it did not say. The turn came from the owner: "use the guardrail to create an R out of the P, so it reads P inside R".
+- **The system behind it:** each fix rearranged a picture that had no idea in it (I threaded the rings through the gap, centred them on the bowl, pushed the P to a corner). A mark needs one sentence; polish cannot supply it. And once there was one, the brand test showed a second system: I had drawn the leg solid on small surfaces, which made a third part and a plain R ("it lost the identity of dual characters"), then removed it when small, which made two logos ("it introduces ambiguity").
+- **What we tried:** the leg as a quarter round, as a slanted bar, as a pipe elbow with collars ("we may need to emphasise some sort of plumbing thing"), as a small DOM tree of three nodes joined by pipe elbows ("make it something related to DOM"); React's rings round the R (dropped); the leg in violet, the bowl's colour (tried, then back to blue).
+- **What we chose and why:** a solid P (pink stem, violet bowl) with its leg only ever drawn: one quarter-round outline at the P's own scale in plumber's tool blue, with the DOM tree inside it. The big shape makes the R read from far; the tree is the detail for a close look. Four rules: the P is solid and the leg is only drawn; the leg is the tool's blue everywhere; detail drops away with size but the leg never goes; guardrails are for the hero.
+- **The fix and the proof:** the R is in the mark's one source (overlay/src/mark.js, `markR`, four drawings by size) and has a brand sheet in the design site (Design → Logo: how it is built, the rules, sizes, colour, room, surfaces, what not to do). Seen in the browser at 256 down to 16px on light and dark, on app icons, avatars, a browser tab, beside the name and in one colour: the R reads down to 16px with the P distinct inside it by colour. Not measured, only looked at.
+- **Then into the product (same day):** the site's bar, the overlay's dock and the films' closing mark draw the R from the same source. Seen running: the bar at 26px, the dock's 14px mark in its state colour, and film 42's closing shot, where the leg thins to dashes, the tree appears inside it and the four guardrails draw on (the old three guides and the "4" pill are gone). The dock and the closing shot are small on screen, so they were checked by what is in the page as well as by eye.
+- **Media hooks:** docs/design/comps/logo-r.html (the leg draws in, then its three nodes drop in), logo-stress.html (every surface), logo-orbit.html (the rings that were dropped), and the Logo page of the design site.
+
+### 32. Messages get their page: the toast and the history strip (2026-11-13)
+
+- **The itch:** the design site listed "Messages" with no page. What plumber says after it writes to your code (the
+  toast with Undo, the history strip, a refusal) was only visible by making a real write in a real app.
+- **How we found it:** it was the first page in the design site's list without a page, after the Logo page was locked.
+- **The system behind it:** the history's styles lived in the same file as the code that talks to the dev server, so
+  no page could show the pieces without pulling in that code (the design site failed to build on the first try).
+- **What we chose:** the history's styles moved to their own file, the way the fix bar's field styles already are. The
+  page draws the product's own toast and strip with the product's own words; only the behaviour on the page is a
+  stand-in (nothing is written). Dead end: importing the history module itself.
+- **The fix and the proof:** `web/design/parts/messages.js`, seen running: the toast says what was written, holds six
+  seconds, Undo answers in the same toast; the strip's playhead, pill, Undo change, Undo step and the refusal on the
+  hatched tick all answer. No tests were run. Dark mode and phone width were not looked at.
+- **Open, written on the page itself:** the toast's Undo is plain text, not a system button; nothing shows the six
+  seconds running out; a refusal is words only.
+- **Then "bit dry and doesn't have our visual identity" (owner, same day).** The system behind it: the page showed
+  the toast and the strip exactly as the product draws them, and both were built before the toy language (a white
+  card, a sky word for Undo, thin ink ticks, a grey line picture). A faithful page of dry pieces is a dry page. What
+  we chose: rebuild the piece in the language and show it beside today's, as the Identity page does, one piece at a
+  time; the toast first. The toy toast is one solid body in the hue of what happened (mint: on your tokens; butter:
+  your own value stays or is back; coral: it went wrong; paper: working), a white disc with one mark that pops, names
+  set as code, the system's quiet Undo button, and a bar under it that runs out over the six seconds and waits while
+  it is pointed at (the language's own line: "a toast is already timing out"). Seen running in light and dark; no
+  tests. It lives on the page only; the product still shows today's. The strip is next.
+- **Then two corrections and the ticks (owner, same day).** "these button are broken": a caption style on the page
+  reached inside the system's buttons and pushed their tops off their sides; removed. "this color is not accurate":
+  the toast was in the pale card tone; it is now the full hue lettered in white, as a Written button is. "improve
+  these are ass", of the history's ticks (a hairline, an outline, a hatch, a notch): redrawn as pegs standing on a
+  rail. Mint standing is a change; pushed down and pale is undone; butter is edited by hand since; a peg that turns
+  back on itself is an undo; lifted under a pink knob is the one pointed at; a coral shake says no. The hatch is
+  gone because a pattern only ever means space. On the page only; the strip itself still draws hairlines.
+- **The pegs were a dead end (owner, same day: "you made them even worse... the most useless icons", "not a single
+  thought given by you").** The system behind it: a new shape invented in code in one go, with no question asked
+  first; coloured blobs that said nothing about what a change is. Asked what a change should look like, the owner
+  chose "plain marks, done well". The thought the first marks lacked: each state had its own trick (an outline, a
+  hatch, a notch, a colour, two widths). Redrawn, a mark is one round-ended stroke on a baseline, and each thing it
+  says has exactly one way of being said: height is what it was (full stroke a change, half stroke an undo), fill is
+  whether it is there (solid, or pale when taken back), colour is whose it is (ink Plumber's, butter edited by hand
+  since, coral for the moment of a no). The pointed one stands taller under a sky knob and keeps its colour. Shown
+  as today over redrawn, the same history, and used in the page's live strip. On the page only.
+- **Plain strokes were wrong too (owner: "use proper semantic icons", "toy doesn't mean make ms paint rectangles",
+  "why are you losing details").** The lesson, in the owner's terms: a toy is a crafted picture with its details, and
+  the product already has 76 of them. Every drawing I made by hand for this page (pegs, strokes) threw that craft
+  away. What we chose: a change in the history is the icon set's own picture of what it changed (a gap, padding, a
+  type size, a colour, a corner, a shadow), so the row can be read before pointing. Taken back is the same picture,
+  pale. An undo is the Undo button's arrow. Typed over by hand since is the key. A no is the warning sign for a
+  moment. Reading, nothing yet and can't read take the turning dots, the ghost and the warning sign. Open: the icon
+  set has no undo picture; the arrow used is borrowed from the button and should be drawn into the set.
+- **Media hooks:** a clip of Take a fix → Undo, and of the hatched tick saying no.
+
+### 33. Surfaces get their page: three heights, by day and by night (2026-11-14)
+
+- **The itch:** the design site listed "Surfaces" with no page; nothing showed what things sit on, how high, or how
+  the same pieces look at night.
+- **How we found it:** the next page without a page, after Messages.
+- **The system behind it:** carried over from Messages (entry 32): a page built from grey panels and hand-drawn
+  shapes is dry, so this one holds only the product's own pieces (a soft block, pills and tags, the name tag, a card
+  with the fix bar's field and the kit's buttons).
+- **What we chose:** one desk shown twice, with the overlay's own light and dark switches for a part of a page, so
+  day and night sit side by side whatever the site's scheme; then the three heights (pressed in, flat, lifted), each
+  holding a real piece; then the surface tokens read from the token file with the file's own notes.
+- **The fix and the proof:** `web/design/parts/surfaces.js`, seen running in light mode at desktop width. No tests.
+  Dead end on the way: a class name the site already styles put the "white ground" rows on grey; renamed.
+- **Open, written on the page:** bars and the dock are not shown (the dock is still grey line pictures); a card's
+  edge is a hairline ring, which the language says a thing should not need; the scrim has no picture.
+- **Media hooks:** the day and night desks side by side.
+
+### 34. Plumber reads tokens that aren't named the Tailwind way (2026-11-14)
+
+- **The itch:** the owner asked why Plumber didn't flag, live, the values typed by hand on our own design pages, and
+  then: "can we have a smart parser where we can parse the tokens from various files, as it's hard to always get a
+  pre-defined shape", with "without involving llm in the loop" and a config the user can see.
+- **How we found it:** a four-file plain-CSS probe, then the site's homepage. The probe's tokens counted only when
+  named `--spacing-*`; the homepage's 22 findings were all one blind spot, with 157 values left unchecked.
+- **The system behind it:** a variable was a token only if its name began with one of nine Tailwind prefixes
+  (`familyFor`). `--space-4`, `--pl-radius-card`, `--muted` were invisible. Variables on `:host` (the overlay's token
+  file) weren't counted as root variables either.
+- **What we chose:** decide a token's kind from three signals, deterministically, no model: its value once resolved
+  (a colour, a time or easing, a shadow, a font), the properties that read it with `var()`, and a word in its name
+  after any prefix. Points per signal, highest wins, a tie is no answer. A theme's backing value is left alone, the
+  config still wins, and `:host` now counts as root. `src/decisions/infer.ts`, wired in `src/decisions/index.ts`.
+- **The proof:** the probe with `--space-*` now gets `padding: 18px → var(--space-4) or var(--space-6)` without
+  renaming. The site with the token file imported for one run: 231 tokens read, 64 values off them found (none
+  before; 157 unchecked). crafting-ui, before and after: 17 more tokens (`--muted`, `--faint`, `--sunken`,
+  `--c-design`…), 13 fewer off-token colours, 17 more tokens waiting to be accepted, 23 more stale debt entries; the
+  homepage app gained one (`--pl-z`). No tests run.
+- **Found on the way:** the history's new style file was missing from the overlay's module list. Corrected later the
+  same day, when a test was written for it: the server serves any plainly named file in overlay/src that exists, so
+  the history always loaded; the missing line only failed the build's licence check (scripts/third-party-notices.mjs).
+  The first account here, and the commit message "the overlay's history could not load it in an app", were wrong.
+- **Then tokens a script reads (same day).** The site puts the overlay's token file on the page from a server
+  component that reads it by path. Plumber now finds a quoted `.css` path in the project's code, tries it from the
+  module's folder and then the project's root, and reads the file like an imported stylesheet; nothing is run
+  (`src/collect/named-css.ts`). The "skipped token file" was not about the folder at all: reading `:host([…])`
+  crashed, because `:host()` holds one selector where `:is()` holds a list; fixed in `src/lower/stylesheets.ts`.
+  Proof: the site as it is, nothing imported, before → after: 22 findings, all "never defined" or "no tokens", 157
+  values unchecked → 81 values judged against 231 tokens, no false ones of that kind. crafting-ui and the homepage
+  app: identical before and after this step.
+- **Then whole text styles (same day).** The system's type tokens are whole styles (`--pl-page-title: 600 20px/28px
+  var(--pl-sans)`), and type was matched by single sizes, so "no token is close to 16px" fired beside a 16px style. A
+  type token that is a `font` shorthand now counts by its parts: its size for `font-size`, its line height for
+  `line-height`, its weight for `font-weight`, even when its face is a font loaded at runtime. Its fix sets the whole
+  style (`Use font: var(--pl-page-title)`), because a style can't be put in one property; and it is shown as
+  `600 20px/28px`, not its list of faces. Site, before → after: 28 type findings → 18, the 10 gone all values that
+  are a step of a style; the rest name the nearest styles. crafting-ui and the homepage app unchanged.
+- **Then the reading, written down (same day; owner: "generate one config file where the user can see visually how
+  his design system is being interpreted").** Each token now carries how it was read: "its name begins `--radius-`"
+  for a Tailwind name, or what decided a guess ("its value is a colour; used in color 6 times"). `plumber decisions`
+  prints it under each token. `plumber init` writes one line per scale, grouping tokens of one file that share a stem
+  (`--pl-space-*`, `--space-*`), with the reading as a comment beside it, so a wrong reading is seen there and fixed by
+  moving the line. Proof, on the plain-CSS probe: `"css:src/tokens.css#--space-*" // 5 tokens; its name says
+  spacing; used in gap`. Findings on crafting-ui and the homepage app unchanged. The page that draws this is next.
+- **Then the page (same day).** The project page `npx plumber` opens has a new section, "How Plumber read your
+  system": one block per kind of token, with its toy and its count, then one line per scale (a file's tokens that share
+  a stem, `--pl-space-*`), its values as pills (colours as swatches), its file, and why it was read that way; lone
+  tokens of a kind are gathered into one line. Built only from the overlay's toys, tags and pills, on its tokens
+  (`overlay/src/project-page.js`; data from `src/decisions/stems.ts`, shared with the config `init` writes). Seen
+  running on the site: 231 tokens in 8 kinds. Found on the way: the page's long-running session skipped the token
+  files a script reads (it showed 51 tokens); it doesn't now. Media hook: the Spacing and Motion blocks side by side
+  with the config line that says the same.
+- **Then the page's headline (same day).** Its type and corner scales were built from names (`--text-*`,
+  `--radius-*`), so on the site it said "Your theme has no text sizes yet" above a list of 35 type tokens. They are now
+  built from the tokens Plumber read as type and corners, a whole style counting by its size: the site's headline
+  reads "Your theme has 18 text sizes". It still says none are used, because the ~30 places that use them
+  (`font: var(--t-label)` and others) are in the homepage app's stylesheets, outside the site's folder: their tokens
+  are read but their declarations aren't counted as the site's code.
+- **Then "I can't read anything, it's just noise" (owner, same day).** The system behind it: the section was a report,
+  every fact at one loudness (filled lilac tags, filled blue value pills, a file path and a reason on every line), drawn
+  without a design pass. Redrawn as a review: per kind one loud line, its name and a verdict ("3 scales, 3 on their own
+  · 21 tokens"); each scale a quiet row, its stem in plain mono and its steps as plain numbers with the unit once
+  (`2 4 6 8 12 16 20 24 px`) or swatches; files said once; past six scales and the lone tokens fold away; the reading
+  itself is shown only where it is a guess from the name alone, marked "by its name only" (2 on the site), since that
+  is the only line that needs a person. Seen running in dark, desktop width.
+- **Then "teach them and help them make better decisions, not throw them into a jungle" (owner, same day).** First
+  widget, the ladder, for spacing and corners: one row per distinct value across a kind's scales, one column per scale,
+  each step drawn at its real size (a mint bar as wide as its pixels, a pink corner as round as its radius), so two
+  scales holding one value share a row and a value off the shared base is flagged on its row; above it, up to three
+  sentences from those numbers only. On the site: `--pl-space-*` and `--s-*` both hold 16 and 24; `--s-*` and
+  `--pl-page-space-*` both hold 32, 48, 64, 96; 2 and 6 are off the 4px base; three names for one kind.
+- **The owner's frame for the page, same day:** it has four jobs, "what it found, how to make sense of it, how to fix
+  it, help user arrive at a good system". Today they are mixed in one section.
+- **Then the four steps (same day; owner chose "four steps").** The section is now its own part of the page,
+  `overlay/src/system-review.js`, in its own shadow root (the page's other parts use the same short class names):
+  1 What Plumber found, one line per kind with counts only; 2 How they fit together, the pictures only (lengths as a
+  ladder at real size, type sizes as "Aa" set at their size, colours as swatch strips), a shared step ringed and an
+  off-base step yellow; 3 Decide, decisions drawn from those numbers only (which scale is the one, round off-base
+  steps or keep them, what the kind is called with Tailwind's name offered and why, whether a name-only guess is
+  right), each an answer with the system's buttons, turning mint when made; 4 Your system, redrawn live from the
+  choices: one scale per kind, its name, the steps that came from a dropped scale marked yellow, how many old names
+  now point at it, and "Copy the CSS". Deterministic; choices live in the tab. On the site: 9 decisions; choosing keep
+  `--pl-space-*`, round, `--spacing-*` gives one 10-step spacing scale with 10 old names pointing at it.
+- **Then the four steps became the whole page (same day; owner: "Yes, whole page").** The page opens on one headline
+  about the system ("231 tokens in 39 scales. 9 decisions get you to one system.") and a line saying nothing changes
+  until you say so. The older type headline and "where your text sizes land" chart went; the specimen went (step 2
+  sets each size at its size); the biggest causes in your code moved into step 3 as "In your code", under the system
+  decisions, its own heading hidden; step 1 counts what's typed by hand. A test (e2e/bare-page) still expects the
+  page to load the landing chart and specimen modules; it needs rewriting with the new page's tests.
+- **Then write-back (same day; owner: "Yes, write-back").** Step 4 has "Write it to your files". The chosen system is
+  sent as plain edits per token file to a new server method, `system-apply` (src/session/engine.ts `systemApply`):
+  values set on tokens that are there, and tokens added after one that is there. Nothing is renamed or deleted: a
+  token given a new name keeps its old one pointing at it (`--space-1: var(--spacing-1)`), a dropped scale's tokens
+  point at the kept scale, a rounded step gets its new value, a step only a dropped scale had is added after the kept
+  scale's last step. Every file is worked out before any lands; each goes through the same guarded write as every fix
+  (the project boundary, the config files refused, the stylesheet's block count kept, each value checked where it
+  landed), and all of them are one Undo. Proof on a copy (the plain-CSS probe with two overlapping spacing scales):
+  15 tokens written, `--space-*` and `--gap-*` now pointing at a new `--spacing-*` scale, 6 rounded to 8, Plumber's
+  check on it still 100% on tokens; Undo put the file back byte for byte. Fixed on the way: added steps landed in
+  reverse order; a Tailwind name (`--radius-*`) was asked about as a guess. Not tried on the real site: there it
+  would edit `../overlay/src/tokens.css` and the homepage app's foundations.
+- **Then numbering (same day; owner: "Yes, numbering").** A merged scale mixed names by order with names by size
+  (`--spacing-8` was 24px beside `--spacing-32`). Step 3 now asks how a length kind's steps are numbered, when its names
+  mix the two or its scales are merged: by size (spacing in 4px units, Tailwind's way: `--spacing-4` is 16px; corners
+  and type by pixels), in order (1, 2, 3), or keep the names; each with its cost in one line (a step added later fits
+  between by size, renames everything after it in order). Renumbering applies only under a new name for the kind,
+  since renumbering a scale in place collides with its own names; step 4 says so until a new name is chosen. Proof on
+  the probe: keep `--space-*`, round, by size, `--spacing-*` wrote `--spacing-1/2/3/4/6/8` for 4 to 32px with both old
+  scales pointing at it; check still 100%. Fixed on the way: step 4 would have written a whole type style as its size
+  alone (`--t-body: 16px`), breaking every `font: var(--t-body)`; a step now keeps its own value unless rounded.
+- **Then the colour roles map (same day; owner: "Yes, colour roles").** Step 2 draws colour as two layers: the palette
+  (tokens that hold a colour, one row per hue, faded when no role points at it) and roles by job (text, surfaces,
+  borders, icons, actions, states), each role with its swatch and the palette colour it points at, a mix shown as
+  both colours. A token holding a raw colour is a role only when its name starts with a job (`--text-…`, `--bg-…`,
+  `--border-…`); a hue's shades (`--pl-coral-ink`, `--pl-mint-on`) are palette. Step 3 asks one thing about colour,
+  only when it applies: roles holding a raw colour the palette already has ("point them at the palette"), written as
+  `var(--palette)`. On the site: 47 palette colours, 97 roles, none holding a raw copy, so no question. On the probe:
+  `--text-primary: #1d1b17` and `--border-focus: #f24a9f` became `var(--ink)` and `var(--pink)`; colour 100%.
+  Found on the way: a Tailwind prefix read `--text-primary: #1d1b17` as type (in Tailwind `--text-*` is a font size);
+  a value that is plainly a colour now wins over a non-colour prefix, and the reading says so. crafting-ui:
+  `--shadow-ink` (a shadow's colour) moves from shadows to colour; its project's records show it as 1 vanished and
+  3 not yet accepted. First tries drew a catch-all `--pl` row and counted light and dark definitions twice; fixed.
+- **Then "wait, I'm not happy with the page" (owner, same day).** Asked what, the owner picked a wall to scroll, not
+  our look, and doesn't teach, and named the reader: "it just throws you a bunch of numbers with nothing to make sense
+  of; someone who doesn't know a thing about design systems and has been vibe-coding will make zero sense of it", then
+  "imagine this is the onboarding to Plumber: use this moment to teach them about the config they will develop, which
+  becomes the baseline for the rest of the interaction". The system behind every miss on this page: it was built from
+  Plumber's data model (kinds, scales, steps, readings) and then explained, for a reader who already knew the words.
+  Replaced by a lesson (spec: docs/design/onboarding.md, "The lesson"): one idea per screen on your own app, each
+  screen what it is, yours drawn, why it matters, one choice shown as what you get with a sensible one picked, and the
+  rule it becomes; the answers fill in "Your rules" beside the lesson, which become plumber.config. Mine to own: two
+  rounds earlier I had removed Gravity, the owner's chosen hero from 2026-11-03, without checking the spec; it is
+  back as the spacing screen's drawing, its steps named by size (16px once, not three token names). Built: Welcome,
+  Spacing in full, Your rules; Colours, Text and Corners show as next. Seen running on the site, dark, desktop.
+- **Then the rest of the screens (owner: "Yes, build the rest").** Spacing, Corners and Text now come from one builder
+  for sizes (each its words, its data, Gravity with steps named by size, and the tidy answer the review's model
+  suggests), each choice drawn as the kind is: bars for spacing, real corners, "Aa" at size. Colours has its own: the
+  palette as chips by hue, the colours your code types by hand each beside the palette colour it's closest to, and one
+  choice (point named uses that copy a palette colour back at it, when there are any). Found on the way: the page's
+  colours only knew tokens named `--color-*`; they now come from every colour Plumber read. On the site: corners show 2
+  lists repeating 6, 8, 12 and 11 places typed by hand; text 5 places; colours 47 in the palette, 97 named uses, 4
+  places typed by hand, and nothing to point back.
+- **Then Set it up (same day).** The Your rules screen's one button does three things in order: tidies the tokens as
+  chosen (`system-apply`, one Undo), writes the rules as plumber.config, and remembers what's already wrong in the code
+  so only new problems are flagged. The last two are `plumber init` itself, called from the page through a new
+  `setup` route with the sources chosen in the lesson instead of the ones init would infer (`InitOptions.decisions`).
+  Proof on the probe, Welcome to Set it up: 17 tokens tidied (one `--spacing-*` list, colour copies pointing at the
+  palette), the config holding the four rules, 6 problems remembered; the check after it shows them as known, not new.
+  Found on the way, and older than the lesson: a whole-file source (`css:src/tokens.css`) pulled every token without a
+  Tailwind prefix into that kind, so `--space-1` counted as a colour and as type. A whole file now gives a kind only the
+  tokens read as that kind (by name, or by value, use and name), and a colour named `--text-…` stays a colour.
+  crafting-ui, the homepage app and the site: unchanged by the fix.
+- **Then the tests (owner: "Yes, write tests").** Integration and end-to-end only, each from a failure seen this day:
+  e2e/token-reading.test.mjs (8, the command line on a plain-CSS app: tokens without a Tailwind prefix, a token file a
+  script reads, `:host(…)`, whole text styles, a colour named `--text-…`, `plumber decisions`' readings, whole-file
+  sources, init's lines), e2e/lesson-routes.test.mjs (5, the page's server: its data, the system write in order and
+  its byte-exact Undo, a refused write that writes nothing, Set it up, a refused source), e2e/lesson-page.test.mjs (4,
+  the lesson in a browser: plain Welcome, steps named by size, a rule per answer, Set it up keeping a whole text style).
+  Proof each guards something: the 8 command-line tests all fail on the code before the token work, each on its own
+  assertion; the two browser regressions fail when their old lines are put back in a scratch copy ("steps by size:
+  space-1, gap-sm…", "a whole style, not its size alone: 16px"). bare-page and project-page-data updated for the new
+  page and passing. A shared browser helper (e2e/helpers/browser.mjs) instead of a launch in the file. Corrected on the
+  way: the history-style "could not load" claim (see above).
+- **Then the existing suite (same day).** The command-line tier on vm-agent (3 cores, beside another session's run) had 9
+  files failing; the same files at the commit before the token work had 3 failing (the 80/140-column report and two
+  page-drawn tests), so 7 were this work's. All were assertions about the product, none a time-out. The causes: the
+  report schema didn't know a token's `reading`; one stray `--page` variable made a bare project read as "a system,
+  half in use"; and guessed tokens swallowed variables that are deliberately not tokens: beside a theme's shadows an
+  extra `:root --well: 0 2px 4px …` is a raw value Plumber points at the theme (e2e/attribution), and shadcn's and the
+  motion fixtures' backing variables likewise. The rule that replaced the guesswork: Plumber guesses tokens only for a
+  kind no theme block, Tailwind-named variable or config declares, and only when two or more variables read as that
+  kind; the reading still decides what a config's whole-file source takes, and a config kind listed with no source
+  keeps to Tailwind's names. After it: those files pass (125 tests), crafting-ui is back to its 205 tokens (the 17
+  extra guesses earlier were wrong to add; `--shadow-ink` reading as the colour it holds is the one change left), the
+  homepage app is as before, and the site loses one lone `--pl-z`.
+- **Then the browser and host tiers (2026-11-15).** Queued on vm-agent behind another session's full run, then run whole:
+  browser 4 files failing, host 1. Each failing file was then run alone, at the commit before the token work and at
+  this branch's head: select (1 test), element-site (2) and locate-bench (1) fail the same way on both, so they predate
+  this work; timeline and apply-all-hot pass on both alone, so their failures were the crowded run, not the code. No
+  browser or host failure is this branch's. With the command-line tier: this branch adds no failing test.
+- **Open on the lesson:** the causes list ("What I'd stop first") is off the page until it has a place in the
+  lesson; Undo after Set it up covers the tokens, not the config.
+- **Open on the four steps:** settled by numbering (above).
+- **Still open on the page:** some motion tokens show `0ms`, the
+  value from the token file's reduced-motion block; nothing on the page can move a line yet (the config does).
+- **Still open:** a `font:` line that is off the scale shows the face's fix first ("use var(--font)"), not the
+  size's; the reason for each reading isn't written anywhere
+  yet (the config and the page are the next slices).
 
 ## Open gaps
+- **The mark was never tried among real neighbours** (a row of browser tabs, an npm page, a README header), only on empty tiles. Nobody outside has been asked whether the round leg reads as an R or leans towards a B.
 - Resizing: a size between your steps always lands on the nearest one; there is no way yet to keep an exact size as
   a new token through the naming flow. The site's homepage is plain CSS, so its cards can't take a size class.
 - The overlay writes about 180 corners as numbers (radius tokens about 45 times), many off its own scale; 6px is
@@ -3394,6 +3757,37 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - The kept analysis and its start-up check now have tests: six, each a real server start on a small project, 9 s in all. It matters because three layers sit on this and the next one answers from it. The doctor test caught its own row being cut off when a start differs.
 - The start-up check now also notices when an import would find a different file than it did, even if no file plumber read has changed. It matters because that was the one way the kept analysis could be stale without the check seeing it. (crafting-ui: 4,638 imports re-asked in about 0.05 s; one altered by hand was named and refused.)
 - `plumber doctor --verbose` now says how the start-up check is going: how many dev-server starts were checked, how many were compared with a fresh analysis, and how many differed. It matters because that count is the evidence the fast start waits on. (crafting-ui on 2026-11-13: 8 starts, 6 compared, 0 differed.)
+
+- The craft films № 3 and № 37 now tell their story in plain words, one line at a time, instead of plumber's raw numbers, with a clear type hierarchy on the stage (The films say what a person would say, in the journey).
+- A third craft film, № 55 (gradients go grey in the middle; mix them in OKLCH), made from the new film skill, whose check stops a film with too many words, plumber's numbers in its words, or more than one property in its change card (Film 55, the first one made from the film skill, in the journey).
+
+- Films are reviewed for story and camera on a cheap draft before they are rendered, and rendered frame by frame at 60 fps: № 3 and № 37 re-made after their first review (The films, reviewed before they are rendered, in the journey).
+
+- A film of craft rule № 3: the camera dives into a shapes picker and draws its square and circle as a type designer would, the circle's missing corners hatched, then the overshoot once plumber's fix lands (Film № 3 in the journey).
+
+- A film of craft rule № 37: the camera dives into a tooltip's pixels to show its words smeared 0.19px between rows, then snapping sharp when plumber's fix lands (Film № 37 in the journey).
+
+- The React Plumber logo film, in a tall size for Shorts and Reels and a square size for Twitter, LinkedIn and Threads ([the logo film](#the-logo-film-2026-11-13)).
+- A logo that reads as both letters, with its brand sheet: React Plumber's mark is a solid P inside a drawn R whose leg is a small DOM tree, and the design site has a Logo page with its rules, sizes, colours and surfaces. See "It reads both R and P" (entry 31).
+- A Messages page in the design site: you can see and press the toast that follows a write (with Undo) and the history
+  strip, with every state, without making a real write. It matters because these were only visible inside a real app
+  (entry 32).
+- A Surfaces page in the design site: the three heights a thing can have, each holding real pieces, and the same
+  desk by day and by night side by side (entry 33).
+- Plumber reads tokens however they are named: `--space-4`, `--pl-radius-card` and `--muted` are told apart by their
+  value, how they are used and their name, so plain CSS and design systems with their own prefix get checked (entry 34).
+- Plumber finds a token file a script reads by path, as our site does, so a page whose tokens arrive at runtime is
+  checked against them (entry 34).
+- Type tokens that are whole text styles (`600 20px/28px`) count by their size, line height and weight, and the fix
+  sets the whole style, so a design system built on text styles is checked by them (entry 34).
+- Plumber says how it read each token: `plumber decisions` gives the reason under each one, and `plumber init` writes
+  one line per scale into the config with the reason beside it, so a wrong reading is seen and fixed in one place (entry 34).
+- The project page shows how Plumber read your design system: each kind of token, its scales with their values, and why
+  each was read that way, so a wrong reading is seen at a glance (entry 34).
+- The project page walks you to a design system in four steps: what was found, how it fits together (scales drawn at
+  real size), a few decisions, and your system redrawn live from your answers, with its CSS to copy (entry 34).
+- React Plumber has a mark: a pink stem and a violet bowl, the gap between them the P, with plumber's guardrail at hero size. It is in the site's bar, the overlay's dock and the films, from one source ([entry](#react-plumber-gets-a-mark-2026-11-13)).
+- Craft № 42 is a 16:9 React Plumber marketing film: the fault felt, measured in plumber's marks, the code that caused it and the code that fixes it, the payoff, and plumber's ✓ bursting where the fix was written, signed and watermarked ([entry](#42-as-a-react-plumber-marketing-film-2026-11-13)).
 - The showcase's #42 explains itself as a short film drawn in plumber's own marks: you feel the tabs jitter, see plumber measure it and name the weight, see the fix keep the width, and watch every tab hold ([entry](#42-redrawn-in-plumbers-own-language-after-copying-the-reference-2026-11-13)).
 - plumber's server no longer keeps a core busy on a big project: its safety-net file check is paced by its own cost, and a 16,000-element page now reads in 6–9 s ([entry](#the-server-was-checking-22808-files-four-times-a-second-2026-11-13)).
 - The page no longer freezes while plumber reads it: the longest block on a big page went from 1.8 s to 0.3 s, and the pointer stays live ([entry](#the-page-froze-while-plumber-read-it-the-judging-now-comes-in-slices-2026-11-13)).

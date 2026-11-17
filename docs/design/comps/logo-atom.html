@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>React Plumber · the box model, round the P</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400..700&display=swap">
+<style>
+  /* The owner (2026-11-13): margin, padding, radius "forming a react logo … dont have to show the whole react logo,
+     somehow it adjust itself around the p", then: "no coherence no composition … cover the top portion … like from
+     right to bottom leaving the 4th quadrant".
+     The composition's one rule: three orbits at React's angles (0°, 60°, 120°) wrap the P through three quadrants, from
+     the right, over the top, down the left, to the bottom, and leave the bottom-right quadrant open: the corner where
+     the P itself is open, under its bowl: the corner's edges are the P's own (down through the gap, along the bowl's
+     underside), and the guides on them stop exactly where the orbits end. The orbits wear the P's own pink and violet. Each
+     orbit is one of plumber's box-model marks: margin (butter dots), padding (a hatched mint ribbon), radius (a sky guide
+     with its corner handles). They sit behind the P, a halo, never across it. React's atom is Meta's trademark: a film
+     moment, never the still mark. */
+  :root { --ink-2: #6b665c; --desk: #f6f5f2; --pink: #f24a9f; --violet: #7356f0; --guide: #a99cf2; }
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: var(--desk); font: 400 14px/20px "Instrument Sans", system-ui, sans-serif; }
+  .stage { display: flex; flex-direction: column; align-items: center; gap: 16px; cursor: pointer; }
+  p { margin: 0; color: var(--ink-2); }
+  svg { overflow: visible; }
+  .o { transform-box: view-box; transform-origin: 60px 60px; }
+  .o1 { transform: rotate(0deg); } .o2 { transform: rotate(60deg); } .o3 { transform: rotate(120deg); }
+  /* each orbit draws on along its own ellipse; the open corner is cut away, so what shows sweeps the three quadrants */
+  .reveal { fill: none; stroke: #fff; stroke-width: 12; stroke-dasharray: 0 100; transition: stroke-dasharray 1500ms cubic-bezier(.6, 0, .2, 1) var(--d, 0ms); }
+  .on .reveal { stroke-dasharray: 100 0; }
+  .margin { fill: none; stroke: var(--pink); stroke-width: 2; stroke-linecap: round; stroke-dasharray: 0 3.2; }
+  .padding { fill: none; stroke: url(#hatch); stroke-width: 2.8; }
+  .padding-edge { fill: none; stroke: var(--violet); stroke-width: .45; }
+  .radius { fill: none; stroke: url(#pv); stroke-width: 1; }
+  /* the open corner's two guides, drawn once the orbits have arrived */
+  .guide { fill: none; stroke: var(--guide); stroke-width: .6; stroke-dasharray: 2 1.6; stroke-linecap: round; opacity: 0; transition: opacity 400ms ease; }
+  .on .guide { opacity: 1; transition-delay: 1500ms; }
+  .tick { stroke-width: .9; stroke-linecap: round; opacity: 0; transition: opacity 300ms ease; }
+  .on .tick { opacity: 1; transition-delay: 1500ms; }
+  .handle { opacity: 0; transform-box: fill-box; transform-origin: center; transform: scale(.4); transition: opacity 200ms ease, transform 300ms cubic-bezier(.3, 1.6, .5, 1); }
+  .on .handle { opacity: 1; transform: scale(1); transition-delay: 1750ms; }
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+  <svg id="s" viewBox="0 0 120 120" width="460" height="460">
+    <defs>
+      <linearGradient id="stem" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff7ac0"/><stop offset=".55" stop-color="#f24a9f"/><stop offset="1" stop-color="#d0287f"/></linearGradient>
+      <linearGradient id="bowl" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9a7dff"/><stop offset=".55" stop-color="#7356f0"/><stop offset="1" stop-color="#5232d4"/></linearGradient>
+      <linearGradient id="lit" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".42"/><stop offset=".25" stop-color="#fff" stop-opacity="0"/></linearGradient>
+      <pattern id="hatch" width="2.4" height="2.4" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="2.4" height="2.4" fill="#efeaff"/><rect width=".9" height="2.4" fill="#7356f0"/></pattern>
+      <linearGradient id="pv" gradientUnits="userSpaceOnUse" x1="10" y1="10" x2="110" y2="110"><stop offset="0" stop-color="#f24a9f"/><stop offset="1" stop-color="#7356f0"/></linearGradient>
+      <!-- three quadrants: everything but the bottom-right corner, which stays open -->
+      <clipPath id="three" clipPathUnits="userSpaceOnUse"><path d="M-20 -20H140V68.68H60V140H-20Z"/></clipPath>
+      <g id="h"><rect x="-1.9" y="-1.9" width="3.8" height="3.8" rx=".9" fill="#fff" stroke="#2f86dc" stroke-width=".7"/></g>
+    </defs>
+
+    <g clip-path="url(#three)">
+      <!-- 0°: margin, dots (the longest arc carries the boldest pattern) -->
+      <g class="o o1"><mask id="m1" maskUnits="userSpaceOnUse" x="-30" y="-30" width="180" height="180"><path class="reveal" pathLength="100" d="M117 60A57 19 0 1 0 3 60A57 19 0 1 0 117 60" style="--d: 0ms"/></mask>
+        <path class="margin" mask="url(#m1)" d="M117 60A57 19 0 1 0 3 60A57 19 0 1 0 117 60"/></g>
+      <!-- 60°: radius, a fine guide (mostly in the open corner, so its short arc is the thinnest mark) -->
+      <g class="o o2"><mask id="m2" maskUnits="userSpaceOnUse" x="-30" y="-30" width="180" height="180"><path class="reveal" pathLength="100" d="M117 60A57 19 0 1 0 3 60A57 19 0 1 0 117 60" style="--d: 140ms"/></mask>
+        <path class="radius" mask="url(#m2)" d="M117 60A57 19 0 1 0 3 60A57 19 0 1 0 117 60"/></g>
+      <!-- 120°: padding, a hatched ribbon with its edges -->
+      <g class="o o3"><mask id="m3" maskUnits="userSpaceOnUse" x="-30" y="-30" width="180" height="180"><path class="reveal" pathLength="100" d="M117 60A57 19 0 1 0 3 60A57 19 0 1 0 117 60" style="--d: 280ms"/></mask>
+        <g mask="url(#m3)"><path class="padding" d="M117 60A57 19 0 1 0 3 60A57 19 0 1 0 117 60"/><path class="padding-edge" d="M115.6 60A55.6 17.6 0 1 0 4.4 60A55.6 17.6 0 1 0 115.6 60"/><path class="padding-edge" d="M118.4 60A58.4 20.4 0 1 0 1.6 60A58.4 20.4 0 1 0 118.4 60"/></g></g>
+    </g>
+
+    <!-- the open corner's edges: two guides from the centre, right and down; every orbit ends on one of them -->
+    <g id="guides"></g>
+
+    <!-- the P, at the heart, in front of everything -->
+    <g id="mark" transform="translate(60 60) scale(.62) translate(-60 -60)"></g>
+  </svg>
+  <p>Click to play again. Margin, padding and radius wrap the P through three quadrants; the corner under its bowl stays open.</p>
+</div>
+<script>
+const STEM = 'M48 18H53A5 5 0 0 1 58 23V92A10 10 0 0 1 48 102H34A10 10 0 0 1 24 92V42A24 24 0 0 1 48 18Z';
+const BOWL = 'M67 18H68A28 28 0 0 1 96 46V46A28 28 0 0 1 68 74H67A5 5 0 0 1 62 69V23A5 5 0 0 1 67 18Z';
+document.getElementById('mark').innerHTML = `<path d="${STEM}" fill="url(#stem)"/><path d="${STEM}" fill="url(#lit)" style="mix-blend-mode:soft-light"/><path d="${BOWL}" fill="url(#bowl)"/><path d="${BOWL}" fill="url(#lit)" style="mix-blend-mode:soft-light"/>`;
+// the open corner's two edges are the P's own, carried on: down through the gap between stem and bowl (x = 60), and
+// right along the bowl's underside (y = 68.68). Each orbit is walked round and caught where it crosses them; the guides
+// run from the P's inner corner to the furthest end, and stop exactly there; an end two orbits share is marked once.
+const RX = 57, RY = 19, C = 60, X0 = 60, Y0 = 68.68, ORBITS = [[0, '#f24a9f'], [60, '#b04ad0'], [120, '#7356f0']];
+const at = (phi, t) => { const a = (phi * Math.PI) / 180; return [C + RX * Math.cos(t) * Math.cos(a) - RY * Math.sin(t) * Math.sin(a), C + RX * Math.cos(t) * Math.sin(a) + RY * Math.sin(t) * Math.cos(a)]; };
+const ends = ORBITS.flatMap(([phi, hue]) => {
+  const out = [], N = 2400;
+  for (let i = 0; i < N; i++) {
+    const [x1, y1] = at(phi, (i / N) * 2 * Math.PI), [x2, y2] = at(phi, ((i + 1) / N) * 2 * Math.PI);
+    if ((y1 - Y0) * (y2 - Y0) < 0) { const x = x1 + ((Y0 - y1) / (y2 - y1)) * (x2 - x1); if (x > X0 + .5) out.push({ x, y: Y0, side: 'h', hue }); }
+    if ((x1 - X0) * (x2 - X0) < 0) { const y = y1 + ((X0 - x1) / (x2 - x1)) * (y2 - y1); if (y > Y0 + .5) out.push({ x: X0, y, side: 'v', hue }); }
+  }
+  return out;
+});
+const far = { h: Math.max(...ends.filter((e) => e.side === 'h').map((e) => e.x)), v: Math.max(...ends.filter((e) => e.side === 'v').map((e) => e.y)) };
+const tick = (x, y, side, hue) => side === 'h' ? `<path class="tick" d="M${x} ${y - 1.8}V${y + 1.8}" stroke="${hue}"/>` : `<path class="tick" d="M${x - 1.8} ${y}H${x + 1.8}" stroke="${hue}"/>`;
+const near = (a, b) => Math.hypot(a.x - b.x, a.y - b.y) < 1.5;
+document.getElementById('guides').innerHTML =
+  `<path class="guide" d="M${X0} ${Y0}H${far.h}M${X0} ${Y0}V${far.v}"/>` +
+  ends.filter((e, i) => !ends.some((o, j) => j < i && near(o, e))).map((e) => tick(e.x, e.y, e.side, ends.filter((o) => near(o, e)).length > 1 ? '#a99cf2' : e.hue)).join('');
+const s = document.getElementById('s');
+const play = () => { s.classList.remove('on'); void s.getBoundingClientRect(); requestAnimationFrame(() => s.classList.add('on')); };
+document.getElementById('stage').addEventListener('click', play);
+setTimeout(play, 500);
+</script>
+</body>
+</html>

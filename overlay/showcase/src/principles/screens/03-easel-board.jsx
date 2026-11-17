@@ -4,6 +4,7 @@
 // nearly all of it, so in every row the round one reads smaller than the square beside it. plumber's fix draws the
 // round ones a few percent larger (overshoot), in every row at once.
 import { LayersIcon, MessageIcon, PathIcon, SparklesIcon } from '@unlocalhosted/dither-icons';
+import { local } from '../Film.jsx';
 import ceramic from '../../media/ceramic.jpg';
 import mira from '../../media/people/person-05.jpg';
 import theo from '../../media/people/person-02.jpg';
@@ -45,9 +46,9 @@ const Cursor = ({ who, color, className }) => (
 );
 const Floating = 'rounded-card bg-surface shadow-[var(--shadow-raised),0_0_0_0.5px_var(--color-line)]';
 
-export default function LaunchBoard() {
+export default function LaunchBoard({ side = 'broken' }) {
   return (
-    <article className="relative h-[37.5rem] w-full max-w-[40rem] overflow-hidden rounded-card bg-canvas shadow-card [background-image:radial-gradient(rgb(18_35_61/0.13)_1px,transparent_1px)] [background-size:16px_16px]">
+    <article className="relative h-[37.5rem] w-[40rem] max-w-full overflow-hidden rounded-card bg-canvas shadow-card [background-image:radial-gradient(rgb(18_35_61/0.13)_1px,transparent_1px)] [background-size:16px_16px]">
       {/* the board's own top: what it is, who's here */}
       <div className={'absolute top-4 left-4 flex h-9 items-center gap-2.5 pr-3 pl-1.5 ' + Floating}>
         <span className="grid size-6 place-items-center rounded-control bg-[#2f6b4f] text-[11px] font-semibold text-white">MF</span>
@@ -114,7 +115,7 @@ export default function LaunchBoard() {
         {SETS.map((set) => (
           <section key={set.name} aria-label={set.name} className="flex flex-col gap-1">
             <span className="px-1 text-[11px] leading-4 text-ink-subtle">{set.name}</span>
-            <div data-shapes className="grid grid-cols-4 gap-1">
+            <div data-shapes className={'grid grid-cols-4 gap-1' + (side === 'fixed' ? ' [&>:nth-child(2)>svg]:scale-[1.04]' : '')}>
               {set.shapes.map((s, i) => (
                 <button key={s.name} type="button" aria-label={s.name} aria-pressed={set.name === 'Basic' && i === 0}
                   className={'grid h-10 place-items-center rounded-control hover:bg-sunken aria-pressed:bg-accent-soft aria-pressed:text-accent-deep ' + (set.name === 'Basic' && i === 0 ? '' : 'text-ink')}>
@@ -153,6 +154,64 @@ export default function LaunchBoard() {
 }
 LaunchBoard.stage = true;
 LaunchBoard.names = ['Same box', 'Overshoot'];
+// The film (Film.jsx, a still film that dives into a construction drawing). The places: the round shape of every row;
+// the lead is the Basic row's circle. What is measured, from the real shapes: the circle's width, and how much of the
+// square's box it fills. The dive draws the Basic row's square and circle as a type designer would: the square's top
+// and bottom carried across as guides; broken, the corners the circle leaves empty hatched in coral; fixed, the circle
+// passing the guides, the overshoot in mint.
+const pct = (v) => Math.round(v * 1000) / 10;
+const shapesOf = (root) => [...root.querySelectorAll('[data-shapes]')];
+const inkOf = (root, el) => local(root)(el);
+const fillOf = (root, row) => { const sq = inkOf(root, row.children[0].querySelector('svg > *')), ci = inkOf(root, row.children[1].querySelector('svg > *')); return { sq, ci, fill: (Math.PI * (ci.w / 2) ** 2) / (sq.w * sq.h) }; };
+LaunchBoard.film = {
+  still: true,
+  instances: (root) => shapesOf(root).map((row) => row.children[1].querySelector('svg')),
+  frame: (root) => shapesOf(root).flatMap((row) => [row.children[0], row.children[1]]),
+  lead: 0,
+  code: { fault: { cls: 'size-6', prop: 'one box for every shape' }, fix: { cls: '[&>:nth-child(2)>svg]:scale-[1.04]', prop: 'scale: 1.04' } },
+  read(root, el) {
+    const row = el.closest('[data-shapes]'), { ci, sq, fill } = fillOf(root, row), short = Math.max(0, sq.h * 1.04 - ci.h);
+    return { off: short > 0.3 ? 1 : 0, size: { icon: null, toy: 'size', pre: '', from: 0, to: Math.round(ci.w * 10) / 10, post: 'px' }, tags: [{ icon: null, toy: 'size', pre: 'fills ', text: `${pct(fill)}% of its box` }] };
+  },
+  // the Basic row's square and circle, drawn as a type designer would; the rest of the card dimmed so only they are bright
+  dive(root, side) {
+    const rows = shapesOf(root).slice(0, 1).map((row) => fillOf(root, row)), W = root.offsetWidth, H = root.offsetHeight; // one row, close: three rows at once made the dive too shallow to see
+    const L = Math.min(...rows.map((r) => r.sq.x)) - 12, R = Math.max(...rows.map((r) => r.ci.x + r.ci.w / 2 + r.sq.w / 2)) + 12;
+    const T = Math.min(...rows.map((r) => r.sq.y)) - 24, B = Math.max(...rows.map((r) => r.sq.y + r.sq.h)) + 14;
+    const K = Math.min(6, (W * 0.84) / (R - L), (H * 0.84) / (B - T)), u = (v) => +(v / K).toFixed(3); // drawn at the dive's zoom
+    const hatch = `<defs><pattern id="ov-h" width="${u(5)}" height="${u(5)}" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="${u(1.6)}" height="${u(5)}" fill="#f24a9f"/></pattern></defs>`;
+    const holes = rows.map((r) => { const x = r.sq.x - 8, y = r.sq.y - 7, w = r.ci.x + r.ci.w / 2 + r.sq.w / 2 + 8 - x, h = r.sq.h + 14; return `M${x} ${y}h${w}v${h}h${-w}Z`; }).join('');
+    const shade = `<path fill-rule="evenodd" d="M-2000 -2000h${W + 4000}v${H + 4000}h${-(W + 4000)}Z ${holes}" fill="#ffffff" fill-opacity=".86"/>`;
+    const pair = ({ sq, ci, fill }, i) => {
+      const cx = ci.x + ci.w / 2, cy = ci.y + ci.h / 2, r = ci.w / 2, r0 = sq.w / 2, top = sq.y, bot = sq.y + sq.h, left = sq.x - 6, right = cx + sq.w / 2 + 6;
+      const box = { x: cx - sq.w / 2, y: sq.y, w: sq.w, h: sq.h }, ring = (rr) => `M${cx - rr} ${cy}a${rr} ${rr} 0 1 0 ${2 * rr} 0a${rr} ${rr} 0 1 0 ${-2 * rr} 0`;
+      const guides = `<path d="M${left} ${top}H${right}M${left} ${bot}H${right}" fill="none" stroke="#2f86dc" stroke-width="${u(1.5)}" stroke-dasharray="${u(7)} ${u(5)}"/>`
+        + `<rect x="${sq.x}" y="${sq.y}" width="${sq.w}" height="${sq.h}" rx="1" fill="none" stroke="#2f86dc" stroke-width="${u(2)}"/>`;
+      return side === 'fixed'
+        // the overshoot zones past each guide, the circle reaching into them, and the old circle as a dashed coral ghost
+        ? `<rect x="${left}" y="${cy - r}" width="${right - left}" height="${top - (cy - r)}" fill="#1fa774" fill-opacity=".35"/><rect x="${left}" y="${bot}" width="${right - left}" height="${cy + r - bot}" fill="#1fa774" fill-opacity=".35"/>${guides}`
+          + `<path d="${ring(r)}" fill="none" stroke="#1fa774" stroke-width="${u(2.5)}"/><path d="${ring(r0)}" fill="none" stroke="#f9a3cf" stroke-width="${u(1.5)}" stroke-dasharray="${u(4)} ${u(3)}"/>`
+        : `${guides}<path fill-rule="evenodd" d="M${box.x} ${box.y}h${box.w}v${box.h}h${-box.w}Z ${ring(r)}" fill="url(#ov-h)"/><path d="${ring(r)}" fill="none" stroke="#f24a9f" stroke-width="${u(2.5)}"/>`;
+    };
+    const first = rows[0], fcx = first.ci.x + first.ci.w / 2;
+    const pills = side === 'fixed'
+      ? [{ x: fcx, y: first.sq.y - 1.5, tone: 'on', toy: 'size', text: `+${Math.round((first.ci.h / first.sq.h - 1) * 100)}%, past the line` }]
+      : [{ x: first.sq.x + first.sq.w / 2, y: first.sq.y - 1.5, tone: 'sky', toy: 'size', text: `${pct(first.fill === 0 ? 0 : (first.sq.w * first.sq.h - (4 - Math.PI)) / (first.sq.w * first.sq.h))}%` },
+         { x: fcx, y: first.sq.y - 1.5, tone: 'off', toy: 'size', text: `${pct(first.fill)}% of the same box` }];
+    return { focus: { x: (L + R) / 2, y: (T + B) / 2 }, k: K, svg: `${hatch}${shade}${rows.map(pair).join('')}`, pills };
+  },
+  say: 'Compare the circle with the square beside it.',
+  // the words on screen, approved by the owner 2026-11-15; `at` is the film's moment for each line
+  teach: { fault: 'scale: 1', fix: 'scale: 1.04' },   // the film's change card: the one idea
+  script: [
+    { at: 'rest', text: 'These two shapes are the same size.' },
+    { at: 'measure', text: 'But people see the circle as *smaller*.' },
+    { at: 'dive', text: 'Its corners are empty, so there\'s less of it.' },
+    { at: 'fix', text: 'Draw it a little bigger, just past the lines.' },
+    { at: 'payoff', text: 'Now they look *equal*.' },
+    { at: 'end', text: 'It\'s why an O is drawn taller than an H.' },
+  ],
+};
 LaunchBoard.lesson = {
   why: 'A circle fills about 78% of its box, a square nearly all of it. Drawn in the same box, the circle carries less ink, so in every row it reads smaller than the square beside it.',
   habit: 'In one set, draw round shapes a few percent larger than square ones. Type designers call it overshoot: an O is taller than an H.',

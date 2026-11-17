@@ -405,12 +405,66 @@ three is a state the page reaches by itself. - **Built (layer 1):** Alt+S opens 
 - Two neighbours of the repaired fix-card write were not driven by hand: a fix taken on the element itself, and the
   class written after a new theme token.
 
+### Plumber on its own design pages (found 2026-11-14)
+
+The owner asked why Plumber did not flag, live, the values typed by hand on the design site's Messages and Surfaces
+pages (73 spacings, 22 type styles, a dozen corners and timings, all beside tokens that exist). Tried: `plumber check`
+in `web/` read 19 JSX files and 2 stylesheets, reported 22 findings (13 dead variables, 6 "no tokens", 3 dead classes),
+and none in `web/design/parts`.
+
+- **Styles written as text inside a JavaScript file are not read.** The design pages (`web/design/parts/*.js`) and the
+  overlay itself write CSS in template strings; the check counts those files as "other" and skips them. The overlay on
+  the page can't point into them either: they are drawn inside a shadow root from a string, with no place in the code
+  stamped on each element.
+- **Tokens that are CSS variables, not a Tailwind theme, are not a scale to Plumber.** The system's tokens live in
+  `overlay/src/tokens.css` as `--pl-*`. The check answered "no tokens" six times for the site, so even a stylesheet it
+  does read has nothing to be compared against.
+- **Open question for the owner:** move the design pages to JSX with classes on a theme Plumber can read (it would then
+  check its own site, live), or teach Plumber to read plain CSS and CSS in strings against variable tokens (useful to
+  every project that isn't all Tailwind, and much more work). Not decided.
+- **Probe, same day: plain CSS already works on the command line.** A four-file React project with `.css` files and
+  `:root` variable tokens got four right findings with fixes (`padding: 18px` → `var(--spacing-4)` or `-6`, a 9px
+  corner, a 15px size, `margin: 0 0 7px`). Two limits: tokens named `--space-*` were not seen as spacing until renamed
+  `--spacing-*` (the config's `decisions.<family>.from` may cover it; not tried), and the live overlay can't write a
+  fix into a `.css` file (journey: the homepage's cards "can't take a size class"). CSS in template strings is still
+  unread apart from a literal `<style>`.
+- **On the site's homepage, same day.** The check read all nine of the homepage's plain stylesheets, and every one of its
+  22 findings came from one blind spot: the site puts the overlay's token file on the page at runtime, read as text
+  (`web/site/tokens.js`), so no `--pl-*` token exists for Plumber. 13 findings say a token is "never defined" (false);
+  6 say "no tokens", hiding 157 values (66 spacing, 34 colour, 44 type, 10 radius, 2 motion, 1 layer). With the token
+  file imported for one run: the 13 false findings went, colours were read (34 unchecked → 4), but spacing (65), type
+  (45) and radius (10) stayed unchecked, and the run said it skipped the token file as outside the project. Causes, as
+  far as read: tokens put on a page by script are never seen; a token file outside the project's folder is skipped;
+  and token names with a prefix (`--pl-space-*`, `--pl-radius-*`) are not taken as spacing or radius, as `--space-*`
+  was not in the probe.
+- **Proposed, same day (owner: "a smart parser where we can parse the tokens from various files, as it's hard to
+  always get a pre-defined shape"):** today a token's kind is decided by its name alone, nine Tailwind prefixes
+  (`familyFor`, src/decisions/index.ts: `--spacing-*`, `--radius-*`, `--text-*`…). Proposed: decide it from several
+  signals, deterministically, and say which ones decided: how the variable is used (`padding: var(--x)`), what its
+  value is (a colour, a duration, a shadow, a length), the words in its name after any prefix (`--pl-space-4`,
+  `--acme-radius-card`), and whether it belongs to a scale (siblings with one stem and ordered values). Separately,
+  read tokens wherever they live: any stylesheet, a file loaded by a script, `:host` blocks, a JS theme object, a
+  DTCG file. Config still wins over a guess. Not started; waiting on the owner.
+  Owner, same day: "generate one config file where the user can see visually how his design system is being
+  interpreted by plumber". Two pieces exist to build on: `plumber init` already writes each family's token sources
+  into the config, marked `inferred: true` (src/adoption/init.ts), and the project page already draws each scale's
+  steps with how many places use them (src/project-page/system.ts: text size, weight, radius, colour; not spacing or
+  motion). Missing: the config saying why each token was taken as what it is, and the page showing it, so a wrong
+  reading is seen and corrected in one place.
+  **Slice 1 built (journey 34):** a token's kind from value, use and name (`src/decisions/infer.ts`), and `:host`
+  as root. Since: token files a script reads by path, and `:host()` selectors read without a crash. Since: whole text styles count by their parts; each token's reading is printed by `plumber decisions` and written into the config by `plumber init`. The project page walks it in four steps (found, fit, decide, your system). Since: the page writes the chosen system (aliases, no renames or deletes, one Undo); the lesson's Set it up writes the config and records today's state (Undo covers the tokens, not the config). Left: removing the aliases once nothing uses the old names; a written system isn't recorded in the config yet; colour: roles that hold a raw colour the palette doesn't have (nearest instead of equal), and roles missing for a job; declarations in stylesheets outside the project's folder aren't counted (the site's ~30 uses of `--t-*` styles live in ../homepage), so the page says its 18 text sizes are unused; motion tokens resolve to their reduced-motion value; a line can only be moved in the config, not on the page; the reason for each reading written to the config and shown.
+
 ### The command line
 
 - At 80 columns the report breaks a rule's name across two lines (`[habits/` / `focus-outline]`).
 
 ### Tests
 
+- Failing before 2026-11-14's token work and still failing (vm-agent, each file alone): select (1 test), element-site (2), locate-bench (1), cli-findings' 80/140-column report (1), page-drawn (2). timeline and apply-all-hot fail only in a crowded full run.
+
+- After an undo that reloads the page, closing the timeline with Esc does not always hand focus back to the history
+  button (timeline test, fails side by side on vm-agent, passes alone). Possibly the button is not focusable on the
+  reloaded page at that moment. Not looked into further; found while preparing 0.5.0.
 
 
 The whole suite on vm-agent (2026-11-12): 939 passed, 16 failed in 14 files. Since then the determinism, noise,

@@ -1,7 +1,7 @@
 import { basename } from 'node:path';
 import { PACK_DATA } from '../overlay/src/pack-list.js';
 import type { Decision, Finding, Site } from './report.js';
-import { count, familyNames, scales, sourceEdit } from './messages.js';
+import { count, familyNames, scales, sourceEdit, shown } from './messages.js';
 import { oneLine, paint, shorten, table, terminalWidth, visibleWidth, wrap, type Ink } from './cli-table.js';
 import { useFor } from './rules/provenance.js';
 import { atSite } from './surfaces/sites.js';
@@ -150,7 +150,7 @@ function suggestion(group: FindingLine, width: number): string {
       const replacement = (authoredEdit ?? (declaration && use ? sourceEdit(declaration, use) : '')).match(/ with `([^`]+)`/)?.[1];
       const name = classSite && replacement ? replacement : classSite && use?.class ? use.class : decision.name.startsWith('--') ? `var(${decision.name})` : use?.css ?? decision.name;
       const why = oneLine(decision.why).replace(/\.$/, '');
-      const value = decision.resolved ?? decision.value;
+      const value = shown(decision);
       return { name, value, why: why.length <= 28 ? why : '' };
     });
     // Keep names and amounts before optional reasons. Avoid losing the second alternative to prose.

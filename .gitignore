@@ -35,3 +35,6 @@ dist/
 /.state/cache/
 .test-logs-remote/
 .test-times.json
+
+# film drafts: one cheap run each, for the story and camera reviews; never published
+docs/films/*-draft/

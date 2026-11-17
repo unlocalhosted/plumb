@@ -15,6 +15,7 @@ import { resolveValue } from './resolve.js';
 import { themeSourceGraph } from './theme-sources.js';
 import { motionDefinitions } from './motion.js';
 import { readSpacing } from './spacing.js';
+import { byValue, inferFamily, variableUses } from './infer.js';
 import type { NumericSpacing, SpacingBase } from './spacing.js';
 import type { Variable } from './resolve.js';
 
@@ -72,13 +73,16 @@ export async function readDecisions(root: string, config: PlumbConfig, graph: St
   function selected(name: string, family: Family, file: string, isTheme: boolean, inferredFamily?: Family): boolean {
     const source = config.decisions?.[family]?.from;
     if (source === undefined) return (familyFor(name) ?? inferredFamily) === family;
-    if (familyFor(name) !== undefined && familyFor(name) !== family) return false;
+    // a Tailwind name says its kind, unless the token was read otherwise by its value (a colour named --text-…)
+    if (familyFor(name) !== undefined && familyFor(name) !== family && inferredFamily !== family) return false;
     if (typeof source === 'function') return false;
     return (Array.isArray(source) ? source : [source]).some(pattern => {
       if (pattern.startsWith('theme:')) return isTheme && matches(name, pattern.slice(6));
       if (pattern.startsWith('dtcg:')) return false;
       const selector = pattern.replace(/^css:/, ''), fragment = /^(.*)#(--[^#]+)$/.exec(selector);
       const path = fragment?.[1] ?? selector;
+      // a whole file holds every kind: from it, a token is this kind only when its name or its reading says so
+      if (!fragment && ((familyFor(name) ?? inferredFamily) !== family && inferredFamily !== family || inferredFamily !== undefined && inferredFamily !== family)) return false;
       return (!fragment || matches(name, fragment[2]!)) && (matches(file, path) || matches(relative(root, file).replaceAll('\\', '/'), path));
     });
   }
@@ -88,13 +92,45 @@ export async function readDecisions(root: string, config: PlumbConfig, graph: St
     const record = defineDecisions([{ family, name: item.name, value: item.value, origin: meta.origin, why: meta.why, source: meta.source, ...(meta.tier ? { tier: meta.tier } : {}) }])[0]!;
     add(record, meta.tier !== undefined);
   }
+  // a variable whose name isn't one of Tailwind's prefixes is still a token when its value, its uses and its name agree
+  // on what it is (infer.ts). Not for a theme's backing value: the theme key that reads it is the token
+  const uses = variableUses(graph);
+  const backing = new Set(theme.flatMap(item => references(item.value)));
+  const inferred = new Map<string, ReturnType<typeof inferFamily>>(), colourOverName = new Map<string, Family>();
+  // where a theme or the config already declares a kind, its other variables are not guessed into it: an extra :root
+  // `--well: 0 2px 4px …` beside a theme's shadows is a raw value to point at them, not a token (e2e/attribution)
+  const declared = new Set<Family>([...decisions.values()].map(d => d.family));
+  // a kind is declared by a token already taken, a Tailwind-named root variable, or any variable in a theme block
+  for (const item of raw) if (item.theme || item.root && item.origin === 'project') { const named = familyFor(item.name); if (named) declared.add(named); }
+  for (const family of Object.keys(config.decisions ?? {}) as Family[]) declared.add(family);
+  for (const item of raw) if (item.root && !item.theme && item.origin === 'project' && !familyFor(item.name) && !backing.has(item.name) && !inferred.has(item.name)) {
+    inferred.set(item.name, inferFamily(item.name, resolveValue(item.value, variables, new Set([item.name])) ?? item.value, uses));
+  }
+  // a lone guessed variable is a shortcut someone took, not a system: a kind counts from guesses only when two or more
+  // variables are read as it
+  const guessed = new Map<Family, number>();
+  for (const reading of inferred.values()) if (reading) guessed.set(reading.family, (guessed.get(reading.family) ?? 0) + 1);
+  // what each variable reads as stays known (a config's whole-file source takes a token by it); only adding a token
+  // on a guess alone is held back
+  const readAs = new Map(inferred);
+  for (const [name, reading] of inferred) if (reading && ((guessed.get(reading.family) ?? 0) < 2 || declared.has(reading.family))) inferred.set(name, undefined);
+  const plainColour = (item: typeof raw[number]) => { const named = familyFor(item.name); return !!named && named !== 'color' && byValue(resolveValue(item.value, variables, new Set([item.name])) ?? item.value) === 'color'; };
   for (const item of raw.filter(item => item.root && !item.theme && item.origin === 'project')) {
-    for (const family of Object.keys(config.decisions ?? {}) as Family[]) if (selected(item.name, family, item.source.file, false)) {
+    const hint = plainColour(item) ? 'color' : readAs.get(item.name)?.family;
+    // the reading helps a source the config names (a whole file) take the right tokens; a kind the config lists
+    // without a source keeps to Tailwind's names
+    for (const family of Object.keys(config.decisions ?? {}) as Family[]) if (selected(item.name, family, item.source.file, false, config.decisions?.[family]?.from === undefined ? undefined : hint)) {
       add(defineDecisions([{ family, name: item.name, value: item.value, why: item.why, source: item.source, ...(item.tier ? { tier: item.tier } : {}) }])[0]!, item.tier !== undefined);
     }
-    const family = familyFor(item.name);
+    // a Tailwind prefix that says one kind over a value that is plainly a colour (`--text-primary: #1d1b17` in plain CSS):
+    // the value wins, and the reading says so
+    const named = familyFor(item.name), plain = plainColour(item);
+    if (plain) colourOverName.set(item.name, named!);
+    const family = plain ? 'color' : named ?? inferred.get(item.name)?.family;
     if (family && !config.decisions?.[family]) add(defineDecisions([{ family, name: item.name, value: item.value, why: item.why, source: item.source, ...(item.tier ? { tier: item.tier } : {}) }])[0]!, item.tier !== undefined);
   }
+  // how each token was read: a guess says what decided it; a Tailwind name says its prefix
+  const readingOf = (name: string, family: Family) => colourOverName.has(name) && family === 'color' ? `its value is a colour, though its name begins ${/^--[a-z]+-/.exec(name)?.[0] ?? name}` : readAs.get(name)?.family === family ? readAs.get(name)!.why : familyFor(name) === family ? `its name begins ${/^--[a-z]+(?:-(?:inset|drop|mono|line))?-/.exec(name)?.[0] ?? name}` : undefined;
   for (const [family, source] of Object.entries(config.decisions ?? {})) {
     if (typeof source.from === 'function') {
       const records = await source.from();
@@ -173,6 +209,7 @@ export async function readDecisions(root: string, config: PlumbConfig, graph: St
     resolveRecord(record);
     return [record];
   });
+  for (const record of [...decisions.values(), ...inventory]) { const reading = record.reading ?? readingOf(record.name, record.family); if (reading) record.reading = reading; }
   tokenReasons([...decisions.values(), ...inventory]);
   const spacing = readSpacing(raw, [...decisions.values()], variables, themeNames);
   return { numericSpacing: spacing.numeric, ...(spacing.numeric || !spacing.base ? {} : { spacingBase: spacing.base }), inventory, defined, frameworkVariables, definitions: raw, decisions: [...decisions.values()].sort((a, b) => a.family.localeCompare(b.family) || a.name.localeCompare(b.name)), variables, theme: new Set(theme.map(item => item.name)) };

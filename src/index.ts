@@ -13,6 +13,7 @@ import { existence, location, unreachableClasses, deadVariables } from './rules/
 import { varUses } from './rules/families.js';
 import { cssCode, collectStylesheets } from './collect/stylesheets.js';
 import { collectModules } from './collect/modules.js';
+import { namedStylesheets } from './collect/named-css.js';
 import { lowerStylesheets } from './lower/stylesheets.js';
 import { references } from './collect/source.js';
 import { selectorStates } from './collect/states.js';
@@ -119,7 +120,10 @@ export async function analyze(options: CheckOptions, snippet?: Snippet, runtime?
   profileProgress('phase:modules');
   const modules = await phase('modules', [root, collected.modules], () => collectModules(root, collected.modules, !!input || !!runtime));
   profileProgress('phase:stylesheet-graph');
-  const graph = await phase('graph', [project.tailwind.entry, files, modules.imports, input], () => collectStylesheets(project.tailwind.entry, files, modules.imports,
+  // stylesheets a script reads by path (a token file put on the page at runtime) count like imported ones
+  const named = input ? [] : namedStylesheets(root, files);
+  const cssImports = [...modules.imports, ...named.filter(item => !modules.imports.some(other => other.resolved === item.resolved))];
+  const graph = await phase('graph', [project.tailwind.entry, files, cssImports, input], () => collectStylesheets(project.tailwind.entry, files, cssImports,
     input?.lang === 'css' ? new Map([[input.file, input.text]]) : undefined));
   const moduleCss = new Set<string>();
   function reachedCss(file: string): void {

@@ -66,8 +66,10 @@ export class Gravity {
    * @param steps   your scale: [{ name, px, uses }]
    * @param strays  sizes typed by hand: [{ px, places, near, copy, scaled, written: [{ text, n }] }]
    */
-  constructor(el, { steps, strays }) {
+  constructor(el, { steps, strays, words = {} }) {
     this.el = el;
+    // what the drawing is of: text sizes by default; the lesson passes spacing's words (overlay/src/lesson.js)
+    this.w = { sizes: 'text sizes', title: 'Where your text sizes land', empty: 'Add text sizes to your theme, and this fills in.', ...words };
     this.steps = steps.slice().sort((a, b) => a.px - b.px);
     this.strays = strays;
     this.reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -79,13 +81,13 @@ export class Gravity {
 
   render() {
     const { steps, strays, onScale, byHand } = this;
-    const empty = !steps.length ? ['No scale to draw yet', 'Add text sizes to your theme, and this fills in.'] : !byHand ? ['Every text size uses your scale', 'Nothing typed by hand.'] : null;
+    const w = this.w, empty = !steps.length ? ['No scale to draw yet', w.empty] : !byHand ? [`All your ${w.sizes} come from your theme`, 'Nothing typed by hand.'] : null;
     this.el.innerHTML = `<div class="gv pl-card sc-quiet"${empty ? ' data-empty' : ''}>
-      <div class="gv-head"><div><h2>Where your text sizes land</h2>${empty ? '' : `<p>Each mark is a place in your code that types a size by hand, next to the size it's closest to.</p>`}</div>
+      <div class="gv-head"><div><h2>${esc(w.title)}</h2>${empty ? '' : `<p>Each mark is a place in your code that types a size by hand, next to the size it's closest to.</p>`}</div>
         ${empty ? '' : `<div class="gv-key" aria-hidden="true"><span>${place('on')}On your scale</span><span>${place('typed')}Your size, typed by hand</span><span>${place('off')}Not on your scale</span></div>`}</div>
-      <div class="gv-plot">${empty ? `<div class="gv-empty"><span>${esc(empty[0])}<small>${esc(empty[1])}</small></span></div>` : `<canvas tabindex="0" role="img" aria-describedby="gv-table" aria-label="${esc(`Your ${steps.length} text sizes with ${plural(byHand, 'hand-typed place', 'hand-typed places')} around them`)}"></canvas><div class="gv-steps"></div>`}</div>
+      <div class="gv-plot">${empty ? `<div class="gv-empty"><span>${esc(empty[0])}<small>${esc(empty[1])}</small></span></div>` : `<canvas tabindex="0" role="img" aria-describedby="gv-table" aria-label="${esc(`Your ${steps.length} ${w.sizes} with ${plural(byHand, 'hand-typed place', 'hand-typed places')} around them`)}"></canvas><div class="gv-steps"></div>`}</div>
       <div class="gv-foot">${countMark(onScale, 'places use your scale')}${empty ? '' : '<button type="button" class="pl-act" aria-pressed="false">Snap to your scale</button>'}</div>
-      <table class="sr" id="gv-table"><caption>Your text sizes, and the places that type a size close to each</caption><tr><th>Size</th><th>Pixels</th><th>Places that use it</th><th>Places typed by hand close to it</th></tr>${steps.map((s) => `<tr><td>${esc(s.name)}</td><td>${fmt(s.px)}</td><td>${s.uses}</td><td>${strays.filter((x) => x.near === s.name).reduce((n, x) => n + x.places, 0)}</td></tr>`).join('')}</table>
+      <table class="sr" id="gv-table"><caption>Your ${esc(w.sizes)}, and the places that type a size close to each</caption><tr><th>Size</th><th>Pixels</th><th>Places that use it</th><th>Places typed by hand close to it</th></tr>${steps.map((s) => `<tr><td>${esc(s.name)}</td><td>${fmt(s.px)}</td><td>${s.uses}</td><td>${strays.filter((x) => x.near === s.name).reduce((n, x) => n + x.places, 0)}</td></tr>`).join('')}</table>
       <span class="sr" aria-live="polite"></span>
     </div>`;
   }

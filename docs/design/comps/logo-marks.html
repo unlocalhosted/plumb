@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>React Plumber · the leak and the fix, as logos</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400..700&display=swap">
+<style>
+  /* Two ideas the owner liked, the leak and before/after, made into logos: still, a few shapes that overlap (the
+     overlap makes a third colour, as Arc's and Figma's do), true squircles, a white sticker edge, no plain blocks. */
+  :root { --ink: #1d1b17; --ink-2: #6b665c; --rule: rgb(29 27 23 / 0.09); --desk: #f6f5f2; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--desk); color: var(--ink); font: 400 14px/20px "Instrument Sans", system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  h1 { margin: 28px 32px 2px; font: 600 20px/26px "Instrument Sans"; letter-spacing: -0.01em; }
+  .sub { margin: 0 32px 18px; color: var(--ink-2); }
+  h2 { margin: 6px 32px 10px; font: 650 14px/20px "Instrument Sans"; color: var(--ink-2); }
+  .grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; padding: 0 32px 22px; }
+  .card { background: #fff; border-radius: 18px; box-shadow: 0 0 0 1px var(--rule), 0 12px 30px -22px rgb(0 0 0 / .3); overflow: hidden; }
+  .art { height: 300px; display: grid; place-items: center; }
+  .row { display: flex; align-items: center; gap: 22px; padding: 14px 18px; border-top: 1px solid var(--rule); }
+  .tile { width: 72px; height: 72px; border-radius: 17px; display: grid; place-items: center; background: linear-gradient(#2b2925, #1a1916); box-shadow: 0 8px 16px -10px rgb(0 0 0 / .5); }
+  .t { margin-left: auto; text-align: right; } .t b { display: block; font: 650 14px/18px "Instrument Sans"; } .t span { color: var(--ink-2); font-size: 12.5px; }
+  svg { display: block; overflow: visible; }
+</style>
+</head>
+<body>
+<h1>The leak and the fix, as logos</h1>
+<p class="sub">Still marks, built from overlapping shapes. Large, as an app icon on a dark tile, then 24 and 16 px.</p>
+<h2>The leak: your UI is leaking, plumber catches the drop</h2>
+<div class="grid" id="leak"></div>
+<h2>Before and after: the shape as written, and the shape as crafted, in one mark</h2>
+<div class="grid" id="fix"></div>
+
+<script>
+// a true squircle (superellipse, n = 4.6), not a rounded rectangle: the curve starts before the corner
+function squircle(cx, cy, w, h, n = 4.6, steps = 96) {
+  const pts = [];
+  for (let i = 0; i < steps; i++) {
+    const t = (i / steps) * Math.PI * 2, c = Math.cos(t), s = Math.sin(t);
+    pts.push([cx + (w / 2) * Math.sign(c) * Math.abs(c) ** (2 / n), cy + (h / 2) * Math.sign(s) * Math.abs(s) ** (2 / n)]);
+  }
+  return 'M' + pts.map((p) => p.map((v) => v.toFixed(2)).join(' ')).join('L') + 'Z';
+}
+// a drop, hanging from a point, of a given size (its neck pinches as it forms)
+const drop = (x, y, r, neck = 0.35) => `M${x} ${y}C${x + r * neck} ${y + r * 0.9} ${x + r} ${y + r * 1.25} ${x + r} ${y + r * 1.75}A${r} ${r} 0 0 1 ${x - r} ${y + r * 1.75}C${x - r} ${y + r * 1.25} ${x - r * neck} ${y + r * 0.9} ${x} ${y}Z`;
+
+const PINK = '#f24a9f', SKY = '#2f86dc', MINT = '#1aa36a', BUTTER = '#ffbf1a', LILAC = '#7a5cf0';
+// every mark: a 120 × 120 drawing; `sticker` is drawn under it in white, a little fatter, as Arc's mark sits on its edge
+const MARKS = {
+  leak: [
+    ['P, drip', 'A P in two strokes, bowl over stem, the stem\'s end gathering into a drop.', (k) => `
+      <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <g stroke="#fff" stroke-width="34"><path d="M40 92V30"/><path d="M40 30h18a20 20 0 0 1 0 40H40"/></g>
+        <path d="M40 92V30" stroke="${PINK}" stroke-width="22"/>
+        <path d="M40 30h18a20 20 0 0 1 0 40H40" stroke="${SKY}" stroke-width="22" style="mix-blend-mode:multiply"/>
+      </g>
+      <path d="${drop(40, 100, 8.5)}" fill="${SKY}" stroke="#fff" stroke-width="6" paint-order="stroke"/>`],
+    ['The forming drop', 'A squircle whose lower edge is pulled into a drop by its own weight: one outline, the leak caught at the moment it forms.', (k) => {
+      const body = squircle(60, 50, 84, 74);
+      return `<path d="${body}" fill="#fff" stroke="#fff" stroke-width="12" stroke-linejoin="round"/>
+        <path d="${drop(60, 80, 12, .55)}" fill="#fff" stroke="#fff" stroke-width="12"/>
+        <path d="${body}" fill="${SKY}"/><path d="${drop(60, 79, 12, .55)}" fill="${SKY}"/>
+        <path d="${drop(60, 86, 7, .5)}" fill="${PINK}" style="mix-blend-mode:multiply"/>
+        <path d="M34 34c6-8 16-11 26-11" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round" opacity=".55"/>`; }],
+    ['Joint and drop', 'Two pipe strokes crossing at a joint, the crossing in a third colour, and one drop beneath it.', (k) => `
+      <g fill="none" stroke-linecap="round">
+        <g stroke="#fff" stroke-width="34"><path d="M18 46h84"/><path d="M60 18v50"/></g>
+        <path d="M18 46h84" stroke="${MINT}" stroke-width="22"/>
+        <path d="M60 18v50" stroke="${PINK}" stroke-width="22" style="mix-blend-mode:multiply"/>
+      </g>
+      <path d="${drop(60, 80, 9)}" fill="${PINK}" stroke="#fff" stroke-width="6" paint-order="stroke"/>`],
+  ],
+  fix: [
+    ['Registration', 'The raw square, a few degrees off and sharp-cornered, under the crafted squircle; where they overlap, a third colour.', (k) => {
+      const crafted = squircle(70, 66, 74, 74);
+      return `<rect x="12" y="10" width="72" height="72" fill="#fff" stroke="#fff" stroke-width="12" stroke-linejoin="round" transform="rotate(-7 48 46)"/>
+        <path d="${crafted}" fill="#fff" stroke="#fff" stroke-width="12" stroke-linejoin="round"/>
+        <rect x="12" y="10" width="72" height="72" fill="${SKY}" transform="rotate(-7 48 46)"/>
+        <path d="${crafted}" fill="${PINK}" style="mix-blend-mode:multiply"/>`; }],
+    ['Half made', 'A P whose stem is the raw cut (square ends, hard corner) and whose bowl is the crafted curve (round ends, true arc).', (k) => `
+      <g fill="none">
+        <g stroke="#fff" stroke-width="34" stroke-linejoin="round" stroke-linecap="round"><path d="M42 98V24"/><path d="M42 24h16a22 22 0 0 1 0 44H42"/></g>
+        <path d="M42 99V23" stroke="${LILAC}" stroke-width="22" stroke-linecap="butt"/>
+        <path d="M42 24h16a22 22 0 0 1 0 44H42" stroke="${PINK}" stroke-width="22" stroke-linecap="round" stroke-linejoin="round" style="mix-blend-mode:multiply"/>
+      </g>`],
+    ['The corner, fixed', 'Two nested corners: the outer one as written (sharp), the inner one as crafted (its radius the outer less the gap), overlapping.', (k) => `
+      <g fill="none" stroke-linejoin="round">
+        <g stroke="#fff" stroke-width="34" stroke-linecap="round"><path d="M22 100V22h78"/><path d="M48 100V66a18 18 0 0 1 18-18h34"/></g>
+        <path d="M22 100V22h78" stroke="${SKY}" stroke-width="22" stroke-linejoin="miter" stroke-linecap="butt"/>
+        <path d="M48 100V66a18 18 0 0 1 18-18h34" stroke="${PINK}" stroke-width="22" stroke-linecap="round" style="mix-blend-mode:multiply"/>
+      </g>`],
+  ],
+};
+for (const [id, list] of Object.entries(MARKS)) {
+  document.getElementById(id).innerHTML = list.map(([name, idea, draw]) => {
+    const svg = (s, extra = '') => `<svg width="${s}" height="${s}" viewBox="0 0 120 120" ${extra}><g style="isolation:isolate">${draw(s / 120)}</g></svg>`;
+    return `<section class="card"><div class="art">${svg(220, 'style="filter: drop-shadow(0 10px 18px rgb(0 0 0 / .12))"')}</div>
+      <div class="row"><div class="tile">${svg(50)}</div>${svg(24)}${svg(16)}<div class="t"><b>${name}</b><span>${idea}</span></div></div></section>`;
+  }).join('');
+}
+</script>
+</body>
+</html>

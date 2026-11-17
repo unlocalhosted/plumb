@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>React Plumber · mark: one-way flow</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400..700&display=swap">
+<style>
+  /* The idea: React's ui = f(state). State flows one way, down the component tree, and comes out as UI. Drawn as a
+     plumber would draw it: one source, tubes that branch down the tree, and at the ends the DOM's nodes, filled. In
+     motion the state runs through, junction by junction, and each node fills as it arrives. React Plumber's hues. */
+  :root { --ink: #1d1b17; --ink-2: #6b665c; --rule: rgb(29 27 23 / 0.09); --pink: #f24a9f; --pink-hi: #ff8cc6; --sky: #2a7fd0; --mint: #1a9460; --butter: #f5b800; --tube: #f4f1ea; --desk: #f6f5f2; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--desk); color: var(--ink); font: 400 14px/20px "Instrument Sans", system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  .wrap { display: grid; grid-template-columns: 1.3fr 1fr; gap: 20px; padding: 36px 40px; }
+  .card { background: #fff; border-radius: 18px; box-shadow: 0 0 0 1px var(--rule), 0 12px 32px -22px rgb(0 0 0 / .3); }
+  .hero { height: 560px; display: grid; place-items: center; }
+  .side { display: grid; grid-template-rows: 1fr 1fr; gap: 20px; }
+  .sizes { display: flex; align-items: flex-end; justify-content: center; gap: 34px; padding: 28px; }
+  .icon { width: 112px; height: 112px; border-radius: 26px; background: linear-gradient(#fff, #f6f3ec); box-shadow: 0 0 0 1px var(--rule), 0 1px 0 #fff inset, 0 14px 26px -16px rgb(0 0 0 / .35); display: grid; place-items: center; }
+  .lock { display: flex; align-items: center; justify-content: center; gap: 12px; font: 650 30px/1 "Instrument Sans"; letter-spacing: -0.03em; padding: 28px; }
+  .cap { text-align: center; color: var(--ink-2); font-size: 12.5px; margin-top: 8px; }
+  svg { display: block; overflow: visible; }
+
+  /* the motion: the source fills, then state runs down each branch (depth by depth), then each node fills */
+  .flow { stroke-dasharray: 1; stroke-dashoffset: 1; animation: run var(--d, 500ms) cubic-bezier(.4, 0, .2, 1) var(--at, 0ms) forwards; }
+  .fill { transform: scaleY(0); transform-box: fill-box; transform-origin: 50% 100%; animation: rise 520ms cubic-bezier(.3, 1.3, .5, 1) var(--at, 0ms) forwards; }
+  .src  { transform: scaleY(0); transform-box: fill-box; transform-origin: 50% 100%; animation: rise 600ms cubic-bezier(.3, 0, .2, 1) 200ms forwards; }
+  @keyframes run { to { stroke-dashoffset: 0; } }
+  @keyframes rise { to { transform: scaleY(1); } }
+  .still .flow { animation: none; stroke-dashoffset: 0; } .still .fill, .still .src { animation: none; transform: none; }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <!-- the tubes: one source, a T, then the left branch splits again: three leaves, like any component tree -->
+  <path id="t0" d="M60 30V44"/>
+  <path id="tL" d="M60 44H42a10 10 0 0 0-10 10V60"/>
+  <path id="tR" d="M60 44H78a10 10 0 0 1 10 10V84"/>
+  <path id="tLL" d="M32 60V64a6 6 0 0 1-6 6H24a6 6 0 0 0-6 6V84"/>
+  <path id="tLR" d="M32 60V64a6 6 0 0 0 6 6H40a6 6 0 0 1 6 6V84"/>
+  <clipPath id="srcClip"><rect x="43" y="6" width="34" height="22" rx="9"/></clipPath>
+
+  <linearGradient id="litS" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4a9be6"/><stop offset="1" stop-color="#1f6cbd"/></linearGradient>
+  <linearGradient id="litM" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#25ad73"/><stop offset="1" stop-color="#147a4e"/></linearGradient>
+  <linearGradient id="litB" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffcc33"/><stop offset="1" stop-color="#e3a400"/></linearGradient>
+  <radialGradient id="orb" cx=".38" cy=".32" r=".75"><stop offset="0" stop-color="#ffb3d9"/><stop offset=".45" stop-color="#f24a9f"/><stop offset="1" stop-color="#c4207a"/></radialGradient>
+  <symbol id="mark" viewBox="0 0 120 120">
+    <!-- the tubes: an empty bore first (pale), the state runs through it (pink), a lit line along each tube's top -->
+    <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <g stroke="#f3e6ee" stroke-width="8">
+        <path d="M60 30V46"/><path d="M60 46H40a10 10 0 0 0-10 10V62"/><path d="M60 46H80a10 10 0 0 1 10 10V82"/>
+        <path d="M30 62H22a6 6 0 0 0-6 6V82"/><path d="M30 62H38a6 6 0 0 1 6 6V82"/>
+      </g>
+      <g stroke="var(--pink)" stroke-width="8">
+        <path d="M60 30V46" class="flow" pathLength="1" style="--at: 700ms; --d: 240ms"/>
+        <path d="M60 46H40a10 10 0 0 0-10 10V62" class="flow" pathLength="1" style="--at: 940ms; --d: 380ms"/>
+        <path d="M60 46H80a10 10 0 0 1 10 10V82" class="flow" pathLength="1" style="--at: 940ms; --d: 540ms"/>
+        <path d="M30 62H22a6 6 0 0 0-6 6V82" class="flow" pathLength="1" style="--at: 1320ms; --d: 340ms"/>
+        <path d="M30 62H38a6 6 0 0 1 6 6V82" class="flow" pathLength="1" style="--at: 1320ms; --d: 340ms"/>
+      </g>
+      <g stroke="#ffd0e8" stroke-width="1.8" opacity=".9">
+        <path d="M58.6 32V44.6" class="flow" pathLength="1" style="--at: 760ms; --d: 240ms"/>
+        <path d="M58.6 44.6H40a11.4 11.4 0 0 0-11.4 11.4V61" class="flow" pathLength="1" style="--at: 1000ms; --d: 380ms"/>
+        <path d="M61.4 44.6H80a11.4 11.4 0 0 1 11.4 11.4" class="flow" pathLength="1" style="--at: 1000ms; --d: 420ms"/>
+      </g>
+    </g>
+    <!-- the tees, where the tree divides: a collar a shade deeper than the tube -->
+    <g fill="#d42b84"><rect x="54.5" y="41" width="11" height="10" rx="3.4"/><rect x="25" y="57" width="10" height="10" rx="3.2"/></g>
+
+    <!-- the source: state, one lit sphere -->
+    <circle cx="60" cy="18" r="14.5" fill="url(#orb)" class="src"/>
+    <ellipse cx="55" cy="12.5" rx="5" ry="3" fill="#fff" opacity=".75" transform="rotate(-25 55 12.5)" class="src"/>
+
+    <!-- the leaves: the DOM's nodes, soft blocks lit from the top, each a little piece of UI -->
+    <g>
+      <rect x="5" y="80" width="22" height="25" rx="7" fill="#123f70" opacity=".22" class="fill" style="--at: 1660ms"/>
+      <rect class="fill" x="5" y="78" width="22" height="24" rx="7" fill="url(#litS)" style="--at: 1660ms"/>
+      <rect class="fill" x="10" y="85" width="12" height="2.8" rx="1.4" fill="#fff" style="--at: 1780ms"/><rect class="fill" x="10" y="90.5" width="8" height="2.8" rx="1.4" fill="#fff" opacity=".85" style="--at: 1820ms"/>
+
+      <rect x="33" y="80" width="22" height="25" rx="7" fill="#0b3d26" opacity=".22" class="fill" style="--at: 1680ms"/>
+      <rect class="fill" x="33" y="78" width="22" height="24" rx="7" fill="url(#litM)" style="--at: 1680ms"/>
+      <circle class="fill" cx="44" cy="90" r="4.4" fill="#fff" style="--at: 1800ms"/>
+
+      <rect x="74" y="80" width="32" height="25" rx="7" fill="#4a3400" opacity=".2" class="fill" style="--at: 1500ms"/>
+      <rect class="fill" x="74" y="78" width="32" height="24" rx="7" fill="url(#litB)" style="--at: 1500ms"/>
+      <rect class="fill" x="80" y="86.5" width="20" height="7.4" rx="3.7" fill="#fff" style="--at: 1620ms"/>
+    </g>
+  </symbol>
+</defs></svg>
+
+<div class="wrap">
+  <section class="card hero"><div><svg id="big" width="420" height="420"><use href="#mark"/></svg><p class="cap">ui = f(state): one source, the tree, the DOM's nodes. Click to replay.</p></div></section>
+  <div class="side">
+    <section class="card still"><div class="sizes">
+      <div><div class="icon"><svg width="80" height="80"><use href="#mark"/></svg></div><p class="cap">app icon</p></div>
+      <div><svg width="40" height="40"><use href="#mark"/></svg><p class="cap">40</p></div>
+      <div><svg width="24" height="24"><use href="#mark"/></svg><p class="cap">24</p></div>
+      <div><svg width="16" height="16"><use href="#mark"/></svg><p class="cap">16</p></div>
+    </div></section>
+    <section class="card still"><div class="lock"><svg width="46" height="46"><use href="#mark"/></svg>React Plumber</div></section>
+  </div>
+</div>
+<script>
+  // replay: put the symbol back to empty and run it again
+  document.querySelector('.hero').addEventListener('click', () => { const s = document.getElementById('big'); const u = s.firstElementChild; s.replaceChild(u.cloneNode(true), u); document.querySelectorAll('symbol .flow, symbol .fill, symbol .src').forEach((e) => { e.style.animation = 'none'; e.getBoundingClientRect(); e.style.animation = ''; }); });
+</script>
+</body>
+</html>

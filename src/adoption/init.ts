@@ -1,3 +1,5 @@
+import { reasons, stems } from '../decisions/stems.js';
+import type { Decision } from '../report.js';
 import { statePath } from '../paths.js';
 import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
@@ -32,12 +34,13 @@ const pathFrom = (root: string, file: string) => relative(root, file).replaceAll
 
 function decisionSources(report: Report): NonNullable<PlumbConfig['decisions']> {
   const sources: Partial<Record<Family, DecisionSource>> = {};
-  for (const decision of currentDecisions(report)) {
+  const current = currentDecisions(report), stemOf = stems(current);
+  for (const decision of current) {
     const entry = sources[decision.family] ??= { inferred: true, from: [] };
     // Name live files rather than freeze today's values. New theme keys remain
     // visible through the engine's independent decision inventory.
     const prefix = /^--[^-]+-/.exec(decision.name)?.[0];
-    const pattern = prefix && familyFor(`${prefix}x`) === decision.family ? `${prefix}*` : decision.name;
+    const pattern = prefix && familyFor(`${prefix}x`) === decision.family ? `${prefix}*` : stemOf.get(decision) ?? decision.name;
     const source = decision.source.file.endsWith('.css') ? `css:${pathFrom(report.root, decision.source.file)}#${pattern}` : `theme:${pattern}`;
     const from = entry.from as string[];
     if (!from.includes(source)) from.push(source);
@@ -62,6 +65,8 @@ export interface InitOptions {
   asker?: Asker;
   /** Say nothing about the questions (for --json). */
   quiet?: boolean;
+  /** The token sources to write, as chosen on the project page's lesson; without them, init infers them from your code. */
+  decisions?: NonNullable<PlumbConfig['decisions']>;
 }
 const labels: Record<string, string> = { color: 'colour', z: 'z-index' };
 
@@ -122,7 +127,7 @@ export async function initProject(root: string, options: InitOptions, print: (te
         report = await checkProject(root, temporary, true);
       }
     }
-    const sources = decisionSources(report);
+    const sources = options.decisions ?? decisionSources(report);
     const components = componentList;
     // no `source`: your code is what the rule says (src/source-identity.ts), with its installed, generated and
     // git-ignored filters; a `source` written here would replace that rule with a glob
@@ -135,6 +140,17 @@ export async function initProject(root: string, options: InitOptions, print: (te
       `// Components: ${components.length} found${from && useShadcn ? ` from ${from}` : ''}.\n` +
       components.map(component => `// ${component.name}: ${pathFrom(root, component.source.file)}:${component.source.line}\n`).join('') +
       `export default ${serialized};\n`;
+    // each token source says how its tokens were read, so a wrong reading is seen here and fixed by moving the line
+    const readings = new Map<string, string[]>();
+    for (const [family, source] of Object.entries(sources)) for (const pattern of (Array.isArray(source?.from) ? source.from : []) as string[]) {
+      const [, , path, glob] = /^(css|theme):(?:(.*)#)?(.+)$/.exec(pattern) ?? [];
+      if (!glob) continue;
+      const like = new RegExp(`^${glob.split('*').map(part => part.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('.*')}$`);
+      const members = currentDecisions(report).filter(d => d.family === family && like.test(d.name) && (!path || pathFrom(root, d.source.file) === path));
+      const said = reasons(members);
+      if (said.length) readings.set(JSON.stringify(pattern), [`${members.length} ${members.length === 1 ? 'token' : 'tokens'}`, ...said.slice(0, 2), ...(said.length > 2 ? [`${said.length - 2} more reasons`] : [])]);
+    }
+    text = text.replace(/^(\s+)("(?:css|theme):[^"\n]+")(,?)$/gm, (line, indent: string, pattern: string, comma: string) => readings.has(pattern) ? `${indent}${pattern}${comma} // ${readings.get(pattern)!.join('; ')}` : line);
     const habits = report.habits ?? [];
     text = text.replace(/"habits": \[[\s\S]*?\n  \]/, '"habits": [\n' + habits.map(habit =>
       `    ${defaults.includes(habit.id) ? '' : '// '}${JSON.stringify(habit.id)}, // ${habit.breaks ?? 0} breaks`).join('\n') + '\n  ]');
