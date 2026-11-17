@@ -65,7 +65,9 @@ function authoredClasses(file: string): Map<string, Site[]> {
 }
 const queryChanges = new Set<string>();
 function changedQueries(files: Iterable<string>): void {
-  for (const file of files) { queryChanges.add(file); for (const dependency of state.queryDependencies(file)) queryChanges.add(dependency); }
+  const changed = [...files];
+  for (const file of changed) queryChanges.add(file);
+  for (const dependency of state.queryDependenciesOf(changed)) queryChanges.add(dependency);
 }
 let ledger: Awaited<ReturnType<typeof readLedger>>;
 const dependencies = () => [...new Set([...state.dependencies, ...state.collection.dependencies,
@@ -234,24 +236,22 @@ async function localReport(file: string): Promise<Report> {
   return view;
 }
 const sourceFiles = () => [...new Set([...state.collection.slices.keys(), ...raw.stylesheets.filter(sheet => sheet.reached.some(reach => reach.kind === 'source')).map(sheet => sheet.file)])];
-/** `known`: the same files' dependencies when the request just worked them out (a refresh), so they are not worked out twice. */
-function queryInputs(files: Iterable<string> = [], known?: [string, string[]][]) {
+/** The files every query over `files` reads, as one set (state.queryDependenciesOf), never a list per file. */
+function queryInputs(files: Iterable<string> = []) {
   return { inputPatterns: [...state.inputPatterns], inputs: [...new Set([...state.configurationFiles, ...state.compilerFiles, ...raw.stylesheets.map(s => s.file), ...raw.declarations.filter(d => d.prop.startsWith('--')).map(d => d.site.file), ...raw.decisions.map(d => d.source.file), ...raw.decisionInventory?.map(d => d.source.file) ?? []])],
-    queryDependencies: known ?? [...files].map(file => [file, state.queryDependencies(file)]) };
+    queryPaths: [...state.queryDependenciesOf(files)] };
 }
 const KEEP_SLICE = 30; // ms of building the reading table before the worker looks at its queue again
 let keeping: { of: Report; packer: ReadingPacker; started: number; worked: number; longest: number; slices: number } | undefined;
 async function dispatch(method: string, params: Record<string, unknown>): Promise<unknown> {
-  if (method === 'queryDependencies') return [...new Set((params.files as string[]).flatMap(file => state.queryDependencies(file)))];
+  if (method === 'queryDependencies') return [...state.queryDependenciesOf(params.files as string[])];
   if (method === 'inventory') { state.inventory = params.files as string[]; return null; }
   if (method === 'refresh') {
     performance.clearMeasures();
     const affected = await update(params.paths as string[]);
-    const queryDependencies: [string, string[]][] = affected.map(file => [file, state.queryDependencies(file)]);
-    const dependencyQueries = [...queryChanges].map(file => [file, state.queryDependencies(file)]);
-    return { revision, dependencyQueries, dependencyDelta: [...new Set(queryDependencies.flatMap(([, paths]) => paths))],
+    return { revision, dependencyDelta: [...state.queryDependenciesOf(affected)],
       files: state.collection.parsedFiles, visited: state.collection.visitedFiles, judged: state.judgement.judgedFiles,
-      timing: raw.timing, queryDependencies,
+      timing: raw.timing,
       ...(environment('PROFILE') === '1' ? { profile: performance.getEntriesByType('measure').map(p => [p.name, p.duration]) } : {}) };
   }
   // A copy, so the shared report the other reads hand out never carries causes computed for another ledger view.
@@ -386,13 +386,10 @@ parentPort!.on('message', ({ id, method, params }) => {
       const start = performance.now();
       const result = await dispatch(method, params);
       profileDuration(`read:${method}`, performance.now() - start);
-      // A refresh answers with every changed query's dependencies itself (`dependencyQueries`, over the same files and
-      // the same state): they are reused here, and travel once, in the result. The session reads them from there.
-      const answered = method === 'refresh' && !metadataFull ? (result as { dependencyQueries?: [string, string[]][] }).dependencyQueries : undefined;
-      const analysis = metadataDirty ? queryInputs(metadataFull ? undefined : queryChanges, answered) : undefined;
+      const analysis = metadataDirty ? queryInputs(metadataFull ? undefined : queryChanges) : undefined;
       parentPort!.postMessage({ id, result, health: await dispatch('health', {}), judged: state.judgement.judgedFiles,
-        ...(analysis ? { analysis: { ...analysis, ...(answered ? { queryDependencies: [] } : {}), dependencies: metadataFull ? dependencies() :
-          [...new Set([...analysis.inputs, ...analysis.queryDependencies.flatMap(([, paths]) => paths as string[])])] } } : {}) });
+        ...(analysis ? { analysis: { inputPatterns: analysis.inputPatterns, inputs: analysis.inputs, dependencies: metadataFull ? dependencies() :
+          [...new Set([...analysis.inputs, ...analysis.queryPaths])] } } : {}) });
       metadataDirty = false; metadataFull = false; queryChanges.clear();
     }
     catch (error) { parentPort!.postMessage({ id, error: errorMessage(error), errorStack: error instanceof Error ? error.stack : undefined, usageError: error instanceof UsageError, ...(error instanceof UsageError ? { errorCode: error.code } : {}) }); }

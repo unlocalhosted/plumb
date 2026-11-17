@@ -264,7 +264,6 @@ export class Session extends EventEmitter {
   private inputs: string[] = [];
   private inputPatterns: string[] = [];
   private analysisInputs = new Set<string>();
-  private queryDependencies = new Map<string, string[]>();
   private watchers: FSWatcher[] = [];
   private timer?: NodeJS.Timeout;
   private debounce?: NodeJS.Timeout;
@@ -336,7 +335,7 @@ export class Session extends EventEmitter {
           this.patterns = message.patterns; this.patternsDirty = true; this.sourceFiles.clear(); for (const file of message.files) this.sourceFiles.add(file);
           this.configurationFiles.clear(); for (const file of message.configurationFiles) this.configurationFiles.add(file);
           this.entryGraph = new Map(message.entryGraph ?? []);
-          this.inputs = message.inputs; this.inputPatterns = message.inputPatterns; this.selectAnalysisInputs(); this.queryDependencies.clear(); for (const [file, paths] of message.queryDependencies) this.queryDependencies.set(file, paths);
+          this.inputs = message.inputs; this.inputPatterns = message.inputPatterns; this.selectAnalysisInputs();
           resolveReady(); return; }
         const failure = (text: string): Error => {
           const error = message.usageError ? new UsageError(text, message.errorCode) : new Error(text);
@@ -352,7 +351,6 @@ export class Session extends EventEmitter {
             this.inputPatterns = message.analysis.inputPatterns; this.selectAnalysisInputs();
           }
           for (const path of message.analysis.dependencies) this.dependencies.add(path);
-          for (const [file, paths] of message.analysis.queryDependencies) this.queryDependencies.set(file, paths);
         }
         if (message.judged) this.lastStats = { ...(this.lastStats as object ?? {}), judged: message.judged };
         if (message.error) pending.reject(failure(message.error)); else pending.resolve(message.result);
@@ -540,9 +538,8 @@ export class Session extends EventEmitter {
     try {
       if (broad || this.failure) { await this.worker.terminate(); this.rejectPending(new Error('Session inputs changed.')); await this.restart(); }
       else {
-        const result = await this.request<{ dependencyDelta: string[]; dependencyQueries: [string, string[]][]; queryDependencies: [string, string[]][] }>('refresh', { paths: changed });
+        const result = await this.request<{ dependencyDelta: string[] }>('refresh', { paths: changed });
         for (const path of result.dependencyDelta) this.dependencies.add(path);
-        for (const [file, paths] of result.dependencyQueries) this.queryDependencies.set(file, paths);
         this.lastStats = result;
       }
       if (!local) await this.retainLocations(new Set());

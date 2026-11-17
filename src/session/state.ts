@@ -139,6 +139,24 @@ export class WarmState implements AnalysisRuntime {
       ...this.collection.consumers.get(file) ?? [], ...this.reachable(file, this.componentDependencies),
       ...this.reachable(file, this.componentConsumers)])];
   }
+  /** queryDependencies of every file in `files` together, from one walk that starts at all of them. Never one walk per
+   * file: a file near the top of a large app (its shell) reaches most of it, and a list per file is files × files paths
+   * (about 13 million on a 3,600-file app, which ran the dev server out of memory on one write). */
+  queryDependenciesOf(files: Iterable<string>): Set<string> {
+    const roots = [...new Set(files)], out = new Set<string>();
+    for (const file of roots) {
+      for (const dependency of this.collection.slices.get(file)?.dependencies.keys() ?? []) out.add(dependency);
+      for (const consumer of this.collection.consumers.get(file) ?? []) out.add(consumer);
+    }
+    for (const edges of [this.componentDependencies, this.componentConsumers] as ReadonlyMap<string, Iterable<string>>[]) {
+      const seen = new Set(roots), queue = [...roots];
+      for (let i = 0; i < queue.length; i++) for (const next of edges.get(queue[i]!) ?? []) {
+        if (seen.has(next)) continue;
+        seen.add(next); out.add(next); queue.push(next);
+      }
+    }
+    return out;
+  }
   get compilerFiles(): string[] { return this.compiler.graph?.files ?? []; }
   sourceHash(file: string): string | undefined {
     if (this.cssHashes.has(file)) return this.cssHashes.get(file);
