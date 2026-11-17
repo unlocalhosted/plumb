@@ -177,6 +177,23 @@ open page's files first and the rest only when asked, which changes what the per
 in later) and so waits for the owner. Steps 4 (one copy of each text, up to about 200 MB here) and 5 (columns for
 sites and findings) remain the order otherwise.
 
+## Step 4, tried and undone (2026-11-17)
+
+The table above read 206 MB of texts as the source held about three times. It is held once. algorecall's source is
+63 million characters, and 3,264 of its 3,818 files contain a character outside Latin-1, so V8 stores the whole file
+at two bytes a character: about 125 MB for one copy.
+
+The change tried: one store of texts for the session, read through by collection and the component pass. Results
+stayed byte-identical, but nothing moved: the heap at rest was 1.35 GB against 1.32 GB, and plumber still failed to
+start under a 1.25 GB heap. Emptying the store after start-up freed nothing; emptying the component pass's copies as
+well freed 31 MB. The texts are kept alive by the results themselves: a string cut from a file's text (a class
+list, an authored value) can keep the whole file alive in V8. The change was undone, since it added a store to keep
+in step with file changes for no measured gain.
+
+What would free the texts: results that hold their own short strings instead of pieces of the file, and nothing
+else holding a file's text at rest (a write reads the file from disk, as it already does to check it is current).
+The ceiling is the 125 MB above; not measured until built.
+
 ## Expected (guesses until measured)
 
 - Step 1 removes most of the 781 MB of trees and a share of the 234 MB that points into them.

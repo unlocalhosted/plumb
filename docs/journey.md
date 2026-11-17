@@ -1909,6 +1909,12 @@ field is empty). The table of five writes, before and after. The Next table: eig
   lookup index, the component graph, for every file in the app. So step 3 was dropped, and the next real lever is
   analysing the open page first, which changes what a person sees and is the owner's call. A heap snapshot was tried
   first; writing it needed more than 11 GB and was killed twice.
+- **One copy of each text, tried and undone (2026-11-17):** the owner picked keeping one copy of each file's text.
+  Collection and the component pass now read through one store; results stayed identical, and memory did not move
+  (1.35 GB at rest against 1.32; still no start under 1.25 GB). The profile had been misread: the text is held once,
+  but at two bytes a character, because 3,264 of 3,818 files have a character like an em dash or an emoji. Emptying
+  the store freed nothing, because pieces cut from a file's text keep the whole text alive. The change was undone. What
+  would work is results holding their own short strings, worth up to about 125 MB.
 
 ## Open gaps
 - Sweeps covered six algorecall pages and thirteen crafting-ui pages.
