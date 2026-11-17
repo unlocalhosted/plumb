@@ -209,3 +209,14 @@ All free under the Unsplash License, hotlinked from images.unsplash.com as Unspl
 - Why: the owner's words: "you can see what does lint tool does is it better than plumber in any way and we can bring any of such capabilities". The owner then sent its link directly (after first pasting an unrelated skills repository by mistake).
 - What we took from it (ours, not a copy): it is the linter plumber says it is not: fixed numbers in a policy file (8px minimum gaps, a list of allowed text sizes), and its alignment check only works on groups a person has marked by hand in the markup, so it would not have found any of the three screens above. Plumber's own headless run already reads a page at desktop and phone size, in dark, across a sweep of widths and under recorded gestures, and has a command with output for agents, so those are not gaps. Where lintapple is ahead, from a skim of plumber's side: named states reached by a written plan (click this, type that, then check the screen that results, such as an open dialog or an error); keyboard behaviour (a tooltip opens on focus and closes on Escape, a dialog holds focus and gives it back, tabs and menus answer the arrow keys); what it could not measure is counted and listed apart from what passed, everywhere; one problem seen at several sizes and states is reported once with the places it occurred; and a short contract for coding agents (run it on every changed screen, never loosen the policy to pass).
 - Used in: not yet.
+
+## 2026-11-18 · A frontend CI under two minutes (shared by the owner)
+- What: a post the owner pasted, no link: a team's frontend CI cut to under 2 minutes by moving tsc to bun check,
+  oxlint with every rule on, shards filled by recorded test time, PRs running only the tests the diff can reach, and
+  lint, typecheck, build and tests running in parallel.
+- Why: the owner's words: "can we expedite our vm agent test suite as well ? also do you run all tests again and
+  again as well ?" Asked while the full suite was running on vm-agent (215 files, about 35 minutes).
+- What it changes for us: our runner already runs files side by side inside a core and memory budget, but it orders
+  them by cost tier, not recorded time, builds before testing instead of alongside, and runs every file every time.
+  The two that would matter most here: running only the tests a change can reach, and scheduling by recorded time.
+- Used in: proposed, not built (docs/backlog.md).
