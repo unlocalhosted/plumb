@@ -63,6 +63,11 @@ reserved.)
 
 ## Doesn't do yet
 
+- **Component root ranges depend on build order (2026-11-17).** A component's root class ranges reach the session's
+  cache only from a build that keeps the component in its graph; a component first found while building another file
+  is missing them in every later graph. Which ones depends on file order. Recording them at discovery changed 77
+  ownership findings on algorecall; the right answer needs a decision on what ownership should see, then that change
+  with its own proof. See docs/briefs/analysis-memory.md, "Component discovery, first pass".
 - **A large app's analysis holds 811 MB live (2026-11-17).** Measured after a forced collection. What is left is mostly the rows themselves, shared by the report, indexes and judgement; open-page-first layer 1 is built (556 MB released). Next: skip whole-app judging at start-up (peak and start time), then layer 2 (collect on demand). Provenance judges each input once (8.6 s to 7.0 s; the rest is per-row string keys). Next: number sites and contexts instead of string keys; expansion and existence once per class; component discovery (13.4 s) needs its own reading. Step 1 of `docs/briefs/analysis-memory.md` took the analysis worker's
   heap from 2.17 GB to 1.26 GB; the process rests at 2.46 GB. Step 2 lowered the heap it needs to start from 1.6–1.8 GB to 1.25–1.4 GB. Step 3 was measured and dropped (tens of MB). One copy of each text was tried and undone (texts are held once, at two bytes a character, kept alive by pieces of them in the results; up to about 125 MB if results held their own strings). Results now own their strings (worker at rest 1.24 GB, starts under 1.25 GB). Open: open-page-first analysis, which waits for the owner because the project-wide list would fill in later. Earlier note: On algorecall (3,662 source files) plumber now starts at node's
   default heap limit (it failed 3 of 3 before the module cache was capped) and rests at about 2.7 GB. The engine

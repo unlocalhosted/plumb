@@ -526,6 +526,27 @@ Proof: algorecall's full report (2,935 findings) and crafting-ui's (927), finger
 identical before and after; algorecall's line and column views identical; all 456 sampled files still give the same
 findings judged alone.
 
+## Component discovery, first pass (2026-11-17)
+
+A CPU profile of start-up on algorecall: 10.6 s under the component graph build. 4.1 s was resolving the exports of
+every module in the component folders, again for each of the 3,649 per-file builds (each answer cached, but asked
+millions of times through fresh string keys); 2.0 s parsing files again and 0.8 s reading them; 0.7 s putting each
+graph's results through the string table, mostly the same component identities in every graph.
+
+Built: within one build of the graph, each component module's enumeration is recorded once (the identities it found
+and the re-exports it followed) and replayed for every later file, taking a replayed identity's root ranges and
+fingerprint classes from the session's cache exactly as the cached path does. Identities go through the string table
+once, when they are made.
+
+Found on the way, left as it is: a component's root class ranges reach the session's cache only from a build that
+keeps the component in its graph. A component first found while building a file that does not keep it is, in every
+later file's graph, missing its root ranges; which components that happens to depends on the order files are built.
+A first replay that recorded the ranges at discovery changed 77 ownership findings on algorecall, so it was not kept;
+the order-dependence is in the backlog.
+
+Proof: the component graph, whole and file by file, byte-identical to this morning's baseline on algorecall and
+crafting-ui; full-report findings identical (2,935 and 927). Component discovery: 13.4 s to 9.5 s.
+
 ## Expected (guesses until measured)
 
 Provenance from 8.6 s to about 1 s, expansion and existence from 7 s to about 1 s: about 13 s off start-up and off
@@ -554,6 +575,27 @@ time is.
 Proof: algorecall's full report (2,935 findings) and crafting-ui's (927), fingerprinted over every finding and site,
 identical before and after; algorecall's line and column views identical; all 456 sampled files still give the same
 findings judged alone.
+
+## Component discovery, first pass (2026-11-17)
+
+A CPU profile of start-up on algorecall: 10.6 s under the component graph build. 4.1 s was resolving the exports of
+every module in the component folders, again for each of the 3,649 per-file builds (each answer cached, but asked
+millions of times through fresh string keys); 2.0 s parsing files again and 0.8 s reading them; 0.7 s putting each
+graph's results through the string table, mostly the same component identities in every graph.
+
+Built: within one build of the graph, each component module's enumeration is recorded once (the identities it found
+and the re-exports it followed) and replayed for every later file, taking a replayed identity's root ranges and
+fingerprint classes from the session's cache exactly as the cached path does. Identities go through the string table
+once, when they are made.
+
+Found on the way, left as it is: a component's root class ranges reach the session's cache only from a build that
+keeps the component in its graph. A component first found while building a file that does not keep it is, in every
+later file's graph, missing its root ranges; which components that happens to depends on the order files are built.
+A first replay that recorded the ranges at discovery changed 77 ownership findings on algorecall, so it was not kept;
+the order-dependence is in the backlog.
+
+Proof: the component graph, whole and file by file, byte-identical to this morning's baseline on algorecall and
+crafting-ui; full-report findings identical (2,935 and 927). Component discovery: 13.4 s to 9.5 s.
 
 ## Expected (guesses until measured)
 

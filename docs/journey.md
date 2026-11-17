@@ -1982,6 +1982,12 @@ field is empty). The table of five writes, before and after. The Next table: eig
   profile showed the verdicts themselves now cost 0.24 s; the time is the bookkeeping around each declaration, keys
   built as strings for every row. Two of those were cut. Results identical on algorecall and crafting-ui, file by
   file too. The next lesson for speed is the same as for memory: number the rows instead of describing them.
+- **Component discovery, 13.4 s to 9.5 s (2026-11-17):** the owner picked the slowest phase. A CPU profile showed each
+  of 3,649 per-file builds resolving every export of every component module again. Each module's result is now
+  recorded once per build and replayed. The first replay changed 77 ownership findings, which uncovered an
+  order-dependence already in the code (a component's root ranges are missing from later graphs if it was first found
+  by a build that did not keep it); the kept replay copies today's behaviour exactly and the order-dependence went to
+  the backlog. Graph and findings identical on both apps.
 
 ## Open gaps
 - Sweeps covered six algorecall pages and thirteen crafting-ui pages.

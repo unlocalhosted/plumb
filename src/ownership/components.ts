@@ -56,7 +56,11 @@ export interface ComponentMemory {
    * one build, when the files on disk are taken to stand still, exactly as a single call over every file takes them. */
   batch?: ComponentBatch;
 }
-export interface ComponentBatch { resolver: ResolverFactory; contextResolver: ResolverFactory; resolutions: Map<string, string | undefined>; directories: Map<string, string[]> }
+/** What enumerating one component module's exports added, kept for one build so the next file replays it. */
+interface Enumerated { identities: [string, ComponentIdentity | null][]; stars: string[] }
+export interface ComponentBatch { resolver: ResolverFactory; contextResolver: ResolverFactory; resolutions: Map<string, string | undefined>; directories: Map<string, string[]>;
+  /** per component module, what resolving its exports found: the same for every file of one build, so done once */
+  enumerated?: Map<string, Enumerated> }
 export interface ComponentMount { component: ComponentIdentity; classes: string[]; ancestors: { element: string; classes: string[] }[] }
 interface Usage { start: number; end: number; component: ComponentIdentity; site: Site; classes: string[]; props: Record<string, string> }
 export interface ElementIdentity { start: number; end: number; tag: string; site: Site; styling: { start: number; end: number }[]; component?: ComponentIdentity }
@@ -102,7 +106,7 @@ const resolverOptions = { tsconfig: 'auto' as const, extensions: ['.tsx', '.ts',
   conditionNames: ['import', 'browser', 'default'], mainFields: ['browser', 'module', 'main'] };
 
 /** A fresh batch for one build of the graph (ComponentMemory.batch). */
-export const componentBatch = (): ComponentBatch => ({ resolver: tracked(resolverOptions), contextResolver: tracked({ tsconfig: 'auto', resolveToContext: true }), resolutions: new Map(), directories: new Map() });
+export const componentBatch = (): ComponentBatch => ({ resolver: tracked(resolverOptions), contextResolver: tracked({ tsconfig: 'auto', resolveToContext: true }), resolutions: new Map(), directories: new Map(), enumerated: new Map() });
 
 /** Read before collection so a warm graph does not retain unneeded source ASTs. */
 export function cachedComponents(root: string, files: string[], config: PlumbConfig, includeUnused = false): ComponentGraph | undefined {
@@ -435,7 +439,9 @@ export function discoverComponents(root: string, files: string[], config: PlumbC
       recipes.push(...read.filter(recipe => Object.keys(recipe.variants).length));
     }
     if (recipes.length) identity.recipes = recipes;
-    fingerprintClasses.set(identity, [...fingerprint].sort());
+    // an identity outlives this build and is shared by thousands of graphs: its strings go through the table once, here
+    internAll(identity);
+    fingerprintClasses.set(identity, [...fingerprint].sort().map(intern));
     return identity;
   }
   function local(value: Module, name: string, seen: Set<string>): ComponentIdentity | undefined {
@@ -585,9 +591,30 @@ export function discoverComponents(root: string, files: string[], config: PlumbC
     for (const file of discovered) module(file);
   }
   if (includeUnused || discoveryDirectories.length) {
+    // A selected module's exports resolve the same way for every file of a build: the server builds the graph one file
+    // at a time, and each of thousands of files enumerated every component module again (4 s of a 13 s graph on a
+    // 3,600-file app). The first enumeration of a module records what it added; the rest replay it.
+    const enumerated = memory?.batch?.enumerated;
     for (const value of modules.values()) if (selectedFile(value.file)) {
+      const kept = enumerated?.get(value.file);
+      if (kept) {
+        // as local() does for an identity it finds cached: the ranges and classes the session kept for it, if any
+        for (const [key, identity] of kept.identities) {
+          if (identities.has(key)) continue;
+          identities.set(key, identity);
+          if (!identity) continue;
+          const ranges = memory?.rootRanges?.get(identity), classes = memory?.fingerprintClasses?.get(identity);
+          if (ranges && !rootRanges.has(identity)) rootRanges.set(identity, ranges);
+          if (classes && !fingerprintClasses.has(identity)) fingerprintClasses.set(identity, classes);
+        }
+        for (const path of kept.stars) { selected.add(path); module(path); }
+        continue;
+      }
+      const before = enumerated && new Set(identities.keys());
+      const stars: string[] = [];
       for (const name of value.exports.keys()) if (name !== '*') exported(value.file, name, new Set());
-      for (const star of value.stars) { const path = target(value.file, star); if (path) { selected.add(path); module(path); } }
+      for (const star of value.stars) { const path = target(value.file, star); if (path) { stars.push(path); selected.add(path); module(path); } }
+      if (enumerated && before) enumerated.set(value.file, { stars, identities: [...identities].filter(([key]) => !before.has(key)) });
     }
   } else if (fingerprints.length) {
     for (const value of modules.values()) if (selectedFile(value.file)) for (const name of fingerprints) exported(value.file, name, new Set());
@@ -612,7 +639,8 @@ export function discoverComponents(root: string, files: string[], config: PlumbC
   // file at a time touches every file of the component folders, and the server keeps thousands of graphs
   const sourceLines = new Map(sourceFiles.flatMap(file => { const value = modules.get(file); return value ? [[file, value.lineStarts] as const] : []; }));
   // what the graph keeps (tags, names, props, classes, sites) is cut from the files' text: keep the table's copies
-  internAll([elements, [...usages.values()], mounts, components, [...rootRanges.values()], [...fingerprintClasses.values()]]);
+  // identities, their root ranges and fingerprint classes were kept once when they were made (metadata above)
+  internAll([elements, [...usages.values()], mounts]);
   for (const item of sourceTokens.values()) { item.classes = new Set([...item.classes].map(intern)); item.variables = new Set([...item.variables].map(intern)); }
   const graph: ComponentGraph = { diagnostics, root, components, used: [...used.values()], usages, mounts, elements, rootRanges, fingerprintClasses, sourceTokens,
     element(site) {
