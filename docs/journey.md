@@ -1959,6 +1959,11 @@ field is empty). The table of five writes, before and after. The Next table: eig
   report. The design (in the analysis-memory brief) has two layers: judge on demand (start-up builds the app-wide
   products, pages are judged per file, project-wide views are built when opened and let go), then collect on demand.
   Waiting for sign-off before code.
+- **A single-file read was 2.6 s, now 0.3 s (2026-11-17):** the owner signed off layer 1. Its first proof compared
+  the per-file path with the full report on 127 algorecall files: 126 match exactly (the miss is two ownership
+  findings in one file, and it exists today after an edit there). Timing it showed 2.3 s of every 2.6 s went to
+  library detection, whose two-second cache every read outlived. The session now holds those facts until it restarts.
+  Every single-file edit on algorecall is about 2.3 s faster because of it. Full-report findings unchanged.
 
 ## Open gaps
 - Sweeps covered six algorecall pages and thirteen crafting-ui pages.

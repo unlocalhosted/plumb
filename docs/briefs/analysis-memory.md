@@ -405,6 +405,20 @@ for a class must not depend on which other classes were compiled with it, which 
 
 Layer 1 first, measured and proven, then layer 2. Each is one commit with its proof.
 
+## Layer 1, first finding: the per-file path was slow for a reason outside judgement (2026-11-17)
+
+Before building layer 1, the per-file path was compared with the full report on algorecall: for 127 sampled files,
+126 give the same findings for that file. The one difference is two ownership findings on a `Button` in
+`src/pages/home/hero-legacy/HeroStudio.tsx`, which the per-file path misses; it is the same path every single-file
+edit takes today, so the miss exists today after an edit to that file.
+
+It took 2.6 s a file, 2.3 s of it in one call: the library detection (`projectFacts`) is cached for two seconds, and
+each per-file read outlived the cache and scanned the project again. The analysis now holds those facts in the
+session's own memory (a `libraries` phase), dropped when the session restarts; a change to `package.json` restarts
+it. A per-file read is 0.3 s, which also makes every single-file edit about 2.3 s faster on algorecall today.
+
+Full-report findings and line and column views are unchanged (same fingerprints, 2,935 findings, 2,277 files).
+
 ## Expected (guesses until measured)
 
 - Step 1 removes most of the 781 MB of trees and a share of the 234 MB that points into them.
