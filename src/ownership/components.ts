@@ -10,7 +10,7 @@ import { sourceHash } from '../collect/cache.js';
 import { intern, internAll } from '../collect/strings.js';
 import type { PlumbConfig } from '../config.js';
 import type { Declaration, Site } from '../report.js';
-import { lineStarts, nodeName, references, sourceSite, unwrap } from '../collect/source.js';
+import { nodeName, packedLineStarts, references, sourceSite, unwrap } from '../collect/source.js';
 import type { SourceText, SourceProgram } from '../collect/source.js';
 import { unreadable } from '../diagnostics.js';
 import type { Finding } from '../report.js';
@@ -33,7 +33,8 @@ interface Import { file: string; name: string }
  * file is read and parsed again (`tree()` below) and kept only for one build, so a large app holds neither every
  * file's tree nor every file's text. `hash` is the text the index was built from; a file that no longer matches it
  * reads as empty until its change event indexes it again. */
-interface Module extends Omit<SourceText, 'text'> {
+interface Module extends Omit<SourceText, 'text' | 'lineStarts'> {
+  lineStarts: Uint32Array;
   hash: string;
   /** whether the text has a `<` at all: no JSX element can be in a file without one */
   jsx: boolean;
@@ -205,7 +206,7 @@ export function discoverComponents(root: string, files: string[], config: PlumbC
       diagnostic = unreadable(file, file, error); diagnostics.push(diagnostic);
       ast = parseSync(file, '', parserOptions).program;
     }
-    const value: Module = { file, hash: sourceHash(text), jsx: text.includes('<'), lineStarts: shared?.text === text ? shared.lineStarts : lineStarts(text), ...(diagnostic ? { diagnostic } : {}), bindings: new Map(), types: new Map(), imports: new Map(), exports: new Map(), stars: [] };
+    const value: Module = { file, hash: sourceHash(text), jsx: text.includes('<'), lineStarts: packedLineStarts(text), ...(diagnostic ? { diagnostic } : {}), bindings: new Map(), types: new Map(), imports: new Map(), exports: new Map(), stars: [] };
     modules.set(file, value); trees.set(value, ast);
     for (const [index, statement] of ast.body.entries()) {
       if (statement.type === 'ImportDeclaration') {
@@ -607,7 +608,9 @@ export function discoverComponents(root: string, files: string[], config: PlumbC
     });
     sourceTokens.set(file, inventory);
   }
-  const sourceLines = new Map([...modules].map(([file, value]) => [file, value.lineStarts]));
+  // positions are only ever asked about in the files this graph scanned (its elements and usages); a graph built one
+  // file at a time touches every file of the component folders, and the server keeps thousands of graphs
+  const sourceLines = new Map(sourceFiles.flatMap(file => { const value = modules.get(file); return value ? [[file, value.lineStarts] as const] : []; }));
   // what the graph keeps (tags, names, props, classes, sites) is cut from the files' text: keep the table's copies
   internAll([elements, [...usages.values()], mounts, components, [...rootRanges.values()], [...fingerprintClasses.values()]]);
   for (const item of sourceTokens.values()) { item.classes = new Set([...item.classes].map(intern)); item.variables = new Set([...item.variables].map(intern)); }

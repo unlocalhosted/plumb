@@ -1935,6 +1935,12 @@ field is empty). The table of five writes, before and after. The Next table: eig
   graph hold 234 MB instead of 382; texts kept alive by pieces of them fell from 97 MB to 1 MB; the worker rests at
   1.09 GB instead of 1.24; plumber starts under a 1.1 GB heap. Results are byte-identical on algorecall and
   crafting-ui, and start-up time did not change.
+- **The graph per file, trimmed (2026-11-17):** the owner asked for one graph table. Measuring first showed the 3,650
+  graph objects themselves cost about 8 MB, so a merged table would have saved little. The cost was inside: each graph
+  kept a map of line tables for every file its build touched (26 MB), and line tables were plain arrays. Graphs now
+  map only their own files, and the index packs line tables four bytes a line. Proof: collection plus the graph hold
+  194 MB instead of 234; the worker rests at 1.04 GB instead of 1.09; results byte-identical. Packing elements (about
+  10 to 15 MB) was left, because it changes the graph cache's format.
 
 ## Open gaps
 - Sweeps covered six algorecall pages and thirteen crafting-ui pages.

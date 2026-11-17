@@ -32,11 +32,11 @@ export const fileHash = (file: string) => {
   catch { return null; }
 };
 
-function serialize(graph: ComponentGraph, lines: Map<string, number[]>) {
+function serialize(graph: ComponentGraph, lines: Map<string, ArrayLike<number>>) {
   const ids = new Map(graph.components.map((component, index) => [component, index]));
   const id = (component: ComponentIdentity) => ids.get(component)!;
   return {
-    diagnostics: graph.diagnostics, root: graph.root, components: graph.components, used: graph.used.map(id), lines: [...lines],
+    diagnostics: graph.diagnostics, root: graph.root, components: graph.components, used: graph.used.map(id), lines: [...lines].map(([file, starts]): [string, number[]] => [file, Array.from(starts)]),
     usages: [...graph.usages].map(([file, usages]) => [file, usages.map(usage => ({ ...usage, component: id(usage.component) }))] as const),
     mounts: graph.mounts.map(mount => ({ ...mount, component: id(mount.component) })),
     elements: graph.elements.map(({ component, ...element }) => ({ ...element, ...(component ? { component: id(component) } : {}) })),
@@ -97,7 +97,7 @@ export function componentCache(root: string, files: string[], config: PlumbConfi
       if (receipt.contexts.some(([key, previous]) => { const [file, specifier] = key.split('\0'); return resolveContext(file!, specifier!) !== (previous ?? undefined); })) return;
       return hydrate(receipt.graph);
     },
-    write(graph: ComponentGraph, lines: Map<string, number[]>, files: Map<string, string | null>, directories: Map<string, string[]>, resolutions: Map<string, string | undefined>, contexts: Map<string, string | undefined>): void {
+    write(graph: ComponentGraph, lines: Map<string, ArrayLike<number>>, files: Map<string, string | null>, directories: Map<string, string[]>, resolutions: Map<string, string | undefined>, contexts: Map<string, string | undefined>): void {
       const receipt: Receipt = { graph: serialize(graph, lines), files: [...files], directories: [...directories], resolutions: [...resolutions], contexts: [...contexts] };
       mkdirSync(dirname(path), { recursive: true });
       // Worker threads share a PID, even though each write is synchronous.

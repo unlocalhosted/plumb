@@ -267,6 +267,31 @@ Collection results and the component graph are byte-identical on algorecall and 
 Next in this order: one graph table instead of a graph per file (the graph still adds about 130 MB for about 10 MB of
 rows), then the judgement side (judgement, lookup index, finding groups), which has not been measured this way.
 
+## The graph per file, measured and trimmed (2026-11-17)
+
+Before building one graph table, a heap snapshot labelled every object by the graph or index field it hangs from
+(collection plus graph, algorecall, vm-agent). The 3,650 graph objects' own fields came to about 8 MB, so merging them
+into one table would save little. The cost was inside:
+
+- each graph mapped every file its build touched to that file's line table, and a build touches every file of the
+  component folders: 26 MB of maps. A graph only converts positions in the files it scanned; it now maps only those;
+- the component index kept line tables as plain arrays; they are now packed, four bytes a line;
+- elements cost about 300 bytes each (32 MB for 108,286): an object, a site object and one object per styling range,
+  in arrays with spare capacity. Mounts copy their ancestor lists (9 MB). Packing these would save about 10 to 15 MB
+  and changes the graph cache's format, so it is left.
+
+| On algorecall, vm-agent | Before | After |
+|---|---|---|
+| collection plus component graph, held after a forced collection | 234 MB | 194 MB |
+| analysis worker at rest (sampled under a 1.5 GB limit) | 1.09 GB | 1.04 GB |
+| smallest heap plumber starts under | 0.95 to 1.1 GB | unchanged |
+
+Collection results and the component graph are byte-identical on algorecall and crafting-ui.
+
+What is left at rest is mostly the judgement side: the report assembled in the analysis entry point, judgement orders
+and provenance, the worker's lookup index, and finding groups. It has not been measured field by field yet; that is
+the next step.
+
 ## Expected (guesses until measured)
 
 - Step 1 removes most of the 781 MB of trees and a share of the 234 MB that points into them.
