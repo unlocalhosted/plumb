@@ -1977,6 +1977,11 @@ field is empty). The table of five writes, before and after. The Next table: eig
   except local Tailwind variables on the same element. Timing the full analysis showed where it pays (provenance 8.6
   s, expansion and existence 7 s) and found a bigger target: component discovery, 13.4 s. The design (a verdict table
   per rule family) is in the analysis-memory brief, waiting for sign-off.
+- **Provenance judges each input once (2026-11-17):** built after sign-off. Verdicts are now judged once per
+  distinct input and shared by every site. My estimate (8.6 s down to about 1 s) was wrong: it went to 7.0 s. A CPU
+  profile showed the verdicts themselves now cost 0.24 s; the time is the bookkeeping around each declaration, keys
+  built as strings for every row. Two of those were cut. Results identical on algorecall and crafting-ui, file by
+  file too. The next lesson for speed is the same as for memory: number the rows instead of describing them.
 
 ## Open gaps
 - Sweeps covered six algorecall pages and thirteen crafting-ui pages.

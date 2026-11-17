@@ -507,7 +507,26 @@ finding is drawn.
 The full report's findings, fingerprinted as in the passes above (every finding and site, with ledger key and
 status), identical before and after, on algorecall and crafting-ui; and the per-file proof (456 files) still equal.
 
-### Expected (guesses until measured)
+### Judge each input once, provenance built (2026-11-17)
+
+Built: provenance's per-declaration judgement is a function of its true inputs, kept in a table per family for the
+run (in the resolution context every cluster shares). A declaration builds its key, reuses the verdict or judges once,
+and replays its own effects (its resolved value, the numeric spacing it uses, the coverage counts).
+
+Measured, and the estimate was wrong. The phase went from 8.6 s to 7.0 s, not to about 1 s. A CPU profile of
+start-up showed why: once verdicts are judged once, judging them is 0.24 s; the rest of provenance is per-declaration
+bookkeeping around them: string keys built with JSON for every declaration (the verdict key, the variable scope, the
+site location), linking each declaration to its definitions (0.49 s), grouping findings (0.5 s), and ordering
+declarations (0.45 s). Two of those were cut here: the variable scope is built only in files that set `--tw-*`
+variables on an element, and the verdict key is joined, not serialised. The rest is the same lesson as the memory
+work: rows described by strings, one at a time. Numbers for sites and contexts, not strings, is where the remaining
+time is.
+
+Proof: algorecall's full report (2,935 findings) and crafting-ui's (927), fingerprinted over every finding and site,
+identical before and after; algorecall's line and column views identical; all 456 sampled files still give the same
+findings judged alone.
+
+## Expected (guesses until measured)
 
 Provenance from 8.6 s to about 1 s, expansion and existence from 7 s to about 1 s: about 13 s off start-up and off
 every full report. Memory: fewer copied declaration objects; the size is not measured.
@@ -516,6 +535,25 @@ every full report. Memory: fewer copied declaration objects; the size is not mea
 
 Provenance's verdict table first, measured and proven, then expansion, then existence; component discovery after its
 own reading.
+
+## Judge each input once, provenance built (2026-11-17)
+
+Built: provenance's per-declaration judgement is a function of its true inputs, kept in a table per family for the
+run (in the resolution context every cluster shares). A declaration builds its key, reuses the verdict or judges once,
+and replays its own effects (its resolved value, the numeric spacing it uses, the coverage counts).
+
+Measured, and the estimate was wrong. The phase went from 8.6 s to 7.0 s, not to about 1 s. A CPU profile of
+start-up showed why: once verdicts are judged once, judging them is 0.24 s; the rest of provenance is per-declaration
+bookkeeping around them: string keys built with JSON for every declaration (the verdict key, the variable scope, the
+site location), linking each declaration to its definitions (0.49 s), grouping findings (0.5 s), and ordering
+declarations (0.45 s). Two of those were cut here: the variable scope is built only in files that set `--tw-*`
+variables on an element, and the verdict key is joined, not serialised. The rest is the same lesson as the memory
+work: rows described by strings, one at a time. Numbers for sites and contexts, not strings, is where the remaining
+time is.
+
+Proof: algorecall's full report (2,935 findings) and crafting-ui's (927), fingerprinted over every finding and site,
+identical before and after; algorecall's line and column views identical; all 456 sampled files still give the same
+findings judged alone.
 
 ## Expected (guesses until measured)
 
