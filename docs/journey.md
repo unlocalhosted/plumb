@@ -1849,8 +1849,31 @@ field is empty). The table of five writes, before and after. The Next table: eig
   half-ink disc (its spoken name stays "Switch to dark"). Measured: 390px wide, the page is 390 and the bar ends at
   374; 360px, it ends at 344; on desktop every part sits where it did, to the pixel. No test written.
 
+- **Writing into every class, then undoing it (2026-11-17):** a read-only sweep can't show that a write lands where
+  it should, so this one wrote. On throwaway copies, each class on a page got a real write through plumber's server,
+  a check that exactly that one line changed with only that class swapped, an undo, and a check that the file came
+  back byte for byte. crafting-ui: 2,552 writes on seven pages, all right. Seven harder cases also held: a file the
+  person edited by hand keeps the edit through a write and its undo; a file changed since plumber read it is refused;
+  of two writes sent at once, one lands and one is refused; a change across two files undoes as one and keeps a
+  line typed since; an undo whose class was retyped is refused, neither file touched.
+- **Big pages lost the line that made an element (2026-11-17):** the sweep found 38 classes refused on the motion
+  vocabulary page. React (19.1 and later) records where an element was created for only 10,000 elements a second;
+  the page draws more than that at load, so later elements carry no line, and a class passed in from a usage could
+  not be found. The overlay now makes React's count read zero in dev, as React did before 19.1. The page went from
+  38 refused to 0; the 7 writes it unlocked were all right.
+- **One write could hang the laptop (2026-11-17):** on algorecall a write took about 40 seconds and its undo another
+  40, and the dev server grew past 5 GB; while the sweep and a profile ran, the owner's laptop ran out of memory and
+  hung. Two causes found so far. First, algorecall has several Tailwind stylesheets, and every file plumber passes on
+  its way from index.html to the right one counted as configuration, so a class written into the app's layout
+  restarted the whole analysis; those files now count only when their imports change. Second, and not solved:
+  plumber's analysis of algorecall's 3,662 files sits at about 4 GB, the default limit, and dies there about half the
+  time at start; with more room on vm-agent, one write took the server from 4.7 GB to 14 GB in 30 seconds before the
+  machine killed it. Whether the second fix changes that is not known yet. Media hook: the memory trace of one write.
+
 ## Open gaps
 - Sweeps covered six algorecall pages and thirteen crafting-ui pages.
+- One write on algorecall (3,662 files) takes the dev server from about 4.7 GB to past 14 GB; plumber cannot write
+  there yet without risking the machine. See "One write could hang the laptop".
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
 
 ### Open gaps from the 0.4.0 release work

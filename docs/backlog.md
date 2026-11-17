@@ -63,6 +63,11 @@ reserved.)
 
 ## Doesn't do yet
 
+- **A large app runs plumber out of memory (2026-11-17).** On algorecall (3,662 source files) the analysis sits at
+  about 4 GB, the default heap limit, and dies there about half the time at start; one class write took the server
+  from 4.7 GB to past 14 GB on vm-agent. Not known yet: what grows during a write. Next: a heap profile of one write
+  on vm-agent, in a memory-capped run.
+
 **Change the class in force (2026-11-13).** One rule (`overlay/src/variants.js`) for every class writer: breakpoints, dark and held states; the box edit, the layout card, Tidy and the shared reader use it. Still to do: a way for Plumber to hold hover/focus, the branch of a condition that is active, the text editor's text-size write, and a check on a running app with responsive classes. The plan is `docs/briefs/xray-propagation.md`.
 
 **The X-ray is Alt+B (2026-11-13).** Blueprint without heat, with the X-ray showing the element under the pointer and the one the list puts in hand. Still to check: the full suite on it (about 40 test files open blueprint; the X-ray's card now appears in them). Earlier note, kept for what must carry over: **The X-ray isn't in Plumber yet (2026-11-13).** The X-ray of the element under the pointer is a working prototype on the design site, and it should replace Alt+B's heat. What must carry over as it is: point at a part and drag it where it is (no mode, nothing drawn on top of the element); the token picker row in the card, where two fingers choose which sides or the value (the direction locks to the swipe, and the thumb resists and then snaps); changes collect for one Sync, and Esc puts them back; Enter opens a note for your agent with the file and line. **A repeated part changes everywhere by default** (every element the same line of code draws, found by its stamp: `peersOf` in `overlay/src/xray.js`), with the other places outlined and "×N places" in the card; Alt as a change starts changes only the one. Sync must write the class at that one line, not once per place.
