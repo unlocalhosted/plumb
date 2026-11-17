@@ -1992,6 +1992,14 @@ field is empty). The table of five writes, before and after. The Next table: eig
   built right after collection reads it, so its parsed code is reused instead of parsed and read again. Graph,
   findings and views identical on both apps. Start to ready went from 60 to 63 s down to 58 to 60 s: about 2 s, near
   the noise, less than the profile suggested, because some of the work moved rather than vanished.
+- **A bench of what you feel, and the regression it caught (2026-11-17/18):** the owner said they saw no improvement
+  and had only my charts. Two causes: their app was running a build from before the day's work (I had only built on
+  vm-agent), and nothing measured what a person feels. bench/moments now times start-up, the page read, an edit and
+  the page after a quiet minute through the overlay's own requests, two builds side by side. It showed edits on
+  crafting-ui 8 times faster and memory down a third, and a 19 s page after a quiet minute on algorecall, caused by
+  letting go of the whole-app report. The cause was what a file judged alone could see (a variable defined in another
+  of the app's files, a stylesheet reading the file's variable); fixed and proven on all 111 such files. That page is
+  now 1.5 s. Media hook: the bench table before and after.
 
 ## Open gaps
 - Sweeps covered six algorecall pages and thirteen crafting-ui pages.

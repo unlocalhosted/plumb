@@ -32,6 +32,15 @@ export class WarmState implements AnalysisRuntime {
   /** Lets go of what only the whole-app judgement keeps: its caches, every site's expanded declarations and the merged
    * component graph. The collected files, the component shards and the app-wide phases stay, so a file is judged
    * alone as fast as before, and the whole app again when asked (docs/briefs/analysis-memory.md, open page first). */
+  /** The project's source files as the whole-app analysis counted them (its file list and computed class files), one set
+   * per list. */
+  projectFileSet(): ReadonlySet<string> | undefined {
+    const files = this.shared<string[]>('files'), collected = this.shared<{ computedClassFiles?: string[] }>('collect');
+    if (!files) return undefined;
+    if (this.projectFilesFor?.files !== files || this.projectFilesFor.collected !== collected) this.projectFilesFor = { files, collected, set: new Set([...files, ...collected?.computedClassFiles ?? []]) };
+    return this.projectFilesFor.set;
+  }
+  private projectFilesFor: { files: string[]; collected: unknown; set: ReadonlySet<string> } | undefined;
   release(): void { this.judgement = new JudgementState(); this.siteCache = new WeakMap(); this.globalGraph = undefined; this.dead = undefined; }
   localJudgement(file: string): JudgementState {
     let value = this.localJudgements.get(file);
@@ -114,6 +123,14 @@ export class WarmState implements AnalysisRuntime {
     const base = this.shared<Awaited<ReturnType<typeof lowerStylesheets>>>('css');
     if (!base) throw new Error('Missing warm stylesheet context.');
     return { ...base, declarations: [...this.cssFiles.get(file) ?? [], ...[...this.cssDefinitions].flatMap(([source, ds]) => source === file ? [] : ds)] };
+  }
+  /** Declarations in any stylesheet that read one of these CSS variables: they decide how a variable a component sets
+   * inline is judged (a background reading `var(--track-hex)` makes it a colour). */
+  stylesReading(names: ReadonlySet<string>): Declaration[] {
+    if (!names.size) return [];
+    const out: Declaration[] = [];
+    for (const ds of this.cssFiles.values()) for (const d of ds) if (!d.prop.startsWith('--') && d.value.includes('var(') && [...d.value.matchAll(/var\(\s*(--[\w-]+)/g)].some(m => names.has(m[1]!))) out.push(d);
+    return out;
   }
   private siteCache = new WeakMap<object, { candidate: unknown; value: unknown }>();
   private compiler: TailwindMemory = {};

@@ -367,7 +367,11 @@ async function dispatch(method: string, params: Record<string, unknown>): Promis
     // its own declarations against the shared project record immediately.
     const definitions = state.collection.slices.get(file)?.value.styles.declarations.some(d => d.prop.startsWith('--')) || known().decisions.some(d => d.source.file === file);
     const start = performance.now();
-    const localQuery = (dirty || !raw) && !sharedDirty && !definitions;
+    // With the whole-app report let go, a component that sets CSS variables inline is read on its own like any other
+    // file (its findings judged alone equal the full report's); a stylesheet or a file that defines the theme's
+    // decisions still is read from the whole-app report. Rebuilding that report for an inline `--face` cost 16 s.
+    const themeDefinitions = file.endsWith('.css') || known().decisions.some(d => d.source.file === file);
+    const localQuery = (dirty || !raw) && !sharedDirty && !(definitions && (raw || themeDefinitions));
     // Site has always applied the ordinary ledger, even when report()/edits()
     // were configured for raw or changed-scope inspection.
     const scopedOptions = options.ledger === false || options.base !== undefined || options.changed || options.strictLedger;

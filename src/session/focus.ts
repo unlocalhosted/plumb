@@ -12,6 +12,8 @@ import type { JudgementState } from './judgement.js';
 export class Focus implements AnalysisRuntime {
   private candidates: string[] = [];
   private queryTokens: string[] = [];
+  /** the CSS variables this file defines: a stylesheet declaration that reads one is part of how they are judged */
+  private defines = new Set<string>();
   private judgement: JudgementState;
   /** `consumers`: for a file whose class literals are only lowered where other files use them (a helper of class
    * strings), the files that import it; its sites are read from their collections, as the whole-app report reads them. */
@@ -24,6 +26,14 @@ export class Focus implements AnalysisRuntime {
       styles: { declarations: parts.flatMap(p => p.styles.declarations), sites: parts.flatMap(p => p.styles.sites), stylesheets: parts.flatMap(p => p.styles.stylesheets),
         imports: parts.flatMap(p => p.styles.imports), definedVariables: parts.flatMap(p => p.styles.definedVariables) } };
   }
+  projectFiles(): ReadonlySet<string> | undefined { return this.state.projectFileSet(); }
+  /** this file's stylesheet context, plus declarations elsewhere that read a variable this file defines */
+  private localStyles() {
+    const base = this.state.localStyles(this.file), seen = new Set(base.declarations);
+    return { ...base, declarations: [...base.declarations, ...this.state.stylesReading(this.defines).filter(d => !seen.has(d))] };
+  }
+  alsoJudged(d: Declaration): boolean { return this.readsOwn(d); }
+  private readsOwn(d: Declaration): boolean { return this.defines.size > 0 && d.site.file !== this.file && [...d.value.matchAll(/var\(\s*(--[\w-]+)/g)].some(m => this.defines.has(m[1]!)); }
   async phase<T>(name: string, inputs: unknown[], compute: () => T | Promise<T>): Promise<T> {
     if (name === 'ranking' && this.queryTokens.every(token => (inputs[1] as Map<string, { css: string | null }>).get(token)?.css?.trim())) return { rankings: new Map(), save: async () => {} } as T;
     if (name === 'files') return [this.file] as T;
@@ -40,20 +50,23 @@ export class Focus implements AnalysisRuntime {
       if (shared && this.candidates.every(token => shared.candidates.has(token))) return shared as T;
       inputs = [...inputs.slice(0, 3), this.candidates, ...inputs.slice(4)];
     }
-    const value = name === 'collect' ? this.collected() : name === 'css' ? this.state.localStyles(this.file) : await this.state.phase(name, inputs, compute);
+    const value = name === 'collect' ? this.collected() : name === 'css' ? this.localStyles() : await this.state.phase(name, inputs, compute);
     if (name === 'collect') {
       const collection = value as Awaited<ReturnType<WarmState['collection']['collect']>>;
       this.candidates = [...new Set(collection.sites.filter(s => !s.opaque).map(s => s.token))].sort();
       const contexts = new Set(collection.sites.filter(s => s.file === this.file && (this.line === undefined || s.line === this.line)).flatMap(s => s.context ? [s.context] : []));
       const sites = collection.sites.filter(s => s.file === this.file && ((this.line === undefined || s.line === this.line) || s.context && contexts.has(s.context)));
       this.queryTokens = sites.filter(s => !s.opaque).map(s => s.token);
+      for (const d of collection.styles.declarations) if (d.site.file === this.file && d.prop.startsWith('--')) this.defines.add(d.prop);
       return { ...collection, sites, styles: { ...collection.styles,
         sites: collection.styles.sites.filter(s => s.site.file === this.file && (this.line === undefined || s.site.line === this.line)),
         declarations: collection.styles.declarations.filter(d => d.site.file === this.file && (this.line === undefined || d.site.line === this.line) || d.prop.startsWith('--')) } } as T;
     }
     if (name === 'css') {
       const css = value as { declarations: Declaration[] };
-      return { ...css, declarations: css.declarations.filter(d => d.site.file === this.file && (this.line === undefined || d.site.line === this.line) || d.prop.startsWith('--')) } as T;
+      // a stylesheet that reads one of this file's variables (`background: var(--track-hex)`) decides what that
+      // variable is judged as, so its declaration comes along, as it is in the whole-app report
+      return { ...css, declarations: css.declarations.filter(d => d.site.file === this.file && (this.line === undefined || d.site.line === this.line) || d.prop.startsWith('--') || this.readsOwn(d)) } as T;
     }
     return value as T;
   }

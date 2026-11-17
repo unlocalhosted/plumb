@@ -566,6 +566,35 @@ run-to-run spread; less than the 3 s of parsing and reading the profile showed, 
 collection rather than going away. What is left in component discovery is mostly resolving each JSX element's
 component (about 3 s).
 
+## The page after a quiet minute (2026-11-18)
+
+The moments bench (bench/moments) found the cost of layer 1: on algorecall the first page read after the report was
+let go took 19.3 s. Four of the home page's ten files set CSS variables inline (`--face`, `--busy-lap`), and `site`
+answered such a file from the whole-app report, which after a release meant rebuilding it (16 to 18 s each).
+
+Judged alone, 109 of 111 such files already matched the full report; two lost colour findings. The cause was what a
+file judged alone could see, not which files share variables (a first rule built on that was wrong and was removed):
+
+- where a variable is defined: `DueStack.tsx` reads `var(--lit-ink)`, defined in `today.css`, the app's own
+  stylesheet; judged alone, the project's own files were only the one file, so that definition did not count. The
+  per-file runtime now gives provenance the project's full file list (`projectFiles`);
+- what reads a variable the file sets: `AchievementCard.tsx` sets `--track-hex`, which `card-effects.css` reads in a
+  background; that reading makes it a colour. The per-file runtime now brings stylesheet declarations that read the
+  file's own variables, and judges them with it (`alsoJudged`).
+
+`site` now reads such a file alone after a release; stylesheets and files that define the theme's decisions still
+read the whole-app report.
+
+Proof: all 111 variable-setting files on algorecall, findings and declarations, identical judged alone; a 456-file
+sample identical; full reports on algorecall and crafting-ui unchanged (findings, component graph, line and column
+views).
+
+Bench, two rounds, this morning's build against this: algorecall page after a quiet minute 19.3 s to 1.5 s, memory
+there 1,971 MB to 1,509 MB (this morning's build still runs out of memory at start). crafting-ui as before: edit
+0.77 s to 0.11 s, memory after a quiet minute 921 MB to 513 MB. Not explained: algorecall's page right after start
+read 1.5 s in this run against 1.0 s in the first, through code this change does not touch; the next run will say
+whether that is the machine.
+
 ## Expected (guesses until measured)
 
 Provenance from 8.6 s to about 1 s, expansion and existence from 7 s to about 1 s: about 13 s off start-up and off
@@ -634,6 +663,35 @@ Measured, start to ready on algorecall: 60 and 63 s before, 58, 59 and 60 s afte
 run-to-run spread; less than the 3 s of parsing and reading the profile showed, because part of that work moved into
 collection rather than going away. What is left in component discovery is mostly resolving each JSX element's
 component (about 3 s).
+
+## The page after a quiet minute (2026-11-18)
+
+The moments bench (bench/moments) found the cost of layer 1: on algorecall the first page read after the report was
+let go took 19.3 s. Four of the home page's ten files set CSS variables inline (`--face`, `--busy-lap`), and `site`
+answered such a file from the whole-app report, which after a release meant rebuilding it (16 to 18 s each).
+
+Judged alone, 109 of 111 such files already matched the full report; two lost colour findings. The cause was what a
+file judged alone could see, not which files share variables (a first rule built on that was wrong and was removed):
+
+- where a variable is defined: `DueStack.tsx` reads `var(--lit-ink)`, defined in `today.css`, the app's own
+  stylesheet; judged alone, the project's own files were only the one file, so that definition did not count. The
+  per-file runtime now gives provenance the project's full file list (`projectFiles`);
+- what reads a variable the file sets: `AchievementCard.tsx` sets `--track-hex`, which `card-effects.css` reads in a
+  background; that reading makes it a colour. The per-file runtime now brings stylesheet declarations that read the
+  file's own variables, and judges them with it (`alsoJudged`).
+
+`site` now reads such a file alone after a release; stylesheets and files that define the theme's decisions still
+read the whole-app report.
+
+Proof: all 111 variable-setting files on algorecall, findings and declarations, identical judged alone; a 456-file
+sample identical; full reports on algorecall and crafting-ui unchanged (findings, component graph, line and column
+views).
+
+Bench, two rounds, this morning's build against this: algorecall page after a quiet minute 19.3 s to 1.5 s, memory
+there 1,971 MB to 1,509 MB (this morning's build still runs out of memory at start). crafting-ui as before: edit
+0.77 s to 0.11 s, memory after a quiet minute 921 MB to 513 MB. Not explained: algorecall's page right after start
+read 1.5 s in this run against 1.0 s in the first, through code this change does not touch; the next run will say
+whether that is the machine.
 
 ## Expected (guesses until measured)
 
