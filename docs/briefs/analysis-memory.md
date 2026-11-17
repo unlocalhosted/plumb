@@ -218,6 +218,32 @@ against 12.6 s.
 The resting profiles were also re-taken under a 1.5 GB limit, to rule out garbage counted as live under the 8 GB limit
 used before; the total came out the same, so the earlier tables stand.
 
+## Where data-oriented design would pay (measured 2026-11-17)
+
+The owner asked how far data-oriented design could push this. Measured on algorecall, vm-agent, with collection and
+the component graph built the way the server builds them (380 MB held after a forced collection):
+
+- **The row tables are small.** Class sites (228,484 rows), style declarations, style sites, elements (108,286),
+  usages and mounts come to about 50 MB as objects and about the same as columns, by a model of V8's layout (4 bytes
+  a field with pointer compression, the same as a column cell). Columns for these tables alone would save little.
+- **The cost is around the rows, not in them.** Building the graph adds 219 MB; dropping the graph objects frees
+  140 MB, for about 10 MB of rows. The per-file index is 27 MB of that.
+- **Names pin whole texts.** The parser's names and values are pieces of the file's text, and a kept piece keeps the
+  text alive. A heap snapshot of the full state counts 247,216 sliced strings over 142,500 parents totalling 154 MB,
+  about 40% of what is held; 2,173 strings over 20 KB (whole file texts) total 97 MB.
+- **A module-level table pins texts for good.** The resolver's record of every import answer (`collect/resolved.ts`)
+  keys each answer by file and specifier; it held 75 MB, mostly file texts, after everything else was released.
+- **3.1 million objects** for the 380 MB, about 120 bytes each.
+
+So the data-oriented moves that would pay, in order:
+1. **One string table at the parser boundary.** Every name, specifier, tag and class value plumber keeps is an id into
+   one table (or at least its own copy), never a piece of the file. This frees the pinned texts everywhere at once,
+   including the resolver record.
+2. **One graph table, not a graph per file.** Elements, usages and mounts for all files in shared columns with a file
+   column, instead of a graph object per file with its own maps and closures.
+3. **The same check on the judgement side** (judgement, the lookup index, finding groups: about 700 MB of the worker
+   at rest), which this harness does not run. Not measured.
+
 ## Expected (guesses until measured)
 
 - Step 1 removes most of the 781 MB of trees and a share of the 234 MB that points into them.

@@ -1922,6 +1922,13 @@ field is empty). The table of five writes, before and after. The Next table: eig
   collection plus the component graph hold 380 MB instead of 582 MB, the worker at rest 1.24 GB instead of 1.31, and
   plumber starts under a 1.25 GB heap where it failed before. Results are byte-identical on algorecall and
   crafting-ui.
+- **Where data-oriented design would pay (2026-11-17):** the owner asked how far data-oriented design could push the
+  memory. Measured before proposing: the row tables are small (about 50 MB, the same as columns), so columns alone
+  would not pay. The cost is around the rows: per-file graph objects (140 MB for 10 MB of rows), and names cut from
+  file texts that keep whole texts alive (154 MB pinned, 40% of what collection and the graph hold). A module-level
+  record of every import answer held 75 MB of texts after everything else was released. The next moves are a string
+  table at the parser boundary and one graph table instead of a graph per file. Media hook: the 50 MB of rows next to
+  the 380 MB held.
 
 ## Open gaps
 - Sweeps covered six algorecall pages and thirteen crafting-ui pages.
