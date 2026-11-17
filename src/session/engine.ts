@@ -1,5 +1,6 @@
 import { environment, stateDirectory, statePath, configurationNames, isLedgerPath, cacheDirectory, ignoreCache, buildId } from '../paths.js';
 import { resolutionsChanged } from '../collect/resolved.js';
+import { importSignature } from '../collect/entries.js';
 import type { Resolutions } from '../collect/resolved.js';
 import { atomicWrite } from '../atomic-write.js';
 import type { KeptStats } from './kept.js';
@@ -257,10 +258,12 @@ export class Session extends EventEmitter {
   private sourceFiles = new Set<string>();
   private outsideSources = new Set<string>();
   private configurationFiles = new Set<string>();
+  /** the modules walked to choose the Tailwind entry and their import lists (collect/entries.ts): a write inside one that
+   * keeps its imports is an ordinary source change, not a new project */
+  private entryGraph = new Map<string, string | null>();
   private inputs: string[] = [];
   private inputPatterns: string[] = [];
   private analysisInputs = new Set<string>();
-  private queryDependencies = new Map<string, string[]>();
   private watchers: FSWatcher[] = [];
   private timer?: NodeJS.Timeout;
   private debounce?: NodeJS.Timeout;
@@ -331,7 +334,8 @@ export class Session extends EventEmitter {
         if (message.ready) { this.dependencies.clear(); for (const file of message.dependencies) this.dependencies.add(file);
           this.patterns = message.patterns; this.patternsDirty = true; this.sourceFiles.clear(); for (const file of message.files) this.sourceFiles.add(file);
           this.configurationFiles.clear(); for (const file of message.configurationFiles) this.configurationFiles.add(file);
-          this.inputs = message.inputs; this.inputPatterns = message.inputPatterns; this.selectAnalysisInputs(); this.queryDependencies.clear(); for (const [file, paths] of message.queryDependencies) this.queryDependencies.set(file, paths);
+          this.entryGraph = new Map(message.entryGraph ?? []);
+          this.inputs = message.inputs; this.inputPatterns = message.inputPatterns; this.selectAnalysisInputs();
           resolveReady(); return; }
         const failure = (text: string): Error => {
           const error = message.usageError ? new UsageError(text, message.errorCode) : new Error(text);
@@ -347,7 +351,6 @@ export class Session extends EventEmitter {
             this.inputPatterns = message.analysis.inputPatterns; this.selectAnalysisInputs();
           }
           for (const path of message.analysis.dependencies) this.dependencies.add(path);
-          for (const [file, paths] of message.analysis.queryDependencies) this.queryDependencies.set(file, paths);
         }
         if (message.judged) this.lastStats = { ...(this.lastStats as object ?? {}), judged: message.judged };
         if (message.error) pending.reject(failure(message.error)); else pending.resolve(message.result);
@@ -524,13 +527,19 @@ export class Session extends EventEmitter {
     if (!local) this.selectAnalysisInputs();
     if (initial) return [];
     if (!changed.length) { if (this.failure) throw this.failure; return []; }
-    const broad = changed.some(path => !isLedgerPath(path) && (this.configurationFiles.has(path) || !/\.(?:[jt]sx?|css)$/.test(path) || !this.sourceFiles.has(path) && !this.dependencies.has(path) || !this.hashes.has(path)));
+    // a module on the way to the Tailwind entry chooses it again only when its imports change; a missing or unparsable
+    // text counts as changed
+    const rechoose = (path: string) => {
+      if (!this.entryGraph.has(path)) return false;
+      const text = this.sourceTexts.get(path), was = this.entryGraph.get(path);
+      return was === null || text === undefined || importSignature(path, text) !== was;
+    };
+    const broad = changed.some(path => !isLedgerPath(path) && (this.configurationFiles.has(path) || rechoose(path) ||!/\.(?:[jt]sx?|css)$/.test(path) || !this.sourceFiles.has(path) && !this.dependencies.has(path) || !this.hashes.has(path)));
     try {
       if (broad || this.failure) { await this.worker.terminate(); this.rejectPending(new Error('Session inputs changed.')); await this.restart(); }
       else {
-        const result = await this.request<{ dependencyDelta: string[]; dependencyQueries: [string, string[]][]; queryDependencies: [string, string[]][] }>('refresh', { paths: changed });
+        const result = await this.request<{ dependencyDelta: string[] }>('refresh', { paths: changed });
         for (const path of result.dependencyDelta) this.dependencies.add(path);
-        for (const [file, paths] of result.dependencyQueries) this.queryDependencies.set(file, paths);
         this.lastStats = result;
       }
       if (!local) await this.retainLocations(new Set());
@@ -1390,7 +1399,9 @@ export class Session extends EventEmitter {
     const names = (v: string) => v.split(/\s+/).filter(Boolean);
     if (names(from).length > 8 || names(to).length > 8) throw new UsageError('Swap changes at most eight classes.');
     const path = this.file(file); this.position(line); this.position(column);
-    const facts = await this.elementFacts(path, line, column);
+    // a write pinned to a string reached from the element asked about (`of`) is checked against what that element
+    // reaches, so its holder need not be a JSX element: a table another file exports is held by its declaration
+    const facts = at && of ? await this.pinFacts(path, line, column) : await this.elementFacts(path, line, column);
     if (sourceHash(facts.text) !== hash) throw stale();
     // a component's usage is not the element that was measured: a class added there may land elsewhere or nowhere
     if (!at && !names(from).length && isComponentJSX(facts.location.tag)) throw new UsageError(`<${facts.location.tag}> is a component; add the class inside it, by hand.`);
@@ -1399,6 +1410,11 @@ export class Session extends EventEmitter {
       if (sourceHash(source) !== hash) throw stale();
       return swapClasses(_file, source, facts.location.start, names(from), names(to), pinned);
     }, changed(from, to, ''));
+  }
+  /** The file a pinned write goes into, read as it is, and the holder's position in it as sent. */
+  private async pinFacts(path: string, line: number, column: number) {
+    await this.readableSource(path);
+    return { text: await readFile(path, 'utf8'), location: { line, column, tag: '', start: 0 } };
   }
   /** How class-site reaches a component's file from a usage's import (src/session/modules.ts): the project's resolution
    * (relative, index files, tsconfig paths, vite aliases), source files inside the root only, read as they are now. */
@@ -1495,6 +1511,8 @@ export class Session extends EventEmitter {
     const answer = classSites({ element, chain: links, modules: this.modules(), ...(names?.length ? { classes: names } : {}) });
     const hashes: Record<string, string> = {};
     for (const name of [element, ...links]) hashes[name.file] = sourceHash(name.text);
+    // a class written in a table another file exports: the writer needs that file's hash too
+    for (const site of answer.classes.flatMap(c => c.sites)) if (!(site.file in hashes)) hashes[site.file] = sourceHash(await readFile(this.file(site.file), 'utf8'));
     return { revision: this.revision, file, hash: hashes[file]!, hashes, ...answer };
   }
   /** Set a literal prop on a component (a craft suggestion of kind prop: delayDuration={500}), in one guarded write. */
@@ -1585,7 +1603,7 @@ export class Session extends EventEmitter {
     // one swap per element: the same element twice with the same edit is one
     const unique = [...new Map(edits.map(e => [`${e.line}:${e.column}|${e.from}|${e.to}|${e.at?.line ?? ''}:${e.at?.column ?? ''}`, e])).values()];
     for (const e of unique) {
-      if (typeof e?.from !== 'string' || typeof e?.to !== 'string' || !e.to.trim() || names(e.from).length > 8 || names(e.to).length > 8) throw new UsageError('Each swap needs from and to (at most eight classes).');
+      if (typeof e?.from !== 'string' || typeof e?.to !== 'string' || (!e.to.trim() && !e.from.trim()) || names(e.from).length > 8 || names(e.to).length > 8) throw new UsageError('Each swap needs a class to take out or one to put in (at most eight of each).');
       this.position(e.line); this.position(e.column);
     }
     // Every place that can be written is; a place that can't (a className built at runtime, a component's usage, a
@@ -1600,7 +1618,7 @@ export class Session extends EventEmitter {
     const starts: { edit: SwapsOptions['edits'][number]; start: number; from: string[]; to: string[]; pin?: ClassString }[] = [];
     for (const e of unique) {
       try {
-        const facts = await this.elementFacts(path, e.line, e.column);
+        const facts = e.at && e.of ? await this.pinFacts(path, e.line, e.column) : await this.elementFacts(path, e.line, e.column);
         if (sourceHash(facts.text) !== hash) throw stale();
         if (!e.at && !names(e.from).length && isComponentJSX(facts.location.tag)) throw new UsageError(`<${facts.location.tag}> is a component; add the class inside it, by hand.`);
         const pin = e.at ? await this.pinned(path, facts, { line: e.line, column: e.column, at: e.at, ...(e.of ? { of: e.of } : {}) }, pinWrite(names(e.from), names(e.to))) : undefined;
@@ -1612,7 +1630,7 @@ export class Session extends EventEmitter {
     if (!starts.length) throw nothing();
     // the history label: each distinct value once, cut to fit the text guard (a big file's swaps are one write)
     const summary = (xs: string[]) => { const all = [...new Set(xs)].join(', '); return all.length <= 500 ? all : `${all.slice(0, 470).replace(/,[^,]*$/, '')} … (${xs.length} in all)`; };
-    const result = await this.writeText(path, hash, `swaps:${unique.length}`, summary(unique.map(e => e.from || '∅')), summary(unique.map(e => e.to)), (_file, source) => {
+    const result = await this.writeText(path, hash, `swaps:${unique.length}`, summary(unique.map(e => e.from || '∅')), summary(unique.map(e => e.to || '∅')), (_file, source) => {
       if (sourceHash(source) !== hash) throw stale();
       const changes: (ReturnType<typeof swapClasses> & { edit: SwapsOptions['edits'][number] })[] = [];
       for (const s of starts) {
@@ -2044,7 +2062,9 @@ export class Session extends EventEmitter {
       let stats: KeptStats & { ms: number; packMs: number; longestMs: number; slices: number } | undefined, resolved: Resolutions = [];
       while (!stats) {
         if (revision !== this.revision || this.closed) return;
-        const step = await this.serializeRead(() => this.request<{ done: false } | ({ done: true; resolutions: Resolutions } & KeptStats & { ms: number; packMs: number; longestMs: number; slices: number })>('keep', { directory, ...(awaited ? { previous: awaited } : {}) }));
+        const step = await this.serializeRead(() => this.request<{ done: false } | { done: true; skipped: true } | ({ done: true; resolutions: Resolutions } & KeptStats & { ms: number; packMs: number; longestMs: number; slices: number })>('keep', { directory, ...(awaited ? { previous: awaited } : {}) }));
+        // the worker has let go of the whole-app report (open page first): the table is written when it exists again
+        if ('skipped' in step) return;
         if (step.done) { const { done: _done, resolutions, ...rest } = step; stats = rest; resolved = resolutions; }
       }
       // something changed while it was being written: it describes a project that is gone, and the change has

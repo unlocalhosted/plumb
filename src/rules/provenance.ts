@@ -85,14 +85,24 @@ export function resolutionContext(declarations: Declaration[], record: DecisionR
     }
     return key;
   };
+  // the files that set a `--tw-*` variable on an element: every other declaration reads the theme's variables, with no
+  // key to build (most files; building one per declaration was half a second on a large app)
+  const localFiles = new Set<string>();
   for (const declaration of declarations) if (declaration.prop.startsWith('--tw-')) {
+    localFiles.add(declaration.site.file);
     const key = context(declaration), values = locals.get(key) ?? new Map();
     values.set(declaration.prop, { value: declaration.value, dynamic: !!declaration.opaque }); locals.set(key, values);
   }
   const scopes = new Map<string, ReadonlyMap<string, Variable>>();
   const resolved = new WeakMap<ReadonlyMap<string, Variable>, Map<string, string | undefined>>();
   const indexes = new Map<JudgedFamily, Map<string, Decision>>();
+  // One verdict per distinct input, per family, for this run (docs/briefs/analysis-memory.md, judge each input once).
+  const tables = new Map<JudgedFamily, Map<string, unknown>>();
+  const ids = new WeakMap<object, number>(); let nextId = 0;
   return {
+    verdicts(family: JudgedFamily): Map<string, unknown> { let table = tables.get(family); if (!table) tables.set(family, table = new Map()); return table; },
+    /** a number for an object (a variable scope, a definition), the same each time it is asked in this run */
+    idOf(item: object): number { let id = ids.get(item); if (id === undefined) { id = ++nextId; ids.set(item, id); } return id; },
     decisionIndex(family: JudgedFamily): Map<string, Decision> {
       let index = indexes.get(family);
       if (!index) {
@@ -118,7 +128,7 @@ export function resolutionContext(declarations: Declaration[], record: DecisionR
       return index;
     },
     variablesFor(declaration: Declaration): ReadonlyMap<string, Variable> {
-      if (!locals.size) return record.variables;
+      if (!locals.size || !localFiles.has(declaration.site.file)) return record.variables;
       const key = context(declaration), local = locals.get(key);
       if (!local) return record.variables;
       if (!scopes.has(key)) scopes.set(key, new Map([...record.variables, ...local]));
@@ -231,12 +241,15 @@ export function familyProvenance(family: JudgedFamily, declarations: Declaration
     const item = owners.consume(declaration, variablesFor(declaration), declaration.decisionRefs?.filter(name => refIndex.has(`var(${name})`)) ?? []);
     return item ? [item] : [];
   });
-  for (const { declaration, parts, definition, uses } of [...consumers, ...owners.definitions]) {
-    if (!isJudged(declaration, family)) continue;
-    coverage.total++;
-    const variables = variablesFor(declaration);
+  // A verdict reads the declaration's property, value, origin, opacity, runtime step and class as written, its
+  // definition, the parts it was split into, and the variables in scope (only `--tw-*` ones set on the same element
+  // differ from the theme's); everything else it reads is fixed for this family in this run. Two declarations with the
+  // same of those get the same verdict, so it is judged once and the sites point at it.
+  type Verdict = { resolved: string | undefined; numericSpacing: string[]; entry?: Omit<ProvenanceEntry, 'declaration' | 'definition' | 'uses'> };
+  const verdicts = resolution.verdicts(family) as Map<string, Verdict>;
+  const judge = (declaration: Declaration, parts: string[], definition: Declaration | undefined, variables: ReadonlyMap<string, Variable>): Verdict => {
+    const numericSpacing: string[] = [];
     const resolved = declaration.opaque ? undefined : resolution.resolve(declaration.value, variables);
-    if (resolved !== undefined) declaration.resolved = resolved;
     let rule = '', title = '', because = familyReasons[family]!, judgedValue = '', severity: Finding['severity'] = 'error', nearest: Decision[] = [];
     // a Tailwind default the class uses: written into the theme as is, it becomes the project's own
     let adopt: Finding['adopt'];
@@ -289,7 +302,7 @@ export function familyProvenance(family: JudgedFamily, declarations: Declaration
         if (match && numericUse(match) && callers.allows(match) && identityFor(declaration.prop) === 'value') {
           const utility = useFor(match, declaration.prop, record.theme).class;
           const numericUtility = declaration.origin === 'class' && utility && (declaration.site.text === utility || declaration.site.text.endsWith(`:${utility}`));
-          if (numericMultiple || numericUtility) usedNumericSpacing.add(match.name);
+          if (numericMultiple || numericUtility) numericSpacing.push(match.name);
         }
         if ((family === 'spacing' || family === 'radius') && length === 0) continue;
         const frameworkTime = family === 'motion' && (declaration.origin === 'class' || declaration.origin === 'arbitrary') && value !== undefined ? decisions.find(d => d.origin === 'framework' && d.resolved !== undefined && equal(value, d.resolved, declaration.prop)) : undefined;
@@ -310,8 +323,7 @@ export function familyProvenance(family: JudgedFamily, declarations: Declaration
         rule = 'provenance/arbitrary'; title = `\`${declaration.site.text}\` hardcodes ${judgedValue || resolved || declaration.value}`; because = familyReasons[family]!;
       }
     }
-    if (!rule) { coverage.fromDecisions++; continue; }
-    coverage.findings++;
+    if (!rule) return { resolved, numericSpacing };
     // Group syntaxes by their static authored amount, while retaining all sites
     // and the original compiler value. Decision/variable changes still rerun judgement.
     const amount = judgedValue || resolved || declaration.value.replace(/\s+/g, ' ').trim();
@@ -327,7 +339,20 @@ export function familyProvenance(family: JudgedFamily, declarations: Declaration
     const message = { ...(rule === 'provenance/opaque-inline' ? { action: `Pass the number through a CSS variable and set ${declaration.prop} from a class or stylesheet.` } : partOfValue ? { action: `The colour is part of this ${declaration.prop}. Use a shadow token for the whole value, or change the colour by hand.` } : alternatives.length ? { choices: alternatives.map(decision => ({ ...decision, use: useFor(decision, fixProp, record.theme) })) } : { action: family === 'elevation' && !project.some(d => d.tier === 'semantic')
           ? 'No tokens fit: your theme has no named shadow tokens. Pick one with the design owner, or add one to the theme.' : noFit(amount) }),
       ...(rule.endsWith('/framework') && adopt ? { adopt } : {}), ...(newToken ? { newToken } : {}) };
-    entries.push({ declaration, definition, uses, resolved, amount, key, fixProp, alternatives, rule, title, because, severity, message });
+    return { resolved, numericSpacing, entry: { resolved, amount, key, fixProp, alternatives, rule, title, because, severity, message } };
+  };
+  for (const { declaration, parts, definition, uses } of [...consumers, ...owners.definitions]) {
+    if (!isJudged(declaration, family)) continue;
+    coverage.total++;
+    const variables = variablesFor(declaration);
+    const verdictKey = `${declaration.prop}\u0001${declaration.value}\u0001${declaration.origin}\u0001${declaration.opaque ? `${declaration.opaque}\u0001${declaration.site.file}` : ''}\u0001${declaration.dynamic ? JSON.stringify(declaration.dynamic) : ''}\u0001${declaration.site.text}\u0001${resolution.idOf(variables)}\u0001${definition ? resolution.idOf(definition) : 0}\u0001${parts.join('\u0002')}`;
+    let verdict = verdicts.get(verdictKey);
+    if (!verdict) { verdict = judge(declaration, parts, definition, variables); verdicts.set(verdictKey, verdict); }
+    if (verdict.resolved !== undefined) declaration.resolved = verdict.resolved;
+    for (const name of verdict.numericSpacing) usedNumericSpacing.add(name);
+    if (!verdict.entry) { coverage.fromDecisions++; continue; }
+    coverage.findings++;
+    entries.push({ declaration, definition, uses, ...verdict.entry });
   }
   return { findings: findingsForFamily(family, entries, record), entries, usedNumericSpacing: [...usedNumericSpacing], coverage };
 }

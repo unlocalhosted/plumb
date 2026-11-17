@@ -121,7 +121,10 @@ const textTags = new Set(['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'span', 'stro
 export interface Branch { condition: string; which: 'then' | 'else'; /** the conditions outside it, outermost first, when it sits under more than one */ within?: { condition: string; which: 'then' | 'else' }[] }
 interface Text { start: number; end: number; text: string; quote?: string; branch?: Branch;
   /** a key of a class helper's object written without quotes (`{ hidden: !open }`), or as shorthand (`{ active }`): a write re-quotes it when the new name is not an identifier */
-  key?: 'identifier' | 'shorthand' }
+  key?: 'identifier' | 'shorthand';
+  /** written as an argument of a call to a local function (`drop(FIT.section, 'max-sm:hidden')`): held by that call,
+   * which only it reads, not by the function every call shares */
+  passed?: true }
 type ClassName =
   | { kind: 'none' }
   | { kind: 'static'; attribute: Node; strings: Text[] }
@@ -168,15 +171,52 @@ function quasiTexts(expression: Extract<Node, { type: 'TemplateLiteral' }>, sour
 }
 /** A name an expression reads its classes from (a variable, a prop, `props.className`, `styles.root`), with the
  * property path read from it (`['className']`, `['root']`; empty for the name itself) and the conditions it is under. */
-export interface ClassRef { name: string; path: string[]; start: number; trail: Trail }
+export interface ClassRef { name: string; path: string[]; start: number; trail: Trail; /** a call (`drop(FIT.section, 'max-sm:hidden')`): what it passes, read where the function returns a parameter */ args?: Node[] }
 const keyName = (key: Node): string | undefined => key.type === 'Identifier' ? key.name : key.type === 'Literal' && typeof key.value === 'string' ? key.value : undefined;
-/** `a.b.c` as the name it starts from and the path read from it; undefined for anything computed or not rooted in a name. */
+/** A path step read by a key known only at run time (`SIZE[size]`): every entry of the table it reads. */
+export const ANY_KEY = '*';
+/** A path step that calls what it reads (`buttonVariants({ size })`): the classes a recipe made there returns. */
+export const CALLED = '()';
+/**
+ * The classes a recipe returns (`const v = cva(base, { variants })`, `tv({ base, variants })`): its base as written, and
+ * each variant's value as the case it is written for (`size is sm`), so a class there is changed in its own case and
+ * nothing is added into one. Compound variants and defaults are not read. Nothing for a call that is not a recipe.
+ */
+function recipeSources(call: Extract<Node, { type: 'CallExpression' }>, source: string, trail: Trail): { strings: Text[]; refs: ClassRef[] } {
+  const helper = helperOf(call.callee), out = { strings: [] as Text[], refs: [] as ClassRef[] };
+  if (!helper || (helper.name !== 'cva' && helper.name !== 'tv')) return out;
+  const add = (each: { strings: Text[]; refs: ClassRef[] }) => { out.strings.push(...each.strings); out.refs.push(...each.refs); };
+  const args = call.arguments.filter(a => a.type !== 'SpreadElement').map(a => unwrap(a as Node));
+  const config = args.find((a, i) => a.type === 'ObjectExpression' && (helper.name === 'tv' || i >= (helper.configFrom ?? 1) || i === 0));
+  if (helper.name === 'cva' && args[0] && args[0].type !== 'ObjectExpression') add(classSources(args[0], source, trail));
+  if (config?.type !== 'ObjectExpression') return out;
+  const prop = (o: Node, key: string) => o.type === 'ObjectExpression' ? o.properties.find(p => p.type === 'Property' && !p.computed && keyName(p.key) === key) : undefined;
+  const base = prop(config, 'base');
+  if (base?.type === 'Property') add(classSources(base.value, source, trail));
+  const variants = prop(config, 'variants');
+  if (variants?.type !== 'Property' || unwrap(variants.value).type !== 'ObjectExpression') return out;
+  for (const v of (unwrap(variants.value) as Extract<Node, { type: 'ObjectExpression' }>).properties) {
+    if (v.type !== 'Property' || v.computed || unwrap(v.value).type !== 'ObjectExpression') continue;
+    const name = keyName(v.key);
+    for (const k of (unwrap(v.value) as Extract<Node, { type: 'ObjectExpression' }>).properties) {
+      if (k.type !== 'Property' || k.computed) continue;
+      const key = keyName(k.key) ?? (k.key.type === 'Literal' ? String(k.key.value) : undefined);
+      if (name === undefined || key === undefined) continue;
+      add(classSources(k.value, source, [...trail, { condition: `${name} is ${key}`, which: 'then' }]));
+    }
+  }
+  return out;
+}
+/** `a.b.c` as the name it starts from and the path read from it; a key read at run time (`SIZE[size].text`) is
+ * ANY_KEY, a key written as a string (`SIZE['sm']`) is that key; undefined for anything not rooted in a name. */
 export function memberPath(node: Node): { name: string; path: string[] } | undefined {
   const path: string[] = [];
   let at = unwrap(node);
   while (at.type === 'MemberExpression') {
-    if (at.computed || at.property.type !== 'Identifier') return undefined;
-    path.unshift(at.property.name); at = unwrap(at.object);
+    const property = at.property as Node;
+    if (!at.computed) { if (property.type !== 'Identifier') return undefined; path.unshift(property.name); }
+    else path.unshift(property.type === 'Literal' && typeof property.value === 'string' ? property.value : ANY_KEY);
+    at = unwrap(at.object);
   }
   return at.type === 'Identifier' ? { name: at.name, path } : undefined;
 }
@@ -216,9 +256,13 @@ export function classSources(node: Node, source: string, trail: Trail = []): { s
           else if (property.key.type === 'Literal' && typeof property.key.value === 'string') strings.push(withBranch({ start: property.key.start + 1, end: property.key.end - 1, text: property.key.value }, under));
         }
         return;
+      // 'a ' + 'b': each string as written
+      case 'BinaryExpression': if (expression.operator === '+') { visit(expression.left, trail, keys); visit(expression.right, trail, keys); } return;
       case 'CallExpression': {
         const helper = helperOf(expression.callee);
-        if (!helper) return;
+        // a function of this file called for classes (`buttonVariants({ size })`): followed to what it is, a recipe
+        // (cva) made in a variable, read in classSourcesAt at CALLED
+        if (!helper) { if (expression.callee.type === 'Identifier') refs.push({ name: expression.callee.name, path: [CALLED], start: expression.start, trail, args: expression.arguments as Node[] }); return; }
         expression.arguments.forEach((argument, index) => {
           if (argument.type === 'SpreadElement' || argumentMode(helper, index, index === 0 && unwrap(argument).type === 'ObjectExpression' && helper.configFrom !== undefined) !== 'classes') return;
           visit(argument, trail, helper.objects === 'keys');
@@ -233,9 +277,28 @@ export function classSources(node: Node, source: string, trail: Trail = []): { s
 }
 /** The value an expression holds at a property path (`styles={{ root: 'p-4' }}` at ['root'] is `'p-4'`), as class
  * sources; a name met on the way is read on with the rest of the path. Nothing when the path leads nowhere written here. */
-export function classSourcesAt(node: Node, path: string[], source: string, trail: Trail = []): { strings: Text[]; refs: ClassRef[] } {
+export function classSourcesAt(node: Node, path: string[], source: string, trail: Trail = [], args?: Node[]): { strings: Text[]; refs: ClassRef[] } {
   let at = unwrap(node);
   for (let i = 0; i < path.length; i++) {
+    if (path[i] === CALLED) {
+      if (i !== path.length - 1) return { strings: [], refs: [] };
+      if (at.type === 'CallExpression') return recipeSources(at, source, trail);
+      if (at.type === 'ArrowFunctionExpression' || at.type === 'FunctionExpression') return returnedSources(at, source, trail, args);
+      return { strings: [], refs: [] };
+    }
+    if (at.type === 'ObjectExpression' && path[i] === ANY_KEY) {
+      // a table read by a key known at run time (`SIZE[size].text`): each entry's value, as the case it is written for,
+      // so a class there is changed in its own entry and nothing is ever added into the table
+      const out = { strings: [] as Text[], refs: [] as ClassRef[] };
+      for (const p of at.properties) {
+        if (p.type !== 'Property' || p.computed) continue;
+        const key = keyName(p.key);
+        if (key === undefined) continue;
+        const each = classSourcesAt(p.value, path.slice(i + 1), source, [...trail, { condition: `the key is ${key}`, which: 'then' }]);
+        out.strings.push(...each.strings); out.refs.push(...each.refs);
+      }
+      return out;
+    }
     if (at.type === 'ObjectExpression') {
       const property = at.properties.find(p => p.type === 'Property' && !p.computed && keyName(p.key) === path[i]);
       if (!property || property.type !== 'Property') return { strings: [], refs: [] };
@@ -245,6 +308,41 @@ export function classSourcesAt(node: Node, path: string[], source: string, trail
     return read ? { strings: [], refs: [{ name: read.name, path: [...read.path, ...path.slice(i)], start: at.start, trail }] } : { strings: [], refs: [] };
   }
   return classSources(at, source, trail);
+}
+/** What a local function called for a className gives back (`const full = (cls = '') => tight ? 'sr-only' : cls`): the
+ * strings it returns, and a parameter's string default, which applies when the call leaves it out. A parameter it
+ * returns is what the call passes there (`drop(FIT.section, 'max-sm:hidden')` returning `guess`), when the call is
+ * known (`args`); a default then applies only where the call passes nothing. Nested functions return for themselves. */
+function returnedSources(fn: Node, source: string, trail: Trail, args?: Node[]): { strings: Text[]; refs: ClassRef[] } {
+  const out = { strings: [] as Text[], refs: [] as ClassRef[] };
+  const f = fn as unknown as { params: Node[]; body: Node; expression?: boolean };
+  const params = f.params.map(p => p.type === 'AssignmentPattern' ? p.left : p).map(p => p.type === 'Identifier' ? p.name : undefined);
+  const passed = (i: number) => { const a = args?.[i]; return a && a.type !== 'SpreadElement' && !(args ?? []).slice(0, i).some(x => x.type === 'SpreadElement') ? a : undefined; };
+  const add = (node: Node, t: Trail) => {
+    const each = classSources(node, source, t);
+    out.strings.push(...each.strings);
+    for (const ref of each.refs) {
+      const i = args ? params.indexOf(ref.name) : -1;
+      if (i < 0) { out.refs.push(ref); continue; }
+      const arg = passed(i);
+      if (!arg) continue; // left out: its default, read below
+      const value = classSourcesAt(arg, ref.path, source, ref.trail);
+      out.strings.push(...value.strings.map(s => ({ ...s, passed: true as const }))); out.refs.push(...value.refs);
+    }
+  };
+  f.params.forEach((param, i) => {
+    if (param.type === 'AssignmentPattern' && param.left.type === 'Identifier' && !(args && passed(i))) add(param.right, [...trail, { condition: `${param.left.name} is left out`, which: 'then' }]);
+  });
+  if (f.body.type !== 'BlockStatement') { add(f.body, trail); return out; }
+  const walk = (node: Node): void => {
+    if (node.type === 'ArrowFunctionExpression' || node.type === 'FunctionExpression' || node.type === 'FunctionDeclaration') return;
+    if (node.type === 'ReturnStatement') { if (node.argument) add(node.argument, trail); return; }
+    for (const value of Object.values(node as unknown as Record<string, unknown>)) {
+      for (const child of Array.isArray(value) ? value : [value]) if (child && typeof child === 'object' && typeof (child as Node).type === 'string') walk(child as Node);
+    }
+  };
+  walk(f.body);
+  return out;
 }
 const stringsIn = (node: Node, source: string, trail: Trail): Text[] => classSources(node, source, trail).strings;
 /** An element's className as its props read it: `static` when any plain string holds a class (each with the condition it

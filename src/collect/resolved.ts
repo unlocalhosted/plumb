@@ -1,5 +1,6 @@
 import { ResolverFactory } from 'oxc-resolver';
 import type { NapiResolveOptions } from 'oxc-resolver';
+import { intern } from './strings.js';
 
 /**
  * What every import resolved to, as the analysis found it (docs/briefs/server-warm-start.md, the receipt). One table
@@ -16,7 +17,8 @@ export function tracked(options: NapiResolveOptions): ResolverFactory {
   const answers = table, ask = resolver.resolveFileSync.bind(resolver);
   resolver.resolveFileSync = (file, specifier) => {
     const answer = ask(file, specifier);
-    answers.set(`${file}\0${specifier}`, answer.path ?? null);
+    // the specifier is a piece of the importing file's text: keyed by a copy, the record does not keep the text
+    answers.set(intern(`${file}\0${specifier}`), answer.path === undefined ? null : intern(answer.path));
     return answer;
   };
   return resolver;

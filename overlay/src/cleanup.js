@@ -36,6 +36,8 @@ import { STAMPED, stampOf, sameStamp } from './stamp.js';
 import { declaredColours, loadPalette, paletteOf } from './colours.js';
 import { renameMap } from './colour-system.js';
 import { Scope } from './scope.js';
+import { button } from './kit.js'; // the soft button
+import { toyOf } from './toys.js'; // each pass's toy
 
 const LAWS = [{ id: 'similarity', name: 'Law of similarity' }, { id: 'cognitive-load', name: 'Cognitive load' }];
 // the passes written as class swaps (spacing-pass.js, colour-pass.js): one shape, so the panel runs them one way
@@ -325,6 +327,48 @@ export class Cleanup {
     }).join('');
     const saved = this.#saved ? `<div class="saved" role="status"><b>${esc(W.pass[PASSES[this.#saved.pass ?? 0]])}</b>${esc(this.#savedLine(this.#saved))}<button type="button" class="cu-btn quiet" data-cu="undo">${esc(W.undo)}</button></div>` : '';
     return `<div class="cu">${`<div class="steps" aria-label="${esc(W.passes)}">${steps}</div>`}${saved}${this.#bodyHtml()}</div>`;
+  }
+
+  // ── the clean-up in the bar (design site: Fix bar, "Both jobs"): one pass at a time, as one line ──
+  // The pass's toy, what it does as a headline, its numbers as the detail, the passes as a strip of toys (now, done,
+  // still to come), and what you can do, as soft buttons. What the pass changes is shown on the page, not in a list.
+  // The two setup screens (the census command, renaming colour tokens) keep the panel's own body: null here.
+  bar() {
+    const s = this.#state, k = PASSES[this.#pass], S = this.#words, W2 = W;
+    if (s === 'noCensus' || (k === 'colour' && this.#rn?.open)) return null;
+    const TOY = { text: 'type', spacing: 'gap', colour: 'fill', icons: 'icon', radius: 'corner', sizes: 'size', shadows: 'shadow', speeds: 'motion', states: 'opacity' };
+    const strip = `<span class="passes" role="list" aria-label="${esc(W2.passes)}">${PASSES.map((p, i) => {
+      const st = this.#done.get(p), kind = st === 'done' ? 'done' : st ? 'skipped' : i === this.#pass ? 'now' : 'soon';
+      return `<i role="listitem" class="ps ${kind}" title="${esc(W2.pass[p])}${st === 'done' ? ' · done' : ''}" aria-label="${esc(W2.pass[p])}${st === 'done' ? ', done' : kind === 'now' ? ', now' : ''}">${toyOf(TOY[p])}</i>`;
+    }).join('')}</span>`;
+    const b = (label, cu, o = {}) => button(esc(label), { cls: `sm ${o.quiet ? 'quiet' : ''}`, key: o.key ?? '', attrs: `data-cu="${cu}"` });
+    const sw = this.#sw, p = sw ? sw.page : this.#page;
+    let say = W2.pass[k], more = '', acts = '', pop = false;
+    if (s === 'reading') more = this.#words.reading ?? W2.reading;
+    else if (s === 'error') { say = this.#words.couldNot; more = this.#err ?? ''; acts = b(W2.retry, 'retry') + b(W2.close, 'close', { quiet: true, key: 'Esc' }); }
+    else if (s === 'writing') { say = W2.writing(this.#moves()); }
+    else if (s === 'preview') {
+      say = sw ? S.head(p.before, p.after, p.places) : W2.previewing(this.#page?.moves ?? 0);
+      more = `This is a preview. ${W2.holdSpace}`;
+      acts = b('Apply', 'apply', { key: '↵' }) + b(W2.cancel, 'cancel', { quiet: true, key: 'Esc' });
+    } else if (s === 'nothing') {
+      say = sw ? S.nothing : W2.nothing(this.#p?.roles?.length ?? 0); more = sw ? S.sub(p) : W2.nothingWhy;
+      acts = b(this.#hasNext() || !sw ? W2.next : W2.done, this.#hasNext() || !sw ? 'next' : 'close', { key: this.#hasNext() || !sw ? '→' : 'Esc' });
+    } else if (s === 'done') {
+      const did = this.#done.get(k) === 'done', more_ = sw ? this.#hasNext() : true;
+      say = sw ? (did ? S.doneHead : S.doneSkipped) : (did ? W2.doneHead : W2.doneSkipped); pop = did;
+      more = did && p ? `${p.before} → ${p.after} ${sw ? S.sizesPage : W2.sizesPage}.` : '';
+      if (this.#saved) more += `${more ? ' ' : ''}${this.#savedLine(this.#saved)}`;
+      acts = (more_ ? b(W2.next, 'next', { key: '→' }) : '') + (this.#saved ? b(W2.undo, 'undo', { quiet: true }) : '') + b(more_ ? W2.close : W2.done, 'close', { quiet: true, key: 'Esc' });
+    } else if (s === 'ready') {
+      say = sw ? S.head(p.before, p.after, p.places) : W2.head(this.#p?.cost?.sizesBefore ?? p.before, this.#p?.roles?.length ?? 0);
+      more = sw ? S.sub(p) : W2.why;
+      acts = b(W2.preview, 'preview', { quiet: true, key: 'P' }) + b('Apply', 'apply', { key: '↵' }) + b('Skip', 'skip', { quiet: true, key: '→' });
+    }
+    // in preview the detail is what changes: the styles as chips, rolling to their values, and how to compare
+    const detail = s === 'preview' ? `<span class="roles">${chipsHtml(this.#steps().map((x) => x.chip))}</span><span class="cmp">${W2.holdSpace}</span>` : esc(more);
+    return `<div class="one cu-one"><i class="ic big${pop ? ' pop' : ''}">${toyOf(s === 'done' && pop ? 'checkbox' : TOY[k])}</i><span class="lines"><span class="hl">${esc(say)}</span>`
+      + `<span class="dt">${detail}</span></span><span class="sep"></span>${strip}${acts}</div>`;
   }
 
   #bodyHtml() {

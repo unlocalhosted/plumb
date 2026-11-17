@@ -164,9 +164,12 @@ export async function analyze(options: CheckOptions, snippet?: Snippet, runtime?
   const sourceFiles = new Set(input ? [input.file] : [...files, ...collected.computedClassFiles ?? []]);
   const inlineDeclarations = collected.styles.declarations.filter(d => sourceFiles.has(d.site.file));
   const declarations: Declaration[] = [...sites.flatMap(site => site.declarations), ...css.declarations, ...collected.styles.declarations]
-    .filter(declaration => sourceFiles.has(declaration.site.file));
+    .filter(declaration => sourceFiles.has(declaration.site.file) || !!runtime?.alsoJudged?.(declaration));
   // A detected library's states, named on every declaration whose selector carries one of its attributes.
-  const detectedLibraries = (await projectFacts(root, { root })).libraries.value ?? [];
+  // Held by the session's memory, not projectFacts' two-second cache: a per-file read takes longer than that, and each
+  // one rebuilt the facts (a project scan and every detector, about 2.3 s on a 3,600-file app). A change to package.json
+  // restarts the session; a new library import in an edited file is seen at that restart.
+  const detectedLibraries = (await phase('libraries', [root], () => projectFacts(root, { root }))).libraries.value ?? [];
   const stateAdapters = detectedLibraries.flatMap(item => { const adapter = adapterOf(item); return adapter?.state && item.capabilities?.states === 'judged' ? [adapter] : []; });
   if (stateAdapters.length) for (const declaration of declarations) { const states = selectorStates(declaration.when, stateAdapters); if (states.length) declaration.when = [...declaration.when, ...states]; }
   // A detected library's own runtime variables: reading one is reading the library, never a dead variable.
@@ -201,7 +204,9 @@ export async function analyze(options: CheckOptions, snippet?: Snippet, runtime?
   findings.push(...sync('deadVariables', [declarations, defined, record.theme], () => deadVariables(declarations, defined, record.theme)));
   profileDuration('rule:existence/dead-var', performance.now() - variablesStart);
   profileProgress('rule:provenance');
-  const judged = sync('provenance', [declarations, record, config.value, sourceFiles, options.verbose], () => provenance(declarations, record, config.value, sourceFiles, options.verbose));
+  // the files that count as the project's own when a value reads a definition: all of them, also when one file is judged
+  const projectFiles = runtime?.projectFiles?.() ?? sourceFiles;
+  const judged = sync('provenance', [declarations, record, config.value, projectFiles, options.verbose], () => provenance(declarations, record, config.value, projectFiles, options.verbose));
   findings.push(...judged.findings);
   const deadStart = performance.now();
   profileProgress('rule:dead');
@@ -218,7 +223,9 @@ export async function analyze(options: CheckOptions, snippet?: Snippet, runtime?
   profileDuration('phase:components', performance.now() - ownershipStart + componentCacheMs);
   const ownershipJudgeStart = performance.now();
   profileProgress('rule:ownership');
-  const owned = sync('ownership', [declarations, components, config.value], () => judgeOwnership(declarations, components, config.value, token => lowered.candidates.get(token)?.declarations ?? []));
+  // the class lookup goes in with the inputs, so the session's file-by-file judge reads the same props as this one
+  const propsOf = (token: string) => lowered.candidates.get(token)?.declarations ?? [];
+  const owned = sync('ownership', [declarations, components, config.value, lowered.candidates, propsOf], () => judgeOwnership(declarations, components, config.value, propsOf));
   profileDuration('rule:ownership', performance.now() - ownershipJudgeStart);
   findings.push(...owned.findings);
   const ownershipMs = performance.now() - ownershipStart + componentCacheMs;

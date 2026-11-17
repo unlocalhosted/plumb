@@ -58,6 +58,24 @@ Object.defineProperty = function (target, key, descriptor) {
   return result;
 };
 const stackOf = fiber => elementStacks.get(fiber?.memoizedProps) ?? fiber?._debugStack;
+// React 19.1+ records the creation stack of only the first 10,000 elements made in a second; every element after that
+// gets one shared "UnknownOwner" stack, and the line that made it is lost for good unless it renders again. A page that
+// draws more than that at load (a long page of live examples) loses the usage lines of everything below, so a class
+// passed in from a usage can't be found. React before 19.1 always recorded them; in dev, so does plumber: the count
+// React keeps (on the internals it hands the devtools hook) always reads 0.
+const liftStackCap = (renderer) => {
+  const internals = renderer?.currentDispatcherRef;
+  if (!internals || typeof internals !== 'object' || !('recentlyCreatedOwnerStacks' in internals)) return;
+  try { defineProperty(internals, 'recentlyCreatedOwnerStacks', { configurable: true, get: () => 0, set() {} }); } catch { /* frozen: React keeps its cap */ }
+};
+{
+  const hook = globalThis.__REACT_DEVTOOLS_GLOBAL_HOOK__;
+  if (hook && typeof hook === 'object') {
+    for (const renderer of hook.renderers?.values?.() ?? []) liftStackCap(renderer);
+    const inject = hook.inject;
+    if (typeof inject === 'function') hook.inject = function (renderer) { liftStackCap(renderer); return inject.apply(this, arguments); };
+  }
+}
 // The server's hash of a file when a creation stack was first read from it. Seeing the same stack after the file
 // changed means the element was kept from before the edit: its positions describe code that no longer exists.
 const stackHashes = new WeakMap();
@@ -200,7 +218,9 @@ async function readFrames(fiber) {
     if (!/^[a-z]+:/i.test(fileName) && !fileName.startsWith('/')) {
       // The module this name came from: the raw frame whose URL ends in the same path (positions need not line up).
       const tail = '/' + fileName.replace(/^(?:\.\.?\/)+/, '');
-      const base = urls.find(url => pathOf(url).endsWith(tail)) ?? raw[i]?.fileName;
+      // with no raw frames (bippy's own reading), the modules the page loaded: only when exactly one ends in the name
+      const loaded = urls.length ? [] : [...new Set(performance.getEntriesByType('resource').map((e) => e.name.split(/[?#]/)[0]).filter((u) => pathOf(u).endsWith(tail) && !runtime(u)))];
+      const base = urls.find(url => pathOf(url).endsWith(tail)) ?? raw[i]?.fileName ?? (loaded.length === 1 ? loaded[0] : undefined);
       try { if (base) fileName = new URL(fileName, base).href; } catch {}
     }
     return { ...frame, fileName, functionName: frame.functionName ?? raw[i]?.functionName };
@@ -340,14 +360,16 @@ export async function locate(element, options = {}) {
     return usageOf(element, fiber, options);
   }
   const owner = await locateOwner(element, { ...options, explain: true });
-  if (owner?.reason === 'resolve-refusal' && owner.detail?.file) return options.explain ? owner : null;
+  // an owner stack the server can't place (a frame named by a bare file name) is no answer; but with a confirmed stamp
+  // the stamp still is, with no chain above it (the class finder then reads usages in the component's own file)
+  if (owner?.reason === 'resolve-refusal' && owner.detail?.file && !confirmed) return options.explain ? owner : null;
   if (!confirmed || options.signal?.aborted) return owner?.location === null && !options.explain ? null : owner;
   const chain = [...(owner?.chain ?? [])];
   const index = chain.findIndex(link => link.file === confirmed.file && link.line === confirmed.line && link.column === confirmed.column);
   // Two witnesses: the stamp and the owner stack, for the same element. The stamp is the answer; when the owner stack
   // says otherwise, the disagreement is recorded for whoever reads the explanation, never shown as a second answer.
   const witness = owner?.file ? { file: owner.file, line: owner.line, column: owner.column } : null;
-  const witnesses = options.explain ? { witnesses: { stamp: { file: confirmed.file, line: confirmed.line, column: confirmed.column }, ownerStack: witness, agree: !!witness && index >= 0 } } : {};
+  const witnesses = options.explain ? { witnesses: { stamp: { file: confirmed.file, line: confirmed.line, column: confirmed.column }, ownerStack: witness, agree: !!witness && index >= 0, ...(owner?.reason ? { ownerRefused: { reason: owner.reason, detail: owner.detail } } : {}) } } : {};
   const at = { file: confirmed.file, line: confirmed.line, column: confirmed.column, component: index >= 0 ? chain[index].component : null };
   if (index >= 0) chain.splice(index, 1);
   chain.unshift(at);
@@ -612,6 +634,9 @@ async function locateOwner(element, options = {}) {
       // Only an element's own creation frame draws the no-JSX boundary. Later frames in a stack are the code that
       // called it, such as App calling items.map(...): not JSX, and not a reason to refuse.
       if (result?.reason === 'no-jsx' && !(unmapped && i === 0)) continue;
+      // a frame further up that its map can't place (a line past the file's end) ends the chain there: the links
+      // already proven are still proven, and nothing above the bad frame is guessed
+      if (result?.reason === 'map' && i > 0 && chain.length) { ownerStackProven = true; break; }
       if (result?.reason) return refuse(result.reason, result.detail);
       ownerStackProven ||= result?.proven === true;
     }

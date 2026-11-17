@@ -1,0 +1,189 @@
+{
+ "/home/admin/projects/algorecall-sweep": {
+  "base": {
+   "runs": 2,
+   "errors": [
+    "Error: plumber did not start: {\"status\":\"failed\",\"diagnostic\":\"Error [ERR_WORKER_OUT_OF_MEMORY]: Worker terminated due to reaching memory limit: JS heap out of memory\\n    at [kOnExit] (node:internal/worker:316:26)\\n    at Worker.<computed>.onexit (node:internal/worker:232:20)\"}",
+    "Error: plumber did not start: {\"status\":\"failed\",\"diagnostic\":\"Error [ERR_WORKER_OUT_OF_MEMORY]: Worker terminated due to reaching memory limit: JS heap out of memory\\n    at [kOnExit] (node:internal/worker:316:26)\\n    at Worker.<computed>.onexit (node:internal/worker:232:20)\"}"
+   ],
+   "moments": {
+    "start": {
+     "medianMs": 66915,
+     "ms": [
+      68502,
+      66915
+     ],
+     "medianRss": 523,
+     "rss": [
+      523,
+      597
+     ]
+    }
+   }
+  },
+  "head": {
+   "runs": 2,
+   "errors": [],
+   "moments": {
+    "start": {
+     "medianMs": 52906,
+     "ms": [
+      55325,
+      52906
+     ],
+     "medianRss": 2291,
+     "rss": [
+      2291,
+      2429
+     ]
+    },
+    "page": {
+     "medianMs": 1511,
+     "ms": [
+      1511,
+      1527
+     ],
+     "medianRss": 1956,
+     "rss": [
+      2011,
+      1956
+     ]
+    },
+    "edit": {
+     "medianMs": 910,
+     "ms": [
+      1064,
+      910
+     ],
+     "medianRss": 2027,
+     "rss": [
+      2075,
+      2027
+     ]
+    },
+    "pageLater": {
+     "medianMs": 1490,
+     "ms": [
+      1490,
+      1654
+     ],
+     "medianRss": 1509,
+     "rss": [
+      1509,
+      1519
+     ]
+    }
+   }
+  }
+ },
+ "/home/admin/projects/cui": {
+  "base": {
+   "runs": 2,
+   "errors": [],
+   "moments": {
+    "start": {
+     "medianMs": 8393,
+     "ms": [
+      8602,
+      8393
+     ],
+     "medianRss": 1005,
+     "rss": [
+      1005,
+      1041
+     ]
+    },
+    "page": {
+     "medianMs": 656,
+     "ms": [
+      656,
+      664
+     ],
+     "medianRss": 1056,
+     "rss": [
+      1056,
+      1079
+     ]
+    },
+    "edit": {
+     "medianMs": 772,
+     "ms": [
+      772,
+      820
+     ],
+     "medianRss": 1180,
+     "rss": [
+      1180,
+      1207
+     ]
+    },
+    "pageLater": {
+     "medianMs": 884,
+     "ms": [
+      884,
+      938
+     ],
+     "medianRss": 921,
+     "rss": [
+      921,
+      1035
+     ]
+    }
+   }
+  },
+  "head": {
+   "runs": 2,
+   "errors": [],
+   "moments": {
+    "start": {
+     "medianMs": 8632,
+     "ms": [
+      8996,
+      8632
+     ],
+     "medianRss": 875,
+     "rss": [
+      942,
+      875
+     ]
+    },
+    "page": {
+     "medianMs": 580,
+     "ms": [
+      678,
+      580
+     ],
+     "medianRss": 902,
+     "rss": [
+      976,
+      902
+     ]
+    },
+    "edit": {
+     "medianMs": 109,
+     "ms": [
+      109,
+      110
+     ],
+     "medianRss": 903,
+     "rss": [
+      979,
+      903
+     ]
+    },
+    "pageLater": {
+     "medianMs": 1001,
+     "ms": [
+      1001,
+      1087
+     ],
+     "medianRss": 513,
+     "rss": [
+      513,
+      603
+     ]
+    }
+   }
+  }
+ }
+}

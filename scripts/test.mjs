@@ -8,19 +8,24 @@
 //   node scripts/test.mjs --timeout 10    minutes before a file is killed (default 6)
 //   node scripts/test.mjs --serial        one file at a time, as before
 //   node scripts/test.mjs --list          print each file's tier and stop
+//   node scripts/test.mjs --changed main  only what the change since `main` can reach (by area; see `affected`)
+//   node scripts/test.mjs --here          on a Mac, allow more than two browser files (the laptop is not where they run)
 //
 // Each file has a cost tier, read from its own source: the cores and the memory a file of that tier was measured
 // to use. Files run side by side while both budgets hold; `alone` files run after the rest, one at a time. A file's
 // whole process tree is killed when it ends or times out, so no browser or dev server outlives its test.
 import { readdir, readFile, mkdir, rm, writeFile } from 'node:fs/promises';
 import { createWriteStream } from 'node:fs';
-import { spawn } from 'node:child_process';
+import { execFileSync, spawn } from 'node:child_process';
 import { availableParallelism, freemem, loadavg, platform, totalmem } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { join } from 'node:path';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 const logs = join(root, '.test-logs');
+// How long each file took on this machine, kept between runs (not committed): the next run starts the longest first.
+const timesFile = join(root, '.test-times.json');
+const recorded = JSON.parse(await readFile(timesFile, 'utf8').catch(() => '{}'));
 // What one file of a tier uses while it runs, measured on vm-agent (8 cores, 2026-11-10) from each file's process
 // tree and the machine's load: a CLI file spawns the CLI over and over, so it is light on memory and heavy on cores;
 // a browser file holds its dev servers in one Node process, and Chromium beside it.
@@ -59,6 +64,21 @@ async function tierOf(file) {
 }
 
 const args = process.argv.slice(2);
+// `--changed <ref>`: the files changed since ref (committed and not), sorted into what they can reach. 153 of the 213
+// files drive the whole engine (the CLI, the Vite plugin, a session), so a change under src/ reaches them all;
+// selection pays by area: docs and benches reach nothing, the overlay reaches the files that open a page, a changed
+// test file reaches itself.
+const changedAt = args.indexOf('--changed');
+const changedRef = changedAt >= 0 ? args.splice(changedAt, 2)[1] ?? 'main' : undefined;
+function affected(ref) {
+  const git = (...a) => execFileSync('git', a, { cwd: root, encoding: 'utf8' }).split('\n').filter(Boolean);
+  const files = [...new Set([...git('diff', '--name-only', `${ref}...HEAD`), ...git('diff', '--name-only', 'HEAD'), ...git('ls-files', '--others', '--exclude-standard')])];
+  const quiet = (f) => /^(docs|bench|\.claude)\//.test(f) || /\.(md|mdx|txt|png|jpe?g|mp4|webm|svg)$/.test(f) && !f.startsWith('overlay/src/');
+  const tests = files.filter((f) => /^e2e\/[^/]+\.test\.mjs$/.test(f)), rest = files.filter((f) => !quiet(f) && !tests.includes(f));
+  if (!rest.length) return { why: tests.length ? `${tests.length} changed test files, nothing else` : 'nothing a test can reach (docs, benches)', files: tests, tiers: [] };
+  if (rest.every((f) => f.startsWith('overlay/'))) return { why: 'the overlay changed: the files that open a page', files: tests, tiers: ['browser', 'host'] };
+  return { why: `${rest.length} changed files reach the engine: everything`, all: true };
+}
 // a flag with a number (`--cores 6`), or the same from the environment (`PLUMB_TEST_CORES=6`)
 function numberOf(name, env) {
   const at = args.indexOf(name);
@@ -77,9 +97,13 @@ const names = words.filter((w) => !tiers.includes(w));
 
 const every = (await readdir(join(root, 'e2e'))).filter((f) => f.endsWith('.test.mjs')).sort().map((f) => `e2e/${f}`);
 let jobs = await Promise.all(every.map(async (file) => ({ file, label: file, tier: await tierOf(file), env: { PLUMBER_WATCH: '1', PLUMBER_POLLING: '0' } })));
-const whole = !tiers.length && !names.length;
+const reach = changedRef ? affected(changedRef) : undefined;
+if (reach) console.log(`Changed since ${changedRef}: ${reach.why}.`);
+const whole = !tiers.length && !names.length && (!reach || reach.all);
 if (tiers.length) jobs = jobs.filter((j) => tiers.includes(j.tier));
 if (names.length) jobs = jobs.filter((j) => names.some((n) => j.file.includes(n)));
+if (reach && !reach.all) jobs = jobs.filter((j) => reach.files.includes(j.file) || reach.tiers.includes(j.tier));
+if (reach && !jobs.length) { console.log('No test can see this change.'); process.exit(0); }
 if (whole) jobs.push(...EXTRA.map((e) => ({ ...e, tier: 'alone' })));
 
 if (flag('--list')) {
@@ -89,6 +113,12 @@ if (flag('--list')) {
   process.exit(0);
 }
 if (!jobs.length) { console.error('No test file matches.'); process.exit(1); }
+// The laptop is not where browser suites run: on 2026-11-10 a full run there starved it, and on 2026-11-18 a mistaken
+// `--changed` started one. More than two browser files on a Mac need `--here`; vm-agent is the place.
+const browsers = jobs.filter((j) => j.tier === 'browser' || j.tier === 'host').length;
+if (platform() === 'darwin' && browsers > 2 && !flag('--here') && !flag('--list')) {
+  console.error(`This would start ${browsers} browser test files on this machine. Run them on vm-agent, or pass --here.`); process.exit(1);
+}
 
 // The budgets, from what the machine has free right now, because it is shared: other projects run on vm-agent and
 // other sessions on the laptop. Cores: every core not already busy (the one-minute load), never fewer than two.
@@ -164,9 +194,11 @@ function report(r) {
 }
 
 const started = Date.now();
-// Side by side: the tiers that hold the most memory first, so the long files don't end up running alone at the end.
-// A file starts when both budgets have room for it; one file always runs, whatever the budgets say.
-const queue = jobs.filter((j) => j.tier !== 'alone').sort((a, b) => COST[b.tier].mb - COST[a.tier].mb);
+// Side by side, longest first by what each file took last time here, so a five-minute file never starts near the end
+// and holds the run open alone (a file with no time yet goes early, as if long); then the tiers that hold the most
+// memory. A file starts when both budgets have room for it; one file always runs, whatever the budgets say.
+const took = (j) => recorded[j.label] ?? Infinity;
+const queue = jobs.filter((j) => j.tier !== 'alone').sort((a, b) => took(b) - took(a) || COST[b.tier].mb - COST[a.tier].mb);
 let most = 0;
 await new Promise((resolve) => {
   let cores = 0, mb = 0, running = 0;
@@ -198,5 +230,8 @@ if (bad.length) {
     for (const name of r.failed) console.log(`      ${name}`);
   }
 }
+// a file killed at the time-out says nothing about how long it takes: its old time is kept
+for (const r of results) if (!r.timedOut) recorded[r.label] = Math.round(r.seconds * 10) / 10;
+await writeFile(timesFile, JSON.stringify(recorded, null, 1));
 await writeFile(join(logs, 'summary.json'), JSON.stringify({ wall, budget, most, results: results.map(({ env, ...r }) => r) }, null, 1));
 process.exit(bad.length ? 1 : 0);

@@ -43,6 +43,10 @@ import { glide } from './inplace.js'; // the text styles the code is reaching fo
 import { stampOf, parseStamp, sameStamp, stampNames } from './stamp.js';
 import { Scope } from './scope.js';
 import { Claims, LEVEL } from './claims.js';
+import { BUTTON_CSS, button } from './kit.js'; // the soft button (design site: Buttons)
+import { soften } from './soft.js'; // its press
+import { toyOf } from './toys.js'; // the property's toy, at the head of the bar
+import { stepper, radius as radiusControl, swatches, bind as bindControl } from './editor-primitives.js'; // the property's control on the element (design site: Pickers)
 
 const TIMING = { open: 260, next: 180, click: 60, clickGap: 45, breath: 480, check: 600, fold: 2300 };
 const CLICK = { drop: 3, over: -1, ms: 420 };
@@ -60,7 +64,7 @@ const BAR_ICON = {
   x: '<svg class="x" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"/></svg>',
 };
 
-export const FIX_CSS = TEXT_EDITOR_CSS + ELEMENT_CARD_CSS + `
+const FIX_CSS_BASE = TEXT_EDITOR_CSS + ELEMENT_CARD_CSS + `
   /* the old pieces this panel replaces stay out of sight */
   .bpp, .cg, .sel { display: none !important; }
   .fx { position: fixed; left: 50%; bottom: 72px; translate: -50% 0; width: 520px; max-width: calc(100vw - 32px); box-sizing: border-box; pointer-events: auto; z-index: 2;
@@ -69,8 +73,62 @@ export const FIX_CSS = TEXT_EDITOR_CSS + ELEMENT_CARD_CSS + `
     box-shadow: 0 0 0 .5px rgb(0 0 0 / .09), 0 1px 1px rgb(0 0 0 / .04), 0 8px 20px -8px rgb(0 0 0 / .14), 0 28px 56px -24px rgb(0 0 0 / .18), inset 0 1px 0 rgb(255 255 255 / .9);
     transition: height ${TIMING.open}ms ${SPRING}; }
   .fx[hidden] { display: none; }
-  .fx button:not(.pl-act) { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; }
-  .fx :not(.pl-act) > kbd { font: 500 10.5px/1 ui-monospace, monospace; color: var(--pl-text-secondary); margin-left: 2px; }
+  /* one place in hand: the comp's bar (design site: Fix bar) — a card, not glass; one line, a headline and a detail */
+  .fx[data-one] { width: max-content; min-width: min(420px, calc(100vw - 32px)); max-width: min(980px, calc(100vw - 32px)); border-radius: 22px; background: var(--pl-paper); -webkit-backdrop-filter: none; backdrop-filter: none;
+    box-shadow: var(--pl-shadow-card); }
+  .fx .one { display: flex; align-items: center; gap: 12px; height: 64px; padding: 0 10px 0 12px; white-space: nowrap; animation: pl-pop 260ms var(--pl-spring-pop) both; }
+  .fx .one .ic { display: block; width: 36px; height: 36px; flex: none; } .fx .one .ic svg { display: block; width: 100%; height: 100%; overflow: visible; }
+  .fx .one .lines { display: flex; flex-direction: column; gap: 7px; min-width: 0; flex: 1 1 auto; overflow: hidden; }
+  .fx.fx-on .cant { font: 500 12.5px/1.3 var(--pl-sans); color: var(--pl-ink-2); max-width: 260px; white-space: normal; padding: 0 4px; }
+  .fx .one .hl { display: block; white-space: nowrap; font: 650 14.5px/1 var(--pl-sans); color: var(--pl-ink); overflow: hidden; text-overflow: ellipsis; }
+  .fx .one .dt { display: block; white-space: nowrap; font: 500 13px/1 var(--pl-sans); color: var(--pl-ink-2); overflow: hidden; text-overflow: ellipsis; }
+  .fx .one .dt .pl-pill { margin: 0; }
+  .fx .one .sep { width: 1px; height: 22px; margin: 0 2px; background: var(--pl-rule); flex: none; }
+  .fx .one .onav { display: inline-flex; align-items: center; gap: 2px; font: 500 12px/1 var(--pl-mono); color: var(--pl-ink-2); flex: none; }
+  .fx .one .onav button { display: grid; place-items: center; width: 22px; height: 22px; border-radius: 6px; color: var(--pl-ink-2); }
+  .fx .one .onav button:hover { background: var(--pl-paper-2); }
+  .fx .one .tb { flex: none; }
+  .fx .one .passes { display: inline-flex; align-items: center; gap: 6px; padding: 0 4px; flex: none; }
+  .fx .one .ps { position: relative; display: block; width: 22px; height: 22px; transition: opacity 240ms var(--pl-ease-out), scale 320ms var(--pl-spring-pop), filter 240ms var(--pl-ease-out); }
+  .fx .one .ps svg { display: block; width: 100%; height: 100%; overflow: visible; }
+  .fx .one .ps.soon { opacity: .35; filter: grayscale(1); scale: .86; }
+  .fx .one .ps.skipped { opacity: .3; filter: grayscale(1); scale: .8; }
+  .fx .one .ps.now { scale: 1.12; }
+  .fx .one .ps.now::before { content: ''; position: absolute; inset: -5px; border-radius: 9px; box-shadow: 0 0 0 2px var(--pl-sky); }
+  .fx .one .ps.done::after { content: ''; position: absolute; right: -4px; bottom: -4px; width: 10px; height: 10px; border-radius: 50%; background: var(--pl-mint); box-shadow: 0 0 0 1.5px var(--pl-paper); }
+  .fx .one .ic.pop { animation: pl-pop 320ms var(--pl-spring-pop) both; }
+  .fx .one .roles { display: inline-flex; flex: none; }
+  .fx .one .dt kbd { font: 600 11px/1 var(--pl-mono); padding: 2px 5px; border-radius: 5px; background: var(--pl-paper-2); color: var(--pl-ink-2); }
+  .fx .cu-one { gap: 10px; }
+  .fx .cu-one .lines { min-width: 180px; }
+  .fx .cu-one .dt .roles .sh-chips, .fx .cu-one .dt .roles { display: inline-flex; gap: 4px; }
+  .fx .cu-one .dt .cmp { margin-left: 6px; white-space: nowrap; }
+  /* a narrow screen keeps the headline: the strip shows only the pass in hand */
+  @media (max-width: 1080px) { .fx .one .passes .ps:not(.now) { display: none; } }
+  ${BUTTON_CSS}
+  .tb.sm { --h: 30px; }
+  .tb.sm .top { padding: 0 11px; font-size: 12.5px; border-radius: 11px; }
+  /* the choice, on the element: a small card beside it, the options and the soft buttons */
+  /* it is a .fx (the card's inner rules apply as they are), undocked: placed beside the element, a card, not glass */
+  .fx.fx-on { left: 0; top: 0; bottom: auto; translate: none; width: auto; height: auto; max-width: min(560px, calc(100vw - 24px)); z-index: 3; overflow: visible;
+    display: flex; flex-flow: row nowrap; align-items: center; gap: 6px; padding: 5px; width: max-content; background: var(--pl-paper); -webkit-backdrop-filter: none; backdrop-filter: none;
+    border-radius: 16px; box-shadow: var(--pl-shadow-tag); transition: none; animation: pl-pop 220ms var(--pl-spring-pop) both; }
+  .fx.fx-on:has(.field, .say, .note, .hint) { flex-wrap: wrap; width: auto; }
+  .fx.fx-on .chips { display: inline-flex; gap: 3px; padding: 0 2px; }
+  .fx.fx-on > .ic.sm { display: block; width: 22px; height: 22px; margin: 0 2px 0 4px; flex: none; } .fx.fx-on > .ic.sm svg { display: block; width: 100%; height: 100%; overflow: visible; }
+  .fx.fx-on .ctl { display: inline-flex; align-items: center; flex: none; }
+  .fx.fx-on .ctl .ep { flex: none; }
+  .fx.fx-on .chip { height: 26px; min-width: 34px; padding: 0 8px; border-radius: 8px; font: 500 12px/26px var(--pl-mono); color: var(--pl-ink-2); background: var(--pl-paper-2); }
+  .fx.fx-on .chip:hover { color: var(--pl-ink); }
+  .fx.fx-on .chip[aria-pressed="true"] { color: var(--pl-sky-ink); background: var(--pl-sky-soft); box-shadow: inset 0 0 0 1.5px var(--pl-instrument); }
+  .fx.fx-on .acts { display: inline-flex; flex-wrap: nowrap; align-items: center; gap: 6px; margin: 0; padding: 0; border: 0; }
+  .fx.fx-on .say, .fx.fx-on .note, .fx.fx-on .hint { flex-basis: 100%; padding: 2px 6px; }
+  .fx.fx-on[hidden] { display: none; }
+  .fx-on .acts { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .fx-on .say, .fx-on .note { color: var(--pl-ink-2); }
+  .fx-on .say.err { color: var(--pl-off); }
+  .fx button:not(.pl-act):not(.tb) { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; }
+  .fx :not(.pl-act):not(.tb) > kbd { font: 500 10.5px/1 ui-monospace, monospace; color: var(--pl-text-secondary); margin-left: 2px; }
   .fx .line { display: flex; align-items: center; gap: 10px; height: 46px; padding: 0 7px 0 16px; }
   .fx .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--pl-heat); box-shadow: 0 0 0 3px color-mix(in oklab, var(--pl-heat) 14%, transparent); flex: none; }
   .fx .count { font-weight: 550; } .fx .count span { color: var(--pl-text-secondary); font-weight: 450; }
@@ -81,6 +139,14 @@ export const FIX_CSS = TEXT_EDITOR_CSS + ELEMENT_CARD_CSS + `
   /* at rest the panel is the bar alone, and is never narrower than the bar's one line: with its tools out on a wider
      system font (Linux) the last control fell off the edge. The window's width is still the limit */
   .fx[data-rest] { min-width: max-content; }
+  /* at rest, the design site's bar: a pill card, one line; the count in the headline's type, the actions soft */
+  .fx[data-rest] { height: auto; border-radius: 25px; background: var(--pl-paper); -webkit-backdrop-filter: none; backdrop-filter: none; box-shadow: var(--pl-shadow-card); }
+  .fx[data-rest] .line.bar { height: 54px; padding: 0 8px 0 18px; gap: 10px; }
+  .fx[data-rest] .count { font: 650 14.5px/1 var(--pl-sans); color: var(--pl-ink); }
+  .fx[data-rest] .quiet-line { font: 500 13.5px/1 var(--pl-sans); color: var(--pl-ink-2); }
+  .fx[data-rest] .tb { flex: none; }
+  .fx[data-rest] .more { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 9px; color: var(--pl-ink-2); }
+  .fx[data-rest] .more:hover { background: var(--pl-paper-2); color: var(--pl-ink); }
   .fx .bar { gap: 8px; height: 48px; padding: 0 7px 0 16px; }
   .fx .bar .pl-act { flex: none; }
   .fx .status { position: relative; display: inline-flex; align-items: center; gap: 8px; flex: none; padding: 6px 8px; margin-left: -8px; border-radius: 8px; outline: none; }
@@ -98,11 +164,11 @@ export const FIX_CSS = TEXT_EDITOR_CSS + ELEMENT_CARD_CSS + `
   .fx .bar .more:hover, .fx .bar .tool:hover, .fx .bar .more[aria-expanded="true"] { background: var(--pl-bg-surface-hover); color: var(--pl-text-primary); }
   .fx .bar .more svg, .fx .bar .tool svg { width: 16px; height: 16px; }
   .fx .bar .tools { display: inline-flex; gap: 2px; animation: pl-pop 260ms var(--pl-spring-pop) both; }
-  .fx .bar .bar-close { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 6px; border-radius: 8px; color: var(--pl-text-secondary); font-weight: 600; font-size: 12px; flex: none; }
-  .fx .bar .bar-close:hover { background: var(--pl-bg-surface-hover); color: var(--pl-text-primary); }
-  .fx .bar .bar-close kbd { display: inline-grid; place-items: center; height: 18px; padding: 0 5px; margin: 0; border-radius: 4px; font: 600 11px/1 var(--pl-mono, ui-monospace, monospace);
+  .fx .bar .bar-close:not(.tb) { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 6px; border-radius: 8px; color: var(--pl-text-secondary); font-weight: 600; font-size: 12px; flex: none; }
+  .fx .bar .bar-close:not(.tb):hover { background: var(--pl-bg-surface-hover); color: var(--pl-text-primary); }
+  .fx .bar .bar-close:not(.tb) kbd { display: inline-grid; place-items: center; height: 18px; padding: 0 5px; margin: 0; border-radius: 4px; font: 600 11px/1 var(--pl-mono, ui-monospace, monospace);
     background: var(--pl-bg-inset); box-shadow: inset 0 0 0 1px var(--pl-border-default); color: var(--pl-text-secondary); }
-  .fx .bar .bar-close .x { display: none; width: 16px; height: 16px; }
+  .fx .bar .bar-close:not(.tb) .x { display: none; width: 16px; height: 16px; }
   .fx .bar.has-notice .long { display: none; }
   /* the tools out take the room Close's word had: Esc says it */
   .fx .bar:has(.tools) .bar-close .word { display: none; }
@@ -114,7 +180,7 @@ export const FIX_CSS = TEXT_EDITOR_CSS + ELEMENT_CARD_CSS + `
     /* a phone's bar keeps the count, its two actions and Close; the tools are on the dock's mark once Blueprint closes */
     .fx .bar .long, .fx .bar .notice, .fx .bar .more, .fx .bar .tools, .fx .bar .bar-close .word, .fx .bar .bar-close kbd { display: none; }
     .fx .bar .pl-act.quiet kbd { display: none; } .fx .bar .pl-act { padding: 0 11px; }
-    .fx .bar .bar-close .x { display: block; }
+    .fx .bar .bar-close:not(.tb) .x { display: block; }
   }
   @media (prefers-reduced-motion: reduce) { .fx .readout { transition: none; } .fx .bar .tools { animation: none; } }
   ${FIX_BUTTONS_CSS}
@@ -175,6 +241,7 @@ export const FIX_CSS = TEXT_EDITOR_CSS + ELEMENT_CARD_CSS + `
   .fx.pl-dark { box-shadow: 0 0 0 .5px rgb(255 255 255 / .12), 0 8px 20px -8px rgb(0 0 0 / .5), 0 28px 56px -24px rgb(0 0 0 / .6), inset 0 1px 0 rgb(255 255 255 / .06); }
 ${CLEANUP_CSS}
 `;
+export const FIX_CSS = FIX_CSS_BASE;
 
 // What kind of thing a mark's value is, for its specimen
 function kindOf(mark) {
@@ -188,6 +255,39 @@ function kindOf(mark) {
   if (/duration|delay/.test(p) || mark?.family === 'motion') return 'time';
   return 'value';
 }
+
+// ── the bar's one line (design site: Fix bar, decided 2026-11-10) ──
+// The headline says what was done by hand, in your words and the real CSS name; the detail says what it is and what your
+// tokens are. A craft finding says its own line and its reason.
+const PROP_WORD = [[/border-radius|radius/, 'border radius'], [/font-size/, 'font size'], [/font-weight/, 'font weight'], [/line-height/, 'line height'],
+  [/letter-spacing/, 'letter spacing'], [/padding/, 'padding'], [/margin/, 'margin'], [/gap/, 'gap'], [/background/, 'background colour'],
+  [/box-shadow/, 'shadow'], [/border-color|outline-color/, 'border colour'], [/color/, 'colour'], [/duration|delay/, 'duration'], [/width|height|size/, 'size']];
+// the property a cause is about, read from its own class first (a Tailwind-default mark carries every property of
+// its element, so its props say nothing), then from its family, then from props when there is just one
+const CLASS_WORD = [[/^fontWeight\b|^font-weight\b/, 'font weight'], [/^fontSize\b|^font-size\b/, 'font size'], [/^fontFamily\b|^font-family\b/, 'font family'],
+  [/^(color|fill|stroke|background(Color)?|borderColor)\b\s*:/, 'colour'],
+  [/^text-(xs|sm|base|lg|[2-9]?xl|\[\d)/, 'font size'], [/^font-(thin|extralight|light|normal|medium|semibold|bold|extrabold|black|\[\d)/, 'font weight'], [/^font-/, 'font family'],
+  [/^leading-/, 'line height'], [/^tracking-/, 'letter spacing'], [/^rounded/, 'border radius'], [/^-?p[xytrblse]?-/, 'padding'], [/^-?m[xytrblse]?-/, 'margin'],
+  [/^gap-/, 'gap'], [/^bg-/, 'background colour'], [/^(border|outline|ring)-(?!\d|\[\d)/, 'border colour'], [/^text-/, 'colour'], [/^shadow/, 'shadow'],
+  [/^(duration|delay)-/, 'duration'], [/^(size|w|h|min-w|min-h|max-w|max-h)-/, 'size']];
+const propWord = (mark, cls = '') => {
+  // a style written in JavaScript ("fontWeight: on ? 600 : 400") is read as it is; a class loses its variants (hover:, md:)
+  const raw = String(cls), c = /^[a-zA-Z-]+\s*:\s/.test(raw) ? raw : raw.split(':').pop().replace(/^!|!$/g, '');
+  const byClass = CLASS_WORD.find(([re]) => re.test(c))?.[1];
+  if (byClass) return byClass;
+  if (mark?.family === 'type') return 'font size';
+  if (mark?.family === 'color') return 'colour';
+  const props = mark?.props ?? [];
+  return props.length <= 2 ? PROP_WORD.find(([re]) => re.test(props.join(' ')))?.[1] ?? null : null;
+};
+const KIND_OF_WORD = { 'font size': 'type', 'font weight': 'type', 'font family': 'type', 'line height': 'type', 'letter spacing': 'type', 'border radius': 'radius', padding: 'padding', margin: 'margin', gap: 'gap',
+  colour: 'colour', 'background colour': 'colour', 'border colour': 'colour', duration: 'time' };
+const NOUNS = { button: ['button', 'buttons'], a: ['link', 'links'], li: ['row', 'rows'], input: ['field', 'fields'], textarea: ['field', 'fields'], select: ['field', 'fields'],
+  img: ['image', 'images'], svg: ['icon', 'icons'], h1: ['heading', 'headings'], h2: ['heading', 'headings'], h3: ['heading', 'headings'], h4: ['heading', 'headings'], p: ['paragraph', 'paragraphs'], label: ['label', 'labels'] };
+const nounOf = (g, n) => { const tags = new Set(g.members.map((m) => m.el?.localName).filter(Boolean)); const w = tags.size === 1 ? NOUNS[[...tags][0]] : null; return w ? w[n === 1 ? 0 : 1] : n === 1 ? 'place' : 'places'; };
+const TOY_OF = { padding: 'padding', margin: 'margin', gap: 'gap', type: 'type', colour: 'fill', radius: 'corner', time: 'motion' };
+const toyFor = (mark, kind) => toyOf(TOY_OF[kind] ?? ({ height: 'height', translate: 'position', 'margin-left': 'alignment', size: 'size' }[(mark?.props ?? [])[0]] ?? 'alignment'));
+const listOf = (xs) => (xs.length < 2 ? xs.join('') : `${xs.slice(0, -1).join(', ')} and ${xs.at(-1)}`);
 
 let hatchN = 0;
 // An option drawn as what it is (overlay/demo/fix-flow.html): the space hatched in its property's own pattern, the
@@ -349,6 +449,13 @@ export class FixPanel {
     this.#el.setAttribute('role', 'region');
     this.#el.setAttribute('aria-label', 'Fix');
     root.append(this.#el);
+    // the choice is made on the element (design site: Fix bar): its own box beside the place in hand, outside the bar,
+    // which clips and blurs what is inside it
+    this.#choice = Object.assign(document.createElement('div'), { className: 'fx fx-on', hidden: true });
+    this.#choice.setAttribute('role', 'group');
+    this.#choice.setAttribute('aria-label', 'Choose');
+    root.append(this.#choice);
+    soften(root);
     // Alt+click on words: a card beside them with their own values, problem or not (texteditor.js)
     let textGroup = null; // the step the card's last write made, until the card says it (the card's own bookkeeping, not the panel's)
     this.#editor = new TextEditor(root, {
@@ -400,7 +507,7 @@ export class FixPanel {
       url: () => location.origin + '/',
     });
     this.#cleanup.mount(this.#el);
-    this.#el.addEventListener('click', (e) => {
+    const onClick = (e) => {
       if (this.#cleanup.running) { this.#cleanup.click(e.target); return; }
       const b = e.target.closest('button');
       if (!b) return;
@@ -410,6 +517,7 @@ export class FixPanel {
       else if (b.classList.contains('tool')) this.#host.tool?.(b.dataset.tool);
       else if (b.classList.contains('bar-close')) this.#host.tool?.('bp-toggle');
       else if (b.classList.contains('setup')) this.#host.openSetup?.();
+      else if (b.classList.contains('opt') || b.classList.contains('page')) return; // the control's own (bindControl)
       else if (b.classList.contains('sp')) this.#pick(+b.dataset.i);
       else if (b.classList.contains('take')) this.take();
       else if (b.classList.contains('skip') || b.classList.contains('next')) this.skip(1);
@@ -418,18 +526,24 @@ export class FixPanel {
       else if (b.classList.contains('keep')) this.keep();
       else if (b.classList.contains('keep-yes')) this.#keepIt();
       else if (b.classList.contains('keep-no')) this.#closeKeep();
-    });
+    };
+    this.#el.addEventListener('click', onClick);
+    this.#choice.addEventListener('click', onClick);
     // the fields own their keys: Enter does the field's action, Esc closes or leaves it; the page's keys never see them
-    this.#el.addEventListener('input', (e) => {
+    const onInput = (e) => {
       if (e.target.name === 'token') { this.#names.set(this.#held?.key, e.target.value.trim()); fit(e.target); this.#sayNew(); }
-      if (e.target.name === 'why') { this.#why = e.target.value; const ok = this.#why.trim().length >= 3; this.#el.querySelector('.keep-yes')?.toggleAttribute('disabled', !ok); fieldSays(e.target.closest('.field'), { ok }); }
-    });
-    this.#el.addEventListener('keydown', (e) => {
+      if (e.target.name === 'why') { this.#why = e.target.value; const ok = this.#why.trim().length >= 3; (this.#choice.querySelector('.keep-yes') ?? this.#el.querySelector('.keep-yes'))?.toggleAttribute('disabled', !ok); fieldSays(e.target.closest('.field'), { ok }); }
+    };
+    this.#el.addEventListener('input', onInput);
+    this.#choice.addEventListener('input', onInput);
+    const onKey = (e) => {
       if (!e.target.matches?.('input')) return;
       e.stopPropagation();
       if (e.key === 'Enter') { e.preventDefault(); e.target.name === 'why' ? this.#keepIt() : this.take(); }
       if (e.key === 'Escape') { e.preventDefault(); e.target.name === 'why' ? this.#closeKeep() : e.target.blur(); }
-    });
+    };
+    this.#el.addEventListener('keydown', onKey);
+    this.#choice.addEventListener('keydown', onKey);
   }
   get rect() { return this.#el.hidden ? null : this.#el.getBoundingClientRect(); }
   #editor; #card; #cleanup; #quiet = false; #tools = false; // #tools: the bar's ··· is open (its tools shown inline)
@@ -448,7 +562,7 @@ export class FixPanel {
   #handOver(card) { const el = card.target; card.close(); if (!el || !this.holdEl(el, 'none')) this.hold(0); }
 
   // each opening starts unread: the last one's count and its settled mark never stand in for this reading
-  show(on) { if (on) { const rest = undoing_(); if (rest) queueMicrotask(() => this.#undo(rest)); this.#el.dataset.scheme = darkGround() ? 'dark' : 'light'; this.#el.classList.toggle('pl-dark', this.#el.dataset.scheme === 'dark'); this.#el.classList.toggle('pl-light', this.#el.dataset.scheme !== 'dark'); for (const w of written_()) if (!this.#taken.has(w.key)) this.#taken.set(w.key, { key: w.key, members: [] }); } if (on !== this.#on) { this.#groups = []; this.#progress = null; this.#steady = null; this.#notice = null; clearTimeout(this.#noticeTimer); this.#el.removeAttribute('data-settled'); this.#send(on ? (this.#flight?.kind === 'undoing' ? 'openUndoing' : this.#flight?.kind === 'writing' ? 'openWriting' : 'open') : 'close'); } this.#el.hidden = !on; if (!on) { this.#editor.close(); this.#card.close(); this.#letGo(false); this.#done = false; const last = this.#last; if (last?.undo?.length || last?.group) this.#host.handOff?.({ undo: last.undo ?? [], trace: { group: last.group ?? null } }, last.text); this.#last = null; this.#resumeAt = null; if (this.#cleanup.running) this.#cleanup.stop(); } else this.#cleanup.resume(); this.render(); }
+  show(on) { if (on) { const rest = undoing_(); if (rest) queueMicrotask(() => this.#undo(rest)); this.#el.dataset.scheme = darkGround() ? 'dark' : 'light'; this.#el.classList.toggle('pl-dark', this.#el.dataset.scheme === 'dark'); this.#el.classList.toggle('pl-light', this.#el.dataset.scheme !== 'dark'); this.#choice.dataset.scheme = this.#el.dataset.scheme; this.#choice.className = `fx fx-on ${this.#el.dataset.scheme === 'dark' ? 'pl-dark' : 'pl-light'}`; for (const w of written_()) if (!this.#taken.has(w.key)) this.#taken.set(w.key, { key: w.key, members: [] }); } if (on !== this.#on) { this.#groups = []; this.#progress = null; this.#steady = null; this.#notice = null; clearTimeout(this.#noticeTimer); this.#el.removeAttribute('data-settled'); this.#send(on ? (this.#flight?.kind === 'undoing' ? 'openUndoing' : this.#flight?.kind === 'writing' ? 'openWriting' : 'open') : 'close'); } this.#el.hidden = !on; if (!on) { this.#choice.hidden = true; this.#onHtml = ""; this.#editor.close(); this.#card.close(); this.#letGo(false); this.#done = false; const last = this.#last; if (last?.undo?.length || last?.group) this.#host.handOff?.({ undo: last.undo ?? [], trace: { group: last.group ?? null } }, last.text); this.#last = null; this.#resumeAt = null; if (this.#cleanup.running) this.#cleanup.stop(); } else this.#cleanup.resume(); this.render(); }
   // the reader handed on the page: causes, most places first; a cause taken stays taken until it is written
   // While a cause is in hand the page is read as previewed (its fix, and what that fix also mends, gone from it): the
   // causes stay as they were read before, and the new reading is taken when the cause is put down
@@ -684,8 +798,16 @@ export class FixPanel {
     if (!nt?.namespace || !nt.utility) return null;
     const name = this.#names.get(g.key) ?? FIX.nameFor(nt.namespace, String(nt.value)), ok = /^[a-z][a-z0-9-]{0,30}$/.test(name);
     // the class as written at the place keeps its variants and sign: hover:-mx-[…] becomes hover:-mx-<name>
+    // a style written in JavaScript (fontWeight: on ? 600 : 400) takes no class: its quoted value becomes the token's
+    // variable where it is written ('oklch(…)' → 'var(--color-name)'), and a value it doesn't quote can't be written
+    const value = String(nt.value);
+    if (!/^[^\s'"(),]+$/.test(g.text)) {
+      const q = [`'${value}'`, `"${value}"`].find((s) => g.text.includes(s));
+      if (!q) return null;
+      return { kind: 'new', name, ok, value, token: `${nt.namespace}-${name}`, cls: g.text.replace(q, `${q[0]}var(--${nt.namespace}-${name})${q[0]}`), namespace: nt.namespace, utility: nt.utility, file: policy.file, hash: policy.hash ?? null };
+    }
     const lead = /^((?:[^:\[\]]+:)*)(!?-?)/.exec(g.text) ?? ['', '', ''];
-    return { kind: 'new', name, ok, value: String(nt.value), token: `${nt.namespace}-${name}`, cls: `${lead[1]}${lead[2]}${nt.utility}-${name}`, namespace: nt.namespace, utility: nt.utility, file: policy.file, hash: policy.hash ?? null };
+    return { kind: 'new', name, ok, value, token: `${nt.namespace}-${name}`, cls: `${lead[1]}${lead[2]}${nt.utility}-${name}`, namespace: nt.namespace, utility: nt.utility, file: policy.file, hash: policy.hash ?? null };
   }
   // the class the new token becomes, said as it is typed (the field is not drawn again while it has the caret)
   #sayNew() {
@@ -846,6 +968,32 @@ export class FixPanel {
 
   // a card open owns the screen: the host says so, and Blueprint's pills step aside under it (N-11)
   #cardFlag() { const h = this.#el.getRootNode()?.host, on = !!(this.#editor?.open || this.#card?.open); if (h && h.hasAttribute('data-card') !== on) h.toggleAttribute('data-card', on); }
+  // the choice, on the page beside the element in hand: below it when there is room, else above; never over the bar
+  #placeOn() {
+    const body = this.#onBody, at = this.#onAt;
+    if (!body) { this.#choice.hidden = true; this.#onHtml = ''; return; }
+    if (body !== this.#onHtml) {
+      const typing = this.#choice.getRootNode().activeElement, field = typing?.matches?.('input') && this.#choice.contains(typing) ? { name: typing.name, at: [typing.selectionStart, typing.selectionEnd] } : null;
+      this.#choice.innerHTML = body; this.#onHtml = body;
+      bindControl(this.#choice, { pick: (_, i) => this.#pick(this.#stepOf[i] ?? i) });
+      if (field) { const f = this.#choice.querySelector(`input[name="${field.name}"]`); if (f) { f.focus(); f.setSelectionRange(...field.at); } }
+    }
+    this.#choice.hidden = false;
+    const bar = this.#el.getBoundingClientRect(), gap = 10, box = this.#choice.getBoundingClientRect(), w = box.width, h = box.height;
+    // no place of it can be seen (off screen, inside something closed, only on focus): the row waits above the bar
+    if (!at) { this.#choice.style.left = `${Math.round(Math.max(gap, Math.min(innerWidth - w - gap, bar.left + bar.width / 2 - w / 2)))}px`; this.#choice.style.top = `${Math.round(Math.max(gap, bar.top - gap - h))}px`; return; }
+    const r = at.getBoundingClientRect();
+    // what else the overlay shows (the X-ray card on the element, its caret): the choice keeps clear of it and of the bar
+    const others = [...this.#choice.getRootNode().querySelectorAll('*')].filter((e) => e !== this.#choice && e !== this.#el && !this.#choice.contains(e) && !this.#el.contains(e)
+      && (e.matches('.xr-card, .ec, .ec-strip') || getComputedStyle(e).position === 'fixed') && e.getClientRects().length).map((e) => e.getBoundingClientRect()).filter((b) => b.width > 40 && b.height > 40 && b.width < innerWidth * 0.9);
+    const taken = [...others, bar, r];
+    const clamp = (x, y) => [Math.min(Math.max(gap, x), innerWidth - w - gap), Math.min(Math.max(gap, y), innerHeight - h - gap)];
+    const spots = [[r.left, r.bottom + gap], [r.right - w, r.bottom + gap], [r.left, r.top - gap - h], [r.right - w, r.top - gap - h], [r.right + gap, r.top], [r.left - gap - w, r.top]].map(([x, y]) => clamp(x, y));
+    const over = ([x, y]) => taken.reduce((sum, b) => sum + Math.max(0, Math.min(b.right, x + w) - Math.max(b.left, x)) * Math.max(0, Math.min(b.bottom, y + h) - Math.max(b.top, y)), 0);
+    const [left, top] = spots.reduce((best, sp) => (over(sp) < over(best) ? sp : best), spots[0]);
+    this.#choice.style.top = `${Math.round(top)}px`; this.#choice.style.left = `${Math.round(left)}px`;
+  }
+
   render(slide = false) {
     this.#cardFlag();
     if (!this.#on) return;
@@ -854,14 +1002,15 @@ export class FixPanel {
     const settledNow = this.#progress?.done ?? (!!this.#progress?.total && this.#progress.read === this.#progress.total);
     const settled = settledNow || (this.#steady?.path === location.pathname && !!this.#unsettledAt && performance.now() - this.#unsettledAt < BRIEF);
     let html;
-    const tidy = `<button class="pl-act quiet cleanup" aria-keyshortcuts="c"><span>${esc(CLEANUP.bar)}<span class="long"> ${esc(CLEANUP.barLong)}</span></span> <kbd>C</kbd></button>`;
+    this.#onBody = ''; this.#onAt = null;
+    const tidy = button(`${esc(CLEANUP.bar)}<span class="long"> ${esc(CLEANUP.barLong)}</span>`, { cls: 'sm quiet cleanup', key: 'C', attrs: 'aria-keyshortcuts="c"', icon: toyOf('icon') });
     // the bar's end: ··· (its tools, only once asked for) and Close; and the setup steps left, said in the line
     const B = FIX.bar, left = this.#host.setupLeft?.() ?? 0;
     const end = `<button class="more" aria-expanded="${this.#tools}" aria-label="${esc(this.#tools ? B.less : B.more)}" title="${esc(this.#tools ? B.less : B.more)}">${BAR_ICON.more}</button>`
       + (this.#tools ? `<span class="tools">${Object.entries(B.tools).map(([n, label]) => `<button class="tool" data-tool="${n}" aria-label="${esc(label)}" title="${esc(label)}">${BAR_ICON[n]}</button>`).join('')}</span>` : '')
-      + `<button class="bar-close" aria-keyshortcuts="Escape" aria-label="${esc(B.close)}"><span class="word">${esc(B.close)}</span> <kbd>Esc</kbd>${BAR_ICON.x}</button>`;
+      + button(esc(B.close), { cls: 'sm quiet bar-close', key: 'Esc', attrs: `aria-keyshortcuts="Escape" aria-label="${esc(B.close)}"` });
     const notice = left ? `<span class="notice"><b>${esc(B.setup(left))}</b><button class="setup">${esc(B.review)}</button></span>` : '';
-    if (this.#cleanup.running) html = this.#cleanup.html();
+    if (this.#cleanup.running) html = this.#cleanup.bar() ?? this.#cleanup.html();
     else if (this.#writing || this.#undoing) html = `<div class="writing"><i></i>${esc(this.#undoing ? FIX.undoing : this.#writingText ?? FIX.writing)}</div>`;
     else if (this.#done) html = `<div class="line done"><svg class="check" viewBox="0 0 20 20" aria-hidden="true"><path d="M5 10.5l3.2 3.2L15 6.8"/></svg><span class="words">${esc(this.#doneText ?? FIX.applied(this.#fixedCount))}</span></div>`;
     // a word about what was just pointed at (why nothing is in hand) comes before any offer
@@ -879,7 +1028,7 @@ export class FixPanel {
       const status = `<span class="status" tabindex="0"${rest ? ` aria-description="${esc(rest)}"` : ''}><i class="dot"></i><span class="count">${places ? FIX.problems(places) : FIX.notes(notes)}</span>${rest ? `<span class="readout" aria-hidden="true">${esc(rest)}</span>` : ''}</span>`;
       void unchecked;
       html = places || notes
-        ? `<div class="line bar${notice ? ' has-notice' : ''}">${this.#error ? `<span class="quiet-line err">${esc(this.#error)}</span>` : status}${notice}<span class="grow"></span>${tidy}<button class="pl-act start" aria-keyshortcuts="Enter">${FIX.start} <kbd>↵</kbd></button>${end}</div>`
+        ? `<div class="line bar${notice ? ' has-notice' : ''}">${this.#error ? `<span class="quiet-line err">${esc(this.#error)}</span>` : status}${notice}<span class="grow"></span>${tidy}${button(esc(FIX.start), { cls: 'sm start', key: '↵', attrs: 'aria-keyshortcuts="Enter"' })}${end}</div>`
         : `<div class="line bar${notice ? ' has-notice' : ''}"><span class="quiet-line">${esc(this.#error ?? (!settled ? (this.#host.scope?.() ? FIX.checkingElement : FIX.checking) : this.#progress?.notChecked ? FIX.clearChecked(this.#progress.notChecked) : FIX.clear))}</span>${notice}${settled ? tidy : ''}${end}</div>`;
     } else {
       const mark = g.members[0].mark, kind = kindOf(mark);
@@ -931,11 +1080,66 @@ export class FixPanel {
       // a write that didn't land: why, on the fix it was for (back in hand, to try again)
       const also = elsewhere(g, this.#host.scope?.()), reach = also ? `<div class="say">${esc(FIX.elsewhere(also))}</div>` : '';
       const failed = this.#error ? `<div class="say err" role="alert">${esc(this.#error)}</div>` : '';
-      html = `<div class="body"${slide ? '' : ' style="animation:none"'}>${head}${failed}${unseen}${reach}${middle}${acts}</div>`;
+      // the bar (design site: Fix bar): the property's toy, the headline and the detail, where you are, the way into the
+      // other job. The choice (the options, Use, Keep, Skip) is made on the element, in its own box beside it
+      const n = placesOf(g), prop = propWord(mark, nameOf(g)), kindNow = KIND_OF_WORD[prop] ?? kind;
+      // a weight, a layer, an opacity is a bare number
+      const bare = prop === 'font weight' || mark.family === 'z' || (mark.props ?? []).some((p) => /^(z-index|opacity|font-weight|order)$/.test(p));
+      const unitOf = (x) => (Number.isFinite(x) ? `${Math.round(x * 10) / 10}${kindNow === 'time' ? 'ms' : bare ? '' : 'px'}` : null);
+      const framework = /framework/.test(mark.rule ?? '');
+      // what it is now: its value, else the class itself. A Tailwind default is said by its class (text-lg), which is
+      // what the headline is about; its number is in the control
+      const cls = nameOf(g), isClass = !!cls && /[a-z]/i.test(cls) && !/^-?[\d.]+[a-z%]*$/i.test(cls);
+      const now = framework && isClass ? cls : unitOf(v?.now?.n) ?? cls ?? null;
+      const sayLine = mark.family === 'craft' ? `${n} ${nounOf(g, n)}: ${String(what).replace(/^./, (c) => c.toLowerCase())}`
+        : prop && framework ? `${n} ${nounOf(g, n)} use${n === 1 ? 's' : ''} Tailwind’s default ${prop}` : prop ? `${n} ${nounOf(g, n)} ${n === 1 ? 'has' : 'have'} a hard-coded ${prop}` : `${n} ${nounOf(g, n)}: ${what.toLowerCase()}`;
+      const tokens = v?.ready ? [...new Map([...v.options].sort((a, b) => (a.n ?? 0) - (b.n ?? 0)).map((o) => [unitOf(o.n) ?? o.label, 1])).keys()].filter(Boolean) : [];
+      const moreLine = mark.family === 'craft' ? esc(String(mark.title ?? mark.because ?? ''))
+        : `${now != null && now !== '' ? `<span class="pl-pill" data-hue="coral">${esc(String(now))}</span> ` : ''}${esc(framework ? (tokens.length && prop ? `isn’t one of your ${prop} tokens: ${listOf(tokens)}.` : `comes from Tailwind’s defaults. Your theme doesn’t set it.`) : tokens.length && prop ? `isn’t one of your ${prop} tokens: ${listOf(tokens)}.` : prop ? `isn’t one of your ${prop} tokens.`
+          // no property word: say the value against your steps, never the headline again
+          : /by-value|matches/.test(mark.rule ?? '') ? 'is typed by hand. Your theme has a token with this value.' : tokens.length ? `isn’t one of your steps: ${listOf(tokens)}.` : 'isn’t in your theme.')}`;
+      const nav = `<span class="onav"><button class="prev" aria-label="Previous fix">‹</button><span>${esc(FIX.position(g, live, noteOf))}</span><button class="next" aria-label="Next fix">›</button></span>`;
+      html = `<div class="one"${slide ? '' : ' style="animation:none"'}><i class="ic big">${toyFor(mark, kindNow)}</i><span class="lines"><span class="hl">${esc(sayLine)}${info}</span><span class="dt">${moreLine}</span></span>`
+        + `<span class="sep"></span>${nav}${button(CLEANUP.bar, { cls: 'sm quiet cleanup', attrs: 'aria-keyshortcuts="c"', icon: toyOf('icon') })}</div>`;
+      // the soft buttons replace the old ones in the choice: Use (pink, ↵), Keep and Skip (quiet)
+      const soft = acts
+        .replace(/<button class="primary take"\s*(disabled)?\s*>([\s\S]*?) <kbd>↵<\/kbd><\/button>/, (m, dis, l) => button(l, { cls: 'sm take', key: '↵', attrs: dis ? 'disabled' : '' }))
+        .replace(/<button class="primary keep-yes"\s*(disabled)?\s*>([\s\S]*?) <kbd>↵<\/kbd><\/button>/, (m, dis, l) => button(l, { cls: 'sm keep-yes', key: '↵', attrs: dis ? 'disabled' : '' }))
+        .replace(/<button class="ghost keep">([\s\S]*?) <kbd>K<\/kbd><\/button>/, (m, l) => button(l, { cls: 'sm quiet keep', key: 'K' }))
+        .replace(/<button class="ghost keep-no">([\s\S]*?) <kbd>esc<\/kbd><\/button>/, (m, l) => button(l, { cls: 'sm quiet keep-no', key: 'Esc' }))
+        .replace(/<button class="ghost skip">([\s\S]*?)<\/button>/, (m, l) => button(l.replace(/<kbd>.*?<\/kbd>/, '').trim(), { cls: 'sm quiet skip', key: '→' }));
+      // the choice is one row on the element (the comp's): the values as small chips, then Use, Keep, Skip. A field
+      // (naming a new token, a reason to keep) stays as it is
+      // the property's own control (design site: Pickers, editor-primitives.js): corners drawn as corners, colours as
+      // swatches, everything with a size as a staircase; the value it has now as the coral notch where it falls. The
+      // steps are your tokens; pressing one tries it on the page (as ↑ ↓ do), Use writes it
+      let chips = middle;
+      if (v?.ready) {
+        const order = v.options.map((o, i) => ({ o, i })).sort((a, b) => (Number.isFinite(a.o.n) && Number.isFinite(b.o.n) ? a.o.n - b.o.n : 0));
+        this.#stepOf = order.map((x) => x.i);
+        // an engine finding's option may carry no number: its proof recorded the corner it wants and the one it has
+        const proof = mark.craft?.proof, wantN = (o) => (Number.isFinite(o.n) ? o.n : kindNow === 'radius' && Number.isFinite(proof?.wantR) ? proof.wantR : o.n);
+        const steps = order.map(({ o }) => ({ token: String(o.cls ?? o.label ?? o.n), label: unitOf(wantN(o)) ?? o.label ?? '', n: wantN(o), swatch: o.swatch }));
+        const nowN = Number.isFinite(v.now?.n) ? v.now.n : kindNow === 'radius' && Number.isFinite(proof?.mineR) ? proof.mineR : null;
+        const state = { steps, current: null, picked: steps[order.findIndex((x) => x.i === v.at)]?.token ?? null,
+          drift: nowN != null ? { n: nowN, label: unitOf(nowN) ?? String(v.now?.label ?? '') } : null };
+        const name = prop ? prop[0].toUpperCase() + prop.slice(1) : FIX.what(mark);
+        const control = kindNow === 'radius' ? radiusControl(name, state) : kindNow === 'colour' && steps.every((x) => x.swatch) ? swatches(name, state)
+          : steps.every((x) => Number.isFinite(x.n)) ? stepper(name, state) : null;
+        chips = control ? `<span class="ic sm" aria-hidden="true">${toyFor(mark, kindNow)}</span><span class="ctl">${control}</span>`
+          : `<span class="chips">${v.options.map((o, i) => `<button class="sp chip" data-i="${i}" aria-pressed="${v.at === i}" title="${esc(o.cls ?? o.label ?? '')}">${esc(unitOf(o.n) ?? o.label ?? '')}</button>`).join('')}</span>`;
+      }
+      const writable = !v?.ready || v.options.some((o) => o.ok);
+      const cant = writable ? '' : `<span class="cant">${esc(FIX.cantWrite ?? 'Plumber can’t write this change in your code yet. Keep it, or change it by hand.')}</span>`;
+      const acts2 = writable ? soft : soft.replace(/<button type="button" class="tb sm take"[\s\S]*?<\/button>/, '');
+      this.#onBody = `${failed}${unseen}${reach}${chips}${cant}${acts2}`;
+      this.#onAt = g.members.find((m) => shown(m.el))?.el ?? null;
     }
     // the last fix written stays said above, with its Undo, until the next one is written
     if (this.#last && !this.#cleanup.running && !this.#writing && !this.#undoing && !this.#done) html = `<div class="said" role="status"><svg class="tick" viewBox="0 0 20 20" aria-hidden="true"><path d="M5 10.5l3.2 3.2L15 6.8"/></svg><span class="t">${esc(this.#last.text)}</span>${this.#last.undo?.length ? `<button class="ghost undo">${FIX.undo}</button>` : ''}</div>${html}`;
     this.#el.toggleAttribute('data-rest', html.includes('class="line bar'));
+    this.#el.toggleAttribute('data-one', /class="one[" ]/.test(html));
+    this.#placeOn();
     if (html === this.#html) return;
     this.#html = html;
     const still = matchMedia('(prefers-reduced-motion: reduce)').matches, from = this.#el.offsetHeight;
@@ -948,7 +1152,7 @@ export class FixPanel {
     // the bar changed size: what is placed clear of it is placed again (now, and once its height has moved)
     if (from !== to && this.#card.open) { this.#card.place(); if (!still) this.#life.timeout(() => this.#card.place(), TIMING.open + 40); }
   }
-  #html = '';
+  #html = ''; #choice; #onHtml = ''; #onBody = ''; #onAt = null; #stepOf = [];
 
   // The page celebrates: every fixed place clicks into place, one after another; the page breathes once; the ✓ draws
   // and bursts. Then the panel folds. (Places that a reload replaced are found again by nothing: the breath and the

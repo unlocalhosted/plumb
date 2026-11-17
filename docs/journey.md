@@ -1466,6 +1466,244 @@ field is empty). The table of five writes, before and after. The Next table: eig
 - **The proof:** 20 of 20 in the checks' test file. Each new test was run with its merge switched off and failed (with the panel's grouping off, the bar read "62 notes" against "8 notes").
 - **Seen on the way:** a three-element test page reads "1 element can't be checked". Not looked at.
 - **Media hooks:** the bar on crafting-ui's icon page, "7 problems", beside the 89 cards.
+## Seeing a screen whole: the lines a designer draws (2026-11-15)
+
+- **The itch:** the owner shared a marked-up critique of Lovable's new sidebar and asked "how can i add this kind of
+  taste judgement in plumber ?". The first answer turned the critic's three notes into four checks. The owner: "i want
+  the system not these rigid 1 to 1 copy of the rules", then: "dont you think if plumber has a concept of guardrails to
+  see the alignment vertically about different things that would be helpful ?"
+- **How we found it:** three screenshots in one afternoon, all with thin vertical lines drawn on a screen: the Lovable
+  critique, Chris Frantz on GitHub's new pull-request page ("nothing is aligned to anything", 2.1K likes), and Karri
+  Saarinen's redraw of a vibe-coded app next to Linear's own sidebar. Then about 260 replies under them, read in full
+  (docs/research/alignment-discourse.md).
+- **The system behind it:** plumber judges one element against a number or its parent. A critic judges the screen:
+  they see lines, count them, and look at what sits near a line but not on it. The fault lives between parts that are
+  each fine ("each row is a different org/team"; "what if i told you this followed the design system perfectly"), so
+  a check of values against tokens cannot see it. People feel it before they can name it; the drawn lines name it.
+- **What we tried, what we chose and why:** four checks copied from one critique (rejected by the owner); five general
+  laws over a picture of the page (agreement, distinction, balance, economy, order), which needs groups found first,
+  the hard part; then guides, which get round that: things on one line are a group. Also read lintapple, the linter
+  recommended in the replies: its alignment check needs every group marked by hand, but it is better than plumber at
+  saying what it could not measure and at measuring what is painted (docs/backlog.md, "Seeing a screen whole").
+- **The fix and the proof:** layer 1 only, read and draw, no judgement. Plumber reads the left edge, right edge and
+  (for pictures) centre of everything in view, groups edges within half a pixel into guides, and draws them (Alt+G).
+  On the messy issue-tracker practice page: 23 guides and 66 edges on none. On the site's own Primitives page: 2
+  guides. Not yet judged by the owner; not committed.
+- **Layer 2, the first judgement and its look** (owner: "Yes, add judgement", then "think about visual identity and
+  keep it lighthearted and delightful too"). One rule, from Saarinen: "Either be left-right positioning, or
+  centering": every thing sits on a line by one edge or its centre. A thing on no line, within one step of the app's
+  spacing grid (4px here) of a line that runs past it, is "just off": the grid has no step that small, so it was not
+  chosen. A second verdict ("off the grid", any offset not a whole number of steps) was tried and dropped the same
+  hour: on the messy tracker 8 of its 9 were toolbar buttons measured against a line far away. Result on the messy
+  tracker: 1 just off ("Projects", 2px left of the sidebar's label line). Known miss: "Views", 4px off, passes as an
+  indent. The look is plumber's own picture, the plumb line from its glyph set: a pin, a string, a bob, a bead per
+  thing; a stray is a coral bead that came off the string. Lines drop from their pins left to right and swing once
+  before they hang; lines only two things share are faint threads so the strong lines and the stray read first.
+- **Layer 3, which line a thing belongs to** (owner: "Catch the missed label"). "Views" was missed for two reasons:
+  4px is one whole grid step, so it read as an indent; and its ragged right end happened to match "Mobile" and
+  "Cycles", so it counted as on a line and was never judged. The fix: a thing belongs to the line its neighbours
+  above and below share (looking past up to three, so a stray next to a stray still finds it). Held like that, a
+  slip of up to two grid steps is a mistake, because a real indent starts a group of its own that shares its own line.
+  The column's line outranks a line touched by chance; a left-aligned word's right end is never a line. Three false
+  catches found and removed on the way: the "Todo" heading's right end, a count "2" after "Backlog" read as part of
+  the titles' column, and a nav tab 1px inside its frame's border. Result: messy tracker 3 just off, all real
+  ("Projects" 2px, its icon 1px, "Views" 5px); the site's Home, Primitives, Interfaces and Motion pages 0 each; the
+  messy chat page 0, so whatever is wrong there is not this kind of fault. Seen once: two numbers in an animated
+  demo flagged mid-move, gone on the next read; guides read a moving page as it is at that instant.
+- **Layer 4, from lines to a roast** (owner: "make the drawing calmer, no lines crossing text and i dont see like
+  insights by seeing the lines they should guide me", then "i want to emulate the experience of like sitting beside
+  a principle ux guy who is roasting my website … i dont want to draw the lines without actionable outcome and
+  judgement"). The system behind the complaint: plumber drew every line it measured at one weight, a measurement
+  dump; a critic draws a line only to prove the point in hand. Now Alt+G opens a roast: one verdict for the screen
+  ("Close, but your sidebar doesn't line up: 2 things are a few pixels off."), then one note at a time, worst first,
+  each with what is wrong ("Views sits 5px right of the other labels."), why, in the classes that differ from its
+  neighbours' ("Its gap is gap-[13px]; the others use gap-2."), the file and line, and a button that says what it
+  writes ("Use gap-2"). Only that note's line is drawn, 3px out in the gutter beside the edge it marks so it never
+  touches a letter, with a coral ring on the row. Proof: on the messy tracker the button wrote exactly
+  gap-[13px] → gap-2 at SloppyIssuesPage.tsx:47, the page hot-updated, the note left and the Projects note
+  ("Its icon size is size-[18px]; the others use size-5.") came up; the file was restored with git afterwards. On the
+  site's Primitives page: "Everything here hangs true. Nothing to roast." Only alignment notes exist so far.
+- **Shown on the wrong plumber, then moved** (owner: "didn't we updating the plumber itself to version without heatmap
+  … why its showing old version here ?"). crafting-ui loads plumber through a link to the main checkout, which was on
+  the homepage branch, 470 commits behind main, so it showed a 15-hour-old overlay; the guides and roast had been
+  built and committed there. They now sit on a branch of their own on top of main (four add-beside-add conflicts,
+  both sides kept), and crafting-ui's link points at that worktree, sharing the main checkout's installed packages
+  (dependencies are the same). The roast found one crash on the newer page (a neighbour that is its row group);
+  fixed. To point crafting-ui back: relink node_modules/@unlocalhosted/react-plumber to ../../../plumb.
+- **Layer 5, siblings agree** (owner, on the three open gaps: other things Karri named, vertical alignment, busier
+  pages; "and also overall improvement"). Not three new rules: everything Karri listed is one judgement, that
+  siblings (the rows of one menu, the buttons of one toolbar) should agree, and the one that disagrees with most of
+  them is the note. Horizontal alignment was one property of it; now also where an icon sits beside its label, a
+  control's height and its corners. The cause is found the same way (the class that differs where the others
+  agree). Result: the Cycles icon, 2px low, is caught with the exact fix ("Its nudge is translate-y-[2px]; the others
+  use none." → "Remove translate-y-[2px]"). The messy chat page still reads 0, and that is right: by its own header
+  its faults are values off the system, the clean-up's job, not ranks broken. A first sweep of 10 busier real pages
+  gave 3 notes, all false, each a gap in the judgement, all fixed: a fill pulled out on purpose (-mx-1; plumber's
+  own rule #1 is "align content, not boxes", so box edges no longer make line notes), a row compared with rows built
+  differently (only things with the same children in order are siblings now), and a list row "shorter" because it
+  says less (height and corners are judged for controls and one-line items only). Names now use a thing's first
+  words, not every word inside it. A second sweep (18 pages) found one more false
+  note, a letter of the home page's animated headline: the lines of one heading are now never compared with each
+  other (at display sizes a T and a b start a few px apart by their shapes), and things a script or animation moves
+  are skipped. Final sweep: the messy tracker 3 notes, all real; 17 other pages 0. Not yet tried: corners and heights
+  on a page that really mixes them, dark mode, any app but crafting-ui.
+- **Layer 6, a page that mixes shapes** (owner: "Yes, add one"). A third practice page in crafting-ui
+  (/sloppy/settings, "Ledgerly"), a settings screen with four faults planted the way Karri named them: one pill
+  button among rounded ones, one square chip among pills, one 36px button among 32px ones, one rounded-square
+  avatar among circles. First run: 3 of 4 caught with exact fixes, and one false note. The miss: avatars are not
+  siblings, each sits in its own member row; now "cousins" (the things at the same place in rows built alike) are
+  judged as one set and said with their row ("In Mei Tanaka's row, MT has 3px rounded corners; the others in its
+  place are fully rounded."). The false note: centred initials were judged by their left edge, which moves with each
+  letter's width; centred words are no longer judged by an edge. Second run: 4 of 4, no false notes. The avatar's
+  fix, whose class sits inside a ternary, wrote the right branch (rounded-md → rounded-full) and the page updated;
+  it leaves a ternary with two equal branches that a person would collapse. Page restored afterwards.
+- **Layer 7, you can see it and you can find it** (owner: "i dont see any lines or anything and i dont know how to
+  interact in this mode"). Two causes. Nothing said the roast existed: it opened on a hidden key, and so did stepping
+  and fixing. And only alignment notes drew a line; the others ringed the odd one and said what was wrong without
+  showing it. Now every note draws what is there in coral, on the thing's own edge, and a dashed sky ghost of the
+  fix over it (the right corners, the right height, the icon where its siblings put theirs). The bar shows its keys
+  as keycaps (← → notes · ↵ fix · esc close); plumber's at-rest hint says "Hold Alt to inspect · Alt+G for notes", and
+  its keyboard help has a Notes section. On the way, my own "centred words" check from the round before was reading
+  items-center (vertical) as horizontal centring and hid every label note on the messy tracker; caught on the
+  re-check and fixed. Sweep after: tracker 3, settings page 4, five real pages 0.
+- **Layer 8, lines that prove it** (owner: "no lines i think its essential to show lines and breaking things to user
+  otherwise he wont believe us … like how a ux designer will breakdown a design on figma … to show improvement to an
+  engineer"). The ghost of the fix said the answer but proved nothing. A designer's breakdown draws the lines the good
+  pieces share, runs them past the broken one, and writes the size on the gap. Now every note does: the top and
+  bottom every other button sits between, run across the row, with the tall one poking past in coral and "+4px"; every
+  chip's and avatar's corners traced in sky and the odd one's in coral with "3px → full"; through every row, the line
+  its icon sits on, stopping before the words, the low one's in coral with "2px low"; the labels' edge in the gutter,
+  run past the first and last row, the gap shaded and "5px right". The size goes in one pill placed where it covers
+  no words or icons (the nearest clear spot); a first version put it over "Projects" and "Mei Tanaka".
+- **A fix that could not be written** (owner, with a screenshot of "Remove translate-y-[2px]" answered by
+  "edits[0].to must be a non-empty string."). Plumber's class swap only ever replaced a class with another; the
+  roast's first fix that removes one (the Cycles icon's nudge, which its siblings simply do not have) hit three
+  guards in turn: the request schema, the engine's check, and the change history's label. The code that rewrites
+  the class string already handled an empty replacement. Now a swap needs a class to take out or one to put in, and a
+  removal is recorded as ∅, the way an addition already recorded an empty "from". Proof: the button took
+  translate-y-[2px] out of SloppyIssuesPage.tsx:48, the page updated, and the roast said "Everything here hangs true.
+  Nothing to roast." (the owner had already fixed the other two notes with the button). Practice page restored.
+- **An invitation** (owner: "make it invite me to open the notes"). At rest, when the screen has notes, a small pill
+  sits beside plumber's dock: the plumb bob in coral, "3 notes on this screen", and the ⌥G key. Clicking it opens the
+  notes; it steps aside while they are open and comes back after; a page with nothing to say shows nothing. Its bob
+  swings once from its pin when it arrives and again under the pointer. It reads the page again only once the page has
+  been still for a moment, never while you type. Two slips on the way: it first drew in plumber's dark set on a light
+  page (it now takes the page's ground, like the notes bar), and it placed itself against the dock while the dock was
+  still wide with its own hint, so it was stranded mid-screen once the dock folded (now placed from the dock's right
+  edge and folded size).
+- **On a real app: algorecall** (owner: "nice can i see it , in one of my app"). algorecall's plumber link pointed at the
+  roast branch and its dev server started. On the four pages that loaded plumber in time (home, problems, two-sum,
+  login) the roast has nothing to say, and that is a reading, not blindness: on the home page it measured 35 things
+  and found the hero's heading, paragraph, button and footnote on one left line. Two pages (/tree, /lld) did not load
+  plumber within the wait and were not read. One real flaw it showed: the bar was drawn light on algorecall's dark
+  page, because its ground is an oklch colour on the body, which the scheme reader did not parse; it now reads the
+  ground under the bar, up through its parents, and reads oklch and oklab by their lightness.
+- **Every crafting-ui page** (owner: "try it on crafting ui pages"). 51 pages read at 1280px: the 22 fixed pages and up
+  to four of each kind of entry page. 44 clean; the two practice pages gave their 7 planted notes; 5 real pages gave
+  notes, all false, from three gaps, all fixed: a film player's Play button, 40px between two 32px ones, is a size
+  hierarchy players use on purpose (height is now judged only among buttons with words on them; icon-only controls
+  size up for emphasis); a scrolling score track that is a button measured 14,700px tall (height and corners now only
+  for control-sized things); and screen-reader-only text ("Not yet.", Tailwind's sr-only, clipped to 1px) was read as
+  a label 1px off its line (text hidden from sight is no longer read). After: the real pages 0, the practice pages 7.
+  That one only showed at 1280px wide: the sweeps now need more than one width.
+- **One engine, not a second judge** (owner: "bro why do you keep coming back to these screen, i asked for real issues in
+  any of my app … it should work similarly to the whole engine, its not a roast. its deterministic fault finding,
+  issues in our ui"; then "inside is fine"). My mistake, said first: I measured success as no false notes on clean
+  pages and kept making the roast more careful until it found only the faults I had planted, then called real apps
+  clean. Worse, it was a second judge beside the engine: on the settings page the engine reported 30 problems while the
+  roast said there were 4. Now the judgement is two ordinary engine checks (craft/column-edge, craft/sibling-match in
+  overlay/src/craft-ranks.js), listed, counted and fixed in Blueprint with everything else; their proof (the lines
+  the good siblings share, the break, the size) draws inside Blueprint for the finding in hand (proof.js), from the
+  values recorded when the fault was found, since Blueprint previews the fix in place. The separate notes bar, its
+  Alt+G, the invitation pill and the guides reader are removed. Seen: on the settings page Blueprint's walk reaches
+  "Corners don't match · Use rounded-full" for the square chip, with every chip's corners traced and "0px → full". Not
+  yet: the avatar finding (its class sits in a ternary inside a loop) does not reach Blueprint's walk.
+- **The fix bar, from the design site into the product: the place in hand** (owner: "bro this is old thing i already
+  designed the toolbar and other stuff with our new design system", then "it's on main, check the fix bar in the
+  design site", "Yes, fix bar first"). The design site's Fix bar (decided 2026-11-10) was a comp; the overlay still
+  shipped the old card, as the comp itself said. First layer: with a cause in hand, Blueprint's panel is the comp's
+  bar: the property's toy, a headline in plain words ("14 places have a hard-coded font size"), a detail in values
+  ("13px isn't one of your font size tokens: 12px and 14px."), where you are, and Clean up as a soft button. The
+  choice moves onto the page beside the element, in its own card (the bar blurs and clips what is inside it): the
+  options as before and the design's soft buttons (Use, pink with ↵; Keep and Skip, quiet), pressing down and springing
+  back. Engine findings read the same way ("1 button: corners don't match · Lifetime has square corners; the other
+  buttons are fully rounded."). Slips on the way: a private field named like one the panel already had; copying the
+  card's styles across copied its container too (the choice is now a card of the panel's own kind, undocked); the old
+  card's .say and .nav rules reached into the new line (own class names now). Not yet: the design's per-property control
+  on the element (the options are still the old specimens), the clean-up job in the bar, the bar at rest, and the
+  choice can still sit partly under the X-ray card when the element is near the top of the screen.
+- **Two things on screen, not four** (owner: "why is the toolbar floating … it looks broken and now we have like 4
+  … different things floating 1 tool bar, 1 this status bar, 1 element popover and 1 small tool tip"). My mistake: I
+  added the choice as a card on top of what was already there, so a fix in hand showed the bar, my choice card, the
+  X-ray card and the proof's size pill. The design shows two: the bar, and one small row on the element. Now the X-ray
+  card stays closed while a fix is in hand; the choice is one compact row (the values as small chips, then Use, Keep,
+  Skip); the proof keeps its lines and drops its pill (the size is in the bar's detail).
+- **The bar at rest** (owner: "now do the bar at rest"). From the one-bar doc's anatomy, in the fix bar's language: a
+  pill card at the bottom (paper, the card shadow, no glass), the count in the headline's type ("32 problems"), Clean up
+  page as a quiet soft button with its sparkle and C, Fix as the pink soft button with ↵, the tools behind ···, Close
+  as a quiet soft button with Esc. One old rule (the card's reset for its buttons) had been taking the soft buttons'
+  side lip; it no longer reaches them. Seen on the settings and issues practice pages and the real workshop page.
+  Not seen: the checking and nothing-to-fix lines (they pass too quickly, or no page here is clean).
+- **The clean-up in the bar** (owner: "now do the clean up in the bar"). The comp's second job: one pass at a time as
+  one line, the pass's toy, its headline and detail, the passes as a strip of toys (in hand in a sky ring, done with a
+  mint dot, skipped and still to come grey), and soft buttons. Every state has its line: reading, ready ("Your site
+  uses 25 text sizes. These 15 styles cover them." · Preview P · Apply ↵ · Skip →), preview ("Previewing 5 changes"
+  with the styles as chips under it · Apply ↵ · Cancel Esc), writing, nothing to change ("The space on this page already
+  follows your scale." · Next pass →), done, error. What a pass changes is shown on the page, not in a list in a card.
+  Kept in the old body: the two setup screens (the census command, renaming colour tokens). On a narrow screen the
+  strip shows only the pass in hand, so the headline keeps its room. Slips: my check for the one-line bar looked for an
+  exact class name, so the clean-up's line kept the old card's width; colour's toy is named fill. Walked on the settings
+  practice page through all nine passes by Preview, Cancel and Skip; Apply not pressed here (it writes the theme file,
+  which has other sessions' changes in it).
+- **The control on the element** (owner: "now do the on-element control"). The row's value chips are replaced by the
+  property's own control from the design system (design site: Pickers; editor-primitives.js): a staircase for
+  anything with a size (each step a bar as wide as its value), corners drawn as the corner each step makes, swatches
+  for colour; the value it has now as the coral notch where it falls between your steps; the step tried with a sky
+  ring. Pressing a step tries it on the page, as ↑ ↓ do, and Use names it ("Use text-label-medium" after pressing
+  12px). An engine finding whose option carries no number takes it from what the finding recorded (the corner it
+  wants, the corner it has), so the square chip shows "0px" as its notch and a rounded corner as its step. Kept on one
+  line, as the comp's row (an old rule let the buttons wrap). Seen on the settings practice page for a font size and a
+  corners fix; not yet seen for spacing or colour (no such fix on that page).
+- **Algorecall hangs with Blueprint open** (owner: "the performance is horrible this page just hangs really really bad
+  on algorecall. my scroll event are getting ignored and apart from hero section the subsequent sections takes so much
+  time to load"). Measured in the page, Blueprint open, scrolling 8 times over 4 seconds: 17 long tasks, about 2 s, the
+  longest frame gap 1,034 ms. My new check (craft-ranks) took 354 ms of it: the engine hands it new facts every pass,
+  so it scanned the whole page 26 times, and asked every ancestor of every element for its animations. Now it scans
+  once and reuses the scan until the page changes (elements, a class or a style, the window's width; scrolling does
+  not change a sibling verdict), and reads running animations once per scan: 152 ms in 17 scans (algorecall's own
+  animations keep changing styles), the longest 46 ms. With the check switched off entirely the page is no better:
+  13 long tasks, 2.1 s, the same 1-second frame gap; the time is the reader's report (about 1.7–2.4 s) and the
+  engine's verdicts and motion reads. So the hang is the engine's reading of algorecall, which this branch does not
+  change. Not yet measured: whether it hangs with Blueprint closed.
+- **Motion is not measured, and plumber waits for still hands** (owner: "we have to find a way to ignore animation as
+  its not static so no point in measuring it"). The system behind the hang, measured once the first read had settled:
+  scrolling makes algorecall render its lower sections, every new section was a change, and every change re-read the
+  page, wrote the report again (16 times in 6.5 s of scrolling, about 210 ms each) and re-judged every element (about
+  156 ms each): 17 long tasks, 4.1 s, while the person scrolled. Two parts to the fix. One record of what is moving,
+  shared (overlay/src/live.js): running animations, read once, and parts the page rewrites five times or more within a
+  second (what JavaScript animates frame by frame), until they have been quiet 1.5 s; the engine, the new checks and
+  the reader all ask it, it replaces the engine's every-element-against-every-animation test (350–500 ms a pass), and a
+  change inside something moving is no longer a reason to read the page again. And the reader's report and rescans wait
+  while the person scrolls or types (an input within 400 ms), then run in idle time. Proof, same page, same scroll:
+  while scrolling, 2 long tasks and 477 ms (was 17 and 4.1 s); after the pause, 7 reports in idle time. Not changed:
+  one report still costs about 190 ms when it runs; the engine's verdicts over the whole page are the next thing to
+  make incremental. Earlier frame-gap numbers (1,033 ms every run) were the browser pane throttling frames, not the page.
+- **The bar on a real app: algorecall** (owner: "check it on algorecall", then "Fix bar bugs"). On the app's own fixes the
+  bar said the wrong thing. A Tailwind-default mark carries every property of its element and its first class, so
+  text-sm read as "18 places have a hard-coded border radius" with "relative" as its value (the old card picked its
+  specimens from the same list, so its kind was wrong too). Now the property comes from the cause's own class (text-sm
+  is a font size, font-mono a font family, a JavaScript style read whole, so fontWeight: … is a weight), then its
+  family. A Tailwind default is said as one ("18 places use Tailwind's default font size"), fluid token values are
+  rounded ("13px and 14.1px"), a Use that cannot be written is not drawn (Keep and Skip stay, and a line says why),
+  the bar sizes to its content so the headline gives way before the buttons, and a fix whose places are not on screen
+  gets its row above the bar, so Keep and Skip are always there. Twelve of algorecall's 55 fixes stepped through, each
+  read right with a row. Not yet: an inline style as the value pill reads awkwardly ("fill: SHADOW isn't one of your
+  colour tokens"); a Use with nothing to write has no why of its own.
+- **Media hooks:** docs/qa/fixbar-algorecall.jpg (the bar on algorecall's dark page), docs/qa/fixbar-control-corners.jpg and docs/qa/fixbar-control-type.png (the control on the element), docs/qa/fixbar-cleanup-pass.jpg and docs/qa/fixbar-cleanup-preview.png (the clean-up in the bar), docs/qa/fixbar-at-rest.jpg (the bar at rest), docs/qa/fixbar-two-things.jpg (the bar and the row on the element, nothing else), docs/qa/fixbar-in-hand-corners.jpg and docs/qa/fixbar-in-hand-type.jpg (the new bar with a place in hand), docs/qa/roast-invite.png (the invitation beside the dock), docs/qa/roast-proof-avatars.jpg, docs/qa/roast-proof-height.png, docs/qa/roast-proof-line.png (the proof lines for corners, height and alignment), docs/qa/roast-ghost-keys.jpg (the ghost of the fix and the keycaps), docs/qa/roast-settings-cousin.jpg (a cousin note on the settings page), docs/qa/roast-icon-note.jpg (the icon note), docs/qa/roast-first-note.jpg (the roast's first note on the messy page), docs/qa/guides-first-look-issues.jpg (guides on the messy page), docs/qa/guides-held-issues.jpg
+  (the three strays held by their neighbours), docs/qa/guides-plumb-lines-issues.jpg
+  (the plumb lines and the one stray); a screen recording of the drop-and-swing arrival would show the toy best; the three source screenshots in
+  docs/references-media/; a clean page beside a messy one with the guide counts would make the point in one frame.
+- References: the five 2026-11-15 entries in docs/references.md.
 
 ## Every check on algorecall, through the real command (2026-11-15)
 - **The itch:** the open gap: the seventeen "a linter cannot see" checks had never met algorecall, the app whose forms and pages found four false alarms in the earlier batches. The owner: "okay lets do".
@@ -1500,9 +1738,286 @@ field is empty). The table of five writes, before and after. The Next table: eig
 - **Left:** when React did not record a part, its findings are gone from that run (two on algorecall's problems page). An honest gap, not a fix.
 - **Full suite, on the test server:** 1,098 passed, 0 failed. Main moved forward to the fix (local, not pushed).
 - **Media hooks:** the walk log: `MotionDOMComponent:none: at UnknownOwner`, then `AdminFeedbackDock:ok:App.tsx:190`.
+### 32. Stepping through every fix in the bar, on algorecall (2026-11-15)
+- **The itch:** the owner: "now come back to testing the bars". All 55 fixes on algorecall's home page, one by one.
+- **What was wrong:** a margin of -2px was offered as +2px (`marginTop: "calc(var(--spacing) * 0.5)"`), so taking it
+  would have flipped the layout. A new token for a style written in JavaScript would have spliced a class into the
+  code (`fontWeight: on ? 600 :font-strong`). Findings with no property word repeated their headline as the detail
+  ("Spacing not in your theme"). A Tailwind size was named by its number while the headline was about its class. A
+  layer (z-index) got "px".
+- **The system behind it:** the steps a value can take are stored as sizes without a sign, and the two places that
+  write a token into an inline style (the agent's edit and the overlay's edit) each rebuilt the value on their own,
+  neither one with the sign. The bar's new-token line assumed every place is a class.
+- **The fix and the proof:** one shared helper keeps the sign for both writers; a JavaScript style takes the token's
+  variable in its quoted value, or no new-token offer when the value isn't quoted; details say the value against
+  your steps ("-1px isn't one of your steps: 0px and 2px."). On algorecall the margin now offers
+  `calc(var(--spacing) * -0.5)`. The overlay's served-file list was also missing `soft.js`, which failed the build.
+- **Then text-sm (same day):** the bar asked the one place it shows for an exact edit, and the mint button's size
+  comes from a table further up its file (`sm: { text: 'text-sm' }`), so the whole fix of 18 places read as
+  unwritable. The write itself finds every place from the class text, so when a place has no exact edit the option
+  now carries the theme choice's class swap (`text-sm` → `text-sm-minus`, variants and sign kept, same utility only).
+  On algorecall the fix now offers "Use text-sm-minus". Not taken there (algorecall has other uncommitted work); the
+  mint button itself still can't be located, so a take would write the other places and say that one didn't land.
+
+### 33. Finding a class kept in a lookup table (2026-11-15)
+- **The itch:** the owner said yes to teaching plumber to write a class it couldn't find: algorecall's mint button
+  takes its text size from a table at the top of its file (`SIZE.sm.text = 'text-sm'`), read as `SIZE[size].text` and
+  passed to an inner `<Face text={…}>`.
+- **The system behind it:** three gaps in a row. The class finder stopped at any key read at run time
+  (`SIZE[size]`). It followed a component's prop only through the usage chain the page reports, and algorecall's
+  page names those frames by bare file name, which the server rejects. And when that chain failed, the locator threw
+  away the element's own confirmed place too.
+- **What we chose:** a key read at run time reads every entry of the table, each entry its own case; a component the
+  file never exports is followed to its usages in that file, each its own case; a chain that can't be read leaves the
+  confirmed place standing. Cases are changed in place and never added into, so a new class never lands in a shared
+  table.
+- **The proof:** on algorecall, the class finder places the mint button's `text-sm` at line 129, column 36. One write
+  through plumber's own path changed exactly `text: 'text-sm'` to `text: 'text-sm-minus'` in the `sm` entry, and
+  nothing else. The file was restored afterwards.
+
+### 34. Sweeping for classes plumber can't find, page by page (2026-11-15)
+- **The itch:** the owner, after the lookup-table fix: "next look for more such bugs".
+- **How we found them:** a sweep on algorecall that asks, for every element with classes, where each class is
+  written, the same way the overlay asks before a write. Before: the home page 4 of 152 classes unplaced, the
+  problems page 23 of 734.
+- **The causes, and what changed:**
+  - the usage chain was thrown away whole when one frame high up mapped past its file's end (a map error in the
+    site header): it now ends at that frame and keeps the links already proven;
+  - with no raw stack, the fallback reader named files bare (`HomePage.tsx`), which the server rejects: a bare name
+    is now resolved against the modules the page loaded, when exactly one matches;
+  - `const { d, icon } = DISC[size]` (a table read by destructuring) was not followed: it is now, each entry a case;
+  - `'a ' + 'b'` (a class string split with +) was not read: it is now;
+  - shadcn's `cva(base, { variants })`, called as `inputGroupAddonVariants({ align })`, was "built in code": the
+    call is now followed to the recipe, its base read as written and each variant value as its own case.
+- **The proof:** after, home 152 of 152 placed, problems 734 of 734, Two Sum 295 of 296.
+- **Still open:** a class table imported from another file (`ICON_CAT_CLS` in richtext-word-icons.ts) is not
+  followed; a write there lands in a different file from the element, which the write path doesn't carry yet.
+
+### 35. Closing the two open misses and sweeping more pages (2026-11-15)
+- **The itch:** the owner: "lets try a few more and fix open items". Two items were open from the sweep before: a
+  class table imported from another file, and a frame in algorecall's site header that seemed to map past the end
+  of its file.
+- **The imported table:** Two Sum's word icons take their colour from `ICON_CAT_CLS[cat]`, a table that
+  richtext-word-icons.ts exports. The class finder now follows the import to the table, with each key as its own
+  case. Because the table is exported, it counts as read by more than one place. A fix pinned to it is written into
+  the table's file: the server no longer needs a JSX element where the table is declared. Proof: a real swap on
+  Two Sum changed line 28 of richtext-word-icons.ts and nothing else, and the file was restored afterwards.
+- **The site header's frame:** decoding the map algorecall serves for SiteHeader showed every entry inside the
+  file, so the map was fine. The stack frame `SiteHeader.tsx:1951:21` is a position in the compiled file, at the start of
+  `/* @__PURE__ */ _jsxDEV(MobileNav, …)`, and the map's first entry on that row is at column 28 (`MobileNav`).
+  Plumber's lookup took only an entry at or before the column, so it found none. It now takes the row's first
+  entry: 547:14, the `<MobileNav>` in the source. (Also seen on the way: React's dev line numbers in that file run
+  to 1251, because the React Compiler's Babel pass runs first. Plumber doesn't read them.)
+- **The new pages:** algorecall's curriculum placed 127 of 127 elements and the system-design list 88 of 88.
+  Burst Balloons had one miss: `<MotionChoice className=…>`, where `const MotionChoice = motion.create(ChoiceSlab)`.
+  A local name made by a call around a component (motion.create, memo, styled) now counts as a usage of that
+  component, and the classes place on LessonButton.tsx:275.
+- **A second app:** crafting-ui's home page had 8 misses out of 182. Two were small local functions in the header,
+  `full()` and `drop(…)`, that return class strings. The finder now reads what a called local function returns,
+  and a parameter's string default (`gone = 'hidden'`) as the case where the call leaves it out. The other six are
+  names put together from data (`fr-m-${k.cls}`). No string in the source holds them, so refusing is right.
+- **Not done:** no tests were run on any of this. The laptop was out of memory for most of the run (under 200 MB
+  free), and after its cache was cleared plumber took about 15 minutes to read algorecall again.
+- **Twelve more crafting-ui pages (2026-11-16):** 3,365 classes across /interfaces, /motion and its primitives,
+  vocabulary and standards pages, /assets, /how-its-made, /workshop, the craft index and two craft articles, and
+  the glyphwrite tooling page. One new cause, on /motion: the isometric `Box` and the paper `Cutout` draw
+  `className={side}` with a default written in the component (`side = 'fill-draw-soft'`), and the page's usages
+  leave the prop out. The finder stopped at a usage that didn't pass the prop. It now reads the default, under
+  the condition that the prop is left out, and treats it like a variable other elements read: a change there
+  changes every box drawn without a `side` of its own, and nothing new is added there. All four classes now place
+  on the line where the default is written (drawing.tsx:183, draw.tsx:198). The only other misses were the six
+  icon classes put together from data on /assets, the same kind as on the home page.
+- **Classes passed into a local function (2026-11-16):** the header's `drop(level, guess, gone = 'hidden')` returns
+  `guess`, and every call passes its own class there: `drop(FIT.section, 'max-sm:hidden')`. The finder read the
+  function body but had no idea what the call passed in. A call now carries its arguments along, so a parameter
+  the function returns is read as the argument written at that call, and a default counts only where the call
+  leaves that argument out. On /motion/primitives, the breadcrumb's `max-sm:hidden` and `max-lg:hidden` now place
+  on their own spots in the calls on lines 145 and 148, each under the conditions that pick that call. Before, they
+  placed nowhere.
+- **Both proved with real writes (2026-11-16):** through the overlay's own write path on crafting-ui. On /motion,
+  changing a box's `fill-draw-soft` to `fill-draw-tint` rewrote only the default `side = 'fill-draw-soft'` on
+  drawing.tsx:183. On /motion/primitives, changing the breadcrumb slash's `max-sm:hidden` to `max-md:hidden`
+  rewrote only the argument in `drop(FIT.section, 'max-sm:hidden')` on SiteHeader.tsx:148. Each diff was one line;
+  both files were restored (the header from a copy taken first, because it held the owner's uncommitted work).
+  No test suite was run.
+- **A class passed in is the call's own (2026-11-16):** a class written as an argument was held like the function
+  every call shares, so plumber would change it but not add a class beside it. It is now held by the call that
+  writes it, which nothing else reads. Proof, a real write: adding `max-sm:opacity-0` beside the slash's
+  `max-sm:hidden` rewrote only that call's argument on SiteHeader.tsx:148; the file was restored from a copy.
+
+- **Two backlog lines checked and closed (2026-11-16):** "an icon that joins its classes with `+` is refused" no
+  longer holds: run straight through the class finder, `'block ' + className` places `block` in the icon and the
+  usage's `size-4` at the usage, and the icon pass writes through that finder. "A class fix is offered, then
+  refused at write" no longer holds either: Alt+click on a frosted icon whose classes are built from data opens a
+  card that says "Set in code" on each field before anything is offered. Both lines left the backlog.
+
+- **The site's bar fits a phone (2026-11-16):** on a 390px phone the bar (name, four places, Dark) needed about
+  500px, so the whole page was laid out 110px too wide and slid sideways. The places are the bar's job, so they
+  never give way; what gives way, in order: at 520px and under the name "React Plumber" folds into the plumb-bob mark
+  (a screen reader still hears the name) and the buttons tighten; at 380px and under the word Dark becomes a
+  half-ink disc (its spoken name stays "Switch to dark"). Measured: 390px wide, the page is 390 and the bar ends at
+  374; 360px, it ends at 344; on desktop every part sits where it did, to the pixel. No test written.
+
+- **Writing into every class, then undoing it (2026-11-17):** a read-only sweep can't show that a write lands where
+  it should, so this one wrote. On throwaway copies, each class on a page got a real write through plumber's server,
+  a check that exactly that one line changed with only that class swapped, an undo, and a check that the file came
+  back byte for byte. crafting-ui: 2,552 writes on seven pages, all right. Seven harder cases also held: a file the
+  person edited by hand keeps the edit through a write and its undo; a file changed since plumber read it is refused;
+  of two writes sent at once, one lands and one is refused; a change across two files undoes as one and keeps a
+  line typed since; an undo whose class was retyped is refused, neither file touched.
+- **Big pages lost the line that made an element (2026-11-17):** the sweep found 38 classes refused on the motion
+  vocabulary page. React (19.1 and later) records where an element was created for only 10,000 elements a second;
+  the page draws more than that at load, so later elements carry no line, and a class passed in from a usage could
+  not be found. The overlay now makes React's count read zero in dev, as React did before 19.1. The page went from
+  38 refused to 0; the 7 writes it unlocked were all right.
+- **One write could hang the laptop (2026-11-17):** on algorecall a write took about 40 seconds and its undo another
+  40, and the dev server grew past 5 GB; while the sweep and a profile ran, the owner's laptop ran out of memory and
+  hung. The runs moved to vm-agent, in a memory-capped scope, with V8's heap profiler on. Two causes, both fixed:
+  - algorecall has several Tailwind stylesheets, and every file plumber passes on its way from index.html to the
+    right one counted as configuration, so a class written into the app's layout restarted the whole analysis. Those
+    files now count only when their imports change.
+  - With that fixed, the change went down the ordinary refresh, which was worse: restoring one file by hand took the
+    server from 3.9 GB to 6.9 GB in 9 seconds. The refresh worked out, for every file the change touched, its own
+    list of the files it depends on, and sent them all to the main thread, which never read them. The layout reaches
+    about 3,600 files, so that was about 13 million paths. It now walks once from all the changed files and sends the
+    one set the main thread uses.
+
+  Proof, on vm-agent: six writes and their undos, each about 3 seconds; memory 4.4 to 5.2 GB, where before one write
+  ran it past 14 GB until the machine killed it. Still open: plumber needs about 4 to 5 GB just to start on algorecall,
+  and at the default heap limit it failed to start in 3 of 7 tries; memory crept 0.8 GB over 12 changes. Media hook:
+  the two memory traces, before and after.
+- **Plumber could not start on a large app (2026-11-17):** at node's default heap limit, plumber failed to start on
+  algorecall in 3 of 3 tries on vm-agent. A heap profile of the analysis worker at rest charged 781 MB of its
+  2.2 GB to parsed syntax trees: the component graph's module cache kept every file's whole tree for the life of the
+  session. The cache now keeps the 400 most recently used and parses a dropped one again. Proof: 2 of 2 starts at the
+  default limit, ready in about 70 s, resting at about 2.7 GB. The deeper fix, keeping small facts per file instead
+  of trees, is in the backlog.
+- **A design for keeping facts, not code (2026-11-17):** the owner asked what data structure would take the
+  analysis out of gigabytes. The profile above pointed at three habits: parsed code kept so later questions can walk
+  it, paths as keys in every map and set, and every file analysed at start-up. The brief
+  (`docs/briefs/analysis-memory.md`) proposes per-file facts with parse-on-demand, files as numbers, links in flat
+  arrays walked when asked, and the open page first, in seven steps, each profiled on algorecall. Its sizes are
+  guesses until the first step is measured. Waiting for sign-off.
+- **The component pass keeps an index, not code (2026-11-17):** the owner signed off the brief and asked for step 1.
+  The component pass now remembers each file's imports, exports and where its declarations sit, and parses the file
+  again when a question needs the code. The first try made the file-by-file build eleven times slower (9 s to 100 s):
+  asking whether a name was declared parsed the file. Counting parses showed it (136,299 for 3,649 files); checking
+  the index first brought it to 1,555. The heap profile then showed a second holder: every file's finished graph kept
+  the lookup tables of its build alive, thousands of copies. They are emptied when a build ends. Proof: the component
+  graph is byte-identical on algorecall and crafting-ui; the worker's resting heap went from 2.17 GB to 1.26 GB,
+  parsed code from 781 MB to 56 MB; the process rests at 2.46 GB. Media hook: the two heap tables side by side.
+- **Start-up no longer holds every file at once (2026-11-17):** step 2. Collection kept every parsed file until the
+  component graph was built, so all 3,649 of algorecall's trees sat in memory together. It now keeps the 256 most
+  recently used. Resident memory varied by 250 MB between identical starts, too much to show the change, so the
+  proof is the smallest heap plumber starts under: 1.6 to 1.8 GB before, 1.25 to 1.4 GB after. Results are
+  byte-identical on algorecall and crafting-ui; start-up stays at about 66 s.
+- **Step 3 measured before it was built (2026-11-17):** step 3 (files as numbers, links as flat lists) was written
+  against the per-file sets that broke writes, and those no longer exist at rest. A profile of what stays alive, by
+  the code that made it, showed the links do not appear at all; path-built keys are about 95 MB of 1.32 GB, and
+  numbering files would save part of that. The rest is volume: texts (about 200 MB), judgements (about 270 MB), the
+  lookup index, the component graph, for every file in the app. So step 3 was dropped, and the next real lever is
+  analysing the open page first, which changes what a person sees and is the owner's call. A heap snapshot was tried
+  first; writing it needed more than 11 GB and was killed twice.
+- **One copy of each text, tried and undone (2026-11-17):** the owner picked keeping one copy of each file's text.
+  Collection and the component pass now read through one store; results stayed identical, and memory did not move
+  (1.35 GB at rest against 1.32; still no start under 1.25 GB). The profile had been misread: the text is held once,
+  but at two bytes a character, because 3,264 of 3,818 files have a character like an em dash or an emoji. Emptying
+  the store freed nothing, because pieces cut from a file's text keep the whole text alive. The change was undone. What
+  would work is results holding their own short strings, worth up to about 125 MB.
+- **Results own their strings (2026-11-17):** the owner chose this next. Measuring before changing anything found two
+  holders of the texts: the component index, which kept each file's text so it could parse the file again, and
+  collection's style results, which held pieces cut from the text. The index now keeps a hash and reads the file when
+  it needs the code; collection gives each file's results their own strings when it finishes the file. Proof:
+  collection plus the component graph hold 380 MB instead of 582 MB, the worker at rest 1.24 GB instead of 1.31, and
+  plumber starts under a 1.25 GB heap where it failed before. Results are byte-identical on algorecall and
+  crafting-ui.
+- **Where data-oriented design would pay (2026-11-17):** the owner asked how far data-oriented design could push the
+  memory. Measured before proposing: the row tables are small (about 50 MB, the same as columns), so columns alone
+  would not pay. The cost is around the rows: per-file graph objects (140 MB for 10 MB of rows), and names cut from
+  file texts that keep whole texts alive (154 MB pinned, 40% of what collection and the graph hold). A module-level
+  record of every import answer held 75 MB of texts after everything else was released. The next moves are a string
+  table at the parser boundary and one graph table instead of a graph per file. Media hook: the 50 MB of rows next to
+  the 380 MB held.
+- **One string table (2026-11-17):** the owner said build it. Every name, tag, specifier and value plumber keeps past a
+  parse now goes through one table that stores its own copy once. A heap snapshot that names the holder of every piece
+  of file text guided it, and caught a miss of mine: export names stored as map values. Proof: collection plus the
+  graph hold 234 MB instead of 382; texts kept alive by pieces of them fell from 97 MB to 1 MB; the worker rests at
+  1.09 GB instead of 1.24; plumber starts under a 1.1 GB heap. Results are byte-identical on algorecall and
+  crafting-ui, and start-up time did not change.
+- **The graph per file, trimmed (2026-11-17):** the owner asked for one graph table. Measuring first showed the 3,650
+  graph objects themselves cost about 8 MB, so a merged table would have saved little. The cost was inside: each graph
+  kept a map of line tables for every file its build touched (26 MB), and line tables were plain arrays. Graphs now
+  map only their own files, and the index packs line tables four bytes a line. Proof: collection plus the graph hold
+  194 MB instead of 234; the worker rests at 1.04 GB instead of 1.09; results byte-identical. Packing elements (about
+  10 to 15 MB) was left, because it changes the graph cache's format.
+- **The judgement side, first pass (2026-11-17):** the owner asked for the judgement side next. A snapshot of
+  algorecall's worker needs more than 9.5 GB to write and was killed, so crafting-ui's worker was snapshotted instead
+  and algorecall was measured by a walk inside the worker. Two wastes were fixed: judgement and the ledger each kept
+  their own key string for every site, and the provenance cache kept findings nobody reads. Proof: algorecall's
+  worker holds 924 MB after a forced collection instead of 1,015, and its 2,935 findings are identical, checked by a
+  fingerprint over every finding and site.
+- **Findings indexed by line only when asked (2026-11-17):** a dominator tree over crafting-ui's worker showed no single
+  holder keeps much alive alone: the same rows are shared by the report, the indexes and judgement. The real copy was
+  the findings index, which built three copies of every finding for the whole app (per file, per line, per column)
+  when the page only ever asks lines of its own files. Line and column views are now built for a file on its first
+  question. Proof: algorecall's worker holds 811 MB instead of 924, with identical findings and identical line and
+  column views for all 2,277 files.
+- **Open page first, designed (2026-11-17):** the owner chose analysing the open page first. Mapping the engine found
+  that the per-file path used after an edit is not independent: it reads the module and component graphs, the token
+  record and the Tailwind compiler that the full analysis builds, and the overlay's first requests build the full
+  report. The design (in the analysis-memory brief) has two layers: judge on demand (start-up builds the app-wide
+  products, pages are judged per file, project-wide views are built when opened and let go), then collect on demand.
+  Waiting for sign-off before code.
+- **A single-file read was 2.6 s, now 0.3 s (2026-11-17):** the owner signed off layer 1. Its first proof compared
+  the per-file path with the full report on 127 algorecall files: 126 match exactly (the miss is two ownership
+  findings in one file, and it exists today after an edit there). Timing it showed 2.3 s of every 2.6 s went to
+  library detection, whose two-second cache every read outlived. The session now holds those facts until it restarts.
+  Every single-file edit on algorecall is about 2.3 s faster because of it. Full-report findings unchanged.
+- **Open page first, layer 1 (2026-11-17):** the whole-app report is now let go after a quiet minute, and pages are
+  judged a file at a time. Proving it equal to the full report, file by file, found three bugs that already showed
+  after any edit: ownership judged without the class lookup, Tailwind recompiled with one file's classes (so a
+  component's own classes were unknown), and files of shared class strings never judged alone. Proof: 456 sampled
+  files give the same findings alone as in the full report; algorecall's worker holds 556 MB released (638 MB after
+  judging those 456 files) instead of 866 MB; a file is judged in 39 ms. Media hook: the heap line dropping a minute
+  after start.
+- **Judge each input once, measured and designed (2026-11-17):** the owner asked for bigger ideas and picked judging
+  each distinct input once. One count on algorecall: 304,612 judged declarations come from about 26,400 distinct
+  inputs (the class as written and its conditions), about 11 times fewer. A verdict reads nothing else about the site
+  except local Tailwind variables on the same element. Timing the full analysis showed where it pays (provenance 8.6
+  s, expansion and existence 7 s) and found a bigger target: component discovery, 13.4 s. The design (a verdict table
+  per rule family) is in the analysis-memory brief, waiting for sign-off.
+- **Provenance judges each input once (2026-11-17):** built after sign-off. Verdicts are now judged once per
+  distinct input and shared by every site. My estimate (8.6 s down to about 1 s) was wrong: it went to 7.0 s. A CPU
+  profile showed the verdicts themselves now cost 0.24 s; the time is the bookkeeping around each declaration, keys
+  built as strings for every row. Two of those were cut. Results identical on algorecall and crafting-ui, file by
+  file too. The next lesson for speed is the same as for memory: number the rows instead of describing them.
+- **Component discovery, 13.4 s to 9.5 s (2026-11-17):** the owner picked the slowest phase. A CPU profile showed each
+  of 3,649 per-file builds resolving every export of every component module again. Each module's result is now
+  recorded once per build and replayed. The first replay changed 77 ownership findings, which uncovered an
+  order-dependence already in the code (a component's root ranges are missing from later graphs if it was first found
+  by a build that did not keep it); the kept replay copies today's behaviour exactly and the order-dependence went to
+  the backlog. Graph and findings identical on both apps.
+- **Shards built while files are hot (2026-11-17):** the owner said keep cutting. Each file's component shard is now
+  built right after collection reads it, so its parsed code is reused instead of parsed and read again. Graph,
+  findings and views identical on both apps. Start to ready went from 60 to 63 s down to 58 to 60 s: about 2 s, near
+  the noise, less than the profile suggested, because some of the work moved rather than vanished.
+- **A bench of what you feel, and the regression it caught (2026-11-17/18):** the owner said they saw no improvement
+  and had only my charts. Two causes: their app was running a build from before the day's work (I had only built on
+  vm-agent), and nothing measured what a person feels. bench/moments now times start-up, the page read, an edit and
+  the page after a quiet minute through the overlay's own requests, two builds side by side. It showed edits on
+  crafting-ui 8 times faster and memory down a third, and a 19 s page after a quiet minute on algorecall, caused by
+  letting go of the whole-app report. The cause was what a file judged alone could see (a variable defined in another
+  of the app's files, a stylesheet reading the file's variable); fixed and proven on all 111 such files. That page is
+  now 1.5 s. Media hook: the bench table before and after.
+- **The full suite, sorted (2026-11-18):** the owner asked for the suite after the day's work. 215 files on vm-agent:
+  178 pass, 37 fail. Rerunning the failing files on the build from before the work showed 36 failing there too. The
+  one regression was mine: files of shared class strings, judged alone, lost their findings' sites in the files that
+  use them (reading-cache); the equality proofs had compared sites one file at a time and could not see it. Those
+  files read the whole-app report again. The 36 older failures are in the backlog.
 
 ## Open gaps
-- The site's top bar doesn't fit a phone (390px): it widens the page to about 500px. Needs a compact bar.
+- Sweeps covered six algorecall pages and thirteen crafting-ui pages.
+- Plumber rests at about 2.7 GB on algorecall (3,662 files). See "Plumber could not start on a large app".
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
 
 ### Open gaps from the 0.4.0 release work
@@ -2549,6 +3064,25 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
   bottom edge wrote `h-28` (112px). Both reset afterwards.
 - **Media hooks:** `docs/qa/resize/0-dragging-between-stops.jpg`, `1-dragging-snapped-w-sm.jpg`,
   `2-landed-w-sm.jpg`, `3-height-h-28.jpg`; a short clip of a corner drag would show it best.
+
+### 31. The words a person reads, through the writing pass (2026-11-15)
+- **The itch:** the owner asked for their writing skill (declauding) on "all the writing thing and how we present
+  warnings and everything that user reads".
+- **How we found it:** the skill's scan over the 743 strings in the overlay's words file, then a read of the strings
+  the fix bar builds itself.
+- **What changed:** two findings ended on a closer (", so it never will."); two leaned on a metaphor ("nowhere to
+  go"); three reasons in the new sibling check were maxims ("Mixed corners make one set of pieces look like two." now
+  says what the reader sees). The fix bar's note on a framework value said "is Tailwind's default, not yours"; it
+  now reads "comes from Tailwind's defaults. Your theme doesn't set it."
+- **What we kept:** short fragments ("Saved.", "Nothing to fix.") are normal in a toolbar; the skill flags them as a
+  run, and they stay.
+- **The proof:** on algorecall the bar shows "18 places use Tailwind's default font size" / "text-sm isn't one of
+  your font size tokens: 13px and 14.1px." The skill's claim check found nothing lost. The structural read was done
+  by the same session that wrote the strings, so it is not independent.
+- **Help and the project page (same day):** the keyboard help is short key labels and stays. On the page `npx
+  plumber` opens and in its terminal steps, two lines were rewritten: the scale's intro ("Each size in your theme,
+  set at that size, with the sizes typed by hand…") is now two sentences, and the missing-React note says "Add React
+  to this project so the overlay can read and write your source." The rest already said one thing plainly.
 
 ## Open gaps
 - Resizing: a size between your steps always lands on the nearest one; there is no way yet to keep an exact size as

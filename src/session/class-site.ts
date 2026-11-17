@@ -73,7 +73,7 @@ const sharedVariable = (name: string, readers: number) => `The classes that alwa
 interface Parsed extends SourceText { program: Node; starts: number[] }
 interface Holder { src: Parsed; kind: 'own' | 'usage'; prop: string; element: ElementRef; level: number; next: number; variable?: string; readers?: number }
 interface Found { string: ClassString; holder: Holder }
-type Binding = { kind: 'variable'; init: Node } | { kind: 'prop'; prop: string | null; /** a rest pattern: the props its siblings took out of it */ except?: string[]; component: Component } | undefined;
+type Binding = { kind: 'variable'; init: Node; /** the keys read from it by destructuring (`const { icon } = DISC[size]`) */ path?: string[] } | { kind: 'prop'; prop: string | null; /** a rest pattern: the props its siblings took out of it */ except?: string[]; component: Component; /** the default written for it (`side = 'fill-draw-soft'`): what a usage that leaves it out draws */ fallback?: Node } | undefined;
 /** A component: every name it answers to (the declarator first, then the function's own: `const Panel = memo(function Inner…)`), and the file it is in. */
 interface Component { names: string[]; isDefault: boolean; file?: string }
 interface Resolved {
@@ -118,8 +118,24 @@ function resolve(input: ClassSiteInput, usageProps = false): Resolved {
     if (seen.has(key)) return;
     seen.add(key);
     const binding = bindingOf(holder.src.program, ref.start, ref.name);
+    // a table imported from another file of the project (`ICON_CAT_CLS[cat]`): its strings are written there. The holder
+    // is the table's declaration in that file; it is exported, so other files may read it (a change there changes them)
+    if (!binding && !boundBelow(holder.src.program, ref.start, ref.name)) {
+      const table = importedVariable(holder.src, ref.name, { modules: input.modules, open });
+      if (table) {
+        const where = position(table.src, table.declaration);
+        const at: Holder = { src: table.src, kind: 'own', prop: holder.prop, element: { file: table.src.file, line: where.line, column: where.column, tag: '' }, level: holder.level, next: holder.next,
+          variable: table.name, readers: Math.max(2, readers(table.src.program, table.name, table.init)) };
+        take(classSourcesAt(table.init, ref.path, table.src.text, ref.trail), at);
+        return;
+      }
+    }
     if (binding?.kind === 'variable') {
-      take(classSourcesAt(binding.init, ref.path, holder.src.text, ref.trail), { ...holder, variable: ref.name, readers: readers(holder.src.program, ref.name, binding.init) });
+      const sources = classSourcesAt(binding.init, [...binding.path ?? [], ...ref.path], holder.src.text, ref.trail, ref.args);
+      // a class the call passes in is written at the call, which no other place reads: it stays with the holder it was
+      // read from; what the function writes itself is held by the function, read by every call
+      take({ strings: sources.strings.filter(s => !s.passed), refs: sources.refs }, { ...holder, variable: ref.name, readers: readers(holder.src.program, ref.name, binding.init) });
+      take({ strings: sources.strings.filter(s => s.passed), refs: [] }, holder);
       return;
     }
     if (binding?.kind !== 'prop') return;
@@ -129,6 +145,12 @@ function resolve(input: ClassSiteInput, usageProps = false): Resolved {
     // a rest pattern its siblings took this prop out of (`{ className, ...rest }`): the rest does not carry it
     if (binding.except?.includes(prop)) return;
     const component = { ...binding.component, file: holder.src.path };
+    // the default the component writes for it (`side = 'fill-draw-soft'`) draws every usage that leaves the prop out:
+    // a change there changes all of those, so it is held like a variable other places read
+    const fallback = () => {
+      if (!binding.fallback) return;
+      take(classSourcesAt(binding.fallback, rest, holder.src.text, [...ref.trail, { condition: `\`${prop}\` is left out`, which: 'then' }]), { ...holder, variable: prop, readers: 2 });
+    };
     for (let i = holder.next; i < input.chain.length; i++) {
       const link = input.chain[i]!, at = locate(link);
       if (!usesComponent(at.src, at.ref.tag, component, { modules: input.modules, open })) continue;
@@ -142,8 +164,26 @@ function resolve(input: ClassSiteInput, usageProps = false): Resolved {
       }
       // not passed by name: a usage that spreads its own props on (`<Panel {...props} />`) passes whatever it was given
       for (const spread of usage.spreads) follow({ ...spread, path: [prop, ...rest], trail: ref.trail }, next);
+      fallback();
       return; // the usage does not pass it: nothing of it is written there
     }
+    // the chain did not reach a usage (the page gave no owner stack): a component the file never exports is used only
+    // in that file, so its usages there are the ones. Each is a case of its own (it may not be the one that drew this
+    // element): a class there is changed, never added into
+    if (!holder.src.text.match(new RegExp(`export\\s+(?:default\\s+)?(?:function|const|class)\\s+(?:${component.names.join('|')})\\b|export\\s*\\{[^}]*\\b(?:${component.names.join('|')})\\b`))) {
+      const usages = localUsages(holder.src.program, component.names);
+      for (const start of usages) {
+        const usage = elementSources(holder.src.path, holder.src.text, start), where = position(holder.src, start);
+        const attribute = usage.attributes.get(prop);
+        if (!attribute) continue;
+        const next: Holder = { src: holder.src, kind: 'usage', prop, element: { file: holder.src.file, line: where.line, column: where.column, tag: usage.tag }, level: holder.level + 1, next: holder.next };
+        const outer: Trail = [...ref.trail, { condition: `drawn by the <${usage.tag}> at line ${where.line}`, which: 'then' }];
+        const value = rest.length ? classSourcesAt(attribute.value, rest, holder.src.text) : attribute;
+        take({ strings: value.strings.map(s => under(outer, s)), refs: value.refs.map(r => ({ ...r, trail: [...outer, ...r.trail] })) }, next);
+      }
+      if (usages.length) { fallback(); return; }
+    }
+    fallback();
     unfollowed.push(prop);
   };
 
@@ -257,6 +297,16 @@ const children = (node: Node): Node[] => {
   }
   return out;
 };
+/** Where a component is used in a file: the start of each `<Name …>` whose tag is one of its names. */
+function localUsages(program: Node, names: string[]): number[] {
+  const out: number[] = [];
+  const walk = (node: Node): void => {
+    if (node.type === 'JSXOpeningElement' && node.name.type === 'JSXIdentifier' && names.includes(node.name.name)) out.push(node.start);
+    for (const child of children(node)) walk(child);
+  };
+  walk(program);
+  return out;
+}
 /** The nodes that contain an offset, outermost first. */
 function ancestorsAt(program: Node, offset: number): Node[] {
   const path: Node[] = [];
@@ -268,7 +318,7 @@ const isFunction = (node: Node) => node.type === 'FunctionDeclaration' || node.t
 const keyName = (key: Node): string | undefined => key.type === 'Identifier' ? key.name : key.type === 'Literal' && typeof key.value === 'string' ? key.value : undefined;
 /** Whether a binding pattern binds a name: `null` for the whole value (`props`, `...rest`), else the key it is read from.
  * A rest pattern also says which keys its siblings took out of it (`{ className, ...rest }`: rest has no className). */
-function binds(pattern: Node, name: string): { key: string | null; except?: string[] } | undefined {
+function binds(pattern: Node, name: string): { key: string | null; except?: string[]; fallback?: Node } | undefined {
   const target = pattern.type === 'AssignmentPattern' ? pattern.left : pattern;
   if (target.type === 'Identifier') return target.name === name ? { key: null } : undefined;
   if (target.type !== 'ObjectPattern') return undefined;
@@ -281,7 +331,7 @@ function binds(pattern: Node, name: string): { key: string | null; except?: stri
     if (property.type !== 'Property' || property.computed) continue;
     const value = property.value.type === 'AssignmentPattern' ? property.value.left : property.value;
     const key = keyName(property.key);
-    if (key !== undefined && value.type === 'Identifier' && value.name === name) return { key };
+    if (key !== undefined && value.type === 'Identifier' && value.name === name) return { key, ...(property.value.type === 'AssignmentPattern' ? { fallback: property.value.right } : {}) };
   }
   return undefined;
 }
@@ -300,7 +350,7 @@ function bindingOf(program: Node, offset: number, name: string, seen = new Set<s
       if (at < 0) continue;
       const component = at === 0 ? componentOf(path.slice(0, i + 1)) : undefined;
       const bound = binds(list[0]!, name)!;
-      return component ? { kind: 'prop', prop: bound.key, ...(bound.except ? { except: bound.except } : {}), component } : undefined;
+      return component ? { kind: 'prop', prop: bound.key, ...(bound.except ? { except: bound.except } : {}), ...(bound.fallback ? { fallback: bound.fallback } : {}), component } : undefined;
     }
     const body = node.type === 'Program' || node.type === 'BlockStatement' ? node.body as Node[] : undefined;
     for (const statement of body ?? []) {
@@ -311,12 +361,15 @@ function bindingOf(program: Node, offset: number, name: string, seen = new Set<s
         // const { className } = props: the prop the whole props object carries; const { className, ...rest } = props: the rest without it
         const bound = binds(d.id, name), source = unwrapped(d.init);
         if (!bound) continue;
-        if (source.type !== 'Identifier') return undefined;
+        // const { icon } = DISC[size]: the key read from the value written there (a table, an object)
+        if (source.type !== 'Identifier') return bound.key !== null && (source.type === 'MemberExpression' || source.type === 'ObjectExpression') ? { kind: 'variable', init: source, path: [bound.key] } : undefined;
         const outer = bindingOf(program, source.start, source.name, seen);
+        // const { icon } = DISC, a variable written in the file
+        if (outer?.kind === 'variable' && bound.key !== null) return { kind: 'variable', init: outer.init, path: [...outer.path ?? [], bound.key] };
         if (outer?.kind !== 'prop' || outer.prop !== null) return undefined;
         if (bound.key === null) return { ...outer, except: [...outer.except ?? [], ...bound.except ?? []] };
         // a key its rest's siblings took out (`{ className: c, ...rest }` then `const { className } = rest`): never in it
-        return outer.except?.includes(bound.key) ? undefined : { kind: 'prop', prop: bound.key, component: outer.component };
+        return outer.except?.includes(bound.key) ? undefined : { kind: 'prop', prop: bound.key, ...(bound.fallback ? { fallback: bound.fallback } : {}), component: outer.component };
       }
     }
   }
@@ -381,15 +434,19 @@ function wrappedName(node: Node): string | undefined {
 }
 const statements = (src: Parsed): Node[] => src.program.type === 'Program' ? src.program.body as Node[] : [];
 interface Modules { modules: ModuleFacts; open: (source: SourceText) => Parsed }
-interface Reached { path: string; local: string }
+interface Reached { path: string; local: string; src: Parsed }
 
 /** Whether a usage's tag names the component. A tag imported in the usage's file is followed through its import (the
  * engine's module facts: relative paths, index files, the project's aliases) and every re-export on the way to the file
  * that declares it; it is the component when that file is the component's and the name it lands on is one the component
  * answers to (a default export: when the component is the file's default). A tag not imported names a component of its
  * own file only: a same-named component in another file is not it, nor is one imported from a package. */
-function usesComponent(usage: Parsed, tag: string, component: Component, m: Modules): boolean {
+function usesComponent(usage: Parsed, tag: string, component: Component, m: Modules, seen = new Set<string>()): boolean {
   const [head, ...rest] = tag.split('.');
+  // a local wrapper around a component (`const MotionChoice = motion.create(ChoiceSlab)`, `memo(Impl)`) passes its
+  // props on: a usage of it is a usage of the component it wraps
+  const inner = rest.length || seen.has(head!) ? undefined : wrapperOf(usage, head!);
+  if (inner) { seen.add(head!); return usesComponent(usage, inner, component, m, seen); }
   for (const statement of statements(usage)) {
     if (statement.type !== 'ImportDeclaration') continue;
     for (const s of statement.specifiers ?? []) {
@@ -427,11 +484,11 @@ function exportOf(file: Parsed, name: string, m: Modules, seen: Set<string>): Re
         if (local === undefined) return undefined;
         return st.source ? exported(file, String(st.source.value), local, m, seen) : localOf(file, local, m, seen);
       }
-      if (st.declaration && declares(st.declaration as Node, name)) return { path: file.path, local: name };
+      if (st.declaration && declares(st.declaration as Node, name)) return { path: file.path, local: name, src: file };
     }
     if (st.type === 'ExportDefaultDeclaration' && name === 'default') {
       const d = unwrapped(st.declaration as Node);
-      return d.type === 'Identifier' ? localOf(file, d.name, m, seen) : { path: file.path, local: 'default' };
+      return d.type === 'Identifier' ? localOf(file, d.name, m, seen) : { path: file.path, local: 'default', src: file };
     }
     if (st.type === 'ExportAllDeclaration' && !st.exported && name !== 'default') stars.push(String(st.source.value));
   }
@@ -449,8 +506,51 @@ function localOf(file: Parsed, local: string, m: Modules, seen: Set<string>): Re
       return imported === undefined ? undefined : exported(file, String(st.source.value), imported, m, seen);
     }
   }
-  return { path: file.path, local };
+  return { path: file.path, local, src: file };
 }
 const declares = (declaration: Node, name: string): boolean =>
   (declaration.type === 'FunctionDeclaration' || declaration.type === 'ClassDeclaration') ? declaration.id?.name === name
     : declaration.type === 'VariableDeclaration' && declaration.declarations.some(d => d.id.type === 'Identifier' && d.id.name === name);
+/** A variable imported from another file of the project, as written there: its file, its name there, its value and
+ * where it is declared. Undefined for a package, a namespace or type import, or a name that is not a variable there. */
+function importedVariable(src: Parsed, name: string, m: Modules): { src: Parsed; name: string; init: Node; declaration: number } | undefined {
+  for (const st of statements(src)) {
+    if (st.type !== 'ImportDeclaration' || st.importKind === 'type') continue;
+    for (const s of st.specifiers ?? []) {
+      if (s.local.name !== name) continue;
+      if (s.type === 'ImportNamespaceSpecifier') return undefined;
+      const imported = s.type === 'ImportDefaultSpecifier' ? 'default' : keyName(s.imported as Node);
+      const reached = imported === undefined ? undefined : exported(src, String(st.source.value), imported, m, new Set());
+      if (!reached || reached.local === 'default') return undefined;
+      for (const top of statements(reached.src)) {
+        const declaration = top.type === 'VariableDeclaration' ? top : top.type === 'ExportNamedDeclaration' && top.declaration?.type === 'VariableDeclaration' ? top.declaration : undefined;
+        for (const d of declaration?.declarations ?? []) if (d.id.type === 'Identifier' && d.id.name === reached.local && d.init) return { src: reached.src, name: reached.local, init: d.init, declaration: d.start };
+      }
+      return undefined;
+    }
+  }
+  return undefined;
+}
+/** Whether a name read at an offset is bound inside the file before the top level: a parameter or a local of a function
+ * around it (a callback's `cat`), which shadows an import of the same name. */
+function boundBelow(program: Node, offset: number, name: string): boolean {
+  const path = ancestorsAt(program, offset);
+  for (let i = path.length - 1; i > 0; i--) {
+    const node = path[i]!;
+    if (isFunction(node) && (node as unknown as { params: Node[] }).params.some(p => binds(p, name))) return true;
+    if (node.type === 'BlockStatement' && (node.body as Node[]).some(st => st.type === 'VariableDeclaration' && st.declarations.some(d => binds(d.id, name)))) return true;
+  }
+  return false;
+}
+/** The component a top-level `const Name = wrapper(Component, …)` wraps (`motion.create(ChoiceSlab as …)`, `memo(Impl)`,
+ * `styled(Card)`): the name inside the calls, when that is a plain name. */
+function wrapperOf(src: Parsed, name: string): string | undefined {
+  for (const top of statements(src)) {
+    const declaration = top.type === 'VariableDeclaration' ? top : top.type === 'ExportNamedDeclaration' && top.declaration?.type === 'VariableDeclaration' ? top.declaration : undefined;
+    for (const d of declaration?.declarations ?? []) {
+      if (d.id.type !== 'Identifier' || d.id.name !== name || !d.init) continue;
+      return unwrapped(d.init).type === 'CallExpression' ? wrappedName(d.init) : undefined;
+    }
+  }
+  return undefined;
+}

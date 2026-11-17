@@ -24,6 +24,7 @@
  *  measure    one batch per frame, only when invalidated: every rect and style first, then every write
  * ───────────────────────────────────────────────────────── */
 
+import { proofSvg } from './proof.js';
 import { pxOf } from './value.js';
 import { FIX } from './words.js';
 
@@ -299,6 +300,7 @@ function heatMarkup(zone, level) {
 }
 
 export class MarkLayer {
+  #proof; #proofFor = ''; #held = null;
   #heat; #hand = null; #cause = null;
   #dim; #dimPath = ''; #svg; #anchor; #outlines; #outlineMarkup = ''; #labels; #labelMarkup = ''; #hint; #hinted = null; #light; #lit = []; #lead = null; #lightMarkup = ''; #nodes = new Map(); #items = []; #pointed = null; #focused = null; #order = []; #orderKey = ''; #scheduled = 0; #onPick; #occluders; #state; #onOrder;
 
@@ -322,6 +324,10 @@ export class MarkLayer {
     this.#light = document.createElementNS(NS, 'g');
     this.#light.setAttribute('class', 'light');
     under.appendChild(this.#light);
+    // the finding in hand proves itself: the lines its siblings share and its break (proof.js), above the light
+    this.#proof = document.createElementNS(NS, 'g');
+    this.#proof.setAttribute('class', 'proof');
+    under.appendChild(this.#proof);
     // the heat: one zone per mark, blurred by its heat level; missing space as dots
     const defs = document.createElementNS(NS, 'defs');
     defs.innerHTML = [0, 1, 2, 3, 4].map((l) => `<filter id="pl-heat-${l}" filterUnits="userSpaceOnUse" x="-50" y="-50" width="20000" height="20000"><feGaussianBlur stdDeviation="${(HEAT.blur[0] + ((HEAT.blur[1] - HEAT.blur[0]) * l) / 4).toFixed(2)}"/><feComponentTransfer><feFuncA type="linear" slope="1.3"/></feComponentTransfer></filter>`).join('')
@@ -594,7 +600,14 @@ export class MarkLayer {
   // One frame: every measurement first, then every write.
   #render() {
     const t0 = performance.now();
-    try { this.#frame(); } finally { performance.measure('plumb:marks', { start: t0 }); }
+    try { this.#frame(); this.#drawProof(); } finally { performance.measure('plumb:marks', { start: t0 }); }
+  }
+  // the finding in hand proves itself (proof.js): Blueprint's walk hands over its element and mark when it puts a fix in
+  // hand, so the drawing never has to match the walk's numbering to the layer's
+  prove(el, mark) { this.#held = el && mark?.craft?.proof ? { el, proof: mark.craft.proof } : null; this.#redraw(); }
+  #drawProof() {
+    const markup = this.#held ? proofSvg(this.#held.el, this.#held.proof) : '';
+    if (markup !== this.#proofFor) { this.#proof.innerHTML = markup; this.#proofFor = markup; }
   }
   #frame() {
     const view = { w: innerWidth, h: innerHeight };

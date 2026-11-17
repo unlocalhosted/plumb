@@ -2,8 +2,10 @@ import { parseSync } from 'oxc-parser';
 import { readFileSync } from 'node:fs';
 import { ResolverFactory } from 'oxc-resolver';
 import { collectClasses } from '../collect/classes.js';
+import { internAll } from '../collect/strings.js';
 import type { CollectionMemory } from '../collect/classes.js';
 import type { ClassSite } from '../collect/classes.js';
+import type { SourceProgram } from '../collect/source.js';
 import type { SourceStyles } from '../collect/inline.js';
 import type { ModuleImport } from '../collect/modules.js';
 import { moduleImports } from '../collect/modules.js';
@@ -21,6 +23,20 @@ export function dependencySpecifiers(file: string, text: string, dynamic = false
 
 type Collection = Awaited<ReturnType<typeof collectClasses>>;
 interface Slice { hash: string; dependencies: Map<string, string>; value: Collection }
+/** The parsed files collection shares while it runs: a file imported by its neighbours is parsed once. Only the most
+ * recently used are kept, so a large app never holds every file's syntax tree at once; a dropped one is parsed again. */
+class RecentPrograms extends Map<string, SourceProgram> {
+  constructor(private limit: number) { super(); }
+  override get(key: string): SourceProgram | undefined {
+    const value = super.get(key); if (value === undefined) return;
+    super.delete(key); super.set(key, value); return value;
+  }
+  override set(key: string, value: SourceProgram): this {
+    super.delete(key); super.set(key, value);
+    while (this.size > this.limit) super.delete(this.keys().next().value!);
+    return this;
+  }
+}
 export class CollectionState {
   readonly slices = new Map<string, Slice>();
   readonly dependencies = new Set<string>();
@@ -60,6 +76,8 @@ export class CollectionState {
     });
     if (valid) return old.value;
     const value = await collectClasses([file], config.classHelpers, new Map([...(input ? [[input.file, input.text] as const] : []), ...(text === undefined ? [] : [[file, text] as const])]), undefined, undefined, undefined, this.memory);
+    // the results keep names and values cut from the file's text; the table's copies let the text go
+    internAll([value.sites, value.styles, value.diagnostics, value.modules]);
     if (old && file !== input?.file) {
       const stable = (value: unknown) => JSON.stringify(value, (key, item) => key === 'resolved' ? undefined : item);
       const sites = new Map(old.value.sites.map(site => [stable(site), site]));
@@ -97,14 +115,19 @@ export class CollectionState {
     // Shared definitions are semantic inputs, retained by file across targeted refreshes.
     return { ...value, styles: { ...value.styles, declarations: [...value.styles.declarations, ...[...this.definitions].flatMap(([source, ds]) => source === file ? [] : ds)] } };
   }
-  async collect(files: string[], config: PlumbConfig, input?: { file: string; text: string; lang: 'tsx' | 'css' }): Promise<Collection> {
+  /** `afterFile`: called after each file is collected, while its parsed code is still among the shared programs. */
+  async collect(files: string[], config: PlumbConfig, input?: { file: string; text: string; lang: 'tsx' | 'css' }, afterFile?: (file: string) => void): Promise<Collection> {
     const current = new Set(files);
     if (!input) for (const file of this.slices.keys()) if (!current.has(file)) this.slices.delete(file);
     const values: Collection[] = [];
-    this.memory = { programs: new Map(), imports: new Map(), specifiers: new Map(), texts: new Map() };
+    this.memory = { programs: new RecentPrograms(256), imports: new Map(), specifiers: new Map(), texts: new Map() };
+    // visible while collecting, so a component shard built after each file (afterFile) reuses its parsed code
+    this.programs = this.memory.programs;
+    this.specifiers = this.memory.specifiers;
     this.parsedFiles = []; this.visitedFiles = [];
     for (const file of files.filter(file => file === input?.file ? input.lang === 'tsx' : /\.[jt]sx?$/.test(file))) {
       values.push(await this.read(file, config, input));
+      afterFile?.(file);
     }
     this.programs = this.memory.programs;
     this.specifiers = this.memory.specifiers;

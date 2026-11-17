@@ -34,3 +34,4 @@ dist/
 /.state/open.json
 /.state/cache/
 .test-logs-remote/
+.test-times.json

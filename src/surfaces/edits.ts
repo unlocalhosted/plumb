@@ -5,7 +5,7 @@ import { cssCode } from '../collect/stylesheets.js';
 import { useFor } from '../rules/provenance.js';
 import { numericUse } from '../decisions/spacing.js';
 import { atSite, newSites, pathFor } from './sites.js';
-import { classEdit } from '../messages.js';
+import { classEdit, signed } from '../messages.js';
 
 export interface StructuredEdit {
   id: string;
@@ -34,12 +34,13 @@ export function replacement(finding: Finding, site: Site, decision: Decision, re
   if (colon < 0 || !use.css.startsWith(`${d.prop}: `)) return undefined;
   const property = site.text.slice(0, colon).trim().replace(/["']/g, '');
   if (property.replace(/[A-Z]/g, m => `-${m.toLowerCase()}`) !== d.prop) return undefined;
-  const value = use.css.slice(d.prop.length + 2);
-  if (!value.startsWith('var(') && !numericUse(decision)) return undefined;
+  const step = use.css.slice(d.prop.length + 2);
+  if (!step.startsWith('var(') && !numericUse(decision)) return undefined;
+  const value = d.dynamic?.kind === 'step' ? step : signed(step, d.value, site.text.slice(colon + 1));
   // A stepped value keeps its runtime multiplier: the token becomes the step.
   const written = d.dynamic?.kind === 'step' ? (value.startsWith('var(') ? `\`calc(${value} * \${${d.dynamic.by}})\`` : undefined) : JSON.stringify(value);
   if (written === undefined) return undefined;
-  const to = d.origin === 'inline' ? `${site.text.slice(0, colon)}: ${written}` : use.css;
+  const to = d.origin === 'inline' ? `${site.text.slice(0, colon)}: ${written}` : `${d.prop}: ${value}`;
   return { from: site.text, to, token: decision.name };
 }
 

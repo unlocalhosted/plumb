@@ -39,7 +39,17 @@ export function lineStarts(text: string): number[] {
   return starts;
 }
 
-export function sourceSite(source: SourceText, offset: number, text: string): Site {
+/** `lineStarts` packed four bytes a line, for what is kept for the session (the component index): a plain array costs
+ * several times that, and a large app has over a million lines. */
+export function packedLineStarts(text: string): Uint32Array {
+  let count = 1;
+  for (let index = text.indexOf('\n'); index !== -1; index = text.indexOf('\n', index + 1)) count++;
+  const starts = new Uint32Array(count);
+  for (let index = text.indexOf('\n'), at = 1; index !== -1; index = text.indexOf('\n', index + 1)) starts[at++] = index + 1;
+  return starts;
+}
+
+export function sourceSite(source: { file: string; lineStarts: ArrayLike<number>; anchors?: NamedAnchor[] | undefined; text?: string }, offset: number, text: string): Site {
   let low = 0, high = source.lineStarts.length;
   while (low + 1 < high) {
     const middle = (low + high) >>> 1;

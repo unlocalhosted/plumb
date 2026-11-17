@@ -62,6 +62,7 @@ import { TIER } from './craft-facets.js';
 import { say } from './words.js';
 import { controlAround, controlKind, roleOf } from './roles.js';
 import { RUN_RULES } from './craft-headless.js';
+import { RANK_RULES } from './craft-ranks.js';
 import { recommend, recommendColour } from './craft-recommend.js';
 import { STAMP_ATTRIBUTE, placeOf } from './stamp.js';
 
@@ -2726,4 +2727,4 @@ export const RULES = [concentricRadius, innerOuterSpacing, textOpacity, halfPixe
   textWrapRole, continuousCorners, opticalSizing, tintedShadow, easedScrim, pureBlackWhite, contentSize,
   baselineAlign, iconCap, trimLeading, headingLead, pairSpacing, cardOpticalPadding, textCollision,
   weightLevels, greyLevels, rhythm, elevationLadder,
-  opticalCentre, overshoot, strokeWeight, scrollCue, pressFeedback, exitFaster, interruptible, ...RUN_RULES];
+  opticalCentre, overshoot, strokeWeight, scrollCue, pressFeedback, exitFaster, interruptible, ...RANK_RULES, ...RUN_RULES];

@@ -169,7 +169,9 @@ export class SourceMapStore {
       return this.original(section.decoded, line - section.offset.line, column - (line === section.offset.line ? section.offset.column : 0), cancelled);
     }
     const row = await this.row(decoded, line, cancelled);
-    const segment = row && before(row, segment => segment.generated <= column);
+    // a stack points at the start of a call; a compiler may leave its head unmapped (`/* @__PURE__ */ _jsxDEV(` before
+    // the mapped `MobileNav`), so a column before the row's first entry is that entry: the call's own source
+    const segment = row && (before(row, segment => segment.generated <= column) ?? row.find(segment => segment.source !== undefined));
     if (!segment || segment.source === undefined || cancelled()) return null;
     const { map, base } = decoded; let source = map.sources[segment.source];
     if (typeof source !== 'string') return null;

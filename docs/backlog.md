@@ -63,6 +63,23 @@ reserved.)
 
 ## Doesn't do yet
 
+- **36 test files already failed before 2026-11-17 (2026-11-18).** The full suite on vm-agent (215 files) after the
+  memory and speed work: 178 pass, 37 fail. Rerun on the build from before that work (c2eac78c), 36 of the 37 fail there
+  too, so they predate it; the 37th (reading-cache) was a regression of the day, fixed. Mostly overlay browser tests
+  timing out, a few assertions; one-owner fails because its locator matches both of the fix panel's elements, which
+  the overlay has made since before then. Files: blueprint, class-site, cleanup, cleanup-colour, cleanup-colour-cases, cleanup-icons, cleanup-icons-cases, cleanup-messy, cleanup-site, cleanup-spacing, cleanup-spacing-proofs, cleanup-spacing-stage, cli-findings, colour-names, craft, craft-hierarchy, craft-wave7, dock, element-only, element-site, fixpanel, inplace, locate-bench, motion-layout, one-bar, one-owner, overlay, qa-fixes-2-overlay, reach, recipes, rule-docs-link, select, text-card-qa, units, verdict, walk.
+- **Component root ranges depend on build order (2026-11-17).** A component's root class ranges reach the session's
+  cache only from a build that keeps the component in its graph; a component first found while building another file
+  is missing them in every later graph. Which ones depends on file order. Recording them at discovery changed 77
+  ownership findings on algorecall; the right answer needs a decision on what ownership should see, then that change
+  with its own proof. See docs/briefs/analysis-memory.md, "Component discovery, first pass".
+- **A large app's analysis holds 811 MB live (2026-11-17).** Measured after a forced collection. What is left is mostly the rows themselves, shared by the report, indexes and judgement; open-page-first layer 1 is built (556 MB released). Next: skip whole-app judging at start-up (peak and start time), then layer 2 (collect on demand). Provenance judges each input once (8.6 s to 7.0 s; the rest is per-row string keys). Next: number sites and contexts instead of string keys; expansion and existence once per class; component discovery (13.4 s) needs its own reading. Step 1 of `docs/briefs/analysis-memory.md` took the analysis worker's
+  heap from 2.17 GB to 1.26 GB; the process rests at 2.46 GB. Step 2 lowered the heap it needs to start from 1.6–1.8 GB to 1.25–1.4 GB. Step 3 was measured and dropped (tens of MB). One copy of each text was tried and undone (texts are held once, at two bytes a character, kept alive by pieces of them in the results; up to about 125 MB if results held their own strings). Results now own their strings (worker at rest 1.24 GB, starts under 1.25 GB). Open: open-page-first analysis, which waits for the owner because the project-wide list would fill in later. Earlier note: On algorecall (3,662 source files) plumber now starts at node's
+  default heap limit (it failed 3 of 3 before the module cache was capped) and rests at about 2.7 GB. The engine
+  keeps syntax trees, string-keyed maps and per-file sets where small per-file facts would do. Memory also crept
+  0.8 GB over 12 changes. The design is proposed in `docs/briefs/analysis-memory.md` (keep per-file facts, not
+  trees; files as numbers; links in flat arrays; open page first), waiting for the owner's sign-off.
+
 **Change the class in force (2026-11-13).** One rule (`overlay/src/variants.js`) for every class writer: breakpoints, dark and held states; the box edit, the layout card, Tidy and the shared reader use it. Still to do: a way for Plumber to hold hover/focus, the branch of a condition that is active, the text editor's text-size write, and a check on a running app with responsive classes. The plan is `docs/briefs/xray-propagation.md`.
 
 **The X-ray is Alt+B (2026-11-13).** Blueprint without heat, with the X-ray showing the element under the pointer and the one the list puts in hand. Still to check: the full suite on it (about 40 test files open blueprint; the X-ray's card now appears in them). Earlier note, kept for what must carry over: **The X-ray isn't in Plumber yet (2026-11-13).** The X-ray of the element under the pointer is a working prototype on the design site, and it should replace Alt+B's heat. What must carry over as it is: point at a part and drag it where it is (no mode, nothing drawn on top of the element); the token picker row in the card, where two fingers choose which sides or the value (the direction locks to the swipe, and the thumb resists and then snaps); changes collect for one Sync, and Esc puts them back; Enter opens a note for your agent with the file and line. **A repeated part changes everywhere by default** (every element the same line of code draws, found by its stamp: `peersOf` in `overlay/src/xray.js`), with the other places outlined and "×N places" in the card; Alt as a change starts changes only the one. Sync must write the class at that one line, not once per place.
@@ -70,8 +87,7 @@ reserved.)
 - **Resizing to a size that isn't one of yours.** A size drag always lands on the nearest step of your theme. Keeping an exact size (say 312px) as a new token through the naming flow isn't built yet; the likely gesture is holding ⌥ while dragging to turn snapping off, then naming the size on the element when you let go. (2026-11-13)
 **The order** (decided 2026-11-12):
 
-- **Now:** nothing of this session's. (A class fix offered and then refused is in the fix card, which another
-  session has been changing today; left to it.)
+- **Now:** nothing of this session's.
 - **Next:** the Next performance test · the tests that fail only under the full run's load.
 - **Decided 2026-11-12:** shadows went ahead of padding-by-job. After padding is snapped to the scale, sibling cards on
   the messy page already agree, so reading padding by job has little to show yet; shadows were a missing primitive.
@@ -141,9 +157,6 @@ and icon passes' cases, and the palette after a write, were tested again through
 - A stroke passed as a prop goes through the same path as a size, untried. A size passed through more layers of
   components is untried.
 - The step's count adds sizes and strokes together, so fixing one icon's size can read "10 → 10".
-- An icon component that joins its classes with `+` (`'block ' + className`) is refused as "built in code", even
-  when the usage passes a plain string; the same component written with a template literal is followed to the usage
-  and written. Found 2026-11-12 writing the icon tests.
 
 ### Clean-up: corners
 
@@ -198,8 +211,6 @@ and icon passes' cases, and the palette after a write, were tested again through
 - The same page gives different craft findings on a Mac and on Linux (two of them depend on the fonts' measurements).
 - The suggestion engine's ranking and the standard's numbers name no source where they are defined
   (docs/PRINCIPLES.md, known debt).
-- A class fix is offered on an element whose classes are built in code, then refused at write. It should say so
-  first.
 - A finding on a wrapped element is reported at the component's line, not where it is used; the fix card says
   "Changed X to Y" when Y was added beside X.
 
@@ -294,6 +305,57 @@ Design written 2026-11-13, not signed off, nothing built: docs/briefs/platform-g
   "Cards · 4 f apart", and the swipe demo's text over "9:41". Both sit in animated demos, so they may be a moment
   mid-animation rather than a resting overlap. If so, words that are moving should be skipped.
 - Words meeting words is advice only: it names the two texts, it does not offer a class to fix them.
+
+### Seeing a screen whole: guides, and what lintapple does that plumber does not (2026-11-15)
+
+Direction under discussion with the owner, nothing built. Sources: docs/research/alignment-discourse.md and the four
+2026-11-15 entries in docs/references.md.
+
+- **Guides.** Read every drawn left edge, centre and right edge across a whole screen, group them into guides, draw
+  them on the page, and judge from the guides (how many, how many things on each, how close two are). Open: when two
+  regions should share a line; the numbers for "near miss" and "strong guide" need a source or measurements.
+- **Open question for the owner:** is the overview (one verdict and the top few notes per screen) the product, or do
+  these feed the findings list? How far beyond visual judgement should it go (wording, structure, flow)?
+
+From reading lintapple's source (read, not run; plumber's side only skimmed, so each line is "likely missing"):
+
+- **Say what was not measured, everywhere.** Three answers per check (passed, failed, could not tell), a count of how
+  many things of each kind were actually checked so an empty pass shows as empty, and exceptions that need a reason
+  and are listed in the report.
+- **Measure what is painted, not the box.** The part of an element left after its ancestors clip it; boxes under a
+  scale or flip; text that lives in ::before and ::after; text cut off by a clip as a finding of its own.
+- **Refuse a contrast verdict when it cannot be trusted** (opacity, filters, blend modes, shadows in the way), and
+  cover placeholder text and text inside SVG.
+- **Screens reached by acting.** A written plan (click, type, press, then wait for a named thing) so an open dialog,
+  an error state or an open tooltip is checked like any page, and tooltips opened by themselves and re-checked at each
+  window width.
+- **Keyboard behaviour.** Tab reaches the control, a focus ring appears (found by comparing styles before and after
+  focus), nothing covers the focused control, a dialog holds focus and gives it back, tabs and menus answer the arrow
+  keys. A different product area; parked here.
+- **One problem, reported once,** with every size, theme and state it was seen in.
+- **A contract for coding agents:** run on every changed screen; never loosen the settings, add an exception or remove
+  a mark to pass.
+- **Small checks:** numbers in table cells right-aligned with equal-width digits; a font file that failed to load;
+  the page scrolling sideways; phrases the project bans.
+
+### The design site against the product (checked 2026-11-15)
+
+Owner: "check if something is still not aligned from design to here". Each design part (web/design/parts) against
+what the overlay draws, by the modules each imports and by eye in the browser.
+
+- **Fix bar: not in the product.** The design's one-line bar (headline, detail, "3 of 60", Clean up all) with the
+  choice made on the element is a comp; the overlay still ships the old card (the design page says so itself). The
+  on-element picker for the fix is also still to be ported.
+- **Buttons: not in the product's fix flow.** The designed soft block (kit.js `button()`: lit top, side lip, key cap,
+  press and spring) is used only by the text editor; the fix card and the bar draw their own flat `primary`/`ghost`
+  buttons and `.pl-act` pills.
+- **Soft blocks (Identity): used nowhere in the product.** soft.js is imported by no product surface.
+- **The round face: not in the product's cards** (the Type page says so itself); `--pl-round` is in the token file only.
+- **Aligned:** the X-ray inspector (xray-live.js is shared by the design page and the product), pills and the box-model
+  icons (boxmodel.js), the clean-up's chips (show.js), the fields (field.js), the burst (burst.js), the name tag (nametag.js).
+- **Not sure:** the inspector card was dark on a light page in the product (it may follow the system's dark setting,
+  not the page's ground, as the roast bar did before it read the ground); its header says "Point at a part or a
+  number" where the design shows the control row and the component's name (a plain button has no component name).
 
 ### Writes and speed
 

@@ -153,6 +153,15 @@ export function classEdit(d: Pick<Declaration, 'origin' | 'prop' | 'site'> & Par
   const base = text.slice(colon + 1);
   return { to: `${text.slice(0, colon + 1)}${base.startsWith('!') ? '!' : ''}${base.replace(/^!/, '').startsWith('-') ? '-' : ''}${use.class}${base.endsWith('!') ? '!' : ''}`, beside: false };
 }
+/**
+ * A token's value written in place of a negative amount keeps the sign: the steps offered are magnitudes, and
+ * `marginTop: '-2px'` must not become +2px. `value`: the declaration's value; `written`: the value as written at the site.
+ */
+export function signed(step: string, value: string | undefined, written: string): string {
+  if (!/^-(?:\d|\.)/.test(String(value ?? written.replace(/["'\s]/g, '')).trim())) return step;
+  const numeric = /^calc\(var\(--spacing\) \* ([\d.]+)\)$/.exec(step);
+  return numeric ? `calc(var(--spacing) * -${numeric[1]})` : `calc(${step} * -1)`;
+}
 export function sourceEdit(d: Declaration, use: NonNullable<Decision['use']>): string {
   const text = d.site.text;
   const edit = classEdit(d, use);
@@ -162,8 +171,8 @@ export function sourceEdit(d: Declaration, use: NonNullable<Decision['use']>): s
   const colon = text.indexOf(':');
   const property = text.slice(0, colon).trim().replace(/["']/g, '');
   if (colon >= 0 && property.replace(/[A-Z]/g, letter => `-${letter.toLowerCase()}`) === d.prop && use.css.startsWith(`${d.prop}: `)) {
-    const value = use.css.slice(d.prop.length + 2);
-    const replacement = d.origin === 'inline' || d.origin === 'custom-property' && /["']/.test(text.slice(0, colon)) ? `${text.slice(0, colon)}: ${JSON.stringify(value)}` : use.css;
+    const value = signed(use.css.slice(d.prop.length + 2), d.value, text.slice(colon + 1));
+    const replacement = d.origin === 'inline' || d.origin === 'custom-property' && /["']/.test(text.slice(0, colon)) ? `${text.slice(0, colon)}: ${JSON.stringify(value)}` : `${d.prop}: ${value}`;
     return `Replace \`${text}\` with \`${replacement}\`.`;
   }
   return `Use ${use.class ? `\`${use.class}\` or ` : ''}\`${use.css}\`.`;

@@ -6,6 +6,7 @@ import { lowerTailwind } from '../lower/tailwind.js';
 import type { TailwindMemory } from '../lower/tailwind.js';
 import { componentBatch, discoverComponents } from '../ownership/components.js';
 import type { ComponentGraph, ComponentMemory } from '../ownership/components.js';
+import type { LoweredProps } from '../ownership/judge.js';
 import type { PlumbConfig } from '../config.js';
 import { sourceHash } from '../collect/cache.js';
 import { ResolverFactory } from 'oxc-resolver';
@@ -19,14 +20,28 @@ import { lowerStylesheets, lowerStylesheet } from '../lower/stylesheets.js';
 import { declaredClasses } from '../lower/css.js';
 import { presetInputs } from '../presets/index.js';
 import { defaultSourceSelectors } from '../project.js';
+
 import type { StylesheetGraph } from '../collect/stylesheets.js';
 
 const signature = (inputs: unknown[]) => JSON.stringify(inputs, (_, value) => value instanceof Map || value instanceof Set ? [...value] : value);
 interface Memo { key: string; value: unknown }
 export class WarmState implements AnalysisRuntime {
   readonly collection: CollectionState;
-  readonly judgement = new JudgementState();
+  judgement = new JudgementState();
   readonly localJudgements = new Map<string, JudgementState>();
+  /** Lets go of what only the whole-app judgement keeps: its caches, every site's expanded declarations and the merged
+   * component graph. The collected files, the component shards and the app-wide phases stay, so a file is judged
+   * alone as fast as before, and the whole app again when asked (docs/briefs/analysis-memory.md, open page first). */
+  /** The project's source files as the whole-app analysis counted them (its file list and computed class files), one set
+   * per list. */
+  projectFileSet(): ReadonlySet<string> | undefined {
+    const files = this.shared<string[]>('files'), collected = this.shared<{ computedClassFiles?: string[] }>('collect');
+    if (!files) return undefined;
+    if (this.projectFilesFor?.files !== files || this.projectFilesFor.collected !== collected) this.projectFilesFor = { files, collected, set: new Set([...files, ...collected?.computedClassFiles ?? []]) };
+    return this.projectFilesFor.set;
+  }
+  private projectFilesFor: { files: string[]; collected: unknown; set: ReadonlySet<string> } | undefined;
+  release(): void { this.judgement = new JudgementState(); this.siteCache = new WeakMap(); this.globalGraph = undefined; this.dead = undefined; }
   localJudgement(file: string): JudgementState {
     let value = this.localJudgements.get(file);
     if (!value) { if (this.localJudgements.size >= 64) this.localJudgements.delete(this.localJudgements.keys().next().value!); value = new JudgementState(); this.localJudgements.set(file, value); }
@@ -35,11 +50,16 @@ export class WarmState implements AnalysisRuntime {
   readonly shards = new Map<string, ComponentGraph>();
   readonly dependencies = new Set<string>();
   readonly configurationFiles = new Set<string>();
+  /** the modules walked to choose the Tailwind entry and their import lists (discoverProject): a change to one is a
+   * configuration change only when its imports change */
+  readonly entryGraph = new Map<string, string | null>();
   readonly patterns = new Set<string>();
   readonly inputPatterns = new Set<string>();
   private componentConsumers = new Map<string, Set<string>>();
   private componentDependencies = new Map<string, Set<string>>();
   private dependencyEdges = new Map<string, string[]>();
+  // the parsed modules the component graph reads, the most recently used ones only: kept for every file, they held each
+  // file's whole syntax tree for the life of the session (most of 2 GB on a 3,600-file app); one dropped is parsed again
   private componentMemory: ComponentMemory = { modules: new Map() };
   private snippetGraph: { key: string; value: ComponentGraph } | undefined;
   private componentResolver = new ResolverFactory({ tsconfig: 'auto', extensions: ['.tsx', '.ts', '.jsx', '.js', '.mts', '.mjs', '.cts', '.cjs'], extensionAlias: { '.js': ['.ts', '.tsx', '.js'] }, conditionNames: ['import', 'browser', 'default'], mainFields: ['browser', 'module', 'main'] });
@@ -104,6 +124,14 @@ export class WarmState implements AnalysisRuntime {
     if (!base) throw new Error('Missing warm stylesheet context.');
     return { ...base, declarations: [...this.cssFiles.get(file) ?? [], ...[...this.cssDefinitions].flatMap(([source, ds]) => source === file ? [] : ds)] };
   }
+  /** Declarations in any stylesheet that read one of these CSS variables: they decide how a variable a component sets
+   * inline is judged (a background reading `var(--track-hex)` makes it a colour). */
+  stylesReading(names: ReadonlySet<string>): Declaration[] {
+    if (!names.size) return [];
+    const out: Declaration[] = [];
+    for (const ds of this.cssFiles.values()) for (const d of ds) if (!d.prop.startsWith('--') && d.value.includes('var(') && [...d.value.matchAll(/var\(\s*(--[\w-]+)/g)].some(m => names.has(m[1]!))) out.push(d);
+    return out;
+  }
   private siteCache = new WeakMap<object, { candidate: unknown; value: unknown }>();
   private compiler: TailwindMemory = {};
   private ranking = new RankingState();
@@ -135,6 +163,24 @@ export class WarmState implements AnalysisRuntime {
     return [...new Set([...this.collection.slices.get(file)?.dependencies.keys() ?? [],
       ...this.collection.consumers.get(file) ?? [], ...this.reachable(file, this.componentDependencies),
       ...this.reachable(file, this.componentConsumers)])];
+  }
+  /** queryDependencies of every file in `files` together, from one walk that starts at all of them. Never one walk per
+   * file: a file near the top of a large app (its shell) reaches most of it, and a list per file is files × files paths
+   * (about 13 million on a 3,600-file app, which ran the dev server out of memory on one write). */
+  queryDependenciesOf(files: Iterable<string>): Set<string> {
+    const roots = [...new Set(files)], out = new Set<string>();
+    for (const file of roots) {
+      for (const dependency of this.collection.slices.get(file)?.dependencies.keys() ?? []) out.add(dependency);
+      for (const consumer of this.collection.consumers.get(file) ?? []) out.add(consumer);
+    }
+    for (const edges of [this.componentDependencies, this.componentConsumers] as ReadonlyMap<string, Iterable<string>>[]) {
+      const seen = new Set(roots), queue = [...roots];
+      for (let i = 0; i < queue.length; i++) for (const next of edges.get(queue[i]!) ?? []) {
+        if (seen.has(next)) continue;
+        seen.add(next); out.add(next); queue.push(next);
+      }
+    }
+    return out;
   }
   get compilerFiles(): string[] { return this.compiler.graph?.files ?? []; }
   sourceHash(file: string): string | undefined {
@@ -209,10 +255,20 @@ export class WarmState implements AnalysisRuntime {
       }
       return value;
     }
-    if (name === 'collect') { this.snippet = !!inputs[2]; return await this.collection.collect(inputs[0] as string[], this.config, inputs[2] as Parameters<CollectionState['collect']>[2]) as T; }
+    if (name === 'collect') {
+      this.snippet = !!inputs[2];
+      // a whole-app collection builds each file's component shard as it goes (buildShard); componentGraph ends the batch
+      const prebuild = !inputs[2] && /\.[jt]sx?$/;
+      if (prebuild && !this.componentMemory.batch) this.componentMemory.batch = componentBatch();
+      return await this.collection.collect(inputs[0] as string[], this.config, inputs[2] as Parameters<CollectionState['collect']>[2],
+        prebuild ? file => { if (prebuild.test(file) && !this.shards.has(file)) this.buildShard(file, this.config); } : undefined) as T;
+    }
     if (name === 'project' || name === 'files') {
       const value = await this.memo(name, [], compute);
-      if (name === 'project') for (const file of (value as { inputs: string[] }).inputs) { this.dependencies.add(file); this.configurationFiles.add(file); }
+      if (name === 'project') {
+        for (const file of (value as { inputs: string[] }).inputs) { this.dependencies.add(file); this.configurationFiles.add(file); }
+        for (const [file, imports] of (value as { entryGraph?: [string, string | null][] }).entryGraph ?? []) { this.dependencies.add(file); this.entryGraph.set(file, imports); }
+      }
       // Snippets may extend the file list or change file counts. Never mutate
       // the warm project's identity through the cold pipeline's local view.
       return structuredClone(value);
@@ -261,40 +317,7 @@ export class WarmState implements AnalysisRuntime {
     // one file at a time, but one set of resolvers, resolutions and directory listings for the whole build
     if ([...wanted].some(file => !this.shards.has(file))) this.componentMemory.batch = componentBatch();
     try {
-    for (const file of wanted) {
-      if (this.shards.has(file)) continue;
-      let text = ''; try { text = readFileSync(file, 'utf8'); } catch { /* Component discovery reports this file. */ }
-      const hash = sourceHash(text);
-      const dependencies = new Set<string>();
-      const queue = [file], visited = new Set<string>();
-      for (let i = 0; i < queue.length; i++) {
-        const source = queue[i]!;
-        if (visited.has(source)) continue;
-        visited.add(source);
-        if (this.dependencyEdges.has(source)) continue;
-        let text: string; try { text = readFileSync(source, 'utf8'); } catch { continue; }
-        const edges = (this.collection.specifiers.get(source) ?? dependencySpecifiers(source, text)).flatMap(id => {
-          const target = this.componentResolver.resolveFileSync(source, id).path;
-          return target && /\.[cm]?[jt]sx?$/.test(target) ? [target] : [];
-        });
-        this.dependencyEdges.set(source, edges);
-        for (const path of this.componentDependencies.get(source) ?? []) this.componentConsumers.get(path)?.delete(source);
-        this.componentDependencies.set(source, new Set(edges));
-        for (const target of edges) {
-          this.dependencies.add(target);
-          let users = this.componentConsumers.get(target);
-          if (!users) this.componentConsumers.set(target, users = new Set());
-          users.add(source);
-          if (!this.dependencyEdges.has(target) && queue.length < 20_000) queue.push(target);
-        }
-      }
-      for (const target of this.componentDependencies.get(file) ?? []) dependencies.add(target);
-      const shard = discoverComponents(this.root, [file], config, undefined, false, this.collection.programs, true, this.componentMemory);
-      for (const identity of shard.components) { dependencies.add(identity.source.file); this.dependencies.add(identity.source.file); }
-      for (const path of this.componentDependencies.get(file) ?? []) this.componentConsumers.get(path)?.delete(file);
-      for (const path of dependencies) { let users = this.componentConsumers.get(path); if (!users) this.componentConsumers.set(path, users = new Set()); users.add(file); }
-      this.shards.set(file, shard); this.componentHashes.set(file, hash); this.componentDependencies.set(file, dependencies);
-    }
+    for (const file of wanted) if (!this.shards.has(file)) this.buildShard(file, config);
     } finally { delete this.componentMemory.batch; }
     const graph = this.mergeGraph(files, this.shards);
     this.collection.programs.clear();
@@ -306,6 +329,44 @@ export class WarmState implements AnalysisRuntime {
       return this.globalGraph.graph;
     }
     this.globalGraph = { key, graph }; return graph;
+  }
+  /** One file's component shard and the import edges it reaches. Built right after the file is collected when the
+   * whole app is collected (its parsed code is still in memory then: building every shard afterwards parsed and read
+   * each file again, about 3 s on a 3,600-file app), otherwise by componentGraph for the files that lack one. The
+   * order is the files' order either way, so the shards are the same. */
+  private buildShard(file: string, config: PlumbConfig): void {
+    // the text collection just parsed, when it is still held; otherwise the file
+    let text = this.collection.programs.get(file)?.text ?? ''; if (!this.collection.programs.has(file)) try { text = readFileSync(file, 'utf8'); } catch { /* Component discovery reports this file. */ }
+    const hash = sourceHash(text);
+    const dependencies = new Set<string>();
+    const queue = [file], visited = new Set<string>();
+    for (let i = 0; i < queue.length; i++) {
+      const source = queue[i]!;
+      if (visited.has(source)) continue;
+      visited.add(source);
+      if (this.dependencyEdges.has(source)) continue;
+      let text = this.collection.programs.get(source)?.text; if (text === undefined) try { text = readFileSync(source, 'utf8'); } catch { continue; }
+      const edges = (this.collection.specifiers.get(source) ?? dependencySpecifiers(source, text)).flatMap(id => {
+        const target = this.componentResolver.resolveFileSync(source, id).path;
+        return target && /\.[cm]?[jt]sx?$/.test(target) ? [target] : [];
+      });
+      this.dependencyEdges.set(source, edges);
+      for (const path of this.componentDependencies.get(source) ?? []) this.componentConsumers.get(path)?.delete(source);
+      this.componentDependencies.set(source, new Set(edges));
+      for (const target of edges) {
+        this.dependencies.add(target);
+        let users = this.componentConsumers.get(target);
+        if (!users) this.componentConsumers.set(target, users = new Set());
+        users.add(source);
+        if (!this.dependencyEdges.has(target) && queue.length < 20_000) queue.push(target);
+      }
+    }
+    for (const target of this.componentDependencies.get(file) ?? []) dependencies.add(target);
+    const shard = discoverComponents(this.root, [file], config, undefined, false, this.collection.programs, true, this.componentMemory);
+    for (const identity of shard.components) { dependencies.add(identity.source.file); this.dependencies.add(identity.source.file); }
+    for (const path of this.componentDependencies.get(file) ?? []) this.componentConsumers.get(path)?.delete(file);
+    for (const path of dependencies) { let users = this.componentConsumers.get(path); if (!users) this.componentConsumers.set(path, users = new Set()); users.add(file); }
+    this.shards.set(file, shard); this.componentHashes.set(file, hash); this.componentDependencies.set(file, dependencies);
   }
   private mergeGraph(files: string[], shards: Map<string, ComponentGraph>): ComponentGraph {
     const graphs = files.flatMap(file => shards.get(file) ?? []);
@@ -340,7 +401,7 @@ export class WarmState implements AnalysisRuntime {
     if (name === 'components') return this.componentGraph(inputs[1] as string[], inputs[2] as PlumbConfig, inputs[3] as Parameters<WarmState['componentGraph']>[2]) as T;
     if (this.snippet && ['provenance', 'ownership', 'habits', 'imitation'].includes(name)) return compute();
     if (name === 'provenance') return this.judgement.provenance(...inputs as Parameters<JudgementState['provenance']>) as T;
-    if (name === 'ownership') return this.judgement.ownership(inputs[0] as Declaration[], inputs[1] as ComponentGraph, this.shards, this.config) as T;
+    if (name === 'ownership') return this.judgement.ownership(inputs[0] as Declaration[], inputs[1] as ComponentGraph, this.shards, this.config, inputs[3], inputs[4] as LoweredProps) as T;
     if (name === 'habits') return this.judgement.habits(inputs[0] as Declaration[], this.config, inputs[2] as Map<Declaration, string>, inputs[3] as string[], inputs[4] as boolean | undefined, inputs[5] as ReadonlySet<Declaration>) as T;
     if (name === 'imitation') return this.judgement.imitation(inputs[0] as ComponentGraph, this.shards, inputs[1] as Parameters<JudgementState['imitation']>[2], inputs[2] as Declaration[], this.config) as T;
     return compute();
