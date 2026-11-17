@@ -458,6 +458,65 @@ A file judged alone takes 39 ms on average (2.6 s before the session held librar
 Proof: for all 456 sampled files, the findings judged alone equal the full report's findings for that file (fingerprint
 over key, rule, message, severity, status and every site with its ledger key and status).
 
+## Judge each input once: design for sign-off (2026-11-17)
+
+Status: proposed. The owner picked this from four larger directions (judge each input once, one query engine, a
+content-addressed fact store, a native core).
+
+### Measured on algorecall (vm-agent, one full analysis)
+
+| What | Count |
+|---|---|
+| judged declarations | 304,612 (256,863 from classes, 36,131 inline, the rest from stylesheets) |
+| class sites | 255,132 |
+| distinct (class as written, variant conditions) | 26,419, about 11 times fewer |
+| distinct (property, value, conditions, origin) | 22,396, about 14 times fewer |
+| distinct, adding the owning component's name | 32,819, about 9 times fewer |
+| findings | 2,935 over 75,063 sites; provenance is about 95% of the sites |
+
+Full-analysis time by phase (the same run): component discovery 13.4 s, provenance 8.6 s, project discovery 3.6 s,
+class existence 3.5 s, expanding class sites into declarations 3.5 s, stylesheets 2.3 s, habits 2.1 s. Start to
+ready is about 66 s.
+
+### What a verdict depends on
+
+A provenance verdict (src/rules/provenance.ts) reads: the family, the property, the value, the origin, whether it is
+opaque or a runtime step, the class as written (some titles quote it), the decision record and the project's
+definitions (both app-wide), and the Tailwind variables set locally on the same element (`variablesFor`: only
+`--tw-*` declarations in the same file, owner and conditions; usually none). Nothing else about the site. So two sites
+with the same class, conditions and local variables get the same verdict, and the site only decides where the
+finding is drawn.
+
+### The design
+
+1. **A verdict table per rule family.** The key is exactly the inputs above, with the local-variable scope as a
+   signature. Judging a declaration is a table lookup; a miss judges it once. The site keeps a pointer to its verdict,
+   and a finding is a verdict with its list of sites, which is the shape findings already have (grouped by key).
+   Provenance first: it is 8.6 s and 95% of the finding sites.
+2. **Expansion once per class.** Today each class site copies every declaration of its class with the site's own
+   fields (256,863 objects). A site becomes a pair (site, class's declarations) and the copy is made only when a
+   reader needs the object.
+3. **Existence once per class.** Whether a class exists is a property of the class and the compile, not the site.
+4. **The same rule for component discovery (13.4 s).** The graph is built file by file, and each file resolves again
+   the components it shares with thousands of others. Resolutions and identities already outlive one file; the
+   rest of the per-file work would be keyed by the component, not the importing file. This needs its own reading
+   before a design.
+
+### Proof required
+
+The full report's findings, fingerprinted as in the passes above (every finding and site, with ledger key and
+status), identical before and after, on algorecall and crafting-ui; and the per-file proof (456 files) still equal.
+
+### Expected (guesses until measured)
+
+Provenance from 8.6 s to about 1 s, expansion and existence from 7 s to about 1 s: about 13 s off start-up and off
+every full report. Memory: fewer copied declaration objects; the size is not measured.
+
+### Order
+
+Provenance's verdict table first, measured and proven, then expansion, then existence; component discovery after its
+own reading.
+
 ## Expected (guesses until measured)
 
 - Step 1 removes most of the 781 MB of trees and a share of the 234 MB that points into them.

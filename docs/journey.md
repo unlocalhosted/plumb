@@ -1971,6 +1971,12 @@ field is empty). The table of five writes, before and after. The Next table: eig
   files give the same findings alone as in the full report; algorecall's worker holds 556 MB released (638 MB after
   judging those 456 files) instead of 866 MB; a file is judged in 39 ms. Media hook: the heap line dropping a minute
   after start.
+- **Judge each input once, measured and designed (2026-11-17):** the owner asked for bigger ideas and picked judging
+  each distinct input once. One count on algorecall: 304,612 judged declarations come from about 26,400 distinct
+  inputs (the class as written and its conditions), about 11 times fewer. A verdict reads nothing else about the site
+  except local Tailwind variables on the same element. Timing the full analysis showed where it pays (provenance 8.6
+  s, expansion and existence 7 s) and found a bigger target: component discovery, 13.4 s. The design (a verdict table
+  per rule family) is in the analysis-memory brief, waiting for sign-off.
 
 ## Open gaps
 - Sweeps covered six algorecall pages and thirteen crafting-ui pages.
