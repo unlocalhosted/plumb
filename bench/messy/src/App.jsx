@@ -60,6 +60,16 @@ function Sidebar() {
 
 // ---------- top bar ----------
 function TopBar() {
+  // written the way an LLM writes it: a loading state, the request, the happy path, and nothing for a failure
+  const [creating, setCreating] = useState(false);
+  const [created, setCreated] = useState('');
+  async function createProject() {
+    setCreating(true);
+    const res = await fetch('/api/projects', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: 'Untitled project' }) });
+    const project = await res.json();
+    setCreated(project.name);
+    setCreating(false);
+  }
   return (
     <header className="h-14 border-b border-gray-200 bg-white px-6 flex items-center justify-between">
       <div className="flex items-center gap-2 bg-gray-100 rounded-lg px-3 h-9 w-80">
@@ -69,7 +79,11 @@ function TopBar() {
       </div>
       <div className="flex items-center gap-3">
         <button className="p-2 rounded-full hover:bg-gray-100 text-gray-500 transition-colors duration-300"><Bell size={20} /></button>
-        <button className="disabled:opacity-50 flex items-center gap-1.5 bg-accent text-white text-sm font-medium px-3.5 py-2 rounded-[10px]"><Plus size={16} stroke={2.5} />New project</button>
+        {created && <span className="text-sm text-gray-500">Created {created}</span>}
+        <button onClick={createProject} disabled={creating} className="disabled:opacity-50 flex items-center gap-1.5 bg-accent text-white text-sm font-medium px-3.5 py-2 rounded-[10px]">
+          {creating ? <span className="w-4 h-4 rounded-full border-2 border-white/40 border-t-white animate-spin" /> : <Plus size={16} stroke={2.5} />}
+          {creating ? 'Creating…' : 'New project'}
+        </button>
         <img alt="" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32'%3E%3Crect width='32' height='32' fill='%23d9c7f0'/%3E%3C/svg%3E" className="w-8 h-8 rounded-full" />
       </div>
     </header>

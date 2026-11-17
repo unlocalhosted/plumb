@@ -4,6 +4,7 @@ import { request } from './src/api.js';
 import { mountOverlay } from './src/widget.js';
 import { craftRun } from './src/craft-run.js';
 import { hostSynced, whenHydrated } from './src/hydration.js';
+import { readBreaks, showBreakIt, hideBreakIt, toggleBreakIt } from './src/breakit.js';
 
 window.__plumb = {
   locate,
@@ -15,6 +16,8 @@ window.__plumb = {
   overlay: mountOverlay(),
   // The craft engine over the whole page, as plain JSON (plumber craft).
   craft: options => craftRun(window.__plumb.overlay, options),
+  // Break the screen on purpose (Alt+S): longer words, and what breaks under them.
+  breakIt: { read: readBreaks, show: showBreakIt, hide: hideBreakIt, toggle: toggleBreakIt },
   // Resolves once Plumb has finished its first read of the project (the dev server never waits for it) and the page is
   // one that can be read: React has hydrated it, and on Next the host's client has had its first sync (a reload on a
   // changed bundle hash restarts the overlay with the page). Both bounded, so a page without React still resolves.

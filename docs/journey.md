@@ -2014,6 +2014,241 @@ field is empty). The table of five writes, before and after. The Next table: eig
   one regression was mine: files of shared class strings, judged alone, lost their findings' sites in the files that
   use them (reading-cache); the equality proofs had compared sites one file at a time and could not see it. Those
   files read the whole-app report again. The 36 older failures are in the backlog.
+## Breaking the screen on purpose: longer words (2026-11-15)
+- **The itch:** a post the owner shared: "Three ways to break a screen before your users do: double the length of
+  every label, turn the system text size all the way up, make the main action fail." The owner asked where this fits
+  in plumber and what the most natural way to bring it is, then: "labels first".
+- **The system behind it:** plumber judges the screen as it is drawn. None of the three is a state a page reaches by
+  itself, so no check could ever see them. Plumber has to put the page into the state, then judge it.
+- **What we chose and why:** one "Break it" bar with toys you switch on, on the live page. The page stays usable,
+  because the third toy (a failing action) only means something when you press the real button yourself. The first
+  toy, Longer words, grows every run of words to about twice its length in accented letters, the way a German or
+  Finnish translation would, and you watch it grow. Placeholders too, and words React draws while it is on. Then
+  plumber marks only what broke because of it: each check runs before and after, so what was already broken is not
+  this toy's news. Four kinds: words cut off by a box that hides overflow, words that run out of the box drawn round
+  them or off the screen, words that run into other words, and a page that now scrolls sideways. Turning it off puts
+  every word back as it was, unless the app changed it in the meantime.
+- **Dead ends, found on crafting-ui:** the first run gave 18 breaks and almost all were wrong. A wide section that
+  hides overflow was blamed for every word inside it, so a cut now counts only when the element's own words go past
+  the edge. A hero drawn one letter per element had each letter doubled, so runs of fewer than three letters are now
+  treated as art and left alone. Words kept for screen readers in a 1px box read as cut off, so those are skipped.
+  A sticky header read as running into the content scrolled under it, and a carousel's last card read as running off
+  the screen; both are now ignored. The coral hatch first sat over the words it marked, so it is now a band round the
+  box.
+- **The fix and the proof:** on crafting-ui's home page one break is left, and it is real: the "Grab a letter and
+  pull" hint wraps onto a second line and lands on the "px · cap" readout under it (Play.tsx:92). Turning the toy
+  off leaves no accented letter on the page. Not yet: a heading split into one element per letter never grows,
+  button values and aria-labels are not stretched, and nothing has been tested.
+- **Media hooks:** docs/qa/break-it-longer-words.png (the hint running into the readout, with the band round it). A
+  screen recording of the words growing and the screen giving way would show it best.
+- References: "Three ways to break a screen" in docs/references.md.
+
+## Break it stretches only words that can change (2026-11-15)
+- **The itch:** the owner, on the first version of Longer words: "you are being dumb this is hardcoded text on
+  single use components, this kind of stress testing would work better on something reusable, something user would
+  interact with and for hardcoded maybe like simulating in like small width and such".
+- **The system behind it:** Longer words treated every word on the page as the same kind of thing. A heading typed
+  once into a one-off component never changes at runtime, so doubling it tests nothing real. The words that do
+  change are the ones that flow in: a label passed into a reusable part, an item from a catalogue, a count, a name.
+  Fixed copy still meets stress, but from the space around it (a narrow screen, bigger text), not from its words.
+- **What we chose, confirmed by the owner:** every run of words is traced to where it is written, with the lookup
+  that text editing already uses, and sorted into fixed copy (typed in the component that draws it), passed in (a
+  string at a use site), or data (no single string in source, or one kept in another file). Items drawn from one line
+  of source are one list and share a kind, so a list typed into its own component stays fixed and a list fed from
+  elsewhere is content. Only content is stretched. Placeholders are left for the typing toy.
+- **Dead ends:** marking every repeated line as content counted 83 of 103 runs on crafting-ui's home page as
+  content, including the hero's own labels, which are typed in. Giving a list its items' majority kind fixed it.
+- **The proof:** crafting-ui's home page, a marketing page: 30 runs can change (counts like "7 skills", the hero's
+  tabs, items passed in), 73 are fixed copy and stay put; the one break left is the hint that runs into the readout.
+  Plumber's showcase index: 48 principle names from its catalogue stretch, 9 section headings stay; two names get cut
+  off at 612px (Principle.jsx:604). Sorting a page takes 1 to 5 seconds (about 50ms per lookup, eight at a time).
+- **Not yet:** the width and text-size toys for fixed copy; extreme content (empty, one letter, nine digits, a long
+  URL, emoji); typing into fields; lists at 0, 1 and 100; a failing or slow main action. All four were chosen by the
+  owner for the first version.
+- **Media hooks:** docs/qa/break-it-only-what-changes.jpg (the showcase index with only the catalogue names
+  stretched and the two cut ones ringed).
+
+## Break it: narrower, and bigger text (2026-11-15)
+- **The itch:** the owner, on fixed copy: "for hardcoded maybe like simulating in like small width and such", then
+  picked "Width and text size" as the next toy.
+- **What we chose and why:** two toys beside Longer words, one on at a time. Narrower squeezes a copy of the page
+  (the same URL in a frame, so the app's own breakpoints fire, which squeezing the live page cannot do) from the
+  window's width down to 320px, a step each frame, so you watch it give way. Each break is caught at the width where
+  it starts; stepping to a break puts the copy at that width with the break ringed. Bigger text doubles the root text
+  size, which is what a browser's text-size setting does, and marks text that stays the same size: it is set in
+  pixels. One note per class that does it, with its rem twin (text-[11px] → text-[0.6875rem]) and every place ringed.
+- **Dead ends:** screen-reader-only words (a 1px clipped box) and labels a narrow layout hides with opacity read as
+  words running into words; both are skipped now. The same collision was said from both sides; now once. A copy with
+  a transparent page showed the real page through it; the copy now carries the page's ground. In a background tab
+  the browser stops animation frames and the sweep stalled; it now falls back to a 50ms timer.
+- **The proof:** crafting-ui's home page: narrower, nothing breaks from 873px to 320px (it already adapts). Bigger
+  text: 52 runs of words stay the same size, from 3 causes (text-[11px] in 41 places, text-[12px] in 7, text-[9px]
+  in 4), while the headline doubles; the page also starts scrolling sideways by 61px. Plumber's showcase index:
+  narrower found principle names cut off from 457px down (Principle.jsx:604). Those names end in an ellipsis on
+  purpose; the owner ruled a designed cut is not a break ("No, skip ellipsis"), so text ended in an ellipsis or a
+  line clamp is skipped, and the index now reads "nothing breaks" from 873px to 320px. A sweep takes about 3 seconds.
+- **Not yet:** plumber's own overlay loads inside the copy and shows its "Hold Alt" hint there; the sideways scroll
+  under bigger text does not say what causes it; no tests.
+- **Media hooks:** docs/qa/break-it-narrower.jpg (the copy at 457px, the cut name ringed),
+  docs/qa/break-it-bigger-text.jpg (the doubled headline beside the labels that stay 11px). A recording of the
+  squeeze would show it best.
+
+## Break it: extreme content (2026-11-15)
+- **The itch:** the owner picked "extreme content" among the first toys: what a slot that can change might really
+  hold, not just a longer version of today's words.
+- **What we chose and why:** only the places that can change (the same sort as Longer words: passed into reusable
+  parts, lists fed from elsewhere, data) get five kinds of content in turn: no words, one letter, 60 letters, one
+  unbroken word (a link or an ID) and, where there is a number, a nine-digit one. Each break says which content did
+  it, and stepping to it puts that content back on the page so you see it. A button or badge that shrinks to a
+  sliver when it is empty counts as a break. The whole page is measured, not only what is on screen, because a
+  person scrolls. A page that scrolls sideways now names what reaches past the edge, for every toy.
+- **Dead ends:** the first run found nothing, though the hero's tabs were visibly pushed out of their frame: the cut
+  check only looked four levels up for a box that clips, and the frame was further up. Then "cap height runs into
+  x-height" appeared under every kind of content, even no words: the two labels already sat a pixel or two apart and
+  any relayout tipped them over. Words that already touch before a toy are no longer its news. Then a collision in
+  plain sight was missed because it was below the fold.
+- **The proof:** crafting-ui's home page, 30 places that can change: 10 breaks, the same on two runs in a row. At 60
+  letters the hero's "Pull" tab runs out of its box and the page scrolls sideways (Plumber.tsx:138); as one unbroken
+  word the contents' counts ("8 ways", "7 live of 112") push the page 95px sideways and run into the next column
+  (Contents.tsx:149). No words and one letter break nothing here. The probe takes under a second; sorting where words
+  come from takes 5 to 13 seconds the first time.
+- **Not yet:** emoji and right-to-left words; one cause seen under two kinds of content is two notes; no tests.
+- **Media hooks:** docs/qa/break-it-extreme-content.jpg (the counts as unbroken words, "8 ways" ringed past the edge).
+
+## Break it: the main action fails, or is slow (2026-11-15)
+- **The itch:** the third line of the post the owner shared: "make the main action fail". The owner chose it as a
+  first-version toy, with "or is slow".
+- **What we chose and why:** plumber does not guess which button is the main one; you press the one you care about,
+  as a person would. The requests that press sends (fetch and XHR, never plumber's own or the dev server's) get a
+  server error: a 500 with a plain-text page, which is what a server that fell over sends, not the JSON the app hoped
+  for. In Slow they are held four seconds and then let through. Then plumber watches for five seconds and says what
+  a person meets: whether any words appeared saying it failed, whether the button came back or stays disabled or
+  still says "Creating…", whether a spinner keeps going; in Slow, whether anything showed it was working and whether
+  the button could be pressed twice. If the press sent nothing plumber could fail, it says so and why that may be.
+- **How we found something to test it on:** none of the apps here has a button that sends a request through fetch.
+  algorecall saves over a WebSocket (Convex), which this toy cannot reach yet. So the messy dashboard bench (written
+  the way an LLM writes one) got its "New project" button wired the way an LLM writes it: a loading state, the
+  request, the happy path, and nothing for a failure.
+- **The proof:** pressing "New project" with Fails on: three things a person would trip on, each ringed on the page:
+  nothing tells them it failed, "New project" stays disabled (it still says "Creating…"), and its spinner keeps
+  spinning (App.jsx:83). With Slow on: it handled it, showing it was working and refusing a second press.
+- **Dead end:** a press on Break it's own bar counted as "the button you want to test", because the page-side check
+  cannot see inside plumber's shadow DOM; presses in the bar are now left out.
+- **Not yet:** WebSockets (Convex, Firebase, Supabase realtime), a form that submits by reloading the page, and an
+  offline mode where the request never answers at all. In Slow the request really goes through after four seconds, so
+  it does whatever the button does. No tests.
+- **Media hooks:** docs/qa/break-it-action-fails.jpg ("Creating…" stuck with its spinner, ringed, and the first of
+  the three notes).
+
+## Break it: typing into fields (2026-11-15)
+- **The itch:** the owner chose "typing into fields" as a first-version toy: what a field and its neighbours do with
+  what people really type.
+- **What we chose and why:** every field on the page gets, in turn, a long line, a pasted link, several pasted lines
+  (in a textarea) and nothing. Each is entered the way typing is, so the app reacts (a search filters), then taken
+  back. Plumber then looks for new breaks, a field that grows and moves its row, lines a box hides with no way to
+  scroll, words running under an icon drawn inside the field, and a list a search empties with nothing saying why.
+  A field that grows is the cause, so what it pushes off the screen is said in the same note, not as notes of its
+  own. Stepping to a note puts that value back in the field so the break is on screen; turning the toy off puts the
+  field's own value back.
+- **Dead ends:** the first run on the vocabulary page said typing pushed the page 309px sideways. It was the browser
+  pane being shown and hidden mid-run: the window changed size, not the content. A step where the window resizes is
+  now thrown away, here and in Extreme content. One growing field first came out as ten notes. Jumping to its note
+  scrolled the page sideways along the 1,200px field into empty space; jumps are now up and down only.
+- **The proof:** crafting-ui's templates page: "Your topic" sits inline in "Make a reel about ___" and grows with what
+  is typed; a long line or a pasted link makes it up to 1232px wider, pushes the things after it off the screen and
+  makes the page scroll sideways (TemplatesPage.tsx:209). The vocabulary page and the icons page handle all four
+  values (the vocabulary search says "No motion match …" when nothing matches), so nothing is said about them.
+  Turning the toy off left the field at "why we get goosebumps" and the page 1024px wide, as before.
+- **Not yet:** typing key by key (some fields only react to keystrokes), number and date fields, editable regions,
+  pasting rich text; no tests.
+- **Media hooks:** docs/qa/break-it-typing.jpg (the long line filling the reel card and running off the screen).
+
+## Break it: lists at none, one and a hundred (2026-11-15)
+- **The itch:** the last first-version toy the owner picked: what a list does with no items, with one, and with a
+  hundred. A page under development almost always shows the handful of items its author had.
+- **What we chose and why:** hiding items on the page would only fake an empty list; the app's own empty message, or
+  its crash, appears only when its data is empty. So plumber walks from a list's first item up through React to the
+  part that holds the array the list is drawn from, either a prop passed in (a reusable part's `steps`, `items`,
+  `scenes`) or the part's own state. Then it hands the part, through React's own override (the one React DevTools
+  edits props with), no items, one item and a hundred copies, each round of copies given its own id so React's keys
+  stay apart. After each size: new breaks, a space left blank with nothing saying why, one item stretched across the
+  row, "1 items", a hundred that take more than 200 ms to draw, a box that hides most of the hundred with no way to
+  scroll, and a page that crashes. An empty list passed into a reusable part gets different advice from empty data:
+  the part should leave itself out or say so; for data, the page owes the person a line on how to add one. A list
+  built inside a part from a constant is the author's copy, so it is left alone and only counted.
+- **Dead ends:** the first run said "each one was 0px wide": the item it measured had been replaced when React drew
+  the list again; items are now found again by the line that draws them after each size. A step-name ticker that
+  crossfades two words through each other was reported as words running into words; words partly faded no longer
+  count. A second run straight after the first found no lists, because it looked before React had drawn the items
+  back. The 100-item timing first included plumber's own settling pause.
+- **The proof:** crafting-ui's templates page, two runs, the same three notes: with no steps, the step rail leaves an
+  empty frame; with one step, that step stretches from 44px to 496px wide; with no questions, the question list
+  leaves an empty space. On the vocabulary page, handing the motion player no scenes crashes the whole page: it goes
+  white, and plumber says `ExamplePlayer` throws "Cannot read properties of undefined (reading 'versions')" at
+  player.tsx:453. A crash the page cannot recover from stops the run, and turning the toy off reloads the page. The
+  messy bench's lists are all constants typed into the file, so the toy rightly leaves them alone.
+- **Not yet:** a list drawn from a value computed inside the part (a filter, a memo) is not reached; a production
+  build has no override, so the toy says to use the dev server; a crash that takes the page down is reported but the
+  later lists are not tried; no tests.
+- **Media hooks:** docs/qa/break-it-lists-crash.jpg (the vocabulary page gone white, the note naming the line).
+
+## Break it: a fix is judged by the person, not by the number (2026-11-16)
+- **The itch:** asked for before-and-after pictures of the worst breaks, I first sent the normal page next to the
+  broken one. The owner wanted the broken page next to the same page fixed. Then, looking at the fixed pictures, the
+  owner asked "from a ux point can you check if youve made good decisions?" Most were not good.
+- **How we found it:** reading the five fixed pictures as a designer. Tab names cut off with "…" are harder to choose
+  between. The topic field set to scroll hides most of a sentence the person typed and needs to read back. A step
+  rail kept at 44px with one step is a stray dash next to Pause. The bigger-text "after" still had labels on top of
+  each other. And the tab-name break could never happen: those four names are typed once by the author.
+- **The system behind it:** the worst case was picked by how dramatic it looked, not by whether real content could
+  make it, and a fix was called done when the measurement stopped failing. Break it's own advice had the same habit:
+  "give it a width and let the text scroll" and "keep its width when it is on its own", whatever the part is for.
+- **What we chose and why:** two rules. Stress only what real content or real people could do in that place. Judge a
+  fix by what the person needs in that state: to read back what they typed, the hero to stay a hero, a rail that
+  means something. In Break it that became three changes. Labels of controls (tabs, options, menu items) looked up
+  from a list the author typed, even one kept in another file, are now fixed copy, so Extreme content leaves them
+  alone. A field set inside a sentence gets "let the words wrap onto the next line, a box that grows down, not
+  across" instead of "scroll". A list whose items have no words (steps, dots) gets "with one there is nothing to step
+  through: leave the part out" instead of "keep its width".
+- **Dead ends:** for the narrow phone, letting the hero's lines wrap kept it large but left one word per line over
+  eight lines and set the type guides crooked. The hero is a type specimen whose hand-set line breaks are the design,
+  so scaling it to fit was right. Putting the guide names inside the frame laid them over the words; on a phone they
+  hide, as the site already hides the hint.
+- **The fix and the proof:** on crafting-ui, the four tab names are now fixed copy (they were "data"); Typing on the
+  templates page gives the wrap advice for the topic field; Lists gives "leave the part out" for the one-step rail.
+  Four pairs show the page broken under stress next to the same stress with the fix applied in the page (crafting-ui
+  is not ours, so its source is unchanged): bigger text, a 320px phone, a long topic, one step.
+- **Not yet:** the fixes in the pictures were applied by hand in the browser; Break it does not apply or preview its
+  advice. Words running out of their box still get no advice. Narrower missed the cut-off headline, because a box
+  that clips its text is neither an overflow nor an overlap. No tests.
+- **Media hooks:** docs/qa/break-it-fixed/1-bigger.jpg, 2-narrower.jpg, 3-typing.jpg, 4-lists.jpg (broken under
+  stress next to fixed).
+
+## Break it: Broken, then Fixed, on the page (2026-11-17)
+- **The itch:** after the pictures of fixes made by hand, the owner said "Yes, build that" to Break it showing its
+  own fix on the page when you step to a note. Advice in words asks the person to picture the result; the page can
+  show it.
+- **What we chose and why:** a Broken / Fixed switch on the note line, and the F key. Fixed applies the note's advice
+  to the live page, under the same stress, and Broken puts the page back. It appears only where plumber has a fix to
+  show: text sizes in pixels (the rem class, or rem on the elements), a field that grows as you type (wrap inside a
+  sentence, or keep its width and scroll for a form field), and lists (leave the part out when its items have no
+  words or it was handed none; keep its width when the one left has words). A crash, a failed action and words
+  running out of their box show no switch, because plumber has no fix to show for them yet. The ring of a fixed note
+  turns mint and loses its hatch.
+- **A fix is judged like the stress:** after applying it, Break it measures the page again, and anything newly broken
+  is said in the note and ringed in coral. Without that, the switch would claim "fixed" over a page that still breaks.
+- **Dead ends:** "leave the part out" first hid the whole step part, its title and text too; it now takes out only
+  the list and the controls that serve it (the rail and its Pause), stopping at anything with words of its own. The
+  wrap message read "keeps its width" because the check for "inside a sentence" ran after the fix had changed the
+  page; it is now asked first. The check after the fix first ran while the page was still moving and named the
+  wrong thing; it now waits for the page to settle. Runs in a hidden browser pane gave the page no width and every
+  list "scrolled sideways"; the runs were redone at a set size.
+- **The proof:** on crafting-ui. Typing: Fixed wraps the long topic inside "Make a reel about …" and the Start from
+  buttons come back. Lists: Fixed takes out the one-step rail and Pause and keeps "Check the topic". Bigger text: Fixed
+  makes the 11px labels rem, then says the "83 px · cap 59" label now runs into the hint, and 6 more things.
+- **Not yet:** the fix is a preview in the page, not a change to source; words running out of their box, a failed
+  action and a crash have no fix to show; Narrower's copy has no switch; no tests.
+- **Media hooks:** docs/qa/break-it-switch/1-typing.jpg, 2-lists.jpg, 3-bigger.jpg (Broken next to Fixed).
 
 ## Open gaps
 - Sweeps covered six algorecall pages and thirteen crafting-ui pages.
@@ -3130,6 +3365,17 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - The 152 checks from Chrome's guides are on main, with their tests, after a full suite run; a blocking-script false hit that every Next app would have seen is fixed on the way ([entry](#the-checks-from-chromes-guides-go-to-main-2026-11-14)).
 - **React Plumber 0.5.0 is released on GitHub** (tag `v0.5.0`, 2026-11-14): Alt+B X-ray with a readable card that waits for you to stop, a change lands in the class that is showing, resize by edges, repeated parts change every copy, big pages stay smooth. Proof: the full suite on vm-agent, 1061 passed; the 3 files that failed under load passed alone (14 of 14). The warm start that reached main the same day is held for 0.6.0, so GitHub's main stops at the tested commit. npm publish is the owner's step.
 - The speed work is on main: plumber stays out of the way on big pages (scroll at 53 of 60 frames a second with it open, no long freeze while it reads) and the server keeps what it learned between starts ([entry](#the-speed-work-lands-on-main-2026-11-14)).
+## Shipped · 2026-W47
+- In Break it, press F on a note and plumber shows its fix on your live page under the same stress, then checks the page again and says what the fix itself breaks; on crafting-ui a long topic wraps inside its sentence, a one-step rail leaves itself out, and 11px labels grow in rem ([entry](#break-it-broken-then-fixed-on-the-page-2026-11-17)). On its own branch.
+
+## Shipped · 2026-W46
+- Break it's advice now depends on what the part is for: a field inside a sentence is told to wrap, not scroll, so a person can read back what they typed; a rail of wordless steps with one step is told to leave itself out; and tab and menu names the author typed are no longer stretched as if they were content ([entry](#break-it-a-fix-is-judged-by-the-person-not-by-the-number-2026-11-16)). On its own branch.
+- Break it's Lists toy hands every list on your page that is fed data or passed in no items, one, and a hundred, through React itself, so the app draws its real empty state and its real crowd; on crafting-ui it found a page that crashes white when a player gets no scenes, and a step that stretches tenfold when it is alone ([entry](#break-it-lists-at-none-one-and-a-hundred-2026-11-15)). On its own branch.
+- Break it's Typing toy puts a long line, a pasted link, pasted lines and nothing into every field on your page, the way typing does, and says what the field and its neighbours do; on crafting-ui it found a topic field that grows 1232px and drags the page sideways ([entry](#break-it-typing-into-fields-2026-11-15)). On its own branch.
+- Break it's Action fails toy: press the button you care about and plumber makes its request fail (or take four seconds), then says what a person would meet: no message, a button stuck on "Creating…", a spinner that never stops, a second press that sends it twice ([entry](#break-it-the-main-action-fails-or-is-slow-2026-11-15)). On its own branch.
+- Break it's Extreme content toy puts no words, one letter, 60 letters, an unbroken link-like word and a nine-digit number into every place on your page that can change, and says which content broke what ([entry](#break-it-extreme-content-2026-11-15)). On its own branch.
+- Break it has two more toys: Narrower squeezes a copy of your page down to 320px and says the width where each thing first breaks; Bigger text turns the reader's text size up to 200% and names the classes that keep text from growing, with the rem class to use instead ([entry](#break-it-narrower-and-bigger-text-2026-11-15)). On its own branch.
+- Press Alt+S and plumber breaks your screen on purpose: the words that can change (items from data, labels passed into reusable parts, counts) grow to twice their length, the way a translation would, and plumber marks only what that broke, on your live page. Copy typed once into a one-off component is left alone ([entry](#break-it-stretches-only-words-that-can-change-2026-11-15)). On its own branch.
 - The ledger's lock can no longer let two writers in when processes die mid-way: a model checker found the hole, the fix was proved in the model, then written, tested between real processes, and merged into main ([entry](#the-lock-put-to-a-model-checker-2026-11-14)).
 - Doing what a check says now provably works: for every check, the fix it advises makes it go quiet and causes no other finding. Two pieces of advice that led straight to the next finding were corrected ([entry](#taking-the-advice-has-to-work-2026-11-14)).
 - Every check from Chrome's guides is now tested both ways: it speaks at the line of its problem, and it stays quiet on the closest right thing. Thirteen tests; one wrong check found and fixed ([entry](#are-the-checks-right-and-does-the-engine-keep-what-they-find-2026-11-14)).

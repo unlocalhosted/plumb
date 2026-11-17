@@ -220,3 +220,8 @@ All free under the Unsplash License, hotlinked from images.unsplash.com as Unspl
   them by cost tier, not recorded time, builds before testing instead of alongside, and runs every file every time.
   The two that would matter most here: running only the tests a change can reach, and scheduling by recorded time.
 - Used in: proposed, not built (docs/backlog.md).
+## 2026-11-15 · "Three ways to break a screen before your users do" (shared by the owner)
+- What: a short post, pasted as text without its author or link: double the length of every label; turn the system text size all the way up; make the main action fail.
+- Why: the owner's words: "Where can we adapt this system in plumber and what's the most intuitive ux to bring this".
+- What it changed: nothing built yet. The first toy, Longer words, is built (Alt+S); the rest are written up in docs/backlog.md under "Breaking a screen on purpose".
+- Used in: overlay/src/breakit.js; journey entry "Breaking the screen on purpose: longer words".
