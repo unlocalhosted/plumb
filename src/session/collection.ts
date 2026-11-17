@@ -4,6 +4,7 @@ import { ResolverFactory } from 'oxc-resolver';
 import { collectClasses } from '../collect/classes.js';
 import type { CollectionMemory } from '../collect/classes.js';
 import type { ClassSite } from '../collect/classes.js';
+import type { SourceProgram } from '../collect/source.js';
 import type { SourceStyles } from '../collect/inline.js';
 import type { ModuleImport } from '../collect/modules.js';
 import { moduleImports } from '../collect/modules.js';
@@ -21,6 +22,20 @@ export function dependencySpecifiers(file: string, text: string, dynamic = false
 
 type Collection = Awaited<ReturnType<typeof collectClasses>>;
 interface Slice { hash: string; dependencies: Map<string, string>; value: Collection }
+/** The parsed files collection shares while it runs: a file imported by its neighbours is parsed once. Only the most
+ * recently used are kept, so a large app never holds every file's syntax tree at once; a dropped one is parsed again. */
+class RecentPrograms extends Map<string, SourceProgram> {
+  constructor(private limit: number) { super(); }
+  override get(key: string): SourceProgram | undefined {
+    const value = super.get(key); if (value === undefined) return;
+    super.delete(key); super.set(key, value); return value;
+  }
+  override set(key: string, value: SourceProgram): this {
+    super.delete(key); super.set(key, value);
+    while (this.size > this.limit) super.delete(this.keys().next().value!);
+    return this;
+  }
+}
 export class CollectionState {
   readonly slices = new Map<string, Slice>();
   readonly dependencies = new Set<string>();
@@ -101,7 +116,7 @@ export class CollectionState {
     const current = new Set(files);
     if (!input) for (const file of this.slices.keys()) if (!current.has(file)) this.slices.delete(file);
     const values: Collection[] = [];
-    this.memory = { programs: new Map(), imports: new Map(), specifiers: new Map(), texts: new Map() };
+    this.memory = { programs: new RecentPrograms(256), imports: new Map(), specifiers: new Map(), texts: new Map() };
     this.parsedFiles = []; this.visitedFiles = [];
     for (const file of files.filter(file => file === input?.file ? input.lang === 'tsx' : /\.[jt]sx?$/.test(file))) {
       values.push(await this.read(file, config, input));

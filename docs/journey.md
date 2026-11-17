@@ -1897,6 +1897,11 @@ field is empty). The table of five writes, before and after. The Next table: eig
   the lookup tables of its build alive, thousands of copies. They are emptied when a build ends. Proof: the component
   graph is byte-identical on algorecall and crafting-ui; the worker's resting heap went from 2.17 GB to 1.26 GB,
   parsed code from 781 MB to 56 MB; the process rests at 2.46 GB. Media hook: the two heap tables side by side.
+- **Start-up no longer holds every file at once (2026-11-17):** step 2. Collection kept every parsed file until the
+  component graph was built, so all 3,649 of algorecall's trees sat in memory together. It now keeps the 256 most
+  recently used. Resident memory varied by 250 MB between identical starts, too much to show the change, so the
+  proof is the smallest heap plumber starts under: 1.6 to 1.8 GB before, 1.25 to 1.4 GB after. Results are
+  byte-identical on algorecall and crafting-ui; start-up stays at about 66 s.
 
 ## Open gaps
 - Sweeps covered six algorecall pages and thirteen crafting-ui pages.

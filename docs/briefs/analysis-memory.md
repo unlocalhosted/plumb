@@ -130,6 +130,27 @@ crafting-ui (37, 8,856), built in one call and file by file. The file-by-file bu
 What is left at the top of the heap: per-file maps in `sync` (110 MB), provenance (81 MB), file texts read twice
 (74 MB and 56 MB), the worker's lookup index (66 MB). Text and maps are steps 3 and 4.
 
+## Step 2, measured (2026-11-17)
+
+Collection shared every parsed file through start-up, so a file imported by many others was parsed once and the
+component pass could reuse them all. That meant every file's tree was in memory at the same moment (3,649 on
+algorecall). The shared store now keeps the 256 most recently used; the component pass parses again what was dropped.
+
+Resident memory moves by about 250 MB between identical starts, so it cannot show this. The measure used instead is
+the smallest heap limit plumber starts under on algorecall, on vm-agent:
+
+| | Starts at | Fails at |
+|---|---|---|
+| before step 2 | 1.8 GB | 1.6 GB |
+| after step 2 | 1.4 GB | 1.25 GB |
+
+Collection results and the component graph, built the way the server builds them, are byte-identical on algorecall
+(228,484 class sites) and crafting-ui. Start-up is about 66 s before and after; building the graph alone takes 9.4 s
+against 6.5 s, the parses the store no longer saves.
+
+This is a cap, not facts: collection still builds whole trees and drops them. Per-file facts for collection wait
+until a profile shows the parse work, not the memory, is the cost.
+
 ## Expected (guesses until measured)
 
 - Step 1 removes most of the 781 MB of trees and a share of the 234 MB that points into them.
