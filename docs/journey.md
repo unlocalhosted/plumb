@@ -1877,11 +1877,16 @@ field is empty). The table of five writes, before and after. The Next table: eig
   ran it past 14 GB until the machine killed it. Still open: plumber needs about 4 to 5 GB just to start on algorecall,
   and at the default heap limit it failed to start in 3 of 7 tries; memory crept 0.8 GB over 12 changes. Media hook:
   the two memory traces, before and after.
+- **Plumber could not start on a large app (2026-11-17):** at node's default heap limit, plumber failed to start on
+  algorecall in 3 of 3 tries on vm-agent. A heap profile of the analysis worker at rest charged 781 MB of its
+  2.2 GB to parsed syntax trees: the component graph's module cache kept every file's whole tree for the life of the
+  session. The cache now keeps the 400 most recently used and parses a dropped one again. Proof: 2 of 2 starts at the
+  default limit, ready in about 70 s, resting at about 2.7 GB. The deeper fix, keeping small facts per file instead
+  of trees, is in the backlog.
 
 ## Open gaps
 - Sweeps covered six algorecall pages and thirteen crafting-ui pages.
-- Plumber needs about 4 to 5 GB to start on algorecall (3,662 files) and fails at the default heap limit about
-  half the time. See "One write could hang the laptop".
+- Plumber rests at about 2.7 GB on algorecall (3,662 files). See "Plumber could not start on a large app".
 Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one list of what plumber does not do yet and the questions waiting for a decision. Add new gaps there, not here.
 
 ### Open gaps from the 0.4.0 release work
