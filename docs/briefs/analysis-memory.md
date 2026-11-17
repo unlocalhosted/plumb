@@ -194,6 +194,30 @@ What would free the texts: results that hold their own short strings instead of 
 else holding a file's text at rest (a write reads the file from disk, as it already does to check it is current).
 The ceiling is the 125 MB above; not measured until built.
 
+## Results own their strings (2026-11-17)
+
+Measured first: after start-up, every file's text was alive through two holders. The component index kept the text so
+a file could be parsed again (118 MB on algorecall, two bytes a character), and collection's style results held pieces
+cut from the text, each of which keeps the whole text alive in V8.
+
+The fix, in two parts:
+- the component index keeps a hash of the text instead of the text, and reads the file from disk when a question
+  needs its code; a file that no longer matches the hash reads as empty until its change event indexes it again;
+- when collection finishes a file, its results are given their own strings, one copy of each distinct string per
+  file.
+
+| On algorecall, vm-agent | Before | After |
+|---|---|---|
+| collection plus component graph, held after a forced collection | 582 MB | 380 MB |
+| analysis worker at rest (sampled under a 1.5 GB limit) | 1.31 GB | 1.24 GB |
+| smallest heap plumber starts under | 1.25 to 1.4 GB | 1.1 to 1.25 GB |
+
+Collection results and the component graph are byte-identical on algorecall and crafting-ui. Collection takes 12.9 s
+against 12.6 s.
+
+The resting profiles were also re-taken under a 1.5 GB limit, to rule out garbage counted as live under the 8 GB limit
+used before; the total came out the same, so the earlier tables stand.
+
 ## Expected (guesses until measured)
 
 - Step 1 removes most of the 781 MB of trees and a share of the 234 MB that points into them.

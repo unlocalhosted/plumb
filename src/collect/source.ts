@@ -39,7 +39,7 @@ export function lineStarts(text: string): number[] {
   return starts;
 }
 
-export function sourceSite(source: SourceText, offset: number, text: string): Site {
+export function sourceSite(source: Omit<SourceText, 'text'> & { text?: string }, offset: number, text: string): Site {
   let low = 0, high = source.lineStarts.length;
   while (low + 1 < high) {
     const middle = (low + high) >>> 1;

@@ -36,6 +36,23 @@ class RecentPrograms extends Map<string, SourceProgram> {
     return this;
   }
 }
+/** Gives a file's collected results their own strings. The collector cuts names, values and conditions out of the file's
+ * text, and in V8 a cut piece can keep the whole text alive: on a large app that held every file's text at two bytes a
+ * character for the life of the session. Each distinct string is copied once per file and shared by every use in it. */
+function ownStrings(value: unknown): void {
+  const copies = new Map<string, string>(), seen = new Set<object>();
+  const own = (text: string) => { let copy = copies.get(text); if (copy === undefined) { copy = (' ' + text).slice(1); copies.set(text, copy); } return copy; };
+  const visit = (item: unknown): void => {
+    if (!item || typeof item !== 'object' || seen.has(item)) return;
+    seen.add(item);
+    if (Array.isArray(item)) { for (let i = 0; i < item.length; i++) { const v = item[i]; if (typeof v === 'string') item[i] = own(v); else visit(v); } return; }
+    if (item instanceof Map) { for (const [k, v] of item) { if (typeof v === 'string') item.set(k, own(v)); else visit(v); } return; }
+    if (item instanceof Set) return;
+    const record = item as Record<string, unknown>;
+    for (const key of Object.keys(record)) { const v = record[key]; if (typeof v === 'string') record[key] = own(v); else visit(v); }
+  };
+  visit(value);
+}
 export class CollectionState {
   readonly slices = new Map<string, Slice>();
   readonly dependencies = new Set<string>();
@@ -75,6 +92,7 @@ export class CollectionState {
     });
     if (valid) return old.value;
     const value = await collectClasses([file], config.classHelpers, new Map([...(input ? [[input.file, input.text] as const] : []), ...(text === undefined ? [] : [[file, text] as const])]), undefined, undefined, undefined, this.memory);
+    ownStrings([value.sites, value.styles, value.diagnostics]);
     if (old && file !== input?.file) {
       const stable = (value: unknown) => JSON.stringify(value, (key, item) => key === 'resolved' ? undefined : item);
       const sites = new Map(old.value.sites.map(site => [stable(site), site]));

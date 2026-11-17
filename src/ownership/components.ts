@@ -6,6 +6,7 @@ import type { Node, Program } from 'oxc-parser';
 import type { ResolverFactory } from 'oxc-resolver';
 import { tracked } from '../collect/resolved.js';
 import { componentCache, componentFiles, fileHash } from './cache.js';
+import { sourceHash } from '../collect/cache.js';
 import type { PlumbConfig } from '../config.js';
 import type { Declaration, Site } from '../report.js';
 import { lineStarts, nodeName, references, sourceSite, unwrap } from '../collect/source.js';
@@ -27,9 +28,14 @@ export interface ComponentIdentity {
 /** Where a declaration sits in its file: the top-level statement, and the declarator in it (-1: the declaration itself). */
 type At = readonly [statement: number, declarator: number];
 interface Import { file: string; name: string }
-/** What the graph needs to know about a file without its syntax tree. The tree is parsed again when a question needs
- * it and kept only for the length of one build (`tree()` below), so a large app does not hold every file's tree. */
-interface Module extends SourceText {
+/** What the graph needs to know about a file without its syntax tree or its text. When a question needs the code, the
+ * file is read and parsed again (`tree()` below) and kept only for one build, so a large app holds neither every
+ * file's tree nor every file's text. `hash` is the text the index was built from; a file that no longer matches it
+ * reads as empty until its change event indexes it again. */
+interface Module extends Omit<SourceText, 'text'> {
+  hash: string;
+  /** whether the text has a `<` at all: no JSX element can be in a file without one */
+  jsx: boolean;
   diagnostic?: Finding;
   bindings: Map<string, At>;
   types: Map<string, At>;
@@ -198,7 +204,7 @@ export function discoverComponents(root: string, files: string[], config: PlumbC
       diagnostic = unreadable(file, file, error); diagnostics.push(diagnostic);
       ast = parseSync(file, '', parserOptions).program;
     }
-    const value: Module = { file, text, lineStarts: shared?.text === text ? shared.lineStarts : lineStarts(text), ...(diagnostic ? { diagnostic } : {}), bindings: new Map(), types: new Map(), imports: new Map(), exports: new Map(), stars: [] };
+    const value: Module = { file, hash: sourceHash(text), jsx: text.includes('<'), lineStarts: shared?.text === text ? shared.lineStarts : lineStarts(text), ...(diagnostic ? { diagnostic } : {}), bindings: new Map(), types: new Map(), imports: new Map(), exports: new Map(), stars: [] };
     modules.set(file, value); trees.set(value, ast);
     for (const [index, statement] of ast.body.entries()) {
       if (statement.type === 'ImportDeclaration') {
@@ -241,12 +247,15 @@ export function discoverComponents(root: string, files: string[], config: PlumbC
   function tree(value: Module): Program {
     let ast = trees.get(value); if (ast) return ast;
     const shared = programs.get(value.file);
-    ast = value.diagnostic ? parseSync(value.file, '', parserOptions).program : shared?.text === value.text ? shared.ast : parseSync(value.file, value.text, parserOptions).program;
+    let text = value.diagnostic ? undefined : overrides.get(value.file) ?? shared?.text;
+    if (!value.diagnostic && (text === undefined || sourceHash(text) !== value.hash)) { try { text = readFileSync(value.file, 'utf8'); } catch { text = undefined; } }
+    ast = text !== undefined && sourceHash(text) === value.hash ? shared?.text === text ? shared.ast : parseSync(value.file, text, parserOptions).program : parseSync(value.file, '', parserOptions).program;
     trees.set(value, ast); return ast;
   }
   function nodeAt(value: Module, at: At | undefined): Node | undefined {
     if (!at) return;
-    const declaration = declarationOf(tree(value).body[at[0]]!)!;
+    const statement = tree(value).body[at[0]], declaration = statement && declarationOf(statement);
+    if (!declaration) return;
     return at[1] < 0 ? declaration : declaration.type === 'VariableDeclaration' ? declaration.declarations[at[1]]!.init ?? undefined : undefined;
   }
   const bindingNode = (value: Module, name: string) => nodeAt(value, value.bindings.get(name));
@@ -552,7 +561,7 @@ export function discoverComponents(root: string, files: string[], config: PlumbC
       }
       for (const child of children(node)) scan(child, inherited, shadows, ancestors);
     }
-    if (value.text.includes('<')) scan(tree(value));
+    if (value.jsx) scan(tree(value));
     usages.set(file, ranges);
   }
   profileProgress('phase:components', { current: sourceFiles.length, total: sourceFiles.length });

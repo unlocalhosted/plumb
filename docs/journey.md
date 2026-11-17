@@ -1915,6 +1915,13 @@ field is empty). The table of five writes, before and after. The Next table: eig
   but at two bytes a character, because 3,264 of 3,818 files have a character like an em dash or an emoji. Emptying
   the store freed nothing, because pieces cut from a file's text keep the whole text alive. The change was undone. What
   would work is results holding their own short strings, worth up to about 125 MB.
+- **Results own their strings (2026-11-17):** the owner chose this next. Measuring before changing anything found two
+  holders of the texts: the component index, which kept each file's text so it could parse the file again, and
+  collection's style results, which held pieces cut from the text. The index now keeps a hash and reads the file when
+  it needs the code; collection gives each file's results their own strings when it finishes the file. Proof:
+  collection plus the component graph hold 380 MB instead of 582 MB, the worker at rest 1.24 GB instead of 1.31, and
+  plumber starts under a 1.25 GB heap where it failed before. Results are byte-identical on algorecall and
+  crafting-ui.
 
 ## Open gaps
 - Sweeps covered six algorecall pages and thirteen crafting-ui pages.
