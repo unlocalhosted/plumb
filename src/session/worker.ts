@@ -196,25 +196,33 @@ function index(view: Report, only?: string): void {
     const occurrences = group(finding.occurrences ?? [], d => d.site.file);
     for (const [file, sites] of group(finding.sites, s => s.file)) {
       if (only && file !== only) continue;
-      const local = { ...finding, sites, ...(finding.occurrences ? { occurrences: occurrences.get(file) ?? [] } : {}) };
-      append(fileFindings, file, local);
-      const lineOccurrences = group(local.occurrences ?? [], d => d.site.line);
-      const byLine = lineFindings.get(file) ?? new Map(); lineFindings.set(file, byLine);
-      const columns = columnFindings.get(file) ?? new Map(); columnFindings.set(file, columns);
-      for (const [line, sites] of group(local.sites, s => s.line)) {
-        const atLine = { ...local, sites, ...(local.occurrences ? { occurrences: lineOccurrences.get(line) ?? [] } : {}) };
-        append(byLine, line, atLine);
-        const columnOccurrences = group(atLine.occurrences ?? [], d => d.site.column);
-        const byColumn = columns.get(line) ?? new Map(); columns.set(line, byColumn);
-        for (const [column, sites] of group(atLine.sites, s => s.column))
-          append(byColumn, column, { ...atLine, sites, ...(atLine.occurrences ? { occurrences: columnOccurrences.get(column) ?? [] } : {}) });
-      }
+      append(fileFindings, file, { ...finding, sites, ...(finding.occurrences ? { occurrences: occurrences.get(file) ?? [] } : {}) });
+    }
+  }
+}
+/** A file's findings by line and by column, built the first time that file is asked about at a line, not for every
+ * file at every index: each view is a copy of the finding with its own site lists, and the whole app's line and
+ * column copies were held for the few files a page shows (docs/briefs/analysis-memory.md). */
+function lineViews(file: string): void {
+  if (lineFindings.has(file)) return;
+  const byLine = new Map<number, Report['findings']>(), columns = new Map<number, Map<number, Report['findings']>>();
+  lineFindings.set(file, byLine); columnFindings.set(file, columns);
+  for (const local of fileFindings.get(file) ?? []) {
+    const lineOccurrences = group(local.occurrences ?? [], d => d.site.line);
+    for (const [line, sites] of group(local.sites, s => s.line)) {
+      const atLine = { ...local, sites, ...(local.occurrences ? { occurrences: lineOccurrences.get(line) ?? [] } : {}) };
+      append(byLine, line, atLine);
+      const columnOccurrences = group(atLine.occurrences ?? [], d => d.site.column);
+      const byColumn = columns.get(line) ?? new Map(); columns.set(line, byColumn);
+      for (const [column, sites] of group(atLine.sites, s => s.column))
+        append(byColumn, column, { ...atLine, sites, ...(atLine.occurrences ? { occurrences: columnOccurrences.get(column) ?? [] } : {}) });
     }
   }
 }
 function scoped(view: Report, file: string, line?: number, column?: number, text?: string): Report {
   if (line !== undefined && column !== undefined && text !== undefined) return { ...view, ...site(readingView(view, file), file, line, column, text) };
   index(view, localReports.get(file) === view ? file : undefined);
+  if (line !== undefined) lineViews(file);
   const findings = (line === undefined ? fileFindings.get(file) : column === undefined ? lineFindings.get(file)?.get(line) : columnFindings.get(file)?.get(line)?.get(column)) ?? [];
   return { ...view, findings };
 }
@@ -289,7 +297,7 @@ async function dispatch(method: string, params: Record<string, unknown>): Promis
         if (!hash || sourceHash(source) !== hash) throw new UsageError('The file changed since the overlay read it. Read it again.');
         index(view, localReports.get(candidate.file) === view ? candidate.file : undefined);
         const at = { file: candidate.file, line: candidate.line, column: candidate.column,
-          declarations: classDeclarations(view, candidate), findings: columnFindings.get(candidate.file)?.get(candidate.line)?.get(candidate.column) ?? [] };
+          declarations: classDeclarations(view, candidate), findings: (lineViews(candidate.file), columnFindings.get(candidate.file)?.get(candidate.line)?.get(candidate.column)) ?? [] };
         const edits = editable.has(candidate.file) && !protectedFiles.has(candidate.file)
           ? structuredEdits({ ...view, ...at }, new Map([[candidate.file, source]]), decisionNames, true) : [];
         candidates.push({ ...at, column: candidate.column, hash, edits });

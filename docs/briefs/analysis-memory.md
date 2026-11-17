@@ -320,6 +320,26 @@ severity and every site with its ledger key and status.
 
 Next: the provenance cache still holds 1.2 million objects on algorecall, its entries; and the findings indexes.
 
+## The judgement side, second pass (2026-11-17)
+
+Retained sizes (a dominator tree over crafting-ui's worker snapshot) changed the reading of the first pass: no single
+holder keeps much alive alone. The session state retains 31 MB of 96; the rest is the same rows (declarations, sites,
+findings) reached from the report, the classified report, the indexes and judgement at once, plus about 25 MB of
+node's own code. The provenance cache's apparent size was mostly shared declarations and the decision record; its own
+part is about 38,600 copied token choices, left for now.
+
+What was a real copy: the findings index built three copies of every finding for the whole app at each index, one per
+file, one per line and one per column, each with its own site lists. Only the per-file copy is read app-wide. A file's
+line and column views are now built the first time that file is asked about at a line.
+
+| algorecall, live heap of the analysis worker after a forced collection | |
+|---|---|
+| before | 924 MB |
+| after | 811 MB |
+
+Checked identical: the findings (2,935, same fingerprint) and every file's line and column views (2,277 files, hashed
+in full in a fixed order, eager before and built on demand after).
+
 ## Expected (guesses until measured)
 
 - Step 1 removes most of the 781 MB of trees and a share of the 234 MB that points into them.

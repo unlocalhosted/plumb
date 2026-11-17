@@ -1947,6 +1947,12 @@ field is empty). The table of five writes, before and after. The Next table: eig
   their own key string for every site, and the provenance cache kept findings nobody reads. Proof: algorecall's
   worker holds 924 MB after a forced collection instead of 1,015, and its 2,935 findings are identical, checked by a
   fingerprint over every finding and site.
+- **Findings indexed by line only when asked (2026-11-17):** a dominator tree over crafting-ui's worker showed no single
+  holder keeps much alive alone: the same rows are shared by the report, the indexes and judgement. The real copy was
+  the findings index, which built three copies of every finding for the whole app (per file, per line, per column)
+  when the page only ever asks lines of its own files. Line and column views are now built for a file on its first
+  question. Proof: algorecall's worker holds 811 MB instead of 924, with identical findings and identical line and
+  column views for all 2,277 files.
 
 ## Open gaps
 - Sweeps covered six algorecall pages and thirteen crafting-ui pages.
