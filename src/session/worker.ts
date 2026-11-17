@@ -245,15 +245,15 @@ async function localReport(file: string): Promise<Report> {
   // A stylesheet's variables and colours are judged against every file that uses them: with nothing changed it is read
   // from the whole-app report, built again if it was let go.
   if (!dirty && (raw || file.endsWith('.css')) || sharedDirty || !state.collection.slices.has(file) && !file.endsWith('.css')) return report();
-  // Imported class literals can be lowered only in their consumer's JSX context: such a file is judged from the
-  // collections of the files that import it, never from its own empty slice.
-  const helperOf = state.collection.consumers.get(file)?.size && !state.collection.slices.get(file)?.value.sites.some(site => site.file === file)
-    ? [...state.collection.consumers.get(file)!].filter(consumer => state.collection.slices.has(consumer)) : [];
+  // Imported class literals can be lowered only in their consumer's JSX context, and a finding on one carries its
+  // sites in those files too (`gap-[17px]` written in helper.ts, used in App.tsx): judged alone, from the importers'
+  // collections, the other files' sites were lost (e2e/reading-cache). Such a file reads the whole-app report.
+  if (state.collection.consumers.get(file)?.size && !state.collection.slices.get(file)?.value.sites.some(site => site.file === file)) return report();
   let view = localReports.get(file);
   if (!view) {
     localAnalyses++;
     changedQueries([file]);
-    const result = (await analyze({ ...options, ledger: false }, undefined, new Focus(state, file, undefined, helperOf))).report;
+    const result = (await analyze({ ...options, ledger: false }, undefined, new Focus(state, file))).report;
     changedQueries([file]);
     view = finishMessages(await applyLedger(result, options, ledger));
     if (localReports.size >= 256) localReports.delete(localReports.keys().next().value!);

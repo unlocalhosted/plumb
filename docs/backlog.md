@@ -63,6 +63,11 @@ reserved.)
 
 ## Doesn't do yet
 
+- **36 test files already failed before 2026-11-17 (2026-11-18).** The full suite on vm-agent (215 files) after the
+  memory and speed work: 178 pass, 37 fail. Rerun on the build from before that work (c2eac78c), 36 of the 37 fail there
+  too, so they predate it; the 37th (reading-cache) was a regression of the day, fixed. Mostly overlay browser tests
+  timing out, a few assertions; one-owner fails because its locator matches both of the fix panel's elements, which
+  the overlay has made since before then. Files: blueprint, class-site, cleanup, cleanup-colour, cleanup-colour-cases, cleanup-icons, cleanup-icons-cases, cleanup-messy, cleanup-site, cleanup-spacing, cleanup-spacing-proofs, cleanup-spacing-stage, cli-findings, colour-names, craft, craft-hierarchy, craft-wave7, dock, element-only, element-site, fixpanel, inplace, locate-bench, motion-layout, one-bar, one-owner, overlay, qa-fixes-2-overlay, reach, recipes, rule-docs-link, select, text-card-qa, units, verdict, walk.
 - **Component root ranges depend on build order (2026-11-17).** A component's root class ranges reach the session's
   cache only from a build that keeps the component in its graph; a component first found while building another file
   is missing them in every later graph. Which ones depends on file order. Recording them at discovery changed 77

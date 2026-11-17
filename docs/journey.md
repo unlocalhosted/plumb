@@ -2000,6 +2000,11 @@ field is empty). The table of five writes, before and after. The Next table: eig
   letting go of the whole-app report. The cause was what a file judged alone could see (a variable defined in another
   of the app's files, a stylesheet reading the file's variable); fixed and proven on all 111 such files. That page is
   now 1.5 s. Media hook: the bench table before and after.
+- **The full suite, sorted (2026-11-18):** the owner asked for the suite after the day's work. 215 files on vm-agent:
+  178 pass, 37 fail. Rerunning the failing files on the build from before the work showed 36 failing there too. The
+  one regression was mine: files of shared class strings, judged alone, lost their findings' sites in the files that
+  use them (reading-cache); the equality proofs had compared sites one file at a time and could not see it. Those
+  files read the whole-app report again. The 36 older failures are in the backlog.
 
 ## Open gaps
 - Sweeps covered six algorecall pages and thirteen crafting-ui pages.
