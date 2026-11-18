@@ -101,7 +101,8 @@ export class JudgementState {
     });
     return mergeFindings(parts, declarations).sort((a, b) => a.key.localeCompare(b.key));
   }
-  provenance(declarations: Declaration[], record: DecisionRecord, config: PlumbConfig, sourceFiles: Set<string>, verbose = false) {
+  /** `onlyFile`: a file judged alone, whose findings are the only ones read: groups of files without it are skipped. */
+  provenance(declarations: Declaration[], record: DecisionRecord, config: PlumbConfig, sourceFiles: Set<string>, verbose = false, onlyFile?: string) {
     const usedNumericSpacing = new Set<string>();
     const positions = orders(declarations).declarations;
     const files = byFile(declarations), definitions = indexDefinitions(declarations, record);
@@ -146,6 +147,8 @@ export class JudgementState {
       const clusters = new Map<string, string[]>();
       for (const file of files.keys()) { const root = find(file), group = clusters.get(root) ?? []; group.push(file); clusters.set(root, group); }
       for (const cluster of clusters.values()) {
+        // judged alone, a file's findings come only from its own group (the files its values' definitions join it to)
+        if (onlyFile !== undefined && !cluster.includes(onlyFile)) continue;
         const ds = cluster.flatMap(file => relevant.get(file) ?? []).sort((a, b) => positions.get(a)! - positions.get(b)!);
         if (!ds.length) continue;
         const refs = new Set(ds.flatMap(d => this.contributions.get(d)!.refs));
