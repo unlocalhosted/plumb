@@ -2444,6 +2444,12 @@ field is empty). The table of five writes, before and after. The Next table: eig
   found no stamp, and guessed from the owner stack. Found with a trace inside the overlay on vm-agent; it now waits for
   the clicked element's own part. The test passed 6 runs of 6, against about 1 in 3 failing before. On the way we found
   that a place's finding lists other files' places only when it comes from the whole-app report (backlog).
+- **Route-level answers, results kept (owner's call):** after an edit, a place's finding used to list only its own
+  file's places until the background check landed. Now the page's files are judged together, so a finding lists all
+  its places on the page right away, and the whole-app results stay in memory instead of being let go after a quiet
+  minute. Checked on algorecall: 61 pages (6.5 files each) judged as groups equal the whole-app report on the page,
+  725 findings spanning files among them; a page takes 47 ms. The engine also stopped refusing edits made before the
+  whole-app report existed.
 - **The old failing tests, sorted:** the 36 files that failed before this work all pass now (time-outs on a busy
   machine). Of what a full run found, one was ours (the kept reading table skipped while the report built in the
   background; fixed), three passed again, and one Next.js test fails on every run, also before today's work.

@@ -56,6 +56,13 @@ let revision = 0;
 let dirty = false;
 let sharedDirty = false;
 const localReports = new Map<string, Report>();
+/** the views judged a file or a page at a time: indexed a file at a time, never as the whole app */
+const localViews = new WeakSet<Report>();
+/** a file changed: the views judged with it go, the page's as well as its own */
+function forgetLocal(files: Iterable<string>): void {
+  const gone = new Set(files);
+  for (const key of [...localReports.keys()]) if (key.split('\0').some(file => gone.has(file))) localReports.delete(key);
+}
 let fullReports = 1, fullIndexes = 0, localAnalyses = 0;
 let sharedInputs = new Set<string>();
 let metadataDirty = false, metadataFull = false;
@@ -102,7 +109,7 @@ async function update(paths: string[]): Promise<string[]> {
     const changedSharedStyles = await state.refreshStyles([...new Set([...paths, ...affected])]);
     sharedDirty ||= changedSharedStyles || affected.some(file => before.get(file) !== signature(file));
     affected.push(...paths.filter(file => file.endsWith('.css')));
-    for (const file of affected) localReports.delete(file);
+    forgetLocal(affected);
     if (sharedDirty || paths.some(file => file.endsWith('.css'))) localReports.clear();
   }
   if (paths.some(p => isLedgerPath(p))) localReports.clear();
@@ -203,7 +210,7 @@ function readingView(view: Report, file: string): Report {
   if (!files) { files = new Map(); readingViews.set(view, files); }
   let local = files.get(file);
   if (!local) {
-    index(view, localReports.get(file) === view ? file : undefined);
+    index(view, localViews.has(view) ? file : undefined);
     local = ledgerView({ ...view, declarations: declarationsFor(view, file), findings: fileFindings.get(file) ?? [] });
     for (const finding of local.findings) {
       if (finding.status === undefined) continue;
@@ -229,8 +236,24 @@ const indexedFiles = new Map<string, Report>();
 let fileFindings = new Map<string, Report['findings']>();
 let lineFindings = new Map<string, Map<number, Report['findings']>>();
 let columnFindings = new Map<string, Map<number, Map<number, Report['findings']>>>();
-let decisionNames = new Set<string>();
-let editable = new Set<string>(), protectedFiles = new Set<string>();
+/** What an edit may touch and the token names it may write: from the files the session collected and the project's
+ * decisions, which it has from start-up on, not from the whole-app report (a page's edit before that report was built
+ * found no editable file: "Apply requires a tracked project source file"). */
+let access: { revision: number; of: Report; editable: Set<string>; protectedFiles: Set<string>; decisionNames: Set<string> } | undefined;
+function writable(): NonNullable<typeof access> {
+  const view = known();
+  if (access?.revision === revision && access.of === view) return access;
+  const editable = new Set(state.collection.slices.keys());
+  for (const slice of state.collection.slices.values()) for (const file of slice.value.computedClassFiles ?? []) {
+    const path = relative(options.root!, file);
+    if (path && path !== '..' && !path.startsWith('..' + sep) && !isAbsolute(path)) editable.add(file);
+  }
+  for (const sheet of view.stylesheets) if (sheet.reached.some(reach => reach.kind === 'source')) editable.add(sheet.file);
+  const protectedFiles = new Set([...view.decisions, ...view.decisionInventory ?? []].map(d => d.source.file));
+  if (view.config.path) protectedFiles.add(view.config.path);
+  if (view.tailwind.entry) protectedFiles.add(view.tailwind.entry);
+  return access = { revision, of: view, editable, protectedFiles, decisionNames: new Set([...view.decisions, ...view.decisionInventory ?? []].map(d => d.name)) };
+}
 const declarationTables = new WeakMap<Report, Map<string, Report['declarations']>>();
 function classDeclarations(view: Report, site: Site): Report['declarations'] {
   let table = declarationTables.get(view);
@@ -249,16 +272,6 @@ function index(view: Report, only?: string): void {
   if (only ? indexedFiles.get(only) === view : indexedReport === view) return;
   if (only) { fileFindings.delete(only); lineFindings.delete(only); columnFindings.delete(only); indexedFiles.set(only, view); }
   else { fullIndexes++; indexedReport = view; indexedFiles.clear(); fileFindings = new Map(); lineFindings = new Map(); columnFindings = new Map();
-    decisionNames = new Set([...view.decisions, ...view.decisionInventory ?? []].map(d => d.name));
-    editable = new Set(state.collection.slices.keys());
-    for (const slice of state.collection.slices.values()) for (const file of slice.value.computedClassFiles ?? []) {
-      const path = relative(options.root!, file);
-      if (path && path !== '..' && !path.startsWith('..' + sep) && !isAbsolute(path)) editable.add(file);
-    }
-    for (const sheet of view.stylesheets) if (sheet.reached.some(reach => reach.kind === 'source')) editable.add(sheet.file);
-    protectedFiles = new Set([...view.decisions, ...view.decisionInventory ?? []].map(d => d.source.file));
-    if (view.config.path) protectedFiles.add(view.config.path);
-    if (view.tailwind.entry) protectedFiles.add(view.tailwind.entry);
   }
   declarationsFor(view, only ?? '');
   for (const finding of view.findings) {
@@ -290,7 +303,7 @@ function lineViews(file: string): void {
 }
 function scoped(view: Report, file: string, line?: number, column?: number, text?: string): Report {
   if (line !== undefined && column !== undefined && text !== undefined) return { ...view, ...site(readingView(view, file), file, line, column, text) };
-  index(view, localReports.get(file) === view ? file : undefined);
+  index(view, localViews.has(view) ? file : undefined);
   if (line !== undefined) lineViews(file);
   const findings = (line === undefined ? fileFindings.get(file) : column === undefined ? lineFindings.get(file)?.get(line) : columnFindings.get(file)?.get(line)?.get(column)) ?? [];
   return { ...view, findings };
@@ -305,7 +318,7 @@ function sitesElsewhere(): Set<string> {
   }
   return elsewhere.files;
 }
-async function localReport(file: string): Promise<Report> {
+async function localReport(file: string, page: string[] = []): Promise<Report> {
   // A stylesheet's variables and colours are judged against every file that uses them: with nothing changed it is read
   // from the whole-app report, built again if it was let go.
   if (!dirty && (raw || file.endsWith('.css')) || sharedDirty || !state.collection.slices.has(file) && !file.endsWith('.css')) return report();
@@ -315,17 +328,21 @@ async function localReport(file: string): Promise<Report> {
   // (e2e/reading-cache; src/lessons/mdx-components.tsx on algorecall, 7 of its 29 declarations). Such a file, 7 of
   // 3,649 on algorecall, reads the whole-app report.
   if (sitesElsewhere().has(file)) return report();
-  let view = localReports.get(file);
+  // the page's other files, judged with this one while the whole-app report is being built: a finding that spans them
+  // lists all its places on the page. Files read from the whole-app report anyway, or not collected, stay out.
+  const others = [...new Set(page)].filter(other => other !== file && state.collection.slices.has(other) && !sitesElsewhere().has(other)).sort();
+  const key = [file, ...others].sort().join('\0');
+  let view = localReports.get(key);
   if (!view) {
     localAnalyses++;
-    changedQueries([file]);
-    const result = (await analyze({ ...options, ledger: false }, undefined, new Focus(state, file))).report;
-    changedQueries([file]);
+    changedQueries([file, ...others]);
+    const result = (await analyze({ ...options, ledger: false }, undefined, new Focus(state, file, undefined, [], others))).report;
+    changedQueries([file, ...others]);
     // copies: a page's findings share objects with the whole-app report (the compile's notes), and the ledger writes
     // its status onto what it is given
     view = finishMessages(await applyLedger(ledgerView(result), options, ledger));
     if (localReports.size >= 256) localReports.delete(localReports.keys().next().value!);
-    localReports.set(file, view); metadataDirty = true;
+    localReports.set(key, view); localViews.add(view); metadataDirty = true;
   }
   index(view, file);
   return view;
@@ -364,10 +381,13 @@ function preparedSummary(): NonNullable<typeof released> {
 // Open page first, layer 1 (docs/briefs/analysis-memory.md): the whole-app report is let go after a quiet period, and
 // pages are judged a file at a time against the app-wide products the session keeps. A project-wide read builds the
 // report again and starts the quiet period over.
-const QUIET_MS = Number(environment('RELEASE_MS') ?? 60_000);
+// Kept by default (owner, 2026-11-18: results computed ahead, ready when asked); PLUMB_RELEASE_MS lets it go after a
+// quiet period, for a machine short of memory.
+const QUIET_MS = environment('RELEASE_MS') === undefined ? Infinity : Number(environment('RELEASE_MS'));
 let releaseTimer: ReturnType<typeof setTimeout> | undefined;
 function releaseLater(): void {
   if (releaseTimer) clearTimeout(releaseTimer);
+  if (!Number.isFinite(QUIET_MS)) return;
   releaseTimer = setTimeout(() => { queue = queue.then(release, release); }, QUIET_MS); releaseTimer.unref();
 }
 function release(): void {
@@ -424,11 +444,11 @@ async function dispatch(method: string, params: Record<string, unknown>): Promis
         const source = await readFile(candidate.file, 'utf8');
         const hash = state.sourceHash(candidate.file) ?? sourceHash(source);
         if (!hash || sourceHash(source) !== hash) throw new UsageError('The file changed since the overlay read it. Read it again.');
-        index(view, localReports.get(candidate.file) === view ? candidate.file : undefined);
+        index(view, localViews.has(view) ? candidate.file : undefined);
         const at = { file: candidate.file, line: candidate.line, column: candidate.column,
           declarations: classDeclarations(view, candidate), findings: (lineViews(candidate.file), columnFindings.get(candidate.file)?.get(candidate.line)?.get(candidate.column)) ?? [] };
-        const edits = editable.has(candidate.file) && !protectedFiles.has(candidate.file)
-          ? structuredEdits({ ...view, ...at }, new Map([[candidate.file, source]]), decisionNames, true) : [];
+        const edits = writable().editable.has(candidate.file) && !writable().protectedFiles.has(candidate.file)
+          ? structuredEdits({ ...view, ...at }, new Map([[candidate.file, source]]), writable().decisionNames, true) : [];
         candidates.push({ ...at, column: candidate.column, hash, edits });
       }
       result.classes.push({ token, ambiguous: candidates.length > 1, sites: candidates });
@@ -437,13 +457,13 @@ async function dispatch(method: string, params: Record<string, unknown>): Promis
   }
   if (method === 'edits') {
     const file = params.file as string, view = await localReport(file);
-    index(view, localReports.get(file) === view ? file : undefined);
-    if (!editable.has(file)) throw new Error('Apply requires a tracked project source file.');
+    index(view, localViews.has(view) ? file : undefined);
+    if (!writable().editable.has(file)) throw new Error('Apply requires a tracked project source file.');
     const text = await readFile(file, 'utf8'), hash = state.sourceHash(file) ?? sourceHash(text);
     if (sourceHash(text) !== hash) throw new Error('The file changed since the overlay read it. Read it again.');
-    if (protectedFiles.has(file) || file.endsWith('.css') && /@theme\b/.test(cssCode(text))) throw new Error('Apply cannot edit config or a stylesheet that defines the theme.');
+    if (writable().protectedFiles.has(file) || file.endsWith('.css') && /@theme\b/.test(cssCode(text))) throw new Error('Apply cannot edit config or a stylesheet that defines the theme.');
     const local = scoped(view, file, params.line as number | undefined, params.column as number | undefined, text), sources = new Map([[file, text]]);
-    const edits = structuredEdits(local, sources, decisionNames, true);
+    const edits = structuredEdits(local, sources, writable().decisionNames, true);
     return { file, hash, edits, refused: refusedSites(local, sources, edits) };
   }
   if (method === 'remaining') {
@@ -468,9 +488,10 @@ async function dispatch(method: string, params: Record<string, unknown>): Promis
     // were configured for raw or changed-scope inspection.
     const scopedOptions = options.ledger === false || options.base !== undefined || options.changed || options.strictLedger;
     const view = scopedOptions ? await report({}, true)
-      : localQuery ? await localReport(file) : await report();
+      : localQuery ? await localReport(file, (params.page as string[] | undefined) ?? []) : await report();
     profileDuration('phase:site-analysis', performance.now() - start);
-    return site(readingView(view, file), file, line, params.column as number | undefined, await readFile(file, 'utf8'));
+    const answer = site(readingView(view, file), file, line, params.column as number | undefined, await readFile(file, 'utf8'));
+    return localViews.has(view) ? { ...answer, scope: (params.page as string[] | undefined)?.some(other => other !== file) ? 'page' : 'file' } : answer;
   }
   if (method === 'decisions') return (sharedDirty ? await current() : known()).decisions;
   // the spacing multiplier an element editor steps by: the theme's `--spacing`, kept beside any named steps (decisions/spacing.ts spacingUnit)
@@ -486,7 +507,7 @@ async function dispatch(method: string, params: Record<string, unknown>): Promis
   if (method === 'places') {
     // per file, as the page's own reads are: with the whole-app report let go, these files are judged alone
     const files = params.files as string[], views = new Map<string, Report>();
-    for (const file of files) views.set(file, await localReport(file));
+    for (const file of files) views.set(file, await localReport(file, files));
     return { revision: params.revision, files: files.map(file => ({ file, hash: state.sourceHash(file) ?? null, view: views.get(file)! })).map(({ file, hash, view }) => ({ file, hash,
       findings: view.findings.filter(f => !f.rule.startsWith('config/') && f.sites.some(s => s.file === file)).map(f => ({ ...drawn(f), sites: f.sites.filter(s => s.file === file), ...(f.occurrences ? { occurrences: f.occurrences.filter(d => d.site.file === file) } : {}) })),
       declarations: view.declarations.filter(d => d.site.file === file) })) };

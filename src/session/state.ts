@@ -308,7 +308,7 @@ export class WarmState implements AnalysisRuntime {
     return this.memo(name, inputs, compute);
   }
   shared<T>(name: string): T | undefined { return (this.sharedContext.get(name) ?? this.phases.get(name)?.value) as T | undefined; }
-  localComponents(file: string): ComponentGraph { return this.componentGraph([file], this.config, undefined, true); }
+  localComponents(files: string | string[]): ComponentGraph { return this.componentGraph(typeof files === 'string' ? [files] : files, this.config, undefined, true); }
   private componentGraph(files: string[], config: PlumbConfig, snippet?: { file: string; text: string; lang: 'tsx' | 'css' }, local = false): ComponentGraph {
     if (snippet) {
       const key = signature([files, snippet]); if (this.snippetGraph?.key === key) return this.snippetGraph.value;

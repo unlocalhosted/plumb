@@ -415,10 +415,13 @@ test('review 5: watch-disabled target judgement refreshes theme, config imports,
   await writeFile(rules, config('value'));
   await writeFile(join(root, 'plumber.config.ts'), "import settings from './rules.mjs'; export default settings;");
   const session = await Session.create({ root, watch: false }); t.after(() => session.close());
+  // both settled: the whole-app report built (it is built in the background, and a place read before it is judged with
+  // its own file or page, which lists a finding's places in other files only once the report is there)
   const parity = async () => {
+    await session.report();
     const actual = await session.site('src/App.jsx', 4, 10);
     const fresh = await Session.create({ root, watch: false });
-    try { assert.deepEqual(actual, await fresh.site('src/App.jsx', 4, 10)); } finally { await fresh.close(); }
+    try { await fresh.report(); assert.deepEqual(actual, await fresh.site('src/App.jsx', 4, 10)); } finally { await fresh.close(); }
     return actual;
   };
   await parity();

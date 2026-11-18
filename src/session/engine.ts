@@ -78,7 +78,10 @@ export interface SessionOptions extends CheckOptions { watch?: boolean; pollInte
   /** Maximum wait before read execution, in milliseconds (default 5000). */
   readQueueMs?: number
 }
-export interface SiteResult { file: string; line: number; column?: number; declarations: Report['declarations']; findings: Report['findings'] }
+export interface SiteResult { file: string; line: number; column?: number; declarations: Report['declarations']; findings: Report['findings'];
+  /** read before the whole-app report was built: judged with its own file, or with the page's files; a finding's places
+   * in other files come once the report is there */
+  scope?: 'file' | 'page' }
 export type ManyCall = { method: 'resolveSource'; args: Parameters<Session['resolveSource']> } | { method: 'site'; args: Parameters<Session['site']> } | { method: 'classes'; args: Parameters<Session['classes']> } | { method: 'structure'; args: Parameters<Session['structure']> };
 export type ManyResult = { value: unknown } | { error: string; usage: boolean; code: ErrorCode };
 export interface EditsResult { revision: number; file: string; hash: string; edits: StructuredEdit[]; refused: RefusedSite[] }
@@ -734,7 +737,9 @@ export class Session extends EventEmitter {
         const untracked = where && 'library' in where ? where.untracked : undefined;
         answers.set(keyOf(item), { stamp: item.stamp, tag: item.tag, ...(item.classes !== undefined ? { classes: item.classes } : {}), status: 'unplaced', ...(untracked ? { outsideSource: true as const, file: untracked } : {}) });
       });
-      const sites = await this.many(reads.map(({ where }) => ({ method: 'site' as const, args: [where.file, where.line, where.column] })));
+      // the route's files, judged together while the whole-app report is being built
+      const pageFiles = [...new Set(reads.map(({ where }) => where.file))].sort();
+      const sites = await this.many(reads.map(({ where }) => ({ method: 'site' as const, args: [where.file, where.line, where.column, pageFiles] })));
       const traces = await this.many(reads.flatMap(({ item, where }, i) => {
         const site = sites[i]!; const value = 'value' in site ? site.value as SiteResult : undefined;
         return item.classes && value && !value.declarations.length ? [{ method: 'classes' as const, args: [where.file, where.line, where.column, item.classes] }] : [];
@@ -837,8 +842,10 @@ export class Session extends EventEmitter {
       return { file: inside, hash, rows: index.rows };
     });
   }
-  site(file: string, line: number, column?: number): Promise<SiteResult> {
-    return this.read('site', { file: this.file(file), line: this.position(line), ...(column === undefined ? {} : { column: this.position(column) }) });
+  /** `page`: the files the page draws. Read before the whole-app report is there, the place is judged with them, so a
+   * finding that spans the page's files lists all its places on the page. */
+  site(file: string, line: number, column?: number, page?: string[]): Promise<SiteResult> {
+    return this.read('site', { file: this.file(file), line: this.position(line), ...(column === undefined ? {} : { column: this.position(column) }), ...(page?.length ? { page: page.map(path => this.file(path)) } : {}) });
   }
   text(file: string, line: number, column: number): Promise<TextResult> {
     const path = this.file(file); this.position(line); this.position(column);

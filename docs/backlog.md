@@ -75,13 +75,16 @@ reserved.)
   page a part at a time, so a click at 270 ms read a heading React hadn't reached and answered from the owner stack.
   locate now waits, bounded, for the clicked element's own part. Passed 6 runs of 6 on vm-agent (failed about 1 in 3
   to 5 before).
-- **A place's finding lists other files' places only from the whole-app report (found 2026-11-18).** A hard-coded value
-  is one finding across files (`gap-[13px]` in App.jsx and a helper: one finding, two places). Judged a file at a time,
-  the finding carries only that file's places. With the report built in the background, which one a place query gets
-  depends on whether the build has finished: e2e/locate "review 5" compares a session after an edit with a fresh one
-  and fails on every lone run (it passed in a busy full run, where both took the per-file path). The per-file proofs
-  missed it: they compared each file's own places. Needs a decision: a place answers with the whole app's places
-  (waiting for the build when it is running) or with its own file's, said as such.
+- **A place's finding and other files' places (found and decided 2026-11-18).** A hard-coded value is one finding
+  across files. Judged a file at a time, a finding carried only that file's places, and which answer a place got
+  depended on whether the background report had finished (e2e/locate review 5). Decided with the owner: results are
+  kept at rest (no letting go after a quiet minute), and a page read judges the route's files together, so a finding
+  lists all its places on the page at once; places on other routes come with the whole-app report. An answer read
+  before it says so (`scope: 'page' | 'file'`); the overlay doesn't show that yet.
+- **Answers that depend on whether the whole-app report exists yet (2026-11-18).** Since start-up stopped judging,
+  edits made before the report was built were refused ("Apply requires a tracked project source file": the editable
+  files were filled only by the whole-app index; fixed). Still failing on main, same family, not yet looked at:
+  e2e/class-site (3 tests: a refusal's words come back empty), e2e/recipes N6, e2e/reading-cache.
 - **Component root ranges depend on build order (2026-11-17).** A component's root class ranges reach the session's
   cache only from a build that keeps the component in its graph; a component first found while building another file
   is missing them in every later graph. Which ones depends on file order. Recording them at discovery changed 77
