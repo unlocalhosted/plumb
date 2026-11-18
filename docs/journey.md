@@ -2364,6 +2364,7 @@ field is empty). The table of five writes, before and after. The Next table: eig
   selecting text across two links, where an instant hover card opens mid-selection. The fix grew a second half: never
   open while a button is held. plumber's pink boxes and number tags meant nothing on a feed ("what are these red
   boxes"), so they came off, and one big caption a side carries the message (worded with the owner).
+- **Then:** the marks came back as plain verdicts on the open card (pink "Opened mid-selection", green "Opened after a pause"), and the fixed half shows the fix as code, `transition-delay: 0ms` to `500ms` (owner asked for both).
 - **Proof:** docs/media/clip-60-hover-warm-up.mp4, 1080 × 1350, 19.7 s, 60 fps; its first and last frames match, so
   it loops.
 
