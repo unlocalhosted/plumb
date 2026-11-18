@@ -2439,6 +2439,11 @@ field is empty). The table of five writes, before and after. The Next table: eig
   of it. The first collection now runs on up to four threads, the same code per file, answers read back in order.
   algorecall is ready 34 s after launch (40 s before), the worker at 28.3 s, with the same answers. crafting-ui on the
   laptop: ready in 5.8 s with threads, 14.9 s without (one run each, busy laptop). Component maps (8.9 s) are next.
+- **The click that came too early (Next, webpack):** the overlay counted the page as hydrated once any part of it had
+  a React fiber, but Next hydrates a page in parts. A click 270 ms after load read a heading React hadn't reached yet,
+  found no stamp, and guessed from the owner stack. Found with a trace inside the overlay on vm-agent; it now waits for
+  the clicked element's own part. The test passed 6 runs of 6, against about 1 in 3 failing before. On the way we found
+  that a place's finding lists other files' places only when it comes from the whole-app report (backlog).
 - **The old failing tests, sorted:** the 36 files that failed before this work all pass now (time-outs on a busy
   machine). Of what a full run found, one was ours (the kept reading table skipped while the report built in the
   background; fixed), three passed again, and one Next.js test fails on every run, also before today's work.
