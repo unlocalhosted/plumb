@@ -270,7 +270,7 @@ export class WarmState implements AnalysisRuntime {
       const prebuild = !inputs[2] && /\.[jt]sx?$/;
       if (prebuild && !this.componentMemory.batch) this.componentMemory.batch = componentBatch();
       return await this.collection.collect(inputs[0] as string[], this.config, inputs[2] as Parameters<CollectionState['collect']>[2],
-        prebuild ? file => { if (prebuild.test(file) && !this.shards.has(file)) this.buildShard(file, this.config, false); } : undefined) as T;
+        prebuild ? file => { if (prebuild.test(file) && !this.shards.has(file)) { const t = performance.now(); this.buildShard(file, this.config, false); this.collection.spent.shards += performance.now() - t; } } : undefined) as T;
     }
     if (name === 'project' || name === 'files') {
       const value = await this.memo(name, [], compute);

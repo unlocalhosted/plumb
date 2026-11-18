@@ -1,3 +1,4 @@
+import { profileDuration } from '../profile.js';
 import { parseSync } from 'oxc-parser';
 import { readFileSync } from 'node:fs';
 import { ResolverFactory } from 'oxc-resolver';
@@ -44,8 +45,12 @@ export class CollectionState {
   readonly consumers = new Map<string, Set<string>>();
   private definitions = new Map<string, SourceStyles['declarations']>();
   visitedFiles: string[] = [];
+  /** where a whole collection's time goes (profiling): reading text, collecting classes, imports, component shards */
+  spent = { read: 0, classes: 0, imports: 0, shards: 0 };
   private dirty = new Set<string>();
   private memory: CollectionMemory | undefined;
+  /** the hash of each imported file, during one whole collection (files don't change under it) */
+  private hashes: Map<string, string> | undefined;
   programs: CollectionMemory['programs'] = new Map();
   specifiers: CollectionMemory['specifiers'] = new Map();
   markChanged(paths: string[]): void { for (const path of paths) this.dirty.add(path); }
@@ -59,7 +64,12 @@ export class CollectionState {
     for (const specifier of this.memory?.specifiers.get(file) ?? dependencySpecifiers(file, text)) {
       const target = this.resolver.resolveFileSync(file, specifier).path;
       if (!target || !/\.[cm]?[jt]sx?$/.test(target)) continue;
-      try { dependencies.set(target, sourceHash(readFileSync(target, 'utf8'))); this.dependencies.add(target); } catch { /* The collector reports unreadable imports that it uses. */ }
+      try {
+        // one read and hash per imported file in a whole collection: a shared component is imported by hundreds
+        let hash = this.hashes?.get(target);
+        if (hash === undefined) { hash = sourceHash(readFileSync(target, 'utf8')); this.hashes?.set(target, hash); }
+        dependencies.set(target, hash); this.dependencies.add(target);
+      } catch { /* The collector reports unreadable imports that it uses. */ }
     }
     return dependencies;
   }
@@ -69,7 +79,9 @@ export class CollectionState {
     const overlay = !!input && old?.dependencies.has(input.file);
     if (file !== input?.file && !overlay && old && !this.dirty.has(file) && ![...old.dependencies.keys()].some(path => this.dirty.has(path))) return old.value;
     let text: string | undefined;
+    let at = performance.now();
     try { text = file === input?.file ? input.text : readFileSync(file, 'utf8'); } catch { /* Collection reports the read failure. */ }
+    this.spent.read += performance.now() - at; at = performance.now();
     const hash = sourceHash(text ?? '<unreadable>');
     const valid = old?.hash === hash && [...old.dependencies].every(([path, previous]) => {
       try { return sourceHash(path === input?.file ? input.text : readFileSync(path, 'utf8')) === previous; } catch { return false; }
@@ -78,6 +90,7 @@ export class CollectionState {
     const value = await collectClasses([file], config.classHelpers, new Map([...(input ? [[input.file, input.text] as const] : []), ...(text === undefined ? [] : [[file, text] as const])]), undefined, undefined, undefined, this.memory);
     // the results keep names and values cut from the file's text; the table's copies let the text go
     internAll([value.sites, value.styles, value.diagnostics, value.modules]);
+    this.spent.classes += performance.now() - at; at = performance.now();
     if (old && file !== input?.file) {
       const stable = (value: unknown) => JSON.stringify(value, (key, item) => key === 'resolved' ? undefined : item);
       const sites = new Map(old.value.sites.map(site => [stable(site), site]));
@@ -95,6 +108,7 @@ export class CollectionState {
         this.dependencies.add(path);
         try { dependencies.set(path, sourceHash(readFileSync(path, 'utf8'))); } catch { /* Collection reports unreadable computed imports. */ }
       }
+      this.spent.imports += performance.now() - at;
       this.slices.set(file, { hash, dependencies, value });
       for (const path of dependencies.keys()) { let users = this.consumers.get(path); if (!users) this.consumers.set(path, users = new Set()); users.add(file); }
       const definitions = value.styles.declarations.filter(d => d.prop.startsWith('--'));
@@ -121,6 +135,7 @@ export class CollectionState {
     if (!input) for (const file of this.slices.keys()) if (!current.has(file)) this.slices.delete(file);
     const values: Collection[] = [];
     this.memory = { programs: new RecentPrograms(256), imports: new Map(), specifiers: new Map(), texts: new Map() };
+    this.hashes = input ? undefined : new Map();
     // visible while collecting, so a component shard built after each file (afterFile) reuses its parsed code
     this.programs = this.memory.programs;
     this.specifiers = this.memory.specifiers;
@@ -131,7 +146,9 @@ export class CollectionState {
     }
     this.programs = this.memory.programs;
     this.specifiers = this.memory.specifiers;
-    this.memory = undefined;
+    this.memory = undefined; this.hashes = undefined;
+    for (const [name, ms] of Object.entries(this.spent)) profileDuration(`collect:${name}`, ms);
+    this.spent = { read: 0, classes: 0, imports: 0, shards: 0 };
     if (!input) this.dirty.clear();
     const sites = new Map<string, ClassSite>(), modules = new Map<string, ModuleImport[]>();
     const styles: SourceStyles = { declarations: [], sites: [], stylesheets: [], imports: [], definedVariables: [] };

@@ -797,6 +797,14 @@ The risk that decides the order: a page judged before the app-wide compile exist
 after. Focus already compiles a page's own classes when one is new; 2a depends on that being exact for every class,
 which is checked first, on the sample, before any start-up step moves.
 
+Checked the same day: compiled with a fresh compiler and only one file's classes, 4,236 classes from 99 sampled
+algorecall files give the same CSS, declarations and notes as the whole-app compile. The 21 s without a timing split
+(profile timings `collect:*`): collecting classes 11.1 s (parsing included), component shards 6.2 s, imports 2.3 s,
+reading text 0.3 s. Imports re-read and re-hashed every imported file once per importer; one hash per file per
+whole collection took that to 0.5 s (worker ready at 35.0 s, from 36.9 s; 465 sampled files equal the full report,
+the background report hashes the same). Next: collecting classes on a few threads at once (plain data, per file),
+the shards staying on the worker thread.
+
 ## Expected (guesses until measured)
 
 - Step 1 removes most of the 781 MB of trees and a share of the 234 MB that points into them.

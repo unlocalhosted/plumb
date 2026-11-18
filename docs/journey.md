@@ -2432,6 +2432,9 @@ field is empty). The table of five writes, before and after. The Next table: eig
   suggestions and reads the files 64 at a time, one pass each. algorecall's worker is ready at 36.9 s instead of
   39.0 s, with the same answers. The bigger part, about 21 s of reading every file before the first page, is planned
   as layer 2 in docs/briefs/analysis-memory.md: ready before reading, the open page first, the rest in the background.
+- **Start-up, second cut:** each file re-read and re-hashed every file it imports, so a shared component was read
+  hundreds of times. Once per start now: the worker is ready at 35.0 s. What is left is collecting classes (11.1 s)
+  and building component maps (6.2 s); collecting can run on several threads, which is next.
 - **The old failing tests, sorted:** the 36 files that failed before this work all pass now (time-outs on a busy
   machine). Of what a full run found, one was ours (the kept reading table skipped while the report built in the
   background; fixed), three passed again, and one Next.js test fails on every run, also before today's work.
