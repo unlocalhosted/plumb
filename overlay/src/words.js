@@ -781,6 +781,9 @@ export const DOCK = {
   failed: 'Couldn’t start. Check your dev server’s terminal.',
   select: 'Click an element to inspect it · Esc',
   idle: 'Hold Alt to inspect',
+  // ready for pages, still reading every file for the whole-app list (setup steps, the project page)
+  reading: 'Reading your whole app…',
+  readingTitle: 'You can inspect now. Your setup steps fill in once every file is read.',
   // while Blueprint is on, the fix bar has the count: the dock only says how to leave
   blueprint: 'Alt+B to close',
   // one element is read: Alt+B widens to the whole page, it does not close

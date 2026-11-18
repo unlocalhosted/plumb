@@ -407,8 +407,6 @@ three is a state the page reaches by itself. - **Built (layer 1):** Alt+S opens 
 - The whole-app report now builds in the background (journey, 2026-11-18). On algorecall its first build pauses at
   least every 0.3 s. After an edit, the restarted build still runs 1.3 s in one piece: every file's classes are
   gathered again into one list (about 0.7 s), and the garbage collection that follows takes about 0.6 s.
-- Nothing on screen says the whole-app list is still building. The worker reports it (`wholeApp` in health:
-  building, ready, or when asked); the overlay doesn't show it yet.
 
 ### Plumber on its own design pages (found 2026-11-14)
 

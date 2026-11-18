@@ -139,12 +139,12 @@ const css = `
   .dock .act:disabled { opacity: .55; cursor: default; }
   .dock .act[aria-busy="true"]::before { content: ""; width: 9px; height: 9px; margin-inline-end: 5px; border-radius: 50%; border: 1.5px solid currentColor; border-right-color: transparent; animation: pl-spin .7s linear infinite; }
   .dock[data-refused] .say { color: var(--pl-off); }
-  .dock[data-state="starting"] .bob { animation: pl-breathe 1.6s ease-in-out infinite; }
+  .dock:is([data-state="starting"], [data-state="reading"]) .bob { animation: pl-breathe 1.6s ease-in-out infinite; }
   .dock[data-state="select"] .bob { color: var(--pl-instrument); }
   .dock[data-state="failed"] .bob, .dock[data-state="failed"] .say { color: var(--pl-off); }
   .dock[data-state="lost"] { opacity: 0.72; }
   @keyframes pl-breathe { 50% { opacity: 0.35; } }
-  @media (prefers-reduced-motion: reduce) { .dock[data-state="starting"] .bob { animation: none; } }
+  @media (prefers-reduced-motion: reduce) { .dock:is([data-state="starting"], [data-state="reading"]) .bob { animation: none; } }
 
   /* the reticle: four corner arms that travel to the element under the pointer */
   .tick { position: fixed; left: 0; top: 0; width: var(--pl-tick); height: var(--pl-tick); transition: transform var(--pl-dur-travel) var(--pl-spring); }
@@ -797,7 +797,7 @@ class PlumbOverlay extends HTMLElement {
   // Health never queues behind reads, so asking is cheap: every second while starting or unreachable, then every ten.
   async #poll() {
     let next = this.#health;
-    try { const h = await request('health', {}); next = h?.status === 'ready' ? 'ready' : h?.status === 'failed' ? 'failed' : 'starting'; this.#reason = h?.diagnostic ?? h?.error ?? ''; }
+    try { const h = await request('health', {}); next = h?.status === 'ready' ? 'ready' : h?.status === 'failed' ? 'failed' : 'starting'; this.#reason = h?.diagnostic ?? h?.error ?? ''; this.#reading = h?.wholeApp === 'building'; }
     catch (error) { next = error?.failed ? 'failed' : error?.starting ? 'starting' : 'lost'; this.#reason = error?.message ?? ''; }
     if (!this.isConnected) return;
     // the engine is ready before the page is: until React has hydrated it there is nothing to read (bounded: a page
@@ -806,9 +806,11 @@ class PlumbOverlay extends HTMLElement {
     if (next !== this.#health) this.#blueprint?.healthChanged(next);
     if (next === 'ready' && this.#health !== 'ready') this.#ready?.read();
     this.#health = next; this.#dock();
-    this.#healthTimer = setTimeout(() => this.#poll(), next === 'ready' || next === 'failed' ? TIMING.healthReady : TIMING.healthStarting);
+    this.#healthTimer = setTimeout(() => this.#poll(), next === 'failed' || next === 'ready' && !this.#reading ? TIMING.healthReady : TIMING.healthStarting);
   }
   #reason = '';
+  // ready for pages while the whole-app list is still being read (the worker's `wholeApp`): the line says so until it is done
+  #reading = false; #readingSince = 0;
   // the fix bar has the count while Blueprint is on: one number, one place
   #blueprintSays() { return this.#blueprint?.scope ? DOCK.blueprintScoped : DOCK.blueprint; }
   #dock() {
@@ -819,24 +821,27 @@ class PlumbOverlay extends HTMLElement {
     if (p?.total && p.read === p.total) dock.dataset.inView = String(p.drift ?? 0); else delete dock.dataset.inView;
     const say = dock.querySelector('.say'), pick = dock.querySelector('.pick');
     const selecting = this.#armed && this.#health !== 'failed';
-    const state = selecting ? 'select' : this.#health;
+    const reading = this.#health === 'ready' && this.#reading && !this.#pinned?.state?.file && !this.#blueprint?.active;
+    if (reading && !this.#readingSince) this.#readingSince = performance.now(); else if (!reading) this.#readingSince = 0;
+    const state = selecting ? 'select' : reading ? 'reading' : this.#health;
     const seconds = Math.round((performance.now() - this.#startedAt) / 1000);
     const text = {
       select: DOCK.select,
       starting: `${DOCK.starting}${performance.now() - this.#startedAt > TIMING.dockCount ? ` <span class="count">${seconds}s</span>` : ''}`,
       failed: DOCK.failed,
       lost: 'Reconnecting…',
+      reading: `${DOCK.reading}${performance.now() - this.#readingSince > TIMING.dockCount ? ` <span class="count">${Math.round((performance.now() - this.#readingSince) / 1000)}s</span>` : ''}`,
       ready: this.#pinned?.state?.file ? `<code>${esc(this.#pinned.state.file.split('/').pop())}:${this.#pinned.state.line}</code>` : this.#blueprint?.active ? this.#blueprintSays() : DOCK.idle,
     }[state];
     if (dock.dataset.state !== state || say.innerHTML !== text) { dock.dataset.state = state; say.innerHTML = text; }
-    dock.title = state === 'failed' ? this.#reason : '';
+    dock.title = state === 'failed' ? this.#reason : state === 'reading' ? DOCK.readingTitle : '';
     pick.disabled = state === 'failed' || state === 'lost';
     pick.setAttribute('aria-pressed', String(selecting));
     // Ready is said once, then the line folds away so the dock stays small; hover or focus brings it back. A pinned
     // reading keeps its file on show.
     if (state === 'ready' && !this.#readyAt) { this.#readyAt = performance.now(); this.#foldTimer = setTimeout(() => this.#dock(), TIMING.dockFold); }
     dock.toggleAttribute('data-fold', state === 'ready' && !this.#pinned && !this.#blueprint?.active && performance.now() - this.#readyAt >= TIMING.dockFold);
-    if (state === 'starting') { clearTimeout(this.#countTimer); this.#countTimer = setTimeout(() => this.#dock(), 1000); }
+    if (state === 'starting' || state === 'reading') { clearTimeout(this.#countTimer); this.#countTimer = setTimeout(() => this.#dock(), 1000); }
   }
   #countTimer = 0;
 
