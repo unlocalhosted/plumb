@@ -17,15 +17,15 @@ const SCREENS = Object.fromEntries(Object.entries(import.meta.glob('./screens/[0
 const W = 1080, H = 1350;
 
 /* ─────────────────────────────────────────────────────────
- * THE CLIP (#60, tooltip warm-up), about 12 s, loops
- *    0.0s   wide: the whole editor, the switch on "At once"
- *    0.5s   the pointer sweeps the toolbar: every tooltip flashes
- *    2.7s   camera in on the toolbar's left half
- *    3.6s   the slow sweep again, up close: pink ghosts where each one flashed
- *    5.9s   camera out; the pointer presses "Warm-up"
- *    7.0s   camera in; the pointer stops on Bold: the warm-up fills, then its tooltip
- *    8.4s   on to Italic and Underline: at once, warm (mint)
- *   10.0s   camera out; back to "At once", the first frame again
+ * THE CLIP (#60, hover cards on the line), about 15 s, loops
+ *    0.0s   wide: the pointer rests at the start of a line, reading
+ *    0.7s   it heads for the comment in the margin: each link it crosses opens its card over the words
+ *    2.7s   camera in on the line; back, and across again: pink ghosts where each card flashed
+ *    7.0s   camera out; the pointer presses "Warm-up"
+ *    8.5s   camera in; across to the comment: nothing opens
+ *   11.0s   back to "the scar", and it stops: the warm-up fills, then its card (mint)
+ *   13.3s   camera out; back to "At once", the first frame again
+ * owner, 2026-11-18: "on the top it is kind of intentional that user is going there", so the toolbar sweep didn't land
  * ───────────────────────────────────────────────────────── */
 const REST = 1.45;           // the editor's scale at rest (600 × 682 → 870 × 989 of 1080 × 1350)
 const ROOM = 1150;           // the camera's room: everything above the switch; the editor fades out at its foot
@@ -33,35 +33,31 @@ const EASE = 'cubic-bezier(.65, 0, .35, 1)';
 const CAM_MS = 900;
 
 const CLIPS = {
-  60: async ({ at, go, sweep, wait, camera, press }) => {
-    const style = 0, bold = 1, italic = 2, under = 3, numbered = 7, ai = 11; // by place: each switch remounts the editor
-    beat('1 · wide: the editor at rest');
-    go({ x: 980, y: 700 }); await wait(500);
-    beat('2 · the sweep: every tooltip flashes');
-    await sweep(at(style, -0.4), at(ai, 0.5), 1900);
-    await sweep(at(ai, 0.5), { x: 1000, y: 620 }, 300);
-    beat('3 · camera in on the toolbar');
-    await camera({ from: style, to: numbered }); await wait(150);
+  // the reader crosses the line on the way to the comment in the margin: every link's card opens over the words
+  60: async ({ p, go, sweep, wait, camera, press }) => {
+    const READ = [70, 338], BUBBLE = [562, 318], SCAR = [255, 335], NEAR = { x0: 150, x1: 604, yc: 378 };
+    beat('1 · wide: reading the line');
+    go(p(...READ)); await wait(700);
+    beat('2 · on the way to the comment: every card opens');
+    await sweep(p(...READ), p(...BUBBLE), 2100); await wait(450);
+    beat('3 · camera in on the line');
+    await camera(NEAR);
+    await sweep(null, p(170, 340), 700); await wait(250);
     beat('4 · up close: a ghost where each one flashed');
-    await sweep(at(style, -0.6), at(numbered, 0.5), 1500);
-    await wait(1100);
+    await sweep(null, p(...BUBBLE), 1900); await wait(1200);
     beat('5 · camera out, the switch');
-    await sweep(at(numbered, 0.5), { x: at(numbered).x, y: 420 }, 260);
     await camera(null);
     await press(1);
-    beat('6 · camera in: the first one waits');
-    await camera({ from: style, to: numbered }); await wait(100);
-    await sweep(at(style, -0.6), at(bold, 0.55), 520);
-    await wait(1250);
-    beat('7 · the next ones come at once');
-    await sweep(at(bold, 0.55), at(italic, 0.5), 260); await wait(650);
-    await sweep(at(italic, 0.5), at(under, 0.5), 260); await wait(900);
+    beat('6 · camera in: crossing opens nothing');
+    await camera(NEAR);
+    await sweep(null, p(170, 340), 650); await wait(200);
+    await sweep(null, p(...BUBBLE), 1900); await wait(700);
+    beat('7 · stop on a word: it opens after a beat');
+    await sweep(null, p(...SCAR), 650); await wait(1700);
     beat('8 · camera out, back to the start');
-    await sweep(at(under, 0.5), { x: at(under).x + 40, y: 420 }, 300);
     await camera(null);
     await press(0);
-    await sweep(null, { x: 980, y: 700 }, 700);
-    await wait(250);
+    await sweep(null, p(...READ), 750); await wait(300);
     beat('frame: line'); // the recorders stop here
   },
 };
@@ -90,10 +86,15 @@ export function ClipPage({ n }) {
     put(); addEventListener('resize', put); return () => removeEventListener('resize', put);
   }, []);
   // the editor at rest: centred above the switch
-  useLayoutEffect(() => {
-    const el = card.current?.firstElementChild; if (!el) return;
-    const h = el.offsetHeight * REST, w = 600 * REST;
-    setRest({ x: (W - w) / 2, y: Math.max(48, (ROOM - h) / 2) });
+  // measured once the fonts are in, so the first frame and the last (the loop's seam) put it in the same place
+  useEffect(() => {
+    let gone = false;
+    document.fonts.ready.then(() => requestAnimationFrame(() => {
+      const el = card.current?.firstElementChild; if (!el || gone) return;
+      const h = el.offsetHeight * REST, w = 600 * REST;
+      setRest({ x: (W - w) / 2, y: Math.max(48, (ROOM - h) / 2) });
+    }));
+    return () => { gone = true; };
   }, [Example]);
 
   // wrong is plumber's pink in the films (owner, 2026-11-15): the marks' shadow roots set --pl-off on :host, so say it there
@@ -111,6 +112,8 @@ export function ClipPage({ n }) {
     const wait = (ms) => new Promise((ok) => setTimeout(ok, ms));
     const toStage = (r) => { const o = stage.current.getBoundingClientRect(); return { x: (r.left - o.left) / fit, y: (r.top - o.top) / fit, w: r.width / fit, h: r.height / fit }; };
     const tools = () => [...card.current.querySelectorAll('[data-tool]')];
+    // a point in the editor's own pixels (600 wide), in stage pixels wherever the camera is
+    const p = (x, y) => { const c = toStage(card.current.getBoundingClientRect()), k = c.w / 600; return { x: c.x + x * k, y: c.y + y * k }; };
     // a point on a control, in stage pixels: across it by u (0 its left edge, 1 its right), at its middle
     const at = (el, u = 0.5) => { const b = toStage(el.getBoundingClientRect()); return { x: b.x + b.w * u, y: b.y + b.h * 0.55 }; };
     // what a mouse at this point would be over: the events a real pointer sends when that changes
@@ -131,12 +134,11 @@ export function ClipPage({ n }) {
         go({ x: a.x + (b.x - a.x) * e, y: a.y + (b.y - a.y) * e }); await wait(16);
       }
     };
-    // camera in on a run of tools (their row and the tooltips under it fill the frame's width), or back to rest
+    // camera in on a stretch of the editor (x0..x1 of its 600px fill the frame's width), or back to rest
     const camera = async (span) => {
       if (!span) { setCam(null); await wait(CAM_MS); return; }
-      const all = tools(), from = all[span.from] ?? span.from, to = all[span.to] ?? span.to;
-      const x0 = from.offsetLeft - 14, x1 = to.offsetLeft + to.offsetWidth + 14, k = (W - 80) / (x1 - x0);
-      setCam({ k, x: 40 - x0 * k, y: 470 - 40 * k });
+      const { x0, x1, yc } = span, k = (W - 60) / (x1 - x0);   // x0..x1 fill the width; yc sits at the room's middle
+      setCam({ k, x: 30 - x0 * k, y: ROOM * 0.45 - yc * k });
       await wait(CAM_MS);
     };
     // the pointer goes to a side of the switch and presses it
@@ -150,7 +152,7 @@ export function ClipPage({ n }) {
     (async () => {
       await document.fonts?.ready; await wait(300);
       const t = (el) => (typeof el === 'number' ? tools()[el] : el);
-      await clip({ at: (el, u) => at(t(el), u), go, sweep, wait, camera, press, tools });
+      await clip({ p, at: (el, u) => at(t(el), u), go, sweep, wait, camera, press, tools });
     })();
     return () => { gone = true; };
   }, [rest, clip]);

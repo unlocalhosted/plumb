@@ -82,6 +82,12 @@ function List({ numbered }) {
   );
 }
 const SERIF = 'font-["New_York",ui-serif,Georgia,serif]';
+// the article's own links, each with a hover card, wired as the toolbar's tooltips are: the reader crosses them on the
+// way to something else (the comment in the margin), so a card that opens on arrival covers the line being read
+const CARDS = [
+  { label: 'Saltburn Scar', line: 'A reef bared at low tide, a mile out from the pier.', meta: 'Place · North Yorkshire' },
+  { label: 'Tide times', line: 'Low water 07:42, 0.6 m. High water 13:58, 5.4 m.', meta: 'Saltburn · 14 March' },
+];
 
 export default function FolioEditor({ side = 'broken', onStatus }) {
   const root = useRef(null), tip = useRef(null);
@@ -135,7 +141,10 @@ export default function FolioEditor({ side = 'broken', onStatus }) {
   const cur = visits.at(-1), t = now();
   const kind = (v) => (!fixed ? 'off' : v.next ? 'on' : 'sky');
   const tagText = (v) => { const w = Math.round(v.shown - v.t); return !fixed ? `${w}ms · no warm-up` : v.next ? `${w}ms · warm ✓` : `${w}ms · warm-up`; };
-  const tools = TOOLS.filter(Boolean);
+  const tools = TOOLS.filter(Boolean), card = (j) => {
+    const at = tools.length + j;
+    return { 'data-tool': true, 'aria-label': CARDS[j].label, onPointerEnter: () => enter(at), onPointerLeave: leave };
+  };
   return (
     <article ref={root} onPointerLeave={leave} className="relative w-[37.5rem] max-w-full rounded-sheet bg-surface shadow-window">
       <div role="toolbar" aria-label="Formatting" className="flex h-12 items-center gap-1.5 border-b-hairline border-line px-2.5">
@@ -158,7 +167,17 @@ export default function FolioEditor({ side = 'broken', onStatus }) {
           );
         })}
       </div>
-      {open ? (() => {
+      {open && open.i >= tools.length ? (() => {
+        const c = CARDS[open.i - tools.length];
+        return (
+          <span ref={tip} role="tooltip" style={{ left: open.at.x - 8, top: open.at.y + open.at.h + 8 }}
+            className="pointer-events-none absolute z-10 flex w-[248px] flex-col gap-1 rounded-control bg-surface p-3 text-left shadow-overlay ring-1 ring-line">
+            <span className="text-[11px] font-semibold tracking-caps text-ink-muted uppercase">{c.meta}</span>
+            <span className="text-[14px] font-semibold text-ink">{c.label}</span>
+            <span className="text-[13px] leading-[18px] text-ink-muted">{c.line}</span>
+          </span>
+        );
+      })() : open ? (() => {
         const [, label, key] = tools[open.i];
         return (
           <span ref={tip} role="tooltip" style={{ left: open.at.x + open.at.w / 2, top: open.at.y + open.at.h + 6 }}
@@ -180,7 +199,7 @@ export default function FolioEditor({ side = 'broken', onStatus }) {
           the <span className="bg-accent/15">dog walkers come down the cliff lift in pairs</span><span aria-hidden="true" className="-mx-px inline-block h-5 w-0.5 rounded-full bg-accent align-[-4px]" />, coats zipped to the chin.
         </p>
         <p className={`mt-[18px] max-w-[28.5rem] text-[17px] leading-7 text-pretty ${SERIF}`}>
-          We walked the <span className="rounded-[2px] bg-caution-soft shadow-[inset_0_-2px_0_#e9b949]">mile to the scar</span> before the tide turned, and back again with wet boots and a bag of sea glass.
+          We walked the mile to <span {...card(0)} className="underline decoration-ink-subtle decoration-1 underline-offset-[3px]">the scar</span> before <span {...card(1)} className="underline decoration-ink-subtle decoration-1 underline-offset-[3px]">the tide turned</span>, and back again with wet boots and <span className="rounded-[2px] bg-caution-soft shadow-[inset_0_-2px_0_#e9b949]">a bag of sea glass</span>.
         </p>
         <span className="absolute top-[256px] right-4 flex h-[26px] items-center gap-1 rounded-full bg-surface pr-2 pl-[3px] text-xs font-medium text-ink-muted shadow-raised ring-1 ring-line">
           <img src={owen} alt="" className="size-5 rounded-full object-cover" /><span className="tabular-nums">2</span>
@@ -203,7 +222,9 @@ export default function FolioEditor({ side = 'broken', onStatus }) {
           const b = local(root.current)(btns()[cur.i]), k = Math.min(1, (t - cur.t) / FIRST);
           return <span style={{ position: 'absolute', left: b.x + 4, top: b.y + b.h + 1, width: (b.w - 8) * k, height: 2, borderRadius: 1, background: 'var(--pl-sky)' }} />;
         })() : null}
-        {last && last.box ? <Tag x={last.box.x + last.box.w + 8} y={last.box.y + last.box.h / 2} off={kind(last) === 'off'}>{tagText(last)}</Tag> : null}
+        {last && last.box ? (last.i >= tools.length // a card is wide: its tag sits under it
+          ? <Tag x={last.box.x} y={last.box.y + last.box.h + 18} off={kind(last) === 'off'}>{tagText(last)}</Tag>
+          : <Tag x={last.box.x + last.box.w + 8} y={last.box.y + last.box.h / 2} off={kind(last) === 'off'}>{tagText(last)}</Tag>) : null}
       </MarksLayer>
     </article>
   );
