@@ -89,7 +89,7 @@ const CARDS = [
   { label: 'Tide times', line: 'Low water 07:42, 0.6 m. High water 13:58, 5.4 m.', meta: 'Saltburn · 14 March' },
 ];
 
-export default function FolioEditor({ side = 'broken', onStatus }) {
+export default function FolioEditor({ side = 'broken', onStatus, clip = false }) {
   const root = useRef(null), tip = useRef(null);
   const tt = useRef({ timer: 0, lastClose: -Infinity });
   const [open, setOpen] = useState(null);      // { i, at } of the tooltip on screen
@@ -218,7 +218,23 @@ export default function FolioEditor({ side = 'broken', onStatus }) {
         </span>
       </footer>
 
-      <MarksLayer>
+      {clip ? (
+        // the social clip's marks (ClipPage): no measurements, only the verdict on the card that is open, in words
+        <MarksLayer>
+          {cur && waiting && fixed && root.current ? (() => {
+            const b = local(root.current)(btns()[cur.i]), k = Math.min(1, (t - cur.t) / FIRST);
+            return <span style={{ position: 'absolute', left: b.x, top: b.y + b.h + 1, width: b.w * k, height: 3, borderRadius: 2, background: 'var(--pl-on)' }} />;
+          })() : null}
+          {open && cur?.box && cur.gone === null ? (
+            <>
+              <span style={{ position: 'absolute', left: cur.box.x - 4, top: cur.box.y - 4, width: cur.box.w + 8, height: cur.box.h + 8, borderRadius: 10, boxSizing: 'border-box',
+                border: `2px solid ${hue(!fixed)}`, animation: 'pl-clip-ring 260ms cubic-bezier(.3, 1.4, .5, 1) both' }} />
+              <Tag x={cur.box.x} y={cur.box.y + cur.box.h + 20} off={!fixed}>{fixed ? 'Opened after a pause' : cur.held ? 'Opened mid-selection' : 'Opened instantly'}</Tag>
+              <style>{'@keyframes pl-clip-ring { from { opacity: 0; transform: scale(.96) } to { opacity: 1; transform: none } }'}</style>
+            </>
+          ) : null}
+        </MarksLayer>
+      ) : <MarksLayer>
         {!fixed ? flashed.slice(-8).map((v, j) => <Ghost key={j} {...v.box} />) : null}
         {cur && waiting && fixed && root.current ? (() => {
           const b = local(root.current)(btns()[cur.i]), k = Math.min(1, (t - cur.t) / FIRST);
@@ -227,7 +243,7 @@ export default function FolioEditor({ side = 'broken', onStatus }) {
         {last && last.box ? (last.i >= tools.length // a card is wide: its tag sits under it
           ? <Tag x={last.box.x} y={last.box.y + last.box.h + 18} off={kind(last) === 'off'}>{tagText(last)}</Tag>
           : <Tag x={last.box.x + last.box.w + 8} y={last.box.y + last.box.h / 2} off={kind(last) === 'off'}>{tagText(last)}</Tag>) : null}
-      </MarksLayer>
+      </MarksLayer>}
     </article>
   );
 }

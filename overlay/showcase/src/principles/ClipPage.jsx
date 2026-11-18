@@ -104,10 +104,11 @@ export function ClipPage({ n }) {
     return () => { gone = true; };
   }, [Example]);
 
-  // no measurements on a clip (owner, 2026-11-18: "what are these red boxes"): the screen's marks layer is hidden
+  // the clip asks the screen for its plain marks (a ring and a verdict in words, no measurements; owner, 2026-11-18);
+  // wrong is plumber's pink in the films, and the marks' shadow roots set --pl-off on :host, so say it there
   useEffect(() => {
     for (const h of card.current?.querySelectorAll('*') ?? []) {
-      if (h.shadowRoot && !h.shadowRoot.querySelector('style[data-clip]')) { const st = document.createElement('style'); st.dataset.clip = ''; st.textContent = ':host { display: none !important; }'; h.shadowRoot.append(st); }
+      if (h.shadowRoot && !h.shadowRoot.querySelector('style[data-clip]')) { const st = document.createElement('style'); st.dataset.clip = ''; st.textContent = ':host { --pl-off: var(--pl-pink) !important; --pl-off-bg: var(--pl-pink-soft) !important; }'; h.shadowRoot.append(st); }
     }
   }, [side, round, rest]);
 
@@ -192,7 +193,7 @@ export function ClipPage({ n }) {
           font: '700 54px/1.12 "Bricolage Grotesque", var(--pl-round)', letterSpacing: '-0.02em', color: '#1c1b19', animation: 'clip-say 520ms cubic-bezier(.2, .8, .2, 1) both' }}>{words?.[side]}</p>
         <div style={{ position: 'absolute', left: 0, top: TOP, right: 0, height: ROOM, overflow: 'hidden', maskImage: 'linear-gradient(transparent, #000 5%, #000 93%, transparent)' }}>
         <div ref={card} data-example style={{ position: 'absolute', left: 0, top: 0, width: 600, transformOrigin: '0 0', transform: tf, transition: `transform ${CAM_MS}ms ${EASE}`, visibility: rest ? 'visible' : 'hidden' }}>
-          <Example key={side + round} side={side} />
+          <Example key={side + round} side={side} clip />
         </div>
         </div>
         <div ref={sw} style={{ position: 'absolute', left: '50%', bottom: 120 / 2.1, transform: 'translateX(-50%)', zoom: 2.1 }}>
