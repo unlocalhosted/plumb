@@ -2345,6 +2345,45 @@ field is empty). The table of five writes, before and after. The Next table: eig
 - **Dead ends:** a pastel pill with brown letters, a brick-red pill, pink gradient blobs over half the frame, a bench with rulers. A misplaced comment once broke the film page, and a render was started without the owner's OK; renders now wait for it.
 - **Proof:** docs/films/panel-stills.png; the three films rendered again in docs/media.
 
+### The lesson films flopped; next is a short loop (2026-11-18)
+
+- **The itch:** the owner posted the lesson films on Twitter and LinkedIn: "this style failed totally nobody even
+  liked the video... like 0 likes".
+- **The system behind it (our reading, partly a guess):** we built a 37-second lesson that ends on our brand, which a
+  feed reads as an ad. The clip that set the bar (maybepratikk's tabular figures, 15 s) shows the fault in the first
+  second, fills the frame with one component and a switch, puts no words on screen, and loops. Ours opened on a
+  title and a slow camera, gave the demo a third of a 16:9 frame (tiny on a phone), and asked people to read a panel
+  while watching. Reach on a small account may also be part of it; we can't see it.
+- **What we chose:** the owner picked a short loop: 8 to 12 seconds, portrait 4:5, the component and its switch
+  full frame on a plain canvas, plumber's marks as the only drawing, the lesson in the post's text, the logo small in
+  a corner. First clip: tooltip warm-up (#60), picked by the owner.
+- **Dead ends:** the silk stage, the words panel and the closing card, for social clips. Film 42 was drafted in the
+  old style and is parked.
+
+## landmines and anti-slop on our code (2026-11-18)
+- **The itch:** the owner shared a linter built to catch the shortcuts coding agents take, and asked to "install
+  this and see what trash we have".
+- **How we found it:** landmines (ten oxlint rules, see references) run once over the whole repository from a scratch
+  folder, 12,068 findings, then each kind read against the code it pointed at.
+- **The system behind it:** most of the tests were written by agents racing a slow, swapping laptop. When a test
+  failed for timing, the cheap move was a sleep or a retry, and nothing stopped it. The linter's other rules (no
+  comments, no written return types) are one company's house style, and ours is the opposite on purpose.
+- **What is real:** about ten fixed sleeps that stand in for a signal (2.2 s because the overlay's index lives 2 s;
+  2.5 s after an apply-all; 1 s before reading a new Next sidecar; 300 ms for a file watcher); a retry loop in five
+  clean-up tests that tries four times and swallows "context was destroyed"; one test that replaces `fs.watch`
+  with a fake. About 30 more sleeps sit inside bounded polling loops, which are honest but slow.
+- **What is noise here:** 10,183 comments (prose about why; none is dead code), 1,416 return types, 415 per-test time
+  limits (Node's runner has none by default, so they guard against hangs), one file name rule, and four browser
+  stubs that simulate a hidden tab or a blocked Worker on purpose.
+- **anti-slop, the same day:** the owner added a second rule set ("also this as well"), aimed at types that
+  claim more than the code knows. 26,214 findings; 23,528 are blank-line spacing and most of the rest are habits we
+  keep on purpose (`typeof` checks, `{}` spreads for optional fields, plain `Record` types for parsed JSON). Real:
+  75 double casts through `unknown` in the engine, mostly reading syntax tree nodes as open records, where one typed
+  helper would do; one that passes `undefined` as a whole report to a function typed to need one
+  (`src/onboarding/propose.ts:183`, safe today only because the function returns early first); 28 functions that
+  return `unknown`; 3 lists copied inside a loop. No module mocks, which matches landmines.
+- **The fix and the proof:** nothing fixed yet. Ranked list in backlog.md, under Tests.
+
 - **Start-up judges nothing (2026-11-18):** the owner asked for open-page-first at start-up. The session now reads
   what the whole app shares and judges no file until a page or a project-wide view asks. algorecall goes from 58 s to
   46 s to ready, with every sampled file's findings equal to the full report's. On the way: one MDX components file

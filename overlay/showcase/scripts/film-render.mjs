@@ -16,8 +16,9 @@ import { checkPage, refuse } from './film-script-check.mjs';
 const args = process.argv.slice(2), n = Number(args[0]), out = args[1];
 if (!n || !out) { console.error('usage: film-render.mjs <N> <out.mp4> [--fps 60] [--size 1920x1080] [--origin URL]'); process.exit(2); }
 const opt = (name, fallback) => { const i = args.indexOf(name); return i > 0 ? args[i + 1] : fallback; };
-const fps = Number(opt('--fps', 60)), [w, h] = opt('--size', '1920x1080').split('x').map(Number), origin = opt('--origin', 'http://localhost:4313');
-const step = 1000 / fps, TAIL = 2500, LIMIT = 90000; // hold past the closing line; never longer than this
+const clip = args.includes('--clip'); // a social clip (/clip/N): 4:5, ends on its last frame so it loops
+const fps = Number(opt('--fps', 60)), [w, h] = opt('--size', clip ? '1080x1350' : '1920x1080').split('x').map(Number), origin = opt('--origin', 'http://localhost:4313');
+const step = 1000 / fps, TAIL = clip ? 0 : 2500, LIMIT = 90000; // hold past the closing line; never longer than this
 
 const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: { width: w, height: h }, deviceScaleFactor: 1 });
@@ -26,7 +27,7 @@ page.on('pageerror', (e) => errors.push(String(e)));
 const T0 = Date.now();
 await page.clock.install({ time: T0 });
 await page.clock.pauseAt(T0 + 10); // an installed clock still runs in real time: paused, only the frames below move it
-await page.goto(`${origin}/film/${n}`);
+await page.goto(`${origin}/${clip ? 'clip' : 'film'}/${n}`);
 { const problems = await checkPage(page); if (problems.length) { await browser.close(); refuse(n, problems); } }
 
 // the film's own time, counted here frame by frame (the page's performance.now keeps running in real time while frames

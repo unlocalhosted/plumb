@@ -45,7 +45,7 @@ const LINE = 'A design review on every screen.';   // the site's hero line (home
 // appears inside it, and the guardrails the mark is built in draw themselves on.
 const GUARD = '#2f86dc';
 // the mark's two parts, from the one source the site's bar and the overlay's dock draw from too
-const Mark = ({ size, guards = false }) => (
+export const Mark = ({ size, guards = false }) => (
   <svg viewBox="0 0 120 120" width={size} height={size} aria-hidden="true" style={{ overflow: 'visible' }}>
     <defs>
       <linearGradient id="mk-stem" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#ff7ac0" /><stop offset=".55" stopColor="#f24a9f" /><stop offset="1" stopColor="#d0287f" /></linearGradient>

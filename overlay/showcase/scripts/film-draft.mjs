@@ -19,14 +19,16 @@ import { checkPage, refuse } from './film-script-check.mjs';
 const args = process.argv.slice(2), n = Number(args[0]);
 if (!n) { console.error('usage: film-draft.mjs <N> [--origin URL] [--out DIR]'); process.exit(2); }
 const opt = (name, fallback) => { const i = args.indexOf(name); return i > 0 ? args[i + 1] : fallback; };
-const origin = opt('--origin', 'http://localhost:4313'), query = opt('--query', ''); // --query '?panel=paper': a variant to compare
-const out = resolve(opt('--out', `docs/films/${String(n).padStart(2, '0')}-draft`));
+const origin = opt('--origin', 'http://localhost:4313'), query = opt('--query', '');
+const clip = args.includes('--clip'); // a social clip (/clip/N): 4:5, and it ends on its last frame // --query '?panel=paper': a variant to compare
+const out = resolve(opt('--out', `docs/films/${String(n).padStart(2, '0')}-${clip ? 'clip' : 'draft'}`));
+const [VW, VH] = clip ? [1080, 1350] : [1600, 900], TAIL = clip ? 100 : 2500;
 const SETTLE = 900;      // ms after a beat starts before its keyframe: its marks drawn, its camera move mostly done
 const LIMIT = 60000;     // a film never runs longer than this
 
 rmSync(out, { recursive: true, force: true }); mkdirSync(out, { recursive: true });
 const browser = await chromium.launch();
-const ctx = await browser.newContext({ viewport: { width: 1600, height: 900 }, deviceScaleFactor: 1, recordVideo: { dir: out, size: { width: 1600, height: 900 } } });
+const ctx = await browser.newContext({ viewport: { width: VW, height: VH }, deviceScaleFactor: 1, recordVideo: { dir: out, size: { width: VW, height: VH } } });
 const page = await ctx.newPage();
 const errors = [];
 page.on('pageerror', (e) => errors.push(String(e)));
@@ -41,9 +43,9 @@ await page.exposeFunction('__filmBeat', (name, t) => {
   beats.push({ name, at });
   const file = `${String(i).padStart(2, '0')}-${name.replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '').toLowerCase().slice(0, 48)}.png`;
   shots.push(new Promise((ok) => setTimeout(() => page.screenshot({ path: join(out, file) }).then(() => ok(file), () => ok(null)), SETTLE)));
-  if (name === 'frame: line') setTimeout(done, 2500); // the closing line is the last beat; hold a moment past it
+  if (name === 'frame: line') setTimeout(done, TAIL + SETTLE); // the closing line is the last beat; hold a moment past it
 });
-await page.goto(`${origin}/film/${n}${query}`);
+await page.goto(`${origin}/${clip ? 'clip' : 'film'}/${n}${query}`);
 const problems = await checkPage(page);
 if (problems.length) { await ctx.close(); await browser.close(); rmSync(out, { recursive: true, force: true }); refuse(n, problems); }
 await Promise.race([finished, new Promise((ok) => setTimeout(ok, LIMIT))]);
@@ -52,11 +54,11 @@ await ctx.close(); await browser.close();
 
 const video = readdirSync(out).find((f) => f.endsWith('.webm'));
 if (video) renameSync(join(out, video), join(out, 'draft.webm'));
-const length = beats.length ? beats.at(-1).at + 2.5 : 0;
+const length = beats.length ? beats.at(-1).at + TAIL / 1000 : 0;
 const rows = beats.map((b, i) => {
   const next = beats[i + 1]?.at ?? length;
   return `| ${b.at.toFixed(1)} s | ${(next - b.at).toFixed(1)} s | ${b.name} | ${files[i] ? `[keyframe](${files[i]})` : ''} |`;
 });
-writeFileSync(join(out, 'beats.md'), `# Film № ${n}, draft beats\n\nOne run at 1600 × 900. Timecodes from the film's own beats (±0.1 s); each keyframe ${SETTLE} ms into its beat.\nLength about ${length.toFixed(1)} s.${errors.length ? `\n\nErrors while it ran:\n${errors.map((e) => `- ${e}`).join('\n')}` : ''}\n\n| at | lasts | beat | |\n|---|---|---|---|\n${rows.join('\n')}\n`);
+writeFileSync(join(out, 'beats.md'), `# Film № ${n}, draft beats\n\nOne run at ${VW} × ${VH}. Timecodes from the film's own beats (±0.1 s); each keyframe ${SETTLE} ms into its beat.\nLength about ${length.toFixed(1)} s.${errors.length ? `\n\nErrors while it ran:\n${errors.map((e) => `- ${e}`).join('\n')}` : ''}\n\n| at | lasts | beat | |\n|---|---|---|---|\n${rows.join('\n')}\n`);
 if (video) execFileSync('ffmpeg', ['-loglevel', 'error', '-y', '-i', join(out, 'draft.webm'), '-vf', 'fps=1,scale=400:-1,tile=8x5', '-frames:v', '1', join(out, 'sheet.png')]);
 console.log(JSON.stringify({ out, beats: beats.length, length: +length.toFixed(1), errors }, null, 1));

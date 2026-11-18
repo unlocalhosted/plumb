@@ -42,7 +42,7 @@ import { TOY_DEFS, toyOf } from '../../../src/toys.js';
 ensureLook();
 
 // the technique switch, in plumber's language: a sunk track, a lit thumb that slides on the spring, names in the toy face
-function TechniqueSwitch({ names, fixed, ready, onBack, onFix, glass = false, full = false }) {
+export function TechniqueSwitch({ names, fixed, ready, onBack, onFix, glass = false, full = false }) {
   const s = useContext(UI);
   const track = useRef(null);
   const [thumb, setThumb] = useState(null);
