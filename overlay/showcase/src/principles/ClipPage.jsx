@@ -17,15 +17,15 @@ const SCREENS = Object.fromEntries(Object.entries(import.meta.glob('./screens/[0
 const W = 1080, H = 1350;
 
 /* ─────────────────────────────────────────────────────────
- * THE CLIP (#60, hover cards on the line), about 15 s, loops
- *    0.0s   wide: the pointer rests at the start of a line, reading
- *    0.7s   it heads for the comment in the margin: each link it crosses opens its card over the words
- *    2.7s   camera in on the line; back, and across again: pink ghosts where each card flashed
- *    7.0s   camera out; the pointer presses "Warm-up"
- *    8.5s   camera in; across to the comment: nothing opens
- *   11.0s   back to "the scar", and it stops: the warm-up fills, then its card (mint)
- *   13.3s   camera out; back to "At once", the first frame again
- * owner, 2026-11-18: "on the top it is kind of intentional that user is going there", so the toolbar sweep didn't land
+ * THE CLIP (#60, hover cards while selecting), about 17 s, loops
+ *    0.0s   wide: the pointer rests by a line, about to select a phrase
+ *    1.0s   it drags across "the scar before the tide turned": each link's card opens mid-selection, over the words
+ *    4.2s   camera in on the line; the same selection again, each card marked in pink
+ *    8.7s   camera out; the pointer presses "Warm-up"
+ *   10.0s   camera in; the same selection: nothing opens (a held button is selecting, not looking)
+ *   12.6s   it stops on "the scar" to look: the warm-up fills, then its card (mint)
+ *   14.9s   camera out; back to "At once", the first frame again
+ * owner, 2026-11-18: the toolbar sweep read as intentional; selecting is where an eager card gets in the way
  * ───────────────────────────────────────────────────────── */
 const REST = 1.45;           // the editor's scale at rest (600 × 682 → 870 × 989 of 1080 × 1350)
 const ROOM = 1150;           // the camera's room: everything above the switch; the editor fades out at its foot
@@ -33,31 +33,33 @@ const EASE = 'cubic-bezier(.65, 0, .35, 1)';
 const CAM_MS = 900;
 
 const CLIPS = {
-  // the reader crosses the line on the way to the comment in the margin: every link's card opens over the words
-  60: async ({ p, go, sweep, wait, camera, press }) => {
-    const READ = [70, 338], BUBBLE = [562, 318], SCAR = [255, 335], NEAR = { x0: 150, x1: 604, yc: 378 };
-    beat('1 · wide: reading the line');
-    go(p(...READ)); await wait(700);
-    beat('2 · on the way to the comment: every card opens');
-    await sweep(p(...READ), p(...BUBBLE), 2100); await wait(450);
+  // the reader selects a phrase across two links: without a warm-up each card opens mid-selection, over the words
+  60: async ({ p, go, sweep, select, wait, camera, press }) => {
+    const REST = [205, 352], FROM = [224, 336], TO = [454, 336], SCAR = [256, 336], NEAR = { x0: 150, x1: 604, yc: 380 };
+    beat('1 · wide: about to select a phrase');
+    go(p(...REST)); await wait(600);
+    beat('2 · selecting: every card opens over the line');
+    await sweep(null, p(...FROM), 400);
+    await select(p(...FROM), p(...TO), 1900); await wait(800);
     beat('3 · camera in on the line');
+    await sweep(null, p(...REST), 500);
     await camera(NEAR);
-    await sweep(null, p(170, 340), 700); await wait(250);
-    beat('4 · up close: a ghost where each one flashed');
-    await sweep(null, p(...BUBBLE), 1900); await wait(1200);
+    beat('4 · up close: selecting again, each card marked');
+    await sweep(null, p(...FROM), 400);
+    await select(p(...FROM), p(...TO), 1900); await wait(1300);
     beat('5 · camera out, the switch');
     await camera(null);
     await press(1);
-    beat('6 · camera in: crossing opens nothing');
+    beat('6 · camera in: selecting opens nothing');
     await camera(NEAR);
-    await sweep(null, p(170, 340), 650); await wait(200);
-    await sweep(null, p(...BUBBLE), 1900); await wait(700);
-    beat('7 · stop on a word: it opens after a beat');
+    await sweep(null, p(...FROM), 600);
+    await select(p(...FROM), p(...TO), 1900); await wait(700);
+    beat('7 · stop on a word to look: it opens after a beat');
     await sweep(null, p(...SCAR), 650); await wait(1700);
     beat('8 · camera out, back to the start');
     await camera(null);
     await press(0);
-    await sweep(null, p(...READ), 750); await wait(300);
+    await sweep(null, p(...REST), 700); await wait(300);
     beat('frame: line'); // the recorders stop here
   },
 };
@@ -78,7 +80,7 @@ export function ClipPage({ n }) {
   const [cam, setCam] = useState(null);       // null: at rest; else the transform up close
   const [rest, setRest] = useState(null);     // the editor's place at rest
   const [ptr, setPtr] = useState({ x: 980, y: 700, down: false });
-  const over = useRef(null), pos = useRef({ x: 980, y: 700 });
+  const over = useRef(null), pos = useRef({ x: 980, y: 700 }), held = useRef(0);
 
   useEffect(() => { ensureLook(); window.__filmSpec = {}; }, []);
   useLayoutEffect(() => {
@@ -121,8 +123,9 @@ export function ClipPage({ n }) {
       const o = stage.current.getBoundingClientRect();
       const el = document.elementFromPoint(o.left + p.x * fit, o.top + p.y * fit), was = over.current;
       if (el === was) return;
-      if (was) { was.dispatchEvent(new PointerEvent('pointerout', { bubbles: true, relatedTarget: el, pointerType: 'mouse' })); was.closest('button')?.removeAttribute('data-clip-hover'); }
-      if (el) { el.dispatchEvent(new PointerEvent('pointerover', { bubbles: true, relatedTarget: was, pointerType: 'mouse' })); el.closest('[data-tool]')?.setAttribute('data-clip-hover', ''); }
+      const b = held.current;
+      if (was) { was.dispatchEvent(new PointerEvent('pointerout', { bubbles: true, relatedTarget: el, pointerType: 'mouse', buttons: b })); was.closest('button')?.removeAttribute('data-clip-hover'); }
+      if (el) { el.dispatchEvent(new PointerEvent('pointerover', { bubbles: true, relatedTarget: was, pointerType: 'mouse', buttons: b })); el.closest('[data-tool]')?.setAttribute('data-clip-hover', ''); }
       over.current = el;
     };
     const go = (p) => { pos.current = p; setPtr((x) => ({ ...x, ...p })); hit(p); };
@@ -133,6 +136,21 @@ export function ClipPage({ n }) {
         const t = i / steps, e = t < 0.5 ? 2 * t * t : 1 - (-2 * t + 2) ** 2 / 2;
         go({ x: a.x + (b.x - a.x) * e, y: a.y + (b.y - a.y) * e }); await wait(16);
       }
+    };
+    // press at a, drag to b with the button held, release: the page's real text selection follows the pointer
+    const caret = (q) => { const o = stage.current.getBoundingClientRect(); return document.caretRangeFromPoint(o.left + q.x * fit, o.top + q.y * fit); };
+    const select = async (a, b, ms) => {
+      const sel = getSelection(); sel.removeAllRanges();
+      setPtr((x) => ({ ...x, down: true })); held.current = 1;
+      const from = caret(a); hit(a);
+      const steps = Math.max(1, Math.round(ms / 16));
+      for (let i = 1; i <= steps && !gone; i++) {
+        const t = i / steps, e = t < 0.5 ? 2 * t * t : 1 - (-2 * t + 2) ** 2 / 2, q = { x: a.x + (b.x - a.x) * e, y: a.y + (b.y - a.y) * e };
+        go(q);
+        const to = caret(q); if (from && to) sel.setBaseAndExtent(from.startContainer, from.startOffset, to.startContainer, to.startOffset);
+        await wait(16);
+      }
+      held.current = 0; setPtr((x) => ({ ...x, down: false }));
     };
     // camera in on a stretch of the editor (x0..x1 of its 600px fill the frame's width), or back to rest
     const camera = async (span) => {
@@ -146,13 +164,13 @@ export function ClipPage({ n }) {
       const b = sw.current.querySelectorAll('button')[i];
       await sweep(null, at(b, 0.5), 650);
       setPtr((x) => ({ ...x, down: true })); await wait(140);
-      setSide(i ? 'fixed' : 'broken'); setRound((r) => r + 1);
+      getSelection().removeAllRanges(); setSide(i ? 'fixed' : 'broken'); setRound((r) => r + 1);
       setPtr((x) => ({ ...x, down: false })); await wait(260);
     };
     (async () => {
       await document.fonts?.ready; await wait(300);
       const t = (el) => (typeof el === 'number' ? tools()[el] : el);
-      await clip({ p, at: (el, u) => at(t(el), u), go, sweep, wait, camera, press, tools });
+      await clip({ p, select, at: (el, u) => at(t(el), u), go, sweep, wait, camera, press, tools });
     })();
     return () => { gone = true; };
   }, [rest, clip]);
@@ -162,7 +180,7 @@ export function ClipPage({ n }) {
   return (
     <div className="pl-light" style={{ position: 'fixed', inset: 0, display: 'grid', placeItems: 'center', background: '#111', overflow: 'hidden', '--pl-off': 'var(--pl-pink)', '--pl-off-bg': 'var(--pl-pink-soft)' }}>
       <div style={{ position: 'relative', width: W * fit, height: H * fit, overflow: 'hidden' }}>
-      <style>{'plumb-overlay { display: none !important; } [data-clip-hover] { background: var(--color-sunken); color: var(--color-ink); } body { margin: 0; }'}</style>
+      <style>{'plumb-overlay { display: none !important; } [data-clip-hover] { background: var(--color-sunken); color: var(--color-ink); } [data-example] ::selection { background: rgb(64 132 255 / .28); } body { margin: 0; }'}</style>
       <div ref={stage} style={{ width: W, height: H, position: 'absolute', left: 0, top: 0, transformOrigin: '0 0', transform: `scale(${fit})`, overflow: 'hidden', cursor: 'none',
         background: '#f5f4f0', backgroundImage: 'radial-gradient(circle, rgb(28 27 25 / .11) 1.3px, transparent 1.6px)', backgroundSize: '26px 26px' }}>
         <div style={{ position: 'absolute', left: 0, top: 0, right: 0, height: ROOM, overflow: 'hidden', maskImage: 'linear-gradient(#000 92%, transparent)' }}>

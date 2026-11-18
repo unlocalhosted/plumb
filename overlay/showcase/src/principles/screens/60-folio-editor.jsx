@@ -102,10 +102,12 @@ export default function FolioEditor({ side = 'broken', onStatus }) {
   useEffect(() => () => clearTimeout(tt.current.timer), []);
 
   // every tooltip on the toolbar is wired here, the same way
-  const enter = (i) => {
-    const t = now(), warm = t - tt.current.lastClose < WARM;
-    setVisits((v) => [...v.slice(-24), { i, t, shown: null, gone: null, next: warm, box: null }]);
+  // a held button means someone is selecting or dragging, not stopping to look: the fixed side opens nothing then
+  const enter = (i, e) => {
+    const t = now(), warm = t - tt.current.lastClose < WARM, held = (e?.buttons ?? 0) !== 0;
     clearTimeout(tt.current.timer);
+    if (fixed && held) return;
+    setVisits((v) => [...v.slice(-24), { i, t, shown: null, gone: null, next: warm, box: null, held }]);
     const wait = fixed ? (warm ? 0 : FIRST) : 0;
     const show = () => {
       tt.current.showing = true;
@@ -140,10 +142,10 @@ export default function FolioEditor({ side = 'broken', onStatus }) {
 
   const cur = visits.at(-1), t = now();
   const kind = (v) => (!fixed ? 'off' : v.next ? 'on' : 'sky');
-  const tagText = (v) => { const w = Math.round(v.shown - v.t); return !fixed ? `${w}ms · no warm-up` : v.next ? `${w}ms · warm ✓` : `${w}ms · warm-up`; };
+  const tagText = (v) => { const w = Math.round(v.shown - v.t); return !fixed ? (v.held ? `${w}ms · mid-selection` : `${w}ms · no warm-up`) : v.next ? `${w}ms · warm ✓` : `${w}ms · warm-up`; };
   const tools = TOOLS.filter(Boolean), card = (j) => {
     const at = tools.length + j;
-    return { 'data-tool': true, 'aria-label': CARDS[j].label, onPointerEnter: () => enter(at), onPointerLeave: leave };
+    return { 'data-tool': true, 'aria-label': CARDS[j].label, onPointerEnter: (e) => enter(at, e), onPointerLeave: leave };
   };
   return (
     <article ref={root} onPointerLeave={leave} className="relative w-[37.5rem] max-w-full rounded-sheet bg-surface shadow-window">
@@ -151,7 +153,7 @@ export default function FolioEditor({ side = 'broken', onStatus }) {
         {TOOLS.map((tool, i) => {
           if (!tool) return <span key={'sep' + i} aria-hidden="true" className="h-4 w-hairline shrink-0 bg-line" />;
           const [glyph, label] = tool, at = TOOLS.slice(0, i).filter(Boolean).length;
-          const own = { 'data-tool': true, 'aria-label': label, onPointerEnter: () => enter(at), onPointerLeave: leave };
+          const own = { 'data-tool': true, 'aria-label': label, onPointerEnter: (e) => enter(at, e), onPointerLeave: leave };
           if (glyph === 'style') return (
             <button key={label} type="button" {...own} aria-label="Text style: Body text" className="flex h-8 shrink-0 items-center gap-1 rounded-control pr-2 pl-2.5 text-[13px] font-medium whitespace-nowrap ring-1 ring-line ring-inset hover:bg-sunken active:bg-line">
               Body text<span aria-hidden="true" className="text-[10px] text-ink-subtle">▼</span>
@@ -232,5 +234,5 @@ export default function FolioEditor({ side = 'broken', onStatus }) {
 FolioEditor.names = ['At once', 'Warm-up'];
 FolioEditor.lesson = {
   why: 'A tooltip that shows the moment the pointer arrives fires for everything you cross on the way somewhere else. Every control on this toolbar has one, so sweeping from Body text to Ask AI sets off all eleven, each flashing up and gone before you could read it.',
-  habit: 'Wait about half a second for the first, the pause that means someone stopped to look; then, while they keep moving, show the next ones at once (Radix: delayDuration 500, skipDelayDuration 300).',
+  habit: 'Wait about half a second for the first, the pause that means someone stopped to look; then, while they keep moving, show the next ones at once (Radix: delayDuration 500, skipDelayDuration 300). Never open one while a button is held: that is someone selecting text, not looking.',
 };
