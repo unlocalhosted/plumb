@@ -497,6 +497,8 @@ async function dispatch(method: string, params: Record<string, unknown>): Promis
   if (method === 'keep') {
     // the reading table describes the whole-app report; with that let go it is not rebuilt for this, it is written the
     // next time the report exists (at start-up, before release, or after a project-wide view)
+    // built in the background right now: asked again shortly, the table is written from the report it builds
+    if (building?.revision === revision) return { done: false, building: true };
     if (!raw || dirty) return { done: true, skipped: true };
     const view = raw;
     if (!keeping || keeping.of !== view) keeping = { of: view, packer: new ReadingPacker(view), started: performance.now(), worked: 0, longest: 0, slices: 0 };

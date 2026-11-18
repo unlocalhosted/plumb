@@ -2120,7 +2120,9 @@ export class Session extends EventEmitter {
       let stats: KeptStats & { ms: number; packMs: number; longestMs: number; slices: number } | undefined, resolved: Resolutions = [];
       while (!stats) {
         if (revision !== this.revision || this.closed) return;
-        const step = await this.serializeRead(() => this.request<{ done: false } | { done: true; skipped: true } | ({ done: true; resolutions: Resolutions } & KeptStats & { ms: number; packMs: number; longestMs: number; slices: number })>('keep', { directory, ...(awaited ? { previous: awaited } : {}) }));
+        const step = await this.serializeRead(() => this.request<{ done: false; building?: true } | { done: true; skipped: true } | ({ done: true; resolutions: Resolutions } & KeptStats & { ms: number; packMs: number; longestMs: number; slices: number })>('keep', { directory, ...(awaited ? { previous: awaited } : {}) }));
+        // the whole-app report is being built in the background: the table is written from it once it is there
+        if ('building' in step) { await new Promise(resolve => setTimeout(resolve, 500)); continue; }
         // the worker has let go of the whole-app report (open page first): the table is written when it exists again
         if ('skipped' in step) return;
         if (step.done) { const { done: _done, resolutions, ...rest } = step; stats = rest; resolved = resolutions; }
