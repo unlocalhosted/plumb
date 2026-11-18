@@ -27,10 +27,15 @@ const W = 1080, H = 1350;
  *   14.9s   camera out; back to "At once", the first frame again
  * owner, 2026-11-18: the toolbar sweep read as intentional; selecting is where an eager card gets in the way
  * ───────────────────────────────────────────────────────── */
-const REST = 1.45;           // the editor's scale at rest (600 × 682 → 870 × 989 of 1080 × 1350)
-const ROOM = 1150;           // the camera's room: everything above the switch; the editor fades out at its foot
+const REST = 1.25;           // the editor's scale at rest (600 × 682 → 750 × 853)
+const TOP = 250, ROOM = 900; // the camera's room, between the caption and the switch; the editor fades at its edges
 const EASE = 'cubic-bezier(.65, 0, .35, 1)';
 const CAM_MS = 900;
+
+// what the clip says, one line a side, in big type above the editor; and the switch in plain words (owner, 2026-11-18)
+const WORDS = {
+  60: { broken: 'Hover that opens instantly fights with text selection.', fixed: 'A short warm-up makes hover intentional.', names: ['Opens instantly', 'Waits for a pause'] },
+};
 
 const CLIPS = {
   // the reader selects a phrase across two links: without a warm-up each card opens mid-selection, over the words
@@ -72,7 +77,7 @@ const Arrow = ({ down }) => (
 );
 
 export function ClipPage({ n }) {
-  const mod = SCREENS[n], Example = mod?.default, clip = CLIPS[n];
+  const mod = SCREENS[n], Example = mod?.default, clip = CLIPS[n], words = WORDS[n];
   const stage = useRef(null), card = useRef(null), sw = useRef(null);
   const [fit, setFit] = useState(1);
   const [side, setSide] = useState('broken');
@@ -94,15 +99,15 @@ export function ClipPage({ n }) {
     document.fonts.ready.then(() => requestAnimationFrame(() => {
       const el = card.current?.firstElementChild; if (!el || gone) return;
       const h = el.offsetHeight * REST, w = 600 * REST;
-      setRest({ x: (W - w) / 2, y: Math.max(48, (ROOM - h) / 2) });
+      setRest({ x: (W - w) / 2, y: (ROOM - h) / 2 });
     }));
     return () => { gone = true; };
   }, [Example]);
 
-  // wrong is plumber's pink in the films (owner, 2026-11-15): the marks' shadow roots set --pl-off on :host, so say it there
+  // no measurements on a clip (owner, 2026-11-18: "what are these red boxes"): the screen's marks layer is hidden
   useEffect(() => {
     for (const h of card.current?.querySelectorAll('*') ?? []) {
-      if (h.shadowRoot && !h.shadowRoot.querySelector('style[data-clip]')) { const st = document.createElement('style'); st.dataset.clip = ''; st.textContent = ':host { --pl-off: var(--pl-pink) !important; --pl-off-bg: var(--pl-pink-soft) !important; }'; h.shadowRoot.append(st); }
+      if (h.shadowRoot && !h.shadowRoot.querySelector('style[data-clip]')) { const st = document.createElement('style'); st.dataset.clip = ''; st.textContent = ':host { display: none !important; }'; h.shadowRoot.append(st); }
     }
   }, [side, round, rest]);
 
@@ -156,7 +161,7 @@ export function ClipPage({ n }) {
     const camera = async (span) => {
       if (!span) { setCam(null); await wait(CAM_MS); return; }
       const { x0, x1, yc } = span, k = (W - 60) / (x1 - x0);   // x0..x1 fill the width; yc sits at the room's middle
-      setCam({ k, x: 30 - x0 * k, y: ROOM * 0.45 - yc * k });
+      setCam({ k, x: 30 - x0 * k, y: ROOM * 0.5 - yc * k });
       await wait(CAM_MS);
     };
     // the pointer goes to a side of the switch and presses it
@@ -180,16 +185,18 @@ export function ClipPage({ n }) {
   return (
     <div className="pl-light" style={{ position: 'fixed', inset: 0, display: 'grid', placeItems: 'center', background: '#111', overflow: 'hidden', '--pl-off': 'var(--pl-pink)', '--pl-off-bg': 'var(--pl-pink-soft)' }}>
       <div style={{ position: 'relative', width: W * fit, height: H * fit, overflow: 'hidden' }}>
-      <style>{'plumb-overlay { display: none !important; } [data-clip-hover] { background: var(--color-sunken); color: var(--color-ink); } [data-example] ::selection { background: rgb(64 132 255 / .28); } body { margin: 0; }'}</style>
+      <style>{'plumb-overlay { display: none !important; } [data-clip-hover] { background: var(--color-sunken); color: var(--color-ink); } [data-example] ::selection { background: rgb(64 132 255 / .28); } @keyframes clip-say { from { opacity: 0; transform: translateY(14px); filter: blur(6px) } to { opacity: 1; transform: none; filter: none } } body { margin: 0; }'}</style>
       <div ref={stage} style={{ width: W, height: H, position: 'absolute', left: 0, top: 0, transformOrigin: '0 0', transform: `scale(${fit})`, overflow: 'hidden', cursor: 'none',
         background: '#f5f4f0', backgroundImage: 'radial-gradient(circle, rgb(28 27 25 / .11) 1.3px, transparent 1.6px)', backgroundSize: '26px 26px' }}>
-        <div style={{ position: 'absolute', left: 0, top: 0, right: 0, height: ROOM, overflow: 'hidden', maskImage: 'linear-gradient(#000 92%, transparent)' }}>
+        <p key={side} style={{ position: 'absolute', left: 90, right: 90, top: 0, height: TOP, margin: 0, display: 'grid', placeItems: 'center', textAlign: 'center', textWrap: 'balance',
+          font: '700 54px/1.12 "Bricolage Grotesque", var(--pl-round)', letterSpacing: '-0.02em', color: '#1c1b19', animation: 'clip-say 520ms cubic-bezier(.2, .8, .2, 1) both' }}>{words?.[side]}</p>
+        <div style={{ position: 'absolute', left: 0, top: TOP, right: 0, height: ROOM, overflow: 'hidden', maskImage: 'linear-gradient(transparent, #000 5%, #000 93%, transparent)' }}>
         <div ref={card} data-example style={{ position: 'absolute', left: 0, top: 0, width: 600, transformOrigin: '0 0', transform: tf, transition: `transform ${CAM_MS}ms ${EASE}`, visibility: rest ? 'visible' : 'hidden' }}>
           <Example key={side + round} side={side} />
         </div>
         </div>
-        <div ref={sw} style={{ position: 'absolute', left: '50%', bottom: 110 / 2.1, transform: 'translateX(-50%)', zoom: 2.1 }}>
-          <TechniqueSwitch names={Example.names} fixed={side === 'fixed'} ready={false} onBack={() => {}} onFix={() => {}} />
+        <div ref={sw} style={{ position: 'absolute', left: '50%', bottom: 120 / 2.1, transform: 'translateX(-50%)', zoom: 2.1 }}>
+          <TechniqueSwitch names={words?.names ?? Example.names} fixed={side === 'fixed'} ready={false} onBack={() => {}} onFix={() => {}} />
         </div>
         <span style={{ position: 'absolute', right: 40, bottom: 36, display: 'flex', alignItems: 'center', gap: 10, font: '750 22px/1 "Bricolage Grotesque", var(--pl-round)', color: 'rgb(28 27 25 / .55)' }}>
           <Mark size={28} />React Plumber
