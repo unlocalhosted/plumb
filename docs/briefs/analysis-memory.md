@@ -768,6 +768,35 @@ the first build: 1.1 s to 0.29 s, two thirds of it garbage collection. Findings,
 same, also with an edit mid-build, and the CLI's output is unchanged. Left: after an edit, re-gathering every
 file's classes runs 1.3 s in one piece (0.6 s of it garbage collection).
 
+## Start-up, where the 37 s go, and layer 2 as a plan (2026-11-18)
+
+Measured inside the worker on algorecall (vm-agent, profile timings, after the selector-hook change): ready at 36.9 s.
+Finding the project 3.6 s, its source files 1.0 s, stylesheets 2.3 s, unknown classes 2.0 s (1.8 of it selector
+hooks, which read every file again), libraries 1.9 s, the Tailwind compile 1.2 s, component steps about 1.8 s, config
+0.7 s. The rest, about 21 s, has no timing of its own: parsing every file and building its component shard.
+
+The background build changes what layer 2 has to be. The whole app is read right after start-up anyway; what the
+person waits for is the part before the first page can be judged. So layer 2 is: ready after the app-wide light
+steps, the open page's files read first, the rest read by the background build in slices.
+
+- **2a. Ready before collection.** Start-up stops after config, project, file list, stylesheets, the token record
+  and libraries. Collection, the component shards, the compile and the module graph move into the background build,
+  which already pauses for pages. A page read that arrives first collects its own file and the files it imports
+  (the collection is per file already), compiles only its own classes when the shared compile isn't there (Focus
+  does this today for a newly typed class), and reads stylesheets that use its variables. Proof: a page read before
+  collection ends equals the same page read after (findings and declarations), on a sample of 400 files, as the
+  prepared-start proof does now.
+- **2b. Custom properties before collection.** `sitesElsewhere`, `stylesReading` and `projectFiles` need every
+  file's `--` declarations and which files lower another's class literals. A pre-pass reads only those (a cheap text
+  scan gated on `--` and on class-helper imports) so 2a's page reads stay exact. Proof: the same sample, the seven
+  files that read the whole report today included.
+- **2c. Hooks and imports from the collection.** Selector hooks and the module graph read every file a second time;
+  both come from the collection's own parse when it exists, and from the pre-pass when it doesn't.
+
+The risk that decides the order: a page judged before the app-wide compile exists must get the same class props as
+after. Focus already compiles a page's own classes when one is new; 2a depends on that being exact for every class,
+which is checked first, on the sample, before any start-up step moves.
+
 ## Expected (guesses until measured)
 
 - Step 1 removes most of the 781 MB of trees and a share of the 234 MB that points into them.

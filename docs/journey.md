@@ -2427,6 +2427,14 @@ field is empty). The table of five writes, before and after. The Next table: eig
   can inspect now. Your setup steps fill in once every file is read." The setup steps are the screen that waited:
   their token rows read the whole-app list. Seen live on crafting-ui: starting, then reading, then the usual
   "Hold Alt to inspect".
+- **Start-up, first cut (same day):** start-up listed every unknown class with a suggested near class, then threw the
+  suggestions away, and checked each one against every file one name at a time. It now lists them without
+  suggestions and reads the files 64 at a time, one pass each. algorecall's worker is ready at 36.9 s instead of
+  39.0 s, with the same answers. The bigger part, about 21 s of reading every file before the first page, is planned
+  as layer 2 in docs/briefs/analysis-memory.md: ready before reading, the open page first, the rest in the background.
+- **The old failing tests, sorted:** the 36 files that failed before this work all pass now (time-outs on a busy
+  machine). Of what a full run found, one was ours (the kept reading table skipped while the report built in the
+  background; fixed), three passed again, and one Next.js test fails on every run, also before today's work.
 - **Media hooks:** a chart of the worker's longest busy stretch: 10 s, then 1.2 to 1.6 s, then 0.29 s, with page
   answer times on top.
 
