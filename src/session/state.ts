@@ -2,6 +2,8 @@ import { readFileSync } from 'node:fs';
 import type { AnalysisRuntime } from './runtime.js';
 import { CollectionState, dependencySpecifiers } from './collection.js';
 import { JudgementState } from './judgement.js';
+import type { Pause } from './judgement.js';
+import type { DecisionRecord } from '../decisions/index.js';
 import { lowerTailwind } from '../lower/tailwind.js';
 import type { TailwindMemory } from '../lower/tailwind.js';
 import { componentBatch, discoverComponents } from '../ownership/components.js';
@@ -403,25 +405,37 @@ export class WarmState implements AnalysisRuntime {
       if (old && old.candidate === inputs[1]) return old.value as T;
       const value = compute(); this.siteCache.set(site, { candidate: inputs[1], value }); return value;
     }
+    if (name === 'components') return this.componentGraph(inputs[1] as string[], inputs[2] as PlumbConfig, inputs[3] as Parameters<WarmState['componentGraph']>[2]) as T;
+    return compute();
+  }
+  /** set while the whole-app report is built in the background: asked between files, it says when to give way */
+  pause: Pause | undefined;
+  async judge<T>(name: string, inputs: unknown[], compute: () => T): Promise<T> {
+    // the first whole-app judgement runs each rule once over every file, unless it is built in the background: then it
+    // goes a file at a time, so it can pause
     if (['deadVariables', 'ownership', 'habits', 'imitation'].includes(name) && !this.initializedRules.has(name)) {
-      this.initializedRules.add(name); return compute();
+      this.initializedRules.add(name); if (!this.pause) return compute();
     }
-    if (name === 'deadVariables') return this.judgement.deadVariables(...inputs as Parameters<JudgementState['deadVariables']>) as T;
+    if (name === 'deadVariables') return await this.judgement.deadVariables(...inputs as [Declaration[], Set<string>, Set<string>], this.pause) as T;
     if (name === 'deadDecisions') {
       const declarations = inputs[0] as Declaration[];
       const defined = new Set((inputs[1] as { decisions: { name: string; refs: string[] }[]; inventory?: { name: string; refs: string[] }[] }).decisions.concat((inputs[1] as { inventory?: { name: string; refs: string[] }[] }).inventory ?? []).flatMap(d => [d.name, ...d.refs.map(ref => /^var\(\s*([\w.-]+)(?:\s*,[\s\S]*)?\)$/.exec(ref)?.[1] ?? /^\{([\w.-]+)\}$/.exec(ref)?.[1] ?? ref)]));
-      const refs = signature([inputs[3], declarations.filter(d => d.prop.startsWith('--')).map(d => [d.prop, d.authoredCss ?? d.value]),
-        [...new Set(declarations.filter(d => !d.prop.startsWith('--') || !defined.has(d.prop))
-          .flatMap(d => [...d.refs, ...(d.decisionRefs ?? []), ...references(d.authoredCss ?? d.value), ...[...(d.authoredCss ?? d.value).matchAll(/\{([\w.-]+)\}/g)].map(m => m[1]!)]))].sort()]);
+      const custom: [string, string][] = [], read = new Set<string>();
+      for (const [i, d] of declarations.entries()) {
+        if (i % 4096 === 0) { const wait = this.pause?.(); if (wait) await wait; }
+        if (d.prop.startsWith('--')) custom.push([d.prop, d.authoredCss ?? d.value]);
+        if (d.prop.startsWith('--') && defined.has(d.prop)) continue;
+        for (const ref of [...d.refs, ...(d.decisionRefs ?? []), ...references(d.authoredCss ?? d.value), ...[...(d.authoredCss ?? d.value).matchAll(/\{([\w.-]+)\}/g)].map(m => m[1]!)]) read.add(ref);
+      }
+      const refs = signature([inputs[3], custom, [...read].sort()]);
       if (this.dead?.refs === refs && this.dead.record === inputs[1] && this.dead.config === inputs[2]) return this.dead.value as T;
       const value = compute(); this.dead = { refs, record: inputs[1], config: inputs[2], value }; return value;
     }
-    if (name === 'components') return this.componentGraph(inputs[1] as string[], inputs[2] as PlumbConfig, inputs[3] as Parameters<WarmState['componentGraph']>[2]) as T;
     if (this.snippet && ['provenance', 'ownership', 'habits', 'imitation'].includes(name)) return compute();
-    if (name === 'provenance') return this.judgement.provenance(...inputs as Parameters<JudgementState['provenance']>) as T;
-    if (name === 'ownership') return this.judgement.ownership(inputs[0] as Declaration[], inputs[1] as ComponentGraph, this.shards, this.config, inputs[3], inputs[4] as LoweredProps) as T;
-    if (name === 'habits') return this.judgement.habits(inputs[0] as Declaration[], this.config, inputs[2] as Map<Declaration, string>, inputs[3] as string[], inputs[4] as boolean | undefined, inputs[5] as ReadonlySet<Declaration>) as T;
-    if (name === 'imitation') return this.judgement.imitation(inputs[0] as ComponentGraph, this.shards, inputs[1] as Parameters<JudgementState['imitation']>[2], inputs[2] as Declaration[], this.config) as T;
+    if (name === 'provenance') return await this.judgement.provenance(...inputs as [Declaration[], DecisionRecord, PlumbConfig, Set<string>, boolean | undefined], undefined, this.pause) as T;
+    if (name === 'ownership') return await this.judgement.ownership(inputs[0] as Declaration[], inputs[1] as ComponentGraph, this.shards, this.config, inputs[3], inputs[4] as LoweredProps, this.pause) as T;
+    if (name === 'habits') return await this.judgement.habits(inputs[0] as Declaration[], this.config, inputs[2] as Map<Declaration, string>, inputs[3] as string[], inputs[4] as boolean | undefined, inputs[5] as ReadonlySet<Declaration>, this.pause) as T;
+    if (name === 'imitation') return await this.judgement.imitation(inputs[0] as ComponentGraph, this.shards, inputs[1] as Parameters<JudgementState['imitation']>[2], inputs[2] as Declaration[], this.config, this.pause) as T;
     return compute();
   }
 }

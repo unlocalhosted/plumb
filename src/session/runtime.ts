@@ -4,6 +4,12 @@ export interface AnalysisRuntime {
   readonly inventory?: readonly string[] | undefined;
   phase<T>(name: string, inputs: unknown[], compute: () => T | Promise<T>): Promise<T>;
   sync<T>(name: string, inputs: unknown[], compute: () => T): T;
+  /** A judgement over the files being judged (unknown and unused variables, provenance, ownership, habits, imitation).
+   * The session's judge works a file or a group at a time and can pause between them. */
+  judge?<T>(name: string, inputs: unknown[], compute: () => T): Promise<T>;
+  /** Asked between pieces of work: a promise when the analysis should give way (a whole-app read built in the
+   * background while a page is being answered), nothing to carry on. It throws when the work is out of date. */
+  readonly pause?: (() => Promise<void> | undefined) | undefined;
   /** The project's own source files when fewer are being judged (a single file): where a definition lives decides how
    * a value that reads it is judged, and a definition in another of the project's files is still the project's. */
   projectFiles?(): ReadonlySet<string> | undefined;

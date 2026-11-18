@@ -729,6 +729,35 @@ and its 36 spacing steps match; the whole-app report, when built, matches the ea
 algorecall and crafting-ui (dependency maps, component graph, raw and classified findings, line and column views).
 Start to ready: 58-59 s before, 44-46 s after.
 
+## The whole-app report in the background (2026-11-18)
+
+After start-up and after every edit the worker builds the whole-app report outside its request queue
+(`buildLater` in worker.ts). The analysis asks `runtime.pause()` between files, groups, steps and every few thousand
+declarations; it gives way while any request is waiting and otherwise every 10 ms. An edit raises the revision and
+the next pause throws, so the build starts over on the new files. A read that needs the report (`current()`,
+`try`) marks the build urgent and waits for it; nothing pauses then. Release after a quiet minute skips a build in
+progress.
+
+Judging became `runtime.judge` (async) instead of `sync` for unknown and unused variables, provenance, ownership,
+habits and imitation. Built in the background, those rules go a file at a time from the first build; the
+foreground's one-shot first pass is kept when nothing can pause. `existenceInPieces` and `deadDecisions` take a
+pause too; the CLI runs them with none.
+
+Rejected first: the report as the union of per-file results. 132 s of work against 18.6 s for one full read on
+algorecall, still 4.6 times after a file judged alone went from 37.1 ms to 23.6 ms, and 90 titles or fix texts
+worded differently because their wording follows the first site in order.
+
+Proof (algorecall, vm-agent; tails appended to the built worker, never committed): with page reads every 250 ms
+during the build, the report's findings, declarations and coverage hash the same as the old foreground read
+(findings 6887d754efc2, declarations f21678799cc4, coverage 630805b12190; one finding line differed until page
+reads marked copies, see below). Page reads during the build: median about 30 ms, 90th percentile 46-57 ms. An
+edit 6 s into the build: handled in 18 ms, build restarted, ready at 24 s, same hashes. The longest stretch without
+a pause went from 10 s to 1.2-1.6 s, part of it garbage collection (open items in backlog.md, Writes and speed).
+
+Found on the way: `applyLedger` writes `status` onto the findings it is given. A page's findings share the
+compile's notes with the whole-app report, so a page read before the full report gave one of its findings a ledger
+status. Page reads hand it copies now (`ledgerView`), as the whole-app path did.
+
 ## Expected (guesses until measured)
 
 - Step 1 removes most of the 781 MB of trees and a share of the 234 MB that points into them.

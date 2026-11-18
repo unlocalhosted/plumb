@@ -2389,6 +2389,28 @@ field is empty). The table of five writes, before and after. The Next table: eig
   46 s to ready, with every sampled file's findings equal to the full report's. On the way: one MDX components file
   lost sites judged alone, an older gap in the per-file path; the seven files like it read the full report.
 
+### The whole-app report builds itself in the background (2026-11-18)
+
+- **The itch:** the owner asked what should move to the background and what should wait to be asked. Pages were
+  already judged a file at a time. The whole-app list (every finding in the app) was built the first time something
+  asked for it: 18 s on algorecall, 10 of them in one stretch where the worker could answer nothing else.
+- **What we tried first:** judging every file alone and merging the results. Measured: 132 s against 18.6 s for one
+  full read, because every file judged alone repeats work the full read does once. Cutting that repeat took a file
+  from 37 ms to 23.6 ms (the config read once per session, provenance groups without the file skipped), still about
+  4.6 times the work, and some fix texts came out worded differently. We dropped it.
+- **What we chose:** the same full read, cut into small pieces. It starts right after start-up and after every edit,
+  runs beside the requests instead of in their queue, and stops between files whenever a page asks something. An
+  edit makes it start over; anything that needs the whole list makes it run straight through and waits for it.
+- **Found on the way:** marking a page's findings with their ledger status wrote onto notes the whole-app report
+  shares, so a page read before the full report changed one of the report's findings. Page reads now mark copies.
+- **The fix and the proof (algorecall, vm-agent):** the background report equals the old full read: same findings,
+  same 304,612 declarations, same coverage. Pages read while it builds answer in about 30 ms (worst about 190 ms).
+  An edit 6 s in starts it over, and it lands on the same report. The longest stretch without a pause went from 10 s
+  to 1.2 to 1.6 s. On crafting-ui the whole-app report answers in 0.2 to 0.3 s instead of being built on the first ask.
+  Details in docs/briefs/analysis-memory.md.
+- **Media hooks:** a chart of the worker's longest busy stretch, 10 s before and 1.2 to 1.6 s after, with page answer
+  times on top.
+
 ## Open gaps
 - Sweeps covered six algorecall pages and thirteen crafting-ui pages.
 - Plumber rests at about 2.7 GB on algorecall (3,662 files). See "Plumber could not start on a large app".
@@ -3773,6 +3795,7 @@ Moved to [backlog.md](backlog.md) on 2026-11-12, at the owner's request: one lis
 - **React Plumber 0.5.0 is released on GitHub** (tag `v0.5.0`, 2026-11-14): Alt+B X-ray with a readable card that waits for you to stop, a change lands in the class that is showing, resize by edges, repeated parts change every copy, big pages stay smooth. Proof: the full suite on vm-agent, 1061 passed; the 3 files that failed under load passed alone (14 of 14). The warm start that reached main the same day is held for 0.6.0, so GitHub's main stops at the tested commit. npm publish is the owner's step.
 - The speed work is on main: plumber stays out of the way on big pages (scroll at 53 of 60 frames a second with it open, no long freeze while it reads) and the server keeps what it learned between starts ([entry](#the-speed-work-lands-on-main-2026-11-14)).
 ## Shipped · 2026-W47
+- Plumber builds the whole-app list of findings in the background after start-up and after each edit, so asking for it no longer waits 18 s on a 3,600-file app, and pages keep answering in about 30 ms while it builds ([entry](#the-whole-app-report-builds-itself-in-the-background-2026-11-18)).
 - In Break it, press F on a note and plumber shows its fix on your live page under the same stress, then checks the page again and says what the fix itself breaks; on crafting-ui a long topic wraps inside its sentence, a one-step rail leaves itself out, and 11px labels grow in rem ([entry](#break-it-broken-then-fixed-on-the-page-2026-11-17)). On its own branch.
 
 ## Shipped · 2026-W46

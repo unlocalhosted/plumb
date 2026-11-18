@@ -56,6 +56,17 @@ export function location(site: ClassSite): Site {
   return { file: site.file, line: site.line, column: site.column, text: site.text, ...(site.anchor ? { anchor: site.anchor } : {}), ...(site.defined ? { defined: site.defined } : {}) };
 }
 export function existence(sites: ClassSite[], candidates: Map<string, CandidateCss>, declared: Set<string>, markers: string[], themeUtilities: { token: string; prefix: string }[], rankings = new Map<string, string[]>()): Finding[] {
+  const { groups, finding } = existenceParts(sites, candidates, declared, markers, themeUtilities, rankings);
+  return groups.map(finding);
+}
+/** The same, a class at a time: `pause` is asked between classes, a promise when the work should give way
+ * (session/runtime.ts). Suggesting a near class compares it with every class that exists. */
+export async function existenceInPieces(sites: ClassSite[], candidates: Map<string, CandidateCss>, declared: Set<string>, markers: string[], themeUtilities: { token: string; prefix: string }[], rankings = new Map<string, string[]>(), pause?: () => Promise<void> | undefined): Promise<Finding[]> {
+  const { groups, finding } = existenceParts(sites, candidates, declared, markers, themeUtilities, rankings), findings: Finding[] = [];
+  for (const group of groups) { const wait = pause?.(); if (wait) await wait; findings.push(finding(group)); }
+  return findings;
+}
+function existenceParts(sites: ClassSite[], candidates: Map<string, CandidateCss>, declared: Set<string>, markers: string[], themeUtilities: { token: string; prefix: string }[], rankings: Map<string, string[]>) {
   const groups = new Map<string, ClassSite[]>();
   for (const site of sites) {
     if (!site.opaque && (candidates.get(site.token)?.unreadable || candidates.get(site.token)?.css?.trim() || declared.has(site.token) || marker(site.token, markers))) continue;
@@ -81,7 +92,7 @@ export function existence(sites: ClassSite[], candidates: Map<string, CandidateC
   }
   const prefix = (name: string) => name.startsWith('--') && name.lastIndexOf('-') < 2 ? '' : name.slice(0, name.lastIndexOf('-') + 1);
   const hintNames = hints.map(token => { const parts = split(token); return { ...parts, prefix: theme.get(token) ?? prefix(parts.base), theme: theme.has(token) }; });
-  return [...groups].sort(([a], [b]) => a.localeCompare(b)).map(([key, group]) => {
+  const finding = ([key, group]: [string, ClassSite[]]): Finding => {
     const site = group[0]!;
     const nearest: { token: string; distance: number; samePrefix: boolean; theme: boolean; suffix: boolean; shared: number }[] = [];
     const input = split(site.token);
@@ -120,7 +131,8 @@ export function existence(sites: ClassSite[], candidates: Map<string, CandidateC
       because: site.opaque ? 'Tailwind only generates classes it can read as complete strings in your source.' : 'The style it was meant to apply is missing, and nothing warns you.',
       action: site.opaque ? `Map each value to a complete class, e.g. { a: '${prefixText}a', b: '${prefixText}b' }.` : alternatives.length ? `Did you mean ${alternatives.map(name => `\`${name}\``).join(' or ')}?` : `Remove it, or define \`.${site.token}\` in a stylesheet.`,
     });
-  });
+  };
+  return { groups: [...groups].sort(([a], [b]) => a.localeCompare(b)), finding };
 }
 
 // The variable registry proves existence, not scope/cascade or runtime value.

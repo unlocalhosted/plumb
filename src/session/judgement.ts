@@ -46,6 +46,19 @@ function orders(ds: Declaration[]) {
   return value;
 }
 const merged = new WeakMap<Finding, { members: Finding[]; result: Finding }>();
+/** Asked between files: a promise when the work should give way (runtime.ts, `pause`). */
+export type Pause = () => Promise<void> | undefined;
+async function breathe(pause: Pause | undefined): Promise<void> { const wait = pause?.(); if (wait) await wait; }
+/** `orders`, built a few thousand declarations at a time when the work can pause (one key per declaration). */
+async function ordersInPieces(ds: Declaration[], pause: Pause | undefined): Promise<void> {
+  if (!pause || indices.has(ds)) return;
+  const value = { order: new Map<string, number>(), declarations: new Map<Declaration, number>() };
+  for (const [i, d] of ds.entries()) {
+    if (i % 4096 === 0) await breathe(pause);
+    value.declarations.set(d, i); if (!value.order.has(location(d))) value.order.set(location(d), i);
+  }
+  indices.set(ds, value);
+}
 
 /** Merge non-provenance rule groups in cold-pipeline declaration order. */
 function mergeFindings(parts: Finding[][], declarations: Declaration[]): Finding[] {
@@ -84,10 +97,13 @@ export class JudgementState {
   private contributions = new WeakMap<Declaration, { families: string[]; refs: string[] }>();
   private variableUses = new WeakMap<Declaration, string[]>();
   judgedFiles: string[] = [];
-  deadVariables(declarations: Declaration[], defined: Set<string>, theme: Set<string>): Finding[] {
+  async deadVariables(declarations: Declaration[], defined: Set<string>, theme: Set<string>, pause?: Pause): Promise<Finding[]> {
+    await ordersInPieces(declarations, pause);
     const files = byFile(declarations), key = [...defined].sort().join('\0'), themeKey = [...theme].sort().join('\0');
     this.variableCache.keep(new Set(files.keys()));
-    const parts = [...files].map(([file, ds]) => {
+    const parts: Finding[][] = [];
+    for (const [file, ds] of files) {
+      await breathe(pause);
       const refs = [...new Set(ds.flatMap(d => {
         let uses = this.variableUses.get(d);
         if (!uses) { uses = isJudged(d) && !d.opaque ? varUses(d.value).map(use => use.name) : []; this.variableUses.set(d, uses); }
@@ -97,19 +113,21 @@ export class JudgementState {
       // Defined-variable consumers depend on their names' presence. Only
       // undefined-variable suggestions depend on the complete hint registry.
       const registry = unknown ? key : JSON.stringify(refs.map(name => [name, defined.has(name)]));
-      return this.variableCache.get(file, [registry, unknown ? themeKey : '', ...ds], () => deadVariables(ds, defined, theme));
-    });
+      parts.push(this.variableCache.get(file, [registry, unknown ? themeKey : '', ...ds], () => deadVariables(ds, defined, theme)));
+    }
     return mergeFindings(parts, declarations).sort((a, b) => a.key.localeCompare(b.key));
   }
   /** `onlyFile`: a file judged alone, whose findings are the only ones read: groups of files without it are skipped. */
-  provenance(declarations: Declaration[], record: DecisionRecord, config: PlumbConfig, sourceFiles: Set<string>, verbose = false, onlyFile?: string) {
+  async provenance(declarations: Declaration[], record: DecisionRecord, config: PlumbConfig, sourceFiles: Set<string>, verbose = false, onlyFile?: string, pause?: Pause) {
     const usedNumericSpacing = new Set<string>();
+    await ordersInPieces(declarations, pause);
     const positions = orders(declarations).declarations;
     const files = byFile(declarations), definitions = indexDefinitions(declarations, record);
     const resolution = resolutionContext(declarations, record);
     const custom = declarations.filter(d => d.origin === 'custom-property');
     const familyFiles = new Map(judgedFamilies.map(f => [f, new Map<string, Declaration[]>()]));
-    for (const d of declarations) {
+    for (const [i, d] of declarations.entries()) {
+      if (i % 4096 === 0) await breathe(pause);
       let item = this.contributions.get(d);
       if (!item) { item = { families: isJudged(d) ? familiesFor(d.prop) : [], refs: [...d.refs, ...references(d.authoredCss ?? '')] }; this.contributions.set(d, item); }
       for (const family of judgedFamilies) if (item.families.includes(family) || d.prop.startsWith('--tw-')) {
@@ -137,11 +155,14 @@ export class JudgementState {
         if (!seen.size) reachedCache.set(name, result); return result;
       }
       const relevant = familyFiles.get(family)!;
-      for (const ds of relevant.values()) for (const d of ds) {
+      for (const ds of relevant.values()) {
+        await breathe(pause);
+        for (const d of ds) {
         const item = this.contributions.get(d)!; if (!item.families.includes(family)) continue;
         for (const ref of item.refs) for (const definition of reached(ref)) {
           if (!sourceFiles.has(definition.site.file) || definition.sourceOrigin === 'framework') continue;
           join(d.site.file, definition.site.file);
+        }
         }
       }
       const clusters = new Map<string, string[]>();
@@ -149,6 +170,7 @@ export class JudgementState {
       for (const cluster of clusters.values()) {
         // judged alone, a file's findings come only from its own group (the files its values' definitions join it to)
         if (onlyFile !== undefined && !cluster.includes(onlyFile)) continue;
+        await breathe(pause);
         const ds = cluster.flatMap(file => relevant.get(file) ?? []).sort((a, b) => positions.get(a)! - positions.get(b)!);
         if (!ds.length) continue;
         const refs = new Set(ds.flatMap(d => this.contributions.get(d)!.refs));
@@ -179,23 +201,27 @@ export class JudgementState {
       const site = JSON.stringify([d.site.file, d.site.line, d.site.column]);
       if (!siteOrder.has(site)) siteOrder.set(site, i);
     });
-    const findings = judgedFamilies.flatMap(family => {
+    const findings: Finding[] = [];
+    for (const family of judgedFamilies) {
+      await breathe(pause);
       const entries = parts.get(family)!;
       const rank = (entry: ProvenanceEntry) => entry.definition ? Math.min(...[...entry.uses].map(site => siteOrder.get(site) ?? Infinity)) : positions.get(entry.declaration) ?? siteOrder.get(JSON.stringify([entry.declaration.site.file, entry.declaration.site.line, entry.declaration.site.column])) ?? Infinity;
       entries.sort((a, b) => Number(!!a.definition) - Number(!!b.definition) || rank(a) - rank(b));
       const merged = findingsForFamily(family, entries, record);
-      return verbose || config.decisions?.[family]?.byValue === 'each' ? merged : groupByValue(family, merged);
-    });
+      findings.push(...verbose || config.decisions?.[family]?.byValue === 'each' ? merged : groupByValue(family, merged));
+    }
     return { findings: presentProvenance(findings), coverage, usedNumericSpacing: [...usedNumericSpacing].sort() };
   }
   // `candidates` keys the cache (the compiled classes); `propsOf` reads them. Without it a class's own props were
   // missing here and this judge disagreed with the whole-app one on component-owned classes.
-  ownership(declarations: Declaration[], graph: ComponentGraph, shards: Map<string, ComponentGraph>, config: PlumbConfig, candidates?: unknown, propsOf?: LoweredProps) {
+  async ownership(declarations: Declaration[], graph: ComponentGraph, shards: Map<string, ComponentGraph>, config: PlumbConfig, candidates?: unknown, propsOf?: LoweredProps, pause?: Pause) {
     const files = byFile(declarations); this.ownershipCache.keep(new Set(files.keys()));
-    const results = [...files].map(([file, ds]) => {
+    const results: ReturnType<typeof judgeOwnership>[] = [];
+    for (const [file, ds] of files) {
+      await breathe(pause);
       const context = ds.some(d => ['stylesheet', 'apply'].includes(d.origin)) ? graph : shards.get(file) ?? graph;
-      return this.ownershipCache.get(file, [context, config, candidates, ...ds], () => judgeOwnership(ds, context, config, propsOf));
-    });
+      results.push(this.ownershipCache.get(file, [context, config, candidates, ...ds], () => judgeOwnership(ds, context, config, propsOf)));
+    }
     const coverage = { callerDeclarations: 0, findings: 0, heuristicFindings: 0, byFamily: {} as ReturnType<typeof judgeOwnership>['coverage']['byFamily'] };
     for (const result of results) {
       coverage.callerDeclarations += result.coverage.callerDeclarations; coverage.findings += result.coverage.findings; coverage.heuristicFindings += result.coverage.heuristicFindings;
@@ -203,28 +229,37 @@ export class JudgementState {
     }
     return { findings: mergeFindings(results.map(r => r.findings), declarations).sort((a, b) => a.rule.localeCompare(b.rule) || a.key.localeCompare(b.key)), coverage };
   }
-  habits(declarations: Declaration[], config: PlumbConfig, contexts: Map<Declaration, string>, hover: string[], list?: boolean, managedFocus: ReadonlySet<Declaration> = new Set()) {
+  async habits(declarations: Declaration[], config: PlumbConfig, contexts: Map<Declaration, string>, hover: string[], list?: boolean, managedFocus: ReadonlySet<Declaration> = new Set(), pause?: Pause) {
+    await breathe(pause);
     const files = byFile(declarations); this.habitCache.keep(new Set(files.keys()));
+    await breathe(pause);
     const overrides = habitOverrides(config);
-    const results = [...files].map(([file, ds]) => this.habitCache.get(file, [config, list, ...hover, ...ds, ...ds.map(d => contexts.get(d)), ...ds.map(d => managedFocus.has(d))], () => judgeHabits(ds, config.habits ?? [], contexts, hover, list, managedFocus, overrides)));
+    const results: ReturnType<typeof judgeHabits>[] = [];
+    for (const [file, ds] of files) {
+      await breathe(pause);
+      results.push(this.habitCache.get(file, [config, list, ...hover, ...ds, ...ds.map(d => contexts.get(d)), ...ds.map(d => managedFocus.has(d))], () => judgeHabits(ds, config.habits ?? [], contexts, hover, list, managedFocus, overrides)));
+    }
     const summaries = judgeHabits([], config.habits ?? [], new Map(), hover, list, new Set(), overrides).summaries;
+    await breathe(pause);
     for (const result of results) for (const summary of summaries) if (summary.breaks !== null) summary.breaks += result.summaries.find(s => s.id === summary.id)?.breaks ?? 0;
     const customIds = new Set((config.habits ?? []).flatMap(entry => typeof entry === 'string' ? [] : [entry.id]));
     const findings = mergeFindings(results.map(r => r.findings), declarations).sort((a, b) => Number(customIds.has(a.rule.slice(7))) - Number(customIds.has(b.rule.slice(7))));
     return { findings, summaries };
   }
-  imitation(graph: ComponentGraph, shards: Map<string, ComponentGraph>, sites: ClassSite[], declarations: Declaration[], config: PlumbConfig) {
+  async imitation(graph: ComponentGraph, shards: Map<string, ComponentGraph>, sites: ClassSite[], declarations: Declaration[], config: PlumbConfig, pause?: Pause) {
     if (!config.imitation) return [];
     const files = byFile(declarations), css = declarations.filter(d => ['stylesheet', 'apply'].includes(d.origin));
     const classFiles = new Map<string, ClassSite[]>();
     for (const site of sites) { const group = classFiles.get(site.file) ?? []; group.push(site); classFiles.set(site.file, group); }
     this.imitationCache.keep(new Set(shards.keys()));
-    const results = [...shards].map(([file, shard]) => {
+    const results: ReturnType<typeof judgeImitation>[] = [];
+    for (const [file, shard] of shards) {
+      await breathe(pause);
       const ds = files.get(file) ?? [], classes = classFiles.get(file) ?? [];
       // Canonical component definitions are global even when no caller uses them.
       const context = { ...shard, components: graph.components };
-      return this.imitationCache.get(file, [shard, config, ...graph.components, ...classes, ...ds, ...css], () => judgeImitation(context, classes, [...ds, ...css.filter(d => d.site.file !== file)], config));
-    });
+      results.push(this.imitationCache.get(file, [shard, config, ...graph.components, ...classes, ...ds, ...css], () => judgeImitation(context, classes, [...ds, ...css.filter(d => d.site.file !== file)], config)));
+    }
     return mergeFindings(results, declarations).sort((a, b) => a.rule.localeCompare(b.rule) || a.key.localeCompare(b.key));
   }
 }

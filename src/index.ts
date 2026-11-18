@@ -9,7 +9,7 @@ import { valueSuggestions } from './rules/value-suggestions.js';
 import { selectorHooks } from './collect/selector-hooks.js';
 import type { ClassSite } from './collect/classes.js';
 import { lowerTailwind } from './lower/tailwind.js';
-import { existence, location, unreachableClasses, deadVariables } from './rules/existence.js';
+import { existenceInPieces, location, unreachableClasses, deadVariables } from './rules/existence.js';
 import { varUses } from './rules/families.js';
 import { cssCode, collectStylesheets } from './collect/stylesheets.js';
 import { collectModules } from './collect/modules.js';
@@ -71,8 +71,10 @@ export interface CheckOptions extends LedgerOptions {
 }
 
 export async function analyze(options: CheckOptions, snippet?: Snippet, runtime?: AnalysisRuntime): Promise<{ report: Report; sites: ExplainedClassSite[] }> {
-  const phase = <T>(name: string, inputs: unknown[], compute: () => T | Promise<T>): Promise<T> => runtime ? runtime.phase(name, inputs, compute) : Promise.resolve(compute());
+  const pause = async (): Promise<void> => { const wait = runtime?.pause?.(); if (wait) await wait; };
+  const phase = async <T>(name: string, inputs: unknown[], compute: () => T | Promise<T>): Promise<T> => { await pause(); return runtime ? runtime.phase(name, inputs, compute) : compute(); };
   const sync = <T>(name: string, inputs: unknown[], compute: () => T): T => runtime ? runtime.sync(name, inputs, compute) : compute();
+  const judge = async <T>(name: string, inputs: unknown[], compute: () => T): Promise<T> => { await pause(); return runtime?.judge ? runtime.judge(name, inputs, compute) : compute(); };
   const start = performance.now();
   const root = resolve(options.root ?? process.cwd());
   profileProgress('phase:config');
@@ -139,7 +141,7 @@ export async function analyze(options: CheckOptions, snippet?: Snippet, runtime?
   const existenceStart = performance.now();
   const ranking = await phase('ranking', [root, lowered.candidates, lowered.suggestions], () => suggestionCache(root, lowered.candidates, lowered.suggestions, !!input || !!runtime));
   const existenceSites = await checkingPlainCss(root, project.tailwind.entry) ? collected.sites.filter(site => !looksLikeTailwind(site.token)) : collected.sites;
-  const unfiltered = existence(existenceSites, lowered.candidates, new Set(css.classes), config.value.markers ?? [], lowered.suggestions, ranking.rankings);
+  const unfiltered = await existenceInPieces(existenceSites, lowered.candidates, new Set(css.classes), config.value.markers ?? [], lowered.suggestions, ranking.rankings, runtime?.pause);
   await ranking.save();
   // A class the project's own source uses as a selector is a hook, not a styling mistake.
   const hooks = await selectorHooks(files, new Set(unfiltered.filter(finding => finding.rule === 'existence/dead-class').map(finding => finding.declaration.value)));
@@ -157,36 +159,44 @@ export async function analyze(options: CheckOptions, snippet?: Snippet, runtime?
   profileProgress('phase:declarations');
   // start-up of a session reads what the whole app shares and judges nothing (AnalysisRuntime.prepareOnly)
   const judging = !runtime?.prepareOnly;
-  const sites = !judging ? [] : collected.sites.map(site => {
+  const sites: ExplainedClassSite[] = [];
+  if (judging) for (const [i, site] of collected.sites.entries()) {
+    if (i % 2048 === 0) await pause();
     const candidate = lowered.candidates.get(site.token);
-    return sync('site', [site, candidate], () => ({ ...site, declarations: (candidate?.declarations ?? []).map(declaration => ({
+    sites.push(sync('site', [site, candidate], () => ({ ...site, declarations: (candidate?.declarations ?? []).map(declaration => ({
       ...declaration, when: [...site.conditions, ...declaration.when], refs: references(declaration.value),
       site: location(site), owner: site.owner, origin: /(?:^|:)(?:-?[\w-]+-)?\[.+\](?:\/.+)?!?$/.test(site.token) ? 'arbitrary' as const : 'class' as const, sourceOrigin: 'project' as const,
       authoredValue: candidate?.authoredValue ?? false,
-    })), notes: candidate?.notes ?? [] }));
-  });
+    })), notes: candidate?.notes ?? [] })));
+  }
   // Imported helpers on a proven className path are authored styling inputs too.
   // Other import-graph files outside source globs still only prove existence.
   const sourceFiles = new Set(input ? [input.file] : [...files, ...collected.computedClassFiles ?? []]);
   const inlineDeclarations = collected.styles.declarations.filter(d => sourceFiles.has(d.site.file));
-  const declarations: Declaration[] = !judging ? [] : [...sites.flatMap(site => site.declarations), ...css.declarations, ...collected.styles.declarations]
-    .filter(declaration => sourceFiles.has(declaration.site.file) || !!runtime?.alsoJudged?.(declaration));
+  const declarations: Declaration[] = [];
+  if (judging) for (const part of [sites.map(site => site.declarations), [css.declarations], [collected.styles.declarations]]) for (const [i, ds] of part.entries()) {
+    if (i % 2048 === 0) await pause();
+    for (const declaration of ds) if (sourceFiles.has(declaration.site.file) || runtime?.alsoJudged?.(declaration)) declarations.push(declaration);
+  }
   // A detected library's states, named on every declaration whose selector carries one of its attributes.
   // Held by the session's memory, not projectFacts' two-second cache: a per-file read takes longer than that, and each
   // one rebuilt the facts (a project scan and every detector, about 2.3 s on a 3,600-file app). A change to package.json
   // restarts the session; a new library import in an edited file is seen at that restart.
   const detectedLibraries = (await phase('libraries', [root], () => projectFacts(root, { root }))).libraries.value ?? [];
   const stateAdapters = detectedLibraries.flatMap(item => { const adapter = adapterOf(item); return adapter?.state && item.capabilities?.states === 'judged' ? [adapter] : []; });
-  if (stateAdapters.length) for (const declaration of declarations) { const states = selectorStates(declaration.when, stateAdapters); if (states.length) declaration.when = [...declaration.when, ...states]; }
+  if (stateAdapters.length) for (const [i, declaration] of declarations.entries()) { if (i % 8192 === 0) await pause(); const states = selectorStates(declaration.when, stateAdapters); if (states.length) declaration.when = [...declaration.when, ...states]; }
   // A detected library's own runtime variables: reading one is reading the library, never a dead variable.
   const owners = detectedLibraries.flatMap(item => { const adapter = adapterOf(item); return adapter?.owned && item.capabilities?.owned === 'judged' ? [{ label: item.label, variables: adapter.owned.variables }] : []; });
   const ownedVariables = new Set<string>();
-  if (owners.length) for (const declaration of declarations) for (const use of varUses(declaration.value)) {
+  if (owners.length) for (const [i, declaration] of declarations.entries()) {
+    if (i % 8192 === 0) await pause();
+    for (const use of varUses(declaration.value)) {
     const owner = owners.find(item => item.variables.test(use.name));
     if (!owner) continue;
     ownedVariables.add(use.name);
     // The whole value is the library's only when it is that one variable; `calc(var(--anchor-width) + 13px)` keeps its 13px judged.
     if (/^var\(\s*--[\w-]+\s*(?:,[^)]*)?\)$/.test(declaration.value.trim())) declaration.owned = owner.label;
+    }
   }
   profileDuration('phase:declarations', performance.now() - prepareStart);
   const decisionsStart = performance.now();
@@ -207,19 +217,21 @@ export async function analyze(options: CheckOptions, snippet?: Snippet, runtime?
   for (const candidate of lowered.candidates.values()) for (const match of cssCode(candidate.css ?? '').matchAll(/(?:@property\s+|[;{]\s*)(--tw-[\w-]+)(?=\s*[:{])/g)) defined.add(match[1]!);
   const variablesStart = performance.now();
   profileProgress('rule:existence/dead-var');
-  findings.push(...sync('deadVariables', [declarations, defined, record.theme], () => deadVariables(declarations, defined, record.theme)));
+  findings.push(...await judge('deadVariables', [declarations, defined, record.theme], () => deadVariables(declarations, defined, record.theme)));
   profileDuration('rule:existence/dead-var', performance.now() - variablesStart);
   profileProgress('rule:provenance');
   // the files that count as the project's own when a value reads a definition: all of them, also when one file is judged
   const projectFiles = runtime?.projectFiles?.() ?? sourceFiles;
-  const judged = sync('provenance', [declarations, record, config.value, projectFiles, options.verbose], () => provenance(declarations, record, config.value, projectFiles, options.verbose));
+  const judged = await judge('provenance', [declarations, record, config.value, projectFiles, options.verbose], () => provenance(declarations, record, config.value, projectFiles, options.verbose));
   findings.push(...judged.findings);
   const deadStart = performance.now();
   profileProgress('rule:dead');
-  const dead = input || !judging ? undefined : sync('deadDecisions', [declarations, record, config.value, judged.usedNumericSpacing], () => deadDecisions(root, declarations, record, config.value, judged.usedNumericSpacing));
+  await pause();
+  const dead = input || !judging ? undefined : await judge('deadDecisions', [declarations, record, config.value, judged.usedNumericSpacing], () => deadDecisions(root, declarations, record, config.value, judged.usedNumericSpacing, runtime?.pause));
   if (dead) findings.push(...dead.findings);
   profileDuration('rule:dead', performance.now() - deadStart);
   const provenanceMs = performance.now() - provenanceStart;
+  await pause();
   const ownershipStart = performance.now();
   profileProgress('phase:components');
   const components = previousComponents ?? sync('components', [root, files, config.value, input], () => discoverComponents(root,
@@ -231,7 +243,7 @@ export async function analyze(options: CheckOptions, snippet?: Snippet, runtime?
   profileProgress('rule:ownership');
   // the class lookup goes in with the inputs, so the session's file-by-file judge reads the same props as this one
   const propsOf = (token: string) => lowered.candidates.get(token)?.declarations ?? [];
-  const owned = sync('ownership', [declarations, components, config.value, lowered.candidates, propsOf], () => judgeOwnership(declarations, components, config.value, propsOf));
+  const owned = await judge('ownership', [declarations, components, config.value, lowered.candidates, propsOf], () => judgeOwnership(declarations, components, config.value, propsOf));
   profileDuration('rule:ownership', performance.now() - ownershipJudgeStart);
   findings.push(...owned.findings);
   const ownershipMs = performance.now() - ownershipStart + componentCacheMs;
@@ -239,10 +251,16 @@ export async function analyze(options: CheckOptions, snippet?: Snippet, runtime?
   profileProgress('phase:habits');
   const contexts = new Map<Declaration, string>();
   const managedFocus = new Set<Declaration>();
-  for (const site of sites) for (const declaration of site.declarations) if (site.context) contexts.set(declaration, site.context);
-  for (const site of sites) if (site.managedFocus) for (const declaration of site.declarations) managedFocus.add(declaration);
-  for (const inline of collected.styles.sites) for (const declaration of inline.declarations) contexts.set(declaration, `${inline.site.file}:${inline.site.line}:${inline.site.column}`);
-  const habits = sync('habits', [declarations, config.value.habits ?? [], contexts, lowered.hoverVariants, options.listHabits, managedFocus, config.value.craft, config.value.craftLayers], () => judgeHabits(declarations, config.value.habits ?? [], contexts, lowered.hoverVariants, options.listHabits, managedFocus, habitOverrides(config.value)));
+  for (const [i, site] of sites.entries()) {
+    if (i % 4096 === 0) await pause();
+    if (site.context) for (const declaration of site.declarations) contexts.set(declaration, site.context);
+    if (site.managedFocus) for (const declaration of site.declarations) managedFocus.add(declaration);
+  }
+  for (const [i, inline] of collected.styles.sites.entries()) {
+    if (i % 4096 === 0) await pause();
+    for (const declaration of inline.declarations) contexts.set(declaration, `${inline.site.file}:${inline.site.line}:${inline.site.column}`);
+  }
+  const habits = await judge('habits', [declarations, config.value.habits ?? [], contexts, lowered.hoverVariants, options.listHabits, managedFocus, config.value.craft, config.value.craftLayers], () => judgeHabits(declarations, config.value.habits ?? [], contexts, lowered.hoverVariants, options.listHabits, managedFocus, habitOverrides(config.value)));
   findings.push(...habits.findings);
   if (judging && (options.listHabits || config.value.habits?.includes('real-quotes'))) {
     const quoted = await realQuotes([...sourceFiles], input ? new Map([[input.file, input.text]]) : undefined);
@@ -254,7 +272,7 @@ export async function analyze(options: CheckOptions, snippet?: Snippet, runtime?
   if (judging && (!input || input.lang === 'tsx')) findings.push(...await judgeSource([...sourceFiles], activeSourceRules(config.value), input ? new Map([[input.file, input.text]]) : undefined));
   const habitsMs = performance.now() - habitsStart;
   const imitationStart = performance.now();
-  if (judging) findings.push(...sync('imitation', [components, collected.sites, declarations, config.value], () => judgeImitation(components, collected.sites, declarations, config.value)));
+  if (judging) findings.push(...await judge('imitation', [components, collected.sites, declarations, config.value], () => judgeImitation(components, collected.sites, declarations, config.value)));
   profileDuration('rule:imitation', performance.now() - imitationStart);
   const origins: Report['coverage']['declarations'] = { class: 0, arbitrary: 0, stylesheet: 0, apply: 0, inline: 0, 'custom-property': 0, keyframes: 0 };
   for (const declaration of declarations) origins[declaration.origin]++;
@@ -262,6 +280,11 @@ export async function analyze(options: CheckOptions, snippet?: Snippet, runtime?
   const stylesheets: Report['stylesheets'] = [...graph.files.values()].map(sheet => ({ file: sheet.file, sourceOrigin: sheet.sourceOrigin, ...(sheet.package ? { package: sheet.package } : {}), reached: sheet.reached }));
   for (const sheet of collected.styles.stylesheets) stylesheets.push({ file: sheet.source.file, sourceOrigin: 'project', reached: [{ kind: 'jsx-style' }] });
   for (const sheet of stylesheets) for (const kind of new Set(sheet.reached.map(reach => reach.kind))) stylesheetCounts[kind]++;
+  await pause();
+  // a compile note points at the first place its class is written
+  const firstSite = new Map<string, ClassSite>();
+  if (lowered.diagnostics.length) for (const site of collected.sites) if (!firstSite.has(site.token)) firstSite.set(site.token, site);
+  await pause();
   const report: Report = {
     ...(judged.coverage.type.total && record.decisions.some(d => d.family === 'type' && d.origin !== 'framework') &&
       !record.decisions.some(d => d.family === 'type' && d.refs.some(ref => ref.startsWith('utility:type-'))) ? {
@@ -275,7 +298,7 @@ export async function analyze(options: CheckOptions, snippet?: Snippet, runtime?
     files: project.files,
     findings: [...findings, ...uniqueDiagnostics([project.diagnostics, collected.diagnostics, modules.diagnostics, css.diagnostics, components.diagnostics,
       lowered.diagnostics.map(finding => {
-        const site = collected.sites.find(site => site.token === finding.declaration.value);
+        const site = firstSite.get(finding.declaration.value);
         return site ? { ...finding, sites: [location(site)], declaration: { ...finding.declaration, site: location(site) } } : finding;
       })])],
     habits: habits.summaries,

@@ -111,8 +111,62 @@ async function update(paths: string[]): Promise<string[]> {
 }
 async function current(): Promise<Report> {
   releaseLater();
-  if (dirty || !raw) { fullReports++; released = undefined; project = undefined; raw = (await analyze({ ...options, ledger: false }, undefined, state)).report; dirty = false; sharedDirty = false; localReports.clear(); metadataDirty = true; metadataFull = true; }
-  return raw;
+  await quiet();
+  if (dirty || !raw) settle((await analyze({ ...options, ledger: false }, undefined, state)).report);
+  return raw!;
+}
+function settle(view: Report): void {
+  fullReports++; released = undefined; project = undefined; raw = view; dirty = false; sharedDirty = false; localReports.clear(); metadataDirty = true; metadataFull = true;
+}
+// The whole-app report is built in the background after start-up and after each edit (docs/briefs/analysis-memory.md,
+// open page first). It works outside the request queue and pauses between files whenever a request is waiting, and
+// otherwise every SLICE_MS, so a page is answered as fast as with nothing building. An edit makes it start over; a
+// request that needs the report makes it run straight through and waits for it.
+const SLICE_MS = 10;
+class Stale extends Error {}
+let waiting = 0;
+let wakers: (() => void)[] = [];
+function wake(): void { const list = wakers; wakers = []; for (const resolve of list) resolve(); }
+let building: { revision: number; urgent: boolean; done: Promise<void> } | undefined;
+/** Lets a background build finish now, with nothing paused, for a request that reads what it builds. */
+async function quiet(): Promise<void> {
+  const job = building;
+  if (!job) return;
+  job.urgent = true; wake();
+  await job.done;
+}
+function buildLater(): void {
+  if (building?.revision === revision || !dirty && raw) return;
+  const job: NonNullable<typeof building> = { revision, urgent: false, done: Promise.resolve() };
+  let sliceStart = 0;
+  const check = () => { if (job.revision !== revision) throw new Stale(); };
+  const resume = async () => {
+    while (waiting > 0 && !job.urgent) await new Promise<void>(resolve => wakers.push(resolve));
+    if (!job.urgent && waiting === 0) await new Promise<void>(resolve => setImmediate(resolve));
+    check(); sliceStart = performance.now();
+  };
+  const pause = () => {
+    check();
+    if (job.urgent) return undefined;
+    if (waiting === 0 && performance.now() - sliceStart < SLICE_MS) return undefined;
+    return resume();
+  };
+  building = job;
+  job.done = (async () => {
+    await resume();
+    state.pause = pause;
+    try {
+      const view = (await analyze({ ...options, ledger: false }, undefined, state)).report;
+      // handed over between requests, never in the middle of one
+      if (!job.urgent) await resume();
+      check(); settle(view); releaseLater();
+    } catch (error) {
+      if (!(error instanceof Stale)) console.error(`[plumber] the whole-app report could not be built in the background: ${errorMessage(error)}`);
+    } finally {
+      if (state.pause === pause) state.pause = undefined;
+      if (building === job) building = undefined;
+    }
+  })();
 }
 async function report(extra: CheckOptions = {}, ordinaryLedger = false): Promise<Report> {
   await current();
@@ -267,7 +321,9 @@ async function localReport(file: string): Promise<Report> {
     changedQueries([file]);
     const result = (await analyze({ ...options, ledger: false }, undefined, new Focus(state, file))).report;
     changedQueries([file]);
-    view = finishMessages(await applyLedger(result, options, ledger));
+    // copies: a page's findings share objects with the whole-app report (the compile's notes), and the ledger writes
+    // its status onto what it is given
+    view = finishMessages(await applyLedger(ledgerView(result), options, ledger));
     if (localReports.size >= 256) localReports.delete(localReports.keys().next().value!);
     localReports.set(file, view); metadataDirty = true;
   }
@@ -316,7 +372,7 @@ function releaseLater(): void {
 }
 function release(): void {
   if (!raw) return;
-  if (keeping) { releaseLater(); return; }
+  if (keeping || building) { releaseLater(); return; }
   released = { declarationFiles: [...new Set(raw.declarations.map(d => d.site.file))], customPropertyFiles: [...new Set(raw.declarations.filter(d => d.prop.startsWith('--')).map(d => d.site.file))], spacingUsed: spacingUses(raw) };
   project = { ...raw, declarations: [], findings: [] };
   raw = undefined; classified = undefined; indexedReport = undefined; indexedFiles.clear();
@@ -329,6 +385,7 @@ async function dispatch(method: string, params: Record<string, unknown>): Promis
   if (method === 'refresh') {
     performance.clearMeasures();
     const affected = await update(params.paths as string[]);
+    buildLater();
     return { revision, dependencyDelta: [...state.queryDependenciesOf(affected)],
       files: state.collection.parsedFiles, visited: state.collection.visitedFiles, judged: state.judgement.judgedFiles,
       timing: known().timing,
@@ -458,8 +515,9 @@ async function dispatch(method: string, params: Record<string, unknown>): Promis
     // what every import resolved to goes with it, for the receipt
     return { done: true, ...stats, packMs: Math.round(job.worked), longestMs: Math.round(job.longest), slices: job.slices, ms: Math.round(performance.now() - job.started), resolutions: resolutions() };
   }
-  if (method === 'health') return { status: 'ready', root: options.root, revision, pid: process.pid, rss: process.memoryUsage().rss, caches: state.caches, work: { fullReports, fullIndexes, localAnalyses }, ...(environment('PROFILE') === '1' ? { profile: performance.getEntriesByType('measure').map(p => [p.name, p.duration]) } : {}) };
+  if (method === 'health') return { status: 'ready', root: options.root, revision, pid: process.pid, rss: process.memoryUsage().rss, caches: state.caches, work: { fullReports, fullIndexes, localAnalyses }, wholeApp: raw && !dirty ? 'ready' : building ? 'building' : 'when asked', ...(environment('PROFILE') === '1' ? { profile: performance.getEntriesByType('measure').map(p => [p.name, p.duration]) } : {}) };
   if (method === 'try') {
+    await quiet();
     const result = (await analyze({ ...options, ...(params.verbose === undefined ? {} : { verbose: params.verbose as boolean }), ledger: false }, { text: params.code as string, ...(params.lang ? { lang: params.lang as 'tsx' | 'css' } : {}), ...(params.as ? { as: params.as as string } : {}) }, state)).report;
     result.notes.push('Dead decisions skipped: try judges a snippet, not whole-project usage. Ledger allowances are not applied.');
     return result;
@@ -468,6 +526,7 @@ async function dispatch(method: string, params: Record<string, unknown>): Promis
 }
 let queue = Promise.resolve();
 parentPort!.on('message', ({ id, method, params }) => {
+  waiting++;
   queue = queue.then(async () => {
     try {
       const start = performance.now();
@@ -480,6 +539,7 @@ parentPort!.on('message', ({ id, method, params }) => {
       metadataDirty = false; metadataFull = false; queryChanges.clear();
     }
     catch (error) { parentPort!.postMessage({ id, error: errorMessage(error), errorStack: error instanceof Error ? error.stack : undefined, usageError: error instanceof UsageError, ...(error instanceof UsageError ? { errorCode: error.code } : {}) }); }
+    finally { if (--waiting === 0) wake(); }
   });
 });
 try {
@@ -491,5 +551,6 @@ try {
   try { project = (await analyze({ ...options, ledger: false }, undefined, state)).report; } finally { state.prepareOnly = false; }
   released = preparedSummary();
   sharedInputs = new Set([...state.configurationFiles, ...state.compilerFiles, ...project.decisions.map(d => d.source.file), ...project.decisionInventory?.map(d => d.source.file) ?? []]);
+  buildLater();
   parentPort!.postMessage({ ready: true, health: await dispatch('health', {}), dependencies: dependencies(), patterns: [...state.patterns], files: sourceFiles(), configurationFiles: [...state.configurationFiles], entryGraph: [...state.entryGraph], ...queryInputs() });
 } catch (error) { parentPort!.postMessage({ startupError: errorMessage(error), errorStack: error instanceof Error ? error.stack : undefined, usageError: error instanceof UsageError, ...(error instanceof UsageError ? { errorCode: error.code } : {}) }); }

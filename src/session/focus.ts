@@ -71,10 +71,13 @@ export class Focus implements AnalysisRuntime {
     return value as T;
   }
   sync<T>(name: string, inputs: unknown[], compute: () => T): T {
-    if (name === 'deadDecisions') return { findings: [], counts: {} } as T;
     if (name === 'components') return this.state.localComponents(this.file) as T;
     if (name === 'site') return this.state.sync(name, inputs, compute);
-    if (name === 'provenance') { const [ds, record, config, files, verbose] = inputs as Parameters<JudgementState['provenance']>; return this.judgement.provenance(ds, record, config, files, verbose, this.file) as T; }
+    return compute();
+  }
+  async judge<T>(name: string, inputs: unknown[], compute: () => T): Promise<T> {
+    if (name === 'deadDecisions') return { findings: [], counts: {} } as T;
+    if (name === 'provenance') { const [ds, record, config, files, verbose] = inputs as Parameters<JudgementState['provenance']>; return await this.judgement.provenance(ds, record, config, files, verbose, this.file) as T; }
     if (name === 'imitation') {
       if (!(inputs[3] as PlumbConfig).imitation) return [] as T;
       const graph = inputs[0] as ComponentGraph;

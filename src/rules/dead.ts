@@ -10,7 +10,9 @@ const valueRefs = (value: string) => [...references(value), ...[...value.matchAl
 const refName = (ref: string) => /^var\(\s*([\w.-]+)(?:\s*,[\s\S]*)?\)$/.exec(ref)?.[1] ?? /^\{([\w.-]+)\}$/.exec(ref)?.[1] ?? ref;
 
 /** Reference reachability, including numeric unit expressions matched by provenance. Definitions are edges, not roots. */
-export function deadDecisions(root: string, declarations: Declaration[], record: DecisionRecord, config: PlumbConfig, usedNumericSpacing: string[] = []): { findings: Finding[]; counts: DeadDecisionCounts } {
+/** `pause`: asked every few thousand declarations, a promise when the work should give way (session/runtime.ts). */
+export async function deadDecisions(root: string, declarations: Declaration[], record: DecisionRecord, config: PlumbConfig, usedNumericSpacing: string[] = [], pause?: () => Promise<void> | undefined): Promise<{ findings: Finding[]; counts: DeadDecisionCounts }> {
+  const breathe = async (i: number) => { if (i % 4096 === 0) { const wait = pause?.(); if (wait) await wait; } };
   const decisions = [...new Map([...(record.inventory ?? []), ...record.decisions].map(d => [`${d.family}:${d.name}`, d])).values()];
   const byRef = new Map<string, Decision[]>();
   for (const decision of decisions) for (const ref of [decision.name, ...decision.refs]) {
@@ -25,17 +27,19 @@ export function deadDecisions(root: string, declarations: Declaration[], record:
   }
   for (const [name, variable] of record.variables) edge(name, variable.value);
   for (const definition of record.definitions) edge(definition.name, definition.value);
-  for (const declaration of declarations) if (declaration.prop.startsWith('--')) edge(declaration.prop, declaration.authoredCss ?? declaration.value);
+  for (const [i, declaration] of declarations.entries()) { await breathe(i); if (declaration.prop.startsWith('--')) edge(declaration.prop, declaration.authoredCss ?? declaration.value); }
   const published = new Set(decisions.filter(d => d.exported || config.decisions?.[d.family]?.exported || config.exported?.some(pattern =>
     [d.name, relative(root, d.source.file), ...d.refs.map(refName)].some(name => matchesGlob(name, pattern)))));
   const used = new Set<Decision>(), seen = new Set<string>(), queue: string[] = [...usedNumericSpacing];
-  for (const declaration of declarations) {
+  for (const [i, declaration] of declarations.entries()) {
+    await breathe(i);
     if (declaration.prop.startsWith('--') && byRef.has(declaration.prop)) continue;
     queue.push(...declaration.refs, ...(declaration.decisionRefs ?? []), ...valueRefs(declaration.authoredCss ?? declaration.value));
   }
   // Exported semantics also publish their dependency graph.
   for (const decision of published) queue.push(decision.name);
   for (let index = 0; index < queue.length; index++) {
+    await breathe(index);
     const name = queue[index]!;
     if (seen.has(name)) continue;
     seen.add(name);
