@@ -2359,6 +2359,13 @@ field is empty). The table of five writes, before and after. The Next table: eig
   a corner. First clip: tooltip warm-up (#60), picked by the owner.
 - **Dead ends:** the silk stage, the words panel and the closing card, for social clips. Film 42 was drafted in the
   old style and is parked.
+- **Three rounds on the first clip (#60):** a pointer sweeping the toolbar read as deliberate ("on the top it is kind
+  of intentional that user is going there"); crossing a line on the way to a comment was better; the owner's pick was
+  selecting text across two links, where an instant hover card opens mid-selection. The fix grew a second half: never
+  open while a button is held. plumber's pink boxes and number tags meant nothing on a feed ("what are these red
+  boxes"), so they came off, and one big caption a side carries the message (worded with the owner).
+- **Proof:** docs/media/clip-60-hover-warm-up.mp4, 1080 × 1350, 19.7 s, 60 fps; its first and last frames match, so
+  it loops.
 
 ## landmines and anti-slop on our code (2026-11-18)
 - **The itch:** the owner shared a linter built to catch the shortcuts coding agents take, and asked to "install
@@ -2388,6 +2395,7 @@ field is empty). The table of five writes, before and after. The Next table: eig
   what the whole app shares and judges no file until a page or a project-wide view asks. algorecall goes from 58 s to
   46 s to ready, with every sampled file's findings equal to the full report's. On the way: one MDX components file
   lost sites judged alone, an older gap in the per-file path; the seven files like it read the full report.
+
 
 ### The whole-app report builds itself in the background (2026-11-18)
 
