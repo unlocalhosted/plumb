@@ -28,13 +28,15 @@ const W = 1080, H = 1350;
  * owner, 2026-11-18: the toolbar sweep read as intentional; selecting is where an eager card gets in the way
  * ───────────────────────────────────────────────────────── */
 const REST = 1.25;           // the editor's scale at rest (600 × 682 → 750 × 853)
-const TOP = 250, ROOM = 900; // the camera's room, between the caption and the switch; the editor fades at its edges
+const TOP = 250, ROOM = 860; // the camera's room, between the caption and the switch; the editor fades at its edges
 const EASE = 'cubic-bezier(.65, 0, .35, 1)';
 const CAM_MS = 900;
 
 // what the clip says, one line a side, in big type above the editor; and the switch in plain words (owner, 2026-11-18)
 const WORDS = {
-  60: { broken: 'Hover that opens instantly fights with text selection.', fixed: 'A short warm-up makes hover intentional.', names: ['Opens instantly', 'Waits for a pause'] },
+  60: { broken: 'Hover that opens instantly fights with text selection.', fixed: 'A short warm-up makes hover intentional.', names: ['Opens instantly', 'Waits for a pause'],
+    // the fix as code, shown once the switch is on the fixed side (owner, 2026-11-18): the warm-up in one property
+    fix: { fault: 'transition-delay: 0ms', fix: 'transition-delay: 500ms' } },
 };
 
 const CLIPS = {
@@ -196,9 +198,17 @@ export function ClipPage({ n }) {
           <Example key={side + round} side={side} clip />
         </div>
         </div>
-        <div ref={sw} style={{ position: 'absolute', left: '50%', bottom: 120 / 2.1, transform: 'translateX(-50%)', zoom: 2.1 }}>
+        <div ref={sw} style={{ position: 'absolute', left: '50%', bottom: 78 / 2.1, transform: 'translateX(-50%)', zoom: 2.1 }}>
           <TechniqueSwitch names={words?.names ?? Example.names} fixed={side === 'fixed'} ready={false} onBack={() => {}} onFix={() => {}} />
         </div>
+        {side === 'fixed' && words?.fix ? (
+          <div key={round} style={{ position: 'absolute', left: 0, right: 0, top: TOP + ROOM + 6, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 14,
+            font: '600 25px/1 ui-monospace, Menlo, monospace', animation: 'clip-say 520ms cubic-bezier(.2, .8, .2, 1) 200ms both' }}>
+            <code style={{ padding: '10px 14px', borderRadius: 10, color: '#fff', background: 'var(--pl-pink)', opacity: 0.6, textDecoration: 'line-through' }}>{words.fix.fault}</code>
+            <span style={{ color: 'rgb(28 27 25 / .45)', font: '600 26px/1 var(--pl-round)' }}>→</span>
+            <code style={{ padding: '10px 14px', borderRadius: 10, color: '#fff', background: '#1a9460' }}>{words.fix.fix}</code>
+          </div>
+        ) : null}
         <span style={{ position: 'absolute', right: 40, bottom: 36, display: 'flex', alignItems: 'center', gap: 10, font: '750 22px/1 "Bricolage Grotesque", var(--pl-round)', color: 'rgb(28 27 25 / .55)' }}>
           <Mark size={28} />React Plumber
         </span>
