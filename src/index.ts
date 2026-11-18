@@ -9,7 +9,7 @@ import { valueSuggestions } from './rules/value-suggestions.js';
 import { selectorHooks } from './collect/selector-hooks.js';
 import type { ClassSite } from './collect/classes.js';
 import { lowerTailwind } from './lower/tailwind.js';
-import { existenceInPieces, location, unreachableClasses, deadVariables } from './rules/existence.js';
+import { existenceInPieces, deadClasses, location, unreachableClasses, deadVariables } from './rules/existence.js';
 import { varUses } from './rules/families.js';
 import { cssCode, collectStylesheets } from './collect/stylesheets.js';
 import { collectModules } from './collect/modules.js';
@@ -139,14 +139,24 @@ export async function analyze(options: CheckOptions, snippet?: Snippet, runtime?
   const css = await phase('css', [root, project.tailwind.entry, project.tailwind.version, graph, collected.styles.stylesheets], () => lowerStylesheets(root, project.tailwind.entry, project.tailwind.version, graph, collected.styles.stylesheets, !!input || !!runtime));
   const stylesheetsMs = performance.now() - stylesheetStart;
   const existenceStart = performance.now();
+  let stepStart = performance.now();
   const ranking = await phase('ranking', [root, lowered.candidates, lowered.suggestions], () => suggestionCache(root, lowered.candidates, lowered.suggestions, !!input || !!runtime));
   const existenceSites = await checkingPlainCss(root, project.tailwind.entry) ? collected.sites.filter(site => !looksLikeTailwind(site.token)) : collected.sites;
-  const unfiltered = await existenceInPieces(existenceSites, lowered.candidates, new Set(css.classes), config.value.markers ?? [], lowered.suggestions, ranking.rankings, runtime?.pause);
-  await ranking.save();
+  // start-up keeps which classes are dead (for selector hooks and unreachable stylesheets), not their findings: working
+  // out a near class for each is left to the judging that follows (3.6 s of a 44 s start on algorecall)
+  const preparing = !!runtime?.prepareOnly;
+  profileDuration('rule:existence/ranking', performance.now() - stepStart); stepStart = performance.now();
+  const unfiltered = preparing ? [] : await existenceInPieces(existenceSites, lowered.candidates, new Set(css.classes), config.value.markers ?? [], lowered.suggestions, ranking.rankings, runtime?.pause);
+  if (!preparing) await ranking.save();
+  const deadNames = preparing ? deadClasses(existenceSites, lowered.candidates, new Set(css.classes), config.value.markers ?? []) : unfiltered.filter(finding => finding.rule === 'existence/dead-class').map(finding => finding.declaration.value);
   // A class the project's own source uses as a selector is a hook, not a styling mistake.
-  const hooks = await selectorHooks(files, new Set(unfiltered.filter(finding => finding.rule === 'existence/dead-class').map(finding => finding.declaration.value)));
+  profileDuration('rule:existence/judge', performance.now() - stepStart); stepStart = performance.now();
+  const hooks = await selectorHooks(files, new Set(deadNames));
+  profileDuration('rule:existence/hooks', performance.now() - stepStart); stepStart = performance.now();
   const findings = hooks.size ? unfiltered.filter(finding => finding.rule !== 'existence/dead-class' || !hooks.has(finding.declaration.value)) : unfiltered;
-  const unreachable = await phase('unreachable', [root, graph, findings.filter(finding => finding.rule === 'existence/dead-class').map(finding => finding.declaration.value)], () => unreachableClasses(root, new Set(graph.files.keys()), findings.filter(finding => finding.rule === 'existence/dead-class').map(finding => finding.declaration.value), runtime?.inventory));
+  const reached = hooks.size ? deadNames.filter(value => !hooks.has(value)) : deadNames;
+  const unreachable = await phase('unreachable', [root, graph, reached], () => unreachableClasses(root, new Set(graph.files.keys()), reached, runtime?.inventory));
+  profileDuration('rule:existence/unreachable', performance.now() - stepStart);
   for (const finding of findings) {
     const file = unreachable.get(finding.declaration.value);
     if (file) {

@@ -63,11 +63,14 @@ reserved.)
 
 ## Doesn't do yet
 
-- **36 test files already failed before 2026-11-17 (2026-11-18).** The full suite on vm-agent (215 files) after the
-  memory and speed work: 178 pass, 37 fail. Rerun on the build from before that work (c2eac78c), 36 of the 37 fail there
-  too, so they predate it; the 37th (reading-cache) was a regression of the day, fixed. Mostly overlay browser tests
-  timing out, a few assertions; one-owner fails because its locator matches both of the fix panel's elements, which
-  the overlay has made since before then. Files: blueprint, class-site, cleanup, cleanup-colour, cleanup-colour-cases, cleanup-icons, cleanup-icons-cases, cleanup-messy, cleanup-site, cleanup-spacing, cleanup-spacing-proofs, cleanup-spacing-stage, cli-findings, colour-names, craft, craft-hierarchy, craft-wave7, dock, element-only, element-site, fixpanel, inplace, locate-bench, motion-layout, one-bar, one-owner, overlay, qa-fixes-2-overlay, reach, recipes, rule-docs-link, select, text-card-qa, units, verdict, walk.
+- **The old failing tests, sorted (2026-11-18).** The 36 files that failed before 2026-11-17 all pass on main now; most
+  were time-outs on a busy machine. A full run on vm-agent (214 files, 24.6 min, by mistake: the file list was lost on
+  the way over SSH) failed 7 tests in 6 files. Sorted: `kept-check` was ours (the kept reading table was skipped while
+  the whole-app report built in the background; fixed), `page-drawn`, `apply-all-hot` and `nested-root` passed when run
+  again, `element-layout` passed on main (uncommitted work in the checkout touches it). Left: `hydration` fails on
+  Next webpack on every run, also on the commit before the background build: right after load, a click finds the
+  heading through the owner stack instead of its stamp, though the stamp resolves when asked a moment later.
+  `npm run build` also failed on main at its last step (breakit.js not listed as a served overlay module; fixed).
 - **Component root ranges depend on build order (2026-11-17).** A component's root class ranges reach the session's
   cache only from a build that keeps the component in its graph; a component first found while building another file
   is missing them in every later graph. Which ones depends on file order. Recording them at discovery changed 77

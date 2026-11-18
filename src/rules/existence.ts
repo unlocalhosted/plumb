@@ -66,6 +66,13 @@ export async function existenceInPieces(sites: ClassSite[], candidates: Map<stri
   for (const group of groups) { const wait = pause?.(); if (wait) await wait; findings.push(finding(group)); }
   return findings;
 }
+/** The classes `existence` would call dead, in its order, without working out a near class for each (start-up keeps
+ * only which they are: for selector hooks and stylesheets nothing imports). */
+export function deadClasses(sites: ClassSite[], candidates: Map<string, CandidateCss>, declared: Set<string>, markers: string[]): string[] {
+  const dead = new Set<string>();
+  for (const site of sites) if (!site.opaque && !(candidates.get(site.token)?.unreadable || candidates.get(site.token)?.css?.trim() || declared.has(site.token) || marker(site.token, markers))) dead.add(site.token);
+  return [...dead].sort((a, b) => `existence/dead-class:${a}`.localeCompare(`existence/dead-class:${b}`));
+}
 function existenceParts(sites: ClassSite[], candidates: Map<string, CandidateCss>, declared: Set<string>, markers: string[], themeUtilities: { token: string; prefix: string }[], rankings: Map<string, string[]>) {
   const groups = new Map<string, ClassSite[]>();
   for (const site of sites) {
