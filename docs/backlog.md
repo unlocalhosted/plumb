@@ -404,13 +404,9 @@ three is a state the page reaches by itself. - **Built (layer 1):** Alt+S opens 
 - A full read is about 2 s on a 1,400-element page (busy laptop, single runs); a fixed 0.6 s wait remains at the end.
 - Two neighbours of the repaired fix-card write were not driven by hand: a fix taken on the element itself, and the
   class written after a new theme token.
-- The whole-app report now builds in the background (journey, 2026-11-18). Its longest stretches without a pause on
-  algorecall are still 1.2 to 1.6 s:
-  - the first build after start-up compiles Tailwind again (about 1.1 s), though start-up already compiled it. Why
-    the compile's inputs differ is not known yet.
-  - after an edit, the early steps (module and stylesheet graphs) run as one piece.
-  - one stylesheet's component ownership, judged against the whole component graph, takes about 0.5 s.
-  - part of each is garbage collection on a 2.2 GB heap.
+- The whole-app report now builds in the background (journey, 2026-11-18). On algorecall its first build pauses at
+  least every 0.3 s. After an edit, the restarted build still runs 1.3 s in one piece: every file's classes are
+  gathered again into one list (about 0.7 s), and the garbage collection that follows takes about 0.6 s.
 - Nothing on screen says the whole-app list is still building. The worker reports it (`wholeApp` in health:
   building, ready, or when asked); the overlay doesn't show it yet.
 

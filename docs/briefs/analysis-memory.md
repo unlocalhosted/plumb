@@ -758,6 +758,16 @@ Found on the way: `applyLedger` writes `status` onto the findings it is given. A
 compile's notes with the whole-app report, so a page read before the full report gave one of its findings a ledger
 status. Page reads hand it copies now (`ledgerView`), as the whole-app path did.
 
+Second pass, same day. The 1.1 s stretch blamed on a second Tailwind compile was a misreading: `analyze` records
+the phase times at its end, and a reused compile carries its old `compileMs` into the record. The compile result is
+the same object before and after the build (checked on algorecall). The real stretch was one provenance group:
+color, 2,132 files and 63,421 declarations joined by variables defined in the project's stylesheet, judged in one
+`familyProvenance` call. Its body is now a generator (`familySteps`) that yields every 2,048 declarations;
+`familyProvenance` runs it straight through, and `familyProvenanceInPieces` pauses between steps. Longest stretch of
+the first build: 1.1 s to 0.29 s, two thirds of it garbage collection. Findings, declarations and coverage hash the
+same, also with an edit mid-build, and the CLI's output is unchanged. Left: after an edit, re-gathering every
+file's classes runs 1.3 s in one piece (0.6 s of it garbage collection).
+
 ## Expected (guesses until measured)
 
 - Step 1 removes most of the 781 MB of trees and a share of the 234 MB that points into them.

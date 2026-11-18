@@ -2417,8 +2417,13 @@ field is empty). The table of five writes, before and after. The Next table: eig
   An edit 6 s in starts it over, and it lands on the same report. The longest stretch without a pause went from 10 s
   to 1.2 to 1.6 s. On crafting-ui the whole-app report answers in 0.2 to 0.3 s instead of being built on the first ask.
   Details in docs/briefs/analysis-memory.md.
-- **Media hooks:** a chart of the worker's longest busy stretch, 10 s before and 1.2 to 1.6 s after, with page answer
-  times on top.
+- **Second pass, the same day:** what looked like Tailwind compiling twice was an old timing copied into the record;
+  the compile is reused. The real stretch was one group in the colour rule: 2,132 files that share variables from
+  the project's stylesheet, judged in one call. That judgement now gives way every 2,048 declarations. The first
+  build's longest stretch went from 1.1 s to 0.29 s, with the same findings and the same command-line output. After
+  an edit, gathering every file's classes again still runs 1.3 s in one piece.
+- **Media hooks:** a chart of the worker's longest busy stretch: 10 s, then 1.2 to 1.6 s, then 0.29 s, with page
+  answer times on top.
 
 ## Open gaps
 - Sweeps covered six algorecall pages and thirteen crafting-ui pages.

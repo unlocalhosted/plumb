@@ -2,7 +2,7 @@ import type { Declaration, Finding, ProvenanceCoverage } from '../report.js';
 import type { ProvenanceEntry } from '../rules/provenance.js';
 import type { PlumbConfig } from '../config.js';
 import type { DecisionRecord } from '../decisions/index.js';
-import { familyProvenance, findingsForFamily, groupByValue, presentProvenance, resolutionContext } from '../rules/provenance.js';
+import { familyProvenance, familyProvenanceInPieces, findingsForFamily, groupByValue, presentProvenance, resolutionContext } from '../rules/provenance.js';
 import { judgedFamilies, isJudged, familiesFor, varUses } from '../rules/families.js';
 import { judgeOwnership } from '../ownership/judge.js';
 import type { LoweredProps } from '../ownership/judge.js';
@@ -23,6 +23,11 @@ class FileCache<T> {
     const old = this.entries.get(file);
     if (old && same(old.inputs, inputs)) return old.value;
     const value = compute(); this.entries.set(file, { inputs, value }); this.changed.push(file); return value;
+  }
+  async getAsync(file: string, inputs: unknown[], compute: () => Promise<T>): Promise<T> {
+    const old = this.entries.get(file);
+    if (old && same(old.inputs, inputs)) return old.value;
+    const value = await compute(); this.entries.set(file, { inputs, value }); this.changed.push(file); return value;
   }
   keep(files: Set<string>): void { for (const file of this.entries.keys()) if (!files.has(file)) this.entries.delete(file); this.changed = []; }
 }
@@ -177,10 +182,16 @@ export class JudgementState {
         for (const name of refs) for (const definition of reached(name)) for (const ref of definition.refs) refs.add(ref);
         const dependencies = custom.filter(d => refs.has(d.prop));
         const key = `${family}:${JSON.stringify(cluster)}`; keys.add(key);
-        const result = this.provenanceCache.get(key, [record, config, ...ds, '|definitions', ...dependencies], () => {
-          const { findings: _rebuiltFromEntries, ...kept } = familyProvenance(family, ds, record, config, sourceFiles, definitions, resolution);
-          return kept;
-        });
+        const inputs = [record, config, ...ds, '|definitions', ...dependencies];
+        const result = pause
+          ? await this.provenanceCache.getAsync(key, inputs, async () => {
+            const { findings: _rebuiltFromEntries, ...kept } = await familyProvenanceInPieces(family, ds, record, config, sourceFiles, definitions, resolution, pause);
+            return kept;
+          })
+          : this.provenanceCache.get(key, inputs, () => {
+            const { findings: _rebuiltFromEntries, ...kept } = familyProvenance(family, ds, record, config, sourceFiles, definitions, resolution);
+            return kept;
+          });
         parts.get(family)!.push(...result.entries);
         for (const name of result.usedNumericSpacing) usedNumericSpacing.add(name);
         for (const key of ['fromDecisions', 'total', 'findings'] as const) coverage[family][key] += result.coverage[key];

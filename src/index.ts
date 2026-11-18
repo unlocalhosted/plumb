@@ -325,7 +325,10 @@ export async function analyze(options: CheckOptions, snippet?: Snippet, runtime?
   if (options.suggestImitation) report.imitationSuggestions = await suggestImitation(components, collected.sites, report, config.value);
   report.timing.totalMs = performance.now() - start;
   for (const [phase, duration] of Object.entries(report.timing.phases)) profileDuration(`phase:${phase}`, duration);
-  return { report: finishMessages(report), sites };
+  const messagesStart = performance.now();
+  finishMessages(report);
+  profileDuration('phase:messages', performance.now() - messagesStart);
+  return { report, sites };
 }
 
 export interface ExplainedClassSite extends ClassSite { declarations: import('./report.js').Declaration[]; notes: string[] }

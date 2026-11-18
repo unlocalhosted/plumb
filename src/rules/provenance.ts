@@ -145,10 +145,21 @@ export function resolutionContext(declarations: Declaration[], record: DecisionR
   };
 }
 
+type FamilyResult = { findings: Finding[]; entries: ProvenanceEntry[]; usedNumericSpacing: string[]; coverage: Pick<FamilyCoverage, 'fromDecisions' | 'total' | 'findings'> };
 export function familyProvenance(family: JudgedFamily, declarations: Declaration[], record: DecisionRecord, config: PlumbConfig,
-  sourceFiles: ReadonlySet<string> = new Set(declarations.map(d => d.site.file)), definitions = indexDefinitions(declarations, record), resolution = resolutionContext(declarations, record)): {
-  findings: Finding[]; entries: ProvenanceEntry[]; usedNumericSpacing: string[]; coverage: Pick<FamilyCoverage, 'fromDecisions' | 'total' | 'findings'>;
-} {
+  sourceFiles: ReadonlySet<string> = new Set(declarations.map(d => d.site.file)), definitions = indexDefinitions(declarations, record), resolution = resolutionContext(declarations, record)): FamilyResult {
+  const steps = familySteps(family, declarations, record, config, sourceFiles, definitions, resolution);
+  for (;;) { const step = steps.next(); if (step.done) return step.value; }
+}
+/** The same, giving way every few thousand declarations: `pause` is asked between them, a promise when the work should
+ * wait (session/runtime.ts). One group of files can hold most of an app (2,132 files joined by shared variables). */
+export async function familyProvenanceInPieces(family: JudgedFamily, declarations: Declaration[], record: DecisionRecord, config: PlumbConfig,
+  sourceFiles: ReadonlySet<string>, definitions: ReturnType<typeof indexDefinitions>, resolution: ReturnType<typeof resolutionContext>, pause: () => Promise<void> | undefined): Promise<FamilyResult> {
+  const steps = familySteps(family, declarations, record, config, sourceFiles, definitions, resolution);
+  for (;;) { const step = steps.next(); if (step.done) return step.value; const wait = pause(); if (wait) await wait; }
+}
+function* familySteps(family: JudgedFamily, declarations: Declaration[], record: DecisionRecord, config: PlumbConfig,
+  sourceFiles: ReadonlySet<string>, definitions: ReturnType<typeof indexDefinitions>, resolution: ReturnType<typeof resolutionContext>): Generator<void, FamilyResult> {
   // a whole text style whose face can't be resolved (a font loaded at runtime) is still a size, a line height and a weight
   const decisions = record.decisions.filter(decision => decision.family === family)
     .map(decision => family === 'type' && decision.resolved === undefined && fontParts(decision.value) ? { ...decision, resolved: decision.value } : decision);
@@ -247,10 +258,13 @@ export function familyProvenance(family: JudgedFamily, declarations: Declaration
   const judgedDeclarations = family === 'type' ? declarations.flatMap(d => typeDeclarations(d, decisionRefs)) : declarations;
   const variablesFor = resolution.variablesFor;
   const owners = attribution(family, definitions, sourceFiles, new Set(record.decisions.filter(d => d.family === family || family === 'color' && d.family === 'elevation' && d.origin === 'project').flatMap(d => d.refs)));
-  const consumers = judgedDeclarations.filter(d => isJudged(d, family)).flatMap(declaration => {
+  const consumers: NonNullable<ReturnType<typeof owners.consume>>[] = [];
+  for (const [i, declaration] of judgedDeclarations.entries()) {
+    if (i % 2048 === 2047) yield;
+    if (!isJudged(declaration, family)) continue;
     const item = owners.consume(declaration, variablesFor(declaration), declaration.decisionRefs?.filter(name => refIndex.has(`var(${name})`)) ?? []);
-    return item ? [item] : [];
-  });
+    if (item) consumers.push(item);
+  }
   // A verdict reads the declaration's property, value, origin, opacity, runtime step and class as written, its
   // definition, the parts it was split into, and the variables in scope (only `--tw-*` ones set on the same element
   // differ from the theme's); everything else it reads is fixed for this family in this run. Two declarations with the
@@ -351,7 +365,8 @@ export function familyProvenance(family: JudgedFamily, declarations: Declaration
       ...(rule.endsWith('/framework') && adopt ? { adopt } : {}), ...(newToken ? { newToken } : {}) };
     return { resolved, numericSpacing, entry: { resolved, amount, key, fixProp, alternatives, rule, title, because, severity, message } };
   };
-  for (const { declaration, parts, definition, uses } of [...consumers, ...owners.definitions]) {
+  for (const [i, { declaration, parts, definition, uses }] of [...consumers, ...owners.definitions].entries()) {
+    if (i % 2048 === 2047) yield;
     if (!isJudged(declaration, family)) continue;
     coverage.total++;
     const variables = variablesFor(declaration);
@@ -364,6 +379,7 @@ export function familyProvenance(family: JudgedFamily, declarations: Declaration
     coverage.findings++;
     entries.push({ declaration, definition, uses, ...verdict.entry });
   }
+  yield;
   return { findings: findingsForFamily(family, entries, record), entries, usedNumericSpacing: [...usedNumericSpacing], coverage };
 }
 
